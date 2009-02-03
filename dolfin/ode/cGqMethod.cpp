@@ -53,7 +53,7 @@ real cGqMethod::timestep(real r, real tol, real k0, real kmax) const
 {
   // FIXME: Missing stability factor and interpolation constant
 
-  if ( abs(r) < ODE::epsilon() )
+  if ( abs(r) < real_epsilon() )
     return kmax;
 
   const real qq = static_cast<real>(q);
@@ -220,7 +220,7 @@ void cGqMethod::computeWeights()
     SORSolver::precondition(q, A_inv, A_real, b_real, Ainv_A, Ainv_b);
     
     // Solve the preconditioned system
-    SORSolver::SOR(q, Ainv_A, w_real, Ainv_b, ODE::epsilon());
+    SORSolver::SOR(q, Ainv_A, w_real, Ainv_b, real_epsilon());
     
     for (uint j = 0; j < nn; ++j)
       nweights[j][i] = qweights[i] * w_real[j];

@@ -8,7 +8,6 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/Legendre.h>
-#include <dolfin/ode/ODE.h>
 #include "LobattoQuadrature.h"
 
 using namespace dolfin;
@@ -77,7 +76,7 @@ void LobattoQuadrature::computePoints()
     {
       dx = - p.ddx(x) / p.d2dx(x);
       x  = x + dx;
-    } while ( abs(dx) > ODE::epsilon() );
+    } while ( abs(dx) > real_epsilon() );
     
     // Save the value using the symmetry of the points
     points[i] = - x;

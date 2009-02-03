@@ -6,11 +6,11 @@
 
 #include <cmath>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/real.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/uBLASVector.h>
 #include <dolfin/la/uBLASDenseMatrix.h>
 #include <dolfin/math/Legendre.h>
-#include <dolfin/ode/ODE.h>
 #include <dolfin/ode/SORSolver.h>
 #include "GaussianQuadrature.h"
 
@@ -101,7 +101,7 @@ void GaussianQuadrature::computeWeights()
   SORSolver::precondition(n, Ainv, A_real, b_real, Ainv_A, Ainv_b);
     
   // Solve the preconditioned system
-  SORSolver::SOR(n, Ainv_A, x_real, Ainv_b, ODE::epsilon());
+  SORSolver::SOR(n, Ainv_A, x_real, Ainv_b, real_epsilon());
   /*
   real err = SORSolver::err(n, A_real, x_real, b_real);
   gmp_printf("Residual: %.3Fe\n", err.get_mpf_t());
@@ -130,12 +130,12 @@ bool GaussianQuadrature::check(unsigned int q) const
   
   if ( q == 0 )
   {
-    if ( abs(sum - 2.0) < 100.0*ODE::epsilon() )
+    if ( abs(sum - 2.0) < 100.0*real_epsilon() )
       return true;
   }
   else
   {
-    if ( abs(sum) < 100.0 * ODE::epsilon() )
+    if ( abs(sum) < 100.0 * real_epsilon() )
       return true; 
   }
 

@@ -7,7 +7,6 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/common/real.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/ode/ODE.h>
 #include <dolfin/math/Legendre.h>
 #include "RadauQuadrature.h"
 
@@ -78,7 +77,7 @@ void RadauQuadrature::computePoints()
     {
       dx = - (p1(x) + p2(x)) / (p1.ddx(x) + p2.ddx(x));
       x  = x + dx;
-    } while ( abs(dx) > ODE::epsilon() );
+    } while ( abs(dx) > real_epsilon() );
     
     // Set the node value
     points[i] = x;

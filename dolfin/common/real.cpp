@@ -1,7 +1,44 @@
+// Copyright (C) 2008 Benjamin Kehlet
+// Licensed under the GNU LGPL Version 2.1.
+//
+//
+// First added:  2009-01-25
+
+
 #include "real.h"
-#include <dolfin/ode/ODE.h>
+#include "constants.h"
 
 using namespace dolfin;
+
+real dolfin::real_epsilon() 
+{
+#ifndef HAS_GMP
+  return DOLFIN_EPS;
+#else 
+  static bool computed = false;
+  //probably faster to store eps somewhere else and call real_init from GMPObject
+  //compute it (thus avoiding the if-test). But where to store eps?
+  static real eps;
+
+  if (!computed) {
+    //computing precision
+    eps = 1.0;
+    real one = real("1.0");
+    while ( eps + one != one ) 
+      {
+	eps /= 2;
+      }
+
+    eps *= 2;
+    computed = true;
+
+    gmp_printf("Epsilon computed. Bits pr number: %d, epsilon=%.3Fe\n", 
+	       (int) mpf_get_default_prec(), eps.get_mpf_t());
+  }
+  
+  return eps;
+#endif
+}
 
 real dolfin::real_sqrt(real a)
 {
@@ -11,7 +48,7 @@ real dolfin::real_sqrt(real a)
 
   int k = 0;
 
-  while ( abs(x - prev) > ODE::epsilon() )
+  while ( abs(x - prev) > real_epsilon() )
   {
     prev = x;
     x = prev - (prev*prev - a)/(2*prev);
@@ -64,7 +101,7 @@ real dolfin::real_pi() {
       
       pi_next = (next[A]+next[B])*(next[A]+next[B])/(4*next[T]);
     
-    } while (abs(pi_next - pi_prev) > 10*ODE::epsilon());
+    } while (abs(pi_next - pi_prev) > 10*real_epsilon());
 
     //gmp_printf("Pi computed in %d iterations: %.50Fe\n", k, pi_next.get_mpf_t());  
     

@@ -1,7 +1,7 @@
 // Default values for the DOLFIN parameter system.
 //
 // First added:  2005-12-19
-// Last changed: 2008-05-31
+// Last changed: 2009-02-02
 
 //--- Linear algebra ---
 #ifdef HAS_PETSC
@@ -113,3 +113,10 @@ add("LU report", true);
 
 //--- Mesh partitioning ---
 add("report edge cut", false);
+
+//--- Floating-point precision (only relevant when using GMP) ---
+#ifdef HAS_GMP
+add("floating-point precision", 30);
+#else
+add("floating-point precision", 16);
+#endif

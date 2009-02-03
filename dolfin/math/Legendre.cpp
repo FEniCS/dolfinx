@@ -7,7 +7,7 @@
 #include <cmath>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/ode/ODE.h>
+#include <dolfin/common/real.h>
 #include "Legendre.h"
 
 using namespace dolfin;
@@ -62,10 +62,10 @@ real Legendre::ddx(int n, real x)
     return 1.0;
   
   // Avoid division by zero
-  if ( abs(x - 1.0) < ODE::epsilon() )
-    x -= 2.0*ODE::epsilon();
-  if ( abs(x + 1.0) < ODE::epsilon() )
-    x += 2.0*ODE::epsilon();
+  if ( abs(x - 1.0) < real_epsilon() )
+    x -= 2.0*real_epsilon();
+  if ( abs(x + 1.0) < real_epsilon() )
+    x += 2.0*real_epsilon();
   
   // Formula, BETA page 254
   real nn = real(n);
@@ -83,10 +83,10 @@ real Legendre::d2dx(int, real x)
     return 0.0;
 
   // Avoid division by zero
-  if ( abs(x - 1.0) < ODE::epsilon() )
-    x -= 2.0*ODE::epsilon();
-  if ( abs(x + 1.0) < ODE::epsilon() )
-    x += 2.0*ODE::epsilon();
+  if ( abs(x - 1.0) < real_epsilon() )
+    x -= 2.0*real_epsilon();
+  if ( abs(x + 1.0) < real_epsilon() )
+    x += 2.0*real_epsilon();
 
   // Formula, BETA page 254
   real nn = real(n);
