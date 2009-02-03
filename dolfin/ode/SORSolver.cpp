@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-11
-// Last changed: 2008-10-11
+// Last changed: 2008-02-03
 
 #include <dolfin/la/uBLASDenseMatrix.h>
 #include "SORSolver.h"
@@ -40,12 +40,9 @@ void SORSolver::SOR(uint n,
     // Check precision
     real_sub(n, prev, x);
     diff = real_max_abs(n, prev);
-    //gmp_printf("Diff: %.25Fe \n\n", diff.get_mpf_t());
   
-
     ++iterations;
   }
-  //printf ("Iterations: %d\n", count);
 }
 //-----------------------------------------------------------------------------
 void SORSolver::_SOR_iteration(uint n, 
@@ -89,22 +86,6 @@ void SORSolver::precondition(uint n, const uBLASDenseMatrix& A_inv,
   }
 }
 //-----------------------------------------------------------------------------
-void SORSolver::printMatrix(const uint n, const real* A)
-{
-  for (uint i = 0; i<n; ++i)
-  {
-    for (uint j = 0; j<n; ++j) 
-      { gmp_printf("(%d, %d, %.20Fe) ", i, j, A[i*n+j].get_mpf_t()); }
-    printf("\n");
-  }
-}
-//-----------------------------------------------------------------------------
-void SORSolver::printVector (const uint n, const real* x)
-{
-  for (uint i = 0; i<n; ++i) gmp_printf("%.25Fe\n", x[i].get_mpf_t());
-  printf("\n");
-}
-//-----------------------------------------------------------------------------
 real SORSolver::err(uint n, const real* A, const real* x, const real* b) {
   real _err[n];
 
@@ -119,6 +100,6 @@ real SORSolver::err(uint n, const real* A, const real* x, const real* b) {
     _err[i] -= b[i];
   }
   real e =  real_max_abs(n, _err);
-  //gmp_printf("Error is: %.3Fe\n", e.get_mpf_t());
+
   return e;
 }
