@@ -145,10 +145,24 @@ void EpetraVector::get(double* values) const
 void EpetraVector::set(double* values)
 {
   dolfin_assert(x);
+  x->GlobalAssemble();
 
+  int* rows = new int[size()]; 
+  for (uint i=0; i<size(); i++){
+    rows[i] = i;
+  }
+  int err = x->ReplaceGlobalValues(size(), reinterpret_cast<const int*>(rows), values);
+  delete [] rows;
+
+  if (err!= 0) 
+    error("EpetraVector::set: Did not manage to set the values into the vector"); 
+
+  /* OLD CODE, should be faster but is not bullet proof ... 
+  dolfin_assert(x);
   double *data = 0;
   x->ExtractView(&data, 0);
   memcpy(data, values, size()*sizeof(double));
+  */
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::add(double* values)
