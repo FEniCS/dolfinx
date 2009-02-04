@@ -261,6 +261,17 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transp
   if (!Ax) 
     error("The vector Ax should be of type EpetraVector");  
 
+
+  if (transposed) {
+    if (size(0) != x->size()) 
+      error("Matrix and vector dimensions don't match for (transposed) matrix-vector product.");
+    Ax->resize(size(1));
+  } else {
+    if (size(1) != x->size()) 
+      error("Matrix and vector dimensions don't match for matrix-vector product.");
+    Ax->resize(size(0));
+  }
+
   int err = A->Multiply(transposed, *(x->vec()), *(Ax->vec()));
   if (err!= 0) 
     error("Epetra_CRSMatrix::Multiply error."); 
