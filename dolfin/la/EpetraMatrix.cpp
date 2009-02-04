@@ -261,7 +261,10 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transp
   if (!Ax) 
     error("The vector Ax should be of type EpetraVector");  
 
-  A->Multiply(transposed, *(x->vec()), *(Ax->vec()));
+  int err = A->Multiply(transposed, *(x->vec()), *(Ax->vec()));
+  if (err!= 0) 
+    error("Epetra_CRSMatrix::Multiply error."); 
+
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::getrow(uint row, Array<uint>& columns, Array<double>& values) const
