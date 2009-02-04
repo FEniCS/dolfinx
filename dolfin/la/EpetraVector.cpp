@@ -55,7 +55,7 @@ EpetraVector::EpetraVector(const Epetra_Map& map):
     Variable("x", "a vector"),
     x(static_cast<Epetra_FEVector*>(0))
 {
-  error("Not implemented yet");
+  error("Not implemented yet.");
 }
 //-----------------------------------------------------------------------------
 EpetraVector::EpetraVector(const EpetraVector& v):
@@ -101,13 +101,17 @@ dolfin::uint EpetraVector::size() const
 void EpetraVector::zero()
 {
   dolfin_assert(x);
-  x->PutScalar(0.0);
+  int err = x->PutScalar(0.0);
+  if (err!= 0) 
+    error("EpetraVector::zero: Did not manage to perform Epetra_Vector::PutScalar."); 
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::apply()
 {
   dolfin_assert(x);
-  x->GlobalAssemble();
+  int err = x->GlobalAssemble();
+  if (err!= 0) 
+    error("EpetraVector::apply: Did not manage to perform Epetra_Vector::GlobalAssemble."); 
 
   // TODO: Use this? Relates to sparsity pattern, dofmap and reassembly!  
   //x->OptimizeStorage(); 
@@ -139,23 +143,29 @@ void EpetraVector::get(double* values) const
   dolfin_assert(x);
 
   // TODO: Are these global or local values?
-  x->ExtractCopy(values, 0); 
+  int err = x->ExtractCopy(values, 0); 
+  if (err!= 0) 
+    error("EpetraVector::get: Did not manage to perform Epetra_Vector::ExtractCopy."); 
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::set(double* values)
 {
   dolfin_assert(x);
-  x->GlobalAssemble();
+
+  int err = x->GlobalAssemble();
+  if (err!= 0) 
+    error("EpetraVector::set: Did not manage to perform Epetra_Vector::GlobalAssemble."); 
 
   int* rows = new int[size()]; 
   for (uint i=0; i<size(); i++){
     rows[i] = i;
   }
-  int err = x->ReplaceGlobalValues(size(), reinterpret_cast<const int*>(rows), values);
-  delete [] rows;
 
+  err = x->ReplaceGlobalValues(size(), reinterpret_cast<const int*>(rows), values);
   if (err!= 0) 
-    error("EpetraVector::set: Did not manage to set the values into the vector"); 
+    error("EpetraVector::set: Did not manage to perform Epetra_Vector::ReplaceGlobalValues."); 
+
+  delete [] rows;
 
   /* OLD CODE, should be faster but is not bullet proof ... 
   dolfin_assert(x);
@@ -171,7 +181,10 @@ void EpetraVector::add(double* values)
 
   // TODO: Use an Epetra function for this
   double *data = 0; 
-  x->ExtractView(&data, 0);
+  int err = x->ExtractView(&data, 0);
+  if (err!= 0) 
+    error("EpetraVector::add: Did not manage to perform Epetra_Vector::ExtractView."); 
+
   for(uint i=0; i<size(); i++)
     data[i] += values[i]; 
 }
@@ -190,7 +203,7 @@ void EpetraVector::set(const double* block, uint m, const uint* rows)
   dolfin_assert(x);
   int err = x->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows), block);
   if (err!= 0) 
-    error("EpetraVector::set: Did not manage to set the values into the vector"); 
+    error("EpetraVector::set: Did not manage to perform Epetra_Vector::ReplaceGlobalValues."); 
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::add(const double* block, uint m, const uint* rows)
@@ -198,7 +211,7 @@ void EpetraVector::add(const double* block, uint m, const uint* rows)
   dolfin_assert(x);
   int err = x->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows), block);
   if (err!= 0) 
-    error("EpetraVector::add : Did not manage to add the values to the vector"); 
+    error("EpetraVector::add : Did not manage to perform Epetra_Vector::SumIntoGlobalValues."); 
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Epetra_FEVector> EpetraVector::vec() const
@@ -216,7 +229,9 @@ double EpetraVector::inner(const GenericVector& y) const
     error("Given vector is not initialized.");
 
   double a;
-  x->Dot(*(v.x), &a); 
+  int err = x->Dot(*(v.x), &a); 
+  if (err!= 0) 
+    error("EpetraVector::inner: Did not manage to perform Epetra_Vector::Dot."); 
   return a;
 }
 //-----------------------------------------------------------------------------
@@ -233,7 +248,7 @@ void EpetraVector::axpy(double a, const GenericVector& y)
 
   int err = x->Update(a, *(v.vec()), 1.0); 
   if (err!= 0) 
-    error("EpetraVector::axpy: Did not manage to perform Update on Epetra vector."); 
+    error("EpetraVector::axpy: Did not manage to perform Epetra_Vector::Update."); 
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraVector::factory() const
@@ -291,7 +306,9 @@ const EpetraVector& EpetraVector::operator-= (const GenericVector& y)
 const EpetraVector& EpetraVector::operator*= (double a)
 {
   dolfin_assert(x);
-  x->Scale(a);
+  int err = x->Scale(a);
+  if (err!= 0) 
+    error("EpetraVector::operator*=: Did not manage to perform Epetra_Vector::Scale."); 
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -306,17 +323,20 @@ double EpetraVector::norm(NormType type) const
   dolfin_assert(x);
 
   double value = 0.0;
+  int err=0; 
   switch (type) 
   {
     case l1:
-      x->Norm1(&value);
+      err = x->Norm1(&value);
       break;
     case l2:
-      x->Norm2(&value);
+      err = x->Norm2(&value);
       break;
     default:
-      x->NormInf(&value);
+      err = x->NormInf(&value);
   }
+  if (err!= 0) 
+    error("EpetraVector::norm: Did not manage to compute the norm."); 
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -325,7 +345,9 @@ double EpetraVector::min() const
   dolfin_assert(x);
 
   double value = 0.0;
-  x->MinValue(&value);
+  int err = x->MinValue(&value);
+  if (err!= 0) 
+    error("EpetraVector::min: Did not manage to perform Epetra_Vector::MinValue."); 
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -334,7 +356,9 @@ double EpetraVector::max() const
   dolfin_assert(x);
 
   double value = 0.0;
-  x->MaxValue(&value);
+  int err = x->MaxValue(&value);
+  if (err!= 0) 
+    error("EpetraVector::min: Did not manage to perform Epetra_Vector::MinValue."); 
   return value;
 }
 //-----------------------------------------------------------------------------
