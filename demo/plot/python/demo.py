@@ -18,7 +18,7 @@ mesh.order()
 try:
     demos = [int(sys.argv[-1])]
 except:
-    demos = [0, 1, 2]
+    demos = [0, 1, 2, 3]
 
 # Have some fun with the mesh
 if 0 in demos:
@@ -71,3 +71,25 @@ if 2 in demos:
     for i in range(200):
         f.t += 0.005
         plot(f, rescale=True, title="Vector function")
+
+if 3 in demos:
+    import numpy
+    mesh = UnitSquare(10, 10)
+    V = VectorFunctionSpace(mesh, "CG", 1)
+    f = Function(V, ("-(x[1] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))",
+                     " (x[0] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))"))
+
+    pts = numpy.array([
+        [.24, .24],
+        [.24, .74],
+        [.74, .24],
+        [.74, .74]
+        ], dtype='d')
+    f.t = 0.0
+    for i in range(150):
+        f.t += 0.005
+        plot(f, eval_pts=pts, rescale=True, title="Vector function")
+
+
+#    plot(f,eval_pts=pts)
+#    interactive()
