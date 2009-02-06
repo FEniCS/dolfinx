@@ -25,6 +25,9 @@ emacs -nw SConstruct
 echo '--- Update version number in dolfin/scons.cfg'
 sleep 1
 emacs -nw dolfin/scons.cfg
+echo '--- Update version number in __init__.py'
+sleep 1
+emacs -nw site-packages/dolfin/__init__.py
 
 # Get the version number
 VERSION=`head -1 ChangeLog | cut -d' ' -f1`

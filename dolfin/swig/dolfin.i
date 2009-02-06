@@ -29,8 +29,8 @@ import_array();
 // Exceptions
 %include "dolfin_exceptions.i"
 
-// Handle shared_ptr only available for swig version >= 1.3.34
-#if SWIG_VERSION >= 0x010334
+// Handle shared_ptr only available for swig version >= 1.3.35
+#if SWIG_VERSION >= 0x010335
 // Un comment these lines to use std::tr1, only works with patched swig
 //#define SWIG_SHARED_PTR_NAMESPACE std
 //#define SWIG_SHARED_PTR_SUBNAMESPACE tr1
@@ -68,19 +68,8 @@ import_array();
 %include "dolfin_common_post.i"
 %include "dolfin_function_post.i"
 
-%inline %{
-int swigversion() { return  SWIGVERSION; }
-%}
-
-int swigversion();
-
-%pythoncode %{
-"""Preliminary code for adding swig version to cpp module. Someone (tm) finish
-this.
-"""
-__swigversion__ = hex(swigversion())
-del swigversion
-%}
+// Include information about swig version
+%include "dolfin_swig_version.i"
 
 //%typedef         std::map<dolfin::uint, dolfin::uint> iimap; //FIXME: Make this work
 //%template(iimap) std::map<dolfin::uint, dolfin::uint>; //FIXME: Make this work

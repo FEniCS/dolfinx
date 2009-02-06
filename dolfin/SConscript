@@ -92,6 +92,24 @@ if env["enablePydolfin"]:
         print "*** Unable to find SWIG."
         print "*** Install SWIG or disable PyDOLFIN with enablePydolfin=no"
         Exit(1)
+    
+    # Determine swig version
+    swig_version = re.match(r"SWIG Version (.+)", out, re.M).group(1)
+
+    # Try to import ufc
+    try:
+        import ufc
+    except:
+        print "*** Unable to import UFC. Install latest UFC"
+        Exit(1)
+
+    # Check version of swig UFC was compiled with
+    if ufc.__swigversion__ != swig_version:
+        print """*** UFC compiled with different version of swig.
+Please install swig version %s or recompile UFC with present swig."""%ufc.__swigversion__
+        Exit(1)
+
+    # Check for python development files
     py_ver = "%s.%s" % (sys.version_info[0],sys.version_info[1])
     if env["PLATFORM"].startswith("win"):
         py_inc = os.path.join(sys.prefix,"include")
@@ -106,11 +124,7 @@ if env["enablePydolfin"]:
     print "Enabling compilation of PyDOLFIN"
     swigFlags = "-python -c++ -shadow -I%s" % os.path.join("include","swig")
     swigFlags = swigFlags.split()
-    out, err = scons.runCommand("swig", "-version")
 
-    # Determine swig version
-    swig_version = re.match(r"SWIG Version (.+)", out, re.M).group(1)
-    
     #if scons.checkVersion(swig_version, "1.3.28"):
     #    swigFlags.append("-O")
 
