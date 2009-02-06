@@ -94,7 +94,7 @@ if env["enablePydolfin"]:
         Exit(1)
     
     # Determine swig version
-    swig_version = re.match(r"SWIG Version (.+)", out, re.M).group(1)
+    swig_version = re.match(r"SWIG Version (.+)", out, re.M).group(1).strip()
 
     # Try to import ufc
     try:
