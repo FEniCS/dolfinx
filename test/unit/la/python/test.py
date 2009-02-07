@@ -9,6 +9,12 @@ import unittest
 from dolfin import *
 
 class AbstractBaseTest(object):
+    count = 0
+    def setUp(self):
+        type(self).count += 1
+        if type(self).count == 1:
+            # Only print this message once per class instance
+            print "\nRunning:",type(self).__name__
 
     def assemble_matrix(self):
         " Assemble a simple matrix"
@@ -117,24 +123,30 @@ class AbstractBaseTest(object):
         self.assertTrue(isinstance(u,type(v)))
         self.assertEqual(u.size(),v.size())
 
-        v2 = v.array()
-        A2 = A.array()
+        u2 = 2*u - A*v
+        self.assertAlmostEqual(u2[4],u[4])
         
-        u2 = dot(A2,v2)
-        u3 = A*v2
+        u3 = 2*u + -1.0*(A*v)
+        self.assertAlmostEqual(u3[4],u[4])
         
-        self.assertTrue(absolute(u.array()-u2).sum() < DOLFIN_EPS*v.size())
-        self.assertTrue(absolute(u3-u2).sum() < DOLFIN_EPS*v.size())
+        v_numpy = v.array()
+        A_numpy = A.array()
+        
+        u_numpy = dot(A_numpy,v_numpy)
+        u_numpy2 = A*v_numpy
+
+        self.assertTrue(absolute(u.array()-u_numpy).sum() < DOLFIN_EPS*v.size())
+        self.assertTrue(absolute(u_numpy2-u_numpy).sum() < DOLFIN_EPS*v.size())
 
 class MatrixTester(AbstractBaseTest,unittest.TestCase):
     MatrixType = Matrix
     VectorType = Vector
 
-class uBLAS1Tester(AbstractBaseTest,unittest.TestCase):
+class uBLASSparseTester(AbstractBaseTest,unittest.TestCase):
     MatrixType = uBLASSparseMatrix
     VectorType = uBLASVector
 
-class uBLAS2Tester(AbstractBaseTest,unittest.TestCase):
+class uBLASDenseTester(AbstractBaseTest,unittest.TestCase):
     MatrixType = uBLASDenseMatrix
     VectorType = uBLASVector
 
@@ -143,11 +155,10 @@ if hasattr(cpp,"PETScMatrix"):
         MatrixType = PETScMatrix
         VectorType = PETScVector
 
-# FIXME: EpetraVector does not support set()
-#if hasattr(cpp,"EpetraMatrix"):
-#    class EpetraTester(AbstractBaseTest,unittest.TestCase):
-#        MatrixType = EpetraMatrix
-#        VectorType = EpetraVector
+if hasattr(cpp,"EpetraMatrix"):
+    class EpetraTester(AbstractBaseTest,unittest.TestCase):
+        MatrixType = EpetraMatrix
+        VectorType = EpetraVector
 
 if hasattr(cpp,"MTL4Matrix"):
     class MTL4Tester(AbstractBaseTest,unittest.TestCase):
@@ -155,4 +166,7 @@ if hasattr(cpp,"MTL4Matrix"):
         VectorType = MTL4Vector
 
 if __name__ == "__main__":
+    print ""
+    print "Testing basic PyDOLFIN linear algebra operations"
+    print "------------------------------------------------"
     unittest.main()
