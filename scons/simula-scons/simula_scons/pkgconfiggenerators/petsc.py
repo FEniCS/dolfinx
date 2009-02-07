@@ -10,16 +10,25 @@ def getPetscVariables(variables=('includes','libs','compiler','linker'), sconsEn
     variables = (variables,)
   filename = "petsc_makefile"
   arch = get_architecture()
+  # Check location of PETSc settings files
+  petsc_path_variables = []
+  if os.path.exists(getPetscDir(sconsEnv=sconsEnv)+"/bmake"):
+      petsc_path_variables = ["bmake/common/", "bmake/", ""]
+  elif os.path.exists(getPetscDir(sconsEnv=sconsEnv)+"/conf/"): 
+      petsc_path_variables = ["conf/", "", "/include"]
+  else:
+      raise UnableToFindPackageException("PETSc")
   # Create a makefile to read basic things from PETSc
   petsc_makefile_str="""
 # Retrive various flags from PETSc settings.
 
 PETSC_DIR=%s
+PETSC_ARCH=%s
 
-include ${PETSC_DIR}/bmake/common/variables
+include ${PETSC_DIR}/%svariables
 
 get_petsc_include:
-	-@echo  -I${PETSC_DIR}/bmake/${PETSC_ARCH} -I${PETSC_DIR}/include ${MPI_INCLUDE}
+	-@echo -I${PETSC_DIR}/%s${PETSC_ARCH}%s -I${PETSC_DIR}/include ${MPI_INCLUDE}
 
 get_petsc_libs:
 	-@echo   ${C_SH_LIB_PATH} -L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC}
@@ -29,7 +38,8 @@ get_petsc_cc:
 
 get_petsc_ld:
 	-@echo ${PCC_LINKER}
-""" % getPetscDir(sconsEnv=sconsEnv)
+""" % (getPetscDir(sconsEnv=sconsEnv), getPetscArch(sconsEnv=sconsEnv), \
+       petsc_path_variables[0], petsc_path_variables[1], petsc_path_variables[2])
   petsc_make_file = open(filename, "w")
   petsc_make_file.write(petsc_makefile_str)
   petsc_make_file.close()
@@ -99,6 +109,12 @@ def getPetscDir(sconsEnv=None):
                 return petsc_location
         raise UnableToFindPackageException("PETSc")
     return petsc_dir
+
+def getPetscArch(sconsEnv=None):
+    if os.environ.has_key('PETSC_ARCH'):
+        return os.environ["PETSC_ARCH"]
+    else:
+        return ""
 
 def pkgVersion(compiler=None, linker=None, cflags=None, libs=None, sconsEnv=None):
   cpp_test_version_str = r"""
