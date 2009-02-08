@@ -5,9 +5,10 @@
 // Modified by Ola Skavhaug, 2006.
 // Modified by Dag Lindbo, 2008.
 // Modified by Kristoffer Selim, 2009.
+// Modified by Garth N. Wells, 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2009-01-12
+// Last changed: 2009-02-08
 
 #ifdef HAS_GTS
 
@@ -47,12 +48,12 @@ void GTSInterface::intersection(const Point& p, std::vector<uint>& cells)
 
   // Compute overlap with probe
   GSList* overlaps = gts_bb_tree_overlap(tree, probe);
-  
-  // Iterate over overlap
-  while (overlaps)
+
+  GSList* overlap = overlaps; 
+  while (overlap)
   {
     // Extract cell index for bounding box
-    const GtsBBox* box = (GtsBBox *) overlaps->data;
+    const GtsBBox* box = (GtsBBox*) overlap->data;
     const uint cell_index = (uint)(long) box->bounded;
     
     // Check for intersection with cell
@@ -61,7 +62,7 @@ void GTSInterface::intersection(const Point& p, std::vector<uint>& cells)
       cells.push_back(cell_index);
     
     // Go to next bounding box
-    overlaps = overlaps->next;
+    overlap = overlap->next;
   }
   
   // Delete overlap and probe
@@ -78,10 +79,11 @@ void GTSInterface::intersection(const Point& p0, const Point& p1, std::vector<ui
   GSList* overlaps = gts_bb_tree_overlap(tree, probe);
 
   // Iterate over overlap
-  while (overlaps)
+  GSList* overlap = overlaps; 
+  while (overlap)
   {
     // Extract cell index for bounding box
-    const GtsBBox* box = (GtsBBox *) overlaps->data;
+    const GtsBBox* box = (GtsBBox*) overlap->data;
     const uint cell_index = (uint)(long) box->bounded;
 
     // Check for intersection with cell
@@ -90,7 +92,7 @@ void GTSInterface::intersection(const Point& p0, const Point& p1, std::vector<ui
       cells.push_back(cell_index);
 
     // Go to next bounding box
-    overlaps = overlaps->next;
+    overlap = overlap->next;
   }
 
   // Delete overlap and probe
@@ -107,10 +109,11 @@ void GTSInterface::intersection(const Cell& cell, std::vector<uint>& cells)
   GSList* overlaps = gts_bb_tree_overlap(tree, probe);
 
   // Iterate over overlap
+  GSList* overlap = overlaps; 
   while (overlaps)
   {
     // Extract cell index for bounding box
-    const GtsBBox* box = (GtsBBox *) overlaps->data;
+    const GtsBBox* box = (GtsBBox*) overlap->data;
     const uint cell_index = (uint)(long) box->bounded;
 
     // Check for intersection with cell
@@ -119,7 +122,7 @@ void GTSInterface::intersection(const Cell& cell, std::vector<uint>& cells)
       cells.push_back(cell_index);
     
     // Go to next bounding box
-    overlaps = overlaps->next;
+    overlap = overlap->next;
   }
   
   // Delete overlap and probe
