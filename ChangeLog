@@ -1,3 +1,4 @@
+ - Add elastodynamics demo
  - Fix memory leak in IntersectionDetector/GTSInterface
  - Bug fix in dolfin-order script for gzipped files
  - Make shared_ptr work across C++/Python interface
