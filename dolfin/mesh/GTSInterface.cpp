@@ -49,6 +49,7 @@ void GTSInterface::intersection(const Point& p, std::vector<uint>& cells)
   // Compute overlap with probe
   GSList* overlaps = gts_bb_tree_overlap(tree, probe);
 
+  // Iterate over overlap
   GSList* overlap = overlaps; 
   while (overlap)
   {
