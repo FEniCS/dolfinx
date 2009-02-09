@@ -37,6 +37,7 @@ namespace dolfin
       
       // Display number of digits
       char msg[100];
+      real eps = real_epsilon();
       gmp_sprintf(msg, "%Fe", eps.get_mpf_t());
       message("Using %d bits per digit, eps = %s", mpf_get_default_prec(), msg);
 
