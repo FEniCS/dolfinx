@@ -11,10 +11,13 @@ from dolfin import *
 class AbstractBaseTest(object):
     count = 0
     def setUp(self):
+        if self.backend != "default":
+            dolfin_set("linear algebra backend",self.backend)
         type(self).count += 1
         if type(self).count == 1:
             # Only print this message once per class instance
             print "\nRunning:",type(self).__name__
+        
 
     def assemble_matrix(self):
         " Assemble a simple matrix"
@@ -25,13 +28,11 @@ class AbstractBaseTest(object):
         u = TrialFunction(V)
         v = TestFunction(V)
         
-        A = self.MatrixType()
-        return assemble(dot(grad(u),grad(v))*dx,tensor=A)
+        return assemble(dot(grad(u),grad(v))*dx)
     
-    def get_vector(self):
-        " Assemble a simple matrix"
+    def get_Vector(self):
         from numpy import random, linspace
-        vec = self.VectorType(16)
+        vec = Vector(16)
         vec.set(random.rand(vec.size()))
         return vec
 
@@ -75,10 +76,13 @@ class AbstractBaseTest(object):
 
     def test_vector(self):
         from numpy import ndarray, linspace
-        org = self.get_vector()
-        
+        org = self.get_Vector()
+
         A = org.copy()
-        B = org.copy()
+        
+        # Avoiding garbage collection
+        B0 = org.copy() 
+        B = down_cast(B0)
         self.assertAlmostEqual(A[5],B[5])
         
         B *= 0.5
@@ -116,7 +120,7 @@ class AbstractBaseTest(object):
 
     def test_matrix_vector(self):
         from numpy import dot, absolute
-        v = self.get_vector()
+        v = self.get_Vector()
         A = self.assemble_matrix()
 
         u = A*v
@@ -139,31 +143,25 @@ class AbstractBaseTest(object):
         self.assertTrue(absolute(u_numpy2-u_numpy).sum() < DOLFIN_EPS*v.size())
 
 class MatrixTester(AbstractBaseTest,unittest.TestCase):
-    MatrixType = Matrix
-    VectorType = Vector
+    backend    = "default"
 
 class uBLASSparseTester(AbstractBaseTest,unittest.TestCase):
-    MatrixType = uBLASSparseMatrix
-    VectorType = uBLASVector
+    backend    = "uBLAS"
 
 class uBLASDenseTester(AbstractBaseTest,unittest.TestCase):
-    MatrixType = uBLASDenseMatrix
-    VectorType = uBLASVector
+    backend    = "uBLAS"
 
 if hasattr(cpp,"PETScMatrix"):
     class PETScTester(AbstractBaseTest,unittest.TestCase):
-        MatrixType = PETScMatrix
-        VectorType = PETScVector
+        backend    = "PETSc"
 
 if hasattr(cpp,"EpetraMatrix"):
     class EpetraTester(AbstractBaseTest,unittest.TestCase):
-        MatrixType = EpetraMatrix
-        VectorType = EpetraVector
+        backend    = "Epetra"
 
 if hasattr(cpp,"MTL4Matrix"):
     class MTL4Tester(AbstractBaseTest,unittest.TestCase):
-        MatrixType = MTL4Matrix
-        VectorType = MTL4Vector
+        backend    = "MTL4"
 
 if __name__ == "__main__":
     print ""
