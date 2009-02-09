@@ -1,8 +1,10 @@
 // Copyright (C) 2009 Benjamin Kehlet
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2009.
+//
 // First added:  2009-02-01
-// Last changed:
+// Last changed: 2009-02-09
 
 #ifndef __GMP_OBJECT_H
 #define __GMP_OBJECT_H
@@ -20,30 +22,27 @@ namespace dolfin
 { 
   class ODE;
 
-  /// This class calls SubSystemsManger to initialise PETSc.
-  ///
-  /// All PETSc objects must be derived from this class.
+  /// This class calls SubSystemsManger to initialise GMP.
 
   class GMPObject
   {
   public:
 
-    GMPObject() { 
+    GMPObject()
+    { 
 #ifdef HAS_GMP
-      //compute the number of bits needed
-      uint decimal_prec = dolfin_get("floating-point precision");
-      mpf_set_default_prec( (uint) (decimal_prec*BITS_PR_DIGIT));
+      // Compute the number of bits needed
+      const uint decimal_prec = dolfin_get("floating-point precision");
+      mpf_set_default_prec(static_cast<uint>(decimal_prec*BITS_PR_DIGIT));
       
-      real eps = real_epsilon();
-      dolfin_set("ODE discrete tolerance", to_double(eps*10));
+      // Display number of digits
       char msg[100];
-      gmp_sprintf(msg, "Epsilon=%Fe", eps.get_mpf_t());
-      message(msg);
-      message("GMP: Using %d bits pr number", mpf_get_default_prec());
+      gmp_sprintf(msg, "%Fe", eps.get_mpf_t());
+      message("Using %d bits per digit, eps = %s", mpf_get_default_prec(), msg);
+
 #else 
-      if (dolfin_changed("floating-point precision")) {
+      if (dolfin_changed("floating-point precision"))
 	warning("Can't change floating-point precision when using type double");
-      }
 #endif
     }
   };
