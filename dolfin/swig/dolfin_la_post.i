@@ -105,6 +105,13 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   
   %pythoncode
   %{
+    def __is_compatibable(self,other):
+        "Returns True if self, and other are compatible Vectors"
+        if not isinstance(other,GenericVector):
+            return False
+        self_type = get_tensor_type(self)
+        return self_type == get_tensor_type(other)
+        
     def array(self):
         " Return a numpy array representation of Vector"
         import numpy
@@ -114,7 +121,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 
     def __add__(self,other):
         """x.__add__(y) <==> x+y"""
-        if isinstance(other,type(self)):
+        if self.__is_compatibable(other):
             ret = self.copy()
             ret.axpy(1.0,other)
             return ret
@@ -122,7 +129,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     
     def __sub__(self,other):
         """x.__sub__(y) <==> x-y"""
-        if isinstance(other,type(self)):
+        if self.__is_compatibable(other):
             ret = self.copy()
             ret.axpy(-1.0,other)
             return ret
@@ -166,14 +173,14 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     
     def __iadd__(self,other):
         """x.__iadd__(y) <==> x+y"""
-        if isinstance(other,type(self)):
+        if self.__is_compatibable(other):
             self.axpy(1.0,other)
             return self
         return NotImplemented
     
     def __isub__(self,other):
         """x.__isub__(y) <==> x-y"""
-        if isinstance(other,type(self)):
+        if self.__is_compatibable(other):
             self.axpy(-1.0,other)
             return self
         return NotImplemented
@@ -207,6 +214,13 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   
   %pythoncode
   %{
+    def __is_compatibable(self,other):
+        "Returns True if self, and other are compatible Vectors"
+        if not isinstance(other,GenericMatrix):
+            return False
+        self_type = get_tensor_type(self)
+        return self_type == get_tensor_type(other)
+        
     def array(self):
         " Return a numpy array representation of Matrix"
         import numpy
@@ -220,7 +234,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 
     def __add__(self,other):
         """x.__add__(y) <==> x+y"""
-        if isinstance(other,type(self)):
+        if self.__is_compatibable(other):
             ret = self.copy()
             ret.axpy(1.0,other)
             return ret
@@ -228,7 +242,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     
     def __sub__(self,other):
         """x.__sub__(y) <==> x-y"""
-        if isinstance(other,type(self)):
+        if self.__is_compatibable(other):
             ret = self.copy()
             ret.axpy(-1.0,other)
             return ret
@@ -298,14 +312,14 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     
     def __iadd__(self,other):
         """x.__iadd__(y) <==> x+y"""
-        if isinstance(other,type(self)):
+        if self.__is_compatibable(other):
             self.axpy(1.0,other)
             return self
         return NotImplemented
     
     def __isub__(self,other):
         """x.__isub__(y) <==> x-y"""
-        if isinstance(other,type(self)):
+        if self.__is_compatibable(other):
             self.axpy(-1.0,other)
             return self
         return NotImplemented
