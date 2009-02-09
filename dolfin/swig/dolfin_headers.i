@@ -167,6 +167,7 @@
 %include "dolfin/mf/MatrixFactory.h"
 
 // DOLFIN headers included from ode
+%include "dolfin/ode/GMPObject.h"
 %include "dolfin/ode/ODE.h"
 %include "dolfin/ode/ComplexODE.h"
 %include "dolfin/ode/Method.h"
