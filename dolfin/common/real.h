@@ -87,7 +87,6 @@ namespace dolfin
   // Get computed epsilon
   real real_epsilon();
 
-
   // Set array to given array (copy values)
   inline void real_set(uint n, real* x, const real* y)
   { for (uint i = 0; i < n; i++) x[i] = y[i]; }

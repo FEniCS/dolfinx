@@ -1,15 +1,15 @@
 // Copyright (C) 2008 Benjamin Kehlet
 // Licensed under the GNU LGPL Version 2.1.
 //
-//
 // First added:  2009-01-25
-
+// Last changed: 2009-02-09
 
 #include "real.h"
 #include "constants.h"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
 real dolfin::real_epsilon() 
 {
 #ifndef HAS_GMP
@@ -20,26 +20,24 @@ real dolfin::real_epsilon()
   //compute it (thus avoiding the if-test). But where to store eps?
   static real eps;
 
-  if (!computed) {
+  if (!computed)
+  {
     //computing precision
     eps = 1.0;
     real one = real("1.0");
     while ( eps + one != one ) 
-      {
-	eps /= 2;
-      }
-
+    {
+      eps /= 2;
+    }
+    
     eps *= 2;
     computed = true;
-
-    gmp_printf("Epsilon computed. Bits pr number: %d, epsilon=%.3Fe\n", 
-	       (int) mpf_get_default_prec(), eps.get_mpf_t());
   }
   
   return eps;
 #endif
 }
-
+//-----------------------------------------------------------------------------
 real dolfin::real_sqrt(real a)
 {
   //Solving x^2 - a = 0 using newtons method
@@ -48,7 +46,7 @@ real dolfin::real_sqrt(real a)
 
   int k = 0;
 
-  while ( abs(x - prev) > real_epsilon() )
+  while (abs(x - prev) > real_epsilon())
   {
     prev = x;
     x = prev - (prev*prev - a)/(2*prev);
@@ -64,10 +62,11 @@ real dolfin::real_sqrt(real a)
   return x;
 }
 //-----------------------------------------------------------------------------
-real dolfin::real_pi() {
-  #ifndef HAS_GMP
+real dolfin::real_pi()
+{
+#ifndef HAS_GMP
     return DOLFIN_PI;
-  #else
+#else
 
     //Computing pi using the Gauss-Legendre formula
   
@@ -106,7 +105,6 @@ real dolfin::real_pi() {
     //gmp_printf("Pi computed in %d iterations: %.50Fe\n", k, pi_next.get_mpf_t());  
     
     return pi_next;
-  #endif
-
+#endif
 }
-//----------------------------------------------------------------------------_
+//-----------------------------------------------------------------------------
