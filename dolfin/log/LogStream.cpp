@@ -95,8 +95,8 @@ LogStream& LogStream::operator<<(double a)
 LogStream& LogStream::operator<<(real a)
 {
   char tmp[DOLFIN_LINELENGTH];
-  gmp_snprintf(tmp, DOLFIN_LINELENGTH, "%.3g", a.get_mpf_t());
-  
+  gmp_snprintf(tmp, DOLFIN_LINELENGTH, "%.3Fg", a.get_mpf_t());
+
   add(tmp);
   return *this;
 }

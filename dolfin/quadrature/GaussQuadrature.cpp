@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <cmath>
+#include <dolfin/common/real.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/Legendre.h>
@@ -33,7 +34,7 @@ void GaussQuadrature::disp() const
   cout << "-----------------------------------------------------" << endl;
   
   for (unsigned int i = 0; i < n; i++)
-    message("%2d   %.16e   %.16e", i, points[i], weights[i]);
+    message("%2d   %.16e   %.16e", i, to_double(points[i]), to_double(weights[i]));
 }
 //-----------------------------------------------------------------------------
 void GaussQuadrature::computePoints()
@@ -49,7 +50,7 @@ void GaussQuadrature::computePoints()
   }
 
   Legendre p(n);
-  double x, dx;
+  real x, dx;
   
   // Compute the points by Newton's method
   for (unsigned int i = 0; i <= ((n-1)/2); i++) 
@@ -62,7 +63,7 @@ void GaussQuadrature::computePoints()
     do {
       dx = - p(x) / p.ddx(x);
       x  = x + dx;
-    } while ( fabs(dx) > DOLFIN_EPS );
+    } while ( abs(dx) > real_epsilon() );
     
     // Save the value using the symmetry of the points
     points[i] = - x;

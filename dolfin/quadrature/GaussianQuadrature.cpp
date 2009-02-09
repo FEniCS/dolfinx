@@ -6,10 +6,12 @@
 
 #include <cmath>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/real.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/uBLASVector.h>
 #include <dolfin/la/uBLASDenseMatrix.h>
 #include <dolfin/math/Legendre.h>
+#include <dolfin/ode/SORSolver.h>
 #include "GaussianQuadrature.h"
 
 using namespace dolfin;
@@ -46,19 +48,26 @@ void GaussianQuadrature::computeWeights()
 
   uBLASDenseMatrix A(n, n);
   ublas_dense_matrix& _A = A.mat();
+  real A_real[n*n];
+
   uBLASVector x(n), b(n);
-  ublas_vector& _x = x.vec();
   ublas_vector& _b = b.vec();
+  real b_real[n];
 
   // Compute the matrix coefficients
   for (unsigned int i = 0; i < n; i++)
   {
     Legendre p(i);
     for (unsigned int j = 0; j < n; j++)
-      _A(i, j) = p(points[j]);
+    {
+      A_real[i*n+j] = p(points[j]);
+      _A(i, j) = to_double(A_real[i*n+j]);
     _b[i] = 0.0;
+    b_real[i] = 0.0;
+    }
   }
   _b[0] = 2.0;
+  b_real[0] = 2.0;
 
   // Solve the system of equations
   // FIXME: Do we get high enough precision?
@@ -67,9 +76,42 @@ void GaussianQuadrature::computeWeights()
   //lu.solve(A, x, b);
   A.solve(x, b);
 
+#ifndef HAS_GMP
+  ublas_vector& _x = x.vec();
+
   // Save the weights
-  for (unsigned int i = 0; i < n; i++)
+  for (uint i = 0; i < n; i++)
     weights[i] = _x[i];
+#else 
+  //With extended precision: Use the double precision result as initial guess for the
+  //extended precision SOR solver.
+  real x_real[n];
+
+  for (uint i = 0; i < n; ++i) {
+    x_real[i] = x[i];
+  }
+
+  uBLASDenseMatrix Ainv(A);
+  Ainv.invert();
+
+  // Allocate memory for holding the preconditioned system
+  real Ainv_A[n*n];
+  real Ainv_b[n];
+
+  SORSolver::precondition(n, Ainv, A_real, b_real, Ainv_A, Ainv_b);
+    
+  // Solve the preconditioned system
+  SORSolver::SOR(n, Ainv_A, x_real, Ainv_b, real_epsilon());
+  /*
+  real err = SORSolver::err(n, A_real, x_real, b_real);
+  gmp_printf("Residual: %.3Fe\n", err.get_mpf_t());
+  */
+  for (uint i = 0; i < n; ++i) 
+  {
+    weights[i] = x_real[i];
+  }
+
+#endif
 }
 //-----------------------------------------------------------------------------
 bool GaussianQuadrature::check(unsigned int q) const
@@ -80,7 +122,7 @@ bool GaussianQuadrature::check(unsigned int q) const
   
   Legendre p(q);
   
-  double sum = 0.0;
+  real sum = 0.0;
   for (unsigned int i = 0; i < n; i++)
     sum += weights[i] * p(points[i]);
   
@@ -88,16 +130,16 @@ bool GaussianQuadrature::check(unsigned int q) const
   
   if ( q == 0 )
   {
-    if ( fabs(sum - 2.0) < 100.0*DOLFIN_EPS )
+    if ( abs(sum - 2.0) < 100.0*real_epsilon() )
       return true;
   }
   else
   {
-    if ( fabs(sum) < 100.0*DOLFIN_EPS )
-      return true;
+    if ( abs(sum) < 100.0 * real_epsilon() )
+      return true; 
   }
 
-  message("Quadrature check failed: r = %.2e.", fabs(sum));
+  message("Quadrature check failed: r = %.2e.", to_double(abs(sum)));
 
   return false;
 }

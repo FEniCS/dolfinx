@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet
+//
 // First added:  2003-05-06
-// Last changed: 2005-03-24
+// Last changed: 2009-01-30
 
 #ifndef __PARAMETER_H
 #define __PARAMETER_H
@@ -90,6 +92,7 @@ namespace dolfin
 
     /// Friends
     friend class XMLFile;
+    friend class ParameterList;
 
   private:
 
@@ -98,6 +101,9 @@ namespace dolfin
 
     // Type of parameter
     Type _type;
+
+    // True if parameter has been changed
+    bool _changed;
     
   };
 

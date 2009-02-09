@@ -7,6 +7,7 @@
 #include <cmath>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/real.h>
 #include "Legendre.h"
 
 using namespace dolfin;
@@ -20,22 +21,22 @@ Legendre::Legendre(int n)
   this->n = n;
 }
 //-----------------------------------------------------------------------------
-double Legendre::operator() (double x)
+real Legendre::operator() (real x)
 {
   return eval(n, x);
 }
 //-----------------------------------------------------------------------------
-double Legendre::ddx(double x)
+real Legendre::ddx(real x)
 {
   return ddx(n, x);
 }
 //-----------------------------------------------------------------------------
-double Legendre::d2dx(double x)
+real Legendre::d2dx(real x)
 {
   return d2dx(n, x);
 }
 //-----------------------------------------------------------------------------
-double Legendre::eval(int n, double x)
+real Legendre::eval(int n, real x)
 {
   // Special case n = 0
   if ( n == 0 )
@@ -46,11 +47,11 @@ double Legendre::eval(int n, double x)
     return x;
   
   // Recurrence, BETA page 254
-  double nn = double(n);
+  real nn = real(n);
   return ( (2.0*nn-1.0)*x*eval(n-1, x) - (nn-1.0)*eval(n-2, x) ) / nn;
 }
 //-----------------------------------------------------------------------------
-double Legendre::ddx(int n, double x)
+real Legendre::ddx(int n, real x)
 {
   // Special case n = 0
   if ( n == 0 )
@@ -61,17 +62,17 @@ double Legendre::ddx(int n, double x)
     return 1.0;
   
   // Avoid division by zero
-  if ( fabs(x - 1.0) < DOLFIN_EPS )
-    x -= 2.0*DOLFIN_EPS;
-  if ( fabs(x + 1.0) < DOLFIN_EPS )
-    x += 2.0*DOLFIN_EPS;
+  if ( abs(x - 1.0) < real_epsilon() )
+    x -= 2.0*real_epsilon();
+  if ( abs(x + 1.0) < real_epsilon() )
+    x += 2.0*real_epsilon();
   
   // Formula, BETA page 254
-  double nn = double(n);
+  real nn = real(n);
   return nn * (x*eval(n, x) - eval(n-1, x)) / (x*x - 1.0);
 }
 //-----------------------------------------------------------------------------
-double Legendre::d2dx(int, double x)
+real Legendre::d2dx(int, real x)
 {
   // Special case n = 0
   if ( n == 0 )
@@ -82,13 +83,13 @@ double Legendre::d2dx(int, double x)
     return 0.0;
 
   // Avoid division by zero
-  if ( fabs(x - 1.0) < DOLFIN_EPS )
-    x -= 2.0*DOLFIN_EPS;
-  if ( fabs(x + 1.0) < DOLFIN_EPS )
-    x += 2.0*DOLFIN_EPS;
+  if ( abs(x - 1.0) < real_epsilon() )
+    x -= 2.0*real_epsilon();
+  if ( abs(x + 1.0) < real_epsilon() )
+    x += 2.0*real_epsilon();
 
   // Formula, BETA page 254
-  double nn = double(n);
+  real nn = real(n);
   return ( 2.0*x*ddx(n, x) - nn*(nn+1)*eval(n, x) ) / (1.0-x*x);
 }
 //-----------------------------------------------------------------------------

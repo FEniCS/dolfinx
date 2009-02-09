@@ -22,12 +22,6 @@ ODE::ODE(uint N, real T)
 {
   message("Creating ODE of size %d.", N);
 
- #ifdef HAS_GMP
-  char msg[100];
-  gmp_sprintf(msg, "ODE::epsilon=%Fe", ODE::epsilon().get_mpf_t());
-  message(msg);
-  message("GMP: Using %d bits pr number", mpf_get_default_prec());
- #endif
 }
 //-----------------------------------------------------------------------------
 ODE::~ODE()
@@ -171,7 +165,7 @@ real ODE::dfdu(const real* u, real t, uint i, uint j)
   uu[j] = uj;
 
   // Compute derivative
-  if ( abs(f1 - f2) < ODE::epsilon() * max(abs(f1), abs(f2)) )
+  if ( abs(f1 - f2) < real_epsilon() * max(abs(f1), abs(f2)) )
     return 0.0;
 
   return (f2 - f1) / h;
@@ -226,10 +220,3 @@ void ODE::solve()
   ODESolver::solve(*this);
 }
 //-----------------------------------------------------------------------------
-
-#ifdef HAS_GMP
-//initialize to 10e-30
-real ODE::_epsilon = real("0.000000000000000000000000000001");
-#else
-real ODE::_epsilon = DOLFIN_EPS;
-#endif

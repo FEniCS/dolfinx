@@ -71,7 +71,7 @@ bool TimeSlabSolver::solve(uint attempt)
     real d2 = iteration(tol, iter, d0, d1);
 
     // Use relative increment
-    d2 /= xnorm + ODE::epsilon();
+    d2 /= xnorm + real_epsilon();
     
     // For debugging convergence
     if ( monitor )

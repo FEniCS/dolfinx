@@ -8,6 +8,7 @@
 #define __LEGENDRE_H
 
 #include <dolfin/common/types.h>
+#include <dolfin/common/real.h>
 
 namespace dolfin {
 
@@ -27,19 +28,19 @@ namespace dolfin {
     Legendre(int n);
 
     /// Evaluation at given point
-    double operator() (double x);
+    real operator() (real x);
     
     /// Evaluation of derivative at given point
-    double ddx(double x);
+    real ddx(real x);
 
     /// Evaluation of second derivative at given point
-    double d2dx(double x);
+    real d2dx(real x);
 
   private:
     
-    double eval (int n, double x);
-    double ddx  (int n, double x);
-    double d2dx (int n, double x);
+    real eval (int n, real x);
+    real ddx  (int n, real x);
+    real d2dx (int n, real x);
 
     int n;
 

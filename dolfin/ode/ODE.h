@@ -14,6 +14,7 @@
 #include <dolfin/parameter/Parametrized.h>
 #include "Dependencies.h"
 #include "Sample.h"
+#include "GMPObject.h"
 
 namespace dolfin
 {
@@ -49,7 +50,7 @@ namespace dolfin
   /// by setting the option "implicit" to true and defining the
   /// function M().
 
-  class ODE : public Parametrized
+  class ODE : public Parametrized, public GMPObject
   {
   public:
     /// Create an ODE of size N with final time T

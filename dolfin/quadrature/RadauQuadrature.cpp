@@ -4,8 +4,8 @@
 // First added:  2003-06-03
 // Last changed: 2006-10-23
 
-#include <cmath>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/real.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/Legendre.h>
 #include "RadauQuadrature.h"
@@ -32,7 +32,7 @@ void RadauQuadrature::disp() const
   cout << "-----------------------------------------------------" << endl;
 
   for (unsigned int i = 0; i < n; i++)
-    message("%2d   %.16e   %.16e", i, points[i], weights[i]);
+    message("%2d   %.16e   %.16e", i, to_double(points[i]), to_double(weights[i]));
 }
 //-----------------------------------------------------------------------------
 void RadauQuadrature::computePoints()
@@ -51,7 +51,7 @@ void RadauQuadrature::computePoints()
   }
 
   Legendre p1(n-1), p2(n);
-  double x, dx, step, sign;
+  real x, dx, step, sign;
   
   // Set size of stepping for seeking starting points
   step = 2.0 / ( double(n-1) * 10.0 );
@@ -77,7 +77,7 @@ void RadauQuadrature::computePoints()
     {
       dx = - (p1(x) + p2(x)) / (p1.ddx(x) + p2.ddx(x));
       x  = x + dx;
-    } while ( fabs(dx) > DOLFIN_EPS );
+    } while ( abs(dx) > real_epsilon() );
     
     // Set the node value
     points[i] = x;

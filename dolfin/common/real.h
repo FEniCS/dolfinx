@@ -66,17 +66,27 @@ namespace dolfin
     return std::pow(to_double(x), to_double(y));
 #endif
   }
-
+  
   // Power function
   inline real pow(real x, real y)
   {
 #ifdef HAS_GMP
-    error("Not implemented.");
+    error("Multiprecision pow function not implemented.");
     return 0.0;
 #else
     return std::pow(to_double(x), to_double(y));
 #endif
   }
+
+  // Square root 
+  real real_sqrt(real a);
+
+  // Compute pi
+  real real_pi();
+
+  // Get computed epsilon
+  real real_epsilon();
+
 
   // Set array to given array (copy values)
   inline void real_set(uint n, real* x, const real* y)

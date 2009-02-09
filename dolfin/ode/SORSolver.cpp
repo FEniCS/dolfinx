@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-11
-// Last changed: 2008-10-11
+// Last changed: 2008-02-03
 
 #include <dolfin/la/uBLASDenseMatrix.h>
 #include "SORSolver.h"
@@ -17,12 +17,13 @@ void SORSolver::SOR(uint n,
 		    const real& epsilon)
 {
   real prev[n];
-    
+
   uint iterations = 0;
-  real diff = 1000.0; //some 
+  real diff = 1000.0; //some big number
   
   uint count = 0;
-  while ( diff > epsilon ) 
+  
+  while ( diff > 200.0*epsilon ) 
   {
     ++count;
 
@@ -30,16 +31,18 @@ void SORSolver::SOR(uint n,
     {
       error("SOR: System seems not to converge");
     }
+
     real_set(n, prev, x);
     
     _SOR_iteration(n, A, b, x, prev);
 
+    
     // Check precision
     real_sub(n, prev, x);
     diff = real_max_abs(n, prev);
+  
     ++iterations;
   }
-  //printf ("Iterations: %d\n", count);
 }
 //-----------------------------------------------------------------------------
 void SORSolver::_SOR_iteration(uint n, 
@@ -54,11 +57,11 @@ void SORSolver::_SOR_iteration(uint n,
     
     // j < i
     for (uint j = 0; j < i; ++j) 
-    { x_new[i] -= (A[i*n+j]/A[i*n+i])*x_new[j]; }
+    { x_new[i] -= (A[i*n+j]/A[i*n+i]) * x_new[j]; }
     
     // j > i
     for (uint j = i+1; j < n; ++j) 
-    { x_new[i] -= (A[i*n+j]/A[i*n+i])*x_prev[j]; }
+    { x_new[i] -= (A[i*n+j]/A[i*n+i]) * x_prev[j]; }
   }
 }
 //-----------------------------------------------------------------------------
@@ -73,28 +76,30 @@ void SORSolver::precondition(uint n, const uBLASDenseMatrix& A_inv,
     for (uint j = 0; j < n; ++j)
     {
       Ainv_b[i] += A_inv(i,j)*b[j];
+
       Ainv_A[i*n+j] = 0.0;
       for (uint k = 0; k < n; ++k)
       {
-	Ainv_A[i*n+j] += A[i*n+k]*A_inv(k,j);
+	Ainv_A[i*n+j] += A_inv(i, k)* A[k*n+j];
       }
     }
   }
 }
 //-----------------------------------------------------------------------------
-void SORSolver::printMatrix(const uint n, const real* A)
-{
-  for (uint i = 0; i<n; ++i)
+real SORSolver::err(uint n, const real* A, const real* x, const real* b) {
+  real _err[n];
+
+  //compute Ax and compare with b
+  for (uint i=0; i < n; ++i)
   {
-    for (uint j = 0; j<n; ++j) 
-      { printf("(%d, %d, %f) ", i, j, to_double(A[i*n+j])); }
-    printf("\n");
+    _err[i] = 0.0;
+    for (uint j = 0; j < n; ++j)
+    {
+      _err[i] += A[i*n+j]*x[j];
+    }
+    _err[i] -= b[i];
   }
+  real e =  real_max_abs(n, _err);
+
+  return e;
 }
-//-----------------------------------------------------------------------------
-void SORSolver::printVector (const uint n, const real* x)
-{
-  for (uint i = 0; i<n; ++i) printf("%f\n", to_double(x[i]));
-  printf("\n");
-}
-//-----------------------------------------------------------------------------

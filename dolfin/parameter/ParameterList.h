@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet
+//
 // First added:  2003-05-06
-// Last changed: 2007-04-13
+// Last changed: 2009-01-31
 
 #ifndef __PARAMETER_LIST_H
 #define __PARAMETER_LIST_H
@@ -37,6 +39,9 @@ namespace dolfin
 
     /// Check if parameter with given key has been defined
     bool defined(std::string key) const;
+
+    /// Check if parameter has been changed
+    bool changed(std::string key) const;
 
     /// Friends
     friend class XMLFile;

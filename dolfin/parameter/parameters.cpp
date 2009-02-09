@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2006.
+// Modified by Benjamin Kehlet, 2009
 //
 // First added:  2005-12-19
-// Last changed: 2008-02-11
+// Last changed: 2009-02-02
 
 #include <dolfin/log/LogManager.h>
 #include "ParameterSystem.h"
@@ -55,5 +56,10 @@ void dolfin::dolfin_set(std::string key, std::ostream& stream)
 void dolfin::dolfin_add(std::string key, Parameter value)
 {
   ParameterSystem::parameters.add(key, value);
+}
+//-----------------------------------------------------------------------------
+bool dolfin::dolfin_changed(std::string key) 
+{
+  return ParameterSystem::parameters.changed(key);
 }
 //-----------------------------------------------------------------------------
