@@ -104,9 +104,15 @@ if env["enablePydolfin"]:
         Exit(1)
 
     # Check version of swig UFC was compiled with
-    if ufc.__swigversion__ != swig_version:
-        print """*** UFC compiled with different version of swig.
-Please install swig version %s or recompile UFC with present swig."""%ufc.__swigversion__
+    try:
+        assert ufc.__swigversion__ == swig_version
+    except AttributeError:
+        print """*** Old UFC installation detected. Install latest UFC."""
+        Exit(1)
+    except AssertionError:
+        print """*** UFC compiled with different version of SWIG.
+Please install SWIG version %s or recompile UFC with present SWIG.""" % \
+        ufc.__swigversion__
         Exit(1)
 
     # Check for python development files
