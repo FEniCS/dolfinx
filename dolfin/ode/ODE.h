@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2008 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2009 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2008-10-18
+// Last changed: 2009-02-09
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -104,14 +104,6 @@ namespace dolfin
     /// Return end time (final time T)
     real endtime() const;
     
-    /// Return precision
-    static inline real& epsilon()
-    { return _epsilon; }
-
-    /// Set precision
-    static inline void set_epsilon (real eps)
-    { _epsilon = eps; }
-
     /// Solve ODE
     void solve();
 
@@ -149,9 +141,6 @@ namespace dolfin
     real default_timestep;
 
   private:
-
-    // The precision defaults DOLFIN_EPS, but can be changed to allow extended precision
-    static real _epsilon;
 
     // Temporary vectors used for computing Jacobian
     real* tmp0;
