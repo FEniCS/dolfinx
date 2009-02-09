@@ -19,9 +19,12 @@
 namespace dolfin
 {
 
-  /// A ODE represents an initial value problem of the form
+  class ODESolution;
+  class TimeStepper;
+
+  /// An ODE represents an initial value problem of the form
   ///
-  ///     u'(t) = f(u(t),t) on (0,T],
+  ///     u'(t) = f(u(t), t) on [0, T],
   ///         
   ///     u(0)  = u0,
   ///
@@ -49,10 +52,23 @@ namespace dolfin
   ///
   /// by setting the option "implicit" to true and defining the
   /// function M().
+  ///
+  /// Two different solve() functions are provided, one to solve the
+  /// ODE on the time interval [0, T], including the solution of a
+  /// dual problem for error control:
+  ///
+  ///     ode.solve();
+  ///
+  /// Alternatively, a time interval may be given in which case the
+  /// solution will be computed in a single sweep over the given time
+  /// interval without solution of dual problems:
+  ///
+  ///     ode.solve(t0, t1);
 
   class ODE : public Parametrized, public GMPObject
   {
   public:
+
     /// Create an ODE of size N with final time T
     ODE(uint N, real T);
     
@@ -92,20 +108,29 @@ namespace dolfin
     /// Save sample (optional)
     virtual void save(Sample& sample);
 
-    /// Return real time (might be flipped backwards for dual)
-    virtual real time(real t) const;
-
-    /// Automatically detect sparsity (optional)
-    void sparse();
-
     /// Return number of components N
     uint size() const;
 
+    /// Return current time
+    real time() const;
+
+    /// Return real time (might be flipped backwards for dual)
+    virtual real time(real t) const;
+
     /// Return end time (final time T)
     real endtime() const;
+
+    /// Automatically detect sparsity (optional)
+    void sparse();
     
-    /// Solve ODE
+    /// Solve ODE on [0, T]
     void solve();
+
+    /// Solve ODE on [0, T]
+    void solve(ODESolution& u);
+
+    /// Solve ODE on [t0, t1]
+    void solve(ODESolution& u, real t0, real t1);
 
     /// Friends
     friend class Dual;
@@ -127,6 +152,9 @@ namespace dolfin
     
     // Number of components
     uint N;
+
+    // Current time
+    real t;
     
     // Final time
     real T;
@@ -139,6 +167,9 @@ namespace dolfin
 
     // Default time step
     real default_timestep;
+
+    // Time stepper
+    TimeStepper* time_stepper;
 
   private:
 

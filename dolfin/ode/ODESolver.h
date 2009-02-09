@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2008 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2009 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Benjamin Kehlet 2008
 //
 // First added:  2003
-// Last changed: 2008-10-02
+// Last changed: 2009-02-09
 
 #ifndef __ODE_SOLVER_H
 #define __ODE_SOLVER_H
@@ -17,7 +17,7 @@ namespace dolfin
 
   /// Solves a given ODE of the form
   ///
-  ///     u'(t) = f(u(t),t) on (0,T],
+  ///     u'(t) = f(u(t), t) on [0, T],
   ///         
   ///     u(0)  = u0,
   ///
@@ -27,16 +27,28 @@ namespace dolfin
   {
   public:
 
-    // Solve ODE
-    static void solve(ODE& ode);
+    /// Create ODE solver for given ODE
+    ODESolver(ODE& ode);
 
-    // Solve ODE and return ODESolution object
-    static void solve(ODE& ode, ODESolution& u); 
+    /// Destructor
+    ~ODESolver();
+
+    // Solve ODE on [0, T]
+    void solve();
+
+    // Solve ODE on [0, T]
+    void solve(ODESolution& u);
 
   private:
 
-    static void solve_primal(ODE& ode, ODESolution& u);
-    static void solve_dual(ODE& ode, ODESolution& u);
+    // Solve primal problem
+    void solve_primal(ODESolution& u);
+
+    // Solve dual problem
+    void solve_dual(ODESolution& u);
+
+    // The ODE
+    ODE& ode;
 
   };
 

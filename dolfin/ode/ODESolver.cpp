@@ -1,13 +1,14 @@
-// Copyright (C) 2003-2006 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2009 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Benjamin Kehlet 2008
 //
 // First added:  2003
-// Last changed: 2008-10-02
+// Last changed: 2009-02-09
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/parameters.h>
+#include <dolfin/common/timing.h>
 #include "ODE.h"
 #include "TimeStepper.h"
 #include "ODESolver.h"
@@ -16,44 +17,57 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------
-void ODESolver::solve(ODE& ode, ODESolution& u)
+//------------------------------------------------------------------------
+ODESolver::ODESolver(ODE& ode) : ode(ode)
 {
-  begin("Solving ODE");  
+  // Do nothing
+}
+//------------------------------------------------------------------------
+ODESolver::~ODESolver()
+{
+  // Do nothing
+}
+//------------------------------------------------------------------------
+void ODESolver::solve()
+{
+  ODESolution u(ode);
+  solve(u);
+}
+//-----------------------------------------------------------------------
+void ODESolver::solve(ODESolution& u)
+{
+  begin("Solving ODE over the time interval [0.0, %g]", ode.endtime());
+
+  // Start timing
+  tic();  
 
   // Solve primal problem
-  solve_primal(ode, u);
+  solve_primal(u);
   u.flush();
 
   // Check if we should solve the dual problem  
-  if ( ode.get("ODE solve dual problem") )
-    solve_dual(ode, u);
+  if (ode.get("ODE solve dual problem"))
+    solve_dual(u);
   else
     cout << "Not solving the dual problem as requested." << endl;
 
+  // Report elapsed time
+  message("ODE solution computed in %.3f seconds.", toc());
+
   end();
 }
-//----------------------------------------------------------------------
-void ODESolver::solve(ODE& ode)
-{
-  // Create dummy object to hold the solution
-  ODESolution u(ode);
-
-  // Solve primal problem
-  solve(ode, u);
-}
 //------------------------------------------------------------------------
-void ODESolver::solve_primal(ODE& ode, ODESolution& u)
+void ODESolver::solve_primal(ODESolution& u)
 {
   begin("Solving primal problem");
-  
-  // Solve primal problem
-  TimeStepper::solve(ode, u);
+
+  TimeStepper time_stepper(ode);
+  time_stepper.solve(u);
 
   end();
 }
 //------------------------------------------------------------------------
-void ODESolver::solve_dual(ODE& ode, ODESolution& u)
+void ODESolver::solve_dual(ODESolution& u)
 { 
   begin("Solving dual problem");
 
@@ -66,11 +80,12 @@ void ODESolver::solve_dual(ODE& ode, ODESolution& u)
   dual.set("ODE solution file name", "solution_dual.py");
   dual.set("ODE save final solution", true);
 
-  // Create dummy objeect to hold the solution of the dual
-  ODESolution u_dual(dual);
+  // Create dummy object to hold the solution of the dual
+  ODESolution z(dual);
 
   // Solve dual problem
-  TimeStepper::solve(dual, u_dual);
+  TimeStepper time_stepper(dual);
+  time_stepper.solve(z);
 
   end();
 }

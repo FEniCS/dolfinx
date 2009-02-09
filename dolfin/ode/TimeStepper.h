@@ -1,11 +1,10 @@
-// Copyright (C) 2003-2008 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2009 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Benjamin Kehlet 2008
 //
-//
 // First added:  2003
-// Last changed: 2008-06-18
+// Last changed: 2009-02-09
 
 #ifndef __TIME_STEPPER_H
 #define __TIME_STEPPER_H
@@ -22,71 +21,64 @@ namespace dolfin
   class TimeSlab;
 
   /// TimeStepper computes the solution of a given ODE. This is where
-  /// the double work takes place (most of it takes place in the time
+  /// the real work takes place (most of it takes place in the time
   /// slab or even in the local elements), whereas the responsibility
-  /// of the ODE solver is also to solve the dual problem (using this
-  /// class), compute stability factors and compute error estimates.
+  /// of the class ODESolver is also to solve the dual problem (using
+  /// this class), compute stability factors and compute error
+  /// estimates.
   ///
-  /// This class can be used in two different ways. One way is to
-  /// call the static method solve() to solve a given ODE:
+  /// This class can be used in two different ways. One way is to call
+  /// the solve() function to solve the ODE on the entire time
+  /// interval or a part thereof:
   ///
-  ///   TimeStepper::solve(ode, u);
+  ///   TimeStepper time_stepper(ode);
+  ///   time_stepper.solve(u);          (solve on [0, T])
+  ///   time_stepper.solve(u, t0, t1);  (solve on [t0, t1])
+  /// 
+  /// Alternatively, one may call the step() function repeatedly to
+  /// solve the ODE one time slab at a time:
   ///
-  /// Alternatively, one can create a TimeStepper object and use this
-  /// for repeatedly time stepping the ODE, one time slab at a time:
-  ///
-  ///   TimeStepper timeStepper(ode, u);
-  ///   timeStepper.step();
-  ///   timeStepper.step();
+  ///   TimeStepper time_stepper(ode, u);
+  ///   time_stepper.step();
+  ///   time_stepper.step();
 
   class TimeStepper
   {
   public:
 
     /// Constructor
-    TimeStepper(ODE& ode, ODESolution& u);
+    TimeStepper(ODE& ode);
 
     /// Destructor
     ~TimeStepper();
-    
-    /// Solve given ODE and store solution in ODESolution object
-    static void solve(ODE& ode, ODESolution& u);
+
+    // Solve ODE on [0, T]
+    void solve(ODESolution& u);
+
+    // Solve ODE on [t0, t1]
+    void solve(ODESolution& u, real t0, real t1);
 
     /// Step solution, return current time
-    real step();
+    real step(ODESolution& u);
 
-    /// Check if we have reached the end time
-    bool finished() const;
-
-    /// Check if we have stopped
-    bool stopped() const;
+    /// Step solution from t0 to t <= t1, return current time
+    real step(ODESolution& u, real t0, real t1);
 
   private:
 
     // Save interpolated solution (when necessary)
-    void save();
+    void save(ODESolution& u);
 
     // Save at fixed sample points
-    void saveFixedSamples();
+    void save_fixed_samples(ODESolution& u);
     
     // Save using adaptive samples
-    void saveAdaptiveSamples();
+    void save_adaptive_samples(ODESolution& u);
 
     //--- Time-stepping data ---
 
-    // Size of system
-    unsigned int N;
-
-    // Current time
-    real t;
-
-    // End time of computation
-    real T;
-
     // The ODE being solved
     ODE& ode;
-
-    ODESolution& u;
 
     // The time slab
     TimeSlab* timeslab;
@@ -97,11 +89,11 @@ namespace dolfin
     // Progress bar
     Progress p;
 
+    // Current time
+    real t;
+
     // True if solution has been stopped
     bool _stopped;
-
-    // True if we have reached the given end time
-    bool _finished;
 
     // True if we should save the solution
     bool save_solution;

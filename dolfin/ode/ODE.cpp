@@ -1,20 +1,21 @@
-// Copyright (C) 2003-2008 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2009 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2008-10-18
+// Last changed: 2009-02-09
 
 #include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/parameter/parameters.h>
 #include "ODESolver.h"
+#include "TimeStepper.h"
 #include "ODE.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ODE::ODE(uint N, real T)
-  : N(N), T(T), dependencies(N), transpose(N), tmp0(0), tmp1(0),
+  : N(N), t(0), T(T), dependencies(N), transpose(N), time_stepper(0), tmp0(0), tmp1(0),
     not_impl_f("Warning: consider implementing mono-adaptive ODE::f() to improve efficiency."),
     not_impl_M("Warning: multiplication with M not implemented, assuming identity."),
     not_impl_J("Warning: consider implementing Jacobian ODE::J() to improve efficiency."),
@@ -28,6 +29,7 @@ ODE::~ODE()
 {
   delete [] tmp0;
   delete [] tmp1;
+  delete time_stepper;
 }
 //-----------------------------------------------------------------------------
 void ODE::f(const real* u, real t, real* y)
@@ -195,19 +197,19 @@ void ODE::save(Sample& sample)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-real ODE::time(real t) const
+dolfin::uint ODE::size() const
+{
+  return N;  
+}
+//-----------------------------------------------------------------------------
+real ODE::time() const
 {
   return t;
 }
 //-----------------------------------------------------------------------------
-void ODE::sparse()
+real ODE::time(real t) const
 {
-  dependencies.detect(*this);
-}
-//-----------------------------------------------------------------------------
-dolfin::uint ODE::size() const
-{
-  return N;  
+  return t;
 }
 //-----------------------------------------------------------------------------
 real ODE::endtime() const
@@ -215,8 +217,47 @@ real ODE::endtime() const
   return T;
 }
 //-----------------------------------------------------------------------------
+void ODE::sparse()
+{
+  dependencies.detect(*this);
+}
+//-----------------------------------------------------------------------------
 void ODE::solve()
 {
-  ODESolver::solve(*this);
+  // Solve ODE on entire time interval
+  ODESolver ode_solver(*this);
+  ode_solver.solve();
+}
+//-----------------------------------------------------------------------------
+void ODE::solve(ODESolution& u)
+{
+  // Solve ODE on entire time interval
+  ODESolver ode_solver(*this);
+  ode_solver.solve(u);
+}
+//-----------------------------------------------------------------------------
+void ODE::solve(ODESolution& u, real t0, real t1)
+{
+  // Check time interval
+  if (t0 < 0.0 - real_epsilon() || t1 > endtime() + real_epsilon())
+  {
+    error("Illegal time interval [%g, %g] for ODE system, not contained in [%g, %g].",
+          t0, t1, 0.0, endtime());
+  }
+
+  // Create time stepper if not created before
+  if (!time_stepper)
+    time_stepper = new TimeStepper(*this);
+
+  // Solve ODE on given time interval
+  time_stepper->solve(u, t0, t1);
+
+  // Delete time stepper if we reached the end time
+  if (t1 > endtime() - real_epsilon())
+  {
+    dolfin_debug("Reached end time, deleting time stepper.");
+    delete time_stepper;
+    time_stepper = 0;
+  }
 }
 //-----------------------------------------------------------------------------

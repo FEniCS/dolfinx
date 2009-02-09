@@ -1,15 +1,14 @@
-// Copyright (C) 2003-2008 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2009 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Benjamin Kehlet 2008
 //
 // First added:  2003
-// Last changed: 2008-10-06
+// Last changed: 2009-02-09
 
 #include <cmath>
 #include <string>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/timing.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/parameter/parameters.h>
 #include "ODE.h"
@@ -21,11 +20,13 @@
 using namespace dolfin;
 
 //--------------------------------------------------------------------------
-TimeStepper::TimeStepper(ODE& ode, ODESolution& u) :
-  N(ode.size()), t(0), T(ode.endtime()),
-  ode(ode), u(u),
-  timeslab(0), file(ode.get("ODE solution file name")),
-  p("Time-stepping"), _stopped(false), _finished(false),
+TimeStepper::TimeStepper(ODE& ode) :
+  ode(ode),
+  timeslab(0),
+  file(ode.get("ODE solution file name")),
+  p("Time-stepping"),
+  t(0),
+  _stopped(false),
   save_solution(ode.get("ODE save solution")),
   adaptive_samples(ode.get("ODE adaptive samples")),
   no_samples(ode.get("ODE number of samples")),
@@ -48,87 +49,77 @@ TimeStepper::~TimeStepper()
   delete timeslab;
 }
 //----------------------------------------------------------------------
-void TimeStepper::solve(ODE& ode, ODESolution& u)
+void TimeStepper::solve(ODESolution& u)
 {
-  // Start timing
-  tic();  
-  
-  // Create a time stepper object
-  TimeStepper timeStepper(ode, u);
-    
-  // Do time stepping
-  while (!timeStepper.finished() && !timeStepper.stopped())
-    timeStepper.step();
-  
-  // Report elapsed time
-  message("Solution computed in %.3f seconds.", toc());
+  solve(u, 0.0, ode.endtime());
+}
+//----------------------------------------------------------------------
+void TimeStepper::solve(ODESolution& u, real t0, real t1)
+{
+  begin("Time-stepping over the time interval [%g, %g]", t0, t1);
+ 
+  // Do time-stepping on [t0, t1]
+  t = t0;
+  while (t < t1 - real_epsilon() && !_stopped)
+  {
+    // Make time step
+    t = step(u);
+
+    // Update progress
+    p = to_double(t / ode.endtime());
+  }
+
+  end();
 }
 //-------------------------------------------------------------------------
-real TimeStepper::step()
+real TimeStepper::step(ODESolution& u)
+{
+  return step(u, t, ode.endtime());
+}
+//-------------------------------------------------------------------------
+real TimeStepper::step(ODESolution& u, real t0, real t1)
 {
   // FIXME: Change type of time slab if solution does not converge
 
   // Check if this is the first time step
   const bool first = t < real_epsilon();
 
-  // Reset stopped flag
-  _stopped = false;
-
   // Iterate until solution is accepted
-  const real a = t;
+  _stopped = false;
   while (true)
   {
     // Build time slab
-    t = timeslab->build(a, T);
-    //timeslab->disp();
+    t = timeslab->build(t0, t1);
     
-    // Solve time slab system
-    if ( !timeslab->solve() )
+    // Try to solve time slab system
+    if (!timeslab->solve())
     {
+      warning("ODE solver did not converge at t = %g", to_double(t));
       _stopped = true;
       break;
     }
-    //timeslab->disp();
 
     // Check if solution can be accepted
-    if ( timeslab->check(first) )
+    if (timeslab->check(first))
       break;
     
-    message("Rejecting time slab K = %.3e, trying again.", to_double( timeslab->length() ));
+    message("Rejecting time slab K = %.3e, trying again.", to_double(timeslab->length()));
   }
 
   // Save solution
-  save();
-
-  // Check if solution was stopped
-  if ( _stopped )
-    warning("Solution stopped at t = %.3e.", to_double(t));
+  save(u);
 
   // Update for next time slab
-  if ( !timeslab->shift(finished()) )
+  if (!timeslab->shift(t > ode.endtime() - real_epsilon()))
   {
-    message("ODE solver stopped on user's request.");
+    message("ODE solver stopped on user's request at t = %g.", to_double(t));
     _stopped = true;
   }
-
-  // Update progress
-  if (!_stopped)
-    p = to_double(t / T);
 
   return t;
 }
 //-----------------------------------------------------------------------------
-bool TimeStepper::finished() const
-{
-  return t >= T;
-}
-//-----------------------------------------------------------------------------
-bool TimeStepper::stopped() const
-{
-  return _stopped;
-}
-//-----------------------------------------------------------------------------
-void TimeStepper::save()
+void TimeStepper::save(ODESolution& u)
 {
   // Check if we should save the solution
   if (!save_solution)
@@ -136,12 +127,12 @@ void TimeStepper::save()
 
   // Choose method for saving the solution
   if (adaptive_samples)
-    saveAdaptiveSamples();
+    save_adaptive_samples(u);
   else
-    saveFixedSamples();
+    save_fixed_samples(u);
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::saveFixedSamples()
+void TimeStepper::save_fixed_samples(ODESolution& u)
 {
   // Get start time and end time of time slab
   real t0 = timeslab->starttime();
@@ -158,7 +149,7 @@ void TimeStepper::saveFixedSamples()
   }
 
   // Compute distance between samples
-  real K = T / static_cast<real>(no_samples);
+  real K = ode.endtime() / static_cast<real>(no_samples);
   real t = floor(t0/K - 0.5) * K;
 
   // Save samples
@@ -182,17 +173,17 @@ void TimeStepper::saveFixedSamples()
   }
 
   // Save final value
-  if (t1 == T)
+  if (t1 > ode.endtime() - real_epsilon())
   {
     //Sample sample(*timeslab, 0.0, u.name(), u.label());
-    Sample sample(*timeslab, ode.time(T), "u", "unknown");
+    Sample sample(*timeslab, ode.time(ode.endtime()), "u", "unknown");
     file << sample;
     u.add_sample(sample);
     ode.save(sample);
   }
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::saveAdaptiveSamples()
+void TimeStepper::save_adaptive_samples(ODESolution& u)
 {
   // Get start time and end time of time slab
   real t0 = timeslab->starttime();
