@@ -52,8 +52,10 @@ ODESolution::~ODESolution()
   for (uint i = 0; i < cache_size; ++i)
     delete [] cache[i].second;
   delete [] cache;
+
   file.close();
   remove(filename.c_str());
+
   free(buffer);
   delete [] tmp;
 }
@@ -77,15 +79,17 @@ void ODESolution::eval(const real t, real* y)
 
   // Find position in buffer
   std::vector<real>::iterator upper = std::upper_bound(bintree.begin(), 
-                                                         bintree.end(), 
-                                                         t);
+                                                       bintree.end(), 
+                                                       t);
   uint b = uint(upper - bintree.begin());
   uint a = b - 1;
 
   if (b >= bintree.size() - 1)
   {
-    if (t > bintree[bintree.size()-1])
+    if (t > bintree[bintree.size() - 1])
     {
+      message("t = %.16g max = %.16g",
+              to_double(t), to_double(bintree[bintree.size() - 1]));
       error("ODESolution, eval(%g) out of range", to_double(t));
     }
     else
@@ -144,7 +148,7 @@ void ODESolution::add_sample(Sample& sample)
   {
     #ifndef HAS_GMP
       //TODO: Fix this so it works with GMP
-      buffer[buffer_count*ode.size()+i] = sample.u(i);
+      buffer[buffer_count*ode.size() + i] = sample.u(i);
     #endif
   }
 

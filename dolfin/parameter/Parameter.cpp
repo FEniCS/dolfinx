@@ -45,25 +45,9 @@ Parameter::Parameter(const char* value) : value(0), _type(type_string), _changed
 }
 //-----------------------------------------------------------------------------
 Parameter::Parameter(const Parameter& parameter)
-  : value(0), _type(parameter._type), _changed(parameter._changed)
+  : value(0), _type(type_int), _changed(false)
 { 
-  switch ( parameter._type )
-  {
-  case type_int:
-    value = new IntValue(*parameter.value);
-    break;
-  case type_real:
-    value = new RealValue(*parameter.value);
-    break;
-  case type_bool:
-    value = new BoolValue(*parameter.value);
-    break;
-  case type_string:
-    value = new StringValue(*parameter.value);
-    break;
-  default:
-    error("Unknown parameter type: %d.", parameter._type);
-  }
+  *this = parameter;
 }
 //-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (int value)
@@ -100,7 +84,7 @@ const Parameter& Parameter::operator= (const Parameter& parameter)
 {
   delete value;
 
-  switch ( parameter._type )
+  switch (parameter._type)
   {
   case type_int:
     value = new IntValue(*parameter.value);
@@ -119,13 +103,14 @@ const Parameter& Parameter::operator= (const Parameter& parameter)
   }  
 
   _type = parameter._type;
+  _changed = parameter._changed;
 
   return *this;
 }
 //-----------------------------------------------------------------------------
 Parameter::~Parameter()
 {
-  if ( value ) delete value;
+  delete value;
 }
 //-----------------------------------------------------------------------------
 Parameter::operator int() const
