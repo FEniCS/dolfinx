@@ -221,11 +221,7 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_inde
   {
     const uint n = local_dimension();
     uint offset = 0; 
-    if (cell_map) {
-      offset = n*cell_map[cell_index];  
-    } else {
-      offset = n*cell_index;
-    }
+    offset = n*cell_index;
     for (uint i = 0; i < n; i++)
       dofs[i] = dof_map[offset + i];
     // FIXME: Maybe memcpy() can be used to speed this up? Test this!

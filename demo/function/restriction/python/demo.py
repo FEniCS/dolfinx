@@ -9,6 +9,9 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
+dolfin_set("linear algebra backend","Epetra")
+
+
 class LeftSide(SubDomain):
     def inside(self, x, on_boundary):
         return bool(x[0] < 0.5 + DOLFIN_EPS)
@@ -21,7 +24,7 @@ subdomain = LeftSide()
 for cell in cells(mesh): 
     p = cell.midpoint()
     mesh_function.values()[cell.index()] = int(subdomain.inside(p, False))
-#    print "c ", cell.index(), " v ",  mesh_function.values()[cell.index()] 
+    print "c ", cell.index(), " v ",  mesh_function.values()[cell.index()] 
 
 V = FunctionSpace(mesh, "Lagrange", 1)
 fv = Function(V, cppexpr='1.0')
