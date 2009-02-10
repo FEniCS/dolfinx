@@ -33,7 +33,7 @@ namespace dolfin
   public:
 
     /// Create a collection of ODEs
-    ODECollection(ODE& ode, uint n);
+    ODECollection(ODE& ode, uint num_systems);
     
     /// Destructor
     virtual ~ODECollection();
@@ -41,18 +41,21 @@ namespace dolfin
     /// Solve ODE collection on [t0, t1]
     void solve(real t0, real t1);
 
-    /// Set state for given ODE
-    void set_state(uint i, const real* u);
+    /// Set state for given ODE system
+    void set_state(uint system, const real* u);
 
-    /// Set states for all ODEs
+    /// Set states for all ODE systems
     void set_state(const real* u);
 
-    /// Get state for given ODE
-    void get_state(uint i, real* u);
+    /// Get state for given ODE system
+    void get_state(uint system, real* u);
 
-    /// Get states for all ODEs
+    /// Get states for all ODE systems
     void get_state(real* u);
 
+    /// Optional user-defined update, called between solves
+    virtual void update(ODE& ode, real* u, real t, uint system);
+    
   private:
 
     // The ODE
@@ -62,7 +65,7 @@ namespace dolfin
     ODESolution u;
 
     // Number of ODE systems
-    uint n;
+    uint num_systems;
 
     // States vectors
     real* states;
