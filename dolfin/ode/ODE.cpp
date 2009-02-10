@@ -246,7 +246,7 @@ void ODE::solve(ODESolution& u, real t0, real t1)
   if (t0 < 0.0 - real_epsilon() || t1 > endtime() + real_epsilon())
   {
     error("Illegal time interval [%g, %g] for ODE system, not contained in [%g, %g].",
-          t0, t1, 0.0, endtime());
+          to_double(t0), to_double(t1), to_double(0.0), to_double(endtime()));
   }
 
   // Create time stepper if not created before
