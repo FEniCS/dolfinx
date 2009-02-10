@@ -215,7 +215,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   %pythoncode
   %{
     def __is_compatibable(self,other):
-        "Returns True if self, and other are compatible Matrices"
+        "Returns True if self, and other are compatible Vectors"
         if not isinstance(other,GenericMatrix):
             return False
         self_type = get_tensor_type(self)
@@ -259,7 +259,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             matrix_type = get_tensor_type(self)
             vector_type = get_tensor_type(other)
             if vector_type not in _matrix_vector_mul_map[matrix_type]:
-                raise TypeError, "Provide a Vector which can be down_casted to '%s'"%vector_type.__name__
+                raise TypeError, "Provide a Vector which can be down_casted to ''"%vector_type.__name__
             if type(other) == Vector:
                 ret = Vector(self.size(0))
             else:
