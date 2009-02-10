@@ -28,7 +28,7 @@ TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
 //-----------------------------------------------------------------------------
 TimeSlabSolver::~TimeSlabSolver()
 {
-  if ( num_timeslabs > 0 )
+  if (num_timeslabs > 0)
   {
     const real n = static_cast<real>(num_timeslabs);
     const real global_average = static_cast<real>(num_global_iterations) / n;
@@ -74,16 +74,16 @@ bool TimeSlabSolver::solve(uint attempt)
     d2 /= xnorm + real_epsilon();
     
     // For debugging convergence
-    if ( monitor )
+    if (monitor)
       message("--- iter = %d: increment = %.3e", iter, to_double(d2));
     
     // Check convergenge
-    if ( d2 < tol )
+    if (d2 < tol)
     {
       end();
       num_timeslabs += 1;
       num_global_iterations += iter + 1;
-      if ( monitor )
+      if (monitor)
 	message("Time slab system of size %d converged in %d iterations.\n", size(), iter + 1);
       return true;
     }
@@ -91,7 +91,7 @@ bool TimeSlabSolver::solve(uint attempt)
     // Check divergence
     // FIXME: implement better check and make this a parameter
     // Is it ok to convert a gmp type to double and then check if it is normal?
-    if ( (iter > 0 && d2 > 1000.0 * d1) || !std::isnormal(to_double(d2)) )
+    if ((iter > 0 && d2 > 1000.0 * d1) || !std::isnormal(to_double(d2)))
     {
       warning("Time slab system seems to be diverging.");
       return false;

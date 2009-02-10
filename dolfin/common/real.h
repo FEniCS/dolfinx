@@ -44,15 +44,17 @@ namespace dolfin
   }
   
   // Absolute value
-  inline real abs (real x) 
-  { return x >= 0 ? x : -1*x; }
+
+
+  inline real abs(real x) 
+  { return x >= 0.0 ? x : -1.0*x; }
   
   // Maximum
-  inline real max (real x, real y)
+  inline real max(real x, real y)
   { return x > y ? x : y; }
   
   // Minimum
-  inline real min (real x, real y)
+  inline real min(real x, real y)
   { return x < y ? x : y; }
     
   // Power function

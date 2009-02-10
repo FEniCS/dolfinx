@@ -37,11 +37,12 @@ MonoAdaptiveFixedPointSolver::~MonoAdaptiveFixedPointSolver()
 }
 //-----------------------------------------------------------------------------
 real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
-                                               real d0, real d1)
+                                             real d0, real d1)
 {
-  //   real K = ts.endtime() - ts.starttime();
+  // FIXME: Cleanup stabilization
+
   real alpha_orig = alpha;
-  if(stabilize)
+  if (stabilize)
   {
     if (iter == 0)
     {
@@ -112,7 +113,7 @@ real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
   for (uint i = 0; i < ts.N; i++)
   {
     const real increment = abs(ts.x[xoffset + i] - xold[i]);
-    if ( increment > max_increment )
+    if (increment > max_increment)
       max_increment = increment;
   }
 
