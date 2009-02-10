@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet
 //
 // First added:  2003-05-06
-// Last changed: 2009-01-31
+// Last changed: 2009-02-10
 
 #ifndef __PARAMETER_LIST_H
 #define __PARAMETER_LIST_H
@@ -29,10 +29,10 @@ namespace dolfin
     ~ParameterList();
 	 
     /// Add parameter
-    void add(std::string key, Parameter value);
+    void add(std::string key, const Parameter& value);
     
     /// Set value of parameter
-    void set(std::string key, Parameter value);
+    void set(std::string key, const Parameter& value);
 
     /// Get value of parameter with given key
     Parameter get(std::string key) const;

@@ -26,7 +26,6 @@ namespace dolfin
     /// Supported parameter types
     enum Type {type_real, type_int, type_bool, type_string};
 
-
     /// Create int-valued parameter
     Parameter(int value);
 

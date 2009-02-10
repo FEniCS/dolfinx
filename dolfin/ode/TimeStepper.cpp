@@ -29,7 +29,7 @@ TimeStepper::TimeStepper(ODE& ode) :
   _stopped(false),
   save_solution(ode.get("ODE save solution")),
   adaptive_samples(ode.get("ODE adaptive samples")),
-  no_samples(ode.get("ODE number of samples")),
+  num_samples(ode.get("ODE number of samples")),
   sample_density(ode.get("ODE sample density"))
 {
   // Create time slab
@@ -60,7 +60,7 @@ void TimeStepper::solve(ODESolution& u, real t0, real t1)
  
   // Do time-stepping on [t0, t1]
   t = t0;
-  while (t < t1 - real_epsilon() && !_stopped)
+  while (!at_end(t, t1) && !_stopped)
   {
     // Make time step
     t = step(u);
@@ -110,7 +110,7 @@ real TimeStepper::step(ODESolution& u, real t0, real t1)
   save(u);
 
   // Update for next time slab
-  if (!timeslab->shift(t > ode.endtime() - real_epsilon()))
+  if (!timeslab->shift(at_end(t, ode.endtime())))
   {
     message("ODE solver stopped on user's request at t = %g.", to_double(t));
     _stopped = true;
@@ -139,48 +139,33 @@ void TimeStepper::save_fixed_samples(ODESolution& u)
   real t1 = timeslab->endtime();
 
   // Save initial value
-  if (t0 == 0.0)
-  {
-    //Sample sample(*timeslab, 0.0, u.name(), u.label());
-    Sample sample(*timeslab, ode.time(0.0), "u", "unknown");
-    file << sample;
-    u.add_sample(sample);
-    ode.save(sample);
-  }
+  if (t0 < real_epsilon())
+    save_sample(u, 0.0);
 
   // Compute distance between samples
-  real K = ode.endtime() / static_cast<real>(no_samples);
-  real t = floor(t0/K - 0.5) * K;
+  real K = ode.endtime() / static_cast<real>(num_samples);
+  real t = floor(t0 / K - 0.5) * K;
 
   // Save samples
   while (true)
   {
     t += K;
 
-    if ( (t - real_epsilon()) < t0 )
+    if (t < t0 + real_epsilon())
       continue;
 
-    if ( (t - real_epsilon()) > t1 )
+    if (t > t1 + real_epsilon())
       break;
 
-    if ( abs(t - t1) < real_epsilon() )
+    if (abs(t - t1) < real_epsilon())
       t = t1;
 
-    Sample sample(*timeslab, ode.time(t), "u", "unknown");
-    file << sample;
-    u.add_sample(sample);
-    ode.save(sample);
+    save_sample(u, t);
   }
 
   // Save final value
-  if (t1 > ode.endtime() - real_epsilon())
-  {
-    //Sample sample(*timeslab, 0.0, u.name(), u.label());
-    Sample sample(*timeslab, ode.time(ode.endtime()), "u", "unknown");
-    file << sample;
-    u.add_sample(sample);
-    ode.save(sample);
-  }
+  if (at_end(t1, ode.endtime()))
+    save_sample(u, ode.endtime());
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::save_adaptive_samples(ODESolution& u)
@@ -190,14 +175,8 @@ void TimeStepper::save_adaptive_samples(ODESolution& u)
   real t1 = timeslab->endtime();
 
   // Save initial value
-  if ( t0 == 0.0 )
-  {
-    //Sample sample(*timeslab, 0.0, u.name(), u.label());
-    Sample sample(*timeslab, ode.time(0.0), "u", "unknown");
-    file << sample;
-    u.add_sample(sample);
-    ode.save(sample);
-  }
+  if (t0 < real_epsilon())
+    save_sample(u, 0.0);
 
   // Compute distance between samples
   dolfin_assert(sample_density >= 1);
@@ -206,17 +185,30 @@ void TimeStepper::save_adaptive_samples(ODESolution& u)
   // Save samples
   for (unsigned int n = 0; n < sample_density; ++n)
   {
-    // Compute time of sample, and make sure we get the end time right
     real t = t0 + static_cast<real>(n + 1)*k;
-    if ( n == (sample_density - 1) )
+    if (n == (sample_density - 1))
       t = t1;
-    
-    // Create and save the sample
-    //Sample sample(*timeslab, t, u.name(), u.label());
-    Sample sample(*timeslab, ode.time(t), "u", "unknown");
-    file << sample;
-    u.add_sample(sample);
-    ode.save(sample);
+    save_sample(u, t);
   }
+}
+//-----------------------------------------------------------------------------
+void TimeStepper::save_sample(ODESolution& u, real t)
+{
+  // Create sample
+  Sample sample(*timeslab, ode.time(t), "u", "ODE solution");
+
+  // Save to file
+  file << sample;
+
+  // Add sample to ODE solution
+  u.add_sample(sample);
+
+  // Let user save sample (optional)
+  ode.save(sample);
+}
+//-----------------------------------------------------------------------------
+bool TimeStepper::at_end(real t, real T) const
+{
+  return T - t < real_epsilon();
 }
 //-----------------------------------------------------------------------------

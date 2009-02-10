@@ -75,6 +75,12 @@ namespace dolfin
     // Save using adaptive samples
     void save_adaptive_samples(ODESolution& u);
 
+    // Save sample at time t
+    void save_sample(ODESolution& u, real t);
+
+    // Check if we have reached end time
+    bool at_end(real t, real T) const;
+
     //--- Time-stepping data ---
 
     // The ODE being solved
@@ -102,7 +108,7 @@ namespace dolfin
     bool adaptive_samples;
 
     // Number of samples to save (for non-adaptive sampling)
-    unsigned int no_samples;
+    unsigned int num_samples;
     
     // Density of sampling (for adaptive sampling)
     unsigned int sample_density;
