@@ -2,11 +2,12 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-02-09
-// Last changed: 2009-02-09
+// Last changed: 2009-02-10
 
 #ifndef __ODE_COLLECTION_H
 #define __ODE_COLLECTION_H
 
+#include "ODESolution.h"
 #include "ODE.h"
 
 namespace dolfin
@@ -27,20 +28,38 @@ namespace dolfin
   /// overhead of instantiating a large number of ODE objects
   /// should be avoided.
 
-  class ODECollection : public ODE
+  class ODECollection
   {
   public:
 
-    /// Create a collection of n ODEs of size N with final time T
-    ODECollection(uint n, uint N, real T);
+    /// Create a collection of ODEs
+    ODECollection(ODE& ode, uint n);
     
     /// Destructor
     virtual ~ODECollection();
 
-    /// Set initial values
-    void u0(real* u);
+    /// Solve ODE collection on [t0, t1]
+    void solve(real t0, real t1);
+
+    /// Set state for given ODE
+    void set_state(uint i, const real* u);
+
+    /// Set states for all ODEs
+    void set_state(const real* u);
+
+    /// Get state for given ODE
+    void get_state(uint i, real* u);
+
+    /// Get states for all ODEs
+    void get_state(real* u);
 
   private:
+
+    // The ODE
+    ODE& ode;
+
+    // The ODE solution
+    ODESolution u;
 
     // Number of ODE systems
     uint n;

@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2008
 //
 // First added:  2003
-// Last changed: 2009-02-09
+// Last changed: 2009-02-10
 
 #ifndef __TIME_STEPPER_H
 #define __TIME_STEPPER_H
@@ -63,6 +63,12 @@ namespace dolfin
 
     /// Step solution from t0 to t <= t1, return current time
     real step(ODESolution& u, real t0, real t1);
+
+    /// Set state for ODE
+    void set_state(const real* u);
+
+    /// Get state for ODE
+    void get_state(real* u);
 
   private:
 

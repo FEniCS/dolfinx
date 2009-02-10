@@ -70,6 +70,18 @@ real TimeSlab::length() const
   return _b - _a;
 }
 //-----------------------------------------------------------------------------
+void TimeSlab::set_state(const real* u)
+{
+  for (uint i = 0; i < N; i++)
+    u0[i] = u[i];
+}
+//-----------------------------------------------------------------------------
+void TimeSlab::get_state(real* u)
+{
+  for (uint i = 0; i < N; i++)
+    u[i] = u0[i];
+}
+//-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream,
 				      const TimeSlab& timeslab)
 {

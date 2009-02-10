@@ -224,6 +224,8 @@ void ODE::sparse()
 //-----------------------------------------------------------------------------
 void ODE::solve()
 {
+  dolfin_assert(!time_stepper);
+
   // Solve ODE on entire time interval
   ODESolver ode_solver(*this);
   ode_solver.solve();
@@ -231,6 +233,8 @@ void ODE::solve()
 //-----------------------------------------------------------------------------
 void ODE::solve(ODESolution& u)
 {
+  dolfin_assert(!time_stepper);
+  
   // Solve ODE on entire time interval
   ODESolver ode_solver(*this);
   ode_solver.solve(u);
@@ -251,13 +255,25 @@ void ODE::solve(ODESolution& u, real t0, real t1)
 
   // Solve ODE on given time interval
   time_stepper->solve(u, t0, t1);
+}
+//-----------------------------------------------------------------------------
+void ODE::set_state(const real* u)
+{
+  // Create time stepper if not created before
+  if (!time_stepper)
+    time_stepper = new TimeStepper(*this);
 
-  // Delete time stepper if we reached the end time
-  if (t1 > endtime() - real_epsilon())
-  {
-    dolfin_debug("Reached end time, deleting time stepper.");
-    delete time_stepper;
-    time_stepper = 0;
-  }
+  // Set state
+  time_stepper->set_state(u);
+}
+//-----------------------------------------------------------------------------
+void ODE::get_state(real* u)
+{
+  // Create time stepper if not created before
+  if (!time_stepper)
+    time_stepper = new TimeStepper(*this);
+
+  // Get state
+  time_stepper->get_state(u);
 }
 //-----------------------------------------------------------------------------

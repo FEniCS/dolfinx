@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2009-02-09
+// Last changed: 2009-02-10
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -64,6 +64,9 @@ namespace dolfin
   /// interval without solution of dual problems:
   ///
   ///     ode.solve(t0, t1);
+  ///
+  /// This mode allows the state to be specified and retrieved in
+  /// between intervals by calling set_state() and get_state().
 
   class ODE : public Parametrized, public GMPObject
   {
@@ -131,6 +134,12 @@ namespace dolfin
 
     /// Solve ODE on [t0, t1]
     void solve(ODESolution& u, real t0, real t1);
+
+    /// Set state for ODE (only available during interval stepping)
+    void set_state(const real* u);
+
+    /// Get state for ODE (only available during interval stepping)
+    void get_state(real* u);
 
     /// Friends
     friend class Dual;

@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2008
 //
 // First added:  2003
-// Last changed: 2009-02-09
+// Last changed: 2009-02-10
 
 #include <cmath>
 #include <string>
@@ -117,6 +117,18 @@ real TimeStepper::step(ODESolution& u, real t0, real t1)
   }
 
   return t;
+}
+//-----------------------------------------------------------------------------
+void TimeStepper::set_state(const real* u)
+{
+  dolfin_assert(timeslab);
+  timeslab->set_state(u);
+}
+//-----------------------------------------------------------------------------
+void TimeStepper::get_state(real* u)
+{
+  dolfin_assert(timeslab);
+  timeslab->get_state(u);
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::save(ODESolution& u)

@@ -44,8 +44,6 @@ namespace dolfin
   }
   
   // Absolute value
-
-
   inline real abs(real x) 
   { return x >= 0.0 ? x : -1.0*x; }
   
