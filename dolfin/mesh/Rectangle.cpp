@@ -1,11 +1,11 @@
-// Copyright (C) 2005-2008 Anders Logg.
+// Copyright (C) 2005-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2007.
 // Modified by Nuno Lopes 2008
 //
 // First added:  2005-12-02
-// Last changed: 2008-11-13
+// Last changed: 2009-02-11
 
 #include "MeshEditor.h"
 #include "Rectangle.h"
@@ -15,13 +15,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Rectangle::Rectangle(double a, double b, double c, double d, uint nx, uint ny, 
-                     Type type) : Mesh()
+Rectangle::Rectangle(double x0, double y0, double x1, double y1,
+                     uint nx, uint ny, Type type) : Mesh()
 {
+  const double a = x0;
+  const double b = x1;
+  const double c = y0;
+  const double d = y1;
+
   // Receive mesh according to parallel policy
   if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
   
-  if ( nx < 1 || ny < 1 )
+  if (nx < 1 || ny < 1)
     error("Size of unit square must be at least 1 in each dimension.");
 
   rename("mesh", "Mesh of the unit square (a,b) x (c,d)");
