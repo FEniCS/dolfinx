@@ -210,6 +210,12 @@ for modName, mod in modules.items():
         # they are to be installed into, otherwise SCons might think it necessary to install
         # them first
 
+        # Add flags for code coverage
+        if env["enableCodeCoverage"]:
+            modEnv.Append(CPPFLAGS=' -fprofile-arcs -ftest-coverage',
+                          LINKFLAGS=' -fprofile-arcs -ftest-coverage',
+                          LIBS=['gcov'])
+
         modEnv.Prepend(CPPPATH=[Dir("#").abspath] + cppPath, LIBPATH=libPath)
         modEnv.Append(LIBS=libs)
         modEnv.Append(LINKFLAGS=linkOpts)

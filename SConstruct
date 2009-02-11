@@ -69,6 +69,7 @@ options = [
     BoolOption("enableDocs", "Build documentation", 0),
     BoolOption("enableDemos", "Build demos", 0),
     BoolOption("enableTests", "Build tests", 0),
+    BoolOption("enableCodeCoverage", "Enable code coverage", 0),
     BoolOption("enableProjectionLibrary", "Enable projection library", 0),
     # Enable or disable external packages.
     # These will also be listed in scons.cfg files, but if they are 
