@@ -26,7 +26,7 @@ void MeshSmoothing::smooth(Mesh& mesh)
 
   // Mark vertices on the boundary so we may skip them
   BoundaryMesh boundary(mesh);
-  MeshFunction<uint>* vertex_map = boundary.data().meshFunction("vertex map");
+  MeshFunction<uint>* vertex_map = boundary.data().mesh_function("vertex map");
   dolfin_assert(vertex_map);
   MeshFunction<bool> on_boundary(mesh, 0);
   on_boundary = false;

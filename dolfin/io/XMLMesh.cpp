@@ -388,7 +388,7 @@ void XMLMesh::readMeshFunction(const xmlChar* name, const xmlChar** attrs)
     error("Wrong number of values for MeshFunction, expecting %d.", _mesh.size(dim));
 
   // Register data
-  f = _mesh.data().createMeshFunction(id);
+  f = _mesh.data().create_mesh_function(id);
   dolfin_assert(f);
   f->init(_mesh, dim);
 
@@ -408,7 +408,7 @@ void XMLMesh::readArray(const xmlChar* name, const xmlChar** attrs)
     error("Only uint-valued mesh data is currently supported.");
 
   // Register data
-  a = _mesh.data().createArray(id, size);
+  a = _mesh.data().create_array(id, size);
   dolfin_assert(a);
 }
 //-----------------------------------------------------------------------------

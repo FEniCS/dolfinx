@@ -28,7 +28,7 @@ namespace dolfin
     enum Type {right, left, crisscross};
     
     Rectangle(double x0, double y0, double x1, double y1,
-              uint nx, uint ny, Type type=crisscross);
+              uint nx, uint ny, Type type=right);
 
   };
   

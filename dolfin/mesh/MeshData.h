@@ -1,10 +1,10 @@
-// Copyright (C) 2008 Anders Logg.
+// Copyright (C) 2008-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2008-05-19
-// Last changed: 2008-12-29
+// Last changed: 2009-02-11
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
@@ -43,34 +43,34 @@ namespace dolfin
     void clear();
 
     /// Create MeshFunction with given name (uninitialized)
-    MeshFunction<uint>* createMeshFunction(std::string name);
+    MeshFunction<uint>* create_mesh_function(std::string name);
 
     /// Create MeshFunction with given name and dimension
-    MeshFunction<uint>* createMeshFunction(std::string name, uint dim);
+    MeshFunction<uint>* create_mesh_function(std::string name, uint dim);
 
     /// Create Array with given name and size
-    Array<uint>* createArray(std::string name, uint size);
+    Array<uint>* create_array(std::string name, uint size);
 
     /// Create map with given name and size
-    std::map<uint, uint>* createMapping(std::string name);
+    std::map<uint, uint>* create_mapping(std::string name);
 
     /// Return Array with given name (returning zero if data is not available)
     Array<uint>* array(const std::string name) const;
     
     /// Return MeshFunction with given name (returning zero if data is not available)
-    MeshFunction<uint>* meshFunction(const std::string name) const;
+    MeshFunction<uint>* mesh_function(const std::string name) const;
 
     /// Return Map with given name (returning zero if data is not available)
     std::map<uint, uint>* mapping(const std::string name) const;
     
     /// Erase MeshFunction with given name
-    void eraseMeshFunction(const std::string name);
+    void erase_mesh_function(const std::string name);
 
     /// Erase Array with given name
-    void eraseArray(const std::string name);
+    void erase_array(const std::string name);
 
     /// Erase Mapping with given name
-    void eraseMapping(const std::string name);
+    void erase_mapping(const std::string name);
 
     /// Display data
     void disp() const;
@@ -84,7 +84,7 @@ namespace dolfin
     Mesh& mesh;
 
     // A map from named mesh data to MeshFunctions
-    std::map<std::string, MeshFunction<uint>*> meshfunctions;
+    std::map<std::string, MeshFunction<uint>*> mesh_functions;
 
     // A map from named mesh data to Arrays
     std::map<std::string, Array<uint>*> arrays;

@@ -24,8 +24,8 @@ void TransfiniteInterpolation::move(Mesh& mesh, Mesh& new_boundary, Interpolatio
     error("Mesh interpolation only implemented in 2D and 3D so far.");
 
   // Get vertex and cell maps
-  const MeshFunction<uint>* vertex_map = new_boundary.data().meshFunction("vertex map");
-  const MeshFunction<uint>* cell_map   = new_boundary.data().meshFunction("cell map");
+  const MeshFunction<uint>* vertex_map = new_boundary.data().mesh_function("vertex map");
+  const MeshFunction<uint>* cell_map   = new_boundary.data().mesh_function("cell map");
   dolfin_assert(vertex_map);
   dolfin_assert(cell_map);
 

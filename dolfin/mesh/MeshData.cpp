@@ -37,9 +37,9 @@ const MeshData& MeshData::operator= (const MeshData& data)
   clear();
 
   // Copy MeshFunctions
-  for (mf_const_iterator it = data.meshfunctions.begin(); it != data.meshfunctions.end(); ++it)
+  for (mf_const_iterator it = data.mesh_functions.begin(); it != data.mesh_functions.end(); ++it)
   {
-    MeshFunction<uint> *f = createMeshFunction( it->first, it->second->dim() );
+    MeshFunction<uint> *f = create_mesh_function( it->first, it->second->dim() );
     for (uint i = 0; i < it->second->size(); i++)
       f->values()[i] = it->second->values()[i];   
   }
@@ -47,7 +47,7 @@ const MeshData& MeshData::operator= (const MeshData& data)
   // Copy Arrays
   for (a_const_iterator it = data.arrays.begin(); it != data.arrays.end(); ++it)
   {
-    Array<uint>* a = createArray( it->first, static_cast<uint>(it->second->size()) );
+    Array<uint>* a = create_array( it->first, static_cast<uint>(it->second->size()) );
     for (uint i = 0; i < it->second->size(); i++)
       (*a)[i] = (*(it->second))[i];   
   }     
@@ -55,7 +55,7 @@ const MeshData& MeshData::operator= (const MeshData& data)
   //Copy Mappings
   for (m_const_iterator it = data.maps.begin(); it != data.maps.end(); ++it)
   {
-    std::map<uint, uint>* m = createMapping( it->first );
+    std::map<uint, uint>* m = create_mapping( it->first );
     std::map<uint, uint>::const_iterator i;
     for (i = it->second->begin(); i != it->second->end(); ++i)
       (*m)[i->first] = i->second;
@@ -66,9 +66,9 @@ const MeshData& MeshData::operator= (const MeshData& data)
 //-----------------------------------------------------------------------------
 void MeshData::clear()
 { 
-  for (mf_iterator it = meshfunctions.begin(); it != meshfunctions.end(); ++it)
+  for (mf_iterator it = mesh_functions.begin(); it != mesh_functions.end(); ++it)
     delete it->second;
-  meshfunctions.clear();
+  mesh_functions.clear();
 
   for (a_iterator it = arrays.begin(); it != arrays.end(); ++it)
     delete it->second;
@@ -79,11 +79,11 @@ void MeshData::clear()
   maps.clear();
 }
 //-----------------------------------------------------------------------------
-MeshFunction<dolfin::uint>* MeshData::createMeshFunction(std::string name)
+MeshFunction<dolfin::uint>* MeshData::create_mesh_function(std::string name)
 {
   // Check if data already exists
-  mf_iterator it = meshfunctions.find(name);
-  if (it != meshfunctions.end())
+  mf_iterator it = mesh_functions.find(name);
+  if (it != mesh_functions.end())
   {
     warning("Mesh data named \"%s\" already exists.", name.c_str());
     return it->second;
@@ -94,20 +94,20 @@ MeshFunction<dolfin::uint>* MeshData::createMeshFunction(std::string name)
   dolfin_assert(f);
 
   // Add to map
-  meshfunctions[name] = f;
+  mesh_functions[name] = f;
 
   return f;
 }
 //-----------------------------------------------------------------------------
-MeshFunction<dolfin::uint>* MeshData::createMeshFunction(std::string name, uint dim)
+MeshFunction<dolfin::uint>* MeshData::create_mesh_function(std::string name, uint dim)
 {
-  MeshFunction<uint>* f = createMeshFunction(name);
+  MeshFunction<uint>* f = create_mesh_function(name);
   f->init(dim);
 
   return f;
 }
 //-----------------------------------------------------------------------------
-Array<dolfin::uint>* MeshData::createArray(std::string name, uint size)
+Array<dolfin::uint>* MeshData::create_array(std::string name, uint size)
 {
   // Check if data already exists
   a_iterator it = arrays.find(name);
@@ -127,7 +127,7 @@ Array<dolfin::uint>* MeshData::createArray(std::string name, uint size)
   return a;
 }
 //-----------------------------------------------------------------------------
-std::map<dolfin::uint, dolfin::uint>* MeshData::createMapping(std::string name)
+std::map<dolfin::uint, dolfin::uint>* MeshData::create_mapping(std::string name)
 {
   // Check if data already exists
   m_iterator it = maps.find(name);
@@ -146,11 +146,11 @@ std::map<dolfin::uint, dolfin::uint>* MeshData::createMapping(std::string name)
   return m;
 }
 //-----------------------------------------------------------------------------
-MeshFunction<dolfin::uint>* MeshData::meshFunction(const std::string name) const
+MeshFunction<dolfin::uint>* MeshData::mesh_function(const std::string name) const
 {
   // Check if data exists
-  mf_const_iterator it = meshfunctions.find(name);
-  if (it == meshfunctions.end())
+  mf_const_iterator it = mesh_functions.find(name);
+  if (it == mesh_functions.end())
     return 0;
   
   return it->second;
@@ -176,13 +176,13 @@ std::map<dolfin::uint, dolfin::uint>* MeshData::mapping(const std::string name) 
   return it->second;
 }
 //-----------------------------------------------------------------------------
-void MeshData::eraseMeshFunction(const std::string name)
+void MeshData::erase_mesh_function(const std::string name)
 {
-  mf_iterator it = meshfunctions.find(name);
-  if (it != meshfunctions.end())
+  mf_iterator it = mesh_functions.find(name);
+  if (it != mesh_functions.end())
   {
     delete it->second;
-    meshfunctions.erase(it);
+    mesh_functions.erase(it);
   }
   else
   {
@@ -190,7 +190,7 @@ void MeshData::eraseMeshFunction(const std::string name)
   }
 }
 //-----------------------------------------------------------------------------
-void MeshData::eraseArray(const std::string name)
+void MeshData::erase_array(const std::string name)
 {
   a_iterator it = arrays.find(name);
   if (it != arrays.end())
@@ -204,7 +204,7 @@ void MeshData::eraseArray(const std::string name)
   }
 }
 //-----------------------------------------------------------------------------
-void MeshData::eraseMapping(const std::string name)
+void MeshData::erase_mapping(const std::string name)
 {
   m_iterator it = maps.find(name);
   if (it != maps.end())
@@ -223,7 +223,7 @@ void MeshData::disp() const
   // Begin indentation
   begin("Auxiliary mesh data");
 
-  for (mf_const_iterator it = meshfunctions.begin(); it != meshfunctions.end(); ++it)
+  for (mf_const_iterator it = mesh_functions.begin(); it != mesh_functions.end(); ++it)
   {
     cout << "MeshFunction<uint> of size "
          << it->second->size()

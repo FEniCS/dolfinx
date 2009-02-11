@@ -52,7 +52,7 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
   Vector b(N);
 
   // Get array of dofs for boundary vertices
-  const MeshFunction<uint>* vertex_map = new_boundary.data().meshFunction("vertex map");
+  const MeshFunction<uint>* vertex_map = new_boundary.data().mesh_function("vertex map");
   dolfin_assert(vertex_map);
   const uint num_dofs = vertex_map->size();
   const uint* dofs = vertex_map->values();

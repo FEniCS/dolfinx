@@ -349,13 +349,13 @@ void XMLFile::operator<< (const Mesh& mesh)
 
   // Write mesh data
   const MeshData& data = mesh.data();
-  if (data.meshfunctions.size() > 0 || data.arrays.size() > 0)
+  if (data.mesh_functions.size() > 0 || data.arrays.size() > 0)
   {
     fprintf(fp, "    <data>\n");
 
     // Write mesh functions
-    for (std::map<std::string, MeshFunction<uint>*>::const_iterator it = data.meshfunctions.begin();
-         it != data.meshfunctions.end(); ++it)
+    for (std::map<std::string, MeshFunction<uint>*>::const_iterator it = data.mesh_functions.begin();
+         it != data.mesh_functions.end(); ++it)
     {
       fprintf(fp, "      <meshfunction name=\"%s\" type=\"uint\" dim=\"%d\" size=\"%d\">\n",
               it->first.c_str(), it->second->dim(), it->second->size());

@@ -7,6 +7,7 @@
 #ifndef __SUB_MESH_H
 #define __SUB_MESH_H
 
+#include "MeshFunction.h"
 #include "Mesh.h"
 
 namespace dolfin
@@ -23,12 +24,20 @@ namespace dolfin
   {
   public:
 
-    /// Create subset of given mesh
-    SubMesh(const Mesh& mesh, const SubDomain& subdomain);
+    /// Create subset of given mesh marked by sub domain
+    SubMesh(const Mesh& mesh, const SubDomain& sub_domain);
+
+    /// Create subset of given mesh marked by mesh function
+    SubMesh(const Mesh& mesh, const MeshFunction<uint>& sub_domains, uint sub_domain);
 
     /// Destructor
     ~SubMesh();
 
+  private:
+
+    /// Create sub mesh
+    void init(const Mesh& mesh, const MeshFunction<uint>& sub_domains, uint sub_domain);
+    
   };
 
 }

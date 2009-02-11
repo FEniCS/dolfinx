@@ -140,6 +140,7 @@
 %include "dolfin/mesh/Cell.h"
 %include "dolfin/mesh/Point.h"
 %include "dolfin/mesh/SubDomain.h"
+%include "dolfin/mesh/SubMesh.h"
 %include "dolfin/mesh/DomainBoundary.h"
 %include "dolfin/mesh/BoundaryMesh.h"
 %include "dolfin/mesh/UnitCube.h"
@@ -169,6 +170,7 @@
 // DOLFIN headers included from ode
 %include "dolfin/ode/GMPObject.h"
 %include "dolfin/ode/ODE.h"
+%include "dolfin/ode/ODECollection.h"
 %include "dolfin/ode/ComplexODE.h"
 %include "dolfin/ode/Method.h"
 %include "dolfin/ode/cGqMethod.h"
