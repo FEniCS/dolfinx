@@ -1,5 +1,16 @@
+"Demonstrating the assembly on a  restricted FunctionSpace."
+
+__author__ = "Kent-Andre Mardal (kent-and@simula.no)"
+__date__ = "2009-02-9"
+__copyright__ = "Copyright (C) 2008 Kent-Andre Mardal"
+__license__  = "GNU LGPL Version 2.1"
+
+
 
 from dolfin import *
+
+dolfin_set("linear algebra backend","Epetra")
+
 
 class LeftSide(SubDomain):
     def inside(self, x, on_boundary):
@@ -7,7 +18,7 @@ class LeftSide(SubDomain):
 
 
 mesh = UnitSquare(2,2)
-mesh.disp()
+#mesh.disp()
 mesh_function = MeshFunction("bool", mesh, mesh.topology().dim())
 subdomain = LeftSide()
 for cell in cells(mesh): 
@@ -24,8 +35,6 @@ m = uv*vv*dx
 L0 = fv*vv*dx 
 M = assemble(m)
 b = assemble(L0)
-file = File("M0.m"); file <<M
-file = File("b0.m"); file <<b
 
 print "size of matrix on the whole domain is ",M.size(0),"x",M.size(1)
 
@@ -42,8 +51,6 @@ b = assemble(L1)
 
 print "size of matrix on the smaller domain is ",M.size(0),"x",M.size(1)
 
-file = File("M1.m"); file <<M
-file = File("b1.m"); file <<b
 
 m = uw*vv*dx
 M = assemble(m)
@@ -56,7 +63,6 @@ M = assemble(m)
 print "size of matrix with test functions on the smaller domain and trial functions on the whole domain ", M.size(0), "x", M.size(1)
        
 
-file = File("M3.m"); file <<M
 
 
 # FIXME: the following is currently not working

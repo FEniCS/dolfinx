@@ -11,30 +11,30 @@ from dolfin import *
 
 mesh = UnitInterval(10)
 print "Plotting a UnitInterval"
-plot(mesh)
+plot(mesh, title="Unit interval")
 
 mesh = UnitSquare(10, 10)
 print "Plotting a UnitSquare"
-plot(mesh)
+plot(mesh, title="Unit square")
 
-mesh = Rectangle(0.0, 10.0, 0.0, 4.0, 10, 10)
+mesh = Rectangle(0.0, 0.0, 10.0, 4.0, 10, 10)
 print "Plotting a Rectangle"
-plot(mesh)
+plot(mesh, title="Rectangle")
 
 mesh = UnitCircle(20, UnitCircle.right)
 print "Plotting a UnitCircle"
-plot(mesh)
+plot(mesh, title="Unit circle")
 
 mesh = UnitCube(10, 10, 10)
 print "Plotting a UnitCube"
-plot(mesh)
+plot(mesh, title="Unit cube")
 
-mesh = Box(0.0, 10.0, 0.0, 4.0, 0.0, 2.0, 10, 10, 10)
+mesh = Box(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10)
 print "Plotting a Box"
-plot(mesh)
+plot(mesh, title="Box")
 
 mesh = UnitSphere(10)
 print "Plotting a UnitSphere"
-plot(mesh)
+plot(mesh, title="Unit sphere")
 
 interactive()
