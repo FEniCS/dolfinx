@@ -84,7 +84,7 @@ void MeshConnectivity::init(uint num_entities, uint num_connections)
     offsets[e] = e*num_connections;
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::init(Array<uint>& num_connections)
+void MeshConnectivity::init(std::vector<uint>& num_connections)
 {
   // Clear old data if any
   clear();
@@ -114,7 +114,7 @@ void MeshConnectivity::set(uint entity, uint connection, uint pos)
   connections[offsets[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::set(uint entity, const Array<uint>& connections)
+void MeshConnectivity::set(uint entity, const std::vector<uint>& connections)
 {
   dolfin_assert(entity < num_entities);
   dolfin_assert(connections.size() == offsets[entity + 1] - offsets[entity]);
@@ -135,7 +135,7 @@ void MeshConnectivity::set(uint entity, uint* connections)
     this->connections[offsets[entity] + i] = connections[i];
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::set(const Array<Array<uint> >& connections)
+void MeshConnectivity::set(const std::vector<std::vector<uint> >& connections)
 {
   // Clear old data if any
   clear();

@@ -8,7 +8,6 @@
 #define __MESH_CONNECTIVITY_H
 
 #include <dolfin/common/types.h>
-#include <dolfin/common/Array.h>
 
 namespace dolfin
 {
@@ -59,19 +58,19 @@ namespace dolfin
     void init(uint num_entities, uint num_connections);
 
     /// Initialize number of entities and number of connections (individually)
-    void init(Array<uint>& num_connections);
+    void init(std::vector<uint>& num_connections);
 
     /// Set given connection for given entity
     void set(uint entity, uint connection, uint pos);
 
     /// Set all connections for given entity
-    void set(uint entity, const Array<uint>& connections);
+    void set(uint entity, const std::vector<uint>& connections);
 
     /// Set all connections for given entity
     void set(uint entity, uint* connections);
 
     /// Set all connections for all entities
-    void set(const Array<Array<uint> >& connectivity);
+    void set(const std::vector<std::vector<uint> >& connectivity);
 
     /// Display data
     void disp() const;

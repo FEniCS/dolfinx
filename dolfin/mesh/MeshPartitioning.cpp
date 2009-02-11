@@ -4,6 +4,7 @@
 // First added:  2008-12-01
 // Last changed: 2008-12-15
 
+#include <vector>
 #include <dolfin/log/log.h>
 #include <dolfin/main/MPI.h>
 #include "LocalMeshData.h"
@@ -275,7 +276,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Add cells
   editor.initCells(mesh_data.cell_vertices.size());
   const uint num_vertices = mesh_data.cell_type->numEntities(0);
-  Array<uint> a(num_vertices);
+  std::vector<uint> a(num_vertices);
   for (uint i = 0; i < mesh_data.cell_vertices.size(); ++i)
   {
     for (uint j = 0; j < num_vertices; ++j)
