@@ -33,6 +33,10 @@ namespace dolfin
   typedef double real;
 #endif
 
+  //Store the epsilon value
+  extern real _real_epsilon;
+  void real_init();
+
   // Convert to double (if necessary)
   inline double to_double(const real x) 
   {
@@ -85,7 +89,7 @@ namespace dolfin
   real real_pi();
 
   // Get computed epsilon
-  real real_epsilon();
+  inline const real real_epsilon() {return _real_epsilon;}
 
   // Set array to given array (copy values)
   inline void real_set(uint n, real* x, const real* y)

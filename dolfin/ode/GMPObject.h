@@ -35,12 +35,15 @@ namespace dolfin
       const uint decimal_prec = dolfin_get("floating-point precision");
       mpf_set_default_prec(static_cast<uint>(decimal_prec*BITS_PR_DIGIT));
 
-      real eps = real_epsilon();
-      dolfin_set("ODE discrete tolerance", to_double(real_sqrt(eps)));
+      // Compute epsilon
+      real_init();
+
+      // Set the default discrete tolerance
+      dolfin_set("ODE discrete tolerance", to_double(real_sqrt(real_epsilon())));
       
       // Display number of digits
       char msg[100];
-      gmp_sprintf(msg, "%Fe", eps.get_mpf_t());
+      gmp_sprintf(msg, "%Fe", real_epsilon().get_mpf_t());
       message("Using %d bits per digit, eps = %s", mpf_get_default_prec(), msg);
 
 #else 
