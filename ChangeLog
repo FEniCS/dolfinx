@@ -1,3 +1,4 @@
+ - Interface update for Rectangle and Box
  - Add elastodynamics demo
  - Fix memory leak in IntersectionDetector/GTSInterface
  - Add check for swig version, in jit and compile functions

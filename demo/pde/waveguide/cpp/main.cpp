@@ -30,7 +30,7 @@ int main()
   // Create mesh
   double width = 1.0;
   double height = 0.5;
-  Rectangle mesh(0, width, 0, height, 2, 1);
+  Rectangle mesh(0, 0, width, height, 2, 1);
 
   // Define the forms - gererates an generalized eigenproblem of the form 
   // [S]{h} = k_o^2[T]{h}
