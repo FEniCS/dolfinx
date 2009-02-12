@@ -157,7 +157,7 @@ void MeshEditor::addVertex(uint v, double x, double y, double z)
   mesh->_geometry.set(v, 2, z);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addCell(uint c, const Array<uint>& v)
+void MeshEditor::addCell(uint c, const std::vector<uint>& v)
 {
   // Add cell
   addCellCommon(c, tdim);

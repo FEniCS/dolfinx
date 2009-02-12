@@ -1,6 +1,8 @@
 // Copyright (C) 2006 Johan Hoffman.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2009.
+//
 // First added:  2006-11-01
 // Last changed: 2007-01-16
 
@@ -510,12 +512,12 @@ void LocalMeshRefinement::transformMeshData(Mesh& newmesh, Mesh& oldmesh,
   newmesh.data().clear();
 
   // Rewrite materials
-  if( oldmesh.data().meshFunction("material indicators") )
+  if( oldmesh.data().mesh_function("material indicators") )
   {
     MeshFunction<dolfin::uint>* mat;
-    mat = newmesh.data().createMeshFunction("material indicators", newmesh.type().dim());
+    mat = newmesh.data().create_mesh_function("material indicators", newmesh.type().dim());
     for(dolfin::uint i=0; i< newmesh.numCells(); i++)
-      mat->set(i, oldmesh.data().meshFunction("material indicators")->get( cell_map.get(i) ));
+      mat->set(i, oldmesh.data().mesh_function("material indicators")->get( cell_map.get(i) ));
     message("MeshData MeshFunction \"material indicators\" transformed.");
   }
  
@@ -565,9 +567,9 @@ void LocalMeshRefinement::transformMeshData(Mesh& newmesh, Mesh& oldmesh,
     Array<dolfin::uint>* bfc_new;
     Array<dolfin::uint>* bfn_new;
     Array<dolfin::uint>* bi_new ;    
-    bfc_new = newmesh.data().createArray("boundary facet cells", bi_size);
-    bfn_new = newmesh.data().createArray("boundary facet numbers", bi_size);
-    bi_new = newmesh.data().createArray("boundary indicators", bi_size);
+    bfc_new = newmesh.data().create_array("boundary facet cells", bi_size);
+    bfn_new = newmesh.data().create_array("boundary facet numbers", bi_size);
+    bi_new = newmesh.data().create_array("boundary indicators", bi_size);
 
     // Main transformation loop
     dolfin::uint number_bi = 0;

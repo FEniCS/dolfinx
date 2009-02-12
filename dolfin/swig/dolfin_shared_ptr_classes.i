@@ -24,6 +24,7 @@ SWIG_SHARED_PTR_DERIVED(DiscreteFunction,dolfin::Function,dolfin::DiscreteFuncti
 
 SWIG_SHARED_PTR(Mesh,dolfin::Mesh)
 SWIG_SHARED_PTR_DERIVED(BoundaryMesh,dolfin::Mesh,dolfin::BoundaryMesh)
+SWIG_SHARED_PTR_DERIVED(SubMesh,dolfin::Mesh,dolfin::SubMesh)
 SWIG_SHARED_PTR_DERIVED(UnitCube,dolfin::Mesh,dolfin::UnitCube)
 SWIG_SHARED_PTR_DERIVED(UnitInterval,dolfin::Mesh,dolfin::UnitInterval)
 SWIG_SHARED_PTR_DERIVED(Interval,dolfin::Mesh,dolfin::Interval)

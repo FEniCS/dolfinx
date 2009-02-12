@@ -53,3 +53,4 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 ** Fix setprecision() for cout
 ** Update function names: fooBar --> foo_bar
 ** Remove as much const_cast as possible
+** Replace Array with std::vector

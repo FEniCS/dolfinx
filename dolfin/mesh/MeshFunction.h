@@ -94,9 +94,7 @@ namespace dolfin
     /// Set all values to given value
     const MeshFunction<T>& operator= (const T& value)
     {
-      dolfin_assert(_values);
-      for (uint i = 0; i < _size; i++)
-        _values[i] = value;
+      set_all(value);
       return *this;
     }
 
@@ -175,6 +173,14 @@ namespace dolfin
       dolfin_assert(_values);
       dolfin_assert(index < _size);
       _values[index] = value;
+    }
+
+    /// Set all values to given value
+    inline void set_all(const T& value)
+    {
+      dolfin_assert(_values);
+      for (uint i = 0; i < _size; i++)
+        _values[i] = value;
     }
     
     /// Display mesh function data

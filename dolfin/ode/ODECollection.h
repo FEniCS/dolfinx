@@ -54,7 +54,7 @@ namespace dolfin
     void get_state(real* u);
 
     /// Optional user-defined update, called between solves
-    virtual void update(ODE& ode, real* u, real t, uint system);
+    virtual void update(real* u, real t, uint system);
     
   private:
 

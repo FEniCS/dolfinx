@@ -15,9 +15,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Box::Box(double a, double b, double c, double d, double e, double f, uint nx, uint ny, 
-         uint nz) : Mesh()
+Box::Box(double x0, double y0, double z0,
+         double x1, double y1, double z1,
+         uint nx, uint ny, uint nz) : Mesh()
 {
+  const double a = x0;
+  const double b = x1;
+  const double c = y0;
+  const double d = y1;
+  const double e = z0;
+  const double f = z1;
+
   // Receive mesh according to parallel policy
   if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
 

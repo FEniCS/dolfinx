@@ -1,3 +1,5 @@
+ - Interface update for MeshData: createMeshFunction --> create_mesh_function etc
+ - Interface update for Rectangle and Box
  - Add elastodynamics demo
  - Fix memory leak in IntersectionDetector/GTSInterface
  - Add check for swig version, in jit and compile functions

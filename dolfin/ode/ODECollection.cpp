@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-02-09
-// Last changed: 2009-02-09
+// Last changed: 2009-02-12
 
 #include "ODECollection.h"
 
@@ -25,7 +25,8 @@ ODECollection::~ODECollection()
 //-----------------------------------------------------------------------------
 void ODECollection::solve(real t0, real t1)
 {
-  begin("Solving ODE collection on interval [%g, %g].", to_double(t0), to_double(t1));
+  begin("Solving ODE collection on interval [%g, %g].",
+        to_double(t0), to_double(t1));
 
   // Iterate over all ODE systems
   for (uint system = 0; system < num_systems; system++)
@@ -39,7 +40,7 @@ void ODECollection::solve(real t0, real t1)
     ode.set_state(states + offset);
 
     // Call user-defined update
-    update(ode, states + offset, t0, system);
+    update(states + offset, t0, system);
     
     // Time-stepping
     ode.solve(u, t0, t1);
@@ -79,7 +80,7 @@ void ODECollection::get_state(real* u)
     u[j] = states[j];
 }
 //-----------------------------------------------------------------------------
-void ODECollection::update(ODE& ode, real* u, real t, uint system)
+void ODECollection::update(real* u, real t, uint system)
 {
   // Do nothing
 }

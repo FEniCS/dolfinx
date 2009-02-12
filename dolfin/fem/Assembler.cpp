@@ -221,7 +221,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
 
   // Create boundary mesh
   BoundaryMesh boundary(mesh);
-  MeshFunction<uint>* cell_map = boundary.data().meshFunction("cell map");
+  MeshFunction<uint>* cell_map = boundary.data().mesh_function("cell map");
   dolfin_assert(cell_map);
 
   // Assemble over exterior facets (the cells of the boundary)

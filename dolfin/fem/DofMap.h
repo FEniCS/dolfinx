@@ -96,6 +96,7 @@ namespace dolfin
     void tabulate_facet_dofs(uint* dofs, uint local_facet) const
     { ufc_dof_map->tabulate_facet_dofs(dofs, local_facet); }
 
+    /// Tabulate the coordinates of all dofs on a cell
     void tabulate_coordinates(double** coordinates, const ufc::cell& ufc_cell) const
     { ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell); }
 

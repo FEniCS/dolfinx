@@ -74,7 +74,7 @@ void BoundaryComputation::computeBoundary(const Mesh& mesh, BoundaryMesh& bounda
   MeshFunction<uint>* vertex_map = 0;
   if (num_boundary_vertices > 0)
   {
-    vertex_map = boundary.data().createMeshFunction("vertex map");
+    vertex_map = boundary.data().create_mesh_function("vertex map");
     dolfin_assert(vertex_map);
     vertex_map->init(boundary, 0, num_boundary_vertices);
   }
@@ -83,7 +83,7 @@ void BoundaryComputation::computeBoundary(const Mesh& mesh, BoundaryMesh& bounda
   MeshFunction<uint>* cell_map = 0;
   if (num_boundary_cells > 0)
   {
-    cell_map = boundary.data().createMeshFunction("cell map");
+    cell_map = boundary.data().create_mesh_function("cell map");
     dolfin_assert(cell_map);
     cell_map->init(boundary, D - 1, num_boundary_cells);
   }
