@@ -2,7 +2,7 @@
 from a common mesh."""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2009-02-11 -- 2009-02-09"
+__date__ = "2009-02-11 -- 2009-02-12"
 __copyright__ = "Copyright (C) 2009 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -34,5 +34,5 @@ plot(structure_mesh, title="Structure")
 interactive()
 
 # Not working, want a dictionary
-global_vertex_indices = fluid_mesh.data().mapping("global vertex indices")
+global_vertex_indices = fluid_mesh.data().mesh_function("global vertex indices")
 print global_vertex_indices
