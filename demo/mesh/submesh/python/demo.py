@@ -33,6 +33,6 @@ plot(fluid_mesh, title="Fluid")
 plot(structure_mesh, title="Structure")
 interactive()
 
-# Not working, want a dictionary
-global_vertex_indices = fluid_mesh.data().mesh_function("global vertex indices")
-print global_vertex_indices
+# Build mapping from structure to fluid mesh
+structure_to_fluid = compute_vertex_map(structure_mesh, fluid_mesh)
+print structure_to_fluid
