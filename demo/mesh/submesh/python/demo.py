@@ -32,3 +32,7 @@ structure_mesh = SubMesh(mesh, sub_domains, 1)
 plot(fluid_mesh, title="Fluid")
 plot(structure_mesh, title="Structure")
 interactive()
+
+# Not working, want a dictionary
+global_vertex_indices = fluid_mesh.data().mapping("global vertex indices")
+print global_vertex_indices
