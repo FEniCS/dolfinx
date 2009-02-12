@@ -9,8 +9,10 @@
 #include <dolfin/main/MPI.h>
 #include "LocalMeshData.h"
 #include "Point.h"
+#include "BoundaryMesh.h"
 #include "MeshEditor.h"
 #include "MeshPartitioning.h"
+#include "MeshFunction.h"
 
 #if defined HAS_PARMETIS && HAS_MPI
 
@@ -234,7 +236,7 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   MPI::distribute(vertex_coordinates, vertex_coordinates_partition);
   std::vector<uint> index_counters(mesh_data.num_processes);
 
-  // Store coordinates
+  // Store coordinates and construct global to local mapping
   mesh_data.vertex_coordinates.clear();
   mesh_data.vertex_indices.clear();
   const uint num_local_vertices = vertex_coordinates.size()/vertex_size;
@@ -246,11 +248,8 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
     mesh_data.vertex_coordinates.push_back(vertex);
     uint sender_process = vertex_coordinates_partition[i*vertex_size];
     uint global_vertex_index = vertex_location[sender_process][index_counters[sender_process]++];
-    //mesh_data.vertex_indices.push_back(global_vertex_index);
     glob2loc[global_vertex_index] = i;
   }
-  for (uint i = 0; i< mesh_data.vertex_indices.size(); ++i)
-    glob2loc[mesh_data.vertex_indices[i]] = i;
 
   // FIXME: Need to store vertex_indices
 }
@@ -287,8 +286,34 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     }
     editor.addCell(i, a);
   }
-
   editor.close();
+
+  // Add local to global mapping
+  mesh.data().create_mesh_function("local to global mapping", 0);
+  uint* loc2glob = mesh.data().mesh_function("local to global mapping")->values();
+  for (uint i=0; i < glob2loc.size(); ++i)
+    loc2glob[glob2loc[i]] = i;
+
+  /// Communicate global number of boundary vertices to all processes
+
+  // First, construct boundary mesh and retrieve vertex map
+  BoundaryMesh bmesh(mesh);
+  MeshFunction<uint>* local_vertex_map = bmesh.data().mesh_function("vertex map");
+  const uint boundary_size = local_vertex_map->size();
+
+  // bmap[i] maps local boundary vertex i to the corresponding index of the mesh
+  uint* bmap = local_vertex_map->values();
+  std::vector<uint> global_vertex_numbers(boundary_size);
+  for (uint i=0; i < boundary_size; ++i)
+  {
+    global_vertex_numbers[i] = loc2glob[bmap[i]];
+    std::cout << "global_vertex_numbers[" << i << "] = " << loc2glob[bmap[i]] << std::endl;
+  }
+
+  // Now, communicate boundary to all neighbors, and figure out which vertices are shared
+
+
+
 }
 //-----------------------------------------------------------------------------
 
