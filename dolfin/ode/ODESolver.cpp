@@ -36,7 +36,7 @@ void ODESolver::solve()
 //-----------------------------------------------------------------------
 void ODESolver::solve(ODESolution& u)
 {
-  begin("Solving ODE over the time interval [0.0, %g]", ode.endtime());
+  begin("Solving ODE over the time interval [0.0, %g]", to_double(ode.endtime()));
 
   // Start timing
   tic();  

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-02-11
-// Last changed: 2009-02-11
+// Last changed: 2009-02-12
 
 #include <map>
 #include <vector>
@@ -72,7 +72,9 @@ void SubMesh::init(const Mesh& mesh,
       uint local_vertex_index = 0;
       std::map<uint, uint>::iterator vertex_it = local_vertex_indices.find(global_vertex_index);
       if (vertex_it != local_vertex_indices.end())
+      {
         local_vertex_index = vertex_it->second;
+      }
       else
       {
         local_vertex_index = current_vertex++;
@@ -88,15 +90,15 @@ void SubMesh::init(const Mesh& mesh,
   for (std::map<uint, uint>::iterator it = local_vertex_indices.begin(); it != local_vertex_indices.end(); ++it)
   {
     Vertex vertex(mesh, it->first);
-    editor.addVertex(it->second++, vertex.point());
+    editor.addVertex(it->second, vertex.point());
   }
   
   // Close editor
   editor.close();
 
   // Build local-to-global mapping for vertices
-  std::map<uint, uint>* global_vertex_indices = data().create_mapping("global vertex indices");
+  MeshFunction<uint>* global_vertex_indices = data().create_mesh_function("global vertex indices", 0);
   for (std::map<uint, uint>::iterator it = local_vertex_indices.begin(); it != local_vertex_indices.end(); ++it)
-    (*global_vertex_indices)[it->second] = it->first;
+    global_vertex_indices->set(it->second, it->first);
 }
 //-----------------------------------------------------------------------------

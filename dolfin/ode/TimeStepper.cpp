@@ -56,7 +56,8 @@ void TimeStepper::solve(ODESolution& u)
 //----------------------------------------------------------------------
 void TimeStepper::solve(ODESolution& u, real t0, real t1)
 {
-  begin("Time-stepping over the time interval [%g, %g]", t0, t1);
+  begin("Time-stepping over the time interval [%g, %g]",
+        to_double(t0), to_double(t1));
  
   // Do time-stepping on [t0, t1]
   t = t0;
