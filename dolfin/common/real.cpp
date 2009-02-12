@@ -10,31 +10,23 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-real dolfin::real_epsilon() 
-{
-#ifndef HAS_GMP
-  return DOLFIN_EPS;
-#else 
-  static bool computed = false;
-  //probably faster to store eps somewhere else and call real_init from GMPObject
-  //compute it (thus avoiding the if-test). But where to store eps?
-  static real eps;
+real dolfin::_real_epsilon;
 
-  if (!computed)
+void dolfin::real_init() {
+#ifndef HAS_GMP
+  _real_epsilon = DOLFIN_EPS;
+#else 
+  //computing precision
+  real eps = 0.1;
+  real one = real("1.0");
+  while ( eps + one != one ) 
   {
-    //computing precision
-    eps = 1.0;
-    real one = real("1.0");
-    while ( eps + one != one ) 
-    {
-      eps /= 2;
-    }
-    
-    eps *= 2;
-    computed = true;
+    eps /= 2;
   }
+    
+  eps *= 2;
   
-  return eps;
+  _real_epsilon = eps;
 #endif
 }
 //-----------------------------------------------------------------------------
