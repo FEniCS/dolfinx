@@ -34,6 +34,9 @@ namespace dolfin
   /// 
   /// The samples are stored in memory if possible, otherwise stored
   /// in a temporary file and fetched from disk in blocks when needed.
+  ///
+  /// Since GMP at the moment doesn't support saving operands on disk,
+  /// this class uses double for all variables.
 
   class ODESolution
   {
@@ -46,7 +49,7 @@ namespace dolfin
     ~ODESolution();
 
     /// Evaluate (interpolate) value of solution at given time    
-    void eval(const real t, real* y);
+    void eval(const real& t, real* y);
 
     // Add sample
     void add_sample(Sample& sample);
@@ -59,29 +62,29 @@ namespace dolfin
     ODE& ode;
     std::string filename;
     std::fstream file;
-    std::pair<real, real*>* cache;
+    std::pair<double, double*>* cache;
     
     uint cache_size;
     uint ringbufcounter;
     
     // Sorted vector with pair. Each entry representents a mapping from t value to index in file/buffer
-    std::vector<real> bintree;
+    std::vector<double> bintree;
     uint step;
     
-    real* buffer;
-    real* tmp;
+    double* buffer;
+    double* tmp;
     uint buffer_size;
     uint buffer_offset;
     uint buffer_count; //actual number of entries in buffer
     bool dataondisk;
 
     // Linear interpolation
-    void interpolate(const real* v0, const real t0, 
-                     const real* v1, const real t1,
-                     const real t, real* result);
+    void interpolate(const double* v0, const double t0, 
+                     const double* v1, const double t1,
+                     const double t, double* result);
 
     // Read entry from buffer, fetch from disk if necessary
-    void get_from_buffer(real* u, uint index);
+    void get_from_buffer(double* u, uint index);
     
   };
 

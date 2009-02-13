@@ -71,10 +71,6 @@ void ODESolver::solve_dual(ODESolution& u)
 { 
   begin("Solving dual problem");
 
-  #ifdef HAS_GMP
-    error("Solving dual with extended precision not implemented");
-  #endif
-
   // Create dual problem
   Dual dual(ode, u);
   dual.set("ODE solution file name", "solution_dual.py");
