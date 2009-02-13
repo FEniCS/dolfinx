@@ -1,3 +1,4 @@
+ - Bug fixes for errornorm(), updates for new interface
  - Interface update for MeshData: createMeshFunction --> create_mesh_function etc
  - Interface update for Rectangle and Box
  - Add elastodynamics demo

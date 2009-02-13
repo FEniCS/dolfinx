@@ -291,7 +291,6 @@ void Function::interpolate(double* coefficients,
 void Function::interpolate(GenericVector& coefficients,
                            const FunctionSpace& V) const
 {
-  dolfin_debug("check");
   V.interpolate(coefficients, *this);
 }
 //-----------------------------------------------------------------------------

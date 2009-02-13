@@ -121,8 +121,8 @@ void FunctionSpace::eval(double* values,
   intersection_detector->intersection(point, cells);
   if (cells.size() < 1)
     error("Unable to evaluate function at given point (not inside domain).");
-  else if (cells.size() > 1)
-    warning("Point belongs to more than one cell, picking first.");
+  //else if (cells.size() > 1)
+  //  warning("Point belongs to more than one cell, picking first.");
   Cell cell(*_mesh, cells[0]);
   UFCCell ufc_cell(cell);
 
