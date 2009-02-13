@@ -81,6 +81,7 @@ namespace dolfin
     /// Friends
     friend class TimeSlabJacobian;
     friend class TimeSlabSolver;
+    friend class Sample;
 
   protected:
 

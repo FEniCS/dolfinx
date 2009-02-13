@@ -7,6 +7,7 @@
 #include <dolfin/log/dolfin_log.h>
 #include "TimeSlab.h"
 #include "Sample.h"
+#include "ODE.h"
 
 using namespace dolfin;
 
@@ -31,7 +32,7 @@ unsigned int Sample::size() const
 //-----------------------------------------------------------------------------
 real Sample::t() const
 {
-  return time;
+  return timeslab.ode.time(time);
 }
 //-----------------------------------------------------------------------------
 real Sample::u(unsigned int index) const
