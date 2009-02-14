@@ -84,6 +84,9 @@ namespace dolfin
     /// Test for the function space
     bool has_function_space() const;
 
+    /// Test for a vector of expansion coefficients
+    bool has_vector() const;
+
     /// Check if function is a member of the given function space
     bool in(const FunctionSpace& V) const;
 
