@@ -103,9 +103,10 @@ Function::Function(const SubFunction& v)
 Function::Function(const Function& v)
   : Variable("v", "unnamed function"),
     _function_space(v._function_space),
-    _vector(static_cast<GenericVector*>(0))
+    _vector(v.vector().factory().create_vector())
 {
-  *this = v;
+  // Assign vector
+  *_vector = *v._vector;
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
@@ -163,9 +164,7 @@ GenericVector& Function::vector()
 {
   // Initialize vector of dofs if not initialized
   if (!_vector)
-  {
     init();
-  }
 
   dolfin_assert(_vector);
   return *_vector;

@@ -127,8 +127,6 @@ namespace dolfin
 
     // The vector of expansion coefficients
     boost::shared_ptr<GenericVector> _vector;
-    //GenericVector* _vector;
-
   };
 
 }
