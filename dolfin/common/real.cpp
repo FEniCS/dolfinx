@@ -10,7 +10,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-real dolfin::_real_epsilon;
+real dolfin::_real_epsilon = DOLFIN_EPS;
 
 void dolfin::real_init() {
 #ifndef HAS_GMP

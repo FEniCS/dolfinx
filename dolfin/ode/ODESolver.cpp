@@ -71,12 +71,17 @@ void ODESolver::solve_dual(ODESolution& u)
 { 
   begin("Solving dual problem");
 
-  #ifdef HAS_GMP
-    error("Solving dual with extended precision not implemented");
-  #endif
-
   // Create dual problem
   Dual dual(ode, u);
+
+  if (dolfin_changed("floating-point precision")) 
+  {
+    warning("Solving dual with extended precision, not supported. Using double precision.");
+    // Set discrete tolerance to default value.
+    dual.set("ODE discrete tolerance", DOLFIN_SQRT_EPS);
+  }
+
+
   dual.set("ODE solution file name", "solution_dual.py");
   dual.set("ODE save final solution", true);
 
