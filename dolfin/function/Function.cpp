@@ -112,14 +112,19 @@ Function::Function(const Function& v)
   }
   else
     error("Cannot copy Functions which do not have a FunctionSpace.");    
-
-  // Copy vector
+  
+  // Initialize vector
+  init();
+  
+  // Copy vector or interpolate values
   if (v.has_vector())
   {
-    boost::shared_ptr<GenericVector> vector(v.vector().factory().create_vector());
-    _vector  = vector;
     *_vector = *v._vector;
-  }    
+  }
+  else
+  {
+    v.interpolate(*_vector, *_function_space);
+  }
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
