@@ -102,10 +102,10 @@ Function::Function(const SubFunction& v)
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
   : Variable("v", "unnamed function"),
-     _function_space(static_cast<FunctionSpace*>(0)),
-     _vector(static_cast<GenericVector*>(0))
+    _function_space(static_cast<FunctionSpace*>(0)),
+    _vector(static_cast<GenericVector*>(0))
 {
-  if(v.has_function_space())
+  if (v.has_function_space())
   {
     boost::shared_ptr<const FunctionSpace> function_space(v.function_space_ptr());
     _function_space = function_space;
@@ -114,7 +114,7 @@ Function::Function(const Function& v)
     error("Cannot copy Functions which do not have a FunctionSpace.");    
 
   // Copy vector
-  if(v.has_vector())
+  if (v.has_vector())
   {
     boost::shared_ptr<GenericVector> vector(v.vector().factory().create_vector());
     _vector  = vector;

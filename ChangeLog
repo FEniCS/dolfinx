@@ -1,3 +1,6 @@
+ - New class SubMesh for simple extraction of matching meshes for sub domains
+ - Improvements of multiprecision ODE solver
+ - Fix Function class copy constructor
  - Bug fixes for errornorm(), updates for new interface
  - Interface update for MeshData: createMeshFunction --> create_mesh_function etc
  - Interface update for Rectangle and Box
