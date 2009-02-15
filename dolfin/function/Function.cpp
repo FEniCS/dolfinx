@@ -105,13 +105,24 @@ Function::Function(const Function& v)
     _function_space(static_cast<FunctionSpace*>(0)),
     _vector(static_cast<GenericVector*>(0))
 {
+  *this = v;
+}
+//-----------------------------------------------------------------------------
+Function::~Function()
+{
+  // Do nothing;
+}
+//-----------------------------------------------------------------------------
+const Function& Function::operator= (const Function& v)
+{
+  // Check for function space
   if (v.has_function_space())
   {
     boost::shared_ptr<const FunctionSpace> function_space(v.function_space_ptr());
     _function_space = function_space;
   }
   else
-    error("Cannot copy Functions which do not have a FunctionSpace.");    
+    error("Cannot copy Functions which do not have a FunctionSpace.");
   
   // Initialize vector
   init();
@@ -125,34 +136,6 @@ Function::Function(const Function& v)
   {
     v.interpolate(*_vector, *_function_space);
   }
-}
-//-----------------------------------------------------------------------------
-Function::~Function()
-{
-  // Do nothing;
-}
-//-----------------------------------------------------------------------------
-const Function& Function::operator= (const Function& v)
-{
-  // Note 1: function spaces must be the same or 'this' must have no function space
-  // Note 2: vector needs special handling
-
-  // Check that function has a function space
-  if (!has_function_space())
-    _function_space = v.function_space_ptr();
-
-  // Check that function spaces are the same
-  if (!v.in(function_space()))
-    error("Unable to assign to function, not in the same function space.");
-
-  // Check that vector exists
-  if (!v._vector)
-    error("Unable to assign to function, missing coefficients (user-defined function).");
-  
-  // Assign vector
-  init();
-  dolfin_assert(_vector);
-  *_vector = *v._vector;
 
   return *this;
 }
