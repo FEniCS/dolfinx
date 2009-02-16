@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008-2008.
 //
 // First added:  2008-04-21
-// Last changed: 2008-12-29
+// Last changed: 2009-02-16
 
 #ifndef __EPETRA_VECTOR_H
 #define __EPETRA_VECTOR_H
@@ -66,7 +66,7 @@ namespace dolfin
     virtual void apply();
 
     /// Display vector
-    virtual void disp(uint precision=2) const;
+    virtual void disp(uint precision = 2) const;
 
     //--- Implementation of the GenericVector interface ---
 
@@ -139,8 +139,6 @@ namespace dolfin
 
     /// Assignment operator
     const EpetraVector& operator= (const EpetraVector& x);
-
-    friend class EpetraMatrix;
 
   private:
 
