@@ -12,7 +12,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Interval::Interval(uint nx,double a,double b) : Mesh()
+Interval::Interval(uint nx, double a, double b) : Mesh()
 {
   if ( nx < 1 )
     error("Size of unit interval must be at least 1.");

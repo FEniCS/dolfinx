@@ -9,6 +9,7 @@
 
 #include "MeshEditor.h"
 #include "Box.h"
+#include <dolfin/common/constants.h>
 #include <dolfin/main/MPI.h>
 #include "MPIMeshCommunicator.h"
 
@@ -28,6 +29,9 @@ Box::Box(double x0, double y0, double z0,
 
   // Receive mesh according to parallel policy
   if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
+
+  if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS || std::abs(z0 - z1) < DOLFIN_EPS )
+    error("Box must have nonzero width, height and depth.");
 
   if ( nx < 1 || ny < 1 || nz < 1 )
     error("Size of box must be at least 1 in each dimension.");
