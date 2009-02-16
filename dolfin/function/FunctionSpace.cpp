@@ -69,11 +69,11 @@ const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
 
   // Reinitialize scratch space and intersection detector
   scratch.init(*_element);
-  if (intersection_detector){
+  if (intersection_detector)
+  {
     delete intersection_detector;
     intersection_detector = 0;
-  }
-  
+  }  
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -121,8 +121,6 @@ void FunctionSpace::eval(double* values,
   intersection_detector->intersection(point, cells);
   if (cells.size() < 1)
     error("Unable to evaluate function at given point (not inside domain).");
-  //else if (cells.size() > 1)
-  //  warning("Point belongs to more than one cell, picking first.");
   Cell cell(*_mesh, cells[0]);
   UFCCell ufc_cell(cell);
 
@@ -334,4 +332,5 @@ bool FunctionSpace::is_inside_restriction(uint c) const
   else 
     return true;
 }
+//-----------------------------------------------------------------------------
 
