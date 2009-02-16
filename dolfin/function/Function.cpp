@@ -115,27 +115,18 @@ Function::~Function()
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Function& v)
 {
-  // Check for function space
-  if (v.has_function_space())
-  {
-    boost::shared_ptr<const FunctionSpace> function_space(v.function_space_ptr());
-    _function_space = function_space;
-  }
-  else
+  // Check for function space and vector
+  if (!v.has_function_space())
     error("Cannot copy Functions which do not have a FunctionSpace.");
+  if (!v.has_vector())
+    error("Cannot copy Functions which do not have a Vector (user-defined Functions).");
+
+  // Copy function space
+  _function_space = v._function_space;
   
-  // Initialize vector
+  // Initialize vector and copy values
   init();
-  
-  // Copy vector or interpolate values
-  if (v.has_vector())
-  {
-    *_vector = *v._vector;
-  }
-  else
-  {
-    v.interpolate(*_vector, *_function_space);
-  }
+  *_vector = *v._vector;
 
   return *this;
 }
