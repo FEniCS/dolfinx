@@ -2,11 +2,13 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
+// Modified by Garth N. Wells, 2009.
 //
 // First added:  2008-06-11
-// Last changed: 2008-10-06
+// Last changed: 2009-02-16
 
 #include <algorithm>
+#include <boost/scoped_array.hpp>
 #include "ODESolution.h"
 #include "Sample.h"
 #include "ODE.h"
@@ -65,7 +67,7 @@ void ODESolution::eval(const real& t, real* y)
 
   // This is a hack to support real (instead of double) in the public interface of
   // ODESolution. Work on this array of doubles, instead of real y.
-  double* y_double = new double[ode.size()];
+  boost::scoped_array<double> y_double(new double[ode.size()]); 
 
   // Scan the cache
   for (uint i = 0; i < cache_size; ++i) 
@@ -77,20 +79,15 @@ void ODESolution::eval(const real& t, real* y)
     // Copy values
     if (cache[i].first == to_double(t)) 
     {
-
       for (uint i = 0; i < ode.size(); i++) 
-      {
-	y[i] = cache[ringbufcounter].second[i];
-      }
-      
+        y[i] = cache[ringbufcounter].second[i];
       return;
     }
   }
 
   // Find position in buffer
   std::vector<double>::iterator upper = std::upper_bound(bintree.begin(), 
-							 bintree.end(), 
-							 t);
+							 bintree.end(), t);
   uint b = uint(upper - bintree.begin());
   uint a = b - 1;
 
@@ -105,14 +102,14 @@ void ODESolution::eval(const real& t, real* y)
     else
     {
       //t = max(t_in_solution)
-      get_from_buffer(y_double, bintree.size() - 1);
+      get_from_buffer(y_double.get(), bintree.size() - 1);
     }
   } 
 
   // Read from buffer
   double t_b = bintree[b];
   double t_a = bintree[a];
-  get_from_buffer(y_double, a);
+  get_from_buffer(y_double.get(), a);
   get_from_buffer(tmp, b);
 
   //printf("Stored in buffer: t=%f", t_b);
@@ -122,7 +119,7 @@ void ODESolution::eval(const real& t, real* y)
   cache[ringbufcounter].first = to_double(t);
 
   // Do linear interpolation, store result in cache
-  interpolate(y_double, t_a, tmp, t_b, cache[ringbufcounter].first, cache[ringbufcounter].second);
+  interpolate(y_double.get(), t_a, tmp, t_b, cache[ringbufcounter].first, cache[ringbufcounter].second);
 
 
   for (uint i = 0; i < ode.size(); i++) 
