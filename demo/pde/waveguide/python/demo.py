@@ -38,7 +38,7 @@ dolfin_set("linear algebra backend", "PETSc")
 # Create mesh
 width = 1.0
 height = 0.5
-mesh = Rectangle(0, width, 0, height, 2, 1)
+mesh = Rectangle(0, 0, width, height, 2, 1)
 
 # Define the function space
 V = FunctionSpace(mesh, "Nedelec", 2)
@@ -58,7 +58,6 @@ t = dot(v, u)*dx
 # Assemble the stiffness matrix (S) and mass matrix (T)
 S = PETScMatrix()
 T = PETScMatrix()
-print S
 assemble(s, tensor=S)
 assemble(t, tensor=T)
 
@@ -79,7 +78,7 @@ esolver.solve(S, T)
 # So, we need to identify the smallest, non-zero eigenvalue of the system - 
 # which corresponds with cutoff wavenumber of the the dominant cutoff mode.
 cutoff = None
-for i in range(S. size(1)):
+for i in range(S.size(1)):
     (lr, lc) = esolver.getEigenvalue(i)
     if lr > 1 and lc == 0:
         cutoff = sqrt(lr)
