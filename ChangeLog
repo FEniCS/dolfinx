@@ -1,3 +1,4 @@
+ - Check Rectangle and Box for non-zero dimensions
  - ODE solvers now solve the dual problem
  - New class SubMesh for simple extraction of matching meshes for sub domains
  - Improvements of multiprecision ODE solver
