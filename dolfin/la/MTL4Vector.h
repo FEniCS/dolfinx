@@ -123,7 +123,7 @@ namespace dolfin
     virtual const double* data() const
     { return x.address_data(); }
 
-    /// Return pointer to underlying data (const version)
+    /// Return pointer to underlying data (non-const version)
     virtual double* data()
     { return x.address_data(); }
 
