@@ -102,7 +102,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   {
     (*self)*=a;
   }
-  
+
   %pythoncode
   %{
     def __is_compatibable(self,other):
@@ -212,6 +212,31 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     (*self)*=a;
   }
   
+  PyObject* data() {
+    npy_intp rowdims[1];
+    rowdims[0] = self->size(0)+1;
+    
+    PyArrayObject* rows = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, rowdims, NPY_UINT, (char *)(std::tr1::get<0>(self->data()))));
+    if ( rows == NULL ) return NULL;
+    PyArray_INCREF(rows);
+    
+    npy_intp coldims[1];
+    coldims[0] = std::tr1::get<3>(self->data());
+    
+    PyArrayObject* cols = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, coldims, NPY_UINT, (char *)(std::tr1::get<1>(self->data()))));
+    if ( cols == NULL ) return NULL;
+    PyArray_INCREF(cols);
+    
+    npy_intp valuedims[1];
+    valuedims[0] = std::tr1::get<3>(self->data());
+    
+    PyArrayObject* values = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, valuedims, NPY_DOUBLE, (char *)(std::tr1::get<2>(self->data()))));
+    if ( values == NULL ) return NULL;
+    PyArray_INCREF(values);
+    
+    return PyTuple_Pack(3,rows, cols, values);
+  }
+
   %pythoncode
   %{
     def __is_compatibable(self,other):
@@ -337,9 +362,35 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             self._scale(1.0/other)
             return self
         return NotImplemented
+
   %}
 }
 %enddef
+
+
+// Vector la interface macro
+%define LA_VEC_DATA_ACCESS(VEC_TYPE)
+%extend dolfin::VEC_TYPE
+{
+  PyObject* _data()
+  {
+    npy_intp valuedims[1];
+    valuedims[0] = self->size();
+    PyArrayObject* values = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, valuedims, NPY_DOUBLE, (char *)(self->data())));
+    if ( values == NULL ) return NULL;
+    PyArray_INCREF(values);
+    return reinterpret_cast<PyObject*>(values);
+  }
+
+  %pythoncode
+  %{
+    def data(self):
+        " Return an array to the underlaying data"
+        return self._data()
+  %}
+}
+%enddef
+
 
 // Down cast macro
 %define DOWN_CAST_MACRO(TENSOR_TYPE)
@@ -369,15 +420,18 @@ _matrix_vector_mul_map = {}
 // Run the interface macros
 LA_POST_VEC_INTERFACE(GenericVector)
 LA_POST_MAT_INTERFACE(GenericMatrix)
+//LA_VEC_DATA_ACCESS(GenericVector)
 
 LA_POST_VEC_INTERFACE(Vector)
 LA_POST_MAT_INTERFACE(Matrix)
+LA_VEC_DATA_ACCESS(Vector)
 
 LA_POST_VEC_INTERFACE(uBLASVector)
 // NOTE: The uBLAS macros need to be run using the whole template type
 // I have tried using the typmaped one from above but with no luck.
 LA_POST_MAT_INTERFACE(uBLASMatrix<dolfin::ublas_sparse_matrix>)
 LA_POST_MAT_INTERFACE(uBLASMatrix<dolfin::ublas_dense_matrix>)
+LA_VEC_DATA_ACCESS(uBLASVector)
 
 // Run the downcast macro
 DOWN_CAST_MACRO(uBLASVector)
@@ -432,6 +486,7 @@ _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
 #ifdef HAS_MTL4
 LA_POST_VEC_INTERFACE(MTL4Vector)
 LA_POST_MAT_INTERFACE(MTL4Matrix)
+LA_VEC_DATA_ACCESS(MTL4Vector)
 
 DOWN_CAST_MACRO(MTL4Vector)
 DOWN_CAST_MACRO(MTL4Matrix)
@@ -464,7 +519,10 @@ def down_cast(tensor, subclass=None):
     if subclass is None:
         subclass = get_tensor_type(tensor)
     assert subclass in _down_cast_map
-    return _down_cast_map[subclass](tensor)
+    ret = _down_cast_map[subclass](tensor)
+    ret.this.acquire()
+    tensor.this.disown()
+    return ret
 
 %}
 

@@ -122,11 +122,11 @@ class AbstractBaseTest(object):
         from numpy import dot, absolute
         v = self.get_Vector()
         A = self.assemble_matrix()
-
+        
         u = A*v
         self.assertTrue(isinstance(u,type(v)))
         self.assertEqual(u.size(),v.size())
-
+        
         u2 = 2*u - A*v
         self.assertAlmostEqual(u2[4],u[4])
         
@@ -138,29 +138,79 @@ class AbstractBaseTest(object):
         
         u_numpy = dot(A_numpy,v_numpy)
         u_numpy2 = A*v_numpy
-
+        
         self.assertTrue(absolute(u.array()-u_numpy).sum() < DOLFIN_EPS*v.size())
         self.assertTrue(absolute(u_numpy2-u_numpy).sum() < DOLFIN_EPS*v.size())
 
-class MatrixTester(AbstractBaseTest,unittest.TestCase):
-    backend    = "default"
+# A DataTester class that test the acces of the raw data through pointers
+# This is only available for uBLAS and MTL4 backends
+class DataTester(object):
+    def test_matrix_data(self):
+        # Test for ordinary Matrix
+        A = self.assemble_matrix()
+        array = A.array()
+        rows, cols, values = A.data()
+        i = 0
+        for row in xrange(A.size(0)):
+            for col in xrange(rows[row],rows[row+1]):
+                self.assertEqual(array[row,cols[col]],values[i])
+                i += 1
 
-class uBLASSparseTester(AbstractBaseTest,unittest.TestCase):
+        # Test for down_casted Matrix
+        A = down_cast(A)
+        rows, cols, values = A.data()
+        i = 0
+        for row in xrange(A.size(0)):
+            for col in xrange(rows[row],rows[row+1]):
+                self.assertEqual(array[row,cols[col]],values[i])
+                i += 1
+
+    def test_vector_data(self):
+        # Test for ordinary Vector
+        v = self.get_Vector()
+        array = v.array()
+        data = v.data()
+        self.assertTrue((data==array).all())
+
+        # Test for down_casted Vector
+        v = down_cast(v)
+        data = v.data()
+        self.assertTrue((data==array).all())
+
+class DataNotWorkingTester(object):
+    def test_matrix_data(self):
+        A = self.assemble_matrix()
+        self.assertRaises(RuntimeError,A.data)
+
+        A = down_cast(A)
+        self.assertRaises(RuntimeError,A.data)
+
+    def test_vector_data(self):
+        v = self.get_Vector()
+        self.assertRaises(RuntimeError,v.data)
+
+        v = down_cast(v)
+        def no_attribute():
+            v.data()
+        self.assertRaises(AttributeError,no_attribute)
+        
+        
+class uBLASSparseTester(AbstractBaseTest,DataTester,unittest.TestCase):
     backend    = "uBLAS"
 
-class uBLASDenseTester(AbstractBaseTest,unittest.TestCase):
+class uBLASDenseTester(AbstractBaseTest,DataTester,unittest.TestCase):
     backend    = "uBLAS"
 
 if hasattr(cpp,"PETScMatrix"):
-    class PETScTester(AbstractBaseTest,unittest.TestCase):
+    class PETScTester(AbstractBaseTest,DataNotWorkingTester,unittest.TestCase):
         backend    = "PETSc"
 
 if hasattr(cpp,"EpetraMatrix"):
-    class EpetraTester(AbstractBaseTest,unittest.TestCase):
+    class EpetraTester(AbstractBaseTest,DataNotWorkingTester,unittest.TestCase):
         backend    = "Epetra"
 
 if hasattr(cpp,"MTL4Matrix"):
-    class MTL4Tester(AbstractBaseTest,unittest.TestCase):
+    class MTL4Tester(AbstractBaseTest,DataTester,unittest.TestCase):
         backend    = "MTL4"
 
 if __name__ == "__main__":
