@@ -1,4 +1,4 @@
-"Demonstrating the assembly on a  restricted FunctionSpace."
+"Demonstrating the assembly on a restricted FunctionSpace."
 
 __author__ = "Kent-Andre Mardal (kent-and@simula.no)"
 __date__ = "2009-02-9"
@@ -26,35 +26,35 @@ for cell in cells(mesh):
     mesh_function.values()[cell.index()] = int(subdomain.inside(p, False))
     print "c ", cell.index(), " v ",  mesh_function.values()[cell.index()] 
 
-V = FunctionSpace(mesh, "Lagrange", 1)
+V  = FunctionSpace(mesh, "Lagrange", 1)
 fv = Function(V, cppexpr='1.0')
 vv = TestFunction(V)
 uv = TrialFunction(V)
 
-m = uv*vv*dx
+m  = uv*vv*dx
 L0 = fv*vv*dx 
-M = assemble(m)
-b = assemble(L0)
+M  = assemble(m)
+b  = assemble(L0)
 
 print "size of matrix on the whole domain is ",M.size(0),"x",M.size(1)
-
 
 W = V.restriction(mesh_function) 
 fw = Function(W, cppexpr='1.0')
 vw = TestFunction(W)
 uw = TrialFunction(W)
 
-m = uw*vw*dx
+m  = uw*vw*dx
 L1 = fw*vw*dx 
-M = assemble(m)
-b = assemble(L1)
+M  = assemble(m)
+b  = assemble(L1)
 
 print "size of matrix on the smaller domain is ",M.size(0),"x",M.size(1)
 
 
 m = uw*vv*dx
 M = assemble(m)
-file = File("M2.m"); file <<M
+file = File("M2.m")
+file << M
 print "size of matrix with trial functions on the smaller domain and test functions on the whole domain ", M.size(0), "x", M.size(1)
 
 m = uv*vw*dx
