@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-06-03
-// Last changed: 2005
+// Last changed: 2009-02-16
 
 #ifndef __LEGENDRE_H
 #define __LEGENDRE_H
@@ -10,7 +10,8 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   /// Legendre polynomial of given degree n on the interval [-1,1].
   ///
@@ -22,10 +23,11 @@ namespace dolfin {
   /// The function values and derivatives are computed using
   /// three-term recurrence formulas.
 
-  class Legendre {
+  class Legendre
+  {
   public:
 
-    Legendre(int n);
+    Legendre(uint n);
 
     /// Evaluation at given point
     real operator() (real x);
@@ -38,11 +40,11 @@ namespace dolfin {
 
   private:
     
-    real eval (int n, real x);
-    real ddx  (int n, real x);
-    real d2dx (int n, real x);
+    real eval (uint n, real x);
+    real ddx  (uint n, real x);
+    real d2dx (uint n, real x);
 
-    int n;
+    uint n;
 
   };
 
