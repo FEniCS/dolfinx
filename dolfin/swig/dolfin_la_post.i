@@ -216,14 +216,14 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     npy_intp rowdims[1];
     rowdims[0] = self->size(0)+1;
     
-    PyArrayObject* rows = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, rowdims, NPY_UINT, (char *)(std::tr1::get<0>(self->data()))));
+    PyArrayObject* rows = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, rowdims, NPY_ULONG, (char *)(std::tr1::get<0>(self->data()))));
     if ( rows == NULL ) return NULL;
     PyArray_INCREF(rows);
     
     npy_intp coldims[1];
     coldims[0] = std::tr1::get<3>(self->data());
     
-    PyArrayObject* cols = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, coldims, NPY_UINT, (char *)(std::tr1::get<1>(self->data()))));
+    PyArrayObject* cols = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, coldims, NPY_ULONG, (char *)(std::tr1::get<1>(self->data()))));
     if ( cols == NULL ) return NULL;
     PyArray_INCREF(cols);
     

@@ -159,11 +159,9 @@ class DataTester(object):
         # Test for down_casted Matrix
         A = down_cast(A)
         rows, cols, values = A.data()
-        i = 0
         for row in xrange(A.size(0)):
-            for col in xrange(rows[row],rows[row+1]):
-                self.assertEqual(array[row,cols[col]],values[i])
-                i += 1
+            for k in xrange(rows[row],rows[row+1]):
+                self.assertEqual(array[row,cols[k]],values[k])
 
     def test_vector_data(self):
         # Test for ordinary Vector
