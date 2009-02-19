@@ -117,14 +117,14 @@ std::vector<const Function*> Form::coefficients() const
 dolfin::uint Form::coefficient_number(const std::string & name) const
 {
   // TODO: Dissect name, assuming "wi", and return i.
-  error("Not implemented.");
+  dolfin_not_implemented();
   return 0;
 }
 //-----------------------------------------------------------------------------
 std::string Form::coefficient_name(dolfin::uint i) const
 {
   // TODO: Create name "wi"
-  error("Not implemented.");
+  dolfin_not_implemented();
   return "unnamed";
 }
 //-----------------------------------------------------------------------------

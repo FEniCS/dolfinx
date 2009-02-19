@@ -55,7 +55,7 @@ EpetraVector::EpetraVector(const Epetra_Map& map):
     Variable("x", "a vector"),
     x(static_cast<Epetra_FEVector*>(0))
 {
-  error("Not implemented yet.");
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 EpetraVector::EpetraVector(const EpetraVector& v):

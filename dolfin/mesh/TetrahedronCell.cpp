@@ -149,7 +149,7 @@ void TetrahedronCell::refineCellIrregular(Cell& cell, MeshEditor& editor,
 				      uint& current_cell, uint refinement_rule, 
 				      uint* marked_edges) const
 {
-  warning("Not implemented yet.");
+  dolfin_not_implemented();
 
   /*
   // Get vertices and edges
@@ -576,13 +576,13 @@ bool TetrahedronCell::intersects(const MeshEntity& tetrahedron,
 //-----------------------------------------------------------------------------
 bool TetrahedronCell::intersects(const MeshEntity& interval, const Point& p0, const Point& p1) const
 {
-  error("Not implemented.");
+  dolfin_not_implemented();
   return false;
 }
 //-----------------------------------------------------------------------------
 bool TetrahedronCell::intersects(const MeshEntity& entity, const Cell& cell) const
 {
-  error("Not implemented.");
+  dolfin_not_implemented();
   return false;
 }
 //-----------------------------------------------------------------------------

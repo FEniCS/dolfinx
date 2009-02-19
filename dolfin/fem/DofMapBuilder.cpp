@@ -30,7 +30,7 @@ void DofMapBuilder::build(DofMap& dof_map, UFC& ufc, const Mesh& mesh)
   const uint n = dof_map.local_dimension();
   dof_map.dof_map = new int[n*mesh.numCells()];
   
-  error("Not implemented.");
+  dolfin_not_implemented();
 
   // Get mesh functions
   //MeshFunction<uint>* S = mesh.data().meshFunction("subdomain overlap");

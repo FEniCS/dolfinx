@@ -479,7 +479,7 @@ bool TriangleCell::intersects(const MeshEntity& triangle, const Cell& cell) cons
     return intersects(triangle, p0, p1);
   } 
   else
-    error("Not implemented");
+    dolfin_not_implemented();
 
   return false;
 }

@@ -175,21 +175,21 @@ void IntervalCell::order(Cell& cell) const
 //-----------------------------------------------------------------------------
 bool IntervalCell::intersects(const MeshEntity& entity, const Point& p) const
 {
-  error("Not implemented.");
+  dolfin_not_implemented();
   return false;
 }
 //-----------------------------------------------------------------------------
 bool IntervalCell::intersects(const MeshEntity& entity,
                               const Point& p0, const Point& p1) const
 {
-  error("Not implemented.");
+  dolfin_not_implemented();
   return false;
 }
 //-----------------------------------------------------------------------------
 bool IntervalCell::intersects(const MeshEntity& entity, const Cell& cell) const
 
 {
-  error("Not implemented.");
+  dolfin_not_implemented();
   return false;
 } 
 //-----------------------------------------------------------------------------

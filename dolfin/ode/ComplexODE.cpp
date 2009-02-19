@@ -64,7 +64,7 @@ void ComplexODE::J(const complex x[], complex y[], const complex z[], real t)
   //
   //     Jx = ( f(z + hx) - f(z - hx) ) / 2h
 
-  error("Not implemented yet...");
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 real ComplexODE::k(uint i)
