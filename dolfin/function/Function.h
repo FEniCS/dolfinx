@@ -113,6 +113,9 @@ namespace dolfin
     /// Interpolate function to given function space
     void interpolate(GenericVector& coefficients, const FunctionSpace& V) const;
 
+    /// Interpolate function to its function space (if not already a discrete function)
+    void interpolate();
+
     /// Interpolate function to vertices of mesh
     void interpolate(double* vertex_values) const;
 
@@ -122,13 +125,15 @@ namespace dolfin
     friend class NonlinearPDE;
     friend class VariationalProblem;
 
+  protected:
+
+    // The function space
+    boost::shared_ptr<const FunctionSpace> _function_space;
+
   private:
 
     // Initialize vector
     void init();
-
-    // The function space
-    boost::shared_ptr<const FunctionSpace> _function_space;
 
     // The vector of expansion coefficients
     boost::shared_ptr<GenericVector> _vector;

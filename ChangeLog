@@ -1,3 +1,5 @@
+ - Add new interpolate() function for interpolation of user-defined function to discrete
+ - Make _function_space protected in Function
  - Added access to crs data from python for uBLAS and MTL4 backend
 0.9.1 [2009-02-17]
  - Check Rectangle and Box for non-zero dimensions

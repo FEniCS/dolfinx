@@ -27,7 +27,7 @@ using namespace dolfin;
 Function::Function()
   :  Variable("v", "unnamed function"),
      _function_space(static_cast<FunctionSpace*>(0)),
-    _vector(static_cast<GenericVector*>(0))
+     _vector(static_cast<GenericVector*>(0))
 {
   // Do nothing
 }
@@ -295,6 +295,26 @@ void Function::interpolate(double* vertex_values) const
   dolfin_assert(vertex_values);
   dolfin_assert(_function_space);
   _function_space->interpolate(vertex_values, *this);
+}
+//-----------------------------------------------------------------------------
+void Function::interpolate()
+{
+  // Check that function is not already discrete
+  if (has_vector())
+    error("Unable to interpolate function, already interpolated (has a vector).");
+
+  // Check that we have a function space
+  if (!has_function_space())
+    error("Unable to interpolate function, missing function space.");
+
+  // Interpolate to vector
+  DefaultFactory factory;
+  boost::shared_ptr<GenericVector> coefficients(factory.create_vector());
+  interpolate(*coefficients, function_space());
+
+  // Set values
+  init();
+  *_vector = *coefficients;
 }
 //-----------------------------------------------------------------------------
 void Function::init()
