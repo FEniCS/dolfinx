@@ -75,6 +75,13 @@ void dolfin::MPI::gather(std::vector<uint>& values)
   delete [] received_values;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::global_maximum(uint size)
+{
+    uint recv_size = 0;
+    MPI_Allreduce(&size, &recv_size, 1, MPI_UNSIGNED, MPI_MAX, MPI_COMM_WORLD);
+    return recv_size;
+}
+//-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest,
                                     uint* recv_buffer, uint recv_size, uint source)
 {

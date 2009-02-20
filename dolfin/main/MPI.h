@@ -47,6 +47,9 @@ namespace dolfin
     /// Gather values (wrapper for MPI_Allgather)
     static void gather(std::vector<uint>& values);
 
+    /// Find global max value (wrapper for MPI_Allredue with MPI_MAX as reduction op)
+    static uint global_maximum(uint size);
+
     /// Send-receive and return number of received values (wrapper for MPI_Sendrecv)
     static uint send_recv(uint* send_buffer, uint send_size, uint dest,
                           uint* recv_buffer, uint recv_size, uint source);

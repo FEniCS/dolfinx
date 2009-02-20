@@ -5,6 +5,7 @@
 // Last changed: 2008-12-15
 
 #include <vector>
+#include <algorithm>
 #include <dolfin/log/log.h>
 #include <dolfin/main/MPI.h>
 #include "LocalMeshData.h"
@@ -296,24 +297,62 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   /// Communicate global number of boundary vertices to all processes
 
-  // First, construct boundary mesh and retrieve vertex map
+  // Construct boundary mesh 
   BoundaryMesh bmesh(mesh);
   MeshFunction<uint>* local_vertex_map = bmesh.data().mesh_function("vertex map");
   const uint boundary_size = local_vertex_map->size();
 
   // bmap[i] maps local boundary vertex i to the corresponding index of the mesh
   uint* bmap = local_vertex_map->values();
-  std::vector<uint> global_vertex_numbers(boundary_size);
+
+  // Build sorted boundary array (global numbering)
+  uint global_vertex_send[boundary_size];
+
   for (uint i=0; i < boundary_size; ++i)
+    global_vertex_send[i] = loc2glob[bmap[i]];
+
+  std::sort(global_vertex_send, global_vertex_send + boundary_size);
+
+  const uint num_processes = MPI::num_processes();
+  const uint process_number = MPI::process_number();
+
+  // Distribute boundaries' sizes
+  std::vector<uint> boundary_sizes(num_processes);
+  boundary_sizes[process_number] = boundary_size;
+  MPI::gather(boundary_sizes);
+  uint max_boundary_size = 0;
+
+
+  // Find largest boundary size (for recv buffer)
+  for (uint i=0; i < num_processes; ++i) 
+    if (boundary_sizes[i] > max_boundary_size)
+      max_boundary_size = boundary_sizes[i];
+
+
+  // Recieve buffer
+  uint global_vertex_recv[max_boundary_size];
+
+  // Distribute
+  for (uint i=1; i < num_processes; ++i)
   {
-    global_vertex_numbers[i] = loc2glob[bmap[i]];
-    std::cout << "global_vertex_numbers[" << i << "] = " << loc2glob[bmap[i]] << std::endl;
+    // We receive data from process p - i (i steps to the left)
+    const int p = (process_number - i + num_processes) % num_processes;
+
+    // We send data to process p + i (i steps to the right)
+    const int q = (process_number + i) % num_processes;
+
+    MPI::send_recv(global_vertex_send, boundary_size, p, global_vertex_recv, boundary_sizes[q], q);
+
+    // Compute union of global indices
+    std::vector<uint> res_union(boundary_size + boundary_sizes[q]);
+    std::vector<uint>::iterator it;
+
+    it = std::set_union(
+         global_vertex_send, global_vertex_send + boundary_size, 
+         global_vertex_recv, global_vertex_recv + boundary_sizes[q], res_union.begin()); 
+
+    std::cout << "Total buffer size is " << boundary_size + boundary_sizes[q] << " and union has " << int(it-res_union.begin()) << " elements." << std::endl;
   }
-
-  // Now, communicate boundary to all neighbors, and figure out which vertices are shared
-
-
-
 }
 //-----------------------------------------------------------------------------
 
