@@ -74,7 +74,7 @@ namespace dolfin
     virtual void apply();
 
     /// Display tensor
-    virtual void disp(uint precision=2) const;
+    virtual void disp(uint precision = 2) const;
 
     //--- Implementation of the GenericMatrix interface ---
 
@@ -106,7 +106,7 @@ namespace dolfin
     virtual void ident(uint m, const uint* rows);
 
     // Matrix-vector product, y = Ax
-    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const;
+    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed = false) const;
 
     /// Multiply matrix by given number
     virtual const EpetraMatrix& operator*= (double a);
@@ -116,7 +116,6 @@ namespace dolfin
 
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& x);
-    //{ error("Not implemented."); return *this; }
 
     //--- Special functions ---
 
@@ -130,7 +129,6 @@ namespace dolfin
 
     /// Assignment operator
     const EpetraMatrix& operator= (const EpetraMatrix& x);
-    //{ error("Not implemented."); return *this; }
 
   private:
 

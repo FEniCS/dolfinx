@@ -84,4 +84,7 @@ namespace dolfin
 #define dolfin_assert(check)
 #endif
 
+// Not implemented error, reporting function name and line number
+#define dolfin_not_implemented() do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, "Sorry, this function has not been implemented."); error("Not implemented"); } while (false)
+
 #endif

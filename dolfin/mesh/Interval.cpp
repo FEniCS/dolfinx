@@ -8,16 +8,23 @@
 
 #include "MeshEditor.h"
 #include "Interval.h"
+#include "dolfin/common/constants.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Interval::Interval(uint nx,double a,double b) : Mesh()
+Interval::Interval(uint nx, double a, double b) : Mesh()
 {
-  if ( nx < 1 )
-    error("Size of unit interval must be at least 1.");
+  if ( std::abs(a - b) < DOLFIN_EPS )
+    error("Length of interval must be greater than zero.");
 
-  rename("mesh", "Mesh of the unit interval (0,1)");
+  if ( b < a )
+    error("Length of interval is negative. Check the order of your arguments.");
+
+  if ( nx < 1 )
+    error("Number of points on interval must be at least 1.");
+
+  rename("mesh", "Mesh of the interval (a, b)");
 
   // Open mesh for editing
   MeshEditor editor;
@@ -30,7 +37,7 @@ Interval::Interval(uint nx,double a,double b) : Mesh()
   // Create main vertices:
   for (uint ix = 0; ix <= nx; ix++)
   {
-    const double x = a+(static_cast<double>(ix)*(b-a) / static_cast<double>(nx));
+    const double x = a + (static_cast<double>(ix)*(b-a) / static_cast<double>(nx));
     editor.addVertex(ix, x);
   }
 

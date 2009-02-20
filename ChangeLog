@@ -1,3 +1,14 @@
+ - Add macro dolfin_not_implemented()
+ - Add new interpolate() function for interpolation of user-defined function to discrete
+ - Make _function_space protected in Function
+ - Added access to crs data from python for uBLAS and MTL4 backend
+0.9.1 [2009-02-17]
+ - Check Rectangle and Box for non-zero dimensions
+ - ODE solvers now solve the dual problem
+ - New class SubMesh for simple extraction of matching meshes for sub domains
+ - Improvements of multiprecision ODE solver
+ - Fix Function class copy constructor
+ - Bug fixes for errornorm(), updates for new interface
  - Interface update for MeshData: createMeshFunction --> create_mesh_function etc
  - Interface update for Rectangle and Box
  - Add elastodynamics demo

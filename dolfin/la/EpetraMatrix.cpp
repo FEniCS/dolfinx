@@ -320,7 +320,7 @@ void EpetraMatrix::getrow(uint row, Array<uint>& columns, Array<double>& values)
 //-----------------------------------------------------------------------------
 void EpetraMatrix::setrow(uint row, const Array<uint>& columns, const Array<double>& values)
 {
-  error("EpetraMatrix::setrow: Not implemented.");
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraMatrix::factory() const

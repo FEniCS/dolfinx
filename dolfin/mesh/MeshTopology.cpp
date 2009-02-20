@@ -48,7 +48,7 @@ const MeshTopology& MeshTopology::operator= (const MeshTopology& topology)
       num_entities[d] = topology.num_entities[d];
     for (uint d0 = 0; d0 <= _dim; d0++)
       for (uint d1 = 0; d1 <= _dim; d1++)
-	connectivity[d0][d1] = topology.connectivity[d0][d1];
+        connectivity[d0][d1] = topology.connectivity[d0][d1];
   }
 
   return *this;

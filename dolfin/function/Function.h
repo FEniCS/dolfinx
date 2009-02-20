@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-01-07
+// Last changed: 2009-02-18
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -75,14 +75,19 @@ namespace dolfin
     /// Return the function space
     boost::shared_ptr<const FunctionSpace> function_space_ptr() const;
 
-    /// Return the vector of expansion coefficients (non-const version)
+    /// Return the vector of expansion coefficients, automatically
+    /// initialized to zero if coefficients have not been computed (non-const version)
     GenericVector& vector();
 
-    /// Return the vector of expansion coefficients (const version)
+    /// Return the vector of expansion coefficients, automatically
+    /// initialized to zero if coefficients have not been computed (const version)
     const GenericVector& vector() const;
 
-    /// Test for the function space
+    /// Check if function has a function space
     bool has_function_space() const;
+
+    /// Check if function has a vector of expansion coefficients
+    bool has_vector() const;
 
     /// Check if function is a member of the given function space
     bool in(const FunctionSpace& V) const;
@@ -108,6 +113,9 @@ namespace dolfin
     /// Interpolate function to given function space
     void interpolate(GenericVector& coefficients, const FunctionSpace& V) const;
 
+    /// Interpolate function to its function space (if not already a discrete function)
+    void interpolate();
+
     /// Interpolate function to vertices of mesh
     void interpolate(double* vertex_values) const;
 
@@ -117,17 +125,18 @@ namespace dolfin
     friend class NonlinearPDE;
     friend class VariationalProblem;
 
+  protected:
+
+    // The function space
+    boost::shared_ptr<const FunctionSpace> _function_space;
+
   private:
 
     // Initialize vector
     void init();
 
-    // The function space
-    boost::shared_ptr<const FunctionSpace> _function_space;
-
     // The vector of expansion coefficients
     boost::shared_ptr<GenericVector> _vector;
-    //GenericVector* _vector;
 
   };
 

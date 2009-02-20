@@ -56,9 +56,9 @@ void BoundaryComputation::computeBoundary(const Mesh& mesh, BoundaryMesh& bounda
       // Count boundary vertices and assign indices
       for (VertexIterator v(*f); !v.end(); ++v)
       {
-	const uint vertex_index = v->index();
-	if (boundary_vertices[vertex_index] == num_vertices)
-	  boundary_vertices[vertex_index] = num_boundary_vertices++;
+        const uint vertex_index = v->index();
+        if (boundary_vertices[vertex_index] == num_vertices)
+          boundary_vertices[vertex_index] = num_boundary_vertices++;
       }
 
       // Count boundary cells (facets of the mesh)

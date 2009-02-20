@@ -208,7 +208,7 @@ void TimeStepper::save_adaptive_samples(ODESolution& u)
 void TimeStepper::save_sample(ODESolution& u, real t)
 {
   // Create sample
-  Sample sample(*timeslab, ode.time(t), "u", "ODE solution");
+  Sample sample(*timeslab, t, "u", "ODE solution");
 
   // Save to file
   file << sample;

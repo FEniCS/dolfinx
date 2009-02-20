@@ -29,6 +29,7 @@ FunctionSpace::FunctionSpace(const Mesh& mesh,
   : _mesh(reference_to_no_delete_pointer(mesh)),
     _element(reference_to_no_delete_pointer(element)),
     _dofmap(reference_to_no_delete_pointer(dofmap)),
+    _restriction(static_cast<MeshFunction<bool>*>(0)),
     scratch(element), intersection_detector(0)
 {
   // Do nothing
@@ -38,6 +39,7 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
                              boost::shared_ptr<const FiniteElement> element,
                              boost::shared_ptr<const DofMap> dofmap)
   : _mesh(mesh), _element(element), _dofmap(dofmap),
+    _restriction(static_cast<MeshFunction<bool>*>(0)),
     scratch(*element), intersection_detector(0)
 {
   // Do nothing
@@ -49,6 +51,7 @@ FunctionSpace::FunctionSpace(const FunctionSpace& V)
   _mesh    = V._mesh;
   _element = V._element;
   _dofmap  = V._dofmap;
+  _restriction = V._restriction;
 
   // Reinitialize scratch space and intersection detector
   scratch.init(*_element);
@@ -66,14 +69,15 @@ const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
   _mesh    = V._mesh;
   _element = V._element;
   _dofmap  = V._dofmap;
+  _restriction = V._restriction;
 
   // Reinitialize scratch space and intersection detector
   scratch.init(*_element);
-  if (intersection_detector){
+  if (intersection_detector)
+  {
     delete intersection_detector;
     intersection_detector = 0;
-  }
-  
+  }  
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -121,8 +125,6 @@ void FunctionSpace::eval(double* values,
   intersection_detector->intersection(point, cells);
   if (cells.size() < 1)
     error("Unable to evaluate function at given point (not inside domain).");
-  else if (cells.size() > 1)
-    warning("Point belongs to more than one cell, picking first.");
   Cell cell(*_mesh, cells[0]);
   UFCCell ufc_cell(cell);
 
@@ -334,4 +336,5 @@ bool FunctionSpace::is_inside_restriction(uint c) const
   else 
     return true;
 }
+//-----------------------------------------------------------------------------
 

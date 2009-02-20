@@ -24,7 +24,6 @@ namespace dolfin {
    $1 = ij;
 }
 
-
 %typemap(in) const double* block = double* _array;
 %typemap(in) (dolfin::uint m, const dolfin::uint* rows) = (int _array_dim, unsigned int* _array);
 %typemap(in) (dolfin::uint n, const dolfin::uint* cols) = (int _array_dim, unsigned int* _array);
@@ -64,6 +63,10 @@ namespace dolfin {
 %ignore dolfin::VEC_TYPE::add;
 
 %newobject dolfin::VEC_TYPE::copy;
+
+%ignore dolfin::VEC_TYPE::data() const;
+%ignore dolfin::VEC_TYPE::data();
+
 %enddef
 
 // Define a macro for the matrix interface
@@ -78,6 +81,7 @@ namespace dolfin {
 
 %newobject dolfin::MAT_TYPE::copy;
 
+%rename (_data) dolfin::MAT_TYPE::data() const;
 %enddef
 
 // Define a macro for the linear algebra factory interface

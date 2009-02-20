@@ -62,12 +62,12 @@ PeriodicBC::~PeriodicBC()
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A) const
 {
-  error("Not implemented.");
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericVector& b) const
 {
-  error("Not implemented.");
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
@@ -290,13 +290,13 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericVector& b, const GenericVector& x) const
 {
-  error("Not implemented.");
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A,
                        GenericVector& b,
                        const GenericVector& x) const
 {
-  error("Not implemented.");
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------

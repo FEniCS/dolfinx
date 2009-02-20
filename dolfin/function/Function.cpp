@@ -27,7 +27,7 @@ using namespace dolfin;
 Function::Function()
   :  Variable("v", "unnamed function"),
      _function_space(static_cast<FunctionSpace*>(0)),
-    _vector(static_cast<GenericVector*>(0))
+     _vector(static_cast<GenericVector*>(0))
 {
   // Do nothing
 }
@@ -102,7 +102,7 @@ Function::Function(const SubFunction& v)
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
   : Variable("v", "unnamed function"),
-    _function_space(v._function_space),
+    _function_space(static_cast<FunctionSpace*>(0)),
     _vector(static_cast<GenericVector*>(0))
 {
   *this = v;
@@ -115,24 +115,17 @@ Function::~Function()
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Function& v)
 {
-  // Note 1: function spaces must be the same or 'this' must have no function space
-  // Note 2: vector needs special handling
+  // Check for function space and vector
+  if (!v.has_function_space())
+    error("Cannot copy Functions which do not have a FunctionSpace.");
+  if (!v.has_vector())
+    error("Cannot copy Functions which do not have a Vector (user-defined Functions).");
 
-  // Check that function has a function space
-  if (!has_function_space())
-    _function_space = v.function_space_ptr();
-
-  // Check that function spaces are the same
-  if (!v.in(function_space()))
-    error("Unable to assign to function, not in the same function space.");
-
-  // Check that vector exists
-  if (!v._vector)
-    error("Unable to assign to function, missing coefficients (user-defined function).");
+  // Copy function space
+  _function_space = v._function_space;
   
-  // Assign vector
+  // Initialize vector and copy values
   init();
-  dolfin_assert(_vector);
   *_vector = *v._vector;
 
   return *this;
@@ -163,9 +156,7 @@ GenericVector& Function::vector()
 {
   // Initialize vector of dofs if not initialized
   if (!_vector)
-  {
     init();
-  }
 
   dolfin_assert(_vector);
   return *_vector;
@@ -184,6 +175,11 @@ const GenericVector& Function::vector() const
 bool Function::has_function_space() const
 {
   return _function_space.get();
+}
+//-----------------------------------------------------------------------------
+bool Function::has_vector() const
+{
+  return _vector.get();
 }
 //-----------------------------------------------------------------------------
 bool Function::in(const FunctionSpace& V) const
@@ -291,7 +287,6 @@ void Function::interpolate(double* coefficients,
 void Function::interpolate(GenericVector& coefficients,
                            const FunctionSpace& V) const
 {
-  dolfin_debug("check");
   V.interpolate(coefficients, *this);
 }
 //-----------------------------------------------------------------------------
@@ -300,6 +295,26 @@ void Function::interpolate(double* vertex_values) const
   dolfin_assert(vertex_values);
   dolfin_assert(_function_space);
   _function_space->interpolate(vertex_values, *this);
+}
+//-----------------------------------------------------------------------------
+void Function::interpolate()
+{
+  // Check that function is not already discrete
+  if (has_vector())
+    error("Unable to interpolate function, already interpolated (has a vector).");
+
+  // Check that we have a function space
+  if (!has_function_space())
+    error("Unable to interpolate function, missing function space.");
+
+  // Interpolate to vector
+  DefaultFactory factory;
+  boost::shared_ptr<GenericVector> coefficients(factory.create_vector());
+  interpolate(*coefficients, function_space());
+
+  // Set values
+  init();
+  *_vector = *coefficients;
 }
 //-----------------------------------------------------------------------------
 void Function::init()

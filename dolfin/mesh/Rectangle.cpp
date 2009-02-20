@@ -9,6 +9,7 @@
 
 #include "MeshEditor.h"
 #include "Rectangle.h"
+#include <dolfin/common/constants.h>
 #include <dolfin/main/MPI.h>
 #include "MPIMeshCommunicator.h"
 
@@ -26,8 +27,11 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
   // Receive mesh according to parallel policy
   if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
   
+  if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS)
+    error("Rectangle must have nonzero width and height.");
+
   if (nx < 1 || ny < 1)
-    error("Size of unit square must be at least 1 in each dimension.");
+    error("Mesh size of rectangle must be at least 1 in each dimension.");
 
   rename("mesh", "Mesh of the unit square (a,b) x (c,d)");
   // Open mesh for editing

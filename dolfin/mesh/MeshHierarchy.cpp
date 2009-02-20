@@ -136,7 +136,7 @@ Mesh& MeshHierarchy::operator()(uint k) const
 Mesh& MeshHierarchy::operator[](uint k) const 
 {
   // Return full (reconstructed) mesh object on level k 
-  error("not implemented.");
+  dolfin_not_implemented();
   return meshes[k];
 }
 //-----------------------------------------------------------------------------

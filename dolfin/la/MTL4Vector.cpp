@@ -84,7 +84,7 @@ void MTL4Vector::disp(uint precision) const
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const MTL4Vector& x)
 {
-  error("MTL4::operator<< not implemented yet");
+  dolfin_not_implemented();
   return stream;
 }
 //-----------------------------------------------------------------------------
