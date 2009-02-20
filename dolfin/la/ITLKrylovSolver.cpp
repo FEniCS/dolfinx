@@ -1,10 +1,10 @@
-// Copyright (C) 2008 Garth N. Wells.
+// Copyright (C) 2008-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2008-05-16
-// Last changed: 2008-08-18
+// Last changed: 2009-02-20
 
 #ifdef HAS_MTL4
 
@@ -47,7 +47,7 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
     warning("Requested ITL Krylov method unknown. Using BiCGStab.");
     method = bicgstab;
   }
-  // Fall back in default precond if unknown
+  // Fall back in default preconditioner if unknown
   if(pc_type != ilu && pc_type != icc && pc_type != none)
   {
     warning("Requested ITL preconditioner unknown. Using ilu.");
@@ -55,7 +55,7 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
   }
 
   // Set convergence criteria
-  // FIXME: These should come from the paramters system
+  // FIXME: These should come from the parameter system
   itl::basic_iteration<double> iter(b.vec(), 500, 1.0e-6);
 
   // Check vector size
@@ -83,11 +83,9 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
   {
     itl::pc::ic_0<mtl4_sparse_matrix> P(A.mat());
     if(method == cg)
-      error("There is a problem here with the MTL4 icc preconditioner. Please fix me.");
-      //errno_ = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
+      errno_ = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
     else if(method == bicgstab)
-      error("There is a problem here with the MTL4 icc preconditioner. Please fix me.");
-      //errno_ = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
+      errno_ = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
   }
   else if(pc_type == none)
   {
