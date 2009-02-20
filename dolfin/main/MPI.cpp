@@ -162,6 +162,12 @@ void dolfin::MPI::gather(std::vector<uint>& values)
   error("MPI::gather() requires MPI.");
 }
 //-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::global_maximum(uint size)
+{
+  error("MPI::global_maximum() requires MPI.");
+  return 0;
+}
+//-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest,
                                     uint* recv_buffer, uint recv_size, uint source)
 {
