@@ -28,7 +28,6 @@ class DirichletBoundary(SubDomain):
 V = FunctionSpace(mesh, "DG", 1)
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Source(V)
 
 # Normal component, mesh size and right-hand side
 n = FacetNormal(mesh)
@@ -70,7 +69,7 @@ file = File("b1.m") ; file << b;
 
 # Project u
 u = Function(V)
-P1 = FiniteElement("Lagrange", "triangle", 1)
+u.vector().set(x.data())
 u_proj = project(u, V)
 
 # Project solution to piecewise linears
@@ -95,8 +94,7 @@ file = File("b2.m") ; file << b;
 
 # Project u
 u = Function(V)
-u.vector.set(x.data())
-P1 = FiniteElement("Lagrange", "triangle", 1)
+u.vector().set(x.data())
 u_proj = project(u, P1)
 
 # Save solution to file
