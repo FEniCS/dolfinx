@@ -290,10 +290,10 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   editor.close();
 
   // Add local to global mapping
-  mesh.data().create_mesh_function("local to global mapping", 0);
-  uint* loc2glob = mesh.data().mesh_function("local to global mapping")->values();
-  for (uint i=0; i < glob2loc.size(); ++i)
-    loc2glob[glob2loc[i]] = i;
+  MeshFunction<uint>* global_vertex_indices = mesh.data().create_mesh_function("global vertex indices", 0);
+  dolfin_assert(global_vertex_indices);
+  for (uint i = 0; i < glob2loc.size(); ++i)
+    global_vertex_indices->set(glob2loc[i], i);
 
   /// Communicate global number of boundary vertices to all processes
 
@@ -307,12 +307,11 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Build sorted boundary array (global numbering)
   uint global_vertex_send[boundary_size];
-
-  for (uint i=0; i < boundary_size; ++i)
-    global_vertex_send[i] = loc2glob[bmap[i]];
-
+  for (uint i = 0; i < boundary_size; ++i)
+    global_vertex_send[i] = global_vertex_indices->get(bmap[i]);
   std::sort(global_vertex_send, global_vertex_send + boundary_size);
 
+  // Get number of processes and process number
   const uint num_processes = MPI::num_processes();
   const uint process_number = MPI::process_number();
 
@@ -322,18 +321,16 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   MPI::gather(boundary_sizes);
   uint max_boundary_size = 0;
 
-
   // Find largest boundary size (for recv buffer)
-  for (uint i=0; i < num_processes; ++i) 
+  for (uint i = 0; i < num_processes; ++i)
     if (boundary_sizes[i] > max_boundary_size)
       max_boundary_size = boundary_sizes[i];
-
 
   // Recieve buffer
   uint global_vertex_recv[max_boundary_size];
 
   // Distribute
-  for (uint i=1; i < num_processes; ++i)
+  for (uint i = 1; i < num_processes; ++i)
   {
     // We receive data from process p - i (i steps to the left)
     const int p = (process_number - i + num_processes) % num_processes;
