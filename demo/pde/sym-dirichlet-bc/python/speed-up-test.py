@@ -35,8 +35,7 @@ boundary = DirichletBoundary()
 bc = DirichletBC(V, u0, boundary)
 
 
-#backends = ["uBLAS", "PETSc", "Epetra"]
-backends = ["uBLAS", "Epetra"]
+backends = ["uBLAS", "PETSc", "Epetra"]
 
 for backend in backends: 
     dolfin_set("linear algebra backend", backend)
