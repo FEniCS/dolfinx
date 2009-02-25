@@ -24,7 +24,7 @@ __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
 # Original implementation (../cpp/main.cpp) by Garth N. Wells.
-# Modified by Anders Logg, 2008.from dolfin import *
+# Modified by Anders Logg, 2008.
 
 from dolfin import *
 
