@@ -14,9 +14,13 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <vector>
-#include <ufc.h>
 
 #include <dolfin/common/types.h>
+
+namespace ufc
+{
+  class cell; 
+}
 
 namespace dolfin
 {
@@ -28,8 +32,6 @@ namespace dolfin
   class IntersectionDetector;
   class GenericVector;
   template <class T> class MeshFunction; 
-//  template<> class MeshFunction<bool>;
-//  class MeshFunction<bool>;
 
   /// This class represents a finite element function space defined by
   /// a mesh, a finite element, and a local-to-global mapping of the
