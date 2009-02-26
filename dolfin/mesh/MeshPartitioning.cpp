@@ -232,11 +232,15 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
     }
   }
   MPI::distribute(vertex_coordinates, vertex_coordinates_partition);
+
+  // Set index counters to first position in recieve buffers
   std::vector<uint> index_counters(mesh_data.num_processes);
+  std::fill(index_counters.begin(), index_counters.end(), 0);
 
   // Store coordinates and construct global to local mapping
   mesh_data.vertex_coordinates.clear();
   mesh_data.vertex_indices.clear();
+  glob2loc.clear();
   const uint num_local_vertices = vertex_coordinates.size()/vertex_size;
   for (uint i = 0; i < num_local_vertices; ++i)
   {
@@ -271,18 +275,13 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   
   // Add cells
   editor.initCells(mesh_data.cell_vertices.size());
-
-  const uint num_vertices = mesh_data.cell_type->numEntities(0);
-  std::vector<uint> a(num_vertices);
+  const uint num_cell_vertices = mesh_data.cell_type->numEntities(0);
+  std::vector<uint> cell(num_cell_vertices);
   for (uint i = 0; i < mesh_data.cell_vertices.size(); ++i)
   {
-    for (uint j = 0; j < num_vertices; ++j)
-    {
-      const uint idx = mesh_data.cell_vertices[i][j];
-      const uint gidx = glob2loc[idx];
-      a[j] = gidx;
-    }
-    editor.addCell(i, a);
+    for (uint j = 0; j < num_cell_vertices; ++j)
+      cell[j] = glob2loc[mesh_data.cell_vertices[i][j]];
+    editor.addCell(i, cell);
   }
   editor.close();
 
@@ -291,24 +290,20 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   dolfin_assert(global_vertex_indices);
   std::map<uint, uint>::iterator iter; 
   for (iter = glob2loc.begin(); iter != glob2loc.end(); ++iter)
-    global_vertex_indices->set((*iter).first, (*iter).second);
+    global_vertex_indices->set((*iter).second, (*iter).first);
 
   /// Communicate global number of boundary vertices to all processes
 
   // Construct boundary mesh 
   BoundaryMesh bmesh(mesh);
-  MeshFunction<uint>* local_vertex_map = bmesh.data().mesh_function("vertex map");
-  const uint boundary_size = local_vertex_map->size();
+  MeshFunction<uint>* boundary_vertex_map = bmesh.data().mesh_function("vertex map");
+  dolfin_assert(boundary_vertex_map);
+  const uint boundary_size = boundary_vertex_map->size();
 
-  // bmap[i] maps local boundary vertex i to the corresponding index of the mesh
-  uint* bmap = local_vertex_map->values();
-
-
-  // Build sorted boundary array (global numbering)
+  // Build sorted array of global boundary vertex indices (global numbering)
   uint global_vertex_send[boundary_size];
-  for (uint i = 0; i < boundary_size; ++i){
-    global_vertex_send[i] = global_vertex_indices->get(bmap[i]);
-  }
+  for (uint i = 0; i < boundary_size; ++i)
+    global_vertex_send[i] = global_vertex_indices->get(boundary_vertex_map->get(i));
   std::sort(global_vertex_send, global_vertex_send + boundary_size);
 
   // Get number of processes and process number
@@ -319,34 +314,36 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   std::vector<uint> boundary_sizes(num_processes);
   boundary_sizes[process_number] = boundary_size;
   MPI::gather(boundary_sizes);
-  uint max_boundary_size = 0;
 
   // Find largest boundary size (for recv buffer)
-  for (uint i = 0; i < num_processes; ++i)
-    if (boundary_sizes[i] > max_boundary_size)
-      max_boundary_size = boundary_sizes[i];
+  const uint max_boundary_size = *(std::max_element(boundary_sizes.begin(), boundary_sizes.end()));
 
   // Recieve buffer
   uint global_vertex_recv[max_boundary_size];
 
+  std::map<uint, std::vector<uint> >* overlap = mesh.data().create_vector_mapping("overlap");
+
   // Distribute boundaries and build mappings
   for (uint i = 1; i < num_processes; ++i)
   {
-    // We receive data from process p - i (i steps to the left)
+    // We send data to process p - i (i steps to the left)
     const int p = (process_number - i + num_processes) % num_processes;
 
-    // We send data to process p + i (i steps to the right)
+    // We receive data from process p + i (i steps to the right)
     const int q = (process_number + i) % num_processes;
 
+    // Send and receive
     MPI::send_recv(global_vertex_send, boundary_size, p, global_vertex_recv, boundary_sizes[q], q);
 
-    // Compute union of global indices
-    std::vector<uint> res_union(std::min(boundary_size,boundary_sizes[q]));
-    std::vector<uint>::iterator it;
-
-    it = std::set_intersection(
+    // Compute intersection of global indices
+    std::vector<uint> intersection(std::min(boundary_size, boundary_sizes[q]));
+    std::vector<uint>::iterator intersection_end = std::set_intersection(
          global_vertex_send, global_vertex_send + boundary_size, 
-         global_vertex_recv, global_vertex_recv + boundary_sizes[q], res_union.begin()); 
+         global_vertex_recv, global_vertex_recv + boundary_sizes[q], intersection.begin()); 
+
+    for (std::vector<uint>::iterator index = intersection.begin(); index != intersection_end; ++index)
+      (*overlap)[*index].push_back(q);
+
   }
 }
 //-----------------------------------------------------------------------------
