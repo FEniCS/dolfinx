@@ -12,9 +12,8 @@
 
 #include <map>
 #include <string>
-#include <boost/shared_ptr.hpp>
 #include <vector>
-
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 
 namespace ufc
