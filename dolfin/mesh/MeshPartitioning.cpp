@@ -273,8 +273,11 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     editor.addVertex(i, p);
   }
   
-  // Add cells
+  // Add cells and local to global mapping
   editor.initCells(mesh_data.cell_vertices.size());
+  MeshFunction<uint>* global_vertex_indices = mesh.data().create_mesh_function("global vertex indices", 0);
+  dolfin_assert(global_vertex_indices);
+
   const uint num_vertices = mesh_data.cell_type->numEntities(0);
   std::vector<uint> a(num_vertices);
   for (uint i = 0; i < mesh_data.cell_vertices.size(); ++i)
@@ -283,17 +286,14 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     {
       const uint idx = mesh_data.cell_vertices[i][j];
       const uint gidx = glob2loc[idx];
+      global_vertex_indices->set(glob2loc[idx], idx);
       a[j] = gidx;
     }
     editor.addCell(i, a);
   }
   editor.close();
 
-  // Add local to global mapping
-  MeshFunction<uint>* global_vertex_indices = mesh.data().create_mesh_function("global vertex indices", 0);
-  dolfin_assert(global_vertex_indices);
-  for (uint i = 0; i < glob2loc.size(); ++i)
-    global_vertex_indices->set(glob2loc[i], i);
+  //for (uint i = 0; i < glob2loc.size(); ++i)
 
   /// Communicate global number of boundary vertices to all processes
 
@@ -305,10 +305,13 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // bmap[i] maps local boundary vertex i to the corresponding index of the mesh
   uint* bmap = local_vertex_map->values();
 
+
   // Build sorted boundary array (global numbering)
   uint global_vertex_send[boundary_size];
-  for (uint i = 0; i < boundary_size; ++i)
+  for (uint i = 0; i < boundary_size; ++i){
     global_vertex_send[i] = global_vertex_indices->get(bmap[i]);
+    std::cout <<  "global_vertex_send[" << i << "] = " <<  global_vertex_send[i]  << std::endl;
+  }
   std::sort(global_vertex_send, global_vertex_send + boundary_size);
 
   // Get number of processes and process number
@@ -341,14 +344,14 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     MPI::send_recv(global_vertex_send, boundary_size, p, global_vertex_recv, boundary_sizes[q], q);
 
     // Compute union of global indices
-    std::vector<uint> res_union(boundary_size + boundary_sizes[q]);
+    std::vector<uint> res_union(std::min(boundary_size,boundary_sizes[q]));
     std::vector<uint>::iterator it;
 
-    it = std::set_union(
+    it = std::set_intersection(
          global_vertex_send, global_vertex_send + boundary_size, 
          global_vertex_recv, global_vertex_recv + boundary_sizes[q], res_union.begin()); 
 
-    std::cout << "Total buffer size is " << boundary_size + boundary_sizes[q] << " and union has " << int(it-res_union.begin()) << " elements." << std::endl;
+    std::cout << "Number of boundary nodes is " << boundary_size << " and intersection has " << int(it-res_union.begin()) << " elements." << std::endl;
   }
 }
 //-----------------------------------------------------------------------------
