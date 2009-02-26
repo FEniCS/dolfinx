@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2008-12-15
+// Last changed: 2009-02-26
 
 #include <vector>
 #include <algorithm>
@@ -252,7 +252,6 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
     glob2loc[global_vertex_index] = i;
   }
 
-  // FIXME: Need to store vertex_indices
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::build_mesh(Mesh& mesh,
@@ -273,10 +272,8 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     editor.addVertex(i, p);
   }
   
-  // Add cells and local to global mapping
+  // Add cells
   editor.initCells(mesh_data.cell_vertices.size());
-  MeshFunction<uint>* global_vertex_indices = mesh.data().create_mesh_function("global vertex indices", 0);
-  dolfin_assert(global_vertex_indices);
 
   const uint num_vertices = mesh_data.cell_type->numEntities(0);
   std::vector<uint> a(num_vertices);
@@ -286,14 +283,18 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     {
       const uint idx = mesh_data.cell_vertices[i][j];
       const uint gidx = glob2loc[idx];
-      global_vertex_indices->set(glob2loc[idx], idx);
       a[j] = gidx;
     }
     editor.addCell(i, a);
   }
   editor.close();
 
-  //for (uint i = 0; i < glob2loc.size(); ++i)
+  // Construct local to global mapping based on the global to local mapping
+  MeshFunction<uint>* global_vertex_indices = mesh.data().create_mesh_function("global vertex indices", 0);
+  dolfin_assert(global_vertex_indices);
+  std::map<uint, uint>::iterator iter; 
+  for (iter = glob2loc.begin(); iter != glob2loc.end(); ++iter)
+    global_vertex_indices->set((*iter).first, (*iter).second);
 
   /// Communicate global number of boundary vertices to all processes
 
