@@ -9,7 +9,6 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
-#include <dolfin/common/Array.h>
 #include "MeshConnectivity.h"
 
 namespace dolfin

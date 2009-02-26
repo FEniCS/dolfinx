@@ -25,7 +25,7 @@ namespace dolfin
     static void refine(Mesh& mesh, 
 		       MeshFunction<bool>& cell_marker,
 		       MeshFunction<uint>& cell_map,
-		       Array<int>& facet_map);
+		       std::vector<int>& facet_map);
 
   private:
 

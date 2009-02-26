@@ -52,7 +52,7 @@ namespace dolfin
     // Multi-adaptive residuals (size N)
     real* residuals;
 
-    // Array for storing temporary data during propagation of time steps (size N)
+    // std::vector for storing temporary data during propagation of time steps (size N)
     real* ktmp;
     
     // Values of right-hand side at quadrature points (size m)

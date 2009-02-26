@@ -25,7 +25,7 @@ using namespace dolfin;
 
 struct cmp2 
 {
-   bool operator()(Array<dolfin::uint> const a, Array<dolfin::uint> const b) 
+   bool operator()(std::vector<dolfin::uint> const a, std::vector<dolfin::uint> const b) 
    {       
      if (a[0] == b[0])
        return a[1] < b[1];
@@ -81,8 +81,8 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
               mesh.topology().dim(), mesh.geometry().dim());
   
   // Initialize mappings
-  Array<int> old2new_cell(mesh.numCells());
-  Array<int> old2new_vertex(mesh.numVertices());
+  std::vector<int> old2new_cell(mesh.numCells());
+  std::vector<int> old2new_vertex(mesh.numVertices());
 
   // Initialise forbidden edges 
   MeshFunction<bool> edge_forbidden(mesh);  
@@ -172,7 +172,7 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
 
   // Add old unrefined cells 
   uint current_cell = 0;
-  Array<uint> cell_vertices(cell_type.numEntities(0));
+  std::vector<uint> cell_vertices(cell_type.numEntities(0));
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     //if ( (cell_marker.get(*c) == false) && (cell_forbidden.get(*c) == false) )
@@ -276,7 +276,7 @@ void LocalMeshRefinement::refineRecursivelyByEdgeBisection(Mesh& mesh,
 {
   // Transformation maps
   MeshFunction<dolfin::uint> cell_map;
-  Array<int> facet_map;
+  std::vector<int> facet_map;
   
   // Create new mesh
   Mesh newmesh;
@@ -297,8 +297,8 @@ void LocalMeshRefinement::bisectEdgeOfSimplexCell(const Cell& cell,
                                                   uint& current_cell) 
 {
   // Init cell vertices 
-  Array<uint> cell1_vertices(cell.numEntities(0));
-  Array<uint> cell2_vertices(cell.numEntities(0));
+  std::vector<uint> cell1_vertices(cell.numEntities(0));
+  std::vector<uint> cell2_vertices(cell.numEntities(0));
 
   // Get edge vertices 
   const uint* edge_vert = edge.entities(0);
@@ -332,8 +332,8 @@ bool LocalMeshRefinement::iterationOfRefinement(Mesh& mesh,
                                       )
 {
   // Map used for edge function transformation
-  std::map<Array<uint>, uint, cmp2> edge_map;
-  std::map<Array<uint>, uint, cmp2>::iterator edge_map_it;
+  std::map<std::vector<uint>, uint, cmp2> edge_map;
+  std::map<std::vector<uint>, uint, cmp2>::iterator edge_map_it;
 
   const uint num_vertices = mesh.size(0);
   const uint num_cells = mesh.size(mesh.topology().dim());
@@ -398,7 +398,7 @@ bool LocalMeshRefinement::iterationOfRefinement(Mesh& mesh,
 
   //Rewrite old cells
   uint current_cell = 0;
-  Array<uint> cell_vertices(cell_type.numEntities(0));
+  std::vector<uint> cell_vertices(cell_type.numEntities(0));
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     if( ! cell_marker.get(c->index()) )
@@ -439,7 +439,7 @@ bool LocalMeshRefinement::iterationOfRefinement(Mesh& mesh,
         middle_vertex = current_vertex-1;
         
         // Insert new vertex into the bisected edges mapping
-        Array<uint> ev(2);
+        std::vector<uint> ev(2);
         ev[0] = longest_edge.entities(0)[0];
         ev[1] = longest_edge.entities(0)[1];
         edge_map[ev] = middle_vertex;
@@ -461,7 +461,7 @@ bool LocalMeshRefinement::iterationOfRefinement(Mesh& mesh,
     uint eix = bisected_edges.get(e->index());          
     if( eix )
     {
-      Array<uint> ev(2);
+      std::vector<uint> ev(2);
       ev[0] = e->entities(0)[0];
       ev[1] = e->entities(0)[1];
       edge_map[ev] = eix;
@@ -480,7 +480,7 @@ bool LocalMeshRefinement::iterationOfRefinement(Mesh& mesh,
   bool next_iteration = false;
   for (EdgeIterator e(refined_mesh); !e.end(); ++e)
   {
-    Array<uint> ev(2);
+    std::vector<uint> ev(2);
     ev[0]= e->entities(0)[0];
     ev[1]= e->entities(0)[1];
     if ( (edge_map_it = edge_map.find(ev)) == edge_map.end())
@@ -506,7 +506,7 @@ bool LocalMeshRefinement::iterationOfRefinement(Mesh& mesh,
 //-----------------------------------------------------------------------------
 void LocalMeshRefinement::transformMeshData(Mesh& newmesh, Mesh& oldmesh, 
                                             MeshFunction<uint>& cell_map,
-                                            Array<int>& facet_map)                                    
+                                            std::vector<int>& facet_map)                                    
 {
   
   newmesh.data().clear();
@@ -528,9 +528,9 @@ void LocalMeshRefinement::transformMeshData(Mesh& newmesh, Mesh& oldmesh,
   {
 
     dolfin::uint num_ent = oldmesh.type().numEntities(0);
-    Array<dolfin::uint>* bfc;
-    Array<dolfin::uint>* bfn;
-    Array<dolfin::uint>* bi ;  
+    std::vector<dolfin::uint>* bfc;
+    std::vector<dolfin::uint>* bfn;
+    std::vector<dolfin::uint>* bi ;  
     bfc = oldmesh.data().array("boundary facet cells");
     bfn = oldmesh.data().array("boundary facet numbers");
     bi = oldmesh.data().array("boundary indicators"); 
@@ -563,10 +563,10 @@ void LocalMeshRefinement::transformMeshData(Mesh& newmesh, Mesh& oldmesh,
       }
     }
  
-    // Create new MeshData Arrays for boundary indicators
-    Array<dolfin::uint>* bfc_new;
-    Array<dolfin::uint>* bfn_new;
-    Array<dolfin::uint>* bi_new ;    
+    // Create new MeshData std::vectors for boundary indicators
+    std::vector<dolfin::uint>* bfc_new;
+    std::vector<dolfin::uint>* bfn_new;
+    std::vector<dolfin::uint>* bi_new ;    
     bfc_new = newmesh.data().create_array("boundary facet cells", bi_size);
     bfn_new = newmesh.data().create_array("boundary facet numbers", bi_size);
     bi_new = newmesh.data().create_array("boundary indicators", bi_size);
@@ -591,7 +591,7 @@ void LocalMeshRefinement::transformMeshData(Mesh& newmesh, Mesh& oldmesh,
       }
     }
 
-  message("MeshData Array \"boundary indicators\" transformed.");
+  message("MeshData \"boundary indicators\" transformed.");
   }
  
 }

@@ -85,10 +85,10 @@ namespace dolfin
     virtual void axpy(double a, const GenericMatrix& A);
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, Array<uint>& columns, Array<double>& values) const;
+    virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(uint row, const Array<uint>& columns, const Array<double>& values);
+    virtual void setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values);
 
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows);

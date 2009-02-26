@@ -6,7 +6,6 @@
 
 #include <cmath>
 #include <dolfin/parameter/parameters.h>
-#include <dolfin/common/Array.h>
 #include "ODE.h"
 #include "Method.h"
 #include "MultiAdaptiveTimeSlab.h"
@@ -213,7 +212,7 @@ void MultiAdaptivity::propagateDependencies()
     const real k = ktmp[i];
 
     // Propagate time step to dependencies
-    const Array<uint>& deps = ode.dependencies[i];
+    const std::vector<uint>& deps = ode.dependencies[i];
     for (uint pos = 0; pos < deps.size(); pos++)
       timesteps[deps[pos]] = std::min(timesteps[deps[pos]], k);
   }

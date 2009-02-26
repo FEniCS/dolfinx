@@ -8,7 +8,6 @@
 // Last changed: 2008-05-28
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/Array.h>
 #include "Mesh.h"
 #include "Facet.h"
 #include "Vertex.h"
@@ -42,8 +41,8 @@ void BoundaryComputation::computeBoundary(const Mesh& mesh, BoundaryMesh& bounda
 
   // Temporary array for assignment of indices to vertices on the boundary
   const uint num_vertices = mesh.numVertices();
-  Array<uint> boundary_vertices(num_vertices);
-  boundary_vertices = num_vertices;
+  std::vector<uint> boundary_vertices(num_vertices);
+  std::fill(boundary_vertices.begin(), boundary_vertices.end(), num_vertices);
 
   // Count boundary vertices and facets, and assign vertex indices
   uint num_boundary_vertices = 0;
@@ -104,7 +103,7 @@ void BoundaryComputation::computeBoundary(const Mesh& mesh, BoundaryMesh& bounda
   }
 
   // Create cells (facets)
-  Array<uint> cell(boundary.type().numVertices(boundary.topology().dim()));
+  std::vector<uint> cell(boundary.type().numVertices(boundary.topology().dim()));
   uint current_cell = 0;
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
@@ -132,7 +131,7 @@ void BoundaryComputation::computeBoundary(const Mesh& mesh, BoundaryMesh& bounda
   editor.close();
 }
 //-----------------------------------------------------------------------------
-void BoundaryComputation::reorder(Array<uint>& vertices, const Facet& facet)
+void BoundaryComputation::reorder(std::vector<uint>& vertices, const Facet& facet)
 {
   // Get mesh
   const Mesh& mesh = facet.mesh();

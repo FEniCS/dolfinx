@@ -6,7 +6,6 @@
 
 #include <set>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/Array.h>
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshTopology.h"
@@ -198,7 +197,7 @@ void TopologyComputation::computeFromTranspose(Mesh& mesh, uint d0, uint d1)
   dolfin_assert(topology(d1, d0).size() > 0);
 
   // Temporary array
-  Array<uint> tmp(topology.size(d0));
+  std::vector<uint> tmp(topology.size(d0));
 
   // Reset size for each entity
   for (uint i = 0; i < tmp.size(); i++)
@@ -248,7 +247,7 @@ void TopologyComputation::computeFromIntersection(Mesh& mesh,
   dolfin_assert(topology(d, d1).size() > 0);
 
   // Temporary array
-  Array<uint> tmp(topology.size(d0));
+  std::vector<uint> tmp(topology.size(d0));
 
   // Reset size for each entity
   for (uint i = 0; i < tmp.size(); i++)

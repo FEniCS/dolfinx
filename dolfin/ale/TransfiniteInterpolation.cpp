@@ -5,7 +5,6 @@
 // Last changed: 2009-01-12
 
 #include <string.h>
-#include <dolfin/common/Array.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
@@ -194,8 +193,8 @@ void TransfiniteInterpolation::computeWeights2D(double* w, double** u, double* d
 void TransfiniteInterpolation::computeWeights3D(double* w, double** u, double* d,
                            uint dim, uint num_vertices)
 {
-  Array<double> ell(num_vertices);
-  Array<double> theta(num_vertices);
+  std::vector<double> ell(num_vertices);
+  std::vector<double> theta(num_vertices);
   double h = 0.0;
   
   for (uint i = 0; i < num_vertices; i++)
@@ -209,8 +208,8 @@ void TransfiniteInterpolation::computeWeights3D(double* w, double** u, double* d
     h += theta[i] / 2.0;
   }
     
-  Array<double> c(num_vertices);
-  Array<double> s(num_vertices);
+  std::vector<double> c(num_vertices);
+  std::vector<double> s(num_vertices);
   
   for (uint i = 0; i < num_vertices; i++)
   {

@@ -7,7 +7,6 @@
 #ifndef __XML_MATRIX_H
 #define __XML_MATRIX_H
 
-#include <dolfin/common/Array.h>
 #include <dolfin/la/GenericMatrix.h>
 #include "XMLObject.h"
 
@@ -38,8 +37,8 @@ namespace dolfin
 
     // Data for row
     uint row;
-    Array<uint> columns;
-    Array<double> values;
+    std::vector<uint> columns;
+    std::vector<double> values;
     
   };
   

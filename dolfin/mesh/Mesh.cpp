@@ -251,7 +251,7 @@ void Mesh::smooth(uint num_smoothings)
     MeshSmoothing::smooth(*this);
 }
 //-----------------------------------------------------------------------------
-void Mesh::intersection(const Point& p, Array<uint>& cells, bool fixed_mesh)
+void Mesh::intersection(const Point& p, std::vector<uint>& cells, bool fixed_mesh)
 {
   // Don't reuse detector if mesh has moved
   if (!fixed_mesh)
@@ -267,7 +267,7 @@ void Mesh::intersection(const Point& p, Array<uint>& cells, bool fixed_mesh)
   detector->intersection(p, cells);
 }
 //-----------------------------------------------------------------------------
-void Mesh::intersection(const Point& p1, const Point& p2, Array<uint>& cells, bool fixed_mesh)
+void Mesh::intersection(const Point& p1, const Point& p2, std::vector<uint>& cells, bool fixed_mesh)
 {
   // Don't reuse detector if the mesh has moved
   if (!fixed_mesh)
@@ -283,7 +283,7 @@ void Mesh::intersection(const Point& p1, const Point& p2, Array<uint>& cells, bo
   detector->intersection(p1, p2, cells);
 }
 //-----------------------------------------------------------------------------
-void Mesh::intersection(Cell& cell, Array<uint>& cells, bool fixed_mesh)
+void Mesh::intersection(Cell& cell, std::vector<uint>& cells, bool fixed_mesh)
 {
   // Don't reuse detector if the has has moved
   if (!fixed_mesh)
@@ -299,7 +299,7 @@ void Mesh::intersection(Cell& cell, Array<uint>& cells, bool fixed_mesh)
   detector->intersection(cell, cells);
 }
 //-----------------------------------------------------------------------------
-void Mesh::intersection(Array<Point>& points, Array<uint>& intersection, bool fixed_mesh)
+void Mesh::intersection(std::vector<Point>& points, std::vector<uint>& intersection, bool fixed_mesh)
 {
   // Don't reuse detector if the mesh has moved
   if (!fixed_mesh)
@@ -315,7 +315,7 @@ void Mesh::intersection(Array<Point>& points, Array<uint>& intersection, bool fi
   detector->intersection(points, intersection);
 }
 //-----------------------------------------------------------------------------
-void Mesh::intersection(Mesh& mesh, Array<uint>& intersection, bool fixed_mesh)
+void Mesh::intersection(Mesh& mesh, std::vector<uint>& intersection, bool fixed_mesh)
 {
   // Don't reuse detector if the mesh has moved
   if (!fixed_mesh)

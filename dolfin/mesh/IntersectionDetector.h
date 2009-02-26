@@ -20,7 +20,6 @@ namespace dolfin
   class Cell;
   class Point;
   class GTSInterface;
-  template <class T> class Array;
 
   class IntersectionDetector
   {
@@ -42,7 +41,7 @@ namespace dolfin
     void intersection(const Cell& cell, std::vector<uint>& cells);
 
     /// Compute overlap with curve defined by points
-    void intersection(Array<Point>& points, std::vector<uint>& intersection);
+    void intersection(std::vector<Point>& points, std::vector<uint>& intersection);
 
     /// Compute overlap with mesh
     void intersection(const Mesh& mesh1, std::vector<uint>& intersection);

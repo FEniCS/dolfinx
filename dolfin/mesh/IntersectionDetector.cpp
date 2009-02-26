@@ -13,7 +13,6 @@
 #include <map>
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/Array.h>
 #include "Mesh.h"
 #include "Edge.h"
 #include "Facet.h"
@@ -55,7 +54,7 @@ void IntersectionDetector::intersection(const Cell& c, std::vector<uint>& cells)
   gts->intersection(c, cells);
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(Array<Point>& points, std::vector<uint>& cells) 
+void IntersectionDetector::intersection(std::vector<Point>& points, std::vector<uint>& cells) 
 {
   // Intersect each segment with mesh
   std::vector<uint> cc;
@@ -64,7 +63,7 @@ void IntersectionDetector::intersection(Array<Point>& points, std::vector<uint>&
 
   // Remove repeated cells
   std::sort(cc.begin(), cc.end());
-  Array<unsigned int>::iterator it;
+  std::vector<unsigned int>::iterator it;
   it = std::unique(cc.begin(), cc.end());
   cc.resize(it - cc.begin());  
 }
@@ -81,7 +80,7 @@ void IntersectionDetector::intersection(const Mesh& mesh1, std::vector<uint>& ce
   
   // Remove repeated cells
   std::sort(cells.begin(), cells.end());
-  Array<unsigned int>::iterator it;
+  std::vector<unsigned int>::iterator it;
   it = std::unique(cells.begin(), cells.end());
   cells.resize(it - cells.begin());
 }
@@ -308,7 +307,7 @@ void IntersectionDetector::intersection(const Point& p1, const Point& p2,
 void IntersectionDetector::intersection(const Cell& cell,
                                         std::vector<uint>& cells) {}
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(Array<Point>& points,
+void IntersectionDetector::intersection(std::vector<Point>& points,
                                         std::vector<uint>& intersection) {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::intersection(const Mesh& mesh1,

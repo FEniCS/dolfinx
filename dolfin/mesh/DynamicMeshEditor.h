@@ -8,7 +8,6 @@
 #define __DYNAMIC_MESH_EDITOR_H
 
 #include <dolfin/common/types.h>
-#include <dolfin/common/Array.h>
 #include "CellType.h"
 
 namespace dolfin
@@ -52,7 +51,7 @@ namespace dolfin
     void addVertex(uint v, double x, double y, double z);
 
     /// Add cell with given vertices
-    void addCell(uint c, const Array<uint>& v);
+    void addCell(uint c, const std::vector<uint>& v);
 
     /// Add cell (interval) with given vertices
     void addCell(uint c, uint v0, uint v1);
@@ -84,10 +83,10 @@ namespace dolfin
     CellType* cell_type;
     
     // Dynamic storage for vertex coordinates
-    Array<double> vertex_coordinates;
+    std::vector<double> vertex_coordinates;
 
     // Dynamic storage for cells
-    Array<uint> cell_vertices;
+    std::vector<uint> cell_vertices;
 
   };
 

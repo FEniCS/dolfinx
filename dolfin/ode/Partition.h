@@ -11,7 +11,6 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
 #include <dolfin/common/real.h>
-#include <dolfin/common/Array.h>
 
 namespace dolfin
 {
@@ -69,7 +68,7 @@ namespace dolfin
     };
 
     // List of component indices
-    Array<uint> indices;
+    std::vector<uint> indices;
     
     // Threshold for partition
     real threshold;

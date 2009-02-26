@@ -43,19 +43,19 @@ namespace dolfin
     /// Update current pair of cells for macro element
     void update(const Cell& cell0, const Cell& cell1);
 
-    // Array of finite elements for primary arguments
+    // std::vector of finite elements for primary arguments
     FiniteElement** finite_elements;
 
-    // Array of finite elements for coefficients
+    // std::vector of finite elements for coefficients
     FiniteElement** coefficient_elements;
 
-    // Array of cell integrals
+    // std::vector of cell integrals
     ufc::cell_integral** cell_integrals;
 
-    // Array of exterior facet integrals
+    // std::vector of exterior facet integrals
     ufc::exterior_facet_integral** exterior_facet_integrals;
 
-    // Array of interior facet integrals
+    // std::vector of interior facet integrals
     ufc::interior_facet_integral** interior_facet_integrals;
 
     // Form
@@ -77,25 +77,25 @@ namespace dolfin
     // Local tensor for macro element
     double* macro_A;
 
-    // Array of local dimensions for each argument
+    // std::vector of local dimensions for each argument
     uint* local_dimensions;
 
-    // Array of local dimensions of macro element for primary arguments
+    // std::vector of local dimensions of macro element for primary arguments
     uint* macro_local_dimensions;
 
-    // Array of global dimensions for primary arguments
+    // std::vector of global dimensions for primary arguments
     uint* global_dimensions;
     
-    // Array of mapped dofs for primary arguments
+    // std::vector of mapped dofs for primary arguments
     uint** dofs;
 
-    // Array of mapped dofs of macro element for primary arguments
+    // std::vector of mapped dofs of macro element for primary arguments
     uint** macro_dofs;
 
-    // Array of coefficients
+    // std::vector of coefficients
     double** w;
 
-    // Array of coefficients on macro element
+    // std::vector of coefficients on macro element
     double** macro_w;
 
   };

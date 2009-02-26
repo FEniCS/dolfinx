@@ -5,7 +5,6 @@
 // Last changed: 2006-05-23
 
 #include <dolfin/log/dolfin_log.h>
-//#include <dolfin/BLASFormData.h>
 #include "XMLBLASFormData.h"
 
 using namespace dolfin;
@@ -232,7 +231,7 @@ void XMLBLASFormData::readBoundary(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLBLASFormData::readTerm(const xmlChar *name, const xmlChar **attrs)
 {
-  Array<double> tensor;
+  std::vector<double> tensor;
 
   // Add new term and read number of rows
   switch ( state )

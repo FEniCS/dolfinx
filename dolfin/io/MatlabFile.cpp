@@ -13,7 +13,6 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericMatrix.h>
 #include "MatlabFile.h"
-#include <dolfin/common/Array.h>
 
 using namespace dolfin;
 
@@ -39,8 +38,8 @@ void MatlabFile::operator<<(const GenericMatrix& A)
 //  fprintf(fp, "%s = [", A.name().c_str());
   fprintf(fp, "A = [");
 
-  Array<uint> columns;
-  Array<double> values;
+  std::vector<uint> columns;
+  std::vector<double> values;
   
   for (uint i = 0; i < A.size(0); i++)
   {

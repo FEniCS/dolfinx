@@ -11,7 +11,6 @@
 #include <stdio.h>
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/Array.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
 #include "MatlabFile.h"
@@ -48,8 +47,8 @@ void OctaveFile::operator<<(const GenericMatrix& A)
   for (uint i = 0; i < M; i++)
   {
     // Get nonzero entries
-    Array<uint> columns;
-    Array<double> values;
+    std::vector<uint> columns;
+    std::vector<double> values;
     A.getrow(i, columns, values);
 
     // Write nonzero entries

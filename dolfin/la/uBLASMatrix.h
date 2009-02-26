@@ -19,7 +19,6 @@
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/Array.h>
 #include "LinearAlgebraFactory.h"
 #include "SparsityPattern.h"
 #include "ublas.h"
@@ -107,10 +106,10 @@ namespace dolfin
     virtual void axpy(double a, const GenericMatrix& A);
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, Array<uint>& columns, Array<double>& values) const;
+    virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;
 
     /// Set values for given row
-    virtual void setrow(uint row_idx, const Array<uint>& columns, const Array<double>& values);
+    virtual void setrow(uint row_idx, const std::vector<uint>& columns, const std::vector<double>& values);
 
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows);
@@ -232,14 +231,14 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  void uBLASMatrix<Mat>::getrow(uint row_idx, Array<uint>& columns, Array<double>& values) const
+  void uBLASMatrix<Mat>::getrow(uint row_idx, std::vector<uint>& columns, std::vector<double>& values) const
   {
     dolfin_assert(row_idx < this->size(0));
 
     // Reference to matrix row (throw away const-ness and trust uBLAS)
     ublas::matrix_row<Mat> row( *(const_cast<Mat*>(&A)) , row_idx);
         
-    // Insert values into Arrays
+    // Insert values into std::vectors
     columns.clear();
     values.clear();
     typename ublas::matrix_row<Mat>::const_iterator component;
@@ -251,7 +250,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
-  void uBLASMatrix<Mat>::setrow(uint row_idx, const Array<uint>& columns, const Array<double>& values)
+  void uBLASMatrix<Mat>::setrow(uint row_idx, const std::vector<uint>& columns, const std::vector<double>& values)
   {
     dolfin_assert(columns.size() == values.size());
     dolfin_assert(row_idx < this->size(0));

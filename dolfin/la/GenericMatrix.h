@@ -14,13 +14,13 @@
 #define __GENERIC_MATRIX_H
 
 #include <tr1/tuple>
+#include <vector>
 #include "GenericTensor.h"
 
 namespace dolfin
 {
 
   class GenericVector;
-  template<class M> class Array;
 
   /// This class defines a common interface for matrices.
 
@@ -89,10 +89,10 @@ namespace dolfin
     virtual void axpy(double a, const GenericMatrix& A) = 0;
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, Array<uint>& columns, Array<double>& values) const = 0;
+    virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const = 0;
 
     /// Set values for given row
-    virtual void setrow(uint row, const Array<uint>& columns, const Array<double>& values) = 0;
+    virtual void setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values) = 0;
 
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows) = 0;

@@ -53,7 +53,7 @@ namespace dolfin
     /// Transform MeshData
     static void transformMeshData(Mesh& newmesh, Mesh& oldmesh, 
                                   MeshFunction<uint>& cell_map,
-		                  Array<int>& facet_map);                                    
+		                  std::vector<int>& facet_map);                                    
 
   };
 

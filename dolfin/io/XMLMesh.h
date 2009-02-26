@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2008 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2008-05-21
+// Last changed: 2009-02-26
 
 #ifndef __NEW_XML_MESH_H
 #define __NEW_XML_MESH_H
@@ -61,7 +61,7 @@ namespace dolfin
     ParserState state;
     MeshEditor editor;
     MeshFunction<uint>* f;
-    Array<uint>* a;
+    std::vector<uint>* a;
     
     // Variables for reading in higher order mesh coordinates from vector data
     Vector *mesh_coord;

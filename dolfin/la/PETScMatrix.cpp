@@ -15,7 +15,6 @@
 #include <sstream>
 #include <iomanip>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/Array.h>
 #include "PETScVector.h"
 #include "PETScMatrix.h"
 #include "GenericSparsityPattern.h"
@@ -249,8 +248,8 @@ void PETScMatrix::axpy(double a, const GenericMatrix& A)
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::getrow(uint row,
-                         Array<uint>& columns,
-                         Array<double>& values) const
+                         std::vector<uint>& columns,
+                         std::vector<double>& values) const
 {
   dolfin_assert(A);
 
@@ -259,7 +258,7 @@ void PETScMatrix::getrow(uint row,
   int ncols = 0;
   MatGetRow(*A, row, &ncols, &cols, &vals);
   
-  // Assign values to Arrays
+  // Assign values to std::vectors
   columns.assign(cols, cols+ncols);
   values.assign(vals, vals+ncols);
 
@@ -267,8 +266,8 @@ void PETScMatrix::getrow(uint row,
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::setrow(uint row,
-                         const Array<uint>& columns,
-                         const Array<double>& values)
+                         const std::vector<uint>& columns,
+                         const std::vector<double>& values)
 {
   dolfin_assert(A);
 
