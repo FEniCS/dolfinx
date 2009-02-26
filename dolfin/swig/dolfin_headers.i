@@ -76,7 +76,6 @@
 
 // DOLFIN headers included from elements
 %include "dolfin/elements/ElementLibrary.h"
-%include "dolfin/elements/ProjectionLibrary.h"
 
 // DOLFIN headers included from function
 %include "dolfin/function/Data.h"
