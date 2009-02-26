@@ -48,7 +48,7 @@ void ALE::move(Mesh& mesh, const Function& displacement)
 
   // Interpolate at vertices
   const uint N = mesh.numVertices();
-  double* vertex_values = new real[N*gdim];
+  double* vertex_values = new double[N*gdim];
   displacement.interpolate(vertex_values);
 
   // Move vertex coordinates
