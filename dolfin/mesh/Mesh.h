@@ -8,7 +8,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2009-01-09
+// Last changed: 2009-02-25
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -27,6 +27,7 @@ namespace dolfin
   
   template <class T> class MeshFunction;
   class IntersectionDetector;
+  class Function;
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
   ///
@@ -158,6 +159,9 @@ namespace dolfin
     /// Move coordinates of mesh according to new boundary coordinates
     void move(Mesh& boundary, dolfin::ALEType method=lagrange);
     
+    /// Move coordinates of mesh according to displacement function
+    void move(const Function& displacement);
+
     /// Smooth mesh using Lagrangian mesh smoothing
     void smooth(uint num_smoothings=1);
     

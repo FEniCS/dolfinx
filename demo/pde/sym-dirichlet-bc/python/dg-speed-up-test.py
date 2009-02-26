@@ -10,15 +10,7 @@ from dolfin import *
 
 # Create mesh and finite element
 mesh = UnitSquare(300,300)
-
-# Source term
-class Source(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
-    def eval(self, values, x):
-        dx = x[0] - 0.5
-        dy = x[1] - 0.5
-        values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02)
+V = FunctionSpace(mesh, "DG", 1)
 
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
@@ -26,23 +18,22 @@ class DirichletBoundary(SubDomain):
         return bool(on_boundary) 
 
 # Define variational problem
-element = FiniteElement("Discontinuous Lagrange", "triangle", 1)
-v = TestFunction(element)
-u = TrialFunction(element)
-f = Function(element, mesh, 1.0)
+v = TestFunction(V)
+u = TrialFunction(V)
+f = Constant(mesh, 1.0)
 
 # Normal component, mesh size and right-hand side
-n = FacetNormal("triangle", mesh)
-h = AvgMeshSize("triangle", mesh)
+n = FacetNormal(mesh)
+h = AvgMeshSize(mesh)
 
 # Parameters
 alpha = 4.0
 gamma = 8.0
 
 # Define boundary condition
-u0 = Function(mesh, 0.0)
+u0 = Constant(mesh, 0.0)
 boundary = DirichletBoundary()
-bc = DirichletBC(u0, mesh, boundary)
+bc = DirichletBC(V, u0, boundary)
 
 # Bilinear form
 a = dot(grad(v), grad(u))*dx \
@@ -57,18 +48,19 @@ a = dot(grad(v), grad(u))*dx \
 L = v*f*dx
 
 backends = ["uBLAS", "PETSc", "Epetra"]
+
 for backend in backends: 
     dolfin_set("linear algebra backend", backend)
 
     t0 = time.time()
-    A, b = assemble_system(a, L, bc, mesh)
+    A, b = assemble_system(a, L, bc)
     t1 = time.time()
     print "time for new assembly      ", t1-t0, " with ", backend
 
     t0 = time.time()
-    A = assemble(a, mesh)
-    b = assemble(L, mesh)
-    bc.apply(A, b, a)
+    A = assemble(a)
+    b = assemble(L)
+    bc.apply(A, b)
     t1 = time.time()
     print "time for standard assembly ", t1-t0, " with ", backend
      

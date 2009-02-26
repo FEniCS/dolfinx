@@ -3,7 +3,7 @@
 for a gear clamped at two of its ends and twisted 30 degrees."""
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-14 -- 2008-12-13"
+__date__ = "2007-11-14 -- 2009-02-25"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -90,4 +90,10 @@ xml_file << u
 
 # Plot solution
 plot(u, mode="displacement")
+
+# Displace mesh and plot displaced mesh
+mesh.move(u)
+plot(mesh)
+
+# Hold plots
 interactive()

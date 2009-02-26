@@ -10,25 +10,6 @@ __license__  = "GNU LGPL Version 2.1"
 import time
 from dolfin import *
 
-# Source term
-class Source(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
-    def eval(self, values, x):
-        dx = x[0] - 0.5
-        dy = x[1] - 0.5
-        values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02)
-
-# Neumann boundary condition
-class Flux(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
-    def eval(self, values, x):
-        if x[0] > DOLFIN_EPS:
-            values[0] = 25.0*sin(5.0*DOLFIN_PI*x[1])
-        else:
-            values[0] = 0.0
-
 
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
@@ -36,26 +17,22 @@ class DirichletBoundary(SubDomain):
         return bool(on_boundary and x[0] < DOLFIN_EPS)
 
 mesh = UnitSquare(500,500)
-element = FiniteElement("Lagrange", "triangle", 1)
-
+V = FunctionSpace(mesh, "CG", 1)
 
 # Define variational problem
-v = TestFunction(element)
-u = TrialFunction(element)
-#f = Source(element, mesh)
-#g = Flux(element, mesh)
-f = Function(element, mesh, 1.0)
-g = Function(element, mesh, 1.0)
+v = TestFunction(V)
+u = TrialFunction(V)
 
+f = Function(V, "500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 
 
 a = dot(grad(v), grad(u))*dx
-L = v*f*dx + v*g*ds
+L = v*f*dx 
 
 # Define boundary condition
-u0 = Function(mesh, 0.0)
+u0 = Constant(mesh, 0.0)
 boundary = DirichletBoundary()
-bc = DirichletBC(u0, mesh, boundary)
+bc = DirichletBC(V, u0, boundary)
 
 
 backends = ["uBLAS", "PETSc", "Epetra"]
@@ -64,14 +41,14 @@ for backend in backends:
     dolfin_set("linear algebra backend", backend)
 
     t0 = time.time()
-    A = assemble(a, mesh)
-    b = assemble(L, mesh)
-    bc.apply(A, b, a)
+    A = assemble(a)
+    b = assemble(L)
+    bc.apply(A, b)
     t1 = time.time()
     print "time for standard assembly ", t1-t0, " using ", backend
 
     t0 = time.time()
-    A, b = assemble_system(a, L, bc, mesh)
+    A, b = assemble_system(a, L, bc)
     t1 = time.time()
     print "time for new assembly      ", t1-t0, " using ", backend
 

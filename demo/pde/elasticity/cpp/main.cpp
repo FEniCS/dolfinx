@@ -1,10 +1,10 @@
-// Copyright (C) 2006-2008 Johan Jansson and Anders Logg.
+// Copyright (C) 2006-2009 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2008
 //
 // First added:  2006-02-07
-// Last changed: 2008-12-12
+// Last changed: 2009-02-25
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -111,6 +111,10 @@ int main()
 
   // Plot solution
   plot(u, "displacement");
+
+  // Displace mesh and plot displaced mesh
+  mesh.move(u);
+  plot(mesh);
 
   // Save solution in VTK format
   File vtk_file("elasticity.pvd");

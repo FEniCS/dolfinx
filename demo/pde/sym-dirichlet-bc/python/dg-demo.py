@@ -17,16 +17,6 @@ mesh = UnitSquare(10,10)
 
 dolfin_set("linear algebra backend", "uBLAS")
 
-# Source term
-class Source(Function):
-    def __init__(self, element, mesh):
-        Function.__init__(self, element, mesh)
-    def eval(self, values, x):
-        dx = x[0] - 0.5
-        dy = x[1] - 0.5
-#        values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02)
-        values[0] = 1.0 
-
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
@@ -35,23 +25,23 @@ class DirichletBoundary(SubDomain):
 
 
 # Define variational problem
-element = FiniteElement("Discontinuous Lagrange", "triangle", 1)
-v = TestFunction(element)
-u = TrialFunction(element)
-f = Source(element, mesh)
+V = FunctionSpace(mesh, "DG", 1)
+v = TestFunction(V)
+u = TrialFunction(V)
 
 # Normal component, mesh size and right-hand side
-n = FacetNormal("triangle", mesh)
-h = AvgMeshSize("triangle", mesh)
+n = FacetNormal(mesh)
+h = AvgMeshSize(mesh)
+f = Function(V, "500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 
 # Parameters
 alpha = 4.0
 gamma = 8.0
 
 # Define boundary condition
-u0 = Function(mesh, 0.0)
+u0 = Constant(mesh, 0.0)
 boundary = DirichletBoundary()
-bc = DirichletBC(u0, mesh, boundary)
+bc = DirichletBC(V, u0, boundary)
 
 # Bilinear form
 
@@ -69,8 +59,8 @@ a = dot(grad(v), grad(u))*dx \
 L = v*f*dx
 
 # Standard way of computing A and b 
-A = assemble(a, mesh)
-b = assemble(L, mesh)
+A = assemble(a)
+b = assemble(L)
 x = b.copy()
 x.zero()
 solve(A, x, b)
@@ -78,9 +68,14 @@ file = File("A1.m") ; file << A;
 file = File("b1.m") ; file << b; 
 
 # Project u
-u = Function(element, mesh, x)
-P1 = FiniteElement("Lagrange", "triangle", 1)
+u = Function(V)
+u.vector().set(x.data())
+u_proj = project(u, V)
+
+# Project solution to piecewise linears
+P1 = FunctionSpace(mesh, "CG", 1)
 u_proj = project(u, P1)
+
 
 # Save solution to file
 file = File("poisson1.pvd")
@@ -98,8 +93,8 @@ file = File("A2.m") ; file << A;
 file = File("b2.m") ; file << b; 
 
 # Project u
-u = Function(element, mesh, x)
-P1 = FiniteElement("Lagrange", "triangle", 1)
+u = Function(V)
+u.vector().set(x.data())
 u_proj = project(u, P1)
 
 # Save solution to file

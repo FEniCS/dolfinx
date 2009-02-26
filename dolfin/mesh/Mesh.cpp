@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2009-01-09
+// Last changed: 2009-02-25
 
 #include <sstream>
 
@@ -238,6 +238,11 @@ void Mesh::coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary)
 void Mesh::move(Mesh& boundary, ALEType method)
 {
   ALE::move(*this, boundary, method);
+}
+//-----------------------------------------------------------------------------
+void Mesh::move(const Function& displacement)
+{
+  ALE::move(*this, displacement);
 }
 //-----------------------------------------------------------------------------
 void Mesh::smooth(uint num_smoothings)

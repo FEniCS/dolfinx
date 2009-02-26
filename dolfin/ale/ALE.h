@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2009-01-12
+// Last changed: 2009-02-25
 
 #ifndef __ALE_H
 #define __ALE_H
@@ -13,6 +13,7 @@ namespace dolfin
 {
 
   class Mesh;
+  class Function;
 
   /// This class provides functionality useful for implementation of
   /// ALE (Arbitrary Lagrangian-Eulerian) methods, in particular
@@ -25,6 +26,9 @@ namespace dolfin
 
     /// Move coordinates of mesh according to new boundary coordinates
     static void move(Mesh& mesh, Mesh& new_boundary, ALEType type=hermite);
+
+    /// Move coordinates of mesh according to displacement function
+    static void move(Mesh& mesh, const Function& displacement);
 
   };
 
