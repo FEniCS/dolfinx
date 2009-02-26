@@ -26,9 +26,10 @@ using namespace dolfin;
 #ifdef HAS_GTS
 
 //-----------------------------------------------------------------------------
-IntersectionDetector::IntersectionDetector(const Mesh& mesh0) : gts(0), mesh0(mesh0)
+IntersectionDetector::IntersectionDetector(const Mesh& mesh0) 
+                                   : gts(new GTSInterface(mesh0)), mesh0(mesh0)
 {
-  gts = new GTSInterface(mesh0);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 IntersectionDetector::~IntersectionDetector()

@@ -75,7 +75,8 @@ int main()
   PeriodicBC bc1(V, periodic_boundary);
 
   // Collect boundary conditions
-  Array<BoundaryCondition*> bcs(&bc0, &bc1);
+  std::vector<BoundaryCondition*> bcs;
+  bcs.push_back(&bc0); bcs.push_back(&bc1);
 
   // Define PDE
   VariationalProblem pde(a, L, bcs);

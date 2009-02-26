@@ -61,7 +61,8 @@ int main()
   DirichletBC bc2(W1, zero, sub_domains, 2);
 
   // Collect boundary conditions
-  Array<BoundaryCondition*> bcs(&bc0, &bc1, &bc2);
+  std::vector<BoundaryCondition*> bcs;
+  bcs.push_back(&bc0); bcs.push_back(&bc1); bcs.push_back(&bc2);
 
   // Set up PDE
   MeshSize h;
