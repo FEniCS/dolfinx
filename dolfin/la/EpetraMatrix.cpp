@@ -14,7 +14,6 @@
 #include <sstream>
 #include <iomanip>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/Array.h>
 #include "EpetraVector.h"
 #include "EpetraMatrix.h"
 #include "GenericSparsityPattern.h"
@@ -292,7 +291,7 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transp
 
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::getrow(uint row, Array<uint>& columns, Array<double>& values) const
+void EpetraMatrix::getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const
 {
   dolfin_assert(A); 
 
@@ -318,7 +317,7 @@ void EpetraMatrix::getrow(uint row, Array<uint>& columns, Array<double>& values)
   delete num_entries; 
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::setrow(uint row, const Array<uint>& columns, const Array<double>& values)
+void EpetraMatrix::setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values)
 {
   dolfin_not_implemented();
 }

@@ -6,7 +6,6 @@
 
 #ifndef HAS_GMP
 
-#include <dolfin/common/Array.h>
 #include "ComplexODE.h"
 
 using namespace dolfin;
@@ -95,7 +94,7 @@ real ComplexODE::f(const real* u, real t, uint i)
   // imaginary parts of the corresponding z_i
 
   // Update zvalues for correct components
-  const Array<uint>& deps = dependencies[i];
+  const std::vector<uint>& deps = dependencies[i];
   for (uint pos = 0; pos < deps.size(); pos++)
   {
     // Element of u that needs to be updated

@@ -12,7 +12,6 @@
 
 #include <ufc.h>
 
-#include <dolfin/common/Array.h>
 #include <dolfin/mesh/MeshFunction.h>
 
 namespace dolfin
@@ -78,7 +77,7 @@ namespace dolfin
     /// or an empty MeshFunction may be used to specify that the tensor should be
     /// assembled over the entire set of cells or facets.
     void assemble(GenericTensor& A, const ufc::form& form,
-                  const Array<Function*>& coefficients,
+                  const std::vector<Function*>& coefficients,
                   const DofMapSet& dof_map_set,
                   const MeshFunction<uint>* cell_domains,
                   const MeshFunction<uint>* exterior_facet_domains,
@@ -88,28 +87,28 @@ namespace dolfin
  
     // Assemble over cells
     void assembleCells(GenericTensor& A,
-                       const Array<Function*>& coefficients,
+                       const std::vector<Function*>& coefficients,
                        const DofMapSet& dof_set_map,
                        UFC& data,
                        const MeshFunction<uint>* domains) const;
 
     // Assemble over exterior facets
     void assembleExteriorFacets(GenericTensor& A,
-                                const Array<Function*>& coefficients,
+                                const std::vector<Function*>& coefficients,
                                 const DofMapSet& dof_set_map,
                                 UFC& data,
                                 const MeshFunction<uint>* domains) const;
 
     // Assemble over interior facets
     void assembleInteriorFacets(GenericTensor& A,
-                                const Array<Function*>& coefficients,
+                                const std::vector<Function*>& coefficients,
                                 const DofMapSet& dof_set_map,
                                 UFC& data,
                                 const MeshFunction<uint>* domains) const;
 
     // Check arguments
     void check(const ufc::form& form,
-               const Array<Function*>& coefficients) const;
+               const std::vector<Function*>& coefficients) const;
 
     // Initialize global tensor
     void initGlobalTensor(GenericTensor& A, const DofMapSet& dof_map_set, UFC& ufc, bool reset_tensor) const;

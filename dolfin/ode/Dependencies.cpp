@@ -77,8 +77,8 @@ void Dependencies::set(const uBLASSparseMatrix& A)
   for (uint i = 0; i < N; i++)
   {
     // FIXME: Could add function to return sparsity pattern
-    Array<uint> columns;
-    Array<real> values;
+    std::vector<uint> columns;
+    std::vector<real> values;
     A.getrow(i, columns, values); 
     setsize(i, columns.size());
     for (uint j = 0; j < columns.size(); j++)
@@ -108,11 +108,11 @@ void Dependencies::transp(const Dependencies& dependencies)
   make_sparse();
 
   // Count the number of dependencies
-  Array<uint> rowsizes(N);
-  rowsizes = 0;
+  std::vector<uint> rowsizes(N);
+  std::fill(rowsizes.begin(), rowsizes.end(), 0);
   for (uint i = 0; i < N; i++)
   {
-    const Array<uint>& row(dependencies.sdep[i]);
+    const std::vector<uint>& row(dependencies.sdep[i]);
     for (uint pos = 0; pos < row.size(); ++pos)
       rowsizes[row[pos]]++;
   }
@@ -124,7 +124,7 @@ void Dependencies::transp(const Dependencies& dependencies)
   // Set dependencies
   for (uint i = 0; i < N; i++)
   {
-    const Array<uint>& row(dependencies.sdep[i]);
+    const std::vector<uint>& row(dependencies.sdep[i]);
     for (uint pos = 0; pos < row.size(); ++pos)
       set(row[pos], i);
   }

@@ -35,7 +35,7 @@ void MeshSmoothing::smooth(Mesh& mesh)
 
   // Iterate over all vertices
   const uint d = mesh.geometry().dim();
-  Array<double> xx(d);
+  std::vector<double> xx(d);
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     // Skip vertices on the boundary

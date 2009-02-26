@@ -91,7 +91,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
   typedef std::map<std::vector<double>, std::pair<int, int>, lt_coordinate>::iterator iterator;
   std::vector<double> xx(mesh.geometry().dim());
   
-  // Array used for mapping coordinates
+  // std::vector used for mapping coordinates
   double* y = new double[mesh.geometry().dim()];
   for (uint i = 0; i < mesh.geometry().dim(); i++)
     y[i] = 0.0;
@@ -258,8 +258,8 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     vals[0] = -1;
     zero[0] = 0.0;
 
-    Array<uint> columns;
-    Array<double> values;
+    std::vector<uint> columns;
+    std::vector<double> values;
     
     // Add slave-dof-row to master-dof-row  
     A.getrow(dof0, columns, values);

@@ -10,7 +10,6 @@
 #define __UBLAS_ILU_PRECONDITIONER_H
 
 #include "ublas.h"
-#include <dolfin/common/Array.h>
 #include "uBLASPreconditioner.h"
 #include "uBLASMatrix.h"
 
@@ -48,7 +47,7 @@ namespace dolfin
     uBLASMatrix<ublas_sparse_matrix> M;
 
     // Diagonal
-    Array<uint> diagonal;
+    std::vector<uint> diagonal;
 
   };
 

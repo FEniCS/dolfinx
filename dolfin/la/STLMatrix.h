@@ -15,7 +15,6 @@
 #include <map>
 
 #include <dolfin/log/LogStream.h>
-#include <dolfin/common/Array.h>
 #include "GenericSparsityPattern.h"
 #include "GenericMatrix.h"
 
@@ -111,7 +110,7 @@ namespace dolfin
     { error("Not implemented."); }
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, Array<uint>& columns, Array<double>& values) const
+    virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const
     {
       columns.clear();
       values.clear();
@@ -124,7 +123,7 @@ namespace dolfin
     }
 
     /// Set values for given row
-    virtual void setrow(uint row, const Array<uint>& columns, const Array<double>& values)
+    virtual void setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values)
     { error("Not implemented."); }
 
     /// Set given rows to zero

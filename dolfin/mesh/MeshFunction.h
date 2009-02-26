@@ -50,6 +50,12 @@ namespace dolfin
       file >> *this;
     }
 
+    /// Copy constructor
+    MeshFunction(const MeshFunction<T>& f) : _values(0), _mesh(0), _dim(0), _size(0)
+    {
+      *this = f;
+    }
+
     /// Destructor
     ~MeshFunction()
     {
@@ -89,6 +95,19 @@ namespace dolfin
       dolfin_assert(entity.dim() == _dim);
       dolfin_assert(entity.index() < _size);
       return _values[entity.index()];
+    }
+
+    /// Assign mesh function
+    const MeshFunction<T>& operator= (const MeshFunction<T>& f)
+    {
+      _mesh = f._mesh;
+      _dim = f._dim;
+      _size = f._size;
+      delete [] _values;
+      _values = new T[_size];
+      for (uint i = 0; i < _size; i++)
+        _values[i] = f._values[i];
+      return *this;
     }
 
     /// Set all values to given value

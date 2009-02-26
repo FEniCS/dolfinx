@@ -37,16 +37,16 @@ namespace dolfin
     static void collapseEdge(Mesh& mesh, Edge& edge, 
                              Vertex& vertex_to_remove, 
                              MeshFunction<bool>& cell_to_remove, 
-                             Array<int>& old2new_vertex, 
-			     Array<int>& old2new_cell,
+                             std::vector<int>& old2new_vertex, 
+			     std::vector<int>& old2new_cell,
                              MeshEditor& editor, 
                              uint& current_cell); 
 
     /// Coarsen simplicial cell by edge collapse 
     static bool coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
 			    int cell_id,
-			    Array<int>& old2new_vertex,
-			    Array<int>& old2new_cell,
+			    std::vector<int>& old2new_vertex,
+			    std::vector<int>& old2new_cell,
 			    bool coarsen_boundary = false);
 
   };

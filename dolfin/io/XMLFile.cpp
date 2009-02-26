@@ -8,14 +8,13 @@
 // Modified by Niclas Jansson 2008.
 //
 // First added:  2002-12-03
-// Last changed: 2009-01-14
+// Last changed: 2009-02-26
 
 #include <stdarg.h>
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/constants.h>
-#include <dolfin/common/Array.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/main/MPI.h>
@@ -258,8 +257,8 @@ void XMLFile::operator<< (const GenericMatrix& A)
   // Write matrix in XML format
   fprintf(fp, "  <matrix rows=\"%u\" columns=\"%u\">\n", A.size(0), A.size(1));
         
-  Array<uint> columns;
-  Array<double> values;
+  std::vector<uint> columns;
+  std::vector<double> values;
 
   for (unsigned int i = 0; i < A.size(0); i++)
   {
@@ -365,7 +364,7 @@ void XMLFile::operator<< (const Mesh& mesh)
     }
 
     // Write arrays
-    for (std::map<std::string, Array<uint>*>::const_iterator it = data.arrays.begin();
+    for (std::map<std::string, std::vector<uint>*>::const_iterator it = data.arrays.begin();
          it != data.arrays.end(); ++it)
     {
       fprintf(fp, "      <array name=\"%s\" type=\"uint\" size=\"%d\">\n",

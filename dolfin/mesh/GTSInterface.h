@@ -27,7 +27,6 @@ namespace dolfin
   class Mesh;
   class Point;
   class Cell;
-  template <class T> class Array;
 
   class GTSInterface
   {

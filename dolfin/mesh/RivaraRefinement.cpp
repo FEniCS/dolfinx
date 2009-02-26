@@ -18,7 +18,7 @@ using namespace dolfin;
 void RivaraRefinement::refine(Mesh& mesh, 
 			      MeshFunction<bool>& cell_marker,
 			      MeshFunction<uint>& cell_map,
-			      Array<int>& facet_map)
+			      std::vector<int>& facet_map)
 {
   message("Refining simplicial mesh by recursive Rivara bisection.");
 
@@ -70,7 +70,7 @@ void RivaraRefinement::refine(Mesh& mesh,
     cell_map.set(c->index(), new2old_cell_arr[c->index()]);
 
   //Generate facet map array 
-  Array<int> new_facet_map(new2old_facet_arr.size());
+  std::vector<int> new_facet_map(new2old_facet_arr.size());
   facet_map = new_facet_map;
   for (uint i=0; i<new2old_facet_arr.size(); i++ )
     facet_map[i] = new2old_facet_arr[i];
@@ -170,7 +170,7 @@ void RivaraRefinement::DMesh::exportMesh(Mesh& mesh,
     editor.addVertex(current_vertex++, dv->p);
   }
 
-  Array<uint> cell_vertices(cell_type->numEntities(0));
+  std::vector<uint> cell_vertices(cell_type->numEntities(0));
   uint current_cell = 0;
   for(std::list<DCell* >::iterator it = cells.begin();
       it != cells.end(); ++it)

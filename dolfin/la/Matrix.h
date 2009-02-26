@@ -92,11 +92,11 @@ namespace dolfin
     { matrix->axpy(a,A); }
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, Array<uint>& columns, Array<double>& values) const
+    virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const
     { matrix->getrow(row, columns, values); }
 
     /// Set values for given row
-    virtual void setrow(uint row, const Array<uint>& columns, const Array<double>& values)
+    virtual void setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values)
     { matrix->setrow(row, columns, values); }
 
     /// Set given rows to zero

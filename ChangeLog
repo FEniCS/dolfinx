@@ -1,3 +1,7 @@
+ - Remove class Array (using std::vector instead)
+ - Add vector_mapping data to MeshData
+ - Use std::vector instead of Array in MeshData
+ - Add assignment operator and copy constructor for MeshFunction
  - Add function mesh.move(u) for moving mesh according to displacement function
  - Add macro dolfin_not_implemented()
  - Add new interpolate() function for interpolation of user-defined function to discrete

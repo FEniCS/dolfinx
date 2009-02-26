@@ -63,7 +63,7 @@ namespace dolfin
 
   private: 
 
-    /// Array of meshes 
+    /// std::vector of meshes 
     Mesh* meshes;
 
     /// Number of meshes in mesh hierarchy 

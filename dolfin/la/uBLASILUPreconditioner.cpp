@@ -124,7 +124,7 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& A)
   diagonal.resize(size);
   diagonal[0] = 0;
 
-  Array<uint> iw(size);
+  std::vector<uint> iw(size);
   for(uint i=0; i< size; ++i)
     iw[i] = 0;
 

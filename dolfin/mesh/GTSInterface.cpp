@@ -15,7 +15,6 @@
 #include <gts.h>
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/Array.h>
 #include "Mesh.h"
 #include "Facet.h"
 #include "Vertex.h"

@@ -4,7 +4,6 @@
 // First added:  2008-05-15
 // Last changed: 2008-05-15
 
-#include <dolfin/common/Array.h>
 #include "LinearAlgebraFactory.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
@@ -104,8 +103,8 @@ void SingularSolver::init(const GenericMatrix& A)
   SparsityPattern s(N + 1, N + 1);
 
   // Copy sparsity pattern for A and last column
-  Array<uint> columns;
-  Array<double> dummy;
+  std::vector<uint> columns;
+  std::vector<double> dummy;
   for (uint i = 0; i < N; i++)
   {
     // Get row
@@ -162,8 +161,8 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
 
   // Copy rows from A into B
   const uint N = A.size(0);
-  Array<uint> columns;
-  Array<double> values;
+  std::vector<uint> columns;
+  std::vector<double> values;
   for (uint i = 0; i < N; i++)
   {
     A.getrow(i, columns, values);

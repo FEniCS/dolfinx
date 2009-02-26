@@ -166,19 +166,19 @@ namespace dolfin
     void smooth(uint num_smoothings=1);
     
     /// Compute cells intersecting point
-    void intersection(const Point& p, Array<uint>& cells, bool fixed_mesh=true);
+    void intersection(const Point& p, std::vector<uint>& cells, bool fixed_mesh=true);
 
     /// Compute cells overlapping line defined by points
-    void intersection(const Point& p1, const Point& p2, Array<uint>& cells, bool fixed_mesh=true);
+    void intersection(const Point& p1, const Point& p2, std::vector<uint>& cells, bool fixed_mesh=true);
     
     /// Compute cells overlapping cell
-    void intersection(Cell& cell, Array<uint>& cells, bool fixed_mesh=true);
+    void intersection(Cell& cell, std::vector<uint>& cells, bool fixed_mesh=true);
     
     /// Compute intersection with curve defined by points
-    void intersection(Array<Point>& points, Array<uint>& intersection, bool fixed_mesh=true);
+    void intersection(std::vector<Point>& points, std::vector<uint>& intersection, bool fixed_mesh=true);
     
     /// Compute intersection with mesh
-    void intersection(Mesh& mesh, Array<unsigned int>& cells, bool fixed_mesh=true);
+    void intersection(Mesh& mesh, std::vector<unsigned int>& cells, bool fixed_mesh=true);
 
     /// Display mesh data
     void disp() const;

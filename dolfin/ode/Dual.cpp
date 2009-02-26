@@ -50,7 +50,7 @@ void Dual::f(const real* phi, real t, real* y)
   
   if ( sparsity.sparse() )
   {
-    const Array<unsigned int>& row(sparsity.row(i));
+    const std::vector<unsigned int>& row(sparsity.row(i));
     for (unsigned int pos = 0; pos < row.size(); pos++)
       sum += rhs.dfdu(row[pos], i, T - t) * phi(row[pos]);
   }

@@ -8,7 +8,6 @@
 // Last changed: 2009-01-07
 
 #include <dolfin/log/log.h>
-#include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/io/File.h>
 #include <dolfin/la/GenericVector.h>

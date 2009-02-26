@@ -121,7 +121,7 @@ void FunctionSpace::eval(double* values,
 
   // Find the cell that contains x
   Point point(_mesh->geometry().dim(), x);
-  Array<uint> cells;
+  std::vector<uint> cells;
   intersection_detector->intersection(point, cells);
   if (cells.size() < 1)
     error("Unable to evaluate function at given point (not inside domain).");

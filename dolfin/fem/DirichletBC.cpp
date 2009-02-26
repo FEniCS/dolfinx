@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008
 //
 // First added:  2007-04-10
-// Last changed: 2009-01-07
+// Last changed: 2009-02-26
 
 #include <dolfin/common/constants.h>
 #include <dolfin/function/Function.h>
@@ -354,9 +354,9 @@ void DirichletBC::init_from_mesh(uint sub_domain)
   cout << "Creating sub domain markers for boundary condition." << endl;
 
   // Get data 
-  Array<uint>* facet_cells   = const_cast<Mesh&>(V->mesh()).data().array("boundary facet cells");
-  Array<uint>* facet_numbers = const_cast<Mesh&>(V->mesh()).data().array("boundary facet numbers");
-  Array<uint>* indicators    = const_cast<Mesh&>(V->mesh()).data().array("boundary indicators");
+  std::vector<uint>* facet_cells   = const_cast<Mesh&>(V->mesh()).data().array("boundary facet cells");
+  std::vector<uint>* facet_numbers = const_cast<Mesh&>(V->mesh()).data().array("boundary facet numbers");
+  std::vector<uint>* indicators    = const_cast<Mesh&>(V->mesh()).data().array("boundary indicators");
 
   // Check data
   if (!facet_cells)

@@ -9,7 +9,6 @@
 // Last changed: 2008-08-12
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/Array.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/Scalar.h>
 #include <dolfin/mesh/Mesh.h>
@@ -128,7 +127,7 @@ double pAssembler::assemble(Form& form,
 }
 //-----------------------------------------------------------------------------
 void pAssembler::assemble(GenericTensor& A, const ufc::form& form,
-                         const Array<Function*>& coefficients,
+                         const std::vector<Function*>& coefficients,
                          const DofMapSet& dof_map_set,
                          const MeshFunction<uint>* cell_domains,
                          const MeshFunction<uint>* exterior_facet_domains,
@@ -163,7 +162,7 @@ void pAssembler::assemble(GenericTensor& A, const ufc::form& form,
 }
 //-----------------------------------------------------------------------------
 void pAssembler::assembleCells(GenericTensor& A,
-                              const Array<Function*>& coefficients,
+                              const std::vector<Function*>& coefficients,
                               const DofMapSet& dof_map_set,
                               UFC& ufc,
                               const MeshFunction<uint>* domains) const
@@ -224,7 +223,7 @@ void pAssembler::assembleCells(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void pAssembler::assembleExteriorFacets(GenericTensor& A,
-                                       const Array<Function*>& coefficients,
+                                       const std::vector<Function*>& coefficients,
                                        const DofMapSet& dof_map_set,
                                        UFC& ufc,
                                        const MeshFunction<uint>* domains) const
@@ -288,7 +287,7 @@ void pAssembler::assembleExteriorFacets(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void pAssembler::assembleInteriorFacets(GenericTensor& A,
-                                       const Array<Function*>& coefficients,
+                                       const std::vector<Function*>& coefficients,
                                        const DofMapSet& dof_map_set,
                                        UFC& ufc,
                                        const MeshFunction<uint>* domains) const
@@ -365,7 +364,7 @@ void pAssembler::assembleInteriorFacets(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void pAssembler::check(const ufc::form& form,
-                      const Array<Function*>& coefficients) const
+                      const std::vector<Function*>& coefficients) const
 {
   // Check that we get the correct number of coefficients
   if ( coefficients.size() != form.num_coefficients() )

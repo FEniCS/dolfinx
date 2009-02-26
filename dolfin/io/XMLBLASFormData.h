@@ -7,7 +7,6 @@
 #ifndef __XML_BLAS_FORM_DATA_H
 #define __XML_BLAS_FORM_DATA_H
 
-#include <dolfin/common/Array.h>
 #include "XMLObject.h"
 
 namespace dolfin
@@ -48,8 +47,8 @@ namespace dolfin
 
     BLASFormData& blas;
 
-    Array<Array<double> > data_interior;
-    Array<Array<double> > data_boundary;
+    std::vector<std::vector<double> > data_interior;
+    std::vector<std::vector<double> > data_boundary;
     int mi, ni, mb, nb;
 
     ParserState state;

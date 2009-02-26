@@ -62,8 +62,8 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
     cell_forbidden.set(c->index(),false);
   
   // Init new vertices and cells
-  Array<int> old2new_cell(mesh.numCells());
-  Array<int> old2new_vertex(mesh.numVertices());
+  std::vector<int> old2new_cell(mesh.numCells());
+  std::vector<int> old2new_vertex(mesh.numVertices());
 
   std::list<int> cells_to_coarsen(0);
 
@@ -133,13 +133,13 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
 void LocalMeshCoarsening::collapseEdge(Mesh& mesh, Edge& edge, 
                                        Vertex& vertex_to_remove, 
                                        MeshFunction<bool>& cell_to_remove, 
-                                       Array<int>& old2new_vertex, 
-                                       Array<int>& old2new_cell, 
+                                       std::vector<int>& old2new_vertex, 
+                                       std::vector<int>& old2new_cell, 
                                        MeshEditor& editor, 
                                        uint& current_cell) 
 {
   const CellType& cell_type = mesh.type();
-  Array<uint> cell_vertices(cell_type.numEntities(0));
+  std::vector<uint> cell_vertices(cell_type.numEntities(0));
 
   uint vert_slave = vertex_to_remove.index();
   uint vert_master = 0; 
@@ -178,8 +178,8 @@ void LocalMeshCoarsening::collapseEdge(Mesh& mesh, Edge& edge,
 //-----------------------------------------------------------------------------
 bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
 				      int cellid,
-				      Array<int>& old2new_vertex,
-				      Array<int>& old2new_cell,
+				      std::vector<int>& old2new_vertex,
+				      std::vector<int>& old2new_cell,
 				      bool coarsen_boundary)
 {
   cout << "coarsenCell: " << cellid << endl;
@@ -348,7 +348,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
   // Add old unrefined cells 
   uint cv_idx;
   uint current_cell = 0;
-  Array<uint> cell_vertices(cell_type.numEntities(0));
+  std::vector<uint> cell_vertices(cell_type.numEntities(0));
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     if(cell_to_remove.get(*c) == false && cell_to_regenerate(*c) == false)

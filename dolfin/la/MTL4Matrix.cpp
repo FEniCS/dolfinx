@@ -9,7 +9,6 @@
 #ifdef HAS_MTL4
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/Array.h>
 #include "GenericSparsityPattern.h"
 #include "MTL4Vector.h"
 #include "MTL4Matrix.h"
@@ -200,7 +199,7 @@ void MTL4Matrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transpos
     Ax_.down_cast<MTL4Vector>().vec() = A*x_.down_cast<MTL4Vector>().vec();
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::getrow(uint row_idx, Array<uint>& columns, Array<double>& values) const
+void MTL4Matrix::getrow(uint row_idx, std::vector<uint>& columns, std::vector<double>& values) const
 {
   assert_no_inserter();
   dolfin_assert(row_idx < this->size(0));
@@ -226,7 +225,7 @@ void MTL4Matrix::getrow(uint row_idx, Array<uint>& columns, Array<double>& value
   }
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::setrow(uint row, const Array<uint>& columns, const Array<double>& values)
+void MTL4Matrix::setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values)
 {
   dolfin_assert(columns.size() == values.size());
   dolfin_assert(row < this->size(0));

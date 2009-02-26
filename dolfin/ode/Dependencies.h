@@ -8,7 +8,6 @@
 #define __DEPENDENCIES_H
 
 #include <dolfin/common/types.h>
-#include <dolfin/common/Array.h>
 
 namespace dolfin
 {
@@ -47,10 +46,10 @@ namespace dolfin
     bool sparse() const;
 
     /// Get dependencies for given component (inline optimized)
-    inline Array<uint>& operator[] (uint i) { return ( _sparse ? sdep[i] : ddep ); }
+    inline std::vector<uint>& operator[] (uint i) { return ( _sparse ? sdep[i] : ddep ); }
 
     /// Get dependencies for given component (inline optimized)
-    inline const Array<uint>& operator[] (uint i) const { return ( _sparse ? sdep[i] : ddep ); }
+    inline const std::vector<uint>& operator[] (uint i) const { return ( _sparse ? sdep[i] : ddep ); }
 
     /// Display dependencies
     void disp() const;
@@ -73,10 +72,10 @@ namespace dolfin
     bool _sparse;
     
     // Sparse dependency pattern
-    Array< Array<uint> > sdep;
+    std::vector< std::vector<uint> > sdep;
 
     // Dense dependency pattern
-    Array<uint> ddep;
+    std::vector<uint> ddep;
     
   };
 

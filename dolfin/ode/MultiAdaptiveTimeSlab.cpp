@@ -249,7 +249,7 @@ real MultiAdaptiveTimeSlab::rsample(uint i, real t)
   // Update the solution vector at the end time for each dependent component
   
   // Get list of dependencies for component
-  const Array<uint>& deps = ode.dependencies[i];
+  const std::vector<uint>& deps = ode.dependencies[i];
   
   // Iterate over dependencies
   for (uint pos = 0; pos < deps.size(); pos++)
@@ -442,7 +442,7 @@ void MultiAdaptiveTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0
   //message("Checking dependencies to element %d (component %d)", element, index);
 
   // Get list of components depending on current component
-  const Array<uint>& deps = ode.transpose[i0];
+  const std::vector<uint>& deps = ode.transpose[i0];
   
   // Iterate over dependencies
   for (uint pos = 0; pos < deps.size(); pos++)
@@ -617,7 +617,7 @@ dolfin::uint MultiAdaptiveTimeSlab::countDependencies(uint i0)
   uint n = 0;
 
   // Get list of dependencies for current component index
-  const Array<uint>& deps = ode.dependencies[i0];
+  const std::vector<uint>& deps = ode.dependencies[i0];
   
   // Iterate over dependencies
   for (uint pos = 0; pos < deps.size(); pos++)
@@ -643,7 +643,7 @@ dolfin::uint MultiAdaptiveTimeSlab::countDependencies(uint i0, real b0)
   uint n = 0;
 
   // Get list of dependencies for current component index
-  const Array<uint>& deps = ode.dependencies[i0];
+  const std::vector<uint>& deps = ode.dependencies[i0];
   
   // Iterate over dependencies
   for (uint pos = 0; pos < deps.size(); pos++)
@@ -810,7 +810,7 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
   const uint last = nn - 1;
 
   // Get list of dependencies for given component index
-  const Array<uint>& deps = ode.dependencies[i0];
+  const std::vector<uint>& deps = ode.dependencies[i0];
 
   // First evaluate at left end-point
   if ( a0 < (_a + real_epsilon()) )
@@ -953,7 +953,7 @@ void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0,
   const uint& nn = method->nsize();
 
   // Get list of dependencies for given component index
-  const Array<uint>& deps = ode.dependencies[i0];
+  const std::vector<uint>& deps = ode.dependencies[i0];
 
   // Get first dependency to components with smaller time steps for element
   uint d = ed[e0];
