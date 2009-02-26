@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-11-30
-// Last changed: 2008-08-18
+// Last changed: 2009-02-26
 
 #include "mpiutils.h"
 #include "SubSystemsManager.h"
@@ -18,6 +18,21 @@
 
 using MPI::COMM_WORLD;
 
+//-----------------------------------------------------------------------------
+dolfin::MPICommunicator::MPICommunicator()
+{
+  MPI_Comm_dup(MPI_COMM_WORLD, &communicator);
+}
+//-----------------------------------------------------------------------------
+dolfin::MPICommunicator::~MPICommunicator()
+{
+  MPI_Comm_free(&communicator);
+}
+//-----------------------------------------------------------------------------
+MPI_Comm& dolfin::MPICommunicator::operator*()
+{ 
+  return communicator; 
+}
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::process_number()
 {
@@ -63,9 +78,11 @@ void dolfin::MPI::gather(std::vector<uint>& values)
   uint send_value = values[process_number()];
   uint* received_values = new uint[values.size()];
 
+  /// Create communicator (copy of MPI_COMM_WORLD)
+  MPICommunicator comm;
   // Call MPI
   MPI_Allgather(&send_value,     1, MPI_UNSIGNED,
-                received_values, 1, MPI_UNSIGNED, MPI_COMM_WORLD);
+                received_values, 1, MPI_UNSIGNED, *comm);
 
   // Copy values
   for (uint i = 0; i < values.size(); i++)
@@ -77,9 +94,11 @@ void dolfin::MPI::gather(std::vector<uint>& values)
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::global_maximum(uint size)
 {
-    uint recv_size = 0;
-    MPI_Allreduce(&size, &recv_size, 1, MPI_UNSIGNED, MPI_MAX, MPI_COMM_WORLD);
-    return recv_size;
+  uint recv_size = 0;
+  /// Create communicator (copy of MPI_COMM_WORLD)
+  MPICommunicator comm;
+  MPI_Allreduce(&size, &recv_size, 1, MPI_UNSIGNED, MPI_MAX, *comm);
+  return recv_size;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest,
@@ -89,10 +108,13 @@ dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest
 
   dolfin_debug2("Sending to %d, receiving from %d", dest, source);
 
+  /// Create communicator (copy of MPI_COMM_WORLD)
+  MPICommunicator comm;
+
   // Send and receive data
   MPI_Sendrecv(send_buffer, static_cast<int>(send_size), MPI_UNSIGNED, static_cast<int>(dest), 0,
                recv_buffer, static_cast<int>(recv_size), MPI_UNSIGNED, static_cast<int>(source),  0,
-               MPI_COMM_WORLD, &status);
+               *comm, &status);
 
   // Check number of received values
   int num_received = 0;
@@ -108,10 +130,13 @@ dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint de
 {
   MPI_Status status;
 
+  /// Create communicator (copy of MPI_COMM_WORLD)
+  MPICommunicator comm;
+
   // Send and receive data
   MPI_Sendrecv(send_buffer, static_cast<int>(send_size), MPI_DOUBLE, static_cast<int>(dest), 0,
                recv_buffer, static_cast<int>(recv_size), MPI_DOUBLE, static_cast<int>(source),  0,
-               MPI_COMM_WORLD, &status);
+               *comm, &status);
 
   // Check number of received values
   int num_received = 0;

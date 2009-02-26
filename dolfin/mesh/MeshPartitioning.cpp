@@ -15,11 +15,9 @@
 #include "MeshPartitioning.h"
 #include "MeshFunction.h"
 
-#if defined HAS_PARMETIS && HAS_MPI
+#if defined HAS_PARMETIS
 
 #include <parmetis.h>
-// FIXME: Should not need mpi.h here, just MPI class instead
-#include <mpi.h>
 
 using namespace dolfin;
 
@@ -114,16 +112,15 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
   int numflag = 0;
   int edgecut = 0;
 
-  // FIXME: Move this part to MPI wrapper
-  MPI_Comm comm;
-  MPI_Comm_dup(MPI_COMM_WORLD, &comm);
+  // Construct communicator (copy of MPI_COMM_WORLD)
+  MPICommunicator comm;
   
   // Call ParMETIS to partition mesh
   ParMETIS_V3_PartMeshKway(elmdist, eptr, eind,
                            elmwgt, &wgtflag, &numflag, &ncon,
                            &ncommonnodes, &nparts,
                            tpwgts, ubvec, options,
-                           &edgecut, part, &comm);
+                           &edgecut, part, &(*comm)); 
   message("Partitioned mesh, edge cut is %d.", edgecut);
 
   // Copy mesh_data
@@ -311,7 +308,6 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   uint global_vertex_send[boundary_size];
   for (uint i = 0; i < boundary_size; ++i){
     global_vertex_send[i] = global_vertex_indices->get(bmap[i]);
-    std::cout <<  "global_vertex_send[" << i << "] = " <<  global_vertex_send[i]  << std::endl;
   }
   std::sort(global_vertex_send, global_vertex_send + boundary_size);
 
@@ -333,7 +329,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Recieve buffer
   uint global_vertex_recv[max_boundary_size];
 
-  // Distribute
+  // Distribute boundaries and build mappings
   for (uint i = 1; i < num_processes; ++i)
   {
     // We receive data from process p - i (i steps to the left)
@@ -351,8 +347,6 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     it = std::set_intersection(
          global_vertex_send, global_vertex_send + boundary_size, 
          global_vertex_recv, global_vertex_recv + boundary_sizes[q], res_union.begin()); 
-
-    std::cout << "Number of boundary nodes is " << boundary_size << " and intersection has " << int(it-res_union.begin()) << " elements." << std::endl;
   }
 }
 //-----------------------------------------------------------------------------
