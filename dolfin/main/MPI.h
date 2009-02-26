@@ -6,7 +6,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-11-30
-// Last changed: 2008-12-09
+// Last changed: 2009-02-26
 
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H
@@ -14,8 +14,30 @@
 #include <vector>
 #include <dolfin/common/types.h>
 
+#ifdef HAS_MPI
+#include <mpi.h>
+#endif
+
 namespace dolfin
 {
+
+#ifdef HAS_MPI
+  class MPICommunicator 
+  {
+  public:
+    /// Create communicator (copy of MPI_COMM_WORLD)
+    MPICommunicator();
+
+    /// Destructor
+    ~MPICommunicator();
+
+    /// Dereference operator
+    MPI_Comm& operator*();
+
+  private:
+    MPI_Comm communicator;
+  };
+#endif
 
   /// This class provides utility functions for easy communcation with MPI.
   
