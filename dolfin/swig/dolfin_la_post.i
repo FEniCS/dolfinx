@@ -250,8 +250,8 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         " Return a numpy array representation of Matrix"
         import numpy
         A = numpy.zeros((self.size(0), self.size(1)))
-        c = ArrayUInt()
-        v = ArrayDouble()
+        c = STLVectorUInt()
+        v = STLVectorDouble()
         for i in xrange(self.size(0)):
             self.getrow(i, c, v)
             A[i,c] = v
