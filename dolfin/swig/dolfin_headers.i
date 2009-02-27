@@ -77,8 +77,10 @@
 %include "dolfin/elements/ElementLibrary.h"
 
 // DOLFIN headers included from mesh
+%include "dolfin/mesh/CellType.h"
 %include "dolfin/mesh/MeshEntity.h"
 %include "dolfin/mesh/MeshEntityIterator.h"
+%include "dolfin/mesh/Point.h"
 %include "dolfin/mesh/Vertex.h"
 %include "dolfin/mesh/Edge.h"
 %include "dolfin/mesh/Face.h"
