@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-02-11
-// Last changed: 2009-02-11
+// Last changed: 2009-03-02
 //
 // This demo program demonstrates how to extract matching sub meshes
 // from a common mesh.
@@ -18,7 +18,7 @@ int main()
   {
     bool inside(const double* x, bool on_boundary) const
     {
-      return x[0] > 1.4 && x[0] < 1.6 && x[1] < 0.6;
+      return x[0] > 1.4 - DOLFIN_EPS and x[0] < 1.6 + DOLFIN_EPS and x[1] < 0.6 + DOLFIN_EPS;
     }
   };
   
@@ -36,6 +36,18 @@ int main()
   // Extract sub meshes
   SubMesh fluid_mesh(mesh, sub_domains, 0);
   SubMesh structure_mesh(mesh, sub_domains, 1);
+
+  // Move structure mesh
+  MeshGeometry& geometry = structure_mesh.geometry();
+  for (VertexIterator v(structure_mesh); !v.end(); ++v)
+  {
+    const double* x = v->x();
+    geometry.x(v->index())[0] += 0.1*x[0]*x[1];
+  }
+  
+  // Move fluid mesh according to structure mesh
+  fluid_mesh.move(structure_mesh);
+  fluid_mesh.smooth();
   
   // Plot meshes
   plot(fluid_mesh);

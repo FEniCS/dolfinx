@@ -89,8 +89,8 @@ namespace dolfin
     
     /// Set higher order mesh coordinates
     void setMeshCoordinates(Mesh& mesh, Vector& mesh_coord,
-                              const std::string FE_signature,
-                              const std::string dofmap_signature);
+                            const std::string FE_signature,
+                            const std::string dofmap_signature);
 
     /// Display data
     void disp() const;

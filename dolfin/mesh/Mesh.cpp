@@ -235,9 +235,14 @@ void Mesh::coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary)
   _ordered = false;
 }
 //-----------------------------------------------------------------------------
-void Mesh::move(Mesh& boundary, ALEType method)
+void Mesh::move(BoundaryMesh& boundary, ALEType method)
 {
   ALE::move(*this, boundary, method);
+}
+//-----------------------------------------------------------------------------
+void Mesh::move(Mesh& mesh, ALEType method)
+{
+  ALE::move(*this, mesh, method);
 }
 //-----------------------------------------------------------------------------
 void Mesh::move(const Function& displacement)

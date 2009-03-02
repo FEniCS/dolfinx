@@ -2,7 +2,8 @@
  - Add vector_mapping data to MeshData
  - Use std::vector instead of Array in MeshData
  - Add assignment operator and copy constructor for MeshFunction
- - Add function mesh.move(u) for moving mesh according to displacement function
+ - Add function mesh.move(other_mesh) for moving mesh according to matching mesh (for FSI)
+ - Add function mesh.move(u) for moving mesh according to displacement function (for FSI)
  - Add macro dolfin_not_implemented()
  - Add new interpolate() function for interpolation of user-defined function to discrete
  - Make _function_space protected in Function
