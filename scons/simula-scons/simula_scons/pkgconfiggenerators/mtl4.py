@@ -51,12 +51,17 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
   else:
     compiler, linker = set_forced_compiler(forceCompiler)
 
+  boost_cflags, boost_libs = \
+                dep_module_header_and_libs('Boost', 'boost', sconsEnv=sconsEnv)
+
   if not cflags:
     cflags = pkgCflags(sconsEnv=sconsEnv)
+  cflags += " " + boost_cflags
   if not version:
     version = pkgVersion(compiler=compiler, cflags=cflags, sconsEnv=sconsEnv)
   if not libs:
     libs = pkgLibs(sconsEnv=sconsEnv)
+  libs += " " + boost_libs
   
   # All we want to do is to compile in some MTL4 headers, so really know
   # enough already, as the API of the headers are defined by the version.
