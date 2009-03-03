@@ -26,6 +26,8 @@ This gives convenient expand/collapse of bullets by pressing TAB.
      local boundary
    - Use parallel mesh information in DofMap to simplify
      implementation - should only need map from local to global cell/vertex
+** Rewrite Point class with public x, y, z member and use the trick
+   described here to allow indexed access: http://www.mr-edd.co.uk/?p=113
 
 * Manual
 ** Write incomplete sections
