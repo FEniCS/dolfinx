@@ -111,5 +111,32 @@ namespace dolfin
 
 }
 
+#else
+
+namespace dolfin
+{
+  /// Dummy implementation of ComplexODE used when DOLFIN is compiled
+  /// with GMP support in which case ComplexODE is not available
+
+  class ComplexODE : public ODE
+  {
+  public:
+
+    ComplexODE(uint n, real T) : ODE(1, 0.0), j(0)
+    {
+      warning("ComplexODE not available when DOLFIN is compiled with GMP support.");
+    }
+
+    void u0(real* u) {}
+
+    void f(const real* u, real t, real* y) {}
+
+  protected:
+
+    double j;
+
+  };
+}
+
 #endif
 #endif
