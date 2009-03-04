@@ -4,17 +4,19 @@
 // Modified by Garth N. Wells 2005, 2006.
 // Modified by Haiko Etzel 2005.
 // Modified by Magnus Vikstrom 2007.
-// Modified by Nuno Lopes 2008
+// Modified by Nuno Lopes 2008.
 // Modified by Niclas Jansson 2008.
+// Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2009-01-14
+// Last changed: 2009-03-04
 
 #include <string>
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include "File.h"
 #include "GenericFile.h"
+#include "NewXMLFile.h"
 #include "XMLFile.h"
 #include "MatlabFile.h"
 #include "OctaveFile.h"
@@ -27,7 +29,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-File::File(const std::string& filename)
+File::File(const std::string& filename, bool new_style)
 {
   // Choose file type base on suffix.
 
@@ -35,9 +37,15 @@ File::File(const std::string& filename)
   // FIXME: it essential that the suffixes are checked in the correct order.
 
   if (filename.rfind(".xml.gz") != filename.npos)
-    file = new XMLFile(filename, true);
+    if ( new_style )
+      file = new NewXMLFile(filename, true);
+    else
+      file = new XMLFile(filename, true);
   else if (filename.rfind(".xml") != filename.npos)
-    file = new XMLFile(filename, false);
+    if ( new_style )
+      file = new NewXMLFile(filename, false);
+    else
+      file = new XMLFile(filename, false);
   else if (filename.rfind(".m") != filename.npos)
     file = new OctaveFile(filename);
   else if (filename.rfind(".py") != filename.npos)
@@ -188,6 +196,48 @@ void File::operator>> (Graph& graph)
   *file >> graph;
 }
 //-----------------------------------------------------------------------------
+void File::operator>> (std::vector<int>& x)
+{
+  file->read();
+  
+  *file >> x;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::vector<uint>& x)
+{
+  file->read();
+  
+  *file >> x;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::vector<double>& x)
+{
+  file->read();
+  
+  *file >> x;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::map<uint, std::vector<int> >& array_map)
+{
+  file->read();
+  
+  *file >> array_map;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::map<uint, std::vector<uint> >& array_map)
+{
+  file->read();
+  
+  *file >> array_map;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::map<uint, std::vector<double> >& array_map)
+{
+  file->read();
+  
+  *file >> array_map;
+}
+//-----------------------------------------------------------------------------
 void File::operator<< (const GenericVector& x)
 {
   file->write();
@@ -284,5 +334,26 @@ void File::operator<< (const Graph& graph)
   file->write();
   
   *file << graph;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const std::vector<int>& x)
+{
+  file->write();
+  
+  *file << x;
+}
+//-----------------------------------------------------------------------------void File::operator<< (const std::vector<int>& ix)
+void File::operator<< (const std::vector<uint>& x)
+{
+  file->write();
+  
+  *file << x;
+}
+//-----------------------------------------------------------------------------void File::operator<< (const std::vector<int>& ix)
+void File::operator<< (const std::vector<double>& x)
+{
+  file->write();
+
+  *file << x;
 }
 //-----------------------------------------------------------------------------

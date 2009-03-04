@@ -4,9 +4,10 @@
 // Modified by Garth N. Wells, 2005, 2006.
 // Modified by Magnus Vikstrom 2007
 // Modified by Nuno Lopes 2008
+// Modified by Ola Skavhaug 2009
 //
 // First added:  2002-11-12
-// Last changed: 2008-12-08
+// Last changed: 2009-03-04
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -43,7 +44,7 @@ namespace dolfin
     enum Type {xml, matlab, octave, opendx, vtk, python ,raw, xyz};
     
     /// Create a file with given name
-    File(const std::string& filename);
+    File(const std::string& filename, bool new_style=false);
 
     /// Create a file with given name and type (format)
     File(const std::string& filename, Type type);
@@ -89,6 +90,16 @@ namespace dolfin
     /// Read graph from file
     void operator>> (Graph& graph);
 
+    /// Read array from file
+    void operator>> (std::vector<int>& x);
+    void operator>> (std::vector<uint>& x);
+    void operator>> (std::vector<double>& x);
+
+    /// Read array maps from file
+    void operator>> (std::map<uint, std::vector<int> >& array_map);
+    void operator>> (std::map<uint, std::vector<uint> >& array_map);
+    void operator>> (std::map<uint, std::vector<double> >& array_map);
+
     //--- Output ---
 
     /// Write vector to file
@@ -126,6 +137,17 @@ namespace dolfin
 	 
     /// Write graph to file
     void operator<< (const Graph& graph);
+
+    /// Write array to file
+    void operator<< (const std::vector<int>& x);
+    void operator<< (const std::vector<uint>& x);
+    void operator<< (const std::vector<double>& x);
+
+    /// Write array maps to file
+    void operator>> (const std::map<uint, std::vector<int> >& array_map);
+    void operator>> (const std::map<uint, std::vector<uint> >& array_map);
+    void operator>> (const std::map<uint, std::vector<double> >& array_map);
+
     
   private:
 

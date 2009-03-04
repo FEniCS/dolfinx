@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Niclas Jansson, 2008.
+// Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2008-12-08
+// Last changed: 2009-03-04
 
 // FIXME: Use streams instead of stdio
 #include <stdio.h>
@@ -104,6 +105,36 @@ void GenericFile::operator>> (Graph& graph)
   read_not_impl("Graph");
 }
 //-----------------------------------------------------------------------------
+void GenericFile::operator>> (std::vector<int>& x)
+{
+  read_not_impl("std::vector<int>");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator>> (std::vector<uint>& x)
+{
+  read_not_impl("std::vector<uint>");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator>> (std::vector<double>& x)
+{
+  read_not_impl("std::vector<double>");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator>> (std::map<uint, std::vector<int> >& array_map)
+{
+  read_not_impl("std::map<uint, std::vector<int> >");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator>> (std::map<uint, std::vector<uint> >& array_map)
+{
+  read_not_impl("std::map<uint, std::vector<uint> >");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator>> (std::map<uint, std::vector<double> >& array_map)
+{
+  read_not_impl("std::map<uint, std::vector<double> >");
+}
+//-----------------------------------------------------------------------------
 void GenericFile::operator<< (const GenericVector& x)
 {
   write_not_impl("Vector");
@@ -172,6 +203,36 @@ void GenericFile::operator<< (const BLASFormData& blas)
 void GenericFile::operator<< (const Graph& graph)
 {
   write_not_impl("Graph");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator<< (const std::vector<int>& x)
+{
+  read_not_impl("std::vector<int>");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator<< (const std::vector<uint>& x)
+{
+  read_not_impl("std::vector<uint>");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator<< (const std::vector<double>& x)
+{
+  read_not_impl("std::vector<double>");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator<< (const std::map<uint, std::vector<int> >& array_map)
+{
+  read_not_impl("std::map<uint, std::vector<int> >");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator<< (const std::map<uint, std::vector<uint> >& array_map)
+{
+  read_not_impl("std::map<uint, std::vector<uint> >");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator<< (const std::map<uint, std::vector<double> >& array_map)
+{
+  read_not_impl("std::map<uint, std::vector<double> >");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::read()
