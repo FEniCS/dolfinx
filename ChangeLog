@@ -1,3 +1,4 @@
+ - Add new constructor to Function class, Function(V, "vector.xml")
  - Remove class Array (using std::vector instead)
  - Add vector_mapping data to MeshData
  - Use std::vector instead of Array in MeshData

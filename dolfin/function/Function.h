@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-02-18
+// Last changed: 2009-03-04
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -42,17 +42,23 @@ namespace dolfin
     /// Create function on given function space
     explicit Function(const FunctionSpace& V);
 
-    /// Create function on given function space with a given vector
-    Function(const FunctionSpace& V, GenericVector& x);
-
     /// Create function on given function space (shared data)
     explicit Function(boost::shared_ptr<const FunctionSpace> V);
+
+    /// Create function on given function space with a given vector
+    Function(const FunctionSpace& V, GenericVector& x);
 
     /// Create function on given function space with a given vector (shared data)
     Function(boost::shared_ptr<const FunctionSpace> V, boost::shared_ptr<GenericVector> x);
 
-    /// Create function from file
-    explicit Function(std::string filename);
+    /// Create function from vector of dofs stored to file
+    Function(const FunctionSpace& V, std::string filename);
+
+    /// Create function from vector of dofs stored to file (shared data)
+    Function(boost::shared_ptr<const FunctionSpace> V, std::string filename);
+
+    /// Create function from file (don't use, will be removed)
+    Function(std::string filename);
 
     /// Create function from sub function
     Function(const SubFunction& v);

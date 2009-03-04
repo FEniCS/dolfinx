@@ -1,11 +1,11 @@
-// Copyright (C) 2003-2008 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2005-2009.
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-01-07
+// Last changed: 2009-03-04
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -39,15 +39,6 @@ Function::Function(const FunctionSpace& V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Function::Function(const FunctionSpace& V, GenericVector& x)
-  : Variable("v", "unnamed function"),
-    _function_space(reference_to_no_delete_pointer(V)),
-    _vector(reference_to_no_delete_pointer(x))
-{
-  // Basic test
-  dolfin_assert(V.dofmap().global_dimension() == x.size());
-}
-//-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : Variable("v", "unnamed function"),
     _function_space(V),
@@ -64,6 +55,41 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 {
   // Basic test
   dolfin_assert(V->dofmap().global_dimension() == x->size());
+}
+//-----------------------------------------------------------------------------
+Function::Function(const FunctionSpace& V, GenericVector& x)
+  : Variable("v", "unnamed function"),
+    _function_space(reference_to_no_delete_pointer(V)),
+    _vector(reference_to_no_delete_pointer(x))
+{
+  // Basic test
+  dolfin_assert(V.dofmap().global_dimension() == x.size());
+}
+//-----------------------------------------------------------------------------
+Function::Function(const FunctionSpace& V, std::string filename)
+  : Variable("v", "unnamed function"),
+    _function_space(reference_to_no_delete_pointer(V)),
+    _vector(static_cast<GenericVector*>(0))
+{
+  // Initialize vector
+  init();
+
+  // Read vector from file
+  File file(filename);
+  file >> *_vector;
+}
+//-----------------------------------------------------------------------------
+Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filename)
+  : Variable("v", "unnamed function"),
+    _function_space(V),
+    _vector(static_cast<GenericVector*>(0))
+{
+  // Initialize vector
+  init();
+
+  // Read vector from file
+  File file(filename);
+  file >> *_vector;
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::string filename)
