@@ -135,7 +135,6 @@ void PETScKrylovMatrix::disp(bool sparse, int precision) const
   PETScVector x(N), y(M);
   PETScMatrix A(M, N);
   
-
   x = 0.0;
   for (unsigned int j = 0; j < N; j++)
   {
@@ -156,7 +155,11 @@ void PETScKrylovMatrix::disp(bool sparse, int precision) const
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const PETScKrylovMatrix& A)
 {
+  #if PETSC_VERSION_MAJOR > 2 
+  const MatType type = 0;
+  #else
   MatType type = 0;
+  #endif
   MatGetType(A.mat(), &type);
   int m = A.size(0);
   int n = A.size(1);

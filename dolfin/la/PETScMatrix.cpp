@@ -107,7 +107,11 @@ void PETScMatrix::resize(uint M, uint N)
     MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, A.get());
 
     setType();
+    #if PETSC_VERSION_MAJOR > 2 
+    MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
+    #else
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS);
+    #endif
     MatSetFromOptions(*A);
   }
 }
@@ -139,7 +143,11 @@ void PETScMatrix::init(uint M, uint N, const uint* nz)
     MatSetSizes(*A,  PETSC_DECIDE,  PETSC_DECIDE, M, N);
     setType();
     MatSeqAIJSetPreallocation(*A, PETSC_DEFAULT, (int*)nz);
+    #if PETSC_VERSION_MAJOR > 2 
+    MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
+    #else
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS);
+    #endif
     MatSetFromOptions(*A);
     MatZeroEntries(*A);
   }
@@ -491,8 +499,13 @@ boost::shared_ptr<Mat> PETScMatrix::mat() const
 //-----------------------------------------------------------------------------
 void PETScMatrix::setType() 
 {
-  //dolfin_assert(A);
+  dolfin_assert(A);
+  #if PETSC_VERSION_MAJOR > 2 
+  const MatType mat_type = getPETScType();
+  #else
   MatType mat_type = getPETScType();
+  #endif
+
   MatSetType(*A, mat_type);
 }
 //-----------------------------------------------------------------------------
@@ -532,16 +545,21 @@ bool PETScMatrix::sameNonzeroPattern(const PETScMatrix& A) const
   if (this->A == 0 || A.mat() == 0)
     return false;
 
+  error("Do not know how to check the non-zero pattern for PETSc matrices.");
+  return false;
+
+ /*
   // FIXME: Is this check sufficient? 
   MatInfo this_info, other_info;
   MatGetInfo(*(this->A), MAT_GLOBAL_SUM, &this_info);
   MatGetInfo(*A.mat(),   MAT_GLOBAL_SUM, &other_info);
-  return this_info.nz_allocated   == other_info.nz_allocated   &&
-         this_info.columns_global == other_info.columns_global &&
-         this_info.rows_global    == other_info.rows_global;
+  return this_info.nz_allocated   == other_info.nz_allocated 
+      && this_info.columns_global == other_info.columns_global 
+      && this_info.rows_global    == other_info.rows_global;
+  */
 }
 //-----------------------------------------------------------------------------
-MatType PETScMatrix::getPETScType() const
+const MatType PETScMatrix::getPETScType() const
 {
   switch ( _type )
   {
@@ -550,12 +568,21 @@ MatType PETScMatrix::getPETScType() const
       return MATMPIAIJ;
     else
       return MATSEQAIJ;
+  #if PETSC_VERSION_MAJOR > 2 
+  case spooles:
+      return MAT_SOLVER_SPOOLES;
+  case superlu:
+      return MAT_SOLVER_SUPERLU;
+  case umfpack:
+      return MAT_SOLVER_UMFPACK;
+  #else
   case spooles:
       return MATSEQAIJSPOOLES;
   case superlu:
       return MATSUPERLU;
   case umfpack:
       return MATUMFPACK;
+  #endif
   default:
     return "default";
   }

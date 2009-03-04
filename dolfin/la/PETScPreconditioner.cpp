@@ -61,7 +61,6 @@ int PETScPreconditioner::PCApply(PC pc, Vec x, Vec y)
 int PETScPreconditioner::PCCreate(PC pc)
 {
   // Initialize function pointers to 0
-
   pc->ops->setup               = 0;
   pc->ops->apply               = 0;
   pc->ops->applyrichardson     = 0;
@@ -78,7 +77,7 @@ int PETScPreconditioner::PCCreate(PC pc)
   return 0;
 }
 //-----------------------------------------------------------------------------
-PCType PETScPreconditioner::getType(PreconditionerType pc)
+const PCType PETScPreconditioner::getType(PreconditionerType pc)
 {
   switch (pc)
   {

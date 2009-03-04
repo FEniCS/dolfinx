@@ -56,7 +56,7 @@ namespace dolfin
     static int PCCreate(PC pc);
 
     /// Return PETSc PETScPreconditioner type
-    static PCType getType(PreconditionerType pc);
+    static const PCType getType(PreconditionerType pc);
 
   };
 

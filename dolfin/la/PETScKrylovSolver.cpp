@@ -241,9 +241,9 @@ void PETScKrylovSolver::setSolver()
   
   // Set PETSc Krylov solver
   #if PETSC_VERSION_MAJOR > 2 
-  const KSPType ksp_type = getType(method);
+  const KSPType ksp_type = get_type(method);
   #else
-  KSPType ksp_type = getType(method);
+  KSPType ksp_type = get_type(method);
   #endif
   KSPSetType(ksp, ksp_type);
 }
@@ -328,7 +328,7 @@ void PETScKrylovSolver::writeReport(int num_iterations)
           ksp_type, pc_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
-KSPType PETScKrylovSolver::getType(SolverType method) const
+const KSPType PETScKrylovSolver::get_type(SolverType method) const
 {
   switch (method)
   {

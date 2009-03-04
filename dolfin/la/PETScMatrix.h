@@ -156,7 +156,7 @@ namespace dolfin
     void setType();
 
     // Return PETSc matrix type
-    MatType getPETScType() const;
+    const MatType getPETScType() const;
 
     // Check that requested type has been compiled into PETSc
     void checkType();
