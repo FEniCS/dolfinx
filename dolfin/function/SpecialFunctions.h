@@ -155,7 +155,7 @@ namespace dolfin
 
     const Function* field;
   };
-
+  
   /// This function is used for the Python interface. By inheriting
   /// from this function instead of dolfin::Function, we avoid unnecessary
   /// calls through the SWIG created director class, when dealing
@@ -172,6 +172,9 @@ namespace dolfin
     {
       vector();
     }
+    
+    // Constructor
+    DiscreteFunction(const FunctionSpace& V, std::string filename) : Function(V,filename){}
 
     // Constructor
     DiscreteFunction(const SubFunction& v) : Function(v){}
@@ -179,6 +182,7 @@ namespace dolfin
     // Constructor
     DiscreteFunction(std::string filename) : Function(filename){}
 
+    ~DiscreteFunction(){}
   };
 }
 
