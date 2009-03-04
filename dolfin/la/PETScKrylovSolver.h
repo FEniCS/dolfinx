@@ -77,7 +77,11 @@ namespace dolfin
     void writeReport(int num_iterations);
 
     /// Get PETSc method identifier 
+    #if PETSC_VERSION_MAJOR > 2 
     const KSPType get_type(dolfin::SolverType method) const;
+    #else
+    KSPType get_type(dolfin::SolverType method) const;
+    #endif
 
     /// Krylov method
     SolverType method;

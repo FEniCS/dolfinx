@@ -559,7 +559,11 @@ bool PETScMatrix::sameNonzeroPattern(const PETScMatrix& A) const
   */
 }
 //-----------------------------------------------------------------------------
+#if PETSC_VERSION_MAJOR > 2 
 const MatType PETScMatrix::getPETScType() const
+#else
+MatType PETScMatrix::getPETScType() const
+#endif
 {
   switch ( _type )
   {

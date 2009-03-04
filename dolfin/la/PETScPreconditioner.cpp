@@ -77,7 +77,11 @@ int PETScPreconditioner::PCCreate(PC pc)
   return 0;
 }
 //-----------------------------------------------------------------------------
+#if PETSC_VERSION_MAJOR > 2 
 const PCType PETScPreconditioner::getType(PreconditionerType pc)
+#else
+PCType PETScPreconditioner::getType(PreconditionerType pc)
+#endif
 {
   switch (pc)
   {

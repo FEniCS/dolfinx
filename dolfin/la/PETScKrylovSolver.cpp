@@ -328,7 +328,11 @@ void PETScKrylovSolver::writeReport(int num_iterations)
           ksp_type, pc_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
+#if PETSC_VERSION_MAJOR > 2 
 const KSPType PETScKrylovSolver::get_type(SolverType method) const
+#else
+KSPType PETScKrylovSolver::get_type(SolverType method) const
+#endif
 {
   switch (method)
   {
