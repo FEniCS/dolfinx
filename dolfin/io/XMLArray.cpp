@@ -99,6 +99,11 @@ void XMLArray::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
+void XMLArray::write(const std::vector<int>& x, std::string filename)
+{
+  // FIXME: write this function, use XMLFile as starting point.
+}
+//-----------------------------------------------------------------------------
 void XMLArray::start_array(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse size of array

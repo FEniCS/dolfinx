@@ -357,3 +357,25 @@ void File::operator<< (const std::vector<double>& x)
   *file << x;
 }
 //-----------------------------------------------------------------------------
+void File::operator<< (const std::map<unsigned int, std::vector<int> >& array_map)
+{
+  file->write();
+
+  *file << array_map;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const std::map<unsigned int, std::vector<uint> >& array_map)
+{
+  file->write();
+
+  *file << array_map;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const std::map<unsigned int, std::vector<double> >& array_map)
+{
+  file->write();
+
+  *file << array_map;
+}
+
+//-----------------------------------------------------------------------------

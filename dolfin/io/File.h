@@ -144,9 +144,9 @@ namespace dolfin
     void operator<< (const std::vector<double>& x);
 
     /// Write array maps to file
-    //void operator<< (const std::map<unsigned int, std::vector<int> >& array_map);
-    //void operator<< (const std::map<unsigned int, std::vector<unsigned int> >& array_map);
-    //void operator<< (const std::map<unsigned int, std::vector<double> >& array_map);
+    void operator<< (const std::map<unsigned int, std::vector<int> >& array_map);
+    void operator<< (const std::map<unsigned int, std::vector<unsigned int> >& array_map);
+    void operator<< (const std::map<unsigned int, std::vector<double> >& array_map);
 
     
   private:

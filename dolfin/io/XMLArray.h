@@ -27,6 +27,11 @@ namespace dolfin
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
     
+    /// Write to file
+    void write(const std::vector<int>& x, std::string filename);
+    void write(const std::vector<uint>& x, std::string filename);
+    void write(const std::vector<double>& x, std::string filename);
+
   private:
     
     enum parser_state { OUTSIDE_ARRAY, INSIDE_ARRAY, ARRAY_DONE };

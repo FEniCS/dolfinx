@@ -120,7 +120,7 @@ void XMLMap::finalize_map_entry()
   {
     case INT_ARRAY:
       delete xml_array;
-      (*iam)[current_key] = (*ix); // Copy stuff
+      (*iam)[current_key] = (*ix); // Copy array
       delete ix;
       ix = 0;
 
@@ -128,7 +128,7 @@ void XMLMap::finalize_map_entry()
 
     case UINT_ARRAY:
       delete xml_array;
-      (*uam)[current_key] = (*ux); // Copy stuff
+      (*uam)[current_key] = (*ux); // Copy array
       delete ux;
       ux = 0;
 
@@ -136,7 +136,7 @@ void XMLMap::finalize_map_entry()
 
     case DOUBLE_ARRAY:
       delete xml_array;
-      (*dam)[current_key] = (*dx); // Copy stuff
+      (*dam)[current_key] = (*dx); // Copy array
       delete dx;
       dx = 0;
 
@@ -233,6 +233,7 @@ void XMLMap::read_array(const xmlChar *name, const xmlChar **attrs)
 {
   uint size = parse_uint(name, attrs, "size");
 
+
   switch ( mtype )
   {
     case INT_ARRAY:
@@ -259,6 +260,9 @@ void XMLMap::read_array(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMap::read_int_array(const xmlChar *name, const xmlChar **attrs, uint size)
 {
+  std::string array_type = parse_string(name, attrs, "type");
+  if ( !array_type.compare("int") == 0 )
+    error("Map with arrays of type '%s', expected 'int'.", array_type.c_str());
   ix = new std::vector<int>();
   xml_array = new XMLArray(*ix, parser, size);
   xml_array->handle();
@@ -266,6 +270,9 @@ void XMLMap::read_int_array(const xmlChar *name, const xmlChar **attrs, uint siz
 //-----------------------------------------------------------------------------
 void XMLMap::read_uint_array(const xmlChar *name, const xmlChar **attrs, uint size)
 {
+  std::string array_type = parse_string(name, attrs, "type");
+  if ( !array_type.compare("uint") == 0 )
+    error("Map with arrays of type '%s', expected 'uint'.", array_type.c_str());
   ux = new std::vector<uint>();
   xml_array = new XMLArray(*ux, parser, size);
   xml_array->handle();
@@ -273,6 +280,9 @@ void XMLMap::read_uint_array(const xmlChar *name, const xmlChar **attrs, uint si
 //-----------------------------------------------------------------------------
 void XMLMap::read_double_array(const xmlChar *name, const xmlChar **attrs, uint size)
 {
+  std::string array_type = parse_string(name, attrs, "type");
+  if ( !array_type.compare("double") == 0 )
+    error("Map with arrays of type '%s', expected 'double'.", array_type.c_str());
   dx = new std::vector<double>();
   xml_array = new XMLArray(*dx, parser, size);
   xml_array->handle();
