@@ -203,7 +203,7 @@ void File::operator>> (std::vector<int>& x)
   *file >> x;
 }
 //-----------------------------------------------------------------------------
-void File::operator>> (std::vector<uint>& x)
+void File::operator>> (std::vector<unsigned int>& x)
 {
   file->read();
   
@@ -217,21 +217,21 @@ void File::operator>> (std::vector<double>& x)
   *file >> x;
 }
 //-----------------------------------------------------------------------------
-void File::operator>> (std::map<uint, std::vector<int> >& array_map)
+void File::operator>> (std::map<unsigned int, std::vector<int> >& array_map)
 {
   file->read();
   
   *file >> array_map;
 }
 //-----------------------------------------------------------------------------
-void File::operator>> (std::map<uint, std::vector<uint> >& array_map)
+void File::operator>> (std::map<unsigned int, std::vector<unsigned int> >& array_map)
 {
   file->read();
   
   *file >> array_map;
 }
 //-----------------------------------------------------------------------------
-void File::operator>> (std::map<uint, std::vector<double> >& array_map)
+void File::operator>> (std::map<unsigned int, std::vector<double> >& array_map)
 {
   file->read();
   
@@ -343,7 +343,7 @@ void File::operator<< (const std::vector<int>& x)
   *file << x;
 }
 //-----------------------------------------------------------------------------void File::operator<< (const std::vector<int>& ix)
-void File::operator<< (const std::vector<uint>& x)
+void File::operator<< (const std::vector<unsigned int>& x)
 {
   file->write();
   

@@ -92,13 +92,13 @@ namespace dolfin
 
     /// Read array from file
     void operator>> (std::vector<int>& x);
-    void operator>> (std::vector<uint>& x);
+    void operator>> (std::vector<unsigned int>& x);
     void operator>> (std::vector<double>& x);
 
     /// Read array maps from file
-    void operator>> (std::map<uint, std::vector<int> >& array_map);
-    void operator>> (std::map<uint, std::vector<uint> >& array_map);
-    void operator>> (std::map<uint, std::vector<double> >& array_map);
+    void operator>> (std::map<unsigned int, std::vector<int> >& array_map);
+    void operator>> (std::map<unsigned int, std::vector<uint> >& array_map);
+    void operator>> (std::map<unsigned int, std::vector<double> >& array_map);
 
     //--- Output ---
 
@@ -140,13 +140,13 @@ namespace dolfin
 
     /// Write array to file
     void operator<< (const std::vector<int>& x);
-    void operator<< (const std::vector<uint>& x);
+    void operator<< (const std::vector<unsigned int>& x);
     void operator<< (const std::vector<double>& x);
 
     /// Write array maps to file
-    void operator<< (const std::map<uint, std::vector<int> >& array_map);
-    void operator<< (const std::map<uint, std::vector<uint> >& array_map);
-    void operator<< (const std::map<uint, std::vector<double> >& array_map);
+    //void operator<< (const std::map<unsigned int, std::vector<int> >& array_map);
+    //void operator<< (const std::map<unsigned int, std::vector<unsigned int> >& array_map);
+    //void operator<< (const std::map<unsigned int, std::vector<double> >& array_map);
 
     
   private:
