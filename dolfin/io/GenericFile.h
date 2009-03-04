@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2008 Johan Hoffman and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Ola Skavhaug 2009.
+//
 // First added:  2003-07-15
-// Last changed: 2008-12-08
+// Last changed: 2009-03-04
 
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
@@ -50,7 +52,12 @@ namespace dolfin
     virtual void operator>> (ParameterList& parameters);
     virtual void operator>> (BLASFormData& blas);
     virtual void operator>> (Graph& graph);
-    
+    virtual void operator>> (std::vector<int>& x);
+    virtual void operator>> (std::vector<uint>& x);
+    virtual void operator>> (std::vector<double>& x);
+    virtual void operator>> (std::map<uint, std::vector<int> >& array_map);
+    virtual void operator>> (std::map<uint, std::vector<uint> >& array_map);
+    virtual void operator>> (std::map<uint, std::vector<double> >& array_map); 
     // Output
     
     virtual void operator<< (const GenericVector& x);
@@ -67,6 +74,12 @@ namespace dolfin
     virtual void operator<< (const ParameterList& parameters);
     virtual void operator<< (const BLASFormData& blas);
     virtual void operator<< (const Graph& graph);
+    virtual void operator<< (const std::vector<int>& x);
+    virtual void operator<< (const std::vector<uint>& x);
+    virtual void operator<< (const std::vector<double>& x);
+    virtual void operator<< (const std::map<uint, std::vector<int> >& array_map);
+    virtual void operator<< (const std::map<uint, std::vector<uint> >& array_map);
+    virtual void operator<< (const std::map<uint, std::vector<double> >& array_map);
     
     void read();
     void write();
