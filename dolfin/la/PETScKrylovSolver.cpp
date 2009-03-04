@@ -240,7 +240,11 @@ void PETScKrylovSolver::setSolver()
     return;
   
   // Set PETSc Krylov solver
-  KSPType ksp_type = getType(method);
+  #if PETSC_VERSION_MAJOR > 2 
+  const KSPType ksp_type = get_type(method);
+  #else
+  KSPType ksp_type = get_type(method);
+  #endif
   KSPSetType(ksp, ksp_type);
 }
 //-----------------------------------------------------------------------------
@@ -305,14 +309,18 @@ void PETScKrylovSolver::writeReport(int num_iterations)
   if ( !report )
     return;
     
-  // Get name of solver
+  // Get name of solver and preconditioner
+  #if PETSC_VERSION_MAJOR > 2 
+  const KSPType ksp_type;
+  const PCType pc_type;
+  #else
   KSPType ksp_type;
-  KSPGetType(ksp, &ksp_type);
-
-  // Get name of preconditioner
-  PC pc;
-  KSPGetPC(ksp, &pc);
   PCType pc_type;
+  #endif
+
+  PC pc;
+  KSPGetType(ksp, &ksp_type);
+  KSPGetPC(ksp, &pc);
   PCGetType(pc, &pc_type);
 
   // Report number of iterations and solver type
@@ -320,7 +328,11 @@ void PETScKrylovSolver::writeReport(int num_iterations)
           ksp_type, pc_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
-KSPType PETScKrylovSolver::getType(SolverType method) const
+#if PETSC_VERSION_MAJOR > 2 
+const KSPType PETScKrylovSolver::get_type(SolverType method) const
+#else
+KSPType PETScKrylovSolver::get_type(SolverType method) const
+#endif
 {
   switch (method)
   {

@@ -68,7 +68,7 @@ namespace dolfin
       void bisect(DCell* dcell, DVertex* hangv, DVertex* hv0, DVertex* hv1);
       void bisectMarked(std::vector<bool> marked_ids);
                         DCell* opposite(DCell* dcell, DVertex* v1, DVertex* v2);
-      void propagateFacets(DCell* dcell, DCell* c0, DCell* c1, uint ii, uint jj);
+      void propagateFacets(DCell* dcell, DCell* c0, DCell* c1, uint ii, uint jj, DVertex* mv);
 
       std::list<DVertex *> vertices;
       std::list<DCell *> cells;

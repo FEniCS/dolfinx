@@ -2,7 +2,7 @@
 from a common mesh."""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2009-02-11 -- 2009-02-12"
+__date__ = "2009-02-11 -- 2009-3-02"
 __copyright__ = "Copyright (C) 2009 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -27,6 +27,14 @@ structure.mark(sub_domains, 1)
 # Extract sub meshes
 fluid_mesh = SubMesh(mesh, sub_domains, 0)
 structure_mesh = SubMesh(mesh, sub_domains, 1)
+
+# Move structure mesh
+for x in structure_mesh.coordinates():
+    x[0] += 0.1*x[0]*x[1]
+
+# Move fluid mesh according to structure mesh
+fluid_mesh.move(structure_mesh)
+fluid_mesh.smooth()
   
 # Plot meshes
 plot(fluid_mesh, title="Fluid")

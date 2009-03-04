@@ -56,7 +56,13 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
   if failure:
     # some strange unknown error, report something!
     raise UnableToXXXException("Unable to read LDFLAGS for %s" % (dep_module_name))
-  
+
+  if os.path.exists(os.path.join(getSlepcDir(sconsEnv=sconsEnv), "bmake")):
+      slepc_path_variables = "bmake"
+  elif os.path.exists(os.path.join(getSlepcDir(sconsEnv=sconsEnv), "conf")):
+      slepc_path_variables = "conf"
+  else:
+      raise UnableToFindPackageException("SLEPc")
   # Create a makefile to read basic things:
   slepc_makefile_str="""
 # Retrive various flags from SLEPc settings.
@@ -64,7 +70,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
 PETSC_DIR=%s
 SLEPC_DIR=%s
 
-include ${SLEPC_DIR}/bmake/slepc_common
+include ${SLEPC_DIR}/%s/slepc_common
 
 get_slepc_include:
 	-@echo  ${SLEPC_INCLUDE}
@@ -74,7 +80,7 @@ get_slepc_libs:
 
 get_petsc_arch:
 	-@echo  ${PETSC_ARCH}
-""" % (petsc_dir, slepc_dir)
+""" % (petsc_dir, slepc_dir, slepc_path_variables)
   slepc_make_file = open("slepc_makefile","w")
   slepc_make_file.write(slepc_makefile_str)
   slepc_make_file.close()

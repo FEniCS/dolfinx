@@ -15,7 +15,7 @@
 # care know what I'm talking about, did something like that with me once. All I 
 # can tell you is this: It was not nice.
 
-import os
+import os, sys
 import os.path
 
 
@@ -35,6 +35,39 @@ def getstatusoutput(cmd):
     if sts is None: sts = 0
     if text[-1:] == '\n': text = text[:-1]
     return sts, text
+
+def dep_module_header_and_libs(dep_module_name, dep_module, sconsEnv=None):
+    # Added current dir to pkg-config path:
+    os.environ["PKG_CONFIG_PATH"] = \
+             os.pathsep.join([os.getenv("PKG_CONFIG_PATH", ""),
+                              suitablePkgConfDir()])
+
+    notexist, output = getstatusoutput("pkg-config --exists %s" % dep_module)
+    if notexist:
+        # Try to generate dependency module:
+        ns = {}
+        sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+        exec "import %s" % dep_module in ns
+        packgen = ns.get("%s" % dep_module)
+        packgen.generatePkgConf(directory=suitablePkgConfDir(),
+                                sconsEnv=sconsEnv)
+
+    # now the dep_module pkg-config should exist!
+    failure, dep_mod_cflags = \
+             getstatusoutput("pkg-config %s --cflags" % dep_module)
+    if failure:
+        # some strange unknown error, report something!
+        msg = "Unable to read CFLAGS for %s" % dep_module_name
+        raise UnableToXXXException(msg, errormsg=dep_mod_cflags)
+    
+    failure, dep_mod_libs = \
+             getstatusoutput("pkg-config %s --libs" % dep_module)
+    if failure:
+        # some strange unknown error, report something!
+        msg = "Unable to read LDFLAGS for %s" % (dep_module_name)
+        raise UnableToXXXException(msg, errormsg=dep_mod_libs)
+
+    return dep_mod_cflags, dep_mod_libs
 
 def suitablePkgConfDir():
     # try:
@@ -267,6 +300,8 @@ int main()
   if runFailed or cmdoutput != "ok":
     remove_cppfile("test_include_iostream.cpp", execfile=True)
     return False
+
+  remove_cppfile("test_include_iostream.cpp", execfile=True)
   return True
 
 def getPackageDir(package,

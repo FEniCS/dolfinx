@@ -1,11 +1,11 @@
-// Copyright (C) 2005-2006 Garth N. Wells.
+// Copyright (C) 2005-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2008.
 // Modified by Anders Logg, 2008.
 //
 // First added:  2005-08-31
-// Last changed: 2008-09-07
+// Last changed: 2009-02-04
 
 #ifdef HAS_SLEPC
 
@@ -109,7 +109,11 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   // Set number of eigenpairs to compute
   dolfin_assert(n <= A->size(0));
   const uint nn = static_cast<int>(n);
+  #if SLEPC_VERSION_MAJOR > 2 
+  EPSSetDimensions(eps, nn, PETSC_DECIDE, PETSC_DECIDE);
+  #else
   EPSSetDimensions(eps, nn, PETSC_DECIDE);
+  #endif
 
   // Set algorithm type (Hermitian matrix)
   //EPSSetProblemType(eps, EPS_NHEP);
@@ -132,7 +136,12 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   // Report solver status
   int num_iterations = 0;
   EPSGetIterationNumber(eps, &num_iterations);
+  
+  #if SLEPC_VERSION_MAJOR > 2 
+  const EPSType eps_type = 0;
+  #else
   EPSType eps_type = 0;
+  #endif
   EPSGetType(eps, &eps_type);
   message("Eigenvalue solver (%s) converged in %d iterations.",
           eps_type, num_iterations);

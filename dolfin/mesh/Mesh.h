@@ -8,7 +8,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2009-02-25
+// Last changed: 2009-03-02
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -28,6 +28,7 @@ namespace dolfin
   template <class T> class MeshFunction;
   class IntersectionDetector;
   class Function;
+  class BoundaryMesh;
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
   ///
@@ -157,8 +158,11 @@ namespace dolfin
     void coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary = false);
 
     /// Move coordinates of mesh according to new boundary coordinates
-    void move(Mesh& boundary, dolfin::ALEType method=lagrange);
+    void move(BoundaryMesh& boundary, dolfin::ALEType method=hermite);
     
+    /// Move coordinates of mesh according to adjacent mesh with common global vertices
+    void move(Mesh& mesh, dolfin::ALEType method=hermite);
+
     /// Move coordinates of mesh according to displacement function
     void move(const Function& displacement);
 
