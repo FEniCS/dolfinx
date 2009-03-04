@@ -40,19 +40,19 @@ VTKFile::~VTKFile()
 void VTKFile::operator<<(const Mesh& mesh)
 {
   // Update vtu file name and clear file
-  vtuNameUpdate(counter);
+  vtu_name_update(counter);
 
   // Write pvd file
-  pvdFileWrite(counter);
+  pvd_file_write(counter);
 
   // Write headers
-  VTKHeaderOpen(mesh);
+  vtk_header_open(mesh);
 
   // Write mesh
-  MeshWrite(mesh);
+  mesh_write(mesh);
   
   // Close headers
-  VTKHeaderClose();
+  vtk_header_close();
 
   // Increase the number of times we have saved the mesh
   counter++;
@@ -63,40 +63,40 @@ void VTKFile::operator<<(const Mesh& mesh)
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<int>& meshfunction)
 {
-  MeshFunctionWrite(meshfunction);
+  mesh_function_write(meshfunction);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
 {
-  MeshFunctionWrite(meshfunction);
+  mesh_function_write(meshfunction);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<double>& meshfunction)
 {
-  MeshFunctionWrite(meshfunction);
+  mesh_function_write(meshfunction);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const Function& u)
 {
   // Update vtu file name and clear file
-  vtuNameUpdate(counter);
+  vtu_name_update(counter);
   
   // Write pvd file
-  pvdFileWrite(counter);
+  pvd_file_write(counter);
     
   const Mesh& mesh = u.function_space().mesh(); 
 
   // Write headers
-  VTKHeaderOpen(mesh);
+  vtk_header_open(mesh);
   
   // Write Mesh
-  MeshWrite(mesh);
+  mesh_write(mesh);
   
   // Write results
-  ResultsWrite(u);
+  results_write(u);
   
   // Close headers
-  VTKHeaderClose();
+  vtk_header_close();
   
   // Increase the number of times we have saved the function
   counter++;
@@ -106,7 +106,7 @@ void VTKFile::operator<<(const Function& u)
 
 }
 //----------------------------------------------------------------------------
-void VTKFile::MeshWrite(const Mesh& mesh) const
+void VTKFile::mesh_write(const Mesh& mesh) const
 {
   // Open file
   FILE* fp = fopen(vtu_filename.c_str(), "a");
@@ -166,7 +166,7 @@ void VTKFile::MeshWrite(const Mesh& mesh) const
   fclose(fp);
 }
 //----------------------------------------------------------------------------
-void VTKFile::ResultsWrite(const Function& u) const
+void VTKFile::results_write(const Function& u) const
 {
   // Type of data (point or cell). Point by default.
   std::string data_type = "point";
@@ -339,7 +339,7 @@ void VTKFile::ResultsWrite(const Function& u) const
     error("Unknown VTK data type."); 
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvdFileWrite(uint num)
+void VTKFile::pvd_file_write(uint num)
 {
   std::fstream pvdFile;
 
@@ -376,7 +376,7 @@ void VTKFile::pvdFileWrite(uint num)
 
 }
 //----------------------------------------------------------------------------
-void VTKFile::VTKHeaderOpen(const Mesh& mesh) const
+void VTKFile::vtk_header_open(const Mesh& mesh) const
 {
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
@@ -393,7 +393,7 @@ void VTKFile::VTKHeaderOpen(const Mesh& mesh) const
   fclose(fp);
 }
 //----------------------------------------------------------------------------
-void VTKFile::VTKHeaderClose() const
+void VTKFile::vtk_header_close() const
 {
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
@@ -407,7 +407,7 @@ void VTKFile::VTKHeaderClose() const
   fclose(fp);
 }
 //----------------------------------------------------------------------------
-void VTKFile::vtuNameUpdate(const int counter) 
+void VTKFile::vtu_name_update(const int counter) 
 {
   std::string filestart, extension;
   std::ostringstream fileid, newfilename;
@@ -431,13 +431,13 @@ void VTKFile::vtuNameUpdate(const int counter)
 }
 //----------------------------------------------------------------------------
 template<class T>
-void VTKFile::MeshFunctionWrite(T& meshfunction) 
+void VTKFile::mesh_function_write(T& meshfunction) 
 {
   // Update vtu file name and clear file
-  vtuNameUpdate(counter);
+  vtu_name_update(counter);
 
   // Write pvd file
-  pvdFileWrite(counter);
+  pvd_file_write(counter);
 
   const Mesh& mesh = meshfunction.mesh(); 
 
@@ -445,10 +445,10 @@ void VTKFile::MeshFunctionWrite(T& meshfunction)
     error("VTK output of mesh functions is implemented for cell-based functions only.");    
 
   // Write headers
-  VTKHeaderOpen(mesh);
+  vtk_header_open(mesh);
 
   // Write mesh
-  MeshWrite(mesh);
+  mesh_write(mesh);
   
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
@@ -464,7 +464,7 @@ void VTKFile::MeshFunctionWrite(T& meshfunction)
   fp.close();
 
   // Close headers
-  VTKHeaderClose();
+  vtk_header_close();
 
   // Increase the number of times we have saved the mesh function
   counter++;

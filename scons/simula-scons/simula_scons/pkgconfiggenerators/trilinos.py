@@ -6,8 +6,12 @@ import os.path
 from commonPkgConfigUtils import *
 
 def getTrilinosDir(sconsEnv=None):
-    trilinos_dir = getPackageDir("trilinos", sconsEnv=sconsEnv,
-                                 default=os.path.join(os.path.sep,"usr","local"))
+    if get_architecture() == "darwin":
+        # use fink as default
+        default = "/sw"
+    else:
+        default = "/usr"
+    trilinos_dir = getPackageDir("trilinos", sconsEnv=sconsEnv, default=default)
     return trilinos_dir
 
 def pkgVersion(sconsEnv=None):

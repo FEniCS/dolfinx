@@ -3,8 +3,16 @@
 
 // DOLFIN mesh interface
 
+#include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/Point.h>
+#include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/Edge.h>
+#include <dolfin/mesh/Face.h>
+#include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/Point.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshTopology.h>
 #include <dolfin/mesh/MeshGeometry.h>
 #include <dolfin/mesh/MeshData.h>
@@ -16,12 +24,6 @@
 #include <dolfin/mesh/MPIMeshCommunicator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/LocalMeshData.h>
-#include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/Edge.h>
-#include <dolfin/mesh/Face.h>
-#include <dolfin/mesh/Facet.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/SubMesh.h>
 #include <dolfin/mesh/DomainBoundary.h>

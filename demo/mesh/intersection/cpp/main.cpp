@@ -34,7 +34,7 @@ int main()
   {
     // Compute intersection with boundary of square
     BoundaryMesh boundary(omega1);
-    Array<unsigned int> cells;
+    std::vector<unsigned int> cells;
     omega0.intersection(boundary, cells, false);
     
     // Copy values to mesh function for plotting

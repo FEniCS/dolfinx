@@ -70,7 +70,7 @@ void update_a(Function& a, const Function& u, const Function& a0,
               const Function& v0,  const Function& u0, 
               double Beta, double delta_t)
 {
-// a = 1/(2*Beta) * ((u-u0 - v0*dt)/(0.5*dt*dt) - (1-2*Beta)*a0)
+  // a = 1/(2*Beta) * ((u-u0 - v0*dt)/(0.5*dt*dt) - (1-2*Beta)*a0)
   a.vector()  = u.vector(); 
   a.vector() -= u0.vector(); 
   a.vector() *= 1.0/delta_t;
@@ -84,7 +84,7 @@ void update_a(Function& a, const Function& u, const Function& a0,
 void update_v(Function& v, const Function& a, const Function& a0, 
               const Function& v0, double Gamma, double delta_t)
 {
-// v = dt * ((1-Gamma)*a0 + Gamma*a) + v0
+  // v = dt * ((1-Gamma)*a0 + Gamma*a) + v0
   v.vector()  = a0.vector();
   v.vector() *= (1.0-Gamma)/Gamma;
   v.vector() += a.vector();
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
   LeftBoundary left_boundary;
   Constant zero(2, 0.0);
   DirichletBC bc0(V, zero, left_boundary);
-  Array<BoundaryCondition*> bc;
+  std::vector<BoundaryCondition*> bc;
   bc.push_back(&bc0);
 
   // Define solution vectors
