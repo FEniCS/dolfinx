@@ -1,10 +1,10 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman 2006.
 //
 // First added:  2006-10-26
-// Last changed: 2007-06-31
+// Last changed: 2009-03-04
 
 #include <dolfin.h>
 
@@ -36,9 +36,6 @@ int main()
     // Refine mesh
     mesh.refine(cell_markers);
     
-    // Smooth mesh
-    mesh.smooth();
-
     plot(mesh);
   }
 

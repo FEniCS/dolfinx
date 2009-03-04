@@ -1,8 +1,8 @@
 "This demo illustrates mesh refinement."
 
 __author__ = "Anders Logg"
-__date__ = "2007-06-01 -- 2007-06-01"
-__copyright__ = "Copyright (C) 2007 Anders Logg"
+__date__ = "2007-06-01 -- 2009-03-04"
+__copyright__ = "Copyright (C) 2007-2009 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
@@ -30,8 +30,5 @@ for i in range(5):
     # Refine mesh
     mesh.refine(cell_markers)
     
-    # Smooth mesh
-    mesh.smooth()
-
     # Plot mesh
     plot(mesh, interactive=True)
