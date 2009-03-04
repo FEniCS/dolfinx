@@ -89,7 +89,7 @@ void XMLArray::end_element(const xmlChar *name)
     if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
     {
       state = ARRAY_DONE;
-      parser.pop();
+      release();
     }
     
     break;

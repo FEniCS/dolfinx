@@ -92,10 +92,10 @@ void XMLMap::end_element(const xmlChar *name)
   {
   case INSIDE_MAP:
     
-    if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
+    if ( xmlStrcasecmp(name, (xmlChar *) "map") == 0 )
     {
       state = MAP_DONE;
-      parser.pop();
+      release();
     }
     
     break;
@@ -261,20 +261,20 @@ void XMLMap::read_int_array(const xmlChar *name, const xmlChar **attrs, uint siz
 {
   ix = new std::vector<int>();
   xml_array = new XMLArray(*ix, parser, size);
-  parser.push(xml_array);
+  xml_array->handle();
 }
 //-----------------------------------------------------------------------------
 void XMLMap::read_uint_array(const xmlChar *name, const xmlChar **attrs, uint size)
 {
   ux = new std::vector<uint>();
   xml_array = new XMLArray(*ux, parser, size);
-  parser.push(xml_array);
+  xml_array->handle();
 }
 //-----------------------------------------------------------------------------
 void XMLMap::read_double_array(const xmlChar *name, const xmlChar **attrs, uint size)
 {
   dx = new std::vector<double>();
   xml_array = new XMLArray(*dx, parser, size);
-  parser.push(xml_array);
+  xml_array->handle();
 }
 //-----------------------------------------------------------------------------

@@ -40,57 +40,61 @@ NewXMLFile::~NewXMLFile()
 void NewXMLFile::operator>>(std::vector<int>& x)
 {
   message(1, "Reading array from file %s.", filename.c_str());
-  XMLArray* xmlarray = new XMLArray(x, *this);
-  push(xmlarray);
+  XMLArray xml_array(x, *this);
+  xml_array.handle();
   parse();
   if ( !handlers.empty() ) 
     error("Hander stack not empty. Something is wrong!");
-  delete xmlarray;
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::vector<uint>& x)
 {
   message(1, "Reading array from file %s.", filename.c_str());
-  XMLArray* xmlarray = new XMLArray(x, *this);
-  push(xmlarray);
+  XMLArray xml_array(x, *this);
+  xml_array.handle();
   parse();
-  delete xmlarray;
+  if ( !handlers.empty() ) 
+    error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::vector<double>& x)
 {
   message(1, "Reading array from file %s.", filename.c_str());
-  XMLArray* xml_array = new XMLArray(x, *this);
-  push(xml_array);
+  XMLArray xml_array(x, *this);
+  xml_array.handle();
   parse();
-  delete xml_array;
+  if ( !handlers.empty() ) 
+    error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, std::vector<int> >& array_map)
 {
   message(1, "Reading array map from file %s.", filename.c_str());
-  XMLMap* xml_array_map = new XMLMap(array_map, *this);
-  push(xml_array_map);
+  XMLMap xml_array_map(array_map, *this);
+  xml_array_map.handle();
   parse();
-  delete xml_array_map;
+  if ( !handlers.empty() ) 
+    error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, std::vector<uint> >& array_map)
 {
   message(1, "Reading array map from file %s.", filename.c_str());
-  XMLMap* xml_array_map = new XMLMap(array_map, *this);
-  push(xml_array_map);
+  XMLMap xml_array_map(array_map, *this);
+  xml_array_map.handle();
   parse();
-  delete xml_array_map;
+  if ( !handlers.empty() ) 
+    error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, std::vector<double> >& array_map)
 {
   message(1, "Reading array map from file %s.", filename.c_str());
-  XMLMap* xml_array_map = new XMLMap(array_map, *this);
-  push(xml_array_map);
+  XMLMap xml_array_map(array_map, *this);
+  xml_array_map.handle();
   parse();
-  delete xml_array_map;
+  if ( !handlers.empty() ) 
+    error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::vector<int>& x)
