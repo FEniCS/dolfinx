@@ -4,6 +4,7 @@
 // First added: 2009-03-03
 // Last changed: 2009-03-04
 
+#include <cstring>
 #include "NewXMLFile.h"
 #include "XMLHandler.h"
 
@@ -222,4 +223,5 @@ bool XMLHandler::parse_bool(const xmlChar* name, const xmlChar** attrs,
 
   return 0;
 }
+//-----------------------------------------------------------------------------
 
