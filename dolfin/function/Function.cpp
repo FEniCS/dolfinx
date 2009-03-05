@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-03-04
+// Last changed: 2009-03-05
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -77,6 +77,10 @@ Function::Function(const FunctionSpace& V, std::string filename)
   // Read vector from file
   File file(filename);
   file >> *_vector;
+
+  // Check size of vector
+  if (_vector->size() != _function_space->dim())
+    error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", vector->size(), _function_space->dim());
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filename)
@@ -90,6 +94,10 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
   // Read vector from file
   File file(filename);
   file >> *_vector;
+
+  // Check size of vector
+  if (_vector->size() != _function_space->dim())
+    error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", vector->size(), _function_space->dim());
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::string filename)
