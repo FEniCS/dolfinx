@@ -176,7 +176,7 @@ void EpetraMatrix::add(const double* block,
                                    n, reinterpret_cast<const int*>(cols), block, 
                                    Epetra_FECrsMatrix::ROW_MAJOR);
 
-  if (err!= 0) 
+  if (err != 0) 
     error("EpetraMatrix::add: Did not manage to perform Epetra_CrsMatrix::SumIntoGlobalValues."); 
 }
 //-----------------------------------------------------------------------------
@@ -187,12 +187,9 @@ void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_patt
   if (!AA->mat()->Filled())
     error("Epetramatrix is not in the correct state for addition."); 
 
-  if (this->A->Filled() && !same_nonzero_pattern)
-    error("Epetramatrix is not in the correct state for addition."); 
-
   int err = EpetraExt::MatrixMatrix::Add(*(AA->mat()), false, a, *(this->A), 1.0);
-  if (err!= 0) 
-    error("EpetraMatrDid::axpy: Did not manage to perform EpetraExt::MatrixMatrix::Add."); 
+  if (err != 0) 
+    error("EpetraMatrDid::axpy: Did not manage to perform EpetraExt::MatrixMatrix::Add. If the matrix has been assembled, the nonzero patterns must match."); 
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::zero()
