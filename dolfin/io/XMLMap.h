@@ -51,10 +51,12 @@ namespace dolfin
     void read_uint_array(const xmlChar *name, const xmlChar **attrs, uint size);
     void read_double_array(const xmlChar *name, const xmlChar **attrs, uint size);
 
-    // For simple maps
+    // Basic maps
     std::map<uint, int>*  im;
     std::map<uint, uint>* um;
     std::map<uint, double>* dm;
+
+    // Array maps
     std::map<uint, std::vector<int> >* iam;
     std::map<uint, std::vector<uint> >* uam;
     std::map<uint, std::vector<double> >* dam;

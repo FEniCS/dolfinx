@@ -32,6 +32,15 @@ void XMLHandler::release()
   parser.pop();
 }
 //-----------------------------------------------------------------------------
+void XMLHandler::open_file(std::string filename)
+{
+  // Open file
+  outfile.open(filename.c_str());
+
+  // Go to end of file
+  outfile.seekp(0, std::ios::end);
+}
+//-----------------------------------------------------------------------------
 int XMLHandler::parse_int(const xmlChar* name, const xmlChar** attrs,
 			const char* attribute)
 {

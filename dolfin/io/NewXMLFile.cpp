@@ -99,14 +99,23 @@ void NewXMLFile::operator>>(std::map<uint, std::vector<double> >& array_map)
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::vector<int>& x)
 {
+  open_file();
+  XMLArray::write(x, outfile);
+  close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::vector<uint>& x)
 {
+  open_file();
+  XMLArray::write(x, outfile);
+  close_file();
 }
 //-----------------------------------------------------------------------------
-void NewXMLFile::operator<<(const std::vector<double>& ix)
+void NewXMLFile::operator<<(const std::vector<double>& x)
 {
+  open_file();
+  XMLArray::write(x, outfile);
+  close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, std::vector<int> >& array_map)
@@ -154,6 +163,16 @@ void NewXMLFile::end_element(const xmlChar *name)
 {
   handlers.top()->end_element(name);
 }
+//-----------------------------------------------------------------------------
+void NewXMLFile::open_file()
+{
+  // Open file
+  outfile.open(filename.c_str());
+
+  // Go to end of file
+  outfile.seekp(0, std::ios::end);
+}
+
 //-----------------------------------------------------------------------------
 // Callback functions for the SAX interface
 //-----------------------------------------------------------------------------

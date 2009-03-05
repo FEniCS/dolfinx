@@ -7,6 +7,7 @@
 #ifndef __XMLHANDLER_H
 #define __XMLHANDLER_H
 
+#include <fstream>
 #include <libxml/parser.h>
 
 namespace dolfin
@@ -34,6 +35,8 @@ namespace dolfin
     /// Callback for end of XML element
     virtual void end_element(const xmlChar* name) = 0;
 
+    void open_file(std::string filename);
+
   protected:
 
     // Parse an integer value
@@ -55,6 +58,7 @@ namespace dolfin
     bool parse_bool(const xmlChar* name, const xmlChar** attrs, const char* attribute);
 
     NewXMLFile& parser;
+    std::ofstream outfile;
 
   };
 
