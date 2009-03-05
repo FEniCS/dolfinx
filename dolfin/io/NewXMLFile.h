@@ -34,6 +34,9 @@ namespace dolfin
     void operator>> (std::vector<int> & x);
     void operator>> (std::vector<uint> & x);
     void operator>> (std::vector<double> & x);
+    void operator>> (std::map<uint, int>& map);
+    void operator>> (std::map<uint, uint>& map);
+    void operator>> (std::map<uint, double>& map);
     void operator>> (std::map<uint, std::vector<int> >& array_map);
     void operator>> (std::map<uint, std::vector<uint> >& array_map);
     void operator>> (std::map<uint, std::vector<double> >& array_map);
@@ -44,6 +47,9 @@ namespace dolfin
     void operator<< (const std::vector<int> & x);
     void operator<< (const std::vector<uint> & x);
     void operator<< (const std::vector<double> & x);
+    void operator<< (const std::map<uint, int>& map);
+    void operator<< (const std::map<uint, uint>& map);
+    void operator<< (const std::map<uint, double>& map);
     void operator<< (const std::map<uint, std::vector<int> >& array_map);
     void operator<< (const std::map<uint, std::vector<uint> >& array_map);
     void operator<< (const std::map<uint, std::vector<double> >& array_map);

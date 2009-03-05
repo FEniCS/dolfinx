@@ -67,6 +67,36 @@ void NewXMLFile::operator>>(std::vector<double>& x)
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
+void NewXMLFile::operator>>(std::map<uint, int>& map)
+{
+  message(1, "Reading map from file %s.", filename.c_str());
+  XMLMap xml_map(map, *this);
+  xml_map.handle();
+  parse();
+  if ( !handlers.empty() ) 
+    error("Hander stack not empty. Something is wrong!");
+}
+//-----------------------------------------------------------------------------
+void NewXMLFile::operator>>(std::map<uint, uint>& map)
+{
+  message(1, "Reading map from file %s.", filename.c_str());
+  XMLMap xml_map(map, *this);
+  xml_map.handle();
+  parse();
+  if ( !handlers.empty() ) 
+    error("Hander stack not empty. Something is wrong!");
+}
+//-----------------------------------------------------------------------------
+void NewXMLFile::operator>>(std::map<uint, double>& map)
+{
+  message(1, "Reading map from file %s.", filename.c_str());
+  XMLMap xml_map(map, *this);
+  xml_map.handle();
+  parse();
+  if ( !handlers.empty() ) 
+    error("Hander stack not empty. Something is wrong!");
+}
+//-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, std::vector<int> >& array_map)
 {
   message(1, "Reading array map from file %s.", filename.c_str());
@@ -115,6 +145,27 @@ void NewXMLFile::operator<<(const std::vector<double>& x)
 {
   open_file();
   XMLArray::write(x, outfile);
+  close_file();
+}
+//-----------------------------------------------------------------------------
+void NewXMLFile::operator<<(const std::map<uint, int>& map)
+{
+  open_file();
+  XMLMap::write(map, outfile);
+  close_file();
+}
+//-----------------------------------------------------------------------------
+void NewXMLFile::operator<<(const std::map<uint, uint>& map)
+{
+  open_file();
+  XMLMap::write(map, outfile);
+  close_file();
+}
+//-----------------------------------------------------------------------------
+void NewXMLFile::operator<<(const std::map<uint, double>& map)
+{
+  open_file();
+  XMLMap::write(map, outfile);
   close_file();
 }
 //-----------------------------------------------------------------------------

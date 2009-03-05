@@ -31,9 +31,14 @@ namespace dolfin
     
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
-    
-    /// Friends
-    friend class XMLMesh;
+
+    /// Write to file
+    static void write(const std::map<uint, int>& map, std::ofstream& outfile, uint indentation_level=0);
+    static void write(const std::map<uint, uint>& map, std::ofstream& outfile, uint indentation_level=0);
+    static void write(const std::map<uint, double>& map, std::ofstream& outfile, uint indentation_level=0);
+    static void write(const std::map<uint, std::vector<int> >& map, std::ofstream& outfile, uint indentation_level=0);
+    static void write(const std::map<uint, std::vector<uint> >& map, std::ofstream& outfile, uint indentation_level=0);
+    static void write(const std::map<uint, std::vector<double> >& map, std::ofstream& outfile, uint indentation_level=0);
     
   private:
     

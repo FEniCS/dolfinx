@@ -133,7 +133,7 @@ void File::operator>> (MeshFunction<int>& meshfunction)
   *file >> meshfunction;
 }
 //-----------------------------------------------------------------------------
-void File::operator>> (MeshFunction<unsigned int>& meshfunction)
+void File::operator>> (MeshFunction<uint>& meshfunction)
 {
   file->read();
   
@@ -203,7 +203,7 @@ void File::operator>> (std::vector<int>& x)
   *file >> x;
 }
 //-----------------------------------------------------------------------------
-void File::operator>> (std::vector<unsigned int>& x)
+void File::operator>> (std::vector<uint>& x)
 {
   file->read();
   
@@ -217,21 +217,42 @@ void File::operator>> (std::vector<double>& x)
   *file >> x;
 }
 //-----------------------------------------------------------------------------
-void File::operator>> (std::map<unsigned int, std::vector<int> >& array_map)
+void File::operator>> (std::map<uint, int>& map)
+{
+  file->read();
+  
+  *file >> map;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::map<uint, uint>& map)
+{
+  file->read();
+  
+  *file >> map;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::map<uint, double>& map)
+{
+  file->read();
+  
+  *file >> map;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::map<uint, std::vector<int> >& array_map)
 {
   file->read();
   
   *file >> array_map;
 }
 //-----------------------------------------------------------------------------
-void File::operator>> (std::map<unsigned int, std::vector<unsigned int> >& array_map)
+void File::operator>> (std::map<uint, std::vector<uint> >& array_map)
 {
   file->read();
   
   *file >> array_map;
 }
 //-----------------------------------------------------------------------------
-void File::operator>> (std::map<unsigned int, std::vector<double> >& array_map)
+void File::operator>> (std::map<uint, std::vector<double> >& array_map)
 {
   file->read();
   
@@ -273,7 +294,7 @@ void File::operator<< (const MeshFunction<int>& meshfunction)
   *file << meshfunction;
 }
 //-----------------------------------------------------------------------------
-void File::operator<< (const MeshFunction<unsigned int>& meshfunction)
+void File::operator<< (const MeshFunction<uint>& meshfunction)
 {
   file->write();
   
@@ -343,7 +364,7 @@ void File::operator<< (const std::vector<int>& x)
   *file << x;
 }
 //-----------------------------------------------------------------------------void File::operator<< (const std::vector<int>& ix)
-void File::operator<< (const std::vector<unsigned int>& x)
+void File::operator<< (const std::vector<uint>& x)
 {
   file->write();
   
@@ -357,25 +378,43 @@ void File::operator<< (const std::vector<double>& x)
   *file << x;
 }
 //-----------------------------------------------------------------------------
-void File::operator<< (const std::map<unsigned int, std::vector<int> >& array_map)
+void File::operator<< (const std::map<uint, int>& array_map)
+{
+  file->write();
+
+  *file << array_map;
+}
+void File::operator<< (const std::map<uint, uint>& array_map)
+{
+  file->write();
+
+  *file << array_map;
+}
+void File::operator<< (const std::map<uint, double>& array_map)
 {
   file->write();
 
   *file << array_map;
 }
 //-----------------------------------------------------------------------------
-void File::operator<< (const std::map<unsigned int, std::vector<uint> >& array_map)
+void File::operator<< (const std::map<uint, std::vector<int> >& array_map)
 {
   file->write();
 
   *file << array_map;
 }
 //-----------------------------------------------------------------------------
-void File::operator<< (const std::map<unsigned int, std::vector<double> >& array_map)
+void File::operator<< (const std::map<uint, std::vector<uint> >& array_map)
 {
   file->write();
 
   *file << array_map;
 }
+//-----------------------------------------------------------------------------
+void File::operator<< (const std::map<uint, std::vector<double> >& array_map)
+{
+  file->write();
 
+  *file << array_map;
+}
 //-----------------------------------------------------------------------------

@@ -55,6 +55,9 @@ namespace dolfin
     virtual void operator>> (std::vector<int>& x);
     virtual void operator>> (std::vector<uint>& x);
     virtual void operator>> (std::vector<double>& x);
+    virtual void operator>> (std::map<uint, int>& map);
+    virtual void operator>> (std::map<uint, uint>& map);
+    virtual void operator>> (std::map<uint, double>& map);
     virtual void operator>> (std::map<uint, std::vector<int> >& array_map);
     virtual void operator>> (std::map<uint, std::vector<uint> >& array_map);
     virtual void operator>> (std::map<uint, std::vector<double> >& array_map); 
@@ -77,6 +80,9 @@ namespace dolfin
     virtual void operator<< (const std::vector<int>& x);
     virtual void operator<< (const std::vector<uint>& x);
     virtual void operator<< (const std::vector<double>& x);
+    virtual void operator<< (const std::map<uint, int>& map);
+    virtual void operator<< (const std::map<uint, uint>& map);
+    virtual void operator<< (const std::map<uint, double>& map);
     virtual void operator<< (const std::map<uint, std::vector<int> >& array_map);
     virtual void operator<< (const std::map<uint, std::vector<uint> >& array_map);
     virtual void operator<< (const std::map<uint, std::vector<double> >& array_map);

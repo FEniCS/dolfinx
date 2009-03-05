@@ -68,7 +68,7 @@ namespace dolfin
 
     /// Read mesh function from file
     void operator>> (MeshFunction<int>& meshfunction);
-    void operator>> (MeshFunction<unsigned int>& meshfunction);
+    void operator>> (MeshFunction<uint>& meshfunction);
     void operator>> (MeshFunction<double>& meshfunction);
     void operator>> (MeshFunction<bool>& meshfunction);
 
@@ -92,13 +92,18 @@ namespace dolfin
 
     /// Read array from file
     void operator>> (std::vector<int>& x);
-    void operator>> (std::vector<unsigned int>& x);
+    void operator>> (std::vector<uint>& x);
     void operator>> (std::vector<double>& x);
 
+    /// Read maps from file
+    void operator>> (std::map<uint, int>& map);
+    void operator>> (std::map<uint, uint>& map);
+    void operator>> (std::map<uint, double>& map);
+
     /// Read array maps from file
-    void operator>> (std::map<unsigned int, std::vector<int> >& array_map);
-    void operator>> (std::map<unsigned int, std::vector<uint> >& array_map);
-    void operator>> (std::map<unsigned int, std::vector<double> >& array_map);
+    void operator>> (std::map<uint, std::vector<int> >& array_map);
+    void operator>> (std::map<uint, std::vector<uint> >& array_map);
+    void operator>> (std::map<uint, std::vector<double> >& array_map);
 
     //--- Output ---
 
@@ -116,7 +121,7 @@ namespace dolfin
 
     /// Write mesh function to file
     void operator<< (const MeshFunction<int>& meshfunction);
-    void operator<< (const MeshFunction<unsigned int>& meshfunction);
+    void operator<< (const MeshFunction<uint>& meshfunction);
     void operator<< (const MeshFunction<double>& meshfunction);
     void operator<< (const MeshFunction<bool>& meshfunction);
 
@@ -140,13 +145,18 @@ namespace dolfin
 
     /// Write array to file
     void operator<< (const std::vector<int>& x);
-    void operator<< (const std::vector<unsigned int>& x);
+    void operator<< (const std::vector<uint>& x);
     void operator<< (const std::vector<double>& x);
 
+    /// Write maps to file
+    void operator<< (const std::map<uint, int>& map);
+    void operator<< (const std::map<uint, uint>& map);
+    void operator<< (const std::map<uint, double>& map);
+
     /// Write array maps to file
-    void operator<< (const std::map<unsigned int, std::vector<int> >& array_map);
-    void operator<< (const std::map<unsigned int, std::vector<unsigned int> >& array_map);
-    void operator<< (const std::map<unsigned int, std::vector<double> >& array_map);
+    void operator<< (const std::map<uint, std::vector<int> >& array_map);
+    void operator<< (const std::map<uint, std::vector<uint> >& array_map);
+    void operator<< (const std::map<uint, std::vector<double> >& array_map);
 
     
   private:
