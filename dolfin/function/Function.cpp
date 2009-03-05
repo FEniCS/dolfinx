@@ -80,7 +80,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
 
   // Check size of vector
   if (_vector->size() != _function_space->dim())
-    error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", vector->size(), _function_space->dim());
+    error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filename)
@@ -97,7 +97,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
 
   // Check size of vector
   if (_vector->size() != _function_space->dim())
-    error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", vector->size(), _function_space->dim());
+    error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::string filename)
