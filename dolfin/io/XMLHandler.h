@@ -22,7 +22,7 @@ namespace dolfin
     XMLHandler(NewXMLFile& parser);
 
     /// Destructor
-    ~XMLHandler();
+    virtual ~XMLHandler();
 
     void handle();
 
