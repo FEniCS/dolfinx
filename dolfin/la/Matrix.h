@@ -88,8 +88,8 @@ namespace dolfin
     { matrix->add(block, m, rows, n, cols); }
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A)
-    { matrix->axpy(a,A); }
+    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false)
+    { matrix->axpy(a, A, same_nonzero_pattern); }
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const

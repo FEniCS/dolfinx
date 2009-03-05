@@ -103,7 +103,7 @@ namespace dolfin
     virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A);
+    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false);
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;
@@ -479,30 +479,14 @@ namespace dolfin
     A.clear();
   }
   //---------------------------------------------------------------------------
-//  template <> 
-//  inline void uBLASMatrix<ublas_sparse_matrix>::axpy(double a, const GenericMatrix& A)
-//  {
-//    // Check for same size
-//    if ( size(0) != A.size(0) or size(1) != A.size(1) )  
-//      error("Matrices must be of same size.");
-//    
-//    // Check for same sparsity pattern
-//    // FIXME: Is this nesessary? Does ublas do it for us
-//    const uBLASMatrix* AA = &A.down_cast<uBLASMatrix>();
-//    if ( AA->mat().nnz() != this->A.nnz())
-//      error("Matrices must have the same sparsity pattern.");
-//    
-//    this->A += a * AA->mat();
-//  }
-  //---------------------------------------------------------------------------
   template <class Mat> 
-  inline void uBLASMatrix<Mat>::axpy(double a, const GenericMatrix& A)
+  inline void uBLASMatrix<Mat>::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
   {
     // Check for same size
     if ( size(0) != A.size(0) or size(1) != A.size(1) )  
       error("Matrices must be of same size.");
     
-    this->A += a * A.down_cast<uBLASMatrix>().mat();
+    this->A += (a)*(A.down_cast<uBLASMatrix>().mat());
   }
   //---------------------------------------------------------------------------
   template <>
@@ -518,7 +502,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <class Mat>
   inline std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> 
-                                                    uBLASMatrix<Mat>::data() const
+                                                 uBLASMatrix<Mat>::data() const
   { 
     error("Unable to return pointers to underlying data for this uBLASMatrix type."); 
     return std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);

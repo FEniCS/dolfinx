@@ -112,14 +112,15 @@ void MTL4Matrix::add(const double* block, uint m, const uint* rows, uint n, cons
       (*ins)[rows[i]][cols[j]] << block[i*n +j];
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::MTL4Matrix::axpy(double a, const GenericMatrix& A)
+void MTL4Matrix::MTL4Matrix::axpy(double a, const GenericMatrix& A, 
+                                  bool same_nonzero_pattern)
   {
     // Check for same size
     if ( size(0) != A.size(0) or size(1) != A.size(1) )  
       error("Matrices must be of same size.");
     
     // Do we need to check for same sparsity pattern?
-    this->A += a * A.down_cast<MTL4Matrix>().mat();
+    this->A += (a)*(A.down_cast<MTL4Matrix>().mat());
   }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::zero()

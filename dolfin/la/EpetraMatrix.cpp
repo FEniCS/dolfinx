@@ -180,13 +180,11 @@ void EpetraMatrix::add(const double* block,
     error("EpetraMatrix::add: Did not manage to perform Epetra_CrsMatrix::SumIntoGlobalValues."); 
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::axpy(double a, const GenericMatrix& A)
+void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
 {
   const EpetraMatrix* AA = &A.down_cast<EpetraMatrix>();
-
-  dolfin_assert((*AA->mat()).NumGlobalNonzeros() == this->A->NumGlobalNonzeros() 
-             && (*AA->mat()).NumGlobalCols()     == this->A->NumGlobalCols() 
-             && (*AA->mat()).NumGlobalRows()     == this->A->NumGlobalRows() );
+  if (!same_nonzero_pattern)
+    error("EpetraMatrix::axpy presently support matrices with identical nonzero patterns."); 
 
   int err = EpetraExt::MatrixMatrix::Add(*(AA->mat()), false, a, *(this->A), 1.0);
   if (err!= 0) 

@@ -91,7 +91,7 @@ namespace dolfin
     virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A);
+    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false);
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;

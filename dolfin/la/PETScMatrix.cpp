@@ -246,13 +246,15 @@ void PETScMatrix::add(const double* block,
                block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::axpy(double a, const GenericMatrix& A)
+void PETScMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
 {
   const PETScMatrix* AA = &A.down_cast<PETScMatrix>();
   dolfin_assert(this->A);
   dolfin_assert(AA->mat());
-  dolfin_assert(sameNonzeroPattern(*AA));
-  MatAXPY(*(this->A), a, *AA->mat(), SAME_NONZERO_PATTERN);
+  if (same_nonzero_pattern)
+    MatAXPY(*(this->A), a, *AA->mat(), SAME_NONZERO_PATTERN);
+  else
+    MatAXPY(*(this->A), a, *AA->mat(), DIFFERENT_NONZERO_PATTERN);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::getrow(uint row,
@@ -413,19 +415,19 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
   if (this != &A)
   {
     // If the NonzeroPattern is the same we just copy the values
-    if (sameNonzeroPattern(A))
-      MatCopy(*A.mat(), *(this->A), SAME_NONZERO_PATTERN);    
-    else
-    {
+    //if (sameNonzeroPattern(A))
+    //  MatCopy(*A.mat(), *(this->A), SAME_NONZERO_PATTERN);    
+    //else
+    //{
       // Create matrix (any old matrix is destroyed automatically)
       if (!this->A.unique())
-        error("Cannot assign PETScMatrix with different non-zero pattern becaue more than one object points to the underlying PETSc object.");
+        error("Cannot assign PETScMatrix with different non-zero pattern because more than one object points to the underlying PETSc object.");
       boost::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
       this->A = _A;
       
       // Duplicate with the same pattern as A.A
       MatDuplicate(*A.mat(), MAT_COPY_VALUES, this->A.get());
-    }
+    //}
   }
   return *this;
 }
@@ -537,26 +539,6 @@ void PETScMatrix::checkType()
     warning("Requested matrix type unknown. Using default.");
     _type = default_matrix;
   }
-}
-//-----------------------------------------------------------------------------
-bool PETScMatrix::sameNonzeroPattern(const PETScMatrix& A) const
-{
-  // FIXME: This function does not assert for zero pointers. Should it?
-  if (this->A == 0 || A.mat() == 0)
-    return false;
-
-  error("Do not know how to check the non-zero pattern for PETSc matrices.");
-  return false;
-
- /*
-  // FIXME: Is this check sufficient? 
-  MatInfo this_info, other_info;
-  MatGetInfo(*(this->A), MAT_GLOBAL_SUM, &this_info);
-  MatGetInfo(*A.mat(),   MAT_GLOBAL_SUM, &other_info);
-  return this_info.nz_allocated   == other_info.nz_allocated 
-      && this_info.columns_global == other_info.columns_global 
-      && this_info.rows_global    == other_info.rows_global;
-  */
 }
 //-----------------------------------------------------------------------------
 #if PETSC_VERSION_MAJOR > 2 
