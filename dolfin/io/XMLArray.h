@@ -18,19 +18,21 @@ namespace dolfin
   public:
 
     XMLArray(std::vector<int>& ix, NewXMLFile& parser);
-    XMLArray(std::vector<uint>& ux, NewXMLFile& parser);
-    XMLArray(std::vector<double>& dx, NewXMLFile& parser);
     XMLArray(std::vector<int>& ix, NewXMLFile& parser, uint size);
+
+    XMLArray(std::vector<uint>& ux, NewXMLFile& parser);
     XMLArray(std::vector<uint>& ux, NewXMLFile& parser, uint size);
+
+    XMLArray(std::vector<double>& dx, NewXMLFile& parser);
     XMLArray(std::vector<double>& dx, NewXMLFile& parser, uint size);
      
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
     
     /// Write to file
-    void write(const std::vector<int>& x, std::string filename);
-    void write(const std::vector<uint>& x, std::string filename);
-    void write(const std::vector<double>& x, std::string filename);
+    static void write(const std::vector<int>& x, std::ofstream& outstream, uint indentation_level=0);
+    static void write(const std::vector<uint>& x, std::ofstream& outstream, uint indentation_level=0);
+    static void write(const std::vector<double>& x, std::ofstream& outstream, uint indentation_level=0);
 
   private:
     

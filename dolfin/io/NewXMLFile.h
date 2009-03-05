@@ -7,6 +7,7 @@
 #ifndef __NEWXMLFILE_H
 #define __NEWXMLFILE_H
 
+#include <fstream>
 #include <stack>
 #include <string>
 #include <map>
@@ -62,9 +63,13 @@ namespace dolfin
   private:
     std::stack<XMLHandler*> handlers;
     xmlSAXHandler* sax;
+    std::ofstream outfile;
 
     void start_element(const xmlChar *name, const xmlChar **attrs);
     void end_element  (const xmlChar *name);
+
+    void open_file();
+    void close_file() { outfile.close(); }
 
   };
 

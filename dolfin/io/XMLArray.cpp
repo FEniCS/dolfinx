@@ -99,10 +99,30 @@ void XMLArray::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLArray::write(const std::vector<int>& x, std::string filename)
+void XMLArray::write(const std::vector<int>& x, std::ofstream& outfile, uint indentation_level)
 {
-  // FIXME: write this function, use XMLFile as starting point.
+  outfile << "<array type=\"int\" size=\"" << x.size() << "\">" << std::endl;
+  for (uint i = 0; i < x.size(); ++i)
+    outfile << "  <element index=\"" << i << "\" value=\"" << x[i] << "\"/>" << std::endl;
+  outfile << "</array>" << std::endl;
 }
+//-----------------------------------------------------------------------------
+void XMLArray::write(const std::vector<uint>& x, std::ofstream& outfile, uint indentation_level)
+{
+  outfile << "<array type=\"uint\" size=\"" << x.size() << "\">" << std::endl;
+  for (uint i = 0; i < x.size(); ++i)
+    outfile << "  <element index=\"" << i << "\" value=\"" << x[i] << "\"/>" << std::endl;
+  outfile << "</array>" << std::endl;
+}
+//-----------------------------------------------------------------------------
+void XMLArray::write(const std::vector<double>& x, std::ofstream& outfile, uint indentation_level)
+{
+  outfile << "<array type=\"double\" size=\"" << x.size() << "\">" << std::endl;
+  for (uint i = 0; i < x.size(); ++i)
+    outfile << "  <element index=\"" << i << "\" value=\"" << x[i] << "\"/>" << std::endl;
+  outfile << "</array>" << std::endl;
+}
+
 //-----------------------------------------------------------------------------
 void XMLArray::start_array(const xmlChar *name, const xmlChar **attrs)
 {
