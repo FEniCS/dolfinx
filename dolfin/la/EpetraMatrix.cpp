@@ -183,8 +183,12 @@ void EpetraMatrix::add(const double* block,
 void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
 {
   const EpetraMatrix* AA = &A.down_cast<EpetraMatrix>();
-  if (!same_nonzero_pattern)
-    error("EpetraMatrix::axpy presently support matrices with identical nonzero patterns."); 
+
+  if (!AA->mat()->Filled())
+    error("Epetramatrix is not in the correct state for addition."); 
+
+  if (this->A->Filled() && !same_nonzero_pattern)
+    error("Epetramatrix is not in the correct state for addition."); 
 
   int err = EpetraExt::MatrixMatrix::Add(*(AA->mat()), false, a, *(this->A), 1.0);
   if (err!= 0) 
