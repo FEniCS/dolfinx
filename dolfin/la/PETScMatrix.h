@@ -99,7 +99,7 @@ namespace dolfin
     virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A);
+    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false);
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;
@@ -164,9 +164,6 @@ namespace dolfin
 
     // Check that requested type has been compiled into PETSc
     void checkType();
-
-    // Check for same size and sparsity pattern of this and another matrix
-    bool sameNonzeroPattern(const PETScMatrix& A) const;
 
     // PETSc Mat pointer
     boost::shared_ptr<Mat> A;

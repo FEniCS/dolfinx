@@ -12,13 +12,18 @@ using namespace dolfin;
 
 int main()
 {
+  File file("mesh.pvd");
+
   // Create mesh of unit square
   UnitSquare mesh(5, 5);
+  file << mesh;
   plot(mesh);
 
   // Uniform refinement
   mesh.refine();
+  file << mesh;
   plot(mesh);
+
 
   // Refine mesh close to x = (0.5, 0.5)
   Point p(0.5, 0.5);
@@ -36,6 +41,7 @@ int main()
     // Refine mesh
     mesh.refine(cell_markers);
     
+    file << mesh;
     plot(mesh);
   }
 
