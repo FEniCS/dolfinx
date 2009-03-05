@@ -5,6 +5,7 @@
 // Last changed: 2009-03-04
 
 #include <cstring>
+#include <sstream>
 #include "NewXMLFile.h"
 #include "XMLHandler.h"
 
@@ -59,7 +60,9 @@ int XMLHandler::parse_int(const xmlChar* name, const xmlChar** attrs,
         error("Value for attribute \"%s\" of <%s> missing in XML file.",
 		      attribute, name);
       
-      int value = atoi((const char *) (attrs[i+1]));
+      std::istringstream ss((const char *)attrs[i+1]);
+      int value;
+      ss >> value;
       return value;
     }
   }
@@ -90,10 +93,12 @@ dolfin::uint XMLHandler::parse_uint(const xmlChar* name,
         error("Value for attribute \"%s\" of <%s> missing in XML file.",
 		      attribute, name);
       
-      int value = atoi((const char *) (attrs[i+1]));
+      std::istringstream ss((const char *)attrs[i+1]);
+      int value;
+      ss >> value;
       if ( value < 0 )
       {
-	error("Value for attribute \"%s\" of <%s> is negative.",
+        error("Value for attribute \"%s\" of <%s> is negative.",
 		      attribute, name);
       }
       return static_cast<uint>(value);
@@ -125,7 +130,9 @@ double XMLHandler::parse_float(const xmlChar* name, const xmlChar** attrs,
         error("Value for attribute \"%s\" of <%s>  missing in XML file.",
 		      attribute, name);
     
-      double value = static_cast<double>(atof((const char *) (attrs[i+1])));
+      std::istringstream ss((const char *)attrs[i+1]);
+      double value;
+      ss >> value;
       return value;
     }
   }

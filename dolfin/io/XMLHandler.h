@@ -7,6 +7,7 @@
 #ifndef __XMLHANDLER_H
 #define __XMLHANDLER_H
 
+#include <iomanip>
 #include <fstream>
 #include <libxml/parser.h>
 
