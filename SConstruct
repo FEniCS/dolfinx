@@ -45,6 +45,8 @@ else:
 options = [
     # configurable options for installation:
     scons.PathOption("prefix", "Installation prefix", default_prefix),
+    scons.PathOption("DESTDIR",
+                     "Prepend DESTDIR to each installed target file", None),
     scons.PathOption("binDir", "Binary installation directory",
                      os.path.join("$prefix","bin")),
     scons.PathOption("manDir", "Manual page installation directory",
@@ -279,60 +281,71 @@ for n in buildDataHash["shlibs"] + buildDataHash["extModules"] + \
 # Set up installation targets
 # -----------------------------------------------------------------------------
 
+install_prefix = "$prefix"
+if env.get("DESTDIR"):
+  install_prefix = os.path.join("$DESTDIR", "$prefix")
+binDir = env["binDir"].replace("$prefix", install_prefix)
+includeDir = env["includeDir"].replace("$prefix", install_prefix)
+libDir = env["libDir"].replace("$prefix", install_prefix)
+pkgConfDir = env["pkgConfDir"].replace("$prefix", install_prefix)
+pythonModuleDir = env["pythonModuleDir"].replace("$prefix", install_prefix)
+pythonExtDir = env["pythonExtDir"].replace("$prefix", install_prefix)
+manDir = env["manDir"].replace("$prefix", install_prefix)
+
 # install dolfin-convert into binDir:
-env.Install(env["binDir"], os.path.join("misc","utils","convert","dolfin-convert"))
+env.Install(binDir, os.path.join("misc","utils","convert","dolfin-convert"))
 
 # install dolfin-convert manual page into manDir/man1:
-env.Install(os.path.join(env["manDir"], "man1"),
+env.Install(os.path.join(manDir, "man1"),
             os.path.join("doc", "man", "man1", "dolfin-convert.1.gz"))
 
 # install dolfin-order into binDir
-env.Install(env["binDir"], os.path.join("misc","utils","order","dolfin-order"))
+env.Install(binDir, os.path.join("misc","utils","order","dolfin-order"))
 
 # install dolfin-order manual page into manDir/man1
-env.Install(os.path.join(env["manDir"], "man1"),
+env.Install(os.path.join(manDir, "man1"),
             os.path.join("doc", "man", "man1", "dolfin-order.1.gz"))
 
 # shared libraries goes into our libDir:
 for l in buildDataHash["shlibs"]:
-  env.InstallVersionedSharedLibrary(env["libDir"], l)
+  env.InstallVersionedSharedLibrary(libDir, l)
 
 # install header files in the same structure as in the source tree, within
 # includeDir/dolfin:
 for h in buildDataHash["headers"]:
   # Get the module path relative to the "src" directory
   dpath = os.path.dirname(h.srcnode().path).split(os.path.sep, 1)[1]
-  env.Install(os.path.join(env["includeDir"], env["projectname"], dpath), h)
+  env.Install(os.path.join(includeDir, env["projectname"], dpath), h)
 # Also, we want the special 'dolfin.h' file to be installed directly in the
 # toplevel includeDir. 
 if buildDataHash.has_key("dolfin_header") and buildDataHash["dolfin_header"] != "":
-  env.Install(env["includeDir"], buildDataHash["dolfin_header"])
+  env.Install(includeDir, buildDataHash["dolfin_header"])
 
 ## install python scripts in the bin directory
 #for s in buildDataHash["pythonScripts"]:
-#  env.Install(env["binDir"], s)
+#  env.Install(binDir, s)
 
 if env["enablePython"]:
     # install python modules, usually in site-packages/<projectname>
     for m in buildDataHash["pythonModules"]:
-        env.Install(os.path.join(env["pythonModuleDir"], env["projectname"]), m)
+        env.Install(os.path.join(pythonModuleDir, env["projectname"]), m)
 
 if env["enablePython"]:
     # install extension modules, usually in site-packages
     for e in buildDataHash["extModules"]:
-        env.Install(os.path.join(env["pythonExtDir"], env["projectname"]), e)
+        env.Install(os.path.join(pythonExtDir, env["projectname"]), e)
     # install SWIG interface files in includeDir/swig
     for s in buildDataHash["swigfiles"]:
-        env.Install(os.path.join(env["includeDir"], env["projectname"], "swig"), s)
+        env.Install(os.path.join(includeDir, env["projectname"], "swig"), s)
 
 # install generated pkg-config files in $prefix/lib/pkgconfig or other
 # specified place
 for p in buildDataHash["pkgconfig"]:
-  env.Install(env["pkgConfDir"], p)
+  env.Install(pkgConfDir, p)
 
-# grab prefix from the environment, substitute all scons construction variables
+# grab installation prefix, substitute all scons construction variables
 # (those prefixed with $...), and create a normalized path:
-prefix = os.path.normpath(env.subst(env["prefix"]))
+prefix = os.path.normpath(env.subst(install_prefix))
 # add '/' (or similar) at the end of prefix if missing:
 if not prefix[-1] == os.path.sep:
   prefix += os.path.sep
@@ -347,7 +360,7 @@ if env["enablePython"]:
 
     for f in installfiles:
         installpath=os.path.sep.join(os.path.dirname(f).split(os.path.sep)[1:])
-        env.Install(os.path.join(env["pythonModuleDir"],installpath), f)
+        env.Install(os.path.join(pythonModuleDir,installpath), f)
 
 _targetdir = os.path.join(prefix, "share", env["projectname"], "data")
 if 'install' in COMMAND_LINE_TARGETS and not os.path.isdir(_targetdir):
@@ -370,11 +383,10 @@ env = scons.addInstallTargets(env, sourcefiles=buildDataHash["docs"],
                               targetdir=_targetdir)
 
 # Instruct scons what to do when user requests 'install'
-targets = [env["binDir"], env["manDir"],
-           env["libDir"], env["includeDir"], env["pkgConfDir"]]
+targets = [binDir, manDir, libDir, includeDir, pkgConfDir]
 if env["enablePython"]:
-    targets.append(env["pythonModuleDir"])
-    targets.append(env["pythonExtDir"])
+    targets.append(pythonModuleDir)
+    targets.append(pythonExtDir)
 env.Alias("install", targets)
 
 # _runTests used to use the global 'ret' (now buildDataHash). Therefore, we
@@ -431,7 +443,7 @@ def help_install():
     #msg = """---------------------------------------------------------
 #DOLFIN successfully compiled and installed in\n\n  %s\n""" % prefix
     # Check that the installation directory is set up correctly
-    if not os.path.join(prefix,"bin") in os.environ["PATH"]:
+    if not os.path.join(env.subst(env["prefix"]),"bin") in os.environ["PATH"]:
         msg = """---------------------------------------------------------
 Warning: Installation directory is not in PATH.
 

@@ -255,8 +255,11 @@ class Configure(object):
         opts.Update(env)
         # Cache options if asked to
         cacheOptions = env.get("cacheOptions", False)
+        DESTDIR = env.get("DESTDIR")
         if cacheOptions:
             del env["cacheOptions"] # Don't store this value
+            if DESTDIR:
+                del env["DESTDIR"]
             # Wan't to make the 'veryClean' a on-off option, so we don't store
             veryCleanOption = env.get("veryClean", False)
             if veryCleanOption:
@@ -266,6 +269,8 @@ class Configure(object):
             env["cacheOptions"] = cacheOptions
             if veryCleanOption:
               env["veryClean"] = veryCleanOption
+            if DESTDIR:
+                env["DESTDIR"] = DESTDIR
         env.Help(opts.GenerateHelpText(env))
     
     def checkCxxHeader(self, header, include_quotes='""'):
