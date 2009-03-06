@@ -84,13 +84,13 @@ if env["PLATFORM"] == "darwin":
 elif env["PLATFORM"].startswith("win"):
     env = scons.Customize.winCxx(env)
 
-if env["enablePydolfin"]:
+if env["enablePython"]:
     # Make sure we can find both SWIG and Python header files (Python.h):
     try:
         out, err = scons.runCommand("swig", "-version")
     except Exception, err:
         print "*** Unable to find SWIG."
-        print "*** Install SWIG or disable PyDOLFIN with enablePydolfin=no"
+        print "*** Install SWIG or disable Python wrappers with enablePython=no"
         Exit(1)
     
     # Determine swig version
@@ -126,8 +126,8 @@ Please install SWIG version %s or recompile UFC with present SWIG.""" % \
         print "*** Perhaps you need to install the package python%s-dev?" % py_ver
         Exit(1)
 
-if env["enablePydolfin"]:
-    print "Enabling compilation of PyDOLFIN"
+if env["enablePython"]:
+    print "Enabling compilation of Python wrappers"
     swigFlags = "-python -c++ -shadow -I%s" % os.path.join("include","swig")
     swigFlags = swigFlags.split()
 
@@ -143,14 +143,15 @@ if env["enablePydolfin"]:
     elif env["PLATFORM"].startswith("win"):
         swigEnv = scons.Customize.winSwig(swigEnv)
 
-    cFileBldr, cxxFileBldr = swigEnv["BUILDERS"]["CFile"], swigEnv["BUILDERS"]["CXXFile"]
+    cFileBldr = swigEnv["BUILDERS"]["CFile"]
+    cxxFileBldr = swigEnv["BUILDERS"]["CXXFile"]
 
     for bldr in cFileBldr, cxxFileBldr:
         bldr.add_emitter(".i", scons.Customize.swigEmitter)
 
     swigEnv.Prepend(SCANNERS=scons.Customize.swigscanner)
 else:
-    print "Disabling compilation of PyDOLFIN"
+    print "Disabling compilation of Python wrappers"
 
 # stencil for return-values:
 ret = {"shlibs": [], "extModules": [], "docs": [], "headers": [], "pythonModules": [], \
@@ -227,7 +228,7 @@ for modName, mod in modules.items():
         # The builder returns a node list
         ret["shlibs"].append(shlib[0])
 
-    if mod.swigSources and env["enablePydolfin"]:
+    if mod.swigSources and env["enablePython"]:
         # Register swig wrapper targets in the module
         mod.cxxFlags += ["-fno-strict-aliasing"]
 
@@ -311,9 +312,9 @@ ret["pythonScripts"]  += scons.globFiles(Dir("#/app").srcnode().abspath, "*.py")
 # set python packagedirs we want to install (in site-packages)
 ret["pythonPackageDirs"] += [Dir("#site-packages")]
 
-if env["enablePydolfin"]:
+if env["enablePython"]:
     # set SWIG interface files we want to install
-    ret["swigfiles"] += scons.globFiles(Dir("#/dolfin/swig").srcnode().abspath, "*.i")
+    ret["swigfiles"] += scons.globFiles(Dir("#/%s/swig" % env["projectname"]).srcnode().abspath, "*.i")
 
 # read SConscript in data.
 data = env.SConscript(os.path.join("#data", "SConscript"), exports=["env"])
@@ -374,7 +375,7 @@ replacements['CXX'] = env["CXX"]
 
 scons.pkgconfig.generate(env, replace=replacements)
 ret["pkgconfig"] = env.PkgConfigGenerator("%s.pc.in" % (env["projectname"]))
-# the dolfin.pc file needs to be regenerated if there are changes to the
+# the <projectname>.pc file needs to be regenerated if there are changes to the
 # configured packages, installation prefix, any compiler/link flags,
 # or the compiler
 pkgconfig_deps = [configuredPackages.keys(), env["prefix"],
@@ -382,11 +383,10 @@ pkgconfig_deps = [configuredPackages.keys(), env["prefix"],
 env.Depends(ret["pkgconfig"][0], Value(pkgconfig_deps))
 
 # We also like to install all generated pkg-config files. 
-
 ret["pkgconfig"] += scons.globFiles(Dir("#/scons/pkgconfig/").srcnode().abspath, "*.pc")
 
-# Return the big data dictionary. Actual targets will be run in SConstruct based 
-# on this information.
+# Return the big data dictionary. Actual targets will be run in SConstruct
+# based on this information.
 Return("ret")
 
 # vim:ft=python sw=2 ts=2 

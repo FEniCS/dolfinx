@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import os, os.path, sys
+import warnings
 
 # Make sure that we have a good scons-version
 EnsureSConsVersion(0, 96)
 
 # Import the local 'scons'
-# Add simula-scons to sys.path and PYTHONPATH
-os.environ["PYTHONPATH"] = \
-    os.pathsep.join([os.environ.get("PYTHONPATH",""),
-                     os.path.join(os.getcwd(),"scons","simula-scons")])
-sys.path.insert(0, os.path.join(os.getcwd(),"scons","simula-scons"))
+sys.path.insert(0, os.path.abspath(os.path.join("scons", "simula-scons")))
 import simula_scons as scons
  
 # Import local exceptions
@@ -29,9 +26,9 @@ scons.setDefaultEnv(env)
 
 # Specify a file where SCons store file signatures, used to figure out what is
 # changed. We store it in the 'scons' subdirectory to avoid mixing signatures
-# with the files in dolfin. 
-dolfin_sconsignfile = os.path.join(os.getcwd(), "scons", ".sconsign")
-env.SConsignFile(dolfin_sconsignfile)
+# with the files in this project. 
+project_sconsignfile = os.path.abspath(os.path.join("scons", ".sconsign"))
+env.SConsignFile(project_sconsignfile)
 
 # -----------------------------------------------------------------------------
 # Command line option handling
@@ -40,7 +37,7 @@ env.SConsignFile(dolfin_sconsignfile)
 DefaultPackages = ""
 
 if env["PLATFORM"].startswith("win"):
-  default_prefix = os.path.join("c:","local")
+  default_prefix = r"c:\local"
 else:
   default_prefix = os.path.join(os.path.sep,"usr","local")
 
@@ -48,6 +45,8 @@ else:
 options = [
     # configurable options for installation:
     scons.PathOption("prefix", "Installation prefix", default_prefix),
+    scons.PathOption("DESTDIR",
+                     "Prepend DESTDIR to each installed target file", None),
     scons.PathOption("binDir", "Binary installation directory",
                      os.path.join("$prefix","bin")),
     scons.PathOption("manDir", "Manual page installation directory",
@@ -71,6 +70,7 @@ options = [
     BoolOption("enableTests", "Build tests", 0),
     BoolOption("enableCodeCoverage", "Enable code coverage", 0),
     BoolOption("enableProjectionLibrary", "Enable projection library", 0),
+    BoolOption("enableResolveCompiler", "Run tests to verify compiler", 1),
     # Enable or disable external packages.
     # These will also be listed in scons.cfg files, but if they are 
     # disabled here, that will override scons.cfg. Remark that unless the
@@ -87,7 +87,8 @@ options = [
     BoolOption("enableMtl4", "Compile with support for MTL4", "yes"),
     BoolOption("enableParmetis", "Compile with support for ParMETIS", "yes"),
     BoolOption("enableGmp", "Compile with support for GMP", "no"),
-    BoolOption("enablePydolfin", "Compile the python wrappers of Dolfin", "yes"),
+    BoolOption("enablePython", "Compile the Python wrappers", "yes"),
+    BoolOption("enablePydolfin", "Compile the Python wrappers of DOLFIN *deprecated*", "yes"),
     # some of the above may need extra options (like petscDir), should we
     # try to get that from pkg-config?
     # It may be neccessary to specify the installation path to the above packages.
@@ -121,9 +122,17 @@ options = [
     #('usePackages','Override or add dependency packages, separate with comma', ""),
     #('customDefaultPackages','Override the default set of packages (%r), separate package names with commas' % (DefaultPackages,)),
     ("SSLOG", "Set Simula scons log file", os.path.join(os.getcwd(),"scons","simula_scons.log")),
-    BoolOption("enableResolveCompiler", "Run tests to verify compiler", 1),
     ]
 
+
+# Option enablePydolfin is now deprecated
+if ARGUMENTS.has_key("enablePydolfin"):
+  msg = "Option 'enablePydolfin' is deprecated and will be removed in " \
+        "the future. Please use the option 'enablePython' instead to " \
+        "enable/disable compiling of Python wrappers."
+  warnings.warn(msg, DeprecationWarning)
+  if not ARGUMENTS.has_key("enablePython"):
+    ARGUMENTS["enablePython"] = ARGUMENTS["enablePydolfin"]
 
 # This Configure class handles both command-line options (which are merged into 
 # the environment) and autoconf-style tests. A special feature is that it
@@ -145,6 +154,10 @@ if not env.GetOption("clean"):
     lines = file(os.path.join('scons','options.cache')).readlines()
     if lines:
       print "Using options from scons/options.cache"
+    # FIXME: this can be removed when option enablePydolfin is removed
+    for line in lines:
+      if line.startswith("enablePydolfin") and not "enablePython" in lines:
+        env["enablePython"] = eval(line.split('=')[1])
   except:
     pass
 
@@ -152,7 +165,7 @@ if not env.GetOption("clean"):
 if env.GetOption("clean"):
   try:
     if env["veryClean"]:
-      os.unlink("%s.dblite" % dolfin_sconsignfile)
+      os.unlink("%s.dblite" % project_sconsignfile)
       os.unlink(os.path.join('scons', 'options.cache'))
       import glob
       for f in glob.glob(os.path.join('scons', 'pkgconfig', '*.pc')):
@@ -268,60 +281,71 @@ for n in buildDataHash["shlibs"] + buildDataHash["extModules"] + \
 # Set up installation targets
 # -----------------------------------------------------------------------------
 
+install_prefix = "$prefix"
+if env.get("DESTDIR"):
+  install_prefix = os.path.join("$DESTDIR", "$prefix")
+binDir = env["binDir"].replace("$prefix", install_prefix)
+includeDir = env["includeDir"].replace("$prefix", install_prefix)
+libDir = env["libDir"].replace("$prefix", install_prefix)
+pkgConfDir = env["pkgConfDir"].replace("$prefix", install_prefix)
+pythonModuleDir = env["pythonModuleDir"].replace("$prefix", install_prefix)
+pythonExtDir = env["pythonExtDir"].replace("$prefix", install_prefix)
+manDir = env["manDir"].replace("$prefix", install_prefix)
+
 # install dolfin-convert into binDir:
-env.Install(env["binDir"], os.path.join("misc","utils","convert","dolfin-convert"))
+env.Install(binDir, os.path.join("misc","utils","convert","dolfin-convert"))
 
 # install dolfin-convert manual page into manDir/man1:
-env.Install(os.path.join(env["manDir"], "man1"),
+env.Install(os.path.join(manDir, "man1"),
             os.path.join("doc", "man", "man1", "dolfin-convert.1.gz"))
 
 # install dolfin-order into binDir
-env.Install(env["binDir"], os.path.join("misc","utils","order","dolfin-order"))
+env.Install(binDir, os.path.join("misc","utils","order","dolfin-order"))
 
 # install dolfin-order manual page into manDir/man1
-env.Install(os.path.join(env["manDir"], "man1"),
+env.Install(os.path.join(manDir, "man1"),
             os.path.join("doc", "man", "man1", "dolfin-order.1.gz"))
 
 # shared libraries goes into our libDir:
 for l in buildDataHash["shlibs"]:
-  env.InstallVersionedSharedLibrary(env["libDir"], l)
+  env.InstallVersionedSharedLibrary(libDir, l)
 
 # install header files in the same structure as in the source tree, within
 # includeDir/dolfin:
 for h in buildDataHash["headers"]:
   # Get the module path relative to the "src" directory
   dpath = os.path.dirname(h.srcnode().path).split(os.path.sep, 1)[1]
-  env.Install(os.path.join(env["includeDir"], "dolfin", dpath), h)
+  env.Install(os.path.join(includeDir, env["projectname"], dpath), h)
 # Also, we want the special 'dolfin.h' file to be installed directly in the
 # toplevel includeDir. 
 if buildDataHash.has_key("dolfin_header") and buildDataHash["dolfin_header"] != "":
-  env.Install(env["includeDir"], buildDataHash["dolfin_header"])
+  env.Install(includeDir, buildDataHash["dolfin_header"])
 
 ## install python scripts in the bin directory
 #for s in buildDataHash["pythonScripts"]:
-#  env.Install(env["binDir"], s)
+#  env.Install(binDir, s)
 
-if env["enablePydolfin"]:
-    # install python modules, usually in site-packages/dolfin
+if env["enablePython"]:
+    # install python modules, usually in site-packages/<projectname>
     for m in buildDataHash["pythonModules"]:
-        env.Install(os.path.join(env["pythonModuleDir"], "dolfin"), m)
+        env.Install(os.path.join(pythonModuleDir, env["projectname"]), m)
 
-if env["enablePydolfin"]:
+if env["enablePython"]:
     # install extension modules, usually in site-packages
     for e in buildDataHash["extModules"]:
-        env.Install(os.path.join(env["pythonExtDir"], "dolfin"), e)
+        env.Install(os.path.join(pythonExtDir, env["projectname"]), e)
     # install SWIG interface files in includeDir/swig
     for s in buildDataHash["swigfiles"]:
-        env.Install(os.path.join(env["includeDir"], "dolfin", "swig"), s)
+        env.Install(os.path.join(includeDir, env["projectname"], "swig"), s)
 
 # install generated pkg-config files in $prefix/lib/pkgconfig or other
 # specified place
 for p in buildDataHash["pkgconfig"]:
-  env.Install(env["pkgConfDir"], p)
+  env.Install(pkgConfDir, p)
 
-# grab prefix from the environment, substitute all scons construction variables
+# grab installation prefix, substitute all scons construction variables
 # (those prefixed with $...), and create a normalized path:
-prefix = os.path.normpath(env.subst(env["prefix"]))
+prefix = os.path.normpath(env.subst(install_prefix))
 # add '/' (or similar) at the end of prefix if missing:
 if not prefix[-1] == os.path.sep:
   prefix += os.path.sep
@@ -329,18 +353,16 @@ if not prefix[-1] == os.path.sep:
 # not sure we need common.py for pydolfin.
 #commonfile=os.path.join("site-packages", "pycc", "common.py")
 
-if env["enablePydolfin"]:
-    installfiles = scons.buildFileList(
-        buildDataHash["pythonPackageDirs"])
+#env = scons.installCommonFile(env, commonfile, prefix)
+
+if env["enablePython"]:
+    installfiles = scons.buildFileList(buildDataHash["pythonPackageDirs"])
 
     for f in installfiles:
         installpath=os.path.sep.join(os.path.dirname(f).split(os.path.sep)[1:])
-        env.Install(os.path.join(env["pythonModuleDir"],installpath), f)
+        env.Install(os.path.join(pythonModuleDir,installpath), f)
 
-#env = scons.installCommonFile(env, commonfile, prefix)
-
-# No data for dolfin?
-_targetdir=os.path.join(prefix, "share", "dolfin", "data")
+_targetdir = os.path.join(prefix, "share", env["projectname"], "data")
 if 'install' in COMMAND_LINE_TARGETS and not os.path.isdir(_targetdir):
   os.makedirs(_targetdir)
 env = scons.addInstallTargets(env, sourcefiles=buildDataHash["data"],
@@ -354,19 +376,17 @@ env = scons.addInstallTargets(env, sourcefiles=buildDataHash["data"],
 #env = scons.addInstallTargets(env, sourcefiles=buildDataHash["tests"],
 #                              targetdir=_targetdir)
 
-### I am not sure there are any docs to install with dolfin.
-_targetdir=os.path.join(prefix, "share", "doc", "dolfin")
+_targetdir = os.path.join(prefix, "share", "doc", env["projectname"])
 if 'install' in COMMAND_LINE_TARGETS and not os.path.isdir(_targetdir):
   os.makedirs(_targetdir)
 env = scons.addInstallTargets(env, sourcefiles=buildDataHash["docs"],
                               targetdir=_targetdir)
 
 # Instruct scons what to do when user requests 'install'
-targets = [env["binDir"], env["manDir"],
-           env["libDir"], env["includeDir"], env["pkgConfDir"]]
-if env["enablePydolfin"]:
-    targets.append(env["pythonModuleDir"])
-    targets.append(env["pythonExtDir"])
+targets = [binDir, manDir, libDir, includeDir, pkgConfDir]
+if env["enablePython"]:
+    targets.append(pythonModuleDir)
+    targets.append(pythonExtDir)
 env.Alias("install", targets)
 
 # _runTests used to use the global 'ret' (now buildDataHash). Therefore, we
@@ -378,35 +398,7 @@ env.Command("runtests", buildDataHash["shlibs"] + buildDataHash["extModules"],
             Action(_runTests, scons._strRuntests))
 
 # Create helper file for setting environment variables
-f = open('dolfin.conf', 'w')
-if env["PLATFORM"] == "darwin":
-    f.write('export DYLD_LIBRARY_PATH="' + prefix + 'lib:$DYLD_LIBRARY_PATH"\n')
-else:
-    f.write('export LD_LIBRARY_PATH="'   + prefix + 'lib:$LD_LIBRARY_PATH"\n')
-f.write('export PATH="'            + prefix + 'bin:$PATH"\n')
-f.write('export PKG_CONFIG_PATH="' + prefix + 'lib/pkgconfig:$PKG_CONFIG_PATH"\n')
-if env["enablePydolfin"]:
-    pyversion=".".join([str(s) for s in sys.version_info[0:2]])
-    f.write('export PYTHONPATH="'  + prefix + 'lib/python'    + pyversion + '/site-packages:$PYTHONPATH"\n')
-f.write('export MANPATH="' + env.subst(env['manDir']) + ':$MANPATH"\n')
-f.close()
-
-# Create helper file for Windows as well
-f = open('dolfin.bat', 'w')
-f.write('set PATH=%s\n' % \
-        os.pathsep.join([env.subst(env['binDir']),
-                         env.subst(env['libDir']),
-                         '%PATH%']))
-f.write('set PYTHONPATH=%s\n' % \
-        os.pathsep.join([env.subst(env['pythonModuleDir']),
-                         env.subst(env['pythonExtDir']),
-                         '%PYTHONPATH%']))
-f.write('set PKG_CONFIG_PATH=%s\n' % \
-        os.pathsep.join([env.subst(env['pkgConfDir']),
-                         '%PKG_CONFIG_PATH%']))
-f.write('set MANPATH=%s\n' % \
-        os.pathsep.join([env.subst(env['manDir']), '%MANPATH%']))
-f.close()
+scons.createHelperFile(env)
 
 def help():
     # TODO: The message below should only be printed if there were no
@@ -451,7 +443,7 @@ def help_install():
     #msg = """---------------------------------------------------------
 #DOLFIN successfully compiled and installed in\n\n  %s\n""" % prefix
     # Check that the installation directory is set up correctly
-    if not os.path.join(prefix,"bin") in os.environ["PATH"]:
+    if not os.path.join(env.subst(env["prefix"]),"bin") in os.environ["PATH"]:
         msg = """---------------------------------------------------------
 Warning: Installation directory is not in PATH.
 
@@ -486,4 +478,3 @@ if not env.GetOption("clean"):
 scons.logClose()
 
 # vim:ft=python ts=2 sw=2
-

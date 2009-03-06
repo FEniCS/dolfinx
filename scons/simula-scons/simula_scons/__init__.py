@@ -52,6 +52,49 @@ def logClose():
     if log_file != sys.stdout and log_file is not None:
         log_file.close()
 
+def createHelperFile(env):
+    """Create helper file for setting environment variables.
+    
+    @param env: SCons evnvironment  
+    """
+    binDir = env.subst(env.get('binDir', os.path.join('$prefix', 'bin')))
+    libDir = env.subst(env.get('libDir', os.path.join('$prefix', 'lib')))
+    pkgConfDir = env.subst(env.get('pkgConfDir',
+                                   os.path.join('$prefix', 'lib', 'pkgconfig')))
+    pythonModuleDir = env.subst(env.get('pythonModuleDir',
+                                        defaultPythonLib(prefix='$prefix')))
+    pythonExtDir = env.subst(env.get('pythonExtDir',
+                                     defaultPythonLib(prefix='$prefix',
+                                                      plat_specific=True)))
+    manDir = env.subst(env.get('manDir',
+                               os.path.join('$prefix', 'share', 'man')))
+    sep = os.pathsep
+    if env["PLATFORM"].startswith("win"):
+        f = open('%s.bat' % env["projectname"], 'w')
+        f.write('set PATH=%s\n' % sep.join([binDir, libDir, '%PATH%']))
+        f.write('set PYTHONPATH=%s\n' % \
+                sep.join([pythonModuleDir, pythonExtDir, '%PYTHONPATH%']))
+        f.write('set PKG_CONFIG_PATH=%s\n' % \
+                sep.join([pkgConfDir, '%PKG_CONFIG_PATH%']))
+        f.write('set MANPATH=%s\n' % sep.join([manDir, '%MANPATH%']))
+        f.close()
+    else:
+        f = open('%s.conf' % env["projectname"], 'w')
+        if env["PLATFORM"] == "darwin":
+            f.write('export DYLD_LIBRARY_PATH=%s\n' % \
+                    sep.join([libDir, '$DYLD_LIBRARY_PATH']))
+        else:
+            f.write('export LD_LIBRARY_PATH=%s\n' % \
+                    sep.join([libDir, '$LD_LIBRARY_PATH']))
+        f.write('export PATH=%s\n' % sep.join([binDir, '$PATH']))
+        f.write('export PKG_CONFIG_PATH=%s\n' % \
+                sep.join([pkgConfDir, '$PKG_CONFIG_PATH']))
+        if env["enablePydolfin"]:
+            f.write('export PYTHONPATH=%s\n' % \
+                    sep.join([pythonModuleDir, pythonExtDir, '$PYTHONPATH']))
+        f.write('export MANPATH=%s\n' % sep.join([manDir, '$MANPATH']))
+        f.close()
+
 def runCommand(command, args, captureOutput=True):
     """ Run command, returning its output on the stdout and stderr streams.
 
@@ -70,37 +113,6 @@ def runCommand(command, args, captureOutput=True):
         raise CommandError(cl, r, err.strip())
     if captureOutput:
         return out.strip(), err.strip()
-
-## def runCommand(command, args, captureOutput=True):
-##     """ Run command, returning its output on the stdout and stderr streams.
-
-##     If the command exits with a non-zero value, CommandError is raised.
-##     @param command: The name of the command
-##     @param args: The arguments to the command, either as an explicit sequence or as a whitespace delimited string.
-##     @return: A pair of strings, containing the command's output on stdout and stderr, respectively.
-##     """
-##     if isinstance(args, basestring):
-##         args = args.split()
-##     cl = "%s %s" % (command, " ".join(args))
-##     print cl
-##     if captureOutput:
-##         from popen2 import Popen3
-##         p = Popen3(cl, capturestderr=True)
-##         r = p.wait()
-##         try:
-##             out = p.fromchild.read().strip()
-##             err = p.childerr.read().strip()
-##         finally:
-##             p.tochild.close()
-##             p.fromchild.close()
-##             p.childerr.close()
-##         if r:
-##             raise CommandError(cl, r, err)
-##         return out, err
-##     else:
-##         r = os.spawnvp(os.P_WAIT, command, [command] + args)
-##         if r:
-##             raise CommandError(cl, r, "")
 
 def rsplit(toSplit, sub, max=None):
     s = toSplit[::-1] # Reverse string
@@ -243,8 +255,11 @@ class Configure(object):
         opts.Update(env)
         # Cache options if asked to
         cacheOptions = env.get("cacheOptions", False)
+        DESTDIR = env.get("DESTDIR")
         if cacheOptions:
             del env["cacheOptions"] # Don't store this value
+            if DESTDIR:
+                del env["DESTDIR"]
             # Wan't to make the 'veryClean' a on-off option, so we don't store
             veryCleanOption = env.get("veryClean", False)
             if veryCleanOption:
@@ -254,6 +269,8 @@ class Configure(object):
             env["cacheOptions"] = cacheOptions
             if veryCleanOption:
               env["veryClean"] = veryCleanOption
+            if DESTDIR:
+                env["DESTDIR"] = DESTDIR
         env.Help(opts.GenerateHelpText(env))
     
     def checkCxxHeader(self, header, include_quotes='""'):
@@ -702,12 +719,6 @@ def getModulesAndDependencies(directory=".",
         except Exception, msg:
           log(msg)
           print "failed"
-##           print "failed"
-##           print """ *** Unable to generate a suitable pkg-config file for %s.
-##  *** If %s is present on your system, try setting the %s_DIR 
-##  *** environment variable to the directory where %s is installed.""" % (d,d,str.upper(d),d)
-##           if os.environ.has_key("%s_DIR" % (str.upper(d))):
-##             print " *** %s_DIR is currently set to %s" % (str.upper(d),os.environ["%s_DIR" % (str.upper(d))])
 
     return modules,dependencies,alldependencies,configuredPackages,packcfgObjs
 
