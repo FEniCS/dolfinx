@@ -171,14 +171,23 @@ void NewXMLFile::operator<<(const std::map<uint, double>& map)
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, std::vector<int> >& array_map)
 {
+  open_file();
+  XMLMap::write(array_map, outfile);
+  close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, std::vector<uint> >& array_map)
 {
+  open_file();
+  XMLMap::write(array_map, outfile);
+  close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, std::vector<double> >& array_map)
 {
+  open_file();
+  XMLMap::write(array_map, outfile);
+  close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::parse()
