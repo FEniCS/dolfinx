@@ -30,9 +30,9 @@ namespace dolfin
     void end_element   (const xmlChar *name);
     
     /// Write to file
-    static void write(const std::vector<int>& x, std::ofstream& outstream, uint indentation_level=0);
-    static void write(const std::vector<uint>& x, std::ofstream& outstream, uint indentation_level=0);
-    static void write(const std::vector<double>& x, std::ofstream& outstream, uint indentation_level=0);
+    static void write(const std::vector<int>& x, std::ofstream& outfile, uint indentation_level=0);
+    static void write(const std::vector<uint>& x, std::ofstream& outfile, uint indentation_level=0);
+    static void write(const std::vector<double>& x, std::ofstream& outfile, uint indentation_level=0);
 
   private:
     

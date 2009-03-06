@@ -7,9 +7,11 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/Mesh.h>
 #include "XMLArray.h"
 #include "XMLMap.h"
 #include "NewXMLFile.h"
+#include "NewXMLMesh.h"
 
 using namespace dolfin;
 
@@ -35,6 +37,16 @@ NewXMLFile::NewXMLFile(const std::string filename, bool gzip)
 NewXMLFile::~NewXMLFile()
 {
   delete sax; 
+}
+//-----------------------------------------------------------------------------
+void NewXMLFile::operator>>(Mesh& mesh)
+{
+  message(1, "Reading mesh from file %s.", filename.c_str());
+  NewXMLMesh xml_mesh(mesh, *this);
+  xml_mesh.handle();
+  parse();
+  if ( !handlers.empty() ) 
+    error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::vector<int>& x)
@@ -125,6 +137,13 @@ void NewXMLFile::operator>>(std::map<uint, std::vector<double> >& array_map)
   parse();
   if ( !handlers.empty() ) 
     error("Hander stack not empty. Something is wrong!");
+}
+//-----------------------------------------------------------------------------
+void NewXMLFile::operator<<(const Mesh& mesh)
+{
+  open_file();
+  NewXMLMesh::write(mesh, outfile);
+  close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::vector<int>& x)
