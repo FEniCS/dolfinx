@@ -6,6 +6,7 @@
 #
 # Modified by Anders Logg, 2008
 # Modified by Johan Hake, 2008
+# Modified by Garth N. Wells, 2009
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
 __date__ = "2007-11-14 -- 2008-01-04"
@@ -14,14 +15,16 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-# Load subdomains and velocity
-velocity = Function("velocity.xml.gz");
-mesh = velocity.function_space().mesh()
+# Load mesh and subdomains
+mesh = Mesh("../mesh.xml.gz")
 sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz");
 
 # Create FunctionSpaces 
 Q = FunctionSpace(mesh, "CG", 1)
 V = VectorFunctionSpace(mesh, "CG", 2)
+
+# Create velocity Function 
+velocity = Function(V, "../velocity.xml.gz");
 
 # Initialise source function and previous solution function
 f  = Function(Q, "0.0")
