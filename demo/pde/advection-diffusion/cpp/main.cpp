@@ -12,24 +12,30 @@
 
 #include <dolfin.h>
 #include "AdvectionDiffusion.h"
+#include "Velocity.h"
 
 using namespace dolfin;
 
 int main(int argc, char *argv[])
 {
-  // Read velocity field
-  Function velocity("../velocity.xml.gz");
+  // Read mesh 
+  Mesh mesh("../mesh.xml.gz");
+
+  // Create DOLFIN objects from UFC objetcts (FFC generation of wrapper code for element needs to be fixed)
+  DofMap dof_map(boost::shared_ptr<ufc::dof_map>(new Velocity_dof_map_0), mesh);
+  FiniteElement velocity_element(boost::shared_ptr<ufc::finite_element>(new Velocity_finite_element_0));
+
+  // Create FunctionSpace
+  FunctionSpace V_u(mesh, velocity_element, dof_map);
+
+  // Create velocity function
+  Function velocity(V_u, "../velocity.xml.gz");
 
   // Read sub domain markers
-  dolfin_debug("");
-  const Mesh& mesh(velocity.function_space().mesh());
-  dolfin_debug("");
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
-  dolfin_debug("");
 
   // Create function space
   AdvectionDiffusionFunctionSpace V(mesh);
-  dolfin_debug("");
 
   // Source term and initial condition
   Constant f(0.0);

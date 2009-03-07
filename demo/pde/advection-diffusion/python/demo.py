@@ -15,7 +15,7 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 
 # Load subdomains and velocity
-velocity = Function("../velocity.xml.gz");
+velocity = Function("velocity.xml.gz");
 mesh = velocity.function_space().mesh()
 sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz");
 
