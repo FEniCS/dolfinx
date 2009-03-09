@@ -25,11 +25,11 @@ namespace dolfin
     XYZFile(const std::string filename);
     ~XYZFile();
     
-    void operator<< (Function& u);
+    void operator<< (const Function& u);
     
   private:
     
-    void ResultsWrite(Function& u) const;
+    void ResultsWrite(const Function& u) const;
     void xyzNameUpdate(const int counter);
     
     template<class T>

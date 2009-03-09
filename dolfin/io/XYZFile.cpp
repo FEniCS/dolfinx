@@ -4,7 +4,8 @@
 // Modified by Nuno Lopes 2008.
 //
 // First added:  2008-07-02
-
+#include <sstream>
+#include <fstream>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -28,7 +29,7 @@ XYZFile::~XYZFile()
   // Do nothing
 }
 //----------------------------------------------------------------------------
-void XYZFile::operator<<(Function& u)
+void XYZFile::operator<<(const Function& u)
 {
   // Update xyz file name and clear file
   xyzNameUpdate(counter);
@@ -43,10 +44,10 @@ void XYZFile::operator<<(Function& u)
        << ") to file " << filename << " in xd3d xyz format." << endl;
 }
 //----------------------------------------------------------------------------
-void XYZFile::ResultsWrite(Function& u) const
+void XYZFile::ResultsWrite(const Function& u) const
 {
   // Open file
-  FILE *fp = fopen(xyz_filename.c_str(), "a");
+  std::ofstream fp(xyz_filename.c_str(), std::ios_base::app);
   if (!fp)
     error("Unable to open file %s", filename.c_str());
   
@@ -73,16 +74,19 @@ void XYZFile::ResultsWrite(Function& u) const
   if ( dim > 1 )
     error("Cannot handle XYZ file for non-scalar functions. ");
 
+
+
+  std::ostringstream ss;
+  ss << std::scientific;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {    
-    if ( dim == 1 ) 
-      fprintf(fp,"%e %e  %e",vertex->x(0),vertex->x(1), values[ vertex->index() ] );
-    fprintf(fp,"\n");
+        ss.str("");
+        ss<<vertex->x(0)<<" "<< vertex->x(1)<<" "<< values[ vertex->index()];
+        ss<<std::endl;
+        fp<<ss.str( );
   }	 
   
-  // Close file
-  fclose(fp);
-
+ 
   delete [] values;
 }
 //----------------------------------------------------------------------------
