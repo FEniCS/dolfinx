@@ -7,8 +7,6 @@ __license__  = "GNU LGPL version 2.1"
 
 import re, sys, os
 
-pwd = os.path.dirname(os.path.abspath(__file__))
-
 # Tests to run
 tests = ["unit", "system", "memory"]
 
@@ -21,7 +19,7 @@ command = "python test.py" + " " + " ".join(sys.argv[1:])
 for test in tests:
     print "Running tests: %s" % test
     print "----------------------------------------------------------------------"
-    os.chdir(os.path.join(pwd, test))
+    os.chdir(os.path.abspath(test))
     fail = os.system(command)
     if fail:
         failed.append(fail)

@@ -6,15 +6,32 @@ __copyright__ = "Copyright (C) 2008 Ilmar Wilbers"
 __license__  = "GNU LGPL Version 2.1"
 
 # Modified by Anders Logg 2008
+# Modified by Johannes Ring 2009
 
 import sys, os, re
-from commands import getstatusoutput
+import platform
 from time import time
+from subprocess import Popen, PIPE, STDOUT
+
+# Taken from (since commands.getstatusoutput does not work in Windows):
+# http://ivory.idyll.org/blog/mar-07/replacing-commands-with-subprocess
+def get_status_output(cmd, input=None, cwd=None, env=None):
+    pipe = Popen(cmd, shell=True, cwd=cwd, env=env, stdout=PIPE, stderr=STDOUT)
+
+    (output, errout) = pipe.communicate(input=input)
+    assert not errout
+
+    status = pipe.returncode
+
+    return (status, output)
+
+# Location of all demos
+demodir = os.path.join(os.curdir, "..", "..", "demo")
 
 # Demos to run
 cppdemos = []
 pydemos = []
-for dpath, dnames, fnames in os.walk(os.path.join(os.curdir, "..", "..", "demo")):
+for dpath, dnames, fnames in os.walk(demodir):
     if os.path.basename(dpath) == 'cpp':
         if os.path.isfile(os.path.join(dpath, 'SConstruct')):
             cppdemos.append(dpath)
@@ -30,10 +47,15 @@ print ""
 print "Found %d C++ demos" % len(cppdemos)
 print "Found %d Python demos" % len(pydemos)
 print ""
+import pprint
 
 # Remove demos that are known not to work (FIXME's)
-pydemos.remove('./../../demo/ode/aliev-panfilov/python')
-pydemos.remove('./../../demo/ode/lorenz/python')
+pydemos.remove(os.path.join(demodir, 'ode', 'aliev-panfilov', 'python'))
+pydemos.remove(os.path.join(demodir, 'ode', 'lorenz', 'python'))
+
+# Disable demos on Windows that pop's up a window that has to be clicked
+if platform.system() == 'Windows':
+    pydemos.remove(os.path.join(demodir, 'mesh', 'intersection', 'python'))
 
 # Push slow demos to the end
 pyslow = []
@@ -46,13 +68,13 @@ for s in cppslow:
     cppdemos.append(s)
 
 # Remove overly slow demos
-cppdemos.remove('./../../demo/pde/cahn-hilliard/cpp')
+cppdemos.remove(os.path.join(demodir, 'pde', 'cahn-hilliard', 'cpp'))
 
 # Demos that need command line arguments are treated separately
-pydemos.remove('./../../demo/quadrature/python')
-cppdemos.remove('./../../demo/quadrature/cpp')
-cppdemos.remove('./../../demo/ode/method-weights/cpp')
-cppdemos.remove('./../../demo/ode/stiff/cpp')
+pydemos.remove(os.path.join(demodir, 'quadrature', 'python'))
+cppdemos.remove(os.path.join(demodir, 'quadrature', 'cpp'))
+cppdemos.remove(os.path.join(demodir, 'ode', 'method-weights', 'cpp'))
+cppdemos.remove(os.path.join(demodir, 'ode', 'stiff', 'cpp'))
 
 failed = []
 timing = []
@@ -71,9 +93,13 @@ for demo in cppdemos:
     print "----------------------------------------------------------------------"
     print "Running C++ demo %s" % demo
     print ""
-    if os.path.isfile(os.path.join(demo, 'demo')):
+    cppdemo_ext = ''
+    if platform.system() == 'Windows':
+        cppdemo_ext = '.exe'
+    if os.path.isfile(os.path.join(demo, 'demo'+cppdemo_ext)):
         t1 = time()
-        output = getstatusoutput("cd %s && ./demo" % demo)
+        output = get_status_output("cd %s && .%sdemo%s" % \
+                                   (demo, os.path.sep, cppdemo_ext))
         t2 = time()
         timing += [(demo, t2-t1)]
         success = not output[0]
@@ -92,7 +118,7 @@ for demo in pydemos:
     print ""
     if os.path.isfile(os.path.join(demo, 'demo.py')):
         t1 = time()
-        output = getstatusoutput("cd %s && python ./demo.py" % demo)
+        output = get_status_output("cd %s && python ./demo.py" % demo)
         t2 = time()
         timing += [(demo, t2-t1)]
         success = not output[0]
@@ -110,10 +136,15 @@ if False:
     print "Time to run demos:"
     print "\n".join("%s: %.2fs" % t for t in timing)
 
+total_no_demos = len(pydemos)
+if not only_python:
+    total_no_demos += len(cppdemos)
+
 # Print output for failed tests
 print ""
 if len(failed) > 0:
-    print "%d demo(s) out of %d failed, see demo.log for details." % (len(failed), len(cppdemos))
+    print "%d demo(s) out of %d failed, see demo.log for details." % \
+          (len(failed), total_no_demos)
     file = open("demo.log", "w")
     for (test, interface, output) in failed:
         file.write("----------------------------------------------------------------------\n")
