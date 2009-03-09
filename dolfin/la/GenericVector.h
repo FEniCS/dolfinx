@@ -4,10 +4,10 @@
 // Modified by Anders Logg, 2006-2008.
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Ola Skavhaug, 2008.
-// Modified by Martin Sandve Alnes, 2008.
+// Modified by Martin Sandve Alnes, 2009.
 //
 // First added:  2006-04-25
-// Last changed: 2008-08-25
+// Last changed: 2009-03-09
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -103,7 +103,7 @@ namespace dolfin
     virtual double inner(const GenericVector& x) const = 0;
 
     /// Return norm of vector
-    virtual double norm(dolfin::NormType type) const = 0;
+    virtual double norm(dolfin::NormType type=l2) const = 0;
 
     /// Return minimum value of vector
     virtual double min() const = 0;
