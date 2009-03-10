@@ -61,7 +61,7 @@ void NewXMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
     else if ( xmlStrcasecmp(name, (xmlChar *) "data") == 0 )
     {
       read_mesh_data(name, attrs);
-      state = INSIDE_DATA;
+      state = INSIDE_MESH;
     }
     else if ( xmlStrcasecmp(name, (xmlChar *) "coordinates") == 0 )
     {
@@ -88,21 +88,6 @@ void NewXMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
     
     break;
 
-  case INSIDE_DATA:
-    
-    if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
-    {
-      read_mesh_function(name, attrs);
-      state = INSIDE_MESH_FUNCTION;
-    }
-    if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
-    {
-      read_array(name, attrs);
-      state = INSIDE_ARRAY;
-    }
-
-    break;
-
   case INSIDE_COORDINATES:
     
     if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
@@ -118,13 +103,6 @@ void NewXMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
     {
       read_dof_map_signature(name, attrs);
     }
-
-    break;
-
-  case INSIDE_MESH_FUNCTION:
-    
-    if ( xmlStrcasecmp(name, (xmlChar *) "entity") == 0 )
-      read_mesh_entity(name, attrs);
 
     break;
 
@@ -166,29 +144,11 @@ void NewXMLMesh::end_element(const xmlChar *name)
 
     break;
 
-  case INSIDE_DATA:
-
-    if ( xmlStrcasecmp(name, (xmlChar *) "data") == 0 )
-    {
-      state = INSIDE_MESH;
-    }
-
-    break;
-
   case INSIDE_COORDINATES:
 
     if ( xmlStrcasecmp(name, (xmlChar *) "coordinates") == 0 )
     {
       state = INSIDE_MESH;
-    }
-
-    break;
-
-  case INSIDE_MESH_FUNCTION:
-
-    if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
-    {
-      state = INSIDE_DATA;
     }
 
     break;
@@ -411,44 +371,6 @@ void NewXMLMesh::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
   // set affine indicator
   const std::string affine_str = parse_string_optional(name, attrs, "affine");
   editor.setAffineCellIndicator(c, affine_str);
-}
-//-----------------------------------------------------------------------------
-void NewXMLMesh::read_mesh_function(const xmlChar* name, const xmlChar** attrs)
-{
-  // Parse values
-  const std::string id = parse_string(name, attrs, "name");
-  const std::string type = parse_string(name, attrs, "type");
-  const uint dim = parse_uint(name, attrs, "dim");
-  const uint size = parse_uint(name, attrs, "size");
-
-  // Only uint supported at this point
-  if (strcmp(type.c_str(), "uint") != 0)
-    error("Only uint-valued mesh data is currently supported.");
-
-  // Check size
-  _mesh.init(dim);
-  if (_mesh.size(dim) != size)
-    error("Wrong number of values for MeshFunction, expecting %d.", _mesh.size(dim));
-
-  // Register data
-  f = _mesh.data().create_mesh_function(id);
-  dolfin_assert(f);
-  f->init(_mesh, dim);
-
-  // Set all values to zero
-  *f = 0;
-}
-//-----------------------------------------------------------------------------
-void NewXMLMesh::read_array(const xmlChar* name, const xmlChar** attrs)
-{
-  // Parse values
-  const std::string type = parse_string(name, attrs, "type");
-  const uint size = parse_uint(name, attrs, "size");
-
-  delete xml_array;
-  uint_array = new std::vector<uint>();
-  xml_array = new XMLArray(*uint_array, parser, size);
-  xml_array->handle();
 }
 //-----------------------------------------------------------------------------
 void NewXMLMesh::read_mesh_coord(const xmlChar* name, const xmlChar** attrs)

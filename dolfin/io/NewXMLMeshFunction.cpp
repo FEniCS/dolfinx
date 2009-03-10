@@ -12,13 +12,13 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<int>& imf, NewXMLFile& parser)
-  : XMLHandler(parser), imf(&imf), umf(0), dmf(0), state(OUTSIDE_MESHFUNCTION), mf_type(INT), size(0)
+  : XMLHandler(parser), imf(&imf), umf(0), dmf(0), state(OUTSIDE_MESHFUNCTION), mf_type(INT), size(0), dim(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<uint>& umf, NewXMLFile& parser)
-  : XMLHandler(parser), imf(0), umf(&umf), dmf(0), state(OUTSIDE_MESHFUNCTION), mf_type(UINT), size(0)
+  : XMLHandler(parser), imf(0), umf(&umf), dmf(0), state(OUTSIDE_MESHFUNCTION), mf_type(UINT), size(0), dim(0)
 {
   // Do nothing
 }
@@ -29,23 +29,32 @@ NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<double>& dmf, NewXMLFile& pa
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<int>& imf, NewXMLFile& parser, uint size)
-  : XMLHandler(parser), imf(&imf), umf(0), dmf(0), state(INSIDE_MESHFUNCTION), mf_type(INT), size(size)
+NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<int>& imf, NewXMLFile& parser, uint size, uint dim)
+  : XMLHandler(parser), imf(&imf), umf(0), dmf(0), state(INSIDE_MESHFUNCTION), mf_type(INT), size(size), dim(dim)
 {
+  // Initialize mesh function
+  this->imf->init(dim);
+
   // Set all values to zero
   *(this->imf) = 0;
 }
 //-----------------------------------------------------------------------------
-NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<uint>& umf, NewXMLFile& parser, uint size)
-  : XMLHandler(parser), imf(0), umf(&umf), dmf(0), state(INSIDE_MESHFUNCTION), mf_type(UINT), size(size)
+NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<uint>& umf, NewXMLFile& parser, uint size, uint dim)
+  : XMLHandler(parser), imf(0), umf(&umf), dmf(0), state(INSIDE_MESHFUNCTION), mf_type(UINT), size(size), dim(dim)
 {
+  // Initialize mesh function
+  this->umf->init(dim);
+
   // Set all values to zero
   *(this->umf) = 0;
 }
 //-----------------------------------------------------------------------------
-NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<double>& dmf, NewXMLFile& parser, uint size)
-  : XMLHandler(parser), imf(0), umf(0), dmf(&dmf), state(INSIDE_MESHFUNCTION), mf_type(DOUBLE), size(size)
+NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<double>& dmf, NewXMLFile& parser, uint size, uint dim)
+  : XMLHandler(parser), imf(0), umf(0), dmf(&dmf), state(INSIDE_MESHFUNCTION), mf_type(DOUBLE), size(size), dim(dim)
 {
+  // Initialize mesh function
+  this->dmf->init(dim);
+
   // Set all values to zero
   *(this->dmf) = 0;
 }

@@ -15,7 +15,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 XMLMeshData::XMLMeshData(MeshData& data, NewXMLFile& parser, bool inside)
   : XMLHandler(parser), data(data), state(OUTSIDE), type(UNSET), entity_name(""),
-    im(0), um(0), dm(0), iam(0), uam(0), dam(0), imf(0), umf(0), dmf(0)
+    im(0), um(0), dm(0), iam(0), uam(0), dam(0)
 {
   if ( inside )
     state = INSIDE_DATA;
@@ -30,9 +30,6 @@ XMLMeshData::~XMLMeshData()
   delete iam;
   delete uam;
   delete dam;
-  delete imf;
-  delete umf;
-  delete dmf;
 }
 //-----------------------------------------------------------------------------
 void XMLMeshData::start_element (const xmlChar* name, const xmlChar** attrs)
@@ -141,10 +138,46 @@ void XMLMeshData::write(const MeshData& data, std::ofstream& outfile, uint inden
       outfile << "</data_entry>" << std::endl;
     }
 
+    typedef std::map<std::string, std::map<uint,uint>* >::const_iterator map_iter;
+    for (map_iter it = data.mappings.begin(); it != data.mappings.end(); ++it)
+    {
+      // Write data entry header
+      curr_indent = indentation_level + 2;
+      outfile << std::setw(curr_indent) << "";
+      outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
+
+      // Write array
+      XMLMap::write(*(it->second), outfile, indentation_level + 4);
+
+      // Write data entry footer 
+      curr_indent = indentation_level + 2;
+      outfile << std::setw(curr_indent) << "";
+      outfile << "</data_entry>" << std::endl;
+    }
+
+    typedef std::map<std::string, std::map<uint, std::vector<uint> >* >::const_iterator vec_map_iter;
+    for (vec_map_iter it = data.vector_mappings.begin(); it != data.vector_mappings.end(); ++it)
+    {
+      // Write data entry header
+      curr_indent = indentation_level + 2;
+      outfile << std::setw(curr_indent) << "";
+      outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
+
+      // Write array
+      XMLMap::write(*(it->second), outfile, indentation_level + 4);
+
+      // Write data entry footer 
+      curr_indent = indentation_level + 2;
+      outfile << std::setw(curr_indent) << "";
+      outfile << "</data_entry>" << std::endl;
+    }
+
+
+
     // Write mesh data footer
     curr_indent = indentation_level;
     outfile << std::setw(curr_indent) << "";
-    outfile << "<data>" << std::endl;
+    outfile << "</data>" << std::endl;
 
   }
 
@@ -169,9 +202,9 @@ void XMLMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
   }
   else if ( array_type.compare("uint") == 0 )
   {
-    data.create_array(entity_name, size);
+    std::vector<uint>* array = data.create_array(entity_name, size);
     delete xml_array;
-    xml_array = new XMLArray(*(data.array(entity_name)), parser, size);
+    xml_array = new XMLArray(*array, parser, size);
     xml_array->handle();
   }
   else if ( array_type.compare("double") == 0 )
@@ -194,8 +227,8 @@ void XMLMeshData::read_map(const xmlChar* name, const xmlChar** attrs)
   if ( value_type.compare("uint") == 0 )
   {
     delete xml_map;
-    data.create_mapping(entity_name);
-    xml_map = new XMLMap(*(data.mapping(entity_name)), parser);
+    std::map<uint, uint>* map = data.create_mapping(entity_name);
+    xml_map = new XMLMap(*map,  parser);
     xml_map->handle();
   } else if ( value_type.compare("array") == 0 )
     warning("Add support for array maps, needed in parallel assembly.");
@@ -205,5 +238,14 @@ void XMLMeshData::read_map(const xmlChar* name, const xmlChar** attrs)
 //-----------------------------------------------------------------------------
 void XMLMeshData::read_mesh_function(const xmlChar* name, const xmlChar** attrs)
 {
+  std::string mf_type = parse_string(name, attrs, "type");
+  uint dim = parse_uint(name, attrs, "dim");
+  uint size = parse_uint(name, attrs, "size");
+  if ( mf_type.compare("uint") != 0 )
+    error("Only MeshFunctions of type 'uint' supported as mesh data. Found '%s'.", mf_type.c_str());
+  delete xml_mesh_function;
+  MeshFunction<uint>* mf = data.create_mesh_function(entity_name);
+  xml_mesh_function = new NewXMLMeshFunction(*mf, parser, size, dim);
+  xml_mesh_function->handle();
 }
 //-----------------------------------------------------------------------------

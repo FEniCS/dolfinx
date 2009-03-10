@@ -29,6 +29,7 @@ namespace dolfin
     XMLMap(std::map<uint, std::vector<uint> >& uam, NewXMLFile& parser);
     XMLMap(std::map<uint, std::vector<double> >& dam, NewXMLFile& parser);
     
+    // Callbacks
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
 

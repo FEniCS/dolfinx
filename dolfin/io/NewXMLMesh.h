@@ -28,15 +28,13 @@ namespace dolfin
     
     void start_element (const xmlChar* name, const xmlChar** attrs);
     void end_element   (const xmlChar* name);
-    
+
     static void write(const Mesh& mesh, std::ofstream& outfile, uint indentation_level=0);
     
   private:
     
-    enum parser_state {OUTSIDE,
-                       INSIDE_MESH, INSIDE_VERTICES, INSIDE_CELLS, INSIDE_COORDINATES,
-                       INSIDE_DATA, INSIDE_MESH_FUNCTION, INSIDE_ARRAY, INSIDE_VECTOR,
-                       DONE};
+    enum parser_state {OUTSIDE, INSIDE_MESH, INSIDE_VERTICES, INSIDE_CELLS, 
+                       INSIDE_COORDINATES, INSIDE_VECTOR, DONE};
     
     void read_mesh          (const xmlChar* name, const xmlChar** attrs);
     void read_vertices      (const xmlChar* name, const xmlChar** attrs);
@@ -46,8 +44,6 @@ namespace dolfin
     void read_interval      (const xmlChar* name, const xmlChar** attrs);
     void read_triangle      (const xmlChar* name, const xmlChar** attrs);
     void read_tetrahedron   (const xmlChar* name, const xmlChar** attrs);
-    void read_mesh_function (const xmlChar* name, const xmlChar** attrs);
-    void read_array         (const xmlChar* name, const xmlChar** attrs);
     void read_mesh_coord    (const xmlChar* name, const xmlChar** attrs);
     void read_mesh_entity   (const xmlChar* name, const xmlChar** attrs);
     void read_mesh_data     (const xmlChar* name, const xmlChar** attrs);

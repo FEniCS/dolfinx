@@ -18,13 +18,13 @@ namespace dolfin
   public:
 
     NewXMLMeshFunction(MeshFunction<int>& imf, NewXMLFile& parser);
-    NewXMLMeshFunction(MeshFunction<int>& imf, NewXMLFile& parser, uint size);
+    NewXMLMeshFunction(MeshFunction<int>& imf, NewXMLFile& parser, uint size, uint dim);
 
     NewXMLMeshFunction(MeshFunction<uint>& umf, NewXMLFile& parser);
-    NewXMLMeshFunction(MeshFunction<uint>& umf, NewXMLFile& parser, uint size);
+    NewXMLMeshFunction(MeshFunction<uint>& umf, NewXMLFile& parser, uint size, uint dim);
 
     NewXMLMeshFunction(MeshFunction<double>& dmf, NewXMLFile& parser);
-    NewXMLMeshFunction(MeshFunction<double>& dmf, NewXMLFile& parser, uint size);
+    NewXMLMeshFunction(MeshFunction<double>& dmf, NewXMLFile& parser, uint size, uint dim);
      
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
@@ -49,6 +49,7 @@ namespace dolfin
     mesh_function_type mf_type;
 
     uint size;
+    uint dim;
 
   };
   

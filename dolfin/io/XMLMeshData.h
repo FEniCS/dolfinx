@@ -15,6 +15,7 @@
 namespace dolfin
 {
 
+  class NewXMLMeshFunction;
   class XMLArray;
   class XMLMap;
 
@@ -30,7 +31,7 @@ namespace dolfin
 
     void start_element (const xmlChar* name, const xmlChar** attrs);
     void end_element   (const xmlChar* name);
-    
+
     static void write(const MeshData& data, std::ofstream& outfile, uint indentation_level=0);
 
   private:
@@ -49,16 +50,13 @@ namespace dolfin
 
     XMLArray* xml_array;
     XMLMap* xml_map;
+    NewXMLMeshFunction* xml_mesh_function;
     std::map<uint, int>*    im;
     std::map<uint, uint>*   um;
     std::map<uint, double>* dm;
     std::map<uint, std::vector<int> >*    iam;
     std::map<uint, std::vector<uint> >*   uam;
     std::map<uint, std::vector<double> >* dam;
-    MeshFunction<int>*    imf;
-    MeshFunction<uint>*   umf;
-    MeshFunction<double>* dmf;
-
   };
 
 }

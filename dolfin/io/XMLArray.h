@@ -28,6 +28,7 @@ namespace dolfin
      
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
+
     
     /// Write to file
     static void write(const std::vector<int>& x, std::ofstream& outfile, uint indentation_level=0);
