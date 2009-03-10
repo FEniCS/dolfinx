@@ -73,7 +73,13 @@ def pkgCflags(sconsEnv=None):
     return "-I%s" % os.path.join(getGmpDir(sconsEnv=sconsEnv), "include")
 
 def pkgLibs(sconsEnv=None):
-  return "-L%s -lgmp -lgmpxx" % os.path.join(getGmpDir(sconsEnv), "lib")
+    if get_architecture().startswith("win"):
+        libs = "-L%s -lgmp-3 -lgmpxx-4" % \
+               os.path.join(getGmpDir(sconsEnv), "bin")
+    else:
+        libs = "-L%s -lgmp -lgmpxx" % \
+               os.path.join(getGmpDir(sconsEnv), "lib")
+    return libs
 
 def pkgTests(forceCompiler=None, sconsEnv=None,
              cflags=None, libs=None, version=None, **kwargs):

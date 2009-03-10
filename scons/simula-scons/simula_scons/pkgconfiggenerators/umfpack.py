@@ -224,7 +224,7 @@ def pkgLibs(sconsEnv=None):
   if get_architecture() == "darwin":
     libs += "-framework vecLib"
   else:
-    libs += "-L%s -lblas" % getAtlasDir(sconsEnv=sconsEnv)
+    libs += "-L%s -lblas" % getBlasDir(sconsEnv=sconsEnv)
   libs += " -L%s -lumfpack" % getUmfpackLibDir(sconsEnv)
   if needAMD(sconsEnv):
     libs += " -L%s -lamd" % getAMDLibDir(sconsEnv)
@@ -309,7 +309,7 @@ int main (void)
     if linkFailed:
       remove_cppfile("umfpack_config_test_lib.cpp", ofile=True)
       errormsg = ("Using '%s' for BLAS, consider setting the environment " + \
-                  "variable ATLAS_DIR if this is wrong.\n") % getAtlasDir()
+                  "variable BLAS_DIR if this is wrong.\n") % getBlasDir()
       errormsg += cmdoutput
       raise UnableToLinkException("UMFPACK", cmd=cmdstr,
                                   program=cpp_test_lib_str, errormsg=errormsg)
