@@ -8,10 +8,12 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/LocalMeshData.h>
 #include "XMLArray.h"
 #include "XMLMap.h"
 #include "NewXMLFile.h"
 #include "NewXMLMesh.h"
+#include "NewXMLLocalMeshData.h"
 
 using namespace dolfin;
 
@@ -47,6 +49,17 @@ void NewXMLFile::operator>>(Mesh& mesh)
   parse();
   if ( !handlers.empty() ) 
     error("Hander stack not empty. Something is wrong!");
+}
+//-----------------------------------------------------------------------------
+void NewXMLFile::operator>> (LocalMeshData& local_mesh_data)
+{
+  message(1, "Reading mesh from file %s.", filename.c_str());
+  NewXMLLocalMeshData xml_local_mesh_data(local_mesh_data, *this);
+  xml_local_mesh_data.handle();
+  parse();
+  if ( !handlers.empty() ) 
+    error("Hander stack not empty. Something is wrong!");
+
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::vector<int>& x)

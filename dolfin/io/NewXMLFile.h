@@ -19,6 +19,7 @@
 namespace dolfin
 {
   class Mesh;
+  class LocalMeshData;
 
   class NewXMLFile: public GenericFile
   {
@@ -33,6 +34,7 @@ namespace dolfin
     // Input
 
     void operator>> (Mesh & mesh);
+    void operator>> (LocalMeshData& local_mesh_data);
     void operator>> (std::vector<int> & x);
     void operator>> (std::vector<uint> & x);
     void operator>> (std::vector<double> & x);
