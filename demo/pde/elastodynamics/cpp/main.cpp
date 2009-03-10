@@ -18,8 +18,8 @@ class Pressure : public Function
     Pressure(const double &t, const double &dt, bool old): t(t), dt(dt), old(old) {}
 
   private:
-  	void eval(double* values, const Data& data) const
-  	{
+    void eval(double* values, const Data& data) const
+    {
       double time = t;
       if(old && time > 0.0)
         time -= dt;
@@ -35,7 +35,7 @@ class Pressure : public Function
   		  values[0] = 1.0;
   		  values[1] = 0.0;
       }
-  	}
+    }
     const double& t;
     const double& dt;
     const bool    old;
@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
   // Create function space
   ElastoDynamicsFunctionSpace V(mesh);
 
-	// Material parameters
+  // Material parameters
   Constant rho(1.0);                           // mass density
   Constant eta(0.25);                          // damping coefficient
   double E  = 1.0;                             // Youngs modulus
@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
       file_eps << eps_xx;
     }
     ++step;
-	}
+  }
   
   return 0;
 }
