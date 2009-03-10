@@ -12,13 +12,14 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
 #include "XMLArray.h"
+#include "XMLMeshData.h"
 #include "NewXMLMesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewXMLMesh::NewXMLMesh(Mesh& mesh, NewXMLFile& parser) : XMLHandler(parser), _mesh(mesh), state(OUTSIDE), f(0), a(0),
-                               mesh_coord(0), uint_array(0), xml_array(0)
+                               mesh_coord(0), uint_array(0), xml_array(0), xml_mesh_data(0)
 {
   // Do nothing
 }
@@ -27,6 +28,7 @@ NewXMLMesh::~NewXMLMesh()
 {
   delete mesh_coord;
   delete uint_array;
+  delete xml_mesh_data;
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -58,6 +60,7 @@ void NewXMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
     }
     else if ( xmlStrcasecmp(name, (xmlChar *) "data") == 0 )
     {
+      read_mesh_data(name, attrs);
       state = INSIDE_DATA;
     }
     else if ( xmlStrcasecmp(name, (xmlChar *) "coordinates") == 0 )
@@ -270,6 +273,9 @@ void NewXMLMesh::write(const Mesh& mesh, std::ofstream& outfile, uint indentatio
   outfile << std::setw(curr_indent) << "";
   outfile << "</cells>" << std::endl;
 
+  // Write mesh data
+  XMLMeshData::write(mesh.data(), outfile, indentation_level + 2);
+
   // Write mesh footer 
   curr_indent = indentation_level;
   outfile << std::setw(curr_indent) << "";
@@ -463,6 +469,12 @@ void NewXMLMesh::read_mesh_entity(const xmlChar* name, const xmlChar** attrs)
   dolfin_assert(index < f->size());
   const uint value = parse_uint(name, attrs, "value");
   f->set(index, value);
+}
+//-----------------------------------------------------------------------------
+void NewXMLMesh::read_mesh_data(const xmlChar* name, const xmlChar** attrs)
+{
+  xml_mesh_data = new XMLMeshData(_mesh.data(), parser, true);
+  xml_mesh_data->handle();
 }
 //-----------------------------------------------------------------------------
 void NewXMLMesh::read_fe_signature(const xmlChar* name, const xmlChar** attrs)
