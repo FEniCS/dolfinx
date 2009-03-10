@@ -17,6 +17,7 @@ namespace dolfin
 {
   
   class Mesh;
+  class XMLMeshData;
   
   class NewXMLMesh : public XMLHandler
   {
@@ -49,6 +50,7 @@ namespace dolfin
     void read_array         (const xmlChar* name, const xmlChar** attrs);
     void read_mesh_coord    (const xmlChar* name, const xmlChar** attrs);
     void read_mesh_entity   (const xmlChar* name, const xmlChar** attrs);
+    void read_mesh_data     (const xmlChar* name, const xmlChar** attrs);
 
     void read_fe_signature  (const xmlChar* name, const xmlChar** attrs);
     void read_dof_map_signature(const xmlChar* name, const xmlChar** attrs);
@@ -58,6 +60,7 @@ namespace dolfin
     Mesh& _mesh;
     parser_state state;
     MeshEditor editor;
+
     MeshFunction<uint>* f;
     std::vector<uint>* a;
     
@@ -66,6 +69,7 @@ namespace dolfin
     std::vector<uint>* uint_array;
     XMLArray *xml_array;
     NewXMLVector* xml_vector;
+    XMLMeshData* xml_mesh_data;
     
   };
   
