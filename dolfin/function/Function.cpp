@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-03-05
+// Last changed: 2009-03-11
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -151,6 +151,7 @@ const Function& Function::operator= (const Function& v)
   // Check for function space and vector
   if (!v.has_function_space())
     error("Cannot copy Functions which do not have a FunctionSpace.");
+  /* Old version, remove after agreement on automatic interpolation
   if (!v.has_vector())
     error("Cannot copy Functions which do not have a Vector (user-defined Functions).");
 
@@ -160,6 +161,25 @@ const Function& Function::operator= (const Function& v)
   // Initialize vector and copy values
   init();
   *_vector = *v._vector;
+  */
+
+  // Copy function space
+  _function_space = v._function_space;
+
+  // Initialize vector and copy values
+  init();
+
+  // Copy values or interpolate
+  if (v.has_vector())
+  {
+    dolfin_assert(_vector->size() == v._vector->size());
+    *_vector = *v._vector;
+  }
+  else
+  {
+    message("Assignment from user-defined function, interpolating.");
+    v.interpolate(*_vector, *_function_space);
+  }
 
   return *this;
 }

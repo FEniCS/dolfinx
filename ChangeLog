@@ -1,3 +1,4 @@
+ - Automatically interpolate user-defined functions on assignment
  - Add new built-in function MeshCoordinates, useful in ALE simulations
  - Add new constructor to Function class, Function(V, "vector.xml")
  - Remove class Array (using std::vector instead)
