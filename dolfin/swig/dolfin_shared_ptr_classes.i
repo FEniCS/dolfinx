@@ -13,6 +13,7 @@ SWIG_SHARED_PTR_DERIVED(SubSpace,dolfin::FunctionSpace,dolfin::SubSpace)
 
 SWIG_SHARED_PTR(Function,dolfin::Function)
 SWIG_SHARED_PTR_DERIVED(Constant,dolfin::Function,dolfin::Constant)
+SWIG_SHARED_PTR_DERIVED(MeshCoordinates,dolfin::Function,dolfin::MeshCoordinates)
 SWIG_SHARED_PTR_DERIVED(MeshSize,dolfin::Function,dolfin::MeshSize)
 SWIG_SHARED_PTR_DERIVED(AvgMeshSize,dolfin::Function,dolfin::AvgMeshSize)
 SWIG_SHARED_PTR_DERIVED(InvMeshSize,dolfin::Function,dolfin::InvMeshSize)

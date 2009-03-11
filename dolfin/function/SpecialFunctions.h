@@ -24,6 +24,9 @@ namespace dolfin
   class SubFunction;
   class Data;
 
+  // FIXME: Need to add checks for all these functions that
+  // FIXME: the function spaces make sense (scalar, vector etc)
+
   /// This Function represents the mesh coordinates on a given mesh.
   class MeshCoordinates : public Function
   {

@@ -38,6 +38,7 @@ void MeshCoordinates::eval(double* values, const Data& data) const
     values[i] = data.x[i];
 }
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 MeshSize::MeshSize() : Function()
 {
   // Do nothing
