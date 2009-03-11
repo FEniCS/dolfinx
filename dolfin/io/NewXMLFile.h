@@ -29,6 +29,8 @@ namespace dolfin
     /// Constructor
     NewXMLFile(const std::string filename, bool gzip);
 
+    NewXMLFile(std::ostream& s);
+
     /// Destructor
     ~NewXMLFile();
 
@@ -68,6 +70,8 @@ namespace dolfin
     friend void new_sax_start_element (void *ctx, const xmlChar *name, const xmlChar **attrs);
     friend void new_sax_end_element   (void *ctx, const xmlChar *name);
 
+    void write() {}
+
     void parse();
 
     void push(XMLHandler* handler);
@@ -79,13 +83,13 @@ namespace dolfin
   private:
     std::stack<XMLHandler*> handlers;
     xmlSAXHandler* sax;
-    std::ofstream outfile;
+    std::ostream* outstream;
 
     void start_element(const xmlChar *name, const xmlChar **attrs);
     void end_element  (const xmlChar *name);
 
     void open_file();
-    void close_file() { outfile.close(); }
+    void close_file();
 
   };
 

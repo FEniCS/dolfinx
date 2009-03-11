@@ -49,6 +49,9 @@ namespace dolfin
     /// Create a file with given name and type (format)
     File(const std::string& filename, Type type);
 
+    /// Create a outfile object writing to stream
+    File(std::ostream& outstream);
+
     /// Destructor
     ~File();
 

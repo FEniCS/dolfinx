@@ -22,7 +22,26 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewXMLFile::NewXMLFile(const std::string filename, bool gzip)
-  : GenericFile(filename), sax(0)
+  : GenericFile(filename), sax(0), outstream(0)
+{
+  // Set up the output stream (to file)
+  outstream = new std::ofstream();
+
+  // Set up the sax handler. 
+  sax = new xmlSAXHandler();
+  
+  // Set up handlers for parser events
+  sax->startDocument = new_sax_start_document;
+  sax->endDocument   = new_sax_end_document;
+  sax->startElement  = new_sax_start_element;
+  sax->endElement    = new_sax_end_element;
+  sax->warning       = new_sax_warning;
+  sax->error         = new_sax_error;
+  sax->fatalError    = new_sax_fatal_error;
+}
+//-----------------------------------------------------------------------------
+NewXMLFile::NewXMLFile(std::ostream& s)
+  : GenericFile(""), sax(0), outstream(&s)
 {
   // Set up the sax handler. 
   sax = new xmlSAXHandler();
@@ -35,13 +54,19 @@ NewXMLFile::NewXMLFile(const std::string filename, bool gzip)
   sax->warning       = new_sax_warning;
   sax->error         = new_sax_error;
   sax->fatalError    = new_sax_fatal_error;
- 
 }
-
 //-----------------------------------------------------------------------------
 NewXMLFile::~NewXMLFile()
 {
   delete sax; 
+
+  // Only delete outstream if it is a ofstream
+  std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream);
+  if ( outfile != 0)
+  {
+    outfile = 0;
+    delete outstream;
+  }
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(Mesh& mesh)
@@ -178,84 +203,84 @@ void NewXMLFile::operator>>(std::map<uint, std::vector<double> >& array_map)
 void NewXMLFile::operator<<(const Mesh& mesh)
 {
   open_file();
-  NewXMLMesh::write(mesh, outfile);
+  NewXMLMesh::write(mesh, *outstream);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const Graph& graph)
 {
   open_file();
-  NewXMLGraph::write(graph, outfile);
+  NewXMLGraph::write(graph, *outstream);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const GenericMatrix& A)
 {
   open_file();
-  NewXMLMatrix::write(A, outfile);
+  NewXMLMatrix::write(A, *outstream);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::vector<int>& x)
 {
   open_file();
-  XMLArray::write(x, outfile);
+  XMLArray::write(x, *outstream);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::vector<uint>& x)
 {
   open_file();
-  XMLArray::write(x, outfile);
+  XMLArray::write(x, *outstream);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::vector<double>& x)
 {
   open_file();
-  XMLArray::write(x, outfile);
+  XMLArray::write(x, *outstream);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, int>& map)
 {
   open_file();
-  XMLMap::write(map, outfile);
+  XMLMap::write(map, *outstream);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, uint>& map)
 {
   open_file();
-  XMLMap::write(map, outfile);
+  XMLMap::write(map, *outstream);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, double>& map)
 {
   open_file();
-  XMLMap::write(map, outfile);
+  XMLMap::write(map, *outstream);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, std::vector<int> >& array_map)
 {
   open_file();
-  XMLMap::write(array_map, outfile);
+  XMLMap::write(array_map, *outstream);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, std::vector<uint> >& array_map)
 {
   open_file();
-  XMLMap::write(array_map, outfile);
+  XMLMap::write(array_map, *outstream);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, std::vector<double> >& array_map)
 {
   open_file();
-  XMLMap::write(array_map, outfile);
+  XMLMap::write(array_map, *outstream);
   close_file();
 }
 //-----------------------------------------------------------------------------
@@ -295,13 +320,27 @@ void NewXMLFile::end_element(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void NewXMLFile::open_file()
 {
-  // Open file
-  outfile.open(filename.c_str());
 
-  // Go to end of file
-  outfile.seekp(0, std::ios::end);
+  // Convert to ofstream
+  std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream);
+  if ( outfile != 0 )
+  {
+    // Open file
+    outfile->open(filename.c_str());
+
+    // Go to end of file
+    outfile->seekp(0, std::ios::end);
+  }
 }
+//-----------------------------------------------------------------------------
+void NewXMLFile::close_file()
+{
+  // Convert to ofstream
+  std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream);
+  if ( outfile != 0 )
+    outfile->close();
 
+}
 //-----------------------------------------------------------------------------
 // Callback functions for the SAX interface
 //-----------------------------------------------------------------------------

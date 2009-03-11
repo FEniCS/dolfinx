@@ -92,6 +92,11 @@ File::File(const std::string& filename, Type type)
   }
 }
 //-----------------------------------------------------------------------------
+File::File(std::ostream& outstream)
+{
+  file = new NewXMLFile(outstream);
+}
+//-----------------------------------------------------------------------------
 File::~File()
 {
   delete file;

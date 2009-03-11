@@ -88,7 +88,7 @@ namespace dolfin
     virtual void operator<< (const std::map<uint, std::vector<double> >& array_map);
     
     void read();
-    void write();
+    virtual void write();
     
   protected:
     
