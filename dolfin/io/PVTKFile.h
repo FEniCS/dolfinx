@@ -3,9 +3,10 @@
 //
 // Modified by Anders Logg 2006.
 // Modified by Niclas Jansson 2008.
+// Modified by Ola Skavhaug 2009.
 //
 // First added:  2005-07-05
-// Last changed: 2008-06-26
+// Last changed: 2009-03-11
 
 #ifndef __PVTK_FILE_H
 #define __PVTK_FILE_H
@@ -29,7 +30,6 @@ namespace dolfin
     void operator<< (const MeshFunction<double>& meshfunction);
     void operator<< (const Function& u);
     
-    void write();
   private:
 
     void MeshWrite(const Mesh& mesh) const;
