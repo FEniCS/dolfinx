@@ -3,12 +3,12 @@
 //
 // Modified by Erik Svensson 2003.
 // Modified by Garth N. Wells 2006-2008.
-// Modified by Ola Skavhaug 2006.
+// Modified by Ola Skavhaug 2006-2009.
 // Modified by Magnus Vikstrom 2007.
 // Modified by Niclas Jansson 2008.
 //
 // First added:  2002-12-03
-// Last changed: 2009-02-26
+// Last changed: 2009-03-11
 
 #include <stdarg.h>
 #include <boost/shared_ptr.hpp>
@@ -566,7 +566,7 @@ void XMLFile::operator<< (const Graph& graph)
   FILE *fp = openFile();
   
   // Get graph type and number of vertices, edges and arches
-  uint num_vertices = graph.numVertices();
+  const uint num_vertices = graph.numVertices();
 
   // Write graph in XML format
   fprintf(fp, "  <graph type=\"%s\">\n", graph.typestr().c_str());
@@ -583,10 +583,10 @@ void XMLFile::operator<< (const Graph& graph)
   dolfin_assert(vertex_weights);
   
   // Write vertice header 
-  fprintf(fp, "    <vertices size=\"%u\">\n", graph.numVertices());
+  fprintf(fp, "    <vertices size=\"%u\">\n", num_vertices);
 
   // Vertices
-  for(uint i=0; i<num_vertices; ++i)
+  for(uint i = 0; i < num_vertices; ++i)
   {
 	  fprintf(fp, 
           "      <vertex index=\"%u\" num_edges=\"%u\" weight=\"%u\"/>\n", i,
