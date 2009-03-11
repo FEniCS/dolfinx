@@ -28,7 +28,7 @@ namespace dolfin
     void start_element (const xmlChar* name, const xmlChar** attrs);
     void end_element   (const xmlChar* name);
 
-    static void write(const Graph& graph, std::ofstream& outfile, uint indentation_level=0);
+    static void write(const Graph& graph, std::ostream& outfile, uint indentation_level=0);
     
   private:
     

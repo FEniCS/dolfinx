@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-06
-// Last changed:  2009-03-06
+// Last changed:  2009-03-11
 
 #include <cstring>
 #include <dolfin/log/dolfin_log.h>
@@ -158,7 +158,7 @@ void NewXMLMesh::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::write(const Mesh& mesh, std::ofstream& outfile, uint indentation_level)
+void NewXMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation_level)
 {
   uint curr_indent = indentation_level;
 

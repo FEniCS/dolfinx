@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-02
-// Last changed: 2009-03-04
+// Last changed: 2009-03-11
 
 #ifndef __XMLARRAY_H
 #define __XMLARRAY_H
@@ -31,9 +31,9 @@ namespace dolfin
 
     
     /// Write to file
-    static void write(const std::vector<int>& x, std::ofstream& outfile, uint indentation_level=0);
-    static void write(const std::vector<uint>& x, std::ofstream& outfile, uint indentation_level=0);
-    static void write(const std::vector<double>& x, std::ofstream& outfile, uint indentation_level=0);
+    static void write(const std::vector<int>& x, std::ostream& outfile, uint indentation_level=0);
+    static void write(const std::vector<uint>& x, std::ostream& outfile, uint indentation_level=0);
+    static void write(const std::vector<double>& x, std::ostream& outfile, uint indentation_level=0);
 
   private:
     

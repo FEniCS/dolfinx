@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-02
-// Last changed: 2009-03-04
+// Last changed: 2009-03-11
 
 #include <dolfin/log/dolfin_log.h>
 #include "NewXMLFile.h"
@@ -105,7 +105,7 @@ void NewXMLMeshFunction::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLMeshFunction::write(const MeshFunction<int>& mf, std::ofstream& outfile, uint indentation_level)
+void NewXMLMeshFunction::write(const MeshFunction<int>& mf, std::ostream& outfile, uint indentation_level)
 {
   uint curr_indent = indentation_level;
   outfile << std::setw(indentation_level) << "" ;
@@ -122,7 +122,7 @@ void NewXMLMeshFunction::write(const MeshFunction<int>& mf, std::ofstream& outfi
   outfile << "</meshfunction>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void NewXMLMeshFunction::write(const MeshFunction<uint>& mf, std::ofstream& outfile, uint indentation_level)
+void NewXMLMeshFunction::write(const MeshFunction<uint>& mf, std::ostream& outfile, uint indentation_level)
 {  
   uint curr_indent = indentation_level;
   outfile << std::setw(indentation_level) << "" ;
@@ -140,7 +140,7 @@ void NewXMLMeshFunction::write(const MeshFunction<uint>& mf, std::ofstream& outf
 }
 
 //-----------------------------------------------------------------------------
-void NewXMLMeshFunction::write(const MeshFunction<double>& mf, std::ofstream& outfile, uint indentation_level)
+void NewXMLMeshFunction::write(const MeshFunction<double>& mf, std::ostream& outfile, uint indentation_level)
 {
   uint curr_indent = indentation_level;
   outfile << std::setw(indentation_level) << "" ;

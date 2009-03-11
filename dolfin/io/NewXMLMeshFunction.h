@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-10
-// Last changed: 2009-03-10
+// Last changed: 2009-03-11
 
 #ifndef __NEWXMLMESHFUNCTION_H
 #define __NEWXMLMESHFUNCTION_H
@@ -30,9 +30,9 @@ namespace dolfin
     void end_element   (const xmlChar *name);
     
     /// Write to file
-    static void write(const MeshFunction<int>& mf, std::ofstream& outfile, uint indentation_level=0);
-    static void write(const MeshFunction<uint>& mf, std::ofstream& outfile, uint indentation_level=0);
-    static void write(const MeshFunction<double>& mf, std::ofstream& outfile, uint indentation_level=0);
+    static void write(const MeshFunction<int>& mf, std::ostream& outfile, uint indentation_level=0);
+    static void write(const MeshFunction<uint>& mf, std::ostream& outfile, uint indentation_level=0);
+    static void write(const MeshFunction<double>& mf, std::ostream& outfile, uint indentation_level=0);
 
   private:
     

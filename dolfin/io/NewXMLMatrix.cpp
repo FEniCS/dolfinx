@@ -82,7 +82,7 @@ void NewXMLMatrix::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLMatrix::write(const GenericMatrix& A, std::ofstream& outfile, uint indentation_level)
+void NewXMLMatrix::write(const GenericMatrix& A, std::ostream& outfile, uint indentation_level)
 {
   uint curr_indent = indentation_level;
 

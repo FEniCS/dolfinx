@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-09
-// Last changed: 2009-03-09
+// Last changed: 2009-03-11
 
 #ifndef __XMLMESHDATA_H
 #define __XMLMESHDATA_H
@@ -32,7 +32,7 @@ namespace dolfin
     void start_element (const xmlChar* name, const xmlChar** attrs);
     void end_element   (const xmlChar* name);
 
-    static void write(const MeshData& data, std::ofstream& outfile, uint indentation_level=0);
+    static void write(const MeshData& data, std::ostream& outfile, uint indentation_level=0);
 
   private:
     enum parser_state {OUTSIDE, INSIDE_DATA, INSIDE_DATA_ENTRY, DONE};

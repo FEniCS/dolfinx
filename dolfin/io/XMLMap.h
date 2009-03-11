@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-02
-// Last changed: 2009-03-04
+// Last changed: 2009-03-11
 
 #ifndef __XMLMAP_H
 #define __XMLMAP_H
@@ -34,12 +34,12 @@ namespace dolfin
     void end_element   (const xmlChar *name);
 
     /// Write to file
-    static void write(const std::map<uint, int>& map, std::ofstream& outfile, uint indentation_level=0);
-    static void write(const std::map<uint, uint>& map, std::ofstream& outfile, uint indentation_level=0);
-    static void write(const std::map<uint, double>& map, std::ofstream& outfile, uint indentation_level=0);
-    static void write(const std::map<uint, std::vector<int> >& map, std::ofstream& outfile, uint indentation_level=0);
-    static void write(const std::map<uint, std::vector<uint> >& map, std::ofstream& outfile, uint indentation_level=0);
-    static void write(const std::map<uint, std::vector<double> >& map, std::ofstream& outfile, uint indentation_level=0);
+    static void write(const std::map<uint, int>& map, std::ostream& outfile, uint indentation_level=0);
+    static void write(const std::map<uint, uint>& map, std::ostream& outfile, uint indentation_level=0);
+    static void write(const std::map<uint, double>& map, std::ostream& outfile, uint indentation_level=0);
+    static void write(const std::map<uint, std::vector<int> >& map, std::ostream& outfile, uint indentation_level=0);
+    static void write(const std::map<uint, std::vector<uint> >& map, std::ostream& outfile, uint indentation_level=0);
+    static void write(const std::map<uint, std::vector<double> >& map, std::ostream& outfile, uint indentation_level=0);
     
   private:
     

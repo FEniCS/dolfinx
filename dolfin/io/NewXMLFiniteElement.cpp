@@ -53,7 +53,7 @@ void NewXMLFiniteElement::end_element(const xmlChar* name)
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLFiniteElement::write(const std::string& signature, std::ofstream& outfile, uint indentation_level)
+void NewXMLFiniteElement::write(const std::string& signature, std::ostream& outfile, uint indentation_level)
 {
   outfile << std::setw(indentation_level) << "" << "<finiteelement signature=\"" << signature << "\"/>" << std::endl;
 }

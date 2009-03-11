@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-02
-// Last changed: 2009-03-04
+// Last changed: 2009-03-11
 
 #include <dolfin/log/dolfin_log.h>
 #include "NewXMLFile.h"
@@ -99,7 +99,7 @@ void XMLArray::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLArray::write(const std::vector<int>& x, std::ofstream& outfile, uint indentation_level)
+void XMLArray::write(const std::vector<int>& x, std::ostream& outfile, uint indentation_level)
 {
   outfile << std::setw(indentation_level) << "" << "<array type=\"int\" size=\"" << x.size() << "\">" << std::endl;
   for (uint i = 0; i < x.size(); ++i)
@@ -107,7 +107,7 @@ void XMLArray::write(const std::vector<int>& x, std::ofstream& outfile, uint ind
   outfile << std::setw(indentation_level) << "" << "</array>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void XMLArray::write(const std::vector<uint>& x, std::ofstream& outfile, uint indentation_level)
+void XMLArray::write(const std::vector<uint>& x, std::ostream& outfile, uint indentation_level)
 {
   outfile << std::setw(indentation_level) << "" << "<array type=\"uint\" size=\"" << x.size() << "\">" << std::endl;
   for (uint i = 0; i < x.size(); ++i)
@@ -115,7 +115,7 @@ void XMLArray::write(const std::vector<uint>& x, std::ofstream& outfile, uint in
   outfile << std::setw(indentation_level) << "" << "</array>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void XMLArray::write(const std::vector<double>& x, std::ofstream& outfile, uint indentation_level)
+void XMLArray::write(const std::vector<double>& x, std::ostream& outfile, uint indentation_level)
 {
   outfile << std::setw(indentation_level) << "" << "<array type=\"double\" size=\"" << x.size() << "\">" << std::endl;
   for (uint i = 0; i < x.size(); ++i)

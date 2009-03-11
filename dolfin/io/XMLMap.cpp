@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-03
-// Last changed: 2009-03-04
+// Last changed: 2009-03-11
 
 #include <dolfin/log/dolfin_log.h>
 #include "XMLArray.h"
@@ -114,7 +114,7 @@ void XMLMap::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMap::write(const std::map<uint, int>& map, std::ofstream& outfile, uint indentation_level)
+void XMLMap::write(const std::map<uint, int>& map, std::ostream& outfile, uint indentation_level)
 {
   outfile << std::setw(indentation_level) << "" << "<map key_type=\"uint\" value_type=\"int\">" << std::endl;
 
@@ -131,7 +131,7 @@ void XMLMap::write(const std::map<uint, int>& map, std::ofstream& outfile, uint 
   outfile << std::setw(indentation_level) << "" << "</map>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void XMLMap::write(const std::map<uint, uint>& map, std::ofstream& outfile, uint indentation_level)
+void XMLMap::write(const std::map<uint, uint>& map, std::ostream& outfile, uint indentation_level)
 {
   outfile << std::setw(indentation_level) << "" << "<map key_type=\"uint\" value_type=\"uint\">" << std::endl;
 
@@ -148,7 +148,7 @@ void XMLMap::write(const std::map<uint, uint>& map, std::ofstream& outfile, uint
   outfile << std::setw(indentation_level) << "" << "</map>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void XMLMap::write(const std::map<uint, double>& map, std::ofstream& outfile, uint indentation_level)
+void XMLMap::write(const std::map<uint, double>& map, std::ostream& outfile, uint indentation_level)
 {
   outfile << std::setw(indentation_level) << "" << "<map key_type=\"uint\" value_type=\"double\">" << std::endl;
 
@@ -165,7 +165,7 @@ void XMLMap::write(const std::map<uint, double>& map, std::ofstream& outfile, ui
   outfile << std::setw(indentation_level) << "" << "</map>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void XMLMap::write(const std::map<uint, std::vector<int> >& map, std::ofstream& outfile, uint indentation_level)
+void XMLMap::write(const std::map<uint, std::vector<int> >& map, std::ostream& outfile, uint indentation_level)
 {
   outfile << std::setw(indentation_level) << "" << "<map key_type=\"uint\" value_type=\"array\">" << std::endl;
 
@@ -181,7 +181,7 @@ void XMLMap::write(const std::map<uint, std::vector<int> >& map, std::ofstream& 
   outfile << std::setw(indentation_level) << "" << "</map>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void XMLMap::write(const std::map<uint, std::vector<uint> >& map, std::ofstream& outfile, uint indentation_level)
+void XMLMap::write(const std::map<uint, std::vector<uint> >& map, std::ostream& outfile, uint indentation_level)
 {
   outfile << std::setw(indentation_level) << "" << "<map key_type=\"uint\" value_type=\"array\">" << std::endl;
 
@@ -197,7 +197,7 @@ void XMLMap::write(const std::map<uint, std::vector<uint> >& map, std::ofstream&
   outfile << std::setw(indentation_level) << "" << "</map>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void XMLMap::write(const std::map<uint, std::vector<double> >& map, std::ofstream& outfile, uint indentation_level)
+void XMLMap::write(const std::map<uint, std::vector<double> >& map, std::ostream& outfile, uint indentation_level)
 {
   outfile << std::setw(indentation_level) << "" << "<map key_type=\"uint\" value_type=\"array\">" << std::endl;
 

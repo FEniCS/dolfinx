@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added: 2009-03-09
-// Last changed: 2009-03-09
+// Last changed: 2009-03-11
 
 
 #include "NewXMLMeshFunction.h"
@@ -92,7 +92,7 @@ void XMLMeshData::end_element (const xmlChar* name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMeshData::write(const MeshData& data, std::ofstream& outfile, uint indentation_level)
+void XMLMeshData::write(const MeshData& data, std::ostream& outfile, uint indentation_level)
 {
   if ( data.mesh_functions.size() > 0 || data.arrays.size() > 0)
   {
