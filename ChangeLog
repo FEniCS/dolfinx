@@ -1,3 +1,4 @@
+ - Add new built-in function MeshCoordinates, useful in ALE simulations
  - Add new constructor to Function class, Function(V, "vector.xml")
  - Remove class Array (using std::vector instead)
  - Add vector_mapping data to MeshData

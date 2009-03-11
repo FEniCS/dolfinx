@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristian B. Oelgaard, 2007.
@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-02-09
-// Last changed: 2008-11-03
+// Last changed: 2009-03-11
 
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
@@ -24,6 +24,21 @@ namespace dolfin
   class SubFunction;
   class Data;
 
+  /// This Function represents the mesh coordinates on a given mesh.
+  class MeshCoordinates : public Function
+  {
+  public:
+
+    /// Constructor
+    MeshCoordinates();
+
+    /// Constructor
+    MeshCoordinates(const FunctionSpace& V);
+
+    /// Function evaluation
+    void eval(double* values, const Data& data) const;
+
+  };
 
   /// This Function represents the local mesh size on a given mesh.
   class MeshSize : public Function

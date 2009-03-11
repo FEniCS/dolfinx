@@ -1,8 +1,8 @@
-// Copyright (C) 2008 Anders Logg.
+// Copyright (C) 2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2008-11-03
-// Last changed: 2008-11-03
+// First added:  2009-03-11
+// Last changed: 2009-03-11
 
 #ifndef __DATA_H
 #define __DATA_H
@@ -43,6 +43,9 @@ namespace dolfin
     /// Check if we are on a facet
     bool on_facet() const;
 
+    /// Return geometric dimension of cell
+    uint geometric_dimension() const;
+
     /// The coordinates
     const double* x;
 
@@ -56,7 +59,6 @@ namespace dolfin
 
     // The current facet (if any, otherwise -1)
     int _facet;
-
 
   };
 

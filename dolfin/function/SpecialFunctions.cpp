@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristian B. Oelgaard, 2007, 2008.
@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2008-07-17
-// Last changed: 2008-11-03
+// Last changed: 2009-03-11
 
 #include <dolfin/common/constants.h>
 #include <dolfin/mesh/Mesh.h>
@@ -21,6 +21,22 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+MeshCoordinates::MeshCoordinates() : Function()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+MeshCoordinates::MeshCoordinates(const FunctionSpace& V) : Function(V)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void MeshCoordinates::eval(double* values, const Data& data) const
+{
+  for (uint i = 0; i < data.geometric_dimension(); i++)
+    values[i] = data.x[i];
+}
 //-----------------------------------------------------------------------------
 MeshSize::MeshSize() : Function()
 {
