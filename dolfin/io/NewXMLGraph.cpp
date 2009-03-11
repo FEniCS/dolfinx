@@ -109,7 +109,7 @@ void NewXMLGraph::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void write(const Graph& graph, std::ofstream& outfile, uint indentation_level)
+void NewXMLGraph::write(const Graph& graph, std::ofstream& outfile, uint indentation_level)
 {
   uint curr_indent = indentation_level;
 
