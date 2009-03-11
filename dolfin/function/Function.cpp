@@ -151,6 +151,7 @@ const Function& Function::operator= (const Function& v)
   // Check for function space and vector
   if (!v.has_function_space())
     error("Cannot copy Functions which do not have a FunctionSpace.");
+
   /* Old version, remove after agreement on automatic interpolation
   if (!v.has_vector())
     error("Cannot copy Functions which do not have a Vector (user-defined Functions).");
