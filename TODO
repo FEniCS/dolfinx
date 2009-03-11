@@ -16,7 +16,12 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 ** Complete Trilinos implementation
 ** Parallel issues
 ** Remove need for calling apply() after changes (solvers may check and call it if necessary)
+** Make the following possible:
+  
+   Vector x(u.vector());
 
+   Not possible today since Vector doesn't have any constructor taking a GenericVector.
+   Can be solved using downcasting + fallback using get/set
 * Mesh
 ** Parallel issues
    - Store both global and local indices for cell/vertex, add mesh
