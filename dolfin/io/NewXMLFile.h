@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-03
-// Last changed: 2009-03-04
+// Last changed: 2009-03-11
 
 #ifndef __NEWXMLFILE_H
 #define __NEWXMLFILE_H
@@ -35,6 +35,7 @@ namespace dolfin
 
     void operator>> (Mesh & mesh);
     void operator>> (LocalMeshData& local_mesh_data);
+    void operator>> (Graph& graph);
     void operator>> (std::vector<int> & x);
     void operator>> (std::vector<uint> & x);
     void operator>> (std::vector<double> & x);
@@ -49,6 +50,7 @@ namespace dolfin
     // Output
 
     void operator<< (const Mesh & mesh);
+    void operator<< (const Graph& graph);
     void operator<< (const std::vector<int> & x);
     void operator<< (const std::vector<uint> & x);
     void operator<< (const std::vector<double> & x);

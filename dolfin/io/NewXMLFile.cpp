@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added: 2009-03-03
-// Last changed: 2009-03-04
+// Last changed: 2009-03-11
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
@@ -14,6 +14,7 @@
 #include "NewXMLFile.h"
 #include "NewXMLMesh.h"
 #include "NewXMLLocalMeshData.h"
+#include "NewXMLGraph.h"
 
 using namespace dolfin;
 
@@ -59,7 +60,16 @@ void NewXMLFile::operator>> (LocalMeshData& local_mesh_data)
   parse();
   if ( !handlers.empty() ) 
     error("Hander stack not empty. Something is wrong!");
-
+}
+//-----------------------------------------------------------------------------
+void NewXMLFile::operator>> (Graph& graph)
+{
+  message(1, "Reading graph from file %s.", filename.c_str());
+  NewXMLGraph xml_graph(graph, *this);
+  xml_graph.handle();
+  parse();
+  if ( !handlers.empty() ) 
+    error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::vector<int>& x)
@@ -156,6 +166,13 @@ void NewXMLFile::operator<<(const Mesh& mesh)
 {
   open_file();
   NewXMLMesh::write(mesh, outfile);
+  close_file();
+}
+//-----------------------------------------------------------------------------
+void NewXMLFile::operator<<(const Graph& graph)
+{
+  open_file();
+  NewXMLGraph::write(graph, outfile);
   close_file();
 }
 //-----------------------------------------------------------------------------
