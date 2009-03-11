@@ -9,12 +9,14 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/LocalMeshData.h>
+#include <dolfin/la/GenericMatrix.h>
 #include "XMLArray.h"
 #include "XMLMap.h"
 #include "NewXMLFile.h"
 #include "NewXMLMesh.h"
 #include "NewXMLLocalMeshData.h"
 #include "NewXMLGraph.h"
+#include "NewXMLMatrix.h"
 
 using namespace dolfin;
 
@@ -70,6 +72,17 @@ void NewXMLFile::operator>> (Graph& graph)
   parse();
   if ( !handlers.empty() ) 
     error("Hander stack not empty. Something is wrong!");
+}
+//-----------------------------------------------------------------------------
+void NewXMLFile::operator>> (GenericMatrix& A)
+{
+  message(1, "Reading matrix from file %s.", filename.c_str());
+  NewXMLMatrix xml_matrix(A, *this);
+  xml_matrix.handle();
+  parse();
+  if ( !handlers.empty() ) 
+    error("Hander stack not empty. Something is wrong!");
+
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::vector<int>& x)
@@ -173,6 +186,13 @@ void NewXMLFile::operator<<(const Graph& graph)
 {
   open_file();
   NewXMLGraph::write(graph, outfile);
+  close_file();
+}
+//-----------------------------------------------------------------------------
+void NewXMLFile::operator<<(const GenericMatrix& A)
+{
+  open_file();
+  NewXMLMatrix::write(A, outfile);
   close_file();
 }
 //-----------------------------------------------------------------------------

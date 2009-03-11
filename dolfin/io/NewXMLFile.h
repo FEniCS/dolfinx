@@ -20,6 +20,7 @@ namespace dolfin
 {
   class Mesh;
   class LocalMeshData;
+  class GenericMatrix;
 
   class NewXMLFile: public GenericFile
   {
@@ -36,6 +37,7 @@ namespace dolfin
     void operator>> (Mesh & mesh);
     void operator>> (LocalMeshData& local_mesh_data);
     void operator>> (Graph& graph);
+    void operator>> (GenericMatrix& A);
     void operator>> (std::vector<int> & x);
     void operator>> (std::vector<uint> & x);
     void operator>> (std::vector<double> & x);
@@ -51,6 +53,7 @@ namespace dolfin
 
     void operator<< (const Mesh & mesh);
     void operator<< (const Graph& graph);
+    void operator<< (const GenericMatrix& A);
     void operator<< (const std::vector<int> & x);
     void operator<< (const std::vector<uint> & x);
     void operator<< (const std::vector<double> & x);
