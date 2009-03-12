@@ -52,9 +52,6 @@ namespace dolfin
     void readMeshEntity  (const xmlChar* name, const xmlChar** attrs);
     void readArrayElement(const xmlChar* name, const xmlChar** attrs);
 
-    void readFEsignature    (const xmlChar* name, const xmlChar** attrs);
-    void readDofMapsignature(const xmlChar* name, const xmlChar** attrs);
-    
     void closeMesh();
 
     Mesh& _mesh;

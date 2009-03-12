@@ -45,12 +45,9 @@ namespace dolfin
     void operator>> (MeshFunction<unsigned int>& meshfunction);
     void operator>> (MeshFunction<double>& meshfunction);
     void operator>> (MeshFunction<bool>& meshfunction);
-    void operator>> (Function& v);
     void operator>> (ParameterList& parameters);
     void operator>> (BLASFormData& blas);
     void operator>> (Graph& graph);
-    
-    void parse(Function& f, FiniteElement& element);
     
     // Output
 
@@ -62,7 +59,6 @@ namespace dolfin
     void operator<< (const MeshFunction<unsigned int>& mesh);
     void operator<< (const MeshFunction<double>& mesh);
     void operator<< (const MeshFunction<bool>& mesh);
-    void operator<< (const Function& v);
     void operator<< (const ParameterList& parameters);
     
     // Friends

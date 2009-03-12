@@ -104,14 +104,6 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
       xml_vector->startVector(name, attrs);
       state = INSIDE_VECTOR;
     }
-    if ( xmlStrcasecmp(name, (xmlChar *) "finiteelement") == 0 )
-    {
-	  readFEsignature(name, attrs);
-    }
-    if ( xmlStrcasecmp(name, (xmlChar *) "dofmap") == 0 )
-    {
-	  readDofMapsignature(name, attrs);
-    }
 
     break;
 
@@ -434,20 +426,6 @@ void XMLMesh::readArrayElement(const xmlChar* name, const xmlChar** attrs)
   dolfin_assert(index < a->size());
   const uint value = parseUnsignedInt(name, attrs, "value");
   (*a)[index] = value;
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::readFEsignature(const xmlChar* name, const xmlChar** attrs)
-{
-  // Read string for the finite element signature
-  const std::string FE_signature = parseStringOptional(name, attrs, "signature");
-  editor.setMeshCoordFEsignature(FE_signature);
-}
-//-----------------------------------------------------------------------------
-void XMLMesh::readDofMapsignature(const xmlChar* name, const xmlChar** attrs)
-{
-  // Read string for the dofmap signature
-  const std::string dofmap_signature = parseStringOptional(name, attrs, "signature");
-  editor.setMeshCoordDofMapsignature(dofmap_signature);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::closeMesh()
