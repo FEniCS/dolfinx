@@ -24,10 +24,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/graph/Graph.h>
 #include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/function/Function.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/fem/DofMap.h>
-#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/parameter/Parameter.h>
 #include <dolfin/parameter/ParameterList.h>
 
@@ -37,9 +33,6 @@
 #include "XMLMesh.h"
 #include "XMLLocalMeshData.h"
 #include "XMLMeshFunction.h"
-#include "XMLDofMap.h"
-#include "XMLFunction.h"
-#include "XMLFiniteElement.h"
 #include "XMLParameterList.h"
 #include "XMLBLASFormData.h"
 #include "XMLGraph.h"
@@ -142,55 +135,6 @@ void XMLFile::operator>> (MeshFunction<bool>& meshfunction)
     delete xmlObject;
   xmlObject = new XMLMeshFunction(meshfunction);
   parseFile();
-}
-//-----------------------------------------------------------------------------
-void XMLFile::operator>> (Function& v)
-{
-  // We are cheating here. Instead of actually parsing the XML for
-  // Function data nested inside <function></function>, we just ignore
-  // the nesting and look for the first occurence of the data which
-  // might be outside of <function></function>.
-
-  message(1, "Reading function from %s.", filename.c_str());
-
-  // Read the mesh
-  boost::shared_ptr<Mesh> mesh(new Mesh());
-  *this >> *mesh;
-  mesh->order();
-
-  // Read the finite element specification
-  std::string element_signature;
-  if (xmlObject)
-    delete xmlObject;
-  xmlObject = new XMLFiniteElement(element_signature);
-  parseFile(); 
-
-  // Read the dof map specification
-  std::string dofmap_signature;
-  if (xmlObject)
-    delete xmlObject;
-  xmlObject = new XMLDofMap(dofmap_signature);
-  parseFile(); 
-
-  // Read the function (not really necessary, see comment above)
-  if (xmlObject)
-    delete xmlObject;
-  xmlObject = new XMLFunction(v);
-  parseFile(); 
-  
-  // Create Function
-  boost::shared_ptr<FiniteElement> element(new FiniteElement(element_signature));
-  boost::shared_ptr<DofMap> dofmap(new DofMap(dofmap_signature, *mesh));
-  boost::shared_ptr<FunctionSpace> V(new FunctionSpace(mesh, element, dofmap));
-  Function _v(V);
-
-  // Read the vector
-  *this >> _v.vector();
-
-  // Assign function
-  v = _v;
-
-  v.rename("u", "discrete function from file data");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (ParameterList& parameters)
@@ -480,37 +424,6 @@ void XMLFile::operator<< (const MeshFunction<bool>& meshfunction)
   closeFile(fp);
   
   message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
-}
-//-----------------------------------------------------------------------------
-void XMLFile::operator<< (const Function& v)
-{
-  // Begin function
-  FILE *fp = openFile();
-  fprintf(fp, "  <function> \n");
-  closeFile(fp);
-
-  // Write the mesh
-  *this << v.function_space().mesh();
-  
-  // Write the vector
-  *this << v.vector();
-
-  // Write the finite element
-  fp = openFile();
-  fprintf(fp, "  <finiteelement signature=\"%s\"/>\n", v.function_space().element().signature().c_str());
-  closeFile(fp);
-
-  // Write the dof map
-  fp = openFile();
-  fprintf(fp, "  <dofmap signature=\"%s\"/>\n", v.function_space().dofmap().signature().c_str());
-  closeFile(fp);
-
-  // End function
-  fp = openFile();
-  fprintf(fp, "  </function> \n");
-  closeFile(fp);
-
-  message(1, "Saved function to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const ParameterList& parameters)
