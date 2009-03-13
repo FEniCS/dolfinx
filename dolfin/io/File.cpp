@@ -34,7 +34,7 @@ File::File(const std::string& filename, bool new_style)
   // Choose file type base on suffix.
 
   // FIXME: Use correct funtion to find the suffix; using rfind() makes
-  // FIXME: it essential that the suffixes are checked in the correct order.
+  //        it essential that the suffixes are checked in the correct order.
 
   if (filename.rfind(".xml.gz") != filename.npos)
     if ( new_style )

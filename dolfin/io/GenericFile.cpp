@@ -12,20 +12,20 @@
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
+//#include <dolfin/la/GenericVector.h>
 #include "GenericFile.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GenericFile::GenericFile(const std::string filename) :
-  filename(filename), 
-  type("Unknown file type"),
-  opened_read(false),
-  opened_write(false),
-  check_header(false),
-  counter(0),
-  counter1(0),
-  counter2(0)
+GenericFile::GenericFile(const std::string filename) : filename(filename), 
+                                                     type("Unknown file type"),
+                                                     opened_read(false),
+                                                     opened_write(false),
+                                                     check_header(false),
+                                                     counter(0),
+                                                     counter1(0),
+                                                     counter2(0)
 {
   // Do nothing
 }

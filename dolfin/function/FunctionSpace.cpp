@@ -18,6 +18,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/la/GenericVector.h>
 #include "Function.h"
 #include "FunctionSpace.h"
 
