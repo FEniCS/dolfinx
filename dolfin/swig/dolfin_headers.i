@@ -73,9 +73,6 @@
 %include "dolfin/nls/NewtonSolver.h"
 %include "dolfin/nls/NonlinearProblem.h"
 
-// DOLFIN headers included from elements
-%include "dolfin/elements/ElementLibrary.h"
-
 // DOLFIN headers included from mesh
 %include "dolfin/mesh/CellType.h"
 %include "dolfin/mesh/MeshEntity.h"
@@ -120,7 +117,6 @@
 %include "dolfin/function/SubSpace.h"
 %include "dolfin/function/Constant.h"
 %include "dolfin/function/SpecialFunctions.h"
-%include "dolfin/function/ProjectL2.h"
 
 // DOLFIN headers included from graph
 %include "dolfin/graph/Graph.h"
