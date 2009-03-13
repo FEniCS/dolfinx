@@ -8,6 +8,7 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/graph/Graph.h>
+#include "NewXMLFile.h"
 #include "NewXMLGraph.h"
 
 using namespace dolfin;

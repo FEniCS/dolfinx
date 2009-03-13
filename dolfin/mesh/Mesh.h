@@ -29,6 +29,8 @@ namespace dolfin
   class IntersectionDetector;
   class Function;
   class BoundaryMesh;
+  class XMLMesh;
+  class NewXMLMesh;
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
   ///
@@ -192,6 +194,9 @@ namespace dolfin
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const Mesh& mesh);
+
+    /// Define XMLHandler for use in new XML reader/writer
+    typedef NewXMLMesh XMLHandler;
     
   private:
 

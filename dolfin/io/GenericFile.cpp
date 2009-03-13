@@ -35,6 +35,11 @@ GenericFile::~GenericFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+void GenericFile::operator>> (Mesh& mesh)
+{
+  read_not_impl("Mesh");
+}
+//-----------------------------------------------------------------------------
 void GenericFile::operator>> (GenericVector& x)
 {
   read_not_impl("Vector");
@@ -43,11 +48,6 @@ void GenericFile::operator>> (GenericVector& x)
 void GenericFile::operator>> (GenericMatrix& A)
 {
   read_not_impl("Matrix");
-}
-//-----------------------------------------------------------------------------
-void GenericFile::operator>> (Mesh& mesh)
-{
-  read_not_impl("Mesh");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator>> (LocalMeshData& data)
@@ -150,6 +150,11 @@ void GenericFile::operator>> (std::map<uint, std::vector<double> >& array_map)
   read_not_impl("std::map<uint, std::vector<double> >");
 }
 //-----------------------------------------------------------------------------
+void GenericFile::operator<< (const Mesh & mesh)
+{
+  write_not_impl("Mesh");
+}
+//-----------------------------------------------------------------------------
 void GenericFile::operator<< (const GenericVector& x)
 {
   write_not_impl("Vector");
@@ -158,11 +163,6 @@ void GenericFile::operator<< (const GenericVector& x)
 void GenericFile::operator<< (const GenericMatrix& A)
 {
   write_not_impl("Matrix");
-}
-//-----------------------------------------------------------------------------
-void GenericFile::operator<< (const Mesh& mesh)
-{
-  write_not_impl("Mesh");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const LocalMeshData& data)

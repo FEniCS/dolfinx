@@ -12,15 +12,18 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/LocalMeshData.h>
+#include <dolfin/graph/Graph.h>
 #include <libxml/parser.h>
 #include "GenericFile.h"
-#include "XMLHandler.h"
+#include "NewXMLMesh.h"
+#include "NewXMLGraph.h"
+#include "NewXMLMatrix.h"
+#include "NewXMLLocalMeshData.h"
 
 namespace dolfin
 {
-  class Mesh;
-  class LocalMeshData;
-  class GenericMatrix;
 
   class NewXMLFile: public GenericFile
   {
@@ -36,10 +39,29 @@ namespace dolfin
 
     // Input
 
-    void operator>> (Mesh & mesh);
-    void operator>> (LocalMeshData& local_mesh_data);
-    void operator>> (Graph& graph);
-    void operator>> (GenericMatrix& A);
+    template<class T> void read_xml(T& t)
+    {
+      typedef typename T::XMLHandler Handler;
+      Handler xml_handler(t, *this);
+      xml_handler.handle();
+      parse();
+      if ( !handlers.empty() ) 
+        error("Handler stack not empty. Something is wrong!");
+    }
+
+    template<class T> void write_xml(const T& t)
+    {
+      open_file();
+      typedef typename T::XMLHandler Handler;
+      Handler::write(t, *outstream);
+      close_file();
+    }
+
+    void operator>> (Mesh& input)          { read_xml(input); }
+    void operator>> (LocalMeshData& input) { read_xml(input); }
+    void operator>> (Graph&  input)        { read_xml(input); }
+    void operator>> (GenericMatrix&  input){ read_xml(input); }
+
     void operator>> (std::vector<int> & x);
     void operator>> (std::vector<uint> & x);
     void operator>> (std::vector<double> & x);
@@ -49,13 +71,13 @@ namespace dolfin
     void operator>> (std::map<uint, std::vector<int> >& array_map);
     void operator>> (std::map<uint, std::vector<uint> >& array_map);
     void operator>> (std::map<uint, std::vector<double> >& array_map);
-
     
     // Output
 
-    void operator<< (const Mesh & mesh);
-    void operator<< (const Graph& graph);
-    void operator<< (const GenericMatrix& A);
+    void operator<< (const Mesh& output)         { write_xml(output); }
+    void operator<< (const Graph& output)         { write_xml(output); }
+    void operator<< (const GenericMatrix& output) { write_xml(output); }
+
     void operator<< (const std::vector<int> & x);
     void operator<< (const std::vector<uint> & x);
     void operator<< (const std::vector<double> & x);

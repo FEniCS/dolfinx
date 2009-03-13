@@ -15,6 +15,7 @@
 
 namespace dolfin
 {
+  class NewXMLGraph;
   class LogStream;
   class Mesh;
 
@@ -123,6 +124,8 @@ namespace dolfin
     
     /// Output
     friend LogStream& operator<< (LogStream& stream, const Graph& graph);
+
+    typedef NewXMLGraph XMLHandler;
     
   private:
     

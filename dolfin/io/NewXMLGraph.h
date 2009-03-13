@@ -12,11 +12,11 @@
 #include <dolfin/common/types.h>
 #include <dolfin/graph/GraphEditor.h>
 #include "XMLHandler.h"
-#include "NewXMLFile.h"
 
 namespace dolfin
 {
   class Graph;
+  class NewXMLFile;
   
   class NewXMLGraph : public XMLHandler
   {

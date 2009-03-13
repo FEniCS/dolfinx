@@ -7,11 +7,12 @@
 #ifndef __NEWNewXMLMATRIX_H
 #define __NEWNewXMLMATRIX_H
 
-#include <dolfin/la/GenericMatrix.h>
 #include "XMLHandler.h"
 
 namespace dolfin
 {
+  class GenericMatrix;
+  class NewXMLFile;
   
   class NewXMLMatrix : public XMLHandler
   {

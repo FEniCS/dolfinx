@@ -69,47 +69,6 @@ NewXMLFile::~NewXMLFile()
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLFile::operator>>(Mesh& mesh)
-{
-  message(1, "Reading mesh from file %s.", filename.c_str());
-  NewXMLMesh xml_mesh(mesh, *this);
-  xml_mesh.handle();
-  parse();
-  if ( !handlers.empty() ) 
-    error("Hander stack not empty. Something is wrong!");
-}
-//-----------------------------------------------------------------------------
-void NewXMLFile::operator>> (LocalMeshData& local_mesh_data)
-{
-  message(1, "Reading mesh from file %s.", filename.c_str());
-  NewXMLLocalMeshData xml_local_mesh_data(local_mesh_data, *this);
-  xml_local_mesh_data.handle();
-  parse();
-  if ( !handlers.empty() ) 
-    error("Hander stack not empty. Something is wrong!");
-}
-//-----------------------------------------------------------------------------
-void NewXMLFile::operator>> (Graph& graph)
-{
-  message(1, "Reading graph from file %s.", filename.c_str());
-  NewXMLGraph xml_graph(graph, *this);
-  xml_graph.handle();
-  parse();
-  if ( !handlers.empty() ) 
-    error("Hander stack not empty. Something is wrong!");
-}
-//-----------------------------------------------------------------------------
-void NewXMLFile::operator>> (GenericMatrix& A)
-{
-  message(1, "Reading matrix from file %s.", filename.c_str());
-  NewXMLMatrix xml_matrix(A, *this);
-  xml_matrix.handle();
-  parse();
-  if ( !handlers.empty() ) 
-    error("Hander stack not empty. Something is wrong!");
-
-}
-//-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::vector<int>& x)
 {
   message(1, "Reading array from file %s.", filename.c_str());
@@ -198,27 +157,6 @@ void NewXMLFile::operator>>(std::map<uint, std::vector<double> >& array_map)
   parse();
   if ( !handlers.empty() ) 
     error("Hander stack not empty. Something is wrong!");
-}
-//-----------------------------------------------------------------------------
-void NewXMLFile::operator<<(const Mesh& mesh)
-{
-  open_file();
-  NewXMLMesh::write(mesh, *outstream);
-  close_file();
-}
-//-----------------------------------------------------------------------------
-void NewXMLFile::operator<<(const Graph& graph)
-{
-  open_file();
-  NewXMLGraph::write(graph, *outstream);
-  close_file();
-}
-//-----------------------------------------------------------------------------
-void NewXMLFile::operator<<(const GenericMatrix& A)
-{
-  open_file();
-  NewXMLMatrix::write(A, *outstream);
-  close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::vector<int>& x)

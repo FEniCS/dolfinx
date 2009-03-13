@@ -21,6 +21,7 @@ namespace dolfin
 {
 
   class GenericVector;
+  class NewXMLMatrix;
 
   /// This class defines a common interface for matrices.
 
@@ -148,6 +149,8 @@ namespace dolfin
     virtual void setitem(std::pair<uint, uint> ij, double value)
     { set(&value, 1, &ij.first, 1, &ij.second); }
 
+
+    typedef NewXMLMatrix XMLHandler;
   };
 
 }
