@@ -13,7 +13,6 @@
 #include <ufc.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/elements/ElementLibrary.h>
 
 namespace dolfin
 {
@@ -31,12 +30,8 @@ namespace dolfin
     FiniteElement(const ufc::finite_element& element) : element(&element, NoDeleter<const ufc::finite_element>()) {}
     //FiniteElement(const ufc::finite_element& element, uint dummy) : element(&element, NoDeleter<const ufc::finite_element>()) {}
 
-    /// Create FiniteElement from a signature
-    FiniteElement(std::string signature) : element(ElementLibrary::create_finite_element(signature)) {}
-
     /// Destructor
-    ~FiniteElement()
-    {}
+    ~FiniteElement() {}
 
     std::string signature() const
     { return element->signature(); }
