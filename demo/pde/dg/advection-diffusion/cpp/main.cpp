@@ -11,6 +11,7 @@
 
 #include "AdvectionDiffusion.h"
 #include "Projection.h"
+#include "Velocity.h"
 
 using namespace dolfin;
 
@@ -36,8 +37,15 @@ int main(int argc, char *argv[])
 {
   // Read simple velocity field (-1.0, -0.4) defined on a 64x64 unit square 
   // mesh and a quadratic vector Lagrange element
-  Function velocity("../velocity.xml.gz");
-  const Mesh& mesh = velocity.function_space().mesh();
+
+  // Read mesh 
+  Mesh mesh("../mesh.xml.gz");
+
+  // Create velocity FunctionSpace
+  VelocityFunctionSpace V_u(mesh);
+
+  // Create velocity function
+  Function velocity(V_u, "../velocity.xml.gz");
 
   // Diffusivity
   Constant c(0.0); 
