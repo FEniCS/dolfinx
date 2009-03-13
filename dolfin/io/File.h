@@ -12,10 +12,10 @@
 #ifndef __FILE_H
 #define __FILE_H
 
+#include <map>
 #include <string>
-
-#include <dolfin/la/GenericVector.h>
-#include <dolfin/la/GenericMatrix.h>
+#include <vector>
+#include "dolfin/common/types.h"
 
 namespace dolfin
 {
@@ -31,6 +31,8 @@ namespace dolfin
   class BLASFormData;
   class GenericFile;
   class FiniteElement;
+  class GenericMatrix;
+  class GenericVector;
   
   /// A File represents a data file for reading and writing objects.
   /// Unless specified explicitly, the format is determined by the
@@ -41,7 +43,7 @@ namespace dolfin
   public:
     
     /// File formats
-    enum Type {xml, matlab, octave, opendx, vtk, python ,raw, xyz};
+    enum Type {xml, matlab, octave, vtk, python, raw, xyz};
     
     /// Create a file with given name
     File(const std::string& filename, bool new_style=false);

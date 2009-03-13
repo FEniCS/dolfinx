@@ -21,6 +21,7 @@ SWIG_SHARED_PTR_DERIVED(FacetNormal,dolfin::Function,dolfin::FacetNormal)
 SWIG_SHARED_PTR_DERIVED(FacetArea,dolfin::Function,dolfin::FacetArea)
 SWIG_SHARED_PTR_DERIVED(InvFacetArea,dolfin::Function,dolfin::InvFacetArea)
 SWIG_SHARED_PTR_DERIVED(IsOutflowFacet,dolfin::Function,dolfin::IsOutflowFacet)
+SWIG_SHARED_PTR_DERIVED(SUPGStabilizer,dolfin::Function,dolfin::SUPGStabilizer)
 SWIG_SHARED_PTR_DERIVED(DiscreteFunction,dolfin::Function,dolfin::DiscreteFunction)
 
 SWIG_SHARED_PTR(Mesh,dolfin::Mesh)

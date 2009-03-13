@@ -11,9 +11,6 @@
 
 #include <string>
 
-#include <dolfin/la/GenericVector.h>
-#include <dolfin/la/GenericMatrix.h>
-
 namespace dolfin
 {
   
@@ -26,9 +23,11 @@ namespace dolfin
   class FiniteElementSpec;
   class ParameterList;
   class BLASFormData;
-
   class FiniteElement;
+  class GenericMatrix;
+  class GenericVector;
   
+
   class GenericFile
   {
   public:
@@ -36,11 +35,10 @@ namespace dolfin
     GenericFile(const std::string filename);
     virtual ~GenericFile();
     
-
-
-    virtual void operator>> (Mesh& x);
+    // Input
     virtual void operator>> (GenericVector& x);
     virtual void operator>> (GenericMatrix& A);
+    virtual void operator>> (Mesh& mesh);
     virtual void operator>> (LocalMeshData& data);
     virtual void operator>> (MeshFunction<int>& meshfunction);
     virtual void operator>> (MeshFunction<unsigned int>& meshfunction);
@@ -61,11 +59,11 @@ namespace dolfin
     virtual void operator>> (std::map<uint, std::vector<int> >& array_map);
     virtual void operator>> (std::map<uint, std::vector<uint> >& array_map);
     virtual void operator>> (std::map<uint, std::vector<double> >& array_map); 
-    
-    // Output
-    virtual void operator<< (const Mesh& mesh);
-    virtual void operator<< (const GenericVector& A);
+
+    // Output    
+    virtual void operator<< (const GenericVector& x);
     virtual void operator<< (const GenericMatrix& A);
+    virtual void operator<< (const Mesh& mesh);
     virtual void operator<< (const LocalMeshData& data);
     virtual void operator<< (const MeshFunction<int>& meshfunction);
     virtual void operator<< (const MeshFunction<unsigned int>& meshfunction);
@@ -101,7 +99,8 @@ namespace dolfin
     bool opened_read;
     bool opened_write;
 
-    bool check_header; // True if we have written a header
+    // True if we have written a header
+    bool check_header; 
 
     // Counters for the number of times various data has been written
     uint counter;

@@ -6,14 +6,14 @@
 
 #include <cstring>
 #include <sstream>
+#include <dolfin/log/log.h>
 #include "NewXMLFile.h"
 #include "XMLHandler.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLHandler::XMLHandler(NewXMLFile& parser)
-  : parser(parser)
+XMLHandler::XMLHandler(NewXMLFile& parser) : parser(parser)
 {
   // Do nothing
 }
@@ -68,8 +68,7 @@ int XMLHandler::parse_int(const xmlChar* name, const xmlChar** attrs,
   }
   
   // Didn't get the value
-  error("Missing attribute \"%s\" for <%s> in XML file.",
-		attribute, name);
+  error("Missing attribute \"%s\" for <%s> in XML file.", attribute, name);
 
   return 0;
 }
@@ -80,8 +79,7 @@ dolfin::uint XMLHandler::parse_uint(const xmlChar* name,
 {
   // Check that we got the data
   if ( !attrs )
-    error("Missing attribute \"%s\" for <%s> in XML file.",
-                  attribute, name);
+    error("Missing attribute \"%s\" for <%s> in XML file.", attribute, name);
   
   // Parse data
   for (uint i = 0; attrs[i]; i++)

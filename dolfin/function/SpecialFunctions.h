@@ -153,9 +153,8 @@ namespace dolfin
   };
 
   /// This function determines if the current facet is an outflow facet with
-  /// respect to the current cell. It accepts as argument the mesh and a form
-  /// M = dot(n, v)*ds, a functional, defined on the normal vector to the
-  /// facet and velocity vector integrated over the exterior of the cell.
+  /// respect to the current cell. It accepts as argument a FunctionSpace
+  /// and a velocity function.
   /// The function returns 1.0 if the dot product > 0, 0.0 otherwise.
 
   class IsOutflowFacet : public Function
@@ -168,6 +167,32 @@ namespace dolfin
     ~IsOutflowFacet();
 
     void eval(double* values, const Data& data) const;
+
+  private:
+
+    const Function* field;
+  };
+
+  /// Streamline Upwind Petrov Galerkin stabilizing function
+  /// Given the advective field a, this function computes the stabilizing factor
+  ///
+  ///           s = h*tau*a/(2*|a|)
+  ///
+  /// where h is the local size of the mesh, tau the local stabilizing factor
+  /// calculated from the local Peclet number, a the advective field.
+  class SUPGStabilizer : public Function
+  {
+  public:
+
+    // Constructor
+    SUPGStabilizer(const FunctionSpace& V, const Function& f, double sigma_=1.0);
+    
+    ~SUPGStabilizer(){}
+    
+    void eval(double* values, const Data& data) const;
+    
+    // The diffusion coeffisient, used to calculate the local Péclet number
+    double sigma;
 
   private:
 
