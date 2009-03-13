@@ -84,10 +84,6 @@ u = problem.solve()
 vtk_file = File("elasticity.pvd")
 vtk_file << u
 
-# Save solution to XML format
-xml_file = File("elasticity.xml")
-xml_file << u
-
 # Plot solution
 plot(u, mode="displacement")
 

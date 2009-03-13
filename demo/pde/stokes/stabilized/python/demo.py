@@ -40,7 +40,6 @@ bc2 = DirichletBC(system.sub(1), zero, sub_domains, 2)
 # Collect boundary conditions
 bcs = [bc0, bc1, bc2]
 
-
 # Define variational problem
 (v, q) = TestFunctions(system)
 (u, p) = TrialFunctions(system)
@@ -59,12 +58,6 @@ problem = VariationalProblem(a, L, bcs)
 
 # Solve PDE
 (U, P) = problem.solve().split()
-
-# Save solution
-ufile = File("velocity.xml")
-ufile << U
-pfile = File("pressure.xml")
-pfile << P
 
 # Save solution in VTK format
 ufile_pvd = File("velocity.pvd")

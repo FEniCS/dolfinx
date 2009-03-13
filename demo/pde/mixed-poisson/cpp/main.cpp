@@ -72,12 +72,6 @@ int main()
   plot(sigma_p);
   plot(u);
 
-  // Save solution in XML format
-  File f0("sigma.xml");
-  File f1("u.xml");
-  f0 << sigma;
-  f1 << u;
-
   // Save solution in VTK format
   File f3("sigma.pvd");
   File f4("u.pvd");
