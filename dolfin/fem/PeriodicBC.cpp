@@ -250,7 +250,8 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     //  cout << " " << it->first[j];
     //cout << ": " << dof0 << " " << dof1 << endl;
     
-    // FIXME: Perhaps this can be done more efficiently?
+    // FIXME: This can be done more efficiently. A.apply() should not be called
+    //        from within a loop.
 
     // Set x_i - x_j = 0
     rows[0] = static_cast<uint>(dof0);
@@ -270,10 +271,18 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     b.get(&values[0], 1, &rows[0]);
     b.add(&values[0], 1, &cols[0]);
 
+    // Apply changes before using set
+    A.apply();
+    b.apply();
+
     // Replace slave-dof equation by relation enforcing periodicity
     A.ident(1, rows);
     A.set(vals, 1, rows, 1, cols);
     b.set(zero, 1, rows);
+
+    // Apply changes
+    A.apply();
+    b.apply();
   }
   
   // Cleanup
@@ -282,10 +291,6 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
   delete [] vals;
   delete [] zero;
   delete [] y;
-
-  // Apply changes
-  A.apply();
-  b.apply();
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericVector& b, const GenericVector& x) const
