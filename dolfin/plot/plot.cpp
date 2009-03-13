@@ -25,6 +25,7 @@ using namespace dolfin;
 
 namespace dolfin
 {
+//-----------------------------------------------------------------------------
   std::string secure_tmp_filename(std::string ident)
   {
     // Return a temporary file name, pointing to an empty file owned by user
@@ -69,7 +70,7 @@ namespace dolfin
     return std::string(buffer);
 #endif
   }
-
+//-----------------------------------------------------------------------------
   void plot_write_and_run_script(std::string type, std::string data_name, std::string mode, bool mesh)
   {
     std::string script_name = secure_tmp_filename("plot.py");
@@ -133,7 +134,7 @@ namespace dolfin
     }
     remove(script_name.c_str());
   }
-
+//-----------------------------------------------------------------------------
   template<class T> void plot(T& t, std::string class_name, std::string mode)
   {
     std::string data_name = secure_tmp_filename("plot.xml");
@@ -145,7 +146,7 @@ namespace dolfin
 
     plot_write_and_run_script(class_name, data_name, mode, false);
   }
-
+//-----------------------------------------------------------------------------
   // Plotting of mesh functions
   template<class T> void plot(const MeshFunction<T>& f, std::string type, std::string mode)
   {
@@ -160,13 +161,12 @@ namespace dolfin
 
     plot_write_and_run_script(type, data_name, mode, true);
   }
-
 }
-
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Function& f, std::string mode)
 {
-  plot(f, "Function", mode);
+  warning("Plotting through Viper needs to be updated for the new output file design.");
+  //plot(f, "Function", mode);
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Mesh& mesh, std::string mode)
