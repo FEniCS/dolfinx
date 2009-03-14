@@ -1,8 +1,10 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garthn N. Wells, 2009
+//
 // First added:  2007-05-14
-// Last changed: 2008-11-17
+// Last changed: 2009-03-14
 //
 // This demo demonstrates how to compute functionals (or forms in
 // general) over subsets of the mesh. The two functionals lift and
@@ -17,6 +19,7 @@
 #include <dolfin.h>
 #include "Lift.h"
 #include "Drag.h"
+#include "Pressure.h"
 
 using namespace dolfin;
 
@@ -33,8 +36,13 @@ class Fish : public SubDomain
 
 int main()
 {
+  // Read mesh from file
+  Mesh mesh("../mesh.xml.gz");
+
+  PressureFunctionSpace Vp(mesh);
+
   // Read velocity field from file
-  Function p("../pressure.xml.gz");
+  Function p(Vp, "../pressure.xml.gz");
 
   // Functionals for lift and drag
   FacetNormal n;

@@ -15,12 +15,17 @@ __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
 # Modified by Anders Logg, 2008.
+# Modified by Garth N. Wells, 2009.
 
 from dolfin import *
 
-# Read pressure field from file and get the mesh
-p = Function("../pressure.xml.gz")
-mesh =  p.function_space().mesh()
+# Read the mesh from file
+mesh =  Mesh("../mesh.xml.gz")
+
+# Create FunctionSpace for pressure field 
+Vp = FunctionSpace(mesh, "CG", 1)
+
+p = Function(Vp, "../pressure.xml.gz")
 
 # Define sub domain for the dolphin
 class Fish(SubDomain):
