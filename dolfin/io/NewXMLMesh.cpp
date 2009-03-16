@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-06
-// Last changed:  2009-03-11
+// Last changed:  2009-03-16
 
 #include <cstring>
 #include <dolfin/log/dolfin_log.h>
@@ -18,8 +18,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewXMLMesh::NewXMLMesh(Mesh& mesh, NewXMLFile& parser) : XMLHandler(parser), _mesh(mesh), state(OUTSIDE), f(0), a(0),
-                               mesh_coord(0), uint_array(0), xml_array(0), xml_mesh_data(0)
+NewXMLMesh::NewXMLMesh(Mesh& mesh, NewXMLFile& parser) 
+  : XMLHandler(parser), _mesh(mesh), state(OUTSIDE), f(0), a(0),
+    mesh_coord(0), uint_array(0), xml_array(0), xml_mesh_data(0)
 {
   // Do nothing
 }
@@ -40,8 +41,7 @@ void NewXMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "mesh") == 0 )
     {
-      read_mesh(name, attrs);
-      state = INSIDE_MESH;
+      read_mesh_tag(name, attrs);
     }
     
     break;
@@ -243,8 +243,11 @@ void NewXMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation
 
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_mesh(const xmlChar *name, const xmlChar **attrs)
+void NewXMLMesh::read_mesh_tag(const xmlChar *name, const xmlChar **attrs)
 {
+  // Set state
+  state = INSIDE_MESH;
+
   // Parse values
   std::string type = parse_string(name, attrs, "celltype");
   uint gdim = parse_uint(name, attrs, "dim");
