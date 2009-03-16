@@ -26,12 +26,12 @@ void plot_object(const T& t, std::string mode)
 
   // Save to file
   const std::string filename = dolfin_get("plot file name");
-  File file(filename);
+  File file(filename, true);
   file << t;
 
   // Plot data from file
   std::stringstream command;
-  command << "dolfin-plot --mode=" << mode << " " << filename;
+  command << "viper --mode=" << mode << " " << filename;
   if (system(command.str().c_str()) != 0)
     warning("Unable to plot.");
 }
