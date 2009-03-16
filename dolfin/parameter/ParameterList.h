@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Benjamin Kehlet
+// Modified by Ola Skavhaug
 //
 // First added:  2003-05-06
-// Last changed: 2009-02-10
+// Last changed: 2009-03-16
 
 #ifndef __PARAMETER_LIST_H
 #define __PARAMETER_LIST_H
@@ -14,6 +15,8 @@
 
 namespace dolfin
 {
+
+  class NewXMLParameterList;
   
   /// This class represents a database of parameters, where each
   /// parameter is uniquely identified by a string.
@@ -45,7 +48,10 @@ namespace dolfin
 
     /// Friends
     friend class XMLFile;
+    friend class NewXMLParameterList;
     
+    // Used by NewXMLFile for templated i/o
+    typedef NewXMLParameterList XMLHandler;
   private:
 
     // Parameters stored as an STL map

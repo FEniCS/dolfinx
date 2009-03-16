@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-03
-// Last changed: 2009-03-11
+// Last changed: 2009-03-16
 
 #ifndef __NEWXMLFILE_H
 #define __NEWXMLFILE_H
@@ -15,12 +15,14 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/graph/Graph.h>
+#include <dolfin/parameter/ParameterList.h>
 #include <libxml/parser.h>
 #include "GenericFile.h"
 #include "NewXMLMesh.h"
 #include "NewXMLGraph.h"
 #include "NewXMLMatrix.h"
 #include "NewXMLLocalMeshData.h"
+#include "NewXMLParameterList.h"
 
 namespace dolfin
 {
@@ -61,6 +63,7 @@ namespace dolfin
     void operator>> (LocalMeshData& input) { read_xml(input); }
     void operator>> (Graph&  input)        { read_xml(input); }
     void operator>> (GenericMatrix&  input){ read_xml(input); }
+    void operator>> (ParameterList&  input){ read_xml(input); }
 
     void operator>> (std::vector<int> & x);
     void operator>> (std::vector<uint> & x);
@@ -77,6 +80,7 @@ namespace dolfin
     void operator<< (const Mesh& output)         { write_xml(output); }
     void operator<< (const Graph& output)         { write_xml(output); }
     void operator<< (const GenericMatrix& output) { write_xml(output); }
+    void operator<< (const ParameterList& output) { write_xml(output); }
 
     void operator<< (const std::vector<int> & x);
     void operator<< (const std::vector<uint> & x);
