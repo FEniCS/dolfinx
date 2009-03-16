@@ -339,4 +339,3 @@ bool FunctionSpace::is_inside_restriction(uint c) const
     return true;
 }
 //-----------------------------------------------------------------------------
-
