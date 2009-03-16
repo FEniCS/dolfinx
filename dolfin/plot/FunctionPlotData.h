@@ -41,7 +41,7 @@ namespace dolfin
     Vector vertex_values;
 
     // Value rank
-    int rank;
+    uint rank;
 
     typedef XMLFunctionPlotData XMLHandler;
 
