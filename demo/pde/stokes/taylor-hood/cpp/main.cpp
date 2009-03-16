@@ -84,12 +84,6 @@ int main()
   plot(u);
   plot(p);
 
-  // Save solution in XML format
-  File ufile("velocity.xml");
-  ufile << u;
-  File pfile("pressure.xml");
-  pfile << p;
-
   // Save solution in VTK format
   File ufile_pvd("velocity.pvd");
   ufile_pvd << u;

@@ -52,12 +52,6 @@ interactive()
 plot(u)
 interactive()
 
-# Save solution to file
-f0 = File("sigma.xml")
-f1 = File("u.xml")
-f0 << sigma
-f1 << u
-
 # Save solution to pvd format
 f3 = File("sigma.pvd")
 f4 = File("u.pvd")

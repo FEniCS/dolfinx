@@ -15,13 +15,16 @@ class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return abs(x[0] - 1.0) < DOLFIN_EPS and on_boundary
 
-# Load the velocity
-velocity = Function ("../velocity.xml.gz")
-mesh = velocity.function_space().mesh()
+# Load mesh
+mesh = Mesh("../mesh.xml.gz")
 
 # Defining the function spaces
 V_dg = FunctionSpace(mesh, "DG", 1)
 V_cg = FunctionSpace(mesh, "CG", 1)
+V_b  = VectorFunctionSpace(mesh, "CG", 2)
+
+# Create velocity Function 
+velocity = Function(V_b, "../velocity.xml.gz");
 
 # Test and trial functions
 v = TestFunction(V_dg)

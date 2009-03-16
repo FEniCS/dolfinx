@@ -48,12 +48,6 @@ L = dot(v, f)*dx
 problem = VariationalProblem(a, L, bcs)
 (u, p) = problem.solve().split()
 
-# Save solution in DOLFIN XML format
-ufile = File("velocity.xml")
-ufile << u
-pfile = File("pressure.xml")
-pfile << p
-
 # Save solution in VTK format
 ufile_pvd = File("velocity.pvd")
 ufile_pvd << u

@@ -45,12 +45,6 @@ namespace dolfin
     /// Create dof map on mesh (may share ufc::dof_map) (parallel)
     DofMap(boost::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh, MeshFunction<uint>& partitions);
 
-    /// Create dof map on mesh
-    DofMap(const std::string signature, const Mesh& mesh);
-
-    /// Create dof map on mesh (parallel)
-    DofMap(const std::string signature, const Mesh& mesh, MeshFunction<uint>& partitions);
-
     /// Destructor
     ~DofMap();
 

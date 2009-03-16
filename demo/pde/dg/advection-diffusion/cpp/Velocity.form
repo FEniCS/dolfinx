@@ -1,0 +1,12 @@
+# Copyright (c) 2009 Garth N. Wells
+# Licensed under the GNU LGPL Version 2.1
+#
+# First added:  2009-0307
+# Last changed: 
+#
+# A continuous P2 vector element
+#
+# Compile this form with FFC: ffc -l dolfin Velocity.form
+
+element = VectorElement("Lagrange", "triangle", 2)
+

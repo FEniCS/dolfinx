@@ -1,0 +1,12 @@
+# Copyright (c) 2009 Garth N. Wells
+# Licensed under the GNU LGPL Version 2.1
+#
+# First added:  2009-03-14
+# Last changed: 
+#
+# A continuous P1 element
+#
+# Compile this form with FFC: ffc -l dolfin Pressure.form
+
+element = FiniteElement("Lagrange", "triangle", 1)
+

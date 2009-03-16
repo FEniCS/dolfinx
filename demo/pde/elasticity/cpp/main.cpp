@@ -120,9 +120,5 @@ int main()
   File vtk_file("elasticity.pvd");
   vtk_file << u;
 
-  // Save solution in XML format
-  File xml_file("displacement.xml");
-  xml_file << u;
-
   return 0;
 }

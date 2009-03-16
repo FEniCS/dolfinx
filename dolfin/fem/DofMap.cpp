@@ -12,7 +12,6 @@
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshData.h>
-#include <dolfin/elements/ElementLibrary.h>
 #include <dolfin/main/MPI.h>
 #include "UFCCell.h"
 #include "UFC.h"
@@ -57,42 +56,6 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map,
     num_cells(mesh.numCells()), partitions(&partitions), _offset(0),
     dolfin_mesh(mesh)
 {
-  init(mesh);
-}
-//-----------------------------------------------------------------------------
-DofMap::DofMap(const std::string signature,
-               const Mesh& mesh)
-  : dof_map(0), dof_map_size(0), cell_map(0), 
-    num_cells(mesh.numCells()), partitions(0), _offset(0),
-    dolfin_mesh(mesh)
-{
-  // FIXME: Missing initializer for ufc_dof_map?
-
-  // Create ufc dof map from signature
-  boost::shared_ptr<ufc::dof_map> _ufc_dof_map(ElementLibrary::create_dof_map(signature));
-  ufc_dof_map.swap(_ufc_dof_map);
-
-  if (!ufc_dof_map)
-    error("Unable to find dof map in library: \"%s\".",signature.c_str());
-
-  init(mesh);
-}
-//-----------------------------------------------------------------------------
-DofMap::DofMap(const std::string signature, const Mesh& mesh,
-               MeshFunction<uint>& partitions)
-  : dof_map(0), dof_map_size(0), cell_map(0), 
-    num_cells(mesh.numCells()), partitions(&partitions), _offset(0),
-    dolfin_mesh(mesh)
-{
-  // FIXME: Missing initializer for ufc_dof_map?
-
-  // Create ufc dof map from signature
-  boost::shared_ptr<ufc::dof_map> _ufc_dof_map(ElementLibrary::create_dof_map(signature));
-  ufc_dof_map.swap(_ufc_dof_map);
-
-  if (!ufc_dof_map)
-    error("Unable to find dof map in library: \"%s\".",signature.c_str());
-
   init(mesh);
 }
 //-----------------------------------------------------------------------------

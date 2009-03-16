@@ -10,6 +10,5 @@
 #include <dolfin/function/SubSpace.h>
 #include <dolfin/function/Constant.h>
 #include <dolfin/function/SpecialFunctions.h>
-#include <dolfin/function/ProjectL2.h>
 
 #endif
