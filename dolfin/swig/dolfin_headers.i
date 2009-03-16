@@ -174,3 +174,4 @@
 %include "dolfin/ode/ODESolution.h"
 
 // DOLFIN headers included from plot
+%include "dolfin/plot/FunctionPlotData.h"
