@@ -25,6 +25,8 @@ namespace dolfin
     void end_element   (const xmlChar* name);
 
     static void write(const FunctionPlotData& data, std::ostream& outfile, uint indentation_level=0);
+
+    void read_data_tag(const xmlChar* name, const xmlChar** attrs);
     
   private:
     

@@ -29,7 +29,7 @@ void XMLFunctionPlotData::start_element(const xmlChar* name, const xmlChar** att
   {
   case OUTSIDE:
     if ( xmlStrcasecmp(name, (xmlChar *) "function_plot_data") == 0 )
-      state = INSIDE;
+      read_data_tag(name, attrs);
 
     break;
 
@@ -69,7 +69,7 @@ void XMLFunctionPlotData::write(const FunctionPlotData& data, std::ostream& outf
   // Write Function plot data header
   uint curr_indent = indentation_level;
   outfile << std::setw(curr_indent) << "";
-  outfile << "<function_plot_data>" << std::endl;
+  outfile << "<function_plot_data rank=\"" << data.rank << "\">" << std::endl;
 
   curr_indent  = indentation_level + 2;
 
@@ -84,6 +84,12 @@ void XMLFunctionPlotData::write(const FunctionPlotData& data, std::ostream& outf
   outfile << std::setw(curr_indent) << "";
   outfile << "</function_plot_data>" << std::endl;
   //Write me later
+}
+//-----------------------------------------------------------------------------
+void XMLFunctionPlotData::read_data_tag(const xmlChar* name, const xmlChar** attrs)
+{
+  data.rank = parse_uint(name, attrs, "rank");
+  state = INSIDE;
 }
 //-----------------------------------------------------------------------------
 void XMLFunctionPlotData::read_mesh(const xmlChar* name, const xmlChar** attrs)
