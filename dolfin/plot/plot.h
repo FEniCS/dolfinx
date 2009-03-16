@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-05-02
-// Last changed: 2007-05-07
+// Last changed: 2009-03-16
 
 #ifndef __PLOT_H
 #define __PLOT_H
@@ -19,24 +19,21 @@ namespace dolfin
 
   /// Simple built-in plot commands for plotting functions and meshes.
   /// For plotting to work, PyDOLFIN and Viper must be installed.
-  /// Specifying the plotting mode is only relevant for vector-valued
-  /// functions and relevant plotting modes are then "vector" (default)
-  /// and "displacement".
   
   /// Plot function
-  void plot(const Function& f, std::string mode = "");
+  void plot(const Function& v, std::string mode="");
 
   /// Plot mesh
-  void plot(const Mesh& mesh, std::string mode = "");
+  void plot(const Mesh& mesh);
 
   /// Plot mesh function
-  void plot(const MeshFunction<uint>& f, std::string mode = "");
+  void plot(const MeshFunction<uint>& f);
 
   /// Plot mesh function
-  void plot(const MeshFunction<double>& f, std::string mode = "");
+  void plot(const MeshFunction<double>& f);
 
   /// Plot mesh function
-  void plot(const MeshFunction<bool>& f, std::string mode = "");
+  void plot(const MeshFunction<bool>& f);
 
 }
 

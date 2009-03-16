@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/la/Vector.h>
 
@@ -22,7 +23,7 @@ namespace dolfin
   /// Function objects. The data is stored as a mesh and a vector
   /// of interpolated vertex values.
 
-  class FunctionPlotData
+  class FunctionPlotData : public Variable
   {
   public:
 

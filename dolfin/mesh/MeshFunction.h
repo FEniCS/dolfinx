@@ -1,15 +1,16 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman, 2007.
 //
 // First added:  2006-05-22
-// Last changed: 2008-11-14
+// Last changed: 2009-03-16
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
 
 #include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 #include <dolfin/io/File.h>
 #include "MeshEntity.h"
 #include <dolfin/main/MPI.h>
@@ -27,31 +28,43 @@ namespace dolfin
   /// numbering scheme for the entities of a (parallel) mesh, marking
   /// sub domains or boolean markers for mesh refinement.
 
-  template <class T> class MeshFunction
+  template <class T> class MeshFunction : public Variable
   {
   public:
  
     /// Create empty mesh function
-    MeshFunction() : _values(0), _mesh(0), _dim(0), _size(0) {}
+    MeshFunction() :
+      Variable("f", "unnamed MeshFunction"),
+      _values(0), _mesh(0), _dim(0), _size(0)
+    {}
 
     /// Create empty mesh function on given mesh
-    MeshFunction(const Mesh& mesh) : _values(0), _mesh(&mesh), _dim(0), _size(0) {}
+    MeshFunction(const Mesh& mesh) : 
+      Variable("f", "unnamed MeshFunction"),
+      _values(0), _mesh(&mesh), _dim(0), _size(0)
+    {}
 
     /// Create mesh function on given mesh of given dimension
-    MeshFunction(const Mesh& mesh, uint dim) : _values(0), _mesh(&mesh), _dim(0), _size(0)
+    MeshFunction(const Mesh& mesh, uint dim) :
+      Variable("f", "unnamed MeshFunction"),
+      _values(0), _mesh(&mesh), _dim(0), _size(0)
     {
       init(dim);
     }
 
     /// Create function from data file
-    MeshFunction(const Mesh& mesh, const std::string filename) : _values(0), _mesh(&mesh), _dim(0), _size(0)
+    MeshFunction(const Mesh& mesh, const std::string filename) :
+      Variable("f", "unnamed MeshFunction"),
+      _values(0), _mesh(&mesh), _dim(0), _size(0)
     {
       File file(filename);
       file >> *this;
     }
 
     /// Copy constructor
-    MeshFunction(const MeshFunction<T>& f) : _values(0), _mesh(0), _dim(0), _size(0)
+    MeshFunction(const MeshFunction<T>& f) :
+      Variable("f", "unnamed MeshFunction"),
+      _values(0), _mesh(0), _dim(0), _size(0)
     {
       *this = f;
     }

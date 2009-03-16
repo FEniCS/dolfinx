@@ -70,5 +70,7 @@ int main()
   File file("poisson.pvd");
   file << u;
 
+  plot(mesh);
+
   return 0;
 }

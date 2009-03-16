@@ -13,6 +13,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 FunctionPlotData::FunctionPlotData(const Function& v)
+  : Variable(v.name(), v.label())
 {
   // Copy mesh
   mesh = v.function_space().mesh();
