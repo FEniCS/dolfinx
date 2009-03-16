@@ -133,6 +133,7 @@ if ARGUMENTS.has_key("enablePydolfin"):
   warnings.warn(msg, DeprecationWarning)
   if not ARGUMENTS.has_key("enablePython"):
     ARGUMENTS["enablePython"] = ARGUMENTS["enablePydolfin"]
+  del ARGUMENTS["enablePydolfin"]
 
 # This Configure class handles both command-line options (which are merged into 
 # the environment) and autoconf-style tests. A special feature is that it
@@ -151,14 +152,22 @@ scons.log("Using simula_scons from: %s" % scons.__file__)
 # Notify the user about that options from scons/options.cache are being used:
 if not env.GetOption("clean"):
   try:
-    lines = file(os.path.join('scons','options.cache')).readlines()
+    optsCache = os.path.abspath(os.path.join("scons", "options.cache"))
+    lines = file(optsCache).readlines()
     if lines:
-      print "Using options from scons/options.cache"
+      print "Using options from %s" % optsCache
     # FIXME: this can be removed when option enablePydolfin is removed
+    new_lines = []
     for line in lines:
-      if line.startswith("enablePydolfin") and not "enablePython" in lines:
-        env["enablePython"] = eval(line.split('=')[1])
-  except:
+      if line.startswith("enablePydolfin"):
+        if not "enablePython" in lines:
+          env["enablePython"] = eval(line.split('=')[1])
+          new_lines.append("enablePython = %s\n" % env["enablePython"])
+      else:
+        new_lines.append(line)
+    if new_lines != lines:
+      file(optsCache, 'w').writelines(new_lines)
+  except IOError, msg:
     pass
 
 # If we are in very-clean mode, remove the sconsign file. 
