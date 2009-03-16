@@ -16,6 +16,8 @@
 namespace dolfin
 {
 
+  class XMLFunctionPlotData;
+
   class Function;
 
   /// This class is used for communicating plot data for functions
@@ -41,6 +43,8 @@ namespace dolfin
 
     // Value shape
     std::vector<uint> value_shape;
+
+    typedef XMLFunctionPlotData XMLHandler;
 
   };
 

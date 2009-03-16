@@ -201,6 +201,13 @@ void File::operator>> (Graph& graph)
   *file >> graph;
 }
 //-----------------------------------------------------------------------------
+void File::operator>> (FunctionPlotData& data)
+{
+  file->read();
+  
+  *file >> data;
+}
+//-----------------------------------------------------------------------------
 void File::operator>> (std::vector<int>& x)
 {
   file->read();
@@ -360,6 +367,13 @@ void File::operator<< (const Graph& graph)
   file->write();
   
   *file << graph;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const FunctionPlotData& data)
+{
+  file->write();
+  
+  *file << data;
 }
 //-----------------------------------------------------------------------------
 void File::operator<< (const std::vector<int>& x)

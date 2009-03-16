@@ -10,6 +10,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/la/GenericMatrix.h>
+#include <dolfin/plot/FunctionPlotData.h>
 #include "XMLArray.h"
 #include "XMLMap.h"
 #include "NewXMLFile.h"
@@ -17,6 +18,7 @@
 #include "NewXMLLocalMeshData.h"
 #include "NewXMLGraph.h"
 #include "NewXMLMatrix.h"
+#include "XMLFunctionPlotData.h"
 
 using namespace dolfin;
 

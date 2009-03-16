@@ -12,6 +12,7 @@
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/plot/FunctionPlotData.h>
 //#include <dolfin/la/GenericVector.h>
 #include "GenericFile.h"
 
@@ -103,6 +104,11 @@ void GenericFile::operator>> (BLASFormData& blas)
 void GenericFile::operator>> (Graph& graph)
 {
   read_not_impl("Graph");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator>> (FunctionPlotData& data)
+{
+  read_not_impl("FunctionPlotData");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator>> (std::vector<int>& x)
@@ -218,6 +224,11 @@ void GenericFile::operator<< (const BLASFormData& blas)
 void GenericFile::operator<< (const Graph& graph)
 {
   write_not_impl("Graph");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator<< (const FunctionPlotData& data)
+{
+  write_not_impl("FunctionPlotData");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const std::vector<int>& x)

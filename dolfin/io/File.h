@@ -33,6 +33,7 @@ namespace dolfin
   class FiniteElement;
   class GenericMatrix;
   class GenericVector;
+  class FunctionPlotData;
   
   /// A File represents a data file for reading and writing objects.
   /// Unless specified explicitly, the format is determined by the
@@ -95,6 +96,9 @@ namespace dolfin
     /// Read graph from file
     void operator>> (Graph& graph);
 
+    /// Read FunctionPlotData from file
+    void operator>> (FunctionPlotData& data);
+
     /// Read array from file
     void operator>> (std::vector<int>& x);
     void operator>> (std::vector<uint>& x);
@@ -147,6 +151,9 @@ namespace dolfin
 	 
     /// Write graph to file
     void operator<< (const Graph& graph);
+
+    /// Write FunctionPlotData to file
+    void operator<< (const FunctionPlotData& data);
 
     /// Write array to file
     void operator<< (const std::vector<int>& x);

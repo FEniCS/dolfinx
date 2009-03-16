@@ -15,6 +15,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/graph/Graph.h>
+#include <dolfin/plot/FunctionPlotData.h>
 #include <dolfin/parameter/ParameterList.h>
 #include <libxml/parser.h>
 #include "GenericFile.h"
@@ -23,6 +24,7 @@
 #include "NewXMLMatrix.h"
 #include "NewXMLLocalMeshData.h"
 #include "NewXMLParameterList.h"
+#include "XMLFunctionPlotData.h"
 
 namespace dolfin
 {
@@ -55,8 +57,7 @@ namespace dolfin
     {
       open_file();
       typedef typename T::XMLHandler Handler;
-      Handler::write(t, *outstream);
-      close_file();
+      Handler::write(t, *outstream); close_file();
     }
 
     void operator>> (Mesh& input)          { read_xml(input); }
@@ -64,6 +65,7 @@ namespace dolfin
     void operator>> (Graph&  input)        { read_xml(input); }
     void operator>> (GenericMatrix&  input){ read_xml(input); }
     void operator>> (ParameterList&  input){ read_xml(input); }
+    void operator>> (FunctionPlotData&  input){ read_xml(input); }
 
     void operator>> (std::vector<int> & x);
     void operator>> (std::vector<uint> & x);
@@ -81,6 +83,7 @@ namespace dolfin
     void operator<< (const Graph& output)         { write_xml(output); }
     void operator<< (const GenericMatrix& output) { write_xml(output); }
     void operator<< (const ParameterList& output) { write_xml(output); }
+    void operator<< (const FunctionPlotData& output) { write_xml(output); }
 
     void operator<< (const std::vector<int> & x);
     void operator<< (const std::vector<uint> & x);
