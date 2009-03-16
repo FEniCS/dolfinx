@@ -1,7 +1,7 @@
 // Default values for the DOLFIN parameter system.
 //
 // First added:  2005-12-19
-// Last changed: 2009-02-02
+// Last changed: 2009-03-16
 
 //--- Linear algebra ---
 #ifdef HAS_PETSC
@@ -19,8 +19,9 @@ add("optimize", false);                   // All of the above
 //--- General parameters ---
 
 add("linear solver", "direct");
-add("timer prefix",  "");                 // Prefix for timer tasks
-add("symmetric", false);                  // Should not be set here!
+add("timer prefix",  "");                      // Prefix for timer tasks
+add("symmetric", false);                       // Should not be set here!
+add("plot file name", "dolfin_plot_data.xml"); // Name of temporary files for plot data
 
 // FIXME: Need to cleanup among parameters below
 
