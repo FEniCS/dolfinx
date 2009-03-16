@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2007 Anders Logg.
+// Copyright (C) 2003-2007 Anders Logg and Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2003-07-15
-// Last changed: 2007-05-15
+// First added:  2009-03-06
+// Last changed: 2009-03-16
 
 #ifndef __XML_VECTOR_H
 #define __XML_VECTOR_H
@@ -22,6 +22,8 @@ namespace dolfin
     
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
+
+    static void write(const GenericVector& vector, std::ostream& outfile, uint indentation_level=0);
     
   private:
     

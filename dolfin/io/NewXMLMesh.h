@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-06
-// Last changed:  2009-03-11
+// Last changed:  2009-03-16
 
 #ifndef __NEW_XML_MESH_H
 #define __NEW_XML_MESH_H
@@ -24,19 +24,21 @@ namespace dolfin
   public:
 
     NewXMLMesh(Mesh& mesh, NewXMLFile& parser);
+    NewXMLMesh(Mesh& mesh, NewXMLFile& parser, std::string celltype, uint dim);
     ~NewXMLMesh();
     
     void start_element (const xmlChar* name, const xmlChar** attrs);
     void end_element   (const xmlChar* name);
 
     static void write(const Mesh& mesh, std::ostream& outfile, uint indentation_level=0);
+
+    void read_mesh_tag(const xmlChar* name, const xmlChar** attrs);
     
   private:
     
     enum parser_state {OUTSIDE, INSIDE_MESH, INSIDE_VERTICES, INSIDE_CELLS, 
                        INSIDE_COORDINATES, INSIDE_VECTOR, DONE};
     
-    void read_mesh          (const xmlChar* name, const xmlChar** attrs);
     void read_vertices      (const xmlChar* name, const xmlChar** attrs);
     void read_cells         (const xmlChar* name, const xmlChar** attrs);
     void read_coordinates   (const xmlChar* name, const xmlChar** attrs);

@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2006 Anders Logg.
+// Copyright (C) 2002-2006 Anders Logg and Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2002-12-06
-// Last changed: 2006-05-23
+// First added:  2009-03-06
+// Last changed: 2009-03-16
 
 
 #include <dolfin/log/dolfin_log.h>
@@ -56,6 +56,32 @@ void NewXMLVector::end_element(const xmlChar *name)
   default:
     ;
   }
+}
+//-----------------------------------------------------------------------------
+void NewXMLVector::write(const GenericVector& vector, std::ostream& outfile, uint indentation_level)
+{
+  // Write vector header
+  uint curr_indent = indentation_level;
+  outfile << std::setw(curr_indent) << "";
+  outfile << "<vector>" << std::endl;
+
+  uint size = vector.size();
+  double vector_values[size];
+  vector.get(vector_values);
+
+  // Convert Vector values to std::vector<double>
+  std::vector<double> arr;
+  arr.resize(size);
+  for (uint i = 0; i < size; ++i)
+    arr[i] = vector_values[i];
+  // Write array
+  XMLArray::write(arr, outfile, indentation_level + 2);
+
+  // Write vector footer
+  curr_indent = indentation_level;
+  outfile << std::setw(curr_indent) << "";
+  outfile << "</vector>" << std::endl;
+
 }
 //-----------------------------------------------------------------------------
 void NewXMLVector::start_vector(const xmlChar *name, const xmlChar **attrs)
