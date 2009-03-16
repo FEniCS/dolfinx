@@ -29,8 +29,9 @@ FunctionPlotData::FunctionPlotData(const Function& v)
   delete [] values;
 
   // Get shape and dimension
-  for (uint i = 0; i < v.function_space().element().value_rank(); i++)
-    value_shape.push_back(v.function_space().element().value_dimension(i));
+  rank = v.function_space().element().value_rank();
+  if (rank > 1)
+    error("Plotting of rank %d functions not supported.", rank);
 }
 //-----------------------------------------------------------------------------
 FunctionPlotData::~FunctionPlotData()

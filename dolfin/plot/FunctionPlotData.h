@@ -7,7 +7,6 @@
 #ifndef __FUNCTION_PLOT_DATA_H
 #define __FUNCTION_PLOT_DATA_H
 
-#include <vector>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/mesh/Mesh.h>
@@ -41,8 +40,8 @@ namespace dolfin
     // The vertex values
     Vector vertex_values;
 
-    // Value shape
-    std::vector<uint> value_shape;
+    // Value rank
+    int rank;
 
     typedef XMLFunctionPlotData XMLHandler;
 
