@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-06
-// Last changed:  2009-03-11
+// Last changed:  2009-03-17
 
 #ifndef __XMLFUNCTIONPLOTDATA_H
 #define __XMLFUNCTIONPLOTDATA_H
@@ -12,7 +12,9 @@
 namespace dolfin
 {
   
+  class NewXMLVector;
   class FunctionPlotData;
+  class NewXMLMesh;
   
   class XMLFunctionPlotData : public XMLHandler
   {
@@ -39,6 +41,7 @@ namespace dolfin
     parser_state state;
 
     NewXMLMesh* xml_mesh;
+    NewXMLVector* xml_vector;
     
   };
   

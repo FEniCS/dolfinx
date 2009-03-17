@@ -2,11 +2,12 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-16
-// Last changed: 2009-03-16
+// Last changed: 2009-03-17
 
 #include <stdlib.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/ParameterList.h>
+#include "XMLIndent.h"
 #include "NewXMLFile.h"
 #include "NewXMLParameterList.h"
 
@@ -63,18 +64,17 @@ void NewXMLParameterList::end_element(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void NewXMLParameterList::write(const ParameterList& parameters, std::ostream& outfile, uint indentation_level)
 {
+  XMLIndent indent(indentation_level);
+
   // Write parameters header
-  uint curr_indent = indentation_level;
-  outfile << std::setw(curr_indent) << "";
-  outfile << "<parameters>" << std::endl;
+  outfile << indent() << "<parameters>" << std::endl;
 
   // Write each parameter item
+  ++indent;
   for (ParameterList::const_iterator it = parameters.parameters.begin(); it != parameters.parameters.end(); ++it)
   {
     const Parameter parameter = it->second;
-    curr_indent = indentation_level + 2;
-    outfile << std::setw(curr_indent) << "";
-
+    outfile << indent();
     switch ( parameter.type() )
     {
     case Parameter::type_int:
@@ -96,10 +96,10 @@ void NewXMLParameterList::write(const ParameterList& parameters, std::ostream& o
       ; // Do nothing
     }
   }
+  --indent;
+
   // Write parameters footer
-  curr_indent = indentation_level + 2;
-  outfile << std::setw(curr_indent) << "";
-  outfile << "</parameters>" << std::endl;
+  outfile << indent() << "</parameters>" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void NewXMLParameterList::read_parameter(const xmlChar *name, const xmlChar **attrs)

@@ -2,10 +2,11 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-16
-// Last changed: 2009-03-16
+// Last changed: 2009-03-17
 
 #include <dolfin/io/NewXMLFile.h>
 #include <dolfin/plot/FunctionPlotData.h>
+#include "XMLIndent.h"
 #include "NewXMLMesh.h"
 #include "XMLFunctionPlotData.h"
 
@@ -66,24 +67,24 @@ void XMLFunctionPlotData::end_element(const xmlChar* name)
 //-----------------------------------------------------------------------------
 void XMLFunctionPlotData::write(const FunctionPlotData& data, std::ostream& outfile, uint indentation_level)
 {
+  XMLIndent indent(indentation_level);
+
   // Write Function plot data header
-  uint curr_indent = indentation_level;
-  outfile << std::setw(curr_indent) << "";
+  outfile << indent();
   outfile << "<function_plot_data rank=\"" << data.rank << "\">" << std::endl;
 
-  curr_indent  = indentation_level + 2;
-
+  ++indent;
+  
   // Write mesh
-  NewXMLMesh::write(data.mesh, outfile, curr_indent);
+  NewXMLMesh::write(data.mesh, outfile, indent.level());
 
   // Write vector
-  NewXMLVector::write(data.vertex_values, outfile, curr_indent);
+  NewXMLVector::write(data.vertex_values, outfile, indent.level());
+
+  --indent;
 
   // Write Function plot data footer
-  curr_indent = indentation_level;
-  outfile << std::setw(curr_indent) << "";
-  outfile << "</function_plot_data>" << std::endl;
-  //Write me later
+  outfile << indent() << "</function_plot_data>" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFunctionPlotData::read_data_tag(const xmlChar* name, const xmlChar** attrs)
@@ -96,11 +97,23 @@ void XMLFunctionPlotData::read_mesh(const xmlChar* name, const xmlChar** attrs)
 {
   delete xml_mesh;
   xml_mesh = new NewXMLMesh(data.mesh, parser);
+
+  // Let the xml mesh read its own the mesh tag
   xml_mesh->read_mesh_tag(name, attrs);
+
+  // Parse the rest of the mesh
   xml_mesh->handle();
 }
 //-----------------------------------------------------------------------------
 void XMLFunctionPlotData::read_vector(const xmlChar* name, const xmlChar** attrs)
 {
+  delete xml_vector;
+  xml_vector = new NewXMLVector(data.vertex_values, parser);
+
+  // Let the xml vector read its own the vector tag
+  xml_vector->read_vector_tag(name, attrs);
+
+  // Parse the rest of the vector
+  xml_vector->handle();
 
 }

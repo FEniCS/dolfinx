@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-06
-// Last changed:  2009-03-16
+// Last changed:  2009-03-17
 
 #include <cstring>
 #include <dolfin/log/dolfin_log.h>
@@ -11,6 +11,7 @@
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
+#include "XMLIndent.h"
 #include "XMLArray.h"
 #include "XMLMeshData.h"
 #include "NewXMLMesh.h"
@@ -160,26 +161,26 @@ void NewXMLMesh::end_element(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void NewXMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation_level)
 {
-  uint curr_indent = indentation_level;
+  XMLIndent indent(indentation_level);
 
   // Get cell type
   CellType::Type cell_type = mesh.type().cellType();
 
   // Write mesh header
-  outfile << std::setw(curr_indent) << "";
+  outfile << indent();
   outfile << "<mesh celltype=\"" << CellType::type2string(cell_type) << "\" dim=\"" << mesh.geometry().dim() << "\">" << std::endl;
 
   // Write vertices header
-  curr_indent = indentation_level + 2;
-  outfile << std::setw(curr_indent) << "";
+  ++indent;
+  outfile << indent();
   outfile << "<vertices size=\"" << mesh.numVertices() << "\">" << std::endl;
 
   // Write each vertex 
-  curr_indent = indentation_level + 4;
+  ++indent;
   for(VertexIterator v(mesh); !v.end(); ++v)
   {
     Point p = v->point();
-    outfile << std::setw(curr_indent) << "";
+    outfile << indent();
 
     switch ( mesh.geometry().dim() ) {
     case 1:
@@ -197,21 +198,20 @@ void NewXMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation
   }
 
   // Write vertex footer
-  curr_indent = indentation_level + 2;
-  outfile << std::setw(curr_indent) << "";
-  outfile << "</vertices>" << std::endl;
+  --indent;
+  outfile << indent() << "</vertices>" << std::endl;
 
   // Write cell header
-  outfile << std::setw(curr_indent) << "";
+  outfile << indent();
   outfile << "<cells size=\"" << mesh.numCells() << "\">" << std::endl;
 
   // Write each cell
-  curr_indent = indentation_level + 4;
+  ++indent;
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     const uint* vertices = c->entities(0);
     dolfin_assert(vertices);
-    outfile << std::setw(curr_indent) << "";
+    outfile << indent();
 
     switch ( cell_type )
     {
@@ -229,17 +229,17 @@ void NewXMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation
     }
   }
   // Write cell footer 
-  curr_indent = indentation_level + 2;
-  outfile << std::setw(curr_indent) << "";
-  outfile << "</cells>" << std::endl;
+  --indent;
+  outfile << indent() << "</cells>" << std::endl;
 
   // Write mesh data
-  XMLMeshData::write(mesh.data(), outfile, indentation_level + 2);
+  ++indent;
+  XMLMeshData::write(mesh.data(), outfile, indent.level());
+  --indent;
 
   // Write mesh footer 
-  curr_indent = indentation_level;
-  outfile << std::setw(curr_indent) << "";
-  outfile << "</mesh>" << std::endl;
+  --indent;
+  outfile << indent() << "</mesh>" << std::endl;
 
 }
 //-----------------------------------------------------------------------------

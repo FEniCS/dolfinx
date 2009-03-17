@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-03
-// Last changed: 2009-03-11
+// Last changed: 2009-03-17
 
 #include <dolfin/log/dolfin_log.h>
+#include "XMLIndent.h"
 #include "XMLArray.h"
 #include "XMLMap.h"
 
@@ -116,101 +117,116 @@ void XMLMap::end_element(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void XMLMap::write(const std::map<uint, int>& map, std::ostream& outfile, uint indentation_level)
 {
-  outfile << std::setw(indentation_level) << "" << "<map key_type=\"uint\" value_type=\"int\">" << std::endl;
+  XMLIndent indent(indentation_level);
+  outfile << indent() << "<map key_type=\"uint\" value_type=\"int\">" << std::endl;
 
+  ++indent;
   std::map<uint, int>::const_iterator pos;
   for (pos = map.begin(); pos != map.end(); ++pos)
   {
-    outfile << std::setw(indentation_level+2) << "";
-    outfile << "<map_entry key=\"" << (*pos).first << "\">" << std::endl;
-    outfile << std::setw(indentation_level+4) << "";
-    outfile << "<int value=\"" << (*pos).second << "\"/>" << std::endl;
-    outfile << std::setw(indentation_level+2) << "";
-    outfile << "</map_entry>" << std::endl;
+    outfile << indent() << "<map_entry key=\"" << (*pos).first << "\">" << std::endl;
+    ++indent;
+    outfile << indent() << "<int value=\"" << (*pos).second << "\"/>" << std::endl;
+    --indent;
+    outfile << indent() << "</map_entry>" << std::endl;
   }
-  outfile << std::setw(indentation_level) << "" << "</map>" << std::endl;
+  --indent;
+  outfile << indent() << "</map>" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLMap::write(const std::map<uint, uint>& map, std::ostream& outfile, uint indentation_level)
 {
-  outfile << std::setw(indentation_level) << "" << "<map key_type=\"uint\" value_type=\"uint\">" << std::endl;
+  XMLIndent indent(indentation_level);
+  outfile << indent() << "<map key_type=\"uint\" value_type=\"uint\">" << std::endl;
 
+  ++indent;
   std::map<uint, uint>::const_iterator pos;
   for (pos = map.begin(); pos != map.end(); ++pos)
   {
-    outfile << std::setw(indentation_level+2) << "";
-    outfile << "<map_entry key=\"" << (*pos).first << "\">" << std::endl;
-    outfile << std::setw(indentation_level+4) << "";
-    outfile << "<uint value=\"" << (*pos).second << "\"/>" << std::endl;
-    outfile << std::setw(indentation_level+2) << "";
-    outfile << "</map_entry>" << std::endl;
+    outfile << indent() << "<map_entry key=\"" << (*pos).first << "\">" << std::endl;
+    ++indent;
+    outfile << indent() << "<uint value=\"" << (*pos).second << "\"/>" << std::endl;
+    --indent;
+    outfile << indent() << "</map_entry>" << std::endl;
   }
-  outfile << std::setw(indentation_level) << "" << "</map>" << std::endl;
+  --indent;
+  outfile << indent() << "</map>" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLMap::write(const std::map<uint, double>& map, std::ostream& outfile, uint indentation_level)
 {
-  outfile << std::setw(indentation_level) << "" << "<map key_type=\"uint\" value_type=\"double\">" << std::endl;
+  XMLIndent indent(indentation_level);
+  outfile << indent() << "<map key_type=\"uint\" value_type=\"double\">" << std::endl;
 
+  ++indent;
   std::map<uint, double>::const_iterator pos;
   for (pos = map.begin(); pos != map.end(); ++pos)
   {
-    outfile << std::setw(indentation_level+2) << "";
-    outfile << "<map_entry key=\"" << (*pos).first << "\">" << std::endl;
-    outfile << std::setw(indentation_level+4) << "";
-    outfile << "<double value=\"" << std::setprecision(16) << (*pos).second << "\"/>" << std::endl;
-    outfile << std::setw(indentation_level+2) << "";
-    outfile << "</map_entry>" << std::endl;
+    outfile << indent() << "<map_entry key=\"" << (*pos).first << "\">" << std::endl;
+    ++indent;
+    outfile << indent() << "<double value=\"" << std::setprecision(16) << (*pos).second << "\"/>" << std::endl;
+    --indent;
+    outfile << indent() << "</map_entry>" << std::endl;
   }
-  outfile << std::setw(indentation_level) << "" << "</map>" << std::endl;
+  --indent;
+  outfile << indent() << "</map>" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLMap::write(const std::map<uint, std::vector<int> >& map, std::ostream& outfile, uint indentation_level)
 {
-  outfile << std::setw(indentation_level) << "" << "<map key_type=\"uint\" value_type=\"array\">" << std::endl;
+  XMLIndent indent(indentation_level);
+  outfile << indent() << "<map key_type=\"uint\" value_type=\"array\">" << std::endl;
 
+  ++indent;
   std::map<uint, std::vector<int> >::const_iterator pos;
   for (pos = map.begin(); pos != map.end(); ++pos)
   {
-    outfile << std::setw(indentation_level+2) << "";
-    outfile << "<map_entry key=\"" << (*pos).first << "\">" << std::endl;
-    XMLArray::write((*pos).second, outfile, indentation_level+4);
-    outfile << std::setw(indentation_level+2) << "";
-    outfile << "</map_entry>" << std::endl;
+    outfile << indent() << "<map_entry key=\"" << (*pos).first << "\">" << std::endl;
+    ++indent;
+    XMLArray::write((*pos).second, outfile, indent.level());
+    --indent;
+    outfile << indent() << "</map_entry>" << std::endl;
   }
-  outfile << std::setw(indentation_level) << "" << "</map>" << std::endl;
+  --indent;
+  outfile << indent() << "</map>" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLMap::write(const std::map<uint, std::vector<uint> >& map, std::ostream& outfile, uint indentation_level)
 {
-  outfile << std::setw(indentation_level) << "" << "<map key_type=\"uint\" value_type=\"array\">" << std::endl;
+  XMLIndent indent(indentation_level);
+  outfile << indent() << "<map key_type=\"uint\" value_type=\"array\">" << std::endl;
 
+  ++indent;
   std::map<uint, std::vector<uint> >::const_iterator pos;
   for (pos = map.begin(); pos != map.end(); ++pos)
   {
-    outfile << std::setw(indentation_level+2) << "";
-    outfile << "<map_entry key=\"" << (*pos).first << "\">" << std::endl;
-    XMLArray::write((*pos).second, outfile, indentation_level+4);
-    outfile << std::setw(indentation_level+2) << "";
-    outfile << "</map_entry>" << std::endl;
+    outfile << indent() << "<map_entry key=\"" << (*pos).first << "\">" << std::endl;
+    ++indent;
+    XMLArray::write((*pos).second, outfile, indent.level());
+    --indent;
+    outfile << indent() << "</map_entry>" << std::endl;
   }
-  outfile << std::setw(indentation_level) << "" << "</map>" << std::endl;
+  --indent;
+  outfile << indent() << "</map>" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLMap::write(const std::map<uint, std::vector<double> >& map, std::ostream& outfile, uint indentation_level)
 {
-  outfile << std::setw(indentation_level) << "" << "<map key_type=\"uint\" value_type=\"array\">" << std::endl;
+  XMLIndent indent(indentation_level);
+  outfile << indent() << "<map key_type=\"uint\" value_type=\"array\">" << std::endl;
 
+  ++indent;
   std::map<uint, std::vector<double> >::const_iterator pos;
   for (pos = map.begin(); pos != map.end(); ++pos)
   {
-    outfile << std::setw(indentation_level+2) << "";
-    outfile << "<map_entry key=\"" << (*pos).first << "\">" << std::endl;
-    XMLArray::write((*pos).second, outfile, indentation_level+4);
-    outfile << std::setw(indentation_level+2) << "";
-    outfile << "</map_entry>" << std::endl;
+    outfile << indent() << "<map_entry key=\"" << (*pos).first << "\">" << std::endl;
+    ++indent;
+    XMLArray::write((*pos).second, outfile, indent.level());
+    --indent;
+    outfile << indent() << "</map_entry>" << std::endl;
   }
-  outfile << std::setw(indentation_level) << "" << "</map>" << std::endl;
+  --indent;
+  outfile << indent() << "</map>" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLMap::finalize_map_entry()

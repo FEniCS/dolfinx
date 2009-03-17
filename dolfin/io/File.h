@@ -7,7 +7,7 @@
 // Modified by Ola Skavhaug 2009
 //
 // First added:  2002-11-12
-// Last changed: 2009-03-04
+// Last changed: 2009-03-17
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -57,6 +57,9 @@ namespace dolfin
 
     /// Destructor
     ~File();
+
+    /// Set new style for xml parsing system
+    void set_new_xml_style();
 
     //--- Input ---
     
@@ -175,6 +178,9 @@ namespace dolfin
 
     // Pointer to implementation (envelop-letter design)
     GenericFile* file;
+
+    // Store the filename (hack related to having both NewXML* and XML*
+    std::string filename;
     
   };
   

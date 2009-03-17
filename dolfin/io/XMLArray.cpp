@@ -2,10 +2,11 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-02
-// Last changed: 2009-03-11
+// Last changed: 2009-03-17
 
 #include <dolfin/log/dolfin_log.h>
 #include "NewXMLFile.h"
+#include "XMLIndent.h"
 #include "XMLArray.h"
 
 using namespace dolfin;
@@ -101,26 +102,35 @@ void XMLArray::end_element(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void XMLArray::write(const std::vector<int>& x, std::ostream& outfile, uint indentation_level)
 {
-  outfile << std::setw(indentation_level) << "" << "<array type=\"int\" size=\"" << x.size() << "\">" << std::endl;
+  XMLIndent indent(indentation_level);
+  outfile << indent() << "<array type=\"int\" size=\"" << x.size() << "\">" << std::endl;
+  ++indent;
   for (uint i = 0; i < x.size(); ++i)
-    outfile << std::setw(indentation_level) << "" << "  <element index=\"" << i << "\" value=\"" << x[i] << "\"/>" << std::endl;
-  outfile << std::setw(indentation_level) << "" << "</array>" << std::endl;
+    outfile << indent() << "<element index=\"" << i << "\" value=\"" << x[i] << "\"/>" << std::endl;
+  --indent;
+  outfile << indent() << "</array>" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLArray::write(const std::vector<uint>& x, std::ostream& outfile, uint indentation_level)
 {
-  outfile << std::setw(indentation_level) << "" << "<array type=\"uint\" size=\"" << x.size() << "\">" << std::endl;
+  XMLIndent indent(indentation_level);
+  outfile << indent() << "<array type=\"uint\" size=\"" << x.size() << "\">" << std::endl;
+  ++indent;
   for (uint i = 0; i < x.size(); ++i)
-    outfile << std::setw(indentation_level) << "" << "  <element index=\"" << i << "\" value=\"" << x[i] << "\"/>" << std::endl;
-  outfile << std::setw(indentation_level) << "" << "</array>" << std::endl;
+    outfile << indent() << "<element index=\"" << i << "\" value=\"" << x[i] << "\"/>" << std::endl;
+  --indent;
+  outfile << indent() << "</array>" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLArray::write(const std::vector<double>& x, std::ostream& outfile, uint indentation_level)
 {
-  outfile << std::setw(indentation_level) << "" << "<array type=\"double\" size=\"" << x.size() << "\">" << std::endl;
+  XMLIndent indent(indentation_level);
+  outfile << indent() << "<array type=\"double\" size=\"" << x.size() << "\">" << std::endl;
+  ++indent;
   for (uint i = 0; i < x.size(); ++i)
-    outfile << std::setw(indentation_level) << "" << "  <element index=\"" << i << "\" value=\"" << std::setprecision(16) << x[i] << "\"/>" << std::endl;
-  outfile << std::setw(indentation_level) << "" << "</array>" << std::endl;
+    outfile << indent() << "<element index=\"" << i << "\" value=\"" << std::setprecision(16) << x[i] << "\"/>" << std::endl;
+  --indent;
+  outfile << indent() << "</array>" << std::endl;
 }
 
 //-----------------------------------------------------------------------------

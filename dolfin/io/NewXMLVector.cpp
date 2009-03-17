@@ -2,11 +2,12 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-06
-// Last changed: 2009-03-16
+// Last changed: 2009-03-17
 
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/Vector.h>
+#include "XMLIndent.h"
 #include "NewXMLVector.h"
 
 using namespace dolfin;
@@ -27,8 +28,7 @@ void NewXMLVector::start_element(const xmlChar *name, const xmlChar **attrs)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
-      start_vector(name, attrs);
-      state = INSIDE_VECTOR;
+      read_vector_tag(name, attrs);
     }
     
     break;
@@ -60,10 +60,10 @@ void NewXMLVector::end_element(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void NewXMLVector::write(const GenericVector& vector, std::ostream& outfile, uint indentation_level)
 {
+  XMLIndent indent(indentation_level);
+
   // Write vector header
-  uint curr_indent = indentation_level;
-  outfile << std::setw(curr_indent) << "";
-  outfile << "<vector>" << std::endl;
+  outfile << indent() << "<vector>" << std::endl;
 
   uint size = vector.size();
   double vector_values[size];
@@ -74,18 +74,19 @@ void NewXMLVector::write(const GenericVector& vector, std::ostream& outfile, uin
   arr.resize(size);
   for (uint i = 0; i < size; ++i)
     arr[i] = vector_values[i];
+
   // Write array
-  XMLArray::write(arr, outfile, indentation_level + 2);
+  ++indent;
+  XMLArray::write(arr, outfile, indent.level());
+  --indent;
 
   // Write vector footer
-  curr_indent = indentation_level;
-  outfile << std::setw(curr_indent) << "";
-  outfile << "</vector>" << std::endl;
-
+  outfile << indent() << "</vector>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void NewXMLVector::start_vector(const xmlChar *name, const xmlChar **attrs)
+void NewXMLVector::read_vector_tag(const xmlChar *name, const xmlChar **attrs)
 {
+  state = INSIDE_VECTOR;
   dolfin_assert(values == 0);
   values = new std::vector<double>();
   xml_array = new XMLArray(*values, parser);
