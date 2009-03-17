@@ -1,8 +1,11 @@
-// Instantiate uBLAS matrix types
+// Instantiate uBLAS matrix and Factory types
 %template(uBLASSparseMatrix) dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>;
 %template(uBLASDenseMatrix) dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>;
+%template(uBLASSparseFactory) dolfin::uBLASFactory<dolfin::ublas_sparse_matrix>;
+%template(uBLASDenseFactory) dolfin::uBLASFactory<dolfin::ublas_dense_matrix>;
 
-// Define names for uBLAS matrix types FIXME: Do we need these?
+// Define names for uBLAS matrix types
+// These are needed so returned type from down_cast get correctly wrapped
 %typedef dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix> uBLASSparseMatrix;
 %typedef dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>  uBLASDenseMatrix;
 
@@ -391,7 +394,6 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 }
 %enddef
 
-
 // Down cast macro
 %define DOWN_CAST_MACRO(TENSOR_TYPE)
 %inline %{
@@ -520,10 +522,53 @@ def down_cast(tensor, subclass=None):
         subclass = get_tensor_type(tensor)
     assert subclass in _down_cast_map
     ret = _down_cast_map[subclass](tensor)
-    ret.this.acquire()
-    tensor.this.disown()
+
+    # Store the tensor to avoid garbage collection
+    ret._org_upcasted_tensor = tensor
     return ret
 
 %}
 
+%feature("docstring") has_linear_algebra_backend "
+Returns True if a linear algebra backend is available.
+";
+
+%inline %{
+bool has_linear_algebra_backend(std::string backend)
+{
+  if (backend == "uBLAS")
+  {
+    return true;
+  }
+  else if (backend == "PETSc")
+  {
+#ifdef HAS_PETSC
+    return true;
+#else 
+    return false;
+#endif
+  }
+  else if (backend == "Epetra")
+  {
+#ifdef HAS_TRILINOS
+    return true;
+#else 
+    return false;
+#endif
+  }
+  else if (backend == "MTL4")
+  {
+#ifdef HAS_MTL4
+    return true;
+#else 
+    return false;
+#endif
+  }
+  else if (backend == "STL")
+  {
+    return true;
+  }
+  return false;
+}
+%}
 

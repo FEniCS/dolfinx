@@ -31,6 +31,9 @@ namespace dolfin
     /// Create plot data for given function
     FunctionPlotData(const Function& v);
 
+    /// Create empty data to be read from file
+    FunctionPlotData();
+
     /// Destructor
     ~FunctionPlotData();
 

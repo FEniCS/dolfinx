@@ -2,10 +2,11 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added: 2009-03-09
-// Last changed: 2009-03-11
+// Last changed: 2009-03-17
 
 
 #include "NewXMLMeshFunction.h"
+#include "XMLIndent.h"
 #include "XMLArray.h"
 #include "XMLMap.h"
 #include "XMLMeshData.h"
@@ -96,28 +97,30 @@ void XMLMeshData::write(const MeshData& data, std::ostream& outfile, uint indent
 {
   if ( data.mesh_functions.size() > 0 || data.arrays.size() > 0)
   {
-    uint curr_indent = indentation_level;
+    XMLIndent indent(indentation_level);
 
     // Write mesh data header
-    outfile << std::setw(curr_indent) << "";
+    outfile << indent();
     outfile << "<data>" << std::endl;
 
+    // Increment level for data_entries
+    ++indent;
 
     // Write mesh functions
     typedef std::map<std::string, MeshFunction<uint>*>::const_iterator mf_iter;
     for (mf_iter it = data.mesh_functions.begin(); it != data.mesh_functions.end(); ++it)
     {
       // Write data entry header
-      curr_indent = indentation_level + 2;
-      outfile << std::setw(curr_indent) << "";
+      outfile << indent();
       outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
 
       // Write array
-      NewXMLMeshFunction::write(*(it->second), outfile, indentation_level + 4);
+      ++indent;
+      NewXMLMeshFunction::write(*(it->second), outfile, indent.level());
+      --indent;
 
       // Write data entry footer 
-      curr_indent = indentation_level + 2;
-      outfile << std::setw(curr_indent) << "";
+      outfile << indent();
       outfile << "</data_entry>" << std::endl;
     }
 
@@ -125,16 +128,16 @@ void XMLMeshData::write(const MeshData& data, std::ostream& outfile, uint indent
     for (arr_iter it = data.arrays.begin(); it != data.arrays.end(); ++it)
     {
       // Write data entry header
-      curr_indent = indentation_level + 2;
-      outfile << std::setw(curr_indent) << "";
+      outfile << indent();
       outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
 
       // Write array
-      XMLArray::write(*(it->second), outfile, indentation_level + 4);
+      ++indent;
+      XMLArray::write(*(it->second), outfile, indent.level());
+      --indent;
 
       // Write data entry footer 
-      curr_indent = indentation_level + 2;
-      outfile << std::setw(curr_indent) << "";
+      outfile << indent();
       outfile << "</data_entry>" << std::endl;
     }
 
@@ -142,16 +145,16 @@ void XMLMeshData::write(const MeshData& data, std::ostream& outfile, uint indent
     for (map_iter it = data.mappings.begin(); it != data.mappings.end(); ++it)
     {
       // Write data entry header
-      curr_indent = indentation_level + 2;
-      outfile << std::setw(curr_indent) << "";
+      outfile << indent();
       outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
 
       // Write array
-      XMLMap::write(*(it->second), outfile, indentation_level + 4);
+      ++indent;
+      XMLMap::write(*(it->second), outfile, indent.level());
+      --indent;
 
       // Write data entry footer 
-      curr_indent = indentation_level + 2;
-      outfile << std::setw(curr_indent) << "";
+      outfile << indent();
       outfile << "</data_entry>" << std::endl;
     }
 
@@ -159,28 +162,26 @@ void XMLMeshData::write(const MeshData& data, std::ostream& outfile, uint indent
     for (vec_map_iter it = data.vector_mappings.begin(); it != data.vector_mappings.end(); ++it)
     {
       // Write data entry header
-      curr_indent = indentation_level + 2;
-      outfile << std::setw(curr_indent) << "";
+      outfile << indent();
       outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
 
       // Write array
-      XMLMap::write(*(it->second), outfile, indentation_level + 4);
+      ++indent;
+      XMLMap::write(*(it->second), outfile, indent.level());
+      --indent;
 
       // Write data entry footer 
-      curr_indent = indentation_level + 2;
-      outfile << std::setw(curr_indent) << "";
+      outfile << indent();
       outfile << "</data_entry>" << std::endl;
     }
 
-
+    // Done with entries, decrement level
+    --indent;
 
     // Write mesh data footer
-    curr_indent = indentation_level;
-    outfile << std::setw(curr_indent) << "";
+    outfile << indent();
     outfile << "</data>" << std::endl;
-
   }
-
 }
 //-----------------------------------------------------------------------------
 void XMLMeshData::read_data_entry(const xmlChar* name, const xmlChar** attrs)

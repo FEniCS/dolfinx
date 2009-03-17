@@ -4,10 +4,11 @@
 // This file is a port of Magnus Vikstrom's previous implementation
 //
 // First added:  2009-03-11
-// Last changed: 2000-03-11
+// Last changed: 2000-03-17
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/graph/Graph.h>
+#include "XMLIndent.h"
 #include "NewXMLFile.h"
 #include "NewXMLGraph.h"
 
@@ -112,7 +113,7 @@ void NewXMLGraph::end_element(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void NewXMLGraph::write(const Graph& graph, std::ostream& outfile, uint indentation_level)
 {
-  uint curr_indent = indentation_level;
+  XMLIndent indent(indentation_level);
 
   // Get connections (outgoing edges), offsets and weigts
   const uint* connections = graph.connectivity();
@@ -130,51 +131,47 @@ void NewXMLGraph::write(const Graph& graph, std::ostream& outfile, uint indentat
   const uint num_vertices = graph.numVertices();
 
   // Write graph header
-  outfile << std::setw(curr_indent) << "";
-  outfile << "<graph type=\"" << graph.typestr() << "\">" << std::endl;
+  outfile << indent() << "<graph type=\"" << graph.typestr() << "\">" << std::endl;
 
   // Write vertices header
-  curr_indent = indentation_level + 2;
-  outfile << std::setw(curr_indent) << "";
+  ++indent;
+  outfile << indent();
   outfile << "<vertices size=\"" << graph.numVertices() << "\">" << std::endl;
 
   // Write each vertex
-  curr_indent = indentation_level + 4;
+  ++indent;
   for(uint i = 0; i < num_vertices; ++i)
   {
-    outfile << std::setw(curr_indent) << "";
+    outfile << indent();
     outfile << "<vertex index=\"" << i << "\" num_edges=\"" << graph.numEdges(i) << "\" weight=\"" << vertex_weights[i] << "\"/>" << std::endl;
   }	  
+  --indent;
 
   // Write vertices footer
-  curr_indent = indentation_level + 2;
-  outfile << std::setw(curr_indent) << "";
-  outfile << "</vertices>" << std::endl;
+  outfile << indent() << "</vertices>" << std::endl;
 
   // Write edges header
-  outfile << std::setw(curr_indent) << "";
+  outfile << indent();
   outfile << "<edges size=\">" << graph.numEdges() << "\">" << std::endl;
 
   // Write each edge
-  curr_indent = indentation_level + 4;
+  ++indent;
   for(uint i = 0; i < num_vertices; ++i)
   {
     for(uint j=offsets[i]; j<offsets[i] + graph.numEdges(i); ++j)
     {
-      outfile << std::setw(curr_indent) << "";
+      outfile << indent();
       outfile << "<edge v1=\"" << i << "\" v2=\"" << connections[j] << "\" weight=\"" << vertex_weights[j] << "\"/>" << std::endl;
     }
-  }	  
+  }
+  --indent;
 
   // Write edges footer
-  curr_indent = indentation_level + 2;
-  outfile << std::setw(curr_indent) << "";
-  outfile << "</edges>" << std::endl;
+  outfile << indent() << "</edges>" << std::endl;
 
   // Write graph footer 
-  curr_indent = indentation_level;
-  outfile << std::setw(curr_indent) << "";
-  outfile << "</graph>" << std::endl;
+  --indent;
+  outfile << indent() << "</graph>" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void NewXMLGraph::read_graph(const xmlChar *name, const xmlChar **attrs)

@@ -34,6 +34,11 @@ FunctionPlotData::FunctionPlotData(const Function& v)
     error("Plotting of rank %d functions not supported.", rank);
 }
 //-----------------------------------------------------------------------------
+FunctionPlotData::FunctionPlotData()
+  : rank(0)
+{
+}
+//-----------------------------------------------------------------------------
 FunctionPlotData::~FunctionPlotData()
 {
   // Do nothing

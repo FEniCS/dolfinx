@@ -1,3 +1,4 @@
+/* -*- C -*-  (not really, but good for syntax highlighting) */
 // Type maps for PyDOLFIN
 
 // Basic typemaps

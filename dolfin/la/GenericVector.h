@@ -20,6 +20,7 @@ namespace dolfin
 {
 
   /// This class defines a common interface for vectors.
+  class NewXMLVector;
 
   class GenericVector : public GenericTensor
   {
@@ -157,6 +158,8 @@ namespace dolfin
     virtual void setitem(uint i, double value)
     { set(&value, 1, &i); }
 
+
+    typedef NewXMLVector XMLHandler;
   };
 
 }

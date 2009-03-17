@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-02
-// Last changed: 2009-03-11
+// Last changed: 2009-03-17
 
 #include <dolfin/log/dolfin_log.h>
+#include "XMLIndent.h"
 #include "NewXMLFile.h"
 #include "NewXMLMeshFunction.h"
 
@@ -107,54 +108,51 @@ void NewXMLMeshFunction::end_element(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void NewXMLMeshFunction::write(const MeshFunction<int>& mf, std::ostream& outfile, uint indentation_level)
 {
-  uint curr_indent = indentation_level;
-  outfile << std::setw(indentation_level) << "" ;
+  XMLIndent indent(indentation_level);
+  outfile << indent();
   outfile << "<meshfunction type=\"int\" dim=\"" << mf.dim() << "\" size=\"" << mf.size() << "\">" << std::endl;
 
-  curr_indent = indentation_level + 2;
+  ++indent;
   for (uint i = 0; i < mf.size(); ++i)
   {
-    outfile << std::setw(curr_indent) << "";
+    outfile << indent();
     outfile << "<entity index=\"" << i << "\" value=\"" << mf.get(i) << "\"/>" << std::endl;
   }
-  curr_indent = indentation_level;
-  outfile << std::setw(curr_indent) << "";
-  outfile << "</meshfunction>" << std::endl;
+  --indent;
+  outfile << indent() << "</meshfunction>" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void NewXMLMeshFunction::write(const MeshFunction<uint>& mf, std::ostream& outfile, uint indentation_level)
 {  
-  uint curr_indent = indentation_level;
-  outfile << std::setw(indentation_level) << "" ;
+  XMLIndent indent(indentation_level);
+  outfile << indent();
   outfile << "<meshfunction type=\"uint\" dim=\"" << mf.dim() << "\" size=\"" << mf.size() << "\">" << std::endl;
 
-  curr_indent = indentation_level + 2;
+  ++indent;
   for (uint i = 0; i < mf.size(); ++i)
   {
-    outfile << std::setw(curr_indent) << "";
+    outfile << indent();
     outfile << "<entity index=\"" << i << "\" value=\"" << mf.get(i) << "\"/>" << std::endl;
   }
-  curr_indent = indentation_level;
-  outfile << std::setw(curr_indent) << "";
-  outfile << "</meshfunction>" << std::endl;
+  --indent;
+  outfile << indent() << "</meshfunction>" << std::endl;
 }
 
 //-----------------------------------------------------------------------------
 void NewXMLMeshFunction::write(const MeshFunction<double>& mf, std::ostream& outfile, uint indentation_level)
 {
-  uint curr_indent = indentation_level;
-  outfile << std::setw(indentation_level) << "" ;
+  XMLIndent indent(indentation_level);
+  outfile << indent();
   outfile << "<meshfunction type=\"double\" dim=\"" << mf.dim() << "\" size=\"" << mf.size() << "\">" << std::endl;
 
-  curr_indent = indentation_level + 2;
+  ++indent;
   for (uint i = 0; i < mf.size(); ++i)
   {
-    outfile << std::setw(curr_indent) << "";
+    outfile << indent();
     outfile << "<entity index=\"" << i << "\" value=\"" << mf.get(i) << "\"/>" << std::endl;
   }
-  curr_indent = indentation_level;
-  outfile << std::setw(curr_indent) << "";
-  outfile << "</meshfunction>" << std::endl;
+  --indent;
+  outfile << indent() << "</meshfunction>" << std::endl;
 }
 
 //-----------------------------------------------------------------------------

@@ -9,8 +9,12 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-dolfin_set("linear algebra backend","Epetra")
+if not has_linear_algebra_backend("Epetra"):
+    print "*** Warning: Dolfin is not compiled with Trilinos linear algebra backend"
+    print "Exiting."
+    exit()
 
+dolfin_set("linear algebra backend","Epetra")
 
 class LeftSide(SubDomain):
     def inside(self, x, on_boundary):

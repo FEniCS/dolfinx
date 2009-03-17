@@ -1,3 +1,4 @@
+/* -*- C -*-  (not really, but good for syntax highlighting) */
 
 //--------------------------------------------------------------------------
 // Input typemaps (from Python to C++)

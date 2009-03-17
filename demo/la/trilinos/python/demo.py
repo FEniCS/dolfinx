@@ -18,12 +18,12 @@ except:
 
 from dolfin import *
 
-dolfin_set("linear algebra backend", "Epetra")
-try:
-    EpetraMatrix
-except:
-    print "PyDOLFIN has not been configured with Trilinos. Exiting."
+if not has_linear_algebra_backend("Epetra"):
+    print "*** Warning: Dolfin is not compiled with Trilinos linear algebra backend"
+    print "Exiting."
     exit()
+
+dolfin_set("linear algebra backend", "Epetra")
 
 # Create mesh and finite element
 mesh = UnitSquare(20,20)
@@ -55,10 +55,9 @@ A, b = assemble_system(a, L, bc)
 U = Function(V)
 
 # Fetch underlying epetra objects 
-
-A_epetra = cpp.down_cast_EpetraMatrix(A).mat() 
-b_epetra = cpp.down_cast_EpetraVector(b).vec() 
-x_epetra = cpp.down_cast_EpetraVector(U.vector()).vec() 
+A_epetra = down_cast(A).mat() 
+b_epetra = down_cast(b).vec() 
+x_epetra = down_cast(U.vector()).vec() 
 
 # Sets up the parameters for ML using a python dictionary
 MLList = {"max levels"        : 3, 

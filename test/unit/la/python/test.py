@@ -19,7 +19,7 @@ class AbstractBaseTest(object):
             print "\nRunning:",type(self).__name__
         
 
-    def assemble_matrix(self):
+    def assemble_matrix(self, use_backend=False):
         " Assemble a simple matrix"
         mesh = UnitSquare(3,3)
 
@@ -27,8 +27,15 @@ class AbstractBaseTest(object):
         
         u = TrialFunction(V)
         v = TestFunction(V)
-        
-        return assemble(dot(grad(u),grad(v))*dx)
+
+        if use_backend:
+            if self.backend == "uBLAS":
+                backend = globals()[self.backend+self.sub_backend+'Factory_instance']()
+            else:
+                backend = globals()[self.backend+'Factory_instance']()
+            return assemble(dot(grad(u),grad(v))*dx, backend=backend)
+        else:
+            return assemble(dot(grad(u),grad(v))*dx)
     
     def get_Vector(self):
         from numpy import random, linspace
@@ -36,11 +43,34 @@ class AbstractBaseTest(object):
         vec.set(random.rand(vec.size()))
         return vec
 
-    def test_matrix(self):
+    def run_matrix_test(self,use_backend):
         from numpy import ndarray
-        org = self.assemble_matrix()
+        org = self.assemble_matrix(use_backend)
         A = org.copy()
         B = org.copy()
+
+        def wrong_getitem(type):
+            if type == 0:
+                A["0,1"]
+            elif type == 1:
+                A[0]
+            elif type == 2:
+                A[0,0,0]
+            elif type == 3:
+                A("0,1")
+            elif type == 4:
+                A(0)
+            else:
+                A(0,0,0)
+        
+        self.assertRaises(TypeError,wrong_getitem,0)
+        self.assertRaises(TypeError,wrong_getitem,1)
+        self.assertRaises(TypeError,wrong_getitem,2)
+        self.assertRaises(TypeError,wrong_getitem,3)
+        self.assertRaises(TypeError,wrong_getitem,4)
+        self.assertRaises(TypeError,wrong_getitem,5)
+        
+        self.assertAlmostEqual(A[5,5],A(5,5))
         self.assertAlmostEqual(A(5,5),B(5,5))
         
         B *= 0.5
@@ -73,16 +103,19 @@ class AbstractBaseTest(object):
         self.assertTrue(isinstance(A2,ndarray))
         self.assertEqual(A2.shape,(16,16))
         self.assertAlmostEqual(A2[5,5],A(5,5))
+        
+    def test_matrix_with_backend(self):
+        self.run_matrix_test(True)
+
+    def test_matrix_without_backend(self):
+        self.run_matrix_test(False)
 
     def test_vector(self):
         from numpy import ndarray, linspace
         org = self.get_Vector()
 
         A = org.copy()
-        
-        # Avoiding garbage collection
-        B0 = org.copy() 
-        B = down_cast(B0)
+        B = down_cast(org.copy())
         self.assertAlmostEqual(A[5],B[5])
         
         B *= 0.5
@@ -192,22 +225,24 @@ class DataNotWorkingTester(object):
             v.data()
         self.assertRaises(AttributeError,no_attribute)
         
-        
+
 class uBLASSparseTester(AbstractBaseTest,DataTester,unittest.TestCase):
-    backend    = "uBLAS"
+    backend     = "uBLAS"
+    sub_backend = "Sparse"
 
 class uBLASDenseTester(AbstractBaseTest,DataTester,unittest.TestCase):
-    backend    = "uBLAS"
+    backend     = "uBLAS"
+    sub_backend = "Dense"
 
-if hasattr(cpp,"PETScMatrix"):
+if has_linear_algebra_backend("PETSc"):
     class PETScTester(AbstractBaseTest,DataNotWorkingTester,unittest.TestCase):
         backend    = "PETSc"
 
-if hasattr(cpp,"EpetraMatrix"):
+if has_linear_algebra_backend("Epetra"):
     class EpetraTester(AbstractBaseTest,DataNotWorkingTester,unittest.TestCase):
         backend    = "Epetra"
 
-if hasattr(cpp,"MTL4Matrix"):
+if has_linear_algebra_backend("MTL4"):
     class MTL4Tester(AbstractBaseTest,DataTester,unittest.TestCase):
         backend    = "MTL4"
 

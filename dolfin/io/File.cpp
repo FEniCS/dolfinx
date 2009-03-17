@@ -9,7 +9,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2009-03-04
+// Last changed: 2009-03-17
 
 #include <string>
 #include <dolfin/main/MPI.h>
@@ -30,6 +30,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 File::File(const std::string& filename, bool new_style)
+  : filename(filename)
 {
   // Choose file type base on suffix.
 
@@ -69,6 +70,7 @@ File::File(const std::string& filename, bool new_style)
 }
 //-----------------------------------------------------------------------------
 File::File(const std::string& filename, Type type)
+  : filename(filename)
 {
   switch (type) {
   case xml:
@@ -93,6 +95,7 @@ File::File(const std::string& filename, Type type)
 }
 //-----------------------------------------------------------------------------
 File::File(std::ostream& outstream)
+  : filename("")
 {
   file = new NewXMLFile(outstream);
 }
@@ -101,6 +104,13 @@ File::~File()
 {
   delete file;
   file = 0;
+}
+//-----------------------------------------------------------------------------
+void File:: set_new_xml_style()
+{
+  delete file;
+  file = new NewXMLFile(filename, true);
+  std::cout << "Reading new xml style file named *" << filename << "*" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void File::operator>> (GenericVector& x)
