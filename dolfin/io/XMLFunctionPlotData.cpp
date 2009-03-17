@@ -14,7 +14,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XMLFunctionPlotData::XMLFunctionPlotData(FunctionPlotData& data, NewXMLFile& parser)
-  : XMLHandler(parser), data(data), state(OUTSIDE), xml_mesh(0)
+  : XMLHandler(parser), data(data), state(OUTSIDE), xml_mesh(0), xml_vector(0)
 {
   // Do nothing
 }
@@ -89,8 +89,8 @@ void XMLFunctionPlotData::write(const FunctionPlotData& data, std::ostream& outf
 //-----------------------------------------------------------------------------
 void XMLFunctionPlotData::read_data_tag(const xmlChar* name, const xmlChar** attrs)
 {
-  data.rank = parse_uint(name, attrs, "rank");
   state = INSIDE;
+  data.rank = parse_uint(name, attrs, "rank");
 }
 //-----------------------------------------------------------------------------
 void XMLFunctionPlotData::read_mesh(const xmlChar* name, const xmlChar** attrs)
@@ -115,5 +115,4 @@ void XMLFunctionPlotData::read_vector(const xmlChar* name, const xmlChar** attrs
 
   // Parse the rest of the vector
   xml_vector->handle();
-
 }

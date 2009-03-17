@@ -63,8 +63,7 @@ void XMLArray::start_element(const xmlChar *name, const xmlChar **attrs)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
     {
-      start_array(name, attrs);
-      state = INSIDE_ARRAY;
+      read_array_tag(name, attrs);
     }
     
     break;
@@ -134,8 +133,10 @@ void XMLArray::write(const std::vector<double>& x, std::ostream& outfile, uint i
 }
 
 //-----------------------------------------------------------------------------
-void XMLArray::start_array(const xmlChar *name, const xmlChar **attrs)
+void XMLArray::read_array_tag(const xmlChar *name, const xmlChar **attrs)
 {
+  state = INSIDE_ARRAY;
+
   // Parse size of array
   size = parse_uint(name, attrs, "size");
 

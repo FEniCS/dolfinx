@@ -18,7 +18,8 @@ namespace dolfin
   {
   public:
 
-    NewXMLVector(GenericVector& vector, NewXMLFile& parser, bool inside=false);
+    NewXMLVector(GenericVector& vector, NewXMLFile& parser);
+    ~NewXMLVector();
     
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
@@ -32,7 +33,8 @@ namespace dolfin
     
     enum parser_state { OUTSIDE, INSIDE_VECTOR, DONE };
     
-    void end_vector  ();
+    void end_vector();
+    void read_array_tag(const xmlChar *name, const xmlChar **attrs);
     
     GenericVector& x;
     parser_state state;

@@ -35,12 +35,13 @@ namespace dolfin
     static void write(const std::vector<uint>& x, std::ostream& outfile, uint indentation_level=0);
     static void write(const std::vector<double>& x, std::ostream& outfile, uint indentation_level=0);
 
+    void read_array_tag(const xmlChar *name, const xmlChar **attrs);
+
   private:
     
     enum parser_state { OUTSIDE_ARRAY, INSIDE_ARRAY, ARRAY_DONE };
     enum array_type { INT, UINT, DOUBLE, UNSET };
     
-    void start_array(const xmlChar *name, const xmlChar **attrs);
     void read_entry  (const xmlChar *name, const xmlChar **attrs);
     
     std::vector<int>*  ix;

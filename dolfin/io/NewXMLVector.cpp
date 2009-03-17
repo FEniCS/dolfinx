@@ -13,11 +13,16 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewXMLVector::NewXMLVector(GenericVector& vector, NewXMLFile& parser, bool inside)
+NewXMLVector::NewXMLVector(GenericVector& vector, NewXMLFile& parser)
   : XMLHandler(parser), x(vector), state(OUTSIDE), values(0)
 {
-  if (inside)
-    state = INSIDE_VECTOR;
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+NewXMLVector::~NewXMLVector()
+{
+  delete xml_array;
+  delete values;
 }
 //-----------------------------------------------------------------------------
 void NewXMLVector::start_element(const xmlChar *name, const xmlChar **attrs)
@@ -29,6 +34,14 @@ void NewXMLVector::start_element(const xmlChar *name, const xmlChar **attrs)
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
       read_vector_tag(name, attrs);
+    }
+    
+    break;
+
+  case INSIDE_VECTOR:
+    if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
+    {
+      read_array_tag(name, attrs);
     }
     
     break;
@@ -87,9 +100,14 @@ void NewXMLVector::write(const GenericVector& vector, std::ostream& outfile, uin
 void NewXMLVector::read_vector_tag(const xmlChar *name, const xmlChar **attrs)
 {
   state = INSIDE_VECTOR;
+}
+//-----------------------------------------------------------------------------
+void NewXMLVector::read_array_tag(const xmlChar *name, const xmlChar **attrs)
+{
   dolfin_assert(values == 0);
   values = new std::vector<double>();
   xml_array = new XMLArray(*values, parser);
+  xml_array->read_array_tag(name, attrs);
   xml_array->handle();
 }
 //-----------------------------------------------------------------------------
@@ -101,8 +119,7 @@ void NewXMLVector::end_vector()
   for (uint i = 0; i< values->size(); ++i)
     v[i] = (*values)[i];
   x.set(v);
-  delete values;
-  delete xml_array;
+  values = 0;
   xml_array = 0;
 }
 //-----------------------------------------------------------------------------

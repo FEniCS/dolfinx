@@ -64,6 +64,7 @@ namespace dolfin
     void operator>> (LocalMeshData& input) { read_xml(input); }
     void operator>> (Graph&  input)        { read_xml(input); }
     void operator>> (GenericMatrix&  input){ read_xml(input); }
+    void operator>> (GenericVector&  input){ read_xml(input); }
     void operator>> (ParameterList&  input){ read_xml(input); }
     void operator>> (FunctionPlotData&  input){ read_xml(input); }
 
@@ -82,6 +83,7 @@ namespace dolfin
     void operator<< (const Mesh& output)         { write_xml(output); }
     void operator<< (const Graph& output)         { write_xml(output); }
     void operator<< (const GenericMatrix& output) { write_xml(output); }
+    void operator<< (const GenericVector& output) { write_xml(output); }
     void operator<< (const ParameterList& output) { write_xml(output); }
     void operator<< (const FunctionPlotData& output) { write_xml(output); }
 
