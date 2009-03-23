@@ -16,8 +16,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver()
-  : ksp(0), B(0), idxm(0), idxn(0)
+PETScLUSolver::PETScLUSolver() : ksp(0), B(0), idxm(0), idxn(0)
 {
   init();
 }
@@ -28,7 +27,7 @@ PETScLUSolver::~PETScLUSolver()
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x, 
-                                       const GenericVector& b) 
+                                  const GenericVector& b) 
 {
   return solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(), 
                b.down_cast<PETScVector>());
@@ -41,24 +40,23 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   init();
 
   #if PETSC_VERSION_MAJOR > 2 
-  const MatType mat_type;
+  const MatSolverPackage solver_type;
+  PC pc;
+  KSPGetPC(ksp, &pc);
+  PCFactorGetMatSolverPackage(pc, &solver_type);  
   #else
-  MatType mat_type;
+  MatType solver_type;
+  MatGetType(*A.mat(), &solver_type);
   #endif
-  MatGetType(*A.mat(), &mat_type);
 
   // Convert to UMFPACK matrix if matrix type is MATSEQAIJ and UMFPACK is available.
-  #if PETSC_HAVE_UMFPACK
-    std::string _mat_type = mat_type;
-    if(_mat_type == MATSEQAIJ)
-    {
-      Mat Atemp = *A.mat();
-      #if PETSC_VERSION_MAJOR > 2 
-      MatConvert(*A.mat(), MAT_SOLVER_UMFPACK, MAT_REUSE_MATRIX, &Atemp);
-      #else
-      MatConvert(*A.mat(), MATUMFPACK, MAT_REUSE_MATRIX, &Atemp);
-      #endif
-    }
+  #if PETSC_HAVE_UMFPACK && PETSC_VERSION_MAJOR < 3
+  std::string _mat_type = solver_type;
+  if(_mat_type == MATSEQAIJ)
+  {
+    Mat Atemp = *A.mat();
+    MatConvert(*A.mat(), MATUMFPACK, MAT_REUSE_MATRIX, &Atemp);
+  }
   #endif
 
   // Get parameters
@@ -70,26 +68,11 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   // Write a message
   if ( report )
     message("Solving linear system of size %d x %d (PETSc LU solver, %s).",
-            A.size(0), A.size(1), mat_type);
+            A.size(0), A.size(1), solver_type);
 
   // Solve linear system
   KSPSetOperators(ksp, *A.mat(), *A.mat(), DIFFERENT_NONZERO_PATTERN);
   KSPSolve(ksp, *b.vec(), *x.vec());
-  
-  // Get name of solver and preconditioner
-  #if PETSC_VERSION_MAJOR > 2 
-  const KSPType ksp_type;
-  const PCType pc_type;
-  #else
-  KSPType ksp_type;
-  PCType pc_type;
-  #endif
-  KSPGetType(ksp, &ksp_type);
-  PC pc;
-  KSPGetPC(ksp, &pc);
-  ;
-  PCGetType(pc, &pc_type);
-  MatGetType(*A.mat(), &mat_type);
 
   // Clear data
   clear();
@@ -97,8 +80,8 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A,
-		       PETScVector& x, const PETScVector& b)
+dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A, PETScVector& x, 
+                                  const PETScVector& b)
 {
   // Initialise solver
   init();
@@ -161,6 +144,10 @@ void PETScLUSolver::init()
   KSPGetPC(ksp, &pc);
   PCSetType(pc, PCLU);
 
+  #if PETSC_HAVE_UMFPACK && PETSC_VERSION_MAJOR > 2
+  PCFactorSetMatSolverPackage(pc, MAT_SOLVER_UMFPACK);
+  #endif
+
   // Allow matrices with zero diagonals to be solved
   PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
 
@@ -171,9 +158,15 @@ void PETScLUSolver::init()
 void PETScLUSolver::clear()
 {
   if ( ksp ) 
-    KSPDestroy(ksp); ksp=0;
+  {
+    KSPDestroy(ksp); 
+    ksp=0;
+  }
   if ( B ) 
-    MatDestroy(B); ; ksp=0;
+  {
+    MatDestroy(B);
+    ksp=0;
+  }
   delete [] idxm; idxm=0;
   delete [] idxn; idxn=0;
 }

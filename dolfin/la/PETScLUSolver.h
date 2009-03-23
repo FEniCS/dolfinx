@@ -11,13 +11,11 @@
 
 #include <petscmat.h>
 #include <petscksp.h>
-
 #include "GenericLinearSolver.h"
 #include "PETScVector.h"
 
 namespace dolfin
 {
-
   /// Forward declarations
   class GenericMatrix;
   class GenericVector;
