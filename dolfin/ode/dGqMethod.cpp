@@ -170,9 +170,7 @@ void dGqMethod::computeWeights()
   }
 
   uBLASVector b(nn);
-  uBLASVector w(nn);
   ublas_vector& _b = b.vec();
-  ublas_vector& _w = w.vec();
 
   real b_real[nn];
 
@@ -189,10 +187,12 @@ void dGqMethod::computeWeights()
       _b[j] = to_double(b_real[j]);
     }
 
+#ifndef HAS_GMP
+    uBLASVector w(nn);
+    ublas_vector& _w = w.vec();
+
     // Solve for the weight functions at the nodal point
     A.solve(w, b);
-
-#ifndef HAS_GMP
 
     // Save weights including quadrature
     for (uint j = 0; j < nn; j++)
@@ -200,23 +200,13 @@ void dGqMethod::computeWeights()
 
 #else 
     
-    // Use the double precision solution as initial guess for the SOR iterator
     real w_real[nn];
     
-    for (uint j = 0; j < nn; ++j)
-      w_real[j] = _w[j];
-    
+    // Solve system using the double precision invert as preconditioner
     uBLASDenseMatrix A_inv(A);
     A_inv.invert();
     
-    // Allocate memory for the preconditioned system
-    real Ainv_A[nn*nn];
-    real Ainv_b[nn];
-    
-    SORSolver::precondition(nn, A_inv, A_real, b_real, Ainv_A, Ainv_b);
-
-    SORSolver::SOR(nn, Ainv_A, w_real, Ainv_b, real_epsilon());
-
+    SORSolver::SOR_precond(nn, A_real, w_real, b_real, A_inv, real_epsilon());
     
     for (uint j = 0; j < nn; ++j)
       nweights[j][i] = qweights[i] * w_real[j];
