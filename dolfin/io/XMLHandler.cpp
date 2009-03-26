@@ -33,6 +33,33 @@ void XMLHandler::release()
   parser.pop();
 }
 //-----------------------------------------------------------------------------
+void XMLHandler::validate(const char* filename)
+{
+  xmlTextReaderPtr reader;
+  int ret;
+  reader = xmlNewTextReaderFilename(filename);
+  std::string schema;
+  //schema = READ FROM FILE
+  if ( reader != NULL ) {
+    ret = xmlTextReaderRead(reader);
+    while ( ret == 1 ) {
+      ret = xmlTextReaderRead(reader);
+      if ( ret != 0 ) {
+        error("%s : failed to parse\n", filename);
+      }      
+    }
+  } 
+  else {
+    error("Unable to open %s\n", filename);
+  }
+  if ( xmlTextReaderIsValid(reader) == true ) {
+    error("%s validates", filename);
+  }
+  else {
+    error("%s fails to validate", filename);
+  }
+}
+//-----------------------------------------------------------------------------
 void XMLHandler::open_file(std::string filename)
 {
   // Open file

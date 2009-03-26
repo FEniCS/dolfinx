@@ -10,6 +10,8 @@
 #include <iomanip>
 #include <fstream>
 #include <libxml/parser.h>
+#include <libxml/xmlreader.h>
+#include <libxml/relaxng.h>
 
 namespace dolfin
 {
@@ -29,6 +31,8 @@ namespace dolfin
     void handle();
 
     void release();
+
+    void validate(const char* filename);
 
     /// Callback for start of XML element
     virtual void start_element(const xmlChar* name, const xmlChar** attrs) = 0;
