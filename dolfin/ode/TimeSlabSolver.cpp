@@ -126,13 +126,11 @@ void TimeSlabSolver::chooseTolerance()
   const double TOL   = ode.get("ODE tolerance");
   const double alpha = ode.get("ODE discrete tolerance factor");
 
-  double tmp = ode.get("ODE discrete tolerance");
+  tol =  ode.get("ODE discrete tolerance").get_real();
 
-  tol = tmp;
   if ( !ode.get("ODE fixed time step") )
   {
-    tmp = std::min(tmp, alpha*TOL);
-    tol = tmp;
+    tol = min(tol, alpha*TOL);
   }
   cout << "Using discrete tolerance tol = " << tol << "." << endl;
 }

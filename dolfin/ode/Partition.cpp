@@ -21,8 +21,7 @@ Partition::Partition(uint N) : indices(N)
 {
   // Get parameter for threshold
   //TODO - make the parameter handle real
-  double tmp =  dolfin_get("ODE partitioning threshold");
-  threshold = tmp;
+  threshold = dolfin_get("ODE partitioning threshold").get_real();
 
   // Reset all indices
   for (uint i = 0; i < N; i++)
