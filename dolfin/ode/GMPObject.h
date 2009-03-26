@@ -33,13 +33,15 @@ namespace dolfin
 #ifdef HAS_GMP
       // Compute the number of bits needed
       const uint decimal_prec = dolfin_get("floating-point precision");
+      // set the GMP default precision
       mpf_set_default_prec(static_cast<uint>(decimal_prec*BITS_PR_DIGIT));
 
       // Compute epsilon
       real_init();
 
-      // Set the default discrete tolerance
-      set("ODE discrete tolerance", to_double(real_sqrt(real_epsilon())));
+      // Set the default discrete tolerance unless user has explicitly set it
+      if (!dolfin_changed("ODE discrete tolerance"))
+	  set("ODE discrete tolerance", to_double(real_sqrt(real_epsilon())));
       
       // Display number of digits
       char msg[100];
