@@ -82,14 +82,31 @@ namespace dolfin
 #endif
   }
 
+  inline int isnormal(real x) {
+#ifdef HAS_GMP
+    // NOTE: Not implemented. 
+    // GMP has no notion of infinity or NaN
+    return 1;
+#else
+    return std::isnormal(to_double(x));
+#endif
+  }
+
+
   // Square root 
   real real_sqrt(real a);
 
   // Compute pi
   real real_pi();
 
+  double real_frexp(int* exp, real x);
+
   // Get computed epsilon
   inline const real real_epsilon() {return _real_epsilon;}
+
+  // Get precision in decimal digits
+  // Usefull when writing with full precision to text (ascii) files
+  int real_decimal_prec();
 
   // Set array to given array (copy values)
   inline void real_set(uint n, real* x, const real* y)

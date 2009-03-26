@@ -30,6 +30,13 @@ void dolfin::real_init() {
 #endif
 }
 //-----------------------------------------------------------------------------
+int dolfin::real_decimal_prec() {
+  int prec;
+  double dummy = real_frexp(&prec, real_epsilon());
+  dummy++; //avoid compiler warning about unused variable
+  return std::abs(static_cast<int>( prec * std::log(2)/std::log(10) ));
+}
+//-----------------------------------------------------------------------------
 real dolfin::real_sqrt(real a)
 {
   //Solving x^2 - a = 0 using newtons method
@@ -100,3 +107,14 @@ real dolfin::real_pi()
 #endif
 }
 //-----------------------------------------------------------------------------
+double dolfin::real_frexp(int* exp, real x)
+{
+#ifdef HAS_GMP
+  long tmp_long = *exp;
+  double tmp_double = mpf_get_d_2exp(&tmp_long, x.get_mpf_t());
+  *exp = static_cast<int>(tmp_long);
+  return tmp_double;
+#else
+  return frexp(x, exp);
+#endif
+}
