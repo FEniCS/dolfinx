@@ -128,7 +128,8 @@ Please install SWIG version %s or recompile UFC with present SWIG.""" % \
 
 if env["enablePython"]:
     print "Enabling compilation of Python wrappers"
-    swigFlags = "-python -c++ -shadow -I%s" % os.path.join("include","swig")
+    swigFlags = "-python -c++ -shadow -fastunpack -I%s" % \
+                os.path.join("include","swig")
     swigFlags = swigFlags.split()
 
     #if scons.checkVersion(swig_version, "1.3.28"):
