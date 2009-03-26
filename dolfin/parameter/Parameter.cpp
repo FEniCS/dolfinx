@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet
 //
 // First added:  2003-05-06
-// Last changed: 2008-11-18
+// Last changed: 2009-03-21
 
 #include <dolfin/log/dolfin_log.h>
 #include "ParameterValue.h"
@@ -27,6 +27,13 @@ Parameter::Parameter(double value) : value(0), _type(type_real), _changed(false)
 {
   this->value = new RealValue(value);
 }
+//-----------------------------------------------------------------------------
+#ifdef HAS_GMP
+Parameter::Parameter(real value) : value(0), _type(type_real), _changed(false)
+{
+  this->value = new RealValue(value);
+}
+#endif
 //-----------------------------------------------------------------------------
 Parameter::Parameter(bool value) : value(0), _type(type_bool), _changed(false)
 {
@@ -136,6 +143,11 @@ Parameter::operator bool() const
 Parameter::operator std::string() const
 {
   return *value;
+}
+//-----------------------------------------------------------------------------
+real Parameter::get_real() const
+{
+  return value->get_real();
 }
 //-----------------------------------------------------------------------------
 Parameter::Type Parameter::type() const

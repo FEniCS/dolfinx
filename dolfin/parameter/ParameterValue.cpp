@@ -1,8 +1,10 @@
 // Copyright (C) 2005-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet 2009
+//
 // First added:  2005-12-18
-// Last changed: 2008-12-30
+// Last changed: 2009-03-21
 
 #include <dolfin/log/dolfin_log.h>
 #include "ParameterValue.h"
@@ -27,9 +29,18 @@ const ParameterValue& ParameterValue::operator= (int value)
   return *this;
 }
 //-----------------------------------------------------------------------------
+#ifdef HAS_GMP
 const ParameterValue& ParameterValue::operator= (double value)
 {
   error("Cannot assign double value to parameter of type %s.",
+        type().c_str());
+  return *this;
+}
+#endif
+//-----------------------------------------------------------------------------
+const ParameterValue& ParameterValue::operator= (real value)
+{
+  error("Cannot assign real value to parameter of type %s.",
         type().c_str());
   return *this;
 }
@@ -64,7 +75,7 @@ ParameterValue::operator int() const
 //-----------------------------------------------------------------------------
 ParameterValue::operator double() const
 {
-  error("Unable to convert parameter of type %s to real.",
+  error("Unable to convert parameter of type %s to double.",
         type().c_str());
   return 0.0;
 }
@@ -90,3 +101,9 @@ ParameterValue::operator dolfin::uint() const
   return 0;
 }
 //-----------------------------------------------------------------------------
+real ParameterValue::get_real() const
+{
+  error("Unable to convert parameter of type %s to real.",
+        type().c_str());
+  return 0.0;  
+}

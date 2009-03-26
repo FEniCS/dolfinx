@@ -1,8 +1,10 @@
 // Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet 2009
+//
 // First added:  2005-12-18
-// Last changed: 2005-12-19
+// Last changed: 2009-03-21
 
 #ifndef __PARAMETER_VALUE_H
 #define __PARAMETER_VALUE_H
@@ -30,8 +32,13 @@ namespace dolfin
     /// Assignment of uint
     virtual const ParameterValue& operator= (uint value);
 
-    /// Assignment of real
+    /// Assignment of double
     virtual const ParameterValue& operator= (double value);
+
+#ifdef HAS_GMP
+    /// Assignment of real (GMP type)
+    virtual const ParameterValue& operator= (real value);
+#endif
 
     /// Assignment of bool
     virtual const ParameterValue& operator= (bool value);
@@ -54,8 +61,12 @@ namespace dolfin
     /// Cast to string
     virtual operator std::string() const;
 
+    /// Get (possibly extended precision) real value
+    virtual real get_real() const;
+
     /// Name of value type
     virtual std::string type() const = 0;
+
 
   };
 
@@ -104,21 +115,29 @@ namespace dolfin
     /// Constructor
     RealValue(double value) : ParameterValue(), value(value) {}
     
+#ifdef HAS_GMP
+    RealValue(real& value) : ParameterValue(), value(value) {}
+#endif
+
     /// Destructor
     ~RealValue() {}
 
     /// Assignment of real
     const ParameterValue& operator= (double value) { this->value = value; return *this; }
+#ifdef HAS_GMP
+    const ParameterValue& operator= (real value) { this->value = value; return *this; }
+#endif
 
     /// Cast to real
-    operator double() const { return value; }
+    operator double() const { return to_double(value); }
+    real get_real() const { return value;}
 
     /// Name of value type
     std::string type() const { return "real"; }
 
   private:
 
-    double value;
+    real value;
 
   };
 

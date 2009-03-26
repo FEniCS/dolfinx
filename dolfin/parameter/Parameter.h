@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet
 //
 // First added:  2003-05-06
-// Last changed: 2009-01-30
+// Last changed: 2009-03-21
 
 #ifndef __PARAMETER_H
 #define __PARAMETER_H
@@ -32,8 +32,13 @@ namespace dolfin
     /// Create int-valued parameter
     Parameter(uint value);
 
-    /// Create real-valued parameter
+    /// Create double-valued parameter
     Parameter(double value);
+
+#ifdef HAS_GMP
+    /// Create real-valued parameter
+    Parameter(real value);
+#endif
 
     /// Create bool-valued parameter
     Parameter(bool value);
@@ -74,7 +79,7 @@ namespace dolfin
     /// Cast parameter to uint
     operator uint() const;
 
-    /// Cast parameter to real
+    /// Cast parameter to double
     operator double() const;
     
     /// Cast parameter to bool
@@ -82,6 +87,9 @@ namespace dolfin
 
     /// Cast parameter to string
     operator std::string() const;
+
+    //get value with (possibly) extended precision
+    real get_real() const;
 
     /// Return type of parameter
     Type type() const;
