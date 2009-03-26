@@ -1,10 +1,10 @@
 // Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Benjamin Kehlet 
+// Modified by Benjamin Kehlet 2009
 //
 // First added:  2005-05-02
-// Last changed: 2008-10-12
+// Last changed: 2009-03-23
 
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
@@ -20,7 +20,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-cGqMethod::cGqMethod(unsigned int q) : Method(q, q + 1, q)
+cGqMethod::cGqMethod(uint q) : Method(q, q + 1, q)
 {
   message("Initializing continuous Galerkin method cG(%d).", q);
 
@@ -77,18 +77,18 @@ void cGqMethod::disp() const
   message(" i   points                   weights");
   message("----------------------------------------------------");
   
-  for (unsigned int i = 0; i < nq; i++)
+  for (uint i = 0; i < nq; i++)
     message("%2d   %.15e   %.15e", i, to_double(qpoints[i]), to_double(qweights[i]));
   message("");
 
-  for (unsigned int i = 0; i < nn; i++)
+  for (uint i = 0; i < nn; i++)
   {
     message("");
     message("cG(%d) weights for degree of freedom %d:", q, i);
     message("");
     message(" i   weights");
     message("---------------------------");
-    for (unsigned int j = 0; j < nq; j++)
+    for (uint j = 0; j < nq; j++)
       message("%2d   %.15e", j, to_double(nweights[i][j]));
   }
   message("");
@@ -98,9 +98,9 @@ void cGqMethod::disp() const
     message("-------------------------------");
   else
     message("--------------------------------");
-  for (unsigned int i = 0; i < nn; i++)
+  for (uint i = 0; i < nn; i++)
   {
-    for (unsigned int j = 0; j < nq; j++)
+    for (uint j = 0; j < nq; j++)
       cout << nweights[i][j] << " ";
     cout << endl;
   }
@@ -112,15 +112,15 @@ void cGqMethod::computeQuadrature()
   LobattoQuadrature quadrature(nq);
 
   // Get quadrature points and rescale from [-1,1] to [0,1]
-  for (unsigned int i = 0; i < nq; i++)
+  for (uint i = 0; i < nq; i++)
     qpoints[i] = (quadrature.point(i) + 1.0) / 2.0;
 
   // Get nodal points and rescale from [-1,1] to [0,1]
-  for (unsigned int i = 0; i < nn; i++)
+  for (uint i = 0; i < nn; i++)
     npoints[i] = (quadrature.point(i + 1) + 1.0) / 2.0;
 
   // Get quadrature weights and rescale from [-1,1] to [0,1]
-  for (unsigned int i = 0; i < nq; i++)
+  for (uint i = 0; i < nq; i++)
     qweights[i] = 0.5 * quadrature.weight(i);
 }
 //-----------------------------------------------------------------------------
@@ -131,7 +131,7 @@ void cGqMethod::computeBasis()
 
   // Compute Lagrange basis for trial space
   trial = new Lagrange(q);
-  for (unsigned int i = 0; i < nq; i++)
+  for (uint i = 0; i < nq; i++)
     trial->set(i, qpoints[i]);
 
   // Compute Lagrange basis for test space using the Lobatto points for q - 1
@@ -139,7 +139,7 @@ void cGqMethod::computeBasis()
   if ( q > 1 )
   {
     LobattoQuadrature lobatto(nq - 1);
-    for (unsigned int i = 0; i < (nq - 1); i++)
+    for (uint i = 0; i < (nq - 1); i++)
       test->set(i, (lobatto.point(i) + 1.0) / 2.0);
   }
   else
@@ -152,7 +152,17 @@ void cGqMethod::computeWeights()
   ublas_dense_matrix& _A = A.mat();
   
   real A_real[q*q];
-  real_zero(q*q, A_real);
+  //real_zero(q*q, A_real);
+
+  real trial_ddx[nn * nq];
+  real test_eval[nn * nq];
+
+  for (uint a = 0; a < nn; ++a) {
+    for (uint b = 0; b < nq; ++b) {
+      trial_ddx[a*nq + b] = trial->ddx(a+1, qpoints[b]);
+      test_eval[a*nq + b] = test->eval(a, qpoints[b]);
+    }
+  }
 
   // Compute matrix coefficients
   for (uint i = 0; i < nn; i++)
@@ -163,8 +173,9 @@ void cGqMethod::computeWeights()
       real integral = 0.0;
       for (uint k = 0; k < nq; k++)
       {
-        real x = qpoints[k];
-        integral += qweights[k] * trial->ddx(j + 1, x) * test->eval(i, x);
+        //real x = qpoints[k];
+        //integral += qweights[k] * trial->ddx(j + 1, x) * test->eval(i, x);
+	integral += qweights[k] * trial_ddx[j*nq + k] * test_eval[i*nq + k];
       }
       
       A_real[i*q+j] = integral;
@@ -181,12 +192,12 @@ void cGqMethod::computeWeights()
   for (uint i = 0; i < nq; i++)
   {
     // Get nodal point
-    real x = qpoints[i];
+    //real x = qpoints[i];
     
     // Evaluate test functions at current nodal point
     for (uint j = 0; j < nn; j++)
     {
-      b_real[j] = test->eval(j, x);
+      b_real[j] = test_eval[j*nq + i];
       _b[j] = to_double(b_real[j]);
     }
 

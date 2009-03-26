@@ -151,6 +151,23 @@ void dGqMethod::computeWeights()
   real A_real[nn*nn];
   real_zero(nn*nn, A_real);
 
+  real trial_ddx[nn * nq];
+  real test_eval[nn * nq];
+
+  real trial_eval_0[nn];
+  real test_eval_0[nn];
+
+
+  for (uint a = 0; a < nn; ++a) {
+    trial_eval_0[a] = trial->eval(a, 0.0);
+    test_eval_0[a]  = test->eval(a, 0.0);
+
+    for (uint b = 0; b < nq; ++b) {
+      trial_ddx[a*nq + b] = trial->ddx(a, qpoints[b]);
+      test_eval[a*nq + b] = test->eval(a, qpoints[b]);
+    }
+  }
+
   // Compute matrix coefficients
   for (unsigned int i = 0; i < nn; i++)
   {
@@ -160,11 +177,13 @@ void dGqMethod::computeWeights()
       real integral = 0.0;
       for (unsigned int k = 0; k < nq; k++)
       {
-        real x = qpoints[k];
-        integral += qweights[k] * trial->ddx(j, x) * test->eval(i, x);
+        //real x = qpoints[k];
+        //integral += qweights[k] * trial->ddx(j, x) * test->eval(i, x);
+        integral += qweights[k] * trial_ddx[j*nq + k] * test_eval[i*nq + k];
+
       }     
       
-      A_real[i*nn+j] = integral + trial->eval(j, 0.0) * test->eval(i, 0.0);
+      A_real[i*nn+j] = integral + trial_eval_0[j] * test_eval_0[i];
       _A(i, j) = to_double(A_real[i*nn+j]);
     }
   }
@@ -178,12 +197,12 @@ void dGqMethod::computeWeights()
   for (unsigned int i = 0; i < nq; i++)
   {
     // Get nodal point
-    real x = qpoints[i];
+    //real x = qpoints[i];
     
     // Evaluate test functions at current nodal point
     for (unsigned int j = 0; j < nn; j++)
     {
-      b_real[j] = test->eval(j, x);
+      b_real[j] = test_eval[j*nq + i];
       _b[j] = to_double(b_real[j]);
     }
 
