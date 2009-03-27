@@ -32,7 +32,7 @@ namespace dolfin
 
     void release();
 
-    void validate(const char* filename);
+    //void validate(std::string filename);
 
     /// Callback for start of XML element
     virtual void start_element(const xmlChar* name, const xmlChar** attrs) = 0;

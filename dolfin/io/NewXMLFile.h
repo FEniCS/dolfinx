@@ -60,6 +60,8 @@ namespace dolfin
       Handler::write(t, *outstream); close_file();
     }
 
+    void validate(std::string filename);
+
     void operator>> (Mesh& input)          { read_xml(input); }
     void operator>> (LocalMeshData& input) { read_xml(input); }
     void operator>> (Graph&  input)        { read_xml(input); }

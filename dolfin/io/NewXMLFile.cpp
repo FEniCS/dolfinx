@@ -71,6 +71,44 @@ NewXMLFile::~NewXMLFile()
   }
 }
 //-----------------------------------------------------------------------------
+void readerErr(void *arg, const char *msg,
+             xmlParserSeverities severity,
+             xmlTextReaderLocatorPtr locator)
+{
+    int line = xmlTextReaderLocatorLineNumber(locator);
+    message(1, "Error parsing file! %s, severity: %i, line: %i", msg, severity, line);
+}
+void NewXMLFile::validate(std::string filename)
+{
+  xmlTextReaderPtr reader;
+  xmlRelaxNGParserCtxtPtr rngp;
+  xmlRelaxNGPtr rngs;
+  int ret = 1;
+  reader = xmlNewTextReaderFilename(filename.c_str());
+  xmlTextReaderSetErrorHandler(reader, (xmlTextReaderErrorFunc)readerErr, NULL);
+  rngp = xmlRelaxNGNewParserCtxt("test.rng");
+  rngs = xmlRelaxNGParse(rngp);
+  xmlTextReaderRelaxNGSetSchema(reader, rngs);
+  if ( reader != NULL ) {
+    //ret = xmlTextReaderRead(reader);
+    while ( ret == 1 ) {
+      ret = xmlTextReaderRead(reader);
+      if ( ret == -1 ) {
+        error("%s failed to parse\n", filename.c_str());
+      }      
+    }
+  } 
+  else {
+    error("Unable to open %s\n", filename.c_str());
+  }
+  if ( xmlTextReaderIsValid(reader) == true ) {
+    message(0, "  %s validates", filename.c_str());
+  }
+  else {
+    error("%s fails to validate", filename.c_str());
+  }
+}
+//-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::vector<int>& x)
 {
   message(1, "Reading array from file %s.", filename.c_str());

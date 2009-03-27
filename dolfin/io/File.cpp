@@ -111,6 +111,8 @@ void File:: set_new_xml_style()
   delete file;
   file = new NewXMLFile(filename, true);
   std::cout << "Reading new xml style file named *" << filename << "*" << std::endl;
+  NewXMLFile* valid = new NewXMLFile(filename, true);
+  valid->validate(filename);
 }
 //-----------------------------------------------------------------------------
 void File::operator>> (GenericVector& x)

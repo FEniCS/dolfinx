@@ -6,6 +6,7 @@
 
 #include <cstring>
 #include <sstream>
+#include <fstream>
 #include <dolfin/log/log.h>
 #include "NewXMLFile.h"
 #include "XMLHandler.h"
@@ -33,32 +34,44 @@ void XMLHandler::release()
   parser.pop();
 }
 //-----------------------------------------------------------------------------
-void XMLHandler::validate(const char* filename)
+/*
+void XMLHandler::validate(std::string filename)
 {
   xmlTextReaderPtr reader;
+  xmlRelaxNGParserCtxtPtr rngp;
+  xmlRelaxNGPtr rngs;
   int ret;
-  reader = xmlNewTextReaderFilename(filename);
-  std::string schema;
-  //schema = READ FROM FILE
+  reader = xmlNewTextReaderFilename(filename.c_str());
+  rngp = xmlRelaxNGNewParserCtxt("test.rng");
+  rngs = xmlRelaxNGParse(rngp);
+  xmlTextReaderRelaxNGSetSchema(reader, rngs);
+  //char* schema;
+  //std::ifstream schemaFile;
+  //schemaFile.open("test.rng");
+  //length = schemaFile.tellg();
+  //schema = new char[length];
+  //schemaFile.read(schema, length);
+  //schemaFile.close();
   if ( reader != NULL ) {
     ret = xmlTextReaderRead(reader);
     while ( ret == 1 ) {
       ret = xmlTextReaderRead(reader);
       if ( ret != 0 ) {
-        error("%s : failed to parse\n", filename);
+        error("%s : failed to parse\n", filename.c_str());
       }      
     }
   } 
   else {
-    error("Unable to open %s\n", filename);
+    error("Unable to open %s\n", filename.c_str());
   }
   if ( xmlTextReaderIsValid(reader) == true ) {
-    error("%s validates", filename);
+    error("%s validates", filename.c_str());
   }
   else {
-    error("%s fails to validate", filename);
+    error("%s fails to validate", filename.c_str());
   }
 }
+*/
 //-----------------------------------------------------------------------------
 void XMLHandler::open_file(std::string filename)
 {
