@@ -108,6 +108,7 @@ void NewXMLMeshFunction::end_element(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void NewXMLMeshFunction::write(const MeshFunction<int>& mf, std::ostream& outfile, uint indentation_level)
 {
+  NewXMLMesh::write(mf.mesh(), outfile, indentation_level);
   XMLIndent indent(indentation_level);
   outfile << indent();
   outfile << "<meshfunction type=\"int\" dim=\"" << mf.dim() << "\" size=\"" << mf.size() << "\">" << std::endl;
@@ -124,6 +125,7 @@ void NewXMLMeshFunction::write(const MeshFunction<int>& mf, std::ostream& outfil
 //-----------------------------------------------------------------------------
 void NewXMLMeshFunction::write(const MeshFunction<uint>& mf, std::ostream& outfile, uint indentation_level)
 {  
+  NewXMLMesh::write(mf.mesh(), outfile, indentation_level);
   XMLIndent indent(indentation_level);
   outfile << indent();
   outfile << "<meshfunction type=\"uint\" dim=\"" << mf.dim() << "\" size=\"" << mf.size() << "\">" << std::endl;
@@ -141,6 +143,7 @@ void NewXMLMeshFunction::write(const MeshFunction<uint>& mf, std::ostream& outfi
 //-----------------------------------------------------------------------------
 void NewXMLMeshFunction::write(const MeshFunction<double>& mf, std::ostream& outfile, uint indentation_level)
 {
+  NewXMLMesh::write(mf.mesh(), outfile, indentation_level);
   XMLIndent indent(indentation_level);
   outfile << indent();
   outfile << "<meshfunction type=\"double\" dim=\"" << mf.dim() << "\" size=\"" << mf.size() << "\">" << std::endl;

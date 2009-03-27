@@ -45,6 +45,8 @@ NewXMLFile::NewXMLFile(const std::string filename, bool gzip)
 NewXMLFile::NewXMLFile(std::ostream& s)
   : GenericFile(""), sax(0), outstream(&s)
 {
+
+
   // Set up the sax handler. 
   sax = new xmlSAXHandler();
   
@@ -75,7 +77,8 @@ void NewXMLFile::operator>>(std::vector<int>& x)
 {
   message(1, "Reading array from file %s.", filename.c_str());
   XMLArray xml_array(x, *this);
-  xml_array.handle();
+  XMLDolfin xml_dolfin(xml_array, *this);
+  xml_dolfin.handle();
   parse();
   if ( !handlers.empty() ) 
     error("Hander stack not empty. Something is wrong!");
@@ -85,7 +88,8 @@ void NewXMLFile::operator>>(std::vector<uint>& x)
 {
   message(1, "Reading array from file %s.", filename.c_str());
   XMLArray xml_array(x, *this);
-  xml_array.handle();
+  XMLDolfin xml_dolfin(xml_array, *this);
+  xml_dolfin.handle();
   parse();
   if ( !handlers.empty() ) 
     error("Hander stack not empty. Something is wrong!");
@@ -95,7 +99,8 @@ void NewXMLFile::operator>>(std::vector<double>& x)
 {
   message(1, "Reading array from file %s.", filename.c_str());
   XMLArray xml_array(x, *this);
-  xml_array.handle();
+  XMLDolfin xml_dolfin(xml_array, *this);
+  xml_dolfin.handle();
   parse();
   if ( !handlers.empty() ) 
     error("Hander stack not empty. Something is wrong!");
@@ -105,7 +110,8 @@ void NewXMLFile::operator>>(std::map<uint, int>& map)
 {
   message(1, "Reading map from file %s.", filename.c_str());
   XMLMap xml_map(map, *this);
-  xml_map.handle();
+  XMLDolfin xml_dolfin(xml_map, *this);
+  xml_dolfin.handle();
   parse();
   if ( !handlers.empty() ) 
     error("Hander stack not empty. Something is wrong!");
@@ -115,7 +121,8 @@ void NewXMLFile::operator>>(std::map<uint, uint>& map)
 {
   message(1, "Reading map from file %s.", filename.c_str());
   XMLMap xml_map(map, *this);
-  xml_map.handle();
+  XMLDolfin xml_dolfin(xml_map, *this);
+  xml_dolfin.handle();
   parse();
   if ( !handlers.empty() ) 
     error("Hander stack not empty. Something is wrong!");
@@ -125,7 +132,8 @@ void NewXMLFile::operator>>(std::map<uint, double>& map)
 {
   message(1, "Reading map from file %s.", filename.c_str());
   XMLMap xml_map(map, *this);
-  xml_map.handle();
+  XMLDolfin xml_dolfin(xml_map, *this);
+  xml_dolfin.handle();
   parse();
   if ( !handlers.empty() ) 
     error("Hander stack not empty. Something is wrong!");
@@ -135,7 +143,8 @@ void NewXMLFile::operator>>(std::map<uint, std::vector<int> >& array_map)
 {
   message(1, "Reading array map from file %s.", filename.c_str());
   XMLMap xml_array_map(array_map, *this);
-  xml_array_map.handle();
+  XMLDolfin xml_dolfin(xml_array_map, *this);
+  xml_dolfin.handle();
   parse();
   if ( !handlers.empty() ) 
     error("Hander stack not empty. Something is wrong!");
@@ -145,7 +154,8 @@ void NewXMLFile::operator>>(std::map<uint, std::vector<uint> >& array_map)
 {
   message(1, "Reading array map from file %s.", filename.c_str());
   XMLMap xml_array_map(array_map, *this);
-  xml_array_map.handle();
+  XMLDolfin xml_dolfin(xml_array_map, *this);
+  xml_dolfin.handle();
   parse();
   if ( !handlers.empty() ) 
     error("Hander stack not empty. Something is wrong!");
@@ -155,7 +165,8 @@ void NewXMLFile::operator>>(std::map<uint, std::vector<double> >& array_map)
 {
   message(1, "Reading array map from file %s.", filename.c_str());
   XMLMap xml_array_map(array_map, *this);
-  xml_array_map.handle();
+  XMLDolfin xml_dolfin(xml_array_map, *this);
+  xml_dolfin.handle();
   parse();
   if ( !handlers.empty() ) 
     error("Hander stack not empty. Something is wrong!");
@@ -164,63 +175,63 @@ void NewXMLFile::operator>>(std::map<uint, std::vector<double> >& array_map)
 void NewXMLFile::operator<<(const std::vector<int>& x)
 {
   open_file();
-  XMLArray::write(x, *outstream);
+  XMLArray::write(x, *outstream, 1);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::vector<uint>& x)
 {
   open_file();
-  XMLArray::write(x, *outstream);
+  XMLArray::write(x, *outstream, 1);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::vector<double>& x)
 {
   open_file();
-  XMLArray::write(x, *outstream);
+  XMLArray::write(x, *outstream, 1);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, int>& map)
 {
   open_file();
-  XMLMap::write(map, *outstream);
+  XMLMap::write(map, *outstream, 1);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, uint>& map)
 {
   open_file();
-  XMLMap::write(map, *outstream);
+  XMLMap::write(map, *outstream, 1);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, double>& map)
 {
   open_file();
-  XMLMap::write(map, *outstream);
+  XMLMap::write(map, *outstream, 1);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, std::vector<int> >& array_map)
 {
   open_file();
-  XMLMap::write(array_map, *outstream);
+  XMLMap::write(array_map, *outstream, 1);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, std::vector<uint> >& array_map)
 {
   open_file();
-  XMLMap::write(array_map, *outstream);
+  XMLMap::write(array_map, *outstream, 1);
   close_file();
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator<<(const std::map<uint, std::vector<double> >& array_map)
 {
   open_file();
-  XMLMap::write(array_map, *outstream);
+  XMLMap::write(array_map, *outstream, 1);
   close_file();
 }
 //-----------------------------------------------------------------------------
@@ -270,6 +281,7 @@ void NewXMLFile::open_file()
 
     // Go to end of file
     outfile->seekp(0, std::ios::end);
+    XMLDolfin::write_start(*outfile);
   }
 }
 //-----------------------------------------------------------------------------
@@ -277,6 +289,7 @@ void NewXMLFile::close_file()
 {
   // Convert to ofstream
   std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream);
+  XMLDolfin::write_end(*outfile);
   if ( outfile != 0 )
     outfile->close();
 

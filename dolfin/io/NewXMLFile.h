@@ -13,6 +13,7 @@
 #include <map>
 #include <vector>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/graph/Graph.h>
 #include <dolfin/plot/FunctionPlotData.h>
@@ -20,11 +21,13 @@
 #include <libxml/parser.h>
 #include "GenericFile.h"
 #include "NewXMLMesh.h"
+#include "NewXMLMeshFunction.h"
 #include "NewXMLGraph.h"
 #include "NewXMLMatrix.h"
 #include "NewXMLLocalMeshData.h"
 #include "NewXMLParameterList.h"
 #include "XMLFunctionPlotData.h"
+#include "XMLDolfin.h"
 
 namespace dolfin
 {
@@ -47,7 +50,8 @@ namespace dolfin
     {
       typedef typename T::XMLHandler Handler;
       Handler xml_handler(t, *this);
-      xml_handler.handle();
+      XMLDolfin xml_dolfin(xml_handler, *this);
+      xml_dolfin.handle();
       parse();
       if ( !handlers.empty() ) 
         error("Handler stack not empty. Something is wrong!");
@@ -57,7 +61,8 @@ namespace dolfin
     {
       open_file();
       typedef typename T::XMLHandler Handler;
-      Handler::write(t, *outstream); close_file();
+      Handler::write(t, *outstream, 1); 
+      close_file();
     }
 
     void operator>> (Mesh& input)          { read_xml(input); }
@@ -67,6 +72,9 @@ namespace dolfin
     void operator>> (GenericVector&  input){ read_xml(input); }
     void operator>> (ParameterList&  input){ read_xml(input); }
     void operator>> (FunctionPlotData&  input){ read_xml(input); }
+    void operator>> (MeshFunction<int>&  input){ read_xml(input); }
+    void operator>> (MeshFunction<uint>&  input){ read_xml(input); }
+    void operator>> (MeshFunction<double>&  input){ read_xml(input); }
 
     void operator>> (std::vector<int> & x);
     void operator>> (std::vector<uint> & x);
@@ -86,6 +94,9 @@ namespace dolfin
     void operator<< (const GenericVector& output) { write_xml(output); }
     void operator<< (const ParameterList& output) { write_xml(output); }
     void operator<< (const FunctionPlotData& output) { write_xml(output); }
+    void operator<< (const MeshFunction<int>&  output){ write_xml(output); }
+    void operator<< (const MeshFunction<uint>&  output){ write_xml(output); }
+    void operator<< (const MeshFunction<double>&  output){ write_xml(output); }
 
     void operator<< (const std::vector<int> & x);
     void operator<< (const std::vector<uint> & x);
