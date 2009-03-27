@@ -31,10 +31,14 @@ void dolfin::real_init() {
 }
 //-----------------------------------------------------------------------------
 int dolfin::real_decimal_prec() {
+#ifndef HAS_GMP
+  return 15;
+#else 
   int prec;
   double dummy = real_frexp(&prec, real_epsilon());
   dummy++; //avoid compiler warning about unused variable
   return std::abs(static_cast<int>( prec * std::log(2)/std::log(10) ));
+#endif
 }
 //-----------------------------------------------------------------------------
 real dolfin::real_sqrt(real a)
