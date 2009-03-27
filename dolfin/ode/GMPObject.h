@@ -42,11 +42,10 @@ namespace dolfin
       // Set the default discrete tolerance unless user has explicitly set it
       if (!dolfin_changed("ODE discrete tolerance"))
 	  set("ODE discrete tolerance", to_double(real_sqrt(real_epsilon())));
-      
+
+      int d = mpf_get_default_prec();
       // Display number of digits
-      char msg[100];
-      gmp_sprintf(msg, "%Fe", real_epsilon().get_mpf_t());
-      message("Using %d bits per digit, eps = %s", mpf_get_default_prec(), msg);
+      cout << "Using " << d << " bits pr digit, epsilon = " << real_epsilon() << endl;
 
 #else 
       if (dolfin_changed("floating-point precision"))
