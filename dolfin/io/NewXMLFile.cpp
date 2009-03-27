@@ -71,9 +71,9 @@ NewXMLFile::~NewXMLFile()
   }
 }
 //-----------------------------------------------------------------------------
-void readerErr(void *arg, const char *msg,
-             xmlParserSeverities severity,
-             xmlTextReaderLocatorPtr locator)
+void NewXMLFile::readerErr(void *arg, const char *msg,
+                           xmlParserSeverities severity,
+                           xmlTextReaderLocatorPtr locator)
 {
     int line = xmlTextReaderLocatorLineNumber(locator);
     message(1, "Error parsing file! %s, severity: %i, line: %i", msg, severity, line);

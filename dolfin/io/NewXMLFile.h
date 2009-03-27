@@ -60,6 +60,9 @@ namespace dolfin
       Handler::write(t, *outstream); close_file();
     }
 
+    void readerErr(void& arg, const char& msg,
+                   xmlParserSeverities severity,
+                   xmlTextReaderLocatorPtr locator);
     void validate(std::string filename);
 
     void operator>> (Mesh& input)          { read_xml(input); }
