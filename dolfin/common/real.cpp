@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-01-25
-// Last changed: 2009-02-09
+// Last changed: 2009-03-27
 
 #include "real.h"
 #include "constants.h"
@@ -52,12 +52,6 @@ real dolfin::real_sqrt(real a)
     ++k;
   }
   
-  real test = x*x;
-  test = test-a;
-  /*
-  printf("Computed square root in %d iterations\n", k);
-  gmp_printf("sqrt, diff: %.20Fe\n", test.get_mpf_t());
-  */
   return x;
 }
 //-----------------------------------------------------------------------------
@@ -101,8 +95,6 @@ real dolfin::real_pi()
     
     } while (abs(pi_next - pi_prev) > 10*real_epsilon());
 
-    //gmp_printf("Pi computed in %d iterations: %.50Fe\n", k, pi_next.get_mpf_t());  
-    
     return pi_next;
 #endif
 }
@@ -114,6 +106,7 @@ double dolfin::real_frexp(int* exp, real x)
   double tmp_double = mpf_get_d_2exp(&tmp_long, x.get_mpf_t());
   *exp = static_cast<int>(tmp_long);
   return tmp_double;
+
 #else
   return frexp(x, exp);
 #endif
