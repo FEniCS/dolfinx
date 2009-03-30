@@ -114,9 +114,9 @@ void XMLMeshData::write(const MeshData& data, std::ostream& outfile, uint indent
       outfile << indent();
       outfile << "<data_entry name=\"" << it->first << "\">" << std::endl;
 
-      // Write array
+      // Write mesh function (omit mesh)
       ++indent;
-      NewXMLMeshFunction::write(*(it->second), outfile, indent.level());
+      NewXMLMeshFunction::write(*(it->second), outfile, indent.level(), false);
       --indent;
 
       // Write data entry footer 

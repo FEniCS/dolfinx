@@ -30,9 +30,9 @@ namespace dolfin
     void end_element   (const xmlChar *name);
     
     /// Write to file
-    static void write(const MeshFunction<int>& mf, std::ostream& outfile, uint indentation_level=0);
-    static void write(const MeshFunction<uint>& mf, std::ostream& outfile, uint indentation_level=0);
-    static void write(const MeshFunction<double>& mf, std::ostream& outfile, uint indentation_level=0);
+    static void write(const MeshFunction<int>& mf, std::ostream& outfile, uint indentation_level=0, bool write_mesh=true);
+    static void write(const MeshFunction<uint>& mf, std::ostream& outfile, uint indentation_level=0, bool write_mesh=true);
+    static void write(const MeshFunction<double>& mf, std::ostream& outfile, uint indentation_level=0, bool write_mesh=true);
 
   private:
     
