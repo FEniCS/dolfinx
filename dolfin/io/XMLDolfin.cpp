@@ -60,7 +60,8 @@ void XMLDolfin::end_element(const xmlChar *name)
 void XMLDolfin::write_start(std::ostream& outfile, uint indentation_level)
 {
   XMLIndent indent(indentation_level);
-  outfile << indent() << "<dolfin>" << std::endl;
+  outfile << indent() << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << std::endl << std::endl;
+  outfile << indent() << "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\">" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLDolfin::write_end(std::ostream& outfile, uint indentation_level)
