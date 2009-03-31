@@ -61,6 +61,9 @@ namespace dolfin
     /// Set new style for xml parsing system
     void set_new_xml_style();
 
+    /// Validation function for XML
+    void validate_xml();
+
     //--- Input ---
     
     /// Read vector from file

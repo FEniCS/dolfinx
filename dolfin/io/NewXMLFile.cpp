@@ -71,22 +71,26 @@ NewXMLFile::~NewXMLFile()
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLFile::readerErr(void *arg, const char *msg,
-                           xmlParserSeverities severity,
-                           xmlTextReaderLocatorPtr locator)
-{
-    int line = xmlTextReaderLocatorLineNumber(locator);
-    message(1, "Error parsing file! %s, severity: %i, line: %i", msg, severity, line);
-}
-void NewXMLFile::validate(std::string filename)
+void NewXMLFile::validate(const std::string filename)
 {
   xmlTextReaderPtr reader;
   xmlRelaxNGParserCtxtPtr rngp;
+  //xmlRelaxNGValidCtxtPtr rngp;
   xmlRelaxNGPtr rngs;
   int ret = 1;
   reader = xmlNewTextReaderFilename(filename.c_str());
-  xmlTextReaderSetErrorHandler(reader, (xmlTextReaderErrorFunc)readerErr, NULL);
-  rngp = xmlRelaxNGNewParserCtxt("test.rng");
+  //xmlTextReaderSetErrorHandler(reader, 
+  //                             (xmlTextReaderErrorFunc)new_reader_error, 
+  //                             NULL);
+  rngp = xmlRelaxNGNewParserCtxt("http://folk.uio.no/ilmarw/tmp/test.rng");
+  //xmlRelaxNGSetParserErrors(rngp,
+  //                          (xmlRelaxNGValidityErrorFunc)new_rng_error,
+  //                          (xmlRelaxNGValidityWarningFunc)new_rng_warning,
+  //                          NULL);
+  //xmlRelaxNGSetValidErrors(rngp,
+  //                         (xmlRelaxNGValidityErrorFunc)new_rng_error,
+  //                         (xmlRelaxNGValidityWarningFunc)new_rng_warning,
+  //                         NULL);
   rngs = xmlRelaxNGParse(rngp);
   xmlTextReaderRelaxNGSetSchema(reader, rngs);
   if ( reader != NULL ) {
@@ -373,3 +377,31 @@ void dolfin::new_sax_fatal_error(void *ctx, const char *msg, ...)
   va_end(args);
 }
 //-----------------------------------------------------------------------------
+void dolfin::new_reader_error(void *ctx, const char *msg, ...)
+{
+  va_list args;
+  va_start(args, msg);
+  char buffer[DOLFIN_LINELENGTH];
+  vsnprintf(buffer, DOLFIN_LINELENGTH, msg, args);
+  std::string buffer_remove_endline = buffer;
+  int length = buffer_remove_endline.length();
+  buffer_remove_endline.erase(length-1);
+  warning("Illegal XML data: " + std::string(buffer_remove_endline));
+  va_end(args);
+}
+//-----------------------------------------------------------------------------
+void dolfin::new_rng_warning(void *ctx, const char *msg, ...)
+{
+  message(0, "Relax-NG warning: %s", msg);
+}
+//-----------------------------------------------------------------------------
+void dolfin::new_rng_error(void *ctx, const char *msg, ...)
+{
+  va_list args;
+  va_start(args, msg);
+  char buffer[DOLFIN_LINELENGTH];
+  vsnprintf(buffer, DOLFIN_LINELENGTH, msg, args);
+  warning("Incomplete XML data: " + std::string(buffer));
+  va_end(args);
+  //message(0, "Relax-NG error: %s", msg);
+}

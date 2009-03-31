@@ -111,6 +111,11 @@ void File:: set_new_xml_style()
   delete file;
   file = new NewXMLFile(filename, true);
   std::cout << "Reading new xml style file named *" << filename << "*" << std::endl;
+}
+//-----------------------------------------------------------------------------
+void File:: validate_xml()
+{
+  std::cout << "Validating xml file named *" << filename << "*" << std::endl;
   NewXMLFile* valid = new NewXMLFile(filename, true);
   valid->validate(filename);
 }
