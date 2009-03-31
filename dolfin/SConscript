@@ -128,7 +128,7 @@ Please install SWIG version %s or recompile UFC with present SWIG.""" % \
 
 if env["enablePython"]:
     print "Enabling compilation of Python wrappers"
-    swigFlags = "-python -c++ -shadow -fastunpack -I%s" % \
+    swigFlags = "-python -c++ -shadow -O -I%s" % \
                 os.path.join("include","swig")
     swigFlags = swigFlags.split()
 
@@ -236,12 +236,6 @@ for modName, mod in modules.items():
         modEnv = swigEnv.Clone(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags + linkOpts)
         modEnv.Append(SWIGFLAGS=mod.swigFlags + ["-I%s" % i for i in swigcppPath])
         
-        # Version of swig together with gcc version 4.3 and later
-        # produce warnings that are treated as error using -werror flag
-        # FIXME: Is this correct? If so maybee we should insert a chek for gcc version?
-        if "-Werror" in modEnv["CXXFLAGS"]:
-            modEnv["CXXFLAGS"].remove("-Werror")
-            
         # Add python dependency (always required in python wrappers)
         pyPkg = configuredPackages[python_version]
         cppPath += pyPkg.cppPath + swigcppPath

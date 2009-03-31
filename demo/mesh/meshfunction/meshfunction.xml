@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<dolfin xmlns:dolfin="http://www.fenics.org/dolfin/">
+<dolfin>
   <meshfunction type="double" dim="2" size="8">
     <entity index="0" value="1.5"/>
     <entity index="1" value="3.5"/>

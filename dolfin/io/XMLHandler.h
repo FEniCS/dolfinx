@@ -42,6 +42,8 @@ namespace dolfin
 
     void open_file(std::string filename);
 
+    void open_close();
+
   protected:
 
     // Parse an integer value

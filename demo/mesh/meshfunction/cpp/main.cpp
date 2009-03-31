@@ -7,21 +7,24 @@
 // Last changed: 2008-03-31
 
 #include <dolfin.h>
+#include <dolfin/io/NewXMLFile.h>
 
 using namespace dolfin;
 
 int main()
 {
-  // Read mesh from file
-  Mesh mesh("../mesh2D.xml.gz");
+  // Read mesh from file (new style)
+  File inmesh("../mesh2D.xml.gz", true);
+  Mesh mesh;
+  inmesh >> mesh;
   
-  // Read mesh function from file
-  File in("../meshfunction.xml");
+  // Read mesh function from file (new style)
+  File in("../meshfunction.xml", true);
   MeshFunction<double> f(mesh);
   in >> f;
 
-  // Write mesh function to file
-  File out("meshfunction_out.xml");
+  // Write mesh function to file (new style)
+  File out("meshfunction_out.xml", true);
   out << f;
 
   // Plot mesh function

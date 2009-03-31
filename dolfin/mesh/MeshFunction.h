@@ -20,6 +20,7 @@ namespace dolfin
 {
   
   class MPIManager;
+  class NewXMLMeshFunction;
 
   /// A MeshFunction is a function that can be evaluated at a set of
   /// mesh entities. A MeshFunction is discrete and is only defined
@@ -228,6 +229,9 @@ namespace dolfin
         cout << "(" << _dim << ", " << i << "): " << _values[i] << endl;
       end();
     }
+
+    // Input and output
+    typedef NewXMLMeshFunction XMLHandler;
 
   private:
 
