@@ -65,6 +65,8 @@ namespace dolfin
       close_file();
     }
 
+    void validate(const std::string filename);
+
     void operator>> (Mesh& input)          { read_xml(input); }
     void operator>> (LocalMeshData& input) { read_xml(input); }
     void operator>> (Graph&  input)        { read_xml(input); }
@@ -146,5 +148,10 @@ namespace dolfin
   void new_sax_error       (void *ctx, const char *msg, ...);
   void new_sax_fatal_error (void *ctx, const char *msg, ...);
  
+  // Callback functions for XMLTextReader
+  void new_reader_error    (void *ctx, const char *msg, ...);
+  void new_rng_warning     (void *ctx, const char *msg, ...);
+  void new_rng_error       (void *ctx, const char *msg, ...);
+
 }
 #endif
