@@ -19,6 +19,7 @@
 #include <dolfin/plot/FunctionPlotData.h>
 #include <dolfin/parameter/ParameterList.h>
 #include <libxml/parser.h>
+#include <libxml/xmlreader.h>
 #include "GenericFile.h"
 #include "NewXMLMesh.h"
 #include "NewXMLMeshFunction.h"
@@ -148,10 +149,8 @@ namespace dolfin
   void new_sax_error       (void *ctx, const char *msg, ...);
   void new_sax_fatal_error (void *ctx, const char *msg, ...);
  
-  // Callback functions for XMLTextReader
-  void new_reader_error    (void *ctx, const char *msg, ...);
-  void new_rng_warning     (void *ctx, const char *msg, ...);
-  void new_rng_error       (void *ctx, const char *msg, ...);
+  // Callback functions for Relax-NG Schema
+  void new_rng_error   (void *user_data, xmlErrorPtr error);
 
 }
 #endif
