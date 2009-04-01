@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2009-02-26
+// Last changed: 2009-04-01
 
 #include <vector>
 #include <algorithm>
@@ -341,6 +341,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
          global_vertex_send, global_vertex_send + boundary_size, 
          global_vertex_recv, global_vertex_recv + boundary_sizes[q], intersection.begin()); 
 
+    // Fill overlap information
     for (std::vector<uint>::iterator index = intersection.begin(); index != intersection_end; ++index)
       (*overlap)[*index].push_back(q);
 

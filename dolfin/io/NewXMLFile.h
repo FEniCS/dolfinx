@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-03
-// Last changed: 2009-03-16
+// Last changed: 2009-04-01
 
 #ifndef __NEWXMLFILE_H
 #define __NEWXMLFILE_H
@@ -19,7 +19,6 @@
 #include <dolfin/plot/FunctionPlotData.h>
 #include <dolfin/parameter/ParameterList.h>
 #include <libxml/parser.h>
-#include <libxml/xmlreader.h>
 #include "GenericFile.h"
 #include "NewXMLMesh.h"
 #include "NewXMLMeshFunction.h"
@@ -66,7 +65,7 @@ namespace dolfin
       close_file();
     }
 
-    void validate(const std::string filename);
+    // Input
 
     void operator>> (Mesh& input)          { read_xml(input); }
     void operator>> (LocalMeshData& input) { read_xml(input); }
@@ -114,6 +113,8 @@ namespace dolfin
     // Friends
     friend void new_sax_start_element (void *ctx, const xmlChar *name, const xmlChar **attrs);
     friend void new_sax_end_element   (void *ctx, const xmlChar *name);
+
+    void validate(std::string filename);
 
     void write() {}
 

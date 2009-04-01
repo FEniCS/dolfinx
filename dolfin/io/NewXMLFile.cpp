@@ -100,7 +100,10 @@ void NewXMLFile::validate(const std::string filename)
                                      stderr);
   ret = xmlRelaxNGValidateDoc(validator, document);
   if ( ret == 0 ) {
-    message(0, "  %s validates", filename.c_str());
+    message(0, "%s validates", filename.c_str());
+  }
+  else if ( ret < 0 ) {
+    error("%s failed to load", filename.c_str());
   }
   else {
     error("%s fails to validate", filename.c_str());
