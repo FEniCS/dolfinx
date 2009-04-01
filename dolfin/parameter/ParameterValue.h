@@ -113,24 +113,19 @@ namespace dolfin
   public:
 
     /// Constructor
-    RealValue(double value) : ParameterValue(), value(value) {}
+    RealValue(real value) : ParameterValue(), value(value) {}
     
-#ifdef HAS_GMP
-    RealValue(real& value) : ParameterValue(), value(value) {}
-#endif
-
     /// Destructor
     ~RealValue() {}
 
     /// Assignment of real
     const ParameterValue& operator= (double value) { this->value = value; return *this; }
-#ifdef HAS_GMP
-    const ParameterValue& operator= (real value) { this->value = value; return *this; }
-#endif
 
-    /// Cast to real
+    /// Cast to double
     operator double() const { return to_double(value); }
-    real get_real() const { return value;}
+
+    /// Get real (possibly extended precision) value
+    real get_real() const {return value;}
 
     /// Name of value type
     std::string type() const { return "real"; }

@@ -97,7 +97,7 @@ const Parameter& Parameter::operator= (const Parameter& parameter)
     value = new IntValue(*parameter.value);
     break;
   case type_real:
-    value = new RealValue(*parameter.value);
+    value = new RealValue(parameter.get_real());
     break;
   case type_bool:
     value = new BoolValue(*parameter.value);
