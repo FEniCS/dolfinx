@@ -101,14 +101,14 @@ void PythonFile::operator<<(const Sample& sample)
   // Save time steps
   for (uint i = 0; i < sample.size(); i++)
   {
-    fp_k << std::setprecision(prec) << sample.k(i);  
+    fp_k << std::setprecision(prec) << sample.k(i) << " ";  
   }
   fp_k << std::endl;
 
   // Save residuals
   for (uint i = 0; i < sample.size(); i++)
   {
-    fp_r << std::setprecision(prec) << sample.r(i);  
+    fp_r << std::setprecision(prec) << sample.r(i) << " ";  
   }
   fp_r << std::endl;
 
