@@ -23,6 +23,11 @@ ODE::ODE(uint N, real T)
 {
   message("Creating ODE of size %d.", N);
 
+  #ifdef HAS_GMP
+    if (!_real_initialized)
+      error("Extended precision not initialized. Use real_set_precision(uint desimal_prec) before instansiating ODE");
+  #endif
+
 }
 //-----------------------------------------------------------------------------
 ODE::~ODE()

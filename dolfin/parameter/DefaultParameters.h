@@ -114,10 +114,3 @@ add("LU report", true);
 
 //--- Mesh partitioning ---
 add("report edge cut", false);
-
-//--- Floating-point precision (only relevant when using GMP) ---
-#ifdef HAS_GMP
-add("floating-point precision", 30);
-#else
-add("floating-point precision", 16);
-#endif

@@ -6,17 +6,24 @@
 
 #include "real.h"
 #include "constants.h"
+#include <dolfin/parameter/parameters.h>
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-real dolfin::_real_epsilon = DOLFIN_EPS;
 
-void dolfin::real_init() {
-#ifndef HAS_GMP
-  _real_epsilon = DOLFIN_EPS;
-#else 
-  //computing precision
+real dolfin::_real_epsilon = DOLFIN_EPS;
+// Used to give warning if extended precision is not initialized
+bool dolfin::_real_initialized = false;
+
+//-----------------------------------------------------------------------------
+void dolfin::dolfin_set_precision(uint decimal_prec) 
+{
+#ifdef HAS_GMP
+  // Compute the number of bits needed
+  // set the GMP default precision
+  mpf_set_default_prec(static_cast<uint>(decimal_prec*std::log(10)/std::log(2)));
+  
+  // Compute epsilon
   real eps = 0.1;
   real one = real("1.0");
   while ( eps + one != one ) 
@@ -27,7 +34,19 @@ void dolfin::real_init() {
   eps *= 2;
   
   _real_epsilon = eps;
+  
+  // Set the default discrete tolerance unless user has explicitly set it
+  if (!dolfin_changed("ODE discrete tolerance"))
+    dolfin_set("ODE discrete tolerance", to_double(real_sqrt(real_epsilon())));
+  
+  int d = mpf_get_default_prec();
+  // Display number of digits
+  cout << "Using " << d << " bits pr digit, epsilon = " << real_epsilon() << endl;
+  _real_initialized = true;
+#else 
+    warning("Can't change floating-point precision when using type double.");
 #endif
+
 }
 //-----------------------------------------------------------------------------
 int dolfin::real_decimal_prec() {

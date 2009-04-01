@@ -14,7 +14,6 @@
 #include <dolfin/parameter/Parametrized.h>
 #include "Dependencies.h"
 #include "Sample.h"
-#include "GMPObject.h"
 
 namespace dolfin
 {
@@ -68,7 +67,7 @@ namespace dolfin
   /// This mode allows the state to be specified and retrieved in
   /// between intervals by calling set_state() and get_state().
 
-  class ODE : public GMPObject
+  class ODE : public Parametrized
   {
   public:
 

@@ -33,9 +33,13 @@ namespace dolfin
   typedef double real;
 #endif
 
+
+  // Set precision and initialize extended precision
+  void dolfin_set_precision(uint prec);
+
   //Store the epsilon value
   extern real _real_epsilon;
-  void real_init();
+  extern bool _real_initialized;
 
   // Convert to double (if necessary)
   inline double to_double(const real x) 
