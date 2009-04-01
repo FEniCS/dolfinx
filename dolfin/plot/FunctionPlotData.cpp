@@ -1,8 +1,10 @@
 // Copyright (C) 2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2009.
+//
 // First added:  2009-03-16
-// Last changed: 2009-03-16
+// Last changed: 2009-04-01
 
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -18,8 +20,14 @@ FunctionPlotData::FunctionPlotData(const Function& v)
   // Copy mesh
   mesh = v.function_space().mesh();
 
+  // Compute number of entries in tensor value (entries per vertex)
+  uint size = 1;
+  for (uint i = 0; i < v.function_space().element().value_rank(); i++)
+    size *= v.function_space().element().value_dimension(i);
+  cout << "Computed size " << endl;
+
   // Initialize vector
-  const uint N = v.function_space().dim();
+  const uint N = size*mesh.numVertices();
   vertex_values.resize(N);
 
   // Interpolate vertex values
@@ -34,9 +42,9 @@ FunctionPlotData::FunctionPlotData(const Function& v)
     error("Plotting of rank %d functions not supported.", rank);
 }
 //-----------------------------------------------------------------------------
-FunctionPlotData::FunctionPlotData()
-  : rank(0)
+FunctionPlotData::FunctionPlotData() : rank(0)
 {
+  // Do nothing  
 }
 //-----------------------------------------------------------------------------
 FunctionPlotData::~FunctionPlotData()
