@@ -91,7 +91,7 @@ bool TimeSlabSolver::solve(uint attempt)
     // Check divergence
     // FIXME: implement better check and make this a parameter
     // Is it ok to convert a gmp type to double and then check if it is normal?
-    if ((iter > 0 && d2 > 1000.0 * d1) || !std::isnormal(to_double(d2)))
+    if ((iter > 0 && d2 > 1000.0 * d1) || !isnormal(to_double(d2)))
     {
       warning("Time slab system seems to be diverging.");
       return false;
@@ -123,8 +123,8 @@ void TimeSlabSolver::end()
 //-----------------------------------------------------------------------------
 void TimeSlabSolver::chooseTolerance()
 {
-  const double TOL   = ode.get("ODE tolerance");
-  const double alpha = ode.get("ODE discrete tolerance factor");
+  const real TOL   = ode.get("ODE tolerance").get_real();
+  const real alpha = ode.get("ODE discrete tolerance factor").get_real();
 
   tol =  ode.get("ODE discrete tolerance").get_real();
 
