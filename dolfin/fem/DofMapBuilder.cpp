@@ -68,46 +68,58 @@ void DofMapBuilder::initialize_data_structure(DofMap& dof_map, const Mesh& mesh)
   MeshFunction<uint>* global_vertex_indices = mesh.data().mesh_function("global vertex indices");
   if (global_vertex_indices != NULL)
   {
-    std::vector<std::pair<uint, uint> > edges(mesh.topology().size(1));
+    uint d = mesh.topology().dim();
+    std::vector<std::vector<uint> > entities(mesh.size(d-1));
 
-    std::vector<uint> edge_vertices;
-    std::pair<uint, uint> edge;
-    for (EdgeIterator e(mesh); !e.end(); ++e)
+    std::vector<uint> entity_vertices;
+    std::vector<uint> entity;
+    for (MeshEntityIterator e(mesh, d-1); !e.end(); ++e)
     {
-      std::cout << "P" << process_number << ". Edge index is " << e->index() << std::endl;
-      edge_vertices.clear();
+      std::cout << "P" << process_number << ". Entity index is " << e->index() << std::endl;
+      entity_vertices.clear();
       for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
       {
         std::cout << "P" << process_number << ". Vertex index is " << vertex->index() << std::endl;
         std::cout << "P" << process_number << ". Global vertex index is " << global_vertex_indices->get(vertex->index()) << std::endl;
-        edge_vertices.push_back(global_vertex_indices->get(vertex->index()));
+        entity_vertices.push_back(global_vertex_indices->get(vertex->index()));
       }
-      edge.first = edge_vertices[0];
-      edge.second= edge_vertices[1];
-      edges[e->index()] = edge;
+      entities[e->index()] = entity_vertices;
     }
 
-    std::cout  << "P" << process_number << ". Total number of edges is " << edges.size() << std::endl;
+    std::cout  << "P" << process_number << ". Total number of edges is " << entities.size() << std::endl;
 
     // Find out which edges to ignore (belonging to a lower ranked process)
     std::map<uint, std::vector<uint> >* mapping = mesh.data().vector_mapping("overlap");
 
-    std::vector<uint> ignored_edges;
-    std::vector<uint> owned_edges;
+    std::vector<uint> ignored_entities;
+    std::vector<uint> owned_entities;
     std::map<uint, uint> owned_shared;
     bool ignore;
-    for (uint e = 0; e < edges.size(); ++e)
+    for (uint e = 0; e < entities.size(); ++e)
     {
       ignore = false;
-      uint v0 = edges[e].first;
-      uint v1 = edges[e].second;
-      if (mapping->count(v0) and mapping->count(v1))
+      bool on_boundary = true;
+      uint num_entities = entities[e].size();
+      for (uint i = 0; i < num_entities; ++i)
+        if (mapping->count(entities[e][i]) == 0)
+            on_boundary = false;
+      if (on_boundary)
       {
         // Find out if we share an edge with another process
-        std::vector<uint> intersection(1);
-        std::vector<uint>::iterator intersection_end = std::set_intersection(
-            (*mapping)[v0].begin(), (*mapping)[v0].end(), 
-            (*mapping)[v1].begin(), (*mapping)[v1].end(), intersection.begin());
+        // This means taking the intersection between all the vertices for the given mesh entity...
+
+        // First copy first overlap
+        std::vector<uint> intersection = (*mapping)[entities[e][0]];
+        std::vector<uint>::iterator intersection_end = intersection.end();
+        std::cout << "NUM_ENTITIES = " << num_entities << std::endl;
+        for (uint i = 1; i < num_entities; ++i)
+        {
+          std::cout << entities[e][i] << std::endl;
+          uint v = entities[e][i];
+           intersection_end = std::set_intersection(
+            intersection.begin(), intersection_end, 
+            (*mapping)[v].begin(), (*mapping)[v].end(), intersection.begin());
+        }
 
         // Non empty intersection
         if (intersection_end != intersection.begin())
@@ -121,16 +133,16 @@ void DofMapBuilder::initialize_data_structure(DofMap& dof_map, const Mesh& mesh)
         }
       }
       if (ignore)
-        ignored_edges.push_back(e);
+        ignored_entities.push_back(e);
       else
-        owned_edges.push_back(e);
+        owned_entities.push_back(e);
     }
 
-    dolfin_assert(ignored_edges.size() + owned_edges.size() == mesh.size(1));
+    dolfin_assert(ignored_entities.size() + owned_entities.size() == mesh.size(d-1));
 
     // Compute local offset
-    std::cout  << "P" << process_number << ". Number of ignored edges is " << ignored_edges.size() << std::endl;
-    uint local_offset = mesh.size(1) - ignored_edges.size();
+    std::cout  << "P" << process_number << ". Number of ignored edges is " << ignored_entities.size() << std::endl;
+    uint local_offset = mesh.size(d-1) - ignored_entities.size();
 
     // Communicate all offsets
     std::vector<uint> offsets(MPI::num_processes());
@@ -145,24 +157,22 @@ void DofMapBuilder::initialize_data_structure(DofMap& dof_map, const Mesh& mesh)
 
     std::cout  << "P" << process_number << ". Offset is " << real_offset << std::endl;
 
-    // Number owned edges
-    std::vector<uint> edge_numbers(mesh.size(1));
-    for (uint i = 0; i < owned_edges.size(); ++i)
+    // Number owned entities
+    std::vector<uint> entity_numbers(mesh.size(d-1));
+    for (uint i = 0; i < owned_entities.size(); ++i)
     {
-      uint edge = owned_edges[i];
-      edge_numbers[edge] = real_offset + i;
+      uint entity = owned_entities[i];
+      entity_numbers[entity] = real_offset + i;
     }
-
-    
 
     for (std::map<uint, uint>::iterator iter = owned_shared.begin(); iter != owned_shared.end(); ++iter)
     {
-      uint edge = (*iter).first;
+      uint entity = (*iter).first;
       uint process = (*iter).second;
-      uint global_number = edge_numbers[edge];
-      uint v0 = edges[edge].first;
-      uint v1 = edges[edge].second;
-      std::cout << "P" << process_number << ": Send local edge " << edge << " with global number " << global_number << " consisting of vertices " << v0 << " and " << v1
+      uint global_number = entity_numbers[entity];
+      uint v0 = entities[entity][0];
+      uint v1 = entities[entity][1];
+      std::cout << "P" << process_number << ": Send local entity " << entity << " with global number " << global_number << " consisting of vertices " << v0 << " and " << v1
                 << " to process " << process << std::endl;
     }
 
