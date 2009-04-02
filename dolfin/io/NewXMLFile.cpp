@@ -82,21 +82,14 @@ void NewXMLFile::validate(const std::string filename)
   xmlDocPtr document;
   document = xmlParseFile(filename.c_str());
   int ret = 1;
-  parser =
-  xmlRelaxNGNewParserCtxt("http://folk.uio.no/ilmarw/tmp/dolfin.rng");
-  // Set to fprintf for now, can be replaced by our own callback functions:
-  xmlRelaxNGSetParserErrors(parser,
-                            (xmlRelaxNGValidityErrorFunc)std::fprintf,
-                            (xmlRelaxNGValidityWarningFunc)std::fprintf,
-                            stderr);
+  parser = xmlRelaxNGNewParserCtxt("http://fenics.org/pub/misc/dolfin.rng");
+  xmlRelaxNGSetParserStructuredErrors(parser,
+                                      (xmlStructuredErrorFunc)new_rng_parser_error,
+                                      stderr);
   schema = xmlRelaxNGParse(parser);
   validator = xmlRelaxNGNewValidCtxt(schema);
-  xmlRelaxNGSetValidErrors(validator,
-                           (xmlRelaxNGValidityErrorFunc)std::fprintf,
-                           (xmlRelaxNGValidityWarningFunc)std::fprintf,
-                           stderr); 
   xmlRelaxNGSetValidStructuredErrors(validator,
-                                     (xmlStructuredErrorFunc)new_rng_error,
+                                     (xmlStructuredErrorFunc)new_rng_valid_error,
                                      stderr);
   ret = xmlRelaxNGValidateDoc(validator, document);
   if ( ret == 0 ) {
@@ -277,7 +270,6 @@ void NewXMLFile::parse()
 {
   // Parse file
   xmlSAXUserParseFile(sax, (void *) this, filename.c_str());
-
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::push(XMLHandler* handler)
@@ -387,13 +379,33 @@ void dolfin::new_sax_fatal_error(void *ctx, const char *msg, ...)
   va_end(args);
 }
 //-----------------------------------------------------------------------------
-void dolfin::new_rng_error(void *user_data, xmlErrorPtr error)
+void dolfin::new_rng_parser_error(void *user_data, xmlErrorPtr error)
 {
   char *file = error->file;
   char *message = error->message;
   int line = error->line;
   xmlNodePtr node;
   node = (xmlNode*)error->node;
+  std::string buffer;
+  buffer = message;
+  int length = buffer.length();
+  buffer.erase(length-1);
+  if (node != NULL)
+    warning("%s:%d: element %s: Relax-NG parser error: %s", 
+            file, line, node->name, buffer.c_str());
+}
+//-----------------------------------------------------------------------------
+void dolfin::new_rng_valid_error(void *user_data, xmlErrorPtr error)
+{
+  char *file = error->file;
+  char *message = error->message;
+  int line = error->line;
+  xmlNodePtr node;
+  node = (xmlNode*)error->node;
+  std::string buffer;
+  buffer = message;
+  int length = buffer.length();
+  buffer.erase(length-1);
   warning("%s:%d: element %s: Relax-NG validity error: %s", 
-          file, line, node->name, message);
+          file, line, node->name, buffer.c_str());
 }

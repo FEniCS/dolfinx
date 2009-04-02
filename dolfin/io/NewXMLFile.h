@@ -151,7 +151,8 @@ namespace dolfin
   void new_sax_fatal_error (void *ctx, const char *msg, ...);
  
   // Callback functions for Relax-NG Schema
-  void new_rng_error   (void *user_data, xmlErrorPtr error);
+  void new_rng_parser_error(void *user_data, xmlErrorPtr error);
+  void new_rng_valid_error (void *user_data, xmlErrorPtr error);
 
 }
 #endif
