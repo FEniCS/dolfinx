@@ -78,17 +78,17 @@ LD_LIBRARY_PATH/DYLD_LIBRARY_PATH as well.
             raise UnableToXXXException("Unable to figure out the version of ML")
         aztecoo_version = float(PyTrilinos.AztecOO.AztecOO_Version().split()[2])
 
-        # must be expanded for later versions of trilinos
-        # TODO: It is also possible to use PyTrilinos.version() to check Trilinos
-        # version and PyTrilinos version (at least in version 8)
-        #trilinos_version = PyTrilinos.version().split()[2]
-        #pytrilinos_version = PyTrilinos.version().split()[5]
-        if epetra_version >= 3.6 and ml_version >= 6.1 and aztecoo_version >= 3.6:
-            trilinos_version = 8
-        elif epetra_version >= 3.5 and ml_version >= 5.0 and aztecoo_version >= 3.5:
-            trilinos_version = 7
-        else:
-            trilinos_version = 6
+        try:
+            trilinos_version = PyTrilinos.version().split()[2]
+        except:
+            if epetra_version >= 3.6 and ml_version >= 6.1 and \
+                   aztecoo_version >= 3.6:
+                trilinos_version = 8
+            elif epetra_version >= 3.5 and ml_version >= 5.0 and \
+                     aztecoo_version >= 3.5:
+                trilinos_version = 7
+            else:
+                trilinos_version = 6
     except:
         # Unable to load PyTrilinos, assume v.6 of trilinos
         pass
@@ -114,7 +114,7 @@ int main() {
 printf("-lml\n");
 
 #ifdef HAVE_ML_NOX
-  printf("-lnox\n")'
+  printf("-lnox\n");'
 #endif
 
 #ifdef HAVE_ML_IFPACK

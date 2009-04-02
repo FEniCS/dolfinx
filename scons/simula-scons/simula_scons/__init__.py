@@ -89,9 +89,8 @@ def createHelperFile(env):
         f.write('export PATH=%s\n' % sep.join([binDir, '$PATH']))
         f.write('export PKG_CONFIG_PATH=%s\n' % \
                 sep.join([pkgConfDir, '$PKG_CONFIG_PATH']))
-        if env["enablePython"]:
-            f.write('export PYTHONPATH=%s\n' % \
-                    sep.join([pythonModuleDir, pythonExtDir, '$PYTHONPATH']))
+        f.write('export PYTHONPATH=%s\n' % \
+                sep.join([pythonModuleDir, pythonExtDir, '$PYTHONPATH']))
         f.write('export MANPATH=%s\n' % sep.join([manDir, '$MANPATH']))
         f.close()
 
