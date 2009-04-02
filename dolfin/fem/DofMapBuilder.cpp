@@ -92,27 +92,80 @@ void DofMapBuilder::initialize_data_structure(DofMap& dof_map, const Mesh& mesh)
     // Find out which edges to ignore (belonging to a lower ranked process)
     std::map<uint, std::vector<uint> >* mapping = mesh.data().vector_mapping("overlap");
 
-    uint num_ignored_edges = 0;
+    std::vector<uint> ignored_edges;
+    std::vector<uint> owned_edges;
+    std::map<uint, uint> owned_shared;
+    bool ignore;
     for (uint e = 0; e < edges.size(); ++e)
     {
+      ignore = false;
       uint v0 = edges[e].first;
       uint v1 = edges[e].second;
       if (mapping->count(v0) and mapping->count(v1))
       {
+        // Find out if we share an edge with another process
         std::vector<uint> intersection(1);
         std::vector<uint>::iterator intersection_end = std::set_intersection(
             (*mapping)[v0].begin(), (*mapping)[v0].end(), 
             (*mapping)[v1].begin(), (*mapping)[v1].end(), intersection.begin());
 
-        if (intersection_end != intersection.begin() and intersection[0] < process_number)
-            ++num_ignored_edges;
+        // Non empty intersection
+        if (intersection_end != intersection.begin())
+        {
+          // Ignore if shared with lower ranked process
+          if (intersection[0] < process_number)
+            ignore = true;
+          else
+            // Shared edge what we will give a number and send to process intersection[0]
+            owned_shared[e] = intersection[0];
+        }
       }
+      if (ignore)
+        ignored_edges.push_back(e);
+      else
+        owned_edges.push_back(e);
     }
 
+    dolfin_assert(ignored_edges.size() + owned_edges.size() == mesh.size(1));
+
     // Compute local offset
-    std::cout  << "P" << process_number << ". Number of ignored edges is " << num_ignored_edges << std::endl;
-    uint local_offset = mesh.size(1) - num_ignored_edges;
-    std::cout  << "P" << process_number << ". Offset is " << local_offset << std::endl;
+    std::cout  << "P" << process_number << ". Number of ignored edges is " << ignored_edges.size() << std::endl;
+    uint local_offset = mesh.size(1) - ignored_edges.size();
+
+    // Communicate all offsets
+    std::vector<uint> offsets(MPI::num_processes());
+    std::fill(offsets.begin(), offsets.end(), 0.0);
+    offsets[process_number] = local_offset;
+    MPI::gather(offsets);
+
+    // Compute offset
+    uint real_offset = 0;
+    for (uint i = 0; i < process_number; ++i)
+      real_offset += offsets[i];
+
+    std::cout  << "P" << process_number << ". Offset is " << real_offset << std::endl;
+
+    // Number owned edges
+    std::vector<uint> edge_numbers(mesh.size(1));
+    for (uint i = 0; i < owned_edges.size(); ++i)
+    {
+      uint edge = owned_edges[i];
+      edge_numbers[edge] = real_offset + i;
+    }
+
+    
+
+    for (std::map<uint, uint>::iterator iter = owned_shared.begin(); iter != owned_shared.end(); ++iter)
+    {
+      uint edge = (*iter).first;
+      uint process = (*iter).second;
+      uint global_number = edge_numbers[edge];
+      uint v0 = edges[edge].first;
+      uint v1 = edges[edge].second;
+      std::cout << "P" << process_number << ": Send local edge " << edge << " with global number " << global_number << " consisting of vertices " << v0 << " and " << v1
+                << " to process " << process << std::endl;
+    }
+
 
     uint max_global_number = *std::max_element(global_vertex_indices->values(), global_vertex_indices->values() + global_vertex_indices->size());
     uint global_num_vertices = MPI::global_maximum(max_global_number);
