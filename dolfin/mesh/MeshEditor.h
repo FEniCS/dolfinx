@@ -38,22 +38,15 @@ namespace dolfin
     
     /// Specify number of vertices
     void initVertices(uint num_vertices);
-
+    
+    /// Specify number of vertices
+    void initHigherOrderVertices(uint num_higher_order_vertices);
+    
     /// Specify number of cells
     void initCells(uint num_cells);
     
-    /// Set the finite element signature for the type of parametric mapping used for the local
-    /// elements in the mesh
-    void setMeshCoordFEsignature(const std::string FE_signature)
-    {mcv_finite_element_signature = FE_signature;}
-
-    /// Set the dofmap signature for the type of parametric mapping used for the local
-    /// elements in the mesh
-    void setMeshCoordDofMapsignature(const std::string dofmap_signature)
-    {mcv_dof_map_signature = dofmap_signature;}
-    
-    /// Set higher order mesh coordinates
-    void setMeshCoordinates(Vector& mesh_coord);
+    /// Specify number of cells
+    void initHigherOrderCells(uint num_higher_order_cells, uint num_higher_order_cell_dof);
     
     /// Set boolean indicator inside MeshGeometry
     void setAffineCellIndicator(uint c, const std::string affine_str);
@@ -69,6 +62,18 @@ namespace dolfin
 
     /// Add vertex v at given coordinate (x, y, z)
     void addVertex(uint v, double x, double y, double z);
+    
+    /// Add vertex v at given point p
+    void addHigherOrderVertex(uint v, const Point& p);
+
+    /// Add vertex v at given coordinate x
+    void addHigherOrderVertex(uint v, double x);
+
+    /// Add vertex v at given coordinate (x, y)
+    void addHigherOrderVertex(uint v, double x, double y);
+
+    /// Add vertex v at given coordinate (x, y, z)
+    void addHigherOrderVertex(uint v, double x, double y, double z);
 
     /// Add cell with given vertices
     void addCell(uint c, const std::vector<uint>& v);
@@ -81,7 +86,10 @@ namespace dolfin
     
     /// Add cell (tetrahedron) with given vertices
     void addCell(uint c, uint v0, uint v1, uint v2, uint v3);
-
+    
+    /// Add higher order cell data (assume P2 triangle for now)
+    void addHigherOrderCellData(uint c, uint v0, uint v1, uint v2, uint v3, uint v4, uint v5);
+    
     /// Close mesh, finish editing, and order entities locally
     void close(bool order=true);
 
@@ -89,9 +97,15 @@ namespace dolfin
 
     // Add vertex, common part
     void addVertexCommon(uint v, uint dim);
+    
+    // Add higher order vertex, common part
+    void addHigherOrderVertexCommon(uint v, uint dim);
 
     // Add cell, common part
     void addCellCommon(uint v, uint dim);
+    
+    // Add higher order cell, common part
+    void addHigherOrderCellCommon(uint v, uint dim);
 
     // Clear all data
     void clear();
@@ -120,10 +134,22 @@ namespace dolfin
     // Temporary storage for local cell data
     std::vector<uint> vertices;
     
-    // stores the type of mesh mapping,
-    // i.e. strings that specify the type of finite element function that represents the local mesh mapping
-    std::string mcv_finite_element_signature;
-    std::string mcv_dof_map_signature;
+    // NEW HIGHER ORDER MESH STUFF
+    
+    // Number of higher order vertices
+    uint num_higher_order_vertices;
+    
+    // Number of higher order cells <--- should be the same as num_cells!  good for error checking
+    uint num_higher_order_cells;
+    
+    // Next available higher order vertex
+    uint next_higher_order_vertex;
+
+    // Next available higher order cell
+    uint next_higher_order_cell;
+    
+    // Temporary storage for local higher order cell data
+    std::vector<uint> higher_order_cell_data;
 
   };
 

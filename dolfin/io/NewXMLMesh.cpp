@@ -21,15 +21,13 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 NewXMLMesh::NewXMLMesh(Mesh& mesh, NewXMLFile& parser) 
   : XMLHandler(parser), _mesh(mesh), state(OUTSIDE), f(0), a(0),
-    mesh_coord(0), uint_array(0), xml_array(0), xml_mesh_data(0)
+    xml_mesh_data(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewXMLMesh::~NewXMLMesh()
 {
-  delete mesh_coord;
-  delete uint_array;
   delete xml_mesh_data;
   // Do nothing
 }
@@ -64,9 +62,15 @@ void NewXMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
       read_mesh_data(name, attrs);
       state = INSIDE_MESH;
     }
-    else if ( xmlStrcasecmp(name, (xmlChar *) "coordinates") == 0 )
+    else if ( xmlStrcasecmp(name, (xmlChar *) "higher_order_coordinates") == 0 )
     {
-      state = INSIDE_COORDINATES;
+      read_higher_order_vertices(name, attrs);
+      state = INSIDE_HIGHERORDERVERTICES;
+    }
+    else if ( xmlStrcasecmp(name, (xmlChar *) "higher_order_cells") == 0 )
+    {
+      read_higher_order_cells(name, attrs);
+      state = INSIDE_HIGHERORDERCELLS;
     }
 
     break;
@@ -89,21 +93,17 @@ void NewXMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
     
     break;
 
-  case INSIDE_COORDINATES:
+  case INSIDE_HIGHERORDERVERTICES:
     
-    if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
-    {
-      read_mesh_coord(name, attrs);
-      state = INSIDE_VECTOR;
-    }
-    if ( xmlStrcasecmp(name, (xmlChar *) "finiteelement") == 0 )
-    {
-      read_fe_signature(name, attrs);
-    }
-    if ( xmlStrcasecmp(name, (xmlChar *) "dofmap") == 0 )
-    {
-      read_dof_map_signature(name, attrs);
-    }
+    if ( xmlStrcasecmp(name, (xmlChar *) "vertex") == 0 )
+      read_higher_order_vertex(name, attrs);
+
+    break;
+
+  case INSIDE_HIGHERORDERCELLS:
+    
+    if ( xmlStrcasecmp(name, (xmlChar *) "cell") == 0 )
+      read_higher_order_cell_data(name, attrs);
 
     break;
 
@@ -145,9 +145,18 @@ void NewXMLMesh::end_element(const xmlChar *name)
 
     break;
 
-  case INSIDE_COORDINATES:
+  case INSIDE_HIGHERORDERVERTICES:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "coordinates") == 0 )
+    if ( xmlStrcasecmp(name, (xmlChar *) "higher_order_coordinates") == 0 )
+    {
+      state = INSIDE_MESH;
+    }
+
+    break;
+    
+  case INSIDE_HIGHERORDERCELLS:
+
+    if ( xmlStrcasecmp(name, (xmlChar *) "higher_order_cells") == 0 )
     {
       state = INSIDE_MESH;
     }
@@ -327,10 +336,6 @@ void NewXMLMesh::read_interval(const xmlChar *name, const xmlChar **attrs)
   
   // Add cell
   editor.addCell(c, v0, v1);
-  
-  // set affine indicator
-  const std::string affine_str = parse_string_optional(name, attrs, "affine");
-  editor.setAffineCellIndicator(c, affine_str);
 }
 //-----------------------------------------------------------------------------
 void NewXMLMesh::read_triangle(const xmlChar *name, const xmlChar **attrs)
@@ -348,10 +353,6 @@ void NewXMLMesh::read_triangle(const xmlChar *name, const xmlChar **attrs)
   
   // Add cell
   editor.addCell(c, v0, v1, v2);
-  
-  // set affine indicator
-  const std::string affine_str = parse_string_optional(name, attrs, "affine");
-  editor.setAffineCellIndicator(c, affine_str);
 }
 //-----------------------------------------------------------------------------
 void NewXMLMesh::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
@@ -370,18 +371,6 @@ void NewXMLMesh::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
   
   // Add cell
   editor.addCell(c, v0, v1, v2, v3);
-  
-  // set affine indicator
-  const std::string affine_str = parse_string_optional(name, attrs, "affine");
-  editor.setAffineCellIndicator(c, affine_str);
-}
-//-----------------------------------------------------------------------------
-void NewXMLMesh::read_mesh_coord(const xmlChar* name, const xmlChar** attrs)
-{
-  delete xml_vector;
-  mesh_coord = new Vector();
-  xml_vector = new NewXMLVector(*mesh_coord, parser);
-  xml_vector->handle();
 }
 //-----------------------------------------------------------------------------
 void NewXMLMesh::read_mesh_entity(const xmlChar* name, const xmlChar** attrs)
@@ -402,34 +391,87 @@ void NewXMLMesh::read_mesh_data(const xmlChar* name, const xmlChar** attrs)
   xml_mesh_data->handle();
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_fe_signature(const xmlChar* name, const xmlChar** attrs)
+void NewXMLMesh::read_higher_order_vertices(const xmlChar *name, const xmlChar **attrs)
 {
-  // Read string for the finite element signature
-  const std::string FE_signature = parse_string_optional(name, attrs, "signature");
-  editor.setMeshCoordFEsignature(FE_signature);
+  // Parse values
+  uint num_higher_order_vertices = parse_uint(name, attrs, "size");
+
+  // Set number of vertices
+  editor.initHigherOrderVertices(num_higher_order_vertices);
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_dof_map_signature(const xmlChar* name, const xmlChar** attrs)
+void NewXMLMesh::read_higher_order_cells(const xmlChar *name, const xmlChar **attrs)
 {
-  // Read string for the dofmap signature
-  const std::string dofmap_signature = parse_string_optional(name, attrs, "signature");
-  editor.setMeshCoordDofMapsignature(dofmap_signature);
+  // Parse values
+  uint num_higher_order_cells    = parse_uint(name, attrs, "size");
+  uint num_higher_order_cell_dof = parse_uint(name, attrs, "num_dof");
+  
+  // Set number of vertices
+  editor.initHigherOrderCells(num_higher_order_cells, num_higher_order_cell_dof);
+}
+//-----------------------------------------------------------------------------
+void NewXMLMesh::read_higher_order_vertex(const xmlChar *name, const xmlChar **attrs)
+{
+  // Read index
+  uint v = parse_uint(name, attrs, "index");
+  
+  // Handle differently depending on geometric dimension
+  switch ( _mesh.geometry().dim() )
+  {
+  case 1:
+    {
+      double x = parse_float(name, attrs, "x");
+      editor.addHigherOrderVertex(v, x);
+    }
+    break;
+  case 2:
+    {
+      double x = parse_float(name, attrs, "x");
+      double y = parse_float(name, attrs, "y");
+      editor.addHigherOrderVertex(v, x, y);
+    }
+    break;
+  case 3:
+    {
+      double x = parse_float(name, attrs, "x");
+      double y = parse_float(name, attrs, "y");
+      double z = parse_float(name, attrs, "z");
+      editor.addHigherOrderVertex(v, x, y, z);
+    }
+    break;
+  default:
+    error("Dimension of mesh must be 1, 2 or 3.");
+  }
+}
+//-----------------------------------------------------------------------------
+void NewXMLMesh::read_higher_order_cell_data(const xmlChar *name, const xmlChar **attrs)
+{
+  // for now assume a P2 triangle!
+
+  // Check dimension
+  if ( _mesh.topology().dim() != 2 )
+    error("Mesh entity must be a triangle; does not match dimension of mesh (%d).",
+		 _mesh.topology().dim());
+
+  // Parse values
+  uint c  = parse_uint(name, attrs, "index");
+  const std::string affine_str = parse_string_optional(name, attrs, "affine");
+  uint v0 = parse_uint(name, attrs, "v0");
+  uint v1 = parse_uint(name, attrs, "v1");
+  uint v2 = parse_uint(name, attrs, "v2");
+  uint v3 = parse_uint(name, attrs, "v3");
+  uint v4 = parse_uint(name, attrs, "v4");
+  uint v5 = parse_uint(name, attrs, "v5");
+  
+  // Add cell
+  editor.addHigherOrderCellData(c, v0, v1, v2, v3, v4, v5);
+  
+  // set affine indicator
+  editor.setAffineCellIndicator(c, affine_str);
 }
 //-----------------------------------------------------------------------------
 void NewXMLMesh::close_mesh()
 {
-  // Setup higher order mesh coordinate data
-  // FIXME: This will introduce a memory leak
-  //error("NewXMLMesh::closeMesh() introduces a memory leak. Please fix.");
-
-  if (!mesh_coord == 0)
-  {
-    editor.setMeshCoordinates(*mesh_coord); 
-    delete mesh_coord;
-    delete xml_vector;
-    mesh_coord = 0;
-    xml_vector = 0;
-  }
   editor.close(false);
 }
 //-----------------------------------------------------------------------------

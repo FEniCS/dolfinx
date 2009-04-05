@@ -42,7 +42,6 @@ namespace dolfin
     void readMesh        (const xmlChar* name, const xmlChar** attrs);
     void readVertices    (const xmlChar* name, const xmlChar** attrs);
     void readCells       (const xmlChar* name, const xmlChar** attrs);
-    void readCoordinates (const xmlChar* name, const xmlChar** attrs);
     void readVertex      (const xmlChar* name, const xmlChar** attrs);
     void readInterval    (const xmlChar* name, const xmlChar** attrs);
     void readTriangle    (const xmlChar* name, const xmlChar** attrs);
@@ -59,10 +58,6 @@ namespace dolfin
     MeshEditor editor;
     MeshFunction<uint>* f;
     std::vector<uint>* a;
-    
-    // Variables for reading in higher order mesh coordinates from vector data
-    Vector *mesh_coord;
-    XMLVector *xml_vector;
     
   };
   
