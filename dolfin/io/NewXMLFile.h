@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-03
-// Last changed: 2009-03-16
+// Last changed: 2009-04-01
 
 #ifndef __NEWXMLFILE_H
 #define __NEWXMLFILE_H
@@ -64,6 +64,8 @@ namespace dolfin
       Handler::write(t, *outstream, 1); 
       close_file();
     }
+
+    // Input
 
     void operator>> (Mesh& input)          { read_xml(input); }
     void operator>> (LocalMeshData& input) { read_xml(input); }

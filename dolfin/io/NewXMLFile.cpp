@@ -281,15 +281,15 @@ void NewXMLFile::open_file()
 
     // Go to end of file
     outfile->seekp(0, std::ios::end);
-    XMLDolfin::write_start(*outfile);
   }
+  XMLDolfin::write_start(*outstream);
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::close_file()
 {
+  XMLDolfin::write_end(*outstream);
   // Convert to ofstream
   std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream);
-  XMLDolfin::write_end(*outfile);
   if ( outfile != 0 )
     outfile->close();
 

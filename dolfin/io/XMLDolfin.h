@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-27
-// Last changed: 2009-03-27
+// Last changed: 2009-04-01
 
 #ifndef __XMLDOLFIN_H
 #define __XMLDOLFIN_H
@@ -11,6 +11,10 @@
 
 namespace dolfin
 {
+
+  /// This class is responsible for the outer <dolfin> xml namespace,
+  /// and dispatches the correct reader in start_element. It is needed 
+  /// when we store more than one data type pr file.
 
   class XMLDolfin : public XMLHandler
   {
