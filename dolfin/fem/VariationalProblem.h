@@ -101,6 +101,9 @@ namespace dolfin
     /// Optional callback called before calls to F() and J()
     virtual void update(const GenericVector& x);
 
+    /// Return Newton solver (only useful when solving a nonlinear problem)
+    NewtonSolver& newton_solver();
+
   private:
 
     // Solve linear variational problem
@@ -127,7 +130,7 @@ namespace dolfin
     bool nonlinear;
 
     // Newton solver
-    NewtonSolver* newton_solver;
+    NewtonSolver* _newton_solver;
 
   };
 

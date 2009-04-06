@@ -1,3 +1,4 @@
+ - Enable setting parameters for Newton solver in VariationalProblem
  - Simplified and improved implementation of C++ plotting, calling Viper on command-line
  - Remove precompiled elements and projections
  - Automatically interpolate user-defined functions on assignment
