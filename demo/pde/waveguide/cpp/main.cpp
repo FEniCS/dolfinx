@@ -30,7 +30,7 @@ int main()
   // Create mesh
   double width = 1.0;
   double height = 0.5;
-  Rectangle mesh(0, 0, width, height, 2, 1);
+  Rectangle mesh(0, 0, width, height, 4, 2);
 
   // Define the forms - gererates an generalized eigenproblem of the form 
   // [S]{h} = k_o^2[T]{h}
@@ -64,7 +64,7 @@ int main()
   // So, we need to identify the smallest, non-zero eigenvalue of the system - 
   // which corresponds with cutoff wavenumber of the the dominant cutoff mode.
   double cutoff = -1.0;
-  real lr, lc;
+  double lr, lc;
   for (unsigned int i = 0; i < S.size(1); i++)
   {
     esolver.getEigenvalue(lr, lc, i);

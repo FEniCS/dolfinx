@@ -38,12 +38,10 @@ dolfin_set("linear algebra backend", "PETSc")
 # Create mesh
 width = 1.0
 height = 0.5
-mesh = Rectangle(0, 0, width, height, 20, 10)
+mesh = Rectangle(0, 0, width, height, 4, 2)
 
 # Define the function space
 V = FunctionSpace(mesh, "Nedelec", 2)
-
-print V.dim()
 
 # Define the test and trial functions
 v = TestFunction(V)
