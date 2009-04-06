@@ -1,8 +1,8 @@
-// Copyright (C) 2008 Anders Logg and Garth N. Wells.
+// Copyright (C) 2008-2009 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-26
-// Last changed: 2008-12-30
+// Last changed: 2009-03-06
 
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
@@ -12,6 +12,7 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/SubFunction.h>
 #include "assemble.h"
+#include "Form.h"
 #include "BoundaryCondition.h"
 #include "DirichletBC.h"
 #include "VariationalProblem.h"
