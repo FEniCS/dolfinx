@@ -96,7 +96,7 @@ for demo in cppdemos:
     cppdemo_ext = ''
     if platform.system() == 'Windows':
         cppdemo_ext = '.exe'
-    if os.path.isfile(os.path.join(demo, 'demo'+cppdemo_ext)):
+    if os.path.isfile(os.path.join(demo, 'demo' + cppdemo_ext)):
         t1 = time()
         output = get_status_output("cd %s && .%sdemo%s" % \
                                    (demo, os.path.sep, cppdemo_ext))
@@ -131,7 +131,7 @@ for demo in pydemos:
         print "*** Warning: missing demo"
 
 # Print summary of time to run demos
-if False:
+if True:
     print ""
     print "Time to run demos:"
     print "\n".join("%s: %.2fs" % t for t in timing)
