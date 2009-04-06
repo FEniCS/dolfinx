@@ -59,6 +59,7 @@ void DofMapBuilder::build(DofMap& dof_map, UFC& ufc, const Mesh& mesh)
 void DofMapBuilder::initialize_data_structure(DofMap& dof_map, const Mesh& mesh)
 {
   const uint process_number = MPI::process_number();
+
   // Initialize mesh entities used by the dof map
   for (uint d = 0; d <= mesh.topology().dim(); d++)
     if (dof_map.ufc_dof_map->needs_mesh_entities(d))
@@ -66,52 +67,53 @@ void DofMapBuilder::initialize_data_structure(DofMap& dof_map, const Mesh& mesh)
 
   // Build edge-global-vertex-number information
   MeshFunction<uint>* global_vertex_indices = mesh.data().mesh_function("global vertex indices");
-  if (global_vertex_indices != NULL)
+  if (global_vertex_indices != NULL) 
   {
     uint d = mesh.topology().dim();
     std::vector<std::vector<uint> > entities(mesh.size(d-1));
-
     std::vector<uint> entity_vertices;
     std::vector<uint> entity;
+    // Iterate over all facets (MeshEntities of co-dimension 1)
     for (MeshEntityIterator e(mesh, d-1); !e.end(); ++e)
     {
-      std::cout << "P" << process_number << ". Entity index is " << e->index() << std::endl;
       entity_vertices.clear();
+      // Get all vertices for the given facet (2 for triagles, 3 for tets)
       for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
-      {
-        std::cout << "P" << process_number << ". Vertex index is " << vertex->index() << std::endl;
-        std::cout << "P" << process_number << ". Global vertex index is " << global_vertex_indices->get(vertex->index()) << std::endl;
         entity_vertices.push_back(global_vertex_indices->get(vertex->index()));
-      }
       entities[e->index()] = entity_vertices;
     }
 
-    std::cout  << "P" << process_number << ". Total number of edges is " << entities.size() << std::endl;
+    /// Find out which edges to ignore (belonging to a lower ranked process), 
+    /// which edges to number, and which edges to number and send to higher ranked processes
 
-    // Find out which edges to ignore (belonging to a lower ranked process)
     std::map<uint, std::vector<uint> >* mapping = mesh.data().vector_mapping("overlap");
 
+    // Edges numbered by other process
     std::vector<uint> ignored_entities;
+
+    // Edges numbered by this process
     std::vector<uint> owned_entities;
+
+    // Edges numbered by this process (key) and sendt to higher ranked process (value)
     std::map<uint, uint> owned_shared;
-    bool ignore;
     for (uint e = 0; e < entities.size(); ++e)
     {
-      ignore = false;
+      bool ignore = false;
       bool on_boundary = true;
-      uint num_entities = entities[e].size();
+      const uint num_entities = entities[e].size(); // Could be moved outside loop
+
+      // All vertices must be in the overlap to be on the boundary
       for (uint i = 0; i < num_entities; ++i)
         if (mapping->count(entities[e][i]) == 0)
             on_boundary = false;
       if (on_boundary)
       {
         // Find out if we share an edge with another process
-        // This means taking the intersection between all the vertices for the given mesh entity...
+        // This means taking the intersection between all the vertices for the given mesh entity.
 
-        // First copy first overlap
+        // Copy first vertex overlap
         std::vector<uint> intersection = (*mapping)[entities[e][0]];
         std::vector<uint>::iterator intersection_end = intersection.end();
-        std::cout << "NUM_ENTITIES = " << num_entities << std::endl;
         for (uint i = 1; i < num_entities; ++i)
         {
           std::cout << entities[e][i] << std::endl;
@@ -129,6 +131,8 @@ void DofMapBuilder::initialize_data_structure(DofMap& dof_map, const Mesh& mesh)
             ignore = true;
           else
             // Shared edge what we will give a number and send to process intersection[0]
+            // FIXME: We assume the intersection is only one number here. This is wrong.
+            // For example, the edge intersection for tets will sometimes be larger.
             owned_shared[e] = intersection[0];
         }
       }
@@ -138,11 +142,8 @@ void DofMapBuilder::initialize_data_structure(DofMap& dof_map, const Mesh& mesh)
         owned_entities.push_back(e);
     }
 
-    dolfin_assert(ignored_entities.size() + owned_entities.size() == mesh.size(d-1));
-
     // Compute local offset
-    std::cout  << "P" << process_number << ". Number of ignored edges is " << ignored_entities.size() << std::endl;
-    uint local_offset = mesh.size(d-1) - ignored_entities.size();
+    const uint local_offset = mesh.size(d-1) - ignored_entities.size();
 
     // Communicate all offsets
     std::vector<uint> offsets(MPI::num_processes());
@@ -151,20 +152,21 @@ void DofMapBuilder::initialize_data_structure(DofMap& dof_map, const Mesh& mesh)
     MPI::gather(offsets);
 
     // Compute offset
-    uint real_offset = 0;
+    uint global_offset = 0;
     for (uint i = 0; i < process_number; ++i)
-      real_offset += offsets[i];
+      global_offset += offsets[i];
 
-    std::cout  << "P" << process_number << ". Offset is " << real_offset << std::endl;
+    std::cout  << "P" << process_number << ". Offset is " << global_offset << std::endl;
 
     // Number owned entities
     std::vector<uint> entity_numbers(mesh.size(d-1));
     for (uint i = 0; i < owned_entities.size(); ++i)
     {
       uint entity = owned_entities[i];
-      entity_numbers[entity] = real_offset + i;
+      entity_numbers[entity] = global_offset + i;
     }
 
+    // Check that we got this right
     for (std::map<uint, uint>::iterator iter = owned_shared.begin(); iter != owned_shared.end(); ++iter)
     {
       uint entity = (*iter).first;
@@ -176,26 +178,12 @@ void DofMapBuilder::initialize_data_structure(DofMap& dof_map, const Mesh& mesh)
                 << " to process " << process << std::endl;
     }
 
-
+    // Find the global number of vertices. Should we add MeshFunction iterators to DOLFIN?
     uint max_global_number = *std::max_element(global_vertex_indices->values(), global_vertex_indices->values() + global_vertex_indices->size());
     uint global_num_vertices = MPI::global_maximum(max_global_number);
 
     std::cout  << "P" << process_number << ". Max global number is " << global_num_vertices << std::endl;
 
-
-    
-  /*
-    std::map<uint, std::vector<uint> >::iterator map_iter;
-
-    BoundaryMesh bmesh(mesh);
-
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-      for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
-      {
-
-      }
-    
-  */
   }
 
 }
