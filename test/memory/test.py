@@ -48,7 +48,12 @@ cppdemos.remove('./../../demo/pde/cahn-hilliard/cpp')
 
 failed = []
 
-vg_comm = 'valgrind --error-exitcode=9 --tool=memcheck --leak-check=full --show-reachable=yes'
+dolfin_mpi_supp = os.path.join(os.getcwd(), 'dolfin_mpi.supp')
+vg_comm = 'valgrind --error-exitcode=9 --tool=memcheck --leak-check=full --show-reachable=yes --suppressions=%s' % dolfin_mpi_supp
+
+re_def_lost = re.compile("definitely lost: 0 bytes in 0 blocks.")
+re_pos_lost = re.compile("possibly lost: 0 bytes in 0 blocks.")
+re_reachable = re.compile("still reachable: 0 bytes in 0 blocks.")
 
 # Run C++ demos
 for demo in cppdemos:
@@ -65,6 +70,13 @@ for demo in cppdemos:
             failed += [(demo, "C++", output[1])]
             if output[0] == 9:
                 print "*** FAILED: Memory error"
+            elif output[1].find("LEAK SUMMARY:"):
+                if re_def_lost.search(output[1]) and \
+                   re_pos_lost.search(output[1]) and \
+                   re_reachable.search(output[1]):
+                    print "OK"
+                else:
+                    print "*** FAILED: Memory leak"
             elif len(noleak) != 1:
                 print "*** FAILED: Memory leak"
             else:
