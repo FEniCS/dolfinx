@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2008 Anders Logg.
+// Copyright (C) 2005-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2008-10-06
+// Last changed: 2009-03-07
 
 #include <dolfin/common/real.h>
 #include <dolfin/common/timing.h>
@@ -30,9 +30,8 @@ MonoAdaptiveJacobian::MonoAdaptiveJacobian(MonoAdaptiveTimeSlab& timeslab,
 //-----------------------------------------------------------------------------
 MonoAdaptiveJacobian::~MonoAdaptiveJacobian()
 {
-  delete xx;
-  delete yy;
-
+  delete [] xx;
+  delete [] yy;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MonoAdaptiveJacobian::size(uint dim) const
