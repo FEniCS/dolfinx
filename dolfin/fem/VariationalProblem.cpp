@@ -1,8 +1,8 @@
-// Copyright (C) 2008 Anders Logg and Garth N. Wells.
+// Copyright (C) 2008-2009 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-26
-// Last changed: 2008-12-30
+// Last changed: 2009-03-06
 
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
@@ -12,6 +12,7 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/SubFunction.h>
 #include "assemble.h"
+#include "Form.h"
 #include "BoundaryCondition.h"
 #include "DirichletBC.h"
 #include "VariationalProblem.h"
@@ -23,7 +24,7 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        const Form& L,
                                        bool nonlinear)
   : a(a), L(L), cell_domains(0), exterior_facet_domains(0), 
-    interior_facet_domains(0), nonlinear(nonlinear), newton_solver(0)
+    interior_facet_domains(0), nonlinear(nonlinear), _newton_solver(0)
     
 {
   // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system 
@@ -36,7 +37,7 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        const BoundaryCondition& bc,
                                        bool nonlinear)
   : a(a), L(L), cell_domains(0), exterior_facet_domains(0),
-    interior_facet_domains(0), nonlinear(nonlinear), newton_solver(0)   
+    interior_facet_domains(0), nonlinear(nonlinear), _newton_solver(0)   
 {
   // Store boundary condition
   bcs.push_back(&bc);
@@ -51,7 +52,7 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        std::vector<BoundaryCondition*>& bcs,
                                        bool nonlinear)
   : a(a), L(L), cell_domains(0), exterior_facet_domains(0), 
-    interior_facet_domains(0), nonlinear(nonlinear), newton_solver(0) 
+    interior_facet_domains(0), nonlinear(nonlinear), _newton_solver(0) 
 {
   // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
@@ -72,7 +73,7 @@ VariationalProblem::VariationalProblem(const Form& a,
   : a(a), L(L), cell_domains(cell_domains), 
     exterior_facet_domains(exterior_facet_domains), 
     interior_facet_domains(interior_facet_domains), nonlinear(nonlinear), 
-    newton_solver(0)
+    _newton_solver(0)
 {
   // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
@@ -85,7 +86,7 @@ VariationalProblem::VariationalProblem(const Form& a,
 //-----------------------------------------------------------------------------
 VariationalProblem::~VariationalProblem()
 {
-  delete newton_solver;
+  delete _newton_solver;
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve(Function& u)
@@ -151,6 +152,19 @@ void VariationalProblem::J(GenericMatrix& A, const GenericVector& x)
 void VariationalProblem::update(const GenericVector& x)
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+NewtonSolver& VariationalProblem::newton_solver()
+{
+  // Create Newton solver if missing
+  if (!_newton_solver)
+  {
+    _newton_solver = new NewtonSolver();
+    _newton_solver->set("parent", *this);
+  }
+
+  dolfin_assert(_newton_solver);
+  return *_newton_solver;
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve_linear(Function& u)
@@ -238,13 +252,8 @@ void VariationalProblem::solve_nonlinear(Function& u)
     u._function_space = a._function_spaces[1];
   }
 
-  // Create Newton solver if missing
-  if (!newton_solver)
-    newton_solver = new NewtonSolver();
-
   // Call Newton solver
-  dolfin_assert(newton_solver);
-  newton_solver->solve(*this, u.vector());
+  newton_solver().solve(*this, u.vector());
 
   end();
 }

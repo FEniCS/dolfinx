@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-05-02
-// Last changed: 2009-03-16
+// Last changed: 2009-03-27
 
 #include <stdlib.h>
 #include <sstream>
@@ -45,21 +45,21 @@ void dolfin::plot(const Function& v, std::string mode)
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Mesh& mesh)
 {
-  plot_object(mesh, "");
+  plot_object(mesh, "auto");
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<uint>& f)
 {
-  plot_object(f, "");
+  plot_object(f, "auto");
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<double>& f)
 {
-  plot_object(f, "");
+  plot_object(f, "auto");
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<bool>& f)
 {
-  plot_object(f, "");
+  plot_object(f, "auto");
 }
 //-----------------------------------------------------------------------------
