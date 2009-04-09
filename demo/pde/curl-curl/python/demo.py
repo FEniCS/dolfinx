@@ -19,7 +19,7 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 
 # Create mesh
-mesh = UnitSphere(10)
+mesh = UnitSphere(8)
 
 # Define function spaces
 PN = FunctionSpace(mesh, "Nedelec", 0)
@@ -47,12 +47,12 @@ bc = DirichletBC(PN, zero, DirichletBoundary())
 
 # Eddy currents equation (using potential T) 
 Teqn = (dot(rot(v0), rot(u0))*dx, -dot(v0, dBdt)*dx)
-Tproblem = VariationalProblem( Teqn[0], Teqn[1], bc)
+Tproblem = VariationalProblem(Teqn[0], Teqn[1], bc)
 T = Tproblem.solve()
 
 # Current density equation
 Jeqn = (dot(v1, u1)*dx, dot(v1, curl(T))*dx)
-Jproblem = VariationalProblem( Jeqn[0], Jeqn[1])
+Jproblem = VariationalProblem(Jeqn[0], Jeqn[1])
 J = Jproblem.solve()
 
 # Plot solution
@@ -60,5 +60,3 @@ plot(J)
 
 # Hold plot
 interactive()
-
-

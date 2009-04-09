@@ -29,7 +29,7 @@ int main()
   class Source : public Function
   {
   public:
-    void eval(real* values, const double* x) const
+    void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -41,7 +41,7 @@ int main()
   class Zero : public Function
   {
   public:
-    void eval(real* values, const double* x) const
+    void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -52,14 +52,14 @@ int main()
   // Everywhere on external surface
   class DirichletBoundary: public SubDomain
   {
-    bool inside(const real* x, bool on_boundary) const
+    bool inside(const double* x, bool on_boundary) const
     {
       return on_boundary;
     }
   };
 
   // Create demo mesh
-  UnitSphere mesh(10);
+  UnitSphere mesh(8);
 
   // Define functions
   Source dBdt;
