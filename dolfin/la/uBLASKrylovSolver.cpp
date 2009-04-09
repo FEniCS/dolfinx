@@ -68,8 +68,6 @@ dolfin::uint uBLASKrylovSolver::solve(const uBLASMatrix<ublas_sparse_matrix>& A,
 dolfin::uint uBLASKrylovSolver::solve(const uBLASKrylovMatrix& A, uBLASVector& x, 
     const uBLASVector& b)
 { 
-  // FIXME: Implement support for uBLASKrylovMatrix
-  error("uBLASKrylovSolver does not yet support uBLASKrylovMatrix.");
   return solveKrylov(A, x, b); 
 }
 //-----------------------------------------------------------------------------
