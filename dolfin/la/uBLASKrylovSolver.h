@@ -319,10 +319,9 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template<class Mat> 
-  dolfin::uint uBLASKrylovSolver::solveBiCGStab(const Mat& A,
-					      uBLASVector& x,
-					      const uBLASVector& b,
-					      bool& converged) const
+  dolfin::uint uBLASKrylovSolver::solveBiCGStab(const Mat& A, uBLASVector& x,
+					                                      const uBLASVector& b,
+					                                      bool& converged) const
   {
     // Get uderlying uBLAS vectors
     ublas_vector& _x = x.vec(); 
@@ -430,8 +429,6 @@ namespace dolfin
     return iteration;
   }
   //-----------------------------------------------------------------------------
-
-
 }
 
 #endif
