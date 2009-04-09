@@ -46,7 +46,7 @@
 // Ignore low level interface from GenericTensor class
 %ignore dolfin::GenericTensor::get(double*, const uint*, const uint * const *) const;
 %ignore dolfin::GenericTensor::set(const double* , const uint* , const uint * const *);
-%ignore dolfin::GenericTensor::add;
+%ignore dolfin::GenericTensor::add(const double* , const uint* , const uint * const *);
 %ignore dolfin::GenericTensor::instance;
 
 // Define a macros for the linear algebra factory interface
