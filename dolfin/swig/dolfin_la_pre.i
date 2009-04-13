@@ -72,8 +72,6 @@
 %ignore dolfin::VEC_TYPE::get(double*, uint, const uint*) const;
 %ignore dolfin::VEC_TYPE::set(const double* , uint m, const uint*);
 		
-%ignore dolfin::VEC_TYPE::add;
-
 %newobject dolfin::VEC_TYPE::copy;
 
 %ignore dolfin::VEC_TYPE::data() const;
@@ -89,7 +87,6 @@
 %ignore dolfin::MAT_TYPE::operator/=;
 %ignore dolfin::MAT_TYPE::operator+=;
 %ignore dolfin::MAT_TYPE::operator-=;
-%ignore dolfin::MAT_TYPE::add;
 
 %newobject dolfin::MAT_TYPE::copy;
 
