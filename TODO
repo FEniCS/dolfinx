@@ -55,6 +55,7 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 ** Figure out where to store parameters: in DefaultParameters.h or create in constructors
 ** Load default parameters from file
 ** Add function to display all parameters
+** Keep list of possible values and check against these when setting parameters
 
 * Demos
 ** Add Python versions of all demos
