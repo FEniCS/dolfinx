@@ -67,3 +67,15 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 ** Update function names: fooBar --> foo_bar
 ** Remove as much const_cast as possible
 ** Replace Array with std::vector
+
+* Higher Order (Curved) Mesh Capability
+** Continue to get P2 (quadratic) 2-D triangles implemented.
+** This will require modifying ufc::cell and related routines so that FFC has access to the curved mesh data.
+** Will need to enable FFC to create code for triangles that are NOT affinely mapped.
+** Have a demo for this.
+
+* 1-D and 2-D Meshes in 3-D
+** Need demos for a 1-D curve in 2-D and 3-D.
+** Need demo for a 2-D surface in 3-D.
+** These demos could involve solving the Laplace-Beltrami PDE on the surface.
+** This section may also relate/link to the higher order mesh stuff.
