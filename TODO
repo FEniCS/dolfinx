@@ -9,6 +9,7 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 * TODO for DOLFIN 0.9.3
 ** Use strings instead of enums for parameters
 ** Consistent naming of member functions (use underscores)
+** Break up function Assembler::assemble_system
 
 * Build system
 ** Demos are not built when using 'scons install . . . enableDemos=yes'
@@ -66,7 +67,6 @@ This gives convenient expand/collapse of bullets by pressing TAB.
 ** Fix setprecision() for cout
 ** Update function names: fooBar --> foo_bar
 ** Remove as much const_cast as possible
-** Replace Array with std::vector
 
 * Higher Order (Curved) Mesh Capability
 ** Continue to get P2 (quadratic) 2-D triangles implemented.
