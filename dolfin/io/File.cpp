@@ -112,6 +112,13 @@ void File:: set_new_xml_style()
   file = new NewXMLFile(filename, true);
 }
 //-----------------------------------------------------------------------------
+void File:: validate_xml()
+{
+  std::cout << "Validating xml file named *" << filename << "*" << std::endl;
+  NewXMLFile* valid = new NewXMLFile(filename, true);
+  valid->validate(filename);
+}
+//-----------------------------------------------------------------------------
 void File::operator>> (GenericVector& x)
 {
   file->read();

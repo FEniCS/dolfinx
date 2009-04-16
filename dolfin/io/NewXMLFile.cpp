@@ -4,6 +4,7 @@
 // First added: 2009-03-03
 // Last changed: 2009-03-11
 
+//#include <stdexcept>
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
@@ -71,6 +72,36 @@ NewXMLFile::~NewXMLFile()
     outfile = 0;
     delete outstream;
   }
+}
+//-----------------------------------------------------------------------------
+void NewXMLFile::validate(const std::string filename)
+{
+  xmlRelaxNGParserCtxtPtr parser;
+  xmlRelaxNGValidCtxtPtr validator;
+  xmlRelaxNGPtr schema;
+  xmlDocPtr document;
+  document = xmlParseFile(filename.c_str());
+  int ret = 1;
+  parser = xmlRelaxNGNewParserCtxt("http://fenics.org/pub/misc/dolfin.rng");
+  xmlRelaxNGSetParserStructuredErrors(parser,
+                                      (xmlStructuredErrorFunc)new_rng_parser_error,
+                                      stderr);
+  schema = xmlRelaxNGParse(parser);
+  validator = xmlRelaxNGNewValidCtxt(schema);
+  xmlRelaxNGSetValidStructuredErrors(validator,
+                                     (xmlStructuredErrorFunc)new_rng_valid_error,
+                                     stderr);
+  ret = xmlRelaxNGValidateDoc(validator, document);
+  if ( ret == 0 ) {
+    message(0, "%s validates", filename.c_str());
+  }
+  else if ( ret < 0 ) {
+    error("%s failed to load", filename.c_str());
+  }
+  else {
+    error("%s fails to validate", filename.c_str());
+  }
+  xmlRelaxNGFreeValidCtxt(validator);
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::vector<int>& x)
@@ -239,7 +270,6 @@ void NewXMLFile::parse()
 {
   // Parse file
   xmlSAXUserParseFile(sax, (void *) this, filename.c_str());
-
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::push(XMLHandler* handler)
@@ -308,7 +338,8 @@ void dolfin::new_sax_end_document(void *ctx)
 }
 //-----------------------------------------------------------------------------
 void dolfin::new_sax_start_element(void *ctx,
-			       const xmlChar *name, const xmlChar **attrs)
+                                   const xmlChar *name, 
+                                   const xmlChar **attrs)
 {
   ( (NewXMLFile*) ctx )->start_element(name, attrs);
 }
@@ -348,3 +379,33 @@ void dolfin::new_sax_fatal_error(void *ctx, const char *msg, ...)
   va_end(args);
 }
 //-----------------------------------------------------------------------------
+void dolfin::new_rng_parser_error(void *user_data, xmlErrorPtr error)
+{
+  char *file = error->file;
+  char *message = error->message;
+  int line = error->line;
+  xmlNodePtr node;
+  node = (xmlNode*)error->node;
+  std::string buffer;
+  buffer = message;
+  int length = buffer.length();
+  buffer.erase(length-1);
+  if (node != NULL)
+    warning("%s:%d: element %s: Relax-NG parser error: %s", 
+            file, line, node->name, buffer.c_str());
+}
+//-----------------------------------------------------------------------------
+void dolfin::new_rng_valid_error(void *user_data, xmlErrorPtr error)
+{
+  char *file = error->file;
+  char *message = error->message;
+  int line = error->line;
+  xmlNodePtr node;
+  node = (xmlNode*)error->node;
+  std::string buffer;
+  buffer = message;
+  int length = buffer.length();
+  buffer.erase(length-1);
+  warning("%s:%d: element %s: Relax-NG validity error: %s", 
+          file, line, node->name, buffer.c_str());
+}

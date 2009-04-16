@@ -114,6 +114,8 @@ namespace dolfin
     friend void new_sax_start_element (void *ctx, const xmlChar *name, const xmlChar **attrs);
     friend void new_sax_end_element   (void *ctx, const xmlChar *name);
 
+    void validate(std::string filename);
+
     void write() {}
 
     void parse();
@@ -148,5 +150,9 @@ namespace dolfin
   void new_sax_error       (void *ctx, const char *msg, ...);
   void new_sax_fatal_error (void *ctx, const char *msg, ...);
  
+  // Callback functions for Relax-NG Schema
+  void new_rng_parser_error(void *user_data, xmlErrorPtr error);
+  void new_rng_valid_error (void *user_data, xmlErrorPtr error);
+
 }
 #endif
