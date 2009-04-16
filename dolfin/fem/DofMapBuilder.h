@@ -21,24 +21,7 @@ namespace dolfin
   public:
 
     /// Build dof map
-    static void build(DofMap& dof_map, UFC& ufc, const Mesh& mesh);
-
-  private:
-    
-    // Build stage 0: Initialize data structures
-    static void initialize_data_structure(DofMap& dof_map, const Mesh& mesh);
-
-    // Build stage 1: Compute offsets
-    static void compute_offsets();
-    
-    // Build stage 2: Communicate offsets
-    static void communicate_offsets();
-
-    // Build stage 3: Compute dofs that this process is resposible for
-    static void number_dofs();
-    
-    // Build stage 4: Communicate mapping on shared facets
-    static void communicate_shared();
+    static void build(DofMap& dof_map, UFC& ufc, Mesh& mesh);
     
   };
 

@@ -95,7 +95,7 @@ namespace dolfin
     { ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell); }
 
     /// Build parallel dof map
-    void build(UFC& ufc, const Mesh& mesh);
+    void build(UFC& ufc, Mesh& mesh);
 
     /// Build dof map on only a subdomain of the mesh (meshfunction contains booleans for each cell)  
     void build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction<bool>& meshfunction);
@@ -130,7 +130,7 @@ namespace dolfin
     int* dof_map;
 
     // Size of dof_map 
-    uint dof_map_size; 
+    uint dof_map_size;
 
     // Cell map for restriction
     int* cell_map; 

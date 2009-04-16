@@ -194,7 +194,7 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_inde
     ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
 }
 //-----------------------------------------------------------------------------
-void DofMap::build(UFC& ufc, const Mesh& mesh)
+void DofMap::build(UFC& ufc, Mesh& mesh)
 {
   DofMapBuilder::build(*this, ufc, mesh);
 }
@@ -276,7 +276,6 @@ void DofMap::build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction
   delete [] dofs; 
   delete [] restriction_mapping; 
 }
-
 //-----------------------------------------------------------------------------
 std::map<dolfin::uint, dolfin::uint> DofMap::getMap() const
 {
