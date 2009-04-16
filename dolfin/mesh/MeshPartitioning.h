@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2008-12-15
+// Last changed: 2009-04-16
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -19,6 +19,29 @@ namespace dolfin
   /// partitioned local mesh data. Note that the local mesh data will
   /// also be repartitioned and redistributed during the computation
   /// of the mesh partitioning.
+  ///
+  /// After partitioning, each process has a local mesh and set of
+  /// mesh data that couples the meshes together.
+  ///
+  /// The following mesh data is created:
+  ///
+  /// 1. "global entity indices 0" (MeshFunction<uint>)
+  ///
+  /// This maps each local vertex to its global index.
+  ///
+  /// 2. "overlap" (std::map<uint, std::vector<uint> >)
+  ///
+  /// This maps each shared vertex to a list of the processes sharing
+  /// the vertex.
+  ///
+  /// After partitioning, the function number_entities() may be called
+  /// to create global indices for all entities of a given topological
+  /// dimension. These are stored as mesh data (MeshFunction<uint>)
+  /// named
+  ///
+  ///    "global entity indices 1"
+  ///    "global entity indices 2"
+  ///    etc
 
   class MeshPartitioning
   {
@@ -26,6 +49,9 @@ namespace dolfin
 
     /// Create a partitioned mesh based on partitioned local mesh data
     static void partition(Mesh& mesh, LocalMeshData& data);
+
+    /// Create global entity indices for entities of dimension d
+    static void number_entities(Mesh& mesh, uint d);
 
   private:
 
@@ -44,6 +70,10 @@ namespace dolfin
     // Build mesh
     static void build_mesh(Mesh& mesh, const LocalMeshData& data,
                            std::map<uint, uint>& glob2loc);
+
+    // Check if all entity vertices are in overlap
+    static bool in_overlap(const std::vector<uint>& entity_vertices,
+                           std::map<uint, std::vector<uint> >& overlap);
 
   };
 
