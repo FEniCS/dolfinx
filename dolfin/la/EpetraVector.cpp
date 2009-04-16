@@ -369,12 +369,12 @@ double EpetraVector::sum() const
   double value=0.;
   double global_sum=0;
   
-  double const * pointers( x[0] );
+  double const * pointers( (*x)[0] );
   
-  for (int i(0); i < x.MyLength(); ++i , ++pointers)
+  for (int i(0); i < x->MyLength(); ++i , ++pointers)
       value += *pointers;
   
-  x.Comm().SumAll(&value, &global_sum, 1);
+  x->Comm().SumAll(&value, &global_sum, 1);
   
   return value;
 }
