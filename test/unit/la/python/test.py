@@ -150,6 +150,7 @@ class AbstractBaseTest(object):
         self.assertTrue(isinstance(A2,ndarray))
         self.assertEqual(A2.shape,(16,))
         self.assertAlmostEqual(A2[5],A[5])
+        self.assertAlmostEqual(A2.sum(),A.sum())
 
     def test_matrix_vector(self):
         from numpy import dot, absolute

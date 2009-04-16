@@ -15,6 +15,7 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/vector_expression.hpp>
 #include "uBLASVector.h"
 #include "uBLASFactory.h"
 #include "LinearAlgebraFactory.h"
@@ -144,6 +145,11 @@ double uBLASVector::max() const
 {
   double value = *std::max_element(x->begin(), x->end());
   return value;
+}
+//-----------------------------------------------------------------------------
+double uBLASVector::sum() const
+{
+  return ublas::sum(*x);
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::axpy(double a, const GenericVector& y)

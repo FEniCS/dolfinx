@@ -302,6 +302,15 @@ double PETScVector::max() const
   return value;
 }
 //-----------------------------------------------------------------------------
+double PETScVector::sum() const
+{
+  dolfin_assert(x);
+
+  double value = 0.0;
+  VecSum(*x, &value);
+  return value;
+}
+//-----------------------------------------------------------------------------
 void PETScVector::disp(uint precision) const
 {
   VecView(*x, PETSC_VIEWER_STDOUT_SELF);

@@ -109,6 +109,9 @@ namespace dolfin
     /// Return maximum value of vector
     virtual double max() const;
 
+    /// Return sum of values of vector
+    virtual double sum() const;
+    
     /// Multiply vector by given number
     virtual const EpetraVector& operator*= (double a);
 

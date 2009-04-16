@@ -115,6 +115,10 @@ namespace dolfin
     virtual double max() const
     { return vector->max(); }
 
+    /// Return sum of values of vector
+    virtual double sum() const
+    { return vector->sum(); }
+    
     /// Multiply vector by given number
     virtual const Vector& operator*= (double a)
     { *vector *= a; return *this; }

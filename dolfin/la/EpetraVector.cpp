@@ -362,5 +362,23 @@ double EpetraVector::max() const
   return value;
 }
 //-----------------------------------------------------------------------------
+double EpetraVector::sum() const
+{
+  dolfin_assert(x);
+  
+  double value=0.;
+  double global_sum=0;
+  
+  double const * pointers( x[0] );
+  
+  for (int i(0); i < x.MyLength(); ++i , ++pointers)
+      value += *pointers;
+  
+  x.Comm().SumAll(&value, &global_sum, 1);
+  
+  return value;
+}
+//-----------------------------------------------------------------------------
+    
 
 #endif
