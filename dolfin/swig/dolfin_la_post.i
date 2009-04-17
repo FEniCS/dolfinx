@@ -133,9 +133,10 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
       return return_vec;
     }
     
-    // If it is a sequence
-    if (!PyList_Check(op))
-      throw std::runtime_error("index must be either an int, a slice or a list");
+    // If it is a List or Numpy array
+    if (!(PyList_Check(op) or (PyArray_Check(op) and PyArray_TYPE(op) == NPY_INT)))
+      //SWIG_exception(SWIG_TypeError, "index must be either an int, a slice, a list or a Numpy array of int");
+      throw std::runtime_error("index must be either an int, a slice, a list or a Numpy array of ints");
     
     // An initial check of the length of sequence
     int seq_length = PySequence_Length(op);
@@ -313,11 +314,6 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   {
     (*self)*=a;
   }
-
-  void _vec_mult(const GenericVector &x)
-  {
-    (*self)*=x;
-  }
   
   %pythoncode
   %{
@@ -356,10 +352,6 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         if isinstance(other,(int,float)):
             ret = self.copy()
             ret._scale(other)
-            return ret
-        elif isinstance(other,GenericVector):
-            ret = self.copy()
-            ret._vec_mult(other)
             return ret
         return NotImplemented
     
@@ -410,11 +402,8 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         if isinstance(other,(float,int)):
             self._scale(other)
             return self
-        elif isinstance(other,GenericVector):
-            self._vec_mult(other)
-            return self
         return NotImplemented
-    
+
     def __idiv__(self,other):
         """x.__idiv__(y) <==> x/y"""
         if isinstance(other,(float,int)):
