@@ -152,6 +152,43 @@ class AbstractBaseTest(object):
         self.assertAlmostEqual(A2[5],A[5])
         self.assertAlmostEqual(A2.sum(),A.sum())
 
+        B2 = B.array()
+        A[1:16:2] = B[1:16:2]
+        A2[1:16:2] = B2[1:16:2]
+        self.assertAlmostEqual(A2[1],A[1])
+        
+        ind = [1,3,6,9,15]
+        G  = A[ind]
+        G2 = A2[ind]
+        self.assertAlmostEqual(G2.sum(),G.sum())
+        self.assertAlmostEqual(A[-1],A[15])
+        self.assertAlmostEqual(A[-16],A[0])
+        
+        C[:] = 2
+        D.assign(2)
+        self.assertAlmostEqual(C[0],2)
+        self.assertAlmostEqual(C[-1],2)
+        self.assertAlmostEqual(C.sum(),D.sum())
+        
+        C[ind] = 3
+        self.assertAlmostEqual(C[ind].sum(),3*len(ind))
+        
+        def wrong_index(ind):
+            A[ind]
+        
+        self.assertRaises(RuntimeError,wrong_index,(-17))
+        self.assertRaises(RuntimeError,wrong_index,(16))
+        self.assertRaises(RuntimeError,wrong_index,("jada"))
+        self.assertRaises(RuntimeError,wrong_index,([-17,2]))
+        self.assertRaises(RuntimeError,wrong_index,([16,2]))
+        
+        def wrong_dim(ind0,ind1):
+            A[ind0] = B[ind1]
+        
+        self.assertRaises(RuntimeError,wrong_dim,[0,2],[0,2,4])
+        self.assertRaises(RuntimeError,wrong_dim,[0,2],slice(0,4,1))
+        self.assertRaises(RuntimeError,wrong_dim,0,slice(0,4,1))
+
     def test_matrix_vector(self):
         from numpy import dot, absolute
         v = self.get_Vector()

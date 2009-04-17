@@ -15,11 +15,11 @@
 
 %typemap(in) std::pair<dolfin::uint,dolfin::uint> ij (std::pair<dolfin::uint, dolfin::uint> ij) {
   if (!PyTuple_Check($input)) {
-    PyErr_SetString(PyExc_TypeError,"*** Error: Expected a tuple of size 2");
+    PyErr_SetString(PyExc_TypeError,"expected a tuple of size 2");
     return NULL;
   }
   if (PyTuple_Size($input) != 2){
-    PyErr_SetString(PyExc_TypeError,"*** Error: Expected a tuple with size 2");	
+    PyErr_SetString(PyExc_TypeError,"expected a tuple with size 2");	
     return NULL;
   }
    ij.first   = PyLong_AsUnsignedLong(PyTuple_GetItem($input,0));
@@ -49,6 +49,18 @@
 %ignore dolfin::GenericTensor::add(const double* , const uint* , const uint * const *);
 %ignore dolfin::GenericTensor::instance;
 
+// Prepend a mod() of the provided index in the GenericVector.{get,set}item function
+%pythonprepend dolfin::VEC_TYPE::getitem(uint) %{
+  if len(args) == 2:
+      args = (args[0],args[1]%self.size())
+%}
+
+%pythonprepend dolfin::VEC_TYPE::setitem(uint, double) %{
+  if len(args) == 3:
+      args = (args[0],args[1]%self.size(),args[2])
+%}
+
+
 // Define a macros for the linear algebra factory interface
 %define LA_PRE_FACTORY(FACTORY_TYPE)
 %newobject dolfin::FACTORY_TYPE::create_matrix;
@@ -65,6 +77,9 @@
 %ignore dolfin::VEC_TYPE::operator/=;
 %ignore dolfin::VEC_TYPE::operator+=;
 %ignore dolfin::VEC_TYPE::operator-=;
+%ignore dolfin::VEC_TYPE::getitem;
+%ignore dolfin::VEC_TYPE::setitem;
+%newobject dolfin::VEC_TYPE::__getitem__(PyObject*);
 
 // Ignore the get and set functions used for blocks 
 // NOTE: The %ignore have to be set using the actuall type used in the declaration
