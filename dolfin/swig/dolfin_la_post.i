@@ -313,6 +313,11 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   {
     (*self)*=a;
   }
+
+  void _vec_mult(const GenericVector &x)
+  {
+    (*self)*=x;
+  }
   
   %pythoncode
   %{
@@ -351,6 +356,10 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         if isinstance(other,(int,float)):
             ret = self.copy()
             ret._scale(other)
+            return ret
+        elif isinstance(other,GenericVector):
+            ret = self.copy()
+            ret._vec_mult(other)
             return ret
         return NotImplemented
     
@@ -401,8 +410,11 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         if isinstance(other,(float,int)):
             self._scale(other)
             return self
+        elif isinstance(other,GenericVector):
+            self._vec_mult(other)
+            return self
         return NotImplemented
-
+    
     def __idiv__(self,other):
         """x.__idiv__(y) <==> x/y"""
         if isinstance(other,(float,int)):

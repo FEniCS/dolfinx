@@ -189,6 +189,17 @@ class AbstractBaseTest(object):
         self.assertRaises(RuntimeError,wrong_dim,[0,2],slice(0,4,1))
         self.assertRaises(RuntimeError,wrong_dim,0,slice(0,4,1))
 
+        if self.backend == "MTL4":
+            return
+        
+        A*=B
+        A2*=B2
+        I = A*B
+        I2 = A2*B2
+        self.assertAlmostEqual(A.sum(),A2.sum())
+        self.assertAlmostEqual(I.sum(),I2.sum())
+            
+
     def test_matrix_vector(self):
         from numpy import dot, absolute
         v = self.get_Vector()

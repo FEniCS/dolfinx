@@ -312,6 +312,23 @@ const EpetraVector& EpetraVector::operator*= (double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const EpetraVector& EpetraVector::operator*= (const GenericVector& y)
+{
+  dolfin_assert(x);
+  
+  const EpetraVector& v = y.down_cast<EpetraVector>();
+  if (!v.x) 
+    error("Given vector is not initialized.");
+  
+  if (size() != v.size())
+    error("The vectors must be of the same size.");  
+  
+  int err = x->Multiply(1.0,*x,*v.x,0.0);
+  if (err!= 0)
+    error("EpetraVector::operator*=: Did not manage to perform Epetra_Vector::Multiply.");
+  return *this;
+}
+//-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator/= (double a)
 {
   *this *= 1.0/a;
