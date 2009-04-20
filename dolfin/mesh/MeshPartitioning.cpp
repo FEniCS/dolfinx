@@ -69,6 +69,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     std::vector<uint> entity_vertices;
     for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
       entity_vertices.push_back(global_vertex_indices->get(vertex->index()));
+    std::sort(entity_vertices.begin(), entity_vertices.end());
     entities[e->index()] = entity_vertices;
   }
   
@@ -157,6 +158,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   // Communicate indices for shared entities
   std::vector<uint> values;
   std::vector<uint> partition;
+  message("Number of shared entities = %d", shared_entities.size());
   for (uint i = 0; i < shared_entities.size(); ++i)
   {
     // Get entity index
@@ -184,15 +186,29 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       for (uint k = 0; k < 2 + entity_vertices.size(); ++k)
         partition.push_back(p);
     }
-
-    // Send data
-    MPI::distribute(values, partition);
-
-    // Extract data (not implemented)
-    
-    // FIXME: Implement this part (should be easy but I don't have time right now)
-
   }
+
+  // Send data
+  MPI::distribute(values, partition);
+
+  // Extract data (not implemented)
+  const uint batch_size = 2 + entities[0].size();
+  const uint num_recieved = values.size() / batch_size;
+
+  for (uint i=0; i < num_recieved; ++i)
+  {
+    const uint global_index = values[i*batch_size];
+    std::vector<uint> entity;
+    for (uint j=2; j < batch_size; ++j)
+      entity.push_back(values[i*batch_size + j]);
+    message("%d", global_index);
+    entity_indices[ignored_entities[entity]] = global_index;
+  }
+
+  
+  // FIXME: Implement this part (should be easy but I don't have time right now)
+
+  
 
   // Create mesh data
 
