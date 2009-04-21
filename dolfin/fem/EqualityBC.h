@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-04-03
-// Last changed: 2009-04-15
+// Last changed: 2009-04-21
 
 #ifndef __EQUALITY_BC_H
 #define __EQUALITY_BC_H
@@ -24,15 +24,15 @@ namespace dolfin
   /// This class specifies the interface for setting equality boundary
   /// conditions for partial differential equations,
   ///
-  ///    u(x) = u(y),    for any x and y on G,
+  ///    u(x) = u(y),    for all x and y on G,
   /// 
-  ///  where G is subdomain of the mesh.
+  /// where G is subdomain of the mesh.
   ///
-  /// The sub domain G may be specified in a two different ways. Both of 
-  /// them produce set of unknowns (dofs) with should be equal. 
+  /// The sub domain G may be specified in two different ways. Both of
+  /// them produce a set of unknowns (dofs) with should be equal.
   ///
   /// The simplest approach is to specify a SubDomain object, using 
-  /// the inside() function to specify on which facets the boundary 
+  /// the inside() function to specify on which facets the boundary
   /// condition should be applied.
   ///
   /// Alternatively, the boundary may be specified by the boundary 
@@ -40,8 +40,7 @@ namespace dolfin
   ///
   /// Current implementation assume that the problem is scalar,
   /// so in case of mixed systems (vector-valued and mixed elements)
-  /// all compoments will be equalize.
-
+  /// all compoments will be set equal.
 
   class EqualityBC : public BoundaryCondition
   {

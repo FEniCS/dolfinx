@@ -59,7 +59,7 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
 
   if (equal_dofs.size() < 2) 
   {
-    warning("No enought dofs to set equality boundary condition.");
+    warning("No enough dofs to set equality boundary condition.");
     return;
   }  
   
@@ -120,7 +120,6 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
   delete [] cols;
   delete [] vals;
   delete [] zero;
-
 }
 //-----------------------------------------------------------------------------
 void EqualityBC::apply(GenericVector& b, const GenericVector& x) const
@@ -156,7 +155,6 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
   // Iterate over the facets of the mesh
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {    
-
     // Get cell to which facet belongs (there may be two, but pick first)
     Cell cell(mesh, facet->entities(D)[0]);
     UFCCell ufc_cell(cell);
@@ -188,9 +186,7 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
         equal_dofs.push_back(global_dof);
       }
     }
-
   }  
-
 }
 //-----------------------------------------------------------------------------
 void EqualityBC::init_from_mesh(uint sub_domain)
@@ -255,8 +251,6 @@ void EqualityBC::init_from_mesh(uint sub_domain)
       // Store dof
       equal_dofs.push_back(global_dof);
     }
-
   }
 }
 //-----------------------------------------------------------------------------
-
