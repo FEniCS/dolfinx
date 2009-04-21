@@ -1,17 +1,18 @@
 // Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
+//
 // Adapted for EqualityBC demo by Bartosz Sawicki.
 //
 // First added:  2009-04-15
-// Last changed: 2009-04-15
+// Last changed: 2009-04-21
 //
 // This demo program solves Poisson's equation,
 //
 //     - div grad u(x, y) = f(x, y)
 //
-// on the unit square with homogeneous Dirichlet boundary condition
-// at x = 0 and equality boundary condition at x = 1.
-// The rest of boundary is natural Neumann condition.
+// on the unit square with homogeneous Dirichlet boundary conditions
+// at x = 0, equality boundary conditions at x = 1, and homogeneous
+// Neumann conditions on the remaining boundary.
 
 #include <dolfin.h>
 #include "Poisson.h"
