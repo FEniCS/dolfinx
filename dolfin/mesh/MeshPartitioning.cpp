@@ -190,14 +190,13 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   MPI::distribute(values, partition);
 
   // Fill in global entity indices recieved from lower ranked processes
-  for (uint i = 0; i < values.size(); ++i)
+  for (uint i = 0; i < values.size();)
   {
     const uint global_index = values[i++];
     const uint entity_size = values[i++];
     std::vector<uint> entity;
     for (uint j=0; j < entity_size; ++j)
       entity.push_back(values[i++]);
-    --i;
     entity_indices[ignored_entities[entity]] = global_index;
   }
   
