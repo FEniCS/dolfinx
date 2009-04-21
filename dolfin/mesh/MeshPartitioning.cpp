@@ -4,6 +4,7 @@
 // First added:  2008-12-01
 // Last changed: 2009-04-16
 
+#include <sstream>
 #include <vector>
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -144,8 +145,6 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   for (uint i = 0; i < process_number; ++i)
     global_offset += offsets[i];
       
-  message("Offset is %d", global_offset);
-      
   // Number owned entities
   std::vector<int> entity_indices(mesh.size(d));
   std::fill(entity_indices.begin(), entity_indices.end(), -1);
@@ -158,7 +157,6 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   // Communicate indices for shared entities
   std::vector<uint> values;
   std::vector<uint> partition;
-  message("Number of shared entities = %d", shared_entities.size());
   for (uint i = 0; i < shared_entities.size(); ++i)
   {
     // Get entity index
@@ -191,42 +189,24 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   // Send data
   MPI::distribute(values, partition);
 
-  // Extract data (not implemented)
-  const uint batch_size = 2 + entities[0].size();
-  const uint num_recieved = values.size() / batch_size;
-
-  for (uint i=0; i < num_recieved; ++i)
+  // Fill in global entity indices recieved from lower ranked processes
+  for (uint i = 0; i < values.size(); ++i)
   {
-    const uint global_index = values[i*batch_size];
+    const uint global_index = values[i++];
+    const uint entity_size = values[i++];
     std::vector<uint> entity;
-    for (uint j=2; j < batch_size; ++j)
-      entity.push_back(values[i*batch_size + j]);
-    message("%d", global_index);
+    for (uint j=0; j < entity_size; ++j)
+      entity.push_back(values[i++]);
+    --i;
     entity_indices[ignored_entities[entity]] = global_index;
   }
-
   
-  // FIXME: Implement this part (should be easy but I don't have time right now)
-
-  
-
   // Create mesh data
-
-  // FIXME: Implement this part (should be easy but I don't have time right now)
-  
-  /*
-  // Check that we got this right
-  for (std::map<uint, uint>::iterator iter = owned_shared.begin(); iter != owned_shared.end(); ++iter)
-  {
-    uint entity = (*iter).first;
-    uint process = (*iter).second;
-    uint global_number = entity_numbers[entity];
-    uint v0 = entities[entity][0];
-    uint v1 = entities[entity][1];
-    std::cout << "P" << process_number << ": Send local entity " << entity << " with global number " << global_number << " consisting of vertices " << v0 << " and " << v1
-              << " to process " << process << std::endl;
-  }
-  */
+  std::stringstream name;
+  name << "global entity indices " << d;
+  MeshFunction<uint>* global_entity_indices = mesh.data().create_mesh_function(name.str(), d);
+  for (uint i = 0; i < entity_indices.size(); ++i)
+    global_entity_indices->set(i, entity_indices[i]);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
