@@ -144,7 +144,11 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   uint global_offset = 0;
   for (uint i = 0; i < process_number; ++i)
     global_offset += offsets[i];
-      
+
+  // Subtract one to get correct index offset if not first process
+  if ( global_offset > 0)
+    --global_offset;
+
   // Number owned entities
   std::vector<int> entity_indices(mesh.size(d));
   std::fill(entity_indices.begin(), entity_indices.end(), -1);
