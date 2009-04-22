@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2009-04-16
+// Last changed: 2009-04-22
 
 #include <sstream>
 #include <vector>
@@ -59,6 +59,10 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   std::map<uint, std::vector<uint> >* overlap = mesh.data().vector_mapping("overlap");
   dolfin_assert(global_vertex_indices);
   dolfin_assert(overlap);
+
+  // Sort overlap
+  for (std::map<uint, std::vector<uint> >::iterator it = (*overlap).begin(); it != (*overlap).end(); ++it)
+      std::sort((*it).second.begin(), (*it).second.end());
   
   // Initialize entities of dimension d
   mesh.init(d);
@@ -80,6 +84,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
 
   // Entities to ignore (shared with lower rank process)
   std::map<std::vector<uint>, uint> ignored_entities;
+  ignored_entities.clear();
 
   // Entities to number
   std::vector<uint> owned_entities;
@@ -100,11 +105,15 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     {
       std::vector<uint> intersection = (*overlap)[entity_vertices[0]];
       std::vector<uint>::iterator intersection_end = intersection.end();
+      std::vector<uint>::iterator iter;
+
       for (uint i = 1; i < entity_vertices.size(); ++i)
       {
         const uint v = entity_vertices[i];
+
         intersection_end = std::set_intersection(intersection.begin(), intersection_end, 
                                                  (*overlap)[v].begin(), (*overlap)[v].end(), intersection.begin());
+
       }
       entity_processes = std::vector<uint>(intersection.begin(), intersection_end);
     }
@@ -144,10 +153,6 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   uint global_offset = 0;
   for (uint i = 0; i < process_number; ++i)
     global_offset += offsets[i];
-
-  // Subtract one to get correct index offset if not first process
-  if ( global_offset > 0)
-    --global_offset;
 
   // Number owned entities
   std::vector<int> entity_indices(mesh.size(d));
@@ -201,6 +206,10 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     std::vector<uint> entity;
     for (uint j=0; j < entity_size; ++j)
       entity.push_back(values[i++]);
+
+    if (ignored_entities.count(entity) == 0) 
+      error("Recieved global value for non-ignored entity.");
+
     entity_indices[ignored_entities[entity]] = global_index;
   }
   
@@ -511,6 +520,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     std::vector<uint>::iterator intersection_end = std::set_intersection(
          global_vertex_send, global_vertex_send + boundary_size, 
          global_vertex_recv, global_vertex_recv + boundary_sizes[q], intersection.begin()); 
+
 
     // Fill overlap information
     for (std::vector<uint>::iterator index = intersection.begin(); index != intersection_end; ++index)
