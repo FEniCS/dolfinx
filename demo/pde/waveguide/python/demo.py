@@ -41,7 +41,7 @@ height = 0.5
 mesh = Rectangle(0, 0, width, height, 4, 2)
 
 # Define the function space
-V = FunctionSpace(mesh, "Nedelec", 2)
+V = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 2)
 
 # Define the test and trial functions
 v = TestFunction(V)
