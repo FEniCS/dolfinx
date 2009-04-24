@@ -50,8 +50,8 @@ h = MeshSize(mesh)
 beta  = 0.2
 delta = beta*h*h
 
-a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u) + delta*dot(grad(q), grad(p)))*dx
-L = dot(v + mult(delta, grad(q)), f)*dx
+a = (inner(grad(v), grad(u)) - div(v)*p + q*div(u) + delta*inner(grad(q), grad(p)))*dx
+L = inner(v + delta*grad(q), f)*dx
 
 # Set up PDE
 problem = VariationalProblem(a, L, bcs)

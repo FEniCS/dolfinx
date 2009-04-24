@@ -41,8 +41,8 @@ bcs = [bc0, bc1, bc2]
 (v, q) = TestFunctions(W)
 (u, p) = TrialFunctions(W)
 f = Constant(mesh, (0, 0, 0))
-a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
-L = dot(v, f)*dx
+a = (inner(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
+L = inner(v, f)*dx
 
 # Compute solution
 problem = VariationalProblem(a, L, bcs)
