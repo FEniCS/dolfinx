@@ -25,9 +25,8 @@ of = Function(constant)  # This function is a switch that determines if a facet 
 kappa = Constant(triangle)
 alpha = Constant(triangle)
 
-# FIXME: Update this function for UFL
 def upwind(u, b):
-  return [b[i]('+')*(of('+')*u('+') + of('-')*u('-')) for i in range(b.cell().d)]
+    return b('+')*(of('+')*u('+') + of('-')*u('-'))
 
 # Bilinear form
 a_int = dot( grad(v), kappa*grad(u) - b*u )*dx
@@ -36,9 +35,9 @@ a_fac = kappa('+')*alpha('+')/h('+')*dot(jump(v, n), jump(u, n))*dS \
       - kappa('+')*dot(avg(grad(v)), jump(u, n))*dS \
       - kappa('+')*dot(jump(v, n), avg(grad(u)))*dS
 
-#a_vel = dot(jump(v, n), upwind(u, b))*dS + dot(v*n, b*of*u)*ds
+a_vel = dot(jump(v, n), upwind(u, b))*dS + dot(v*n, b*of*u)*ds
 
-#a = a_int + a_fac + a_vel
+a = a_int + a_fac + a_vel
 
 # Linear form
 L = v*f*dx
