@@ -1,0 +1,8 @@
+vector  = VectorElement("Lagrange", "triangle", 2)
+scalar  = FiniteElement("Lagrange", "triangle", 1)
+element = vector + scalar
+
+(v, q) = TestFunctions(element)
+(u, p) = TrialFunctions(element)
+
+a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u))*dx

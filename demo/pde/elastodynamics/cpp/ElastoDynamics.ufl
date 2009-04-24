@@ -52,19 +52,19 @@ factor_d3  = eta*(gamma-2.0*beta)*(1.0-alpha_f)*dt/(2.0*beta)
 
 # Strain tensor
 def eps(r):
-    return 0.5*(grad(r) + transp(grad(r)))
+    return 0.5*(grad(r) + grad(r).T)
 
 # Stress tensor
 def sigma(r):
-    return 2.0*mult(mu, eps(r)) + mult(lmbda, mult(trace(eps(r)), Identity(len(r))))
+    return 2.0*mu*eps(r) + lmbda*tr(eps(r))*Identity(r.cell().d)
 
 # Forms
-a = factor_m1*dot(r, u)*dx  \
-   +factor_d1*dot(r, u)*dx \
-   +(1.0-alpha_f)*dot(grad(r), sigma(u))*dx
+a = factor_m1*inner(r, u)*dx  \
+   +factor_d1*inner(r, u)*dx \
+   +(1.0-alpha_f)*inner(grad(r), sigma(u))*dx
 
-L = factor_m1*dot(r, u0)*dx + factor_m2*dot(r, v0)*dx + factor_m3*dot(r, a0)*dx  \
-   +factor_d1*dot(r, u0)*dx + factor_d2*dot(r, v0)*dx + factor_d3*dot(r, a0)*dx  \
-   -alpha_f*dot(grad(r), sigma(u0))*dx \
-   +dot(r, f)*dx + (1.0-alpha_f)*dot(r, p)*ds(3) + alpha_f*dot(r, p0)*ds(3)
+L =  factor_m1*inner(r, u0)*dx + factor_m2*inner(r, v0)*dx + factor_m3*inner(r, a0)*dx  \
+   + factor_d1*inner(r, u0)*dx + factor_d2*inner(r, v0)*dx + factor_d3*inner(r, a0)*dx  \
+   - alpha_f*inner(grad(r), sigma(u0))*dx \
+   + inner(r, f)*dx + (1.0-alpha_f)*inner(r, p)*ds(3) + alpha_f*inner(r, p0)*ds(3)
 

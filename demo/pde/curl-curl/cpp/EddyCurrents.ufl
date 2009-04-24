@@ -9,12 +9,13 @@
 #
 # Compile this form with FFC: ffc -l dolfin EddyCurrents.form
 
-eN = FiniteElement("Nedelec", "tetrahedron", 0)
+eN = FiniteElement("Nedelec 1st kind H(curl)", "tetrahedron", 0)
 eL = VectorElement("Lagrange", "tetrahedron", 1)
 
 v = TestFunction(eN)
 u = TrialFunction(eN)
 dBdt = Function(eL)
 
-a = dot(rot(v), rot(u))*dx 
-L = -dot(v, dBdt)*dx 
+# FIXME: rot not supported by UFL?
+#a = inner(rot(v), rot(u))*dx 
+L = -inner(v, dBdt)*dx 

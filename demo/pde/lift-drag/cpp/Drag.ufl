@@ -5,12 +5,12 @@
 # Last changed: 2007-05-14
 #
 # This form defines the functional for computing the
-# lift on a body.
+# drag on a body.
 #
-# Compile this form with FFC: ffc -l dolfin Lift.form.
+# Compile this form with FFC: ffc -l dolfin Drag.form.
 
 element = FiniteElement("Lagrange", "triangle", 1)
 
 p = Function(element)
-n = FacetNormal("triangle")
-M = p*n[1]*ds
+n  = VectorConstant(triangle)
+M = -p*n[0]*ds

@@ -15,29 +15,30 @@ constant = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 v = TestFunction(scalar)
 u = TrialFunction(scalar)
 
-b   = Function(vector) # Note: b('+') == b('-')
-f   = Function(scalar)
-n   = FacetNormal("triangle")
-h   = MeshSize("triangle")
-of  = Function(constant)  # This function is a switch that determines if a facet is
+b  = Function(vector) # Note: b('+') == b('-')
+f  = Function(scalar)
+n  = VectorConstant(triangle)
+h  = Constant(triangle)
+of = Function(constant)  # This function is a switch that determines if a facet is
                           # an outflow facet or not 1.0 or 0.0
 
-kappa = Constant("triangle")
-alpha = Constant("triangle")
+kappa = Constant(triangle)
+alpha = Constant(triangle)
 
+# FIXME: Update this function for UFL
 def upwind(u, b):
-  return [b[i]('+')*(of('+')*u('+') + of('-')*u('-')) for i in range(len(b))]
+  return [b[i]('+')*(of('+')*u('+') + of('-')*u('-')) for i in range(b.cell().d)]
 
 # Bilinear form
-a_int = dot( grad(v), mult(kappa, grad(u)) - mult(b,u) )*dx
+a_int = dot( grad(v), kappa*grad(u) - b*u )*dx
 
 a_fac = kappa('+')*alpha('+')/h('+')*dot(jump(v, n), jump(u, n))*dS \
       - kappa('+')*dot(avg(grad(v)), jump(u, n))*dS \
       - kappa('+')*dot(jump(v, n), avg(grad(u)))*dS
 
-a_vel = dot(jump(v, n), upwind(u, b))*dS + dot(mult(v, n), mult(b, of*u))*ds
+#a_vel = dot(jump(v, n), upwind(u, b))*dS + dot(v*n, b*of*u)*ds
 
-a = a_int + a_fac + a_vel
+#a = a_int + a_fac + a_vel
 
 # Linear form
 L = v*f*dx

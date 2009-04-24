@@ -19,8 +19,8 @@ u = TrialFunction(element)
 f = Function(element)
 
 # Normal component, mesh size and right-hand side
-n = FacetNormal("triangle")
-h = MeshSize("triangle")
+n  = VectorConstant(triangle)
+h  = Constant(triangle)
 
 # Parameters
 alpha = 4.0
@@ -31,8 +31,8 @@ a = dot(grad(v), grad(u))*dx \
    - dot(avg(grad(v)), jump(u, n))*dS \
    - dot(jump(v, n), avg(grad(u)))*dS \
    + alpha/h('+')*dot(jump(v, n), jump(u, n))*dS \
-   - dot(grad(v), mult(u, n))*ds \
-   - dot(mult(v, n), grad(u))*ds \
+   - dot(grad(v), u*n)*ds \
+   - dot(v*n, grad(u))*ds \
    + gamma/h*v*u*ds
 
 # Linear form

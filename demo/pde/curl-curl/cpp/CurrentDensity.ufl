@@ -10,11 +10,11 @@
 # Compile this form with FFC: ffc -l dolfin CurrentDensity.form
 
 eL = VectorElement("CG", "tetrahedron", 1)
-eN = FiniteElement("Nedelec", "tetrahedron", 0)
+eN = FiniteElement("Nedelec 1st kind H(curl)", "tetrahedron", 0)
 
 v = TestFunction(eL)
 u = TrialFunction(eL)
 T = Function(eN)
 
-a = dot(v,u)*dx
-L = dot(v,curl(T))*dx
+a = dot(v, u)*dx
+L = dot(v, curl(T))*dx

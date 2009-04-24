@@ -27,6 +27,8 @@ using namespace dolfin;
 
 int main()
 {
+  error("Demo broken. Needs updating for UFL.");
+/*
   // Create mesh
   double width = 1.0;
   double height = 0.5;
@@ -79,7 +81,7 @@ int main()
     message("Unable to find dominant mode.");
   else
     message("Cutoff frequency = %g", cutoff);
-  
+*/  
   return 0;
 }
 
