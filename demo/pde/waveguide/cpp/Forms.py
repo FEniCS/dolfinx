@@ -22,8 +22,10 @@ element = FiniteElement("Nedelec 1st kind H(curl)", "triangle", 2)
 v = TestFunction(element)
 u = TrialFunction(element)
 
-# FIXME: curl_t not supported by UFL
-#a = inner(curl_t(v), curl_t(u))*dx
+def curl_t(w):
+    return Dx(w[1], 0) - Dx(w[0], 1)
+
+a = curl_t(v)*curl_t(u)*dx
 L = inner(v, u)*dx
 
-compile([a, L, M, element], "Forms", {'log_level': 20, 'language': 'dolfin', 'format': 'dolfin', 'form_postfix': True, 'quadrature_order': 'auto', 'precision': '15', 'cpp optimize': False, 'split_implementation': False, 'cache_dir': None, 'output_dir': '.', 'representation': 'auto', 'optimize': True}, globals())
+compile([a, L, M, element], "Forms", {'log_level': 20, 'format': 'ufc', 'form_postfix': True, 'quadrature_order': 'auto', 'precision': '15', 'cpp optimize': False, 'split_implementation': False, 'cache_dir': None, 'output_dir': '.', 'representation': 'auto', 'optimize': False}, globals())

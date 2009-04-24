@@ -52,8 +52,10 @@ u = TrialFunction(V)
 # with the eigenvalues k_o^2 representing the square of the cutoff wavenumber 
 # and the corresponding right-eigenvector giving the coefficients of the 
 # discrete system used to obtain the approximate field anywhere in the domain   
-s = dot(curl_t(v), curl_t(u))*dx
-t = dot(v, u)*dx
+def curl_t(w):
+    return Dx(w[1], 0) - Dx(w[0], 1)
+s = curl_t(v)*curl_t(u)*dx
+t = inner(v, u)*dx
 
 # Assemble the stiffness matrix (S) and mass matrix (T)
 S = PETScMatrix()

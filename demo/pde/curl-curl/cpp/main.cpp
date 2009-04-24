@@ -24,8 +24,6 @@ using namespace dolfin;
 
 int main()
 {
-  error("Demo broken. Needs updating for UFL.");
-/*  
   // Homogenous external magnetic field (dB/dt)
   class Source : public Function
   {
@@ -94,6 +92,6 @@ int main()
 
   // Plot solution
   plot(J);
-*/
+
   return 0;
 }

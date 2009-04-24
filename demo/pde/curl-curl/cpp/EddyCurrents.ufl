@@ -16,6 +16,5 @@ v = TestFunction(eN)
 u = TrialFunction(eN)
 dBdt = Function(eL)
 
-# FIXME: rot not supported by UFL?
-#a = inner(rot(v), rot(u))*dx 
+a =  inner(curl(v), curl(u))*dx 
 L = -inner(v, dBdt)*dx 

@@ -24,7 +24,6 @@ FunctionPlotData::FunctionPlotData(const Function& v)
   uint size = 1;
   for (uint i = 0; i < v.function_space().element().value_rank(); i++)
     size *= v.function_space().element().value_dimension(i);
-  cout << "Computed size " << endl;
 
   // Initialize vector
   const uint N = size*mesh.numVertices();
