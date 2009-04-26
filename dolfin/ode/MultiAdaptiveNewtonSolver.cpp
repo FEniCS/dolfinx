@@ -155,9 +155,9 @@ void MultiAdaptiveNewtonSolver::Feval(uBLASVector& F)
 
     // Evaluate right-hand side at quadrature points of element
     if ( method.type() == Method::cG )
-      ts.cGfeval(f, s, e, i, a, b, k);
+      ts.cg_feval(f, s, e, i, a, b, k);
     else
-      ts.dGfeval(f, s, e, i, a, b, k);  
+      ts.dg_feval(f, s, e, i, a, b, k);  
     //cout << "f = "; Alloc::disp(f, method.qsize());
 
     // Update values on element using fixed-point iteration
@@ -195,9 +195,9 @@ void MultiAdaptiveNewtonSolver::debug()
 
     for (uint i = 0; i < n; i++)
     {
-      real dFdx = (F1[i] - F2[i]) / dx;
-      if ( abs(dFdx) > real_epsilon() )
-        _B(i, j) = to_double(dFdx);
+      real df_dx = (F1[i] - F2[i]) / dx;
+      if ( abs(df_dx) > real_epsilon() )
+        _B(i, j) = to_double(df_dx);
     }
   }
 

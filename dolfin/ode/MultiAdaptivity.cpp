@@ -166,9 +166,9 @@ void MultiAdaptivity::computeResiduals(MultiAdaptiveTimeSlab& ts)
       
       // Evaluate right-hand side at quadrature points of element
       if ( method.type() == Method::cG )
-	ts.cGfeval(f, s, e, i, a, b, k);
+	ts.cg_feval(f, s, e, i, a, b, k);
       else
-	ts.dGfeval(f, s, e, i, a, b, k);
+	ts.dg_feval(f, s, e, i, a, b, k);
 
       // Update maximum residual for component
       const real r = method.residual(x0, ts.jx + j, f[method.nsize()], k);

@@ -803,7 +803,7 @@ void MultiAdaptiveTimeSlab::coverTime(real t)
   }
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0, 
+void MultiAdaptiveTimeSlab::cg_feval(real* f, uint s0, uint e0, uint i0, 
 				    real a0, real b0, real k0)
 {
   const uint& nn = method->nsize();
@@ -947,7 +947,7 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
   }
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0, 
+void MultiAdaptiveTimeSlab::dg_feval(real* f, uint s0, uint e0, uint i0, 
 				  real a0, real b0, real k0)
 {
   const uint& nn = method->nsize();

@@ -300,9 +300,9 @@ void MonoAdaptiveNewtonSolver::debug()
 
     for (uint i = 0; i < n; i++)
     {
-      real dFdx = (F1[i] - F2[i]) / dx;
-      if ( abs(dFdx) > real_epsilon() )
-        _B(i, j) = to_double(dFdx);
+      real df_dx = (F1[i] - F2[i]) / dx;
+      if ( abs(df_dx) > real_epsilon() )
+        _B(i, j) = to_double(df_dx);
     }
   }
 

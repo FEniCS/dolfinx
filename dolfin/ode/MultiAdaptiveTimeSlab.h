@@ -126,10 +126,10 @@ namespace dolfin
     real computeMaxResiduals();
 
     // Evaluate right-hand side at quadrature points of given element (cG)
-    void cGfeval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
+    void cg_feval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
 
     // Evaluate right-hand side at quadrature points of given element (dG)
-    void dGfeval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
+    void dg_feval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
 
     // Choose solver
     TimeSlabSolver* chooseSolver();
