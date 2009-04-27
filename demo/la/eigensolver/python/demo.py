@@ -39,7 +39,7 @@ esolver = SLEPcEigenSolver()
 esolver.set("eigenvalue spectrum", "smallest magnitude")
 esolver.solve(A, n)
 
-print "Eigenvalue solver converged in %d iterations" % (esolver.getIterationNumber(),)
+print "Eigenvalue solver converged in %d iterations" % (esolver.get_iteration_number(),)
 
 # Display eigenvalues
 for i in range(n):
