@@ -11,7 +11,8 @@ import os, sys, re
 camelcaps_exceptions = ["cGq", "dGq",                                                         # ODE solver
                         "addListener", "addTest", "getRegistry", "makeTest", "wasSuccessful", # cppunit
                         "tagName", "tagNames", "documentElement", "childNodes",               # doscstrings
-                        "nodeType", "firstChild", "parent_node",                              # docstrings
+                        "nodeType", "firstChild", "parentNode",                               # docstrings
+                        "doubleArray", "intArray",                                            # swig 
                         "fatalError", "xmlChar", "xmlNode", "xmlStrcasecmp",                  # libxml2
                         "startDocument", "endDocument", "startElement", "endElement"]         # libxml2
 
@@ -38,6 +39,7 @@ def check_camelcaps(code, replacements):
             replacements[r] += 1
         else:
             replacements[r] = 1
+        print "  Replacing: %s --> %s" % r
     return code
 
 def replace(filename, replacements):
