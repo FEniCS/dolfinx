@@ -29,30 +29,30 @@ void MeshHierarchyAlgorithms::refineTetMesh(MeshHierarchy& mesh_hierarchy)
   for (uint k = num_meshes-1; k >= 0; k--)
   {
     /*
-    evaluateMarks(mesh_hierarchy(k));
-    closeMesh(mesh_hierarchy(k));
+    evaluate_marks(mesh_hierarchy(k));
+    close_mesh(mesh_hierarchy(k));
     */
   }
 
   for (uint k = 0; k < num_meshes; k++)
   {
-    if ( mesh_hierarchy(k).numCells() > 0 )
+    if ( mesh_hierarchy(k).num_cells() > 0 )
     {
       /*
-      if ( k > 0 ) closeMesh(mesh_hierarchy(k));
-      unrefineMesh(mesh_hierarchy,k);
-      refineMesh(mesh_hierarchy,k);
+      if ( k > 0 ) close_mesh(mesh_hierarchy(k));
+      unrefine_mesh(mesh_hierarchy,k);
+      refine_mesh(mesh_hierarchy,k);
       */
     }
   }
 
   /*
-  if      ( mesh_hierarchy(num_meshes-1).numCells() == 0 ) num_meshes--;
-  else if ( mesh_hierarchy(num_meshes).numCells()   != 0 ) num_meshes++;
+  if      ( mesh_hierarchy(num_meshes-1).num_cells() == 0 ) num_meshes--;
+  else if ( mesh_hierarchy(num_meshes).num_cells()   != 0 ) num_meshes++;
   */
 }
 //-----------------------------------------------------------------------------
-void MeshHierarchyAlgorithms::evaluateMarks(Mesh& mesh) 
+void MeshHierarchyAlgorithms::evaluate_marks(Mesh& mesh) 
 {
   // This function implements the "EvaluateMarks" subroutine by Bey 
   warning("Not implemented yet.");
@@ -78,25 +78,25 @@ void MeshHierarchyAlgorithms::evaluateMarks(Mesh& mesh)
   
 }
 //-----------------------------------------------------------------------------
-void MeshHierarchyAlgorithms::closeMesh(Mesh& mesh) 
+void MeshHierarchyAlgorithms::close_mesh(Mesh& mesh) 
 {
   // This function implements the "CloseGrid" subroutine by Bey 
   warning("Not implemented yet.");
 }
 //-----------------------------------------------------------------------------
-void MeshHierarchyAlgorithms::closeCell(Cell& cell) 
+void MeshHierarchyAlgorithms::close_cell(Cell& cell) 
 {
   // This function implements the "CloseElement" subroutine by Bey 
   warning("Not implemented yet.");
 }
 //-----------------------------------------------------------------------------
-void MeshHierarchyAlgorithms::unrefineMesh(MeshHierarchy& mesh, uint k)
+void MeshHierarchyAlgorithms::unrefine_mesh(MeshHierarchy& mesh, uint k)
 {
   // This function implements the "UnrefineGrid" subroutine by Bey 
   warning("Not implemented yet.");
 }
 //-----------------------------------------------------------------------------
-void MeshHierarchyAlgorithms::refineMesh(MeshHierarchy& mesh, uint k)
+void MeshHierarchyAlgorithms::refine_mesh(MeshHierarchy& mesh, uint k)
 {
   // This function implements the "RefineGrid" subroutine by Bey 
   warning("Not implemented yet.");

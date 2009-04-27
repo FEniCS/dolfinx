@@ -24,7 +24,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
 
     // Constructor 
     CahnHilliardEquation(Mesh& mesh, Function& u, Function& u0, Constant& dt, 
-                         Constant& theta, Constant& lambda, Constant& muFactor) 
+                         Constant& theta, Constant& lambda, Constant& mu_factor) 
                        : reset_Jacobian(true)
     {
       // Create forms
@@ -37,7 +37,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         if (!_a) error("Problem in downcast of CahnHilliard2DBilinearForm");
         _a->w0 = u;
         _a->lmbda = lambda;
-        _a->muFactor = muFactor;
+        _a->mu_factor = mu_factor;
         _a->dt = dt;
         _a->theta = theta;
 
@@ -47,7 +47,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         _L->w0 = u;
         _L->w1 = u0;
         _L->lmbda = lambda;
-        _L->muFactor = muFactor;
+        _L->mu_factor = mu_factor;
         _L->dt = dt;
         _L->theta = theta;
       }
@@ -60,7 +60,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         if (!_a) error("Problem in downcast of CahnHilliard3DBilinearForm");
         _a->w0 = u;
         _a->lmbda = lambda;
-        _a->muFactor = muFactor;
+        _a->mu_factor = mu_factor;
         _a->dt = dt;
         _a->theta = theta;
 
@@ -70,7 +70,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         _L->w0 = u;
         _L->w1 = u0;
         _L->lmbda = lambda;
-        _L->muFactor = muFactor;
+        _L->mu_factor = mu_factor;
         _L->dt = dt;
         _L->theta = theta;
       }
@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
   Constant dt(delta_t); 
   Constant theta(0.5); 
   Constant lambda(1.0e-2); 
-  Constant muFactor(100.0); 
+  Constant mu_factor(100.0); 
 
   double t = 0.0; 
   double T = 50*delta_t;
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
   Function u0;
 
   // Create user-defined nonlinear problem
-  CahnHilliardEquation cahn_hilliard(mesh, u, u0, dt, theta, lambda, muFactor);
+  CahnHilliardEquation cahn_hilliard(mesh, u, u0, dt, theta, lambda, mu_factor);
 
   // Create nonlinear solver and set parameters
   //NewtonSolver newton_solver;
@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 
   // Randomly perturbed intitial conditions
   dolfin::seed(2);
-  dolfin::uint size = mesh.numVertices();
+  dolfin::uint size = mesh.num_vertices();
   double* x_init = new double[size];
   unsigned int* x_pos = new unsigned int[size];
   for(dolfin::uint i=0; i < size; ++i)

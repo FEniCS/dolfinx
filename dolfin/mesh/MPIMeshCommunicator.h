@@ -52,7 +52,7 @@ namespace dolfin
                                                                                  
   private:  
                                                                      
-    static void distributeCommon(Mesh& mesh, MeshFunction<uint>& distribution,   
+    static void distribute_common(Mesh& mesh, MeshFunction<uint>& distribution,   
                                  MeshFunction<bool>* old_cell_marker,            
                                  MeshFunction<bool>* cell_marker);       
 

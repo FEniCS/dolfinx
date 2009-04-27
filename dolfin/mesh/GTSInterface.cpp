@@ -43,7 +43,7 @@ GTSInterface::~GTSInterface()
 void GTSInterface::intersection(const Point& p, std::vector<uint>& cells)
 {
   // Create probe for point
-  GtsBBox* probe = createBox(p);
+  GtsBBox* probe = create_box(p);
 
   // Compute overlap with probe
   GSList* overlaps = gts_bb_tree_overlap(tree, probe);
@@ -73,7 +73,7 @@ void GTSInterface::intersection(const Point& p, std::vector<uint>& cells)
 void GTSInterface::intersection(const Point& p0, const Point& p1, std::vector<uint>& cells)
 {
   // Create probe for line
-  GtsBBox* probe = createBox(p0, p1);
+  GtsBBox* probe = create_box(p0, p1);
 
   // Compute overlap with probe
   GSList* overlaps = gts_bb_tree_overlap(tree, probe);
@@ -103,7 +103,7 @@ void GTSInterface::intersection(const Point& p0, const Point& p1, std::vector<ui
 void GTSInterface::intersection(const Cell& cell, std::vector<uint>& cells)
 {
   // Create probe for cell
-  GtsBBox* probe = createBox(cell);
+  GtsBBox* probe = create_box(cell);
 
   // Compute overlap with probe
   GSList* overlaps = gts_bb_tree_overlap(tree, probe);
@@ -130,7 +130,7 @@ void GTSInterface::intersection(const Cell& cell, std::vector<uint>& cells)
   gts_object_destroy(GTS_OBJECT(probe));
 }
 //-----------------------------------------------------------------------------
-GtsBBox* GTSInterface::createBox(const Point& p)
+GtsBBox* GTSInterface::create_box(const Point& p)
 {
   // Create bounding box
   GtsBBox* box = gts_bbox_new(gts_bbox_class(), 0,
@@ -140,7 +140,7 @@ GtsBBox* GTSInterface::createBox(const Point& p)
   return box;
 }
 //-----------------------------------------------------------------------------
-GtsBBox* GTSInterface::createBox(const Point& p0, const Point& p1)
+GtsBBox* GTSInterface::create_box(const Point& p0, const Point& p1)
 {
   // Compute coordinates for bounding box
   const double x0 = std::min(p0.x(), p1.x());
@@ -157,7 +157,7 @@ GtsBBox* GTSInterface::createBox(const Point& p0, const Point& p1)
   return box;
 }
 //-----------------------------------------------------------------------------
-GtsBBox* GTSInterface::createBox(const Cell& cell)
+GtsBBox* GTSInterface::create_box(const Cell& cell)
 {
   // Pick first vertex
   VertexIterator v(cell);
@@ -195,7 +195,7 @@ void GTSInterface::buildCellTree()
   // Build list of bounding boxes for cells
   GSList* bboxes = 0; 
   for (CellIterator c(mesh); !c.end(); ++c)
-    bboxes = g_slist_prepend(bboxes, createBox(*c));
+    bboxes = g_slist_prepend(bboxes, create_box(*c));
   
   // Build tree (hierarchy) of bounding boxes
   tree = gts_bb_tree_new(bboxes);

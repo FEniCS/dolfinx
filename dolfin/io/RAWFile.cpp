@@ -100,14 +100,14 @@ void RAWFile::ResultsWrite(const Function& u) const
   if (data_type == "cell")
     {
       // Allocate memory for function values at cell centres
-      const uint size = mesh.numCells()*dim;
+      const uint size = mesh.num_cells()*dim;
       double* values = new double[size];
 
       // Get function values on cells
       u.vector().get(values);
 
       // Write function data at cells 
-      uint num_cells = mesh.numCells();
+      uint num_cells = mesh.num_cells();
       fp << num_cells << std::endl;     
 
       std::ostringstream ss;
@@ -117,7 +117,7 @@ void RAWFile::ResultsWrite(const Function& u) const
           // Write all components
           ss.str("");    
           for (uint i = 0; i < dim; i++)
-            ss  <<" "<< values[cell->index() + i*mesh.numCells()];
+            ss  <<" "<< values[cell->index() + i*mesh.num_cells()];
           ss << std::endl;
           fp << ss.str();
         } 
@@ -127,14 +127,14 @@ void RAWFile::ResultsWrite(const Function& u) const
    else if (data_type == "point")
     {
       // Allocate memory for function values at vertices
-      const uint size = mesh.numVertices()*dim;
+      const uint size = mesh.num_vertices()*dim;
       double* values = new double[size];
 
       // Get function values at vertices
       u.interpolate(values);
 
       // Write function data at mesh vertices
-      uint num_vertices = mesh.numVertices();
+      uint num_vertices = mesh.num_vertices();
       fp << num_vertices << std::endl;
 
       std::ostringstream ss;
@@ -143,7 +143,7 @@ void RAWFile::ResultsWrite(const Function& u) const
         {
           ss.str("");
           for(uint i=0; i<dim; i++)
-            ss << " " << values[vertex->index() + i*mesh.numCells()];
+            ss << " " << values[vertex->index() + i*mesh.num_cells()];
           
           ss << std::endl;
           fp << ss.str();
@@ -193,7 +193,7 @@ void RAWFile::MeshFunctionWrite(T& meshfunction)
   // Open file
   std::ofstream fp(raw_filename.c_str(), std::ios_base::app);
   
-  fp<<mesh.numCells( ) <<std::endl;
+  fp<<mesh.num_cells( ) <<std::endl;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     fp << meshfunction.get( cell->index() )  << std::endl;
   

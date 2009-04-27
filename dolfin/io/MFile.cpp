@@ -97,7 +97,7 @@ void MFile::operator<<(const Mesh& mesh)
     p = v->point();
     
     ++v;
-    if ( mesh.type().cellType() == CellType::triangle )
+    if ( mesh.type().cell_type() == CellType::triangle )
     {
       if ( v.end() )
         fprintf(fp,"%.15f %.15f]';\n", p.x(), p.y());

@@ -20,8 +20,8 @@ namespace dolfin
 
     XMLParameterList(ParameterList& parameters);
     
-    void startElement(const xmlChar *name, const xmlChar **attrs);
-    void endElement  (const xmlChar *name);
+    void start_element(const xmlChar *name, const xmlChar **attrs);
+    void end_element  (const xmlChar *name);
     
     void open(std::string filename);
     bool close();
@@ -30,7 +30,7 @@ namespace dolfin
     
     enum ParserState { OUTSIDE, INSIDE_PARAMETERS, DONE };
     
-    void readParameter(const xmlChar *name, const xmlChar **attrs);
+    void read_parameter(const xmlChar *name, const xmlChar **attrs);
     
     ParameterList& parameters;
     ParserState state;

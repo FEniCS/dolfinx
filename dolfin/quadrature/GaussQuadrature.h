@@ -32,7 +32,7 @@ namespace dolfin
 
   private:
 
-    void computePoints();
+    void compute_points();
 
   };
   

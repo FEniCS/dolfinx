@@ -63,7 +63,7 @@ void XYZFile::ResultsWrite(const Function& u) const
   Mesh& mesh = const_cast<Mesh&>(u.function_space().mesh());
   
   // Allocate memory for function values at vertices
-  const uint size = mesh.numVertices()*dim;
+  const uint size = mesh.num_vertices()*dim;
   double* values = new double[size];
 
   // Get function values at vertices
@@ -127,7 +127,7 @@ void XYZFile::MeshFunctionWrite(T& meshfunction)
   // Open file
   std::ofstream fp(xyz_filename.c_str(), std::ios_base::app);
   
-  fp<<mesh.numCells( ) <<std::endl;
+  fp<<mesh.num_cells( ) <<std::endl;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     fp << meshfunction.get( cell->index() )  << std::endl;
   

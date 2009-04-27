@@ -89,7 +89,7 @@ void MultiAdaptivity::update(MultiAdaptiveTimeSlab& ts, real t, bool first)
   }
 
   // Compute maximum residuals for all components in time slab
-  computeResiduals(ts);
+  compute_residuals(ts);
   
   // Accept if error is small enough
   if ( emax <= tol )
@@ -108,7 +108,7 @@ void MultiAdaptivity::update(MultiAdaptiveTimeSlab& ts, real t, bool first)
     real k = method.timestep(residuals[i], used_tol, k0, _kmax);
 
     // Apply time step regulation
-    k = Controller::updateHarmonic(k, timesteps[i], _kmax);
+    k = Controller::update_harmonic(k, timesteps[i], _kmax);
     
     // Make sure to decrease the time step if not accepted
     if ( !_accept )
@@ -121,10 +121,10 @@ void MultiAdaptivity::update(MultiAdaptiveTimeSlab& ts, real t, bool first)
   }
 
   // Propagate time steps according to dependencies
-  propagateDependencies();
+  propagate_dependencies();
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptivity::computeResiduals(MultiAdaptiveTimeSlab& ts)
+void MultiAdaptivity::compute_residuals(MultiAdaptiveTimeSlab& ts)
 {
   // Reset dof
   uint j = 0;
@@ -147,7 +147,7 @@ void MultiAdaptivity::computeResiduals(MultiAdaptiveTimeSlab& ts)
   for (uint s = 0; s < ts.ns; s++)
   {
     // Cover all elements in current sub slab
-    e1 = ts.coverSlab(s, e0);
+    e1 = ts.cover_slab(s, e0);
     
     // Get data for sub slab
     const real a = ts.sa[s];
@@ -187,7 +187,7 @@ void MultiAdaptivity::computeResiduals(MultiAdaptiveTimeSlab& ts)
   }
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptivity::propagateDependencies()
+void MultiAdaptivity::propagate_dependencies()
 {
   // This is a poor man's dual weighting function. For each component,
   // we look at all other components that the component in question

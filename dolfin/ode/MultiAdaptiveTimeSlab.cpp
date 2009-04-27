@@ -28,7 +28,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   elast(0), f0(0), u(0), emax(0), kmin(0)
 {
   // Choose solver
-  solver = chooseSolver();
+  solver = choose_solver();
 
   // Initialize elast
   elast = new int[N];
@@ -73,7 +73,7 @@ real MultiAdaptiveTimeSlab::build(real a, real b)
   //     << a << " and " << b << endl;
   
   // Allocate data
-  allocData(a, b);
+  alloc_data(a, b);
 
   // Reset elast
   for (uint i = 0; i < N; i++)
@@ -137,7 +137,7 @@ bool MultiAdaptiveTimeSlab::check(bool first)
 bool MultiAdaptiveTimeSlab::shift(bool end)
 {
   // Cover end time
-  coverTime(_b);
+  cover_time(_b);
 
   // Update the solution vector at the end time for each component
   for (uint i = 0; i < N; i++)
@@ -188,7 +188,7 @@ void MultiAdaptiveTimeSlab::reset()
 void MultiAdaptiveTimeSlab::sample(real t)
 {
   // Cover the given time
-  coverTime(t);
+  cover_time(t);
 
   //cout << "t = " << t << " elast: ";
   //for (uint i = 0; i < N; i++)
@@ -244,7 +244,7 @@ real MultiAdaptiveTimeSlab::rsample(uint i, real t)
   // Note that the residual is always sampled at the end-time
   
   // Cover end time
-  coverTime(_b);
+  cover_time(_b);
   
   // Update the solution vector at the end time for each dependent component
   
@@ -321,7 +321,7 @@ void MultiAdaptiveTimeSlab::disp() const
   cout << "de = "; Alloc::disp(de, nd);
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveTimeSlab::allocData(real a, real b)
+void MultiAdaptiveTimeSlab::alloc_data(real a, real b)
 { 
   // Use u to keep track of the latest time value for each component here
   for (uint i = 0; i < N; i++)
@@ -384,7 +384,7 @@ void MultiAdaptiveTimeSlab::create_s(real a0, real b0, uint offset, uint end)
     dolfin_assert(element != -1);
 
     // Count number of dependencies from element
-    size_d.next += countDependencies(index, b0);
+    size_d.next += count_dependencies(index, b0);
 
     // Update mapping ed
     if ( element == 0 )
@@ -597,7 +597,7 @@ real MultiAdaptiveTimeSlab::computeDataSize(real a, real b, uint offset)
   ne += end - offset;
   nj += method->nsize()*(end - offset);
   for (uint n = offset; n < end; n++)
-    nd += countDependencies(partition.index(n));
+    nd += count_dependencies(partition.index(n));
 
   // Add contribution from all sub slabs
   real t = a;
@@ -607,7 +607,7 @@ real MultiAdaptiveTimeSlab::computeDataSize(real a, real b, uint offset)
   return b;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MultiAdaptiveTimeSlab::countDependencies(uint i0)
+dolfin::uint MultiAdaptiveTimeSlab::count_dependencies(uint i0)
 {
   // Count the number of dependencies to components with smaller time steps
   // for the given component. This version is used before any elements are
@@ -633,7 +633,7 @@ dolfin::uint MultiAdaptiveTimeSlab::countDependencies(uint i0)
   return n;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MultiAdaptiveTimeSlab::countDependencies(uint i0, real b0)
+dolfin::uint MultiAdaptiveTimeSlab::count_dependencies(uint i0, real b0)
 {
   // Count the number of dependencies to components with smaller time steps
   // for the given component. This version is used at the time of creation
@@ -690,7 +690,7 @@ bool MultiAdaptiveTimeSlab::within(real a0, real b0, real a1, real b1) const
   return a1 <= (a0 + real_epsilon()) && (b0 - real_epsilon()) <= b1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MultiAdaptiveTimeSlab::coverSlab(int subslab, uint e0)
+dolfin::uint MultiAdaptiveTimeSlab::cover_slab(int subslab, uint e0)
 {
   // Start at e0 and step until we reach a new sub slab
   uint e = e0;
@@ -708,7 +708,7 @@ dolfin::uint MultiAdaptiveTimeSlab::coverSlab(int subslab, uint e0)
   return e;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MultiAdaptiveTimeSlab::coverNext(int subslab, uint element)
+dolfin::uint MultiAdaptiveTimeSlab::cover_next(int subslab, uint element)
 {
   // Check if we are still on the same sub slab
   if ( subslab == static_cast<int>(es[element]) )
@@ -731,7 +731,7 @@ dolfin::uint MultiAdaptiveTimeSlab::coverNext(int subslab, uint element)
   return subslab;
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveTimeSlab::coverTime(real t)
+void MultiAdaptiveTimeSlab::cover_time(real t)
 {
   // Check if t is covered for all components
   bool ok = true;
@@ -1024,7 +1024,7 @@ void MultiAdaptiveTimeSlab::dg_feval(real* f, uint s0, uint e0, uint i0,
   }
 }
 //-----------------------------------------------------------------------------
-TimeSlabSolver* MultiAdaptiveTimeSlab::chooseSolver()
+TimeSlabSolver* MultiAdaptiveTimeSlab::choose_solver()
 {
   bool implicit = ode.get("ODE implicit");
   std::string solver = ode.get("ODE nonlinear solver");

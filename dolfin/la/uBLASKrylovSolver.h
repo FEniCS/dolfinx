@@ -63,7 +63,7 @@ namespace dolfin
 
     /// Select solver and solve linear system Ax = b and return number of iterations
     template<class Mat>
-    uint solveKrylov(const Mat& A, uBLASVector& x, const uBLASVector& b);
+    uint solve_krylov(const Mat& A, uBLASVector& x, const uBLASVector& b);
 
     /// Solve linear system Ax = b using restarted GMRES
     template<class Mat>    
@@ -76,10 +76,10 @@ namespace dolfin
                         bool& converged) const;
     
     /// Select and create named preconditioner
-    void selectPreconditioner(dolfin::PreconditionerType pc_type);
+    void select_preconditioner(dolfin::PreconditionerType pc_type);
 
     /// Read solver parameters
-    void readParameters();
+    void read_parameters();
 
     /// Krylov method
     SolverType solver_type;
@@ -103,7 +103,7 @@ namespace dolfin
   // Implementation of template functions
   //---------------------------------------------------------------------------
   template<class Mat>
-  dolfin::uint uBLASKrylovSolver::solveKrylov(const Mat& A, uBLASVector& x, 
+  dolfin::uint uBLASKrylovSolver::solve_krylov(const Mat& A, uBLASVector& x, 
         const uBLASVector& b)
   {
     // Check dimensions
@@ -121,7 +121,7 @@ namespace dolfin
 
     // Read parameters if not done
     if ( !parameters_read )
-      readParameters();
+      read_parameters();
 
     // Write a message
     if ( report )

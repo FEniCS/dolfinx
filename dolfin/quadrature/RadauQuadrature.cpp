@@ -35,7 +35,7 @@ void RadauQuadrature::disp() const
     message("%2d   %.16e   %.16e", i, to_double(points[i]), to_double(weights[i]));
 }
 //-----------------------------------------------------------------------------
-void RadauQuadrature::computePoints()
+void RadauQuadrature::compute_points()
 {
   // Compute the Radau quadrature points in [-1,1] as -1 and the zeros
   // of ( Pn-1(x) + Pn(x) ) / (1+x) where Pn is the n:th Legendre

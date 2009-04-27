@@ -82,7 +82,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
     {
       // Check if we have an interior facet
-      if (facet->numEntities(mesh.topology().dim()) != 2)
+      if (facet->num_entities(mesh.topology().dim()) != 2)
         continue;
       
       // Get cells incident with facet
@@ -178,7 +178,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
     {
       // Check if we have an interior facet
-      if (facet->numEntities(mesh.topology().dim()) != 2)
+      if (facet->num_entities(mesh.topology().dim()) != 2)
         continue;
       
       // Get cells incident with facet

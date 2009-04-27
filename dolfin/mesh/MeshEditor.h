@@ -37,13 +37,13 @@ namespace dolfin
     void open(Mesh& mesh, std::string type, uint tdim, uint gdim);
     
     /// Specify number of vertices
-    void initVertices(uint num_vertices);
+    void init_vertices(uint num_vertices);
     
     /// Specify number of vertices
     void initHigherOrderVertices(uint num_higher_order_vertices);
     
     /// Specify number of cells
-    void initCells(uint num_cells);
+    void init_cells(uint num_cells);
     
     /// Specify number of cells
     void initHigherOrderCells(uint num_higher_order_cells, uint num_higher_order_cell_dof);
@@ -52,16 +52,16 @@ namespace dolfin
     void setAffineCellIndicator(uint c, const std::string affine_str);
     
     /// Add vertex v at given point p
-    void addVertex(uint v, const Point& p);
+    void add_vertex(uint v, const Point& p);
 
     /// Add vertex v at given coordinate x
-    void addVertex(uint v, double x);
+    void add_vertex(uint v, double x);
 
     /// Add vertex v at given coordinate (x, y)
-    void addVertex(uint v, double x, double y);
+    void add_vertex(uint v, double x, double y);
 
     /// Add vertex v at given coordinate (x, y, z)
-    void addVertex(uint v, double x, double y, double z);
+    void add_vertex(uint v, double x, double y, double z);
     
     /// Add vertex v at given point p
     void addHigherOrderVertex(uint v, const Point& p);
@@ -76,16 +76,16 @@ namespace dolfin
     void addHigherOrderVertex(uint v, double x, double y, double z);
 
     /// Add cell with given vertices
-    void addCell(uint c, const std::vector<uint>& v);
+    void add_cell(uint c, const std::vector<uint>& v);
 
     /// Add cell (interval) with given vertices
-    void addCell(uint c, uint v0, uint v1);
+    void add_cell(uint c, uint v0, uint v1);
 
     /// Add cell (triangle) with given vertices
-    void addCell(uint c, uint v0, uint v1, uint v2);
+    void add_cell(uint c, uint v0, uint v1, uint v2);
     
     /// Add cell (tetrahedron) with given vertices
-    void addCell(uint c, uint v0, uint v1, uint v2, uint v3);
+    void add_cell(uint c, uint v0, uint v1, uint v2, uint v3);
     
     /// Add higher order cell data (assume P2 triangle for now)
     void addHigherOrderCellData(uint c, uint v0, uint v1, uint v2, uint v3, uint v4, uint v5);
@@ -96,13 +96,13 @@ namespace dolfin
   private:
 
     // Add vertex, common part
-    void addVertexCommon(uint v, uint dim);
+    void add_vertexCommon(uint v, uint dim);
     
     // Add higher order vertex, common part
     void addHigherOrderVertexCommon(uint v, uint dim);
 
     // Add cell, common part
-    void addCellCommon(uint v, uint dim);
+    void add_cellCommon(uint v, uint dim);
     
     // Add higher order cell, common part
     void addHigherOrderCellCommon(uint v, uint dim);

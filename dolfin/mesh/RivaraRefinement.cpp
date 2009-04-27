@@ -26,10 +26,10 @@ void RivaraRefinement::refine(Mesh& mesh,
 
   // Create dynamic mesh and import data
   DMesh dmesh;
-  dmesh.importMesh(mesh);
+  dmesh.import_mesh(mesh);
 
   // Rewrite MeshFunction into vector
-  std::vector<bool> dmarked(mesh.numCells());
+  std::vector<bool> dmarked(mesh.num_cells());
   for (CellIterator ci(mesh); !ci.end(); ++ci)
   {
     if(cell_marker.get(ci->index()) == true)
@@ -39,7 +39,7 @@ void RivaraRefinement::refine(Mesh& mesh,
   }
 
   // Main refinement algorithm
-  dmesh.bisectMarked(dmarked);
+  dmesh.bisect_marked(dmarked);
 
   // Remove deleted cells from global list
   for(std::list<DCell* >::iterator it = dmesh.cells.begin(); it != dmesh.cells.end(); )
@@ -60,7 +60,7 @@ void RivaraRefinement::refine(Mesh& mesh,
 
   Mesh omesh;
 
-  dmesh.exportMesh(omesh, new2old_cell_arr, new2old_facet_arr);
+  dmesh.export_mesh(omesh, new2old_cell_arr, new2old_facet_arr);
 
   mesh = omesh;
 
@@ -104,7 +104,7 @@ RivaraRefinement::DMesh::~DMesh()
     delete *it;
 }
 //-----------------------------------------------------------------------------
-void RivaraRefinement::DMesh::importMesh(Mesh& mesh)
+void RivaraRefinement::DMesh::import_mesh(Mesh& mesh)
 {
   cell_type = &(mesh.type());
   dim = mesh.topology().dim();
@@ -119,7 +119,7 @@ void RivaraRefinement::DMesh::importMesh(Mesh& mesh)
     dv->p = vi->point();
     dv->id = vi->index();
     
-    addVertex(dv);
+    add_vertex(dv);
     vertexvec.push_back(dv);
   }
 
@@ -128,7 +128,7 @@ void RivaraRefinement::DMesh::importMesh(Mesh& mesh)
   {
     DCell* dc = new DCell;
 
-    std::vector<DVertex*> vs(ci->numEntities(0));
+    std::vector<DVertex*> vs(ci->num_entities(0));
     uint i = 0;
     for (VertexIterator vi(*ci); !vi.end(); ++vi)
     {
@@ -138,29 +138,29 @@ void RivaraRefinement::DMesh::importMesh(Mesh& mesh)
     }
     
     // Initialize facets
-    for (uint i=0; i < cell_type->numEntities(0); i++)
+    for (uint i=0; i < cell_type->num_entities(0); i++)
       dc->facets.push_back(i);
     
-    addCell(dc, vs, ci->index());
+    add_cell(dc, vs, ci->index());
 
     // Define the same cell numbering
     dc->id = ci->index();
   }
 }
 //-----------------------------------------------------------------------------
-void RivaraRefinement::DMesh::exportMesh(Mesh& mesh, 
+void RivaraRefinement::DMesh::export_mesh(Mesh& mesh, 
      std::vector<int>& new2old_cell, std::vector<int>& new2old_facet)
 {
   number();
 
   new2old_cell.resize(cells.size());
-  new2old_facet.resize(cells.size()*cell_type->numEntities(0));
+  new2old_facet.resize(cells.size()*cell_type->num_entities(0));
 
   MeshEditor editor;
-  editor.open(mesh, cell_type->cellType(), dim, dim);
+  editor.open(mesh, cell_type->cell_type(), dim, dim);
   
-  editor.initVertices(vertices.size());
-  editor.initCells(cells.size());
+  editor.init_vertices(vertices.size());
+  editor.init_cells(cells.size());
 
   // Add vertices
   uint current_vertex = 0;
@@ -168,10 +168,10 @@ void RivaraRefinement::DMesh::exportMesh(Mesh& mesh,
       it != vertices.end(); ++it)
   {
     DVertex* dv = *it;
-    editor.addVertex(current_vertex++, dv->p);
+    editor.add_vertex(current_vertex++, dv->p);
   }
 
-  std::vector<uint> cell_vertices(cell_type->numEntities(0));
+  std::vector<uint> cell_vertices(cell_type->num_entities(0));
   uint current_cell = 0;
   for(std::list<DCell* >::iterator it = cells.begin();
       it != cells.end(); ++it)
@@ -183,12 +183,12 @@ void RivaraRefinement::DMesh::exportMesh(Mesh& mesh,
       DVertex* dv = dc->vertices[j];
       cell_vertices[j] = dv->id;
     }
-    editor.addCell(current_cell, cell_vertices);
+    editor.add_cell(current_cell, cell_vertices);
     new2old_cell[current_cell] = dc->parent_id;
   
     for(uint j = 0; j < dc->facets.size(); j++)
     {
-      uint index = cell_type->numEntities(0)*current_cell + j;
+      uint index = cell_type->num_entities(0)*current_cell + j;
       new2old_facet[ index ] = dc->facets[j];
     }  
 
@@ -264,7 +264,7 @@ void RivaraRefinement::DMesh::bisect(DCell* dcell, DVertex* hangv,
     mv = new DVertex;
     mv->p = (dcell->vertices[ii]->p + dcell->vertices[jj]->p) / 2.0;
     mv->id = vertices.size();
-    addVertex(mv);
+    add_vertex(mv);
     closing = false;
   }
 
@@ -307,12 +307,12 @@ void RivaraRefinement::DMesh::bisect(DCell* dcell, DVertex* hangv,
     vs0.push_back(mv); 
   if( !pushed1 )
     vs1.push_back(mv); 
-  addCell(c0, vs0, dcell->parent_id);
-  addCell(c1, vs1, dcell->parent_id);
+  add_cell(c0, vs0, dcell->parent_id);
+  add_cell(c1, vs1, dcell->parent_id);
 
-  propagateFacets(dcell, c0, c1, ii, jj, mv);
+  propagate_facets(dcell, c0, c1, ii, jj, mv);
 
-  removeCell(dcell);
+  remove_cell(dcell);
 
   // Continue refinement
   if(!closing)
@@ -353,12 +353,12 @@ RivaraRefinement::DCell* RivaraRefinement::DMesh::opposite(DCell* dcell,
   return 0;
 }
 //-----------------------------------------------------------------------------
-void RivaraRefinement::DMesh::addVertex(DVertex* v)
+void RivaraRefinement::DMesh::add_vertex(DVertex* v)
 {
   vertices.push_back(v);
 }
 //-----------------------------------------------------------------------------
-void RivaraRefinement::DMesh::addCell(DCell* c, std::vector<DVertex*> vs, 
+void RivaraRefinement::DMesh::add_cell(DCell* c, std::vector<DVertex*> vs, 
                                       int parent_id)
 {
   for(uint i = 0; i < vs.size(); i++)
@@ -372,7 +372,7 @@ void RivaraRefinement::DMesh::addCell(DCell* c, std::vector<DVertex*> vs,
   c->parent_id = parent_id;
 }
 //-----------------------------------------------------------------------------
-void RivaraRefinement::DMesh::removeCell(DCell* c)
+void RivaraRefinement::DMesh::remove_cell(DCell* c)
 {
   for(uint i = 0; i < c->vertices.size(); ++i)
   {
@@ -382,7 +382,7 @@ void RivaraRefinement::DMesh::removeCell(DCell* c)
   c->deleted = true;
 }
 //-----------------------------------------------------------------------------
-void RivaraRefinement::DMesh::bisectMarked(std::vector<bool> marked_ids)
+void RivaraRefinement::DMesh::bisect_marked(std::vector<bool> marked_ids)
 {
   std::list<DCell*> marked_cells;
   for(std::list<DCell* >::iterator it = cells.begin();
@@ -402,7 +402,7 @@ void RivaraRefinement::DMesh::bisectMarked(std::vector<bool> marked_ids)
   }
 }
 //-----------------------------------------------------------------------------
-void RivaraRefinement::DMesh::propagateFacets(DCell* dcell, DCell* c0, 
+void RivaraRefinement::DMesh::propagate_facets(DCell* dcell, DCell* c0, 
                        DCell* c1, uint ii, uint jj, DVertex* mv)
 {
   // Initialize local facets

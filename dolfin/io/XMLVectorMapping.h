@@ -21,8 +21,8 @@ namespace dolfin
     XMLVectorMapping(std::map<uint, std::vector<uint> >& mvec);
     ~XMLVectorMapping();
     
-    void startElement (const xmlChar* name, const xmlChar** attrs);
-    void endElement   (const xmlChar* name);
+    void start_element (const xmlChar* name, const xmlChar** attrs);
+    void end_element   (const xmlChar* name);
     
     void open(std::string filename);
     bool close();
@@ -33,7 +33,7 @@ namespace dolfin
     enum VectorMappingType { INT, UINT, DOUBLE, BOOL, UNSET };
     
     void startVectorMapping(const xmlChar* name, const xmlChar** attrs);
-    void readEntities    (const xmlChar* name, const xmlChar** attrs);
+    void read_entities    (const xmlChar* name, const xmlChar** attrs);
 
     ParserState state;
     VectorMappingType mvec_type;

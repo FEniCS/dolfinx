@@ -153,7 +153,7 @@ namespace dolfin
     void init(uint M, uint N, const uint* d_nzrow, const uint* o_nzrow);
 
     // Set PETSc matrix type
-    void setType();
+    void set_type();
 
     // Return PETSc matrix type
     #if PETSC_VERSION_MAJOR > 2 
@@ -163,7 +163,7 @@ namespace dolfin
     #endif
 
     // Check that requested type has been compiled into PETSc
-    void checkType();
+    void check_type();
 
     // PETSc Mat pointer
     boost::shared_ptr<Mat> A;

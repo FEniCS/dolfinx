@@ -92,11 +92,11 @@ namespace dolfin
     
     void init();
 
-    virtual void computeQuadrature () = 0;
-    virtual void computeBasis      () = 0;
-    virtual void computeWeights    () = 0;
+    virtual void compute_quadrature () = 0;
+    virtual void compute_basis      () = 0;
+    virtual void compute_weights    () = 0;
 
-    void computeDerivatives();
+    void compute_derivatives();
 
     unsigned int q;  // Polynomial degree
     unsigned int p;  // Convergence order

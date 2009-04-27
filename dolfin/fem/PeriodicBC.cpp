@@ -140,7 +140,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
       sub_domain.map(x, y);
 
       // Check if coordinate is inside the domain G or in H
-      const bool on_boundary = facet->numEntities(D) == 1;
+      const bool on_boundary = facet->num_entities(D) == 1;
       if (sub_domain.inside(x, on_boundary))
       {
         // Coordinate x is in G

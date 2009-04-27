@@ -106,8 +106,8 @@ class Doxy2SWIG:
             return
         attr = "do_%s" % name
         if hasattr(self, attr):
-            handlerMethod = getattr(self, attr)
-            handlerMethod(node)
+            handler_method = getattr(self, attr)
+            handler_method(node)
         else:
             self.generic_parse(node)
             #if name not in self.generics: self.generics.append(name)

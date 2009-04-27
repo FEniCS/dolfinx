@@ -32,7 +32,7 @@ v1 = TestFunction(P1)
 u1 = TrialFunction(P1)
 
 # Define functions
-dBdt = Function(P1, ("0.0", "0.0", "1.0"))
+dbdt = Function(P1, ("0.0", "0.0", "1.0"))
 zero = Function(P1, ("0.0", "0.0", "0.0"))
 T = Function(PN)
 J = Function(P1)
@@ -46,7 +46,7 @@ class DirichletBoundary(SubDomain):
 bc = DirichletBC(PN, zero, DirichletBoundary())
 
 # Eddy currents equation (using potential T) 
-Teqn = inner(curl(v0), curl(u0))*dx, -dot(v0, dBdt)*dx
+Teqn = inner(curl(v0), curl(u0))*dx, -dot(v0, dbdt)*dx
 Tproblem = VariationalProblem(Teqn[0], Teqn[1], bc)
 T = Tproblem.solve()
 

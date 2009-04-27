@@ -21,7 +21,7 @@ XMLObject::~XMLObject()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-int XMLObject::parseInt(const xmlChar* name, const xmlChar** attrs,
+int XMLObject::parse_int(const xmlChar* name, const xmlChar** attrs,
 			const char* attribute)
 {
   // Check that we got the data
@@ -87,7 +87,7 @@ dolfin::uint XMLObject::parseUnsignedInt(const xmlChar* name,
   return 0;
 }
 //-----------------------------------------------------------------------------
-double XMLObject::parseReal(const xmlChar* name, const xmlChar** attrs,
+double XMLObject::parse_real(const xmlChar* name, const xmlChar** attrs,
 			  const char* attribute)
 {
   // Check that we got the data
@@ -117,7 +117,7 @@ double XMLObject::parseReal(const xmlChar* name, const xmlChar** attrs,
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-std::string XMLObject::parseString(const xmlChar* name, const xmlChar** attrs,
+std::string XMLObject::parse_string(const xmlChar* name, const xmlChar** attrs,
 				   const char* attribute)
 {
   // Check that we got the data
@@ -147,7 +147,7 @@ std::string XMLObject::parseString(const xmlChar* name, const xmlChar** attrs,
   return "";
 }
 //-----------------------------------------------------------------------------
-std::string XMLObject::parseStringOptional(const xmlChar* name, const xmlChar** attrs,
+std::string XMLObject::parse_stringOptional(const xmlChar* name, const xmlChar** attrs,
 				   const char* attribute)
 {
   // Check that we got the data
@@ -175,7 +175,7 @@ std::string XMLObject::parseStringOptional(const xmlChar* name, const xmlChar** 
   return "";
 }
 //-----------------------------------------------------------------------------
-bool XMLObject::parseBool(const xmlChar* name, const xmlChar** attrs,
+bool XMLObject::parse_bool(const xmlChar* name, const xmlChar** attrs,
 			const char* attribute)
 {
   // Check that we got the data

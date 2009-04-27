@@ -22,7 +22,7 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
     fq(0), rmax(0), x(0), u(0), f(0)
 {
   // Choose solver
-  solver = chooseSolver();
+  solver = choose_solver();
 
   // Initialize dofs
   dofs = new real[method->nsize()];
@@ -249,7 +249,7 @@ void MonoAdaptiveTimeSlab::feval(uint m)
   }
 }
 //-----------------------------------------------------------------------------
-TimeSlabSolver* MonoAdaptiveTimeSlab::chooseSolver()
+TimeSlabSolver* MonoAdaptiveTimeSlab::choose_solver()
 {
   bool implicit = ode.get("ODE implicit");
   std::string solver = ode.get("ODE nonlinear solver");

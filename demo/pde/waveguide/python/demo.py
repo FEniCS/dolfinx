@@ -81,7 +81,7 @@ esolver.solve(S, T)
 # which corresponds with cutoff wavenumber of the the dominant cutoff mode.
 cutoff = None
 for i in range(S.size(1)):
-    (lr, lc) = esolver.getEigenvalue(i)
+    (lr, lc) = esolver.get_eigenvalue(i)
     if lr > 1 and lc == 0:
         cutoff = sqrt(lr)
         break

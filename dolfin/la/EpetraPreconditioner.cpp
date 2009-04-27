@@ -9,7 +9,7 @@
 
 using namespace dolfin;
 //-----------------------------------------------------------------------------
-void EpetraPreconditioner::setType(PreconditionerType type) {
+void EpetraPreconditioner::set_type(PreconditionerType type) {
   prec_type = type; 
 }
 //-----------------------------------------------------------------------------

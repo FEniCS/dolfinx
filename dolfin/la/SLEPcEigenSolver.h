@@ -90,19 +90,19 @@ namespace dolfin
     void solve(const PETScMatrix& A, const PETScMatrix& B, uint n);
 
     /// Get the first eigenvalue
-    void getEigenvalue(double& lr, double& lc);
+    void get_eigenvalue(double& lr, double& lc);
 
     /// Get the first eigenpair
-    void getEigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c);
+    void get_eigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c);
 
     /// Get eigenvalue i
-    void getEigenvalue(double& lr, double& lc, uint i);
+    void get_eigenvalue(double& lr, double& lc, uint i);
 
     /// Get eigenpair i
-    void getEigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c, uint i);
+    void get_eigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c, uint i);
 
     // Get the number of iterations used by the solver
-    int getIterationNumber();
+    int get_iteration_number();
 
   private:
 
@@ -110,16 +110,16 @@ namespace dolfin
     void solve(const PETScMatrix* A, const PETScMatrix* B, uint n);
 
     /// Callback for changes in parameter values
-    void readParameters();
+    void read_parameters();
     
     // Set spectrum
-    void setSpectrum(std::string solver);
+    void set_spectrum(std::string solver);
 
     // Set solver
-    void setSolver(std::string spectrum);
+    void set_solver(std::string spectrum);
 
     // Set tolerance
-    void setTolerance(double tolerance, uint maxiter);
+    void set_tolerance(double tolerance, uint maxiter);
 
     // SLEPc solver pointer
     EPS eps;

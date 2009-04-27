@@ -96,8 +96,8 @@ void MPIMeshCommunicator::broadcast(const Mesh& mesh)
   }
 
   // CellType
-  int cell_type = mesh._cell_type->cell_type;
-  int facet_type = mesh._cell_type->facet_type;
+  int cell_type = mesh._cell_type->cell_type();
+  int facet_type = mesh._cell_type->facet_type();
   //dolfin_debug1("Sending cell_type %d", cell_type);
   MPI_Bcast(&cell_type, 1, MPI_INT, this_process, MPI_COMM_WORLD);
   //dolfin_debug1("Sending facet_type %d", facet_type);
@@ -185,7 +185,7 @@ void MPIMeshCommunicator::receive(Mesh& mesh)
   mesh.topology().connectivity = c;
 
   mesh._cell_type = CellType::create(CellType::Type(cell_type));
-  mesh._cell_type->facet_type = CellType::Type(facet_type);
+  mesh._cell_type->_facet_type = CellType::Type(facet_type);
   
   dolfin_debug1("Finished mesh receive on process %d", this_process);
 }
@@ -238,7 +238,7 @@ void MPIMeshCommunicator::receive(MeshFunction<unsigned int>& mesh_function)
 void MPIMeshCommunicator::distribute(Mesh& mesh,
 				     MeshFunction<uint>& distribution)
 {
-  distributeCommon(mesh, distribution, 0, 0);
+  distribute_common(mesh, distribution, 0, 0);
 }
 //-----------------------------------------------------------------------------
   void MPIMeshCommunicator::distribute(Mesh& mesh, 
@@ -246,10 +246,10 @@ void MPIMeshCommunicator::distribute(Mesh& mesh,
 				       MeshFunction<bool>& old_cell_marker,
 				       MeshFunction<bool>& cell_marker) 
 {
-  distributeCommon(mesh, distribution, &old_cell_marker, &cell_marker);
+  distribute_common(mesh, distribution, &old_cell_marker, &cell_marker);
 }
 //-----------------------------------------------------------------------------
-  void MPIMeshCommunicator::distributeCommon(Mesh& mesh, 
+  void MPIMeshCommunicator::distribute_common(Mesh& mesh, 
 				       MeshFunction<uint>& distribution, 
 				       MeshFunction<bool>* old_cell_marker,
 				       MeshFunction<bool>* cell_marker) 

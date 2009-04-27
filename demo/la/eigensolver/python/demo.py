@@ -43,5 +43,5 @@ print "Eigenvalue solver converged in %d iterations" % (esolver.getIterationNumb
 
 # Display eigenvalues
 for i in range(n):
-    (lr, lc) = esolver.getEigenvalue(i)
+    (lr, lc) = esolver.get_eigenvalue(i)
     print "Eigenvalue " + str(i) + ": " + str(lr)

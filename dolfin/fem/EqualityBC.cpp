@@ -180,7 +180,7 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
       double* x = data.coordinates[local_dof];
 
       // Check if coordinate is inside the domain
-      const bool on_boundary = facet->numEntities(D) == 1;
+      const bool on_boundary = facet->num_entities(D) == 1;
       if (sub_domain.inside(x, on_boundary))
       {
         equal_dofs.push_back(global_dof);

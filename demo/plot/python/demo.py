@@ -41,7 +41,7 @@ if 0 in demos:
         X += dX
         Y += dY
 
-        for j in xrange(mesh.numVertices()):
+        for j in xrange(mesh.num_vertices()):
             x, y = coordinates[j]
             r = sqrt((x - X)**2 + (y - Y)**2)
             if r < R:
@@ -49,7 +49,7 @@ if 0 in demos:
 
         plot(mesh)
 
-        for j in xrange(mesh.numVertices()):
+        for j in xrange(mesh.num_vertices()):
             coordinates[j] = original[j]
 
 # Plot scalar function

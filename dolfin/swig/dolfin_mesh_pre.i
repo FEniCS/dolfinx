@@ -17,9 +17,9 @@
 %extend name {
     PyObject* coordinates() {
         // Get coordinates for all vertices in structure.
-        // returns a 3xnumVertices numpy array, x in array[0], y in array[1]
+        // returns a 3xnum_vertices numpy array, x in array[0], y in array[1]
         // and z in array[2]
-        int m = self->numVertices();
+        int m = self->num_vertices();
         int n = self->geometry().dim();
 
         MAKE_ARRAY(2, m, n, self->coordinates(), NPY_DOUBLE)
@@ -33,7 +33,7 @@
 %extend name {
     PyObject* cells() {
        // Get the node-id for all vertices.
-        int m = self->numCells();
+        int m = self->num_cells();
         int n = 0;
         if(self->topology().dim() == 1)
           n = 2;

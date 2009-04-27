@@ -14,7 +14,7 @@ eL = VectorElement("Lagrange", "tetrahedron", 1)
 
 v = TestFunction(eN)
 u = TrialFunction(eN)
-dBdt = Function(eL)
+dbdt = Function(eL)
 
 a =  inner(curl(v), curl(u))*dx 
-L = -inner(v, dBdt)*dx 
+L = -inner(v, dbdt)*dx 

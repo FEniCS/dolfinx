@@ -55,7 +55,7 @@ namespace dolfin
     bool has(std::string key) const;
 
     /// Callback for changes in parameter values
-    virtual void readParameters();
+    virtual void read_parameters();
 
   private:
 

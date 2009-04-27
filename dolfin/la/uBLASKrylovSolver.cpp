@@ -17,14 +17,14 @@ uBLASKrylovSolver::uBLASKrylovSolver(SolverType solver_type, PreconditionerType 
   : solver_type(solver_type), pc_user(false), report(false), parameters_read(false)
 {
   // Select and create default preconditioner
-  selectPreconditioner(pc_type);
+  select_preconditioner(pc_type);
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(PreconditionerType pc_type)
   : solver_type(default_solver), pc_user(false), report(false), parameters_read(false)
 {
   // Select and create default preconditioner
-  selectPreconditioner(pc_type);
+  select_preconditioner(pc_type);
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
@@ -56,22 +56,22 @@ dolfin::uint uBLASKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
 dolfin::uint uBLASKrylovSolver::solve(const uBLASMatrix<ublas_dense_matrix>& A, 
     uBLASVector& x, const uBLASVector& b)
 { 
-  return solveKrylov(A, x, b); 
+  return solve_krylov(A, x, b); 
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBLASKrylovSolver::solve(const uBLASMatrix<ublas_sparse_matrix>& A, 
     uBLASVector& x, const uBLASVector& b)
 { 
-  return solveKrylov(A, x, b); 
+  return solve_krylov(A, x, b); 
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBLASKrylovSolver::solve(const uBLASKrylovMatrix& A, uBLASVector& x, 
     const uBLASVector& b)
 { 
-  return solveKrylov(A, x, b); 
+  return solve_krylov(A, x, b); 
 }
 //-----------------------------------------------------------------------------
-void uBLASKrylovSolver::selectPreconditioner(PreconditionerType pc_type)
+void uBLASKrylovSolver::select_preconditioner(PreconditionerType pc_type)
 {
   switch (pc_type)
   { 
@@ -90,7 +90,7 @@ void uBLASKrylovSolver::selectPreconditioner(PreconditionerType pc_type)
   }
 }
 //-----------------------------------------------------------------------------
-void uBLASKrylovSolver::readParameters()
+void uBLASKrylovSolver::read_parameters()
 {
   // Set tolerances and other parameters
   rtol    = get("Krylov relative tolerance");

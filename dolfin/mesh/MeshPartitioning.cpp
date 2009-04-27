@@ -440,27 +440,27 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 {
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(mesh, mesh_data.cell_type->cellType(), mesh_data.gdim, mesh_data.tdim);
+  editor.open(mesh, mesh_data.cell_type->cell_type(), mesh_data.gdim, mesh_data.tdim);
 
   // Add vertices
-  editor.initVertices(mesh_data.vertex_coordinates.size());
+  editor.init_vertices(mesh_data.vertex_coordinates.size());
   Point p(mesh_data.gdim);
   for (uint i = 0; i < mesh_data.vertex_coordinates.size(); ++i)
   {
     for (uint j = 0; j < mesh_data.gdim; ++j)
       p[j] = mesh_data.vertex_coordinates[i][j];
-    editor.addVertex(i, p);
+    editor.add_vertex(i, p);
   }
   
   // Add cells
-  editor.initCells(mesh_data.cell_vertices.size());
-  const uint num_cell_vertices = mesh_data.cell_type->numEntities(0);
+  editor.init_cells(mesh_data.cell_vertices.size());
+  const uint num_cell_vertices = mesh_data.cell_type->num_entities(0);
   std::vector<uint> cell(num_cell_vertices);
   for (uint i = 0; i < mesh_data.cell_vertices.size(); ++i)
   {
     for (uint j = 0; j < num_cell_vertices; ++j)
       cell[j] = glob2loc[mesh_data.cell_vertices[i][j]];
-    editor.addCell(i, cell);
+    editor.add_cell(i, cell);
   }
   editor.close();
 

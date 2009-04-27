@@ -26,8 +26,8 @@ namespace dolfin
     /// Destructor
     ~XMLLocalMeshData();
     
-    void startElement (const xmlChar* name, const xmlChar** attrs);
-    void endElement   (const xmlChar* name);
+    void start_element (const xmlChar* name, const xmlChar** attrs);
+    void end_element   (const xmlChar* name);
     
     void open(std::string filename);
     bool close();
@@ -40,17 +40,17 @@ namespace dolfin
                       DONE};
     
     // Callbacks for reading XML data
-    void readMesh        (const xmlChar* name, const xmlChar** attrs);
-    void readVertices    (const xmlChar* name, const xmlChar** attrs);
-    void readVertex      (const xmlChar* name, const xmlChar** attrs);
-    void readCells       (const xmlChar* name, const xmlChar** attrs);
-    void readInterval    (const xmlChar* name, const xmlChar** attrs);
-    void readTriangle    (const xmlChar* name, const xmlChar** attrs);
-    void readTetrahedron (const xmlChar* name, const xmlChar** attrs);
-    void readMeshFunction(const xmlChar* name, const xmlChar** attrs);
-    void readArray       (const xmlChar* name, const xmlChar** attrs);
-    void readMeshEntity  (const xmlChar* name, const xmlChar** attrs);
-    void readArrayElement(const xmlChar* name, const xmlChar** attrs);
+    void read_mesh        (const xmlChar* name, const xmlChar** attrs);
+    void read_vertices    (const xmlChar* name, const xmlChar** attrs);
+    void read_vertex      (const xmlChar* name, const xmlChar** attrs);
+    void read_cells       (const xmlChar* name, const xmlChar** attrs);
+    void read_interval    (const xmlChar* name, const xmlChar** attrs);
+    void read_triangle    (const xmlChar* name, const xmlChar** attrs);
+    void read_tetrahedron (const xmlChar* name, const xmlChar** attrs);
+    void read_meshFunction(const xmlChar* name, const xmlChar** attrs);
+    void read_array       (const xmlChar* name, const xmlChar** attrs);
+    void read_meshEntity  (const xmlChar* name, const xmlChar** attrs);
+    void read_arrayElement(const xmlChar* name, const xmlChar** attrs);
     
     // Number of local vertices
     uint num_local_vertices() const;

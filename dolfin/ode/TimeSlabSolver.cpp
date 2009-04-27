@@ -20,7 +20,7 @@ TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
     xnorm(0.0)
 {
   // Choose tolerance
-  chooseTolerance();
+  choose_tolerance();
 
   // Get maximum number of iterations
   maxiter = ode.get("ODE maximum iterations");
@@ -121,7 +121,7 @@ void TimeSlabSolver::end()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void TimeSlabSolver::chooseTolerance()
+void TimeSlabSolver::choose_tolerance()
 {
   const double TOL   = ode.get("ODE tolerance");
   const double alpha = ode.get("ODE discrete tolerance factor");

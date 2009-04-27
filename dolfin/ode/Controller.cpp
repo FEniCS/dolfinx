@@ -85,7 +85,7 @@ real Controller::updateH211PI(real e, real tol)
   return k;
 }
 //-----------------------------------------------------------------------------
-real Controller::updateSimple(real e, real tol)
+real Controller::update_simple(real e, real tol)
 {
   double _e   = to_double(e);
   double _tol = to_double(tol);  
@@ -104,7 +104,7 @@ real Controller::updateSimple(real e, real tol)
   return k;
 }
 //-----------------------------------------------------------------------------
-real Controller::updateHarmonic(real e, real tol)
+real Controller::update_harmonic(real e, real tol)
 {
   double _e   = to_double(e);
   double _tol = to_double(tol);  
@@ -128,7 +128,7 @@ real Controller::updateHarmonic(real e, real tol)
   return k;
 }
 //-----------------------------------------------------------------------------
-real Controller::updateHarmonic(real knew, real kold, real kmax)
+real Controller::update_harmonic(real knew, real kold, real kmax)
 {
   const real w = 5.0;
   return min(kmax, (1.0 + w)*kold*knew / (kold + w*knew));

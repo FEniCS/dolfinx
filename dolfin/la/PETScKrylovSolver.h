@@ -65,16 +65,16 @@ namespace dolfin
     void init(uint M, uint N);
 
     /// Read parameters from database
-    void readParameters();
+    void read_parameters();
     
     /// Set solver
-    void setSolver();
+    void set_solver();
 
     /// Set PETScPreconditioner
     void setPETScPreconditioner();
     
     /// Report the number of iterations
-    void writeReport(int num_iterations);
+    void write_report(int num_iterations);
 
     /// Get PETSc method identifier 
     #if PETSC_VERSION_MAJOR > 2 

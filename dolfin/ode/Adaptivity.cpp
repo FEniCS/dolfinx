@@ -40,7 +40,7 @@ bool Adaptivity::accept()
   if ( _accept )
   {
     safety_old = safety;
-    safety = Controller::updateHarmonic(safety_max, safety_old, safety_max);
+    safety = Controller::update_harmonic(safety_max, safety_old, safety_max);
     //cout << "---------------------- Time step ok -----------------------" << endl;
   }
   else

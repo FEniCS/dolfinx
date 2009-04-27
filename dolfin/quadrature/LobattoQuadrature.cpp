@@ -38,7 +38,7 @@ void LobattoQuadrature::disp() const
     message("%2d   %.16e   %.16e", i, to_double(points[i]), to_double(weights[i]));
 }
 //----------------------------------------------------------------------------
-void LobattoQuadrature::computePoints()
+void LobattoQuadrature::compute_points()
 {
   // Compute the Lobatto quadrature points in [-1,1] as the enpoints
   // and the zeroes of the derivatives of the Legendre polynomials

@@ -31,22 +31,22 @@ namespace dolfin
     uint dim() const;
 
     /// Return number of entitites of given topological dimension
-    uint numEntities(uint dim) const;
+    uint num_entities(uint dim) const;
 
     /// Return number of vertices for entity of given topological dimension
-    uint numVertices(uint dim) const;
+    uint num_vertices(uint dim) const;
 
     /// Return orientation of the cell
     uint orientation(const Cell& cell) const;
 
     /// Create entities e of given topological dimension from vertices v
-    void createEntities(uint** e, uint dim, const uint* v) const;
+    void create_entities(uint** e, uint dim, const uint* v) const;
 
     /// Regular refinement of cell 
-    void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
+    void refine_cell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
 
     /// Irregular refinement of cell 
-    void refineCellIrregular(Cell& cell, MeshEditor& editor, uint& current_cell, 
+    void refine_cellIrregular(Cell& cell, MeshEditor& editor, uint& current_cell, 
 			     uint refinement_rule, uint* marked_edges) const;
 
     /// Compute volume of tetrahedron
@@ -62,7 +62,7 @@ namespace dolfin
     Point normal(const Cell& cell, uint facet) const;
 
     /// Compute the area/length of given facet with respect to the cell
-    double facetArea(const Cell& cell, uint facet) const;
+    double facet_area(const Cell& cell, uint facet) const;
 
     /// Order entities locally
     void order(Cell& cell) const;
@@ -82,7 +82,7 @@ namespace dolfin
   private:
     
     // Find local index of edge i according to ordering convention
-    uint findEdge(uint i, const Cell& cell) const;
+    uint find_edge(uint i, const Cell& cell) const;
 
   };
 

@@ -46,12 +46,12 @@ void XMLHandler::validate(std::string filename)
   rngs = xmlRelaxNGParse(rngp);
   xmlTextReaderRelaxNGSetSchema(reader, rngs);
   //char* schema;
-  //std::ifstream schemaFile;
-  //schemaFile.open("test.rng");
-  //length = schemaFile.tellg();
+  //std::ifstream schema_file;
+  //schema_file.open("test.rng");
+  //length = schema_file.tellg();
   //schema = new char[length];
-  //schemaFile.read(schema, length);
-  //schemaFile.close();
+  //schema_file.read(schema, length);
+  //schema_file.close();
   if ( reader != NULL ) {
     ret = xmlTextReaderRead(reader);
     while ( ret == 1 ) {

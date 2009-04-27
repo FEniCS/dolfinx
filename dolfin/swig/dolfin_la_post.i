@@ -12,9 +12,9 @@
 #ifdef HAS_SLEPC
 %extend dolfin::SLEPcEigenSolver {
 
-PyObject* getEigenvalue(const int emode) {
+PyObject* get_eigenvalue(const int emode) {
     double err, ecc;
-    self->getEigenvalue(err, ecc, emode);
+    self->get_eigenvalue(err, ecc, emode);
 
     PyObject* result = PyTuple_New(2);
     PyTuple_SET_ITEM(result, 0, PyFloat_FromDouble(err));
@@ -23,9 +23,9 @@ PyObject* getEigenvalue(const int emode) {
     return result;
 }
 
-PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const int emode) {
+PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const int emode) {
     double err, ecc;
-    self->getEigenpair(err, ecc, rr, cc, emode);
+    self->get_eigenpair(err, ecc, rr, cc, emode);
 
     PyObject* result = PyTuple_New(2);
     PyTuple_SET_ITEM(result, 0, PyFloat_FromDouble(err));

@@ -84,7 +84,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
 
   // Read parameters if not done
   if ( !parameters_read )
-    readParameters();
+    read_parameters();
 
   // Solve linear system
   KSPSetOperators(ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
@@ -110,7 +110,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   KSPGetIterationNumber(ksp, &num_iterations);
 
   // Report results
-  writeReport(num_iterations);
+  write_report(num_iterations);
 
   return num_iterations;
 }
@@ -139,7 +139,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, PETScVector& x
 
   // Read parameters if not done
   if ( !parameters_read )
-    readParameters();
+    read_parameters();
 
   // Don't use preconditioner that can't handle virtual (shell) matrix
   if ( !pc_dolfin )
@@ -164,7 +164,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, PETScVector& x
   KSPGetIterationNumber(ksp, &num_iterations);
   
   // Report results
-  writeReport(num_iterations);
+  write_report(num_iterations);
 
   return num_iterations;
 }
@@ -194,7 +194,7 @@ void PETScKrylovSolver::init(uint M, uint N)
   KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
 
   // Set solver
-  setSolver();
+  set_solver();
 
   // FIXME: The preconditioner is being set in solve() due to a PETSc bug
   //        when using Hypre preconditioner. The problem can be avoided by
@@ -204,7 +204,7 @@ void PETScKrylovSolver::init(uint M, uint N)
 //  setPETScPreconditioner();
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::readParameters()
+void PETScKrylovSolver::read_parameters()
 {
   // Don't do anything if not initialized
   if( !ksp )
@@ -233,7 +233,7 @@ void PETScKrylovSolver::readParameters()
   parameters_read = true;
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::setSolver()
+void PETScKrylovSolver::set_solver()
 {
   // Don't do anything for default method
   if (method == default_solver)
@@ -288,7 +288,7 @@ void PETScKrylovSolver::setPETScPreconditioner()
   if ( pc_petsc == amg_ml )
   {  
 #if PETSC_HAVE_ML
-  PCSetType(pc, PETScPreconditioner::getType(pc_petsc));
+  PCSetType(pc, PETScPreconditioner::get_type(pc_petsc));
   PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
 #else
     warning("PETSc has not been compiled with the ML library for   "
@@ -299,10 +299,10 @@ void PETScKrylovSolver::setPETScPreconditioner()
   }
 
   // Set preconditioner
-  PCSetType(pc, PETScPreconditioner::getType(pc_petsc));
+  PCSetType(pc, PETScPreconditioner::get_type(pc_petsc));
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::writeReport(int num_iterations)
+void PETScKrylovSolver::write_report(int num_iterations)
 {
   // Check if we should write the report
   bool report = get("Krylov report");

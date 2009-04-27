@@ -141,7 +141,7 @@ void MultiAdaptiveNewtonSolver::Feval(uBLASVector& F)
   for (uint e = 0; e < ts.ne; e++)
   {
     // Cover all elements in current sub slab
-    s = ts.coverNext(s, e);
+    s = ts.cover_next(s, e);
 
     // Get element data
     const uint i = ts.ei[e];

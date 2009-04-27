@@ -117,7 +117,7 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
   for (uint s = 0; s < ts.ns; s++)
   {
     // Cover all elements in current sub slab
-    e1 = ts.coverSlab(s, e0);
+    e1 = ts.cover_slab(s, e0);
     
     // Get data for sub slab
     const real a = ts.sa[s];

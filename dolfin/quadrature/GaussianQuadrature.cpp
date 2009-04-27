@@ -25,11 +25,11 @@ GaussianQuadrature::GaussianQuadrature(unsigned int n) : Quadrature(n)
 //-----------------------------------------------------------------------------
 void GaussianQuadrature::init()
 {
-  computePoints();
-  computeWeights();
+  compute_points();
+  compute_weights();
 }
 //-----------------------------------------------------------------------------
-void GaussianQuadrature::computeWeights()
+void GaussianQuadrature::compute_weights()
 {
   // Compute the quadrature weights by solving a linear system of equations
   // for exact integration of polynomials. We compute the integrals over

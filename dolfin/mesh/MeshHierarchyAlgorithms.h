@@ -27,19 +27,19 @@ namespace dolfin
   private:
 
     /// This function implements the "EvaluateMarks" subroutine by Bey 
-    void evaluateMarks(Mesh& mesh); 
+    void evaluate_marks(Mesh& mesh); 
       
     /// This function implements the "CloseGrid" subroutine by Bey 
-    void closeMesh(Mesh& mesh); 
+    void close_mesh(Mesh& mesh); 
 
     /// This function implements the "CloseElement" subroutine by Bey 
-    void closeCell(Cell& cell); 
+    void close_cell(Cell& cell); 
 
     /// This function implements the "UnrefineGrid" subroutine by Bey 
-    void unrefineMesh(MeshHierarchy& mesh, uint k);
+    void unrefine_mesh(MeshHierarchy& mesh, uint k);
 
     /// This function implements the "RefineGrid" subroutine by Bey 
-    void refineMesh(MeshHierarchy& mesh, uint k);
+    void refine_mesh(MeshHierarchy& mesh, uint k);
 
   MeshFunction<uint>* cell_marker; 
   MeshFunction<uint>* cell_state; 

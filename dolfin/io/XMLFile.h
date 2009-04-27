@@ -67,14 +67,14 @@ namespace dolfin
     
   private:
     
-    void parseFile();
+    void parse_file();
     void parseSAX();
 
-    FILE* openFile();
-    void  closeFile(FILE* fp);
+    FILE* open_file();
+    void  close_file(FILE* fp);
     
     // Implementation for specific class (output)
-    XMLObject* xmlObject;
+    XMLObject* xml_object;
 
     // True if header is written (need to close)
     bool header_written;

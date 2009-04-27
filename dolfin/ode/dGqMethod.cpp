@@ -110,7 +110,7 @@ void dGqMethod::disp() const
   }
 }
 //-----------------------------------------------------------------------------
-void dGqMethod::computeQuadrature()
+void dGqMethod::compute_quadrature()
 {
   // Use Radau quadrature
   RadauQuadrature quadrature(nq);
@@ -127,7 +127,7 @@ void dGqMethod::computeQuadrature()
     qweights[i] = 0.5 * quadrature.weight(nq - 1 - i);
 }
 //-----------------------------------------------------------------------------
-void dGqMethod::computeBasis()
+void dGqMethod::compute_basis()
 {
   dolfin_assert(!trial);
   dolfin_assert(!test);
@@ -143,7 +143,7 @@ void dGqMethod::computeBasis()
     test->set(i, qpoints[i]);
 }
 //-----------------------------------------------------------------------------
-void dGqMethod::computeWeights()
+void dGqMethod::compute_weights()
 {
   uBLASDenseMatrix A(nn, nn);
   ublas_dense_matrix& _A = A.mat();

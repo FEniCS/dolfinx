@@ -30,7 +30,7 @@ namespace dolfin
     ~Cell() {}
     
     /// Return type of cell
-    inline CellType::Type type() const { return _mesh.type().cellType(); }
+    inline CellType::Type type() const { return _mesh.type().cell_type(); }
     
     /// Compute orientation of cell (0 is right, 1 is left)
     inline double orientation() const
@@ -56,8 +56,8 @@ namespace dolfin
     { return _mesh.type().normal(*this, facet); }
 
     /// Compute the area/length of given facet with respect to the cell
-    inline double facetArea(uint facet) const
-    { return _mesh.type().facetArea(*this, facet); }
+    inline double facet_area(uint facet) const
+    { return _mesh.type().facet_area(*this, facet); }
 
     /// Order entities locally
     inline void order()

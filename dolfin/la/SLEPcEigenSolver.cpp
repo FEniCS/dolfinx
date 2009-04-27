@@ -49,17 +49,17 @@ void SLEPcEigenSolver::solve(const PETScMatrix& A, const PETScMatrix& B, uint n)
   solve(&A, &B, n);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::getEigenvalue(double& lr, double& lc)
+void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc)
 {
-  getEigenvalue(lr, lc, 0);
+  get_eigenvalue(lr, lc, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::getEigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c)
+void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c)
 {
-  getEigenpair(lr, lc, r, c, 0);
+  get_eigenpair(lr, lc, r, c, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::getEigenvalue(double& lr, double& lc, uint i)
+void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i)
 {
   const int ii = static_cast<int>(i);
 
@@ -73,7 +73,7 @@ void SLEPcEigenSolver::getEigenvalue(double& lr, double& lc, uint i)
     error("Requested eigenvalue has not been computed");
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::getEigenpair(double& lr, double& lc,
+void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
                                     PETScVector& r, PETScVector& c,
                                     uint i)
 {
@@ -147,17 +147,17 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
           eps_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::readParameters()
+void SLEPcEigenSolver::read_parameters()
 {
   if (has("eigenvalue spectrum"))
-    setSpectrum(get("eigenvalue spectrum"));
+    set_spectrum(get("eigenvalue spectrum"));
   if (has("eigenvalue solver"))
-    setSolver(get("eigenvalue solver"));
+    set_solver(get("eigenvalue solver"));
   if (has("eigenvalue tolerance") && has("eigenvalue iterations"))
-    setTolerance(get("eigenvalue tolerance"), get("eigenvalue iterations"));
+    set_tolerance(get("eigenvalue tolerance"), get("eigenvalue iterations"));
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::setSpectrum(std::string spectrum)
+void SLEPcEigenSolver::set_spectrum(std::string spectrum)
 {
   // Do nothing if default type is specified
   if (spectrum == "default")
@@ -186,7 +186,7 @@ void SLEPcEigenSolver::setSpectrum(std::string spectrum)
   // FIXME: largest eigenvalues. Asking for smallest leads to a PETSc error.
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::setSolver(std::string solver)
+void SLEPcEigenSolver::set_solver(std::string solver)
 {
   // Do nothing if default type is specified
   if (solver == "default")
@@ -212,13 +212,13 @@ void SLEPcEigenSolver::setSolver(std::string solver)
   }
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::setTolerance(double tolerance, uint maxiter)
+void SLEPcEigenSolver::set_tolerance(double tolerance, uint maxiter)
 {
   dolfin_assert(tolerance > 0.0);
   EPSSetTolerances(eps, tolerance, static_cast<int>(maxiter));
 }
 //-----------------------------------------------------------------------------
-int SLEPcEigenSolver::getIterationNumber()
+int SLEPcEigenSolver::get_iteration_number()
 {
   int num_iter;
   EPSGetIterationNumber(eps, &num_iter);

@@ -114,7 +114,7 @@ namespace dolfin
         umfpack_solver = new UmfpackLUSolver();
         umfpack_solver->set("parent", *this);
       }
-      return umfpack_solver->factorizedSolve(x, b);
+      return umfpack_solver->factorized_solve(x, b);
     }
 
   private:

@@ -109,7 +109,7 @@ public:
   
   void f(const double* u, double t, double* y)
   {
-    computeCurrents(u);
+    compute_currents(u);
     computeGateCoefficients(u);
 
     y[0] = -1.0/Cm*(I_ion + ist);
@@ -137,7 +137,7 @@ public:
     num_fevals++;
   }
 
-  void computeCurrents(const double* u)
+  void compute_currents(const double* u)
   {
     V      = u[0];
     m      = u[1];

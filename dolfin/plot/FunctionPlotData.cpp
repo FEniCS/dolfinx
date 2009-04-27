@@ -26,7 +26,7 @@ FunctionPlotData::FunctionPlotData(const Function& v)
     size *= v.function_space().element().value_dimension(i);
 
   // Initialize vector
-  const uint N = size*mesh.numVertices();
+  const uint N = size*mesh.num_vertices();
   vertex_values.resize(N);
 
   // Interpolate vertex values

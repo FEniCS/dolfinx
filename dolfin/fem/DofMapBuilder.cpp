@@ -38,6 +38,6 @@ void DofMapBuilder::build(DofMap& dof_map, UFC& ufc, Mesh& mesh)
 
   // Allocate dof map
   const uint n = dof_map.local_dimension();
-  dof_map.dof_map = new int[n*mesh.numCells()];  
+  dof_map.dof_map = new int[n*mesh.num_cells()];  
 }
 //-----------------------------------------------------------------------------

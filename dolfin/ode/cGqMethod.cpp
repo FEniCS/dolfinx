@@ -106,7 +106,7 @@ void cGqMethod::disp() const
   }
 }
 //-----------------------------------------------------------------------------
-void cGqMethod::computeQuadrature()
+void cGqMethod::compute_quadrature()
 {
   // Use Lobatto quadrature
   LobattoQuadrature quadrature(nq);
@@ -124,7 +124,7 @@ void cGqMethod::computeQuadrature()
     qweights[i] = 0.5 * quadrature.weight(i);
 }
 //-----------------------------------------------------------------------------
-void cGqMethod::computeBasis()
+void cGqMethod::compute_basis()
 {
   dolfin_assert(!trial);
   dolfin_assert(!test);
@@ -146,7 +146,7 @@ void cGqMethod::computeBasis()
     test->set(0, 1.0);
 }
 //-----------------------------------------------------------------------------
-void cGqMethod::computeWeights()
+void cGqMethod::compute_weights()
 {
   uBLASDenseMatrix A(q, q);
   ublas_dense_matrix& _A = A.mat();

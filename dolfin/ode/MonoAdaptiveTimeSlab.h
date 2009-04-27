@@ -71,7 +71,7 @@ namespace dolfin
     void feval(uint m);
     
     // Choose solver
-    TimeSlabSolver* chooseSolver();
+    TimeSlabSolver* choose_solver();
 
     // Temporary data array used to store multiplications
     real* tmp();

@@ -26,7 +26,7 @@ dolfin::uint TriangleCell::dim() const
   return 2;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TriangleCell::numEntities(uint dim) const
+dolfin::uint TriangleCell::num_entities(uint dim) const
 {
   switch ( dim )
     {
@@ -43,7 +43,7 @@ dolfin::uint TriangleCell::numEntities(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TriangleCell::numVertices(uint dim) const
+dolfin::uint TriangleCell::num_vertices(uint dim) const
 {
   switch ( dim )
     {
@@ -76,7 +76,7 @@ dolfin::uint TriangleCell::orientation(const Cell& cell) const
   return ( n.dot(p02) < 0.0 ? 1 : 0 );
 }
 //-----------------------------------------------------------------------------
-void TriangleCell::createEntities(uint** e, uint dim, const uint* v) const
+void TriangleCell::create_entities(uint** e, uint dim, const uint* v) const
 {
   // We only need to know how to create edges
   if ( dim != 1 )
@@ -88,7 +88,7 @@ void TriangleCell::createEntities(uint** e, uint dim, const uint* v) const
   e[2][0] = v[0]; e[2][1] = v[1];
 }
 //-----------------------------------------------------------------------------
-void TriangleCell::refineCell(Cell& cell, MeshEditor& editor,
+void TriangleCell::refine_cell(Cell& cell, MeshEditor& editor,
 			      uint& current_cell) const
 {
   // Get vertices and edges
@@ -98,21 +98,21 @@ void TriangleCell::refineCell(Cell& cell, MeshEditor& editor,
   dolfin_assert(e);
 
   // Get offset for new vertex indices
-  const uint offset = cell.mesh().numVertices();
+  const uint offset = cell.mesh().num_vertices();
 
   // Compute indices for the six new vertices
   const uint v0 = v[0];
   const uint v1 = v[1];
   const uint v2 = v[2];
-  const uint e0 = offset + e[findEdge(0, cell)];
-  const uint e1 = offset + e[findEdge(1, cell)];
-  const uint e2 = offset + e[findEdge(2, cell)];
+  const uint e0 = offset + e[find_edge(0, cell)];
+  const uint e1 = offset + e[find_edge(1, cell)];
+  const uint e2 = offset + e[find_edge(2, cell)];
   
   // Add the four new cells
-  editor.addCell(current_cell++, v0, e2, e1);
-  editor.addCell(current_cell++, v1, e0, e2);
-  editor.addCell(current_cell++, v2, e1, e0);
-  editor.addCell(current_cell++, e0, e1, e2);
+  editor.add_cell(current_cell++, v0, e2, e1);
+  editor.add_cell(current_cell++, v1, e0, e2);
+  editor.add_cell(current_cell++, v2, e1, e0);
+  editor.add_cell(current_cell++, e0, e1, e2);
 }
 //-----------------------------------------------------------------------------
 double TriangleCell::volume(const MeshEntity& triangle) const
@@ -232,7 +232,7 @@ Point TriangleCell::normal(const Cell& cell, uint facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
-double TriangleCell::facetArea(const Cell& cell, uint facet) const
+double TriangleCell::facet_area(const Cell& cell, uint facet) const
 {
   // This is a trick to be allowed to initialize a facet from the cell
   Cell& c = const_cast<Cell&>(cell);
@@ -490,7 +490,7 @@ std::string TriangleCell::description() const
   return s;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TriangleCell::findEdge(uint i, const Cell& cell) const
+dolfin::uint TriangleCell::find_edge(uint i, const Cell& cell) const
 {
   // Get vertices and edges
   const uint* v = cell.entities(0);

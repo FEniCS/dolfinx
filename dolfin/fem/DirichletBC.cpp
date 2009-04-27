@@ -537,7 +537,7 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
   const DofMap& dofmap = V->dofmap();
 
   // Iterate over cells
-  Progress p("Computing Dirichlet boundary values, pointwise search", mesh.numCells());
+  Progress p("Computing Dirichlet boundary values, pointwise search", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     UFCCell ufc_cell(*cell);

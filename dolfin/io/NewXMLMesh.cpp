@@ -173,7 +173,7 @@ void NewXMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation
   XMLIndent indent(indentation_level);
 
   // Get cell type
-  CellType::Type cell_type = mesh.type().cellType();
+  CellType::Type cell_type = mesh.type().cell_type();
 
   // Write mesh header
   outfile << indent();
@@ -182,7 +182,7 @@ void NewXMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation
   // Write vertices header
   ++indent;
   outfile << indent();
-  outfile << "<vertices size=\"" << mesh.numVertices() << "\">" << std::endl;
+  outfile << "<vertices size=\"" << mesh.num_vertices() << "\">" << std::endl;
 
   // Write each vertex 
   ++indent;
@@ -212,7 +212,7 @@ void NewXMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation
 
   // Write cell header
   outfile << indent();
-  outfile << "<cells size=\"" << mesh.numCells() << "\">" << std::endl;
+  outfile << "<cells size=\"" << mesh.num_cells() << "\">" << std::endl;
 
   // Write each cell
   ++indent;
@@ -276,7 +276,7 @@ void NewXMLMesh::read_vertices(const xmlChar *name, const xmlChar **attrs)
   uint num_vertices = parse_uint(name, attrs, "size");
 
   // Set number of vertices
-  editor.initVertices(num_vertices);
+  editor.init_vertices(num_vertices);
 }
 //-----------------------------------------------------------------------------
 void NewXMLMesh::read_cells(const xmlChar *name, const xmlChar **attrs)
@@ -285,7 +285,7 @@ void NewXMLMesh::read_cells(const xmlChar *name, const xmlChar **attrs)
   uint num_cells = parse_uint(name, attrs, "size");
 
   // Set number of vertices
-  editor.initCells(num_cells);
+  editor.init_cells(num_cells);
 }
 //-----------------------------------------------------------------------------
 void NewXMLMesh::read_vertex(const xmlChar *name, const xmlChar **attrs)
@@ -299,14 +299,14 @@ void NewXMLMesh::read_vertex(const xmlChar *name, const xmlChar **attrs)
   case 1:
     {
       double x = parse_float(name, attrs, "x");
-      editor.addVertex(v, x);
+      editor.add_vertex(v, x);
     }
     break;
   case 2:
     {
       double x = parse_float(name, attrs, "x");
       double y = parse_float(name, attrs, "y");
-      editor.addVertex(v, x, y);
+      editor.add_vertex(v, x, y);
     }
     break;
   case 3:
@@ -314,7 +314,7 @@ void NewXMLMesh::read_vertex(const xmlChar *name, const xmlChar **attrs)
       double x = parse_float(name, attrs, "x");
       double y = parse_float(name, attrs, "y");
       double z = parse_float(name, attrs, "z");
-      editor.addVertex(v, x, y, z);
+      editor.add_vertex(v, x, y, z);
     }
     break;
   default:
@@ -335,7 +335,7 @@ void NewXMLMesh::read_interval(const xmlChar *name, const xmlChar **attrs)
   uint v1 = parse_uint(name, attrs, "v1");
   
   // Add cell
-  editor.addCell(c, v0, v1);
+  editor.add_cell(c, v0, v1);
 }
 //-----------------------------------------------------------------------------
 void NewXMLMesh::read_triangle(const xmlChar *name, const xmlChar **attrs)
@@ -352,7 +352,7 @@ void NewXMLMesh::read_triangle(const xmlChar *name, const xmlChar **attrs)
   uint v2 = parse_uint(name, attrs, "v2");
   
   // Add cell
-  editor.addCell(c, v0, v1, v2);
+  editor.add_cell(c, v0, v1, v2);
 }
 //-----------------------------------------------------------------------------
 void NewXMLMesh::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
@@ -370,7 +370,7 @@ void NewXMLMesh::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
   uint v3 = parse_uint(name, attrs, "v3");
   
   // Add cell
-  editor.addCell(c, v0, v1, v2, v3);
+  editor.add_cell(c, v0, v1, v2, v3);
 }
 //-----------------------------------------------------------------------------
 void NewXMLMesh::read_mesh_entity(const xmlChar* name, const xmlChar** attrs)

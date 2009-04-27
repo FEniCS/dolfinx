@@ -79,19 +79,19 @@ namespace dolfin
     const Mesh& operator=(const Mesh& mesh);
 
     /// Return number of vertices
-    inline uint numVertices() const { return _topology.size(0); }
+    inline uint num_vertices() const { return _topology.size(0); }
 
     /// Return number of edges
-    inline uint numEdges() const { return _topology.size(1); }
+    inline uint num_edges() const { return _topology.size(1); }
 
     /// Return number of faces
-    inline uint numFaces() const { return _topology.size(2); }
+    inline uint num_faces() const { return _topology.size(2); }
 
     /// Return number of facets
-    inline uint numFacets() const { return _topology.size(_topology.dim() - 1); }
+    inline uint num_facets() const { return _topology.size(_topology.dim() - 1); }
 
     /// Return number of cells
-    inline uint numCells() const { return _topology.size(_topology.dim()); }
+    inline uint num_cells() const { return _topology.size(_topology.dim()); }
 
     /// Return coordinates of all vertices
     inline double* coordinates() { return _geometry.x(); }
