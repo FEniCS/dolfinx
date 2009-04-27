@@ -13,14 +13,14 @@ class SimpleShapes(unittest.TestCase):
     def testUnitSquare(self):
         """Create mesh of unit square"""
         mesh = UnitSquare(5, 7)
-        self.assertEqual(mesh.numVertices(), 48)
-        self.assertEqual(mesh.numCells(), 70)
+        self.assertEqual(mesh.num_vertices(), 48)
+        self.assertEqual(mesh.num_cells(), 70)
 
     def testUnitCube(self):
         """Create mesh of unit cube"""
         mesh = UnitCube(5, 7, 9)
-        self.assertEqual(mesh.numVertices(), 480)
-        self.assertEqual(mesh.numCells(), 1890)
+        self.assertEqual(mesh.num_vertices(), 480)
+        self.assertEqual(mesh.num_cells(), 1890)
 
 class MeshRefinement(unittest.TestCase):
 
@@ -28,15 +28,15 @@ class MeshRefinement(unittest.TestCase):
         """Refine mesh of unit square"""
         mesh = UnitSquare(5, 7)
         mesh.refine()
-        self.assertEqual(mesh.numVertices(), 165)
-        self.assertEqual(mesh.numCells(), 280)
+        self.assertEqual(mesh.num_vertices(), 165)
+        self.assertEqual(mesh.num_cells(), 280)
 
     def testRefineUnitCube(self):
         """Refine mesh of unit cube"""
         mesh = UnitCube(5, 7, 9)
         mesh.refine()
-        self.assertEqual(mesh.numVertices(), 3135)
-        self.assertEqual(mesh.numCells(), 15120)
+        self.assertEqual(mesh.num_vertices(), 3135)
+        self.assertEqual(mesh.num_cells(), 15120)
 
 class MeshIterators(unittest.TestCase):
 
@@ -46,7 +46,7 @@ class MeshIterators(unittest.TestCase):
         n = 0
         for v in vertices(mesh):
             n += 1
-        self.assertEqual(n, mesh.numVertices())
+        self.assertEqual(n, mesh.num_vertices())
 
     def testEdgeIterators(self):
         """Iterate over edges"""
@@ -54,7 +54,7 @@ class MeshIterators(unittest.TestCase):
         n = 0
         for e in edges(mesh):
             n += 1
-        self.assertEqual(n, mesh.numEdges())
+        self.assertEqual(n, mesh.num_edges())
 
     def testFaceIterators(self):
         """Iterate over faces"""
@@ -62,7 +62,7 @@ class MeshIterators(unittest.TestCase):
         n = 0
         for f in faces(mesh):
             n += 1
-        self.assertEqual(n, mesh.numFaces())
+        self.assertEqual(n, mesh.num_faces())
 
     def testFacetIterators(self):
         """Iterate over facets"""
@@ -70,7 +70,7 @@ class MeshIterators(unittest.TestCase):
         n = 0
         for f in facets(mesh):
             n += 1
-        self.assertEqual(n, mesh.numFacets())
+        self.assertEqual(n, mesh.num_facets())
 
     def testCellIterators(self):
         """Iterate over cells"""
@@ -78,7 +78,7 @@ class MeshIterators(unittest.TestCase):
         n = 0
         for c in cells(mesh):
             n += 1
-        self.assertEqual(n, mesh.numCells())
+        self.assertEqual(n, mesh.num_cells())
         
     def testMixedIterators(self):
         """Iterate over vertices of cells"""
@@ -87,7 +87,7 @@ class MeshIterators(unittest.TestCase):
         for c in cells(mesh):
             for v in vertices(c):
                 n += 1
-        self.assertEqual(n, 4*mesh.numCells())
+        self.assertEqual(n, 4*mesh.num_cells())
 
 class BoundaryExtraction(unittest.TestCase):
 
@@ -95,16 +95,16 @@ class BoundaryExtraction(unittest.TestCase):
          """Compute boundary of mesh"""
          mesh = UnitCube(2, 2, 2)
          boundary = BoundaryMesh(mesh)
-         self.assertEqual(boundary.numVertices(), 26)
-         self.assertEqual(boundary.numCells(), 48)
+         self.assertEqual(boundary.num_vertices(), 26)
+         self.assertEqual(boundary.num_cells(), 48)
 
      def testBoundaryBoundary(self):
          """Compute boundary of boundary"""
          mesh = UnitCube(2, 2, 2)
          b0 = BoundaryMesh(mesh)
          b1 = BoundaryMesh(b0)
-         self.assertEqual(b1.numVertices(), 0)
-         self.assertEqual(b1.numCells(), 0)
+         self.assertEqual(b1.num_vertices(), 0)
+         self.assertEqual(b1.num_cells(), 0)
 
 class MeshFunctions(unittest.TestCase):
 
@@ -125,7 +125,7 @@ class InputOutput(unittest.TestCase):
          file = File("unitsquare.xml")
          file << mesh_out
          file >> mesh_in
-         self.assertEqual(mesh_in.numVertices(), 16)
+         self.assertEqual(mesh_in.num_vertices(), 16)
 
      def testMeshXML3D(self):
          """Write and read 3D mesh to/from file"""
@@ -134,7 +134,7 @@ class InputOutput(unittest.TestCase):
          file = File("unitcube.xml")
          file << mesh_out
          file >> mesh_in
-         self.assertEqual(mesh_in.numVertices(), 64)
+         self.assertEqual(mesh_in.num_vertices(), 64)
 
      def testMeshMatlab2D(self):
          """Write matlab format (no double test)"""
