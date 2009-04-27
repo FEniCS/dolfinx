@@ -74,9 +74,9 @@ void MultiAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
 
   // Choose method
   if ( method.type() == Method::cG )
-    cGmult(x, y);
+    cg_mult(x, y);
   else
-    dGmult(x, y);
+    dg_mult(x, y);
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveJacobian::init()
@@ -108,7 +108,7 @@ void MultiAdaptiveJacobian::init()
   */
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
+void MultiAdaptiveJacobian::cg_mult(const uBLASVector& x, uBLASVector& y) const
 {
   // Reset current sub slab
   int s0 = -1;
@@ -121,7 +121,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
   for (uint e0 = 0; e0 < ts.ne; e0++)
   {
     // Cover all elements in current sub slab
-    s0 = ts.coverNext(s0, e0);
+    s0 = ts.cover_next(s0, e0);
     
     // Get element data
     const uint i0 = ts.ei[e0];
@@ -306,7 +306,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
   }
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
+void MultiAdaptiveJacobian::dg_mult(const uBLASVector& x, uBLASVector& y) const
 {
   // Reset current sub slab
   int s0 = -1;
@@ -319,7 +319,7 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
   for (uint e0 = 0; e0 < ts.ne; e0++)
   {
     // Cover all elements in current sub slab
-    s0 = ts.coverNext(s0, e0);
+    s0 = ts.cover_next(s0, e0);
     
     // Get element data
     const uint i0 = ts.ei[e0];

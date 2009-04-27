@@ -30,10 +30,10 @@ namespace dolfin {
     void init();
 
     // Compute quadrature points
-    virtual void computePoints() = 0;
+    virtual void compute_points() = 0;
 
     // Compute quadrature weights
-    void computeWeights();
+    void compute_weights();
 
     // Check that quadrature is exact for given degree q
     bool check(unsigned int q) const;

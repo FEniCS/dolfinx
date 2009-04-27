@@ -130,7 +130,7 @@ void Logger::setDebugLevel(int debug_level)
   this->debug_level = debug_level;
 }
 //-----------------------------------------------------------------------------
-void Logger::registerTiming(std::string task, double elapsed_time)
+void Logger::register_timing(std::string task, double elapsed_time)
 {
   // Remove small or negative numbers
   if (elapsed_time < DOLFIN_EPS)

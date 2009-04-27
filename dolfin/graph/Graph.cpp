@@ -1,11 +1,11 @@
 // Copyright (C) 2007 Magnus Vikstrom.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2007-2008.
+// Modified by Anders Logg, 2007-2009.
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-02-12
-// Last changed: 2008-10-27
+// Last changed: 2009-04-27
 
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
@@ -17,16 +17,20 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Graph::Graph() : Variable("graph", "DOLFIN graph"), num_edges(0), 
-                                        num_vertices(0), edges(0), vertices(0), 
-                                        edge_weights(0), vertex_weights(0)
+Graph::Graph() 
+  : Variable("graph", "DOLFIN graph"),
+    _num_edges(0), _num_vertices(0),
+    _edges(0), _vertices(0), 
+    _edge_weights(0), _vertex_weights(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Graph::Graph(Mesh& mesh, Representation rep) : Variable("graph", "DOLFIN graph"),
-                     num_edges(0), num_vertices(0), edges(0), 
-                     vertices(0), edge_weights(0), vertex_weights(0)
+Graph::Graph(Mesh& mesh, Representation rep)
+  : Variable("graph", "DOLFIN graph"),
+    _num_edges(0), _num_vertices(0),
+    _edges(0), _vertices(0),
+    _edge_weights(0), _vertex_weights(0)
 {
   // Build graph
   GraphBuilder::build(*this, mesh, rep);
@@ -48,25 +52,25 @@ Graph::~Graph()
   clear();
 }
 //-----------------------------------------------------------------------------
-void Graph::init(uint _num_vertices, uint _num_edges)
+void Graph::init(uint num_vertices, uint num_edges)
 {
   clear();
 
-  num_vertices = _num_vertices;
-  num_edges    = _num_edges;
-  edges        = new uint[num_edges];
-  vertices     = new uint[num_vertices + 1];
+  _num_vertices = num_vertices;
+  _num_edges    = num_edges;
+  _edges        = new uint[num_edges];
+  _vertices     = new uint[num_vertices + 1];
 
   // FIXME: is this needed?
-  vertices[num_vertices] = num_edges;
+  _vertices[num_vertices] = num_edges;
 }
 //-----------------------------------------------------------------------------
 bool Graph::adjacent(uint u, uint v)
 {
-  for(uint i=vertices[u]; i<vertices[u+1]; ++i)
+  for(uint i = _vertices[u]; i < _vertices[u+1]; ++i)
   {
-	 if(edges[i] == v)
-		return true;
+    if (_edges[i] == v)
+      return true;
   }
   return false;
 }
@@ -74,22 +78,21 @@ bool Graph::adjacent(uint u, uint v)
 void Graph::disp()
 {
   cout << "Graph type: " << typestr() << endl;
-  cout << "Number of vertices = " << num_vertices << endl;
-  cout << "Number of edges = " << num_edges << endl;
+  cout << "Number of vertices = " << _num_vertices << endl;
+  cout << "Number of edges = " << _num_edges << endl;
   cout << "Connectivity" << endl;
   cout << "Vertex: Edges" << endl;
-  for(uint i=0; i<num_vertices-1; ++i)
+  for(uint i=0; i < _num_vertices - 1; ++i)
   {
     cout << i << ": ";
-    for(uint j=vertices[i]; j<vertices[i+1]; ++j)
-      cout << edges[j] << " ";
-
+    for(uint j = _vertices[i]; j < _vertices[i+1]; ++j)
+      cout << _edges[j] << " ";
     cout << endl;
   }
   // last vertex
-  cout << num_vertices-1 << ": ";
-  for(uint i = vertices[num_vertices-1]; i < num_edges; ++i)
-    cout << edges[i] << " ";
+  cout << _num_vertices-1 << ": ";
+  for(uint i = _vertices[_num_vertices - 1]; i < _num_edges; ++i)
+    cout << _edges[i] << " ";
   cout << endl;
 }
 //-----------------------------------------------------------------------------
@@ -102,12 +105,12 @@ std::string Graph::typestr() const
 {
   switch ( _type )
   {
-    case directed:
-      return "directed";
-    case undirected:
-      return "undirected";
-    default:
-      return "";
+  case directed:
+    return "directed";
+  case undirected:
+    return "undirected";
+  default:
+    return "";
   }
 
   return "";
@@ -115,14 +118,9 @@ std::string Graph::typestr() const
 //-----------------------------------------------------------------------------
 void Graph::clear()
 {
-  if ( edges )
-    delete [] edges;
-  if ( vertices )
-    delete [] vertices;
-  if ( edge_weights )
-    delete [] edge_weights;
-  if ( vertex_weights )
-    delete [] vertex_weights;
+  delete [] _edges;
+  delete [] _vertices;
+  delete [] _edge_weights;
+  delete [] _vertex_weights;
 }
 //-----------------------------------------------------------------------------
-

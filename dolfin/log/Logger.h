@@ -60,7 +60,7 @@ namespace dolfin
     inline int getDebugLevel() const { return debug_level; }
 
     /// Register timing (for later summary)
-    void registerTiming(std::string task, double elapsed_time);
+    void register_timing(std::string task, double elapsed_time);
 
     /// Print summary of timings and tasks, optionally clearing stored timings
     void summary(bool reset=false);

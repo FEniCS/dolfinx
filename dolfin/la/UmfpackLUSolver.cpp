@@ -43,7 +43,7 @@ dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
   factorize(A);
 
   // Solve system
-  factorizedSolve(x, b);
+  factorized_solve(x, b);
 
   // Clear data
   umfpack.clear();
@@ -72,7 +72,7 @@ dolfin::uint UmfpackLUSolver::factorize(const GenericMatrix& A)
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorizedSolve(GenericVector& x, const GenericVector& b) const
+dolfin::uint UmfpackLUSolver::factorized_solve(GenericVector& x, const GenericVector& b) const
 {
   const uint N = b.size();
 
@@ -87,7 +87,7 @@ dolfin::uint UmfpackLUSolver::factorizedSolve(GenericVector& x, const GenericVec
 
   message("Solving factorized linear system of size %d x %d (UMFPACK).", N, N);
   // Solve for tranpose since we use compressed rows and UMFPACK expected compressed columns
-  umfpack.factorizedSolve(x.data(), b.data(), true);
+  umfpack.factorized_solve(x.data(), b.data(), true);
 
   return 1;
 }
@@ -108,7 +108,7 @@ dolfin::uint UmfpackLUSolver::factorize(const GenericMatrix& A)
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorizedSolve(GenericVector& x, 
+dolfin::uint UmfpackLUSolver::factorized_solve(GenericVector& x, 
                                               const GenericVector& b) const
 {
   error("UMFPACK must be installed to perform sparse backward and forward substitutions.");
@@ -162,7 +162,7 @@ void UmfpackLUSolver::Umfpack::init(const long int* Ap, const long int* Ai,
   local_matrix = false;
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::Umfpack::initTranspose(const long int* Ap, const long int* Ai, 
+void UmfpackLUSolver::Umfpack::init_transpose(const long int* Ap, const long int* Ai, 
                                          const double* Ax, uint M, uint nz)
 {  
   if(Rp || Ri || Rx)
@@ -179,7 +179,7 @@ void UmfpackLUSolver::Umfpack::initTranspose(const long int* Ap, const long int*
   // Compute transpse
   long int status = umfpack_dl_transpose(M, M, Ap, Ai, Ax, inull, inull, 
                     const_cast<long int*>(Rp), const_cast<long int*>(Ri), const_cast<double*>(Rx));
-  Umfpack::checkStatus(status, "transpose");
+  Umfpack::check_status(status, "transpose");
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::factorize()
@@ -195,12 +195,12 @@ void UmfpackLUSolver::Umfpack::factorize()
   // Symbolic step (reordering etc)
   status= umfpack_dl_symbolic(N, N, (const long int*) Rp,(const long int*) Ri, 
                               Rx, &Symbolic, dnull, dnull);
-  checkStatus(status, "symbolic");
+  check_status(status, "symbolic");
 
   // Factorization step
   status = umfpack_dl_numeric((const long int*) Rp,(const long int*) Ri, Rx, 
                                Symbolic, &Numeric, dnull, dnull);
-  Umfpack::checkStatus(status, "numeric");
+  Umfpack::check_status(status, "numeric");
 
   // Discard the symbolic part (since the factorization is complete.)
   umfpack_dl_free_symbolic(&Symbolic);
@@ -209,7 +209,7 @@ void UmfpackLUSolver::Umfpack::factorize()
   factorized = true;
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::Umfpack::factorizedSolve(double*x, const double* b, bool transpose) const
+void UmfpackLUSolver::Umfpack::factorized_solve(double*x, const double* b, bool transpose) const
 {
   dolfin_assert(Rp);
   dolfin_assert(Ri);
@@ -222,10 +222,10 @@ void UmfpackLUSolver::Umfpack::factorizedSolve(double*x, const double* b, bool t
   else
     status = umfpack_dl_solve(UMFPACK_A, Rp, Ri, Rx, x, b, Numeric, dnull, dnull);
 
-  Umfpack::checkStatus(status, "solve");
+  Umfpack::check_status(status, "solve");
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::Umfpack::checkStatus(long int status, std::string function) const
+void UmfpackLUSolver::Umfpack::check_status(long int status, std::string function) const
 {
   if(status == UMFPACK_OK)
     return;

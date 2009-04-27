@@ -50,13 +50,13 @@ namespace dolfin
   private:
 
     /// Create bounding box for a single point
-    GtsBBox* createBox(const Point& p);
+    GtsBBox* create_box(const Point& p);
 
     /// Create bounding box for a pair of points
-    GtsBBox* createBox(const Point& p0, const Point& p1);
+    GtsBBox* create_box(const Point& p0, const Point& p1);
 
     /// Create bounding box for cell
-    GtsBBox* createBox(const Cell& cell);
+    GtsBBox* create_box(const Cell& cell);
 
     // Build tree (hierarchy) of bounding boxes
     void buildCellTree();

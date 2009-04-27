@@ -118,8 +118,8 @@ void NewXMLGraph::write(const Graph& graph, std::ostream& outfile, uint indentat
   // Get connections (outgoing edges), offsets and weigts
   const uint* connections = graph.connectivity();
   const uint* offsets = graph.offsets();
-  const uint* edge_weights = graph.edgeWeights();
-  const uint* vertex_weights = graph.vertexWeights();
+  const uint* edge_weights = graph.edge_weights();
+  const uint* vertex_weights = graph.vertex_weights();
 
   // Make sure data is fine
   dolfin_assert(connections);
@@ -128,7 +128,7 @@ void NewXMLGraph::write(const Graph& graph, std::ostream& outfile, uint indentat
   dolfin_assert(vertex_weights);
 
   // Get number of vertices
-  const uint num_vertices = graph.numVertices();
+  const uint num_vertices = graph.num_vertices();
 
   // Write graph header
   outfile << indent() << "<graph type=\"" << graph.typestr() << "\">" << std::endl;
@@ -136,14 +136,14 @@ void NewXMLGraph::write(const Graph& graph, std::ostream& outfile, uint indentat
   // Write vertices header
   ++indent;
   outfile << indent();
-  outfile << "<vertices size=\"" << graph.numVertices() << "\">" << std::endl;
+  outfile << "<vertices size=\"" << graph.num_vertices() << "\">" << std::endl;
 
   // Write each vertex
   ++indent;
   for(uint i = 0; i < num_vertices; ++i)
   {
     outfile << indent();
-    outfile << "<vertex index=\"" << i << "\" num_edges=\"" << graph.numEdges(i) << "\" weight=\"" << vertex_weights[i] << "\"/>" << std::endl;
+    outfile << "<vertex index=\"" << i << "\" num_edges=\"" << graph.num_edges(i) << "\" weight=\"" << vertex_weights[i] << "\"/>" << std::endl;
   }	  
   --indent;
 
@@ -152,13 +152,13 @@ void NewXMLGraph::write(const Graph& graph, std::ostream& outfile, uint indentat
 
   // Write edges header
   outfile << indent();
-  outfile << "<edges size=\">" << graph.numEdges() << "\">" << std::endl;
+  outfile << "<edges size=\">" << graph.num_edges() << "\">" << std::endl;
 
   // Write each edge
   ++indent;
   for(uint i = 0; i < num_vertices; ++i)
   {
-    for(uint j=offsets[i]; j<offsets[i] + graph.numEdges(i); ++j)
+    for(uint j=offsets[i]; j<offsets[i] + graph.num_edges(i); ++j)
     {
       outfile << indent();
       outfile << "<edge v1=\"" << i << "\" v2=\"" << connections[j] << "\" weight=\"" << vertex_weights[j] << "\"/>" << std::endl;
@@ -185,21 +185,21 @@ void NewXMLGraph::read_graph(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void NewXMLGraph::read_vertices(const xmlChar *name, const xmlChar **attrs)
 {
-  dolfin_debug("readVertices()");
+  dolfin_debug("read_vertices()");
   uint num_vertices = parse_uint(name, attrs, "size");
-  editor.initVertices(num_vertices);
+  editor.init_vertices(num_vertices);
 }
 //-----------------------------------------------------------------------------
 void NewXMLGraph::read_edges(const xmlChar *name, const xmlChar **attrs)
 {
-  dolfin_debug("readEdges()");
+  dolfin_debug("read_edges()");
   uint num_edges = parse_uint(name, attrs, "size");
-  editor.initEdges(num_edges);
+  editor.init_edges(num_edges);
 }
 //-----------------------------------------------------------------------------
 void NewXMLGraph::read_vertex(const xmlChar *name, const xmlChar **attrs)
 {
-  editor.addVertex(parse_uint(name, attrs, "index"), parse_uint(name, attrs, "num_edges"));
+  editor.add_vertex(parse_uint(name, attrs, "index"), parse_uint(name, attrs, "num_edges"));
 }
 //-----------------------------------------------------------------------------
 void NewXMLGraph::read_edge(const xmlChar *name, const xmlChar **attrs)
@@ -208,11 +208,11 @@ void NewXMLGraph::read_edge(const xmlChar *name, const xmlChar **attrs)
   uint v1 = parse_uint(name, attrs, "v1");
   uint v2 = parse_uint(name, attrs, "v2");
 
-  //dolfin_debug2("readEdge, v1 = %d, v2 = %d", v1, v2);
+  //dolfin_debug2("read_edge, v1 = %d, v2 = %d", v1, v2);
   
   // Edge weights not yet implemented
   //uint w = parse_uint(name, attrs, "weight");
-  editor.addEdge(v1, v2);
+  editor.add_edge(v1, v2);
 }
 //-----------------------------------------------------------------------------
 void NewXMLGraph::close_graph()

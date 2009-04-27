@@ -30,9 +30,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh, 
-                                                    MeshFunction<bool>& cell_marker,
-                                                    bool coarsen_boundary)
+void LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(Mesh& mesh, 
+                                                        MeshFunction<bool>& cell_marker,
+                                                        bool coarsen_boundary)
 {
   message("Coarsen simplicial mesh by edge collapse.");
 
@@ -62,8 +62,8 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
     cell_forbidden.set(c->index(),false);
   
   // Init new vertices and cells
-  std::vector<int> old2new_cell(mesh.numCells());
-  std::vector<int> old2new_vertex(mesh.numVertices());
+  std::vector<int> old2new_cell(mesh.num_cells());
+  std::vector<int> old2new_vertex(mesh.num_vertices());
 
   std::list<int> cells_to_coarsen(0);
 
@@ -100,8 +100,8 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
         *iter = old2new_cell[*iter];
     }
 
-    old2new_cell.resize(mesh.numCells());
-    old2new_vertex.resize(mesh.numVertices());
+    old2new_cell.resize(mesh.num_cells());
+    old2new_vertex.resize(mesh.num_vertices());
 
     // Coarsen cells in list
     for(std::list<int>::iterator iter = cells_to_coarsen.begin();
@@ -111,7 +111,7 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
       int cid = *iter;
       if(cid != -1)
       {
-        mesh_ok = coarsenCell(mesh, coarse_mesh, cid,
+        mesh_ok = coarsen_cell(mesh, coarse_mesh, cid,
 			                        old2new_vertex, old2new_cell,
 			                        coarsen_boundary);
         if(!mesh_ok)
@@ -130,7 +130,7 @@ void LocalMeshCoarsening::coarsenMeshByEdgeCollapse(Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-void LocalMeshCoarsening::collapseEdge(Mesh& mesh, Edge& edge, 
+void LocalMeshCoarsening::collapse_edge(Mesh& mesh, Edge& edge, 
                                        Vertex& vertex_to_remove, 
                                        MeshFunction<bool>& cell_to_remove, 
                                        std::vector<int>& old2new_vertex, 
@@ -139,7 +139,7 @@ void LocalMeshCoarsening::collapseEdge(Mesh& mesh, Edge& edge,
                                        uint& current_cell) 
 {
   const CellType& cell_type = mesh.type();
-  std::vector<uint> cell_vertices(cell_type.numEntities(0));
+  std::vector<uint> cell_vertices(cell_type.num_entities(0));
 
   uint vert_slave = vertex_to_remove.index();
   uint vert_master = 0; 
@@ -167,7 +167,7 @@ void LocalMeshCoarsening::collapseEdge(Mesh& mesh, Edge& edge,
           cell_vertices[cv_idx++] = old2new_vertex[v->index()];
       }
       //cout << "adding new cell" << endl;
-      editor.addCell(current_cell++, cell_vertices);
+      editor.add_cell(current_cell++, cell_vertices);
 
       // Update cell map
       old2new_cell[c->index()] = current_cell - 1;
@@ -176,14 +176,14 @@ void LocalMeshCoarsening::collapseEdge(Mesh& mesh, Edge& edge,
   
 }
 //-----------------------------------------------------------------------------
-bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
+bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
 				      int cellid,
 				      std::vector<int>& old2new_vertex,
 				      std::vector<int>& old2new_cell,
 				      bool coarsen_boundary)
 {
-  cout << "coarsenCell: " << cellid << endl;
-  cout << "numCells: " << mesh.numCells() << endl;
+  cout << "coarsen_cell: " << cellid << endl;
+  cout << "num_cells: " << mesh.num_cells() << endl;
 
   const uint num_vertices = mesh.size(0);
   const uint num_cells = mesh.size(mesh.topology().dim());
@@ -213,7 +213,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
       vertex_forbidden.set(bnd_vertex_map->get(v->index()),true);
   }
   // Initialise data for finding which vertex to remove   
-  bool collapse_edge = false;
+  bool _collapse_edge = false;
   const uint* edge_vertex;
   uint shortest_edge_index = 0;
   double lmin, l;
@@ -225,7 +225,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
   const Cell c(mesh, cellid);
 
   MeshEditor editor;
-  editor.open(coarse_mesh, cell_type.cellType(),
+  editor.open(coarse_mesh, cell_type.cell_type(),
               mesh.topology().dim(), mesh.geometry().dim());
 
   MeshFunction<bool> cell_to_remove(mesh);  
@@ -240,7 +240,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
     cell_to_regenerate.set(ci->index(), false);
 
   // Find shortest edge of cell c
-  collapse_edge = false;
+  _collapse_edge = false;
   lmin = 1.0e10 * c.diameter();
   for (EdgeIterator e(c); !e.end(); ++e)
   {
@@ -252,7 +252,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
       {
         lmin = l;
         shortest_edge_index = e->index(); 
-        collapse_edge = true;
+        _collapse_edge = true;
       }
     }
   }
@@ -263,7 +263,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
   uint vert2remove_idx = 0;
     
   // If at least one vertex should be removed 
-  if ( collapse_edge == true )
+  if ( _collapse_edge == true )
   {
     edge_vertex = shortest_edge.entities(0);
     
@@ -302,7 +302,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
 
   //cout << "edge vertices2: " << edge_vertex[0] << " " << edge_vertex[1] << endl;
   //cout << "vertex2: " << vertex_to_remove.index() << endl;
-  //cout << "collapse: " << collapse_edge << endl;
+  //cout << "collapse: " << _collapse_edge << endl;
 
   // Remove cells around edge 
   num_cells_to_remove = 0;
@@ -325,8 +325,8 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
   }
   
   // Specify number of vertices and cells
-  editor.initVertices(num_vertices - 1);
-  editor.initCells(num_cells - num_cells_to_remove);
+  editor.init_vertices(num_vertices - 1);
+  editor.init_cells(num_cells - num_cells_to_remove);
   
   cout << "Number of cells in old mesh: " << num_cells << "; to remove: " <<
     num_cells_to_remove << endl;
@@ -341,14 +341,14 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
     {
       //cout << "adding old vertex at: " << v->point() << endl;
       old2new_vertex[v->index()] = vertex;
-      editor.addVertex(vertex++, v->point());
+      editor.add_vertex(vertex++, v->point());
     }
   }
 
   // Add old unrefined cells 
   uint cv_idx;
   uint current_cell = 0;
-  std::vector<uint> cell_vertices(cell_type.numEntities(0));
+  std::vector<uint> cell_vertices(cell_type.num_entities(0));
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     if(cell_to_remove.get(*c) == false && cell_to_regenerate(*c) == false)
@@ -357,7 +357,7 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
       for (VertexIterator v(*c); !v.end(); ++v)
         cell_vertices[cv_idx++] = old2new_vertex[v->index()]; 
       //cout << "adding old cell" << endl;
-      editor.addCell(current_cell++, cell_vertices);
+      editor.add_cell(current_cell++, cell_vertices);
 
       // Update cell maps
       old2new_cell[c->index()] = current_cell - 1;
@@ -365,8 +365,8 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
   }
   
   // Add new cells. 
-  collapseEdge(mesh, shortest_edge, vertex_to_remove, cell_to_remove,
-	       old2new_vertex, old2new_cell, editor, current_cell);
+  collapse_edge(mesh, shortest_edge, vertex_to_remove, cell_to_remove,
+                old2new_vertex, old2new_cell, editor, current_cell);
 
   editor.close();
 
@@ -419,4 +419,3 @@ bool LocalMeshCoarsening::coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
   return mesh_ok;
 }
 //-----------------------------------------------------------------------------
-

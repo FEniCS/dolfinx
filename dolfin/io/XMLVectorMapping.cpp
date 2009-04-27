@@ -23,7 +23,7 @@ XMLVectorMapping::~XMLVectorMapping()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void XMLVectorMapping::startElement(const xmlChar* name, const xmlChar** attrs)
+void XMLVectorMapping::start_element(const xmlChar* name, const xmlChar** attrs)
 {
   switch ( state )
   {
@@ -44,7 +44,7 @@ void XMLVectorMapping::startVectorMapping(const xmlChar *name, const xmlChar **a
 {
 }
 //-----------------------------------------------------------------------------
-void XMLVectorMapping::endElement(const xmlChar* name)
+void XMLVectorMapping::end_element(const xmlChar* name)
 {
 }
 //-----------------------------------------------------------------------------
@@ -57,7 +57,7 @@ bool XMLVectorMapping::close()
   return true;
 }
 //-----------------------------------------------------------------------------
-void XMLVectorMapping::readEntities(const xmlChar* name, const xmlChar** attrs)
+void XMLVectorMapping::read_entities(const xmlChar* name, const xmlChar** attrs)
 {
 }
 //-----------------------------------------------------------------------------

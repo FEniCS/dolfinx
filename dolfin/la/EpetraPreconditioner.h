@@ -34,7 +34,7 @@ namespace dolfin
     virtual ~EpetraPreconditioner() {};
 
     /// Set the Preconditioner type (amg, ilu, etc.)
-    void setType(PreconditionerType type); 
+    void set_type(PreconditionerType type); 
 
     /// Initialise preconditioner 
     virtual void init(const EpetraMatrix& A);

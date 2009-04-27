@@ -105,7 +105,7 @@ void ALE::move(Mesh& mesh, const Function& displacement)
     error("Unable to move mesh, illegal value dimension of displacement function.");
 
   // Interpolate at vertices
-  const uint N = mesh.numVertices();
+  const uint N = mesh.num_vertices();
   double* vertex_values = new double[N*gdim];
   displacement.interpolate(vertex_values);
 

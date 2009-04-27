@@ -67,7 +67,7 @@ int main()
   double lr, lc;
   for (unsigned int i = 0; i < S.size(1); i++)
   {
-    esolver.getEigenvalue(lr, lc, i);
+    esolver.get_eigenvalue(lr, lc, i);
     if (lr > 1 && lc == 0)
     {
       cutoff = sqrt(lr);
@@ -79,7 +79,7 @@ int main()
     message("Unable to find dominant mode.");
   else
     message("Cutoff frequency = %g", cutoff);
-  
+
   return 0;
 }
 

@@ -28,7 +28,7 @@ void plot_object(const T& t, std::string mode)
   const std::string filename = dolfin_get("plot file name");
   File file(filename, true);
   file << t;
-
+  
   // Plot data from file
   std::stringstream command;
   command << "viper --mode=" << mode << " " << filename;

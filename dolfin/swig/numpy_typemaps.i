@@ -150,11 +150,11 @@
 
 %{
 namespace __private {
-    class dppDeleter {
+    class DppDeleter {
     public:
         double** amat;
-        dppDeleter () {amat = 0;}
-        ~dppDeleter ()
+        DppDeleter () {amat = 0;}
+        ~DppDeleter ()
         {
             free(amat);
         }
@@ -162,7 +162,7 @@ namespace __private {
 }
 %}
 
-%typemap(in) double** (__private::dppDeleter tmp){
+%typemap(in) double** (__private::DppDeleter tmp){
 
     if PyArray_Check($input) {
         PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
@@ -186,7 +186,7 @@ namespace __private {
     }
 }
 
-%typemap(in) (int _matrix_dim_0, int _matrix_dim_1, double** _matrix) (__private::dppDeleter tmp){
+%typemap(in) (int _matrix_dim_0, int _matrix_dim_1, double** _matrix) (__private::DppDeleter tmp){
 
     if PyArray_Check($input) {
         PyArrayObject *xa = reinterpret_cast<PyArrayObject *>($input);

@@ -18,7 +18,7 @@ XMLVector::XMLVector(GenericVector& vector)
   state = OUTSIDE;
 }
 //-----------------------------------------------------------------------------
-void XMLVector::startElement(const xmlChar *name, const xmlChar **attrs)
+void XMLVector::start_element(const xmlChar *name, const xmlChar **attrs)
 {
   switch ( state )
   {
@@ -26,7 +26,7 @@ void XMLVector::startElement(const xmlChar *name, const xmlChar **attrs)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
-      startVector(name, attrs);
+      start_vector(name, attrs);
       state = INSIDE_VECTOR;
     }
     
@@ -35,7 +35,7 @@ void XMLVector::startElement(const xmlChar *name, const xmlChar **attrs)
   case INSIDE_VECTOR:
     
     if ( xmlStrcasecmp(name, (xmlChar *) "entry") == 0 )
-      readEntry(name, attrs);
+      read_entry(name, attrs);
     
     break;
     
@@ -44,7 +44,7 @@ void XMLVector::startElement(const xmlChar *name, const xmlChar **attrs)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLVector::endElement(const xmlChar *name)
+void XMLVector::end_element(const xmlChar *name)
 {
   switch ( state )
   {
@@ -52,7 +52,7 @@ void XMLVector::endElement(const xmlChar *name)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
-      endVector();
+      end_vector();
       state = DONE;
     }
     
@@ -63,7 +63,7 @@ void XMLVector::endElement(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLVector::startVector(const xmlChar *name, const xmlChar **attrs)
+void XMLVector::start_vector(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse size of vector
   size = parseUnsignedInt(name, attrs, "size");
@@ -74,7 +74,7 @@ void XMLVector::startVector(const xmlChar *name, const xmlChar **attrs)
   values = new double[size];
 }
 //-----------------------------------------------------------------------------
-void XMLVector::endVector()
+void XMLVector::end_vector()
 {
   // Copy values to vector
   dolfin_assert(values);
@@ -84,11 +84,11 @@ void XMLVector::endVector()
   values = 0;
 }
 //-----------------------------------------------------------------------------
-void XMLVector::readEntry(const xmlChar *name, const xmlChar **attrs)
+void XMLVector::read_entry(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   uint row   = parseUnsignedInt(name, attrs, "row");
-  double value = parseReal(name, attrs, "value");
+  double value = parse_real(name, attrs, "value");
   
   // Check values
   if (row >= size)

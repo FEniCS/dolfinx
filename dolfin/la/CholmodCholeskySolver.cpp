@@ -35,7 +35,7 @@ dolfin::uint CholmodCholeskySolver::solve(const GenericMatrix& A,
   factorize(A);
 
   // Solve system
-  factorizedSolve(x, b);
+  factorized_solve(x, b);
 
   // Clear data
   cholmod.clear();
@@ -65,7 +65,7 @@ dolfin::uint CholmodCholeskySolver::factorize(const GenericMatrix& A)
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint CholmodCholeskySolver::factorizedSolve(GenericVector& x, const GenericVector& b)
+dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x, const GenericVector& b)
 {
   const uint N = b.size();
 
@@ -80,7 +80,7 @@ dolfin::uint CholmodCholeskySolver::factorizedSolve(GenericVector& x, const Gene
 
   message("Solving factorized linear system of size %d x %d (CHOLMOD).", N, N);
 
-  cholmod.factorizedSolve(x.data(), b.data());
+  cholmod.factorized_solve(x.data(), b.data());
 
   return 1;
 }
@@ -103,7 +103,7 @@ dolfin::uint CholmodCholeskySolver::factorize(const GenericMatrix& A)
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint CholmodCholeskySolver::factorizedSolve(GenericVector& x, const GenericVector& b)
+dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x, const GenericVector& b)
 {
   error("CHOLMOD must be installed to perform sparse back and forward substitution");
   return 0;
@@ -183,12 +183,12 @@ void CholmodCholeskySolver::Cholmod::factorize()
   // Factorize
   cholmod_l_factorize(A_chol, L_chol, &c);
 
-  checkStatus("factorize()");
+  check_status("factorize()");
 
   factorized = true;
 }
 //-----------------------------------------------------------------------------
-void CholmodCholeskySolver::Cholmod::factorizedSolve(double*x, const double* b)
+void CholmodCholeskySolver::Cholmod::factorized_solve(double*x, const double* b)
 {
   cholmod_dense *x_chol, *b_chol;
 
@@ -231,7 +231,7 @@ void CholmodCholeskySolver::Cholmod::factorizedSolve(double*x, const double* b)
   // Clear residual
   cholmod_l_free_dense(&r_chol, &c);
 
-  checkStatus("factorizedSolve()");
+  check_status("factorized_solve()");
 }
 //-----------------------------------------------------------------------------
 cholmod_dense* CholmodCholeskySolver::Cholmod::residual(cholmod_dense* x,
@@ -275,21 +275,21 @@ void CholmodCholeskySolver::Cholmod::refine_once(cholmod_dense* x,
   cholmod_l_free_dense(&r_iter, &c);
 }
 //-----------------------------------------------------------------------------
-void CholmodCholeskySolver::Cholmod::checkStatus(std::string function)
+void CholmodCholeskySolver::Cholmod::check_status(std::string function)
 {
   UF_long status = c.status;
 
   if( status < 0)
   {
     cout << "\nCHOLMOD Warning: problem related to call to " << function
-	    << ".\nFull CHOLMOD common dump:" << endl;
+	    << ".\n_full CHOLMOD common dump:" << endl;
 
     cholmod_l_print_common(NULL, &c);
   }
   else if(status > 0)
   {
     cout << "\nCHOLMOD Fatal error: problem related to call to " << function
-	    << ".\nFull CHOLMOD common dump:" << endl;
+	    << ".\n_full CHOLMOD common dump:" << endl;
     cholmod_l_print_common(NULL, &c);
   }
 }

@@ -44,10 +44,10 @@ namespace dolfin
   private:
 
     // Compute product for mcG(q)
-    void cGmult(const uBLASVector& x, uBLASVector& y) const;
+    void cg_mult(const uBLASVector& x, uBLASVector& y) const;
 
     // Compute product for mdG(q)
-    void dGmult(const uBLASVector& x, uBLASVector& y) const;
+    void dg_mult(const uBLASVector& x, uBLASVector& y) const;
 
     // The Newton solver
     MultiAdaptiveNewtonSolver& newton;

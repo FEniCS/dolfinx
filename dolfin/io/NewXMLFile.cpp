@@ -409,3 +409,4 @@ void dolfin::new_rng_valid_error(void *user_data, xmlErrorPtr error)
   warning("%s:%d: element %s: Relax-NG validity error: %s", 
           file, line, node->name, buffer.c_str());
 }
+//-----------------------------------------------------------------------------

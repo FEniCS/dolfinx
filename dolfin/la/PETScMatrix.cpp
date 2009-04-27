@@ -44,7 +44,7 @@ PETScMatrix::PETScMatrix(const Type type):
     A(static_cast<Mat*>(0), PETScMatrixDeleter()), _type(type)
 {
   // Check type
-  checkType();
+  check_type();
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A):
@@ -60,7 +60,7 @@ PETScMatrix::PETScMatrix(uint M, uint N, Type type):
     A(static_cast<Mat*>(0), PETScMatrixDeleter()), _type(type)
 {
   // Check type
-  checkType();
+  check_type();
 
   // Create PETSc matrix
   resize(M, N);
@@ -106,7 +106,7 @@ void PETScMatrix::resize(uint M, uint N)
     // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in thise case)
     MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, A.get());
 
-    setType();
+    set_type();
     #if PETSC_VERSION_MAJOR > 2 
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
     #else
@@ -141,7 +141,7 @@ void PETScMatrix::init(uint M, uint N, const uint* nz)
     // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in thise case)
     MatCreate(PETSC_COMM_SELF, A.get());
     MatSetSizes(*A,  PETSC_DECIDE,  PETSC_DECIDE, M, N);
-    setType();
+    set_type();
     MatSeqAIJSetPreallocation(*A, PETSC_DEFAULT, (int*)nz);
     #if PETSC_VERSION_MAJOR > 2 
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
@@ -499,7 +499,7 @@ boost::shared_ptr<Mat> PETScMatrix::mat() const
   return A;
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::setType() 
+void PETScMatrix::set_type() 
 {
   dolfin_assert(A);
   #if PETSC_VERSION_MAJOR > 2 
@@ -511,7 +511,7 @@ void PETScMatrix::setType()
   MatSetType(*A, mat_type);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::checkType()
+void PETScMatrix::check_type()
 {
   switch ( _type )
   {

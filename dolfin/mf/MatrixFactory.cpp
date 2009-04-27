@@ -27,13 +27,13 @@ using namespace dolfin;
 void MatrixFactory::computeMassMatrix(GenericMatrix& A, Mesh& mesh)
 {
   warning("Using default dof map in MatrixFactory");
-  if (mesh.type().cellType() == CellType::triangle)
+  if (mesh.type().cell_type() == CellType::triangle)
   {
     MassMatrix2DFunctionSpace V(mesh);
     MassMatrix2DBilinearForm a(V, V);
     Assembler::assemble(A, a);
   }
-  else if (mesh.type().cellType() == CellType::tetrahedron)
+  else if (mesh.type().cell_type() == CellType::tetrahedron)
   {
     MassMatrix3DFunctionSpace V(mesh);
     MassMatrix3DBilinearForm a(V, V);
@@ -49,14 +49,14 @@ void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, double 
   Constant f(c);
 
   warning("Using default dof map in MatrixFactory");
-  if (mesh.type().cellType() == CellType::triangle)
+  if (mesh.type().cell_type() == CellType::triangle)
   {
     StiffnessMatrix2DFunctionSpace V(mesh);
     StiffnessMatrix2DBilinearForm a(V, V);
     a.c = f;
     Assembler::assemble(A, a);
   }
-  else if (mesh.type().cellType() == CellType::tetrahedron)
+  else if (mesh.type().cell_type() == CellType::tetrahedron)
   {
     StiffnessMatrix3DFunctionSpace V(mesh);
     StiffnessMatrix3DBilinearForm a(V, V);
@@ -78,12 +78,12 @@ void MatrixFactory::computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,
   Function fz(mesh, cz);
 
   warning("Using default dof map in MatrixFactory");
-  if (mesh.type().cellType() == CellType::triangle)
+  if (mesh.type().cell_type() == CellType::triangle)
   {
     ConvectionMatrix2DBilinearForm a(fx, fy);
     assemble(A, a, mesh);
   }
-  else if (mesh.type().cellType() == CellType::tetrahedron)
+  else if (mesh.type().cell_type() == CellType::tetrahedron)
   {
     ConvectionMatrix3DBilinearForm a(fx, fy, fz);
     assemble(A, a, mesh);
@@ -104,12 +104,12 @@ void MatrixFactory::computeLoadVector(GenericVector& x, Mesh& mesh, double c)
 
   error("MF forms need to be updated to new mesh format.");
   warning("Using default dof map in MatrixFactory");
-  if (mesh.type().cellType() == CellType::triangle)
+  if (mesh.type().cell_type() == CellType::triangle)
   {
     LoadVector2DLinearForm b(f);
     assemble(x, b, mesh);
   }
-  else if (mesh.type().cellType() == CellType::tetrahedron)
+  else if (mesh.type().cell_type() == CellType::tetrahedron)
   {
     LoadVector3DLinearForm b(f);
     assemble(x, b, mesh);

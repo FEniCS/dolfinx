@@ -2,8 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2009-04-16
+// Last changed: 2009-04-22
 
+#include <sstream>
 #include <vector>
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -58,6 +59,10 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   std::map<uint, std::vector<uint> >* overlap = mesh.data().vector_mapping("overlap");
   dolfin_assert(global_vertex_indices);
   dolfin_assert(overlap);
+
+  // Sort overlap
+  for (std::map<uint, std::vector<uint> >::iterator it = (*overlap).begin(); it != (*overlap).end(); ++it)
+      std::sort((*it).second.begin(), (*it).second.end());
   
   // Initialize entities of dimension d
   mesh.init(d);
@@ -69,6 +74,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     std::vector<uint> entity_vertices;
     for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
       entity_vertices.push_back(global_vertex_indices->get(vertex->index()));
+    std::sort(entity_vertices.begin(), entity_vertices.end());
     entities[e->index()] = entity_vertices;
   }
   
@@ -78,6 +84,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
 
   // Entities to ignore (shared with lower rank process)
   std::map<std::vector<uint>, uint> ignored_entities;
+  ignored_entities.clear();
 
   // Entities to number
   std::vector<uint> owned_entities;
@@ -98,11 +105,15 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     {
       std::vector<uint> intersection = (*overlap)[entity_vertices[0]];
       std::vector<uint>::iterator intersection_end = intersection.end();
+      std::vector<uint>::iterator iter;
+
       for (uint i = 1; i < entity_vertices.size(); ++i)
       {
         const uint v = entity_vertices[i];
+
         intersection_end = std::set_intersection(intersection.begin(), intersection_end, 
                                                  (*overlap)[v].begin(), (*overlap)[v].end(), intersection.begin());
+
       }
       entity_processes = std::vector<uint>(intersection.begin(), intersection_end);
     }
@@ -142,9 +153,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   uint global_offset = 0;
   for (uint i = 0; i < process_number; ++i)
     global_offset += offsets[i];
-      
-  message("Offset is %d", global_offset);
-      
+
   // Number owned entities
   std::vector<int> entity_indices(mesh.size(d));
   std::fill(entity_indices.begin(), entity_indices.end(), -1);
@@ -184,33 +193,32 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       for (uint k = 0; k < 2 + entity_vertices.size(); ++k)
         partition.push_back(p);
     }
-
-    // Send data
-    MPI::distribute(values, partition);
-
-    // Extract data (not implemented)
-    
-    // FIXME: Implement this part (should be easy but I don't have time right now)
-
   }
 
-  // Create mesh data
+  // Send data
+  MPI::distribute(values, partition);
 
-  // FIXME: Implement this part (should be easy but I don't have time right now)
-  
-  /*
-  // Check that we got this right
-  for (std::map<uint, uint>::iterator iter = owned_shared.begin(); iter != owned_shared.end(); ++iter)
+  // Fill in global entity indices recieved from lower ranked processes
+  for (uint i = 0; i < values.size();)
   {
-    uint entity = (*iter).first;
-    uint process = (*iter).second;
-    uint global_number = entity_numbers[entity];
-    uint v0 = entities[entity][0];
-    uint v1 = entities[entity][1];
-    std::cout << "P" << process_number << ": Send local entity " << entity << " with global number " << global_number << " consisting of vertices " << v0 << " and " << v1
-              << " to process " << process << std::endl;
+    const uint global_index = values[i++];
+    const uint entity_size = values[i++];
+    std::vector<uint> entity;
+    for (uint j=0; j < entity_size; ++j)
+      entity.push_back(values[i++]);
+
+    if (ignored_entities.count(entity) == 0) 
+      error("Recieved global value for non-ignored entity.");
+
+    entity_indices[ignored_entities[entity]] = global_index;
   }
-  */
+  
+  // Create mesh data
+  std::stringstream name;
+  name << "global entity indices " << d;
+  MeshFunction<uint>* global_entity_indices = mesh.data().create_mesh_function(name.str(), d);
+  for (uint i = 0; i < entity_indices.size(); ++i)
+    global_entity_indices->set(i, entity_indices[i]);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
@@ -432,27 +440,27 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 {
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(mesh, mesh_data.cell_type->cellType(), mesh_data.gdim, mesh_data.tdim);
+  editor.open(mesh, mesh_data.cell_type->cell_type(), mesh_data.gdim, mesh_data.tdim);
 
   // Add vertices
-  editor.initVertices(mesh_data.vertex_coordinates.size());
+  editor.init_vertices(mesh_data.vertex_coordinates.size());
   Point p(mesh_data.gdim);
   for (uint i = 0; i < mesh_data.vertex_coordinates.size(); ++i)
   {
     for (uint j = 0; j < mesh_data.gdim; ++j)
       p[j] = mesh_data.vertex_coordinates[i][j];
-    editor.addVertex(i, p);
+    editor.add_vertex(i, p);
   }
   
   // Add cells
-  editor.initCells(mesh_data.cell_vertices.size());
-  const uint num_cell_vertices = mesh_data.cell_type->numEntities(0);
+  editor.init_cells(mesh_data.cell_vertices.size());
+  const uint num_cell_vertices = mesh_data.cell_type->num_entities(0);
   std::vector<uint> cell(num_cell_vertices);
   for (uint i = 0; i < mesh_data.cell_vertices.size(); ++i)
   {
     for (uint j = 0; j < num_cell_vertices; ++j)
       cell[j] = glob2loc[mesh_data.cell_vertices[i][j]];
-    editor.addCell(i, cell);
+    editor.add_cell(i, cell);
   }
   editor.close();
 
@@ -512,6 +520,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     std::vector<uint>::iterator intersection_end = std::set_intersection(
          global_vertex_send, global_vertex_send + boundary_size, 
          global_vertex_recv, global_vertex_recv + boundary_sizes[q], intersection.begin()); 
+
 
     // Fill overlap information
     for (std::vector<uint>::iterator index = intersection.begin(); index != intersection_end; ++index)

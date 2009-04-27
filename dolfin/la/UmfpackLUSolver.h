@@ -47,7 +47,7 @@ namespace dolfin
     virtual uint factorize(const GenericMatrix& A);
 
     /// Solve factorized system (UMFPACK).
-    virtual uint factorizedSolve(GenericVector& x, const GenericVector& b) const;
+    virtual uint factorized_solve(GenericVector& x, const GenericVector& b) const;
 
   private:
 
@@ -71,16 +71,16 @@ namespace dolfin
         void init(const long int* Ap, const long int* Ai, const double* Ax, uint M, uint nz);
 
         // Initialise with transpose of matrix
-        void initTranspose(const long int* Ap, const long int* Ai, const double* Ax, uint M, uint nz);
+        void init_transpose(const long int* Ap, const long int* Ai, const double* Ax, uint M, uint nz);
 
         // Factorize
         void factorize();
 
         // Factorized solve
-        void factorizedSolve(double*x, const double* b, bool transpose = false) const;
+        void factorized_solve(double*x, const double* b, bool transpose = false) const;
 
         /// Check status flag returned by an UMFPACK function
-        void checkStatus(long int status, std::string function) const;
+        void check_status(long int status, std::string function) const;
 
         // UMFPACK data
         double*   dnull;

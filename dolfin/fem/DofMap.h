@@ -101,7 +101,7 @@ namespace dolfin
     void build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction<bool>& meshfunction);
 
     /// Return renumbering (used for testing)
-    std::map<uint, uint> getMap() const;
+    std::map<uint, uint> get_map() const;
 
     /// Extract sub dofmap and offset for component
     DofMap* extract_sub_dofmap(const std::vector<uint>& component, uint& offset, const Mesh& mesh) const;

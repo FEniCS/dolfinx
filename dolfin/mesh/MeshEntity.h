@@ -37,7 +37,7 @@ namespace dolfin
     inline uint index() const { return _index; }
 
     /// Return number of incident mesh entities of given topological dimension
-    inline uint numEntities(uint dim) const { return _mesh.topology()(_dim, dim).size(_index); }
+    inline uint num_entities(uint dim) const { return _mesh.topology()(_dim, dim).size(_index); }
 
     /// Return array of indices for incident mesh entitites of given topological dimension
     inline const uint* entities(uint dim) const { return _mesh.topology()(_dim, dim)(_index); }

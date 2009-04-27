@@ -48,52 +48,52 @@ XMLFile::XMLFile(const std::string filename, bool gzip)
     gzip(gzip)
 {
   type = "XML";
-  xmlObject = 0;
+  xml_object = 0;
 }
 //-----------------------------------------------------------------------------
 XMLFile::~XMLFile()
 {
-  if (xmlObject)
-    delete xmlObject;
+  if (xml_object)
+    delete xml_object;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (GenericVector& x)
 {
   message(1, "Reading vector from file %s.", filename.c_str());
 
-  if (xmlObject)
-    delete xmlObject;
-  xmlObject = new XMLVector(x);
-  parseFile();
+  if (xml_object)
+    delete xml_object;
+  xml_object = new XMLVector(x);
+  parse_file();
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (GenericMatrix& A)
 {
   message(1, "Reading matrix from file %s.", filename.c_str());
 
-  if (xmlObject)
-    delete xmlObject;
-  xmlObject = new XMLMatrix(A);
-  parseFile();
+  if (xml_object)
+    delete xml_object;
+  xml_object = new XMLMatrix(A);
+  parse_file();
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (Mesh& mesh)
 {
   message(1, "Reading mesh from file %s.", filename.c_str());
 
-  if (xmlObject)
-    delete xmlObject;
+  if (xml_object)
+    delete xml_object;
   
-  xmlObject = new XMLMesh(mesh);
-  parseFile();
+  xml_object = new XMLMesh(mesh);
+  parse_file();
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (LocalMeshData& meshdata)
 {
-  if (xmlObject)
-    delete xmlObject;
-  xmlObject = new XMLLocalMeshData(meshdata);
-  parseFile();
+  if (xml_object)
+    delete xml_object;
+  xml_object = new XMLLocalMeshData(meshdata);
+  parse_file();
 
 }
 //-----------------------------------------------------------------------------
@@ -101,74 +101,74 @@ void XMLFile::operator>> (MeshFunction<int>& meshfunction)
 {
   message(1, "Reading int-valued mesh function from file %s.", filename.c_str());
 
-  if (xmlObject)
-    delete xmlObject;
-  xmlObject = new XMLMeshFunction(meshfunction);
-  parseFile();
+  if (xml_object)
+    delete xml_object;
+  xml_object = new XMLMeshFunction(meshfunction);
+  parse_file();
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (MeshFunction<unsigned int>& meshfunction)
 {
   message(1, "Reading uint-valued mesh function from file %s.", filename.c_str());
 
-  if (xmlObject)
-    delete xmlObject;
-  xmlObject = new XMLMeshFunction(meshfunction);
-  parseFile();
+  if (xml_object)
+    delete xml_object;
+  xml_object = new XMLMeshFunction(meshfunction);
+  parse_file();
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (MeshFunction<double>& meshfunction)
 {
   message(1, "Reading real-valued mesh function from file %s.", filename.c_str());
 
-  if (xmlObject)
-    delete xmlObject;
-  xmlObject = new XMLMeshFunction(meshfunction);
-  parseFile();
+  if (xml_object)
+    delete xml_object;
+  xml_object = new XMLMeshFunction(meshfunction);
+  parse_file();
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (MeshFunction<bool>& meshfunction)
 {
   message(1, "Reading bool-valued mesh function from file %s.", filename.c_str());
 
-  if (xmlObject)
-    delete xmlObject;
-  xmlObject = new XMLMeshFunction(meshfunction);
-  parseFile();
+  if (xml_object)
+    delete xml_object;
+  xml_object = new XMLMeshFunction(meshfunction);
+  parse_file();
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (ParameterList& parameters)
 {
   message(1, "Reading parameter list from file %s.", filename.c_str());
 
-  if (xmlObject)
-    delete xmlObject;
-  xmlObject = new XMLParameterList(parameters);
-  parseFile();
+  if (xml_object)
+    delete xml_object;
+  xml_object = new XMLParameterList(parameters);
+  parse_file();
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (BLASFormData& blas)
 {
-  if (xmlObject)
-    delete xmlObject;
-  xmlObject = new XMLBLASFormData(blas);
-  parseFile();
+  if (xml_object)
+    delete xml_object;
+  xml_object = new XMLBLASFormData(blas);
+  parse_file();
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (Graph& graph)
 {
   message(1, "Reading graph from file %s.", filename.c_str());
 
-  if (xmlObject)
-    delete xmlObject;
-  xmlObject = new XMLGraph(graph);
-  parseFile();
+  if (xml_object)
+    delete xml_object;
+  xml_object = new XMLGraph(graph);
+  parse_file();
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const GenericVector& x)
 {
   // Open file
-  FILE* fp = openFile();
+  FILE* fp = open_file();
 
   // Get vector values
   double* values = new double[x.size()];
@@ -187,7 +187,7 @@ void XMLFile::operator<< (const GenericVector& x)
   delete [] values;
 
   // Close file
-  closeFile(fp);
+  close_file(fp);
   
 //  message(1, "Saved vector %s (%s) to file %s in DOLFIN XML format.", x.name().c_str(), x.label().c_str(), filename.c_str());
   message(1, "Saved vector  to file %s in DOLFIN XML format.", filename.c_str());
@@ -196,7 +196,7 @@ void XMLFile::operator<< (const GenericVector& x)
 void XMLFile::operator<< (const GenericMatrix& A)
 {
   // Open file
-  FILE *fp = openFile();
+  FILE *fp = open_file();
   
   // Write matrix in XML format
   fprintf(fp, "  <matrix rows=\"%u\" columns=\"%u\">\n", A.size(0), A.size(1));
@@ -221,7 +221,7 @@ void XMLFile::operator<< (const GenericMatrix& A)
   fprintf(fp, "  </matrix>\n");
 
   // Close file
-  closeFile(fp);
+  close_file(fp);
 
   message(1, "Saved matrix file %s in DOLFIN XML format.", filename.c_str());
 }
@@ -229,17 +229,17 @@ void XMLFile::operator<< (const GenericMatrix& A)
 void XMLFile::operator<< (const Mesh& mesh)
 {
   // Open file
-  FILE *fp = openFile();
+  FILE *fp = open_file();
   
   // Get cell type
-  CellType::Type cell_type = mesh.type().cellType();
+  CellType::Type cell_type = mesh.type().cell_type();
 
   // Write mesh in XML format
   fprintf(fp, "  <mesh celltype=\"%s\" dim=\"%u\">\n",
           CellType::type2string(cell_type).c_str(), mesh.geometry().dim());
 
   // Write vertices
-  fprintf(fp, "    <vertices size=\"%u\">\n", mesh.numVertices());
+  fprintf(fp, "    <vertices size=\"%u\">\n", mesh.num_vertices());
   for(VertexIterator v(mesh); !v.end(); ++v)
   {
     Point p = v->point();
@@ -264,7 +264,7 @@ void XMLFile::operator<< (const Mesh& mesh)
   fprintf(fp, "    </vertices>\n");
 
   // Write cells
-  fprintf(fp, "    <cells size=\"%u\">\n", mesh.numCells());
+  fprintf(fp, "    <cells size=\"%u\">\n", mesh.num_cells());
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     const uint* vertices = c->entities(0);
@@ -323,7 +323,7 @@ void XMLFile::operator<< (const Mesh& mesh)
   fprintf(fp, "  </mesh>\n");
  
   // Close file
-  closeFile(fp);
+  close_file(fp);
 
   message(1, "Saved mesh to file %s in DOLFIN XML format.", filename.c_str());
 }
@@ -331,7 +331,7 @@ void XMLFile::operator<< (const Mesh& mesh)
 void XMLFile::operator<< (const MeshFunction<int>& meshfunction)
 {
   // Open file
-  FILE *fp = openFile();
+  FILE *fp = open_file();
   
   // Write mesh in XML format
   fprintf(fp, "  <meshfunction type=\"int\" dim=\"%u\" size=\"%u\">\n",
@@ -347,7 +347,7 @@ void XMLFile::operator<< (const MeshFunction<int>& meshfunction)
   fprintf(fp, "  </meshfunction>\n");
  
   // Close file
-  closeFile(fp);
+  close_file(fp);
   
   message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
@@ -355,7 +355,7 @@ void XMLFile::operator<< (const MeshFunction<int>& meshfunction)
 void XMLFile::operator<< (const MeshFunction<unsigned int>& meshfunction)
 {
   // Open file
-  FILE *fp = openFile();
+  FILE *fp = open_file();
   
   // Write mesh in XML format
   fprintf(fp, "  <meshfunction type=\"uint\" dim=\"%u\" size=\"%u\">\n",
@@ -371,7 +371,7 @@ void XMLFile::operator<< (const MeshFunction<unsigned int>& meshfunction)
   fprintf(fp, "  </meshfunction>\n");
  
   // Close file
-  closeFile(fp);
+  close_file(fp);
   
   message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
@@ -379,7 +379,7 @@ void XMLFile::operator<< (const MeshFunction<unsigned int>& meshfunction)
 void XMLFile::operator<< (const MeshFunction<double>& meshfunction)
 {
   // Open file
-  FILE *fp = openFile();
+  FILE *fp = open_file();
   
   // Write mesh in XML format
   fprintf(fp, "  <meshfunction type=\"double\" dim=\"%u\" size=\"%u\">\n",
@@ -395,7 +395,7 @@ void XMLFile::operator<< (const MeshFunction<double>& meshfunction)
   fprintf(fp, "  </meshfunction>\n");
  
   // Close file
-  closeFile(fp);
+  close_file(fp);
   
   message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
@@ -403,7 +403,7 @@ void XMLFile::operator<< (const MeshFunction<double>& meshfunction)
 void XMLFile::operator<< (const MeshFunction<bool>& meshfunction)
 {
   // Open file
-  FILE *fp = openFile();
+  FILE *fp = open_file();
   
   // Write mesh in XML format
   fprintf(fp, "  <meshfunction type=\"bool\" dim=\"%u\" size=\"%u\">\n",
@@ -421,7 +421,7 @@ void XMLFile::operator<< (const MeshFunction<bool>& meshfunction)
   fprintf(fp, "  </meshfunction>\n");
  
   // Close file
-  closeFile(fp);
+  close_file(fp);
   
   message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
@@ -429,7 +429,7 @@ void XMLFile::operator<< (const MeshFunction<bool>& meshfunction)
 void XMLFile::operator<< (const ParameterList& parameters)
 {
   // Open file
-  FILE *fp = openFile();
+  FILE *fp = open_file();
 
   // Write parameter list in XML format
   fprintf(fp, "  <parameters>\n" );
@@ -468,7 +468,7 @@ void XMLFile::operator<< (const ParameterList& parameters)
   fprintf(fp, "  </parameters>\n" );
 
   // Close file
-  closeFile(fp);
+  close_file(fp);
 
   message(1, "Saved parameters to file %s in DOLFIN XML format.", filename.c_str());
 }
@@ -476,10 +476,10 @@ void XMLFile::operator<< (const ParameterList& parameters)
 void XMLFile::operator<< (const Graph& graph)
 {
   // Open file
-  FILE *fp = openFile();
+  FILE *fp = open_file();
   
   // Get graph type and number of vertices, edges and arches
-  const uint num_vertices = graph.numVertices();
+  const uint num_vertices = graph.num_vertices();
 
   // Write graph in XML format
   fprintf(fp, "  <graph type=\"%s\">\n", graph.typestr().c_str());
@@ -487,8 +487,8 @@ void XMLFile::operator<< (const Graph& graph)
   // Get connections (outgoing edges), offsets and weigts
   const uint* connections = graph.connectivity();
   const uint* offsets = graph.offsets();
-  const uint* edge_weights = graph.edgeWeights();
-  const uint* vertex_weights = graph.vertexWeights();
+  const uint* edge_weights = graph.edge_weights();
+  const uint* vertex_weights = graph.vertex_weights();
 
   dolfin_assert(connections);
   dolfin_assert(offsets);
@@ -503,16 +503,16 @@ void XMLFile::operator<< (const Graph& graph)
   {
 	  fprintf(fp, 
           "      <vertex index=\"%u\" num_edges=\"%u\" weight=\"%u\"/>\n", i,
-          graph.numEdges(i), vertex_weights[i]);
+          graph.num_edges(i), vertex_weights[i]);
 	  
   }
   fprintf(fp, "    </vertices>\n");
 
-  fprintf(fp, "    <edges size=\"%u\">\n", graph.numEdges());
+  fprintf(fp, "    <edges size=\"%u\">\n", graph.num_edges());
   // Edges
   for(uint i=0; i<num_vertices; ++i)
   {
-    for(uint j=offsets[i]; j<offsets[i] + graph.numEdges(i); ++j)
+    for(uint j=offsets[i]; j<offsets[i] + graph.num_edges(i); ++j)
     {
       // In undirected graphs an edge (v1, v2) is the same as edge (v2, v1)
       // and should not be stored twice
@@ -526,12 +526,12 @@ void XMLFile::operator<< (const Graph& graph)
   fprintf(fp, "  </graph>\n");
   
   // Close file
-  closeFile(fp);
+  close_file(fp);
 
   message(1, "Saved graph to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-FILE* XMLFile::openFile()
+FILE* XMLFile::open_file()
 {
   // Cannot write gzipped files (yet)
   if (gzip)
@@ -559,7 +559,7 @@ FILE* XMLFile::openFile()
   return fp;
 }
 //-----------------------------------------------------------------------------
-void XMLFile::closeFile(FILE* fp)
+void XMLFile::close_file(FILE* fp)
 {
   // Get position in file before writing footer
   mark = ftell(fp);
@@ -573,16 +573,16 @@ void XMLFile::closeFile(FILE* fp)
   fclose(fp);
 }
 //-----------------------------------------------------------------------------
-void XMLFile::parseFile()
+void XMLFile::parse_file()
 {
   // Notify that file is being opened
-  xmlObject->open(filename);
+  xml_object->open(filename);
 
   // Parse file using the SAX interface
   parseSAX();
   
   // Notify that file is being closed
-  if (!xmlObject->close())
+  if (!xml_object->close())
     error("Unable to find data in XML file.");
 }
 //-----------------------------------------------------------------------------
@@ -602,7 +602,7 @@ void XMLFile::parseSAX()
   sax.fatalError    = sax_fatal_error;
   
   // Parse file
-  xmlSAXUserParseFile(&sax, (void *) xmlObject, filename.c_str());
+  xmlSAXUserParseFile(&sax, (void *) xml_object, filename.c_str());
 }
 //-----------------------------------------------------------------------------
 // Callback functions for the SAX interface
@@ -620,12 +620,12 @@ void dolfin::sax_end_document(void *ctx)
 void dolfin::sax_start_element(void *ctx,
 			       const xmlChar *name, const xmlChar **attrs)
 {
-  ( (XMLObject *) ctx )->startElement(name, attrs);
+  ( (XMLObject *) ctx )->start_element(name, attrs);
 }
 //-----------------------------------------------------------------------------
 void dolfin::sax_end_element(void *ctx, const xmlChar *name)
 {
-  ( (XMLObject *) ctx )->endElement(name);
+  ( (XMLObject *) ctx )->end_element(name);
 }
 //-----------------------------------------------------------------------------
 void dolfin::sax_warning(void *ctx, const char *msg, ...)

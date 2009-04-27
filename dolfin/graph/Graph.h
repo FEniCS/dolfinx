@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008.
-// Modified by Anders Logg, 2008.
+// Modified by Anders Logg, 2008-2009.
 //
 // First added:  2007-02-12
-// Last changed: 2008-10-27
+// Last changed: 2009-04-27
 
 #ifndef __GRAPH_H
 #define __GRAPH_H
@@ -81,31 +81,31 @@ namespace dolfin
     ~Graph();
     
     /// Initialise graph data structures
-    void init(uint _num_vertices, uint _num_edges);
+    void init(uint num_vertices, uint num_edges);
 
     /// Return number of vertices
-    inline uint numVertices() const { return num_vertices; }
+    inline uint num_vertices() const { return _num_vertices; }
     
     /// Return number of edges
-    inline uint numEdges() const { return num_edges; }
+    inline uint num_edges() const { return _num_edges; }
     
     /// Return number of edges incident to vertex u
-    inline uint numEdges(uint u) const { return vertices[u+1] - vertices[u]; }
+    inline uint num_edges(uint u) const { return _vertices[u+1] - _vertices[u]; }
 
     /// Check if vertex u is adjacent to vertex v
     bool adjacent(uint u, uint v);
     
     /// Return edge weights
-    inline uint* edgeWeights() const { return edge_weights; }
+    inline uint* edge_weights() const { return _edge_weights; }
     
     /// Return vertex weights
-    inline uint* vertexWeights() const { return vertex_weights; }
+    inline uint* vertex_weights() const { return _vertex_weights; }
     
     /// Return array of edges for all vertices
-    inline uint* connectivity() const { return edges; }
+    inline uint* connectivity() const { return _edges; }
     
     /// Return array of offsets for edges of all vertices
-    inline uint* offsets() const { return vertices; }
+    inline uint* offsets() const { return _vertices; }
     
     /// Return graph type
     inline Type type() const { return _type; }
@@ -129,18 +129,19 @@ namespace dolfin
     
   private:
     
-    uint num_edges;
-    uint num_vertices;
+    uint _num_edges;
+    uint _num_vertices;
     
-    uint* edges;
-    uint* vertices;
+    uint* _edges;
+    uint* _vertices;
     
-    uint* edge_weights;
-    uint* vertex_weights;
+    uint* _edge_weights;
+    uint* _vertex_weights;
     
     Type _type;
 
     Representation _representation;
+
   };
   
 }

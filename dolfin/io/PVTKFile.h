@@ -32,18 +32,18 @@ namespace dolfin
     
   private:
 
-    void MeshWrite(const Mesh& mesh) const;
-    void ResultsWrite(const Function& u) const;
-    void pvdFileWrite(uint u);
-    void pvtuFileWrite();
-    void pvtuFileWrite_func(const Function& u);
-    void VTKHeaderOpen(const Mesh& mesh) const;
-    void VTKHeaderClose() const;
-    void vtuNameUpdate(const int counter);
-    void pvtuNameUpdate(const int counter);
+    void mesh_write(const Mesh& mesh) const;
+    void results_write(const Function& u) const;
+    void pvd_file_write(uint u);
+    void pvtu_file_write();
+    void pvtu_file_write_func(const Function& u);
+    void vtk_header_open(const Mesh& mesh) const;
+    void vtk_header_close() const;
+    void vtu_name_update(const int counter);
+    void pvtu_name_update(const int counter);
 
     template<class T>
-    void MeshFunctionWrite(T& meshfunction);    
+    void mesh_function_write(T& meshfunction);    
     
     // Most recent position in pvd file
     std::ios::pos_type mark;
@@ -53,6 +53,7 @@ namespace dolfin
 
     // pvtu filename
     std::string pvtu_filename;
+
   };
   
 }

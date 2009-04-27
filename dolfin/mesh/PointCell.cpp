@@ -23,7 +23,7 @@ dolfin::uint PointCell::dim() const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PointCell::numEntities(uint dim) const
+dolfin::uint PointCell::num_entities(uint dim) const
 {
   switch (dim)
   {
@@ -36,7 +36,7 @@ dolfin::uint PointCell::numEntities(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PointCell::numVertices(uint dim) const
+dolfin::uint PointCell::num_vertices(uint dim) const
 {
   switch (dim)
   {
@@ -55,15 +55,15 @@ dolfin::uint PointCell::orientation(const Cell& cell) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void PointCell::createEntities(uint** e, uint dim, const uint* v) const
+void PointCell::create_entities(uint** e, uint dim, const uint* v) const
 {
-  error("PointCell::createEntities() don't know how to create entities on a point.");
+  error("PointCell::create_entities() don't know how to create entities on a point.");
 }
 //-----------------------------------------------------------------------------
-void PointCell::refineCell(Cell& cell, MeshEditor& editor,
+void PointCell::refine_cell(Cell& cell, MeshEditor& editor,
                           uint& current_cell) const
 {
-  error("PointCell::refineCell() not defined.");
+  error("PointCell::refine_cell() not defined.");
 }
 //-----------------------------------------------------------------------------
 double PointCell::volume(const MeshEntity& triangle) const
@@ -91,9 +91,9 @@ Point PointCell::normal(const Cell& cell, uint facet) const
   return p;
 }
 //-----------------------------------------------------------------------------
-double PointCell::facetArea(const Cell& cell, uint facet) const
+double PointCell::facet_area(const Cell& cell, uint facet) const
 {
-  error("PointCell::facetAread() not defined.");
+  error("PointCell::facet_aread() not defined.");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
@@ -129,9 +129,9 @@ std::string PointCell::description() const
   return s;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PointCell::findEdge(uint i, const Cell& cell) const
+dolfin::uint PointCell::find_edge(uint i, const Cell& cell) const
 {
-  error("PointCell::findEdge() not defined.");
+  error("PointCell::find_edge() not defined.");
   return 0;
 }
 //-----------------------------------------------------------------------------

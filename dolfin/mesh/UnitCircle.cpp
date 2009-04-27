@@ -35,13 +35,13 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
   // Create vertices and cells:
   if (type == crisscross) 
   {
-    editor.initVertices((nx+1)*(ny+1) + nx*ny);
-    editor.initCells(4*nx*ny);
+    editor.init_vertices((nx+1)*(ny+1) + nx*ny);
+    editor.init_cells(4*nx*ny);
   } 
   else 
   {
-    editor.initVertices((nx+1)*(ny+1));
-    editor.initCells(2*nx*ny);
+    editor.init_vertices((nx+1)*(ny+1));
+    editor.init_cells(2*nx*ny);
   }
   
   // Create main vertices:
@@ -57,7 +57,7 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
       const double x =-1.+ static_cast<double>(ix)*2.0 / static_cast<double>(nx);
       trns_x = transformx(x, y, transformation);
       trns_y = transformy(x, y, transformation);
-      editor.addVertex(vertex++, trns_x, trns_y);
+      editor.add_vertex(vertex++, trns_x, trns_y);
     }
   }
   
@@ -72,7 +72,7 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
         const double x = -1.0 + (static_cast<double>(ix) + 0.5)*2.0 / static_cast<double>(nx);
         trns_x = transformx(x, y, transformation);
         trns_y = transformy(x, y, transformation);
-        editor.addVertex(vertex++, trns_x, trns_y);
+        editor.add_vertex(vertex++, trns_x, trns_y);
       }
     }
   }
@@ -92,10 +92,10 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
         const uint vmid = (nx + 1)*(ny + 1) + iy*nx + ix;
 	
         // Note that v0 < v1 < v2 < v3 < vmid.
-        editor.addCell(cell++, v0, v1, vmid);
-        editor.addCell(cell++, v0, v2, vmid);
-        editor.addCell(cell++, v1, v3, vmid);
-        editor.addCell(cell++, v2, v3, vmid);
+        editor.add_cell(cell++, v0, v1, vmid);
+        editor.add_cell(cell++, v0, v2, vmid);
+        editor.add_cell(cell++, v1, v3, vmid);
+        editor.add_cell(cell++, v2, v3, vmid);
       }
     }
   } 
@@ -110,8 +110,8 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
         const uint v2 = v0 + (nx + 1);
         const uint v3 = v1 + (nx + 1);
 
-        editor.addCell(cell++, v0, v1, v2);
-        editor.addCell(cell++, v1, v2, v3);
+        editor.add_cell(cell++, v0, v1, v2);
+        editor.add_cell(cell++, v1, v2, v3);
       }
     }
   } 
@@ -126,8 +126,8 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
         const uint v2 = v0 + (nx + 1);
         const uint v3 = v1 + (nx + 1);
 
-        editor.addCell(cell++, v0, v1, v3);
-        editor.addCell(cell++, v0, v2, v3);
+        editor.add_cell(cell++, v0, v1, v3);
+        editor.add_cell(cell++, v0, v2, v3);
       }
     }
   }

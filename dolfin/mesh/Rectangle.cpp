@@ -41,13 +41,13 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
   // Create vertices and cells:
   if (type == crisscross) 
   {
-    editor.initVertices((nx+1)*(ny+1) + nx*ny);
-    editor.initCells(4*nx*ny);
+    editor.init_vertices((nx+1)*(ny+1) + nx*ny);
+    editor.init_cells(4*nx*ny);
   } 
   else 
   {
-    editor.initVertices((nx+1)*(ny+1));
-    editor.initCells(2*nx*ny);
+    editor.init_vertices((nx+1)*(ny+1));
+    editor.init_cells(2*nx*ny);
   }
   
   // Create main vertices:
@@ -58,7 +58,7 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
     for (uint ix = 0; ix <= nx; ix++) 
     {
       const double x = a + ((static_cast<double>(ix))*(b-a) / static_cast<double>(nx));
-      editor.addVertex(vertex++, x, y);
+      editor.add_vertex(vertex++, x, y);
     }
   }
   
@@ -71,7 +71,7 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
       for (uint ix = 0; ix < nx; ix++) 
       {
         const double x = a + (static_cast<double>(ix) + 0.5)*(b-a)/ static_cast<double>(nx);
-        editor.addVertex(vertex++, x, y);
+        editor.add_vertex(vertex++, x, y);
       }
     }
   }
@@ -91,10 +91,10 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
         const uint vmid = (nx + 1)*(ny + 1) + iy*nx + ix;
 	
         // Note that v0 < v1 < v2 < v3 < vmid.
-        editor.addCell(cell++, v0, v1, vmid);
-        editor.addCell(cell++, v0, v2, vmid);
-        editor.addCell(cell++, v1, v3, vmid);
-        editor.addCell(cell++, v2, v3, vmid);
+        editor.add_cell(cell++, v0, v1, vmid);
+        editor.add_cell(cell++, v0, v2, vmid);
+        editor.add_cell(cell++, v1, v3, vmid);
+        editor.add_cell(cell++, v2, v3, vmid);
       }
     }
   } 
@@ -109,8 +109,8 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
         const uint v2 = v0 + (nx + 1);
         const uint v3 = v1 + (nx + 1);
 
-        editor.addCell(cell++, v0, v1, v2);
-        editor.addCell(cell++, v1, v2, v3);
+        editor.add_cell(cell++, v0, v1, v2);
+        editor.add_cell(cell++, v1, v2, v3);
       }
     }
   } 
@@ -125,8 +125,8 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
         const uint v2 = v0 + (nx + 1);
         const uint v3 = v1 + (nx + 1);
 
-        editor.addCell(cell++, v0, v1, v3);
-        editor.addCell(cell++, v0, v2, v3);
+        editor.add_cell(cell++, v0, v1, v3);
+        editor.add_cell(cell++, v0, v2, v3);
       }
     }
   }

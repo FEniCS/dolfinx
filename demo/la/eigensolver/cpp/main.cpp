@@ -39,7 +39,7 @@ int main()
   for (unsigned int i = 0; i < n; i++)
   {
     double lr, lc;
-    esolver.getEigenvalue(lr, lc, i);
+    esolver.get_eigenvalue(lr, lc, i);
     cout << "Eigenvalue " << i << ": " << lr << endl;
   }
 

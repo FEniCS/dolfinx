@@ -137,26 +137,26 @@ void VTKFile::mesh_write(const Mesh& mesh) const
 
   // Write offset into connectivity array for the end of each cell
   fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"offsets\"  format=\"ascii\">  \n");
-  for (uint offsets = 1; offsets <= mesh.numCells(); offsets++)
+  for (uint offsets = 1; offsets <= mesh.num_cells(); offsets++)
   {
-    if (mesh.type().cellType() == CellType::tetrahedron )
+    if (mesh.type().cell_type() == CellType::tetrahedron )
       fprintf(fp, " %8u \n",  offsets*4);
-    if (mesh.type().cellType() == CellType::triangle )
+    if (mesh.type().cell_type() == CellType::triangle )
       fprintf(fp, " %8u \n", offsets*3);
-    if (mesh.type().cellType() == CellType::interval )
+    if (mesh.type().cell_type() == CellType::interval )
       fprintf(fp, " %8u \n",  offsets*2);
   }
   fprintf(fp, "</DataArray> \n");
   
   //Write cell type
   fprintf(fp, "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"ascii\">  \n");
-  for (uint types = 1; types <= mesh.numCells(); types++)
+  for (uint types = 1; types <= mesh.num_cells(); types++)
   {
-    if (mesh.type().cellType() == CellType::tetrahedron )
+    if (mesh.type().cell_type() == CellType::tetrahedron )
       fprintf(fp, " 10 \n");
-    if (mesh.type().cellType() == CellType::triangle )
+    if (mesh.type().cell_type() == CellType::triangle )
       fprintf(fp, " 5 \n");
-    if (mesh.type().cellType() == CellType::interval )
+    if (mesh.type().cell_type() == CellType::interval )
       fprintf(fp, " 3 \n");
   }
   fprintf(fp, "</DataArray> \n");
@@ -201,7 +201,7 @@ void VTKFile::results_write(const Function& u) const
   if (data_type == "cell")
   {
     // Allocate memory for function values at cell centres
-    const uint size = mesh.numCells()*dim;
+    const uint size = mesh.num_cells()*dim;
     double* values = new double[size];
 
     // Get function values on cells
@@ -238,7 +238,7 @@ void VTKFile::results_write(const Function& u) const
       {
         // Append 0.0 to 2D vectors to make them 3D
         for(uint i = 0; i < dim; i++)
-          ss << " " << values[cell->index() + i*mesh.numCells()];
+          ss << " " << values[cell->index() + i*mesh.num_cells()];
         ss << " " << 0.0;
       }
       else if (rank == 2 && dim == 4)
@@ -246,8 +246,8 @@ void VTKFile::results_write(const Function& u) const
         // Pad with 0.0 to 2D tensors to make them 3D
         for(uint i = 0; i < 2; i++)
         {
-          ss << " " << values[cell->index() + (2*i+0)*mesh.numCells()];
-          ss << " " << values[cell->index() + (2*i+1)*mesh.numCells()];
+          ss << " " << values[cell->index() + (2*i+0)*mesh.num_cells()];
+          ss << " " << values[cell->index() + (2*i+1)*mesh.num_cells()];
           ss << " " << 0.0;
         }
         ss << " " << 0.0;
@@ -258,7 +258,7 @@ void VTKFile::results_write(const Function& u) const
       {
         // Write all components
         for (uint i = 0; i < dim; i++)
-          ss << " " << values[cell->index() + i*mesh.numCells()];
+          ss << " " << values[cell->index() + i*mesh.num_cells()];
       }
       ss << std::endl;
     
@@ -272,7 +272,7 @@ void VTKFile::results_write(const Function& u) const
   else if (data_type == "point") 
   {
     // Allocate memory for function values at vertices
-    uint size = mesh.numVertices()*dim;
+    uint size = mesh.num_vertices()*dim;
     double* values = new double[size];
 
     // Get function values at vertices
@@ -304,7 +304,7 @@ void VTKFile::results_write(const Function& u) const
       {
         // Append 0.0 to 2D vectors to make them 3D
         for(uint i = 0; i < dim; i++)
-          ss << " " << values[vertex->index() + i*mesh.numVertices()];
+          ss << " " << values[vertex->index() + i*mesh.num_vertices()];
         ss << " " << 0.0;
       }
       else if (rank == 2 && dim == 4)
@@ -312,8 +312,8 @@ void VTKFile::results_write(const Function& u) const
         // Pad with 0.0 to 2D tensors to make them 3D
         for(uint i = 0; i < 2; i++)
         {
-          ss << " " << values[vertex->index() + (2*i+0)*mesh.numVertices()];
-          ss << " " << values[vertex->index() + (2*i+1)*mesh.numVertices()];
+          ss << " " << values[vertex->index() + (2*i+0)*mesh.num_vertices()];
+          ss << " " << values[vertex->index() + (2*i+1)*mesh.num_vertices()];
           ss << " " << 0.0;
         }
         ss << " " << 0.0;
@@ -324,7 +324,7 @@ void VTKFile::results_write(const Function& u) const
       {
         // Write all components
         for(uint i = 0; i < dim; i++)
-          ss << " " << values[vertex->index() + i*mesh.numVertices()];
+          ss << " " << values[vertex->index() + i*mesh.num_vertices()];
       }
       ss << std::endl;
       
@@ -341,22 +341,22 @@ void VTKFile::results_write(const Function& u) const
 //----------------------------------------------------------------------------
 void VTKFile::pvd_file_write(uint num)
 {
-  std::fstream pvdFile;
+  std::fstream pvd_file;
 
   if( num == 0)
   {
     // Open pvd file
-    pvdFile.open(filename.c_str(), std::ios::out|std::ios::trunc);
+    pvd_file.open(filename.c_str(), std::ios::out|std::ios::trunc);
     // Write header    
-    pvdFile << "<?xml version=\"1.0\"?> " << std::endl;
-    pvdFile << "<VTKFile type=\"Collection\" version=\"0.1\" > " << std::endl;
-    pvdFile << "<Collection> " << std::endl;
+    pvd_file << "<?xml version=\"1.0\"?> " << std::endl;
+    pvd_file << "<VTKFile type=\"Collection\" version=\"0.1\" > " << std::endl;
+    pvd_file << "<Collection> " << std::endl;
   } 
   else
   {
     // Open pvd file
-    pvdFile.open(filename.c_str(),  std::ios::out|std::ios::in);
-    pvdFile.seekp(mark);
+    pvd_file.open(filename.c_str(),  std::ios::out|std::ios::in);
+    pvd_file.seekp(mark);
   
   }
   // Remove directory path from name for pvd file
@@ -364,15 +364,15 @@ void VTKFile::pvd_file_write(uint num)
   fname.assign(vtu_filename, filename.find_last_of("/") + 1, vtu_filename.size()); 
   
   // Data file name 
-  pvdFile << "<DataSet timestep=\"" << num << "\" part=\"0\"" << " file=\"" <<  fname <<  "\"/>" << std::endl; 
-  mark = pvdFile.tellp();
+  pvd_file << "<DataSet timestep=\"" << num << "\" part=\"0\"" << " file=\"" <<  fname <<  "\"/>" << std::endl; 
+  mark = pvd_file.tellp();
   
   // Close headers
-  pvdFile << "</Collection> " << std::endl;
-  pvdFile << "</VTKFile> " << std::endl;
+  pvd_file << "</Collection> " << std::endl;
+  pvd_file << "</VTKFile> " << std::endl;
   
   // Close file
-  pvdFile.close();  
+  pvd_file.close();  
 
 }
 //----------------------------------------------------------------------------
@@ -387,7 +387,7 @@ void VTKFile::vtk_header_open(const Mesh& mesh) const
   fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\"   >\n");
   fprintf(fp, "<UnstructuredGrid>  \n");
   fprintf(fp, "<Piece  NumberOfPoints=\" %8u\"  NumberOfCells=\" %8u\">  \n",
-  mesh.numVertices(), mesh.numCells());
+  mesh.num_vertices(), mesh.num_cells());
   
   // Close file
   fclose(fp);

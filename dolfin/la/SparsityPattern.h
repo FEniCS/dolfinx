@@ -83,7 +83,7 @@ namespace dolfin
     void apply() { /* Do nothing */ }
 
     /// Return array with row range for process_number
-    void processRange(uint process_number, uint local_range[]);
+    void process_range(uint process_number, uint local_range[]);
 
     /// Return number of local rows for process_number
     uint numLocalRows(uint process_number) const;
@@ -91,7 +91,7 @@ namespace dolfin
   private:
 
     /// Initialize range
-    void initRange();
+    void init_range();
 
     /// Sparsity pattern represented as an vector of vectors 
     mutable std::vector< std::vector<uint> > sparsity_pattern;

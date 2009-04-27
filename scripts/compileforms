@@ -9,15 +9,16 @@
 import os
 
 # Forms that need special options
-special = {"CahnHilliard2D.form": "-fsplit_implementation",
-           "CahnHilliard3D.form": "-fsplit_implementation"}
+special = {"CahnHilliard2D.ufl": "-fsplit_implementation",
+           "CahnHilliard3D.ufl": "-fsplit_implementation"}
 
 # Compile all form files
 cwd = os.getcwd()
 for root, dirs, files in os.walk(cwd):
 
-    # Check for .form files
-    formfiles = [f for f in files if len(f) > 5 and f[-5:] == ".form"]
+    # Check for .ufl files
+    formfiles = [f for f in files if len(f) > 4 and f[-4:] == ".ufl"]
+    print 
     if len(formfiles) == 0:
         continue
 
@@ -29,16 +30,9 @@ for root, dirs, files in os.walk(cwd):
             options = special[f]
         else:
             options = ""
-        command = "ffc -l dolfin %s %s > /dev/null" % (options, f)
+        command = "ffc -l dolfin -O %s %s > /dev/null" % (options, f)
         print "  " + command
         ret = os.system(command)
         if not ret == 0:
             raise RuntimeError, "Unable to compile form: %s/%s" % (root, f)
 
-# Step back to top level directory
-os.chdir(cwd)
-
-# Regenerate all forms in element and projection library
-os.chdir(os.path.join(cwd, "dolfin", "elements"))
-os.system("python generate_elements.py")
-os.system("python generate_projections.py")

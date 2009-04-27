@@ -62,33 +62,33 @@ options = [
     scons.PathOption("pythonExtDir", "Python extension module installation directory", 
                      scons.defaultPythonLib(prefix="$prefix", plat_specific=True)),
     # configurable options for how we want to build:
-    BoolOption("enableDebug", "Build with debug information", 1),
-    BoolOption("enableDebugUblas", "Add some extra Ublas debug information", 0),
-    BoolOption("enableOptimize", "Compile with optimization", 0),
-    BoolOption("enableDocs", "Build documentation", 0),
-    BoolOption("enableDemos", "Build demos", 0),
-    BoolOption("enableTests", "Build tests", 0),
-    BoolOption("enableCodeCoverage", "Enable code coverage", 0),
-    BoolOption("enableProjectionLibrary", "Enable projection library", 0),
-    BoolOption("enableResolveCompiler", "Run tests to verify compiler", 1),
+    BoolVariable("enableDebug", "Build with debug information", 1),
+    BoolVariable("enableDebugUblas", "Add some extra Ublas debug information", 0),
+    BoolVariable("enableOptimize", "Compile with optimization", 0),
+    BoolVariable("enableDocs", "Build documentation", 0),
+    BoolVariable("enableDemos", "Build demos", 0),
+    BoolVariable("enableTests", "Build tests", 0),
+    BoolVariable("enableCodeCoverage", "Enable code coverage", 0),
+    BoolVariable("enableProjectionLibrary", "Enable projection library", 0),
+    BoolVariable("enableResolveCompiler", "Run tests to verify compiler", 1),
     # Enable or disable external packages.
     # These will also be listed in scons.cfg files, but if they are 
     # disabled here, that will override scons.cfg. Remark that unless the
     # module is listed as OptDependencies in scons.cfg, the whole module
     # will be turned off.
-    BoolOption("enableMpi", "Compile with support for MPI", "yes"),
-    BoolOption("enablePetsc", "Compile with support for PETSc linear algebra", "yes"),
-    BoolOption("enableSlepc", "Compile with support for SLEPc", "yes"),
-    BoolOption("enableScotch", "Compile with support for SCOTCH graph partitioning", "yes"),
-    BoolOption("enableGts", "Compile with support for GTS", "yes"),
-    BoolOption("enableUmfpack", "Compile with support for UMFPACK", "yes"),
-    BoolOption("enableTrilinos", "Compile with support for Trilinos", "yes"),
-    BoolOption("enableCholmod", "Compile with support for CHOLMOD", "yes"),
-    BoolOption("enableMtl4", "Compile with support for MTL4", "yes"),
-    BoolOption("enableParmetis", "Compile with support for ParMETIS", "yes"),
-    BoolOption("enableGmp", "Compile with support for GMP", "no"),
-    BoolOption("enablePython", "Compile the Python wrappers", "yes"),
-    BoolOption("enablePydolfin", "Compile the Python wrappers of DOLFIN *deprecated*", "yes"),
+    BoolVariable("enableMpi", "Compile with support for MPI", "yes"),
+    BoolVariable("enablePetsc", "Compile with support for PETSc linear algebra", "yes"),
+    BoolVariable("enableSlepc", "Compile with support for SLEPc", "yes"),
+    BoolVariable("enableScotch", "Compile with support for SCOTCH graph partitioning", "yes"),
+    BoolVariable("enableGts", "Compile with support for GTS", "yes"),
+    BoolVariable("enableUmfpack", "Compile with support for UMFPACK", "yes"),
+    BoolVariable("enableTrilinos", "Compile with support for Trilinos", "yes"),
+    BoolVariable("enableCholmod", "Compile with support for CHOLMOD", "yes"),
+    BoolVariable("enableMtl4", "Compile with support for MTL4", "yes"),
+    BoolVariable("enableParmetis", "Compile with support for ParMETIS", "yes"),
+    BoolVariable("enableGmp", "Compile with support for GMP", "no"),
+    BoolVariable("enablePython", "Compile the Python wrappers", "yes"),
+    BoolVariable("enablePydolfin", "Compile the Python wrappers of DOLFIN *deprecated*", "yes"),
     # some of the above may need extra options (like petscDir), should we
     # try to get that from pkg-config?
     # It may be neccessary to specify the installation path to the above packages.
@@ -107,9 +107,9 @@ options = [
     PathOption("withLibxml2Dir", "Specify path to libXML2", None),
     #
     # a few more options originally from PyCC:
-    #BoolOption("autoFetch", "Automatically fetch datafiles from (password protected) SSH repository", 0),
-    BoolOption("cacheOptions", "Cache command-line options for later invocations", 1),
-    BoolOption("veryClean", "Remove the sconsign file during clean, must be set during regular build", 0),
+    #BoolVariable("autoFetch", "Automatically fetch datafiles from (password protected) SSH repository", 0),
+    BoolVariable("cacheOptions", "Cache command-line options for later invocations", 1),
+    BoolVariable("veryClean", "Remove the sconsign file during clean, must be set during regular build", 0),
     # maybe we should do this more cleverly. The default in dolfin now is
     # to use mpicxx if that is available...:
     #("CXX", "Set C++ compiler", scons.defaultCxxCompiler()),

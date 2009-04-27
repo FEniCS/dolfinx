@@ -117,7 +117,7 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
   for (uint s = 0; s < ts.ns; s++)
   {
     // Cover all elements in current sub slab
-    e1 = ts.coverSlab(s, e0);
+    e1 = ts.cover_slab(s, e0);
     
     // Get data for sub slab
     const real a = ts.sa[s];
@@ -149,9 +149,9 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
 	
 	// Evaluate right-hand side at quadrature points of element
 	if ( method.type() == Method::cG )
-	  ts.cGfeval(f, s, e, i, a, b, k);
+	  ts.cg_feval(f, s, e, i, a, b, k);
 	else
-	  ts.dGfeval(f, s, e, i, a, b, k);
+	  ts.dg_feval(f, s, e, i, a, b, k);
 	//cout << "f = "; Alloc::disp(f, method.qsize());
 	
 	// Update values on element using fixed-point iteration

@@ -20,8 +20,8 @@ namespace dolfin
 
     XMLBLASFormData(BLASFormData& blas);
     
-    void startElement (const xmlChar *name, const xmlChar **attrs);
-    void endElement   (const xmlChar *name);
+    void start_element (const xmlChar *name, const xmlChar **attrs);
+    void end_element   (const xmlChar *name);
     
     void open(std::string filename);
     bool close();
@@ -35,15 +35,15 @@ namespace dolfin
 		       INSIDE_INTERIOR_REFTENSOR, INSIDE_BOUNDARY_REFTENSOR,
 		       DONE };
     
-    void readForm     (const xmlChar *name, const xmlChar **attrs);
-    void readInterior (const xmlChar *name, const xmlChar **attrs);
-    void readBoundary (const xmlChar *name, const xmlChar **attrs);
-    void readTerm     (const xmlChar *name, const xmlChar **attrs);
+    void read_form     (const xmlChar *name, const xmlChar **attrs);
+    void read_interior (const xmlChar *name, const xmlChar **attrs);
+    void read_boundary (const xmlChar *name, const xmlChar **attrs);
+    void read_term     (const xmlChar *name, const xmlChar **attrs);
     void readGeoTensor(const xmlChar *name, const xmlChar **attrs);
     void readRefTensor(const xmlChar *name, const xmlChar **attrs);
-    void readEntry    (const xmlChar *name, const xmlChar **attrs);
+    void read_entry    (const xmlChar *name, const xmlChar **attrs);
     
-    void initForm();
+    void init_form();
 
     BLASFormData& blas;
 

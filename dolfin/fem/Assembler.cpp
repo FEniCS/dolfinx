@@ -153,7 +153,7 @@ void Assembler::assemble_cells(GenericTensor& A,
 
   // Assemble over cells
   uint num_function_spaces = a.function_spaces().size();  
-  Progress p(progress_message(A.rank(), "cells"), mesh.numCells());
+  Progress p(progress_message(A.rank(), "cells"), mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // FIXME will move this check into a separate function. 
@@ -225,7 +225,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   dolfin_assert(cell_map);
 
   // Assemble over exterior facets (the cells of the boundary)
-  Progress p(progress_message(A.rank(), "exterior facets"), boundary.numCells());
+  Progress p(progress_message(A.rank(), "exterior facets"), boundary.num_cells());
   for (CellIterator boundary_cell(boundary); !boundary_cell.end(); ++boundary_cell)
   {
     // Get mesh facet corresponding to boundary cell
@@ -242,7 +242,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     }
 
     // Get mesh cell to which mesh facet belongs (pick first, there is only one)
-    dolfin_assert(mesh_facet.numEntities(mesh.topology().dim()) == 1);
+    dolfin_assert(mesh_facet.num_entities(mesh.topology().dim()) == 1);
     Cell mesh_cell(mesh, mesh_facet.entities(mesh.topology().dim())[0]);
 
     // Get local index of facet with respect to the cell
@@ -292,11 +292,11 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
   dolfin_assert(mesh.ordered());
   // Assemble over interior facets (the facets of the mesh)
-  Progress p(progress_message(A.rank(), "interior facets"), mesh.numFacets());
+  Progress p(progress_message(A.rank(), "interior facets"), mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Check if we have an interior facet
-    if ( facet->numEntities(mesh.topology().dim()) != 2 )
+    if ( facet->num_entities(mesh.topology().dim()) != 2 )
     {
       p++;
       continue;
@@ -400,11 +400,11 @@ You may need to provide the dimension of a user defined Function.", j, i, dim, f
   {
     ufc::finite_element* element = a.ufc_form().create_finite_element(0);
     dolfin_assert(element);
-    if (mesh.type().cellType() == CellType::interval && element->cell_shape() != ufc::interval)
+    if (mesh.type().cell_type() == CellType::interval && element->cell_shape() != ufc::interval)
       error("Mesh cell type (intervals) does not match cell type of form.");
-    if (mesh.type().cellType() == CellType::triangle && element->cell_shape() != ufc::triangle)
+    if (mesh.type().cell_type() == CellType::triangle && element->cell_shape() != ufc::triangle)
       error("Mesh cell type (triangles) does not match cell type of form.");
-    if (mesh.type().cellType() == CellType::tetrahedron && element->cell_shape() != ufc::tetrahedron)
+    if (mesh.type().cell_type() == CellType::tetrahedron && element->cell_shape() != ufc::tetrahedron)
       error("Mesh cell type (tetrahedra) does not match cell type of form.");
     delete element;
   }
@@ -633,7 +633,7 @@ void Assembler::assemble_system(GenericMatrix& A,
         {
           for (FacetIterator facet(*cell); !facet.end(); ++facet)
           {
-            if (facet->numEntities(D) != 2) 
+            if (facet->num_entities(D) != 2) 
             {
               ufc::exterior_facet_integral* A_integral = A_ufc.exterior_facet_integrals[0]; 
               if (exterior_facet_domains && exterior_facet_domains->size() > 0)
@@ -659,7 +659,7 @@ void Assembler::assemble_system(GenericMatrix& A,
         {
           for (FacetIterator facet(*cell); !facet.end(); ++facet)
           {
-            if (facet->numEntities(D) != 2) 
+            if (facet->num_entities(D) != 2) 
             {
               ufc::exterior_facet_integral* b_integral = b_ufc.exterior_facet_integrals[0]; 
               if (exterior_facet_domains && exterior_facet_domains->size() > 0)
@@ -730,7 +730,7 @@ void Assembler::assemble_system(GenericMatrix& A,
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
     {
       // Check if we have an interior facet
-      if ( facet->numEntities(mesh.topology().dim()) == 2 ) 
+      if ( facet->num_entities(mesh.topology().dim()) == 2 ) 
       {
         for (uint i = 0; i < A_macro_num_entries; i++) 
           Ae_macro[i] = 0.0; 
@@ -996,7 +996,7 @@ void Assembler::assemble_system(GenericMatrix& A,
       }
 
       // Check if we have an exterior facet
-      if ( facet->numEntities(mesh.topology().dim()) != 2 )  
+      if ( facet->num_entities(mesh.topology().dim()) != 2 )  
       {
         // set element matrix and vector to zero 
         for (uint i=0; i<A_num_entries; i++) 
@@ -1080,7 +1080,7 @@ void Assembler::assemble_system(GenericMatrix& A,
         if (A_ufc.form.num_exterior_facet_integrals() > 0 ) 
         {
           const uint D = mesh.topology().dim(); 
-          if (facet->numEntities(D) != 2) 
+          if (facet->num_entities(D) != 2) 
           {
             ufc::exterior_facet_integral* A_integral = A_ufc.exterior_facet_integrals[0]; 
 
@@ -1101,7 +1101,7 @@ void Assembler::assemble_system(GenericMatrix& A,
         if (b_ufc.form.num_exterior_facet_integrals() > 0) 
         {
           const uint D = mesh.topology().dim(); 
-          if (facet->numEntities(D) != 2) 
+          if (facet->num_entities(D) != 2) 
           {
             ufc::exterior_facet_integral* b_integral = b_ufc.exterior_facet_integrals[0]; 
             if (exterior_facet_domains && exterior_facet_domains->size() > 0)

@@ -122,7 +122,7 @@ void AvgMeshSize::eval(double* values, const Data& data) const
     Facet facet0(mesh, cell.entities(mesh.topology().dim() - 1)[facet]);
 
     // If there are two cells connected to the facet
-    if (facet0.numEntities(mesh.topology().dim()) == 2)
+    if (facet0.num_entities(mesh.topology().dim()) == 2)
     {
       // Create the two connected cells and return the average of their diameter
       Cell cell0(mesh, facet0.entities(mesh.topology().dim())[0]);
@@ -195,7 +195,7 @@ FacetArea::FacetArea(const FunctionSpace& V) : Function(V)
 void FacetArea::eval(double* values, const Data& data) const
 {
   if (data.on_facet())
-    values[0] = data.cell().facetArea(data.facet());
+    values[0] = data.cell().facet_area(data.facet());
   else
     values[0] = 0.0;
 }
@@ -214,7 +214,7 @@ InvFacetArea::InvFacetArea(const FunctionSpace& V) : Function(V)
 void InvFacetArea::eval(double* values, const Data& data) const
 {
   if (data.on_facet() >= 0)
-    values[0] = 1.0 / data.cell().facetArea(data.facet());
+    values[0] = 1.0 / data.cell().facet_area(data.facet());
   else
     values[0] = 0.0;
 }
@@ -261,7 +261,7 @@ void IsOutflowFacet::eval(double* values, const Data& data) const
   Point x;
   for (VertexIterator v(facet); !v.end(); ++v)
     x += v->point();
-  x /= static_cast<double>(facet.numEntities(0));
+  x /= static_cast<double>(facet.num_entities(0));
   
   // Compute size of value
   uint size = 1;

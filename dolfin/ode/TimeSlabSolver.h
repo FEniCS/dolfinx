@@ -80,7 +80,7 @@ namespace dolfin
   private:
 
     /// Choose tolerance
-    void chooseTolerance();
+    void choose_tolerance();
 
   };
 

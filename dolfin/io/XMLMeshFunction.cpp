@@ -70,7 +70,7 @@ XMLMeshFunction::~XMLMeshFunction()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void XMLMeshFunction::startElement(const xmlChar *name, const xmlChar **attrs)
+void XMLMeshFunction::start_element(const xmlChar *name, const xmlChar **attrs)
 {
   switch ( state )
   {
@@ -88,7 +88,7 @@ void XMLMeshFunction::startElement(const xmlChar *name, const xmlChar **attrs)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "entity") == 0 )
     {
-      readEntities(name, attrs);
+      read_entities(name, attrs);
       state = INSIDE_ENTITY;
     }
   default:
@@ -96,7 +96,7 @@ void XMLMeshFunction::startElement(const xmlChar *name, const xmlChar **attrs)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMeshFunction::endElement(const xmlChar *name)
+void XMLMeshFunction::end_element(const xmlChar *name)
 {
   switch ( state )
   {
@@ -134,7 +134,7 @@ bool XMLMeshFunction::close()
 void XMLMeshFunction::readMeshFunction(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
-  std::string type = parseString(name, attrs, "type");
+  std::string type = parse_string(name, attrs, "type");
   uint tdim = parseUnsignedInt(name, attrs,   "dim");
   uint size = parseUnsignedInt(name, attrs,   "size");
   if (strcmp(type.c_str(), "int") == 0 ) 
@@ -175,26 +175,26 @@ void XMLMeshFunction::readMeshFunction(const xmlChar *name, const xmlChar **attr
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMeshFunction::readEntities(const xmlChar *name, const xmlChar **attrs)
+void XMLMeshFunction::read_entities(const xmlChar *name, const xmlChar **attrs)
 {
   // Read index
   uint i = parseUnsignedInt(name, attrs, "index");
   switch ( mf_type )
   {
   case INT:
-    _imeshfunction->set(i, parseInt(name, attrs, "value"));
+    _imeshfunction->set(i, parse_int(name, attrs, "value"));
     break;
 
   case UINT:
-    _uimeshfunction->set(i, parseInt(name, attrs, "value"));
+    _uimeshfunction->set(i, parse_int(name, attrs, "value"));
     break;
 
   case DOUBLE:
-    _dmeshfunction->set(i, parseReal(name, attrs, "value"));
+    _dmeshfunction->set(i, parse_real(name, attrs, "value"));
     break;
 
   case BOOL:
-    _bmeshfunction->set(i, parseBool(name, attrs, "value"));
+    _bmeshfunction->set(i, parse_bool(name, attrs, "value"));
     break;
 
   default:

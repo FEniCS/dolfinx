@@ -46,8 +46,8 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
   mesh._topology.init(tdim);
   
   // Initialize temporary storage for local cell data
-  vertices.reserve(mesh.type().numVertices(tdim));
-  for (uint i = 0; i < mesh.type().numVertices(tdim); i++)
+  vertices.reserve(mesh.type().num_vertices(tdim));
+  for (uint i = 0; i < mesh.type().num_vertices(tdim); i++)
     vertices.push_back(0);
 
   // in the future, could set a string in MeshGeometry that indicates the type of
@@ -73,7 +73,7 @@ void MeshEditor::open(Mesh& mesh, std::string type, uint tdim, uint gdim)
     error("Unknown cell type \"%s\".", type.c_str());
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::initVertices(uint num_vertices)
+void MeshEditor::init_vertices(uint num_vertices)
 {
   // Check if we are currently editing a mesh
   if ( !mesh )
@@ -96,7 +96,7 @@ void MeshEditor::initHigherOrderVertices(uint num_higher_order_vertices)
   mesh->_geometry.init_HigherOrderVertices(gdim, num_higher_order_vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::initCells(uint num_cells)
+void MeshEditor::init_cells(uint num_cells)
 {
   // Check if we are currently editing a mesh
   if ( !mesh )
@@ -105,7 +105,7 @@ void MeshEditor::initCells(uint num_cells)
   // Initialize mesh data
   this->num_cells = num_cells;
   mesh->_topology.init(tdim, num_cells);
-  mesh->_topology(tdim, 0).init(num_cells, mesh->type().numVertices(tdim));
+  mesh->_topology(tdim, 0).init(num_cells, mesh->type().num_vertices(tdim));
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::initHigherOrderCells(uint num_higher_order_cells, uint num_higher_order_cell_dof)
@@ -133,20 +133,20 @@ void MeshEditor::setAffineCellIndicator(uint c, const std::string affine_str)
   mesh->_geometry.setAffineIndicator(c, affine_value);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addVertex(uint v, const Point& p)
+void MeshEditor::add_vertex(uint v, const Point& p)
 {
   // Add vertex
-  addVertexCommon(v, mesh->geometry().dim());
+  add_vertexCommon(v, mesh->geometry().dim());
   
   // Set coordinate
   for (uint i = 0; i < mesh->geometry().dim(); i++)
     mesh->_geometry.set(v, i, p[i]);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addVertex(uint v, double x)
+void MeshEditor::add_vertex(uint v, double x)
 {
   // Add vertex
-  addVertexCommon(v, 1);
+  add_vertexCommon(v, 1);
 
   // Set coordinate, next_vertex doesn't seem to work right
 //  mesh->_geometry.set(next_vertex, 0, x);
@@ -155,20 +155,20 @@ void MeshEditor::addVertex(uint v, double x)
   mesh->_geometry.set(v, 0, x);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addVertex(uint v, double x, double y)
+void MeshEditor::add_vertex(uint v, double x, double y)
 {
   // Add vertex
-  addVertexCommon(v, 2);
+  add_vertexCommon(v, 2);
 
   // Set coordinate
   mesh->_geometry.set(v, 0, x);
   mesh->_geometry.set(v, 1, y);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addVertex(uint v, double x, double y, double z)
+void MeshEditor::add_vertex(uint v, double x, double y, double z)
 {
   // Add vertex
-  addVertexCommon(v, 3);
+  add_vertexCommon(v, 3);
 
   // Set coordinate
   mesh->_geometry.set(v, 0, x);
@@ -216,19 +216,19 @@ void MeshEditor::addHigherOrderVertex(uint v, double x, double y, double z)
   mesh->_geometry.set_higher_order_coordinates(v, 2, z);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addCell(uint c, const std::vector<uint>& v)
+void MeshEditor::add_cell(uint c, const std::vector<uint>& v)
 {
   // Add cell
-  addCellCommon(c, tdim);
+  add_cellCommon(c, tdim);
 
   // Set data
   mesh->_topology(tdim, 0).set(c, v);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addCell(uint c, uint v0, uint v1)
+void MeshEditor::add_cell(uint c, uint v0, uint v1)
 {
   // Add cell
-  addCellCommon(c, 1);
+  add_cellCommon(c, 1);
 
   // Set data
   vertices[0] = v0;
@@ -236,10 +236,10 @@ void MeshEditor::addCell(uint c, uint v0, uint v1)
   mesh->_topology(tdim, 0).set(c, vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2)
+void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2)
 {
   // Add cell
-  addCellCommon(c, 2);
+  add_cellCommon(c, 2);
 
   // Set data
   vertices[0] = v0;
@@ -248,10 +248,10 @@ void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2)
   mesh->_topology(tdim, 0).set(c, vertices);
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2, uint v3)
+void MeshEditor::add_cell(uint c, uint v0, uint v1, uint v2, uint v3)
 {
   // Add cell
-  addCellCommon(c, 3);
+  add_cellCommon(c, 3);
 
   // Set data
   vertices[0] = v0;
@@ -288,7 +288,7 @@ void MeshEditor::close(bool order)
   clear();
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addVertexCommon(uint v, uint gdim)
+void MeshEditor::add_vertexCommon(uint v, uint gdim)
 {
   // Check if we are currently editing a mesh
   if ( !mesh )
@@ -338,7 +338,7 @@ void MeshEditor::addHigherOrderVertexCommon(uint v, uint gdim)
   next_higher_order_vertex++;
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addCellCommon(uint c, uint tdim)
+void MeshEditor::add_cellCommon(uint c, uint tdim)
 {
   // Check if we are currently editing a mesh
   if ( !mesh )

@@ -18,7 +18,7 @@ XMLParameterList::XMLParameterList(ParameterList& parameters)
   state = OUTSIDE;
 }
 //-----------------------------------------------------------------------------
-void XMLParameterList::startElement(const xmlChar *name, const xmlChar **attrs)
+void XMLParameterList::start_element(const xmlChar *name, const xmlChar **attrs)
 {
   switch ( state )
   {
@@ -32,7 +32,7 @@ void XMLParameterList::startElement(const xmlChar *name, const xmlChar **attrs)
   case INSIDE_PARAMETERS:
 
     if ( xmlStrcasecmp(name,(xmlChar *) "parameter") == 0 )
-      readParameter(name,attrs);
+      read_parameter(name,attrs);
     
     break;
     
@@ -41,7 +41,7 @@ void XMLParameterList::startElement(const xmlChar *name, const xmlChar **attrs)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLParameterList::endElement(const xmlChar *name)
+void XMLParameterList::end_element(const xmlChar *name)
 {
   switch ( state )
   {
@@ -69,12 +69,12 @@ bool XMLParameterList::close()
   return state == DONE;
 }
 //-----------------------------------------------------------------------------
-void XMLParameterList::readParameter(const xmlChar *name, const xmlChar **attrs)
+void XMLParameterList::read_parameter(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
-  std::string pname  = parseString(name, attrs, "name");
-  std::string ptype  = parseString(name, attrs, "type");
-  std::string pvalue = parseString(name, attrs, "value");
+  std::string pname  = parse_string(name, attrs, "name");
+  std::string ptype  = parse_string(name, attrs, "type");
+  std::string pvalue = parse_string(name, attrs, "value");
 
   // Set parameter
   if ( ptype == "real" )

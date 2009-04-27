@@ -36,13 +36,13 @@ bc = DirichletBC(P1, u0, DirichletBoundary())
 J = (u - u0)*(u - u0)*dx
 
 # Forward problem
-problem = (dot(grad(v1), mult(p, grad(w1)))*dx, v1*f*dx)
+problem = (dot(grad(v1), p*grad(w1))*dx, v1*f*dx)
 
 # Adjoint problem
-adjoint = (dot(grad(w1), mult(p, grad(v1)))*dx, -2*v1*(u - u0)*dx)
+adjoint = (dot(grad(w1), p*grad(v1))*dx, -2*v1*(u - u0)*dx)
 
 # Update of parameter
-gradient = -dot(grad(z), mult(w0, grad(u)))*dx
+gradient = -dot(grad(z), w0*grad(u))*dx
 px = p.vector()
 
 # Set initial value for parameter

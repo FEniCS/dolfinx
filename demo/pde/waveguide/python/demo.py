@@ -41,7 +41,7 @@ height = 0.5
 mesh = Rectangle(0, 0, width, height, 4, 2)
 
 # Define the function space
-V = FunctionSpace(mesh, "Nedelec", 2)
+V = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 2)
 
 # Define the test and trial functions
 v = TestFunction(V)
@@ -52,8 +52,10 @@ u = TrialFunction(V)
 # with the eigenvalues k_o^2 representing the square of the cutoff wavenumber 
 # and the corresponding right-eigenvector giving the coefficients of the 
 # discrete system used to obtain the approximate field anywhere in the domain   
-s = dot(curl_t(v), curl_t(u))*dx
-t = dot(v, u)*dx
+def curl_t(w):
+    return Dx(w[1], 0) - Dx(w[0], 1)
+s = curl_t(v)*curl_t(u)*dx
+t = inner(v, u)*dx
 
 # Assemble the stiffness matrix (S) and mass matrix (T)
 S = PETScMatrix()
@@ -79,7 +81,7 @@ esolver.solve(S, T)
 # which corresponds with cutoff wavenumber of the the dominant cutoff mode.
 cutoff = None
 for i in range(S.size(1)):
-    (lr, lc) = esolver.getEigenvalue(i)
+    (lr, lc) = esolver.get_eigenvalue(i)
     if lr > 1 and lc == 0:
         cutoff = sqrt(lr)
         break

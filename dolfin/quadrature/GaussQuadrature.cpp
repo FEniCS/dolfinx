@@ -37,7 +37,7 @@ void GaussQuadrature::disp() const
     message("%2d   %.16e   %.16e", i, to_double(points[i]), to_double(weights[i]));
 }
 //-----------------------------------------------------------------------------
-void GaussQuadrature::computePoints()
+void GaussQuadrature::compute_points()
 {
   // Compute Gauss quadrature points on [-1,1] as the
   // as the zeroes of the Legendre polynomials using Newton's method

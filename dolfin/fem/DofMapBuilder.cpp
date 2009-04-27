@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-08-12
-// Last changed: 2009-04-01
+// Last changed: 2009-04-22
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -30,7 +30,7 @@ void DofMapBuilder::build(DofMap& dof_map, UFC& ufc, Mesh& mesh)
   // FIXME: so the mesh can be const here
 
   // Number mesh entities globally
-  for (uint d = 1; d < mesh.topology().dim(); ++d)
+  for (uint d = 1; d <= mesh.topology().dim(); ++d)
   {
     if (dof_map.needs_mesh_entities(d))
       MeshPartitioning::number_entities(mesh, d);
@@ -38,6 +38,6 @@ void DofMapBuilder::build(DofMap& dof_map, UFC& ufc, Mesh& mesh)
 
   // Allocate dof map
   const uint n = dof_map.local_dimension();
-  dof_map.dof_map = new int[n*mesh.numCells()];  
+  dof_map.dof_map = new int[n*mesh.num_cells()];  
 }
 //-----------------------------------------------------------------------------

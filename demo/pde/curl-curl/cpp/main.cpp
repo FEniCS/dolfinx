@@ -24,7 +24,6 @@ using namespace dolfin;
 
 int main()
 {
-  
   // Homogenous external magnetic field (dB/dt)
   class Source : public Function
   {
@@ -62,7 +61,7 @@ int main()
   UnitSphere mesh(8);
 
   // Define functions
-  Source dBdt;
+  Source d_bdt;
   Zero zero;
   Function T;
   Function J;
@@ -75,7 +74,7 @@ int main()
   // Use forms to define variational problem
   EddyCurrentsBilinearForm a(V,V);
   EddyCurrentsLinearForm L(V);
-  L.dBdt = dBdt;
+  L.d_bdt = d_bdt;
   VariationalProblem problem (a, L,  bc);
   
   // Solve problem using default solver

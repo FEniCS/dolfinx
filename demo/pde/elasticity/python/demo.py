@@ -57,13 +57,13 @@ mu    = E / (2*(1 + nu))
 lmbda = E*nu / ((1 + nu)*(1 - 2*nu))
 
 def epsilon(v):
-    return 0.5*(grad(v) + transp(grad(v)))
+    return 0.5*(grad(v) + grad(v).T)
 
 def sigma(v):
-    return 2.0*mu*epsilon(v) + lmbda*mult(trace(epsilon(v)), Identity(len(v)))
+    return 2.0*mu*epsilon(v) + lmbda*tr(epsilon(v))*Identity(v.cell().d)
 
-a = dot(epsilon(v), sigma(u))*dx
-L = dot(v, f)*dx
+a = inner(epsilon(v), sigma(u))*dx
+L = inner(v, f)*dx
 
 # Set up boundary condition at left end
 c = Constant(mesh, [0, 0, 0])

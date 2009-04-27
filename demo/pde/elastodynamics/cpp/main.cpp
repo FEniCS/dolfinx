@@ -96,6 +96,7 @@ int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
 
+/*
   // Create Mesh
   Mesh mesh("../../../../data/meshes/dolfin-2.xml.gz");
 
@@ -211,6 +212,6 @@ int main(int argc, char* argv[])
     }
     ++step;
   }
-  
+*/  
   return 0;
 }

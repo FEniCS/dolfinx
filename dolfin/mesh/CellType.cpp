@@ -20,7 +20,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 CellType::CellType(Type cell_type, Type facet_type)
-  : cell_type(cell_type), facet_type(facet_type)
+  : _cell_type(cell_type), _facet_type(facet_type)
 {
   // Do nothing
 }

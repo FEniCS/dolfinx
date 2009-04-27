@@ -23,8 +23,8 @@ namespace dolfin
     XMLGraph(Graph& graph);
     ~XMLGraph();
     
-    void startElement (const xmlChar* name, const xmlChar** attrs);
-    void endElement   (const xmlChar* name);
+    void start_element (const xmlChar* name, const xmlChar** attrs);
+    void end_element   (const xmlChar* name);
     
     void open(std::string filename);
     bool close();
@@ -34,18 +34,18 @@ namespace dolfin
     enum ParserState { OUTSIDE, INSIDE_GRAPH, INSIDE_VERTICES, 
                        INSIDE_EDGES, DONE };
     
-    void readGraph       (const xmlChar* name, const xmlChar** attrs);
-    void readVertex      (const xmlChar* name, const xmlChar** attrs);
-    void readVertices    (const xmlChar* name, const xmlChar** attrs);
-	void readEdge        (const xmlChar* name, const xmlChar** attrs);
-	void readEdges       (const xmlChar* name, const xmlChar** attrs);
+    void read_graph       (const xmlChar* name, const xmlChar** attrs);
+    void read_vertex      (const xmlChar* name, const xmlChar** attrs);
+    void read_vertices    (const xmlChar* name, const xmlChar** attrs);
+	void read_edge        (const xmlChar* name, const xmlChar** attrs);
+	void read_edges       (const xmlChar* name, const xmlChar** attrs);
     
-    void closeGraph();
+    void close_graph();
 
     Graph& _graph;
     ParserState state;
     GraphEditor editor;
-    uint currentVertex;
+    uint current_vertex;
     
   };
   
