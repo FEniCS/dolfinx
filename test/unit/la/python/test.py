@@ -18,7 +18,6 @@ class AbstractBaseTest(object):
             # Only print this message once per class instance
             print "\nRunning:",type(self).__name__
         
-
     def assemble_matrix(self, use_backend=False):
         " Assemble a simple matrix"
         mesh = UnitSquare(3,3)
@@ -40,11 +39,11 @@ class AbstractBaseTest(object):
     def get_Vector(self):
         from numpy import random, linspace
         vec = Vector(16)
-        vec.set(random.rand(vec.size()))
+        vec.set(random.rand(len(vec)))
         return vec
 
     def run_matrix_test(self,use_backend):
-        from numpy import ndarray
+        from numpy import ndarray, array, ones
         org = self.assemble_matrix(use_backend)
         A = org.copy()
         B = org.copy()
@@ -56,53 +55,75 @@ class AbstractBaseTest(object):
                 A[0]
             elif type == 2:
                 A[0,0,0]
-            elif type == 3:
-                A("0,1")
-            elif type == 4:
-                A(0)
-            else:
-                A(0,0,0)
         
         self.assertRaises(TypeError,wrong_getitem,0)
         self.assertRaises(TypeError,wrong_getitem,1)
         self.assertRaises(TypeError,wrong_getitem,2)
-        self.assertRaises(TypeError,wrong_getitem,3)
-        self.assertRaises(TypeError,wrong_getitem,4)
-        self.assertRaises(TypeError,wrong_getitem,5)
-        
-        self.assertAlmostEqual(A[5,5],A(5,5))
-        self.assertAlmostEqual(A(5,5),B(5,5))
-        
+
         B *= 0.5
         A *= 2
-        self.assertAlmostEqual(A(5,5),4*B(5,5))
+        self.assertAlmostEqual(A[5,5],4*B[5,5])
         
         B /= 2
         A /= 0.5
-        self.assertAlmostEqual(A(5,5),16*B(5,5))
+        self.assertAlmostEqual(A[5,5],16*B[5,5])
         
         A += B
-        self.assertAlmostEqual(A(5,5),17)
+        self.assertAlmostEqual(A[5,5],17)
         
         A -= B
-        self.assertAlmostEqual(A(5,5),16)
+        self.assertAlmostEqual(A[5,5],16)
         
         C = 16*B
-        self.assertAlmostEqual(A(5,5),C(5,5))
+        self.assertAlmostEqual(A[5,5],C[5,5])
         
         D = (C+B)*5
-        self.assertAlmostEqual(D(5,5),85)
+        self.assertAlmostEqual(D[5,5],85)
         
         F = (A-B)/4
-        self.assertAlmostEqual(F(5,5),3.75)
+        self.assertAlmostEqual(F[5,5],3.75)
         
         A.axpy(100,B)
-        self.assertAlmostEqual(A(5,5),116)
+        self.assertAlmostEqual(A[5,5],116)
         
         A2 = A.array()
         self.assertTrue(isinstance(A2,ndarray))
         self.assertEqual(A2.shape,(16,16))
-        self.assertAlmostEqual(A2[5,5],A(5,5))
+        self.assertAlmostEqual(A2[5,5],A[5,5])
+
+        # setitem segfaults for MTL4 backend
+        if not self.backend == "MTL4":
+            A[5,5] = 15.
+            self.assertEqual(A[5,5],15.)
+
+        B = A[0,:]
+        self.assertEqual(B.size(),A.size(1))
+        self.assertEqual(B[1],A[0,1])
+        
+        # Epetra backend does not implement resize () which is needed by Matrix slicing
+        if self.backend == "Epetra":
+            return
+        
+        inds1 = [0,4,5,10]
+        
+        C = A[inds1,inds1]
+        self.assertEqual(C.size(0),len(inds1))
+        self.assertEqual(C.size(1),len(inds1))
+        self.assertEqual(C[2,2],A[5,5])
+
+        inds2 = array(inds1)
+        one_vec = Vector(len(inds1))
+        one_vec[:] = 1.
+        
+        D = A[inds1,inds2]
+        self.assertAlmostEqual(((C-D)*one_vec).sum(),0.0)
+
+        E = A[inds1,:]
+        self.assertEqual(E.size(0),len(inds1))
+        self.assertEqual(E.size(1),A.size(1))
+        for i in xrange(len(inds1)):
+            for j in xrange(A.size(1)):
+                self.assertAlmostEqual(E[i,j],A[inds1[i],j])
         
     def test_matrix_with_backend(self):
         self.run_matrix_test(True)
@@ -111,7 +132,7 @@ class AbstractBaseTest(object):
         self.run_matrix_test(False)
 
     def test_vector(self):
-        from numpy import ndarray, linspace
+        from numpy import ndarray, linspace, array
         org = self.get_Vector()
 
         A = org.copy()
@@ -158,11 +179,20 @@ class AbstractBaseTest(object):
         self.assertAlmostEqual(A2[1],A[1])
         
         ind = [1,3,6,9,15]
+        ind1 = array([1,3,6,9,15])
         G  = A[ind]
+        G1 = A[ind1]
         G2 = A2[ind]
+        self.assertAlmostEqual(G1.sum(),G.sum())
         self.assertAlmostEqual(G2.sum(),G.sum())
         self.assertAlmostEqual(A[-1],A[15])
         self.assertAlmostEqual(A[-16],A[0])
+        self.assertEqual(len(ind),len(G))
+        self.assertTrue(all(val==G[i] for i, val in enumerate(G)))
+
+        H  = A.copy()
+        H.assign(0.0)
+        H[ind] = G
         
         C[:] = 2
         D.assign(2)
@@ -178,7 +208,8 @@ class AbstractBaseTest(object):
         
         self.assertRaises(RuntimeError,wrong_index,(-17))
         self.assertRaises(RuntimeError,wrong_index,(16))
-        self.assertRaises(RuntimeError,wrong_index,("jada"))
+        self.assertRaises(TypeError,wrong_index,("jada"))
+        self.assertRaises(TypeError,wrong_index,(.5))
         self.assertRaises(RuntimeError,wrong_index,([-17,2]))
         self.assertRaises(RuntimeError,wrong_index,([16,2]))
         
@@ -187,8 +218,9 @@ class AbstractBaseTest(object):
         
         self.assertRaises(RuntimeError,wrong_dim,[0,2],[0,2,4])
         self.assertRaises(RuntimeError,wrong_dim,[0,2],slice(0,4,1))
-        self.assertRaises(RuntimeError,wrong_dim,0,slice(0,4,1))
+        self.assertRaises(TypeError,wrong_dim,0,slice(0,4,1))
 
+        # Vector multiplication is not implemented for the MTL4 backend
         if self.backend == "MTL4":
             return
         
@@ -207,7 +239,7 @@ class AbstractBaseTest(object):
         
         u = A*v
         self.assertTrue(isinstance(u,type(v)))
-        self.assertEqual(u.size(),v.size())
+        self.assertEqual(len(u),len(v))
         
         u2 = 2*u - A*v
         self.assertAlmostEqual(u2[4],u[4])
@@ -221,8 +253,11 @@ class AbstractBaseTest(object):
         u_numpy = dot(A_numpy,v_numpy)
         u_numpy2 = A*v_numpy
         
-        self.assertTrue(absolute(u.array()-u_numpy).sum() < DOLFIN_EPS*v.size())
-        self.assertTrue(absolute(u_numpy2-u_numpy).sum() < DOLFIN_EPS*v.size())
+        self.assertTrue(absolute(u.array()-u_numpy).sum() < DOLFIN_EPS*len(v))
+        self.assertTrue(absolute(u_numpy2-u_numpy).sum() < DOLFIN_EPS*len(v))
+        
+        
+        
 
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS and MTL4 backends

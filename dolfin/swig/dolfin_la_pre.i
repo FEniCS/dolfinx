@@ -49,17 +49,10 @@
 %ignore dolfin::GenericTensor::add(const double* , const uint* , const uint * const *);
 %ignore dolfin::GenericTensor::instance;
 
-// Prepend a mod() of the provided index in the GenericVector.{get,set}item function
-%pythonprepend dolfin::VEC_TYPE::getitem(uint) %{
-  if len(args) == 2:
-      args = (args[0],args[1]%self.size())
-%}
-
-%pythonprepend dolfin::VEC_TYPE::setitem(uint, double) %{
-  if len(args) == 3:
-      args = (args[0],args[1]%self.size(),args[2])
-%}
-
+// Declare newobject for vector and matrix get functions
+%newobject _get_vector_sub_vector;
+%newobject _get_matrix_sub_vector;
+%newobject _get_matrix_sub_matrix;
 
 // Define a macros for the linear algebra factory interface
 %define LA_PRE_FACTORY(FACTORY_TYPE)
@@ -79,7 +72,6 @@
 %ignore dolfin::VEC_TYPE::operator-=;
 %ignore dolfin::VEC_TYPE::getitem;
 %ignore dolfin::VEC_TYPE::setitem;
-%newobject dolfin::VEC_TYPE::__getitem__(PyObject*);
 
 // Ignore the get and set functions used for blocks 
 // NOTE: The %ignore have to be set using the actuall type used in the declaration
@@ -106,6 +98,10 @@
 %newobject dolfin::MAT_TYPE::copy;
 
 %rename (_data) dolfin::MAT_TYPE::data() const;
+
+%ignore dolfin::MAT_TYPE::getitem;
+%ignore dolfin::MAT_TYPE::setitem;
+%ignore dolfin::MAT_TYPE::operator();
 %enddef
 
 // Run the macros with different types
