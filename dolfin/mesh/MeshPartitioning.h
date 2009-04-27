@@ -7,11 +7,18 @@
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
 
+#include <iterator>
 #include <vector>
 #include <dolfin/common/types.h>
 
 namespace dolfin
 {
+
+  template<typename InputIterator> void print_container(std::ostream& ostr, InputIterator itbegin, InputIterator itend, const std::string& delimiter)
+  {
+    std::copy(itbegin, itend, std::ostream_iterator<typename InputIterator::value_type>(ostr, delimiter.c_str()));
+  }
+
 
   class LocalMeshData;
 
