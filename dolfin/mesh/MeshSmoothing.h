@@ -9,7 +9,7 @@
 
 namespace dolfin
 {
-  
+
   class Mesh;
 
   /// This class implements mesh smoothing. The coordinates of

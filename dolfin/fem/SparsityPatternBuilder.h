@@ -26,13 +26,13 @@ namespace dolfin
   class SparsityPatternBuilder
   {
   public:
-    
+
     /// Build sparsity pattern
     static void build(GenericSparsityPattern& sparsity_pattern, const Mesh& mesh,
                       UFC& ufc, const std::vector<const DofMap*> dof_maps);
 
     /// Build sparsity pattern
-    static void build(GenericSparsityPattern& sparsity_pattern, 
+    static void build(GenericSparsityPattern& sparsity_pattern,
                       UFC& ufc, const Form& a);
 
 

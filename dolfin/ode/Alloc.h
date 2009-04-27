@@ -18,14 +18,14 @@ namespace dolfin
   /// time slab data structures are simple arrays.
   ///
   /// FIXME: Maybe this should be a template?
-  
+
   class Alloc
   {
   public:
-    
+
     /// Constructor
     Alloc();
-        
+
     /// (Re-)allocate an array of ints
     static void realloc(int** data, uint oldsize, uint newsize);
 
@@ -47,7 +47,7 @@ namespace dolfin
     uint size; // Allocated size
     uint next; // Next available position (used size)
   };
-  
+
 }
 
 #endif

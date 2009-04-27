@@ -12,21 +12,21 @@
 #include <dolfin/parameter/Parametrized.h>
 #include "enums_la.h"
 
-#endif 
+#endif
 
-namespace dolfin 
+namespace dolfin
 {
-  class EpetraVector; 
-  class EpetraMatrix; 
+  class EpetraVector;
+  class EpetraMatrix;
 
   /// This class specifies the interface for user-defined Krylov
   /// method EpetraPreconditioners. A user wishing to implement her own
   /// EpetraPreconditioner needs only supply a function that approximately
   /// solves the linear system given a right-hand side.
 
-  class EpetraPreconditioner : public Parametrized  
+  class EpetraPreconditioner : public Parametrized
   {
-    public: 
+    public:
     /// Constructor
     EpetraPreconditioner() {};
 
@@ -34,22 +34,22 @@ namespace dolfin
     virtual ~EpetraPreconditioner() {};
 
     /// Set the Preconditioner type (amg, ilu, etc.)
-    void set_type(PreconditionerType type); 
+    void set_type(PreconditionerType type);
 
-    /// Initialise preconditioner 
+    /// Initialise preconditioner
     virtual void init(const EpetraMatrix& A);
 
     /// Solve linear system (M^-1)Ax = y
     virtual void solve(EpetraVector& x, const EpetraVector& b);
 
-    private: 
-    PreconditionerType prec_type; 
+    private:
+    PreconditionerType prec_type;
 
-  }; 
+  };
 
 }
 
 
-#endif 
+#endif
 
 

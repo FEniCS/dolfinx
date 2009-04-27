@@ -63,7 +63,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   // Sort overlap
   for (std::map<uint, std::vector<uint> >::iterator it = (*overlap).begin(); it != (*overlap).end(); ++it)
       std::sort((*it).second.begin(), (*it).second.end());
-  
+
   // Initialize entities of dimension d
   mesh.init(d);
 
@@ -77,7 +77,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     std::sort(entity_vertices.begin(), entity_vertices.end());
     entities[e->index()] = entity_vertices;
   }
-  
+
   /// Find out which entities to ignore, which to number and which to number
   /// and send to other processes. Entities shared by two or more processes
   /// are numbered by the lower ranked process.
@@ -88,7 +88,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
 
   // Entities to number
   std::vector<uint> owned_entities;
-    
+
   // Entites to number and send (shared with higher rank processes)
   std::vector<uint> shared_entities;
   std::vector<std::vector<uint> > shared_entity_vertices;
@@ -111,13 +111,13 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       {
         const uint v = entity_vertices[i];
 
-        intersection_end = std::set_intersection(intersection.begin(), intersection_end, 
+        intersection_end = std::set_intersection(intersection.begin(), intersection_end,
                                                  (*overlap)[v].begin(), (*overlap)[v].end(), intersection.begin());
 
       }
       entity_processes = std::vector<uint>(intersection.begin(), intersection_end);
     }
-    
+
     // Check if entity is ignored (shared with lower ranked process)
     bool ignore = false;
     for (uint i = 0; i < entity_processes.size(); ++i)
@@ -128,7 +128,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
         break;
       }
     }
-      
+
     // Check cases
     if (entity_processes.size() == 0)
       owned_entities.push_back(e);
@@ -142,7 +142,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       shared_entity_processes.push_back(entity_processes);
     }
   }
-     
+
   // Communicate all offsets
   std::vector<uint> offsets(num_processes);
   std::fill(offsets.begin(), offsets.end(), 0);
@@ -181,7 +181,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
 
     // Prepare data for sending
     for (uint j = 0; j < entity_processes.size(); ++j)
-    {   
+    {
       // Store interleaved: entity index, number of vertices, global vertex indices
       values.push_back(entity_index);
       values.push_back(entity_vertices.size());
@@ -207,12 +207,12 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     for (uint j=0; j < entity_size; ++j)
       entity.push_back(values[i++]);
 
-    if (ignored_entities.count(entity) == 0) 
+    if (ignored_entities.count(entity) == 0)
       error("Recieved global value for non-ignored entity.");
 
     entity_indices[ignored_entities[entity]] = global_index;
   }
-  
+
   // Create mesh data
   std::stringstream name;
   name << "global entity indices " << d;
@@ -282,7 +282,7 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
   options[0] = 0;
   options[1] = 0;
   options[2] = 0;
-  
+
   // Partitioning array to be computed by ParMETIS (note bug in manual: vertices, not cells!)
   int* part = new int[num_local_cells];
 
@@ -294,13 +294,13 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
 
   // Construct communicator (copy of MPI_COMM_WORLD)
   MPICommunicator comm;
-  
+
   // Call ParMETIS to partition mesh
   ParMETIS_V3_PartMeshKway(elmdist, eptr, eind,
                            elmwgt, &wgtflag, &numflag, &ncon,
                            &ncommonnodes, &nparts,
                            tpwgts, ubvec, options,
-                           &edgecut, part, &(*comm)); 
+                           &edgecut, part, &(*comm));
   message("Partitioned mesh, edge cut is %d.", edgecut);
 
   // Copy mesh_data
@@ -308,7 +308,7 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
   cell_partition.reserve(num_local_cells);
   for (uint i = 0; i < num_local_cells; i++)
     cell_partition.push_back(static_cast<uint>(part[i]));
-  
+
   // Cleanup
   delete [] elmdist;
   delete [] eptr;
@@ -345,7 +345,7 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
       cell_vertices_partition.push_back(cell_partition[i]);
     }
   }
-  
+
   // Distribute cell-vertex connectivity
   MPI::distribute(cell_vertices, cell_vertices_partition);
   cell_vertices_partition.clear();
@@ -373,7 +373,7 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   // it needs to send its vertices.
 
   dolfin_debug("Distributing vertices...");
-  
+
   // Compute which vertices we need
   std::set<uint> needed_vertex_indices;
   std::vector<std::vector<uint> >& cell_vertices = mesh_data.cell_vertices;
@@ -393,7 +393,7 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
     vertex_indices.push_back(*it);
     vertex_location[location].push_back(*it);
   }
-  needed_vertex_indices.clear(); 
+  needed_vertex_indices.clear();
   MPI::distribute(vertex_indices, vertex_partition);
   dolfin_assert(vertex_indices.size() == vertex_partition.size());
 
@@ -451,7 +451,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
       p[j] = mesh_data.vertex_coordinates[i][j];
     editor.add_vertex(i, p);
   }
-  
+
   // Add cells
   editor.init_cells(mesh_data.cell_vertices.size());
   const uint num_cell_vertices = mesh_data.cell_type->num_entities(0);
@@ -467,13 +467,13 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Construct local to global mapping based on the global to local mapping
   MeshFunction<uint>* global_vertex_indices = mesh.data().create_mesh_function("global entity indices 0", 0);
   dolfin_assert(global_vertex_indices);
-  std::map<uint, uint>::iterator iter; 
+  std::map<uint, uint>::iterator iter;
   for (iter = glob2loc.begin(); iter != glob2loc.end(); ++iter)
     global_vertex_indices->set((*iter).second, (*iter).first);
 
   /// Communicate global number of boundary vertices to all processes
 
-  // Construct boundary mesh 
+  // Construct boundary mesh
   BoundaryMesh bmesh(mesh);
   MeshFunction<uint>* boundary_vertex_map = bmesh.data().mesh_function("vertex map");
   dolfin_assert(boundary_vertex_map);
@@ -518,8 +518,8 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     // Compute intersection of global indices
     std::vector<uint> intersection(std::min(boundary_size, boundary_sizes[q]));
     std::vector<uint>::iterator intersection_end = std::set_intersection(
-         global_vertex_send, global_vertex_send + boundary_size, 
-         global_vertex_recv, global_vertex_recv + boundary_sizes[q], intersection.begin()); 
+         global_vertex_send, global_vertex_send + boundary_size,
+         global_vertex_recv, global_vertex_recv + boundary_sizes[q], intersection.begin());
 
 
     // Fill overlap information

@@ -14,7 +14,7 @@
 
 namespace dolfin
 {
-  
+
   /// Base class for sparsity patterns of vectors/matrices. Concrete
   /// sub classes can be used to initialize vectors and sparse
   /// matrices.
@@ -41,7 +41,7 @@ namespace dolfin
     /// Insert non-zero entry
     virtual void pinsert(const uint* num_rows, const uint * const * rows) = 0;
 
-    /// Return global size 
+    /// Return global size
     virtual uint size(uint n) const = 0;
 
     /// Return array with number of non-zeroes per row
@@ -57,8 +57,8 @@ namespace dolfin
 
     /// Finalize sparsity pattern (needed by most parallel la backends)
     virtual void apply() = 0;
-    
-    
+
+
 
   };
 

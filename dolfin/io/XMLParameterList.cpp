@@ -23,19 +23,19 @@ void XMLParameterList::start_element(const xmlChar *name, const xmlChar **attrs)
   switch ( state )
   {
   case OUTSIDE:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "parameters") == 0 )
       state = INSIDE_PARAMETERS;
-    
+
     break;
 
   case INSIDE_PARAMETERS:
 
     if ( xmlStrcasecmp(name,(xmlChar *) "parameter") == 0 )
       read_parameter(name,attrs);
-    
+
     break;
-    
+
   default:
     ;
   }
@@ -46,14 +46,14 @@ void XMLParameterList::end_element(const xmlChar *name)
   switch ( state )
   {
   case INSIDE_PARAMETERS:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "parameters") == 0 )
     {
       state = DONE;
     }
-    
+
     break;
-    
+
   default:
     ;
   }

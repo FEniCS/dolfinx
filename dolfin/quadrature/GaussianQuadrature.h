@@ -10,7 +10,7 @@
 #include "Quadrature.h"
 
 namespace dolfin {
-  
+
   /// Gaussian-type quadrature rule on the double line,
   /// including Gauss, Radau, and Lobatto quadrature.
   ///
@@ -21,11 +21,11 @@ namespace dolfin {
   class GaussianQuadrature : public Quadrature
   {
   public:
-    
+
     GaussianQuadrature(unsigned int n);
-    
+
   protected:
-    
+
     // Compute points and weights
     void init();
 
@@ -40,9 +40,9 @@ namespace dolfin {
 
     /// Display quadrature data
     virtual void disp() const = 0;
-    
+
   };
-  
+
 }
 
 #endif

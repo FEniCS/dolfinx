@@ -33,28 +33,28 @@ namespace dolfin
   class LUSolver : public Parametrized
   {
 
-  /// LU solver for the built-in LA backends. 
-    
+  /// LU solver for the built-in LA backends.
+
   public:
 
-    LUSolver(MatrixType matrix_type = nonsymmetric) : cholmod_solver(0), 
-             umfpack_solver(0), petsc_solver(0), epetra_solver(0), 
+    LUSolver(MatrixType matrix_type = nonsymmetric) : cholmod_solver(0),
+             umfpack_solver(0), petsc_solver(0), epetra_solver(0),
              matrix_type(matrix_type) {}
-    
-    ~LUSolver() 
-    { 
-      delete cholmod_solver; 
-      delete umfpack_solver; 
-      delete petsc_solver; 
-      delete epetra_solver; 
+
+    ~LUSolver()
+    {
+      delete cholmod_solver;
+      delete umfpack_solver;
+      delete petsc_solver;
+      delete epetra_solver;
     }
-    
+
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
     {
       Timer timer("LU solver");
 
 #ifdef HAS_PETSC
-      if (A.has_type<PETScMatrix>()) 
+      if (A.has_type<PETScMatrix>())
       {
         if (!petsc_solver)
         {
@@ -65,7 +65,7 @@ namespace dolfin
       }
 #endif
 #ifdef HAS_TRILINOS
-      if (A.has_type<EpetraMatrix>()) 
+      if (A.has_type<EpetraMatrix>())
       {
         if (!epetra_solver)
         {
@@ -106,7 +106,7 @@ namespace dolfin
         }
         return umfpack_solver->factorize(A);
     }
-    
+
     uint factorized_solve(GenericVector& x, const GenericVector& b)
     {
       if (!umfpack_solver)

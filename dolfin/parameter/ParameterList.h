@@ -17,10 +17,10 @@ namespace dolfin
 {
 
   class NewXMLParameterList;
-  
+
   /// This class represents a database of parameters, where each
   /// parameter is uniquely identified by a string.
-  
+
   class ParameterList
   {
   public:
@@ -30,10 +30,10 @@ namespace dolfin
 
     /// Destructor
     ~ParameterList();
-	 
+
     /// Add parameter
     void add(std::string key, const Parameter& value);
-    
+
     /// Set value of parameter
     void set(std::string key, const Parameter& value);
 
@@ -49,7 +49,7 @@ namespace dolfin
     /// Friends
     friend class XMLFile;
     friend class NewXMLParameterList;
-    
+
     // Used by NewXMLFile for templated i/o
     typedef NewXMLParameterList XMLHandler;
   private:
@@ -60,12 +60,12 @@ namespace dolfin
     // Typedef of iterators for convenience
     typedef std::map<const std::string, Parameter>::iterator iterator;
     typedef std::map<const std::string, Parameter>::const_iterator const_iterator;
-    
+
     // Typedef of pair for convenience
     typedef std::pair<const std::string, Parameter> pair;
-    
+
   };
-  
+
 }
 
 #endif

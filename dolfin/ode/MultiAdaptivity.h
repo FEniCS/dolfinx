@@ -54,7 +54,7 @@ namespace dolfin
 
     // std::vector for storing temporary data during propagation of time steps (size N)
     real* ktmp;
-    
+
     // Values of right-hand side at quadrature points (size m)
     real* f;
 

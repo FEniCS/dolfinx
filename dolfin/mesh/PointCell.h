@@ -41,7 +41,7 @@ namespace dolfin
 
     /// Order entities locally (connectivity 1-0, 2-0, 2-1)
     void order_entities(Cell& cell) const;
-    
+
     /// Refine cell uniformly
     void refine_cell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
 
@@ -68,8 +68,8 @@ namespace dolfin
 
     /// Check for intersection with line defined by points
     bool intersects(const MeshEntity& entity, const Point& p0, const Point& p1) const;
-    
-    /// Check for intersection with cell 
+
+    /// Check for intersection with cell
     bool intersects(const MeshEntity& entity, const Cell& cell) const;
 
     /// Return description of cell type

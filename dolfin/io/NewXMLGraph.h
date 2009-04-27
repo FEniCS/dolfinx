@@ -17,38 +17,38 @@ namespace dolfin
 {
   class Graph;
   class NewXMLFile;
-  
+
   class NewXMLGraph : public XMLHandler
   {
   public:
 
     NewXMLGraph(Graph& graph, NewXMLFile& parser);
     ~NewXMLGraph();
-    
+
     void start_element (const xmlChar* name, const xmlChar** attrs);
     void end_element   (const xmlChar* name);
 
     static void write(const Graph& graph, std::ostream& outfile, uint indentation_level=0);
-    
+
   private:
-    
-    enum parser_state { OUTSIDE, INSIDE_GRAPH, INSIDE_VERTICES, 
+
+    enum parser_state { OUTSIDE, INSIDE_GRAPH, INSIDE_VERTICES,
                        INSIDE_EDGES, DONE };
-    
+
     void read_graph       (const xmlChar* name, const xmlChar** attrs);
     void read_vertex      (const xmlChar* name, const xmlChar** attrs);
     void read_vertices    (const xmlChar* name, const xmlChar** attrs);
     void read_edge        (const xmlChar* name, const xmlChar** attrs);
     void read_edges       (const xmlChar* name, const xmlChar** attrs);
-    
+
     void close_graph();
 
     Graph& graph;
     parser_state state;
     GraphEditor editor;
-    
+
   };
-  
+
 }
 
 #endif

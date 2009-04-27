@@ -10,7 +10,7 @@
 #include "GenericLinearSolver.h"
 
 #ifdef HAS_CHOLMOD
-extern "C" 
+extern "C"
 {
   #include <cholmod.h>
 }
@@ -26,12 +26,12 @@ namespace dolfin
   /// linear systems of the form Ax = b. Sparse matrices
   /// are solved using CHOLMOD http://www.cise.ufl.edu/research/sparse/cholmod/
   /// is installed.
-    
+
   class CholmodCholeskySolver : public GenericLinearSolver
   {
 
   public:
-    
+
     /// Constructor
     CholmodCholeskySolver();
 
@@ -54,7 +54,7 @@ namespace dolfin
     class Cholmod
     {
     public:
- 
+
       Cholmod();
       ~Cholmod();
 
@@ -69,7 +69,7 @@ namespace dolfin
 
       /// Factorized solve
       void factorized_solve(double*x, const double* b);
-      
+
       uint N;
       bool factorized;
 
@@ -77,9 +77,9 @@ namespace dolfin
 
       /// Compute residual: b-Ax
       cholmod_dense* residual(cholmod_dense* x, cholmod_dense* b);
-      
+
       /// Compute residual norm
-      double residual_norm(cholmod_dense* r, cholmod_dense* x, 
+      double residual_norm(cholmod_dense* r, cholmod_dense* x,
 			   cholmod_dense* b);
 
       /// Perform one refinement

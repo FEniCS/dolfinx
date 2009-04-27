@@ -23,17 +23,17 @@ void XMLBLASFormData::start_element(const xmlChar *name, const xmlChar **attrs)
   switch ( state )
   {
   case OUTSIDE:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "form") == 0 )
     {
       read_form(name, attrs);
       state = INSIDE_FORM;
     }
-    
+
     break;
 
   case INSIDE_FORM:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "interior") == 0 )
     {
       read_interior(name, attrs);
@@ -44,11 +44,11 @@ void XMLBLASFormData::start_element(const xmlChar *name, const xmlChar **attrs)
       read_boundary(name, attrs);
       state = INSIDE_BOUNDARY;
     }
-    
+
     break;
-    
+
   case INSIDE_INTERIOR:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "term") == 0 )
     {
       read_term(name,attrs);
@@ -58,15 +58,15 @@ void XMLBLASFormData::start_element(const xmlChar *name, const xmlChar **attrs)
     break;
 
   case INSIDE_BOUNDARY:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "term") == 0 )
     {
       read_term(name,attrs);
       state = INSIDE_BOUNDARY_TERM;
     }
-    
+
     break;
-    
+
   case INSIDE_INTERIOR_TERM:
 
     if ( xmlStrcasecmp(name,(xmlChar *) "geometrytensor") == 0 )
@@ -83,7 +83,7 @@ void XMLBLASFormData::start_element(const xmlChar *name, const xmlChar **attrs)
     break;
 
   case INSIDE_BOUNDARY_TERM:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "referencetensor") == 0 )
     {
       readRefTensor(name, attrs);
@@ -99,7 +99,7 @@ void XMLBLASFormData::start_element(const xmlChar *name, const xmlChar **attrs)
     break;
 
   case INSIDE_INTERIOR_REFTENSOR:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "entry") == 0 )
     {
       read_entry(name, attrs);
@@ -108,18 +108,18 @@ void XMLBLASFormData::start_element(const xmlChar *name, const xmlChar **attrs)
     break;
 
   case INSIDE_BOUNDARY_REFTENSOR:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "entry") == 0 )
     {
       read_entry(name, attrs);
     }
 
     break;
-   
+
   default:
     ;
   }
-  
+
 }
 //-----------------------------------------------------------------------------
 void XMLBLASFormData::end_element(const xmlChar *name)
@@ -129,7 +129,7 @@ void XMLBLASFormData::end_element(const xmlChar *name)
   switch ( state )
   {
   case INSIDE_FORM:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "form") == 0 )
     {
       init_form();
@@ -137,69 +137,69 @@ void XMLBLASFormData::end_element(const xmlChar *name)
       data_interior.clear();
       state = DONE;
     }
-    
+
     break;
-    
+
   case INSIDE_INTERIOR:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "interior") == 0 )
       state = INSIDE_FORM;
-    
+
     break;
 
   case INSIDE_BOUNDARY:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "boundary") == 0 )
       state = INSIDE_FORM;
-    
+
     break;
 
   case INSIDE_INTERIOR_TERM:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "term") == 0 )
       state = INSIDE_INTERIOR;
-    
+
     break;
 
   case INSIDE_BOUNDARY_TERM:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "term") == 0 )
       state = INSIDE_BOUNDARY;
-    
+
     break;
 
   case INSIDE_INTERIOR_GEOTENSOR:
-	 
+
     if ( xmlStrcasecmp(name,(xmlChar *) "geometrytensor") == 0 )
       state = INSIDE_INTERIOR_TERM;
-    
+
     break;
 
   case INSIDE_BOUNDARY_GEOTENSOR:
-	 
+
     if ( xmlStrcasecmp(name,(xmlChar *) "geometrytensor") == 0 )
       state = INSIDE_BOUNDARY_TERM;
-    
+
     break;
-    
+
   case INSIDE_INTERIOR_REFTENSOR:
-	 
+
     if ( xmlStrcasecmp(name,(xmlChar *) "referencetensor") == 0 )
       state = INSIDE_INTERIOR_TERM;
-    
+
     break;
 
   case INSIDE_BOUNDARY_REFTENSOR:
-	 
+
     if ( xmlStrcasecmp(name,(xmlChar *) "referencetensor") == 0 )
       state = INSIDE_BOUNDARY_TERM;
-    
+
     break;
-    
+
   default:
     ;
   }
-  
+
 }
 //-----------------------------------------------------------------------------
 void XMLBLASFormData::open(std::string filename)

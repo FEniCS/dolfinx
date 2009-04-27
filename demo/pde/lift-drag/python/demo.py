@@ -22,7 +22,7 @@ from dolfin import *
 # Read the mesh from file
 mesh =  Mesh("../mesh.xml.gz")
 
-# Create FunctionSpace for pressure field 
+# Create FunctionSpace for pressure field
 Vp = FunctionSpace(mesh, "CG", 1)
 
 p = Function(Vp, "../pressure.xml.gz")

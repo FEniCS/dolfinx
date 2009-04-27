@@ -66,9 +66,9 @@ namespace dolfin
 
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const
-    { 
-      if (dof_map) return dof_map_size;  
-      else return ufc_dof_map->global_dimension(); 
+    {
+      if (dof_map) return dof_map_size;
+      else return ufc_dof_map->global_dimension();
     }
 
     /// Return the dimension of the local finite element function space
@@ -97,7 +97,7 @@ namespace dolfin
     /// Build parallel dof map
     void build(UFC& ufc, Mesh& mesh);
 
-    /// Build dof map on only a subdomain of the mesh (meshfunction contains booleans for each cell)  
+    /// Build dof map on only a subdomain of the mesh (meshfunction contains booleans for each cell)
     void build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction<bool>& meshfunction);
 
     /// Return renumbering (used for testing)
@@ -129,11 +129,11 @@ namespace dolfin
     // Precomputed dof map
     int* dof_map;
 
-    // Size of dof_map 
+    // Size of dof_map
     uint dof_map_size;
 
     // Cell map for restriction
-    int* cell_map; 
+    int* cell_map;
 
     // UFC dof map
     boost::shared_ptr<ufc::dof_map> ufc_dof_map;

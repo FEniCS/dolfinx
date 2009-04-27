@@ -10,7 +10,7 @@
 #include <dolfin/main/SubSystemsManager.h>
 
 namespace dolfin
-{ 
+{
   /// This class calls SubSystemsManger to initialise PETSc.
   ///
   /// All PETSc objects must be derived from this class.

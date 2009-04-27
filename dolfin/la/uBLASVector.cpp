@@ -32,14 +32,14 @@ uBLASVector::uBLASVector(): Variable("x", "uBLAS vector"), x(new ublas_vector(0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(uint N): Variable("x", "uBLAS vector"), 
+uBLASVector::uBLASVector(uint N): Variable("x", "uBLAS vector"),
                                   x(new ublas_vector(N))
 {
   // Clear vector
   x->clear();
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(const uBLASVector& x): Variable("x", "uBLAS vector"), 
+uBLASVector::uBLASVector(const uBLASVector& x): Variable("x", "uBLAS vector"),
                          x(new ublas_vector(*(x.x)))
 {
   //Do nothing
@@ -59,7 +59,7 @@ void uBLASVector::resize(uint N)
 {
   if(x->size() == N)
     return;
- 
+
   x->resize(N, false);
 }
 //-----------------------------------------------------------------------------
@@ -121,7 +121,7 @@ void uBLASVector::zero()
 //-----------------------------------------------------------------------------
 double uBLASVector::norm(NormType type) const
 {
-  switch (type) 
+  switch (type)
   {
     case l1:
       return norm_1(*x);
@@ -154,7 +154,7 @@ double uBLASVector::sum() const
 //-----------------------------------------------------------------------------
 void uBLASVector::axpy(double a, const GenericVector& y)
 {
-  if ( size() != y.size() )  
+  if ( size() != y.size() )
     error("Vectors must be of same size.");
 
   (*x) += a * y.down_cast<uBLASVector>().vec();
@@ -165,46 +165,46 @@ double uBLASVector::inner(const GenericVector& y) const
   return ublas::inner_prod(*x, y.down_cast<uBLASVector>().vec());
 }
 //-----------------------------------------------------------------------------
-const GenericVector& uBLASVector::operator= (const GenericVector& y) 
-{ 
+const GenericVector& uBLASVector::operator= (const GenericVector& y)
+{
   *x = y.down_cast<uBLASVector>().vec();
-  return *this; 
+  return *this;
 }
 //-----------------------------------------------------------------------------
-const uBLASVector& uBLASVector::operator= (const uBLASVector& y) 
-{ 
+const uBLASVector& uBLASVector::operator= (const uBLASVector& y)
+{
   *x = y.vec();
-  return *this; 
+  return *this;
 }
 //-----------------------------------------------------------------------------
-const uBLASVector& uBLASVector::operator= (double a) 
-{ 
+const uBLASVector& uBLASVector::operator= (double a)
+{
   x->ublas_vector::assign(ublas::scalar_vector<double> (x->size(), a));
-  return *this; 
+  return *this;
 }
 //-----------------------------------------------------------------------------
-const uBLASVector& uBLASVector::operator*= (const double a) 
-{ 
+const uBLASVector& uBLASVector::operator*= (const double a)
+{
   (*x) *= a;
-  return *this;     
+  return *this;
 }
 //-----------------------------------------------------------------------------
-const uBLASVector& uBLASVector::operator/= (const double a) 
-{ 
+const uBLASVector& uBLASVector::operator/= (const double a)
+{
   (*x) /= a;
-  return *this;     
+  return *this;
 }
 //-----------------------------------------------------------------------------
-const uBLASVector& uBLASVector::operator+= (const GenericVector& y) 
-{ 
+const uBLASVector& uBLASVector::operator+= (const GenericVector& y)
+{
   *x += y.down_cast<uBLASVector>().vec();
-  return *this; 
+  return *this;
 }
 //-----------------------------------------------------------------------------
-const uBLASVector& uBLASVector::operator-= (const GenericVector& y) 
-{ 
+const uBLASVector& uBLASVector::operator-= (const GenericVector& y)
+{
   *x -= y.down_cast<uBLASVector>().vec();
-  return *this; 
+  return *this;
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::disp(uint precision) const

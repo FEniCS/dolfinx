@@ -29,12 +29,12 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
   // Initialize local arrays
   f = new real[method.qsize()];
   u = new real[method.nsize()];
-  
+
   // Don't report number of GMRES iteration if not asked to
   solver.set("Krylov report", monitor);
   solver.set("Krylov absolute tolerance", 0.01);
   solver.set("Krylov relative tolerance", 0.01 * to_double(tol));
-  
+
   // Initialize Jacobian
   if ( updated_jacobian )
     A = new UpdatedMultiAdaptiveJacobian(*this, timeslab);
@@ -50,7 +50,7 @@ MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
     const real alpha = num_elements_mono / static_cast<real>(num_elements);
     message("Multi-adaptive efficiency index: %.3f", to_double(alpha));
   }
-  
+
   // Delete local arrays
   if ( f ) delete [] f;
   if ( u ) delete [] u;
@@ -77,7 +77,7 @@ void MultiAdaptiveNewtonSolver::start()
   // Initialize right-hand side
   b.resize(nj);
   b.zero();
-  
+
   // Recompute Jacobian on each time slab
   A->init();
 
@@ -90,14 +90,14 @@ real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter,
 {
   // Evaluate b = -F(x) at current x
   Feval(b);
- 
+
   // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBLAS?
 
   // Save norm of old solution
   xnorm = 0.0;
   for (uint j = 0; j < ts.nj; j++)
     xnorm = max(xnorm, abs(ts.jx[j]));
-  
+
   // Solve linear system
   const double r = b.norm(linf) + to_double( real_epsilon() );
   b /= r;
@@ -157,12 +157,12 @@ void MultiAdaptiveNewtonSolver::Feval(uBLASVector& F)
     if ( method.type() == Method::cG )
       ts.cg_feval(f, s, e, i, a, b, k);
     else
-      ts.dg_feval(f, s, e, i, a, b, k);  
+      ts.dg_feval(f, s, e, i, a, b, k);
     //cout << "f = "; Alloc::disp(f, method.qsize());
 
     // Update values on element using fixed-point iteration
     method.update(x0, f, k, u);
-    
+
     // Subtract current values
     for (uint n = 0; n < method.nsize(); n++)
       F[j + n] = to_double(u[j] - ts.jx[j + n]);
@@ -184,7 +184,7 @@ void MultiAdaptiveNewtonSolver::debug()
   {
     const real xj = ts.jx[j];
     real dx = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(xj));
-		  
+
     ts.jx[j] -= 0.5*dx;
     Feval(F1);
 

@@ -48,11 +48,11 @@ void XMLLocalMeshData::start_element(const xmlChar* name, const xmlChar** attrs)
       read_mesh(name, attrs);
       state = INSIDE_MESH;
     }
-    
+
     break;
 
   case INSIDE_MESH:
-    
+
     if (xmlStrcasecmp(name, (xmlChar* ) "vertices") == 0)
     {
       read_vertices(name, attrs);
@@ -70,27 +70,27 @@ void XMLLocalMeshData::start_element(const xmlChar* name, const xmlChar** attrs)
     }
 
     break;
-    
+
   case INSIDE_VERTICES:
-    
+
     if (xmlStrcasecmp(name, (xmlChar* ) "vertex") == 0)
       read_vertex(name, attrs);
 
     break;
-    
+
   case INSIDE_CELLS:
-    
+
     if (xmlStrcasecmp(name, (xmlChar* ) "interval") == 0)
       read_interval(name, attrs);
     else if (xmlStrcasecmp(name, (xmlChar* ) "triangle") == 0)
       read_triangle(name, attrs);
     else if (xmlStrcasecmp(name, (xmlChar* ) "tetrahedron") == 0)
       read_tetrahedron(name, attrs);
-    
+
     break;
 
   case INSIDE_DATA:
-    
+
     if (xmlStrcasecmp(name, (xmlChar* ) "meshfunction") == 0)
     {
       read_meshFunction(name, attrs);
@@ -105,14 +105,14 @@ void XMLLocalMeshData::start_element(const xmlChar* name, const xmlChar** attrs)
     break;
 
   case INSIDE_MESH_FUNCTION:
-    
+
     if (xmlStrcasecmp(name, (xmlChar* ) "entity") == 0)
       read_meshEntity(name, attrs);
 
     break;
 
   case INSIDE_ARRAY:
-    
+
     if (xmlStrcasecmp(name, (xmlChar* ) "element") == 0)
       read_arrayElement(name, attrs);
 
@@ -137,25 +137,25 @@ void XMLLocalMeshData::end_element(const xmlChar* name)
     break;
 
   case INSIDE_MESH:
-    
+
     if (xmlStrcasecmp(name, (xmlChar* ) "mesh") == 0)
     {
       state = INSIDE_DOLFIN;
     }
-    
+
     break;
-    
+
   case INSIDE_VERTICES:
-    
+
     if (xmlStrcasecmp(name, (xmlChar* ) "vertices") == 0)
     {
-      state = INSIDE_MESH;    
+      state = INSIDE_MESH;
     }
 
     break;
 
   case INSIDE_CELLS:
-	 
+
     if (xmlStrcasecmp(name, (xmlChar* ) "cells") == 0)
     {
       state = INSIDE_MESH;
@@ -211,10 +211,10 @@ void XMLLocalMeshData::read_mesh(const xmlChar* name, const xmlChar** attrs)
   // Parse values
   std::string type = parse_string(name, attrs, "celltype");
   gdim = parseUnsignedInt(name, attrs, "dim");
-  
+
   // Create cell type to get topological dimension
   std::auto_ptr<CellType> cell_type(CellType::create(type));
-  
+
   tdim = cell_type->dim();
 
   // Get number of entities for topological dimension 0
@@ -255,7 +255,7 @@ void XMLLocalMeshData::read_vertex(const xmlChar* name, const xmlChar** attrs)
     return;
 
   std::vector<double> coordinate;
-  
+
   // Parse vertex coordinates
   switch (gdim)
   {
@@ -286,13 +286,13 @@ void XMLLocalMeshData::read_vertex(const xmlChar* name, const xmlChar** attrs)
     error("Geometric dimension of mesh must be 1, 2 or 3.");
   }
 
-  // Store global vertex numbering 
+  // Store global vertex numbering
   mesh_data.vertex_indices.push_back(v);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::read_cells(const xmlChar* name, const xmlChar** attrs)
 {
-  // Parse the number of global cells 
+  // Parse the number of global cells
   const uint num_global_cells = parseUnsignedInt(name, attrs, "size");
   dolfin_debug1("num_global_cells = %d", num_global_cells);
   mesh_data.num_global_cells = num_global_cells;
@@ -347,7 +347,7 @@ void XMLLocalMeshData::read_triangle(const xmlChar *name, const xmlChar **attrs)
   cell[0] = parseUnsignedInt(name, attrs, "v0");
   cell[1] = parseUnsignedInt(name, attrs, "v1");
   cell[2] = parseUnsignedInt(name, attrs, "v2");
-  
+
   // Add cell
   mesh_data.cell_vertices.push_back(cell);
 }
@@ -371,28 +371,28 @@ void XMLLocalMeshData::read_tetrahedron(const xmlChar *name, const xmlChar **att
   cell[1] = parseUnsignedInt(name, attrs, "v1");
   cell[2] = parseUnsignedInt(name, attrs, "v2");
   cell[3] = parseUnsignedInt(name, attrs, "v3");
-  
+
   // Add cell
   mesh_data.cell_vertices.push_back(cell);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::read_meshFunction(const xmlChar* name, const xmlChar** attrs)
-{ 
+{
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
-{ 
+{
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::read_meshEntity(const xmlChar* name, const xmlChar** attrs)
-{ 
+{
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::read_arrayElement(const xmlChar* name, const xmlChar** attrs)
-{ 
+{
   // Do nothing
 }
 //-----------------------------------------------------------------------------

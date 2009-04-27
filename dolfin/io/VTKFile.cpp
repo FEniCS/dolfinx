@@ -50,7 +50,7 @@ void VTKFile::operator<<(const Mesh& mesh)
 
   // Write mesh
   mesh_write(mesh);
-  
+
   // Close headers
   vtk_header_close();
 
@@ -80,27 +80,27 @@ void VTKFile::operator<<(const Function& u)
 {
   // Update vtu file name and clear file
   vtu_name_update(counter);
-  
+
   // Write pvd file
   pvd_file_write(counter);
-    
-  const Mesh& mesh = u.function_space().mesh(); 
+
+  const Mesh& mesh = u.function_space().mesh();
 
   // Write headers
   vtk_header_open(mesh);
-  
+
   // Write Mesh
   mesh_write(mesh);
-  
+
   // Write results
   results_write(u);
-  
+
   // Close headers
   vtk_header_close();
-  
+
   // Increase the number of times we have saved the function
   counter++;
-  
+
   cout << "Saved function " << u.name() << " (" << u.label()
        << ") to file " << filename << " in VTK format." << endl;
 
@@ -123,7 +123,7 @@ void VTKFile::mesh_write(const Mesh& mesh) const
   }
   fprintf(fp, "</DataArray>  \n");
   fprintf(fp, "</Points>  \n");
-  
+
   // Write cell connectivity
   fprintf(fp, "<Cells>  \n");
   fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"connectivity\"  format=\"ascii\">  \n");
@@ -132,7 +132,7 @@ void VTKFile::mesh_write(const Mesh& mesh) const
     for (VertexIterator v(*c); !v.end(); ++v)
       fprintf(fp," %8u ",v->index());
     fprintf(fp," \n");
-  }  
+  }
   fprintf(fp, "</DataArray> \n");
 
   // Write offset into connectivity array for the end of each cell
@@ -147,7 +147,7 @@ void VTKFile::mesh_write(const Mesh& mesh) const
       fprintf(fp, " %8u \n",  offsets*2);
   }
   fprintf(fp, "</DataArray> \n");
-  
+
   //Write cell type
   fprintf(fp, "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"ascii\">  \n");
   for (uint types = 1; types <= mesh.num_cells(); types++)
@@ -160,8 +160,8 @@ void VTKFile::mesh_write(const Mesh& mesh) const
       fprintf(fp, " 3 \n");
   }
   fprintf(fp, "</DataArray> \n");
-  fprintf(fp, "</Cells> \n"); 
-  
+  fprintf(fp, "</Cells> \n");
+
   // Close file
   fclose(fp);
 }
@@ -193,7 +193,7 @@ void VTKFile::results_write(const Function& u) const
     cell_based_dim *= mesh.topology().dim();
   if (dofmap.local_dimension() == cell_based_dim)
     data_type = "cell";
-    
+
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
 
@@ -261,15 +261,15 @@ void VTKFile::results_write(const Function& u) const
           ss << " " << values[cell->index() + i*mesh.num_cells()];
       }
       ss << std::endl;
-    
+
       fp << ss.str();
-    } 
+    }
     fp << "</DataArray> " << std::endl;
     fp << "</CellData> " << std::endl;
 
     delete [] values;
   }
-  else if (data_type == "point") 
+  else if (data_type == "point")
   {
     // Allocate memory for function values at vertices
     uint size = mesh.num_vertices()*dim;
@@ -299,7 +299,7 @@ void VTKFile::results_write(const Function& u) const
     for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
     {
       ss.str("");
-      
+
       if(rank == 1 && dim == 2)
       {
         // Append 0.0 to 2D vectors to make them 3D
@@ -327,16 +327,16 @@ void VTKFile::results_write(const Function& u) const
           ss << " " << values[vertex->index() + i*mesh.num_vertices()];
       }
       ss << std::endl;
-      
+
       fp << ss.str();
-    } 
+    }
     fp << "</DataArray> " << std::endl;
     fp << "</PointData> " << std::endl;
 
     delete [] values;
   }
   else
-    error("Unknown VTK data type."); 
+    error("Unknown VTK data type.");
 }
 //----------------------------------------------------------------------------
 void VTKFile::pvd_file_write(uint num)
@@ -347,32 +347,32 @@ void VTKFile::pvd_file_write(uint num)
   {
     // Open pvd file
     pvd_file.open(filename.c_str(), std::ios::out|std::ios::trunc);
-    // Write header    
+    // Write header
     pvd_file << "<?xml version=\"1.0\"?> " << std::endl;
     pvd_file << "<VTKFile type=\"Collection\" version=\"0.1\" > " << std::endl;
     pvd_file << "<Collection> " << std::endl;
-  } 
+  }
   else
   {
     // Open pvd file
     pvd_file.open(filename.c_str(),  std::ios::out|std::ios::in);
     pvd_file.seekp(mark);
-  
+
   }
   // Remove directory path from name for pvd file
   std::string fname;
-  fname.assign(vtu_filename, filename.find_last_of("/") + 1, vtu_filename.size()); 
-  
-  // Data file name 
-  pvd_file << "<DataSet timestep=\"" << num << "\" part=\"0\"" << " file=\"" <<  fname <<  "\"/>" << std::endl; 
+  fname.assign(vtu_filename, filename.find_last_of("/") + 1, vtu_filename.size());
+
+  // Data file name
+  pvd_file << "<DataSet timestep=\"" << num << "\" part=\"0\"" << " file=\"" <<  fname <<  "\"/>" << std::endl;
   mark = pvd_file.tellp();
-  
+
   // Close headers
   pvd_file << "</Collection> " << std::endl;
   pvd_file << "</VTKFile> " << std::endl;
-  
+
   // Close file
-  pvd_file.close();  
+  pvd_file.close();
 
 }
 //----------------------------------------------------------------------------
@@ -382,13 +382,13 @@ void VTKFile::vtk_header_open(const Mesh& mesh) const
   FILE *fp = fopen(vtu_filename.c_str(), "a");
   if (!fp)
     error("Unable to open file %s", filename.c_str());
-  
+
   // Write headers
   fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\"   >\n");
   fprintf(fp, "<UnstructuredGrid>  \n");
   fprintf(fp, "<Piece  NumberOfPoints=\" %8u\"  NumberOfCells=\" %8u\">  \n",
   mesh.num_vertices(), mesh.num_cells());
-  
+
   // Close file
   fclose(fp);
 }
@@ -399,30 +399,30 @@ void VTKFile::vtk_header_close() const
   FILE *fp = fopen(vtu_filename.c_str(), "a");
   if (!fp)
     error("Unable to open file %s", filename.c_str());
-  
+
   // Close headers
-  fprintf(fp, "</Piece> \n </UnstructuredGrid> \n </VTKFile>"); 
-  
+  fprintf(fp, "</Piece> \n </UnstructuredGrid> \n </VTKFile>");
+
   // Close file
   fclose(fp);
 }
 //----------------------------------------------------------------------------
-void VTKFile::vtu_name_update(const int counter) 
+void VTKFile::vtu_name_update(const int counter)
 {
   std::string filestart, extension;
   std::ostringstream fileid, newfilename;
-  
+
   fileid.fill('0');
   fileid.width(6);
-  
+
   filestart.assign(filename, 0, filename.find("."));
   extension.assign(filename, filename.find("."), filename.size());
-  
+
   fileid << counter;
   newfilename << filestart << fileid.str() << ".vtu";
-  
+
   vtu_filename = newfilename.str();
-  
+
   // Make sure file is empty
   FILE* fp = fopen(vtu_filename.c_str(), "w");
   if (!fp)
@@ -431,7 +431,7 @@ void VTKFile::vtu_name_update(const int counter)
 }
 //----------------------------------------------------------------------------
 template<class T>
-void VTKFile::mesh_function_write(T& meshfunction) 
+void VTKFile::mesh_function_write(T& meshfunction)
 {
   // Update vtu file name and clear file
   vtu_name_update(counter);
@@ -439,17 +439,17 @@ void VTKFile::mesh_function_write(T& meshfunction)
   // Write pvd file
   pvd_file_write(counter);
 
-  const Mesh& mesh = meshfunction.mesh(); 
+  const Mesh& mesh = meshfunction.mesh();
 
   if( meshfunction.dim() != mesh.topology().dim() )
-    error("VTK output of mesh functions is implemented for cell-based functions only.");    
+    error("VTK output of mesh functions is implemented for cell-based functions only.");
 
   // Write headers
   vtk_header_open(mesh);
 
   // Write mesh
   mesh_write(mesh);
-  
+
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
 
@@ -459,7 +459,7 @@ void VTKFile::mesh_function_write(T& meshfunction)
     fp << meshfunction.get( cell->index() )  << std::endl;
   fp << "</DataArray>" << std::endl;
   fp << "</CellData>" << std::endl;
-  
+
   // Close file
   fp.close();
 
@@ -473,6 +473,6 @@ void VTKFile::mesh_function_write(T& meshfunction)
 
   cout << "Saved mesh function " << mesh.name() << " (" << mesh.label()
        << ") to file " << filename << " in VTK format." << endl;
-}    
+}
 //----------------------------------------------------------------------------
 

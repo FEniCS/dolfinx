@@ -23,7 +23,7 @@ public:
     b = 8.0 / 3.0;
     r = 28.0;
   }
-  
+
   void u0(real* u)
   {
     u[0] = 1.0;
@@ -51,7 +51,7 @@ public:
     y[1] = s*x[0] - x[1] + u[0]*x[2];
     y[2] = -u[0]*x[1] - b*x[2];
   }
- 
+
 private:
 
   // Parameters
@@ -71,9 +71,9 @@ int main()
   dolfin_set("ODE discrete tolerance", 1e-10);
   dolfin_set("ODE save solution", true);
   dolfin_set("ODE solve dual problem", true);
-  
+
   Lorenz lorenz;
   lorenz.solve();
-  
+
   return 0;
 }

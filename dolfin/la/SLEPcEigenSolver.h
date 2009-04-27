@@ -66,7 +66,7 @@ namespace dolfin
   ///
   /// Note that both the tolerance and the number of iterations must be
   /// specified if either one is specified.
-  
+
   class SLEPcEigenSolver : public Parametrized, public PETScObject
   {
   public:
@@ -111,7 +111,7 @@ namespace dolfin
 
     /// Callback for changes in parameter values
     void read_parameters();
-    
+
     // Set spectrum
     void set_spectrum(std::string solver);
 

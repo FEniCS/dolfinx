@@ -22,7 +22,7 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
 
   uint ny=nx;
   uint nz=nx;
-  
+
   // Receive mesh according to parallel policy
   if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
 
@@ -93,7 +93,7 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
 double UnitSphere::transformx(double x,double y,double z)
 {
   double retrn=0.0;
-  if (x||y||z) 
+  if (x||y||z)
     retrn=x*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
   else
     retrn=x;
@@ -103,7 +103,7 @@ double UnitSphere::transformx(double x,double y,double z)
 double UnitSphere::transformy(double x,double y,double z)
 {
   double retrn=0.0;
-  if (x||y||z) 
+  if (x||y||z)
     retrn=y*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
   else
     retrn=y;
@@ -130,7 +130,7 @@ double UnitSphere::max(double x,double y, double z)
   else if ((y>=x)*(y>=z))
     rtrn=y;
   else
-    rtrn=z; 
+    rtrn=z;
   return rtrn;
 }
 //-----------------------------------------------------------------------------

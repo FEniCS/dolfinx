@@ -13,17 +13,17 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology()
   : _dim(0), num_entities(0), connectivity(0)
-  
+
 {
   // Do nothing
 }
-//-----------------------------------------------------------------------------  
+//-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(const MeshTopology& topology)
   : _dim(0), num_entities(0), connectivity(0)
 {
   *this = topology;
 }
-//-----------------------------------------------------------------------------  
+//-----------------------------------------------------------------------------
 MeshTopology::~MeshTopology()
 {
   clear();
@@ -60,7 +60,7 @@ void MeshTopology::clear()
   if ( num_entities )
     delete [] num_entities;
   num_entities = 0;
-  
+
   // Delete mesh connectivity
   if ( connectivity )
   {
@@ -115,10 +115,10 @@ void MeshTopology::disp() const
     end();
     return;
   }
-  
+
   // Display topological dimension
   cout << "Topological dimension: " << _dim << endl << endl;
-  
+
   // Display number of entities for each topological dimension
   cout << "Number of entities:" << endl;
   begin("");
@@ -126,7 +126,7 @@ void MeshTopology::disp() const
     cout << "dim = " << d << ": " << num_entities[d] << endl;
   end();
   cout << endl;
-  
+
   // Display matrix of connectivities
   cout << "Connectivity:" << endl;
   begin("");

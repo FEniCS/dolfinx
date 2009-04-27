@@ -11,7 +11,7 @@
 
 namespace dolfin
 {
- 
+
   /// Timing functions measure CPU time as determined by clock(),
   /// the precision of which seems to be 0.01 seconds.
 

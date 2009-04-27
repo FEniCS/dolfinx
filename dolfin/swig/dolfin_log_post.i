@@ -11,7 +11,7 @@ def debug(message):
 %extend dolfin::Progress {
 
 void __add(int incr) {
-    for (int j=0;j<incr; ++j) 
+    for (int j=0;j<incr; ++j)
         (*self)++;
 }
 

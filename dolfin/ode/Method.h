@@ -15,14 +15,14 @@ namespace dolfin
 {
 
   class Lagrange;
-  
+
   /// Base class for cGqMethod and dGqMethod, which contain all numeric constants,
   /// such as nodal points and nodal weights, needed for the method.
-  
+
   class Method
   {
   public:
-    
+
     enum Type { cG, dG, none };
 
     /// Constructor
@@ -48,10 +48,10 @@ namespace dolfin
 
     /// Return nodal point (inline optimized)
     inline real npoint(unsigned int i) const { return npoints[i]; }
-    
+
     /// Return quadrature point (inline optimized)
     inline real qpoint(unsigned int i) const { return qpoints[i]; }
-    
+
     /// Return nodal weight j for node i, including quadrature (inline optimized)
     inline real nweight(unsigned int i, unsigned int j) const { return nweights[i][j]; }
 
@@ -60,7 +60,7 @@ namespace dolfin
 
     /// Evaluation of trial space basis function i at given tau (inline optimized)
     inline real eval(unsigned int i, real tau) const { return trial->eval(i, tau); }
-    
+
     /// Evaluation of derivative of basis function i at t = 1 (inline optimized)
     inline real derivative(unsigned int i) const { return derivatives[i]; }
 
@@ -78,18 +78,18 @@ namespace dolfin
 
     /// Compute residual at right end-point
     virtual real residual(real x0, real values[], real f, real k) const = 0;
-  
+
     /// Compute new time step based on the given residual
     virtual real timestep(real r, real tol, real k0, real kmax) const = 0;
 
     /// Compute error estimate (modulo stability factor)
     virtual real error(real k, real r) const = 0;
-    
+
     /// Display method data
     virtual void disp() const = 0;
 
   protected:
-    
+
     void init();
 
     virtual void compute_quadrature () = 0;

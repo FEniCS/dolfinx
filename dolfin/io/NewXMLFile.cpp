@@ -30,9 +30,9 @@ NewXMLFile::NewXMLFile(const std::string filename, bool gzip)
   // Set up the output stream (to file)
   outstream = new std::ofstream();
 
-  // Set up the sax handler. 
+  // Set up the sax handler.
   sax = new xmlSAXHandler();
-  
+
   // Set up handlers for parser events
   sax->startDocument = new_sax_start_document;
   sax->endDocument   = new_sax_end_document;
@@ -48,9 +48,9 @@ NewXMLFile::NewXMLFile(std::ostream& s)
 {
 
 
-  // Set up the sax handler. 
+  // Set up the sax handler.
   sax = new xmlSAXHandler();
-  
+
   // Set up handlers for parser events
   sax->startDocument = new_sax_start_document;
   sax->endDocument   = new_sax_end_document;
@@ -63,7 +63,7 @@ NewXMLFile::NewXMLFile(std::ostream& s)
 //-----------------------------------------------------------------------------
 NewXMLFile::~NewXMLFile()
 {
-  delete sax; 
+  delete sax;
 
   // Only delete outstream if it is a ofstream
   std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream);
@@ -111,7 +111,7 @@ void NewXMLFile::operator>>(std::vector<int>& x)
   XMLDolfin xml_dolfin(xml_array, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
@@ -122,7 +122,7 @@ void NewXMLFile::operator>>(std::vector<uint>& x)
   XMLDolfin xml_dolfin(xml_array, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
@@ -133,7 +133,7 @@ void NewXMLFile::operator>>(std::vector<double>& x)
   XMLDolfin xml_dolfin(xml_array, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
@@ -144,7 +144,7 @@ void NewXMLFile::operator>>(std::map<uint, int>& map)
   XMLDolfin xml_dolfin(xml_map, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
@@ -155,7 +155,7 @@ void NewXMLFile::operator>>(std::map<uint, uint>& map)
   XMLDolfin xml_dolfin(xml_map, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
@@ -166,7 +166,7 @@ void NewXMLFile::operator>>(std::map<uint, double>& map)
   XMLDolfin xml_dolfin(xml_map, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
@@ -177,7 +177,7 @@ void NewXMLFile::operator>>(std::map<uint, std::vector<int> >& array_map)
   XMLDolfin xml_dolfin(xml_array_map, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
@@ -188,7 +188,7 @@ void NewXMLFile::operator>>(std::map<uint, std::vector<uint> >& array_map)
   XMLDolfin xml_dolfin(xml_array_map, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
@@ -199,7 +199,7 @@ void NewXMLFile::operator>>(std::map<uint, std::vector<double> >& array_map)
   XMLDolfin xml_dolfin(xml_array_map, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
@@ -338,7 +338,7 @@ void dolfin::new_sax_end_document(void *ctx)
 }
 //-----------------------------------------------------------------------------
 void dolfin::new_sax_start_element(void *ctx,
-                                   const xmlChar *name, 
+                                   const xmlChar *name,
                                    const xmlChar **attrs)
 {
   ( (NewXMLFile*) ctx )->start_element(name, attrs);
@@ -391,7 +391,7 @@ void dolfin::new_rng_parser_error(void *user_data, xmlErrorPtr error)
   int length = buffer.length();
   buffer.erase(length-1);
   if (node != NULL)
-    warning("%s:%d: element %s: Relax-NG parser error: %s", 
+    warning("%s:%d: element %s: Relax-NG parser error: %s",
             file, line, node->name, buffer.c_str());
 }
 //-----------------------------------------------------------------------------
@@ -406,7 +406,7 @@ void dolfin::new_rng_valid_error(void *user_data, xmlErrorPtr error)
   buffer = message;
   int length = buffer.length();
   buffer.erase(length-1);
-  warning("%s:%d: element %s: Relax-NG validity error: %s", 
+  warning("%s:%d: element %s: Relax-NG validity error: %s",
           file, line, node->name, buffer.c_str());
 }
 //-----------------------------------------------------------------------------

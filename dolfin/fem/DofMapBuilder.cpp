@@ -21,7 +21,7 @@ using namespace dolfin;
 void DofMapBuilder::build(DofMap& dof_map, UFC& ufc, Mesh& mesh)
 {
   message("Building parallel dof map");
-  
+
   // Check that dof map has not been built
   if (dof_map.dof_map)
     error("Local-to-global mapping has already been computed.");
@@ -38,6 +38,6 @@ void DofMapBuilder::build(DofMap& dof_map, UFC& ufc, Mesh& mesh)
 
   // Allocate dof map
   const uint n = dof_map.local_dimension();
-  dof_map.dof_map = new int[n*mesh.num_cells()];  
+  dof_map.dof_map = new int[n*mesh.num_cells()];
 }
 //-----------------------------------------------------------------------------

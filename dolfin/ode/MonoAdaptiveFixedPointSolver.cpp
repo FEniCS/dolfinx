@@ -50,20 +50,20 @@ real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
       mi = 0;
       li = 0;
     }
-    
+
     if (iter == 0 || (d1 > d0 && li == 0))
     {
       ramp = 1.0;
       mi = ode.get("ODE fixed-point stabilization m");
       //mi = (int)ceil(log10(K * 1.0e4));
-    }  
-    
+    }
+
     if (mi == 0 && li == 0)
     {
       // Choose number of ramping iterations
       li = ode.get("ODE fixed-point stabilization l");
     }
-    
+
     if (mi == 0)
     {
       // Ramping
@@ -107,7 +107,7 @@ real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
 	ts.x[noffset + i] += alpha*tmp*ts.fq[moffset + i];
     }
   }
-  
+
   // Compute size of increment
   real max_increment = 0.0;
   for (uint i = 0; i < ts.N; i++)

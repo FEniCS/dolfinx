@@ -1,13 +1,13 @@
-""" Eddy currents phenomena in low conducting body can be 
+""" Eddy currents phenomena in low conducting body can be
 described using electric vector potential and curl-curl operator:
    \nabla \times \nabla \times T = - \frac{\partial B}{\partial t}
 Electric vector potential defined as:
    \nabla \times T = J
 
 Boundary condition:
-   J_n = 0, 
+   J_n = 0,
    T_t=T_w=0, \frac{\partial T_n}{\partial n} = 0
-which is naturaly fulfilled for zero Dirichlet BC with Nedelec (edge) 
+which is naturaly fulfilled for zero Dirichlet BC with Nedelec (edge)
 elements.
 """
 
@@ -45,7 +45,7 @@ class DirichletBoundary(SubDomain):
 # Boundary condition
 bc = DirichletBC(PN, zero, DirichletBoundary())
 
-# Eddy currents equation (using potential T) 
+# Eddy currents equation (using potential T)
 Teqn = inner(curl(v0), curl(u0))*dx, -dot(v0, dbdt)*dx
 Tproblem = VariationalProblem(Teqn[0], Teqn[1], bc)
 T = Tproblem.solve()

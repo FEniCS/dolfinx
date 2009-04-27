@@ -22,7 +22,7 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
   uint ny=nx;
   // Receive mesh according to parallel policy
   if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
-  
+
   if ( nx < 1 || ny < 1 )
     error("Size of unit square must be at least 1 in each dimension.");
 
@@ -33,26 +33,26 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
   editor.open(*this, CellType::triangle, 2, 2);
 
   // Create vertices and cells:
-  if (type == crisscross) 
+  if (type == crisscross)
   {
     editor.init_vertices((nx+1)*(ny+1) + nx*ny);
     editor.init_cells(4*nx*ny);
-  } 
-  else 
+  }
+  else
   {
     editor.init_vertices((nx+1)*(ny+1));
     editor.init_cells(2*nx*ny);
   }
-  
+
   // Create main vertices:
   // variables for transformation
   double trns_x = 0.0;
   double trns_y = 0.0;
   uint vertex = 0;
-  for (uint iy = 0; iy <= ny; iy++) 
+  for (uint iy = 0; iy <= ny; iy++)
   {
     const double y = -1.0 + static_cast<double>(iy)*2.0 / static_cast<double>(ny);
-    for (uint ix = 0; ix <= nx; ix++) 
+    for (uint ix = 0; ix <= nx; ix++)
     {
       const double x =-1.+ static_cast<double>(ix)*2.0 / static_cast<double>(nx);
       trns_x = transformx(x, y, transformation);
@@ -60,14 +60,14 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
       editor.add_vertex(vertex++, trns_x, trns_y);
     }
   }
-  
+
   // Create midpoint vertices if the mesh type is crisscross
-  if (type == crisscross) 
+  if (type == crisscross)
   {
-    for (uint iy = 0; iy < ny; iy++) 
+    for (uint iy = 0; iy < ny; iy++)
     {
       const double y = -1.0 + (static_cast<double>(iy) + 0.5)*2.0 / static_cast<double>(ny);
-      for (uint ix = 0; ix < nx; ix++) 
+      for (uint ix = 0; ix < nx; ix++)
       {
         const double x = -1.0 + (static_cast<double>(ix) + 0.5)*2.0 / static_cast<double>(nx);
         trns_x = transformx(x, y, transformation);
@@ -79,18 +79,18 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
 
   // Create triangles
   uint cell = 0;
-  if (type == crisscross) 
+  if (type == crisscross)
   {
-    for (uint iy = 0; iy < ny; iy++) 
+    for (uint iy = 0; iy < ny; iy++)
     {
-      for (uint ix = 0; ix < nx; ix++) 
+      for (uint ix = 0; ix < nx; ix++)
       {
         const uint v0 = iy*(nx + 1) + ix;
         const uint v1 = v0 + 1;
         const uint v2 = v0 + (nx + 1);
         const uint v3 = v1 + (nx + 1);
         const uint vmid = (nx + 1)*(ny + 1) + iy*nx + ix;
-	
+
         // Note that v0 < v1 < v2 < v3 < vmid.
         editor.add_cell(cell++, v0, v1, vmid);
         editor.add_cell(cell++, v0, v2, vmid);
@@ -98,12 +98,12 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
         editor.add_cell(cell++, v2, v3, vmid);
       }
     }
-  } 
-  else if (type == left ) 
+  }
+  else if (type == left )
   {
-    for (uint iy = 0; iy < ny; iy++) 
+    for (uint iy = 0; iy < ny; iy++)
     {
-      for (uint ix = 0; ix < nx; ix++) 
+      for (uint ix = 0; ix < nx; ix++)
       {
         const uint v0 = iy*(nx + 1) + ix;
         const uint v1 = v0 + 1;
@@ -114,12 +114,12 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
         editor.add_cell(cell++, v1, v2, v3);
       }
     }
-  } 
-  else 
-  { 
-    for (uint iy = 0; iy < ny; iy++) 
+  }
+  else
+  {
+    for (uint iy = 0; iy < ny; iy++)
     {
-      for (uint ix = 0; ix < nx; ix++) 
+      for (uint ix = 0; ix < nx; ix++)
       {
         const uint v0 = iy*(nx + 1) + ix;
         const uint v1 = v0 + 1;
@@ -157,11 +157,11 @@ double UnitCircle::transformx(double x, double y, Transformation transformation)
     else
       return x;
   }
-  else 
+  else
   {
     // FIXME: Use easier to understand check
     if((transformation != maxn)*(transformation != sumn)*(transformation != rotsumn))
-    { 
+    {
       message("Implemented  transformations are: maxn,sumn and rotsumn");
       message("Using rotsumn transformation");
     }
@@ -194,7 +194,7 @@ double UnitCircle::transformy(double x, double y, Transformation transformation)
     else
       return y;
   }
-  else 
+  else
   {
     if ((transformation != maxn)*(transformation != sumn)*(transformation != rotsumn))
     {

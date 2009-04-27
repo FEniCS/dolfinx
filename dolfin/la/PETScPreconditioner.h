@@ -56,7 +56,7 @@ namespace dolfin
     static int PCCreate(PC pc);
 
     /// Return PETSc PETScPreconditioner type
-    #if PETSC_VERSION_MAJOR > 2 
+    #if PETSC_VERSION_MAJOR > 2
     static const PCType get_type(PreconditionerType pc);
     #else
     static PCType get_type(PreconditionerType pc);

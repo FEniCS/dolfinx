@@ -47,7 +47,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Function::Function(boost::shared_ptr<const FunctionSpace> V, 
+Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    boost::shared_ptr<GenericVector> x)
   : Variable("v", "unnamed function"),
     _function_space(V),
@@ -127,7 +127,7 @@ Function::Function(const SubFunction& v)
   v.v.vector().get(values, n, rows);
   _vector->set(values);
   _vector->apply();
-  
+
   // Clean up
   delete [] rows;
   delete [] values;
@@ -158,7 +158,7 @@ const Function& Function::operator= (const Function& v)
 
   // Copy function space
   _function_space = v._function_space;
-  
+
   // Initialize vector and copy values
   init();
   *_vector = *v._vector;
@@ -289,7 +289,7 @@ void Function::eval(double* values, const double* x, const ufc::cell& ufc_cell, 
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(double* coefficients,
-                           const ufc::cell& ufc_cell, 
+                           const ufc::cell& ufc_cell,
                            uint cell_index,
                            int local_facet) const
 {
@@ -315,7 +315,7 @@ void Function::interpolate(double* coefficients,
     // Tabulate dofs
     uint* dofs = new uint[dofmap.local_dimension()];
     dofmap.tabulate_dofs(dofs, ufc_cell, cell_index);
-    
+
     // Pick values from global vector
     _vector->get(coefficients, dofmap.local_dimension(), dofs);
     delete [] dofs;

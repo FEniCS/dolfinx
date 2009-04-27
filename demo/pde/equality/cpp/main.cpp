@@ -16,7 +16,7 @@
 
 #include <dolfin.h>
 #include "Poisson.h"
-  
+
 using namespace dolfin;
 
 int main()
@@ -66,14 +66,14 @@ int main()
   Constant u0(0.0);
   DirichletBoundary dirichlet_boundary;
   DirichletBC bc0(V, u0, dirichlet_boundary);
-  
+
   // Create equality boundary condition
   EqualityBoundary equality_boundary;
   EqualityBC bc1(V, equality_boundary);
 
   // Collect boundary conditions
   std::vector<BoundaryCondition*> bcs;
-  bcs.push_back(&bc0); 
+  bcs.push_back(&bc0);
   bcs.push_back(&bc1);
 
   // Define PDE

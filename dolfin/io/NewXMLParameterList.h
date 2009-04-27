@@ -14,29 +14,29 @@ namespace dolfin
 
   class ParameterList;
   class NewXMLFile;
-  
+
   class NewXMLParameterList : public XMLHandler
   {
   public:
 
     NewXMLParameterList(ParameterList& parameters, NewXMLFile& parser);
-    
+
     void start_element(const xmlChar *name, const xmlChar **attrs);
     void end_element  (const xmlChar *name);
 
     static void write(const ParameterList& parameters, std::ostream& outgile, uint indentation_level=0);
-    
+
   private:
-    
+
     enum parser_state { OUTSIDE, INSIDE_PARAMETERS, DONE };
-    
+
     void read_parameter(const xmlChar *name, const xmlChar **attrs);
-    
+
     ParameterList& parameters;
     parser_state state;
-    
+
   };
-  
+
 }
 
 #endif

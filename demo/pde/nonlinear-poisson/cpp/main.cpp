@@ -26,7 +26,7 @@
 
 #include <dolfin.h>
 #include "NonlinearPoisson.h"
-  
+
 using namespace dolfin;
 
 // Right-hand side

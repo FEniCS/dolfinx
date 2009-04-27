@@ -22,11 +22,11 @@ namespace dolfin
   class Interval : public Mesh
   {
   public:
-    
+
     Interval(uint nx,double a,double b);
 
   };
-  
+
 }
 
 #endif

@@ -101,7 +101,7 @@ int main()
 
   // Display summary
   table.disp();
- 
+
   // Solve system
   GenericVector& x = u.vector();
   LUSolver solver(symmetric);

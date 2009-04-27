@@ -42,6 +42,25 @@ def check_camelcaps(code, replacements):
         print "  Replacing: %s --> %s" % r
     return code
 
+def check_trailing_whitespace(code, replacements):
+    "Remove trailing spaces at end of lines."
+    lines = []
+    for line in code.split("\n"):
+        new_line = line.rstrip()
+        lines.append(new_line)
+        if new_line == line:
+            continue
+        r = ("trailing whitespace", "")
+        if r in replacements:
+            replacements[r] += 1
+        else:
+            replacements[r] = 1
+        print "  Removing trailing whitespace"
+    new_code = "\n".join(lines)
+    if len(new_code) > 0 and not new_code[-1] == "\n":
+        new_code += "\n"
+    return new_code
+
 def replace(filename, replacements):
     "Make replacements for given filename."
 
@@ -52,8 +71,9 @@ def replace(filename, replacements):
     code = f.read()
     f.close()
 
-    # Check for camelcaps
+    # Checks
     new_code = check_camelcaps(code, replacements)
+    new_code = check_trailing_whitespace(code, replacements)
 
     # Write file
     f = open(filename, "w")

@@ -15,16 +15,16 @@
 
 namespace dolfin
 {
-  
+
   /// A simple graph editor for creating graphs
 
   class GraphEditor
   {
   public:
-    
+
     /// Constructor
     GraphEditor();
-    
+
     /// Destructor
     ~GraphEditor();
 
@@ -36,11 +36,11 @@ namespace dolfin
 
     /// Specify number of vertices
     void init_vertices(uint num_vertices);
-    
+
     /// Specify number of edges
     void init_edges(uint num_edges);
 
-    /// Add vertex u with num_edges = number of outgoing edges. For undirected 
+    /// Add vertex u with num_edges = number of outgoing edges. For undirected
     /// graphs, edge must "belong" to a vertex and not be counted twice.
     void add_vertex(uint u, uint num_edges);
 

@@ -3,7 +3,7 @@
 //
 // Modified by Anders Logg 2006.
 // Modified by Dag Lindbo 2008.
-// 
+//
 // First added:  2006-05-31
 // Last changed: 2008-09-05
 
@@ -28,12 +28,12 @@ namespace dolfin
   /// matrices are solved using uBLAS LU factorisation, and sparse matrices
   /// are solved using UMFPACK (http://www.cise.ufl.edu/research/sparse/umfpack/)
   /// is installed. Matrices can also be inverted.
-    
+
   class UmfpackLUSolver : public GenericLinearSolver
   {
 
   public:
-    
+
     /// Constructor
     UmfpackLUSolver();
 
@@ -56,10 +56,10 @@ namespace dolfin
     class Umfpack
     {
       public:
- 
+
         // Constructor
-        Umfpack() : dnull(0), inull(0), Symbolic(0), Numeric(0), local_matrix(false), 
-                    Rp(0), Ri(0), Rx(0), N(0), factorized(false) {} 
+        Umfpack() : dnull(0), inull(0), Symbolic(0), Numeric(0), local_matrix(false),
+                    Rp(0), Ri(0), Rx(0), N(0), factorized(false) {}
 
         // Destructor
         ~Umfpack() { clear(); }
@@ -92,7 +92,7 @@ namespace dolfin
         bool local_matrix;
         const long int* Rp;
         const long int* Ri;
-        const double*   Rx;   
+        const double*   Rx;
 
         uint N;
         bool factorized;
@@ -100,7 +100,7 @@ namespace dolfin
 
     Umfpack umfpack;
 #endif
-    
+
   };
 
 }

@@ -15,10 +15,10 @@
 
 namespace dolfin
 {
-  
+
   class Mesh;
   class XMLMeshData;
-  
+
   class NewXMLMesh : public XMLHandler
   {
   public:
@@ -26,17 +26,17 @@ namespace dolfin
     NewXMLMesh(Mesh& mesh, NewXMLFile& parser);
     NewXMLMesh(Mesh& mesh, NewXMLFile& parser, std::string celltype, uint dim);
     ~NewXMLMesh();
-    
+
     void start_element (const xmlChar* name, const xmlChar** attrs);
     void end_element   (const xmlChar* name);
 
     static void write(const Mesh& mesh, std::ostream& outfile, uint indentation_level=0);
 
     void read_mesh_tag(const xmlChar* name, const xmlChar** attrs);
-    
+
   private:
-    
-    enum parser_state {OUTSIDE, INSIDE_MESH, INSIDE_VERTICES, INSIDE_HIGHERORDERVERTICES, INSIDE_CELLS, 
+
+    enum parser_state {OUTSIDE, INSIDE_MESH, INSIDE_VERTICES, INSIDE_HIGHERORDERVERTICES, INSIDE_CELLS,
                        INSIDE_HIGHERORDERCELLS, INSIDE_VECTOR, DONE};
 
     void read_vertices                  (const xmlChar* name, const xmlChar** attrs);
@@ -60,10 +60,10 @@ namespace dolfin
 
     MeshFunction<uint>* f;
     std::vector<uint>* a;
-    
+
     XMLMeshData* xml_mesh_data;
   };
-  
+
 }
 
 #endif

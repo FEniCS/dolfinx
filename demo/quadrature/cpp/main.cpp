@@ -17,29 +17,29 @@ int main(int argc, char** argv)
     dolfin::cout << "gauss, radau, lobatto, and n is the number of points" << dolfin::endl;
     return 1;
   }
-  
+
   int n = atoi(argv[2]);
 
   if (strcmp(argv[1], "gauss") == 0)
-  {  
+  {
     GaussQuadrature q(n);
     q.disp();
   }
   else if (strcmp(argv[1], "radau") == 0)
-  {  
+  {
     RadauQuadrature q(n);
     q.disp();
-  } 
+  }
   else if (strcmp(argv[1], "lobatto") == 0)
   {
     LobattoQuadrature q(n);
-    q.disp();     
+    q.disp();
   }
-  else 
+  else
   {
     dolfin::cout << "Unknown quadrature rule." << dolfin::endl;
     return 1;
   }
-  
+
   return 0;
 }

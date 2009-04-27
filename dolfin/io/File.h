@@ -34,7 +34,7 @@ namespace dolfin
   class GenericMatrix;
   class GenericVector;
   class FunctionPlotData;
-  
+
   /// A File represents a data file for reading and writing objects.
   /// Unless specified explicitly, the format is determined by the
   /// file name suffix.
@@ -42,10 +42,10 @@ namespace dolfin
   class File
   {
   public:
-    
+
     /// File formats
     enum Type {xml, matlab, octave, vtk, python, raw, xyz};
-    
+
     /// Create a file with given name
     File(const std::string& filename, bool new_style=false);
 
@@ -65,7 +65,7 @@ namespace dolfin
     void validate_xml();
 
     //--- Input ---
-    
+
     /// Read vector from file
     void operator>> (GenericVector& x);
 
@@ -89,7 +89,7 @@ namespace dolfin
 
     /// Read ODE sample from file
     void operator>> (Sample& sample);
-    
+
     /// Read finite element specification from file
     void operator>> (FiniteElementSpec& spec);
 
@@ -98,7 +98,7 @@ namespace dolfin
 
     /// Read FFC BLAS data from file
     void operator>> (BLASFormData& blas);
-	 
+
     /// Read graph from file
     void operator>> (Graph& graph);
 
@@ -154,7 +154,7 @@ namespace dolfin
 
     /// Write FFC BLAS data to file
     void operator<< (const BLASFormData& blas);
-	 
+
     /// Write graph to file
     void operator<< (const Graph& graph);
 
@@ -176,7 +176,7 @@ namespace dolfin
     void operator<< (const std::map<uint, std::vector<uint> >& array_map);
     void operator<< (const std::map<uint, std::vector<double> >& array_map);
 
-    
+
   private:
 
     // Pointer to implementation (envelop-letter design)
@@ -184,9 +184,9 @@ namespace dolfin
 
     // Store the filename (hack related to having both NewXML* and XML*
     std::string filename;
-    
+
   };
-  
+
 }
 
 #endif

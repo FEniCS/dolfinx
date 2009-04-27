@@ -32,31 +32,31 @@
 namespace dolfin
 {
 
-  /// This class defines an interface for a Krylov solver. The underlying 
+  /// This class defines an interface for a Krylov solver. The underlying
   /// Krylov solver type is defined in default_type.h.
-  
+
   class KrylovSolver : public GenericLinearSolver
   {
   public:
-    
+
     /// Create Krylov solver
     KrylovSolver(dolfin::SolverType solver_type=default_solver,
                  dolfin::PreconditionerType pc_type=default_pc)
-      : solver_type(solver_type), pc_type(pc_type), ublas_solver(0), petsc_solver(0), 
+      : solver_type(solver_type), pc_type(pc_type), ublas_solver(0), petsc_solver(0),
         epetra_solver(0), itl_solver(0) {}
-    
+
     /// Destructor
     ~KrylovSolver()
     {
-      delete ublas_solver; 
-      delete petsc_solver; 
-      delete epetra_solver; 
-      delete itl_solver; 
+      delete ublas_solver;
+      delete petsc_solver;
+      delete epetra_solver;
+      delete itl_solver;
     }
-    
+
     /// Solve linear system Ax = b
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
-    { 
+    {
       Timer timer("Krylov solver");
 
       if (A.has_type<uBLASSparseMatrix>())
@@ -116,15 +116,15 @@ namespace dolfin
       error("No default Krylov solver for given backend");
       return 0;
     }
-    
+
   private:
-    
+
     // Krylov method
     SolverType solver_type;
-    
+
     // Preconditioner type
     PreconditionerType pc_type;
-    
+
     // uBLAS solver
     uBLASKrylovSolver* ublas_solver;
 

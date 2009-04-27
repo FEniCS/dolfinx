@@ -18,7 +18,7 @@ Adaptivity::Adaptivity(const ODE& ode, const Method& method)
   tmp = ode.get("ODE interval threshold"); beta   = tmp;
   tmp =  ode.get("ODE safety factor");     safety = tmp;
   kfixed = ode.get("ODE fixed time step");
-   
+
   safety_old = safety;
   safety_max = safety;
 
@@ -61,7 +61,7 @@ bool Adaptivity::accept()
   }
 
   //message("safefy factor = %.3e", safety);
-  
+
   return _accept;
 }
 //-----------------------------------------------------------------------------

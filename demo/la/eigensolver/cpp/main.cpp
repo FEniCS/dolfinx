@@ -9,7 +9,7 @@
 // This simple program illustrates the use of the SLEPc eigenvalue solver.
 
 #include <dolfin.h>
-  
+
 using namespace dolfin;
 
 int main()

@@ -16,20 +16,20 @@ using namespace dolfin;
 class Courtemanche : public ODE
 {
 public:
-  
+
   Courtemanche() : ODE(21, 300.0)
   {
     // Set parameters
     Cm        = 100.0;
-    R         = 8.3143; 
-    T         = 310; 
-    F         = 96.4867; 
-    z_Na      = 1.0; 
-    z_K       = 1.0; 
+    R         = 8.3143;
+    T         = 310;
+    F         = 96.4867;
+    z_Na      = 1.0;
+    z_K       = 1.0;
     z_Ca      = 2.0;
-    Na_o      = 140.0; 
-    K_o       = 5.4; 
-    Ca_o      = 1.8; 
+    Na_o      = 140.0;
+    K_o       = 5.4;
+    Ca_o      = 1.8;
     K_Q10     = 3.0;
     tau_fca   = 2.0;
     k_rel     = 30.0;
@@ -71,7 +71,7 @@ public:
     num_fevals = 0;
     VT = 0.0;
   }
-  
+
   ~Courtemanche()
   {
     message("Function evaluations:  %d", num_fevals);
@@ -81,8 +81,8 @@ public:
   void u0(double* u)
   {
     // Set initial data
-    u[0]  = -85.0; 
-    u[1]  = 2.91e-3; 
+    u[0]  = -85.0;
+    u[1]  = 2.91e-3;
     u[2]  = 9.65e-1;
     u[3]  = 9.78e-1;
     u[4]  = 3.04e-2;
@@ -92,7 +92,7 @@ public:
     u[8]  = 3.29e-5;
     u[9]  = 1.87e-2;
     u[10] = 1.37e-4;
-    u[11] = 9.99e-1; 
+    u[11] = 9.99e-1;
     u[12] = 7.75e-1;
     u[13] = 0.0;
     u[14] = 1.0;
@@ -106,7 +106,7 @@ public:
     // Initial kick
     u[0] = -25.0;
   }
-  
+
   void f(const double* u, double t, double* y)
   {
     compute_currents(u);
@@ -188,11 +188,11 @@ public:
     B1       = (2.0*I_NaCa - I_pCa - I_CaL - I_bCa)/(2.0*F*Vi) + (Vup*(I_upleak - I_up) + I_rel*Vrel)/Vi;
     B2       = 1.0 + Trpn_max*K_mTrpn/((Ca_i + K_mTrpn)*(Ca_i + K_mTrpn)) + Cmdn_max*K_mCmdn/((Ca_i + K_mCmdn)*(Ca_i + K_mCmdn));
   }
-  
+
   void computeGateCoefficients(const double* u)
   {
     V = u[0];
-    
+
     if ( V == -47.13 )
         alpha_m = 3.2;
     else
@@ -211,7 +211,7 @@ public:
 
     tau_h = 1.0/(alpha_h + beta_h);
     h_inf = alpha_h*tau_h;
-      
+
     if ( V >= -40.0 )
     {
         alpha_j = 0.0;
@@ -223,68 +223,68 @@ public:
 
     tau_j = 1.0/(alpha_j + beta_j);
     j_inf = alpha_j*tau_j;
-      
+
     alpha_oa = 0.65/(exp((V + 10.0)/-8.5) + exp((V - 30.0)/-59.0));
     beta_oa  = 0.65/(2.5 + exp((V + 82.0)/17.0));
     tau_oa   = 1.0/((alpha_oa + beta_oa)*K_Q10);
     oa_inf   = 1.0/(1.0 + exp((V + 20.47)/-17.54));
-      
+
     alpha_oi = 1.0/(18.53 + exp((V + 113.7)/10.95));
     beta_oi  = 1.0/(35.56 + exp((V + 1.26)/-7.44));
     tau_oi   = 1.0/((alpha_oi + beta_oi)*K_Q10);
     oi_inf   = 1.0/(1.0 + exp((V + 43.1)/5.3));
-      
+
     alpha_ua = 0.65/(exp((V + 10.0)/-8.5) + exp((V - 30)/-59.0));
     beta_ua  = 0.65/(2.5 + exp((V + 82.0)/17.0));
     tau_ua   = 1.0/((alpha_ua + beta_ua)*K_Q10);
     ua_inf   = 1.0/(1.0 + exp((V + 30.3)/-9.6));
-     
+
     alpha_ui = 1.0/(21.0 + exp((V - 185.0)/-28.0));
     beta_ui  = exp((V - 158.0)/16.0);
     tau_ui   = 1.0/((alpha_ui + beta_ui)*K_Q10);
     ui_inf   = 1.0/(1.0 + exp((V - 99.45)/27.48));
-      
+
     alpha_xr = 0.0003*(V + 14.1)/(1.0 - exp((V + 14.1)/-5.0));
     beta_xr  = 7.3898e-05*(V - 3.3328)/(exp((V -3.3328)/5.1237) - 1.0);
     tau_xr   = 1.0/(alpha_xr + beta_xr);
     xr_inf   = 1.0/(1.0 + exp((V + 14.1)/-6.5));
-      
+
     alpha_xs = 4e-05*(V - 19.9)/(1.0 - exp((V - 19.9)/-17.0));
     beta_xs  = 3.5e-05*(V - 19.9)/(exp((V - 19.9)/9.0) - 1.0);
     tau_xs   = 0.5/(alpha_xs + beta_xs);
     xs_inf   = dolfin::pow((1.0 + exp((V - 19.9)/-12.7)),-0.5);
-     
-    tau_d    = (1.0 - exp((V + 10.0)/-6.24))/(0.035*(V + 10.0)*(1.0 + exp((V + 10.0)/-6.24))); 
+
+    tau_d    = (1.0 - exp((V + 10.0)/-6.24))/(0.035*(V + 10.0)*(1.0 + exp((V + 10.0)/-6.24)));
     d_inf    = 1.0/(1.0 + exp((V +10.0)/-8.0));
-      
-    tau_f    = 9.0/(0.0197*exp(-0.0337*0.0337*(V + 10.0)*(V + 10.0)) + 0.02); 
+
+    tau_f    = 9.0/(0.0197*exp(-0.0337*0.0337*(V + 10.0)*(V + 10.0)) + 0.02);
     f_inf    = 1.0/(1.0 + exp((V + 28.0)/6.9));
-     
+
     fca_inf  = 1.0/(1.0 + Ca_i/0.00035);
-     
+
     Fn       = 1e-12*Vrel*I_rel - (5e-13/F)*(0.5*I_CaL - 0.2*I_NaCa);
     u_inf    = 1.0/(1.0 + exp((Fn - 3.4175e-13)/-13.67e-16));
-     
+
     tau_v    = 1.91 + 2.09/(1.0 + exp((Fn - 3.4175e-13)/-13.67e-16));
     v_inf    = 1.0 - 1.0/(1.0 + exp((Fn - 6.835e-14)/-13.67e-16));
-     
+
     tau_w    = 6.0*(1.0 - exp((V - 7.9)/-5.0))/((1.0 + 0.3*exp((V - 7.9)/-5.0))*(V - 7.9));
     w_inf    = 1.0 - 1.0/(1.0 + exp((V - 40.0)/-17.0));
   }
-  
+
   bool update(const double* u, double t, bool end)
   {
     if ( end )
       VT = u[0];
     return true;
   }
-  
+
 private:
-  
+
   // State varibles
   double m, h, j, oa, oi, ua, ui, xr, xs, d, ff, fca, uu, v, w, Na_i, Ca_i;
   double Ca_rel, Ca_up, K_i, V;
-  
+
   // Ionic currents and gating variables
   double alpha_m, beta_m, tau_m, m_inf, alpha_h, beta_h, tau_h, h_inf;
   double alpha_j, beta_j, tau_j, j_inf, alpha_oa, beta_oa, tau_oa, oa_inf;
@@ -292,12 +292,12 @@ private:
   double alpha_ui, beta_ui, tau_ui, ui_inf, alpha_xr, beta_xr, tau_xr, xr_inf;
   double alpha_xs, beta_xs, tau_xs, xs_inf, tau_d, d_inf, tau_f, f_inf;
   double fca_inf, u_inf, tau_v, v_inf, tau_w, w_inf, B1, B2;
-  
+
   // Membrane currents
   double I_rel, I_CaL, I_NaCa, Fn, sigma, f_NaK, I_NaK, E_Na, I_bNa;
   double I_Na, I_pCa, E_Ca, I_bCa, I_upleak, I_up, I_tr, E_K, I_K1;
   double I_to, g_Kur, I_Kur, I_Kr, I_Ks, I_ion;
-  
+
   // Gate coefficients
   double Cm, R, T, F, z_Na, z_K, z_Ca, Na_o, K_o, Ca_o, K_Q10, tau_fca;
   double k_rel, g_CaL, gamma, I_NaCamax, K_mNa, K_mCa, k_sat, Vrel, tau_u;
@@ -308,7 +308,7 @@ private:
 
   // Stimulus current
   double ist;
-  
+
   // Number of function evaluations
   unsigned int num_fevals;
 

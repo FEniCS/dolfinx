@@ -48,13 +48,13 @@ void TimeSlabJacobian::update()
 
     //cout << ej << endl;
     //cout << Aj << endl;
-    
+
     // Compute product Aj = Aej
     mult(ej, Aj);
-    
+
     // Set column of A
     column(A.mat(), j) = Aj.vec();
-    
+
     ej[j] = 0.0;
   }
 }

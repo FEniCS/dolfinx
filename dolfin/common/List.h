@@ -17,21 +17,21 @@ namespace dolfin
   /// reallocation and spliced together with other lists, etc.
   ///
   /// It is a wrapper for std::list (doubly-linked list), so see the STL
-  /// manual for further details: http://www.sgi.com/tech/stl/ 
+  /// manual for further details: http://www.sgi.com/tech/stl/
 
   template <class T>
   class List : public std::list<T>
   {
   public:
-    
+
     /// Create empty list
     List() : std::list<T>() {}
 
     /// Copy constructor
     List(const List<T>& x) : std::list<T>(x) {}
-    
+
   };
-  
+
 }
 
 #endif

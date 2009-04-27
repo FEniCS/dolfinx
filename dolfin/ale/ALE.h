@@ -27,7 +27,7 @@ namespace dolfin
 
     /// Move coordinates of mesh according to new boundary coordinates
     static void move(Mesh& mesh, BoundaryMesh& new_boundary, dolfin::ALEType method=lagrange);
-    
+
     /// Move coordinates of mesh0 according to mesh1 with common global vertices
     static void move(Mesh& mesh0, Mesh& mesh1, dolfin::ALEType method=lagrange);
 

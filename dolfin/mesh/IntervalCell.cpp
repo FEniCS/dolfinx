@@ -82,7 +82,7 @@ void IntervalCell::refine_cell(Cell& cell, MeshEditor& editor,
   const uint v0 = v[0];
   const uint v1 = v[1];
   const uint e0 = offset + e[0];
-  
+
   // Add the two new cells
   editor.add_cell(current_cell++, v0, e0);
   editor.add_cell(current_cell++, e0, v1);
@@ -101,7 +101,7 @@ double IntervalCell::volume(const MeshEntity& interval) const
   const uint* vertices = interval.entities(0);
   const double* x0 = geometry.x(vertices[0]);
   const double* x1 = geometry.x(vertices[1]);
-  
+
   // Compute length of interval (line segment)
   double sum = 0.0;
   for (uint i = 0; i < geometry.dim(); ++i)
@@ -191,7 +191,7 @@ bool IntervalCell::intersects(const MeshEntity& entity, const Cell& cell) const
 {
   dolfin_not_implemented();
   return false;
-} 
+}
 //-----------------------------------------------------------------------------
 std::string IntervalCell::description() const
 {

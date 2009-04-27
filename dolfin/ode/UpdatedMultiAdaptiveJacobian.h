@@ -13,7 +13,7 @@ namespace dolfin
 {
   class MultiAdaptiveNewtonSolver;
   class MultiAdaptiveTimeSlab;
-    
+
   /// This class represents the Jacobian matrix of the system of
   /// equations defined on a multi-adaptive time slab.
 
@@ -50,7 +50,7 @@ namespace dolfin
 
     // Size of increment
     double h;
-    
+
   };
 
 }

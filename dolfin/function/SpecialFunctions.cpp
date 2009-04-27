@@ -131,7 +131,7 @@ void AvgMeshSize::eval(double* values, const Data& data) const
       values[0] = (cell0.diameter() + cell1.diameter())/2.0;
       return;
     }
-    // Else there is only one cell connected to the facet and the average is 
+    // Else there is only one cell connected to the facet and the average is
     // the cell diameter
     else
     {
@@ -173,7 +173,7 @@ dolfin::uint FacetNormal::rank() const
 {
   return 1;
 }
-//-----------------------------------------------------------------------------    
+//-----------------------------------------------------------------------------
 dolfin::uint FacetNormal::dim(uint i) const
 {
   if(i > 0)
@@ -219,7 +219,7 @@ void InvFacetArea::eval(double* values, const Data& data) const
     values[0] = 0.0;
 }
 //-----------------------------------------------------------------------------
-IsOutflowFacet::IsOutflowFacet(const FunctionSpace& V, const Function& f) 
+IsOutflowFacet::IsOutflowFacet(const FunctionSpace& V, const Function& f)
                              : Function(V), field(&f)
 {
   // Some simple sanity checks on function
@@ -262,7 +262,7 @@ void IsOutflowFacet::eval(double* values, const Data& data) const
   for (VertexIterator v(facet); !v.end(); ++v)
     x += v->point();
   x /= static_cast<double>(facet.num_entities(0));
-  
+
   // Compute size of value
   uint size = 1;
   for (uint i = 0; i < element.value_rank(); i++)
@@ -293,13 +293,13 @@ SUPGStabilizer::SUPGStabilizer(const FunctionSpace& V, const Function& f, double
 
   if (f.function_space().element().value_rank() != 1)
     error("The provided field function need to be a vector valued function.");
-  
+
   if (f.function_space().element().value_dimension(0) != geometric_dimension())
     error("The provided field function value dimension need to be the same as the geometric dimension.");
-  
+
   if (sigma_ < 0.0)
     error("Provide a positive value for sigma");
-  
+
 }
 //-----------------------------------------------------------------------------
   void SUPGStabilizer::eval(double* values, const Data& data) const
@@ -325,8 +325,8 @@ SUPGStabilizer::SUPGStabilizer(const FunctionSpace& V, const Function& f, double
     // Compute the local stabilizing factor tau
     if (PE > DOLFIN_EPS)
       tau = 1/std::tanh(PE)-1/PE;
-    
-    // Weight the field with the norm, together with the cell size and 
+
+    // Weight the field with the norm, together with the cell size and
     // the local stabilizing factor
     for (uint i = 0;i < geometric_dimension(); ++i)
       values[i] *= 0.5*h*tau/field_norm;

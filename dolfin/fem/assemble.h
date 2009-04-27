@@ -17,7 +17,7 @@
 
 namespace dolfin
 {
-  
+
   class GenericTensor;
   class GenericMatrix;
   class GenericVector;
@@ -26,7 +26,7 @@ namespace dolfin
   class DirichletBC;
 
   //--- Copies of assembly functions in Assembler.h ---
-  
+
   /// Assemble tensor
   void assemble(GenericTensor& A,
                 const Form& a,
@@ -53,12 +53,12 @@ namespace dolfin
                        const Form& L,
                        const DirichletBC& bc,
                        bool reset_tensors=true);
- 
+
   /// Assemble system (A, b) and apply Dirichlet boundary conditions
   void assemble_system(GenericMatrix& A,
                        GenericVector& b,
                        const Form& a,
-                       const Form& L, 
+                       const Form& L,
                        std::vector<const DirichletBC*>& bcs,
                        bool reset_tensors=true);
 

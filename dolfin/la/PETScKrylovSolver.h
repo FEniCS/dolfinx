@@ -32,7 +32,7 @@ namespace dolfin
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of PETSc.
-  
+
   class PETScKrylovSolver : public GenericLinearSolver
   {
   public:
@@ -52,13 +52,13 @@ namespace dolfin
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
-          
+
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);
-    
+
     /// Display solver data
     void disp() const;
-     
+
   private:
 
     /// Initialize KSP solver
@@ -66,18 +66,18 @@ namespace dolfin
 
     /// Read parameters from database
     void read_parameters();
-    
+
     /// Set solver
     void set_solver();
 
     /// Set PETScPreconditioner
     void setPETScPreconditioner();
-    
+
     /// Report the number of iterations
     void write_report(int num_iterations);
 
-    /// Get PETSc method identifier 
-    #if PETSC_VERSION_MAJOR > 2 
+    /// Get PETSc method identifier
+    #if PETSC_VERSION_MAJOR > 2
     const KSPType get_type(dolfin::SolverType method) const;
     #else
     KSPType get_type(dolfin::SolverType method) const;
@@ -101,8 +101,8 @@ namespace dolfin
 
     /// True if we have read parameters
     bool parameters_read;
-    
-    // FIXME: Required to avoid PETSc bug with Hypre. See explanation inside 
+
+    // FIXME: Required to avoid PETSc bug with Hypre. See explanation inside
     //        PETScKrylovSolver:init(). Can be removed when PETSc is patched.
     bool pc_set;
   };

@@ -38,31 +38,31 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
 #endif
 
 %extend dolfin::BlockVector {
-    Vector& getitem(int i) 
-    { 
+    Vector& getitem(int i)
+    {
       return self->get(i);
     }
     void setitem(int i, Vector& v)
     {
-      self->set(i,v); 
+      self->set(i,v);
     }
 }
 
 %extend dolfin::BlockVector {
   %pythoncode %{
 
-    def __add__(self, v): 
-      a = self.copy() 
+    def __add__(self, v):
+      a = self.copy()
       a += v
       return a
 
-    def __sub__(self, v): 
-      a = self.copy() 
+    def __sub__(self, v):
+      a = self.copy()
       a -= v
       return a
 
-    def __mul__(self, v): 
-      a = self.copy() 
+    def __mul__(self, v):
+      a = self.copy()
       a *= v
       return a
 
@@ -89,8 +89,8 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
     i,j = t
     return self.get(i,j)
 
-  def BlockMatrix_set(self,t,m): 
-    i,j = t 
+  def BlockMatrix_set(self,t,m):
+    i,j = t
     return self.set(i,j,m)
 
   BlockMatrix.__getitem__ = BlockMatrix_get
@@ -98,31 +98,31 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
 %}
 
 %define GET_VEC_ITEM_MACRO(VEC_TYPE,RETURN_VEC_TYPE)
-%extend dolfin::VEC_TYPE 
+%extend dolfin::VEC_TYPE
 {
   // Get item for single index
   double __getitem__(int index) {
-    if (index >= static_cast<int>(self->size()) or 
+    if (index >= static_cast<int>(self->size()) or
 	index < -static_cast<int>(self->size()))
       throw std::runtime_error("index out of range");
     if (index < 0)
       index += self->size();
     return self->getitem(index);
   }
-  
+
   // Get item for single index
   RETURN_VEC_TYPE* __getitem__(PyObject* op) {
     //Check first for None
     if (op == Py_None)
       throw std::runtime_error("provide a sequence or slice");
-    
+
     // If it is a slice
     if (PySlice_Check(op)){
       Py_ssize_t length(self->size());
       Py_ssize_t start, stop, step, slice_length;
       if (PySlice_GetIndicesEx((PySliceObject*)op, length, &start, &stop, &step, &slice_length)<0)
 	throw std::runtime_error("invalid slice");
-      
+
       // Create the Vector
       RETURN_VEC_TYPE * return_vec = new RETURN_VEC_TYPE(static_cast<dolfin::uint>(slice_length));
       dolfin::uint j = static_cast<dolfin::uint>(start);
@@ -132,17 +132,17 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
       }
       return return_vec;
     }
-    
+
     // If it is a sequence
     if (!PyList_Check(op))
       throw std::runtime_error("index must be either an int, a slice or a list");
-    
+
     // An initial check of the length of sequence
     int seq_length = PySequence_Length(op);
     int size_of_me = self->size();
     if ( seq_length > size_of_me )
       throw std::runtime_error("the length of the sequence must be smaller than the Vector");
-    
+
     // Create the Vector
     RETURN_VEC_TYPE * return_vec = new RETURN_VEC_TYPE(seq_length);
     PyObject *op1=NULL;
@@ -152,39 +152,39 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
 	delete return_vec;
 	throw std::runtime_error("invalid index");
       }
-      
+
       // Check for int
       if (!PyInt_Check(op1)){
 	delete return_vec;
 	throw std::runtime_error("invalid index, must be int");
       }
 
-      // Convert to long and check sign of index and 
+      // Convert to long and check sign of index and
       // decrease refernce on python index
       index = PyInt_AsLong(op1);
-      if (index >= static_cast<int>(self->size()) or 
+      if (index >= static_cast<int>(self->size()) or
 	  index < -static_cast<int>(self->size()))
 	throw std::runtime_error("index out of range");
       if (index < 0)
 	index += self->size();
       Py_DECREF(op1);
-	
+
       // Assign the vector element
       return_vec->setitem(i,self->getitem(static_cast<dolfin::uint>(index)));
     }
     return return_vec;
-  } 	      
+  }
 
   void __setitem__(PyObject* op, const dolfin::GenericVector &values) {
     //Check first for None
     if (op == Py_None){
       throw std::runtime_error("provide a sequence or slice as index");
     }
-    
+
     // Check for int
     if (PyInt_Check(op))
       throw std::runtime_error("cannot broadcast vector to a single index");
-	
+
     // If it is a slice
     if (PySlice_Check(op)){
       Py_ssize_t length(self->size());
@@ -199,12 +199,12 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
 	j += step;
       }
     }
-    
+
     // If it is a List
     else if (PyList_Check(op)) {
       // An initial check of the length of sequence
       dolfin::uint seq_length = static_cast<dolfin::uint>(PySequence_Length(op));
-      if ( seq_length != values.size() ) 
+      if ( seq_length != values.size() )
 	throw std::runtime_error("non matching dimensions on input");
       if ( seq_length > self->size())
 	throw std::runtime_error("too large index");
@@ -214,21 +214,21 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
       for (dolfin::uint i = 0; i < seq_length; i++){
 	if (!(op1=PySequence_GetItem(op, i)))
 	  throw std::runtime_error("invalid index");
-	
+
       	// Check for int
 	if (!PyInt_Check(op1))
 	  throw std::runtime_error("invalid index, must be int");
-	
-	// Convert to long and check sign of index and 
+
+	// Convert to long and check sign of index and
 	// decrease refernce on python index
 	index = PyInt_AsLong(op1);
-	if (index >= static_cast<int>(self->size()) or 
+	if (index >= static_cast<int>(self->size()) or
 	    index < -static_cast<int>(self->size()))
 	  throw std::runtime_error("index out of range");
 	if (index < 0)
 	  index += self->size();
 	Py_DECREF(op1);
-	
+
 	// Assign the vector element
 	self->setitem(index,values.getitem(static_cast<dolfin::uint>(i)));
       }
@@ -246,14 +246,14 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
     // If the index is a single int
     if (PyInt_Check(op)){
       long index = PyInt_AsLong(op);
-      if (index >= static_cast<int>(self->size()) or 
+      if (index >= static_cast<int>(self->size()) or
 	  index < -static_cast<int>(self->size()))
 	throw std::runtime_error("index out of range");
       if (index < 0)
 	index += self->size();
       self->setitem(index, value);
     }
-      
+
     // If it is a slice
     else if (PySlice_Check(op)){
       Py_ssize_t length(self->size());
@@ -266,35 +266,35 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
 	j += step;
       }
     }
-      
+
     // If it is a List
     else if (PyList_Check(op)) {
-      
+
       // An initial check of the length of sequence
       dolfin::uint seq_length = static_cast<dolfin::uint>(PySequence_Length(op));
       if ( seq_length > self->size())
 	throw std::runtime_error("too large index");
-      
+
       PyObject *op1=NULL;
       long index;
       for (dolfin::uint i = 0; i < seq_length; i++){
 	if (!(op1=PySequence_GetItem(op, i)))
 	  throw std::runtime_error("invalid index");
-	
+
       	// Check for int
 	if (!PyInt_Check(op1))
 	  throw std::runtime_error("invalid index, must be int");
-	
-	// Convert to long and check sign of index and 
+
+	// Convert to long and check sign of index and
 	// decrease refernce on python index
 	index = PyInt_AsLong(op1);
-	if (index >= static_cast<int>(self->size()) or 
+	if (index >= static_cast<int>(self->size()) or
 	    index < -static_cast<int>(self->size()))
 	  throw std::runtime_error("index out of range");
 	if (index < 0)
 	  index += self->size();
 	Py_DECREF(op1);
-	    
+
 	// Assign the vector element
 	self->setitem(index,value);
       }
@@ -313,7 +313,7 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
   {
     (*self)*=a;
   }
-  
+
   %pythoncode
   %{
     def __is_compatibable(self,other):
@@ -322,7 +322,7 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
             return False
         self_type = get_tensor_type(self)
         return self_type == get_tensor_type(other)
-        
+
     def array(self):
         " Return a numpy array representation of Vector"
         import numpy
@@ -337,7 +337,7 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
             ret.axpy(1.0,other)
             return ret
         return NotImplemented
-    
+
     def __sub__(self,other):
         """x.__sub__(y) <==> x-y"""
         if self.__is_compatibable(other):
@@ -345,7 +345,7 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
             ret.axpy(-1.0,other)
             return ret
         return NotImplemented
-    
+
     def __mul__(self,other):
         """x.__mul__(y) <==> x*y"""
         if isinstance(other,(int,float)):
@@ -353,7 +353,7 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
             ret._scale(other)
             return ret
         return NotImplemented
-    
+
     def __div__(self,other):
         """x.__div__(y) <==> x/y"""
         if isinstance(other,(int,float)):
@@ -361,15 +361,15 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
             ret._scale(1.0/other)
             return ret
         return NotImplemented
-    
+
     def __radd__(self,other):
         """x.__radd__(y) <==> y+x"""
         return self.__add__(other)
-    
+
     def __rsub__(self,other):
         """x.__rsub__(y) <==> y-x"""
         return self.__sub__(other)
-    
+
     def __rmul__(self,other):
         """x.__rmul__(y) <==> y*x"""
         if isinstance(other,(int,float)):
@@ -377,25 +377,25 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
             ret._scale(other)
             return ret
         return NotImplemented
-    
+
     def __rdiv__(self,other):
         """x.__rdiv__(y) <==> y/x"""
         return NotImplemented
-    
+
     def __iadd__(self,other):
         """x.__iadd__(y) <==> x+y"""
         if self.__is_compatibable(other):
             self.axpy(1.0,other)
             return self
         return NotImplemented
-    
+
     def __isub__(self,other):
         """x.__isub__(y) <==> x-y"""
         if self.__is_compatibable(other):
             self.axpy(-1.0,other)
             return self
         return NotImplemented
-    
+
     def __imul__(self,other):
         """x.__imul__(y) <==> x*y"""
         if isinstance(other,(float,int)):
@@ -409,7 +409,7 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
             self._scale(1.0/other)
             return self
         return NotImplemented
-    
+
   %}
 }
 %enddef
@@ -422,29 +422,29 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
   {
     (*self)*=a;
   }
-  
+
   PyObject* data() {
     npy_intp rowdims[1];
     rowdims[0] = self->size(0)+1;
-    
+
     PyArrayObject* rows = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, rowdims, NPY_ULONG, (char *)(std::tr1::get<0>(self->data()))));
     if ( rows == NULL ) return NULL;
     PyArray_INCREF(rows);
-    
+
     npy_intp coldims[1];
     coldims[0] = std::tr1::get<3>(self->data());
-    
+
     PyArrayObject* cols = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, coldims, NPY_ULONG, (char *)(std::tr1::get<1>(self->data()))));
     if ( cols == NULL ) return NULL;
     PyArray_INCREF(cols);
-    
+
     npy_intp valuedims[1];
     valuedims[0] = std::tr1::get<3>(self->data());
-    
+
     PyArrayObject* values = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, valuedims, NPY_DOUBLE, (char *)(std::tr1::get<2>(self->data()))));
     if ( values == NULL ) return NULL;
     PyArray_INCREF(values);
-    
+
     return PyTuple_Pack(3,rows, cols, values);
   }
 
@@ -456,7 +456,7 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
             return False
         self_type = get_tensor_type(self)
         return self_type == get_tensor_type(other)
-        
+
     def array(self):
         " Return a numpy array representation of Matrix"
         import numpy
@@ -475,7 +475,7 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
             ret.axpy(1.0,other)
             return ret
         return NotImplemented
-    
+
     def __sub__(self,other):
         """x.__sub__(y) <==> x-y"""
         if self.__is_compatibable(other):
@@ -483,7 +483,7 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
             ret.axpy(-1.0,other)
             return ret
         return NotImplemented
-    
+
     def __mul__(self,other):
         """x.__mul__(y) <==> x*y"""
         from numpy import ndarray
@@ -517,7 +517,7 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
             result_vec.get(ret)
             return ret
         return NotImplemented
-    
+
     def __div__(self,other):
         """x.__div__(y) <==> x/y"""
         if isinstance(other,(int,float)):
@@ -525,15 +525,15 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
             ret._scale(1.0/other)
             return ret
         return NotImplemented
-    
+
     def __radd__(self,other):
         """x.__radd__(y) <==> y+x"""
         return self.__add__(other)
-    
+
     def __rsub__(self,other):
         """x.__rsub__(y) <==> y-x"""
         return self.__sub__(other)
-    
+
     def __rmul__(self,other):
         """x.__rmul__(y) <==> y*x"""
         if isinstance(other,(int,float)):
@@ -541,25 +541,25 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
             ret._scale(other)
             return ret
         return NotImplemented
-    
+
     def __rdiv__(self,other):
         """x.__rdiv__(y) <==> y/x"""
         return NotImplemented
-    
+
     def __iadd__(self,other):
         """x.__iadd__(y) <==> x+y"""
         if self.__is_compatibable(other):
             self.axpy(1.0,other)
             return self
         return NotImplemented
-    
+
     def __isub__(self,other):
         """x.__isub__(y) <==> x-y"""
         if self.__is_compatibable(other):
             self.axpy(-1.0,other)
             return self
         return NotImplemented
-    
+
     def __imul__(self,other):
         """x.__imul__(y) <==> x*y"""
         if isinstance(other,(float,int)):
@@ -758,7 +758,7 @@ bool has_linear_algebra_backend(std::string backend)
   {
 #ifdef HAS_PETSC
     return true;
-#else 
+#else
     return false;
 #endif
   }
@@ -766,7 +766,7 @@ bool has_linear_algebra_backend(std::string backend)
   {
 #ifdef HAS_TRILINOS
     return true;
-#else 
+#else
     return false;
 #endif
   }
@@ -774,7 +774,7 @@ bool has_linear_algebra_backend(std::string backend)
   {
 #ifdef HAS_MTL4
     return true;
-#else 
+#else
     return false;
 #endif
   }

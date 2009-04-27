@@ -20,9 +20,9 @@ namespace dolfin
   {
 
   public:
-    
-    /// Refine simplicial mesh locally by recursive edge bisection 
-    static void refine(Mesh& mesh, 
+
+    /// Refine simplicial mesh locally by recursive edge bisection
+    static void refine(Mesh& mesh,
 		       MeshFunction<bool>& cell_marker,
 		       MeshFunction<uint>& cell_map,
 		       std::vector<int>& facet_map);
@@ -30,7 +30,7 @@ namespace dolfin
   private:
 
     class DCell;
-  
+
     /// Vertex with list of connected cells
     class DVertex
     {
@@ -40,7 +40,7 @@ namespace dolfin
       std::list<DCell*> cells;
       Point p;
     };
-    
+
     // Cell with parent_id, deletion marker and facets markets
     class DCell
     {
@@ -50,9 +50,9 @@ namespace dolfin
       int parent_id;
       std::vector<DVertex *> vertices;
       bool deleted;
-      std::vector<int> facets; 
+      std::vector<int> facets;
     };
-    
+
     // Dynamic mesh for recursive Rivara refinement
     class DMesh
     {

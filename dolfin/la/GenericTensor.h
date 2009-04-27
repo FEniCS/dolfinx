@@ -81,7 +81,7 @@ namespace dolfin
     template<class T> T& down_cast()
     {
       T* t = dynamic_cast<T*>(instance());
-      if (!t) 
+      if (!t)
         error("GenericTensor cannot be cast to the requested type.");
       return *t;
     }

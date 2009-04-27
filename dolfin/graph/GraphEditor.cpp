@@ -53,7 +53,7 @@ void GraphEditor::init_vertices(uint num_vertices)
   // Check if we are currently editing a graph
   if ( !graph )
     error("No graph opened, unable to edit.");
-  
+
   // Initialize graph data
   graph->_num_vertices = num_vertices;
   if(!graph->_vertices && !graph->_vertex_weights)
@@ -74,7 +74,7 @@ void GraphEditor::init_edges(uint num_edges)
   // Check if we are currently editing a graph
   if ( !graph )
     error("No graph opened, unable to edit.");
-  
+
   // Check that vertex data has been inialised
   if( !graph->_vertices )
     error("Vertex data has not been initialised.");
@@ -118,7 +118,7 @@ void GraphEditor::add_vertex(uint u, uint num_edges)
   // Check if vertex added in correct order
   if ( u != next_vertex )
     error("Next vertex that can be added is %d.", next_vertex);
-  
+
   // Set offset and step to next vertex
   graph->_vertices[next_vertex++] = edge_count;
 

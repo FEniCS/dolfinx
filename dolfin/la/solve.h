@@ -13,7 +13,7 @@
 #include "enums_la.h"
 
 namespace dolfin
-{  
+{
 
   class GenericMatrix;
   class GenericVector;
@@ -27,10 +27,10 @@ namespace dolfin
 
   /// Normalize vector according to given normalization type
   double normalize(GenericVector& x, dolfin::NormalizationType normalization_type=normalize_average);
-  
+
   /// Solve linear system Ax = b
   //void solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);
-  
+
 }
 
 #endif

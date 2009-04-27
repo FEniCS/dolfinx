@@ -28,7 +28,7 @@ namespace dolfin
     XMLMap(std::map<uint, std::vector<int> >& iam, NewXMLFile& parser);
     XMLMap(std::map<uint, std::vector<uint> >& uam, NewXMLFile& parser);
     XMLMap(std::map<uint, std::vector<double> >& dam, NewXMLFile& parser);
-    
+
     // Callbacks
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
@@ -40,12 +40,12 @@ namespace dolfin
     static void write(const std::map<uint, std::vector<int> >& map, std::ostream& outfile, uint indentation_level=0);
     static void write(const std::map<uint, std::vector<uint> >& map, std::ostream& outfile, uint indentation_level=0);
     static void write(const std::map<uint, std::vector<double> >& map, std::ostream& outfile, uint indentation_level=0);
-    
+
   private:
-    
+
     enum parser_state { OUTSIDE_MAP, INSIDE_MAP, INSIDE_MAP_ENTRY, MAP_DONE };
     enum map_type { INT, UINT, DOUBLE, INT_ARRAY, UINT_ARRAY, DOUBLE_ARRAY, UNSET };
-    
+
     void finalize_map_entry();
     void start_map(const xmlChar *name, const xmlChar **attrs);
     void read_map_entry(const xmlChar *name, const xmlChar **attrs);
@@ -79,7 +79,7 @@ namespace dolfin
     uint current_key;
 
   };
-  
+
 }
 
 #endif

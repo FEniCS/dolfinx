@@ -28,7 +28,7 @@ int XMLObject::parse_int(const xmlChar* name, const xmlChar** attrs,
   if ( !attrs )
     error("Missing attribute \"%s\" for <%s> in XML file.",
                   attribute, name);
-  
+
   // Parse data
   for (uint i = 0; attrs[i]; i++)
   {
@@ -38,12 +38,12 @@ int XMLObject::parse_int(const xmlChar* name, const xmlChar** attrs,
       if ( !attrs[i+1] )
         error("Value for attribute \"%s\" of <%s> missing in XML file.",
 		      attribute, name);
-      
+
       int value = atoi((const char *) (attrs[i+1]));
       return value;
     }
   }
-  
+
   // Didn't get the value
   error("Missing attribute \"%s\" for <%s> in XML file.",
 		attribute, name);
@@ -59,7 +59,7 @@ dolfin::uint XMLObject::parseUnsignedInt(const xmlChar* name,
   if ( !attrs )
     error("Missing attribute \"%s\" for <%s> in XML file.",
                   attribute, name);
-  
+
   // Parse data
   for (uint i = 0; attrs[i]; i++)
   {
@@ -69,7 +69,7 @@ dolfin::uint XMLObject::parseUnsignedInt(const xmlChar* name,
       if ( !attrs[i+1] )
         error("Value for attribute \"%s\" of <%s> missing in XML file.",
 		      attribute, name);
-      
+
       int value = atoi((const char *) (attrs[i+1]));
       if ( value < 0 )
       {
@@ -79,7 +79,7 @@ dolfin::uint XMLObject::parseUnsignedInt(const xmlChar* name,
       return static_cast<uint>(value);
     }
   }
-  
+
   // Didn't get the value
   error("Missing attribute \"%s\" for <%s> in XML file.",
 		attribute, name);
@@ -94,7 +94,7 @@ double XMLObject::parse_real(const xmlChar* name, const xmlChar** attrs,
   if ( !attrs )
     error("Missing attribute \"%s\" for <%s> in XML file.",
                   attribute, name);
-  
+
   // Parse data
   for (uint i = 0; attrs[i]; i++)
   {
@@ -104,12 +104,12 @@ double XMLObject::parse_real(const xmlChar* name, const xmlChar** attrs,
       if ( !attrs[i+1] )
         error("Value for attribute \"%s\" of <%s>  missing in XML file.",
 		      attribute, name);
-    
+
       double value = static_cast<double>(atof((const char *) (attrs[i+1])));
       return value;
     }
   }
-  
+
   // Didn't get the value
   error("Missing attribute \"%s\" for <%s> in XML file.",
 		attribute, name);
@@ -124,7 +124,7 @@ std::string XMLObject::parse_string(const xmlChar* name, const xmlChar** attrs,
   if ( !attrs )
     error("Missing attribute \"%s\" for <%s> in XML file.  No attribute list given.",
                   attribute, name);
-  
+
   // Parse data
   for (uint i = 0; attrs[i]; i++)
   {
@@ -139,7 +139,7 @@ std::string XMLObject::parse_string(const xmlChar* name, const xmlChar** attrs,
       return value;
     }
   }
-  
+
   // Didn't get the value
   error("Missing attribute value for \"%s\" for <%s> in XML file.",
 		attribute, name);
@@ -154,7 +154,7 @@ std::string XMLObject::parse_stringOptional(const xmlChar* name, const xmlChar**
   if ( !attrs )
     error("Missing attribute \"%s\" for <%s> in XML file.  No attribute list given.",
                   attribute, name);
-  
+
   // Parse data
   for (uint i = 0; attrs[i]; i++)
   {
@@ -169,7 +169,7 @@ std::string XMLObject::parse_stringOptional(const xmlChar* name, const xmlChar**
       return value;
     }
   }
-  
+
   // Didn't get the value, then return an empty string
   // a default will be set in the calling function
   return "";
@@ -182,7 +182,7 @@ bool XMLObject::parse_bool(const xmlChar* name, const xmlChar** attrs,
   if ( !attrs )
     error("Missing attribute \"%s\" for <%s> in XML file.",
                   attribute, name);
-  
+
   // Parse data
   for (uint i = 0; attrs[i]; i++)
   {
@@ -192,7 +192,7 @@ bool XMLObject::parse_bool(const xmlChar* name, const xmlChar** attrs,
       if ( !attrs[i+1] )
         error("Value for attribute \"%s\" of <%s> missing in XML file.",
 		      attribute, name);
-      
+
       std::string value = (const char *) (attrs[i+1]);
       if ( strcmp(value.c_str(), "true") == 0 or strcmp(value.c_str(), "1") == 0 )
         return true;
@@ -202,10 +202,10 @@ bool XMLObject::parse_bool(const xmlChar* name, const xmlChar** attrs,
       error("Cannot convert \"%s\" for attribute \"%s\" in <%s> to bool.",
 		    value.c_str(), attribute, name);
       return false;
-      
+
     }
   }
-  
+
   // Didn't get the value
   error("Missing attribute \"%s\" for <%s> in XML file.",
 		attribute, name);

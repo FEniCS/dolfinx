@@ -47,7 +47,7 @@ void dolfin::dolfin_set(std::string key, std::ostream& stream)
           else
                 error("Only key 'output destination' can take a stream as value.");
     }
-    
+
   }
   else
     error("Only key 'output destination' can take a stream as value.");
@@ -58,7 +58,7 @@ void dolfin::dolfin_add(std::string key, Parameter value)
   ParameterSystem::parameters.add(key, value);
 }
 //-----------------------------------------------------------------------------
-bool dolfin::dolfin_changed(std::string key) 
+bool dolfin::dolfin_changed(std::string key)
 {
   return ParameterSystem::parameters.changed(key);
 }

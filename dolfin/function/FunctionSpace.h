@@ -18,7 +18,7 @@
 
 namespace ufc
 {
-  class cell; 
+  class cell;
 }
 
 namespace dolfin
@@ -30,7 +30,7 @@ namespace dolfin
   class Function;
   class IntersectionDetector;
   class GenericVector;
-  template <class T> class MeshFunction; 
+  template <class T> class MeshFunction;
 
   /// This class represents a finite element function space defined by
   /// a mesh, a finite element, and a local-to-global mapping of the
@@ -100,7 +100,7 @@ namespace dolfin
     // Create Functions space based on the restriction
     boost::shared_ptr<FunctionSpace> restriction(MeshFunction<bool>& restriction);
 
-    // Evaluate restriction 
+    // Evaluate restriction
     bool is_inside_restriction(uint c) const;
 
   private:
@@ -112,7 +112,7 @@ namespace dolfin
 
       // Constructor
       Scratch(const FiniteElement& element);
-      
+
       // Constructor
       Scratch();
 

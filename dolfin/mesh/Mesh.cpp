@@ -56,7 +56,7 @@ Mesh::Mesh(std::string filename)
     File file(filename);
     LocalMeshData data;
     file >> data;
-    
+
     // Partition data
     MeshPartitioning::partition(*this, data);
   }
@@ -79,10 +79,10 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   _topology = mesh._topology;
   _geometry = mesh._geometry;
   _data = mesh._data;
-  
+
   if (mesh._cell_type)
     _cell_type = CellType::create(mesh._cell_type->cell_type());
-  
+
   rename(mesh.name(), mesh.label());
 
   _ordered = mesh._ordered;

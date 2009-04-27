@@ -36,7 +36,7 @@ void ODE::f(const real* u, real t, real* y)
 {
   // If a user of the mono-adaptive solver does not supply this function,
   // then call f_i() for each component.
-  
+
   // Display a warning, more efficiently if implemented
   not_impl_f();
 
@@ -127,7 +127,7 @@ void ODE::JT(const real* x, real* y, const real* u, real t)
   {
     uu[i] += h;
     f(uu, t, tmp0);
-    
+
     uu[i] -= 2*h;
     f(uu, t, tmp1);
 
@@ -143,7 +143,7 @@ void ODE::JT(const real* x, real* y, const real* u, real t)
 real ODE::dfdu(const real* u, real t, uint i, uint j)
 {
   // Compute Jacobian numerically if dfdu() is not implemented by user
-  
+
   // FIXME: Maybe we should move this somewhere else?
 
   // We are not allowed to change u, but we restore it afterwards,
@@ -152,17 +152,17 @@ real ODE::dfdu(const real* u, real t, uint i, uint j)
 
   // Save value of u_j
   real uj = uu[j];
-  
+
   // Small change in u_j
   real h = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(uj));
-  
+
   // Compute F values
   uu[j] -= 0.5 * h;
   real f1 = f(uu, t, i);
-  
+
   uu[j] = uj + 0.5*h;
   real f2 = f(uu, t, i);
-         
+
   // Reset value of uj
   uu[j] = uj;
 
@@ -199,7 +199,7 @@ void ODE::save(Sample& sample)
 //-----------------------------------------------------------------------------
 dolfin::uint ODE::size() const
 {
-  return N;  
+  return N;
 }
 //-----------------------------------------------------------------------------
 real ODE::time() const
@@ -234,7 +234,7 @@ void ODE::solve()
 void ODE::solve(ODESolution& u)
 {
   dolfin_assert(!time_stepper);
-  
+
   // Solve ODE on entire time interval
   ODESolver ode_solver(*this);
   ode_solver.solve(u);

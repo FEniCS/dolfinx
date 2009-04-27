@@ -22,13 +22,13 @@ namespace dolfin
   class Logger
   {
   public:
-    
+
     /// Constructor
     Logger();
 
     /// Destructor
     ~Logger();
-    
+
     /// Print message
     void message(std::string msg, int debug_level = 0) const;
 
@@ -64,7 +64,7 @@ namespace dolfin
 
     /// Print summary of timings and tasks, optionally clearing stored timings
     void summary(bool reset=false);
-    
+
     /// Return timing (average) for given task, optionally clearing timing for task
     double timing(std::string task, bool reset=false);
 
@@ -82,7 +82,7 @@ namespace dolfin
 
     // Write message to current output destination
     void write(int debug_level, std::string msg) const;
-    
+
     // Current debug level
     int debug_level;
 

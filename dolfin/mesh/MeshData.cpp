@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Niclas Jansson, 2008.
-// 
+//
 // First added:  2008-05-19
 // Last changed: 2009-02-26
 
@@ -51,7 +51,7 @@ const MeshData& MeshData::operator= (const MeshData& data)
   {
     std::vector<uint>* a = create_array( it->first, static_cast<uint>(it->second->size()) );
     *a = *it->second;
-  }     
+  }
 
   // Copy mappings
   for (m_const_iterator it = data.mappings.begin(); it != data.mappings.end(); ++it)
@@ -71,7 +71,7 @@ const MeshData& MeshData::operator= (const MeshData& data)
 }
 //-----------------------------------------------------------------------------
 void MeshData::clear()
-{ 
+{
   for (mf_iterator it = mesh_functions.begin(); it != mesh_functions.end(); ++it)
     delete it->second;
   mesh_functions.clear();
@@ -149,7 +149,7 @@ std::map<dolfin::uint, dolfin::uint>* MeshData::create_mapping(std::string name)
 
   // Create new data
   std::map<uint, uint>* m = new std::map<uint, uint>;
-  
+
   // Add to map
   mappings[name] = m;
 
@@ -168,7 +168,7 @@ std::map<dolfin::uint, std::vector<dolfin::uint> >* MeshData::create_vector_mapp
 
   // Create new data
   std::map<uint, std::vector<uint> >* m = new std::map<uint, std::vector<uint> >;
-  
+
   // Add to map
   vector_mappings[name] = m;
 
@@ -181,7 +181,7 @@ MeshFunction<dolfin::uint>* MeshData::mesh_function(const std::string name) cons
   mf_const_iterator it = mesh_functions.find(name);
   if (it == mesh_functions.end())
     return 0;
-  
+
   return it->second;
 }
 //-----------------------------------------------------------------------------
@@ -191,7 +191,7 @@ std::vector<dolfin::uint>* MeshData::array(const std::string name) const
   a_const_iterator it = arrays.find(name);
   if (it == arrays.end())
     return 0;
-  
+
   return it->second;
 }
 //-----------------------------------------------------------------------------

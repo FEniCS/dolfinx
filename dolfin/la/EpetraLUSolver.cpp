@@ -14,34 +14,34 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EpetraLUSolver::EpetraLUSolver() 
+EpetraLUSolver::EpetraLUSolver()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraLUSolver::~EpetraLUSolver() 
+EpetraLUSolver::~EpetraLUSolver()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint EpetraLUSolver::solve(const GenericMatrix& A, GenericVector& x, 
-                                       const GenericVector& b) 
+dolfin::uint EpetraLUSolver::solve(const GenericMatrix& A, GenericVector& x,
+                                       const GenericVector& b)
 {
-  return  solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(), 
+  return  solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(),
                 b.down_cast<EpetraVector>());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint EpetraLUSolver::solve(const EpetraMatrix&A, EpetraVector& x, 
+dolfin::uint EpetraLUSolver::solve(const EpetraMatrix&A, EpetraVector& x,
                                    const EpetraVector& b)
 {
-  error("EpetraLUSolver::solve not implemented"); 
-  return 0; 
+  error("EpetraLUSolver::solve not implemented");
+  return 0;
 }
 //-----------------------------------------------------------------------------
-void EpetraLUSolver::disp() const 
+void EpetraLUSolver::disp() const
 {
-  error("EpetraLUSolver::disp not implemented"); 
+  error("EpetraLUSolver::disp not implemented");
 }
 //-----------------------------------------------------------------------------
-#endif 
+#endif
 

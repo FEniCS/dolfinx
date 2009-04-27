@@ -38,7 +38,7 @@ TimeStepper::TimeStepper(ODE& ode) :
   {
     timeslab = new MultiAdaptiveTimeSlab(ode);
   }
-  else    
+  else
   {
     timeslab = new MonoAdaptiveTimeSlab(ode);
   }
@@ -58,7 +58,7 @@ void TimeStepper::solve(ODESolution& u, real t0, real t1)
 {
   begin("Time-stepping over the time interval [%g, %g]",
         to_double(t0), to_double(t1));
- 
+
   // Do time-stepping on [t0, t1]
   t = t0;
   while (!at_end(t, t1) && !_stopped)
@@ -91,7 +91,7 @@ real TimeStepper::step(ODESolution& u, real t0, real t1)
   {
     // Build time slab
     t = timeslab->build(t0, t1);
-    
+
     // Try to solve time slab system
     if (!timeslab->solve())
     {
@@ -103,7 +103,7 @@ real TimeStepper::step(ODESolution& u, real t0, real t1)
     // Check if solution can be accepted
     if (timeslab->check(first))
       break;
-    
+
     message("Rejecting time slab K = %.3e, trying again.", to_double(timeslab->length()));
   }
 
@@ -194,7 +194,7 @@ void TimeStepper::save_adaptive_samples(ODESolution& u)
   // Compute distance between samples
   dolfin_assert(sample_density >= 1);
   real k = (t1 - t0) / static_cast<real>(sample_density);
-  
+
   // Save samples
   for (unsigned int n = 0; n < sample_density; ++n)
   {

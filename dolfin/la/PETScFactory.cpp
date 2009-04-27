@@ -14,20 +14,20 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SparsityPattern* PETScFactory::create_pattern() const 
+SparsityPattern* PETScFactory::create_pattern() const
 {
-  return new SparsityPattern(); 
+  return new SparsityPattern();
 }
 //-----------------------------------------------------------------------------
-PETScMatrix* PETScFactory::create_matrix() const 
-{ 
+PETScMatrix* PETScFactory::create_matrix() const
+{
   PETScMatrix* pm = new PETScMatrix();
   return pm;
 }
 //-----------------------------------------------------------------------------
-PETScVector* PETScFactory:: create_vector() const 
-{ 
-  return new PETScVector(); 
+PETScVector* PETScFactory:: create_vector() const
+{
+  return new PETScVector();
 }
 //-----------------------------------------------------------------------------
 

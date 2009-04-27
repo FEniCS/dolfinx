@@ -58,7 +58,7 @@ namespace dolfin
 
     /// Return topological dimension of cell
     virtual uint dim() const = 0;
-    
+
     /// Return number of entitites of given topological dimension
     virtual uint num_entities(uint dim) const = 0;
 
@@ -79,7 +79,7 @@ namespace dolfin
 
     /// Compute diameter of mesh entity
     virtual double diameter(const MeshEntity& entity) const = 0;
-    
+
     /// Compute component i of normal of given facet with respect to the cell
     virtual double normal(const Cell& cell, uint facet, uint i) const = 0;
 

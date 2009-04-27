@@ -20,7 +20,7 @@ namespace dolfin
   class Controller
   {
   public:
-    
+
     /// Create uninitialized controller
     Controller();
 

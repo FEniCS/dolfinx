@@ -99,13 +99,13 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
 
         return reinterpret_cast<PyObject*>(array);
     }
-    
+
     PyObject* _connections(dolfin::uint entity) {
         int m = self->size(entity);
         int n = 0;
-	
+
         MAKE_ARRAY(1, m, n, self->operator()(entity), NPY_UINT)
-	  
+
         return reinterpret_cast<PyObject*>(array);
     }
 

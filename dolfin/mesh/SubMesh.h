@@ -37,7 +37,7 @@ namespace dolfin
 
     /// Create sub mesh
     void init(const Mesh& mesh, const MeshFunction<uint>& sub_domains, uint sub_domain);
-    
+
   };
 
 }

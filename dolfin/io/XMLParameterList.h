@@ -13,30 +13,30 @@ namespace dolfin
 {
 
   class ParameterList;
-  
+
   class XMLParameterList : public XMLObject
   {
   public:
 
     XMLParameterList(ParameterList& parameters);
-    
+
     void start_element(const xmlChar *name, const xmlChar **attrs);
     void end_element  (const xmlChar *name);
-    
+
     void open(std::string filename);
     bool close();
-    
+
   private:
-    
+
     enum ParserState { OUTSIDE, INSIDE_PARAMETERS, DONE };
-    
+
     void read_parameter(const xmlChar *name, const xmlChar **attrs);
-    
+
     ParameterList& parameters;
     ParserState state;
-    
+
   };
-  
+
 }
 
 #endif

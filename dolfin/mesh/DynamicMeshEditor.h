@@ -12,11 +12,11 @@
 
 namespace dolfin
 {
-  
+
   class Mesh;
   class Point;
   class Vector;
-  
+
   /// This class provides an interface for dynamic editing of meshes,
   /// that is, when the number of vertices and cells are not known
   /// a priori. If the number of vertices and cells are known a priori,
@@ -25,10 +25,10 @@ namespace dolfin
   class DynamicMeshEditor
   {
   public:
-    
+
     /// Constructor
     DynamicMeshEditor();
-    
+
     /// Destructor
     ~DynamicMeshEditor();
 
@@ -37,7 +37,7 @@ namespace dolfin
 
     /// Open mesh of given cell type, topological and geometrical dimension
     void open(Mesh& mesh, std::string type, uint tdim, uint gdim);
-    
+
     /// Add vertex v at given point p
     void add_vertex(uint v, const Point& p);
 
@@ -58,7 +58,7 @@ namespace dolfin
 
     /// Add cell (triangle) with given vertices
     void add_cell(uint c, uint v0, uint v1, uint v2);
-    
+
     /// Add cell (tetrahedron) with given vertices
     void add_cell(uint c, uint v0, uint v1, uint v2, uint v3);
 
@@ -75,13 +75,13 @@ namespace dolfin
 
     // Topological dimension
     uint tdim;
-    
+
     // Geometrical (Euclidean) dimension
     uint gdim;
 
     // Cell type
     CellType* cell_type;
-    
+
     // Dynamic storage for vertex coordinates
     std::vector<double> vertex_coordinates;
 

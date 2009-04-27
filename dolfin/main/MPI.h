@@ -22,7 +22,7 @@ namespace dolfin
 {
 
 #ifdef HAS_MPI
-  class MPICommunicator 
+  class MPICommunicator
   {
   public:
     /// Create communicator (copy of MPI_COMM_WORLD)
@@ -40,7 +40,7 @@ namespace dolfin
 #endif
 
   /// This class provides utility functions for easy communcation with MPI.
-  
+
   class MPI
   {
   public:

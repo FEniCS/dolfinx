@@ -42,11 +42,11 @@ namespace dolfin
     /// Create entities e of given topological dimension from vertices v
     void create_entities(uint** e, uint dim, const uint* v) const;
 
-    /// Regular refinement of cell 
+    /// Regular refinement of cell
     void refine_cell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
 
-    /// Irregular refinement of cell 
-    void refine_cellIrregular(Cell& cell, MeshEditor& editor, uint& current_cell, 
+    /// Irregular refinement of cell
+    void refine_cellIrregular(Cell& cell, MeshEditor& editor, uint& current_cell,
 			     uint refinement_rule, uint* marked_edges) const;
 
     /// Compute volume of tetrahedron
@@ -69,18 +69,18 @@ namespace dolfin
 
     /// Check for intersection with point
     bool intersects(const MeshEntity& entity, const Point& p) const;
-    
+
     /// Check for intersection with line defined by points
     bool intersects(const MeshEntity& entity, const Point& p0, const Point& p1) const;
-    
+
     /// Check for intersection with cell
-    bool intersects(const MeshEntity& entity, const Cell& cell) const;    
- 
+    bool intersects(const MeshEntity& entity, const Cell& cell) const;
+
     /// Return description of cell type
     std::string description() const;
 
   private:
-    
+
     // Find local index of edge i according to ordering convention
     uint find_edge(uint i, const Cell& cell) const;
 

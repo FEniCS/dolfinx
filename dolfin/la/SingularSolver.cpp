@@ -40,7 +40,7 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
 
   // Create extended system
   create(A, b, 0);
-  
+
   // Solve extended system
   const uint num_iterations = linear_solver.solve(*B, *y, *c);
 

@@ -27,7 +27,7 @@ f = Function(V, "500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 
 
 a = dot(grad(v), grad(u))*dx
-L = v*f*dx 
+L = v*f*dx
 
 # Define boundary condition
 u0 = Constant(mesh, 0.0)
@@ -37,11 +37,11 @@ bc = DirichletBC(V, u0, boundary)
 
 backends = ["uBLAS", "PETSc", "Epetra"]
 
-for backend in backends: 
+for backend in backends:
     if not has_linear_algebra_backend(backend):
         print "DOLFIN not compiled with % linear algebra backend."%backend
         continue
-    
+
     dolfin_set("linear algebra backend", backend)
 
     t0 = time.time()

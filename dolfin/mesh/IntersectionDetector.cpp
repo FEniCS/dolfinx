@@ -26,7 +26,7 @@ using namespace dolfin;
 #ifdef HAS_GTS
 
 //-----------------------------------------------------------------------------
-IntersectionDetector::IntersectionDetector(const Mesh& mesh0) 
+IntersectionDetector::IntersectionDetector(const Mesh& mesh0)
                                    : gts(new GTSInterface(mesh0)), mesh0(mesh0)
 {
   // Do nothing
@@ -55,7 +55,7 @@ void IntersectionDetector::intersection(const Cell& c, std::vector<uint>& cells)
   gts->intersection(c, cells);
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(std::vector<Point>& points, std::vector<uint>& cells) 
+void IntersectionDetector::intersection(std::vector<Point>& points, std::vector<uint>& cells)
 {
   // Intersect each segment with mesh
   std::vector<uint> cc;
@@ -66,7 +66,7 @@ void IntersectionDetector::intersection(std::vector<Point>& points, std::vector<
   std::sort(cc.begin(), cc.end());
   std::vector<unsigned int>::iterator it;
   it = std::unique(cc.begin(), cc.end());
-  cc.resize(it - cc.begin());  
+  cc.resize(it - cc.begin());
 }
 //-----------------------------------------------------------------------------
 void IntersectionDetector::intersection(const Mesh& mesh1, std::vector<uint>& cells)
@@ -74,7 +74,7 @@ void IntersectionDetector::intersection(const Mesh& mesh1, std::vector<uint>& ce
   // Intersect each cell with mesh
   for (CellIterator cell(mesh1); !cell.end(); ++cell)
     intersection(*cell, cells);
-  
+
   // Remove repeated cells
   std::sort(cells.begin(), cells.end());
   std::vector<unsigned int>::iterator it;
@@ -94,19 +94,19 @@ void IntersectionDetector::new_intersection(const Mesh& mesh1,
   // 2. mesh1 (input mesh)
   //
   // This mesh is the mesh that we are intersecting with. Typically,
-  // this input mesh will be the boundary of some other mesh, see 
-  // /demo/mesh/intersection/python/demo.py . 
+  // this input mesh will be the boundary of some other mesh, see
+  // /demo/mesh/intersection/python/demo.py .
 
   // Intersect each cell with mesh
   for (CellIterator cell(mesh1); !cell.end(); ++cell)
     intersection(*cell, cells);
-  
+
   // Remove repeated cells
   std::sort(cells.begin(), cells.end());
   std::vector<unsigned int>::iterator it;
   it = std::unique(cells.begin(), cells.end());
   cells.resize(it - cells.begin());
-  
+
   // Map from cell numbers in mesh0 to intersecting cells in mesh1
   std::map<uint, std::vector<uint> > cell_intersections;
   typedef std::map<uint, std::vector<uint> >::iterator map_iterator;
@@ -152,7 +152,7 @@ void IntersectionDetector::new_intersection(const Mesh& mesh1,
     const Cell c0(mesh0, it->first);
     compute_polygon(mesh1, c0, it->second);
   }
-  
+
 }
 //-----------------------------------------------------------------------------
 void IntersectionDetector::compute_polygon(const Mesh& mesh1,
@@ -165,16 +165,16 @@ void IntersectionDetector::compute_polygon(const Mesh& mesh1,
   if (c0.mesh().topology().dim() != 2)
     error("Sorry, can only handle intersection with edges.");
   if (mesh1.topology().dim() != 1)
-    error("Sorry, can only handle intersection of triangles."); 
+    error("Sorry, can only handle intersection of triangles.");
 
   // Some debugging information
   cout << "Cell no: " << c0.index() << endl;
   cout << "is intersected with: " << endl;
-  
+
   for (uint i = 0; i < intersections.size(); i++)
   {
     Edge edge(mesh1, intersections[i]);
-    cout << "Edge: " << edge << endl; 
+    cout << "Edge: " << edge << endl;
     for (VertexIterator v(edge); !v.end(); ++v)
       cout << "  x = " << v->point() << endl;
 
@@ -185,25 +185,25 @@ void IntersectionDetector::compute_polygon(const Mesh& mesh1,
 
   // Prepare list of polygon points
   std::vector<std::vector<double> > points;
-  
+
   // Prepare sets of edge indices
   std::set<uint> intersecting_edges;
   std::set<uint> visited_edges;
   typedef std::set<uint>::iterator set_iterator;
-  
+
   // Add all intersecting edges to set
   for (uint i = 0; i < intersections.size(); i++)
     intersecting_edges.insert(intersections[i]);
-  
+
    // Find starting edge with at most one intersecting neighbouring edge
   uint current_index = 0;
   bool found_edge = false;
 
   for (uint i = 0; i < intersections.size(); i++)
   {
-    current_index = intersections[0];    
+    current_index = intersections[0];
     Edge current_edge(mesh1, current_index);
-    
+
     // Count number of intersecting neighbouring edges
     uint num_neighbours = 0;
     for (EdgeIterator e(current_edge); !e.end(); ++e)
@@ -211,7 +211,7 @@ void IntersectionDetector::compute_polygon(const Mesh& mesh1,
       if (intersecting_edges.count(e->index()) > 0)
         num_neighbours += 1;
     }
-    
+
     // Want to find edge with at most one intersecting neighbouring edge
     if (num_neighbours < 2)
     {
@@ -219,10 +219,10 @@ void IntersectionDetector::compute_polygon(const Mesh& mesh1,
       break;
     }
   }
-  
+
   if (!found_edge)
     error("Unable to find first edge!");
-  
+
   cout <<"*************************"<< endl;
   cout << "Start to walk along edge" << endl;
   cout <<"*************************"<< endl;
@@ -234,10 +234,10 @@ void IntersectionDetector::compute_polygon(const Mesh& mesh1,
     visited_edges.insert(current_index);
     cout << "Current edge: " << current_edge << endl;
     cout << "with corresponding vertices " << endl;
-    
+
     // Get vertex coordinates
     std::vector<std::vector<double> > x;
-    std::vector<double> xx(2);  
+    std::vector<double> xx(2);
     std::pair<double, double> test;
 
     for (VertexIterator v(current_edge); !v.end(); ++v)
@@ -245,15 +245,15 @@ void IntersectionDetector::compute_polygon(const Mesh& mesh1,
     {
       std::vector<double> xx(2);
       xx[0] = v->x()[0];
-      xx[1] = v->x()[1]; 
-      
+      xx[1] = v->x()[1];
+
       cout << "xx[0] = "<< xx[0] << ",  " << "xx[1] =  " << xx[1] << endl;
-      x.push_back(xx);      
+      x.push_back(xx);
     }
-    
+
     points.push_back(x[0]);
-    points.push_back(x[1]);       
-        
+    points.push_back(x[1]);
+
     // Find next neighbour
     uint next_index = current_index;
     for (EdgeIterator e(current_edge); !e.end(); ++e)
@@ -274,14 +274,14 @@ void IntersectionDetector::compute_polygon(const Mesh& mesh1,
       cout <<"*******************************"<< endl;
       break;
     }
-    current_index = next_index;  
+    current_index = next_index;
   }
 
   cout << "Polygon points " << endl;
   for (uint i = 0; i < points.size(); i++)
   {
     cout << "i = " << i << ": x = (" << points[i][0] << ", " << points[i][1] << ")" << endl;
-  }      
+  }
 }
 //-----------------------------------------------------------------------------
 
@@ -314,7 +314,7 @@ void IntersectionDetector::new_intersection(const Mesh& mesh1,
                                             std::vector<uint>& intersection) {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::compute_polygon(const Mesh& mesh1,
-                                           const Cell& c0, 
+                                           const Cell& c0,
                                            const std::vector<uint>& intersections) const {}
 //-----------------------------------------------------------------------------
 

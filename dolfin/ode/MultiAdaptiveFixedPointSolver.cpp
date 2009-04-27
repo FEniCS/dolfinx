@@ -18,7 +18,7 @@ using namespace dolfin;
 MultiAdaptiveFixedPointSolver::MultiAdaptiveFixedPointSolver
 (MultiAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), f(0),
-    num_elements(0), num_elements_mono(0), 
+    num_elements(0), num_elements_mono(0),
     maxiter_local(ode.get("ODE maximum local iterations")),
     diagonal_newton_damping(ode.get("ODE diagonal newton damping")), dfdu(0)
 {
@@ -26,7 +26,7 @@ MultiAdaptiveFixedPointSolver::MultiAdaptiveFixedPointSolver
   f = new real[method.qsize()];
   for (unsigned int i = 0; i < method.qsize(); i++)
     f[i] = 0.0;
-  
+
   // Initialize diagonal of Jacobian df/du for diagonal Newton damping
   if ( diagonal_newton_damping )
   {
@@ -47,7 +47,7 @@ MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
 
   // Delete local array
   if ( f ) delete [] f;
-  
+
   // Delete diagonal of Jacobian
   if ( dfdu ) delete [] dfdu;
 }
@@ -118,7 +118,7 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
   {
     // Cover all elements in current sub slab
     e1 = ts.cover_slab(s, e0);
-    
+
     // Get data for sub slab
     const real a = ts.sa[s];
     const real b = ts.sb[s];
@@ -139,21 +139,21 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
       {
 	// Get element data
 	const uint i = ts.ei[e];
-	
+
 	// Save old end-point value
 	const real x1 = ts.jx[j + method.nsize() - 1];
-	
+
 	// Get initial value for element
 	const int ep = ts.ee[e];
 	const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
-	
+
 	// Evaluate right-hand side at quadrature points of element
 	if ( method.type() == Method::cG )
 	  ts.cg_feval(f, s, e, i, a, b, k);
 	else
 	  ts.dg_feval(f, s, e, i, a, b, k);
 	//cout << "f = "; Alloc::disp(f, method.qsize());
-	
+
 	// Update values on element using fixed-point iteration
 	if ( diagonal_newton_damping )
 	{
@@ -169,10 +169,10 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
 
 	// Compute increment
 	const real increment = abs(ts.jx[j + method.nsize() - 1] - x1);
-	
+
 	// Update sub slab increment
 	increment_local = std::max(increment_local, increment);
-	
+
 	// Update maximum increment
 	increment_max = std::max(increment_max, increment);
 
@@ -182,11 +182,11 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
 
       // Update counter of local iterations
       num_local += static_cast<real>(e1 - e0) / static_cast<real>(ts.ne);
-      
+
       // Check if we are done
       if ( increment_local < tol )
       {
-	
+
 	break;
       }
     }
@@ -194,7 +194,7 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
     // Step to next sub slab
     e0 = e1;
   }
-  
+
   // Add to common counter of local iterations
   //A little silly, but GMP don't define casting from mpf_class to uint
   num_local_iterations += static_cast<uint>(to_double(num_local) + 0.5);

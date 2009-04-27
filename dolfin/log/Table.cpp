@@ -103,7 +103,7 @@ Table Table::operator- (const Table& table) const
 const Table& Table::operator= (const Table& table)
 {
   // Assign everything but the title
-  
+
   rows = table.rows;
   row_set = table.row_set;
 
@@ -122,7 +122,7 @@ void Table::disp(bool round_to_zero) const
 
   std::vector<std::vector<std::string> > formatted_values;
   std::vector<uint> col_sizes;
-  
+
   // Format values and compute column sizes
   col_sizes.push_back(_title.size());
   for (uint j = 0; j < cols.size(); j++)

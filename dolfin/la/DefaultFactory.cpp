@@ -69,7 +69,7 @@ LinearAlgebraFactory& DefaultFactory::factory() const
 #endif
   }
   else if (backend == "STL")
-  { 
+  {
     return STLFactory::instance();
   }
 

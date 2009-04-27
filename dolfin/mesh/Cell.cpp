@@ -14,12 +14,12 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Point Cell::midpoint()
 {
-  uint num_vertices = 0; 
-  
+  uint num_vertices = 0;
+
   double x = 0.0;
   double y = 0.0;
   double z = 0.0;
-  
+
   for (VertexIterator v(*this); !v.end(); ++v)
   {
     x += v->point().x();

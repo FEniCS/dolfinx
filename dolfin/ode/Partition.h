@@ -14,7 +14,7 @@
 
 namespace dolfin
 {
-  
+
   class MultiAdaptivity;
 
   /// Partition is used in the recursive construction of time slabs
@@ -56,23 +56,23 @@ namespace dolfin
 
     // Update time steps
     void update(uint offset, uint end, MultiAdaptivity& adaptivity, real k) const;
-    
+
     // Comparison operator for the partition
-    struct Less : public std::unary_function<uint, bool> 
+    struct Less : public std::unary_function<uint, bool>
     {
       Less(real& K, MultiAdaptivity& adaptivity);
       bool operator()(uint index) const;
-      
+
       real K;
       MultiAdaptivity& adaptivity;
     };
 
     // List of component indices
     std::vector<uint> indices;
-    
+
     // Threshold for partition
     real threshold;
-    
+
   };
 
 }

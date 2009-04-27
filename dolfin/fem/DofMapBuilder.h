@@ -9,7 +9,7 @@
 
 namespace dolfin
 {
-  
+
   class DofMap;
   class UFC;
   class Mesh;
@@ -22,7 +22,7 @@ namespace dolfin
 
     /// Build dof map
     static void build(DofMap& dof_map, UFC& ufc, Mesh& mesh);
-    
+
   };
 
 }

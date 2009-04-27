@@ -17,7 +17,7 @@ namespace dolfin
   /// problems of the form
   ///
   ///     u'(t) = f(u(t), t) on (0, T],
-  ///         
+  ///
   ///     u(0)  = u0,
   ///
   /// where u(t) is a vector of length N.
@@ -34,7 +34,7 @@ namespace dolfin
 
     /// Create a collection of ODEs
     ODECollection(ODE& ode, uint num_systems);
-    
+
     /// Destructor
     virtual ~ODECollection();
 
@@ -55,7 +55,7 @@ namespace dolfin
 
     /// Optional user-defined update, called between solves
     virtual void update(real* u, real t, uint system);
-    
+
   private:
 
     // The ODE

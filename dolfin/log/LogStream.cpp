@@ -23,7 +23,7 @@ LogStream dolfin::cout(LogStream::COUT);
 LogStream dolfin::endl(LogStream::ENDL);
 
 //-----------------------------------------------------------------------------
-LogStream::LogStream(Type type) : type(type), 
+LogStream::LogStream(Type type) : type(type),
                                   buffer(new char[DOLFIN_LINELENGTH]),
                                   current(0)
 {
@@ -57,7 +57,7 @@ LogStream& LogStream::operator<<(const LogStream& stream)
   }
   else
     add(stream.buffer);
-  
+
   return *this;
 }
 //-----------------------------------------------------------------------------

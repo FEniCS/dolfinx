@@ -25,7 +25,7 @@ namespace dolfin
   /// An ODE represents an initial value problem of the form
   ///
   ///     u'(t) = f(u(t), t) on [0, T],
-  ///         
+  ///
   ///     u(0)  = u0,
   ///
   /// where u(t) is a vector of length N.
@@ -47,7 +47,7 @@ namespace dolfin
   /// It is also possible to solve implicit systems of the form
   ///
   ///     M(u(t), t) u'(t) = f(u(t),t) on (0,T],
-  ///         
+  ///
   ///     u(0)  = u0,
   ///
   /// by setting the option "implicit" to true and defining the
@@ -74,7 +74,7 @@ namespace dolfin
 
     /// Create an ODE of size N with final time T
     ODE(uint N, real T);
-    
+
     /// Destructor
     virtual ~ODE();
 
@@ -101,7 +101,7 @@ namespace dolfin
 
     /// Time step to use for the whole system at a given time t (optional)
     virtual real timestep(real t, real k0) const;
-    
+
     /// Time step to use for a given component at a given time t (optional)
     virtual real timestep(real t, uint i, real k0) const;
 
@@ -125,7 +125,7 @@ namespace dolfin
 
     /// Automatically detect sparsity (optional)
     void sparse();
-    
+
     /// Solve ODE on [0, T]
     void solve();
 
@@ -158,13 +158,13 @@ namespace dolfin
     friend class TimeStepper;
 
   protected:
-    
+
     // Number of components
     uint N;
 
     // Current time
     real t;
-    
+
     // Final time
     real T;
 

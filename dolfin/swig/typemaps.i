@@ -12,7 +12,7 @@
     dolfin::uint size = 1;
     for (dolfin::uint i = 0; i < this->function_space().element().value_rank(); i++)
       size *= this->function_space().element().value_dimension(i);
-    
+
     npy_intp dims[1] = {size};
     $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
   }
@@ -35,7 +35,7 @@
   }
 }
 
-//%apply const double* x { const double* y };  
+//%apply const double* x { const double* y };
 
 // Typemap check
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) double* {
@@ -70,7 +70,7 @@
   }
   int pyseq_length = PySequence_Size($input);
   if (!pyseq_length > 0){
-    PyErr_SetString(PyExc_RuntimeError,"*** Error: Supply a sequence with length > 0");	
+    PyErr_SetString(PyExc_RuntimeError,"*** Error: Supply a sequence with length > 0");
     return NULL;
   }
   tmp.reserve(pyseq_length);
@@ -96,7 +96,7 @@
   }
   int pyseq_length = PySequence_Size($input);
   if (!pyseq_length > 0){
-    PyErr_SetString(PyExc_RuntimeError,"*** Error: Supply a sequence with length > 0");	
+    PyErr_SetString(PyExc_RuntimeError,"*** Error: Supply a sequence with length > 0");
     return NULL;
   }
   tmp.reserve(pyseq_length);
@@ -120,7 +120,7 @@
             $1  = static_cast<double*>(PyArray_DATA(xa));
         else
             SWIG_exception(SWIG_ValueError, "numpy array of doubles expected");
-    } else 
+    } else
         SWIG_exception(SWIG_ValueError, "numpy array expected");
 }
 
@@ -133,7 +133,7 @@
             $1 = (dolfin::uint *)(*xa).data;
         else
             SWIG_exception(SWIG_ValueError, "numpy array of unsigned integers expected");
-    } else 
+    } else
         SWIG_exception(SWIG_ValueError, "numpy array expected");
 }
 
@@ -174,7 +174,7 @@
         dolfin::Parameter tmp(PyFloat_AsDouble($input));
         $1 = tmp;
     }
-    
+
 
 }
 
@@ -182,34 +182,34 @@
 %typemap(out) dolfin::Parameter {
   {
     // Custom typemap
-    // std::string tmp; 
+    // std::string tmp;
 
     switch ( $1.type() )
     {
     case Parameter::type_real:
-      
+
       $result = SWIG_From_double(*&($1));
       break;
 
     case Parameter::type_int:
-      
+
       $result = SWIG_From_int((int)*&($1));
       break;
-      
+
     case Parameter::type_bool:
-      
+
       $result = SWIG_From_bool(*&($1));
       break;
-      
+
     case Parameter::type_string:
-      
+
       //$result = SWIG_From_std_string(*&($1));
       //tmp = (std::string)*&($1);
       //$result = SWIG_FromCharPtrAndSize(tmp.c_str(), tmp.size());
       $result = SWIG_FromCharPtrAndSize(((std::string)*&($1)).c_str(), ((std::string)*&($1)).size());
 
       break;
-      
+
     default:
       error("Unknown type for parameter.");
     }

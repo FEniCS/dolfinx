@@ -88,7 +88,7 @@ void Assembler::assemble(GenericTensor& A,
 {
   // Note the importance of treating empty mesh functions as null pointers
   // for the PyDOLFIN interface.
-  
+
   // Check form
   check(a);
 
@@ -101,7 +101,7 @@ void Assembler::assemble(GenericTensor& A,
   // Assemble over cells
   assemble_cells(A, a, ufc, cell_domains, 0);
 
-  // Assemble over exterior facets 
+  // Assemble over exterior facets
   assemble_exterior_facets(A, a, ufc, exterior_facet_domains, 0);
 
   // Assemble over interior facets
@@ -152,21 +152,21 @@ void Assembler::assemble_cells(GenericTensor& A,
   ufc::cell_integral* integral = ufc.cell_integrals[0];
 
   // Assemble over cells
-  uint num_function_spaces = a.function_spaces().size();  
+  uint num_function_spaces = a.function_spaces().size();
   Progress p(progress_message(A.rank(), "cells"), mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    // FIXME will move this check into a separate function. 
-    // Need to check the coefficients as well. 
-    bool compute_on_cell = true; 
+    // FIXME will move this check into a separate function.
+    // Need to check the coefficients as well.
+    bool compute_on_cell = true;
     for (uint i = 0; i < num_function_spaces; i++)
-    {  
+    {
       if (!a.function_space(i).is_inside_restriction(cell->index()))
         compute_on_cell = false;
     }
     if (!compute_on_cell)
       continue;
-    
+
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
@@ -247,7 +247,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
 
     // Get local index of facet with respect to the cell
     const uint local_facet = mesh_cell.index(mesh_facet);
-      
+
     // Update to current cell
     ufc.update(mesh_cell);
 
@@ -261,11 +261,11 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
 
     // Tabulate exterior facet tensor
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
-    
+
     // Add entries to global tensor
     A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
 
-    p++;  
+    p++;
   }
 }
 //-----------------------------------------------------------------------------
@@ -279,7 +279,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   if (ufc.form.num_interior_facet_integrals() == 0)
     return;
   Timer timer("Assemble interior facets");
-  
+
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
   const std::vector<const Function*>& coefficients = a.coefficients();
@@ -315,14 +315,14 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     // Get cells incident with facet
     Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
     Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
-      
+
     // Get local index of facet with respect to each cell
     uint facet0 = cell0.index(*facet);
     uint facet1 = cell1.index(*facet);
 
     // Update to current pair of cells
     ufc.update(cell0, cell1);
-    
+
     // Interpolate coefficients on cell
     for (uint i = 0; i < coefficients.size(); i++)
     {
@@ -362,24 +362,24 @@ void Assembler::check(const Form& a)
   if (coefficients.size() != a.ufc_form().num_coefficients())
     error("Incorrect number of coefficients for form: %d given but %d required.",
           coefficients.size(), a.ufc_form().num_coefficients());
-  
+
   // Check that all coefficients have valid value dimensions
   for (uint i = 0; i < coefficients.size(); ++i)
   {
     if(!coefficients[i])
       error("Got NULL Function as coefficient %d.", i);
-    
+
     try
     {
       // auto_ptr deletes its object when it exits its scope
       std::auto_ptr<ufc::finite_element> fe( a.ufc_form().create_finite_element(i+a.rank()) );
-      
+
       uint r = coefficients[i]->function_space().element().value_rank();
       uint fe_r = fe->value_rank();
       if (fe_r != r)
         warning("Invalid value rank of Function %d, got %d but expecting %d. \
 You may need to provide the rank of a user defined Function.", i, r, fe_r);
-      
+
       for (uint j = 0; j < r; ++j)
       {
         uint dim = coefficients[i]->function_space().element().value_dimension(j);
@@ -394,7 +394,7 @@ You may need to provide the dimension of a user defined Function.", j, i, dim, f
       warning("Function %d is invalid.", i);
     }
   }
-  
+
   // Check that the cell dimension matches the mesh dimension
   if (a.ufc_form().rank() + a.ufc_form().num_coefficients() > 0)
   {
@@ -415,7 +415,7 @@ You may need to provide the dimension of a user defined Function.", j, i, dim, f
 }
 //-----------------------------------------------------------------------------
 void Assembler::init_global_tensor(GenericTensor& A,
-                                   const Form& a, 
+                                   const Form& a,
                                    UFC& ufc, bool reset_tensor)
 {
   if (reset_tensor)
@@ -426,13 +426,13 @@ void Assembler::init_global_tensor(GenericTensor& A,
     if (sparsity_pattern)
     {
       std::vector<const DofMap*> dof_maps(0);
-      for(uint i=0; i < a.rank(); ++i) 
+      for(uint i=0; i < a.rank(); ++i)
         dof_maps.push_back(&(a.function_space(i).dofmap()));
 //      SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), ufc, dof_maps);
       SparsityPatternBuilder::build(*sparsity_pattern, ufc, a);
     }
     t0.stop();
-    
+
     // Initialize tensor
     Timer t1("Init tensor");
     if (sparsity_pattern)
@@ -457,7 +457,7 @@ std::string Assembler::progress_message(uint rank, std::string integral_type)
 {
   std::stringstream s;
   s << "Assembling ";
-  
+
   switch (rank)
   {
   case 0:
@@ -473,7 +473,7 @@ std::string Assembler::progress_message(uint rank, std::string integral_type)
     s << "rank " << rank << " tensor over ";
     break;
   }
- 
+
   s << integral_type;
 
   return s.str();
@@ -518,17 +518,17 @@ void Assembler::assemble_system(GenericMatrix& A,
   init_global_tensor(b, L, b_ufc, reset_tensors);
 
   // Pointers to element matrix and vector
-  double* Ae = 0; 
-  double* be = 0; 
+  double* Ae = 0;
+  double* be = 0;
 
-  // Get boundary values (global) 
-  const uint N = a.function_space(1).dofmap().global_dimension();  
+  // Get boundary values (global)
+  const uint N = a.function_space(1).dofmap().global_dimension();
   uint* indicators = new uint[N];
   double* g = new double[N];
-  for (uint i = 0; i < N; i++) 
+  for (uint i = 0; i < N; i++)
   {
-    indicators[i] = 0; 
-    g[i] = 0.0; 
+    indicators[i] = 0;
+    g[i] = 0.0;
   }
   for(uint i = 0; i < bcs.size(); ++i)
     bcs[i]->get_bc(indicators, g);
@@ -546,9 +546,9 @@ void Assembler::assemble_system(GenericMatrix& A,
   }
 
   // If there are no interior facet integrals
-  if (A_ufc.form.num_interior_facet_integrals() == 0 && b_ufc.form.num_interior_facet_integrals() == 0) 
+  if (A_ufc.form.num_interior_facet_integrals() == 0 && b_ufc.form.num_interior_facet_integrals() == 0)
   {
-    // Allocate memory for Ae and be 
+    // Allocate memory for Ae and be
     uint A_num_entries = 1;
     for (uint i = 0; i < a.rank(); i++)
       A_num_entries *= a.function_space(i).dofmap().local_dimension();
@@ -559,12 +559,12 @@ void Assembler::assemble_system(GenericMatrix& A,
       b_num_entries *= L.function_space(i).dofmap().local_dimension();
     be = new double[b_num_entries];
 
-    for (CellIterator cell(mesh); !cell.end(); ++cell) 
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      for (uint i = 0; i < A_num_entries; i++) 
-        Ae[i] = 0.0; 
-      for (uint i = 0; i < b_num_entries; i++) 
-        be[i] = 0.0; 
+      for (uint i = 0; i < A_num_entries; i++)
+        Ae[i] = 0.0;
+      for (uint i = 0; i < b_num_entries; i++)
+        be[i] = 0.0;
 
       // Update to current cell
       A_ufc.update(*cell);
@@ -588,54 +588,54 @@ void Assembler::assemble_system(GenericMatrix& A,
       for (uint i = 0; i < b_ufc.form.rank(); i++)
         L.function_space(i).dofmap().tabulate_dofs(b_ufc.dofs[i], b_ufc.cell, cell->index());
 
-      // Compute cell integral for A 
-      if (A_ufc.form.num_cell_integrals() > 0) 
+      // Compute cell integral for A
+      if (A_ufc.form.num_cell_integrals() > 0)
       {
         ufc::cell_integral* A_cell_integral =  A_ufc.cell_integrals[0];
         if (cell_domains && cell_domains->size() > 0)
         {
           const uint cell_domain = (*cell_domains)(*cell);
-          if (cell_domain < A_ufc.form.num_cell_integrals()) 
+          if (cell_domain < A_ufc.form.num_cell_integrals())
             A_cell_integral = A_ufc.cell_integrals[cell_domain];
-          else 
+          else
             continue;
         }
         // Tabulate cell tensor
         A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell);
-        for (uint i=0; i<A_num_entries; i++) 
-          Ae[i] += A_ufc.A[i]; 
+        for (uint i=0; i<A_num_entries; i++)
+          Ae[i] += A_ufc.A[i];
       }
 
-      // Compute cell integral for b 
-      if (b_ufc.form.num_cell_integrals() > 0) 
+      // Compute cell integral for b
+      if (b_ufc.form.num_cell_integrals() > 0)
       {
         ufc::cell_integral* b_cell_integral = b_ufc.cell_integrals[0];
-        if (cell_domains && cell_domains->size() > 0) 
+        if (cell_domains && cell_domains->size() > 0)
         {
           const uint cell_domain = (*cell_domains)(*cell);
-          if (cell_domain < b_ufc.form.num_cell_integrals()) 
+          if (cell_domain < b_ufc.form.num_cell_integrals())
             b_cell_integral = b_ufc.cell_integrals[cell_domain];
-          else 
+          else
             continue;
         }
         // Tabulate cell tensor
         b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
-        for (uint i=0; i<b_num_entries; i++) 
-          be[i] += b_ufc.A[i]; 
+        for (uint i=0; i<b_num_entries; i++)
+          be[i] += b_ufc.A[i];
       }
 
       // Compute exterior facet integral
-      if (A_ufc.form.num_exterior_facet_integrals() > 0 || b_ufc.form.num_exterior_facet_integrals() > 0) 
+      if (A_ufc.form.num_exterior_facet_integrals() > 0 || b_ufc.form.num_exterior_facet_integrals() > 0)
       {
-        const uint D = mesh.topology().dim(); 
+        const uint D = mesh.topology().dim();
 
-        if (A_ufc.form.num_exterior_facet_integrals() > 0) 
+        if (A_ufc.form.num_exterior_facet_integrals() > 0)
         {
           for (FacetIterator facet(*cell); !facet.end(); ++facet)
           {
-            if (facet->num_entities(D) != 2) 
+            if (facet->num_entities(D) != 2)
             {
-              ufc::exterior_facet_integral* A_integral = A_ufc.exterior_facet_integrals[0]; 
+              ufc::exterior_facet_integral* A_integral = A_ufc.exterior_facet_integrals[0];
               if (exterior_facet_domains && exterior_facet_domains->size() > 0)
               {
                 const uint exterior_facet_domain= (*exterior_facet_domains)(*facet);
@@ -649,19 +649,19 @@ void Assembler::assemble_system(GenericMatrix& A,
                 A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, cell->index(), local_facet);
 
               A_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell, local_facet);
-              for (uint i=0; i<A_num_entries; i++) 
-                Ae[i] += A_ufc.A[i]; 
+              for (uint i=0; i<A_num_entries; i++)
+                Ae[i] += A_ufc.A[i];
             }
           }
         }
 
-        if (b_ufc.form.num_exterior_facet_integrals() > 0) 
+        if (b_ufc.form.num_exterior_facet_integrals() > 0)
         {
           for (FacetIterator facet(*cell); !facet.end(); ++facet)
           {
-            if (facet->num_entities(D) != 2) 
+            if (facet->num_entities(D) != 2)
             {
-              ufc::exterior_facet_integral* b_integral = b_ufc.exterior_facet_integrals[0]; 
+              ufc::exterior_facet_integral* b_integral = b_ufc.exterior_facet_integrals[0];
               if (exterior_facet_domains && exterior_facet_domains->size() > 0)
               {
                 const uint exterior_facet_domain= (*exterior_facet_domains)(*facet);
@@ -675,30 +675,30 @@ void Assembler::assemble_system(GenericMatrix& A,
                 b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, cell->index(), local_facet);
 
               b_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell, local_facet);
-              for (uint i=0; i<b_num_entries; i++) 
-                be[i] += b_ufc.A[i]; 
+              for (uint i=0; i<b_num_entries; i++)
+                be[i] += b_ufc.A[i];
             }
           }
         }
       }
 
       // Enforce Dirichlet boundary conditions
-      uint m = A_ufc.local_dimensions[0]; 
-      uint n = A_ufc.local_dimensions[1]; 
-      for (uint i=0; i<n; i++) 
-      {  
-        uint ii = A_ufc.dofs[1][i]; 
-        if (indicators[ii] > 0) 
-        {  
-          be[i] = g[ii]; 
-          for (uint k=0; k<n; k++) 
-            Ae[k+i*n] = 0.0; 
-          for (uint j=0; j<m; j++) 
+      uint m = A_ufc.local_dimensions[0];
+      uint n = A_ufc.local_dimensions[1];
+      for (uint i=0; i<n; i++)
+      {
+        uint ii = A_ufc.dofs[1][i];
+        if (indicators[ii] > 0)
+        {
+          be[i] = g[ii];
+          for (uint k=0; k<n; k++)
+            Ae[k+i*n] = 0.0;
+          for (uint j=0; j<m; j++)
           {
-            be[j] -= Ae[i+j*n]*g[ii]; 
-            Ae[i+j*n] = 0.0; 
+            be[j] -= Ae[i+j*n]*g[ii];
+            Ae[i+j*n] = 0.0;
           }
-          Ae[i+i*n] = 1.0; 
+          Ae[i+i*n] = 1.0;
         }
       }
 
@@ -709,33 +709,33 @@ void Assembler::assemble_system(GenericMatrix& A,
   }
 
 
-  if (A_ufc.form.num_interior_facet_integrals() > 0 || b_ufc.form.num_interior_facet_integrals() > 0) 
+  if (A_ufc.form.num_interior_facet_integrals() > 0 || b_ufc.form.num_interior_facet_integrals() > 0)
   {
-    // Create temporary storage for Ae, Ae_macro 
+    // Create temporary storage for Ae, Ae_macro
     uint A_num_entries = 1;
     for (uint i = 0; i < a.rank(); i++)
       A_num_entries *= a.function_space(i).dofmap().local_dimension();
-    uint A_macro_num_entries = 4*A_num_entries; 
+    uint A_macro_num_entries = 4*A_num_entries;
     Ae = new double[A_num_entries];
-    double* Ae_macro = new double[A_macro_num_entries]; 
+    double* Ae_macro = new double[A_macro_num_entries];
 
-    // Create temporay storage for be, be_macro 
+    // Create temporay storage for be, be_macro
     uint b_num_entries = 1;
     for (uint i = 0; i < L.rank(); i++)
       b_num_entries *= L.function_space(i).dofmap().local_dimension();
-    uint b_macro_num_entries = b_num_entries*2; 
+    uint b_macro_num_entries = b_num_entries*2;
     be = new double[b_num_entries];
-    double* be_macro = new double[b_macro_num_entries]; 
+    double* be_macro = new double[b_macro_num_entries];
 
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
     {
       // Check if we have an interior facet
-      if ( facet->num_entities(mesh.topology().dim()) == 2 ) 
+      if ( facet->num_entities(mesh.topology().dim()) == 2 )
       {
-        for (uint i = 0; i < A_macro_num_entries; i++) 
-          Ae_macro[i] = 0.0; 
-        for (uint i = 0; i < b_macro_num_entries; i++) 
-          be_macro[i] = 0.0; 
+        for (uint i = 0; i < A_macro_num_entries; i++)
+          Ae_macro[i] = 0.0;
+        for (uint i = 0; i < b_macro_num_entries; i++)
+          be_macro[i] = 0.0;
 
         // Get cells incident with facet
         Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
@@ -769,8 +769,8 @@ void Assembler::assemble_system(GenericMatrix& A,
                                                      b_ufc.cell1, cell1.index());
         }
 
-        if ( A_ufc.form.num_interior_facet_integrals() ) 
-        {  
+        if ( A_ufc.form.num_interior_facet_integrals() )
+        {
           ufc::interior_facet_integral* interior_facet_integral = A_ufc.interior_facet_integrals[0];
 
           // Get integral for sub domain (if any)
@@ -804,14 +804,14 @@ void Assembler::assemble_system(GenericMatrix& A,
           }
 
           // Tabulate interior facet tensor on macro element
-          interior_facet_integral->tabulate_tensor(A_ufc.macro_A, A_ufc.macro_w, 
+          interior_facet_integral->tabulate_tensor(A_ufc.macro_A, A_ufc.macro_w,
                                       A_ufc.cell0, A_ufc.cell1, facet0, facet1);
-          for (uint i=0; i<A_macro_num_entries; i++) 
-            Ae_macro[i] += A_ufc.macro_A[i]; 
+          for (uint i=0; i<A_macro_num_entries; i++)
+            Ae_macro[i] += A_ufc.macro_A[i];
         }
 
-        if ( b_ufc.form.num_interior_facet_integrals() > 0 ) 
-        {  
+        if ( b_ufc.form.num_interior_facet_integrals() > 0 )
+        {
           ufc::interior_facet_integral* interior_facet_integral = b_ufc.interior_facet_integrals[0];
 
           b_ufc.update(cell0, cell1);
@@ -834,16 +834,16 @@ void Assembler::assemble_system(GenericMatrix& A,
               continue;
           }
 
-          interior_facet_integral->tabulate_tensor(b_ufc.macro_A, b_ufc.macro_w, b_ufc.cell0, 
+          interior_facet_integral->tabulate_tensor(b_ufc.macro_A, b_ufc.macro_w, b_ufc.cell0,
                                                    b_ufc.cell1, facet0, facet1);
 
-          for (uint i=0; i<b_macro_num_entries; i++) 
-            be_macro[i] += b_ufc.macro_A[i]; 
+          for (uint i=0; i<b_macro_num_entries; i++)
+            be_macro[i] += b_ufc.macro_A[i];
         }
 
-        if (facet0 == 0) 
+        if (facet0 == 0)
         {
-          if (A_ufc.form.num_cell_integrals() > 0) 
+          if (A_ufc.form.num_cell_integrals() > 0)
           {
             A_ufc.update(cell0);
 
@@ -860,24 +860,24 @@ void Assembler::assemble_system(GenericMatrix& A,
             if (cell_domains && cell_domains->size() > 0)
             {
               const uint cell_domain = (*cell_domains)(cell0);
-              if (cell_domain < A_ufc.form.num_cell_integrals()) 
+              if (cell_domain < A_ufc.form.num_cell_integrals())
                 A_cell_integral = A_ufc.cell_integrals[cell_domain];
-              else 
+              else
                 continue;
             }
             // Tabulate cell tensor
             A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell0);
 
-            uint nn = A_ufc.local_dimensions[0]; 
+            uint nn = A_ufc.local_dimensions[0];
             uint mm = A_ufc.local_dimensions[1];
-            for (uint i=0; i<mm; i++) 
-              for (uint j=0; j<nn; j++) 
-                Ae_macro[2*i*nn+j] += A_ufc.A[i*nn+j]; 
+            for (uint i=0; i<mm; i++)
+              for (uint j=0; j<nn; j++)
+                Ae_macro[2*i*nn+j] += A_ufc.A[i*nn+j];
           }
 
-          if (b_ufc.form.num_cell_integrals() > 0) 
+          if (b_ufc.form.num_cell_integrals() > 0)
           {
-            // Update to cell0 
+            // Update to cell0
             b_ufc.update(cell0);
 
             // Interpolate coefficients on cell
@@ -895,19 +895,19 @@ void Assembler::assemble_system(GenericMatrix& A,
               const uint cell_domain = (*cell_domains)(cell0);
               if (cell_domain < b_ufc.form.num_cell_integrals())
                 b_cell_integral = b_ufc.cell_integrals[cell_domain];
-              else 
+              else
                 continue;
             }
             // Tabulate cell tensor
             b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell0);
-            for (uint i=0; i<b_num_entries; i++) 
-              be_macro[i] += b_ufc.A[i]; 
+            for (uint i=0; i<b_num_entries; i++)
+              be_macro[i] += b_ufc.A[i];
           }
         }
 
-        if (facet1 == 0) 
-        { 
-          if (A_ufc.form.num_cell_integrals() > 0) 
+        if (facet1 == 0)
+        {
+          if (A_ufc.form.num_cell_integrals() > 0)
           {
             A_ufc.update(cell1);
 
@@ -924,22 +924,22 @@ void Assembler::assemble_system(GenericMatrix& A,
             if (cell_domains && cell_domains->size() > 0)
             {
               const uint cell_domain = (*cell_domains)(cell1);
-              if (cell_domain < A_ufc.form.num_cell_integrals()) 
+              if (cell_domain < A_ufc.form.num_cell_integrals())
                 A_cell_integral = A_ufc.cell_integrals[cell_domain];
-              else 
+              else
                 continue;
             }
 
-            // Tabulate cell tensor 
+            // Tabulate cell tensor
             A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell1);
-            uint nn = A_ufc.local_dimensions[0]; 
+            uint nn = A_ufc.local_dimensions[0];
             uint mm = A_ufc.local_dimensions[1];
             for (uint i=0; i<mm; i++)
               for (uint j=0; j<nn; j++)
-                Ae_macro[2*nn*mm + 2*i*nn + nn + j] += A_ufc.A[i*nn+j]; 
+                Ae_macro[2*nn*mm + 2*i*nn + nn + j] += A_ufc.A[i*nn+j];
           }
 
-          if (b_ufc.form.num_cell_integrals() > 0) 
+          if (b_ufc.form.num_cell_integrals() > 0)
           {
             b_ufc.update(cell1);
 
@@ -958,34 +958,34 @@ void Assembler::assemble_system(GenericMatrix& A,
               const uint cell_domain = (*cell_domains)(cell1);
               if (cell_domain < b_ufc.form.num_cell_integrals())
                 b_cell_integral = b_ufc.cell_integrals[cell_domain];
-              else 
+              else
                 continue;
             }
             // Tabulate cell tensor
             b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell1);
-            for (uint i=0; i<b_num_entries; i++) 
-              be_macro[b_num_entries + i] += b_ufc.A[i]; 
+            for (uint i=0; i<b_num_entries; i++)
+              be_macro[b_num_entries + i] += b_ufc.A[i];
           }
         }
         // enforce BC  ---------------------------------------
 
-        const uint m = A_ufc.macro_local_dimensions[0]; 
-        const uint n = A_ufc.macro_local_dimensions[1]; 
+        const uint m = A_ufc.macro_local_dimensions[0];
+        const uint n = A_ufc.macro_local_dimensions[1];
 
-        for (uint i=0; i<n; i++) 
-        {  
-          uint ii = A_ufc.macro_dofs[1][i]; 
-          if (indicators[ii] > 0) 
-          {  
-            be[i] = g[ii]; 
-            for (uint k=0; k<n; k++) 
-              Ae_macro[k+i*n] = 0.0; 
-            for (uint j=0; j<m; j++) 
+        for (uint i=0; i<n; i++)
+        {
+          uint ii = A_ufc.macro_dofs[1][i];
+          if (indicators[ii] > 0)
+          {
+            be[i] = g[ii];
+            for (uint k=0; k<n; k++)
+              Ae_macro[k+i*n] = 0.0;
+            for (uint j=0; j<m; j++)
             {
-              be_macro[j] -= Ae_macro[i+j*n]*g[ii]; 
-              Ae_macro[i+j*n] = 0.0; 
+              be_macro[j] -= Ae_macro[i+j*n]*g[ii];
+              Ae_macro[i+j*n] = 0.0;
             }
-            Ae_macro[i+i*n] = 1.0; 
+            Ae_macro[i+i*n] = 1.0;
           }
         }
         // enforce BC done  ------------------------------------------
@@ -996,13 +996,13 @@ void Assembler::assemble_system(GenericMatrix& A,
       }
 
       // Check if we have an exterior facet
-      if ( facet->num_entities(mesh.topology().dim()) != 2 )  
+      if ( facet->num_entities(mesh.topology().dim()) != 2 )
       {
-        // set element matrix and vector to zero 
-        for (uint i=0; i<A_num_entries; i++) 
-          Ae[i] = 0.0; 
-        for (uint i=0; i<b_num_entries; i++) 
-          be[i] = 0.0; 
+        // set element matrix and vector to zero
+        for (uint i=0; i<A_num_entries; i++)
+          Ae[i] = 0.0;
+        for (uint i=0; i<b_num_entries; i++)
+          be[i] = 0.0;
 
         // Get mesh cell to which mesh facet belongs (pick first, there is only one)
         Cell cell(mesh, facet->entities(mesh.topology().dim())[0]);
@@ -1030,12 +1030,12 @@ void Assembler::assemble_system(GenericMatrix& A,
         for (uint i = 0; i < b_ufc.form.rank(); i++)
           L.function_space(i).dofmap().tabulate_dofs(b_ufc.dofs[i], b_ufc.cell, cell.index());
 
-        if (local_facet == 0) 
+        if (local_facet == 0)
         {
           // compute cell integrals ---------------------------------
 
-          // compute cell for A integral ---------------------------- 
-          if (A_ufc.form.num_cell_integrals() > 0) 
+          // compute cell for A integral ----------------------------
+          if (A_ufc.form.num_cell_integrals() > 0)
           {
             ufc::cell_integral* A_cell_integral =  A_ufc.cell_integrals[0];
             if (cell_domains && cell_domains->size() > 0)
@@ -1043,46 +1043,46 @@ void Assembler::assemble_system(GenericMatrix& A,
               const uint cell_domain = (*cell_domains)(cell);
               if (cell_domain < A_ufc.form.num_cell_integrals())
                 A_cell_integral = A_ufc.cell_integrals[cell_domain];
-              else 
+              else
                 continue;
             }
             // Tabulate cell tensor
             A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell);
-            for (uint i=0; i<A_num_entries; i++) 
-              Ae[i] += A_ufc.A[i]; 
+            for (uint i=0; i<A_num_entries; i++)
+              Ae[i] += A_ufc.A[i];
           }
-          // compute cell A integral done ---------------------------- 
+          // compute cell A integral done ----------------------------
 
-          // compute cell b integral ---------------------------- 
-          if (b_ufc.form.num_cell_integrals() > 0) 
+          // compute cell b integral ----------------------------
+          if (b_ufc.form.num_cell_integrals() > 0)
           {
             ufc::cell_integral* b_cell_integral = b_ufc.cell_integrals[0];
-            if (cell_domains && cell_domains->size() > 0) 
+            if (cell_domains && cell_domains->size() > 0)
             {
               const uint cell_domain = (*cell_domains)(cell);
               if (cell_domain < b_ufc.form.num_cell_integrals())
                 b_cell_integral = b_ufc.cell_integrals[cell_domain];
-              else 
+              else
                 continue;
             }
             // Tabulate cell tensor
             b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
-            for (uint i=0; i<b_num_entries; i++) 
-              be[i] += b_ufc.A[i]; 
+            for (uint i=0; i<b_num_entries; i++)
+              be[i] += b_ufc.A[i];
           }
-          // compute cell b integral done ---------------------------- 
+          // compute cell b integral done ----------------------------
 
-          // compute cell integral done ------------------------------ 
+          // compute cell integral done ------------------------------
         }
 
-        // compute exterior facet integral ------------------------- 
+        // compute exterior facet integral -------------------------
 
-        if (A_ufc.form.num_exterior_facet_integrals() > 0 ) 
+        if (A_ufc.form.num_exterior_facet_integrals() > 0 )
         {
-          const uint D = mesh.topology().dim(); 
-          if (facet->num_entities(D) != 2) 
+          const uint D = mesh.topology().dim();
+          if (facet->num_entities(D) != 2)
           {
-            ufc::exterior_facet_integral* A_integral = A_ufc.exterior_facet_integrals[0]; 
+            ufc::exterior_facet_integral* A_integral = A_ufc.exterior_facet_integrals[0];
 
             if (exterior_facet_domains && exterior_facet_domains->size() > 0)
             {
@@ -1093,17 +1093,17 @@ void Assembler::assemble_system(GenericMatrix& A,
                 continue;
             }
             A_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell, local_facet);
-            for (uint i=0; i<A_num_entries; i++) 
-              Ae[i] += A_ufc.A[i]; 
+            for (uint i=0; i<A_num_entries; i++)
+              Ae[i] += A_ufc.A[i];
           }
         }
 
-        if (b_ufc.form.num_exterior_facet_integrals() > 0) 
+        if (b_ufc.form.num_exterior_facet_integrals() > 0)
         {
-          const uint D = mesh.topology().dim(); 
-          if (facet->num_entities(D) != 2) 
+          const uint D = mesh.topology().dim();
+          if (facet->num_entities(D) != 2)
           {
-            ufc::exterior_facet_integral* b_integral = b_ufc.exterior_facet_integrals[0]; 
+            ufc::exterior_facet_integral* b_integral = b_ufc.exterior_facet_integrals[0];
             if (exterior_facet_domains && exterior_facet_domains->size() > 0)
             {
               const uint exterior_facet_domain= (*exterior_facet_domains)(*facet);
@@ -1114,29 +1114,29 @@ void Assembler::assemble_system(GenericMatrix& A,
             }
             const uint local_facet = cell.index(*facet);
             b_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell, local_facet);
-            for (uint i=0; i<b_num_entries; i++) 
-              be[i] += b_ufc.A[i]; 
+            for (uint i=0; i<b_num_entries; i++)
+              be[i] += b_ufc.A[i];
           }
         }
         // enforce BC  ---------------------------------------
 
-        uint m = A_ufc.local_dimensions[0]; 
-        uint n = A_ufc.local_dimensions[1]; 
+        uint m = A_ufc.local_dimensions[0];
+        uint n = A_ufc.local_dimensions[1];
 
-        for (uint i=0; i<n; i++) 
-        {  
-          uint ii = A_ufc.dofs[1][i]; 
-          if (indicators[ii] > 0) 
-          {  
-            be[i] = g[ii]; 
-            for (uint k=0; k<n; k++) 
-              Ae[k+i*n] = 0.0; 
-            for (uint j=0; j<m; j++) 
+        for (uint i=0; i<n; i++)
+        {
+          uint ii = A_ufc.dofs[1][i];
+          if (indicators[ii] > 0)
+          {
+            be[i] = g[ii];
+            for (uint k=0; k<n; k++)
+              Ae[k+i*n] = 0.0;
+            for (uint j=0; j<m; j++)
             {
-              be[j] -= Ae[i+j*n]*g[ii]; 
-              Ae[i+j*n] = 0.0; 
+              be[j] -= Ae[i+j*n]*g[ii];
+              Ae[i+j*n] = 0.0;
             }
-            Ae[i+i*n] = 1.0; 
+            Ae[i+i*n] = 1.0;
           }
         }
 
@@ -1151,7 +1151,7 @@ void Assembler::assemble_system(GenericMatrix& A,
     delete [] be_macro;
   }
 
-  // -- Finalize tensors 
+  // -- Finalize tensors
   A.apply();
   b.apply();
 

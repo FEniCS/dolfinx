@@ -64,7 +64,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh, BoundaryMesh& bound
       num_boundary_cells++;
     }
   }
-  
+
   // Specify number of vertices and cells
   editor.init_vertices(num_boundary_vertices);
   editor.init_cells(num_boundary_cells);
@@ -77,7 +77,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh, BoundaryMesh& bound
     dolfin_assert(vertex_map);
     vertex_map->init(boundary, 0, num_boundary_vertices);
   }
-  
+
   // Initialize mapping from cells in boundary to facets in mesh
   MeshFunction<uint>* cell_map = 0;
   if (num_boundary_cells > 0)
@@ -96,7 +96,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh, BoundaryMesh& bound
       // Create mapping from boundary vertex to mesh vertex if requested
       if ( vertex_map )
         vertex_map->set(vertex_index, v->index());
-      
+
       // Add vertex
       editor.add_vertex(vertex_index, v->point());
     }
@@ -165,7 +165,7 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices, const Facet& face
   case CellType::triangle:
     {
       dolfin_assert(facet.num_entities(0) == 2);
-      
+
       Point p0 = mesh.geometry().point(facet.entities(0)[0]);
       Point p1 = mesh.geometry().point(facet.entities(0)[1]);
       Point v = p1 - p0;
@@ -182,7 +182,7 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices, const Facet& face
   case CellType::tetrahedron:
     {
       dolfin_assert(facet.num_entities(0) == 3);
-    
+
       Point p0 = mesh.geometry().point(facet.entities(0)[0]);
       Point p1 = mesh.geometry().point(facet.entities(0)[1]);
       Point p2 = mesh.geometry().point(facet.entities(0)[2]);

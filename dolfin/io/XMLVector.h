@@ -20,21 +20,21 @@ namespace dolfin
   public:
 
     XMLVector(GenericVector& vector);
-    
+
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
-    
+
     /// Friends
     friend class XMLMesh;
-    
+
   private:
-    
+
     enum ParserState { OUTSIDE, INSIDE_VECTOR, DONE };
-    
+
     void start_vector(const xmlChar *name, const xmlChar **attrs);
     void end_vector  ();
     void read_entry  (const xmlChar *name, const xmlChar **attrs);
-    
+
     GenericVector& x;
     ParserState state;
 
@@ -42,7 +42,7 @@ namespace dolfin
     uint size;
 
   };
-  
+
 }
 
 #endif

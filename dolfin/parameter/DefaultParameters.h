@@ -55,7 +55,7 @@ add("ODE size threshold", 50);
 
 add("ODE tolerance", 0.1);
 add("ODE start time", 0.0);
-add("ODE end time", 10.0);      
+add("ODE end time", 10.0);
 add("ODE discrete tolerance", 0.001);
 add("ODE discrete tolerance factor", 0.001);
 add("ODE discrete Krylov tolerance factor", 0.01);

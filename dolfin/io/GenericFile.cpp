@@ -19,7 +19,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GenericFile::GenericFile(const std::string filename) : filename(filename), 
+GenericFile::GenericFile(const std::string filename) : filename(filename),
                                                      type("Unknown file type"),
                                                      opened_read(false),
                                                      opened_write(false),
@@ -294,7 +294,7 @@ void GenericFile::write()
       error("Unable to open file %s", filename.c_str());
     fclose(fp);
   }
-  
+
   opened_write = true;
 }
 //-----------------------------------------------------------------------------

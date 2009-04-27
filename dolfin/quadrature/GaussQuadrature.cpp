@@ -21,18 +21,18 @@ GaussQuadrature::GaussQuadrature(unsigned int n) : GaussianQuadrature(n)
 
   if ( !check(2*n-1) )
     error("Gauss quadrature not ok, check failed.");
-  
+
   //message("Gauss quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
 void GaussQuadrature::disp() const
 {
-  cout << "Gauss quadrature points and weights on [-1,1] for n = " 
+  cout << "Gauss quadrature points and weights on [-1,1] for n = "
        << n << ":" << endl;
 
   cout << " i    points                   weights" << endl;
   cout << "-----------------------------------------------------" << endl;
-  
+
   for (unsigned int i = 0; i < n; i++)
     message("%2d   %.16e   %.16e", i, to_double(points[i]), to_double(weights[i]));
 }
@@ -41,7 +41,7 @@ void GaussQuadrature::compute_points()
 {
   // Compute Gauss quadrature points on [-1,1] as the
   // as the zeroes of the Legendre polynomials using Newton's method
-  
+
   // Special case n = 1
   if ( n == 1 )
   {
@@ -51,26 +51,26 @@ void GaussQuadrature::compute_points()
 
   Legendre p(n);
   real x, dx;
-  
+
   // Compute the points by Newton's method
-  for (unsigned int i = 0; i <= ((n-1)/2); i++) 
+  for (unsigned int i = 0; i <= ((n-1)/2); i++)
   {
-    
+
     // Initial guess
     x = cos(DOLFIN_PI*(double(i+1)-0.25)/(double(n)+0.5));
-    
+
     // Newton's method
     do {
       dx = - p(x) / p.ddx(x);
       x  = x + dx;
     } while ( abs(dx) > real_epsilon() );
-    
+
     // Save the value using the symmetry of the points
     points[i] = - x;
     points[n-1-i] = x;
-    
+
   }
-  
+
   // Set middle node
   if ( (n % 2) != 0 )
     points[n/2] = 0.0;

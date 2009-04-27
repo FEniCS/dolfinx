@@ -43,7 +43,7 @@ FunctionPlotData::FunctionPlotData(const Function& v)
 //-----------------------------------------------------------------------------
 FunctionPlotData::FunctionPlotData() : rank(0)
 {
-  // Do nothing  
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 FunctionPlotData::~FunctionPlotData()

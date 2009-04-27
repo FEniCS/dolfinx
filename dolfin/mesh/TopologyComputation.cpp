@@ -33,7 +33,7 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   //   2. Allocate memory / prepare data structures
   //
   //   3. Iterate over cells and add new entities
-  
+
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
 
@@ -79,10 +79,10 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
     // Get vertices from cell
     const uint* vertices = c->entities(0);
     dolfin_assert(vertices);
-    
+
     // Create entities
     cell_type.create_entities(entities, dim, vertices);
-    
+
     // Count new entities
     num_entities += count_entities(mesh, *c, entities, m, n, dim);
   }
@@ -99,10 +99,10 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
     // Get vertices from cell
     const uint* vertices = c->entities(0);
     dolfin_assert(vertices);
-    
+
     // Create entities
     cell_type.create_entities(entities, dim, vertices);
-    
+
     // Add new entities to the mesh
     add_entities(mesh, *c, entities, m, n, dim, ce, ev, current_entity);
   }
@@ -188,7 +188,7 @@ void TopologyComputation::computeFromTranspose(Mesh& mesh, uint d0, uint d1)
   //      for each entity of dimension d0
 
   //message("Computing mesh connectivity %d - %d from transpose.", d0, d1);
-  
+
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
   MeshConnectivity& connectivity = topology(d0, d1);
@@ -214,7 +214,7 @@ void TopologyComputation::computeFromTranspose(Mesh& mesh, uint d0, uint d1)
   // Reset current position for each entity
   for (uint i = 0; i < tmp.size(); i++)
     tmp[i] = 0;
-  
+
   // Add the connections
   for (MeshEntityIterator e1(mesh, d1); !e1.end(); ++e1)
     for (MeshEntityIterator e0(*e1, d0); !e0.end(); ++e0)
@@ -332,7 +332,7 @@ dolfin::uint TopologyComputation::count_entities(Mesh& mesh, MeshEntity& cell,
 {
   // For each entity, we iterate over connected and previously visited
   // cells to see if the entity has already been counted.
-  
+
   // Needs to be a cell
   dolfin_assert(cell.dim() == mesh.topology().dim());
 
@@ -351,10 +351,10 @@ dolfin::uint TopologyComputation::count_entities(Mesh& mesh, MeshEntity& cell,
       if ( contains(c->entities(0), c->num_entities(0), entities[i], n) )
         goto found;
     }
-    
+
     // Increase counter
     num_entities++;
-    
+
     // Entity found, don't need to count
     found:
     ;
@@ -371,7 +371,7 @@ void TopologyComputation::add_entities(Mesh& mesh, MeshEntity& cell,
 {
   // We repeat the same algorithm as in count_entities() but this time
   // we add any entities that are new.
-  
+
   // Needs to be a cell
   dolfin_assert(cell.dim() == mesh.topology().dim());
 
@@ -384,7 +384,7 @@ void TopologyComputation::add_entities(Mesh& mesh, MeshEntity& cell,
       // Check only previously visited cells
       if ( c->index() >= cell.index() )
         continue;
-      
+
       // Check all entities of dimension dim in connected cell
       uint num_other_entities = c->num_entities(dim);
       const uint* other_entities = c->entities(dim);
@@ -400,14 +400,14 @@ void TopologyComputation::add_entities(Mesh& mesh, MeshEntity& cell,
         }
       }
     }
-    
+
     // Entity does not exist, so create it
     ce.set(cell.index(), current_entity, i);
     ev.set(current_entity, entities[i]);
-    
+
     // Increase counter
     current_entity++;
-    
+
     // Entity found, don't need to create
     found:
     ;

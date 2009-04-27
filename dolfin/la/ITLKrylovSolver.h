@@ -16,7 +16,7 @@
 #include "GenericLinearSolver.h"
 #include "enums_la.h"
 
-namespace dolfin 
+namespace dolfin
 {
 
   /// Forward declarations
@@ -28,7 +28,7 @@ namespace dolfin
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of ITL.
-  
+
   class ITLKrylovSolver : public GenericLinearSolver
   {
   public:
@@ -48,15 +48,15 @@ namespace dolfin
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const MTL4Matrix& A, MTL4Vector& x, const MTL4Vector& b);
-    
+
     /// Display solver data
     void disp() const;
 
-  private: 
+  private:
 
-    SolverType         method; 
-    PreconditionerType pc_type; 
-    //ITLPreconditioner* prec; 
+    SolverType         method;
+    PreconditionerType pc_type;
+    //ITLPreconditioner* prec;
 
   };
 

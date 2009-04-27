@@ -34,7 +34,7 @@ namespace dolfin
   ///   TimeStepper time_stepper(ode);
   ///   time_stepper.solve(u);          (solve on [0, T])
   ///   time_stepper.solve(u, t0, t1);  (solve on [t0, t1])
-  /// 
+  ///
   /// Alternatively, one may call the step() function repeatedly to
   /// solve the ODE one time slab at a time:
   ///
@@ -77,7 +77,7 @@ namespace dolfin
 
     // Save at fixed sample points
     void save_fixed_samples(ODESolution& u);
-    
+
     // Save using adaptive samples
     void save_adaptive_samples(ODESolution& u);
 
@@ -115,7 +115,7 @@ namespace dolfin
 
     // Number of samples to save (for non-adaptive sampling)
     unsigned int num_samples;
-    
+
     // Density of sampling (for adaptive sampling)
     unsigned int sample_density;
 

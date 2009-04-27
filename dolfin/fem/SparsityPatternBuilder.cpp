@@ -43,17 +43,17 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     {
       // Update to current cell
       ufc.update(*cell);
-  
+
       // Tabulate dofs for each dimension
       for (uint i = 0; i < ufc.form.rank(); ++i)
         dof_maps[i]->tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
- 
-    std::cout <<"--- ufc.dofs[0][0] "<<ufc.dofs[0][0]<<std::endl; 
-    std::cout <<"--- ufc.dofs[0][1] "<<ufc.dofs[0][1]<<std::endl; 
-    std::cout <<"--- ufc.dofs[0][2] "<<ufc.dofs[0][2]<<std::endl; 
-    std::cout <<"--- ufc.dofs[1][0] "<<ufc.dofs[1][0]<<std::endl; 
-    std::cout <<"--- ufc.dofs[1][1] "<<ufc.dofs[1][1]<<std::endl; 
-    std::cout <<"--- ufc.dofs[1][2] "<<ufc.dofs[1][2]<<std::endl; 
+
+    std::cout <<"--- ufc.dofs[0][0] "<<ufc.dofs[0][0]<<std::endl;
+    std::cout <<"--- ufc.dofs[0][1] "<<ufc.dofs[0][1]<<std::endl;
+    std::cout <<"--- ufc.dofs[0][2] "<<ufc.dofs[0][2]<<std::endl;
+    std::cout <<"--- ufc.dofs[1][0] "<<ufc.dofs[1][0]<<std::endl;
+    std::cout <<"--- ufc.dofs[1][1] "<<ufc.dofs[1][1]<<std::endl;
+    std::cout <<"--- ufc.dofs[1][2] "<<ufc.dofs[1][2]<<std::endl;
 
 
       // Fill sparsity pattern.
@@ -84,7 +84,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       // Check if we have an interior facet
       if (facet->num_entities(mesh.topology().dim()) != 2)
         continue;
-      
+
       // Get cells incident with facet
       Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
       Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
@@ -104,7 +104,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       sparsity_pattern.insert(ufc.macro_local_dimensions, ufc.macro_dofs);
     }
   }
-  
+
   // Finalize sparsity pattern
   sparsity_pattern.apply();
 }
@@ -113,7 +113,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 				   UFC& ufc, const Form& a)
 {
 
-  const Mesh& mesh = a.mesh(); 
+  const Mesh& mesh = a.mesh();
   // Initialise sparsity pattern
   /*
   if (dof_map_set.parallel())
@@ -127,18 +127,18 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   if (ufc.form.rank() < 2)
     return;
 
-  uint num_function_spaces = a.function_spaces().size();  
+  uint num_function_spaces = a.function_spaces().size();
   // Build sparsity pattern for cell integrals
   if (ufc.form.num_cell_integrals() != 0)
   {
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
 
-      // FIXME will move this check into a separate function. 
-      // Need to check the coefficients as well. 
-      bool compute_on_cell = true; 
+      // FIXME will move this check into a separate function.
+      // Need to check the coefficients as well.
+      bool compute_on_cell = true;
       for (uint i = 0; i < num_function_spaces; i++)
-      {  
+      {
         if (!a.function_space(i).is_inside_restriction(cell->index()))
           compute_on_cell = false;
       }
@@ -147,11 +147,11 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
       // Update to current cell
       ufc.update(*cell);
-  
+
       // Tabulate dofs for each dimension
       for (uint i = 0; i < ufc.form.rank(); ++i)
         a.function_space(i).dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
- 
+
       // Fill sparsity pattern.
       /*
       if( dof_map_set.parallel() )
@@ -180,7 +180,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       // Check if we have an interior facet
       if (facet->num_entities(mesh.topology().dim()) != 2)
         continue;
-      
+
       // Get cells incident with facet
       Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
       Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
@@ -200,7 +200,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       sparsity_pattern.insert(ufc.macro_local_dimensions, ufc.macro_dofs);
     }
   }
-  
+
   // Finalize sparsity pattern
   sparsity_pattern.apply();
 }

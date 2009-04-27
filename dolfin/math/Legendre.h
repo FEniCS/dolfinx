@@ -31,7 +31,7 @@ namespace dolfin
 
     /// Evaluation at given point
     real operator() (real x);
-    
+
     /// Evaluation of derivative at given point
     real ddx(real x);
 
@@ -39,7 +39,7 @@ namespace dolfin
     real d2dx(real x);
 
   private:
-    
+
     real eval(uint n, real x);
     real ddx(uint n, real x);
     real d2dx(uint n, real x);

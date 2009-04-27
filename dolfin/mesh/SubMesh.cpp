@@ -54,7 +54,7 @@ void SubMesh::init(const Mesh& mesh,
     if (sub_domains(*cell) == sub_domain)
       cells.insert(cell->index());
   }
-  
+
   // Map to keep track of new local indices for vertices
   std::map<uint, uint> local_vertex_indices;
 
@@ -92,7 +92,7 @@ void SubMesh::init(const Mesh& mesh,
     Vertex vertex(mesh, it->first);
     editor.add_vertex(it->second, vertex.point());
   }
-  
+
   // Close editor
   editor.close();
 

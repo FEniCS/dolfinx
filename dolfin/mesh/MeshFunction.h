@@ -18,7 +18,7 @@
 
 namespace dolfin
 {
-  
+
   class MPIManager;
   class NewXMLMeshFunction;
 
@@ -32,7 +32,7 @@ namespace dolfin
   template <class T> class MeshFunction : public Variable
   {
   public:
- 
+
     /// Create empty mesh function
     MeshFunction() :
       Variable("f", "unnamed MeshFunction"),
@@ -40,7 +40,7 @@ namespace dolfin
     {}
 
     /// Create empty mesh function on given mesh
-    MeshFunction(const Mesh& mesh) : 
+    MeshFunction(const Mesh& mesh) :
       Variable("f", "unnamed MeshFunction"),
       _values(0), _mesh(&mesh), _dim(0), _size(0)
     {}
@@ -162,7 +162,7 @@ namespace dolfin
       // Initialize mesh for entities of given dimension
       mesh.init(dim);
       dolfin_assert(mesh.size(dim) == size);
-      
+
       // Initialize data
       _mesh = &mesh;
       _dim = dim;
@@ -199,7 +199,7 @@ namespace dolfin
       dolfin_assert(entity.index() < _size);
       _values[entity.index()] = value;
     }
-    
+
     /// Set value at given entity
     inline void set(uint index, const T& value)
     {
@@ -215,7 +215,7 @@ namespace dolfin
       for (uint i = 0; i < _size; i++)
         _values[i] = value;
     }
-    
+
     /// Display mesh function data
     void disp() const
     {

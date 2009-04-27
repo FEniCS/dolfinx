@@ -16,7 +16,7 @@ using namespace dolfin;
 using dolfin::uint;
 
 //-----------------------------------------------------------------------------
-NewXMLGraph::NewXMLGraph(Graph& graph, NewXMLFile& parser) 
+NewXMLGraph::NewXMLGraph(Graph& graph, NewXMLFile& parser)
 : XMLHandler(parser), graph(graph), state(OUTSIDE)
 {
   // Do nothing
@@ -32,17 +32,17 @@ void NewXMLGraph::start_element(const xmlChar *name, const xmlChar **attrs)
   switch ( state )
   {
   case OUTSIDE:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "graph") == 0 )
     {
       read_graph(name, attrs);
       state = INSIDE_GRAPH;
     }
-    
+
     break;
 
   case INSIDE_GRAPH:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "vertices") == 0 )
     {
       read_vertices(name, attrs);
@@ -53,16 +53,16 @@ void NewXMLGraph::start_element(const xmlChar *name, const xmlChar **attrs)
       read_edges(name, attrs);
       state = INSIDE_EDGES;
     }
-    
+
     break;
-    
+
   case INSIDE_VERTICES:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "vertex") == 0 )
       read_vertex(name, attrs);
 
     break;
-    
+
   case INSIDE_EDGES:
 
     if ( xmlStrcasecmp(name, (xmlChar *) "edge") == 0 )
@@ -89,23 +89,23 @@ void NewXMLGraph::end_element(const xmlChar *name)
     break;
 
   case INSIDE_VERTICES:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "vertices") == 0)
     {
       state = INSIDE_GRAPH;
     }
-    
+
     break;
 
   case INSIDE_EDGES:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "edges") == 0)
     {
       state = INSIDE_GRAPH;
     }
-    
+
     break;
-    
+
   default:
     ;
   }
@@ -144,7 +144,7 @@ void NewXMLGraph::write(const Graph& graph, std::ostream& outfile, uint indentat
   {
     outfile << indent();
     outfile << "<vertex index=\"" << i << "\" num_edges=\"" << graph.num_edges(i) << "\" weight=\"" << vertex_weights[i] << "\"/>" << std::endl;
-  }	  
+  }
   --indent;
 
   // Write vertices footer
@@ -169,7 +169,7 @@ void NewXMLGraph::write(const Graph& graph, std::ostream& outfile, uint indentat
   // Write edges footer
   outfile << indent() << "</edges>" << std::endl;
 
-  // Write graph footer 
+  // Write graph footer
   --indent;
   outfile << indent() << "</graph>" << std::endl;
 }
@@ -178,7 +178,7 @@ void NewXMLGraph::read_graph(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   std::string type = parse_string(name, attrs, "type");
-  
+
   // Open graph for editing
   editor.open(graph, type);
 }
@@ -209,7 +209,7 @@ void NewXMLGraph::read_edge(const xmlChar *name, const xmlChar **attrs)
   uint v2 = parse_uint(name, attrs, "v2");
 
   //dolfin_debug2("read_edge, v1 = %d, v2 = %d", v1, v2);
-  
+
   // Edge weights not yet implemented
   //uint w = parse_uint(name, attrs, "weight");
   editor.add_edge(v1, v2);

@@ -64,7 +64,7 @@ namespace dolfin
 
     /// Check for intersection with line defined by points
     bool intersects(const MeshEntity& entity, const Point& p0, const Point& p1) const;
-   
+
     /// Check for intersection with cell
     bool intersects(const MeshEntity& entity, const Cell& cell) const;
 

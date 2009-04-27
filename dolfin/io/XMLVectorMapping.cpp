@@ -10,7 +10,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XMLVectorMapping::XMLVectorMapping(std::map<uint, std::vector<uint> >& mvec)
-: XMLObject(), 
+: XMLObject(),
   state(OUTSIDE),
   mvec_type(UNSET),
   _umvec(&mvec)

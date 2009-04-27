@@ -34,9 +34,9 @@ xx[1] = x
 
 # Create another block vector
 y = Vector(A.size(1))
-yy = BlockVector(2) 
-yy[0] = y 
-yy[1] = y 
+yy = BlockVector(2)
+yy[0] = y
+yy[1] = y
 
 # Multiply
 AA.mult(xx, yy)

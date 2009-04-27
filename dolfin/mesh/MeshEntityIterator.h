@@ -58,11 +58,11 @@ namespace dolfin
     {
       // Get connectivity
       const MeshConnectivity& c = entity.mesh().topology()(entity.dim(), dim);
-      
+
       // Compute connectivity if empty
       if (c.size() == 0)
         entity.mesh().init(entity.dim(), dim);
-      
+
       // Get size and index map
       if (c.size() == 0)
       {
@@ -78,7 +78,7 @@ namespace dolfin
 
     /// Destructor
     virtual ~MeshEntityIterator() {}
-    
+
     /// Step to next mesh entity (prefix increment)
     MeshEntityIterator& operator++() { ++_pos; return *this; }
 
@@ -96,7 +96,7 @@ namespace dolfin
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const MeshEntityIterator& it);
-    
+
   private:
 
     /// Copy constructor is private to disallow usage. If it were public (or not
@@ -110,7 +110,7 @@ namespace dolfin
     /// fact a copy of c0.
     MeshEntityIterator(const MeshEntityIterator& entity) :  entity(entity.entity.mesh(), 0, 0), _pos(0)
     { error("Illegal use of mesh entity iterator."); }
-    
+
     // Mesh entity
     MeshEntity entity;
 
@@ -122,7 +122,7 @@ namespace dolfin
 
     // Mapping from pos to index (if any)
     const uint* index;
-    
+
   };
 
 }

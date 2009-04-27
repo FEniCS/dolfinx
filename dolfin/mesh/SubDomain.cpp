@@ -51,7 +51,7 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
 
   // Set geometric dimension (needed for SWIG interface)
   _geometric_dimension = mesh.geometry().dim();
-  
+
   // Always false when not marking facets
   bool on_boundary = false;
 

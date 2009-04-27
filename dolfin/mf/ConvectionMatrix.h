@@ -25,7 +25,7 @@ namespace dolfin
   class ConvectionMatrix : public Matrix
   {
   public:
-  
+
     /// Construct convection matrix with constant velocity c on a given mesh
     ConvectionMatrix(Mesh& mesh, double cx = 1.0, double cy = 0.0, double cz = 0.0) : Matrix()
     {
@@ -43,7 +43,7 @@ namespace dolfin
   class PETScConvectionMatrix : public PETScMatrix
   {
   public:
-  
+
     /// Construct convection matrix with constant velocity c on a given mesh
     PETScConvectionMatrix(Mesh& mesh, double cx = 1.0, double cy = 0.0, double cz = 0.0) : PETScMatrix()
     {
@@ -61,7 +61,7 @@ namespace dolfin
   class uBLASConvectionMatrix : public uBLASSparseMatrix
   {
   public:
-  
+
     /// Construct convection matrix with constant velocity c on a given mesh
     uBLASConvectionMatrix(Mesh& mesh, double cx = 1.0, double cy = 0.0, double cz = 0.0) : uBLASSparseMatrix()
     {

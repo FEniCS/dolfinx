@@ -58,9 +58,9 @@ void XMLHandler::validate(std::string filename)
       ret = xmlTextReaderRead(reader);
       if ( ret != 0 ) {
         error("%s : failed to parse\n", filename.c_str());
-      }      
+      }
     }
-  } 
+  }
   else {
     error("Unable to open %s\n", filename.c_str());
   }
@@ -89,7 +89,7 @@ int XMLHandler::parse_int(const xmlChar* name, const xmlChar** attrs,
   if ( !attrs )
     error("Missing attribute \"%s\" for <%s> in XML file.",
                   attribute, name);
-  
+
   // Parse data
   for (uint i = 0; attrs[i]; i++)
   {
@@ -99,14 +99,14 @@ int XMLHandler::parse_int(const xmlChar* name, const xmlChar** attrs,
       if ( !attrs[i+1] )
         error("Value for attribute \"%s\" of <%s> missing in XML file.",
 		      attribute, name);
-      
+
       std::istringstream ss((const char *)attrs[i+1]);
       int value;
       ss >> value;
       return value;
     }
   }
-  
+
   // Didn't get the value
   error("Missing attribute \"%s\" for <%s> in XML file.", attribute, name);
 
@@ -120,7 +120,7 @@ dolfin::uint XMLHandler::parse_uint(const xmlChar* name,
   // Check that we got the data
   if ( !attrs )
     error("Missing attribute \"%s\" for <%s> in XML file.", attribute, name);
-  
+
   // Parse data
   for (uint i = 0; attrs[i]; i++)
   {
@@ -130,7 +130,7 @@ dolfin::uint XMLHandler::parse_uint(const xmlChar* name,
       if ( !attrs[i+1] )
         error("Value for attribute \"%s\" of <%s> missing in XML file.",
 		      attribute, name);
-      
+
       std::istringstream ss((const char *)attrs[i+1]);
       int value;
       ss >> value;
@@ -142,7 +142,7 @@ dolfin::uint XMLHandler::parse_uint(const xmlChar* name,
       return static_cast<uint>(value);
     }
   }
-  
+
   // Didn't get the value
   error("Missing attribute \"%s\" for <%s> in XML file.",
 		attribute, name);
@@ -157,7 +157,7 @@ double XMLHandler::parse_float(const xmlChar* name, const xmlChar** attrs,
   if ( !attrs )
     error("Missing attribute \"%s\" for <%s> in XML file.",
                   attribute, name);
-  
+
   // Parse data
   for (uint i = 0; attrs[i]; i++)
   {
@@ -167,14 +167,14 @@ double XMLHandler::parse_float(const xmlChar* name, const xmlChar** attrs,
       if ( !attrs[i+1] )
         error("Value for attribute \"%s\" of <%s>  missing in XML file.",
 		      attribute, name);
-    
+
       std::istringstream ss((const char *)attrs[i+1]);
       double value;
       ss >> value;
       return value;
     }
   }
-  
+
   // Didn't get the value
   error("Missing attribute \"%s\" for <%s> in XML file.",
 		attribute, name);
@@ -189,7 +189,7 @@ std::string XMLHandler::parse_string(const xmlChar* name, const xmlChar** attrs,
   if ( !attrs )
     error("Missing attribute \"%s\" for <%s> in XML file.  No attribute list given.",
                   attribute, name);
-  
+
   // Parse data
   for (uint i = 0; attrs[i]; i++)
   {
@@ -204,7 +204,7 @@ std::string XMLHandler::parse_string(const xmlChar* name, const xmlChar** attrs,
       return value;
     }
   }
-  
+
   // Didn't get the value
   error("Missing attribute value for \"%s\" for <%s> in XML file.",
 		attribute, name);
@@ -219,7 +219,7 @@ std::string XMLHandler::parse_string_optional(const xmlChar* name, const xmlChar
   if ( !attrs )
     error("Missing attribute \"%s\" for <%s> in XML file.  No attribute list given.",
                   attribute, name);
-  
+
   // Parse data
   for (uint i = 0; attrs[i]; i++)
   {
@@ -234,7 +234,7 @@ std::string XMLHandler::parse_string_optional(const xmlChar* name, const xmlChar
       return value;
     }
   }
-  
+
   // Didn't get the value, then return an empty string
   // a default will be set in the calling function
   return "";
@@ -247,7 +247,7 @@ bool XMLHandler::parse_bool(const xmlChar* name, const xmlChar** attrs,
   if ( !attrs )
     error("Missing attribute \"%s\" for <%s> in XML file.",
                   attribute, name);
-  
+
   // Parse data
   for (uint i = 0; attrs[i]; i++)
   {
@@ -257,7 +257,7 @@ bool XMLHandler::parse_bool(const xmlChar* name, const xmlChar** attrs,
       if ( !attrs[i+1] )
         error("Value for attribute \"%s\" of <%s> missing in XML file.",
 		      attribute, name);
-      
+
       std::string value = (const char *) (attrs[i+1]);
       if ( strcmp(value.c_str(), "true") == 0 or strcmp(value.c_str(), "1") == 0 )
         return true;
@@ -267,10 +267,10 @@ bool XMLHandler::parse_bool(const xmlChar* name, const xmlChar** attrs,
       error("Cannot convert \"%s\" for attribute \"%s\" in <%s> to bool.",
 		    value.c_str(), attribute, name);
       return false;
-      
+
     }
   }
-  
+
   // Didn't get the value
   error("Missing attribute \"%s\" for <%s> in XML file.",
 		attribute, name);

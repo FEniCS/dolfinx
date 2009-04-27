@@ -67,7 +67,7 @@ namespace dolfin
     virtual void apply();
 
     /// Display tensor
-    virtual void disp(uint precision=2) const;    
+    virtual void disp(uint precision=2) const;
 
     //--- Implementation of the GenericVector interface ---
 
@@ -112,7 +112,7 @@ namespace dolfin
 
     /// Return sum of values of vector
     virtual double sum() const;
-    
+
     /// Multiply vector by given number
     virtual const uBLASVector& operator *= (double a);
 
@@ -132,7 +132,7 @@ namespace dolfin
     virtual const uBLASVector& operator= (double a);
 
     /// Return pointer to underlying data (const version)
-    virtual const double* data() const 
+    virtual const double* data() const
     { return &x->data()[0]; }
 
     /// Return pointer to underlying data
@@ -143,7 +143,7 @@ namespace dolfin
 
     /// Return linear algebra backend factory
     virtual LinearAlgebraFactory& factory() const;
-    
+
     //--- Special uBLAS functions ---
 
     /// Return reference to uBLAS vector (const version)
@@ -173,7 +173,7 @@ namespace dolfin
   };
 
   LogStream& operator<< (LogStream& stream, const uBLASVector& x);
- 
+
 }
 
 #endif

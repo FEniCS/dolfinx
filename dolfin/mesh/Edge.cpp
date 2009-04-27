@@ -21,12 +21,12 @@ double Edge::length()
 
   const Vertex v0(_mesh, vertices[0]);
   const Vertex v1(_mesh, vertices[1]);
-  
+
   const Point p0 = v0.point();
   const Point p1 = v1.point();
 
-  double length(sqrt((p1.x()-p0.x())*(p1.x()-p0.x()) 
-               + (p1.y()-p0.y())*(p1.y()-p0.y()) 
+  double length(sqrt((p1.x()-p0.x())*(p1.x()-p0.x())
+               + (p1.y()-p0.y())*(p1.y()-p0.y())
                + (p1.z()-p0.z())*(p1.z()-p0.z())));
 
   return length;
@@ -39,7 +39,7 @@ Point Edge::midpoint()
 
   const Vertex v0(_mesh, vertices[0]);
   const Vertex v1(_mesh, vertices[1]);
-  
+
   const Point p0 = v0.point();
   const Point p1 = v1.point();
 

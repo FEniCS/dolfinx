@@ -63,7 +63,7 @@ namespace dolfin
     static void distribute_cells(LocalMeshData& data,
                                  const std::vector<uint>& cell_partition);
 
-    // Distribute vertices 
+    // Distribute vertices
     static void distribute_vertices(LocalMeshData& data,
                                     std::map<uint, uint>& glob2loc);
 

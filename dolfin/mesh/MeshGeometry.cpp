@@ -47,7 +47,7 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
   // Copy data
   for (uint i = 0; i < n; i++)
     coordinates[i] = geometry.coordinates[i];
-  
+
   // higher order mesh data
   _size_higher_order         = geometry._size_higher_order;
   _higher_order_num_cells    = geometry._higher_order_num_cells;
@@ -59,7 +59,7 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
 	higher_order_coordinates = new double[hon];
 	higher_order_cell_data = new uint[honcd];
 	affine_cell = new bool[_higher_order_num_cells];
-	
+
 	/** COPY: higher order mesh data **/
 	// higher order coordinate data
 	for (uint i = 0; i < hon; i++)
@@ -80,7 +80,7 @@ const MeshGeometry& MeshGeometry::operator= (const MeshGeometry& geometry)
 	higher_order_cell_data    = 0;
 	affine_cell               = 0;
   	}
-  
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -89,14 +89,14 @@ Point MeshGeometry::point(uint n) const
   double _x = 0.0;
   double _y = 0.0;
   double _z = 0.0;
-  
+
   if ( _dim > 0 )
     _x = x(n, 0);
   if ( _dim > 1 )
     _y = x(n, 1);
   if ( _dim > 2 )
     _z = x(n, 2);
-  
+
   Point p(_x, _y, _z);
   return p;
 }
@@ -108,12 +108,12 @@ void MeshGeometry::clear()
   _size_higher_order      = 0;
   _higher_order_num_cells = 0;
   _higher_order_num_dof   = 0;
-  
+
   delete [] coordinates;
   delete(higher_order_coordinates);
   delete(higher_order_cell_data);
   delete(affine_cell);
-  
+
   coordinates               = 0;
   higher_order_coordinates  = 0;
   higher_order_cell_data    = 0;
@@ -128,7 +128,7 @@ void MeshGeometry::init(uint dim, uint size)
   // Allocate new data
   coordinates = new double[dim*size];
   higher_order_coordinates = 0; // this will be set by another routine
-  
+
   // Save dimension and size
   _dim = dim;
   _size = size;
@@ -139,7 +139,7 @@ void MeshGeometry::init_HigherOrderVertices(uint dim, uint size_higher_order)
 {
   // Allocate new data
   higher_order_coordinates = new double[dim*size_higher_order];
-  
+
   // Save size
   _size_higher_order = size_higher_order;
 }
@@ -148,7 +148,7 @@ void MeshGeometry::init_HigherOrderCells(uint num_cells, uint num_dof)
 {
   // Allocate new data
   higher_order_cell_data = new uint[num_dof*num_cells];
-  
+
   // Save size
   _higher_order_num_cells = num_cells;
   _higher_order_num_dof   = num_dof;
@@ -202,7 +202,7 @@ void MeshGeometry::disp() const
     end();
     return;
   }
-  
+
   // Display coordinates for all vertices
   for (uint i = 0; i < _size; i++)
   {

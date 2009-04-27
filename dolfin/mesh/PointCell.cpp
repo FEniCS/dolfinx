@@ -45,7 +45,7 @@ dolfin::uint PointCell::num_vertices(uint dim) const
   default:
     error("Illegal topological dimension %d for point.", dim);
   }
-  
+
   return 0;
 }
 //-----------------------------------------------------------------------------

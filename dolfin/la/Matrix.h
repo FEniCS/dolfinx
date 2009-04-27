@@ -123,7 +123,7 @@ namespace dolfin
     virtual const GenericMatrix& operator= (const GenericMatrix& A)
     { *matrix = A; return *this; }
 
-    /// Return pointers to underlying compressed storage data. 
+    /// Return pointers to underlying compressed storage data.
     /// See GenericMatrix for documentation.
     virtual std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
     { return matrix->data(); }

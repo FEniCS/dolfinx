@@ -79,7 +79,7 @@ const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
   {
     delete intersection_detector;
     intersection_detector = 0;
-  }  
+  }
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -246,7 +246,7 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vec
   std::ostringstream identifier;
   for (uint i = 0; i < component.size(); ++i)
     identifier << component[i] << ".";
-  
+
   // Check if sub space is aleady in the cache
   std::map<std::string, boost::shared_ptr<FunctionSpace> >::iterator subspace;
   subspace = subspaces.find(identifier.str());
@@ -259,7 +259,7 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vec
   // Extract sub dofmap and offset
   uint offset = 0;
   boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component, offset, *_mesh));
-  
+
   // Create new sub space
   boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
 
@@ -333,9 +333,9 @@ void FunctionSpace::Scratch::init(const FiniteElement& element)
 //-----------------------------------------------------------------------------
 bool FunctionSpace::is_inside_restriction(uint c) const
 {
-  if (_restriction) 
+  if (_restriction)
     return _restriction->get(c);
-  else 
+  else
     return true;
 }
 //-----------------------------------------------------------------------------

@@ -117,7 +117,7 @@ void MatrixFactory::computeLoadVector(GenericVector& x, Mesh& mesh, double c)
   else
   {
     error("Unknown mesh type.");
-  } 
+  }
 */
 }
 //-----------------------------------------------------------------------------

@@ -29,7 +29,7 @@ namespace dolfin
   /// implementing the GenericVector interface.
   ///
   /// The interface is intentionally simple. For advanced usage,
-  /// access the Epetra_FEVector object using the function vec() or vec_ptr() 
+  /// access the Epetra_FEVector object using the function vec() or vec_ptr()
   /// and use the standard Epetra interface.
 
   class EpetraVector: public GenericVector, public Variable
@@ -111,7 +111,7 @@ namespace dolfin
 
     /// Return sum of values of vector
     virtual double sum() const;
-    
+
     /// Multiply vector by given number
     virtual const EpetraVector& operator*= (double a);
 
@@ -148,7 +148,7 @@ namespace dolfin
     // Epetra_FEVector pointer
     boost::shared_ptr<Epetra_FEVector> x;
 
-  };  
+  };
 
   LogStream& operator<< (LogStream& stream, const EpetraVector& A);
 

@@ -75,7 +75,7 @@ namespace dolfin
     static void assemble_system(GenericMatrix& A,
                                 GenericVector& b,
                                 const Form& a,
-                                const Form& L, 
+                                const Form& L,
                                 std::vector<const DirichletBC*>& bcs,
                                 bool reset_tensors=true);
 

@@ -18,7 +18,7 @@ namespace dolfin
 
   class XMLLocalMeshData;
   class NewXMLLocalMeshData;
-  
+
   /// This class stores mesh data on a local processor corresponding
   /// to a portion of a (larger) global mesh.
   ///
@@ -39,10 +39,10 @@ namespace dolfin
   class LocalMeshData
   {
   public:
-    
+
     /// Constructor
     LocalMeshData();
-    
+
     /// Destructor
     ~LocalMeshData();
 
@@ -54,10 +54,10 @@ namespace dolfin
     /// Clear all data
     void clear();
 
-    /// Compute process number for vertex 
+    /// Compute process number for vertex
     uint initial_vertex_location(uint vertex_index) const;
 
-    /// Compute process number for vertex 
+    /// Compute process number for vertex
     uint initial_cell_location(uint cell_index) const;
 
     /// Compute local number for given global vertex number
@@ -66,7 +66,7 @@ namespace dolfin
     /// Compute vertex range for local process
     void initial_vertex_range(uint& start, uint& stop) const;
 
-    /// Compute with simple formula process number for vertex 
+    /// Compute with simple formula process number for vertex
     void initial_cell_range(uint& start, uint& stop) const;
 
     /// Coordinates for all vertices stored on local processor
@@ -106,9 +106,9 @@ namespace dolfin
     friend class XMLLocalMeshData;
     friend class NewXMLLocalMeshData;
     friend class MeshPartitioning;
-    
+
   };
-  
+
 }
 
 #endif

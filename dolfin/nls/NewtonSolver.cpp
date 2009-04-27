@@ -19,15 +19,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(SolverType solver_type, PreconditionerType pc_type) 
-             : solver(new LinearSolver(solver_type, pc_type)), 
+NewtonSolver::NewtonSolver(SolverType solver_type, PreconditionerType pc_type)
+             : solver(new LinearSolver(solver_type, pc_type)),
                A(new Matrix), dx(new Vector), b(new Vector)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& factory) 
-            : solver(reference_to_no_delete_pointer(solver)), A(factory.create_matrix()), 
+NewtonSolver::NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& factory)
+            : solver(reference_to_no_delete_pointer(solver)), A(factory.create_matrix()),
               dx(factory.create_vector()), b(factory.create_vector())
 {
   // Do nothing
@@ -79,33 +79,33 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
 
     // Update number of iterations
     ++newton_iteration;
-    
+
     //FIXME: this step is not needed if residual is based on dx and this has converged.
     // Compute F(u) and J
     nonlinear_problem.F(*b, x);
     nonlinear_problem.J(*A, x);
 
-    // Test for convergence 
+    // Test for convergence
     newton_converged = converged(*b, *dx, nonlinear_problem);
   }
 
   if (newton_converged)
-    message("Newton solver finished in %d iterations and %d linear solver iterations.", 
+    message("Newton solver finished in %d iterations and %d linear solver iterations.",
             newton_iteration, krylov_iterations);
   else
     warning("Newton solver did not converge.");
-  
+
   end();
 
   return newton_iteration;
-} 
+}
 //-----------------------------------------------------------------------------
 dolfin::uint NewtonSolver::get_iteration() const
 {
-  return newton_iteration; 
+  return newton_iteration;
 }
 //-----------------------------------------------------------------------------
-bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx, 
+bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
                              const NonlinearProblem& nonlinear_problem)
 {
   const std::string convergence_criterion = get("Newton convergence criterion");
@@ -133,8 +133,8 @@ bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
   // Output iteration number and residual
   //FIXME: allow precision to be set for dolfin::cout<<
   std::cout.precision(3);
-  if(report && newton_iteration >0) 
-    std::cout << "  Iteration " << newton_iteration  
+  if(report && newton_iteration >0)
+    std::cout << "  Iteration " << newton_iteration
               << ":"
               << " r = " << std::scientific << residual
               << " (atol = " << std::scientific << atol << ")"

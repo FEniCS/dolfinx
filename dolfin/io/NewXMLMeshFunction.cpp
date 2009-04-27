@@ -66,22 +66,22 @@ void NewXMLMeshFunction::start_element(const xmlChar *name, const xmlChar **attr
   switch ( state )
   {
   case OUTSIDE_MESHFUNCTION:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
     {
       start_mesh_function(name, attrs);
       state = INSIDE_MESHFUNCTION;
     }
-    
+
     break;
-    
+
   case INSIDE_MESHFUNCTION:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "entity") == 0 )
       read_entity(name, attrs);
-    
+
     break;
-    
+
   default:
     ;
   }
@@ -92,15 +92,15 @@ void NewXMLMeshFunction::end_element(const xmlChar *name)
   switch ( state )
   {
   case INSIDE_MESHFUNCTION:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
     {
       state = DONE;
       release();
     }
-    
+
     break;
-    
+
   default:
     ;
   }
@@ -125,7 +125,7 @@ void NewXMLMeshFunction::write(const MeshFunction<int>& mf, std::ostream& outfil
 }
 //-----------------------------------------------------------------------------
 void NewXMLMeshFunction::write(const MeshFunction<uint>& mf, std::ostream& outfile, uint indentation_level, bool write_mesh)
-{  
+{
   if (write_mesh)
     NewXMLMesh::write(mf.mesh(), outfile, indentation_level);
   XMLIndent indent(indentation_level);
@@ -167,13 +167,13 @@ void NewXMLMeshFunction::start_mesh_function(const xmlChar *name, const xmlChar 
   // Parse size of mesh function
   size = parse_uint(name, attrs, "size");
 
-  // Parse type of mesh function 
+  // Parse type of mesh function
   std::string _type = parse_string(name, attrs, "type");
 
   // Parse dimension of mesh function
 
   uint dim = parse_uint(name, attrs, "dim");
-  
+
   // Initialize mesh function
   switch ( mf_type )
   {
@@ -182,7 +182,7 @@ void NewXMLMeshFunction::start_mesh_function(const xmlChar *name, const xmlChar 
       if ( _type.compare("int") != 0 )
         error("MeshFunction file of type '%s', expected 'int'.", _type.c_str());
       imf->init(dim);
-      
+
       break;
 
     case UINT:
@@ -208,14 +208,14 @@ void NewXMLMeshFunction::start_mesh_function(const xmlChar *name, const xmlChar 
 //-----------------------------------------------------------------------------
 void NewXMLMeshFunction::read_entity(const xmlChar *name, const xmlChar **attrs)
 {
-  // Parse index 
+  // Parse index
   uint index = parse_uint(name, attrs, "index");
-  
+
   // Check values
   if (index >= size)
     error("Illegal XML data for MeshFunction: row index %d out of range (0 - %d)",
           index, size - 1);
-  
+
   // Parse value and insert in array
   switch ( mf_type )
   {
@@ -236,7 +236,7 @@ void NewXMLMeshFunction::read_entity(const xmlChar *name, const xmlChar **attrs)
       dmf->set(index, parse_float(name, attrs, "value"));
 
       break;
-          
+
      default:
       ;
   }

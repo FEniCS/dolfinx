@@ -4,7 +4,7 @@
 // First added:  2006-03-02
 // Last changed: 2008-12-27
 //
-// This program illustrates the use of the DOLFIN nonlinear solver for solving 
+// This program illustrates the use of the DOLFIN nonlinear solver for solving
 // the Cahn-Hilliard equation.
 //
 // The Cahn-Hilliard equation is very sensitive to the chosen parameters and
@@ -17,14 +17,14 @@
 
 using namespace dolfin;
 
-// User defined nonlinear problem 
+// User defined nonlinear problem
 class CahnHilliardEquation : public NonlinearProblem, public Parametrized
 {
   public:
 
-    // Constructor 
-    CahnHilliardEquation(Mesh& mesh, Function& u, Function& u0, Constant& dt, 
-                         Constant& theta, Constant& lambda, Constant& mu_factor) 
+    // Constructor
+    CahnHilliardEquation(Mesh& mesh, Function& u, Function& u0, Constant& dt,
+                         Constant& theta, Constant& lambda, Constant& mu_factor)
                        : reset_Jacobian(true)
     {
       // Create forms
@@ -78,22 +78,22 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         error("Cahn-Hilliard model is programmed for 2D and 3D only");
     }
 
-    // Destructor 
+    // Destructor
     ~CahnHilliardEquation()
     {
-      delete V; 
-      delete a; 
+      delete V;
+      delete a;
       delete L;
     }
- 
-    // User defined residual vector 
+
+    // User defined residual vector
     void F(GenericVector& b, const GenericVector& x)
     {
       // Assemble RHS (Neumann boundary conditions)
       assemble(b, *L);
     }
 
-    // User defined assemble of Jacobian 
+    // User defined assemble of Jacobian
     void J(GenericMatrix& A, const GenericVector& x)
     {
       // Assemble system and RHS (Neumann boundary conditions)
@@ -120,16 +120,16 @@ int main(int argc, char* argv[])
 
   // Time stepping and model parameters
   double delta_t = 5.0e-6;
-  Constant dt(delta_t); 
-  Constant theta(0.5); 
-  Constant lambda(1.0e-2); 
-  Constant mu_factor(100.0); 
+  Constant dt(delta_t);
+  Constant theta(0.5);
+  Constant lambda(1.0e-2);
+  Constant mu_factor(100.0);
 
-  double t = 0.0; 
+  double t = 0.0;
   double T = 50*delta_t;
 
   // Solution functions
-  Function u; 
+  Function u;
   Function u0;
 
   // Create user-defined nonlinear problem
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
     // Update for next time step
     t += delta_t;
     u0.vector() = u.vector();
-    
+
     // Solve
     newton_solver.solve(cahn_hilliard, u.vector());
 
@@ -177,6 +177,6 @@ int main(int argc, char* argv[])
 
   // Plot solution
   plot(u[1]);
-  
+
   return 0;
 }

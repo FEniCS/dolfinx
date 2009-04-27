@@ -3,7 +3,7 @@
 //
 // Modified by Anders Logg 2006.
 // Modified by Dag Lindbo 2008.
-// 
+//
 // First added:  2006-06-01
 // Last changed: 2008-09-05
 
@@ -15,7 +15,7 @@
 #include "uBLASKrylovMatrix.h"
 #include "uBLASVector.h"
 
-extern "C" 
+extern "C"
 {
 #ifdef HAS_UMFPACK
 #include <umfpack.h>
@@ -36,7 +36,7 @@ UmfpackLUSolver::~UmfpackLUSolver()
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_UMFPACK
-dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x, 
+dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
                                     const GenericVector& b)
 {
   // Factorize matrix
@@ -59,10 +59,10 @@ dolfin::uint UmfpackLUSolver::factorize(const GenericMatrix& A)
   const uint nnz = std::tr1::get<3>(data);
   dolfin_assert(A.size(0) == A.size(1));
 
-  dolfin_assert(nnz >= M); 
+  dolfin_assert(nnz >= M);
 
   // Initialise umfpack data
-  umfpack.init((const long int*) std::tr1::get<0>(data), 
+  umfpack.init((const long int*) std::tr1::get<0>(data),
     (const long int*) std::tr1::get<1>(data), std::tr1::get<2>(data), M, nnz);
 
   // Factorize
@@ -93,7 +93,7 @@ dolfin::uint UmfpackLUSolver::factorized_solve(GenericVector& x, const GenericVe
 }
 //-----------------------------------------------------------------------------
 #else
-dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x, 
+dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
                                     const GenericVector& b)
 {
   warning("UMFPACK must be installed to peform a LU solve for uBLAS matrices. A Krylov iterative solver will be used instead.");
@@ -108,7 +108,7 @@ dolfin::uint UmfpackLUSolver::factorize(const GenericMatrix& A)
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorized_solve(GenericVector& x, 
+dolfin::uint UmfpackLUSolver::factorized_solve(GenericVector& x,
                                               const GenericVector& b) const
 {
   error("UMFPACK must be installed to perform sparse backward and forward substitutions.");
@@ -144,9 +144,9 @@ void UmfpackLUSolver::Umfpack::clear()
   N = 0;
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::Umfpack::init(const long int* Ap, const long int* Ai, 
+void UmfpackLUSolver::Umfpack::init(const long int* Ap, const long int* Ai,
                                          const double* Ax, uint M, uint nz)
-{  
+{
   if(factorized)
     warning("LUSolver already contains a factorized matrix! Clearing and starting over.");
 
@@ -162,9 +162,9 @@ void UmfpackLUSolver::Umfpack::init(const long int* Ap, const long int* Ai,
   local_matrix = false;
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::Umfpack::init_transpose(const long int* Ap, const long int* Ai, 
+void UmfpackLUSolver::Umfpack::init_transpose(const long int* Ap, const long int* Ai,
                                          const double* Ax, uint M, uint nz)
-{  
+{
   if(Rp || Ri || Rx)
     error("UmfpackLUSolver data already points to a matrix");
 
@@ -177,7 +177,7 @@ void UmfpackLUSolver::Umfpack::init_transpose(const long int* Ap, const long int
   N  = M;
 
   // Compute transpse
-  long int status = umfpack_dl_transpose(M, M, Ap, Ai, Ax, inull, inull, 
+  long int status = umfpack_dl_transpose(M, M, Ap, Ai, Ax, inull, inull,
                     const_cast<long int*>(Rp), const_cast<long int*>(Ri), const_cast<double*>(Rx));
   Umfpack::check_status(status, "transpose");
 }
@@ -193,12 +193,12 @@ void UmfpackLUSolver::Umfpack::factorize()
   long int status;
 
   // Symbolic step (reordering etc)
-  status= umfpack_dl_symbolic(N, N, (const long int*) Rp,(const long int*) Ri, 
+  status= umfpack_dl_symbolic(N, N, (const long int*) Rp,(const long int*) Ri,
                               Rx, &Symbolic, dnull, dnull);
   check_status(status, "symbolic");
 
   // Factorization step
-  status = umfpack_dl_numeric((const long int*) Rp,(const long int*) Ri, Rx, 
+  status = umfpack_dl_numeric((const long int*) Rp,(const long int*) Ri, Rx,
                                Symbolic, &Numeric, dnull, dnull);
   Umfpack::check_status(status, "numeric");
 

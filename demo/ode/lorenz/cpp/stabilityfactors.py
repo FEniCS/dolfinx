@@ -61,7 +61,7 @@ def stabilityfactors(t, U, Jacobian, show_progress=True, plot=True) :
 
   if show_progress : print "Done"
 
-  if plot : 
+  if plot :
     import pylab
     pylab.figure(1)
     pylab.semilogy(tS, S)

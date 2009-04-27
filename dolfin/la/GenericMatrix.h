@@ -31,7 +31,7 @@ namespace dolfin
 
     /// Destructor
     virtual ~GenericMatrix() {}
-    
+
     //--- Implementation of the GenericTensor interface ---
 
     /// Resize tensor with given dimensions
@@ -112,36 +112,36 @@ namespace dolfin
 
     /// Add given matrix
     const GenericMatrix& operator+= (const GenericMatrix& A)
-    { 
-      axpy(1.0,A); 
+    {
+      axpy(1.0,A);
       return *this;
     }
 
     /// Subtract given matrix
     const GenericMatrix& operator-= (const GenericMatrix& A)
-    { 
-      axpy(-1.0,A); 
+    {
+      axpy(-1.0,A);
       return *this;
     }
 
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
 
-    /// Return pointers to underlying compresssed row/column storage data 
+    /// Return pointers to underlying compresssed row/column storage data
     /// For compressed row storage, data = (row_pointer[#rows +1], column_index[#nz], matrix_values[#nz], nz)
     virtual std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
-    { 
-      error("Unable to return pointers to underlying matrix data."); 
+    {
+      error("Unable to return pointers to underlying matrix data.");
       return std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
-    } 
+    }
 
     //--- Convenience functions ---
 
-    /// Get value of given entry 
+    /// Get value of given entry
     virtual double operator() (uint i, uint j) const
     { double value(0); get(&value, 1, &i, 1, &j); return value; }
 
-    /// Get value of given entry 
+    /// Get value of given entry
     virtual double getitem(std::pair<uint, uint> ij) const
     { double value(0); get(&value, 1, &ij.first, 1, &ij.second); return value; }
 

@@ -22,7 +22,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh)
-  : dof_map(0), dof_map_size(0), cell_map(0),     
+  : dof_map(0), dof_map_size(0), cell_map(0),
     ufc_dof_map(reference_to_no_delete_pointer(dof_map)),
     num_cells(mesh.num_cells()), partitions(0), _offset(0),
     dolfin_mesh(mesh)
@@ -31,7 +31,7 @@ DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh)
-  : dof_map(0), dof_map_size(0), cell_map(0),     
+  : dof_map(0), dof_map_size(0), cell_map(0),
     ufc_dof_map(dof_map),
     num_cells(mesh.num_cells()), partitions(0), _offset(0),
     dolfin_mesh(mesh)
@@ -40,7 +40,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& partitions)
-  : dof_map(0), dof_map_size(0), cell_map(0), 
+  : dof_map(0), dof_map_size(0), cell_map(0),
     ufc_dof_map(reference_to_no_delete_pointer(dof_map)),
     num_cells(mesh.num_cells()), partitions(&partitions), _offset(0),
     dolfin_mesh(mesh)
@@ -51,7 +51,7 @@ DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& part
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map,
                const Mesh& mesh,
                MeshFunction<uint>& partitions)
-  : dof_map(0), dof_map_size(0), cell_map(0), 
+  : dof_map(0), dof_map_size(0), cell_map(0),
     ufc_dof_map(dof_map),
     num_cells(mesh.num_cells()), partitions(&partitions), _offset(0),
     dolfin_mesh(mesh)
@@ -183,7 +183,7 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_inde
   if (dof_map)
   {
     const uint n = local_dimension();
-    uint offset = 0; 
+    uint offset = 0;
     offset = n*cell_index;
     for (uint i = 0; i < n; i++)
       dofs[i] = dof_map[offset + i];
@@ -202,79 +202,79 @@ void DofMap::build(UFC& ufc, Mesh& mesh)
 void DofMap::build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction<bool>& meshfunction)
 {
   // Allocate dof map
-  uint n = ufc_dof_map->local_dimension(); 
-  uint* dofs = new uint[n]; 
+  uint n = ufc_dof_map->local_dimension();
+  uint* dofs = new uint[n];
   dof_map = new int[n*mesh.num_cells()];
-  cell_map = new int[mesh.num_cells()]; 
+  cell_map = new int[mesh.num_cells()];
   int* restriction_mapping = new int[n*mesh.num_cells()];
 
-  // dof_map, restriction_mapping, and cell_map are initialized to -1 to indicate that an error 
+  // dof_map, restriction_mapping, and cell_map are initialized to -1 to indicate that an error
   // has occured when used outside the subdomain described by meshfunction
-  for (uint i=0; i<n*mesh.num_cells(); i++) 
+  for (uint i=0; i<n*mesh.num_cells(); i++)
   {
-    dof_map[i]  = -1;  
+    dof_map[i]  = -1;
   }
-  for (uint i=0; i<ufc_dof_map->global_dimension(); i++) 
+  for (uint i=0; i<ufc_dof_map->global_dimension(); i++)
   {
-    restriction_mapping[i] = -1; 
+    restriction_mapping[i] = -1;
   }
   for (uint i=0; i<mesh.num_cells(); i++) {
-    cell_map[i] = -1; 
+    cell_map[i] = -1;
   }
 
   CellIterator cell(mesh);
   UFCCell ufc_cell(*cell);
-  bool use_cell = false; 
+  bool use_cell = false;
 
-  // restriction maping R  
-  std::map<int,int> R; 
-  std::map<int,int>:: iterator iter; 
-  uint dof_counter = 0; 
-  uint cell_counter = 0; 
+  // restriction maping R
+  std::map<int,int> R;
+  std::map<int,int>:: iterator iter;
+  uint dof_counter = 0;
+  uint cell_counter = 0;
 
   // loop over all cells
   for (; !cell.end(); ++cell)
   {
     ufc_cell.update(*cell);
-    use_cell = meshfunction.get(cell->index()); 
+    use_cell = meshfunction.get(cell->index());
     ufc_dof_map->init_cell(ufc_mesh, ufc_cell);
-    ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell); 
+    ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
 
-    // If the cell is marked by meshfunction then run through all dofs[k] 
+    // If the cell is marked by meshfunction then run through all dofs[k]
     // and check if they have been used before or not.
     // If the dof is new then it is set to dof_counter.
-    // The reason why this simple algorithm works is that all already have 
+    // The reason why this simple algorithm works is that all already have
     // an unique global numbers. We only need to leave out some of them
-    // and have the other numbered in increasing order like 1,2,3,4 (without gaps like 1,3,4). 
+    // and have the other numbered in increasing order like 1,2,3,4 (without gaps like 1,3,4).
     if (use_cell) {
       for (uint k=0; k<n; k++) {
-        // the dofs[k] is new 
-        if (R.find(dofs[k]) == R.end()){ 
-          R[dofs[k]] = dof_counter; 
+        // the dofs[k] is new
+        if (R.find(dofs[k]) == R.end()){
+          R[dofs[k]] = dof_counter;
           dof_counter++;
         }
-        cell_map[cell->index()] = cell_counter; 
-        dof_map[cell->index()*n + k] = R[dofs[k]];  
-        restriction_mapping [dofs[k]] = R[dofs[k]]; 
+        cell_map[cell->index()] = cell_counter;
+        dof_map[cell->index()*n + k] = R[dofs[k]];
+        restriction_mapping [dofs[k]] = R[dofs[k]];
       }
-      cell_counter++; 
+      cell_counter++;
     }
   }
-  dof_map_size = dof_counter; 
+  dof_map_size = dof_counter;
 
-  /* For debugging  
+  /* For debugging
   for (uint i=0; i<ufc_dof_map->global_dimension(); i++) {
-    std::cout <<"R["<<i<<"]="<<restriction_mapping[i]<<std::endl; 
+    std::cout <<"R["<<i<<"]="<<restriction_mapping[i]<<std::endl;
   }
-  for (uint c=0; c<mesh.num_cells(); c++) { 
+  for (uint c=0; c<mesh.num_cells(); c++) {
     for (uint i=0; i<n; i++) {
-      std::cout <<" c "<<c<<" i "<<i<<" dof_map["<<c*n+i<<"]="<<dof_map[c*n+i]<<std::endl; 
+      std::cout <<" c "<<c<<" i "<<i<<" dof_map["<<c*n+i<<"]="<<dof_map[c*n+i]<<std::endl;
     }
   }
   */
 
-  delete [] dofs; 
-  delete [] restriction_mapping; 
+  delete [] dofs;
+  delete [] restriction_mapping;
 }
 //-----------------------------------------------------------------------------
 std::map<dolfin::uint, dolfin::uint> DofMap::get_map() const

@@ -15,20 +15,20 @@
 namespace dolfin
 {
   // Forward declaration
-  class SubMatrix; 
+  class SubMatrix;
 
-  class BlockMatrix 
+  class BlockMatrix
   {
   public:
-    
+
     // Constructor
-    BlockMatrix(uint n=0, uint m=0, bool owner=false); 
-    
+    BlockMatrix(uint n=0, uint m=0, bool owner=false);
+
     // Destructor
-    ~BlockMatrix(); 
-    
-    /// Return SubMatrix reference number (i,j) 
-    SubMatrix operator() (uint i, uint j); 
+    ~BlockMatrix();
+
+    /// Return SubMatrix reference number (i,j)
+    SubMatrix operator() (uint i, uint j);
 
     /// Set block
     void set(uint i, uint j, Matrix& m);
@@ -37,54 +37,54 @@ namespace dolfin
     const Matrix& get(uint i, uint j) const;
 
     /// Get block
-    Matrix& get(uint i, uint j); 
-    
+    Matrix& get(uint i, uint j);
+
     /// Return size of given dimension
     uint size(uint dim) const;
-    
+
     /// Set all entries to zero and keep any sparse structure
     void zero();
-    
+
     /// Finalize assembly of tensor
     void apply();
-    
+
     /// Display tensor
     void disp(uint precision=2) const;
-    
+
     /// Matrix-vector product, y = Ax
     void mult(const BlockVector& x, BlockVector& y, bool transposed=false) const;
 
   private:
-    
-    bool owner; 
-    uint n, m; 
-    //    std::map<std::pair<int,int>, Matrix*> matrices; 
-    Matrix** matrices; 
-    
-  }; 
 
-  // SubMatrix 
+    bool owner;
+    uint n, m;
+    //    std::map<std::pair<int,int>, Matrix*> matrices;
+    Matrix** matrices;
+
+  };
+
+  // SubMatrix
   // Rip off of the design in Table and TableEntry for giving nice operators
-  // A(0,0) = A00 also in the case with external storage. 
+  // A(0,0) = A00 also in the case with external storage.
 
   class SubMatrix
   {
   public:
-    
-    SubMatrix(uint row, uint col, BlockMatrix& bm); 
-    ~SubMatrix();
-    
-    /// Assign Matrix to SubMatrix 
-    const SubMatrix& operator= (Matrix& m); 
-    //          Matrix& operator() const; 
-    
-  private:
-    
-    uint row, col; 
-    BlockMatrix& bm; 
 
-  }; 
+    SubMatrix(uint row, uint col, BlockMatrix& bm);
+    ~SubMatrix();
+
+    /// Assign Matrix to SubMatrix
+    const SubMatrix& operator= (Matrix& m);
+    //          Matrix& operator() const;
+
+  private:
+
+    uint row, col;
+    BlockMatrix& bm;
+
+  };
 
 }
 
-#endif 
+#endif

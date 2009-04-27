@@ -23,24 +23,24 @@ namespace dolfin
   class NonlinearProblem;
 
   /// This class defines a Newton solver for equations of the form F(u) = 0.
-  
+
   class NewtonSolver : public Parametrized
   {
   public:
 
-    /// Create nonlinear solver with default linear solver and default 
+    /// Create nonlinear solver with default linear solver and default
     /// linear algebra backend
-    NewtonSolver(dolfin::SolverType solver_type = lu, 
+    NewtonSolver(dolfin::SolverType solver_type = lu,
                  dolfin::PreconditionerType pc_type = default_pc);
 
     /// Create nonlinear solver using provided linear solver and linear algebra
-    /// backend determined by factory 
+    /// backend determined by factory
     NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& factory);
 
     /// Destructor
     virtual ~NewtonSolver();
 
-    /// Solve abstract nonlinear problem F(x) = 0 for given vector F and 
+    /// Solve abstract nonlinear problem F(x) = 0 for given vector F and
     /// Jacobian dF/dx
     uint solve(NonlinearProblem& nonlinear_function, GenericVector& x);
 
@@ -49,8 +49,8 @@ namespace dolfin
 
   private:
 
-    /// Convergence test 
-    virtual bool converged(const GenericVector& b, const GenericVector& dx, 
+    /// Convergence test
+    virtual bool converged(const GenericVector& b, const GenericVector& dx,
                            const NonlinearProblem& nonlinear_problem);
 
     /// Current number of Newton iterations

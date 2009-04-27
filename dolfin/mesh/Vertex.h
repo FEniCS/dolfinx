@@ -40,15 +40,15 @@ namespace dolfin
 
     /// Return array of vertex coordinates (const version)
     const double* x() const { return _mesh.geometry().x(_index); }
-    
+
   };
 
   /// A VertexIterator is a MeshEntityIterator of topological dimension 0.
-  
+
   class VertexIterator : public MeshEntityIterator
   {
   public:
-    
+
     VertexIterator(const Mesh& mesh) : MeshEntityIterator(mesh, 0) {}
     VertexIterator(const MeshEntity& entity) : MeshEntityIterator(entity, 0) {}
 

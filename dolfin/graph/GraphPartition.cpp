@@ -33,13 +33,13 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
   SCOTCH_Graph grafdat;
   SCOTCH_Strat strat;
 
-  if (SCOTCH_graphInit(&grafdat) != 0) 
+  if (SCOTCH_graphInit(&grafdat) != 0)
     error("Error initialising SCOTCH graph.");
 
-  if (SCOTCH_graphBuild(&grafdat, 0, static_cast<int>(graph.num_vertices()), 
-                        reinterpret_cast<int*>(graph.offsets()), NULL, NULL, 
-                        NULL, static_cast<int>(graph.num_edges()), 
-                        reinterpret_cast<int*>(graph.connectivity()), NULL) != 0) 
+  if (SCOTCH_graphBuild(&grafdat, 0, static_cast<int>(graph.num_vertices()),
+                        reinterpret_cast<int*>(graph.offsets()), NULL, NULL,
+                        NULL, static_cast<int>(graph.num_edges()),
+                        reinterpret_cast<int*>(graph.connectivity()), NULL) != 0)
   {
     error("Error building SCOTCH graph.");
   }
@@ -47,7 +47,7 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
   SCOTCH_stratInit(&strat);
 
   // Only some graphs successfully partitioned, why?
-  if (SCOTCH_graphPart (&grafdat, num_part, &strat, reinterpret_cast<int*>(vtx_part)) != 0) 
+  if (SCOTCH_graphPart (&grafdat, num_part, &strat, reinterpret_cast<int*>(vtx_part)) != 0)
     error("Error partitioning SCOTCH graph.");
 
   SCOTCH_stratExit (&strat);
@@ -70,8 +70,8 @@ void GraphPartition::check(Graph& graph, uint num_part, uint* vtx_part)
   }
 
   // Check that partitions are continuous
-  // One way to do this is by checking (for all partitions) that there is a 
-  // path from every vertex in a partition to all other vertices of the 
+  // One way to do this is by checking (for all partitions) that there is a
+  // path from every vertex in a partition to all other vertices of the
   // partition.
   /*
   // This does not work

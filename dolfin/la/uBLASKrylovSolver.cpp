@@ -46,35 +46,35 @@ uBLASKrylovSolver::~uBLASKrylovSolver()
     delete pc;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBLASKrylovSolver::solve(const GenericMatrix& A, GenericVector& x, 
-                                       const GenericVector& b) 
+dolfin::uint uBLASKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
+                                       const GenericVector& b)
 {
-  return solve(A.down_cast<uBLASMatrix<ublas_sparse_matrix> >(), 
+  return solve(A.down_cast<uBLASMatrix<ublas_sparse_matrix> >(),
                x.down_cast<uBLASVector>(),  b.down_cast<uBLASVector>());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBLASKrylovSolver::solve(const uBLASMatrix<ublas_dense_matrix>& A, 
+dolfin::uint uBLASKrylovSolver::solve(const uBLASMatrix<ublas_dense_matrix>& A,
     uBLASVector& x, const uBLASVector& b)
-{ 
-  return solve_krylov(A, x, b); 
+{
+  return solve_krylov(A, x, b);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBLASKrylovSolver::solve(const uBLASMatrix<ublas_sparse_matrix>& A, 
+dolfin::uint uBLASKrylovSolver::solve(const uBLASMatrix<ublas_sparse_matrix>& A,
     uBLASVector& x, const uBLASVector& b)
-{ 
-  return solve_krylov(A, x, b); 
+{
+  return solve_krylov(A, x, b);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBLASKrylovSolver::solve(const uBLASKrylovMatrix& A, uBLASVector& x, 
+dolfin::uint uBLASKrylovSolver::solve(const uBLASKrylovMatrix& A, uBLASVector& x,
     const uBLASVector& b)
-{ 
-  return solve_krylov(A, x, b); 
+{
+  return solve_krylov(A, x, b);
 }
 //-----------------------------------------------------------------------------
 void uBLASKrylovSolver::select_preconditioner(PreconditionerType pc_type)
 {
   switch (pc_type)
-  { 
+  {
     case none:
       pc = new uBLASDummyPreconditioner();
       break;

@@ -28,7 +28,7 @@ namespace dolfin
   class GenericMatrix;
   class GenericVector;
   class SubDomain;
-  template<class T> class MeshFunction; 
+  template<class T> class MeshFunction;
 
   /// The BCMethod variable may be used to specify the type of method
   /// used to identify degrees of freedom on the boundary. Available
@@ -43,7 +43,7 @@ namespace dolfin
   /// use the pointwise approach which in turn is the slowest of the
   /// three possible methods.
   enum BCMethod {topological, geometric, pointwise};
-  
+
   /// This class specifies the interface for setting (strong)
   /// Dirichlet boundary conditions for partial differential
   /// equations,
@@ -87,7 +87,7 @@ namespace dolfin
                 const Function& g,
                 const MeshFunction<uint>& sub_domains, uint sub_domain,
                 BCMethod method=topological);
-    
+
     /// Create boundary condition for boundary data included in the mesh
     DirichletBC(const FunctionSpace& V,
                 const Function& g,
@@ -112,10 +112,10 @@ namespace dolfin
     /// Apply boundary condition to a linear system for a nonlinear problem
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const;
 
-    /// Make row associated with boundary conditions zero, useful for non-diagonal matrices in a block matrix. 
+    /// Make row associated with boundary conditions zero, useful for non-diagonal matrices in a block matrix.
     void zero(GenericMatrix& A) const;
 
-    /// Get Dirichlet values and indicators 
+    /// Get Dirichlet values and indicators
     void get_bc(uint* indicators, double* values) const;
 
     /// Check if given function is compatible with boundary condition (checking only vertex values)
@@ -125,7 +125,7 @@ namespace dolfin
 
     // Apply boundary conditions
     void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
-    
+
     // Check input data to constructor
     void check() const;
 
@@ -134,29 +134,29 @@ namespace dolfin
 
     // Initialize sub domain markers from sub domain
     void init_from_sub_domain(const SubDomain& sub_domain);
-    
+
     // Initialize sub domain markers from MeshFunction
     void init_from_mesh_function(const MeshFunction<uint>& sub_domains, uint sub_domain);
 
     // Initialize sub domain markers from mesh
     void init_from_mesh(uint sub_domain);
-    
+
     // Compute dofs and values for application of boundary conditions
     void compute_bc(std::map<uint, double>& boundary_values,
                     BoundaryCondition::LocalData& data) const;
-    
+
     // Compute boundary values for facet (topological approach)
     void compute_bc_topological(std::map<uint, double>& boundary_values,
                                 BoundaryCondition::LocalData& data) const;
-    
+
     // Compute boundary values for facet (geometrical approach)
     void compute_bc_geometric(std::map<uint, double>& boundary_values,
                               BoundaryCondition::LocalData& data) const;
-    
+
     // Compute boundary values for facet (pointwise approach)
     void compute_bc_pointwise(std::map<uint, double>& boundary_values,
                               BoundaryCondition::LocalData& data) const;
-    
+
     // Check if the point is in the same plane as the given facet
     bool on_facet(double* coordinates, Facet& facet) const;
 
@@ -171,7 +171,7 @@ namespace dolfin
 
     // Boundary facets, stored as pairs (cell, local facet number)
     std::vector< std::pair<uint, uint> > facets;
-    
+
   };
 
 }

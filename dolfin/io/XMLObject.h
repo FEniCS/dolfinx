@@ -18,10 +18,10 @@ namespace dolfin
   class XMLObject
   {
   public:
-    
+
     /// Constructor
     XMLObject();
-    
+
     /// Destructor
     virtual ~XMLObject();
 
@@ -30,13 +30,13 @@ namespace dolfin
 
     /// Callback for end of XML element
     virtual void end_element(const xmlChar* name) = 0;
-    
+
     /// Callback for start of XML file (optional)
     virtual void open(std::string filename);
 
     /// Callback for end of XML file, should return true iff data is ok (optional)
     virtual bool close();
-    
+
   protected:
 
     // Parse an integer value
@@ -44,21 +44,21 @@ namespace dolfin
 
     // Parse an unsigned integer value
     uint parseUnsignedInt(const xmlChar* name, const xmlChar** attrs, const char *attribute);
-    
+
     // Parse a double value
     double parse_real(const xmlChar* name, const xmlChar** attrs, const char* attribute);
-    
+
     // Parse a string
     std::string parse_string(const xmlChar* name, const xmlChar** attrs, const char* attribute);
-    
+
     // Parse a string with some forgiveness!
     std::string parse_stringOptional(const xmlChar* name, const xmlChar** attrs, const char* attribute);
-    
-    // Parse a bool 
+
+    // Parse a bool
     bool parse_bool(const xmlChar* name, const xmlChar** attrs, const char* attribute);
 
   };
-  
+
 }
 
 #endif

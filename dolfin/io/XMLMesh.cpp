@@ -17,7 +17,7 @@ using namespace dolfin;
 XMLMesh::XMLMesh(Mesh& mesh) : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0)
 {
   // Do nothing
-  
+
 }
 //-----------------------------------------------------------------------------
 XMLMesh::~XMLMesh()
@@ -30,17 +30,17 @@ void XMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
   switch ( state )
   {
   case OUTSIDE:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "mesh") == 0 )
     {
       read_mesh(name, attrs);
       state = INSIDE_MESH;
     }
-    
+
     break;
 
   case INSIDE_MESH:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "vertices") == 0 )
     {
       read_vertices(name, attrs);
@@ -61,27 +61,27 @@ void XMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
     }
 
     break;
-    
+
   case INSIDE_VERTICES:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "vertex") == 0 )
       read_vertex(name, attrs);
 
     break;
-    
+
   case INSIDE_CELLS:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "interval") == 0 )
       read_interval(name, attrs);
     else if ( xmlStrcasecmp(name, (xmlChar *) "triangle") == 0 )
       read_triangle(name, attrs);
     else if ( xmlStrcasecmp(name, (xmlChar *) "tetrahedron") == 0 )
       read_tetrahedron(name, attrs);
-    
+
     break;
 
   case INSIDE_DATA:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
     {
       read_meshFunction(name, attrs);
@@ -96,7 +96,7 @@ void XMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
     break;
 
   case INSIDE_COORDINATES:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
       state = INSIDE_VECTOR;
@@ -105,24 +105,24 @@ void XMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
     break;
 
   case INSIDE_MESH_FUNCTION:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "entity") == 0 )
       read_meshEntity(name, attrs);
 
     break;
 
   case INSIDE_ARRAY:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "element") == 0 )
       read_arrayElement(name, attrs);
 
     break;
 
   case INSIDE_VECTOR:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "entry") == 0 )
     break;
-    
+
   default:
     ;
   }
@@ -133,26 +133,26 @@ void XMLMesh::end_element(const xmlChar *name)
   switch ( state )
   {
   case INSIDE_MESH:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "mesh") == 0 )
     {
       close_mesh();
       state = DONE;
     }
-    
+
     break;
-    
+
   case INSIDE_VERTICES:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "vertices") == 0 )
     {
-      state = INSIDE_MESH;    
+      state = INSIDE_MESH;
     }
 
     break;
 
   case INSIDE_CELLS:
-	 
+
     if ( xmlStrcasecmp(name, (xmlChar *) "cells") == 0 )
     {
       state = INSIDE_MESH;
@@ -225,7 +225,7 @@ void XMLMesh::read_mesh(const xmlChar *name, const xmlChar **attrs)
   // Parse values
   std::string type = parse_string(name, attrs, "celltype");
   uint gdim = parseUnsignedInt(name, attrs, "dim");
-  
+
   // Create cell type to get topological dimension
   CellType* cell_type = CellType::create(type);
   uint tdim = cell_type->dim();
@@ -257,7 +257,7 @@ void XMLMesh::read_vertex(const xmlChar *name, const xmlChar **attrs)
 {
   // Read index
   uint v = parseUnsignedInt(name, attrs, "index");
-  
+
   // Handle differently depending on geometric dimension
   switch ( _mesh.geometry().dim() )
   {
@@ -298,7 +298,7 @@ void XMLMesh::read_interval(const xmlChar *name, const xmlChar **attrs)
   uint c  = parseUnsignedInt(name, attrs, "index");
   uint v0 = parseUnsignedInt(name, attrs, "v0");
   uint v1 = parseUnsignedInt(name, attrs, "v1");
-  
+
   // Add cell
   editor.add_cell(c, v0, v1);
 }
@@ -315,7 +315,7 @@ void XMLMesh::read_triangle(const xmlChar *name, const xmlChar **attrs)
   uint v0 = parseUnsignedInt(name, attrs, "v0");
   uint v1 = parseUnsignedInt(name, attrs, "v1");
   uint v2 = parseUnsignedInt(name, attrs, "v2");
-  
+
   // Add cell
   editor.add_cell(c, v0, v1, v2);
 }
@@ -333,7 +333,7 @@ void XMLMesh::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
   uint v1 = parseUnsignedInt(name, attrs, "v1");
   uint v2 = parseUnsignedInt(name, attrs, "v2");
   uint v3 = parseUnsignedInt(name, attrs, "v3");
-  
+
   // Add cell
   editor.add_cell(c, v0, v1, v2, v3);
 }

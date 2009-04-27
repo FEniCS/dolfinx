@@ -44,7 +44,7 @@ void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
 
   // Initialize topological dimension
   mesh._topology.init(tdim);
-  
+
   // Initialize temporary storage for local cell data
   vertices.reserve(mesh.type().num_vertices(tdim));
   for (uint i = 0; i < mesh.type().num_vertices(tdim); i++)
@@ -78,7 +78,7 @@ void MeshEditor::init_vertices(uint num_vertices)
   // Check if we are currently editing a mesh
   if ( !mesh )
     error("No mesh opened, unable to edit.");
-  
+
   // Initialize mesh data
   this->num_vertices = num_vertices;
   mesh->_topology.init(0,    num_vertices);
@@ -90,7 +90,7 @@ void MeshEditor::initHigherOrderVertices(uint num_higher_order_vertices)
   // Check if we are currently editing a mesh
   if ( !mesh )
     error("No mesh opened, unable to edit.");
-  
+
   // Initialize mesh data
   this->num_higher_order_vertices = num_higher_order_vertices;
   mesh->_geometry.init_HigherOrderVertices(gdim, num_higher_order_vertices);
@@ -117,7 +117,7 @@ void MeshEditor::initHigherOrderCells(uint num_higher_order_cells, uint num_high
   // Initialize higher order mesh data
   this->num_higher_order_cells = num_higher_order_cells;
   mesh->_geometry.init_HigherOrderCells(num_higher_order_cells, num_higher_order_cell_dof);
-  
+
   // init a boolean array that indicates whether cells are affinely mapped or not
   mesh->_geometry.initAffineIndicator(num_higher_order_cells);
 }
@@ -128,7 +128,7 @@ void MeshEditor::setAffineCellIndicator(uint c, const std::string affine_str)
 
   if ( affine_str=="false" )
     affine_value = false;
-  
+
   // Set affine indicator for specific cell
   mesh->_geometry.setAffineIndicator(c, affine_value);
 }
@@ -137,7 +137,7 @@ void MeshEditor::add_vertex(uint v, const Point& p)
 {
   // Add vertex
   add_vertexCommon(v, mesh->geometry().dim());
-  
+
   // Set coordinate
   for (uint i = 0; i < mesh->geometry().dim(); i++)
     mesh->_geometry.set(v, i, p[i]);
@@ -180,7 +180,7 @@ void MeshEditor::addHigherOrderVertex(uint v, const Point& p)
 {
   // Add vertex
   addHigherOrderVertexCommon(v, mesh->geometry().dim());
-  
+
   // Set coordinate
   for (uint i = 0; i < mesh->geometry().dim(); i++)
     mesh->_geometry.set_higher_order_coordinates(v, i, p[i]);
@@ -266,7 +266,7 @@ void MeshEditor::addHigherOrderCellData(uint c, uint v0, uint v1, uint v2,
 {
   // Add cell
   addHigherOrderCellCommon(c, 6);
-  
+
   // Set data
   higher_order_cell_data[0] = v0;
   higher_order_cell_data[1] = v1;
@@ -308,7 +308,7 @@ void MeshEditor::add_vertexCommon(uint v, uint gdim)
   if ( next_vertex >= num_vertices )
     error("Vertex list is full, %d vertices already specified.",
 		  num_vertices);
-  
+
   // Step to next vertex
   next_vertex++;
 }
@@ -333,7 +333,7 @@ void MeshEditor::addHigherOrderVertexCommon(uint v, uint gdim)
   if ( next_higher_order_vertex >= num_higher_order_vertices )
     error("Higher Order vertex list is full, %d vertices already specified.",
 		  num_higher_order_vertices);
-  
+
   // Step to next vertex
   next_higher_order_vertex++;
 }

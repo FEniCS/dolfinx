@@ -38,7 +38,7 @@ namespace dolfin
     static void computeFromIntersection(Mesh& mesh, uint d0, uint d1, uint d);
 
     /// Count how many of the given entities that are new
-    static uint count_entities(Mesh& mesh, MeshEntity& cell, 
+    static uint count_entities(Mesh& mesh, MeshEntity& cell,
 			      uint** vertices, uint m, uint n, uint dim);
 
     /// Add entities that are new
@@ -52,7 +52,7 @@ namespace dolfin
 
     /// Check if array v0 contains array v1
     static bool contains(const uint* v0, uint n0, const uint* v1, uint n1);
-    
+
   };
 
 }

@@ -18,7 +18,7 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
-  
+
   if ( nx < 1 || ny < 1 )
     error("Size of unit square must be at least 1 in each dimension.");
 
@@ -29,36 +29,36 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
   editor.open(*this, CellType::triangle, 2, 2);
 
   // Create vertices and cells:
-  if (type == crisscross) 
+  if (type == crisscross)
   {
     editor.init_vertices((nx+1)*(ny+1) + nx*ny);
     editor.init_cells(4*nx*ny);
-  } 
-  else 
+  }
+  else
   {
     editor.init_vertices((nx+1)*(ny+1));
     editor.init_cells(2*nx*ny);
   }
-  
+
   // Create main vertices:
   uint vertex = 0;
-  for (uint iy = 0; iy <= ny; iy++) 
+  for (uint iy = 0; iy <= ny; iy++)
   {
     const double y = static_cast<double>(iy) / static_cast<double>(ny);
-    for (uint ix = 0; ix <= nx; ix++) 
+    for (uint ix = 0; ix <= nx; ix++)
     {
       const double x = static_cast<double>(ix) / static_cast<double>(nx);
       editor.add_vertex(vertex++, x, y);
     }
   }
-  
+
   // Create midpoint vertices if the mesh type is crisscross
-  if (type == crisscross) 
+  if (type == crisscross)
   {
-    for (uint iy = 0; iy < ny; iy++) 
+    for (uint iy = 0; iy < ny; iy++)
     {
       const double y = (static_cast<double>(iy) + 0.5) / static_cast<double>(ny);
-      for (uint ix = 0; ix < nx; ix++) 
+      for (uint ix = 0; ix < nx; ix++)
       {
         const double x = (static_cast<double>(ix) + 0.5) / static_cast<double>(nx);
         editor.add_vertex(vertex++, x, y);
@@ -68,18 +68,18 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
 
   // Create triangles
   uint cell = 0;
-  if (type == crisscross) 
+  if (type == crisscross)
   {
-    for (uint iy = 0; iy < ny; iy++) 
+    for (uint iy = 0; iy < ny; iy++)
     {
-      for (uint ix = 0; ix < nx; ix++) 
+      for (uint ix = 0; ix < nx; ix++)
       {
         const uint v0 = iy*(nx + 1) + ix;
         const uint v1 = v0 + 1;
         const uint v2 = v0 + (nx + 1);
         const uint v3 = v1 + (nx + 1);
         const uint vmid = (nx + 1)*(ny + 1) + iy*nx + ix;
-	
+
         // Note that v0 < v1 < v2 < v3 < vmid.
         editor.add_cell(cell++, v0, v1, vmid);
         editor.add_cell(cell++, v0, v2, vmid);
@@ -87,12 +87,12 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
         editor.add_cell(cell++, v2, v3, vmid);
       }
     }
-  } 
-  else if (type == left ) 
+  }
+  else if (type == left )
   {
-    for (uint iy = 0; iy < ny; iy++) 
+    for (uint iy = 0; iy < ny; iy++)
     {
-      for (uint ix = 0; ix < nx; ix++) 
+      for (uint ix = 0; ix < nx; ix++)
       {
         const uint v0 = iy*(nx + 1) + ix;
         const uint v1 = v0 + 1;
@@ -103,12 +103,12 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
         editor.add_cell(cell++, v1, v2, v3);
       }
     }
-  } 
-  else 
-  { 
-    for (uint iy = 0; iy < ny; iy++) 
+  }
+  else
+  {
+    for (uint iy = 0; iy < ny; iy++)
     {
-      for (uint ix = 0; ix < nx; ix++) 
+      for (uint ix = 0; ix < nx; ix++)
       {
         const uint v0 = iy*(nx + 1) + ix;
         const uint v1 = v0 + 1;

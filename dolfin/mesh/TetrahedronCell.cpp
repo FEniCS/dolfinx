@@ -145,8 +145,8 @@ void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
   editor.add_cell(current_cell++, e0, e3, e4, e5);
 }
 //-----------------------------------------------------------------------------
-void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor, 
-				      uint& current_cell, uint refinement_rule, 
+void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor,
+				      uint& current_cell, uint refinement_rule,
 				      uint* marked_edges) const
 {
   dolfin_not_implemented();
@@ -174,8 +174,8 @@ void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor,
   const uint e5 = offset + e[5];
 
   // Refine according to refinement rule
-  // The rules are numbered according to the paper: 
-  // J. Bey, "Tetrahedral Grid Refinement", 1995.   
+  // The rules are numbered according to the paper:
+  // J. Bey, "Tetrahedral Grid Refinement", 1995.
   switch ( refinement_rule )
   {
   case 1:
@@ -230,7 +230,7 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
              x1[0] * ( x0[1]*x2[2] + x3[1]*x0[2] + x2[1]*x3[2] - x2[1]*x0[2] - x0[1]*x3[2] - x3[1]*x2[2] ) +
              x2[0] * ( x0[1]*x1[2] + x3[1]*x0[2] + x1[1]*x3[2] - x1[1]*x0[2] - x0[1]*x3[2] - x3[1]*x1[2] ) -
              x3[0] * ( x0[1]*x1[2] + x1[1]*x2[2] + x2[1]*x0[2] - x1[1]*x0[2] - x2[1]*x1[2] - x0[1]*x2[2] ) );
-  
+
   return std::abs(v) / 6.0;
 }
 //-----------------------------------------------------------------------------
@@ -242,7 +242,7 @@ double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
   // Only know how to compute the volume when embedded in R^3
   if ( geometry.dim() != 3 )
     error("Only know how to compute the diameter of a tetrahedron when embedded in R^3.");
-  
+
   // Get the coordinates of the four vertices
   const uint* vertices = tetrahedron.entities(0);
   Point p0 = geometry.point(vertices[0]);
@@ -257,14 +257,14 @@ double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
   double aa = p0.distance(p3);
   double bb = p1.distance(p3);
   double cc = p2.distance(p3);
-                                
+
   // Compute "area" of triangle with strange side lengths
   double la   = a*aa;
   double lb   = b*bb;
   double lc   = c*cc;
   double s    = 0.5*(la+lb+lc);
   double area = sqrt(s*(s-la)*(s-lb)*(s-lc));
-                                
+
   // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
   return area / ( 3.0*volume(tetrahedron) );
 }
@@ -278,13 +278,13 @@ Point TetrahedronCell::normal(const Cell& cell, uint facet) const
 {
   // This is a trick to be allowed to initialize a facet from the cell
   Cell& c = const_cast<Cell&>(cell);
-  
+
   // Create facet from the mesh and local facet number
   Facet f(c.mesh(), c.entities(2)[facet]);
 
   // Get global index of opposite vertex
   const uint v0 = cell.entities(0)[facet];
-  
+
   // Get global index of vertices on the facet
   uint v1 = f.entities(0)[0];
   uint v2 = f.entities(0)[1];
@@ -292,7 +292,7 @@ Point TetrahedronCell::normal(const Cell& cell, uint facet) const
 
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
-  
+
   // Get the coordinates of the four vertices
   const double* p0 = geometry.x(v0);
   const double* p1 = geometry.x(v1);
@@ -330,10 +330,10 @@ double TetrahedronCell::facet_area(const Cell& cell, uint facet) const
 
   // This is a trick to be allowed to initialize a facet from the cell
   Cell& c = const_cast<Cell&>(cell);
-  
+
   // Create facet from the mesh and local facet number
   Facet f(c.mesh(), c.entities(2)[facet]);
-  
+
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
 
@@ -342,13 +342,13 @@ double TetrahedronCell::facet_area(const Cell& cell, uint facet) const
   const double* x0 = geometry.x(vertices[0]);
   const double* x1 = geometry.x(vertices[1]);
   const double* x2 = geometry.x(vertices[2]);
-  
+
   // Compute area of triangle embedded in R^3
   double v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
   double v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
   double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
-  
-  // Formula for area from http://mathworld.wolfram.com 
+
+  // Formula for area from http://mathworld.wolfram.com
   return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
 }
 //-----------------------------------------------------------------------------
@@ -601,7 +601,7 @@ dolfin::uint TetrahedronCell::find_edge(uint i, const Cell& cell) const
   const uint* e = cell.entities(1);
   dolfin_assert(v);
   dolfin_assert(e);
-  
+
   // Ordering convention for edges (order of non-incident vertices)
   static uint EV[6][2] = {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}};
 

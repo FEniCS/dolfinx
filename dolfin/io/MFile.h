@@ -11,21 +11,21 @@
 #include <dolfin/common/real.h>
 #include "GenericFile.h"
 
-/// Note: This M file  generator will save the values only with double precision, even if 
+/// Note: This M file  generator will save the values only with double precision, even if
 /// dolfin is working with GMP types (extended precision)
 
 namespace dolfin
 {
-  
+
   class MFile : public GenericFile
   {
   public:
-    
+
     MFile(const std::string filename);
     virtual ~MFile();
 
     // Input
-    
+
     // Output
 
     void operator<< (const GenericVector& x);
@@ -35,7 +35,7 @@ namespace dolfin
     void operator<< (const Sample& sample);
 
   };
-  
+
 }
 
 #endif

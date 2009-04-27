@@ -16,7 +16,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TimeSlab::TimeSlab(ODE& ode) : 
+TimeSlab::TimeSlab(ODE& ode) :
   N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(0),
   save_final(ode.get("ODE save final solution"))
 {
@@ -88,7 +88,7 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream,
   stream << "[ TimeSlab of length " << timeslab.length()
 	 << " between a = " << timeslab.starttime()
 	 << " and b = " << timeslab.endtime() << " ]";
-  
+
   return stream;
 }
 //-----------------------------------------------------------------------------
@@ -96,7 +96,7 @@ void TimeSlab::write(uint N, const real* u)
 {
   // FIXME: Make this a parameter?
   std::string filename = "solution.data";
-  
+
   message("Saving solution at final time to file \"%s\".", filename.c_str());
   #ifdef HAS_GMP
     warning("Precision in solution file lost. Saving with double precision");
@@ -104,7 +104,7 @@ void TimeSlab::write(uint N, const real* u)
 
   FILE* fp = fopen(filename.c_str(), "w");
   for (uint i = 0; i < N; i++)
-  {  
+  {
     fprintf(fp, "%.15e ", to_double(u[i]));
   }
   fprintf(fp, "\n");

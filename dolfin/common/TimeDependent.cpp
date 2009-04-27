@@ -19,7 +19,7 @@ TimeDependent::TimeDependent(const double* t) : t(t)
  // Do nothing
 }
 //-----------------------------------------------------------------------------
-TimeDependent::~TimeDependent() 
+TimeDependent::~TimeDependent()
 {
  // Do nothing
 }

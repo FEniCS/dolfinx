@@ -19,7 +19,7 @@
 
 #include <dolfin.h>
 #include "Poisson.h"
-  
+
 using namespace dolfin;
 
 // Boundary condition

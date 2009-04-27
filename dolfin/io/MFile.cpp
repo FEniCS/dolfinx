@@ -19,7 +19,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MFile::MFile(const std::string filename) : 
+MFile::MFile(const std::string filename) :
   GenericFile(filename)
 {
   type = "Octave/MATLAB";
@@ -40,19 +40,19 @@ void MFile::operator<<(const GenericVector& x)
   FILE *fp = fopen(filename.c_str(), "a");
   if (!fp)
     error("Unable to open file %s", filename.c_str());
-  
+
   // Write vector
   fprintf(fp, "x = [");
-  double temp; 
+  double temp;
   for (unsigned int i = 0; i < x.size(); i++)
   {
-    // FIXME: This is a slow way to access PETSc vectors. Need a fast way 
+    // FIXME: This is a slow way to access PETSc vectors. Need a fast way
     //        which is consistent for different vector types.
     x.get(&temp, 1, &i);
     fprintf(fp, " %.15g;", temp);
   }
   fprintf(fp, " ];\n");
-  
+
   // Close file
   fclose(fp);
 
@@ -62,7 +62,7 @@ void MFile::operator<<(const GenericVector& x)
 void MFile::operator<<(const Mesh& mesh)
 {
   Point p;
-  
+
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   if (!fp)
@@ -86,7 +86,7 @@ void MFile::operator<<(const Mesh& mesh)
     fprintf(fp, "edges{1} = tmp;\n");
     fprintf(fp, "clear tmp\n\n");
   }
-  
+
   // Write vertices
   if ( counter == 0 )
     fprintf(fp,"points = [");
@@ -95,7 +95,7 @@ void MFile::operator<<(const Mesh& mesh)
   for (VertexIterator v(mesh); !v.end();)
   {
     p = v->point();
-    
+
     ++v;
     if ( mesh.type().cell_type() == CellType::triangle )
     {
@@ -112,7 +112,7 @@ void MFile::operator<<(const Mesh& mesh)
     }
   }
   fprintf(fp,"\n");
-  
+
   // Write cells
   if ( counter == 0 )
     fprintf(fp,"cells = [");
@@ -121,7 +121,7 @@ void MFile::operator<<(const Mesh& mesh)
   for (CellIterator c(mesh); !c.end();)
   {
     for (VertexIterator v(*c); !v.end(); ++v)
-      fprintf(fp, "%u ", (v->index()) + 1 );    
+      fprintf(fp, "%u ", (v->index()) + 1 );
     ++c;
     if ( c.end() )
       fprintf(fp, "]';\n");
@@ -136,7 +136,7 @@ void MFile::operator<<(const Mesh& mesh)
     fprintf(fp,"edges = [1;2;0;0;0;0;0];\n\n");
   else
     fprintf(fp,"edges{%u} = [1;2;0;0;0;0;0];\n\n", counter + 1);
-  
+
   // Close file
   fclose(fp);
 
@@ -144,7 +144,7 @@ void MFile::operator<<(const Mesh& mesh)
 //  // FIXME: Count number of meshes saved to this file, rather
 //  // than the number of times this specific mesh has been saved.
 //  ++mesh;
-  
+
   // Increase the number of meshes saved to this file
   counter++;
 
@@ -159,12 +159,12 @@ void MFile::operator<<(const Function& u)
   // Write mesh the first time
   if ( counter1 == 0 )
     *this << u.mesh();
-  
+
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   if (!fp)
     error("Unable to open file %s", filename.c_str());
-  
+
   // Move old vector into list if we are saving a new value
   if ( counter1 == 1 )
   {
@@ -179,7 +179,7 @@ void MFile::operator<<(const Function& u)
   {
     fprintf(fp, "%s = [", u.name().c_str());
     for (unsigned int i = 0; i < u.vectordim(); i++)
-    { 
+    {
       for (VertexIterator v(u.mesh()); !v.end(); ++v)
         fprintf(fp, " %.15f", u(*v, i));
         fprintf(fp, ";");
@@ -190,17 +190,17 @@ void MFile::operator<<(const Function& u)
   {
     fprintf(fp, "%s{%u} = [", u.name().c_str(), counter1 + 1);
     for (unsigned int i = 0; i < u.vectordim(); i++)
-    { 
+    {
       for (VertexIterator v(u.mesh()); !v.end(); ++v)
         fprintf(fp, " %.15f", u(*v, i));
         fprintf(fp, ";");
     }
     fprintf(fp, " ]';\n\n");
   }
-  
+
   // Close file
   fclose(fp);
-  
+
   // Increase the number of times we have saved the function
   counter1++;
 
@@ -225,16 +225,16 @@ void MFile::operator<<(const Sample& sample)
     fprintf(fp, "r = [];\n");
     fprintf(fp, "\n");
   }
-  
+
   // Save time
   fprintf(fp, "t = [t %.15e];\n", to_double(sample.t()));
 
   // Save solution
   fprintf(fp, "tmp = [ ");
   for (unsigned int i = 0; i < sample.size(); i++)
-    fprintf(fp, "%.15e ", to_double(sample.u(i)));  
+    fprintf(fp, "%.15e ", to_double(sample.u(i)));
   fprintf(fp, "];\n");
-  fprintf(fp, "%s = [%s tmp'];\n", 
+  fprintf(fp, "%s = [%s tmp'];\n",
 	  sample.name().c_str(), sample.name().c_str());
   //fprintf(fp, "clear tmp;\n");
 
@@ -258,7 +258,7 @@ void MFile::operator<<(const Sample& sample)
 
   // Increase frame counter
   counter2++;
-  
+
   // Close file
   fclose(fp);
 }

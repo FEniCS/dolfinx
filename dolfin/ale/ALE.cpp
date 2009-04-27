@@ -71,7 +71,7 @@ void ALE::move(Mesh& mesh0, Mesh& mesh1, ALEType method)
   {
     // Get global vertex index (steps 1 and 2)
     const uint global_vertex_index = local_to_global_1->get(boundary_to_mesh_1->get(v->index()));
-    
+
     // Get local vertex index for mesh0 if possible (step 3)
     std::map<uint, uint>::const_iterator it;
     it = global_to_local_0.find(global_vertex_index);

@@ -25,7 +25,7 @@ namespace dolfin
   class LobattoQuadrature : public GaussianQuadrature
   {
   public:
-    
+
     LobattoQuadrature(unsigned int n);
 
     void disp() const;
@@ -33,9 +33,9 @@ namespace dolfin
   private:
 
     void compute_points();
-    
+
   };
-  
+
 }
 
 #endif

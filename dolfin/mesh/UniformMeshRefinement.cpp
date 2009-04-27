@@ -28,22 +28,22 @@ void UniformMeshRefinement::refine(Mesh& mesh)
 void UniformMeshRefinement::refine_simplex(Mesh& mesh)
 {
   message(1, "Refining simplicial mesh uniformly.");
-  
+
   // Generate cell - edge connectivity if not generated
   mesh.init(mesh.topology().dim(), 1);
-  
+
   // Generate edge - vertex connectivity if not generated
   mesh.init(1, 0);
 
   // Get cell type
   const CellType& cell_type = mesh.type();
-  
+
   // Create new mesh and open for editing
   Mesh refined_mesh;
   MeshEditor editor;
   editor.open(refined_mesh, cell_type.cell_type(),
 	      mesh.topology().dim(), mesh.geometry().dim());
-  
+
   // Get size of mesh
   const uint num_vertices = mesh.size(0);
   const uint num_edges = mesh.size(1);

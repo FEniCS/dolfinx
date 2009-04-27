@@ -18,7 +18,7 @@ namespace dolfin
   /// A Dual represents an initial value problem of the form
   ///
   ///   - phi'(t) = J(u, t)^* phi(t) on [0,T),
-  ///         
+  ///
   ///     phi(T)  = psi,
   ///
   /// where phi(t) is a vector of length N, A is the Jacobian of the
@@ -30,7 +30,7 @@ namespace dolfin
   /// of the form
   ///
   ///     w'(t) = J(u(T-t), T-t)^* w(t) on (0,T],
-  ///         
+  ///
   ///     w(0)  = psi,
   ///
   /// where w(t) = phi(T-t).

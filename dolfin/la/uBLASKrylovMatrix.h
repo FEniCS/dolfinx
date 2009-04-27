@@ -32,7 +32,7 @@ namespace dolfin
     /// Destructor
     virtual ~uBLASKrylovMatrix() {};
 
-    /// Return number of rows (dim = 0) or columns (dim = 1) 
+    /// Return number of rows (dim = 0) or columns (dim = 1)
     virtual uint size(uint dim) const = 0;
 
     /// Compute product y = Ax
@@ -41,7 +41,7 @@ namespace dolfin
     /// Solve linear system Ax = b for a Krylov matrix using uBLAS and dense matrices
     void solve(uBLASVector& x, const uBLASVector& b);
 
-    /// Display matrix 
+    /// Display matrix
     //void disp(const int precision = 2) const;
 
   private:

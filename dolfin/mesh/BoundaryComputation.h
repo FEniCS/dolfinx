@@ -23,7 +23,7 @@ namespace dolfin
   class BoundaryComputation
   {
   public:
-    
+
     /// Compute the boundary of a given mesh
     static void compute_boundary(const Mesh& mesh, BoundaryMesh& boundary);
 

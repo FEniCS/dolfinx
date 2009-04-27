@@ -23,7 +23,7 @@ V_dg = FunctionSpace(mesh, "DG", 1)
 V_cg = FunctionSpace(mesh, "CG", 1)
 V_b  = VectorFunctionSpace(mesh, "CG", 2)
 
-# Create velocity Function 
+# Create velocity Function
 velocity = Function(V_b, "../velocity.xml.gz");
 
 # Test and trial functions

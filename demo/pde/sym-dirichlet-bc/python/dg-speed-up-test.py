@@ -1,4 +1,4 @@
-# Efficiency test  
+# Efficiency test
 
 __author__    = "Kent-Andre Mardal"
 __date__      = "2008"
@@ -15,7 +15,7 @@ V = FunctionSpace(mesh, "DG", 1)
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
-        return bool(on_boundary) 
+        return bool(on_boundary)
 
 # Define variational problem
 v = TestFunction(V)
@@ -66,6 +66,6 @@ for backend in backends:
     bc.apply(A, b)
     t1 = time.time()
     print "time for standard assembly ", t1-t0, " with ", backend
-     
+
 
 

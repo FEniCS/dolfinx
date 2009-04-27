@@ -28,7 +28,7 @@ namespace dolfin
   class MeshData
   {
   public:
-    
+
     /// Constructor
     MeshData(Mesh& mesh);
 
@@ -65,15 +65,15 @@ namespace dolfin
 
     /// Return array with given name (returning zero if data is not available)
     std::vector<uint>* array(const std::string name) const;
-    
+
     /// Return mapping with given name (returning zero if data is not available)
     std::map<uint, uint>* mapping(const std::string name) const;
 
     /// Return vector mapping with given name (returning zero if data is not available)
     std::map<uint, std::vector<uint> >* vector_mapping(const std::string name) const;
-    
+
     //--- Removal of data ---
-    
+
     /// Erase MeshFunction with given name
     void erase_mesh_function(const std::string name);
 
@@ -111,7 +111,7 @@ namespace dolfin
 
     // A map from named mesh data to vector mapping
     std::map<std::string, std::map<uint, std::vector<uint> >* > vector_mappings;
-    
+
   };
 
 }

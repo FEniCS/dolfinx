@@ -132,6 +132,6 @@ int main(int argc, char* argv[])
   default:
     error("No such test problem.");
   }
-  
+
   return 0;
 }

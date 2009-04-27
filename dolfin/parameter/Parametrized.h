@@ -28,7 +28,7 @@ namespace dolfin
   /// function, in any given object, takes the value specified for the
   /// parent, whereas any parameter value that has been specified
   /// locally overrides the value specified for the parent.
-  
+
   class Parametrized
   {
   public:
@@ -41,7 +41,7 @@ namespace dolfin
 
     /// Add local parameter
     void add(std::string key, Parameter value);
-    
+
     /// Set value of local parameter
     void set(std::string key, Parameter value);
 

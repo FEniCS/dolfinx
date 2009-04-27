@@ -13,12 +13,12 @@
 #include "TimeSlab.h"
 
 namespace dolfin
-{  
+{
 
   class ODE;
   class Method;
   class TimeSlabSolver;
-  
+
   /// This class represents a mono-adaptive time slab of length k = b - a
   /// holding the degrees of freedom for the solution of an ODE between
   /// two time levels a and b.
@@ -32,7 +32,7 @@ namespace dolfin
 
     /// Destructor
     ~MonoAdaptiveTimeSlab();
-    
+
     /// Build time slab, return end time
     real build(real a, real b);
 
@@ -59,7 +59,7 @@ namespace dolfin
 
     /// Display time slab data
     void disp() const;
-    
+
     /// Friends
     friend class MonoAdaptiveFixedPointSolver;
     friend class MonoAdaptiveNewtonSolver;
@@ -69,7 +69,7 @@ namespace dolfin
 
     // Evaluate right-hand side at given quadrature point
     void feval(uint m);
-    
+
     // Choose solver
     TimeSlabSolver* choose_solver();
 
@@ -86,7 +86,7 @@ namespace dolfin
     real* x; // Degrees of freedom for the solution on the time slab
     real* u; // The solution at a given stage
     real* f; // The right-hand side at a given stage
-    
+
   };
 
 }

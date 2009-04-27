@@ -70,11 +70,11 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
     // Get boundary coordinates
     for (uint i = 0; i < new_boundary.num_vertices(); i++)
       values[i] = new_boundary.geometry().x(i, dim);
-    
+
     // Modify right-hand side
     b.set(values, num_dofs, dofs);
     b.apply();
-    
+
     // Solve system
     solve(A, x, b, gmres, amg_hypre);
 

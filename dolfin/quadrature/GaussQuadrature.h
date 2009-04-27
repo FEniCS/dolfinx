@@ -25,7 +25,7 @@ namespace dolfin
   class GaussQuadrature : public GaussianQuadrature
   {
   public:
-    
+
     GaussQuadrature(unsigned int n);
 
     void disp() const;
@@ -35,7 +35,7 @@ namespace dolfin
     void compute_points();
 
   };
-  
+
 }
 
 #endif

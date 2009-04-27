@@ -18,16 +18,16 @@ namespace dolfin
   class VTKFile : public GenericFile
   {
   public:
-    
+
     VTKFile(const std::string filename);
     ~VTKFile();
-    
+
     void operator<< (const Mesh& mesh);
     void operator<< (const MeshFunction<int>& meshfunction);
     void operator<< (const MeshFunction<unsigned int>& meshfunction);
     void operator<< (const MeshFunction<double>& meshfunction);
     void operator<< (const Function& u);
-    
+
   private:
 
     void mesh_write(const Mesh& mesh) const;
@@ -38,16 +38,16 @@ namespace dolfin
     void vtu_name_update(const int counter);
 
     template<class T>
-    void mesh_function_write(T& meshfunction);    
-    
+    void mesh_function_write(T& meshfunction);
+
     // Most recent position in pvd file
     std::ios::pos_type mark;
-    
+
     // vtu filename
     std::string vtu_filename;
 
   };
-  
+
 }
 
 #endif

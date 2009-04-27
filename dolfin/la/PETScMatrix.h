@@ -118,7 +118,7 @@ namespace dolfin
 
     /// Multiply matrix by given number
     virtual const PETScMatrix& operator*= (double a);
-    
+
     /// Divide matrix by given number
     virtual const PETScMatrix& operator/= (double a);
 
@@ -135,7 +135,7 @@ namespace dolfin
     /// Return PETSc Mat pointer
     boost::shared_ptr<Mat> mat() const;
 
-    /// Return PETSc matrix type 
+    /// Return PETSc matrix type
     Type type() const;
 
     /// Return norm of matrix
@@ -156,7 +156,7 @@ namespace dolfin
     void set_type();
 
     // Return PETSc matrix type
-    #if PETSC_VERSION_MAJOR > 2 
+    #if PETSC_VERSION_MAJOR > 2
     const MatType getPETScType() const;
     #else
     MatType getPETScType() const;

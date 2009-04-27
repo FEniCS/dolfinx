@@ -66,13 +66,13 @@ class LeftBoundary : public SubDomain
 };
 
 // Acceleration update
-void update_a(Function& a, const Function& u, const Function& a0, 
-              const Function& v0,  const Function& u0, 
+void update_a(Function& a, const Function& u, const Function& a0,
+              const Function& v0,  const Function& u0,
               double Beta, double delta_t)
 {
   // a = 1/(2*Beta) * ((u-u0 - v0*dt)/(0.5*dt*dt) - (1-2*Beta)*a0)
-  a.vector()  = u.vector(); 
-  a.vector() -= u0.vector(); 
+  a.vector()  = u.vector();
+  a.vector() -= u0.vector();
   a.vector() *= 1.0/delta_t;
   a.vector() -= v0.vector();
   a.vector() *= 1.0/((0.5-Beta)*delta_t);
@@ -81,7 +81,7 @@ void update_a(Function& a, const Function& u, const Function& a0,
 }
 
 // Velocity update
-void update_v(Function& v, const Function& a, const Function& a0, 
+void update_v(Function& v, const Function& a, const Function& a0,
               const Function& v0, double Gamma, double delta_t)
 {
   // v = dt * ((1-Gamma)*a0 + Gamma*a) + v0
@@ -107,15 +107,15 @@ int main(int argc, char* argv[])
   Constant rho(1.0);                           // mass density
   Constant eta(0.25);                          // damping coefficient
   double E  = 1.0;                             // Youngs modulus
-  double nu = 0.0;                             // Poisson ratio 
+  double nu = 0.0;                             // Poisson ratio
   Constant lambda((nu*E)/((1.0+nu)*(1.0-nu))); // Lame coefficient
   Constant mu(E/(2.0*(1.0+nu)));               // Lame coefficient
 
   // Time stepping parameters
   Constant alpha_m(0.2);
   Constant alpha_f(0.4);
-  double Beta = 0.36;                   
-  double Gamma = 0.7;      
+  double Beta = 0.36;
+  double Gamma = 0.7;
   double delta_t = 1.0/32.0;               // time step
   double t = 0.0;                              // initial time
   double T = 200*delta_t;                      // final time
@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
   MeshFunction<unsigned int> right_boundary_function(mesh, 1);
   right_boundary.mark(right_boundary_function, 3);
   Pressure p(t, delta_t, false), p0(t, delta_t, true);
-  
+
   // Dirichlet boundary conditions
   LeftBoundary left_boundary;
   Constant zero(2, 0.0);
@@ -149,27 +149,27 @@ int main(int argc, char* argv[])
 
   // Create forms and attach functions
   ElastoDynamicsBilinearForm a_form(V, V);
-  a_form.lmbda = lambda; a_form.mu = mu; a_form.rho = rho; 
+  a_form.lmbda = lambda; a_form.mu = mu; a_form.rho = rho;
   a_form.eta = eta;
-  a_form.beta = beta; 
+  a_form.beta = beta;
   a_form.gamma = gamma;
-  a_form.dt = dt; 
-  a_form.alpha_m = alpha_m; 
+  a_form.dt = dt;
+  a_form.alpha_m = alpha_m;
   a_form.alpha_f = alpha_f;
 
   ElastoDynamicsLinearForm L(V);
   L.u0 = u0; L.v0 = v0; L.a0 = a0;
-  L.lmbda = lambda; 
-  L.mu = mu; 
-  L.rho = rho; 
+  L.lmbda = lambda;
+  L.mu = mu;
+  L.rho = rho;
   L.eta = eta;
-  L.beta = beta; 
+  L.beta = beta;
   L.gamma = gamma;
-  L.dt = dt; 
-  L.alpha_m = alpha_m; 
+  L.dt = dt;
+  L.alpha_m = alpha_m;
   L.alpha_f = alpha_f;
-  L.f = f; 
-  L.p = p; 
+  L.f = f;
+  L.p = p;
   L.p0 = p0;
 
   // Create variational problem
@@ -212,6 +212,6 @@ int main(int argc, char* argv[])
     }
     ++step;
   }
-*/  
+*/
   return 0;
 }

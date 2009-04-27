@@ -57,12 +57,12 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
 {
   message("Applying equality boundary conditions to linear system.");
 
-  if (equal_dofs.size() < 2) 
+  if (equal_dofs.size() < 2)
   {
     warning("No enough dofs to set equality boundary condition.");
     return;
-  }  
-  
+  }
+
   // Insert -1 at (dof0, dof1) and 0 on right-hand side
   uint* rows = new uint[1];
   uint* cols = new uint[1];
@@ -78,11 +78,11 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
     //        from within a loop.
 
     // Get dof1
-    const int dof1 = *it;   
+    const int dof1 = *it;
 
-    // Avoid modification for reference 
+    // Avoid modification for reference
     if (dof1 == dof0) continue;
-    
+
     // Set x_0 - x_i = 0
     rows[0] = static_cast<uint>(dof0);
     cols[0] = static_cast<uint>(dof1);
@@ -91,12 +91,12 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
 
     std::vector<uint> columns;
     std::vector<double> values;
-    
-    // Add slave-dof-row to master-dof-row  
+
+    // Add slave-dof-row to master-dof-row
     A.getrow(dof0, columns, values);
     A.add(&values[0], 1, &cols[0], columns.size(), &columns[0]);
 
-    // Add slave-dof-entry to master-dof-entry 
+    // Add slave-dof-entry to master-dof-entry
     values.resize(1);
     b.get(&values[0], 1, &rows[0]);
     b.add(&values[0], 1, &cols[0]);
@@ -114,7 +114,7 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
     A.apply();
     b.apply();
   }
-  
+
   // Cleanup
   delete [] rows;
   delete [] cols;
@@ -151,10 +151,10 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
 
   // Create UFC view of mesh
   UFCMesh ufc_mesh(mesh);
-  
+
   // Iterate over the facets of the mesh
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
-  {    
+  {
     // Get cell to which facet belongs (there may be two, but pick first)
     Cell cell(mesh, facet->entities(D)[0]);
     UFCCell ufc_cell(cell);
@@ -164,7 +164,7 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
 
     // Tabulate dofs on cell
     dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell.index());
-    
+
     // Tabulate coordinates on cell
     dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
 
@@ -186,14 +186,14 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
         equal_dofs.push_back(global_dof);
       }
     }
-  }  
+  }
 }
 //-----------------------------------------------------------------------------
 void EqualityBC::init_from_mesh(uint sub_domain)
 {
   dolfin_assert(equal_dofs.size() == 0);
 
-  // Get data from MeshData 
+  // Get data from MeshData
   std::vector<uint>* facet_cells   = const_cast<Mesh&>(V->mesh()).data().array("boundary facet cells");
   std::vector<uint>* facet_numbers = const_cast<Mesh&>(V->mesh()).data().array("boundary facet numbers");
   std::vector<uint>* indicators    = const_cast<Mesh&>(V->mesh()).data().array("boundary indicators");
@@ -234,7 +234,7 @@ void EqualityBC::init_from_mesh(uint sub_domain)
 
     // Tabulate dofs on cell
     dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell.index());
-    
+
     // Tabulate coordinates on cell
     dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
 

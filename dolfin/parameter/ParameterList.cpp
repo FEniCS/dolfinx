@@ -49,7 +49,7 @@ Parameter ParameterList::get(std::string key) const
 
   if (p == parameters.end())
     error("Unknown parameter \"%s\".", key.c_str());
-  
+
   return p->second;
 }
 //-----------------------------------------------------------------------------

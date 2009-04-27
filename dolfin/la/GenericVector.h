@@ -114,7 +114,7 @@ namespace dolfin
 
     /// Return sum of vector
     virtual double sum() const = 0;
-    
+
     /// Multiply vector by given number
     virtual const GenericVector& operator*= (double a) = 0;
 
@@ -135,17 +135,17 @@ namespace dolfin
 
     /// Return pointer to underlying data (const version)
     virtual const double* data() const
-    { 
-      error("Unable to return pointer to underlying vector data."); 
+    {
+      error("Unable to return pointer to underlying vector data.");
       return 0;
-    } 
+    }
 
     /// Return pointer to underlying data
     virtual double* data()
-    { 
-      error("Unable to return pointer to underlying vector data."); 
+    {
+      error("Unable to return pointer to underlying vector data.");
       return 0;
-    } 
+    }
 
     //--- Convenience functions ---
 
@@ -153,7 +153,7 @@ namespace dolfin
     virtual double operator[] (uint i) const
     { double value(0); get(&value, 1, &i); return value; }
 
-    /// Get value of given entry 
+    /// Get value of given entry
     virtual double getitem(uint i) const
     { double value(0); get(&value, 1, &i); return value; }
 

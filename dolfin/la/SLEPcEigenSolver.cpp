@@ -109,7 +109,7 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   // Set number of eigenpairs to compute
   dolfin_assert(n <= A->size(0));
   const uint nn = static_cast<int>(n);
-  #if SLEPC_VERSION_MAJOR > 2 
+  #if SLEPC_VERSION_MAJOR > 2
   EPSSetDimensions(eps, nn, PETSC_DECIDE, PETSC_DECIDE);
   #else
   EPSSetDimensions(eps, nn, PETSC_DECIDE);
@@ -136,8 +136,8 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   // Report solver status
   int num_iterations = 0;
   EPSGetIterationNumber(eps, &num_iterations);
-  
-  #if SLEPC_VERSION_MAJOR > 2 
+
+  #if SLEPC_VERSION_MAJOR > 2
   const EPSType eps_type = 0;
   #else
   EPSType eps_type = 0;

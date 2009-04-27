@@ -37,10 +37,10 @@ int main()
       if (c->midpoint().distance(p) < 0.1)
         cell_markers(*c) = true;
     }
-    
+
     // Refine mesh
     mesh.refine(cell_markers);
-    
+
     file << mesh;
     plot(mesh);
   }

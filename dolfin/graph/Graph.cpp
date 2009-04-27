@@ -17,10 +17,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Graph::Graph() 
+Graph::Graph()
   : Variable("graph", "DOLFIN graph"),
     _num_edges(0), _num_vertices(0),
-    _edges(0), _vertices(0), 
+    _edges(0), _vertices(0),
     _edge_weights(0), _vertex_weights(0)
 {
   // Do nothing

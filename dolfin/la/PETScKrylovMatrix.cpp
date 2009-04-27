@@ -22,7 +22,7 @@ using namespace dolfin;
 // FIXME: Add an explanation why this function is needed
 namespace dolfin
 {
- 
+
   int usermult(Mat A, Vec x, Vec y)
   {
     boost::shared_ptr<Vec> _x(&x, NoDeleter<Vec>());
@@ -53,7 +53,7 @@ PETScKrylovMatrix::PETScKrylovMatrix(const PETScVector& x, const PETScVector& y)
 PETScKrylovMatrix::~PETScKrylovMatrix()
 {
   // Free memory of matrix
-  if ( A ) 
+  if ( A )
     MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
@@ -65,7 +65,7 @@ void PETScKrylovMatrix::init(const PETScVector& x, const PETScVector& y)
   VecGetLocalSize(*(x.vec()), &n);
   VecGetSize(*(y.vec()), &M);
   VecGetSize(*(x.vec()), &N);
-  
+
   // Free previously allocated memory if necessary
   if ( A )
   {
@@ -79,7 +79,7 @@ void PETScKrylovMatrix::init(const PETScVector& x, const PETScVector& y)
     else
       MatDestroy(A);
   }
-  
+
   MatCreateShell(PETSC_COMM_WORLD, m, n, M, N, (void*) this, &A);
   MatShellSetOperation(A, MATOP_MULT, (void (*)()) usermult);
 }
@@ -87,12 +87,12 @@ void PETScKrylovMatrix::init(const PETScVector& x, const PETScVector& y)
 void PETScKrylovMatrix::resize(int M, int N)
 {
   // Put here to set up arbitrary Shell of global size M,N.
-  // Analagous to the matrix being on one processor. 
+  // Analagous to the matrix being on one processor.
 
   // Free previously allocated memory if necessary
   if ( A )
   {
-    // Get size and local size of existing matrix                                                            
+    // Get size and local size of existing matrix
     int MM(0), NN(0);
     MatGetSize(A, &MM, &NN);
 
@@ -126,7 +126,7 @@ void PETScKrylovMatrix::disp(bool sparse, int precision) const
 {
   // Since we don't really have the matrix, we create the matrix by
   // performing multiplication with unit vectors. Used only for debugging.
-  
+
   warning("Display of PETScKrylovMatrix needs to be fixed.");
 
 /*
@@ -134,7 +134,7 @@ void PETScKrylovMatrix::disp(bool sparse, int precision) const
   uint N = size(1);
   PETScVector x(N), y(M);
   PETScMatrix A(M, N);
-  
+
   x = 0.0;
   for (unsigned int j = 0; j < N; j++)
   {
@@ -155,7 +155,7 @@ void PETScKrylovMatrix::disp(bool sparse, int precision) const
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const PETScKrylovMatrix& A)
 {
-  #if PETSC_VERSION_MAJOR > 2 
+  #if PETSC_VERSION_MAJOR > 2
   const MatType type = 0;
   #else
   MatType type = 0;

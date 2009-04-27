@@ -34,14 +34,14 @@ def __contains__(self,u):
 %pythoncode %{
 def sub(self,i):
     """ Return a sub function
-    
+
     A sub function can be extracted from a discrete function that is in a
     a MixedFunctionSpace or in a VectorFunctionSpace. The sub function is a
     function that resides in a sub space of the mixed space.
-    
+
     The sub functions are numbered from i = 0..N-1, where N is the total number
-    of sub spaces. 
-    
+    of sub spaces.
+
     @param i : The number of the sub function
     """
     num_sub_space = self.function_space().element().num_sub_elements()

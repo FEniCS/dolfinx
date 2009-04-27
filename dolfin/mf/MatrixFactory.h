@@ -26,17 +26,17 @@ namespace dolfin
   class MatrixFactory
   {
   public:
-    
+
     /// Compute mass matrix on a given mesh
     static void computeMassMatrix(GenericMatrix& A, Mesh& mesh);
 
     /// Compute stiffness matrix with diffusivity c on a given mesh
     static void computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, double c = 1.0);
-    
+
     /// Compute convection matrix with constant velocity c on a given mesh
     static void computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,
 					double cx = 1.0, double cy = 0.0, double cz = 0.0);
-    
+
     /// Construct load vector with constant load c on a given mesh
     static void computeLoadVector(GenericVector& x, Mesh& mesh, double c = 1.0);
 

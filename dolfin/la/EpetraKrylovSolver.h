@@ -15,7 +15,7 @@
 #include "enums_la.h"
 #include "EpetraPreconditioner.h"
 
-namespace dolfin 
+namespace dolfin
 {
 
   /// Forward declarations
@@ -28,7 +28,7 @@ namespace dolfin
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of Epetra.
-  
+
   class EpetraKrylovSolver : public GenericLinearSolver
   {
   public:
@@ -48,20 +48,20 @@ namespace dolfin
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
-    
+
     /// Display solver data
     void disp() const;
 
   private:
 
-    SolverType         method; 
-    PreconditionerType pc_type; 
-    EpetraPreconditioner* prec; 
+    SolverType         method;
+    PreconditionerType pc_type;
+    EpetraPreconditioner* prec;
 
   };
 
 }
 
-#endif 
+#endif
 
-#endif 
+#endif
