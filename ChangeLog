@@ -1,3 +1,5 @@
+ - Rename of camelCaps functions names: fooBar --> foo_bar
+   Note: mesh.numVertices() --> mesh.num_vertices(), mesh.numCells() --> mesh.num_cells()
  - Added slicing capabilities for GenericVector interface in PyDOLFIN
  - Added sum to GenericVector interface
 0.9.2 [2009-04-07]

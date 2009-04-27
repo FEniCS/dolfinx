@@ -1,0 +1,86 @@
+#!/usr/bin/env python
+#
+# Copyright (C) 2009 Anders Logg.
+# Licensed under the GNU LGPL Version 2.1.
+#
+# Check and fix coding style in all files (currently very limited)
+
+import os, sys, re
+
+# Camelcaps exceptions
+camelcaps_exceptions = ["cGq", "dGq",                                                         # ODE solver
+                        "addListener", "addTest", "getRegistry", "makeTest", "wasSuccessful", # cppunit
+                        "tagName", "tagNames", "documentElement", "childNodes",               # doscstrings
+                        "nodeType", "firstChild", "parent_node",                              # docstrings
+                        "fatalError", "xmlChar", "xmlNode", "xmlStrcasecmp",                  # libxml2
+                        "startDocument", "endDocument", "startElement", "endElement"]         # libxml2
+
+def camelcaps2underscore(word):
+    "Convert fooBar to foo_bar."
+    new_word = ""
+    for c in word:
+        if c.isupper() and len(new_word) > 0:
+            new_word += "_" + c.lower()
+        else:
+            new_word += c
+    return new_word
+
+def check_camelcaps(code, replacements):
+    "Replace fooBar by foo_bar."
+    words = re.findall(r"\b([a-z]+[A-Z][a-z]+)\b", code)
+    for word in words:
+        if word in camelcaps_exceptions:
+            continue
+        new_word = camelcaps2underscore(word)
+        code = code.replace(word, new_word)
+        r = (word, new_word)
+        if r in replacements:
+            replacements[r] += 1
+        else:
+            replacements[r] = 1
+    return code
+
+def replace(filename, replacements):
+    "Make replacements for given filename."
+
+    print "Checking %s..." % filename
+
+    # Open file
+    f = open(filename, "r")
+    code = f.read()
+    f.close()
+
+    # Check for camelcaps
+    new_code = check_camelcaps(code, replacements)
+
+    # Write file
+    f = open(filename, "w")
+    f.write(new_code)
+    f.close()
+
+# Iterate over all source files
+replacements = {}
+for root, dirs, files in os.walk("dolfin"):
+    for file in files:
+        if not file.endswith((".cpp", ".h", ".py", ".i")):
+            continue
+        filename = os.path.join(root, file)
+        replace(filename, replacements)
+for root, dirs, files in os.walk("demo"):
+    for file in files:
+        if not file.endswith((".cpp", ".h", ".py")):
+            continue
+        filename = os.path.join(root, file)
+        replace(filename, replacements)
+
+# Report replacements
+if len(replacements) == 0:
+    print "No replacements were made, unchanged."
+else:
+    print ""
+    print "The following replacements were made:"
+    lines = []
+    for r in replacements:
+        lines.append("  %s --> %s (%d occurences)" % (r[0], r[1], replacements[r]))
+    lines.sort()
+    print "\n".join(lines)
