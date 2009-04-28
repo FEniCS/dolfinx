@@ -1323,12 +1323,12 @@ void Assembler::assemble_system_new(GenericMatrix& A,
     // Allocate memory for Ae and be 
     uint A_num_entries = 1;
     for (uint i = 0; i < a.rank(); i++)
-      A_num_entries *= a.function_space(i).dofmap().local_dimension();
+      A_num_entries *= a.function_space(i).dofmap().max_local_dimension();
     Ae = new double[A_num_entries];
 
     uint b_num_entries = 1;
     for (uint i = 0; i < L.rank(); i++)
-      b_num_entries *= L.function_space(i).dofmap().local_dimension();
+      b_num_entries *= L.function_space(i).dofmap().max_local_dimension();
     be = new double[b_num_entries];
 
     for (CellIterator cell(mesh); !cell.end(); ++cell) 
@@ -1362,7 +1362,7 @@ void Assembler::assemble_system_new(GenericMatrix& A,
         {
           for (FacetIterator facet(*cell); !facet.end(); ++facet)
           {
-            if (facet->numEntities(D) != 2) 
+            if (facet->num_entities(D) != 2) 
             {
 
               compute_tensor_on_one_exterior_facet(a, A_ufc, *cell, *facet, A_coefficients, exterior_facet_domains);
