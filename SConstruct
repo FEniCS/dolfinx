@@ -4,7 +4,7 @@ import os, os.path, sys
 import warnings
 
 # Make sure that we have a good scons-version
-EnsureSConsVersion(0, 96)
+EnsureSConsVersion(0, 98, 5)
 
 # Import the local 'scons'
 sys.path.insert(0, os.path.abspath(os.path.join("scons", "simula-scons")))
@@ -410,16 +410,14 @@ env.Command("runtests", buildDataHash["shlibs"] + buildDataHash["extModules"],
 scons.createHelperFile(env)
 
 def help():
-    # TODO: The message below should only be printed if there were no
-    # errors running scons. In SCons 0.98 we can do this by checking
-    # if GetBuildFailures() returns an empty list.
-    #from SCons.Script import GetBuildFailures
-    #if GetBuildFailures():
-    #    # There have been errors. Write out error summary or just
-    #    # return and let SCons handle the error message.
-    #    return
+    from SCons.Script import GetBuildFailures
+    build_failures = GetBuildFailures()
+    if build_failures:
+        for bf in build_failures:
+            print "%s failed: %s" % (bf.node, bf.errstr)
+        return
     msg = """---------------------------------------------------------
-If there were no errors, run
+Compilation of DOLFIN finished. Now run
 
     scons install
 
@@ -441,19 +439,17 @@ demo by running
     print msg
 
 def help_install():
-    # TODO: The message below should only be printed if there were no
-    # errors running scons. In SCons 0.98 we can do this by checking
-    # if GetBuildFailures() returns an empty list.
-    #from SCons.Script import GetBuildFailures
-    #if GetBuildFailures():
-    #    # There have been errors. Write out error summary or just
-    #    # return and let SCons handle the error message.
-    #    return
-    #msg = """---------------------------------------------------------
-#DOLFIN successfully compiled and installed in\n\n  %s\n""" % prefix
+    from SCons.Script import GetBuildFailures
+    build_failures = GetBuildFailures()
+    if build_failures:
+        for bf in build_failures:
+            print "%s failed: %s" % (bf.node, bf.errstr)
+        return
+    msg = """---------------------------------------------------------
+DOLFIN successfully compiled and installed in\n\n  %s\n\n""" % prefix
     # Check that the installation directory is set up correctly
     if not os.path.join(env.subst(env["prefix"]),"bin") in os.environ["PATH"]:
-        msg = """---------------------------------------------------------
+        msg += """---------------------------------------------------------
 Warning: Installation directory is not in PATH.
 
 To compile a program against DOLFIN, you need to update
@@ -471,9 +467,9 @@ Windows users can simply run the file dolfin.bat:
 This will update the values for the environment variables
 PATH, LD_LIBRARY_PATH, PKG_CONFIG_PATH and PYTHONPATH.
 ---------------------------------------------------------"""
-        print msg
-    #msg += "\n---------------------------------------------------------"
-    #print msg
+    else:
+        msg += "---------------------------------------------------------"
+    print msg
 
 # Print some help text at the end
 if not env.GetOption("clean"):
