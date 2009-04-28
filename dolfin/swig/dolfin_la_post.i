@@ -192,6 +192,19 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     def __delslice__(self):
         raise ValueError, "cannor delete Vector elements"
     
+    def __setslice__(self,i,j,values):
+        if i == 0 and (j >= len(self) or j == -1) and isinstance(values, (float, int, GenericVector)):
+            if isinstance(values, (float, int)) or len(values) == len(self):
+                self.assign(values)
+            else :
+                raise ValueError, "dimension error"
+        self.__setitem__(slice(i,j,1),values)
+    
+    def __getslice__(self,i,j):
+        if i == 0 and (j >= len(self) or j == -1):
+            return self.copy()
+        return self.__getitem__(slice(i,j,1))
+    
     def __getitem__(self, indices):
         from numpy import ndarray
         from types import SliceType
@@ -210,14 +223,6 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
                 return _set_vector_items_value(self, indices, values)
             else:
                 raise TypeError, "provide a scalar to set single item"
-        elif isinstance(indices, SliceType) and \
-             (indices.indices(len(self)) == (0,len(self),1)) and \
-             isinstance(values, (float, int, GenericVector)):
-            if isinstance(values, (float, int)) or len(values) == len(self):
-                self.assign(values)
-            else :
-                raise ValueError, "dimension error"
-                
         elif isinstance(indices, (SliceType, ndarray, list)):
             if isinstance(values, (float, int)):
                 _set_vector_items_value(self, indices, values)
