@@ -60,7 +60,7 @@ int main()
   };
 
   // Create mesh
-  UnitSquare mesh(128, 128);
+  UnitSquare mesh(300, 300);
 
   // Create functions
   Source f;
@@ -98,6 +98,11 @@ int main()
   tic();
   assemble_system(A, b, a, L, bc);
   table("Symmetric", "Assembly time") = toc();
+
+  // Assemble A and b together
+  tic();
+  assemble_system_new(A, b, a, L, bc);
+  table("Symmetric New", "Assembly time") = toc();
 
   // Display summary
   table.disp();

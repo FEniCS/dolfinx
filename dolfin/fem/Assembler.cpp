@@ -1160,4 +1160,262 @@ void Assembler::assemble_system(GenericMatrix& A,
   delete [] g;
   delete [] indicators;
 }
+
+void Assembler::compute_tensor_on_one_cell(const Form& a,
+                                           UFC& ufc, 
+                                           const Cell& cell, 
+                                           const std::vector<const Function*>& coefficients, 
+                                           const MeshFunction<uint>* cell_domains
+                                           ) 
+{
+    // Cell integral
+    ufc::cell_integral* integral = ufc.cell_integrals[0];
+
+    // Get integral for sub domain (if any)
+    if (cell_domains && cell_domains->size() > 0)
+    {
+      const uint domain = (*cell_domains)(cell);
+      if (domain < ufc.form.num_cell_integrals())
+        integral = ufc.cell_integrals[domain];
+    }
+
+    // Update to current cell
+    ufc.update(cell);
+
+    // Interpolate coefficients on cell
+    for (uint i = 0; i < coefficients.size(); i++)
+      coefficients[i]->interpolate(ufc.w[i], ufc.cell, cell.index());
+
+    // Tabulate dofs for each dimension
+    for (uint i = 0; i < ufc.form.rank(); i++)
+      a.function_space(i).dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell.index());
+
+    // Tabulate cell tensor
+    integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
+}
+
 //-----------------------------------------------------------------------------
+void Assembler::compute_tensor_on_one_exterior_facet
+  (const Form& a,
+   UFC& ufc, 
+   const Cell& cell, 
+   const Facet& facet,
+   const std::vector<const Function*>& coefficients, 
+   const MeshFunction<uint>* exterior_facet_domains
+   ) 
+{
+  // Get facet integral
+  ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];; 
+
+  // Get integral for sub domain (if any)
+  if (exterior_facet_domains && exterior_facet_domains->size() > 0)
+  {
+    const uint exterior_facet_domain= (*exterior_facet_domains)(facet);
+    if (exterior_facet_domain < ufc.form.num_exterior_facet_integrals())
+      integral = ufc.exterior_facet_integrals[exterior_facet_domain];
+  }
+
+  // Tabulate dofs for each dimension
+  for (uint i = 0; i < ufc.form.rank(); i++)
+    a.function_space(i).dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell.index());
+
+  // Interpolate coefficients on cell
+  const uint local_facet = cell.index(facet);
+  for (uint i = 0; i < coefficients.size(); i++)
+    coefficients[i]->interpolate(ufc.w[i], ufc.cell, cell.index(), local_facet);
+
+  integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
+}
+//-----------------------------------------------------------------------------
+void Assembler::assemble_system_new(GenericMatrix& A,
+                                GenericVector& b,
+                                const Form& a,
+                                const Form& L,
+                                const DirichletBC& bc,
+                                bool reset_tensors)
+{
+  std::vector<const DirichletBC*> bcs;
+  bcs.push_back(&bc);
+  assemble_system(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
+}
+//-----------------------------------------------------------------------------
+void Assembler::assemble_system_new(GenericMatrix& A,
+                                GenericVector& b,
+                                const Form& a,
+                                const Form& L,
+                                std::vector<const DirichletBC*>& bcs,
+                                bool reset_tensors)
+{
+  assemble_system(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
+}
+
+
+//-----------------------------------------------------------------------------
+void Assembler::assemble_system_new(GenericMatrix& A,
+                                GenericVector& b,
+                                const Form& a,
+                                const Form& L,
+                                std::vector<const DirichletBC*>& bcs,
+                                const MeshFunction<uint>* cell_domains,
+                                const MeshFunction<uint>* exterior_facet_domains,
+                                const MeshFunction<uint>* interior_facet_domains,
+                                const GenericVector* x0,
+                                bool reset_tensors)
+{
+  Timer timer("Assemble system");
+  message("Assembling linear system and applying boundary conditions...");
+
+  // Note the importance of treating empty mesh functions as null pointers
+  // for the PyDOLFIN interface.
+
+  // FIXME: 1. Need consistency check between a and L
+  // FIXME: 2. We assume that we get a bilinear and linear form, need to check this
+  // FIXME: 3. Some things can be simplified since we know it's a matrix and a vector
+
+  // Check arguments
+  check(a);
+  check(L);
+
+  // Extract mesh and coefficients
+  const Mesh& mesh = a.mesh();
+  const std::vector<const Function*>& A_coefficients = a.coefficients();
+  const std::vector<const Function*>& b_coefficients = L.coefficients();
+
+  // Create data structure for local assembly data
+  UFC A_ufc(a);
+  UFC b_ufc(L);
+
+  // Initialize global tensor
+  init_global_tensor(A, a, A_ufc, reset_tensors);
+  init_global_tensor(b, L, b_ufc, reset_tensors);
+
+  // Pointers to element matrix and vector
+  double* Ae = 0; 
+  double* be = 0; 
+
+  // Get boundary values (global) 
+  const uint N = a.function_space(1).dofmap().global_dimension();  
+  uint* indicators = new uint[N];
+  double* g = new double[N];
+  for (uint i = 0; i < N; i++) 
+  {
+    indicators[i] = 0; 
+    g[i] = 0.0; 
+  }
+  for(uint i = 0; i < bcs.size(); ++i)
+    bcs[i]->get_bc(indicators, g);
+
+  // Modify boundary values for incremental (typically nonlinear) problems
+  if (x0)
+  {
+    warning("Symmetric application of Dirichlet boundary conditions for incremental problems is untested.");
+    dolfin_assert( x0->size() == N);
+    double* x0_values = new double[N];
+    x0->get(x0_values);
+    for (uint i = 0; i < N; i++)
+      g[i] = x0_values[i] - g[i];
+    delete [] x0_values;
+  }
+
+  // If there are no interior facet integrals
+  if (A_ufc.form.num_interior_facet_integrals() == 0 && b_ufc.form.num_interior_facet_integrals() == 0) 
+  {
+    // Allocate memory for Ae and be 
+    uint A_num_entries = 1;
+    for (uint i = 0; i < a.rank(); i++)
+      A_num_entries *= a.function_space(i).dofmap().local_dimension();
+    Ae = new double[A_num_entries];
+
+    uint b_num_entries = 1;
+    for (uint i = 0; i < L.rank(); i++)
+      b_num_entries *= L.function_space(i).dofmap().local_dimension();
+    be = new double[b_num_entries];
+
+    for (CellIterator cell(mesh); !cell.end(); ++cell) 
+    {
+      // Initialize element matrix to zero
+      for (uint i = 0; i < A_num_entries; i++) 
+        Ae[i] = 0.0; 
+
+      // Initialize element vector to zero
+      for (uint i = 0; i < b_num_entries; i++) 
+        be[i] = 0.0; 
+
+      // compute element matrix on one cell
+      compute_tensor_on_one_cell(a, A_ufc, *cell, A_coefficients, cell_domains); 
+
+      for (uint i=0; i<A_num_entries; i++) 
+        Ae[i] += A_ufc.A[i]; 
+
+      // compute element vector on one cell
+      compute_tensor_on_one_cell(L, b_ufc, *cell, b_coefficients, cell_domains); 
+
+      for (uint i=0; i<b_num_entries; i++) 
+        be[i] += b_ufc.A[i]; 
+
+      // Compute exterior facet integral
+      if (A_ufc.form.num_exterior_facet_integrals() > 0 || b_ufc.form.num_exterior_facet_integrals() > 0) 
+      {
+        const uint D = mesh.topology().dim(); 
+
+        if (A_ufc.form.num_exterior_facet_integrals() > 0) 
+        {
+          for (FacetIterator facet(*cell); !facet.end(); ++facet)
+          {
+            if (facet->numEntities(D) != 2) 
+            {
+
+              compute_tensor_on_one_exterior_facet(a, A_ufc, *cell, *facet, A_coefficients, exterior_facet_domains);
+
+              for (uint i=0; i<b_num_entries; i++) 
+                Ae[i] += A_ufc.A[i]; 
+
+              compute_tensor_on_one_exterior_facet(L, b_ufc, *cell, *facet, b_coefficients, exterior_facet_domains);
+
+              for (uint i=0; i<b_num_entries; i++) 
+                be[i] += b_ufc.A[i]; 
+            }
+          }
+        }
+
+
+        // Enforce Dirichlet boundary conditions
+        uint m = A_ufc.local_dimensions[0]; 
+        uint n = A_ufc.local_dimensions[1]; 
+        for (uint i=0; i<n; i++) 
+        {  
+          uint ii = A_ufc.dofs[1][i]; 
+          if (indicators[ii] > 0) 
+          {  
+            be[i] = g[ii]; 
+            for (uint k=0; k<n; k++) 
+              Ae[k+i*n] = 0.0; 
+            for (uint j=0; j<m; j++) 
+            {
+              be[j] -= Ae[i+j*n]*g[ii]; 
+              Ae[i+j*n] = 0.0; 
+            }
+            Ae[i+i*n] = 1.0; 
+          }
+        }
+
+        // Add entries to global tensor
+        A.add(Ae, A_ufc.local_dimensions, A_ufc.dofs);
+        b.add(be, b_ufc.local_dimensions, b_ufc.dofs);
+      }
+    }
+  } else {
+    error("This assemble function is not implemented for forms with integrands on interior facet domains yet");
+  }
+
+  // -- Finalize tensors 
+  A.apply();
+  b.apply();
+
+  delete [] Ae;
+  delete [] be;
+  delete [] g;
+  delete [] indicators;
+}
+//-----------------------------------------------------------------------------
+
