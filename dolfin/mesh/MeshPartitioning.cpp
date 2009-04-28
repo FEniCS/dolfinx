@@ -71,7 +71,6 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   // Initialize entities of dimension d
   mesh.init(d);
 
-  std::string delim(", ");
   // Build entity-to-global-vertex-number information
   std::vector<std::vector<uint> > entities(mesh.size(d));
   for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
@@ -83,7 +82,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     entities[e->index()] = entity_vertices;
     std::stringstream mess;
     mess << "Entity[" << e->index() << "] = ";
-    print_container(mess, entity_vertices.begin(), entity_vertices.end(), delim);
+    print_container(mess, entity_vertices.begin(), entity_vertices.end());
     message(mess.str());
   }
   
@@ -128,7 +127,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     {
       std::stringstream mess;
       mess << "In overlap:";
-      print_container(mess, entity_vertices.begin(), entity_vertices.end(), delim);
+      print_container(mess, entity_vertices.begin(), entity_vertices.end());
       message(mess.str());
 
       std::vector<uint> intersection = (*overlap)[entity_vertices[0]];
@@ -148,7 +147,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       entity_processes = std::vector<uint>(intersection.begin(), intersection_end);
       mess.str("");
       mess << "Overlap: ";
-      print_container(mess, intersection.begin(), intersection_end, delim);
+      print_container(mess, intersection.begin(), intersection_end);
       message(mess.str());
     }
     
@@ -276,7 +275,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
         std::stringstream mess;
         mess << "Non-ignore entity ";
         std::string delim(", ");
-        print_container(mess, entity.begin(), entity.end(), delim);
+        print_container(mess, entity.begin(), entity.end());
         message(mess.str());
         ignored_entities.erase(entity);
         owned_entities.push_back(e);
@@ -361,7 +360,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       std::string delim(", ");
       std::stringstream mess;
       mess << "Erroneously got enity given by ";
-      print_container(mess, entity.begin(), entity.end(), delim);
+      print_container(mess, entity.begin(), entity.end());
       mess << " with global index " << global_index;
       message(mess.str());
     }
@@ -597,27 +596,27 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 {
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(mesh, mesh_data.cell_type->cellType(), mesh_data.gdim, mesh_data.tdim);
+  editor.open(mesh, mesh_data.cell_type->cell_type(), mesh_data.gdim, mesh_data.tdim);
 
   // Add vertices
-  editor.initVertices(mesh_data.vertex_coordinates.size());
+  editor.init_vertices(mesh_data.vertex_coordinates.size());
   Point p(mesh_data.gdim);
   for (uint i = 0; i < mesh_data.vertex_coordinates.size(); ++i)
   {
     for (uint j = 0; j < mesh_data.gdim; ++j)
       p[j] = mesh_data.vertex_coordinates[i][j];
-    editor.addVertex(i, p);
+    editor.add_vertex(i, p);
   }
   
   // Add cells
-  editor.initCells(mesh_data.cell_vertices.size());
-  const uint num_cell_vertices = mesh_data.cell_type->numEntities(0);
+  editor.init_cells(mesh_data.cell_vertices.size());
+  const uint num_cell_vertices = mesh_data.cell_type->num_entities(0);
   std::vector<uint> cell(num_cell_vertices);
   for (uint i = 0; i < mesh_data.cell_vertices.size(); ++i)
   {
     for (uint j = 0; j < num_cell_vertices; ++j)
       cell[j] = glob2loc[mesh_data.cell_vertices[i][j]];
-    editor.addCell(i, cell);
+    editor.add_cell(i, cell);
   }
   editor.close();
 
