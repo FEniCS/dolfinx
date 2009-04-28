@@ -113,10 +113,9 @@ void EpetraMatrix::get(double* block,
 {
   dolfin_assert(A);
   
-  int max_num_indices = A->MaxNumEntries();
   int num_entities    = 0;
-  int * indices       = new int[max_num_indices];
-  double * values     = new double[max_num_indices];
+  int * indices;
+  double * values;
   
   // For each row in rows
   for(uint i = 0; i < m; ++i)

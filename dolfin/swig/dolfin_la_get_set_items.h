@@ -9,7 +9,7 @@ enum DolfinCompareType {dolfin_gt, dolfin_ge, dolfin_lt, dolfin_le, dolfin_eq, d
 
 // Returns the values from a Vector. 
 // copied_values are true if the returned values are copied and need clean up.
-double* _get_vector_values( dolfin::GenericVector* self, bool copied_values){
+double* _get_vector_values( dolfin::GenericVector* self, bool &copied_values){
   double * values;
   try{
     // Try accessing the value pointer directly
@@ -52,8 +52,7 @@ PyObject* _compare_vector_with_value( dolfin::GenericVector* self, double value,
   npy_intp size = self->size();
   
   // Create the Numpy array
-  PyObject* return_array = PyArray_SimpleNew(1, &size, PyArray_BOOL);
-  Py_INCREF(return_array);
+  PyArrayObject* return_array = (PyArrayObject*)PyArray_SimpleNew(1, &size, PyArray_BOOL);
   
   // Get the data array
   npy_bool* bool_data = (npy_bool *)PyArray_DATA(return_array);
@@ -95,7 +94,7 @@ PyObject* _compare_vector_with_value( dolfin::GenericVector* self, double value,
   if (copied_values)
     delete [] values;
   
-  return return_array;
+  return PyArray_Return(return_array);
 }
 
 // A general compare function for Vector vs Vector comparison
@@ -111,8 +110,7 @@ PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::Gene
   npy_intp size = self->size();
   
   // Create the Numpy array
-  PyObject* return_array = PyArray_SimpleNew(1, &size, PyArray_BOOL);
-  Py_INCREF(return_array);
+  PyArrayObject* return_array = (PyArrayObject*)PyArray_SimpleNew(1, &size, PyArray_BOOL);
   
   // Get the data array
   npy_bool* bool_data = (npy_bool *)PyArray_DATA(return_array);
@@ -156,9 +154,9 @@ PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::Gene
     delete [] self_values;
   
   if (copied_values_other)
-    delete [] self_values;
+    delete [] other_values;
   
-  return return_array;
+  return PyArray_Return(return_array);
 }
 
 // Get single Vector item 
@@ -229,6 +227,7 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
   
   // Check for size of indices
   if ( inds->size() != other.size() ){
+    delete inds;
     throw std::runtime_error("non matching dimensions on input");
   }
   

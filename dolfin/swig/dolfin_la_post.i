@@ -342,27 +342,24 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     (*self)*=a;
   }
   
-  PyObject* data() {
+  PyObject* _data() {
     npy_intp rowdims[1];
     rowdims[0] = self->size(0)+1;
     
     PyArrayObject* rows = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, rowdims, NPY_ULONG, (char *)(std::tr1::get<0>(self->data()))));
     if ( rows == NULL ) return NULL;
-    PyArray_INCREF(rows);
     
     npy_intp coldims[1];
     coldims[0] = std::tr1::get<3>(self->data());
     
     PyArrayObject* cols = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, coldims, NPY_ULONG, (char *)(std::tr1::get<1>(self->data()))));
     if ( cols == NULL ) return NULL;
-    PyArray_INCREF(cols);
     
     npy_intp valuedims[1];
     valuedims[0] = std::tr1::get<3>(self->data());
     
     PyArrayObject* values = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, valuedims, NPY_DOUBLE, (char *)(std::tr1::get<2>(self->data()))));
     if ( values == NULL ) return NULL;
-    PyArray_INCREF(values);
     
     return PyTuple_Pack(3,rows, cols, values);
   }
@@ -387,6 +384,13 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             A[i,c] = v
         return A
 
+    def data(self):
+        """ Return arrays to underlying compresssed row/column storage data """
+        
+        if not (hasattr(self,"_rows") and hasattr(self,"_cols") and hasattr(self,"_nnz")):
+            self._rows, self._cols, self._nnz = self._data() # Keep references
+        return self._rows, self._cols, self._nnz
+        
     def __getitem__(self,indices):
         from numpy import ndarray
         from types import SliceType
@@ -579,7 +583,6 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   %}
 }
 %enddef
-
 
 // Vector la interface macro
 %define LA_VEC_DATA_ACCESS(VEC_TYPE)

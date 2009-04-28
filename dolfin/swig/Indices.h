@@ -243,6 +243,7 @@ public:
     unsigned int i, nz_ind;
     npy_bool* bool_data;
     PyArrayObject* npy_op;
+    PyObject* sum_res;
     
     if ( op == Py_None or !( PyArray_Check(op) and PyArray_ISBOOL(op) ) )
       throw std::runtime_error("expected numpy array of boolean");
@@ -258,7 +259,10 @@ public:
     bool_data = (npy_bool *) PyArray_DATA(npy_op);
 
     // Sum the array to get the numbers of indices
-    _index_size = PyInt_AsLong(PyArray_Sum(npy_op, 0, NPY_LONG, (PyArrayObject*)Py_None));
+    
+    sum_res = PyArray_Sum(npy_op, 0, NPY_LONG, (PyArrayObject*)Py_None);
+    _index_size = PyInt_AsLong(sum_res);
+    Py_DECREF(sum_res);
     
     // Construct the array and fill it with indices
     _indices = new unsigned int[_index_size];

@@ -97,8 +97,7 @@
 
 %newobject dolfin::MAT_TYPE::copy;
 
-%rename (_data) dolfin::MAT_TYPE::data() const;
-
+%ignore dolfin::MAT_TYPE::data;
 %ignore dolfin::MAT_TYPE::getitem;
 %ignore dolfin::MAT_TYPE::setitem;
 %ignore dolfin::MAT_TYPE::operator();
@@ -111,8 +110,8 @@ LA_PRE_VEC_INTERFACE(uBLASVector)
 
 LA_PRE_MAT_INTERFACE(GenericMatrix)
 LA_PRE_MAT_INTERFACE(Matrix)
-LA_PRE_MAT_INTERFACE(uBLASSparseMatrix)
-LA_PRE_MAT_INTERFACE(uBLASDenseMatrix)
+LA_PRE_MAT_INTERFACE(uBLASMatrix<dolfin::ublas_sparse_matrix>)
+LA_PRE_MAT_INTERFACE(uBLASMatrix<dolfin::ublas_dense_matrix>)
 
 LA_PRE_FACTORY(DefaultFactory)
 LA_PRE_FACTORY(uBLASFactory<dolfin::ublas_sparse_matrix>)
