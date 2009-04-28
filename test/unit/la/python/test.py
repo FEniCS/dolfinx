@@ -132,7 +132,7 @@ class AbstractBaseTest(object):
         self.run_matrix_test(False)
 
     def test_vector(self):
-        from numpy import ndarray, linspace, array
+        from numpy import ndarray, linspace, array, fromiter
         org = self.get_Vector()
 
         A = org.copy()
@@ -183,13 +183,36 @@ class AbstractBaseTest(object):
         G  = A[ind]
         G1 = A[ind1]
         G2 = A2[ind]
+        
+        G3 = A[A>1]
+        G4 = A2[A2>1]
+
+        A3 = fromiter(A,"d")
+
+        a = A[15]
+        b = 1.e10
+
         self.assertAlmostEqual(G1.sum(),G.sum())
         self.assertAlmostEqual(G2.sum(),G.sum())
+        self.assertAlmostEqual(len(G3),len(G4))
+        self.assertAlmostEqual(G3.sum(),G4.sum())
         self.assertAlmostEqual(A[-1],A[15])
         self.assertAlmostEqual(A[-16],A[0])
         self.assertEqual(len(ind),len(G))
         self.assertTrue(all(val==G[i] for i, val in enumerate(G)))
+        self.assertTrue((G==G1).all())
+        self.assertTrue((G<=G1).all())
+        self.assertTrue((G>=G1).all())
+        self.assertFalse((G<G1).any())
+        self.assertFalse((G>G1).any())
+        self.assertTrue(a in A)
+        self.assertTrue(b not in A)
+        self.assertTrue((A3==A2).all())
 
+        A[:] = A2
+
+        self.assertTrue((A==A2).all())
+        
         H  = A.copy()
         H.assign(0.0)
         H[ind] = G

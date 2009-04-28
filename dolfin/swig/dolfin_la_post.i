@@ -133,7 +133,65 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         v = zeros(self.size())
         self.get(v)
         return v
+    
+    def __contains__(self,value):
+        if not isinstance(value,(int,float)):
+            raise TypeError, "expected scalar"
+        return _contains(self,value)
 
+    def __gt__(self,value):
+        if isinstance(value,(int,float)):
+            return _compare_vector_with_value(self, value, dolfin_gt)
+        if isinstance(value,GenericVector):
+            return _compare_vector_with_vector(self, value, dolfin_gt)
+        return NotImplemented
+    
+    def __ge__(self,value):
+        if isinstance(value,(int,float)):
+            return _compare_vector_with_value(self, value, dolfin_ge)
+        if isinstance(value,GenericVector):
+            return _compare_vector_with_vector(self, value, dolfin_ge)
+        return NotImplemented
+    
+    def __lt__(self,value):
+        if isinstance(value,(int,float)):
+            return _compare_vector_with_value(self, value, dolfin_lt)
+        if isinstance(value,GenericVector):
+            return _compare_vector_with_vector(self, value, dolfin_lt)
+        return NotImplemented
+    
+    def __le__(self,value):
+        if isinstance(value,(int,float)):
+            return _compare_vector_with_value(self, value, dolfin_le)
+        if isinstance(value,GenericVector):
+            return _compare_vector_with_vector(self, value, dolfin_le)
+        return NotImplemented
+    
+    def __eq__(self,value):
+        if isinstance(value,(int,float)):
+            return _compare_vector_with_value(self, value, dolfin_eq)
+        if isinstance(value,GenericVector):
+            return _compare_vector_with_vector(self, value, dolfin_eq)
+        return NotImplemented
+    
+    def __neq__(self,value):
+        if isinstance(value,(int,float)):
+            return _compare_vector_with_value(self, value, dolfin_neq)
+        if isinstance(value,GenericVector):
+            return _compare_vector_with_vector(self, value, dolfin_neq)
+        return NotImplemented
+
+    def __neg__(self):
+        ret = self.copy()
+        ret *= -1
+        return ret
+
+    def __delitem__(self):
+        raise ValueError, "cannor delete Vector elements"
+    
+    def __delslice__(self):
+        raise ValueError, "cannor delete Vector elements"
+    
     def __getitem__(self, indices):
         from numpy import ndarray
         from types import SliceType
@@ -152,6 +210,14 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
                 return _set_vector_items_value(self, indices, values)
             else:
                 raise TypeError, "provide a scalar to set single item"
+        elif isinstance(indices, SliceType) and \
+             (indices.indices(len(self)) == (0,len(self),1)) and \
+             isinstance(values, (float, int, GenericVector)):
+            if isinstance(values, (float, int)) or len(values) == len(self):
+                self.assign(values)
+            else :
+                raise ValueError, "dimension error"
+                
         elif isinstance(indices, (SliceType, ndarray, list)):
             if isinstance(values, (float, int)):
                 _set_vector_items_value(self, indices, values)

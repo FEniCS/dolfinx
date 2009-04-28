@@ -1,16 +1,18 @@
-//#include <Python.h>
-//#include <numpy/arrayobject.h>
-//#include <dolfin.h>
+// Copyright (C) 2009 Johan Hake
+// Licensed under the GNU LGPL Version 2.1.
+//
+// First added:  2009-04-27
+// Last changed:  2009-04-27
 
 class Indices
 {
 public:
 
   // Constructor
-  Indices():_index_size(0),_array(0){}
+  Indices():_index_size(0),_indices(0),_range(0){}
 
   // Constructor
-  Indices(unsigned int size):_index_size(size),_array(0){}
+  Indices(unsigned int size):_index_size(size),_indices(0),_range(0){}
 
   // Destructor
   virtual ~Indices(){    
@@ -19,19 +21,31 @@ public:
   
   // Clear any created array
   void clear(){
-    if (_array == 0) 
-      delete[] _array;
+    if (_indices) 
+      delete[] _indices;
+    if (_range) 
+      delete[] _range;
   }
 
   // Returns an array of indices
-  unsigned int* array(){
+  unsigned int* indices(){
     // Construct the array if not excisting
-    if (_array == 0) {
-      _array = new unsigned int[size()];
+    if (!_indices) {
+      _indices = new unsigned int[size()];
       for ( unsigned int i = 0; i < size(); i++)
-	_array[i] = index(i);
+	_indices[i] = index(i);
     }
-    return _array;
+    return _indices;
+  }
+
+  unsigned int* range(){
+    // Construct the array if not excisting
+    if (!_range) {
+      _range = new unsigned int[size()];
+      for ( unsigned int i = 0; i < size(); i++)
+	_range[i] = i;
+    }
+    return _range;
   }
   
   // Returns the ith index, raises RuntimeError if i is out of range
@@ -57,7 +71,8 @@ public:
 protected:
 
   unsigned int _index_size;
-  unsigned int* _array;
+  unsigned int* _indices;
+  unsigned int* _range;
 
 };
 
@@ -156,7 +171,6 @@ public:
 private:
   PyObject* _list;
   unsigned int _vector_size;
-  unsigned int* _array;
 };
 
 
@@ -215,6 +229,68 @@ private:
   unsigned int _vector_size;
 };
 
+
+class BoolArrayIndices : public Indices
+  /// BoolArrayIndices provides a c++ wrapper class for a NumPy array of bool,
+  /// which is ment to hold indices to a Vector
+{
+public:
+
+  // Constructor
+  BoolArrayIndices( PyObject* op, unsigned int vector_size )
+    :Indices()
+  {
+    unsigned int i, nz_ind;
+    npy_bool* bool_data;
+    PyArrayObject* npy_op;
+    
+    if ( op == Py_None or !( PyArray_Check(op) and PyArray_ISBOOL(op) ) )
+      throw std::runtime_error("expected numpy array of boolean");
+    npy_op = (PyArrayObject*) op;
+
+    // An initial check of the length of the array
+    if (PyArray_NDIM(op)!=1)
+      throw std::runtime_error("provide an 1D array");
+    
+    if ( static_cast<unsigned int>(PyArray_DIM(npy_op,0)) != vector_size)
+      throw std::runtime_error("non matching dimensions");
+    
+    bool_data = (npy_bool *) PyArray_DATA(npy_op);
+
+    // Sum the array to get the numbers of indices
+    _index_size = PyInt_AsLong(PyArray_Sum(npy_op, 0, NPY_LONG, (PyArrayObject*)Py_None));
+    
+    // Construct the array and fill it with indices
+    _indices = new unsigned int[_index_size];
+    
+    nz_ind = 0;
+    for ( i = 0; i < vector_size; i++ ){
+      if ( bool_data[i] > 0){
+	_indices[nz_ind] = i;
+	nz_ind++;
+      }
+    }
+    std::cout << std::endl;
+  }
+  
+  // Destructor
+  virtual ~BoolArrayIndices(){
+  }
+  
+  // Returns the ith index, raises RuntimeError if i is out of range
+  virtual unsigned int index( unsigned int i ) {
+
+    // Check size of passed index
+    if ( i >= size() )
+      throw std::runtime_error("index out of range");
+    
+    // Return index
+    return _indices[i];
+  }
+  
+};
+
+
 // Return a new Indice object correspondning to the input
 Indices* indice_chooser( PyObject* op, unsigned int vector_size )
 {
@@ -234,6 +310,10 @@ Indices* indice_chooser( PyObject* op, unsigned int vector_size )
   else if (PyList_Check(op))
     inds = new ListIndices( op, vector_size );
 
+  // If the provided indices are in a Numpy array of boolean
+  else if (PyArray_Check(op) and PyArray_ISBOOL(op))
+    inds = new BoolArrayIndices( op, vector_size );
+  
   // If the provided indices are in a Numpy array of integers
   else if (PyArray_Check(op) and PyArray_ISINTEGER(op))
     inds = new IntArrayIndices( op, vector_size );
@@ -244,3 +324,4 @@ Indices* indice_chooser( PyObject* op, unsigned int vector_size )
 
   return inds;
 }
+
