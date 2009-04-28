@@ -71,13 +71,17 @@ namespace dolfin
       else return ufc_dof_map->global_dimension();
     }
 
-    /// Return the dimension of the local finite element function space
-    unsigned int local_dimension() const
-    { return ufc_dof_map->local_dimension(); }
+    /// Return the dimension of the local finite element function space on a cell
+    unsigned int local_dimension(const ufc::cell& cell) const
+    { return ufc_dof_map->local_dimension(cell); }
 
-    /// Return the dimension of the local finite element function space
-    unsigned int macro_local_dimension() const
-    { return ufc_dof_map->local_dimension(); }
+    /// Return the dimension of the local finite element function space on a cell
+    unsigned int macro_local_dimension(const ufc::cell& cell) const
+    { return ufc_dof_map->local_dimension(cell); }
+
+    /// Return the maximum dimension of the local finite element function space
+    unsigned int max_local_dimension() const
+    { return ufc_dof_map->max_local_dimension(); }
 
     /// Return number of facet dofs
     unsigned int num_facet_dofs() const

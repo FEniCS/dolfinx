@@ -187,7 +187,7 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
     _dofmap->tabulate_dofs(scratch.dofs, ufc_cell, cell->index());
 
     // Copy dofs to vector
-    coefficients.set(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
+    coefficients.set(scratch.coefficients, _dofmap->local_dimension(ufc_cell), scratch.dofs);
   }
 }
 //-----------------------------------------------------------------------------

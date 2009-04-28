@@ -313,11 +313,11 @@ void Function::interpolate(double* coefficients,
     const DofMap& dofmap = V.dofmap();
 
     // Tabulate dofs
-    uint* dofs = new uint[dofmap.local_dimension()];
+    uint* dofs = new uint[dofmap.max_local_dimension()];
     dofmap.tabulate_dofs(dofs, ufc_cell, cell_index);
 
     // Pick values from global vector
-    _vector->get(coefficients, dofmap.local_dimension(), dofs);
+    _vector->get(coefficients, dofmap.local_dimension(ufc_cell), dofs);
     delete [] dofs;
   }
   else

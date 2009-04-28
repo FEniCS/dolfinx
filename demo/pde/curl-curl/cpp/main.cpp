@@ -61,7 +61,7 @@ int main()
   UnitSphere mesh(8);
 
   // Define functions
-  Source d_bdt;
+  Source dbdt;
   Zero zero;
   Function T;
   Function J;
@@ -74,7 +74,7 @@ int main()
   // Use forms to define variational problem
   EddyCurrentsBilinearForm a(V,V);
   EddyCurrentsLinearForm L(V);
-  L.d_bdt = d_bdt;
+  L.dbdt = dbdt;
   VariationalProblem problem (a, L,  bc);
 
   // Solve problem using default solver

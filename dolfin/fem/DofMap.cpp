@@ -182,7 +182,9 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_inde
 
   if (dof_map)
   {
-    const uint n = local_dimension();
+    // FIXME: This will only work for problem where local_dimension is the
+    //        same for all cell
+    const uint n = local_dimension(ufc_cell);
     uint offset = 0;
     offset = n*cell_index;
     for (uint i = 0; i < n; i++)
@@ -202,7 +204,7 @@ void DofMap::build(UFC& ufc, Mesh& mesh)
 void DofMap::build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction<bool>& meshfunction)
 {
   // Allocate dof map
-  uint n = ufc_dof_map->local_dimension();
+  uint n = ufc_dof_map->max_local_dimension();
   uint* dofs = new uint[n];
   dof_map = new int[n*mesh.num_cells()];
   cell_map = new int[mesh.num_cells()];
@@ -300,12 +302,12 @@ void DofMap::disp() const
   cout << "-----------------" << endl;
   begin("");
 
-  cout << "Signature:            " << ufc_dof_map->signature() << endl;
-  cout << "Global dimension:     " << ufc_dof_map->global_dimension() << endl;
-  cout << "Local dimension:      " << ufc_dof_map->local_dimension() << endl;
-  cout << "Geometric dimension:  " << ufc_dof_map->geometric_dimension() << endl;
-  cout << "Number of subdofmaps: " << ufc_dof_map->num_sub_dof_maps() << endl;
-  cout << "Number of facet dofs: " << ufc_dof_map->num_facet_dofs() << endl;
+  cout << "Signature:               " << ufc_dof_map->signature() << endl;
+  cout << "Global dimension:        " << ufc_dof_map->global_dimension() << endl;
+  cout << "Maximum local dimension: " << ufc_dof_map->max_local_dimension() << endl;
+  cout << "Geometric dimension:     " << ufc_dof_map->geometric_dimension() << endl;
+  cout << "Number of subdofmaps:    " << ufc_dof_map->num_sub_dof_maps() << endl;
+  cout << "Number of facet dofs:    " << ufc_dof_map->num_facet_dofs() << endl;
 
   for(uint d = 0; d <= dolfin_mesh.topology().dim(); d++)
   {
@@ -391,18 +393,19 @@ void DofMap::disp() const
   begin("");
   {
     uint tdim = dolfin_mesh.topology().dim();
-    uint num_dofs = ufc_dof_map->local_dimension();
-    uint* dofs = new uint[num_dofs];
+    uint max_num_dofs = ufc_dof_map->max_local_dimension();
+    uint* dofs = new uint[max_num_dofs];
     CellIterator cell(dolfin_mesh);
     UFCCell ufc_cell(*cell);
     for (; !cell.end(); ++cell)
     {
       ufc_cell.update(*cell);
+      uint num_dofs = ufc_dof_map->local_dimension(ufc_cell);
 
       ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
 
       cout << "Cell " << ufc_cell.entity_indices[tdim][0] << ":  ";
-      for(uint j=0; j<num_dofs; j++)
+      for(uint j = 0; j < num_dofs; j++)
       {
         cout << dofs[j];
         if(j < num_dofs-1) cout << ", ";
@@ -420,9 +423,9 @@ void DofMap::disp() const
   {
     uint tdim = dolfin_mesh.topology().dim();
     uint gdim = ufc_dof_map->geometric_dimension();
-    uint num_dofs = ufc_dof_map->local_dimension();
-    double** coordinates = new double*[num_dofs];
-    for(uint k=0; k<num_dofs; k++)
+    uint max_num_dofs = ufc_dof_map->max_local_dimension();
+    double** coordinates = new double*[max_num_dofs];
+    for(uint k=0; k<max_num_dofs; k++)
     {
       coordinates[k] = new double[gdim];
     }
@@ -431,6 +434,7 @@ void DofMap::disp() const
     for (; !cell.end(); ++cell)
     {
       ufc_cell.update(*cell);
+      uint num_dofs = ufc_dof_map->local_dimension(ufc_cell);
 
       ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell);
 

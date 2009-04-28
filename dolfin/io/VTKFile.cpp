@@ -191,7 +191,7 @@ void VTKFile::results_write(const Function& u) const
   uint cell_based_dim = 1;
   for (uint i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
-  if (dofmap.local_dimension() == cell_based_dim)
+  if (dofmap.max_local_dimension() == cell_based_dim)
     data_type = "cell";
 
   // Open file

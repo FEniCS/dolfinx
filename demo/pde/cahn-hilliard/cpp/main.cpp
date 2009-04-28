@@ -37,7 +37,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         if (!_a) error("Problem in downcast of CahnHilliard2DBilinearForm");
         _a->w0 = u;
         _a->lmbda = lambda;
-        _a->mu_factor = mu_factor;
+        _a->muFactor = mu_factor;
         _a->dt = dt;
         _a->theta = theta;
 
@@ -47,7 +47,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         _L->w0 = u;
         _L->w1 = u0;
         _L->lmbda = lambda;
-        _L->mu_factor = mu_factor;
+        _L->muFactor = mu_factor;
         _L->dt = dt;
         _L->theta = theta;
       }
@@ -60,7 +60,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         if (!_a) error("Problem in downcast of CahnHilliard3DBilinearForm");
         _a->w0 = u;
         _a->lmbda = lambda;
-        _a->mu_factor = mu_factor;
+        _a->muFactor = mu_factor;
         _a->dt = dt;
         _a->theta = theta;
 
@@ -70,7 +70,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         _L->w0 = u;
         _L->w1 = u0;
         _L->lmbda = lambda;
-        _L->mu_factor = mu_factor;
+        _L->muFactor = mu_factor;
         _L->dt = dt;
         _L->theta = theta;
       }

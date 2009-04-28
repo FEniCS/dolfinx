@@ -95,7 +95,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       // Tabulate dofs for each dimension on macro element
       for (uint i = 0; i < ufc.form.rank(); ++i)
       {
-        const uint offset = dof_maps[i]->local_dimension();
+        const uint offset = dof_maps[i]->local_dimension(ufc.cell0);
         dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i], ufc.cell0, cell0.index());
         dof_maps[i]->tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
       }
@@ -191,7 +191,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       // Tabulate dofs for each dimension on macro element
       for (uint i = 0; i < ufc.form.rank(); ++i)
       {
-        const uint offset = a.function_space(i).dofmap().local_dimension();
+        const uint offset = a.function_space(i).dofmap().local_dimension(ufc.cell0);
         a.function_space(i).dofmap().tabulate_dofs(ufc.macro_dofs[i], ufc.cell0, cell0.index());
         a.function_space(i).dofmap().tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
       }
