@@ -1,12 +1,12 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2007,-2008
+// Modified by Garth N. Wells, 2007-2009
 // Modified by Ola Skavhaug, 2007-2008
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-01-06
+// Last changed: 2009-04-29
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
