@@ -1364,7 +1364,7 @@ void Assembler::assemble_system_new(GenericMatrix& A,
   if (x0)
   {
     warning("Symmetric application of Dirichlet boundary conditions for incremental problems is untested.");
-    dolfin_assert( x0->size() == N);
+    dolfin_assert(x0->size() == N);
     double* x0_values = new double[N];
     x0->get(x0_values);
     for (uint i = 0; i < N; i++)
@@ -1419,14 +1419,11 @@ void Assembler::assemble_system_new(GenericMatrix& A,
           {
             if (facet->num_entities(D) != 2) 
             {
-
               compute_tensor_on_one_exterior_facet(a, A_ufc, *cell, *facet, A_coefficients, exterior_facet_domains);
-
               for (uint i=0; i<b_num_entries; i++) 
                 Ae[i] += A_ufc.A[i]; 
 
               compute_tensor_on_one_exterior_facet(L, b_ufc, *cell, *facet, b_coefficients, exterior_facet_domains);
-
               for (uint i=0; i<b_num_entries; i++) 
                 be[i] += b_ufc.A[i]; 
             }

@@ -99,7 +99,6 @@ namespace dolfin
     double** macro_w;
 
   };
-
 }
 
 #endif
