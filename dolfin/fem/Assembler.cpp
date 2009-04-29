@@ -1172,13 +1172,12 @@ void Assembler::assemble_system(GenericMatrix& A,
   delete [] g;
   delete [] indicators;
 }
-
+//-----------------------------------------------------------------------------
 void Assembler::compute_tensor_on_one_cell(const Form& a,
                                            UFC& ufc, 
                                            const Cell& cell, 
                                            const std::vector<const Function*>& coefficients, 
-                                           const MeshFunction<uint>* cell_domains
-                                           ) 
+                                           const MeshFunction<uint>* cell_domains) 
 {
     // Cell integral
     ufc::cell_integral* integral = ufc.cell_integrals[0];
@@ -1205,16 +1204,13 @@ void Assembler::compute_tensor_on_one_cell(const Form& a,
     // Tabulate cell tensor
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
 }
-
 //-----------------------------------------------------------------------------
-void Assembler::compute_tensor_on_one_exterior_facet
-  (const Form& a,
-   UFC& ufc, 
-   const Cell& cell, 
-   const Facet& facet,
-   const std::vector<const Function*>& coefficients, 
-   const MeshFunction<uint>* exterior_facet_domains
-   ) 
+void Assembler::compute_tensor_on_one_exterior_facet(const Form& a,
+                              UFC& ufc, 
+                              const Cell& cell, 
+                              const Facet& facet,
+                              const std::vector<const Function*>& coefficients, 
+                              const MeshFunction<uint>* exterior_facet_domains) 
 {
   // Get facet integral
   ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];; 
@@ -1240,11 +1236,11 @@ void Assembler::compute_tensor_on_one_exterior_facet
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble_system_new(GenericMatrix& A,
-                                GenericVector& b,
-                                const Form& a,
-                                const Form& L,
-                                const DirichletBC& bc,
-                                bool reset_tensors)
+                                    GenericVector& b,
+                                    const Form& a,
+                                    const Form& L,
+                                    const DirichletBC& bc,
+                                    bool reset_tensors)
 {
   std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
@@ -1252,16 +1248,14 @@ void Assembler::assemble_system_new(GenericMatrix& A,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble_system_new(GenericMatrix& A,
-                                GenericVector& b,
-                                const Form& a,
-                                const Form& L,
-                                std::vector<const DirichletBC*>& bcs,
-                                bool reset_tensors)
+                                    GenericVector& b,
+                                    const Form& a,
+                                    const Form& L,
+                                    std::vector<const DirichletBC*>& bcs,
+                                    bool reset_tensors)
 {
   assemble_system(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
 }
-
-
 //-----------------------------------------------------------------------------
 void Assembler::assemble_system_new(GenericMatrix& A,
                                 GenericVector& b,
@@ -1390,10 +1384,9 @@ void Assembler::assemble_system_new(GenericMatrix& A,
           }
         }
 
-
         // Enforce Dirichlet boundary conditions
-        uint m = A_ufc.local_dimensions[0]; 
-        uint n = A_ufc.local_dimensions[1]; 
+        const uint m = A_ufc.local_dimensions[0]; 
+        const uint n = A_ufc.local_dimensions[1]; 
         for (uint i=0; i<n; i++) 
         {  
           uint ii = A_ufc.dofs[1][i]; 
@@ -1416,7 +1409,9 @@ void Assembler::assemble_system_new(GenericMatrix& A,
         b.add(be, b_ufc.local_dimensions, b_ufc.dofs);
       }
     }
-  } else {
+  } 
+  else 
+  {
     error("This assemble function is not implemented for forms with integrands on interior facet domains yet");
   }
 
