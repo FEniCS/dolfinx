@@ -8,7 +8,6 @@
 // First added:  2007-01-17
 // Last changed: 2009-01-06
 
-#include <ufc.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>

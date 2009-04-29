@@ -7,7 +7,7 @@
 #ifndef __UFC_MESH_H
 #define __UFC_MESH_H
 
-#include <ufc.h>
+#include "UFC.h"
 #include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
