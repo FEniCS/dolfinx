@@ -1,3 +1,4 @@
+/* -*- C -*-  (for syntax highlighting) */
 // Copyright (C) 2009 Johan Hake
 // Licensed under the GNU LGPL Version 2.1.
 //
@@ -329,6 +330,7 @@ void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double 
       throw;
     }
 
+    // Fill and array with the value and call set()
     values = new double[inds->size()];
     for ( i = 0; i < inds->size(); i++)
       values[i] = value;
@@ -457,6 +459,9 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self
   // Create the return matrix
   return_mat = self->factory().create_matrix();
   return_mat->resize(m,n);
+
+  // Zero the matrice (needed for the uBLASDenseMatrix)
+  return_mat->zero();
   
   // Fill the get the values from me and set non zero values in return matrix
   tmp_index_array = new dolfin::uint[n];

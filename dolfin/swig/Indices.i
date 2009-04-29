@@ -1,3 +1,4 @@
+/* -*- C -*-  (for syntax highlighting) */
 // Copyright (C) 2009 Johan Hake
 // Licensed under the GNU LGPL Version 2.1.
 //

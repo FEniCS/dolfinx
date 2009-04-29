@@ -100,8 +100,9 @@ class AbstractBaseTest(object):
         self.assertEqual(B.size(),A.size(1))
         self.assertEqual(B[1],A[0,1])
         
-        # Epetra backend does not implement resize () which is needed by Matrix slicing
         if self.backend == "Epetra":
+            print "Testing of Matrix slicing is turned of for the Epetra backend:"
+            print "because resize() is not implemented."
             return
         
         inds1 = [0,4,5,10]
@@ -243,8 +244,10 @@ class AbstractBaseTest(object):
         self.assertRaises(RuntimeError,wrong_dim,[0,2],slice(0,4,1))
         self.assertRaises(TypeError,wrong_dim,0,slice(0,4,1))
 
-        # Vector multiplication is not implemented for the MTL4 backend
         if self.backend == "MTL4":
+            print "Testing of pointwise vector multiplication is turned of "
+            print "for the MTL4 backend, because operator*=(const GenericVector)"
+            print "is not implemented"
             return
         
         A*=B
