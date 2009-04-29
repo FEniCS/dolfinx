@@ -10,7 +10,7 @@
 #include <dolfin/log/log.h>
 #include <boost/shared_ptr.hpp>
 #include <vector>
-#include <ufc.h>
+#include "UFC.h"
 #include <dolfin/common/types.h>
 #include <dolfin/common/NoDeleter.h>
 

@@ -77,10 +77,10 @@ namespace dolfin
     // Local tensor for macro element
     double* macro_A;
 
-    // std::vector of local dimensions for each argument
+    // std::vector for local dimensions for each argument
     uint* local_dimensions;
 
-    // std::vector of local dimensions of macro element for primary arguments
+    // std::vector for local dimensions of macro element for primary arguments
     uint* macro_local_dimensions;
 
     // std::vector of global dimensions for primary arguments

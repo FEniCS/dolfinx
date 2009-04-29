@@ -14,6 +14,7 @@
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/UFC.h>
 #include "Data.h"
 #include "UFCFunction.h"
 #include "FunctionSpace.h"

@@ -8,7 +8,6 @@
 // First added:  2007-01-17
 // Last changed: 2009-01-06
 
-#include <ufc.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -195,7 +194,12 @@ void Assembler::assemble_cells(GenericTensor& A,
     if (values && ufc.form.rank() == 0)
       (*values)[cell->index()] = ufc.A[0];
     else
+    {
+      // Get local dimensions
+      for (uint i = 0; i < a.rank(); i++)
+        ufc.local_dimensions[i] = a.function_space(i).dofmap().local_dimension(ufc.cell);
       A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
+    }
 
     p++;
   }
@@ -261,6 +265,10 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
 
     // Tabulate exterior facet tensor
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
+
+    // Get local dimensions
+    for (uint i = 0; i < a.rank(); i++)
+      ufc.local_dimensions[i] = a.function_space(i).dofmap().local_dimension(ufc.cell);
 
     // Add entries to global tensor
     A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
@@ -332,15 +340,20 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     }
 
     // Tabulate dofs for each dimension on macro element
-    for (uint i = 0; i < ufc.form.rank(); i++)
+    for (uint i = 0; i < a.rank(); i++)
     {
-      const uint offset = ufc.local_dimensions[i];
+      const uint offset = a.function_space(i).dofmap().local_dimension(ufc.cell0);
       a.function_space(i).dofmap().tabulate_dofs(ufc.macro_dofs[i],          ufc.cell0, cell0.index());
       a.function_space(i).dofmap().tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
     }
 
     // Tabulate exterior interior facet tensor on macro element
     integral->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1, facet0, facet1);
+
+    // Get local dimensions
+    for (uint i = 0; i < a.rank(); i++)
+      ufc.macro_local_dimensions[i] = a.function_space(i).dofmap().local_dimension(ufc.cell0)
+                                    + a.function_space(i).dofmap().local_dimension(ufc.cell1);
 
     // Add entries to global tensor
     A.add(ufc.macro_A, ufc.macro_local_dimensions, ufc.macro_dofs);
@@ -707,7 +720,6 @@ void Assembler::assemble_system(GenericMatrix& A,
       b.add(be, b_ufc.local_dimensions, b_ufc.dofs);
     }
   }
-
 
   if (A_ufc.form.num_interior_facet_integrals() > 0 || b_ufc.form.num_interior_facet_integrals() > 0)
   {

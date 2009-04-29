@@ -225,6 +225,20 @@ const PETScVector& PETScVector::operator*= (const double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const PETScVector& PETScVector::operator*= (const GenericVector& y)
+{
+  dolfin_assert(x);
+  
+  const PETScVector& v = y.down_cast<PETScVector>();
+  dolfin_assert(v.x);
+
+  if (size() != v.size())
+    error("The vectors must be of the same size.");  
+
+  VecPointwiseMult(*x,*x,*v.x);
+  return *this;
+}
+//-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator/= (const double a)
 {
   dolfin_assert(x);

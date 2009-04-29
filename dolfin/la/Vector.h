@@ -123,6 +123,10 @@ namespace dolfin
     virtual const Vector& operator*= (double a)
     { *vector *= a; return *this; }
 
+    /// Multiply vector by another vector pointwise
+    virtual const Vector& operator*= (const GenericVector& x)
+    { *vector *= x; return *this; }
+
     /// Divide vector by given number
     virtual const Vector& operator/= (double a)
     { *this *= 1.0 / a; return *this; }

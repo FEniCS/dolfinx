@@ -9,7 +9,7 @@
 #ifndef __UFC_FUNCTION_H
 #define __UFC_FUNCTION_H
 
-#include <ufc.h>
+#include <dolfin/fem/UFC.h>
 
 namespace dolfin
 {

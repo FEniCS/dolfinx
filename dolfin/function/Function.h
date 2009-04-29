@@ -11,14 +11,20 @@
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
-#include <ufc.h>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
 
+namespace ufc
+{
+  // Forward declarations
+  class cell;
+}
+
 namespace dolfin
 {
 
+  // Forward declarations
   class FunctionSpace;
   class GenericVector;
   class Data;

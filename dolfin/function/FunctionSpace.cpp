@@ -9,7 +9,7 @@
 // First added:  2008-09-11
 // Last changed: 2009-01-06
 
-#include <ufc.h>
+#include <dolfin/fem/UFC.h>
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Vertex.h>

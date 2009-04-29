@@ -13,10 +13,10 @@
 #include <boost/shared_ptr.hpp>
 #include <map>
 #include <vector>
-#include <ufc.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include "UFC.h"
 #include "UFCCell.h"
 #include "UFCMesh.h"
 
