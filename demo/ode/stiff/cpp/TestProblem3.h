@@ -11,7 +11,7 @@ using namespace dolfin;
 class TestProblem3 : public ODE
 {
 public:
-  
+
   TestProblem3() : ODE(2, 1.0)
   {
     message("A non-normal test problem, critically damped oscillation.");

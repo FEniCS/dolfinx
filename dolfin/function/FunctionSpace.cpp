@@ -79,7 +79,7 @@ const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
   {
     delete intersection_detector;
     intersection_detector = 0;
-  }  
+  }
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -187,7 +187,7 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
     _dofmap->tabulate_dofs(scratch.dofs, ufc_cell, cell->index());
 
     // Copy dofs to vector
-    coefficients.set(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
+    coefficients.set(scratch.coefficients, _dofmap->local_dimension(ufc_cell), scratch.dofs);
   }
 }
 //-----------------------------------------------------------------------------
@@ -201,7 +201,7 @@ void FunctionSpace::interpolate(double* vertex_values,
   dolfin_assert(_dofmap);
 
   // Local data for interpolation on each cell
-  const uint num_cell_vertices = _mesh->type().numVertices(_mesh->topology().dim());
+  const uint num_cell_vertices = _mesh->type().num_vertices(_mesh->topology().dim());
   double* local_vertex_values = new double[scratch.size*num_cell_vertices];
 
   // Interpolate vertex values on each cell (using latest value if not continuous)
@@ -226,7 +226,7 @@ void FunctionSpace::interpolate(double* vertex_values,
       for (uint i = 0; i < scratch.size; ++i)
       {
         const uint local_index  = vertex.pos()*scratch.size + i;
-        const uint global_index = i*_mesh->numVertices() + vertex->index();
+        const uint global_index = i*_mesh->num_vertices() + vertex->index();
         vertex_values[global_index] = local_vertex_values[local_index];
       }
     }
@@ -246,7 +246,7 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vec
   std::ostringstream identifier;
   for (uint i = 0; i < component.size(); ++i)
     identifier << component[i] << ".";
-  
+
   // Check if sub space is aleady in the cache
   std::map<std::string, boost::shared_ptr<FunctionSpace> >::iterator subspace;
   subspace = subspaces.find(identifier.str());
@@ -259,7 +259,7 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vec
   // Extract sub dofmap and offset
   uint offset = 0;
   boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component, offset, *_mesh));
-  
+
   // Create new sub space
   boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
 
@@ -333,9 +333,9 @@ void FunctionSpace::Scratch::init(const FiniteElement& element)
 //-----------------------------------------------------------------------------
 bool FunctionSpace::is_inside_restriction(uint c) const
 {
-  if (_restriction) 
+  if (_restriction)
     return _restriction->get(c);
-  else 
+  else
     return true;
 }
 //-----------------------------------------------------------------------------

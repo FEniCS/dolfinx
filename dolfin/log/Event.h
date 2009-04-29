@@ -40,12 +40,12 @@ namespace dolfin
 
     /// Display message
     void operator() ();
-    
+
     /// Display count
     unsigned int count() const;
 
     /// Maximum display count
-    unsigned int maxcount() const;    
+    unsigned int maxcount() const;
 
   private:
 

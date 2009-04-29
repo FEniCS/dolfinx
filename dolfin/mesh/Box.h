@@ -28,7 +28,7 @@ namespace dolfin
         uint nx, uint ny, uint nz);
 
   };
-  
+
 }
 
 #endif

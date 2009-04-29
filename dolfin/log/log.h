@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2007.
-// 
+//
 // First added:  2003-03-13
 // Last changed: 2008-07-23
 
@@ -16,7 +16,7 @@
 
 namespace dolfin
 {
-  
+
   /// The DOLFIN log system provides the following set of functions for
   /// uniform handling of log messages, warnings and errors. In addition,
   /// macros are provided for debug messages and assertions.
@@ -41,7 +41,7 @@ namespace dolfin
 
   /// Print message
   void message(int debug_level, std::string msg, ...);
-  
+
   /// Print warning
   void warning(std::string msg, ...);
 

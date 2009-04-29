@@ -32,7 +32,7 @@ void ODECollection::solve(real t0, real t1)
   for (uint system = 0; system < num_systems; system++)
   {
     begin("Time-stepping ODE system number %d.", system);
-    
+
     // Compute offset for ODE
     const uint offset = system*ode.size();
 
@@ -41,7 +41,7 @@ void ODECollection::solve(real t0, real t1)
 
     // Call user-defined update
     update(states + offset, t0, system);
-    
+
     // Time-stepping
     ode.solve(u, t0, t1);
 

@@ -15,30 +15,30 @@
 #include "MTL4Vector.h"
 #include <boost/numeric/itl/itl.hpp>
 
-using namespace dolfin; 
+using namespace dolfin;
 using namespace itl;
 using namespace mtl;
 
 //-----------------------------------------------------------------------------
-ITLKrylovSolver::ITLKrylovSolver(SolverType method_, PreconditionerType pc_) 
+ITLKrylovSolver::ITLKrylovSolver(SolverType method_, PreconditionerType pc_)
                                : method(method_), pc_type(pc_)
-{ 
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-ITLKrylovSolver::~ITLKrylovSolver() 
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint ITLKrylovSolver::solve(const GenericMatrix& A, GenericVector& x, 
-                                    const GenericVector& b) 
+ITLKrylovSolver::~ITLKrylovSolver()
 {
-  return solve(A.down_cast<MTL4Matrix>(), x.down_cast<MTL4Vector>(), 
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+dolfin::uint ITLKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
+                                    const GenericVector& b)
+{
+  return solve(A.down_cast<MTL4Matrix>(), x.down_cast<MTL4Vector>(),
                b.down_cast<MTL4Vector>());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x, 
+dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
                                     const MTL4Vector& b)
 {
   // Fall back in default method if unknown
@@ -69,7 +69,7 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
   int errno_ = 0;
 
   // Developers note: the following code is not very elegant.
-  // The problem is that ITL are all templates, but DOLFIN selects 
+  // The problem is that ITL are all templates, but DOLFIN selects
   // solvers at runtime. All solvers and preconditioners are instantiated.
   if(pc_type == ilu)
   {
@@ -95,7 +95,7 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
     else if(method == bicgstab)
       errno_ = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
   }
-  
+
   // Check exit condition
   if(errno_ == 0)
     message("ITLSolver (%d, %d) converged in %d iterations. Resid=%8.2e",
@@ -103,15 +103,15 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
   else
     warning("ITLKrylovSolver: (%d, %d) failed to converge!\n\t%d iterations,"
 	  " Resid=%8.2e", method, pc_type, iter.iterations(), iter.resid());
-  
-  return iter.iterations(); 
+
+  return iter.iterations();
 }
 //-----------------------------------------------------------------------------
-void ITLKrylovSolver::disp() const 
+void ITLKrylovSolver::disp() const
 {
-  error("ITLKrylovSolver::disp not implemented"); 
+  error("ITLKrylovSolver::disp not implemented");
 }
 //-----------------------------------------------------------------------------
-#endif 
+#endif
 
 

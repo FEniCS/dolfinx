@@ -1,7 +1,7 @@
-# This demo program solves Poisson's using 
-# using a discontinuous Galerkin formulation 
+# This demo program solves Poisson's using
+# using a discontinuous Galerkin formulation
 # and enforcing boundary conditions in a symmetric way.
-# The demo builds on the standard dg demo 
+# The demo builds on the standard dg demo
 # demo/pde/dg/poisson/python/demo.py
 
 __author__    = "Kent-Andre Mardal"
@@ -20,7 +20,7 @@ dolfin_set("linear algebra backend", "uBLAS")
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
-        return bool(on_boundary) 
+        return bool(on_boundary)
 
 
 
@@ -58,14 +58,14 @@ a = dot(grad(v), grad(u))*dx \
 # Linear form
 L = v*f*dx
 
-# Standard way of computing A and b 
+# Standard way of computing A and b
 A = assemble(a)
 b = assemble(L)
 x = b.copy()
 x.zero()
 solve(A, x, b)
-file = File("A1.m") ; file << A; 
-file = File("b1.m") ; file << b; 
+file = File("A1.m") ; file << A;
+file = File("b1.m") ; file << b;
 
 # Project u
 u = Function(V)
@@ -84,13 +84,13 @@ file << u_proj
 # Plot solution
 plot(u_proj, interactive=True)
 
-# Symmetric way of computing A and b 
+# Symmetric way of computing A and b
 A, b = assemble_system(a, L, bc, mesh)
 x = b.copy()
 x.zero()
 solve(A, x, b)
-file = File("A2.m") ; file << A; 
-file = File("b2.m") ; file << b; 
+file = File("A2.m") ; file << A;
+file = File("b2.m") ; file << b;
 
 # Project u
 u = Function(V)

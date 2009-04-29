@@ -35,7 +35,7 @@ namespace dolfin
   ///
   /// For a nonlinear variational problem, the forms should
   /// be given by
-  /// 
+  ///
   ///     a(v, u) = F_u'(v) u = F_u'(v, u),
   ///     L(v)    = F(v),
   ///

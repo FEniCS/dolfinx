@@ -134,7 +134,7 @@ namespace dolfin
 
     // Epetra_FECrsMatrix pointer
     boost::shared_ptr<Epetra_FECrsMatrix> A;
-    
+
   };
 
   LogStream& operator<< (LogStream& stream, const EpetraMatrix& A);

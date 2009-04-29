@@ -45,23 +45,23 @@ namespace dolfin
 
     /// Compute overlap with mesh
     void intersection(const Mesh& mesh1, std::vector<uint>& intersection);
-    
+
     /// Compute overlap with mesh (test version)
     void new_intersection(const Mesh& mesh1, std::vector<uint>& intersection);
-    
+
 
   private:
 
     /// Compute points for the new intesected mesh
-    void compute_polygon(const Mesh& mesh1, const Cell& c0, 
+    void compute_polygon(const Mesh& mesh1, const Cell& c0,
                          const std::vector<uint>& intersections) const;
-    
+
     // Interface to GTS
     GTSInterface* gts;
 
     // The mesh that we are intersecting
     const Mesh& mesh0;
-    
+
   };
 
 }

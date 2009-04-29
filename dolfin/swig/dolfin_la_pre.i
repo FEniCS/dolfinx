@@ -19,7 +19,7 @@
     return NULL;
   }
   if (PyTuple_Size($input) != 2){
-    PyErr_SetString(PyExc_TypeError,"expected a tuple with size 2");	
+    PyErr_SetString(PyExc_TypeError,"expected a tuple with size 2");
     return NULL;
   }
    ij.first   = PyLong_AsUnsignedLong(PyTuple_GetItem($input,0));
@@ -31,13 +31,13 @@
 %typemap(in) const double* block = double* _array;
 %typemap(in) (dolfin::uint m, const dolfin::uint* rows) = (int _array_dim, unsigned int* _array);
 %typemap(in) (dolfin::uint n, const dolfin::uint* cols) = (int _array_dim, unsigned int* _array);
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (dolfin::uint m, const dolfin::uint* rows) 
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (dolfin::uint m, const dolfin::uint* rows)
 {
     // rows typemap
     $1 = PyArray_Check($input);
 }
 
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (dolfin::uint n, const dolfin::uint* cols) 
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (dolfin::uint n, const dolfin::uint* cols)
 {
     // cols typemap
     $1 = PyArray_Check($input);
@@ -57,7 +57,7 @@
 // Define a macros for the linear algebra factory interface
 %define LA_PRE_FACTORY(FACTORY_TYPE)
 %newobject dolfin::FACTORY_TYPE::create_matrix;
-%newobject dolfin::FACTORY_TYPE::create_pattern; 
+%newobject dolfin::FACTORY_TYPE::create_pattern;
 %newobject dolfin::FACTORY_TYPE::create_vector;
 
 %enddef
@@ -73,12 +73,12 @@
 %ignore dolfin::VEC_TYPE::getitem;
 %ignore dolfin::VEC_TYPE::setitem;
 
-// Ignore the get and set functions used for blocks 
+// Ignore the get and set functions used for blocks
 // NOTE: The %ignore have to be set using the actuall type used in the declaration
 // so we cannot use dolfin::uint or unsigned int for uint. Strange...
 %ignore dolfin::VEC_TYPE::get(double*, uint, const uint*) const;
 %ignore dolfin::VEC_TYPE::set(const double* , uint m, const uint*);
-		
+
 %newobject dolfin::VEC_TYPE::copy;
 
 %ignore dolfin::VEC_TYPE::data() const;

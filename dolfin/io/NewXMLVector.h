@@ -20,7 +20,7 @@ namespace dolfin
 
     NewXMLVector(GenericVector& vector, NewXMLFile& parser);
     ~NewXMLVector();
-    
+
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
 
@@ -28,14 +28,14 @@ namespace dolfin
 
     // Read the vector begin tag
     void read_vector_tag(const xmlChar *name, const xmlChar **attrs);
-    
+
   private:
-    
+
     enum parser_state { OUTSIDE, INSIDE_VECTOR, DONE };
-    
+
     void end_vector();
     void read_array_tag(const xmlChar *name, const xmlChar **attrs);
-    
+
     GenericVector& x;
     parser_state state;
 
@@ -43,7 +43,7 @@ namespace dolfin
     XMLArray* xml_array;
 
   };
-  
+
 }
 
 #endif

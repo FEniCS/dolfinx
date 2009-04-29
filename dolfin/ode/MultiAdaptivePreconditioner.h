@@ -14,7 +14,7 @@ namespace dolfin
   class ODE;
   class Method;
   class MultiAdaptiveTimeSlab;
-  
+
   /// This class implements a preconditioner for the Newton system to
   /// be solved on a multi-adaptive time slab. The preconditioner just
   /// does simple forward propagation of values on internal elements
@@ -29,10 +29,10 @@ namespace dolfin
 
     /// Destructor
     ~MultiAdaptivePreconditioner();
-    
+
     /// Solve linear system approximately for given right-hand side b
     void solve(uBLASVector& x, const uBLASVector& b) const;
-    
+
   private:
 
     // The time slab

@@ -28,18 +28,18 @@ namespace dolfin
   };
 
   /// A FacetIterator is a MeshEntityIterator of topological codimension 1.
-  
+
   class FacetIterator : public MeshEntityIterator
   {
   public:
-    
+
     FacetIterator(const Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim() - 1) {}
     FacetIterator(const MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim() - 1) {}
 
     inline const Facet& operator*() { return *operator->(); }
     inline const Facet* operator->() { return static_cast<Facet*>(MeshEntityIterator::operator->()); }
 
-  };    
+  };
 
 }
 

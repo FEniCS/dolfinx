@@ -22,7 +22,7 @@ namespace dolfin
   class dGqMethod : public Method
   {
   public:
-    
+
     dGqMethod(unsigned int q);
 
     /// Evaluate solution at given point
@@ -43,12 +43,12 @@ namespace dolfin
 
     /// Display method data
     void disp() const;
-    
+
   protected:
 
-    void computeQuadrature();
-    void computeBasis();
-    void computeWeights();
+    void compute_quadrature();
+    void compute_basis();
+    void compute_weights();
 
   };
 

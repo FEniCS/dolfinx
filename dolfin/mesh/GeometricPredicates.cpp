@@ -675,7 +675,7 @@ static float uniformfloatrand()
 /*                                                                           */
 /*****************************************************************************/
 
-static int fast_expansion_sum_zeroelim(int elen, REAL *e, 
+static int fast_expansion_sum_zeroelim(int elen, REAL *e,
 				       int flen, REAL *f, REAL *h)
      /* h cannot be e or f. */
 {
@@ -998,7 +998,7 @@ REAL orient2d(REAL *pa, REAL *pb, REAL *pc)
 /*                                                                           */
 /*****************************************************************************/
 
-static REAL orient3dadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd, 
+static REAL orient3dadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd,
 			  REAL permanent)
 {
   INEXACT REAL adx, bdx, cdx, ady, bdy, cdy, adz, bdz, cdz;
@@ -1428,7 +1428,7 @@ REAL orient3d(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
   adxbdy = adx * bdy;
   bdxady = bdx * ady;
 
-  det = adz * (bdxcdy - cdxbdy) 
+  det = adz * (bdxcdy - cdxbdy)
       + bdz * (cdxady - adxcdy)
       + cdz * (adxbdy - bdxady);
 
@@ -1472,7 +1472,7 @@ REAL orient3d(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
 /*                                                                           */
 /*****************************************************************************/
 
-static REAL incircleadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd, 
+static REAL incircleadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd,
 			  REAL permanent)
 {
   INEXACT REAL adx, bdx, cdx, ady, bdy, cdy;
@@ -2054,7 +2054,7 @@ REAL incircle(REAL *pa, REAL *pb, REAL *pc, REAL *pd)
   REAL inc;
 
   FPU_ROUND_DOUBLE;
-  
+
   adx = pa[0] - pd[0];
   bdx = pb[0] - pd[0];
   cdx = pc[0] - pd[0];
@@ -2371,7 +2371,7 @@ static REAL insphereexact(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe)
   return deter[deterlen - 1];
 }
 
-static REAL insphereadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe, 
+static REAL insphereadapt(REAL *pa, REAL *pb, REAL *pc, REAL *pd, REAL *pe,
 			  REAL permanent)
 {
   INEXACT REAL aex, bex, cex, dex, aey, bey, cey, dey, aez, bez, cez, dez;

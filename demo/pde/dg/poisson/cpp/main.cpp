@@ -37,7 +37,7 @@ int main()
       values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
   };
- 
+
   // Create mesh
   UnitSquare mesh(24, 24);
 

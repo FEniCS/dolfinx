@@ -20,11 +20,11 @@ namespace dolfin
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b. It is a wrapper for the LU
   /// solver of Epetra.
-  
+
   class EpetraLUSolver : public GenericLinearSolver
   {
   public:
-    
+
     /// Constructor
     EpetraLUSolver();
 
@@ -49,6 +49,6 @@ namespace dolfin
 
 
 
-#endif 
+#endif
 
 

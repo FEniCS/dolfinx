@@ -21,7 +21,7 @@ namespace dolfin
 {
 
   class PETScVector;
-  
+
   /// This class represents a matrix-free matrix of dimension m x m.
   /// It is a simple wrapper for a PETSc shell matrix. The interface
   /// is intentionally simple. For advanced usage, access the PETSc
@@ -77,7 +77,7 @@ namespace dolfin
   };
 
   LogStream& operator<< (LogStream& stream, const PETScKrylovMatrix& A);
-  
+
 }
 
 #endif

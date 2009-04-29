@@ -33,7 +33,7 @@ double dolfin::toc()
 double dolfin::tocd()
 {
   double elapsed_time = toc();
-  
+
   cout << "Elapsed time: " << elapsed_time << " seconds" << endl;
 
   return elapsed_time;

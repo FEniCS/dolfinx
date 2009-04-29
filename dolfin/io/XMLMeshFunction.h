@@ -12,7 +12,7 @@
 
 namespace dolfin
 {
-  
+
   class XMLMeshFunction : public XMLObject
   {
   public:
@@ -22,20 +22,20 @@ namespace dolfin
     XMLMeshFunction(MeshFunction<double>& meshfunction);
     XMLMeshFunction(MeshFunction<bool>& meshfunction);
     ~XMLMeshFunction();
-    
-    void startElement (const xmlChar* name, const xmlChar** attrs);
-    void endElement   (const xmlChar* name);
-    
+
+    void start_element (const xmlChar* name, const xmlChar** attrs);
+    void end_element   (const xmlChar* name);
+
     void open(std::string filename);
     bool close();
-    
+
   private:
-    
+
     enum ParserState { OUTSIDE, INSIDE_MESHFUNCTION, INSIDE_ENTITY, DONE };
     enum MeshFunctionType { INT, UINT, DOUBLE, BOOL, UNSET };
-    
+
     void readMeshFunction(const xmlChar* name, const xmlChar** attrs);
-    void readEntities    (const xmlChar* name, const xmlChar** attrs);
+    void read_entities    (const xmlChar* name, const xmlChar** attrs);
 
     ParserState state;
     MeshFunctionType mf_type;
@@ -45,7 +45,7 @@ namespace dolfin
     MeshFunction<bool>* _bmeshfunction;
 
   };
-  
+
 }
 
 #endif

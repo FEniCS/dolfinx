@@ -14,7 +14,7 @@
 
 namespace dolfin
 {
-  
+
   class uBLASKrylovSolver;
   class UmfpackLUSolver;
   class KrylovSolver;
@@ -31,7 +31,7 @@ namespace dolfin
   class MonoAdaptiveNewtonSolver : public TimeSlabSolver
   {
   public:
-    
+
     /// Constructor
     MonoAdaptiveNewtonSolver(MonoAdaptiveTimeSlab& timeslab, bool implicit = false);
 
@@ -42,7 +42,7 @@ namespace dolfin
 
     /// Start iterations (optional)
     void start();
-    
+
     // Make an iteration
     real iteration(real tol, uint iter, real d0, real d1);
 
@@ -59,13 +59,13 @@ namespace dolfin
 
     // Evaluate -F(x) for implicit system: Mu' = f
     void FevalImplicit(real* F);
-	
+
     // Choose  linear solver
     void chooseLinearSolver();
 
     // Numerical evaluation of the Jacobian used for testing
     void debug();
-    
+
     bool implicit;  // True if ODE is implicit
     bool piecewise; // True if M is piecewise constant
 

@@ -48,18 +48,18 @@ PETScKrylovSolver::PETScKrylovSolver(SolverType method,
 PETScKrylovSolver::~PETScKrylovSolver()
 {
   // Destroy solver environment.
-  if ( ksp ) 
+  if ( ksp )
     KSPDestroy(ksp);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const GenericMatrix& A, GenericVector& x, 
-                                       const GenericVector& b) 
+dolfin::uint PETScKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
+                                       const GenericVector& b)
 {
-  return  solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(), 
+  return  solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(),
                 b.down_cast<PETScVector>());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x, 
+dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
                                       const PETScVector& b)
 {
   // Check dimensions
@@ -84,7 +84,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
 
   // Read parameters if not done
   if ( !parameters_read )
-    readParameters();
+    read_parameters();
 
   // Solve linear system
   KSPSetOperators(ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
@@ -92,9 +92,9 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   // FIXME: Preconditioner being set here to avoid PETSc bug with Hypre.
   //        See explanation inside PETScKrylovSolver:init().
   if( !pc_set )
-  { 
+  {
     setPETScPreconditioner();
-    pc_set = true;   
+    pc_set = true;
   }
 
   KSPSolve(ksp, *b.vec(), *x.vec());
@@ -110,7 +110,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   KSPGetIterationNumber(ksp, &num_iterations);
 
   // Report results
-  writeReport(num_iterations);
+  write_report(num_iterations);
 
   return num_iterations;
 }
@@ -122,11 +122,11 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, PETScVector& x
   uint N = A.size(1);
   if ( N != b.size() )
     error("Non-matching dimensions for linear system.");
-  
+
   // Write a message
   if ( get("Krylov report") )
     message("Solving virtual linear system of size %d x %d (Krylov solver).", M, N);
- 
+
   // Reinitialize KSP solver if necessary
   init(M, N);
 
@@ -139,7 +139,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, PETScVector& x
 
   // Read parameters if not done
   if ( !parameters_read )
-    readParameters();
+    read_parameters();
 
   // Don't use preconditioner that can't handle virtual (shell) matrix
   if ( !pc_dolfin )
@@ -151,7 +151,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, PETScVector& x
 
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
-  KSPSolve(ksp, *b.vec(), *x.vec());  
+  KSPSolve(ksp, *b.vec(), *x.vec());
 
   // Check if the solution converged
   KSPConvergedReason reason;
@@ -162,9 +162,9 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, PETScVector& x
   // Get the number of iterations
   int num_iterations = 0;
   KSPGetIterationNumber(ksp, &num_iterations);
-  
+
   // Report results
-  writeReport(num_iterations);
+  write_report(num_iterations);
 
   return num_iterations;
 }
@@ -190,11 +190,11 @@ void PETScKrylovSolver::init(uint M, uint N)
 
   // Set up solver environment
   KSPCreate(PETSC_COMM_SELF, &ksp);
-  KSPSetFromOptions(ksp);  
+  KSPSetFromOptions(ksp);
   KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
 
   // Set solver
-  setSolver();
+  set_solver();
 
   // FIXME: The preconditioner is being set in solve() due to a PETSc bug
   //        when using Hypre preconditioner. The problem can be avoided by
@@ -204,7 +204,7 @@ void PETScKrylovSolver::init(uint M, uint N)
 //  setPETScPreconditioner();
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::readParameters()
+void PETScKrylovSolver::read_parameters()
 {
   // Don't do anything if not initialized
   if( !ksp )
@@ -233,14 +233,14 @@ void PETScKrylovSolver::readParameters()
   parameters_read = true;
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::setSolver()
+void PETScKrylovSolver::set_solver()
 {
   // Don't do anything for default method
   if (method == default_solver)
     return;
-  
+
   // Set PETSc Krylov solver
-  #if PETSC_VERSION_MAJOR > 2 
+  #if PETSC_VERSION_MAJOR > 2
   const KSPType ksp_type = get_type(method);
   #else
   KSPType ksp_type = get_type(method);
@@ -270,7 +270,7 @@ void PETScKrylovSolver::setPETScPreconditioner()
 
   // Treat special case Hypre AMG preconditioner
   if ( pc_petsc == amg_hypre )
-  {  
+  {
 #if PETSC_HAVE_HYPRE
     PCSetType(pc, PCHYPRE);
     PCHYPRESetType(pc, "boomeramg");
@@ -286,9 +286,9 @@ void PETScKrylovSolver::setPETScPreconditioner()
 
   // Treat special case ML AMG preconditioner
   if ( pc_petsc == amg_ml )
-  {  
+  {
 #if PETSC_HAVE_ML
-  PCSetType(pc, PETScPreconditioner::getType(pc_petsc));
+  PCSetType(pc, PETScPreconditioner::get_type(pc_petsc));
   PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
 #else
     warning("PETSc has not been compiled with the ML library for   "
@@ -299,18 +299,18 @@ void PETScKrylovSolver::setPETScPreconditioner()
   }
 
   // Set preconditioner
-  PCSetType(pc, PETScPreconditioner::getType(pc_petsc));
+  PCSetType(pc, PETScPreconditioner::get_type(pc_petsc));
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::writeReport(int num_iterations)
+void PETScKrylovSolver::write_report(int num_iterations)
 {
   // Check if we should write the report
   bool report = get("Krylov report");
   if ( !report )
     return;
-    
+
   // Get name of solver and preconditioner
-  #if PETSC_VERSION_MAJOR > 2 
+  #if PETSC_VERSION_MAJOR > 2
   const KSPType ksp_type;
   const PCType pc_type;
   #else
@@ -328,7 +328,7 @@ void PETScKrylovSolver::writeReport(int num_iterations)
           ksp_type, pc_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
-#if PETSC_VERSION_MAJOR > 2 
+#if PETSC_VERSION_MAJOR > 2
 const KSPType PETScKrylovSolver::get_type(SolverType method) const
 #else
 KSPType PETScKrylovSolver::get_type(SolverType method) const

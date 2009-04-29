@@ -11,40 +11,40 @@
 
 namespace dolfin
 {
-  
+
   class NewXMLVector;
   class FunctionPlotData;
   class NewXMLMesh;
-  
+
   class XMLFunctionPlotData : public XMLHandler
   {
   public:
 
     XMLFunctionPlotData(FunctionPlotData& data, NewXMLFile& parser);
     ~XMLFunctionPlotData();
-    
+
     void start_element (const xmlChar* name, const xmlChar** attrs);
     void end_element   (const xmlChar* name);
 
     static void write(const FunctionPlotData& data, std::ostream& outfile, uint indentation_level=0);
 
     void read_data_tag(const xmlChar* name, const xmlChar** attrs);
-    
+
   private:
-    
+
     enum parser_state {OUTSIDE, INSIDE, DONE};
-    
+
     void read_mesh      (const xmlChar* name, const xmlChar** attrs);
     void read_vector    (const xmlChar* name, const xmlChar** attrs);
-    
+
     FunctionPlotData& data;
     parser_state state;
 
     NewXMLMesh* xml_mesh;
     NewXMLVector* xml_vector;
-    
+
   };
-  
+
 }
 
 #endif

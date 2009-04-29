@@ -13,7 +13,7 @@
 
 namespace dolfin
 {
-  
+
   // Represents input/output of data in a format readable by Python
   // (Numeric). The data is written to several files (the variable
   // name is appended to the base file name) to enable incremental
@@ -22,20 +22,20 @@ namespace dolfin
   class PythonFile : public GenericFile
   {
   public:
-    
+
     PythonFile(const std::string filename);
     virtual ~PythonFile();
 
     // Input
-    
+
     // Output
-    
+
     void operator<< (const Sample& sample);
 
     std::string filename_t, filename_u, filename_k, filename_r;
 
   };
-  
+
 }
 
 #endif

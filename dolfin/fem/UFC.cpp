@@ -20,14 +20,14 @@ UFC::UFC(const Form& form): form(form.ufc_form())
   finite_elements = new FiniteElement*[this->form.rank()];
   for (uint i = 0; i < this->form.rank(); i++)
   {
-    boost::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(i)); 
+    boost::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(i));
     finite_elements[i] = new FiniteElement(element);
   }
   // Create finite elements for coefficients
   coefficient_elements = new FiniteElement*[this->form.num_coefficients()];
   for (uint i = 0; i < this->form.num_coefficients(); i++)
   {
-    boost::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(this->form.rank() + i)); 
+    boost::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(this->form.rank() + i));
     coefficient_elements[i] = new FiniteElement(element);
   }
   // Create cell integrals
@@ -60,7 +60,7 @@ UFC::UFC(const Form& form): form(form.ufc_form())
   // Initialize local tensor
   uint num_entries = 1;
   for (uint i = 0; i < this->form.rank(); i++)
-    num_entries *= V[i]->dofmap().local_dimension();
+    num_entries *= V[i]->dofmap().max_local_dimension();
   A = new double[num_entries];
   for (uint i = 0; i < num_entries; i++)
     A[i] = 0.0;
@@ -68,20 +68,20 @@ UFC::UFC(const Form& form): form(form.ufc_form())
   // Initialize local tensor for macro element
   num_entries = 1;
   for (uint i = 0; i < this->form.rank(); i++)
-    num_entries *= 2*V[i]->dofmap().local_dimension();
+    num_entries *= 2*V[i]->dofmap().max_local_dimension();
   macro_A = new double[num_entries];
   for (uint i = 0; i < num_entries; i++)
-    macro_A[i] = 0.0;  
+    macro_A[i] = 0.0;
 
   // Initialize local dimensions
   local_dimensions = new uint[this->form.rank()];
   for (uint i = 0; i < this->form.rank(); i++)
-    local_dimensions[i] = V[i]->dofmap().local_dimension();
+    local_dimensions[i] = V[i]->dofmap().max_local_dimension();
 
   // Initialize local dimensions for macro element
   macro_local_dimensions = new uint[this->form.rank()];
   for (uint i = 0; i < this->form.rank(); i++)
-    macro_local_dimensions[i] = 2*V[i]->dofmap().local_dimension();
+    macro_local_dimensions[i] = 2*V[i]->dofmap().max_local_dimension();
 
   // Initialize global dimensions
   global_dimensions = new uint[this->form.rank()];

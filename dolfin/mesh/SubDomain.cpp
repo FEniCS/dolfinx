@@ -51,7 +51,7 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
 
   // Set geometric dimension (needed for SWIG interface)
   _geometric_dimension = mesh.geometry().dim();
-  
+
   // Always false when not marking facets
   bool on_boundary = false;
 
@@ -60,7 +60,7 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
   {
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)
-      on_boundary = entity->numEntities(D) == 1;
+      on_boundary = entity->num_entities(D) == 1;
 
     bool all_vertices_inside = true;
     // Dimension of facet > 0, check incident vertices

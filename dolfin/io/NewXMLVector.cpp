@@ -30,12 +30,12 @@ void NewXMLVector::start_element(const xmlChar *name, const xmlChar **attrs)
   switch ( state )
   {
   case OUTSIDE:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
       read_vector_tag(name, attrs);
     }
-    
+
     break;
 
   case INSIDE_VECTOR:
@@ -43,9 +43,9 @@ void NewXMLVector::start_element(const xmlChar *name, const xmlChar **attrs)
     {
       read_array_tag(name, attrs);
     }
-    
+
     break;
-    
+
   default:
     ;
   }
@@ -56,16 +56,16 @@ void NewXMLVector::end_element(const xmlChar *name)
   switch ( state )
   {
   case INSIDE_VECTOR:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
       end_vector();
       state = DONE;
       release();
     }
-    
+
     break;
-    
+
   default:
     ;
   }

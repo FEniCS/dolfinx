@@ -25,9 +25,9 @@ void Event::operator() ()
 {
   if ( _count < _maxcount)
     message(msg);
-  
+
   _count++;
-  
+
   if ( _count == _maxcount && _maxcount > 1 )
     message("Last message repeated %d times. Not displaying again.", _count);
 }

@@ -61,77 +61,77 @@ int main(int argc, char* argv[])
     {
       message("Solving test problem number 1.");
       dolfin_set("ODE solution file name", "solution_1.py");
-      TestProblem1 testProblem;
-      testProblem.solve();
+      TestProblem1 test_problem;
+      test_problem.solve();
     }
     break;
   case 2:
     {
       message("Solving test problem number 2.");
       dolfin_set("ODE solution file name", "solution_2.py");
-      TestProblem2 testProblem;
-      testProblem.solve();
+      TestProblem2 test_problem;
+      test_problem.solve();
     }
     break;
   case 3:
     {
       message("Solving test problem number 3.");
       dolfin_set("ODE solution file name", "solution_3.py");
-      TestProblem3 testProblem;
-      testProblem.solve();
+      TestProblem3 test_problem;
+      test_problem.solve();
     }
     break;
   case 4:
     {
       message("Solving test problem number 4.");
       dolfin_set("ODE solution file name", "solution_4.py");
-      TestProblem4 testProblem;
-      testProblem.solve();
+      TestProblem4 test_problem;
+      test_problem.solve();
     }
     break;
   case 5:
     {
       message("Solving test problem number 5.");
       dolfin_set("ODE solution file name", "solution_5.py");
-      TestProblem5 testProblem;
-      testProblem.solve();
+      TestProblem5 test_problem;
+      test_problem.solve();
     }
     break;
   case 6:
     {
       message("Solving test problem number 6.");
       dolfin_set("ODE solution file name", "solution_6.py");
-      TestProblem6 testProblem;
-      testProblem.solve();
+      TestProblem6 test_problem;
+      test_problem.solve();
     }
     break;
   case 7:
     {
       message("Solving test problem number 7.");
       dolfin_set("ODE solution file name", "solution_7.py");
-      TestProblem7 testProblem;
-      testProblem.solve();
+      TestProblem7 test_problem;
+      test_problem.solve();
     }
     break;
   case 8:
     {
       message("Solving test problem number 8.");
       dolfin_set("ODE solution file name", "solution_8.py");
-      TestProblem8 testProblem;
-      testProblem.solve();
+      TestProblem8 test_problem;
+      test_problem.solve();
     }
     break;
   case 9:
     {
       message("Solving test problem number 9.");
       dolfin_set("ODE solution file name", "solution_9.py");
-      TestProblem9 testProblem;
-      testProblem.solve();
+      TestProblem9 test_problem;
+      test_problem.solve();
     }
     break;
   default:
     error("No such test problem.");
   }
-  
+
   return 0;
 }

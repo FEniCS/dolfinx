@@ -66,11 +66,11 @@ void SparsityPattern::pinit(uint rank, const uint* dims)
   sparsity_pattern.resize(dim[0]);
   o_sparsity_pattern.clear();
   o_sparsity_pattern.resize(dim[0]);
-  initRange();
+  init_range();
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(uint m, const uint* rows, uint n, const uint* cols)
-{ 
+{
   for (uint i = 0; i < m; ++i)
     for (uint j = 0; j < n; ++j)
     {
@@ -88,7 +88,7 @@ void SparsityPattern::insert(uint m, const uint* rows, uint n, const uint* cols)
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::pinsert(const uint* num_rows, const uint * const * rows)
-{ 
+{
   error("SparsityPattern::pinsert needs to be updated");
 
   uint process = dolfin::MPI::process_number();
@@ -116,13 +116,13 @@ void SparsityPattern::sort() const
 {
   std::vector< std::vector<uint> >::iterator row;
   for(row = sparsity_pattern.begin(); row != sparsity_pattern.end(); ++row)
-    std::sort(row->begin(), row->end()); 
+    std::sort(row->begin(), row->end());
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::size(uint n) const
 {
   dolfin_assert(n < 2);
-  return dim[n]; 
+  return dim[n];
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::numNonZeroPerRow(uint nzrow[]) const
@@ -189,7 +189,7 @@ dolfin::uint SparsityPattern::numNonZero() const
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::disp() const
-{ 
+{
   if ( dim[1] == 0 )
     warning("Only matrix sparsity patterns can be displayed.");
 
@@ -198,17 +198,17 @@ void SparsityPattern::disp() const
 
   std::vector< std::vector<uint> >::const_iterator row;
   std::vector<uint>::const_iterator element;
-  
+
   for(row = sparsity_pattern.begin(); row != sparsity_pattern.end(); ++row)
   {
     cout << "Row " << endl;
     for(element = row->begin(); element != row->end(); ++element)
       cout << *element << " ";
     cout << endl;
-  }  
+  }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::processRange(uint process_number, uint local_range[])
+void SparsityPattern::process_range(uint process_number, uint local_range[])
 {
   local_range[0] = range[process_number];
   local_range[1] = range[process_number + 1];
@@ -219,7 +219,7 @@ dolfin::uint SparsityPattern::numLocalRows(uint process_number) const
   return range[process_number + 1] - range[process_number];
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::initRange()
+void SparsityPattern::init_range()
 {
   uint num_procs = dolfin::MPI::num_processes();
   range = new uint[num_procs+1];

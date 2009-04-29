@@ -13,14 +13,14 @@ namespace dolfin
 {
   class Method;
   class TimeSlab;
-  
+
   /// This is the base class for solvers of the system of equations
   /// defined on time slabs.
 
   class TimeSlabSolver
   {
   public:
-    
+
     /// Constructor
     TimeSlabSolver(TimeSlab& timeslab);
 
@@ -55,7 +55,7 @@ namespace dolfin
 
     // The method
     const Method& method;
-    
+
     // Tolerance for iterations (max-norm)
     real tol;
 
@@ -80,7 +80,7 @@ namespace dolfin
   private:
 
     /// Choose tolerance
-    void chooseTolerance();
+    void choose_tolerance();
 
   };
 

@@ -21,18 +21,18 @@ int main()
       return x[0] > 1.4 - DOLFIN_EPS and x[0] < 1.6 + DOLFIN_EPS and x[1] < 0.6 + DOLFIN_EPS;
     }
   };
-  
+
   // Create mesh
   Rectangle mesh(0.0, 0.0, 3.0, 1.0, 60, 20);
-  
+
   // Create sub domain markers and mark everything as 0
   MeshFunction<unsigned int> sub_domains(mesh, mesh.topology().dim());
   sub_domains = 0;
-  
+
   // Mark structure domain as 1
   Structure structure;
   structure.mark(sub_domains, 1);
-  
+
   // Extract sub meshes
   SubMesh fluid_mesh(mesh, sub_domains, 0);
   SubMesh structure_mesh(mesh, sub_domains, 1);
@@ -44,11 +44,11 @@ int main()
     const double* x = v->x();
     geometry.x(v->index())[0] += 0.1*x[0]*x[1];
   }
-  
+
   // Move fluid mesh according to structure mesh
   fluid_mesh.move(structure_mesh);
   fluid_mesh.smooth();
-  
+
   // Plot meshes
   plot(fluid_mesh);
   plot(structure_mesh);

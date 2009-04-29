@@ -15,9 +15,9 @@ namespace dolfin
   class GenericMatrix;
   class GenericVector;
 
-  /// This is a base class for nonlinear problems which can return the 
+  /// This is a base class for nonlinear problems which can return the
   /// nonlinear function F(u) and its Jacobian J = dF(u)/du.
-  
+
   class NonlinearProblem
   {
   public:

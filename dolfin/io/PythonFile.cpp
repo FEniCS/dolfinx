@@ -6,7 +6,7 @@
 
 // First added:  2003-05-06
 // Last changed: 2008-04-08
-// 
+//
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericVector.h>
@@ -30,7 +30,7 @@ PythonFile::PythonFile(const std::string filename) : GenericFile(filename)
   filename_r = prefix + "_r.data";
 
   #ifdef HAS_GMP
-  warning("PythonFile: Precision lost. Values will be saved with double precision");  
+  warning("PythonFile: Precision lost. Values will be saved with double precision");
   #endif
 }
 //-----------------------------------------------------------------------------
@@ -107,28 +107,28 @@ void PythonFile::operator<<(const Sample& sample)
   // Save solution
   for (unsigned int i = 0; i < sample.size(); i++)
   {
-    fprintf(fp_u, "%.15e ", to_double(sample.u(i)));  
+    fprintf(fp_u, "%.15e ", to_double(sample.u(i)));
   }
   fprintf(fp_u, "\n");
 
   // Save time steps
   for (unsigned int i = 0; i < sample.size(); i++)
   {
-    fprintf(fp_k, "%.15e ", to_double(sample.k(i)));  
+    fprintf(fp_k, "%.15e ", to_double(sample.k(i)));
   }
   fprintf(fp_k, "\n");
 
   // Save residuals
   for (unsigned int i = 0; i < sample.size(); i++)
   {
-    fprintf(fp_r, "%.15e ", to_double(sample.r(i)));  
+    fprintf(fp_r, "%.15e ", to_double(sample.r(i)));
   }
   fprintf(fp_r, "\n");
 
 
   // Increase frame counter
   counter2++;
-  
+
   // Close files
   fclose(fp_t);
   fclose(fp_u);

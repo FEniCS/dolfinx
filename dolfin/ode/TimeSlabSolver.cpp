@@ -20,7 +20,7 @@ TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
     xnorm(0.0)
 {
   // Choose tolerance
-  chooseTolerance();
+  choose_tolerance();
 
   // Get maximum number of iterations
   maxiter = ode.get("ODE maximum iterations");
@@ -32,7 +32,7 @@ TimeSlabSolver::~TimeSlabSolver()
   {
     const real n = static_cast<real>(num_timeslabs);
     const real global_average = static_cast<real>(num_global_iterations) / n;
-    const real local_average = static_cast<real>(num_local_iterations) / 
+    const real local_average = static_cast<real>(num_local_iterations) /
       static_cast<real>(num_global_iterations);
     message("Average number of global iterations per step: %.3f",
 	    to_double(global_average));
@@ -50,7 +50,7 @@ bool TimeSlabSolver::solve()
     // Try to solve system
     if ( solve(attempt) )
       return true;
-    
+
     // Check if we should try again
     if ( !retry() )
       return false;
@@ -72,11 +72,11 @@ bool TimeSlabSolver::solve(uint attempt)
 
     // Use relative increment
     d2 /= xnorm + real_epsilon();
-    
+
     // For debugging convergence
     if (monitor)
       message("--- iter = %d: increment = %.3e", iter, to_double(d2));
-    
+
     // Check convergenge
     if (d2 < tol)
     {
@@ -96,7 +96,7 @@ bool TimeSlabSolver::solve(uint attempt)
       warning("Time slab system seems to be diverging.");
       return false;
     }
-    
+
     d0 = d1;
     d1 = d2;
   }
@@ -121,7 +121,7 @@ void TimeSlabSolver::end()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void TimeSlabSolver::chooseTolerance()
+void TimeSlabSolver::choose_tolerance()
 {
   const double TOL   = ode.get("ODE tolerance");
   const double alpha = ode.get("ODE discrete tolerance factor");

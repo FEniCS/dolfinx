@@ -1,13 +1,13 @@
-""" Eddy currents phenomena in low conducting body can be 
+""" Eddy currents phenomena in low conducting body can be
 described using electric vector potential and curl-curl operator:
    \nabla \times \nabla \times T = - \frac{\partial B}{\partial t}
 Electric vector potential defined as:
    \nabla \times T = J
 
 Boundary condition:
-   J_n = 0, 
+   J_n = 0,
    T_t=T_w=0, \frac{\partial T_n}{\partial n} = 0
-which is naturaly fulfilled for zero Dirichlet BC with Nedelec (edge) 
+which is naturaly fulfilled for zero Dirichlet BC with Nedelec (edge)
 elements.
 """
 
@@ -22,7 +22,7 @@ from dolfin import *
 mesh = UnitSphere(8)
 
 # Define function spaces
-PN = FunctionSpace(mesh, "Nedelec", 0)
+PN = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 0)
 P1 = VectorFunctionSpace(mesh, "CG", 1)
 
 # Define test and trial functions
@@ -32,7 +32,7 @@ v1 = TestFunction(P1)
 u1 = TrialFunction(P1)
 
 # Define functions
-dBdt = Function(P1, ("0.0", "0.0", "1.0"))
+dbdt = Function(P1, ("0.0", "0.0", "1.0"))
 zero = Function(P1, ("0.0", "0.0", "0.0"))
 T = Function(PN)
 J = Function(P1)
@@ -45,13 +45,13 @@ class DirichletBoundary(SubDomain):
 # Boundary condition
 bc = DirichletBC(PN, zero, DirichletBoundary())
 
-# Eddy currents equation (using potential T) 
-Teqn = (dot(rot(v0), rot(u0))*dx, -dot(v0, dBdt)*dx)
+# Eddy currents equation (using potential T)
+Teqn = inner(curl(v0), curl(u0))*dx, -dot(v0, dbdt)*dx
 Tproblem = VariationalProblem(Teqn[0], Teqn[1], bc)
 T = Tproblem.solve()
 
 # Current density equation
-Jeqn = (dot(v1, u1)*dx, dot(v1, curl(T))*dx)
+Jeqn = inner(v1, u1)*dx, dot(v1, curl(T))*dx
 Jproblem = VariationalProblem(Jeqn[0], Jeqn[1])
 J = Jproblem.solve()
 

@@ -21,7 +21,7 @@ namespace dolfin
   class ODE;
   class Method;
   class TimeSlabSolver;
-  
+
   /// This class represents a multi-adaptive time slab holding the
   /// degrees of freedom for the solution of an ODE between two
   /// synchronized time levels a and b, with individual time steps for
@@ -36,7 +36,7 @@ namespace dolfin
 
     /// Destructor
     ~MultiAdaptiveTimeSlab();
-    
+
     /// Build time slab, return end time
     real build(real a, real b);
 
@@ -45,13 +45,13 @@ namespace dolfin
 
     /// Check if current solution can be accepted
     bool check(bool first);
-    
+
     /// Shift time slab (prepare for next time slab)
     bool shift(bool end);
 
     /// Reset to initial data
     void reset();
-    
+
     /// Prepare sample at time t
     void sample(real t);
 
@@ -78,7 +78,7 @@ namespace dolfin
   private:
 
     // Reallocate all data
-    void allocData(real a, real b);
+    void alloc_data(real a, real b);
 
     // Create time slab
     real createTimeSlab(real a, real b, uint offset);
@@ -88,7 +88,7 @@ namespace dolfin
     void create_e(uint index, uint subslab, real a, real b);
     void create_j(uint index);
     void create_d(uint index, uint element, uint subslab, real a0, real b0);
-   
+
     // Reallocation of data
     void alloc_s(uint newsize);
     void alloc_e(uint newsize);
@@ -100,12 +100,12 @@ namespace dolfin
 
     // Compute size of data
     real computeDataSize(real a, real b, uint offset);
-    
-    // Compute number of dependencies to components with smaller time steps
-    uint countDependencies(uint i0);
 
     // Compute number of dependencies to components with smaller time steps
-    uint countDependencies(uint i0, real b0);
+    uint count_dependencies(uint i0);
+
+    // Compute number of dependencies to components with smaller time steps
+    uint count_dependencies(uint i0, real b0);
 
     // Check if the given time is within the given interval
     bool within(real t, real a, real b) const;
@@ -114,42 +114,42 @@ namespace dolfin
     bool within(real a0, real b0, real a1, real b1) const;
 
     // Cover all elements in sub slab and return e1, with e0 <= e < e1
-    uint coverSlab(int subslab, uint e0);
+    uint cover_slab(int subslab, uint e0);
 
     // Cover all elements in next sub slab and return next sub slab
-    uint coverNext(int subslab, uint element);
+    uint cover_next(int subslab, uint element);
 
     // Cover given time for all components
-    void coverTime(real t);
+    void cover_time(real t);
 
     // Compute maximum of all element residuals
     real computeMaxResiduals();
 
     // Evaluate right-hand side at quadrature points of given element (cG)
-    void cGfeval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
+    void cg_feval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
 
     // Evaluate right-hand side at quadrature points of given element (dG)
-    void dGfeval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
+    void dg_feval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
 
     // Choose solver
-    TimeSlabSolver* chooseSolver();
+    TimeSlabSolver* choose_solver();
 
     //--- Time slab data ---
 
     real* sa; // Mapping s --> start time t of sub slab s
     real* sb; // Mapping s --> end time t of sub slab s
-        
+
     uint* ei; // Mapping e --> component index i of element e
     uint* es; // Mapping e --> time slab s containing element e
     uint* ee; // Mapping e --> previous element e of element e
     uint* ed; // Mapping e --> first dependency d of element e
-    
+
     real* jx; // Mapping j --> value of dof j
-    
+
     int* de;  // Mapping d --> element e of dependency d
-        
+
     //--- Size of time slab data ---
-    
+
     Alloc size_s; // Allocation data for sub slabs s
     Alloc size_e; // Allocation data for elements e
     Alloc size_j; // Allocation data for dofs j

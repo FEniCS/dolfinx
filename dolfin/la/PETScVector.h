@@ -93,7 +93,7 @@ namespace dolfin
     virtual void add(double* values);
 
     /// Add multiple of given vector (AXPY operation)
-    virtual void axpy(double a, const GenericVector& x); 
+    virtual void axpy(double a, const GenericVector& x);
 
     /// Return inner product with given vector
     virtual double inner(const GenericVector& v) const;
@@ -109,7 +109,7 @@ namespace dolfin
 
     /// Return sum of values of vector
     virtual double sum() const;
-    
+
     /// Multiply vector by given number
     virtual const PETScVector& operator*= (double a);
 
@@ -150,12 +150,12 @@ namespace dolfin
 
     // PETSc Vec pointer
     boost::shared_ptr<Vec> x;
-    
+
   };
 
   /// Output of PETScVector
   LogStream& operator<< (LogStream& stream, const PETScVector& x);
-  
+
 }
 
 #endif

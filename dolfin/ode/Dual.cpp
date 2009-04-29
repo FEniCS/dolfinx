@@ -13,7 +13,7 @@
 using namespace dolfin;
 
 //------------------------------------------------------------------------
-Dual::Dual(ODE& primal, ODESolution& u) 
+Dual::Dual(ODE& primal, ODESolution& u)
   : ODE(primal.size(), primal.endtime()),
     primal(primal), u(u)
 {
@@ -46,8 +46,8 @@ void Dual::f(const real* phi, real t, real* y)
   // FIXME: outside the sum.
 
   /*
-  real sum = 0.0;  
-  
+  real sum = 0.0;
+
   if ( sparsity.sparse() )
   {
     const std::vector<unsigned int>& row(sparsity.row(i));

@@ -23,11 +23,11 @@ using namespace dolfin;
 VariationalProblem::VariationalProblem(const Form& a,
                                        const Form& L,
                                        bool nonlinear)
-  : a(a), L(L), cell_domains(0), exterior_facet_domains(0), 
+  : a(a), L(L), cell_domains(0), exterior_facet_domains(0),
     interior_facet_domains(0), nonlinear(nonlinear), _newton_solver(0)
-    
+
 {
-  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system 
+  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system
   // Add parameter "symmetric"
   //add("symmetric", false);
 }
@@ -37,12 +37,12 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        const BoundaryCondition& bc,
                                        bool nonlinear)
   : a(a), L(L), cell_domains(0), exterior_facet_domains(0),
-    interior_facet_domains(0), nonlinear(nonlinear), _newton_solver(0)   
+    interior_facet_domains(0), nonlinear(nonlinear), _newton_solver(0)
 {
   // Store boundary condition
   bcs.push_back(&bc);
 
-  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system 
+  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system
   // Add parameter "symmetric"
   //add("symmetric", false);
 }
@@ -51,14 +51,14 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        const Form& L,
                                        std::vector<BoundaryCondition*>& bcs,
                                        bool nonlinear)
-  : a(a), L(L), cell_domains(0), exterior_facet_domains(0), 
-    interior_facet_domains(0), nonlinear(nonlinear), _newton_solver(0) 
+  : a(a), L(L), cell_domains(0), exterior_facet_domains(0),
+    interior_facet_domains(0), nonlinear(nonlinear), _newton_solver(0)
 {
   // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
     this->bcs.push_back(bcs[i]);
 
-  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system 
+  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system
   // Add parameter "symmetric"
   //add("symmetric", false);
 }
@@ -70,16 +70,16 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        const MeshFunction<uint>* exterior_facet_domains,
                                        const MeshFunction<uint>* interior_facet_domains,
                                        bool nonlinear)
-  : a(a), L(L), cell_domains(cell_domains), 
-    exterior_facet_domains(exterior_facet_domains), 
-    interior_facet_domains(interior_facet_domains), nonlinear(nonlinear), 
+  : a(a), L(L), cell_domains(cell_domains),
+    exterior_facet_domains(exterior_facet_domains),
+    interior_facet_domains(interior_facet_domains), nonlinear(nonlinear),
     _newton_solver(0)
 {
   // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
     this->bcs.push_back(bcs[i]);
 
-  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system 
+  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system
   // Add parameter "symmetric"
   //add("symmetric", false);
 }

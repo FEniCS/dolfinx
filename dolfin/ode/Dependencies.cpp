@@ -37,7 +37,7 @@ void Dependencies::setsize(uint i, uint size)
 {
   // Prepare sparse pattern if necessary
   make_sparse();
-  
+
   // Set size of row
   sdep[i].reserve(size);
 }
@@ -79,7 +79,7 @@ void Dependencies::set(const uBLASSparseMatrix& A)
     // FIXME: Could add function to return sparsity pattern
     std::vector<uint> columns;
     std::vector<real> values;
-    A.getrow(i, columns, values); 
+    A.getrow(i, columns, values);
     setsize(i, columns.size());
     for (uint j = 0; j < columns.size(); j++)
       set(i, columns[j]);
@@ -97,10 +97,10 @@ void Dependencies::transp(const Dependencies& dependencies)
       for (uint i = 0; i < N; i++)
         sdep[i].clear();
       sdep.clear();
-      
+
       _sparse = false;
     }
-    
+
     return;
   }
 
@@ -139,7 +139,7 @@ void Dependencies::detect(ODE& ode)
   real* u = new real[N];
   for (uint i = 0; i < N; i++)
     u[i] = rand();
-  
+
   // Check dependencies for all components
   Progress p("Computing sparsity", N);
   uint sum = 0;
@@ -151,10 +151,10 @@ void Dependencies::detect(ODE& ode)
     for (uint j = 0; j < N; j++)
       if (check_dependency(ode, u, f0, i, j))
         size++;
-    
+
     // Compute total number of dependencies
     sum += size;
-    
+
     // Set size of row
     setsize(i, size);
 
@@ -162,7 +162,7 @@ void Dependencies::detect(ODE& ode)
     for (uint j = 0; j < N; j++)
       if ( check_dependency(ode, u, f0, i, j) )
 	set(i, j);
-    
+
     // Update progress
     p = i;
   }
@@ -191,7 +191,7 @@ void Dependencies::disp() const
       cout << endl;
     }
   }
-  else  
+  else
     message("Dependency pattern: dense");
 }
 //-----------------------------------------------------------------------------
@@ -216,12 +216,12 @@ void Dependencies::make_sparse()
 {
   if ( _sparse )
     return;
-  
+
   sdep.reserve(N);
   sdep.resize(N);
-  
+
   ddep.clear();
-    
+
   _sparse = true;
 }
 //-----------------------------------------------------------------------------

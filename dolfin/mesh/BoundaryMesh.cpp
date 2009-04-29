@@ -30,6 +30,6 @@ BoundaryMesh::~BoundaryMesh()
 //-----------------------------------------------------------------------------
 void BoundaryMesh::init(const Mesh& mesh)
 {
-  BoundaryComputation::computeBoundary(mesh, *this);
+  BoundaryComputation::compute_boundary(mesh, *this);
 }
 //-----------------------------------------------------------------------------

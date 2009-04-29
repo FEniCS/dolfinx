@@ -31,7 +31,7 @@ namespace dolfin
     uBLASMatrix<Mat>* create_matrix() const
     { return new uBLASMatrix<Mat>(); }
 
-    /// Create empty sparsity pattern 
+    /// Create empty sparsity pattern
     SparsityPattern* create_pattern() const
     { return new SparsityPattern(); }
 
@@ -39,7 +39,7 @@ namespace dolfin
     uBLASVector* create_vector() const
     { return new uBLASVector(); }
 
-    static uBLASFactory<Mat>& instance() 
+    static uBLASFactory<Mat>& instance()
     { return factory; }
 
   private:

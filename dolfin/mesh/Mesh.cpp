@@ -56,7 +56,7 @@ Mesh::Mesh(std::string filename)
     File file(filename);
     LocalMeshData data;
     file >> data;
-    
+
     // Partition data
     MeshPartitioning::partition(*this, data);
   }
@@ -79,10 +79,10 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
   _topology = mesh._topology;
   _geometry = mesh._geometry;
   _data = mesh._data;
-  
+
   if (mesh._cell_type)
-    _cell_type = CellType::create(mesh._cell_type->cellType());
-  
+    _cell_type = CellType::create(mesh._cell_type->cell_type());
+
   rename(mesh.name(), mesh.label());
 
   _ordered = mesh._ordered;
@@ -107,7 +107,7 @@ dolfin::uint Mesh::init(uint dim) const
 
   // Compute connectivity
   Mesh* mesh = const_cast<Mesh*>(this);
-  TopologyComputation::computeEntities(*mesh, dim);
+  TopologyComputation::compute_entities(*mesh, dim);
 
   // Order mesh if necessary
   if (!ordered())
@@ -133,7 +133,7 @@ void Mesh::init(uint d0, uint d1) const
 
   // Compute connectivity
   Mesh* mesh = const_cast<Mesh*>(this);
-  TopologyComputation::computeConnectivity(*mesh, d0, d1);
+  TopologyComputation::compute_connectivity(*mesh, d0, d1);
 
   // Order mesh if necessary
   if (!ordered())
@@ -220,7 +220,7 @@ void Mesh::coarsen()
   for (CellIterator c(*this); !c.end(); ++c)
     cell_marker.set(c->index(),true);
 
-  LocalMeshCoarsening::coarsenMeshByEdgeCollapse(*this,cell_marker);
+  LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(*this, cell_marker);
 
   // Mesh may not be ordered
   _ordered = false;
@@ -228,8 +228,9 @@ void Mesh::coarsen()
 //-----------------------------------------------------------------------------
 void Mesh::coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary)
 {
-  LocalMeshCoarsening::coarsenMeshByEdgeCollapse(*this, cell_markers,
-                                                 coarsen_boundary);
+  LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(*this,
+                                                     cell_markers,
+                                                     coarsen_boundary);
 
   // Mesh may not be ordered
   _ordered = false;
@@ -380,9 +381,9 @@ std::string Mesh::str() const
   stream << "[Mesh of topological dimension "
          << topology().dim()
          << " with "
-         << numVertices()
+         << num_vertices()
          << " vertices and "
-         << numCells()
+         << num_cells()
          << " cells]";
   return stream.str();
 }

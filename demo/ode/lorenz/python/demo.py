@@ -9,28 +9,28 @@ __license__  = "GNU LGPL Version 2.1"
 
 from numpy import empty
 from dolfin import *
-  
+
 class Lorenz(ODE):
-    
+
     # Parameters
     s = 10.0;
     b = 8.0 / 3.0;
     r = 28.0;
-        
+
     def __init__(self, N=3, T=50.):
         ODE.__init__(self, N, T)
         # Work arrays corresponding to uBLASVectors
         self.u = empty(N)
         self.x = empty(N)
         self.y = empty(N)
-        
+
     def u0(self, u_):
         u = self.u
         u[0] = 1.0;
         u[1] = 0.0;
         u[2] = 0.0;
         u_.set(u)
-        
+
     def f(self, u_, t_, y_):
         u = self.u
         u_.get(u)
@@ -39,7 +39,7 @@ class Lorenz(ODE):
         y[1] = self.r*u[0] - u[1] - u[0]*u[2];
         y[2] = u[0]*u[1] - self.b*u[2];
         y_.set(y)
-        
+
     def J(self, x_, y_, u_, t):
         x = self.x
         y = self.y

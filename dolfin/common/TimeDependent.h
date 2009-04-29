@@ -5,44 +5,44 @@
 // Last changed: 2008-06-23
 
 #ifndef __TIME_DEPENDENT_H
-#define __TIME_DEPENDENT_H 
- 
+#define __TIME_DEPENDENT_H
+
 #include <dolfin/log/dolfin_log.h>
 
 namespace dolfin
 {
-  
-  /// Associates an object with time t 
+
+  /// Associates an object with time t
 
   class TimeDependent
   {
   public:
-    
+
     /// Constructors
     TimeDependent();
     TimeDependent(const double* t);
-    
+
     /// Destructor
     ~TimeDependent();
 
     /// Associate object with time t
     void sync(const double* t);
-    
+
     /// Return the current time t
     double time() const
     {
 	    if( !t )
-        error("Time has not been associated with object.");		
+        error("Time has not been associated with object.");
 	    return *t;
     };
 
   private:
-    
+
     // Pointer to the current time
     const double* t;
 
   };
-  
+
 }
 
 #endif

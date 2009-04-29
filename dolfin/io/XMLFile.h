@@ -18,7 +18,7 @@
 
 namespace dolfin
 {
-  
+
   class Mesh;
   class Graph;
   template <class T> class MeshFunction;
@@ -27,14 +27,14 @@ namespace dolfin
   class LocalMeshData;
 
   class XMLObject;
-  
+
   class XMLFile : public GenericFile
   {
   public:
-    
+
     XMLFile(const std::string filename, bool gzip);
     ~XMLFile();
-    
+
     // Input
 
     void operator>> (GenericVector& x);
@@ -48,7 +48,7 @@ namespace dolfin
     void operator>> (ParameterList& parameters);
     void operator>> (BLASFormData& blas);
     void operator>> (Graph& graph);
-    
+
     // Output
 
     void operator<< (const GenericVector& x);
@@ -60,21 +60,21 @@ namespace dolfin
     void operator<< (const MeshFunction<double>& mesh);
     void operator<< (const MeshFunction<bool>& mesh);
     void operator<< (const ParameterList& parameters);
-    
+
     // Friends
     friend void sax_start_element (void *ctx, const xmlChar *name, const xmlChar **attrs);
     friend void sax_end_element   (void *ctx, const xmlChar *name);
-    
+
   private:
-    
-    void parseFile();
+
+    void parse_file();
     void parseSAX();
 
-    FILE* openFile();
-    void  closeFile(FILE* fp);
-    
+    FILE* open_file();
+    void  close_file(FILE* fp);
+
     // Implementation for specific class (output)
-    XMLObject* xmlObject;
+    XMLObject* xml_object;
 
     // True if header is written (need to close)
     bool header_written;
@@ -86,9 +86,9 @@ namespace dolfin
     bool gzip;
 
   };
-  
+
   // Callback functions for the SAX interface
-  
+
   void sax_start_document (void *ctx);
   void sax_end_document   (void *ctx);
   void sax_start_element  (void *ctx, const xmlChar *name, const xmlChar **attrs);
@@ -97,7 +97,7 @@ namespace dolfin
   void sax_warning     (void *ctx, const char *msg, ...);
   void sax_error       (void *ctx, const char *msg, ...);
   void sax_fatal_error (void *ctx, const char *msg, ...);
-  
+
 }
 
 #endif

@@ -13,20 +13,20 @@
 
 namespace dolfin
 {
-  
+
   class Mesh;
   class Point;
   class Vector;
-  
+
   /// A simple mesh editor for creating simplicial meshes in 1D, 2D and 3D.
 
   class MeshEditor
   {
   public:
-    
+
     /// Constructor
     MeshEditor();
-    
+
     /// Destructor
     ~MeshEditor();
 
@@ -35,34 +35,34 @@ namespace dolfin
 
     /// Open mesh of given cell type, topological and geometrical dimension
     void open(Mesh& mesh, std::string type, uint tdim, uint gdim);
-    
+
     /// Specify number of vertices
-    void initVertices(uint num_vertices);
-    
+    void init_vertices(uint num_vertices);
+
     /// Specify number of vertices
     void initHigherOrderVertices(uint num_higher_order_vertices);
-    
+
     /// Specify number of cells
-    void initCells(uint num_cells);
-    
+    void init_cells(uint num_cells);
+
     /// Specify number of cells
     void initHigherOrderCells(uint num_higher_order_cells, uint num_higher_order_cell_dof);
-    
+
     /// Set boolean indicator inside MeshGeometry
     void setAffineCellIndicator(uint c, const std::string affine_str);
-    
+
     /// Add vertex v at given point p
-    void addVertex(uint v, const Point& p);
+    void add_vertex(uint v, const Point& p);
 
     /// Add vertex v at given coordinate x
-    void addVertex(uint v, double x);
+    void add_vertex(uint v, double x);
 
     /// Add vertex v at given coordinate (x, y)
-    void addVertex(uint v, double x, double y);
+    void add_vertex(uint v, double x, double y);
 
     /// Add vertex v at given coordinate (x, y, z)
-    void addVertex(uint v, double x, double y, double z);
-    
+    void add_vertex(uint v, double x, double y, double z);
+
     /// Add vertex v at given point p
     void addHigherOrderVertex(uint v, const Point& p);
 
@@ -76,34 +76,34 @@ namespace dolfin
     void addHigherOrderVertex(uint v, double x, double y, double z);
 
     /// Add cell with given vertices
-    void addCell(uint c, const std::vector<uint>& v);
+    void add_cell(uint c, const std::vector<uint>& v);
 
     /// Add cell (interval) with given vertices
-    void addCell(uint c, uint v0, uint v1);
+    void add_cell(uint c, uint v0, uint v1);
 
     /// Add cell (triangle) with given vertices
-    void addCell(uint c, uint v0, uint v1, uint v2);
-    
+    void add_cell(uint c, uint v0, uint v1, uint v2);
+
     /// Add cell (tetrahedron) with given vertices
-    void addCell(uint c, uint v0, uint v1, uint v2, uint v3);
-    
+    void add_cell(uint c, uint v0, uint v1, uint v2, uint v3);
+
     /// Add higher order cell data (assume P2 triangle for now)
     void addHigherOrderCellData(uint c, uint v0, uint v1, uint v2, uint v3, uint v4, uint v5);
-    
+
     /// Close mesh, finish editing, and order entities locally
     void close(bool order=true);
 
   private:
 
     // Add vertex, common part
-    void addVertexCommon(uint v, uint dim);
-    
+    void add_vertexCommon(uint v, uint dim);
+
     // Add higher order vertex, common part
     void addHigherOrderVertexCommon(uint v, uint dim);
 
     // Add cell, common part
-    void addCellCommon(uint v, uint dim);
-    
+    void add_cellCommon(uint v, uint dim);
+
     // Add higher order cell, common part
     void addHigherOrderCellCommon(uint v, uint dim);
 
@@ -115,10 +115,10 @@ namespace dolfin
 
     // Topological dimension
     uint tdim;
-    
+
     // Geometrical (Euclidean) dimension
     uint gdim;
-    
+
     // Number of vertices
     uint num_vertices;
 
@@ -133,21 +133,21 @@ namespace dolfin
 
     // Temporary storage for local cell data
     std::vector<uint> vertices;
-    
+
     // NEW HIGHER ORDER MESH STUFF
-    
+
     // Number of higher order vertices
     uint num_higher_order_vertices;
-    
+
     // Number of higher order cells <--- should be the same as num_cells!  good for error checking
     uint num_higher_order_cells;
-    
+
     // Next available higher order vertex
     uint next_higher_order_vertex;
 
     // Next available higher order cell
     uint next_higher_order_cell;
-    
+
     // Temporary storage for local higher order cell data
     std::vector<uint> higher_order_cell_data;
 

@@ -17,12 +17,12 @@ namespace dolfin
   /// Given the number of cells (nx, ny, nz) in each direction,
   /// the total number of tetrahedra will be 6*nx*ny*nz and the
   /// total number of vertices will be (nx + 1)*(ny + 1)*(nz + 1).
-  
- 
+
+
   class UnitSphere : public Mesh
   {
   public:
-  
+
     UnitSphere(uint nx);
 
   private:
@@ -33,7 +33,7 @@ namespace dolfin
     double max(double x,double y,double z);
 
   };
-  
+
 }
 
 #endif

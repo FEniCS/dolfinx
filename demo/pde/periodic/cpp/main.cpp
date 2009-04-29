@@ -13,7 +13,7 @@
 
 #include <dolfin.h>
 #include "Poisson.h"
-  
+
 using namespace dolfin;
 
 int main()
@@ -69,7 +69,7 @@ int main()
   Constant u0(0.0);
   DirichletBoundary dirichlet_boundary;
   DirichletBC bc0(V, u0, dirichlet_boundary);
-  
+
   // Create periodic boundary condition
   PeriodicBoundary periodic_boundary;
   PeriodicBC bc1(V, periodic_boundary);

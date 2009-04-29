@@ -44,7 +44,7 @@ void SubMesh::init(const Mesh& mesh,
 {
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(*this, mesh.type().cellType(),
+  editor.open(*this, mesh.type().cell_type(),
               mesh.topology().dim(), mesh.geometry().dim());
 
   // Extract cells
@@ -54,12 +54,12 @@ void SubMesh::init(const Mesh& mesh,
     if (sub_domains(*cell) == sub_domain)
       cells.insert(cell->index());
   }
-  
+
   // Map to keep track of new local indices for vertices
   std::map<uint, uint> local_vertex_indices;
 
   // Add cells
-  editor.initCells(cells.size());
+  editor.init_cells(cells.size());
   uint current_cell = 0;
   uint current_vertex = 0;
   for (std::set<uint>::iterator cell_it = cells.begin(); cell_it != cells.end(); ++cell_it)
@@ -82,17 +82,17 @@ void SubMesh::init(const Mesh& mesh,
       }
       cell_vertices.push_back(local_vertex_index);
     }
-    editor.addCell(current_cell++, cell_vertices);
+    editor.add_cell(current_cell++, cell_vertices);
   }
 
   // Add vertices
-  editor.initVertices(local_vertex_indices.size());
+  editor.init_vertices(local_vertex_indices.size());
   for (std::map<uint, uint>::iterator it = local_vertex_indices.begin(); it != local_vertex_indices.end(); ++it)
   {
     Vertex vertex(mesh, it->first);
-    editor.addVertex(it->second, vertex.point());
+    editor.add_vertex(it->second, vertex.point());
   }
-  
+
   // Close editor
   editor.close();
 

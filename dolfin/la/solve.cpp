@@ -23,7 +23,7 @@ void dolfin::solve(const GenericMatrix& A, GenericVector& x, const GenericVector
   LinearSolver solver(solver_type, pc_type);
   solver.solve(A, x, b);
 }
-//-----------------------------------------------------------------------------  
+//-----------------------------------------------------------------------------
 double dolfin::residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b)
 {
   GenericVector* y = A.factory().create_vector();

@@ -12,9 +12,9 @@
 #ifdef HAS_SLEPC
 %extend dolfin::SLEPcEigenSolver {
 
-PyObject* getEigenvalue(const int emode) {
+PyObject* get_eigenvalue(const int emode) {
     double err, ecc;
-    self->getEigenvalue(err, ecc, emode);
+    self->get_eigenvalue(err, ecc, emode);
 
     PyObject* result = PyTuple_New(2);
     PyTuple_SET_ITEM(result, 0, PyFloat_FromDouble(err));
@@ -23,9 +23,9 @@ PyObject* getEigenvalue(const int emode) {
     return result;
 }
 
-PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const int emode) {
+PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const int emode) {
     double err, ecc;
-    self->getEigenpair(err, ecc, rr, cc, emode);
+    self->get_eigenpair(err, ecc, rr, cc, emode);
 
     PyObject* result = PyTuple_New(2);
     PyTuple_SET_ITEM(result, 0, PyFloat_FromDouble(err));
@@ -38,31 +38,31 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 #endif
 
 %extend dolfin::BlockVector {
-    Vector& getitem(int i) 
-    { 
+    Vector& getitem(int i)
+    {
       return self->get(i);
     }
     void setitem(int i, Vector& v)
     {
-      self->set(i,v); 
+      self->set(i,v);
     }
 }
 
 %extend dolfin::BlockVector {
   %pythoncode %{
 
-    def __add__(self, v): 
-      a = self.copy() 
+    def __add__(self, v):
+      a = self.copy()
       a += v
       return a
 
-    def __sub__(self, v): 
-      a = self.copy() 
+    def __sub__(self, v):
+      a = self.copy()
       a -= v
       return a
 
-    def __mul__(self, v): 
-      a = self.copy() 
+    def __mul__(self, v):
+      a = self.copy()
       a *= v
       return a
 
@@ -89,8 +89,8 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     i,j = t
     return self.get(i,j)
 
-  def BlockMatrix_set(self,t,m): 
-    i,j = t 
+  def BlockMatrix_set(self,t,m):
+    i,j = t
     return self.set(i,j,m)
 
   BlockMatrix.__getitem__ = BlockMatrix_get
@@ -112,7 +112,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   {
     (*self)*=a;
   }
-  
+
   void _vec_mul(const GenericVector& other)
   {
     (*self)*=other;
@@ -126,7 +126,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             return False
         self_type = get_tensor_type(self)
         return self_type == get_tensor_type(other)
-        
+
     def array(self):
         " Return a numpy array representation of Vector"
         from numpy import zeros
@@ -249,7 +249,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             ret.axpy(1.0,other)
             return ret
         return NotImplemented
-    
+
     def __sub__(self,other):
         """x.__sub__(y) <==> x-y"""
         if self.__is_compatibable(other):
@@ -257,7 +257,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             ret.axpy(-1.0,other)
             return ret
         return NotImplemented
-    
+
     def __mul__(self,other):
         """x.__mul__(y) <==> x*y"""
         if isinstance(other,(int,float)):
@@ -269,7 +269,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             ret._vec_mul(other)
             return ret
         return NotImplemented
-    
+
     def __div__(self,other):
         """x.__div__(y) <==> x/y"""
         if isinstance(other,(int,float)):
@@ -277,15 +277,15 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             ret._scale(1.0/other)
             return ret
         return NotImplemented
-    
+
     def __radd__(self,other):
         """x.__radd__(y) <==> y+x"""
         return self.__add__(other)
-    
+
     def __rsub__(self,other):
         """x.__rsub__(y) <==> y-x"""
         return self.__sub__(other)
-    
+
     def __rmul__(self,other):
         """x.__rmul__(y) <==> y*x"""
         if isinstance(other,(int,float)):
@@ -293,25 +293,25 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             ret._scale(other)
             return ret
         return NotImplemented
-    
+
     def __rdiv__(self,other):
         """x.__rdiv__(y) <==> y/x"""
         return NotImplemented
-    
+
     def __iadd__(self,other):
         """x.__iadd__(y) <==> x+y"""
         if self.__is_compatibable(other):
             self.axpy(1.0,other)
             return self
         return NotImplemented
-    
+
     def __isub__(self,other):
         """x.__isub__(y) <==> x-y"""
         if self.__is_compatibable(other):
             self.axpy(-1.0,other)
             return self
         return NotImplemented
-    
+
     def __imul__(self,other):
         """x.__imul__(y) <==> x*y"""
         if isinstance(other,(float,int)):
@@ -328,7 +328,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             self._scale(1.0/other)
             return self
         return NotImplemented
-    
+
   %}
 }
 %enddef
@@ -341,26 +341,26 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   {
     (*self)*=a;
   }
-  
+
   PyObject* _data() {
     npy_intp rowdims[1];
     rowdims[0] = self->size(0)+1;
-    
+
     PyArrayObject* rows = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, rowdims, NPY_ULONG, (char *)(std::tr1::get<0>(self->data()))));
     if ( rows == NULL ) return NULL;
-    
+
     npy_intp coldims[1];
     coldims[0] = std::tr1::get<3>(self->data());
-    
+
     PyArrayObject* cols = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, coldims, NPY_ULONG, (char *)(std::tr1::get<1>(self->data()))));
     if ( cols == NULL ) return NULL;
-    
+
     npy_intp valuedims[1];
     valuedims[0] = std::tr1::get<3>(self->data());
-    
+
     PyArrayObject* values = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, valuedims, NPY_DOUBLE, (char *)(std::tr1::get<2>(self->data()))));
     if ( values == NULL ) return NULL;
-    
+
     return PyTuple_Pack(3,rows, cols, values);
   }
 
@@ -372,7 +372,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             return False
         self_type = get_tensor_type(self)
         return self_type == get_tensor_type(other)
-        
+
     def array(self):
         " Return a numpy array representation of Matrix"
         from numpy import zeros
@@ -481,7 +481,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             ret.axpy(1.0,other)
             return ret
         return NotImplemented
-    
+
     def __sub__(self,other):
         """x.__sub__(y) <==> x-y"""
         if self.__is_compatibable(other):
@@ -489,7 +489,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             ret.axpy(-1.0,other)
             return ret
         return NotImplemented
-    
+
     def __mul__(self,other):
         """x.__mul__(y) <==> x*y"""
         from numpy import ndarray
@@ -523,7 +523,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             result_vec.get(ret)
             return ret
         return NotImplemented
-    
+
     def __div__(self,other):
         """x.__div__(y) <==> x/y"""
         if isinstance(other,(int,float)):
@@ -531,15 +531,15 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             ret._scale(1.0/other)
             return ret
         return NotImplemented
-    
+
     def __radd__(self,other):
         """x.__radd__(y) <==> y+x"""
         return self.__add__(other)
-    
+
     def __rsub__(self,other):
         """x.__rsub__(y) <==> y-x"""
         return self.__sub__(other)
-    
+
     def __rmul__(self,other):
         """x.__rmul__(y) <==> y*x"""
         if isinstance(other,(int,float)):
@@ -547,25 +547,25 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             ret._scale(other)
             return ret
         return NotImplemented
-    
+
     def __rdiv__(self,other):
         """x.__rdiv__(y) <==> y/x"""
         return NotImplemented
-    
+
     def __iadd__(self,other):
         """x.__iadd__(y) <==> x+y"""
         if self.__is_compatibable(other):
             self.axpy(1.0,other)
             return self
         return NotImplemented
-    
+
     def __isub__(self,other):
         """x.__isub__(y) <==> x-y"""
         if self.__is_compatibable(other):
             self.axpy(-1.0,other)
             return self
         return NotImplemented
-    
+
     def __imul__(self,other):
         """x.__imul__(y) <==> x*y"""
         if isinstance(other,(float,int)):
@@ -757,7 +757,7 @@ bool has_linear_algebra_backend(std::string backend)
   {
 #ifdef HAS_PETSC
     return true;
-#else 
+#else
     return false;
 #endif
   }
@@ -765,7 +765,7 @@ bool has_linear_algebra_backend(std::string backend)
   {
 #ifdef HAS_TRILINOS
     return true;
-#else 
+#else
     return false;
 #endif
   }
@@ -773,7 +773,7 @@ bool has_linear_algebra_backend(std::string backend)
   {
 #ifdef HAS_MTL4
     return true;
-#else 
+#else
     return false;
 #endif
   }

@@ -17,7 +17,7 @@
 
 namespace dolfin
 {
-  
+
   class GenericTensor;
   class GenericMatrix;
   class GenericVector;
@@ -26,7 +26,7 @@ namespace dolfin
   class DirichletBC;
 
   //--- Copies of assembly functions in Assembler.h ---
-  
+
   /// Assemble tensor
   void assemble(GenericTensor& A,
                 const Form& a,
@@ -53,12 +53,12 @@ namespace dolfin
                        const Form& L,
                        const DirichletBC& bc,
                        bool reset_tensors=true);
- 
+
   /// Assemble system (A, b) and apply Dirichlet boundary conditions
   void assemble_system(GenericMatrix& A,
                        GenericVector& b,
                        const Form& a,
-                       const Form& L, 
+                       const Form& L,
                        std::vector<const DirichletBC*>& bcs,
                        bool reset_tensors=true);
 
@@ -73,6 +73,35 @@ namespace dolfin
                        const MeshFunction<uint>* interior_facet_domains,
                        const GenericVector* x0,
                        bool reset_tensors=true);
+
+  /// Assemble system (A, b) and apply Dirichlet boundary condition
+  void assemble_system_new(GenericMatrix& A,
+                       GenericVector& b,
+                       const Form& a,
+                       const Form& L,
+                       const DirichletBC& bc,
+                       bool reset_tensors=true);
+ 
+  /// Assemble system (A, b) and apply Dirichlet boundary conditions
+  void assemble_system_new(GenericMatrix& A,
+                       GenericVector& b,
+                       const Form& a,
+                       const Form& L, 
+                       std::vector<const DirichletBC*>& bcs,
+                       bool reset_tensors=true);
+
+  /// Assemble system (A, b) on sub domains and apply Dirichlet boundary conditions
+  void assemble_system_new(GenericMatrix& A,
+                       GenericVector& b,
+                       const Form& a,
+                       const Form& L,
+                       std::vector<const DirichletBC*>& bcs,
+                       const MeshFunction<uint>* cell_domains,
+                       const MeshFunction<uint>* exterior_facet_domains,
+                       const MeshFunction<uint>* interior_facet_domains,
+                       const GenericVector* x0,
+                       bool reset_tensors=true);
+
 
   //--- Specialized versions for scalars ---
 

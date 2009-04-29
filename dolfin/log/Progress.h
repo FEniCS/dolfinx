@@ -14,7 +14,7 @@
 
 namespace dolfin
 {
-  
+
   /// This class provides a simple way to create and update progress
   /// bars during a computation. A progress bar may be used either
   /// in an iteration with a known number of steps:
@@ -47,21 +47,21 @@ namespace dolfin
 
     /// Destructor
     ~Progress();
-    
+
     /// Set current position
     void operator=(double p);
 
     /// Increment progress
     void operator++(int);
-    
+
   private:
-    
+
     // Update progress
     void update(double p);
-    
+
     // Title of progress bar
     std::string title;
-    
+
     // Number of steps
     uint n;
 
@@ -76,21 +76,21 @@ namespace dolfin
 
     // Current progress
     double p;
-    
+
     // Current time
     double t;
-    
+
     // Always visible
     bool always;
-    
+
     // Finished flag
     bool finished;
-    
+
     // Displayed flag
     bool displayed;
-    
+
   };
-  
+
 }
 
 #endif

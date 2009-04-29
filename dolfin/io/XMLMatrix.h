@@ -12,26 +12,26 @@
 
 namespace dolfin
 {
-  
+
   class XMLMatrix : public XMLObject
   {
   public:
 
     XMLMatrix(GenericMatrix& matrix);
-    
-    void startElement (const xmlChar *name, const xmlChar **attrs);
-    void endElement   (const xmlChar *name);
-    
-  private:
-    
-    enum ParserState { OUTSIDE, INSIDE_MATRIX, INSIDE_ROW, DONE };
-    
-    void readMatrix  (const xmlChar *name, const xmlChar **attrs);
-    void readRow     (const xmlChar *name, const xmlChar **attrs);
-    void readEntry   (const xmlChar *name, const xmlChar **attrs);
 
-    void setRow();
-    
+    void start_element (const xmlChar *name, const xmlChar **attrs);
+    void end_element   (const xmlChar *name);
+
+  private:
+
+    enum ParserState { OUTSIDE, INSIDE_MATRIX, INSIDE_ROW, DONE };
+
+    void read_matrix  (const xmlChar *name, const xmlChar **attrs);
+    void read_row     (const xmlChar *name, const xmlChar **attrs);
+    void read_entry   (const xmlChar *name, const xmlChar **attrs);
+
+    void set_row();
+
     GenericMatrix& A;
     ParserState state;
 
@@ -39,9 +39,9 @@ namespace dolfin
     uint row;
     std::vector<uint> columns;
     std::vector<double> values;
-    
+
   };
-  
+
 }
 
 #endif

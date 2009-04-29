@@ -14,36 +14,36 @@
 
 namespace dolfin
 {
-  
+
   class RAWFile : public GenericFile
     {
     public:
-      
+
       //Write results in raw format
       //Much lighter than the other formats
       //A Xd3d format for instance
-      
+
       RAWFile(const std::string filename);
       ~RAWFile();
-      
-      
+
+
       void operator<< (const MeshFunction<int>& meshfunction);
       void operator<< (const MeshFunction<unsigned int>& meshfunction);
       void operator<< (const MeshFunction<double>& meshfunction);
       void operator<< (const Function& u);
-      
+
     private:
       void ResultsWrite(const Function& u) const;
       void rawNameUpdate(const int counter);
-      
+
       template<class T>
-      void MeshFunctionWrite(T& meshfunction);    
-      
+      void MeshFunctionWrite(T& meshfunction);
+
       // raw filename
       std::string raw_filename;
 
     };
-  
+
 }
 
 #endif

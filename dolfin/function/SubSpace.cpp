@@ -15,7 +15,7 @@ SubSpace::SubSpace(const FunctionSpace& V, uint component)
   // Create array
   std::vector<uint> c;
   c.push_back(component);
-  
+
   // Extract subspace and assign
   boost::shared_ptr<FunctionSpace> _V(V.extract_sub_space(c));
   *static_cast<FunctionSpace*>(this) = *_V;

@@ -18,7 +18,7 @@ namespace dolfin
 
   /// Get value of parameter with given key
   Parameter dolfin_get(std::string key);
-  
+
   /// Set value of parameter
   void dolfin_set(std::string key, dolfin::Parameter value);
 
@@ -30,7 +30,7 @@ namespace dolfin
 
   /// Check if parameter has been changed from default value
   bool dolfin_changed(std::string key);
- 
+
 }
 
 #endif

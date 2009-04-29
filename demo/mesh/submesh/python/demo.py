@@ -15,7 +15,7 @@ class Structure(SubDomain):
 
 # Create mesh
 mesh = Rectangle(0.0, 0.0, 3.0, 1.0, 60, 20)
-  
+
 # Create sub domain markers and mark everaything as 0
 sub_domains = MeshFunction("uint", mesh, mesh.topology().dim())
 sub_domains.set_all(0)
@@ -23,7 +23,7 @@ sub_domains.set_all(0)
 # Mark structure domain as 1
 structure = Structure()
 structure.mark(sub_domains, 1)
-  
+
 # Extract sub meshes
 fluid_mesh = SubMesh(mesh, sub_domains, 0)
 structure_mesh = SubMesh(mesh, sub_domains, 1)
@@ -35,7 +35,7 @@ for x in structure_mesh.coordinates():
 # Move fluid mesh according to structure mesh
 fluid_mesh.move(structure_mesh)
 fluid_mesh.smooth()
-  
+
 # Plot meshes
 plot(fluid_mesh, title="Fluid")
 plot(structure_mesh, title="Structure")

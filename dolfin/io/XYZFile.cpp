@@ -33,13 +33,13 @@ void XYZFile::operator<<(const Function& u)
 {
   // Update xyz file name and clear file
   xyzNameUpdate(counter);
-        
+
   // Write results
   ResultsWrite(u);
-  
+
   // Increase the number of times we have saved the function
   counter++;
-  
+
   cout << "Saved function " << u.name() << " (" << u.label()
        << ") to file " << filename << " in xd3d xyz format." << endl;
 }
@@ -50,7 +50,7 @@ void XYZFile::ResultsWrite(const Function& u) const
   std::ofstream fp(xyz_filename.c_str(), std::ios_base::app);
   if (!fp)
     error("Unable to open file %s", filename.c_str());
-  
+
   const uint rank = u.function_space().element().value_rank();
   if(rank > 1)
     error("Only scalar functions can be saved in xyz format.");
@@ -61,9 +61,9 @@ void XYZFile::ResultsWrite(const Function& u) const
     dim *= u.function_space().element().value_dimension(i);
 
   Mesh& mesh = const_cast<Mesh&>(u.function_space().mesh());
-  
+
   // Allocate memory for function values at vertices
-  const uint size = mesh.numVertices()*dim;
+  const uint size = mesh.num_vertices()*dim;
   double* values = new double[size];
 
   // Get function values at vertices
@@ -79,33 +79,33 @@ void XYZFile::ResultsWrite(const Function& u) const
   std::ostringstream ss;
   ss << std::scientific;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-  {    
+  {
         ss.str("");
         ss<<vertex->x(0)<<" "<< vertex->x(1)<<" "<< values[ vertex->index()];
         ss<<std::endl;
         fp<<ss.str( );
-  }	 
-  
- 
+  }
+
+
   delete [] values;
 }
 //----------------------------------------------------------------------------
-void XYZFile::xyzNameUpdate(const int counter) 
+void XYZFile::xyzNameUpdate(const int counter)
 {
   std::string filestart, extension;
   std::ostringstream fileid, newfilename;
-  
+
   fileid.fill('0');
   fileid.width(6);
-  
+
   filestart.assign(filename, 0, filename.find("."));
   extension.assign(filename, filename.find("."), filename.size());
-  
+
   fileid << counter;
   newfilename << filestart << fileid.str() << ".xyz";
-  
+
   xyz_filename = newfilename.str();
-  
+
   // Make sure file is empty
   FILE* fp = fopen(xyz_filename.c_str(), "w");
   if (!fp)
@@ -114,23 +114,23 @@ void XYZFile::xyzNameUpdate(const int counter)
 }
 //----------------------------------------------------------------------------
 template<class T>
-void XYZFile::MeshFunctionWrite(T& meshfunction) 
+void XYZFile::MeshFunctionWrite(T& meshfunction)
 {
   // Update xyz file name and clear file
   xyzNameUpdate(counter);
- 
-  Mesh& mesh = meshfunction.mesh(); 
+
+  Mesh& mesh = meshfunction.mesh();
 
   if( meshfunction.dim() != mesh.topology().dim() )
-    error("XYZ output of mesh functions is implemenetd for cell-based functions only.");    
-  
+    error("XYZ output of mesh functions is implemenetd for cell-based functions only.");
+
   // Open file
   std::ofstream fp(xyz_filename.c_str(), std::ios_base::app);
-  
-  fp<<mesh.numCells( ) <<std::endl;
+
+  fp<<mesh.num_cells( ) <<std::endl;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     fp << meshfunction.get( cell->index() )  << std::endl;
-  
+
   // Close file
   fp.close();
 
@@ -141,5 +141,5 @@ void XYZFile::MeshFunctionWrite(T& meshfunction)
 
   cout << "Saved mesh function " << mesh.name() << " (" << mesh.label()
        << ") to file " << filename << " in XYZ format." << endl;
-}    
+}
 //----------------------------------------------------------------------------

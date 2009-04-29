@@ -1,0 +1,20 @@
+# Copyright (C) 2009 Bartosz Sawicki.
+# Licensed under the GNU LGPL Version 2.1.
+#
+# First added:  2009-03-30
+# Last changed: 2009-03-30
+#
+# The bilinear form a(v, u) and linear form L(v) for
+# curl operator.
+#
+# Compile this form with FFC: ffc -l dolfin CurrentDensity.form
+
+eL = VectorElement("CG", "tetrahedron", 1)
+eN = FiniteElement("Nedelec 1st kind H(curl)", "tetrahedron", 0)
+
+v = TestFunction(eL)
+u = TrialFunction(eL)
+T = Function(eN)
+
+a = dot(v, u)*dx
+L = dot(v, curl(T))*dx

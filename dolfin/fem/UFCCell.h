@@ -22,7 +22,7 @@ namespace dolfin
   class UFCCell : public ufc::cell
   {
   public:
-    
+
     /// Create emtpy UFC cell
     UFCCell() : ufc::cell(), num_vertices(0) {}
 
@@ -44,7 +44,7 @@ namespace dolfin
     {
       clear();
     }
-    
+
     /// Initialize UFC cell data
     void init(const Cell& cell)
     {
@@ -124,7 +124,7 @@ namespace dolfin
     }
 
   private:
-    
+
     // Number of cell vertices
     uint num_vertices;
 

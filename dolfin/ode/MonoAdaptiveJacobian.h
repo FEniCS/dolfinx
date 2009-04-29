@@ -11,9 +11,9 @@
 
 namespace dolfin
 {
-  
+
   class MonoAdaptiveTimeSlab;
-    
+
   /// This class represents the Jacobian matrix of the system of
   /// equations defined on a mono-adaptive time slab.
 

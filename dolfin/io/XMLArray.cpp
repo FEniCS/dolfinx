@@ -60,21 +60,21 @@ void XMLArray::start_element(const xmlChar *name, const xmlChar **attrs)
   switch ( state )
   {
   case OUTSIDE_ARRAY:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
     {
       read_array_tag(name, attrs);
     }
-    
+
     break;
-    
+
   case INSIDE_ARRAY:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "element") == 0 )
       read_entry(name, attrs);
-    
+
     break;
-    
+
   default:
     ;
   }
@@ -85,15 +85,15 @@ void XMLArray::end_element(const xmlChar *name)
   switch ( state )
   {
   case INSIDE_ARRAY:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
     {
       state = ARRAY_DONE;
       release();
     }
-    
+
     break;
-    
+
   default:
     ;
   }
@@ -141,7 +141,7 @@ void XMLArray::read_array_tag(const xmlChar *name, const xmlChar **attrs)
   size = parse_uint(name, attrs, "size");
 
   std::string array_type = parse_string(name, attrs, "type");
-  
+
   // Initialize vector
   switch ( atype )
   {
@@ -152,7 +152,7 @@ void XMLArray::read_array_tag(const xmlChar *name, const xmlChar **attrs)
       ix->clear();
       ix->resize(size);
       std::fill(ix->begin(), ix->end(), 0);
-      
+
       break;
 
     case UINT:
@@ -182,14 +182,14 @@ void XMLArray::read_array_tag(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLArray::read_entry(const xmlChar *name, const xmlChar **attrs)
 {
-  // Parse index 
+  // Parse index
   uint index = parse_uint(name, attrs, "index");
-  
+
   // Check values
   if (index >= size)
     error("Illegal XML data for Array: row index %d out of range (0 - %d)",
           index, size - 1);
-  
+
   int ivalue = 0;
   uint uvalue = 0;
   double dvalue = 0.0;
@@ -217,7 +217,7 @@ void XMLArray::read_entry(const xmlChar *name, const xmlChar **attrs)
       (*dx)[index] = dvalue;
 
       break;
-          
+
      default:
       ;
   }

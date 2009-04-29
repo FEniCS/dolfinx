@@ -24,7 +24,7 @@ namespace dolfin
     UnitCube(uint nx, uint ny, uint nz);
 
   };
-  
+
 }
 
 #endif

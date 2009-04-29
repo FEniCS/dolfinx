@@ -26,37 +26,37 @@
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
 
-using namespace dolfin; 
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EpetraKrylovSolver::EpetraKrylovSolver(SolverType method, PreconditionerType pc) 
-                    : method(method), pc_type(pc), prec(0) 
-{ 
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-EpetraKrylovSolver::EpetraKrylovSolver(SolverType method, EpetraPreconditioner& prec) 
-                    : method(method), pc_type(default_pc), prec(&prec) 
-{ 
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-EpetraKrylovSolver::~EpetraKrylovSolver() 
+EpetraKrylovSolver::EpetraKrylovSolver(SolverType method, PreconditionerType pc)
+                    : method(method), pc_type(pc), prec(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint EpetraKrylovSolver::solve(const GenericMatrix& A, GenericVector& x, 
-                                       const GenericVector& b) 
+EpetraKrylovSolver::EpetraKrylovSolver(SolverType method, EpetraPreconditioner& prec)
+                    : method(method), pc_type(default_pc), prec(&prec)
 {
-  return  solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(), 
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+EpetraKrylovSolver::~EpetraKrylovSolver()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+dolfin::uint EpetraKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
+                                       const GenericVector& b)
+{
+  return  solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(),
                 b.down_cast<EpetraVector>());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x, 
-                                       const EpetraVector& b) 
+dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
+                                       const EpetraVector& b)
 {
-  //FIXME need the ifdef AztecOO 
+  //FIXME need the ifdef AztecOO
 
 
   // FIXME: check vector size
@@ -68,19 +68,19 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   Epetra_MultiVector* b_vec    = dynamic_cast<Epetra_MultiVector*>(b.vec().get());
 
   /*
-  // Create linear system 
-  Epetra_LinearProblem linear_system; 
-  linear_system.SetOperator(row_matrix); 
-  linear_system.SetLHS(x_vec); 
-  linear_system.SetRHS(b_vec); 
+  // Create linear system
+  Epetra_LinearProblem linear_system;
+  linear_system.SetOperator(row_matrix);
+  linear_system.SetLHS(x_vec);
+  linear_system.SetRHS(b_vec);
   AztecOO linear_solver(linear_system);;
   */
 
-  // Create solver 
+  // Create solver
   AztecOO linear_solver;
   linear_solver.SetUserMatrix(row_matrix);
-  linear_solver.SetLHS(x_vec); 
-  linear_solver.SetRHS(b_vec); 
+  linear_solver.SetLHS(x_vec);
+  linear_solver.SetRHS(b_vec);
 
   // Set solver type
   switch (method)
@@ -98,19 +98,19 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     linear_solver.SetAztecOption( AZ_solver, AZ_bicgstab);
     break;
   case lu:
-    error("EpetraKrylovSolver::solve LU not supported."); 
+    error("EpetraKrylovSolver::solve LU not supported.");
     break;
   default:
     error("EpetraKrylovSolver::solve solver type not supported.");
   }
 
-  //FIXME GS or SSOR not a PreconditionerType not in 
+  //FIXME GS or SSOR not a PreconditionerType not in
   // Set preconditioner
   switch (pc_type)
   {
   case default_pc:
     linear_solver.SetAztecOption( AZ_precond, AZ_dom_decomp);
-    linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu); 
+    linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu);
     break;
   case jacobi:
     linear_solver.SetAztecOption( AZ_precond, AZ_Jacobi);
@@ -120,23 +120,23 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     break;
   case ilu:
     linear_solver.SetAztecOption( AZ_precond, AZ_dom_decomp);
-    linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu); 
+    linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu);
     break;
   case icc:
     linear_solver.SetAztecOption( AZ_precond, AZ_icc);
     break;
   case amg_ml:
-    // Do nothing. Configured below    
+    // Do nothing. Configured below
     break;
   default:
-    error("EpetraKrylovSolver::solve pc type not supported."); 
+    error("EpetraKrylovSolver::solve pc type not supported.");
   }
 
-  if (pc_type == amg_ml) 
-  {  
+  if (pc_type == amg_ml)
+  {
 //#ifdef HAVE_ML_AZTECOO
-    //FIXME ifdef ML 
-    // Code from trilinos-8.0.3/packages/didasko/examples/ml/ex1.cpp 
+    //FIXME ifdef ML
+    // Code from trilinos-8.0.3/packages/didasko/examples/ml/ex1.cpp
 
     // Create and set an ML multilevel preconditioner
     ML *ml_handle;
@@ -156,13 +156,13 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     ML_Aggregate *agg_object;
     ML_Aggregate_Create(&agg_object);
 
-    // specify max coarse size 
+    // specify max coarse size
     ML_Aggregate_Set_MaxCoarseSize(agg_object, 1);
 
     // generate the hierady
     N_levels = ML_Gen_MGHierarchy_UsingAggregation(ml_handle, 0, ML_INCREASING, agg_object);
 
-    // Set a symmetric Gauss-Seidel smoother for the MG method 
+    // Set a symmetric Gauss-Seidel smoother for the MG method
     ML_Gen_Smoother_SymGaussSeidel(ml_handle, ML_ALL_LEVELS, ML_BOTH, 1, ML_DEFAULT);
 
     // generate solver
@@ -174,21 +174,21 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     // set this operator as preconditioner for AztecOO
     linear_solver.SetPrecOperator(&MLop);
 
-//#else 
-//    error("EpetraKrylovSolver::solve not compiled with ML support."); 
-//#endif 
-  }   
+//#else
+//    error("EpetraKrylovSolver::solve not compiled with ML support.");
+//#endif
+  }
 
-  std::cout << "starting to iterate " << std::endl; 
+  std::cout << "starting to iterate " << std::endl;
   linear_solver.Iterate(1000, 1.0e-9);
 
-  return linear_solver.NumIters(); 
+  return linear_solver.NumIters();
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::disp() const 
+void EpetraKrylovSolver::disp() const
 {
-  error("EpetraKrylovSolver::disp not implemented"); 
+  error("EpetraKrylovSolver::disp not implemented");
 }
 //-----------------------------------------------------------------------------
-#endif 
+#endif
 

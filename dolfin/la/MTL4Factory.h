@@ -44,7 +44,7 @@ namespace dolfin
     { return factory; }
 
   private:
-    
+
     // Private constructor
     MTL4Factory() {}
 

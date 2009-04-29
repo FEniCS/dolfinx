@@ -14,7 +14,7 @@ using namespace dolfin;
 class Harmonic : public ODE
 {
 public:
-  
+
   Harmonic() : ODE(2, 4.0 * DOLFIN_PI), e(0.0) {}
 
   void u0(real* u)
@@ -40,12 +40,12 @@ public:
 
     return true;
   }
-  
+
   real error()
   {
     return e;
   }
-  
+
 private:
 
   real e;

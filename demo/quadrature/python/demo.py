@@ -15,7 +15,7 @@ def main(argv):
         print "Usage: './demo rule n' where rule is one of"
         print "gauss, radau, lobatto, and n is the number of points"
         return 2
-  
+
     n = int(argv[1])
 
     if argv[0] == "gauss":

@@ -9,7 +9,7 @@
 // Last changed: 2008-08-06
 
 #include <sstream>
-#include <iomanip> 
+#include <iomanip>
 
 #include "STLFactory.h"
 #include "STLMatrix.h"
@@ -24,18 +24,18 @@ void STLMatrix::disp(uint precision) const
     std::stringstream line;
     line << std::setiosflags(std::ios::scientific);
     line << std::setprecision(precision);
-    
+
     line << "|";
     for (std::map<uint, double>::const_iterator it = A[i].begin(); it != A[i].end(); it++)
       line << " (" << i << ", " << it->first << ", " << it->second << ")";
     line << " |";
-    
+
     dolfin::cout << line.str().c_str() << dolfin::endl;
   }
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& STLMatrix::factory() const
 {
-  return STLFactory::instance(); 
+  return STLFactory::instance();
 }
 //-----------------------------------------------------------------------------

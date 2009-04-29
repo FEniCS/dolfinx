@@ -12,20 +12,20 @@
 #include "GenericSparsityPattern.h"
 #include "LinearAlgebraFactory.h"
 
-class Epetra_FECrsGraph; 
+class Epetra_FECrsGraph;
 
 namespace dolfin
 {
-  class EpetraVector; 
-  class EpetraFactory; 
-  /// Base class for sparsity patterns of vectors/matrices. Concrete sub classes can 
+  class EpetraVector;
+  class EpetraFactory;
+  /// Base class for sparsity patterns of vectors/matrices. Concrete sub classes can
   /// be used to initalise vectors and sparse matrices.
-  class EpetraSparsityPattern : public GenericSparsityPattern 
+  class EpetraSparsityPattern : public GenericSparsityPattern
   {
   public:
 
     /// Constructor
-    EpetraSparsityPattern(); 
+    EpetraSparsityPattern();
 
     /// Destructor
     virtual ~EpetraSparsityPattern();
@@ -42,7 +42,7 @@ namespace dolfin
     /// Insert non-zero entry
     void pinsert(const uint* num_rows, const uint * const * rows);
 
-    /// Return global size 
+    /// Return global size
     uint size(uint n) const;
 
     /// Return array with number of non-zeroes per row
@@ -57,12 +57,12 @@ namespace dolfin
     /// Return factory object for backend
     LinearAlgebraFactory& factory() const;
 
-    Epetra_FECrsGraph& pattern() const;  
+    Epetra_FECrsGraph& pattern() const;
 
-  private: 
-    Epetra_FECrsGraph* epetra_graph; 
-    uint                rank; 
-    uint*               dims; 
+  private:
+    Epetra_FECrsGraph* epetra_graph;
+    uint                rank;
+    uint*               dims;
 
   };
 

@@ -38,7 +38,7 @@ namespace dolfin
 
     /// Assignment of string
     virtual const ParameterValue& operator= (std::string value);
-    
+
     /// Cast to int
     virtual operator int() const;
 
@@ -66,7 +66,7 @@ namespace dolfin
 
     /// Constructor
     IntValue(int value) : ParameterValue(), value(value) {}
-    
+
     /// Destructor
     ~IntValue() {}
 
@@ -81,7 +81,7 @@ namespace dolfin
 
     /// Cast to uint
     operator uint() const
-    { 
+    {
       if ( value < 0 )
 	error("Unable to convert negative int parameter to uint.");
       return static_cast<uint>(value);
@@ -103,7 +103,7 @@ namespace dolfin
 
     /// Constructor
     RealValue(double value) : ParameterValue(), value(value) {}
-    
+
     /// Destructor
     ~RealValue() {}
 
@@ -135,7 +135,7 @@ namespace dolfin
 
     /// Assignment of bool
     const ParameterValue& operator= (bool value) { this->value = value; return *this; }
-    
+
     /// Cast to int
     operator bool() const { return value; }
 
@@ -155,7 +155,7 @@ namespace dolfin
 
     /// Constructor
     StringValue(std::string value) : ParameterValue(), value(value) {}
-    
+
     /// Destructor
     ~StringValue() {}
 

@@ -24,7 +24,7 @@ namespace dolfin
   public:
 
     /// Create a point at (x, y, z)
-    Point(const double x = 0.0, const double y = 0.0, const double z =0.0) 
+    Point(const double x = 0.0, const double y = 0.0, const double z =0.0)
     { _x[0] = x; _x[1] = y; _x[2] = z; }
 
     /// Create point from array
@@ -58,7 +58,7 @@ namespace dolfin
 
     /// Compute sum of two points
     Point operator+ (const Point& p) const { Point q(_x[0] + p._x[0], _x[1] + p._x[1], _x[2] + p._x[2]); return q; }
-    
+
     /// Compute difference of two points
     Point operator- (const Point& p) const { Point q(_x[0] - p._x[0], _x[1] - p._x[1], _x[2] - p._x[2]); return q; }
 
@@ -73,7 +73,7 @@ namespace dolfin
 
     /// Incremental multiplication with scalar
     const Point& operator*= (double a) { _x[0] *= a; _x[1] *= a; _x[2] *= a; return *this; }
-    
+
     /// Division by scalar
     Point operator/ (double a) const { Point p(_x[0]/a, _x[1]/a, _x[2]/a); return p; }
 
@@ -106,10 +106,10 @@ namespace dolfin
 
   /// Multiplication with scalar
   inline Point operator*(double a, const Point& p) { return p*a; }
-  
+
   /// Output
   LogStream& operator<< (LogStream& stream, const Point& p);
-  
+
 }
 
 #endif

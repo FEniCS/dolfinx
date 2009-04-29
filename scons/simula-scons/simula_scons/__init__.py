@@ -8,6 +8,7 @@ from subprocess import Popen, PIPE
 from SCons.Builder import Builder
 from SCons.Action import Action
 from SCons.Options import Options
+from SCons.Variables import Variables
 from SCons.Environment import Environment
 from ExtendedEnvironment import ExtendedEnvironment
 

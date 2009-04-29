@@ -1,5 +1,7 @@
  - Add elementwise multiplication in GeneriVector interface
  - GenericVector interface in PyDOLFIN now support the sequence protocol
+ - Rename of camelCaps functions names: fooBar --> foo_bar
+   Note: mesh.numVertices() --> mesh.num_vertices(), mesh.numCells() --> mesh.num_cells()
  - Add slicing capabilities for GenericMatrix interface in PyDOLFIN (only getitem)
  - Add slicing capabilities for GenericVector interface in PyDOLFIN
  - Add sum to GenericVector interface

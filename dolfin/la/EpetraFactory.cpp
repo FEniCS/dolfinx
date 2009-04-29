@@ -18,7 +18,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 EpetraFactory:: EpetraFactory()
 {
-  comm = new Epetra_SerialComm(); 
+  comm = new Epetra_SerialComm();
 }
 //-----------------------------------------------------------------------------
 EpetraFactory:: ~EpetraFactory()
@@ -26,19 +26,19 @@ EpetraFactory:: ~EpetraFactory()
   delete comm;
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix* EpetraFactory::create_matrix() const 
-{ 
+EpetraMatrix* EpetraFactory::create_matrix() const
+{
   return new EpetraMatrix();
 }
 //-----------------------------------------------------------------------------
-EpetraSparsityPattern* EpetraFactory::create_pattern() const 
+EpetraSparsityPattern* EpetraFactory::create_pattern() const
 {
-  return new EpetraSparsityPattern(); 
+  return new EpetraSparsityPattern();
 }
 //-----------------------------------------------------------------------------
-EpetraVector* EpetraFactory::create_vector() const 
-{ 
-  return new EpetraVector(); 
+EpetraVector* EpetraFactory::create_vector() const
+{
+  return new EpetraVector();
 }
 //-----------------------------------------------------------------------------
 Epetra_SerialComm& EpetraFactory::getSerialComm()

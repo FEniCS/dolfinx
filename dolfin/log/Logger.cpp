@@ -73,14 +73,14 @@ void Logger::progress(std::string title, double p) const
 {
   int N = DOLFIN_TERM_WIDTH - 15;
   int n = static_cast<int>(p*static_cast<double>(N));
-  
+
   // Print the title
   std::string s = "| " + title;
   for (uint i = 0; i < (N - title.size() - 1); i++)
     s += " ";
   s += "|";
   write(0, s);
-  
+
   // Print the progress bar
   s = "|";
   for (int i = 0; i < n; i++)
@@ -130,7 +130,7 @@ void Logger::setDebugLevel(int debug_level)
   this->debug_level = debug_level;
 }
 //-----------------------------------------------------------------------------
-void Logger::registerTiming(std::string task, double elapsed_time)
+void Logger::register_timing(std::string task, double elapsed_time)
 {
   // Remove small or negative numbers
   if (elapsed_time < DOLFIN_EPS)
@@ -234,7 +234,7 @@ void Logger::write(int debug_level, std::string msg) const
   // Add indentation
   for (int i = 0; i < indentation_level; i++)
     msg = "  " + msg;
-  
+
   // Choose destination
   switch (destination)
   {

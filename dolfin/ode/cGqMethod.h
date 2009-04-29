@@ -21,7 +21,7 @@ namespace dolfin
   class cGqMethod : public Method
   {
   public:
-    
+
     cGqMethod(unsigned int q);
 
     /// Evaluate solution at given point
@@ -31,7 +31,7 @@ namespace dolfin
     inline real ueval(real x0, real values[], uint i) const
     { return ( i == 0 ? x0 : values[i - 1] ); }
 
-    /// Compute residual at right end-point    
+    /// Compute residual at right end-point
     real residual(real x0, real values[], real f, real k) const;
 
     /// Compute new time step based on the given residual
@@ -42,12 +42,12 @@ namespace dolfin
 
     /// Display method data
     void disp() const;
-    
+
   protected:
 
-    void computeQuadrature();
-    void computeBasis();
-    void computeWeights();
+    void compute_quadrature();
+    void compute_basis();
+    void compute_weights();
 
   };
 

@@ -1,7 +1,7 @@
 """ This demo implements a Poisson equations solver
 based on the demo "dolfin/demo/pde/poisson/python/demo.py"
-in Dolfin using Epetra matrices, the AztecOO CG solver and ML 
-AMG preconditioner 
+in Dolfin using Epetra matrices, the AztecOO CG solver and ML
+AMG preconditioner
 """
 
 __author__ = "Kent-Andre Mardal (kent-and@simula.no)"
@@ -10,7 +10,7 @@ __copyright__ = "Copyright (C) 2008 Kent-Andre Mardal"
 
 # Test for Trilinos:
 try:
-    from PyTrilinos import Epetra, AztecOO, TriUtils, ML 
+    from PyTrilinos import Epetra, AztecOO, TriUtils, ML
 except:
     print "You Need to have PyTrilinos with Epetra, AztecOO, TriUtils and ML installed for this demo to run",
     print "Exiting."
@@ -41,7 +41,7 @@ f = Function(V,"500.0 * exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 
 
 a = dot(grad(v), grad(u))*dx
-L = v*f*dx 
+L = v*f*dx
 
 
 # Define boundary condition
@@ -49,37 +49,37 @@ u0 = Constant(mesh, 0.0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
 # Create linear system
-A, b = assemble_system(a, L, bc) 
+A, b = assemble_system(a, L, bc)
 
-# Solution   
+# Solution
 U = Function(V)
 
-# Fetch underlying epetra objects 
-A_epetra = down_cast(A).mat() 
-b_epetra = down_cast(b).vec() 
-x_epetra = down_cast(U.vector()).vec() 
+# Fetch underlying epetra objects
+A_epetra = down_cast(A).mat()
+b_epetra = down_cast(b).vec()
+x_epetra = down_cast(U.vector()).vec()
 
 # Sets up the parameters for ML using a python dictionary
-MLList = {"max levels"        : 3, 
+MLList = {"max levels"        : 3,
           "output"            : 10,
           "smoother: type"    : "ML symmetric Gauss-Seidel",
           "aggregation: type" : "Uncoupled",
           "ML validate parameter list" : False
 }
 
-# Create the preconditioner 
+# Create the preconditioner
 Prec = ML.MultiLevelPreconditioner(A_epetra, False)
 Prec.SetParameterList(MLList)
 Prec.ComputePreconditioner()
 
-# Create solver and solve system 
+# Create solver and solve system
 Solver = AztecOO.AztecOO(A_epetra, x_epetra, b_epetra)
 Solver.SetPrecOperator(Prec)
 Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
 Solver.SetAztecOption(AztecOO.AZ_output, 16)
 Solver.Iterate(1550, 1e-5)
 
-# Plot the solution 
+# Plot the solution
 plot(U)
 interactive()
 

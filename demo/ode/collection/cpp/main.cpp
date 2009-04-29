@@ -15,7 +15,7 @@ using namespace dolfin;
 class Harmonic : public ODE
 {
 public:
-  
+
   Harmonic(real T) : ODE(2, T) {}
 
   void u0(real* u)

@@ -24,7 +24,7 @@ namespace dolfin
   class MassMatrix : public Matrix
   {
   public:
-  
+
     /// Construct mass matrix on a given mesh
     MassMatrix(Mesh& mesh) : Matrix()
     {
@@ -41,7 +41,7 @@ namespace dolfin
   class PETScMassMatrix : public PETScMatrix
   {
   public:
-  
+
     /// Construct mass matrix on a given mesh
     PETScMassMatrix(Mesh& mesh) : PETScMatrix()
     {
@@ -58,7 +58,7 @@ namespace dolfin
   class uBLASMassMatrix : public uBLASSparseMatrix
   {
   public:
-  
+
     /// Construct mass matrix on a given mesh
     uBLASMassMatrix(Mesh& mesh) : uBLASSparseMatrix()
     {

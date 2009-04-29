@@ -19,7 +19,7 @@ namespace dolfin
   class UFCMesh : public ufc::mesh
   {
   public:
-    
+
     /// Create empty UFC mesh
     UFCMesh() : ufc::mesh() {}
 
@@ -43,7 +43,7 @@ namespace dolfin
 
       // Set topological dimension
       topological_dimension = mesh.topology().dim();
-      
+
       // Set geometric dimension
       geometric_dimension = mesh.geometry().dim();
 

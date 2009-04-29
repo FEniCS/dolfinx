@@ -39,7 +39,7 @@ namespace dolfin
   /// For mixed systems (vector-valued and mixed elements), an
   /// optional set of parameters may be used to specify for which sub
   /// system the boundary condition should be specified.
-  
+
   class PeriodicBC : public BoundaryCondition
   {
   public:

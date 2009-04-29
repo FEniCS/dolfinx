@@ -100,7 +100,7 @@ namespace dolfin
 
     /// Return geometric dimension
     uint geometric_dimension() const;
-    
+
     /// Function evaluation (overload for user-defined function, simple version)
     virtual void eval(double* values, const double* x) const;
 

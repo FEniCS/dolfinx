@@ -32,7 +32,7 @@ namespace dolfin
     uBLASVector* create_vector() const
     { return new uBLASVector(); }
 
-    /// Create empty sparsity pattern 
+    /// Create empty sparsity pattern
     GenericSparsityPattern* create_pattern() const
     { return 0; }
 

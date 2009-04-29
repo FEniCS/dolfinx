@@ -19,7 +19,7 @@ namespace dolfin
 
   /// Simple built-in plot commands for plotting functions and meshes.
   /// For plotting to work, PyDOLFIN and Viper must be installed.
-  
+
   /// Plot function
   void plot(const Function& v, std::string mode="auto");
 

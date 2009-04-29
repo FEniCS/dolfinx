@@ -15,7 +15,7 @@
 
 namespace dolfin
 {
-  
+
   template<class Mat> class uBLASMatrix;
   class uBLASVector;
 

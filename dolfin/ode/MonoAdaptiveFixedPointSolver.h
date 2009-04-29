@@ -14,7 +14,7 @@
 namespace dolfin
 {
   class MonoAdaptiveTimeSlab;
-  
+
   /// This class implements fixed-point iteration on mono-adaptive
   /// time slabs. In each iteration, the solution is updated according
   /// to the fixed-point iteration x = g(x).

@@ -5,7 +5,7 @@ __date__ = "2008-04-03 -- 2008-04-03"
 __copyright__ = "Copyright (C) 2008 Rolv Erlend Bredesen"
 __license__  = "GNU LGPL Version 2.1"
 
-import numpy 
+import numpy
 from pylab import *
 import matplotlib.axes3d as p3
 from solution import u, t, k, r

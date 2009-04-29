@@ -36,7 +36,7 @@ namespace dolfin
 
     /// Destructor
     ~UFC();
-    
+
     /// Update current cell
     void update(const Cell& cell);
 
@@ -63,7 +63,7 @@ namespace dolfin
 
     // Mesh
     UFCMesh mesh;
-    
+
     // Current cell
     UFCCell cell;
 
@@ -85,7 +85,7 @@ namespace dolfin
 
     // std::vector of global dimensions for primary arguments
     uint* global_dimensions;
-    
+
     // std::vector of mapped dofs for primary arguments
     uint** dofs;
 

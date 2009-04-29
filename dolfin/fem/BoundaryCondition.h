@@ -52,16 +52,16 @@ namespace dolfin
     class LocalData
     {
     public:
-      
+
       // Constructor
       LocalData(const FunctionSpace& V);
-      
+
       // Destructor
       ~LocalData();
 
       // Local dimension
       uint n;
-      
+
       // Coefficients
       double* w;
 

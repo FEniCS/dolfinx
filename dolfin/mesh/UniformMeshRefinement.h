@@ -24,7 +24,7 @@ namespace dolfin
     static void refine(Mesh& mesh);
 
     /// Refine simplicial mesh uniformly
-    static void refineSimplex(Mesh& mesh);
+    static void refine_simplex(Mesh& mesh);
 
   };
 

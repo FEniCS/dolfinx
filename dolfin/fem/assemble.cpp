@@ -52,7 +52,7 @@ void dolfin::assemble_system(GenericMatrix& A,
 void dolfin::assemble_system(GenericMatrix& A,
                              GenericVector& b,
                              const Form& a,
-                             const Form& L, 
+                             const Form& L,
                              std::vector<const DirichletBC*>& bcs,
                              bool reset_tensors)
 {
@@ -70,10 +70,48 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const GenericVector* x0,
                              bool reset_tensors)
 {
-  Assembler::assemble_system(A, b, a, L, bcs, 
+  Assembler::assemble_system(A, b, a, L, bcs,
                              cell_domains, exterior_facet_domains, interior_facet_domains,
                              x0, reset_tensors);
 }
+//-----------------------------------------------------------------------------
+void dolfin::assemble_system_new(GenericMatrix& A,
+                             GenericVector& b,
+                             const Form& a,
+                             const Form& L,
+                             const DirichletBC& bc,
+                             bool reset_tensors)
+{
+  Assembler::assemble_system_new(A, b, a, L, bc, reset_tensors);
+}
+//-----------------------------------------------------------------------------
+void dolfin::assemble_system_new(GenericMatrix& A,
+                             GenericVector& b,
+                             const Form& a,
+                             const Form& L, 
+                             std::vector<const DirichletBC*>& bcs,
+                             bool reset_tensors)
+{
+  Assembler::assemble_system_new(A, b, a, L, bcs, reset_tensors);
+}
+//-----------------------------------------------------------------------------
+void dolfin::assemble_system_new(GenericMatrix& A,
+                             GenericVector& b,
+                             const Form& a,
+                             const Form& L,
+                             std::vector<const DirichletBC*>& bcs,
+                             const MeshFunction<uint>* cell_domains,
+                             const MeshFunction<uint>* exterior_facet_domains,
+                             const MeshFunction<uint>* interior_facet_domains,
+                             const GenericVector* x0,
+                             bool reset_tensors)
+{
+  Assembler::assemble_system_new(A, b, a, L, bcs, 
+                             cell_domains, exterior_facet_domains, interior_facet_domains,
+                             x0, reset_tensors);
+}
+
+
 //-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a,
                         bool reset_tensor)

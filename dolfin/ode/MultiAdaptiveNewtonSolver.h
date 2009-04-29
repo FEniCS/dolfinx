@@ -17,7 +17,7 @@
 
 namespace dolfin
 {
-  
+
   class ODE;
   class MultiAdaptiveTimeSlab;
   class Method;
@@ -48,7 +48,7 @@ namespace dolfin
 
     // End iterations
     void end();
-    
+
     // Make an iteration
     real iteration(real tol, uint iter, real d0, real d1);
 

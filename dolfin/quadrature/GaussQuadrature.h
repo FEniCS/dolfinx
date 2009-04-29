@@ -25,17 +25,17 @@ namespace dolfin
   class GaussQuadrature : public GaussianQuadrature
   {
   public:
-    
+
     GaussQuadrature(unsigned int n);
 
     void disp() const;
 
   private:
 
-    void computePoints();
+    void compute_points();
 
   };
-  
+
 }
 
 #endif

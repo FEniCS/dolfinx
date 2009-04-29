@@ -53,7 +53,7 @@ real Legendre::eval(uint n, real x)
   real prev     = x;
   real current  = 0.0;
 
-  for (uint i = 2; i <= n; ++i) 
+  for (uint i = 2; i <= n; ++i)
   {
     real ii(i);
 
@@ -71,17 +71,17 @@ real Legendre::ddx(uint n, real x)
   // Special case n = 0
   if (n == 0)
     return 0.0;
-  
+
   // Special case n = 1
   if (n == 1)
     return 1.0;
-  
+
   // Avoid division by zero
   if (abs(x - 1.0) < real_epsilon())
     x -= 2.0*real_epsilon();
   if (abs(x + 1.0) < real_epsilon())
     x += 2.0*real_epsilon();
-  
+
   // Formula, BETA page 254
   real nn = real(n);
   return nn * (x*eval(n, x) - eval(n-1, x)) / (x*x - 1.0);

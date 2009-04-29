@@ -1,4 +1,9 @@
-from ffc import *
+from ufl import *
+from ufl.log import set_level
+from ffc.compiler.compiler import compile
+
+# Set debug level
+set_level(20)
 
 # Reserved variables for forms
 (a, L, M) = (None, None, None)
@@ -23,4 +28,4 @@ U = Function(element)
 a = v.dx(i)*(1.0 + U*U)*u.dx(i)*dx + v.dx(i)*(2.0*U*u)*U.dx(i)*dx
 L = v.dx(i)*(1.0 + U*U)*U.dx(i)*dx - v*f*dx
 
-compile([a, L, M, element], "NonlinearPoisson", options={'language': 'dolfin', 'blas': False, 'form_postfix': True, 'precision': '15', 'cache_dir': None, 'cpp optimize': False, 'split_implementation': False, 'quadrature_points': False, 'output_dir': '.', 'representation': 'tensor', 'shared_ptr': True, 'optimize': False}, global_variables=globals())
+compile([a, L, M, element], "NonlinearPoisson", {'log_level': 20, 'language': 'dolfin', 'format': 'dolfin', 'form_postfix': True, 'quadrature_order': 'auto', 'precision': '15', 'cpp optimize': False, 'split_implementation': False, 'cache_dir': None, 'output_dir': '.', 'representation': 'auto', 'optimize': True}, globals())

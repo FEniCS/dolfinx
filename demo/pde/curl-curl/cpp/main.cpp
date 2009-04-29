@@ -4,27 +4,26 @@
 // First added:  2009-03-30
 // Last changed: 2009-03-30
 //
-// Eddy currents phenomena in low conducting body can be 
+// Eddy currents phenomena in low conducting body can be
 // described using electric vector potential and curl-curl operator:
 //    \nabla \times \nabla \times T = - \frac{\partial B}{\partial t}
 // Electric vector potential defined as:
 //    \nabla \times T = J
 //
-// Boundary condition 
-//    J_n = 0, 
+// Boundary condition
+//    J_n = 0,
 //    T_t=T_w=0, \frac{\partial T_n}{\partial n} = 0
-// which is naturaly fulfilled for zero Dirichlet BC with Nedelec (edge) 
+// which is naturaly fulfilled for zero Dirichlet BC with Nedelec (edge)
 // elements.
 
 #include <dolfin.h>
 #include "EddyCurrents.h"
 #include "CurrentDensity.h"
-  
+
 using namespace dolfin;
 
 int main()
 {
-  
   // Homogenous external magnetic field (dB/dt)
   class Source : public Function
   {
@@ -62,7 +61,7 @@ int main()
   UnitSphere mesh(8);
 
   // Define functions
-  Source dBdt;
+  Source dbdt;
   Zero zero;
   Function T;
   Function J;
@@ -75,9 +74,9 @@ int main()
   // Use forms to define variational problem
   EddyCurrentsBilinearForm a(V,V);
   EddyCurrentsLinearForm L(V);
-  L.dBdt = dBdt;
+  L.dbdt = dbdt;
   VariationalProblem problem (a, L,  bc);
-  
+
   // Solve problem using default solver
   problem.solve(T);
 

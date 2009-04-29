@@ -34,9 +34,9 @@ namespace dolfin
     { dims[0] = dims[1] = 0; }
 
     /// Create M x N matrix
-    STLMatrix(uint M, uint N) 
+    STLMatrix(uint M, uint N)
     { resize(M, N); }
-  
+
     /// Copy constructor
     explicit STLMatrix(const STLMatrix& A)
     { error("Not implemented."); }
@@ -57,7 +57,7 @@ namespace dolfin
     /// Return size of given dimension
     virtual uint size(uint dim) const
     { return dims[dim]; }
-    
+
     /// Set all entries to zero and keep any sparse structure
     virtual void zero()
     {
@@ -73,7 +73,7 @@ namespace dolfin
     virtual void disp(uint precision=2) const;
 
     //--- Implementation of the GenericMatrix interface ---
-    
+
     /// Initialize M x N matrix
     virtual void resize(uint M, uint N)
     { dims[0] = M; dims[1] = N; A.resize(M); }
@@ -161,10 +161,10 @@ namespace dolfin
       // Check that the rank is 2
       if ( rank != 2 )
         error("Illegal tensor rank (%d) for matrix. Rank must be 2.", rank);
-      
+
       // Initialize matrix
       resize(dims[0], dims[1]);
-      
+
       // Save dimensions
       this->dims[0] = dims[0];
       this->dims[1] = dims[1];

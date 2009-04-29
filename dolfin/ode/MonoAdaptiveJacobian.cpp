@@ -23,7 +23,7 @@ MonoAdaptiveJacobian::MonoAdaptiveJacobian(MonoAdaptiveTimeSlab& timeslab,
   //Do nothing
   xx = new real[ts.N];
   yy = new real[ts.N];
-  
+
   real_zero(ts.N, xx);
   real_zero(ts.N, yy);
 }
@@ -71,7 +71,7 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
         ts.copy(ts.x, noffset, ts.u, 0, ts.N);
         ode.M(xx, yy, ts.u, t);
       }
-      
+
       // Copy values from yy
       ts.copy(yy, 0, y, noffset, ts.N);
     }

@@ -1,8 +1,10 @@
 // Copyright (C) 2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Ola Skavhaug, 2009.
+//
 // First added:  2008-12-09
-// Last changed: 2008-12-09
+// Last changed: 2009-04-20
 //
 // Template utilities for MPI class placed here so it will not clutter
 // the MPI class.
@@ -27,7 +29,6 @@ namespace dolfin
   void distribute(std::vector<T>& values, std::vector<uint>& partition)
   {
     dolfin_assert(values.size() == partition.size());
-    dolfin_assert(values.size() > 0);
 
     // Get number of processes and process number
     const uint num_processes = MPI::num_processes();

@@ -17,7 +17,7 @@ using namespace dolfin;
 XMLMesh::XMLMesh(Mesh& mesh) : XMLObject(), _mesh(mesh), state(OUTSIDE), f(0), a(0)
 {
   // Do nothing
-  
+
 }
 //-----------------------------------------------------------------------------
 XMLMesh::~XMLMesh()
@@ -25,30 +25,30 @@ XMLMesh::~XMLMesh()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
 {
   switch ( state )
   {
   case OUTSIDE:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "mesh") == 0 )
     {
-      readMesh(name, attrs);
+      read_mesh(name, attrs);
       state = INSIDE_MESH;
     }
-    
+
     break;
 
   case INSIDE_MESH:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "vertices") == 0 )
     {
-      readVertices(name, attrs);
+      read_vertices(name, attrs);
       state = INSIDE_VERTICES;
     }
     else if ( xmlStrcasecmp(name, (xmlChar *) "cells") == 0 )
     {
-      readCells(name, attrs);
+      read_cells(name, attrs);
       state = INSIDE_CELLS;
     }
     else if ( xmlStrcasecmp(name, (xmlChar *) "data") == 0 )
@@ -61,42 +61,42 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
     }
 
     break;
-    
+
   case INSIDE_VERTICES:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "vertex") == 0 )
-      readVertex(name, attrs);
+      read_vertex(name, attrs);
 
     break;
-    
+
   case INSIDE_CELLS:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "interval") == 0 )
-      readInterval(name, attrs);
+      read_interval(name, attrs);
     else if ( xmlStrcasecmp(name, (xmlChar *) "triangle") == 0 )
-      readTriangle(name, attrs);
+      read_triangle(name, attrs);
     else if ( xmlStrcasecmp(name, (xmlChar *) "tetrahedron") == 0 )
-      readTetrahedron(name, attrs);
-    
+      read_tetrahedron(name, attrs);
+
     break;
 
   case INSIDE_DATA:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "meshfunction") == 0 )
     {
-      readMeshFunction(name, attrs);
+      read_meshFunction(name, attrs);
       state = INSIDE_MESH_FUNCTION;
     }
     if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
     {
-      readArray(name, attrs);
+      read_array(name, attrs);
       state = INSIDE_ARRAY;
     }
 
     break;
 
   case INSIDE_COORDINATES:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
       state = INSIDE_VECTOR;
@@ -105,54 +105,54 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
     break;
 
   case INSIDE_MESH_FUNCTION:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "entity") == 0 )
-      readMeshEntity(name, attrs);
+      read_meshEntity(name, attrs);
 
     break;
 
   case INSIDE_ARRAY:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "element") == 0 )
-      readArrayElement(name, attrs);
+      read_arrayElement(name, attrs);
 
     break;
 
   case INSIDE_VECTOR:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "entry") == 0 )
     break;
-    
+
   default:
     ;
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::endElement(const xmlChar *name)
+void XMLMesh::end_element(const xmlChar *name)
 {
   switch ( state )
   {
   case INSIDE_MESH:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "mesh") == 0 )
     {
-      closeMesh();
+      close_mesh();
       state = DONE;
     }
-    
+
     break;
-    
+
   case INSIDE_VERTICES:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "vertices") == 0 )
     {
-      state = INSIDE_MESH;    
+      state = INSIDE_MESH;
     }
 
     break;
 
   case INSIDE_CELLS:
-	 
+
     if ( xmlStrcasecmp(name, (xmlChar *) "cells") == 0 )
     {
       state = INSIDE_MESH;
@@ -220,12 +220,12 @@ bool XMLMesh::close()
   return state == DONE;
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::readMesh(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_mesh(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
-  std::string type = parseString(name, attrs, "celltype");
+  std::string type = parse_string(name, attrs, "celltype");
   uint gdim = parseUnsignedInt(name, attrs, "dim");
-  
+
   // Create cell type to get topological dimension
   CellType* cell_type = CellType::create(type);
   uint tdim = cell_type->dim();
@@ -235,51 +235,51 @@ void XMLMesh::readMesh(const xmlChar *name, const xmlChar **attrs)
   editor.open(_mesh, CellType::string2type(type), tdim, gdim);
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::readVertices(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_vertices(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   uint num_vertices = parseUnsignedInt(name, attrs, "size");
 
   // Set number of vertices
-  editor.initVertices(num_vertices);
+  editor.init_vertices(num_vertices);
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::readCells(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_cells(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   uint num_cells = parseUnsignedInt(name, attrs, "size");
 
   // Set number of vertices
-  editor.initCells(num_cells);
+  editor.init_cells(num_cells);
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_vertex(const xmlChar *name, const xmlChar **attrs)
 {
   // Read index
   uint v = parseUnsignedInt(name, attrs, "index");
-  
+
   // Handle differently depending on geometric dimension
   switch ( _mesh.geometry().dim() )
   {
   case 1:
     {
-      double x = parseReal(name, attrs, "x");
-      editor.addVertex(v, x);
+      double x = parse_real(name, attrs, "x");
+      editor.add_vertex(v, x);
     }
     break;
   case 2:
     {
-      double x = parseReal(name, attrs, "x");
-      double y = parseReal(name, attrs, "y");
-      editor.addVertex(v, x, y);
+      double x = parse_real(name, attrs, "x");
+      double y = parse_real(name, attrs, "y");
+      editor.add_vertex(v, x, y);
     }
     break;
   case 3:
     {
-      double x = parseReal(name, attrs, "x");
-      double y = parseReal(name, attrs, "y");
-      double z = parseReal(name, attrs, "z");
-      editor.addVertex(v, x, y, z);
+      double x = parse_real(name, attrs, "x");
+      double y = parse_real(name, attrs, "y");
+      double z = parse_real(name, attrs, "z");
+      editor.add_vertex(v, x, y, z);
     }
     break;
   default:
@@ -287,7 +287,7 @@ void XMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::readInterval(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_interval(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
   if ( _mesh.topology().dim() != 1 )
@@ -298,12 +298,12 @@ void XMLMesh::readInterval(const xmlChar *name, const xmlChar **attrs)
   uint c  = parseUnsignedInt(name, attrs, "index");
   uint v0 = parseUnsignedInt(name, attrs, "v0");
   uint v1 = parseUnsignedInt(name, attrs, "v1");
-  
+
   // Add cell
-  editor.addCell(c, v0, v1);
+  editor.add_cell(c, v0, v1);
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_triangle(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
   if ( _mesh.topology().dim() != 2 )
@@ -315,12 +315,12 @@ void XMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
   uint v0 = parseUnsignedInt(name, attrs, "v0");
   uint v1 = parseUnsignedInt(name, attrs, "v1");
   uint v2 = parseUnsignedInt(name, attrs, "v2");
-  
+
   // Add cell
-  editor.addCell(c, v0, v1, v2);
+  editor.add_cell(c, v0, v1, v2);
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
   if ( _mesh.topology().dim() != 3 )
@@ -333,16 +333,16 @@ void XMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
   uint v1 = parseUnsignedInt(name, attrs, "v1");
   uint v2 = parseUnsignedInt(name, attrs, "v2");
   uint v3 = parseUnsignedInt(name, attrs, "v3");
-  
+
   // Add cell
-  editor.addCell(c, v0, v1, v2, v3);
+  editor.add_cell(c, v0, v1, v2, v3);
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::readMeshFunction(const xmlChar* name, const xmlChar** attrs)
+void XMLMesh::read_meshFunction(const xmlChar* name, const xmlChar** attrs)
 {
   // Parse values
-  const std::string id = parseString(name, attrs, "name");
-  const std::string type = parseString(name, attrs, "type");
+  const std::string id = parse_string(name, attrs, "name");
+  const std::string type = parse_string(name, attrs, "type");
   const uint dim = parseUnsignedInt(name, attrs, "dim");
   const uint size = parseUnsignedInt(name, attrs, "size");
 
@@ -364,11 +364,11 @@ void XMLMesh::readMeshFunction(const xmlChar* name, const xmlChar** attrs)
   *f = 0;
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::readArray(const xmlChar* name, const xmlChar** attrs)
+void XMLMesh::read_array(const xmlChar* name, const xmlChar** attrs)
 {
   // Parse values
-  const std::string id = parseString(name, attrs, "name");
-  const std::string type = parseString(name, attrs, "type");
+  const std::string id = parse_string(name, attrs, "name");
+  const std::string type = parse_string(name, attrs, "type");
   const uint size = parseUnsignedInt(name, attrs, "size");
 
   // Only uint supported at this point
@@ -380,7 +380,7 @@ void XMLMesh::readArray(const xmlChar* name, const xmlChar** attrs)
   dolfin_assert(a);
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::readMeshEntity(const xmlChar* name, const xmlChar** attrs)
+void XMLMesh::read_meshEntity(const xmlChar* name, const xmlChar** attrs)
 {
   // Read index
   const uint index = parseUnsignedInt(name, attrs, "index");
@@ -392,7 +392,7 @@ void XMLMesh::readMeshEntity(const xmlChar* name, const xmlChar** attrs)
   f->set(index, value);
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::readArrayElement(const xmlChar* name, const xmlChar** attrs)
+void XMLMesh::read_arrayElement(const xmlChar* name, const xmlChar** attrs)
 {
   // Read index
   const uint index = parseUnsignedInt(name, attrs, "index");
@@ -404,7 +404,7 @@ void XMLMesh::readArrayElement(const xmlChar* name, const xmlChar** attrs)
   (*a)[index] = value;
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::closeMesh()
+void XMLMesh::close_mesh()
 {
   editor.close(false);
 }

@@ -53,23 +53,23 @@ void XMLMap::start_element(const xmlChar *name, const xmlChar **attrs)
   switch ( state )
   {
   case OUTSIDE_MAP:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "map") == 0 )
     {
       start_map(name, attrs);
       state = INSIDE_MAP;
     }
-    
+
     break;
-    
+
   case INSIDE_MAP:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "map_entry") == 0 )
     {
       read_map_entry(name, attrs);
       state = INSIDE_MAP_ENTRY;
     }
-    
+
     break;
 
   case INSIDE_MAP_ENTRY:
@@ -81,7 +81,7 @@ void XMLMap::start_element(const xmlChar *name, const xmlChar **attrs)
       read_double(name, attrs);
     if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
       read_array(name, attrs);
-    
+
   default:
     ;
   }
@@ -92,13 +92,13 @@ void XMLMap::end_element(const xmlChar *name)
   switch ( state )
   {
   case INSIDE_MAP:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "map") == 0 )
     {
       state = MAP_DONE;
       release();
     }
-    
+
     break;
 
   case INSIDE_MAP_ENTRY:
@@ -107,7 +107,7 @@ void XMLMap::end_element(const xmlChar *name)
       finalize_map_entry();
       state = INSIDE_MAP;
     }
-    
+
     break;
 
   default:
@@ -271,8 +271,8 @@ void XMLMap::start_map(const xmlChar *name, const xmlChar **attrs)
   std::string value_type = parse_string(name, attrs, "value_type");
 
   // Make sure key is an unsigned integer
-  dolfin_assert( key_type.compare("uint") == 0 ); 
-  
+  dolfin_assert( key_type.compare("uint") == 0 );
+
   // Initialize map
   switch ( mtype )
   {
@@ -280,7 +280,7 @@ void XMLMap::start_map(const xmlChar *name, const xmlChar **attrs)
       dolfin_assert( value_type.compare("int") == 0 );
       dolfin_assert(im);
       im->clear();
-      
+
       break;
 
     case UINT:
@@ -325,7 +325,7 @@ void XMLMap::start_map(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMap::read_map_entry(const xmlChar *name, const xmlChar **attrs)
 {
-  // Parse index 
+  // Parse index
   current_key = parse_uint(name, attrs, "key");
 }
 //-----------------------------------------------------------------------------
@@ -362,19 +362,19 @@ void XMLMap::read_array(const xmlChar *name, const xmlChar **attrs)
   {
     case INT_ARRAY:
       read_int_array(name, attrs, size);
-      
+
       break;
 
     case UINT_ARRAY:
       read_uint_array(name, attrs, size);
 
       break;
-      
+
     case DOUBLE_ARRAY:
       read_double_array(name, attrs, size);
 
       break;
-      
+
     default:
       ;
 

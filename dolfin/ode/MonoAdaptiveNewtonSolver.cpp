@@ -87,7 +87,7 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
 {
   // Evaluate b = -F(x) at current x
   Feval(btmp);
-  for (uint j = 0; j < ts.nj; j++) 
+  for (uint j = 0; j < ts.nj; j++)
     //Note: Precision lost if working with GMP
     b[j] = to_double(btmp[j]);
 
@@ -113,7 +113,7 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
   // Update solution x <- x + dx (note: b = -F)
   for (uint j = 0; j < ts.nj; j++)
     ts.x[j] += dx[j];
-  
+
   // Return maximum increment
   return dx.norm(linf);
 }
@@ -139,7 +139,7 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(real* F)
   // Evaluate right-hand side at all quadrature points
   for (uint m = 0; m < method.qsize(); m++)
     ts.feval(m);
-  
+
   // Update the values at each stage
   for (uint n = 0; n < method.nsize(); n++)
   {
@@ -185,7 +185,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real* F)
     // Reset values to initial data
     for (uint i = 0; i < ts.N; i++)
       F[noffset + i] = Mu0[i];
-    
+
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
     {
@@ -195,7 +195,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real* F)
         F[noffset + i] += tmp * ts.fq[moffset + i];
     }
   }
-  
+
   // Subtract current values
   for (uint n = 0; n < method.nsize(); n++)
   {
@@ -225,9 +225,9 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real* F)
 void MonoAdaptiveNewtonSolver::chooseLinearSolver()
 {
   const std::string linear_solver = ode.get("ODE linear solver");
-  
+
   // First determine if we should use a direct solver
-  bool direct = false;  
+  bool direct = false;
   if ( linear_solver == "direct" )
     direct = true;
   else if ( linear_solver == "iterative" )
@@ -289,20 +289,20 @@ void MonoAdaptiveNewtonSolver::debug()
   {
     const real xj = ts.x[j];
     real dx = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(xj));
-		  
+
     ts.x[j] -= 0.5*dx;
     Feval(F1);
 
     ts.x[j] = xj + 0.5*dx;
     Feval(F2);
-    
+
     ts.x[j] = xj;
 
     for (uint i = 0; i < n; i++)
     {
-      real dFdx = (F1[i] - F2[i]) / dx;
-      if ( abs(dFdx) > real_epsilon() )
-        _B(i, j) = to_double(dFdx);
+      real df_dx = (F1[i] - F2[i]) / dx;
+      if ( abs(df_dx) > real_epsilon() )
+        _B(i, j) = to_double(df_dx);
     }
   }
 

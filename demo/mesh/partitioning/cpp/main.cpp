@@ -21,7 +21,7 @@ int main()
 {
   // Read in mesh from XML file in parallel
   Mesh mesh("unitsquare.xml.gz");
-  
+
   // Store partition to file
   char filename[100];
   sprintf(filename, "unitsquare-%d.xml", dolfin::MPI::process_number());

@@ -74,7 +74,7 @@ void XMLFunctionPlotData::write(const FunctionPlotData& data, std::ostream& outf
   outfile << "<function_plot_data rank=\"" << data.rank << "\">" << std::endl;
 
   ++indent;
-  
+
   // Write mesh
   NewXMLMesh::write(data.mesh, outfile, indent.level());
 

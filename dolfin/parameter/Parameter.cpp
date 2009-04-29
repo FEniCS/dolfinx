@@ -46,7 +46,7 @@ Parameter::Parameter(const char* value) : value(0), _type(type_string), _changed
 //-----------------------------------------------------------------------------
 Parameter::Parameter(const Parameter& parameter)
   : value(0), _type(type_int), _changed(false)
-{ 
+{
   *this = parameter;
 }
 //-----------------------------------------------------------------------------
@@ -100,7 +100,7 @@ const Parameter& Parameter::operator= (const Parameter& parameter)
     break;
   default:
     error("Unknown parameter type: %d.", parameter._type);
-  }  
+  }
 
   _type = parameter._type;
   _changed = parameter._changed;
@@ -149,7 +149,7 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream,
   switch ( parameter.type() )
   {
   case Parameter::type_int:
-    stream << "[Parameter: value = " 
+    stream << "[Parameter: value = "
 	   << static_cast<int>(parameter) << " (int)]";
     break;
   case Parameter::type_real:
@@ -169,7 +169,7 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream,
   default:
     error("Unknown parameter type: %d.", parameter._type);
   }
-  
+
   return stream;
 }
 //-----------------------------------------------------------------------------

@@ -28,7 +28,7 @@ namespace dolfin
     /// Create empty vector
     virtual dolfin::GenericVector* create_vector() const;
 
-    /// Create empty sparsity pattern 
+    /// Create empty sparsity pattern
     virtual dolfin::GenericSparsityPattern * create_pattern() const;
 
   private:

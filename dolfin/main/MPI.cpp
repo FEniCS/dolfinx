@@ -30,8 +30,8 @@ dolfin::MPICommunicator::~MPICommunicator()
 }
 //-----------------------------------------------------------------------------
 MPI_Comm& dolfin::MPICommunicator::operator*()
-{ 
-  return communicator; 
+{
+  return communicator;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::process_number()

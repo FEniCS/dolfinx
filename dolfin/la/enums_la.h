@@ -22,7 +22,7 @@ namespace dolfin
     lu,            // LU factorization
     cg,            // Krylov conjugate gradient method
     gmres,         // Krylov GMRES method
-    bicgstab,      // Krylov stabilised biconjugate gradient squared method 
+    bicgstab,      // Krylov stabilised biconjugate gradient squared method
     default_solver // Default Krylov solver
   };
 
@@ -40,7 +40,7 @@ namespace dolfin
   };
 
   /// Two different normalizations are available:
-  /// 
+  ///
   /// normalize_average: Normalizes a vector x according to x --> x - avg(x)
   ///                    where avg(x) is the average of x. This is useful to
   ///                    satisfy the compatibility condition for the Neumann

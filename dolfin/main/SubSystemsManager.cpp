@@ -128,7 +128,7 @@ void SubSystemsManager::finalizePETSc()
  if ( sub_systems_manager.petsc_initialized )
   {
     PetscFinalize();
- 
+
     #ifdef HAS_SLEPC
     SlepcFinalize();
     #endif
@@ -140,10 +140,10 @@ void SubSystemsManager::finalizePETSc()
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::MPIinitialized()
 {
-  // This function not affected if MPI_Finalize has been called. It returns 
+  // This function not affected if MPI_Finalize has been called. It returns
   // true if MPI_Init has been called at any point, even if MPI_Finalize has
   // been called.
- 
+
 #ifdef HAS_MPI
   return MPI::Is_initialized();
 #else

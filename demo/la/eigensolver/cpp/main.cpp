@@ -9,7 +9,7 @@
 // This simple program illustrates the use of the SLEPc eigenvalue solver.
 
 #include <dolfin.h>
-  
+
 using namespace dolfin;
 
 int main()
@@ -33,13 +33,13 @@ int main()
   esolver.set("eigenvalue spectrum", "smallest magnitude");
   esolver.solve(AA, n);
 
-  cout << "Solver converted in " << esolver.getIterationNumber() << " iterations" << endl;
+  cout << "Solver converted in " << esolver.get_iteration_number() << " iterations" << endl;
 
   // Display eigenvalues
   for (unsigned int i = 0; i < n; i++)
   {
     double lr, lc;
-    esolver.getEigenvalue(lr, lc, i);
+    esolver.get_eigenvalue(lr, lc, i);
     cout << "Eigenvalue " << i << ": " << lr << endl;
   }
 

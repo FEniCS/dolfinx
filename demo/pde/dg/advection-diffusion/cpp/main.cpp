@@ -35,10 +35,10 @@ class DirichletBoundary : public SubDomain
 
 int main(int argc, char *argv[])
 {
-  // Read simple velocity field (-1.0, -0.4) defined on a 64x64 unit square 
+  // Read simple velocity field (-1.0, -0.4) defined on a 64x64 unit square
   // mesh and a quadratic vector Lagrange element
 
-  // Read mesh 
+  // Read mesh
   Mesh mesh("../mesh.xml.gz");
 
   // Create velocity FunctionSpace
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
   Function velocity(V_u, "../velocity.xml.gz");
 
   // Diffusivity
-  Constant c(0.0); 
+  Constant c(0.0);
 
   //Source term
   Constant f(0.0);

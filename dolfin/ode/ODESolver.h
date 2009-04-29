@@ -18,11 +18,11 @@ namespace dolfin
   /// Solves a given ODE of the form
   ///
   ///     u'(t) = f(u(t), t) on [0, T],
-  ///         
+  ///
   ///     u(0)  = u0,
   ///
   /// where u(t) is a vector of length N.
-  
+
   class ODESolver
   {
   public:

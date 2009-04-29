@@ -15,7 +15,7 @@ ComplexODE::ComplexODE(uint n, real T) : ODE(2*n, T), n(n), j(0.0, 1.0),
                                            zvalues(0), fvalues(0), yvalues(0)
 {
   message("Creating complex ODE of size %d (%d complex components).", N, n);
-  
+
   // Initialize complex solution vector and right-hand side
   zvalues = new complex[n];
   fvalues = new complex[n];
@@ -36,7 +36,7 @@ ComplexODE::~ComplexODE()
 complex ComplexODE::f(const complex z[], real t, uint i)
 {
   error("Right-hand side for complex ODE not supplied by user.");
-  
+
   complex zvalue;
   return zvalue;
 }
@@ -45,7 +45,7 @@ void ComplexODE::f(const complex z[], real t, complex y[])
 {
   // If a user of the mono-adaptive solver does not supply this function,
   // then call f() for each component.
- 
+
   for (uint i = 0; i < n; i++)
     y[i] = this->f(z, t, i);
 }
@@ -110,7 +110,7 @@ real ComplexODE::f(const real* u, real t, uint i)
 
   // Call user-supplied function f(z, t, i)
   const complex fvalue = f(zvalues, t, i / 2);
-  
+
   // Return value
   return ( i % 2 == 0 ? fvalue.real() : fvalue.imag() );
 }
@@ -126,7 +126,7 @@ void ComplexODE::f(const real* u, real t, real* y)
 
   // Call user-supplied function f(z, t, y)
   f(zvalues, t, fvalues);
-  
+
   // Translate values into f
   for (uint i = 0; i < n; i++)
   {
@@ -155,7 +155,7 @@ void ComplexODE::M(const real* x, real* y,
     for (uint i = 0; i < n; i++)
       yvalues[i] = 0.0;
   }
-  
+
   // Call user-supplied function M(x, y, z, t)
   M(fvalues, yvalues, zvalues, t);
 
@@ -187,7 +187,7 @@ void ComplexODE::J(const real* x, real* y,
     for (uint i = 0; i < n; i++)
       yvalues[i] = 0.0;
   }
-  
+
   // Call user-supplied function J(x, y, z, t)
   J(fvalues, yvalues, zvalues, t);
 

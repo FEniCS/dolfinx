@@ -1,7 +1,7 @@
 // Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Benjamin Kehlet 
+// Modified by Benjamin Kehlet
 //
 // First added:  2005-05-02
 // Last changed: 2008-10-12
@@ -36,7 +36,7 @@ real cGqMethod::ueval(real x0, real values[], real tau) const
   real sum = x0 * trial->eval(0, tau);
   for (uint i = 0; i < nn; i++)
     sum += values[i] * trial->eval(i + 1, tau);
-  
+
   return sum;
 }
 //-----------------------------------------------------------------------------
@@ -76,7 +76,7 @@ void cGqMethod::disp() const
   message("");
   message(" i   points                   weights");
   message("----------------------------------------------------");
-  
+
   for (unsigned int i = 0; i < nq; i++)
     message("%2d   %.15e   %.15e", i, to_double(qpoints[i]), to_double(qweights[i]));
   message("");
@@ -92,7 +92,7 @@ void cGqMethod::disp() const
       message("%2d   %.15e", j, to_double(nweights[i][j]));
   }
   message("");
-  
+
   message("cG(%d) weights in matrix format:", q);
   if ( q < 10 )
     message("-------------------------------");
@@ -106,7 +106,7 @@ void cGqMethod::disp() const
   }
 }
 //-----------------------------------------------------------------------------
-void cGqMethod::computeQuadrature()
+void cGqMethod::compute_quadrature()
 {
   // Use Lobatto quadrature
   LobattoQuadrature quadrature(nq);
@@ -124,7 +124,7 @@ void cGqMethod::computeQuadrature()
     qweights[i] = 0.5 * quadrature.weight(i);
 }
 //-----------------------------------------------------------------------------
-void cGqMethod::computeBasis()
+void cGqMethod::compute_basis()
 {
   dolfin_assert(!trial);
   dolfin_assert(!test);
@@ -146,11 +146,11 @@ void cGqMethod::computeBasis()
     test->set(0, 1.0);
 }
 //-----------------------------------------------------------------------------
-void cGqMethod::computeWeights()
+void cGqMethod::compute_weights()
 {
   uBLASDenseMatrix A(q, q);
   ublas_dense_matrix& _A = A.mat();
-  
+
   real A_real[q*q];
   real_zero(q*q, A_real);
 
@@ -166,7 +166,7 @@ void cGqMethod::computeWeights()
         real x = qpoints[k];
         integral += qweights[k] * trial->ddx(j + 1, x) * test->eval(i, x);
       }
-      
+
       A_real[i*q+j] = integral;
       _A(i, j) = to_double(integral);
 
@@ -176,7 +176,7 @@ void cGqMethod::computeWeights()
   uBLASVector b(q);
   ublas_vector& _b = b.vec();
   real b_real[q];
-  
+
   uBLASVector w(q);
   ublas_vector& _w = w.vec();
 
@@ -185,7 +185,7 @@ void cGqMethod::computeWeights()
   {
     // Get nodal point
     real x = qpoints[i];
-    
+
     // Evaluate test functions at current nodal point
     for (uint j = 0; j < nn; j++)
     {
@@ -195,36 +195,36 @@ void cGqMethod::computeWeights()
 
     // Solve for the weight functions at the nodal point
     A.solve(w, b);
-    
+
 #ifndef HAS_GMP
 
     // Save weights including quadrature
     for (uint j = 0; j < nn; j++)
       nweights[j][i] = qweights[i] * _w[j];
 
-#else 
-    
+#else
+
     // Use the double precision solution as initial guess for the SOR iterator
     real w_real[q];
-    
+
     for (uint j = 0; j < q; ++j)
       w_real[j] = _w[j];
-    
+
     uBLASDenseMatrix A_inv(A);
     A_inv.invert();
-    
+
     // Allocate memory for holding the preconditioned system
     real Ainv_A[q*q];
     real Ainv_b[q];
-    
+
     SORSolver::precondition(q, A_inv, A_real, b_real, Ainv_A, Ainv_b);
-    
+
     // Solve the preconditioned system
     SORSolver::SOR(q, Ainv_A, w_real, Ainv_b, real_epsilon());
-    
+
     for (uint j = 0; j < nn; ++j)
       nweights[j][i] = qweights[i] * w_real[j];
-    
+
 #endif
 
   }

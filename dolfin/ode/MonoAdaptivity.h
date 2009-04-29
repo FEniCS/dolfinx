@@ -28,7 +28,7 @@ namespace dolfin
 
     /// Destructor
     ~MonoAdaptivity();
-    
+
     /// Return time step
     real timestep() const;
 

@@ -21,7 +21,7 @@ namespace dolfin
   class Sample : public Variable
   {
   public:
-    
+
     /// Constructor
     Sample(TimeSlab& timeslab, real t, std::string name, std::string label);
 
@@ -42,7 +42,7 @@ namespace dolfin
 
     /// Return residual for component with given index
     real r(uint index) const;
-    
+
   private:
 
     TimeSlab& timeslab;

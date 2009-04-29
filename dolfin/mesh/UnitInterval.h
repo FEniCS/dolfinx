@@ -20,11 +20,11 @@ namespace dolfin
   class UnitInterval : public Mesh
   {
   public:
-    
+
     UnitInterval(uint nx);
 
   };
-  
+
 }
 
 #endif

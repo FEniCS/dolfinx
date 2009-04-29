@@ -76,7 +76,7 @@ namespace dolfin
 
     /// Cast parameter to real
     operator double() const;
-    
+
     /// Cast parameter to bool
     operator bool() const;
 
@@ -103,11 +103,11 @@ namespace dolfin
 
     // True if parameter has been changed
     bool _changed;
-    
+
   };
 
   LogStream& operator<< (LogStream& stream, const Parameter& parameter);
-  
+
 }
 
 #endif

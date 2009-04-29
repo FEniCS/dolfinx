@@ -1,7 +1,7 @@
 """ This demo implements a Poisson equations solver
 based on the demo "dolfin/demo/pde/poisson/python/demo.py"
-in Dolfin using Epetra matrices, the AztecOO CG solver and ML 
-AMG preconditioner 
+in Dolfin using Epetra matrices, the AztecOO CG solver and ML
+AMG preconditioner
 """
 
 __author__ = "Kent-Andre Mardal (kent-and@simula.no)"
@@ -35,16 +35,16 @@ u = TrialFunction(V)
 f = Function(V,"500.0 * exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 
 a = dot(grad(v), grad(u))*dx
-L = v*f*dx 
+L = v*f*dx
 
 # Define boundary condition
 u0 = Constant(mesh, 0.0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
 # Create linear system
-A, b = assemble_system(a, L, bc, mesh) 
+A, b = assemble_system(a, L, bc, mesh)
 
-# Create solution vector (also used as start vector) 
+# Create solution vector (also used as start vector)
 U = Function(V)
 
 solve(A, U.vector(), b, cg, ilu)

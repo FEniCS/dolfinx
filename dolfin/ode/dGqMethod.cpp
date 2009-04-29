@@ -36,7 +36,7 @@ real dGqMethod::ueval(real x0, real values[], real tau) const
   real sum = 0.0;
   for (unsigned int i = 0; i < nn; i++)
     sum += values[i] * trial->eval(i, tau);
-  
+
   return sum;
 }
 //-----------------------------------------------------------------------------
@@ -54,7 +54,7 @@ real dGqMethod::timestep(real r, real tol, real k0, real kmax) const
 {
   // FIXME: Missing stability factor and interpolation constant
   // FIXME: Missing jump term
-  
+
   if ( abs(r) < real_epsilon() )
     return kmax;
 
@@ -80,7 +80,7 @@ void dGqMethod::disp() const
   message("");
   message(" i   points                   weights");
   message("----------------------------------------------------");
-  
+
   for (unsigned int i = 0; i < nq; i++)
     message("%2d   %.15e   %.15e", i, to_double(qpoints[i]), to_double(qweights[i]));
   message("");
@@ -110,7 +110,7 @@ void dGqMethod::disp() const
   }
 }
 //-----------------------------------------------------------------------------
-void dGqMethod::computeQuadrature()
+void dGqMethod::compute_quadrature()
 {
   // Use Radau quadrature
   RadauQuadrature quadrature(nq);
@@ -127,7 +127,7 @@ void dGqMethod::computeQuadrature()
     qweights[i] = 0.5 * quadrature.weight(nq - 1 - i);
 }
 //-----------------------------------------------------------------------------
-void dGqMethod::computeBasis()
+void dGqMethod::compute_basis()
 {
   dolfin_assert(!trial);
   dolfin_assert(!test);
@@ -143,11 +143,11 @@ void dGqMethod::computeBasis()
     test->set(i, qpoints[i]);
 }
 //-----------------------------------------------------------------------------
-void dGqMethod::computeWeights()
+void dGqMethod::compute_weights()
 {
   uBLASDenseMatrix A(nn, nn);
   ublas_dense_matrix& _A = A.mat();
-  
+
   real A_real[nn*nn];
   real_zero(nn*nn, A_real);
 
@@ -162,8 +162,8 @@ void dGqMethod::computeWeights()
       {
         real x = qpoints[k];
         integral += qweights[k] * trial->ddx(j, x) * test->eval(i, x);
-      }     
-      
+      }
+
       A_real[i*nn+j] = integral + trial->eval(j, 0.0) * test->eval(i, 0.0);
       _A(i, j) = to_double(A_real[i*nn+j]);
     }
@@ -181,7 +181,7 @@ void dGqMethod::computeWeights()
   {
     // Get nodal point
     real x = qpoints[i];
-    
+
     // Evaluate test functions at current nodal point
     for (unsigned int j = 0; j < nn; j++)
     {
@@ -198,29 +198,29 @@ void dGqMethod::computeWeights()
     for (uint j = 0; j < nn; j++)
       nweights[j][i] = qweights[i] * _w[j];
 
-#else 
-    
+#else
+
     // Use the double precision solution as initial guess for the SOR iterator
     real w_real[nn];
-    
+
     for (uint j = 0; j < nn; ++j)
       w_real[j] = _w[j];
-    
+
     uBLASDenseMatrix A_inv(A);
     A_inv.invert();
-    
+
     // Allocate memory for the preconditioned system
     real Ainv_A[nn*nn];
     real Ainv_b[nn];
-    
+
     SORSolver::precondition(nn, A_inv, A_real, b_real, Ainv_A, Ainv_b);
 
     SORSolver::SOR(nn, Ainv_A, w_real, Ainv_b, real_epsilon());
 
-    
+
     for (uint j = 0; j < nn; ++j)
       nweights[j][i] = qweights[i] * w_real[j];
-    
+
 #endif
 
   }

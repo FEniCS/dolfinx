@@ -57,7 +57,7 @@ int main()
 
   // Extract sub functions
   Function sigma = w[0];
-  Function u = w[1];  
+  Function u = w[1];
 
   // Project sigma onto P1 continuous Lagrange for post-processing
   P1ProjectionFunctionSpace Vp(mesh);
