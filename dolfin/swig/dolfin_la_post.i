@@ -97,213 +97,12 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
   BlockMatrix.__setitem__ = BlockMatrix_set
 %}
 
-%define GET_VEC_ITEM_MACRO(VEC_TYPE,RETURN_VEC_TYPE)
-%extend dolfin::VEC_TYPE
-{
-  // Get item for single index
-  double __getitem__(int index) {
-    if (index >= static_cast<int>(self->size()) or
-	index < -static_cast<int>(self->size()))
-      throw std::runtime_error("index out of range");
-    if (index < 0)
-      index += self->size();
-    return self->getitem(index);
-  }
+%{
+#include "Indices.h"
+#include "dolfin_la_get_set_items.h"
+%}
 
-  // Get item for single index
-  RETURN_VEC_TYPE* __getitem__(PyObject* op) {
-    //Check first for None
-    if (op == Py_None)
-      throw std::runtime_error("provide a sequence or slice");
-
-    // If it is a slice
-    if (PySlice_Check(op)){
-      Py_ssize_t length(self->size());
-      Py_ssize_t start, stop, step, slice_length;
-      if (PySlice_GetIndicesEx((PySliceObject*)op, length, &start, &stop, &step, &slice_length)<0)
-	throw std::runtime_error("invalid slice");
-
-      // Create the Vector
-      RETURN_VEC_TYPE * return_vec = new RETURN_VEC_TYPE(static_cast<dolfin::uint>(slice_length));
-      dolfin::uint j = static_cast<dolfin::uint>(start);
-      for (dolfin::uint i=0; i<static_cast<dolfin::uint>(slice_length); i++){
-	return_vec->setitem(i,self->getitem(j));
-	j += step;
-      }
-      return return_vec;
-    }
-
-    // If it is a sequence
-    if (!PyList_Check(op))
-      throw std::runtime_error("index must be either an int, a slice or a list");
-
-    // An initial check of the length of sequence
-    int seq_length = PySequence_Length(op);
-    int size_of_me = self->size();
-    if ( seq_length > size_of_me )
-      throw std::runtime_error("the length of the sequence must be smaller than the Vector");
-
-    // Create the Vector
-    RETURN_VEC_TYPE * return_vec = new RETURN_VEC_TYPE(seq_length);
-    PyObject *op1=NULL;
-    long index;
-    for (dolfin::uint i = 0; i < static_cast<dolfin::uint>(seq_length); i++){
-      if (!(op1=PySequence_GetItem(op, i))) {
-	delete return_vec;
-	throw std::runtime_error("invalid index");
-      }
-
-      // Check for int
-      if (!PyInt_Check(op1)){
-	delete return_vec;
-	throw std::runtime_error("invalid index, must be int");
-      }
-
-      // Convert to long and check sign of index and
-      // decrease refernce on python index
-      index = PyInt_AsLong(op1);
-      if (index >= static_cast<int>(self->size()) or
-	  index < -static_cast<int>(self->size()))
-	throw std::runtime_error("index out of range");
-      if (index < 0)
-	index += self->size();
-      Py_DECREF(op1);
-
-      // Assign the vector element
-      return_vec->setitem(i,self->getitem(static_cast<dolfin::uint>(index)));
-    }
-    return return_vec;
-  }
-
-  void __setitem__(PyObject* op, const dolfin::GenericVector &values) {
-    //Check first for None
-    if (op == Py_None){
-      throw std::runtime_error("provide a sequence or slice as index");
-    }
-
-    // Check for int
-    if (PyInt_Check(op))
-      throw std::runtime_error("cannot broadcast vector to a single index");
-
-    // If it is a slice
-    if (PySlice_Check(op)){
-      Py_ssize_t length(self->size());
-      Py_ssize_t start, stop, step, slice_length;
-      if (PySlice_GetIndicesEx((PySliceObject*)op, length, &start, &stop, &step, &slice_length)<0)
-	throw std::runtime_error("invalid slice");
-      if (static_cast<dolfin::uint>(slice_length) != values.size())
-	throw std::runtime_error("non matching dimensions on input");
-      dolfin::uint j = static_cast<dolfin::uint>(start);
-      for (dolfin::uint i=0; i<static_cast<dolfin::uint>(slice_length); i++){
-	self->setitem(j,values.getitem(i));
-	j += step;
-      }
-    }
-
-    // If it is a List
-    else if (PyList_Check(op)) {
-      // An initial check of the length of sequence
-      dolfin::uint seq_length = static_cast<dolfin::uint>(PySequence_Length(op));
-      if ( seq_length != values.size() )
-	throw std::runtime_error("non matching dimensions on input");
-      if ( seq_length > self->size())
-	throw std::runtime_error("too large index");
-
-      PyObject *op1=NULL;
-      long index;
-      for (dolfin::uint i = 0; i < seq_length; i++){
-	if (!(op1=PySequence_GetItem(op, i)))
-	  throw std::runtime_error("invalid index");
-
-      	// Check for int
-	if (!PyInt_Check(op1))
-	  throw std::runtime_error("invalid index, must be int");
-
-	// Convert to long and check sign of index and
-	// decrease refernce on python index
-	index = PyInt_AsLong(op1);
-	if (index >= static_cast<int>(self->size()) or
-	    index < -static_cast<int>(self->size()))
-	  throw std::runtime_error("index out of range");
-	if (index < 0)
-	  index += self->size();
-	Py_DECREF(op1);
-
-	// Assign the vector element
-	self->setitem(index,values.getitem(static_cast<dolfin::uint>(i)));
-      }
-    }
-    else
-      throw std::runtime_error("index must be either an int, a slice or a list");
-  }
-
-  void __setitem__(PyObject* op, double value) {
-    //Check first for None
-    if (op == Py_None){
-      throw std::runtime_error("provide a sequence, int or slice as index");
-    }
-
-    // If the index is a single int
-    if (PyInt_Check(op)){
-      long index = PyInt_AsLong(op);
-      if (index >= static_cast<int>(self->size()) or
-	  index < -static_cast<int>(self->size()))
-	throw std::runtime_error("index out of range");
-      if (index < 0)
-	index += self->size();
-      self->setitem(index, value);
-    }
-
-    // If it is a slice
-    else if (PySlice_Check(op)){
-      Py_ssize_t length(self->size());
-      Py_ssize_t start, stop, step, slice_length;
-      if (PySlice_GetIndicesEx((PySliceObject*)op, length, &start, &stop, &step, &slice_length)<0)
-	throw std::runtime_error("invalid slice");
-      dolfin::uint j = static_cast<dolfin::uint>(start);
-      for (dolfin::uint i=0; i<static_cast<dolfin::uint>(slice_length); i++){
-	self->setitem(j,value);
-	j += step;
-      }
-    }
-
-    // If it is a List
-    else if (PyList_Check(op)) {
-
-      // An initial check of the length of sequence
-      dolfin::uint seq_length = static_cast<dolfin::uint>(PySequence_Length(op));
-      if ( seq_length > self->size())
-	throw std::runtime_error("too large index");
-
-      PyObject *op1=NULL;
-      long index;
-      for (dolfin::uint i = 0; i < seq_length; i++){
-	if (!(op1=PySequence_GetItem(op, i)))
-	  throw std::runtime_error("invalid index");
-
-      	// Check for int
-	if (!PyInt_Check(op1))
-	  throw std::runtime_error("invalid index, must be int");
-
-	// Convert to long and check sign of index and
-	// decrease refernce on python index
-	index = PyInt_AsLong(op1);
-	if (index >= static_cast<int>(self->size()) or
-	    index < -static_cast<int>(self->size()))
-	  throw std::runtime_error("index out of range");
-	if (index < 0)
-	  index += self->size();
-	Py_DECREF(op1);
-
-	// Assign the vector element
-	self->setitem(index,value);
-      }
-    }
-    else
-      throw std::runtime_error("index must be either an int, a slice or a list");
-  }
-}
-%enddef
+%include "dolfin_la_get_set_items.h"
 
 // Vector la interface macro
 %define LA_POST_VEC_INTERFACE(VEC_TYPE)
@@ -312,6 +111,11 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
   void _scale(double a)
   {
     (*self)*=a;
+  }
+
+  void _vec_mul(const GenericVector& other)
+  {
+    (*self)*=other;
   }
 
   %pythoncode
@@ -325,10 +129,47 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
 
     def array(self):
         " Return a numpy array representation of Vector"
-        import numpy
-        v = numpy.zeros(self.size())
+        from numpy import zeros
+        v = zeros(self.size())
         self.get(v)
         return v
+
+    def __getitem__(self, indices):
+        from numpy import ndarray
+        from types import SliceType
+        if isinstance(indices, int):
+            return _get_vector_single_item(self, indices)
+        elif isinstance(indices, (SliceType, ndarray, list) ):
+            return down_cast(_get_vector_sub_vector(self, indices))
+        else:
+            raise TypeError, "expected an int, slice, list or numpy array of integers"
+
+    def __setitem__(self, indices, values):
+        from numpy import ndarray
+        from types import SliceType
+        if isinstance(indices, int):
+            if isinstance(values,(float, int)):
+                return _set_vector_items_value(self, indices, values)
+            else:
+                raise TypeError, "provide a scalar to set single item"
+        elif isinstance(indices, (SliceType, ndarray, list)):
+            if isinstance(values, (float, int)):
+                _set_vector_items_value(self, indices, values)
+            elif isinstance(values, GenericVector):
+                _set_vector_items_vector(self, indices, values)
+            elif isinstance(values, ndarray):
+                _set_vector_items_array_of_float(self, indices, values)
+            else:
+                raise TypeError, "provide a scalar, GenericVector or numpy array of float to set items in Vector"
+        else:
+            raise TypeError, "index must be an int, slice or a list or numpy array of integers"
+        
+    def __len__(self):
+        return self.size()
+
+    def __iter__(self):
+        for i in xrange(self.size()):
+            yield _get_vector_single_item(self, i)
 
     def __add__(self,other):
         """x.__add__(y) <==> x+y"""
@@ -351,6 +192,10 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
         if isinstance(other,(int,float)):
             ret = self.copy()
             ret._scale(other)
+            return ret
+        if isinstance(other,GenericVector):
+            ret = self.copy()
+            ret._vec_mul(other)
             return ret
         return NotImplemented
 
@@ -400,6 +245,9 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
         """x.__imul__(y) <==> x*y"""
         if isinstance(other,(float,int)):
             self._scale(other)
+            return self
+        if isinstance(other,GenericVector):
+            self._vec_mul(other)
             return self
         return NotImplemented
 
@@ -459,8 +307,8 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
 
     def array(self):
         " Return a numpy array representation of Matrix"
-        import numpy
-        A = numpy.zeros((self.size(0), self.size(1)))
+        from numpy import zeros
+        A = zeros((self.size(0), self.size(1)))
         c = STLVectorUInt()
         v = STLVectorDouble()
         for i in xrange(self.size(0)):
@@ -468,6 +316,89 @@ PyObject* get_eigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const 
             A[i,c] = v
         return A
 
+    def __getitem__(self,indices):
+        from numpy import ndarray
+        from types import SliceType
+        if not (isinstance(indices,tuple) and len(indices) == 2):
+            raise TypeError, "expected two indices"
+        if not all(isinstance(ind,(int,SliceType,list,ndarray)) for ind in indices):
+            raise TypeError, "an int, slice, list or numpy array as indices"
+        
+        if isinstance(indices[0],int):
+            if isinstance(indices[1],int):
+                return _get_matrix_single_item(self,indices[0],indices[1])
+            return down_cast(_get_matrix_sub_vector(self,indices[0], indices[1], True))
+        elif isinstance(indices[1],int):
+            return down_cast(_get_matrix_sub_vector(self,indices[1], indices[0], False))
+        else:
+            same_indices = id(indices[0]) == id(indices[1])
+            
+            if not same_indices and ( type(indices[0]) == type(indices[1]) ):
+                if isinstance(indices[0],(list,SliceType)):
+                    same_indices = indices[0] == indices[1]
+                else:
+                    same_indices = (indices[0] == indices[1]).all()
+            
+            if same_indices:
+                return down_cast(_get_matrix_sub_matrix(self, indices[0], None))
+            else:
+                return down_cast(_get_matrix_sub_matrix(self, indices[0], indices[1]))
+            
+    def __setitem__(self,indices, values):
+        from numpy import ndarray
+        from types import SliceType
+        if not (isinstance(indices,tuple) and len(indices) == 2):
+            raise TypeError, "expected two indices"
+        if not all(isinstance(ind,(int,SliceType,list,ndarray)) for ind in indices):
+            raise TypeError, "an int, slice, list or numpy array as indices"
+        
+        if isinstance(indices[0],int):
+            if isinstance(indices[1],int):
+                if not isinstance(values,(float,int)):
+                    raise TypeError, "expected scalar for single value assigment"
+                _set_matrix_single_item(self,indices[0],indices[1],values)
+            else:
+                raise NotImplementedError
+                if isinstance(values,GenericVector):
+                    _set_matrix_items_vector(self, indices[0], indices[1], values, True)
+                elif isinstance(values,ndarray):
+                    _set_matrix_items_array_of_float(self, indices[0], indices[1], values, True)
+                else:
+                    raise TypeError, "expected a GenericVector or numpy array of float"
+        elif isinstance(indices[1],int):
+            raise NotImplementedError
+            if isinstance(values,GenericVector):
+                _set_matrix_items_vector(self, indices[1], indices[0], values, False)
+            elif isinstance(values,ndarray):
+                _set_matrix_items_array_of_float(self, indices[1], indices[0], values, False)
+            else:
+                raise TypeError, "expected a GenericVector or numpy array of float"
+
+        else:
+            raise NotImplementedError
+            same_indices = id(indices[0]) == id(indices[1])
+            
+            if not same_indices and ( type(indices[0]) == type(indices[1]) ):
+                if isinstance(indices[0],(list,SliceType)):
+                    same_indices = indices[0] == indices[1]
+                else:
+                    same_indices = (indices[0] == indices[1]).all()
+            
+            if same_indices:
+                if isinstance(values,GenericMatrix):
+                    _set_matrix_items_matrix(self, indices[0], None, values)
+                elif isinstance(values,ndarray) and len(values.shape)==2:
+                    _set_matrix_items_array_of_float(self, indices[0], None, values)
+                else:
+                    raise TypeError, "expected a GenericMatrix or 2D numpy array of float"
+            else:
+                if isinstance(values,GenericMatrix):
+                    _set_matrix_items_matrix(self, indices[0], indices[1], values)
+                elif isinstance(values,ndarray) and len(values.shape)==2:
+                    _set_matrix_items_array_of_float(self, indices[0], indices[1], values)
+                else:
+                    raise TypeError, "expected a GenericMatrix or 2D numpy array of float"
+            
     def __add__(self,other):
         """x.__add__(y) <==> x+y"""
         if self.__is_compatibable(other):
@@ -631,12 +562,10 @@ _matrix_vector_mul_map = {}
 LA_POST_VEC_INTERFACE(GenericVector)
 LA_POST_MAT_INTERFACE(GenericMatrix)
 //LA_VEC_DATA_ACCESS(GenericVector)
-GET_VEC_ITEM_MACRO(GenericVector,Vector)
 
 LA_POST_VEC_INTERFACE(Vector)
 LA_POST_MAT_INTERFACE(Matrix)
 LA_VEC_DATA_ACCESS(Vector)
-GET_VEC_ITEM_MACRO(Vector,Vector)
 
 LA_POST_VEC_INTERFACE(uBLASVector)
 // NOTE: The uBLAS macros need to be run using the whole template type
@@ -644,7 +573,6 @@ LA_POST_VEC_INTERFACE(uBLASVector)
 LA_POST_MAT_INTERFACE(uBLASMatrix<dolfin::ublas_sparse_matrix>)
 LA_POST_MAT_INTERFACE(uBLASMatrix<dolfin::ublas_dense_matrix>)
 LA_VEC_DATA_ACCESS(uBLASVector)
-GET_VEC_ITEM_MACRO(uBLASVector,uBLASVector)
 
 // Run the downcast macro
 DOWN_CAST_MACRO(uBLASVector)
@@ -659,7 +587,6 @@ _matrix_vector_mul_map[uBLASDenseMatrix]  = [uBLASVector]
 #ifdef HAS_PETSC
 LA_POST_VEC_INTERFACE(PETScVector)
 LA_POST_MAT_INTERFACE(PETScMatrix)
-GET_VEC_ITEM_MACRO(PETScVector,PETScVector)
 
 DOWN_CAST_MACRO(PETScVector)
 DOWN_CAST_MACRO(PETScMatrix)
@@ -672,7 +599,6 @@ _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
 #ifdef HAS_TRILINOS
 LA_POST_VEC_INTERFACE(EpetraVector)
 LA_POST_MAT_INTERFACE(EpetraMatrix)
-GET_VEC_ITEM_MACRO(EpetraVector,EpetraVector)
 
 DOWN_CAST_MACRO(EpetraVector)
 DOWN_CAST_MACRO(EpetraMatrix)
@@ -702,7 +628,6 @@ _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
 LA_POST_VEC_INTERFACE(MTL4Vector)
 LA_POST_MAT_INTERFACE(MTL4Matrix)
 LA_VEC_DATA_ACCESS(MTL4Vector)
-GET_VEC_ITEM_MACRO(MTL4Vector,MTL4Vector)
 
 DOWN_CAST_MACRO(MTL4Vector)
 DOWN_CAST_MACRO(MTL4Matrix)
@@ -736,7 +661,7 @@ def down_cast(tensor, subclass=None):
         subclass = get_tensor_type(tensor)
     assert subclass in _down_cast_map
     ret = _down_cast_map[subclass](tensor)
-
+    
     # Store the tensor to avoid garbage collection
     ret._org_upcasted_tensor = tensor
     return ret

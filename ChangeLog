@@ -1,3 +1,4 @@
+ - Added slicing capabilities for GenericMatrix interface in PyDOLFIN (only getitem)
  - Rename of camelCaps functions names: fooBar --> foo_bar
    Note: mesh.numVertices() --> mesh.num_vertices(), mesh.numCells() --> mesh.num_cells()
  - Added slicing capabilities for GenericVector interface in PyDOLFIN

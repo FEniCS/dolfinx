@@ -115,6 +115,9 @@ namespace dolfin
     /// Multiply vector by given number
     virtual const EpetraVector& operator*= (double a);
 
+    /// Multiply vector by another vector pointwise
+    virtual const EpetraVector& operator*= (const GenericVector& x);
+
     /// Divide vector by given number
     virtual const EpetraVector& operator/= (double a);
 

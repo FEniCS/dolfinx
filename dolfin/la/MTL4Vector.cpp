@@ -179,6 +179,17 @@ const MTL4Vector& MTL4Vector::operator*= (double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const MTL4Vector& MTL4Vector::operator*= (const GenericVector& y) 
+{ 
+  if ( size() != y.size() )  
+    error("Vectors must be of same size.");
+  dolfin_not_implemented();
+  //mtl4_vector vv =  y.down_cast<MTL4Vector>().vec();
+  //
+  //x = mtl::operator*(x,vv);
+  return *this;     
+}
+//-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator= (const MTL4Vector& v)
 {
   x = v.vec();
