@@ -1235,6 +1235,55 @@ void Assembler::compute_tensor_on_one_exterior_facet(const Form& a,
   integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
 }
 //-----------------------------------------------------------------------------
+void Assembler::compute_tensor_on_one_interior_facet
+  (const Form& a, 
+   UFC& ufc, 
+   const Cell& cell0, 
+   const Cell& cell1, 
+   const Facet& facet,  
+   const std::vector<const Function*>& coefficients, 
+   const MeshFunction<uint>* interior_facet_domains
+   )
+{
+  // Facet integral
+  ufc::interior_facet_integral* interior_facet_integral = ufc.interior_facet_integrals[0];
+
+  // Get integral for sub domain (if any)
+  if (interior_facet_domains && interior_facet_domains->size() > 0)
+  {
+    const uint domain = (*interior_facet_domains)(facet);
+    if (domain < ufc.form.num_interior_facet_integrals())
+      interior_facet_integral = ufc.interior_facet_integrals[domain];
+  }
+
+  // Update to current pair of cells
+  ufc.update(cell0, cell1);
+
+  // Get local index of facet with respect to each cell
+  uint facet0 = cell0.index(facet);
+  uint facet1 = cell1.index(facet);
+
+  // Tabulate dofs for each dimension on macro element
+  for (uint i = 0; i < ufc.form.rank(); i++)
+  {
+    const uint offset = ufc.local_dimensions[i];
+    a.function_space(i).dofmap().tabulate_dofs(ufc.macro_dofs[i],
+        ufc.cell0, cell0.index());
+    a.function_space(i).dofmap().tabulate_dofs(ufc.macro_dofs[i] + offset,
+        ufc.cell1, cell1.index());
+  }
+
+  // Interpolate coefficients on cell
+  for (uint i = 0; i < coefficients.size(); i++)
+  {
+    const uint offset = ufc.coefficient_elements[i]->space_dimension();
+    coefficients[i]->interpolate(ufc.macro_w[i],          ufc.cell0, cell0.index(), facet0);
+    coefficients[i]->interpolate(ufc.macro_w[i] + offset, ufc.cell1, cell1.index(), facet1);
+  }
+
+  interior_facet_integral->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1, facet0, facet1);
+}
+//-----------------------------------------------------------------------------
 void Assembler::assemble_system_new(GenericMatrix& A,
                                     GenericVector& b,
                                     const Form& a,
@@ -1409,10 +1458,200 @@ void Assembler::assemble_system_new(GenericMatrix& A,
         b.add(be, b_ufc.local_dimensions, b_ufc.dofs);
       }
     }
-  } 
-  else 
-  {
-    error("This assemble function is not implemented for forms with integrands on interior facet domains yet");
+  } else { // interior facets 
+
+    // Create temporary storage for Ae, Ae_macro
+    uint A_num_entries = 1;
+    for (uint i = 0; i < a.rank(); i++)
+      A_num_entries *= a.function_space(i).dofmap().max_local_dimension();
+    uint A_macro_num_entries = 4*A_num_entries;
+    Ae = new double[A_num_entries];
+    double* Ae_macro = new double[A_macro_num_entries];
+
+    // Create temporay storage for be, be_macro
+    uint b_num_entries = 1;
+    for (uint i = 0; i < L.rank(); i++)
+      b_num_entries *= L.function_space(i).dofmap().max_local_dimension();
+    uint b_macro_num_entries = b_num_entries*2;
+    be = new double[b_num_entries];
+    double* be_macro = new double[b_macro_num_entries];
+
+    for (FacetIterator facet(mesh); !facet.end(); ++facet)
+    {
+      // Check if we have an interior facet
+      if ( facet->num_entities(mesh.topology().dim()) == 2 )
+      {
+        for (uint i = 0; i < A_macro_num_entries; i++)
+          Ae_macro[i] = 0.0;
+        for (uint i = 0; i < b_macro_num_entries; i++)
+          be_macro[i] = 0.0;
+
+        // Get cells incident with facet
+        Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
+        Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
+
+        compute_tensor_on_one_interior_facet(a, A_ufc, cell0, cell1, *facet, 
+                                             A_coefficients, interior_facet_domains);  
+
+        compute_tensor_on_one_interior_facet(L, b_ufc, cell0, cell1, *facet, 
+                                             b_coefficients, interior_facet_domains);  
+
+        for (uint i=0; i<A_macro_num_entries; i++)
+          Ae_macro[i] += A_ufc.macro_A[i];
+
+        for (uint i=0; i<b_macro_num_entries; i++)
+          be_macro[i] += b_ufc.macro_A[i];
+
+
+        uint facet0 = cell0.index(*facet);
+        uint facet1 = cell1.index(*facet);
+
+        if (facet0 == 0)
+        {
+
+          if (A_ufc.form.num_cell_integrals() > 0) {
+
+            // FIXME: check that this is cell0 
+            compute_tensor_on_one_cell(a, A_ufc, cell0, A_coefficients, cell_domains); 
+
+            uint nn = A_ufc.local_dimensions[0];
+            uint mm = A_ufc.local_dimensions[1];
+            for (uint i=0; i<mm; i++)
+              for (uint j=0; j<nn; j++)
+                Ae_macro[2*i*nn+j] += A_ufc.A[i*nn+j];
+          }
+
+          if (b_ufc.form.num_cell_integrals() > 0) {
+
+            compute_tensor_on_one_cell(a, b_ufc, cell0, b_coefficients, cell_domains); 
+
+            uint nn = A_ufc.local_dimensions[0];
+            uint mm = A_ufc.local_dimensions[1];
+            for (uint i=0; i<mm; i++)
+              for (uint j=0; j<nn; j++)
+                be_macro[2*i*nn+j] += b_ufc.A[i*nn+j];
+          }
+        }
+
+        if (facet1 == 0)
+        {
+
+          if (A_ufc.form.num_cell_integrals() > 0) {
+
+            compute_tensor_on_one_cell(a, A_ufc, cell1, A_coefficients, cell_domains); 
+
+            uint nn = A_ufc.local_dimensions[0];
+            uint mm = A_ufc.local_dimensions[1];
+            for (uint i=0; i<mm; i++)
+              for (uint j=0; j<nn; j++)
+                Ae_macro[2*nn*mm + 2*i*nn + nn + j] += A_ufc.A[i*nn+j];
+          }
+
+          if (b_ufc.form.num_cell_integrals() > 0) {
+
+            compute_tensor_on_one_cell(a, b_ufc, cell1, b_coefficients, cell_domains); 
+
+            uint nn = A_ufc.local_dimensions[0];
+            uint mm = A_ufc.local_dimensions[1];
+            for (uint i=0; i<mm; i++)
+              for (uint j=0; j<nn; j++)
+                be_macro[2*nn*mm + 2*i*nn + nn + j] += b_ufc.A[i*nn+j];
+          }
+        }
+
+        // enforce BC  ---------------------------------------
+
+        const uint m = A_ufc.macro_local_dimensions[0];
+        const uint n = A_ufc.macro_local_dimensions[1];
+
+        for (uint i=0; i<n; i++)
+        {
+          uint ii = A_ufc.macro_dofs[1][i];
+          if (indicators[ii] > 0)
+          {
+            be[i] = g[ii];
+            for (uint k=0; k<n; k++)
+              Ae_macro[k+i*n] = 0.0;
+            for (uint j=0; j<m; j++)
+            {
+              be_macro[j] -= Ae_macro[i+j*n]*g[ii];
+              Ae_macro[i+j*n] = 0.0;
+            }
+            Ae_macro[i+i*n] = 1.0;
+          }
+        }
+        // enforce BC done  ------------------------------------------
+
+        // Add entries to global tensor
+        A.add(Ae_macro, A_ufc.macro_local_dimensions, A_ufc.macro_dofs);
+        b.add(be_macro, b_ufc.macro_local_dimensions, b_ufc.macro_dofs);
+      }
+
+      // Check if we have an exterior facet
+      if ( facet->num_entities(mesh.topology().dim()) != 2 )
+      {
+        // set element matrix and vector to zero
+        for (uint i=0; i<A_num_entries; i++)
+          Ae[i] = 0.0;
+        for (uint i=0; i<b_num_entries; i++)
+          be[i] = 0.0;
+
+        // Get mesh cell to which mesh facet belongs (pick first, there is only one)
+        Cell cell(mesh, facet->entities(mesh.topology().dim())[0]);
+
+        if (A_ufc.form.num_exterior_facet_integrals() > 0 )
+          compute_tensor_on_one_exterior_facet(a, A_ufc, cell, *facet, A_coefficients, exterior_facet_domains);  
+
+        if (b_ufc.form.num_exterior_facet_integrals() > 0 )
+          compute_tensor_on_one_exterior_facet(L, b_ufc, cell, *facet, b_coefficients, exterior_facet_domains);  
+
+        const uint local_facet = cell.index(*facet);
+
+        if (local_facet == 0)
+        {
+          // compute cell integrals ---------------------------------
+
+          if (A_ufc.form.num_cell_integrals() > 0 )
+            compute_tensor_on_one_cell(a, A_ufc, cell, A_coefficients, cell_domains); 
+
+          if (b_ufc.form.num_cell_integrals() > 0 )
+            compute_tensor_on_one_cell(L, b_ufc, cell, b_coefficients, cell_domains); 
+
+          for (uint i=0; i<A_num_entries; i++)
+            Ae[i] += A_ufc.A[i];
+        }
+
+        // enforce BC  ---------------------------------------
+
+        uint m = A_ufc.local_dimensions[0];
+        uint n = A_ufc.local_dimensions[1];
+
+        for (uint i=0; i<n; i++)
+        {
+          uint ii = A_ufc.dofs[1][i];
+          if (indicators[ii] > 0)
+          {
+            be[i] = g[ii];
+            for (uint k=0; k<n; k++)
+              Ae[k+i*n] = 0.0;
+            for (uint j=0; j<m; j++)
+            {
+              be[j] -= Ae[i+j*n]*g[ii];
+              Ae[i+j*n] = 0.0;
+            }
+            Ae[i+i*n] = 1.0;
+          }
+        }
+
+        // enforce BC done  ------------------------------------------
+
+        // Add entries to global tensor
+        A.add(Ae, A_ufc.local_dimensions, A_ufc.dofs);
+        b.add(be, b_ufc.local_dimensions, b_ufc.dofs);
+      }
+    }
+    delete [] Ae_macro;
+    delete [] be_macro;
   }
 
   // -- Finalize tensors 
