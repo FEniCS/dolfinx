@@ -3,10 +3,10 @@
 //
 // Thanks to Jim Tilander for many helpful hints.
 //
-// Modified by Ola Skavhaug, 2007.
+// Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2008-09-18
+// Last changed: 2009-04-30
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -48,16 +48,19 @@ namespace dolfin
     void progress (std::string title, double p) const;
 
     /// Set output destination ("terminal" or "silent")
-    void setOutputDestination(std::string destination);
+    void set_output_destination(std::string destination);
 
     /// Set output destination to stream
-    void setOutputDestination(std::ostream& stream);
+    void set_output_destination(std::ostream& stream);
+
+    /// Set output destination to stream
+    std::ostream& get_output_destination() { return *logstream; }
 
     /// Set debug level
-    void setDebugLevel(int debug_level);
+    void set_debug_level(int debug_level);
 
-    /// Set debug level
-    inline int getDebugLevel() const { return debug_level; }
+    /// Get debug level
+    inline int get_debug_level() const { return debug_level; }
 
     /// Register timing (for later summary)
     void register_timing(std::string task, double elapsed_time);

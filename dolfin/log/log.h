@@ -1,10 +1,10 @@
 // Copyright (C) 2003-2008 Anders Logg and Jim Tilander.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Ola Skavhaug, 2007.
+// Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2008-07-23
+// Last changed: 2009-04-30
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -36,11 +36,15 @@ namespace dolfin
   /// where destination is one of "terminal" (default) or "silent". Setting
   /// the output destination to "silent" means no messages will be printed.
 
+
   /// Print message
   void message(std::string msg, ...);
 
   /// Print message
   void message(int debug_level, std::string msg, ...);
+
+  /// Print message
+  void stream_message(std::ostream& out, std::string msg);
 
   /// Print warning
   void warning(std::string msg, ...);
