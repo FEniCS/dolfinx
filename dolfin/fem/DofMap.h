@@ -77,10 +77,6 @@ namespace dolfin
     unsigned int local_dimension(const ufc::cell& cell) const
     { return ufc_dof_map->local_dimension(cell); }
 
-    /// Return the dimension of the local finite element function space on a cell
-    unsigned int macro_local_dimension(const ufc::cell& cell) const
-    { return ufc_dof_map->local_dimension(cell); }
-
     /// Return the maximum dimension of the local finite element function space
     unsigned int max_local_dimension() const
     { return ufc_dof_map->max_local_dimension(); }
