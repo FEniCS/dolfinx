@@ -67,8 +67,10 @@ namespace dolfin
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const
     {
-      if (dof_map) return dof_map_size;
-      else return ufc_dof_map->global_dimension();
+      if (dof_map) 
+        return dof_map_size;
+      else 
+        return ufc_dof_map->global_dimension();
     }
 
     /// Return the dimension of the local finite element function space on a cell
