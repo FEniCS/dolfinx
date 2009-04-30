@@ -89,18 +89,18 @@ namespace dolfin
       for (uint i = 0; i < num_vertices; i++)
         coordinates[i] = const_cast<double*> (cell.mesh().geometry().x(vertices[i]));
 
-//       /// Set higher order vertex coordinates
-//       num_higher_order_vertices = cell.mesh().geometry().get_num_higher_order_vertices_per_cell();
-//       if (num_higher_order_vertices > 0)
-//           {
-// 	      uint current_cell_index = cell.index();
-// 	      const uint* higher_order_vertex_indices =
-// 	                               cell.mesh().geometry().higher_order_cell(current_cell_index);
-// 	      higher_order_coordinates = new double*[num_higher_order_vertices];
-// 	      for (uint i = 0; i < num_higher_order_vertices; i++)
-// 	        higher_order_coordinates[i] = const_cast<double*>
-// 	                    (cell.mesh().geometry().higher_order_x(higher_order_vertex_indices[i]));
-//           }
+      /// Set higher order vertex coordinates
+      num_higher_order_vertices = cell.mesh().geometry().get_num_higher_order_vertices_per_cell();
+      if (num_higher_order_vertices > 0)
+          {
+	      uint current_cell_index = cell.index();
+	      const uint* higher_order_vertex_indices =
+	                               cell.mesh().geometry().higher_order_cell(current_cell_index);
+	      higher_order_coordinates = new double*[num_higher_order_vertices];
+	      for (uint i = 0; i < num_higher_order_vertices; i++)
+	        higher_order_coordinates[i] = const_cast<double*>
+	                    (cell.mesh().geometry().higher_order_x(higher_order_vertex_indices[i]));
+          }
 
     }
 
@@ -138,16 +138,16 @@ namespace dolfin
       for (uint i = 0; i < num_vertices; i++)
         coordinates[i] =  const_cast<double*>(cell.mesh().geometry().x(vertices[i]));
         
-//       /// Set higher order vertex coordinates
-//       if (num_higher_order_vertices > 0)
-//           {
-// 	      uint current_cell_index = cell.index();
-// 	      const uint* higher_order_vertex_indices =
-// 	                               cell.mesh().geometry().higher_order_cell(current_cell_index);
-// 	      for (uint i = 0; i < num_higher_order_vertices; i++)
-// 	        higher_order_coordinates[i] = const_cast<double*>
-// 	                    (cell.mesh().geometry().higher_order_x(higher_order_vertex_indices[i]));
-//           }
+      /// Set higher order vertex coordinates
+      if (num_higher_order_vertices > 0)
+          {
+	      uint current_cell_index = cell.index();
+	      const uint* higher_order_vertex_indices =
+	                               cell.mesh().geometry().higher_order_cell(current_cell_index);
+	      for (uint i = 0; i < num_higher_order_vertices; i++)
+	        higher_order_coordinates[i] = const_cast<double*>
+	                    (cell.mesh().geometry().higher_order_x(higher_order_vertex_indices[i]));
+          }
 
     }
 

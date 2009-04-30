@@ -110,9 +110,9 @@ void MeshGeometry::clear()
   _higher_order_num_dof   = 0;
 
   delete [] coordinates;
-  delete(higher_order_coordinates);
-  delete(higher_order_cell_data);
-  delete(affine_cell);
+  delete [] higher_order_coordinates;
+  delete [] higher_order_cell_data;
+  delete [] affine_cell;
 
   coordinates               = 0;
   higher_order_coordinates  = 0;
