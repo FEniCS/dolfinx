@@ -118,6 +118,9 @@ namespace dolfin
     /// Multiply vector by given number
     virtual const GenericVector& operator*= (double a) = 0;
 
+    /// Multiply vector by another vector pointwise
+    virtual const GenericVector& operator*= (const GenericVector& x) = 0;
+
     /// Divide vector by given number
     virtual const GenericVector& operator/= (double a) = 0;
 

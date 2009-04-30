@@ -7,11 +7,10 @@
 #ifndef __UFC_CELL_H
 #define __UFC_CELL_H
 
-#include <ufc.h>
-
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Cell.h>
+#include "UFC.h"
 
 namespace dolfin
 {

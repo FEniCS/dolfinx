@@ -173,6 +173,17 @@ namespace dolfin
                                                ); 
 
 
+    static void compute_tensor_on_one_interior_facet (const Form& a,
+                                               UFC& ufc, 
+                                               const Cell& cell1, 
+                                               const Cell& cell2, 
+                                               const Facet& facet,
+                                               const std::vector<const Function*>& coefficients, 
+                                               const MeshFunction<uint>* exterior_facet_domains
+                                               ); 
+
+
+
 
   };
 

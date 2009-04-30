@@ -13,8 +13,8 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshData.h>
 #include <dolfin/main/MPI.h>
-#include "UFCCell.h"
 #include "UFC.h"
+#include "UFCCell.h"
 #include "DofMapBuilder.h"
 #include "DofMap.h"
 

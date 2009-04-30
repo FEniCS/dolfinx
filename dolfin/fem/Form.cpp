@@ -8,13 +8,13 @@
 // Last changed: 2008-12-15
 
 #include <string>
-#include <ufc.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
+#include "UFC.h"
 #include "Form.h"
 
 using namespace dolfin;

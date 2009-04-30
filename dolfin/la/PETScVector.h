@@ -113,6 +113,9 @@ namespace dolfin
     /// Multiply vector by given number
     virtual const PETScVector& operator*= (double a);
 
+    /// Multiply vector by another vector pointwise
+    virtual const PETScVector& operator*= (const GenericVector& x);
+
     /// Divide vector by given number
     virtual const PETScVector& operator/= (double a);
 

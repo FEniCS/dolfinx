@@ -73,15 +73,14 @@ UFC::UFC(const Form& form): form(form.ufc_form())
   for (uint i = 0; i < num_entries; i++)
     macro_A[i] = 0.0;
 
-  // Initialize local dimensions
+  // Allocate memory for storing local dimensions
   local_dimensions = new uint[this->form.rank()];
-  for (uint i = 0; i < this->form.rank(); i++)
-    local_dimensions[i] = V[i]->dofmap().max_local_dimension();
-
-  // Initialize local dimensions for macro element
   macro_local_dimensions = new uint[this->form.rank()];
   for (uint i = 0; i < this->form.rank(); i++)
+  {
+    local_dimensions[i] = V[i]->dofmap().max_local_dimension();
     macro_local_dimensions[i] = 2*V[i]->dofmap().max_local_dimension();
+  }
 
   // Initialize global dimensions
   global_dimensions = new uint[this->form.rank()];

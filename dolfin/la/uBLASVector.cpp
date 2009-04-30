@@ -189,6 +189,12 @@ const uBLASVector& uBLASVector::operator*= (const double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const uBLASVector& uBLASVector::operator*= (const GenericVector& y) 
+{ 
+  *x = ublas::element_prod(*x,y.down_cast<uBLASVector>().vec());
+  return *this;
+}
+//-----------------------------------------------------------------------------
 const uBLASVector& uBLASVector::operator/= (const double a)
 {
   (*x) /= a;

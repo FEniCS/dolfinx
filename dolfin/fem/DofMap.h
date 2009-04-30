@@ -13,10 +13,10 @@
 #include <boost/shared_ptr.hpp>
 #include <map>
 #include <vector>
-#include <ufc.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include "UFC.h"
 #include "UFCCell.h"
 #include "UFCMesh.h"
 
@@ -67,16 +67,14 @@ namespace dolfin
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const
     {
-      if (dof_map) return dof_map_size;
-      else return ufc_dof_map->global_dimension();
+      if (dof_map) 
+        return dof_map_size;
+      else 
+        return ufc_dof_map->global_dimension();
     }
 
     /// Return the dimension of the local finite element function space on a cell
     unsigned int local_dimension(const ufc::cell& cell) const
-    { return ufc_dof_map->local_dimension(cell); }
-
-    /// Return the dimension of the local finite element function space on a cell
-    unsigned int macro_local_dimension(const ufc::cell& cell) const
     { return ufc_dof_map->local_dimension(cell); }
 
     /// Return the maximum dimension of the local finite element function space
