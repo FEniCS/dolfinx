@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-03-01
-// Last changed: 2008-10-06
+// Last changed: 2009-04-30
 
 #ifndef __UFC_CELL_H
 #define __UFC_CELL_H
@@ -11,6 +11,7 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Cell.h>
 #include "UFC.h"
+#include <dolfin/fem/ufcexp.h>
 
 namespace dolfin
 {
@@ -18,21 +19,21 @@ namespace dolfin
   /// This class is simple wrapper for a UFC cell and provides
   /// a layer between a DOLFIN cell and a UFC cell.
 
-  class UFCCell : public ufc::cell
+  class UFCCell : public ufcexp::cell
   {
   public:
 
     /// Create emtpy UFC cell
-    UFCCell() : ufc::cell(), num_vertices(0) {}
+    UFCCell() : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0) {}
 
     /// Create UFC cell from DOLFIN cell
-    UFCCell(const Cell& cell) : ufc::cell(), num_vertices(0)
+    UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0)
     {
       init(cell);
     }
 
     /// Create UFC cell for first DOLFIN cell in mesh
-    UFCCell(const Mesh& mesh) : ufc::cell(), num_vertices(0)
+    UFCCell(const Mesh& mesh) : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0)
     {
       CellIterator cell(mesh);
       init(*cell);
@@ -87,6 +88,20 @@ namespace dolfin
       coordinates = new double*[num_vertices];
       for (uint i = 0; i < num_vertices; i++)
         coordinates[i] = const_cast<double*> (cell.mesh().geometry().x(vertices[i]));
+
+//       /// Set higher order vertex coordinates
+//       num_higher_order_vertices = cell.mesh().geometry().get_num_higher_order_vertices_per_cell();
+//       if (num_higher_order_vertices > 0)
+//           {
+// 	      uint current_cell_index = cell.index();
+// 	      const uint* higher_order_vertex_indices =
+// 	                               cell.mesh().geometry().higher_order_cell(current_cell_index);
+// 	      higher_order_coordinates = new double*[num_higher_order_vertices];
+// 	      for (uint i = 0; i < num_higher_order_vertices; i++)
+// 	        higher_order_coordinates[i] = const_cast<double*>
+// 	                    (cell.mesh().geometry().higher_order_x(higher_order_vertex_indices[i]));
+//           }
+
     }
 
     // Clear UFC cell data
@@ -99,9 +114,11 @@ namespace dolfin
       }
       entity_indices = 0;
 
-      if (coordinates)
-        delete [] coordinates;
+      delete [] coordinates;
       coordinates = 0;
+
+      delete [] higher_order_coordinates;
+      higher_order_coordinates = 0;
 
       cell_shape = ufc::interval;
       topological_dimension = 0;
@@ -120,12 +137,27 @@ namespace dolfin
       const uint* vertices = cell.entities(0);
       for (uint i = 0; i < num_vertices; i++)
         coordinates[i] =  const_cast<double*>(cell.mesh().geometry().x(vertices[i]));
+        
+//       /// Set higher order vertex coordinates
+//       if (num_higher_order_vertices > 0)
+//           {
+// 	      uint current_cell_index = cell.index();
+// 	      const uint* higher_order_vertex_indices =
+// 	                               cell.mesh().geometry().higher_order_cell(current_cell_index);
+// 	      for (uint i = 0; i < num_higher_order_vertices; i++)
+// 	        higher_order_coordinates[i] = const_cast<double*>
+// 	                    (cell.mesh().geometry().higher_order_x(higher_order_vertex_indices[i]));
+//           }
+
     }
 
   private:
 
     // Number of cell vertices
     uint num_vertices;
+
+    // Number of higher order cell vertices
+    uint num_higher_order_vertices;
 
   };
 
