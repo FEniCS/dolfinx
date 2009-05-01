@@ -1,10 +1,10 @@
 // Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Ola Skavhaug, 2007.
+// Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2008-09-18
+// Last changed: 2009-03-30
 
 #include <string>
 #include <iostream>
@@ -25,7 +25,7 @@ typedef std::map<std::string, std::pair<dolfin::uint, double> >::const_iterator 
 
 //-----------------------------------------------------------------------------
 Logger::Logger()
-  : destination(terminal), debug_level(0), indentation_level(0), logstream(0),
+  : destination(terminal), debug_level(0), indentation_level(0), logstream(&std::cout),
     process_number(-1)
 {
   if (MPI::num_processes() > 1)
@@ -101,31 +101,37 @@ void Logger::progress(std::string title, double p) const
   write(0, s);
 }
 //-----------------------------------------------------------------------------
-void Logger::setOutputDestination(std::string destination)
+void Logger::set_output_destination(std::string destination)
 {
   // Choose output destination
   if (destination == "terminal")
+  {
     this->destination = terminal;
+    logstream = &std::cout;
+  }
   else if (destination == "silent")
     this->destination = silent;
-  else if (destination == "stream"){
+  else if (destination == "stream")
+  {
     warning("Please provide the actual stream. Using terminal instead.");
     this->destination = terminal;
+    logstream = &std::cout;
   }
   else
   {
     this->destination = terminal;
+    logstream = &std::cout;
     message("Unknown output destination, using plain text.");
   }
 }
 //-----------------------------------------------------------------------------
-void Logger::setOutputDestination(std::ostream& ostream)
+void Logger::set_output_destination(std::ostream& ostream)
 {
    logstream = &ostream;
    this->destination = stream;
 }
 //-----------------------------------------------------------------------------
-void Logger::setDebugLevel(int debug_level)
+void Logger::set_debug_level(int debug_level)
 {
   this->debug_level = debug_level;
 }
@@ -238,17 +244,12 @@ void Logger::write(int debug_level, std::string msg) const
   // Choose destination
   switch (destination)
   {
-  case terminal:
-    std::cout << msg << std::endl;
-    break;
-  case stream:
-    if (logstream == NULL)
-      error("No stream attached, cannot write to stream");
-    *logstream << msg << std::endl;
-    break;
-  default:
+  case silent:
     // Do nothing if destination == silent
     do {} while (false);
+    break;
+  default:
+    *logstream << msg << std::endl;
   }
 }
 //----------------------------------------------------------------------------

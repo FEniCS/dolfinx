@@ -4,7 +4,6 @@
 // First added: 2009-03-03
 // Last changed: 2009-03-11
 
-//#include <stdexcept>
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
@@ -46,8 +45,6 @@ NewXMLFile::NewXMLFile(const std::string filename, bool gzip)
 NewXMLFile::NewXMLFile(std::ostream& s)
   : GenericFile(""), sax(0), outstream(&s)
 {
-
-
   // Set up the sax handler.
   sax = new xmlSAXHandler();
 

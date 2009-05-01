@@ -260,14 +260,14 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
     const double _tol = to_double(tol);
 
     // FIXME: Check choice of tolerances
-    krylov = new uBLASKrylovSolver(none);
+    krylov = new uBLASKrylovSolver("default", "none");
     krylov->set("Krylov report", monitor);
     krylov->set("Krylov relative tolerance", ktol);
     //Note: Precision lost if working with GMP types
     krylov->set("Krylov absolute tolerance", ktol*_tol);
 
     message("Using BiCGStab Krylov solver for matrix Jacobian.");
-    krylov_g = new KrylovSolver(bicgstab, ilu);
+    krylov_g = new KrylovSolver("bicgstab", "ilu");
     krylov_g->set("Krylov report", monitor);
     krylov_g->set("Krylov relative tolerance", ktol);
     krylov_g->set("Krylov absolute tolerance", ktol*_tol);

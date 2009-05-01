@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2005-2008.
-// Modified by Garth N. Wells, 2005-2008.
+// Modified by Garth N. Wells, 2005-2009.
 //
 // First added:  2005-12-02
 // Last changed: 2008-09-26
@@ -30,16 +30,16 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(SolverType method, PreconditionerType pc)
-  : method(method), pc_petsc(pc), pc_dolfin(0),
+PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
+  : method(method), pc_petsc(pc_type), pc_dolfin(0),
     ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(SolverType method,
+PETScKrylovSolver::PETScKrylovSolver(std::string method,
 				     PETScPreconditioner& preconditioner)
-  : method(method), pc_petsc(default_pc), pc_dolfin(&preconditioner),
+  : method(method), pc_petsc("default"), pc_dolfin(&preconditioner),
     ksp(0), M(0), N(0), parameters_read(false), pc_set(false)
 {
   // Do nothing
@@ -236,7 +236,7 @@ void PETScKrylovSolver::read_parameters()
 void PETScKrylovSolver::set_solver()
 {
   // Don't do anything for default method
-  if (method == default_solver)
+  if (method == "default")
     return;
 
   // Set PETSc Krylov solver
@@ -258,7 +258,7 @@ void PETScKrylovSolver::setPETScPreconditioner()
   }
 
   // Treat special case default preconditioner (do nothing)
-  if (pc_petsc == default_pc)
+  if (pc_petsc == "default")
     return;
 
   // Get PETSc PC pointer
@@ -269,7 +269,7 @@ void PETScKrylovSolver::setPETScPreconditioner()
   PCSetFromOptions(pc);
 
   // Treat special case Hypre AMG preconditioner
-  if ( pc_petsc == amg_hypre )
+  if ( pc_petsc == "amg_hypre" )
   {
 #if PETSC_HAVE_HYPRE
     PCSetType(pc, PCHYPRE);
@@ -285,7 +285,7 @@ void PETScKrylovSolver::setPETScPreconditioner()
   }
 
   // Treat special case ML AMG preconditioner
-  if ( pc_petsc == amg_ml )
+  if ( pc_petsc == "amg_ml" )
   {
 #if PETSC_HAVE_ML
   PCSetType(pc, PETScPreconditioner::get_type(pc_petsc));
@@ -329,22 +329,21 @@ void PETScKrylovSolver::write_report(int num_iterations)
 }
 //-----------------------------------------------------------------------------
 #if PETSC_VERSION_MAJOR > 2
-const KSPType PETScKrylovSolver::get_type(SolverType method) const
+const KSPType PETScKrylovSolver::get_type(std::string method) const
 #else
-KSPType PETScKrylovSolver::get_type(SolverType method) const
+KSPType PETScKrylovSolver::get_type(std::string method) const
 #endif
 {
-  switch (method)
-  {
-  case bicgstab:
+  if (method == "bicgstab")
     return KSPBCGS;
-  case cg:
+  else if (method == "cg")
     return KSPCG;
-  case default_solver:
+  else if (method == "default")
     return "default";
-  case gmres:
+  else if (method == "gmres")
     return KSPGMRES;
-  default:
+  else
+  {
     warning("Requested Krylov method unknown. Using GMRES.");
     return KSPGMRES;
   }

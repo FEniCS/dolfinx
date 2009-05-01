@@ -18,6 +18,7 @@
 #include <mpi.h>
 #endif
 
+#include <libxml/parser.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include "SubSystemsManager.h"
@@ -44,6 +45,9 @@ SubSystemsManager::~SubSystemsManager()
   // Finalize subsystems in the correct order
   finalizePETSc();
   finalizeMPI();
+
+  // Clean up libxml2 parser
+  xmlCleanupParser();
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::initMPI()

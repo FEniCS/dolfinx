@@ -4,9 +4,10 @@
 // Thanks to Jim Tilander for many helpful hints.
 //
 // Modified by Garth N. Wells, 2006.
+// Modified by Ola Skavhaug, 2009.
 //
 // First added:  2003-03-14
-// Last changed: 2008-06-20
+// Last changed: 2009-04-30
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/timing.h>
@@ -28,7 +29,7 @@ Progress::Progress(std::string title, unsigned int n)
   t = time();
 
   //When "debug level" is more than 0, progress is always visible
-  if (LogManager::logger.getDebugLevel() > 0 )
+  if (LogManager::logger.get_debug_level() > 0 )
     always = true;
 
 }
@@ -42,7 +43,7 @@ Progress::Progress(std::string title)
   t = time();
 
   //When "debug level" is more than 0, progress is always visible
-  if (LogManager::logger.getDebugLevel() > 0 )
+  if (LogManager::logger.get_debug_level() > 0 )
     always = true;
 
 }

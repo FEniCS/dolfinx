@@ -3,10 +3,10 @@
 //
 // Thanks to Jim Tilander for many helpful hints.
 //
-// Modified by Ola Skavhaug, 2007.
+// Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2008-07-23
+// Last changed: 2009-04-30
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -27,6 +27,14 @@ static char buffer[DOLFIN_LINELENGTH];
   vsnprintf(buffer, DOLFIN_LINELENGTH, msg.c_str(), aptr); \
   va_end(aptr);
 
+//-----------------------------------------------------------------------------
+void dolfin::stream_message(std::ostream& out, std::string msg)
+{
+  std::ostream& old_out = LogManager::logger.get_output_destination();
+  LogManager::logger.set_output_destination(out);
+  LogManager::logger.message(msg);
+  LogManager::logger.set_output_destination(old_out);
+}
 //-----------------------------------------------------------------------------
 void dolfin::message(std::string msg, ...)
 {

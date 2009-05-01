@@ -76,7 +76,7 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
     b.apply();
 
     // Solve system
-    solve(A, x, b, gmres, amg_hypre);
+    solve(A, x, b, "gmres", "amg_hypre");
 
     // Get new coordinates
     x.get(new_coordinates + dim*N);

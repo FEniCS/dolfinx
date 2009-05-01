@@ -17,14 +17,15 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void dolfin::solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b,
-                   SolverType solver_type, PreconditionerType pc_type)
+                   std::string solver_type, std::string pc_type)
 {
   Timer timer("Solving linear system");
   LinearSolver solver(solver_type, pc_type);
   solver.solve(A, x, b);
 }
 //-----------------------------------------------------------------------------
-double dolfin::residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b)
+double dolfin::residual(const GenericMatrix& A, const GenericVector& x, 
+                        const GenericVector& b)
 {
   GenericVector* y = A.factory().create_vector();
   A.mult(x, *y);
@@ -64,13 +65,4 @@ double dolfin::normalize(GenericVector& x, NormalizationType normalization_type)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-/*
-void dolfin::solve(const PETScKrylovMatrix& A,
-                   PETScVector& x,
-                   const PETScVector& b)
-{
-  PETScLUSolver solver;
-  solver.solve(A, x, b);
-}
-*/
-//-----------------------------------------------------------------------------
+

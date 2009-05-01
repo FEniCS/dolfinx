@@ -1,12 +1,12 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2007,-2008
+// Modified by Garth N. Wells, 2007-2009
 // Modified by Ola Skavhaug, 2007-2008
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-01-06
+// Last changed: 2009-04-29
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
@@ -444,7 +444,6 @@ void Assembler::init_global_tensor(GenericTensor& A,
       std::vector<const DofMap*> dof_maps(0);
       for(uint i=0; i < a.rank(); ++i)
         dof_maps.push_back(&(a.function_space(i).dofmap()));
-//      SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), ufc, dof_maps);
       SparsityPatternBuilder::build(*sparsity_pattern, ufc, a);
     }
     t0.stop();
@@ -1367,7 +1366,7 @@ void Assembler::assemble_system_new(GenericMatrix& A,
   if (x0)
   {
     warning("Symmetric application of Dirichlet boundary conditions for incremental problems is untested.");
-    dolfin_assert( x0->size() == N);
+    dolfin_assert(x0->size() == N);
     double* x0_values = new double[N];
     x0->get(x0_values);
     for (uint i = 0; i < N; i++)
@@ -1422,14 +1421,11 @@ void Assembler::assemble_system_new(GenericMatrix& A,
           {
             if (facet->num_entities(D) != 2) 
             {
-
               compute_tensor_on_one_exterior_facet(a, A_ufc, *cell, *facet, A_coefficients, exterior_facet_domains);
-
               for (uint i=0; i<b_num_entries; i++) 
                 Ae[i] += A_ufc.A[i]; 
 
               compute_tensor_on_one_exterior_facet(L, b_ufc, *cell, *facet, b_coefficients, exterior_facet_domains);
-
               for (uint i=0; i<b_num_entries; i++) 
                 be[i] += b_ufc.A[i]; 
             }

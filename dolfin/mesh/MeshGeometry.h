@@ -62,12 +62,29 @@ namespace dolfin
 
     /// Return array of values for all coordinates
     inline const double* x() const { return coordinates; }
+    
+    /// Return array of values for higher order coordinate n
+    inline double* higher_order_x(uint n) { return higher_order_coordinates + n*_dim; }
+
+    /// Return array of values for higher order coordinate n
+    inline const double* higher_order_x(uint n) const { return higher_order_coordinates + n*_dim; }
 
     /// Return array of values for all higher order coordinates
     inline double* higher_order_x() { return higher_order_coordinates; }
 
     /// Return array of values for all higher order coordinates
     inline const double* higher_order_x() const { return higher_order_coordinates; }
+
+    /// Return number of vertices used (per cell) to represent the higher order geometry
+    inline uint num_higher_order_vertices_per_cell() const { return _higher_order_num_dof; }
+    
+    /// Return array of higher order vertex indices for a specific higher order cell
+    inline uint* higher_order_cell(uint c)
+    { return (higher_order_cell_data + (c*_higher_order_num_dof)); }
+
+    /// Return array of higher order vertex indices for a specific higher order cell
+    inline const uint* higher_order_cell(uint c)
+                       const { return (higher_order_cell_data + (c*_higher_order_num_dof)); }
 
     /// Return array of values for all higher order cell data
     inline uint* higher_order_cells() { return higher_order_cell_data; }

@@ -29,14 +29,16 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EpetraKrylovSolver::EpetraKrylovSolver(SolverType method, PreconditionerType pc)
-                    : method(method), pc_type(pc), prec(0)
+EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
+                    : method(method), pc_type(pc_type), prec(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraKrylovSolver::EpetraKrylovSolver(SolverType method, EpetraPreconditioner& prec)
-                    : method(method), pc_type(default_pc), prec(&prec)
+EpetraKrylovSolver::EpetraKrylovSolver(std::string method, 
+                                       EpetraPreconditioner& prec)
+                                     : method(method), 
+                                       pc_type("default"), prec(&prec)
 {
   // Do nothing
 }
@@ -83,56 +85,44 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   linear_solver.SetRHS(b_vec);
 
   // Set solver type
-  switch (method)
-  {
-  case default_solver:
-    linear_solver.SetAztecOption( AZ_solver, AZ_gmres);
-    break;
-  case cg:
-    linear_solver.SetAztecOption( AZ_solver, AZ_cg);
-    break;
-  case gmres:
-    linear_solver.SetAztecOption( AZ_solver, AZ_gmres);
-    break;
-  case bicgstab:
-    linear_solver.SetAztecOption( AZ_solver, AZ_bicgstab);
-    break;
-  case lu:
+  if (method == "default")
+    linear_solver.SetAztecOption(AZ_solver, AZ_gmres);
+  else if (method == "cg")
+    linear_solver.SetAztecOption(AZ_solver, AZ_cg);
+  else if (method == "gmres")
+    linear_solver.SetAztecOption(AZ_solver, AZ_gmres);
+  else if (method == "bicgstab")
+    linear_solver.SetAztecOption(AZ_solver, AZ_bicgstab);
+  else if (method == "lu")
     error("EpetraKrylovSolver::solve LU not supported.");
-    break;
-  default:
+  else
     error("EpetraKrylovSolver::solve solver type not supported.");
-  }
 
-  //FIXME GS or SSOR not a PreconditionerType not in
   // Set preconditioner
-  switch (pc_type)
+  if (pc_type == "default")
   {
-  case default_pc:
     linear_solver.SetAztecOption( AZ_precond, AZ_dom_decomp);
     linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu);
-    break;
-  case jacobi:
-    linear_solver.SetAztecOption( AZ_precond, AZ_Jacobi);
-    break;
-  case sor:
-    linear_solver.SetAztecOption( AZ_precond, AZ_sym_GS);
-    break;
-  case ilu:
-    linear_solver.SetAztecOption( AZ_precond, AZ_dom_decomp);
-    linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu);
-    break;
-  case icc:
-    linear_solver.SetAztecOption( AZ_precond, AZ_icc);
-    break;
-  case amg_ml:
-    // Do nothing. Configured below
-    break;
-  default:
-    error("EpetraKrylovSolver::solve pc type not supported.");
   }
+  else if (pc_type == "jacobi")
+    linear_solver.SetAztecOption( AZ_precond, AZ_Jacobi);
+  else if (pc_type == "sor")
+    linear_solver.SetAztecOption( AZ_precond, AZ_sym_GS);
+  else if (pc_type == "ilu")
+  {
+    linear_solver.SetAztecOption( AZ_precond, AZ_dom_decomp);
+    linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu);
+  }
+  else if (pc_type == "icc")
+    linear_solver.SetAztecOption( AZ_precond, AZ_icc);
+  else if (pc_type == "amg_ml")
+  {
+    // Do nothing. Configured below
+  }
+  else
+    error("EpetraKrylovSolver::solve pc type not supported.");
 
-  if (pc_type == amg_ml)
+  if (pc_type == "amg_ml")
   {
 //#ifdef HAVE_ML_AZTECOO
     //FIXME ifdef ML

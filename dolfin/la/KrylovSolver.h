@@ -40,8 +40,7 @@ namespace dolfin
   public:
 
     /// Create Krylov solver
-    KrylovSolver(dolfin::SolverType solver_type=default_solver,
-                 dolfin::PreconditionerType pc_type=default_pc)
+    KrylovSolver(std::string solver_type = "default", std::string pc_type="default")
       : solver_type(solver_type), pc_type(pc_type), ublas_solver(0), petsc_solver(0),
         epetra_solver(0), itl_solver(0) {}
 
@@ -120,10 +119,10 @@ namespace dolfin
   private:
 
     // Krylov method
-    SolverType solver_type;
+    std::string solver_type;
 
     // Preconditioner type
-    PreconditionerType pc_type;
+    std::string pc_type;
 
     // uBLAS solver
     uBLASKrylovSolver* ublas_solver;
