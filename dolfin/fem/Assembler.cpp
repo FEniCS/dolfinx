@@ -40,7 +40,10 @@ void Assembler::assemble(GenericTensor& A,
                          const Form& a,
                          bool reset_tensor)
 {
-  assemble(A, a, 0, 0, 0, reset_tensor);
+  Mesh& mesh = (Mesh&) a.mesh(); // FIXME: this causes the Mesh to change, hence const is casted away 
+  compute_mesh_function_from_mesh_arrays(mesh); 
+  MeshFunction<uint>* exterior_facet_domains = mesh.data().mesh_function("exterior facet domains"); 
+  assemble(A, a, 0, exterior_facet_domains, 0, reset_tensor);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A,
@@ -1664,4 +1667,43 @@ void Assembler::assemble_system_new(GenericMatrix& A,
   delete [] indicators;
 }
 //-----------------------------------------------------------------------------
+void Assembler::compute_mesh_function_from_mesh_arrays(Mesh& mesh){
+
+  if (mesh.data().mesh_function("exterior facet domains")) return; 
+
+  std::vector<uint>* facet_cells   = mesh.data().array("boundary facet cells");
+  std::vector<uint>* facet_numbers = mesh.data().array("boundary facet numbers");
+  std::vector<uint>* indicators    = mesh.data().array("boundary indicators");
+
+  if (!indicators) return;   
+
+  //FIXME: we do now assume consistency between the arrays. How to check this ?  
+
+  MeshFunction<uint>* exterior_facet_domains = mesh.data().create_mesh_function("exterior facet domains", mesh.topology().dim()-1); 
+
+  // initialize meshfunction
+  for (uint i=0; i<exterior_facet_domains->size(); i++) { 
+    Facet facet(mesh, i); 
+    (*exterior_facet_domains)(facet) = 0;
+  }
+
+  const uint size = facet_cells->size();
+  uint cell_index; 
+  uint local_facet; 
+  uint global_facet; 
+  const uint d = mesh.topology().dim(); 
+  for (uint i=0; i<size; i++) {
+    cell_index = (*facet_cells)[i];    
+    local_facet = (*facet_numbers)[i]; 
+    Cell cell(mesh, cell_index);
+    global_facet = cell.entities(d - 1)[local_facet];
+    Facet facet(mesh, global_facet); 
+    (*exterior_facet_domains)(facet) = (*indicators)[i]; 
+//    std::cout << "global_facet " << global_facet<< " indicators "<<(*indicators)[i]<<std::endl;
+  }
+//  (*exterior_facet_domains).disp();
+
+}
+//-----------------------------------------------------------------------------
+
 
