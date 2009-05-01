@@ -319,13 +319,13 @@ void FunctionSpace::Scratch::init(const FiniteElement& element)
     dofs[i] = 0;
 
   // Initialize local array for expansion coefficients
-  delete coefficients;
+  delete [] coefficients;
   coefficients = new double[element.space_dimension()];
   for (uint i = 0; i < element.space_dimension(); i++)
     coefficients[i] = 0.0;
 
   // Initialize local array for values
-  delete values;
+  delete [] values;
   values = new double[size];
   for (uint i = 0; i < size; i++)
     values[i] = 0.0;
