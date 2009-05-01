@@ -38,11 +38,10 @@ namespace dolfin
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    PETScKrylovSolver(dolfin::SolverType method=default_solver,
-                      dolfin::PreconditionerType pc=default_pc);
+    PETScKrylovSolver(std::string method = "default", std::string pc_type = "default");
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
-    PETScKrylovSolver(dolfin::SolverType method, PETScPreconditioner& PETScPreconditioner);
+    PETScKrylovSolver(std::string method, PETScPreconditioner& PETScPreconditioner);
 
     /// Destructor
     ~PETScKrylovSolver();
@@ -78,16 +77,16 @@ namespace dolfin
 
     /// Get PETSc method identifier
     #if PETSC_VERSION_MAJOR > 2
-    const KSPType get_type(dolfin::SolverType method) const;
+    const KSPType get_type(std::string method) const;
     #else
-    KSPType get_type(dolfin::SolverType method) const;
+    KSPType get_type(std::string method) const;
     #endif
 
     /// Krylov method
-    SolverType method;
+    std::string method;
 
-    /// PETSc PETScPreconditioner
-    PreconditionerType pc_petsc;
+    /// PETSc preconditioner type
+    std::string pc_petsc;
 
     /// DOLFIN PETScPreconditioner
     PETScPreconditioner* pc_dolfin;

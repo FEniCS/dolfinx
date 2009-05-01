@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Garth N. Wells.
+// Copyright (C) 2006-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2006-2008.
@@ -13,28 +13,24 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBLASKrylovSolver::uBLASKrylovSolver(SolverType solver_type, PreconditionerType pc_type)
-  : solver_type(solver_type), pc_user(false), report(false), parameters_read(false)
-{
-  // Select and create default preconditioner
-  select_preconditioner(pc_type);
-}
-//-----------------------------------------------------------------------------
-uBLASKrylovSolver::uBLASKrylovSolver(PreconditionerType pc_type)
-  : solver_type(default_solver), pc_user(false), report(false), parameters_read(false)
+uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type, std::string pc_type)
+  : solver_type(solver_type), pc_user(false), report(false), 
+    parameters_read(false)
 {
   // Select and create default preconditioner
   select_preconditioner(pc_type);
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
-  : solver_type(default_solver), pc(&pc), pc_user(true), report(false), parameters_read(false)
+  : solver_type("default"), pc(&pc), pc_user(true), report(false), 
+    parameters_read(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBLASKrylovSolver::uBLASKrylovSolver(SolverType solver_type, uBLASPreconditioner& pc)
-  : solver_type(solver_type), pc(&pc), pc_user(true), report(false), parameters_read(false)
+uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type, uBLASPreconditioner& pc)
+  : solver_type(solver_type), pc(&pc), pc_user(true), report(false), 
+    parameters_read(false)
 {
   // Do nothing
 }
@@ -47,46 +43,42 @@ uBLASKrylovSolver::~uBLASKrylovSolver()
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBLASKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
-                                       const GenericVector& b)
+                                      const GenericVector& b)
 {
   return solve(A.down_cast<uBLASMatrix<ublas_sparse_matrix> >(),
                x.down_cast<uBLASVector>(),  b.down_cast<uBLASVector>());
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBLASKrylovSolver::solve(const uBLASMatrix<ublas_dense_matrix>& A,
-    uBLASVector& x, const uBLASVector& b)
+                                      uBLASVector& x, const uBLASVector& b)
 {
   return solve_krylov(A, x, b);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBLASKrylovSolver::solve(const uBLASMatrix<ublas_sparse_matrix>& A,
-    uBLASVector& x, const uBLASVector& b)
+                                      uBLASVector& x, const uBLASVector& b)
 {
   return solve_krylov(A, x, b);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBLASKrylovSolver::solve(const uBLASKrylovMatrix& A, uBLASVector& x,
-    const uBLASVector& b)
+                                      const uBLASVector& b)
 {
   return solve_krylov(A, x, b);
 }
 //-----------------------------------------------------------------------------
-void uBLASKrylovSolver::select_preconditioner(PreconditionerType pc_type)
+void uBLASKrylovSolver::select_preconditioner(std::string pc_type)
 {
-  switch (pc_type)
+  if(pc_type == "none")
+    pc = new uBLASDummyPreconditioner();
+  else if (pc_type == "ilu")
+    pc = new uBLASILUPreconditioner();
+  else if (pc_type == "default")
+    pc = new uBLASILUPreconditioner();
+  else
   {
-    case none:
-      pc = new uBLASDummyPreconditioner();
-      break;
-    case ilu:
-      pc = new uBLASILUPreconditioner();
-      break;
-    case default_pc:
-      pc = new uBLASILUPreconditioner();
-      break;
-    default:
-      warning("Requested preconditioner is not available for uBLAS Krylov solver. Using ILU.");
-      pc = new uBLASILUPreconditioner();
+    warning("Requested preconditioner is not available for uBLAS Krylov solver. Using ILU.");
+    pc = new uBLASILUPreconditioner();
   }
 }
 //-----------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Garth N. Wells.
+// Copyright (C) 2008-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Dag Lindbo, 2008.
@@ -34,11 +34,7 @@ namespace dolfin
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    ITLKrylovSolver(dolfin::SolverType method=default_solver,
-                    dolfin::PreconditionerType pc=default_pc);
-
-    /// Create Krylov solver for a particular method and EpetraPreconditioner
-    //ITLKrylovSolver(dolfin::SolverType method, ITLPreconditioner& prec);
+    ITLKrylovSolver(std::string method = "default", std::string pc_type = "default");
 
     /// Destructor
     ~ITLKrylovSolver();
@@ -54,9 +50,11 @@ namespace dolfin
 
   private:
 
-    SolverType         method;
-    PreconditionerType pc_type;
-    //ITLPreconditioner* prec;
+    // Solver type
+    std::string method;
+
+    // Preconditioner type
+    std::string pc_type;
 
   };
 

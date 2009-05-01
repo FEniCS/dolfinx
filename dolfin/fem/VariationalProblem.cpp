@@ -224,13 +224,13 @@ void VariationalProblem::solve_linear(Function& u)
   {
     if (symmetric)
     {
-      KrylovSolver solver(gmres);
+      KrylovSolver solver("gmres");
       solver.set("parent", *this);
       solver.solve(A, u.vector(), b);
     }
     else
     {
-      KrylovSolver solver(cg);
+      KrylovSolver solver("cg");
       solver.set("parent", *this);
       solver.solve(A, u.vector(), b);
     }

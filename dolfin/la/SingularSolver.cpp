@@ -13,8 +13,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SingularSolver::SingularSolver(SolverType solver_type,
-                               PreconditionerType pc_type)
+SingularSolver::SingularSolver(std::string solver_type,
+                               std::string pc_type)
   : Parametrized(), linear_solver(solver_type, pc_type), B(0), y(0), c(0)
 {
   // Set parameters for linear solver

@@ -1,4 +1,4 @@
-// Copyright (C) 2006 Garth N. Wells.
+// Copyright (C) 2006-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2006-2008.
@@ -9,9 +9,9 @@
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
 
+#include <string>
 #include <dolfin/common/types.h>
 #include "ublas.h"
-
 #include "GenericLinearSolver.h"
 #include "enums_la.h"
 #include "uBLASKrylovMatrix.h"
@@ -30,17 +30,14 @@ namespace dolfin
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    uBLASKrylovSolver(dolfin::SolverType solver_type=default_solver,
-                      dolfin::PreconditionerType pc_type=default_pc);
-
-    /// Create Krylov solver for a particular preconditioner (set by name)
-    uBLASKrylovSolver(dolfin::PreconditionerType pc);
+    uBLASKrylovSolver(std::string solver_type = "default",
+                      std::string pc_type = "default");
 
     /// Create Krylov solver for a particular uBLASPreconditioner
     uBLASKrylovSolver(uBLASPreconditioner& pc);
 
     /// Create Krylov solver for a particular method and uBLASPreconditioner
-    uBLASKrylovSolver(dolfin::SolverType solver_type, uBLASPreconditioner& preconditioner);
+    uBLASKrylovSolver(std::string solver_type, uBLASPreconditioner& preconditioner);
 
     /// Destructor
     ~uBLASKrylovSolver();
@@ -76,13 +73,13 @@ namespace dolfin
                         bool& converged) const;
 
     /// Select and create named preconditioner
-    void select_preconditioner(dolfin::PreconditionerType pc_type);
+    void select_preconditioner(std::string pc_type);
 
     /// Read solver parameters
     void read_parameters();
 
     /// Krylov method
-    SolverType solver_type;
+    std::string solver_type;
 
     /// Preconditioner
     uBLASPreconditioner* pc;
@@ -133,22 +130,19 @@ namespace dolfin
     // Choose solver
     bool converged;
     uint iterations;
-    switch (solver_type)
+    if (solver_type == "cg")
     {
-    case cg:
       warning("Conjugate-gradient method not programmed for uBLASKrylovSolver. Using GMRES.");
       iterations = solveGMRES(A, x, b, converged);
-      break;
-    case gmres:
+    }
+    else if (solver_type == "gmres")
       iterations = solveGMRES(A, x, b, converged);
-      break;
-    case bicgstab:
+    else if (solver_type == "bicgstab")
       iterations = solveBiCGStab(A, x, b, converged);
-      break;
-    case default_solver:
+    else if (solver_type == "default")
       iterations = solveBiCGStab(A, x, b, converged);
-      break;
-    default:
+    else
+    {
       warning("Requested Krylov method unknown. Using BiCGStab.");
       iterations = solveBiCGStab(A, x, b, converged);
     }

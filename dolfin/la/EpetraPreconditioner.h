@@ -26,7 +26,7 @@ namespace dolfin
 
   class EpetraPreconditioner : public Parametrized
   {
-    public:
+  public:
     /// Constructor
     EpetraPreconditioner() {};
 
@@ -34,7 +34,7 @@ namespace dolfin
     virtual ~EpetraPreconditioner() {};
 
     /// Set the Preconditioner type (amg, ilu, etc.)
-    void set_type(PreconditionerType type);
+    void set_type(std::string type);
 
     /// Initialise preconditioner
     virtual void init(const EpetraMatrix& A);
@@ -42,8 +42,10 @@ namespace dolfin
     /// Solve linear system (M^-1)Ax = y
     virtual void solve(EpetraVector& x, const EpetraVector& b);
 
-    private:
-    PreconditionerType prec_type;
+  private:
+
+    // Preconditioner type
+    std::string pc_type;
 
   };
 

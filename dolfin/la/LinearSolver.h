@@ -31,8 +31,7 @@ namespace dolfin
   public:
 
     /// Create linear solver
-    LinearSolver(dolfin::SolverType solver_type=lu,
-                 dolfin::PreconditionerType pc_type=ilu);
+    LinearSolver(std::string solver_type = "lu", std::string pc_type = "ilu");
 
     /// Destructor
     ~LinearSolver();
