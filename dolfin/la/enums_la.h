@@ -16,29 +16,6 @@ namespace dolfin
   /// List of norm types for vectors and matrices
   enum MatrixType {symmetric, nonsymmetric};
 
-  /// List of linear solvers
-  enum SolverType
-  {
-    lu,            // LU factorization
-    cg,            // Krylov conjugate gradient method
-    gmres,         // Krylov GMRES method
-    bicgstab,      // Krylov stabilised biconjugate gradient squared method
-    default_solver // Default Krylov solver
-  };
-
-  /// List of preconditioners
-  enum PreconditionerType
-  {
-    none,      // No preconditioning
-    jacobi,    // Jacobi
-    sor,       // SOR (successive over relaxation)
-    ilu,       // Incomplete LU factorization
-    icc,       // Incomplete Cholesky factorization
-    amg_hypre, // Algebraic multigrid (through Hypre when available)
-    amg_ml,    // Algebraic multigrid (through ML when available)
-    default_pc // Default preconditioner
-  };
-
   /// Two different normalizations are available:
   ///
   /// normalize_average: Normalizes a vector x according to x --> x - avg(x)

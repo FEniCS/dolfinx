@@ -34,11 +34,11 @@ namespace dolfin
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    EpetraKrylovSolver(dolfin::SolverType method=default_solver,
-                       dolfin::PreconditionerType pc=default_pc);
+    EpetraKrylovSolver(std::string method = "default",
+                       std::string pc_type = "default");
 
     /// Create Krylov solver for a particular method and EpetraPreconditioner
-    EpetraKrylovSolver(dolfin::SolverType method, EpetraPreconditioner& prec);
+    EpetraKrylovSolver(std::string method, EpetraPreconditioner& prec);
 
     /// Destructor
     ~EpetraKrylovSolver();
@@ -54,8 +54,12 @@ namespace dolfin
 
   private:
 
-    SolverType         method;
-    PreconditionerType pc_type;
+    // Solver type
+    std::string method;
+
+    // Preconditioner type
+    std::string pc_type;
+
     EpetraPreconditioner* prec;
 
   };

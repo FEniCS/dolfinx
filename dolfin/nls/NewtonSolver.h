@@ -30,8 +30,7 @@ namespace dolfin
 
     /// Create nonlinear solver with default linear solver and default
     /// linear algebra backend
-    NewtonSolver(dolfin::SolverType solver_type = lu,
-                 dolfin::PreconditionerType pc_type = default_pc);
+    NewtonSolver(std::string solver_type = "lu", std::string pc_type = "default");
 
     /// Create nonlinear solver using provided linear solver and linear algebra
     /// backend determined by factory
@@ -61,10 +60,6 @@ namespace dolfin
 
     /// Solver
     boost::shared_ptr<GenericLinearSolver> solver;
-
-    /// Solver
-    dolfin::PreconditionerType pc;
-    //Preconditioner* local_pc;
 
     /// Jacobian matrix
     GenericMatrix* A;

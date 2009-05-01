@@ -19,7 +19,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(SolverType solver_type, PreconditionerType pc_type)
+NewtonSolver::NewtonSolver(std::string solver_type, std::string pc_type)
              : solver(new LinearSolver(solver_type, pc_type)),
                A(new Matrix), dx(new Vector), b(new Vector)
 {
