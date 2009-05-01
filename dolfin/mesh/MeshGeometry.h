@@ -76,11 +76,11 @@ namespace dolfin
     inline const double* higher_order_x() const { return higher_order_coordinates; }
 
     /// Return number of vertices used (per cell) to represent the higher order geometry
-    inline uint get_num_higher_order_vertices_per_cell() const { return _higher_order_num_dof; }
+    inline uint num_higher_order_vertices_per_cell() const { return _higher_order_num_dof; }
     
     /// Return array of higher order vertex indices for a specific higher order cell
     inline uint* higher_order_cell(uint c)
-                             { return (higher_order_cell_data + (c*_higher_order_num_dof)); }
+    { return (higher_order_cell_data + (c*_higher_order_num_dof)); }
 
     /// Return array of higher order vertex indices for a specific higher order cell
     inline const uint* higher_order_cell(uint c)

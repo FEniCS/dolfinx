@@ -90,7 +90,7 @@ namespace dolfin
         coordinates[i] = const_cast<double*> (cell.mesh().geometry().x(vertices[i]));
 
       /// Set higher order vertex coordinates
-      num_higher_order_vertices = cell.mesh().geometry().get_num_higher_order_vertices_per_cell();
+      num_higher_order_vertices = cell.mesh().geometry().num_higher_order_vertices_per_cell();
       if (num_higher_order_vertices > 0)
           {
 	      uint current_cell_index = cell.index();
