@@ -20,7 +20,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    Face(Mesh& mesh, uint index) : MeshEntity(mesh, 2, index) {}
+    Face(const Mesh& mesh, uint index) : MeshEntity(mesh, 2, index) {}
 
     /// Destructor
     ~Face() {}
