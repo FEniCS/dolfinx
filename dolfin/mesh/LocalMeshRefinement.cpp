@@ -38,7 +38,7 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
                                                     MeshFunction<bool>& cell_marker,
                                                     bool refine_boundary)
 {
-  message("Refining simplicial mesh by edge bisection.");
+  info("Refining simplicial mesh by edge bisection.");
 
   // Get size of old mesh
   const uint num_vertices = mesh.size(0);
@@ -518,7 +518,7 @@ void LocalMeshRefinement::transformMeshData(Mesh& newmesh, Mesh& oldmesh,
     mat = newmesh.data().create_mesh_function("material indicators", newmesh.type().dim());
     for(dolfin::uint i=0; i< newmesh.num_cells(); i++)
       mat->set(i, oldmesh.data().mesh_function("material indicators")->get( cell_map.get(i) ));
-    message("MeshData MeshFunction \"material indicators\" transformed.");
+    info("MeshData MeshFunction \"material indicators\" transformed.");
   }
 
   //Rewrite boundary indicators
@@ -591,7 +591,7 @@ void LocalMeshRefinement::transformMeshData(Mesh& newmesh, Mesh& oldmesh,
       }
     }
 
-  message("MeshData \"boundary indicators\" transformed.");
+  info("MeshData \"boundary indicators\" transformed.");
   }
 
 }

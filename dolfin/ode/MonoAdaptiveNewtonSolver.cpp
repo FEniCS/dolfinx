@@ -250,12 +250,12 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
   // Initialize linear solver
   if ( direct )
   {
-    message("Using UMFPACK direct solver.");
+    info("Using UMFPACK direct solver.");
     lu = new UmfpackLUSolver();
   }
   else
   {
-    message("Using uBLAS Krylov solver with no preconditioning.");
+    info("Using uBLAS Krylov solver with no preconditioning.");
     const double ktol = ode.get("ODE discrete Krylov tolerance factor");
     const double _tol = to_double(tol);
 
@@ -266,7 +266,7 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
     //Note: Precision lost if working with GMP types
     krylov->set("Krylov absolute tolerance", ktol*_tol);
 
-    message("Using BiCGStab Krylov solver for matrix Jacobian.");
+    info("Using BiCGStab Krylov solver for matrix Jacobian.");
     krylov_g = new KrylovSolver("bicgstab", "ilu");
     krylov_g->set("Krylov report", monitor);
     krylov_g->set("Krylov relative tolerance", ktol);

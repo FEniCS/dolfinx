@@ -67,7 +67,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
 
   // Write a message
   if ( report )
-    message("Solving linear system of size %d x %d (PETSc LU solver, %s).",
+    info("Solving linear system of size %d x %d (PETSc LU solver, %s).",
             A.size(0), A.size(1), solver_type);
 
   // Solve linear system
@@ -97,7 +97,7 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A, PETScVector& x,
 
   // Write a message
   if ( report )
-    message("Solving linear system of size %d x %d (PETSc LU solver).",
+    info("Solving linear system of size %d x %d (PETSc LU solver).",
 		A.size(0), A.size(1));
 
   // Solve linear system

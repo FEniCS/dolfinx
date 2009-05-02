@@ -41,5 +41,5 @@ int main()
 
   // Multiply
   AA.mult(xx,yy);
-  message("||Ax|| = %g", y.norm());
+  info("||Ax|| = %g", y.norm());
 };

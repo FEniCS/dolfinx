@@ -24,7 +24,7 @@ namespace dolfin
 {
   int monitor(KSP ksp, int iteration, double rnorm, void *mctx)
   {
-    message("Iteration %d: residual = %g", iteration, rnorm);
+    info("Iteration %d: residual = %g", iteration, rnorm);
     return 0;
   }
 }
@@ -70,7 +70,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
 
   // Write a message
   if ( get("Krylov report") )
-    message("Solving linear system of size %d x %d (Krylov solver).", M, N);
+    info("Solving linear system of size %d x %d (Krylov solver).", M, N);
 
   // Reinitialize KSP solver if necessary
   init(M, N);
@@ -125,7 +125,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, PETScVector& x
 
   // Write a message
   if ( get("Krylov report") )
-    message("Solving virtual linear system of size %d x %d (Krylov solver).", M, N);
+    info("Solving virtual linear system of size %d x %d (Krylov solver).", M, N);
 
   // Reinitialize KSP solver if necessary
   init(M, N);
@@ -324,7 +324,7 @@ void PETScKrylovSolver::write_report(int num_iterations)
   PCGetType(pc, &pc_type);
 
   // Report number of iterations and solver type
-  message("PETSc Krylov solver (%s, %s) converged in %d iterations.",
+  info("PETSc Krylov solver (%s, %s) converged in %d iterations.",
           ksp_type, pc_type, num_iterations);
 }
 //-----------------------------------------------------------------------------

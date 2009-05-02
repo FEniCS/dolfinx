@@ -22,7 +22,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 cGqMethod::cGqMethod(unsigned int q) : Method(q, q + 1, q)
 {
-  message("Initializing continuous Galerkin method cG(%d).", q);
+  info("Initializing continuous Galerkin method cG(%d).", q);
 
   init();
 
@@ -68,36 +68,36 @@ real cGqMethod::error(real k, real r) const
 //-----------------------------------------------------------------------------
 void cGqMethod::disp() const
 {
-  message("Data for the cG(%d) method", q);
-  message("=========================");
-  message("");
+  info("Data for the cG(%d) method", q);
+  info("=========================");
+  info("");
 
-  message("Lobatto quadrature points and weights on [0,1]:");
-  message("");
-  message(" i   points                   weights");
-  message("----------------------------------------------------");
+  info("Lobatto quadrature points and weights on [0,1]:");
+  info("");
+  info(" i   points                   weights");
+  info("----------------------------------------------------");
 
   for (unsigned int i = 0; i < nq; i++)
-    message("%2d   %.15e   %.15e", i, to_double(qpoints[i]), to_double(qweights[i]));
-  message("");
+    info("%2d   %.15e   %.15e", i, to_double(qpoints[i]), to_double(qweights[i]));
+  info("");
 
   for (unsigned int i = 0; i < nn; i++)
   {
-    message("");
-    message("cG(%d) weights for degree of freedom %d:", q, i);
-    message("");
-    message(" i   weights");
-    message("---------------------------");
+    info("");
+    info("cG(%d) weights for degree of freedom %d:", q, i);
+    info("");
+    info(" i   weights");
+    info("---------------------------");
     for (unsigned int j = 0; j < nq; j++)
-      message("%2d   %.15e", j, to_double(nweights[i][j]));
+      info("%2d   %.15e", j, to_double(nweights[i][j]));
   }
-  message("");
+  info("");
 
-  message("cG(%d) weights in matrix format:", q);
+  info("cG(%d) weights in matrix format:", q);
   if ( q < 10 )
-    message("-------------------------------");
+    info("-------------------------------");
   else
-    message("--------------------------------");
+    info("--------------------------------");
   for (unsigned int i = 0; i < nn; i++)
   {
     for (unsigned int j = 0; j < nq; j++)

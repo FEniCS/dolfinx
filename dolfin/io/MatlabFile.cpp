@@ -60,9 +60,9 @@ void MatlabFile::operator<<(const GenericMatrix& A)
   // Close file
   fclose(fp);
 
-//  message(1, "Saved matrix %s (%s) to file %s in sparse MATLAB format",
+//  info(1, "Saved matrix %s (%s) to file %s in sparse MATLAB format",
 //          A.name().c_str(), A.label().c_str(), filename.c_str());
-  message(1, "Saved matrix to file %s in sparse MATLAB format", filename.c_str());
+  info(1, "Saved matrix to file %s in sparse MATLAB format", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 

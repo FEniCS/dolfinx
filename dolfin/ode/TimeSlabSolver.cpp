@@ -34,13 +34,13 @@ TimeSlabSolver::~TimeSlabSolver()
     const real global_average = static_cast<real>(num_global_iterations) / n;
     const real local_average = static_cast<real>(num_local_iterations) /
       static_cast<real>(num_global_iterations);
-    message("Average number of global iterations per step: %.3f",
+    info("Average number of global iterations per step: %.3f",
 	    to_double(global_average));
-    message("Average number of local iterations per global iteration: %.3f",
+    info("Average number of local iterations per global iteration: %.3f",
 	    to_double(local_average));
   }
 
-  message("Total number of (macro) time steps: %d", num_timeslabs);
+  info("Total number of (macro) time steps: %d", num_timeslabs);
 }
 //-----------------------------------------------------------------------------
 bool TimeSlabSolver::solve()
@@ -75,7 +75,7 @@ bool TimeSlabSolver::solve(uint attempt)
 
     // For debugging convergence
     if (monitor)
-      message("--- iter = %d: increment = %.3e", iter, to_double(d2));
+      info("--- iter = %d: increment = %.3e", iter, to_double(d2));
 
     // Check convergenge
     if (d2 < tol)
@@ -84,7 +84,7 @@ bool TimeSlabSolver::solve(uint attempt)
       num_timeslabs += 1;
       num_global_iterations += iter + 1;
       if (monitor)
-	message("Time slab system of size %d converged in %d iterations.\n", size(), iter + 1);
+	info("Time slab system of size %d converged in %d iterations.\n", size(), iter + 1);
       return true;
     }
 

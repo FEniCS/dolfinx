@@ -14,7 +14,7 @@ boost::shared_ptr<const FiniteElement> FiniteElement::extract_sub_element(const 
 {
   // Recursively extract sub element
   boost::shared_ptr<const FiniteElement> sub_finite_element = extract_sub_element(*this, component);
-  message(2, "Extracted finite element for sub system: %s", sub_finite_element->signature().c_str());
+  info(2, "Extracted finite element for sub system: %s", sub_finite_element->signature().c_str());
 
   return sub_finite_element;
 }

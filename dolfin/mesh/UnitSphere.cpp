@@ -18,7 +18,7 @@ using namespace dolfin;
 UnitSphere::UnitSphere(uint nx) : Mesh()
 {
 
-  message("UnitSphere is Experimental: It could have a bad quality mesh");
+  info("UnitSphere is Experimental: It could have a bad quality mesh");
 
   uint ny=nx;
   uint nz=nx;

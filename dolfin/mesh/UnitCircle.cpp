@@ -162,8 +162,8 @@ double UnitCircle::transformx(double x, double y, Transformation transformation)
     // FIXME: Use easier to understand check
     if((transformation != maxn)*(transformation != sumn)*(transformation != rotsumn))
     {
-      message("Implemented  transformations are: maxn,sumn and rotsumn");
-      message("Using rotsumn transformation");
+      info("Implemented  transformations are: maxn,sumn and rotsumn");
+      info("Using rotsumn transformation");
     }
     if(x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
     {
@@ -198,8 +198,8 @@ double UnitCircle::transformy(double x, double y, Transformation transformation)
   {
     if ((transformation != maxn)*(transformation != sumn)*(transformation != rotsumn))
     {
-      message("Implemented  transformations for are: maxn, sumn and rotsumn");
-      message("Using rotsumn transformation");
+      info("Implemented  transformations for are: maxn, sumn and rotsumn");
+      info("Using rotsumn transformation");
     }
     if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
     {

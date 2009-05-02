@@ -32,7 +32,7 @@ Adaptivity::Adaptivity(const ODE& ode, const Method& method)
 //-----------------------------------------------------------------------------
 Adaptivity::~Adaptivity()
 {
-  message("Number of rejected time steps: %d", num_rejected);
+  info("Number of rejected time steps: %d", num_rejected);
 }
 //-----------------------------------------------------------------------------
 bool Adaptivity::accept()
@@ -60,7 +60,7 @@ bool Adaptivity::accept()
     num_rejected++;
   }
 
-  //message("safefy factor = %.3e", safety);
+  //info("safefy factor = %.3e", safety);
 
   return _accept;
 }

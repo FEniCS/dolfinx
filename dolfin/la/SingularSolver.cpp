@@ -33,7 +33,7 @@ SingularSolver::~SingularSolver()
 dolfin::uint SingularSolver::solve(const GenericMatrix& A,
                                    GenericVector& x, const GenericVector& b)
 {
-  message("Solving singular system...");
+  info("Solving singular system...");
 
   // Initialize data structures for extended system
   init(A);
@@ -58,7 +58,7 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
                                    GenericVector& x, const GenericVector& b,
                                    const GenericMatrix& M)
 {
-  message("Solving singular system...");
+  info("Solving singular system...");
 
   // Initialize data structures for extended system
   init(A);
@@ -154,7 +154,7 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
   dolfin_assert(B);
   dolfin_assert(c);
 
-  message("Creating extended hopefully non-singular system...");
+  info("Creating extended hopefully non-singular system...");
 
   // Reset matrix
   B->zero();

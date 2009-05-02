@@ -53,7 +53,7 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   if ( ce.size() > 0 || ev.size() > 0 )
     error("Connectivity for topological dimension %d exists but entities are missing.", dim);
 
-  //message("Computing mesh entities of topological dimension %d.", dim);
+  //info("Computing mesh entities of topological dimension %d.", dim);
 
   // Compute connectivity dim - dim if not already computed
   compute_connectivity(mesh, mesh.topology().dim(), mesh.topology().dim());
@@ -112,7 +112,7 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
     delete [] entities[i];
   delete [] entities;
 
-  //message("Created %d new entities.", num_entities);
+  //info("Created %d new entities.", num_entities);
 
   return num_entities;
 }
@@ -139,7 +139,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
   if ( connectivity.size() > 0 )
     return;
 
-  //message("Computing mesh connectivity %d - %d.", d0, d1);
+  //info("Computing mesh connectivity %d - %d.", d0, d1);
 
   // Compute entities if they don't exist
   if ( topology.size(d0) == 0 )
@@ -187,7 +187,7 @@ void TopologyComputation::computeFromTranspose(Mesh& mesh, uint d0, uint d1)
   //   3. Iterate again over entities of dimension d1 and add connections
   //      for each entity of dimension d0
 
-  //message("Computing mesh connectivity %d - %d from transpose.", d0, d1);
+  //info("Computing mesh connectivity %d - %d from transpose.", d0, d1);
 
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
@@ -232,7 +232,7 @@ void TopologyComputation::computeFromIntersection(Mesh& mesh,
   //
   //   3. Nested iteration over mesh - d0 - d - d1 and add the connections
 
-  //message("Computing mesh connectivity %d - %d from intersection %d - %d - %d.",
+  //info("Computing mesh connectivity %d - %d from intersection %d - %d - %d.",
   //            d0, d1, d0, d, d1);
 
   // Get mesh topology and connectivity

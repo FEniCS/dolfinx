@@ -28,7 +28,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh, BoundaryMesh& bound
   // the boundary. A facet is on the boundary if it is connected to
   // exactly one cell.
 
-  message(1, "Computing boundary mesh.");
+  info(1, "Computing boundary mesh.");
 
   // Open boundary mesh for editing
   const uint D = mesh.topology().dim();

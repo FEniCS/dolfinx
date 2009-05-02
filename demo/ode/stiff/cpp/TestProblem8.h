@@ -16,8 +16,8 @@ public:
 
   TestProblem8() : ODE(3, 0.3)
   {
-    message("System of fast and slow chemical reactions, taken from the book by");
-    message("Hairer and Wanner, page 3.");
+    info("System of fast and slow chemical reactions, taken from the book by");
+    info("Hairer and Wanner, page 3.");
   }
 
   void u0(double* u)

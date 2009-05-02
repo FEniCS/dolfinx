@@ -15,7 +15,7 @@ public:
 
   TestProblem5() : ODE(6, 180.0)
   {
-    message("The Chemical Akzo-Nobel problem.");
+    info("The Chemical Akzo-Nobel problem.");
 
     k1  = 18.7;
     k2  = 0.58;

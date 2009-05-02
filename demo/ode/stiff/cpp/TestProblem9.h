@@ -14,7 +14,7 @@ public:
 
   TestProblem9() : ODE(3, 30.0)
   {
-    message("A mixed stiff/nonstiff test problem.");
+    info("A mixed stiff/nonstiff test problem.");
 
     lambda = 1000.0;
   }

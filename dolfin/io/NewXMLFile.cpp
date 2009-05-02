@@ -90,7 +90,7 @@ void NewXMLFile::validate(const std::string filename)
                                      stderr);
   ret = xmlRelaxNGValidateDoc(validator, document);
   if ( ret == 0 ) {
-    message(0, "%s validates", filename.c_str());
+    info(0, "%s validates", filename.c_str());
   }
   else if ( ret < 0 ) {
     error("%s failed to load", filename.c_str());
@@ -103,7 +103,7 @@ void NewXMLFile::validate(const std::string filename)
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::vector<int>& x)
 {
-  message(1, "Reading array from file %s.", filename.c_str());
+  info(1, "Reading array from file %s.", filename.c_str());
   XMLArray xml_array(x, *this);
   XMLDolfin xml_dolfin(xml_array, *this);
   xml_dolfin.handle();
@@ -114,7 +114,7 @@ void NewXMLFile::operator>>(std::vector<int>& x)
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::vector<uint>& x)
 {
-  message(1, "Reading array from file %s.", filename.c_str());
+  info(1, "Reading array from file %s.", filename.c_str());
   XMLArray xml_array(x, *this);
   XMLDolfin xml_dolfin(xml_array, *this);
   xml_dolfin.handle();
@@ -125,7 +125,7 @@ void NewXMLFile::operator>>(std::vector<uint>& x)
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::vector<double>& x)
 {
-  message(1, "Reading array from file %s.", filename.c_str());
+  info(1, "Reading array from file %s.", filename.c_str());
   XMLArray xml_array(x, *this);
   XMLDolfin xml_dolfin(xml_array, *this);
   xml_dolfin.handle();
@@ -136,7 +136,7 @@ void NewXMLFile::operator>>(std::vector<double>& x)
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, int>& map)
 {
-  message(1, "Reading map from file %s.", filename.c_str());
+  info(1, "Reading map from file %s.", filename.c_str());
   XMLMap xml_map(map, *this);
   XMLDolfin xml_dolfin(xml_map, *this);
   xml_dolfin.handle();
@@ -147,7 +147,7 @@ void NewXMLFile::operator>>(std::map<uint, int>& map)
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, uint>& map)
 {
-  message(1, "Reading map from file %s.", filename.c_str());
+  info(1, "Reading map from file %s.", filename.c_str());
   XMLMap xml_map(map, *this);
   XMLDolfin xml_dolfin(xml_map, *this);
   xml_dolfin.handle();
@@ -158,7 +158,7 @@ void NewXMLFile::operator>>(std::map<uint, uint>& map)
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, double>& map)
 {
-  message(1, "Reading map from file %s.", filename.c_str());
+  info(1, "Reading map from file %s.", filename.c_str());
   XMLMap xml_map(map, *this);
   XMLDolfin xml_dolfin(xml_map, *this);
   xml_dolfin.handle();
@@ -169,7 +169,7 @@ void NewXMLFile::operator>>(std::map<uint, double>& map)
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, std::vector<int> >& array_map)
 {
-  message(1, "Reading array map from file %s.", filename.c_str());
+  info(1, "Reading array map from file %s.", filename.c_str());
   XMLMap xml_array_map(array_map, *this);
   XMLDolfin xml_dolfin(xml_array_map, *this);
   xml_dolfin.handle();
@@ -180,7 +180,7 @@ void NewXMLFile::operator>>(std::map<uint, std::vector<int> >& array_map)
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, std::vector<uint> >& array_map)
 {
-  message(1, "Reading array map from file %s.", filename.c_str());
+  info(1, "Reading array map from file %s.", filename.c_str());
   XMLMap xml_array_map(array_map, *this);
   XMLDolfin xml_dolfin(xml_array_map, *this);
   xml_dolfin.handle();
@@ -191,7 +191,7 @@ void NewXMLFile::operator>>(std::map<uint, std::vector<uint> >& array_map)
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, std::vector<double> >& array_map)
 {
-  message(1, "Reading array map from file %s.", filename.c_str());
+  info(1, "Reading array map from file %s.", filename.c_str());
   XMLMap xml_array_map(array_map, *this);
   XMLDolfin xml_dolfin(xml_array_map, *this);
   xml_dolfin.handle();

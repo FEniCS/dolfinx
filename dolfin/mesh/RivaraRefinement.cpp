@@ -20,7 +20,7 @@ void RivaraRefinement::refine(Mesh& mesh,
 			      MeshFunction<uint>& cell_map,
 			      std::vector<int>& facet_map)
 {
-  message("Refining simplicial mesh by recursive Rivara bisection.");
+  info("Refining simplicial mesh by recursive Rivara bisection.");
 
   int dim = mesh.topology().dim();
 

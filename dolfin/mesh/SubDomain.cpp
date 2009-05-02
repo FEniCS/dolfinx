@@ -35,7 +35,7 @@ void SubDomain::map(const double* x, double* y) const
 //-----------------------------------------------------------------------------
 void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
 {
-  message(1, "Computing sub domain markers for sub domain %d.", sub_domain);
+  info(1, "Computing sub domain markers for sub domain %d.", sub_domain);
 
   // Get the dimension of the entities we are marking
   const uint dim = sub_domains.dim();

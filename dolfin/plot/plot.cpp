@@ -21,7 +21,7 @@ using namespace dolfin;
 template <class T>
 void plot_object(const T& t, std::string mode)
 {
-  message("Plotting %s (%s), press 'q' to continue...",
+  info("Plotting %s (%s), press 'q' to continue...",
           t.name().c_str(), t.label().c_str());
 
   // Save to file

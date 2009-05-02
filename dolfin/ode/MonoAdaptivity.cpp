@@ -76,7 +76,7 @@ void MonoAdaptivity::update(real k0, real r, const Method& method, real t,
     controller.reset(k);
     _accept = false;
 
-    //message("e = %.3e  tol = %.3e", error, tol);
+    //info("e = %.3e  tol = %.3e", error, tol);
   }
 }
 //-----------------------------------------------------------------------------

@@ -93,7 +93,7 @@ real MonoAdaptiveTimeSlab::build(real a, real b)
 //-----------------------------------------------------------------------------
 bool MonoAdaptiveTimeSlab::solve()
 {
-  //message("Solving time slab system on [%f, %f].", _a, _b);
+  //info("Solving time slab system on [%f, %f].", _a, _b);
 
   return solver->solve();
 }
@@ -259,19 +259,19 @@ TimeSlabSolver* MonoAdaptiveTimeSlab::choose_solver()
     if (implicit)
       error("Newton solver must be used for implicit ODE.");
 
-    message("Using mono-adaptive fixed-point solver.");
+    info("Using mono-adaptive fixed-point solver.");
     return new MonoAdaptiveFixedPointSolver(*this);
   }
   else if (solver == "newton")
   {
     if (implicit)
     {
-      message("Using mono-adaptive Newton solver for implicit ODE.");
+      info("Using mono-adaptive Newton solver for implicit ODE.");
       return new MonoAdaptiveNewtonSolver(*this, implicit);
     }
     else
     {
-      message("Using mono-adaptive Newton solver.");
+      info("Using mono-adaptive Newton solver.");
       return new MonoAdaptiveNewtonSolver(*this, implicit);
     }
   }
@@ -279,12 +279,12 @@ TimeSlabSolver* MonoAdaptiveTimeSlab::choose_solver()
   {
     if (implicit)
     {
-      message("Using mono-adaptive Newton solver (default for implicit ODEs).");
+      info("Using mono-adaptive Newton solver (default for implicit ODEs).");
       return new MonoAdaptiveNewtonSolver(*this, implicit);
     }
     else
     {
-      message("Using mono-adaptive fixed-point solver (default for c/dG(q)).");
+      info("Using mono-adaptive fixed-point solver (default for c/dG(q)).");
       return new MonoAdaptiveFixedPointSolver(*this);
     }
   }

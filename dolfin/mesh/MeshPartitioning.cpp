@@ -52,7 +52,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   if (d == 0)
     error("Unable to number entities of dimension 0. Vertex indices must already exist.");
 
-  message("Computing global numbers for mesh entities of dimension %d", d);
+  info("Computing global numbers for mesh entities of dimension %d", d);
 
   // Get number of processes and process number
   const uint num_processes = MPI::num_processes();
@@ -504,7 +504,7 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
                            &ncommonnodes, &nparts,
                            tpwgts, ubvec, options,
                            &edgecut, part, &(*comm)); 
-  message("Partitioned mesh, edge cut is %d.", edgecut);
+  info("Partitioned mesh, edge cut is %d.", edgecut);
 
   // Copy mesh_data
   cell_partition.clear();

@@ -74,8 +74,8 @@ public:
 
   ~Courtemanche()
   {
-    message("Function evaluations:  %d", num_fevals);
-    message("Potential at end time: %.6f", VT);
+    info("Function evaluations:  %d", num_fevals);
+    info("Potential at end time: %.6f", VT);
   }
 
   void u0(double* u)

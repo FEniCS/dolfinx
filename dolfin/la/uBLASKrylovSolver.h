@@ -122,7 +122,7 @@ namespace dolfin
 
     // Write a message
     if ( report )
-      message("Solving linear system of size %d x %d (uBLAS Krylov solver).", M, N);
+      info("Solving linear system of size %d x %d (uBLAS Krylov solver).", M, N);
 
     // Initialise preconditioner if necessary
     pc->init(A);
@@ -151,7 +151,7 @@ namespace dolfin
     if( !converged )
       warning("Krylov solver failed to converge.");
     else if ( report )
-      message("Krylov solver converged in %d iterations.", iterations);
+      info("Krylov solver converged in %d iterations.", iterations);
 
     return iterations;
   }

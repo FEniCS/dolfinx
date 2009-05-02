@@ -76,9 +76,9 @@ int main()
   }
 
   if (cutoff == -1.0)
-    message("Unable to find dominant mode.");
+    info("Unable to find dominant mode.");
   else
-    message("Cutoff frequency = %g", cutoff);
+    info("Cutoff frequency = %g", cutoff);
 
   return 0;
 }
@@ -87,7 +87,7 @@ int main()
 
 int main()
 {
-  message("Sorry, this demo is only available when DOLFIN is compiled with PETSc and SLEPc.");
+  info("Sorry, this demo is only available when DOLFIN is compiled with PETSc and SLEPc.");
   return 0;
 }
 

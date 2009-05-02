@@ -20,7 +20,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build(DofMap& dof_map, UFC& ufc, Mesh& mesh)
 {
-  message("Building parallel dof map");
+  info("Building parallel dof map");
 
   // Check that dof map has not been built
   if (dof_map.dof_map)

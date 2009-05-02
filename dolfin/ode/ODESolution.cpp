@@ -95,7 +95,7 @@ void ODESolution::eval(const real& t, real* y)
   {
     if (t > bintree[bintree.size() - 1])
     {
-      message("t = %.16g max = %.16g",
+      info("t = %.16g max = %.16g",
               to_double(t), to_double(bintree[bintree.size() - 1]));
       error("ODESolution, eval(%g) out of range", to_double(t));
     }

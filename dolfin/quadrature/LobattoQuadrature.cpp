@@ -23,7 +23,7 @@ LobattoQuadrature::LobattoQuadrature(unsigned int n) : GaussianQuadrature(n)
   if ( !check(2*n-3) )
     error("Lobatto quadrature not ok, check failed.");
 
-  //message("Lobatto quadrature computed for n = %d, check passed.", n);
+  //info("Lobatto quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
 void LobattoQuadrature::disp() const
@@ -35,7 +35,7 @@ void LobattoQuadrature::disp() const
   cout << "-----------------------------------------------------" << endl;
 
   for (unsigned int i = 0; i < n; i++)
-    message("%2d   %.16e   %.16e", i, to_double(points[i]), to_double(weights[i]));
+    info("%2d   %.16e   %.16e", i, to_double(points[i]), to_double(weights[i]));
 }
 //----------------------------------------------------------------------------
 void LobattoQuadrature::compute_points()

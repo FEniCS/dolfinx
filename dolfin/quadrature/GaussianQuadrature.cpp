@@ -126,7 +126,7 @@ bool GaussianQuadrature::check(unsigned int q) const
   for (unsigned int i = 0; i < n; i++)
     sum += weights[i] * p(points[i]);
 
-  //message("Checking quadrature weights: %.2e.", fabs(sum));
+  //info("Checking quadrature weights: %.2e.", fabs(sum));
 
   if ( q == 0 )
   {
@@ -139,7 +139,7 @@ bool GaussianQuadrature::check(unsigned int q) const
       return true;
   }
 
-  message("Quadrature check failed: r = %.2e.", to_double(abs(sum)));
+  info("Quadrature check failed: r = %.2e.", to_double(abs(sum)));
 
   return false;
 }

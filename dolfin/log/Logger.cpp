@@ -37,7 +37,7 @@ Logger::~Logger()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Logger::message(std::string msg, int debug_level) const
+void Logger::info(std::string msg, int debug_level) const
 {
   if (debug_level > this->debug_level)
     return;
@@ -60,7 +60,7 @@ void Logger::error(std::string msg) const
 void Logger::begin(std::string msg, int debug_level)
 {
   // Write a message
-  message(msg, debug_level);
+  info(msg, debug_level);
   indentation_level++;
 }
 //-----------------------------------------------------------------------------
@@ -121,7 +121,7 @@ void Logger::set_output_destination(std::string destination)
   {
     this->destination = terminal;
     logstream = &std::cout;
-    message("Unknown output destination, using plain text.");
+    info("Unknown output destination, using plain text.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -145,7 +145,7 @@ void Logger::register_timing(std::string task, double elapsed_time)
   // Print a message
   std::stringstream line;
   line << "Elapsed time: " << elapsed_time << " (" << task << ")";
-  message(line.str(), 1);
+  info(line.str(), 1);
 
   // Store values for summary
   map_iterator it = timings.find(task);
@@ -165,11 +165,11 @@ void Logger::summary(bool reset)
 {
   if (timings.size() == 0)
   {
-    message("Summary: no timings to report.");
+    info("Summary: no timings to report.");
     return;
   }
 
-  message("");
+  info("");
   Table table("Summary of timings");
   for (const_map_iterator it = timings.begin(); it != timings.end(); ++it)
   {

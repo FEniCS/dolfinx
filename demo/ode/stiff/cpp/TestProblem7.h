@@ -15,7 +15,7 @@ public:
   TestProblem7() : ODE(101, 1.0)
   {
     h = 1.0 / (static_cast<double>(N) - 1);
-    message("The heat equation on [0,1] with h = %f", h);
+    info("The heat equation on [0,1] with h = %f", h);
   }
 
   void u0(double* u)

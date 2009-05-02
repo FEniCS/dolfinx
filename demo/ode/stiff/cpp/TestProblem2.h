@@ -14,7 +14,7 @@ public:
 
   TestProblem2() : ODE(2, 10.0)
   {
-    message("The simple test system.");
+    info("The simple test system.");
   }
 
   void u0(double* u)

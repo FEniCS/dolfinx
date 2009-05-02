@@ -15,7 +15,7 @@ public:
 
   TestProblem6() : ODE(2, 100.0)
   {
-    message("Van der Pol's equation.");
+    info("Van der Pol's equation.");
 
     mu = 10.0;
   }

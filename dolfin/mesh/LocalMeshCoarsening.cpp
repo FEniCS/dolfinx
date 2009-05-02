@@ -34,7 +34,7 @@ void LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(Mesh& mesh,
                                                         MeshFunction<bool>& cell_marker,
                                                         bool coarsen_boundary)
 {
-  message("Coarsen simplicial mesh by edge collapse.");
+  info("Coarsen simplicial mesh by edge collapse.");
 
   // Get size of old mesh
   //const uint num_vertices = mesh.size(0);

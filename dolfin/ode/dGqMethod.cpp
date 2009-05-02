@@ -20,7 +20,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 dGqMethod::dGqMethod(unsigned int q) : Method(q, q + 1, q + 1)
 {
-  message("Initializing discontinuous Galerkin method dG(%d).", q);
+  info("Initializing discontinuous Galerkin method dG(%d).", q);
 
   init();
 
@@ -72,36 +72,36 @@ real dGqMethod::error(real k, real r) const
 //-----------------------------------------------------------------------------
 void dGqMethod::disp() const
 {
-  message("Data for the dG(%d) method", q);
-  message("==========================");
-  message("");
+  info("Data for the dG(%d) method", q);
+  info("==========================");
+  info("");
 
-  message("Radau quadrature points and weights on [0,1]:");
-  message("");
-  message(" i   points                   weights");
-  message("----------------------------------------------------");
+  info("Radau quadrature points and weights on [0,1]:");
+  info("");
+  info(" i   points                   weights");
+  info("----------------------------------------------------");
 
   for (unsigned int i = 0; i < nq; i++)
-    message("%2d   %.15e   %.15e", i, to_double(qpoints[i]), to_double(qweights[i]));
-  message("");
+    info("%2d   %.15e   %.15e", i, to_double(qpoints[i]), to_double(qweights[i]));
+  info("");
 
   for (unsigned int i = 0; i < nn; i++)
   {
-    message("");
-    message("dG(%d) weights for degree of freedom %d:", q, i);
-    message("");
-    message(" i   weights");
-    message("---------------------------");
+    info("");
+    info("dG(%d) weights for degree of freedom %d:", q, i);
+    info("");
+    info(" i   weights");
+    info("---------------------------");
     for (unsigned int j = 0; j < nq; j++)
-      message("%2d   %.15e", j, to_double(nweights[i][j]));
+      info("%2d   %.15e", j, to_double(nweights[i][j]));
   }
-  message("");
+  info("");
 
-  message("dG(%d) weights in matrix format:", q);
+  info("dG(%d) weights in matrix format:", q);
   if ( q < 10 )
-    message("-------------------------------");
+    info("-------------------------------");
   else
-    message("--------------------------------");
+    info("--------------------------------");
   for (unsigned int i = 0; i < nn; i++)
   {
     for (unsigned int j = 0; j < nq; j++)

@@ -42,7 +42,7 @@ MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
   if ( num_elements > 0 )
   {
     const real alpha = num_elements_mono / static_cast<real>(num_elements);
-    message("Multi-adaptive efficiency index: %.3f", to_double(alpha));
+    info("Multi-adaptive efficiency index: %.3f", to_double(alpha));
   }
 
   // Delete local array
@@ -68,8 +68,8 @@ bool MultiAdaptiveFixedPointSolver::retry()
   // Reset system
   ts.reset();
 
-  message("Direct fixed-point iteration does not converge.");
-  message("Trying diagonally damped fixed-point iteration.");
+  info("Direct fixed-point iteration does not converge.");
+  info("Trying diagonally damped fixed-point iteration.");
   return true;
 }
 //-----------------------------------------------------------------------------

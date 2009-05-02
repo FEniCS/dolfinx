@@ -224,7 +224,7 @@ void DirichletBC::apply(GenericMatrix* A,
     delete [] x_values;
   }
 
-  message("Applying boundary conditions to linear system.");
+  info("Applying boundary conditions to linear system.");
 
   // Modify RHS vector (b[i] = value) and apply changes
   if (b)
@@ -473,7 +473,7 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
   const DofMap& dofmap = V->dofmap();
 
   // Initialize facets, needed for geometric search
-  message("Computing facets, needed for geometric application of boundary conditions.");
+  info("Computing facets, needed for geometric application of boundary conditions.");
   mesh.init(mesh.topology().dim() - 1);
 
   // Iterate over facets

@@ -26,19 +26,19 @@ int main(int argc, char* argv[])
   // Check arguments
   if ( argc != 2 )
   {
-    message("Usage: dolfin-ode-stiff-testproblems n");
-    message("");
-    message("where n is one of");
-    message("");
-    message("  1 - the test equation");
-    message("  2 - the test system");
-    message("  3 - a non-normal test problem");
-    message("  4 - the HIRES problem");
-    message("  5 - the Chemical Akzo-Nobel problem");
-    message("  6 - Van der Pol's equation");
-    message("  7 - the heat equation");
-    message("  8 - a chemical reaction test problem");
-    message("  9 - a mixed stiff/nonstiff test problem");
+    info("Usage: dolfin-ode-stiff-testproblems n");
+    info("");
+    info("where n is one of");
+    info("");
+    info("  1 - the test equation");
+    info("  2 - the test system");
+    info("  3 - a non-normal test problem");
+    info("  4 - the HIRES problem");
+    info("  5 - the Chemical Akzo-Nobel problem");
+    info("  6 - Van der Pol's equation");
+    info("  7 - the heat equation");
+    info("  8 - a chemical reaction test problem");
+    info("  9 - a mixed stiff/nonstiff test problem");
 
     return 1;
   }
@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
   switch (n) {
   case 1:
     {
-      message("Solving test problem number 1.");
+      info("Solving test problem number 1.");
       dolfin_set("ODE solution file name", "solution_1.py");
       TestProblem1 test_problem;
       test_problem.solve();
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
     break;
   case 2:
     {
-      message("Solving test problem number 2.");
+      info("Solving test problem number 2.");
       dolfin_set("ODE solution file name", "solution_2.py");
       TestProblem2 test_problem;
       test_problem.solve();
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
     break;
   case 3:
     {
-      message("Solving test problem number 3.");
+      info("Solving test problem number 3.");
       dolfin_set("ODE solution file name", "solution_3.py");
       TestProblem3 test_problem;
       test_problem.solve();
@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
     break;
   case 4:
     {
-      message("Solving test problem number 4.");
+      info("Solving test problem number 4.");
       dolfin_set("ODE solution file name", "solution_4.py");
       TestProblem4 test_problem;
       test_problem.solve();
@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
     break;
   case 5:
     {
-      message("Solving test problem number 5.");
+      info("Solving test problem number 5.");
       dolfin_set("ODE solution file name", "solution_5.py");
       TestProblem5 test_problem;
       test_problem.solve();
@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
     break;
   case 6:
     {
-      message("Solving test problem number 6.");
+      info("Solving test problem number 6.");
       dolfin_set("ODE solution file name", "solution_6.py");
       TestProblem6 test_problem;
       test_problem.solve();
@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
     break;
   case 7:
     {
-      message("Solving test problem number 7.");
+      info("Solving test problem number 7.");
       dolfin_set("ODE solution file name", "solution_7.py");
       TestProblem7 test_problem;
       test_problem.solve();
@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
     break;
   case 8:
     {
-      message("Solving test problem number 8.");
+      info("Solving test problem number 8.");
       dolfin_set("ODE solution file name", "solution_8.py");
       TestProblem8 test_problem;
       test_problem.solve();
@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
     break;
   case 9:
     {
-      message("Solving test problem number 9.");
+      info("Solving test problem number 9.");
       dolfin_set("ODE solution file name", "solution_9.py");
       TestProblem9 test_problem;
       test_problem.solve();

@@ -90,7 +90,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
   }
 
   if (newton_converged)
-    message("Newton solver finished in %d iterations and %d linear solver iterations.",
+    info("Newton solver finished in %d iterations and %d linear solver iterations.",
             newton_iteration, krylov_iterations);
   else
     warning("Newton solver did not converge.");

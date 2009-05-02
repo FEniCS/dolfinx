@@ -44,7 +44,7 @@ namespace dolfin
       // Display number of digits
       char msg[100];
       gmp_sprintf(msg, "%Fe", real_epsilon().get_mpf_t());
-      message("Using %d bits per digit, eps = %s", mpf_get_default_prec(), msg);
+      info("Using %d bits per digit, eps = %s", mpf_get_default_prec(), msg);
 
 #else
       if (dolfin_changed("floating-point precision"))

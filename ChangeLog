@@ -1,3 +1,4 @@
+ - Rename message() --> info() for "compatibility" with Python logging module
  - Add elementwise multiplication in GeneriVector interface
  - GenericVector interface in PyDOLFIN now support the sequence protocol
  - Rename of camelCaps functions names: fooBar --> foo_bar

@@ -506,7 +506,7 @@ void Assembler::assemble_system(GenericMatrix& A,
                                 bool reset_tensors)
 {
   Timer timer("Assemble system");
-  message("Assembling linear system and applying boundary conditions...");
+  info("Assembling linear system and applying boundary conditions...");
 
   // Note the importance of treating empty mesh functions as null pointers
   // for the PyDOLFIN interface.
@@ -1320,7 +1320,7 @@ void Assembler::assemble_system_new(GenericMatrix& A,
                                 bool reset_tensors)
 {
   Timer timer("Assemble system");
-  message("Assembling linear system and applying boundary conditions...");
+  info("Assembling linear system and applying boundary conditions...");
 
   // Note the importance of treating empty mesh functions as null pointers
   // for the PyDOLFIN interface.

@@ -20,7 +20,7 @@ RadauQuadrature::RadauQuadrature(unsigned int n) : GaussianQuadrature(n)
   if ( !check(2*n-2) )
     error("Radau quadrature not ok, check failed.");
 
-  //message("Radau quadrature computed for n = %d, check passed.", n);
+  //info("Radau quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
 void RadauQuadrature::disp() const
@@ -32,7 +32,7 @@ void RadauQuadrature::disp() const
   cout << "-----------------------------------------------------" << endl;
 
   for (unsigned int i = 0; i < n; i++)
-    message("%2d   %.16e   %.16e", i, to_double(points[i]), to_double(weights[i]));
+    info("%2d   %.16e   %.16e", i, to_double(points[i]), to_double(weights[i]));
 }
 //-----------------------------------------------------------------------------
 void RadauQuadrature::compute_points()

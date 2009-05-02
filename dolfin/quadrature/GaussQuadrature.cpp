@@ -22,7 +22,7 @@ GaussQuadrature::GaussQuadrature(unsigned int n) : GaussianQuadrature(n)
   if ( !check(2*n-1) )
     error("Gauss quadrature not ok, check failed.");
 
-  //message("Gauss quadrature computed for n = %d, check passed.", n);
+  //info("Gauss quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
 void GaussQuadrature::disp() const
@@ -34,7 +34,7 @@ void GaussQuadrature::disp() const
   cout << "-----------------------------------------------------" << endl;
 
   for (unsigned int i = 0; i < n; i++)
-    message("%2d   %.16e   %.16e", i, to_double(points[i]), to_double(weights[i]));
+    info("%2d   %.16e   %.16e", i, to_double(points[i]), to_double(weights[i]));
 }
 //-----------------------------------------------------------------------------
 void GaussQuadrature::compute_points()

@@ -30,7 +30,7 @@ namespace dolfin
     ~Logger();
 
     /// Print message
-    void message(std::string msg, int debug_level = 0) const;
+    void info(std::string msg, int debug_level = 0) const;
 
     /// Print warning
     void warning(std::string msg) const;

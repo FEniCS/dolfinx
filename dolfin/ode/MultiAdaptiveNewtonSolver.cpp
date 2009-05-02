@@ -48,7 +48,7 @@ MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
   if ( num_elements > 0 )
   {
     const real alpha = num_elements_mono / static_cast<real>(num_elements);
-    message("Multi-adaptive efficiency index: %.3f", to_double(alpha));
+    info("Multi-adaptive efficiency index: %.3f", to_double(alpha));
   }
 
   // Delete local arrays

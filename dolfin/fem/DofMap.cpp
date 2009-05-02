@@ -77,8 +77,8 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
 
   // Recursively extract sub dofmap
   boost::shared_ptr<ufc::dof_map> sub_dof_map(extract_sub_dofmap(*ufc_dof_map, offset, component, mesh));
-  message(2, "Extracted dof map for sub system: %s", sub_dof_map->signature());
-  message(2, "Offset for sub system: %d", offset);
+  info(2, "Extracted dof map for sub system: %s", sub_dof_map->signature());
+  info(2, "Offset for sub system: %d", offset);
 
   // Create dofmap
   DofMap* dofmap = 0;

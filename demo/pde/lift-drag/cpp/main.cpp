@@ -54,6 +54,6 @@ int main()
   double lift = assemble(L, fish);
   double drag = assemble(D, fish);
 
-  message("Lift: %f", lift);
-  message("Drag: %f", drag);
+  info("Lift: %f", lift);
+  info("Drag: %f", drag);
 }

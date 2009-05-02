@@ -57,7 +57,7 @@ void VTKFile::operator<<(const Mesh& mesh)
   // Increase the number of times we have saved the mesh
   counter++;
 
-  message(1, "Saved mesh %s (%s) to file %s in VTK format.",
+  info(1, "Saved mesh %s (%s) to file %s in VTK format.",
           mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------

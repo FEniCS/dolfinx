@@ -44,7 +44,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   real_zero(N, u);
 
   // Initialize transpose of dependencies if necessary
-  message("Computing transpose (inverse) of dependency pattern.");
+  info("Computing transpose (inverse) of dependency pattern.");
   if ( ode.dependencies.sparse() && !ode.transpose.sparse() )
     ode.transpose.transp(ode.dependencies);
 }
@@ -101,7 +101,7 @@ real MultiAdaptiveTimeSlab::build(real a, real b)
 //-----------------------------------------------------------------------------
 bool MultiAdaptiveTimeSlab::solve()
 {
-  //message("Solving time slab system on [%f, %f].", _a, _b);
+  //info("Solving time slab system on [%f, %f].", _a, _b);
 
   // Copy u0 to u. This happens automatically in feval if user has set
   // dependencies correctly, but you never know...
@@ -121,7 +121,7 @@ bool MultiAdaptiveTimeSlab::solve()
   //for (uint i = 0; i < N; i++)
   // {
   //  real endval = jx[elast[i] * method->nsize() + method->nsize() - 1];
-  //  message("i = %d: u = %.16e", i, endval);
+  //  info("i = %d: u = %.16e", i, endval);
   // }
 }
 //-----------------------------------------------------------------------------
@@ -297,10 +297,10 @@ void MultiAdaptiveTimeSlab::disp() const
 {
   cout << "--------------------------------------------------------" << endl;
 
-  message("s: size = %d alloc = %d", ns, size_s.size);
-  message("e: size = %d alloc = %d", ne, size_e.size);
-  message("j: size = %d alloc = %d", nj, size_j.size);
-  message("d: size = %d alloc = %d", nd, size_d.size);
+  info("s: size = %d alloc = %d", ns, size_s.size);
+  info("e: size = %d alloc = %d", ne, size_e.size);
+  info("j: size = %d alloc = %d", nj, size_j.size);
+  info("d: size = %d alloc = %d", nd, size_d.size);
 
   cout << "sa = "; Alloc::disp(sa, ns);
   cout << "sb = "; Alloc::disp(sb, ns);
@@ -401,7 +401,7 @@ void MultiAdaptiveTimeSlab::create_e(uint index, uint subslab, real a, real b)
   // Get next available position
   uint pos = size_e.next++;
 
-  //message("  Creating element e = %d for i = %d at [%f, %f]", pos, index, a, b);
+  //info("  Creating element e = %d for i = %d at [%f, %f]", pos, index, a, b);
 
   //if ( index == 145 )
   //  cout << "Modified: " << b - a << endl << endl;
@@ -439,7 +439,7 @@ void MultiAdaptiveTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0
   // Add dependencies to elements that depend on the given element if the
   // depending elements use larger time steps
 
-  //message("Checking dependencies to element %d (component %d)", element, index);
+  //info("Checking dependencies to element %d (component %d)", element, index);
 
   // Get list of components depending on current component
   const std::vector<uint>& deps = ode.transpose[i0];
@@ -469,7 +469,7 @@ void MultiAdaptiveTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0
     if ( !within(a0, b0, a1, b1) || s0 == s1 )
       continue;
 
-    //message("  Checking element %d (component %d)", e1, i1);
+    //info("  Checking element %d (component %d)", e1, i1);
 
     // Iterate over dofs for element
     for (uint n = 0; n < method->nsize(); n++)
@@ -477,7 +477,7 @@ void MultiAdaptiveTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0
       //const uint j = j1 + n;
       const real t = a1 + k1*method->npoint(n);
 
-      //message("    Checking dof at t = %f", t);
+      //info("    Checking dof at t = %f", t);
 
       // Check if dof is contained in the current element
       if ( within(t, a0, b0) )
@@ -511,7 +511,7 @@ void MultiAdaptiveTimeSlab::alloc_s(uint newsize)
 
   if ( newsize <= size_s.size ) return;
 
-  //message("Reallocating: ns = %d", newsize);
+  //info("Reallocating: ns = %d", newsize);
 
   Alloc::realloc(&sa, size_s.size, newsize);
   Alloc::realloc(&sb, size_s.size, newsize);
@@ -525,7 +525,7 @@ void MultiAdaptiveTimeSlab::alloc_e(uint newsize)
 
   if ( newsize <= size_e.size ) return;
 
-  //message("Reallocating: ne = %d", newsize);
+  //info("Reallocating: ne = %d", newsize);
 
   Alloc::realloc(&ei, size_e.size, newsize);
   Alloc::realloc(&es, size_e.size, newsize);
@@ -541,7 +541,7 @@ void MultiAdaptiveTimeSlab::alloc_j(uint newsize)
 
   if ( newsize <= size_j.size ) return;
 
-  //message("Reallocating: nj = %d", newsize);
+  //info("Reallocating: nj = %d", newsize);
 
   Alloc::realloc(&jx, size_j.size, newsize);
 
@@ -554,7 +554,7 @@ void MultiAdaptiveTimeSlab::alloc_d(uint newsize)
 
   if ( newsize <= size_d.size ) return;
 
-  //message("Reallocating: nd = %d", newsize);
+  //info("Reallocating: nd = %d", newsize);
 
   Alloc::realloc(&de, size_d.size, newsize);
 
@@ -1034,17 +1034,17 @@ TimeSlabSolver* MultiAdaptiveTimeSlab::choose_solver()
 
   if ( solver == "fixed-point" )
   {
-    message("Using multi-adaptive fixed-point solver.");
+    info("Using multi-adaptive fixed-point solver.");
     return new MultiAdaptiveFixedPointSolver(*this);
   }
   else if ( solver == "newton" )
   {
-    message("Using multi-adaptive Newton solver.");
+    info("Using multi-adaptive Newton solver.");
     return new MultiAdaptiveNewtonSolver(*this);
   }
   else if ( solver == "default" )
   {
-    message("Using multi-adaptive fixed-point solver (default for mc/dG(q)).");
+    info("Using multi-adaptive fixed-point solver (default for mc/dG(q)).");
     return new MultiAdaptiveFixedPointSolver(*this);
   }
   else

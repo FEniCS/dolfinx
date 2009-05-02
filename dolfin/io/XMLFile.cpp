@@ -59,7 +59,7 @@ XMLFile::~XMLFile()
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (GenericVector& x)
 {
-  message(1, "Reading vector from file %s.", filename.c_str());
+  info(1, "Reading vector from file %s.", filename.c_str());
 
   if (xml_object)
     delete xml_object;
@@ -69,7 +69,7 @@ void XMLFile::operator>> (GenericVector& x)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (GenericMatrix& A)
 {
-  message(1, "Reading matrix from file %s.", filename.c_str());
+  info(1, "Reading matrix from file %s.", filename.c_str());
 
   if (xml_object)
     delete xml_object;
@@ -79,7 +79,7 @@ void XMLFile::operator>> (GenericMatrix& A)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (Mesh& mesh)
 {
-  message(1, "Reading mesh from file %s.", filename.c_str());
+  info(1, "Reading mesh from file %s.", filename.c_str());
 
   if (xml_object)
     delete xml_object;
@@ -99,7 +99,7 @@ void XMLFile::operator>> (LocalMeshData& meshdata)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (MeshFunction<int>& meshfunction)
 {
-  message(1, "Reading int-valued mesh function from file %s.", filename.c_str());
+  info(1, "Reading int-valued mesh function from file %s.", filename.c_str());
 
   if (xml_object)
     delete xml_object;
@@ -109,7 +109,7 @@ void XMLFile::operator>> (MeshFunction<int>& meshfunction)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (MeshFunction<unsigned int>& meshfunction)
 {
-  message(1, "Reading uint-valued mesh function from file %s.", filename.c_str());
+  info(1, "Reading uint-valued mesh function from file %s.", filename.c_str());
 
   if (xml_object)
     delete xml_object;
@@ -119,7 +119,7 @@ void XMLFile::operator>> (MeshFunction<unsigned int>& meshfunction)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (MeshFunction<double>& meshfunction)
 {
-  message(1, "Reading real-valued mesh function from file %s.", filename.c_str());
+  info(1, "Reading real-valued mesh function from file %s.", filename.c_str());
 
   if (xml_object)
     delete xml_object;
@@ -129,7 +129,7 @@ void XMLFile::operator>> (MeshFunction<double>& meshfunction)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (MeshFunction<bool>& meshfunction)
 {
-  message(1, "Reading bool-valued mesh function from file %s.", filename.c_str());
+  info(1, "Reading bool-valued mesh function from file %s.", filename.c_str());
 
   if (xml_object)
     delete xml_object;
@@ -139,7 +139,7 @@ void XMLFile::operator>> (MeshFunction<bool>& meshfunction)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (ParameterList& parameters)
 {
-  message(1, "Reading parameter list from file %s.", filename.c_str());
+  info(1, "Reading parameter list from file %s.", filename.c_str());
 
   if (xml_object)
     delete xml_object;
@@ -157,7 +157,7 @@ void XMLFile::operator>> (BLASFormData& blas)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (Graph& graph)
 {
-  message(1, "Reading graph from file %s.", filename.c_str());
+  info(1, "Reading graph from file %s.", filename.c_str());
 
   if (xml_object)
     delete xml_object;
@@ -189,8 +189,8 @@ void XMLFile::operator<< (const GenericVector& x)
   // Close file
   close_file(fp);
 
-//  message(1, "Saved vector %s (%s) to file %s in DOLFIN XML format.", x.name().c_str(), x.label().c_str(), filename.c_str());
-  message(1, "Saved vector  to file %s in DOLFIN XML format.", filename.c_str());
+//  info(1, "Saved vector %s (%s) to file %s in DOLFIN XML format.", x.name().c_str(), x.label().c_str(), filename.c_str());
+  info(1, "Saved vector  to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const GenericMatrix& A)
@@ -223,7 +223,7 @@ void XMLFile::operator<< (const GenericMatrix& A)
   // Close file
   close_file(fp);
 
-  message(1, "Saved matrix file %s in DOLFIN XML format.", filename.c_str());
+  info(1, "Saved matrix file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Mesh& mesh)
@@ -325,7 +325,7 @@ void XMLFile::operator<< (const Mesh& mesh)
   // Close file
   close_file(fp);
 
-  message(1, "Saved mesh to file %s in DOLFIN XML format.", filename.c_str());
+  info(1, "Saved mesh to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const MeshFunction<int>& meshfunction)
@@ -349,7 +349,7 @@ void XMLFile::operator<< (const MeshFunction<int>& meshfunction)
   // Close file
   close_file(fp);
 
-  message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
+  info(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const MeshFunction<unsigned int>& meshfunction)
@@ -373,7 +373,7 @@ void XMLFile::operator<< (const MeshFunction<unsigned int>& meshfunction)
   // Close file
   close_file(fp);
 
-  message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
+  info(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const MeshFunction<double>& meshfunction)
@@ -397,7 +397,7 @@ void XMLFile::operator<< (const MeshFunction<double>& meshfunction)
   // Close file
   close_file(fp);
 
-  message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
+  info(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const MeshFunction<bool>& meshfunction)
@@ -423,7 +423,7 @@ void XMLFile::operator<< (const MeshFunction<bool>& meshfunction)
   // Close file
   close_file(fp);
 
-  message(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
+  info(1, "Saved mesh function to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const ParameterList& parameters)
@@ -470,7 +470,7 @@ void XMLFile::operator<< (const ParameterList& parameters)
   // Close file
   close_file(fp);
 
-  message(1, "Saved parameters to file %s in DOLFIN XML format.", filename.c_str());
+  info(1, "Saved parameters to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<< (const Graph& graph)
@@ -528,7 +528,7 @@ void XMLFile::operator<< (const Graph& graph)
   // Close file
   close_file(fp);
 
-  message(1, "Saved graph to file %s in DOLFIN XML format.", filename.c_str());
+  info(1, "Saved graph to file %s in DOLFIN XML format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 FILE* XMLFile::open_file()

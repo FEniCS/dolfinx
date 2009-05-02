@@ -170,7 +170,7 @@ void Dependencies::detect(ODE& ode)
   // Clean up
   delete [] u;
 
-  message("Automatically detected %d dependencies.", sum);
+  info("Automatically detected %d dependencies.", sum);
 }
 //-----------------------------------------------------------------------------
 bool Dependencies::sparse() const
@@ -182,7 +182,7 @@ void Dependencies::disp() const
 {
   if ( _sparse )
   {
-    message("Dependency pattern:");
+    info("Dependency pattern:");
     for (uint i = 0; i < N; i++)
     {
       cout << i << ":";
@@ -192,7 +192,7 @@ void Dependencies::disp() const
     }
   }
   else
-    message("Dependency pattern: dense");
+    info("Dependency pattern: dense");
 }
 //-----------------------------------------------------------------------------
 bool Dependencies::check_dependency(ODE& ode, real* u, real f0,

@@ -104,7 +104,7 @@ real TimeStepper::step(ODESolution& u, real t0, real t1)
     if (timeslab->check(first))
       break;
 
-    message("Rejecting time slab K = %.3e, trying again.", to_double(timeslab->length()));
+    info("Rejecting time slab K = %.3e, trying again.", to_double(timeslab->length()));
   }
 
   // Save solution
@@ -113,7 +113,7 @@ real TimeStepper::step(ODESolution& u, real t0, real t1)
   // Update for next time slab
   if (!timeslab->shift(at_end(t, ode.endtime())))
   {
-    message("ODE solver stopped on user's request at t = %g.", to_double(t));
+    info("ODE solver stopped on user's request at t = %g.", to_double(t));
     _stopped = true;
   }
 

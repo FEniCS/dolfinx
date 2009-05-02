@@ -179,7 +179,7 @@ const Function& Function::operator= (const Function& v)
   }
   else
   {
-    message("Assignment from user-defined function, interpolating.");
+    info("Assignment from user-defined function, interpolating.");
     v.interpolate(*_vector, *_function_space);
   }
 

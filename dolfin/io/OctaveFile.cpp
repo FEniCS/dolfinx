@@ -60,9 +60,9 @@ void OctaveFile::operator<<(const GenericMatrix& A)
   fclose(fp);
   delete [] row;
 
-//  message(1, "Saved matrix %s (%s) to file %s in Octave format.",
+//  info(1, "Saved matrix %s (%s) to file %s in Octave format.",
 //          A.name().c_str(), A.label().c_str(), filename.c_str());
 
-  message(1, "Saved matrix to file %s in Octave format.", filename.c_str());
+  info(1, "Saved matrix to file %s in Octave format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------

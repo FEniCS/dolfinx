@@ -98,7 +98,7 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
 
   // Check exit condition
   if(errno_ == 0)
-    message("ITLSolver (%s, %s) converged in %d iterations. Resid=%8.2e",
+    info("ITLSolver (%s, %s) converged in %d iterations. Resid=%8.2e",
 	    method.c_str(), pc_type.c_str(), iter.iterations(), iter.resid());
   else
     warning("ITLKrylovSolver: (%s, %s) failed to converge!\n\t%d iterations,"

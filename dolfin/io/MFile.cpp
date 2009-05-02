@@ -56,7 +56,7 @@ void MFile::operator<<(const GenericVector& x)
   // Close file
   fclose(fp);
 
-  message("Saved vector to file %s in Octave/MATLAB format.", filename.c_str());
+  info("Saved vector to file %s in Octave/MATLAB format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void MFile::operator<<(const Mesh& mesh)
@@ -148,7 +148,7 @@ void MFile::operator<<(const Mesh& mesh)
   // Increase the number of meshes saved to this file
   counter++;
 
-  message(1, "Saved mesh %s (%s) to file %s in Octave/MATLAB format.",
+  info(1, "Saved mesh %s (%s) to file %s in Octave/MATLAB format.",
           mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
 }
 //-----------------------------------------------------------------------------

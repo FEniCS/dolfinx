@@ -28,24 +28,24 @@ static char buffer[DOLFIN_LINELENGTH];
   va_end(aptr);
 
 //-----------------------------------------------------------------------------
-void dolfin::stream_message(std::ostream& out, std::string msg)
+void dolfin::stream_info(std::ostream& out, std::string msg)
 {
   std::ostream& old_out = LogManager::logger.get_output_destination();
   LogManager::logger.set_output_destination(out);
-  LogManager::logger.message(msg);
+  LogManager::logger.info(msg);
   LogManager::logger.set_output_destination(old_out);
 }
 //-----------------------------------------------------------------------------
-void dolfin::message(std::string msg, ...)
+void dolfin::info(std::string msg, ...)
 {
   read(buffer, msg);
-  LogManager::logger.message(buffer);
+  LogManager::logger.info(buffer);
 }
 //-----------------------------------------------------------------------------
-void dolfin::message(int debug_level, std::string msg, ...)
+void dolfin::info(int debug_level, std::string msg, ...)
 {
   read(buffer, msg);
-  LogManager::logger.message(buffer, debug_level);
+  LogManager::logger.info(buffer, debug_level);
 }
 //-----------------------------------------------------------------------------
 void dolfin::warning(std::string msg, ...)

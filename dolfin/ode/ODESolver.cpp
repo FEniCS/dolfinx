@@ -52,7 +52,7 @@ void ODESolver::solve(ODESolution& u)
     cout << "Not solving the dual problem as requested." << endl;
 
   // Report elapsed time
-  message("ODE solution computed in %.3f seconds.", toc());
+  info("ODE solution computed in %.3f seconds.", toc());
 
   end();
 }

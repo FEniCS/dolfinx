@@ -38,13 +38,13 @@ namespace dolfin
 
 
   /// Print message
-  void message(std::string msg, ...);
+  void info(std::string msg, ...);
 
   /// Print message
-  void message(int debug_level, std::string msg, ...);
+  void info(int debug_level, std::string msg, ...);
 
   /// Print message
-  void stream_message(std::ostream& out, std::string msg);
+  void stream_info(std::ostream& out, std::string msg);
 
   /// Print warning
   void warning(std::string msg, ...);

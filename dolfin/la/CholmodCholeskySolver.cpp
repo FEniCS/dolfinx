@@ -59,7 +59,7 @@ dolfin::uint CholmodCholeskySolver::factorize(const GenericMatrix& A)
 	             (double*) std::tr1::get<2>(data), M, nnz);
 
   // Factorize
-  message("Cholesky-factorizing linear system of size %d x %d (CHOLMOD).",M,M);
+  info("Cholesky-factorizing linear system of size %d x %d (CHOLMOD).",M,M);
   cholmod.factorize();
 
   return 1;
@@ -78,7 +78,7 @@ dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x, const Gen
   // Initialise solution vector and solve
   x.resize(N);
 
-  message("Solving factorized linear system of size %d x %d (CHOLMOD).", N, N);
+  info("Solving factorized linear system of size %d x %d (CHOLMOD).", N, N);
 
   cholmod.factorized_solve(x.data(), b.data());
 
