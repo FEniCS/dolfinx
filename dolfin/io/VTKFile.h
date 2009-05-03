@@ -28,23 +28,26 @@ namespace dolfin
     void operator<< (const MeshFunction<double>& meshfunction);
     void operator<< (const Function& u);
 
-  private:
+  protected:
 
     void mesh_write(const Mesh& mesh) const;
     void results_write(const Function& u) const;
     void pvd_file_write(uint u);
-    void vtk_header_open(const Mesh& mesh) const;
+    void vtk_header_open(uint num_vertices, uint num_cells) const;
     void vtk_header_close() const;
     void vtu_name_update(const int counter);
 
     template<class T>
     void mesh_function_write(T& meshfunction);
 
+    // vtu filename
+    std::string vtu_filename;
+
+  private:
+
     // Most recent position in pvd file
     std::ios::pos_type mark;
 
-    // vtu filename
-    std::string vtu_filename;
 
   };
 

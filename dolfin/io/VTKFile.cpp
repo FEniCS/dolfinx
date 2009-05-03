@@ -46,7 +46,7 @@ void VTKFile::operator<<(const Mesh& mesh)
   pvd_file_write(counter);
 
   // Write headers
-  vtk_header_open(mesh);
+  vtk_header_open(mesh.num_vertices(), mesh.num_cells());
 
   // Write mesh
   mesh_write(mesh);
@@ -87,7 +87,7 @@ void VTKFile::operator<<(const Function& u)
   const Mesh& mesh = u.function_space().mesh();
 
   // Write headers
-  vtk_header_open(mesh);
+  vtk_header_open(mesh.num_vertices(), mesh.num_cells());
 
   // Write Mesh
   mesh_write(mesh);
@@ -376,7 +376,7 @@ void VTKFile::pvd_file_write(uint num)
 
 }
 //----------------------------------------------------------------------------
-void VTKFile::vtk_header_open(const Mesh& mesh) const
+void VTKFile::vtk_header_open(uint num_vertices, uint num_cells) const
 {
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
@@ -387,7 +387,7 @@ void VTKFile::vtk_header_open(const Mesh& mesh) const
   fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\"   >\n");
   fprintf(fp, "<UnstructuredGrid>  \n");
   fprintf(fp, "<Piece  NumberOfPoints=\" %8u\"  NumberOfCells=\" %8u\">  \n",
-  mesh.num_vertices(), mesh.num_cells());
+          num_vertices, num_cells);
 
   // Close file
   fclose(fp);
@@ -445,7 +445,7 @@ void VTKFile::mesh_function_write(T& meshfunction)
     error("VTK output of mesh functions is implemented for cell-based functions only.");
 
   // Write headers
-  vtk_header_open(mesh);
+  vtk_header_open(mesh.num_vertices(), mesh.num_cells());
 
   // Write mesh
   mesh_write(mesh);
