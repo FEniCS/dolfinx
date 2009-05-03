@@ -33,7 +33,7 @@ namespace dolfin
     void mesh_write(const Mesh& mesh) const;
     void results_write(const Function& u) const;
     void pvd_file_write(uint u);
-    void vtk_header_open(const Mesh& mesh) const;
+    void vtk_header_open(uint num_vertices, uint num_cells) const;
     void vtk_header_close() const;
     void vtu_name_update(const int counter);
 
