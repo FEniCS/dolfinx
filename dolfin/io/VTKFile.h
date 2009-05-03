@@ -28,7 +28,7 @@ namespace dolfin
     void operator<< (const MeshFunction<double>& meshfunction);
     void operator<< (const Function& u);
 
-  private:
+  protected:
 
     void mesh_write(const Mesh& mesh) const;
     void results_write(const Function& u) const;
@@ -40,11 +40,14 @@ namespace dolfin
     template<class T>
     void mesh_function_write(T& meshfunction);
 
+    // vtu filename
+    std::string vtu_filename;
+
+  private:
+
     // Most recent position in pvd file
     std::ios::pos_type mark;
 
-    // vtu filename
-    std::string vtu_filename;
 
   };
 
