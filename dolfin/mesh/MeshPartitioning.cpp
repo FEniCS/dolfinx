@@ -75,11 +75,11 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   std::map<std::vector<uint>, uint> entities;
   for (MeshEntityIterator e(mesh, d); !e.end(); ++e)
   {
-    std::vector<uint> entity_vertices;
+    std::vector<uint> entity;
     for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
-      entity_vertices.push_back(global_vertex_indices->get(vertex->index()));
-    std::sort(entity_vertices.begin(), entity_vertices.end());
-    entities[entity_vertices] = e->index();
+      entity.push_back(global_vertex_indices->get(vertex->index()));
+    std::sort(entity.begin(), entity.end());
+    entities[entity] = e->index();
   }
   
   /// Find out which entities to ignore, which to number and which to number
@@ -89,7 +89,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   // Entities to number
   std::map<std::vector<uint>, uint> owned_entity_indices;
     
-  // Entites to number and send (shared with higher rank processes)
+  // Candidates to number and send to other, higher rank processes
   std::map<std::vector<uint>, uint> shared_entity_indices;
   std::map<std::vector<uint>, std::vector<uint> > shared_entity_processes;
 
@@ -159,7 +159,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   // communicating values to the higher ranked processes (if any).
 
   
-  // Communicate ignored entitis
+  // Communicate common entitis, starting with the entities we think should be ignored 
   std::vector<uint> common_entity_values;
   std::vector<uint> common_entity_partition;
   for (std::map<std::vector<uint>, std::vector<uint> >::iterator it = ignored_entity_processes.begin(); it != ignored_entity_processes.end(); ++it)
@@ -190,6 +190,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
 
   }
 
+  // Communicate common entitis, add the entities we think should be shared as well 
   for (std::map<std::vector<uint>, std::vector<uint> >::iterator it = shared_entity_processes.begin(); it != shared_entity_processes.end(); ++it)
   {
     // Get entity vertices (global vertex indices)
@@ -270,8 +271,8 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     }
   }
 
+  // Fix the list of entities we ignore (numbered by lower ranked process)
   std::vector<std::vector<uint> > erased_entities;
-
   for (std::map<std::vector<uint>, uint>::iterator it = ignored_entity_indices.begin(); it != ignored_entity_indices.end(); ++it)
   {
     const std::vector<uint> entity = (*it).first;
@@ -292,6 +293,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
         shared_entity_indices[entity] = e;
         shared_entity_processes[entity] = common_processes;
 
+        // Add entity to list of entities that should be removed from the ignored entity list.
         erased_entities.push_back(entity);
       }
 
@@ -299,15 +301,19 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     {
       // Move from ignored to owned
       owned_entity_indices[entity] = e;
+
+      // Add entity to list of entities that should be removed from the ignored entity list.
       erased_entities.push_back(entity);
     }
   }
+
   for (std::vector<std::vector<uint> >::iterator it = erased_entities.begin(); it != erased_entities.end(); ++it)
   {
     ignored_entity_indices.erase(*it);
     ignored_entity_processes.erase(*it);
   }
 
+  // Fix the list of entities we share 
   erased_entities.clear();
 
   for (std::map<std::vector<uint>, uint>::iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
@@ -777,11 +783,11 @@ void MeshPartitioning::build_mesh(Mesh& mesh, const LocalMeshData& data,
 #endif
 
 //-----------------------------------------------------------------------------
-bool MeshPartitioning::in_overlap(const std::vector<uint>& entity_vertices,
+bool MeshPartitioning::in_overlap(const std::vector<uint>& entity,
                                   std::map<uint, std::vector<uint> >& overlap)
 {
-  for (uint i = 0; i < entity_vertices.size(); ++i)
-    if (overlap.count(entity_vertices[i]) == 0)
+  for (uint i = 0; i < entity.size(); ++i)
+    if (overlap.count(entity[i]) == 0)
       return false;
   return true;
 }
