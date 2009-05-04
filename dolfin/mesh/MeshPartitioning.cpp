@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2009-04-30
+// Last changed: 2009-05-04
 
 #include <sstream>
 #include <vector>
@@ -166,7 +166,6 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   {
     // Get entity vertices (global vertex indices)
     const std::vector<uint>& entity = (*it).first;
-    const uint entity_size = entity.size();
 
     // Get entity processes (processes might sharing the entity)
     const std::vector<uint>& entity_processes = (*it).second;
@@ -177,14 +176,9 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       const uint p = entity_processes[j];
       if ( p < process_number)
       {
-        common_entity_values.push_back(entity_size);
-        common_entity_partition.push_back(p); 
-
-        for (uint k = 0; k < entity_size; ++k)
-        {
-          common_entity_values.push_back(entity[k]);
-          common_entity_partition.push_back(p);
-        }
+        common_entity_values.push_back(entity.size());
+        common_entity_values.insert(common_entity_values.end(), entity.begin(), entity.end());
+        common_entity_partition.insert(common_entity_partition.end(), entity.size() + 1, p);
       }
     }
 
@@ -195,7 +189,6 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   {
     // Get entity vertices (global vertex indices)
     const std::vector<uint>& entity = (*it).first;
-    const uint entity_size = entity.size();
 
     // Get entity processes (processes might sharing the entity)
     const std::vector<uint>& entity_processes = (*it).second;
@@ -206,14 +199,9 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       const uint p = entity_processes[j];
       if ( p < process_number)
       {
-        common_entity_values.push_back(entity_size);
-        common_entity_partition.push_back(p); 
-
-        for (uint k = 0; k < entity_size; ++k)
-        {
-          common_entity_values.push_back(entity[k]);
-          common_entity_partition.push_back(p);
-        }
+        common_entity_values.push_back(entity.size());
+        common_entity_values.insert(common_entity_values.end(), entity.begin(), entity.end());
+        common_entity_partition.insert(common_entity_partition.end(), entity.size() + 1, p);
       }
     }
 
@@ -250,9 +238,13 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     is_entity_partition.push_back(p);
   }
 
+  common_entity_values.clear();
+  common_entity_partition.clear();
+
   // Send data back (list of entities that should not be ignored by the process)
   MPI::distribute(is_entity_values, is_entity_partition);
 
+  // entity_processes is the list of edges in the overlap that are actually edges
   std::map<std::vector<uint>, std::vector<uint> > entity_processes;
   for (uint i = 0; i < is_entity_values.size();)
   {
@@ -265,14 +257,14 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     if (is_entity == 1)
     {
       // The local entity is an entity of a lower ranked process, so we can safely ignore it.
-      if ( entity_processes.count(entity) == 0 )
-        entity_processes[entity] = std::vector<uint>();
       entity_processes[entity].push_back(p);
     }
   }
 
+  is_entity_values.clear();
+  is_entity_partition.clear();
+
   // Fix the list of entities we ignore (numbered by lower ranked process)
-  std::vector<std::vector<uint> > erased_entities;
   for (std::map<std::vector<uint>, uint>::iterator it = ignored_entity_indices.begin(); it != ignored_entity_indices.end(); ++it)
   {
     const std::vector<uint> entity = (*it).first;
@@ -281,20 +273,17 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     {
       std::vector<uint> common_processes = entity_processes[entity];
       dolfin_assert(common_processes.size() > 0);
-      const uint min_proc = *(std::min_element(common_processes.begin(), common_processes.end()));
       const uint max_proc = *(std::max_element(common_processes.begin(), common_processes.end()));
 
-      if ( min_proc < process_number )
-      {
-        // Still ignore
-      } else if ( max_proc > process_number )
+      if ( max_proc > process_number )
       {
         // Move from ignored to shared
         shared_entity_indices[entity] = e;
         shared_entity_processes[entity] = common_processes;
 
         // Add entity to list of entities that should be removed from the ignored entity list.
-        erased_entities.push_back(entity);
+        ignored_entity_indices.erase(entity);
+        ignored_entity_processes.erase(entity);
       }
 
     } else
@@ -303,19 +292,12 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       owned_entity_indices[entity] = e;
 
       // Add entity to list of entities that should be removed from the ignored entity list.
-      erased_entities.push_back(entity);
+      ignored_entity_indices.erase(entity);
+      ignored_entity_processes.erase(entity);
     }
   }
 
-  for (std::vector<std::vector<uint> >::iterator it = erased_entities.begin(); it != erased_entities.end(); ++it)
-  {
-    ignored_entity_indices.erase(*it);
-    ignored_entity_processes.erase(*it);
-  }
-
   // Fix the list of entities we share 
-  erased_entities.clear();
-
   for (std::map<std::vector<uint>, uint>::iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
   {
     const std::vector<uint> entity = (*it).first;
@@ -324,14 +306,9 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     {
       // Move from ignored to owned
       owned_entity_indices[entity] = e;
-      erased_entities.push_back(entity);
+      shared_entity_indices.erase(entity);
+      shared_entity_processes.erase(entity);
     }
-  }
-
-  for (std::vector<std::vector<uint> >::iterator it = erased_entities.begin(); it != erased_entities.end(); ++it)
-  {
-    shared_entity_indices.erase(*it);
-    shared_entity_processes.erase(*it);
   }
 
   // Communicate all offsets
@@ -349,16 +326,10 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   std::vector<int> entity_indices(mesh.size(d));
   std::fill(entity_indices.begin(), entity_indices.end(), -1);
   for (std::map<std::vector<uint>, uint>::iterator it = owned_entity_indices.begin(); it != owned_entity_indices.end(); ++it)
-  {
-    entity_indices[(*it).second] = offset;
-    ++offset;
-  }
+    entity_indices[(*it).second] = offset++;
 
   for (std::map<std::vector<uint>, uint>::iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
-  {
-    entity_indices[(*it).second] = offset;
-    ++offset;
-  }
+    entity_indices[(*it).second] = offset++;
 
   // Communicate indices for shared entities
   std::vector<uint> values;
@@ -381,22 +352,17 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     {   
       // Store interleaved: entity index, number of vertices, global vertex indices
 
-      // Processes to communicate values to
-      const uint p = entity_processes[j];
-
       values.push_back(entity_index);
-      partition.push_back(p);
-
       values.push_back(entity.size());
-      partition.push_back(p);
+      values.insert(values.end(), entity.begin(), entity.end());
 
-      for (uint k = 0; k < entity.size(); ++k)
-      {
-        values.push_back(entity[k]);
-        partition.push_back(p);
-      }
+      partition.insert(partition.end(), entity.size() + 2, entity_processes[j]);
     }
   }
+
+  entity_processes.clear();
+  shared_entity_indices.clear();
+  shared_entity_processes.clear();
 
   // Send data
   MPI::distribute(values, partition);
@@ -421,6 +387,11 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
 
     entity_indices[ignored_entity_indices[entity]] = global_index;
   }
+
+  values.clear();
+  partition.clear();
+  ignored_entity_indices.clear();
+  ignored_entity_processes.clear();
   
   // Create mesh data
   std::stringstream mesh_data_name;
