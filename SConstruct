@@ -260,16 +260,25 @@ if not env["CXX"]:
 #doFetch = "fetch" in COMMAND_LINE_TARGETS or (env["autoFetch"]) and not env.GetOption("clean")
 #env["doFetch"] = doFetch
 
+# data dicitionary:
+buildDataHash = {"shlibs": [], "extModules": [], "docs": [], "headers": [],
+                 "pythonModules": [], "pythonScripts": [], "pkgconfig": [],
+                 "pythonPackageDirs": [], "data": [], "tests": [], "progs": [],
+                 "demos": [], "dolfin_header": "", "swigfiles": []}
+
 # -----------------------------------------------------------------------------
 # Call the main SConscript in the project directory
 # -----------------------------------------------------------------------------
-try:
-  # Invoke the SConscript as if it was situated in the build directory, this
-  # tells SCons to build beneath this
-  buildDataHash = env.SConscript(os.path.join(env["projectname"], "SConscript"), exports=["env", "configure"])
-except PkgconfigError, err:
-  sys.stderr.write("%s\n" % err)
-  Exit(1)
+if not env.GetOption('help'):
+  try:
+    # Invoke the SConscript as if it was situated in the build directory, this
+    # tells SCons to build beneath this
+    buildDataHash = \
+        env.SConscript(os.path.join(env["projectname"], "SConscript"),
+                       exports=["env", "configure", "buildDataHash"])
+  except PkgconfigError, err:
+    sys.stderr.write("%s\n" % err)
+    Exit(1)
 
 # -----------------------------------------------------------------------------
 # Set up build targets
@@ -467,7 +476,7 @@ PATH, LD_LIBRARY_PATH, PKG_CONFIG_PATH and PYTHONPATH.
     print msg
 
 # Print some help text at the end
-if not env.GetOption("clean"):
+if not env.GetOption("clean") and not env.GetOption('help'):
     import atexit
     if 'install' in COMMAND_LINE_TARGETS:
         atexit.register(help_install)
