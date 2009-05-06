@@ -69,28 +69,29 @@ double BlockVector::inner(const BlockVector& x) const
   return value;
 }
 //-----------------------------------------------------------------------------
-double BlockVector::norm(NormType type) const
+double BlockVector::norm(std::string norm_type) const
 {
   double value = 0.0;
-  switch (type)
+  if(norm_type == "l1")
   {
-    case l1:
-      for (uint i = 0; i < n; i++)
-        value += this->get(i).norm(type);
-      break;
-    case l2:
-      for (uint i = 0; i < n; i++)
-        value += std::pow(this->get(i).norm(type), 2);
-      value = sqrt(value);
-      break;
-    default:
-      double tmp= 0.0;
-      for (uint i = 0; i < n; i++)
-      {
-        tmp = this->get(i).norm(type);
-        if (tmp > value)
-          value = tmp;
-      }
+    for (uint i = 0; i < n; i++)
+      value += this->get(i).norm(norm_type);
+  }
+  else if(norm_type == "l2")
+  {
+    for (uint i = 0; i < n; i++)
+      value += std::pow(this->get(i).norm(norm_type), 2);
+    value = sqrt(value);
+  }
+  else
+  {
+    double tmp= 0.0;
+    for (uint i = 0; i < n; i++)
+    {
+      tmp = this->get(i).norm(norm_type);
+      if (tmp > value)
+        value = tmp;
+    }
   }
   return value;
 }

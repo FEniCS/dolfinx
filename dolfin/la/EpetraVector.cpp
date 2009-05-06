@@ -335,24 +335,20 @@ const EpetraVector& EpetraVector::operator/= (double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-double EpetraVector::norm(NormType type) const
+double EpetraVector::norm(std::string norm_type) const
 {
   dolfin_assert(x);
 
   double value = 0.0;
-  int err=0;
-  switch (type)
-  {
-    case l1:
-      err = x->Norm1(&value);
-      break;
-    case l2:
-      err = x->Norm2(&value);
-      break;
-    default:
-      err = x->NormInf(&value);
-  }
-  if (err!= 0)
+  int err = 0;
+  if (norm_type == "l1")
+    err = x->Norm1(&value);
+  else if (norm_type == "l2")
+    err = x->Norm2(&value);
+  else
+    err = x->NormInf(&value);
+
+  if (err != 0)
     error("EpetraVector::norm: Did not manage to compute the norm.");
   return value;
 }

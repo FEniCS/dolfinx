@@ -352,25 +352,20 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y, bool transposed
   }
 }
 //-----------------------------------------------------------------------------
-double PETScMatrix::norm(const NormType type) const
+double PETScMatrix::norm(std::string norm_type) const
 {
   dolfin_assert(A);
 
   double value = 0.0;
-  switch ( type )
-  {
-    case l1:
-      MatNorm(*A, NORM_1, &value);
-      break;
-    case linf:
-      MatNorm(*A, NORM_INFINITY, &value);
-      break;
-    case frobenius:
-      MatNorm(*A, NORM_FROBENIUS, &value);
-      break;
-    default:
-      error("Unknown norm type.");
-  }
+  if (norm_type == "l1")
+    MatNorm(*A, NORM_1, &value);
+  else if (norm_type == "linf")
+    MatNorm(*A, NORM_INFINITY, &value);
+  else if (norm_type == "frobenius")
+    MatNorm(*A, NORM_FROBENIUS, &value);
+  else
+    error("Unknown norm type.");
+
   return value;
 }
 //-----------------------------------------------------------------------------

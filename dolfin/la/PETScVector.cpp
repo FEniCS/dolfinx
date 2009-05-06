@@ -274,25 +274,20 @@ void PETScVector::axpy(double a, const GenericVector& y)
   VecAXPY(*x, a, *(v.x));
 }
 //-----------------------------------------------------------------------------
-double PETScVector::norm(NormType type) const
+double PETScVector::norm(std::string norm_type) const
 {
   dolfin_assert(x);
 
   double value = 0.0;
-  switch (type)
-  {
-    case l1:
-      VecNorm(*x, NORM_1, &value);
-      break;
-    case l2:
-      VecNorm(*x, NORM_2, &value);
-      break;
-    case linf:
-      VecNorm(*x, NORM_INFINITY, &value);
-      break;
-    default:
-      error("Norm type for PETScVector unknown.");
-  }
+  if (norm_type == "l1")
+    VecNorm(*x, NORM_1, &value);
+  else if (norm_type == "l2")
+    VecNorm(*x, NORM_2, &value);
+  else if (norm_type == "linf")
+    VecNorm(*x, NORM_INFINITY, &value);
+  else
+    error("Norm type for PETScVector unknown.");
+
   return value;
 }
 //-----------------------------------------------------------------------------

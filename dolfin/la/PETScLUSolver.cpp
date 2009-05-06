@@ -105,8 +105,8 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A, PETScVector& x,
   KSPSolve(ksp, *b.vec(), *x.vec());
 
   // Estimate condition number for l1 norm
-  const double xnorm = x.norm(l1);
-  const double bnorm = b.norm(l1) + DOLFIN_EPS;
+  const double xnorm = x.norm("l1");
+  const double bnorm = b.norm("l1") + DOLFIN_EPS;
   const double kappa = Anorm * xnorm / bnorm;
   if ( kappa > 0.001 / DOLFIN_EPS )
   {

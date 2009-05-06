@@ -139,7 +139,7 @@ namespace dolfin
     Type type() const;
 
     /// Return norm of matrix
-    double norm(const dolfin::NormType) const;
+    double norm(std::string norm_type) const;
 
     /// Assignment operator
     const PETScMatrix& operator= (const PETScMatrix& A);

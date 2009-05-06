@@ -79,8 +79,6 @@ void MonoAdaptiveNewtonSolver::start()
   if (implicit)
     ode.M(ts.u0, Mu0, ts.u0, ts.starttime());
 
-  //debug();
-  //A.disp(true, 10);
 }
 //-----------------------------------------------------------------------------
 real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
@@ -94,7 +92,7 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
   // Solve linear system
   if (krylov)
   {
-    const double r = b.norm(linf) + to_double( real_epsilon() );
+    const double r = b.norm("linf") + to_double( real_epsilon() );
     b /= r;
     num_local_iterations += krylov->solve(A, dx, b);
     dx *= r;
@@ -115,7 +113,7 @@ real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
     ts.x[j] += dx[j];
 
   // Return maximum increment
-  return dx.norm(linf);
+  return dx.norm("linf");
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MonoAdaptiveNewtonSolver::size() const

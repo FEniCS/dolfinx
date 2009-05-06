@@ -30,7 +30,7 @@ double dolfin::residual(const GenericMatrix& A, const GenericVector& x,
   GenericVector* y = A.factory().create_vector();
   A.mult(x, *y);
   *y -= b;
-  const double norm = y->norm(l2);
+  const double norm = y->norm("l2");
   delete y;
   return norm;
 }
@@ -41,7 +41,7 @@ double dolfin::normalize(GenericVector& x, NormalizationType normalization_type)
   {
   case normalize_l2norm:
     {
-      const double c = x.norm(l2);
+      const double c = x.norm("l2");
       x /= c;
       return c;
     }

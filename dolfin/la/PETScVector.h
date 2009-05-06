@@ -99,7 +99,7 @@ namespace dolfin
     virtual double inner(const GenericVector& v) const;
 
     /// Return norm of vector
-    virtual double norm(dolfin::NormType type=l2) const;
+    virtual double norm(std::string norm_type = "l2") const;
 
     /// Return minimum value of vector
     virtual double min() const;

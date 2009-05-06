@@ -119,19 +119,17 @@ void uBLASVector::zero()
   x->clear();
 }
 //-----------------------------------------------------------------------------
-double uBLASVector::norm(NormType type) const
+double uBLASVector::norm(std::string norm_type) const
 {
-  switch (type)
-  {
-    case l1:
-      return norm_1(*x);
-    case l2:
-      return norm_2(*x);
-    case linf:
-      return norm_inf(*x);
-    default:
-      error("Requested vector norm type for uBLASVector unknown");
-  }
+  if (norm_type == "l1")
+    return norm_1(*x);
+  else if (norm_type == "l2")
+    return norm_2(*x);
+  else if (norm_type == "linf")
+    return norm_inf(*x);
+  else
+    error("Requested vector norm type for uBLASVector unknown");
+
   return 0.0;
 }
 //-----------------------------------------------------------------------------

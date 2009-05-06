@@ -45,7 +45,7 @@ namespace dolfin
     double inner(const BlockVector& x) const;
 
     /// Return norm of vector
-    double norm(NormType type) const;
+    double norm(std::string norm_type) const;
 
     /// Return minimum value of vector
     double min() const;

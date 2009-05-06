@@ -104,8 +104,8 @@ namespace dolfin
     { return vector->inner(x); }
 
     /// Return norm of vector
-    virtual double norm(dolfin::NormType type=l2) const
-    { return vector->norm(type); }
+    virtual double norm(std::string norm_type = "l2") const
+    { return vector->norm(norm_type); }
 
     /// Return minimum value of vector
     virtual double min() const

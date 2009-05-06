@@ -208,19 +208,17 @@ const MTL4Vector& MTL4Vector::operator-= (const GenericVector& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-double MTL4Vector::norm(NormType type) const
+double MTL4Vector::norm(std::string norm_type) const
 {
-  switch (type)
-  {
-    case l1:
-      return mtl::one_norm(x);
-    case l2:
-      return mtl::two_norm(x);
-    case linf:
-      return mtl::infinity_norm(x);
-    default:
-      error("Requested vector norm type for MTL4Vector unknown");
-  }
+  if (norm_type == "l1")
+    return mtl::one_norm(x);
+  else if (norm_type == "l2")
+    return mtl::two_norm(x);
+  else if (norm_type == "linf")
+    return mtl::infinity_norm(x);
+  else 
+    error("Requested vector norm type for MTL4Vector unknown");
+
   return 0.0;
 }
 //-----------------------------------------------------------------------------

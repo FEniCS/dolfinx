@@ -85,8 +85,7 @@ void MultiAdaptiveNewtonSolver::start()
   //A->disp(true, 10);
 }
 //-----------------------------------------------------------------------------
-real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter,
-					  real d0, real d1)
+real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
 {
   // Evaluate b = -F(x) at current x
   Feval(b);
@@ -99,7 +98,7 @@ real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter,
     xnorm = max(xnorm, abs(ts.jx[j]));
 
   // Solve linear system
-  const double r = b.norm(linf) + to_double( real_epsilon() );
+  const double r = b.norm("linf") + to_double( real_epsilon() );
   b /= r;
   num_local_iterations += solver.solve(*A, dx, b);
   dx *= r;
@@ -158,7 +157,6 @@ void MultiAdaptiveNewtonSolver::Feval(uBLASVector& F)
       ts.cg_feval(f, s, e, i, a, b, k);
     else
       ts.dg_feval(f, s, e, i, a, b, k);
-    //cout << "f = "; Alloc::disp(f, method.qsize());
 
     // Update values on element using fixed-point iteration
     method.update(x0, f, k, u);
