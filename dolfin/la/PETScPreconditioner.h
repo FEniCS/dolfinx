@@ -15,7 +15,6 @@
 #include <petscksp.h>
 #include <petscpc.h>
 
-#include "enums_la.h"
 #include "PETScObject.h"
 
 namespace dolfin

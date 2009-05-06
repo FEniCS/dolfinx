@@ -222,7 +222,7 @@ void VariationalProblem::solve_linear(Function& u)
   }
   else if (solver_type == "iterative")
   {
-    if (symmetric)
+    if ("symmetric")
     {
       KrylovSolver solver("gmres");
       solver.set("parent", *this);

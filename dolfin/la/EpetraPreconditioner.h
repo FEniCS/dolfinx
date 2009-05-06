@@ -10,7 +10,6 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/parameter/Parametrized.h>
-#include "enums_la.h"
 
 #endif
 

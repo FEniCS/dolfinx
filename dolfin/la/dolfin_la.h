@@ -5,7 +5,6 @@
 
 // Note that the order is important!
 
-#include <dolfin/la/enums_la.h>
 #include <dolfin/la/ublas.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>

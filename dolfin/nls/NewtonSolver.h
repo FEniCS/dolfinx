@@ -15,7 +15,6 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/parameter/Parametrized.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
-#include <dolfin/la/enums_la.h>
 
 namespace dolfin
 {

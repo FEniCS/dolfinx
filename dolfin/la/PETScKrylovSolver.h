@@ -16,7 +16,6 @@
 
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
-#include "enums_la.h"
 #include "PETScPreconditioner.h"
 
 namespace dolfin

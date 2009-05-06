@@ -102,7 +102,7 @@ int main()
   a.mu = mu; a.lmbda = lambda;
   ElasticityLinearForm L(V);
   L.f = f;
-  VariationalProblem pde(a, L, bcs, symmetric);
+  VariationalProblem pde(a, L, bcs, "symmetric");
 
   // Solve PDE (using direct solver)
   Function u;

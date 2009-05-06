@@ -15,7 +15,6 @@
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "LinearSolver.h"
-#include "enums_la.h"
 #include "uBLASKrylovSolver.h"
 #include "uBLASSparseMatrix.h"
 #include "uBLASDenseMatrix.h"

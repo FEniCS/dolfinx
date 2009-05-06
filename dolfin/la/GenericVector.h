@@ -12,7 +12,6 @@
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
 
-#include "enums_la.h"
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
 

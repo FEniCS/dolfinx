@@ -37,7 +37,7 @@ namespace dolfin
 
   public:
 
-    LUSolver(MatrixType matrix_type = nonsymmetric) : cholmod_solver(0),
+    LUSolver(std::string matrix_type = "nonsymmetric") : cholmod_solver(0),
              umfpack_solver(0), petsc_solver(0), epetra_solver(0),
              matrix_type(matrix_type) {}
 
@@ -77,7 +77,7 @@ namespace dolfin
 #endif
 
       // Default LU solvers
-      if (matrix_type == symmetric)
+      if (matrix_type == "symmetric")
       {
         if (!cholmod_solver)
         {
@@ -137,7 +137,7 @@ namespace dolfin
     int* epetra_solver;
 #endif
 
-    dolfin::MatrixType matrix_type;
+    std::string  matrix_type;
 
   };
 }

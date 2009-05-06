@@ -13,7 +13,6 @@
 #include <dolfin/common/types.h>
 #include "ublas.h"
 #include "GenericLinearSolver.h"
-#include "enums_la.h"
 #include "uBLASKrylovMatrix.h"
 #include "uBLASMatrix.h"
 #include "uBLASVector.h"

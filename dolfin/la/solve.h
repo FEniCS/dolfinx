@@ -10,7 +10,6 @@
 #define __SOLVE_H
 
 #include <dolfin/common/types.h>
-#include "enums_la.h"
 
 namespace dolfin
 {
@@ -26,7 +25,7 @@ namespace dolfin
   double residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b);
 
   /// Normalize vector according to given normalization type
-  double normalize(GenericVector& x, dolfin::NormalizationType normalization_type=normalize_average);
+  double normalize(GenericVector& x, std::string normalization_type = "average");
 
 }
 

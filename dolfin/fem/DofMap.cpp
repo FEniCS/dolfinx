@@ -183,7 +183,7 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_inde
   if (dof_map)
   {
     // FIXME: This will only work for problem where local_dimension is the
-    //        same for all cell
+    //        same for all cells
     const uint n = local_dimension(ufc_cell);
     uint offset = 0;
     offset = n*cell_index;

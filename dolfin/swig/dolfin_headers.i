@@ -25,7 +25,6 @@
 %include "dolfin/log/Table.h"
 
 // DOLFIN headers included from la
-%include "dolfin/la/enums_la.h"
 %include "dolfin/la/ublas.h"
 %include "dolfin/la/GenericTensor.h"
 %include "dolfin/la/GenericMatrix.h"

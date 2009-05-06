@@ -35,32 +35,27 @@ double dolfin::residual(const GenericMatrix& A, const GenericVector& x,
   return norm;
 }
 //-----------------------------------------------------------------------------
-double dolfin::normalize(GenericVector& x, NormalizationType normalization_type)
+double dolfin::normalize(GenericVector& x, std::string normalization_type)
 {
-  switch (normalization_type)
+  if (normalization_type == "l2")
   {
-  case normalize_l2norm:
-    {
-      const double c = x.norm("l2");
-      x /= c;
-      return c;
-    }
-    break;
-  case normalize_average:
-    {
-      GenericVector* y = x.factory().create_vector();
-      y->resize(x.size());
-      (*y) = 1.0 / static_cast<double>(x.size());
-      const double c = x.inner(*y);
-      (*y) = c;
-      x -= (*y);
-      delete y;
-      return c;
-    }
-    break;
-  default:
-    error("Unknown normalization type.");
+    const double c = x.norm("l2");
+    x /= c;
+    return c;
   }
+  else if (normalization_type == "average")
+  {
+    GenericVector* y = x.factory().create_vector();
+    y->resize(x.size());
+    (*y) = 1.0 / static_cast<double>(x.size());
+    const double c = x.inner(*y);
+    (*y) = c;
+    x -= (*y);
+    delete y;
+    return c;
+  }
+  else
+    error("Unknown normalization type.");
 
   return 0.0;
 }

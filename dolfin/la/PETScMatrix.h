@@ -19,7 +19,6 @@
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
-#include "enums_la.h"
 #include "PETScObject.h"
 #include "GenericMatrix.h"
 
