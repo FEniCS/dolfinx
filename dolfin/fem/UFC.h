@@ -9,8 +9,8 @@
 
 #include <vector>
 #include <ufc.h>
-#include "UFCMesh.h"
 #include "UFCCell.h"
+#include "UFCMesh.h"
 
 namespace dolfin
 {
