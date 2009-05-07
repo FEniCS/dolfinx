@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Benjamin Kehlet
 //
 // First added:  2003-05-06
-// Last changed: 2008-11-18
+// Last changed: 2009-05-06
 
 #include <dolfin/log/dolfin_log.h>
 #include "ParameterValue.h"
@@ -13,90 +13,101 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Parameter::Parameter(int value) : value(0), _type(type_int), _changed(false)
+Parameter::Parameter(int value)
+  : _value(0), _type(type_int), _changed(false)
 {
-  this->value = new IntValue(value);
+  _value = new IntValue(value);
 }
 //-----------------------------------------------------------------------------
-Parameter::Parameter(uint value) : value(0), _type(type_int), _changed(false)
+Parameter::Parameter(uint value)
+  : _value(0), _type(type_int), _changed(false)
 {
-  this->value = new IntValue(static_cast<int>(value));
+  _value = new IntValue(static_cast<int>(value));
 }
 //-----------------------------------------------------------------------------
-Parameter::Parameter(double value) : value(0), _type(type_real), _changed(false)
+Parameter::Parameter(double value)
+  : _value(0), _type(type_double), _changed(false)
 {
-  this->value = new RealValue(value);
+  _value = new DoubleValue(value);
 }
 //-----------------------------------------------------------------------------
-Parameter::Parameter(bool value) : value(0), _type(type_bool), _changed(false)
+Parameter::Parameter(bool value)
+  : _value(0), _type(type_bool), _changed(false)
 {
-  this->value = new BoolValue(value);
+  _value = new BoolValue(value);
 }
 //-----------------------------------------------------------------------------
-Parameter::Parameter(std::string value) : value(0), _type(type_string), _changed(false)
+Parameter::Parameter(std::string value)
+  : _value(0), _type(type_string), _changed(false)
 {
-  this->value = new StringValue(value);
+  _value = new StringValue(value);
 }
 //-----------------------------------------------------------------------------
-Parameter::Parameter(const char* value) : value(0), _type(type_string), _changed(false)
+Parameter::Parameter(const char* value)
+  : _value(0), _type(type_string), _changed(false)
 {
   std::string s(value);
-  this->value = new StringValue(s);
+  _value = new StringValue(s);
 }
 //-----------------------------------------------------------------------------
 Parameter::Parameter(const Parameter& parameter)
-  : value(0), _type(type_int), _changed(false)
+  : _value(0), _type(type_int), _changed(false)
 {
   *this = parameter;
 }
 //-----------------------------------------------------------------------------
+Parameter::~Parameter()
+{
+  delete _value;
+}
+//-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (int value)
 {
-  *(this->value) = value;
+  _changed = true;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (dolfin::uint value)
 {
-  *(this->value) = value;
+  _changed = true;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (double value)
 {
-  *(this->value) = value;
+  _changed = true;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (bool value)
 {
-  *(this->value) = value;
+  _changed = true;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (std::string value)
 {
-  *(this->value) = value;
+  _changed = true;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const Parameter& Parameter::operator= (const Parameter& parameter)
 {
-  delete value;
+  delete _value;
 
   switch (parameter._type)
   {
   case type_int:
-    value = new IntValue(*parameter.value);
+    _value = new IntValue(*parameter._value);
     break;
-  case type_real:
-    value = new RealValue(*parameter.value);
+  case type_double:
+    _value = new DoubleValue(*parameter._value);
     break;
   case type_bool:
-    value = new BoolValue(*parameter.value);
+    _value = new BoolValue(*parameter._value);
     break;
   case type_string:
-    value = new StringValue(*parameter.value);
+    _value = new StringValue(*parameter._value);
     break;
   default:
     error("Unknown parameter type: %d.", parameter._type);
@@ -108,34 +119,49 @@ const Parameter& Parameter::operator= (const Parameter& parameter)
   return *this;
 }
 //-----------------------------------------------------------------------------
-Parameter::~Parameter()
+void Parameter::set_range(int min_value, int max_value)
 {
-  delete value;
+  _value->set_range(min_value, max_value);
+}
+//-----------------------------------------------------------------------------
+void Parameter::set_range(uint min_value, uint max_value)
+{
+  _value->set_range(min_value, max_value);
+}
+//-----------------------------------------------------------------------------
+void Parameter::set_range(double min_value, double max_value)
+{
+  _value->set_range(min_value, max_value);
+}
+//-----------------------------------------------------------------------------
+void Parameter::set_range(const std::vector<std::string>& allowed_values)
+{
+  _value->set_range(allowed_values);
 }
 //-----------------------------------------------------------------------------
 Parameter::operator int() const
 {
-  return *value;
+  return *_value;
 }
 //-----------------------------------------------------------------------------
 Parameter::operator dolfin::uint() const
 {
-  return *value;
+  return *_value;
 }
 //-----------------------------------------------------------------------------
 Parameter::operator double() const
 {
-  return *value;
+  return *_value;
 }
 //-----------------------------------------------------------------------------
 Parameter::operator bool() const
 {
-  return *value;
+  return *_value;
 }
 //-----------------------------------------------------------------------------
 Parameter::operator std::string() const
 {
-  return *value;
+  return *_value;
 }
 //-----------------------------------------------------------------------------
 Parameter::Type Parameter::type() const
@@ -146,13 +172,13 @@ Parameter::Type Parameter::type() const
 dolfin::LogStream& dolfin::operator<<(LogStream& stream,
 				      const Parameter& parameter)
 {
-  switch ( parameter.type() )
+  switch (parameter.type())
   {
   case Parameter::type_int:
     stream << "[Parameter: value = "
 	   << static_cast<int>(parameter) << " (int)]";
     break;
-  case Parameter::type_real:
+  case Parameter::type_double:
     stream << "[Parameter: value = "
 	   << static_cast<double>(parameter) << " (double)]";
     break;

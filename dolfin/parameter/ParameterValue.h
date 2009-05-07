@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-12-18
-// Last changed: 2005-12-19
+// Last changed: 2009-05-06
 
 #ifndef __PARAMETER_VALUE_H
 #define __PARAMETER_VALUE_H
@@ -24,20 +24,32 @@ namespace dolfin
     /// Destructor
     virtual ~ParameterValue();
 
-    /// Assignment of int
-    virtual const ParameterValue& operator= (int value);
+    /// Set int value
+    virtual void set(int value);
 
-    /// Assignment of uint
-    virtual const ParameterValue& operator= (uint value);
+    /// Set uint value
+    virtual void set(uint value);
 
-    /// Assignment of real
-    virtual const ParameterValue& operator= (double value);
+    /// Set double value
+    virtual void set(double value);
 
-    /// Assignment of bool
-    virtual const ParameterValue& operator= (bool value);
+    /// Set bool value
+    virtual void set(bool value);
 
-    /// Assignment of string
-    virtual const ParameterValue& operator= (std::string value);
+    /// Set string value
+    virtual void set(std::string value);
+
+    /// Set int-valued range
+    void set_range(int min_value, int max_value);
+
+    /// Set uint-valued range
+    void set_range(uint min_value, uint max_value);
+    
+    /// Set double-valued range
+    void set_range(double min_value, double max_value);
+    
+    /// Set string-valued range (list of values)
+    void set_range(const std::vector<std::string>& allowed_values);
 
     /// Cast to int
     virtual operator int() const;
@@ -45,7 +57,7 @@ namespace dolfin
     /// Cast to uint
     virtual operator uint() const;
 
-    /// Cast to real
+    /// Cast to double
     virtual operator double() const;
 
     /// Cast to bool
@@ -55,7 +67,7 @@ namespace dolfin
     virtual operator std::string() const;
 
     /// Name of value type
-    virtual std::string type() const = 0;
+    virtual std::string type_str() const = 0;
 
   };
 
@@ -65,60 +77,68 @@ namespace dolfin
   public:
 
     /// Constructor
-    IntValue(int value) : ParameterValue(), value(value) {}
+    IntValue(int value);
 
     /// Destructor
-    ~IntValue() {}
+    ~IntValue();
 
-    /// Assignment of int
-    const ParameterValue& operator= (int value) { this->value = value; return *this; }
+    /// Set int value
+    void set(int value);
 
-    /// Assignment of uint
-    const ParameterValue& operator= (uint value) { this->value = static_cast<int>(value); return *this; }
+    /// Set uint value
+    void set(uint value);
+
+    /// Set int-valued range
+    void set_range(int min_value, int max_value);
+
+    /// Set uint-valued range
+    void set_range(uint min_value, uint max_value);
 
     /// Cast to int
-    operator int() const { return value; }
+    operator int() const;
 
     /// Cast to uint
-    operator uint() const
-    {
-      if ( value < 0 )
-	error("Unable to convert negative int parameter to uint.");
-      return static_cast<uint>(value);
-    }
+    operator uint() const;
 
     /// Name of value type
-    std::string type() const { return "int"; }
+    std::string type_str() const;
 
   private:
 
     int value;
+    int min_value;
+    int max_value;
 
   };
 
-  /// real-valued parameter value
-  class RealValue : public ParameterValue
+  /// double-valued parameter value
+  class DoubleValue : public ParameterValue
   {
   public:
 
     /// Constructor
-    RealValue(double value) : ParameterValue(), value(value) {}
+    DoubleValue(double value);
 
     /// Destructor
-    ~RealValue() {}
+    ~DoubleValue();
 
-    /// Assignment of real
-    const ParameterValue& operator= (double value) { this->value = value; return *this; }
+    /// Set real value
+    void set(double value);
 
-    /// Cast to real
-    operator double() const { return value; }
+    /// Set double-valued range
+    void set_range(double min_value, double max_value);
+    
+    /// Cast to double
+    operator double() const;
 
     /// Name of value type
-    std::string type() const { return "real"; }
+    std::string type_str() const;
 
   private:
 
     double value;
+    double min_value;
+    double max_value;
 
   };
 
@@ -128,19 +148,19 @@ namespace dolfin
   public:
 
     /// Constructor
-    BoolValue(bool value) : ParameterValue(), value(value) {}
+    BoolValue(bool value);
 
     /// Destructor
-    ~BoolValue() {}
+    ~BoolValue();
 
-    /// Assignment of bool
-    const ParameterValue& operator= (bool value) { this->value = value; return *this; }
+    /// Set bool value
+    void set(bool value);
 
     /// Cast to int
-    operator bool() const { return value; }
+    operator bool() const;
 
     /// Name of value type
-    std::string type() const { return "bool"; }
+    std::string type_str() const;
 
   private:
 
@@ -154,23 +174,27 @@ namespace dolfin
   public:
 
     /// Constructor
-    StringValue(std::string value) : ParameterValue(), value(value) {}
+    StringValue(std::string value);
 
     /// Destructor
-    ~StringValue() {}
+    ~StringValue();
 
-    /// Assignment of string
-    const ParameterValue& operator= (std::string value) { this->value = value; return *this; }
+    /// Set string value
+    void set(std::string value);
+
+    /// Set string-valued range (list of values)
+    void set_range(const std::vector<std::string>& allowed_values);
 
     /// Cast to string
-    operator std::string() const { return value; }
+    operator std::string() const;
 
     /// Name of value type
-    std::string type() const { return "string"; }
+    std::string type_str() const;
 
   private:
 
     std::string value;
+    std::vector<std::string> allowed_values;
 
   };
 

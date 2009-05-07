@@ -119,7 +119,7 @@ void XMLFile::operator>> (MeshFunction<unsigned int>& meshfunction)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>> (MeshFunction<double>& meshfunction)
 {
-  info(1, "Reading real-valued mesh function from file %s.", filename.c_str());
+  info(1, "Reading double-valued mesh function from file %s.", filename.c_str());
 
   if (xml_object)
     delete xml_object;
@@ -444,8 +444,8 @@ void XMLFile::operator<< (const ParameterList& parameters)
       fprintf(fp, "    <parameter name=\"%s\" type=\"int\" value=\"%d\"/>\n",
 	      it->first.c_str(), static_cast<int>(parameter));
       break;
-    case Parameter::type_real:
-      fprintf(fp, "    <parameter name=\"%s\" type=\"real\" value=\"%.16e\"/>\n",
+    case Parameter::type_double:
+      fprintf(fp, "    <parameter name=\"%s\" type=\"double\" value=\"%.16e\"/>\n",
 	      it->first.c_str(), static_cast<double>(parameter));
       break;
     case Parameter::type_bool:

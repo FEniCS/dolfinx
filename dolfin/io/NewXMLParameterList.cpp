@@ -1,8 +1,8 @@
-// Copyright (C) 2004-2006 Ola Skavhaug and Anders Logg.
+// Copyright (C) 2004-2009 Ola Skavhaug and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-16
-// Last changed: 2009-03-17
+// Last changed: 2009-05-07
 
 #include <stdlib.h>
 #include <dolfin/log/dolfin_log.h>
@@ -80,8 +80,8 @@ void NewXMLParameterList::write(const ParameterList& parameters, std::ostream& o
     case Parameter::type_int:
       outfile << "<parameter name=\"" << it->first << "\" type=\"int\" value=\"" << static_cast<int>(parameter) << "\"/>" << std::endl;
       break;
-    case Parameter::type_real:
-      outfile << "<parameter name=\"" << it->first << "\" type=\"real\" value=\"" << static_cast<double>(parameter) << "\"/>" << std::endl;
+    case Parameter::type_double:
+      outfile << "<parameter name=\"" << it->first << "\" type=\"double\" value=\"" << static_cast<double>(parameter) << "\"/>" << std::endl;
       break;
     case Parameter::type_bool:
       if (static_cast<bool>(parameter))
@@ -110,32 +110,32 @@ void NewXMLParameterList::read_parameter(const xmlChar *name, const xmlChar **at
   std::string pvalue = parse_string(name, attrs, "value");
 
   // Set parameter
-  if ( ptype == "real" )
+  if (ptype == "double")
   {
     std::istringstream ss(pvalue);
     double val;
     ss >> val;
-    parameters.set(pname.c_str(), val);
+    parameters.set(pname, val);
   }
   else if ( ptype == "int" )
   {
     std::istringstream ss(pvalue);
     int val;
     ss >> val;
-    parameters.set(pname.c_str(), val);
+    parameters.set(pname, val);
   }
   else if ( ptype == "bool" )
   {
     if ( pvalue == "true" )
-      parameters.set(pname.c_str(), true);
+      parameters.set(pname, true);
     else if ( pvalue == "false" )
-      parameters.set(pname.c_str(), false);
+      parameters.set(pname, false);
     else
       warning("Illegal value for boolean parameter: %s.", pname.c_str());
   }
   else if ( ptype == "string" )
   {
-    parameters.set(pname.c_str(), pvalue.c_str());
+    parameters.set(pname, pvalue);
   }
   else
     warning("Illegal parameter type: %s", ptype.c_str());

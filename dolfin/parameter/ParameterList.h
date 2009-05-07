@@ -52,6 +52,7 @@ namespace dolfin
 
     // Used by NewXMLFile for templated i/o
     typedef NewXMLParameterList XMLHandler;
+ 
   private:
 
     // Parameters stored as an STL map
