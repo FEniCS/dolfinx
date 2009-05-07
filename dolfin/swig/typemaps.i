@@ -186,7 +186,7 @@
 
     switch ( $1.type() )
     {
-    case Parameter::type_real:
+    case Parameter::type_double:
 
       $result = SWIG_From_double(*&($1));
       break;

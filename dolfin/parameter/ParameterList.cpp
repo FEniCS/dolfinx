@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet
 //
 // First added:  2003-05-06
-// Last changed: 2009-02-10
+// Last changed: 2009-05-06
 
 #include <string>
 #include <dolfin/log/dolfin_log.h>
@@ -40,7 +40,6 @@ void ParameterList::set(std::string key, const Parameter& value)
     error("Unknown parameter \"%s\".", key.c_str());
 
   p->second = value;
-  p->second._changed = true;
 }
 //-----------------------------------------------------------------------------
 Parameter ParameterList::get(std::string key) const
