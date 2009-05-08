@@ -47,10 +47,14 @@ void Logger::info(std::string msg, int debug_level) const
 //-----------------------------------------------------------------------------
 void Logger::info_underline(std::string msg, int debug_level) const
 {
+  if (msg.size() == 0)
+    info(msg, debug_level);
+
   std::stringstream s;
   s << msg;
-  if (msg.size() > 0)
-    s << "\n";
+  s << "\n";
+  for (int i = 0; i < indentation_level; i++)
+    s << "  ";
   for (uint i = 0; i < msg.size(); i++)
     s << "-";
 

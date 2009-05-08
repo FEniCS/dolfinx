@@ -22,13 +22,19 @@ namespace dolfin
   public:
 
     /// Create empty parameter database
-    Parameters(std::string name);
+    Parameters(std::string key);
 
     /// Destructor
     ~Parameters();
 
-    /// Return name of parameter database
-    std::string name() const;
+    /// Copy constructor
+    Parameters(const Parameters& parameters);
+
+    /// Return database key
+    std::string key() const;
+    
+    /// Clear database
+    void clear();
 
     /// Add int-valued parameter
     void add(std::string key, int value);    
@@ -41,12 +47,24 @@ namespace dolfin
 
     /// Add double-valued parameter with given range
     void add(std::string key, double value, double min_value, double max_value);
-    
+
+    /// Add nested parameter database
+    void add(const Parameters& parameters);
+
     /// Return parameter for given key
-    NewParameter& operator[] (std::string key);
+    NewParameter& operator() (std::string key);
 
     /// Return parameter for given key (const)
-    const NewParameter& operator[] (std::string key) const;
+    const NewParameter& operator() (std::string key) const;
+
+    /// Return nested parameter database for given key
+    Parameters& operator[] (std::string key);
+
+    /// Return nested parameter database for given key (const)
+    const Parameters& operator[] (std::string key) const;
+
+    /// Assignment operator
+    const Parameters& operator= (const Parameters& parameters);
 
     /// Return short string description
     std::string str() const;
@@ -57,13 +75,19 @@ namespace dolfin
   private:
 
     // Return pointer to parameter for given key and 0 if not found
-    NewParameter* find(std::string key) const;
+    NewParameter* find_parameter(std::string key) const;
 
-    // Name of database
-    std::string _name;
+    // Return pointer to database for given key and 0 if not found
+    Parameters* find_database(std::string key) const;
 
-    // Map from parameter key to parameter
+    // Database key
+    std::string _key;
+
+    // Map from key to parameter
     std::map<std::string, NewParameter*> _parameters;
+
+    // Map from key to database
+    std::map<std::string, Parameters*> _databases;
 
   };
 
