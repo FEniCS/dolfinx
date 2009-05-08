@@ -1,3 +1,4 @@
+ - Add function info_underline() for writing underlined messages
  - Rename message() --> info() for "compatibility" with Python logging module
  - Add elementwise multiplication in GeneriVector interface
  - GenericVector interface in PyDOLFIN now support the sequence protocol
