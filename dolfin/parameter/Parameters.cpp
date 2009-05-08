@@ -108,11 +108,11 @@ void Parameters::print() const
   for (const_iterator it = _parameters.begin(); it != _parameters.end(); ++it)
   {
     NewParameter* p = it->second;
-    t(p->key(), "value type") = p->type_str();
+    t(p->key(), "type") = p->type_str();
     t(p->key(), "value") = p->value_str();
     t(p->key(), "range") = p->range_str();
-    t(p->key(), "access count") = p->access_count();
-    t(p->key(), "change count") = p->change_count();
+    t(p->key(), "access") = p->access_count();
+    t(p->key(), "change") = p->change_count();
   }
 
   t.print();
