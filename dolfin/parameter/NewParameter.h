@@ -27,6 +27,12 @@ namespace dolfin
     /// Return parameter key
     std::string key() const;
 
+    /// Return access count (number of times parameter has been accessed)
+    uint access_count() const;
+
+    /// Return change count (number of times parameter has been changed)
+    uint change_count() const;
+
     /// Set range for int-valued parameter
     virtual void set_range(int min_value, int max_value);
 
@@ -45,11 +51,25 @@ namespace dolfin
     /// Cast parameter to double
     virtual operator double() const;
 
-    /// Return name of value type
+    /// Return value type string
     virtual std::string type_str() const = 0;
+
+    /// Return value string
+    virtual std::string value_str() const = 0;
+
+    /// Return range string
+    virtual std::string range_str() const = 0;
 
     /// Return short string description
     virtual std::string str() const = 0;
+
+  protected:
+
+    // Access count
+    mutable uint _access_count;
+
+    // Change count
+    uint _change_count;
 
   private:
 
@@ -78,8 +98,14 @@ namespace dolfin
     /// Cast parameter to int
     operator int() const;
 
-    /// Return name of value type
+    /// Return value type string
     std::string type_str() const;
+
+    /// Return value string
+    std::string value_str() const;
+
+    /// Return range string
+    std::string range_str() const;
 
     /// Return short string description
     std::string str() const;
@@ -114,8 +140,14 @@ namespace dolfin
     /// Cast parameter to int
     operator double() const;
 
-    /// Return name of value type
+    /// Return value type string
     std::string type_str() const;
+
+    /// Return value string
+    std::string value_str() const;
+
+    /// Return range string
+    std::string range_str() const;
 
     /// Return short string description
     std::string str() const;

@@ -52,7 +52,7 @@ namespace dolfin
     std::string str() const;
 
     /// Print parameter data
-    void info() const;
+    void print() const;
 
   private:
 

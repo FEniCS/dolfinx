@@ -6,6 +6,7 @@
 
 #include <sstream>
 #include <dolfin/log/log.h>
+#include <dolfin/log/Table.h>
 #include "Parameters.h"
 
 using namespace dolfin;
@@ -97,19 +98,24 @@ const NewParameter& Parameters::operator[] (std::string key) const
 std::string Parameters::str() const
 {
   std::stringstream s;
-  s << "<Parameter database containing "
-    << _parameters.size() << " parameters>";
+  s << "<Parameter database containing " << _parameters.size() << " parameters>";
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void Parameters::info() const
+void Parameters::print() const
 {
-  info_underline(str());
+  Table t(_name);
   for (const_iterator it = _parameters.begin(); it != _parameters.end(); ++it)
   {
-    dolfin_assert(it->second);
-    dolfin::info("  " + it->second->str());
+    NewParameter* p = it->second;
+    t(p->key(), "value type") = p->type_str();
+    t(p->key(), "value") = p->value_str();
+    t(p->key(), "range") = p->range_str();
+    t(p->key(), "access count") = p->access_count();
+    t(p->key(), "change count") = p->change_count();
   }
+
+  t.print();
 }
 //-----------------------------------------------------------------------------
 NewParameter* Parameters::find(std::string key) const

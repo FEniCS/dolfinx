@@ -13,7 +13,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 // class Parameter
 //-----------------------------------------------------------------------------
-NewParameter::NewParameter(std::string key) : _key(key)
+NewParameter::NewParameter(std::string key)
+  : _access_count(0), _change_count(0), _key(key)
 {
   // Do nothing
 }
@@ -26,6 +27,16 @@ NewParameter::~NewParameter()
 std::string NewParameter::key() const
 {
   return _key;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint NewParameter::access_count() const
+{
+  return _access_count;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint NewParameter::change_count() const
+{
+  return _change_count;
 }
 //-----------------------------------------------------------------------------
 void NewParameter::set_range(int min_value, int max_value)
@@ -97,18 +108,37 @@ const NewIntParameter& NewIntParameter::operator= (int value)
     error("Parameter value %d for parameter \"%s\" out of range [%d, %d].",
           value, key().c_str(), _min, _max);
   _value = value;
+  _change_count++;
 
   return *this;
 }
 //-----------------------------------------------------------------------------
 NewIntParameter::operator int() const
 {
+  _access_count++;
   return _value;
 }
 //-----------------------------------------------------------------------------
 std::string NewIntParameter::type_str() const
 {
   return "int";
+}
+//-----------------------------------------------------------------------------
+std::string NewIntParameter::value_str() const
+{
+  std::stringstream s;
+  s << _value;
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+std::string NewIntParameter::range_str() const
+{
+  std::stringstream s;
+  if (_min == _max)
+    s << "[]";
+  else
+    s << "[" << _min << ", " << _max << "]";
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 std::string NewIntParameter::str() const
@@ -153,17 +183,36 @@ const NewDoubleParameter& NewDoubleParameter::operator= (double value)
     error("Parameter value %g for parameter \"%s\" out of range [%g, %g].",
           value, key().c_str(), _min, _max);
   _value = value;
+  _change_count++;
   return *this;
 }
 //-----------------------------------------------------------------------------
 NewDoubleParameter::operator double() const
 {
+  _access_count++;
   return _value;
 }
 //-----------------------------------------------------------------------------
 std::string NewDoubleParameter::type_str() const
 {
   return "double";
+}
+//-----------------------------------------------------------------------------
+std::string NewDoubleParameter::value_str() const
+{
+  std::stringstream s;
+  s << _value;
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+std::string NewDoubleParameter::range_str() const
+{
+  std::stringstream s;
+  if (_min == _max)
+    s << "[]";
+  else
+    s << "[" << _min << ", " << _max << "]";
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 std::string NewDoubleParameter::str() const

@@ -185,8 +185,8 @@ void Logger::summary(bool reset)
   Table table("Summary of timings");
   for (const_map_iterator it = timings.begin(); it != timings.end(); ++it)
   {
-    const std::string task  = it->first;
-    const uint num_timings  = it->second.first;
+    const std::string task    = it->first;
+    const uint num_timings    = it->second.first;
     const double total_time   = it->second.second;
     const double average_time = total_time / static_cast<double>(num_timings);
 
@@ -194,7 +194,7 @@ void Logger::summary(bool reset)
     table(task, "Total time")   = total_time;
     table(task, "Reps")         = num_timings;
   }
-  table.disp();
+  table.print();
 
   // Clear timings
   if (reset)
