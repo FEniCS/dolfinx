@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2008 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Thanks to Jim Tilander for many helpful hints.
@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-04-30
+// Last changed: 2009-05-08
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -31,6 +31,9 @@ namespace dolfin
 
     /// Print message
     void info(std::string msg, int debug_level = 0) const;
+
+    /// Print underlined message
+    void info_underline(std::string msg, int debug_level = 0) const;
 
     /// Print warning
     void warning(std::string msg) const;

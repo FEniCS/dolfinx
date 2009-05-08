@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2008 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-03-30
+// Last changed: 2009-05-08
 
 #include <string>
 #include <iostream>
@@ -43,6 +43,18 @@ void Logger::info(std::string msg, int debug_level) const
     return;
 
   write(debug_level, msg);
+}
+//-----------------------------------------------------------------------------
+void Logger::info_underline(std::string msg, int debug_level) const
+{
+  std::stringstream s;
+  s << msg;
+  if (msg.size() > 0)
+    s << "\n";
+  for (uint i = 0; i < msg.size(); i++)
+    s << "-";
+
+  info(s.str(), debug_level);
 }
 //-----------------------------------------------------------------------------
 void Logger::warning(std::string msg) const

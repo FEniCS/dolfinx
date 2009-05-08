@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2008 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Thanks to Jim Tilander for many helpful hints.
@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-04-30
+// Last changed: 2009-05-08
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -28,14 +28,6 @@ static char buffer[DOLFIN_LINELENGTH];
   va_end(aptr);
 
 //-----------------------------------------------------------------------------
-void dolfin::stream_info(std::ostream& out, std::string msg)
-{
-  std::ostream& old_out = LogManager::logger.get_output_destination();
-  LogManager::logger.set_output_destination(out);
-  LogManager::logger.info(msg);
-  LogManager::logger.set_output_destination(old_out);
-}
-//-----------------------------------------------------------------------------
 void dolfin::info(std::string msg, ...)
 {
   read(buffer, msg);
@@ -46,6 +38,20 @@ void dolfin::info(int debug_level, std::string msg, ...)
 {
   read(buffer, msg);
   LogManager::logger.info(buffer, debug_level);
+}
+//-----------------------------------------------------------------------------
+void dolfin::info_stream(std::ostream& out, std::string msg)
+{
+  std::ostream& old_out = LogManager::logger.get_output_destination();
+  LogManager::logger.set_output_destination(out);
+  LogManager::logger.info(msg);
+  LogManager::logger.set_output_destination(old_out);
+}
+//-----------------------------------------------------------------------------
+void dolfin::info_underline(std:: string msg, ...)
+{
+  read(buffer, msg);
+  LogManager::logger.info_underline(buffer);
 }
 //-----------------------------------------------------------------------------
 void dolfin::warning(std::string msg, ...)
