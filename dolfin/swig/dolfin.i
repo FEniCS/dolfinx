@@ -36,7 +36,7 @@ import_array();
 //#define SWIG_SHARED_PTR_NAMESPACE std
 //#define SWIG_SHARED_PTR_SUBNAMESPACE tr1
 %include "boost_shared_ptr.i"
-%include dolfin_shared_ptr_classes.i
+%include "dolfin_shared_ptr_classes.i"
 #endif
 
 // FIXME: what are these doing?

@@ -36,4 +36,31 @@ SWIG_SHARED_PTR_DERIVED(Box,dolfin::Mesh,dolfin::Box)
 SWIG_SHARED_PTR_DERIVED(Rectangle,dolfin::Mesh,dolfin::Rectangle)
 SWIG_SHARED_PTR_DERIVED(UnitSphere,dolfin::Mesh,dolfin::UnitSphere)
 
+// This macro exposes the Variable interface for the derived classes
+// This is a hack to get around the problem that Variable is not declared
+// as a shared_ptr class.
+%define IMPLEMENT_VARIABLE_INTERFACE(DERIVED_TYPE)
+%extend dolfin::DERIVED_TYPE
+{
+  void rename(const std::string name, const std::string label)
+  {
+    self->rename(name,label);
+  }
+
+  const std::string& name()  const
+  {
+    return self->name();
+  }
+    
+  const std::string& label() const
+  {
+    return self->label();
+  }
+  
+}
+%enddef
+
+IMPLEMENT_VARIABLE_INTERFACE(Function)
+IMPLEMENT_VARIABLE_INTERFACE(Mesh)
+
 #endif
