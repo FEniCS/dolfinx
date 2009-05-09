@@ -11,8 +11,10 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <signal.h>
+#include <sstream>
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/Variable.h>
 #include "LogManager.h"
 #include "log.h"
 
@@ -38,6 +40,11 @@ void dolfin::info(int debug_level, std::string msg, ...)
 {
   read(buffer, msg);
   LogManager::logger.info(buffer, debug_level);
+}
+//-----------------------------------------------------------------------------
+void dolfin::info(const Variable& variable)
+{
+  info(variable.str());
 }
 //-----------------------------------------------------------------------------
 void dolfin::info_stream(std::ostream& out, std::string msg)
@@ -81,6 +88,21 @@ void dolfin::begin(int debug_level, std::string msg, ...)
 void dolfin::end()
 {
   LogManager::logger.end();
+}
+//-----------------------------------------------------------------------------
+std::string dolfin::indent(std::string s)
+{
+  const std::string indentation("  ");
+  std::stringstream is;
+  is << indentation;
+  for (uint i = 0; i < s.size(); ++i)
+  {
+    is << s[i];
+    if (s[i] == '\n') // && i < s.size() - 1)
+      is << indentation;
+  }
+
+  return is.str();
 }
 //-----------------------------------------------------------------------------
 void dolfin::summary(bool reset)

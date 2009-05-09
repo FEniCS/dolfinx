@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-05-08
+// Last changed: 2009-05-09
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -16,6 +16,8 @@
 
 namespace dolfin
 {
+
+  class Variable;
 
   /// The DOLFIN log system provides the following set of functions for
   /// uniform handling of log messages, warnings and errors. In addition,
@@ -39,8 +41,11 @@ namespace dolfin
   /// Print message
   void info(std::string msg, ...);
 
-  /// Print message
+  /// Print message at given debug level
   void info(int debug_level, std::string msg, ...);
+
+  /// Print variable (using output of variable's str() method)
+  void info(const Variable& variable);
 
   /// Print message to stream
   void info_stream(std::ostream& out, std::string msg);
@@ -62,6 +67,9 @@ namespace dolfin
 
   /// End task (decrease indentation level)
   void end();
+
+  /// Indent string
+  std::string indent(std::string s);
 
   /// Print summary of timings and tasks, optionally clearing stored timings
   void summary(bool reset=false);

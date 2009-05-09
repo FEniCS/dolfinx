@@ -198,7 +198,7 @@ void Logger::summary(bool reset)
     table(task, "Total time")   = total_time;
     table(task, "Reps")         = num_timings;
   }
-  table.print();
+  info(table.str());
 
   // Clear timings
   if (reset)

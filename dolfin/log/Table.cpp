@@ -140,10 +140,10 @@ const Table& Table::operator= (const Table& table)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void Table::print() const
+std::string Table::str() const
 {
   if (rows.size() == 0 || cols.size() == 0)
-    return;
+    return "Empty table";
 
   std::vector<std::vector<std::string> > tvalues;
   std::vector<uint> col_sizes;
@@ -168,29 +168,37 @@ void Table::print() const
     row_size += col_sizes[j];
 
   // Write table
-  cout << _title;
-  for (uint k = 0; k < col_sizes[0] - _title.size(); k++) cout << " ";
-  cout << "  |";
+  std::stringstream s;
+  s << _title;
+  for (uint k = 0; k < col_sizes[0] - _title.size(); k++)
+    s << " ";
+  s << "  |";
   for (uint j = 0; j < cols.size(); j++)
   {
-    for (uint k = 0; k < col_sizes[j + 1] - cols[j].size(); k++) cout << " ";
-    cout << "  " << cols[j];
+    for (uint k = 0; k < col_sizes[j + 1] - cols[j].size(); k++)
+      s << " ";
+    s << "  " << cols[j];
   }
-  cout << endl;
-  for (uint k = 0; k < row_size; k++) cout << "-";
-  cout << endl;
+  s << "\n";
+  for (uint k = 0; k < row_size; k++)
+    s << "-";
+  s << "\n";
   for (uint i = 0; i < rows.size(); i++)
   {
-    cout << rows[i];
-    for (uint k = 0; k < col_sizes[0] - rows[i].size(); k++) cout << " ";
-    cout << "  |";
+    s << rows[i];
+    for (uint k = 0; k < col_sizes[0] - rows[i].size(); k++)
+      s << " ";
+    s << "  |";
     for (uint j = 0; j < cols.size(); j++)
     {
-      for (uint k = 0; k < col_sizes[j + 1] - tvalues[i][j].size(); k++) cout << " ";
-      cout << "  " << tvalues[i][j];
+      for (uint k = 0; k < col_sizes[j + 1] - tvalues[i][j].size(); k++)
+        s << " ";
+      s << "  " << tvalues[i][j];
     }
-    cout << endl;
+    s << "\n";
   }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 TableEntry::TableEntry(std::string row, std::string col, Table& table)

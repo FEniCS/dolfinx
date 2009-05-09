@@ -189,17 +189,9 @@ const NewParameters& NewParameters::operator= (const NewParameters& parameters)
 std::string NewParameters::str() const
 {
   std::stringstream s;
-  s << "<Parameter database containing " << _parameters.size() << " parameters>";
-  return s.str();
-}
-//-----------------------------------------------------------------------------
-void NewParameters::print() const
-{
+
   if (_parameters.size() > 0)
-  {
-    info_underline("Parameters");
-    info("");
-  }
+    s << "Parameters\n\n";
 
   Table t(_key);
   for (const_parameter_iterator it = _parameters.begin(); it != _parameters.end(); ++it)
@@ -211,18 +203,15 @@ void NewParameters::print() const
     t(p->key(), "access") = p->access_count();
     t(p->key(), "change") = p->change_count();
   }
-  t.print();
+  s << t.str();
 
   if (_databases.size() > 0)
-  {
-    info("");
-    info_underline("Nested parameter databases");
-  }
+    s << "\nNested parameter databases";
 
-  begin(" ");
   for (const_database_iterator it = _databases.begin(); it != _databases.end(); ++it)
-    it->second->print();
-  end();
+    s << indent(it->second->str());
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 NewParameter* NewParameters::find_parameter(std::string key) const

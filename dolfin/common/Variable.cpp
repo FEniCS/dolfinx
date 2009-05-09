@@ -1,9 +1,10 @@
-// Copyright (C) 2003-2008 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-02-26
-// Last changed: 2008-12-12
+// Last changed: 2009-05-09
 
+#include <sstream>
 #include "Variable.h"
 
 using namespace dolfin;
@@ -17,12 +18,6 @@ Variable::Variable() :
 //-----------------------------------------------------------------------------
 Variable::Variable(const std::string name, const std::string label) :
   _name(name), _label(label)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Variable::Variable(const Variable& variable) :
-  _name(variable._name), _label(variable._label)
 {
   // Do nothing
 }
@@ -41,5 +36,12 @@ const std::string& Variable::name() const
 const std::string& Variable::label() const
 {
   return _label;
+}
+//-----------------------------------------------------------------------------
+std::string Variable::str() const
+{
+  std::stringstream s;
+  s << "Variable " << _name << " (" << _label << ")";
+  return s.str();
 }
 //-----------------------------------------------------------------------------

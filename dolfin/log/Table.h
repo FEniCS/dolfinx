@@ -11,6 +11,7 @@
 #include <set>
 #include <map>
 
+#include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -30,9 +31,9 @@ namespace dolfin
   ///   table("Epetra", "Assemble") = 0.012;
   ///   table("Epetra", "Solve")    = 0.018;
   ///
-  ///   table.print();
+  ///   info(table);
 
-  class Table
+  class Table : public Variable
   {
   public:
 
@@ -66,8 +67,8 @@ namespace dolfin
     /// Assignment operator
     const Table& operator= (const Table& table);
 
-    /// Print table, rounding small numbers to zero
-    void print() const;
+    /// Return informal string representation (pretty-print)
+    std::string str() const;
 
   private:
 

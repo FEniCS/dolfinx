@@ -8,6 +8,7 @@
 #define __NEWPARAMETERS_H
 
 #include <map>
+#include <dolfin/common/Variable.h>
 #include "NewParameter.h"
 
 namespace dolfin
@@ -17,7 +18,7 @@ namespace dolfin
   /// identified by a unique string (the key) and a value of some
   /// given value type.
 
-  class NewParameters
+  class NewParameters : public Variable
   {
   public:
 
@@ -66,11 +67,8 @@ namespace dolfin
     /// Assignment operator
     const NewParameters& operator= (const NewParameters& parameters);
 
-    /// Return short string description
+    /// Return informal string representation (pretty-print)
     std::string str() const;
-
-    /// Print parameter data
-    void print() const;
 
   private:
 
