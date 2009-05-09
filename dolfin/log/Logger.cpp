@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2008 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-03-30
+// Last changed: 2009-05-08
 
 #include <string>
 #include <iostream>
@@ -43,6 +43,22 @@ void Logger::info(std::string msg, int debug_level) const
     return;
 
   write(debug_level, msg);
+}
+//-----------------------------------------------------------------------------
+void Logger::info_underline(std::string msg, int debug_level) const
+{
+  if (msg.size() == 0)
+    info(msg, debug_level);
+
+  std::stringstream s;
+  s << msg;
+  s << "\n";
+  for (int i = 0; i < indentation_level; i++)
+    s << "  ";
+  for (uint i = 0; i < msg.size(); i++)
+    s << "-";
+
+  info(s.str(), debug_level);
 }
 //-----------------------------------------------------------------------------
 void Logger::warning(std::string msg) const
@@ -173,8 +189,8 @@ void Logger::summary(bool reset)
   Table table("Summary of timings");
   for (const_map_iterator it = timings.begin(); it != timings.end(); ++it)
   {
-    const std::string task  = it->first;
-    const uint num_timings  = it->second.first;
+    const std::string task    = it->first;
+    const uint num_timings    = it->second.first;
     const double total_time   = it->second.second;
     const double average_time = total_time / static_cast<double>(num_timings);
 
@@ -182,7 +198,7 @@ void Logger::summary(bool reset)
     table(task, "Total time")   = total_time;
     table(task, "Reps")         = num_timings;
   }
-  table.disp();
+  table.print();
 
   // Clear timings
   if (reset)

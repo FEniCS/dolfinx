@@ -1,8 +1,8 @@
-// Copyright (C) 2008 Anders Logg.
+// Copyright (C) 2008-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-19
-// Last changed: 2008-08-04
+// Last changed: 2009-05-08
 
 #ifndef __TABLE_H
 #define __TABLE_H
@@ -30,7 +30,7 @@ namespace dolfin
   ///   table("Epetra", "Assemble") = 0.012;
   ///   table("Epetra", "Solve")    = 0.018;
   ///
-  ///   table.disp();
+  ///   table.print();
 
   class Table
   {
@@ -45,26 +45,29 @@ namespace dolfin
     /// Return table entry
     TableEntry operator() (std::string row, std::string col);
 
-    /// Get value of table entry
-    double get(std::string row, std::string col) const;
+    /// Set value of table entry
+    void set(std::string row, std::string col, int value);
+
+    /// Set value of table entry
+    void set(std::string row, std::string col, uint value);
 
     /// Set value of table entry
     void set(std::string row, std::string col, double value);
 
+    /// Set value of table entry
+    void set(std::string row, std::string col, std::string value);
+
+    /// Get value of table entry
+    std::string get(std::string row, std::string col) const;
+
     /// Return table title
     std::string title() const;
-
-    /// Addition of tables
-    Table operator+ (const Table& table) const;
-
-    /// Subtraction of tables
-    Table operator- (const Table& table) const;
 
     /// Assignment operator
     const Table& operator= (const Table& table);
 
-    /// Display table, rounding small numbers to zero
-    void disp(bool round_to_zero=true) const;
+    /// Print table, rounding small numbers to zero
+    void print() const;
 
   private:
 
@@ -80,7 +83,7 @@ namespace dolfin
     std::set<std::string> col_set;
 
     // Table values
-    std::map<std::pair<std::string, std::string>, double> values;
+    std::map<std::pair<std::string, std::string>, std::string> values;
 
   };
 
@@ -97,10 +100,19 @@ namespace dolfin
     ~TableEntry();
 
     /// Assign value to table entry
+    const TableEntry& operator= (uint value);
+
+    /// Assign value to table entry
+    const TableEntry& operator= (int value);
+
+    /// Assign value to table entry
     const TableEntry& operator= (double value);
 
+    /// Assign value to table entry
+    const TableEntry& operator= (std::string value);
+
     /// Cast to entry value
-    operator double() const;
+    operator std::string() const;
 
   private:
 

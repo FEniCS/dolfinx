@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-04-30
+// Last changed: 2009-05-08
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -36,15 +36,17 @@ namespace dolfin
   /// where destination is one of "terminal" (default) or "silent". Setting
   /// the output destination to "silent" means no messages will be printed.
 
-
   /// Print message
   void info(std::string msg, ...);
 
   /// Print message
   void info(int debug_level, std::string msg, ...);
 
-  /// Print message
-  void stream_info(std::ostream& out, std::string msg);
+  /// Print message to stream
+  void info_stream(std::ostream& out, std::string msg);
+
+  /// Print underlined message
+  void info_underline(std:: string msg, ...);
 
   /// Print warning
   void warning(std::string msg, ...);
