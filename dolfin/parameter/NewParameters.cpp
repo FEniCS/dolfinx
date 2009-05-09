@@ -7,38 +7,38 @@
 #include <sstream>
 #include <dolfin/log/log.h>
 #include <dolfin/log/Table.h>
-#include "Parameters.h"
+#include "NewParameters.h"
 
 using namespace dolfin;
 
 // Typedef of iterators for convenience
 typedef std::map<std::string, NewParameter*>::iterator parameter_iterator;
 typedef std::map<std::string, NewParameter*>::const_iterator const_parameter_iterator;
-typedef std::map<std::string, Parameters*>::iterator database_iterator;
-typedef std::map<std::string, Parameters*>::const_iterator const_database_iterator;
+typedef std::map<std::string, NewParameters*>::iterator database_iterator;
+typedef std::map<std::string, NewParameters*>::const_iterator const_database_iterator;
 
 //-----------------------------------------------------------------------------
-Parameters::Parameters(std::string key) : _key(key)
+NewParameters::NewParameters(std::string key) : _key(key)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Parameters::~Parameters()
+NewParameters::~NewParameters()
 {
   clear();
 }
 //-----------------------------------------------------------------------------
-Parameters::Parameters(const Parameters& parameters)
+NewParameters::NewParameters(const NewParameters& parameters)
 {
   *this = parameters;
 }
 //-----------------------------------------------------------------------------
-std::string Parameters::key() const
+std::string NewParameters::key() const
 {
   return _key;
 }
 //-----------------------------------------------------------------------------
-void Parameters::clear()
+void NewParameters::clear()
 {
   // Delete parameters
   for (parameter_iterator it = _parameters.begin(); it != _parameters.end(); ++it)
@@ -54,7 +54,7 @@ void Parameters::clear()
   _key = "";
 }
 //-----------------------------------------------------------------------------
-void Parameters::add(std::string key, int value)
+void NewParameters::add(std::string key, int value)
 {
   // Check key name
   if (find_parameter(key))
@@ -64,8 +64,8 @@ void Parameters::add(std::string key, int value)
   _parameters[key] = new NewIntParameter(key, value);
 }
 //-----------------------------------------------------------------------------
-void Parameters::add(std::string key, int value,
-                     int min_value, int max_value)
+void NewParameters::add(std::string key, int value,
+                        int min_value, int max_value)
 {
   // Add parameter
   add(key, value);
@@ -76,7 +76,7 @@ void Parameters::add(std::string key, int value,
   p->set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
-void Parameters::add(std::string key, double value)
+void NewParameters::add(std::string key, double value)
 {
   // Check key name
   if (find_parameter(key))
@@ -86,8 +86,8 @@ void Parameters::add(std::string key, double value)
   _parameters[key] = new NewDoubleParameter(key, value);
 }
 //-----------------------------------------------------------------------------
-void Parameters::add(std::string key, double value,
-                     double min_value, double max_value)
+void NewParameters::add(std::string key, double value,
+                        double min_value, double max_value)
 {
   // Add parameter
   add(key, value);
@@ -98,7 +98,7 @@ void Parameters::add(std::string key, double value,
   p->set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
-void Parameters::add(const Parameters& parameters)
+void NewParameters::add(const NewParameters& parameters)
 {
   // Check key name
   if (find_database(parameters.key()))
@@ -106,12 +106,12 @@ void Parameters::add(const Parameters& parameters)
           parameters.key().c_str());
 
   // Add parameter database
-  Parameters* p = new Parameters("");
+  NewParameters* p = new NewParameters("");
   *p = parameters;
   _databases[parameters.key()] = p;
 }
 //-----------------------------------------------------------------------------
-NewParameter& Parameters::operator() (std::string key)
+NewParameter& NewParameters::operator() (std::string key)
 {
   NewParameter* p = find_parameter(key);
   if (!p)
@@ -120,7 +120,7 @@ NewParameter& Parameters::operator() (std::string key)
   return *p;
 }
 //-----------------------------------------------------------------------------
-const NewParameter& Parameters::operator() (std::string key) const
+const NewParameter& NewParameters::operator() (std::string key) const
 {
   NewParameter* p = find_parameter(key);
   if (!p)
@@ -129,25 +129,25 @@ const NewParameter& Parameters::operator() (std::string key) const
   return *p;
 }
 //-----------------------------------------------------------------------------
-Parameters& Parameters::operator[] (std::string key)
+NewParameters& NewParameters::operator[] (std::string key)
 {
-  Parameters* p = find_database(key);
+  NewParameters* p = find_database(key);
   if (!p)
     error("Unable to access parameter database \"%s\", database not defined.",
           key.c_str());
   return *p;
 }
 //-----------------------------------------------------------------------------
-const Parameters& Parameters::operator[] (std::string key) const
+const NewParameters& NewParameters::operator[] (std::string key) const
 {
-  Parameters* p = find_database(key);
+  NewParameters* p = find_database(key);
   if (!p)
     error("Unable to access parameter database \"%s\", database not defined.",
           key.c_str());
   return *p;
 }
 //-----------------------------------------------------------------------------
-const Parameters& Parameters::operator= (const Parameters& parameters)
+const NewParameters& NewParameters::operator= (const NewParameters& parameters)
 {
   // Clear database
   clear();
@@ -179,21 +179,21 @@ const Parameters& Parameters::operator= (const Parameters& parameters)
   for (const_database_iterator it = parameters._databases.begin();
        it != parameters._databases.end(); ++it)
   {
-    const Parameters& p = *it->second;
-    _databases[p.key()] = new Parameters(p);
+    const NewParameters& p = *it->second;
+    _databases[p.key()] = new NewParameters(p);
   }
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-std::string Parameters::str() const
+std::string NewParameters::str() const
 {
   std::stringstream s;
   s << "<Parameter database containing " << _parameters.size() << " parameters>";
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void Parameters::print() const
+void NewParameters::print() const
 {
   if (_parameters.size() > 0)
   {
@@ -225,7 +225,7 @@ void Parameters::print() const
   end();
 }
 //-----------------------------------------------------------------------------
-NewParameter* Parameters::find_parameter(std::string key) const
+NewParameter* NewParameters::find_parameter(std::string key) const
 {
   const_parameter_iterator p = _parameters.find(key);
   if (p == _parameters.end())
@@ -233,7 +233,7 @@ NewParameter* Parameters::find_parameter(std::string key) const
   return p->second;
 }
 //-----------------------------------------------------------------------------
-Parameters* Parameters::find_database(std::string key) const
+NewParameters* NewParameters::find_database(std::string key) const
 {
   const_database_iterator p = _databases.find(key);
   if (p == _databases.end())

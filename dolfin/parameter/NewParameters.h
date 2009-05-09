@@ -17,18 +17,18 @@ namespace dolfin
   /// identified by a unique string (the key) and a value of some
   /// given value type.
 
-  class Parameters
+  class NewParameters
   {
   public:
 
     /// Create empty parameter database
-    Parameters(std::string key);
+    NewParameters(std::string key);
 
     /// Destructor
-    ~Parameters();
+    ~NewParameters();
 
     /// Copy constructor
-    Parameters(const Parameters& parameters);
+    NewParameters(const NewParameters& parameters);
 
     /// Return database key
     std::string key() const;
@@ -49,7 +49,7 @@ namespace dolfin
     void add(std::string key, double value, double min_value, double max_value);
 
     /// Add nested parameter database
-    void add(const Parameters& parameters);
+    void add(const NewParameters& parameters);
 
     /// Return parameter for given key
     NewParameter& operator() (std::string key);
@@ -58,13 +58,13 @@ namespace dolfin
     const NewParameter& operator() (std::string key) const;
 
     /// Return nested parameter database for given key
-    Parameters& operator[] (std::string key);
+    NewParameters& operator[] (std::string key);
 
     /// Return nested parameter database for given key (const)
-    const Parameters& operator[] (std::string key) const;
+    const NewParameters& operator[] (std::string key) const;
 
     /// Assignment operator
-    const Parameters& operator= (const Parameters& parameters);
+    const NewParameters& operator= (const NewParameters& parameters);
 
     /// Return short string description
     std::string str() const;
@@ -78,7 +78,7 @@ namespace dolfin
     NewParameter* find_parameter(std::string key) const;
 
     // Return pointer to database for given key and 0 if not found
-    Parameters* find_database(std::string key) const;
+    NewParameters* find_database(std::string key) const;
 
     // Database key
     std::string _key;
@@ -87,7 +87,7 @@ namespace dolfin
     std::map<std::string, NewParameter*> _parameters;
 
     // Map from key to database
-    std::map<std::string, Parameters*> _databases;
+    std::map<std::string, NewParameters*> _databases;
 
   };
 
