@@ -24,9 +24,6 @@ namespace dolfin
     /// Create variable with given name and label
     Variable(const std::string name, const std::string label);
 
-    /// Copy constructor
-    Variable(const Variable& variable);
-    
     /// Rename variable
     void rename(const std::string name, const std::string label);
     

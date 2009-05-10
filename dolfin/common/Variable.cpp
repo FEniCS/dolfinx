@@ -10,20 +10,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Variable::Variable() :
-  _name("x"), _label("unnamed data")
+Variable::Variable()
+  : _name("x"), _label("unnamed data")
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Variable::Variable(const Variable& variable) :
-  _name(variable._name), _label(variable._label)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Variable::Variable(const std::string name, const std::string label) :
-  _name(name), _label(label)
+Variable::Variable(const std::string name, const std::string label)
+  : _name(name), _label(label)
 {
   // Do nothing
 }
