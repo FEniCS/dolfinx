@@ -21,7 +21,7 @@
 using namespace dolfin;
 
 // Buffer
-static uint buffer_size = 0;
+static unsigned int buffer_size = 0;
 static char* buffer = 0;
 
 // Buffer allocation
@@ -32,7 +32,7 @@ void allocate_buffer(std::string msg)
   // the format string and at least DOLFIN_LINELENGTH. This should be
   // ok in most cases.
 
-  uint new_size = std::max(2*msg.size(), static_cast<uint>(DOLFIN_LINELENGTH));
+  unsigned int new_size = std::max(2*msg.size(), static_cast<uint>(DOLFIN_LINELENGTH));
   if (new_size > buffer_size)
   {
     delete [] buffer;
