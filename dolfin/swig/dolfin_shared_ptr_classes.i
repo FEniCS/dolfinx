@@ -57,6 +57,11 @@ SWIG_SHARED_PTR_DERIVED(UnitSphere,dolfin::Mesh,dolfin::UnitSphere)
     return self->label();
   }
   
+  const std::string __str__() const
+  {
+    return self->str();
+  }
+   
 }
 %enddef
 
