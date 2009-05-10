@@ -206,7 +206,7 @@ std::string NewParameters::str() const
     s << "\n";
 
   for (const_database_iterator it = _databases.begin(); it != _databases.end(); ++it)
-    s << indent(it->second->str());
+    s << "\n" << indent(it->second->str());
 
   return s.str();
 }
