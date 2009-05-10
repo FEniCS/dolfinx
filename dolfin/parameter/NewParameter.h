@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-05-08
-// Last changed: 2009-05-08
+// Last changed: 2009-05-10
 
 #ifndef __NEWPARAMETER_H
 #define __NEWPARAMETER_H
@@ -26,6 +26,9 @@ namespace dolfin
 
     /// Return parameter key
     std::string key() const;
+
+    /// Return parameter description
+    std::string description() const;
 
     /// Return access count (number of times parameter has been accessed)
     uint access_count() const;
@@ -75,6 +78,9 @@ namespace dolfin
 
     // Parameter key
     std::string _key;
+
+    // Parameter description
+    std::string _description;
 
   };
 

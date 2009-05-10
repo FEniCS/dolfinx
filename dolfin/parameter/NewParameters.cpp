@@ -5,11 +5,14 @@
 // Last changed: 2009-05-08
 
 #include <sstream>
+#include <boost/program_options.hpp>
+
 #include <dolfin/log/log.h>
 #include <dolfin/log/Table.h>
 #include "NewParameters.h"
 
 using namespace dolfin;
+namespace po = boost::program_options;
 
 // Typedef of iterators for convenience
 typedef std::map<std::string, NewParameter*>::iterator parameter_iterator;
@@ -109,6 +112,47 @@ void NewParameters::add(const NewParameters& parameters)
   NewParameters* p = new NewParameters("");
   *p = parameters;
   _databases[parameters.key()] = p;
+}
+//-----------------------------------------------------------------------------
+void NewParameters::read(int argc, char* argv[])
+{
+  info("Reading command-line arguments...");
+
+  // Add list of allowed options to po::options_description
+  po::options_description desc("Allowed options");
+  for (const_parameter_iterator it = _parameters.begin();
+       it != _parameters.end(); ++it)
+  {
+    const NewParameter& p = *it->second;
+    if (p.type_str() == "int")
+      desc.add_options()(p.key().c_str(), po::value<int>(), p.description().c_str());
+    else if (p.type_str() == "double")
+      desc.add_options()(p.key().c_str(), po::value<double>(), p.description().c_str());
+  }
+
+  // Read command-line arguments into po::variables_map
+  po::variables_map vm;
+  po::store(po::parse_command_line(argc, argv, desc), vm);
+  po::notify(vm);
+
+  // Read values from po::variables_map
+  for (parameter_iterator it = _parameters.begin();
+       it != _parameters.end(); ++it)
+  {
+    NewParameter& p = *it->second;
+    if (p.type_str() == "int")
+    {
+      const po::variable_value& v = vm[p.key()];
+      if (!v.empty())
+        p = v.as<int>();
+    }
+    else if (p.type_str() == "double")
+    {
+      const po::variable_value& v = vm[p.key()];
+      if (!v.empty())
+        p = v.as<double>();
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 NewParameter& NewParameters::operator() (std::string key)

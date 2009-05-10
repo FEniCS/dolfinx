@@ -52,6 +52,9 @@ namespace dolfin
     /// Add nested parameter database
     void add(const NewParameters& parameters);
 
+    /// Read parameters from command-line
+    void read(int argc, char* argv[]);
+
     /// Return parameter for given key
     NewParameter& operator() (std::string key);
 
