@@ -190,9 +190,6 @@ std::string NewParameters::str() const
 {
   std::stringstream s;
 
-  if (_parameters.size() > 0)
-    s << "Parameters\n\n";
-
   Table t(_key);
   for (const_parameter_iterator it = _parameters.begin(); it != _parameters.end(); ++it)
   {
@@ -206,7 +203,7 @@ std::string NewParameters::str() const
   s << t.str();
 
   if (_databases.size() > 0)
-    s << "\nNested parameter databases";
+    s << "\n";
 
   for (const_database_iterator it = _databases.begin(); it != _databases.end(); ++it)
     s << indent(it->second->str());

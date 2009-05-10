@@ -20,13 +20,33 @@
 
 using namespace dolfin;
 
-// Buffers
-static char buffer[DOLFIN_LINELENGTH];
+// Buffer
+static uint buffer_size = 0;
+static char* buffer = 0;
 
+// Buffer allocation
+void allocate_buffer(std::string msg)
+{
+  // va_list, start, end require a char pointer of fixed size so we
+  // need to allocate the buffer here. We allocate twice the size of
+  // the format string and at least DOLFIN_LINELENGTH. This should be
+  // ok in most cases.
+
+  uint new_size = std::max(2*msg.size(), static_cast<uint>(DOLFIN_LINELENGTH));
+  if (new_size > buffer_size)
+  {
+    delete [] buffer;
+    buffer = new char[new_size];
+    buffer_size = new_size;
+  }
+}
+
+// Macro for parsing arguments
 #define read(buffer, msg) \
+  allocate_buffer(msg); \
   va_list aptr; \
   va_start(aptr, msg); \
-  vsnprintf(buffer, DOLFIN_LINELENGTH, msg.c_str(), aptr); \
+  vsnprintf(buffer, buffer_size, msg.c_str(), aptr); \
   va_end(aptr);
 
 //-----------------------------------------------------------------------------

@@ -182,9 +182,9 @@ std::string Table::str() const
   s << "\n";
   for (uint k = 0; k < row_size; k++)
     s << "-";
-  s << "\n";
   for (uint i = 0; i < rows.size(); i++)
   {
+    s << "\n";
     s << rows[i];
     for (uint k = 0; k < col_sizes[0] - rows[i].size(); k++)
       s << " ";
@@ -195,7 +195,6 @@ std::string Table::str() const
         s << " ";
       s << "  " << tvalues[i][j];
     }
-    s << "\n";
   }
 
   return s.str();
