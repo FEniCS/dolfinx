@@ -56,6 +56,7 @@ import_array();
 %include "dolfin_la_pre.i"
 %include "dolfin_mesh_pre.i"
 %include "dolfin_log_pre.i"
+%include "dolfin_common_pre.i"
 %include "dolfin_function_pre.i"
 %include "dolfin_pde_pre.i"
 
