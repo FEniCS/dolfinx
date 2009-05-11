@@ -2,19 +2,21 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-05-08
-// Last changed: 2009-05-10
+// Last changed: 2009-05-11
 
 #ifndef __NEWPARAMETER_H
 #define __NEWPARAMETER_H
 
+#include <set>
 #include <string>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
 
   /// Base class for parameters.
 
-  class NewParameter
+  class NewParameter : public Variable
   {
   public:
 
@@ -42,17 +44,26 @@ namespace dolfin
     /// Set range for double-valued parameter
     virtual void set_range(double min_value, double max_value);
 
+    /// Set range for string-valued parameter
+    virtual void set_range(const std::set<std::string>& range);
+
     /// Assignment from int
     virtual const NewParameter& operator= (int value);
 
     /// Assignment from double
     virtual const NewParameter& operator= (double value);
 
+    /// Assignment from string
+    virtual const NewParameter& operator= (std::string value);
+
     /// Cast parameter to int
     virtual operator int() const;
 
     /// Cast parameter to double
     virtual operator double() const;
+
+    /// Cast parameter to string
+    virtual operator std::string() const;
 
     /// Return value type string
     virtual std::string type_str() const = 0;
@@ -143,7 +154,7 @@ namespace dolfin
     /// Assignment
     const NewDoubleParameter& operator= (double value);
 
-    /// Cast parameter to int
+    /// Cast parameter to double
     operator double() const;
 
     /// Return value type string
@@ -165,6 +176,48 @@ namespace dolfin
 
     /// Parameter range
     double _min, _max;
+
+  };
+
+  /// Parameter with value type string
+  class NewStringParameter : public NewParameter
+  {
+  public:
+
+    /// Create string-valued parameter
+    NewStringParameter(std::string key, std::string value);
+
+    /// Destructor
+    ~NewStringParameter();
+
+    /// Set range
+    void set_range(const std::set<std::string>& range);
+
+    /// Assignment
+    const NewStringParameter& operator= (std::string value);
+
+    /// Cast parameter to string
+    operator std::string() const;
+
+    /// Return value type string
+    std::string type_str() const;
+
+    /// Return value string
+    std::string value_str() const;
+
+    /// Return range string
+    std::string range_str() const;
+
+    /// Return short string description
+    std::string str() const;
+
+  private:
+
+    /// Parameter value
+    std::string _value;
+
+    /// Parameter range
+    std::set<std::string> _range;
 
   };
 

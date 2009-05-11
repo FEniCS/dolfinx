@@ -49,6 +49,12 @@ namespace dolfin
     /// Add double-valued parameter with given range
     void add(std::string key, double value, double min_value, double max_value);
 
+    /// Add string-valued parameter
+    void add(std::string key, std::string value);
+
+    /// Add string-valued parameter with given range
+    void add(std::string key, std::string value, std::set<std::string> range);
+
     /// Add nested parameter database
     void add(const NewParameters& parameters);
 

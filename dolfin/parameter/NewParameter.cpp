@@ -14,7 +14,9 @@ using namespace dolfin;
 // class Parameter
 //-----------------------------------------------------------------------------
 NewParameter::NewParameter(std::string key)
-  : _access_count(0), _change_count(0), _key(key), _description("missing description")
+  : Variable(key, "missing description"),
+    _access_count(0), _change_count(0),
+    _key(key), _description("missing description")
 {
   // Do nothing
 }
@@ -56,6 +58,12 @@ void NewParameter::set_range(double min_value, double max_value)
         type_str().c_str());
 }
 //-----------------------------------------------------------------------------
+void NewParameter::set_range(const std::set<std::string>& range)
+{
+  error("Cannot set string-valued range for parameter of type %s.",
+        type_str().c_str());
+}
+//-----------------------------------------------------------------------------
 const NewParameter& NewParameter::operator= (int value)
 {
   error("Cannot assign int-value to parameter of type %s.",
@@ -70,6 +78,13 @@ const NewParameter& NewParameter::operator= (double value)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const NewParameter& NewParameter::operator= (std::string value)
+{
+  error("Cannot assign string-value to parameter of type %s.",
+        type_str().c_str());
+  return *this;
+}
+//-----------------------------------------------------------------------------
 NewParameter::operator int() const
 {
   error("Unable to convert parameter of type %s to int.", type_str().c_str());
@@ -79,6 +94,12 @@ NewParameter::operator int() const
 NewParameter::operator double() const
 {
   error("Unable to convert parameter of type %s to double.", type_str().c_str());
+  return 0;
+}
+//-----------------------------------------------------------------------------
+NewParameter::operator std::string() const
+{
+  error("Unable to convert parameter of type %s to string.", type_str().c_str());
   return 0;
 }
 //-----------------------------------------------------------------------------
@@ -109,9 +130,12 @@ void NewIntParameter::set_range(int min_value, int max_value)
 //-----------------------------------------------------------------------------
 const NewIntParameter& NewIntParameter::operator= (int value)
 {
+  // Check value
   if (_min != _max && (value < _min || value > _max))
     error("Parameter value %d for parameter \"%s\" out of range [%d, %d].",
           value, key().c_str(), _min, _max);
+
+  // Set value
   _value = value;
   _change_count++;
 
@@ -184,11 +208,15 @@ void NewDoubleParameter::set_range(double min_value, double max_value)
 //-----------------------------------------------------------------------------
 const NewDoubleParameter& NewDoubleParameter::operator= (double value)
 {
+  // Check value
   if (_min != _max && (value < _min || value > _max))
     error("Parameter value %g for parameter \"%s\" out of range [%g, %g].",
           value, key().c_str(), _min, _max);
+
+  // Set value
   _value = value;
   _change_count++;
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -224,6 +252,83 @@ std::string NewDoubleParameter::str() const
 {
   std::stringstream s;
   s << "<double-valued parameter named \""
+    << key()
+    << "\" with value "
+    << _value
+    << ">";
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+NewStringParameter::NewStringParameter(std::string key, std::string value)
+  : NewParameter(key), _value(value)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+NewStringParameter::~NewStringParameter()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void NewStringParameter::set_range(const std::set<std::string>& range)
+{
+  _range = range;
+}
+//-----------------------------------------------------------------------------
+const NewStringParameter& NewStringParameter::operator= (std::string value)
+{
+  // Check value
+  if (_range.size() > 0 && _range.find(value) == _range.end())
+  {
+    std::stringstream s;
+    s << "Illegal value for parameter. Allowed values are: " << range_str();
+    error(s.str());
+  }
+
+  // Set value
+  _value = value;
+  _change_count++;
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+NewStringParameter::operator std::string() const
+{
+  _access_count++;
+  return _value;
+}
+//-----------------------------------------------------------------------------
+std::string NewStringParameter::type_str() const
+{
+  return "string";
+}
+//-----------------------------------------------------------------------------
+std::string NewStringParameter::value_str() const
+{
+  return _value;
+}
+//-----------------------------------------------------------------------------
+std::string NewStringParameter::range_str() const
+{
+  std::stringstream s;
+  s << "[";
+  uint i = 0;
+  for (std::set<std::string>::const_iterator it = _range.begin();
+       it != _range.end(); ++it)
+  {
+    s << *it;
+    if (i++ < _range.size() - 1)
+      s << ", ";
+  }
+  s << "]";
+
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+std::string NewStringParameter::str() const
+{
+  std::stringstream s;
+  s << "<string-valued parameter named \""
     << key()
     << "\" with value "
     << _value

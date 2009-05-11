@@ -101,6 +101,27 @@ void NewParameters::add(std::string key, double value,
   p->set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
+void NewParameters::add(std::string key, std::string value)
+{
+  // Check key name
+  if (find_parameter(key))
+    error("Unable to add parameter \"%s\", already defined.", key.c_str());
+
+  // Add parameter
+  _parameters[key] = new NewStringParameter(key, value);
+}
+//-----------------------------------------------------------------------------
+void NewParameters::add(std::string key, std::string value, std::set<std::string> range)
+{
+  // Add parameter
+  add(key, value);
+
+  // Set range
+  NewParameter* p = find_parameter(key);
+  dolfin_assert(p);
+  p->set_range(range);
+}
+//-----------------------------------------------------------------------------
 void NewParameters::add(const NewParameters& parameters)
 {
   // Check key name
@@ -128,6 +149,8 @@ void NewParameters::parse(int argc, char* argv[])
       desc.add_options()(p.key().c_str(), po::value<int>(), p.description().c_str());
     else if (p.type_str() == "double")
       desc.add_options()(p.key().c_str(), po::value<double>(), p.description().c_str());
+    else if (p.type_str() == "string")
+      desc.add_options()(p.key().c_str(), po::value<std::string>(), p.description().c_str());
   }
 
   // Add help option
@@ -146,6 +169,7 @@ void NewParameters::parse(int argc, char* argv[])
     std::stringstream s;
     s << desc;
     info(s.str());
+    exit(1);
   }
 
   // Read values from po::variables_map
@@ -164,6 +188,12 @@ void NewParameters::parse(int argc, char* argv[])
       const po::variable_value& v = vm[p.key()];
       if (!v.empty())
         p = v.as<double>();
+    }
+    else if (p.type_str() == "string")
+    {
+      const po::variable_value& v = vm[p.key()];
+      if (!v.empty())
+        p = v.as<std::string>();
     }
   }
 }
