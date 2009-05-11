@@ -2,13 +2,14 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-05-08
-// Last changed: 2009-05-08
+// Last changed: 2009-05-11
 
 #include <sstream>
 #include <boost/program_options.hpp>
 
 #include <dolfin/log/log.h>
 #include <dolfin/log/Table.h>
+#include "NewParameter.h"
 #include "NewParameters.h"
 
 using namespace dolfin;
@@ -276,6 +277,12 @@ const NewParameters& NewParameters::operator= (const NewParameters& parameters)
 std::string NewParameters::str() const
 {
   std::stringstream s;
+
+  if (_parameters.size() == 0 && _databases.size() == 0)
+  {
+    s << key() << " (empty)";
+    return s.str();
+  }
 
   Table t(_key);
   for (const_parameter_iterator it = _parameters.begin(); it != _parameters.end(); ++it)

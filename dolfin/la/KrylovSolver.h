@@ -10,6 +10,8 @@
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
 
+#include <dolfin/parameter/NewParameters.h>
+#include <dolfin/common/Variable.h>
 #include <dolfin/parameter/Parametrized.h>
 #include <dolfin/common/Timer.h>
 #include "GenericMatrix.h"
@@ -34,14 +36,18 @@ namespace dolfin
   /// This class defines an interface for a Krylov solver. The underlying
   /// Krylov solver type is defined in default_type.h.
 
-  class KrylovSolver : public GenericLinearSolver
+  class KrylovSolver : public GenericLinearSolver, public Variable
   {
   public:
 
     /// Create Krylov solver
     KrylovSolver(std::string solver_type = "default", std::string pc_type="default")
-      : solver_type(solver_type), pc_type(pc_type), ublas_solver(0), petsc_solver(0),
-        epetra_solver(0), itl_solver(0) {}
+      : Variable("solver", "Krylov solver"),
+        solver_type(solver_type), pc_type(pc_type), ublas_solver(0), petsc_solver(0),
+        epetra_solver(0), itl_solver(0)
+    {
+      parameters = default_parameters();
+    }
 
     /// Destructor
     ~KrylovSolver()
@@ -113,6 +119,23 @@ namespace dolfin
 
       error("No default Krylov solver for given backend");
       return 0;
+    }
+
+    /// Return default parameters
+    NewParameters default_parameters() const
+    {
+      NewParameters p("krylov");
+
+      p.add("relative_tolerance",  1e-15);
+      p.add("absolute_tolerance",  1e-15);
+      p.add("divergence_limit",    1e4);
+      p.add("maximum_iterations",  10000);
+      p.add("gmres_restart",       30);
+      p.add("shift_nonzero",       0.0);
+      p.add("report",              true);
+      p.add("monitor_convergence", false);
+
+      return p;
     }
 
   private:

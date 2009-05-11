@@ -2,12 +2,13 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-02-26
-// Last changed: 2009-05-09
+// Last changed: 2009-05-11
 
 #ifndef __VARIABLE_H
 #define __VARIABLE_H
 
 #include <string>
+#include <dolfin/parameter/NewParameters.h>
 
 namespace dolfin
 {
@@ -24,6 +25,9 @@ namespace dolfin
     /// Create variable with given name and label
     Variable(const std::string name, const std::string label);
 
+    /// Destructor
+    virtual ~Variable();
+
     /// Rename variable
     void rename(const std::string name, const std::string label);
     
@@ -35,6 +39,12 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     virtual std::string str() const;
+
+    /// Return default parameters
+    virtual NewParameters default_parameters() const;
+
+    // Parameters
+    NewParameters parameters;
     
   private:
 

@@ -7,23 +7,24 @@
 #ifndef __NEWPARAMETERS_H
 #define __NEWPARAMETERS_H
 
+#include <set>
 #include <map>
-#include <dolfin/common/Variable.h>
-#include "NewParameter.h"
 
 namespace dolfin
 {
+
+  class NewParameter;
 
   /// This class stores a database of parameters. Each parameter is
   /// identified by a unique string (the key) and a value of some
   /// given value type.
 
-  class NewParameters : public Variable
+  class NewParameters
   {
   public:
 
     /// Create empty parameter database
-    NewParameters(std::string key);
+    NewParameters(std::string key="parameters");
 
     /// Destructor
     ~NewParameters();
@@ -64,7 +65,7 @@ namespace dolfin
     /// Return parameter for given key
     NewParameter& operator() (std::string key);
 
-    /// Return parameter for given key (const)
+    /// Return parameter for given key (const version)
     const NewParameter& operator() (std::string key) const;
 
     /// Return nested parameter database for given key

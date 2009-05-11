@@ -9,14 +9,14 @@
 
 #include <set>
 #include <string>
-#include <dolfin/common/Variable.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {
 
   /// Base class for parameters.
 
-  class NewParameter : public Variable
+  class NewParameter
   {
   public:
 

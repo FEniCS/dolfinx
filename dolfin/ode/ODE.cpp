@@ -22,7 +22,6 @@ ODE::ODE(uint N, real T)
     not_impl_JT("Warning: consider implementing Jacobian transpose ODE::JT() to improve efficiency")
 {
   info("Creating ODE of size %d.", N);
-
 }
 //-----------------------------------------------------------------------------
 ODE::~ODE()
