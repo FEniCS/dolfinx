@@ -33,7 +33,8 @@ void allocate_buffer(std::string msg)
   // the format string and at least DOLFIN_LINELENGTH. This should be
   // ok in most cases.
 
-  unsigned int new_size = std::max(2*msg.size(), static_cast<unsigned int>(DOLFIN_LINELENGTH));
+  unsigned int new_size = std::max(static_cast<unsigned int>(2*msg.size()),
+                                   static_cast<unsigned int>(DOLFIN_LINELENGTH));
   if (new_size > buffer_size)
   {
     delete [] buffer;
