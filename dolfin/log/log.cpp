@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-05-08
+// Last changed: 2009-05-11
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -15,6 +15,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/parameter/NewParameters.h>
 #include "LogManager.h"
 #include "log.h"
 
@@ -65,6 +66,13 @@ void dolfin::info(int debug_level, std::string msg, ...)
 void dolfin::info(const Variable& variable)
 {
   info(variable.str());
+}
+//-----------------------------------------------------------------------------
+void dolfin::info(const NewParameters& parameters)
+{
+  // Need separate function for Parameters since we can't make Parameters
+  // a subclass of Variable (gives cyclic dependencies)
+  info(parameters.str());
 }
 //-----------------------------------------------------------------------------
 void dolfin::info_stream(std::ostream& out, std::string msg)

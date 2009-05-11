@@ -60,7 +60,7 @@ namespace dolfin
   private:
 
     // Local database of parameters
-    ParameterList parameters;
+    ParameterList plist;
 
     // Pointer to parent
     const Parametrized* parent;

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2009-02-10
+// Last changed: 2009-05-11
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -11,6 +11,7 @@
 #include <dolfin/common/real.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/Event.h>
+#include <dolfin/parameter/NewParameters.h>
 #include <dolfin/parameter/Parametrized.h>
 #include "Dependencies.h"
 #include "Sample.h"
@@ -140,6 +141,9 @@ namespace dolfin
 
     /// Get state for ODE (only available during interval stepping)
     void get_state(real* u);
+
+    /// Return default parameters
+    NewParameters default_parameters() const;
 
     /// Friends
     friend class Dual;

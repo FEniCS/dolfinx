@@ -9,5 +9,6 @@
 #include <dolfin/parameter/parameters.h>
 
 #include <dolfin/parameter/NewParameters.h>
+#include <dolfin/parameter/NewParameter.h>
 
 #endif
