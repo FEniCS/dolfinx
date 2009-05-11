@@ -24,7 +24,7 @@ namespace dolfin
     NewParameter(std::string key);
 
     /// Destructor
-    ~NewParameter();
+    virtual ~NewParameter();
 
     /// Return parameter key
     std::string key() const;
