@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-08-12
-// Last changed: 2009-04-22
+// Last changed: 2009-05-11
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -37,7 +37,16 @@ void DofMapBuilder::build(DofMap& dof_map, UFC& ufc, Mesh& mesh)
   }
 
   // Allocate dof map
+  delete [] dof_map.dof_map;
   const uint n = dof_map.max_local_dimension();
   dof_map.dof_map = new int[n*mesh.num_cells()];
+
+  // Fill dof map 
+  //uint offset = 0;
+  UFCCell ufc_cell(mesh);
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    ufc_cell.update(*c);
+  }
 }
 //-----------------------------------------------------------------------------

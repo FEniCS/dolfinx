@@ -3,10 +3,13 @@
 //
 // Modified by Martin Alnes, 2008
 // Modified by Kent-Andre Mardal, 2009
+// Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-01-06
+// Last changed: 2009-05-11
 
+#include <dolfin/main/MPI.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
@@ -25,7 +28,7 @@ DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh)
   : dof_map(0), dof_map_size(0), cell_map(0),
     ufc_dof_map(reference_to_no_delete_pointer(dof_map)),
     num_cells(mesh.num_cells()), partitions(0), _offset(0),
-    dolfin_mesh(mesh)
+    dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
   init(mesh);
 }
@@ -34,7 +37,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh)
   : dof_map(0), dof_map_size(0), cell_map(0),
     ufc_dof_map(dof_map),
     num_cells(mesh.num_cells()), partitions(0), _offset(0),
-    dolfin_mesh(mesh)
+    dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
   init(mesh);
 }
@@ -43,7 +46,7 @@ DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& part
   : dof_map(0), dof_map_size(0), cell_map(0),
     ufc_dof_map(reference_to_no_delete_pointer(dof_map)),
     num_cells(mesh.num_cells()), partitions(&partitions), _offset(0),
-    dolfin_mesh(mesh)
+    dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
   init(mesh);
 }
@@ -54,7 +57,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map,
   : dof_map(0), dof_map_size(0), cell_map(0),
     ufc_dof_map(dof_map),
     num_cells(mesh.num_cells()), partitions(&partitions), _offset(0),
-    dolfin_mesh(mesh)
+    dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
   init(mesh);
 }
@@ -153,7 +156,11 @@ void DofMap::init(const Mesh& mesh)
   // Initialize mesh entities used by dof map
   for (uint d = 0; d <= mesh.topology().dim(); d++)
     if (ufc_dof_map->needs_mesh_entities(d))
+    {
       mesh.init(d);
+      if (d > 0)
+        MeshPartitioning::number_entities(const_cast<Mesh&>(mesh), d);
+    }
 
   // Initialize UFC mesh data (must be done after entities are created)
   ufc_mesh.init(mesh);
