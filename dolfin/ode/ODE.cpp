@@ -276,7 +276,7 @@ void ODE::get_state(real* u)
   time_stepper->get_state(u);
 }
 //-----------------------------------------------------------------------------
-NewParameters default_parameters() const
+NewParameters ODE::default_parameters() const
 {
   NewParameters p("ode");
 
