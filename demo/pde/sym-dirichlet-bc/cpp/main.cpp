@@ -105,7 +105,7 @@ int main()
   table("Symmetric New", "Assembly time") = toc();
 
   // Display summary
-  table.print();
+  info(table);
 
   // Solve system
   GenericVector& x = u.vector();

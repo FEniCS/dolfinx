@@ -158,7 +158,7 @@ void DofMap::init(const Mesh& mesh)
     if (ufc_dof_map->needs_mesh_entities(d))
     {
       mesh.init(d);
-      if (d > 0)
+      if (d > 0 && parallel)
         MeshPartitioning::number_entities(const_cast<Mesh&>(mesh), d);
     }
 
