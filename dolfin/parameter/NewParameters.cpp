@@ -114,9 +114,9 @@ void NewParameters::add(const NewParameters& parameters)
   _databases[parameters.key()] = p;
 }
 //-----------------------------------------------------------------------------
-void NewParameters::read(int argc, char* argv[])
+void NewParameters::parse(int argc, char* argv[])
 {
-  info("Reading command-line arguments...");
+  info("Parsing command-line arguments...");
 
   // Add list of allowed options to po::options_description
   po::options_description desc("Allowed options");
@@ -130,10 +130,23 @@ void NewParameters::read(int argc, char* argv[])
       desc.add_options()(p.key().c_str(), po::value<double>(), p.description().c_str());
   }
 
+  // Add help option
+  desc.add_options()("help", "show help text");
+
   // Read command-line arguments into po::variables_map
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);
+
+  // FIXME: Should we exit after printing help text?
+
+  // Show help text
+  if (vm.count("help"))
+  {
+    std::stringstream s;
+    s << desc;
+    info(s.str());
+  }
 
   // Read values from po::variables_map
   for (parameter_iterator it = _parameters.begin();
