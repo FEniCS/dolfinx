@@ -44,7 +44,7 @@ int main()
       intersection.set(cells[i], 1);
 
     // Plot intersection
-    plot(intersection);
+    //plot(intersection);
 
     // Rotate circle around (0.5, 0.5)
     for (VertexIterator vertex(omega0); !vertex.end(); ++vertex)

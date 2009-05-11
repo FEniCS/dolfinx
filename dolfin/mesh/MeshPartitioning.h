@@ -8,6 +8,7 @@
 #define __MESH_PARTITIONING_H
 
 #include <iterator>
+#include <map>
 #include <vector>
 #include <dolfin/common/types.h>
 
