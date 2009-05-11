@@ -63,7 +63,8 @@ return 0;
   return full_boost_version
 
 def pkgLibs(sconsEnv=None):
-  return ""
+  return "-L%s -lboost_program_options" % \
+         os.path.join(getBoostDir(sconsEnv), "lib")
 
 def pkgCflags(sconsEnv=None):
   include_dir = None
@@ -104,7 +105,12 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
   cpp_testublas_str = r"""
 #include <iostream>
 #include <boost/numeric/ublas/vector.hpp>
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
+
 int main() {
+  po::variables_map vm;
   boost::numeric::ublas::vector<double> ubv(10);
   if ( ubv.size() == 10 ) {
     std::cout << "ublas ok";
@@ -115,7 +121,8 @@ int main() {
 """
   write_cppfile(cpp_testublas_str, "boost_config_test_ublas.cpp")
 
-  cmdstr = "%s -o a.out %s boost_config_test_ublas.cpp" % (compiler, cflags)
+  cmdstr = "%s -o a.out %s boost_config_test_ublas.cpp %s" % \
+           (compiler, cflags, libs)
   compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
     remove_cppfile("boost_config_test_ublas.cpp")
