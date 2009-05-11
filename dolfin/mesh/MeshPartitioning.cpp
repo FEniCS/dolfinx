@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2009-05-05
+// Last changed: 2009-05-11
 
 #include <vector>
 #include <algorithm>
@@ -50,6 +50,15 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   // Check for vertices
   if (d == 0)
     error("Unable to number entities of dimension 0. Vertex indices must already exist.");
+
+  // Return if global entity indices are already calculated
+  std::stringstream mesh_data_name;
+  mesh_data_name << "global entity indices " << d;
+  MeshFunction<uint>* global_entity_indices = mesh.data().mesh_function(mesh_data_name.str());
+
+  // Already computed the global entity numbers; do nothing
+  if (global_entity_indices == NULL)
+    return;
 
   info("Computing global numbers for mesh entities of dimension %d", d);
 
@@ -389,9 +398,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   ignored_entity_processes.clear();
   
   // Create mesh data
-  std::stringstream mesh_data_name;
-  mesh_data_name << "global entity indices " << d;
-  MeshFunction<uint>* global_entity_indices = mesh.data().create_mesh_function(mesh_data_name.str(), d);
+  global_entity_indices = mesh.data().create_mesh_function(mesh_data_name.str(), d);
   for (uint i = 0; i < entity_indices.size(); ++i)
     global_entity_indices->set(i, entity_indices[i]);
 }

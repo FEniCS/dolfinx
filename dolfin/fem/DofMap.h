@@ -3,9 +3,10 @@
 //
 // Modified by Martin Alnes, 2008
 // Modified by Kent-Andre Mardal, 2009
+// Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-01-06
+// Last changed: 2009-05-11
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -158,6 +159,7 @@ namespace dolfin
     // Reference to mesh we live in
     const Mesh & dolfin_mesh;
 
+    bool parallel;
   };
 
 }
