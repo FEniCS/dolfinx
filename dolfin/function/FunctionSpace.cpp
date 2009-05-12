@@ -25,7 +25,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(const Mesh& mesh,
+FunctionSpace::FunctionSpace(Mesh& mesh,
                              const FiniteElement &element,
                              const DofMap& dofmap)
   : _mesh(reference_to_no_delete_pointer(mesh)),

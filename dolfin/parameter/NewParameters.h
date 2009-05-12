@@ -81,10 +81,10 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str() const;
 
-    /// Return a vector of keys to the parameters
+    /// Return a vector of parameter keys
     void parameter_keys(std::vector<std::string>& keys) const;
 
-    /// Return a vector of keys to the database
+    /// Return a vector of database keys
     void database_keys(std::vector<std::string>& keys) const;
 
   private:
