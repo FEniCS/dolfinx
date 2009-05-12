@@ -16,6 +16,8 @@
 %include "dolfin/parameter/Parametrized.h"
 %include "dolfin/parameter/Parameter.h"
 %include "dolfin/parameter/parameters.h"
+%include "dolfin/parameter/NewParameter.h"
+%include "dolfin/parameter/NewParameters.h"
 
 // DOLFIN headers included from log
 %include "dolfin/log/log.h"

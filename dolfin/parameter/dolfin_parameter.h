@@ -8,7 +8,7 @@
 #include <dolfin/parameter/ParameterSystem.h>
 #include <dolfin/parameter/parameters.h>
 
-#include <dolfin/parameter/NewParameters.h>
 #include <dolfin/parameter/NewParameter.h>
+#include <dolfin/parameter/NewParameters.h>
 
 #endif

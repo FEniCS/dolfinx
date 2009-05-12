@@ -59,6 +59,7 @@ import_array();
 %include "dolfin_common_pre.i"
 %include "dolfin_function_pre.i"
 %include "dolfin_pde_pre.i"
+%include "dolfin_parameter_pre.i"
 
 // DOLFIN interface
 %import "dolfin/common/types.h"
