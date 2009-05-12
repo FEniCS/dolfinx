@@ -9,14 +9,14 @@
 
 #include <set>
 #include <string>
-#include <dolfin/common/Variable.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {
 
   /// Base class for parameters.
 
-  class NewParameter : public Variable
+  class NewParameter
   {
   public:
 
@@ -24,7 +24,7 @@ namespace dolfin
     NewParameter(std::string key);
 
     /// Destructor
-    ~NewParameter();
+    virtual ~NewParameter();
 
     /// Return parameter key
     std::string key() const;

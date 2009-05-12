@@ -14,8 +14,7 @@ using namespace dolfin;
 // class Parameter
 //-----------------------------------------------------------------------------
 NewParameter::NewParameter(std::string key)
-  : Variable(key, "missing description"),
-    _access_count(0), _change_count(0),
+  : _access_count(0), _change_count(0),
     _key(key), _description("missing description")
 {
   // Do nothing
