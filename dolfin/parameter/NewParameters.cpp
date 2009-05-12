@@ -257,6 +257,8 @@ const NewParameters& NewParameters::operator= (const NewParameters& parameters)
       q = new NewIntParameter(dynamic_cast<const NewIntParameter&>(p));
     else if (p.type_str() == "double")
       q = new NewDoubleParameter(dynamic_cast<const NewDoubleParameter&>(p));
+    else if (p.type_str() == "string")
+      q = new NewStringParameter(dynamic_cast<const NewStringParameter&>(p));
     else
       error("Unable to copy parameter, unknown type: \"%s\".",
             p.type_str().c_str());
@@ -320,4 +322,18 @@ NewParameters* NewParameters::find_database(std::string key) const
     return 0;
   return p->second;
 }
+//-----------------------------------------------------------------------------
+void NewParameters::parameter_keys(std::vector<std::string>& keys) const
+{
+  keys.reserve(_parameters.size());
+  for (const_parameter_iterator it = _parameters.begin(); it != _parameters.end(); ++it)
+    keys.push_back(it->first);
+}
+//-----------------------------------------------------------------------------
+void NewParameters::database_keys(std::vector<std::string>& keys) const
+{
+  keys.reserve(_databases.size());
+  for (const_database_iterator it = _databases.begin(); it != _databases.end(); ++it)
+    keys.push_back(it->first);
+ }
 //-----------------------------------------------------------------------------

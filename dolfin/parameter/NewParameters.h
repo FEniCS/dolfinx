@@ -9,6 +9,7 @@
 
 #include <set>
 #include <map>
+#include <vector>
 
 namespace dolfin
 {
@@ -79,6 +80,12 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     std::string str() const;
+
+    /// Return a vector of keys to the parameters
+    void parameter_keys(std::vector<std::string>& keys) const;
+
+    /// Return a vector of keys to the database
+    void database_keys(std::vector<std::string>& keys) const;
 
   private:
 

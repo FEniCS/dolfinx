@@ -3,6 +3,7 @@
 %template(STLVectorFunctionSpacePtr) std::vector<dolfin::FunctionSpace *>;
 %template(STLVectorUInt) std::vector<dolfin::uint>;
 %template(STLVectorDouble) std::vector<double>;
+%template(STLVectorString) std::vector<std::string>;
 
 %extend dolfin::Variable
 {
