@@ -3,8 +3,8 @@
 
 // DOLFIN interface
 
-#include <dolfin/common/dolfin_common.h>
 #include <dolfin/parameter/dolfin_parameter.h>
+#include <dolfin/common/dolfin_common.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/dolfin_la.h>
 #include <dolfin/nls/dolfin_nls.h>

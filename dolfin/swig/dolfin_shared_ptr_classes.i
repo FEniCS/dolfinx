@@ -61,6 +61,11 @@ SWIG_SHARED_PTR_DERIVED(UnitSphere,dolfin::Mesh,dolfin::UnitSphere)
   {
     return self->str();
   }
+
+  NewParameters default_parameters() const
+  {
+    return self->default_parameters();
+  }
    
 }
 %enddef

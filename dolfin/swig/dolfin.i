@@ -53,10 +53,10 @@ import_array();
 %pointer_class(double, doublep);
 
 // Fixes for specific kernel modules (pre)
+%include "dolfin_common_pre.i"
+%include "dolfin_log_pre.i"
 %include "dolfin_la_pre.i"
 %include "dolfin_mesh_pre.i"
-%include "dolfin_log_pre.i"
-%include "dolfin_common_pre.i"
 %include "dolfin_function_pre.i"
 %include "dolfin_pde_pre.i"
 %include "dolfin_parameter_pre.i"
@@ -66,11 +66,12 @@ import_array();
 %include "dolfin_headers.i"
 
 // Fixes for specific kernel modules (post)
+%include "dolfin_common_post.i"
+%include "dolfin_log_post.i"
 %include "dolfin_la_post.i"
 %include "dolfin_mesh_post.i"
-%include "dolfin_log_post.i"
-%include "dolfin_common_post.i"
 %include "dolfin_function_post.i"
+%include "dolfin_parameter_post.i"
 
 // Include information about swig version
 %include "dolfin_swig_version.i"
