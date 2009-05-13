@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2009-05-11
+// Last changed: 2009-05-12
 
 #include <vector>
 #include <algorithm>
@@ -57,7 +57,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   MeshFunction<uint>* global_entity_indices = mesh.data().mesh_function(mesh_data_name.str());
 
   // Already computed the global entity numbers; do nothing
-  if (global_entity_indices == NULL)
+  if (global_entity_indices != NULL)
     return;
 
   info("Computing global numbers for mesh entities of dimension %d", d);
@@ -325,6 +325,17 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   uint offset = 0;
   for (uint i = 0; i < process_number; ++i)
     offset += offsets[i];
+
+  // Compute number of global entities
+  uint num_global = offset;
+  for (uint i = process_number; i < num_processes; ++i)
+    num_global += offsets[i];
+
+  std::vector<uint>* num_global_entities = mesh.data().array("num global entities");
+  if (num_global_entities == NULL)
+    num_global_entities = mesh.data().create_array("num global entities", mesh.topology().dim());
+
+  (*num_global_entities)[d] = num_global;
 
   // Number owned entities
   std::vector<int> entity_indices(mesh.size(d));
@@ -651,6 +662,11 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   dolfin_assert(global_vertex_indices);
   for (std::map<uint, uint>::const_iterator iter = glob2loc.begin(); iter != glob2loc.end(); ++iter)
     global_vertex_indices->set((*iter).second, (*iter).first);
+
+  // Construct array of length topology().dim() that holds the global number of mesh entities
+  std::vector<uint>* num_global_entities = mesh.data().create_array("num global entities", mesh_data.tdim);
+  (*num_global_entities)[0] = mesh_data.num_global_vertices;
+  (*num_global_entities)[mesh_data.tdim] = mesh_data.num_global_cells;
 
   /// Communicate global number of boundary vertices to all processes
 

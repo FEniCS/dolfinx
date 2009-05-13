@@ -66,6 +66,7 @@ void SparsityPattern::pinit(uint rank, const uint* dims)
   sparsity_pattern.resize(dim[0]);
   o_sparsity_pattern.clear();
   o_sparsity_pattern.resize(dim[0]);
+  info("Calling init_range() from SparsityPatter::pinit()");
   init_range();
 }
 //-----------------------------------------------------------------------------
@@ -226,6 +227,9 @@ void SparsityPattern::init_range()
   range[0] = 0;
 
   for(uint p=0; p<num_procs; ++p)
+  {
+    info("range[%d] = %d", p+1, range[p+1]);
     range[p+1] = range[p] + dim[0]/num_procs + ((dim[0]%num_procs) > p ? 1 : 0);
+  }
 }
 //-----------------------------------------------------------------------------

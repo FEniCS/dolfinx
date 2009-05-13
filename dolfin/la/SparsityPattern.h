@@ -93,7 +93,7 @@ namespace dolfin
     /// Initialize range
     void init_range();
 
-    /// Sparsity pattern represented as an vector of vectors
+    /// Sparsity pattern represented as a vector of vectors
     mutable std::vector< std::vector<uint> > sparsity_pattern;
 
     /// Sparsity pattern for off diagonal represented as vector of sets. Each

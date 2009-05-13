@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-05-11
+// Last changed: 2009-05-12
 
 #ifndef __UFC_CELL_H
 #define __UFC_CELL_H
@@ -29,17 +29,22 @@ namespace dolfin
   public:
 
     /// Create emtpy UFC cell
-    UFCCell() : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0), parallel(MPI::num_processes() > 1) {}
+    UFCCell() : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0), parallel(MPI::num_processes() > 1) 
+    {
+      info("Calling init from UFCCell empty constructor");
+    }
 
     /// Create UFC cell from DOLFIN cell
     UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0), parallel(MPI::num_processes() > 1)
     {
+      info("Calling init from UFCCell cell constructor");
       init(cell);
     }
 
     /// Create UFC cell for first DOLFIN cell in mesh
     UFCCell(const Mesh& mesh) : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0), parallel(MPI::num_processes() > 1)
     {
+      info("Calling init from UFCCell mesh constructor");
       CellIterator cell(mesh);
       init(*cell);
     }
@@ -163,20 +168,13 @@ namespace dolfin
       {
         for (uint d = 0; d < topological_dimension; ++d)
         {
-          info("Treating entities of topological dimesion %d", d);
           const uint num_entities = cell.num_entities(d);
-          info("num_entities = %d", num_entities);
           if (num_entities > 0)
           {
-            info("More than 0 entities of this dimension.");
             const uint* local_entity_indices = cell.entities(d);
             dolfin_assert((*global_entities)[d]);
-            info("Size of meshfunction = %d", (*global_entities)[d]->size());
             for (uint i = 0; i < num_entities; ++i)
-            {
-              info("Dim %d, num %d, entity %d", d, i, local_entity_indices[i]);
               entity_indices[d][i] = (*global_entities)[d]->get(local_entity_indices[i]);
-            }
           }
         }
       }

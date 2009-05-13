@@ -5,9 +5,10 @@
 // Modified by Martin Alnes, 2008.
 // Modified by Garth N. Wells, 2008.
 // Modified by Kent-Andre Mardal, 2009.
+// Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-01-06
+// Last changed: 2009-05-12
 
 #include <dolfin/fem/UFC.h>
 #include <dolfin/log/log.h>
@@ -16,6 +17,7 @@
 #include <dolfin/mesh/IntersectionDetector.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/la/GenericVector.h>
@@ -45,6 +47,34 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
     scratch(*element), intersection_detector(0)
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::FunctionSpace(Mesh& mesh,
+                             const FiniteElement &element,
+                             const DofMap& dofmap)
+  : _mesh(reference_to_no_delete_pointer(mesh)),
+    _element(reference_to_no_delete_pointer(element)),
+    _dofmap(reference_to_no_delete_pointer(dofmap)),
+    _restriction(static_cast<MeshFunction<bool>*>(0)),
+    scratch(element), intersection_detector(0)
+{
+
+  for (uint d = 1; d < mesh.topology().dim(); ++d)
+    if (_dofmap->needs_mesh_entities(d))
+      MeshPartitioning::number_entities(mesh, d);
+  
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
+                             boost::shared_ptr<const FiniteElement> element,
+                             boost::shared_ptr<const DofMap> dofmap)
+  : _mesh(mesh), _element(element), _dofmap(dofmap),
+    _restriction(static_cast<MeshFunction<bool>*>(0)),
+    scratch(*element), intersection_detector(0)
+{
+  for (uint d = 1; d < mesh->topology().dim(); ++d)
+    if (_dofmap->needs_mesh_entities(d))
+      MeshPartitioning::number_entities(*mesh, d);
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(const FunctionSpace& V)

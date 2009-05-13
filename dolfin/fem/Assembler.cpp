@@ -2,11 +2,11 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007-2009
-// Modified by Ola Skavhaug, 2007-2008
+// Modified by Ola Skavhaug, 2007-2009
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-04-29
+// Last changed: 2009-05-12
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
@@ -40,9 +40,10 @@ void Assembler::assemble(GenericTensor& A,
                          const Form& a,
                          bool reset_tensor)
 {
-  Mesh& mesh = (Mesh&) a.mesh(); // FIXME: this causes the Mesh to change, hence const is casted away 
+  Mesh& mesh = const_cast<Mesh&>(a.mesh()); // FIXME: this causes the Mesh to change, hence const is casted away 
   compute_mesh_function_from_mesh_arrays(mesh); 
   MeshFunction<uint>* exterior_facet_domains = mesh.data().mesh_function("exterior facet domains"); 
+
   assemble(A, a, 0, exterior_facet_domains, 0, reset_tensor);
 }
 //-----------------------------------------------------------------------------

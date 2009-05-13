@@ -1,8 +1,10 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Ola Skavhaug, 2009
+//
 // First added:  2007-01-17
-// Last changed: 2008-11-06
+// Last changed: 2009-05-13
 
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -14,7 +16,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UFC::UFC(const Form& form): form(form.ufc_form())
+UFC::UFC(const Form& form)
+ : form(form.ufc_form()), cell(form.mesh()), cell0(form.mesh()), cell1(form.mesh())
 {
   // Create finite elements
   finite_elements = new FiniteElement*[this->form.rank()];
@@ -47,12 +50,6 @@ UFC::UFC(const Form& form): form(form.ufc_form())
 
   // Initialize mesh
   this->mesh.init(form.mesh());
-
-  // Initialize cells with first cell in mesh
-  CellIterator cell(form.mesh());
-  this->cell.init(*cell);
-  this->cell0.init(*cell);
-  this->cell1.init(*cell);
 
   // Get function spaces for arguments
   std::vector<const FunctionSpace*> V = form.function_spaces();
