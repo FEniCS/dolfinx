@@ -25,8 +25,11 @@
     
 %pythoncode%{
 
-def parse(self,argv):
+def parse(self,argv=None):
     "Parse command line arguments"
+    if argv is None:
+        import sys
+        argv = sys.argv
     self._parse(argv)
 
 def keys(self):
