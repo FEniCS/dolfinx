@@ -33,13 +33,13 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
   SCOTCH_Graph grafdat;
   SCOTCH_Strat strat;
 
-  if (SCOTCH_graphInit(&grafdat) != 0) 
+  if (SCOTCH_graphInit(&grafdat) != 0)
     error("Error initialising SCOTCH graph.");
 
-  if (SCOTCH_graphBuild(&grafdat, 0, static_cast<int>(graph.numVertices()), 
-                        reinterpret_cast<int*>(graph.offsets()), NULL, NULL, 
-                        NULL, static_cast<int>(graph.numEdges()), 
-                        reinterpret_cast<int*>(graph.connectivity()), NULL) != 0) 
+  if (SCOTCH_graphBuild(&grafdat, 0, static_cast<int>(graph.num_vertices()),
+                        reinterpret_cast<int*>(graph.offsets()), NULL, NULL,
+                        NULL, static_cast<int>(graph.num_edges()),
+                        reinterpret_cast<int*>(graph.connectivity()), NULL) != 0)
   {
     error("Error building SCOTCH graph.");
   }
@@ -47,7 +47,7 @@ void GraphPartition::partition(Graph& graph, uint num_part, uint* vtx_part)
   SCOTCH_stratInit(&strat);
 
   // Only some graphs successfully partitioned, why?
-  if (SCOTCH_graphPart (&grafdat, num_part, &strat, reinterpret_cast<int*>(vtx_part)) != 0) 
+  if (SCOTCH_graphPart (&grafdat, num_part, &strat, reinterpret_cast<int*>(vtx_part)) != 0)
     error("Error partitioning SCOTCH graph.");
 
   SCOTCH_stratExit (&strat);
@@ -63,19 +63,19 @@ void GraphPartition::check(Graph& graph, uint num_part, uint* vtx_part)
   cout << "Checking that all vertices are partitioned" << endl;
 
   // Check that all vertices are partitioned
-  for(uint i=0; i < graph.numVertices(); ++i)
+  for(uint i=0; i < graph.num_vertices(); ++i)
   {
     if(vtx_part[i] == num_part)
       error("Vertex %d not partitioned", i);
   }
 
   // Check that partitions are continuous
-  // One way to do this is by checking (for all partitions) that there is a 
-  // path from every vertex in a partition to all other vertices of the 
+  // One way to do this is by checking (for all partitions) that there is a
+  // path from every vertex in a partition to all other vertices of the
   // partition.
   /*
   // This does not work
-  for(uint i=0; i<graph.numVertices(); ++i)
+  for(uint i=0; i<graph.num_vertices(); ++i)
   {
 	 // For all other vertices
 	 for(uint j=0; j<i; ++j)
@@ -86,7 +86,7 @@ void GraphPartition::check(Graph& graph, uint num_part, uint* vtx_part)
 		  dolfin_error2("Vertex %d not adjacent to vertex %d, but in the same partition", i, j);
 		}
 	 }
-	 for(uint j=i+1; j<graph.numVertices(); ++j)
+	 for(uint j=i+1; j<graph.num_vertices(); ++j)
 	 {
 		// If vertices shares partition check that they are neighbors
 		if(vtx_part[i] == vtx_part[j] && !graph.adjacent(i, j))
@@ -110,7 +110,7 @@ void GraphPartition::eval(Graph& graph, uint num_part, uint* vtx_part)
     part_sizes[i] = 0;
 
   // Count number of vertices per partition
-  for(uint i=0; i<graph.numVertices(); ++i)
+  for(uint i=0; i<graph.num_vertices(); ++i)
     part_sizes[vtx_part[i]]++;
 
   // Print number of vertices per partition
@@ -125,9 +125,9 @@ dolfin::uint GraphPartition::edgecut(Graph& graph, uint num_part, uint* vtx_part
 {
   // Calculate edge-cut
   uint edge_cut = 0;
-  for(uint i=0; i<graph.numVertices(); ++i)
+  for(uint i=0; i<graph.num_vertices(); ++i)
   {
-    for(uint j=0; j<graph.numEdges(i); ++j)
+    for(uint j=0; j<graph.num_edges(i); ++j)
     {
       int edge_index = (int) (graph.offsets()[(int) i] + j);
       uint nvtx = graph.connectivity()[edge_index];
@@ -150,7 +150,7 @@ void GraphPartition::disp(Graph& graph, uint num_part, uint* vtx_part)
   cout << "Number of partitions: " << num_part << endl;
   cout << "Partition vector" << endl;
 
-  for(uint i = 0; i < graph.numVertices(); ++i)
+  for(uint i = 0; i < graph.num_vertices(); ++i)
     cout << vtx_part[i] << " ";
   cout << endl;
 }

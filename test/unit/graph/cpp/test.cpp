@@ -29,21 +29,21 @@ public:
     Graph graph;
     GraphEditor editor;
     editor.open(graph, "undirected");
-    editor.initVertices(4);
-    editor.addVertex(0, 2);
-    editor.addVertex(1, 2);
-    editor.addVertex(2, 1);
-    editor.addVertex(3, 0);
-    editor.initEdges(5);
-    editor.addEdge(0, 1);
-    editor.addEdge(1, 2);
-    editor.addEdge(2, 3);
-    editor.addEdge(1, 3);
-    editor.addEdge(0, 3);
+    editor.init_vertices(4);
+    editor.add_vertex(0, 2);
+    editor.add_vertex(1, 2);
+    editor.add_vertex(2, 1);
+    editor.add_vertex(3, 0);
+    editor.init_edges(5);
+    editor.add_edge(0, 1);
+    editor.add_edge(1, 2);
+    editor.add_edge(2, 3);
+    editor.add_edge(1, 3);
+    editor.add_edge(0, 3);
     editor.close();
 
-    CPPUNIT_ASSERT(graph.numVertices() == 4);
-    CPPUNIT_ASSERT(graph.numEdges() == 5);
+    CPPUNIT_ASSERT(graph.num_vertices() == 4);
+    CPPUNIT_ASSERT(graph.num_edges() == 5);
   }
    
   void testDirected()
@@ -52,21 +52,21 @@ public:
     Graph graph;
     GraphEditor editor;
     editor.open(graph, "directed");
-    editor.initVertices(4);
-    editor.addVertex(0, 2);
-    editor.addVertex(1, 1);
-    editor.addVertex(2, 1);
-    editor.addVertex(3, 1);
-    editor.initEdges(5);
-    editor.addEdge(0, 1);
-    editor.addEdge(1, 2);
-    editor.addEdge(2, 3);
-    editor.addEdge(3, 1);
-    editor.addEdge(0, 3);
+    editor.init_vertices(4);
+    editor.add_vertex(0, 2);
+    editor.add_vertex(1, 1);
+    editor.add_vertex(2, 1);
+    editor.add_vertex(3, 1);
+    editor.init_edges(5);
+    editor.add_edge(0, 1);
+    editor.add_edge(1, 2);
+    editor.add_edge(2, 3);
+    editor.add_edge(3, 1);
+    editor.add_edge(0, 3);
     editor.close();
 
-    CPPUNIT_ASSERT(graph.numVertices() == 4);
-    CPPUNIT_ASSERT(graph.numEdges() == 5);
+    CPPUNIT_ASSERT(graph.num_vertices() == 4);
+    CPPUNIT_ASSERT(graph.num_edges() == 5);
   }
 };
 
@@ -93,8 +93,8 @@ public:
     Graph graph_in;
     file >> graph_in;
 
-    CPPUNIT_ASSERT(graph_out.numVertices() == graph_in.numVertices());
-    CPPUNIT_ASSERT(graph_out.numEdges() == graph_in.numEdges());
+    CPPUNIT_ASSERT(graph_out.num_vertices() == graph_in.num_vertices());
+    CPPUNIT_ASSERT(graph_out.num_edges() == graph_in.num_edges());
 
   }
 
@@ -111,8 +111,8 @@ public:
     Graph graph_in;
     file >> graph_in;
 
-    CPPUNIT_ASSERT(graph_out.numVertices() == graph_in.numVertices());
-    CPPUNIT_ASSERT(graph_out.numEdges() == graph_in.numEdges());
+    CPPUNIT_ASSERT(graph_out.num_vertices() == graph_in.num_vertices());
+    CPPUNIT_ASSERT(graph_out.num_edges() == graph_in.num_edges());
   }
 
   void testMetisGraphConvertion()
@@ -136,8 +136,8 @@ public:
     File file("mgraph.xml");
     file >> graph;
 
-    CPPUNIT_ASSERT(graph.numVertices() == 3);
-    CPPUNIT_ASSERT(graph.numEdges() == 6);
+    CPPUNIT_ASSERT(graph.num_vertices() == 3);
+    CPPUNIT_ASSERT(graph.num_edges() == 6);
   }
 
   void testScotchGraphConvertion()
@@ -163,8 +163,8 @@ public:
     File file("sgraph.xml");
     file >> graph;
 
-    CPPUNIT_ASSERT(graph.numVertices() == 3);
-    CPPUNIT_ASSERT(graph.numEdges() == 6);
+    CPPUNIT_ASSERT(graph.num_vertices() == 3);
+    CPPUNIT_ASSERT(graph.num_edges() == 6);
   }
 };
 
@@ -194,27 +194,27 @@ public:
     Graph graph;
     GraphEditor editor;
     editor.open(graph, "undirected");
-    editor.initVertices(nn);
-    editor.addVertex(0, 1);
-    editor.addVertex(1, 2);
-    editor.addVertex(2, 1);
-    editor.addVertex(3, 3);
-    editor.addVertex(4, 1);
-    editor.addVertex(5, 1);
-    editor.addVertex(6, 1);
-    editor.addVertex(7, 0);
-    editor.addVertex(8, 0);
-    editor.initEdges(10);
-    editor.addEdge(0, 1);
-    editor.addEdge(1, 2);
-    editor.addEdge(1, 3);
-    editor.addEdge(2, 3);
-    editor.addEdge(3, 4);
-    editor.addEdge(3, 5);
-    editor.addEdge(3, 6);
-    editor.addEdge(4, 7);
-    editor.addEdge(5, 8);
-    editor.addEdge(6, 8);
+    editor.init_vertices(nn);
+    editor.add_vertex(0, 1);
+    editor.add_vertex(1, 2);
+    editor.add_vertex(2, 1);
+    editor.add_vertex(3, 3);
+    editor.add_vertex(4, 1);
+    editor.add_vertex(5, 1);
+    editor.add_vertex(6, 1);
+    editor.add_vertex(7, 0);
+    editor.add_vertex(8, 0);
+    editor.init_edges(10);
+    editor.add_edge(0, 1);
+    editor.add_edge(1, 2);
+    editor.add_edge(1, 3);
+    editor.add_edge(2, 3);
+    editor.add_edge(3, 4);
+    editor.add_edge(3, 5);
+    editor.add_edge(3, 6);
+    editor.add_edge(4, 7);
+    editor.add_edge(5, 8);
+    editor.add_edge(6, 8);
     editor.close();
 
     dolfin::uint* parts = new dolfin::uint[nn];

@@ -25,6 +25,9 @@ namespace dolfin
   class Mesh;
   class SubDomain;
   class UFC;
+  class Cell; 
+  class Facet; 
+  class Function;
   template<class T> class MeshFunction;
 
   /// This class provides automated assembly of linear systems, or
@@ -75,7 +78,7 @@ namespace dolfin
     static void assemble_system(GenericMatrix& A,
                                 GenericVector& b,
                                 const Form& a,
-                                const Form& L, 
+                                const Form& L,
                                 std::vector<const DirichletBC*>& bcs,
                                 bool reset_tensors=true);
 
@@ -90,6 +93,36 @@ namespace dolfin
                                 const MeshFunction<uint>* interior_facet_domains,
                                 const GenericVector* x0,
                                 bool reset_tensors=true);
+
+    /// Assemble system (A, b) and apply Dirichlet boundary condition
+    static void assemble_system_new(GenericMatrix& A,
+                                GenericVector& b,
+                                const Form& a,
+                                const Form& L,
+                                const DirichletBC& bc,
+                                bool reset_tensors=true);
+
+    /// Assemble system (A, b) and apply Dirichlet boundary conditions
+    static void assemble_system_new(GenericMatrix& A,
+                                GenericVector& b,
+                                const Form& a,
+                                const Form& L, 
+                                std::vector<const DirichletBC*>& bcs,
+                                bool reset_tensors=true);
+
+    static void assemble_system_new(GenericMatrix& A,
+                                GenericVector& b,
+                                const Form& a,
+                                const Form& L,
+                                std::vector<const DirichletBC*>& bcs,
+                                const MeshFunction<uint>* cell_domains,
+                                const MeshFunction<uint>* exterior_facet_domains,
+                                const MeshFunction<uint>* interior_facet_domains,
+                                const GenericVector* x0,
+                                bool reset_tensors=true);
+
+
+    static void compute_mesh_function_from_mesh_arrays(Mesh& mesh);
 
   private:
 
@@ -126,6 +159,34 @@ namespace dolfin
     // Pretty-printing for progress bar
     static std::string progress_message(uint rank,
                                         std::string integral_type);
+
+    static void compute_tensor_on_one_cell(const Form& a,
+                                    UFC& ufc, 
+                                    const Cell& cell, 
+                                    const std::vector<const Function*>& coefficients, 
+                                    const MeshFunction<uint>* cell_domains
+                                    ); 
+    
+    static void compute_tensor_on_one_exterior_facet (const Form& a,
+                                               UFC& ufc, 
+                                               const Cell& cell, 
+                                               const Facet& facet,
+                                               const std::vector<const Function*>& coefficients, 
+                                               const MeshFunction<uint>* exterior_facet_domains
+                                               ); 
+
+
+    static void compute_tensor_on_one_interior_facet (const Form& a,
+                                               UFC& ufc, 
+                                               const Cell& cell1, 
+                                               const Cell& cell2, 
+                                               const Facet& facet,
+                                               const std::vector<const Function*>& coefficients, 
+                                               const MeshFunction<uint>* exterior_facet_domains
+                                               ); 
+
+
+
 
   };
 

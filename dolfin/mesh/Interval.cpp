@@ -31,14 +31,14 @@ Interval::Interval(uint nx, double a, double b) : Mesh()
   editor.open(*this, CellType::interval, 1, 1);
 
   // Create vertices and cells:
-  editor.initVertices((nx+1));
-  editor.initCells(nx);
+  editor.init_vertices((nx+1));
+  editor.init_cells(nx);
 
   // Create main vertices:
   for (uint ix = 0; ix <= nx; ix++)
   {
     const double x = a + (static_cast<double>(ix)*(b-a) / static_cast<double>(nx));
-    editor.addVertex(ix, x);
+    editor.add_vertex(ix, x);
   }
 
   // Create intervals
@@ -46,7 +46,7 @@ Interval::Interval(uint nx, double a, double b) : Mesh()
   {
     const uint v0 = ix;
     const uint v1 = v0 + 1;
-    editor.addCell(ix, v0, v1);
+    editor.add_cell(ix, v0, v1);
   }
 
   // Close mesh editor

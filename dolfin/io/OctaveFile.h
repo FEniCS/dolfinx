@@ -17,18 +17,18 @@ namespace dolfin
   class OctaveFile : public MFile
   {
   public:
-    
+
     OctaveFile(const std::string filename);
     ~OctaveFile();
 
     // Input
-    
+
     // Output
-    
+
     void operator<< (const GenericMatrix& A);
-    
+
   };
-  
+
 }
 
 #endif

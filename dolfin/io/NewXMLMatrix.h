@@ -13,28 +13,28 @@ namespace dolfin
 {
   class GenericMatrix;
   class NewXMLFile;
-  
+
   class NewXMLMatrix : public XMLHandler
   {
   public:
 
     NewXMLMatrix(GenericMatrix& matrix, NewXMLFile& parser);
-    
+
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
 
     static void write(const GenericMatrix& matrix, std::ostream& outfile, uint indentation_level=0);
-    
+
   private:
-    
+
     enum parser_state { OUTSIDE, INSIDE_MATRIX, INSIDE_ROW, DONE };
-    
+
     void read_matrix  (const xmlChar *name, const xmlChar **attrs);
     void read_row     (const xmlChar *name, const xmlChar **attrs);
     void read_entry   (const xmlChar *name, const xmlChar **attrs);
 
     void set_row();
-    
+
     GenericMatrix& A;
     parser_state state;
 
@@ -42,9 +42,9 @@ namespace dolfin
     uint row;
     std::vector<uint> columns;
     std::vector<double> values;
-    
+
   };
-  
+
 }
 
 #endif

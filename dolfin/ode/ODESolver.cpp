@@ -39,20 +39,20 @@ void ODESolver::solve(ODESolution& u)
   begin("Solving ODE over the time interval [0.0, %g]", to_double(ode.endtime()));
 
   // Start timing
-  tic();  
+  tic();
 
   // Solve primal problem
   solve_primal(u);
   u.flush();
 
-  // Check if we should solve the dual problem  
+  // Check if we should solve the dual problem
   if (ode.get("ODE solve dual problem"))
     solve_dual(u);
   else
     cout << "Not solving the dual problem as requested." << endl;
 
   // Report elapsed time
-  message("ODE solution computed in %.3f seconds.", toc());
+  info("ODE solution computed in %.3f seconds.", toc());
 
   end();
 }
@@ -68,13 +68,13 @@ void ODESolver::solve_primal(ODESolution& u)
 }
 //------------------------------------------------------------------------
 void ODESolver::solve_dual(ODESolution& u)
-{ 
+{
   begin("Solving dual problem");
 
   // Create dual problem
   Dual dual(ode, u);
 
-  if (dolfin_changed("floating-point precision")) 
+  if (dolfin_changed("floating-point precision"))
   {
     warning("Solving dual with extended precision, not supported. Using double precision.");
     // Set discrete tolerance to default value.

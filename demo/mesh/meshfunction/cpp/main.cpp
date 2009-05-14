@@ -17,7 +17,7 @@ int main()
   File inmesh("../mesh2D.xml.gz", true);
   Mesh mesh;
   inmesh >> mesh;
-  
+
   // Read mesh function from file (new style)
   File in("../meshfunction.xml", true);
   MeshFunction<double> f(mesh);
@@ -29,4 +29,4 @@ int main()
 
   // Plot mesh function
   plot(f);
-} 
+}

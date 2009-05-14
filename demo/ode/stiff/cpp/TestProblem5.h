@@ -12,10 +12,10 @@ using namespace dolfin;
 class TestProblem5 : public ODE
 {
 public:
-  
+
   TestProblem5() : ODE(6, 180.0)
   {
-    message("The Chemical Akzo-Nobel problem.");
+    info("The Chemical Akzo-Nobel problem.");
 
     k1  = 18.7;
     k2  = 0.58;
@@ -54,7 +54,7 @@ private:
   {
     return k1*dolfin::pow(u[0], 4.0)*sqrt(u[1]);
   }
-  
+
   double r2(const double* u)
   {
     return k2*u[2]*u[3];

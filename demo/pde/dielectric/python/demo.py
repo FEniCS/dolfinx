@@ -20,7 +20,7 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-l = 1.0; h = 1.0 # unit square 
+l = 1.0; h = 1.0 # unit square
 h_ = 0.5         # position of the dielectric interface
 e_r = 10         # dielectric constant for y<h_ (e_r=1 for y>h_
 V = 1.0          # applied voltage at the y=0 boundary
@@ -28,15 +28,15 @@ V = 1.0          # applied voltage at the y=0 boundary
 # Create mesh and finite element
 mesh = Mesh()
 editor = MeshEditor()
-editor.open(mesh, "triangle", 2, 2) 
-editor.initVertices(4)
-editor.initCells(2)
-editor.addVertex(0, 0.0, 0.0)
-editor.addVertex(1, 0.0, h)
-editor.addVertex(2, l, h)
-editor.addVertex(3, l,0)
-editor.addCell(0, 0, 1, 2)
-editor.addCell(1, 0, 2, 3)
+editor.open(mesh, "triangle", 2, 2)
+editor.init_vertices(4)
+editor.init_cells(2)
+editor.add_vertex(0, 0.0, 0.0)
+editor.add_vertex(1, 0.0, h)
+editor.add_vertex(2, l, h)
+editor.add_vertex(3, l,0)
+editor.add_cell(0, 0, 1, 2)
+editor.add_cell(1, 0, 2, 3)
 editor.close()
 
 # Refine mesh
@@ -73,8 +73,8 @@ class Exact(Function):
                                                      2*e_r*X2*exp(-n_*pi*(x[1]-h_))) /\
                                                      ( (1.+e_r*X)*exp(-n_*pi*h_) -
                                                        (1.-e_r*X)*exp(n_*pi*h_) )
-        values[0] = u 
-        
+        values[0] = u
+
 # Dielectric constant
 class Coefficient(Function):
     def eval(self, values, x):
@@ -90,7 +90,7 @@ class DirichletFunction(Function):
             values[0] = V
         else:
             values[0] = 0.0
-            
+
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):

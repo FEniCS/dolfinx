@@ -9,18 +9,21 @@
 
 using namespace dolfin;
 //-----------------------------------------------------------------------------
-void EpetraPreconditioner::setType(PreconditionerType type) {
-  prec_type = type; 
+void EpetraPreconditioner::set_type(std::string type) 
+{
+  pc_type = type;
 }
 //-----------------------------------------------------------------------------
-void EpetraPreconditioner::init(const EpetraMatrix& a) { 
-  error("EpetraPreconditioner::init : not implemented "); 
+void EpetraPreconditioner::init(const EpetraMatrix& a) 
+{
+  error("EpetraPreconditioner::init : not implemented ");
 }
 //-----------------------------------------------------------------------------
-void EpetraPreconditioner::solve(EpetraVector& x, const EpetraVector& b) { 
-  error("EpetraPreconditioner::solve: not implemented "); 
+void EpetraPreconditioner::solve(EpetraVector& x, const EpetraVector& b) 
+{
+  error("EpetraPreconditioner::solve: not implemented ");
 }
 //-----------------------------------------------------------------------------
-#endif 
+#endif
 
 

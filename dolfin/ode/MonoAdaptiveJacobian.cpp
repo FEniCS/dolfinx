@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2008 Anders Logg.
+// Copyright (C) 2005-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2008-10-06
+// Last changed: 2009-03-07
 
 #include <dolfin/common/real.h>
 #include <dolfin/common/timing.h>
@@ -23,16 +23,15 @@ MonoAdaptiveJacobian::MonoAdaptiveJacobian(MonoAdaptiveTimeSlab& timeslab,
   //Do nothing
   xx = new real[ts.N];
   yy = new real[ts.N];
-  
+
   real_zero(ts.N, xx);
   real_zero(ts.N, yy);
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveJacobian::~MonoAdaptiveJacobian()
 {
-  delete xx;
-  delete yy;
-
+  delete [] xx;
+  delete [] yy;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MonoAdaptiveJacobian::size(uint dim) const
@@ -72,7 +71,7 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
         ts.copy(ts.x, noffset, ts.u, 0, ts.N);
         ode.M(xx, yy, ts.u, t);
       }
-      
+
       // Copy values from yy
       ts.copy(yy, 0, y, noffset, ts.N);
     }

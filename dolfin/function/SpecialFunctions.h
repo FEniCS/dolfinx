@@ -56,16 +56,16 @@ namespace dolfin
 
     /// Function evaluation
     void eval(double* values, const Data& data) const;
-    
+
     /// Compute minimal cell diameter
     double min() const;
 
     /// Compute maximal cell diameter
-    double max() const;    
+    double max() const;
 
   };
 
-  /// This Function represents the inverse of the local cell size on a given 
+  /// This Function represents the inverse of the local cell size on a given
   /// mesh.
   class InvMeshSize : public Function
   {
@@ -82,7 +82,7 @@ namespace dolfin
 
   };
 
-  /// This Function represents the average of the local cell size (average of 
+  /// This Function represents the average of the local cell size (average of
   /// cell sharing a facet) on a given mesh.
   class AvgMeshSize : public Function
   {
@@ -113,9 +113,9 @@ namespace dolfin
 
     /// Function evaluation
     void eval(double* values, const Data& data) const;
-    
+
     uint rank() const;
-    
+
     uint dim(uint i) const;
 
   };
@@ -186,11 +186,11 @@ namespace dolfin
 
     // Constructor
     SUPGStabilizer(const FunctionSpace& V, const Function& f, double sigma_=1.0);
-    
+
     ~SUPGStabilizer(){}
-    
+
     void eval(double* values, const Data& data) const;
-    
+
     // The diffusion coeffisient, used to calculate the local Péclet number
     double sigma;
 
@@ -198,7 +198,7 @@ namespace dolfin
 
     const Function* field;
   };
-  
+
   /// This function is used for the Python interface. By inheriting
   /// from this function instead of dolfin::Function, we avoid unnecessary
   /// calls through the SWIG created director class, when dealing
@@ -209,13 +209,13 @@ namespace dolfin
 
     // Constructor
     DiscreteFunction() : Function(){}
-    
+
     // Constructor
     DiscreteFunction(const FunctionSpace& V) : Function(V)
     {
       vector();
     }
-    
+
     // Constructor
     DiscreteFunction(const FunctionSpace& V, std::string filename) : Function(V,filename){}
 

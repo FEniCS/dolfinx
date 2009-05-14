@@ -42,14 +42,14 @@ namespace dolfin
 
     // FIXME: Pointers need to be const here to work with SWIG. Is there a fix for this?
 
-    /// Create form from given Constructor used in the python interface 
+    /// Create form from given Constructor used in the python interface
     Form(const ufc::form& ufc_form,
-         const std::vector<FunctionSpace*>& function_spaces, 
+         const std::vector<FunctionSpace*>& function_spaces,
          const std::vector<Function*>& coefficients);
-    
+
     /// Destructor
     virtual ~Form();
-    
+
     /// Return rank of form (bilinear form = 2, linear form = 1, functional = 0, etc)
     uint rank() const;
 
@@ -70,10 +70,10 @@ namespace dolfin
 
     /// Return the number of the coefficient with this name
     virtual dolfin::uint coefficient_number(const std::string & name) const;
-    
+
     /// Return the name of the coefficient with this number
     virtual std::string coefficient_name(dolfin::uint i) const;
-    
+
     /// Return UFC form
     const ufc::form& ufc_form() const;
 

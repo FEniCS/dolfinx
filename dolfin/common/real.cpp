@@ -15,17 +15,17 @@ real dolfin::_real_epsilon = DOLFIN_EPS;
 void dolfin::real_init() {
 #ifndef HAS_GMP
   _real_epsilon = DOLFIN_EPS;
-#else 
+#else
   //computing precision
   real eps = 0.1;
   real one = real("1.0");
-  while ( eps + one != one ) 
+  while ( eps + one != one )
   {
     eps /= 2;
   }
-    
+
   eps *= 2;
-  
+
   _real_epsilon = eps;
 #endif
 }
@@ -44,7 +44,7 @@ real dolfin::real_sqrt(real a)
     x = prev - (prev*prev - a)/(2*prev);
     ++k;
   }
-  
+
   real test = x*x;
   test = test-a;
   /*
@@ -61,41 +61,41 @@ real dolfin::real_pi()
 #else
 
     //Computing pi using the Gauss-Legendre formula
-  
+
     real pi_prev;
     real pi_next;
-    
+
     real prev[3];
     real next[3];
-    
+
     const int A = 0;
     const int B = 1;
     const int T = 2;
-    
+
     next[A] = real("1.0");
     next[B] = 1/real_sqrt(real("2.0"));
     next[T] = real("0.25");
     uint P = 1;
-    
+
     uint k = 0;
-    do 
+    do
     {
       ++k;
       pi_prev = pi_next;
       real_set(3, prev, next);
-      
+
       next[A] = (prev[A]+prev[B])/2;
       next[B] = real_sqrt(prev[A]*prev[B]);
-      
+
       next[T]= prev[T] - P*(prev[A]-next[A])*(prev[A]-next[A]);
       P *= 2;
-      
+
       pi_next = (next[A]+next[B])*(next[A]+next[B])/(4*next[T]);
-    
+
     } while (abs(pi_next - pi_prev) > 10*real_epsilon());
 
-    //gmp_printf("Pi computed in %d iterations: %.50Fe\n", k, pi_next.get_mpf_t());  
-    
+    //gmp_printf("Pi computed in %d iterations: %.50Fe\n", k, pi_next.get_mpf_t());
+
     return pi_next;
 #endif
 }

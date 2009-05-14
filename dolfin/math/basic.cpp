@@ -41,7 +41,7 @@ double dolfin::rand()
     std::srand(s);
     rand_seeded = true;
   }
-  
+
   return static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
 }
 //-----------------------------------------------------------------------------

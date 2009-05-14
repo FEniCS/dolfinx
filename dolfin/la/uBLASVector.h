@@ -67,7 +67,7 @@ namespace dolfin
     virtual void apply();
 
     /// Display tensor
-    virtual void disp(uint precision=2) const;    
+    virtual void disp(uint precision=2) const;
 
     //--- Implementation of the GenericVector interface ---
 
@@ -102,7 +102,7 @@ namespace dolfin
     virtual double inner(const GenericVector& x) const;
 
     /// Compute norm of vector
-    virtual double norm(dolfin::NormType type=l2) const;
+    virtual double norm(std::string norm_type = "l2") const;
 
     /// Return minimum value of vector
     virtual double min() const;
@@ -110,8 +110,14 @@ namespace dolfin
     /// Return maximum value of vector
     virtual double max() const;
 
+    /// Return sum of values of vector
+    virtual double sum() const;
+
     /// Multiply vector by given number
     virtual const uBLASVector& operator *= (double a);
+
+    /// Multiply vector by another vector pointwise
+    virtual const uBLASVector& operator*= (const GenericVector& x);
 
     /// Divide vector by given number
     virtual const uBLASVector& operator /= (double a);
@@ -129,7 +135,7 @@ namespace dolfin
     virtual const uBLASVector& operator= (double a);
 
     /// Return pointer to underlying data (const version)
-    virtual const double* data() const 
+    virtual const double* data() const
     { return &x->data()[0]; }
 
     /// Return pointer to underlying data
@@ -140,7 +146,7 @@ namespace dolfin
 
     /// Return linear algebra backend factory
     virtual LinearAlgebraFactory& factory() const;
-    
+
     //--- Special uBLAS functions ---
 
     /// Return reference to uBLAS vector (const version)
@@ -170,7 +176,7 @@ namespace dolfin
   };
 
   LogStream& operator<< (LogStream& stream, const uBLASVector& x);
- 
+
 }
 
 #endif

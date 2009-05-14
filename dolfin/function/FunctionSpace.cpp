@@ -5,17 +5,20 @@
 // Modified by Martin Alnes, 2008.
 // Modified by Garth N. Wells, 2008.
 // Modified by Kent-Andre Mardal, 2009.
+// Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-01-06
+// Last changed: 2009-05-12
 
-#include <ufc.h>
+#include <dolfin/main/MPI.h>
+#include <dolfin/fem/UFC.h>
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/IntersectionDetector.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/la/GenericVector.h>
@@ -32,7 +35,8 @@ FunctionSpace::FunctionSpace(const Mesh& mesh,
     _element(reference_to_no_delete_pointer(element)),
     _dofmap(reference_to_no_delete_pointer(dofmap)),
     _restriction(static_cast<MeshFunction<bool>*>(0)),
-    scratch(element), intersection_detector(0)
+    scratch(element), intersection_detector(0),
+    parallel(MPI::num_processes() > 1)
 {
   // Do nothing
 }
@@ -42,9 +46,52 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
                              boost::shared_ptr<const DofMap> dofmap)
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0)),
-    scratch(*element), intersection_detector(0)
+    scratch(*element), intersection_detector(0),
+    parallel(MPI::num_processes() > 1)
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::FunctionSpace(Mesh& mesh,
+                             const FiniteElement &element,
+                             const DofMap& dofmap)
+  : _mesh(reference_to_no_delete_pointer(mesh)),
+    _element(reference_to_no_delete_pointer(element)),
+    _dofmap(reference_to_no_delete_pointer(dofmap)),
+    _restriction(static_cast<MeshFunction<bool>*>(0)),
+    scratch(element), intersection_detector(0),
+    parallel(MPI::num_processes() > 1)
+{
+  for (uint d = 1; d < mesh.topology().dim(); ++d)
+  {
+    if (_dofmap->needs_mesh_entities(d))
+    {
+      mesh.init(d);
+      if (parallel) 
+        MeshPartitioning::number_entities(mesh, d);
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
+                             boost::shared_ptr<const FiniteElement> element,
+                             boost::shared_ptr<const DofMap> dofmap)
+  : _mesh(mesh), _element(element), _dofmap(dofmap),
+    _restriction(static_cast<MeshFunction<bool>*>(0)),
+    scratch(*element), intersection_detector(0),
+    parallel(MPI::num_processes() > 1)
+{
+  for (uint d = 1; d < (*mesh).topology().dim(); ++d)
+  {
+    if (_dofmap->needs_mesh_entities(d))
+    {
+      (*mesh).init(d);
+      if (parallel) 
+        MeshPartitioning::number_entities((*mesh), d);
+    }
+  }
+  //info("size of num global entities is %d", (*mesh).data().array("num global entities")->size());
+  //info("num global entities[0] is %d", (*(*mesh).data().array("num global entities"))[0]);
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(const FunctionSpace& V)
@@ -54,6 +101,8 @@ FunctionSpace::FunctionSpace(const FunctionSpace& V)
   _element = V._element;
   _dofmap  = V._dofmap;
   _restriction = V._restriction;
+  parallel = V.parallel;
+
 
   // Reinitialize scratch space and intersection detector
   scratch.init(*_element);
@@ -79,7 +128,7 @@ const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
   {
     delete intersection_detector;
     intersection_detector = 0;
-  }  
+  }
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -187,7 +236,7 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
     _dofmap->tabulate_dofs(scratch.dofs, ufc_cell, cell->index());
 
     // Copy dofs to vector
-    coefficients.set(scratch.coefficients, _dofmap->local_dimension(), scratch.dofs);
+    coefficients.set(scratch.coefficients, _dofmap->local_dimension(ufc_cell), scratch.dofs);
   }
 }
 //-----------------------------------------------------------------------------
@@ -201,7 +250,7 @@ void FunctionSpace::interpolate(double* vertex_values,
   dolfin_assert(_dofmap);
 
   // Local data for interpolation on each cell
-  const uint num_cell_vertices = _mesh->type().numVertices(_mesh->topology().dim());
+  const uint num_cell_vertices = _mesh->type().num_vertices(_mesh->topology().dim());
   double* local_vertex_values = new double[scratch.size*num_cell_vertices];
 
   // Interpolate vertex values on each cell (using latest value if not continuous)
@@ -226,7 +275,7 @@ void FunctionSpace::interpolate(double* vertex_values,
       for (uint i = 0; i < scratch.size; ++i)
       {
         const uint local_index  = vertex.pos()*scratch.size + i;
-        const uint global_index = i*_mesh->numVertices() + vertex->index();
+        const uint global_index = i*_mesh->num_vertices() + vertex->index();
         vertex_values[global_index] = local_vertex_values[local_index];
       }
     }
@@ -246,7 +295,7 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vec
   std::ostringstream identifier;
   for (uint i = 0; i < component.size(); ++i)
     identifier << component[i] << ".";
-  
+
   // Check if sub space is aleady in the cache
   std::map<std::string, boost::shared_ptr<FunctionSpace> >::iterator subspace;
   subspace = subspaces.find(identifier.str());
@@ -259,7 +308,7 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vec
   // Extract sub dofmap and offset
   uint offset = 0;
   boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component, offset, *_mesh));
-  
+
   // Create new sub space
   boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
 
@@ -319,13 +368,13 @@ void FunctionSpace::Scratch::init(const FiniteElement& element)
     dofs[i] = 0;
 
   // Initialize local array for expansion coefficients
-  delete coefficients;
+  delete [] coefficients;
   coefficients = new double[element.space_dimension()];
   for (uint i = 0; i < element.space_dimension(); i++)
     coefficients[i] = 0.0;
 
   // Initialize local array for values
-  delete values;
+  delete [] values;
   values = new double[size];
   for (uint i = 0; i < size; i++)
     values[i] = 0.0;
@@ -333,9 +382,9 @@ void FunctionSpace::Scratch::init(const FiniteElement& element)
 //-----------------------------------------------------------------------------
 bool FunctionSpace::is_inside_restriction(uint c) const
 {
-  if (_restriction) 
+  if (_restriction)
     return _restriction->get(c);
-  else 
+  else
     return true;
 }
 //-----------------------------------------------------------------------------

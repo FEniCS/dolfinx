@@ -28,11 +28,11 @@ class Fish : public SubDomain
 {
   bool inside(const double* x, bool on_boundary) const
   {
-    return (x[0] > DOLFIN_EPS && x[0] < (1.0 - DOLFIN_EPS) && 
+    return (x[0] > DOLFIN_EPS && x[0] < (1.0 - DOLFIN_EPS) &&
             x[1] > DOLFIN_EPS && x[1] < (1.0 - DOLFIN_EPS) &&
             on_boundary);
   }
-};  
+};
 
 int main()
 {
@@ -54,6 +54,6 @@ int main()
   double lift = assemble(L, fish);
   double drag = assemble(D, fish);
 
-  message("Lift: %f", lift);
-  message("Drag: %f", drag);
+  info("Lift: %f", lift);
+  info("Drag: %f", drag);
 }

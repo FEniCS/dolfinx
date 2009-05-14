@@ -14,7 +14,7 @@
 namespace dolfin
 {
 
-  /// Triangular mesh of the 2D unit circle. 
+  /// Triangular mesh of the 2D unit circle.
   /// Given the number of cells (nx, ny) in each direction,
   /// the total number of triangles will be 2*nx*ny and the
   /// total number of vertices will be (nx + 1)*(ny + 1).
@@ -30,7 +30,7 @@ namespace dolfin
     enum Type {right, left, crisscross};
     enum Transformation {maxn, sumn, rotsumn};
 
-    UnitCircle(uint nx, Type type = crisscross, 
+    UnitCircle(uint nx, Type type = crisscross,
                Transformation transformation = rotsumn);
 
   private:
@@ -42,7 +42,7 @@ namespace dolfin
     inline double max(double x, double y)
     { return ((x>y) ? x : y); };
   };
-  
+
 }
 
 #endif

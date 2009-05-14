@@ -3,9 +3,10 @@
 //
 // Modified by Garth N. Wells, 2008.
 // Modified by Kent-Andre Mardal, 2009.
+// Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-01-06
+// Last changed: 2009-05-12
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -18,7 +19,7 @@
 
 namespace ufc
 {
-  class cell; 
+  class cell;
 }
 
 namespace dolfin
@@ -30,7 +31,7 @@ namespace dolfin
   class Function;
   class IntersectionDetector;
   class GenericVector;
-  template <class T> class MeshFunction; 
+  template <class T> class MeshFunction;
 
   /// This class represents a finite element function space defined by
   /// a mesh, a finite element, and a local-to-global mapping of the
@@ -39,6 +40,16 @@ namespace dolfin
   class FunctionSpace
   {
   public:
+
+    /// Create function space for given mesh, element and dofmap
+    FunctionSpace(Mesh& mesh,
+                  const FiniteElement& element,
+                  const DofMap& dofmap);
+
+    /// Create function space for given mesh, element and dofmap (shared data)
+    FunctionSpace(boost::shared_ptr<Mesh> mesh,
+                  boost::shared_ptr<const FiniteElement> element,
+                  boost::shared_ptr<const DofMap> dofmap);
 
     /// Create function space for given mesh, element and dofmap
     FunctionSpace(const Mesh& mesh,
@@ -100,7 +111,7 @@ namespace dolfin
     // Create Functions space based on the restriction
     boost::shared_ptr<FunctionSpace> restriction(MeshFunction<bool>& restriction);
 
-    // Evaluate restriction 
+    // Evaluate restriction
     bool is_inside_restriction(uint c) const;
 
   private:
@@ -112,7 +123,7 @@ namespace dolfin
 
       // Constructor
       Scratch(const FiniteElement& element);
-      
+
       // Constructor
       Scratch();
 
@@ -156,6 +167,9 @@ namespace dolfin
 
     // Intersection detector, used for evaluation at arbitrary points
     mutable IntersectionDetector* intersection_detector;
+
+    // True if running in parallel
+    bool parallel;
 
   };
 

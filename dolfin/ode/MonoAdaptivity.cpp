@@ -59,12 +59,12 @@ void MonoAdaptivity::update(real k0, real r, const Method& method, real t,
 
   // Compute local error estimate
   const real error = method.error(k0, r);
-  
+
   // Let controller choose new time step
   k = controller.update(error, safety*tol);
 
   // Check if time step can be accepted
-  _accept = true;    
+  _accept = true;
   if ( error > tol )
   {
     // Extra reduction if this is the first time step
@@ -72,11 +72,11 @@ void MonoAdaptivity::update(real k0, real r, const Method& method, real t,
       k = min(k, 0.1*k0);
     else
       k = min(k, 0.5*k0);
-    
+
     controller.reset(k);
     _accept = false;
 
-    //message("e = %.3e  tol = %.3e", error, tol);
+    //info("e = %.3e  tol = %.3e", error, tol);
   }
 }
 //-----------------------------------------------------------------------------

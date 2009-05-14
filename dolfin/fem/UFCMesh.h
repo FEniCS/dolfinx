@@ -7,7 +7,7 @@
 #ifndef __UFC_MESH_H
 #define __UFC_MESH_H
 
-#include <ufc.h>
+#include "UFC.h"
 #include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
@@ -19,7 +19,7 @@ namespace dolfin
   class UFCMesh : public ufc::mesh
   {
   public:
-    
+
     /// Create empty UFC mesh
     UFCMesh() : ufc::mesh() {}
 
@@ -43,7 +43,7 @@ namespace dolfin
 
       // Set topological dimension
       topological_dimension = mesh.topology().dim();
-      
+
       // Set geometric dimension
       geometric_dimension = mesh.geometry().dim();
 

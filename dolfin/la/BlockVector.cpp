@@ -17,156 +17,157 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 BlockVector::BlockVector(uint n_, bool owner_): owner(owner_), n(n_)
-{ 
-  vectors = new Vector*[n]; 
-  if (owner) 
+{
+  vectors = new Vector*[n];
+  if (owner)
   {
-    for (uint i = 0; i < n; i++) 
-      vectors[i] = new Vector(); 
+    for (uint i = 0; i < n; i++)
+      vectors[i] = new Vector();
   }
 }
 //-----------------------------------------------------------------------------
-BlockVector::~BlockVector() 
+BlockVector::~BlockVector()
 {
   if (owner)
   {
-    for (uint i = 0; i < n; i++) 
-      delete vectors[i]; 
+    for (uint i = 0; i < n; i++)
+      delete vectors[i];
   }
-  delete [] vectors; 
+  delete [] vectors;
 }
 //-----------------------------------------------------------------------------
 BlockVector* BlockVector::copy() const
 {
-  BlockVector* x= new BlockVector(n); 
-  for (uint i = 0; i < n; i++)   
-    x->set(i,*(this->get(i).copy())); 
-  return x; 
+  BlockVector* x= new BlockVector(n);
+  for (uint i = 0; i < n; i++)
+    x->set(i,*(this->get(i).copy()));
+  return x;
 }
 //-----------------------------------------------------------------------------
 SubVector BlockVector::operator()(uint i)
 {
-  SubVector sv(i,*this);  
-  return sv; 
+  SubVector sv(i,*this);
+  return sv;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint BlockVector::size() const 
-{  
-  return n; 
-} 
-//-----------------------------------------------------------------------------
-void BlockVector::axpy(double a, const BlockVector& x) 
+dolfin::uint BlockVector::size() const
 {
-  for (uint i = 0; i < n; i++) 
-    this->get(i).axpy(a, x.get(i)); 
+  return n;
 }
 //-----------------------------------------------------------------------------
-double BlockVector::inner(const BlockVector& x) const 
+void BlockVector::axpy(double a, const BlockVector& x)
 {
-  double value = 0.0; 
-  for (uint i = 0; i < n; i++) 
-    value += this->get(i).inner(x.get(i)); 
-  return value; 
+  for (uint i = 0; i < n; i++)
+    this->get(i).axpy(a, x.get(i));
 }
 //-----------------------------------------------------------------------------
-double BlockVector::norm(NormType type) const
+double BlockVector::inner(const BlockVector& x) const
 {
-  double value = 0.0; 
-  switch (type) 
-  { 
-    case l1: 
-      for (uint i = 0; i < n; i++)  
-        value += this->get(i).norm(type); 
-      break; 
-    case l2: 
-      for (uint i = 0; i < n; i++)  
-        value += std::pow(this->get(i).norm(type), 2); 
-      value = sqrt(value); 
-      break; 
-    default: 
-      double tmp= 0.0; 
-      for (uint i = 0; i < n; i++)  
-      {
-        tmp = this->get(i).norm(type); 
-        if (tmp > value) 
-          value = tmp;    
-      }
+  double value = 0.0;
+  for (uint i = 0; i < n; i++)
+    value += this->get(i).inner(x.get(i));
+  return value;
+}
+//-----------------------------------------------------------------------------
+double BlockVector::norm(std::string norm_type) const
+{
+  double value = 0.0;
+  if(norm_type == "l1")
+  {
+    for (uint i = 0; i < n; i++)
+      value += this->get(i).norm(norm_type);
   }
-  return value; 
+  else if(norm_type == "l2")
+  {
+    for (uint i = 0; i < n; i++)
+      value += std::pow(this->get(i).norm(norm_type), 2);
+    value = sqrt(value);
+  }
+  else
+  {
+    double tmp= 0.0;
+    for (uint i = 0; i < n; i++)
+    {
+      tmp = this->get(i).norm(norm_type);
+      if (tmp > value)
+        value = tmp;
+    }
+  }
+  return value;
 }
 //-----------------------------------------------------------------------------
 double BlockVector::min() const
 {
-  double value = 100000000; //FIXME use MAXFLOAT or something  
+  double value = 100000000; //FIXME use MAXFLOAT or something
   double tmp = 0.0;
-  for (uint i = 0; i < n; i++)  
+  for (uint i = 0; i < n; i++)
   {
-    tmp = this->get(i).min(); 
+    tmp = this->get(i).min();
     if (tmp < value)
-      value = tmp; 
+      value = tmp;
   }
   return value;
 }
 //-----------------------------------------------------------------------------
 double BlockVector::max() const
 {
-  double value = -1.0; //FIXME use MINFLOAT or something  
+  double value = -1.0; //FIXME use MINFLOAT or something
   double tmp = 0.0;
-  for (uint i = 0; i < n; i++)  
+  for (uint i = 0; i < n; i++)
   {
-    tmp = this->get(i).min(); 
+    tmp = this->get(i).min();
     if (tmp > value)
-      value = tmp; 
+      value = tmp;
   }
-  return value; 
+  return value;
 }
 //-----------------------------------------------------------------------------
-const BlockVector& BlockVector::operator*= (double a) 
-{
-  for(uint i = 0; i < n; i++) 
-    this->get(i) *= a; 
-  return *this; 
-}
-//-----------------------------------------------------------------------------
-const BlockVector& BlockVector::operator/= (double a) 
+const BlockVector& BlockVector::operator*= (double a)
 {
   for(uint i = 0; i < n; i++)
-    this->get(i) /= a; 
-  return *this; 
+    this->get(i) *= a;
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const BlockVector& BlockVector::operator/= (double a)
+{
+  for(uint i = 0; i < n; i++)
+    this->get(i) /= a;
+  return *this;
 }
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator+= (const BlockVector& y)
 {
-  axpy(1.0, y); 
-  return *this;  
+  axpy(1.0, y);
+  return *this;
 }
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator-= (const BlockVector& y)
 {
-  axpy(-1.0, y); 
-  return *this;  
+  axpy(-1.0, y);
+  return *this;
 }
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator= (const BlockVector& x)
 {
   for(uint i = 0; i < n; i++)
-    this->get(i) = x.get(i); 
-  return *this; 
+    this->get(i) = x.get(i);
+  return *this;
 }
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator= (double a)
 {
   for(uint i = 0; i < n; i++)
-    this->get(i) = a; 
-  return *this; 
+    this->get(i) = a;
+  return *this;
 }
 //-----------------------------------------------------------------------------
-void BlockVector::disp(uint precision) const  
+void BlockVector::disp(uint precision) const
 {
-  for(uint i = 0; i < n; i++) 
+  for(uint i = 0; i < n; i++)
   {
-    std::cout <<"BlockVector("<<i<<"):"<<std::endl;  
-    this->get(i).disp(precision); 
+    std::cout <<"BlockVector("<<i<<"):"<<std::endl;
+    this->get(i).disp(precision);
   }
 }
 //-----------------------------------------------------------------------------
@@ -178,17 +179,17 @@ void BlockVector::set(uint i, Vector& v)
 //-----------------------------------------------------------------------------
 const Vector& BlockVector::get(uint i) const
 {
-  return *(vectors[i]); 
+  return *(vectors[i]);
 }
 //-----------------------------------------------------------------------------
-Vector& BlockVector::get(uint i) 
+Vector& BlockVector::get(uint i)
 {
-  return *(vectors[i]); 
+  return *(vectors[i]);
 }
 //-----------------------------------------------------------------------------
 // SubVector
 //-----------------------------------------------------------------------------
-SubVector::SubVector(uint n_, BlockVector& bv_) 
+SubVector::SubVector(uint n_, BlockVector& bv_)
   : n(n_),bv(bv_)
 {
   // Do nothing
@@ -199,16 +200,16 @@ SubVector::~SubVector()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const SubVector& SubVector::operator=(Vector& v) 
+const SubVector& SubVector::operator=(Vector& v)
 {
-  bv.set(n, v);  
-  return *this; 
+  bv.set(n, v);
+  return *this;
 }
 /*
 //-----------------------------------------------------------------------------
 Vector& SubVector::operator()
 {
-  return bm.get(row, col); 
+  return bm.get(row, col);
 }
 */
 //-----------------------------------------------------------------------------

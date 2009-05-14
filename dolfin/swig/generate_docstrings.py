@@ -24,13 +24,13 @@ def my_open_write(dest):
         return open(dest, 'w')
 
 
-class Doxy2SWIG:    
+class Doxy2SWIG:
     """Converts Doxygen generated XML files into a file containing
     docstrings that can be used by SWIG-1.3.x that have support for
     feature("docstring").  Once the data is parsed it is stored in
     self.pieces.
 
-    """    
+    """
     __author__ = "Prabhu Ramachandran"
     __license__ = "BSD style"
     # This code is implemented using Mark Pilgrim's code as a guideline:
@@ -62,14 +62,14 @@ class Doxy2SWIG:
                         'basecompoundref', 'argsstring')
         #self.generics = []
         self.include_function_definition = False
-        
+
     def generate(self):
         """Parses the file set in the initialization.  The resulting
         data is stored in `self.pieces`.
 
         """
         self.parse(self.xmldoc)
-    
+
     def parse(self, node):
         """Parse a given node.  This function in turn calls the
         `parse_<nodeType>` functions which handle the respective
@@ -98,7 +98,7 @@ class Doxy2SWIG:
         `do_<tagName>` handers for different elements.  If no handler
         is available the `generic_parse` method is called.  All
         tagNames specified in `self.ignores` are simply ignored.
-        
+
         """
         name = node.tagName
         ignores = self.ignores
@@ -106,8 +106,8 @@ class Doxy2SWIG:
             return
         attr = "do_%s" % name
         if hasattr(self, attr):
-            handlerMethod = getattr(self, attr)
-            handlerMethod(node)
+            handler_method = getattr(self, attr)
+            handler_method(node)
         else:
             self.generic_parse(node)
             #if name not in self.generics: self.generics.append(name)
@@ -151,7 +151,7 @@ class Doxy2SWIG:
         if pad:
             npiece = len(self.pieces)
             if pad == 2:
-                self.add_text('\n')                
+                self.add_text('\n')
         for n in node.childNodes:
             self.parse(n)
         if pad:
@@ -226,7 +226,7 @@ class Doxy2SWIG:
         tmp = node.parentNode.parentNode.parentNode
         compdef = tmp.getElementsByTagName('compounddef')[0]
         cdef_kind = compdef.attributes['kind'].value
-        
+
         if prot == 'public':
             first = self.get_specific_nodes(node, ('definition', 'name'))
             name = first['name'].firstChild.data
@@ -239,7 +239,7 @@ class Doxy2SWIG:
                 defn = "" # Scip definition. Use the one produced with %feature("autodoc",1) instead
             self.add_text('\n')
             self.add_text('%feature("docstring") ')
-            
+
             anc = node.parentNode.parentNode
             if cdef_kind in ('file', 'namespace'):
                 ns_node = anc.getElementsByTagName('innernamespace')
@@ -260,7 +260,7 @@ class Doxy2SWIG:
                 if n not in first.values():
                     self.parse(n)
             self.add_text(['";', '\n'])
-        
+
     def do_definition(self, node):
         data = node.firstChild.data
         self.add_text('%s "\n%s'%(data, data))
@@ -318,7 +318,7 @@ class Doxy2SWIG:
         """Cleans the list of strings given as `pieces`.  It replaces
         multiple newlines by a maximum of 2 and returns a new list.
         It also wraps the paragraphs nicely.
-        
+
         """
         ret = []
         count = 0
@@ -371,7 +371,7 @@ class DocstringGenerator:
             self._header_files = [ f for f in os.listdir(self._directory) if f.rfind(".h") != -1]
         else:
             self._header_files = header_files
-            
+
         # Set the name of the directory where the generated interface file(s) are placed
         if os.path.isabs(swig_directory):
             self._swig_directory = swig_directory
@@ -394,12 +394,12 @@ class DocstringGenerator:
             # If the not provided then use current directory
             docstring_file_base = self._directory.split(os.path.sep)[-1]
         self._docstring_file = os.path.join(self._swig_directory,docstring_file_base + "_docstrings.i")
-            
+
     def generate_doxygen_documentation(self):
         """
         Generate xml documentation with doxygen.
         Doxygen needs to be installed.
-        """ 
+        """
         from subprocess import Popen
         header_files = " ".join(self._header_files)
         dfile = open(self._doxygen_file,'w')
@@ -411,7 +411,7 @@ XML_OUTPUT             = %s""" % (header_files,self._xml_directory))
         dfile.close()
         generate_doxygen_code = Popen(['doxygen',dfile.name])
         generate_doxygen_code.wait()
-    
+
     def generate_interface_files_from_classes(self):
         """Only include class files when generating interface files"""
         class_files = [f for f in os.listdir(self._xml_directory) if f.find("class") != -1]
@@ -432,7 +432,7 @@ XML_OUTPUT             = %s""" % (header_files,self._xml_directory))
         dfile.write("// An autogenerated docstringfile\n\n")
         #p.write(self._docstring_file)
         p.write(dfile)
-    
+
     def clean(self):
         """Remove temporary xml directory and doxyfile."""
         for f in os.listdir(self._xml_directory):
@@ -444,7 +444,7 @@ XML_OUTPUT             = %s""" % (header_files,self._xml_directory))
             for f in os.listdir(html_dir):
                 os.remove(os.path.join(html_dir,f))
             os.removedirs(html_dir)
-            
+
 if __name__ == '__main__':
     import sys
     if len(sys.argv) == 2:

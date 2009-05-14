@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-03
-// Last changed: 2009-03-16
+// Last changed: 2009-04-01
 
 #ifndef __NEWXMLFILE_H
 #define __NEWXMLFILE_H
@@ -53,7 +53,7 @@ namespace dolfin
       XMLDolfin xml_dolfin(xml_handler, *this);
       xml_dolfin.handle();
       parse();
-      if ( !handlers.empty() ) 
+      if ( !handlers.empty() )
         error("Handler stack not empty. Something is wrong!");
     }
 
@@ -61,9 +61,11 @@ namespace dolfin
     {
       open_file();
       typedef typename T::XMLHandler Handler;
-      Handler::write(t, *outstream, 1); 
+      Handler::write(t, *outstream, 1);
       close_file();
     }
+
+    // Input
 
     void operator>> (Mesh& input)          { read_xml(input); }
     void operator>> (LocalMeshData& input) { read_xml(input); }
@@ -85,7 +87,7 @@ namespace dolfin
     void operator>> (std::map<uint, std::vector<int> >& array_map);
     void operator>> (std::map<uint, std::vector<uint> >& array_map);
     void operator>> (std::map<uint, std::vector<double> >& array_map);
-    
+
     // Output
 
     void operator<< (const Mesh& output)         { write_xml(output); }
@@ -112,6 +114,8 @@ namespace dolfin
     friend void new_sax_start_element (void *ctx, const xmlChar *name, const xmlChar **attrs);
     friend void new_sax_end_element   (void *ctx, const xmlChar *name);
 
+    void validate(std::string filename);
+
     void write() {}
 
     void parse();
@@ -136,7 +140,7 @@ namespace dolfin
   };
 
   // Callback functions for the SAX interface
-  
+
   void new_sax_start_document (void *ctx);
   void new_sax_end_document   (void *ctx);
   void new_sax_start_element  (void *ctx, const xmlChar *name, const xmlChar **attrs);
@@ -145,6 +149,10 @@ namespace dolfin
   void new_sax_warning     (void *ctx, const char *msg, ...);
   void new_sax_error       (void *ctx, const char *msg, ...);
   void new_sax_fatal_error (void *ctx, const char *msg, ...);
- 
+
+  // Callback functions for Relax-NG Schema
+  void new_rng_parser_error(void *user_data, xmlErrorPtr error);
+  void new_rng_valid_error (void *user_data, xmlErrorPtr error);
+
 }
 #endif

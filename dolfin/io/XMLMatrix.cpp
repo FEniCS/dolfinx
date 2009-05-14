@@ -17,82 +17,82 @@ XMLMatrix::XMLMatrix(GenericMatrix& matrix)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void XMLMatrix::startElement(const xmlChar *name, const xmlChar **attrs)
+void XMLMatrix::start_element(const xmlChar *name, const xmlChar **attrs)
 {
   switch ( state )
   {
   case OUTSIDE:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "matrix") == 0 )
     {
-      readMatrix(name, attrs);
+      read_matrix(name, attrs);
       state = INSIDE_MATRIX;
     }
-    
+
     break;
-    
+
   case INSIDE_MATRIX:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "row") == 0 )
     {
-      readRow(name, attrs);
+      read_row(name, attrs);
       state = INSIDE_ROW;
     }
-    
+
     break;
-    
+
   case INSIDE_ROW:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "entry") == 0 )
-      readEntry(name, attrs);
-    
+      read_entry(name, attrs);
+
     break;
-    
+
   default:
     ;
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMatrix::endElement(const xmlChar *name)
+void XMLMatrix::end_element(const xmlChar *name)
 {
   switch ( state )
   {
   case INSIDE_MATRIX:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "matrix") == 0 )
     {
       A.apply();
       state = DONE;
     }
-    
+
     break;
-    
+
   case INSIDE_ROW:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "row") == 0 )
     {
-      setRow();
+      set_row();
       state = INSIDE_MATRIX;
     }
-    
+
     break;
-    
+
   default:
     ;
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMatrix::readMatrix(const xmlChar *name, const xmlChar **attrs)
+void XMLMatrix::read_matrix(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
-  uint M = parseInt(name, attrs, "rows");
-  uint N = parseInt(name, attrs, "columns");
+  uint M = parse_int(name, attrs, "rows");
+  uint N = parse_int(name, attrs, "columns");
 
   // Set size
   A.resize(M, N);
 }
 //-----------------------------------------------------------------------------
-void XMLMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
+void XMLMatrix::read_row(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   row = parseUnsignedInt(name, attrs, "row");
@@ -105,18 +105,18 @@ void XMLMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
   values.reserve(size);
 }
 //-----------------------------------------------------------------------------
-void XMLMatrix::readEntry(const xmlChar *name, const xmlChar **attrs)
+void XMLMatrix::read_entry(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   const uint column = parseUnsignedInt(name, attrs, "column");
-  const double value  = parseReal(name, attrs, "value");
-  
+  const double value  = parse_real(name, attrs, "value");
+
   // Set values
   columns.push_back(column);
   values.push_back(value);
 }
 //-----------------------------------------------------------------------------
-void XMLMatrix::setRow()
+void XMLMatrix::set_row()
 {
   A.setrow(row, columns, values);
 }

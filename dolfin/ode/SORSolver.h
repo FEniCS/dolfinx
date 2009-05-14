@@ -28,24 +28,24 @@ namespace dolfin
   public:
 
     // Will replace the initial guess in x
-    static void SOR(uint n, const real* A, 
-		    real* x, const real* b, 
-		    const real& epsilon); 
-    
+    static void SOR(uint n, const real* A,
+		    real* x, const real* b,
+		    const real& epsilon);
+
     // Compute A_inv*A and Ainv*b
-    static void precondition(uint n, 
-			     const uBLASDenseMatrix& Ainv, 
+    static void precondition(uint n,
+			     const uBLASDenseMatrix& Ainv,
 			     real* A, real* b,
 			     real* Ainv_A, real* Ainv_b);
-    
+
     static real err(uint n, const real* A, const real* x, const real* b);
 
   private:
 
-    static void _SOR_iteration(uint n, 
-			       const real* A, 
-			       const real* b, 
-			       real* x_new, 
+    static void _SOR_iteration(uint n,
+			       const real* A,
+			       const real* b,
+			       real* x_new,
 			       const real* x_prev);
 
   };

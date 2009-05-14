@@ -18,24 +18,24 @@ int main(int argc, char** argv)
     dolfin::cout << "cg or dg, and q is the order" << dolfin::endl;
     return 1;
   }
-  
+
   int q = atoi(argv[2]);
 
-  if (strcmp(argv[1], "cg") == 0) 
-  {    
+  if (strcmp(argv[1], "cg") == 0)
+  {
     cGqMethod cGq(q);
     cGq.disp();
   }
   else if (strcmp(argv[1], "dg") == 0)
-  {    
+  {
     dGqMethod dGq(q);
-    dGq.disp(); 
-  } 
-  else 
+    dGq.disp();
+  }
+  else
   {
     dolfin::cout << "Unknown method." << dolfin::endl;
     return 1;
   }
-  
+
   return 0;
 }

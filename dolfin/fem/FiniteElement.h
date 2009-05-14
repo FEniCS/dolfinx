@@ -10,7 +10,7 @@
 #include <dolfin/log/log.h>
 #include <boost/shared_ptr.hpp>
 #include <vector>
-#include <ufc.h>
+#include "UFC.h"
 #include <dolfin/common/types.h>
 #include <dolfin/common/NoDeleter.h>
 
@@ -38,7 +38,7 @@ namespace dolfin
 
     uint value_rank() const
     { return element->value_rank(); }
-   
+
     uint value_dimension(uint i) const
     { return element->value_dimension(i); }
 
@@ -53,21 +53,21 @@ namespace dolfin
 
     void evaluate_basis(uint i, double* values, const double* x, const ufc::cell& cell) const
     { element->evaluate_basis(i, values, x, cell); }
-  
+
     double evaluate_dof(uint i, const ufc::function& function, const ufc::cell& cell) const
     { return element->evaluate_dof(i, function, cell); }
-    
+
     /// Create sub element
     boost::shared_ptr<const FiniteElement> create_sub_element(uint i) const
-    { 
+    {
       boost::shared_ptr<const ufc::finite_element>  ufc_element(element->create_sub_element(i));
       boost::shared_ptr<const FiniteElement> _element(new const FiniteElement(ufc_element));
-      return _element; 
+      return _element;
     }
 
     /// Return ufc::finite_element
     boost::shared_ptr<const ufc::finite_element> ufc_element() const
-    { return element; } 
+    { return element; }
 
     /// Extract sub finite element for component
     boost::shared_ptr<const FiniteElement> extract_sub_element(const std::vector<uint>& component) const;
@@ -75,7 +75,7 @@ namespace dolfin
   private:
 
     // Recursively extract sub finite element
-    static boost::shared_ptr<const FiniteElement> extract_sub_element(const FiniteElement& finite_element, 
+    static boost::shared_ptr<const FiniteElement> extract_sub_element(const FiniteElement& finite_element,
                                               const std::vector<uint>& component);
 
     // UFC finite element

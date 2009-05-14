@@ -40,7 +40,7 @@ void MatlabFile::operator<<(const GenericMatrix& A)
 
   std::vector<uint> columns;
   std::vector<double> values;
-  
+
   for (uint i = 0; i < A.size(0); i++)
   {
     A.getrow(i, columns, values);
@@ -56,13 +56,13 @@ void MatlabFile::operator<<(const GenericMatrix& A)
   }
 //  fprintf(fp, "%s = spconvert(%s);\n", A.name().c_str(), A.name().c_str());
   fprintf(fp, "A = spconvert(A);\n");
-  
+
   // Close file
   fclose(fp);
 
-//  message(1, "Saved matrix %s (%s) to file %s in sparse MATLAB format",
+//  info(1, "Saved matrix %s (%s) to file %s in sparse MATLAB format",
 //          A.name().c_str(), A.label().c_str(), filename.c_str());
-  message(1, "Saved matrix to file %s in sparse MATLAB format", filename.c_str());
+  info(1, "Saved matrix to file %s in sparse MATLAB format", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 

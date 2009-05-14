@@ -9,25 +9,25 @@ formatting of the output from an entire program, including the
 
 %------------------------------------------------------------------------------
 \section{Generating log messages}
-\index{\texttt{message()}}
+\index{\texttt{info()}}
 \index{\texttt{cout}}
 \index{\texttt{endl}}
 
 Log messages can be generated using the function
-\texttt{message()} available in the \texttt{dolfin} namespace:
+\texttt{info()} available in the \texttt{dolfin} namespace:
 \begin{code}
-void message(std::string format, ...);
+void info(std::string format, ...);
 \end{code}
 which works similarly to the standard C library function \texttt{printf}.
 The following examples illustrate the usage of
-\texttt{message()}:
+\texttt{info()}:
 \begin{code}
-message("Solving linear system.");
-message("Size of vector: \%d.", x.size());
-message("R = \%.3e (TOL = \%.3e)", R, TOL);
+info("Solving linear system.");
+info("Size of vector: \%d.", x.size());
+info("R = \%.3e (TOL = \%.3e)", R, TOL);
 \end{code}
 
-As an alternative to \texttt{message()}, \dolfin{} provides a C++
+As an alternative to \texttt{info()}, \dolfin{} provides a C++
 style interface to generating log messages. Thus, the above examples
 can also be implemented as follows:
 \footnotesize
@@ -82,7 +82,7 @@ Once an error is encountered, the program throws an exception.
 \index{\texttt{dolfin\_assert()}}
 
 The macro \texttt{dolfin\_debug()} works similarly to
-\texttt{message()}:
+\texttt{info()}:
 \begin{code}
 dolfin_debug(message);
 \end{code}

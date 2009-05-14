@@ -11,10 +11,10 @@ using namespace dolfin;
 class TestProblem3 : public ODE
 {
 public:
-  
+
   TestProblem3() : ODE(2, 1.0)
   {
-    message("A non-normal test problem, critically damped oscillation.");
+    info("A non-normal test problem, critically damped oscillation.");
   }
 
   void u0(double* u)

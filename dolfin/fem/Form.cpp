@@ -8,13 +8,13 @@
 // Last changed: 2008-12-15
 
 #include <string>
-#include <ufc.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
+#include "UFC.h"
 #include "Form.h"
 
 using namespace dolfin;
@@ -40,10 +40,10 @@ Form::Form(const ufc::form& ufc_form,
 {
   for (uint i = 0; i < function_spaces.size(); i++)
     _function_spaces[i] = reference_to_no_delete_pointer(*function_spaces[i]);
-  
+
   for (uint i = 0; i < coefficients.size(); i++)
     _coefficients[i] = reference_to_no_delete_pointer(*coefficients[i]);
-  
+
   _ufc_form = reference_to_no_delete_pointer(ufc_form);
 }
 //-----------------------------------------------------------------------------
@@ -53,9 +53,9 @@ Form::~Form()
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Form::rank() const
-{ 
-  dolfin_assert(_ufc_form); 
-  return _ufc_form->rank(); 
+{
+  dolfin_assert(_ufc_form);
+  return _ufc_form->rank();
 }
 //-----------------------------------------------------------------------------
 const Mesh& Form::mesh() const

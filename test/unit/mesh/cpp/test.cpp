@@ -24,16 +24,16 @@ public:
   {
     // Create mesh of unit square
     UnitSquare mesh(5, 7);
-    CPPUNIT_ASSERT(mesh.numVertices() == 48);
-    CPPUNIT_ASSERT(mesh.numCells() == 70);
+    CPPUNIT_ASSERT(mesh.num_vertices() == 48);
+    CPPUNIT_ASSERT(mesh.num_cells() == 70);
   }
    
   void testUnitCube()
   {
     // Create mesh of unit cube
     UnitCube mesh(5, 7, 9);
-    CPPUNIT_ASSERT(mesh.numVertices() == 480);
-    CPPUNIT_ASSERT(mesh.numCells() == 1890);
+    CPPUNIT_ASSERT(mesh.num_vertices() == 480);
+    CPPUNIT_ASSERT(mesh.num_cells() == 1890);
   }
 
 };
@@ -52,8 +52,8 @@ public:
     // Refine mesh of unit square
     UnitSquare mesh(5, 7);
     mesh.refine();
-    CPPUNIT_ASSERT(mesh.numVertices() == 165);
-    CPPUNIT_ASSERT(mesh.numCells() == 280);
+    CPPUNIT_ASSERT(mesh.num_vertices() == 165);
+    CPPUNIT_ASSERT(mesh.num_cells() == 280);
   }
   
   void testRefineUnitCube()
@@ -61,8 +61,8 @@ public:
     // Refine mesh of unit cube
     UnitCube mesh(5, 7, 9);
     mesh.refine();
-    CPPUNIT_ASSERT(mesh.numVertices() == 3135);
-    CPPUNIT_ASSERT(mesh.numCells() == 15120);
+    CPPUNIT_ASSERT(mesh.num_vertices() == 3135);
+    CPPUNIT_ASSERT(mesh.num_cells() == 15120);
   }
 
 };
@@ -87,7 +87,7 @@ public:
     unsigned int n = 0;
     for (VertexIterator v(mesh); !v.end(); ++v)
       n++;
-    CPPUNIT_ASSERT(n == mesh.numVertices());
+    CPPUNIT_ASSERT(n == mesh.num_vertices());
   }
 
   void testEdgeIterators()
@@ -97,7 +97,7 @@ public:
     unsigned int n = 0;
     for (EdgeIterator e(mesh); !e.end(); ++e)
       n++;
-    CPPUNIT_ASSERT(n == mesh.numEdges());
+    CPPUNIT_ASSERT(n == mesh.num_edges());
   }
 
   void testFaceIterators()
@@ -107,7 +107,7 @@ public:
     unsigned int n = 0;
     for (FaceIterator f(mesh); !f.end(); ++f)
       n++;
-    CPPUNIT_ASSERT(n == mesh.numFaces());
+    CPPUNIT_ASSERT(n == mesh.num_faces());
   }
 
   void testFacetIterators()
@@ -117,7 +117,7 @@ public:
     unsigned int n = 0;
     for (FacetIterator f(mesh); !f.end(); ++f)
       n++;
-    CPPUNIT_ASSERT(n == mesh.numFacets());
+    CPPUNIT_ASSERT(n == mesh.num_facets());
   }
 
   void testCellIterators()
@@ -127,7 +127,7 @@ public:
     unsigned int n = 0;
     for (CellIterator c(mesh); !c.end(); ++c)
       n++;
-    CPPUNIT_ASSERT(n == mesh.numCells());
+    CPPUNIT_ASSERT(n == mesh.num_cells());
   }
         
   void testMixedIterators()
@@ -138,7 +138,7 @@ public:
     for (CellIterator c(mesh); !c.end(); ++c)
       for (VertexIterator v(*c); !v.end(); ++v)
         n++;
-    CPPUNIT_ASSERT(n == 4*mesh.numCells());
+    CPPUNIT_ASSERT(n == 4*mesh.num_cells());
   }
 
 };
@@ -157,8 +157,8 @@ public:
     // Compute boundary of mesh
     UnitCube mesh(2, 2, 2);
     BoundaryMesh boundary(mesh);
-    CPPUNIT_ASSERT(boundary.numVertices() == 26);
-    CPPUNIT_ASSERT(boundary.numCells() == 48);
+    CPPUNIT_ASSERT(boundary.num_vertices() == 26);
+    CPPUNIT_ASSERT(boundary.num_cells() == 48);
   }
 
   void testBoundaryBoundary()
@@ -178,8 +178,8 @@ public:
     BoundaryMesh b1;
     b0.order();
     b1.init(b0);
-    CPPUNIT_ASSERT(b1.numVertices() == 0);
-    CPPUNIT_ASSERT(b1.numCells() == 0);
+    CPPUNIT_ASSERT(b1.num_vertices() == 0);
+    CPPUNIT_ASSERT(b1.num_cells() == 0);
   }
 
 };
@@ -223,7 +223,7 @@ public:
     File file("unitsquare.xml");
     file << mesh_out;
     file >> mesh_in;
-    CPPUNIT_ASSERT(mesh_in.numVertices() == 16);
+    CPPUNIT_ASSERT(mesh_in.num_vertices() == 16);
   }
   
   void testMeshXML3D()
@@ -234,7 +234,7 @@ public:
     File file("unitcube.xml");
     file << mesh_out;
     file >> mesh_in;
-    CPPUNIT_ASSERT(mesh_in.numVertices() == 64);
+    CPPUNIT_ASSERT(mesh_in.num_vertices() == 64);
   }
 
   void testMeshMatlab2D()

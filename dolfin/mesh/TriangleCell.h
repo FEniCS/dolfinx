@@ -27,19 +27,19 @@ namespace dolfin
     uint dim() const;
 
     /// Return number of entitites of given topological dimension
-    uint numEntities(uint dim) const;
+    uint num_entities(uint dim) const;
 
     /// Return number of vertices for entity of given topological dimension
-    uint numVertices(uint dim) const;
+    uint num_vertices(uint dim) const;
 
     /// Return orientation of the cell
     uint orientation(const Cell& cell) const;
 
     /// Create entities e of given topological dimension from vertices v
-    void createEntities(uint** e, uint dim, const uint* v) const;
+    void create_entities(uint** e, uint dim, const uint* v) const;
 
     /// Refine cell uniformly
-    void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
+    void refine_cell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
 
     /// Compute (generalized) volume (area) of triangle
     double volume(const MeshEntity& triangle) const;
@@ -54,7 +54,7 @@ namespace dolfin
     Point normal(const Cell& cell, uint facet) const;
 
     /// Compute the area/length of given facet with respect to the cell
-    double facetArea(const Cell& cell, uint facet) const;
+    double facet_area(const Cell& cell, uint facet) const;
 
     /// Order entities locally
     void order(Cell& cell) const;
@@ -65,16 +65,16 @@ namespace dolfin
     /// Check for intersection with line defined by points
     bool intersects(const MeshEntity& entity, const Point& p0, const Point& p1) const;
 
-    /// Check for intersection with cell 
+    /// Check for intersection with cell
     bool intersects(const MeshEntity& entity, const Cell& cell) const;
-    
+
     /// Return description of cell type
     std::string description() const;
 
   private:
 
     // Find local index of edge i according to ordering convention
-    uint findEdge(uint i, const Cell& cell) const;
+    uint find_edge(uint i, const Cell& cell) const;
 
   };
 

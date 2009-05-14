@@ -15,7 +15,7 @@
 #include "LinearAlgebraFactory.h"
 //#include "Epetra_SerialComm.h"
 
-class Epetra_SerialComm; 
+class Epetra_SerialComm;
 
 namespace dolfin
 {
@@ -33,18 +33,18 @@ namespace dolfin
     /// Create empty vector
     EpetraVector* create_vector() const;
 
-    /// Create empty sparsity pattern 
+    /// Create empty sparsity pattern
     EpetraSparsityPattern* create_pattern() const;
 
-    // Return Epetra Communicator  
-    Epetra_SerialComm& getSerialComm(); 
+    // Return Epetra Communicator
+    Epetra_SerialComm& getSerialComm();
 
     // Return singleton instance
     static EpetraFactory& instance()
     { return factory; }
 
   private:
-    
+
     // Private constructor
     EpetraFactory();
 

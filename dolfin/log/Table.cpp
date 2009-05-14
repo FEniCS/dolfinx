@@ -1,8 +1,8 @@
-// Copyright (C) 2008 Anders Logg.
+// Copyright (C) 2008-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-19
-// Last changed: 2008-07-31
+// Last changed: 2009-05-08
 
 #include <iostream>
 
@@ -35,16 +35,30 @@ TableEntry Table::operator() (std::string row, std::string col)
   return entry;
 }
 //-----------------------------------------------------------------------------
-double Table::get(std::string row, std::string col) const
+void Table::set(std::string row, std::string col, int value)
 {
-  std::pair<std::string, std::string> key(row, col);
-  std::map<std::pair<std::string, std::string>, double>::const_iterator it = values.find(key);
-  if (it == values.end())
-    error("Missing table value for entry (\"%s\", \"%s\").", row.c_str(), col.c_str());
-  return it->second;
+  std::stringstream s;
+  s << value;
+  set(row, col, s.str());
+}
+//-----------------------------------------------------------------------------
+void Table::set(std::string row, std::string col, uint value)
+{
+  std::stringstream s;
+  s << value;
+  set(row, col, s.str());
 }
 //-----------------------------------------------------------------------------
 void Table::set(std::string row, std::string col, double value)
+{
+  if (std::abs(value) < DOLFIN_EPS)
+    value = 0.0;
+  std::stringstream s;
+  s << std::setprecision(5) << value;
+  set(row, col, s.str());
+}
+//-----------------------------------------------------------------------------
+void Table::set(std::string row, std::string col, std::string value)
 {
   // Add row
   if (row_set.find(row) == row_set.end())
@@ -65,11 +79,21 @@ void Table::set(std::string row, std::string col, double value)
   values[key] = value;
 }
 //-----------------------------------------------------------------------------
+std::string Table::get(std::string row, std::string col) const
+{
+  std::pair<std::string, std::string> key(row, col);
+  std::map<std::pair<std::string, std::string>, std::string>::const_iterator it = values.find(key);
+  if (it == values.end())
+    error("Missing table value for entry (\"%s\", \"%s\").", row.c_str(), col.c_str());
+  return it->second;
+}
+//-----------------------------------------------------------------------------
 std::string Table::title() const
 {
   return _title;
 }
 //-----------------------------------------------------------------------------
+/* Removed after storing values as strings instead of double
 Table Table::operator+ (const Table& table) const
 {
   // Check table sizes
@@ -99,11 +123,12 @@ Table Table::operator- (const Table& table) const
 
   return t;
 }
+*/
 //-----------------------------------------------------------------------------
 const Table& Table::operator= (const Table& table)
 {
   // Assign everything but the title
-  
+
   rows = table.rows;
   row_set = table.row_set;
 
@@ -115,31 +140,27 @@ const Table& Table::operator= (const Table& table)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void Table::disp(bool round_to_zero) const
+std::string Table::str() const
 {
   if (rows.size() == 0 || cols.size() == 0)
-    return;
+    return "Empty table";
 
-  std::vector<std::vector<std::string> > formatted_values;
+  std::vector<std::vector<std::string> > tvalues;
   std::vector<uint> col_sizes;
-  
+
   // Format values and compute column sizes
   col_sizes.push_back(_title.size());
   for (uint j = 0; j < cols.size(); j++)
     col_sizes.push_back(cols[j].size());
   for (uint i = 0; i < rows.size(); i++)
   {
-    formatted_values.push_back(std::vector<std::string>());
+    tvalues.push_back(std::vector<std::string>());
     col_sizes[0] = std::max(col_sizes[0], (dolfin::uint)(rows[i].size()));
     for (uint j = 0; j < cols.size(); j++)
     {
-      double value = get(rows[i], cols[j]);
-      if (round_to_zero && std::abs(value) < DOLFIN_EPS)
-        value = 0.0;
-      std::stringstream string_value;
-      string_value << std::setprecision(5) << value;
-      formatted_values[i].push_back(string_value.str());
-      col_sizes[j + 1] = std::max(col_sizes[j + 1], (dolfin::uint)(string_value.str().size()));
+      std::string value = get(rows[i], cols[j]);
+      tvalues[i].push_back(value);
+      col_sizes[j + 1] = std::max(col_sizes[j + 1], (dolfin::uint)(value.size()));
     }
   }
   uint row_size = 2*col_sizes.size() + 1;
@@ -147,29 +168,36 @@ void Table::disp(bool round_to_zero) const
     row_size += col_sizes[j];
 
   // Write table
-  cout << _title;
-  for (uint k = 0; k < col_sizes[0] - _title.size(); k++) cout << " ";
-  cout << "  |";
+  std::stringstream s;
+  s << _title;
+  for (uint k = 0; k < col_sizes[0] - _title.size(); k++)
+    s << " ";
+  s << "  |";
   for (uint j = 0; j < cols.size(); j++)
   {
-    for (uint k = 0; k < col_sizes[j + 1] - cols[j].size(); k++) cout << " ";
-    cout << "  " << cols[j];
+    for (uint k = 0; k < col_sizes[j + 1] - cols[j].size(); k++)
+      s << " ";
+    s << "  " << cols[j];
   }
-  cout << endl;
-  for (uint k = 0; k < row_size; k++) cout << "-";
-  cout << endl;
+  s << "\n";
+  for (uint k = 0; k < row_size; k++)
+    s << "-";
   for (uint i = 0; i < rows.size(); i++)
   {
-    cout << rows[i];
-    for (uint k = 0; k < col_sizes[0] - rows[i].size(); k++) cout << " ";
-    cout << "  |";
+    s << "\n";
+    s << rows[i];
+    for (uint k = 0; k < col_sizes[0] - rows[i].size(); k++)
+      s << " ";
+    s << "  |";
     for (uint j = 0; j < cols.size(); j++)
     {
-      for (uint k = 0; k < col_sizes[j + 1] - formatted_values[i][j].size(); k++) cout << " ";
-      cout << "  " << formatted_values[i][j];
+      for (uint k = 0; k < col_sizes[j + 1] - tvalues[i][j].size(); k++)
+        s << " ";
+      s << "  " << tvalues[i][j];
     }
-    cout << endl;
   }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 TableEntry::TableEntry(std::string row, std::string col, Table& table)
@@ -183,13 +211,31 @@ TableEntry::~TableEntry()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+const TableEntry& TableEntry::operator= (uint value)
+{
+  table.set(row, col, value);
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const TableEntry& TableEntry::operator= (int value)
+{
+  table.set(row, col, value);
+  return *this;
+}
+//-----------------------------------------------------------------------------
 const TableEntry& TableEntry::operator= (double value)
 {
   table.set(row, col, value);
   return *this;
 }
 //-----------------------------------------------------------------------------
-TableEntry::operator double() const
+const TableEntry& TableEntry::operator= (std::string value)
+{
+  table.set(row, col, value);
+  return *this;
+}
+//-----------------------------------------------------------------------------
+TableEntry::operator std::string() const
 {
   return table.get(row, col);
 }

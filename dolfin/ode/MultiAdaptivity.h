@@ -41,10 +41,10 @@ namespace dolfin
   private:
 
     // Compute maximum residuals for components
-    void computeResiduals(MultiAdaptiveTimeSlab& ts);
+    void compute_residuals(MultiAdaptiveTimeSlab& ts);
 
     // Propagate time steps according to dependencies
-    void propagateDependencies();
+    void propagate_dependencies();
 
     // Multi-adaptive time steps (size N)
     real* timesteps;
@@ -54,7 +54,7 @@ namespace dolfin
 
     // std::vector for storing temporary data during propagation of time steps (size N)
     real* ktmp;
-    
+
     // Values of right-hand side at quadrature points (size m)
     real* f;
 

@@ -4,9 +4,10 @@
 // Thanks to Jim Tilander for many helpful hints.
 //
 // Modified by Garth N. Wells, 2006.
+// Modified by Ola Skavhaug, 2009.
 //
 // First added:  2003-03-14
-// Last changed: 2008-06-20
+// Last changed: 2009-04-30
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/timing.h>
@@ -17,32 +18,32 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Progress::Progress(std::string title, unsigned int n) 
-  : title(title), n(n), i(0), p_step(0.1), t_step(1.0), p(0), t(0), 
-    always(false), finished(false), displayed(false) 
+Progress::Progress(std::string title, unsigned int n)
+  : title(title), n(n), i(0), p_step(0.1), t_step(1.0), p(0), t(0),
+    always(false), finished(false), displayed(false)
 {
   if (n <= 0)
     error("Number of steps for progress session must be positive.");
 
   //LogManager::logger.progress(title, 0.0);
   t = time();
-  
+
   //When "debug level" is more than 0, progress is always visible
-  if (LogManager::logger.getDebugLevel() > 0 )
+  if (LogManager::logger.get_debug_level() > 0 )
     always = true;
-  
+
 }
 
 //-----------------------------------------------------------------------------
 Progress::Progress(std::string title)
-  : title(title), n(0), i(0), p_step(0.1), t_step(1.0), p(0), t(0), 
+  : title(title), n(0), i(0), p_step(0.1), t_step(1.0), p(0), t(0),
     always(false), finished(false), displayed(false)
 {
   //LogManager::logger.progress(title, 0.0);
   t = time();
-  
+
   //When "debug level" is more than 0, progress is always visible
-  if (LogManager::logger.getDebugLevel() > 0 )
+  if (LogManager::logger.get_debug_level() > 0 )
     always = true;
 
 }
@@ -63,7 +64,7 @@ void Progress::operator++(int)
 {
   if (n == 0)
     error("Cannot step progress for session with unknown number of steps.");
-  
+
   if (i < n)
     i++;
 
@@ -87,7 +88,7 @@ void Progress::update(double p)
     always = false;
     displayed = true;
   }
-  
+
   // Update finished flag
   if (p >= 1.0)
     finished = true;

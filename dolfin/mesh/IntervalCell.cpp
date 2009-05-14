@@ -22,7 +22,7 @@ dolfin::uint IntervalCell::dim() const
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint IntervalCell::numEntities(uint dim) const
+dolfin::uint IntervalCell::num_entities(uint dim) const
 {
   switch ( dim )
   {
@@ -37,7 +37,7 @@ dolfin::uint IntervalCell::numEntities(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint IntervalCell::numVertices(uint dim) const
+dolfin::uint IntervalCell::num_vertices(uint dim) const
 {
   switch ( dim )
   {
@@ -60,13 +60,13 @@ dolfin::uint IntervalCell::orientation(const Cell& cell) const
   return ( n.dot(v01) < 0.0 ? 1 : 0 );
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::createEntities(uint** e, uint dim, const uint* v) const
+void IntervalCell::create_entities(uint** e, uint dim, const uint* v) const
 {
   // We don't need to create any entities
   error("Don't know how to create entities of topological dimension %d.", dim);
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::refineCell(Cell& cell, MeshEditor& editor,
+void IntervalCell::refine_cell(Cell& cell, MeshEditor& editor,
                               uint& current_cell) const
 {
   // Get vertices and edges
@@ -76,16 +76,16 @@ void IntervalCell::refineCell(Cell& cell, MeshEditor& editor,
   dolfin_assert(e);
 
   // Get offset for new vertex indices
-  const uint offset = cell.mesh().numVertices();
+  const uint offset = cell.mesh().num_vertices();
 
   // Compute indices for the three new vertices
   const uint v0 = v[0];
   const uint v1 = v[1];
   const uint e0 = offset + e[0];
-  
+
   // Add the two new cells
-  editor.addCell(current_cell++, v0, e0);
-  editor.addCell(current_cell++, e0, v1);
+  editor.add_cell(current_cell++, v0, e0);
+  editor.add_cell(current_cell++, e0, v1);
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::volume(const MeshEntity& interval) const
@@ -101,7 +101,7 @@ double IntervalCell::volume(const MeshEntity& interval) const
   const uint* vertices = interval.entities(0);
   const double* x0 = geometry.x(vertices[0]);
   const double* x1 = geometry.x(vertices[1]);
-  
+
   // Compute length of interval (line segment)
   double sum = 0.0;
   for (uint i = 0; i < geometry.dim(); ++i)
@@ -153,7 +153,7 @@ Point IntervalCell::normal(const Cell& cell, uint facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::facetArea(const Cell& cell, uint facet) const
+double IntervalCell::facet_area(const Cell& cell, uint facet) const
 {
   return 0.0;
 }
@@ -191,7 +191,7 @@ bool IntervalCell::intersects(const MeshEntity& entity, const Cell& cell) const
 {
   dolfin_not_implemented();
   return false;
-} 
+}
 //-----------------------------------------------------------------------------
 std::string IntervalCell::description() const
 {

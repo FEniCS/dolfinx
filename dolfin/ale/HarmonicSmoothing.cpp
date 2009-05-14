@@ -48,7 +48,7 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
   Assembler::assemble(A, *form);
 
   // Initialize vector
-  const uint N = mesh.numVertices();
+  const uint N = mesh.num_vertices();
   Vector b(N);
 
   // Get array of dofs for boundary vertices
@@ -68,15 +68,15 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
   for (uint dim = 0; dim < d; dim++)
   {
     // Get boundary coordinates
-    for (uint i = 0; i < new_boundary.numVertices(); i++)
+    for (uint i = 0; i < new_boundary.num_vertices(); i++)
       values[i] = new_boundary.geometry().x(i, dim);
-    
+
     // Modify right-hand side
     b.set(values, num_dofs, dofs);
     b.apply();
-    
+
     // Solve system
-    solve(A, x, b, gmres, amg_hypre);
+    solve(A, x, b, "gmres", "amg_hypre");
 
     // Get new coordinates
     x.get(new_coordinates + dim*N);

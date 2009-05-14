@@ -12,7 +12,7 @@
 #include "ODE.h"
 namespace dolfin
 {
-  
+
   class ODE;
   class Method;
 
@@ -42,7 +42,7 @@ namespace dolfin
 
     // The ODE
     const ODE& ode;
-   
+
     // The method
     const Method& method;
 
@@ -72,7 +72,7 @@ namespace dolfin
 
     // Flag for fixed time steps
     bool kfixed;
-    
+
   };
 
 }

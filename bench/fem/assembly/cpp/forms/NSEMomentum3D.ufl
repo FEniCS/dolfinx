@@ -1,0 +1,18 @@
+element = VectorElement("Lagrange", "tetrahedron", 1)
+
+v = TestFunction(element)
+u = TrialFunction(element)
+
+constant_scalar = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
+constant_vector = VectorElement("Discontinuous Lagrange", "tetrahedron", 0)
+
+w  = Function(constant_vector)
+d1 = Function(constant_scalar)
+d2 = Function(constant_scalar)
+k  = Function(constant_scalar)
+nu = Function(constant_scalar)
+
+G_a  = dot(v, u)*dx + 0.5*k*nu*dot(grad(v), grad(u))*dx + 0.5*k*dot(v, mult(grad(u), w))*dx
+SD_a = d1*0.5*k*dot(mult(grad(v), w), mult(grad(u), w))*dx + d2*0.5*k*div(v)*div(u)*dx
+
+a = G_a + SD_a

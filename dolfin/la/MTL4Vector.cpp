@@ -27,7 +27,7 @@ MTL4Vector::MTL4Vector(): Variable("x", "a sparse vector")
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MTL4Vector::MTL4Vector(uint N): Variable("x", "a sparse vector") 
+MTL4Vector::MTL4Vector(uint N): Variable("x", "a sparse vector")
 {
   resize(N);
 }
@@ -44,7 +44,7 @@ MTL4Vector::~MTL4Vector()
 //-----------------------------------------------------------------------------
 void MTL4Vector::resize(uint N)
 {
-  if (this->size() != N) 
+  if (this->size() != N)
     x.change_dim(N);
 }
 //-----------------------------------------------------------------------------
@@ -136,15 +136,15 @@ mtl4_vector& MTL4Vector::vec()
 //-----------------------------------------------------------------------------
 double MTL4Vector::inner(const GenericVector& v) const
 {
-  // Developers note: The literal template arguments refers to the number 
+  // Developers note: The literal template arguments refers to the number
   // of levels of loop unrolling that is done at compile time.
   return mtl::dot<6>(x, v.down_cast<MTL4Vector>().vec() );
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::axpy(double a, const GenericVector& v) 
+void MTL4Vector::axpy(double a, const GenericVector& v)
 {
   // Developers note: This is a hack. One would like:
-  // x += a*v.down_cast<MTL4Vector>().vec(); 
+  // x += a*v.down_cast<MTL4Vector>().vec();
   mtl4_vector vv =  v.down_cast<MTL4Vector>().vec();
   vv *= a;
   x  += vv;
@@ -158,19 +158,19 @@ LinearAlgebraFactory& MTL4Vector::factory() const
 const MTL4Vector& MTL4Vector::operator= (const GenericVector& v)
 {
   x = v.down_cast<MTL4Vector>().vec();
-  return *this; 
+  return *this;
 }
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator= (double a)
 {
   x = a;
-  return *this; 
+  return *this;
 }
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator/= (double a)
 {
   x /= a;
-  return *this; 
+  return *this;
 }
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator*= (double a)
@@ -179,10 +179,21 @@ const MTL4Vector& MTL4Vector::operator*= (double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const MTL4Vector& MTL4Vector::operator*= (const GenericVector& y) 
+{ 
+  if ( size() != y.size() )  
+    error("Vectors must be of same size.");
+  dolfin_not_implemented();
+  //mtl4_vector vv =  y.down_cast<MTL4Vector>().vec();
+  //
+  //x = mtl::operator*(x,vv);
+  return *this;     
+}
+//-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator= (const MTL4Vector& v)
 {
   x = v.vec();
-  return *this; 
+  return *this;
 }
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator+= (const GenericVector& v)
@@ -197,19 +208,17 @@ const MTL4Vector& MTL4Vector::operator-= (const GenericVector& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-double MTL4Vector::norm(NormType type) const
+double MTL4Vector::norm(std::string norm_type) const
 {
-  switch (type) 
-  {
-    case l1:
-      return mtl::one_norm(x);
-    case l2:
-      return mtl::two_norm(x);
-    case linf:
-      return mtl::infinity_norm(x);
-    default:
-      error("Requested vector norm type for MTL4Vector unknown");
-  }
+  if (norm_type == "l1")
+    return mtl::one_norm(x);
+  else if (norm_type == "l2")
+    return mtl::two_norm(x);
+  else if (norm_type == "linf")
+    return mtl::infinity_norm(x);
+  else 
+    error("Requested vector norm type for MTL4Vector unknown");
+
   return 0.0;
 }
 //-----------------------------------------------------------------------------
@@ -221,6 +230,11 @@ double MTL4Vector::min() const
 double MTL4Vector::max() const
 {
   return mtl::max(x);
+}
+//-----------------------------------------------------------------------------
+double MTL4Vector::sum() const
+{
+  return mtl::sum(x);
 }
 //-----------------------------------------------------------------------------
 

@@ -23,7 +23,7 @@ V_dg = FunctionSpace(mesh, "DG", 1)
 V_cg = FunctionSpace(mesh, "CG", 1)
 V_b  = VectorFunctionSpace(mesh, "CG", 2)
 
-# Create velocity Function 
+# Create velocity Function
 velocity = Function(V_b, "../velocity.xml.gz");
 
 # Test and trial functions
@@ -47,16 +47,16 @@ h = AvgMeshSize(mesh)
 of = IsOutflowFacet(velocity)
 
 def upwind(u, b):
-  return [b[i]('+')*(of('+')*u('+') + of('-')*u('-')) for i in range(len(b))]
+    return b('+')*(of('+')*u('+') + of('-')*u('-'))
 
 # Bilinear form
-a_int = dot(grad(v), mult(kappa, grad(u)) - mult(velocity, u))*dx
+a_int = dot(grad(v), kappa*grad(u) - velocity*u)*dx
 
 a_fac = kappa('+')*alpha('+')/h('+')*dot(jump(v, n), jump(u, n))*dS \
       - kappa('+')*dot(avg(grad(v)), jump(u, n))*dS \
       - kappa('+')*dot(jump(v, n), avg(grad(u)))*dS
 
-a_vel = dot(jump(v, n), upwind(u, velocity))*dS + dot(mult(v, n), mult(velocity, of*u))*ds
+a_vel = dot(jump(v, n), upwind(u, velocity))*dS + dot(v*n, velocity*of*u)*ds
 
 a = a_int + a_fac + a_vel
 

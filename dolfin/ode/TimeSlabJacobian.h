@@ -15,11 +15,11 @@
 
 namespace dolfin
 {
-  
+
   class ODE;
   class Method;
   class TimeSlab;
-    
+
   /// This is the base class for Jacobians defined on mono- or
   /// multi-adaptive time slabs.
 
@@ -32,10 +32,10 @@ namespace dolfin
 
     /// Destructor
     ~TimeSlabJacobian();
-    
+
     /// Return number of rows (dim = 0) or columns (dim = 1)
     virtual uint size(uint dim) const = 0;
-    
+
     /// Compute product y = Ax
     virtual void mult(const uBLASVector& x, uBLASVector& y) const = 0;
 
@@ -49,7 +49,7 @@ namespace dolfin
     const uBLASDenseMatrix& matrix() const;
 
   protected:
-    
+
     // The ODE
     ODE& ode;
 

@@ -1,43 +1,93 @@
-// Copyright (C) 2003-2008 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Thanks to Jim Tilander for many helpful hints.
 //
-// Modified by Ola Skavhaug, 2007.
+// Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2008-07-23
+// Last changed: 2009-05-11
 
 #include <stdarg.h>
 #include <stdio.h>
 #include <signal.h>
+#include <sstream>
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/Variable.h>
+#include <dolfin/parameter/NewParameters.h>
 #include "LogManager.h"
 #include "log.h"
 
 using namespace dolfin;
 
-// Buffers
-static char buffer[DOLFIN_LINELENGTH];
+// Buffer
+static unsigned int buffer_size = 0;
+static char* buffer = 0;
 
+// Buffer allocation
+void allocate_buffer(std::string msg)
+{
+  // va_list, start, end require a char pointer of fixed size so we
+  // need to allocate the buffer here. We allocate twice the size of
+  // the format string and at least DOLFIN_LINELENGTH. This should be
+  // ok in most cases.
+
+  unsigned int new_size = std::max(static_cast<unsigned int>(2*msg.size()),
+                                   static_cast<unsigned int>(DOLFIN_LINELENGTH));
+  if (new_size > buffer_size)
+  {
+    delete [] buffer;
+    buffer = new char[new_size];
+    buffer_size = new_size;
+  }
+}
+
+// Macro for parsing arguments
 #define read(buffer, msg) \
+  allocate_buffer(msg); \
   va_list aptr; \
   va_start(aptr, msg); \
-  vsnprintf(buffer, DOLFIN_LINELENGTH, msg.c_str(), aptr); \
+  vsnprintf(buffer, buffer_size, msg.c_str(), aptr); \
   va_end(aptr);
 
 //-----------------------------------------------------------------------------
-void dolfin::message(std::string msg, ...)
+void dolfin::info(std::string msg, ...)
 {
   read(buffer, msg);
-  LogManager::logger.message(buffer);
+  LogManager::logger.info(buffer);
 }
 //-----------------------------------------------------------------------------
-void dolfin::message(int debug_level, std::string msg, ...)
+void dolfin::info(int debug_level, std::string msg, ...)
 {
   read(buffer, msg);
-  LogManager::logger.message(buffer, debug_level);
+  LogManager::logger.info(buffer, debug_level);
+}
+//-----------------------------------------------------------------------------
+void dolfin::info(const Variable& variable)
+{
+  info(variable.str());
+}
+//-----------------------------------------------------------------------------
+void dolfin::info(const NewParameters& parameters)
+{
+  // Need separate function for Parameters since we can't make Parameters
+  // a subclass of Variable (gives cyclic dependencies)
+  info(parameters.str());
+}
+//-----------------------------------------------------------------------------
+void dolfin::info_stream(std::ostream& out, std::string msg)
+{
+  std::ostream& old_out = LogManager::logger.get_output_destination();
+  LogManager::logger.set_output_destination(out);
+  LogManager::logger.info(msg);
+  LogManager::logger.set_output_destination(old_out);
+}
+//-----------------------------------------------------------------------------
+void dolfin::info_underline(std:: string msg, ...)
+{
+  read(buffer, msg);
+  LogManager::logger.info_underline(buffer);
 }
 //-----------------------------------------------------------------------------
 void dolfin::warning(std::string msg, ...)
@@ -67,6 +117,21 @@ void dolfin::begin(int debug_level, std::string msg, ...)
 void dolfin::end()
 {
   LogManager::logger.end();
+}
+//-----------------------------------------------------------------------------
+std::string dolfin::indent(std::string s)
+{
+  const std::string indentation("  ");
+  std::stringstream is;
+  is << indentation;
+  for (uint i = 0; i < s.size(); ++i)
+  {
+    is << s[i];
+    if (s[i] == '\n') // && i < s.size() - 1)
+      is << indentation;
+  }
+
+  return is.str();
 }
 //-----------------------------------------------------------------------------
 void dolfin::summary(bool reset)

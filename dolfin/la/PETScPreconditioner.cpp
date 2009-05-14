@@ -77,34 +77,31 @@ int PETScPreconditioner::PCCreate(PC pc)
   return 0;
 }
 //-----------------------------------------------------------------------------
-#if PETSC_VERSION_MAJOR > 2 
-const PCType PETScPreconditioner::getType(PreconditionerType pc)
+#if PETSC_VERSION_MAJOR > 2
+const PCType PETScPreconditioner::get_type(std::string pc_type)
 #else
-PCType PETScPreconditioner::getType(PreconditionerType pc)
+PCType PETScPreconditioner::get_type(std::string pc_type)
 #endif
 {
-  switch (pc)
-  {
-  case default_pc:
+  if (pc_type == "default")
     return "default";
-  case amg_hypre:
+  if (pc_type == "amg_hypre")
     return PCHYPRE;
-  case amg_ml:
+  if (pc_type == "amg_ml")
     return PCML;
-  case icc:
+  if (pc_type =="icc")
     return PCICC;
-  case ilu:
+  if (pc_type =="ilu")
     return PCILU;
-  case jacobi:
+  if (pc_type =="jacobi")
     return PCJACOBI;
-  case sor:
+  if (pc_type == "sor")
     return PCSOR;
-  case none:
+  if (pc_type == "none")
     return PCNONE;
-  default:
-    warning("Requested preconditioner unkown. Using incomplete LU.");
-    return PCILU;
-  }
+
+  warning("Requested preconditioner unkown. Using incomplete LU.");
+  return PCILU;
 }
 //-----------------------------------------------------------------------------
 

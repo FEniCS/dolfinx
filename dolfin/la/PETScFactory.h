@@ -30,11 +30,11 @@ namespace dolfin
     /// Create empty vector
     PETScVector* create_vector() const;
 
-    /// Create empty sparsity pattern 
+    /// Create empty sparsity pattern
     SparsityPattern* create_pattern() const;
 
     /// Return singleton instance
-    static PETScFactory& instance() 
+    static PETScFactory& instance()
     { return factory; }
 
   private:

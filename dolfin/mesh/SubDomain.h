@@ -29,10 +29,10 @@ namespace dolfin
 
     /// Return true for points inside the subdomain
     virtual bool inside(const double* x, bool on_boundary) const;
-    
+
     /// Map coordinate x in domain H to coordinate y in domain G (used for periodic boundary conditions)
     virtual void map(const double* x, double* y) const;
-    
+
     /// Set sub domain markers for given subdomain
     void mark(MeshFunction<uint>& sub_domains, uint sub_domain) const;
 

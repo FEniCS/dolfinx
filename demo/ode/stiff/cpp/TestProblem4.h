@@ -11,10 +11,10 @@ using namespace dolfin;
 class TestProblem4 : public ODE
 {
 public:
-  
+
   TestProblem4() : ODE(8, 321.8122)
   {
-    message("The HIRES problem.");
+    info("The HIRES problem.");
   }
 
   void u0(double* u)

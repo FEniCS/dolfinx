@@ -12,17 +12,17 @@
 
 namespace dolfin
 {
-  
+
   class Quadrature
   {
   public:
-    
+
     /// Constructor
     Quadrature(unsigned int n);
 
     /// Destructor
     virtual ~Quadrature();
-    
+
     /// Return number of quadrature points
     int size() const;
 
@@ -34,19 +34,19 @@ namespace dolfin
 
     /// Return sum of weights (length, area, volume)
     real measure() const;
-    
+
     /// Display quadrature data
     virtual void disp() const = 0;
 
   protected:
-    
+
     uint n;        // Number of quadrature points
     real* points;  // Quadrature points
     real* weights; // Quadrature weights
     real m;        // Sum of weights
-    
+
   };
-  
+
 }
 
 #endif

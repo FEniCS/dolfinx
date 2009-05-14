@@ -34,7 +34,7 @@ struct lt_coordinate
   {
     if (x.size() > (y.size() + DOLFIN_EPS))
       return false;
-    
+
     for (unsigned int i = 0; i < x.size(); i++)
     {
       if (x[i] < (y[i] - DOLFIN_EPS))
@@ -42,7 +42,7 @@ struct lt_coordinate
       else if (x[i] > (y[i] + DOLFIN_EPS))
         return false;
     }
-    
+
     return false;
   }
 };
@@ -90,7 +90,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
   std::map<std::vector<double>, std::pair<int, int>, lt_coordinate> coordinate_dofs;
   typedef std::map<std::vector<double>, std::pair<int, int>, lt_coordinate>::iterator iterator;
   std::vector<double> xx(mesh.geometry().dim());
-  
+
   // std::vector used for mapping coordinates
   double* y = new double[mesh.geometry().dim()];
   for (uint i = 0; i < mesh.geometry().dim(); i++)
@@ -102,10 +102,10 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
   // Make sure we have the facet - cell connectivity
   const uint D = mesh.topology().dim();
   mesh.init(D - 1, D);
-  
+
   // Create UFC view of mesh
   UFCMesh ufc_mesh(mesh);
-  
+
   // Iterate over the facets of the mesh
   Progress p("Applying periodic boundary conditions", mesh.size(D - 1));
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
@@ -119,7 +119,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
 
     // Tabulate dofs on cell
     dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell.index());
-    
+
     // Tabulate coordinates on cell
     dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
 
@@ -140,12 +140,12 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
       sub_domain.map(x, y);
 
       // Check if coordinate is inside the domain G or in H
-      const bool on_boundary = facet->numEntities(D) == 1;
+      const bool on_boundary = facet->num_entities(D) == 1;
       if (sub_domain.inside(x, on_boundary))
       {
         // Coordinate x is in G
         //cout << "Inside: " << x[0] << " " << x[1] << endl;
-        
+
         // Copy coordinate to std::vector
         for (uint j = 0; j < mesh.geometry().dim(); j++)
           xx[j] = x[j];
@@ -179,11 +179,11 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
       {
         // y = F(x) is in G, so coordinate x is in H
         //cout << "Mapped: " << x[0] << " " << x[1] << endl;
-        
+
         // Copy coordinate to std::vector
         for (uint j = 0; j < mesh.geometry().dim(); j++)
           xx[j] = y[j];
-        
+
         // Check if coordinate exists from before
         iterator it = coordinate_dofs.find(xx);
         if (it != coordinate_dofs.end())
@@ -233,9 +233,9 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     // Check that we got both dofs
     const int dof0 = it->second.first;
     const int dof1 = it->second.second;
-    
+
     //cout << dof0 << " " << dof1 <<endl;
-    
+
     if (dof0 == -1 || dof1 == -1)
     {
       cout << "At coordinate: x =";
@@ -249,7 +249,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     //for (uint j = 0; j < mesh.geometry().dim(); j++)
     //  cout << " " << it->first[j];
     //cout << ": " << dof0 << " " << dof1 << endl;
-    
+
     // FIXME: This can be done more efficiently. A.apply() should not be called
     //        from within a loop.
 
@@ -261,12 +261,12 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
 
     std::vector<uint> columns;
     std::vector<double> values;
-    
-    // Add slave-dof-row to master-dof-row  
+
+    // Add slave-dof-row to master-dof-row
     A.getrow(dof0, columns, values);
     A.add(&values[0], 1, &cols[0], columns.size(), &columns[0]);
 
-    // Add slave-dof-entry to master-dof-entry 
+    // Add slave-dof-entry to master-dof-entry
     values.resize(1);
     b.get(&values[0], 1, &rows[0]);
     b.add(&values[0], 1, &cols[0]);
@@ -284,7 +284,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     A.apply();
     b.apply();
   }
-  
+
   // Cleanup
   delete [] rows;
   delete [] cols;

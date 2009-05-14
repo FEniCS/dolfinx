@@ -59,7 +59,7 @@ void MPIMeshCommunicator::broadcast(const Mesh& mesh)
   MPI_Bcast(&dim, 1, MPI_UNSIGNED, this_process, MPI_COMM_WORLD);
 
   // Send the coordinates
-  const double* coordinates = mesh.coordinates(); 
+  const double* coordinates = mesh.coordinates();
   //dolfin_debug1("sending geometry %d coordinates", dim*size);
   MPI_Bcast(const_cast<double *>(coordinates), dim*size, MPI_DOUBLE, this_process, MPI_COMM_WORLD);
 
@@ -72,7 +72,7 @@ void MPIMeshCommunicator::broadcast(const Mesh& mesh)
   uint* num_entities = mesh.topology().num_entities;
   //dolfin_debug1("sending %d num_entities", D+1);
   MPI_Bcast(num_entities, D+1, MPI_UNSIGNED, this_process, MPI_COMM_WORLD);
-  
+
   // Send connectivity
   MeshConnectivity** connectivity = mesh.topology().connectivity;
   if ( D > 0 )
@@ -86,18 +86,18 @@ void MPIMeshCommunicator::broadcast(const Mesh& mesh)
 
         // num_entities
         MPI_Bcast(&mc.num_entities, 1, MPI_UNSIGNED, this_process, MPI_COMM_WORLD);
-        
+
         // offsets
         MPI_Bcast(mc.offsets, mc.num_entities + 1, MPI_UNSIGNED, this_process, MPI_COMM_WORLD);
-        
+
         // connections
         MPI_Bcast(mc.connections, mc._size, MPI_UNSIGNED, this_process, MPI_COMM_WORLD);
       }
   }
 
   // CellType
-  int cell_type = mesh._cell_type->cell_type;
-  int facet_type = mesh._cell_type->facet_type;
+  int cell_type = mesh._cell_type->cell_type();
+  int facet_type = mesh._cell_type->facet_type();
   //dolfin_debug1("Sending cell_type %d", cell_type);
   MPI_Bcast(&cell_type, 1, MPI_INT, this_process, MPI_COMM_WORLD);
   //dolfin_debug1("Sending facet_type %d", facet_type);
@@ -116,7 +116,7 @@ void MPIMeshCommunicator::receive(Mesh& mesh)
   // Define custom MPI datatype?
   //MPI_Datatype mpi_mesh;
 
-  // Receiving number of coordinates 
+  // Receiving number of coordinates
   uint size = 0;
   MPI_Bcast(&size, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
   //dolfin_debug1("received geometry size %d", size);
@@ -156,11 +156,11 @@ void MPIMeshCommunicator::receive(Mesh& mesh)
 
         // num_entities
         MPI_Bcast(&c[d0][d1].num_entities, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-        
+
         // offsets
         c[d0][d1].offsets = new uint[c[d0][d1].num_entities + 1];
         MPI_Bcast(c[d0][d1].offsets, c[d0][d1].num_entities + 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-        
+
         // connections
         c[d0][d1].connections = new uint[c[d0][d1]._size];
         MPI_Bcast(c[d0][d1].connections, c[d0][d1]._size, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
@@ -168,7 +168,7 @@ void MPIMeshCommunicator::receive(Mesh& mesh)
   }
 
   // Receive CellType
-  
+
   int cell_type, facet_type;
   MPI_Bcast(&cell_type, 1, MPI_INT, 0, MPI_COMM_WORLD);
   //dolfin_debug2("process num: %d received cell_type %d ", this_process, cell_type);
@@ -185,8 +185,8 @@ void MPIMeshCommunicator::receive(Mesh& mesh)
   mesh.topology().connectivity = c;
 
   mesh._cell_type = CellType::create(CellType::Type(cell_type));
-  mesh._cell_type->facet_type = CellType::Type(facet_type);
-  
+  mesh._cell_type->_facet_type = CellType::Type(facet_type);
+
   dolfin_debug1("Finished mesh receive on process %d", this_process);
 }
 //-----------------------------------------------------------------------------
@@ -238,21 +238,21 @@ void MPIMeshCommunicator::receive(MeshFunction<unsigned int>& mesh_function)
 void MPIMeshCommunicator::distribute(Mesh& mesh,
 				     MeshFunction<uint>& distribution)
 {
-  distributeCommon(mesh, distribution, 0, 0);
+  distribute_common(mesh, distribution, 0, 0);
 }
 //-----------------------------------------------------------------------------
-  void MPIMeshCommunicator::distribute(Mesh& mesh, 
-				       MeshFunction<uint>& distribution, 
+  void MPIMeshCommunicator::distribute(Mesh& mesh,
+				       MeshFunction<uint>& distribution,
 				       MeshFunction<bool>& old_cell_marker,
-				       MeshFunction<bool>& cell_marker) 
+				       MeshFunction<bool>& cell_marker)
 {
-  distributeCommon(mesh, distribution, &old_cell_marker, &cell_marker);
+  distribute_common(mesh, distribution, &old_cell_marker, &cell_marker);
 }
 //-----------------------------------------------------------------------------
-  void MPIMeshCommunicator::distributeCommon(Mesh& mesh, 
-				       MeshFunction<uint>& distribution, 
+  void MPIMeshCommunicator::distribute_common(Mesh& mesh,
+				       MeshFunction<uint>& distribution,
 				       MeshFunction<bool>* old_cell_marker,
-				       MeshFunction<bool>* cell_marker) 
+				       MeshFunction<bool>* cell_marker)
 {
   //FIXME add code for mesh distribution after dual graph partitioning
 }
@@ -270,23 +270,23 @@ MPIMeshCommunicator::~MPIMeshCommunicator()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MPIMeshCommunicator::broadcast(const Mesh& mesh) 
-{ 
+void MPIMeshCommunicator::broadcast(const Mesh& mesh)
+{
   error("Cannot broadcast meshes without MPI.");
 }
 //-----------------------------------------------------------------------------
-void MPIMeshCommunicator::receive(Mesh& mesh) 
-{ 
+void MPIMeshCommunicator::receive(Mesh& mesh)
+{
   error("Cannot receive meshes without MPI.");
 }
 //-----------------------------------------------------------------------------
-void MPIMeshCommunicator::broadcast(const MeshFunction<unsigned int>& mesh_function) 
-{ 
+void MPIMeshCommunicator::broadcast(const MeshFunction<unsigned int>& mesh_function)
+{
   error("Cannot broadcast mesh functions without MPI.");
 }
 //-----------------------------------------------------------------------------
-void MPIMeshCommunicator::receive(MeshFunction<unsigned int>& mesh_function) 
-{ 
+void MPIMeshCommunicator::receive(MeshFunction<unsigned int>& mesh_function)
+{
   error("Cannot receive mesh functions without MPI.");
 }
 //-----------------------------------------------------------------------------
@@ -296,10 +296,10 @@ void MPIMeshCommunicator::distribute(Mesh& mesh,
   error("Cannot distribute mesh without MPI.");
 }
 //-----------------------------------------------------------------------------
-void MPIMeshCommunicator::distribute(Mesh& mesh, 
-				     MeshFunction<uint>& distribution, 
+void MPIMeshCommunicator::distribute(Mesh& mesh,
+				     MeshFunction<uint>& distribution,
 				     MeshFunction<bool>& old_cell_marker,
-				     MeshFunction<bool>& cell_marker) 
+				     MeshFunction<bool>& cell_marker)
 {
   error("Cannot distribute mesh without MPI.");
 }

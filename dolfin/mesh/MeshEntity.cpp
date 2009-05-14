@@ -19,7 +19,7 @@ bool MeshEntity::incident(const MeshEntity& entity) const
   // Get list of entities for given topological dimension
   const uint* entities = _mesh.topology()(_dim, entity._dim)(_index);
   const uint num_entities = _mesh.topology()(_dim, entity._dim).size(_index);
-  
+
   // Check if any entity matches
   for (uint i = 0; i < num_entities; ++i)
     if ( entities[i] == entity._index )
@@ -38,7 +38,7 @@ dolfin::uint MeshEntity::index(const MeshEntity& entity) const
   // Get list of entities for given topological dimension
   const uint* entities = _mesh.topology()(_dim, entity._dim)(_index);
   const uint num_entities = _mesh.topology()(_dim, entity._dim).size(_index);
-  
+
   // Check if any entity matches
   for (uint i = 0; i < num_entities; ++i)
     if ( entities[i] == entity._index )

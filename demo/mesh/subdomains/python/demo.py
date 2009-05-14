@@ -31,7 +31,7 @@ class Inflow(SubDomain):
 class Outflow(SubDomain):
     def inside(self, x, on_boundary):
         return x[0] < DOLFIN_EPS and on_boundary
-  
+
 # Read mesh
 mesh = Mesh("../../../../data/meshes/dolfin-2.xml.gz")
 

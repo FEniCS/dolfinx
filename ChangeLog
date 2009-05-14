@@ -1,3 +1,14 @@
+ - Add function info_underline() for writing underlined messages
+ - Rename message() --> info() for "compatibility" with Python logging module
+ - Add elementwise multiplication in GeneriVector interface
+ - GenericVector interface in PyDOLFIN now support the sequence protocol
+ - Rename of camelCaps functions names: fooBar --> foo_bar
+   Note: mesh.numVertices() --> mesh.num_vertices(), mesh.numCells() --> mesh.num_cells()
+ - Add slicing capabilities for GenericMatrix interface in PyDOLFIN (only getitem)
+ - Add slicing capabilities for GenericVector interface in PyDOLFIN
+ - Add sum to GenericVector interface
+0.9.2 [2009-04-07]
+ - Enable setting parameters for Newton solver in VariationalProblem
  - Simplified and improved implementation of C++ plotting, calling Viper on command-line
  - Remove precompiled elements and projections
  - Automatically interpolate user-defined functions on assignment
@@ -12,7 +23,7 @@
  - Add macro dolfin_not_implemented()
  - Add new interpolate() function for interpolation of user-defined function to discrete
  - Make _function_space protected in Function
- - Added access to crs data from python for uBLAS and MTL4 backend
+ - Added access to crs data from python for uBLAS and MTL4 backendg
 0.9.1 [2009-02-17]
  - Check Rectangle and Box for non-zero dimensions
  - ODE solvers now solve the dual problem

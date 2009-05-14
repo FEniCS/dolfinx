@@ -24,12 +24,12 @@ Event::~Event()
 void Event::operator() ()
 {
   if ( _count < _maxcount)
-    message(msg);
-  
+    info(msg);
+
   _count++;
-  
+
   if ( _count == _maxcount && _maxcount > 1 )
-    message("Last message repeated %d times. Not displaying again.", _count);
+    info("Last message repeated %d times. Not displaying again.", _count);
 }
 //-----------------------------------------------------------------------------
 unsigned int Event::count() const

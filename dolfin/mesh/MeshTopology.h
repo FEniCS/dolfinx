@@ -13,7 +13,7 @@
 
 namespace dolfin
 {
-  
+
   /// MeshTopology stores the topology of a mesh, consisting of mesh entities
   /// and connectivity (incidence relations for the mesh entities). Note that
   /// the mesh entities don't need to be stored, only the number of entities
@@ -23,26 +23,26 @@ namespace dolfin
   /// A mesh entity e may be identified globally as a pair e = (dim, i), where
   /// dim is the topological dimension and i is the index of the entity within
   /// that topological dimension.
-  
+
   class MeshTopology
   {
   public:
-    
+
     /// Create empty mesh topology
     MeshTopology();
 
     /// Copy constructor
     MeshTopology(const MeshTopology& topology);
-    
+
     /// Destructor
     ~MeshTopology();
 
     /// Assignment
     const MeshTopology& operator= (const MeshTopology& topology);
- 
+
     /// Return topological dimension
     inline uint dim() const { return _dim; }
-    
+
     /// Return number of entities for given dimension
     inline uint size(uint dim) const
     { dolfin_assert(dim <= _dim); return num_entities[dim]; }
@@ -73,13 +73,13 @@ namespace dolfin
 
     // Topological dimension
     uint _dim;
-  
+
     // Number of mesh entities for each topological dimension
     uint* num_entities;
 
     // Connectivity for pairs of topological dimensions
     MeshConnectivity** connectivity;
-   
+
   };
 
 }

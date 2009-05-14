@@ -15,7 +15,7 @@ using namespace dolfin;
 class Harmonic : public ODE
 {
 public:
-  
+
   Harmonic() : ODE(2, 4.0 * real_pi()), e(0.0) {}
 
   void u0(real* u)
@@ -41,12 +41,12 @@ public:
 
     return true;
   }
-  
+
   real error()
   {
     return e;
   }
-  
+
 private:
 
   real e;
@@ -68,7 +68,7 @@ int main()
     ode.solve();
     dolfin_set("output destination", "terminal");
 
-    message("cG(%d): e = %.3e", q, to_double(ode.error()));
+    info("cG(%d): e = %.3e", q, to_double(ode.error()));
   }
 
   cout << endl;
@@ -83,7 +83,7 @@ int main()
     ode.solve();
     dolfin_set("output destination", "terminal");
 
-    message("dG(%d): e = %.3e", q, to_double(ode.error()));
+    info("dG(%d): e = %.3e", q, to_double(ode.error()));
   }
 
   return 0;

@@ -22,32 +22,32 @@ namespace dolfin
   {
   public:
 
-    /// Coarsen simplicial mesh locally by edge collapse 
-    static void coarsenMeshByEdgeCollapse(Mesh& mesh, 
-                                          MeshFunction<bool>& cell_marker,
-                                          bool coarsen_boundary = false); 
+    /// Coarsen simplicial mesh locally by edge collapse
+    static void coarsen_mesh_by_edge_collapse(Mesh& mesh,
+                                              MeshFunction<bool>& cell_marker,
+                                              bool coarsen_boundary = false);
 
   private:
-    
-    /// Check that edge collapse is ok  
-    static bool coarsenMeshOk(Mesh& mesh, uint edge_index, uint* edge_vertex, 
-			      MeshFunction<bool>& vertex_forbidden);  
 
-    /// Collapse edge by node deletion 
-    static void collapseEdge(Mesh& mesh, Edge& edge, 
-                             Vertex& vertex_to_remove, 
-                             MeshFunction<bool>& cell_to_remove, 
-                             std::vector<int>& old2new_vertex, 
-			     std::vector<int>& old2new_cell,
-                             MeshEditor& editor, 
-                             uint& current_cell); 
+    /// Check that edge collapse is ok
+    static bool coarsen_mesh_ok(Mesh& mesh, uint edge_index, uint* edge_vertex,
+                                MeshFunction<bool>& vertex_forbidden);
 
-    /// Coarsen simplicial cell by edge collapse 
-    static bool coarsenCell(Mesh& mesh, Mesh& coarse_mesh,
-			    int cell_id,
-			    std::vector<int>& old2new_vertex,
-			    std::vector<int>& old2new_cell,
-			    bool coarsen_boundary = false);
+    /// Collapse edge by node deletion
+    static void collapse_edge(Mesh& mesh, Edge& edge,
+                              Vertex& vertex_to_remove,
+                              MeshFunction<bool>& cell_to_remove,
+                              std::vector<int>& old2new_vertex,
+                              std::vector<int>& old2new_cell,
+                              MeshEditor& editor,
+                              uint& current_cell);
+
+    /// Coarsen simplicial cell by edge collapse
+    static bool coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
+                             int cell_id,
+                             std::vector<int>& old2new_vertex,
+                             std::vector<int>& old2new_cell,
+                             bool coarsen_boundary = false);
 
   };
 

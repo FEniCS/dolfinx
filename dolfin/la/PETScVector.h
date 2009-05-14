@@ -93,13 +93,13 @@ namespace dolfin
     virtual void add(double* values);
 
     /// Add multiple of given vector (AXPY operation)
-    virtual void axpy(double a, const GenericVector& x); 
+    virtual void axpy(double a, const GenericVector& x);
 
     /// Return inner product with given vector
     virtual double inner(const GenericVector& v) const;
 
     /// Return norm of vector
-    virtual double norm(dolfin::NormType type=l2) const;
+    virtual double norm(std::string norm_type = "l2") const;
 
     /// Return minimum value of vector
     virtual double min() const;
@@ -107,8 +107,14 @@ namespace dolfin
     /// Return maximum value of vector
     virtual double max() const;
 
+    /// Return sum of values of vector
+    virtual double sum() const;
+
     /// Multiply vector by given number
     virtual const PETScVector& operator*= (double a);
+
+    /// Multiply vector by another vector pointwise
+    virtual const PETScVector& operator*= (const GenericVector& x);
 
     /// Divide vector by given number
     virtual const PETScVector& operator/= (double a);
@@ -144,12 +150,12 @@ namespace dolfin
 
     // PETSc Vec pointer
     boost::shared_ptr<Vec> x;
-    
+
   };
 
   /// Output of PETScVector
   LogStream& operator<< (LogStream& stream, const PETScVector& x);
-  
+
 }
 
 #endif

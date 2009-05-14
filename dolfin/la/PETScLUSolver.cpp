@@ -26,24 +26,24 @@ PETScLUSolver::~PETScLUSolver()
   clear();
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x, 
-                                  const GenericVector& b) 
+dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x,
+                                  const GenericVector& b)
 {
-  return solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(), 
+  return solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(),
                b.down_cast<PETScVector>());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x, 
+dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
                                   const PETScVector& b)
 {
   // Initialise solver
   init();
 
-  #if PETSC_VERSION_MAJOR > 2 
+  #if PETSC_VERSION_MAJOR > 2
   const MatSolverPackage solver_type;
   PC pc;
   KSPGetPC(ksp, &pc);
-  PCFactorGetMatSolverPackage(pc, &solver_type);  
+  PCFactorGetMatSolverPackage(pc, &solver_type);
   #else
   MatType solver_type;
   MatGetType(*A.mat(), &solver_type);
@@ -67,7 +67,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
 
   // Write a message
   if ( report )
-    message("Solving linear system of size %d x %d (PETSc LU solver, %s).",
+    info("Solving linear system of size %d x %d (PETSc LU solver, %s).",
             A.size(0), A.size(1), solver_type);
 
   // Solve linear system
@@ -80,7 +80,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A, PETScVector& x, 
+dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A, PETScVector& x,
                                   const PETScVector& b)
 {
   // Initialise solver
@@ -91,13 +91,13 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A, PETScVector& x,
 
   // Copy data to dense matrix
   const double Anorm = copyToDense(A);
-  
+
   // Initialize solution vector (remains untouched if dimensions match)
   x.resize(A.size(1));
 
   // Write a message
   if ( report )
-    message("Solving linear system of size %d x %d (PETSc LU solver).",
+    info("Solving linear system of size %d x %d (PETSc LU solver).",
 		A.size(0), A.size(1));
 
   // Solve linear system
@@ -105,8 +105,8 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A, PETScVector& x,
   KSPSolve(ksp, *b.vec(), *x.vec());
 
   // Estimate condition number for l1 norm
-  const double xnorm = x.norm(l1);
-  const double bnorm = b.norm(l1) + DOLFIN_EPS;
+  const double xnorm = x.norm("l1");
+  const double bnorm = b.norm("l1") + DOLFIN_EPS;
   const double kappa = Anorm * xnorm / bnorm;
   if ( kappa > 0.001 / DOLFIN_EPS )
   {
@@ -138,7 +138,7 @@ void PETScLUSolver::init()
 {
   // Set up solver environment to use only preconditioner
   KSPCreate(PETSC_COMM_SELF, &ksp);
-  
+
   // Set preconditioner to LU factorization
   PC pc;
   KSPGetPC(ksp, &pc);
@@ -157,12 +157,12 @@ void PETScLUSolver::init()
 //-----------------------------------------------------------------------------
 void PETScLUSolver::clear()
 {
-  if ( ksp ) 
+  if ( ksp )
   {
-    KSPDestroy(ksp); 
+    KSPDestroy(ksp);
     ksp=0;
   }
-  if ( B ) 
+  if ( B )
   {
     MatDestroy(B);
     ksp=0;

@@ -16,7 +16,7 @@ int main()
   // Create meshes (omega0 overlapped by omega1)
   UnitCircle omega0(20);
   UnitSquare omega1(20, 20);
-    
+
   // Access mesh geometry
   MeshGeometry& geometry = omega0.geometry();
 
@@ -36,16 +36,16 @@ int main()
     BoundaryMesh boundary(omega1);
     std::vector<unsigned int> cells;
     omega0.intersection(boundary, cells, false);
-    
+
     // Copy values to mesh function for plotting
     MeshFunction<unsigned int> intersection(omega0, omega0.topology().dim());
     intersection = 0;
     for (unsigned int i = 0; i < cells.size(); i++)
       intersection.set(cells[i], 1);
-    
+
     // Plot intersection
-    plot(intersection);
- 
+    //plot(intersection);
+
     // Rotate circle around (0.5, 0.5)
     for (VertexIterator vertex(omega0); !vertex.end(); ++vertex)
     {

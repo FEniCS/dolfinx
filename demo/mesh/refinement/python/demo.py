@@ -29,6 +29,6 @@ for i in range(5):
 
     # Refine mesh
     mesh.refine(cell_markers)
-    
+
     # Plot mesh
     plot(mesh, interactive=True)

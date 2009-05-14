@@ -11,14 +11,20 @@
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
-#include <ufc.h>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
 
+namespace ufc
+{
+  // Forward declarations
+  class cell;
+}
+
 namespace dolfin
 {
 
+  // Forward declarations
   class FunctionSpace;
   class GenericVector;
   class Data;
@@ -100,7 +106,7 @@ namespace dolfin
 
     /// Return geometric dimension
     uint geometric_dimension() const;
-    
+
     /// Function evaluation (overload for user-defined function, simple version)
     virtual void eval(double* values, const double* x) const;
 

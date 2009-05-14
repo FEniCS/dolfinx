@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2008 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Ola Skavhaug, 2007.
+// Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2008-09-18
+// Last changed: 2009-05-08
 
 #include <string>
 #include <iostream>
@@ -25,7 +25,7 @@ typedef std::map<std::string, std::pair<dolfin::uint, double> >::const_iterator 
 
 //-----------------------------------------------------------------------------
 Logger::Logger()
-  : destination(terminal), debug_level(0), indentation_level(0), logstream(0),
+  : destination(terminal), debug_level(0), indentation_level(0), logstream(&std::cout),
     process_number(-1)
 {
   if (MPI::num_processes() > 1)
@@ -37,12 +37,28 @@ Logger::~Logger()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Logger::message(std::string msg, int debug_level) const
+void Logger::info(std::string msg, int debug_level) const
 {
   if (debug_level > this->debug_level)
     return;
 
   write(debug_level, msg);
+}
+//-----------------------------------------------------------------------------
+void Logger::info_underline(std::string msg, int debug_level) const
+{
+  if (msg.size() == 0)
+    info(msg, debug_level);
+
+  std::stringstream s;
+  s << msg;
+  s << "\n";
+  for (int i = 0; i < indentation_level; i++)
+    s << "  ";
+  for (uint i = 0; i < msg.size(); i++)
+    s << "-";
+
+  info(s.str(), debug_level);
 }
 //-----------------------------------------------------------------------------
 void Logger::warning(std::string msg) const
@@ -60,7 +76,7 @@ void Logger::error(std::string msg) const
 void Logger::begin(std::string msg, int debug_level)
 {
   // Write a message
-  message(msg, debug_level);
+  info(msg, debug_level);
   indentation_level++;
 }
 //-----------------------------------------------------------------------------
@@ -73,14 +89,14 @@ void Logger::progress(std::string title, double p) const
 {
   int N = DOLFIN_TERM_WIDTH - 15;
   int n = static_cast<int>(p*static_cast<double>(N));
-  
+
   // Print the title
   std::string s = "| " + title;
   for (uint i = 0; i < (N - title.size() - 1); i++)
     s += " ";
   s += "|";
   write(0, s);
-  
+
   // Print the progress bar
   s = "|";
   for (int i = 0; i < n; i++)
@@ -101,36 +117,42 @@ void Logger::progress(std::string title, double p) const
   write(0, s);
 }
 //-----------------------------------------------------------------------------
-void Logger::setOutputDestination(std::string destination)
+void Logger::set_output_destination(std::string destination)
 {
   // Choose output destination
   if (destination == "terminal")
+  {
     this->destination = terminal;
+    logstream = &std::cout;
+  }
   else if (destination == "silent")
     this->destination = silent;
-  else if (destination == "stream"){
+  else if (destination == "stream")
+  {
     warning("Please provide the actual stream. Using terminal instead.");
     this->destination = terminal;
+    logstream = &std::cout;
   }
   else
   {
     this->destination = terminal;
-    message("Unknown output destination, using plain text.");
+    logstream = &std::cout;
+    info("Unknown output destination, using plain text.");
   }
 }
 //-----------------------------------------------------------------------------
-void Logger::setOutputDestination(std::ostream& ostream)
+void Logger::set_output_destination(std::ostream& ostream)
 {
    logstream = &ostream;
    this->destination = stream;
 }
 //-----------------------------------------------------------------------------
-void Logger::setDebugLevel(int debug_level)
+void Logger::set_debug_level(int debug_level)
 {
   this->debug_level = debug_level;
 }
 //-----------------------------------------------------------------------------
-void Logger::registerTiming(std::string task, double elapsed_time)
+void Logger::register_timing(std::string task, double elapsed_time)
 {
   // Remove small or negative numbers
   if (elapsed_time < DOLFIN_EPS)
@@ -139,7 +161,7 @@ void Logger::registerTiming(std::string task, double elapsed_time)
   // Print a message
   std::stringstream line;
   line << "Elapsed time: " << elapsed_time << " (" << task << ")";
-  message(line.str(), 1);
+  info(line.str(), 1);
 
   // Store values for summary
   map_iterator it = timings.find(task);
@@ -159,16 +181,16 @@ void Logger::summary(bool reset)
 {
   if (timings.size() == 0)
   {
-    message("Summary: no timings to report.");
+    info("Summary: no timings to report.");
     return;
   }
 
-  message("");
+  info("");
   Table table("Summary of timings");
   for (const_map_iterator it = timings.begin(); it != timings.end(); ++it)
   {
-    const std::string task  = it->first;
-    const uint num_timings  = it->second.first;
+    const std::string task    = it->first;
+    const uint num_timings    = it->second.first;
     const double total_time   = it->second.second;
     const double average_time = total_time / static_cast<double>(num_timings);
 
@@ -176,7 +198,7 @@ void Logger::summary(bool reset)
     table(task, "Total time")   = total_time;
     table(task, "Reps")         = num_timings;
   }
-  table.disp();
+  info(table.str());
 
   // Clear timings
   if (reset)
@@ -234,21 +256,16 @@ void Logger::write(int debug_level, std::string msg) const
   // Add indentation
   for (int i = 0; i < indentation_level; i++)
     msg = "  " + msg;
-  
+
   // Choose destination
   switch (destination)
   {
-  case terminal:
-    std::cout << msg << std::endl;
-    break;
-  case stream:
-    if (logstream == NULL)
-      error("No stream attached, cannot write to stream");
-    *logstream << msg << std::endl;
-    break;
-  default:
+  case silent:
     // Do nothing if destination == silent
     do {} while (false);
+    break;
+  default:
+    *logstream << msg << std::endl;
   }
 }
 //----------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 // First added:  2006-03-02
 // Last changed: 2008-12-27
 //
-// This program illustrates the use of the DOLFIN nonlinear solver for solving 
+// This program illustrates the use of the DOLFIN nonlinear solver for solving
 // the Cahn-Hilliard equation.
 //
 // The Cahn-Hilliard equation is very sensitive to the chosen parameters and
@@ -17,14 +17,14 @@
 
 using namespace dolfin;
 
-// User defined nonlinear problem 
+// User defined nonlinear problem
 class CahnHilliardEquation : public NonlinearProblem, public Parametrized
 {
   public:
 
-    // Constructor 
-    CahnHilliardEquation(Mesh& mesh, Function& u, Function& u0, Constant& dt, 
-                         Constant& theta, Constant& lambda, Constant& muFactor) 
+    // Constructor
+    CahnHilliardEquation(Mesh& mesh, Function& u, Function& u0, Constant& dt,
+                         Constant& theta, Constant& lambda, Constant& mu_factor)
                        : reset_Jacobian(true)
     {
       // Create forms
@@ -37,7 +37,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         if (!_a) error("Problem in downcast of CahnHilliard2DBilinearForm");
         _a->w0 = u;
         _a->lmbda = lambda;
-        _a->muFactor = muFactor;
+        _a->muFactor = mu_factor;
         _a->dt = dt;
         _a->theta = theta;
 
@@ -47,7 +47,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         _L->w0 = u;
         _L->w1 = u0;
         _L->lmbda = lambda;
-        _L->muFactor = muFactor;
+        _L->muFactor = mu_factor;
         _L->dt = dt;
         _L->theta = theta;
       }
@@ -60,7 +60,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         if (!_a) error("Problem in downcast of CahnHilliard3DBilinearForm");
         _a->w0 = u;
         _a->lmbda = lambda;
-        _a->muFactor = muFactor;
+        _a->muFactor = mu_factor;
         _a->dt = dt;
         _a->theta = theta;
 
@@ -70,7 +70,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         _L->w0 = u;
         _L->w1 = u0;
         _L->lmbda = lambda;
-        _L->muFactor = muFactor;
+        _L->muFactor = mu_factor;
         _L->dt = dt;
         _L->theta = theta;
       }
@@ -78,22 +78,22 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
         error("Cahn-Hilliard model is programmed for 2D and 3D only");
     }
 
-    // Destructor 
+    // Destructor
     ~CahnHilliardEquation()
     {
-      delete V; 
-      delete a; 
+      delete V;
+      delete a;
       delete L;
     }
- 
-    // User defined residual vector 
+
+    // User defined residual vector
     void F(GenericVector& b, const GenericVector& x)
     {
       // Assemble RHS (Neumann boundary conditions)
       assemble(b, *L);
     }
 
-    // User defined assemble of Jacobian 
+    // User defined assemble of Jacobian
     void J(GenericMatrix& A, const GenericVector& x)
     {
       // Assemble system and RHS (Neumann boundary conditions)
@@ -120,24 +120,24 @@ int main(int argc, char* argv[])
 
   // Time stepping and model parameters
   double delta_t = 5.0e-6;
-  Constant dt(delta_t); 
-  Constant theta(0.5); 
-  Constant lambda(1.0e-2); 
-  Constant muFactor(100.0); 
+  Constant dt(delta_t);
+  Constant theta(0.5);
+  Constant lambda(1.0e-2);
+  Constant mu_factor(100.0);
 
-  double t = 0.0; 
+  double t = 0.0;
   double T = 50*delta_t;
 
   // Solution functions
-  Function u; 
+  Function u;
   Function u0;
 
   // Create user-defined nonlinear problem
-  CahnHilliardEquation cahn_hilliard(mesh, u, u0, dt, theta, lambda, muFactor);
+  CahnHilliardEquation cahn_hilliard(mesh, u, u0, dt, theta, lambda, mu_factor);
 
   // Create nonlinear solver and set parameters
   //NewtonSolver newton_solver;
-  NewtonSolver newton_solver(lu);
+  NewtonSolver newton_solver("lu");
   newton_solver.set("Newton convergence criterion", "incremental");
   newton_solver.set("Newton maximum iterations", 10);
   newton_solver.set("Newton relative tolerance", 1e-6);
@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 
   // Randomly perturbed intitial conditions
   dolfin::seed(2);
-  dolfin::uint size = mesh.numVertices();
+  dolfin::uint size = mesh.num_vertices();
   double* x_init = new double[size];
   unsigned int* x_pos = new unsigned int[size];
   for(dolfin::uint i=0; i < size; ++i)
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
     // Update for next time step
     t += delta_t;
     u0.vector() = u.vector();
-    
+
     // Solve
     newton_solver.solve(cahn_hilliard, u.vector());
 
@@ -177,6 +177,6 @@ int main(int argc, char* argv[])
 
   // Plot solution
   plot(u[1]);
-  
+
   return 0;
 }

@@ -37,9 +37,9 @@ void uBLASKrylovMatrix::solve(uBLASVector& x, const uBLASVector& b)
   }
 
   // Get underlying uBLAS vectors
-  ublas_vector& _ej = ej->vec(); 
-  ublas_vector& _Aj = Aj->vec(); 
-  ublas_dense_matrix& _AA = AA->mat(); 
+  ublas_vector& _ej = ej->vec();
+  ublas_vector& _Aj = Aj->vec();
+  ublas_dense_matrix& _AA = AA->mat();
 
   // Reset unit vector
   _ej *= 0.0;
@@ -51,10 +51,10 @@ void uBLASKrylovMatrix::solve(uBLASVector& x, const uBLASVector& b)
 
     // Compute product Aj = Aej
     mult(*ej, *Aj);
-    
+
     // Set column of A
     column(_AA, j) = _Aj;
-    
+
     (_ej)(j) = 0.0;
   }
 
@@ -69,12 +69,12 @@ void uBLASKrylovMatrix::disp(const int precision) const
 {
   // Since we don't really have the matrix, we create the matrix by
   // performing multiplication with unit vectors. Used only for debugging.
-  
+
   uint M = size(0);
   uint N = size(1);
   uBLASVector x(N), y(M);
   uBLASMatrix<ublas_sparse_matrix> A(M, N);
-  
+
   x = 0.0;
   for (unsigned int j = 0; j < N; j++)
   {

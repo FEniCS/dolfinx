@@ -12,9 +12,9 @@
 #ifdef HAS_SLEPC
 %extend dolfin::SLEPcEigenSolver {
 
-PyObject* getEigenvalue(const int emode) {
+PyObject* get_eigenvalue(const int emode) {
     double err, ecc;
-    self->getEigenvalue(err, ecc, emode);
+    self->get_eigenvalue(err, ecc, emode);
 
     PyObject* result = PyTuple_New(2);
     PyTuple_SET_ITEM(result, 0, PyFloat_FromDouble(err));
@@ -25,7 +25,7 @@ PyObject* getEigenvalue(const int emode) {
 
 PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const int emode) {
     double err, ecc;
-    self->getEigenpair(err, ecc, rr, cc, emode);
+    self->get_eigenpair(err, ecc, rr, cc, emode);
 
     PyObject* result = PyTuple_New(2);
     PyTuple_SET_ITEM(result, 0, PyFloat_FromDouble(err));
@@ -97,6 +97,13 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   BlockMatrix.__setitem__ = BlockMatrix_set
 %}
 
+%{
+#include "Indices.i"
+#include "dolfin_la_get_set_items.i"
+%}
+
+%include "dolfin_la_get_set_items.i"
+
 // Vector la interface macro
 %define LA_POST_VEC_INTERFACE(VEC_TYPE)
 %extend dolfin::VEC_TYPE
@@ -104,6 +111,11 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   void _scale(double a)
   {
     (*self)*=a;
+  }
+  
+  void _vec_mul(const GenericVector& other)
+  {
+    (*self)*=other;
   }
 
   %pythoncode
@@ -117,10 +129,118 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         
     def array(self):
         " Return a numpy array representation of Vector"
-        import numpy
-        v = numpy.zeros(self.size())
+        from numpy import zeros
+        v = zeros(self.size())
         self.get(v)
         return v
+    
+    def __contains__(self,value):
+        if not isinstance(value,(int,float)):
+            raise TypeError, "expected scalar"
+        return _contains(self,value)
+
+    def __gt__(self,value):
+        if isinstance(value,(int,float)):
+            return _compare_vector_with_value(self, value, dolfin_gt)
+        if isinstance(value,GenericVector):
+            return _compare_vector_with_vector(self, value, dolfin_gt)
+        return NotImplemented
+    
+    def __ge__(self,value):
+        if isinstance(value,(int,float)):
+            return _compare_vector_with_value(self, value, dolfin_ge)
+        if isinstance(value,GenericVector):
+            return _compare_vector_with_vector(self, value, dolfin_ge)
+        return NotImplemented
+    
+    def __lt__(self,value):
+        if isinstance(value,(int,float)):
+            return _compare_vector_with_value(self, value, dolfin_lt)
+        if isinstance(value,GenericVector):
+            return _compare_vector_with_vector(self, value, dolfin_lt)
+        return NotImplemented
+    
+    def __le__(self,value):
+        if isinstance(value,(int,float)):
+            return _compare_vector_with_value(self, value, dolfin_le)
+        if isinstance(value,GenericVector):
+            return _compare_vector_with_vector(self, value, dolfin_le)
+        return NotImplemented
+    
+    def __eq__(self,value):
+        if isinstance(value,(int,float)):
+            return _compare_vector_with_value(self, value, dolfin_eq)
+        if isinstance(value,GenericVector):
+            return _compare_vector_with_vector(self, value, dolfin_eq)
+        return NotImplemented
+    
+    def __neq__(self,value):
+        if isinstance(value,(int,float)):
+            return _compare_vector_with_value(self, value, dolfin_neq)
+        if isinstance(value,GenericVector):
+            return _compare_vector_with_vector(self, value, dolfin_neq)
+        return NotImplemented
+
+    def __neg__(self):
+        ret = self.copy()
+        ret *= -1
+        return ret
+
+    def __delitem__(self):
+        raise ValueError, "cannor delete Vector elements"
+    
+    def __delslice__(self):
+        raise ValueError, "cannor delete Vector elements"
+    
+    def __setslice__(self,i,j,values):
+        if i == 0 and (j >= len(self) or j == -1) and isinstance(values, (float, int, GenericVector)):
+            if isinstance(values, (float, int)) or len(values) == len(self):
+                self.assign(values)
+            else :
+                raise ValueError, "dimension error"
+        self.__setitem__(slice(i,j,1),values)
+    
+    def __getslice__(self,i,j):
+        if i == 0 and (j >= len(self) or j == -1):
+            return self.copy()
+        return self.__getitem__(slice(i,j,1))
+    
+    def __getitem__(self, indices):
+        from numpy import ndarray
+        from types import SliceType
+        if isinstance(indices, int):
+            return _get_vector_single_item(self, indices)
+        elif isinstance(indices, (SliceType, ndarray, list) ):
+            return down_cast(_get_vector_sub_vector(self, indices))
+        else:
+            raise TypeError, "expected an int, slice, list or numpy array of integers"
+
+    def __setitem__(self, indices, values):
+        from numpy import ndarray
+        from types import SliceType
+        if isinstance(indices, int):
+            if isinstance(values,(float, int)):
+                return _set_vector_items_value(self, indices, values)
+            else:
+                raise TypeError, "provide a scalar to set single item"
+        elif isinstance(indices, (SliceType, ndarray, list)):
+            if isinstance(values, (float, int)):
+                _set_vector_items_value(self, indices, values)
+            elif isinstance(values, GenericVector):
+                _set_vector_items_vector(self, indices, values)
+            elif isinstance(values, ndarray):
+                _set_vector_items_array_of_float(self, indices, values)
+            else:
+                raise TypeError, "provide a scalar, GenericVector or numpy array of float to set items in Vector"
+        else:
+            raise TypeError, "index must be an int, slice or a list or numpy array of integers"
+        
+    def __len__(self):
+        return self.size()
+
+    def __iter__(self):
+        for i in xrange(self.size()):
+            yield _get_vector_single_item(self, i)
 
     def __add__(self,other):
         """x.__add__(y) <==> x+y"""
@@ -143,6 +263,10 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         if isinstance(other,(int,float)):
             ret = self.copy()
             ret._scale(other)
+            return ret
+        if isinstance(other,GenericVector):
+            ret = self.copy()
+            ret._vec_mul(other)
             return ret
         return NotImplemented
     
@@ -193,6 +317,9 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         if isinstance(other,(float,int)):
             self._scale(other)
             return self
+        if isinstance(other,GenericVector):
+            self._vec_mul(other)
+            return self
         return NotImplemented
 
     def __idiv__(self,other):
@@ -215,27 +342,24 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     (*self)*=a;
   }
   
-  PyObject* data() {
+  PyObject* _data() {
     npy_intp rowdims[1];
     rowdims[0] = self->size(0)+1;
     
     PyArrayObject* rows = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, rowdims, NPY_ULONG, (char *)(std::tr1::get<0>(self->data()))));
     if ( rows == NULL ) return NULL;
-    PyArray_INCREF(rows);
     
     npy_intp coldims[1];
     coldims[0] = std::tr1::get<3>(self->data());
     
     PyArrayObject* cols = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, coldims, NPY_ULONG, (char *)(std::tr1::get<1>(self->data()))));
     if ( cols == NULL ) return NULL;
-    PyArray_INCREF(cols);
     
     npy_intp valuedims[1];
     valuedims[0] = std::tr1::get<3>(self->data());
     
     PyArrayObject* values = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, valuedims, NPY_DOUBLE, (char *)(std::tr1::get<2>(self->data()))));
     if ( values == NULL ) return NULL;
-    PyArray_INCREF(values);
     
     return PyTuple_Pack(3,rows, cols, values);
   }
@@ -251,8 +375,8 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         
     def array(self):
         " Return a numpy array representation of Matrix"
-        import numpy
-        A = numpy.zeros((self.size(0), self.size(1)))
+        from numpy import zeros
+        A = zeros((self.size(0), self.size(1)))
         c = STLVectorUInt()
         v = STLVectorDouble()
         for i in xrange(self.size(0)):
@@ -260,6 +384,96 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             A[i,c] = v
         return A
 
+    def data(self):
+        """ Return arrays to underlying compresssed row/column storage data """
+        
+        if not (hasattr(self,"_rows") and hasattr(self,"_cols") and hasattr(self,"_nnz")):
+            self._rows, self._cols, self._nnz = self._data() # Keep references
+        return self._rows, self._cols, self._nnz
+        
+    def __getitem__(self,indices):
+        from numpy import ndarray
+        from types import SliceType
+        if not (isinstance(indices,tuple) and len(indices) == 2):
+            raise TypeError, "expected two indices"
+        if not all(isinstance(ind,(int,SliceType,list,ndarray)) for ind in indices):
+            raise TypeError, "an int, slice, list or numpy array as indices"
+        
+        if isinstance(indices[0],int):
+            if isinstance(indices[1],int):
+                return _get_matrix_single_item(self,indices[0],indices[1])
+            return down_cast(_get_matrix_sub_vector(self,indices[0], indices[1], True))
+        elif isinstance(indices[1],int):
+            return down_cast(_get_matrix_sub_vector(self,indices[1], indices[0], False))
+        else:
+            same_indices = id(indices[0]) == id(indices[1])
+            
+            if not same_indices and ( type(indices[0]) == type(indices[1]) ):
+                if isinstance(indices[0],(list,SliceType)):
+                    same_indices = indices[0] == indices[1]
+                else:
+                    same_indices = (indices[0] == indices[1]).all()
+            
+            if same_indices:
+                return down_cast(_get_matrix_sub_matrix(self, indices[0], None))
+            else:
+                return down_cast(_get_matrix_sub_matrix(self, indices[0], indices[1]))
+            
+    def __setitem__(self,indices, values):
+        from numpy import ndarray
+        from types import SliceType
+        if not (isinstance(indices,tuple) and len(indices) == 2):
+            raise TypeError, "expected two indices"
+        if not all(isinstance(ind,(int,SliceType,list,ndarray)) for ind in indices):
+            raise TypeError, "an int, slice, list or numpy array as indices"
+        
+        if isinstance(indices[0],int):
+            if isinstance(indices[1],int):
+                if not isinstance(values,(float,int)):
+                    raise TypeError, "expected scalar for single value assigment"
+                _set_matrix_single_item(self,indices[0],indices[1],values)
+            else:
+                raise NotImplementedError
+                if isinstance(values,GenericVector):
+                    _set_matrix_items_vector(self, indices[0], indices[1], values, True)
+                elif isinstance(values,ndarray):
+                    _set_matrix_items_array_of_float(self, indices[0], indices[1], values, True)
+                else:
+                    raise TypeError, "expected a GenericVector or numpy array of float"
+        elif isinstance(indices[1],int):
+            raise NotImplementedError
+            if isinstance(values,GenericVector):
+                _set_matrix_items_vector(self, indices[1], indices[0], values, False)
+            elif isinstance(values,ndarray):
+                _set_matrix_items_array_of_float(self, indices[1], indices[0], values, False)
+            else:
+                raise TypeError, "expected a GenericVector or numpy array of float"
+
+        else:
+            raise NotImplementedError
+            same_indices = id(indices[0]) == id(indices[1])
+            
+            if not same_indices and ( type(indices[0]) == type(indices[1]) ):
+                if isinstance(indices[0],(list,SliceType)):
+                    same_indices = indices[0] == indices[1]
+                else:
+                    same_indices = (indices[0] == indices[1]).all()
+            
+            if same_indices:
+                if isinstance(values,GenericMatrix):
+                    _set_matrix_items_matrix(self, indices[0], None, values)
+                elif isinstance(values,ndarray) and len(values.shape)==2:
+                    _set_matrix_items_array_of_float(self, indices[0], None, values)
+                else:
+                    raise TypeError, "expected a GenericMatrix or 2D numpy array of float"
+            else:
+                if isinstance(values,GenericMatrix):
+                    _set_matrix_items_matrix(self, indices[0], indices[1], values)
+                elif isinstance(values,ndarray) and len(values.shape)==2:
+                    _set_matrix_items_array_of_float(self, indices[0], indices[1], values)
+                else:
+                    raise TypeError, "expected a GenericMatrix or 2D numpy array of float"
+            
     def __add__(self,other):
         """x.__add__(y) <==> x+y"""
         if self.__is_compatibable(other):
@@ -369,7 +583,6 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   %}
 }
 %enddef
-
 
 // Vector la interface macro
 %define LA_VEC_DATA_ACCESS(VEC_TYPE)
@@ -522,7 +735,7 @@ def down_cast(tensor, subclass=None):
         subclass = get_tensor_type(tensor)
     assert subclass in _down_cast_map
     ret = _down_cast_map[subclass](tensor)
-
+    
     # Store the tensor to avoid garbage collection
     ret._org_upcasted_tensor = tensor
     return ret

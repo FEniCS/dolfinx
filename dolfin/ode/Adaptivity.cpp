@@ -18,7 +18,7 @@ Adaptivity::Adaptivity(const ODE& ode, const Method& method)
   tmp = ode.get("ODE interval threshold"); beta   = tmp;
   tmp =  ode.get("ODE safety factor");     safety = tmp;
   kfixed = ode.get("ODE fixed time step");
-   
+
   safety_old = safety;
   safety_max = safety;
 
@@ -32,7 +32,7 @@ Adaptivity::Adaptivity(const ODE& ode, const Method& method)
 //-----------------------------------------------------------------------------
 Adaptivity::~Adaptivity()
 {
-  message("Number of rejected time steps: %d", num_rejected);
+  info("Number of rejected time steps: %d", num_rejected);
 }
 //-----------------------------------------------------------------------------
 bool Adaptivity::accept()
@@ -40,7 +40,7 @@ bool Adaptivity::accept()
   if ( _accept )
   {
     safety_old = safety;
-    safety = Controller::updateHarmonic(safety_max, safety_old, safety_max);
+    safety = Controller::update_harmonic(safety_max, safety_old, safety_max);
     //cout << "---------------------- Time step ok -----------------------" << endl;
   }
   else
@@ -60,8 +60,8 @@ bool Adaptivity::accept()
     num_rejected++;
   }
 
-  //message("safefy factor = %.3e", safety);
-  
+  //info("safefy factor = %.3e", safety);
+
   return _accept;
 }
 //-----------------------------------------------------------------------------

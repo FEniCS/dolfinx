@@ -20,85 +20,85 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void MeshHierarchyAlgorithms::refineTetMesh(MeshHierarchy& mesh_hierarchy) 
+void MeshHierarchyAlgorithms::refineTetMesh(MeshHierarchy& mesh_hierarchy)
 {
-  // This function implements the "GlobalRefinement" algorithm by Bey 
+  // This function implements the "GlobalRefinement" algorithm by Bey
 
   uint num_meshes = uint(mesh_hierarchy.size());
 
   for (uint k = num_meshes-1; k >= 0; k--)
   {
     /*
-    evaluateMarks(mesh_hierarchy(k));
-    closeMesh(mesh_hierarchy(k));
+    evaluate_marks(mesh_hierarchy(k));
+    close_mesh(mesh_hierarchy(k));
     */
   }
 
   for (uint k = 0; k < num_meshes; k++)
   {
-    if ( mesh_hierarchy(k).numCells() > 0 )
+    if ( mesh_hierarchy(k).num_cells() > 0 )
     {
       /*
-      if ( k > 0 ) closeMesh(mesh_hierarchy(k));
-      unrefineMesh(mesh_hierarchy,k);
-      refineMesh(mesh_hierarchy,k);
+      if ( k > 0 ) close_mesh(mesh_hierarchy(k));
+      unrefine_mesh(mesh_hierarchy,k);
+      refine_mesh(mesh_hierarchy,k);
       */
     }
   }
 
   /*
-  if      ( mesh_hierarchy(num_meshes-1).numCells() == 0 ) num_meshes--;
-  else if ( mesh_hierarchy(num_meshes).numCells()   != 0 ) num_meshes++;
+  if      ( mesh_hierarchy(num_meshes-1).num_cells() == 0 ) num_meshes--;
+  else if ( mesh_hierarchy(num_meshes).num_cells()   != 0 ) num_meshes++;
   */
 }
 //-----------------------------------------------------------------------------
-void MeshHierarchyAlgorithms::evaluateMarks(Mesh& mesh) 
+void MeshHierarchyAlgorithms::evaluate_marks(Mesh& mesh)
 {
-  // This function implements the "EvaluateMarks" subroutine by Bey 
+  // This function implements the "EvaluateMarks" subroutine by Bey
   warning("Not implemented yet.");
 
   /*
-    cell_children = new MeshFunction<uint>[num_meshes]; 
+    cell_children = new MeshFunction<uint>[num_meshes];
     cell_children[0].init(2);
 
     delete [] cell_children;
 
 
 
-  MeshFunction<uint> cell_marker(mesh); 
-  MeshFunction<uint> cell_state(mesh); 
+  MeshFunction<uint> cell_marker(mesh);
+  MeshFunction<uint> cell_state(mesh);
   cell_marker.init(2);
   cell_state.init(2);
 
-  MeshFunction<uint> edge_marker(mesh); 
-  MeshFunction<uint> edge_state(mesh); 
+  MeshFunction<uint> edge_marker(mesh);
+  MeshFunction<uint> edge_state(mesh);
   edge_marker.init(1);
   edge_state.init(1);
   */
-  
+
 }
 //-----------------------------------------------------------------------------
-void MeshHierarchyAlgorithms::closeMesh(Mesh& mesh) 
+void MeshHierarchyAlgorithms::close_mesh(Mesh& mesh)
 {
-  // This function implements the "CloseGrid" subroutine by Bey 
+  // This function implements the "CloseGrid" subroutine by Bey
   warning("Not implemented yet.");
 }
 //-----------------------------------------------------------------------------
-void MeshHierarchyAlgorithms::closeCell(Cell& cell) 
+void MeshHierarchyAlgorithms::close_cell(Cell& cell)
 {
-  // This function implements the "CloseElement" subroutine by Bey 
+  // This function implements the "CloseElement" subroutine by Bey
   warning("Not implemented yet.");
 }
 //-----------------------------------------------------------------------------
-void MeshHierarchyAlgorithms::unrefineMesh(MeshHierarchy& mesh, uint k)
+void MeshHierarchyAlgorithms::unrefine_mesh(MeshHierarchy& mesh, uint k)
 {
-  // This function implements the "UnrefineGrid" subroutine by Bey 
+  // This function implements the "UnrefineGrid" subroutine by Bey
   warning("Not implemented yet.");
 }
 //-----------------------------------------------------------------------------
-void MeshHierarchyAlgorithms::refineMesh(MeshHierarchy& mesh, uint k)
+void MeshHierarchyAlgorithms::refine_mesh(MeshHierarchy& mesh, uint k)
 {
-  // This function implements the "RefineGrid" subroutine by Bey 
+  // This function implements the "RefineGrid" subroutine by Bey
   warning("Not implemented yet.");
 }
 //-----------------------------------------------------------------------------

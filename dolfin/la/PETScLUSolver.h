@@ -26,11 +26,11 @@ namespace dolfin
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b. It is a wrapper for the LU
   /// solver of PETSc.
-  
+
   class PETScLUSolver : public GenericLinearSolver
   {
   public:
-    
+
     /// Constructor
     PETScLUSolver();
 
@@ -50,10 +50,10 @@ namespace dolfin
     void disp() const;
 
   private:
-    
+
     // Initialise solver
     void init();
-    
+
     // Clear data
     void clear();
 

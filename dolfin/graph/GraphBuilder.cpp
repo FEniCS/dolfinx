@@ -48,10 +48,10 @@ void GraphBuilder::createMeshNodal(Graph& graph, const Mesh& mesh)
   uint i = 0, j = 0;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
-    graph.vertices[i++] = j;
+    graph._vertices[i++] = j;
     const uint* entities = vertex->entities(0);
-    for (uint k = 0; k < vertex->numEntities(0); k++)
-      graph.edges[j++] = entities[k];
+    for (uint k = 0; k < vertex->num_entities(0); k++)
+      graph._edges[j++] = entities[k];
 
     // Replace with this?
     /*
@@ -73,7 +73,7 @@ void GraphBuilder::createMeshDual(Graph& graph, const Mesh& mesh)
   const MeshConnectivity& connectivity = mesh.topology()(D,D);
 
   // Get number of vertices and edges
-  uint num_vertices = mesh.numCells();
+  uint num_vertices = mesh.num_cells();
   uint num_edges   = connectivity.size();
 
   // Initialise graph
@@ -83,9 +83,9 @@ void GraphBuilder::createMeshDual(Graph& graph, const Mesh& mesh)
   uint i = 0, j = 0;
   for (CellIterator c0(mesh); !c0.end(); ++c0)
   {
-    graph.vertices[i++] = j;
+    graph._vertices[i++] = j;
     for (CellIterator c1(*c0); !c1.end(); ++c1)
-      graph.edges[j++] = c1->index();
+      graph._edges[j++] = c1->index();
   }
 }
 //-----------------------------------------------------------------------------

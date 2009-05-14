@@ -39,11 +39,11 @@ void NewXMLLocalMeshData::start_element(const xmlChar* name, const xmlChar** att
       read_mesh(name, attrs);
       state = INSIDE_MESH;
     }
-    
+
     break;
 
   case INSIDE_MESH:
-    
+
     if (xmlStrcasecmp(name, (xmlChar* ) "vertices") == 0)
     {
       read_vertices(name, attrs);
@@ -61,27 +61,27 @@ void NewXMLLocalMeshData::start_element(const xmlChar* name, const xmlChar** att
     }
 
     break;
-    
+
   case INSIDE_VERTICES:
-    
+
     if (xmlStrcasecmp(name, (xmlChar* ) "vertex") == 0)
       read_vertex(name, attrs);
 
     break;
-    
+
   case INSIDE_CELLS:
-    
+
     if (xmlStrcasecmp(name, (xmlChar* ) "interval") == 0)
       read_interval(name, attrs);
     else if (xmlStrcasecmp(name, (xmlChar* ) "triangle") == 0)
       read_triangle(name, attrs);
     else if (xmlStrcasecmp(name, (xmlChar* ) "tetrahedron") == 0)
       read_tetrahedron(name, attrs);
-    
+
     break;
 
   case INSIDE_DATA:
-    
+
     if (xmlStrcasecmp(name, (xmlChar* ) "meshfunction") == 0)
     {
       read_mesh_function(name, attrs);
@@ -106,26 +106,26 @@ void NewXMLLocalMeshData::end_element(const xmlChar* name)
   {
 
   case INSIDE_MESH:
-    
+
     if (xmlStrcasecmp(name, (xmlChar* ) "mesh") == 0)
     {
       state = DONE;
       release();
     }
-    
+
     break;
-    
+
   case INSIDE_VERTICES:
-    
+
     if (xmlStrcasecmp(name, (xmlChar* ) "vertices") == 0)
     {
-      state = INSIDE_MESH;    
+      state = INSIDE_MESH;
     }
 
     break;
 
   case INSIDE_CELLS:
-	 
+
     if (xmlStrcasecmp(name, (xmlChar* ) "cells") == 0)
     {
       state = INSIDE_MESH;
@@ -171,14 +171,14 @@ void NewXMLLocalMeshData::read_mesh(const xmlChar* name, const xmlChar** attrs)
   // Parse values
   std::string type = parse_string(name, attrs, "celltype");
   gdim = parse_uint(name, attrs, "dim");
-  
+
   // Create cell type to get topological dimension
   std::auto_ptr<CellType> cell_type(CellType::create(type));
-  
+
   tdim = cell_type->dim();
 
   // Get number of entities for topological dimension 0
-  //num_cell_vertices = cell_type->numEntities(0);
+  //num_cell_vertices = cell_type->num_entities(0);
   mesh_data.cell_type = CellType::create(type);
   mesh_data.tdim = tdim;
   mesh_data.gdim = gdim;
@@ -215,7 +215,7 @@ void NewXMLLocalMeshData::read_vertex(const xmlChar* name, const xmlChar** attrs
     return;
 
   std::vector<double> coordinate;
-  
+
   // Parse vertex coordinates
   switch (gdim)
   {
@@ -246,13 +246,13 @@ void NewXMLLocalMeshData::read_vertex(const xmlChar* name, const xmlChar** attrs
     error("Geometric dimension of mesh must be 1, 2 or 3.");
   }
 
-  // Store global vertex numbering 
+  // Store global vertex numbering
   mesh_data.vertex_indices.push_back(v);
 }
 //-----------------------------------------------------------------------------
 void NewXMLLocalMeshData::read_cells(const xmlChar* name, const xmlChar** attrs)
 {
-  // Parse the number of global cells 
+  // Parse the number of global cells
   const uint num_global_cells = parse_uint(name, attrs, "size");
   dolfin_debug1("num_global_cells = %d", num_global_cells);
   mesh_data.num_global_cells = num_global_cells;
@@ -307,7 +307,7 @@ void NewXMLLocalMeshData::read_triangle(const xmlChar *name, const xmlChar **att
   cell[0] = parse_uint(name, attrs, "v0");
   cell[1] = parse_uint(name, attrs, "v1");
   cell[2] = parse_uint(name, attrs, "v2");
-  
+
   // Add cell
   mesh_data.cell_vertices.push_back(cell);
 }
@@ -331,18 +331,18 @@ void NewXMLLocalMeshData::read_tetrahedron(const xmlChar *name, const xmlChar **
   cell[1] = parse_uint(name, attrs, "v1");
   cell[2] = parse_uint(name, attrs, "v2");
   cell[3] = parse_uint(name, attrs, "v3");
-  
+
   // Add cell
   mesh_data.cell_vertices.push_back(cell);
 }
 //-----------------------------------------------------------------------------
 void NewXMLLocalMeshData::read_mesh_function(const xmlChar* name, const xmlChar** attrs)
-{ 
+{
   error("Local mesh data can not read mesh functions.");
 }
 //-----------------------------------------------------------------------------
 void NewXMLLocalMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
-{ 
+{
   error("Local mesh data can not read arrays.");
 }
 //-----------------------------------------------------------------------------

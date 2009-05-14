@@ -13,6 +13,6 @@ using namespace dolfin;
 
 int main()
 {
-  message("Sorry, this demo is currently broken.");
+  info("Sorry, this demo is currently broken.");
   return 0;
 }

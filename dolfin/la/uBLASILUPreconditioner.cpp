@@ -34,8 +34,8 @@ uBLASILUPreconditioner::~uBLASILUPreconditioner()
 void uBLASILUPreconditioner::solve(uBLASVector& x, const uBLASVector& b) const
 {
   // Get uderlying uBLAS matrices and vectors
-  ublas_vector& _x = x.vec(); 
-  const ublas_vector& _b = b.vec(); 
+  ublas_vector& _x = x.vec();
+  const ublas_vector& _b = b.vec();
   const ublas_sparse_matrix & _M = M.mat();
 
   dolfin_assert( _x.size() == _M.size1() );
@@ -51,13 +51,13 @@ void uBLASILUPreconditioner::solve(uBLASVector& x, const uBLASVector& b) const
     uint k;
     for(k = _M.index1_data () [i]; k < diagonal[i]; ++k)
       _x(i) -= ( _M.value_data () [k] )*x[ _M.index2_data () [k] ];
-  } 
+  }
   for(int i =size-1; i >= 0; --i)
   {
     uint k;
     for(k = _M.index1_data () [i+1]-1; k > diagonal[i]; --k)
       _x(i) -= ( _M.value_data () [k] )*x[ _M.index2_data () [k] ];
-    _x(i) /= ( _M.value_data () [k] );  
+    _x(i) /= ( _M.value_data () [k] );
   }
 }
 //-----------------------------------------------------------------------------
@@ -65,23 +65,23 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& A)
 {
   ublas_sparse_matrix & _M = M.mat();
 
-  const uint size = A.size(0); 
+  const uint size = A.size(0);
   _M.resize(size, size, false);
-  _M.assign(A.mat()); 
+  _M.assign(A.mat());
 
   // Add term to diagonal to avoid negative pivots
   const double zero_shift = get("Krylov shift nonzero");
   if(zero_shift > 0.0)
-    _M.plus_assign( zero_shift*ublas::identity_matrix<double>(size) );  
-  
+    _M.plus_assign( zero_shift*ublas::identity_matrix<double>(size) );
+
   /*
   // Straightforward and very slow implementation. This is used for verification
   tic();
-  M.assign(A);  
+  M.assign(A);
   for(uint i=1; i < size; ++i)
   {
     for(uint k=0; k < i; ++k)
-    { 
+    {
      if( fabs( M(i,k) ) > 0.0 )
       {
         M(i,k) = M(i,k)/M(k,k);
@@ -90,11 +90,11 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& A)
           if( fabs( M(i,j) ) > DOLFIN_EPS )
               M(i,j) = M(i,j) - M(i,k)*M(k,j);
         }
-      }    
-    }  
+      }
+    }
   }
   */
-  
+
   // This approach using uBLAS iterators is simple and quite fast.
   // Is it possible to remove the M(.,.) calls? This would speed it up a lot.
 
@@ -129,27 +129,27 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& A)
     iw[i] = 0;
 
   uint j0=0, j1=0, j=0, jrow=0, jw=0;
-  double t1;   
+  double t1;
 
   for (uint k = 0; k < size ; ++k)        // i (rows)
   {
-    j0 = _M.index1_data () [k];    // ia 
+    j0 = _M.index1_data () [k];    // ia
     j1 = _M.index1_data () [k+1]-1;
 
     // Initialise working array iw
-    for (uint i = j0;  i <= j1; ++i)       
-      iw[ _M.index2_data () [i] ] = i;  // ja     
+    for (uint i = j0;  i <= j1; ++i)
+      iw[ _M.index2_data () [i] ] = i;  // ja
 
     // Move along row looking for diagonal
     j=j0;
     while(j <= j1)
     {
-      jrow = _M.index2_data () [j];  // ja  
+      jrow = _M.index2_data () [j];  // ja
 
       if( jrow >= k ) // passed or found diagonal, therefore break
         break;
 
-      t1 = (_M.value_data() [j])/(_M.value_data() [ diagonal[jrow] ]);  //M(k,j) = M(k,j)/M(j,j) 
+      t1 = (_M.value_data() [j])/(_M.value_data() [ diagonal[jrow] ]);  //M(k,j) = M(k,j)/M(j,j)
       _M.value_data() [j] = t1;
       for(uint jj = diagonal[jrow]+1; jj <= _M.index1_data () [jrow+1]-1; ++jj)
       {
@@ -165,7 +165,7 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& A)
       error("Zero pivot detected in uBLAS ILU preconditioner in row %u.", k);
 
     for(uint i=j0; i <= j1; ++i)
-      iw[ _M.index2_data () [i] ] = 0;        
+      iw[ _M.index2_data () [i] ] = 0;
   } // k
 }
 //-----------------------------------------------------------------------------

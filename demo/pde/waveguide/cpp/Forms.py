@@ -1,4 +1,9 @@
-from ffc import *
+from ufl import *
+from ufl.log import set_level
+from ffc.compiler.compiler import compile
+
+# Set debug level
+set_level(20)
 
 # Reserved variables for forms
 (a, L, M) = (None, None, None)
@@ -12,12 +17,15 @@ element = None
 #
 # Compile this form with FFC: ffc -l dolfin Forms.form
 
-element = FiniteElement("Nedelec", "triangle", 2)
+element = FiniteElement("Nedelec 1st kind H(curl)", "triangle", 2)
 
 v = TestFunction(element)
 u = TrialFunction(element)
 
-a = dot(curl_t(v), curl_t(u))*dx
-L = dot(v, u)*dx
+def curl_t(w):
+    return Dx(w[1], 0) - Dx(w[0], 1)
 
-compile([a, L, M, element], "Forms", options={'language': 'dolfin', 'blas': False, 'form_postfix': True, 'precision': '15', 'cache_dir': None, 'cpp optimize': False, 'split_implementation': False, 'quadrature_points': False, 'output_dir': '.', 'representation': 'tensor', 'shared_ptr': True, 'optimize': False}, global_variables=globals())
+a = curl_t(v)*curl_t(u)*dx
+L = inner(v, u)*dx
+
+compile([a, L, M, element], "Forms", {'log_level': 20, 'language': 'dolfin', 'format': 'dolfin', 'form_postfix': True, 'quadrature_order': 'auto', 'precision': '15', 'cpp optimize': False, 'split_implementation': False, 'cache_dir': None, 'output_dir': '.', 'representation': 'auto', 'optimize': True}, globals())

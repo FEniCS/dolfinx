@@ -18,11 +18,11 @@ using namespace dolfin;
 UnitSphere::UnitSphere(uint nx) : Mesh()
 {
 
-  message("UnitSphere is Experimental: It could have a bad quality mesh");
+  info("UnitSphere is Experimental: It could have a bad quality mesh");
 
   uint ny=nx;
   uint nz=nx;
-  
+
   // Receive mesh according to parallel policy
   if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
 
@@ -36,7 +36,7 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
   editor.open(*this, CellType::tetrahedron, 3, 3);
 
   // Create vertices
-  editor.initVertices((nx+1)*(ny+1)*(nz+1));
+  editor.init_vertices((nx+1)*(ny+1)*(nz+1));
   uint vertex = 0;
   for (uint iz = 0; iz <= nz; iz++)
   {
@@ -50,13 +50,13 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
         double trns_x=transformx(x,y,z);
         double trns_y=transformy(x,y,z);
         double trns_z=transformz(x,y,z);
-        editor.addVertex(vertex++, trns_x, trns_y, trns_z);
+        editor.add_vertex(vertex++, trns_x, trns_y, trns_z);
       }
     }
   }
 
   // Create tetrahedra
-  editor.initCells(6*nx*ny*nz);
+  editor.init_cells(6*nx*ny*nz);
   uint cell = 0;
   for (uint iz = 0; iz < nz; iz++)
   {
@@ -73,12 +73,12 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
         const uint v6 = v2 + (nx + 1)*(ny + 1);
         const uint v7 = v3 + (nx + 1)*(ny + 1);
 
-        editor.addCell(cell++, v0, v1, v3, v7);
-        editor.addCell(cell++, v0, v1, v7, v5);
-        editor.addCell(cell++, v0, v5, v7, v4);
-        editor.addCell(cell++, v0, v3, v2, v7);
-        editor.addCell(cell++, v0, v6, v4, v7);
-        editor.addCell(cell++, v0, v2, v6, v7);
+        editor.add_cell(cell++, v0, v1, v3, v7);
+        editor.add_cell(cell++, v0, v1, v7, v5);
+        editor.add_cell(cell++, v0, v5, v7, v4);
+        editor.add_cell(cell++, v0, v3, v2, v7);
+        editor.add_cell(cell++, v0, v6, v4, v7);
+        editor.add_cell(cell++, v0, v2, v6, v7);
       }
     }
   }
@@ -93,7 +93,7 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
 double UnitSphere::transformx(double x,double y,double z)
 {
   double retrn=0.0;
-  if (x||y||z) 
+  if (x||y||z)
     retrn=x*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
   else
     retrn=x;
@@ -103,7 +103,7 @@ double UnitSphere::transformx(double x,double y,double z)
 double UnitSphere::transformy(double x,double y,double z)
 {
   double retrn=0.0;
-  if (x||y||z) 
+  if (x||y||z)
     retrn=y*max(fabs(x),fabs(y),fabs(z))/sqrt(x*x+y*y+z*z);
   else
     retrn=y;
@@ -130,7 +130,7 @@ double UnitSphere::max(double x,double y, double z)
   else if ((y>=x)*(y>=z))
     rtrn=y;
   else
-    rtrn=z; 
+    rtrn=z;
   return rtrn;
 }
 //-----------------------------------------------------------------------------

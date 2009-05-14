@@ -9,8 +9,8 @@
 
 #include <vector>
 #include <ufc.h>
-#include "UFCMesh.h"
 #include "UFCCell.h"
+#include "UFCMesh.h"
 
 namespace dolfin
 {
@@ -36,7 +36,7 @@ namespace dolfin
 
     /// Destructor
     ~UFC();
-    
+
     /// Update current cell
     void update(const Cell& cell);
 
@@ -63,7 +63,7 @@ namespace dolfin
 
     // Mesh
     UFCMesh mesh;
-    
+
     // Current cell
     UFCCell cell;
 
@@ -77,15 +77,15 @@ namespace dolfin
     // Local tensor for macro element
     double* macro_A;
 
-    // std::vector of local dimensions for each argument
+    // std::vector for local dimensions for each argument
     uint* local_dimensions;
 
-    // std::vector of local dimensions of macro element for primary arguments
+    // std::vector for local dimensions of macro element for primary arguments
     uint* macro_local_dimensions;
 
     // std::vector of global dimensions for primary arguments
     uint* global_dimensions;
-    
+
     // std::vector of mapped dofs for primary arguments
     uint** dofs;
 
@@ -99,7 +99,6 @@ namespace dolfin
     double** macro_w;
 
   };
-
 }
 
 #endif

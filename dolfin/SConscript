@@ -11,7 +11,7 @@ import simula_scons as scons
 # code should be short and simple.
 
 # import the default env and configure objects created in SConstruct
-Import("env", "configure")
+Import("env", "configure", "buildDataHash")
 
 # Set the default env in our local scons utility module.
 scons.setDefaultEnv(env)
@@ -154,11 +154,6 @@ if env["enablePython"]:
 else:
     print "Disabling compilation of Python wrappers"
 
-# stencil for return-values:
-ret = {"shlibs": [], "extModules": [], "docs": [], "headers": [], "pythonModules": [], \
-       "pythonScripts": [], "pkgconfig": [], "pythonPackageDirs": [], "data": [], "tests": [], \
-       "progs": [], "demos": [], "dolfin_header": "", "swigfiles": []}
-
 #### XXX
 #### Messy code
 #### TODO
@@ -227,7 +222,7 @@ for modName, mod in modules.items():
                 env["PACKAGE_VERSION"],
                 [os.path.join(mod.path, s) for s in mod.libSources])
         # The builder returns a node list
-        ret["shlibs"].append(shlib[0])
+        buildDataHash["shlibs"].append(shlib[0])
 
     if mod.swigSources and env["enablePython"]:
         # Register swig wrapper targets in the module
@@ -263,8 +258,8 @@ for modName, mod in modules.items():
         wrapCxx, wrapPy = modEnv.CXXFile(target=os.path.join(mod.path, "swig", swigModName), source=[os.path.join(mod.path, s) for s in mod.swigSources])
         swig = modEnv.SharedLibrary(target=os.path.join(mod.path, "swig", swigModName), source=wrapCxx)[0]
         # The builder returns a node list
-        ret["extModules"].append(swig)
-        ret["pythonModules"].append(wrapPy)
+        buildDataHash["extModules"].append(swig)
+        buildDataHash["pythonModules"].append(wrapPy)
 
     for progName, progSources in mod.progSources.items():
         # Register program targets in the module
@@ -291,39 +286,39 @@ for modName, mod in modules.items():
         prog = modEnv.Program(target=os.path.join(mod.path, progName), source=\
                 [os.path.join(mod.path, s) for s in progSources])
         # The builder returns a node list
-        ret["progs"].append(prog[0])
+        buildDataHash["progs"].append(prog[0])
 
     # Register headers to be installed for the module
-    ret["headers"] += [File(h, mod.path) for h in mod.libHeaders]
+    buildDataHash["headers"] += [File(h, mod.path) for h in mod.libHeaders]
     ## Need to detect the 'dolfin.h' header file, and treat differently
     #for h in mod.libHeaders:
     #    if h.endswith("dolfin.h"):
-    #        ret["main_header"] = File(h, mod.path)
+    #        buildDataHash["main_header"] = File(h, mod.path)
 # The 'dolfin.h' header file is treated differently
-ret["dolfin_header"] = File("dolfin.h", '.')
+buildDataHash["dolfin_header"] = File("dolfin.h", '.')
 
 # set pythonScripts we want to install
-ret["pythonScripts"]  += scons.globFiles(Dir("#/app").srcnode().abspath, "*.py")
+buildDataHash["pythonScripts"] += scons.globFiles(Dir("#/app").srcnode().abspath, "*.py")
 # set python packagedirs we want to install (in site-packages)
-ret["pythonPackageDirs"] += [Dir("#site-packages")]
+buildDataHash["pythonPackageDirs"] += [Dir("#site-packages")]
 
 if env["enablePython"]:
     # set SWIG interface files we want to install
-    ret["swigfiles"] += scons.globFiles(Dir("#/%s/swig" % env["projectname"]).srcnode().abspath, "*.i")
+    buildDataHash["swigfiles"] += scons.globFiles(Dir("#/%s/swig" % env["projectname"]).srcnode().abspath, "*.i")
 
 # read SConscript in data.
 data = env.SConscript(os.path.join("#data", "SConscript"), exports=["env"])
 # set information about data we want to install
-ret["data"].extend([File(os.path.join("#data", f)) for f in data])
+buildDataHash["data"].extend([File(os.path.join("#data", f)) for f in data])
 
 ## read SConscript for tests
 #tests = env.SConscript(os.path.join("#test", "SConscript"), exports=["env", "modules", "configuredPackages"])
-#ret["tests"].extend([File(os.path.join("#test", f)) for f in tests["pytests"]])
+#buildDataHash["tests"].extend([File(os.path.join("#test", f)) for f in tests["pytests"]])
 ## join the cpptests with regular progs.
-#ret["progs"].append([t for t in tests["cpptests"]])
+#buildDataHash["progs"].append([t for t in tests["cpptests"]])
 
 # read the SConscript for tests if enabled
-ret["tests"] = []
+buildDataHash["tests"] = []
 if env["enableTests"]:
     print "Checking for cppunit...", 
     try:
@@ -333,18 +328,18 @@ if env["enableTests"]:
         print "*** Unable to find the Unit Testing Library for C++"
         print "*** Install CppUnit (libcppunit-dev) or disable testing with enableTests=no"
         Exit(1)
-    ret["tests"] += env.SConscript(os.path.join("#test", "SConscript"),
+    buildDataHash["tests"] += env.SConscript(os.path.join("#test", "SConscript"),
                                    exports=["env", "modules", "configuredPackages", "cppunitCfg"])
 
 # read SConscript for docs if enabled
-ret["docs"] = []
+buildDataHash["docs"] = []
 if env["enableDocs"]:
-    ret["docs"] += env.SConscript(os.path.join("#doc", "SConscript"), exports=["env"])
+    buildDataHash["docs"] += env.SConscript(os.path.join("#doc", "SConscript"), exports=["env"])
 
 # read the SConscript for demos if enabled (or if tests are enabled)
-ret["demos"] = []
+buildDataHash["demos"] = []
 if env["enableDemos"] or env["enableTests"]:
-    ret["demos"] += env.SConscript(os.path.join("#demo", "SConscript"),
+    buildDataHash["demos"] += env.SConscript(os.path.join("#demo", "SConscript"),
                                    exports=["env", "modules", "configuredPackages"])
 # generate a builder for the pycc pkg-config file.
 # TODO: The template-based generator can maybe be replaced with the
@@ -369,19 +364,19 @@ replacements['PACKAGE_LINKFLAGS'] = linkflags
 replacements['CXX'] = env["CXX"]
 
 scons.pkgconfig.generate(env, replace=replacements)
-ret["pkgconfig"] = env.PkgConfigGenerator("%s.pc.in" % (env["projectname"]))
+buildDataHash["pkgconfig"] = env.PkgConfigGenerator("%s.pc.in" % (env["projectname"]))
 # the <projectname>.pc file needs to be regenerated if there are changes to the
 # configured packages, installation prefix, any compiler/link flags,
 # or the compiler
 pkgconfig_deps = [configuredPackages.keys(), env["prefix"],
                   cxxflags, linkflags, env["CXX"]]
-env.Depends(ret["pkgconfig"][0], Value(pkgconfig_deps))
+env.Depends(buildDataHash["pkgconfig"][0], Value(pkgconfig_deps))
 
 # We also like to install all generated pkg-config files. 
-ret["pkgconfig"] += scons.globFiles(Dir("#/scons/pkgconfig/").srcnode().abspath, "*.pc")
+buildDataHash["pkgconfig"] += scons.globFiles(Dir("#/scons/pkgconfig/").srcnode().abspath, "*.pc")
 
 # Return the big data dictionary. Actual targets will be run in SConstruct
 # based on this information.
-Return("ret")
+Return("buildDataHash")
 
 # vim:ft=python sw=2 ts=2 

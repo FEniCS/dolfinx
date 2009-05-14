@@ -1,10 +1,10 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2008-11-13
+// Last changed: 2009-04-27
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -51,35 +51,35 @@ namespace dolfin
     static std::string type2string(Type type);
 
     /// Return type of cell
-    inline Type cellType() const { return cell_type; }
+    inline Type cell_type() const { return _cell_type; }
 
     /// Return type of cell for facets
-    inline Type facetType() const { return facet_type; }
+    inline Type facet_type() const { return _facet_type; }
 
     /// Return topological dimension of cell
     virtual uint dim() const = 0;
-    
+
     /// Return number of entitites of given topological dimension
-    virtual uint numEntities(uint dim) const = 0;
+    virtual uint num_entities(uint dim) const = 0;
 
     /// Return number of vertices for entity of given topological dimension
-    virtual uint numVertices(uint dim) const = 0;
+    virtual uint num_vertices(uint dim) const = 0;
 
     /// Return orientation of the cell
     virtual uint orientation(const Cell& cell) const = 0;
 
     /// Create entities e of given topological dimension from vertices v
-    virtual void createEntities(uint** e, uint dim, const uint* v) const = 0;
+    virtual void create_entities(uint** e, uint dim, const uint* v) const = 0;
 
     /// Refine cell uniformly
-    virtual void refineCell(Cell& cell, MeshEditor& editor, uint& current_cell) const = 0;
+    virtual void refine_cell(Cell& cell, MeshEditor& editor, uint& current_cell) const = 0;
 
     /// Compute (generalized) volume of mesh entity
     virtual double volume(const MeshEntity& entity) const = 0;
 
     /// Compute diameter of mesh entity
     virtual double diameter(const MeshEntity& entity) const = 0;
-    
+
     /// Compute component i of normal of given facet with respect to the cell
     virtual double normal(const Cell& cell, uint facet, uint i) const = 0;
 
@@ -87,7 +87,7 @@ namespace dolfin
     virtual Point normal(const Cell& cell, uint facet) const = 0;
 
     /// Compute the area/length of given facet with respect to the cell
-    virtual double facetArea(const Cell& cell, uint facet) const = 0;
+    virtual double facet_area(const Cell& cell, uint facet) const = 0;
 
     // FIXME: The order() function should be reimplemented and use one common
     // FIXME: implementation for all cell types, just as we have for ordered()
@@ -114,8 +114,8 @@ namespace dolfin
 
     friend class MPIMeshCommunicator;
 
-    Type cell_type;
-    Type facet_type;
+    Type _cell_type;
+    Type _facet_type;
 
   private:
 

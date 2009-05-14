@@ -15,7 +15,6 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/parameter/Parametrized.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
-#include <dolfin/la/enums_la.h>
 
 namespace dolfin
 {
@@ -23,34 +22,33 @@ namespace dolfin
   class NonlinearProblem;
 
   /// This class defines a Newton solver for equations of the form F(u) = 0.
-  
+
   class NewtonSolver : public Parametrized
   {
   public:
 
-    /// Create nonlinear solver with default linear solver and default 
+    /// Create nonlinear solver with default linear solver and default
     /// linear algebra backend
-    NewtonSolver(dolfin::SolverType solver_type = lu, 
-                 dolfin::PreconditionerType pc_type = default_pc);
+    NewtonSolver(std::string solver_type = "lu", std::string pc_type = "default");
 
     /// Create nonlinear solver using provided linear solver and linear algebra
-    /// backend determined by factory 
+    /// backend determined by factory
     NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& factory);
 
     /// Destructor
     virtual ~NewtonSolver();
 
-    /// Solve abstract nonlinear problem F(x) = 0 for given vector F and 
+    /// Solve abstract nonlinear problem F(x) = 0 for given vector F and
     /// Jacobian dF/dx
     uint solve(NonlinearProblem& nonlinear_function, GenericVector& x);
 
     /// Return Newton iteration number
-    uint getIteration() const;
+    uint get_iteration() const;
 
   private:
 
-    /// Convergence test 
-    virtual bool converged(const GenericVector& b, const GenericVector& dx, 
+    /// Convergence test
+    virtual bool converged(const GenericVector& b, const GenericVector& dx,
                            const NonlinearProblem& nonlinear_problem);
 
     /// Current number of Newton iterations
@@ -61,10 +59,6 @@ namespace dolfin
 
     /// Solver
     boost::shared_ptr<GenericLinearSolver> solver;
-
-    /// Solver
-    dolfin::PreconditionerType pc;
-    //Preconditioner* local_pc;
 
     /// Jacobian matrix
     GenericMatrix* A;

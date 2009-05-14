@@ -16,7 +16,6 @@
 
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
-#include "enums_la.h"
 #include "PETScPreconditioner.h"
 
 namespace dolfin
@@ -32,17 +31,16 @@ namespace dolfin
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of PETSc.
-  
+
   class PETScKrylovSolver : public GenericLinearSolver
   {
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    PETScKrylovSolver(dolfin::SolverType method=default_solver,
-                      dolfin::PreconditionerType pc=default_pc);
+    PETScKrylovSolver(std::string method = "default", std::string pc_type = "default");
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
-    PETScKrylovSolver(dolfin::SolverType method, PETScPreconditioner& PETScPreconditioner);
+    PETScKrylovSolver(std::string method, PETScPreconditioner& PETScPreconditioner);
 
     /// Destructor
     ~PETScKrylovSolver();
@@ -52,42 +50,42 @@ namespace dolfin
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
-          
+
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);
-    
+
     /// Display solver data
     void disp() const;
-     
+
   private:
 
     /// Initialize KSP solver
     void init(uint M, uint N);
 
     /// Read parameters from database
-    void readParameters();
-    
+    void read_parameters();
+
     /// Set solver
-    void setSolver();
+    void set_solver();
 
     /// Set PETScPreconditioner
     void setPETScPreconditioner();
-    
-    /// Report the number of iterations
-    void writeReport(int num_iterations);
 
-    /// Get PETSc method identifier 
-    #if PETSC_VERSION_MAJOR > 2 
-    const KSPType get_type(dolfin::SolverType method) const;
+    /// Report the number of iterations
+    void write_report(int num_iterations);
+
+    /// Get PETSc method identifier
+    #if PETSC_VERSION_MAJOR > 2
+    const KSPType get_type(std::string method) const;
     #else
-    KSPType get_type(dolfin::SolverType method) const;
+    KSPType get_type(std::string method) const;
     #endif
 
     /// Krylov method
-    SolverType method;
+    std::string method;
 
-    /// PETSc PETScPreconditioner
-    PreconditionerType pc_petsc;
+    /// PETSc preconditioner type
+    std::string pc_petsc;
 
     /// DOLFIN PETScPreconditioner
     PETScPreconditioner* pc_dolfin;
@@ -101,8 +99,8 @@ namespace dolfin
 
     /// True if we have read parameters
     bool parameters_read;
-    
-    // FIXME: Required to avoid PETSc bug with Hypre. See explanation inside 
+
+    // FIXME: Required to avoid PETSc bug with Hypre. See explanation inside
     //        PETScKrylovSolver:init(). Can be removed when PETSc is patched.
     bool pc_set;
   };

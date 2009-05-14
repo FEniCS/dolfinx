@@ -20,7 +20,7 @@ namespace dolfin
   class Controller
   {
   public:
-    
+
     /// Create uninitialized controller
     Controller();
 
@@ -46,13 +46,13 @@ namespace dolfin
     real updateH211PI(real e, real tol);
 
     /// No control, simple formula
-    real updateSimple(real e, real tol);
+    real update_simple(real e, real tol);
 
     /// Control by harmonic mean value
-    real updateHarmonic(real e, real tol);
+    real update_harmonic(real e, real tol);
 
     /// Control by harmonic mean value (no history supplied)
-    static real updateHarmonic(real knew, real kold, real kmax);
+    static real update_harmonic(real knew, real kold, real kmax);
 
   private:
 

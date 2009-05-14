@@ -13,7 +13,7 @@
 
 namespace dolfin
 {
-  
+
   class Mesh;
   class LocalMeshData;
   class Graph;
@@ -27,15 +27,15 @@ namespace dolfin
   class GenericMatrix;
   class GenericVector;
   class FunctionPlotData;
-  
+
 
   class GenericFile
   {
   public:
-    
+
     GenericFile(const std::string filename);
     virtual ~GenericFile();
-    
+
     // Input
     virtual void operator>> (GenericVector& x);
     virtual void operator>> (GenericMatrix& A);
@@ -60,9 +60,9 @@ namespace dolfin
     virtual void operator>> (std::map<uint, double>& map);
     virtual void operator>> (std::map<uint, std::vector<int> >& array_map);
     virtual void operator>> (std::map<uint, std::vector<uint> >& array_map);
-    virtual void operator>> (std::map<uint, std::vector<double> >& array_map); 
+    virtual void operator>> (std::map<uint, std::vector<double> >& array_map);
 
-    // Output    
+    // Output
     virtual void operator<< (const GenericVector& x);
     virtual void operator<< (const GenericMatrix& A);
     virtual void operator<< (const Mesh& mesh);
@@ -87,23 +87,23 @@ namespace dolfin
     virtual void operator<< (const std::map<uint, std::vector<int> >& array_map);
     virtual void operator<< (const std::map<uint, std::vector<uint> >& array_map);
     virtual void operator<< (const std::map<uint, std::vector<double> >& array_map);
-    
+
     void read();
     virtual void write();
-    
+
   protected:
-    
+
     void read_not_impl(const std::string object);
     void write_not_impl(const std::string object);
 
     std::string filename;
     std::string type;
-    
+
     bool opened_read;
     bool opened_write;
 
     // True if we have written a header
-    bool check_header; 
+    bool check_header;
 
     // Counters for the number of times various data has been written
     uint counter;
@@ -111,7 +111,7 @@ namespace dolfin
     uint counter2;
 
   };
-  
+
 }
 
 #endif

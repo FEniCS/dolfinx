@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Garth N. Wells.
+// Copyright (C) 2008-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Dag Lindbo, 2008.
@@ -14,9 +14,8 @@
 
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
-#include "enums_la.h"
 
-namespace dolfin 
+namespace dolfin
 {
 
   /// Forward declarations
@@ -28,17 +27,13 @@ namespace dolfin
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of ITL.
-  
+
   class ITLKrylovSolver : public GenericLinearSolver
   {
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    ITLKrylovSolver(dolfin::SolverType method=default_solver,
-                    dolfin::PreconditionerType pc=default_pc);
-
-    /// Create Krylov solver for a particular method and EpetraPreconditioner
-    //ITLKrylovSolver(dolfin::SolverType method, ITLPreconditioner& prec);
+    ITLKrylovSolver(std::string method = "default", std::string pc_type = "default");
 
     /// Destructor
     ~ITLKrylovSolver();
@@ -48,15 +43,17 @@ namespace dolfin
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const MTL4Matrix& A, MTL4Vector& x, const MTL4Vector& b);
-    
+
     /// Display solver data
     void disp() const;
 
-  private: 
+  private:
 
-    SolverType         method; 
-    PreconditionerType pc_type; 
-    //ITLPreconditioner* prec; 
+    // Solver type
+    std::string method;
+
+    // Preconditioner type
+    std::string pc_type;
 
   };
 

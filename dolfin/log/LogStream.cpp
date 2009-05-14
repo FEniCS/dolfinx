@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2009.
+//
 // First added:  2003-03-13
-// Last changed: 2007-05-15
+// Last changed: 2009-04-09
 
 #include <stdio.h>
 #include <cmath>
@@ -21,17 +23,16 @@ LogStream dolfin::cout(LogStream::COUT);
 LogStream dolfin::endl(LogStream::ENDL);
 
 //-----------------------------------------------------------------------------
-LogStream::LogStream(Type type)
+LogStream::LogStream(Type type) : type(type),
+                                  buffer(new char[DOLFIN_LINELENGTH]),
+                                  current(0)
 {
-  this->type = type;
-  buffer = new char[DOLFIN_LINELENGTH];
-  current = 0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 LogStream::~LogStream()
 {
-  if (buffer)
-    delete [] buffer;
+  delete [] buffer;
 }
 //-----------------------------------------------------------------------------
 LogStream& LogStream::operator<<(const char* s)
@@ -50,13 +51,13 @@ LogStream& LogStream::operator<<(const LogStream& stream)
 {
   if (stream.type == ENDL)
   {
-    LogManager::logger.message(buffer);
+    LogManager::logger.info(buffer);
     current = 0;
     buffer[0] = '\0';
   }
   else
     add(stream.buffer);
-  
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -102,8 +103,6 @@ LogStream& LogStream::operator<<(real a)
 }
 #endif
 //-----------------------------------------------------------------------------
-
-
 LogStream& LogStream::operator<<(complex z)
 {
   char tmp[DOLFIN_LINELENGTH];
@@ -135,7 +134,7 @@ void LogStream::add(const char* msg)
   {
     if (current >= (DOLFIN_LINELENGTH-1))
     {
-      LogManager::logger.message(buffer);
+      LogManager::logger.info(buffer);
       current = 0;
       buffer[0] = '\0';
       return;
@@ -145,3 +144,4 @@ void LogStream::add(const char* msg)
   buffer[current] = '\0';
 }
 //-----------------------------------------------------------------------------
+

@@ -29,11 +29,11 @@ namespace dolfin
     /// Move coordinates of mesh according to new boundary coordinates
     static void move(Mesh& mesh, Mesh& new_boundary,
                      InterpolationType type);//=interpolation_lagrange);
-    
+
   private:
-    
+
     // Transfinite meanvalue interpolation
-    static void meanValue(double* new_x, uint dim, Mesh& new_boundary,
+    static void mean_value(double* new_x, uint dim, Mesh& new_boundary,
                           Mesh& mesh, const MeshFunction<uint>& vertex_map,
                           const Vertex& vertex, double** ghat, InterpolationType type);
 
@@ -46,12 +46,12 @@ namespace dolfin
                                  uint dim, uint num_vertices);
 
     static void normals(double** dfdn, uint dim, Mesh& new_boundary,
-			Mesh& mesh, const MeshFunction<uint>& vertex_map, 
+			Mesh& mesh, const MeshFunction<uint>& vertex_map,
 			const MeshFunction<uint>& cell_map);
 
-    static void hermiteFunction(double** ghat, uint dim, Mesh& new_boundary,
-				Mesh& mesh, 
-				const MeshFunction<uint>& vertex_map, 
+    static void hermite_function(double** ghat, uint dim, Mesh& new_boundary,
+				Mesh& mesh,
+				const MeshFunction<uint>& vertex_map,
 				const MeshFunction<uint>& cell_map);
 
     static void integral(double* new_x, uint dim, Mesh& new_boundary,

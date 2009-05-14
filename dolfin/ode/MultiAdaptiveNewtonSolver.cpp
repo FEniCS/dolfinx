@@ -29,12 +29,12 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
   // Initialize local arrays
   f = new real[method.qsize()];
   u = new real[method.nsize()];
-  
+
   // Don't report number of GMRES iteration if not asked to
   solver.set("Krylov report", monitor);
   solver.set("Krylov absolute tolerance", 0.01);
   solver.set("Krylov relative tolerance", 0.01 * to_double(tol));
-  
+
   // Initialize Jacobian
   if ( updated_jacobian )
     A = new UpdatedMultiAdaptiveJacobian(*this, timeslab);
@@ -48,9 +48,9 @@ MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
   if ( num_elements > 0 )
   {
     const real alpha = num_elements_mono / static_cast<real>(num_elements);
-    message("Multi-adaptive efficiency index: %.3f", to_double(alpha));
+    info("Multi-adaptive efficiency index: %.3f", to_double(alpha));
   }
-  
+
   // Delete local arrays
   if ( f ) delete [] f;
   if ( u ) delete [] u;
@@ -77,7 +77,7 @@ void MultiAdaptiveNewtonSolver::start()
   // Initialize right-hand side
   b.resize(nj);
   b.zero();
-  
+
   // Recompute Jacobian on each time slab
   A->init();
 
@@ -85,21 +85,20 @@ void MultiAdaptiveNewtonSolver::start()
   //A->disp(true, 10);
 }
 //-----------------------------------------------------------------------------
-real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter,
-					  real d0, real d1)
+real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
 {
   // Evaluate b = -F(x) at current x
   Feval(b);
- 
+
   // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBLAS?
 
   // Save norm of old solution
   xnorm = 0.0;
   for (uint j = 0; j < ts.nj; j++)
     xnorm = max(xnorm, abs(ts.jx[j]));
-  
+
   // Solve linear system
-  const double r = b.norm(linf) + to_double( real_epsilon() );
+  const double r = b.norm("linf") + to_double( real_epsilon() );
   b /= r;
   num_local_iterations += solver.solve(*A, dx, b);
   dx *= r;
@@ -141,7 +140,7 @@ void MultiAdaptiveNewtonSolver::Feval(uBLASVector& F)
   for (uint e = 0; e < ts.ne; e++)
   {
     // Cover all elements in current sub slab
-    s = ts.coverNext(s, e);
+    s = ts.cover_next(s, e);
 
     // Get element data
     const uint i = ts.ei[e];
@@ -155,14 +154,13 @@ void MultiAdaptiveNewtonSolver::Feval(uBLASVector& F)
 
     // Evaluate right-hand side at quadrature points of element
     if ( method.type() == Method::cG )
-      ts.cGfeval(f, s, e, i, a, b, k);
+      ts.cg_feval(f, s, e, i, a, b, k);
     else
-      ts.dGfeval(f, s, e, i, a, b, k);  
-    //cout << "f = "; Alloc::disp(f, method.qsize());
+      ts.dg_feval(f, s, e, i, a, b, k);
 
     // Update values on element using fixed-point iteration
     method.update(x0, f, k, u);
-    
+
     // Subtract current values
     for (uint n = 0; n < method.nsize(); n++)
       F[j + n] = to_double(u[j] - ts.jx[j + n]);
@@ -184,7 +182,7 @@ void MultiAdaptiveNewtonSolver::debug()
   {
     const real xj = ts.jx[j];
     real dx = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(xj));
-		  
+
     ts.jx[j] -= 0.5*dx;
     Feval(F1);
 
@@ -195,9 +193,9 @@ void MultiAdaptiveNewtonSolver::debug()
 
     for (uint i = 0; i < n; i++)
     {
-      real dFdx = (F1[i] - F2[i]) / dx;
-      if ( abs(dFdx) > real_epsilon() )
-        _B(i, j) = to_double(dFdx);
+      real df_dx = (F1[i] - F2[i]) / dx;
+      if ( abs(df_dx) > real_epsilon() )
+        _B(i, j) = to_double(df_dx);
     }
   }
 

@@ -27,7 +27,7 @@ namespace dolfin
 
     // Constructor
     ParameterSystem();
-    
+
   };
 
 }

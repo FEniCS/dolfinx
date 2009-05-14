@@ -1,8 +1,10 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Ola Skavhaug, 2009
+//
 // First added:  2007-01-17
-// Last changed: 2008-11-06
+// Last changed: 2009-05-13
 
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -14,20 +16,21 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UFC::UFC(const Form& form): form(form.ufc_form())
+UFC::UFC(const Form& form)
+ : form(form.ufc_form()), cell(form.mesh()), cell0(form.mesh()), cell1(form.mesh())
 {
   // Create finite elements
   finite_elements = new FiniteElement*[this->form.rank()];
   for (uint i = 0; i < this->form.rank(); i++)
   {
-    boost::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(i)); 
+    boost::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(i));
     finite_elements[i] = new FiniteElement(element);
   }
   // Create finite elements for coefficients
   coefficient_elements = new FiniteElement*[this->form.num_coefficients()];
   for (uint i = 0; i < this->form.num_coefficients(); i++)
   {
-    boost::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(this->form.rank() + i)); 
+    boost::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(this->form.rank() + i));
     coefficient_elements[i] = new FiniteElement(element);
   }
   // Create cell integrals
@@ -48,19 +51,13 @@ UFC::UFC(const Form& form): form(form.ufc_form())
   // Initialize mesh
   this->mesh.init(form.mesh());
 
-  // Initialize cells with first cell in mesh
-  CellIterator cell(form.mesh());
-  this->cell.init(*cell);
-  this->cell0.init(*cell);
-  this->cell1.init(*cell);
-
   // Get function spaces for arguments
   std::vector<const FunctionSpace*> V = form.function_spaces();
 
   // Initialize local tensor
   uint num_entries = 1;
   for (uint i = 0; i < this->form.rank(); i++)
-    num_entries *= V[i]->dofmap().local_dimension();
+    num_entries *= V[i]->dofmap().max_local_dimension();
   A = new double[num_entries];
   for (uint i = 0; i < num_entries; i++)
     A[i] = 0.0;
@@ -68,20 +65,19 @@ UFC::UFC(const Form& form): form(form.ufc_form())
   // Initialize local tensor for macro element
   num_entries = 1;
   for (uint i = 0; i < this->form.rank(); i++)
-    num_entries *= 2*V[i]->dofmap().local_dimension();
+    num_entries *= 2*V[i]->dofmap().max_local_dimension();
   macro_A = new double[num_entries];
   for (uint i = 0; i < num_entries; i++)
-    macro_A[i] = 0.0;  
+    macro_A[i] = 0.0;
 
-  // Initialize local dimensions
+  // Allocate memory for storing local dimensions
   local_dimensions = new uint[this->form.rank()];
-  for (uint i = 0; i < this->form.rank(); i++)
-    local_dimensions[i] = V[i]->dofmap().local_dimension();
-
-  // Initialize local dimensions for macro element
   macro_local_dimensions = new uint[this->form.rank()];
   for (uint i = 0; i < this->form.rank(); i++)
-    macro_local_dimensions[i] = 2*V[i]->dofmap().local_dimension();
+  {
+    local_dimensions[i] = V[i]->dofmap().max_local_dimension();
+    macro_local_dimensions[i] = 2*V[i]->dofmap().max_local_dimension();
+  }
 
   // Initialize global dimensions
   global_dimensions = new uint[this->form.rank()];

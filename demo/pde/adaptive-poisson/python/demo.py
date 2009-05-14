@@ -41,15 +41,15 @@ for level in xrange(MAX_ITER):
     f = Function(V, source_str)
     a = dot(grad(v), grad(u))*dx
     L = v*f*dx
-    
+
     # Define boundary condition
     u0 = Constant(mesh, 0.0)
     bc = DirichletBC(V, u0, DomainBoundary())
-    
+
     # Compute solution
     problem = VariationalProblem(a, L, bc)
     u = problem.solve()
-    
+
     # Compute error indicators
     h = array([c.diameter() for c in cells(mesh)])
     K = array([c.volume() for c in cells(mesh)])
@@ -70,10 +70,10 @@ for level in xrange(MAX_ITER):
     gamma_0 = sorted(gamma, reverse=True)[int(len(gamma)*REFINE_RATIO)]
     for c in cells(mesh):
         cell_markers.set(c, gamma[c.index()] > gamma_0)
-        
+
     # Refine mesh
     mesh.refine(cell_markers)
-    
+
     # Plot mesh
     plot(mesh)
 

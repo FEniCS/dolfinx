@@ -17,13 +17,13 @@ namespace dolfin
 {
 
   //  class Mesh;
-  
+
   /// The class facilitates the transfer of a mesh between processes using MPI
-  
+
   class MPIMeshCommunicator
   {
   public:
-    
+
     /// Constructor
     MPIMeshCommunicator();
 
@@ -35,26 +35,26 @@ namespace dolfin
 
     /// Receive mesh
     static void receive(Mesh& mesh);
-    
+
     /// Broadcast mesh function to all processes
     static void broadcast(const MeshFunction<unsigned int>& mesh_function);
 
     /// Receive mesh function
     static void receive(MeshFunction<unsigned int>& mesh_function);
 
-    /// Distribute mesh according to a mesh function                             
-    static void distribute(Mesh& mesh, MeshFunction<uint>& distribution);        
-                                                                                 
-    /// Distribute mesh according to mesh function and preserve cell markers     
-    static void distribute(Mesh& mesh, MeshFunction<uint>& distribution,         
-                           MeshFunction<bool>& old_cell_marker,                  
-                           MeshFunction<bool>& cell_marker);                     
-                                                                                 
-  private:  
-                                                                     
-    static void distributeCommon(Mesh& mesh, MeshFunction<uint>& distribution,   
-                                 MeshFunction<bool>* old_cell_marker,            
-                                 MeshFunction<bool>* cell_marker);       
+    /// Distribute mesh according to a mesh function
+    static void distribute(Mesh& mesh, MeshFunction<uint>& distribution);
+
+    /// Distribute mesh according to mesh function and preserve cell markers
+    static void distribute(Mesh& mesh, MeshFunction<uint>& distribution,
+                           MeshFunction<bool>& old_cell_marker,
+                           MeshFunction<bool>& cell_marker);
+
+  private:
+
+    static void distribute_common(Mesh& mesh, MeshFunction<uint>& distribution,
+                                 MeshFunction<bool>* old_cell_marker,
+                                 MeshFunction<bool>* cell_marker);
 
   };
 }

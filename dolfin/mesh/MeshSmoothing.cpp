@@ -20,7 +20,7 @@ void MeshSmoothing::smooth(Mesh& mesh)
 {
   // Make sure we have cell-facet connectivity
   mesh.init(mesh.topology().dim(), mesh.topology().dim() - 1);
-  
+
   // Make sure the mesh is ordered
   mesh.order();
 
@@ -41,11 +41,11 @@ void MeshSmoothing::smooth(Mesh& mesh)
     // Skip vertices on the boundary
     if (on_boundary(*v))
       continue;
-    
+
     // Get coordinates of vertex
     double* x = const_cast<double*>(v->x());
     const Point p = v->point();
-    
+
     // Compute center of mass of neighboring vertices
     for (uint i = 0; i < d; i++) xx[i] = 0.0;
     uint num_neighbors = 0;
@@ -73,7 +73,7 @@ void MeshSmoothing::smooth(Mesh& mesh)
 
       // Get normal of corresponding facet
       Point n = c->normal(local_vertex);
-      
+
       // Get first vertex in facet
       Facet f(mesh, c->entities(mesh.topology().dim() - 1)[local_vertex]);
       VertexIterator fv(f);

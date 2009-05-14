@@ -74,7 +74,7 @@ namespace dolfin
 
     /// Display data
     void disp() const;
-    
+
   private:
 
     friend class MPIMeshCommunicator;
@@ -84,7 +84,7 @@ namespace dolfin
 
     /// Number of entities
     uint num_entities;
-    
+
     /// Connections for all entities stored as a contiguous array
     uint* connections;
 

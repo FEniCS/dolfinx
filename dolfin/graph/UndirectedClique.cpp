@@ -26,16 +26,16 @@ UndirectedClique::UndirectedClique(uint num_vertices) : Graph()
   editor.open(*this, Graph::undirected);
 
   // Create vertices
-  editor.initVertices(num_vertices);
+  editor.init_vertices(num_vertices);
   for (uint i = 0; i < num_vertices; ++i)
-    editor.addVertex(i, num_vertices - i - 1);
+    editor.add_vertex(i, num_vertices - i - 1);
 
   // Create edges
-  editor.initEdges(((num_vertices - 1) * num_vertices)/2);
+  editor.init_edges(((num_vertices - 1) * num_vertices)/2);
   for (uint i = 0; i < num_vertices - 1; ++i)
   {
     for (uint j = i+1; j < num_vertices; ++j)
-      editor.addEdge(i, j);
+      editor.add_edge(i, j);
   }
 
   // Close graph editor

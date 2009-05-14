@@ -23,7 +23,7 @@ MultiAdaptiveJacobian::MultiAdaptiveJacobian(MultiAdaptiveNewtonSolver& newton,
 {
   // Allocate Jacobian row indices
   Jindices = new uint[ode.size()];
-  
+
   // Compute start of each row
   uint sum = 0;
   for (uint i = 0; i < ode.size(); i++)
@@ -37,7 +37,7 @@ MultiAdaptiveJacobian::MultiAdaptiveJacobian(MultiAdaptiveNewtonSolver& newton,
   for (uint pos = 0; pos < sum; pos++)
     Jvalues[pos] = 0.0;
 
-  message("Generated Jacobian data structure for %d dependencies.", sum);
+  info("Generated Jacobian data structure for %d dependencies.", sum);
 
   // Compute maximum number of dependencies
   uint maxsize = 0;
@@ -74,17 +74,17 @@ void MultiAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
 
   // Choose method
   if ( method.type() == Method::cG )
-    cGmult(x, y);
+    cg_mult(x, y);
   else
-    dGmult(x, y);
+    dg_mult(x, y);
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveJacobian::init()
 {
   // Compute Jacobian at the beginning of the slab
   double t = to_double(ts.starttime());
-  //message("Recomputing Jacobian matrix at t = %f.", t);
-  
+  //info("Recomputing Jacobian matrix at t = %f.", t);
+
   // Compute Jacobian
   for (uint i = 0; i < ode.size(); i++)
   {
@@ -96,8 +96,8 @@ void MultiAdaptiveJacobian::init()
   /*
   // Compute Jacobian at the end of the slab
   double t = ts.endtime();
-  //message("Recomputing Jacobian matrix at t = %f.", t);
-  
+  //info("Recomputing Jacobian matrix at t = %f.", t);
+
   // Compute Jacobian
   for (uint i = 0; i < ode.size(); i++)
   {
@@ -108,7 +108,7 @@ void MultiAdaptiveJacobian::init()
   */
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
+void MultiAdaptiveJacobian::cg_mult(const uBLASVector& x, uBLASVector& y) const
 {
   // Reset current sub slab
   int s0 = -1;
@@ -121,15 +121,15 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
   for (uint e0 = 0; e0 < ts.ne; e0++)
   {
     // Cover all elements in current sub slab
-    s0 = ts.coverNext(s0, e0);
-    
+    s0 = ts.cover_next(s0, e0);
+
     // Get element data
     const uint i0 = ts.ei[e0];
     const double a0 = to_double(ts.sa[s0]);
     const double b0 = to_double(ts.sb[s0]);
     const double k0 = b0 - a0;
     const uint j0 = e0 * method.nsize();
-    
+
     // Add dependency on predecessor for all dofs of element
     const int ep = ts.ee[e0];
     if ( ep != -1 )
@@ -151,7 +151,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 
       // Skip elements which have not been covered
       const uint i1 = deps[pos];
-      const int e1 = ts.elast[i1];      
+      const int e1 = ts.elast[i1];
       if ( e1 == -1 )
       {
 	// Save dependency for later
@@ -174,10 +174,10 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 
        	continue;
       }
-      
+
       // Get first dof for other element
       const uint j1 = e1 * method.nsize();
-      
+
       // Use fast evaluation for elements in the same sub slab
       if ( s0 == static_cast<int>(s1) )
       {
@@ -190,7 +190,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	  for (uint n = 0; n < method.nsize(); n++)
 	    y[j0 + n] -= tmp1 * to_double(method.nweight(n, 0));
 	}
-	
+
 	// Add dependencies to internal dofs
 	for (uint n = 0; n < method.nsize(); n++)
 	{
@@ -204,7 +204,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
       {
 	const double a1 = to_double( ts.sa[s1] );
 	const double k1 = b1 - a1;
-	
+
 	// Iterate over dofs of element
 	const double tmp0 = k0 * dfdu;
 	for (uint n = 0; n < method.nsize(); n++)
@@ -217,7 +217,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	    const double tmp1 = to_double( method.nweight(n, m) );
 	    dolfin_assert(tau >= -real_epsilon());
 	    dolfin_assert(tau <= 1.0 + real_epsilon());
-	    
+
 	    // Add dependency to dof of initial value if any
 	    const int ep = ts.ee[e1];
 	    if ( ep != -1 )
@@ -225,18 +225,18 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	      const double x0 = x[ep * method.nsize() + method.nsize() - 1];
 	      sum += tmp1 * to_double( method.eval(0, tau)) * x0;
 	    }
-	    
+
 	    // Iterate over dofs of other element and add dependencies
 	    for (uint l = 0; l < method.nsize(); l++)
 	      sum += tmp1 * to_double(method.eval(l + 1, tau)) * x[j1 + l];
 	  }
-	    
+
 	  // Add dependencies
 	  y[j0 + n] -= tmp0 * sum;
 	}
-      }      
+      }
     }
-    
+
     // At this point, we have added dependencies to the predecessor,
     // to dofs in the same sub slab and to components with larger time
     // steps. It remains to add dependencies to components with
@@ -246,7 +246,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 
     // Get first dependency to components with smaller time steps for element
     uint d = ts.ed[e0];
-    
+
     // Compute number of such dependencies for each nodal point
     const uint end = ( e0 < (ts.ne - 1) ? ts.ed[e0 + 1] : ts.nd );
     const uint ndep = (end - d) / method.nsize();
@@ -270,13 +270,13 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	const double b1 = to_double( ts.sb[s1] );
 	const double k1 = b1 - a1;
 	const double tau = (t - a1) / k1;
-	
+
 	// We don't know how to index Jvalues here and want to avoid
 	// searching, but we were clever enough to pick out the value
 	// before when we had the chance... :-)
 	const double dfdu = Jlookup[dep];
-	//message("Looks like df_%d/du_%d = %f", i0, i1, dfdu);      
-	
+	//info("Looks like df_%d/du_%d = %f", i0, i1, dfdu);
+
 	// Iterate over quadrature points of other element
 	const double tmp0 = k0 * dfdu;
 	for (uint l = 0; l < method.qsize(); l++)
@@ -290,7 +290,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
 	      // Iterate over dofs of current element
 	      tmp1 *= x[ep*method.nsize() + method.nsize() - 1];
 	      for (uint n = 0; n < method.nsize(); n++)
-		y[j0 + n] -= tmp1 * to_double( method.nweight(n, m));		
+		y[j0 + n] -= tmp1 * to_double( method.nweight(n, m));
 	    }
 	  }
 	  else
@@ -306,7 +306,7 @@ void MultiAdaptiveJacobian::cGmult(const uBLASVector& x, uBLASVector& y) const
   }
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
+void MultiAdaptiveJacobian::dg_mult(const uBLASVector& x, uBLASVector& y) const
 {
   // Reset current sub slab
   int s0 = -1;
@@ -319,15 +319,15 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
   for (uint e0 = 0; e0 < ts.ne; e0++)
   {
     // Cover all elements in current sub slab
-    s0 = ts.coverNext(s0, e0);
-    
+    s0 = ts.cover_next(s0, e0);
+
     // Get element data
     const uint i0 = ts.ei[e0];
     const double a0 = to_double( ts.sa[s0] );
     const double b0 = to_double( ts.sb[s0] );
     const double k0 = b0 - a0;
     const uint j0 = e0 * method.nsize();
-    
+
     // Add dependency on predecessor for all dofs of element
     const int ep = ts.ee[e0];
     if ( ep != -1 )
@@ -349,7 +349,7 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
 
       // Skip elements which have not been covered
       const uint i1 = deps[pos];
-      const int e1 = ts.elast[i1];      
+      const int e1 = ts.elast[i1];
       if ( e1 == -1 )
       {
 	// Save dependency for later
@@ -366,10 +366,10 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
 	Jlookup[Jpos++] = dfdu;
        	continue;
       }
-      
+
       // Get first dof for other element
       const uint j1 = e1 * method.nsize();
-      
+
       // Use fast evaluation for elements in the same sub slab
       if ( s0 == static_cast<int>(s1) )
       {
@@ -386,7 +386,7 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
       {
 	const double a1 = to_double( ts.sa[s1] );
 	const double k1 = b1 - a1;
-	
+
 	// Iterate over dofs of element
 	const double tmp0 = k0 * dfdu;
 	for (uint n = 0; n < method.nsize(); n++)
@@ -397,18 +397,18 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
 	  {
 	    const double tau = (a0 + k0* to_double(method.qpoint(m)) - a1) / k1;
 	    const double tmp1 = to_double(method.nweight(n, m));
-	    
+
 	    // Iterate over dofs of other element and add dependencies
 	    for (uint l = 0; l < method.nsize(); l++)
 	      sum += tmp1 * to_double(method.eval(l, tau)) * x[j1 + l];
 	  }
-	  
+
 	  // Add dependencies
 	  y[j0 + n] -= tmp0 * sum;
 	}
       }
     }
-    
+
     // At this point, we have added dependencies to the predecessor,
     // to dofs in the same sub slab and to components with larger time
     // steps. It remains to add dependencies to components with
@@ -418,7 +418,7 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
 
     // Get first dependency to components with smaller time steps for element
     uint d = ts.ed[e0];
-    
+
     // Compute number of such dependencies for each nodal point
     const uint end = ( e0 < (ts.ne - 1) ? ts.ed[e0 + 1] : ts.nd );
     const uint ndep = (end - d) / method.nsize();
@@ -442,13 +442,13 @@ void MultiAdaptiveJacobian::dGmult(const uBLASVector& x, uBLASVector& y) const
 	const double b1 = to_double(ts.sb[s1]);
 	const double k1 = b1 - a1;
 	const double tau = (t - a1) / k1;
-	
+
 	// We don't know how to index Jvalues here and want to avoid
 	// searching, but we were clever enough to pick out the value
 	// before when we had the chance... :-)
 	const double dfdu = Jlookup[dep];
-	//message("Looks like df_%d/du_%d = %f", i0, i1, dfdu);      
-	
+	//info("Looks like df_%d/du_%d = %f", i0, i1, dfdu);
+
 	// Iterate over quadrature points of other element
 	const double tmp0 = k0 * dfdu;
 	for (uint l = 0; l < method.qsize(); l++)

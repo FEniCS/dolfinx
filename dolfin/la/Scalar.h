@@ -92,7 +92,7 @@ namespace dolfin
     //--- Special functions
 
     /// Return a factory for the default linear algebra backend
-    inline LinearAlgebraFactory& factory() const 
+    inline LinearAlgebraFactory& factory() const
     { return dolfin::uBLASFactory<>::instance(); }
 
     /// Get value
@@ -100,7 +100,7 @@ namespace dolfin
     { return value; }
 
   private:
-    
+
     // Value of scalar
     double value;
 

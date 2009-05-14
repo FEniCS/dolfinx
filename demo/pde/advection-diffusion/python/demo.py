@@ -19,11 +19,11 @@ from dolfin import *
 mesh = Mesh("../mesh.xml.gz")
 sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz");
 
-# Create FunctionSpaces 
+# Create FunctionSpaces
 Q = FunctionSpace(mesh, "CG", 1)
 V = VectorFunctionSpace(mesh, "CG", 2)
 
-# Create velocity Function 
+# Create velocity Function
 velocity = Function(V, "../velocity.xml.gz");
 
 # Initialise source function and previous solution function
@@ -66,10 +66,10 @@ while t < T:
     # Assemble vector and apply boundary conditions
     b = assemble(L)
     bc.apply(A, b)
-    
+
     # Solve the linear system
     solve(A, u1.vector(), b)
-    
+
     # Plot solution
     plot(u1)
 

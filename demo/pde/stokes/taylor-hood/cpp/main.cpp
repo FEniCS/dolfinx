@@ -52,7 +52,7 @@ int main()
   Noslip noslip;
   Inflow inflow;
   Constant zero(0.0);
-  
+
   // No-slip boundary condition for velocity
   DirichletBC bc0(W0, noslip, sub_domains, 0);
 

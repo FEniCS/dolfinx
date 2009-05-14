@@ -15,7 +15,6 @@
 #include <petscksp.h>
 #include <petscpc.h>
 
-#include "enums_la.h"
 #include "PETScObject.h"
 
 namespace dolfin
@@ -56,10 +55,10 @@ namespace dolfin
     static int PCCreate(PC pc);
 
     /// Return PETSc PETScPreconditioner type
-    #if PETSC_VERSION_MAJOR > 2 
-    static const PCType getType(PreconditionerType pc);
+    #if PETSC_VERSION_MAJOR > 2
+    static const PCType get_type(std::string pc_type);
     #else
-    static PCType getType(PreconditionerType pc);
+    static PCType get_type(std::string pc_type);
     #endif
 
   };

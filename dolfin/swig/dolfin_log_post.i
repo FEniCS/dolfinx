@@ -11,7 +11,7 @@ def debug(message):
 %extend dolfin::Progress {
 
 void __add(int incr) {
-    for (int j=0;j<incr; ++j) 
+    for (int j=0;j<incr; ++j)
         (*self)++;
 }
 
@@ -35,3 +35,10 @@ def update(self, other):
 
 }
 
+%pythoncode %{
+def info(*args):
+    if len(args) > 0 and isinstance(args[0],(Variable,NewParameters)):
+        _info(args[0].__str__())
+    else:
+        _info(*args)
+%}

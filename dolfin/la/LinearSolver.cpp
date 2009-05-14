@@ -11,10 +11,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearSolver::LinearSolver(SolverType solver_type, PreconditionerType pc_type)
+LinearSolver::LinearSolver(std::string solver_type, std::string pc_type)
                          : lu_solver(0), krylov_solver(0)
 {
-  if (solver_type == lu)
+  if (solver_type == "lu")
   {
     lu_solver = new LUSolver();
     lu_solver->set("parent", *this);
@@ -36,7 +36,7 @@ dolfin::uint LinearSolver::solve(const GenericMatrix& A, GenericVector& x,
                                  const GenericVector& b)
 {
   dolfin_assert(lu_solver || krylov_solver);
-  
+
   if (lu_solver)
     return lu_solver->solve(A, x, b);
   else

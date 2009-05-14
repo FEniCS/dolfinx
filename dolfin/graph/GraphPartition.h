@@ -17,7 +17,7 @@ namespace dolfin
   class GraphPartition
   {
   public:
-    
+
     /// Partition a graph into num_part partitions
     static void partition(Graph& graph, uint num_part, uint* vtx_part);
 
@@ -29,7 +29,7 @@ namespace dolfin
 
     /// Display partitioning
     static void disp(Graph& graph, uint num_part, uint* vtx_part);
-	 
+
     /// Calculate edge_cut
     static uint edgecut(Graph& graph, uint num_part, uint* vtx_part);
 

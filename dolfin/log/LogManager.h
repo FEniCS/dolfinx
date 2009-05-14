@@ -13,16 +13,16 @@
 
 namespace dolfin
 {
-  
+
   class LogManager
   {
   public:
 
     // Singleton instance of logger
     static Logger logger;
-	 
+
   };
 
 }
-  
+
 #endif

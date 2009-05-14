@@ -79,10 +79,10 @@ Method::~Method()
 //-----------------------------------------------------------------------------
 void Method::init()
 {
-  computeQuadrature();
-  computeBasis();
-  computeWeights();
-  computeDerivatives();
+  compute_quadrature();
+  compute_basis();
+  compute_weights();
+  compute_derivatives();
 }
 //-----------------------------------------------------------------------------
 void Method::update(real x0, real f[], real k, real values[]) const
@@ -109,7 +109,7 @@ void Method::update(real x0, real f[], real k, real values[], real alpha) const
   }
 }
 //-----------------------------------------------------------------------------
-void Method::computeDerivatives()
+void Method::compute_derivatives()
 {
   for (unsigned int i = 0; i < nq; i++)
     derivatives[i] = trial->ddx(i, 1.0);

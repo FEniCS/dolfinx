@@ -29,7 +29,7 @@ namespace dolfin
 
     /// Destructor
     virtual ~TimeSlab();
-    
+
     /// Build time slab, return end time
     virtual real build(real a, real b) = 0;
 
@@ -50,7 +50,7 @@ namespace dolfin
 
     /// Return start time of time slab
     real starttime() const;
-    
+
     /// Return end time of time slab
     real endtime() const;
 
@@ -99,15 +99,15 @@ namespace dolfin
 
     // Copy data of given size between vectors with given offsets
     static void copy(const uBLASVector& x, uint xoffset, uBLASVector& y, uint yoffset, uint n);
-    
+
     uint N;  // Size of system
     real _a; // Start time of time slab
     real _b; // End time of time slab
-    
+
     ODE& ode;             // The ODE
-    const Method* method; // Method, mcG(q) or mdG(q)  
+    const Method* method; // Method, mcG(q) or mdG(q)
     real* u0;             // Initial values (current end-time state)
-    
+
     bool save_final; // True if we should save the solution at final time
 
   };

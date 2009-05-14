@@ -24,17 +24,17 @@ Parametrized::~Parametrized()
 //-----------------------------------------------------------------------------
 void Parametrized::add(std::string key, Parameter value)
 {
-  parameters.add(key, value);
+  plist.add(key, value);
 }
 //-----------------------------------------------------------------------------
 void Parametrized::set(std::string key, Parameter value)
 {
   if ( !has(key) )
-    parameters.add(key, value);
+    plist.add(key, value);
   else
-    parameters.set(key, value);
+    plist.set(key, value);
 
-  readParameters();
+  read_parameters();
 }
 //-----------------------------------------------------------------------------
 void Parametrized::set(std::string key, const Parametrized& parent)
@@ -59,7 +59,7 @@ Parameter Parametrized::get(std::string key) const
 {
   // First check local database
   if ( has(key) )
-    return parameters.get(key);
+    return plist.get(key);
 
   // Check parent if any
   if ( parent )
@@ -71,10 +71,10 @@ Parameter Parametrized::get(std::string key) const
 //-----------------------------------------------------------------------------
 bool Parametrized::has(std::string key) const
 {
-  return parameters.defined(key);
+  return plist.defined(key);
 }
 //-----------------------------------------------------------------------------
-void Parametrized::readParameters()
+void Parametrized::read_parameters()
 {
   // Do nothing
 }

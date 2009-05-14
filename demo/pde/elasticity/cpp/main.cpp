@@ -45,14 +45,14 @@ int main()
       // Center of rotation
       double y0 = 0.5;
       double z0 = 0.219;
-      
+
       // Angle of rotation (30 degrees)
       double theta = 0.5236;
-      
+
       // New coordinates
       double y = y0 + (x[1] - y0)*cos(theta) - (x[2] - z0)*sin(theta);
       double z = z0 + (x[1] - y0)*sin(theta) + (x[2] - z0)*cos(theta);
-      
+
       // Clamp at right end
       values[0] = 0.0;
       values[1] = y - x[1];
@@ -102,7 +102,7 @@ int main()
   a.mu = mu; a.lmbda = lambda;
   ElasticityLinearForm L(V);
   L.f = f;
-  VariationalProblem pde(a, L, bcs, symmetric);
+  VariationalProblem pde(a, L, bcs);
 
   // Solve PDE (using direct solver)
   Function u;

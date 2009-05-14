@@ -11,10 +11,10 @@ using namespace dolfin;
 class TestProblem9 : public ODE
 {
 public:
-  
+
   TestProblem9() : ODE(3, 30.0)
   {
-    message("A mixed stiff/nonstiff test problem.");
+    info("A mixed stiff/nonstiff test problem.");
 
     lambda = 1000.0;
   }
@@ -25,7 +25,7 @@ public:
     u[1] = 1.0;
     u[2] = 1.0;
   }
-  
+
   void f(const double* u, double t, double* y)
   {
     y[0] = u[1];

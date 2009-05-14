@@ -10,9 +10,9 @@
 
 #include <dolfin.h>
 
-using namespace dolfin; 
+using namespace dolfin;
 
-int main() 
+int main()
 {
   // Create a simple stiffness matrix
   UnitSquare mesh(4, 4);
@@ -20,18 +20,18 @@ int main()
 
   // Create a block matrix
   BlockMatrix AA(2, 2);
-  AA(0, 0) = A; 
-  AA(1, 0) = A; 
-  AA(0, 1) = A; 
-  AA(1, 1) = A; 
+  AA(0, 0) = A;
+  AA(1, 0) = A;
+  AA(0, 1) = A;
+  AA(1, 1) = A;
 
   // Create a block vector
   Vector x(A.size(0));
   for (unsigned int i = 0; i < x.size(); i++)
     x.setitem(i, i);
-  BlockVector xx(2); 
-  xx(0) = x; 
-  xx(1) = x; 
+  BlockVector xx(2);
+  xx(0) = x;
+  xx(1) = x;
 
   // Create another block vector
   Vector y(A.size(1));
@@ -41,5 +41,5 @@ int main()
 
   // Multiply
   AA.mult(xx,yy);
-  message("||Ax|| = %g", y.norm());
-}; 
+  info("||Ax|| = %g", y.norm());
+};

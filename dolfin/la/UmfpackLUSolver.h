@@ -3,7 +3,7 @@
 //
 // Modified by Anders Logg 2006.
 // Modified by Dag Lindbo 2008.
-// 
+//
 // First added:  2006-05-31
 // Last changed: 2008-09-05
 
@@ -28,12 +28,12 @@ namespace dolfin
   /// matrices are solved using uBLAS LU factorisation, and sparse matrices
   /// are solved using UMFPACK (http://www.cise.ufl.edu/research/sparse/umfpack/)
   /// is installed. Matrices can also be inverted.
-    
+
   class UmfpackLUSolver : public GenericLinearSolver
   {
 
   public:
-    
+
     /// Constructor
     UmfpackLUSolver();
 
@@ -47,7 +47,7 @@ namespace dolfin
     virtual uint factorize(const GenericMatrix& A);
 
     /// Solve factorized system (UMFPACK).
-    virtual uint factorizedSolve(GenericVector& x, const GenericVector& b) const;
+    virtual uint factorized_solve(GenericVector& x, const GenericVector& b) const;
 
   private:
 
@@ -56,10 +56,10 @@ namespace dolfin
     class Umfpack
     {
       public:
- 
+
         // Constructor
-        Umfpack() : dnull(0), inull(0), Symbolic(0), Numeric(0), local_matrix(false), 
-                    Rp(0), Ri(0), Rx(0), N(0), factorized(false) {} 
+        Umfpack() : dnull(0), inull(0), Symbolic(0), Numeric(0), local_matrix(false),
+                    Rp(0), Ri(0), Rx(0), N(0), factorized(false) {}
 
         // Destructor
         ~Umfpack() { clear(); }
@@ -71,16 +71,16 @@ namespace dolfin
         void init(const long int* Ap, const long int* Ai, const double* Ax, uint M, uint nz);
 
         // Initialise with transpose of matrix
-        void initTranspose(const long int* Ap, const long int* Ai, const double* Ax, uint M, uint nz);
+        void init_transpose(const long int* Ap, const long int* Ai, const double* Ax, uint M, uint nz);
 
         // Factorize
         void factorize();
 
         // Factorized solve
-        void factorizedSolve(double*x, const double* b, bool transpose = false) const;
+        void factorized_solve(double*x, const double* b, bool transpose = false) const;
 
         /// Check status flag returned by an UMFPACK function
-        void checkStatus(long int status, std::string function) const;
+        void check_status(long int status, std::string function) const;
 
         // UMFPACK data
         double*   dnull;
@@ -92,7 +92,7 @@ namespace dolfin
         bool local_matrix;
         const long int* Rp;
         const long int* Ri;
-        const double*   Rx;   
+        const double*   Rx;
 
         uint N;
         bool factorized;
@@ -100,7 +100,7 @@ namespace dolfin
 
     Umfpack umfpack;
 #endif
-    
+
   };
 
 }

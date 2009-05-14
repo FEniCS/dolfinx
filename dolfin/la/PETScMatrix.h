@@ -19,7 +19,6 @@
 
 #include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
-#include "enums_la.h"
 #include "PETScObject.h"
 #include "GenericMatrix.h"
 
@@ -118,7 +117,7 @@ namespace dolfin
 
     /// Multiply matrix by given number
     virtual const PETScMatrix& operator*= (double a);
-    
+
     /// Divide matrix by given number
     virtual const PETScMatrix& operator/= (double a);
 
@@ -135,11 +134,11 @@ namespace dolfin
     /// Return PETSc Mat pointer
     boost::shared_ptr<Mat> mat() const;
 
-    /// Return PETSc matrix type 
+    /// Return PETSc matrix type
     Type type() const;
 
     /// Return norm of matrix
-    double norm(const dolfin::NormType) const;
+    double norm(std::string norm_type) const;
 
     /// Assignment operator
     const PETScMatrix& operator= (const PETScMatrix& A);
@@ -153,17 +152,17 @@ namespace dolfin
     void init(uint M, uint N, const uint* d_nzrow, const uint* o_nzrow);
 
     // Set PETSc matrix type
-    void setType();
+    void set_type();
 
     // Return PETSc matrix type
-    #if PETSC_VERSION_MAJOR > 2 
+    #if PETSC_VERSION_MAJOR > 2
     const MatType getPETScType() const;
     #else
     MatType getPETScType() const;
     #endif
 
     // Check that requested type has been compiled into PETSc
-    void checkType();
+    void check_type();
 
     // PETSc Mat pointer
     boost::shared_ptr<Mat> A;

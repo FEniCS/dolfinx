@@ -16,6 +16,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 XMLMeshData::XMLMeshData(MeshData& data, NewXMLFile& parser, bool inside)
   : XMLHandler(parser), data(data), state(OUTSIDE), type(UNSET), entity_name(""),
+    xml_array(0), xml_map(0), xml_mesh_function(0),
     im(0), um(0), dm(0), iam(0), uam(0), dam(0)
 {
   if ( inside )
@@ -119,7 +120,7 @@ void XMLMeshData::write(const MeshData& data, std::ostream& outfile, uint indent
       NewXMLMeshFunction::write(*(it->second), outfile, indent.level(), false);
       --indent;
 
-      // Write data entry footer 
+      // Write data entry footer
       outfile << indent();
       outfile << "</data_entry>" << std::endl;
     }
@@ -136,7 +137,7 @@ void XMLMeshData::write(const MeshData& data, std::ostream& outfile, uint indent
       XMLArray::write(*(it->second), outfile, indent.level());
       --indent;
 
-      // Write data entry footer 
+      // Write data entry footer
       outfile << indent();
       outfile << "</data_entry>" << std::endl;
     }
@@ -153,7 +154,7 @@ void XMLMeshData::write(const MeshData& data, std::ostream& outfile, uint indent
       XMLMap::write(*(it->second), outfile, indent.level());
       --indent;
 
-      // Write data entry footer 
+      // Write data entry footer
       outfile << indent();
       outfile << "</data_entry>" << std::endl;
     }
@@ -170,7 +171,7 @@ void XMLMeshData::write(const MeshData& data, std::ostream& outfile, uint indent
       XMLMap::write(*(it->second), outfile, indent.level());
       --indent;
 
-      // Write data entry footer 
+      // Write data entry footer
       outfile << indent();
       outfile << "</data_entry>" << std::endl;
     }

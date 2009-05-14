@@ -18,7 +18,7 @@ using namespace dolfin;
 
 int main(int argc, char *argv[])
 {
-  // Read mesh 
+  // Read mesh
   Mesh mesh("../mesh.xml.gz");
 
   // Create velocity FunctionSpace
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
   double T = 2.0;
   double k = 0.05;
   double t = k;
-  
+
   // Output file
   File file("temperature.pvd");
 
@@ -77,10 +77,10 @@ int main(int argc, char *argv[])
     // Assemble vector and apply boundary conditions
     assemble(b, L);
     bc.apply(b);
-    
+
     // Solve the linear system
     lu.solve(A, u.vector(), b);
-    
+
     // Save solution in VTK format
     file << u;
 

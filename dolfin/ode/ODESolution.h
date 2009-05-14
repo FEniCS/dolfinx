@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
-// 
+//
 // First added:  2008-06-11
 // Last changed: 2008-10-06
 
@@ -31,7 +31,7 @@ namespace dolfin
   /// interpolation between the the closest samples. A number of
   /// interpolated values is cached, since the ODE solver repeatedly
   /// requests evaluation of the same t.
-  /// 
+  ///
   /// The samples are stored in memory if possible, otherwise stored
   /// in a temporary file and fetched from disk in blocks when needed.
   ///
@@ -48,7 +48,7 @@ namespace dolfin
     /// Destructor
     ~ODESolution();
 
-    /// Evaluate (interpolate) value of solution at given time    
+    /// Evaluate (interpolate) value of solution at given time
     void eval(const real& t, real* y);
 
     // Add sample
@@ -56,21 +56,21 @@ namespace dolfin
 
     // Flush values (make values available for interpolation)
     void flush();
-    
+
   private:
 
     ODE& ode;
     std::string filename;
     std::fstream file;
     std::pair<double, double*>* cache;
-    
+
     uint cache_size;
     uint ringbufcounter;
-    
+
     // Sorted vector with pair. Each entry representents a mapping from t value to index in file/buffer
     std::vector<double> bintree;
     uint step;
-    
+
     double* buffer;
     double* tmp;
     uint buffer_size;
@@ -79,13 +79,13 @@ namespace dolfin
     bool dataondisk;
 
     // Linear interpolation
-    void interpolate(const double* v0, const double t0, 
+    void interpolate(const double* v0, const double t0,
                      const double* v1, const double t1,
                      const double t, double* result);
 
     // Read entry from buffer, fetch from disk if necessary
     void get_from_buffer(double* u, uint index);
-    
+
   };
 
 }

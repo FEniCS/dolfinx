@@ -15,11 +15,11 @@
 
 %typemap(in) std::pair<dolfin::uint,dolfin::uint> ij (std::pair<dolfin::uint, dolfin::uint> ij) {
   if (!PyTuple_Check($input)) {
-    PyErr_SetString(PyExc_TypeError,"*** Error: Expected a tuple of size 2");
+    PyErr_SetString(PyExc_TypeError,"expected a tuple of size 2");
     return NULL;
   }
   if (PyTuple_Size($input) != 2){
-    PyErr_SetString(PyExc_TypeError,"*** Error: Expected a tuple with size 2");	
+    PyErr_SetString(PyExc_TypeError,"expected a tuple with size 2");
     return NULL;
   }
    ij.first   = PyLong_AsUnsignedLong(PyTuple_GetItem($input,0));
@@ -31,13 +31,13 @@
 %typemap(in) const double* block = double* _array;
 %typemap(in) (dolfin::uint m, const dolfin::uint* rows) = (int _array_dim, unsigned int* _array);
 %typemap(in) (dolfin::uint n, const dolfin::uint* cols) = (int _array_dim, unsigned int* _array);
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (dolfin::uint m, const dolfin::uint* rows) 
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (dolfin::uint m, const dolfin::uint* rows)
 {
     // rows typemap
     $1 = PyArray_Check($input);
 }
 
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (dolfin::uint n, const dolfin::uint* cols) 
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (dolfin::uint n, const dolfin::uint* cols)
 {
     // cols typemap
     $1 = PyArray_Check($input);
@@ -46,13 +46,18 @@
 // Ignore low level interface from GenericTensor class
 %ignore dolfin::GenericTensor::get(double*, const uint*, const uint * const *) const;
 %ignore dolfin::GenericTensor::set(const double* , const uint* , const uint * const *);
-%ignore dolfin::GenericTensor::add;
+%ignore dolfin::GenericTensor::add(const double* , const uint* , const uint * const *);
 %ignore dolfin::GenericTensor::instance;
+
+// Declare newobject for vector and matrix get functions
+%newobject _get_vector_sub_vector;
+%newobject _get_matrix_sub_vector;
+%newobject _get_matrix_sub_matrix;
 
 // Define a macros for the linear algebra factory interface
 %define LA_PRE_FACTORY(FACTORY_TYPE)
 %newobject dolfin::FACTORY_TYPE::create_matrix;
-%newobject dolfin::FACTORY_TYPE::create_pattern; 
+%newobject dolfin::FACTORY_TYPE::create_pattern;
 %newobject dolfin::FACTORY_TYPE::create_vector;
 
 %enddef
@@ -65,14 +70,14 @@
 %ignore dolfin::VEC_TYPE::operator/=;
 %ignore dolfin::VEC_TYPE::operator+=;
 %ignore dolfin::VEC_TYPE::operator-=;
+%ignore dolfin::VEC_TYPE::getitem;
+%ignore dolfin::VEC_TYPE::setitem;
 
-// Ignore the get and set functions used for blocks 
+// Ignore the get and set functions used for blocks
 // NOTE: The %ignore have to be set using the actuall type used in the declaration
 // so we cannot use dolfin::uint or unsigned int for uint. Strange...
 %ignore dolfin::VEC_TYPE::get(double*, uint, const uint*) const;
 %ignore dolfin::VEC_TYPE::set(const double* , uint m, const uint*);
-		
-%ignore dolfin::VEC_TYPE::add;
 
 %newobject dolfin::VEC_TYPE::copy;
 
@@ -89,11 +94,13 @@
 %ignore dolfin::MAT_TYPE::operator/=;
 %ignore dolfin::MAT_TYPE::operator+=;
 %ignore dolfin::MAT_TYPE::operator-=;
-%ignore dolfin::MAT_TYPE::add;
 
 %newobject dolfin::MAT_TYPE::copy;
 
-%rename (_data) dolfin::MAT_TYPE::data() const;
+%ignore dolfin::MAT_TYPE::data;
+%ignore dolfin::MAT_TYPE::getitem;
+%ignore dolfin::MAT_TYPE::setitem;
+%ignore dolfin::MAT_TYPE::operator();
 %enddef
 
 // Run the macros with different types
@@ -103,8 +110,8 @@ LA_PRE_VEC_INTERFACE(uBLASVector)
 
 LA_PRE_MAT_INTERFACE(GenericMatrix)
 LA_PRE_MAT_INTERFACE(Matrix)
-LA_PRE_MAT_INTERFACE(uBLASSparseMatrix)
-LA_PRE_MAT_INTERFACE(uBLASDenseMatrix)
+LA_PRE_MAT_INTERFACE(uBLASMatrix<dolfin::ublas_sparse_matrix>)
+LA_PRE_MAT_INTERFACE(uBLASMatrix<dolfin::ublas_dense_matrix>)
 
 LA_PRE_FACTORY(DefaultFactory)
 LA_PRE_FACTORY(uBLASFactory<dolfin::ublas_sparse_matrix>)

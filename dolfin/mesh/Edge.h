@@ -33,7 +33,7 @@ namespace dolfin
     /// Destructor
     ~Edge() {}
 
-    /// Compute Euclidian length of edge 
+    /// Compute Euclidian length of edge
     double length();
 
     /// Compute coordinates of edge midpoint as a 3D point value
@@ -42,18 +42,18 @@ namespace dolfin
   };
 
   /// An EdgeIterator is a MeshEntityIterator of topological dimension 1.
-  
+
   class EdgeIterator : public MeshEntityIterator
   {
   public:
-    
+
     EdgeIterator(const Mesh& mesh) : MeshEntityIterator(mesh, 1) {}
     EdgeIterator(const MeshEntity& entity) : MeshEntityIterator(entity, 1) {}
 
     inline Edge& operator*() { return *operator->(); }
     inline Edge* operator->() { return static_cast<Edge*>(MeshEntityIterator::operator->()); }
 
-  };    
+  };
 
 }
 

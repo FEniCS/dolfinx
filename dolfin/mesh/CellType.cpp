@@ -1,7 +1,7 @@
 // Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Kristoffer Selim, 2008. 
+// Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
 // Last changed: 2008-11-18
@@ -20,7 +20,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 CellType::CellType(Type cell_type, Type facet_type)
-  : cell_type(cell_type), facet_type(facet_type)
+  : _cell_type(cell_type), _facet_type(facet_type)
 {
   // Do nothing
 }
@@ -45,7 +45,7 @@ CellType* CellType::create(Type type)
   default:
     error("Unknown cell type: %d.", type);
   }
-  
+
   return 0;
 }
 //-----------------------------------------------------------------------------
@@ -64,7 +64,7 @@ CellType::Type CellType::string2type(std::string type)
     return tetrahedron;
   else
     error("Unknown cell type: \"%s\".", type.c_str());
-  
+
   return interval;
 }
 //-----------------------------------------------------------------------------

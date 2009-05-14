@@ -26,7 +26,7 @@ dolfin::uint TriangleCell::dim() const
   return 2;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TriangleCell::numEntities(uint dim) const
+dolfin::uint TriangleCell::num_entities(uint dim) const
 {
   switch ( dim )
     {
@@ -43,7 +43,7 @@ dolfin::uint TriangleCell::numEntities(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TriangleCell::numVertices(uint dim) const
+dolfin::uint TriangleCell::num_vertices(uint dim) const
 {
   switch ( dim )
     {
@@ -76,7 +76,7 @@ dolfin::uint TriangleCell::orientation(const Cell& cell) const
   return ( n.dot(p02) < 0.0 ? 1 : 0 );
 }
 //-----------------------------------------------------------------------------
-void TriangleCell::createEntities(uint** e, uint dim, const uint* v) const
+void TriangleCell::create_entities(uint** e, uint dim, const uint* v) const
 {
   // We only need to know how to create edges
   if ( dim != 1 )
@@ -88,7 +88,7 @@ void TriangleCell::createEntities(uint** e, uint dim, const uint* v) const
   e[2][0] = v[0]; e[2][1] = v[1];
 }
 //-----------------------------------------------------------------------------
-void TriangleCell::refineCell(Cell& cell, MeshEditor& editor,
+void TriangleCell::refine_cell(Cell& cell, MeshEditor& editor,
 			      uint& current_cell) const
 {
   // Get vertices and edges
@@ -98,21 +98,21 @@ void TriangleCell::refineCell(Cell& cell, MeshEditor& editor,
   dolfin_assert(e);
 
   // Get offset for new vertex indices
-  const uint offset = cell.mesh().numVertices();
+  const uint offset = cell.mesh().num_vertices();
 
   // Compute indices for the six new vertices
   const uint v0 = v[0];
   const uint v1 = v[1];
   const uint v2 = v[2];
-  const uint e0 = offset + e[findEdge(0, cell)];
-  const uint e1 = offset + e[findEdge(1, cell)];
-  const uint e2 = offset + e[findEdge(2, cell)];
-  
+  const uint e0 = offset + e[find_edge(0, cell)];
+  const uint e1 = offset + e[find_edge(1, cell)];
+  const uint e2 = offset + e[find_edge(2, cell)];
+
   // Add the four new cells
-  editor.addCell(current_cell++, v0, e2, e1);
-  editor.addCell(current_cell++, v1, e0, e2);
-  editor.addCell(current_cell++, v2, e1, e0);
-  editor.addCell(current_cell++, e0, e1, e2);
+  editor.add_cell(current_cell++, v0, e2, e1);
+  editor.add_cell(current_cell++, v1, e0, e2);
+  editor.add_cell(current_cell++, v2, e1, e0);
+  editor.add_cell(current_cell++, e0, e1, e2);
 }
 //-----------------------------------------------------------------------------
 double TriangleCell::volume(const MeshEntity& triangle) const
@@ -129,28 +129,28 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   const double* x0 = geometry.x(vertices[0]);
   const double* x1 = geometry.x(vertices[1]);
   const double* x2 = geometry.x(vertices[2]);
-  
+
   if ( geometry.dim() == 2 )
     {
       // Compute area of triangle embedded in R^2
       double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
-    
-      // Formula for volume from http://mathworld.wolfram.com 
+
+      // Formula for volume from http://mathworld.wolfram.com
       return v2 = 0.5 * std::abs(v2);
     }
   else if ( geometry.dim() == 3 )
-    { 
+    {
       // Compute area of triangle embedded in R^3
       double v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
       double v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
       double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
-  
-      // Formula for volume from http://mathworld.wolfram.com 
+
+      // Formula for volume from http://mathworld.wolfram.com
       return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
     }
   else
     error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
- 
+
   return 0.0;
 }
 //-----------------------------------------------------------------------------
@@ -194,24 +194,24 @@ Point TriangleCell::normal(const Cell& cell, uint facet) const
 {
   // This is a trick to be allowed to initialize a facet from the cell
   Cell& c = const_cast<Cell&>(cell);
-  
+
   // Create facet from the mesh and local facet number
   Facet f(c.mesh(), c.entities(1)[facet]);
-  
+
   // The normal vector is currently only defined for a triangle in R^2
   if (c.mesh().geometry().dim() != 2)
     error("The normal vector is only defined when the triangle is in R^2");
-  
+
   // Get global index of opposite vertex
   const uint v0 = cell.entities(0)[facet];
-  
+
   // Get global index of vertices on the facet
   const uint v1 = f.entities(0)[0];
   const uint v2 = f.entities(0)[1];
-  
+
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
-  
+
   // Get the coordinates of the three vertices
   const double* p0 = geometry.x(v0);
   const double* p1 = geometry.x(v1);
@@ -232,18 +232,18 @@ Point TriangleCell::normal(const Cell& cell, uint facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
-double TriangleCell::facetArea(const Cell& cell, uint facet) const
+double TriangleCell::facet_area(const Cell& cell, uint facet) const
 {
   // This is a trick to be allowed to initialize a facet from the cell
   Cell& c = const_cast<Cell&>(cell);
-  
+
   // Create facet from the mesh and local facet number
   Facet f(c.mesh(), c.entities(1)[facet]);
-  
+
   // Get global index of vertices on the facet
   const uint v0 = f.entities(0)[0];
   const uint v1 = f.entities(0)[1];
-  
+
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
 
@@ -258,7 +258,7 @@ double TriangleCell::facetArea(const Cell& cell, uint facet) const
     const double dp = p0[i] - p1[i];
     d += dp*dp;
   }
-  
+
   return std::sqrt(d);
 }
 //-----------------------------------------------------------------------------
@@ -448,7 +448,7 @@ bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p0, const
 
   if (d1 < 0 && d2 < 0)
     return false;
-  
+
   // Line pa-pb intersects triangle but both pa and pb are
   // on the negative side of x2-x0:
   d1 = orient2d((double*)x2, (double*)x0, (double*) pa);
@@ -456,28 +456,28 @@ bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p0, const
 
   if (d1 < 0 && d2 < 0)
     return false;
-  
+
   return true;
 }
 //-----------------------------------------------------------------------------
 bool TriangleCell::intersects(const MeshEntity& triangle, const Cell& cell) const
 {
   dolfin_assert(triangle.dim() == 2);
-  
+
   if (cell.dim() == 1)
   {
     // Get vertices
     const uint *vertices = cell.entities(0);
     const uint v0 = vertices[0];
     const uint v1 = vertices[1];
-    
+
     // Get points
     const MeshGeometry& geometry = cell.mesh().geometry();
     const Point p0 = geometry.point(v0);
     const Point p1 = geometry.point(v1);
-    
+
     return intersects(triangle, p0, p1);
-  } 
+  }
   else
     dolfin_not_implemented();
 
@@ -490,14 +490,14 @@ std::string TriangleCell::description() const
   return s;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint TriangleCell::findEdge(uint i, const Cell& cell) const
+dolfin::uint TriangleCell::find_edge(uint i, const Cell& cell) const
 {
   // Get vertices and edges
   const uint* v = cell.entities(0);
   const uint* e = cell.entities(1);
   dolfin_assert(v);
   dolfin_assert(e);
-  
+
   // Look for edge satisfying ordering convention
   for (uint j = 0; j < 3; j++)
   {
@@ -506,7 +506,7 @@ dolfin::uint TriangleCell::findEdge(uint i, const Cell& cell) const
     if (ev[0] != v[i] && ev[1] != v[i])
       return j;
   }
-  
+
   // We should not reach this
   error("Unable to find edge.");
 

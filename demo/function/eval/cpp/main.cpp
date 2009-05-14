@@ -41,9 +41,9 @@ int main()
   // Evaluate user-defined function f
   double value = 0.0;
   f.eval(&value, x);
-  message("f(x) = %g", value);
+  info("f(x) = %g", value);
 
   // Evaluate discrete function g (projection of f)
   g.eval(&value, x);
-  message("g(x) = %g", value);
+  info("g(x) = %g", value);
 }

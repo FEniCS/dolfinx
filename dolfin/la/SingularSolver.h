@@ -30,14 +30,13 @@ namespace dolfin
   /// The solver makes not attempt to check that the null-space is
   /// indeed one-dimensional. It is also assumed that the system
   /// Ax = b retains its sparsity pattern between calls to solve().
-  
+
   class SingularSolver : public Parametrized
   {
   public:
 
     /// Create linear solver
-    SingularSolver(dolfin::SolverType solver_type=lu,
-                   dolfin::PreconditionerType pc_type=ilu);
+    SingularSolver(std::string solver_type = "lu", std::string pc_type = "ilu");
 
     /// Destructor
     ~SingularSolver();
@@ -65,7 +64,7 @@ namespace dolfin
 
     // Solution of extended system
     GenericVector* y;
-    
+
     // Extended vector
     GenericVector* c;
 

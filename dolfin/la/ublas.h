@@ -25,7 +25,7 @@
 
 namespace dolfin
 {
-  /// Various typedefs for uBLAS data types 
+  /// Various typedefs for uBLAS data types
 
   namespace ublas = boost::numeric::ublas;
 
@@ -44,15 +44,15 @@ namespace dolfin
   // uBLAS sparse matrix
   typedef ublas::compressed_matrix<double, ublas::row_major> ublas_sparse_matrix;
 
-  // uBLAS sparse matrix (column major format) 
+  // uBLAS sparse matrix (column major format)
   typedef ublas::compressed_matrix<double, ublas::column_major> ublas_sparse_matrix_cmajor;
 
   // uBLAS sparse matrix for temporary assembly
-  typedef ublas::generalized_vector_of_vector<double, ublas::row_major, 
+  typedef ublas::generalized_vector_of_vector<double, ublas::row_major,
             ublas::vector<ublas::compressed_vector<double> > > ublas_assembly_matrix;
 
   // uBLAS sparse matrix for temporary assembly (column major format)
-  typedef ublas::generalized_vector_of_vector<double, ublas::column_major, 
+  typedef ublas::generalized_vector_of_vector<double, ublas::column_major,
             ublas::vector<ublas::compressed_vector<double> > > ublas_assembly_matrix_cmajor;
 
   // uBLAS upper triangular matrix (column major format)

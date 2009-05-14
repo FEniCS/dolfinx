@@ -5,7 +5,6 @@
 
 // Note that the order is important!
 
-#include <dolfin/la/enums_la.h>
 #include <dolfin/la/ublas.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
@@ -13,7 +12,9 @@
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/la/uBLASFactory.h>
 #include <dolfin/la/uBLASMatrix.h>
+#include <dolfin/la/uBLASKrylovMatrix.h>
 #include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/PETScKrylovMatrix.h>
 #include <dolfin/la/EpetraMatrix.h>
 #include <dolfin/la/MTL4Matrix.h>
 #include <dolfin/la/STLMatrix.h>

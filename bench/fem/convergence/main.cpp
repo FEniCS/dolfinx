@@ -58,9 +58,9 @@ public:
 // Solve equation and compute error, 2D
 double solve2D(int q, int n)
 {
-  message("--------------------------------------------------");
-  message("Solving Poisson's equation in 2D for q = %d, n = %d.", q, n);
-  message("--------------------------------------------------");
+  info("--------------------------------------------------");
+  info("Solving Poisson's equation in 2D for q = %d, n = %d.", q, n);
+  info("--------------------------------------------------");
 
   // Set up problem
   UnitSquare mesh(n, n);
@@ -132,9 +132,9 @@ double solve2D(int q, int n)
 // Solve equation and compute error, 3D
 double solve3D(int q, int n)
 {
-  message("--------------------------------------------------");
-  message("Solving Poisson's equation in 3D for q = %d, n = %d.", q, n);
-  message("--------------------------------------------------");
+  info("--------------------------------------------------");
+  info("Solving Poisson's equation in 3D for q = %d, n = %d.", q, n);
+  info("--------------------------------------------------");
 
   // Set up problem
   UnitCube mesh(n, n, n);

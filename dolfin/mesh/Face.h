@@ -20,7 +20,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    Face(Mesh& mesh, uint index) : MeshEntity(mesh, 2, index) {}
+    Face(const Mesh& mesh, uint index) : MeshEntity(mesh, 2, index) {}
 
     /// Destructor
     ~Face() {}
@@ -28,18 +28,18 @@ namespace dolfin
   };
 
   /// A FaceIterator is a MeshEntityIterator of topological dimension 2.
-  
+
   class FaceIterator : public MeshEntityIterator
   {
   public:
-    
-    FaceIterator(Mesh& mesh) : MeshEntityIterator(mesh, 2) {}
-    FaceIterator(MeshEntity& entity) : MeshEntityIterator(entity, 2) {}
+
+    FaceIterator(const Mesh& mesh) : MeshEntityIterator(mesh, 2) {}
+    FaceIterator(const MeshEntity& entity) : MeshEntityIterator(entity, 2) {}
 
     inline Face& operator*() { return *operator->(); }
     inline Face* operator->() { return static_cast<Face*>(MeshEntityIterator::operator->()); }
 
-  };    
+  };
 
 }
 

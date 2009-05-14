@@ -24,7 +24,7 @@ namespace dolfin
   class LoadVector : public Vector
   {
   public:
-  
+
     /// Construct load vector with constant load c on a given mesh
     LoadVector(Mesh& mesh, double c = 1.0) : Vector()
     {
@@ -41,7 +41,7 @@ namespace dolfin
   class PETScLoadVector : public PETScVector
   {
   public:
-  
+
     /// Construct load vector with constant load c on a given mesh
     PETScLoadVector(Mesh& mesh, double c = 1.0) : PETScVector()
     {
@@ -59,7 +59,7 @@ namespace dolfin
   class uBLASLoadVector : public uBLASVector
   {
   public:
-  
+
     /// Construct load vector with constant load c on a given mesh
     uBLASLoadVector(Mesh& mesh, double c = 1.0) : uBLASVector()
     {

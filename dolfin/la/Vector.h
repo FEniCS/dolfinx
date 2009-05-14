@@ -104,8 +104,8 @@ namespace dolfin
     { return vector->inner(x); }
 
     /// Return norm of vector
-    virtual double norm(dolfin::NormType type=l2) const
-    { return vector->norm(type); }
+    virtual double norm(std::string norm_type = "l2") const
+    { return vector->norm(norm_type); }
 
     /// Return minimum value of vector
     virtual double min() const
@@ -115,9 +115,17 @@ namespace dolfin
     virtual double max() const
     { return vector->max(); }
 
+    /// Return sum of values of vector
+    virtual double sum() const
+    { return vector->sum(); }
+
     /// Multiply vector by given number
     virtual const Vector& operator*= (double a)
     { *vector *= a; return *this; }
+
+    /// Multiply vector by another vector pointwise
+    virtual const Vector& operator*= (const GenericVector& x)
+    { *vector *= x; return *this; }
 
     /// Divide vector by given number
     virtual const Vector& operator/= (double a)

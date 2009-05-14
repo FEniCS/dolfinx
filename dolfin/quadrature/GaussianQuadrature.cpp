@@ -25,11 +25,11 @@ GaussianQuadrature::GaussianQuadrature(unsigned int n) : Quadrature(n)
 //-----------------------------------------------------------------------------
 void GaussianQuadrature::init()
 {
-  computePoints();
-  computeWeights();
+  compute_points();
+  compute_weights();
 }
 //-----------------------------------------------------------------------------
-void GaussianQuadrature::computeWeights()
+void GaussianQuadrature::compute_weights()
 {
   // Compute the quadrature weights by solving a linear system of equations
   // for exact integration of polynomials. We compute the integrals over
@@ -82,7 +82,7 @@ void GaussianQuadrature::computeWeights()
   // Save the weights
   for (uint i = 0; i < n; i++)
     weights[i] = _x[i];
-#else 
+#else
   //With extended precision: Use the double precision result as initial guess for the
   //extended precision SOR solver.
   real x_real[n];
@@ -99,14 +99,14 @@ void GaussianQuadrature::computeWeights()
   real Ainv_b[n];
 
   SORSolver::precondition(n, Ainv, A_real, b_real, Ainv_A, Ainv_b);
-    
+
   // Solve the preconditioned system
   SORSolver::SOR(n, Ainv_A, x_real, Ainv_b, real_epsilon());
   /*
   real err = SORSolver::err(n, A_real, x_real, b_real);
   gmp_printf("Residual: %.3Fe\n", err.get_mpf_t());
   */
-  for (uint i = 0; i < n; ++i) 
+  for (uint i = 0; i < n; ++i)
   {
     weights[i] = x_real[i];
   }
@@ -119,15 +119,15 @@ bool GaussianQuadrature::check(unsigned int q) const
   // Checks that the points and weights are correct. We compute the
   // value of the integral of the Legendre polynomial of degree q.
   // This value should be zero for q > 0 and 2 for q = 0
-  
+
   Legendre p(q);
-  
+
   real sum = 0.0;
   for (unsigned int i = 0; i < n; i++)
     sum += weights[i] * p(points[i]);
-  
-  //message("Checking quadrature weights: %.2e.", fabs(sum));
-  
+
+  //info("Checking quadrature weights: %.2e.", fabs(sum));
+
   if ( q == 0 )
   {
     if ( abs(sum - 2.0) < 100.0*real_epsilon() )
@@ -136,10 +136,10 @@ bool GaussianQuadrature::check(unsigned int q) const
   else
   {
     if ( abs(sum) < 100.0 * real_epsilon() )
-      return true; 
+      return true;
   }
 
-  message("Quadrature check failed: r = %.2e.", to_double(abs(sum)));
+  info("Quadrature check failed: r = %.2e.", to_double(abs(sum)));
 
   return false;
 }

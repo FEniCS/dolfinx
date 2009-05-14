@@ -18,12 +18,12 @@
 
 /*
   Developers note:
-  
+
   This class implements a minimal backend for MTL4.
 
   There are certain inline decisions that have been deferred.
   Due to the extensive calling of this backend through the generic LA
-  interface, it is not clear where inlining will be possible and 
+  interface, it is not clear where inlining will be possible and
   improve performance.
 */
 
@@ -93,7 +93,7 @@ namespace dolfin
     virtual double inner(const GenericVector& vector) const;
 
     /// Return norm of vector
-    virtual double norm(dolfin::NormType type=l2) const;
+    virtual double norm(std::string norm_type = "l2") const;
 
     /// Return minimum value of vector
     virtual double min() const;
@@ -101,8 +101,14 @@ namespace dolfin
     /// Return maximum value of vector
     virtual double max() const;
 
+    /// Return sum of values of vector
+    virtual double sum() const;
+
     /// Multiply vector by given number
     virtual const MTL4Vector& operator*= (double a);
+
+    /// Multiply vector by another vector pointwise
+    virtual const MTL4Vector& operator*= (const GenericVector& x);
 
     /// Divide vector by given number
     virtual const MTL4Vector& operator/= (double a);
@@ -134,7 +140,7 @@ namespace dolfin
 
     /// Return const mtl4_vector reference
     const mtl4_vector& vec() const;
-    
+
     /// Return mtl4_vector reference
     mtl4_vector& vec();
 
@@ -148,11 +154,11 @@ namespace dolfin
     // MTL4 vector object
     mtl4_vector x;
 
-  };  
+  };
 
   LogStream& operator<< (LogStream& stream, const MTL4Vector& A);
 
 }
 
-#endif 
-#endif 
+#endif
+#endif

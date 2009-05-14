@@ -1,12 +1,12 @@
-// Copyright (C) 2003-2008 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Thanks to Jim Tilander for many helpful hints.
 //
-// Modified by Ola Skavhaug, 2007.
+// Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2008-09-18
+// Last changed: 2009-05-08
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -22,15 +22,18 @@ namespace dolfin
   class Logger
   {
   public:
-    
+
     /// Constructor
     Logger();
 
     /// Destructor
     ~Logger();
-    
+
     /// Print message
-    void message(std::string msg, int debug_level = 0) const;
+    void info(std::string msg, int debug_level = 0) const;
+
+    /// Print underlined message
+    void info_underline(std::string msg, int debug_level = 0) const;
 
     /// Print warning
     void warning(std::string msg) const;
@@ -48,23 +51,26 @@ namespace dolfin
     void progress (std::string title, double p) const;
 
     /// Set output destination ("terminal" or "silent")
-    void setOutputDestination(std::string destination);
+    void set_output_destination(std::string destination);
 
     /// Set output destination to stream
-    void setOutputDestination(std::ostream& stream);
+    void set_output_destination(std::ostream& stream);
+
+    /// Set output destination to stream
+    std::ostream& get_output_destination() { return *logstream; }
 
     /// Set debug level
-    void setDebugLevel(int debug_level);
+    void set_debug_level(int debug_level);
 
-    /// Set debug level
-    inline int getDebugLevel() const { return debug_level; }
+    /// Get debug level
+    inline int get_debug_level() const { return debug_level; }
 
     /// Register timing (for later summary)
-    void registerTiming(std::string task, double elapsed_time);
+    void register_timing(std::string task, double elapsed_time);
 
     /// Print summary of timings and tasks, optionally clearing stored timings
     void summary(bool reset=false);
-    
+
     /// Return timing (average) for given task, optionally clearing timing for task
     double timing(std::string task, bool reset=false);
 
@@ -82,7 +88,7 @@ namespace dolfin
 
     // Write message to current output destination
     void write(int debug_level, std::string msg) const;
-    
+
     // Current debug level
     int debug_level;
 

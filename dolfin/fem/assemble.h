@@ -1,10 +1,10 @@
-// Copyright (C) 2007-2008 Anders Logg.
+// Copyright (C) 2007-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-12-26
+// Last changed: 2009-03-06
 //
 // This file duplicates the Assembler::assemble* functions in
 // namespace dolfin, and adds special versions returning the value
@@ -13,32 +13,30 @@
 #ifndef __ASSEMBLE_H
 #define __ASSEMBLE_H
 
-#include <dolfin/log/log.h>
-#include "dolfin/la/Scalar.h"
-#include "Form.h"
-#include "Assembler.h"
+#include <dolfin/mesh/MeshFunction.h>
 
 namespace dolfin
 {
-  
+
+  class GenericTensor;
+  class GenericMatrix;
+  class GenericVector;
+  class Form;
+  class SubDomain;
+  class DirichletBC;
+
   //--- Copies of assembly functions in Assembler.h ---
-  
+
   /// Assemble tensor
   void assemble(GenericTensor& A,
                 const Form& a,
-                bool reset_tensor=true)
-  {
-    Assembler::assemble(A, a, reset_tensor);
-  }
+                bool reset_tensor=true);
 
   /// Assemble tensor on sub domain
   void assemble(GenericTensor& A,
                 const Form& a,
                 const SubDomain& sub_domain,
-                bool reset_tensor=true)
-  {
-    Assembler::assemble(A, a, sub_domain, reset_tensor);
-  }
+                bool reset_tensor=true);
 
   /// Assemble tensor on sub domains
   void assemble(GenericTensor& A,
@@ -46,10 +44,7 @@ namespace dolfin
                 const MeshFunction<uint>* cell_domains,
                 const MeshFunction<uint>* exterior_facet_domains,
                 const MeshFunction<uint>* interior_facet_domains,
-                bool reset_tensor=true)
-  {
-    Assembler::assemble(A, a, cell_domains, exterior_facet_domains, interior_facet_domains, reset_tensor);
-  }
+                bool reset_tensor=true);
 
   /// Assemble system (A, b) and apply Dirichlet boundary condition
   void assemble_system(GenericMatrix& A,
@@ -57,21 +52,15 @@ namespace dolfin
                        const Form& a,
                        const Form& L,
                        const DirichletBC& bc,
-                       bool reset_tensors=true)
-  {
-    Assembler::assemble_system(A, b, a, L, bc, reset_tensors);
-  }
- 
+                       bool reset_tensors=true);
+
   /// Assemble system (A, b) and apply Dirichlet boundary conditions
   void assemble_system(GenericMatrix& A,
                        GenericVector& b,
                        const Form& a,
-                       const Form& L, 
+                       const Form& L,
                        std::vector<const DirichletBC*>& bcs,
-                       bool reset_tensors=true)
-  {
-    Assembler::assemble_system(A, b, a, L, bcs, reset_tensors);
-  }
+                       bool reset_tensors=true);
 
   /// Assemble system (A, b) on sub domains and apply Dirichlet boundary conditions
   void assemble_system(GenericMatrix& A,
@@ -83,48 +72,54 @@ namespace dolfin
                        const MeshFunction<uint>* exterior_facet_domains,
                        const MeshFunction<uint>* interior_facet_domains,
                        const GenericVector* x0,
-                       bool reset_tensors=true)
-  {
-    Assembler::assemble_system(A, b, a, L, bcs, 
-                               cell_domains, exterior_facet_domains, interior_facet_domains,
-                               x0, reset_tensors);
-  }
+                       bool reset_tensors=true);
+
+  /// Assemble system (A, b) and apply Dirichlet boundary condition
+  void assemble_system_new(GenericMatrix& A,
+                       GenericVector& b,
+                       const Form& a,
+                       const Form& L,
+                       const DirichletBC& bc,
+                       bool reset_tensors=true);
+ 
+  /// Assemble system (A, b) and apply Dirichlet boundary conditions
+  void assemble_system_new(GenericMatrix& A,
+                       GenericVector& b,
+                       const Form& a,
+                       const Form& L, 
+                       std::vector<const DirichletBC*>& bcs,
+                       bool reset_tensors=true);
+
+  /// Assemble system (A, b) on sub domains and apply Dirichlet boundary conditions
+  void assemble_system_new(GenericMatrix& A,
+                       GenericVector& b,
+                       const Form& a,
+                       const Form& L,
+                       std::vector<const DirichletBC*>& bcs,
+                       const MeshFunction<uint>* cell_domains,
+                       const MeshFunction<uint>* exterior_facet_domains,
+                       const MeshFunction<uint>* interior_facet_domains,
+                       const GenericVector* x0,
+                       bool reset_tensors=true);
+
 
   //--- Specialized versions for scalars ---
 
   /// Assemble scalar
   double assemble(const Form& a,
-                  bool reset_tensor=true)
-  {
-    if (a.rank() != 0) error("Unable to assemble, form is not scalar.");
-    Scalar s;
-    Assembler::assemble(s, a, reset_tensor);
-    return s;
-  }
+                  bool reset_tensor=true);
 
   /// Assemble scalar on sub domain
   double assemble(const Form& a,
                   const SubDomain& sub_domain,
-                  bool reset_tensor=true)
-  {
-    if (a.rank() != 0) error("Unable to assemble, form is not scalar.");
-    Scalar s;
-    Assembler::assemble(s, a, sub_domain, reset_tensor);
-    return s;
-  }
+                  bool reset_tensor=true);
 
   /// Assemble scalar on sub domains
   double assemble(const Form& a,
                   const MeshFunction<uint>* cell_domains,
                   const MeshFunction<uint>* exterior_facet_domains,
                   const MeshFunction<uint>* interior_facet_domains,
-                  bool reset_tensor=true)
-  {
-    if (a.rank() != 0) error("Unable to assemble, form is not scalar.");
-    Scalar s;
-    Assembler::assemble(s, a, cell_domains, exterior_facet_domains, interior_facet_domains, reset_tensor);
-    return s;
-  }
+                  bool reset_tensor=true);
 
 }
 

@@ -30,13 +30,13 @@ int main()
   // Create mesh
   double width = 1.0;
   double height = 0.5;
-  Rectangle mesh(0, 0, width, height, 2, 1);
+  Rectangle mesh(0, 0, width, height, 4, 2);
 
-  // Define the forms - gererates an generalized eigenproblem of the form 
+  // Define the forms - gererates an generalized eigenproblem of the form
   // [S]{h} = k_o^2[T]{h}
-  // with the eigenvalues k_o^2 representing the square of the cutoff wavenumber 
-  // and the corresponding right-eigenvector giving the coefficients of the 
-  // discrete system used to obtain the approximate field anywhere in the domain   
+  // with the eigenvalues k_o^2 representing the square of the cutoff wavenumber
+  // and the corresponding right-eigenvector giving the coefficients of the
+  // discrete system used to obtain the approximate field anywhere in the domain
   FormsFunctionSpace V(mesh);
   Forms_0 s(V, V);
   Forms_1 t(V, V);
@@ -52,22 +52,22 @@ int main()
   esolver.set("eigenvalue spectrum", "smallest real");
   esolver.set("eigenvalue solver", "lapack");
   esolver.solve(S, T);
-  
-  // The result should have real eigenvalues but due to rounding errors, some of 
-  // the resultant eigenvalues may be small complex values. 
+
+  // The result should have real eigenvalues but due to rounding errors, some of
+  // the resultant eigenvalues may be small complex values.
   // only consider the real part
 
-  // Now, the system contains a number of zero eigenvalues (near zero due to 
-  // rounding) which are eigenvalues corresponding to the null-space of the curl 
-  // operator and are a mathematical construct and do not represent physically 
-  // realizable modes.  These are called spurious modes.  
-  // So, we need to identify the smallest, non-zero eigenvalue of the system - 
+  // Now, the system contains a number of zero eigenvalues (near zero due to
+  // rounding) which are eigenvalues corresponding to the null-space of the curl
+  // operator and are a mathematical construct and do not represent physically
+  // realizable modes.  These are called spurious modes.
+  // So, we need to identify the smallest, non-zero eigenvalue of the system -
   // which corresponds with cutoff wavenumber of the the dominant cutoff mode.
   double cutoff = -1.0;
-  real lr, lc;
+  double lr, lc;
   for (unsigned int i = 0; i < S.size(1); i++)
   {
-    esolver.getEigenvalue(lr, lc, i);
+    esolver.get_eigenvalue(lr, lc, i);
     if (lr > 1 && lc == 0)
     {
       cutoff = sqrt(lr);
@@ -76,10 +76,10 @@ int main()
   }
 
   if (cutoff == -1.0)
-    message("Unable to find dominant mode.");
+    info("Unable to find dominant mode.");
   else
-    message("Cutoff frequency = %g", cutoff);
-  
+    info("Cutoff frequency = %g", cutoff);
+
   return 0;
 }
 
@@ -87,7 +87,7 @@ int main()
 
 int main()
 {
-  message("Sorry, this demo is only available when DOLFIN is compiled with PETSc and SLEPc.");
+  info("Sorry, this demo is only available when DOLFIN is compiled with PETSc and SLEPc.");
   return 0;
 }
 

@@ -31,7 +31,7 @@ BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)
   : n(0), w(0), cell_dofs(0), facet_dofs(0)
 {
   // Create array for coefficients
-  n = V.dofmap().local_dimension();
+  n = V.dofmap().max_local_dimension();
   w = new double[n];
   for (uint i = 0; i < n; i++)
     w[i] = 0.0;

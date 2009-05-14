@@ -55,7 +55,7 @@ add("ODE size threshold", 50);
 
 add("ODE tolerance", 0.1);
 add("ODE start time", 0.0);
-add("ODE end time", 10.0);      
+add("ODE end time", 10.0);
 add("ODE discrete tolerance", 0.001);
 add("ODE discrete tolerance factor", 0.001);
 add("ODE discrete Krylov tolerance factor", 0.01);
@@ -100,8 +100,8 @@ add("Newton report", true);
 
 //--- Parameters for Krylov solvers ---
 
-add("Krylov relative tolerance", 1e-9);
-add("Krylov absolute tolerance", 1e-10);
+add("Krylov relative tolerance", 1e-15);
+add("Krylov absolute tolerance", 1e-15);
 add("Krylov divergence limit",   1e4);
 add("Krylov maximum iterations", 10000);
 add("Krylov GMRES restart", 30);

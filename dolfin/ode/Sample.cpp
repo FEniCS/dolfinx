@@ -13,7 +13,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Sample::Sample(TimeSlab& timeslab, real t,
-	       std::string name, std::string label) : 
+	       std::string name, std::string label) :
   Variable(name, label), timeslab(timeslab), time(t)
 {
   // Prepare time slab for sample

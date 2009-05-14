@@ -41,7 +41,7 @@ dolfin::uint Partition::size() const
 //-----------------------------------------------------------------------------
 dolfin::uint Partition::index(uint i) const
 {
-  dolfin_assert(i < indices.size());  
+  dolfin_assert(i < indices.size());
   return indices[i];
 }
 //-----------------------------------------------------------------------------
@@ -61,7 +61,7 @@ real Partition::update(uint offset, uint& end, MultiAdaptivity& adaptivity,
   std::vector<uint>::iterator start = indices.begin();
   std::advance(start, offset);
   std::vector<uint>::iterator middle = std::partition(start, indices.end(), less);
-  
+
   // Compute pivot index
   end = std::distance(indices.begin(), middle);
 

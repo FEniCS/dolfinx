@@ -1,10 +1,10 @@
 // Copyright (C) 2003-2008 Anders Logg and Jim Tilander.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Ola Skavhaug, 2007.
-// 
+// Modified by Ola Skavhaug, 2007, 2009.
+//
 // First added:  2003-03-13
-// Last changed: 2008-07-23
+// Last changed: 2009-05-11
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -16,7 +16,10 @@
 
 namespace dolfin
 {
-  
+
+  class Variable;
+  class NewParameters;
+
   /// The DOLFIN log system provides the following set of functions for
   /// uniform handling of log messages, warnings and errors. In addition,
   /// macros are provided for debug messages and assertions.
@@ -37,11 +40,23 @@ namespace dolfin
   /// the output destination to "silent" means no messages will be printed.
 
   /// Print message
-  void message(std::string msg, ...);
+  void info(std::string msg, ...);
 
-  /// Print message
-  void message(int debug_level, std::string msg, ...);
-  
+  /// Print message at given debug level
+  void info(int debug_level, std::string msg, ...);
+
+  /// Print variable (using output of str() method)
+  void info(const Variable& variable);
+
+  /// Print variable (using output of str() method)
+  void info(const NewParameters& parameters);
+
+  /// Print message to stream
+  void info_stream(std::ostream& out, std::string msg);
+
+  /// Print underlined message
+  void info_underline(std:: string msg, ...);
+
   /// Print warning
   void warning(std::string msg, ...);
 
@@ -56,6 +71,9 @@ namespace dolfin
 
   /// End task (decrease indentation level)
   void end();
+
+  /// Indent string
+  std::string indent(std::string s);
 
   /// Print summary of timings and tasks, optionally clearing stored timings
   void summary(bool reset=false);

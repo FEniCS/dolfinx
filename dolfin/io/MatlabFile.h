@@ -13,22 +13,22 @@
 
 namespace dolfin
 {
-  
+
   class MatlabFile : public MFile
   {
   public:
-    
+
     MatlabFile(const std::string filename);
     ~MatlabFile();
 
     // Input
-    
+
     // Output
 
     void operator<< (const GenericMatrix& A);
-        
+
   };
-  
+
 }
 
 #endif

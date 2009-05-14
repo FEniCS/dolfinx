@@ -12,7 +12,7 @@ using namespace dolfin;
 ODECollection::ODECollection(ODE& ode, uint num_systems)
   : ode(ode), u(ode), num_systems(num_systems), states(0)
 {
-  message("Creating ODE collection of size %d x %d.", num_systems, ode.size());
+  info("Creating ODE collection of size %d x %d.", num_systems, ode.size());
 
   // Allocate state vectors
   states = new real[num_systems*ode.size()];
@@ -32,7 +32,7 @@ void ODECollection::solve(real t0, real t1)
   for (uint system = 0; system < num_systems; system++)
   {
     begin("Time-stepping ODE system number %d.", system);
-    
+
     // Compute offset for ODE
     const uint offset = system*ode.size();
 
@@ -41,7 +41,7 @@ void ODECollection::solve(real t0, real t1)
 
     // Call user-defined update
     update(states + offset, t0, system);
-    
+
     // Time-stepping
     ode.solve(u, t0, t1);
 

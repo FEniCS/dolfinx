@@ -15,7 +15,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MultiAdaptivity::MultiAdaptivity(const ODE& ode, const Method& method)
-  : Adaptivity(ode, method), 
+  : Adaptivity(ode, method),
     timesteps(0), residuals(0), ktmp(0), f(0), rmax(0), emax(0)
 {
   // Initialize time steps and residuals
@@ -83,14 +83,14 @@ void MultiAdaptivity::update(MultiAdaptiveTimeSlab& ts, real t, bool first)
   {
     for (uint i = 0; i < ts.N; i++)
       timesteps[i] = ode.timestep(t, i, timesteps[i]);
-   
+
     _accept = true;
     return;
   }
 
   // Compute maximum residuals for all components in time slab
-  computeResiduals(ts);
-  
+  compute_residuals(ts);
+
   // Accept if error is small enough
   if ( emax <= tol )
     _accept = true;
@@ -100,31 +100,31 @@ void MultiAdaptivity::update(MultiAdaptiveTimeSlab& ts, real t, bool first)
   {
     // Previous time step
     const real k0 = timesteps[i];
-    
+
     // Include dynamic safety factor
     real used_tol = safety*tol;
-    
+
     // Compute new time step
     real k = method.timestep(residuals[i], used_tol, k0, _kmax);
 
     // Apply time step regulation
-    k = Controller::updateHarmonic(k, timesteps[i], _kmax);
-    
+    k = Controller::update_harmonic(k, timesteps[i], _kmax);
+
     // Make sure to decrease the time step if not accepted
     if ( !_accept )
     {
       k = min(k, 0.9*k0);
     }
-    
+
     // Save time step for component
     timesteps[i] = k;
   }
 
   // Propagate time steps according to dependencies
-  propagateDependencies();
+  propagate_dependencies();
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptivity::computeResiduals(MultiAdaptiveTimeSlab& ts)
+void MultiAdaptivity::compute_residuals(MultiAdaptiveTimeSlab& ts)
 {
   // Reset dof
   uint j = 0;
@@ -136,7 +136,7 @@ void MultiAdaptivity::computeResiduals(MultiAdaptiveTimeSlab& ts)
   // Reset residuals
   for (uint i = 0; i < ts.N; i++)
     residuals[i] = 0.0;
-  
+
   // Reset maximum local residual and error
   rmax = 0.0;
   emax = 0.0;
@@ -147,8 +147,8 @@ void MultiAdaptivity::computeResiduals(MultiAdaptiveTimeSlab& ts)
   for (uint s = 0; s < ts.ns; s++)
   {
     // Cover all elements in current sub slab
-    e1 = ts.coverSlab(s, e0);
-    
+    e1 = ts.cover_slab(s, e0);
+
     // Get data for sub slab
     const real a = ts.sa[s];
     const real b = ts.sb[s];
@@ -163,12 +163,12 @@ void MultiAdaptivity::computeResiduals(MultiAdaptiveTimeSlab& ts)
       // Get initial value for element
       const int ep = ts.ee[e];
       const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
-      
+
       // Evaluate right-hand side at quadrature points of element
       if ( method.type() == Method::cG )
-	ts.cGfeval(f, s, e, i, a, b, k);
+	ts.cg_feval(f, s, e, i, a, b, k);
       else
-	ts.dGfeval(f, s, e, i, a, b, k);
+	ts.dg_feval(f, s, e, i, a, b, k);
 
       // Update maximum residual for component
       const real r = method.residual(x0, ts.jx + j, f[method.nsize()], k);
@@ -187,7 +187,7 @@ void MultiAdaptivity::computeResiduals(MultiAdaptiveTimeSlab& ts)
   }
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptivity::propagateDependencies()
+void MultiAdaptivity::propagate_dependencies()
 {
   // This is a poor man's dual weighting function. For each component,
   // we look at all other components that the component in question

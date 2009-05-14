@@ -19,7 +19,7 @@
 #include <dolfin/parameter/parameters.h>
 
 namespace dolfin
-{ 
+{
   class ODE;
 
   /// This class calls SubSystemsManger to initialise GMP.
@@ -29,7 +29,7 @@ namespace dolfin
   public:
 
     GMPObject()
-    { 
+    {
 #ifdef HAS_GMP
       // Compute the number of bits needed
       const uint decimal_prec = dolfin_get("floating-point precision");
@@ -40,13 +40,13 @@ namespace dolfin
 
       // Set the default discrete tolerance
       set("ODE discrete tolerance", to_double(real_sqrt(real_epsilon())));
-      
+
       // Display number of digits
       char msg[100];
       gmp_sprintf(msg, "%Fe", real_epsilon().get_mpf_t());
-      message("Using %d bits per digit, eps = %s", mpf_get_default_prec(), msg);
+      info("Using %d bits per digit, eps = %s", mpf_get_default_prec(), msg);
 
-#else 
+#else
       if (dolfin_changed("floating-point precision"))
 	warning("Can't change floating-point precision when using type double");
 #endif

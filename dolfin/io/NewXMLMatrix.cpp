@@ -23,32 +23,32 @@ void NewXMLMatrix::start_element(const xmlChar *name, const xmlChar **attrs)
   switch ( state )
   {
   case OUTSIDE:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "matrix") == 0 )
     {
       read_matrix(name, attrs);
       state = INSIDE_MATRIX;
     }
-    
+
     break;
-    
+
   case INSIDE_MATRIX:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "row") == 0 )
     {
       read_row(name, attrs);
       state = INSIDE_ROW;
     }
-    
+
     break;
-    
+
   case INSIDE_ROW:
-    
+
     if ( xmlStrcasecmp(name, (xmlChar *) "entry") == 0 )
       read_entry(name, attrs);
-    
+
     break;
-    
+
   default:
     ;
   }
@@ -59,25 +59,25 @@ void NewXMLMatrix::end_element(const xmlChar *name)
   switch ( state )
   {
   case INSIDE_MATRIX:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "matrix") == 0 )
     {
       A.apply();
       state = DONE;
     }
-    
+
     break;
-    
+
   case INSIDE_ROW:
-    
+
     if ( xmlStrcasecmp(name,(xmlChar *) "row") == 0 )
     {
       set_row();
       state = INSIDE_MATRIX;
     }
-    
+
     break;
-    
+
   default:
     ;
   }
@@ -152,7 +152,7 @@ void NewXMLMatrix::read_entry(const xmlChar *name, const xmlChar **attrs)
   // Parse values
   const uint column = parse_uint(name, attrs, "column");
   const double value  = parse_float(name, attrs, "value");
-  
+
   // Set values
   columns.push_back(column);
   values.push_back(value);

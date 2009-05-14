@@ -45,7 +45,7 @@ namespace dolfin
 
     /// Destructor
     ~ComplexODE();
-    
+
     /// Set initial values
     virtual void z0(complex z[]) = 0;
 
@@ -54,7 +54,7 @@ namespace dolfin
 
     /// Evaluate right-hand side (mono-adaptive version)
     virtual void f(const complex z[], real t, complex y[]);
-    
+
     /// Compute product y = Mx for implicit system
     virtual void M(const complex x[], complex y[], const complex z[], real t);
 

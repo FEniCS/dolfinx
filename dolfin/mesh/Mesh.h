@@ -24,7 +24,7 @@
 
 namespace dolfin
 {
-  
+
   template <class T> class MeshFunction;
   class IntersectionDetector;
   class Function;
@@ -58,11 +58,11 @@ namespace dolfin
   /// by a call to mesh.init(1). Similarly, connectivities such as
   /// all edges connected to a given vertex must also be explicitly
   /// created (in this case by a call to mesh.init(0, 1)).
-  
+
   class Mesh : public Variable
   {
   public:
-    
+
     /// Create empty mesh
     Mesh();
 
@@ -71,7 +71,7 @@ namespace dolfin
 
     /// Create mesh from data file
     explicit Mesh(std::string filename);
-    
+
     /// Destructor
     ~Mesh();
 
@@ -79,19 +79,19 @@ namespace dolfin
     const Mesh& operator=(const Mesh& mesh);
 
     /// Return number of vertices
-    inline uint numVertices() const { return _topology.size(0); }
+    inline uint num_vertices() const { return _topology.size(0); }
 
     /// Return number of edges
-    inline uint numEdges() const { return _topology.size(1); }
+    inline uint num_edges() const { return _topology.size(1); }
 
     /// Return number of faces
-    inline uint numFaces() const { return _topology.size(2); }
+    inline uint num_faces() const { return _topology.size(2); }
 
     /// Return number of facets
-    inline uint numFacets() const { return _topology.size(_topology.dim() - 1); }
+    inline uint num_facets() const { return _topology.size(_topology.dim() - 1); }
 
     /// Return number of cells
-    inline uint numCells() const { return _topology.size(_topology.dim()); }
+    inline uint num_cells() const { return _topology.size(_topology.dim()); }
 
     /// Return coordinates of all vertices
     inline double* coordinates() { return _geometry.x(); }
@@ -104,7 +104,7 @@ namespace dolfin
 
     /// Return number of entities of given topological dimension
     inline uint size(uint dim) const { return _topology.size(dim); }
-    
+
     /// Return mesh topology (non-const version)
     inline MeshTopology& topology() { return _topology; }
 
@@ -161,7 +161,7 @@ namespace dolfin
 
     /// Move coordinates of mesh according to new boundary coordinates
     void move(BoundaryMesh& boundary, dolfin::ALEType method=hermite);
-    
+
     /// Move coordinates of mesh according to adjacent mesh with common global vertices
     void move(Mesh& mesh, dolfin::ALEType method=hermite);
 
@@ -170,25 +170,25 @@ namespace dolfin
 
     /// Smooth mesh using Lagrangian mesh smoothing
     void smooth(uint num_smoothings=1);
-    
+
     /// Compute cells intersecting point
     void intersection(const Point& p, std::vector<uint>& cells, bool fixed_mesh=true);
 
     /// Compute cells overlapping line defined by points
     void intersection(const Point& p1, const Point& p2, std::vector<uint>& cells, bool fixed_mesh=true);
-    
+
     /// Compute cells overlapping cell
     void intersection(Cell& cell, std::vector<uint>& cells, bool fixed_mesh=true);
-    
+
     /// Compute intersection with curve defined by points
     void intersection(std::vector<Point>& points, std::vector<uint>& intersection, bool fixed_mesh=true);
-    
+
     /// Compute intersection with mesh
     void intersection(Mesh& mesh, std::vector<unsigned int>& cells, bool fixed_mesh=true);
 
     /// Display mesh data
     void disp() const;
-    
+
     /// Return a short desriptive string
     std::string str() const;
 
@@ -197,7 +197,7 @@ namespace dolfin
 
     /// Define XMLHandler for use in new XML reader/writer
     typedef NewXMLMesh XMLHandler;
-    
+
   private:
 
     // Friends
@@ -217,13 +217,13 @@ namespace dolfin
 
     // Cell type
     CellType* _cell_type;
-    
+
     // Intersection detector
     IntersectionDetector* detector;
 
     // True if mesh has been ordered
     mutable bool _ordered;
-    
+
   };
 
 }

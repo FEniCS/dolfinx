@@ -11,20 +11,20 @@ using namespace dolfin;
 class TestProblem1 : public ODE
 {
 public:
-  
+
   TestProblem1() : ODE(1, 10.0)
   {
-    message("The simple test equation: u' = -1000 u, u(0) = 1.");
+    info("The simple test equation: u' = -1000 u, u(0) = 1.");
   }
 
   void u0(double* u)
   {
     u[0] = 1.0;
   }
-  
+
   void f(const double* u, double t, double* y)
   {
     y[0] = -1000.0 * u[0];
   }
-  
+
 };

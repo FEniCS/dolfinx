@@ -11,10 +11,10 @@
 
 namespace dolfin
 {
-  
+
   class MultiAdaptiveNewtonSolver;
   class MultiAdaptiveTimeSlab;
-    
+
   /// This class represents the Jacobian matrix of the system of
   /// equations defined on a multi-adaptive time slab.
 
@@ -28,7 +28,7 @@ namespace dolfin
 
     /// Destructor
     ~MultiAdaptiveJacobian();
-    
+
     /// Return number of rows (dim = 0) or columns (dim = 1)
     uint size(uint dim) const;
 
@@ -44,10 +44,10 @@ namespace dolfin
   private:
 
     // Compute product for mcG(q)
-    void cGmult(const uBLASVector& x, uBLASVector& y) const;
+    void cg_mult(const uBLASVector& x, uBLASVector& y) const;
 
     // Compute product for mdG(q)
-    void dGmult(const uBLASVector& x, uBLASVector& y) const;
+    void dg_mult(const uBLASVector& x, uBLASVector& y) const;
 
     // The Newton solver
     MultiAdaptiveNewtonSolver& newton;
@@ -60,10 +60,10 @@ namespace dolfin
 
     // Indices for first element of each row for the Jacobian df/du
     uint* Jindices;
-    
+
     // Lookup table for dependencies to components with smaller time steps
     double* Jlookup;
-    
+
   };
 
 }

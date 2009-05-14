@@ -23,7 +23,7 @@ class AlievPanfilov(ODE):
         self.k    = 8.0
         self.mu1  = 0.07
         self.mu2  = 0.3
-  
+
     def u0(self, u):
         u[0] = 0.2
         u[1] = 0.0

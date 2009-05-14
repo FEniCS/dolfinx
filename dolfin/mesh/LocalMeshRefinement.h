@@ -22,38 +22,38 @@ namespace dolfin
   {
   public:
 
-    /// Refine simplicial mesh locally by edge bisection 
-    static void refineMeshByEdgeBisection(Mesh& mesh, 
+    /// Refine simplicial mesh locally by edge bisection
+    static void refineMeshByEdgeBisection(Mesh& mesh,
                                           MeshFunction<bool>& cell_marker,
-                                          bool refine_boundary = true); 
-    
-    /// Iteratively refine mesh locally by the longest edge bisection 
-    static void refineIterativelyByEdgeBisection(Mesh& mesh, 
+                                          bool refine_boundary = true);
+
+    /// Iteratively refine mesh locally by the longest edge bisection
+    static void refineIterativelyByEdgeBisection(Mesh& mesh,
                                                  MeshFunction<bool>& cell_marker);
- 
-    /// Recursively refine mesh locally by the longest edge bisection 
+
+    /// Recursively refine mesh locally by the longest edge bisection
     /// Fast Rivara algorithm implementation with propagation MeshFunctions and
-    ///   arrays for boundary indicators  
-    static void refineRecursivelyByEdgeBisection(Mesh& mesh, 
+    ///   arrays for boundary indicators
+    static void refineRecursivelyByEdgeBisection(Mesh& mesh,
                                                  MeshFunction<bool>& cell_marker);
- 
-  private: 
+
+  private:
 
     /// Bisect edge of simplex cell
-    static void bisectEdgeOfSimplexCell(const Cell& cell, Edge& edge, 
-                                        uint new_vertex,  
-                                        MeshEditor& editor, 
+    static void bisectEdgeOfSimplexCell(const Cell& cell, Edge& edge,
+                                        uint new_vertex,
+                                        MeshEditor& editor,
                                         uint& current_cell);
- 
-    /// Iteration of iterative algorithm                                        
-    static bool iterationOfRefinement(Mesh& mesh, 
+
+    /// Iteration of iterative algorithm
+    static bool iterationOfRefinement(Mesh& mesh,
                                       MeshFunction<bool>& cell_marker,
                                       MeshFunction<uint>& bisected_edges);
 
     /// Transform MeshData
-    static void transformMeshData(Mesh& newmesh, Mesh& oldmesh, 
+    static void transformMeshData(Mesh& newmesh, Mesh& oldmesh,
                                   MeshFunction<uint>& cell_map,
-		                  std::vector<int>& facet_map);                                    
+		                  std::vector<int>& facet_map);
 
   };
 

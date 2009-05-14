@@ -3,6 +3,13 @@
 
 // Generated list of include files for PyDOLFIN
 
+// DOLFIN headers included from parameter
+%include "dolfin/parameter/Parametrized.h"
+%include "dolfin/parameter/Parameter.h"
+%include "dolfin/parameter/parameters.h"
+%include "dolfin/parameter/NewParameter.h"
+%include "dolfin/parameter/NewParameters.h"
+
 // DOLFIN headers included from common
 %include "dolfin/common/types.h"
 %include "dolfin/common/constants.h"
@@ -12,11 +19,6 @@
 %include "dolfin/common/TimeDependent.h"
 %include "dolfin/common/Variable.h"
 
-// DOLFIN headers included from parameter
-%include "dolfin/parameter/Parametrized.h"
-%include "dolfin/parameter/Parameter.h"
-%include "dolfin/parameter/parameters.h"
-
 // DOLFIN headers included from log
 %include "dolfin/log/log.h"
 %include "dolfin/log/Event.h"
@@ -25,7 +27,6 @@
 %include "dolfin/log/Table.h"
 
 // DOLFIN headers included from la
-%include "dolfin/la/enums_la.h"
 %include "dolfin/la/ublas.h"
 %include "dolfin/la/GenericTensor.h"
 %include "dolfin/la/GenericMatrix.h"
@@ -33,7 +34,9 @@
 %include "dolfin/la/PETScObject.h"
 %include "dolfin/la/uBLASFactory.h"
 %include "dolfin/la/uBLASMatrix.h"
+%include "dolfin/la/uBLASKrylovMatrix.h"
 %include "dolfin/la/PETScMatrix.h"
+%include "dolfin/la/PETScKrylovMatrix.h"
 %include "dolfin/la/EpetraMatrix.h"
 %include "dolfin/la/MTL4Matrix.h"
 %include "dolfin/la/STLMatrix.h"
@@ -156,6 +159,7 @@
 %include "dolfin/fem/BoundaryCondition.h"
 %include "dolfin/fem/DirichletBC.h"
 %include "dolfin/fem/PeriodicBC.h"
+%include "dolfin/fem/EqualityBC.h"
 %include "dolfin/fem/assemble.h"
 %include "dolfin/fem/Form.h"
 %include "dolfin/fem/Assembler.h"

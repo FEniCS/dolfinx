@@ -29,7 +29,7 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
   editor.open(*this, CellType::tetrahedron, 3, 3);
 
   // Create vertices
-  editor.initVertices((nx+1)*(ny+1)*(nz+1));
+  editor.init_vertices((nx+1)*(ny+1)*(nz+1));
   uint vertex = 0;
   for (uint iz = 0; iz <= nz; iz++)
   {
@@ -40,13 +40,13 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
       for (uint ix = 0; ix <= nx; ix++)
       {
         const double x = static_cast<double>(ix) / static_cast<double>(nx);
-        editor.addVertex(vertex++, x, y, z);
+        editor.add_vertex(vertex++, x, y, z);
       }
     }
   }
 
   // Create tetrahedra
-  editor.initCells(6*nx*ny*nz);
+  editor.init_cells(6*nx*ny*nz);
   uint cell = 0;
   for (uint iz = 0; iz < nz; iz++)
   {
@@ -63,12 +63,12 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
         const uint v6 = v2 + (nx + 1)*(ny + 1);
         const uint v7 = v3 + (nx + 1)*(ny + 1);
 
-        editor.addCell(cell++, v0, v1, v3, v7);
-        editor.addCell(cell++, v0, v1, v7, v5);
-        editor.addCell(cell++, v0, v5, v7, v4);
-        editor.addCell(cell++, v0, v3, v2, v7);
-        editor.addCell(cell++, v0, v6, v4, v7);
-        editor.addCell(cell++, v0, v2, v6, v7);
+        editor.add_cell(cell++, v0, v1, v3, v7);
+        editor.add_cell(cell++, v0, v1, v7, v5);
+        editor.add_cell(cell++, v0, v5, v7, v4);
+        editor.add_cell(cell++, v0, v3, v2, v7);
+        editor.add_cell(cell++, v0, v6, v4, v7);
+        editor.add_cell(cell++, v0, v2, v6, v7);
       }
     }
   }

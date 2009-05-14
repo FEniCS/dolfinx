@@ -29,9 +29,9 @@ NewXMLFile::NewXMLFile(const std::string filename, bool gzip)
   // Set up the output stream (to file)
   outstream = new std::ofstream();
 
-  // Set up the sax handler. 
+  // Set up the sax handler.
   sax = new xmlSAXHandler();
-  
+
   // Set up handlers for parser events
   sax->startDocument = new_sax_start_document;
   sax->endDocument   = new_sax_end_document;
@@ -45,11 +45,9 @@ NewXMLFile::NewXMLFile(const std::string filename, bool gzip)
 NewXMLFile::NewXMLFile(std::ostream& s)
   : GenericFile(""), sax(0), outstream(&s)
 {
-
-
-  // Set up the sax handler. 
+  // Set up the sax handler.
   sax = new xmlSAXHandler();
-  
+
   // Set up handlers for parser events
   sax->startDocument = new_sax_start_document;
   sax->endDocument   = new_sax_end_document;
@@ -62,7 +60,7 @@ NewXMLFile::NewXMLFile(std::ostream& s)
 //-----------------------------------------------------------------------------
 NewXMLFile::~NewXMLFile()
 {
-  delete sax; 
+  delete sax;
 
   // Only delete outstream if it is a ofstream
   std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream);
@@ -73,102 +71,132 @@ NewXMLFile::~NewXMLFile()
   }
 }
 //-----------------------------------------------------------------------------
+void NewXMLFile::validate(const std::string filename)
+{
+  xmlRelaxNGParserCtxtPtr parser;
+  xmlRelaxNGValidCtxtPtr validator;
+  xmlRelaxNGPtr schema;
+  xmlDocPtr document;
+  document = xmlParseFile(filename.c_str());
+  int ret = 1;
+  parser = xmlRelaxNGNewParserCtxt("http://fenics.org/pub/misc/dolfin.rng");
+  xmlRelaxNGSetParserStructuredErrors(parser,
+                                      (xmlStructuredErrorFunc)new_rng_parser_error,
+                                      stderr);
+  schema = xmlRelaxNGParse(parser);
+  validator = xmlRelaxNGNewValidCtxt(schema);
+  xmlRelaxNGSetValidStructuredErrors(validator,
+                                     (xmlStructuredErrorFunc)new_rng_valid_error,
+                                     stderr);
+  ret = xmlRelaxNGValidateDoc(validator, document);
+  if ( ret == 0 ) {
+    info(0, "%s validates", filename.c_str());
+  }
+  else if ( ret < 0 ) {
+    error("%s failed to load", filename.c_str());
+  }
+  else {
+    error("%s fails to validate", filename.c_str());
+  }
+  xmlRelaxNGFreeValidCtxt(validator);
+}
+//-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::vector<int>& x)
 {
-  message(1, "Reading array from file %s.", filename.c_str());
+  info(1, "Reading array from file %s.", filename.c_str());
   XMLArray xml_array(x, *this);
   XMLDolfin xml_dolfin(xml_array, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::vector<uint>& x)
 {
-  message(1, "Reading array from file %s.", filename.c_str());
+  info(1, "Reading array from file %s.", filename.c_str());
   XMLArray xml_array(x, *this);
   XMLDolfin xml_dolfin(xml_array, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::vector<double>& x)
 {
-  message(1, "Reading array from file %s.", filename.c_str());
+  info(1, "Reading array from file %s.", filename.c_str());
   XMLArray xml_array(x, *this);
   XMLDolfin xml_dolfin(xml_array, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, int>& map)
 {
-  message(1, "Reading map from file %s.", filename.c_str());
+  info(1, "Reading map from file %s.", filename.c_str());
   XMLMap xml_map(map, *this);
   XMLDolfin xml_dolfin(xml_map, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, uint>& map)
 {
-  message(1, "Reading map from file %s.", filename.c_str());
+  info(1, "Reading map from file %s.", filename.c_str());
   XMLMap xml_map(map, *this);
   XMLDolfin xml_dolfin(xml_map, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, double>& map)
 {
-  message(1, "Reading map from file %s.", filename.c_str());
+  info(1, "Reading map from file %s.", filename.c_str());
   XMLMap xml_map(map, *this);
   XMLDolfin xml_dolfin(xml_map, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, std::vector<int> >& array_map)
 {
-  message(1, "Reading array map from file %s.", filename.c_str());
+  info(1, "Reading array map from file %s.", filename.c_str());
   XMLMap xml_array_map(array_map, *this);
   XMLDolfin xml_dolfin(xml_array_map, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, std::vector<uint> >& array_map)
 {
-  message(1, "Reading array map from file %s.", filename.c_str());
+  info(1, "Reading array map from file %s.", filename.c_str());
   XMLMap xml_array_map(array_map, *this);
   XMLDolfin xml_dolfin(xml_array_map, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::operator>>(std::map<uint, std::vector<double> >& array_map)
 {
-  message(1, "Reading array map from file %s.", filename.c_str());
+  info(1, "Reading array map from file %s.", filename.c_str());
   XMLMap xml_array_map(array_map, *this);
   XMLDolfin xml_dolfin(xml_array_map, *this);
   xml_dolfin.handle();
   parse();
-  if ( !handlers.empty() ) 
+  if ( !handlers.empty() )
     error("Hander stack not empty. Something is wrong!");
 }
 //-----------------------------------------------------------------------------
@@ -239,7 +267,6 @@ void NewXMLFile::parse()
 {
   // Parse file
   xmlSAXUserParseFile(sax, (void *) this, filename.c_str());
-
 }
 //-----------------------------------------------------------------------------
 void NewXMLFile::push(XMLHandler* handler)
@@ -308,7 +335,8 @@ void dolfin::new_sax_end_document(void *ctx)
 }
 //-----------------------------------------------------------------------------
 void dolfin::new_sax_start_element(void *ctx,
-			       const xmlChar *name, const xmlChar **attrs)
+                                   const xmlChar *name,
+                                   const xmlChar **attrs)
 {
   ( (NewXMLFile*) ctx )->start_element(name, attrs);
 }
@@ -346,5 +374,36 @@ void dolfin::new_sax_fatal_error(void *ctx, const char *msg, ...)
   vsnprintf(buffer, DOLFIN_LINELENGTH, msg, args);
   error("Illegal XML data: " + std::string(buffer));
   va_end(args);
+}
+//-----------------------------------------------------------------------------
+void dolfin::new_rng_parser_error(void *user_data, xmlErrorPtr error)
+{
+  char *file = error->file;
+  char *message = error->message;
+  int line = error->line;
+  xmlNodePtr node;
+  node = (xmlNode*)error->node;
+  std::string buffer;
+  buffer = message;
+  int length = buffer.length();
+  buffer.erase(length-1);
+  if (node != NULL)
+    warning("%s:%d: element %s: Relax-NG parser error: %s",
+            file, line, node->name, buffer.c_str());
+}
+//-----------------------------------------------------------------------------
+void dolfin::new_rng_valid_error(void *user_data, xmlErrorPtr error)
+{
+  char *file = error->file;
+  char *message = error->message;
+  int line = error->line;
+  xmlNodePtr node;
+  node = (xmlNode*)error->node;
+  std::string buffer;
+  buffer = message;
+  int length = buffer.length();
+  buffer.erase(length-1);
+  warning("%s:%d: element %s: Relax-NG validity error: %s",
+          file, line, node->name, buffer.c_str());
 }
 //-----------------------------------------------------------------------------

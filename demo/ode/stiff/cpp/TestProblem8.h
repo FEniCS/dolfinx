@@ -13,11 +13,11 @@ using namespace dolfin;
 class TestProblem8 : public ODE
 {
 public:
-  
+
   TestProblem8() : ODE(3, 0.3)
   {
-    message("System of fast and slow chemical reactions, taken from the book by");
-    message("Hairer and Wanner, page 3.");
+    info("System of fast and slow chemical reactions, taken from the book by");
+    info("Hairer and Wanner, page 3.");
   }
 
   void u0(double* u)
@@ -26,12 +26,12 @@ public:
     u[1] = 0.0;
     u[2] = 0.0;
   }
-  
+
   void f(const double* u, double t, double* y)
   {
     y[0] = -0.04 * u[0] + 1.0e4 * u[1] * u[2];
     y[1] = 0.04 * u[0] - 1.0e4 * u[1] * u[2] - 3.0e7 * u[1] * u[1];
     y[2] = 3.0e7 * u[1] * u[1];
   }
-  
+
 };

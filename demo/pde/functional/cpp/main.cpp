@@ -16,7 +16,7 @@
 
 #include <dolfin.h>
 #include "EnergyNorm.h"
-  
+
 using namespace dolfin;
 
 int main()
@@ -24,7 +24,7 @@ int main()
   // The function v
   class MyFunction : public Function
   {
-  public: 
+  public:
 
     MyFunction(const FunctionSpace& V) : Function(V) {}
 
@@ -32,7 +32,7 @@ int main()
     {
       values[0] = sin(x[0]) + cos(x[1]);
     }
-    
+
   };
 
   // Define functional
@@ -48,8 +48,8 @@ int main()
   // Compute exact value
   double exact_value = 2.0 + 2.0*sin(1.0)*(1.0 - cos(1.0));
 
-  message("The energy norm of v is: %.15g", approximate_value);
-  message("It should be:            %.15g", exact_value);
-  
+  info("The energy norm of v is: %.15g", approximate_value);
+  info("It should be:            %.15g", exact_value);
+
   return 0;
 }

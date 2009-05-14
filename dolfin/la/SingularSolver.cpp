@@ -13,8 +13,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SingularSolver::SingularSolver(SolverType solver_type,
-                               PreconditionerType pc_type)
+SingularSolver::SingularSolver(std::string solver_type,
+                               std::string pc_type)
   : Parametrized(), linear_solver(solver_type, pc_type), B(0), y(0), c(0)
 {
   // Set parameters for linear solver
@@ -33,14 +33,14 @@ SingularSolver::~SingularSolver()
 dolfin::uint SingularSolver::solve(const GenericMatrix& A,
                                    GenericVector& x, const GenericVector& b)
 {
-  message("Solving singular system...");
+  info("Solving singular system...");
 
   // Initialize data structures for extended system
   init(A);
 
   // Create extended system
   create(A, b, 0);
-  
+
   // Solve extended system
   const uint num_iterations = linear_solver.solve(*B, *y, *c);
 
@@ -58,7 +58,7 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
                                    GenericVector& x, const GenericVector& b,
                                    const GenericMatrix& M)
 {
-  message("Solving singular system...");
+  info("Solving singular system...");
 
   // Initialize data structures for extended system
   init(A);
@@ -154,7 +154,7 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
   dolfin_assert(B);
   dolfin_assert(c);
 
-  message("Creating extended hopefully non-singular system...");
+  info("Creating extended hopefully non-singular system...");
 
   // Reset matrix
   B->zero();

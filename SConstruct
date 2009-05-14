@@ -4,7 +4,7 @@ import os, os.path, sys
 import warnings
 
 # Make sure that we have a good scons-version
-EnsureSConsVersion(0, 96)
+EnsureSConsVersion(0, 98, 5)
 
 # Import the local 'scons'
 sys.path.insert(0, os.path.abspath(os.path.join("scons", "simula-scons")))
@@ -20,7 +20,7 @@ env = scons.ExtendedEnvironment(ENV=os.environ)
 env["projectname"] = "dolfin"
 
 # Set version
-env["PACKAGE_VERSION"] = "0.9.1"
+env["PACKAGE_VERSION"] = "0.9.2"
 
 scons.setDefaultEnv(env)
 
@@ -62,33 +62,32 @@ options = [
     scons.PathOption("pythonExtDir", "Python extension module installation directory", 
                      scons.defaultPythonLib(prefix="$prefix", plat_specific=True)),
     # configurable options for how we want to build:
-    BoolOption("enableDebug", "Build with debug information", 1),
-    BoolOption("enableDebugUblas", "Add some extra Ublas debug information", 0),
-    BoolOption("enableOptimize", "Compile with optimization", 0),
-    BoolOption("enableDocs", "Build documentation", 0),
-    BoolOption("enableDemos", "Build demos", 0),
-    BoolOption("enableTests", "Build tests", 0),
-    BoolOption("enableCodeCoverage", "Enable code coverage", 0),
-    BoolOption("enableProjectionLibrary", "Enable projection library", 0),
-    BoolOption("enableResolveCompiler", "Run tests to verify compiler", 1),
+    BoolVariable("enableDebug", "Build with debug information", 1),
+    BoolVariable("enableDebugUblas", "Add some extra Ublas debug information", 0),
+    BoolVariable("enableOptimize", "Compile with optimization", 0),
+    BoolVariable("enableDocs", "Build documentation", 0),
+    BoolVariable("enableDemos", "Build demos", 0),
+    BoolVariable("enableTests", "Build tests", 0),
+    BoolVariable("enableCodeCoverage", "Enable code coverage", 0),
+    BoolVariable("enableResolveCompiler", "Run tests to verify compiler", 1),
     # Enable or disable external packages.
     # These will also be listed in scons.cfg files, but if they are 
     # disabled here, that will override scons.cfg. Remark that unless the
     # module is listed as OptDependencies in scons.cfg, the whole module
     # will be turned off.
-    BoolOption("enableMpi", "Compile with support for MPI", "yes"),
-    BoolOption("enablePetsc", "Compile with support for PETSc linear algebra", "yes"),
-    BoolOption("enableSlepc", "Compile with support for SLEPc", "yes"),
-    BoolOption("enableScotch", "Compile with support for SCOTCH graph partitioning", "yes"),
-    BoolOption("enableGts", "Compile with support for GTS", "yes"),
-    BoolOption("enableUmfpack", "Compile with support for UMFPACK", "yes"),
-    BoolOption("enableTrilinos", "Compile with support for Trilinos", "yes"),
-    BoolOption("enableCholmod", "Compile with support for CHOLMOD", "yes"),
-    BoolOption("enableMtl4", "Compile with support for MTL4", "yes"),
-    BoolOption("enableParmetis", "Compile with support for ParMETIS", "yes"),
-    BoolOption("enableGmp", "Compile with support for GMP", "no"),
-    BoolOption("enablePython", "Compile the Python wrappers", "yes"),
-    BoolOption("enablePydolfin", "Compile the Python wrappers of DOLFIN *deprecated*", "yes"),
+    BoolVariable("enableMpi", "Compile with support for MPI", "yes"),
+    BoolVariable("enablePetsc", "Compile with support for PETSc linear algebra", "yes"),
+    BoolVariable("enableSlepc", "Compile with support for SLEPc", "yes"),
+    BoolVariable("enableScotch", "Compile with support for SCOTCH graph partitioning", "yes"),
+    BoolVariable("enableGts", "Compile with support for GTS", "yes"),
+    BoolVariable("enableUmfpack", "Compile with support for UMFPACK", "yes"),
+    BoolVariable("enableTrilinos", "Compile with support for Trilinos", "yes"),
+    BoolVariable("enableCholmod", "Compile with support for CHOLMOD", "yes"),
+    BoolVariable("enableMtl4", "Compile with support for MTL4", "yes"),
+    BoolVariable("enableParmetis", "Compile with support for ParMETIS", "yes"),
+    BoolVariable("enableGmp", "Compile with support for GMP", "no"),
+    BoolVariable("enablePython", "Compile the Python wrappers", "yes"),
+    BoolVariable("enablePydolfin", "Compile the Python wrappers of DOLFIN *deprecated*", "yes"),
     # some of the above may need extra options (like petscDir), should we
     # try to get that from pkg-config?
     # It may be neccessary to specify the installation path to the above packages.
@@ -107,9 +106,9 @@ options = [
     PathOption("withLibxml2Dir", "Specify path to libXML2", None),
     #
     # a few more options originally from PyCC:
-    #BoolOption("autoFetch", "Automatically fetch datafiles from (password protected) SSH repository", 0),
-    BoolOption("cacheOptions", "Cache command-line options for later invocations", 1),
-    BoolOption("veryClean", "Remove the sconsign file during clean, must be set during regular build", 0),
+    #BoolVariable("autoFetch", "Automatically fetch datafiles from (password protected) SSH repository", 0),
+    BoolVariable("cacheOptions", "Cache command-line options for later invocations", 1),
+    BoolVariable("veryClean", "Remove the sconsign file during clean, must be set during regular build", 0),
     # maybe we should do this more cleverly. The default in dolfin now is
     # to use mpicxx if that is available...:
     #("CXX", "Set C++ compiler", scons.defaultCxxCompiler()),
@@ -204,10 +203,6 @@ else:
   # FIXME: why are we optimizing when enableOptimize is False?
   env.Append(CXXFLAGS=" -O2")
 
-# Set ENABLE_PROJECTION_LIBRARY if enabled
-if env["enableProjectionLibrary"]:
-  env.Append(CXXFLAGS=" -DENABLE_PROJECTION_LIBRARY")
-
 # Not sure we need this - but lets leave it for completeness sake - if people
 # use if for PyCC, and know that dolfin use the same system, they will expect
 # it to be here. We should probably discuss whether that is a good argument or
@@ -265,16 +260,25 @@ if not env["CXX"]:
 #doFetch = "fetch" in COMMAND_LINE_TARGETS or (env["autoFetch"]) and not env.GetOption("clean")
 #env["doFetch"] = doFetch
 
+# data dicitionary:
+buildDataHash = {"shlibs": [], "extModules": [], "docs": [], "headers": [],
+                 "pythonModules": [], "pythonScripts": [], "pkgconfig": [],
+                 "pythonPackageDirs": [], "data": [], "tests": [], "progs": [],
+                 "demos": [], "dolfin_header": "", "swigfiles": []}
+
 # -----------------------------------------------------------------------------
 # Call the main SConscript in the project directory
 # -----------------------------------------------------------------------------
-try:
-  # Invoke the SConscript as if it was situated in the build directory, this
-  # tells SCons to build beneath this
-  buildDataHash = env.SConscript(os.path.join(env["projectname"], "SConscript"), exports=["env", "configure"])
-except PkgconfigError, err:
-  sys.stderr.write("%s\n" % err)
-  Exit(1)
+if not env.GetOption('help'):
+  try:
+    # Invoke the SConscript as if it was situated in the build directory, this
+    # tells SCons to build beneath this
+    buildDataHash = \
+        env.SConscript(os.path.join(env["projectname"], "SConscript"),
+                       exports=["env", "configure", "buildDataHash"])
+  except PkgconfigError, err:
+    sys.stderr.write("%s\n" % err)
+    Exit(1)
 
 # -----------------------------------------------------------------------------
 # Set up build targets
@@ -410,16 +414,14 @@ env.Command("runtests", buildDataHash["shlibs"] + buildDataHash["extModules"],
 scons.createHelperFile(env)
 
 def help():
-    # TODO: The message below should only be printed if there were no
-    # errors running scons. In SCons 0.98 we can do this by checking
-    # if GetBuildFailures() returns an empty list.
-    #from SCons.Script import GetBuildFailures
-    #if GetBuildFailures():
-    #    # There have been errors. Write out error summary or just
-    #    # return and let SCons handle the error message.
-    #    return
+    from SCons.Script import GetBuildFailures
+    build_failures = GetBuildFailures()
+    if build_failures:
+        for bf in build_failures:
+            print "%s failed: %s" % (bf.node, bf.errstr)
+        return
     msg = """---------------------------------------------------------
-If there were no errors, run
+Compilation of DOLFIN finished. Now run
 
     scons install
 
@@ -441,19 +443,17 @@ demo by running
     print msg
 
 def help_install():
-    # TODO: The message below should only be printed if there were no
-    # errors running scons. In SCons 0.98 we can do this by checking
-    # if GetBuildFailures() returns an empty list.
-    #from SCons.Script import GetBuildFailures
-    #if GetBuildFailures():
-    #    # There have been errors. Write out error summary or just
-    #    # return and let SCons handle the error message.
-    #    return
-    #msg = """---------------------------------------------------------
-#DOLFIN successfully compiled and installed in\n\n  %s\n""" % prefix
+    from SCons.Script import GetBuildFailures
+    build_failures = GetBuildFailures()
+    if build_failures:
+        for bf in build_failures:
+            print "%s failed: %s" % (bf.node, bf.errstr)
+        return
+    msg = """---------------------------------------------------------
+DOLFIN successfully compiled and installed in\n\n  %s\n\n""" % prefix
     # Check that the installation directory is set up correctly
     if not os.path.join(env.subst(env["prefix"]),"bin") in os.environ["PATH"]:
-        msg = """---------------------------------------------------------
+        msg += """---------------------------------------------------------
 Warning: Installation directory is not in PATH.
 
 To compile a program against DOLFIN, you need to update
@@ -471,12 +471,12 @@ Windows users can simply run the file dolfin.bat:
 This will update the values for the environment variables
 PATH, LD_LIBRARY_PATH, PKG_CONFIG_PATH and PYTHONPATH.
 ---------------------------------------------------------"""
-        print msg
-    #msg += "\n---------------------------------------------------------"
-    #print msg
+    else:
+        msg += "---------------------------------------------------------"
+    print msg
 
 # Print some help text at the end
-if not env.GetOption("clean"):
+if not env.GetOption("clean") and not env.GetOption('help'):
     import atexit
     if 'install' in COMMAND_LINE_TARGETS:
         atexit.register(help_install)

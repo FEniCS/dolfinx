@@ -17,60 +17,47 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void dolfin::solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b,
-                   SolverType solver_type, PreconditionerType pc_type)
+                   std::string solver_type, std::string pc_type)
 {
   Timer timer("Solving linear system");
   LinearSolver solver(solver_type, pc_type);
   solver.solve(A, x, b);
 }
-//-----------------------------------------------------------------------------  
-double dolfin::residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b)
+//-----------------------------------------------------------------------------
+double dolfin::residual(const GenericMatrix& A, const GenericVector& x, 
+                        const GenericVector& b)
 {
   GenericVector* y = A.factory().create_vector();
   A.mult(x, *y);
   *y -= b;
-  const double norm = y->norm(l2);
+  const double norm = y->norm("l2");
   delete y;
   return norm;
 }
 //-----------------------------------------------------------------------------
-double dolfin::normalize(GenericVector& x, NormalizationType normalization_type)
+double dolfin::normalize(GenericVector& x, std::string normalization_type)
 {
-  switch (normalization_type)
+  if (normalization_type == "l2")
   {
-  case normalize_l2norm:
-    {
-      const double c = x.norm(l2);
-      x /= c;
-      return c;
-    }
-    break;
-  case normalize_average:
-    {
-      GenericVector* y = x.factory().create_vector();
-      y->resize(x.size());
-      (*y) = 1.0 / static_cast<double>(x.size());
-      const double c = x.inner(*y);
-      (*y) = c;
-      x -= (*y);
-      delete y;
-      return c;
-    }
-    break;
-  default:
-    error("Unknown normalization type.");
+    const double c = x.norm("l2");
+    x /= c;
+    return c;
   }
+  else if (normalization_type == "average")
+  {
+    GenericVector* y = x.factory().create_vector();
+    y->resize(x.size());
+    (*y) = 1.0 / static_cast<double>(x.size());
+    const double c = x.inner(*y);
+    (*y) = c;
+    x -= (*y);
+    delete y;
+    return c;
+  }
+  else
+    error("Unknown normalization type.");
 
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-/*
-void dolfin::solve(const PETScKrylovMatrix& A,
-                   PETScVector& x,
-                   const PETScVector& b)
-{
-  PETScLUSolver solver;
-  solver.solve(A, x, b);
-}
-*/
-//-----------------------------------------------------------------------------
+

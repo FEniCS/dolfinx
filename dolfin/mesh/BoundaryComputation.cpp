@@ -22,25 +22,25 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void BoundaryComputation::computeBoundary(const Mesh& mesh, BoundaryMesh& boundary)
+void BoundaryComputation::compute_boundary(const Mesh& mesh, BoundaryMesh& boundary)
 {
   // We iterate over all facets in the mesh and check if they are on
   // the boundary. A facet is on the boundary if it is connected to
   // exactly one cell.
 
-  message(1, "Computing boundary mesh.");
+  info(1, "Computing boundary mesh.");
 
   // Open boundary mesh for editing
   const uint D = mesh.topology().dim();
   MeshEditor editor;
-  editor.open(boundary, mesh.type().facetType(),
+  editor.open(boundary, mesh.type().facet_type(),
 	      D - 1, mesh.geometry().dim());
 
   // Generate facet - cell connectivity if not generated
   mesh.init(D - 1, D);
 
   // Temporary array for assignment of indices to vertices on the boundary
-  const uint num_vertices = mesh.numVertices();
+  const uint num_vertices = mesh.num_vertices();
   std::vector<uint> boundary_vertices(num_vertices);
   std::fill(boundary_vertices.begin(), boundary_vertices.end(), num_vertices);
 
@@ -50,7 +50,7 @@ void BoundaryComputation::computeBoundary(const Mesh& mesh, BoundaryMesh& bounda
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
-    if (f->numEntities(D) == 1)
+    if (f->num_entities(D) == 1)
     {
       // Count boundary vertices and assign indices
       for (VertexIterator v(*f); !v.end(); ++v)
@@ -64,10 +64,10 @@ void BoundaryComputation::computeBoundary(const Mesh& mesh, BoundaryMesh& bounda
       num_boundary_cells++;
     }
   }
-  
+
   // Specify number of vertices and cells
-  editor.initVertices(num_boundary_vertices);
-  editor.initCells(num_boundary_cells);
+  editor.init_vertices(num_boundary_vertices);
+  editor.init_cells(num_boundary_cells);
 
   // Initialize mapping from vertices in boundary to vertices in mesh
   MeshFunction<uint>* vertex_map = 0;
@@ -77,7 +77,7 @@ void BoundaryComputation::computeBoundary(const Mesh& mesh, BoundaryMesh& bounda
     dolfin_assert(vertex_map);
     vertex_map->init(boundary, 0, num_boundary_vertices);
   }
-  
+
   // Initialize mapping from cells in boundary to facets in mesh
   MeshFunction<uint>* cell_map = 0;
   if (num_boundary_cells > 0)
@@ -91,24 +91,24 @@ void BoundaryComputation::computeBoundary(const Mesh& mesh, BoundaryMesh& bounda
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const uint vertex_index = boundary_vertices[v->index()];
-    if ( vertex_index != mesh.numVertices() )
+    if ( vertex_index != mesh.num_vertices() )
     {
       // Create mapping from boundary vertex to mesh vertex if requested
       if ( vertex_map )
         vertex_map->set(vertex_index, v->index());
-      
+
       // Add vertex
-      editor.addVertex(vertex_index, v->point());
+      editor.add_vertex(vertex_index, v->point());
     }
   }
 
   // Create cells (facets)
-  std::vector<uint> cell(boundary.type().numVertices(boundary.topology().dim()));
+  std::vector<uint> cell(boundary.type().num_vertices(boundary.topology().dim()));
   uint current_cell = 0;
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
-    if (f->numEntities(D) == 1)
+    if (f->num_entities(D) == 1)
     {
       // Compute new vertex numbers for cell
       const uint* vertices = f->entities(0);
@@ -123,7 +123,7 @@ void BoundaryComputation::computeBoundary(const Mesh& mesh, BoundaryMesh& bounda
         cell_map->set(current_cell, f->index());
 
       // Add cell
-      editor.addCell(current_cell++, cell);
+      editor.add_cell(current_cell++, cell);
     }
   }
 
@@ -139,11 +139,11 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices, const Facet& face
   // Get the vertex opposite to the facet (the one we remove)
   uint vertex = 0;
   const Cell cell(mesh, facet.entities(mesh.topology().dim())[0]);
-  for (uint i = 0; i < cell.numEntities(0); i++)
+  for (uint i = 0; i < cell.num_entities(0); i++)
   {
     bool not_in_facet = true;
     vertex = cell.entities(0)[i];
-    for (uint j = 0; j < facet.numEntities(0); j++)
+    for (uint j = 0; j < facet.num_entities(0); j++)
     {
       if (vertex == facet.entities(0)[j])
       {
@@ -157,15 +157,15 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices, const Facet& face
   const Point p = mesh.geometry().point(vertex);
 
   // Check orientation
-  switch (mesh.type().cellType())
+  switch (mesh.type().cell_type())
   {
   case CellType::interval:
     // Do nothing
     break;
   case CellType::triangle:
     {
-      dolfin_assert(facet.numEntities(0) == 2);
-      
+      dolfin_assert(facet.num_entities(0) == 2);
+
       Point p0 = mesh.geometry().point(facet.entities(0)[0]);
       Point p1 = mesh.geometry().point(facet.entities(0)[1]);
       Point v = p1 - p0;
@@ -181,8 +181,8 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices, const Facet& face
     break;
   case CellType::tetrahedron:
     {
-      dolfin_assert(facet.numEntities(0) == 3);
-    
+      dolfin_assert(facet.num_entities(0) == 3);
+
       Point p0 = mesh.geometry().point(facet.entities(0)[0]);
       Point p1 = mesh.geometry().point(facet.entities(0)[1]);
       Point p2 = mesh.geometry().point(facet.entities(0)[2]);

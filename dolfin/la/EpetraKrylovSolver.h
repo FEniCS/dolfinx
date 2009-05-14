@@ -12,10 +12,9 @@
 
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
-#include "enums_la.h"
 #include "EpetraPreconditioner.h"
 
-namespace dolfin 
+namespace dolfin
 {
 
   /// Forward declarations
@@ -28,17 +27,17 @@ namespace dolfin
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of Epetra.
-  
+
   class EpetraKrylovSolver : public GenericLinearSolver
   {
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    EpetraKrylovSolver(dolfin::SolverType method=default_solver,
-                       dolfin::PreconditionerType pc=default_pc);
+    EpetraKrylovSolver(std::string method = "default",
+                       std::string pc_type = "default");
 
     /// Create Krylov solver for a particular method and EpetraPreconditioner
-    EpetraKrylovSolver(dolfin::SolverType method, EpetraPreconditioner& prec);
+    EpetraKrylovSolver(std::string method, EpetraPreconditioner& prec);
 
     /// Destructor
     ~EpetraKrylovSolver();
@@ -48,20 +47,24 @@ namespace dolfin
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
-    
+
     /// Display solver data
     void disp() const;
 
   private:
 
-    SolverType         method; 
-    PreconditionerType pc_type; 
-    EpetraPreconditioner* prec; 
+    // Solver type
+    std::string method;
+
+    // Preconditioner type
+    std::string pc_type;
+
+    EpetraPreconditioner* prec;
 
   };
 
 }
 
-#endif 
+#endif
 
-#endif 
+#endif
