@@ -35,7 +35,8 @@ FunctionSpace::FunctionSpace(const Mesh& mesh,
     _element(reference_to_no_delete_pointer(element)),
     _dofmap(reference_to_no_delete_pointer(dofmap)),
     _restriction(static_cast<MeshFunction<bool>*>(0)),
-    scratch(element), intersection_detector(0)
+    scratch(element), intersection_detector(0),
+    parallel(MPI::num_processes() > 1)
 {
   // Do nothing
 }
@@ -45,7 +46,8 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
                              boost::shared_ptr<const DofMap> dofmap)
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0)),
-    scratch(*element), intersection_detector(0)
+    scratch(*element), intersection_detector(0),
+    parallel(MPI::num_processes() > 1)
 {
   // Do nothing
 }
@@ -57,14 +59,18 @@ FunctionSpace::FunctionSpace(Mesh& mesh,
     _element(reference_to_no_delete_pointer(element)),
     _dofmap(reference_to_no_delete_pointer(dofmap)),
     _restriction(static_cast<MeshFunction<bool>*>(0)),
-    scratch(element), intersection_detector(0)
+    scratch(element), intersection_detector(0),
+    parallel(MPI::num_processes() > 1)
 {
-  if (MPI::num_processes() > 1)
+  for (uint d = 1; d < mesh.topology().dim(); ++d)
   {
-    for (uint d = 1; d < mesh.topology().dim(); ++d)
-      if (_dofmap->needs_mesh_entities(d) && MPI::num_processes() > 1)
+    if (_dofmap->needs_mesh_entities(d))
+    {
+      mesh.init(d);
+      if (parallel) 
         MeshPartitioning::number_entities(mesh, d);
-  }  
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
@@ -72,14 +78,20 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
                              boost::shared_ptr<const DofMap> dofmap)
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0)),
-    scratch(*element), intersection_detector(0)
+    scratch(*element), intersection_detector(0),
+    parallel(MPI::num_processes() > 1)
 {
-  if (MPI::num_processes() > 1)
+  for (uint d = 1; d < (*mesh).topology().dim(); ++d)
   {
-    for (uint d = 1; d < mesh->topology().dim(); ++d)
-      if (_dofmap->needs_mesh_entities(d) && MPI::num_processes() > 1)
-        MeshPartitioning::number_entities(*mesh, d);
+    if (_dofmap->needs_mesh_entities(d))
+    {
+      (*mesh).init(d);
+      if (parallel) 
+        MeshPartitioning::number_entities((*mesh), d);
+    }
   }
+  //info("size of num global entities is %d", (*mesh).data().array("num global entities")->size());
+  //info("num global entities[0] is %d", (*(*mesh).data().array("num global entities"))[0]);
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(const FunctionSpace& V)
@@ -89,6 +101,8 @@ FunctionSpace::FunctionSpace(const FunctionSpace& V)
   _element = V._element;
   _dofmap  = V._dofmap;
   _restriction = V._restriction;
+  parallel = V.parallel;
+
 
   // Reinitialize scratch space and intersection detector
   scratch.init(*_element);

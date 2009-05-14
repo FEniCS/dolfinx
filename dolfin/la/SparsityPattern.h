@@ -106,6 +106,9 @@ namespace dolfin
     //range -array of size + 1 where size is num_processes + 1.
     //range[rank], range[rank+1] is the range for processor
     uint* range;
+
+    // True if running in parallel
+    bool parallel;
   };
 }
 #endif
