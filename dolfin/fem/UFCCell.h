@@ -31,20 +31,17 @@ namespace dolfin
     /// Create emtpy UFC cell
     UFCCell() : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0), parallel(MPI::num_processes() > 1) 
     {
-      info("Calling init from UFCCell empty constructor");
     }
 
     /// Create UFC cell from DOLFIN cell
     UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0), parallel(MPI::num_processes() > 1)
     {
-      info("Calling init from UFCCell cell constructor");
       init(cell);
     }
 
     /// Create UFC cell for first DOLFIN cell in mesh
     UFCCell(const Mesh& mesh) : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0), parallel(MPI::num_processes() > 1)
     {
-      info("Calling init from UFCCell mesh constructor");
       CellIterator cell(mesh);
       init(*cell);
     }
