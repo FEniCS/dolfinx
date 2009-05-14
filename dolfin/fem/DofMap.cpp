@@ -153,6 +153,7 @@ void DofMap::init(const Mesh& mesh)
   if (!mesh.ordered())
     error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
 
+  /*
   // Initialize mesh entities used by dof map
   for (uint d = 0; d <= mesh.topology().dim(); d++)
     if (ufc_dof_map->needs_mesh_entities(d))
@@ -161,6 +162,7 @@ void DofMap::init(const Mesh& mesh)
       if (d > 0 && parallel)
         MeshPartitioning::number_entities(const_cast<Mesh&>(mesh), d);
     }
+    */
 
   // Initialize UFC mesh data (must be done after entities are created)
   ufc_mesh.init(mesh);

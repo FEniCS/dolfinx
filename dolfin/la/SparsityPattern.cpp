@@ -16,7 +16,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern(uint M, uint N) : range(0)
+SparsityPattern::SparsityPattern(uint M, uint N) : range(0), parallel(MPI::num_processes() > 1)
 {
   uint dims[2];
   dims[0] = M;
@@ -24,7 +24,7 @@ SparsityPattern::SparsityPattern(uint M, uint N) : range(0)
   init(2, dims);
 }
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern(uint M) : range(0)
+SparsityPattern::SparsityPattern(uint M) : range(0), parallel(MPI::num_processes() > 1)
 {
   uint dims[2];
   dims[0] = M;
@@ -32,7 +32,7 @@ SparsityPattern::SparsityPattern(uint M) : range(0)
   init(1, dims);
 }
 //-----------------------------------------------------------------------------
-  SparsityPattern::SparsityPattern() : range(0)
+  SparsityPattern::SparsityPattern() : range(0), parallel(MPI::num_processes() > 1)
 {
   dim[0] = 0;
   dim[1] = 0;
@@ -54,6 +54,13 @@ void SparsityPattern::init(uint rank, const uint* dims)
     dim[i] = dims[i];
   sparsity_pattern.clear();
   sparsity_pattern.resize(dim[0]);
+  if (parallel)
+  {
+    o_sparsity_pattern.clear();
+    o_sparsity_pattern.resize(dim[0]);
+    info("Calling init_range() from SparsityPatter::pinit()");
+    init_range();
+  }
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::pinit(uint rank, const uint* dims)
@@ -72,6 +79,10 @@ void SparsityPattern::pinit(uint rank, const uint* dims)
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(uint m, const uint* rows, uint n, const uint* cols)
 {
+  if (parallel)
+  {
+    error("Implement me!");
+  }
   for (uint i = 0; i < m; ++i)
     for (uint j = 0; j < n; ++j)
     {
@@ -94,7 +105,7 @@ void SparsityPattern::pinsert(const uint* num_rows, const uint * const * rows)
 
   uint process = dolfin::MPI::process_number();
 
-  for (unsigned int i = 0; i<num_rows[0];++i)
+  for (unsigned int i = 0; i < num_rows[0];++i)
   {
     const uint global_row = rows[0][i];
     // If not in a row "owned" by this processor
@@ -150,7 +161,7 @@ void SparsityPattern::numNonZeroPerRow(uint process_number, uint d_nzrow[], uint
 
   // Compute number of nonzeros per row diagonal and off-diagonal
   uint offset = range[process_number];
-  for(uint i=0; i+offset<range[process_number+1]; ++i)
+  for(uint i = 0; i+offset<range[process_number+1]; ++i)
   {
     d_nzrow[i] = sparsity_pattern[i+offset].size();
     o_nzrow[i] = o_sparsity_pattern[i+offset].size();
@@ -228,8 +239,8 @@ void SparsityPattern::init_range()
 
   for(uint p=0; p<num_procs; ++p)
   {
-    info("range[%d] = %d", p+1, range[p+1]);
     range[p+1] = range[p] + dim[0]/num_procs + ((dim[0]%num_procs) > p ? 1 : 0);
+    info("range[%d] = %d", p+1, range[p+1]);
   }
 }
 //-----------------------------------------------------------------------------

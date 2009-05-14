@@ -168,6 +168,9 @@ namespace dolfin
     // Intersection detector, used for evaluation at arbitrary points
     mutable IntersectionDetector* intersection_detector;
 
+    // True if running in parallel
+    bool parallel;
+
   };
 
 }
