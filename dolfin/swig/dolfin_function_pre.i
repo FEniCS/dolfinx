@@ -1,3 +1,8 @@
+// Ignoring the const Mesh constructor of FunctionSpace
+%ignore dolfin::FunctionSpace::FunctionSpace(const Mesh &,
+	                                     const FiniteElement &,
+                                             const DofMap &);
+
 // Modifying the interface of Function
 %rename(_sub) dolfin::Function::operator[];
 %rename(assign) dolfin::Function::operator=;
