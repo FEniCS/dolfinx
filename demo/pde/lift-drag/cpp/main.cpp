@@ -39,15 +39,14 @@ int main()
   // Read mesh from file
   Mesh mesh("../mesh.xml.gz");
 
-  PressureFunctionSpace Vp(mesh);
-
   // Read velocity field from file
+  Pressure::FunctionSpace Vp(mesh);
   Function p(Vp, "../pressure.xml.gz");
 
   // Functionals for lift and drag
   FacetNormal n;
-  LiftFunctional L(p, n);
-  DragFunctional D(p, n);
+  Lift::Functional L(p, n);
+  Drag::Functional D(p, n);
 
   // Assemble functionals over sub domain
   Fish fish;
