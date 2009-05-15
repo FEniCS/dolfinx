@@ -21,18 +21,8 @@ int main(int argc, char *argv[])
   // Read mesh
   Mesh mesh("../mesh.xml.gz");
 
-  //mesh.init(1);
-
-  info("%d", mesh.num_vertices());
-  info("%d", mesh.num_edges());
-  info("%d", 2*(mesh.num_vertices() + mesh.num_edges()));
-
   // Create velocity FunctionSpace
   Velocity::FunctionSpace V_u(mesh);
-
-  info("%d", mesh.num_vertices());
-  info("%d", mesh.num_edges());
-  info("%d", 2*(mesh.num_vertices() + mesh.num_edges()));
 
   // Create velocity function
   Function velocity(V_u, "../velocity.xml.gz");
@@ -41,7 +31,7 @@ int main(int argc, char *argv[])
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
 
   // Create function space
-  AdvectionDiffusion::BilinearForm::TrialSpace V(mesh);
+  AdvectionDiffusion::FunctionSpace V(mesh);
 
   // Source term and initial condition
   Constant f(0.0);
@@ -82,7 +72,7 @@ int main(int argc, char *argv[])
 
   // Time-stepping
   Progress p("Time-stepping");
-  while ( t < T )
+  while (t < T)
   {
     // Assemble vector and apply boundary conditions
     assemble(b, L);
