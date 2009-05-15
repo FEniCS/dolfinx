@@ -71,7 +71,7 @@ int main()
 
   // Read mesh and create function space
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
-  ElasticityFunctionSpace V(mesh);
+  Elasticity::FunctionSpace V(mesh);
 
   // Create right-hand side
   Constant f(3, 0.0);
@@ -98,9 +98,9 @@ int main()
   Constant lambda(E*nu / ((1 + nu)*(1 - 2*nu)));
 
   // Set up PDE (symmetric)
-  ElasticityBilinearForm a(V, V);
+  Elasticity::BilinearForm a(V, V);
   a.mu = mu; a.lmbda = lambda;
-  ElasticityLinearForm L(V);
+  Elasticity::LinearForm L(V);
   L.f = f;
   VariationalProblem pde(a, L, bcs);
 

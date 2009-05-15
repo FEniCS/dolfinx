@@ -67,13 +67,13 @@ int main()
   Function J;
 
   // Define function space and boundary condition
-  EddyCurrentsFunctionSpace V(mesh);
+  EddyCurrents::FunctionSpace V(mesh);
   DirichletBoundary boundary;
   DirichletBC bc(V, zero, boundary);
 
   // Use forms to define variational problem
-  EddyCurrentsBilinearForm a(V,V);
-  EddyCurrentsLinearForm L(V);
+  EddyCurrents::BilinearForm a(V,V);
+  EddyCurrents::LinearForm L(V);
   L.dbdt = dbdt;
   VariationalProblem problem (a, L,  bc);
 
@@ -81,9 +81,9 @@ int main()
   problem.solve(T);
 
   // Define variational problem for current density (J)
-  CurrentDensityFunctionSpace V1(mesh);
-  CurrentDensityBilinearForm a1(V1,V1);
-  CurrentDensityLinearForm L1(V1);
+  CurrentDensity::FunctionSpace V1(mesh);
+  CurrentDensity::BilinearForm a1(V1,V1);
+  CurrentDensity::LinearForm L1(V1);
   L1.T = T;
   VariationalProblem problem1(a1, L1);
 
