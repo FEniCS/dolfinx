@@ -17,6 +17,6 @@ U = TrialFunction(element)
 # for matrix assembly
 
 def symgrad(v):
-    return 0.5 * (grad(v) + transp(grad(v)))
+    return 0.5 * (grad(v) + grad(v).T)
 
-a = dot(symgrad(v), symgrad(U))*dx
+a = inner(symgrad(v), symgrad(U))*dx

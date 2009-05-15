@@ -8,4 +8,4 @@ element = vector + scalar
 h = Function(scalar)
 delta = 0.2*h*h
 
-a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u) + delta*dot(grad(q), grad(p)))*dx
+a = (inner(grad(v), grad(u)) - div(v)*p + q*div(u) + delta*inner(grad(q), grad(p)))*dx

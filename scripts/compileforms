@@ -18,7 +18,6 @@ for root, dirs, files in os.walk(cwd):
 
     # Check for .ufl files
     formfiles = [f for f in files if len(f) > 4 and f[-4:] == ".ufl"]
-    print 
     if len(formfiles) == 0:
         continue
 
