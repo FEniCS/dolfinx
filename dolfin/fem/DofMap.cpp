@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg and Garth N. Wells.
+// Copyright (C) 2007-2009 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Martin Alnes, 2008
@@ -24,12 +24,62 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh)
+  : dof_map(0), dof_map_size(0), cell_map(0),
+    ufc_dof_map(reference_to_no_delete_pointer(dof_map)),
+    num_cells(mesh.num_cells()), partitions(0), _offset(0),
+    dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
+{
+  // Generate and number all mesh entities
+  for (uint d = 1; d <= mesh.topology().dim(); ++d)
+  {
+    if (ufc_dof_map->needs_mesh_entities(d))
+    {
+      mesh.init(d);
+      if (parallel) 
+        MeshPartitioning::number_entities(mesh, d);
+    }
+  }
+
+  // Initialize dof map
+  init(mesh);
+}
+//-----------------------------------------------------------------------------
+DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, Mesh& mesh)
+  : dof_map(0), dof_map_size(0), cell_map(0),
+    ufc_dof_map(dof_map),
+    num_cells(mesh.num_cells()), partitions(0), _offset(0),
+    dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
+{
+  // Generate and number all mesh entities
+  for (uint d = 1; d <= mesh.topology().dim(); ++d)
+  {
+    if (ufc_dof_map->needs_mesh_entities(d))
+    {
+      mesh.init(d);
+      if (parallel) 
+        MeshPartitioning::number_entities(mesh, d);
+    }
+  }
+
+  // Initialize dof map
+  init(mesh);
+}
+//-----------------------------------------------------------------------------
 DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh)
   : dof_map(0), dof_map_size(0), cell_map(0),
     ufc_dof_map(reference_to_no_delete_pointer(dof_map)),
     num_cells(mesh.num_cells()), partitions(0), _offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
+  // Check that we have all mesh entities (const so we can't generate them)
+  for (uint d = 0; d <= mesh.topology().dim(); ++d)
+  {
+    if (ufc_dof_map->needs_mesh_entities(d) && mesh.num_entities(d) == 0)
+      error("Unable to create function space, missing entities of dimension %d. Try calling mesh.init(%d).", d, d);
+  }
+
+  // Initialize dof map
   init(mesh);
 }
 //-----------------------------------------------------------------------------
@@ -39,6 +89,14 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh)
     num_cells(mesh.num_cells()), partitions(0), _offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
+  // Check that we have all mesh entities (const so we can't generate them)
+  for (uint d = 0; d <= mesh.topology().dim(); ++d)
+  {
+    if (ufc_dof_map->needs_mesh_entities(d) && mesh.num_entities(d) == 0)
+      error("Unable to create function space, missing entities of dimension %d. Try calling mesh.init(%d).", d, d);
+  }
+
+  // Initialize dof map
   init(mesh);
 }
 //-----------------------------------------------------------------------------

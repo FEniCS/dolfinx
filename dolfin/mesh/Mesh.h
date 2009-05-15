@@ -8,7 +8,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2009-03-02
+// Last changed: 2009-05-15
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -92,6 +92,9 @@ namespace dolfin
 
     /// Return number of cells
     inline uint num_cells() const { return _topology.size(_topology.dim()); }
+
+    /// Return number of entities of dimension d
+    inline uint num_entities(uint d) const { return _topology.size(d); }
 
     /// Return coordinates of all vertices
     inline double* coordinates() { return _geometry.x(); }

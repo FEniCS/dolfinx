@@ -28,16 +28,16 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
   switch (D)
   {
   case 1:
-    V    = new Poisson1DFunctionSpace(mesh);
-    form = new Poisson1DBilinearForm(*V, *V);
+    V    = new Poisson1D::FunctionSpace(mesh);
+    form = new Poisson1D::BilinearForm(*V, *V);
     break;
   case 2:
-    V    = new Poisson2DFunctionSpace(mesh);
-    form = new Poisson2DBilinearForm(*V, *V);
+    V    = new Poisson2D::FunctionSpace(mesh);
+    form = new Poisson2D::BilinearForm(*V, *V);
     break;
   case 3:
-    V    = new Poisson3DFunctionSpace(mesh);
-    form = new Poisson3DBilinearForm(*V, *V);
+    V    = new Poisson3D::FunctionSpace(mesh);
+    form = new Poisson3D::BilinearForm(*V, *V);
     break;
   default:
     error("Illegal mesh dimension %d for harmonic mesh smoothing.", D);

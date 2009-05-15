@@ -21,8 +21,18 @@ int main(int argc, char *argv[])
   // Read mesh
   Mesh mesh("../mesh.xml.gz");
 
+  //mesh.init(1);
+
+  info("%d", mesh.num_vertices());
+  info("%d", mesh.num_edges());
+  info("%d", 2*(mesh.num_vertices() + mesh.num_edges()));
+
   // Create velocity FunctionSpace
-  VelocityFunctionSpace V_u(mesh);
+  Velocity::FunctionSpace V_u(mesh);
+
+  info("%d", mesh.num_vertices());
+  info("%d", mesh.num_edges());
+  info("%d", 2*(mesh.num_vertices() + mesh.num_edges()));
 
   // Create velocity function
   Function velocity(V_u, "../velocity.xml.gz");
@@ -31,7 +41,7 @@ int main(int argc, char *argv[])
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
 
   // Create function space
-  AdvectionDiffusionFunctionSpace V(mesh);
+  AdvectionDiffusion::BilinearForm::TrialSpace V(mesh);
 
   // Source term and initial condition
   Constant f(0.0);
@@ -39,9 +49,9 @@ int main(int argc, char *argv[])
   u.vector().zero();
 
   // Set up forms
-  AdvectionDiffusionBilinearForm a(V, V);
+  AdvectionDiffusion::BilinearForm a(V, V);
   a.b = velocity;
-  AdvectionDiffusionLinearForm L(V);
+  AdvectionDiffusion::LinearForm L(V);
   L.u0 = u; L.b = velocity; L.f = f;
 
   // Set up boundary condition

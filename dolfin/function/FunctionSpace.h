@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-05-12
+// Last changed: 2009-05-15
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -167,9 +167,6 @@ namespace dolfin
 
     // Intersection detector, used for evaluation at arbitrary points
     mutable IntersectionDetector* intersection_detector;
-
-    // True if running in parallel
-    bool parallel;
 
   };
 

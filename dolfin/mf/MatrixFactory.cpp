@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-08-21
-// Last changed: 2006-10-26
+// Last changed: 2009-05-15
 
 #include <dolfin/fem/Assembler.h>
 #include <dolfin/function/Constant.h>
@@ -29,14 +29,14 @@ void MatrixFactory::computeMassMatrix(GenericMatrix& A, Mesh& mesh)
   warning("Using default dof map in MatrixFactory");
   if (mesh.type().cell_type() == CellType::triangle)
   {
-    MassMatrix2DFunctionSpace V(mesh);
-    MassMatrix2DBilinearForm a(V, V);
+    MassMatrix2D::BilinearForm::TrialSpace V(mesh);
+    MassMatrix2D::BilinearForm a(V, V);
     Assembler::assemble(A, a);
   }
   else if (mesh.type().cell_type() == CellType::tetrahedron)
   {
-    MassMatrix3DFunctionSpace V(mesh);
-    MassMatrix3DBilinearForm a(V, V);
+    MassMatrix3D::BilinearForm::TrialSpace V(mesh);
+    MassMatrix3D::BilinearForm a(V, V);
     Assembler::assemble(A, a);
   }
   else
@@ -51,15 +51,15 @@ void MatrixFactory::computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, double 
   warning("Using default dof map in MatrixFactory");
   if (mesh.type().cell_type() == CellType::triangle)
   {
-    StiffnessMatrix2DFunctionSpace V(mesh);
-    StiffnessMatrix2DBilinearForm a(V, V);
+    StiffnessMatrix2D::BilinearForm::TrialSpace V(mesh);
+    StiffnessMatrix2D::BilinearForm a(V, V);
     a.c = f;
     Assembler::assemble(A, a);
   }
   else if (mesh.type().cell_type() == CellType::tetrahedron)
   {
-    StiffnessMatrix3DFunctionSpace V(mesh);
-    StiffnessMatrix3DBilinearForm a(V, V);
+    StiffnessMatrix3D::BilinearForm::TrialSpace V(mesh);
+    StiffnessMatrix3D::BilinearForm a(V, V);
     a.c = f;
     Assembler::assemble(A, a);
   }
