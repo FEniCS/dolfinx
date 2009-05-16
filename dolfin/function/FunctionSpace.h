@@ -65,7 +65,7 @@ namespace dolfin
     FunctionSpace(const FunctionSpace& V);
 
     /// Destructor
-    ~FunctionSpace();
+    virtual ~FunctionSpace();
 
     /// Assignment operator
     const FunctionSpace& operator= (const FunctionSpace& V);
