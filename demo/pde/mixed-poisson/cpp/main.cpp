@@ -45,9 +45,9 @@ int main()
   Source f;
 
   // Define PDE
-  MixedPoissonFunctionSpace V(mesh);
-  MixedPoissonBilinearForm a(V, V);
-  MixedPoissonLinearForm L(V);
+  MixedPoisson::FunctionSpace V(mesh);
+  MixedPoisson::BilinearForm a(V, V);
+  MixedPoisson::LinearForm L(V);
   L.f = f;
   VariationalProblem pde(a, L);
 
@@ -60,9 +60,9 @@ int main()
   Function u = w[1];
 
   // Project sigma onto P1 continuous Lagrange for post-processing
-  P1ProjectionFunctionSpace Vp(mesh);
-  P1ProjectionBilinearForm a_p(Vp, Vp);
-  P1ProjectionLinearForm L_p(Vp);
+  P1Projection::FunctionSpace Vp(mesh);
+  P1Projection::BilinearForm a_p(Vp, Vp);
+  P1Projection::LinearForm L_p(Vp);
   L_p.f = sigma;
   VariationalProblem pde_project(a_p, L_p);
   Function sigma_p;

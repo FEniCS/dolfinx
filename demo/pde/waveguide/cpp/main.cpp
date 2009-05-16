@@ -37,9 +37,9 @@ int main()
   // with the eigenvalues k_o^2 representing the square of the cutoff wavenumber
   // and the corresponding right-eigenvector giving the coefficients of the
   // discrete system used to obtain the approximate field anywhere in the domain
-  FormsFunctionSpace V(mesh);
-  Forms_0 s(V, V);
-  Forms_1 t(V, V);
+  Forms::FunctionSpace V(mesh);
+  Forms::Form_0 s(V, V);
+  Forms::Form_1 t(V, V);
 
   // Assemble the system matrices stiffness (S) and mass matrices (T)
   PETScMatrix S;

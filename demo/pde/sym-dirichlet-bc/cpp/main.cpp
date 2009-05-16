@@ -67,9 +67,9 @@ int main()
   Flux g;
 
   // Define forms and attach functions
-  PoissonFunctionSpace V(mesh);
-  PoissonBilinearForm a(V, V);
-  PoissonLinearForm L(V);
+  Poisson::FunctionSpace V(mesh);
+  Poisson::BilinearForm a(V, V);
+  Poisson::LinearForm L(V);
   L.f = f; L.g = g;
 
   // Create boundary condition

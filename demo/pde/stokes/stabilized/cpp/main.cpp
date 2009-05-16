@@ -42,7 +42,7 @@ int main()
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
 
   // Create function space and subspaces
-  StokesFunctionSpace W(mesh);
+  Stokes::FunctionSpace W(mesh);
   SubSpace W0(W, 0);
   SubSpace W1(W, 1);
 
@@ -67,9 +67,9 @@ int main()
   // Set up PDE
   MeshSize h;
   Constant f(2, 0.0);
-  StokesBilinearForm a(W, W);
+  Stokes::BilinearForm a(W, W);
   a.h = h;
-  StokesLinearForm L(W);
+  Stokes::LinearForm L(W);
   L.f = f; L.h = h;
   VariationalProblem pde(a, L, bcs);
 

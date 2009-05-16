@@ -37,9 +37,9 @@ int main()
 
   // Define functional
   UnitSquare mesh(16, 16);
-  EnergyNormCoefficientSpace V(mesh);
+  EnergyNorm::CoefficientSpace_v V(mesh);
   MyFunction v(V);
-  EnergyNormFunctional M;
+  EnergyNorm::Functional M;
   M.v = v;
 
   // Evaluate functional

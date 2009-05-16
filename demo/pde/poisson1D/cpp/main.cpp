@@ -55,7 +55,7 @@ int main()
   UnitInterval mesh(50);
 
   // Create function space
-  PoissonFunctionSpace V(mesh);
+  Poisson::FunctionSpace V(mesh);
 
   // Set up BCs
   Constant zero(0.0);
@@ -67,8 +67,8 @@ int main()
   Flux g;
 
   // Define PDE
-  PoissonBilinearForm a(V, V);
-  PoissonLinearForm L(V);
+  Poisson::BilinearForm a(V, V);
+  Poisson::LinearForm L(V);
   L.f = f;
   L.g = g;
   VariationalProblem pde(a, L, bc);

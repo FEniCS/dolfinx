@@ -52,7 +52,7 @@ int main()
 {
   // Create mesh and define function space
   UnitSquare mesh(16, 16);
-  NonlinearPoissonFunctionSpace V(mesh);
+  NonlinearPoisson::FunctionSpace V(mesh);
 
   // Define boundary condition
   DirichletBoundary dirichlet_boundary;
@@ -64,9 +64,9 @@ int main()
   Function U;
 
   // Create forms
-  NonlinearPoissonBilinearForm a(V, V);
+  NonlinearPoisson::BilinearForm a(V, V);
   a.U = U;
-  NonlinearPoissonLinearForm L(V);
+  NonlinearPoisson::LinearForm L(V);
   L.U = U; L.f = f;
 
   // Solve nonlinear variational problem
