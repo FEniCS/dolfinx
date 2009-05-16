@@ -49,11 +49,11 @@ int main()
   AvgMeshSize h;
 
   // Create funtion space
-  PoissonFunctionSpace V(mesh);
+  Poisson::FunctionSpace V(mesh);
 
   // Define forms and attach functions
-  PoissonBilinearForm a(V, V);
-  PoissonLinearForm L(V);
+  Poisson::BilinearForm a(V, V);
+  Poisson::LinearForm L(V);
   a.n = n; a.h = h; L.f = f;
 
   // Create PDE

@@ -30,9 +30,9 @@ int main()
   F f;
 
   // Project to a discrete function
-  ProjectionFunctionSpace V(mesh);
-  ProjectionBilinearForm a(V, V);
-  ProjectionLinearForm L(V);
+  Projection::FunctionSpace V(mesh);
+  Projection::BilinearForm a(V, V);
+  Projection::LinearForm L(V);
   L.f = f;
   VariationalProblem pde(a, L);
   Function g;

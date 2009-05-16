@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
   Mesh mesh("../mesh.xml.gz");
 
   // Create velocity FunctionSpace
-  VelocityFunctionSpace V_u(mesh);
+  Velocity::FunctionSpace V_u(mesh);
 
   // Create velocity function
   Function velocity(V_u, "../velocity.xml.gz");
@@ -61,16 +61,16 @@ int main(int argc, char *argv[])
   Constant alpha(5.0);
 
   // Create outflow facet function
-  AdvectionDiffusionBilinearFormCoefficientSpace3 V_dg(mesh);
-  IsOutflowFacet of(V_dg, velocity);
+  AdvectionDiffusion::CoefficientSpace_of V_of(mesh);
+  IsOutflowFacet of(V_of, velocity);
 
   // Create function space
-  AdvectionDiffusionFunctionSpace V(mesh);
+  AdvectionDiffusion::FunctionSpace V(mesh);
 
   // Create forms and attach functions
-  AdvectionDiffusionBilinearForm a(V, V);
+  AdvectionDiffusion::BilinearForm a(V, V);
   a.b = velocity; a.n = N; a.h = h; a.of = of; a.kappa = c; a.alpha = alpha;
-  AdvectionDiffusionLinearForm L(V);
+  AdvectionDiffusion::LinearForm L(V);
   L.f = f;
 
   // Set up boundary condition (apply strong BCs)
@@ -92,9 +92,9 @@ int main(int argc, char *argv[])
   solve(A, uh.vector(), b);
 
   // Define PDE for projection onto continuous P1 basis
-  ProjectionFunctionSpace Vp(mesh);
-  ProjectionBilinearForm ap(Vp, Vp);
-  ProjectionLinearForm Lp(Vp);
+  Projection::FunctionSpace Vp(mesh);
+  Projection::BilinearForm ap(Vp, Vp);
+  Projection::LinearForm Lp(Vp);
   Lp.u0 = uh;
   VariationalProblem pde(ap, Lp);
 

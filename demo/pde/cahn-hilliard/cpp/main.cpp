@@ -30,20 +30,22 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
       // Create forms
       if (mesh.topology().dim() == 2)
       {
-        V = new CahnHilliard2DFunctionSpace(mesh);
+        V = new CahnHilliard2D::FunctionSpace(mesh);
 
-        a = new CahnHilliard2DBilinearForm(*V, *V);
-        CahnHilliard2DBilinearForm* _a = dynamic_cast<CahnHilliard2DBilinearForm*>(a);
-        if (!_a) error("Problem in downcast of CahnHilliard2DBilinearForm");
+        a = new CahnHilliard2D::BilinearForm(*V, *V);
+        CahnHilliard2D::BilinearForm* _a = dynamic_cast<CahnHilliard2D::BilinearForm*>(a);
+        if (!_a) 
+          error("Problem in downcast of CahnHilliard2DBilinearForm");
         _a->w0 = u;
         _a->lmbda = lambda;
         _a->muFactor = mu_factor;
         _a->dt = dt;
         _a->theta = theta;
 
-        L = new CahnHilliard2DLinearForm(*V);
-        CahnHilliard2DLinearForm* _L = dynamic_cast<CahnHilliard2DLinearForm*>(L);
-        if (!_L) error("Problem in downcast of CahnHilliard2DLinearForm");
+        L = new CahnHilliard2D::LinearForm(*V);
+        CahnHilliard2D::LinearForm* _L = dynamic_cast<CahnHilliard2D::LinearForm*>(L);
+        if (!_L) 
+          error("Problem in downcast of CahnHilliard2DLinearForm");
         _L->w0 = u;
         _L->w1 = u0;
         _L->lmbda = lambda;
@@ -53,20 +55,22 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
       }
       else if (mesh.topology().dim() == 3)
       {
-        V = new CahnHilliard3DFunctionSpace(mesh);
+        V = new CahnHilliard3D::FunctionSpace(mesh);
 
-        a = new CahnHilliard3DBilinearForm(*V, *V);
-        CahnHilliard3DBilinearForm* _a = dynamic_cast<CahnHilliard3DBilinearForm*>(a);
-        if (!_a) error("Problem in downcast of CahnHilliard3DBilinearForm");
+        a = new CahnHilliard3D::BilinearForm(*V, *V);
+        CahnHilliard3D::BilinearForm* _a = dynamic_cast<CahnHilliard3D::BilinearForm*>(a);
+        if (!_a) 
+          error("Problem in downcast of CahnHilliard3DBilinearForm");
         _a->w0 = u;
         _a->lmbda = lambda;
         _a->muFactor = mu_factor;
         _a->dt = dt;
         _a->theta = theta;
 
-        L = new CahnHilliard3DLinearForm(*V);
-        CahnHilliard3DLinearForm* _L = dynamic_cast<CahnHilliard3DLinearForm*>(L);
-        if (!_L) error("Problem in downcast of CahnHilliard3DLinearForm");
+        L = new CahnHilliard3D::LinearForm(*V);
+        CahnHilliard3D::LinearForm* _L = dynamic_cast<CahnHilliard3D::LinearForm*>(L);
+        if (!_L) 
+          error("Problem in downcast of CahnHilliard3DLinearForm");
         _L->w0 = u;
         _L->w1 = u0;
         _L->lmbda = lambda;
