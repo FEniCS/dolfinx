@@ -258,7 +258,7 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vec
 
   // Extract sub dofmap and offset
   uint offset = 0;
-  boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component, offset, *_mesh));
+  boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component, offset));
 
   // Create new sub space
   boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
@@ -275,7 +275,7 @@ void FunctionSpace::attach(MeshFunction<bool>& restriction)
   {
     _restriction.reset(&restriction);
     //FIXME: hack to cast away the const
-    const_cast<DofMap&>(*_dofmap).build(*_mesh, restriction);
+    const_cast<DofMap&>(*_dofmap).build(restriction);
   }
 }
 //-----------------------------------------------------------------------------

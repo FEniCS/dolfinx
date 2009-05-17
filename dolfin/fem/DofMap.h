@@ -92,16 +92,16 @@ namespace dolfin
     { ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell); }
 
     /// Build parallel dof map
-    void build(UFC& ufc, Mesh& mesh);
+    void build(UFC& ufc);
 
     /// Build dof map on only a subdomain of the mesh (meshfunction contains booleans for each cell)
-    void build(const Mesh& mesh, const MeshFunction<bool>& meshfunction);
+    void build(const MeshFunction<bool>& meshfunction);
 
     /// Return renumbering (used for testing)
     std::map<uint, uint> get_map() const;
 
     /// Extract sub dofmap and offset for component
-    DofMap* extract_sub_dofmap(const std::vector<uint>& component, uint& offset, const Mesh& mesh) const;
+    DofMap* extract_sub_dofmap(const std::vector<uint>& component, uint& offset) const;
 
     /// Return offset into parent's vector of coefficients
     uint offset() const;
@@ -115,13 +115,12 @@ namespace dolfin
     friend class DofMapBuilder;
 
     /// Initialise DofMap
-    void init(const Mesh& mesh);
+    void init();
 
     // Recursively extract sub dofmap
     ufc::dof_map* extract_sub_dofmap(const ufc::dof_map& dof_map,
                                      uint& offset,
-                                     const std::vector<uint>& component,
-                                     const Mesh& mesh) const;
+                                     const std::vector<uint>& component) const;
 
     // Precomputed dof map
     int* dof_map;
@@ -137,9 +136,6 @@ namespace dolfin
 
     // UFC mesh
     UFCMesh ufc_mesh;
-
-    // Number of cells in the mesh
-    uint num_cells;
 
     // Provide easy access to map for testing
     std::map<uint, uint> map;

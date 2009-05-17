@@ -22,7 +22,7 @@
 
 using namespace dolfin;
 
-// Singleton class for allocating and deleteting buffer memory
+// Singleton class for allocating and deleting buffer memory
 class Buffer
 {
 public:

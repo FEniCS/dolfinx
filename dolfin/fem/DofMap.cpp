@@ -26,8 +26,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<Mesh> mesh)
   : dof_map(0), dof_map_size(0), cell_map(0),
-    ufc_dof_map(dof_map),
-    num_cells(mesh->num_cells()), _offset(0),
+    ufc_dof_map(dof_map), _offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
   // Generate and number all mesh entities
@@ -42,13 +41,12 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<Mesh> 
   }
 
   // Initialize dof map
-  init(*mesh);
+  init();
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const Mesh> mesh)
   : dof_map(0), dof_map_size(0), cell_map(0),
-    ufc_dof_map(dof_map),
-    num_cells(mesh->num_cells()), _offset(0),
+    ufc_dof_map(dof_map), _offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
   // Check that we have all mesh entities (const so we can't generate them)
@@ -59,7 +57,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const 
   }
 
   // Initialize dof map
-  init(*mesh);
+  init();
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
@@ -68,8 +66,7 @@ DofMap::~DofMap()
 }
 //-----------------------------------------------------------------------------
 DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
-                                   uint& offset,
-                                   const Mesh& mesh) const
+                                   uint& offset) const
 {
   // Check that dof map has not be re-ordered
   if (dof_map)
@@ -79,13 +76,12 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
   offset = 0;
 
   // Recursively extract sub dofmap
-  boost::shared_ptr<ufc::dof_map> sub_dof_map(extract_sub_dofmap(*ufc_dof_map, offset, component, mesh));
+  boost::shared_ptr<ufc::dof_map> sub_dof_map(extract_sub_dofmap(*ufc_dof_map, offset, component));
   info(2, "Extracted dof map for sub system: %s", sub_dof_map->signature());
   info(2, "Offset for sub system: %d", offset);
 
   // Create dofmap
-  boost::shared_ptr<const Mesh> _mesh(reference_to_no_delete_pointer(mesh));
-  DofMap* dofmap = new DofMap(sub_dof_map, _mesh);
+  DofMap* dofmap = new DofMap(sub_dof_map, dolfin_mesh);
 
   // Set offset
   dofmap->_offset = offset;
@@ -95,8 +91,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
 //-----------------------------------------------------------------------------
 ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map,
                                          uint& offset,
-                                         const std::vector<uint>& component,
-                                         const Mesh& mesh) const
+                                         const std::vector<uint>& component) const
 {
   // Check if there are any sub systems
   if (dof_map.num_sub_dof_maps() == 0)
@@ -115,8 +110,7 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map,
   for (uint i = 0; i < component[0]; i++)
   {
     boost::shared_ptr<ufc::dof_map> _ufc_dof_map(dof_map.create_sub_dof_map(i)); 
-    boost::shared_ptr<const Mesh> _mesh(reference_to_no_delete_pointer(mesh)); 
-    DofMap dof_map_test(_ufc_dof_map, _mesh);
+    DofMap dof_map_test(_ufc_dof_map, dolfin_mesh);
     offset += _ufc_dof_map->global_dimension();
   }
 
@@ -131,28 +125,28 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map,
   std::vector<uint> sub_component;
   for (uint i = 1; i < component.size(); i++)
     sub_component.push_back(component[i]);
-  ufc::dof_map* sub_sub_dof_map = extract_sub_dofmap(*sub_dof_map, offset, sub_component, mesh);
+  ufc::dof_map* sub_sub_dof_map = extract_sub_dofmap(*sub_dof_map, offset, sub_component);
   delete sub_dof_map;
 
   return sub_sub_dof_map;
 }
 //-----------------------------------------------------------------------------
-void DofMap::init(const Mesh& mesh)
+void DofMap::init()
 {
   Timer timer("Init dof map");
 
   // Check that mesh has been ordered
-  if (!mesh.ordered())
+  if (!dolfin_mesh->ordered())
     error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
 
   // Initialize UFC mesh data (must be done after entities are created)
-  ufc_mesh.init(mesh);
+  ufc_mesh.init(*dolfin_mesh);
 
   // Initialize UFC dof map
   const bool init_cells = ufc_dof_map->init_mesh(ufc_mesh);
   if (init_cells)
   {
-    CellIterator cell(mesh);
+    CellIterator cell(*dolfin_mesh);
     UFCCell ufc_cell(*cell);
     for (; !cell.end(); ++cell)
     {
@@ -184,38 +178,39 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_inde
     ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
 }
 //-----------------------------------------------------------------------------
-void DofMap::build(UFC& ufc, Mesh& mesh)
+void DofMap::build(UFC& ufc)
 {
-  DofMapBuilder::build(*this, ufc, mesh);
+  error("DofMap::build(UFC& ufc) needs to be fixed since the mesh is const in DofMap.");
+  //DofMapBuilder::build(*this, ufc, *dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
-void DofMap::build(const Mesh& mesh, const MeshFunction<bool>& meshfunction)
+void DofMap::build(const MeshFunction<bool>& meshfunction)
 {
   // FIXME: This should be moved to DofMapBuilder
 
   // Allocate dof map
   const uint n = ufc_dof_map->max_local_dimension();
   uint* dofs = new uint[n];
-  dof_map = new int[n*mesh.num_cells()];
-  cell_map = new int[mesh.num_cells()];
-  int* restriction_mapping = new int[n*mesh.num_cells()];
+  dof_map = new int[n*dolfin_mesh->num_cells()];
+  cell_map = new int[dolfin_mesh->num_cells()];
+  int* restriction_mapping = new int[n*dolfin_mesh->num_cells()];
 
   // dof_map, restriction_mapping, and cell_map are initialized to -1 to indicate that an error
   // has occured when used outside the subdomain described by meshfunction
-  for (uint i=0; i<n*mesh.num_cells(); i++)
+  for (uint i=0; i<n*dolfin_mesh->num_cells(); i++)
     dof_map[i]  = -1;
   for (uint i=0; i<ufc_dof_map->global_dimension(); i++)
     restriction_mapping[i] = -1;
-  for (uint i=0; i<mesh.num_cells(); i++) 
+  for (uint i=0; i<dolfin_mesh->num_cells(); i++) 
     cell_map[i] = -1;
 
-  CellIterator cell(mesh);
+  CellIterator cell(*dolfin_mesh);
   UFCCell ufc_cell(*cell);
   bool use_cell = false;
 
   // restriction maping R
   std::map<int,int> R;
-  std::map<int,int>:: iterator iter;
+  std::map<int,int>::iterator iter;
   uint dof_counter = 0;
   uint cell_counter = 0;
 
