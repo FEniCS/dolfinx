@@ -9,6 +9,8 @@
 // First added:  2003-03-13
 // Last changed: 2009-05-17
 
+#include <boost/scoped_array.hpp>
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <signal.h>
@@ -22,64 +24,45 @@
 
 using namespace dolfin;
 
-// Singleton class for allocating and deleting buffer memory
-class Buffer
+static boost::scoped_array<char> buffer(0);
+static unsigned int buffer_size= 0;
+
+// Buffer allocation
+void allocate_buffer(std::string msg)
 {
-public:
-
-  static void allocate(std::string msg)
+  // va_list, start, end require a char pointer of fixed size so we
+  // need to allocate the buffer here. We allocate twice the size of
+  // the format string and at least DOLFIN_LINELENGTH. This should be
+  // ok in most cases.
+  unsigned int new_size = std::max(static_cast<unsigned int>(2*msg.size()),
+                                   static_cast<unsigned int>(DOLFIN_LINELENGTH));
+  if (new_size > buffer_size)
   {
-    const unsigned int new_size = std::max(static_cast<unsigned int>(2*msg.size()),
-                                           static_cast<unsigned int>(DOLFIN_LINELENGTH));
-    if (new_size > buffer_size)
-    {
-      delete [] buffer;
-      buffer = new char[new_size];
-      buffer_size = new_size;
-    }
+    buffer.reset(new char[new_size]);
+    buffer_size = new_size;
   }
-
-  static char* buffer;
-  static unsigned int buffer_size;
-
-private:
-  Buffer(){}
-  Buffer(const Buffer& Buffer){}
-  Buffer& operator=(const Buffer&) { return *this; }    
-
-  ~Buffer()
-  { delete [] buffer; }
-
-  // Singleton instance
-  static Buffer _buffer;
-
-};
-
-// Instantiate static data
-unsigned int Buffer::buffer_size = 0;
-char* Buffer::buffer = 0;
-Buffer Buffer::_buffer;
+}
 
 
 // Macro for parsing arguments
 #define read(buffer, msg) \
-  Buffer::allocate(msg); \
+  allocate_buffer(msg); \
   va_list aptr; \
   va_start(aptr, msg); \
-  vsnprintf(Buffer::buffer, Buffer::buffer_size, msg.c_str(), aptr); \
+  vsnprintf(buffer.get(), buffer_size, msg.c_str(), aptr); \
   va_end(aptr);
 
 //-----------------------------------------------------------------------------
 void dolfin::info(std::string msg, ...)
 {
-  read(Buffer::buffer, msg);
-  LogManager::logger.info(Buffer::buffer);
+  read(buffer, msg);
+  LogManager::logger.info(buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::info(int debug_level, std::string msg, ...)
 {
-  read(Buffer::buffer, msg);
-  LogManager::logger.info(Buffer::buffer, debug_level);
+  read(buffer, msg);
+  LogManager::logger.info(buffer.get(), debug_level);
 }
 //-----------------------------------------------------------------------------
 void dolfin::info(const Variable& variable)
@@ -104,32 +87,32 @@ void dolfin::info_stream(std::ostream& out, std::string msg)
 //-----------------------------------------------------------------------------
 void dolfin::info_underline(std:: string msg, ...)
 {
-  read(Buffer::buffer, msg);
-  LogManager::logger.info_underline(Buffer::buffer);
+  read(buffer, msg);
+  LogManager::logger.info_underline(buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::warning(std::string msg, ...)
 {
-  read(Buffer::buffer, msg);
-  LogManager::logger.warning(Buffer::buffer);
+  read(buffer, msg);
+  LogManager::logger.warning(buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::error(std::string msg, ...)
 {
-  read(Buffer::buffer, msg);
-  LogManager::logger.error(Buffer::buffer);
+  read(buffer, msg);
+  LogManager::logger.error(buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::begin(std::string msg, ...)
 {
-  read(Buffer::buffer, msg);
-  LogManager::logger.begin(Buffer::buffer);
+  read(buffer, msg);
+  LogManager::logger.begin(buffer.get());
 }
 //-----------------------------------------------------------------------------
 void dolfin::begin(int debug_level, std::string msg, ...)
 {
-  read(Buffer::buffer, msg);
-  LogManager::logger.begin(Buffer::buffer, debug_level);
+  read(buffer, msg);
+  LogManager::logger.begin(buffer.get(), debug_level);
 }
 //-----------------------------------------------------------------------------
 void dolfin::end()
@@ -165,20 +148,20 @@ double dolfin::timing(std::string task, bool reset)
 void dolfin::__debug(std::string file, unsigned long line,
                      std::string function, std::string format, ...)
 {
-  read(Buffer::buffer, format);
+  read(buffer, format);
   std::ostringstream ost;
   ost << file << ":" << line << " in " << function << "()";
-  std::string msg = std::string(Buffer::buffer) + " [at " + ost.str() + "]";
+  std::string msg = std::string(buffer.get()) + " [at " + ost.str() + "]";
   LogManager::logger.__debug(msg);
 }
 //-----------------------------------------------------------------------------
 void dolfin::__dolfin_assert(std::string file, unsigned long line,
                       std::string function, std::string format, ...)
 {
-  read(Buffer::buffer, format);
+  read(buffer, format);
   std::ostringstream ost;
   ost << file << ":" << line << " in " << function << "()";
-  std::string msg = std::string(Buffer::buffer) + " [at " + ost.str() + "]";
+  std::string msg = std::string(buffer.get()) + " [at " + ost.str() + "]";
   LogManager::logger.__assert(msg);
 }
 //-----------------------------------------------------------------------------
