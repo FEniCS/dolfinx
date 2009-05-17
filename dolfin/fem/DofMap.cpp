@@ -24,46 +24,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(ufc::dof_map& dof_map, Mesh& mesh)
-  : dof_map(0), dof_map_size(0), cell_map(0),
-    ufc_dof_map(reference_to_no_delete_pointer(dof_map)),
-    num_cells(mesh.num_cells()), partitions(0), _offset(0),
-    dolfin_mesh(reference_to_no_delete_pointer(mesh)), 
-    parallel(MPI::num_processes() > 1)
-{
-  // Generate and number all mesh entities
-  for (uint d = 1; d <= mesh.topology().dim(); ++d)
-  {
-    if (ufc_dof_map->needs_mesh_entities(d))
-    {
-      mesh.init(d);
-      if (parallel) 
-        MeshPartitioning::number_entities(mesh, d);
-    }
-  }
-
-  // Initialize dof map
-  init(mesh);
-}
-//-----------------------------------------------------------------------------
-DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh)
-  : dof_map(0), dof_map_size(0), cell_map(0),
-    ufc_dof_map(reference_to_no_delete_pointer(dof_map)),
-    num_cells(mesh.num_cells()), partitions(0), _offset(0),
-    dolfin_mesh(reference_to_no_delete_pointer(mesh)), 
-    parallel(MPI::num_processes() > 1)
-{
-  // Check that we have all mesh entities (const so we can't generate them)
-  for (uint d = 0; d <= mesh.topology().dim(); ++d)
-  {
-    if (ufc_dof_map->needs_mesh_entities(d) && mesh.num_entities(d) == 0)
-      error("Unable to create function space, missing entities of dimension %d. Try calling mesh.init(%d).", d, d);
-  }
-
-  // Initialize dof map
-  init(mesh);
-}
-//-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<Mesh> mesh)
   : dof_map(0), dof_map_size(0), cell_map(0),
     ufc_dof_map(dof_map),
@@ -178,13 +138,13 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map,
   // Add to offset if necessary
   for (uint i = 0; i < component[0]; i++)
   {
-    ufc::dof_map* ufc_dof_map = dof_map.create_sub_dof_map(i);
+    boost::shared_ptr<ufc::dof_map> _ufc_dof_map(dof_map.create_sub_dof_map(i)); 
+    boost::shared_ptr<const Mesh> _mesh(reference_to_no_delete_pointer(mesh)); 
     if (partitions)
       DofMap dof_map_test(*ufc_dof_map, mesh, *partitions);
     else
-      DofMap dof_map_test(*ufc_dof_map, mesh);
-    offset += ufc_dof_map->global_dimension();
-    delete ufc_dof_map;
+      DofMap dof_map_test(_ufc_dof_map, _mesh);
+    offset += _ufc_dof_map->global_dimension();
   }
 
   // Create sub system
@@ -208,22 +168,9 @@ void DofMap::init(const Mesh& mesh)
 {
   Timer timer("Init dof map");
 
-  //dolfin_debug("Initializing dof map...");
-
   // Check that mesh has been ordered
   if (!mesh.ordered())
     error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
-
-  /*
-  // Initialize mesh entities used by dof map
-  for (uint d = 0; d <= mesh.topology().dim(); d++)
-    if (ufc_dof_map->needs_mesh_entities(d))
-    {
-      mesh.init(d);
-      if (d > 0 && parallel)
-        MeshPartitioning::number_entities(const_cast<Mesh&>(mesh), d);
-    }
-    */
 
   // Initialize UFC mesh data (must be done after entities are created)
   ufc_mesh.init(mesh);
@@ -241,8 +188,6 @@ void DofMap::init(const Mesh& mesh)
     }
     ufc_dof_map->init_cell_finalize();
   }
-
-  //dolfin_debug("Dof map initialized");
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_index) const
@@ -290,7 +235,8 @@ void DofMap::build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction
   {
     restriction_mapping[i] = -1;
   }
-  for (uint i=0; i<mesh.num_cells(); i++) {
+  for (uint i=0; i<mesh.num_cells(); i++) 
+  {
     cell_map[i] = -1;
   }
 

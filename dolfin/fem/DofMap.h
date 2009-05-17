@@ -35,15 +35,9 @@ namespace dolfin
   public:
 
     /// Create dof map on mesh
-    DofMap(ufc::dof_map& dof_map, Mesh& mesh);
-
-    /// Create dof map on mesh (const)
-    DofMap(ufc::dof_map& dof_map, const Mesh& mesh);
-
-    /// Create dof map on mesh (shared ufc::dof_map and mesh)
     DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<Mesh> mesh);
 
-    /// Create dof map on mesh (shared ufc::dof_map and mesh, const)
+    /// Create dof map on mesh (const)
     DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const Mesh> mesh);
 
     // FIXME: Check constructors below, should they be removed?
@@ -52,7 +46,8 @@ namespace dolfin
     DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& partitions);
 
     /// Create dof map on mesh (may share ufc::dof_map and mesh) (parallel)
-    DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const Mesh> mesh, MeshFunction<uint>& partitions);
+    DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const Mesh> mesh, 
+           MeshFunction<uint>& partitions);
 
     /// Destructor
     ~DofMap();
