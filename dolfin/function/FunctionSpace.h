@@ -1,12 +1,12 @@
 // Copyright (C) 2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008-2009.
 // Modified by Kent-Andre Mardal, 2009.
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-05-15
+// Last changed: 2009-05-17
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -41,20 +41,10 @@ namespace dolfin
   {
   public:
 
-    /// Create function space for given mesh, element and dofmap
-    FunctionSpace(Mesh& mesh,
-                  const FiniteElement& element,
-                  const DofMap& dofmap);
-
     /// Create function space for given mesh, element and dofmap (shared data)
     FunctionSpace(boost::shared_ptr<Mesh> mesh,
                   boost::shared_ptr<const FiniteElement> element,
                   boost::shared_ptr<const DofMap> dofmap);
-
-    /// Create function space for given mesh, element and dofmap
-    FunctionSpace(const Mesh& mesh,
-                  const FiniteElement& element,
-                  const DofMap& dofmap);
 
     /// Create function space for given mesh, element and dofmap (shared data)
     FunctionSpace(boost::shared_ptr<const Mesh> mesh,

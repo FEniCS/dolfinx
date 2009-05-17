@@ -3,17 +3,16 @@
 //
 // Modified by Kristoffer Selim, 2008.
 // Modified by Martin Alnes, 2008.
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008-2009.
 // Modified by Kent-Andre Mardal, 2009.
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-05-12
+// Last changed: 2009-05-17
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/log/log.h>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/IntersectionDetector.h>
 #include <dolfin/mesh/Mesh.h>
@@ -28,36 +27,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(const Mesh& mesh,
-                             const FiniteElement &element,
-                             const DofMap& dofmap)
-  : _mesh(reference_to_no_delete_pointer(mesh)),
-    _element(reference_to_no_delete_pointer(element)),
-    _dofmap(reference_to_no_delete_pointer(dofmap)),
-    _restriction(static_cast<MeshFunction<bool>*>(0)),
-    scratch(element), intersection_detector(0)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
                              boost::shared_ptr<const FiniteElement> element,
                              boost::shared_ptr<const DofMap> dofmap)
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0)),
     scratch(*element), intersection_detector(0)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(Mesh& mesh,
-                             const FiniteElement &element,
-                             const DofMap& dofmap)
-  : _mesh(reference_to_no_delete_pointer(mesh)),
-    _element(reference_to_no_delete_pointer(element)),
-    _dofmap(reference_to_no_delete_pointer(dofmap)),
-    _restriction(static_cast<MeshFunction<bool>*>(0)),
-    scratch(element), intersection_detector(0)
 {
   // Do nothing
 }
@@ -294,7 +269,7 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vec
   return new_sub_space;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace:: attach(MeshFunction<bool>& restriction)
+void FunctionSpace::attach(MeshFunction<bool>& restriction)
 {
   if (restriction.dim() == (*_mesh).topology().dim())
   {
@@ -364,3 +339,4 @@ bool FunctionSpace::is_inside_restriction(uint c) const
     return true;
 }
 //-----------------------------------------------------------------------------
+
