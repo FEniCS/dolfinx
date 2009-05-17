@@ -27,7 +27,7 @@ using namespace dolfin;
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<Mesh> mesh)
   : dof_map(0), dof_map_size(0), cell_map(0),
     ufc_dof_map(dof_map),
-    num_cells(mesh->num_cells()), partitions(0), _offset(0),
+    num_cells(mesh->num_cells()), _offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
   // Generate and number all mesh entities
@@ -48,7 +48,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<Mesh> 
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const Mesh> mesh)
   : dof_map(0), dof_map_size(0), cell_map(0),
     ufc_dof_map(dof_map),
-    num_cells(mesh->num_cells()), partitions(0), _offset(0),
+    num_cells(mesh->num_cells()), _offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
   // Check that we have all mesh entities (const so we can't generate them)
@@ -59,26 +59,6 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const 
   }
 
   // Initialize dof map
-  init(*mesh);
-}
-//-----------------------------------------------------------------------------
-DofMap::DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& partitions)
-  : dof_map(0), dof_map_size(0), cell_map(0),
-    ufc_dof_map(reference_to_no_delete_pointer(dof_map)),
-    num_cells(mesh.num_cells()), partitions(&partitions), _offset(0),
-    dolfin_mesh(reference_to_no_delete_pointer(mesh)), parallel(MPI::num_processes() > 1)
-{
-  init(mesh);
-}
-//-----------------------------------------------------------------------------
-DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map,
-               boost::shared_ptr<const Mesh> mesh,
-               MeshFunction<uint>& partitions)
-  : dof_map(0), dof_map_size(0), cell_map(0),
-    ufc_dof_map(dof_map),
-    num_cells(mesh->num_cells()), partitions(&partitions), _offset(0),
-    dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
-{
   init(*mesh);
 }
 //-----------------------------------------------------------------------------
@@ -104,12 +84,8 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
   info(2, "Offset for sub system: %d", offset);
 
   // Create dofmap
-  DofMap* dofmap = 0;
   boost::shared_ptr<const Mesh> _mesh(reference_to_no_delete_pointer(mesh));
-  if (partitions)
-    dofmap = new DofMap(sub_dof_map, _mesh, *partitions);
-  else
-    dofmap = new DofMap(sub_dof_map, _mesh);
+  DofMap* dofmap = new DofMap(sub_dof_map, _mesh);
 
   // Set offset
   dofmap->_offset = offset;
@@ -140,10 +116,7 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map,
   {
     boost::shared_ptr<ufc::dof_map> _ufc_dof_map(dof_map.create_sub_dof_map(i)); 
     boost::shared_ptr<const Mesh> _mesh(reference_to_no_delete_pointer(mesh)); 
-    if (partitions)
-      DofMap dof_map_test(*ufc_dof_map, mesh, *partitions);
-    else
-      DofMap dof_map_test(_ufc_dof_map, _mesh);
+    DofMap dof_map_test(_ufc_dof_map, _mesh);
     offset += _ufc_dof_map->global_dimension();
   }
 
@@ -216,10 +189,12 @@ void DofMap::build(UFC& ufc, Mesh& mesh)
   DofMapBuilder::build(*this, ufc, mesh);
 }
 //-----------------------------------------------------------------------------
-void DofMap::build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction<bool>& meshfunction)
+void DofMap::build(const Mesh& mesh, const MeshFunction<bool>& meshfunction)
 {
+  // FIXME: This should be moved to DofMapBuilder
+
   // Allocate dof map
-  uint n = ufc_dof_map->max_local_dimension();
+  const uint n = ufc_dof_map->max_local_dimension();
   uint* dofs = new uint[n];
   dof_map = new int[n*mesh.num_cells()];
   cell_map = new int[mesh.num_cells()];
@@ -228,17 +203,11 @@ void DofMap::build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction
   // dof_map, restriction_mapping, and cell_map are initialized to -1 to indicate that an error
   // has occured when used outside the subdomain described by meshfunction
   for (uint i=0; i<n*mesh.num_cells(); i++)
-  {
     dof_map[i]  = -1;
-  }
   for (uint i=0; i<ufc_dof_map->global_dimension(); i++)
-  {
     restriction_mapping[i] = -1;
-  }
   for (uint i=0; i<mesh.num_cells(); i++) 
-  {
     cell_map[i] = -1;
-  }
 
   CellIterator cell(mesh);
   UFCCell ufc_cell(*cell);
@@ -250,7 +219,7 @@ void DofMap::build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction
   uint dof_counter = 0;
   uint cell_counter = 0;
 
-  // loop over all cells
+  // Loop over all cells
   for (; !cell.end(); ++cell)
   {
     ufc_cell.update(*cell);
@@ -264,10 +233,13 @@ void DofMap::build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction
     // The reason why this simple algorithm works is that all already have
     // an unique global numbers. We only need to leave out some of them
     // and have the other numbered in increasing order like 1,2,3,4 (without gaps like 1,3,4).
-    if (use_cell) {
-      for (uint k=0; k<n; k++) {
+    if (use_cell) 
+    {
+      for (uint k=0; k<n; k++) 
+      {
         // the dofs[k] is new
-        if (R.find(dofs[k]) == R.end()){
+        if (R.find(dofs[k]) == R.end())
+        {
           R[dofs[k]] = dof_counter;
           dof_counter++;
         }
@@ -279,17 +251,6 @@ void DofMap::build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction
     }
   }
   dof_map_size = dof_counter;
-
-  /* For debugging
-  for (uint i=0; i<ufc_dof_map->global_dimension(); i++) {
-    std::cout <<"R["<<i<<"]="<<restriction_mapping[i]<<std::endl;
-  }
-  for (uint c=0; c<mesh.num_cells(); c++) {
-    for (uint i=0; i<n; i++) {
-      std::cout <<" c "<<c<<" i "<<i<<" dof_map["<<c*n+i<<"]="<<dof_map[c*n+i]<<std::endl;
-    }
-  }
-  */
 
   delete [] dofs;
   delete [] restriction_mapping;
@@ -326,13 +287,9 @@ void DofMap::disp() const
   cout << "Number of facet dofs:    " << ufc_dof_map->num_facet_dofs() << endl;
 
   for(uint d = 0; d <= dolfin_mesh->topology().dim(); d++)
-  {
     cout << "Number of entity dofs (dim " << d << "): " << ufc_dof_map->num_entity_dofs(d) << endl;
-  }
   for(uint d = 0; d <= dolfin_mesh->topology().dim(); d++)
-  {
     cout << "Needs mesh entities (dim " << d << "):   " << ufc_dof_map->needs_mesh_entities(d) << endl;
-  }
   cout << endl;
   end();
 

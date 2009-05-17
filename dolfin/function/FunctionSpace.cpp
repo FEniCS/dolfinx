@@ -275,7 +275,7 @@ void FunctionSpace::attach(MeshFunction<bool>& restriction)
   {
     _restriction.reset(&restriction);
     //FIXME: hack to cast away the const
-    const_cast<DofMap&>(*_dofmap).build(*_mesh, *_element, restriction);
+    const_cast<DofMap&>(*_dofmap).build(*_mesh, restriction);
   }
 }
 //-----------------------------------------------------------------------------

@@ -37,17 +37,8 @@ namespace dolfin
     /// Create dof map on mesh
     DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<Mesh> mesh);
 
-    /// Create dof map on mesh (const)
+    /// Create dof map on mesh (const mesh version)
     DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const Mesh> mesh);
-
-    // FIXME: Check constructors below, should they be removed?
-
-    /// Create dof map on mesh (parallel)
-    DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& partitions);
-
-    /// Create dof map on mesh (may share ufc::dof_map and mesh) (parallel)
-    DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const Mesh> mesh, 
-           MeshFunction<uint>& partitions);
 
     /// Destructor
     ~DofMap();
@@ -104,7 +95,7 @@ namespace dolfin
     void build(UFC& ufc, Mesh& mesh);
 
     /// Build dof map on only a subdomain of the mesh (meshfunction contains booleans for each cell)
-    void build(const Mesh& mesh, const FiniteElement& fe, const MeshFunction<bool>& meshfunction);
+    void build(const Mesh& mesh, const MeshFunction<bool>& meshfunction);
 
     /// Return renumbering (used for testing)
     std::map<uint, uint> get_map() const;
@@ -149,9 +140,6 @@ namespace dolfin
 
     // Number of cells in the mesh
     uint num_cells;
-
-    // Partitions
-    MeshFunction<uint>* partitions;
 
     // Provide easy access to map for testing
     std::map<uint, uint> map;
