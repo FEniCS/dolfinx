@@ -18,8 +18,6 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-#dolfin_set("linear algebra backend","Epetra")
-
 # Create mesh and define function space
 mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
