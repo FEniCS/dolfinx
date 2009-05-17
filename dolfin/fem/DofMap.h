@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg and Garth N. Wells.
+// Copyright (C) 2007-2009 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Martin Alnes, 2008
@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-05-11
+// Last changed: 2009-05-17
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -37,22 +37,22 @@ namespace dolfin
     /// Create dof map on mesh
     DofMap(ufc::dof_map& dof_map, Mesh& mesh);
 
-    /// Create dof map on mesh (shared ufc::dof_map)
-    DofMap(boost::shared_ptr<ufc::dof_map> dof_map, Mesh& mesh);
-
     /// Create dof map on mesh (const)
     DofMap(ufc::dof_map& dof_map, const Mesh& mesh);
 
-    /// Create dof map on mesh (shared ufc::dof_map, const)
-    DofMap(boost::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh);
+    /// Create dof map on mesh (shared ufc::dof_map and mesh)
+    DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<Mesh> mesh);
+
+    /// Create dof map on mesh (shared ufc::dof_map and mesh, const)
+    DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const Mesh> mesh);
 
     // FIXME: Check constructors below, should they be removed?
 
     /// Create dof map on mesh (parallel)
     DofMap(ufc::dof_map& dof_map, const Mesh& mesh, MeshFunction<uint>& partitions);
 
-    /// Create dof map on mesh (may share ufc::dof_map) (parallel)
-    DofMap(boost::shared_ptr<ufc::dof_map> dof_map, const Mesh& mesh, MeshFunction<uint>& partitions);
+    /// Create dof map on mesh (may share ufc::dof_map and mesh) (parallel)
+    DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const Mesh> mesh, MeshFunction<uint>& partitions);
 
     /// Destructor
     ~DofMap();
@@ -164,8 +164,8 @@ namespace dolfin
     // Offset into parent's vector of coefficients
     uint _offset;
 
-    // Reference to mesh we live in
-    const Mesh & dolfin_mesh;
+    // Mesh we live in
+    boost::shared_ptr<const Mesh> dolfin_mesh;
 
     bool parallel;
   };

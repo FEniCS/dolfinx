@@ -61,9 +61,9 @@ public:
 
 #ifdef HAS_GTS
     // Test evaluation of a discrete function
-    ProjectionFunctionSpace V(mesh);
-    ProjectionBilinearForm a(V, V);
-    ProjectionLinearForm L(V);
+    Projection::FunctionSpace V(mesh);
+    Projection::BilinearForm a(V, V);
+    Projection::LinearForm L(V);
     L.f = f1;
     VariationalProblem problem(a, L);
     Function g(V);
