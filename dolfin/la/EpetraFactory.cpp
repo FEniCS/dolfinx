@@ -31,24 +31,23 @@ EpetraMatrix* EpetraFactory::create_matrix() const
   return new EpetraMatrix();
 }
 //-----------------------------------------------------------------------------
-EpetraSparsityPattern* EpetraFactory::create_pattern() const
-{
-  return new EpetraSparsityPattern();
-}
-//-----------------------------------------------------------------------------
 EpetraVector* EpetraFactory::create_vector() const
 {
   return new EpetraVector();
 }
 //-----------------------------------------------------------------------------
+EpetraSparsityPattern* EpetraFactory::create_pattern() const
+{
+  return new EpetraSparsityPattern();
+}
+//-----------------------------------------------------------------------------
 Epetra_SerialComm& EpetraFactory::getSerialComm()
 {
   return *comm;
-};
+}
 //-----------------------------------------------------------------------------
 
 // Singleton instance
 EpetraFactory EpetraFactory::factory;
-
 
 #endif
