@@ -8,6 +8,7 @@
 // Last changed: 2008-04-08
 //
 
+#include <stdio.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>

@@ -6,6 +6,8 @@
 // First added:  2003-05-06
 // Last changed: 2008-03-29
 
+#include <stdio.h>
+
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
