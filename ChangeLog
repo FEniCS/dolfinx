@@ -1,3 +1,7 @@
+ - Add call to clean up libxml2 parser at exit
+ - Remove unecessary arguments in DofMap member functions
+ - Remove reference constructors from DofMap, FiniteElement and FunctionSpace
+ - Use a shared_ptr to store the mesh in DofMap objects 
  - Interface change for wrapper code: PoissonBilinearForm --> Poisson::BilinearForm
  - Add function info_underline() for writing underlined messages
  - Rename message() --> info() for "compatibility" with Python logging module
