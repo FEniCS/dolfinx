@@ -134,7 +134,7 @@ print ""
 print "Found %d C++ demos" % len(cppdemos)
 print ""
 
-for demo_path in cppdemos[:3]:
+for demo_path in cppdemos:
     print "----------------------------------------------------------------------"
     print "Running Valgrind on C++ demo %s" % demo_path
     print ""
