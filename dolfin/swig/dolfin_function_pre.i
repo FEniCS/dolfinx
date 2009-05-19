@@ -1,6 +1,8 @@
-//%ignore dolfin::FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh>,
-//                                             boost::shared_ptr<const FiniteElement>,
-//                                             boost::shared_ptr<const DofMap> );
+// Ignore reference (to FunctionSpaces) constructors of Function
+%ignore dolfin::Function::Function(const FunctionSpace&);
+%ignore dolfin::Function::Function(const FunctionSpace&, GenericVector&);
+%ignore dolfin::Function::Function(const FunctionSpace&, std::string);
+
 // Modifying the interface of Function
 %rename(_sub) dolfin::Function::operator[];
 %rename(assign) dolfin::Function::operator=;

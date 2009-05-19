@@ -54,9 +54,12 @@ namespace dolfin
     /// Create function on given function space with a given vector
     Function(const FunctionSpace& V, GenericVector& x);
 
+    /// Create function on given function space with a given vector (shared FunctionSpace, needed for the PyDOLFIN interface)
+    Function(boost::shared_ptr<const FunctionSpace> V, GenericVector& x);
+
     /// Create function on given function space with a given vector (shared data)
     Function(boost::shared_ptr<const FunctionSpace> V, boost::shared_ptr<GenericVector> x);
-
+    
     /// Create function from vector of dofs stored to file
     Function(const FunctionSpace& V, std::string filename);
 

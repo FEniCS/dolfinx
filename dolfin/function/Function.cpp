@@ -49,6 +49,16 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
+                   GenericVector& x)
+  : Variable("v", "unnamed function"),
+    _function_space(V),
+    _vector(reference_to_no_delete_pointer(x))
+{
+  // Basic test
+  dolfin_assert(V->dofmap().global_dimension() == x.size());
+}
+//-----------------------------------------------------------------------------
+Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    boost::shared_ptr<GenericVector> x)
   : Variable("v", "unnamed function"),
     _function_space(V),

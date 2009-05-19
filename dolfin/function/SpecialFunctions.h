@@ -211,13 +211,13 @@ namespace dolfin
     DiscreteFunction() : Function(){}
 
     // Constructor
-    DiscreteFunction(const FunctionSpace& V) : Function(V)
+    DiscreteFunction(boost::shared_ptr<const FunctionSpace> V) : Function(V)
     {
       vector();
     }
 
     // Constructor
-    DiscreteFunction(const FunctionSpace& V, std::string filename) : Function(V,filename){}
+    DiscreteFunction(boost::shared_ptr<const FunctionSpace> V, std::string filename) : Function(V,filename){}
 
     // Constructor
     DiscreteFunction(const SubFunction& v) : Function(v){}
