@@ -39,7 +39,7 @@ namespace dolfin
 
   private:
 
-    /// Private Constructor
+    /// Private constructor
     PETScFactory() {}
     static PETScFactory factory;
 

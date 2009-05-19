@@ -1,8 +1,10 @@
 // Copyright (C) 2005-2006 Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2009.
+//
 // First added:  2007-12-06
-// Last changed: 2007-12-07
+// Last changed: 2009-05-18
 
 #ifdef HAS_PETSC
 
@@ -14,11 +16,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SparsityPattern* PETScFactory::create_pattern() const
-{
-  return new SparsityPattern();
-}
-//-----------------------------------------------------------------------------
 PETScMatrix* PETScFactory::create_matrix() const
 {
   PETScMatrix* pm = new PETScMatrix();
@@ -28,6 +25,11 @@ PETScMatrix* PETScFactory::create_matrix() const
 PETScVector* PETScFactory:: create_vector() const
 {
   return new PETScVector();
+}
+//-----------------------------------------------------------------------------
+SparsityPattern* PETScFactory::create_pattern() const
+{
+  return new SparsityPattern();
 }
 //-----------------------------------------------------------------------------
 
