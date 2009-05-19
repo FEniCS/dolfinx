@@ -361,7 +361,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     PyArrayObject* values = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, valuedims, NPY_DOUBLE, (char *)(std::tr1::get<2>(self->data()))));
     if ( values == NULL ) return NULL;
     
-    return PyTuple_Pack(3,rows, cols, values);
+    return Py_BuildValue("NNN",rows, cols, values);
   }
 
   %pythoncode
@@ -387,9 +387,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     def data(self):
         """ Return arrays to underlying compresssed row/column storage data """
         
-        if not (hasattr(self,"_rows") and hasattr(self,"_cols") and hasattr(self,"_nnz")):
-            self._rows, self._cols, self._nnz = self._data() # Keep references
-        return self._rows, self._cols, self._nnz
+        return self._data()
         
     def __getitem__(self,indices):
         from numpy import ndarray
@@ -594,7 +592,6 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     valuedims[0] = self->size();
     PyArrayObject* values = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, valuedims, NPY_DOUBLE, (char *)(self->data())));
     if ( values == NULL ) return NULL;
-    PyArray_INCREF(values);
     return reinterpret_cast<PyObject*>(values);
   }
 
