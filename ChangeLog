@@ -1,3 +1,4 @@
+ - Add unit tests to the memorycheck
  - Add call to clean up libxml2 parser at exit
  - Remove unecessary arguments in DofMap member functions
  - Remove reference constructors from DofMap, FiniteElement and FunctionSpace
