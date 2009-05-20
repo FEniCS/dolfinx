@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg.
+// Copyright (C) 2007-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007-2009
@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-05-12
+// Last changed: 2009-05-20
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
@@ -445,7 +445,7 @@ void Assembler::init_global_tensor(GenericTensor& A,
       std::vector<const DofMap*> dof_maps(0);
       for(uint i=0; i < a.rank(); ++i)
         dof_maps.push_back(&(a.function_space(i).dofmap()));
-      SparsityPatternBuilder::build(*sparsity_pattern, ufc, a);
+      SparsityPatternBuilder::build(*sparsity_pattern, a, ufc);
     }
     t0.stop();
 
@@ -1702,5 +1702,3 @@ void Assembler::compute_mesh_function_from_mesh_arrays(Mesh& mesh){
 
 }
 //-----------------------------------------------------------------------------
-
-
