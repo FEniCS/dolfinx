@@ -1,33 +1,35 @@
-// Copyright (C) 2008 Dag Lindbo, Anders Logg, Ilmar Wilbers.
+// Copyright (C) 2008-2009 Dag Lindbo, Anders Logg, Ilmar Wilbers.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-22
-// Last changed: 2008-08-07
+// Last changed: 2009-05-20
 
+#include <string>
+#include <vector>
 #include <iostream>
 #include <dolfin.h>
 #include "forms.h"
 
 using namespace dolfin;
 
-double assemble_form(Form& form, Mesh& mesh)
+double assemble_form(Form& form)
 {
   // Assemble once
   const double t0 = time();
   Matrix A;
-  assemble(A, form, mesh);
+  assemble(A, form);
   return time() - t0;
 }
 
-double reassemble_form(Form& form, Mesh& mesh)
+double reassemble_form(Form& form)
 {
   // Assemble once
   Matrix A;
-  assemble(A, form, mesh);
+  assemble(A, form);
 
   // Reassemble
   const double t0 = time();
-  assemble(A, form, mesh, false);
+  assemble(A, form, false);
   return time() - t0;
 }
 
@@ -36,7 +38,7 @@ int main()
   dolfin_set("output destination", "silent");
 
   // Backends
-  Array<std::string> backends;
+  std::vector<std::string> backends;
   backends.push_back("uBLAS");
   backends.push_back("PETSc");
   backends.push_back("Epetra");
@@ -44,7 +46,7 @@ int main()
   backends.push_back("STL");
 
   // Forms
-  Array<std::string> forms;
+  std::vector<std::string> forms;
   forms.push_back("Poisson2DP1");
   forms.push_back("Poisson2DP2");
   forms.push_back("Poisson2DP3");
@@ -72,12 +74,19 @@ int main()
     for (unsigned int j = 0; j < forms.size(); j++)
     {
       std::cout << "  Form: " << forms[j] << std::endl;
-      t0(backends[i], forms[j]) = bench_form(forms[j], assemble_form);
-      t1(backends[i], forms[j]) = timing(backends[i] + t1.title(), true);
-      t2(backends[i], forms[j]) = timing(backends[i] + t2.title(), true);
-      t3(backends[i], forms[j]) = timing(backends[i] + t3.title(), true);
-      t4(backends[i], forms[j]) = timing(backends[i] + t4.title(), true);
-      t5(backends[i], forms[j]) = timing(backends[i] + t5.title(), true);
+      const double tt0 = bench_form(forms[j], assemble_form);
+      const double tt1 = timing(backends[i] + t1.title(), true);
+      const double tt2 = timing(backends[i] + t2.title(), true);
+      const double tt3 = timing(backends[i] + t3.title(), true);
+      const double tt4 = timing(backends[i] + t4.title(), true);
+      const double tt5 = timing(backends[i] + t5.title(), true);
+      t0(backends[i], forms[j]) = tt0;
+      t1(backends[i], forms[j]) = tt1;
+      t2(backends[i], forms[j]) = tt2;
+      t3(backends[i], forms[j]) = tt3;
+      t4(backends[i], forms[j]) = tt4;
+      t5(backends[i], forms[j]) = tt5;
+      t6(backends[i], forms[j]) = tt0 - tt1 - tt2 - tt3 - tt4 - tt5;
     }
   }
 
@@ -93,20 +102,17 @@ int main()
       t7(backends[i], forms[j]) = bench_form(forms[j], reassemble_form);
     }
   }
-  
-  // Compute overhead
-  t6 = t0 - t1 - t2 - t3 - t4 - t5;
 
   // Display results
   dolfin_set("output destination", "terminal");
-  cout << endl; t0.disp();
-  cout << endl; t1.disp();
-  cout << endl; t2.disp();
-  cout << endl; t3.disp();
-  cout << endl; t4.disp();
-  cout << endl; t5.disp();
-  cout << endl; t6.disp();
-  cout << endl; t7.disp();
+  cout << endl; info(t0);
+  cout << endl; info(t1);
+  cout << endl; info(t2);
+  cout << endl; info(t3);
+  cout << endl; info(t4);
+  cout << endl; info(t5);
+  cout << endl; info(t6);
+  cout << endl; info(t7);
   
   return 0;
 }

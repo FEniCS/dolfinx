@@ -1,8 +1,8 @@
-// Copyright (C) 2008 Anders Logg.
+// Copyright (C) 2008-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-22
-// Last changed: 2008-08-05
+// Last changed: 2009-05-20
 
 #include <dolfin.h>
 
@@ -19,55 +19,62 @@
 
 using namespace dolfin;
 
-double bench_form(std::string form_name, double (*bench_form)(Form&, Mesh&))
+double bench_form(std::string form_name, double (*bench_form)(Form&))
 {
   if (form_name == "Poisson2DP1")
   {
     UnitSquare mesh(N_2D, N_2D);
-    Poisson2DP1BilinearForm form;
-    return bench_form(form, mesh);
+    Poisson2DP1::FunctionSpace V(mesh);
+    Poisson2DP1::BilinearForm form(V, V);
+    return bench_form(form);
   }
   else if (form_name == "Poisson2DP2")
   {
     UnitSquare mesh(N_2D, N_2D);
-    Poisson2DP2BilinearForm form;
-    return bench_form(form, mesh);
+    Poisson2DP2::FunctionSpace V(mesh);
+    Poisson2DP2::BilinearForm form(V, V);
+    return bench_form(form);
   }
   else if (form_name == "Poisson2DP3")
   {
     UnitSquare mesh(N_2D, N_2D);
-    Poisson2DP3BilinearForm form;
-    return bench_form(form, mesh);
+    Poisson2DP3::FunctionSpace V(mesh);
+    Poisson2DP3::BilinearForm form(V, V);
+    return bench_form(form);
   }
   else if (form_name == "THStokes2D")
   {
     UnitSquare mesh(N_2D, N_2D);
-    THStokes2DBilinearForm form;
-    return bench_form(form, mesh);
+    THStokes2D::FunctionSpace V(mesh);
+    THStokes2D::BilinearForm form(V, V);
+    return bench_form(form);
   }
   else if (form_name == "StabStokes2D")
   {
     UnitSquare mesh(N_2D, N_2D);
-    Function h(mesh, 1.0);
-    StabStokes2DBilinearForm form(h);
-    return bench_form(form, mesh);
+    StabStokes2D::FunctionSpace V(mesh);
+    Constant h(1.0);
+    StabStokes2D::BilinearForm form(V, V, h);
+    return bench_form(form);
   }
   else if (form_name == "Elasticity3D")
   {
     UnitCube mesh(N_3D, N_3D, N_3D);
-    Elasticity3DBilinearForm form;
-    return bench_form(form, mesh);
+    Elasticity3D::FunctionSpace V(mesh);
+    Elasticity3D::BilinearForm form(V, V);
+    return bench_form(form);
   }
   else if (form_name == "NSEMomentum3D")
   {
     UnitCube mesh(N_3D, N_3D, N_3D);
-    Function w(mesh, 3, 1.0);
-    Function d1(mesh, 1.0);
-    Function d2(mesh, 1.0);
-    Function k(mesh, 1.0);
-    Function nu(mesh, 1.0);
-    NSEMomentum3DBilinearForm form(w, d1, d2, k, nu);
-    return bench_form(form, mesh);
+    NSEMomentum3D::FunctionSpace V(mesh);
+    Constant  w(3, 1.0);
+    Constant d1(1.0);
+    Constant d2(1.0);
+    Constant k(1.0);
+    Constant nu(1.0);
+    NSEMomentum3D::BilinearForm form(V, V, w, d1, d2, k, nu);
+    return bench_form(form);
   }
   else
   {
