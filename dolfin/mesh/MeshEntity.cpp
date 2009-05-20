@@ -1,14 +1,30 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-11
-// Last changed: 2006-10-20
+// Last changed: 2009-05-20
 
 #include <dolfin/log/dolfin_log.h>
 #include "MeshEntity.h"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+MeshEntity::MeshEntity(const Mesh& mesh, uint dim, uint index)
+  : _mesh(mesh), _dim(dim), _index(index)
+{
+  if (index >= mesh.num_entities(dim))
+  {
+    info("Hint: Did you forget to call mesh.init(%d)?", dim);
+    error("Mesh entity index %d out of range [0, %d] for entity of dimension %d.",
+          index, mesh.num_entities(dim), dim);
+  }
+}
+//-----------------------------------------------------------------------------
+MeshEntity::~MeshEntity()
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 bool MeshEntity::incident(const MeshEntity& entity) const
 {

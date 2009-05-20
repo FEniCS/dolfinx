@@ -1,8 +1,8 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-11
-// Last changed: 2008-10-23
+// Last changed: 2009-05-20
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
@@ -22,10 +22,10 @@ namespace dolfin
   public:
 
     /// Constructor
-    MeshEntity(const Mesh& mesh, uint dim, uint index) : _mesh(mesh), _dim(dim), _index(index) {}
+    MeshEntity(const Mesh& mesh, uint dim, uint index);
 
     /// Destructor
-    ~MeshEntity() {}
+    virtual ~MeshEntity();
 
     /// Return mesh associated with mesh entity
     inline const Mesh& mesh() const { return _mesh; }
