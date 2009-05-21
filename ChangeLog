@@ -1,3 +1,5 @@
+ - Replace enums with strings for linear algebra and built-in meshes
+ - Allow direct access to Constant value
  - Initialize entities in MeshEntity constructor automatically and check range
  - Add unit tests to the memorycheck
  - Add call to clean up libxml2 parser at exit
