@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-04-21
+// Last changed: 2009-05-22
+
 #ifndef __EPETRA_SPARSITY_PATTERN_H
 #define __EPETRA_SPARSITY_PATTERN_H
-
 
 #ifdef HAS_TRILINOS
 
@@ -16,10 +17,10 @@ class Epetra_FECrsGraph;
 
 namespace dolfin
 {
+
   class EpetraVector;
   class EpetraFactory;
-  /// Base class for sparsity patterns of vectors/matrices. Concrete sub classes can
-  /// be used to initalise vectors and sparse matrices.
+
   class EpetraSparsityPattern : public GenericSparsityPattern
   {
   public:
@@ -57,17 +58,19 @@ namespace dolfin
     /// Return factory object for backend
     LinearAlgebraFactory& factory() const;
 
+    /// Return Epetra CRS graph
     Epetra_FECrsGraph& pattern() const;
 
   private:
-    Epetra_FECrsGraph* epetra_graph;
+    
+    Epetra_FECrsGraph*  epetra_graph;
     uint                rank;
     uint*               dims;
 
   };
 
 }
-#endif
+
 #endif
 
-
+#endif
