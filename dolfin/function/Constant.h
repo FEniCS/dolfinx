@@ -46,6 +46,14 @@ namespace dolfin
     /// Function evaluation
     void eval(double* values, const Data& data) const;
 
+    /// Return size
+    uint size() const
+    { return _size; }
+
+    /// Return values
+    const double* values() const 
+    { return _values; }
+
   private:
 
     // Size of value (number of entries in tensor value)
