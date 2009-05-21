@@ -9,13 +9,15 @@
 
 #include "MeshEditor.h"
 #include "UnitCircle.h"
+#include <dolfin/common/constants.h>
 #include <dolfin/main/MPI.h>
 #include "MPIMeshCommunicator.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh()
+UnitCircle::UnitCircle(uint nx, std::string diagonal, 
+                       std::string transformation) : Mesh()
 {
   warning("UnitCircle is Experimental: It may be of poor quality.");
 
@@ -33,7 +35,7 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
   editor.open(*this, CellType::triangle, 2, 2);
 
   // Create vertices and cells:
-  if (type == crisscross)
+  if (diagonal == "crossed")
   {
     editor.init_vertices((nx+1)*(ny+1) + nx*ny);
     editor.init_cells(4*nx*ny);
@@ -44,25 +46,22 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
     editor.init_cells(2*nx*ny);
   }
 
-  // Create main vertices:
-  // variables for transformation
-  double trns_x = 0.0;
-  double trns_y = 0.0;
+  // Create main vertices
+  double x_trans[2];
   uint vertex = 0;
   for (uint iy = 0; iy <= ny; iy++)
   {
-    const double y = -1.0 + static_cast<double>(iy)*2.0 / static_cast<double>(ny);
+    const double y = -1.0 + static_cast<double>(iy)*2.0/static_cast<double>(ny);
     for (uint ix = 0; ix <= nx; ix++)
     {
-      const double x =-1.+ static_cast<double>(ix)*2.0 / static_cast<double>(nx);
-      trns_x = transformx(x, y, transformation);
-      trns_y = transformy(x, y, transformation);
-      editor.add_vertex(vertex++, trns_x, trns_y);
+      const double x = -1.0 + static_cast<double>(ix)*2.0/static_cast<double>(nx);
+      transform(x_trans, x, y, transformation);
+      editor.add_vertex(vertex++, x_trans[0], x_trans[1]);
     }
   }
 
   // Create midpoint vertices if the mesh type is crisscross
-  if (type == crisscross)
+  if (diagonal == "crossed")
   {
     for (uint iy = 0; iy < ny; iy++)
     {
@@ -70,16 +69,15 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
       for (uint ix = 0; ix < nx; ix++)
       {
         const double x = -1.0 + (static_cast<double>(ix) + 0.5)*2.0 / static_cast<double>(nx);
-        trns_x = transformx(x, y, transformation);
-        trns_y = transformy(x, y, transformation);
-        editor.add_vertex(vertex++, trns_x, trns_y);
+        transform(x_trans, x, y, transformation);
+        editor.add_vertex(vertex++, x_trans[0], x_trans[1]);
       }
     }
   }
 
   // Create triangles
   uint cell = 0;
-  if (type == crisscross)
+  if (diagonal == "crossed")
   {
     for (uint iy = 0; iy < ny; iy++)
     {
@@ -99,7 +97,7 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
       }
     }
   }
-  else if (type == left )
+  else if (diagonal == "left" )
   {
     for (uint iy = 0; iy < ny; iy++)
     {
@@ -139,76 +137,34 @@ UnitCircle::UnitCircle(uint nx, Type type, Transformation transformation) : Mesh
   if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
 }
 //-----------------------------------------------------------------------------
-double UnitCircle::transformx(double x, double y, Transformation transformation)
+void UnitCircle::transform(double* trans, double x, double y, std::string transformation)
 {
-  //maxn transformation
-  if(transformation == maxn)
+  if (std::abs(x) < DOLFIN_EPS && std::abs(y) < DOLFIN_EPS)
   {
-    if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
-      return x*max(fabs(x),fabs(y))/sqrt(x*x+y*y);
-    else
-      return x;
+    trans[0] = x;
+    trans[1] = y;
+    return;
   }
-  //sumn transformation
-  else if(transformation == sumn)
+  
+  if(transformation == "maxn") // maxn transformation
   {
-    if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
-      return x*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
-    else
-      return x;
+    trans[0] = x*max(fabs(x),fabs(y))/sqrt(x*x+y*y);
+    trans[1] = y*max(fabs(x),fabs(y))/sqrt(x*x+y*y);
+  }
+  else if (transformation == "sumn") // sumn transformation
+  {
+    error("sumn mapping for a UnitCircle is broken");
+    trans[0] = x*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
+    trans[1] = y*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
+  }
+  else if (transformation == "rotsumn") // rotsum transformation
+  {
+    double xx = 0.5*(x+y);
+    double yy = 0.5*(-x+y);
+    trans[0] = xx*(fabs(xx)+fabs(yy))/sqrt(xx*xx+yy*yy);
+    trans[1] = yy*(fabs(xx)+fabs(yy))/sqrt(xx*xx+yy*yy);
   }
   else
-  {
-    // FIXME: Use easier to understand check
-    if((transformation != maxn)*(transformation != sumn)*(transformation != rotsumn))
-    {
-      info("Implemented  transformations are: maxn,sumn and rotsumn");
-      info("Using rotsumn transformation");
-    }
-    if(x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
-    {
-      double xx = 0.5*(x+y);
-      double yy = 0.5*(-x+y);
-      return xx*(fabs(xx)+fabs(yy))/sqrt(xx*xx+yy*yy);
-    }
-    else
-      return y;
-  }
-}
-//-----------------------------------------------------------------------------
-double UnitCircle::transformy(double x, double y, Transformation transformation)
-{
-  //maxn transformation
-  if(transformation == maxn)
-  {
-    if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
-      return y*max(fabs(x),fabs(y))/sqrt(x*x+y*y);
-    else
-      return y;
-  }
-  //sumn transformation
-  else if (transformation == sumn)
-  {
-    if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
-      return y*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
-    else
-      return y;
-  }
-  else
-  {
-    if ((transformation != maxn)*(transformation != sumn)*(transformation != rotsumn))
-    {
-      info("Implemented  transformations for are: maxn, sumn and rotsumn");
-      info("Using rotsumn transformation");
-    }
-    if (x||y) //in (0,0) (trns_x,trans_y)=(nan,nan)
-    {
-      double xx = 0.5*(x+y);
-      double yy = 0.5*(-x+y);
-      return yy*(fabs(xx)+fabs(yy))/sqrt(xx*xx+yy*yy);
-    }
-    else
-      return y;
-  }
+    error("Unknown transformation type.");
 }
 //-----------------------------------------------------------------------------

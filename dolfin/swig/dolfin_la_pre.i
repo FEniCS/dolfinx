@@ -1,8 +1,5 @@
 /* -*- C -*-  (not really, but good for syntax highlighting) */
 
-// Cannot handle overloading on enums Preconditioner and KrylovMethod
-%ignore dolfin::uBLASKrylovSolver::uBLASKrylovSolver(dolfin::PreconditionerType);
-
 // Fix problem with missing uBLAS namespace
 %inline %{
   namespace boost{ namespace numeric{ namespace ublas{}}}

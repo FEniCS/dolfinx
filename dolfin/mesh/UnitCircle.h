@@ -19,25 +19,24 @@ namespace dolfin
   /// the total number of triangles will be 2*nx*ny and the
   /// total number of vertices will be (nx + 1)*(ny + 1).
 
-  /// The Type is an enumerater taking values in {left, right or
-  /// crisscross} indicating the direction of the diagonals for
-  /// left/right or both == crisscross. The default is right.
+  /// std::string diagonal ("left", "right" or "crossed") indicates the 
+  /// direction of the diagonals.
+
+  /// std:string transformation ("maxn", "sumn" or "rotsumn")
 
   class UnitCircle : public Mesh
   {
   public:
 
-    enum Type {right, left, crisscross};
-    enum Transformation {maxn, sumn, rotsumn};
-
-    UnitCircle(uint nx, Type type = crisscross,
-               Transformation transformation = rotsumn);
+    UnitCircle(uint nx, std::string diagonal = "crossed",
+               std::string transformation = "rotsumn");
 
   private:
 
-    double transformx(double x, double y, Transformation transformation);
+    void transform(double* x_trans, double x, double y, std::string transformation);
 
-    double transformy(double x, double y, Transformation transformation);
+    double transformx(double x, double y, std::string transformation);
+    double transformy(double x, double y, std::string transformation);
 
     inline double max(double x, double y)
     { return ((x>y) ? x : y); };

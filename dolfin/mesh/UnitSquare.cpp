@@ -14,10 +14,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
+UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
 {
   // Receive mesh according to parallel policy
   if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
+
+  if(diagonal != "left" && diagonal != "right" && diagonal != "crossed")
+    error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\" and \"crossed\".");
 
   if ( nx < 1 || ny < 1 )
     error("Size of unit square must be at least 1 in each dimension.");
@@ -29,7 +32,7 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
   editor.open(*this, CellType::triangle, 2, 2);
 
   // Create vertices and cells:
-  if (type == crisscross)
+  if (diagonal == "crossed")
   {
     editor.init_vertices((nx+1)*(ny+1) + nx*ny);
     editor.init_cells(4*nx*ny);
@@ -44,16 +47,16 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
   uint vertex = 0;
   for (uint iy = 0; iy <= ny; iy++)
   {
-    const double y = static_cast<double>(iy) / static_cast<double>(ny);
+    const double y = static_cast<double>(iy)/static_cast<double>(ny);
     for (uint ix = 0; ix <= nx; ix++)
     {
-      const double x = static_cast<double>(ix) / static_cast<double>(nx);
+      const double x = static_cast<double>(ix)/static_cast<double>(nx);
       editor.add_vertex(vertex++, x, y);
     }
   }
 
   // Create midpoint vertices if the mesh type is crisscross
-  if (type == crisscross)
+  if (diagonal == "crossed")
   {
     for (uint iy = 0; iy < ny; iy++)
     {
@@ -68,7 +71,7 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
 
   // Create triangles
   uint cell = 0;
-  if (type == crisscross)
+  if (diagonal == "crossed")
   {
     for (uint iy = 0; iy < ny; iy++)
     {
@@ -88,7 +91,7 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
       }
     }
   }
-  else if (type == left )
+  else if (diagonal == "left" || diagonal == "right")
   {
     for (uint iy = 0; iy < ny; iy++)
     {
@@ -100,26 +103,15 @@ UnitSquare::UnitSquare(uint nx, uint ny, Type type) : Mesh()
         const uint v3 = v1 + (nx + 1);
 
         editor.add_cell(cell++, v0, v1, v2);
-        editor.add_cell(cell++, v1, v2, v3);
+        if(diagonal =="left")
+          editor.add_cell(cell++, v1, v2, v3);
+        else
+          editor.add_cell(cell++, v0, v2, v3);
       }
     }
   }
   else
-  {
-    for (uint iy = 0; iy < ny; iy++)
-    {
-      for (uint ix = 0; ix < nx; ix++)
-      {
-        const uint v0 = iy*(nx + 1) + ix;
-        const uint v1 = v0 + 1;
-        const uint v2 = v0 + (nx + 1);
-        const uint v3 = v1 + (nx + 1);
-
-        editor.add_cell(cell++, v0, v1, v3);
-        editor.add_cell(cell++, v0, v2, v3);
-      }
-    }
-  }
+    error("Unkown diagonal string.");
 
   // Close mesh editor
   editor.close();

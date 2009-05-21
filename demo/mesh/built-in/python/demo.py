@@ -11,30 +11,46 @@ from dolfin import *
 
 mesh = UnitInterval(10)
 print "Plotting a UnitInterval"
-plot(mesh, title="Unit interval")
+#plot(mesh, title="Unit interval")
 
 mesh = UnitSquare(10, 10)
 print "Plotting a UnitSquare"
-plot(mesh, title="Unit square")
+#plot(mesh, title="Unit square")
+
+mesh = UnitSquare(10, 10, "left")
+print "Plotting a UnitSquare"
+#plot(mesh, title="Unit square (left)")
+
+mesh = UnitSquare(10, 10, "crossed")
+print "Plotting a UnitSquare"
+#plot(mesh, title="Unit square (crossed)")
 
 mesh = Rectangle(0.0, 0.0, 10.0, 4.0, 10, 10)
 print "Plotting a Rectangle"
 plot(mesh, title="Rectangle")
 
-mesh = UnitCircle(20, UnitCircle.right)
+mesh = UnitCircle(20, "right", "rotsumn")
 print "Plotting a UnitCircle"
-plot(mesh, title="Unit circle")
+plot(mesh, title="Unit circle (rotsum)")
+
+#mesh = UnitCircle(20, "left", "sumn")
+#print "Plotting a UnitCircle"
+#plot(mesh, title="Unit circle (sumn)")
+
+mesh = UnitCircle(20, "right", "maxn")
+print "Plotting a UnitCircle"
+plot(mesh, title="Unit circle (maxn)")
 
 mesh = UnitCube(10, 10, 10)
 print "Plotting a UnitCube"
-plot(mesh, title="Unit cube")
+#plot(mesh, title="Unit cube")
 
 mesh = Box(0.0, 0.0, 0.0, 10.0, 4.0, 2.0, 10, 10, 10)
 print "Plotting a Box"
-plot(mesh, title="Box")
+#plot(mesh, title="Box")
 
 mesh = UnitSphere(10)
 print "Plotting a UnitSphere"
-plot(mesh, title="Unit sphere")
+#plot(mesh, title="Unit sphere")
 
 interactive()

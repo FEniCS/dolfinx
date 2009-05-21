@@ -17,8 +17,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Rectangle::Rectangle(double x0, double y0, double x1, double y1,
-                     uint nx, uint ny, Type type) : Mesh()
+                     uint nx, uint ny, std::string diagonal) : Mesh()
 {
+  if(diagonal != "left" && diagonal != "right" && diagonal != "crossed")
+    error("Unknown mesh diagonal in Rectangle. Allowed options are \"left\", \"right\" and \"crossed\".");
+
+  // Receive mesh according to parallel policy
+  if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
+
   const double a = x0;
   const double b = x1;
   const double c = y0;
@@ -39,7 +45,7 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
   editor.open(*this, CellType::triangle, 2, 2);
 
   // Create vertices and cells:
-  if (type == crisscross)
+  if (diagonal == "crossed")
   {
     editor.init_vertices((nx+1)*(ny+1) + nx*ny);
     editor.init_cells(4*nx*ny);
@@ -54,16 +60,16 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
   uint vertex = 0;
   for (uint iy = 0; iy <= ny; iy++)
   {
-    const double y = c + ((static_cast<double> (iy))*(d-c) / static_cast<double>(ny));
+    const double y = c + ((static_cast<double>(iy))*(d-c)/static_cast<double>(ny));
     for (uint ix = 0; ix <= nx; ix++)
     {
-      const double x = a + ((static_cast<double>(ix))*(b-a) / static_cast<double>(nx));
+      const double x = a + ((static_cast<double>(ix))*(b-a)/static_cast<double>(nx));
       editor.add_vertex(vertex++, x, y);
     }
   }
 
-  // Create midpoint vertices if the mesh type is crisscross
-  if (type == crisscross)
+  // Create midpoint vertices if the mesh type is crossed
+  if (diagonal == "crossed")
   {
     for (uint iy = 0; iy < ny; iy++)
     {
@@ -78,7 +84,7 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
 
   // Create triangles
   uint cell = 0;
-  if (type == crisscross)
+  if (diagonal == "crossed")
   {
     for (uint iy = 0; iy < ny; iy++)
     {
@@ -98,7 +104,7 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
       }
     }
   }
-  else if (type == left )
+  else if (diagonal == "left" || diagonal == "right")
   {
     for (uint iy = 0; iy < ny; iy++)
     {
@@ -110,26 +116,15 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
         const uint v3 = v1 + (nx + 1);
 
         editor.add_cell(cell++, v0, v1, v2);
-        editor.add_cell(cell++, v1, v2, v3);
+        if (diagonal == "left")
+          editor.add_cell(cell++, v1, v2, v3);
+        else
+          editor.add_cell(cell++, v0, v2, v3);
       }
     }
   }
   else
-  {
-    for (uint iy = 0; iy < ny; iy++)
-    {
-      for (uint ix = 0; ix < nx; ix++)
-      {
-        const uint v0 = iy*(nx + 1) + ix;
-        const uint v1 = v0 + 1;
-        const uint v2 = v0 + (nx + 1);
-        const uint v3 = v1 + (nx + 1);
-
-        editor.add_cell(cell++, v0, v1, v3);
-        editor.add_cell(cell++, v0, v2, v3);
-      }
-    }
-  }
+    error("Unkown diagonal string.");
 
   // Close mesh editor
   editor.close();
