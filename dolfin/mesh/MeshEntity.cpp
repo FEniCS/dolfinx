@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-11
-// Last changed: 2009-05-20
+// Last changed: 2009-05-21
 
 #include <dolfin/log/dolfin_log.h>
 #include "MeshEntity.h"
@@ -13,16 +13,21 @@ using namespace dolfin;
 MeshEntity::MeshEntity(const Mesh& mesh, uint dim, uint index)
   : _mesh(mesh), _dim(dim), _index(index)
 {
-  // FIXME: Add this test back, check why it breaks some demos
+  // Check index range
+  if (index < mesh.num_entities(dim))
+    return;
 
-  /*
-  if (index >= mesh.num_entities(dim))
-  {
-    info("Hint: Did you forget to call mesh.init(%d)?", dim);
-    error("Mesh entity index %d out of range [0, %d] for entity of dimension %d.",
+  // Initialize mesh entities
+  mesh.init(dim);
+
+  // Check index range again
+  if (index < mesh.num_entities(dim))
+    return;
+
+  // Illegal index range
+  info("Hint: Did you forget to call mesh.init(%d)?", dim);
+  error("Mesh entity index %d out of range [0, %d] for entity of dimension %d.",
           index, mesh.num_entities(dim), dim);
-  }
-  */
 }
 //-----------------------------------------------------------------------------
 MeshEntity::~MeshEntity()
