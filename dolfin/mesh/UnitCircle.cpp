@@ -155,7 +155,7 @@ void UnitCircle::transform(double* trans, double x, double y, std::string transf
   }
   else if (transformation == "sumn")
   {
-    //error("sumn mapping for a UnitCircle is broken");
+    error("sumn mapping for a UnitCircle is broken");
     trans[0] = x*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
     trans[1] = y*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
   }
