@@ -13,12 +13,16 @@ using namespace dolfin;
 MeshEntity::MeshEntity(const Mesh& mesh, uint dim, uint index)
   : _mesh(mesh), _dim(dim), _index(index)
 {
+  // FIXME: Add this test back, check why it breaks some demos
+
+  /*
   if (index >= mesh.num_entities(dim))
   {
     info("Hint: Did you forget to call mesh.init(%d)?", dim);
     error("Mesh entity index %d out of range [0, %d] for entity of dimension %d.",
           index, mesh.num_entities(dim), dim);
   }
+  */
 }
 //-----------------------------------------------------------------------------
 MeshEntity::~MeshEntity()
