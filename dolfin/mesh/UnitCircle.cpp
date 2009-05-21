@@ -25,8 +25,9 @@ UnitCircle::UnitCircle(uint nx, std::string diagonal,
   if(diagonal != "left" && diagonal != "right" && diagonal != "crossed")
     error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\" and \"crossed\".");
 
-  if(transformation != "left" && transformation != "right" && transformation != "crossed")
-    error("Unknown transformation in UnitCircle. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\".");
+  if(transformation != "maxn" && transformation != "sumn" && transformation != "rotsumn")
+    error("Unknown transformation '%s' in UnitCircle. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\".", 
+            transformation.c_str());
 
   warning("UnitCircle is experimental. It may be of poor quality.");
 
@@ -104,7 +105,7 @@ UnitCircle::UnitCircle(uint nx, std::string diagonal,
       }
     }
   }
-  else if (diagonal == "left" ||  diagonal == "left")
+  else if (diagonal == "left" ||  diagonal == "right")
   {
     for (uint iy = 0; iy < ny; iy++)
     {
@@ -115,11 +116,16 @@ UnitCircle::UnitCircle(uint nx, std::string diagonal,
         const uint v2 = v0 + (nx + 1);
         const uint v3 = v1 + (nx + 1);
 
-        editor.add_cell(cell++, v0, v1, v2);
-        if (diagonal == "left")
+        if(diagonal == "left")
+        {
+          editor.add_cell(cell++, v0, v1, v2);
           editor.add_cell(cell++, v1, v2, v3);
+        }
         else
+        {
+          editor.add_cell(cell++, v0, v1, v3);
           editor.add_cell(cell++, v0, v2, v3);
+        }
       }
     }
   }
@@ -149,9 +155,21 @@ void UnitCircle::transform(double* trans, double x, double y, std::string transf
   }
   else if (transformation == "sumn")
   {
-    error("sumn mapping for a UnitCircle is broken");
-    trans[0] = x*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
-    trans[1] = y*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
+    //error("sumn mapping for a UnitCircle is broken");
+    //trans[0] = x*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
+    //trans[1] = y*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
+    if(fabs(x) > fabs(y))
+    {
+      trans[0] = x*cos(DOLFIN_PI*y/(4.0*x));
+      trans[1] = x*sin(DOLFIN_PI*y/(4.0*x));
+    }
+    else
+    {
+      trans[0] = y*sin(DOLFIN_PI*x/(4.0*y));
+      trans[1] = y*cos(DOLFIN_PI*x/(4.0*y));
+    }
+    //trans[0] = x*sqrt(x*x+y*y)/(fabs(x)+fabs(y));
+    //trans[1] = y*sqrt(x*x+y*y)/(fabs(x)+fabs(y));
   }
   else if (transformation == "rotsumn")
   {

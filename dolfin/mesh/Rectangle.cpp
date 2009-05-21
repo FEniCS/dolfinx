@@ -115,11 +115,16 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
         const uint v2 = v0 + (nx + 1);
         const uint v3 = v1 + (nx + 1);
 
-        editor.add_cell(cell++, v0, v1, v2);
-        if (diagonal == "left")
+        if(diagonal == "left")
+        {
+          editor.add_cell(cell++, v0, v1, v2);
           editor.add_cell(cell++, v1, v2, v3);
+        }
         else
+        {
+          editor.add_cell(cell++, v0, v1, v3);
           editor.add_cell(cell++, v0, v2, v3);
+        }
       }
     }
   }

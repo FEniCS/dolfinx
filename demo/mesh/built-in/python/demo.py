@@ -15,7 +15,7 @@ print "Plotting a UnitInterval"
 
 mesh = UnitSquare(10, 10)
 print "Plotting a UnitSquare"
-#plot(mesh, title="Unit square")
+plot(mesh, title="Unit square")
 
 mesh = UnitSquare(10, 10, "left")
 print "Plotting a UnitSquare"
@@ -29,13 +29,13 @@ mesh = Rectangle(0.0, 0.0, 10.0, 4.0, 10, 10)
 print "Plotting a Rectangle"
 plot(mesh, title="Rectangle")
 
-mesh = UnitCircle(20, "right", "rotsumn")
+mesh = UnitCircle(20, "right", "rotsusmn")
 print "Plotting a UnitCircle"
 plot(mesh, title="Unit circle (rotsum)")
 
-#mesh = UnitCircle(20, "left", "sumn")
-#print "Plotting a UnitCircle"
-#plot(mesh, title="Unit circle (sumn)")
+mesh = UnitCircle(20, "left", "sumn")
+print "Plotting a UnitCircle"
+plot(mesh, title="Unit circle (sumn)")
 
 mesh = UnitCircle(20, "right", "maxn")
 print "Plotting a UnitCircle"
