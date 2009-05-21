@@ -20,15 +20,15 @@ Box::Box(double x0, double y0, double z0,
          double x1, double y1, double z1,
          uint nx, uint ny, uint nz) : Mesh()
 {
+  // Receive mesh according to parallel policy
+  if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
+
   const double a = x0;
   const double b = x1;
   const double c = y0;
   const double d = y1;
   const double e = z0;
   const double f = z1;
-
-  // Receive mesh according to parallel policy
-  if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
 
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS || std::abs(z0 - z1) < DOLFIN_EPS )
     error("Box must have nonzero width, height and depth.");

@@ -19,11 +19,18 @@ using namespace dolfin;
 UnitCircle::UnitCircle(uint nx, std::string diagonal, 
                        std::string transformation) : Mesh()
 {
-  warning("UnitCircle is Experimental: It may be of poor quality.");
-
-  uint ny=nx;
   // Receive mesh according to parallel policy
   if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
+
+  if(diagonal != "left" && diagonal != "right" && diagonal != "crossed")
+    error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\" and \"crossed\".");
+
+  if(transformation != "left" && transformation != "right" && transformation != "crossed")
+    error("Unknown transformation in UnitCircle. Allowed options are \"maxn\", \"sumn\" and \"rotsumn\".");
+
+  warning("UnitCircle is experimental. It may be of poor quality.");
+
+  uint ny=nx;
 
   if ( nx < 1 || ny < 1 )
     error("Size of unit square must be at least 1 in each dimension.");
@@ -47,8 +54,8 @@ UnitCircle::UnitCircle(uint nx, std::string diagonal,
   }
 
   // Create main vertices
-  double x_trans[2];
   uint vertex = 0;
+  double x_trans[2];
   for (uint iy = 0; iy <= ny; iy++)
   {
     const double y = -1.0 + static_cast<double>(iy)*2.0/static_cast<double>(ny);
@@ -97,7 +104,7 @@ UnitCircle::UnitCircle(uint nx, std::string diagonal,
       }
     }
   }
-  else if (diagonal == "left" )
+  else if (diagonal == "left" ||  diagonal == "left")
   {
     for (uint iy = 0; iy < ny; iy++)
     {
@@ -109,26 +116,15 @@ UnitCircle::UnitCircle(uint nx, std::string diagonal,
         const uint v3 = v1 + (nx + 1);
 
         editor.add_cell(cell++, v0, v1, v2);
-        editor.add_cell(cell++, v1, v2, v3);
+        if (diagonal == "left")
+          editor.add_cell(cell++, v1, v2, v3);
+        else
+          editor.add_cell(cell++, v0, v2, v3);
       }
     }
   }
   else
-  {
-    for (uint iy = 0; iy < ny; iy++)
-    {
-      for (uint ix = 0; ix < nx; ix++)
-      {
-        const uint v0 = iy*(nx + 1) + ix;
-        const uint v1 = v0 + 1;
-        const uint v2 = v0 + (nx + 1);
-        const uint v3 = v1 + (nx + 1);
-
-        editor.add_cell(cell++, v0, v1, v3);
-        editor.add_cell(cell++, v0, v2, v3);
-      }
-    }
-  }
+    error("Unknown diagonal string.");
 
   // Close mesh editor
   editor.close();
@@ -146,18 +142,18 @@ void UnitCircle::transform(double* trans, double x, double y, std::string transf
     return;
   }
   
-  if(transformation == "maxn") // maxn transformation
+  if(transformation == "maxn")
   {
     trans[0] = x*max(fabs(x),fabs(y))/sqrt(x*x+y*y);
     trans[1] = y*max(fabs(x),fabs(y))/sqrt(x*x+y*y);
   }
-  else if (transformation == "sumn") // sumn transformation
+  else if (transformation == "sumn")
   {
     error("sumn mapping for a UnitCircle is broken");
     trans[0] = x*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
     trans[1] = y*(fabs(x)+fabs(y))/sqrt(x*x+y*y);
   }
-  else if (transformation == "rotsumn") // rotsum transformation
+  else if (transformation == "rotsumn")
   {
     double xx = 0.5*(x+y);
     double yy = 0.5*(-x+y);

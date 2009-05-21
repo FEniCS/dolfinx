@@ -17,14 +17,13 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UnitSphere::UnitSphere(uint nx) : Mesh()
 {
+  // Receive mesh according to parallel policy
+  if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
 
-  info("UnitSphere is Experimental: It could have a bad quality mesh");
+  info("UnitSphere is experimental. It may be of poor quality mesh");
 
   uint ny=nx;
   uint nz=nx;
-
-  // Receive mesh according to parallel policy
-  if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
 
   if ( nx < 1 || ny < 1 || nz < 1 )
     error("Size of unit cube must be at least 1 in each dimension.");

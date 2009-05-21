@@ -124,7 +124,7 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
     }
   }
   else
-    error("Unkown diagonal string.");
+    error("Unknown diagonal string.");
 
   // Close mesh editor
   editor.close();

@@ -111,7 +111,7 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
     }
   }
   else
-    error("Unkown diagonal string.");
+    error("Unknown diagonal string.");
 
   // Close mesh editor
   editor.close();
