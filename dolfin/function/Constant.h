@@ -51,6 +51,14 @@ namespace dolfin
     { return _size; }
 
     /// Return values
+    operator double() const 
+    { 
+      if(_size > 1)
+        error("Cannot convert non-scalar Constant to a double.");
+      return _values[0];
+    }
+
+    /// Return values
     const double* values() const 
     { return _values; }
 
