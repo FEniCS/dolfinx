@@ -10,9 +10,8 @@
 // Last changed: 2009-05-17
 
 #include <boost/scoped_array.hpp>
-#include <stdarg.h>
+#include <cstdarg>
 #include <stdio.h>
-#include <signal.h>
 #include <sstream>
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>

@@ -10,8 +10,6 @@
 #define __LOG_H
 
 #include <string>
-#include <map>
-#include <stdarg.h>
 #include <dolfin/common/types.h>
 
 namespace dolfin
