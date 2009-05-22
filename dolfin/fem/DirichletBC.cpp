@@ -7,6 +7,8 @@
 // First added:  2007-04-10
 // Last changed: 2009-02-26
 
+#include <boost/assign/list_of.hpp>
+
 #include <dolfin/common/constants.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -28,6 +30,8 @@
 #include "DirichletBC.h"
 
 using namespace dolfin;
+
+const std::set<std::string> DirichletBC::methods = boost::assign::list_of("topological")("geometric")("pointwise");
 
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V,
@@ -251,7 +255,8 @@ void DirichletBC::check() const
   //if (!g.in(*V))
   //  error("Unable to create boundary condition, boundary value function is not in trial space.");
 
-  if (method != "topological" && method != "geometric" && method != "pointwise")
+  // Check that boundary condition method is known
+  if (methods.count(method) == 0)
     error("Unknown method for applying Dirichlet boundary condtions."); 
 
 

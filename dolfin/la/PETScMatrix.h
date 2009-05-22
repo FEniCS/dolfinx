@@ -14,6 +14,8 @@
 
 #ifdef HAS_PETSC
 
+#include <map>
+#include <string>
 #include <boost/shared_ptr.hpp>
 #include <petscmat.h>
 
@@ -152,8 +154,14 @@ namespace dolfin
     // Return PETSc matrix type
     #if PETSC_VERSION_MAJOR > 2
     const MatType getPETScType() const;
+
+    // Possible PETSc matrix types
+    static const std::map<std::string, const MatType> types;
     #else
     MatType getPETScType() const;
+
+    // Possible PETSc matrix types
+    static const std::map<std::string, MatType> types;
     #endif
 
     // Check that requested type has been compiled into PETSc
@@ -161,6 +169,9 @@ namespace dolfin
 
     // PETSc Mat pointer
     boost::shared_ptr<Mat> A;
+
+    // PETSc norm types
+    static const std::map<std::string, NormType> norm_types;
 
     // PETSc matrix type
     std::string _type;

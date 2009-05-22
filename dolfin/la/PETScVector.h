@@ -1,19 +1,21 @@
 // Copyright (C) 2004-2008 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2005-2007.
+// Modified by Garth N. Wells, 2005-2009.
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Ola Skavhaug, 2008.
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2008-05-25
+// Last changed: 2009-05-22
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
 
 #ifdef HAS_PETSC
 
+#include <map>
+#include <string>
 #include <boost/shared_ptr.hpp>
 #include <petscvec.h>
 
@@ -150,6 +152,9 @@ namespace dolfin
 
     // PETSc Vec pointer
     boost::shared_ptr<Vec> x;
+
+    // PETSc norm types
+    static const std::map<std::string, NormType> norm_types;
 
   };
 

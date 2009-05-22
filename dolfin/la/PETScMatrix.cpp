@@ -1,7 +1,7 @@
 // Copyright (C) 2004-2008 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2005-2008.
+// Modified by Garth N. Wells 2005-2009.
 // Modified by Andy R. Terrel 2005.
 // Modified by Ola Skavhaug 2007.
 // Modified by Magnus Vikstrøm 2007-2008.
@@ -14,13 +14,15 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <boost/assign/list_of.hpp>
+
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/main/MPI.h>
 #include "PETScVector.h"
 #include "PETScMatrix.h"
 #include "GenericSparsityPattern.h"
 #include "SparsityPattern.h"
 #include "PETScFactory.h"
-#include <dolfin/main/MPI.h>
 
 namespace dolfin
 {
@@ -37,6 +39,25 @@ namespace dolfin
 }
 
 using namespace dolfin;
+
+#if PETSC_VERSION_MAJOR > 2
+const std::map<std::string, const MatType> PETScMatrix::types 
+  = boost::assign::map_list_of("default", MATSEQAIJ)
+                              ("spooles", MAT_SOLVER_SPOOLES)
+                              ("superlu", MAT_SOLVER_SUPERLU)
+                              ("umfpack", MAT_SOLVER_UMFPACK); 
+#else
+const std::map<std::string, MatType> PETScMatrix::types 
+  = boost::assign::map_list_of("default", MATSEQAIJ)
+                              ("spooles", MATSEQAIJSPOOLES)
+                              ("superlu", MATSUPERLU)
+                              ("umfpack", MATUMFPACK); 
+#endif
+
+const std::map<std::string, NormType> PETScMatrix::norm_types 
+  = boost::assign::map_list_of("l1",        NORM_1)
+                              ("lif",       NORM_INFINITY)
+                              ("frobenius", NORM_FROBENIUS); 
 
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const std::string type):
@@ -355,17 +376,13 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y, bool transposed
 double PETScMatrix::norm(std::string norm_type) const
 {
   dolfin_assert(A);
+  
+  // Check that norm is known
+  if( norm_types.count(norm_type) == 0)  
+    error("Unknown PETSc matrix norm type.");
 
   double value = 0.0;
-  if (norm_type == "l1")
-    MatNorm(*A, NORM_1, &value);
-  else if (norm_type == "linf")
-    MatNorm(*A, NORM_INFINITY, &value);
-  else if (norm_type == "frobenius")
-    MatNorm(*A, NORM_FROBENIUS, &value);
-  else
-    error("Unknown norm type.");
-
+  MatNorm(*A, norm_types.find(norm_type)->second, &value);
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -502,33 +519,10 @@ const MatType PETScMatrix::getPETScType() const
 MatType PETScMatrix::getPETScType() const
 #endif
 {
-  if (_type == "default")
-  {
-    if (MPI::num_processes() > 1)
-      return MATMPIAIJ;
-    else
-      return MATSEQAIJ;
-  }
-  #if PETSC_VERSION_MAJOR > 2
-  else if (_type == "spooles")
-    return MAT_SOLVER_SPOOLES;
-  else if (_type == "superlu")
-    return MAT_SOLVER_SUPERLU;
-  else if (_type == "umfpack")
-    return MAT_SOLVER_UMFPACK;
-  #else
-  else if (_type == "spooles")
-      return MATSEQAIJSPOOLES;
-  else if (_type == "superlu")
-      return MATSUPERLU;
-  else if (_type == "umfpack")
-      return MATUMFPACK;
-  #endif
-  else
-  {
-    error("Unknown PETSc matrix type");
-    return "";
-  }
+  if( types.count(_type) == 0)  
+    error("Unknown PETSc matrix type.");
+
+  return types.find(_type)->second;
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const PETScMatrix& A)

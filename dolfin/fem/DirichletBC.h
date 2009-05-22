@@ -14,6 +14,7 @@
 #define __DIRICHLET_BC_H
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
@@ -22,7 +23,6 @@
 
 namespace dolfin
 {
-
   class Function;
   class FunctionSpace;
   class Facet;
@@ -47,7 +47,6 @@ namespace dolfin
   ///   "topological"
   ///   "geometric"
   ///   "pointwise"
-  //enum BCMethod {topological, geometric, pointwise};
 
   /// This class specifies the interface for setting (strong)
   /// Dirichlet boundary conditions for partial differential
@@ -170,6 +169,9 @@ namespace dolfin
 
     // Search method
     std::string method;
+
+    // Possible search methods
+    static const std::set<std::string> methods;
 
     // User defined sub domain
     const SubDomain* user_sub_domain;

@@ -1,15 +1,16 @@
 // Copyright (C) 2004-2007 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2005-2008.
+// Modified by Garth N. Wells 2005-2009.
 // Modified by Martin Sandve Alnes 2008
 //
 // First added:  2004
-// Last changed: 2008-12-27
+// Last changed: 2008-05-22
 
 #ifdef HAS_PETSC
 
 #include <cmath>
+#include <boost/assign/list_of.hpp>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
@@ -33,6 +34,11 @@ namespace dolfin
 }
 
 using namespace dolfin;
+
+const std::map<std::string, NormType> PETScVector::norm_types 
+  = boost::assign::map_list_of("l1",   NORM_1)
+                              ("l2",   NORM_2)
+                              ("linf", NORM_INFINITY); 
 
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector():
@@ -277,17 +283,11 @@ void PETScVector::axpy(double a, const GenericVector& y)
 double PETScVector::norm(std::string norm_type) const
 {
   dolfin_assert(x);
-
-  double value = 0.0;
-  if (norm_type == "l1")
-    VecNorm(*x, NORM_1, &value);
-  else if (norm_type == "l2")
-    VecNorm(*x, NORM_2, &value);
-  else if (norm_type == "linf")
-    VecNorm(*x, NORM_INFINITY, &value);
-  else
+  if (norm_types.count(norm_type) == 0)
     error("Norm type for PETScVector unknown.");
 
+  double value = 0.0;
+  VecNorm(*x, norm_types.find(norm_type)->second, &value);
   return value;
 }
 //-----------------------------------------------------------------------------

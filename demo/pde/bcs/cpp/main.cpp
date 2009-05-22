@@ -10,6 +10,7 @@
 
 #include <dolfin.h>
 #include "Poisson.h"
+#include <boost/assign/list_of.hpp>
 
 using namespace dolfin;
 
