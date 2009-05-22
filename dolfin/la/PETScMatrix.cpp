@@ -7,7 +7,7 @@
 // Modified by Magnus Vikstrøm 2007-2008.
 //
 // First added:  2004
-// Last changed: 2008-12-25
+// Last changed: 2009-05-22
 
 #ifdef HAS_PETSC
 
@@ -39,7 +39,7 @@ namespace dolfin
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const Type type):
+PETScMatrix::PETScMatrix(const std::string type):
     Variable("A", "a sparse matrix"),
     A(static_cast<Mat*>(0), PETScMatrixDeleter()), _type(type)
 {
@@ -49,13 +49,13 @@ PETScMatrix::PETScMatrix(const Type type):
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A):
     Variable("A", "a sparse matrix"),
-    A(A), _type(default_matrix)
+    A(A), _type("default")
 {
   // FIXME: get PETSc matrix type and set
-  _type = default_matrix;
+  _type = "default";
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(uint M, uint N, Type type):
+PETScMatrix::PETScMatrix(uint M, uint N, std::string type):
     Variable("A", "a sparse matrix"),
     A(static_cast<Mat*>(0), PETScMatrixDeleter()), _type(type)
 {
@@ -427,7 +427,7 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
   return *this;
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::Type PETScMatrix::type() const
+std::string PETScMatrix::type() const
 {
   return _type;
 }
@@ -441,47 +441,6 @@ void PETScMatrix::disp(uint precision) const
     MatView(*A, PETSC_VIEWER_STDOUT_WORLD);
   else
     MatView(*A, PETSC_VIEWER_STDOUT_SELF);
-
-/*
-  const uint M = size(0);
-  const uint N = size(1);
-
-  // Sparse output
-  for (uint i = 0; i < M; i++)
-  {
-    std::stringstream line;
-    line << std::setiosflags(std::ios::scientific);
-    line << std::setprecision(precision);
-
-    line << "|";
-
-    if ( sparse )
-    {
-      int ncols = 0;
-      const int* cols = 0;
-      const double* vals = 0;
-      MatGetRow(A, i, &ncols, &cols, &vals);
-      for (int pos = 0; pos < ncols; pos++)
-      {
-	       line << " (" << i << ", " << cols[pos] << ", " << vals[pos] << ")";
-      }
-      MatRestoreRow(A, i, &ncols, &cols, &vals);
-    }
-    else
-    {
-      for (uint j = 0; j < N; j++)
-      {
-        double value = get(i, j);
-        if ( fabs(value) < DOLFIN_EPS )
-        value = 0.0;
-        line << " " << value;
-      }
-    }
-
-    line << "|";
-    cout << line.str().c_str() << endl;
-  }
-*/
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScMatrix::factory() const
@@ -508,32 +467,29 @@ void PETScMatrix::set_type()
 //-----------------------------------------------------------------------------
 void PETScMatrix::check_type()
 {
-  switch ( _type )
+  if (_type == "spooles")
   {
-  case default_matrix:
-    return;
-  case spooles:
     #if !PETSC_HAVE_SPOOLES
-      warning("PETSc has not been complied with Spooles. Using default matrix type");
-      _type = default_matrix;
+    warning("PETSc has not been complied with Spooles. Using default matrix type");
+    _type = "default";
     #endif
-    return;
-  case superlu:
+  }
+  else if (_type == "superlu")
+  {
     #if !PETSC_HAVE_SUPERLU
       warning("PETSc has not been complied with Super LU. Using default matrix type");
-      _type = default_matrix;
+      _type = "default";
     #endif
-    return;
-  case umfpack:
+  }
+  else if (_type == "umfpack")
+  {
     #if !PETSC_HAVE_UMFPACK
       warning("PETSc has not been complied with UMFPACK. Using default matrix type");
-      _type = default_matrix;
+      _type = "default";
     #endif
-    return;
-  default:
-    warning("Requested matrix type unknown. Using default.");
-    _type = default_matrix;
   }
+  else
+    error("Requested matrix type unknown. Using default.");
 }
 //-----------------------------------------------------------------------------
 #if PETSC_VERSION_MAJOR > 2
@@ -542,30 +498,32 @@ const MatType PETScMatrix::getPETScType() const
 MatType PETScMatrix::getPETScType() const
 #endif
 {
-  switch ( _type )
+  if (_type == "default")
   {
-  case default_matrix:
     if (MPI::num_processes() > 1)
       return MATMPIAIJ;
     else
       return MATSEQAIJ;
+  }
   #if PETSC_VERSION_MAJOR > 2
-  case spooles:
-      return MAT_SOLVER_SPOOLES;
-  case superlu:
-      return MAT_SOLVER_SUPERLU;
-  case umfpack:
-      return MAT_SOLVER_UMFPACK;
+  else if (_type == "spooles")
+    return MAT_SOLVER_SPOOLES;
+  else if (_type == "superlu")
+    return MAT_SOLVER_SUPERLU;
+  else if (_type == "umfpack")
+    return MAT_SOLVER_UMFPACK;
   #else
-  case spooles:
+  else if (_type == "spooles")
       return MATSEQAIJSPOOLES;
-  case superlu:
+  else if (_type == "superlu")
       return MATSUPERLU;
-  case umfpack:
+  else if (_type == "umfpack")
       return MATUMFPACK;
   #endif
-  default:
-    return "default";
+  else
+  {
+    error("Unknown PETSc matrix type");
+    return "";
   }
 }
 //-----------------------------------------------------------------------------
