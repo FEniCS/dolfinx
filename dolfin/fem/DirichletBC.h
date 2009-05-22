@@ -14,6 +14,7 @@
 #define __DIRICHLET_BC_H
 
 #include <map>
+#include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
@@ -42,7 +43,11 @@ namespace dolfin
   /// pointwise boundary conditions e.g. pointloads, one will have to
   /// use the pointwise approach which in turn is the slowest of the
   /// three possible methods.
-  enum BCMethod {topological, geometric, pointwise};
+  /// The three possibilties are:
+  ///   "topological"
+  ///   "geometric"
+  ///   "pointwise"
+  //enum BCMethod {topological, geometric, pointwise};
 
   /// This class specifies the interface for setting (strong)
   /// Dirichlet boundary conditions for partial differential
@@ -80,19 +85,19 @@ namespace dolfin
     DirichletBC(const FunctionSpace& V,
                 const Function& g,
                 const SubDomain& sub_domain,
-                BCMethod method=topological);
+                std::string method="topological");
 
     /// Create boundary condition for subdomain specified by index
     DirichletBC(const FunctionSpace& V,
                 const Function& g,
                 const MeshFunction<uint>& sub_domains, uint sub_domain,
-                BCMethod method=topological);
+                std::string method="topological");
 
     /// Create boundary condition for boundary data included in the mesh
     DirichletBC(const FunctionSpace& V,
                 const Function& g,
                 uint sub_domain,
-                BCMethod method=topological);
+                std::string method="topological");
 
     /// Destructor
     ~DirichletBC();
@@ -164,7 +169,7 @@ namespace dolfin
     const Function& g;
 
     // Search method
-    BCMethod method;
+    std::string method;
 
     // User defined sub domain
     const SubDomain* user_sub_domain;

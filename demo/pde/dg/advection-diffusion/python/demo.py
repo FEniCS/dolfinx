@@ -65,7 +65,7 @@ L = v*f*dx
 
 # Set up boundary condition (apply strong BCs)
 g = Function(V_dg,"sin(pi*5.0*x[1])")
-bc = DirichletBC(V_dg, g, DirichletBoundary(), geometric)
+bc = DirichletBC(V_dg, g, DirichletBoundary(), "geometric")
 
 # Solution function
 uh = Function(V_dg)

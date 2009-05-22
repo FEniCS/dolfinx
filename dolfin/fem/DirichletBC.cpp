@@ -33,7 +33,7 @@ using namespace dolfin;
 DirichletBC::DirichletBC(const FunctionSpace& V,
                          const Function& g,
                          const SubDomain& sub_domain,
-                         BCMethod method)
+                         std::string method)
   : BoundaryCondition(V),
     g(g),
     method(method), user_sub_domain(&sub_domain)
@@ -46,7 +46,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
                          const Function& g,
                          const MeshFunction<uint>& sub_domains,
                          uint sub_domain,
-                         BCMethod method)
+                         std::string method)
   : BoundaryCondition(V),
     g(g),
     method(method), user_sub_domain(0)
@@ -58,7 +58,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
 DirichletBC::DirichletBC(const FunctionSpace& V,
                          const Function& g,
                          uint sub_domain,
-                         BCMethod method)
+                         std::string method)
   : BoundaryCondition(V),
     g(g),
     method(method), user_sub_domain(0)
@@ -251,6 +251,10 @@ void DirichletBC::check() const
   //if (!g.in(*V))
   //  error("Unable to create boundary condition, boundary value function is not in trial space.");
 
+  if (method != "topological" && method != "geometric" && method != "pointwise")
+    error("Unknown method for applying Dirichlet boundary condtions."); 
+
+
   // Check that the mesh is ordered
   if (!V->mesh().ordered())
     error("Unable to create boundary condition, mesh is not correctly ordered (consider calling mesh.order()).");
@@ -387,20 +391,14 @@ void DirichletBC::compute_bc(std::map<uint, double>& boundary_values,
                              BoundaryCondition::LocalData& data) const
 {
   // Choose strategy
-  switch (method)
-  {
-  case topological:
+  if (method == "topological")
     compute_bc_topological(boundary_values, data);
-    break;
-  case geometric:
+  else if (method == "geometric")
     compute_bc_geometric(boundary_values, data);
-    break;
-  case pointwise:
+  else if (method == "pointwise")
     compute_bc_pointwise(boundary_values, data);
-    break;
-  default:
+  else
     error("Unknown method for application of boundary conditions.");
-  }
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values,

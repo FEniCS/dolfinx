@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
   // Set up boundary condition (apply strong BCs)
   BC g;
   DirichletBoundary boundary;
-  DirichletBC bc(V, g, boundary, geometric);
+  DirichletBC bc(V, g, boundary, "geometric");
 
   // Solution function
   Function uh(V);
