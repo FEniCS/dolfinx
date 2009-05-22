@@ -467,6 +467,10 @@ void PETScMatrix::set_type()
 //-----------------------------------------------------------------------------
 void PETScMatrix::check_type()
 {
+  if (_type == "default")
+    return;
+
+  // Check that requested matrix type is available in PETSc
   if (_type == "spooles")
   {
     #if !PETSC_HAVE_SPOOLES
