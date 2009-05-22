@@ -33,9 +33,9 @@ mesh = UnitCircle(20, "right", "rotsumn")
 print "Plotting a UnitCircle"
 plot(mesh, title="Unit circle (rotsum)")
 
-mesh = UnitCircle(20, "left", "sumn")
-print "Plotting a UnitCircle"
-plot(mesh, title="Unit circle (sumn)")
+#mesh = UnitCircle(20, "left", "sumn")
+#print "Plotting a UnitCircle"
+#plot(mesh, title="Unit circle (sumn)")
 
 mesh = UnitCircle(20, "right", "maxn")
 print "Plotting a UnitCircle"
