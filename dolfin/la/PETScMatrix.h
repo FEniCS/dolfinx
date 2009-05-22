@@ -2,12 +2,12 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Andy R. Terrel, 2005.
-// Modified by Garth N. Wells, 2006-2007.
+// Modified by Garth N. Wells, 2006-2009.
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2008-05-15
+// Last changed: 2009-05-22
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -34,25 +34,20 @@ namespace dolfin
   /// The interface is intentionally simple. For advanced usage,
   /// access the PETSc Mat pointer using the function mat() and
   /// use the standard PETSc interface.
+  ///
+  /// std::string type is the type of PETSc matrix. Options are "default", 
+  /// "spooles", "superlu" and "umfpack". Note: Setting the matrix type may
+  /// not be necessary in the future with PETSc version 3.
 
   class PETScMatrix : public GenericMatrix, public PETScObject, public Variable
   {
   public:
 
-    /// PETSc sparse matrix types
-    enum Type
-    {
-      default_matrix, // Default matrix type
-      spooles,        // Spooles
-      superlu,        // Super LU
-      umfpack         // UMFPACK
-    };
-
     /// Create empty matrix
-    explicit PETScMatrix(Type type=default_matrix);
+    explicit PETScMatrix(std::string type = "default");
 
     /// Create M x N matrix
-    PETScMatrix(uint M, uint N, Type type=default_matrix);
+    PETScMatrix(uint M, uint N, std::string type = "default");
 
     /// Copy constructor
     explicit PETScMatrix(const PETScMatrix& A);
@@ -135,7 +130,7 @@ namespace dolfin
     boost::shared_ptr<Mat> mat() const;
 
     /// Return PETSc matrix type
-    Type type() const;
+    std::string type() const;
 
     /// Return norm of matrix
     double norm(std::string norm_type) const;
@@ -168,7 +163,7 @@ namespace dolfin
     boost::shared_ptr<Mat> A;
 
     // PETSc matrix type
-    Type _type;
+    std::string _type;
 
   };
 
