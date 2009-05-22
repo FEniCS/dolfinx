@@ -161,7 +161,7 @@ void NewXMLGraph::write(const Graph& graph, std::ostream& outfile, uint indentat
     for(uint j=offsets[i]; j<offsets[i] + graph.num_edges(i); ++j)
     {
       outfile << indent();
-      outfile << "<edge v1=\"" << i << "\" v2=\"" << connections[j] << "\" weight=\"" << vertex_weights[j] << "\"/>" << std::endl;
+      outfile << "<edge v1=\"" << i << "\" v2=\"" << connections[j] << "\" weight=\"" << edge_weights[j] << "\"/>" << std::endl;
     }
   }
   --indent;
