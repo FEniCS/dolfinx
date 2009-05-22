@@ -37,8 +37,7 @@ int main()
   DirichletBC bc1(V, u1, 1);
   DirichletBC bc2(V, u2, 2);
   DirichletBC bc3(V, u3, 3);
-  std::vector<BoundaryCondition*> bcs;
-  bcs.push_back(&bc0); bcs.push_back(&bc1); bcs.push_back(&bc2); bcs.push_back(&bc3);
+  std::vector<BoundaryCondition*> bcs = boost::assign::list_of(&bc0)(&bc1)(&bc2)(&bc3);
 
   // Solve PDE and plot solution
   VariationalProblem pde(a, L, bcs);
