@@ -59,7 +59,7 @@ void EpetraSparsityPattern::pinit(uint rank, const uint* dims)
 }
 //-----------------------------------------------------------------------------
 void EpetraSparsityPattern::insert(const uint* num_rows,
-                                   const uint * const * rows
+                                   const uint * const * rows)
 {
   if (rank == 2)
   {
