@@ -4,13 +4,20 @@
 // Modified by Anders Logg, 2006-2008.
 //
 // First added:  2006-05-31
-// Last changed: 2008-05-15
+// Last changed: 2009-05-23
 
+#include <boost/assign/list_of.hpp>
 #include "uBLASILUPreconditioner.h"
 #include "uBLASDummyPreconditioner.h"
 #include "uBLASKrylovSolver.h"
 
 using namespace dolfin;
+
+const std::set<std::string> uBLASKrylovSolver::solver_types 
+    = boost::assign::list_of("default")
+                            ("cg")
+                            ("gmres")
+                            ("bicgstab"); 
 
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type, std::string pc_type)

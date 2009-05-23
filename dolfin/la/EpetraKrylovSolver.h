@@ -2,14 +2,17 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
+// Modified by Garth N. Wells, 2009.
 //
-// Last changed: 2008-08-25
+// Last changed: 2009-05-23
 
 #ifdef HAS_TRILINOS
 
 #ifndef __EPETRA_KRYLOV_SOLVER_H
 #define __EPETRA_KRYLOV_SOLVER_H
 
+#include <set>
+#include <string>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
 #include "EpetraPreconditioner.h"
@@ -58,6 +61,10 @@ namespace dolfin
 
     // Preconditioner type
     std::string pc_type;
+
+    // Available solvers and preconditioners
+    static const std::map<std::string, int> methods; 
+    static const std::map<std::string, int> pc_methods; 
 
     EpetraPreconditioner* prec;
 

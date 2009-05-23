@@ -4,12 +4,13 @@
 // Modified by Anders Logg, 2006-2008.
 //
 // First added:  2006-05-31
-// Last changed: 2008-08-25
+// Last changed: 2009-05-23
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
 
 #include <string>
+#include <set>
 #include <dolfin/common/types.h>
 #include "ublas.h"
 #include "GenericLinearSolver.h"
@@ -61,6 +62,11 @@ namespace dolfin
     template<class Mat>
     uint solve_krylov(const Mat& A, uBLASVector& x, const uBLASVector& b);
 
+    /// Solve linear system Ax = b using CG
+    template<class Mat>
+    uint solveCG(const Mat& A, uBLASVector& x, const uBLASVector& b, 
+                 bool& converged) const;
+
     /// Solve linear system Ax = b using restarted GMRES
     template<class Mat>
     uint solveGMRES(const Mat& A, uBLASVector& x, const uBLASVector& b,
@@ -83,6 +89,9 @@ namespace dolfin
     /// Preconditioner
     uBLASPreconditioner* pc;
 
+    // Available solver types
+    static const std::set<std::string> solver_types;
+
     /// True if a user has provided a preconditioner
     bool pc_user;
 
@@ -99,9 +108,13 @@ namespace dolfin
   // Implementation of template functions
   //---------------------------------------------------------------------------
   template<class Mat>
-  dolfin::uint uBLASKrylovSolver::solve_krylov(const Mat& A, uBLASVector& x,
-        const uBLASVector& b)
+  dolfin::uint uBLASKrylovSolver::solve_krylov(const Mat& A, 
+                                               uBLASVector& x,
+                                               const uBLASVector& b)
   {
+    if (solver_types.count(solver_type) == 0)
+      error("Requested Krylov solver '%s' not available in uBLASKrylovSolver.", solver_type.c_str());
+
     // Check dimensions
     uint M = A.size(0);
     uint N = A.size(1);
@@ -126,14 +139,11 @@ namespace dolfin
     // Initialise preconditioner if necessary
     pc->init(A);
 
-    // Choose solver
-    bool converged;
-    uint iterations;
+    // Choose solver and solve
+    bool converged = false;
+    uint iterations = 0;
     if (solver_type == "cg")
-    {
-      warning("Conjugate-gradient method not programmed for uBLASKrylovSolver. Using GMRES.");
-      iterations = solveGMRES(A, x, b, converged);
-    }
+      iterations = solveCG(A, x, b, converged);
     else if (solver_type == "gmres")
       iterations = solveGMRES(A, x, b, converged);
     else if (solver_type == "bicgstab")
@@ -141,10 +151,7 @@ namespace dolfin
     else if (solver_type == "default")
       iterations = solveBiCGStab(A, x, b, converged);
     else
-    {
-      warning("Requested Krylov method unknown. Using BiCGStab.");
-      iterations = solveBiCGStab(A, x, b, converged);
-    }
+      error("Requested Krylov method unknown.");
 
     // Check for convergence
     if( !converged )
@@ -153,6 +160,15 @@ namespace dolfin
       info("Krylov solver converged in %d iterations.", iterations);
 
     return iterations;
+  }
+  //-----------------------------------------------------------------------------
+  template<class Mat>
+  dolfin::uint uBLASKrylovSolver::solveCG(const Mat& A, uBLASVector& x,
+					                                const uBLASVector& b, 
+                                          bool& converged) const
+  {
+    warning("Conjugate-gradient method not yet programmed for uBLASKrylovSolver. Using GMRES.");
+    return solveGMRES(A, x, b, converged);
   }
   //-----------------------------------------------------------------------------
   template<class Mat>

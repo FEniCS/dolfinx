@@ -1,7 +1,9 @@
 // Copyright (C) 2008 Kent-Andre Mardal.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Last changed: 2008-05-16
+// Modified by Garth N. Wells, 2009.
+//
+// Last changed: 2009-05-23
 
 #ifdef HAS_TRILINOS
 
@@ -19,6 +21,7 @@
 #include "ml_MultiLevelOperator.h"
 #include "ml_epetra_utils.h"
 
+#include <boost/assign/list_of.hpp>
 #include <dolfin/log/dolfin_log.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
@@ -27,6 +30,22 @@
 #include "EpetraVector.h"
 
 using namespace dolfin;
+
+// Available solvers
+const std::map<std::string, int> EpetraKrylovSolver::methods 
+  = boost::assign::map_list_of("default",  AZ_gmres)
+                              ("cg",       AZ_cg)
+                              ("gmres",    AZ_gmres)
+                              ("bicgstab", AZ_bicgstab); 
+
+// Available preconditioners
+const std::map<std::string, int> EpetraKrylovSolver::pc_methods 
+  = boost::assign::map_list_of("default", AZ_ilu)
+                              ("ilu",     AZ_ilu)
+                              ("jacobi",  AZ_Jacobi)
+                              ("sor",     AZ_sym_GS)
+                              ("icc",     AZ_icc)
+                              ("amg_ml",  -1); 
 
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
@@ -37,10 +56,9 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method, 
                                        EpetraPreconditioner& prec)
-                                     : method(method), 
-                                       pc_type("default"), prec(&prec)
+                                     : method(method), pc_type("default"), prec(&prec)
 {
-  // Do nothing
+  error("Initialisation of EpetraKrylovSolver with a EpetraPreconditioner needs to be implemented.");
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::~EpetraKrylovSolver()
@@ -58,6 +76,16 @@ dolfin::uint EpetraKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
 dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                        const EpetraVector& b)
 {
+  // FIXME: This function needs to be cleaned up
+
+  // Check that requsted solver is supported
+  if (methods.count(method) == 0 )
+    error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str()); 
+
+  // Check that requsted preconditioner is supported
+  if (pc_methods.count(pc_type) == 0 )
+    error("Requested EpetraKrylovSolver preconditioner '%s' in unknown", pc_type.c_str()); 
+
   //FIXME need the ifdef AztecOO
 
 
@@ -85,44 +113,17 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   linear_solver.SetRHS(b_vec);
 
   // Set solver type
-  if (method == "default")
-    linear_solver.SetAztecOption(AZ_solver, AZ_gmres);
-  else if (method == "cg")
-    linear_solver.SetAztecOption(AZ_solver, AZ_cg);
-  else if (method == "gmres")
-    linear_solver.SetAztecOption(AZ_solver, AZ_gmres);
-  else if (method == "bicgstab")
-    linear_solver.SetAztecOption(AZ_solver, AZ_bicgstab);
-  else if (method == "lu")
-    error("EpetraKrylovSolver::solve LU not supported.");
-  else
-    error("EpetraKrylovSolver::solve solver type not supported.");
+  linear_solver.SetAztecOption(AZ_solver, methods.find(method)->second);
 
   // Set preconditioner
-  if (pc_type == "default")
+  if (pc_type == "default" || pc_type == "ilu")
   {
-    linear_solver.SetAztecOption( AZ_precond, AZ_dom_decomp);
-    linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu);
+    linear_solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
+    linear_solver.SetAztecOption(AZ_subdomain_solve, pc_methods.find(pc_type)->second);
   }
-  else if (pc_type == "jacobi")
-    linear_solver.SetAztecOption( AZ_precond, AZ_Jacobi);
-  else if (pc_type == "sor")
-    linear_solver.SetAztecOption( AZ_precond, AZ_sym_GS);
-  else if (pc_type == "ilu")
-  {
-    linear_solver.SetAztecOption( AZ_precond, AZ_dom_decomp);
-    linear_solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu);
-  }
-  else if (pc_type == "icc")
-    linear_solver.SetAztecOption( AZ_precond, AZ_icc);
+  else if(pc_type != "amg_ml")
+    linear_solver.SetAztecOption(AZ_precond, pc_methods.find(pc_type)->second);
   else if (pc_type == "amg_ml")
-  {
-    // Do nothing. Configured below
-  }
-  else
-    error("EpetraKrylovSolver::solve pc type not supported.");
-
-  if (pc_type == "amg_ml")
   {
 //#ifdef HAVE_ML_AZTECOO
     //FIXME ifdef ML
@@ -159,17 +160,19 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     ML_Gen_Solver(ml_handle, ML_MGV, 0, N_levels-1);
 
     // wrap ML_Operator into Epetra_Operator
-    ML_Epetra::MultiLevelOperator  MLop(ml_handle, (*A.mat()).Comm(), (*A.mat()).DomainMap(), (*A.mat()).RangeMap());
+    ML_Epetra::MultiLevelOperator mLop(ml_handle, (*A.mat()).Comm(), (*A.mat()).DomainMap(), (*A.mat()).RangeMap());
 
     // set this operator as preconditioner for AztecOO
-    linear_solver.SetPrecOperator(&MLop);
+    linear_solver.SetPrecOperator(&mLop);
 
 //#else
 //    error("EpetraKrylovSolver::solve not compiled with ML support.");
 //#endif
   }
 
-  std::cout << "starting to iterate " << std::endl;
+  info("Starting to iterate");
+
+  // FIXME: Parameters should come from the parameter system
   linear_solver.Iterate(1000, 1.0e-9);
 
   return linear_solver.NumIters();
