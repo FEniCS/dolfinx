@@ -313,7 +313,7 @@ void PETScKrylovSolver::setPETScPreconditioner()
   if ( pc_petsc == "amg_ml" )
   {
 #if PETSC_HAVE_ML
-  PCSetType(pc, PETScPreconditioner::get_type(pc_petsc));
+  PCSetType(pc, pc_methods.find(pc_petsc)->second);
   PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
 #else
     warning("PETSc has not been compiled with the ML library for   "
