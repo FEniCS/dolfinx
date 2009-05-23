@@ -42,9 +42,6 @@ namespace dolfin
     /// Solve linear system approximately for given right-hand side b
     virtual void solve(PETScVector& x, const PETScVector& b) = 0;
 
-    /// Friends
-    friend class PETScKrylovSolver;
-
   protected:
 
     PC petscpc;
@@ -53,13 +50,6 @@ namespace dolfin
 
     static int PCApply(PC pc, Vec x, Vec y);
     static int PCCreate(PC pc);
-
-    /// Return PETSc PETScPreconditioner type
-    #if PETSC_VERSION_MAJOR > 2
-    static const PCType get_type(std::string pc_type);
-    #else
-    static PCType get_type(std::string pc_type);
-    #endif
 
   };
 

@@ -4,15 +4,17 @@
 // Modified by Anders Logg, 2005-2008.
 // Modified by Johan Hoffman, 2005.
 // Modified by Andy R. Terrel, 2005.
-// Modified by Garth N. Wells, 2005-2007.
+// Modified by Garth N. Wells, 2005-2009.
 //
 // First added:  2005-12-02
-// Last changed: 2008-08-25
+// Last changed: 2009-05-23
 
 #ifndef __PETSC_KRYLOV_SOLVER_H
 #define __PETSC_KRYLOV_SOLVER_H
 
 #ifdef HAS_PETSC
+
+#include <map>
 
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
@@ -65,27 +67,26 @@ namespace dolfin
     /// Read parameters from database
     void read_parameters();
 
-    /// Set solver
-    void set_solver();
-
     /// Set PETScPreconditioner
     void setPETScPreconditioner();
 
     /// Report the number of iterations
     void write_report(int num_iterations);
 
-    /// Get PETSc method identifier
-    #if PETSC_VERSION_MAJOR > 2
-    const KSPType get_type(std::string method) const;
-    #else
-    KSPType get_type(std::string method) const;
-    #endif
-
     /// Krylov method
     std::string method;
 
     /// PETSc preconditioner type
     std::string pc_petsc;
+
+    // Available solvers and preconditioners
+    #if PETSC_VERSION_MAJOR > 2
+    static const std::map<std::string, const KSPType> methods; 
+    static const std::map<std::string, const PCType> pc_methods; 
+    #else
+    static const std::map<std::string, KSPType> methods; 
+    static const std::map<std::string, PCType> pc_methods; 
+    #endif
 
     /// DOLFIN PETScPreconditioner
     PETScPreconditioner* pc_dolfin;

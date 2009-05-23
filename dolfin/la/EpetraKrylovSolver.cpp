@@ -56,7 +56,8 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method, 
                                        EpetraPreconditioner& prec)
-                                     : method(method), pc_type("default"), prec(&prec)
+                                     : method(method), pc_type("default"), 
+                                       prec(&prec)
 {
   error("Initialisation of EpetraKrylovSolver with a EpetraPreconditioner needs to be implemented.");
 }
