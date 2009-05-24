@@ -93,6 +93,13 @@ uint EpetraSparsityPattern::size(uint i) const
   return 0;
 }
 //-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> EpetraSparsityPattern::range() const
+{
+  dolfin_not_implemented();
+  std::pair<uint, uint> r;
+  return r;
+}
+//-----------------------------------------------------------------------------
 uint EpetraSparsityPattern::num_nonzeros() const
 {
   dolfin_not_implemented();

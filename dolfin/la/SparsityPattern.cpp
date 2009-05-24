@@ -96,6 +96,13 @@ dolfin::uint SparsityPattern::size(uint i) const
   return shape[i];
 }
 //-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> SparsityPattern::range() const
+{
+  // FIXME: use correct range here
+  std::pair<uint, uint> r(0, size(0));
+  return r;
+}
+//-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::num_nonzeros() const
 {
   uint nz = 0;

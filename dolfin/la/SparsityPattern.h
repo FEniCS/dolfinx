@@ -46,6 +46,9 @@ namespace dolfin
     /// Return global size for dimension i
     uint size(uint i) const;
 
+    /// Return local range
+    std::pair<uint, uint> range() const;
+
     /// Return total number of nonzeros in local rows
     uint num_nonzeros() const;
 

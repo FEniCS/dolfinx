@@ -105,6 +105,9 @@ PETScMatrix::~PETScMatrix()
 //-----------------------------------------------------------------------------
 void PETScMatrix::resize(uint M, uint N)
 {
+  // FIXME: Remove this function or use init() function somehow to
+  // FIXME: avoid duplication of code
+
   if (A && size(0) == N && size(1) == N)
     return;
 
@@ -143,10 +146,11 @@ void PETScMatrix::resize(uint M, uint N)
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
-  // Get global dimensions
+  // Get global dimensions and range
   dolfin_assert(sparsity_pattern.rank() == 2);
   const uint M = sparsity_pattern.size(0);
   const uint N = sparsity_pattern.size(1);
+  const std::pair<uint, uint> range = sparsity_pattern.range();
 
   // Create matrix (any old matrix is destroyed automatically)
   if (!A.unique())
@@ -155,22 +159,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   A = _A;
 
   // Initialize matrix
-  if (dolfin::MPI::num_processes() > 1)
-  {
-    dolfin_not_implemented();
-    /*
-    uint p = dolfin::MPI::process_number();
-    const SparsityPattern& spattern = reinterpret_cast<const SparsityPattern&>(sparsity_pattern);
-    uint local_size = spattern.numLocalRows(p);
-    uint* d_nzrow = new uint[local_size];
-    uint* o_nzrow = new uint[local_size];
-    spattern.numNonZeroPerRow(p, d_nzrow, o_nzrow);
-    init(spattern.size(0), spattern.size(1), d_nzrow, o_nzrow);
-    delete [] d_nzrow;
-    delete [] o_nzrow;
-    */
-  }
-  else
+  if (range.first == 0 && range.second == M)
   {
     // Get number of nonzeros for each row from sparsity pattern
     uint* num_nonzeros = new uint[M];
@@ -191,6 +180,21 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 
     // Cleanup
     delete [] num_nonzeros;
+  }
+  else
+  {
+    dolfin_not_implemented();
+    /*
+    uint p = dolfin::MPI::process_number();
+    const SparsityPattern& spattern = reinterpret_cast<const SparsityPattern&>(sparsity_pattern);
+    uint local_size = spattern.numLocalRows(p);
+    uint* d_nzrow = new uint[local_size];
+    uint* o_nzrow = new uint[local_size];
+    spattern.numNonZeroPerRow(p, d_nzrow, o_nzrow);
+    init(spattern.size(0), spattern.size(1), d_nzrow, o_nzrow);
+    delete [] d_nzrow;
+    delete [] o_nzrow;
+    */
   }
 
   /*
