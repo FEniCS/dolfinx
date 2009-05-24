@@ -126,8 +126,9 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     linear_solver.SetAztecOption(AZ_precond, pc_methods.find(pc_type)->second);
   else if (pc_type == "amg_ml")
   {
-//#ifdef HAVE_ML_AZTECOO
-    //FIXME ifdef ML
+    //error("The EpetraKrylovSolver interface for the ML preconditioner needs to be fixed.");
+
+    #ifdef HAVE_ML_AZTECOO
     // Code from trilinos-8.0.3/packages/didasko/examples/ml/ex1.cpp
 
     // Create and set an ML multilevel preconditioner
@@ -166,9 +167,9 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     // set this operator as preconditioner for AztecOO
     linear_solver.SetPrecOperator(&mLop);
 
-//#else
-//    error("EpetraKrylovSolver::solve not compiled with ML support.");
-//#endif
+    #else
+    error("Epetra has not been compiled with ML support.");
+    #endif
   }
 
   info("Starting to iterate");
