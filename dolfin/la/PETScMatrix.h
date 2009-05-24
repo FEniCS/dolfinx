@@ -142,12 +142,6 @@ namespace dolfin
 
   private:
 
-    // Initialize M x N matrix with a given number of nonzeros per row
-    void init(uint M, uint N, const uint* nz);
-
-    // Initialize M x N matrix with a given number of nonzeros per row diagonal and off-diagonal
-    void init(uint M, uint N, const uint* d_nzrow, const uint* o_nzrow);
-
     // Set PETSc matrix type
     void set_type();
 

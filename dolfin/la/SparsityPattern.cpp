@@ -85,6 +85,11 @@ void SparsityPattern::sort()
     std::sort(it->begin(), it->end()); 
 }
 //-----------------------------------------------------------------------------
+dolfin::uint SparsityPattern::rank() const
+{
+  return shape.size();
+}
+//-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::size(uint i) const
 {
   dolfin_assert(i < shape.size());

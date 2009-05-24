@@ -38,6 +38,9 @@ namespace dolfin
     /// Sort entries for each row 
     virtual void sort() = 0;
 
+    /// Return rank
+    virtual uint rank() const = 0;
+
     /// Return global size for dimension i
     virtual uint size(uint i) const = 0;
 

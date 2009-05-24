@@ -21,7 +21,7 @@ using namespace dolfin;
 using dolfin::uint;
 
 //-----------------------------------------------------------------------------
-EpetraSparsityPattern::EpetraSparsityPattern() : rank(0), epetra_graph(0)
+EpetraSparsityPattern::EpetraSparsityPattern() : _rank(0), epetra_graph(0)
 {
   dims[0] = 0;
   dims[1] = 0;
@@ -34,13 +34,13 @@ EpetraSparsityPattern::~EpetraSparsityPattern()
 //-----------------------------------------------------------------------------
 void EpetraSparsityPattern::init(uint rank_, const uint* dims_)
 {
-  rank = rank_;
+  _rank = rank_;
 
-  if (rank == 1)
+  if (_rank == 1)
   {
     dims[0] = dims_[0];
   }
-  else if (rank == 2)
+  else if (_rank == 2)
   {
     dims[0] = dims_[0];
     dims[1] = dims_[1];
@@ -58,7 +58,7 @@ void EpetraSparsityPattern::init(uint rank_, const uint* dims_)
 void EpetraSparsityPattern::insert(const uint* num_rows,
                                    const uint * const * rows)
 {
-  if (rank == 2)
+  if (_rank == 2)
   {
     epetra_graph->InsertGlobalIndices(num_rows[0], reinterpret_cast<const int*>(rows[0]),
                                       num_rows[1], reinterpret_cast<const int*>(rows[1]));
@@ -70,14 +70,19 @@ void EpetraSparsityPattern::sort()
   dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
+dolfin::uint EpetraSparsityPattern::rank() const
+{
+  return _rank;
+}
+//-----------------------------------------------------------------------------
 uint EpetraSparsityPattern::size(uint i) const
 {
-  if (rank == 1)
+  if (_rank == 1)
   {
     return dims[0];
   }
   
-  if (rank == 2)
+  if (_rank == 2)
   {
     dolfin_assert(epetra_graph);
     if (i == 0)

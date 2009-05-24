@@ -146,7 +146,9 @@ namespace dolfin
     // Mesh we live in
     boost::shared_ptr<const Mesh> dolfin_mesh;
 
+    // True iff running in parallel
     bool parallel;
+
   };
 
 }

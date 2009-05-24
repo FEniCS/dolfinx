@@ -40,6 +40,9 @@ namespace dolfin
     /// Sort entries for each row 
     void sort();
 
+    /// Return rank
+    uint rank() const;
+
     /// Return global size for dimension i
     uint size(uint i) const;
 
