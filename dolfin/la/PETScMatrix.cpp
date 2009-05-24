@@ -193,6 +193,8 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
   if (dolfin::MPI::num_processes() > 1)
   {
+    dolfin_not_implemented();
+    /*
     uint p = dolfin::MPI::process_number();
     const SparsityPattern& spattern = reinterpret_cast<const SparsityPattern&>(sparsity_pattern);
     uint local_size = spattern.numLocalRows(p);
@@ -202,14 +204,15 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     init(spattern.size(0), spattern.size(1), d_nzrow, o_nzrow);
     delete [] d_nzrow;
     delete [] o_nzrow;
+    */
   }
   else
   {
     const SparsityPattern& spattern = reinterpret_cast<const SparsityPattern&>(sparsity_pattern);
-    uint* nzrow = new uint[spattern.size(0)];
-    spattern.numNonZeroPerRow(nzrow);
-    init(spattern.size(0), spattern.size(1), nzrow);
-    delete [] nzrow;
+    uint* num_nonzeros = new uint[spattern.size(0)];
+    spattern.num_nonzeros_diagonal(num_nonzeros);
+    init(spattern.size(0), spattern.size(1), num_nonzeros);
+    delete [] num_nonzeros;
   }
 }
 //-----------------------------------------------------------------------------
