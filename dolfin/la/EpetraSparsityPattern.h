@@ -1,8 +1,10 @@
 // Copyright (C) 2008 Martin Sandve Alnes, Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2009.
+//
 // First added:  2008-04-21
-// Last changed: 2009-05-22
+// Last changed: 2009-05-23
 
 #ifndef __EPETRA_SPARSITY_PATTERN_H
 #define __EPETRA_SPARSITY_PATTERN_H
@@ -21,6 +23,12 @@ namespace dolfin
   class EpetraVector;
   class EpetraFactory;
 
+  /// This class implements the GenericSparsityPattern interface for
+  /// the Epetra backend. The common interface is mostly
+  /// ignored. Instead, the sparsity pattern is represented as an
+  /// Epetra_FECrsGraph and a dynamic_cast is used to retrieve the
+  /// underlying representation when creating Epetra matrices.
+
   class EpetraSparsityPattern : public GenericSparsityPattern
   {
   public:
@@ -31,41 +39,43 @@ namespace dolfin
     /// Destructor
     virtual ~EpetraSparsityPattern();
 
-    /// Initialise sparsity pattern for a generic tensor
+    /// Initialize sparsity pattern for a generic tensor
     void init(uint rank, const uint* dims);
 
-    /// Initialise sparsity pattern for a parallel generic tensor
-    void pinit(uint rank, const uint* dims);
-
-    /// Insert non-zero entry
+    /// Insert non-zero entries
     void insert(const uint* num_rows, const uint * const * rows);
 
-    /// Insert non-zero entry
-    void pinsert(const uint* num_rows, const uint * const * rows);
+    /// Sort entries for each row 
+    void sort();
 
-    /// Return global size
-    uint size(uint n) const;
+    /// Return global size for dimension i
+    uint size(uint i) const;
 
-    /// Return array with number of non-zeroes per row
-    void numNonZeroPerRow(uint nzrow[]) const;
+    /// Return total number of nonzeros in local rows
+    uint num_nonzeros() const;
 
-    /// Return total number of non-zeroes
-    uint numNonZero() const;
+    /// Fill array with number of nonzeros per local row for diagonal block
+    void num_nonzeros_diagonal(uint* num_nonzeros) const;
 
-    /// Finalize sparsity pattern (needed by most parallel la backends)
+    /// Fill array with number of nonzeros per local row for off-diagonal block
+    void num_nonzeros_off_diagonal(uint* num_nonzeros) const;
+
+    /// Finalize sparsity pattern
     void apply();
-
-    /// Return factory object for backend
-    LinearAlgebraFactory& factory() const;
 
     /// Return Epetra CRS graph
     Epetra_FECrsGraph& pattern() const;
 
   private:
     
-    Epetra_FECrsGraph*  epetra_graph;
-    uint                rank;
-    uint*               dims;
+    // Rank
+    uint rank;
+
+    // Dimensions
+    uint dims[2];
+   
+    // Epetra representation of sparsity pattern
+    Epetra_FECrsGraph* epetra_graph;
 
   };
 

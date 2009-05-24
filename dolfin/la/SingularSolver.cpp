@@ -100,11 +100,15 @@ void SingularSolver::init(const GenericMatrix& A)
   delete c;
 
   // Create sparsity pattern for B
-  SparsityPattern s(N + 1, N + 1);
+  SparsityPattern s;
+  uint dims[2] = {N + 1, N + 1};
+  s.init(2, dims);
 
   // Copy sparsity pattern for A and last column
   std::vector<uint> columns;
   std::vector<double> dummy;
+  uint num_rows[2];
+  const uint* rows[2];
   for (uint i = 0; i < N; i++)
   {
     // Get row
@@ -120,7 +124,11 @@ void SingularSolver::init(const GenericMatrix& A)
     cols[num_cols - 1] = N;
 
     // Insert into sparsity pattern
-    s.insert(1, &i, num_cols, cols);
+    num_rows[0] = 1;
+    num_rows[1] = num_cols;
+    rows[0] = &i;
+    rows[1] = cols;
+    s.insert(num_rows, rows);
 
     // Delete temporary array
     delete [] cols;
@@ -132,7 +140,11 @@ void SingularSolver::init(const GenericMatrix& A)
   for (uint j = 0; j < num_cols; j++)
     cols[j] = j;
   const uint row = N;
-  s.insert(1, &row, num_cols, cols);
+  num_rows[0] = 1;
+  num_rows[1] = num_cols;
+  rows[0] = &row;
+  rows[1] = cols;
+  s.insert(num_rows, rows);
   delete [] cols;
 
   // Create matrix and vector

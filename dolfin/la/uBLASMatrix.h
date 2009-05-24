@@ -1,14 +1,14 @@
 // Copyright (C) 2006-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2006-2008.
+// Modified by Anders Logg, 2006-2009.
 // Modified by Ola Skavhaug, 2007-2008.
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Martin Sandve Alnes, 2008.
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2006-07-05
-// Last changed: 2008-07-20
+// Last changed: 2009-05-23
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -454,17 +454,19 @@ namespace dolfin
     A.clear();
 
     // Reserve space for non-zeroes
-    A.reserve(sparsity_pattern.numNonZero());
+    A.reserve(sparsity_pattern.num_nonzeros());
+    
+    // FIXME: const cast needed here
+    // Sort sparsity pattern
+    const_cast<GenericSparsityPattern&>(sparsity_pattern).sort();
 
+    // Get underlying pattern
     const SparsityPattern* pattern_pointer = dynamic_cast<const SparsityPattern*>(&sparsity_pattern);
     if (not pattern_pointer)
       error("Cannot convert GenericSparsityPattern to concrete SparsityPattern type. Aborting.");
-
     const std::vector< std::vector<uint> >& pattern = pattern_pointer->pattern();
-
-    // Sort sparsity pattern
-    pattern_pointer->sort();
-
+    
+    // Add entries
     std::vector< std::vector<uint> >::const_iterator row;
     std::vector<uint>::const_iterator element;
     for(row = pattern.begin(); row != pattern.end(); ++row)
