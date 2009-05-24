@@ -1,8 +1,10 @@
 // Copyright (C) 2008 Martin Sandve Alnes, Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2009.
+//
 // First added:  2008-04-21
-// Last changed: 2009-05-22
+// Last changed: 2009-05-23
 
 #ifdef HAS_TRILINOS
 
@@ -19,43 +21,38 @@ using namespace dolfin;
 using dolfin::uint;
 
 //-----------------------------------------------------------------------------
-EpetraSparsityPattern::EpetraSparsityPattern() : epetra_graph(0), rank(0), dims(0)
+EpetraSparsityPattern::EpetraSparsityPattern() : rank(0), epetra_graph(0)
 {
-  // Do nothing
+  dims[0] = 0;
+  dims[1] = 0;
 }
 //-----------------------------------------------------------------------------
 EpetraSparsityPattern::~EpetraSparsityPattern()
 {
   delete epetra_graph;
-  delete dims;
 }
 //-----------------------------------------------------------------------------
 void EpetraSparsityPattern::init(uint rank_, const uint* dims_)
 {
   rank = rank_;
 
-  //init for vector
-  if (rank == 1) {
-    dims = new uint(1);
+  if (rank == 1)
+  {
     dims[0] = dims_[0];
   }
-  //init for matrix
-  if ( rank == 2) {
-    dims = new uint(2);
+  else if (rank == 2)
+  {
     dims[0] = dims_[0];
     dims[1] = dims_[1];
 
-    EpetraFactory& f = dynamic_cast<EpetraFactory&>(factory());
+    EpetraFactory& f = EpetraFactory::instance();
     Epetra_SerialComm Comm = f.getSerialComm();
 
     Epetra_Map row_map(dims[0], 0, Comm);
     epetra_graph = new Epetra_FECrsGraph(Copy, row_map, 0);
   }
-}
-//-----------------------------------------------------------------------------
-void EpetraSparsityPattern::pinit(uint rank, const uint* dims)
-{
-  error("EpetraSparsityPattern::pinit not implemented yet.");
+  else
+    error("Illegal rank for Epetra sparsity pattern.");
 }
 //-----------------------------------------------------------------------------
 void EpetraSparsityPattern::insert(const uint* num_rows,
@@ -68,38 +65,43 @@ void EpetraSparsityPattern::insert(const uint* num_rows,
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraSparsityPattern::pinsert(const uint* num_rows,
-                                    const uint * const * rows)
+void EpetraSparsityPattern::sort()
 {
-  error("EpetraSparsityPattern::pinsert not implemented yet.");
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
-uint EpetraSparsityPattern::size(uint n) const
+uint EpetraSparsityPattern::size(uint i) const
 {
   if (rank == 1)
   {
     return dims[0];
   }
-  if (rank == 2 ) {
+  
+  if (rank == 2)
+  {
     dolfin_assert(epetra_graph);
-    if ( n==0) {
+    if (i == 0)
       return epetra_graph->NumGlobalRows();
-    } else {
+    else
       return epetra_graph->NumGlobalCols();
-    }
   }
   return 0;
 }
 //-----------------------------------------------------------------------------
-void EpetraSparsityPattern::numNonZeroPerRow(uint nzrow[]) const
+uint EpetraSparsityPattern::num_nonzeros() const
 {
-  error("EpetraSparsityPattern::numNonZeroPerRow not implemented yet");
+  dolfin_not_implemented();
+  return 0;
 }
 //-----------------------------------------------------------------------------
-uint EpetraSparsityPattern::numNonZero() const
+void EpetraSparsityPattern::num_nonzeros_diagonal(uint* num_nonzeros) const
 {
-  dolfin_assert(epetra_graph);
-  return epetra_graph->NumGlobalNonzeros();
+  dolfin_not_implemented();
+}
+//-----------------------------------------------------------------------------
+void EpetraSparsityPattern::num_nonzeros_off_diagonal(uint* num_nonzeros) const
+{
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 void EpetraSparsityPattern::apply()
@@ -109,7 +111,7 @@ void EpetraSparsityPattern::apply()
   // Could employ eg. OptimizeStorage. Not sure if this is wanted,
   // the graph would then depend on the equations, not only the method.
 
-  EpetraFactory& f = dynamic_cast<EpetraFactory&>(factory());
+  EpetraFactory& f = EpetraFactory::instance();
   Epetra_SerialComm Comm = f.getSerialComm();
 
   Epetra_Map row_map(dims[0], 0, Comm);
@@ -118,14 +120,10 @@ void EpetraSparsityPattern::apply()
   epetra_graph->FillComplete (col_map, row_map);
 }
 //-----------------------------------------------------------------------------
-LinearAlgebraFactory& EpetraSparsityPattern::factory() const
-{
-  return EpetraFactory::instance();
-}
-//-----------------------------------------------------------------------------
 Epetra_FECrsGraph& EpetraSparsityPattern:: pattern() const
 {
   return *epetra_graph;
 }
 //-----------------------------------------------------------------------------
+
 #endif

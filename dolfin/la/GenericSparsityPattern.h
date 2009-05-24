@@ -1,29 +1,29 @@
-// Copyright (C) 2007 Ola Skavhaug
+// Copyright (C) 2007 Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Magnus Vikstrom 2008.
+// Modified by Magnus Vikstrom, 2008.
+// Modified by Anders Logg, 2009.
 //
 // First added:  2007-11-30
-// Last changed: 2008-01-24
+// Last changed: 2009-05-23
 
 #ifndef __GENERIC_SPARSITY_PATTERN_H
 #define __GENERIC_SPARSITY_PATTERN_H
 
 #include <dolfin/common/types.h>
-#include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
 
-  /// Base class for sparsity patterns of vectors/matrices. Concrete
-  /// sub classes can be used to initialize vectors and sparse
-  /// matrices.
+  /// Base class (interface) for generic tensor sparsity patterns.
+  /// Currently, this interface is mostly limited to matrices.
 
-  class GenericSparsityPattern
+  class GenericSparsityPattern : public Variable
   {
   public:
 
-    /// Constructor
+    /// Create empty sparsity pattern
     GenericSparsityPattern() {}
 
     /// Destructor
@@ -32,33 +32,26 @@ namespace dolfin
     /// Initialize sparsity pattern for a generic tensor
     virtual void init(uint rank, const uint* dims) = 0;
 
-    /// Initialise sparsity pattern for a parallel generic tensor
-    virtual void pinit(uint rank, const uint* dims) = 0;
-
-    /// Insert non-zero entry
+    /// Insert non-zero entries
     virtual void insert(const uint* num_rows, const uint * const * rows) = 0;
 
-    /// Insert non-zero entry
-    virtual void pinsert(const uint* num_rows, const uint * const * rows) = 0;
+    /// Sort entries for each row 
+    virtual void sort() = 0;
 
-    /// Return global size
-    virtual uint size(uint n) const = 0;
+    /// Return global size for dimension i
+    virtual uint size(uint i) const = 0;
 
-    /// Return array with number of non-zeroes per row
-    virtual void numNonZeroPerRow(uint nzrow[]) const
-      { error("numNonZeroPerRow not implemented for this sparsity pattern object."); }
+    /// Return total number of nonzeros in local rows
+    virtual uint num_nonzeros() const = 0;
 
-    /// Return maximum number of non-zeroes for a row
-    virtual uint numNonZeroPerRowMax() const
-      { error("numNonZeroPerRowMax not implemented for this sparsity pattern object."); return 0; }
+    /// Fill array with number of nonzeros per local row for diagonal block
+    virtual void num_nonzeros_diagonal(uint* num_nonzeros) const = 0;
 
-    /// Return total number of non-zeroes
-    virtual uint numNonZero() const = 0;
+    /// Fill array with number of nonzeros per local row for off-diagonal block
+    virtual void num_nonzeros_off_diagonal(uint* num_nonzeros) const = 0;
 
-    /// Finalize sparsity pattern (needed by most parallel la backends)
+    /// Finalize sparsity pattern
     virtual void apply() = 0;
-
-
 
   };
 
