@@ -4,13 +4,14 @@
 %rename (__str__) dolfin::NewParameter::operator std::string() const;
 %rename (_assign) dolfin::NewParameter::operator=;
 
-// Renames for NewParameters
+// Renames and ignores for NewParameters
 %rename (_parameter_keys) dolfin::NewParameters::parameter_keys;
 %rename (_database_keys) dolfin::NewParameters::database_keys;
 %rename (_get_database) dolfin::NewParameters::operator[];
 %rename (_get_parameter) dolfin::NewParameters::operator();
 %rename (__str__) dolfin::NewParameters::str const;
 %ignore dolfin::NewParameters::parse;
+%ignore dolfin::NewParameters::update;
 
 // Typemaps (in) for std::vectors<std::string>
 %typecheck(SWIG_TYPECHECK_STRING_ARRAY) std::set<std::string> {

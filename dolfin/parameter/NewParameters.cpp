@@ -1,8 +1,10 @@
 // Copyright (C) 2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Johan Hake, 2009
+//
 // First added:  2009-05-08
-// Last changed: 2009-05-11
+// Last changed: 2009-05-23
 
 #include <sstream>
 #include <boost/program_options.hpp>
@@ -142,18 +144,8 @@ void NewParameters::parse(int argc, char* argv[])
 
   // Add list of allowed options to po::options_description
   po::options_description desc("Allowed options");
-  for (const_parameter_iterator it = _parameters.begin();
-       it != _parameters.end(); ++it)
-  {
-    const NewParameter& p = *it->second;
-    if (p.type_str() == "int")
-      desc.add_options()(p.key().c_str(), po::value<int>(), p.description().c_str());
-    else if (p.type_str() == "double")
-      desc.add_options()(p.key().c_str(), po::value<double>(), p.description().c_str());
-    else if (p.type_str() == "string")
-      desc.add_options()(p.key().c_str(), po::value<std::string>(), p.description().c_str());
-  }
-
+  add_database_to_po(desc, *this);
+  
   // Add help option
   desc.add_options()("help", "show help text");
 
@@ -172,30 +164,34 @@ void NewParameters::parse(int argc, char* argv[])
     info(s.str());
     exit(1);
   }
-
-  // Read values from po::variables_map
-  for (parameter_iterator it = _parameters.begin();
-       it != _parameters.end(); ++it)
+  
+  // Read values from the parsed variable map
+  read_vm(vm, *this);
+}
+//-----------------------------------------------------------------------------
+void NewParameters::update(const NewParameters& parameters)
+{
+  // Update the parameters
+  for (const_parameter_iterator it = parameters._parameters.begin();
+       it != parameters._parameters.end(); ++it)
   {
-    NewParameter& p = *it->second;
-    if (p.type_str() == "int")
-    {
-      const po::variable_value& v = vm[p.key()];
-      if (!v.empty())
-        p = v.as<int>();
-    }
-    else if (p.type_str() == "double")
-    {
-      const po::variable_value& v = vm[p.key()];
-      if (!v.empty())
-        p = v.as<double>();
-    }
-    else if (p.type_str() == "string")
-    {
-      const po::variable_value& v = vm[p.key()];
-      if (!v.empty())
-        p = v.as<std::string>();
-    }
+    const NewParameter& others = *it->second;
+    NewParameter& mine = (*this)(others.key());
+    if (others.type_str() == "int")
+      mine = int(others);
+    else if (others.type_str() == "double")
+      mine = double(others);
+    else if (others.type_str() == "string")
+      mine = std::string(others);
+    else
+      error("Unable to use parameter \"%s\", unknown type: \"%s\".",
+            others.key().c_str(), others.type_str().c_str());
+  }
+  
+  // Update the parameter database
+  for (const_database_iterator it = parameters._databases.begin(); it != parameters._databases.end(); ++it)
+  {
+    (*this)[it->first].update(*it->second);
   }
 }
 //-----------------------------------------------------------------------------
@@ -307,6 +303,75 @@ std::string NewParameters::str() const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+void NewParameters::parameter_keys(std::vector<std::string>& keys) const
+{
+  keys.reserve(_parameters.size());
+  for (const_parameter_iterator it = _parameters.begin(); it != _parameters.end(); ++it)
+    keys.push_back(it->first);
+}
+//-----------------------------------------------------------------------------
+void NewParameters::database_keys(std::vector<std::string>& keys) const
+{
+  keys.reserve(_databases.size());
+  for (const_database_iterator it = _databases.begin(); it != _databases.end(); ++it)
+    keys.push_back(it->first);
+ }
+//-----------------------------------------------------------------------------
+void NewParameters::add_database_to_po(po::options_description& desc, const NewParameters &parameters, std::string base_name) const
+{
+  for (const_parameter_iterator it = parameters._parameters.begin();
+       it != parameters._parameters.end(); ++it)
+  {
+    const NewParameter& p = *it->second;
+    std::string param_name(base_name + p.key());
+    if (p.type_str() == "int")
+      desc.add_options()(param_name.c_str(), po::value<int>(), p.description().c_str());
+    else if (p.type_str() == "double")
+      desc.add_options()(param_name.c_str(), po::value<double>(), p.description().c_str());
+    else if (p.type_str() == "string")
+      desc.add_options()(param_name.c_str(), po::value<std::string>(), p.description().c_str());
+  }
+  
+  for (const_database_iterator it = parameters._databases.begin(); it != parameters._databases.end(); ++it)
+  {
+    add_database_to_po(desc, *it->second, base_name + it->first + ".");
+  }
+}
+//-----------------------------------------------------------------------------
+void NewParameters::read_vm(po::variables_map& vm, NewParameters &parameters, std::string base_name)
+{
+  // Read values from po::variables_map
+  for (parameter_iterator it = parameters._parameters.begin();
+       it != parameters._parameters.end(); ++it)
+  {
+    NewParameter& p = *it->second;
+    std::string param_name(base_name + p.key());
+    if (p.type_str() == "int")
+    {
+      const po::variable_value& v = vm[param_name];
+      if (!v.empty())
+        p = v.as<int>();
+    }
+    else if (p.type_str() == "double")
+    {
+      const po::variable_value& v = vm[param_name];
+      if (!v.empty())
+        p = v.as<double>();
+    }
+    else if (p.type_str() == "string")
+    {
+      const po::variable_value& v = vm[param_name];
+      if (!v.empty())
+        p = v.as<std::string>();
+    }
+  }
+  for (database_iterator it = parameters._databases.begin(); it != parameters._databases.end(); ++it)
+  {
+    read_vm(vm, *it->second, base_name + it->first + ".");
+  }
+  
+}
+//-----------------------------------------------------------------------------
 NewParameter* NewParameters::find_parameter(std::string key) const
 {
   const_parameter_iterator p = _parameters.find(key);
@@ -322,18 +387,4 @@ NewParameters* NewParameters::find_database(std::string key) const
     return 0;
   return p->second;
 }
-//-----------------------------------------------------------------------------
-void NewParameters::parameter_keys(std::vector<std::string>& keys) const
-{
-  keys.reserve(_parameters.size());
-  for (const_parameter_iterator it = _parameters.begin(); it != _parameters.end(); ++it)
-    keys.push_back(it->first);
-}
-//-----------------------------------------------------------------------------
-void NewParameters::database_keys(std::vector<std::string>& keys) const
-{
-  keys.reserve(_databases.size());
-  for (const_database_iterator it = _databases.begin(); it != _databases.end(); ++it)
-    keys.push_back(it->first);
- }
 //-----------------------------------------------------------------------------

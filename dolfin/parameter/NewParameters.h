@@ -1,8 +1,10 @@
 // Copyright (C) 2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Johan Hake, 2009
+//
 // First added:  2009-05-08
-// Last changed: 2009-05-08
+// Last changed: 2009-05-23
 
 #ifndef __NEWPARAMETERS_H
 #define __NEWPARAMETERS_H
@@ -11,10 +13,20 @@
 #include <map>
 #include <vector>
 
+namespace boost
+{
+  namespace program_options
+  {
+    class variables_map;
+    class options_description;
+  }
+}
+
 namespace dolfin
 {
 
   class NewParameter;
+
 
   /// This class stores a database of parameters. Each parameter is
   /// identified by a unique string (the key) and a value of some
@@ -63,6 +75,9 @@ namespace dolfin
     /// Parse parameters from command-line
     void parse(int argc, char* argv[]);
 
+    /// Update parameters with another parameters
+    void update(const NewParameters& parameters);
+
     /// Return parameter for given key
     NewParameter& operator() (std::string key);
 
@@ -88,6 +103,12 @@ namespace dolfin
     void database_keys(std::vector<std::string>& keys) const;
 
   private:
+
+    // Add parameters in database as options to a boost::program_option instance
+    void add_database_to_po(boost::program_options::options_description& desc, const NewParameters &parameters, std::string base_name = "") const;
+
+    // Read in values from the boost::variable_map
+    void read_vm(boost::program_options::variables_map& vm, NewParameters &parameters, std::string base_name = "");
 
     // Return pointer to parameter for given key and 0 if not found
     NewParameter* find_parameter(std::string key) const;

@@ -52,19 +52,11 @@ def iterkeys(self):
 
 def values(self):
     "Returns a list of the parameter values"
-    ret = []
-    par_keys = STLVectorString()
-    self._parameter_keys(par_keys)
-    for key in self.keys():
-        if key in par_keys:
-            ret.append(self._get_parameter(key))
-        else:
-            ret.append(self._get_database(key))
+    return [self[key] for key in self.keys()]
             
 def itervalues(self):
     "Returns an iterator to the parameter values"
-    for val in self.values():
-        yield val
+    return (self[key] for key in self.keys())
 
 def items(self):
     return zip(self.keys(),self.values())
@@ -103,7 +95,6 @@ def __getitem__(self,key):
         return self._get_database(key)
     raise KeyError, "'%s'"%key
 
-
 def __setitem__(self,key,value):
     "Set the parameter 'key', with given 'value'"
     _keys = STLVectorString()
@@ -115,5 +106,92 @@ def __setitem__(self,key,value):
     par = self._get_parameter(key)
     par._assign(value)
 
+def update(self, other):
+    "A recursive update that handles parameter subsets correctly."
+    if not isinstance(other,(type(self),dict)):
+        raise TypeError, "expected a 'dict' or a '%s'"%type(self).__name__
+    for key, other_value in other.iteritems():
+        self_value  = self[key]
+        if isinstance(self_value, type(self)):
+            self_value.update(other_value)
+        else:
+            setattr(self, key, other_value)
+
+def to_dict(self):
+    """Convert the Parameters to a dict"""
+    ret = {}
+    for key, value in self.iteritems():
+        if isinstance(value, type(self)):
+            ret[key] = value.to_dict()
+        else:
+            ret[key] = value
+    return ret
+
+def copy(self):
+    "Return a copy of it self"
+    return type(self)(self)
+
+def option_string(self):
+    "Return an option string representation of the Parameters"
+    def option_list(parent,basename):
+        ret_list = []
+        for key, value in parent.iteritems():
+            if isinstance(value, type(parent)):
+                ret_list.extend(option_list(value,basename + key + '.'))
+            else:
+                ret_list.append(basename + key + " " + str(value))
+        return ret_list
+    
+    return " ".join(option_list(self,"--"))
+
+__getattr__ = __getitem__
+__setattr__ = __setitem__
+
 %}  
 }
+
+%pythoncode%{
+old_init = NewParameters.__init__
+def __new_Parameter_init__(self,*args,**kwargs):
+    """ Initialize Parameters
+
+    Usage:
+    Parameters("parameters")
+       returns an empty Parameters
+       
+    Parameters(other_parameters)
+       returns a copy of the other_parameters
+       
+    Parameters("parameters",dim=3,tol=0.1,name='Name')
+       returns a parameters with the given values
+       
+    Parameters("parameters",dim=(3,0,4),name=("Name",["Name","Blame"])
+      returns a parameters with the given values and ranges
+    """
+    if len(args) == 1 and isinstance(args[0],(str,type(self))):
+        old_init(self,args[0])
+    else:
+        raise TypeError, "expected a single optional argument of type 'str' or ''"%type(self).__name__
+    if len(kwargs) == 0:
+        return
+
+    for key, value in kwargs.iteritems():
+        if isinstance(value,type(self)):
+            self.add(value)
+        elif isinstance(value,tuple):
+            if len(value) > 0 and ((isinstance(value[0],str) and len(value) == 2) or \
+                                   (isinstance(value[0],(int,float)) and len(value) == 3)):
+                if isinstance(value[0],(float,int)) or \
+                    (isinstance(value[0],str) and isinstance(value[1],list)):
+                    self.add(key,*value)
+                else:
+                    raise TypeError, "expected a list as second item of tuple, when first is a 'str'"
+            else:
+                raise TypeError,"expected a range tuple of size 2 for 'str' values and 3 for scalars"
+        else:
+            self.add(key,value)
+
+NewParameters.__init__ = __new_Parameter_init__
+
+%}
+
