@@ -18,11 +18,10 @@
 
 namespace dolfin
 {
+
   class MTL4Factory : public LinearAlgebraFactory
   {
   public:
-
-
 
     /// Destructor
     virtual ~MTL4Factory() {}
@@ -55,4 +54,5 @@ namespace dolfin
 }
 
 #endif
+
 #endif

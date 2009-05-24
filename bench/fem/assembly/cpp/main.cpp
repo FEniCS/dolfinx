@@ -70,10 +70,10 @@ int main()
   {
     dolfin_set("linear algebra backend", backends[i]);
     dolfin_set("timer prefix", backends[i]);
-    std::cout << "Backend: " << backends[i] << std::endl;
+    std::cout << "BENCH Backend: " << backends[i] << std::endl;
     for (unsigned int j = 0; j < forms.size(); j++)
     {
-      std::cout << "  Form: " << forms[j] << std::endl;
+      std::cout << "BENCH  Form: " << forms[j] << std::endl;
       const double tt0 = bench_form(forms[j], assemble_form);
       const double tt1 = timing(backends[i] + t1.title(), true);
       const double tt2 = timing(backends[i] + t2.title(), true);
@@ -95,10 +95,10 @@ int main()
   {
     dolfin_set("linear algebra backend", backends[i]);
     dolfin_set("timer prefix", backends[i]);
-    std::cout << "Backend: " << backends[i] << std::endl;
+    std::cout << "BENCH Backend: " << backends[i] << std::endl;
     for (unsigned int j = 0; j < forms.size(); j++)
     {
-      std::cout << "  Form: " << forms[j] << std::endl;
+      std::cout << "BENCH  Form: " << forms[j] << std::endl;
       t7(backends[i], forms[j]) = bench_form(forms[j], reassemble_form);
     }
   }

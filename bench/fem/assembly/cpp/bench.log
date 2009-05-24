@@ -1,21 +1,75 @@
-Backend: uBLAS
-  Form: Poisson2DP1
-  Form: Poisson2DP2
-  Form: Poisson2DP3
-  Form: THStokes2D
-  Form: StabStokes2D
-  Form: Elasticity3D
-  Form: NSEMomentum3D
-Backend: PETSc
-  Form: Poisson2DP1
-  Form: Poisson2DP2
-  Form: Poisson2DP3
-  Form: THStokes2D
-  Form: StabStokes2D
-  Form: Elasticity3D
-  Form: NSEMomentum3D
-Backend: Epetra
-  Form: Poisson2DP1
-  Form: Poisson2DP2
-  Form: Poisson2DP3
-  Form: THStokes2D
+Date: Sun May 24 22:28:45 CEST 2009
+-------------------------------------------------------------------------------
+
+Linux yavanna 2.6.28-12-generic #43-Ubuntu SMP Fri May 1 19:27:06 UTC 2009 i686 GNU/Linux
+
+changeset:   6224:c35189fe7b3a
+tag:         tip
+user:        Anders Logg <logg@simula.no>
+date:        Sun May 24 21:48:23 2009 +0200
+summary:     Bug fix in PETScMatrix.cpp for new sparsity pattern interface
+
+Assemble total  |  Poisson2DP1  Poisson2DP2  Poisson2DP3  THStokes2D  StabStokes2D  Elasticity3D  NSEMomentum3D
+---------------------------------------------------------------------------------------------------------------
+uBLAS           |          0.6            2         6.49       10.22          3.01          7.71          11.41
+PETSc           |         0.62         1.95         6.17        9.67          2.81          7.16           10.8
+Epetra          |          2.4         3.77         8.17       11.14          5.42         14.38           18.3
+MTL4            |         0.25         1.16         4.72        5.61           1.7           3.5           7.12
+STL             |         0.24         1.15         5.15        6.54           1.6          3.03           6.73
+
+Init dof map  |  Poisson2DP1  Poisson2DP2  Poisson2DP3  THStokes2D  StabStokes2D  Elasticity3D  NSEMomentum3D
+-------------------------------------------------------------------------------------------------------------
+uBLAS         |            0            0            0           0             0             0      1.707e-15
+PETSc         |            0    3.126e-15    1.138e-15           0    6.2519e-15     1.138e-15      1.707e-15
+Epetra        |            0            0   6.2519e-15           0             0    5.6899e-15     1.1366e-14
+MTL4          |   1.3642e-14            0   5.6899e-15  3.4139e-15     2.276e-15             0              0
+STL           |            0            0   1.3642e-14  1.3642e-14     1.138e-15             0              0
+
+Build sparsity  |  Poisson2DP1  Poisson2DP2  Poisson2DP3  THStokes2D  StabStokes2D  Elasticity3D  NSEMomentum3D
+---------------------------------------------------------------------------------------------------------------
+uBLAS           |         0.36         0.89         1.96         3.9          1.27          3.33           3.33
+PETSc           |         0.37         0.88          1.9        3.87          1.22          3.34           3.32
+Epetra          |         0.44         0.93         1.95        4.11           1.8          7.64           7.67
+MTL4            |   1.3642e-14            0   5.6899e-15  3.4139e-15     2.276e-15             0              0
+STL             |            0            0   1.3642e-14  1.3642e-14     1.138e-15             0              0
+
+Init tensor  |  Poisson2DP1  Poisson2DP2  Poisson2DP3  THStokes2D  StabStokes2D  Elasticity3D  NSEMomentum3D
+------------------------------------------------------------------------------------------------------------
+uBLAS        |         0.02         0.18         0.62        1.18          0.28          0.31           0.31
+PETSc        |            0         0.04         0.13         0.2          0.03          0.02           0.02
+Epetra       |         0.01         0.05         0.17        0.38          0.07          0.31           0.31
+MTL4         |   1.3642e-14            0   5.6899e-15  3.4139e-15     2.276e-15             0              0
+STL          |            0            0         0.01        0.01     1.138e-15          0.01              0
+
+Delete sparsity  |  Poisson2DP1  Poisson2DP2  Poisson2DP3  THStokes2D  StabStokes2D  Elasticity3D  NSEMomentum3D
+----------------------------------------------------------------------------------------------------------------
+uBLAS            |            0         0.04         0.08        0.18          0.05          0.03           0.03
+PETSc            |            0         0.04         0.15        0.18          0.06          0.04           0.04
+Epetra           |   6.2519e-15            0    1.707e-15           0     4.545e-15             0              0
+MTL4             |   1.3642e-14            0   5.6899e-15  3.4139e-15     2.276e-15             0              0
+STL              |            0            0            0           0     1.138e-15    3.4139e-15              0
+
+Assemble cells  |  Poisson2DP1  Poisson2DP2  Poisson2DP3  THStokes2D  StabStokes2D  Elasticity3D  NSEMomentum3D
+---------------------------------------------------------------------------------------------------------------
+uBLAS           |         0.21         0.87         3.77        4.96          1.41          4.03           7.73
+PETSc           |         0.23         0.91         3.85        5.24          1.45          3.72           7.38
+Epetra          |         1.92         2.67         5.59           6          3.34          6.25          10.14
+MTL4            |         0.23         1.08         4.51        5.35          1.62          3.44           7.06
+STL             |         0.24         1.15         5.14        6.53           1.6          3.02           6.73
+
+Overhead  |  Poisson2DP1  Poisson2DP2  Poisson2DP3   THStokes2D  StabStokes2D  Elasticity3D  NSEMomentum3D
+----------------------------------------------------------------------------------------------------------
+uBLAS     |         0.01         0.02         0.06   4.5519e-15    3.2543e-15          0.01           0.01
+PETSc     |         0.02         0.08         0.14         0.18          0.05          0.04           0.04
+Epetra    |         0.03         0.12         0.46         0.65          0.21          0.18           0.18
+MTL4      |         0.02         0.08         0.21         0.26          0.08          0.06           0.06
+STL       |   -1.138e-14  -1.2434e-14  -2.9587e-14  -1.4488e-14   -1.1435e-14             0    -2.6645e-15
+
+Reassemble total  |  Poisson2DP1  Poisson2DP2  Poisson2DP3  THStokes2D  StabStokes2D  Elasticity3D  NSEMomentum3D
+-----------------------------------------------------------------------------------------------------------------
+uBLAS             |         0.23          0.9         3.92        5.15          1.46          4.11           7.74
+PETSc             |         0.23         0.87         3.77        4.03          1.34          3.42            7.1
+Epetra            |         1.94         2.61         5.55        5.88          3.29          6.44          10.02
+MTL4              |         0.26         1.04         4.23        4.42           1.5           3.1           6.79
+STL               |         0.19         0.82          3.6        3.69           1.1           2.3           6.04
+
