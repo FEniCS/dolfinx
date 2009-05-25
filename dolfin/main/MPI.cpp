@@ -146,6 +146,32 @@ dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint de
   return static_cast<uint>(num_received);
 }
 //-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint N)
+{
+  // Get number of processes and process number
+  const uint _num_processes = num_processes();
+  const uint _process_number = process_number();
+
+  // Compute number of items per process and remainder
+  const uint n = N / _num_processes;
+  const uint r = N % _num_processes;
+
+  // Compute local range
+  std::pair<uint, uint> range;
+  if (_process_number < r)
+  {
+    range.first = _process_number*(n + 1);
+    range.second = range.first + n + 1;
+  }
+  else
+  {
+    range.first = _process_number*n + r;
+    range.second = range.first + n;
+  }
+
+  return range;
+}
+//-----------------------------------------------------------------------------
 
 #else
 
@@ -207,33 +233,11 @@ dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint de
   return 0;
 }
 //-----------------------------------------------------------------------------
-/*
 std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint N)
 {
-  // Get number of processes and process number
-  const uint _num_processes = num_processes();
-  const uint _process_number = process_number();
-
-  // Compute number of items per process and remainder
-  const uint n = N / _num_processes;
-  const uint r = N % _num_processes;
-
-  // Compute local range
-  std::pair<uint, uint> range;
-  if (_process_number < r)
-  {
-    range.first = process_number*(n + 1);
-    range.second = range.first + n + 1;
-  }
-  else
-  {
-    range.first = process_number*n + r;
-    range.second = range.first + n;
-  }
-
-  return range;
+  error("MPI::local_range requires MPI.");
+  return std::make_pair(0, 0) 
 }
-*/
 //-----------------------------------------------------------------------------
 
 #endif

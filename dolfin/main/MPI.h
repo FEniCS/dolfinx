@@ -80,35 +80,8 @@ namespace dolfin
     static uint send_recv(double* send_buffer, uint send_size, uint dest,
                           double* recv_buffer, uint recv_size, uint source);
 
-    // FIXME: The implementation of local_range should be moved to MPI.cpp
-    // FIXME: but I keep getting "undefined reference to `dolfin::MPI::local_range(unsigned int)"
-
     /// Return local range, splitting [0, N - 1] into num_processes() portions of almost equal size
-    static std::pair<uint, uint> local_range(uint N)
-    {
-      // Get number of processes and process number
-      const uint _num_processes = num_processes();
-      const uint _process_number = process_number();
-      
-      // Compute number of items per process and remainder
-      const uint n = N / _num_processes;
-      const uint r = N % _num_processes;
-      
-      // Compute local range
-      std::pair<uint, uint> range;
-      if (_process_number < r)
-      {
-        range.first = _process_number*(n + 1);
-        range.second = range.first + n + 1;
-      }
-      else
-      {
-        range.first = _process_number*n + r;
-        range.second = range.first + n;
-      }
-      
-      return range;
-    }
+    static std::pair<uint, uint> local_range(uint N);
 
   };
 
