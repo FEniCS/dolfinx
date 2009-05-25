@@ -2,11 +2,11 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007, 2008.
-// Modified by Anders Logg, 2007.
-// Modified by Ola Skavhaug, 2008.
+// Modified by Anders Logg, 2007-2009.
+// Modified by Ola Skavhaug, 2008-2009.
 //
 // First added:  2007-11-30
-// Last changed: 2009-02-26
+// Last changed: 2009-05-25
 
 #include "mpiutils.h"
 #include "SubSystemsManager.h"
@@ -206,6 +206,34 @@ dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint de
   error("MPI::send_recv() requires MPI.");
   return 0;
 }
+//-----------------------------------------------------------------------------
+/*
+std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint N)
+{
+  // Get number of processes and process number
+  const uint _num_processes = num_processes();
+  const uint _process_number = process_number();
+
+  // Compute number of items per process and remainder
+  const uint n = N / _num_processes;
+  const uint r = N % _num_processes;
+
+  // Compute local range
+  std::pair<uint, uint> range;
+  if (_process_number < r)
+  {
+    range.first = process_number*(n + 1);
+    range.second = range.first + n + 1;
+  }
+  else
+  {
+    range.first = process_number*n + r;
+    range.second = range.first + n;
+  }
+
+  return range;
+}
+*/
 //-----------------------------------------------------------------------------
 
 #endif

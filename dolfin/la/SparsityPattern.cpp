@@ -19,7 +19,7 @@ typedef std::vector<std::vector<dolfin::uint> >::iterator iterator;
 typedef std::vector<std::vector<dolfin::uint> >::const_iterator const_iterator;
 
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern() : parallel(MPI::num_processes() > 1)
+SparsityPattern::SparsityPattern()
 {
   // Do nothing
 }
@@ -56,10 +56,12 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
   const uint* r = rows[0];
   const uint* c = rows[1];
 
+  /*
   if (parallel)
   {
     error("Implement me!");
   }
+  */
 
   for (uint i = 0; i < m; ++i)
   {
@@ -98,9 +100,7 @@ dolfin::uint SparsityPattern::size(uint i) const
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> SparsityPattern::range() const
 {
-  // FIXME: use correct range here
-  std::pair<uint, uint> r(0, size(0));
-  return r;
+  return MPI::local_range(size(0));
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::num_nonzeros() const
@@ -171,30 +171,3 @@ const std::vector<std::vector<dolfin::uint> >& SparsityPattern::pattern() const
   return diagonal;
 }
 //-----------------------------------------------------------------------------
-
-/*
-void SparsityPattern::process_range(uint process_number, uint local_range[])
-{
-  local_range[0] = range[process_number];
-  local_range[1] = range[process_number + 1];
-}
-//-----------------------------------------------------------------------------
-dolfin::uint SparsityPattern::numLocalRows(uint process_number) const
-{
-  return range[process_number + 1] - range[process_number];
-}
-//-----------------------------------------------------------------------------
-void SparsityPattern::init_range()
-{
-  uint num_procs = dolfin::MPI::num_processes();
-  range = new uint[num_procs+1];
-  range[0] = 0;
-
-  for(uint p=0; p<num_procs; ++p)
-  {
-    range[p+1] = range[p] + dim[0]/num_procs + ((dim[0]%num_procs) > p ? 1 : 0);
-    info("range[%d] = %d", p+1, range[p+1]);
-  }
-}
-//-----------------------------------------------------------------------------
-*/

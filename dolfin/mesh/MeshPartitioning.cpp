@@ -23,8 +23,6 @@
 
 using namespace dolfin;
 
-
-
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 {

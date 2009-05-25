@@ -67,20 +67,7 @@ namespace dolfin
     /// Return underlying sparsity pattern
     const std::vector<std::vector<uint> >& pattern() const;
 
-    /*
-    
-    /// Return array with row range for process_number
-    void process_range(uint process_number, uint local_range[]);
-
-    /// Return number of local rows for process_number
-    uint numLocalRows(uint process_number) const;
-
-    */
-
   private:
-
-    // Initialize range
-    //void init_range();
 
     // Shape of tensor
     std::vector<uint> shape;
@@ -88,13 +75,6 @@ namespace dolfin
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<std::vector<uint> > diagonal;
     std::vector<std::vector<uint> > off_diagonal;
-
-    //range -array of size + 1 where size is num_processes + 1.
-    //range[rank], range[rank+1] is the range for processor
-    //uint* range;
-
-    // True if running in parallel
-    bool parallel;
 
   };
 
