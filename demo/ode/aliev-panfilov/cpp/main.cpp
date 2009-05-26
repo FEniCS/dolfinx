@@ -31,9 +31,9 @@ public:
     u[1] = 0.0;
   }
 
-  void f(const real* u, double t, real* y)
+  void f(const real* u, real t, real* y)
   {
-    const double eps = eps0 + mu1*u[1] / (u[0] + mu2);
+    const real eps = eps0 + mu1*u[1] / (u[0] + mu2);
 
     y[0] = -k*u[0]*(u[0] - a)*(u[0] - 1.0) - u[0]*u[1];
     y[1] = eps*(-u[1] - k*u[0]*(u[0] - a - 1.0));
@@ -41,11 +41,11 @@ public:
 
 private:
 
-  double a;
-  double eps0;
-  double k;
-  double mu1;
-  double mu2;
+  real a;
+  real eps0;
+  real k;
+  real mu1;
+  real mu2;
 
 };
 
