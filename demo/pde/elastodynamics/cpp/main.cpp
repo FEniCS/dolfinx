@@ -68,27 +68,27 @@ class LeftBoundary : public SubDomain
 // Acceleration update
 void update_a(Function& a, const Function& u, const Function& a0,
               const Function& v0,  const Function& u0,
-              double Beta, double delta_t)
+              double beta, double dt)
 {
-  // a = 1/(2*Beta) * ((u-u0 - v0*dt)/(0.5*dt*dt) - (1-2*Beta)*a0)
+  // a = 1/(2*beta)*((u-u0 - v0*dt)/(0.5*dt*dt) - (1-2*beta)*a0)
   a.vector()  = u.vector();
   a.vector() -= u0.vector();
-  a.vector() *= 1.0/delta_t;
+  a.vector() *= 1.0/dt;
   a.vector() -= v0.vector();
-  a.vector() *= 1.0/((0.5-Beta)*delta_t);
+  a.vector() *= 1.0/((0.5-beta)*dt);
   a.vector() -= a0.vector();
-  a.vector() *= (0.5-Beta)/Beta;
+  a.vector() *= (0.5-beta)/beta;
 }
 
 // Velocity update
 void update_v(Function& v, const Function& a, const Function& a0,
-              const Function& v0, double Gamma, double delta_t)
+              const Function& v0, double gamma, double dt)
 {
-  // v = dt * ((1-Gamma)*a0 + Gamma*a) + v0
+  // v = dt * ((1-gamma)*a0 + gamma*a) + v0
   v.vector()  = a0.vector();
-  v.vector() *= (1.0-Gamma)/Gamma;
+  v.vector() *= (1.0-gamma)/gamma;
   v.vector() += a.vector();
-  v.vector() *= delta_t*Gamma;
+  v.vector() *= dt*gamma;
   v.vector() += v0.vector();
 }
 
@@ -96,12 +96,11 @@ int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
 
-/*
   // Create Mesh
   Mesh mesh("../../../../data/meshes/dolfin-2.xml.gz");
 
   // Create function space
-  ElastoDynamicsFunctionSpace V(mesh);
+  ElastoDynamics::FunctionSpace V(mesh);
 
   // Material parameters
   Constant rho(1.0);                           // mass density
@@ -114,12 +113,11 @@ int main(int argc, char* argv[])
   // Time stepping parameters
   Constant alpha_m(0.2);
   Constant alpha_f(0.4);
-  double Beta = 0.36;
-  double Gamma = 0.7;
-  double delta_t = 1.0/32.0;               // time step
-  double t = 0.0;                              // initial time
-  double T = 200*delta_t;                      // final time
-  Constant beta(Beta), gamma(Gamma), dt(delta_t);
+  Constant beta(0.36);
+  Constant gamma(0.7);
+  Constant dt(1.0/32.0);               // time step
+  double t = 0.0;                      // initial time
+  double T = 200*dt;              // final time
 
   // Body force
   Constant f(2, 0.0);
@@ -128,7 +126,7 @@ int main(int argc, char* argv[])
   RightBoundary right_boundary;
   MeshFunction<unsigned int> right_boundary_function(mesh, 1);
   right_boundary.mark(right_boundary_function, 3);
-  Pressure p(t, delta_t, false), p0(t, delta_t, true);
+  Pressure p(t, dt, false), p0(t, dt, true);
 
   // Dirichlet boundary conditions
   LeftBoundary left_boundary;
@@ -148,37 +146,29 @@ int main(int argc, char* argv[])
   a0.vector().zero();
 
   // Create forms and attach functions
-  ElastoDynamicsBilinearForm a_form(V, V);
-  a_form.lmbda = lambda; a_form.mu = mu; a_form.rho = rho;
-  a_form.eta = eta;
-  a_form.beta = beta;
-  a_form.gamma = gamma;
-  a_form.dt = dt;
-  a_form.alpha_m = alpha_m;
-  a_form.alpha_f = alpha_f;
+  ElastoDynamics::CoefficientSet coeffs;
+  coeffs.lmbda = lambda; coeffs.mu = mu; coeffs.rho = rho;
+  coeffs.eta = eta;
+  coeffs.beta = beta;
+  coeffs.gamma = gamma;
+  coeffs.dt = dt;
+  coeffs.alpha_m = alpha_m;
+  coeffs.alpha_f = alpha_f;
+  coeffs.u0 = u0; coeffs.v0 = v0; coeffs.a0 = a0;
+  coeffs.f = f;
+  coeffs.p = p;
+  coeffs.p0 = p0;
 
-  ElastoDynamicsLinearForm L(V);
-  L.u0 = u0; L.v0 = v0; L.a0 = a0;
-  L.lmbda = lambda;
-  L.mu = mu;
-  L.rho = rho;
-  L.eta = eta;
-  L.beta = beta;
-  L.gamma = gamma;
-  L.dt = dt;
-  L.alpha_m = alpha_m;
-  L.alpha_f = alpha_f;
-  L.f = f;
-  L.p = p;
-  L.p0 = p0;
+  ElastoDynamics::BilinearForm a_form(V, V, coeffs);
+  ElastoDynamics::LinearForm L(V, coeffs);
 
   // Create variational problem
   VariationalProblem pde(a_form, L, bc, 0, &right_boundary_function, 0);
 
   // Create projection to compute the normal strain eps_xx
-  DG0_eps_xxFunctionSpace Vdg(mesh);
-  DG0_eps_xxBilinearForm a_eps(Vdg, Vdg);
-  DG0_eps_xxLinearForm L_eps(Vdg);
+  DG0_eps_xx::FunctionSpace Vdg(mesh);
+  DG0_eps_xx::BilinearForm a_eps(Vdg, Vdg);
+  DG0_eps_xx::LinearForm L_eps(Vdg);
   L_eps.u = u;
   VariationalProblem eps(a_eps, L_eps);
   Function eps_xx(Vdg);
@@ -192,7 +182,7 @@ int main(int argc, char* argv[])
   while( t < T)
   {
     // Update for next time step
-    t += delta_t;
+    t += dt;
     cout << "Time: " << t << endl;
 
     // Solve
@@ -200,8 +190,8 @@ int main(int argc, char* argv[])
     eps.solve(eps_xx);
 
     // Update velocity and acceleration
-    update_a(a, u, a0, v0, u0, Beta, delta_t);
-    update_v(v, a, a0, v0, Gamma, delta_t);
+    update_a(a, u, a0, v0, u0, beta, dt);
+    update_v(v, a, a0, v0, gamma, dt);
     u0 = u; v0 = v; a0 = a;
 
     // Save solutions to file
@@ -212,6 +202,6 @@ int main(int argc, char* argv[])
     }
     ++step;
   }
-*/
+
   return 0;
 }
