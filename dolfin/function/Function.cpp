@@ -196,7 +196,7 @@ const Function& Function::operator= (const Function& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-SubFunction Function::operator[] (uint i)
+SubFunction Function::operator[] (uint i) const
 {
   // Check that vector exists
   if (!_vector)

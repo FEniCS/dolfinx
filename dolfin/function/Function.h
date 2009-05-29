@@ -82,7 +82,7 @@ namespace dolfin
     const Function& operator= (const Function& v);
 
     /// Extract sub function
-    SubFunction operator[] (uint i);
+    SubFunction operator[] (uint i) const;
 
     /// Return the function space
     const FunctionSpace& function_space() const;
