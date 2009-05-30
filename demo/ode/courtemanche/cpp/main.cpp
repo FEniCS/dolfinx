@@ -2,16 +2,30 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Original code copied from PyCC.
-// Modified by Anders Logg, 2006-2008.
+// Modified by Anders Logg, 2006-2009.
 //
 // First added:  2006-05-24
-// Last changed: 2008-10-07
+// Last changed: 2009-05-30
 //
 // This demo solves the Courtemanche model for cardiac excitation.
 
 #include <dolfin.h>
 
 using namespace dolfin;
+
+// FIXME: Temporary fix to get things to compile with GMP
+// FIXME: Note that this might decrease precision when running with GMP
+inline real myexp(real x)
+{
+  return to_real(exp(to_double(x)));
+}
+
+// FIXME: Temporary fix to get things to compile with GMP
+// FIXME: Note that this might decrease precision when running with GMP
+inline real mylog(real x)
+{
+  return to_real(log(to_double(x)));
+}
 
 class Courtemanche : public ODE
 {
@@ -163,26 +177,26 @@ public:
 
     I_rel    = k_rel*uu*uu*v*w*(Ca_rel - Ca_i);
     I_CaL    = Cm*g_CaL*d*ff*fca*(V - 65);
-    I_NaCa   = Cm*(I_NaCamax*(exp(gamma*F*V/(R*T))*Na_i*Na_i*Na_i*Ca_o - exp((gamma - 1)*F*V/(R*T))*Na_o*Na_o*Na_o*Ca_i))/((K_mNa*K_mNa*K_mNa + Na_o*Na_o*Na_o)*(K_mCa + Ca_o)*(1 + k_sat*exp((gamma -1 )*F*V/(R*T))));
+    I_NaCa   = Cm*(I_NaCamax*(myexp(gamma*F*V/(R*T))*Na_i*Na_i*Na_i*Ca_o - myexp((gamma - 1)*F*V/(R*T))*Na_o*Na_o*Na_o*Ca_i))/((K_mNa*K_mNa*K_mNa + Na_o*Na_o*Na_o)*(K_mCa + Ca_o)*(1 + k_sat*myexp((gamma -1 )*F*V/(R*T))));
     //Fn = 1e-12*Vrel*I_rel - 5e-13/F*(0.5*I_CaL - 0.2*I_NaCa);
-    sigma    = (1.0/7.0)*(exp(Na_o/67.3) - 1.0);
-    f_NaK    = 1.0/(1.0 + 0.1245*exp(-0.1*F*V/(R*T))+ 0.0365*sigma*exp(-F*V/(R*T)));
+    sigma    = (1.0/7.0)*(myexp(Na_o/67.3) - 1.0);
+    f_NaK    = 1.0/(1.0 + 0.1245*myexp(-0.1*F*V/(R*T))+ 0.0365*sigma*myexp(-F*V/(R*T)));
     I_NaK    = Cm*I_NaKmax*f_NaK/(1.0 + dolfin::pow((K_mNai/Na_i),1.5))*(K_o/(K_o + K_mKo));
-    E_Na     = R*T/(z_Na*F)*log(Na_o/Na_i);
+    E_Na     = R*T/(z_Na*F)*mylog(Na_o/Na_i);
     I_bNa    = Cm*g_bNa*(V - E_Na);
     I_Na     = Cm*g_Na*m*m*m*h*j*(V - E_Na);
     I_pCa    = Cm*I_pCamax*Ca_i/(0.0005 + Ca_i);
-    E_Ca     = R*T/(z_Ca*F)*log(Ca_o/Ca_i);
+    E_Ca     = R*T/(z_Ca*F)*mylog(Ca_o/Ca_i);
     I_bCa    = Cm*g_bCa*(V - E_Ca);
     I_upleak = (Ca_up/Ca_upmax)*I_upmax;
     I_up     = I_upmax/(1.0 + (K_up/Ca_i));
     I_tr     = (Ca_up - Ca_rel)/tau_tr;
-    E_K      = R*T/(z_K*F)*log(K_o/K_i);
-    I_K1     = Cm*(g_K1*(V - E_K))/(1.0 + exp(0.07*(V + 80.0)));
+    E_K      = R*T/(z_K*F)*mylog(K_o/K_i);
+    I_K1     = Cm*(g_K1*(V - E_K))/(1.0 + myexp(0.07*(V + 80.0)));
     I_to     = Cm*g_to*oa*oa*oa*oi*(V - E_K);
-    g_Kur    = 0.005 + 0.05/(1.0 + exp((V - 15.0)/-13.0));
+    g_Kur    = 0.005 + 0.05/(1.0 + myexp((V - 15.0)/-13.0));
     I_Kur    = Cm*g_Kur*ua*ua*ua*ui*(V - E_K);
-    I_Kr     = Cm*(g_Kr*xr*(V - E_K))/(1.0 + exp((V + 15.0)/22.4));
+    I_Kr     = Cm*(g_Kr*xr*(V - E_K))/(1.0 + myexp((V + 15.0)/22.4));
     I_Ks     = Cm*g_Ks*xs*xs*(V - E_K);
     I_ion    = I_Na + I_K1 + I_to + I_Kur + I_Kr + I_Ks + I_CaL + I_pCa + I_NaK + I_NaCa + I_bNa + I_bCa;
     B1       = (2.0*I_NaCa - I_pCa - I_CaL - I_bCa)/(2.0*F*Vi) + (Vup*(I_upleak - I_up) + I_rel*Vrel)/Vi;
@@ -196,17 +210,17 @@ public:
     if ( V == -47.13 )
         alpha_m = 3.2;
     else
-        alpha_m = 0.32*(V + 47.13)/(1.0 - exp(-0.1*(V + 47.13)));
+        alpha_m = 0.32*(V + 47.13)/(1.0 - myexp(-0.1*(V + 47.13)));
 
-    beta_m = 0.08*exp(V/-11.0);
+    beta_m = 0.08*myexp(V/-11.0);
     tau_m  = 1.0/(alpha_m + beta_m);
     m_inf  = alpha_m*tau_m;
     if (V >= -40.0){
         alpha_h = 0.0;
-        beta_h  = 1.0/(0.13*(1.0 + exp((V + 10.66)/-11.1)));
+        beta_h  = 1.0/(0.13*(1.0 + myexp((V + 10.66)/-11.1)));
     } else {
-        alpha_h = 0.135*exp((V + 80.0)/-6.8);
-        beta_h  = 3.56*exp(0.079*V)+3.1e5*exp(0.35*V);
+        alpha_h = 0.135*myexp((V + 80.0)/-6.8);
+        beta_h  = 3.56*myexp(0.079*V)+3.1e5*myexp(0.35*V);
     }
 
     tau_h = 1.0/(alpha_h + beta_h);
@@ -215,61 +229,61 @@ public:
     if ( V >= -40.0 )
     {
         alpha_j = 0.0;
-        beta_j  = 0.3*(exp(-2.535e-7*V))/(1.0 + exp(-0.1*(V +32.0)));
+        beta_j  = 0.3*(myexp(-2.535e-7*V))/(1.0 + myexp(-0.1*(V +32.0)));
     } else {
-        alpha_j = (-127140.0*exp(0.2444*V)-3.474e-5*exp(-0.04391*V))*(V + 37.78)/(1.0 + exp(0.311*(V + 79.23)));
-        beta_j  = 0.1212*(exp(-0.01052*V))/(1.0 + exp(-0.1378*(V + 40.14)));
+        alpha_j = (-127140.0*myexp(0.2444*V)-3.474e-5*myexp(-0.04391*V))*(V + 37.78)/(1.0 + myexp(0.311*(V + 79.23)));
+        beta_j  = 0.1212*(myexp(-0.01052*V))/(1.0 + myexp(-0.1378*(V + 40.14)));
     }
 
     tau_j = 1.0/(alpha_j + beta_j);
     j_inf = alpha_j*tau_j;
 
-    alpha_oa = 0.65/(exp((V + 10.0)/-8.5) + exp((V - 30.0)/-59.0));
-    beta_oa  = 0.65/(2.5 + exp((V + 82.0)/17.0));
+    alpha_oa = 0.65/(myexp((V + 10.0)/-8.5) + myexp((V - 30.0)/-59.0));
+    beta_oa  = 0.65/(2.5 + myexp((V + 82.0)/17.0));
     tau_oa   = 1.0/((alpha_oa + beta_oa)*K_Q10);
-    oa_inf   = 1.0/(1.0 + exp((V + 20.47)/-17.54));
+    oa_inf   = 1.0/(1.0 + myexp((V + 20.47)/-17.54));
 
-    alpha_oi = 1.0/(18.53 + exp((V + 113.7)/10.95));
-    beta_oi  = 1.0/(35.56 + exp((V + 1.26)/-7.44));
+    alpha_oi = 1.0/(18.53 + myexp((V + 113.7)/10.95));
+    beta_oi  = 1.0/(35.56 + myexp((V + 1.26)/-7.44));
     tau_oi   = 1.0/((alpha_oi + beta_oi)*K_Q10);
-    oi_inf   = 1.0/(1.0 + exp((V + 43.1)/5.3));
+    oi_inf   = 1.0/(1.0 + myexp((V + 43.1)/5.3));
 
-    alpha_ua = 0.65/(exp((V + 10.0)/-8.5) + exp((V - 30)/-59.0));
-    beta_ua  = 0.65/(2.5 + exp((V + 82.0)/17.0));
+    alpha_ua = 0.65/(myexp((V + 10.0)/-8.5) + myexp((V - 30)/-59.0));
+    beta_ua  = 0.65/(2.5 + myexp((V + 82.0)/17.0));
     tau_ua   = 1.0/((alpha_ua + beta_ua)*K_Q10);
-    ua_inf   = 1.0/(1.0 + exp((V + 30.3)/-9.6));
+    ua_inf   = 1.0/(1.0 + myexp((V + 30.3)/-9.6));
 
-    alpha_ui = 1.0/(21.0 + exp((V - 185.0)/-28.0));
-    beta_ui  = exp((V - 158.0)/16.0);
+    alpha_ui = 1.0/(21.0 + myexp((V - 185.0)/-28.0));
+    beta_ui  = myexp((V - 158.0)/16.0);
     tau_ui   = 1.0/((alpha_ui + beta_ui)*K_Q10);
-    ui_inf   = 1.0/(1.0 + exp((V - 99.45)/27.48));
+    ui_inf   = 1.0/(1.0 + myexp((V - 99.45)/27.48));
 
-    alpha_xr = 0.0003*(V + 14.1)/(1.0 - exp((V + 14.1)/-5.0));
-    beta_xr  = 7.3898e-05*(V - 3.3328)/(exp((V -3.3328)/5.1237) - 1.0);
+    alpha_xr = 0.0003*(V + 14.1)/(1.0 - myexp((V + 14.1)/-5.0));
+    beta_xr  = 7.3898e-05*(V - 3.3328)/(myexp((V -3.3328)/5.1237) - 1.0);
     tau_xr   = 1.0/(alpha_xr + beta_xr);
-    xr_inf   = 1.0/(1.0 + exp((V + 14.1)/-6.5));
+    xr_inf   = 1.0/(1.0 + myexp((V + 14.1)/-6.5));
 
-    alpha_xs = 4e-05*(V - 19.9)/(1.0 - exp((V - 19.9)/-17.0));
-    beta_xs  = 3.5e-05*(V - 19.9)/(exp((V - 19.9)/9.0) - 1.0);
+    alpha_xs = 4e-05*(V - 19.9)/(1.0 - myexp((V - 19.9)/-17.0));
+    beta_xs  = 3.5e-05*(V - 19.9)/(myexp((V - 19.9)/9.0) - 1.0);
     tau_xs   = 0.5/(alpha_xs + beta_xs);
-    xs_inf   = dolfin::pow((1.0 + exp((V - 19.9)/-12.7)),-0.5);
+    xs_inf   = dolfin::pow((1.0 + myexp((V - 19.9)/-12.7)),-0.5);
 
-    tau_d    = (1.0 - exp((V + 10.0)/-6.24))/(0.035*(V + 10.0)*(1.0 + exp((V + 10.0)/-6.24)));
-    d_inf    = 1.0/(1.0 + exp((V +10.0)/-8.0));
+    tau_d    = (1.0 - myexp((V + 10.0)/-6.24))/(0.035*(V + 10.0)*(1.0 + myexp((V + 10.0)/-6.24)));
+    d_inf    = 1.0/(1.0 + myexp((V +10.0)/-8.0));
 
-    tau_f    = 9.0/(0.0197*exp(-0.0337*0.0337*(V + 10.0)*(V + 10.0)) + 0.02);
-    f_inf    = 1.0/(1.0 + exp((V + 28.0)/6.9));
+    tau_f    = 9.0/(0.0197*myexp(-0.0337*0.0337*(V + 10.0)*(V + 10.0)) + 0.02);
+    f_inf    = 1.0/(1.0 + myexp((V + 28.0)/6.9));
 
     fca_inf  = 1.0/(1.0 + Ca_i/0.00035);
 
     Fn       = 1e-12*Vrel*I_rel - (5e-13/F)*(0.5*I_CaL - 0.2*I_NaCa);
-    u_inf    = 1.0/(1.0 + exp((Fn - 3.4175e-13)/-13.67e-16));
+    u_inf    = 1.0/(1.0 + myexp((Fn - 3.4175e-13)/-13.67e-16));
 
-    tau_v    = 1.91 + 2.09/(1.0 + exp((Fn - 3.4175e-13)/-13.67e-16));
-    v_inf    = 1.0 - 1.0/(1.0 + exp((Fn - 6.835e-14)/-13.67e-16));
+    tau_v    = 1.91 + 2.09/(1.0 + myexp((Fn - 3.4175e-13)/-13.67e-16));
+    v_inf    = 1.0 - 1.0/(1.0 + myexp((Fn - 6.835e-14)/-13.67e-16));
 
-    tau_w    = 6.0*(1.0 - exp((V - 7.9)/-5.0))/((1.0 + 0.3*exp((V - 7.9)/-5.0))*(V - 7.9));
-    w_inf    = 1.0 - 1.0/(1.0 + exp((V - 40.0)/-17.0));
+    tau_w    = 6.0*(1.0 - myexp((V - 7.9)/-5.0))/((1.0 + 0.3*myexp((V - 7.9)/-5.0))*(V - 7.9));
+    w_inf    = 1.0 - 1.0/(1.0 + myexp((V - 40.0)/-17.0));
   }
 
   bool update(const real* u, real t, bool end)

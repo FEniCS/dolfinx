@@ -38,13 +38,19 @@ namespace dolfin
   void real_init();
 
   // Convert to double (if necessary)
-  inline double to_double(const real x)
+  inline double to_double(real x)
   {
 #ifdef HAS_GMP
     return x.get_d();
 #else
     return x;
 #endif
+  }
+
+  // Convert to real (if necessary)
+  inline real to_real(double x)
+  {
+    return real(x);
   }
 
   // Absolute value
