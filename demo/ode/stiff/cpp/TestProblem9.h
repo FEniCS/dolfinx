@@ -19,14 +19,14 @@ public:
     lambda = 1000.0;
   }
 
-  void u0(double* u)
+  void u0(real* u)
   {
     u[0] = 0.0;
     u[1] = 1.0;
     u[2] = 1.0;
   }
 
-  void f(const double* u, double t, double* y)
+  void f(const real* u, real t, real* y)
   {
     y[0] = u[1];
     y[1] = -(1.0 - u[2])*u[0];
@@ -35,6 +35,6 @@ public:
 
 private:
 
-  double lambda;
+  real lambda;
 
 };

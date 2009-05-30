@@ -14,17 +14,17 @@ public:
 
   TestProblem7() : ODE(101, 1.0)
   {
-    h = 1.0 / (static_cast<double>(N) - 1);
-    info("The heat equation on [0,1] with h = %f", h);
+    h = 1.0 / (static_cast<real>(N) - 1);
+    info("The heat equation on [0,1] with h = %f", to_double(h));
   }
 
-  void u0(double* u)
+  void u0(real* u)
   {
     for (unsigned int i = 0; i < N; i++)
       u[i] = 0.0;
   }
 
-  void f(const double* u, double t, double* y)
+  void f(const real* u, real t, real* y)
   {
     // Boundary values
     y[0]   = 0.0;
@@ -34,7 +34,7 @@ public:
     for (unsigned int i = 1; i < N - 1; i++)
     {
       // Heat source
-      double source = 0.0;
+      real source = 0.0;
       if ( i == N/2 )
 	source = 100.0;
 
@@ -44,6 +44,6 @@ public:
 
 private:
 
-  double h;
+  real h;
 
 };

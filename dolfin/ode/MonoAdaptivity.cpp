@@ -69,9 +69,9 @@ void MonoAdaptivity::update(real k0, real r, const Method& method, real t,
   {
     // Extra reduction if this is the first time step
     if ( first )
-      k = min(k, 0.1*k0);
+      k = real_min(k, 0.1*k0);
     else
-      k = min(k, 0.5*k0);
+      k = real_min(k, 0.5*k0);
 
     controller.reset(k);
     _accept = false;

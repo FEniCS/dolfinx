@@ -131,6 +131,6 @@ real Controller::update_harmonic(real e, real tol)
 real Controller::update_harmonic(real knew, real kold, real kmax)
 {
   const real w = 5.0;
-  return min(kmax, (1.0 + w)*kold*knew / (kold + w*knew));
+  return real_min(kmax, (1.0 + w)*kold*knew / (kold + w*knew));
 }
 //-----------------------------------------------------------------------------

@@ -113,7 +113,7 @@ void MultiAdaptivity::update(MultiAdaptiveTimeSlab& ts, real t, bool first)
     // Make sure to decrease the time step if not accepted
     if ( !_accept )
     {
-      k = min(k, 0.9*k0);
+      k = real_min(k, 0.9*k0);
     }
 
     // Save time step for component
@@ -172,11 +172,11 @@ void MultiAdaptivity::compute_residuals(MultiAdaptiveTimeSlab& ts)
 
       // Update maximum residual for component
       const real r = method.residual(x0, ts.jx + j, f[method.nsize()], k);
-      residuals[i] = max(residuals[i], abs(r));
+      residuals[i] = real_max(residuals[i], abs(r));
 
       // Update maximum residual and error
-      rmax = max(rmax, r);
-      emax = max(emax, method.error(k, r));
+      rmax = real_max(rmax, r);
+      emax = real_max(emax, method.error(k, r));
 
       // Update dof
       j += method.nsize();
@@ -214,7 +214,7 @@ void MultiAdaptivity::propagate_dependencies()
     // Propagate time step to dependencies
     const std::vector<uint>& deps = ode.dependencies[i];
     for (uint pos = 0; pos < deps.size(); pos++)
-      timesteps[deps[pos]] = std::min(timesteps[deps[pos]], k);
+      timesteps[deps[pos]] = real_min(timesteps[deps[pos]], k);
   }
 }
 //-----------------------------------------------------------------------------

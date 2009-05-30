@@ -73,8 +73,8 @@ void ODE::J(const real* x, real* y, const real* u, real t)
   // Small change in u
   real umax = 0.0;
   for (unsigned int i = 0; i < N; i++)
-    umax = max(umax, abs(u[i]));
-  real h = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
+    umax = real_max(umax, real_abs(u[i]));
+  real h = real_max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
 
   // We are not allowed to change u, but we restore it afterwards,
   // so maybe we can cheat a little...
@@ -108,8 +108,8 @@ void ODE::JT(const real* x, real* y, const real* u, real t)
   // Small change in u
   real umax = 0.0;
   for (unsigned int i = 0; i < N; i++)
-    umax = max(umax, abs(u[i]));
-  real h = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
+    umax = real_max(umax, real_abs(u[i]));
+  real h = real_max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
 
   // We are not allowed to change u, but we restore it afterwards,
   // so maybe we can cheat a little...
@@ -153,7 +153,7 @@ real ODE::dfdu(const real* u, real t, uint i, uint j)
   real uj = uu[j];
 
   // Small change in u_j
-  real h = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(uj));
+  real h = real_max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * real_abs(uj));
 
   // Compute F values
   uu[j] -= 0.5 * h;
@@ -166,7 +166,7 @@ real ODE::dfdu(const real* u, real t, uint i, uint j)
   uu[j] = uj;
 
   // Compute derivative
-  if ( abs(f1 - f2) < real_epsilon() * max(abs(f1), abs(f2)) )
+  if (real_abs(f1 - f2) < real_epsilon() * real_max(real_abs(f1), real_abs(f2)))
     return 0.0;
 
   return (f2 - f1) / h;

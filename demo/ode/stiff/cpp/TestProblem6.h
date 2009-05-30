@@ -20,13 +20,13 @@ public:
     mu = 10.0;
   }
 
-  void u0(double* u)
+  void u0(real* u)
   {
     u[0] = 2.0;
     u[1] = 0.0;
   }
 
-  void f(const double* u, double t, double* y)
+  void f(const real* u, real t, real* y)
   {
     y[0] = u[1];
     y[1] = mu*(1.0 - u[0]*u[0])*u[1] - u[0];
@@ -34,6 +34,6 @@ public:
 
 private:
 
-  double mu;
+  real mu;
 
 };

@@ -1,10 +1,10 @@
-// Copyright (C) 2008 Anders Logg.
+// Copyright (C) 2008-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Benjamin Kehlet, 2008.
 //
 // First added:  2008-10-02
-// Last changed: 2008-10-14
+// Last changed: 2009-05-30
 //
 // This file provides utilities for working with variable-precision
 // floating-point numbers. It defines a datatype "real" which defaults
@@ -54,19 +54,19 @@ namespace dolfin
   }
 
   // Absolute value
-  inline real abs(real x)
+  inline real real_abs(real x)
   { return x >= 0.0 ? x : -1.0*x; }
 
   // Maximum
-  inline real max(real x, real y)
+  inline real real_max(real x, real y)
   { return x > y ? x : y; }
 
   // Minimum
-  inline real min(real x, real y)
+  inline real real_min(real x, real y)
   { return x < y ? x : y; }
 
   // Power function
-  inline real pow(real x, uint y)
+  inline real real_pow(real x, uint y)
   {
 #ifdef HAS_GMP
     real res;
@@ -78,7 +78,7 @@ namespace dolfin
   }
 
   // Power function
-  inline real pow(real x, real y)
+  inline real real_pow(real x, real y)
   {
 #ifdef HAS_GMP
     error("Multiprecision pow function not implemented.");
@@ -88,11 +88,23 @@ namespace dolfin
 #endif
   }
 
-  // Square root
+  /// Square root
   real real_sqrt(real a);
 
-  // Compute pi
+  /// Compute pi
   real real_pi();
+
+  /// Exponential function (note: not full precision!)
+  inline real real_exp(real x)
+  {
+    return to_real(exp(to_double(x)));
+  }
+
+  /// Logarithmic function (note: not full precision!)
+  inline real real_log(real x)
+  {
+    return to_real(log(to_double(x)));
+  }
 
   // Get computed epsilon
   inline const real real_epsilon() {return _real_epsilon;}
@@ -131,7 +143,7 @@ namespace dolfin
 
   // Compute maximum absolute value of array
   inline real real_max_abs(uint n, const real* x)
-  { real _max = 0.0; for (uint i = 0; i < n; i++) _max = max(abs(x[i]), _max); return _max; }
+  { real _max = 0.0; for (uint i = 0; i < n; i++) _max = real_max(abs(x[i]), _max); return _max; }
 
 }
 

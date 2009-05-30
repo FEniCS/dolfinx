@@ -17,13 +17,13 @@ public:
     info("The simple test system.");
   }
 
-  void u0(double* u)
+  void u0(real* u)
   {
     u[0] = 1.0;
     u[1] = 1.0;
   }
 
-  void f(const double* u, double t, double* y)
+  void f(const real* u, real t, real* y)
   {
     y[0] = -100.0*u[0];
     y[1] = -1000.0*u[1];

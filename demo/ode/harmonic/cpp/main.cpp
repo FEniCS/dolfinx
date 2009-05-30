@@ -37,7 +37,7 @@ public:
 
     real e0 = u[0] - 0.0;
     real e1 = u[1] - 1.0;
-    e = max(abs(e0), abs(e1));
+    e = real_max(abs(e0), abs(e1));
 
     return true;
   }

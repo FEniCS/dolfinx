@@ -17,13 +17,13 @@ public:
     info("A non-normal test problem, critically damped oscillation.");
   }
 
-  void u0(double* u)
+  void u0(real* u)
   {
     u[0] = 1.0;
     u[1] = 1.0;
   }
 
-  void f(const double* u, double t, double* y)
+  void f(const real* u, real t, real* y)
   {
     y[0] = -1000*u[0] + 10000*u[1];
     y[1] = -100*u[1];

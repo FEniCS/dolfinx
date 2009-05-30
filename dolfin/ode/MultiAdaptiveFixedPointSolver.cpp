@@ -103,7 +103,7 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
   // Save norm of old solution
   xnorm = 0.0;
   for (uint j = 0; j < ts.nj; j++)
-    xnorm = max(xnorm, abs(ts.jx[j]));
+    xnorm = real_max(xnorm, abs(ts.jx[j]));
 
   // Reset maximum increment
   real increment_max = 0.0;
@@ -171,10 +171,10 @@ real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
 	const real increment = abs(ts.jx[j + method.nsize() - 1] - x1);
 
 	// Update sub slab increment
-	increment_local = std::max(increment_local, increment);
+	increment_local = real_max(increment_local, increment);
 
 	// Update maximum increment
-	increment_max = std::max(increment_max, increment);
+	increment_max = real_max(increment_max, increment);
 
 	// Update dof
 	j += method.nsize();

@@ -564,7 +564,7 @@ void MultiAdaptiveTimeSlab::alloc_d(uint newsize)
 real MultiAdaptiveTimeSlab::computeEndTime(real a, real b, uint offset, uint& end)
 {
   // Update partitition
-  real K = min(adaptivity.kmax(), b - a);
+  real K = real_min(adaptivity.kmax(), b - a);
   K = partition.update(offset, end, adaptivity, K);
 
   //partition.debug(offset, end);
@@ -574,7 +574,7 @@ real MultiAdaptiveTimeSlab::computeEndTime(real a, real b, uint offset, uint& en
     b = a + K;
 
   // Save minimum time step
-  kmin = min(kmin, b - a);
+  kmin = real_min(kmin, b - a);
 
   return b;
 }

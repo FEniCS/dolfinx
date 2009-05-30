@@ -57,13 +57,13 @@ real cGqMethod::timestep(real r, real tol, real k0, real kmax) const
     return kmax;
 
   const real qq = static_cast<real>(q);
-  return pow(tol * pow(k0, q) / abs(r), 0.5 / qq);
+  return real_pow(tol * real_pow(k0, q) / real_abs(r), 0.5 / qq);
 }
 //-----------------------------------------------------------------------------
 real cGqMethod::error(real k, real r) const
 {
   // FIXME: Missing interpolation constant
-  return pow(k, static_cast<real>(q)) * abs(r);
+  return real_pow(k, static_cast<real>(q)) * real_abs(r);
 }
 //-----------------------------------------------------------------------------
 void cGqMethod::disp() const

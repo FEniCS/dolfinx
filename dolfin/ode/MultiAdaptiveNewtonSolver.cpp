@@ -95,7 +95,7 @@ real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
   // Save norm of old solution
   xnorm = 0.0;
   for (uint j = 0; j < ts.nj; j++)
-    xnorm = max(xnorm, abs(ts.jx[j]));
+    xnorm = real_max(xnorm, real_abs(ts.jx[j]));
 
   // Solve linear system
   const double r = b.norm("linf") + to_double( real_epsilon() );
@@ -111,8 +111,8 @@ real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
   real max_increment = 0.0;
   for (uint j = 0; j < ts.nj; j++)
   {
-    const real increment = fabs(dx[j]);
-    if ( increment > max_increment )
+    const real increment = real_abs(dx[j]);
+    if (increment > max_increment)
       max_increment = increment;
   }
 
@@ -181,7 +181,7 @@ void MultiAdaptiveNewtonSolver::debug()
   for (uint j = 0; j < n; j++)
   {
     const real xj = ts.jx[j];
-    real dx = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(xj));
+    real dx = real_max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * real_abs(xj));
 
     ts.jx[j] -= 0.5*dx;
     Feval(F1);
@@ -194,7 +194,7 @@ void MultiAdaptiveNewtonSolver::debug()
     for (uint i = 0; i < n; i++)
     {
       real df_dx = (F1[i] - F2[i]) / dx;
-      if ( abs(df_dx) > real_epsilon() )
+      if (real_abs(df_dx) > real_epsilon())
         _B(i, j) = to_double(df_dx);
     }
   }
