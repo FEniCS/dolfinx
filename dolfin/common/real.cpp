@@ -9,17 +9,18 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
 real dolfin::_real_epsilon = DOLFIN_EPS;
 
-void dolfin::real_init() {
+//-----------------------------------------------------------------------------
+void dolfin::real_init()
+{
 #ifndef HAS_GMP
   _real_epsilon = DOLFIN_EPS;
 #else
   //computing precision
   real eps = 0.1;
   real one = real("1.0");
-  while ( eps + one != one )
+  while (eps + one != one)
   {
     eps /= 2;
   }

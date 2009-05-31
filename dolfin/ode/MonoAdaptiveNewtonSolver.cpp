@@ -68,7 +68,7 @@ void MonoAdaptiveNewtonSolver::start()
   // Initialize right-hand side
   b.resize(nj);
   b.zero();
-  delete btmp;
+  delete [] btmp;
   btmp = new real[nj];
   real_zero(nj, btmp);
 

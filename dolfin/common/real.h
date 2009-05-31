@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet, 2008.
 //
 // First added:  2008-10-02
-// Last changed: 2009-05-30
+// Last changed: 2009-05-31
 //
 // This file provides utilities for working with variable-precision
 // floating-point numbers. It defines a datatype "real" which defaults
@@ -33,8 +33,10 @@ namespace dolfin
   typedef double real;
 #endif
 
-  //Store the epsilon value
+  // Store the epsilon value
   extern real _real_epsilon;
+
+  // Initialize value of real_epsilon()
   void real_init();
 
   // Convert to double (if necessary)
@@ -49,9 +51,7 @@ namespace dolfin
 
   // Convert to real (if necessary)
   inline real to_real(double x)
-  {
-    return real(x);
-  }
+  { return real(x); }
 
   // Absolute value
   inline real real_abs(real x)
@@ -77,18 +77,11 @@ namespace dolfin
 #endif
   }
 
-  // Power function
+  // Power function (note: not full precision!)
   inline real real_pow(real x, real y)
-  {
-#ifdef HAS_GMP
-    error("Multiprecision pow function not implemented.");
-    return 0.0;
-#else
-    return std::pow(to_double(x), to_double(y));
-#endif
-  }
+  { return std::pow(to_double(x), to_double(y)); }
 
-  /// Square root
+ /// Square root
   real real_sqrt(real a);
 
   /// Compute pi
@@ -96,18 +89,15 @@ namespace dolfin
 
   /// Exponential function (note: not full precision!)
   inline real real_exp(real x)
-  {
-    return to_real(exp(to_double(x)));
-  }
+  { return to_real(exp(to_double(x))); }
 
   /// Logarithmic function (note: not full precision!)
   inline real real_log(real x)
-  {
-    return to_real(log(to_double(x)));
-  }
+  { return to_real(log(to_double(x))); }
 
   // Get computed epsilon
-  inline const real real_epsilon() {return _real_epsilon;}
+  inline const real real_epsilon()
+  { return _real_epsilon; }
 
   // Set array to given array (copy values)
   inline void real_set(uint n, real* x, const real* y)
