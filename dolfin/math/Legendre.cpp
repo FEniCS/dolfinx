@@ -77,9 +77,9 @@ real Legendre::ddx(uint n, real x)
     return 1.0;
 
   // Avoid division by zero
-  if (abs(x - 1.0) < real_epsilon())
+  if (real_abs(x - 1.0) < real_epsilon())
     x -= 2.0*real_epsilon();
-  if (abs(x + 1.0) < real_epsilon())
+  if (real_abs(x + 1.0) < real_epsilon())
     x += 2.0*real_epsilon();
 
   // Formula, BETA page 254
@@ -98,9 +98,9 @@ real Legendre::d2dx(uint, real x)
     return 0.0;
 
   // Avoid division by zero
-  if (abs(x - 1.0) < real_epsilon())
+  if (real_abs(x - 1.0) < real_epsilon())
     x -= 2.0*real_epsilon();
-  if (abs(x + 1.0) < real_epsilon())
+  if (real_abs(x + 1.0) < real_epsilon())
     x += 2.0*real_epsilon();
 
   // Formula, BETA page 254

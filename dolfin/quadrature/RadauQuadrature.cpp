@@ -77,7 +77,7 @@ void RadauQuadrature::compute_points()
     {
       dx = - (p1(x) + p2(x)) / (p1.ddx(x) + p2.ddx(x));
       x  = x + dx;
-    } while ( abs(dx) > real_epsilon() );
+    } while (real_abs(dx) > real_epsilon());
 
     // Set the node value
     points[i] = x;

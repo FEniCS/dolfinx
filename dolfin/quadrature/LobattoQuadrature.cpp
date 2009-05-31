@@ -76,7 +76,7 @@ void LobattoQuadrature::compute_points()
     {
       dx = - p.ddx(x) / p.d2dx(x);
       x  = x + dx;
-    } while ( abs(dx) > real_epsilon() );
+    } while (real_abs(dx) > real_epsilon());
 
     // Save the value using the symmetry of the points
     points[i] = - x;

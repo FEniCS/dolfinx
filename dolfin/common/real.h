@@ -133,7 +133,7 @@ namespace dolfin
 
   // Compute maximum absolute value of array
   inline real real_max_abs(uint n, const real* x)
-  { real _max = 0.0; for (uint i = 0; i < n; i++) _max = real_max(abs(x[i]), _max); return _max; }
+  { real _max = 0.0; for (uint i = 0; i < n; i++) _max = real_max(real_abs(x[i]), _max); return _max; }
 
 }
 

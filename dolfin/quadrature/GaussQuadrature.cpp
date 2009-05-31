@@ -60,19 +60,19 @@ void GaussQuadrature::compute_points()
     x = cos(DOLFIN_PI*(double(i+1)-0.25)/(double(n)+0.5));
 
     // Newton's method
-    do {
+    do
+    {
       dx = - p(x) / p.ddx(x);
       x  = x + dx;
-    } while ( abs(dx) > real_epsilon() );
+    } while (real_abs(dx) > real_epsilon());
 
     // Save the value using the symmetry of the points
     points[i] = - x;
     points[n-1-i] = x;
-
   }
 
   // Set middle node
-  if ( (n % 2) != 0 )
+  if ((n % 2) != 0)
     points[n/2] = 0.0;
 }
 //-----------------------------------------------------------------------------

@@ -83,7 +83,7 @@ real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
   // Save norm of old solution
   xnorm = 0.0;
   for (uint j = 0; j < ts.nj; j++)
-    xnorm = real_max(xnorm, abs(ts.x[j]));
+    xnorm = real_max(xnorm, real_abs(ts.x[j]));
 
   // Evaluate right-hand side at all quadrature points
   for (uint m = 0; m < method.qsize(); m++)
@@ -112,7 +112,7 @@ real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
   real max_increment = 0.0;
   for (uint i = 0; i < ts.N; i++)
   {
-    const real increment = abs(ts.x[xoffset + i] - xold[i]);
+    const real increment = real_abs(ts.x[xoffset + i] - xold[i]);
     if (increment > max_increment)
       max_increment = increment;
   }

@@ -39,7 +39,7 @@ real dolfin::real_sqrt(real a)
 
   int k = 0;
 
-  while (abs(x - prev) > real_epsilon())
+  while (real_abs(x - prev) > real_epsilon())
   {
     prev = x;
     x = prev - (prev*prev - a)/(2*prev);
@@ -93,7 +93,7 @@ real dolfin::real_pi()
 
       pi_next = (next[A]+next[B])*(next[A]+next[B])/(4*next[T]);
 
-    } while (abs(pi_next - pi_prev) > 10*real_epsilon());
+    } while (real_abs(pi_next - pi_prev) > 10*real_epsilon());
 
     //gmp_printf("Pi computed in %d iterations: %.50Fe\n", k, pi_next.get_mpf_t());
 
