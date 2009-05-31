@@ -78,7 +78,6 @@ void MonoAdaptiveNewtonSolver::start()
   // Precompute product M*u0
   if (implicit)
     ode.M(ts.u0, Mu0, ts.u0, ts.starttime());
-
 }
 //-----------------------------------------------------------------------------
 real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)

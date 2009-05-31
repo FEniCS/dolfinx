@@ -31,10 +31,6 @@ SparsityPattern::~SparsityPattern()
 //-----------------------------------------------------------------------------
 void SparsityPattern::init(uint rank, const uint* dims)
 {
-  // Check rank
-  if (rank < 1 or rank > 2)
-    error("Sparsity pattern only implemented for tensors of rank 1 and 2.");
-
   // Store dimensions
   shape.resize(rank);
   for (uint i = 0; i < rank; ++i)
@@ -44,6 +40,10 @@ void SparsityPattern::init(uint rank, const uint* dims)
   diagonal.clear();
   off_diagonal.clear();
 
+  // Check rank, ignore if not a matrix
+  if (shape.size() != 2)
+    return;
+
   // FIXME: This is wrong when running in parallel
   diagonal.resize(shape[0]);
   off_diagonal.resize(shape[0]);
@@ -51,6 +51,10 @@ void SparsityPattern::init(uint rank, const uint* dims)
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
 {
+  // Check rank, ignore if not a matrix
+  if (shape.size() != 2)
+    return;
+
   const uint  m = num_rows[0];
   const uint  n = num_rows[1];
   const uint* r = rows[0];
