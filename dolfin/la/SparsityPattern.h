@@ -70,6 +70,9 @@ namespace dolfin
     // Shape of tensor
     std::vector<uint> shape;
 
+    // FIXME: Use std::tr1::unsorted_set, should be faster
+    // FIXME: and hopefully fixes problem with slow destructor for std::set
+
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<std::set<uint> > diagonal;
     std::vector<std::set<uint> > off_diagonal;
