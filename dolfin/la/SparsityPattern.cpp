@@ -1,11 +1,11 @@
-// Copyright (C) 2007-2008 Garth N. Wells.
+// Copyright (C) 2007-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Magnus Vikstrom, 2008.
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2007-03-13
-// Last changed: 2009-05-23
+// Last changed: 2009-06-01
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -15,8 +15,9 @@
 using namespace dolfin;
 
 // Typedef of iterators for convenience
-typedef std::vector<std::vector<dolfin::uint> >::iterator iterator;
-typedef std::vector<std::vector<dolfin::uint> >::const_iterator const_iterator;
+typedef std::vector<std::set<dolfin::uint> >::iterator iterator;
+typedef std::vector<std::set<dolfin::uint> >::const_iterator const_iterator;
+typedef std::set<dolfin::uint>::const_iterator const_set_iterator;
 
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern()
@@ -68,27 +69,8 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
   */
 
   for (uint i = 0; i < m; ++i)
-  {
     for (uint j = 0; j < n; ++j)
-    {
-      bool inserted = false;
-      uint k = 0;
-      while (k < diagonal[r[i]].size() && !inserted)
-      {
-        if (c[j] == diagonal[r[i]][k])
-          inserted = true;
-        ++k;
-      }
-      if (!inserted)
-        diagonal[r[i]].push_back(c[j]);
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-void SparsityPattern::sort()
-{
-  for (iterator it = diagonal.begin(); it != diagonal.end(); ++it)
-    std::sort(it->begin(), it->end()); 
+      diagonal[r[i]].insert(c[j]);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::rank() const
@@ -122,8 +104,7 @@ void SparsityPattern::num_nonzeros_diagonal(uint* num_nonzeros) const
     error("Non-zero entries per row can be computed for matrices only.");
 
   // Compute number of nonzeros per row
-  std::vector< std::vector<uint> >::const_iterator row;
-  for (row = diagonal.begin(); row != diagonal.end(); ++row)
+  for (const_iterator row = diagonal.begin(); row != diagonal.end(); ++row)
     num_nonzeros[row - diagonal.begin()] = row->size();
 }
 //-----------------------------------------------------------------------------
@@ -162,15 +143,15 @@ std::string SparsityPattern::str() const
   for (uint i = 0; i < diagonal.size(); i++)
   {
     s << "Row " << i << ":";
-    for (uint k = 0; k < diagonal[i].size(); ++k)
-      cout << " " << diagonal[i][k];
+    for (const_set_iterator entry = diagonal[i].begin(); entry != diagonal[i].end(); ++entry)
+      cout << " " << *entry;
     s << std::endl;
   }
 
   return s.str();
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<dolfin::uint> >& SparsityPattern::pattern() const
+const std::vector<std::set<dolfin::uint> >& SparsityPattern::pattern() const
 {
   return diagonal;
 }

@@ -65,11 +65,6 @@ void EpetraSparsityPattern::insert(const uint* num_rows,
   }
 }
 //-----------------------------------------------------------------------------
-void EpetraSparsityPattern::sort()
-{
-  dolfin_not_implemented();
-}
-//-----------------------------------------------------------------------------
 dolfin::uint EpetraSparsityPattern::rank() const
 {
   return _rank;
