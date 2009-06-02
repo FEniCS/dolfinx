@@ -33,7 +33,7 @@ namespace dolfin
 
     /// Create empty sparsity pattern
     SparsityPattern* create_pattern() const
-    { return new SparsityPattern(); }
+    { return new SparsityPattern(SparsityPattern::sorted); }
 
     /// Create empty vector
     uBLASVector* create_vector() const

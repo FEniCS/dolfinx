@@ -1,11 +1,11 @@
-// Copyright (C) 2007-2008 Garth N. Wells.
+// Copyright (C) 2007-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Magnus Vikstrom, 2008.
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2007-03-13
-// Last changed: 2009-05-23
+// Last changed: 2009-06-02
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -19,7 +19,7 @@ typedef std::vector<std::vector<dolfin::uint> >::iterator iterator;
 typedef std::vector<std::vector<dolfin::uint> >::const_iterator const_iterator;
 
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern()
+SparsityPattern::SparsityPattern(Type type) : type(type), _sorted(false)
 {
   // Do nothing
 }
@@ -55,6 +55,9 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
   if (shape.size() != 2)
     return;
 
+  // Set sorted flag to false
+  _sorted = false;
+
   const uint  m = num_rows[0];
   const uint  n = num_rows[1];
   const uint* r = rows[0];
@@ -76,12 +79,6 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
         diagonal[r[i]].push_back(c[j]);
     }
   }
-}
-//-----------------------------------------------------------------------------
-void SparsityPattern::sort()
-{
-  for (iterator it = diagonal.begin(); it != diagonal.end(); ++it)
-    std::sort(it->begin(), it->end()); 
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::rank() const
@@ -141,7 +138,12 @@ void SparsityPattern::num_nonzeros_off_diagonal(uint* num_nonzeros) const
 //-----------------------------------------------------------------------------
 void SparsityPattern::apply()
 {
-  // Do nothing
+  // Sort sparsity pattern if required
+  if (type == sorted && _sorted == false)
+  {
+    sort();
+    _sorted = true;
+  }
 }
 //-----------------------------------------------------------------------------
 std::string SparsityPattern::str() const
@@ -165,6 +167,15 @@ std::string SparsityPattern::str() const
 //-----------------------------------------------------------------------------
 const std::vector<std::vector<dolfin::uint> >& SparsityPattern::pattern() const
 {
+  if (type == sorted && _sorted == false)
+    error("SparsityPattern has not been sorted. You need to call SparsityPattern::apply().");
+
   return diagonal;
+}
+//-----------------------------------------------------------------------------
+void SparsityPattern::sort()
+{
+  for (iterator it = diagonal.begin(); it != diagonal.end(); ++it)
+    std::sort(it->begin(), it->end()); 
 }
 //-----------------------------------------------------------------------------

@@ -205,7 +205,6 @@ void VariationalProblem::solve_linear(Function& u)
   {
     // Assemble linear system
     assemble(A, a, cell_domains, exterior_facet_domains, interior_facet_domains);
-    summary();
     assemble(b, L, cell_domains, exterior_facet_domains, interior_facet_domains);
 
     // Apply boundary conditions

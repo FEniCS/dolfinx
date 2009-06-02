@@ -18,8 +18,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 PETScMatrix* PETScFactory::create_matrix() const
 {
-  PETScMatrix* pm = new PETScMatrix();
-  return pm;
+  //PETScMatrix* pm = new PETScMatrix();
+  return new PETScMatrix();
 }
 //-----------------------------------------------------------------------------
 PETScVector* PETScFactory:: create_vector() const
@@ -29,7 +29,7 @@ PETScVector* PETScFactory:: create_vector() const
 //-----------------------------------------------------------------------------
 SparsityPattern* PETScFactory::create_pattern() const
 {
-  return new SparsityPattern();
+  return new SparsityPattern(SparsityPattern::unsorted);
 }
 //-----------------------------------------------------------------------------
 

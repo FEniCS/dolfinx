@@ -1,17 +1,15 @@
-// Copyright (C) 2007-2008 Garth N. Wells
+// Copyright (C) 2007-2009 Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2007-2009.
 //
 // First added:  2007-03-13
-// Last changed: 2009-05-23
+// Last changed: 2009-06-02
 
 #ifndef __SPARSITY_PATTERN_H
 #define __SPARSITY_PATTERN_H
 
-#include <set>
 #include <vector>
-
 #include "GenericSparsityPattern.h"
 
 namespace dolfin
@@ -25,8 +23,10 @@ namespace dolfin
   {
   public:
 
+    enum Type {sorted, unsorted};
+
     /// Create empty sparsity pattern
-    SparsityPattern();
+    SparsityPattern(Type type);
 
     /// Destructor
     ~SparsityPattern();
@@ -36,9 +36,6 @@ namespace dolfin
 
     /// Insert non-zero entries
     void insert(const uint* num_rows, const uint * const * rows);
-
-    /// Sort entries for each row 
-    void sort();
 
     /// Return rank
     uint rank() const;
@@ -68,6 +65,15 @@ namespace dolfin
     const std::vector<std::vector<uint> >& pattern() const;
 
   private:
+
+    // Sparsity pattern type (sorted/unsorted)
+    const Type type;    
+
+    // Whether or not pattern has been sorted
+    bool _sorted;    
+
+    // Sort entries for each row 
+    void sort();
 
     // Shape of tensor
     std::vector<uint> shape;

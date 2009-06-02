@@ -35,9 +35,6 @@ namespace dolfin
     /// Insert non-zero entries
     virtual void insert(const uint* num_rows, const uint * const * rows) = 0;
 
-    /// Sort entries for each row 
-    virtual void sort() = 0;
-
     /// Return rank
     virtual uint rank() const = 0;
 
