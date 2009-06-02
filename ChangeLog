@@ -1,3 +1,6 @@
+ - Remove GenericSparsityPattern::sort
+ - Require sorted/unsorted parameter in SparsityPattern constructor
+ - Improve performance of SparsityPattern::insert
  - Replace enums with strings for linear algebra and built-in meshes
  - Allow direct access to Constant value
  - Initialize entities in MeshEntity constructor automatically and check range
