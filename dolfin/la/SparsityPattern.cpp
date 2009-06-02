@@ -72,7 +72,7 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
     for (uint j = 0; j < n; ++j)
     {
       // Insert entry if not already inserted
-      if (std::find(diagonal[r[i]].begin(), diagonal[r[i]].end(), c[j]) != diagonal[r[i]].end());
+      if (std::find(diagonal[r[i]].begin(), diagonal[r[i]].end(), c[j]) == diagonal[r[i]].end());
         diagonal[r[i]].push_back(c[j]);
     }
   }

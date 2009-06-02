@@ -71,6 +71,7 @@ int main()
 
   // Read mesh and create function space
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
+  mesh.refine();
   Elasticity::FunctionSpace V(mesh);
 
   // Create right-hand side
@@ -110,11 +111,11 @@ int main()
   pde.solve(u);
 
   // Plot solution
-  plot(u, "displacement");
+  //plot(u, "displacement");
 
   // Displace mesh and plot displaced mesh
-  mesh.move(u);
-  plot(mesh);
+  //mesh.move(u);
+  //plot(mesh);
 
   // Save solution in VTK format
   File vtk_file("elasticity.pvd");
