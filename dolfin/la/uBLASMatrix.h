@@ -456,16 +456,19 @@ namespace dolfin
     // Reserve space for non-zeroes
     A.reserve(sparsity_pattern.num_nonzeros());
     
+    // FIXME: const cast needed here
+    // Sort sparsity pattern
+    const_cast<GenericSparsityPattern&>(sparsity_pattern).sort();
+
     // Get underlying pattern
     const SparsityPattern* pattern_pointer = dynamic_cast<const SparsityPattern*>(&sparsity_pattern);
-    if (!pattern_pointer)
+    if (not pattern_pointer)
       error("Cannot convert GenericSparsityPattern to concrete SparsityPattern type. Aborting.");
-
-    const std::vector<std::set<uint> >& pattern = pattern_pointer->pattern();
+    const std::vector< std::vector<uint> >& pattern = pattern_pointer->pattern();
     
     // Add entries
-    std::vector<std::set<uint> >::const_iterator row;
-    std::set<uint>::const_iterator element;
+    std::vector< std::vector<uint> >::const_iterator row;
+    std::vector<uint>::const_iterator element;
     for(row = pattern.begin(); row != pattern.end(); ++row)
       for(element = row->begin(); element != row->end(); ++element)
         A.push_back(row - pattern.begin(), *element, 0.0);
