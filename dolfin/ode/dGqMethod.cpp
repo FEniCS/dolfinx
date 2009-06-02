@@ -55,7 +55,7 @@ real dGqMethod::timestep(real r, real tol, real k0, real kmax) const
   // FIXME: Missing stability factor and interpolation constant
   // FIXME: Missing jump term
 
-  if ( abs(r) < real_epsilon() )
+  if ( real_abs(r) < real_epsilon() )
     return kmax;
 
   //return pow(tol / fabs(r), 1.0 / static_cast<real>(q+1));

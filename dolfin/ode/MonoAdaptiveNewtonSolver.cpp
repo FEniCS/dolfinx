@@ -285,7 +285,7 @@ void MonoAdaptiveNewtonSolver::debug()
   for (uint j = 0; j < n; j++)
   {
     const real xj = ts.x[j];
-    real dx = real_max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(xj));
+    real dx = real_max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * real_abs(xj));
 
     ts.x[j] -= 0.5*dx;
     Feval(F1);
@@ -298,7 +298,7 @@ void MonoAdaptiveNewtonSolver::debug()
     for (uint i = 0; i < n; i++)
     {
       real df_dx = (F1[i] - F2[i]) / dx;
-      if ( abs(df_dx) > real_epsilon() )
+      if ( real_abs(df_dx) > real_epsilon() )
         _B(i, j) = to_double(df_dx);
     }
   }

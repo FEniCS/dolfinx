@@ -53,7 +53,7 @@ real cGqMethod::timestep(real r, real tol, real k0, real kmax) const
 {
   // FIXME: Missing stability factor and interpolation constant
 
-  if ( abs(r) < real_epsilon() )
+  if ( real_abs(r) < real_epsilon() )
     return kmax;
 
   const real qq = static_cast<real>(q);

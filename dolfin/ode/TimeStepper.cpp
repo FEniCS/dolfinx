@@ -170,7 +170,7 @@ void TimeStepper::save_fixed_samples(ODESolution& u)
     if (t > t1 + real_epsilon())
       break;
 
-    if (abs(t - t1) < real_epsilon())
+    if (real_abs(t - t1) < real_epsilon())
       t = t1;
 
     save_sample(u, t);

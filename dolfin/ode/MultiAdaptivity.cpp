@@ -172,7 +172,7 @@ void MultiAdaptivity::compute_residuals(MultiAdaptiveTimeSlab& ts)
 
       // Update maximum residual for component
       const real r = method.residual(x0, ts.jx + j, f[method.nsize()], k);
-      residuals[i] = real_max(residuals[i], abs(r));
+      residuals[i] = real_max(residuals[i], real_abs(r));
 
       // Update maximum residual and error
       rmax = real_max(rmax, r);

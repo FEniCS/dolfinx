@@ -117,7 +117,7 @@ bool MonoAdaptiveTimeSlab::check(bool first)
       dofs[n] = x[n*N + i];
 
     // Compute residual
-    const real r = abs(method->residual(x0, dofs, fq[foffset + i], k));
+    const real r = real_abs(method->residual(x0, dofs, fq[foffset + i], k));
 
     // Compute maximum
     if (r > rmax)

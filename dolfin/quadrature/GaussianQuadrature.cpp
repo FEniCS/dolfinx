@@ -130,16 +130,16 @@ bool GaussianQuadrature::check(unsigned int q) const
 
   if ( q == 0 )
   {
-    if ( abs(sum - 2.0) < 100.0*real_epsilon() )
+    if ( real_abs(sum - 2.0) < 100.0*real_epsilon() )
       return true;
   }
   else
   {
-    if ( abs(sum) < 100.0 * real_epsilon() )
+    if ( real_abs(sum) < 100.0 * real_epsilon() )
       return true;
   }
 
-  info("Quadrature check failed: r = %.2e.", to_double(abs(sum)));
+  info("Quadrature check failed: r = %.2e.", to_double(real_abs(sum)));
 
   return false;
 }
