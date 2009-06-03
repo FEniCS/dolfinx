@@ -13,7 +13,6 @@
 #include "EpetraVector.h"
 #include "EpetraSparsityPattern.h"
 #include "LinearAlgebraFactory.h"
-//#include "Epetra_SerialComm.h"
 
 class Epetra_SerialComm;
 

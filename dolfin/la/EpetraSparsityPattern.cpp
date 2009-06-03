@@ -101,6 +101,12 @@ uint EpetraSparsityPattern::num_nonzeros() const
   return 0;
 }
 //-----------------------------------------------------------------------------
+uint EpetraSparsityPattern::max_num_nonzeros_diagonal() const
+{
+  dolfin_not_implemented();
+  return 0;
+}
+//-----------------------------------------------------------------------------
 void EpetraSparsityPattern::num_nonzeros_diagonal(uint* num_nonzeros) const
 {
   dolfin_not_implemented();

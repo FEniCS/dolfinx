@@ -47,6 +47,9 @@ namespace dolfin
     /// Return total number of nonzeros in local rows
     virtual uint num_nonzeros() const = 0;
 
+    /// Return the maximum number of nonzeros for a row
+    virtual uint max_num_nonzeros_diagonal() const = 0;
+
     /// Fill array with number of nonzeros per local row for diagonal block
     virtual void num_nonzeros_diagonal(uint* num_nonzeros) const = 0;
 
