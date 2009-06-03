@@ -148,8 +148,8 @@ Version: %s
 Description: The Boost library of template code
 Libs: %s
 Cflags: %s
-""" % (version, libs, repr(cflags)[1:-1])
-  # FIXME:            ^^^^^^^^^^^^^^^^^^
+""" % (version, repr(libs)[1:-1], repr(cflags)[1:-1])
+  # FIXME:      ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^
   # Is there a better way to handle this on Windows?
   
   pkg_file = open(os.path.join(directory,"boost.pc"), 'w')
