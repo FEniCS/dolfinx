@@ -1035,7 +1035,7 @@ def resolveModuleDependencies(modules, configuredPackages, packcfgObjs,
           # nor the configured external packages. Hence we don't know anything about 
           # it and have to throw this module away.
           module_ok = False
-          print "Warning: Unknown dependency package: %s" % (d)
+          print "Error: Unknown dependency package: %s" % (d)
           if len(check_modules) > 0:
             modName = check_modules.pop(0)
             mod = internalmodules[modName]
@@ -1053,6 +1053,8 @@ def resolveModuleDependencies(modules, configuredPackages, packcfgObjs,
           mod = internalmodules[modName]
         else:
           check_more = False
+      else:
+          sconsEnv.Exit(1)
 
 #    for modName, mod in modules.items():
 #
