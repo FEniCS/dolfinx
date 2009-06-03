@@ -40,13 +40,15 @@ MTL4Matrix::MTL4Matrix(const MTL4Matrix& mat): Variable("A", "MTL4 matrix"),
 {
   assert_no_inserter();
 
+  // Deep copy
   A = mat.mat();
   nnz_row = mat.nnz_row;
 }
 //-----------------------------------------------------------------------------
 MTL4Matrix::~MTL4Matrix()
 {
-  delete ins;
+  if(ins)
+    delete ins;
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::resize(uint M, uint N)
@@ -59,11 +61,11 @@ void MTL4Matrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
   resize(sparsity_pattern.size(0), sparsity_pattern.size(1));
   zero();
-  nnz_row = sparsity_pattern.max_num_nonzeros_diagonal();
 }
 //-----------------------------------------------------------------------------
 MTL4Matrix* MTL4Matrix::copy() const
 {
+  // Why is this needed???
   assert_no_inserter();
   return new MTL4Matrix(*this);
 }
@@ -83,6 +85,7 @@ void MTL4Matrix::get(double* block, uint m, const uint* rows, uint n,
                      const uint* cols) const
 {
   assert_no_inserter();
+
   for (uint i = 0; i < m; i++)
     for (uint j = 0; j < n; j++)
       block[i*n+j] = A[rows[i]][cols[j]];
@@ -139,7 +142,7 @@ void MTL4Matrix::disp(uint precision) const
 
   // FIXME: This bypasses the dolfin log system!
   //std::cout << A << std::endl;
-  warning("MTL4Matrix::disp is not working due to broken MTL4.");
+  warning("MTL4Matrix::disp is not working du to broken MTL4.");
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::ident(uint m, const uint* rows)

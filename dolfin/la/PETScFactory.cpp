@@ -18,6 +18,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 PETScMatrix* PETScFactory::create_matrix() const
 {
+  //PETScMatrix* pm = new PETScMatrix();
   return new PETScMatrix();
 }
 //-----------------------------------------------------------------------------
