@@ -148,7 +148,7 @@ void CholmodCholeskySolver::Cholmod::init(UF_long* Ap, UF_long* Ai, double* Ax,
 					  uint M, uint nz)
 {
   if(factorized)
-    debug("CholeskySolver already contains a factorized matrix! Clearing and starting over.");
+    info(1, "CholeskySolver already contains a factorized matrix! Clearing and starting over.");
 
   // Clear any data
   clear();
