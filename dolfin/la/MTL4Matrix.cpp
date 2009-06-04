@@ -140,9 +140,10 @@ void MTL4Matrix::disp(uint precision) const
 {
   assert_no_inserter();
 
-  // FIXME: This bypasses the dolfin log system!
-  //std::cout << A << std::endl;
-  warning("MTL4Matrix::disp is not working du to broken MTL4.");
+  // FIXME: This ignores precision
+  std::stringstream stream;
+  stream << A;
+  cout << stream.str() << endl;
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::ident(uint m, const uint* rows)
@@ -316,7 +317,7 @@ LogStream& dolfin::operator<< (LogStream& stream, const  MTL4Matrix& A)
   int M = mtl::matrix::num_rows(A.mat());
   int N = mtl::matrix::num_cols(A.mat());
 
-  stream << "MTL4 Matrix of size " << M << "x" << N;
+  stream << "[ MTL4 Matrix of size " << M << "x" << N << " ]";
   return stream;
 }
 //-----------------------------------------------------------------------------
