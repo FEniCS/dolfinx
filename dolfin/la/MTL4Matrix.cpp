@@ -107,9 +107,15 @@ void MTL4Matrix::add(const double* block, uint m, const uint* rows, uint n, cons
   if(!ins)
     init_inserter();
 
+  // Block insertion
+  *ins << element_array(mtl::dense2D<double>(m, n, const_cast<double*>(block)), 
+                        mtl::dense_vector<uint>(m, const_cast<uint*>(rows)),
+                        mtl::dense_vector<uint>(n, const_cast<uint*>(cols))); 
+  /*
   for (uint i = 0; i < m; i++)
     for (uint j = 0; j < n; j++)
       (*ins)[rows[i]][cols[j]] << block[i*n +j];
+  */
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::MTL4Matrix::axpy(double a, const GenericMatrix& A,
