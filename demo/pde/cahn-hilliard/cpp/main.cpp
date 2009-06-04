@@ -78,7 +78,6 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
       }
       else
         error("Cahn-Hilliard model is programmed for 2D and 3D only");
-  
     }
 
     // Destructor
@@ -122,7 +121,7 @@ int main(int argc, char* argv[])
   Constant dt(5.0e-6);
   Constant theta(0.5);
   Constant lambda(1.0e-2);
-  Constant mu_factor(100.0);
+  Constant mu_factor(10.0);
 
   double t = 0.0;
   double T = 50*dt;
@@ -135,7 +134,7 @@ int main(int argc, char* argv[])
   CahnHilliardEquation cahn_hilliard(mesh, u, u0, dt, theta, lambda, mu_factor);
 
   // Create nonlinear solver and set parameters
-  NewtonSolver newton_solver("lu");
+  NewtonSolver newton_solver("cholesky");
   newton_solver.set("Newton convergence criterion", "incremental");
   newton_solver.set("Newton maximum iterations", 10);
   newton_solver.set("Newton relative tolerance", 1e-6);

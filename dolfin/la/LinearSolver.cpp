@@ -16,7 +16,12 @@ LinearSolver::LinearSolver(std::string solver_type, std::string pc_type)
 {
   if (solver_type == "lu")
   {
-    lu_solver = new LUSolver();
+    lu_solver = new LUSolver("nonsymmetric");
+    lu_solver->set("parent", *this);
+  }
+  else if (solver_type == "cholesky")
+  {
+    lu_solver = new LUSolver("symmetric");
     lu_solver->set("parent", *this);
   }
   else
