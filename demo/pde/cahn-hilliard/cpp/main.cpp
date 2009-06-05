@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
   Constant dt(5.0e-6);
   Constant theta(0.5);
   Constant lambda(1.0e-2);
-  Constant mu_factor(10.0);
+  Constant mu_factor(100.0);
 
   double t = 0.0;
   double T = 50*dt;
