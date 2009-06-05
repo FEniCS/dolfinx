@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
   CahnHilliardEquation cahn_hilliard(mesh, u, u0, dt, theta, lambda, mu_factor);
 
   // Create nonlinear solver and set parameters
-  NewtonSolver newton_solver("cholesky");
+  NewtonSolver newton_solver("lu");
   newton_solver.set("Newton convergence criterion", "incremental");
   newton_solver.set("Newton maximum iterations", 10);
   newton_solver.set("Newton relative tolerance", 1e-6);
