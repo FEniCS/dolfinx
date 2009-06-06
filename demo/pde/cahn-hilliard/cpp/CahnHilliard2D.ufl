@@ -1,8 +1,8 @@
-# Copyright (C) 2006-2007 Garth N Wells.
+# Copyright (C) 2006-2009 Garth N Wells.
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2006
-# Last changed: 2007-05-01
+# Last changed: 2009-06-06
 #
 # The linearised bilinear form a(v, U) and linear form L(v) for
 # the Cahn-Hilliard equation.
@@ -13,11 +13,16 @@ P1 = FiniteElement("Lagrange", "triangle", 1)
 P2 = FiniteElement("Lagrange", "triangle", 1)
 ME = P1 + P2
 
-(q,  v)  = TestFunctions(ME)
-(dk, dc) = TrialFunctions(ME)   # potential, concentration 
+q, v  = TestFunctions(ME)
+du    = TrialFunction(ME)
 
-(k1, c1) = Functions(ME)        # current solution 
-(k0, c0) = Functions(ME)        # solution from previous converged step 
+u1  = Function(ME)  # current solution 
+u0  = Function(ME)  # solution from previous converged step 
+
+# Split mixed element
+dk, dc = split(du) 
+k1, c1 = split(u1)
+k0, c0 = split(u0)
 
 lmbda    = Constant("triangle") # surface parameter
 muFactor = Constant("triangle") # chemical free energy multiplier
@@ -25,7 +30,7 @@ muFactor = Constant("triangle") # chemical free energy multiplier
 dt       = Constant("triangle") # time step
 theta    = Constant("triangle") # time stepping parameter 
 
-# Chemical free-energy \phi = c^2*(1-c^2)
+# Chemical free-energy \phi = c^2*(1-c)^2
 
 # mu = \phi,c
 def mu(c, muFactor):
@@ -37,7 +42,6 @@ def DmuDc(c, muFactor):
 
 # Mobility
 Mob = 1.0
-dMob = 0.0
 
 # k^(n+theta)
 k_mid = (1-theta)*k0 + theta*k1
@@ -45,12 +49,12 @@ k_mid = (1-theta)*k0 + theta*k1
 # \delta k^(n+theta)
 dk_mid = theta*dk
 
-a1 = q*dc*dx + dt*Mob*dot(grad(q), grad(dk_mid))*dx
-a2 = v*dk*dx - v*DmuDc(c1, muFactor)*dc*dx \
-             - lmbda*dot(grad(v), grad(dc))*dx
-
 L1 = q*c1*dx - q*c0*dx + dt*Mob*dot(grad(q), grad(k_mid))*dx
 L2 = v*k1*dx - v*mu(c1, muFactor)*dx - lmbda*dot(grad(v), grad(c1))*dx
 
+a1 = derivative(L1, u1, du)
+a2 = derivative(L2, u1, du)
+
+L = L1 + L2
 a = a1 + a2
-L = L1 + L2 
+ 
