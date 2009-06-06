@@ -10,8 +10,7 @@
 # Compile this form with FFC: ffc -l dolfin CahnHilliard.form
 
 P1 = FiniteElement("Lagrange", "triangle", 1)
-P2 = FiniteElement("Lagrange", "triangle", 1)
-ME = P1 + P2
+ME = P1 + P1
 
 q, v  = TestFunctions(ME)
 du    = TrialFunction(ME)
@@ -19,26 +18,20 @@ du    = TrialFunction(ME)
 u1  = Function(ME)  # current solution 
 u0  = Function(ME)  # solution from previous converged step 
 
-# Split mixed element
+# Split mixed functions
 dk, dc = split(du) 
 k1, c1 = split(u1)
 k0, c0 = split(u0)
 
-lmbda    = Constant("triangle") # surface parameter
-muFactor = Constant("triangle") # chemical free energy multiplier
+lmbda    = Constant(triangle) # surface parameter
+muFactor = Constant(triangle) # chemical free energy multiplier
 
-dt       = Constant("triangle") # time step
-theta    = Constant("triangle") # time stepping parameter 
+dt       = Constant(triangle) # time step
+theta    = Constant(triangle) # time stepping parameter 
 
-# Chemical free-energy \phi = c^2*(1-c)^2
-
-# mu = \phi,c
+# Potential mu = \phi,c (chemical free-energy \phi = c^2*(1-c)^2)
 def mu(c, muFactor):
     return muFactor*(2*c*(1-c)*(1-c) - 2*c*c*(1-c))
-
-# DmuDc = \phi,cc
-def DmuDc(c, muFactor):
-    return muFactor*(2.0*(1.0-c)*(1.0-c) - 8.0*c*(1.0-c) + 2.0*c*c)
 
 # Mobility
 Mob = 1.0

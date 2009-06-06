@@ -64,7 +64,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
       else if (mesh.topology().dim() == 3)
       {
         CahnHilliard3D::CoefficientSet coeffs;
-        coeffs.w0 = u; coeffs.w1 = u0;
+        coeffs.u1 = u; coeffs.u0 = u0;
         coeffs.lmbda = lambda; coeffs.muFactor = mu_factor;
         coeffs.dt = dt; coeffs.theta = theta;
 
@@ -115,7 +115,8 @@ int main(int argc, char* argv[])
   dolfin_init(argc, argv);
 
   // Mesh
-  UnitSquare mesh(96, 96);
+  //UnitSquare mesh(96, 96);
+  UnitCube mesh(24, 24, 24);
 
   // Time stepping and model parameters
   Constant dt(5.0e-6);
