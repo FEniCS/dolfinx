@@ -138,6 +138,10 @@ class PkgConfig(object):
       try: 
         scons.runCommand("pkg-config", ["--exists", self.package])
         print "yes"
+        if env.ARGUMENTS.has_key('with%sDir' % self.package.split('-',1)[0].capitalize()):
+          print " Trying to re-generate pkg-config file for %s..." % (self.package),
+          packgen = get_packgen(package)
+          packgen.generatePkgConf(sconsEnv=env)
       except CommandError:
         print "no (pkg-config file not found)"
         print " Trying to generate pkg-config file for %s..." % (self.package),

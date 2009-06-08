@@ -16,6 +16,9 @@ from simula_scons.Errors import PkgconfigError, PkgconfigMissing
 # Create a SCons Environment based on the main os environment
 env = scons.ExtendedEnvironment(ENV=os.environ)
 
+# Add ARGUMENTS to SCons environment
+env.ARGUMENTS = ARGUMENTS
+
 # Set a projectname. Used in some places, like pkg-config generator
 env["projectname"] = "dolfin"
 
@@ -104,6 +107,7 @@ options = [
     PathOption("withGmpDir", "Specify path to GMP", None),
     PathOption("withBoostDir", "Specify path to Boost", None),
     PathOption("withLibxml2Dir", "Specify path to libXML2", None),
+    PathOption("withGtsDir", "Specify path to GTS", None),
     #
     # a few more options originally from PyCC:
     #BoolVariable("autoFetch", "Automatically fetch datafiles from (password protected) SSH repository", 0),

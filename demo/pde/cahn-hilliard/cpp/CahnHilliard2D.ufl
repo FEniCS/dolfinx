@@ -13,7 +13,7 @@ P1 = FiniteElement("Lagrange", "triangle", 1)
 P2 = FiniteElement("Lagrange", "triangle", 1)
 ME = P1 + P2
 
-(v,  q)  = TestFunctions(ME)
+(q,  v)  = TestFunctions(ME)
 (dk, dc) = TrialFunctions(ME)   # potential, concentration 
 
 (k1, c1) = Functions(ME)        # current solution 

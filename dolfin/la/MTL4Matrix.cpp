@@ -107,9 +107,15 @@ void MTL4Matrix::add(const double* block, uint m, const uint* rows, uint n, cons
   if(!ins)
     init_inserter();
 
+  // Block insertion
+  *ins << element_array(mtl::dense2D<double>(m, n, const_cast<double*>(block)), 
+                        mtl::dense_vector<uint>(m, const_cast<uint*>(rows)),
+                        mtl::dense_vector<uint>(n, const_cast<uint*>(cols))); 
+  /*
   for (uint i = 0; i < m; i++)
     for (uint j = 0; j < n; j++)
       (*ins)[rows[i]][cols[j]] << block[i*n +j];
+  */
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::MTL4Matrix::axpy(double a, const GenericMatrix& A,
@@ -140,9 +146,10 @@ void MTL4Matrix::disp(uint precision) const
 {
   assert_no_inserter();
 
-  // FIXME: This bypasses the dolfin log system!
-  //std::cout << A << std::endl;
-  warning("MTL4Matrix::disp is not working du to broken MTL4.");
+  // FIXME: This ignores precision
+  std::stringstream stream;
+  stream << A;
+  cout << stream.str() << endl;
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::ident(uint m, const uint* rows)
@@ -316,7 +323,7 @@ LogStream& dolfin::operator<< (LogStream& stream, const  MTL4Matrix& A)
   int M = mtl::matrix::num_rows(A.mat());
   int N = mtl::matrix::num_cols(A.mat());
 
-  stream << "MTL4 Matrix of size " << M << "x" << N;
+  stream << "[ MTL4 Matrix of size " << M << "x" << N << " ]";
   return stream;
 }
 //-----------------------------------------------------------------------------
