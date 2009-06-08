@@ -66,7 +66,35 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
   /*
   if (parallel)
   {
-    error("Implement me!");
+    std::pair<uint, uint> _range = range();
+    const uint ind_start = _range.first;
+    const uint ind_stop = _range.second;
+
+    for (uint i = 0; i < m; ++i)
+    {
+      if (r[i] >= ind_start and r[i] < ind_stop)
+      {
+        for (uint j = 0; j < n; ++j)
+        {
+          if (c[j] >= ind_start and r[i] < ind_stop)
+          {
+            // Insert entry if not already inserted
+            if (std::find(diagonal[r[i]].begin(), diagonal[r[i]].end(), c[j]) == diagonal[r[i]].end())
+              diagonal[r[i]].push_back(c[j]);
+          }
+          else
+          {
+            // Insert entry if not already inserted
+            if (std::find(off_diagonal[r[i]].begin(), off_diagonal[r[i]].end(), c[j]) == off_diagonal[r[i]].end())
+              off_diagonal[r[i]].push_back(c[j]);
+          }
+        }
+      }
+      else
+      {
+        // FIXME: Unhandled case. We need to store these indexes and send them to the corresponding processor
+      }
+    }
   }
   */
 
