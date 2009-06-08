@@ -15,7 +15,7 @@
 #ifdef HAS_PETSC
 
 #include <map>
-
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
 #include "PETScPreconditioner.h"
@@ -43,6 +43,9 @@ namespace dolfin
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
     PETScKrylovSolver(std::string method, PETScPreconditioner& PETScPreconditioner);
+
+    /// Create solver from given PETSc KSP pointer
+    explicit PETScKrylovSolver(boost::shared_ptr<KSP> ksp);
 
     /// Destructor
     ~PETScKrylovSolver();
@@ -92,7 +95,7 @@ namespace dolfin
     PETScPreconditioner* pc_dolfin;
 
     /// PETSc solver pointer
-    KSP ksp;
+    boost::shared_ptr<KSP> ksp;
 
     /// Size of old system (need to reinitialize when changing)
     uint M;
