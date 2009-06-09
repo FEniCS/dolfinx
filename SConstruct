@@ -310,7 +310,9 @@ if "configure" in COMMAND_LINE_TARGETS:
                       'CXXFLAGS',
                       'LIBPATH',
                       'LIBS',
-                      'LINKFLAGS']
+                      'LINKFLAGS',
+                      'SHLINKFLAGS',
+                      'LDMODULEFLAGS']
     # Also add all other user configurable options
     for opt in options:
       if not opt[0] in env_cache_keys:
