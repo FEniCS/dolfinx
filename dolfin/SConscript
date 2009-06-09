@@ -322,15 +322,14 @@ buildDataHash["data"].extend([File(os.path.join("#data", f)) for f in data])
 # read the SConscript for tests if enabled
 buildDataHash["tests"] = []
 if env["enableTests"]:
-    if "configure" in COMMAND_LINE_TARGETS:
-        print "Checking for cppunit...", 
-        try:
-            cppunitCfg = scons.pkgconfig.PkgConfig('cppunit', env=env)
-        except Exception:
-            print 'no'
-            print "*** Unable to find the Unit Testing Library for C++"
-            print "*** Install CppUnit (libcppunit-dev) or disable testing with enableTests=no"
-            Exit(1)
+    print "Checking for cppunit...", 
+    try:
+        cppunitCfg = scons.pkgconfig.PkgConfig('cppunit', env=env)
+    except Exception:
+        print 'no'
+        print "*** Unable to find the Unit Testing Library for C++"
+        print "*** Install CppUnit (libcppunit-dev) or disable testing with enableTests=no"
+        Exit(1)
     buildDataHash["tests"] += env.SConscript(os.path.join("#test", "SConscript"),
                                    exports=["env", "modules", "configuredPackages", "cppunitCfg"])
 
@@ -379,7 +378,8 @@ env.Depends(buildDataHash["pkgconfig"][0], Value(pkgconfig_deps))
 buildDataHash["pkgconfig"] += scons.globFiles(Dir("#/scons/pkgconfig/").srcnode().abspath, "*.pc")
 
 # Return the big data dictionary. Actual targets will be run in SConstruct
-# based on this information.
+# based on this information. Also return configuration stuff that should be
+# pickled.
 Return("buildDataHash", "modules", "configuredPackages")
 
 # vim:ft=python sw=2 ts=2 
