@@ -98,8 +98,6 @@ int main() {
 
 def generatePkgConf(directory=suitablePkgConfDir(), sconsEnv=None, **kwargs):
 
-    print "CHECK: MTL4"
-
   name = "MTL4"
   version, libs, cflags = pkgTests(sconsEnv=sconsEnv)
 
