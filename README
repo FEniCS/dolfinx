@@ -10,15 +10,14 @@ Contents
 
 To build DOLFIN, run
 
+    scons configure [options]
     scons
+
+Run scons configure --help to see which options are available.
 
 After a successful build, you may install DOLFIN by running
 
-    scons install prefix=<somewhere>
-
-For detailed installation instructions, see
-
-    <insert page here after removing old autotools page on wiki>
+    scons install
 
 ------------------------------------------------------------------------------
 2. License
