@@ -2,6 +2,7 @@
 
 import os, os.path, sys
 import warnings
+import pickle
 
 # Make sure that we have a good scons-version
 EnsureSConsVersion(0, 98, 5)
@@ -96,18 +97,18 @@ options = [
     # It may be neccessary to specify the installation path to the above packages.
     # One can either use the options below (with<Package>Dir) or define the
     # <PACKAGE>_DIR environment variable.
-    PathOption("withPetscDir", "Specify path to PETSc", None),
-    PathOption("withSlepcDir", "Specify path to SLEPc", None),
-    PathOption("withScotchDir", "Specify path to SCOTCH", None),
-    PathOption("withUmfpackDir", "Specify path to UMFPACK", None),
-    PathOption("withTrilinosDir", "Specify path to Trilinos", None),
-    PathOption("withCholmodDir", "Specify path to CHOLMOD", None),
-    PathOption("withMtl4Dir", "Specify path to MTL4", None),
-    PathOption("withParmetisDir", "Specify path to ParMETIS", None),
-    PathOption("withGmpDir", "Specify path to GMP", None),
-    PathOption("withBoostDir", "Specify path to Boost", None),
-    PathOption("withLibxml2Dir", "Specify path to libXML2", None),
-    PathOption("withGtsDir", "Specify path to GTS", None),
+    PathOption("withPetscDir", "Specify path to PETSc", None, PathOption.PathAccept),
+    PathOption("withSlepcDir", "Specify path to SLEPc", None, PathOption.PathAccept),
+    PathOption("withScotchDir", "Specify path to SCOTCH", None, PathOption.PathAccept),
+    PathOption("withUmfpackDir", "Specify path to UMFPACK", None, PathOption.PathAccept),
+    PathOption("withTrilinosDir", "Specify path to Trilinos", None, PathOption.PathAccept),
+    PathOption("withCholmodDir", "Specify path to CHOLMOD", None, PathOption.PathAccept),
+    PathOption("withMtl4Dir", "Specify path to MTL4", None, PathOption.PathAccept),
+    PathOption("withParmetisDir", "Specify path to ParMETIS", None, PathOption.PathAccept),
+    PathOption("withGmpDir", "Specify path to GMP", None, PathOption.PathAccept),
+    PathOption("withBoostDir", "Specify path to Boost", None, PathOption.PathAccept),
+    PathOption("withLibxml2Dir", "Specify path to libXML2", None, PathOption.PathAccept),
+    PathOption("withGtsDir", "Specify path to GTS", None, PathOption.PathAccept),
     #
     # a few more options originally from PyCC:
     #BoolVariable("autoFetch", "Automatically fetch datafiles from (password protected) SSH repository", 0),
@@ -138,45 +139,218 @@ if ARGUMENTS.has_key("enablePydolfin"):
     ARGUMENTS["enablePython"] = ARGUMENTS["enablePydolfin"]
   del ARGUMENTS["enablePydolfin"]
 
-# This Configure class handles both command-line options (which are merged into 
-# the environment) and autoconf-style tests. A special feature is that it
-# remembers configuration parameters (options and results from tests) between
-# invocations so that they are re-used when cleaning after a previous build.
-configure = scons.Configure(env, ARGUMENTS, options)
-
-# Open log file for writing
-scons.logOpen(env)
-scons.log("=================== %s log ===================" % env["projectname"])
-scons.logDate()
-
-# Writing the simula_scons used to the log:
-scons.log("Using simula_scons from: %s" % scons.__file__)
-
-# Notify the user about that options from scons/options.cache are being used:
-if not env.GetOption("clean"):
+config_cache = os.path.join('scons', 'config.cache')
+if not "configure" in COMMAND_LINE_TARGETS and not env.GetOption('help'):
+  # Try to open the pickled configuration cache under scons/config.cache
   try:
-    optsCache = os.path.abspath(os.path.join("scons", "options.cache"))
-    lines = file(optsCache).readlines()
-    if lines:
-      print "Using options from %s" % optsCache
-    # FIXME: this can be removed when option enablePydolfin is removed
-    new_lines = []
-    for line in lines:
-      if line.startswith("enablePydolfin"):
-        if not "enablePython" in lines:
-          env["enablePython"] = eval(line.split('=')[1])
-          new_lines.append("enablePython = %s\n" % env["enablePython"])
-      else:
-        new_lines.append(line)
-    if new_lines != lines:
-      file(optsCache, 'w').writelines(new_lines)
-  except IOError, msg:
-    pass
+    f = open(config_cache, 'r')
+    up = pickle.Unpickler(f)
+    env_cache, modules, configuredPackages = up.load()
+    for key, value in env_cache.items():
+      env[key] = value
+  except IOError:
+      print """---------------------------------------------------------
+No configuration found. Please run
 
-# If we are in very-clean mode, remove the sconsign file. 
+    scons configure
+
+before building DOLFIN. To view a complete list of
+available configuration options, run
+
+    scons configure --help or -h
+
+For SCons specific options, run
+
+    scons --help-options or -H
+
+---------------------------------------------------------"""
+      Exit(1)
+
+# Set up basic data dicitionary
+buildDataHash = {"shlibs": [], "extModules": [], "docs": [], "headers": [],
+                 "pythonModules": [], "pythonScripts": [], "pkgconfig": [],
+                 "pythonPackageDirs": [], "data": [], "tests": [], "progs": [],
+                 "demos": [], "dolfin_header": "", "swigfiles": []}
+
+if "configure" in COMMAND_LINE_TARGETS:
+  # This Configure class handles both command-line options (which are merged
+  # into the environment) and autoconf-style tests. A special feature is that it
+  # remembers configuration parameters (options and results from tests) between
+  # invocations so that they are re-used when cleaning after a previous build.
+  configure = scons.Configure(env, ARGUMENTS, options)
+
+  # Open log file for writing
+  scons.logOpen(env)
+  scons.log("=================== %s log ===================" % \
+            env["projectname"])
+  scons.logDate()
+
+  # Writing the simula_scons used to the log:
+  scons.log("Using simula_scons from: %s" % scons.__file__)
+
+  # Notify the user about that options from scons/options.cache are being used:
+  if not env.GetOption("clean"):
+    try:
+      optsCache = os.path.abspath(os.path.join("scons", "options.cache"))
+      lines = file(optsCache).readlines()
+      if lines:
+        print "Using options from %s" % optsCache
+      # FIXME: this can be removed when option enablePydolfin is removed
+      new_lines = []
+      for line in lines:
+        if line.startswith("enablePydolfin"):
+          if not "enablePython" in lines:
+            env["enablePython"] = eval(line.split('=')[1])
+            new_lines.append("enablePython = %s\n" % env["enablePython"])
+        else:
+          new_lines.append(line)
+      if new_lines != lines:
+        file(optsCache, 'w').writelines(new_lines)
+    except IOError, msg:
+      pass
+
+  # Set default compiler and linker flags (defining CXXFLAGS/LINKFLAGS
+  # will override this)
+  env['CXXFLAGS'] = os.environ.get("CXXFLAGS", "-Wall -pipe -ansi -Werror")
+  env["LINKFLAGS"] = os.environ.get("LINKFLAGS", "")  # FIXME: "" OK as default?
+
+  # Default FORTRAN flags
+  #env["SHFORTRANFLAGS"] = "-Wall -pipe -fPIC"
+
+  # If Debug is enabled, add -g:
+  if env["enableDebug"]:
+    env.Append(CXXFLAGS=" -DDEBUG -g")
+
+  if not env["enableDebugUblas"]:
+    env.Append(CXXFLAGS=" -DNDEBUG")
+
+  # if Optimization is requested, use -O3
+  if env["enableOptimize"]:
+    env.Append(CXXFLAGS=" -O3")
+  else:
+    # FIXME: why are we optimizing when enableOptimize is False?
+    env.Append(CXXFLAGS=" -O2")
+
+  # Not sure we need this - but lets leave it for completeness sake - if people
+  # use if for PyCC, and know that dolfin use the same system, they will expect
+  # it to be here. We should probably discuss whether that is a good argument or
+  # not. 
+  # Append whatever custom flags given
+  if env["customCxxFlags"]:
+    env.Append(CXXFLAGS=" " + env["customCxxFlags"])
+
+  # Append custom linker flags
+  if env["customLinkFlags"]:
+    env.Append(LINKFLAGS=" " + env["customLinkFlags"])
+
+  # Determine which compiler to be used:
+  cxx_compilers = ["c++", "g++", "CC"]
+  # Use CXX from os.environ if available:
+  cxx = os.environ.get("CXX", env.Detect(cxx_compilers))
+
+  # Set MPI compiler and add neccessary MPI flags if enableMpi is True:
+  if env["enableMpi"]:
+    mpi_cxx_compilers = ["mpic++", "mpicxx", "mpiCC"]
+    mpi_cxx = os.environ.get("CXX", env.Detect(mpi_cxx_compilers))
+    # Several cases for mpi_cxx depending on CXX from os.environ:
+    # CXX=                           - not OK
+    # CXX=cxx_compiler               - not OK
+    # CXX=/path/to/cxx_compiler      - not OK 
+    # CXX=mpi_cxx_compiler           - OK
+    # CXX=/path/to/mpi_cxx_compiler  - OK (use os.path.basename)
+    # CXX="ccache cxx_compiler"      - OK (use mpi_cxx.split()[-1])
+    # FIXME: Any other cases?
+    if not env.Detect(["mpirun", "mpiexec", "orterun"]) or not \
+           (mpi_cxx and \
+            os.path.basename(mpi_cxx.split()[-1]) in mpi_cxx_compilers):
+      print "MPI not found (might not work if PETSc uses MPI)."
+      # revert back to cxx compiler
+      env["CXX"] = cxx
+    else:
+      # Found MPI, so set HAS_MPI and IGNORE_CXX_SEEK (mpich2 bug)
+      env.Append(CXXFLAGS=" -DHAS_MPI=1 -DMPICH_IGNORE_CXX_SEEK")
+      env["CXX"] = mpi_cxx
+  else:
+    env["CXX"] = cxx
+
+  if not env["CXX"]:
+    print "Unable to find any valid C++ compiler."
+    # try to use g++ as default:
+    env["CXX"] = "g++"
+
+  # process list of packages to be included in allowed Dependencies.
+  # Do we need this any more? I think we rather pick up (external) packages from
+  # the scons.cfg files. Actually, I doubt usePackages is ever used?
+  #env["usePackages"] = scons.resolvePackages(env["usePackages"].split(','),\
+  #        env.get("customDefaultPackages", DefaultPackages).split(","))
+
+  # Figure out if we should fetch datafiles, and set an option in env. 
+  #doFetch = "fetch" in COMMAND_LINE_TARGETS or (env["autoFetch"]) and not env.GetOption("clean")
+  #env["doFetch"] = doFetch
+
+  if not env.GetOption('help'):
+    try:
+      # Invoke the SConscript as if it was situated in the build directory, this
+      # tells SCons to build beneath this
+      buildDataHash, modules, configuredPackages = \
+          env.SConscript(os.path.join(env["projectname"], "SConscript"),
+                         exports=["env", "buildDataHash"])
+    except PkgconfigError, err:
+      sys.stderr.write("%s\n" % err)
+      Exit(1)
+
+    # Now, store modules, configuredPackages, and the following options
+    # from the SCons environment in scons/config.cache:
+    env_cache_keys = ['CC',
+                      'CXX',
+                      'CCFLAGS',
+                      'CPPDEFINES',
+                      'CPPFLAGS',
+                      'CPPPATH',
+                      'CXXFLAGS',
+                      'LIBPATH',
+                      'LIBS',
+                      'LINKFLAGS']
+    # Also add all other user configurable options
+    for opt in options:
+      if not opt[0] in env_cache_keys:
+        env_cache_keys.append(opt[0])
+
+    f = open(config_cache, 'w')
+    p = pickle.Pickler(f)
+    cache_dict = {}
+    for key in env_cache_keys:
+      if env.has_key(key):
+        cache_dict[key] = env[key]
+    p.dump([cache_dict, modules, configuredPackages])
+    f.close()
+
+    # Create helper file for setting environment variables
+    scons.createHelperFile(env)
+
+    # Configuring completed, show message and exit
+    print """---------------------------------------------------------
+Configuration of DOLFIN finished. Now run
+
+    scons 
+
+to build DOLFIN. To see available configure options, run
+
+    scons configure --help or -h
+
+For a list of general SCons options, run
+
+    scons --help-options or -H
+
+---------------------------------------------------------"""
+    Exit(0)
+
+# If we are in very-clean mode, remove the sconsign file, the file
+# scons/options.cache with cached options, and all generated
+# pkg-config files under scons/pkgconfig/.
 if env.GetOption("clean"):
   try:
-    if env["veryClean"]:
+    if ARGUMENTS.get("veryClean", False) or env["veryClean"]:
       os.unlink("%s.dblite" % project_sconsignfile)
       os.unlink(os.path.join('scons', 'options.cache'))
       import glob
@@ -185,237 +359,147 @@ if env.GetOption("clean"):
   except OSError, msg:
     scons.log("Error using 'veryClean' option:\n%s\n" % msg)
 
-# Set default compiler and linker flags (defining CXXFLAGS/LINKFLAGS
-# will override this)
-env['CXXFLAGS'] = os.environ.get("CXXFLAGS", "-Wall -pipe -ansi -Werror")
-env["LINKFLAGS"] = os.environ.get("LINKFLAGS", "")  # FIXME: "" OK as default?
-
-# Default FORTRAN flags
-#env["SHFORTRANFLAGS"] = "-Wall -pipe -fPIC"
-
-# If Debug is enabled, add -g:
-if env["enableDebug"]:
-  env.Append(CXXFLAGS=" -DDEBUG -g")
-
-if not env["enableDebugUblas"]:
-  env.Append(CXXFLAGS=" -DNDEBUG")
-
-# if Optimization is requested, use -O3
-if env["enableOptimize"]:
-  env.Append(CXXFLAGS=" -O3")
-else:
-  # FIXME: why are we optimizing when enableOptimize is False?
-  env.Append(CXXFLAGS=" -O2")
-
-# Not sure we need this - but lets leave it for completeness sake - if people
-# use if for PyCC, and know that dolfin use the same system, they will expect
-# it to be here. We should probably discuss whether that is a good argument or
-# not. 
-# Append whatever custom flags given
-if env["customCxxFlags"]:
-  env.Append(CXXFLAGS=" " + env["customCxxFlags"])
-
-# Append custom linker flags
-if env["customLinkFlags"]:
-  env.Append(LINKFLAGS=" " + env["customLinkFlags"])
-
-# Determine which compiler to be used:
-cxx_compilers = ["c++", "g++", "CC"]
-# Use CXX from os.environ if available:
-cxx = os.environ.get("CXX", env.Detect(cxx_compilers))
-
-# Set MPI compiler and add neccessary MPI flags if enableMpi is True:
-if env["enableMpi"]:
-  mpi_cxx_compilers = ["mpic++", "mpicxx", "mpiCC"]
-  mpi_cxx = os.environ.get("CXX", env.Detect(mpi_cxx_compilers))
-  # Several cases for mpi_cxx depending on CXX from os.environ:
-  # CXX=                           - not OK
-  # CXX=cxx_compiler               - not OK
-  # CXX=/path/to/cxx_compiler      - not OK 
-  # CXX=mpi_cxx_compiler           - OK
-  # CXX=/path/to/mpi_cxx_compiler  - OK (use os.path.basename)
-  # CXX="ccache cxx_compiler"      - OK (use mpi_cxx.split()[-1])
-  # FIXME: Any other cases?
-  if not env.Detect(["mpirun", "mpiexec", "orterun"]) or not \
-         (mpi_cxx and \
-          os.path.basename(mpi_cxx.split()[-1]) in mpi_cxx_compilers):
-    print "MPI not found (might not work if PETSc uses MPI)."
-    # revert back to cxx compiler
-    env["CXX"] = cxx
-  else:
-    # Found MPI, so set HAS_MPI and IGNORE_CXX_SEEK (mpich2 bug)
-    env.Append(CXXFLAGS=" -DHAS_MPI=1 -DMPICH_IGNORE_CXX_SEEK")
-    env["CXX"] = mpi_cxx
-else:
-  env["CXX"] = cxx
-
-if not env["CXX"]:
-  print "Unable to find any valid C++ compiler."
-  # try to use g++ as default:
-  env["CXX"] = "g++"
-
-# process list of packages to be included in allowed Dependencies.
-# Do we need this any more? I think we rather pick up (external) packages from
-# the scons.cfg files. Actually, I doubt usePackages is ever used?
-#env["usePackages"] = scons.resolvePackages(env["usePackages"].split(','),\
-#        env.get("customDefaultPackages", DefaultPackages).split(","))
-
-# Figure out if we should fetch datafiles, and set an option in env. 
-#doFetch = "fetch" in COMMAND_LINE_TARGETS or (env["autoFetch"]) and not env.GetOption("clean")
-#env["doFetch"] = doFetch
-
-# data dicitionary:
-buildDataHash = {"shlibs": [], "extModules": [], "docs": [], "headers": [],
-                 "pythonModules": [], "pythonScripts": [], "pkgconfig": [],
-                 "pythonPackageDirs": [], "data": [], "tests": [], "progs": [],
-                 "demos": [], "dolfin_header": "", "swigfiles": []}
-
-# -----------------------------------------------------------------------------
-# Call the main SConscript in the project directory
-# -----------------------------------------------------------------------------
 if not env.GetOption('help'):
-  try:
-    # Invoke the SConscript as if it was situated in the build directory, this
-    # tells SCons to build beneath this
-    buildDataHash = \
-        env.SConscript(os.path.join(env["projectname"], "SConscript"),
-                       exports=["env", "configure", "buildDataHash"])
-  except PkgconfigError, err:
-    sys.stderr.write("%s\n" % err)
-    Exit(1)
+  # ----------------------------------------------------------------------------
+  # Call the main SConscript in the project directory
+  # ----------------------------------------------------------------------------
+  # Invoke the SConscript as if it was situated in the build directory, this
+  # tells SCons to build beneath this
+  buildDataHash, modules, configuredPackages = \
+      env.SConscript(os.path.join(env["projectname"], "SConscript"),
+                     exports=["env", "modules", "configuredPackages", "buildDataHash"])
 
-# -----------------------------------------------------------------------------
-# Set up build targets
-# -----------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # Set up build targets
+  # ----------------------------------------------------------------------------
 
-# default build-targets: shared libs, extension modules, programs, demos, and
-# documentation.
-for n in buildDataHash["shlibs"] + buildDataHash["extModules"] + \
-        buildDataHash["progs"] + buildDataHash["demos"], buildDataHash["docs"], buildDataHash["tests"]:
-  env.Default(n)
+  # default build-targets: shared libs, extension modules, programs, demos, and
+  # documentation.
+  for n in buildDataHash["shlibs"] + buildDataHash["extModules"] + \
+          buildDataHash["progs"] + buildDataHash["demos"], buildDataHash["docs"], buildDataHash["tests"]:
+    env.Default(n)
 
-# -----------------------------------------------------------------------------
-# Set up installation targets
-# -----------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # Set up installation targets
+  # ----------------------------------------------------------------------------
 
-install_prefix = "$prefix"
-if env.get("DESTDIR"):
-  install_prefix = os.path.join("$DESTDIR", "$prefix")
-binDir = env["binDir"].replace("$prefix", install_prefix)
-includeDir = env["includeDir"].replace("$prefix", install_prefix)
-libDir = env["libDir"].replace("$prefix", install_prefix)
-pkgConfDir = env["pkgConfDir"].replace("$prefix", install_prefix)
-pythonModuleDir = env["pythonModuleDir"].replace("$prefix", install_prefix)
-pythonExtDir = env["pythonExtDir"].replace("$prefix", install_prefix)
-manDir = env["manDir"].replace("$prefix", install_prefix)
+  install_prefix = "$prefix"
+  if ARGUMENTS.has_key("DESTDIR"):
+    env["DESTDIR"] = ARGUMENTS["DESTDIR"]
+  if env.get("DESTDIR"):
+    install_prefix = os.path.join("$DESTDIR", "$prefix")
+  binDir = env["binDir"].replace("$prefix", install_prefix)
+  includeDir = env["includeDir"].replace("$prefix", install_prefix)
+  libDir = env["libDir"].replace("$prefix", install_prefix)
+  pkgConfDir = env["pkgConfDir"].replace("$prefix", install_prefix)
+  pythonModuleDir = env["pythonModuleDir"].replace("$prefix", install_prefix)
+  pythonExtDir = env["pythonExtDir"].replace("$prefix", install_prefix)
+  manDir = env["manDir"].replace("$prefix", install_prefix)
 
-# install dolfin-convert into binDir:
-env.Install(binDir, os.path.join("misc","utils","convert","dolfin-convert"))
+  # install dolfin-convert into binDir:
+  env.Install(binDir, os.path.join("misc","utils","convert","dolfin-convert"))
 
-# install dolfin-convert manual page into manDir/man1:
-env.Install(os.path.join(manDir, "man1"),
-            os.path.join("doc", "man", "man1", "dolfin-convert.1.gz"))
+  # install dolfin-convert manual page into manDir/man1:
+  env.Install(os.path.join(manDir, "man1"),
+              os.path.join("doc", "man", "man1", "dolfin-convert.1.gz"))
 
-# install dolfin-order into binDir
-env.Install(binDir, os.path.join("misc","utils","order","dolfin-order"))
+  # install dolfin-order into binDir
+  env.Install(binDir, os.path.join("misc","utils","order","dolfin-order"))
 
-# install dolfin-order manual page into manDir/man1
-env.Install(os.path.join(manDir, "man1"),
-            os.path.join("doc", "man", "man1", "dolfin-order.1.gz"))
+  # install dolfin-order manual page into manDir/man1
+  env.Install(os.path.join(manDir, "man1"),
+              os.path.join("doc", "man", "man1", "dolfin-order.1.gz"))
 
-# shared libraries goes into our libDir:
-for l in buildDataHash["shlibs"]:
-  env.InstallVersionedSharedLibrary(libDir, l)
+  # shared libraries goes into our libDir:
+  for l in buildDataHash["shlibs"]:
+    env.InstallVersionedSharedLibrary(libDir, l)
 
-# install header files in the same structure as in the source tree, within
-# includeDir/dolfin:
-for h in buildDataHash["headers"]:
-  # Get the module path relative to the "src" directory
-  dpath = os.path.dirname(h.srcnode().path).split(os.path.sep, 1)[1]
-  env.Install(os.path.join(includeDir, env["projectname"], dpath), h)
-# Also, we want the special 'dolfin.h' file to be installed directly in the
-# toplevel includeDir. 
-if buildDataHash.has_key("dolfin_header") and buildDataHash["dolfin_header"] != "":
-  env.Install(includeDir, buildDataHash["dolfin_header"])
+  # install header files in the same structure as in the source tree, within
+  # includeDir/dolfin:
+  for h in buildDataHash["headers"]:
+    # Get the module path relative to the "src" directory
+    dpath = os.path.dirname(h.srcnode().path).split(os.path.sep, 1)[1]
+    env.Install(os.path.join(includeDir, env["projectname"], dpath), h)
+  # Also, we want the special 'dolfin.h' file to be installed directly in the
+  # toplevel includeDir. 
+  if buildDataHash.has_key("dolfin_header") and buildDataHash["dolfin_header"] != "":
+    env.Install(includeDir, buildDataHash["dolfin_header"])
 
-## install python scripts in the bin directory
-#for s in buildDataHash["pythonScripts"]:
-#  env.Install(binDir, s)
+  ## install python scripts in the bin directory
+  #for s in buildDataHash["pythonScripts"]:
+  #  env.Install(binDir, s)
 
-if env["enablePython"]:
-    # install python modules, usually in site-packages/<projectname>
-    for m in buildDataHash["pythonModules"]:
-        env.Install(os.path.join(pythonModuleDir, env["projectname"]), m)
+  if env["enablePython"]:
+      # install python modules, usually in site-packages/<projectname>
+      for m in buildDataHash["pythonModules"]:
+          env.Install(os.path.join(pythonModuleDir, env["projectname"]), m)
 
-if env["enablePython"]:
-    # install extension modules, usually in site-packages
-    for e in buildDataHash["extModules"]:
-        env.Install(os.path.join(pythonExtDir, env["projectname"]), e)
-    # install SWIG interface files in includeDir/swig
-    for s in buildDataHash["swigfiles"]:
-        env.Install(os.path.join(includeDir, env["projectname"], "swig"), s)
+  if env["enablePython"]:
+      # install extension modules, usually in site-packages
+      for e in buildDataHash["extModules"]:
+          env.Install(os.path.join(pythonExtDir, env["projectname"]), e)
+      # install SWIG interface files in includeDir/swig
+      for s in buildDataHash["swigfiles"]:
+          env.Install(os.path.join(includeDir, env["projectname"], "swig"), s)
 
-# install generated pkg-config files in $prefix/lib/pkgconfig or other
-# specified place
-for p in buildDataHash["pkgconfig"]:
-  env.Install(pkgConfDir, p)
+  # install generated pkg-config files in $prefix/lib/pkgconfig or other
+  # specified place
+  for p in buildDataHash["pkgconfig"]:
+    env.Install(pkgConfDir, p)
 
-# grab installation prefix, substitute all scons construction variables
-# (those prefixed with $...), and create a normalized path:
-prefix = os.path.normpath(env.subst(install_prefix))
-# add '/' (or similar) at the end of prefix if missing:
-if not prefix[-1] == os.path.sep:
-  prefix += os.path.sep
+  # grab installation prefix, substitute all scons construction variables
+  # (those prefixed with $...), and create a normalized path:
+  prefix = os.path.normpath(env.subst(install_prefix))
+  # add '/' (or similar) at the end of prefix if missing:
+  if not prefix[-1] == os.path.sep:
+    prefix += os.path.sep
 
-# not sure we need common.py for pydolfin.
-#commonfile=os.path.join("site-packages", "pycc", "common.py")
+  # not sure we need common.py for pydolfin.
+  #commonfile=os.path.join("site-packages", "pycc", "common.py")
 
-#env = scons.installCommonFile(env, commonfile, prefix)
+  #env = scons.installCommonFile(env, commonfile, prefix)
 
-if env["enablePython"]:
-    installfiles = scons.buildFileList(buildDataHash["pythonPackageDirs"])
+  if env["enablePython"]:
+      installfiles = scons.buildFileList(buildDataHash["pythonPackageDirs"])
 
-    for f in installfiles:
-        installpath=os.path.sep.join(os.path.dirname(f).split(os.path.sep)[1:])
-        env.Install(os.path.join(pythonModuleDir,installpath), f)
+      for f in installfiles:
+          installpath=os.path.sep.join(os.path.dirname(f).split(os.path.sep)[1:])
+          env.Install(os.path.join(pythonModuleDir,installpath), f)
 
-_targetdir = os.path.join(prefix, "share", env["projectname"], "data")
-if 'install' in COMMAND_LINE_TARGETS and not os.path.isdir(_targetdir):
-  os.makedirs(_targetdir)
-env = scons.addInstallTargets(env, sourcefiles=buildDataHash["data"],
-                              targetdir=_targetdir)
+  _targetdir = os.path.join(prefix, "share", env["projectname"], "data")
+  if 'install' in COMMAND_LINE_TARGETS and not os.path.isdir(_targetdir):
+    os.makedirs(_targetdir)
+  env = scons.addInstallTargets(env, sourcefiles=buildDataHash["data"],
+                                targetdir=_targetdir)
 
-## No tests to install for dolfin?
-## Not sure tests should be installed, have to check that.
-#_targetdir=os.path.join(prefix, "share", "pycc", "tests")
-#if 'install' in COMMAND_LINE_TARGETS and not os.path.isdir(_targetdir):
-#  os.makedirs(_targetdir)
-#env = scons.addInstallTargets(env, sourcefiles=buildDataHash["tests"],
-#                              targetdir=_targetdir)
+  ## No tests to install for dolfin?
+  ## Not sure tests should be installed, have to check that.
+  #_targetdir=os.path.join(prefix, "share", "pycc", "tests")
+  #if 'install' in COMMAND_LINE_TARGETS and not os.path.isdir(_targetdir):
+  #  os.makedirs(_targetdir)
+  #env = scons.addInstallTargets(env, sourcefiles=buildDataHash["tests"],
+  #                              targetdir=_targetdir)
 
-_targetdir = os.path.join(prefix, "share", "doc", env["projectname"])
-if 'install' in COMMAND_LINE_TARGETS and not os.path.isdir(_targetdir):
-  os.makedirs(_targetdir)
-env = scons.addInstallTargets(env, sourcefiles=buildDataHash["docs"],
-                              targetdir=_targetdir)
+  _targetdir = os.path.join(prefix, "share", "doc", env["projectname"])
+  if 'install' in COMMAND_LINE_TARGETS and not os.path.isdir(_targetdir):
+    os.makedirs(_targetdir)
+  env = scons.addInstallTargets(env, sourcefiles=buildDataHash["docs"],
+                                targetdir=_targetdir)
 
-# Instruct scons what to do when user requests 'install'
-targets = [binDir, manDir, libDir, includeDir, pkgConfDir]
-if env["enablePython"]:
-    targets.append(pythonModuleDir)
-    targets.append(pythonExtDir)
-env.Alias("install", targets)
+  # Instruct scons what to do when user requests 'install'
+  targets = [binDir, manDir, libDir, includeDir, pkgConfDir]
+  if env["enablePython"]:
+      targets.append(pythonModuleDir)
+      targets.append(pythonExtDir)
+  env.Alias("install", targets)
 
-# _runTests used to use the global 'ret' (now buildDataHash). Therefore, we
-# need to wrap _runTests in a closure, now that the functions is moved into
-# 'scons'
-_runTests = scons.gen_runTests(buildDataHash)
+  # _runTests used to use the global 'ret' (now buildDataHash). Therefore, we
+  # need to wrap _runTests in a closure, now that the functions is moved into
+  # 'scons'
+  _runTests = scons.gen_runTests(buildDataHash)
 
-env.Command("runtests", buildDataHash["shlibs"] + buildDataHash["extModules"],
-            Action(_runTests, scons._strRuntests))
-
-# Create helper file for setting environment variables
-scons.createHelperFile(env)
+  env.Command("runtests", buildDataHash["shlibs"] + buildDataHash["extModules"],
+              Action(_runTests, scons._strRuntests))
 
 def help():
     from SCons.Script import GetBuildFailures
@@ -433,7 +517,7 @@ to install DOLFIN on your system. Note that you may need
 to be root in order to install. To specify an alternative
 installation directory, run
 
-    scons install prefix=<path>
+    scons configure prefix=<path> && scons install
 
 You may also run ./scons.local for a local installation
 in the DOLFIN source tree.
@@ -441,7 +525,7 @@ in the DOLFIN source tree.
 You can compile all the demo programs in the subdirectory
 demo by running
 
-   scons enableDemos=yes
+   scons configure enableDemos=yes && scons
 
 ---------------------------------------------------------"""
     print msg
