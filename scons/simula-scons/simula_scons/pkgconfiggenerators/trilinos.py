@@ -96,9 +96,18 @@ LD_LIBRARY_PATH/DYLD_LIBRARY_PATH as well.
     return trilinos_version
 
 def pkgCflags(sconsEnv=None):
-    include_dir = os.path.join(getTrilinosDir(sconsEnv=sconsEnv), "include")
-    cflags = "-I%s" % include_dir
-    return cflags
+    trilinos_dir = getTrilinosDir(sconsEnv=sconsEnv)
+    trilinos_inc_dir = None
+    inc_dirs = ['include', os.path.join('include', 'trilinos')]
+    for inc_dir in inc_dirs:
+        if os.path.exists(os.path.join(trilinos_dir, inc_dir, 'ml_config.h')):
+            trilinos_inc_dir = os.path.join(trilinos_dir, inc_dir)
+            break
+    
+    if trilinos_inc_dir is None:
+        raise UnableToFindPackageException("Trilinos")
+    
+    return "-I%s" % trilinos_inc_dir
 
 def pkgLibs(compiler=None, cflags=None, sconsEnv=None):
     cpp_file_str = r""" 
@@ -172,6 +181,14 @@ printf("-lml\n");
 
     libs_dir = os.path.join(getTrilinosDir(sconsEnv=sconsEnv), "lib")
     libs_str = " -L%s %s" % (libs_dir,string.join(string.split(cmdoutput, '\n')))
+    
+    # Check if we should prefix the Trilinos libraries with trilinos_ 
+    # as in the latest debian packages:
+    if not (os.path.exists(os.path.join(libs_dir, "libml.a")) or \
+            os.path.exists(os.path.join(libs_dir, "libml.so"))) and \
+           (os.path.exists(os.path.join(libs_dir, "libtrilinos_ml.a")) or \
+            os.path.exists(os.path.join(libs_dir, "libtrilinos_ml.so"))):
+        libs_str = libs_str.replace('-l', '-llibtrilinos_')
     
     remove_cppfile("trilinos_config_test.cpp", execfile=True)
 
