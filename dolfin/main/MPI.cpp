@@ -235,8 +235,7 @@ dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint de
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint N)
 {
-  error("MPI::local_range() requires MPI.");
-  return std::make_pair(0, 0);
+  return std::make_pair(0, N);
 }
 //-----------------------------------------------------------------------------
 
