@@ -62,9 +62,78 @@ return 0;
   
   return full_boost_version
 
-def pkgLibs(sconsEnv=None):
-  return "-L%s -lboost_program_options" % \
-         os.path.join(getBoostDir(sconsEnv), "lib")
+def pkgLibs(compiler=None, linker=None, cflags=None, sconsEnv=None):
+  if not compiler:
+    compiler = get_compiler(sconsEnv)
+  if not linker:
+    linker = get_linker(sconsEnv)
+  if not cflags:
+    cflags = pkgCflags(sconsEnv=sconsEnv)
+
+  # create a simple test program that uses Boost.Program_options:
+  cpp_test_lib_str = r"""
+#include <boost/program_options.hpp>
+namespace po = boost::program_options;
+
+#include <iostream>
+#include <iterator>
+using namespace std;
+
+int main(int argc, char* argv[]) {
+  po::options_description desc("Allowed options");
+  desc.add_options() ("foo", po::value<string>(), "just an option");
+
+  po::variables_map vm;
+  po::store(po::parse_command_line(argc, argv, desc), vm);
+  po::notify(vm);
+
+  if (vm.count("foo")) {
+    cout << "success, foo is " << vm["foo"].as<string>();
+  } else {
+    cout << "failure";
+  }
+
+  return 0;
+}
+"""
+  cpp_file = "boost_config_test_lib.cpp"
+  write_cppfile(cpp_test_lib_str, cpp_file)
+
+  # test that we can compile:
+  cmdstr = "%s %s -c %s" % (compiler, cflags, cpp_file)
+  compileFailed, cmdoutput = getstatusoutput(cmdstr)
+  if compileFailed:
+    remove_cppfile(cpp_file)
+    raise UnableToCompileException("Boost", cmd=cmdstr,
+                                   program=cpp_test_lib_str,
+                                   errormsg=cmdoutput)
+
+  # test that we can link a binary using Boost.Program_options:
+  lib_dir = os.path.join(getBoostDir(sconsEnv=sconsEnv), 'lib')
+  po_lib = "boost_program_options"
+  app = os.path.join(os.getcwd(), "a.out")
+  cmdstr = "%s -o %s -L%s -l%s %s" % \
+           (linker, app, lib_dir, po_lib, cpp_file.replace('.cpp', '.o'))
+  linkFailed, cmdoutput = getstatusoutput(cmdstr)
+  if linkFailed:
+    # try to append -mt to lib
+    po_lib += "-mt"
+    cmdstr = "%s -o %s -L%s -l%s %s" % \
+             (linker, app, lib_dir, po_lib, cpp_file.replace('.cpp', '.o'))
+    linkFailed, cmdoutput = getstatusoutput(cmdstr)
+    if linkFailed:
+      remove_cppfile(cpp_file, ofile=True)
+      raise UnableToLinkException("Boost", cmd=cmdstr,
+                                  program=cpp_test_lib_str,
+                                  errormsg=cmdoutput)
+  
+  # test that we can run the binary:
+  runFailed, cmdoutput = getstatusoutput(app + ' --foo=ok')
+  remove_cppfile(cpp_file, ofile=True, execfile=True)
+  if runFailed or not "success" in cmdoutput:
+    raise UnableToRunException("Boost", errormsg=cmdoutput)
+
+  return "-L%s -l%s" % (lib_dir, po_lib)
 
 def pkgCflags(sconsEnv=None):
   include_dir = None
