@@ -39,6 +39,7 @@ namespace dolfin
     GenericVector& x;
     parser_state state;
 
+    // FIXME: What is this a pointer?
     std::vector<double>* values;
     XMLArray* xml_array;
 

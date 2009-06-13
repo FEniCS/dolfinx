@@ -41,12 +41,12 @@ File::File(const std::string& filename, bool new_style)
     if ( new_style )
       file = new NewXMLFile(filename, true);
     else
-      file = new XMLFile(filename, true);
+      file = new NewXMLFile(filename, true);
   else if (filename.rfind(".xml") != filename.npos)
     if ( new_style )
       file = new NewXMLFile(filename, false);
     else
-      file = new XMLFile(filename, false);
+      file = new NewXMLFile(filename, false);
   else if (filename.rfind(".m") != filename.npos)
     file = new OctaveFile(filename);
   else if (filename.rfind(".py") != filename.npos)
@@ -72,9 +72,10 @@ File::File(const std::string& filename, bool new_style)
 File::File(const std::string& filename, Type type)
   : filename(filename)
 {
-  switch (type) {
+  switch (type) 
+  {
   case xml:
-    file = new XMLFile(filename, false);
+    file = new NewXMLFile(filename, false);
     break;
   case matlab:
     file = new MatlabFile(filename);
