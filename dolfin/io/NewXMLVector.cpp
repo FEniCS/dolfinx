@@ -59,7 +59,9 @@ void NewXMLVector::end_element(const xmlChar *name)
 
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
+      cout << "Calling end_vector" << endl;
       end_vector();
+      cout << "Finish Calling end_vectpr" << endl;
       state = DONE;
       release();
     }
@@ -114,6 +116,7 @@ void NewXMLVector::read_array_tag(const xmlChar *name, const xmlChar **attrs)
 void NewXMLVector::end_vector()
 {
   // Copy values to vector
+  dolfin_assert(values);
   x.resize(values->size());
   double v[values->size()];
   for (uint i = 0; i< values->size(); ++i)
