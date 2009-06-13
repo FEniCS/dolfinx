@@ -122,6 +122,8 @@ void NewXMLVector::end_vector()
   for (uint i = 0; i< values->size(); ++i)
     v[i] = (*values)[i];
   x.set(v);
+
+  // FIXME: This look really wrong (setting to the NULL pointer)
   values = 0;
   xml_array = 0;
 }
