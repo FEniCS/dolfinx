@@ -62,7 +62,7 @@ Mesh::Mesh(std::string filename, bool new_style)
   }
   else
   {
-    File file(filename);
+    File file(filename, new_style);
     file >> *this;
   }
 }
