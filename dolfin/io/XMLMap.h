@@ -15,7 +15,7 @@
 namespace dolfin
 {
 
-  class XMLMesh;
+  //class XMLMesh;
   class XMLArray;
 
   class XMLMap : public XMLHandler

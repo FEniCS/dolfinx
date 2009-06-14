@@ -17,7 +17,6 @@
 #include "File.h"
 #include "GenericFile.h"
 #include "NewXMLFile.h"
-#include "XMLFile.h"
 #include "MatlabFile.h"
 #include "OctaveFile.h"
 #include "PythonFile.h"

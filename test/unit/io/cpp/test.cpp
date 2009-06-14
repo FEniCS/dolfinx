@@ -7,12 +7,9 @@
 // Unit tests for the graph library 
 
 #include <dolfin.h>
-#include <dolfin/io/XMLFile.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/common/unittest.h>
 #include <cstdlib>
-//#include <iostream>
-//#include <fstream>
 
 using namespace dolfin;
 
@@ -27,7 +24,7 @@ public:
   void testRead()
   {
     // Create undirected graph with edges added out of order (should pass)
-    XMLFile file("../../../../data/meshes/snake.xml.gz", true);
+    File file("../../../../data/meshes/snake.xml.gz");
     LocalMeshData localdata;
     file >> localdata;
   }
