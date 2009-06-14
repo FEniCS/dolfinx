@@ -17,7 +17,7 @@ using namespace dolfin;
 int main()
 {
   // Create mesh and finite element
-  Mesh mesh("../../../../data/meshes/aneurysm.xml.gz");
+  Mesh mesh("../../../../data/meshes/aneurysm.xml.gz", false);
 
   // Define variational problem
   Constant f(0.0);

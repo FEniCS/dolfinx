@@ -61,7 +61,7 @@ namespace dolfin
     Function(boost::shared_ptr<const FunctionSpace> V, boost::shared_ptr<GenericVector> x);
     
     /// Create function from vector of dofs stored to file
-    Function(const FunctionSpace& V, std::string filename);
+    Function(const FunctionSpace& V, std::string filename, bool new_style=true);
 
     /// Create function from vector of dofs stored to file (shared data)
     Function(boost::shared_ptr<const FunctionSpace> V, std::string filename);

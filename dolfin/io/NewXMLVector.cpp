@@ -59,9 +59,7 @@ void NewXMLVector::end_element(const xmlChar *name)
 
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
-      cout << "Calling end_vector" << endl;
       end_vector();
-      cout << "Finish Calling end_vectpr" << endl;
       state = DONE;
       release();
     }

@@ -70,7 +70,8 @@ namespace dolfin
     Mesh(const Mesh& mesh);
 
     /// Create mesh from data file
-    explicit Mesh(std::string filename);
+    //explicit Mesh(std::string filename);
+    Mesh(std::string filename, bool new_style=true);
 
     /// Destructor
     ~Mesh();

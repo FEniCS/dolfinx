@@ -46,14 +46,14 @@ Mesh::Mesh(const Mesh& mesh)
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(std::string filename)
+Mesh::Mesh(std::string filename, bool new_style)
   : Variable("mesh", "DOLFIN mesh"),
     _data(*this), _cell_type(0), detector(0), _ordered(false)
 {
   if (MPI::num_processes() > 1)
   {
     // Read local mesh data
-    File file(filename);
+    File file(filename, new_style);
     LocalMeshData data;
     file >> data;
 

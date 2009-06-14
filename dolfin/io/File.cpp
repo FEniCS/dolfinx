@@ -41,12 +41,12 @@ File::File(const std::string& filename, bool new_style)
     if ( new_style )
       file = new NewXMLFile(filename, true);
     else
-      file = new NewXMLFile(filename, true);
+      file = new XMLFile(filename, true);
   else if (filename.rfind(".xml") != filename.npos)
     if ( new_style )
       file = new NewXMLFile(filename, false);
     else
-      file = new NewXMLFile(filename, false);
+      file = new XMLFile(filename, false);
   else if (filename.rfind(".m") != filename.npos)
     file = new OctaveFile(filename);
   else if (filename.rfind(".py") != filename.npos)

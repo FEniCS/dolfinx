@@ -47,7 +47,7 @@ namespace dolfin
     enum Type {xml, matlab, octave, vtk, python, raw, xyz};
 
     /// Create a file with given name
-    File(const std::string& filename, bool new_style=false);
+    File(const std::string& filename, bool new_style=true);
 
     /// Create a file with given name and type (format)
     File(const std::string& filename, Type type);
