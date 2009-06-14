@@ -29,7 +29,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-File::File(const std::string& filename, bool new_style)
+File::File(const std::string& filename)
   : filename(filename)
 {
   // Choose file type base on suffix.
@@ -38,15 +38,9 @@ File::File(const std::string& filename, bool new_style)
   //        it essential that the suffixes are checked in the correct order.
 
   if (filename.rfind(".xml.gz") != filename.npos)
-    if ( new_style )
-      file = new NewXMLFile(filename, true);
-    else
-      file = new XMLFile(filename, true);
+    file = new NewXMLFile(filename, true);
   else if (filename.rfind(".xml") != filename.npos)
-    if ( new_style )
-      file = new NewXMLFile(filename, false);
-    else
-      file = new XMLFile(filename, false);
+    file = new NewXMLFile(filename, false);
   else if (filename.rfind(".m") != filename.npos)
     file = new OctaveFile(filename);
   else if (filename.rfind(".py") != filename.npos)

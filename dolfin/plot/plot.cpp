@@ -26,7 +26,7 @@ void plot_object(const T& t, std::string mode)
 
   // Save to file
   const std::string filename = dolfin_get("plot file name");
-  File file(filename, true);
+  File file(filename);
   file << t;
 
   // Plot data from file

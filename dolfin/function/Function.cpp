@@ -77,7 +77,7 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
   dolfin_assert(V.dofmap().global_dimension() == x.size());
 }
 //-----------------------------------------------------------------------------
-Function::Function(const FunctionSpace& V, std::string filename, bool new_style)
+Function::Function(const FunctionSpace& V, std::string filename)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
     _vector(static_cast<GenericVector*>(0))
@@ -86,7 +86,7 @@ Function::Function(const FunctionSpace& V, std::string filename, bool new_style)
   init();
 
   // Read vector from file
-  File file(filename, new_style);
+  File file(filename);
   file >> *_vector;
 
   // Check size of vector
