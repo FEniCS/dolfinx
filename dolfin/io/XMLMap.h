@@ -10,7 +10,7 @@
 #include <vector>
 #include <map>
 #include "XMLHandler.h"
-#include "NewXMLFile.h"
+#include "XMLFile.h"
 
 namespace dolfin
 {
@@ -22,12 +22,12 @@ namespace dolfin
   {
   public:
 
-    XMLMap(std::map<uint, int>& im, NewXMLFile& parser);
-    XMLMap(std::map<uint, uint>& um, NewXMLFile& parser);
-    XMLMap(std::map<uint, double>& dm, NewXMLFile& parser);
-    XMLMap(std::map<uint, std::vector<int> >& iam, NewXMLFile& parser);
-    XMLMap(std::map<uint, std::vector<uint> >& uam, NewXMLFile& parser);
-    XMLMap(std::map<uint, std::vector<double> >& dam, NewXMLFile& parser);
+    XMLMap(std::map<uint, int>& im, XMLFile& parser);
+    XMLMap(std::map<uint, uint>& um, XMLFile& parser);
+    XMLMap(std::map<uint, double>& dm, XMLFile& parser);
+    XMLMap(std::map<uint, std::vector<int> >& iam, XMLFile& parser);
+    XMLMap(std::map<uint, std::vector<uint> >& uam, XMLFile& parser);
+    XMLMap(std::map<uint, std::vector<double> >& dam, XMLFile& parser);
 
     // Callbacks
     void start_element (const xmlChar *name, const xmlChar **attrs);

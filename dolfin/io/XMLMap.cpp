@@ -12,37 +12,37 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLMap::XMLMap(std::map<uint, int>& im, NewXMLFile& parser)
+XMLMap::XMLMap(std::map<uint, int>& im, XMLFile& parser)
   : XMLHandler(parser), im(&im), um(0), dm(0), iam(0), uam(0), dam(0), state(OUTSIDE_MAP), mtype(INT), current_key(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-XMLMap::XMLMap(std::map<uint, uint>& um, NewXMLFile& parser)
+XMLMap::XMLMap(std::map<uint, uint>& um, XMLFile& parser)
   : XMLHandler(parser), im(0), um(&um), dm(0), iam(0), uam(0), dam(0), state(OUTSIDE_MAP), mtype(UINT), current_key(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-XMLMap::XMLMap(std::map<uint, double>& dm, NewXMLFile& parser)
+XMLMap::XMLMap(std::map<uint, double>& dm, XMLFile& parser)
   : XMLHandler(parser), im(0), um(0), dm(&dm), iam(0), uam(0), dam(0), state(OUTSIDE_MAP), mtype(DOUBLE), current_key(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-XMLMap::XMLMap(std::map<uint, std::vector<int> >& iam, NewXMLFile& parser)
+XMLMap::XMLMap(std::map<uint, std::vector<int> >& iam, XMLFile& parser)
   : XMLHandler(parser), im(0), um(0), dm(0), iam(&iam), uam(0), dam(0), state(OUTSIDE_MAP), mtype(INT_ARRAY), current_key(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-XMLMap::XMLMap(std::map<uint, std::vector<uint> >& uam, NewXMLFile& parser)
+XMLMap::XMLMap(std::map<uint, std::vector<uint> >& uam, XMLFile& parser)
   : XMLHandler(parser), im(0), um(0), dm(0), iam(0), uam(&uam), dam(0), state(OUTSIDE_MAP), mtype(UINT_ARRAY), current_key(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-XMLMap::XMLMap(std::map<uint, std::vector<double> >& dam, NewXMLFile& parser)
+XMLMap::XMLMap(std::map<uint, std::vector<double> >& dam, XMLFile& parser)
   : XMLHandler(parser), im(0), um(0), dm(0), iam(0), uam(0), dam(&dam), state(OUTSIDE_MAP), mtype(DOUBLE_ARRAY), current_key(0)
 {
   // Do nothing

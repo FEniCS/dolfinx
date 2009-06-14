@@ -30,7 +30,7 @@ namespace dolfin
   class Function;
   class BoundaryMesh;
   class XMLMesh;
-  class NewXMLMesh;
+  class XMLMesh;
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
   ///
@@ -199,7 +199,7 @@ namespace dolfin
     friend LogStream& operator<< (LogStream& stream, const Mesh& mesh);
 
     /// Define XMLHandler for use in new XML reader/writer
-    typedef NewXMLMesh XMLHandler;
+    typedef XMLMesh XMLHandler;
 
   private:
 

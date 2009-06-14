@@ -5,32 +5,32 @@
 // Last changed: 2009-03-17
 
 #include <dolfin/log/dolfin_log.h>
-#include "NewXMLFile.h"
+#include "XMLFile.h"
 #include "XMLIndent.h"
 #include "XMLArray.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLArray::XMLArray(std::vector<int>& ix, NewXMLFile& parser)
+XMLArray::XMLArray(std::vector<int>& ix, XMLFile& parser)
   : XMLHandler(parser), ix(&ix), ux(0), dx(0), state(OUTSIDE_ARRAY), atype(INT), size(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-XMLArray::XMLArray(std::vector<uint>& ux, NewXMLFile& parser)
+XMLArray::XMLArray(std::vector<uint>& ux, XMLFile& parser)
   : XMLHandler(parser), ix(0), ux(&ux), dx(0), state(OUTSIDE_ARRAY), atype(UINT), size(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-XMLArray::XMLArray(std::vector<double>& dx, NewXMLFile& parser)
+XMLArray::XMLArray(std::vector<double>& dx, XMLFile& parser)
   : XMLHandler(parser), ix(0), ux(0), dx(&dx), state(OUTSIDE_ARRAY), atype(DOUBLE), size(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-XMLArray::XMLArray(std::vector<int>& ix, NewXMLFile& parser, uint size)
+XMLArray::XMLArray(std::vector<int>& ix, XMLFile& parser, uint size)
   : XMLHandler(parser), ix(&ix), ux(0), dx(0), state(INSIDE_ARRAY), atype(INT), size(size)
 {
   this->ix->clear();
@@ -38,7 +38,7 @@ XMLArray::XMLArray(std::vector<int>& ix, NewXMLFile& parser, uint size)
   std::fill(this->ix->begin(), this->ix->end(), 0);
 }
 //-----------------------------------------------------------------------------
-XMLArray::XMLArray(std::vector<uint>& ux, NewXMLFile& parser, uint size)
+XMLArray::XMLArray(std::vector<uint>& ux, XMLFile& parser, uint size)
   : XMLHandler(parser), ix(0), ux(&ux), dx(0), state(INSIDE_ARRAY), atype(UINT), size(size)
 {
   this->ux->clear();
@@ -46,7 +46,7 @@ XMLArray::XMLArray(std::vector<uint>& ux, NewXMLFile& parser, uint size)
   std::fill(this->ux->begin(), this->ux->end(), 0);
 }
 //-----------------------------------------------------------------------------
-XMLArray::XMLArray(std::vector<double>& dx, NewXMLFile& parser, uint size)
+XMLArray::XMLArray(std::vector<double>& dx, XMLFile& parser, uint size)
   : XMLHandler(parser), ix(0), ux(0), dx(&dx), state(INSIDE_ARRAY), atype(DOUBLE), size(size)
 {
   this->dx->clear();

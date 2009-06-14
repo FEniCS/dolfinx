@@ -5,14 +5,14 @@
 // Last changed: 2009-03-17
 
 #include <dolfin/log/dolfin_log.h>
-#include "NewXMLFile.h"
+#include "XMLFile.h"
 #include "XMLIndent.h"
 #include "XMLDolfin.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLDolfin::XMLDolfin(XMLHandler& dispatch, NewXMLFile& parser)
+XMLDolfin::XMLDolfin(XMLHandler& dispatch, XMLFile& parser)
   : XMLHandler(parser), state(OUTSIDE_DOLFIN), dispatch(dispatch)
 {
   // Do nothing

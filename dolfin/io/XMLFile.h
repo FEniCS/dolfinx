@@ -4,14 +4,16 @@
 // First added:  2009-03-03
 // Last changed: 2009-04-01
 
-#ifndef __NEWXMLFILE_H
-#define __NEWXMLFILE_H
+#ifndef __XMLFILE_H
+#define __XMLFILE_H
 
 #include <fstream>
 #include <stack>
 #include <string>
 #include <map>
 #include <vector>
+#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/LocalMeshData.h>
@@ -20,29 +22,30 @@
 #include <dolfin/parameter/ParameterList.h>
 #include <libxml/parser.h>
 #include "GenericFile.h"
-#include "NewXMLMesh.h"
-#include "NewXMLMeshFunction.h"
-#include "NewXMLGraph.h"
-#include "NewXMLMatrix.h"
-#include "NewXMLLocalMeshData.h"
-#include "NewXMLParameterList.h"
+#include "XMLMesh.h"
+#include "XMLMeshFunction.h"
+#include "XMLGraph.h"
+#include "XMLMatrix.h"
+#include "XMLLocalMeshData.h"
+#include "XMLParameterList.h"
 #include "XMLFunctionPlotData.h"
 #include "XMLDolfin.h"
+#include "XMLHandler.h"
 
 namespace dolfin
 {
 
-  class NewXMLFile: public GenericFile
+  class XMLFile: public GenericFile
   {
   public:
 
     /// Constructor
-    NewXMLFile(const std::string filename, bool gzip);
+    XMLFile(const std::string filename, bool gzip);
 
-    NewXMLFile(std::ostream& s);
+    XMLFile(std::ostream& s);
 
     /// Destructor
-    ~NewXMLFile();
+    ~XMLFile();
 
     // Input
 

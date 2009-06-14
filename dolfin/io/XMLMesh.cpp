@@ -14,25 +14,25 @@
 #include "XMLIndent.h"
 #include "XMLArray.h"
 #include "XMLMeshData.h"
-#include "NewXMLMesh.h"
+#include "XMLMesh.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewXMLMesh::NewXMLMesh(Mesh& mesh, NewXMLFile& parser)
+XMLMesh::XMLMesh(Mesh& mesh, XMLFile& parser)
   : XMLHandler(parser), _mesh(mesh), state(OUTSIDE), f(0), a(0),
     xml_mesh_data(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewXMLMesh::~NewXMLMesh()
+XMLMesh::~XMLMesh()
 {
   delete xml_mesh_data;
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
 {
   switch ( state )
   {
@@ -112,7 +112,7 @@ void NewXMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::end_element(const xmlChar *name)
+void XMLMesh::end_element(const xmlChar *name)
 {
   switch ( state )
   {
@@ -168,7 +168,7 @@ void NewXMLMesh::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation_level)
+void XMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation_level)
 {
   XMLIndent indent(indentation_level);
 
@@ -252,7 +252,7 @@ void NewXMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation
 
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_mesh_tag(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_mesh_tag(const xmlChar *name, const xmlChar **attrs)
 {
   // Set state
   state = INSIDE_MESH;
@@ -270,7 +270,7 @@ void NewXMLMesh::read_mesh_tag(const xmlChar *name, const xmlChar **attrs)
   editor.open(_mesh, CellType::string2type(type), tdim, gdim);
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_vertices(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_vertices(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   uint num_vertices = parse_uint(name, attrs, "size");
@@ -279,7 +279,7 @@ void NewXMLMesh::read_vertices(const xmlChar *name, const xmlChar **attrs)
   editor.init_vertices(num_vertices);
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_cells(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_cells(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   uint num_cells = parse_uint(name, attrs, "size");
@@ -288,7 +288,7 @@ void NewXMLMesh::read_cells(const xmlChar *name, const xmlChar **attrs)
   editor.init_cells(num_cells);
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_vertex(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_vertex(const xmlChar *name, const xmlChar **attrs)
 {
   // Read index
   uint v = parse_uint(name, attrs, "index");
@@ -322,7 +322,7 @@ void NewXMLMesh::read_vertex(const xmlChar *name, const xmlChar **attrs)
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_interval(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_interval(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
   if ( _mesh.topology().dim() != 1 )
@@ -338,7 +338,7 @@ void NewXMLMesh::read_interval(const xmlChar *name, const xmlChar **attrs)
   editor.add_cell(c, v0, v1);
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_triangle(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_triangle(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
   if ( _mesh.topology().dim() != 2 )
@@ -355,7 +355,7 @@ void NewXMLMesh::read_triangle(const xmlChar *name, const xmlChar **attrs)
   editor.add_cell(c, v0, v1, v2);
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
   if ( _mesh.topology().dim() != 3 )
@@ -373,7 +373,7 @@ void NewXMLMesh::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
   editor.add_cell(c, v0, v1, v2, v3);
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_mesh_entity(const xmlChar* name, const xmlChar** attrs)
+void XMLMesh::read_mesh_entity(const xmlChar* name, const xmlChar** attrs)
 {
   // Read index
   const uint index = parse_uint(name, attrs, "index");
@@ -385,13 +385,13 @@ void NewXMLMesh::read_mesh_entity(const xmlChar* name, const xmlChar** attrs)
   f->set(index, value);
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_mesh_data(const xmlChar* name, const xmlChar** attrs)
+void XMLMesh::read_mesh_data(const xmlChar* name, const xmlChar** attrs)
 {
   xml_mesh_data = new XMLMeshData(_mesh.data(), parser, true);
   xml_mesh_data->handle();
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_higher_order_vertices(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_higher_order_vertices(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   uint num_higher_order_vertices = parse_uint(name, attrs, "size");
@@ -400,7 +400,7 @@ void NewXMLMesh::read_higher_order_vertices(const xmlChar *name, const xmlChar *
   editor.initHigherOrderVertices(num_higher_order_vertices);
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_higher_order_cells(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_higher_order_cells(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   uint num_higher_order_cells    = parse_uint(name, attrs, "size");
@@ -410,7 +410,7 @@ void NewXMLMesh::read_higher_order_cells(const xmlChar *name, const xmlChar **at
   editor.initHigherOrderCells(num_higher_order_cells, num_higher_order_cell_dof);
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_higher_order_vertex(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_higher_order_vertex(const xmlChar *name, const xmlChar **attrs)
 {
   // Read index
   uint v = parse_uint(name, attrs, "index");
@@ -444,7 +444,7 @@ void NewXMLMesh::read_higher_order_vertex(const xmlChar *name, const xmlChar **a
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::read_higher_order_cell_data(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::read_higher_order_cell_data(const xmlChar *name, const xmlChar **attrs)
 {
   // for now assume a P2 triangle!
 
@@ -470,7 +470,7 @@ void NewXMLMesh::read_higher_order_cell_data(const xmlChar *name, const xmlChar 
   editor.setAffineCellIndicator(c, affine_str);
 }
 //-----------------------------------------------------------------------------
-void NewXMLMesh::close_mesh()
+void XMLMesh::close_mesh()
 {
   editor.close(false);
 }

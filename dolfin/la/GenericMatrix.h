@@ -21,7 +21,7 @@ namespace dolfin
 {
 
   class GenericVector;
-  class NewXMLMatrix;
+  class XMLMatrix;
 
   /// This class defines a common interface for matrices.
 
@@ -150,7 +150,7 @@ namespace dolfin
     { set(&value, 1, &ij.first, 1, &ij.second); }
 
 
-    typedef NewXMLMatrix XMLHandler;
+    typedef XMLMatrix XMLHandler;
   };
 
 }

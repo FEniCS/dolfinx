@@ -4,8 +4,8 @@
 // First added:  2009-02-26
 // Last changed: 2009-02-26
 
-#ifndef __NEW_XML_VECTORMAPPING_H
-#define __NEW_XML_VECTORMAPPING_H
+#ifndef __XML_VECTORMAPPING_H
+#define __XML_VECTORMAPPING_H
 
 #include <map>
 #include <vector>

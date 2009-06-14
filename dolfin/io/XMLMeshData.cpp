@@ -5,7 +5,7 @@
 // Last changed: 2009-03-17
 
 
-#include "NewXMLMeshFunction.h"
+#include "XMLMeshFunction.h"
 #include "XMLIndent.h"
 #include "XMLArray.h"
 #include "XMLMap.h"
@@ -14,7 +14,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLMeshData::XMLMeshData(MeshData& data, NewXMLFile& parser, bool inside)
+XMLMeshData::XMLMeshData(MeshData& data, XMLFile& parser, bool inside)
   : XMLHandler(parser), data(data), state(OUTSIDE), type(UNSET), entity_name(""),
     xml_array(0), xml_map(0), xml_mesh_function(0),
     im(0), um(0), dm(0), iam(0), uam(0), dam(0)
@@ -117,7 +117,7 @@ void XMLMeshData::write(const MeshData& data, std::ostream& outfile, uint indent
 
       // Write mesh function (omit mesh)
       ++indent;
-      NewXMLMeshFunction::write(*(it->second), outfile, indent.level(), false);
+      XMLMeshFunction::write(*(it->second), outfile, indent.level(), false);
       --indent;
 
       // Write data entry footer
@@ -247,7 +247,7 @@ void XMLMeshData::read_mesh_function(const xmlChar* name, const xmlChar** attrs)
     error("Only MeshFunctions of type 'uint' supported as mesh data. Found '%s'.", mf_type.c_str());
   delete xml_mesh_function;
   MeshFunction<uint>* mf = data.create_mesh_function(entity_name);
-  xml_mesh_function = new NewXMLMeshFunction(*mf, parser, size, dim);
+  xml_mesh_function = new XMLMeshFunction(*mf, parser, size, dim);
   xml_mesh_function->handle();
 }
 //-----------------------------------------------------------------------------

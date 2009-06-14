@@ -4,16 +4,16 @@
 // First added:  2009-03-16
 // Last changed: 2009-03-17
 
-#include <dolfin/io/NewXMLFile.h>
+#include <dolfin/io/XMLFile.h>
 #include <dolfin/plot/FunctionPlotData.h>
 #include "XMLIndent.h"
-#include "NewXMLMesh.h"
+#include "XMLMesh.h"
 #include "XMLFunctionPlotData.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLFunctionPlotData::XMLFunctionPlotData(FunctionPlotData& data, NewXMLFile& parser)
+XMLFunctionPlotData::XMLFunctionPlotData(FunctionPlotData& data, XMLFile& parser)
   : XMLHandler(parser), data(data), state(OUTSIDE), xml_mesh(0), xml_vector(0)
 {
   // Do nothing
@@ -76,10 +76,10 @@ void XMLFunctionPlotData::write(const FunctionPlotData& data, std::ostream& outf
   ++indent;
 
   // Write mesh
-  NewXMLMesh::write(data.mesh, outfile, indent.level());
+  XMLMesh::write(data.mesh, outfile, indent.level());
 
   // Write vector
-  NewXMLVector::write(data.vertex_values, outfile, indent.level());
+  XMLVector::write(data.vertex_values, outfile, indent.level());
 
   --indent;
 
@@ -96,7 +96,7 @@ void XMLFunctionPlotData::read_data_tag(const xmlChar* name, const xmlChar** att
 void XMLFunctionPlotData::read_mesh(const xmlChar* name, const xmlChar** attrs)
 {
   delete xml_mesh;
-  xml_mesh = new NewXMLMesh(data.mesh, parser);
+  xml_mesh = new XMLMesh(data.mesh, parser);
 
   // Let the xml mesh read its own the mesh tag
   xml_mesh->read_mesh_tag(name, attrs);
@@ -108,7 +108,7 @@ void XMLFunctionPlotData::read_mesh(const xmlChar* name, const xmlChar** attrs)
 void XMLFunctionPlotData::read_vector(const xmlChar* name, const xmlChar** attrs)
 {
   delete xml_vector;
-  xml_vector = new NewXMLVector(data.vertex_values, parser);
+  xml_vector = new XMLVector(data.vertex_values, parser);
 
   // Let the xml vector read its own the vector tag
   xml_vector->read_vector_tag(name, attrs);

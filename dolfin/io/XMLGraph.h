@@ -6,8 +6,8 @@
 // First added:  2009-03-11
 // Last changed: 2000-03-11
 
-#ifndef __NEWXMLGRAPH_H
-#define __NEWXMLGRAPH_H
+#ifndef __XMLGRAPH_H
+#define __XMLGRAPH_H
 
 #include <dolfin/common/types.h>
 #include <dolfin/graph/GraphEditor.h>
@@ -16,14 +16,14 @@
 namespace dolfin
 {
   class Graph;
-  class NewXMLFile;
+  class XMLFile;
 
-  class NewXMLGraph : public XMLHandler
+  class XMLGraph : public XMLHandler
   {
   public:
 
-    NewXMLGraph(Graph& graph, NewXMLFile& parser);
-    ~NewXMLGraph();
+    XMLGraph(Graph& graph, XMLFile& parser);
+    ~XMLGraph();
 
     void start_element (const xmlChar* name, const xmlChar** attrs);
     void end_element   (const xmlChar* name);

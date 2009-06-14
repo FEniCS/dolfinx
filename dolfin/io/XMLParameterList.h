@@ -4,8 +4,8 @@
 // First added:  2009-03-16
 // Last changed: 2009-03-16
 
-#ifndef __NEWNewXMLPARAMETERLIST_H
-#define __NEWNewXMLPARAMETERLIST_H
+#ifndef __XMLPARAMETERLIST_H
+#define __XMLPARAMETERLIST_H
 
 #include "XMLHandler.h"
 
@@ -13,13 +13,13 @@ namespace dolfin
 {
 
   class ParameterList;
-  class NewXMLFile;
+  class XMLFile;
 
-  class NewXMLParameterList : public XMLHandler
+  class XMLParameterList : public XMLHandler
   {
   public:
 
-    NewXMLParameterList(ParameterList& parameters, NewXMLFile& parser);
+    XMLParameterList(ParameterList& parameters, XMLFile& parser);
 
     void start_element(const xmlChar *name, const xmlChar **attrs);
     void end_element  (const xmlChar *name);

@@ -4,27 +4,27 @@
 // First added:  2009-03-10
 // Last changed: 2009-03-10
 
-#ifndef __NEWXMLLOCALMESHDATA_H
-#define __NEWXMLLOCALMESHDATA_H
+#ifndef __XMLLOCALMESHDATA_H
+#define __XMLLOCALMESHDATA_H
 
 #include <dolfin/mesh/LocalMeshData.h>
 #include "XMLHandler.h"
 
-/// Documentation of class NewXMLLocalMeshData
+/// Documentation of class XMLLocalMeshData
 
 namespace dolfin
 {
   class LocalMeshData;
 
-  class NewXMLLocalMeshData: public XMLHandler
+  class XMLLocalMeshData: public XMLHandler
   {
   public:
 
     /// Constructor
-    NewXMLLocalMeshData(LocalMeshData& mesh_data, NewXMLFile& parser);
+    XMLLocalMeshData(LocalMeshData& mesh_data, XMLFile& parser);
 
     /// Destructor
-    ~NewXMLLocalMeshData();
+    ~XMLLocalMeshData();
 
     void start_element (const xmlChar* name, const xmlChar** attrs);
     void end_element   (const xmlChar* name);

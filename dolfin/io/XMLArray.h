@@ -17,14 +17,14 @@ namespace dolfin
   {
   public:
 
-    XMLArray(std::vector<int>& ix, NewXMLFile& parser);
-    XMLArray(std::vector<int>& ix, NewXMLFile& parser, uint size);
+    XMLArray(std::vector<int>& ix, XMLFile& parser);
+    XMLArray(std::vector<int>& ix, XMLFile& parser, uint size);
 
-    XMLArray(std::vector<uint>& ux, NewXMLFile& parser);
-    XMLArray(std::vector<uint>& ux, NewXMLFile& parser, uint size);
+    XMLArray(std::vector<uint>& ux, XMLFile& parser);
+    XMLArray(std::vector<uint>& ux, XMLFile& parser, uint size);
 
-    XMLArray(std::vector<double>& dx, NewXMLFile& parser);
-    XMLArray(std::vector<double>& dx, NewXMLFile& parser, uint size);
+    XMLArray(std::vector<double>& dx, XMLFile& parser);
+    XMLArray(std::vector<double>& dx, XMLFile& parser, uint size);
 
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);

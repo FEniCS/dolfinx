@@ -7,18 +7,18 @@
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/log/dolfin_log.h>
 #include "XMLIndent.h"
-#include "NewXMLMatrix.h"
+#include "XMLMatrix.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewXMLMatrix::NewXMLMatrix(GenericMatrix& matrix, NewXMLFile& parser)
+XMLMatrix::XMLMatrix(GenericMatrix& matrix, XMLFile& parser)
   : XMLHandler(parser), A(matrix), state(OUTSIDE), row(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NewXMLMatrix::start_element(const xmlChar *name, const xmlChar **attrs)
+void XMLMatrix::start_element(const xmlChar *name, const xmlChar **attrs)
 {
   switch ( state )
   {
@@ -54,7 +54,7 @@ void NewXMLMatrix::start_element(const xmlChar *name, const xmlChar **attrs)
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLMatrix::end_element(const xmlChar *name)
+void XMLMatrix::end_element(const xmlChar *name)
 {
   switch ( state )
   {
@@ -83,7 +83,7 @@ void NewXMLMatrix::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLMatrix::write(const GenericMatrix& A, std::ostream& outfile, uint indentation_level)
+void XMLMatrix::write(const GenericMatrix& A, std::ostream& outfile, uint indentation_level)
 {
   XMLIndent indent(indentation_level);
 
@@ -124,7 +124,7 @@ void NewXMLMatrix::write(const GenericMatrix& A, std::ostream& outfile, uint ind
   outfile << indent() << "</matrix>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void NewXMLMatrix::read_matrix(const xmlChar *name, const xmlChar **attrs)
+void XMLMatrix::read_matrix(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   uint M = parse_int(name, attrs, "rows");
@@ -134,7 +134,7 @@ void NewXMLMatrix::read_matrix(const xmlChar *name, const xmlChar **attrs)
   A.resize(M, N);
 }
 //-----------------------------------------------------------------------------
-void NewXMLMatrix::read_row(const xmlChar *name, const xmlChar **attrs)
+void XMLMatrix::read_row(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   row = parse_uint(name, attrs, "index");
@@ -147,7 +147,7 @@ void NewXMLMatrix::read_row(const xmlChar *name, const xmlChar **attrs)
   values.reserve(size);
 }
 //-----------------------------------------------------------------------------
-void NewXMLMatrix::read_entry(const xmlChar *name, const xmlChar **attrs)
+void XMLMatrix::read_entry(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   const uint column = parse_uint(name, attrs, "column");
@@ -158,7 +158,7 @@ void NewXMLMatrix::read_entry(const xmlChar *name, const xmlChar **attrs)
   values.push_back(value);
 }
 //-----------------------------------------------------------------------------
-void NewXMLMatrix::set_row()
+void XMLMatrix::set_row()
 {
   A.setrow(row, columns, values);
 }

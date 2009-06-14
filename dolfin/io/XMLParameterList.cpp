@@ -8,19 +8,19 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/ParameterList.h>
 #include "XMLIndent.h"
-#include "NewXMLFile.h"
-#include "NewXMLParameterList.h"
+#include "XMLFile.h"
+#include "XMLParameterList.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewXMLParameterList::NewXMLParameterList(ParameterList& parameters, NewXMLFile& parser)
+XMLParameterList::XMLParameterList(ParameterList& parameters, XMLFile& parser)
   : XMLHandler(parser), parameters(parameters), state(OUTSIDE)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NewXMLParameterList::start_element(const xmlChar *name, const xmlChar **attrs)
+void XMLParameterList::start_element(const xmlChar *name, const xmlChar **attrs)
 {
   switch ( state )
   {
@@ -43,7 +43,7 @@ void NewXMLParameterList::start_element(const xmlChar *name, const xmlChar **att
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLParameterList::end_element(const xmlChar *name)
+void XMLParameterList::end_element(const xmlChar *name)
 {
   switch ( state )
   {
@@ -62,7 +62,7 @@ void NewXMLParameterList::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLParameterList::write(const ParameterList& parameters, std::ostream& outfile, uint indentation_level)
+void XMLParameterList::write(const ParameterList& parameters, std::ostream& outfile, uint indentation_level)
 {
   XMLIndent indent(indentation_level);
 
@@ -102,7 +102,7 @@ void NewXMLParameterList::write(const ParameterList& parameters, std::ostream& o
   outfile << indent() << "</parameters>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void NewXMLParameterList::read_parameter(const xmlChar *name, const xmlChar **attrs)
+void XMLParameterList::read_parameter(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   std::string pname  = parse_string(name, attrs, "name");

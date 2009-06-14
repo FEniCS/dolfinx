@@ -8,13 +8,13 @@
 #include <sstream>
 #include <fstream>
 #include <dolfin/log/log.h>
-#include "NewXMLFile.h"
+#include "XMLFile.h"
 #include "XMLHandler.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLHandler::XMLHandler(NewXMLFile& parser) : parser(parser)
+XMLHandler::XMLHandler(XMLFile& parser) : parser(parser)
 {
   // Do nothing
 }

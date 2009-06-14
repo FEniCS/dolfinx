@@ -12,15 +12,15 @@
 namespace dolfin
 {
 
-  class NewXMLVector;
+  class XMLVector;
   class FunctionPlotData;
-  class NewXMLMesh;
+  class XMLMesh;
 
   class XMLFunctionPlotData : public XMLHandler
   {
   public:
 
-    XMLFunctionPlotData(FunctionPlotData& data, NewXMLFile& parser);
+    XMLFunctionPlotData(FunctionPlotData& data, XMLFile& parser);
     ~XMLFunctionPlotData();
 
     void start_element (const xmlChar* name, const xmlChar** attrs);
@@ -40,8 +40,8 @@ namespace dolfin
     FunctionPlotData& data;
     parser_state state;
 
-    NewXMLMesh* xml_mesh;
-    NewXMLVector* xml_vector;
+    XMLMesh* xml_mesh;
+    XMLVector* xml_vector;
 
   };
 

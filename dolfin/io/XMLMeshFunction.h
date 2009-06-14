@@ -4,8 +4,8 @@
 // First added:  2009-03-10
 // Last changed: 2009-03-11
 
-#ifndef __NEWXMLMESHFUNCTION_H
-#define __NEWXMLMESHFUNCTION_H
+#ifndef __XMLMESHFUNCTION_H
+#define __XMLMESHFUNCTION_H
 
 #include <dolfin/mesh/MeshFunction.h>
 #include "XMLHandler.h"
@@ -13,18 +13,18 @@
 namespace dolfin
 {
 
-  class NewXMLMeshFunction : public XMLHandler
+  class XMLMeshFunction : public XMLHandler
   {
   public:
 
-    NewXMLMeshFunction(MeshFunction<int>& imf, NewXMLFile& parser);
-    NewXMLMeshFunction(MeshFunction<int>& imf, NewXMLFile& parser, uint size, uint dim);
+    XMLMeshFunction(MeshFunction<int>& imf, XMLFile& parser);
+    XMLMeshFunction(MeshFunction<int>& imf, XMLFile& parser, uint size, uint dim);
 
-    NewXMLMeshFunction(MeshFunction<uint>& umf, NewXMLFile& parser);
-    NewXMLMeshFunction(MeshFunction<uint>& umf, NewXMLFile& parser, uint size, uint dim);
+    XMLMeshFunction(MeshFunction<uint>& umf, XMLFile& parser);
+    XMLMeshFunction(MeshFunction<uint>& umf, XMLFile& parser, uint size, uint dim);
 
-    NewXMLMeshFunction(MeshFunction<double>& dmf, NewXMLFile& parser);
-    NewXMLMeshFunction(MeshFunction<double>& dmf, NewXMLFile& parser, uint size, uint dim);
+    XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser);
+    XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser, uint size, uint dim);
 
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);

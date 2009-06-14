@@ -4,13 +4,13 @@
 // First added:  2009-03-06
 // Last changed:  2009-03-16
 
-#ifndef __NEW_XML_MESH_H
-#define __NEW_XML_MESH_H
+#ifndef __XML_MESH_H
+#define __XML_MESH_H
 
 #include <dolfin/la/Vector.h>
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshFunction.h>
-#include "NewXMLVector.h"
+#include "XMLVector.h"
 #include "XMLHandler.h"
 
 namespace dolfin
@@ -19,13 +19,13 @@ namespace dolfin
   class Mesh;
   class XMLMeshData;
 
-  class NewXMLMesh : public XMLHandler
+  class XMLMesh : public XMLHandler
   {
   public:
 
-    NewXMLMesh(Mesh& mesh, NewXMLFile& parser);
-    NewXMLMesh(Mesh& mesh, NewXMLFile& parser, std::string celltype, uint dim);
-    ~NewXMLMesh();
+    XMLMesh(Mesh& mesh, XMLFile& parser);
+    XMLMesh(Mesh& mesh, XMLFile& parser, std::string celltype, uint dim);
+    ~XMLMesh();
 
     void start_element (const xmlChar* name, const xmlChar** attrs);
     void end_element   (const xmlChar* name);

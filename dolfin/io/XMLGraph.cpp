@@ -9,25 +9,25 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/graph/Graph.h>
 #include "XMLIndent.h"
-#include "NewXMLFile.h"
-#include "NewXMLGraph.h"
+#include "XMLFile.h"
+#include "XMLGraph.h"
 
 using namespace dolfin;
 using dolfin::uint;
 
 //-----------------------------------------------------------------------------
-NewXMLGraph::NewXMLGraph(Graph& graph, NewXMLFile& parser)
+XMLGraph::XMLGraph(Graph& graph, XMLFile& parser)
 : XMLHandler(parser), graph(graph), state(OUTSIDE)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewXMLGraph::~NewXMLGraph()
+XMLGraph::~XMLGraph()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NewXMLGraph::start_element(const xmlChar *name, const xmlChar **attrs)
+void XMLGraph::start_element(const xmlChar *name, const xmlChar **attrs)
 {
   switch ( state )
   {
@@ -75,7 +75,7 @@ void NewXMLGraph::start_element(const xmlChar *name, const xmlChar **attrs)
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLGraph::end_element(const xmlChar *name)
+void XMLGraph::end_element(const xmlChar *name)
 {
   switch ( state )
   {
@@ -111,7 +111,7 @@ void NewXMLGraph::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLGraph::write(const Graph& graph, std::ostream& outfile, uint indentation_level)
+void XMLGraph::write(const Graph& graph, std::ostream& outfile, uint indentation_level)
 {
   XMLIndent indent(indentation_level);
 
@@ -174,7 +174,7 @@ void NewXMLGraph::write(const Graph& graph, std::ostream& outfile, uint indentat
   outfile << indent() << "</graph>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void NewXMLGraph::read_graph(const xmlChar *name, const xmlChar **attrs)
+void XMLGraph::read_graph(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   std::string type = parse_string(name, attrs, "type");
@@ -183,26 +183,26 @@ void NewXMLGraph::read_graph(const xmlChar *name, const xmlChar **attrs)
   editor.open(graph, type);
 }
 //-----------------------------------------------------------------------------
-void NewXMLGraph::read_vertices(const xmlChar *name, const xmlChar **attrs)
+void XMLGraph::read_vertices(const xmlChar *name, const xmlChar **attrs)
 {
   dolfin_debug("read_vertices()");
   uint num_vertices = parse_uint(name, attrs, "size");
   editor.init_vertices(num_vertices);
 }
 //-----------------------------------------------------------------------------
-void NewXMLGraph::read_edges(const xmlChar *name, const xmlChar **attrs)
+void XMLGraph::read_edges(const xmlChar *name, const xmlChar **attrs)
 {
   dolfin_debug("read_edges()");
   uint num_edges = parse_uint(name, attrs, "size");
   editor.init_edges(num_edges);
 }
 //-----------------------------------------------------------------------------
-void NewXMLGraph::read_vertex(const xmlChar *name, const xmlChar **attrs)
+void XMLGraph::read_vertex(const xmlChar *name, const xmlChar **attrs)
 {
   editor.add_vertex(parse_uint(name, attrs, "index"), parse_uint(name, attrs, "num_edges"));
 }
 //-----------------------------------------------------------------------------
-void NewXMLGraph::read_edge(const xmlChar *name, const xmlChar **attrs)
+void XMLGraph::read_edge(const xmlChar *name, const xmlChar **attrs)
 {
   // Read index
   uint v1 = parse_uint(name, attrs, "v1");
@@ -215,7 +215,7 @@ void NewXMLGraph::read_edge(const xmlChar *name, const xmlChar **attrs)
   editor.add_edge(v1, v2);
 }
 //-----------------------------------------------------------------------------
-void NewXMLGraph::close_graph()
+void XMLGraph::close_graph()
 {
   editor.close();
 }

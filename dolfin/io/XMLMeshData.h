@@ -15,7 +15,7 @@
 namespace dolfin
 {
 
-  class NewXMLMeshFunction;
+  class XMLMeshFunction;
   class XMLArray;
   class XMLMap;
 
@@ -24,7 +24,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    XMLMeshData(MeshData& data, NewXMLFile& parser, bool inside=false);
+    XMLMeshData(MeshData& data, XMLFile& parser, bool inside=false);
 
     /// Destructor
     ~XMLMeshData();
@@ -50,7 +50,7 @@ namespace dolfin
 
     XMLArray* xml_array;
     XMLMap* xml_map;
-    NewXMLMeshFunction* xml_mesh_function;
+    XMLMeshFunction* xml_mesh_function;
     std::map<uint, int>*    im;
     std::map<uint, uint>*   um;
     std::map<uint, double>* dm;

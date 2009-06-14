@@ -16,7 +16,7 @@
 #include <dolfin/log/dolfin_log.h>
 #include "File.h"
 #include "GenericFile.h"
-#include "NewXMLFile.h"
+#include "XMLFile.h"
 #include "MatlabFile.h"
 #include "OctaveFile.h"
 #include "PythonFile.h"
@@ -37,9 +37,9 @@ File::File(const std::string& filename)
   //        it essential that the suffixes are checked in the correct order.
 
   if (filename.rfind(".xml.gz") != filename.npos)
-    file = new NewXMLFile(filename, true);
+    file = new XMLFile(filename, true);
   else if (filename.rfind(".xml") != filename.npos)
-    file = new NewXMLFile(filename, false);
+    file = new XMLFile(filename, false);
   else if (filename.rfind(".m") != filename.npos)
     file = new OctaveFile(filename);
   else if (filename.rfind(".py") != filename.npos)
@@ -68,7 +68,7 @@ File::File(const std::string& filename, Type type)
   switch (type) 
   {
   case xml:
-    file = new NewXMLFile(filename, false);
+    file = new XMLFile(filename, false);
     break;
   case matlab:
     file = new MatlabFile(filename);
@@ -91,7 +91,7 @@ File::File(const std::string& filename, Type type)
 File::File(std::ostream& outstream)
   : filename("")
 {
-  file = new NewXMLFile(outstream);
+  file = new XMLFile(outstream);
 }
 //-----------------------------------------------------------------------------
 File::~File()
@@ -103,13 +103,13 @@ File::~File()
 void File:: set_new_xml_style()
 {
   delete file;
-  file = new NewXMLFile(filename, true);
+  file = new XMLFile(filename, true);
 }
 //-----------------------------------------------------------------------------
 void File:: validate_xml()
 {
   std::cout << "Validating xml file named *" << filename << "*" << std::endl;
-  NewXMLFile* valid = new NewXMLFile(filename, true);
+  XMLFile* valid = new XMLFile(filename, true);
   valid->validate(filename);
 }
 //-----------------------------------------------------------------------------

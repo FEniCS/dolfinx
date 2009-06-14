@@ -20,7 +20,7 @@ namespace dolfin
   {
   public:
 
-    XMLDolfin(XMLHandler& dispatch, NewXMLFile& parser);
+    XMLDolfin(XMLHandler& dispatch, XMLFile& parser);
 
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);

@@ -14,12 +14,12 @@
 namespace dolfin
 {
 
-  class NewXMLVector : public XMLHandler
+  class XMLVector : public XMLHandler
   {
   public:
 
-    NewXMLVector(GenericVector& vector, NewXMLFile& parser);
-    ~NewXMLVector();
+    XMLVector(GenericVector& vector, XMLFile& parser);
+    ~XMLVector();
 
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);

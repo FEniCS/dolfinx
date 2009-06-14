@@ -17,7 +17,6 @@ namespace dolfin
 {
 
   class XMLLocalMeshData;
-  class NewXMLLocalMeshData;
 
   /// This class stores mesh data on a local processor corresponding
   /// to a portion of a (larger) global mesh.
@@ -47,7 +46,7 @@ namespace dolfin
     ~LocalMeshData();
 
     /// Define XMLHandler for use in new XML reader/writer
-    typedef NewXMLLocalMeshData XMLHandler;
+    typedef XMLLocalMeshData XMLHandler;
 
   private:
 
@@ -104,7 +103,6 @@ namespace dolfin
 
     // Friends
     friend class XMLLocalMeshData;
-    friend class NewXMLLocalMeshData;
     friend class MeshPartitioning;
 
   };

@@ -16,7 +16,7 @@
 namespace dolfin
 {
 
-  class NewXMLParameterList;
+  class XMLParameterList;
 
   /// This class represents a database of parameters, where each
   /// parameter is uniquely identified by a string.
@@ -48,10 +48,10 @@ namespace dolfin
 
     /// Friends
     friend class XMLFile;
-    friend class NewXMLParameterList;
+    friend class XMLParameterList;
 
-    // Used by NewXMLFile for templated i/o
-    typedef NewXMLParameterList XMLHandler;
+    // Used by XMLFile for templated i/o
+    typedef XMLParameterList XMLHandler;
  
   private:
 

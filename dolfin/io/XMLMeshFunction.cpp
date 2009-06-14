@@ -6,31 +6,31 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include "XMLIndent.h"
-#include "NewXMLFile.h"
-#include "NewXMLMeshFunction.h"
+#include "XMLFile.h"
+#include "XMLMeshFunction.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<int>& imf, NewXMLFile& parser)
+XMLMeshFunction::XMLMeshFunction(MeshFunction<int>& imf, XMLFile& parser)
   : XMLHandler(parser), imf(&imf), umf(0), dmf(0), state(OUTSIDE_MESHFUNCTION), mf_type(INT), size(0), dim(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<uint>& umf, NewXMLFile& parser)
+XMLMeshFunction::XMLMeshFunction(MeshFunction<uint>& umf, XMLFile& parser)
   : XMLHandler(parser), imf(0), umf(&umf), dmf(0), state(OUTSIDE_MESHFUNCTION), mf_type(UINT), size(0), dim(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<double>& dmf, NewXMLFile& parser)
+XMLMeshFunction::XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser)
   : XMLHandler(parser), imf(0), umf(0), dmf(&dmf), state(OUTSIDE_MESHFUNCTION), mf_type(DOUBLE), size(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<int>& imf, NewXMLFile& parser, uint size, uint dim)
+XMLMeshFunction::XMLMeshFunction(MeshFunction<int>& imf, XMLFile& parser, uint size, uint dim)
   : XMLHandler(parser), imf(&imf), umf(0), dmf(0), state(INSIDE_MESHFUNCTION), mf_type(INT), size(size), dim(dim)
 {
   // Initialize mesh function
@@ -40,7 +40,7 @@ NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<int>& imf, NewXMLFile& parse
   *(this->imf) = 0;
 }
 //-----------------------------------------------------------------------------
-NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<uint>& umf, NewXMLFile& parser, uint size, uint dim)
+XMLMeshFunction::XMLMeshFunction(MeshFunction<uint>& umf, XMLFile& parser, uint size, uint dim)
   : XMLHandler(parser), imf(0), umf(&umf), dmf(0), state(INSIDE_MESHFUNCTION), mf_type(UINT), size(size), dim(dim)
 {
   // Initialize mesh function
@@ -50,7 +50,7 @@ NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<uint>& umf, NewXMLFile& pars
   *(this->umf) = 0;
 }
 //-----------------------------------------------------------------------------
-NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<double>& dmf, NewXMLFile& parser, uint size, uint dim)
+XMLMeshFunction::XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser, uint size, uint dim)
   : XMLHandler(parser), imf(0), umf(0), dmf(&dmf), state(INSIDE_MESHFUNCTION), mf_type(DOUBLE), size(size), dim(dim)
 {
   // Initialize mesh function
@@ -61,7 +61,7 @@ NewXMLMeshFunction::NewXMLMeshFunction(MeshFunction<double>& dmf, NewXMLFile& pa
 }
 
 //-----------------------------------------------------------------------------
-void NewXMLMeshFunction::start_element(const xmlChar *name, const xmlChar **attrs)
+void XMLMeshFunction::start_element(const xmlChar *name, const xmlChar **attrs)
 {
   switch ( state )
   {
@@ -87,7 +87,7 @@ void NewXMLMeshFunction::start_element(const xmlChar *name, const xmlChar **attr
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLMeshFunction::end_element(const xmlChar *name)
+void XMLMeshFunction::end_element(const xmlChar *name)
 {
   switch ( state )
   {
@@ -106,10 +106,10 @@ void NewXMLMeshFunction::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLMeshFunction::write(const MeshFunction<int>& mf, std::ostream& outfile, uint indentation_level, bool write_mesh)
+void XMLMeshFunction::write(const MeshFunction<int>& mf, std::ostream& outfile, uint indentation_level, bool write_mesh)
 {
   if (write_mesh)
-    NewXMLMesh::write(mf.mesh(), outfile, indentation_level);
+    XMLMesh::write(mf.mesh(), outfile, indentation_level);
   XMLIndent indent(indentation_level);
   outfile << indent();
   outfile << "<meshfunction type=\"int\" dim=\"" << mf.dim() << "\" size=\"" << mf.size() << "\">" << std::endl;
@@ -124,10 +124,10 @@ void NewXMLMeshFunction::write(const MeshFunction<int>& mf, std::ostream& outfil
   outfile << indent() << "</meshfunction>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void NewXMLMeshFunction::write(const MeshFunction<uint>& mf, std::ostream& outfile, uint indentation_level, bool write_mesh)
+void XMLMeshFunction::write(const MeshFunction<uint>& mf, std::ostream& outfile, uint indentation_level, bool write_mesh)
 {
   if (write_mesh)
-    NewXMLMesh::write(mf.mesh(), outfile, indentation_level);
+    XMLMesh::write(mf.mesh(), outfile, indentation_level);
   XMLIndent indent(indentation_level);
   outfile << indent();
   outfile << "<meshfunction type=\"uint\" dim=\"" << mf.dim() << "\" size=\"" << mf.size() << "\">" << std::endl;
@@ -143,10 +143,10 @@ void NewXMLMeshFunction::write(const MeshFunction<uint>& mf, std::ostream& outfi
 }
 
 //-----------------------------------------------------------------------------
-void NewXMLMeshFunction::write(const MeshFunction<double>& mf, std::ostream& outfile, uint indentation_level, bool write_mesh)
+void XMLMeshFunction::write(const MeshFunction<double>& mf, std::ostream& outfile, uint indentation_level, bool write_mesh)
 {
   if (write_mesh)
-    NewXMLMesh::write(mf.mesh(), outfile, indentation_level);
+    XMLMesh::write(mf.mesh(), outfile, indentation_level);
   XMLIndent indent(indentation_level);
   outfile << indent();
   outfile << "<meshfunction type=\"double\" dim=\"" << mf.dim() << "\" size=\"" << mf.size() << "\">" << std::endl;
@@ -162,7 +162,7 @@ void NewXMLMeshFunction::write(const MeshFunction<double>& mf, std::ostream& out
 }
 
 //-----------------------------------------------------------------------------
-void NewXMLMeshFunction::start_mesh_function(const xmlChar *name, const xmlChar **attrs)
+void XMLMeshFunction::start_mesh_function(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse size of mesh function
   size = parse_uint(name, attrs, "size");
@@ -206,7 +206,7 @@ void NewXMLMeshFunction::start_mesh_function(const xmlChar *name, const xmlChar 
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLMeshFunction::read_entity(const xmlChar *name, const xmlChar **attrs)
+void XMLMeshFunction::read_entity(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse index
   uint index = parse_uint(name, attrs, "index");

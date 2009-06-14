@@ -8,24 +8,24 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/Vector.h>
 #include "XMLIndent.h"
-#include "NewXMLVector.h"
+#include "XMLVector.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewXMLVector::NewXMLVector(GenericVector& vector, NewXMLFile& parser)
+XMLVector::XMLVector(GenericVector& vector, XMLFile& parser)
   : XMLHandler(parser), x(vector), state(OUTSIDE), values(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewXMLVector::~NewXMLVector()
+XMLVector::~XMLVector()
 {
   delete xml_array;
   delete values;
 }
 //-----------------------------------------------------------------------------
-void NewXMLVector::start_element(const xmlChar *name, const xmlChar **attrs)
+void XMLVector::start_element(const xmlChar *name, const xmlChar **attrs)
 {
   switch ( state )
   {
@@ -51,7 +51,7 @@ void NewXMLVector::start_element(const xmlChar *name, const xmlChar **attrs)
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLVector::end_element(const xmlChar *name)
+void XMLVector::end_element(const xmlChar *name)
 {
   switch ( state )
   {
@@ -71,7 +71,7 @@ void NewXMLVector::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void NewXMLVector::write(const GenericVector& vector, std::ostream& outfile, uint indentation_level)
+void XMLVector::write(const GenericVector& vector, std::ostream& outfile, uint indentation_level)
 {
   XMLIndent indent(indentation_level);
 
@@ -97,12 +97,12 @@ void NewXMLVector::write(const GenericVector& vector, std::ostream& outfile, uin
   outfile << indent() << "</vector>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void NewXMLVector::read_vector_tag(const xmlChar *name, const xmlChar **attrs)
+void XMLVector::read_vector_tag(const xmlChar *name, const xmlChar **attrs)
 {
   state = INSIDE_VECTOR;
 }
 //-----------------------------------------------------------------------------
-void NewXMLVector::read_array_tag(const xmlChar *name, const xmlChar **attrs)
+void XMLVector::read_array_tag(const xmlChar *name, const xmlChar **attrs)
 {
   dolfin_assert(values == 0);
   values = new std::vector<double>();
@@ -111,7 +111,7 @@ void NewXMLVector::read_array_tag(const xmlChar *name, const xmlChar **attrs)
   xml_array->handle();
 }
 //-----------------------------------------------------------------------------
-void NewXMLVector::end_vector()
+void XMLVector::end_vector()
 {
   // Copy values to vector
   dolfin_assert(values);

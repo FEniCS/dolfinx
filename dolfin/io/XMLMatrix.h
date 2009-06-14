@@ -4,21 +4,21 @@
 // First added:  2009-03-11
 // Last changed: 2009-03-11
 
-#ifndef __NEWNewXMLMATRIX_H
-#define __NEWNewXMLMATRIX_H
+#ifndef __XMLMATRIX_H
+#define __XMLMATRIX_H
 
 #include "XMLHandler.h"
 
 namespace dolfin
 {
   class GenericMatrix;
-  class NewXMLFile;
+  class XMLFile;
 
-  class NewXMLMatrix : public XMLHandler
+  class XMLMatrix : public XMLHandler
   {
   public:
 
-    NewXMLMatrix(GenericMatrix& matrix, NewXMLFile& parser);
+    XMLMatrix(GenericMatrix& matrix, XMLFile& parser);
 
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
