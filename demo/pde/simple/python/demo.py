@@ -4,6 +4,9 @@
 
 on the unit square with f = sin(x)*sin(y) and homogeneous Neumann
 boundary conditions.
+
+This demo is also available in more compact form in short.py,
+the world's maybe shortest PDE solver.
 """
 
 __author__ = "Anders Logg (logg@simula.no)"
