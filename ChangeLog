@@ -1,3 +1,4 @@
+ - Transition to new XML io
  - Remove GenericSparsityPattern::sort
  - Require sorted/unsorted parameter in SparsityPattern constructor
  - Improve performance of SparsityPattern::insert

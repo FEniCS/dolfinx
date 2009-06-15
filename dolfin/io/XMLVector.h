@@ -1,18 +1,23 @@
 // Copyright (C) 2003-2007 Anders Logg and Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2009.
+//
 // First added:  2009-03-06
-// Last changed: 2009-03-17
+// Last changed: 2009-06-15
 
 #ifndef __XML_VECTOR_H
 #define __XML_VECTOR_H
 
-#include <dolfin/la/Vector.h>
+#include <memory>
 #include "XMLArray.h"
 #include "XMLHandler.h"
 
 namespace dolfin
 {
+  
+  class GenericVector;
+
 
   class XMLVector : public XMLHandler
   {
@@ -39,9 +44,8 @@ namespace dolfin
     GenericVector& x;
     parser_state state;
 
-    // FIXME: Why is this a pointer?
-    std::vector<double>* values;
-    XMLArray* xml_array;
+    std::vector<double> values;
+    std::auto_ptr<XMLArray> xml_array;
 
   };
 

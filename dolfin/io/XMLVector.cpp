@@ -1,12 +1,14 @@
 // Copyright (C) 2002-2006 Anders Logg and Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2009.
+//
 // First added:  2009-03-06
-// Last changed: 2009-03-17
+// Last changed: 2009-06-15
 
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/la/Vector.h>
+#include <dolfin/la/GenericVector.h>
 #include "XMLIndent.h"
 #include "XMLVector.h"
 
@@ -21,8 +23,7 @@ XMLVector::XMLVector(GenericVector& vector, XMLFile& parser)
 //-----------------------------------------------------------------------------
 XMLVector::~XMLVector()
 {
-  delete xml_array;
-  delete values;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void XMLVector::start_element(const xmlChar *name, const xmlChar **attrs)
@@ -30,24 +31,15 @@ void XMLVector::start_element(const xmlChar *name, const xmlChar **attrs)
   switch ( state )
   {
   case OUTSIDE:
-
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
-    {
       read_vector_tag(name, attrs);
-    }
-
     break;
-
   case INSIDE_VECTOR:
     if ( xmlStrcasecmp(name, (xmlChar *) "array") == 0 )
-    {
       read_array_tag(name, attrs);
-    }
-
     break;
-
   default:
-    ;
+    break;
   }
 }
 //-----------------------------------------------------------------------------
@@ -56,18 +48,15 @@ void XMLVector::end_element(const xmlChar *name)
   switch ( state )
   {
   case INSIDE_VECTOR:
-
     if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
     {
       end_vector();
       state = DONE;
       release();
     }
-
     break;
-
   default:
-    ;
+    break;
   }
 }
 //-----------------------------------------------------------------------------
@@ -104,9 +93,8 @@ void XMLVector::read_vector_tag(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLVector::read_array_tag(const xmlChar *name, const xmlChar **attrs)
 {
-  dolfin_assert(values == 0);
-  values = new std::vector<double>();
-  xml_array = new XMLArray(*values, parser);
+  std::auto_ptr<XMLArray> _xml_array(new XMLArray(values, parser));   
+  xml_array = _xml_array;
   xml_array->read_array_tag(name, attrs);
   xml_array->handle();
 }
@@ -114,15 +102,10 @@ void XMLVector::read_array_tag(const xmlChar *name, const xmlChar **attrs)
 void XMLVector::end_vector()
 {
   // Copy values to vector
-  dolfin_assert(values);
-  x.resize(values->size());
-  double v[values->size()];
-  for (uint i = 0; i< values->size(); ++i)
-    v[i] = (*values)[i];
+  x.resize(values.size());
+  double v[values.size()];
+  for (uint i = 0; i< values.size(); ++i)
+    v[i] = values[i];
   x.set(v);
-
-  // FIXME: This look really wrong (setting to the NULL pointer)
-  values = 0;
-  xml_array = 0;
 }
 //-----------------------------------------------------------------------------
