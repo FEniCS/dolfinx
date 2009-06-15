@@ -22,8 +22,8 @@ namespace dolfin
 
     XMLDolfin(XMLHandler& dispatch, XMLFile& parser);
 
-    void start_element (const xmlChar *name, const xmlChar **attrs);
-    void end_element   (const xmlChar *name);
+    void start_element (const xmlChar* name, const xmlChar** attrs);
+    void end_element   (const xmlChar* name);
 
 
     /// Write to file
@@ -34,7 +34,7 @@ namespace dolfin
 
     enum parser_state { OUTSIDE_DOLFIN, INSIDE_DOLFIN};
 
-    void read_entry  (const xmlChar *name, const xmlChar **attrs);
+    void read_entry  (const xmlChar* name, const xmlChar** attrs);
 
     parser_state state;
     XMLHandler& dispatch;

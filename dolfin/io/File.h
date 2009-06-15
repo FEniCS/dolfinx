@@ -1,13 +1,13 @@
 // Copyright (C) 2002-2008 Johan Hoffman and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2005, 2006.
+// Modified by Garth N. Wells, 2005-2009.
 // Modified by Magnus Vikstrom 2007
 // Modified by Nuno Lopes 2008
 // Modified by Ola Skavhaug 2009
 //
 // First added:  2002-11-12
-// Last changed: 2009-03-17
+// Last changed: 2009-06-15
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -28,7 +28,6 @@ namespace dolfin
   class Sample;
   class FiniteElementSpec;
   class ParameterList;
-  class BLASFormData;
   class GenericFile;
   class FiniteElement;
   class GenericMatrix;
@@ -47,22 +46,16 @@ namespace dolfin
     enum Type {xml, matlab, octave, vtk, python, raw, xyz};
 
     /// Create a file with given name
-    File(const std::string& filename);
+    File(const std::string filename);
 
     /// Create a file with given name and type (format)
-    File(const std::string& filename, Type type);
+    File(const std::string filename, Type type);
 
     /// Create a outfile object writing to stream
     File(std::ostream& outstream);
 
     /// Destructor
     ~File();
-
-    /// Set new style for xml parsing system
-    void set_new_xml_style();
-
-    /// Validation function for XML
-    void validate_xml();
 
     //--- Input ---
 
@@ -95,9 +88,6 @@ namespace dolfin
 
     /// Read parameter list from file
     void operator>> (ParameterList& parameters);
-
-    /// Read FFC BLAS data from file
-    void operator>> (BLASFormData& blas);
 
     /// Read graph from file
     void operator>> (Graph& graph);
@@ -152,9 +142,6 @@ namespace dolfin
     /// Write parameter list to file
     void operator<< (const ParameterList& parameters);
 
-    /// Write FFC BLAS data to file
-    void operator<< (const BLASFormData& blas);
-
     /// Write graph to file
     void operator<< (const Graph& graph);
 
@@ -181,9 +168,6 @@ namespace dolfin
 
     // Pointer to implementation (envelop-letter design)
     GenericFile* file;
-
-    // Store the filename (hack related to having both NewXML* and XML*
-    std::string filename;
 
   };
 

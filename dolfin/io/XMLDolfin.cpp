@@ -30,11 +30,10 @@ void XMLDolfin::start_element(const xmlChar *name, const xmlChar **attrs)
       state = INSIDE_DOLFIN;
       dispatch.handle();
     }
-
     break;
 
   default:
-    ;
+    break;
   }
 }
 //-----------------------------------------------------------------------------
@@ -49,11 +48,10 @@ void XMLDolfin::end_element(const xmlChar *name)
       state = OUTSIDE_DOLFIN;
       release();
     }
-
     break;
 
   default:
-    ;
+    break;
   }
 }
 //-----------------------------------------------------------------------------

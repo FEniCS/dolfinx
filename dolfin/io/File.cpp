@@ -1,7 +1,7 @@
 // Copyright (C) 2002-2009 Johan Hoffman and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2005, 2006.
+// Modified by Garth N. Wells 2005-2009.
 // Modified by Haiko Etzel 2005.
 // Modified by Magnus Vikstrom 2007.
 // Modified by Nuno Lopes 2008.
@@ -9,7 +9,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2009-03-17
+// Last changed: 2009-06-15
 
 #include <string>
 #include <dolfin/main/MPI.h>
@@ -28,8 +28,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-File::File(const std::string& filename)
-  : filename(filename)
+File::File(const std::string filename)
 {
   // Choose file type base on suffix.
 
@@ -62,8 +61,7 @@ File::File(const std::string& filename)
   }
 }
 //-----------------------------------------------------------------------------
-File::File(const std::string& filename, Type type)
-  : filename(filename)
+File::File(const std::string filename, Type type)
 {
   switch (type) 
   {
@@ -89,7 +87,6 @@ File::File(const std::string& filename, Type type)
 }
 //-----------------------------------------------------------------------------
 File::File(std::ostream& outstream)
-  : filename("")
 {
   file = new XMLFile(outstream);
 }
@@ -98,19 +95,6 @@ File::~File()
 {
   delete file;
   file = 0;
-}
-//-----------------------------------------------------------------------------
-void File:: set_new_xml_style()
-{
-  delete file;
-  file = new XMLFile(filename, true);
-}
-//-----------------------------------------------------------------------------
-void File:: validate_xml()
-{
-  std::cout << "Validating xml file named *" << filename << "*" << std::endl;
-  XMLFile* valid = new XMLFile(filename, true);
-  valid->validate(filename);
 }
 //-----------------------------------------------------------------------------
 void File::operator>> (GenericVector& x)
@@ -195,13 +179,6 @@ void File::operator>> (ParameterList& parameters)
   file->read();
 
   *file >> parameters;
-}
-//-----------------------------------------------------------------------------
-void File::operator>> (BLASFormData& blas)
-{
-  file->read();
-
-  *file >> blas;
 }
 //-----------------------------------------------------------------------------
 void File::operator>> (Graph& graph)
@@ -365,13 +342,6 @@ void File::operator<< (const ParameterList& parameters)
   *file << parameters;
 }
 //-----------------------------------------------------------------------------
-void File::operator<< (const BLASFormData& blas)
-{
-  file->write();
-
-  *file << blas;
-}
-//-----------------------------------------------------------------------------
 void File::operator<< (const Graph& graph)
 {
   file->write();
@@ -392,14 +362,14 @@ void File::operator<< (const std::vector<int>& x)
 
   *file << x;
 }
-//-----------------------------------------------------------------------------void File::operator<< (const std::vector<int>& ix)
+//-----------------------------------------------------------------------------
 void File::operator<< (const std::vector<uint>& x)
 {
   file->write();
 
   *file << x;
 }
-//-----------------------------------------------------------------------------void File::operator<< (const std::vector<int>& ix)
+//-----------------------------------------------------------------------------
 void File::operator<< (const std::vector<double>& x)
 {
   file->write();
