@@ -25,7 +25,7 @@ f = Function(V, "sin(x[0])*sin(x[1])")
 a = (grad(v), grad(u)) + (v, u)
 L = (v, f)
 
-# Compute plot solution
+# Compute and plot solution
 problem = VariationalProblem(a, L)
 u = problem.solve()
 plot(u, interactive=True)
