@@ -47,13 +47,13 @@ int main()
 
   // Forms
   std::vector<std::string> forms;
-  forms.push_back("Poisson2DP1");
-  forms.push_back("Poisson2DP2");
-  forms.push_back("Poisson2DP3");
-  forms.push_back("THStokes2D");
-  forms.push_back("StabStokes2D");
-  forms.push_back("Elasticity3D");
-  forms.push_back("NSEMomentum3D");
+  forms.push_back("LAP1");
+  forms.push_back("LAP2");
+  forms.push_back("LAP2");
+  forms.push_back("TH");
+  forms.push_back("STAB");
+  forms.push_back("LE");
+  forms.push_back("NSE");
 
   // Tables for results
   Table t0("Assemble total");
@@ -64,7 +64,7 @@ int main()
   Table t5("Assemble cells");
   Table t6("Overhead");
   Table t7("Reassemble total");
-  
+
   // Benchmark assembly
   for (unsigned int i = 0; i < backends.size(); i++)
   {
@@ -105,14 +105,28 @@ int main()
 
   // Display results
   dolfin_set("output destination", "terminal");
-  cout << endl; info(t0);
-  cout << endl; info(t1);
-  cout << endl; info(t2);
-  cout << endl; info(t3);
-  cout << endl; info(t4);
-  cout << endl; info(t5);
-  cout << endl; info(t6);
-  cout << endl; info(t7);
+  std::cout << std::endl; info(t0);
+  std::cout << std::endl; info(t1);
+  std::cout << std::endl; info(t2);
+  std::cout << std::endl; info(t3);
+  std::cout << std::endl; info(t4);
+  std::cout << std::endl; info(t5);
+  std::cout << std::endl; info(t6);
+  std::cout << std::endl; info(t7);
+
+  // Display LaTeX tables
+  const bool print_latex = true;
+  if (print_latex)
+  {
+    std::cout << std::endl << t0.str_latex();
+    std::cout << std::endl << t1.str_latex();
+    std::cout << std::endl << t2.str_latex();
+    std::cout << std::endl << t3.str_latex();
+    std::cout << std::endl << t4.str_latex();
+    std::cout << std::endl << t5.str_latex();
+    std::cout << std::endl << t6.str_latex();
+    std::cout << std::endl << t7.str_latex();
+  }
   
   return 0;
 }

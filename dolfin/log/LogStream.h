@@ -13,9 +13,11 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
 
-
 namespace dolfin
 {
+
+  // FIXME: This class uses a fixed buffer size and needs to be
+  // FIXME: redesigned, possibly using std::stringstream.
 
   class LogStream
   {
@@ -36,8 +38,6 @@ namespace dolfin
 #ifdef HAS_GMP
     LogStream& operator<<(real a);
 #endif
-
-
 
     void disp() const;
 
