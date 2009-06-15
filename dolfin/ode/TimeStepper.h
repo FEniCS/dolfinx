@@ -17,6 +17,7 @@
 namespace dolfin
 {
 
+  class File;
   class ODE;
   class TimeSlab;
 

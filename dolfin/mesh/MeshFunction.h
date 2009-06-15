@@ -19,6 +19,7 @@
 namespace dolfin
 {
 
+  class File;
   class MPIManager;
   class XMLMeshFunction;
 

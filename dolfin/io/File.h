@@ -17,6 +17,21 @@
 #include <vector>
 #include "dolfin/common/types.h"
 
+#include <string>
+#include <dolfin/main/MPI.h>
+#include <dolfin/log/dolfin_log.h>
+#include "File.h"
+#include "GenericFile.h"
+#include "XMLFile.h"
+#include "MatlabFile.h"
+#include "OctaveFile.h"
+#include "PythonFile.h"
+#include "PVTKFile.h"
+#include "VTKFile.h"
+#include "RAWFile.h"
+#include "XYZFile.h"
+
+
 namespace dolfin
 {
 
@@ -57,58 +72,21 @@ namespace dolfin
     /// Destructor
     ~File();
 
-    //--- Input ---
+    /// Read from file
+    template<class T> void operator>> (T& t)
+    {
+      file->read();
+      *file >> t;
+    }
 
-    /// Read vector from file
-    void operator>> (GenericVector& x);
-
-    /// Read matrix from file
-    void operator>> (GenericMatrix& A);
-
-    /// Read mesh from file
-    void operator>> (Mesh& mesh);
-
-    /// Read local mesh data from file
-    void operator>> (LocalMeshData& data);
-
-    /// Read mesh function from file
-    void operator>> (MeshFunction<int>& meshfunction);
-    void operator>> (MeshFunction<uint>& meshfunction);
-    void operator>> (MeshFunction<double>& meshfunction);
-    void operator>> (MeshFunction<bool>& meshfunction);
-
-    /// Read function from file
-    void operator>> (Function& u);
-
-    /// Read ODE sample from file
-    void operator>> (Sample& sample);
-
-    /// Read finite element specification from file
-    void operator>> (FiniteElementSpec& spec);
-
-    /// Read parameter list from file
-    void operator>> (ParameterList& parameters);
-
-    /// Read graph from file
-    void operator>> (Graph& graph);
-
-    /// Read FunctionPlotData from file
-    void operator>> (FunctionPlotData& data);
-
-    /// Read array from file
-    void operator>> (std::vector<int>& x);
-    void operator>> (std::vector<uint>& x);
-    void operator>> (std::vector<double>& x);
-
-    /// Read maps from file
-    void operator>> (std::map<uint, int>& map);
-    void operator>> (std::map<uint, uint>& map);
-    void operator>> (std::map<uint, double>& map);
-
-    /// Read array maps from file
-    void operator>> (std::map<uint, std::vector<int> >& array_map);
-    void operator>> (std::map<uint, std::vector<uint> >& array_map);
-    void operator>> (std::map<uint, std::vector<double> >& array_map);
+    /*
+    /// Write to file
+    template<class T> void operator>> (const T& t)
+    {
+      file->write();
+      *file << t;
+    }
+    */
 
     //--- Output ---
 
