@@ -21,35 +21,35 @@ using namespace dolfin;
 
 double bench_form(std::string form_name, double (*bench_form)(Form&))
 {
-  if (form_name == "Poisson2DP1")
+  if (form_name == "LAP1")
   {
     UnitSquare mesh(N_2D, N_2D);
     Poisson2DP1::FunctionSpace V(mesh);
     Poisson2DP1::BilinearForm form(V, V);
     return bench_form(form);
   }
-  else if (form_name == "Poisson2DP2")
+  else if (form_name == "LAP2")
   {
     UnitSquare mesh(N_2D, N_2D);
     Poisson2DP2::FunctionSpace V(mesh);
     Poisson2DP2::BilinearForm form(V, V);
     return bench_form(form);
   }
-  else if (form_name == "Poisson2DP3")
+  else if (form_name == "LAP3")
   {
     UnitSquare mesh(N_2D, N_2D);
     Poisson2DP3::FunctionSpace V(mesh);
     Poisson2DP3::BilinearForm form(V, V);
     return bench_form(form);
   }
-  else if (form_name == "THStokes2D")
+  else if (form_name == "TH")
   {
     UnitSquare mesh(N_2D, N_2D);
     THStokes2D::FunctionSpace V(mesh);
     THStokes2D::BilinearForm form(V, V);
     return bench_form(form);
   }
-  else if (form_name == "StabStokes2D")
+  else if (form_name == "STAB")
   {
     UnitSquare mesh(N_2D, N_2D);
     StabStokes2D::FunctionSpace V(mesh);
@@ -57,14 +57,14 @@ double bench_form(std::string form_name, double (*bench_form)(Form&))
     StabStokes2D::BilinearForm form(V, V, h);
     return bench_form(form);
   }
-  else if (form_name == "Elasticity3D")
+  else if (form_name == "LE")
   {
     UnitCube mesh(N_3D, N_3D, N_3D);
     Elasticity3D::FunctionSpace V(mesh);
     Elasticity3D::BilinearForm form(V, V);
     return bench_form(form);
   }
-  else if (form_name == "NSEMomentum3D")
+  else if (form_name == "NSE")
   {
     UnitCube mesh(N_3D, N_3D, N_3D);
     NSEMomentum3D::FunctionSpace V(mesh);

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-19
-// Last changed: 2009-05-08
+// Last changed: 2009-06-15
 
 #include <iostream>
 
@@ -196,6 +196,47 @@ std::string Table::str() const
       s << "  " << tvalues[i][j];
     }
   }
+
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+std::string Table::str_latex() const
+{
+  if (rows.size() == 0 || cols.size() == 0)
+    return "Empty table";
+
+  std::stringstream s;
+
+  s << _title << "\n";
+  s << "\\begin{center}\n";
+  s << "\\begin{tabular}{|l|";
+  for (uint j = 0; j < cols.size(); j++)
+    s << "|c";
+  s << "|}\n";
+  s << "\\hline\n";
+  s << "& ";
+  for (uint j = 0; j < cols.size(); j++)
+  {
+    if (j < cols.size() - 1)
+      s << cols[j] << " & ";
+    else
+      s << cols[j] << " \\\\\n";
+  }
+  s << "\\hline\\hline\n";
+  for (uint i = 0; i < rows.size(); i++)
+  {
+    s << rows[i] << " & ";
+    for (uint j = 0; j < cols.size(); j++)
+    {
+      if (j < cols.size() - 1)
+        s << get(rows[i], cols[j]) << " & ";
+      else
+        s << get(rows[i], cols[j]) << " \\\\\n";
+    }
+    s << "\\hline\n";
+  }
+  s << "\\end{tabular}\n";
+  s << "\\end{center}\n";
 
   return s.str();
 }
