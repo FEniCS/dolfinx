@@ -16,7 +16,6 @@
 #include <string>
 #include "GenericFile.h"
 
-#include <string>
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericVector.h>

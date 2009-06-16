@@ -12,9 +12,10 @@
 // Last changed: 2009-06-16
 
 #include <string>
+#include <boost/filesystem.hpp>
+
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/mesh/MeshFunction.h>
 #include "File.h"
 #include "GenericFile.h"
 #include "XMLFile.h"
@@ -32,34 +33,36 @@ using namespace dolfin;
 File::File(const std::string filename)
 {
   // Choose file type base on suffix.
-
-  // FIXME: Use correct function to find the suffix; using rfind() makes
-  //        it essential that the suffixes are checked in the correct order.
-
-  if (filename.rfind(".xml.gz") != filename.npos)
-    file = new XMLFile(filename, true);
-  else if (filename.rfind(".xml") != filename.npos)
+  const boost::filesystem::path path(filename);
+  const std::string extension = boost::filesystem::extension(path);
+  if (extension == ".gz")
+  {
+    // Get suffix after discarding .gz
+    const std::string ext = boost::filesystem::extension(boost::filesystem::basename(path));
+    if (ext == ".xml")
+      file = new XMLFile(filename, true);
+    else
+      error("Unknown file type for \"%s\".", filename.c_str());
+  }
+  else if (extension == ".xml")
     file = new XMLFile(filename, false);
-  else if (filename.rfind(".m") != filename.npos)
+  else if (extension == ".m")
     file = new OctaveFile(filename);
-  else if (filename.rfind(".py") != filename.npos)
+  else if (extension == ".py")
     file = new PythonFile(filename);
-  else if (filename.rfind(".pvd") != filename.npos)
+  else if (extension == ".pvd")
   {
     if (MPI::num_processes() > 1)
       file = new PVTKFile(filename);
     else
       file = new VTKFile(filename);
   }
-  else if (filename.rfind(".raw") != filename.npos)
+  else if (extension == ".raw")
     file = new RAWFile(filename);
-  else if (filename.rfind(".xyz") != filename.npos)
+  else if (extension == ".xyz")
     file = new XYZFile(filename);
   else
-  {
-    file = 0;
     error("Unknown file type for \"%s\".", filename.c_str());
-  }
 }
 //-----------------------------------------------------------------------------
 File::File(const std::string filename, Type type)

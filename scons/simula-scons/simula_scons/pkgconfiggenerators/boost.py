@@ -73,8 +73,11 @@ def pkgLibs(compiler=None, linker=None, cflags=None, sconsEnv=None):
   # create a simple test program that uses Boost.Program_options:
   cpp_test_lib_str = r"""
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
+
 namespace po = boost::program_options;
 
+#include <string>
 #include <iostream>
 #include <iterator>
 using namespace std;
@@ -92,6 +95,10 @@ int main(int argc, char* argv[]) {
   } else {
     cout << "failure";
   }
+
+  const std::string filename = "test.h";
+  const boost::filesystem::path path(filename);
+  const std::string extension = boost::filesystem::extension(path);
 
   return 0;
 }
@@ -111,15 +118,17 @@ int main(int argc, char* argv[]) {
   # test that we can link a binary using Boost.Program_options:
   lib_dir = os.path.join(getBoostDir(sconsEnv=sconsEnv), 'lib')
   po_lib = "boost_program_options"
+  filesystem_lib = "boost_filesystem"
   app = os.path.join(os.getcwd(), "a.out")
-  cmdstr = "%s -o %s -L%s -l%s %s" % \
-           (linker, app, lib_dir, po_lib, cpp_file.replace('.cpp', '.o'))
+  cmdstr = "%s -o %s -L%s -l%s -l%s %s" % \
+           (linker, app, lib_dir, po_lib, filesystem_lib, cpp_file.replace('.cpp', '.o'))
   linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     # try to append -mt to lib
     po_lib += "-mt"
-    cmdstr = "%s -o %s -L%s -l%s %s" % \
-             (linker, app, lib_dir, po_lib, cpp_file.replace('.cpp', '.o'))
+    filesystem_lib += "-mt"
+    cmdstr = "%s -o %s -L%s -l%s -l%s %s" % \
+             (linker, app, lib_dir, po_lib, filesystem_lib, cpp_file.replace('.cpp', '.o'))
     linkFailed, cmdoutput = getstatusoutput(cmdstr)
     if linkFailed:
       remove_cppfile(cpp_file, ofile=True)
@@ -133,7 +142,7 @@ int main(int argc, char* argv[]) {
   if runFailed or not "success" in cmdoutput:
     raise UnableToRunException("Boost", errormsg=cmdoutput)
 
-  return "-L%s -l%s" % (lib_dir, po_lib)
+  return "-L%s -l%s -l%s" % (lib_dir, po_lib, filesystem_lib)
 
 def pkgCflags(sconsEnv=None):
   include_dir = None
@@ -173,12 +182,17 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
   # enough already, as the API of the headers are defined by the version.
   cpp_testublas_str = r"""
 #include <iostream>
+#include <string>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 namespace po = boost::program_options;
 
 int main() {
+  const std::string filename = "test.h";
+  const boost::filesystem::path path(filename);
+  const std::string extension = boost::filesystem::extension(path);
   po::variables_map vm;
   boost::numeric::ublas::vector<double> ubv(10);
   if ( ubv.size() == 10 ) {
