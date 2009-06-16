@@ -14,7 +14,7 @@ mesh = Mesh("../mesh2D.xml.gz")
 
 # Read mesh function from file
 file_in = File("../meshfunction.xml")
-f = MeshFunction("real", mesh)
+f = MeshFunction("double", mesh)
 file_in >> f
 
 # Write mesh function to file

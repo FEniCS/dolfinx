@@ -9,7 +9,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2009-06-17
+// Last changed: 2009-06-16
 
 #include <string>
 #include <dolfin/main/MPI.h>
@@ -33,7 +33,7 @@ File::File(const std::string filename)
 {
   // Choose file type base on suffix.
 
-  // FIXME: Use correct funtion to find the suffix; using rfind() makes
+  // FIXME: Use correct function to find the suffix; using rfind() makes
   //        it essential that the suffixes are checked in the correct order.
 
   if (filename.rfind(".xml.gz") != filename.npos)
@@ -98,53 +98,4 @@ File::~File()
   file = 0;
 }
 //-----------------------------------------------------------------------------
-// Instantiate templated functions explicitly for PyDolfin
-template void File::operator>> <GenericVector> (GenericVector& t);
-template void File::operator>> <GenericMatrix> (GenericMatrix& t);
-template void File::operator>> <Mesh> (Mesh& t);
-template void File::operator>> <LocalMeshData> (LocalMeshData& t);
-template void File::operator>> <MeshFunction<int> > (MeshFunction<int>& t);
-template void File::operator>> <MeshFunction<dolfin::uint> > (MeshFunction<dolfin::uint>& t);
-template void File::operator>> <MeshFunction<double> > (MeshFunction<double>& t);
-template void File::operator>> <MeshFunction<bool> > (MeshFunction<bool>& t);
-template void File::operator>> <Function> (Function& t);
-template void File::operator>> <Sample> (Sample& t);
-template void File::operator>> <FiniteElementSpec> (FiniteElementSpec& t);
-template void File::operator>> <ParameterList> (ParameterList& t);
-template void File::operator>> <Graph> (Graph& t);
-template void File::operator>> <FunctionPlotData> (FunctionPlotData& t);
-template void File::operator>> <std::vector<int> > (std::vector<int>& t);
-template void File::operator>> <std::vector<dolfin::uint> > (std::vector<dolfin::uint>& t);
-template void File::operator>> <std::vector<double> > (std::vector<double>& t);
-template void File::operator>> <std::map<dolfin::uint, int> > (std::map<dolfin::uint, int>& t);
-template void File::operator>> <std::map<dolfin::uint, dolfin::uint> > (std::map<dolfin::uint, dolfin::uint>& t);
-template void File::operator>> <std::map<dolfin::uint, double> > (std::map<dolfin::uint, double>& t);
-template void File::operator>> <std::map<dolfin::uint, std::vector<int> > > (std::map<dolfin::uint, std::vector<int> >& t);
-template void File::operator>> <std::map<dolfin::uint, std::vector<dolfin::uint> > > (std::map<dolfin::uint, std::vector<dolfin::uint> >& t);
-template void File::operator>> <std::map<dolfin::uint, std::vector<double> > > (std::map<dolfin::uint, std::vector<double> >& t);
-
-template void File::operator<< <GenericVector> (const GenericVector& t);
-template void File::operator<< <GenericMatrix> (const GenericMatrix& t);
-template void File::operator<< <Mesh> (const Mesh& t);
-template void File::operator<< <LocalMeshData> (const LocalMeshData& t);
-template void File::operator<< <MeshFunction<int> > (const MeshFunction<int>& t);
-template void File::operator<< <MeshFunction<dolfin::uint> > (const MeshFunction<dolfin::uint>& t);
-template void File::operator<< <MeshFunction<double> > (const MeshFunction<double>& t);
-template void File::operator<< <MeshFunction<bool> > (const MeshFunction<bool>& t);
-template void File::operator<< <Function> (const Function& t);
-template void File::operator<< <Sample> (const Sample& t);
-template void File::operator<< <FiniteElementSpec> (const FiniteElementSpec& t);
-template void File::operator<< <ParameterList> (const ParameterList& t);
-template void File::operator<< <Graph> (const Graph& t);
-template void File::operator<< <FunctionPlotData> (const FunctionPlotData& t);
-template void File::operator<< <std::vector<int> > (const std::vector<int>& t);
-template void File::operator<< <std::vector<dolfin::uint> > (const std::vector<dolfin::uint>& t);
-template void File::operator<< <std::vector<double> > (const std::vector<double>& t);
-template void File::operator<< <std::map<dolfin::uint, int> > (const std::map<dolfin::uint, int>& t);
-template void File::operator<< <std::map<dolfin::uint, dolfin::uint> > (const std::map<dolfin::uint, dolfin::uint>& t);
-template void File::operator<< <std::map<dolfin::uint, double> > (const std::map<dolfin::uint, double>& t);
-template void File::operator<< <std::map<dolfin::uint, std::vector<int> > > (const std::map<dolfin::uint, std::vector<int> >& t);
-template void File::operator<< <std::map<dolfin::uint, std::vector<dolfin::uint> > > (const std::map<dolfin::uint, std::vector<dolfin::uint> >& t);
-template void File::operator<< <std::map<dolfin::uint, std::vector<double> > > (const std::map<dolfin::uint, std::vector<double> >& t);
-
 
