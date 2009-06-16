@@ -22,6 +22,7 @@
 #include <dolfin/parameter/ParameterList.h>
 #include <libxml/parser.h>
 #include "GenericFile.h"
+#include "XMLMap.h"
 #include "XMLMesh.h"
 #include "XMLMeshFunction.h"
 #include "XMLGraph.h"
@@ -81,19 +82,18 @@ namespace dolfin
     void operator>> (MeshFunction<uint>&  input){ read_xml(input); }
     void operator>> (MeshFunction<double>&  input){ read_xml(input); }
 
-    void operator>> (std::vector<int> & x);
-    void operator>> (std::vector<uint> & x);
-    void operator>> (std::vector<double> & x);
-    void operator>> (std::map<uint, int>& map);
-    void operator>> (std::map<uint, uint>& map);
-    void operator>> (std::map<uint, double>& map);
-    void operator>> (std::map<uint, std::vector<int> >& array_map);
-    void operator>> (std::map<uint, std::vector<uint> >& array_map);
-    void operator>> (std::map<uint, std::vector<double> >& array_map);
+    void operator>> (std::vector<int> & x){ read_xml_array(x); }
+    void operator>> (std::vector<uint> & x){ read_xml_array(x); }
+    void operator>> (std::vector<double> & x){ read_xml_array(x); }
+    void operator>> (std::map<uint, int>& map){ read_xml_map(map); }
+    void operator>> (std::map<uint, uint>& map){ read_xml_map(map); }
+    void operator>> (std::map<uint, double>& map){ read_xml_map(map); }
+    void operator>> (std::map<uint, std::vector<int> >& array_map){ read_xml_map(array_map); }
+    void operator>> (std::map<uint, std::vector<uint> >& array_map){ read_xml_map(array_map); }
+    void operator>> (std::map<uint, std::vector<double> >& array_map){ read_xml_map(array_map); }
 
     // Output
-
-    void operator<< (const Mesh& output)         { write_xml(output); }
+    void operator<< (const Mesh& output)          { write_xml(output); }
     void operator<< (const Graph& output)         { write_xml(output); }
     void operator<< (const GenericMatrix& output) { write_xml(output); }
     void operator<< (const GenericVector& output) { write_xml(output); }
@@ -103,15 +103,15 @@ namespace dolfin
     void operator<< (const MeshFunction<uint>&  output){ write_xml(output); }
     void operator<< (const MeshFunction<double>&  output){ write_xml(output); }
 
-    void operator<< (const std::vector<int> & x);
-    void operator<< (const std::vector<uint> & x);
-    void operator<< (const std::vector<double> & x);
-    void operator<< (const std::map<uint, int>& map);
-    void operator<< (const std::map<uint, uint>& map);
-    void operator<< (const std::map<uint, double>& map);
-    void operator<< (const std::map<uint, std::vector<int> >& array_map);
-    void operator<< (const std::map<uint, std::vector<uint> >& array_map);
-    void operator<< (const std::map<uint, std::vector<double> >& array_map);
+    void operator<< (const std::vector<int> & x){ write_xml_array(x); }
+    void operator<< (const std::vector<uint> & x){ write_xml_array(x); }
+    void operator<< (const std::vector<double> & x){ write_xml_array(x); }
+    void operator<< (const std::map<uint, int>& map){ write_xml_map(map); }
+    void operator<< (const std::map<uint, uint>& map){ write_xml_map(map); }
+    void operator<< (const std::map<uint, double>& map){ write_xml_map(map); }
+    void operator<< (const std::map<uint, std::vector<int> >& array_map){ write_xml_map(array_map); }
+    void operator<< (const std::map<uint, std::vector<uint> >& array_map){ write_xml_map(array_map); }
+    void operator<< (const std::map<uint, std::vector<double> >& array_map){ write_xml_map(array_map); }
 
     // Friends
     friend void new_sax_start_element (void *ctx, const xmlChar *name, const xmlChar **attrs);
@@ -130,6 +130,44 @@ namespace dolfin
     XMLHandler* top();
 
   private:
+
+    template<class T> void read_xml_map(T& map)
+    {
+      info(1, "Reading map from file %s.", filename.c_str());
+      XMLMap xml_map(map, *this);
+      XMLDolfin xml_dolfin(xml_map, *this);
+      xml_dolfin.handle();
+      parse();
+      if ( !handlers.empty() )
+        error("Hander stack not empty. Something is wrong!");
+    }
+
+    template<class T> void read_xml_array(T& x)
+    {
+      info(1, "Reading array from file %s.", filename.c_str());
+      XMLArray xml_array(x, *this);
+      XMLDolfin xml_dolfin(xml_array, *this);
+      xml_dolfin.handle();
+      parse();
+      if ( !handlers.empty() )
+        error("Hander stack not empty. Something is wrong!");
+    }
+
+
+    template<class T> void write_xml_map(const T& map)
+    {
+      open_file();
+      XMLMap::write(map, *outstream, 1);
+      close_file();
+    }
+
+    template<class T> void write_xml_array(const T& x)
+    {
+      open_file();
+      XMLArray::write(x, *outstream, 1);
+      close_file();
+    } 
+
     std::stack<XMLHandler*> handlers;
     xmlSAXHandler* sax;
     std::ostream* outstream;

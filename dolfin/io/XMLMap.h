@@ -1,8 +1,10 @@
 // Copyright (C) 2009 Ola Skavhaug
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2009.
+//
 // First added:  2009-03-02
-// Last changed: 2009-03-11
+// Last changed: 2009-06-16
 
 #ifndef __XMLMAP_H
 #define __XMLMAP_H
@@ -10,12 +12,12 @@
 #include <vector>
 #include <map>
 #include "XMLHandler.h"
-#include "XMLFile.h"
+//#include "XMLFile.h"
 
 namespace dolfin
 {
 
-  //class XMLMesh;
+  class XMLFile;
   class XMLArray;
 
   class XMLMap : public XMLHandler
