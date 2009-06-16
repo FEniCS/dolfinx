@@ -34,7 +34,7 @@ def next(self):
 
 %template(MeshFunctionInt) dolfin::MeshFunction<int>;
 %template(MeshFunctionUInt) dolfin::MeshFunction<unsigned int>;
-%template(MeshFunctionReal) dolfin::MeshFunction<double>;
+%template(MeshFunctionDouble) dolfin::MeshFunction<double>;
 %template(MeshFunctionBool) dolfin::MeshFunction<bool>;
 
 %pythoncode
@@ -45,17 +45,17 @@ class MeshFunction(object):
             return MeshFunctionInt(*args)
         if tp == "uint":
             return MeshFunctionUInt(*args)
-        elif tp == "real":
-            return MeshFunctionReal(*args)
+        elif tp == "double":
+            return MeshFunctionDouble(*args)
         elif tp == "bool":
             return MeshFunctionBool(*args)
         else:
             raise RuntimeError, "Cannot create a MeshFunction of %s" % (tp,)
 
-MeshFunctionInt.__call__  = MeshFunctionInt.get
-MeshFunctionUInt.__call__ = MeshFunctionUInt.get
-MeshFunctionReal.__call__ = MeshFunctionReal.get
-MeshFunctionBool.__call__ = MeshFunctionBool.get
+MeshFunctionInt.__call__    = MeshFunctionInt.get
+MeshFunctionUInt.__call__   = MeshFunctionUInt.get
+MeshFunctionDouble.__call__ = MeshFunctionDouble.get
+MeshFunctionBool.__call__   = MeshFunctionBool.get
 
 %}
 

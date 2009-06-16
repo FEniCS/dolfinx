@@ -14,6 +14,7 @@
 #include <string>
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include "File.h"
 #include "GenericFile.h"
 #include "XMLFile.h"
@@ -97,162 +98,53 @@ File::~File()
   file = 0;
 }
 //-----------------------------------------------------------------------------
-void File::operator<< (const GenericVector& x)
-{
-  file->write();
+// Instantiate templated functions explicitly for PyDolfin
+template void File::operator>> <GenericVector> (GenericVector& t);
+template void File::operator>> <GenericMatrix> (GenericMatrix& t);
+template void File::operator>> <Mesh> (Mesh& t);
+template void File::operator>> <LocalMeshData> (LocalMeshData& t);
+template void File::operator>> <MeshFunction<int> > (MeshFunction<int>& t);
+template void File::operator>> <MeshFunction<dolfin::uint> > (MeshFunction<dolfin::uint>& t);
+template void File::operator>> <MeshFunction<double> > (MeshFunction<double>& t);
+template void File::operator>> <MeshFunction<bool> > (MeshFunction<bool>& t);
+template void File::operator>> <Function> (Function& t);
+template void File::operator>> <Sample> (Sample& t);
+template void File::operator>> <FiniteElementSpec> (FiniteElementSpec& t);
+template void File::operator>> <ParameterList> (ParameterList& t);
+template void File::operator>> <Graph> (Graph& t);
+template void File::operator>> <FunctionPlotData> (FunctionPlotData& t);
+template void File::operator>> <std::vector<int> > (std::vector<int>& t);
+template void File::operator>> <std::vector<dolfin::uint> > (std::vector<dolfin::uint>& t);
+template void File::operator>> <std::vector<double> > (std::vector<double>& t);
+template void File::operator>> <std::map<dolfin::uint, int> > (std::map<dolfin::uint, int>& t);
+template void File::operator>> <std::map<dolfin::uint, dolfin::uint> > (std::map<dolfin::uint, dolfin::uint>& t);
+template void File::operator>> <std::map<dolfin::uint, double> > (std::map<dolfin::uint, double>& t);
+template void File::operator>> <std::map<dolfin::uint, std::vector<int> > > (std::map<dolfin::uint, std::vector<int> >& t);
+template void File::operator>> <std::map<dolfin::uint, std::vector<dolfin::uint> > > (std::map<dolfin::uint, std::vector<dolfin::uint> >& t);
+template void File::operator>> <std::map<dolfin::uint, std::vector<double> > > (std::map<dolfin::uint, std::vector<double> >& t);
 
-  *file << x;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const GenericMatrix& A)
-{
-  file->write();
+template void File::operator<< <GenericVector> (const GenericVector& t);
+template void File::operator<< <GenericMatrix> (const GenericMatrix& t);
+template void File::operator<< <Mesh> (const Mesh& t);
+template void File::operator<< <LocalMeshData> (const LocalMeshData& t);
+template void File::operator<< <MeshFunction<int> > (const MeshFunction<int>& t);
+template void File::operator<< <MeshFunction<dolfin::uint> > (const MeshFunction<dolfin::uint>& t);
+template void File::operator<< <MeshFunction<double> > (const MeshFunction<double>& t);
+template void File::operator<< <MeshFunction<bool> > (const MeshFunction<bool>& t);
+template void File::operator<< <Function> (const Function& t);
+template void File::operator<< <Sample> (const Sample& t);
+template void File::operator<< <FiniteElementSpec> (const FiniteElementSpec& t);
+template void File::operator<< <ParameterList> (const ParameterList& t);
+template void File::operator<< <Graph> (const Graph& t);
+template void File::operator<< <FunctionPlotData> (const FunctionPlotData& t);
+template void File::operator<< <std::vector<int> > (const std::vector<int>& t);
+template void File::operator<< <std::vector<dolfin::uint> > (const std::vector<dolfin::uint>& t);
+template void File::operator<< <std::vector<double> > (const std::vector<double>& t);
+template void File::operator<< <std::map<dolfin::uint, int> > (const std::map<dolfin::uint, int>& t);
+template void File::operator<< <std::map<dolfin::uint, dolfin::uint> > (const std::map<dolfin::uint, dolfin::uint>& t);
+template void File::operator<< <std::map<dolfin::uint, double> > (const std::map<dolfin::uint, double>& t);
+template void File::operator<< <std::map<dolfin::uint, std::vector<int> > > (const std::map<dolfin::uint, std::vector<int> >& t);
+template void File::operator<< <std::map<dolfin::uint, std::vector<dolfin::uint> > > (const std::map<dolfin::uint, std::vector<dolfin::uint> >& t);
+template void File::operator<< <std::map<dolfin::uint, std::vector<double> > > (const std::map<dolfin::uint, std::vector<double> >& t);
 
-  *file << A;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const Mesh& mesh)
-{
-  file->write();
 
-  *file << mesh;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const LocalMeshData& data)
-{
-  file->write();
-
-  *file << data;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const MeshFunction<int>& meshfunction)
-{
-  file->write();
-
-  *file << meshfunction;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const MeshFunction<uint>& meshfunction)
-{
-  file->write();
-
-  *file << meshfunction;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const MeshFunction<double>& meshfunction)
-{
-  file->write();
-
-  *file << meshfunction;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const MeshFunction<bool>& meshfunction)
-{
-  file->write();
-
-  *file << meshfunction;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const Function& v)
-{
-  file->write();
-
-  *file << v;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const Sample& sample)
-{
-  file->write();
-
-  *file << sample;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const FiniteElementSpec& spec)
-{
-  file->write();
-
-  *file << spec;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const ParameterList& parameters)
-{
-  file->write();
-
-  *file << parameters;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const Graph& graph)
-{
-  file->write();
-
-  *file << graph;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const FunctionPlotData& data)
-{
-  file->write();
-
-  *file << data;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const std::vector<int>& x)
-{
-  file->write();
-
-  *file << x;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const std::vector<uint>& x)
-{
-  file->write();
-
-  *file << x;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const std::vector<double>& x)
-{
-  file->write();
-
-  *file << x;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const std::map<uint, int>& array_map)
-{
-  file->write();
-
-  *file << array_map;
-}
-void File::operator<< (const std::map<uint, uint>& array_map)
-{
-  file->write();
-
-  *file << array_map;
-}
-void File::operator<< (const std::map<uint, double>& array_map)
-{
-  file->write();
-
-  *file << array_map;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const std::map<uint, std::vector<int> >& array_map)
-{
-  file->write();
-
-  *file << array_map;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const std::map<uint, std::vector<uint> >& array_map)
-{
-  file->write();
-
-  *file << array_map;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const std::map<uint, std::vector<double> >& array_map)
-{
-  file->write();
-
-  *file << array_map;
-}
-//-----------------------------------------------------------------------------
