@@ -2,18 +2,17 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Niclas Jansson, 2008.
-// Modified by Ola Skavhaug 2009.
+// Modified by Ola Skavhaug, 2009.
+// Modified by Garth N. Wells, 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2009-03-04
+// Last changed: 2009-06-17
 
 // FIXME: Use streams instead of stdio
-#include <stdio.h>
+//#include <stdio.h>
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/plot/FunctionPlotData.h>
-//#include <dolfin/la/GenericVector.h>
 #include "GenericFile.h"
 
 using namespace dolfin;
@@ -76,29 +75,14 @@ void GenericFile::operator>> (MeshFunction<bool>& meshfunction)
   read_not_impl("MeshFunction<bool>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (Function& f)
-{
-  read_not_impl("Function");
-}
-//-----------------------------------------------------------------------------
 void GenericFile::operator>> (Sample& sample)
 {
   read_not_impl("Sample");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (FiniteElementSpec& spec)
-{
-  read_not_impl("FiniteElementSpec");
-}
-//-----------------------------------------------------------------------------
 void GenericFile::operator>> (ParameterList& parameters)
 {
   read_not_impl("ParameterList");
-}
-//-----------------------------------------------------------------------------
-void GenericFile::operator>> (BLASFormData& blas)
-{
-  read_not_impl("BLASFormData");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator>> (Graph& graph)
@@ -206,19 +190,9 @@ void GenericFile::operator<< (const Sample& sample)
   write_not_impl("Sample");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const FiniteElementSpec& spec)
-{
-  write_not_impl("FiniteElementSpec");
-}
-//-----------------------------------------------------------------------------
 void GenericFile::operator<< (const ParameterList& parameters)
 {
   write_not_impl("ParameterList");
-}
-//-----------------------------------------------------------------------------
-void GenericFile::operator<< (const BLASFormData& blas)
-{
-  write_not_impl("BLASFormData");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const Graph& graph)
@@ -287,7 +261,8 @@ void GenericFile::write()
   if ( type == "VTK" && MPI::process_number() > 0)
     opened_write = true;
 
-  if ( !opened_write ) {
+  if ( !opened_write ) 
+  {
     // Clear file
     FILE* fp = fopen(filename.c_str(), "w");
     if (!fp)

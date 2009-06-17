@@ -111,15 +111,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
 }
 //-----------------------------------------------------------------------------
-Function::Function(std::string filename)
-  : Variable("v", "unnamed function"),
-    _function_space(static_cast<FunctionSpace*>(0)),
-    _vector(static_cast<GenericVector*>(0))
-{
-  File file(filename);
-  file >> *this;
-}
-//-----------------------------------------------------------------------------
 Function::Function(const SubFunction& v)
   : Variable("v", "unnamed function"),
     _function_space(v.v.function_space().extract_sub_space(v.component)),

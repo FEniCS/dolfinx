@@ -222,9 +222,6 @@ namespace dolfin
     // Constructor
     DiscreteFunction(const SubFunction& v) : Function(v){}
 
-    // Constructor
-    DiscreteFunction(std::string filename) : Function(filename){}
-
     ~DiscreteFunction(){}
   };
 }

@@ -66,9 +66,6 @@ namespace dolfin
     /// Create function from vector of dofs stored to file (shared data)
     Function(boost::shared_ptr<const FunctionSpace> V, std::string filename);
 
-    /// Create function from file (don't use, will be removed)
-    Function(std::string filename);
-
     /// Create function from sub function
     Function(const SubFunction& v);
 

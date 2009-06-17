@@ -302,33 +302,33 @@ SUPGStabilizer::SUPGStabilizer(const FunctionSpace& V, const Function& f, double
 
 }
 //-----------------------------------------------------------------------------
-  void SUPGStabilizer::eval(double* values, const Data& data) const
-  {
-    dolfin_assert(values);
-    dolfin_assert(field);
-    double field_norm = 0.0;
-    double tau = 0.0;
-    double h = data.cell().diameter();
-    UFCCell ufc_cell(data.cell());
+void SUPGStabilizer::eval(double* values, const Data& data) const
+{
+  dolfin_assert(values);
+  dolfin_assert(field);
+  double field_norm = 0.0;
+  double tau = 0.0;
+  const double h = data.cell().diameter();
+  UFCCell ufc_cell(data.cell());
 
-    // Evaluate the advective field
-    field->eval(values, data.x, ufc_cell, data.cell().index());
+  // Evaluate the advective field
+  field->eval(values, data.x, ufc_cell, data.cell().index());
 
-    // Compute the norm of the field
-    for (uint i = 0;i < geometric_dimension(); ++i)
-      field_norm += values[i]*values[i];
-    field_norm = sqrt(field_norm);
+  // Compute the norm of the field
+  for (uint i = 0;i < geometric_dimension(); ++i)
+    field_norm += values[i]*values[i];
+  field_norm = sqrt(field_norm);
 
-    // Local Péclet number
-    double PE = 0.5*field_norm * h/sigma;
+  // Local Péclet number
+  const double PE = 0.5*field_norm*h/sigma;
 
-    // Compute the local stabilizing factor tau
-    if (PE > DOLFIN_EPS)
-      tau = 1/std::tanh(PE)-1/PE;
+  // Compute the local stabilizing factor tau
+  if (PE > DOLFIN_EPS)
+    tau = 1.0/std::tanh(PE)-1.0/PE;
 
-    // Weight the field with the norm, together with the cell size and
-    // the local stabilizing factor
-    for (uint i = 0;i < geometric_dimension(); ++i)
-      values[i] *= 0.5*h*tau/field_norm;
-  }
+  // Weight the field with the norm, together with the cell size and
+  // the local stabilizing factor
+  for (uint i = 0; i < geometric_dimension(); ++i)
+    values[i] *= 0.5*h*tau/field_norm;
+}
 //-----------------------------------------------------------------------------

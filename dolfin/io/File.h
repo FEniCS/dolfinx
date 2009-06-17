@@ -66,9 +66,7 @@ namespace dolfin
     void operator>> (MeshFunction<dolfin::uint>& t){ read(t); }
     void operator>> (MeshFunction<double>& t){ read(t); }
     void operator>> (MeshFunction<bool>& t){ read(t); }
-    void operator>> (Function& t){ read(t); }
     void operator>> (Sample& t){ read(t); }
-    void operator>> (FiniteElementSpec& t){ read(t); }
     void operator>> (ParameterList& t){ read(t); }
     void operator>> (Graph& t){ read(t); }
     void operator>> (FunctionPlotData& t){ read(t); }
@@ -93,7 +91,6 @@ namespace dolfin
     void operator<< (const MeshFunction<bool>& t){ write(t); }
     void operator<< (const Function& t){ write(t); }
     void operator<< (const Sample& t){ write(t); }
-    void operator<< (const FiniteElementSpec& t){ write(t); }
     void operator<< (const ParameterList& t){ write(t); }
     void operator<< (const Graph& t){ write(t); }
     void operator<< (const FunctionPlotData& t){ write(t); }
