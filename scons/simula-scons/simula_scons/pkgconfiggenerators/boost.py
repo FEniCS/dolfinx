@@ -63,86 +63,7 @@ return 0;
   return full_boost_version
 
 def pkgLibs(compiler=None, linker=None, cflags=None, sconsEnv=None):
-  if not compiler:
-    compiler = get_compiler(sconsEnv)
-  if not linker:
-    linker = get_linker(sconsEnv)
-  if not cflags:
-    cflags = pkgCflags(sconsEnv=sconsEnv)
-
-  # create a simple test program that uses Boost.Program_options:
-  cpp_test_lib_str = r"""
-#include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
-
-namespace po = boost::program_options;
-
-#include <string>
-#include <iostream>
-#include <iterator>
-using namespace std;
-
-int main(int argc, char* argv[]) {
-  po::options_description desc("Allowed options");
-  desc.add_options() ("foo", po::value<string>(), "just an option");
-
-  po::variables_map vm;
-  po::store(po::parse_command_line(argc, argv, desc), vm);
-  po::notify(vm);
-
-  if (vm.count("foo")) {
-    cout << "success, foo is " << vm["foo"].as<string>();
-  } else {
-    cout << "failure";
-  }
-
-  const std::string filename = "test.h";
-  const boost::filesystem::path path(filename);
-  const std::string extension = boost::filesystem::extension(path);
-
-  return 0;
-}
-"""
-  cpp_file = "boost_config_test_lib.cpp"
-  write_cppfile(cpp_test_lib_str, cpp_file)
-
-  # test that we can compile:
-  cmdstr = "%s %s -c %s" % (compiler, cflags, cpp_file)
-  compileFailed, cmdoutput = getstatusoutput(cmdstr)
-  if compileFailed:
-    remove_cppfile(cpp_file)
-    raise UnableToCompileException("Boost", cmd=cmdstr,
-                                   program=cpp_test_lib_str,
-                                   errormsg=cmdoutput)
-
-  # test that we can link a binary using Boost.Program_options:
-  lib_dir = os.path.join(getBoostDir(sconsEnv=sconsEnv), 'lib')
-  po_lib = "boost_program_options"
-  filesystem_lib = "boost_filesystem"
-  app = os.path.join(os.getcwd(), "a.out")
-  cmdstr = "%s -o %s -L%s -l%s -l%s %s" % \
-           (linker, app, lib_dir, po_lib, filesystem_lib, cpp_file.replace('.cpp', '.o'))
-  linkFailed, cmdoutput = getstatusoutput(cmdstr)
-  if linkFailed:
-    # try to append -mt to lib
-    po_lib += "-mt"
-    filesystem_lib += "-mt"
-    cmdstr = "%s -o %s -L%s -l%s -l%s %s" % \
-             (linker, app, lib_dir, po_lib, filesystem_lib, cpp_file.replace('.cpp', '.o'))
-    linkFailed, cmdoutput = getstatusoutput(cmdstr)
-    if linkFailed:
-      remove_cppfile(cpp_file, ofile=True)
-      raise UnableToLinkException("Boost", cmd=cmdstr,
-                                  program=cpp_test_lib_str,
-                                  errormsg=cmdoutput)
-  
-  # test that we can run the binary:
-  runFailed, cmdoutput = getstatusoutput(app + ' --foo=ok')
-  remove_cppfile(cpp_file, ofile=True, execfile=True)
-  if runFailed or not "success" in cmdoutput:
-    raise UnableToRunException("Boost", errormsg=cmdoutput)
-
-  return "-L%s -l%s -l%s" % (lib_dir, po_lib, filesystem_lib)
+  return ""
 
 def pkgCflags(sconsEnv=None):
   include_dir = None
@@ -176,24 +97,16 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
   if not version:
     version = pkgVersion(compiler=compiler, cflags=cflags, sconsEnv=sconsEnv)
   if not libs:
-    libs = pkgLibs(sconsEnv=sconsEnv)
+    libs = pkgLibs(compiler=compiler, linker=linker,
+                   cflags=cflags, sconsEnv=sconsEnv)
   
   # All we want to do is to compile in some boost headers, so really know
   # enough already, as the API of the headers are defined by the version.
   cpp_testublas_str = r"""
 #include <iostream>
-#include <string>
 #include <boost/numeric/ublas/vector.hpp>
-#include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
-
-namespace po = boost::program_options;
 
 int main() {
-  const std::string filename = "test.h";
-  const boost::filesystem::path path(filename);
-  const std::string extension = boost::filesystem::extension(path);
-  po::variables_map vm;
   boost::numeric::ublas::vector<double> ubv(10);
   if ( ubv.size() == 10 ) {
     std::cout << "ublas ok";
@@ -204,13 +117,13 @@ int main() {
 """
   write_cppfile(cpp_testublas_str, "boost_config_test_ublas.cpp")
 
-  cmdstr = "%s -o a.out %s boost_config_test_ublas.cpp %s" % \
-           (compiler, cflags, libs)
+  cmdstr = "%s -o a.out %s boost_config_test_ublas.cpp" % (compiler, cflags)
   compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
     remove_cppfile("boost_config_test_ublas.cpp")
     raise UnableToCompileException("Boost", cmd=cmdstr,
-                                   program=cpp_testublas_str, errormsg=cmdoutput)
+                                   program=cpp_testublas_str,
+                                   errormsg=cmdoutput)
 
   cmdstr = os.path.join(os.getcwd(), "a.out")
   runFailed, cmdoutput = getstatusoutput(cmdstr)
@@ -222,7 +135,10 @@ int main() {
 
   return version, libs, cflags
 
-def generatePkgConf(directory=suitablePkgConfDir(), sconsEnv=None, **kwargs):
+def generatePkgConf(directory=None, sconsEnv=None, **kwargs):
+
+  if directory is None:
+    directory = suitablePkgConfDir()
 
   version, libs, cflags = pkgTests(sconsEnv=sconsEnv)
 
@@ -231,8 +147,8 @@ Version: %s
 Description: The Boost library of template code
 Libs: %s
 Cflags: %s
-""" % (version, repr(libs)[1:-1], repr(cflags)[1:-1])
-  # FIXME:      ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^
+""" % (version, libs, repr(cflags)[1:-1])
+  # FIXME:            ^^^^^^^^^^^^^^^^^^
   # Is there a better way to handle this on Windows?
   
   pkg_file = open(os.path.join(directory,"boost.pc"), 'w')
