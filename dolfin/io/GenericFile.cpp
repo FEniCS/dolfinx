@@ -8,9 +8,6 @@
 // First added:  2002-11-12
 // Last changed: 2009-06-17
 
-// FIXME: Use streams instead of stdio
-//#include <stdio.h>
-
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include "GenericFile.h"
