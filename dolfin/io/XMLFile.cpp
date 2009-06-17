@@ -1,8 +1,10 @@
 // Copyright (C) 2009 Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2009.
+//
 // First added: 2009-03-03
-// Last changed: 2009-03-11
+// Last changed: 2009-06-16
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>

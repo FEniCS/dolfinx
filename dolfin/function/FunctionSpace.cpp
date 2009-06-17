@@ -162,12 +162,16 @@ void FunctionSpace::eval(double* values,
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(GenericVector& coefficients,
-                                const Function& v) const
+                                const Function& v, std::string meshes) const
 {
   dolfin_assert(_mesh);
   dolfin_assert(_element);
   dolfin_assert(_dofmap);
-  dolfin_assert(&v.function_space().mesh() == &mesh());
+  
+  if (meshes == "matching")
+    dolfin_assert(&v.function_space().mesh() == &mesh());
+  else if (meshes != "non-matching")
+    error("Unknown mesh matching string %s in FunctionSpace::interpolate", meshes.c_str());
 
   // Initialize vector of coefficients
   coefficients.resize(_dofmap->global_dimension());

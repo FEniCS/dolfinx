@@ -84,9 +84,9 @@ namespace dolfin
               const ufc::cell& ufc_cell,
               uint cell_index) const;
 
-    /// Interpolate function v to function space
+    /// Interpolate function v in function space (meshes = "matching" or "non-matching")
     void interpolate(GenericVector& coefficients,
-                     const Function& v) const;
+                     const Function& v, std::string meshes = "matching") const;
 
     /// Interpolate function v in function space to vertices of mesh
     void interpolate(double* vertex_values,
