@@ -6,7 +6,7 @@
 # the string 'BENCH' is ignored (useful for printing progress
 # information that should not be logged).
 #
-# Anders Logg, 2009-05-24
+# Anders Logg, 2009-05-24 -- 2009-06-17
 
 unset LANG
 LOG=bench.log
@@ -21,5 +21,6 @@ hg tip >> $LOG
 
 # Run benchmark
 echo "Running benchmark..."
-./bench | grep -v BENCH >> $LOG
+time -f "%E" --output=timing.tmp ./bench | grep -v BENCH >> $LOG
 echo "" >> $LOG
+echo "Total time: "`cat timing.tmp` >> $LOG
