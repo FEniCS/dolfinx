@@ -5,6 +5,9 @@ import boost
 
 from commonPkgConfigUtils import *
 
+# Use the same pkgTests function as in boost.py:
+pkgTests = boost.pkgTests
+
 def pkgLibs(compiler=None, linker=None, cflags=None, sconsEnv=None):
   if not compiler:
     compiler = get_compiler(sconsEnv)
