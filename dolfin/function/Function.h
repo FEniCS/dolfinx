@@ -122,8 +122,8 @@ namespace dolfin
     /// Interpolate function to local function space on cell with check on function space
     void interpolate(double* coefficients, const FunctionSpace& V, const ufc::cell& ufc_cell, uint cell_index, int local_facet=-1) const;
 
-    /// Interpolate function to given function space
-    void interpolate(GenericVector& coefficients, const FunctionSpace& V) const;
+    /// Interpolate function (possibly non-matching meshes)
+    void interpolate(const Function& v);
 
     /// Interpolate function to its function space (if not already a discrete function)
     void interpolate();
@@ -133,8 +133,6 @@ namespace dolfin
 
     /// Friends
     friend class Coefficient;
-    friend class LinearPDE;
-    friend class NonlinearPDE;
     friend class VariationalProblem;
 
   protected:

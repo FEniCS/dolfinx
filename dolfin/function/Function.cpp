@@ -54,7 +54,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _function_space(V),
     _vector(reference_to_no_delete_pointer(x))
 {
-  // Basic test
   dolfin_assert(V->dofmap().global_dimension() == x.size());
 }
 //-----------------------------------------------------------------------------
@@ -64,7 +63,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _function_space(V),
     _vector(x)
 {
-  // Basic test
   dolfin_assert(V->dofmap().global_dimension() == x->size());
 }
 //-----------------------------------------------------------------------------
@@ -73,7 +71,6 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
     _function_space(reference_to_no_delete_pointer(V)),
     _vector(reference_to_no_delete_pointer(x))
 {
-  // Basic test
   dolfin_assert(V.dofmap().global_dimension() == x.size());
 }
 //-----------------------------------------------------------------------------
@@ -181,7 +178,7 @@ const Function& Function::operator= (const Function& v)
   else
   {
     info("Assignment from user-defined function, interpolating.");
-    v.interpolate(*_vector, *_function_space);
+    function_space().interpolate(*_vector, v);
   }
 
   return *this;
@@ -340,10 +337,11 @@ void Function::interpolate(double* coefficients,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(GenericVector& coefficients,
-                           const FunctionSpace& V) const
+void Function::interpolate(const Function& v)
 {
-  V.interpolate(coefficients, *this);
+  dolfin_assert(has_function_space());
+  dolfin_assert(v.has_function_space());
+  function_space().interpolate(this->vector(), v, "non-matching");
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(double* vertex_values) const
@@ -366,7 +364,7 @@ void Function::interpolate()
   // Interpolate to vector
   DefaultFactory factory;
   boost::shared_ptr<GenericVector> coefficients(factory.create_vector());
-  interpolate(*coefficients, function_space());
+  function_space().interpolate(*coefficients, *this);  
 
   // Set values
   init();
