@@ -26,10 +26,8 @@ namespace dolfin
   template <class T> class MeshFunction;
   class Function;
   class Sample;
-  class FiniteElementSpec;
   class ParameterList;
   class GenericFile;
-  class FiniteElement;
   class GenericMatrix;
   class GenericVector;
   class FunctionPlotData;
@@ -83,9 +81,6 @@ namespace dolfin
     /// Read ODE sample from file
     void operator>> (Sample& sample);
 
-    /// Read finite element specification from file
-    void operator>> (FiniteElementSpec& spec);
-
     /// Read parameter list from file
     void operator>> (ParameterList& parameters);
 
@@ -135,9 +130,6 @@ namespace dolfin
 
     /// Write ODE sample to file
     void operator<< (const Sample& sample);
-
-    /// Write finite element specification to file
-    void operator<< (const FiniteElementSpec& spec);
 
     /// Write parameter list to file
     void operator<< (const ParameterList& parameters);

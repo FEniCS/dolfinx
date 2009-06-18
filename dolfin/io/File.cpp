@@ -156,25 +156,11 @@ void File::operator>> (MeshFunction<bool>& meshfunction)
   *file >> meshfunction;
 }
 //-----------------------------------------------------------------------------
-void File::operator>> (Function& v)
-{
-  file->read();
-
-  *file >> v;
-}
-//-----------------------------------------------------------------------------
 void File::operator>> (Sample& sample)
 {
   file->read();
 
   *file >> sample;
-}
-//-----------------------------------------------------------------------------
-void File::operator>> (FiniteElementSpec& spec)
-{
-  file->read();
-
-  *file >> spec;
 }
 //-----------------------------------------------------------------------------
 void File::operator>> (ParameterList& parameters)
@@ -329,13 +315,6 @@ void File::operator<< (const Sample& sample)
   file->write();
 
   *file << sample;
-}
-//-----------------------------------------------------------------------------
-void File::operator<< (const FiniteElementSpec& spec)
-{
-  file->write();
-
-  *file << spec;
 }
 //-----------------------------------------------------------------------------
 void File::operator<< (const ParameterList& parameters)
