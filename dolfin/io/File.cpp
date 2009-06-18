@@ -365,12 +365,14 @@ void File::operator<< (const std::map<uint, int>& array_map)
 
   *file << array_map;
 }
+//-----------------------------------------------------------------------------
 void File::operator<< (const std::map<uint, uint>& array_map)
 {
   file->write();
 
   *file << array_map;
 }
+//-----------------------------------------------------------------------------
 void File::operator<< (const std::map<uint, double>& array_map)
 {
   file->write();
@@ -390,6 +392,7 @@ void File::operator<< (const std::map<uint, std::vector<uint> >& array_map)
   file->write();
 
   *file << array_map;
+
 }
 //-----------------------------------------------------------------------------
 void File::operator<< (const std::map<uint, std::vector<double> >& array_map)

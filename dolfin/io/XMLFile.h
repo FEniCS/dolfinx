@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Skavhaug.
+// Copyright (C) 2009 Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-03
@@ -114,8 +114,8 @@ namespace dolfin
     void operator<< (const std::map<uint, std::vector<double> >& array_map){ write_xml_map(array_map); }
 
     // Friends
-    friend void new_sax_start_element (void *ctx, const xmlChar *name, const xmlChar **attrs);
-    friend void new_sax_end_element   (void *ctx, const xmlChar *name);
+    friend void sax_start_element (void *ctx, const xmlChar *name, const xmlChar **attrs);
+    friend void sax_end_element   (void *ctx, const xmlChar *name);
 
     void validate(std::string filename);
 
@@ -153,7 +153,6 @@ namespace dolfin
         error("Hander stack not empty. Something is wrong!");
     }
 
-
     template<class T> void write_xml_map(const T& map)
     {
       open_file();
@@ -182,18 +181,19 @@ namespace dolfin
 
   // Callback functions for the SAX interface
 
-  void new_sax_start_document (void *ctx);
-  void new_sax_end_document   (void *ctx);
-  void new_sax_start_element  (void *ctx, const xmlChar *name, const xmlChar **attrs);
-  void new_sax_end_element    (void *ctx, const xmlChar *name);
+  void sax_start_document (void *ctx);
+  void sax_end_document   (void *ctx);
+  void sax_start_element  (void *ctx, const xmlChar *name, const xmlChar **attrs);
+  void sax_end_element    (void *ctx, const xmlChar *name);
 
-  void new_sax_warning     (void *ctx, const char *msg, ...);
-  void new_sax_error       (void *ctx, const char *msg, ...);
-  void new_sax_fatal_error (void *ctx, const char *msg, ...);
+  void sax_warning     (void *ctx, const char *msg, ...);
+  void sax_error       (void *ctx, const char *msg, ...);
+  void sax_fatal_error (void *ctx, const char *msg, ...);
 
   // Callback functions for Relax-NG Schema
-  void new_rng_parser_error(void *user_data, xmlErrorPtr error);
-  void new_rng_valid_error (void *user_data, xmlErrorPtr error);
+
+  void rng_parser_error(void *user_data, xmlErrorPtr error);
+  void rng_valid_error (void *user_data, xmlErrorPtr error);
 
 }
 #endif

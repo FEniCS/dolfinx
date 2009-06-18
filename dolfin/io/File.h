@@ -155,7 +155,6 @@ namespace dolfin
     void operator<< (const std::map<uint, std::vector<uint> >& array_map);
     void operator<< (const std::map<uint, std::vector<double> >& array_map);
 
-
   private:
 
     // Pointer to implementation (envelop-letter design)

@@ -25,7 +25,6 @@ namespace dolfin
   class GenericVector;
   class FunctionPlotData;
 
-
   class GenericFile
   {
   public:

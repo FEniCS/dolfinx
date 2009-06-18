@@ -19,13 +19,13 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 GenericFile::GenericFile(const std::string filename) : filename(filename),
-                                                     type("Unknown file type"),
-                                                     opened_read(false),
-                                                     opened_write(false),
-                                                     check_header(false),
-                                                     counter(0),
-                                                     counter1(0),
-                                                     counter2(0)
+                                                       type("Unknown file type"),
+                                                       opened_read(false),
+                                                       opened_write(false),
+                                                       check_header(false),
+                                                       counter(0),
+                                                       counter1(0),
+                                                       counter2(0)
 {
   // Do nothing
 }
@@ -275,12 +275,12 @@ void GenericFile::write()
 void GenericFile::read_not_impl(const std::string object)
 {
   error("Unable to read objects of type %s from %s files.",
-		object.c_str(), type.c_str());
+        object.c_str(), type.c_str());
 }
 //-----------------------------------------------------------------------------
 void GenericFile::write_not_impl(const std::string object)
 {
   error("Unable to write objects of type %s to %s files.",
-		object.c_str(), type.c_str());
+        object.c_str(), type.c_str());
 }
 //-----------------------------------------------------------------------------

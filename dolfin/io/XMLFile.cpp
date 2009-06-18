@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Skavhaug.
+// Copyright (C) 2009 Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2009.
@@ -35,13 +35,13 @@ XMLFile::XMLFile(const std::string filename, bool gzip)
   sax = new xmlSAXHandler();
 
   // Set up handlers for parser events
-  sax->startDocument = new_sax_start_document;
-  sax->endDocument   = new_sax_end_document;
-  sax->startElement  = new_sax_start_element;
-  sax->endElement    = new_sax_end_element;
-  sax->warning       = new_sax_warning;
-  sax->error         = new_sax_error;
-  sax->fatalError    = new_sax_fatal_error;
+  sax->startDocument = sax_start_document;
+  sax->endDocument   = sax_end_document;
+  sax->startElement  = sax_start_element;
+  sax->endElement    = sax_end_element;
+  sax->warning       = sax_warning;
+  sax->error         = sax_error;
+  sax->fatalError    = sax_fatal_error;
 }
 //-----------------------------------------------------------------------------
 XMLFile::XMLFile(std::ostream& s)
@@ -51,13 +51,13 @@ XMLFile::XMLFile(std::ostream& s)
   sax = new xmlSAXHandler();
 
   // Set up handlers for parser events
-  sax->startDocument = new_sax_start_document;
-  sax->endDocument   = new_sax_end_document;
-  sax->startElement  = new_sax_start_element;
-  sax->endElement    = new_sax_end_element;
-  sax->warning       = new_sax_warning;
-  sax->error         = new_sax_error;
-  sax->fatalError    = new_sax_fatal_error;
+  sax->startDocument = sax_start_document;
+  sax->endDocument   = sax_end_document;
+  sax->startElement  = sax_start_element;
+  sax->endElement    = sax_end_element;
+  sax->warning       = sax_warning;
+  sax->error         = sax_error;
+  sax->fatalError    = sax_fatal_error;
 }
 //-----------------------------------------------------------------------------
 XMLFile::~XMLFile()
@@ -83,12 +83,12 @@ void XMLFile::validate(const std::string filename)
   int ret = 1;
   parser = xmlRelaxNGNewParserCtxt("http://fenics.org/pub/misc/dolfin.rng");
   xmlRelaxNGSetParserStructuredErrors(parser,
-                                      (xmlStructuredErrorFunc)new_rng_parser_error,
+                                      (xmlStructuredErrorFunc)rng_parser_error,
                                       stderr);
   schema = xmlRelaxNGParse(parser);
   validator = xmlRelaxNGNewValidCtxt(schema);
   xmlRelaxNGSetValidStructuredErrors(validator,
-                                     (xmlStructuredErrorFunc)new_rng_valid_error,
+                                     (xmlStructuredErrorFunc)rng_valid_error,
                                      stderr);
   ret = xmlRelaxNGValidateDoc(validator, document);
   if ( ret == 0 ) {
@@ -163,29 +163,29 @@ void XMLFile::close_file()
 //-----------------------------------------------------------------------------
 // Callback functions for the SAX interface
 //-----------------------------------------------------------------------------
-void dolfin::new_sax_start_document(void *ctx)
+void dolfin::sax_start_document(void *ctx)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void dolfin::new_sax_end_document(void *ctx)
+void dolfin::sax_end_document(void *ctx)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void dolfin::new_sax_start_element(void *ctx,
+void dolfin::sax_start_element(void *ctx,
                                    const xmlChar *name,
                                    const xmlChar **attrs)
 {
   ( (XMLFile*) ctx )->start_element(name, attrs);
 }
 //-----------------------------------------------------------------------------
-void dolfin::new_sax_end_element(void *ctx, const xmlChar *name)
+void dolfin::sax_end_element(void *ctx, const xmlChar *name)
 {
   ( (XMLFile*) ctx )->end_element(name);
 }
 //-----------------------------------------------------------------------------
-void dolfin::new_sax_warning(void *ctx, const char *msg, ...)
+void dolfin::sax_warning(void *ctx, const char *msg, ...)
 {
   va_list args;
   va_start(args, msg);
@@ -195,7 +195,7 @@ void dolfin::new_sax_warning(void *ctx, const char *msg, ...)
   va_end(args);
 }
 //-----------------------------------------------------------------------------
-void dolfin::new_sax_error(void *ctx, const char *msg, ...)
+void dolfin::sax_error(void *ctx, const char *msg, ...)
 {
   va_list args;
   va_start(args, msg);
@@ -205,7 +205,7 @@ void dolfin::new_sax_error(void *ctx, const char *msg, ...)
   va_end(args);
 }
 //-----------------------------------------------------------------------------
-void dolfin::new_sax_fatal_error(void *ctx, const char *msg, ...)
+void dolfin::sax_fatal_error(void *ctx, const char *msg, ...)
 {
   va_list args;
   va_start(args, msg);
@@ -215,7 +215,7 @@ void dolfin::new_sax_fatal_error(void *ctx, const char *msg, ...)
   va_end(args);
 }
 //-----------------------------------------------------------------------------
-void dolfin::new_rng_parser_error(void *user_data, xmlErrorPtr error)
+void dolfin::rng_parser_error(void *user_data, xmlErrorPtr error)
 {
   char *file = error->file;
   char *message = error->message;
@@ -231,7 +231,7 @@ void dolfin::new_rng_parser_error(void *user_data, xmlErrorPtr error)
             file, line, node->name, buffer.c_str());
 }
 //-----------------------------------------------------------------------------
-void dolfin::new_rng_valid_error(void *user_data, xmlErrorPtr error)
+void dolfin::rng_valid_error(void *user_data, xmlErrorPtr error)
 {
   char *file = error->file;
   char *message = error->message;
