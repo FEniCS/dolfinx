@@ -32,6 +32,7 @@
  - Remove class Array (using std::vector instead)
  - Add vector_mapping data to MeshData
  - Use std::vector instead of Array in MeshData
+
  - Add assignment operator and copy constructor for MeshFunction
  - Add function mesh.move(other_mesh) for moving mesh according to matching mesh (for FSI)
  - Add function mesh.move(u) for moving mesh according to displacement function (for FSI)
