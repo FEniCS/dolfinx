@@ -44,19 +44,21 @@ int main(int argc, char* argv[]) {
   # test that we can link a binary using Boost.Filesystem:
   lib_dir = os.path.join(boost.getBoostDir(sconsEnv=sconsEnv), 'lib')
   filesystem_lib = "boost_filesystem"
+  system_lib = "boost_system"
   app = os.path.join(os.getcwd(), "a.out")
   cmdstr = "%s -o %s -L%s -l%s" % (linker, app, lib_dir, filesystem_lib)
   if get_architecture() == "darwin":
-    cmdstr += " -lboost_system"
+    cmdstr += " -l%s" % system_lib
   cmdstr += " %s" % cpp_file.replace('.cpp', '.o')
   linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     # try to append -mt to lib
     filesystem_lib += "-mt"
+    system_lib += "-mt"
     cmdstr = "%s -o %s -L%s -l%s" % \
              (linker, app, lib_dir, filesystem_lib)
     if get_architecture() == "darwin":
-      cmdstr += " -lboost_system-mt"
+      cmdstr += " -l%s" % system_lib
     cmdstr += " %s" % cpp_file.replace('.cpp', '.o')
     linkFailed, cmdoutput = getstatusoutput(cmdstr)
     if linkFailed:
@@ -71,7 +73,10 @@ int main(int argc, char* argv[]) {
   if runFailed:
     raise UnableToRunException("Boost.Filesystem", errormsg=cmdoutput)
 
-  return "-L%s -l%s" % (lib_dir, filesystem_lib)
+  libs = "-L%s -l%s" % (lib_dir, filesystem_lib)
+  if get_architecture() == "darwin":
+    libs += " -l%s" % system_lib
+  return libs
 
 # Overwrite the pkgLibs function from boost.py:
 boost.pkgLibs = pkgLibs
