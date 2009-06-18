@@ -9,10 +9,7 @@
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
 
-#include <map>
 #include <string>
-#include <vector>
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -23,11 +20,14 @@ namespace dolfin
   template <class T> class MeshFunction;
   class Function;
   class Sample;
+  class FiniteElementSpec;
   class ParameterList;
+  class BLASFormData;
   class FiniteElement;
   class GenericMatrix;
   class GenericVector;
   class FunctionPlotData;
+
 
   class GenericFile
   {
@@ -45,8 +45,11 @@ namespace dolfin
     virtual void operator>> (MeshFunction<unsigned int>& meshfunction);
     virtual void operator>> (MeshFunction<double>& meshfunction);
     virtual void operator>> (MeshFunction<bool>& meshfunction);
+    virtual void operator>> (Function& mesh);
     virtual void operator>> (Sample& sample);
+    virtual void operator>> (FiniteElementSpec& spec);
     virtual void operator>> (ParameterList& parameters);
+    virtual void operator>> (BLASFormData& blas);
     virtual void operator>> (Graph& graph);
     virtual void operator>> (FunctionPlotData& data);
     virtual void operator>> (std::vector<int>& x);
@@ -70,7 +73,9 @@ namespace dolfin
     virtual void operator<< (const MeshFunction<bool>& meshfunction);
     virtual void operator<< (const Function& u);
     virtual void operator<< (const Sample& sample);
+    virtual void operator<< (const FiniteElementSpec& spec);
     virtual void operator<< (const ParameterList& parameters);
+    virtual void operator<< (const BLASFormData& blas);
     virtual void operator<< (const Graph& graph);
     virtual void operator<< (const FunctionPlotData& data);
     virtual void operator<< (const std::vector<int>& x);

@@ -7,32 +7,32 @@
 // Modified by Ola Skavhaug 2009
 //
 // First added:  2002-11-12
-// Last changed: 2009-06-16
+// Last changed: 2009-06-15
 
 #ifndef __FILE_H
 #define __FILE_H
 
-#include <ostream>
+#include <map>
 #include <string>
-#include "GenericFile.h"
-
-#include <dolfin/main/MPI.h>
-#include <dolfin/log/dolfin_log.h>
-#include <dolfin/la/GenericVector.h>
-#include <dolfin/mesh/MeshFunction.h>
-#include "File.h"
-#include "GenericFile.h"
-#include "XMLFile.h"
-#include "MatlabFile.h"
-#include "OctaveFile.h"
-#include "PythonFile.h"
-#include "PVTKFile.h"
-#include "VTKFile.h"
-#include "RAWFile.h"
-#include "XYZFile.h"
+#include <vector>
+#include "dolfin/common/types.h"
 
 namespace dolfin
 {
+
+  class Mesh;
+  class LocalMeshData;
+  class Graph;
+  template <class T> class MeshFunction;
+  class Function;
+  class Sample;
+  class FiniteElementSpec;
+  class ParameterList;
+  class GenericFile;
+  class FiniteElement;
+  class GenericMatrix;
+  class GenericVector;
+  class FunctionPlotData;
 
   /// A File represents a data file for reading and writing objects.
   /// Unless specified explicitly, the format is determined by the
@@ -57,68 +57,114 @@ namespace dolfin
     /// Destructor
     ~File();
 
-    /// Read (operator>> is not templated to avoid SWIG template instantiations)
-    void operator>> (GenericVector& t) { read(t); }
-    void operator>> (GenericMatrix& t){ read(t); }
-    void operator>> (Mesh& t){ read(t); }
-    void operator>> (LocalMeshData& t){ read(t); }
-    void operator>> (MeshFunction<int>& t){ read(t); }
-    void operator>> (MeshFunction<dolfin::uint>& t){ read(t); }
-    void operator>> (MeshFunction<double>& t){ read(t); }
-    void operator>> (MeshFunction<bool>& t){ read(t); }
-    void operator>> (Sample& t){ read(t); }
-    void operator>> (ParameterList& t){ read(t); }
-    void operator>> (Graph& t){ read(t); }
-    void operator>> (FunctionPlotData& t){ read(t); }
-    void operator>> (std::vector<int>& t){ read(t); }
-    void operator>> (std::vector<dolfin::uint>& t){ read(t); }
-    void operator>> (std::vector<double>& t){ read(t); }
-    void operator>> (std::map<dolfin::uint, int>& t){ read(t); }
-    void operator>> (std::map<dolfin::uint, dolfin::uint>& t){ read(t); }
-    void operator>> (std::map<dolfin::uint, double>& t){ read(t); }
-    void operator>> (std::map<dolfin::uint, std::vector<int> >& t){ read(t); }
-    void operator>> (std::map<dolfin::uint, std::vector<dolfin::uint> >& t){ read(t); }
-    void operator>> (std::map<dolfin::uint, std::vector<double> >& t){ read(t); }
+    //--- Input ---
 
-    /// Write (operator<< is not templated to avoid SWIG template instantiations)
-    void operator<< (const GenericVector& t) { write(t); }
-    void operator<< (const GenericMatrix& t){ write(t); }
-    void operator<< (const Mesh& t){ write(t); }
-    void operator<< (const LocalMeshData& t){ write(t); }
-    void operator<< (const MeshFunction<int>& t){ write(t); }
-    void operator<< (const MeshFunction<dolfin::uint>& t){ write(t); }
-    void operator<< (const MeshFunction<double>& t){ write(t); }
-    void operator<< (const MeshFunction<bool>& t){ write(t); }
-    void operator<< (const Function& t){ write(t); }
-    void operator<< (const Sample& t){ write(t); }
-    void operator<< (const ParameterList& t){ write(t); }
-    void operator<< (const Graph& t){ write(t); }
-    void operator<< (const FunctionPlotData& t){ write(t); }
-    void operator<< (const std::vector<int>& t){ write(t); }
-    void operator<< (const std::vector<dolfin::uint>& t){ write(t); }
-    void operator<< (const std::vector<double>& t){ write(t); }
-    void operator<< (const std::map<dolfin::uint, int>& t){ write(t); }
-    void operator<< (const std::map<dolfin::uint, dolfin::uint>& t){ write(t); }
-    void operator<< (const std::map<dolfin::uint, double>& t){ write(t); }
-    void operator<< (const std::map<dolfin::uint, std::vector<int> >& t){ write(t); }
-    void operator<< (const std::map<dolfin::uint, std::vector<dolfin::uint> >& t){ write(t); }
-    void operator<< (const std::map<dolfin::uint, std::vector<double> >& t){ write(t); }
+    /// Read vector from file
+    void operator>> (GenericVector& x);
+
+    /// Read matrix from file
+    void operator>> (GenericMatrix& A);
+
+    /// Read mesh from file
+    void operator>> (Mesh& mesh);
+
+    /// Read local mesh data from file
+    void operator>> (LocalMeshData& data);
+
+    /// Read mesh function from file
+    void operator>> (MeshFunction<int>& meshfunction);
+    void operator>> (MeshFunction<uint>& meshfunction);
+    void operator>> (MeshFunction<double>& meshfunction);
+    void operator>> (MeshFunction<bool>& meshfunction);
+
+    /// Read function from file
+    void operator>> (Function& u);
+
+    /// Read ODE sample from file
+    void operator>> (Sample& sample);
+
+    /// Read finite element specification from file
+    void operator>> (FiniteElementSpec& spec);
+
+    /// Read parameter list from file
+    void operator>> (ParameterList& parameters);
+
+    /// Read graph from file
+    void operator>> (Graph& graph);
+
+    /// Read FunctionPlotData from file
+    void operator>> (FunctionPlotData& data);
+
+    /// Read array from file
+    void operator>> (std::vector<int>& x);
+    void operator>> (std::vector<uint>& x);
+    void operator>> (std::vector<double>& x);
+
+    /// Read maps from file
+    void operator>> (std::map<uint, int>& map);
+    void operator>> (std::map<uint, uint>& map);
+    void operator>> (std::map<uint, double>& map);
+
+    /// Read array maps from file
+    void operator>> (std::map<uint, std::vector<int> >& array_map);
+    void operator>> (std::map<uint, std::vector<uint> >& array_map);
+    void operator>> (std::map<uint, std::vector<double> >& array_map);
+
+    //--- Output ---
+
+    /// Write vector to file
+    void operator<< (const GenericVector& x);
+
+    /// Write matrix to file
+    void operator<< (const GenericMatrix& A);
+
+    /// Write mesh to file
+    void operator<< (const Mesh& mesh);
+
+    /// Write local mesh data to file
+    void operator<< (const LocalMeshData& data);
+
+    /// Write mesh function to file
+    void operator<< (const MeshFunction<int>& meshfunction);
+    void operator<< (const MeshFunction<uint>& meshfunction);
+    void operator<< (const MeshFunction<double>& meshfunction);
+    void operator<< (const MeshFunction<bool>& meshfunction);
+
+    /// Write function to file
+    void operator<< (const Function& v);
+
+    /// Write ODE sample to file
+    void operator<< (const Sample& sample);
+
+    /// Write finite element specification to file
+    void operator<< (const FiniteElementSpec& spec);
+
+    /// Write parameter list to file
+    void operator<< (const ParameterList& parameters);
+
+    /// Write graph to file
+    void operator<< (const Graph& graph);
+
+    /// Write FunctionPlotData to file
+    void operator<< (const FunctionPlotData& data);
+
+    /// Write array to file
+    void operator<< (const std::vector<int>& x);
+    void operator<< (const std::vector<uint>& x);
+    void operator<< (const std::vector<double>& x);
+
+    /// Write maps to file
+    void operator<< (const std::map<uint, int>& map);
+    void operator<< (const std::map<uint, uint>& map);
+    void operator<< (const std::map<uint, double>& map);
+
+    /// Write array maps to file
+    void operator<< (const std::map<uint, std::vector<int> >& array_map);
+    void operator<< (const std::map<uint, std::vector<uint> >& array_map);
+    void operator<< (const std::map<uint, std::vector<double> >& array_map);
+
 
   private:
-
-    /// Read from file
-    template<class T> void read(T& t)
-    {
-      file->read();
-      *file >> t;
-    }
-
-    /// Write to file
-    template<class T> void write (const T& t)
-    {
-      file->write();
-      *file << t;
-    }
 
     // Pointer to implementation (envelop-letter design)
     GenericFile* file;

@@ -9,11 +9,10 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2009-06-16
+// Last changed: 2009-06-15
 
 #include <string>
 #include <boost/filesystem.hpp>
-
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include "File.h"
@@ -101,4 +100,323 @@ File::~File()
   file = 0;
 }
 //-----------------------------------------------------------------------------
+void File::operator>> (GenericVector& x)
+{
+  file->read();
 
+  *file >> x;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (GenericMatrix& A)
+{
+  file->read();
+
+  *file >> A;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (Mesh& mesh)
+{
+  file->read();
+
+  *file >> mesh;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (LocalMeshData& data)
+{
+  file->read();
+
+  *file >> data;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (MeshFunction<int>& meshfunction)
+{
+  file->read();
+
+  *file >> meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (MeshFunction<uint>& meshfunction)
+{
+  file->read();
+
+  *file >> meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (MeshFunction<double>& meshfunction)
+{
+  file->read();
+
+  *file >> meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (MeshFunction<bool>& meshfunction)
+{
+  file->read();
+
+  *file >> meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (Function& v)
+{
+  file->read();
+
+  *file >> v;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (Sample& sample)
+{
+  file->read();
+
+  *file >> sample;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (FiniteElementSpec& spec)
+{
+  file->read();
+
+  *file >> spec;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (ParameterList& parameters)
+{
+  file->read();
+
+  *file >> parameters;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (Graph& graph)
+{
+  file->read();
+
+  *file >> graph;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (FunctionPlotData& data)
+{
+  file->read();
+
+  *file >> data;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::vector<int>& x)
+{
+  file->read();
+
+  *file >> x;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::vector<uint>& x)
+{
+  file->read();
+
+  *file >> x;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::vector<double>& x)
+{
+  file->read();
+
+  *file >> x;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::map<uint, int>& map)
+{
+  file->read();
+
+  *file >> map;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::map<uint, uint>& map)
+{
+  file->read();
+
+  *file >> map;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::map<uint, double>& map)
+{
+  file->read();
+
+  *file >> map;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::map<uint, std::vector<int> >& array_map)
+{
+  file->read();
+
+  *file >> array_map;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::map<uint, std::vector<uint> >& array_map)
+{
+  file->read();
+
+  *file >> array_map;
+}
+//-----------------------------------------------------------------------------
+void File::operator>> (std::map<uint, std::vector<double> >& array_map)
+{
+  file->read();
+
+  *file >> array_map;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const GenericVector& x)
+{
+  file->write();
+
+  *file << x;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const GenericMatrix& A)
+{
+  file->write();
+
+  *file << A;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const Mesh& mesh)
+{
+  file->write();
+
+  *file << mesh;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const LocalMeshData& data)
+{
+  file->write();
+
+  *file << data;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const MeshFunction<int>& meshfunction)
+{
+  file->write();
+
+  *file << meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const MeshFunction<uint>& meshfunction)
+{
+  file->write();
+
+  *file << meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const MeshFunction<double>& meshfunction)
+{
+  file->write();
+
+  *file << meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const MeshFunction<bool>& meshfunction)
+{
+  file->write();
+
+  *file << meshfunction;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const Function& v)
+{
+  file->write();
+
+  *file << v;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const Sample& sample)
+{
+  file->write();
+
+  *file << sample;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const FiniteElementSpec& spec)
+{
+  file->write();
+
+  *file << spec;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const ParameterList& parameters)
+{
+  file->write();
+
+  *file << parameters;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const Graph& graph)
+{
+  file->write();
+
+  *file << graph;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const FunctionPlotData& data)
+{
+  file->write();
+
+  *file << data;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const std::vector<int>& x)
+{
+  file->write();
+
+  *file << x;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const std::vector<uint>& x)
+{
+  file->write();
+
+  *file << x;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const std::vector<double>& x)
+{
+  file->write();
+
+  *file << x;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const std::map<uint, int>& array_map)
+{
+  file->write();
+
+  *file << array_map;
+}
+void File::operator<< (const std::map<uint, uint>& array_map)
+{
+  file->write();
+
+  *file << array_map;
+}
+void File::operator<< (const std::map<uint, double>& array_map)
+{
+  file->write();
+
+  *file << array_map;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const std::map<uint, std::vector<int> >& array_map)
+{
+  file->write();
+
+  *file << array_map;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const std::map<uint, std::vector<uint> >& array_map)
+{
+  file->write();
+
+  *file << array_map;
+}
+//-----------------------------------------------------------------------------
+void File::operator<< (const std::map<uint, std::vector<double> >& array_map)
+{
+  file->write();
+
+  *file << array_map;
+}
+//-----------------------------------------------------------------------------
