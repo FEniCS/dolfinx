@@ -24,3 +24,4 @@ echo "Running benchmark..."
 time -f "%E" --output=timing.tmp ./bench | grep -v BENCH >> $LOG
 echo "" >> $LOG
 echo "Total time: "`cat timing.tmp` >> $LOG
+echo "" >> $LOG
