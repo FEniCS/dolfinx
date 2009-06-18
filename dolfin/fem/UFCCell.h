@@ -29,23 +29,23 @@ namespace dolfin
   public:
 
     /// Create emtpy UFC cell
-    UFCCell() : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0), parallel(MPI::num_processes() > 1) 
+    UFCCell() : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0)
     {
     }
 
     /// Create UFC cell from DOLFIN cell
-    UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0), parallel(MPI::num_processes() > 1)
+    UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0)
     {
       init(cell);
     }
 
     /// Create UFC cell for first DOLFIN cell in mesh
-    UFCCell(const Mesh& mesh) : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0), parallel(MPI::num_processes() > 1)
+    UFCCell(const Mesh& mesh) : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0)
     {
       CellIterator cell(mesh);
       init(*cell);
     }
-
+    
     /// Destructor
     ~UFCCell()
     {
@@ -86,25 +86,22 @@ namespace dolfin
       // Allocate arrays for local entity indices
       entity_indices = new uint*[topological_dimension + 1];
       for (uint d = 0; d < topological_dimension; d++)
-        entity_indices[d] = new uint[cell.num_entities(d)];
+      {
+        if (cell.num_entities(d) > 0)
+          entity_indices[d] = new uint[cell.num_entities(d)];
+        else
+          entity_indices[d] = 0;
+      }
       entity_indices[topological_dimension] = new uint[1];
 
-      // Get global entity indices if running in parallel
-      if (parallel)
+      // Get global entity indices (if any)
+      global_entities.resize(topological_dimension + 1);
+      for (uint d = 0; d <= topological_dimension; ++d)
       {
-        global_entities.resize(topological_dimension + 1);
-        for (uint d = 0; d <= topological_dimension; ++d)
-        {
-          if (cell.num_entities(d) > 0)
-          {
-            std::stringstream name;
-            name << "global entity indices " << d;
-            global_entities[d] = cell.mesh().data().mesh_function(name.str());
-            dolfin_assert(global_entities[d]);
-          }
-          else
-            global_entities[d] = 0;
-        }
+        std::stringstream name;
+        name << "global entity indices " << d;
+        // This pointer may be zero, in which case local entity indices are used
+        global_entities[d] = cell.mesh().data().mesh_function(name.str());
       }
       
       // Allocate vertex coordinates
@@ -145,6 +142,15 @@ namespace dolfin
     // Update cell entities and coordinates
     inline void update(const Cell& cell)
     {
+      // Note handling of local and global mesh entity indices.
+      // If mappings from local to global entities are available in
+      // MeshData ("global entity indices %d") then those are used.
+      // Otherwise, local entities are used. It is the responsibility
+      // of the DofMap class to create the local-to-global mapping of
+      // entity indices when running in parallel. In that sense, this
+      // class is non parallel aware. It just uses the local-to-global
+      // mapping when it is available.
+
       // Copy local entity indices from mesh
       const uint D = topological_dimension;
       for (uint d = 0; d < D; ++d)
@@ -152,18 +158,15 @@ namespace dolfin
           entity_indices[d][i] = cell.entities(d)[i];
       entity_indices[D][0] = cell.index();
 
-      // Map to global entity indices if running in parallel
-      if (parallel)
+      // Map to global entity indices (if any)
+      for (uint d = 0; d < D; ++d)
       {
-        for (uint d = 0; d < D; ++d)
-        {
-          dolfin_assert(global_entities[d]);
+        if (global_entities[d])
           for (uint i = 0; i < cell.num_entities(d); ++i)
             entity_indices[d][i] = global_entities[d]->get(entity_indices[d][i]);
-        }
-        dolfin_assert(global_entities[D]);
-        entity_indices[D][0] = global_entities[D]->get(entity_indices[D][0]);
       }
+      if (global_entities[D])
+        entity_indices[D][0] = global_entities[D]->get(entity_indices[D][0]);
 
       /// Set vertex coordinates
       const uint* vertices = cell.entities(0);
@@ -188,11 +191,8 @@ namespace dolfin
     // Number of higher order cell vertices
     uint num_higher_order_vertices;
 
-    // Vector of meshfunctions used in parallel
+    // Mappings from local to global entity indices (if any)
     std::vector<MeshFunction<uint>*> global_entities;
-
-    // Running in parallell?
-    bool parallel;
 
   };
 

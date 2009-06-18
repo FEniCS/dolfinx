@@ -35,7 +35,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<Mesh> 
     if (ufc_dof_map->needs_mesh_entities(d))
     {
       mesh->init(d);
-      if (parallel) 
+      if (parallel)
         MeshPartitioning::number_entities(*mesh, d);
     }
   }
