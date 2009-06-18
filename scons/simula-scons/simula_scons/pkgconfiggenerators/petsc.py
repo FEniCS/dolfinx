@@ -103,7 +103,7 @@ get_petsc_ld:
 def getPetscDir(sconsEnv=None):
     petsc_dir = getPackageDir("petsc", sconsEnv=sconsEnv, default=None)
     if not petsc_dir:
-        petsc_locations = ["/usr/lib/petscdir/2.3.3"]
+        petsc_locations = ["/usr/lib/petscdir/3.0.0", "/usr/lib/petscdir/2.3.3"]
         for petsc_location in petsc_locations:
             if os.access(petsc_location, os.F_OK) == True:
                 return petsc_location
@@ -113,6 +113,8 @@ def getPetscDir(sconsEnv=None):
 def getPetscArch(sconsEnv=None):
     if os.environ.has_key('PETSC_ARCH'):
         return os.environ["PETSC_ARCH"]
+    elif os.path.exists(getPetscDir(sconsEnv=sconsEnv)+"/linux-gnu-c-opt"):
+        return "linux-gnu-c-opt"
     else:
         return ""
 
