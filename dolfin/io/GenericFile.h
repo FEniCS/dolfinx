@@ -9,10 +9,7 @@
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
 
-#include <map>
 #include <string>
-#include <vector>
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -24,10 +21,10 @@ namespace dolfin
   class Function;
   class Sample;
   class ParameterList;
-  class FiniteElement;
   class GenericMatrix;
   class GenericVector;
   class FunctionPlotData;
+
 
   class GenericFile
   {

@@ -3,17 +3,16 @@ import os,sys
 import string
 import os.path
 
+from petsc import getPetscArch, getPetscDir
 from commonPkgConfigUtils import *
-
-def getPetscDir(sconsEnv=None):
-    petsc_dir = getPackageDir("petsc", sconsEnv=sconsEnv, default=None)
-    if not petsc_dir:
-        raise UnableToFindPackageException("PETSc")
-    return petsc_dir
 
 def getSlepcDir(sconsEnv=None):
     slepc_dir = getPackageDir("slepc", sconsEnv=sconsEnv, default=None)
     if not slepc_dir:
+        slepc_locations = ["/usr/lib/slepcdir/3.0.0", "/usr/lib/slepcdir/2.3.3"]
+        for slepc_location in slepc_locations:
+            if os.access(slepc_location, os.F_OK) == True:
+                return slepc_location
         raise UnableToFindPackageException("SLEPc")
     return slepc_dir
 
@@ -25,8 +24,9 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
      or just a string, which in that case will be used as both
   """
   arch = get_architecture()
-  petsc_dir = getPetscDir(sconsEnv=sconsEnv)
-  slepc_dir = getSlepcDir(sconsEnv=sconsEnv)
+  petsc_dir  = getPetscDir(sconsEnv=sconsEnv)
+  petsc_arch = getPetscArch(sconsEnv=sconsEnv)
+  slepc_dir  = getSlepcDir(sconsEnv=sconsEnv)
 
   # make sure that "directory" is contained in PKG_CONFIG_PATH, only relevant 
   # for test-cases where directory="."
@@ -44,9 +44,10 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
   if notexist:
     # Try to generate petsc:
     ns = {}
+    sys.path.insert(0, os.path.dirname(__file__))
     exec "import %s" % (dep_module) in ns
     packgen = ns.get("%s" % (dep_module))
-    packgen.generatePkgConf(directory=os.getcwd(), sconsEnv=sconsEnv)
+    packgen.generatePkgConf(directory=suitablePkgConfDir(), sconsEnv=sconsEnv)
   # now the dep_module pkg-config should exist!
   failure,dep_mod_cflags = getstatusoutput("pkg-config %s --cflags" % (dep_module))
   if failure:
@@ -68,6 +69,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
 # Retrive various flags from SLEPc settings.
 
 PETSC_DIR=%s
+PETSC_ARCH=%s
 SLEPC_DIR=%s
 
 include ${SLEPC_DIR}/%s/slepc_common
@@ -76,11 +78,11 @@ get_slepc_include:
 	-@echo  ${SLEPC_INCLUDE}
 
 get_slepc_libs:
-	-@echo ${CC_LINKER_SLFLAG}${SLEPC_LIB_DIR} -L${SLEPC_LIB_DIR} -lslepc
+	-@echo ${CC_LINKER_SLFLAG}${SLEPC_LIB_DIR} -L${SLEPC_LIB_DIR} -lslepc ${SLEPC_EXTERNAL_LIB}
 
-get_petsc_arch:
-	-@echo  ${PETSC_ARCH}
-""" % (petsc_dir, slepc_dir, slepc_path_variables)
+#get_petsc_arch:
+#	-@echo  ${PETSC_ARCH}
+""" % (petsc_dir, petsc_arch, slepc_dir, slepc_path_variables)
   slepc_make_file = open("slepc_makefile","w")
   slepc_make_file.write(slepc_makefile_str)
   slepc_make_file.close()
@@ -101,18 +103,6 @@ get_petsc_arch:
     slepc_libs = "-lslepc"
   else:
     slepc_libs = cmdoutput
-
-  if not runFailed:
-    cmdstr = "make -s -f slepc_makefile get_petsc_arch"
-    runFailed, cmdoutput = getstatusoutput(cmdstr)
-  if runFailed:
-    petsc_arch = os.environ.get('PETSC_ARCH', None)
-    if not petsc_arch:
-      os.unlink("slepc_makefile")
-      msg = "Unable to read PETSc arch through make"
-      raise UnableToXXXException(msg, errormsg=cmdoutput)
-  else:
-    petsc_arch = cmdoutput
 
   # Try to get compiler and linker from petsc
   cmdstr = "pkg-config petsc --variable=compiler"

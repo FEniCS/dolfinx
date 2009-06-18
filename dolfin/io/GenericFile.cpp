@@ -2,14 +2,17 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Niclas Jansson, 2008.
-// Modified by Ola Skavhaug, 2009.
-// Modified by Garth N. Wells, 2009.
+// Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2009-06-17
+// Last changed: 2009-03-04
+
+// FIXME: Use streams instead of stdio
+#include <stdio.h>
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/plot/FunctionPlotData.h>
 #include "GenericFile.h"
 
 using namespace dolfin;
@@ -258,8 +261,7 @@ void GenericFile::write()
   if ( type == "VTK" && MPI::process_number() > 0)
     opened_write = true;
 
-  if ( !opened_write ) 
-  {
+  if ( !opened_write ) {
     // Clear file
     FILE* fp = fopen(filename.c_str(), "w");
     if (!fp)
