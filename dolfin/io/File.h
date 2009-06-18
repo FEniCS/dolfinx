@@ -75,9 +75,6 @@ namespace dolfin
     void operator>> (MeshFunction<double>& meshfunction);
     void operator>> (MeshFunction<bool>& meshfunction);
 
-    /// Read function from file
-    void operator>> (Function& u);
-
     /// Read ODE sample from file
     void operator>> (Sample& sample);
 
