@@ -44,9 +44,10 @@ def pkgTests(forceCompiler=None, sconsEnv=None, **kwargs):
   if notexist:
     # Try to generate petsc:
     ns = {}
+    sys.path.insert(0, os.path.dirname(__file__))
     exec "import %s" % (dep_module) in ns
     packgen = ns.get("%s" % (dep_module))
-    packgen.generatePkgConf(directory=os.getcwd(), sconsEnv=sconsEnv)
+    packgen.generatePkgConf(directory=suitablePkgConfDir(), sconsEnv=sconsEnv)
   # now the dep_module pkg-config should exist!
   failure,dep_mod_cflags = getstatusoutput("pkg-config %s --cflags" % (dep_module))
   if failure:
