@@ -4,7 +4,6 @@
 // First added: 2009-03-09
 // Last changed: 2009-03-17
 
-
 #include "XMLMeshFunction.h"
 #include "XMLIndent.h"
 #include "XMLArray.h"

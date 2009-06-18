@@ -4,7 +4,9 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2008-05-19
-// Last changed: 2009-02-26
+// Last changed: 2009-06-18
+
+#include <sstream>
 
 #include "MeshFunction.h"
 #include "MeshData.h"
@@ -273,7 +275,7 @@ void MeshData::erase_vector_mapping(const std::string name)
 //-----------------------------------------------------------------------------
 void MeshData::disp() const
 {
-  // Check if data exists
+  // FIXME: Remove this function and use str() instead
 
   // Begin indentation
   begin("Auxiliary mesh data");
@@ -305,5 +307,44 @@ void MeshData::disp() const
 
   // End indentation
   end();
+}
+//-----------------------------------------------------------------------------
+std::string MeshData::str() const
+{
+  std::stringstream s;
+
+  // Header
+  s << "Mesh data" << std::endl;
+  s << "---------" << std::endl << std::endl;
+
+  // Mesh functions
+  s << "  MeshFunction<uint>" << std::endl;
+  s << "  ------------------" << std::endl;
+  for (mf_const_iterator it = mesh_functions.begin(); it != mesh_functions.end(); ++it)
+    s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
+  s << std::endl;
+
+  // Arrays
+  s << "  std::vector<uint>" << std::endl;
+  s << "  -----------------" << std::endl;
+  for (a_const_iterator it = arrays.begin(); it != arrays.end(); ++it)
+    s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
+  s << std::endl;
+
+  // Mappings
+  s << "  std::map<uint, uint>" << std::endl;
+  s << "  --------------------" << std::endl;
+  for (m_const_iterator it = mappings.begin(); it != mappings.end(); ++it)
+    s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
+  s << std::endl;
+
+  // Vector mappings
+  s << "  std::map<uint, std::vector<uint>" << std::endl;
+  s << "  --------------------------------" << std::endl;
+  for (mvec_const_iterator it = vector_mappings.begin(); it != vector_mappings.end(); ++it)
+    s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
+  s << std::endl;
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------

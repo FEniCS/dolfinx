@@ -4,12 +4,13 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2008-05-19
-// Last changed: 2009-02-26
+// Last changed: 2009-06-18
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
 
 #include <map>
+#include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -25,7 +26,7 @@ namespace dolfin
   ///
   /// Currently, only uint-valued data is supported.
 
-  class MeshData
+  class MeshData : public Variable
   {
   public:
 
@@ -90,6 +91,9 @@ namespace dolfin
 
     /// Display data
     void disp() const;
+
+    /// Return informal string representation (pretty-print)
+    std::string str() const;
 
     /// Friends
     friend class XMLFile;
