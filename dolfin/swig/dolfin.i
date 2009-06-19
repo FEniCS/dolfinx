@@ -72,6 +72,7 @@ import_array();
 %include "dolfin_mesh_post.i"
 %include "dolfin_function_post.i"
 %include "dolfin_parameter_post.i"
+%include "dolfin_io_post.i"
 
 // Include information about swig version
 %include "dolfin_swig_version.i"

@@ -14,6 +14,7 @@
 #include <dolfin/io/File.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/ale/ALE.h>
+#include <dolfin/io/File.h>
 #include "UniformMeshRefinement.h"
 #include "LocalMeshRefinement.h"
 #include "LocalMeshCoarsening.h"
