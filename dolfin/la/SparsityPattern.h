@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2007-2009.
 //
 // First added:  2007-03-13
-// Last changed: 2009-06-02
+// Last changed: 2009-06-19
 
 #ifndef __SPARSITY_PATTERN_H
 #define __SPARSITY_PATTERN_H
@@ -66,21 +66,28 @@ namespace dolfin
 
   private:
 
+    // Sort entries for each row 
+    void sort();
+
     // Sparsity pattern type (sorted/unsorted)
     const Type type;    
 
     // Whether or not pattern has been sorted
     bool _sorted;    
 
-    // Sort entries for each row 
-    void sort();
-
     // Shape of tensor
     std::vector<uint> shape;
+
+    // Local range
+    uint rmin;
+    uint rmax;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<std::vector<uint> > diagonal;
     std::vector<std::vector<uint> > off_diagonal;
+
+    // Sparsity pattern for non-local entries stored as [i, j, i, j, ...]
+    std::vector<uint> non_local;
 
   };
 

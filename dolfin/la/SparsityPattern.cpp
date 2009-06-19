@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2007-03-13
-// Last changed: 2009-06-02
+// Last changed: 2009-06-19
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -18,8 +18,16 @@ using namespace dolfin;
 typedef std::vector<std::vector<dolfin::uint> >::iterator iterator;
 typedef std::vector<std::vector<dolfin::uint> >::const_iterator const_iterator;
 
+// Inlined function for insertion
+inline void insert_entry(unsigned int j, std::vector<unsigned int>& row)
+{
+  if (std::find(row.begin(), row.end(), j) == row.end())
+    row.push_back(j);
+}
+
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern(Type type) : type(type), _sorted(false)
+SparsityPattern::SparsityPattern(Type type) 
+  : type(type), _sorted(false), rmin(0), rmax(0)
 {
   // Do nothing
 }
@@ -39,14 +47,23 @@ void SparsityPattern::init(uint rank, const uint* dims)
   // Clear sparsity pattern
   diagonal.clear();
   off_diagonal.clear();
+  non_local.clear();
 
   // Check rank, ignore if not a matrix
   if (shape.size() != 2)
     return;
 
-  // FIXME: This is wrong when running in parallel
-  diagonal.resize(shape[0]);
-  off_diagonal.resize(shape[0]);
+  // Get local range
+  std::pair<uint, uint> r = range();
+  rmin = r.first;
+  rmax = r.second;
+
+  // Resize diagonal block
+  diagonal.resize(rmax - rmin);
+
+  // Resize off-diagonal block (only needed when local range != global range)
+  if (rmin != 0 || rmax != shape[0])
+    off_diagonal.resize(rmax - rmin);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
@@ -58,14 +75,31 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
   // Set sorted flag to false
   _sorted = false;
 
+  // Get local rows and columsn to insert
   const uint  m = num_rows[0];
   const uint  n = num_rows[1];
   const uint* r = rows[0];
   const uint* c = rows[1];
 
-  /*
-  if (parallel)
+  // Check local range
+  if (rmin == 0 && rmax == shape[0])
   {
+    // Sequential mode, do simple insertion
+    for (uint i = 0; i < m; ++i)
+    {
+      std::vector<uint>& row = diagonal[r[i]];
+      for (uint j = 0; j < n; ++j)
+      {
+        insert_entry(c[j], row);
+      }
+    }
+  }
+
+  /*
+  else
+  {
+    // Parallel mode, use either diagonal, off_diagonal or non_local
+
     std::pair<uint, uint> _range = range();
     const uint ind_start = _range.first;
     const uint ind_stop = _range.second;
@@ -78,13 +112,13 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
         {
           if (c[j] >= ind_start and r[i] < ind_stop)
           {
-            // Insert entry if not already inserted
+            // Insert entry on diagonal if not already inserted
             if (std::find(diagonal[r[i]].begin(), diagonal[r[i]].end(), c[j]) == diagonal[r[i]].end())
               diagonal[r[i]].push_back(c[j]);
           }
           else
           {
-            // Insert entry if not already inserted
+            // Insert entry on off-diagonal if not already inserted
             if (std::find(off_diagonal[r[i]].begin(), off_diagonal[r[i]].end(), c[j]) == off_diagonal[r[i]].end())
               off_diagonal[r[i]].push_back(c[j]);
           }
@@ -96,17 +130,8 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
       }
     }
   }
-  */
+    */
 
-  for (uint i = 0; i < m; ++i)
-  {
-    for (uint j = 0; j < n; ++j)
-    {
-      // Insert entry if not already inserted
-      if (std::find(diagonal[r[i]].begin(), diagonal[r[i]].end(), c[j]) == diagonal[r[i]].end())
-        diagonal[r[i]].push_back(c[j]);
-    }
-  }
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::rank() const
