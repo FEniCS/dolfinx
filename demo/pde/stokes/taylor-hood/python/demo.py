@@ -15,6 +15,7 @@ from dolfin import *
 
 # Load mesh and subdomains
 mesh = Mesh("../../../../../data/meshes/dolfin-2.xml.gz")
+
 sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz")
 
 # Define function spaces

@@ -9,7 +9,10 @@
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
 
+#include <map>
 #include <string>
+#include <vector>
+#include "dolfin/common/types.h"
 
 namespace dolfin
 {
