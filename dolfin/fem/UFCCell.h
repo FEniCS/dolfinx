@@ -87,6 +87,9 @@ namespace dolfin
       entity_indices = new uint*[topological_dimension + 1];
       for (uint d = 0; d < topological_dimension; d++)
       {
+        // Store number of cell entities allocated for (this can change between 
+        // init() and update() which is why it's stored)
+        num_cell_entities.push_back(cell.num_entities(d));
         if (cell.num_entities(d) > 0)
           entity_indices[d] = new uint[cell.num_entities(d)];
         else
@@ -154,16 +157,20 @@ namespace dolfin
       // Copy local entity indices from mesh
       const uint D = topological_dimension;
       for (uint d = 0; d < D; ++d)
-        for (uint i = 0; i < cell.num_entities(d); ++i)
+      {
+        for (uint i = 0; i < num_cell_entities[d]; ++i)
           entity_indices[d][i] = cell.entities(d)[i];
+      }
       entity_indices[D][0] = cell.index();
 
       // Map to global entity indices (if any)
       for (uint d = 0; d < D; ++d)
       {
         if (global_entities[d])
-          for (uint i = 0; i < cell.num_entities(d); ++i)
+        {
+          for (uint i = 0; i < num_cell_entities[d]; ++i)
             entity_indices[d][i] = global_entities[d]->get(entity_indices[d][i]);
+        }
       }
       if (global_entities[D])
         entity_indices[D][0] = global_entities[D]->get(entity_indices[D][0]);
@@ -193,6 +200,9 @@ namespace dolfin
 
     // Mappings from local to global entity indices (if any)
     std::vector<MeshFunction<uint>*> global_entities;
+
+    // Number of cell entities of dimension d at initialisation
+    std::vector<uint> num_cell_entities;
 
   };
 
