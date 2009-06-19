@@ -19,15 +19,15 @@ typedef std::vector<std::vector<dolfin::uint> >::iterator iterator;
 typedef std::vector<std::vector<dolfin::uint> >::const_iterator const_iterator;
 
 // Inlined function for insertion
-inline void insert_entry(unsigned int j, std::vector<unsigned int>& row)
+inline void insert_column(unsigned int j, std::vector<unsigned int>& columns)
 {
-  if (std::find(row.begin(), row.end(), j) == row.end())
-    row.push_back(j);
+  if (std::find(columns.begin(), columns.end(), j) == columns.end())
+    columns.push_back(j);
 }
 
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(Type type) 
-  : type(type), _sorted(false), rmin(0), rmax(0)
+  : type(type), _sorted(false), range_min(0), range_max(0)
 {
   // Do nothing
 }
@@ -55,15 +55,15 @@ void SparsityPattern::init(uint rank, const uint* dims)
 
   // Get local range
   std::pair<uint, uint> r = range();
-  rmin = r.first;
-  rmax = r.second;
+  range_min = r.first;
+  range_max = r.second;
 
   // Resize diagonal block
-  diagonal.resize(rmax - rmin);
+  diagonal.resize(range_max - range_min);
 
   // Resize off-diagonal block (only needed when local range != global range)
-  if (rmin != 0 || rmax != shape[0])
-    off_diagonal.resize(rmax - rmin);
+  if (range_min != 0 || range_max != shape[0])
+    off_diagonal.resize(range_max - range_min);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
@@ -78,60 +78,52 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
   // Get local rows and columsn to insert
   const uint  m = num_rows[0];
   const uint  n = num_rows[1];
-  const uint* r = rows[0];
-  const uint* c = rows[1];
+  const uint* map_i = rows[0];
+  const uint* map_j = rows[1];
 
   // Check local range
-  if (rmin == 0 && rmax == shape[0])
+  if (range_min == 0 && range_max == shape[0])
   {
     // Sequential mode, do simple insertion
     for (uint i = 0; i < m; ++i)
     {
-      std::vector<uint>& row = diagonal[r[i]];
+      const uint I = map_i[i];
       for (uint j = 0; j < n; ++j)
       {
-        insert_entry(c[j], row);
+        insert_column(map_j[j], diagonal[I]);
       }
     }
   }
-
-  /*
   else
   {
     // Parallel mode, use either diagonal, off_diagonal or non_local
-
-    std::pair<uint, uint> _range = range();
-    const uint ind_start = _range.first;
-    const uint ind_stop = _range.second;
-
     for (uint i = 0; i < m; ++i)
     {
-      if (r[i] >= ind_start and r[i] < ind_stop)
+      const uint I = map_i[i];
+      if (range_min <= I && I < range_max)
       {
+        // Store local entry in diagonal or off-diagonal block
         for (uint j = 0; j < n; ++j)
         {
-          if (c[j] >= ind_start and r[i] < ind_stop)
-          {
-            // Insert entry on diagonal if not already inserted
-            if (std::find(diagonal[r[i]].begin(), diagonal[r[i]].end(), c[j]) == diagonal[r[i]].end())
-              diagonal[r[i]].push_back(c[j]);
-          }
+          const uint J = map_j[j];
+          if (range_min <= J && J < range_max)
+            insert_column(J, diagonal[I]);
           else
-          {
-            // Insert entry on off-diagonal if not already inserted
-            if (std::find(off_diagonal[r[i]].begin(), off_diagonal[r[i]].end(), c[j]) == off_diagonal[r[i]].end())
-              off_diagonal[r[i]].push_back(c[j]);
-          }
+            insert_column(J, off_diagonal[I]);
         }
       }
       else
       {
-        // FIXME: Unhandled case. We need to store these indexes and send them to the corresponding processor
+        // Store non-local entry and communicate during apply()
+        for (uint j = 0; j < n; ++j)
+        {
+          const uint J = map_j[j];
+          non_local.push_back(I);
+          non_local.push_back(J);
+        }
       }
     }
   }
-    */
-
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::rank() const
@@ -191,6 +183,9 @@ void SparsityPattern::num_nonzeros_off_diagonal(uint* num_nonzeros) const
 //-----------------------------------------------------------------------------
 void SparsityPattern::apply()
 {
+  // Need to communicate non-local blocks here
+
+
   // Sort sparsity pattern if required
   if (type == sorted && _sorted == false)
   {

@@ -79,8 +79,8 @@ namespace dolfin
     std::vector<uint> shape;
 
     // Local range
-    uint rmin;
-    uint rmax;
+    uint range_min;
+    uint range_max;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
     std::vector<std::vector<uint> > diagonal;
