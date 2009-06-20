@@ -11,7 +11,6 @@ from dolfin import *
 
 class InitialConditions(Function):
     def __init__(self, V):
-        Function.__init__(V)
         random.seed(2)
     def eval(self, values, x):
         values[0] = 0.0
@@ -29,18 +28,21 @@ class CahnHilliardEquation(NonlinearProblem):
 
 #------------------------------------------------------------------------------
 # Create mesh and define function space
-lmbda    = 1.0e-02  # surface parameter
-muFactor = 100      # chemical free energy multiplier
-dt       = 5.0e-06
-theta    = 0.5 
+lmbda  = 1.0e-02  # surface parameter
+factor = 100      # chemical free energy multiplier
+dt     = 5.0e-06
+theta  = 0.5 
 
+# Define function spaces
 mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
 ME = V + V
 
+# Define test and trial functions
 q, v  = TestFunctions(ME)
 du    = TrialFunction(ME)
 
+# Define functions
 u   = Function(ME)  # current solution 
 u0  = Function(ME)  # solution from previous converged step 
 
@@ -50,7 +52,7 @@ k,  c  = split(u)
 k0, c0 = split(u0)
 
 # Potential mu = \phi,c (chemical free-energy \phi = c^2*(1-c)^2)
-mu = muFactor*(2.0*c*(1.0-c)*(1.0-c) - 2.0*c*c*(1.0-c))
+mu = factor*(2.0*c*(1.0-c)*(1.0-c) - 2.0*c*c*(1.0-c))
 
 # k^(n+theta)
 k_mid = (1.0-theta)*k0 + theta*k
@@ -58,34 +60,29 @@ k_mid = (1.0-theta)*k0 + theta*k
 L1 = q*c*dx - q*c0*dx + dt*dot(grad(q), grad(k_mid))*dx
 L2 = v*k*dx - v*mu*dx - lmbda*dot(grad(v), grad(c))*dx
 
-a1 = derivative(L1, u, du)
-a2 = derivative(L2, u, du)
-
 L = L1 + L2
-a = a1 + a2
+a = derivative(L1, u, du) + derivative(L2, u, du)
 #------------------------------------------------------------------------------
 
+# Create intial conditions and interpolate
 u_init = InitialConditions(ME)
 u.interpolate(u_init)
 u0.interpolate(u)
 
+# Create nonlinear problem and Newton solver
 problem = CahnHilliardEquation(a, L)
 newton_solver = NewtonSolver("lu")
 
 file = File("output.pvd")
 
 t = 0.0
-T = 2*dt
+T = 50*dt
 while (t < T):
     t += dt
+    # FIXME: This should be u0.vector() = u.vector(). Is this an issue with overloading operators?
     u0.interpolate(u)
     newton_solver.solve(problem, u.vector())
-    file << u
+    file << u.sub(1)
 
-# FIXME: Why does the below not work?
-#plot(c)
-
-# FIXME: Why does the below not work?
-#conc = u[1]
-#file = File("output.pvd")
-#file << conc
+plot(u.sub(1))
+interactive()
