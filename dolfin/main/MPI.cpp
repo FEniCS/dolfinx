@@ -6,8 +6,9 @@
 // Modified by Ola Skavhaug, 2008-2009.
 //
 // First added:  2007-11-30
-// Last changed: 2009-05-25
+// Last changed: 2009-06-20
 
+#include <dolfin/log/dolfin_log.h>
 #include "mpiutils.h"
 #include "SubSystemsManager.h"
 #include "MPI.h"
@@ -172,6 +173,25 @@ std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint N)
   return range;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::index_owner(uint index, uint N)
+{
+  dolfin_assert(index < N);
+
+  // Get number of processes
+  const uint _num_processes = num_processes();
+
+  // Compute number of items per process and remainder
+  const uint n = N / _num_processes;
+  const uint r = N % _num_processes;
+  
+  // First r processes own n + 1 indices
+  if (index < r * (n + 1))
+    return index / (n + 1);
+
+  // Remaining processes own n indices
+  return r + (index - r * (n + 1)) / n;
+}
+//-----------------------------------------------------------------------------
 
 #else
 
@@ -236,6 +256,12 @@ dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint de
 std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint N)
 {
   return std::make_pair(0, N);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::index_owner(uint i, uint N)
+{
+  dolfin_assert(i < N);
+  return 0;
 }
 //-----------------------------------------------------------------------------
 

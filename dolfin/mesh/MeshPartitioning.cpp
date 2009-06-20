@@ -327,10 +327,9 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   for (uint i = process_number; i < num_processes; ++i)
     num_global += offsets[i];
 
+  // Store number of global entities
   std::vector<uint>* num_global_entities = mesh.data().array("num global entities");
-  if (num_global_entities == NULL)
-    num_global_entities = mesh.data().create_array("num global entities", mesh.topology().dim());
-
+  dolfin_assert(num_global_entities);
   (*num_global_entities)[d] = num_global;
 
   // Number owned entities
@@ -408,13 +407,6 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   global_entity_indices = mesh.data().create_mesh_function(mesh_data_name.str(), d);
   for (uint i = 0; i < entity_indices.size(); ++i)
     global_entity_indices->set(i, entity_indices[i]);
-
-  // Record number of global entities for current topological dimension
-  std::vector<uint>* num_entities = mesh.data().array("num global entities");
-  dolfin_assert(num_entities);
-  dolfin_assert(d < num_entities->size());
-  const uint local_max_index = *std::max_element(entity_indices.begin(), entity_indices.end());
-  (*num_entities)[d] = MPI::global_maximum(local_max_index) + 1;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
