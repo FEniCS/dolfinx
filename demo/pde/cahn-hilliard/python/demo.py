@@ -19,12 +19,10 @@ class InitialConditions(Function):
 class CahnHilliardEquation(NonlinearProblem):
     def __init__(self, a, L):
         NonlinearProblem.__init__(self)
-        self.L = form.Form(L)
-        #self.L = L
+        self.L = L
         self.a = a
     def F(self, b, x):
-        cpp.assemble(b, self.L)
-        #assemble(self.L, tensor=b)
+        assemble(self.L, tensor=b)
     def J(self, A, x):
         assemble(self.a, tensor=A)
 
