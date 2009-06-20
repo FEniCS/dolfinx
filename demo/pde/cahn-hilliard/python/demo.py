@@ -1,3 +1,11 @@
+"""This demo illustrates how to use of DOLFIN for solving the Cahn-Hilliard 
+equation, which is a time-dependent nonlinear PDE """
+
+__author__ = "Garth N. Wells (gnw20@cam.ac.uk)"
+__date__ = "2009-06-20"
+__copyright__ = "Copyright (C) 2009 Garth N. Wells"
+__license__  = "GNU LGPL Version 2.1"
+
 import random
 from dolfin import *
 
