@@ -31,8 +31,6 @@ namespace dolfin
     }
   }
 
-
-
   class LocalMeshData;
 
   /// This class partitions and distributes a mesh based on
@@ -54,6 +52,8 @@ namespace dolfin
   /// This maps each shared vertex to a list of the processes sharing
   /// the vertex.
   ///
+  /// 3. "global entity indices %d" (MeshFunction<uint>)
+  ///
   /// After partitioning, the function number_entities() may be called
   /// to create global indices for all entities of a given topological
   /// dimension. These are stored as mesh data (MeshFunction<uint>)
@@ -62,6 +62,15 @@ namespace dolfin
   ///    "global entity indices 1"
   ///    "global entity indices 2"
   ///    etc
+  ///
+  /// 4. "num global entities" (std::vector<uint>)
+  ///
+  /// The function number_entities also records the number of global
+  /// entities for the dimension of the numbered entities in the array
+  /// named "num global entities". This array has size D + 1, where D
+  /// is the topological dimension of the mesh. This array is
+  /// initially created by the mesh and then contains only the number
+  /// entities of dimension 0 (vertices) and dimension D (cells).
 
   class MeshPartitioning
   {

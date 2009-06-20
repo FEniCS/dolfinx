@@ -49,8 +49,15 @@ namespace dolfin
 
       // Set number of entities for each topological dimension
       num_entities = new uint[mesh.topology().dim() + 1];
+      std::vector<uint>* num_global_entities = mesh.data().array("num global entities");
       for (uint d = 0; d <= mesh.topology().dim(); d++)
-        num_entities[d] = mesh.size(d);
+      {
+        // Use number of global entities if available (when running in parallel)
+        if (num_global_entities)
+          num_entities[d] = (*num_global_entities)[d];
+        else
+          num_entities[d] = mesh.size(d);
+      }
     }
 
     // Clear UFC cell data

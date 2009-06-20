@@ -183,8 +183,59 @@ void SparsityPattern::num_nonzeros_off_diagonal(uint* num_nonzeros) const
 //-----------------------------------------------------------------------------
 void SparsityPattern::apply()
 {
-  // Need to communicate non-local blocks here
+  dolfin_debug("Calling apply() for sparsity pattern.");
 
+  // Need to communicate non-local blocks here
+  if (range_min != 0 || range_max != shape[0])
+  {
+    // Figure out correct process for each non-local entry
+    dolfin_assert(non_local.size() % 2 == 0);
+    std::vector<uint> partition(non_local.size());
+    const uint process_number = MPI::process_number();
+    for (uint i = 0; i < non_local.size(); i+= 2)
+    {
+      // Get row for non-local entry
+      const uint I = non_local[i];
+
+      // Figure out which process owns the row
+      const uint p = MPI::index_owner(I, shape[0]);
+      cout << "p = " << p << endl;
+      dolfin_assert(p < MPI::num_processes());
+      dolfin_assert(p != process_number);
+      partition[i] = p;
+      partition[i + 1] = p;
+    }
+
+    info("Communicating %d non-local sparsity pattern entries.", non_local.size() / 2);
+
+    // Communicate non-local entries
+    MPI::distribute(non_local, partition);
+
+    info("Received %d non-local sparsity pattern entries.", non_local.size() / 2);
+
+    // Insert non-local entries received from other processes
+    dolfin_assert(non_local.size() % 2 == 0);
+    for (uint i = 0; i < non_local.size(); i+= 2)
+    {
+      // Get row and column
+      const uint I = non_local[i];
+      const uint J = non_local[i + 1];
+
+      // Sanity check
+      if (I < range_min || I >= range_max)
+        error("Received illegal sparsity pattern entry for row %d, not in range [%d, %d].",
+              I, range_min, range_max);
+      
+      // Insert in diagonal or off-diagonal block
+      if (range_min <= J && J < range_max)
+        insert_column(J, diagonal[I]);
+      else
+        insert_column(J, off_diagonal[I]);
+    }
+
+    // Clear non-local entries
+    non_local.clear();
+  }
 
   // Sort sparsity pattern if required
   if (type == sorted && _sorted == false)

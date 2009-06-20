@@ -82,6 +82,9 @@ namespace dolfin
 
     /// Return local range, splitting [0, N - 1] into num_processes() portions of almost equal size
     static std::pair<uint, uint> local_range(uint N);
+    
+    /// Return which process owns index (inverse of local_range)
+    static uint index_owner(uint index, uint N);
 
   };
 
