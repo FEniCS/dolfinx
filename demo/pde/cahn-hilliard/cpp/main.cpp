@@ -115,8 +115,7 @@ int main(int argc, char* argv[])
   dolfin_init(argc, argv);
 
   // Mesh
-  //UnitSquare mesh(96, 96);
-  UnitCube mesh(24, 24, 24);
+  UnitSquare mesh(96, 96);
 
   // Time stepping and model parameters
   Constant dt(5.0e-6);

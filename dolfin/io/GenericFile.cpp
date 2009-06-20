@@ -3,16 +3,13 @@
 //
 // Modified by Niclas Jansson, 2008.
 // Modified by Ola Skavhaug 2009.
+// Modified by Garth N. Wells 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2009-03-04
-
-// FIXME: Use streams instead of stdio
-#include <stdio.h>
+// Last changed: 2009-06-20
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/plot/FunctionPlotData.h>
 #include "GenericFile.h"
 
 using namespace dolfin;
