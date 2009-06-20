@@ -6,6 +6,8 @@
 // First added: 2009-03-03
 // Last changed: 2009-06-16
 
+#include <libxml/relaxng.h>
+
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>

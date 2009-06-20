@@ -12,6 +12,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <libxml/parser.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/mesh/Mesh.h>
@@ -20,7 +21,6 @@
 #include <dolfin/graph/Graph.h>
 #include <dolfin/plot/FunctionPlotData.h>
 #include <dolfin/parameter/ParameterList.h>
-#include <libxml/parser.h>
 #include "GenericFile.h"
 #include "XMLMap.h"
 #include "XMLMesh.h"
