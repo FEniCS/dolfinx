@@ -34,7 +34,7 @@ dt     = 5.0e-06
 theta  = 0.5 
 
 # Define function spaces
-mesh = UnitSquare(32, 32)
+mesh = UnitSquare(64, 64)
 V = FunctionSpace(mesh, "CG", 1)
 ME = V + V
 
@@ -67,21 +67,22 @@ a = derivative(L1, u, du) + derivative(L2, u, du)
 # Create intial conditions and interpolate
 u_init = InitialConditions(ME)
 u.interpolate(u_init)
-u0.interpolate(u)
 
 # Create nonlinear problem and Newton solver
 problem = CahnHilliardEquation(a, L)
-newton_solver = NewtonSolver("lu")
+solver = NewtonSolver("lu")
+solver.set("Newton convergence criterion", "incremental");
+solver.set("Newton relative tolerance", 1e-6);
 
+# Output file
 file = File("output.pvd")
 
 t = 0.0
-T = 50*dt
+T = 80*dt
 while (t < T):
     t += dt
-    # FIXME: This should be u0.vector() = u.vector(). Is this an issue with overloading operators?
-    u0.interpolate(u)
-    newton_solver.solve(problem, u.vector())
+    u0.vector().assign(u.vector())
+    solver.solve(problem, u.vector())
     file << u.sub(1)
 
 plot(u.sub(1))
