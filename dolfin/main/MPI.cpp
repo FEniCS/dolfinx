@@ -107,8 +107,6 @@ dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest
 {
   MPI_Status status;
 
-  dolfin_debug2("Sending to %d, receiving from %d", dest, source);
-
   /// Create communicator (copy of MPI_COMM_WORLD)
   MPICommunicator comm;
 
@@ -121,7 +119,6 @@ dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest
   int num_received = 0;
   MPI_Get_count(&status, MPI_UNSIGNED, &num_received);
   dolfin_assert(num_received >= 0);
-  dolfin_debug1("Received %d values", num_received);
 
   return static_cast<uint>(num_received);
 }
