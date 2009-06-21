@@ -174,21 +174,14 @@ void SparsityPattern::num_nonzeros_diagonal(uint* num_nonzeros) const
 //-----------------------------------------------------------------------------
 void SparsityPattern::num_nonzeros_off_diagonal(uint* num_nonzeros) const
 {
-  /*
-  if ( dim[1] == 0 )
+  // Check rank
+  if (shape.size() != 2)
     error("Non-zero entries per row can be computed for matrices only.");
 
-  if ( diagonal.size() == 0 )
-    error("Sparsity pattern has not been computed.");
-
-  // Compute number of nonzeros per row diagonal and off-diagonal
-  uint offset = range[process_number];
-  for(uint i = 0; i+offset<range[process_number+1]; ++i)
-  {
-    d_nzrow[i] = diagonal[i+offset].size();
-    o_nzrow[i] = o_diagonal[i+offset].size();
-  }
-  */
+  // Compute number of nonzeros per row
+  std::vector< std::vector<uint> >::const_iterator row;
+  for (row = off_diagonal.begin(); row != off_diagonal.end(); ++row)
+    num_nonzeros[row - off_diagonal.begin()] = row->size();
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::apply()
