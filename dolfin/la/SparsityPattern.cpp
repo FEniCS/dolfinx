@@ -185,7 +185,10 @@ void SparsityPattern::apply()
 {
   dolfin_debug("Calling apply() for sparsity pattern.");
 
-  // Need to communicate non-local blocks here
+  // Write some statistics
+  info(statistics());
+
+  // Communicate non-local blocks if any
   if (range_min != 0 || range_max != shape[0])
   {
     // Figure out correct process for each non-local entry
@@ -199,7 +202,6 @@ void SparsityPattern::apply()
 
       // Figure out which process owns the row
       const uint p = MPI::index_owner(I, shape[0]);
-      cout << "p = " << p << endl;
       dolfin_assert(p < MPI::num_processes());
       dolfin_assert(p != process_number);
       partition[i] = p;
@@ -277,5 +279,41 @@ void SparsityPattern::sort()
 {
   for (iterator it = diagonal.begin(); it != diagonal.end(); ++it)
     std::sort(it->begin(), it->end()); 
+}
+//-----------------------------------------------------------------------------
+std::string SparsityPattern::statistics() const
+{
+   // Count nonzeros in diagonal block
+  uint num_nonzeros_diagonal = 0;
+  for (uint i = 0; i < diagonal.size(); ++i)
+    num_nonzeros_diagonal += diagonal[i].size();
+
+  // Count nonzeros in off-diagonal block
+  uint num_nonzeros_off_diagonal = 0;
+  for (uint i = 0; i < off_diagonal.size(); ++i)
+    num_nonzeros_off_diagonal += off_diagonal[i].size();
+
+  // Count nonzeros in non-local block
+  const uint num_nonzeros_non_local = non_local.size() / 2;
+
+  // Count total number of nonzeros
+  const uint num_nonzeros_total = 
+    num_nonzeros_diagonal + num_nonzeros_off_diagonal + num_nonzeros_non_local;
+
+  // Return number of entries
+  std::stringstream s;
+  s << "Nonzeros in sparsity pattern: ";
+  s << "diagonal = " << num_nonzeros_diagonal << " ("
+    << (100.0 * static_cast<double>(num_nonzeros_diagonal) / static_cast<double>(num_nonzeros_total))
+    << "\%), ";
+  s << "off-diagonal = " << num_nonzeros_off_diagonal << " ("
+    << (100.0 * static_cast<double>(num_nonzeros_off_diagonal) / static_cast<double>(num_nonzeros_total))
+    << "\%), ";
+  s << "non-local = " << num_nonzeros_non_local << " ("
+    << (100.0 * static_cast<double>(num_nonzeros_non_local) / static_cast<double>(num_nonzeros_total))
+    << "\%), ";
+  s << "total = " << num_nonzeros_total;
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
