@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2009.
 //
 // First added:  2007-11-30
-// Last changed: 2009-05-23
+// Last changed: 2009-06-21
 
 #ifndef __GENERIC_SPARSITY_PATTERN_H
 #define __GENERIC_SPARSITY_PATTERN_H
@@ -41,8 +41,11 @@ namespace dolfin
     /// Return global size for dimension i
     virtual uint size(uint i) const = 0;
 
-    /// Return local range
-    virtual std::pair<uint, uint> range() const = 0;
+    /// Return local range for rows
+    virtual std::pair<uint, uint> row_range() const = 0;
+
+    /// Return local range for columns
+    virtual std::pair<uint, uint> col_range() const = 0;
 
     /// Return total number of nonzeros in local rows
     virtual uint num_nonzeros() const = 0;

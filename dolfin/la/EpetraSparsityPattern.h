@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2009.
 //
 // First added:  2008-04-21
-// Last changed: 2009-05-23
+// Last changed: 2009-06-21
 
 #ifndef __EPETRA_SPARSITY_PATTERN_H
 #define __EPETRA_SPARSITY_PATTERN_H
@@ -51,8 +51,11 @@ namespace dolfin
     /// Return global size for dimension i
     uint size(uint i) const;
 
-    /// Return local range
-    std::pair<uint, uint> range() const;
+    /// Return local range for rows
+    std::pair<uint, uint> row_range() const;
+
+    /// Return local range for columns
+    std::pair<uint, uint> col_range() const;
 
     /// Return total number of nonzeros in local rows
     uint num_nonzeros() const;

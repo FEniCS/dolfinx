@@ -150,7 +150,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   dolfin_assert(sparsity_pattern.rank() == 2);
   const uint M = sparsity_pattern.size(0);
   const uint N = sparsity_pattern.size(1);
-  const std::pair<uint, uint> range = sparsity_pattern.range();
+  const std::pair<uint, uint> range = sparsity_pattern.row_range();
 
   // Create matrix (any old matrix is destroyed automatically)
   if (!A.unique())

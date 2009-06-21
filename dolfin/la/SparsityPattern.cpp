@@ -27,7 +27,8 @@ inline void insert_column(unsigned int j, std::vector<unsigned int>& columns)
 
 //-----------------------------------------------------------------------------
 SparsityPattern::SparsityPattern(Type type) 
-  : type(type), _sorted(false), range_min(0), range_max(0)
+  : type(type), _sorted(false),
+    row_range_min(0), row_range_max(0), col_range_min(0), col_range_max(0)
 {
   // Do nothing
 }
@@ -54,17 +55,20 @@ void SparsityPattern::init(uint rank, const uint* dims)
     return;
 
   // Get local range
-  std::pair<uint, uint> r = range();
-  range_min = r.first;
-  range_max = r.second;
+  std::pair<uint, uint> _row_range = row_range();
+  std::pair<uint, uint> _col_range = col_range();
+  row_range_min = _row_range.first;
+  row_range_max = _row_range.second;
+  col_range_min = _col_range.first;
+  col_range_max = _col_range.second;
 
   // Resize diagonal block
-  dolfin_assert(range_max > range_min);
-  diagonal.resize(range_max - range_min);
+  dolfin_assert(row_range_max > row_range_min);
+  diagonal.resize(row_range_max - row_range_min);
 
   // Resize off-diagonal block (only needed when local range != global range)
-  if (range_min != 0 || range_max != shape[0])
-    off_diagonal.resize(range_max - range_min);
+  if (row_range_min != 0 || row_range_max != shape[0])
+    off_diagonal.resize(row_range_max - row_range_min);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
@@ -83,7 +87,7 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
   const uint* map_j = rows[1];
 
   // Check local range
-  if (range_min == 0 && range_max == shape[0])
+  if (row_range_min == 0 && row_range_max == shape[0])
   {
     // Sequential mode, do simple insertion
     for (uint i = 0; i < m; ++i)
@@ -101,16 +105,16 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
     for (uint i = 0; i < m; ++i)
     {
       uint I = map_i[i];
-      if (range_min <= I && I < range_max)
+      if (row_range_min <= I && I < row_range_max)
       {
         // Subtract offset
-        I -= range_min;
+        I -= row_range_min;
 
         // Store local entry in diagonal or off-diagonal block
         for (uint j = 0; j < n; ++j)
         {
           const uint J = map_j[j];
-          if (range_min <= J && J < range_max)
+          if (col_range_min <= J && J < col_range_max)
           {
             dolfin_assert(I < diagonal.size());
             insert_column(J, diagonal[I]);
@@ -147,9 +151,14 @@ dolfin::uint SparsityPattern::size(uint i) const
   return shape[i];
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint> SparsityPattern::range() const
+std::pair<dolfin::uint, dolfin::uint> SparsityPattern::row_range() const
 {
   return MPI::local_range(size(0));
+}
+//-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> SparsityPattern::col_range() const
+{
+  return MPI::local_range(size(1));
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::num_nonzeros() const
@@ -194,7 +203,7 @@ void SparsityPattern::apply()
   info_statistics();
 
   // Communicate non-local blocks if any
-  if (range_min != 0 || range_max != shape[0])
+  if (row_range_min != 0 || row_range_max != shape[0])
   {
     // Figure out correct process for each non-local entry
     dolfin_assert(non_local.size() % 2 == 0);
@@ -229,15 +238,15 @@ void SparsityPattern::apply()
       const uint J = non_local[i + 1];
 
       // Sanity check
-      if (I < range_min || I >= range_max)
+      if (I < row_range_min || I >= row_range_max)
         error("Received illegal sparsity pattern entry for row %d, not in range [%d, %d].",
-              I, range_min, range_max);
+              I, row_range_min, row_range_max);
 
       // Subtract offset
-      I -= range_min;
+      I -= row_range_min;
 
       // Insert in diagonal or off-diagonal block
-      if (range_min <= J && J < range_max)
+      if (col_range_min <= J && J < col_range_max)
       {
         dolfin_assert(I < diagonal.size());
         insert_column(J, diagonal[I]);

@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2009.
 //
 // First added:  2008-04-21
-// Last changed: 2009-05-23
+// Last changed: 2009-06-21
 
 #ifdef HAS_TRILINOS
 
@@ -88,7 +88,14 @@ uint EpetraSparsityPattern::size(uint i) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint> EpetraSparsityPattern::range() const
+std::pair<dolfin::uint, dolfin::uint> EpetraSparsityPattern::row_range() const
+{
+  dolfin_not_implemented();
+  std::pair<uint, uint> r;
+  return r;
+}
+//-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> EpetraSparsityPattern::col_range() const
 {
   dolfin_not_implemented();
   std::pair<uint, uint> r;
