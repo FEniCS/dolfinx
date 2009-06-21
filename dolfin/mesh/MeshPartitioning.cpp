@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Ola Skavhaug and Anders Logg.
+// Copyright (C) 2008-2009 Ola Skavhaug and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01

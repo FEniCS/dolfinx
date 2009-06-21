@@ -86,14 +86,26 @@ void PETScVector::resize(uint N)
   boost::shared_ptr<Vec> _x(new Vec, PETScVectorDeleter());
   x = _x;
 
-  if (MPI::num_processes() > 1)
-    VecCreateMPI(PETSC_COMM_WORLD, PETSC_DECIDE, N, x.get());
-  else
+  // Get local range
+  const std::pair<uint, uint> range = MPI::local_range(N);
+  
+  // Initialize vector, either default or MPI vector
+  if (range.first == 0 && range.second == N)
+  {
+    // FIXME: Should we just use MatCreateSeq here?
     VecCreate(PETSC_COMM_SELF, x.get());
+    VecSetSizes(*x, PETSC_DECIDE, N);
+    VecSetFromOptions(*x);
+  }
+  else
+  {
+    info("Initializing parallel PETSc vector (MPI) of size %d.", N);
+    info("Local range is [%d, %d].", range.first, range.second);
 
-  // Set size
-  VecSetSizes(*x, PETSC_DECIDE, N);
-  VecSetFromOptions(*x);
+    const uint n = range.second - range.first;
+    dolfin_assert(n > 0);
+    VecCreateMPI(PETSC_COMM_WORLD, n, N, x.get());
+  }
 }
 //-----------------------------------------------------------------------------
 PETScVector* PETScVector::copy() const

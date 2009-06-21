@@ -1,13 +1,14 @@
-// Copyright (C) 2005-2008 Anders Logg.
+// Copyright (C) 2005-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005
-// Last changed: 2008-04-22
+// Last changed: 2009-06-22
 
 #ifdef HAS_PETSC
 
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/main/MPI.h>
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "PETScKrylovMatrix.h"
@@ -52,7 +53,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   // Convert to UMFPACK matrix if matrix type is MATSEQAIJ and UMFPACK is available.
   #if PETSC_HAVE_UMFPACK && PETSC_VERSION_MAJOR < 3
   std::string _mat_type = solver_type;
-  if(_mat_type == MATSEQAIJ)
+  if (_mat_type == MATSEQAIJ)
   {
     Mat Atemp = *A.mat();
     MatConvert(*A.mat(), MATUMFPACK, MAT_REUSE_MATRIX, &Atemp);
@@ -66,7 +67,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   x.resize(A.size(1));
 
   // Write a message
-  if ( report )
+  if (report)
     info("Solving linear system of size %d x %d (PETSc LU solver, %s).",
             A.size(0), A.size(1), solver_type);
 
@@ -136,8 +137,18 @@ double PETScLUSolver::copyToDense(const PETScKrylovMatrix& A)
 //-----------------------------------------------------------------------------
 void PETScLUSolver::init()
 {
-  // Set up solver environment to use only preconditioner
-  KSPCreate(PETSC_COMM_SELF, &ksp);
+  // We create a PETSc Krylov solver and instruct it to use LU preconditioner
+
+  // Set up solver environment
+  if (MPI::num_processes() > 1)
+  {
+    info("Creating parallel PETSc Krylov solver (for LU factorization).");
+    KSPCreate(PETSC_COMM_WORLD, &ksp);
+  }
+  else
+  {
+    KSPCreate(PETSC_COMM_SELF, &ksp);
+  }
 
   // Set preconditioner to LU factorization
   PC pc;
@@ -157,18 +168,21 @@ void PETScLUSolver::init()
 //-----------------------------------------------------------------------------
 void PETScLUSolver::clear()
 {
-  if ( ksp )
+  if (ksp)
   {
     KSPDestroy(ksp);
-    ksp=0;
+    ksp = 0;
   }
-  if ( B )
+
+  if (B )
   {
     MatDestroy(B);
-    ksp=0;
+    ksp = 0;
   }
+
   delete [] idxm; idxm=0;
   delete [] idxn; idxn=0;
 }
 //-----------------------------------------------------------------------------
+
 #endif

@@ -54,10 +54,10 @@ const std::map<std::string, MatType> PETScMatrix::types
                               ("umfpack", MATUMFPACK);
 #endif
 
-const std::map<std::string, NormType> PETScMatrix::norm_types 
+const std::map<std::string, NormType> PETScMatrix::norm_types
   = boost::assign::map_list_of("l1",        NORM_1)
                               ("lif",       NORM_INFINITY)
-                              ("frobenius", NORM_FROBENIUS); 
+                              ("frobenius", NORM_FROBENIUS);
 
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const std::string type):
@@ -146,11 +146,15 @@ void PETScMatrix::resize(uint M, uint N)
 //-----------------------------------------------------------------------------
 void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
-  // Get global dimensions and range
+  // Get global dimensions and local range
   dolfin_assert(sparsity_pattern.rank() == 2);
   const uint M = sparsity_pattern.size(0);
   const uint N = sparsity_pattern.size(1);
-  const std::pair<uint, uint> range = sparsity_pattern.row_range();
+  const std::pair<uint, uint> row_range = sparsity_pattern.row_range();
+  const std::pair<uint, uint> col_range = sparsity_pattern.col_range();
+  const uint m = row_range.second - row_range.first;
+  const uint n = col_range.second - col_range.first;
+  dolfin_assert(M > 0 && N > 0 && m > 0 && n > 0);
 
   // Create matrix (any old matrix is destroyed automatically)
   if (!A.unique())
@@ -159,17 +163,23 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   A = _A;
 
   // Initialize matrix
-  if (range.first == 0 && range.second == M)
+  if (row_range.first == 0 && row_range.second == M)
   {
     // Get number of nonzeros for each row from sparsity pattern
     uint* num_nonzeros = new uint[M];
+    dolfin_assert(num_nonzeros);
     sparsity_pattern.num_nonzeros_diagonal(num_nonzeros);
+
+    // FIXME: Does this need to be cleaned up? Seems like a mix of
+    // FIXME: of MatSeqAIJ and MatSetFromOptions?
 
     // Initialize PETSc matrix
     MatCreate(PETSC_COMM_SELF, A.get());
     MatSetSizes(*A, PETSC_DECIDE, PETSC_DECIDE, M, N);
     set_type();
     MatSeqAIJSetPreallocation(*A, PETSC_DEFAULT, reinterpret_cast<int*>(num_nonzeros));
+
+    // Set some options
     #if PETSC_VERSION_MAJOR > 2
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
     #else
@@ -183,40 +193,38 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   }
   else
   {
-    dolfin_not_implemented();
-    /*
-    uint p = dolfin::MPI::process_number();
-    const SparsityPattern& spattern = reinterpret_cast<const SparsityPattern&>(sparsity_pattern);
-    uint local_size = spattern.numLocalRows(p);
-    uint* d_nzrow = new uint[local_size];
-    uint* o_nzrow = new uint[local_size];
-    spattern.numNonZeroPerRow(p, d_nzrow, o_nzrow);
-    init(spattern.size(0), spattern.size(1), d_nzrow, o_nzrow);
-    delete [] d_nzrow;
-    delete [] o_nzrow;
-    */
-  }
+    info("Initializing parallel PETSc matrix (MPIAIJ) of size %d x %d.", M, N);
+    info("Local range is [%d, %d] x [%d, %d].",
+         row_range.first, row_range.second, col_range.first, col_range.second);
 
-  /*
-  // Create a sparse matrix in compressed row format
-  if (dolfin::MPI::num_processes() > 1)
-  {
-    // Create PETSc parallel matrix with a guess for number of diagonal (50 in this case)
-    // and number of off-diagonal non-zeroes (50 in this case).
-    // Note that guessing too high leads to excessive memory usage.
-    // In order to not waste any memory one would need to specify d_nnz and o_nnz.
-    MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, 50, PETSC_NULL, 50, PETSC_NULL, A.get());
-    //MatSetFromOptions(A);
-    //MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
-    //MatZeroEntries(A);
-  }
-  else
-  {
+    // Get number of nonzeros for each row from sparsity pattern
+    uint* num_nonzeros_diagonal = new uint[m];
+    uint* num_nonzeros_off_diagonal = new uint[n];
+    dolfin_assert(num_nonzeros_diagonal);
+    dolfin_assert(num_nonzeros_off_diagonal);
+    sparsity_pattern.num_nonzeros_diagonal(num_nonzeros_diagonal);
+    sparsity_pattern.num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
 
-  }
+    // Initialize PETSc matrix (MPIAIJ)
+    MatCreateMPIAIJ(PETSC_COMM_WORLD,
+                    m, n,
+                    M, N,
+                    PETSC_NULL, reinterpret_cast<int*>(num_nonzeros_diagonal),
+                    PETSC_NULL, reinterpret_cast<int*>(num_nonzeros_off_diagonal),
+                    A.get());
+    
+    // Set some options
+    #if PETSC_VERSION_MAJOR > 2
+    MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
+    #else
+    MatSetOption(*A, MAT_KEEP_ZEROED_ROWS);
+    #endif
+    MatZeroEntries(*A);
 
-  //MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, PETSC_NULL, (int*)d_nzrow, PETSC_NULL, (int*)o_nzrow, A.get());
-  */
+    // Cleanup
+    delete [] num_nonzeros_diagonal;
+    delete [] num_nonzeros_off_diagonal;
+  }
 }
 //-----------------------------------------------------------------------------
 PETScMatrix* PETScMatrix::copy() const
@@ -460,7 +468,7 @@ void PETScMatrix::disp(uint precision) const
   dolfin_assert(A);
 
   // FIXME: Maybe this could be an option?
-  if(MPI::num_processes() > 1)
+  if (MPI::num_processes() > 1)
     MatView(*A, PETSC_VIEWER_STDOUT_WORLD);
   else
     MatView(*A, PETSC_VIEWER_STDOUT_SELF);
@@ -480,9 +488,9 @@ void PETScMatrix::set_type()
 {
   dolfin_assert(A);
   #if PETSC_VERSION_MAJOR > 2
-  const MatType mat_type = getPETScType();
+  const MatType mat_type = get_petsc_type();
   #else
-  MatType mat_type = getPETScType();
+  MatType mat_type = get_petsc_type();
   #endif
 
   MatSetType(*A, mat_type);
@@ -520,12 +528,12 @@ void PETScMatrix::check_type()
 }
 //-----------------------------------------------------------------------------
 #if PETSC_VERSION_MAJOR > 2
-const MatType PETScMatrix::getPETScType() const
+const MatType PETScMatrix::get_petsc_type() const
 #else
-MatType PETScMatrix::getPETScType() const
+MatType PETScMatrix::get_petsc_type() const
 #endif
 {
-  if( types.count(_type) == 0)  
+  if (types.count(_type) == 0)
     error("Unknown PETSc matrix type.");
 
   return types.find(_type)->second;

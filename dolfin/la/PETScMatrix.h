@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2009 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Andy R. Terrel, 2005.
@@ -7,7 +7,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2009-05-22
+// Last changed: 2009-06-21
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -147,12 +147,12 @@ namespace dolfin
 
     // Return PETSc matrix type
     #if PETSC_VERSION_MAJOR > 2
-    const MatType getPETScType() const;
+    const MatType get_petsc_type() const;
 
     // Possible PETSc matrix types
     static const std::map<std::string, const MatType> types;
     #else
-    MatType getPETScType() const;
+    MatType get_petsc_type() const;
 
     // Possible PETSc matrix types
     static const std::map<std::string, MatType> types;

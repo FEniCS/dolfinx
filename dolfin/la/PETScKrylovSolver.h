@@ -1,13 +1,13 @@
 // Copyright (C) 2004-2005 Johan Jansson.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2005-2008.
+// Modified by Anders Logg, 2005-2009.
 // Modified by Johan Hoffman, 2005.
 // Modified by Andy R. Terrel, 2005.
 // Modified by Garth N. Wells, 2005-2009.
 //
 // First added:  2005-12-02
-// Last changed: 2009-05-23
+// Last changed: 2009-06-21
 
 #ifndef __PETSC_KRYLOV_SOLVER_H
 #define __PETSC_KRYLOV_SOLVER_H
@@ -71,7 +71,7 @@ namespace dolfin
     void read_parameters();
 
     /// Set PETScPreconditioner
-    void setPETScPreconditioner();
+    void set_petsc_preconditioner();
 
     /// Report the number of iterations
     void write_report(int num_iterations);

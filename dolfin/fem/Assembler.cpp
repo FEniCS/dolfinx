@@ -443,7 +443,7 @@ void Assembler::init_global_tensor(GenericTensor& A,
     if (sparsity_pattern)
     {
       std::vector<const DofMap*> dof_maps(0);
-      for(uint i=0; i < a.rank(); ++i)
+      for (uint i=0; i < a.rank(); ++i)
         dof_maps.push_back(&(a.function_space(i).dofmap()));
       SparsityPatternBuilder::build(*sparsity_pattern, a, ufc);
     }

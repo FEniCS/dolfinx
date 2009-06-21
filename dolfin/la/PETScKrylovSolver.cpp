@@ -1,11 +1,11 @@
 // Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2005-2008.
+// Modified by Anders Logg, 2005-2009.
 // Modified by Garth N. Wells, 2005-2009.
 //
 // First added:  2005-12-02
-// Last changed: 2009-05-23
+// Last changed: 2009-06-21
 
 #ifdef HAS_PETSC
 
@@ -13,6 +13,7 @@
 #include <private/pcimpl.h>
 
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/main/MPI.h>
 #include "PETScKrylovSolver.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
@@ -30,7 +31,6 @@ namespace dolfin
     }
   };
 }
-
 
 using namespace dolfin;
 
@@ -144,9 +144,9 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
 
   // FIXME: Preconditioner being set here and not in init() to avoid PETSc bug 
   //        with Hypre. See explanation inside PETScKrylovSolver:init().
-  if( !pc_set )
+  if (!pc_set)
   {
-    setPETScPreconditioner();
+    set_petsc_preconditioner();
     pc_set = true;
   }
 
@@ -251,10 +251,19 @@ void PETScKrylovSolver::init(uint M, uint N)
   }
 
   // Set up solver environment
-  KSPCreate(PETSC_COMM_SELF, ksp.get());
+  if (MPI::num_processes() > 1)
+  {
+    info("Creating parallel PETSc Krylov solver.");
+    KSPCreate(PETSC_COMM_WORLD, ksp.get());
+  }
+  else
+  {
+    KSPCreate(PETSC_COMM_SELF, ksp.get());
+  }
+
+  // Set some options
   KSPSetFromOptions(*ksp);
   KSPSetInitialGuessNonzero(*ksp, PETSC_TRUE);
-
 
   // Check that the requested method is known
   if (methods.count(method) == 0)
@@ -263,16 +272,15 @@ void PETScKrylovSolver::init(uint M, uint N)
   // Set solver
   if (method != "default")
     KSPSetType(*ksp, methods.find(method)->second);
-     
 
   //set_solver();
 
   // FIXME: The preconditioner is being set in solve() due to a PETSc bug
   //        when using Hypre preconditioner. The problem can be avoided by
   //        setting the preconditioner after KSPSetOperators(). This will be
-  //        fixed in PETSc, the the preconditioner can be set here again.
+  //        fixed in PETSc and then the preconditioner can be set here again.
   // Set preconditioner
-//  setPETScPreconditioner();
+  //  set_petsc_preconditioner();
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::read_parameters()
@@ -304,7 +312,7 @@ void PETScKrylovSolver::read_parameters()
   parameters_read = true;
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::setPETScPreconditioner()
+void PETScKrylovSolver::set_petsc_preconditioner()
 {
   // Treat special case DOLFIN user-defined preconditioner
   if ( pc_dolfin )
