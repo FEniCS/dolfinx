@@ -69,8 +69,8 @@ namespace dolfin
     // Sort entries for each row 
     void sort();
 
-    // Return string with statistics for sparsity pattern
-    std::string statistics() const;
+    // Print some useful information
+    void info_statistics() const;
 
     // Sparsity pattern type (sorted/unsorted)
     const Type type;    

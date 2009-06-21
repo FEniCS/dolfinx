@@ -59,6 +59,7 @@ void SparsityPattern::init(uint rank, const uint* dims)
   range_max = r.second;
 
   // Resize diagonal block
+  dolfin_assert(range_max > range_min);
   diagonal.resize(range_max - range_min);
 
   // Resize off-diagonal block (only needed when local range != global range)
@@ -99,22 +100,31 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
     // Parallel mode, use either diagonal, off_diagonal or non_local
     for (uint i = 0; i < m; ++i)
     {
-      const uint I = map_i[i];
+      uint I = map_i[i];
       if (range_min <= I && I < range_max)
       {
+        // Subtract offset
+        I -= range_min;
+
         // Store local entry in diagonal or off-diagonal block
         for (uint j = 0; j < n; ++j)
         {
           const uint J = map_j[j];
           if (range_min <= J && J < range_max)
+          {
+            dolfin_assert(I < diagonal.size());
             insert_column(J, diagonal[I]);
+          }
           else
+          {
+            dolfin_assert(I < off_diagonal.size());
             insert_column(J, off_diagonal[I]);
+          }
         }
       }
       else
       {
-        // Store non-local entry and communicate during apply()
+        // Store non-local entry (communicated later during apply())
         for (uint j = 0; j < n; ++j)
         {
           const uint J = map_j[j];
@@ -183,10 +193,12 @@ void SparsityPattern::num_nonzeros_off_diagonal(uint* num_nonzeros) const
 //-----------------------------------------------------------------------------
 void SparsityPattern::apply()
 {
-  dolfin_debug("Calling apply() for sparsity pattern.");
+  // Check rank, ignore if not a matrix
+  if (shape.size() != 2)
+    return;
 
-  // Write some statistics
-  info(statistics());
+  // Print some useful information
+  info_statistics();
 
   // Communicate non-local blocks if any
   if (range_min != 0 || range_max != shape[0])
@@ -220,19 +232,28 @@ void SparsityPattern::apply()
     for (uint i = 0; i < non_local.size(); i+= 2)
     {
       // Get row and column
-      const uint I = non_local[i];
+      uint I = non_local[i];
       const uint J = non_local[i + 1];
 
       // Sanity check
       if (I < range_min || I >= range_max)
         error("Received illegal sparsity pattern entry for row %d, not in range [%d, %d].",
               I, range_min, range_max);
-      
+
+      // Subtract offset
+      I -= range_min;
+
       // Insert in diagonal or off-diagonal block
       if (range_min <= J && J < range_max)
+      {
+        dolfin_assert(I < diagonal.size());
         insert_column(J, diagonal[I]);
+      }
       else
+      {
+        dolfin_assert(I < off_diagonal.size());
         insert_column(J, off_diagonal[I]);
+      }
     }
 
     // Clear non-local entries
@@ -242,7 +263,7 @@ void SparsityPattern::apply()
   // Sort sparsity pattern if required
   if (type == sorted && _sorted == false)
   {
-    cout << "Sorting pattern " << endl;
+    cout << "Sorting sparsity pattern." << endl;
     sort();
     _sorted = true;
   }
@@ -281,9 +302,9 @@ void SparsityPattern::sort()
     std::sort(it->begin(), it->end()); 
 }
 //-----------------------------------------------------------------------------
-std::string SparsityPattern::statistics() const
+void SparsityPattern::info_statistics() const
 {
-   // Count nonzeros in diagonal block
+  // Count nonzeros in diagonal block
   uint num_nonzeros_diagonal = 0;
   for (uint i = 0; i < diagonal.size(); ++i)
     num_nonzeros_diagonal += diagonal[i].size();
@@ -301,19 +322,20 @@ std::string SparsityPattern::statistics() const
     num_nonzeros_diagonal + num_nonzeros_off_diagonal + num_nonzeros_non_local;
 
   // Return number of entries
-  std::stringstream s;
-  s << "Nonzeros in sparsity pattern: ";
-  s << "diagonal = " << num_nonzeros_diagonal << " ("
-    << (100.0 * static_cast<double>(num_nonzeros_diagonal) / static_cast<double>(num_nonzeros_total))
-    << "\%), ";
-  s << "off-diagonal = " << num_nonzeros_off_diagonal << " ("
-    << (100.0 * static_cast<double>(num_nonzeros_off_diagonal) / static_cast<double>(num_nonzeros_total))
-    << "\%), ";
-  s << "non-local = " << num_nonzeros_non_local << " ("
-    << (100.0 * static_cast<double>(num_nonzeros_non_local) / static_cast<double>(num_nonzeros_total))
-    << "\%), ";
-  s << "total = " << num_nonzeros_total;
-
-  return s.str();
+  cout << "Matrix of size " << shape[0] << " x " << shape[1] << " has "
+       << num_nonzeros_total << " nonzero entries." << endl;
+  if (num_nonzeros_total != num_nonzeros_diagonal)
+  {
+    cout << "Diagonal: " << num_nonzeros_diagonal << " ("
+         << (100.0 * static_cast<double>(num_nonzeros_diagonal) / static_cast<double>(num_nonzeros_total))
+         << "\%), ";
+    cout << "off-diagonal: " << num_nonzeros_off_diagonal << " ("
+         << (100.0 * static_cast<double>(num_nonzeros_off_diagonal) / static_cast<double>(num_nonzeros_total))
+         << "\%), ";
+    cout << "non-local: " << num_nonzeros_non_local << " ("
+         << (100.0 * static_cast<double>(num_nonzeros_non_local) / static_cast<double>(num_nonzeros_total))
+         << "\%)";
+    cout << endl;
+  }
 }
 //-----------------------------------------------------------------------------
