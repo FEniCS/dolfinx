@@ -211,7 +211,7 @@ void PVTKFile::results_write(const Function& u) const
   double* values = new double[size];
 
   // Get function values at vertices
-  u.interpolate(values);
+  u.interpolate_vertex_values(values);
 
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);

@@ -1,3 +1,5 @@
+ - Experimental support for parallel assembly and solve
+ - Rename interpolate(double*) --> interpolate_vertex_values(double*)
  - Add Python version of Cahn-Hilliard demo
  - Fix bug in assemble.py
  - Permit interpolation of functions between non-matching meshes

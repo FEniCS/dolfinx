@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2009-02-25
+// Last changed: 2009-06-22
 
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -107,7 +107,7 @@ void ALE::move(Mesh& mesh, const Function& displacement)
   // Interpolate at vertices
   const uint N = mesh.num_vertices();
   double* vertex_values = new double[N*gdim];
-  displacement.interpolate(vertex_values);
+  displacement.interpolate_vertex_values(vertex_values);
 
   // Move vertex coordinates
   double* x = mesh.geometry().x();

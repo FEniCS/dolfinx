@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-03-11
+// Last changed: 2009-06-22
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
@@ -344,11 +344,11 @@ void Function::interpolate(const Function& v)
   function_space().interpolate(this->vector(), v, "non-matching");
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(double* vertex_values) const
+void Function::interpolate_vertex_values(double* vertex_values) const
 {
   dolfin_assert(vertex_values);
   dolfin_assert(_function_space);
-  _function_space->interpolate(vertex_values, *this);
+  _function_space->interpolate_vertex_values(vertex_values, *this);
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate()

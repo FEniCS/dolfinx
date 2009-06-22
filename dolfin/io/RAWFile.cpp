@@ -19,7 +19,6 @@
 #include <dolfin/la/Vector.h>
 #include "RAWFile.h"
 
-
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
@@ -131,7 +130,7 @@ void RAWFile::ResultsWrite(const Function& u) const
       double* values = new double[size];
 
       // Get function values at vertices
-      u.interpolate(values);
+      u.interpolate_vertex_values(values);
 
       // Write function data at mesh vertices
       uint num_vertices = mesh.num_vertices();

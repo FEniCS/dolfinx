@@ -67,7 +67,7 @@ void XYZFile::ResultsWrite(const Function& u) const
   double* values = new double[size];
 
   // Get function values at vertices
-  u.interpolate(values);
+  u.interpolate_vertex_values(values);
 
   // Write function data at mesh vertices
 

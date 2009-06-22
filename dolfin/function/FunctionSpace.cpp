@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg.
+// Copyright (C) 2008-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristoffer Selim, 2008.
@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-05-17
+// Last changed: 2009-06-22
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/fem/UFC.h>
@@ -195,8 +195,8 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
   }
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(double* vertex_values,
-                                const Function& v) const
+void FunctionSpace::interpolate_vertex_values(double* vertex_values,
+                                              const Function& v) const
 {
   dolfin_assert(vertex_values);
   dolfin_assert(v.in(*this));

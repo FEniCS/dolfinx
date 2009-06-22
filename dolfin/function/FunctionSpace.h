@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Anders Logg.
+// Copyright (C) 2008-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008-2009.
@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-05-17
+// Last changed: 2009-06-22
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -89,8 +89,8 @@ namespace dolfin
                      const Function& v, std::string meshes = "matching") const;
 
     /// Interpolate function v in function space to vertices of mesh
-    void interpolate(double* vertex_values,
-                     const Function& v) const;
+    void interpolate_vertex_values(double* vertex_values,
+                                   const Function& v) const;
 
     /// Extract sub space for component
     boost::shared_ptr<FunctionSpace> extract_sub_space(const std::vector<uint>& component) const;

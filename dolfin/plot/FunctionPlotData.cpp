@@ -31,7 +31,7 @@ FunctionPlotData::FunctionPlotData(const Function& v)
 
   // Interpolate vertex values
   double* values = new double[N];
-  v.interpolate(values);
+  v.interpolate_vertex_values(values);
   vertex_values.set(values);
   delete [] values;
 
