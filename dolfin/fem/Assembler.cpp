@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-05-20
+// Last changed: 2009-06-22
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
@@ -306,7 +306,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   // Assemble over interior facets (the facets of the mesh)
   Progress p(progress_message(A.rank(), "interior facets"), mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
-  {
+As  {
     // Check if we have an interior facet
     if ( facet->num_entities(mesh.topology().dim()) != 2 )
     {
@@ -1664,47 +1664,52 @@ void Assembler::assemble_system_new(GenericMatrix& A,
   delete [] indicators;
 }
 //-----------------------------------------------------------------------------
-void Assembler::compute_mesh_function_from_mesh_arrays(Mesh& mesh){
+void Assembler::compute_mesh_function_from_mesh_arrays(Mesh& mesh)
+{
+  // Do nothing if mesh function "exterior facet domains" is present
+  if (mesh.data().mesh_function("exterior facet domains"))
+    return; 
 
-  // if mesh function "exterior facet domain" is present: Do nothing. 
-  if (mesh.data().mesh_function("exterior facet domains")) return; 
-
-  //FIXME: we do now assume consistency between the arrays. How to check this ?  
+  // Extract data for boundary indicators
   std::vector<uint>* facet_cells   = mesh.data().array("boundary facet cells");
   std::vector<uint>* facet_numbers = mesh.data().array("boundary facet numbers");
   std::vector<uint>* indicators    = mesh.data().array("boundary indicators");
 
-  // if no indicators: Do nothing
-  if (!indicators) return;   
+  // Do nothing if there are no indicators
+  if (!indicators)
+    return;
+
+  // Make sure mesh has facets
+  const uint D = mesh.topology().dim();
+  mesh.init(D - 1);
+
+  // Need facet cells and numbers if indicators are present
+  if (!facet_cells || !facet_numbers)
+    error("Mesh has boundary indicators, but missing data for \"boundary facet cells\" and \"boundary facet numbers\".");
+  dolfin_assert(facet_cells->size() == mesh.num_entities(D - 1));
+  dolfin_assert(facet_numbers->size() == mesh.num_entities(D - 1));
+  dolfin_assert(indicators->size() == mesh.num_entities(D - 1));
 
   // Create mesh function "exterior_facet_domains"
-  MeshFunction<uint>* exterior_facet_domains = mesh.data().create_mesh_function("exterior facet domains", mesh.topology().dim()-1); 
+  MeshFunction<uint>* exterior_facet_domains =
+    mesh.data().create_mesh_function("exterior facet domains", D - 1);
 
-  // initialize meshfunction to zero 
-  for (uint i=0; i<exterior_facet_domains->size(); i++) { 
-    Facet facet(mesh, i); 
-    (*exterior_facet_domains)(facet) = 0;
-  }
+  // Initialize meshfunction to zero
+  (*exterior_facet_domains) = 0;
 
-  const uint size = facet_cells->size();
-  uint cell_index; 
-  uint local_facet; 
-  uint global_facet; 
-  const uint d = mesh.topology().dim(); 
-  // for all facets 
-  for (uint i=0; i<size; i++) {
-    // get cell index 
-    cell_index = (*facet_cells)[i];    
-    // get local facet  
-    local_facet = (*facet_numbers)[i]; 
-    // create cell 
-    Cell cell(mesh, cell_index);
-    // get global facet 
-    global_facet = cell.entities(d - 1)[local_facet];
-    // create global facet
-    Facet facet(mesh, global_facet); 
-    // update mesh function with the boundary indicator
-    (*exterior_facet_domains)(facet) = (*indicators)[i]; 
+  // Assign domain numbers for each facet
+  for (uint i = 0; i < mesh.num_entities(D - 1); i++)
+  {
+    // Get cell index and local facet index
+    const uint cell_index = (*facet_cells)[i];
+    const uint local_facet = (*facet_numbers)[i];
+    
+    // Get global facet index
+    const Cell cell(mesh, cell_index);
+    const uint global_facet = cell.entities(D - 1)[local_facet];
+        
+    // Set boundary indicator for facet
+    exterior_facet_domains->set(global_facet, (*indicators)[i]);
   }
 }
 //-----------------------------------------------------------------------------

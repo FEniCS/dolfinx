@@ -188,8 +188,6 @@ namespace dolfin
                                                ); 
 
 
-
-
   };
 
 }
