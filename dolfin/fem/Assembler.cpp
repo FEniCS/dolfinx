@@ -1666,19 +1666,21 @@ void Assembler::assemble_system_new(GenericMatrix& A,
 //-----------------------------------------------------------------------------
 void Assembler::compute_mesh_function_from_mesh_arrays(Mesh& mesh){
 
+  // if mesh function "exterior facet domain" is present: Do nothing. 
   if (mesh.data().mesh_function("exterior facet domains")) return; 
 
+  //FIXME: we do now assume consistency between the arrays. How to check this ?  
   std::vector<uint>* facet_cells   = mesh.data().array("boundary facet cells");
   std::vector<uint>* facet_numbers = mesh.data().array("boundary facet numbers");
   std::vector<uint>* indicators    = mesh.data().array("boundary indicators");
 
+  // if no indicators: Do nothing
   if (!indicators) return;   
 
-  //FIXME: we do now assume consistency between the arrays. How to check this ?  
-
+  // Create mesh function "exterior_facet_domains"
   MeshFunction<uint>* exterior_facet_domains = mesh.data().create_mesh_function("exterior facet domains", mesh.topology().dim()-1); 
 
-  // initialize meshfunction
+  // initialize meshfunction to zero 
   for (uint i=0; i<exterior_facet_domains->size(); i++) { 
     Facet facet(mesh, i); 
     (*exterior_facet_domains)(facet) = 0;
@@ -1689,16 +1691,20 @@ void Assembler::compute_mesh_function_from_mesh_arrays(Mesh& mesh){
   uint local_facet; 
   uint global_facet; 
   const uint d = mesh.topology().dim(); 
+  // for all facets 
   for (uint i=0; i<size; i++) {
+    // get cell index 
     cell_index = (*facet_cells)[i];    
+    // get local facet  
     local_facet = (*facet_numbers)[i]; 
+    // create cell 
     Cell cell(mesh, cell_index);
+    // get global facet 
     global_facet = cell.entities(d - 1)[local_facet];
+    // create global facet
     Facet facet(mesh, global_facet); 
+    // update mesh function with the boundary indicator
     (*exterior_facet_domains)(facet) = (*indicators)[i]; 
-//    std::cout << "global_facet " << global_facet<< " indicators "<<(*indicators)[i]<<std::endl;
   }
-//  (*exterior_facet_domains).disp();
-
 }
 //-----------------------------------------------------------------------------
