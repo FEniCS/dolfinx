@@ -14,17 +14,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshGeometry::MeshGeometry() : _dim(0), _size(0), coordinates(0), _size_higher_order(0),
-                               higher_order_coordinates(0), _higher_order_num_cells(0),
-                               _higher_order_num_dof(0), higher_order_cell_data(0), affine_cell(0)
+MeshGeometry::MeshGeometry() :
+  _dim(0), _size(0), coordinates(0), _size_higher_order(0),
+  higher_order_coordinates(0), _higher_order_num_cells(0),
+  _higher_order_num_dof(0), higher_order_cell_data(0), affine_cell(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshGeometry::MeshGeometry(const MeshGeometry& geometry) :
-                               _dim(0), _size(0), coordinates(0), _size_higher_order(0),
-                               higher_order_coordinates(0), _higher_order_num_cells(0),
-                               _higher_order_num_dof(0), higher_order_cell_data(0), affine_cell(0)
+  _dim(0), _size(0), coordinates(0), _size_higher_order(0),
+  higher_order_coordinates(0), _higher_order_num_cells(0),
+  _higher_order_num_dof(0), higher_order_cell_data(0), affine_cell(0)
 {
   *this = geometry;
 }
@@ -135,7 +136,7 @@ void MeshGeometry::init(uint dim, uint size)
   _size_higher_order = 0; // this will be set by another routine
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::init_HigherOrderVertices(uint dim, uint size_higher_order)
+void MeshGeometry::init_higher_order_vertices(uint dim, uint size_higher_order)
 {
   // Allocate new data
   higher_order_coordinates = new double[dim*size_higher_order];
@@ -144,7 +145,7 @@ void MeshGeometry::init_HigherOrderVertices(uint dim, uint size_higher_order)
   _size_higher_order = size_higher_order;
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::init_HigherOrderCells(uint num_cells, uint num_dof)
+void MeshGeometry::init_higher_order_cells(uint num_cells, uint num_dof)
 {
   // Allocate new data
   higher_order_cell_data = new uint[num_dof*num_cells];
@@ -154,11 +155,11 @@ void MeshGeometry::init_HigherOrderCells(uint num_cells, uint num_dof)
   _higher_order_num_dof   = num_dof;
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::initAffineIndicator(uint num_cells)
+void MeshGeometry::init_affine_indicator(uint num_cells)
 {
   // Clear it if it was already allocated
-  delete(affine_cell);
-
+  delete affine_cell;
+  
   // Allocate new data
   affine_cell = new bool[num_cells];
 
@@ -167,7 +168,7 @@ void MeshGeometry::initAffineIndicator(uint num_cells)
     affine_cell[i] = true;
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::setAffineIndicator(uint i, bool value)
+void MeshGeometry::set_affine_indicator(uint i, bool value)
 {
   affine_cell[i] = value;
 }

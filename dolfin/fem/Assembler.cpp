@@ -40,10 +40,11 @@ void Assembler::assemble(GenericTensor& A,
                          const Form& a,
                          bool reset_tensor)
 {
-  Mesh& mesh = const_cast<Mesh&>(a.mesh()); // FIXME: this causes the Mesh to change, hence const is casted away 
-  compute_mesh_function_from_mesh_arrays(mesh); 
-  MeshFunction<uint>* exterior_facet_domains = mesh.data().mesh_function("exterior facet domains"); 
-
+  // Extract boundary indicators (if any)
+  MeshFunction<uint>* exterior_facet_domains
+    = a.mesh().data().mesh_function("exterior facet domains"); 
+  
+  // Assemble
   assemble(A, a, 0, exterior_facet_domains, 0, reset_tensor);
 }
 //-----------------------------------------------------------------------------
@@ -303,12 +304,13 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   mesh.init(mesh.topology().dim() - 1);
   mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
   dolfin_assert(mesh.ordered());
+
   // Assemble over interior facets (the facets of the mesh)
   Progress p(progress_message(A.rank(), "interior facets"), mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
-As  {
+  {
     // Check if we have an interior facet
-    if ( facet->num_entities(mesh.topology().dim()) != 2 )
+    if (facet->num_entities(mesh.topology().dim()) != 2)
     {
       p++;
       continue;
@@ -1662,54 +1664,5 @@ void Assembler::assemble_system_new(GenericMatrix& A,
   delete [] be;
   delete [] g;
   delete [] indicators;
-}
-//-----------------------------------------------------------------------------
-void Assembler::compute_mesh_function_from_mesh_arrays(Mesh& mesh)
-{
-  // Do nothing if mesh function "exterior facet domains" is present
-  if (mesh.data().mesh_function("exterior facet domains"))
-    return; 
-
-  // Extract data for boundary indicators
-  std::vector<uint>* facet_cells   = mesh.data().array("boundary facet cells");
-  std::vector<uint>* facet_numbers = mesh.data().array("boundary facet numbers");
-  std::vector<uint>* indicators    = mesh.data().array("boundary indicators");
-
-  // Do nothing if there are no indicators
-  if (!indicators)
-    return;
-
-  // Make sure mesh has facets
-  const uint D = mesh.topology().dim();
-  mesh.init(D - 1);
-
-  // Need facet cells and numbers if indicators are present
-  if (!facet_cells || !facet_numbers)
-    error("Mesh has boundary indicators, but missing data for \"boundary facet cells\" and \"boundary facet numbers\".");
-  dolfin_assert(facet_cells->size() == mesh.num_entities(D - 1));
-  dolfin_assert(facet_numbers->size() == mesh.num_entities(D - 1));
-  dolfin_assert(indicators->size() == mesh.num_entities(D - 1));
-
-  // Create mesh function "exterior_facet_domains"
-  MeshFunction<uint>* exterior_facet_domains =
-    mesh.data().create_mesh_function("exterior facet domains", D - 1);
-
-  // Initialize meshfunction to zero
-  (*exterior_facet_domains) = 0;
-
-  // Assign domain numbers for each facet
-  for (uint i = 0; i < mesh.num_entities(D - 1); i++)
-  {
-    // Get cell index and local facet index
-    const uint cell_index = (*facet_cells)[i];
-    const uint local_facet = (*facet_numbers)[i];
-    
-    // Get global facet index
-    const Cell cell(mesh, cell_index);
-    const uint global_facet = cell.entities(D - 1)[local_facet];
-        
-    // Set boundary indicator for facet
-    exterior_facet_domains->set(global_facet, (*indicators)[i]);
-  }
 }
 //-----------------------------------------------------------------------------

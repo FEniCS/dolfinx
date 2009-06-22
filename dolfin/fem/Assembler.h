@@ -122,10 +122,6 @@ namespace dolfin
                                 const GenericVector* x0,
                                 bool reset_tensors=true);
 
-    // Compute mesh function "exterior facet domains" from the arrays 
-    // "boundary facet cells", "boundary facet numbers" and "boundary indicators" 
-    static void compute_mesh_function_from_mesh_arrays(Mesh& mesh);
-
   private:
 
     // Assemble over cells

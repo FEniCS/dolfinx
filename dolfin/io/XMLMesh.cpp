@@ -397,7 +397,7 @@ void XMLMesh::read_higher_order_vertices(const xmlChar *name, const xmlChar **at
   uint num_higher_order_vertices = parse_uint(name, attrs, "size");
 
   // Set number of vertices
-  editor.initHigherOrderVertices(num_higher_order_vertices);
+  editor.init_higher_order_vertices(num_higher_order_vertices);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::read_higher_order_cells(const xmlChar *name, const xmlChar **attrs)
@@ -407,7 +407,7 @@ void XMLMesh::read_higher_order_cells(const xmlChar *name, const xmlChar **attrs
   uint num_higher_order_cell_dof = parse_uint(name, attrs, "num_dof");
 
   // Set number of vertices
-  editor.initHigherOrderCells(num_higher_order_cells, num_higher_order_cell_dof);
+  editor.init_higher_order_cells(num_higher_order_cells, num_higher_order_cell_dof);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::read_higher_order_vertex(const xmlChar *name, const xmlChar **attrs)
@@ -421,14 +421,14 @@ void XMLMesh::read_higher_order_vertex(const xmlChar *name, const xmlChar **attr
   case 1:
     {
       double x = parse_float(name, attrs, "x");
-      editor.addHigherOrderVertex(v, x);
+      editor.add_higher_order_vertex(v, x);
     }
     break;
   case 2:
     {
       double x = parse_float(name, attrs, "x");
       double y = parse_float(name, attrs, "y");
-      editor.addHigherOrderVertex(v, x, y);
+      editor.add_higher_order_vertex(v, x, y);
     }
     break;
   case 3:
@@ -436,7 +436,7 @@ void XMLMesh::read_higher_order_vertex(const xmlChar *name, const xmlChar **attr
       double x = parse_float(name, attrs, "x");
       double y = parse_float(name, attrs, "y");
       double z = parse_float(name, attrs, "z");
-      editor.addHigherOrderVertex(v, x, y, z);
+      editor.add_higher_order_vertex(v, x, y, z);
     }
     break;
   default:
@@ -464,10 +464,10 @@ void XMLMesh::read_higher_order_cell_data(const xmlChar *name, const xmlChar **a
   uint v5 = parse_uint(name, attrs, "v5");
 
   // Add cell
-  editor.addHigherOrderCellData(c, v0, v1, v2, v3, v4, v5);
+  editor.add_higher_order_cell_data(c, v0, v1, v2, v3, v4, v5);
 
   // set affine indicator
-  editor.setAffineCellIndicator(c, affine_str);
+  editor.set_affine_cell_indicator(c, affine_str);
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::close_mesh()

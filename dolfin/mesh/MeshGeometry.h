@@ -105,16 +105,16 @@ namespace dolfin
     void init(uint dim, uint size);
 
     /// Initialize higher order coordinate list to given dimension and size
-    void init_HigherOrderVertices(uint dim, uint size_higher_order);
+    void init_higher_order_vertices(uint dim, uint size_higher_order);
 
     /// Initialize higher order cell data list to given number of cells and dofs
-    void init_HigherOrderCells(uint num_cells, uint num_dof);
+    void init_higher_order_cells(uint num_cells, uint num_dof);
 
     /// Initialize the affine indicator array
-    void initAffineIndicator(uint num_cells);
+    void init_affine_indicator(uint num_cells);
 
     /// set affine indicator at index i
-    void setAffineIndicator(uint i, bool value);
+    void set_affine_indicator(uint i, bool value);
 
     /// Set value of coordinate n in direction i
     void set(uint n, uint i, double x);
