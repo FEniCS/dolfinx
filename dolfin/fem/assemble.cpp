@@ -4,11 +4,12 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2009-03-06
+// Last changed: 2009-06-22
 
 #include <dolfin/la/Scalar.h>
 #include "Form.h"
 #include "Assembler.h"
+#include "SystemAssembler.h"
 #include "assemble.h"
 
 using namespace dolfin;
@@ -46,7 +47,7 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const DirichletBC& bc,
                              bool reset_tensors)
 {
-  Assembler::assemble_system(A, b, a, L, bc, reset_tensors);
+  SystemAssembler::assemble_system(A, b, a, L, bc, reset_tensors);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -56,7 +57,7 @@ void dolfin::assemble_system(GenericMatrix& A,
                              std::vector<const DirichletBC*>& bcs,
                              bool reset_tensors)
 {
-  Assembler::assemble_system(A, b, a, L, bcs, reset_tensors);
+  SystemAssembler::assemble_system(A, b, a, L, bcs, reset_tensors);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -70,9 +71,9 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const GenericVector* x0,
                              bool reset_tensors)
 {
-  Assembler::assemble_system(A, b, a, L, bcs,
-                             cell_domains, exterior_facet_domains, interior_facet_domains,
-                             x0, reset_tensors);
+  SystemAssembler::assemble_system(A, b, a, L, bcs,
+                                   cell_domains, exterior_facet_domains, interior_facet_domains,
+                                   x0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system_new(GenericMatrix& A,
@@ -82,7 +83,7 @@ void dolfin::assemble_system_new(GenericMatrix& A,
                              const DirichletBC& bc,
                              bool reset_tensors)
 {
-  Assembler::assemble_system_new(A, b, a, L, bc, reset_tensors);
+  SystemAssembler::assemble_system_new(A, b, a, L, bc, reset_tensors);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system_new(GenericMatrix& A,
@@ -92,7 +93,7 @@ void dolfin::assemble_system_new(GenericMatrix& A,
                              std::vector<const DirichletBC*>& bcs,
                              bool reset_tensors)
 {
-  Assembler::assemble_system_new(A, b, a, L, bcs, reset_tensors);
+  SystemAssembler::assemble_system_new(A, b, a, L, bcs, reset_tensors);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system_new(GenericMatrix& A,
@@ -106,12 +107,10 @@ void dolfin::assemble_system_new(GenericMatrix& A,
                              const GenericVector* x0,
                              bool reset_tensors)
 {
-  Assembler::assemble_system_new(A, b, a, L, bcs, 
-                             cell_domains, exterior_facet_domains, interior_facet_domains,
-                             x0, reset_tensors);
+  SystemAssembler::assemble_system_new(A, b, a, L, bcs, 
+                                       cell_domains, exterior_facet_domains, interior_facet_domains,
+                                       x0, reset_tensors);
 }
-
-
 //-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a,
                         bool reset_tensor)
