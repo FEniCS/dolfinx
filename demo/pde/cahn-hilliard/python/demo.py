@@ -67,6 +67,7 @@ a = derivative(L1, u, du) + derivative(L2, u, du)
 # Create intial conditions and interpolate
 u_init = InitialConditions(ME)
 u.interpolate(u_init)
+u0.interpolate(u_init)
 
 # Create nonlinear problem and Newton solver
 problem = CahnHilliardEquation(a, L)
@@ -81,7 +82,7 @@ t = 0.0
 T = 80*dt
 while (t < T):
     t += dt
-    u0.vector().assign(u.vector())
+    u0.vector()[:] = u.vector()[:]
     solver.solve(problem, u.vector())
     file << u.sub(1)
 
