@@ -26,37 +26,37 @@
 #include "DofMap.h"
 #include "Form.h"
 #include "UFC.h"
-#include "Assembler.h"
 #include "SparsityPatternBuilder.h"
 #include "DirichletBC.h"
 #include "FiniteElement.h"
+#include "SystemAssembler.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void Assembler::assemble_system(GenericMatrix& A,
-                                GenericVector& b,
-                                const Form& a,
-                                const Form& L,
-                                const DirichletBC& bc,
-                                bool reset_tensors)
+void SystemAssembler::assemble_system(GenericMatrix& A,
+                                      GenericVector& b,
+                                      const Form& a,
+                                      const Form& L,
+                                      const DirichletBC& bc,
+                                      bool reset_tensors)
 {
   std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
   assemble_system(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_system(GenericMatrix& A,
-                                GenericVector& b,
-                                const Form& a,
-                                const Form& L,
-                                std::vector<const DirichletBC*>& bcs,
-                                bool reset_tensors)
+void SystemAssembler::assemble_system(GenericMatrix& A,
+                                      GenericVector& b,
+                                      const Form& a,
+                                      const Form& L,
+                                      std::vector<const DirichletBC*>& bcs,
+                                      bool reset_tensors)
 {
   assemble_system(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
-void Assembler::check(const Form& a)
+void SystemAssembler::check(const Form& a)
 {
   // Check the form
   a.check();
@@ -121,9 +121,9 @@ You may need to provide the dimension of a user defined Function.", j, i, dim, f
     error("Unable to assemble, mesh is not correctly ordered (consider calling mesh.order()).");
 }
 //-----------------------------------------------------------------------------
-void Assembler::init_global_tensor(GenericTensor& A,
-                                   const Form& a,
-                                   UFC& ufc, bool reset_tensor)
+void SystemAssembler::init_global_tensor(GenericTensor& A,
+                                         const Form& a,
+                                         UFC& ufc, bool reset_tensor)
 {
   if (reset_tensor)
   {
@@ -159,16 +159,16 @@ void Assembler::init_global_tensor(GenericTensor& A,
     A.zero();
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_system(GenericMatrix& A,
-                                GenericVector& b,
-                                const Form& a,
-                                const Form& L,
-                                std::vector<const DirichletBC*>& bcs,
-                                const MeshFunction<uint>* cell_domains,
-                                const MeshFunction<uint>* exterior_facet_domains,
-                                const MeshFunction<uint>* interior_facet_domains,
-                                const GenericVector* x0,
-                                bool reset_tensors)
+void SystemAssembler::assemble_system(GenericMatrix& A,
+                                      GenericVector& b,
+                                      const Form& a,
+                                      const Form& L,
+                                      std::vector<const DirichletBC*>& bcs,
+                                      const MeshFunction<uint>* cell_domains,
+                                      const MeshFunction<uint>* exterior_facet_domains,
+                                      const MeshFunction<uint>* interior_facet_domains,
+                                      const GenericVector* x0,
+                                      bool reset_tensors)
 {
   Timer timer("Assemble system");
   info("Assembling linear system and applying boundary conditions...");
@@ -840,11 +840,11 @@ void Assembler::assemble_system(GenericMatrix& A,
   delete [] indicators;
 }
 //-----------------------------------------------------------------------------
-void Assembler::compute_tensor_on_one_cell(const Form& a,
-                                           UFC& ufc, 
-                                           const Cell& cell, 
-                                           const std::vector<const Function*>& coefficients, 
-                                           const MeshFunction<uint>* cell_domains) 
+void SystemAssembler::compute_tensor_on_one_cell(const Form& a,
+                                                 UFC& ufc, 
+                                                 const Cell& cell, 
+                                                 const std::vector<const Function*>& coefficients, 
+                                                 const MeshFunction<uint>* cell_domains) 
 {
     // Cell integral
     ufc::cell_integral* integral = ufc.cell_integrals[0];
@@ -872,12 +872,12 @@ void Assembler::compute_tensor_on_one_cell(const Form& a,
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
 }
 //-----------------------------------------------------------------------------
-void Assembler::compute_tensor_on_one_exterior_facet(const Form& a,
-                              UFC& ufc, 
-                              const Cell& cell, 
-                              const Facet& facet,
-                              const std::vector<const Function*>& coefficients, 
-                              const MeshFunction<uint>* exterior_facet_domains) 
+void SystemAssembler::compute_tensor_on_one_exterior_facet(const Form& a,
+                                                           UFC& ufc, 
+                                                           const Cell& cell, 
+                                                           const Facet& facet,
+                                                           const std::vector<const Function*>& coefficients, 
+                                                           const MeshFunction<uint>* exterior_facet_domains) 
 {
   // Get facet integral
   ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];; 
@@ -902,15 +902,15 @@ void Assembler::compute_tensor_on_one_exterior_facet(const Form& a,
   integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
 }
 //-----------------------------------------------------------------------------
-void Assembler::compute_tensor_on_one_interior_facet
-  (const Form& a, 
-   UFC& ufc, 
-   const Cell& cell0, 
-   const Cell& cell1, 
-   const Facet& facet,  
-   const std::vector<const Function*>& coefficients, 
-   const MeshFunction<uint>* interior_facet_domains
-   )
+void SystemAssembler::compute_tensor_on_one_interior_facet
+(const Form& a, 
+ UFC& ufc, 
+ const Cell& cell0, 
+ const Cell& cell1, 
+ const Facet& facet,  
+ const std::vector<const Function*>& coefficients, 
+ const MeshFunction<uint>* interior_facet_domains
+ )
 {
   // Facet integral
   ufc::interior_facet_integral* interior_facet_integral = ufc.interior_facet_integrals[0];
@@ -951,42 +951,43 @@ void Assembler::compute_tensor_on_one_interior_facet
   interior_facet_integral->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1, facet0, facet1);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_system_new(GenericMatrix& A,
-                                    GenericVector& b,
-                                    const Form& a,
-                                    const Form& L,
-                                    const DirichletBC& bc,
-                                    bool reset_tensors)
+void SystemAssembler::assemble_system_new(GenericMatrix& A,
+                                          GenericVector& b,
+                                          const Form& a,
+                                          const Form& L,
+                                          const DirichletBC& bc,
+                                          bool reset_tensors)
 {
   std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
   assemble_system(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_system_new(GenericMatrix& A,
-                                    GenericVector& b,
-                                    const Form& a,
-                                    const Form& L,
-                                    std::vector<const DirichletBC*>& bcs,
-                                    bool reset_tensors)
+void SystemAssembler::assemble_system_new(GenericMatrix& A,
+                                          GenericVector& b,
+                                          const Form& a,
+                                          const Form& L,
+                                          std::vector<const DirichletBC*>& bcs,
+                                          bool reset_tensors)
 {
   assemble_system(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_system_new(GenericMatrix& A,
-                                GenericVector& b,
-                                const Form& a,
-                                const Form& L,
-                                std::vector<const DirichletBC*>& bcs,
-                                const MeshFunction<uint>* cell_domains,
-                                const MeshFunction<uint>* exterior_facet_domains,
-                                const MeshFunction<uint>* interior_facet_domains,
-                                const GenericVector* x0,
-                                bool reset_tensors)
+void SystemAssembler::assemble_system_new(GenericMatrix& A,
+                                          GenericVector& b,
+                                          const Form& a,
+                                          const Form& L,
+                                          std::vector<const DirichletBC*>& bcs,
+                                          const MeshFunction<uint>* cell_domains,
+                                          const MeshFunction<uint>* exterior_facet_domains,
+                                          const MeshFunction<uint>* interior_facet_domains,
+                                          const GenericVector* x0,
+                                          bool reset_tensors)
 {
   Timer timer("Assemble system");
   info("Assembling linear system and applying boundary conditions...");
 
+ 
   // Note the importance of treating empty mesh functions as null pointers
   // for the PyDOLFIN interface.
 
