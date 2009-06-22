@@ -19,7 +19,7 @@ P3 = FunctionSpace(mesh0, "CG", 3)
 v0 = Function(P3, "sin(10.0*x[0])*sin(10.0*x[1])")
 v1 = Function(P1)
 
-# Compute projection (L2-projection)
+# Interpolate
 v1.interpolate(v0)
 
 # Plot functions
