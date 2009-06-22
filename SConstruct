@@ -461,12 +461,15 @@ if not env.GetOption('help'):
 
   #env = scons.installCommonFile(env, commonfile, prefix)
 
-  if env["enablePython"]:
-      installfiles = scons.buildFileList(buildDataHash["pythonPackageDirs"])
+  # Note we need to remove the PyDOLFIN python modules if enablePyDolfin is false.
+  installfiles = scons.buildFileList(buildDataHash["pythonPackageDirs"])
 
-      for f in installfiles:
-          installpath=os.path.sep.join(os.path.dirname(f).split(os.path.sep)[1:])
-          env.Install(os.path.join(pythonModuleDir,installpath), f)
+  for f in installfiles:
+    installpath=os.path.sep.join(os.path.dirname(f).split(os.path.sep)[1:])
+    # Do not install the python modules residing under projectname path if enablePython is not true
+    if installpath.split(os.path.sep)[0] != env["projectname"] or env["enablePython"]:
+      print f
+      env.Install(os.path.join(pythonModuleDir,installpath), f)
 
   _targetdir = os.path.join(prefix, "share", env["projectname"], "data")
   if 'install' in COMMAND_LINE_TARGETS and not os.path.isdir(_targetdir):
