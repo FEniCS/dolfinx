@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-06-22
+// Last changed: 2009-06-23
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/fem/UFC.h>
@@ -214,9 +214,6 @@ void FunctionSpace::interpolate_vertex_values(double* vertex_values,
   {
     // Update to current cell
     ufc_cell.update(*cell);
-
-    // Tabulate dofs
-    _dofmap->tabulate_dofs(scratch.dofs, ufc_cell, cell->index());
 
     // Pick values from global vector
     v.interpolate(scratch.coefficients, ufc_cell, cell->index());
