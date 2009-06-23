@@ -468,7 +468,6 @@ if not env.GetOption('help'):
     installpath=os.path.sep.join(os.path.dirname(f).split(os.path.sep)[1:])
     # Do not install the python modules residing under projectname path if enablePython is not true
     if installpath.split(os.path.sep)[0] != env["projectname"] or env["enablePython"]:
-      print f
       env.Install(os.path.join(pythonModuleDir,installpath), f)
 
   _targetdir = os.path.join(prefix, "share", env["projectname"], "data")
