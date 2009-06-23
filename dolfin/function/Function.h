@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-06-22
+// Last changed: 2009-06-23
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -130,6 +130,9 @@ namespace dolfin
 
     /// Interpolate function to vertices of mesh
     void interpolate_vertex_values(double* vertex_values) const;
+
+    /// Collect global dof values for all dofs located on local mesh
+    void collect_global_dof_values(std::map<uint, double> dof_values) const;
 
     /// Friends
     friend class Coefficient;

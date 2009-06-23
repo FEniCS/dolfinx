@@ -351,6 +351,40 @@ void Function::interpolate_vertex_values(double* vertex_values) const
   _function_space->interpolate_vertex_values(vertex_values, *this);
 }
 //-----------------------------------------------------------------------------
+void Function::collect_global_dof_values(std::map<uint, double> dof_values) const
+{
+  // This function collects the global dof values for all dofs located on
+  // the local mesh. These dofs may be stored in a portion of the vector
+  // on another process. We build the map in two steps. First, we compute
+  // which dofs are needed and send requests to the processes that own the
+  // dofs. Then all processes send the requested values back.
+  
+  // Clear map
+  dof_values.clear();
+
+  // Get mesh
+  dolfin_assert(_function_space);
+  const Mesh& mesh = _function_space->mesh();
+
+  // Iterate over mesh and check which dofs are needed
+  UFCCell ufc_cell(mesh);
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update to current cell
+    ufc_cell.update(*cell);
+
+    // Tabulate dofs on cell
+    
+
+  }
+
+  // Request dofs from other processes
+
+
+  // Receive dofs from other processes
+
+}
+//-----------------------------------------------------------------------------
 void Function::interpolate()
 {
   // Check that function is not already discrete
