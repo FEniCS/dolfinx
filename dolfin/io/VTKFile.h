@@ -10,6 +10,7 @@
 #define __VTK_FILE_H
 
 #include <fstream>
+#include <string>
 #include "GenericFile.h"
 
 namespace dolfin
@@ -33,21 +34,29 @@ namespace dolfin
     void mesh_write(const Mesh& mesh) const;
     void results_write(const Function& u) const;
     void pvd_file_write(uint u);
+
+    void pvtu_file_write();
+
     void vtk_header_open(uint num_vertices, uint num_cells) const;
     void vtk_header_close() const;
-    void vtu_name_update(const int counter);
+
+    std::string vtu_name(const int process, const int num_processes,
+                         const int counter, std::string ext) const;
+    std::string pvtu_name(const int counter);
+    
+    void clear_file(std::string file) const;
 
     template<class T>
     void mesh_function_write(T& meshfunction);
 
     // vtu filename
     std::string vtu_filename;
+    std::string pvtu_filename;
 
   private:
 
     // Most recent position in pvd file
     std::ios::pos_type mark;
-
 
   };
 

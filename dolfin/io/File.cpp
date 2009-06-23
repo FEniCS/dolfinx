@@ -49,9 +49,9 @@ File::File(const std::string filename)
     file = new PythonFile(filename);
   else if (extension == ".pvd")
   {
-    if (MPI::num_processes() > 1)
-      file = new PVTKFile(filename);
-    else
+    //if (MPI::num_processes() > 1)
+    //  file = new PVTKFile(filename);
+    //else
       file = new VTKFile(filename);
   }
   else if (extension == ".raw")

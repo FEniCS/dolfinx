@@ -39,11 +39,25 @@ VTKFile::~VTKFile()
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const Mesh& mesh)
 {
-  // Update vtu file name and clear file
-  vtu_name_update(counter);
+  // Update vtu file name
+  vtu_filename = vtu_name(MPI::process_number(), MPI::num_processes(), counter, ".vtu");
 
-  // Write pvd file
-  pvd_file_write(counter);
+  // Clear file
+  clear_file(vtu_filename);
+
+  // Parallel-specfic files
+  if (MPI::process_number() == 0 && MPI::num_processes() > 1)
+  { 
+    // Update pvtu file name and clear file
+    pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
+ 
+    // Write pvtu file
+    pvtu_file_write();
+  }
+
+  // Write pvd file (only on root process)
+  if (MPI::process_number() == 0)
+    pvd_file_write(counter);  
 
   // Write headers
   vtk_header_open(mesh.num_vertices(), mesh.num_cells());
@@ -79,10 +93,14 @@ void VTKFile::operator<<(const MeshFunction<double>& meshfunction)
 void VTKFile::operator<<(const Function& u)
 {
   // Update vtu file name and clear file
-  vtu_name_update(counter);
+  vtu_filename = vtu_name(MPI::process_number(), MPI::num_processes(), counter, ".vtu");
+
+  // Clear file
+  clear_file(vtu_filename);
 
   // Write pvd file
   pvd_file_write(counter);
+
 
   const Mesh& mesh = u.function_space().mesh();
 
@@ -103,7 +121,6 @@ void VTKFile::operator<<(const Function& u)
 
   cout << "Saved function " << u.name() << " (" << u.label()
        << ") to file " << filename << " in VTK format." << endl;
-
 }
 //----------------------------------------------------------------------------
 void VTKFile::mesh_write(const Mesh& mesh) const
@@ -361,7 +378,13 @@ void VTKFile::pvd_file_write(uint num)
   }
   // Remove directory path from name for pvd file
   std::string fname;
-  fname.assign(vtu_filename, filename.find_last_of("/") + 1, vtu_filename.size());
+  std::string _filename;
+  if (MPI::num_processes() > 1)
+    _filename = pvtu_filename;
+  else
+    _filename = vtu_filename;
+
+  fname.assign(_filename, filename.find_last_of("/") + 1, _filename.size());
 
   // Data file name
   pvd_file << "<DataSet timestep=\"" << num << "\" part=\"0\"" << " file=\"" <<  fname <<  "\"/>" << std::endl;
@@ -374,6 +397,41 @@ void VTKFile::pvd_file_write(uint num)
   // Close file
   pvd_file.close();
 
+}
+//----------------------------------------------------------------------------
+void VTKFile::pvtu_file_write()
+{
+  std::fstream pvtu_file;
+
+  // Open pvtu file
+  pvtu_file.open(pvtu_filename.c_str(), std::ios::out|std::ios::trunc);
+
+  // Write header
+  pvtu_file << "<?xml version=\"1.0\"?> " << std::endl;
+  pvtu_file << "<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\">" << std::endl;
+  pvtu_file << "<PUnstructuredGrid GhostLevel=\"0\">" << std::endl;
+
+  pvtu_file << "<PCellData>" << std::endl;
+  pvtu_file << "<PDataArray  type=\"Int32\"  Name=\"connectivity\"  format=\"ascii\"/>" << std::endl;
+  pvtu_file << "<PDataArray  type=\"Int32\"  Name=\"offsets\"  format=\"ascii\"/>" << std::endl;
+  pvtu_file << "<PDataArray  type=\"UInt8\"  Name=\"types\"  format=\"ascii\"/>"  << std::endl;
+  pvtu_file << "</PCellData>" << std::endl;
+
+  pvtu_file << "<PPoints>" <<std::endl;
+  pvtu_file << "<PDataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\"ascii\"/>" << std::endl;
+  pvtu_file << "</PPoints>" << std::endl;
+
+  // Remove rank from vtu filename ( <rank>.vtu)
+  //std::string fname;
+  //fname.assign(vtu_filename, filename.find_last_of("/") + 1, vtu_filename.size() - 5 );
+  for(uint i=0; i< MPI::num_processes(); i++)
+  {
+    pvtu_file << "<Piece Source=\"" << vtu_name(i, MPI::num_processes(), counter, ".vtu") << "\"/>" << std::endl;
+  }
+
+  pvtu_file << "</PUnstructuredGrid>" << std::endl;
+  pvtu_file << "</VTKFile>" << std::endl;
+  pvtu_file.close();
 }
 //----------------------------------------------------------------------------
 void VTKFile::vtk_header_open(uint num_vertices, uint num_cells) const
@@ -407,7 +465,8 @@ void VTKFile::vtk_header_close() const
   fclose(fp);
 }
 //----------------------------------------------------------------------------
-void VTKFile::vtu_name_update(const int counter)
+std::string VTKFile::vtu_name(const int process, const int num_processes,
+                              const int counter, std::string ext) const
 {
   std::string filestart, extension;
   std::ostringstream fileid, newfilename;
@@ -419,22 +478,25 @@ void VTKFile::vtu_name_update(const int counter)
   extension.assign(filename, filename.find("."), filename.size());
 
   fileid << counter;
-  newfilename << filestart << fileid.str() << ".vtu";
 
-  vtu_filename = newfilename.str();
+  // Add process number to .vtu file name
+  std::string proc = "";
+  if (num_processes > 1)
+  {
+    std::ostringstream _p;
+    _p << "_p" << process << "_";
+    proc = _p.str();
+  }
+  newfilename << filestart << proc << fileid.str() << ext;
 
-  // Make sure file is empty
-  FILE* fp = fopen(vtu_filename.c_str(), "w");
-  if (!fp)
-    error("Unable to open file %s", filename.c_str());
-  fclose(fp);
+  return newfilename.str();
 }
 //----------------------------------------------------------------------------
 template<class T>
 void VTKFile::mesh_function_write(T& meshfunction)
 {
   // Update vtu file name and clear file
-  vtu_name_update(counter);
+  vtu_name(MPI::process_number(), MPI::num_processes(), counter, ".vtu");
 
   // Write pvd file
   pvd_file_write(counter);
@@ -473,6 +535,14 @@ void VTKFile::mesh_function_write(T& meshfunction)
 
   cout << "Saved mesh function " << mesh.name() << " (" << mesh.label()
        << ") to file " << filename << " in VTK format." << endl;
+}
+//----------------------------------------------------------------------------
+void VTKFile::clear_file(std::string file) const
+{
+  FILE* fp = fopen(file.c_str(), "w");
+  if (!fp)
+    error("Unable to open file %s", file.c_str());
+  fclose(fp);
 }
 //----------------------------------------------------------------------------
 
