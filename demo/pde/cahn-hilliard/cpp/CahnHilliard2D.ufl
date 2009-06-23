@@ -15,12 +15,12 @@ ME = P1 + P1
 q, v  = TestFunctions(ME)
 du    = TrialFunction(ME)
 
-u1  = Function(ME)  # current solution 
+u   = Function(ME)  # current solution 
 u0  = Function(ME)  # solution from previous converged step 
 
 # Split mixed functions
 dk, dc = split(du) 
-k1, c1 = split(u1)
+k,  c  = split(u)
 k0, c0 = split(u0)
 
 lmbda    = Constant(triangle) # surface parameter
@@ -30,24 +30,14 @@ dt       = Constant(triangle) # time step
 theta    = Constant(triangle) # time stepping parameter 
 
 # Potential mu = \phi,c (chemical free-energy \phi = c^2*(1-c)^2)
-def mu(c, muFactor):
-    return muFactor*(2*c*(1-c)*(1-c) - 2*c*c*(1-c))
-
-# Mobility
-Mob = 1.0
+mu = muFactor*(2*c*(1-c)*(1-c) - 2*c*c*(1-c))
 
 # k^(n+theta)
-k_mid = (1-theta)*k0 + theta*k1
+k_mid = (1-theta)*k0 + theta*k
 
-# \delta k^(n+theta)
-dk_mid = theta*dk
-
-L1 = q*c1*dx - q*c0*dx + dt*Mob*dot(grad(q), grad(k_mid))*dx
-L2 = v*k1*dx - v*mu(c1, muFactor)*dx - lmbda*dot(grad(v), grad(c1))*dx
-
-a1 = derivative(L1, u1, du)
-a2 = derivative(L2, u1, du)
-
+L1 = q*c*dx - q*c0*dx + dt*dot(grad(q), grad(k_mid))*dx
+L2 = v*k*dx - v*mu*dx - lmbda*dot(grad(v), grad(c))*dx
 L = L1 + L2
-a = a1 + a2
+
+a = derivative(L, u, du)
  

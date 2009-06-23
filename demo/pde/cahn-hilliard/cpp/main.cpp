@@ -49,7 +49,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
       if (mesh.topology().dim() == 2)
       {
         CahnHilliard2D::CoefficientSet coeffs;
-        coeffs.u1 = u; coeffs.u0 = u0;
+        coeffs.u = u; coeffs.u0 = u0;
         coeffs.lmbda = lambda; coeffs.muFactor = mu_factor;
         coeffs.dt = dt; coeffs.theta = theta;
 
@@ -64,7 +64,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
       else if (mesh.topology().dim() == 3)
       {
         CahnHilliard3D::CoefficientSet coeffs;
-        coeffs.u1 = u; coeffs.u0 = u0;
+        coeffs.u = u; coeffs.u0 = u0;
         coeffs.lmbda = lambda; coeffs.muFactor = mu_factor;
         coeffs.dt = dt; coeffs.theta = theta;
 
