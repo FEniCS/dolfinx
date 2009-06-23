@@ -31,27 +31,30 @@ namespace dolfin
 
   protected:
 
-    void mesh_write(const Mesh& mesh) const;
-    void results_write(const Function& u) const;
-    void pvd_file_write(uint u);
+    std::string init(const Mesh& mesh) const;
+    void finalize(std::string vtu_filename);
 
-    void pvtu_file_write();
+    void mesh_write(const Mesh& mesh, std::string file) const;
 
-    void vtk_header_open(uint num_vertices, uint num_cells) const;
-    void vtk_header_close() const;
+    void results_write(const Function& u, std::string file) const;
+
+    void pvd_file_write(uint u, std::string file);
+
+    void pvtu_file_write(std::string pvtu_file, std::string vtu_file) const;
+
+    void vtk_header_open(uint num_vertices, uint num_cells, std::string file) const;
+    void vtk_header_close(std::string file) const;
 
     std::string vtu_name(const int process, const int num_processes,
                          const int counter, std::string ext) const;
-    std::string pvtu_name(const int counter);
     
     void clear_file(std::string file) const;
 
     template<class T>
     void mesh_function_write(T& meshfunction);
 
-    // vtu filename
-    std::string vtu_filename;
-    std::string pvtu_filename;
+    // Strip path from file 
+    std::string strip_path(std::string file) const;
 
   private:
 
