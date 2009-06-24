@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-16
-// Last changed: 2009-06-22
+// Last changed: 2009-06-25
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -413,9 +413,10 @@ void MeshEditor::compute_boundary_indicators()
   // Need facet cells and numbers if indicators are present
   if (!facet_cells || !facet_numbers)
     error("Mesh has boundary indicators, but missing data for \"boundary facet cells\" and \"boundary facet numbers\".");
-  dolfin_assert(facet_cells->size() == mesh->num_entities(D - 1));
-  dolfin_assert(facet_numbers->size() == mesh->num_entities(D - 1));
-  dolfin_assert(indicators->size() == mesh->num_entities(D - 1));
+  const uint num_facets = facet_cells->size();
+  dolfin_assert(facet_numbers->size() == num_facets);
+  dolfin_assert(indicators->size() == num_facets);
+  dolfin_assert(num_facets > 0);
 
   // Create mesh function "exterior_facet_domains"
   MeshFunction<uint>* exterior_facet_domains =
@@ -425,7 +426,7 @@ void MeshEditor::compute_boundary_indicators()
   (*exterior_facet_domains) = 0;
 
   // Assign domain numbers for each facet
-  for (uint i = 0; i < mesh->num_entities(D - 1); i++)
+  for (uint i = 0; i < num_facets; i++)
   {
     // Get cell index and local facet index
     const uint cell_index = (*facet_cells)[i];
