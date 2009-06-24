@@ -421,7 +421,6 @@ void Function::init()
 
   // Initialize vector of dofs
   dolfin_assert(_vector);
-  dolfin_debug("Creating function vector");
   _vector->resize(N);
   _vector->zero();
 }
