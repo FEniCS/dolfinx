@@ -44,39 +44,57 @@ int main(int argc, char* argv[]) {
   # test that we can link a binary using Boost.Filesystem:
   lib_dir = os.path.join(boost.getBoostDir(sconsEnv=sconsEnv), 'lib')
   filesystem_lib = "boost_filesystem"
+  libs = [filesystem_lib]
   system_lib = "boost_system"
   app = os.path.join(os.getcwd(), "a.out")
-  cmdstr = "%s -o %s -L%s -l%s" % (linker, app, lib_dir, filesystem_lib)
-  if get_architecture() == "darwin":
-    cmdstr += " -l%s" % system_lib
-  cmdstr += " %s" % cpp_file.replace('.cpp', '.o')
+  cmdstr = "%s -o %s -L%s -l%s %s" % (linker, app, lib_dir, filesystem_lib,
+                                      cpp_file.replace('.cpp', '.o'))
   linkFailed, cmdoutput = getstatusoutput(cmdstr)
+  if linkFailed:
+    # on newer versions of Boost, Boost.FileSystem requires to link
+    # with Boost.System:
+    libs.append(system_lib)
+    cmdstr = "%s -o %s -L%s -l%s -l%s %s" % \
+           (linker, app, lib_dir, filesystem_lib, system_lib,
+            cpp_file.replace('.cpp', '.o'))
+    linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     # try to append -mt to lib
     filesystem_lib += "-mt"
-    system_lib += "-mt"
-    cmdstr = "%s -o %s -L%s -l%s" % \
-             (linker, app, lib_dir, filesystem_lib)
-    if get_architecture() == "darwin":
-      cmdstr += " -l%s" % system_lib
-    cmdstr += " %s" % cpp_file.replace('.cpp', '.o')
+    libs = [filesystem_lib]
+    cmdstr = "%s -o %s -L%s -l%s %s" % (linker, app, lib_dir, filesystem_lib,
+                                        cpp_file.replace('.cpp', '.o'))
     linkFailed, cmdoutput = getstatusoutput(cmdstr)
-    if linkFailed:
-      remove_cppfile(cpp_file, ofile=True)
-      raise UnableToLinkException("Boost.Filesystem", cmd=cmdstr,
-                                  program=cpp_test_lib_str,
-                                  errormsg=cmdoutput)
+  if linkFailed:
+    # again, try to link with Boost.System:
+    system_lib += "-mt"
+    libs.append(system_lib)
+    cmdstr = "%s -o %s -L%s -l%s -l%s %s" % \
+           (linker, app, lib_dir, filesystem_lib, system_lib,
+            cpp_file.replace('.cpp', '.o'))
+    linkFailed, cmdoutput = getstatusoutput(cmdstr)
+  if linkFailed:
+    remove_cppfile(cpp_file, ofile=True)
+    raise UnableToLinkException("Boost.Filesystem", cmd=cmdstr,
+                                program=cpp_test_lib_str,
+                                errormsg=cmdoutput)
   
   # test that we can run the binary:
+  arch = get_architecture()
+  if arch == 'darwin':
+    os.putenv('DYLD_LIBRARY_PATH',
+              os.pathsep.join([os.getenv('DYLD_LIBRARY_PATH', ''), lib_dir]))
+  elif arch.startswith('win'):
+    os.putenv('PATH', os.pathsep.join([os.getenv('PATH', ''), lib_dir]))
+  else:
+    os.putenv('LD_LIBRARY_PATH',
+              os.pathsep.join([os.getenv('LD_LIBRARY_PATH', ''), lib_dir]))
   runFailed, cmdoutput = getstatusoutput(app)
   remove_cppfile(cpp_file, ofile=True, execfile=True)
   if runFailed:
     raise UnableToRunException("Boost.Filesystem", errormsg=cmdoutput)
 
-  libs = "-L%s -l%s" % (lib_dir, filesystem_lib)
-  if get_architecture() == "darwin":
-    libs += " -l%s" % system_lib
-  return libs
+  return "-L%s %s" % (lib_dir, ' '.join(["-l%s" % l for l in libs]))
 
 # Overwrite the pkgLibs function from boost.py:
 boost.pkgLibs = pkgLibs

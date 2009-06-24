@@ -76,6 +76,15 @@ int main(int argc, char* argv[]) {
                                   errormsg=cmdoutput)
   
   # test that we can run the binary:
+  arch = get_architecture()
+  if arch == 'darwin':
+    os.putenv('DYLD_LIBRARY_PATH',
+              os.pathsep.join([os.getenv('DYLD_LIBRARY_PATH', ''), lib_dir]))
+  elif arch.startswith('win'):
+    os.putenv('PATH', os.pathsep.join([os.getenv('PATH', ''), lib_dir]))
+  else:
+    os.putenv('LD_LIBRARY_PATH',
+              os.pathsep.join([os.getenv('LD_LIBRARY_PATH', ''), lib_dir]))
   runFailed, cmdoutput = getstatusoutput(app + ' --foo=ok')
   remove_cppfile(cpp_file, ofile=True, execfile=True)
   if runFailed or not "success" in cmdoutput:
