@@ -21,14 +21,14 @@ mesh = Mesh("../mesh.xml.gz")
 # Defining the function spaces
 V_dg = FunctionSpace(mesh, "DG", 1)
 V_cg = FunctionSpace(mesh, "CG", 1)
-V_b  = VectorFunctionSpace(mesh, "CG", 2)
+V_u  = VectorFunctionSpace(mesh, "CG", 2)
 
 # Create velocity Function
-velocity = Function(V_b, "../velocity.xml.gz");
+u = Function(V_u, "../velocity.xml.gz");
 
 # Test and trial functions
-v = TestFunction(V_dg)
-u = TrialFunction(V_dg)
+v   = TestFunction(V_dg)
+phi = TrialFunction(V_dg)
 
 # Diffusivity
 kappa = Constant(mesh, 0.0)
@@ -43,20 +43,17 @@ alpha = Constant(mesh, 5.0)
 n = FacetNormal(mesh)
 h = AvgMeshSize(mesh)
 
-# IsOutflow facet function
-of = IsOutflowFacet(velocity)
-
-def upwind(u, b):
-    return b('+')*(of('+')*u('+') + of('-')*u('-'))
+# ( dot(v, n) + |dot(v, n)| )/2.0 
+un = (dot(u, n) + abs(dot(u, n)))/2.0
 
 # Bilinear form
-a_int = dot(grad(v), kappa*grad(u) - velocity*u)*dx
+a_int = dot(grad(v), kappa*grad(phi) - u*phi)*dx
 
-a_fac = kappa('+')*alpha('+')/h('+')*dot(jump(v, n), jump(u, n))*dS \
-      - kappa('+')*dot(avg(grad(v)), jump(u, n))*dS \
-      - kappa('+')*dot(jump(v, n), avg(grad(u)))*dS
+a_fac = kappa('+')*(alpha('+')/h('+'))*dot(jump(v, n), jump(phi, n))*dS \
+      - kappa('+')*dot(avg(grad(v)), jump(phi, n))*dS \
+      - kappa('+')*dot(jump(v, n), avg(grad(phi)))*dS
 
-a_vel = dot(jump(v, n), upwind(u, velocity))*dS + dot(v*n, velocity*of*u)*ds
+a_vel = dot(jump(v), un('+')*phi('+') - un('-')*phi('-') )*dS  + dot(v, un*phi)*ds
 
 a = a_int + a_fac + a_vel
 
@@ -68,7 +65,7 @@ g = Function(V_dg,"sin(pi*5.0*x[1])")
 bc = DirichletBC(V_dg, g, DirichletBoundary(), "geometric")
 
 # Solution function
-uh = Function(V_dg)
+phi_h = Function(V_dg)
 
 # Assemble and apply boundary conditions
 A = assemble(a)
@@ -76,10 +73,10 @@ b = assemble(L)
 bc.apply(A, b)
 
 # Solve system
-solve(A, uh.vector(), b)
+solve(A, phi_h.vector(), b)
 
 # Project solution to a continuous function space
-up = project(uh,V_cg)
+up = project(phi_h, V_cg)
 
 file = File("temperature.pvd")
 file << up

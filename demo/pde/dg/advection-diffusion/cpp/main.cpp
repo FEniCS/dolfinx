@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
   Velocity::FunctionSpace V_u(mesh);
 
   // Create velocity function
-  Function velocity(V_u, "../velocity.xml.gz");
+  Function u(V_u, "../velocity.xml.gz");
 
   // Diffusivity
   Constant c(0.0);
@@ -60,16 +60,12 @@ int main(int argc, char *argv[])
   // Penalty parameter
   Constant alpha(5.0);
 
-  // Create outflow facet function
-  AdvectionDiffusion::CoefficientSpace_of V_of(mesh);
-  IsOutflowFacet of(V_of, velocity);
-
   // Create function space
   AdvectionDiffusion::FunctionSpace V(mesh);
 
   // Create forms and attach functions
   AdvectionDiffusion::BilinearForm a(V, V);
-  a.b = velocity; a.n = N; a.h = h; a.of = of; a.kappa = c; a.alpha = alpha;
+  a.u = u; a.n = N; a.h = h; a.kappa = c; a.alpha = alpha;
   AdvectionDiffusion::LinearForm L(V);
   L.f = f;
 
@@ -79,7 +75,7 @@ int main(int argc, char *argv[])
   DirichletBC bc(V, g, boundary, "geometric");
 
   // Solution function
-  Function uh(V);
+  Function phi_h(V);
 
   // Assemble and apply boundary conditions
   Matrix A;
@@ -89,23 +85,23 @@ int main(int argc, char *argv[])
   bc.apply(A, b);
 
   // Solve system
-  solve(A, uh.vector(), b);
+  solve(A, phi_h.vector(), b);
 
   // Define PDE for projection onto continuous P1 basis
   Projection::FunctionSpace Vp(mesh);
   Projection::BilinearForm ap(Vp, Vp);
   Projection::LinearForm Lp(Vp);
-  Lp.u0 = uh;
+  Lp.phi0 = phi_h;
   VariationalProblem pde(ap, Lp);
 
   // Compute projection
-  Function up;
-  pde.solve(up);
+  Function phi_p;
+  pde.solve(phi_p);
 
   // Save projected solution in VTK format
   File file("temperature.pvd");
-  file << up;
+  file << phi_p;
 
   // Plot projected solution
-  plot(up);
+  plot(phi_h);
 }
