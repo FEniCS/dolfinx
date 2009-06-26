@@ -152,27 +152,6 @@ namespace dolfin
 
   };
 
-  /// This function determines if the current facet is an outflow facet with
-  /// respect to the current cell. It accepts as argument a FunctionSpace
-  /// and a velocity function.
-  /// The function returns 1.0 if the dot product > 0, 0.0 otherwise.
-
-  class IsOutflowFacet : public Function
-  {
-  public:
-
-    // Constructor
-    IsOutflowFacet(const FunctionSpace& V, const Function& f);
-
-    ~IsOutflowFacet();
-
-    void eval(double* values, const Data& data) const;
-
-  private:
-
-    const Function* field;
-  };
-
   /// Streamline Upwind Petrov Galerkin stabilizing function
   /// Given the advective field a, this function computes the stabilizing factor
   ///
