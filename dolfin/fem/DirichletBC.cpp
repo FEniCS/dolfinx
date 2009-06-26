@@ -369,11 +369,20 @@ void DirichletBC::init_from_mesh(uint sub_domain)
 
   // Check data
   if (!facet_cells)
+  {
+    info(V->mesh().data());
     error("Mesh data \"boundary facet cells\" not available.");
+  }
   if (!facet_numbers)
+  {
+    info(V->mesh().data());
     error("Mesh data \"boundary facet numbers\" not available.");
+  }
   if (!indicators)
+  {
+    info(V->mesh().data());
     error("Mesh data \"boundary indicators\" not available.");
+  }
 
   // Get size
   const uint size = facet_cells->size();
