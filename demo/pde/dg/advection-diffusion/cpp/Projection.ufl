@@ -9,11 +9,11 @@ DG = FiniteElement("Discontinuous Lagrange", "triangle", 1)
 CG = FiniteElement("Lagrange", "triangle", 1)
 
 # Test and trial functions
-v = TestFunction(CG)
-u = TrialFunction(CG)
+v   = TestFunction(CG)
+phi = TrialFunction(CG)
 
-u0 = Function(DG)
+phi0 = Function(DG)
 
-a = dot(v, u)*dx
-L = dot(v, u0)*dx
+a = dot(v, phi)*dx
+L = dot(v, phi0)*dx
 
