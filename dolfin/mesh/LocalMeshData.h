@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Skavhaug.
+// Copyright (C) 2008 Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
@@ -6,8 +6,8 @@
 //
 // Modified by Anders Logg, 2008.
 
-#ifndef __LOCALMESHDATA_H
-#define __LOCALMESHDATA_H
+#ifndef __LOCAL_MESH_DATA_H
+#define __LOCAL_MESH_DATA_H
 
 #include <vector>
 #include <dolfin/common/types.h>

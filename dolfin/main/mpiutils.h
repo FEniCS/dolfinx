@@ -1,10 +1,8 @@
-// Copyright (C) 2008 Anders Logg.
+// Copyright (C) 2008-2009 Niclas Jansson, Anders Logg and Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Ola Skavhaug, 2009.
-//
 // First added:  2008-12-09
-// Last changed: 2009-04-20
+// Last changed: 2009-06-29
 //
 // Template utilities for MPI class placed here so it will not clutter
 // the MPI class.

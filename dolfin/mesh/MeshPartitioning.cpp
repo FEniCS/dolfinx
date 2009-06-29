@@ -1,8 +1,8 @@
-// Copyright (C) 2008-2009 Ola Skavhaug and Anders Logg.
+// Copyright (C) 2008-2009 Niclas Jansson, Ola Skavhaug and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2009-05-12
+// Last changed: 2009-06-29
 
 #include <vector>
 #include <algorithm>
