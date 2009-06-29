@@ -39,48 +39,48 @@ public:
   }
 
   /// Initial condition
-  void u0(uBLASVector& u)
+  void u0(real* u)
   {
     for (unsigned int i = 0; i < N; i++)
     {
       const double x = static_cast<double>(i)*h;
-      u(i) = 1.0 / (1.0 + exp(lambda*(x - 1.0)));
+      u[i] = 1.0 / (1.0 + exp(lambda*(x - 1.0)));
     }
   }
 
   /// Right-hand side, mono-adaptive version
-  void f(const uBLASVector& u, double t, uBLASVector& y)
+  void f(const real* u, double t, real* y)
   {
     printf("MONO!\n");
     for (unsigned int i = 0; i < N; i++)
     {
-      const double ui = u(i);
+      const double ui = u[i];
 
       double sum = 0.0;
-      if ( i == 0 )
-	sum = u(i + 1) - ui;
-      else if ( i == (N - 1) )
-	sum = u(i - 1) - ui;
+      if (i == 0)
+	sum = u[i + 1] - ui;
+      else if (i == (N - 1))
+	sum = u[i - 1] - ui;
       else
-	sum = u(i + 1) - 2.0*ui + u(i - 1);
+	sum = u[i + 1] - 2.0*ui + u[i - 1];
 
-      y(i) = epsilon * sum / (h*h) + gamma * ui*ui * (1.0 - ui);
+      y[i] = epsilon * sum / (h*h) + gamma * ui*ui * (1.0 - ui);
     }
   }
 
   /// Right-hand side, multi-adaptive version
-  double f(const uBLASVector& u, double t, unsigned int i)
+  double f(const real* u, double t, unsigned int i)
   {
     printf("MULTI!\n");
-    const double ui = u(i);
+    const double ui = u[i];
     
     double sum = 0.0;
     if ( i == 0 )
-      sum = u(i + 1) - ui;
-    else if ( i == (N - 1) )
-      sum = u(i - 1) - ui;
+      sum = u[i + 1] - ui;
+    else if (i == (N - 1))
+      sum = u[i - 1] - ui;
     else
-      sum = u(i + 1) - 2.0*ui + u(i - 1);
+      sum = u[i + 1] - 2.0*ui + u[i - 1];
     
     return epsilon * sum / (h*h) + gamma * ui*ui * (1.0 - ui);
   }
@@ -122,11 +122,6 @@ int main(int argc, char* argv[])
   File file(params);
   file >> ParameterSystem::parameters;
 
-  // Set remaining solver parameters from command-line arguments
-  set("ODE method", method);
-  set("ODE nonlinear solver", solver);
-  set("ODE tolerance", tol);
-
   // Set fixed parameters for test problem
   const double T = 1.0;
   const double epsilon = 0.01;
@@ -135,6 +130,11 @@ int main(int argc, char* argv[])
   // Solve system of ODEs
   Reaction ode(N, T, L, epsilon, gamma);
   ode.solve();
+
+  // Set solver parameters from command-line arguments
+  ode.set("ODE method", method);
+  ode.set("ODE nonlinear solver", solver);
+  ode.set("ODE tolerance", tol);
 
   return 0;
 }
