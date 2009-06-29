@@ -17,13 +17,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Partition::Partition(uint N) : indices(N)
+Partition::Partition(uint N) : indices(N), threshold(0)
 {
-  // Get parameter for threshold
-  //TODO - make the parameter handle real
-  double tmp =  dolfin_get("ODE partitioning threshold");
-  threshold = tmp;
-
   // Reset all indices
   for (uint i = 0; i < N; i++)
     indices[i] = i;
@@ -50,6 +45,13 @@ real Partition::update(uint offset, uint& end, MultiAdaptivity& adaptivity,
 {
   // Compute time steps for partition. We partition the components into two
   // groups, one group with k < Kpivot and one with k >= Kpivot.
+
+  // Get parameter for threshold (only first time)
+  if (threshold == 0.0)
+  {
+    double tmp = adaptivity.ode.get("ODE partitioning threshold");
+    threshold = tmp;
+  }
 
   // Compute time step for partitioning
   real Kpivot = threshold * maximum(offset, adaptivity);

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2009-05-11
+// Last changed: 2009-06-29
 
 #ifndef __ODE_H
 #define __ODE_H

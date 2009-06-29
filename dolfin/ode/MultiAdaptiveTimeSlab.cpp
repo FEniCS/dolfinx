@@ -45,7 +45,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
 
   // Initialize transpose of dependencies if necessary
   info("Computing transpose (inverse) of dependency pattern.");
-  if ( ode.dependencies.sparse() && !ode.transpose.sparse() )
+  if (ode.dependencies.sparse() && !ode.transpose.sparse())
     ode.transpose.transp(ode.dependencies);
 }
 //-----------------------------------------------------------------------------

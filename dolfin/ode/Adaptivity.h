@@ -38,6 +38,9 @@ namespace dolfin
     /// Return maximum allowed time step
     real kmax() const;
 
+    /// Friends
+    friend class Partition;
+
   protected:
 
     // The ODE

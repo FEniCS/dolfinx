@@ -280,6 +280,8 @@ NewParameters ODE::default_parameters() const
 {
   NewParameters p("ode");
 
+  // FIXME: These parameters need to be cleaned up
+
   p.add("fixed_time_step", false);
   p.add("solve_dual_problem", false);
   p.add("save_solution", true);

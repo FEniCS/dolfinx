@@ -16,11 +16,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Dependencies::Dependencies(uint N) :
-  N(N), _sparse(false)
+  N(N), increment(0), _sparse(false)
 {
-  double tmp = dolfin_get("ODE sparsity check increment");
-  increment = tmp;
-
   // Use dense dependency pattern by default
   ddep.reserve(N);
   ddep.resize(N);
@@ -132,6 +129,10 @@ void Dependencies::transp(const Dependencies& dependencies)
 //-----------------------------------------------------------------------------
 void Dependencies::detect(ODE& ode)
 {
+  // Get size of increment
+  double tmp = ode.get("ODE sparsity check increment");
+  increment = tmp;
+
   // Prepare sparse pattern if necessary
   make_sparse();
 
