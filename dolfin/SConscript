@@ -343,6 +343,14 @@ buildDataHash["demos"] = []
 if env["enableDemos"] or env["enableTests"]:
     buildDataHash["demos"] += env.SConscript(os.path.join("#demo", "SConscript"),
                                    exports=["env", "modules", "configuredPackages"])
+
+# read the SConscript for benchmarks if enabled
+buildDataHash["benchmarks"] = []
+if env["enableBenchmarks"]:
+    buildDataHash["benchmarks"] += \
+        env.SConscript(os.path.join("#bench", "SConscript"),
+                       exports=["env", "modules", "configuredPackages"])
+
 # generate a builder for the pycc pkg-config file.
 # TODO: The template-based generator can maybe be replaced with the
 # "builtin" generator (in simula-scons/_module
