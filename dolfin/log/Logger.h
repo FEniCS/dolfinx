@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-05-08
+// Last changed: 2009-07-02
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -30,10 +30,10 @@ namespace dolfin
     ~Logger();
 
     /// Print message
-    void info(std::string msg, int debug_level = 0) const;
+    void info(std::string msg, int log_level = 0) const;
 
     /// Print underlined message
-    void info_underline(std::string msg, int debug_level = 0) const;
+    void info_underline(std::string msg, int log_level = 0) const;
 
     /// Print warning
     void warning(std::string msg) const;
@@ -42,7 +42,7 @@ namespace dolfin
     void error(std::string msg) const;
 
     /// Begin task (increase indentation level)
-    void begin(std::string msg, int debug_level = 0);
+    void begin(std::string msg, int log_level = 0);
 
     /// End task (decrease indentation level)
     void end();
@@ -50,20 +50,23 @@ namespace dolfin
     /// Draw progress bar
     void progress (std::string title, double p) const;
 
-    /// Set output destination ("terminal" or "silent")
-    void set_output_destination(std::string destination);
+    /// Set output stream
+    void set_output_stream(std::ostream& stream);
 
-    /// Set output destination to stream
-    void set_output_destination(std::ostream& stream);
+    /// Get output stream
+    std::ostream& get_output_stream() { return *logstream; }
 
-    /// Set output destination to stream
-    std::ostream& get_output_destination() { return *logstream; }
+    /// Turn logging on or off
+    void logging(bool active);
 
-    /// Set debug level
-    void set_debug_level(int debug_level);
+    /// Return true iff logging is active
+    inline bool is_active() { return active; }
 
-    /// Get debug level
-    inline int get_debug_level() const { return debug_level; }
+    /// Set log level
+    void set_log_level(int log_level);
+
+    /// Get log level
+    inline int get_log_level() const { return log_level; }
 
     /// Register timing (for later summary)
     void register_timing(std::string task, double elapsed_time);
@@ -82,15 +85,14 @@ namespace dolfin
 
   private:
 
-    // Output destination
-    enum Destination {terminal, stream, silent};
-    Destination destination;
+    // Write message
+    void write(int log_level, std::string msg) const;
 
-    // Write message to current output destination
-    void write(int debug_level, std::string msg) const;
+    // True iff logging is active
+    bool active;
 
-    // Current debug level
-    int debug_level;
+    // Current log level
+    int log_level;
 
     // Current indentation level
     int indentation_level;

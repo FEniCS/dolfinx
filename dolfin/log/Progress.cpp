@@ -25,31 +25,29 @@ Progress::Progress(std::string title, unsigned int n)
   if (n <= 0)
     error("Number of steps for progress session must be positive.");
 
-  //LogManager::logger.progress(title, 0.0);
+  // LogManager::logger.progress(title, 0.0);
   t = time();
 
-  //When "debug level" is more than 0, progress is always visible
-  if (LogManager::logger.get_debug_level() > 0 )
+  // When log level is more than 0, progress is always visible
+  if (LogManager::logger.get_log_level() > 0 )
     always = true;
-
 }
-
 //-----------------------------------------------------------------------------
 Progress::Progress(std::string title)
   : title(title), n(0), i(0), p_step(0.1), t_step(1.0), p(0), t(0),
     always(false), finished(false), displayed(false)
 {
-  //LogManager::logger.progress(title, 0.0);
+  // LogManager::logger.progress(title, 0.0);
   t = time();
 
-  //When "debug level" is more than 0, progress is always visible
-  if (LogManager::logger.get_debug_level() > 0 )
+  // When log level is more than 0, progress is always visible
+  if (LogManager::logger.get_log_level() > 0 )
     always = true;
-
 }
 //-----------------------------------------------------------------------------
 Progress::~Progress()
 {
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void Progress::operator=(double p)

@@ -22,9 +22,6 @@ namespace dolfin
   /// Set value of parameter
   void dolfin_set(std::string key, dolfin::Parameter value);
 
-  /// Set special key/value pair
-  void dolfin_set(std::string key, std::ostream& ostream);
-
   /// Add parameter
   void dolfin_add(std::string key, dolfin::Parameter value);
 

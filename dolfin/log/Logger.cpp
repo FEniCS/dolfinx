@@ -25,7 +25,7 @@ typedef std::map<std::string, std::pair<dolfin::uint, double> >::const_iterator 
 
 //-----------------------------------------------------------------------------
 Logger::Logger()
-  : destination(terminal), debug_level(0), indentation_level(0), logstream(&std::cout),
+  : active(true), log_level(0), indentation_level(0), logstream(&std::cout),
     process_number(-1)
 {
   if (MPI::num_processes() > 1)
@@ -37,18 +37,15 @@ Logger::~Logger()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Logger::info(std::string msg, int debug_level) const
+void Logger::info(std::string msg, int log_level) const
 {
-  if (debug_level > this->debug_level)
-    return;
-
-  write(debug_level, msg);
+  write(log_level, msg);
 }
 //-----------------------------------------------------------------------------
-void Logger::info_underline(std::string msg, int debug_level) const
+void Logger::info_underline(std::string msg, int log_level) const
 {
   if (msg.size() == 0)
-    info(msg, debug_level);
+    info(msg, log_level);
 
   std::stringstream s;
   s << msg;
@@ -58,7 +55,7 @@ void Logger::info_underline(std::string msg, int debug_level) const
   for (uint i = 0; i < msg.size(); i++)
     s << "-";
 
-  info(s.str(), debug_level);
+  info(s.str(), log_level);
 }
 //-----------------------------------------------------------------------------
 void Logger::warning(std::string msg) const
@@ -73,10 +70,10 @@ void Logger::error(std::string msg) const
   throw std::runtime_error(s);
 }
 //-----------------------------------------------------------------------------
-void Logger::begin(std::string msg, int debug_level)
+void Logger::begin(std::string msg, int log_level)
 {
   // Write a message
-  info(msg, debug_level);
+  info(msg, log_level);
   indentation_level++;
 }
 //-----------------------------------------------------------------------------
@@ -117,39 +114,19 @@ void Logger::progress(std::string title, double p) const
   write(0, s);
 }
 //-----------------------------------------------------------------------------
-void Logger::set_output_destination(std::string destination)
+void Logger::set_output_stream(std::ostream& ostream)
 {
-  // Choose output destination
-  if (destination == "terminal")
-  {
-    this->destination = terminal;
-    logstream = &std::cout;
-  }
-  else if (destination == "silent")
-    this->destination = silent;
-  else if (destination == "stream")
-  {
-    warning("Please provide the actual stream. Using terminal instead.");
-    this->destination = terminal;
-    logstream = &std::cout;
-  }
-  else
-  {
-    this->destination = terminal;
-    logstream = &std::cout;
-    info("Unknown output destination, using plain text.");
-  }
+  logstream = &ostream;
 }
 //-----------------------------------------------------------------------------
-void Logger::set_output_destination(std::ostream& ostream)
+void Logger::logging(bool active)
 {
-   logstream = &ostream;
-   this->destination = stream;
+  this->active = active;
 }
 //-----------------------------------------------------------------------------
-void Logger::set_debug_level(int debug_level)
+void Logger::set_log_level(int log_level)
 {
-  this->debug_level = debug_level;
+  this->log_level = log_level;
 }
 //-----------------------------------------------------------------------------
 void Logger::register_timing(std::string task, double elapsed_time)
@@ -239,10 +216,10 @@ void Logger::__assert(std::string msg) const
   throw std::runtime_error(s);
 }
 //-----------------------------------------------------------------------------
-void Logger::write(int debug_level, std::string msg) const
+void Logger::write(int log_level, std::string msg) const
 {
-  // Check debug level
-  if (debug_level > this->debug_level)
+  // Check log level
+  if (!active || log_level > this->log_level)
     return;
 
   // Prefix with process number if running in parallel
@@ -257,15 +234,7 @@ void Logger::write(int debug_level, std::string msg) const
   for (int i = 0; i < indentation_level; i++)
     msg = "  " + msg;
 
-  // Choose destination
-  switch (destination)
-  {
-  case silent:
-    // Do nothing if destination == silent
-    do {} while (false);
-    break;
-  default:
-    *logstream << msg << std::endl;
-  }
+  // Write to stream
+  *logstream << msg << std::endl;
 }
 //----------------------------------------------------------------------------

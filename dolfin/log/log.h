@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-05-11
+// Last changed: 2009-07-02
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -22,20 +22,9 @@ namespace dolfin
   /// uniform handling of log messages, warnings and errors. In addition,
   /// macros are provided for debug messages and assertions.
   ///
-  /// Only messages with a debug level higher than or equal to the global
-  /// debug level are printed (the default being zero). The global debug
-  /// level may be controlled by
-  ///
-  ///    set("debug level", debug_level);
-  ///
-  /// where debug_level is the desired debug level.
-  ///
-  /// The output destination can be controlled by
-  ///
-  ///    set("output destination", destination);
-  ///
-  /// where destination is one of "terminal" (default) or "silent". Setting
-  /// the output destination to "silent" means no messages will be printed.
+  /// Only messages with a debug level higher than or equal to the current
+  /// log level are printed (the default being zero). Logging may also be
+  /// turned off by calling log(false).
 
   /// Print message
   void info(std::string msg, ...);
@@ -69,6 +58,15 @@ namespace dolfin
 
   /// End task (decrease indentation level)
   void end();
+  
+  /// Turn logging on or off
+  void logging(bool active=true);
+
+  /// Set log level
+  void set_log_level(uint level);
+
+  /// Get log level
+  uint get_log_level();
 
   /// Indent string
   std::string indent(std::string s);
