@@ -17,12 +17,12 @@ using namespace dolfin;
 MonoAdaptiveFixedPointSolver::MonoAdaptiveFixedPointSolver
 (MonoAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), xold(0),
-    stabilize(ode.get("ODE fixed-point stabilize")), mi(0), li(0), ramp(1.0)
+    stabilize(ode.parameters("fixed-point_stabilize")), mi(0), li(0), ramp(1.0)
 {
-  double tmp = ode.get("ODE fixed-point stabilization ramp");
+  double tmp = ode.parameters("fixed-point_stabilization_ramp");
   rampfactor = tmp;
 
-  tmp = ode.get("ODE fixed-point damping");
+  tmp = ode.parameters("fixed-point_damping");
   alpha = tmp;
 
   // Initialize old values at right end-point
@@ -54,14 +54,14 @@ real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
     if (iter == 0 || (d1 > d0 && li == 0))
     {
       ramp = 1.0;
-      mi = ode.get("ODE fixed-point stabilization m");
+      mi = ode.parameters("fixed-point_stabilization_m");
       //mi = (int)ceil(log10(K * 1.0e4));
     }
 
     if (mi == 0 && li == 0)
     {
       // Choose number of ramping iterations
-      li = ode.get("ODE fixed-point stabilization l");
+      li = ode.parameters("fixed-point_stabilization_l");
     }
 
     if (mi == 0)

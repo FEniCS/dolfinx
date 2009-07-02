@@ -46,7 +46,7 @@ void ODESolver::solve(ODESolution& u)
   u.flush();
 
   // Check if we should solve the dual problem
-  if (ode.get("ODE solve dual problem"))
+  if (ode.parameters("solve_dual_problem"))
     solve_dual(u);
   else
     cout << "Not solving the dual problem as requested." << endl;
@@ -78,12 +78,11 @@ void ODESolver::solve_dual(ODESolution& u)
   {
     warning("Solving dual with extended precision, not supported. Using double precision.");
     // Set discrete tolerance to default value.
-    dual.set("ODE discrete tolerance", DOLFIN_SQRT_EPS);
+    dual.parameters("discrete_tolerance") = DOLFIN_SQRT_EPS;
   }
 
-
-  dual.set("ODE solution file name", "solution_dual.py");
-  dual.set("ODE save final solution", true);
+  dual.parameters("solution_file_name") = "solution_dual.py";
+  dual.parameters("save_final_solution") = true;
 
   // Create dummy object to hold the solution of the dual
   ODESolution z(dual);

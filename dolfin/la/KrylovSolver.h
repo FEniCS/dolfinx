@@ -1,22 +1,19 @@
-// Copyright (C) 2007-2008 Garth N. Wells.
+// Copyright (C) 2007-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2008.
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-08-26
+// Last changed: 2009-06-30
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
 
-#include <dolfin/parameter/NewParameters.h>
-#include <dolfin/common/Variable.h>
-#include <dolfin/parameter/Parametrized.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/parameter/NewParameters.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
-#include "LinearSolver.h"
 #include "uBLASKrylovSolver.h"
 #include "uBLASSparseMatrix.h"
 #include "uBLASDenseMatrix.h"
@@ -29,6 +26,7 @@
 #include "PETScVector.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
+#include "GenericLinearSolver.h"
 
 namespace dolfin
 {
@@ -36,16 +34,16 @@ namespace dolfin
   /// This class defines an interface for a Krylov solver. The underlying
   /// Krylov solver type is defined in default_type.h.
 
-  class KrylovSolver : public GenericLinearSolver, public Variable
+  class KrylovSolver : public GenericLinearSolver
   {
   public:
 
     /// Create Krylov solver
     KrylovSolver(std::string solver_type = "default", std::string pc_type="default")
-      : Variable("solver", "Krylov solver"),
-        solver_type(solver_type), pc_type(pc_type), ublas_solver(0), petsc_solver(0),
+      : solver_type(solver_type), pc_type(pc_type), ublas_solver(0), petsc_solver(0),
         epetra_solver(0), itl_solver(0)
     {
+      // Set default parameters
       parameters = default_parameters();
     }
 
@@ -68,7 +66,7 @@ namespace dolfin
         if (!ublas_solver)
         {
           ublas_solver = new uBLASKrylovSolver(solver_type, pc_type);
-          ublas_solver->set("parent", *this);
+          ublas_solver->parameters.update(parameters);
         }
         return ublas_solver->solve(A, x, b);
       }
@@ -78,7 +76,7 @@ namespace dolfin
         if (!ublas_solver)
         {
           ublas_solver = new uBLASKrylovSolver(solver_type, pc_type);
-          ublas_solver->set("parent", *this);
+          ublas_solver->parameters.update(parameters);
         }
         return ublas_solver->solve(A.down_cast<uBLASDenseMatrix>(), x.down_cast<uBLASVector>(), b.down_cast<uBLASVector>());
       }
@@ -89,7 +87,7 @@ namespace dolfin
         if (!petsc_solver)
         {
           petsc_solver = new PETScKrylovSolver(solver_type, pc_type);
-          petsc_solver->set("parent", *this);
+          petsc_solver->parameters.update(parameters);
         }
         return petsc_solver->solve(A, x, b);
       }
@@ -100,7 +98,7 @@ namespace dolfin
         if (!epetra_solver)
         {
           epetra_solver = new EpetraKrylovSolver(solver_type, pc_type);
-          epetra_solver->set("parent", *this);
+          epetra_solver->parameters.update(parameters);
         }
         return epetra_solver->solve(A, x, b);
       }
@@ -111,7 +109,7 @@ namespace dolfin
         if (!itl_solver)
         {
           itl_solver = new ITLKrylovSolver(solver_type, pc_type);
-          itl_solver->set("parent", *this);
+          itl_solver->parameters.update(parameters);
         }
         return itl_solver->solve(A, x, b);
       }
@@ -121,10 +119,10 @@ namespace dolfin
       return 0;
     }
 
-    /// Return default parameters
-    NewParameters default_parameters() const
+    /// Default parameter values
+    static NewParameters default_parameters()
     {
-      NewParameters p("krylov");
+      NewParameters p("krylov_solver");
 
       p.add("relative_tolerance",  1e-15);
       p.add("absolute_tolerance",  1e-15);

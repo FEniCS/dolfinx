@@ -1,16 +1,16 @@
-// Copyright (C) 2008 Anders Logg and Garth N. Wells.
+// Copyright (C) 2008-2009 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-26
-// Last changed: 2008-12-30
+// Last changed: 2009-06-29
 
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
 
 #include <vector>
 
+#include <dolfin/common/Variable.h>
 #include <dolfin/nls/NonlinearProblem.h>
-#include <dolfin/parameter/Parametrized.h>
 
 namespace dolfin
 {
@@ -47,7 +47,7 @@ namespace dolfin
   ///     "linear solvers": "direct" or "iterative" (default: "direct")
   ///     "symmetric":      true or false (default: false)
 
-  class VariationalProblem : public Parametrized, public NonlinearProblem
+  class VariationalProblem : public Variable, public NonlinearProblem
   {
   public:
 
@@ -103,6 +103,21 @@ namespace dolfin
 
     /// Return Newton solver (only useful when solving a nonlinear problem)
     NewtonSolver& newton_solver();
+
+    /// Default parameter values
+    static NewParameters default_parameters()
+    {
+      NewParameters p("variational_problem");
+      
+      p.add("linear_solver", "direct");
+      p.add("symmetric", false);
+      
+      p.add(NewtonSolver::default_parameters());
+      p.add(LUSolver::default_parameters());
+      p.add(KrylovSolver::default_parameters());
+
+      return p;
+    }
 
   private:
 

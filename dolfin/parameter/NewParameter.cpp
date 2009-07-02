@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-05-08
-// Last changed: 2009-05-08
+// Last changed: 2009-06-29
 
 #include <sstream>
 #include <dolfin/log/log.h>
@@ -47,58 +47,89 @@ dolfin::uint NewParameter::change_count() const
 //-----------------------------------------------------------------------------
 void NewParameter::set_range(int min_value, int max_value)
 {
-  error("Cannot set double-valued range for parameter of type %s.",
-        type_str().c_str());
+  error("Cannot set double-valued range for parameter \"%s\" of type %s.",
+        _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
 void NewParameter::set_range(double min_value, double max_value)
 {
-  error("Cannot set int-valued range for parameter of type %s.",
-        type_str().c_str());
+  error("Cannot set int-valued range for parameter \"%s\" of type %s.",
+        _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
 void NewParameter::set_range(const std::set<std::string>& range)
 {
-  error("Cannot set string-valued range for parameter of type %s.",
-        type_str().c_str());
+  error("Cannot set string-valued range for parameter \"%s\" of type %s.",
+        _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
 const NewParameter& NewParameter::operator= (int value)
 {
-  error("Cannot assign int-value to parameter of type %s.",
-        type_str().c_str());
+  error("Cannot assign int-value to parameter \"%s\" of type %s.",
+        _key.c_str(), type_str().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
 const NewParameter& NewParameter::operator= (double value)
 {
-  error("Cannot assign double-value to parameter of type %s.",
-        type_str().c_str());
+  error("Cannot assign double-value to parameter \"%s\" of type %s.",
+        _key.c_str(), type_str().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
 const NewParameter& NewParameter::operator= (std::string value)
 {
-  error("Cannot assign string-value to parameter of type %s.",
-        type_str().c_str());
+  error("Cannot assign string-value to parameter \"%s\" of type %s.",
+        _key.c_str(), type_str().c_str());
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const NewParameter& NewParameter::operator= (const char* value)
+{
+  error("Cannot assign string-value to parameter \"%s\" of type %s.",
+        _key.c_str(), type_str().c_str());
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const NewParameter& NewParameter::operator= (bool value)
+{
+  error("Cannot assign bool-value to parameter \"%s\" of type %s.",
+        _key.c_str(), type_str().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
 NewParameter::operator int() const
 {
-  error("Unable to convert parameter of type %s to int.", type_str().c_str());
+  error("Unable to convert parameter \"%s\" of type %s to int.",
+        _key.c_str(), type_str().c_str());
+  return 0;
+}
+//-----------------------------------------------------------------------------
+NewParameter::operator uint() const
+{
+  error("Unable to convert parameter \"%s\" of type %s to uint.",
+        _key.c_str(), type_str().c_str());
   return 0;
 }
 //-----------------------------------------------------------------------------
 NewParameter::operator double() const
 {
-  error("Unable to convert parameter of type %s to double.", type_str().c_str());
+  error("Unable to convert paramete \"%s\"r of type %s to double.",
+        _key.c_str(), type_str().c_str());
   return 0;
 }
 //-----------------------------------------------------------------------------
 NewParameter::operator std::string() const
 {
-  error("Unable to convert parameter of type %s to string.", type_str().c_str());
+  error("Unable to convert parameter \"%s\" of type %s to string.",
+        _key.c_str(), type_str().c_str());
+  return 0;
+}
+//-----------------------------------------------------------------------------
+NewParameter::operator bool() const
+{
+  error("Unable to convert parameter \"%s\" of type %s to bool.",
+        _key.c_str(), type_str().c_str());
   return 0;
 }
 //-----------------------------------------------------------------------------
@@ -143,6 +174,16 @@ const NewIntParameter& NewIntParameter::operator= (int value)
 //-----------------------------------------------------------------------------
 NewIntParameter::operator int() const
 {
+  _access_count++;
+  return _value;
+}
+//-----------------------------------------------------------------------------
+NewIntParameter::operator dolfin::uint() const
+{
+  if (_value < 0)
+    error("Unable to convert value %d for parameter \"%s\" to uint (unsigned integer), value is negative.",
+          _value, key().c_str());
+
   _access_count++;
   return _value;
 }
@@ -258,6 +299,8 @@ std::string NewDoubleParameter::str() const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+// class StringParameter
+//-----------------------------------------------------------------------------
 NewStringParameter::NewStringParameter(std::string key, std::string value)
   : NewParameter(key), _value(value)
 {
@@ -286,6 +329,25 @@ const NewStringParameter& NewStringParameter::operator= (std::string value)
 
   // Set value
   _value = value;
+  _change_count++;
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const NewStringParameter& NewStringParameter::operator= (const char* value)
+{
+  std::string s(value);
+
+  // Check value
+  if (_range.size() > 0 && _range.find(s) == _range.end())
+  {
+    std::stringstream s;
+    s << "Illegal value for parameter. Allowed values are: " << range_str();
+    error(s.str());
+  }
+
+  // Set value
+  _value = s;
   _change_count++;
 
   return *this;
@@ -328,6 +390,63 @@ std::string NewStringParameter::str() const
 {
   std::stringstream s;
   s << "<string-valued parameter named \""
+    << key()
+    << "\" with value "
+    << _value
+    << ">";
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+// class BoolParameter
+//-----------------------------------------------------------------------------
+NewBoolParameter::NewBoolParameter(std::string key, bool value)
+  : NewParameter(key), _value(value)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+NewBoolParameter::~NewBoolParameter()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+const NewBoolParameter& NewBoolParameter::operator= (bool value)
+{
+  // Set value
+  _value = value;
+  _change_count++;
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+NewBoolParameter::operator bool() const
+{
+  _access_count++;
+  return _value;
+}
+//-----------------------------------------------------------------------------
+std::string NewBoolParameter::type_str() const
+{
+  return "bool";
+}
+//-----------------------------------------------------------------------------
+std::string NewBoolParameter::value_str() const
+{
+  if (_value)
+    return "true";
+  else
+    return "false";
+}
+//-----------------------------------------------------------------------------
+std::string NewBoolParameter::range_str() const
+{
+  return "{true, false}";
+}
+//-----------------------------------------------------------------------------
+std::string NewBoolParameter::str() const
+{
+  std::stringstream s;
+  s << "<bool-valued parameter named \""
     << key()
     << "\" with value "
     << _value

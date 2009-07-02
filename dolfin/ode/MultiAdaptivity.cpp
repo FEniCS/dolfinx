@@ -29,7 +29,7 @@ MultiAdaptivity::MultiAdaptivity(const ODE& ode, const Method& method)
     f[i] = 0.0;
 
   // Set initial time steps
-  real k0 = static_cast<double>(ode.get("ODE initial time step"));
+  real k0 = static_cast<double>(ode.parameters("initial_time_step"));
   if ( kfixed )
   {
     for (uint i = 0; i < ode.size(); i++)

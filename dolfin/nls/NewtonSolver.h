@@ -1,20 +1,21 @@
 // Copyright (C) 2005-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2006.
+// Modified by Anders Logg 2006-2009.
 //
 // First added:  2005-10-23
-// Last changed: 2008-06-29
+// Last changed: 2009-06-29
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
 
 #include <boost/shared_ptr.hpp>
+
 #include <dolfin/la/GenericLinearSolver.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/parameter/Parametrized.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -23,7 +24,7 @@ namespace dolfin
 
   /// This class defines a Newton solver for equations of the form F(u) = 0.
 
-  class NewtonSolver : public Parametrized
+  class NewtonSolver : public Variable
   {
   public:
 
@@ -44,6 +45,21 @@ namespace dolfin
 
     /// Return Newton iteration number
     uint get_iteration() const;
+
+    /// Default parameter values
+    static NewParameters default_parameters()
+    {
+      NewParameters p("newton_solver");
+ 
+      p.add("maximum_iterations",    50);
+      p.add("relative_tolerance",    1e-9);
+      p.add("absolute_tolerance",    1e-10);
+      p.add("convergence_criterion", "residual");
+      p.add("method",                "full");
+      p.add("report",                true);
+ 
+      return p;
+    }
 
   private:
 

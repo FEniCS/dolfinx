@@ -4,7 +4,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-05-23
+// Last changed: 2009-06-30
 
 #ifndef __NEWPARAMETERS_H
 #define __NEWPARAMETERS_H
@@ -12,6 +12,7 @@
 #include <set>
 #include <map>
 #include <vector>
+#include "NewParameter.h"
 
 namespace boost
 {
@@ -25,18 +26,52 @@ namespace boost
 namespace dolfin
 {
 
-  class NewParameter;
-
-
-  /// This class stores a database of parameters. Each parameter is
+  /// This class stores a set of parameters. Each parameter is
   /// identified by a unique string (the key) and a value of some
-  /// given value type.
+  /// given value type. Parameter sets can be nested at arbitrary
+  /// depths.
+  ///
+  /// A parameter may be either int, double, string or boolean valued.
+  ///
+  /// Parameters may be added as follows:
+  ///
+  ///   Parameters p("my_parameters");
+  ///   p.add("relative_tolerance",  1e-15);
+  ///   p.add("absolute_tolerance",  1e-15);
+  ///   p.add("gmres_restart",       30);
+  ///   p.add("monitor_convergence", false);
+  ///
+  /// Parameters may be changed as follows:
+  ///
+  ///   p("gmres_restart") = 50;
+  ///
+  /// Parameter values may be retrieved as follows:
+  ///
+  ///   int gmres_restart = p("gmres_restart");
+  ///
+  /// Parameter sets may be nested as follows:
+  ///
+  ///   Parameters q("nested_parameters");
+  ///   p.add(q);
+  ///
+  /// Nested parameters may then be accessed by
+  ///
+  ///   p["nested_parameters"]("...")
+  ///
+  /// Parameters may be nested at arbitrary depths.
+  ///
+  /// Parameters may be parsed from the command-line as follows:
+  ///
+  ///   p.parse(argc, argv);
+  ///
+  /// Note: spaces in parameter keys are not allowed (to simplify
+  /// usage from command-line).
 
   class NewParameters
   {
   public:
 
-    /// Create empty parameter database
+    /// Create empty parameter set
     NewParameters(std::string key="parameters");
 
     /// Destructor
@@ -45,10 +80,10 @@ namespace dolfin
     /// Copy constructor
     NewParameters(const NewParameters& parameters);
 
-    /// Return database key
+    /// Return key for parameter set
     std::string key() const;
     
-    /// Clear database
+    /// Clear parameter set
     void clear();
 
     /// Add int-valued parameter
@@ -66,16 +101,25 @@ namespace dolfin
     /// Add string-valued parameter
     void add(std::string key, std::string value);
 
+    /// Add string-valued parameter
+    void add(std::string key, const char* value);
+
     /// Add string-valued parameter with given range
     void add(std::string key, std::string value, std::set<std::string> range);
 
-    /// Add nested parameter database
+    /// Add string-valued parameter with given range
+    void add(std::string key, const char* value, std::set<std::string> range);
+
+    /// Add bool-valued parameter
+    void add(std::string key, bool value);
+
+    /// Add nested parameter set
     void add(const NewParameters& parameters);
 
     /// Parse parameters from command-line
     void parse(int argc, char* argv[]);
 
-    /// Update parameters with another parameters
+    /// Update parameters with another set of parameters
     void update(const NewParameters& parameters);
 
     /// Return parameter for given key
@@ -84,10 +128,10 @@ namespace dolfin
     /// Return parameter for given key (const version)
     const NewParameter& operator() (std::string key) const;
 
-    /// Return nested parameter database for given key
+    /// Return nested parameter set for given key
     NewParameters& operator[] (std::string key);
 
-    /// Return nested parameter database for given key (const)
+    /// Return nested parameter set for given key (const)
     const NewParameters& operator[] (std::string key) const;
 
     /// Assignment operator
@@ -99,31 +143,35 @@ namespace dolfin
     /// Return a vector of parameter keys
     void parameter_keys(std::vector<std::string>& keys) const;
 
-    /// Return a vector of database keys
-    void database_keys(std::vector<std::string>& keys) const;
+    /// Return a vector of parameter set keys
+    void parameter_set_keys(std::vector<std::string>& keys) const;
 
   private:
 
-    // Add parameters in database as options to a boost::program_option instance
-    void add_database_to_po(boost::program_options::options_description& desc, const NewParameters &parameters, std::string base_name = "") const;
+    // Add all parameters as options to a boost::program_option instance
+    void add_parameter_set_to_po(boost::program_options::options_description& desc,
+                                 const NewParameters &parameters, 
+                                 std::string base_name = "") const;
 
     // Read in values from the boost::variable_map
-    void read_vm(boost::program_options::variables_map& vm, NewParameters &parameters, std::string base_name = "");
+    void read_vm(boost::program_options::variables_map& vm, 
+                 NewParameters &parameters, 
+                 std::string base_name = "");
 
     // Return pointer to parameter for given key and 0 if not found
     NewParameter* find_parameter(std::string key) const;
 
-    // Return pointer to database for given key and 0 if not found
-    NewParameters* find_database(std::string key) const;
+    // Return pointer to parameter set for given key and 0 if not found
+    NewParameters* find_parameter_set(std::string key) const;
 
-    // Database key
+    // Parameter set key
     std::string _key;
 
     // Map from key to parameter
     std::map<std::string, NewParameter*> _parameters;
 
-    // Map from key to database
-    std::map<std::string, NewParameters*> _databases;
+    // Map from key to parameter sets
+    std::map<std::string, NewParameters*> _parameter_sets;
 
   };
 

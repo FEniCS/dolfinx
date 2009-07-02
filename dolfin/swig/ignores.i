@@ -16,6 +16,9 @@
 %ignore dolfin::Parametrized::get;
 %ignore dolfin::Parametrized::set;
 %ignore dolfin::Parametrized::add;
+%ignore dolfin::NewParameters::add(std::string, char const *);
+%ignore dolfin::NewParameters::add(std::string, char const *, std::set<std::string>);
+%ignore dolfin::NewParameter::operator =(char const *);
 %ignore dolfin::LogStream;
 %ignore dolfin::ElementLibrary::create_finite_element(char const *);
 %ignore dolfin::ElementLibrary::create_dof_map(char const *);

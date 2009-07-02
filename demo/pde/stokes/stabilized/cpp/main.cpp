@@ -71,12 +71,12 @@ int main()
   a.h = h;
   Stokes::LinearForm L(W);
   L.f = f; L.h = h;
-  VariationalProblem pde(a, L, bcs);
+  VariationalProblem problem(a, L, bcs);
 
   // Solve PDE
   Function w;
-  pde.set("linear solver", "direct");
-  pde.solve(w);
+  problem.parameters("linear_solver") = "direct";
+  problem.solve(w);
 
   // Extract subfunctions
   Function u = w[0];

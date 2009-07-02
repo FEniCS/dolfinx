@@ -19,7 +19,6 @@ namespace dolfin
   /// Forward declarations
   class GenericMatrix;
   class GenericVector;
-  class PETScManager;
   class PETScMatrix;
   class PETScKrylovMatrix;
 
@@ -49,6 +48,15 @@ namespace dolfin
     /// Display LU solver data
     void disp() const;
 
+    /// Default parameter values
+    static NewParameters default_parameters()
+    {
+      // FIXME: Change name to petsc_lu_solver?
+      NewParameters p("lu_solver");
+      p.add("report", false);
+      return p;
+    }
+
   private:
 
     // Initialise solver
@@ -58,7 +66,7 @@ namespace dolfin
     void clear();
 
     // Create dense copy of virtual matrix
-    double copyToDense(const PETScKrylovMatrix& A);
+    double copy_to_dense(const PETScKrylovMatrix& A);
 
     KSP ksp;
 
@@ -68,6 +76,7 @@ namespace dolfin
 
     PETScVector e;
     PETScVector y;
+
   };
 
 }

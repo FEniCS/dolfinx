@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2008 Anders Logg.
+// Copyright (C) 2005-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-27
-// Last changed: 2008-04-22
+// Last changed: 2009-07-01
 
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
@@ -24,16 +24,16 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
 (MultiAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), A(0),
     mpc(timeslab, method), solver(mpc), f(0), u(0), num_elements(0), num_elements_mono(0),
-    updated_jacobian(ode.get("ODE updated jacobian"))
+    updated_jacobian(ode.parameters("updated_jacobian"))
 {
   // Initialize local arrays
   f = new real[method.qsize()];
   u = new real[method.nsize()];
 
-  // Don't report number of GMRES iteration if not asked to
-  solver.set("Krylov report", monitor);
-  solver.set("Krylov absolute tolerance", 0.01);
-  solver.set("Krylov relative tolerance", 0.01 * to_double(tol));
+  // Set parameters for Krylov solver
+  solver.parameters("report") = monitor;
+  solver.parameters("absolute_tolerance") = 0.01;
+  solver.parameters("relative_tolerance") = 0.01 * to_double(tol);
 
   // Initialize Jacobian
   if ( updated_jacobian )

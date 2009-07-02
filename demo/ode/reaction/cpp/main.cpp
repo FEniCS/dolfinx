@@ -87,16 +87,16 @@ int main()
   const double L = 1.0;
   const unsigned int N = 5000;
 
-  // Set up ODE
+  // Create ODE
   Reaction ode(N, T, L, epsilon, gamma);
-  ode.set("ODE method", "mcg");
-  ode.set("ODE order", 1);
-  ode.set("ODE nonlinear solver", "fixed-point");
-  ode.set("ODE tolerance", 1e-3);
-  ode.set("ODE partitioning threshold", 0.5);
-  ode.set("ODE initial time step", 1e-5);
-  ode.set("ODE maximum time step", 1e-3);
-  ode.set("ODE adaptive samples", true);
+  ode.parameters("method") = "mcg";
+  ode.parameters("order") = 1;
+  ode.parameters("nonlinear_solver") = "fixed-point";
+  ode.parameters("tolerance") = 1e-3;
+  ode.parameters("partitioning_threshold") = 0.5;
+  ode.parameters("initial_time_step") = 1e-5;
+  ode.parameters("maximum_time_step") = 1e-3;
+  ode.parameters("adaptive_samples") = true;
 
   // Solve ODE
   ode.solve();

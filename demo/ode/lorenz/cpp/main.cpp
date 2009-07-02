@@ -63,17 +63,18 @@ private:
 
 int main()
 {
-  dolfin_set("ODE number of samples", 500);
-  dolfin_set("ODE initial time step", 0.01);
-  dolfin_set("ODE fixed time step", true);
-  dolfin_set("ODE method", "cg");
-  dolfin_set("ODE order", 5);
-  dolfin_set("ODE discrete tolerance", 1e-10);
-  dolfin_set("ODE save solution", true);
-  dolfin_set("ODE solve dual problem", true);
-
   Lorenz lorenz;
-  lorenz.solve();
 
+  lorenz.parameters("number_of_samples") = 500;
+  lorenz.parameters("initial_time_step") = 0.01;
+  lorenz.parameters("fixed_time_step") = true;
+  lorenz.parameters("method") = "cg";
+  lorenz.parameters("order") = 5;
+  lorenz.parameters("discrete_tolerance") = 1e-10;
+  lorenz.parameters("save_solution") = true;
+  lorenz.parameters("solve_dual_problem") = true;
+
+  lorenz.solve();
+                    
   return 0;
 }

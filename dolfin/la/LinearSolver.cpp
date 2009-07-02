@@ -2,10 +2,8 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-10
-// Last changed: 2008-05-10
+// Last changed: 2009-06-30
 
-#include "LUSolver.h"
-#include "KrylovSolver.h"
 #include "LinearSolver.h"
 
 using namespace dolfin;
@@ -14,20 +12,21 @@ using namespace dolfin;
 LinearSolver::LinearSolver(std::string solver_type, std::string pc_type)
                          : lu_solver(0), krylov_solver(0)
 {
+  // Set default parameters
+  parameters = default_parameters();
+
+  // Choose solver
   if (solver_type == "lu")
   {
     lu_solver = new LUSolver("nonsymmetric");
-    lu_solver->set("parent", *this);
   }
   else if (solver_type == "cholesky")
   {
     lu_solver = new LUSolver("symmetric");
-    lu_solver->set("parent", *this);
   }
   else
   {
     krylov_solver = new KrylovSolver(solver_type, pc_type);
-    krylov_solver->set("parent", *this);
   }
 }
 //-----------------------------------------------------------------------------
@@ -43,8 +42,14 @@ dolfin::uint LinearSolver::solve(const GenericMatrix& A, GenericVector& x,
   dolfin_assert(lu_solver || krylov_solver);
 
   if (lu_solver)
+  {
+    lu_solver->parameters.update(parameters["lu_solver"]);
     return lu_solver->solve(A, x, b);
+  }
   else
+  {
+    lu_solver->parameters.update(parameters["krylov_solver"]);
     return krylov_solver->solve(A, x, b);
+  }
 }
 //-----------------------------------------------------------------------------

@@ -56,6 +56,22 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations (virtual matrix)
     uint solve(const uBLASKrylovMatrix& A, uBLASVector& x, const uBLASVector& b);
 
+    /// Default parameter values
+    static NewParameters default_parameters()
+    {
+      NewParameters p("lu_solver");
+
+      p.add("relative_tolerance",  1e-15);
+      p.add("absolute_tolerance",  1e-15);
+      p.add("divergence_limit",    1e4);
+      p.add("maximum_iterations",  10000);
+      p.add("gmres_restart",       30);
+      p.add("report",              true);
+      p.add("monitor_convergence", false);
+
+      return p;
+    }
+
   private:
 
     /// Select solver and solve linear system Ax = b and return number of iterations

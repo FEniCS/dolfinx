@@ -17,9 +17,8 @@ Dual::Dual(ODE& primal, ODESolution& u)
   : ODE(primal.size(), primal.endtime()),
     primal(primal), u(u)
 {
-
-  // Inherit parameters from primal problem
-  set("parent", primal);
+  // Get parameters from primal
+  parameters.update(primal.parameters);
 }
 //------------------------------------------------------------------------
 Dual::~Dual()

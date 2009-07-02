@@ -71,12 +71,12 @@ int main()
   Stokes::BilinearForm a(W, W);
   Stokes::LinearForm L(W);
   L.f = f;
-  VariationalProblem pde(a, L, bcs);
+  VariationalProblem problem(a, L, bcs);
 
   // Solve PDE
   Function w;
-  pde.set("linear solver", "direct");
-  pde.solve(w);
+  problem.parameters("linear_solver") = "direct";
+  problem.solve(w);
   Function u = w[0];
   Function p = w[1];
 

@@ -1,10 +1,10 @@
 // Copyright (C) 2006-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2006-2008.
+// Modified by Anders Logg, 2006-2009.
 //
 // First added:  2006-05-31
-// Last changed: 2009-05-23
+// Last changed: 2009-07-01
 
 #include <boost/assign/list_of.hpp>
 #include "uBLASILUPreconditioner.h"
@@ -14,16 +14,19 @@
 using namespace dolfin;
 
 const std::set<std::string> uBLASKrylovSolver::solver_types 
-    = boost::assign::list_of("default")
-                            ("cg")
-                            ("gmres")
-                            ("bicgstab"); 
+= boost::assign::list_of("default")
+  ("cg")
+  ("gmres")
+  ("bicgstab"); 
 
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type, std::string pc_type)
   : solver_type(solver_type), pc_user(false), report(false), 
     parameters_read(false)
 {
+  // Set parameter values
+  parameters = default_parameters();
+
   // Select and create default preconditioner
   select_preconditioner(pc_type);
 }
@@ -32,20 +35,22 @@ uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
   : solver_type("default"), pc(&pc), pc_user(true), report(false), 
     parameters_read(false)
 {
-  // Do nothing
+  // Set parameter values
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type, uBLASPreconditioner& pc)
   : solver_type(solver_type), pc(&pc), pc_user(true), report(false), 
     parameters_read(false)
 {
-  // Do nothing
+  // Set parameter values
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::~uBLASKrylovSolver()
 {
   // Delete preconditioner if it was not created by user
-  if( !pc_user )
+  if (!pc_user)
     delete pc;
 }
 //-----------------------------------------------------------------------------
@@ -92,12 +97,12 @@ void uBLASKrylovSolver::select_preconditioner(std::string pc_type)
 void uBLASKrylovSolver::read_parameters()
 {
   // Set tolerances and other parameters
-  rtol    = get("Krylov relative tolerance");
-  atol    = get("Krylov absolute tolerance");
-  div_tol = get("Krylov divergence limit");
-  max_it  = get("Krylov maximum iterations");
-  restart = get("Krylov GMRES restart");
-  report  = get("Krylov report");
+  rtol    = parameters("relative_tolerance");
+  atol    = parameters("absolute_tolerance");
+  div_tol = parameters("divergence_limit");
+  max_it  = parameters("maximum_iterations");
+  restart = parameters("gmres_restart");
+  report  = parameters("report");
 
   // Remember that we have read parameters
   parameters_read = true;

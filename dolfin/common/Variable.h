@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-02-26
-// Last changed: 2009-05-11
+// Last changed: 2009-06-30
 
 #ifndef __VARIABLE_H
 #define __VARIABLE_H
@@ -39,9 +39,6 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     virtual std::string str() const;
-
-    /// Return default parameters
-    virtual NewParameters default_parameters() const;
 
     // Parameters
     NewParameters parameters;

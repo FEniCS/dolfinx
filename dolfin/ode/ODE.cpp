@@ -22,6 +22,7 @@ ODE::ODE(uint N, real T)
     not_impl_JT("Warning: consider implementing Jacobian transpose ODE::JT() to improve efficiency")
 {
   info("Creating ODE of size %d.", N);
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 ODE::~ODE()
@@ -274,62 +275,5 @@ void ODE::get_state(real* u)
 
   // Get state
   time_stepper->get_state(u);
-}
-//-----------------------------------------------------------------------------
-NewParameters ODE::default_parameters() const
-{
-  NewParameters p("ode");
-
-  // FIXME: These parameters need to be cleaned up
-
-  p.add("fixed_time_step", false);
-  p.add("solve_dual_problem", false);
-  p.add("save_solution", true);
-  p.add("save_final_solution", false);
-  p.add("adaptive_samples", false);
-  p.add("automatic_modeling", false);
-  p.add("implicit", false);
-  p.add("matrix_piecewise_constant", true);
-  p.add("M_matrix_constant", false);
-  p.add("monitor_convergence", false);
-  p.add("updated_jacobian", false);           // only multi-adaptive Newton
-  p.add("diagonal_newton_damping", false);    // only multi-adaptive fixed-point
-  p.add("matrix-free_jacobian", true);
-  
-  p.add("order", 1);
-  p.add("number_of_samples", 100);
-  p.add("sample_density", 1);
-  p.add("maximum_iterations", 100);
-  p.add("maximum_local_iterations", 2);
-  p.add("average_samples", 1000);
-  p.add("size_threshold", 50);
-
-  p.add("tolerance", 0.1);
-  p.add("start_time", 0.0);
-  p.add("end_time", 10.0);
-  p.add("discrete_tolerance", 0.001);
-  p.add("discrete_tolerance_factor", 0.001);
-  p.add("discrete_Krylov_tolerance_factor", 0.01);
-  p.add("initial_time_step", 0.01);
-  p.add("maximum_time_step", 0.1);
-  p.add("partitioning_threshold", 0.1);
-  p.add("interval_threshold", 0.9);
-  p.add("safety_factor", 0.9);
-  p.add("time_step_conservation", 5.0);
-  p.add("sparsity_check_increment", 0.01);
-  p.add("average_length", 0.1);
-  p.add("average_tolerance", 0.1);
-  p.add("fixed-point_damping", 1.0);
-  p.add("fixed-point_stabilize", false);
-  p.add("fixed-point_stabilization_m", 3);
-  p.add("fixed-point_stabilization_l", 4);
-  p.add("fixed-point_stabilization_ramp", 2.0);
-
-  p.add("method", "cg");
-  p.add("nonlinear_solver", "default");
-  p.add("linear_solver", "auto");
-  p.add("solution_file_name", "solution.py");
-
-  return p;
 }
 //-----------------------------------------------------------------------------

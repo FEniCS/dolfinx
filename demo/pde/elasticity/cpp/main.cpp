@@ -102,12 +102,12 @@ int main()
   a.mu = mu; a.lmbda = lambda;
   Elasticity::LinearForm L(V);
   L.f = f;
-  VariationalProblem pde(a, L, bcs);
+  VariationalProblem problem(a, L, bcs);
 
   // Solve PDE (using direct solver)
   Function u;
-  pde.set("linear solver", "direct");
-  pde.solve(u);
+  problem.parameters("linear_solver") = "direct";
+  problem.solve(u);
 
   // Plot solution
   plot(u, "displacement");

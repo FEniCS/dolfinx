@@ -24,17 +24,17 @@ using namespace dolfin;
 TimeStepper::TimeStepper(ODE& ode) :
   ode(ode),
   timeslab(0),
-  file(ode.get("ODE solution file name")),
+  file(ode.parameters("solution_file_name")),
   p("Time-stepping"),
   t(0),
   _stopped(false),
-  save_solution(ode.get("ODE save solution")),
-  adaptive_samples(ode.get("ODE adaptive samples")),
-  num_samples(ode.get("ODE number of samples")),
-  sample_density(ode.get("ODE sample density"))
+  save_solution(ode.parameters("save_solution")),
+  adaptive_samples(ode.parameters("adaptive_samples")),
+  num_samples(ode.parameters("number_of_samples")),
+  sample_density(ode.parameters("sample_density"))
 {
   // Create time slab
-  std::string method = ode.get("ODE method");
+  std::string method = ode.parameters("method");
   if ( method == "mcg" || method == "mdg" )
   {
     timeslab = new MultiAdaptiveTimeSlab(ode);

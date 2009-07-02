@@ -18,34 +18,34 @@ namespace dolfin
   public:
 
     /// Initialise MPI
-    static void initMPI();
+    static void init_mpi();
 
     /// Initialize PETSc without command-line arguments
-    static void initPETSc();
+    static void init_petsc();
 
     /// Initialize PETSc with command-line arguments
-    static void initPETSc(int argc, char* argv[], bool cmd_line_args = true);
+    static void init_petsc(int argc, char* argv[], bool cmd_line_args = true);
 
   private:
 
-    // Constructor
+    // Constructor (private)
     SubSystemsManager();
 
-    // Copy construtor
+    // Copy constructor (private)
     SubSystemsManager(const SubSystemsManager& sub_sys_manager);
 
     // Destructor
     ~SubSystemsManager();
 
     /// Finalize MPI
-    static void finalizeMPI();
+    static void finalize_mpi();
 
     /// Finalize PETSc
-    static void finalizePETSc();
+    static void finalize_petsc();
 
     // Check if MPI has been initialised (returns true if MPI has been
     //   initialised, even if it is later finalised)
-    static bool MPIinitialized();
+    static bool mpi_initialized();
 
     // Singleton instance
     static SubSystemsManager sub_systems_manager;

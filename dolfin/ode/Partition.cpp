@@ -49,7 +49,7 @@ real Partition::update(uint offset, uint& end, MultiAdaptivity& adaptivity,
   // Get parameter for threshold (only first time)
   if (threshold == 0.0)
   {
-    double tmp = adaptivity.ode.get("ODE partitioning threshold");
+    double tmp = adaptivity.ode.parameters("partitioning_threshold");
     threshold = tmp;
   }
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005
-// Last changed: 2009-06-22
+// Last changed: 2009-07-01
 
 #ifdef HAS_PETSC
 
@@ -19,6 +19,10 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver() : ksp(0), B(0), idxm(0), idxn(0)
 {
+  // Set parameter values
+  parameters = default_parameters();
+
+  // Initialize PETSc LU solver
   init();
 }
 //-----------------------------------------------------------------------------
@@ -61,7 +65,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   #endif
 
   // Get parameters
-  const bool report = get("LU report");
+  const bool report = parameters("report");
 
   // Initialize solution vector (remains untouched if dimensions match)
   x.resize(A.size(1));
@@ -69,7 +73,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   // Write a message
   if (report)
     info("Solving linear system of size %d x %d (PETSc LU solver, %s).",
-            A.size(0), A.size(1), solver_type);
+         A.size(0), A.size(1), solver_type);
 
   // Solve linear system
   KSPSetOperators(ksp, *A.mat(), *A.mat(), DIFFERENT_NONZERO_PATTERN);
@@ -88,10 +92,10 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A, PETScVector& x,
   init();
 
   // Get parameters
-  const bool report = get("LU report");
+  const bool report = parameters("report");
 
   // Copy data to dense matrix
-  const double Anorm = copyToDense(A);
+  const double Anorm = copy_to_dense(A);
 
   // Initialize solution vector (remains untouched if dimensions match)
   x.resize(A.size(1));
@@ -128,9 +132,9 @@ void PETScLUSolver::disp() const
   KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
-double PETScLUSolver::copyToDense(const PETScKrylovMatrix& A)
+double PETScLUSolver::copy_to_dense(const PETScKrylovMatrix& A)
 {
-  error("PETScLUSolver::copyToDense needs to be fixed");
+  error("PETScLUSolver::copy_to_dense needs to be fixed");
 
   return 0;
 }

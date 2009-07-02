@@ -36,8 +36,6 @@ public:
 
 int main()
 {
-  dolfin_set("ODE adaptive samples", true);
-
   // Final time
   const real T = 50.0;
 
@@ -46,6 +44,7 @@ int main()
 
   // Create ODE and collection of ODE systems
   Harmonic ode(T);
+  ode.parameters("adaptive_samples") = true;
   ODECollection collection(ode, n);
 
   // Set initial states for all ODE systems

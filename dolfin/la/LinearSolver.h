@@ -1,16 +1,18 @@
-// Copyright (C) 2004-2008 Anders Logg and Garth N. Wells.
+// Copyright (C) 2004-2009 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2006.
 // Modified by Ola Skavhaug 2008.
 //
 // First added:  2004-06-19
-// Last changed: 2008-08-25
+// Last changed: 2009-06-30
 
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
 
 #include <dolfin/common/types.h>
+#include "LUSolver.h"
+#include "KrylovSolver.h"
 #include "GenericLinearSolver.h"
 
 namespace dolfin
@@ -18,12 +20,8 @@ namespace dolfin
 
   class GenericMatrix;
   class GenericVector;
-  class LUSolver;
-  class KrylovSolver;
 
   /// This class provides a general solver for linear systems Ax = b.
-  /// Available methods are defined in SolverType.h and available
-  /// preconditioners are defined in PreconditionerType.h.
 
   class LinearSolver : public GenericLinearSolver
   {
@@ -37,6 +35,17 @@ namespace dolfin
 
     /// Solve linear system Ax = b
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
+
+    /// Default parameter values
+    static NewParameters default_parameters()
+    {
+      NewParameters p("ode");
+
+      p.add(LUSolver::default_parameters());
+      p.add(KrylovSolver::default_parameters());
+
+      return p;
+    }
 
   private:
 

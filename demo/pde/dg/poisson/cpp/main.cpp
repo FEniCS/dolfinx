@@ -56,13 +56,13 @@ int main()
   Poisson::LinearForm L(V);
   a.n = n; a.h = h; L.f = f;
 
-  // Create PDE
-  VariationalProblem pde(a, L);
-  pde.set("symmetric", true);
+  // Create variational problem
+  VariationalProblem problem(a, L);
+  problem.parameters("symmetric") = true;
 
-  // Solve PDE
+  // Solve variational problem
   Function u;
-  pde.solve(u);
+  problem.solve(u);
 
   // Plot solution projected
   plot(u);

@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2008 Anders Logg.
+// Copyright (C) 2005-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2008-04-22
+// Last changed: 2009-07-01
 
 #include <dolfin/common/real.h>
 #include <dolfin/common/constants.h>
@@ -26,7 +26,7 @@ using namespace dolfin;
 MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab, bool implicit)
   : TimeSlabSolver(timeslab), implicit(implicit),
-    piecewise(ode.get("ODE matrix piecewise constant")),
+    piecewise(ode.parameters("matrix_piecewise_constant")),
     ts(timeslab), A(timeslab, implicit, piecewise), btmp(0), Mu0(0),
     krylov(0), lu(0), krylov_g(0), lu_g(0)
 {
@@ -221,7 +221,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real* F)
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::chooseLinearSolver()
 {
-  const std::string linear_solver = ode.get("ODE linear solver");
+  const std::string linear_solver = ode.parameters("linear_solver");
 
   // First determine if we should use a direct solver
   bool direct = false;
@@ -232,7 +232,7 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
   else if ( linear_solver == "auto" )
   {
     /*
-    const uint ode_size_threshold = ode.get("ODE size threshold");
+    const uint ode_size_threshold = ode.parameters("size_threshold");
     if ( ode.size() > ode_size_threshold )
       direct = false;
     else
@@ -253,21 +253,21 @@ void MonoAdaptiveNewtonSolver::chooseLinearSolver()
   else
   {
     info("Using uBLAS Krylov solver with no preconditioning.");
-    const double ktol = ode.get("ODE discrete Krylov tolerance factor");
+    const double ktol = ode.parameters("discrete_krylov_tolerance_factor");
     const double _tol = to_double(tol);
 
     // FIXME: Check choice of tolerances
     krylov = new uBLASKrylovSolver("default", "none");
-    krylov->set("Krylov report", monitor);
-    krylov->set("Krylov relative tolerance", ktol);
+    krylov->parameters("report") = monitor;
+    krylov->parameters("relative_tolerance") = ktol;
     //Note: Precision lost if working with GMP types
-    krylov->set("Krylov absolute tolerance", ktol*_tol);
+    krylov->parameters("absolute_tolerance") = ktol*_tol;
 
     info("Using BiCGStab Krylov solver for matrix Jacobian.");
     krylov_g = new KrylovSolver("bicgstab", "ilu");
-    krylov_g->set("Krylov report", monitor);
-    krylov_g->set("Krylov relative tolerance", ktol);
-    krylov_g->set("Krylov absolute tolerance", ktol*_tol);
+    krylov_g->parameters("report") = monitor;
+    krylov_g->parameters("relative_tolerance") = ktol;
+    krylov_g->parameters("absolute_tolerance") = ktol*_tol;
   }
 }
 //-----------------------------------------------------------------------------

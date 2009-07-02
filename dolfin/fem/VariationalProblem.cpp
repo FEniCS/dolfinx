@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-26
-// Last changed: 2009-03-06
+// Last changed: 2009-06-29
 
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
@@ -27,6 +27,10 @@ VariationalProblem::VariationalProblem(const Form& a,
     interior_facet_domains(0), nonlinear(nonlinear), _newton_solver(0)
 
 {
+  // Set default parameters
+  parameters = default_parameters();
+
+  // FIXME: Is this comment still valid?
   // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system
   // Add parameter "symmetric"
   //add("symmetric", false);
@@ -39,6 +43,9 @@ VariationalProblem::VariationalProblem(const Form& a,
   : a(a), L(L), cell_domains(0), exterior_facet_domains(0),
     interior_facet_domains(0), nonlinear(nonlinear), _newton_solver(0)
 {
+  // Set default parameters
+  parameters = default_parameters();
+
   // Store boundary condition
   bcs.push_back(&bc);
 
@@ -54,6 +61,9 @@ VariationalProblem::VariationalProblem(const Form& a,
   : a(a), L(L), cell_domains(0), exterior_facet_domains(0),
     interior_facet_domains(0), nonlinear(nonlinear), _newton_solver(0)
 {
+  // Set default parameters
+  parameters = default_parameters();
+
   // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
     this->bcs.push_back(bcs[i]);
@@ -75,6 +85,9 @@ VariationalProblem::VariationalProblem(const Form& a,
     interior_facet_domains(interior_facet_domains), nonlinear(nonlinear),
     _newton_solver(0)
 {
+  // Set default parameters
+  parameters = default_parameters();
+
   // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
     this->bcs.push_back(bcs[i]);
@@ -160,7 +173,7 @@ NewtonSolver& VariationalProblem::newton_solver()
   if (!_newton_solver)
   {
     _newton_solver = new NewtonSolver();
-    _newton_solver->set("parent", *this);
+    _newton_solver->parameters.update(parameters["newton_solver"]);
   }
 
   dolfin_assert(_newton_solver);
@@ -179,7 +192,7 @@ void VariationalProblem::solve_linear(Function& u)
   }
 
   // Check if system is symmetric
-  const bool symmetric = get("symmetric");
+  const bool symmetric = parameters("symmetric");
 
   // Create matrix and vector
   Matrix A;
@@ -213,11 +226,11 @@ void VariationalProblem::solve_linear(Function& u)
   }
 
   // Solve linear system
-  const std::string solver_type = get("linear solver");
+  const std::string solver_type = parameters("linear_solver");
   if (solver_type == "direct")
   {
     LUSolver solver;
-    solver.set("parent", *this);
+    solver.parameters.update(parameters["lu_solver"]);
     solver.solve(A, u.vector(), b);
   }
   else if (solver_type == "iterative")
@@ -225,13 +238,13 @@ void VariationalProblem::solve_linear(Function& u)
     if ("symmetric")
     {
       KrylovSolver solver("gmres");
-      solver.set("parent", *this);
+      solver.parameters.update(parameters["krylov_solver"]);
       solver.solve(A, u.vector(), b);
     }
     else
     {
       KrylovSolver solver("cg");
-      solver.set("parent", *this);
+      solver.parameters.update(parameters["krylov_solver"]);
       solver.solve(A, u.vector(), b);
     }
   }

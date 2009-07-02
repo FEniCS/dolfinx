@@ -2,13 +2,13 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-09-19
-// Last changed: 2008-08-25
+// Last changed: 2009-07-01
 
 #ifndef __SINGULAR_SOLVER_H
 #define __SINGULAR_SOLVER_H
 
 #include <dolfin/common/types.h>
-#include <dolfin/parameter/Parametrized.h>
+#include <dolfin/common/Variable.h>
 #include "LinearSolver.h"
 
 namespace dolfin
@@ -31,7 +31,7 @@ namespace dolfin
   /// indeed one-dimensional. It is also assumed that the system
   /// Ax = b retains its sparsity pattern between calls to solve().
 
-  class SingularSolver : public Parametrized
+  class SingularSolver : public Variable
   {
   public:
 
@@ -47,6 +47,16 @@ namespace dolfin
     /// Solve linear system Ax = b using mass matrix M for setting constraint
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b,
                const GenericMatrix& M);
+
+    /// Default parameter values
+    static NewParameters default_parameters()
+    {
+      NewParameters p("singular_solver");
+      
+      p.add(LinearSolver::default_parameters());
+
+      return p;
+    }
 
   private:
 

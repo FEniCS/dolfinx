@@ -24,7 +24,7 @@ namespace dolfin
 
   /// This class calls SubSystemsManger to initialise GMP.
 
-  class GMPObject : public Parametrized
+  class GMPObject
   {
   public:
 
@@ -39,7 +39,7 @@ namespace dolfin
       real_init();
 
       // Set the default discrete tolerance
-      set("ODE discrete tolerance", to_double(real_sqrt(real_epsilon())));
+      dolfin_set("ODE discrete tolerance", to_double(real_sqrt(real_epsilon())));
 
       // Display number of digits
       char msg[100];

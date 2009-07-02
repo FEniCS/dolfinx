@@ -3,16 +3,15 @@
 //
 // Modified by Ola Skavhaug, 2008.
 // Modified by Dag Lindbo, 2008.
-// Modified by Anders Logg, 2008.
+// Modified by Anders Logg, 2008-2009.
 // Modified by Kent-Andre Mardal, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-08-21
+// Last changed: 2009-06-29
 
 #ifndef __LU_SOLVER_H
 #define __LU_SOLVER_H
 
-#include <dolfin/parameter/Parametrized.h>
 #include <dolfin/common/Timer.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
@@ -26,11 +25,12 @@
 #include "EpetraMatrix.h"
 #include "MTL4Matrix.h"
 #include "MTL4Vector.h"
+#include "GenericLinearSolver.h"
 
 namespace dolfin
 {
 
-  class LUSolver : public Parametrized
+  class LUSolver : public GenericLinearSolver
   {
 
   /// LU solver for the built-in LA backends.
@@ -59,7 +59,7 @@ namespace dolfin
         if (!petsc_solver)
         {
           petsc_solver = new PETScLUSolver();
-          petsc_solver->set("parent", *this);
+          petsc_solver->parameters.update(parameters);
         }
         return petsc_solver->solve(A, x, b);
       }
@@ -70,7 +70,7 @@ namespace dolfin
         if (!epetra_solver)
         {
           epetra_solver = new EpetraLUSolver();
-          epetra_solver->set("parent", *this);
+          epetra_solver->parameters.update(parameters);
         }
         return epetra_solver->solve(A, x, b);
       }
@@ -82,7 +82,7 @@ namespace dolfin
         if (!cholmod_solver)
         {
           cholmod_solver = new CholmodCholeskySolver();
-          cholmod_solver->set("parent", *this);
+          cholmod_solver->parameters.update(parameters);
         }
         return cholmod_solver->solve(A, x, b);
       }
@@ -91,7 +91,7 @@ namespace dolfin
         if (!umfpack_solver)
         {
           umfpack_solver = new UmfpackLUSolver();
-          umfpack_solver->set("parent", *this);
+          umfpack_solver->parameters.update(parameters);
         }
         return umfpack_solver->solve(A, x, b);
       }
@@ -102,7 +102,7 @@ namespace dolfin
     if (!umfpack_solver)
         {
           umfpack_solver = new UmfpackLUSolver();
-          umfpack_solver->set("parent", *this);
+          umfpack_solver->parameters.update(parameters);
         }
         return umfpack_solver->factorize(A);
     }
@@ -112,9 +112,17 @@ namespace dolfin
       if (!umfpack_solver)
       {
         umfpack_solver = new UmfpackLUSolver();
-        umfpack_solver->set("parent", *this);
+        umfpack_solver->parameters.update(parameters);
       }
       return umfpack_solver->factorized_solve(x, b);
+    }
+
+    /// Default parameter values
+    static NewParameters default_parameters()
+    {
+      NewParameters p("lu_solver");
+      p.add("report", true);
+      return p;
     }
 
   private:

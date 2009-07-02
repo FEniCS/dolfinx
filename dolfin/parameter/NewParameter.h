@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-05-08
-// Last changed: 2009-05-11
+// Last changed: 2009-06-30
 
 #ifndef __NEWPARAMETER_H
 #define __NEWPARAMETER_H
@@ -56,14 +56,26 @@ namespace dolfin
     /// Assignment from string
     virtual const NewParameter& operator= (std::string value);
 
+    /// Assignment from string
+    virtual const NewParameter& operator= (const char* value);
+
+    /// Assignment from bool
+    virtual const NewParameter& operator= (bool value);
+
     /// Cast parameter to int
     virtual operator int() const;
+
+    /// Cast parameter to uint
+    virtual operator dolfin::uint() const;
 
     /// Cast parameter to double
     virtual operator double() const;
 
     /// Cast parameter to string
     virtual operator std::string() const;
+
+    /// Cast parameter to bool
+    virtual operator bool() const;
 
     /// Return value type string
     virtual std::string type_str() const = 0;
@@ -115,6 +127,9 @@ namespace dolfin
     /// Cast parameter to int
     operator int() const;
 
+    /// Cast parameter to uint
+    operator dolfin::uint() const;
+
     /// Return value type string
     std::string type_str() const;
 
@@ -142,7 +157,7 @@ namespace dolfin
   {
   public:
 
-    /// Create int-valued parameter
+    /// Create double-valued parameter
     NewDoubleParameter(std::string key, double value);
 
     /// Destructor
@@ -196,6 +211,9 @@ namespace dolfin
     /// Assignment
     const NewStringParameter& operator= (std::string value);
 
+    /// Assignment
+    const NewStringParameter& operator= (const char* value);
+
     /// Cast parameter to string
     operator std::string() const;
 
@@ -218,6 +236,42 @@ namespace dolfin
 
     /// Parameter range
     std::set<std::string> _range;
+
+  };
+
+  /// Parameter with value type bool
+  class NewBoolParameter : public NewParameter
+  {
+  public:
+
+    /// Create bool-valued parameter
+    NewBoolParameter(std::string key, bool value);
+
+    /// Destructor
+    ~NewBoolParameter();
+
+    /// Assignment
+    const NewBoolParameter& operator= (bool value);
+
+    /// Cast parameter to bool
+    operator bool() const;
+
+    /// Return value type string
+    std::string type_str() const;
+
+    /// Return value string
+    std::string value_str() const;
+
+    /// Return range string
+    std::string range_str() const;
+
+    /// Return short string description
+    std::string str() const;
+
+  private:
+
+    /// Parameter value
+    bool _value;
 
   };
 

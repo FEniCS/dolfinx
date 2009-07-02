@@ -20,7 +20,6 @@ namespace dolfin
 {
 
   class File;
-  class MPIManager;
   class XMLMeshFunction;
 
   /// A MeshFunction is a function that can be evaluated at a set of

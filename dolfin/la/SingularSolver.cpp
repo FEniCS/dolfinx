@@ -1,8 +1,8 @@
-// Copyright (C) 2008 Anders Logg.
+// Copyright (C) 2008-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-15
-// Last changed: 2008-05-15
+// Last changed: 2009-07-01
 
 #include "LinearAlgebraFactory.h"
 #include "GenericMatrix.h"
@@ -15,12 +15,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 SingularSolver::SingularSolver(std::string solver_type,
                                std::string pc_type)
-  : Parametrized(), linear_solver(solver_type, pc_type), B(0), y(0), c(0)
+  : linear_solver(solver_type, pc_type), B(0), y(0), c(0)
 {
-  // Set parameters for linear solver
-  linear_solver.set("parent", *this);
-
-  //linear_solver.set("Krylov monitor convergence", true);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 SingularSolver::~SingularSolver()
@@ -31,9 +28,13 @@ SingularSolver::~SingularSolver()
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SingularSolver::solve(const GenericMatrix& A,
-                                   GenericVector& x, const GenericVector& b)
+                                   GenericVector& x,
+                                   const GenericVector& b)
 {
   info("Solving singular system...");
+
+  // Propagate parameters
+  linear_solver.parameters.update(parameters["linear_solver"]);
 
   // Initialize data structures for extended system
   init(A);
@@ -55,10 +56,14 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SingularSolver::solve(const GenericMatrix& A,
-                                   GenericVector& x, const GenericVector& b,
+                                   GenericVector& x,
+                                   const GenericVector& b,
                                    const GenericMatrix& M)
 {
   info("Solving singular system...");
+
+  // Propagate parameters
+  linear_solver.parameters.update(parameters["linear_solver"]);
 
   // Initialize data structures for extended system
   init(A);

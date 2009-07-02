@@ -112,25 +112,25 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   // Check dimensions
   uint M = A.size(0);
   uint N = A.size(1);
-  if ( N != b.size() )
+  if (N != b.size())
     error("Non-matching dimensions for linear system.");
 
   // Write a message
-  if ( get("Krylov report") )
+  if (parameters("report"))
     info("Solving linear system of size %d x %d (Krylov solver).", M, N);
 
   // Reinitialize KSP solver if necessary
   init(M, N);
 
   // Reinitialize solution vector if necessary
-  if( x.size() != M )
+  if (x.size() != M)
   {
     x.resize(M);
     x.zero();
   }
 
   // Read parameters if not done
-  if ( !parameters_read )
+  if (!parameters_read)
     read_parameters();
 
   if (!ksp)
@@ -155,7 +155,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   // Check if the solution converged
   KSPConvergedReason reason;
   KSPGetConvergedReason(*ksp, &reason);
-  if ( reason < 0 )
+  if (reason < 0)
     error("Krylov solver did not converge.");
 
   // Get the number of iterations
@@ -173,29 +173,29 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, PETScVector& x
   // Check dimensions
   uint M = A.size(0);
   uint N = A.size(1);
-  if ( N != b.size() )
+  if (N != b.size())
     error("Non-matching dimensions for linear system.");
 
   // Write a message
-  if ( get("Krylov report") )
+  if (parameters("report"))
     info("Solving virtual linear system of size %d x %d (Krylov solver).", M, N);
 
   // Reinitialize KSP solver if necessary
   init(M, N);
 
   // Reinitialize solution vector if necessary
-  if( x.size() != M )
+  if (x.size() != M)
   {
     x.resize(M);
     x.zero();
   }
 
   // Read parameters if not done
-  if ( !parameters_read )
+  if (!parameters_read)
     read_parameters();
 
   // Don't use preconditioner that can't handle virtual (shell) matrix
-  if ( !pc_dolfin )
+  if (!pc_dolfin)
   {
     PC pc;
     KSPGetPC(*ksp, &pc);
@@ -209,7 +209,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, PETScVector& x
   // Check if the solution converged
   KSPConvergedReason reason;
   KSPGetConvergedReason(*ksp, &reason);
-  if ( reason < 0 )
+  if (reason < 0)
     error("Krylov solver did not converge.");
 
   // Get the number of iterations
@@ -230,7 +230,7 @@ void PETScKrylovSolver::disp() const
 void PETScKrylovSolver::init(uint M, uint N)
 {
   // Check if we need to reinitialize
-  if ( ksp != 0 && M == this->M && N == this->N )
+  if (ksp != 0 && M == this->M && N == this->N)
     return;
 
   // Save size of system
@@ -286,26 +286,26 @@ void PETScKrylovSolver::init(uint M, uint N)
 void PETScKrylovSolver::read_parameters()
 {
   // Don't do anything if not initialized
-  if( !ksp )
+  if (!ksp)
     return;
 
   // Set monitor
-  if( get("Krylov monitor convergence") )
+  if (parameters("monitor convergence"))
     KSPMonitorSet(*ksp, KSPMonitorTrueResidualNorm, 0, 0);
 
   // Set tolerances
   KSPSetTolerances(*ksp,
-		   get("Krylov relative tolerance"),
-		   get("Krylov absolute tolerance"),
-		   get("Krylov divergence limit"),
-		   get("Krylov maximum iterations"));
+		   parameters("relative tolerance"),
+		   parameters("absolute tolerance"),
+		   parameters("divergence limit"),
+		   parameters("maximum iterations"));
 
   // Set nonzero shift for preconditioner
-  if ( !pc_dolfin )
+  if (!pc_dolfin)
   {
     PC pc;
     KSPGetPC(*ksp, &pc);
-    PCFactorSetShiftNonzero(pc, get("Krylov shift nonzero"));
+    PCFactorSetShiftNonzero(pc, parameters("shift nonzero"));
   }
 
   // Remember that we have read parameters
@@ -315,7 +315,7 @@ void PETScKrylovSolver::read_parameters()
 void PETScKrylovSolver::set_petsc_preconditioner()
 {
   // Treat special case DOLFIN user-defined preconditioner
-  if ( pc_dolfin )
+  if (pc_dolfin)
   {
     PETScPreconditioner::setup(*ksp, *pc_dolfin);
     return;
@@ -353,7 +353,7 @@ void PETScKrylovSolver::set_petsc_preconditioner()
   }
 
   // Treat special case ML AMG preconditioner
-  if ( pc_petsc == "amg_ml" )
+  if (pc_petsc == "amg_ml")
   {
 #if PETSC_HAVE_ML
   PCSetType(pc, pc_methods.find(pc_petsc)->second);
@@ -373,8 +373,8 @@ void PETScKrylovSolver::set_petsc_preconditioner()
 void PETScKrylovSolver::write_report(int num_iterations)
 {
   // Check if we should write the report
-  bool report = get("Krylov report");
-  if ( !report )
+  bool report = parameters("report");
+  if (!report)
     return;
 
   // Get name of solver and preconditioner

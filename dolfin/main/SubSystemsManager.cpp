@@ -50,7 +50,7 @@ SubSystemsManager::~SubSystemsManager()
   xmlCleanupParser();
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::initMPI()
+void SubSystemsManager::init_mpi()
 {
 #ifdef HAS_MPI
   if( MPI::Is_initialized() )
@@ -64,7 +64,7 @@ void SubSystemsManager::initMPI()
 #endif
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::initPETSc()
+void SubSystemsManager::init_petsc()
 {
 #ifdef HAS_PETSC
   if ( sub_systems_manager.petsc_initialized )
@@ -84,7 +84,7 @@ void SubSystemsManager::initPETSc()
 #endif
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
+void SubSystemsManager::init_petsc(int argc, char* argv[], bool cmd_line_args)
 {
 #ifdef HAS_PETSC
   if ( sub_systems_manager.petsc_initialized )
@@ -115,7 +115,7 @@ void SubSystemsManager::initPETSc(int argc, char* argv[], bool cmd_line_args)
 #endif
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::finalizeMPI()
+void SubSystemsManager::finalize_mpi()
 {
 #ifdef HAS_MPI
   //Finalise MPI if required
@@ -126,7 +126,7 @@ void SubSystemsManager::finalizeMPI()
 #endif
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::finalizePETSc()
+void SubSystemsManager::finalize_petsc()
 {
 #ifdef HAS_PETSC
  if ( sub_systems_manager.petsc_initialized )
@@ -142,7 +142,7 @@ void SubSystemsManager::finalizePETSc()
 #endif
 }
 //-----------------------------------------------------------------------------
-bool SubSystemsManager::MPIinitialized()
+bool SubSystemsManager::mpi_initialized()
 {
   // This function not affected if MPI_Finalize has been called. It returns
   // true if MPI_Init has been called at any point, even if MPI_Finalize has

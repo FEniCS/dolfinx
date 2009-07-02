@@ -17,7 +17,7 @@ MonoAdaptivity::MonoAdaptivity(const ODE& ode, const Method& method)
   : Adaptivity(ode, method), k(0)
 {
   // Specify initial time step
-  real k0 = static_cast<double>(ode.get("ODE initial time step"));
+  real k0 = static_cast<double>(ode.parameters("initial_time_step"));
   if ( kfixed )
   {
     k = ode.timestep(0.0, k0);

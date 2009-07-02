@@ -28,8 +28,8 @@ ODESolution::ODESolution(ODE& ode) :
   dataondisk(false)
 {
   // Initalize cache
-  cache_size = ode.get("ODE order");
-  std::string m = ode.get("ODE method") ;
+  cache_size = ode.parameters("order");
+  std::string m = ode.parameters("method") ;
   if (m == "dg") ++cache_size;
 
   cache = new std::pair<double, double*>[cache_size];

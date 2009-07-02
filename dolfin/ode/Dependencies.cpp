@@ -130,7 +130,7 @@ void Dependencies::transp(const Dependencies& dependencies)
 void Dependencies::detect(ODE& ode)
 {
   // Get size of increment
-  double tmp = ode.get("ODE sparsity check increment");
+  double tmp = ode.parameters("sparsity_check_increment");
   increment = tmp;
 
   // Prepare sparse pattern if necessary

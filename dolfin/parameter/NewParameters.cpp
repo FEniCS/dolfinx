@@ -4,12 +4,13 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-05-23
+// Last changed: 2009-06-30
 
 #include <sstream>
 #include <boost/program_options.hpp>
 
 #include <dolfin/log/log.h>
+#include <dolfin/log/LogStream.h>
 #include <dolfin/log/Table.h>
 #include "NewParameter.h"
 #include "NewParameters.h"
@@ -20,8 +21,8 @@ namespace po = boost::program_options;
 // Typedef of iterators for convenience
 typedef std::map<std::string, NewParameter*>::iterator parameter_iterator;
 typedef std::map<std::string, NewParameter*>::const_iterator const_parameter_iterator;
-typedef std::map<std::string, NewParameters*>::iterator database_iterator;
-typedef std::map<std::string, NewParameters*>::const_iterator const_database_iterator;
+typedef std::map<std::string, NewParameters*>::iterator parameter_set_iterator;
+typedef std::map<std::string, NewParameters*>::const_iterator const_parameter_set_iterator;
 
 //-----------------------------------------------------------------------------
 NewParameters::NewParameters(std::string key) : _key(key)
@@ -51,10 +52,10 @@ void NewParameters::clear()
     delete it->second;
   _parameters.clear();
 
-  // Delete database
-  for (database_iterator it = _databases.begin(); it != _databases.end(); ++it)
+  // Delete parameter sets
+  for (parameter_set_iterator it = _parameter_sets.begin(); it != _parameter_sets.end(); ++it)
     delete it->second;
-  _databases.clear();
+  _parameter_sets.clear();
 
   // Reset key
   _key = "";
@@ -114,6 +115,19 @@ void NewParameters::add(std::string key, std::string value)
   _parameters[key] = new NewStringParameter(key, value);
 }
 //-----------------------------------------------------------------------------
+void NewParameters::add(std::string key, const char* value)
+{
+  // This version is needed to avoid having const char* picked up by
+  // the add function for bool parameters.
+
+  // Check key name
+  if (find_parameter(key))
+    error("Unable to add parameter \"%s\", already defined.", key.c_str());
+
+  // Add parameter
+  _parameters[key] = new NewStringParameter(key, value);
+}
+//-----------------------------------------------------------------------------
 void NewParameters::add(std::string key, std::string value, std::set<std::string> range)
 {
   // Add parameter
@@ -125,17 +139,41 @@ void NewParameters::add(std::string key, std::string value, std::set<std::string
   p->set_range(range);
 }
 //-----------------------------------------------------------------------------
+void NewParameters::add(std::string key, const char* value, std::set<std::string> range)
+{
+  // This version is needed to avoid having const char* picked up by
+  // the add function for bool parameters.
+
+  // Add parameter
+  add(key, value);
+
+  // Set range
+  NewParameter* p = find_parameter(key);
+  dolfin_assert(p);
+  p->set_range(range);
+}
+//-----------------------------------------------------------------------------
+void NewParameters::add(std::string key, bool value)
+{
+  // Check key name
+  if (find_parameter(key))
+    error("Unable to add parameter \"%s\", already defined.", key.c_str());
+
+  // Add parameter
+  _parameters[key] = new NewBoolParameter(key, value);
+}
+//-----------------------------------------------------------------------------
 void NewParameters::add(const NewParameters& parameters)
 {
   // Check key name
-  if (find_database(parameters.key()))
-    error("Unable to add parameter database \"%s\", already defined.",
+  if (find_parameter_set(parameters.key()))
+    error("Unable to add parameter set \"%s\", already defined.",
           parameters.key().c_str());
 
-  // Add parameter database
+  // Add parameter set
   NewParameters* p = new NewParameters("");
   *p = parameters;
-  _databases[parameters.key()] = p;
+  _parameter_sets[parameters.key()] = p;
 }
 //-----------------------------------------------------------------------------
 void NewParameters::parse(int argc, char* argv[])
@@ -144,7 +182,7 @@ void NewParameters::parse(int argc, char* argv[])
 
   // Add list of allowed options to po::options_description
   po::options_description desc("Allowed options");
-  add_database_to_po(desc, *this);
+  add_parameter_set_to_po(desc, *this);
   
   // Add help option
   desc.add_options()("help", "show help text");
@@ -175,21 +213,34 @@ void NewParameters::update(const NewParameters& parameters)
   for (const_parameter_iterator it = parameters._parameters.begin();
        it != parameters._parameters.end(); ++it)
   {
-    const NewParameter& others = *it->second;
-    NewParameter& mine = (*this)(others.key());
-    if (others.type_str() == "int")
-      mine = int(others);
-    else if (others.type_str() == "double")
-      mine = double(others);
-    else if (others.type_str() == "string")
-      mine = std::string(others);
+    // Get parameters
+    const NewParameter& other = *it->second;
+    NewParameter* self = find_parameter(other.key());
+    
+    // Skip parameters not in this parameter set (no new parameters added)
+    if (!self)
+    {
+      warning("Ignoring unknown parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
+              other.key().c_str(), parameters.key().c_str(), key().c_str());
+      continue;
+    }
+    
+    // Set value (will give an error if the type is wrong)
+    if (other.type_str() == "int")
+      *self = static_cast<int>(other);
+    else if (other.type_str() == "double")
+      *self = static_cast<double>(other);
+    else if (other.type_str() == "bool")
+      *self = static_cast<bool>(other);
+    else if (other.type_str() == "string")
+      *self = static_cast<std::string>(other);
     else
       error("Unable to use parameter \"%s\", unknown type: \"%s\".",
-            others.key().c_str(), others.type_str().c_str());
+            other.key().c_str(), other.type_str().c_str());
   }
   
-  // Update the parameter database
-  for (const_database_iterator it = parameters._databases.begin(); it != parameters._databases.end(); ++it)
+  // Update nested parameter sets
+  for (const_parameter_set_iterator it = parameters._parameter_sets.begin(); it != parameters._parameter_sets.end(); ++it)
   {
     (*this)[it->first].update(*it->second);
   }
@@ -199,8 +250,8 @@ NewParameter& NewParameters::operator() (std::string key)
 {
   NewParameter* p = find_parameter(key);
   if (!p)
-    error("Unable to access parameter \"%s\", parameter not defined.",
-          key.c_str());
+    error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter not defined.",
+          key.c_str(), this->key().c_str());
   return *p;
 }
 //-----------------------------------------------------------------------------
@@ -208,32 +259,32 @@ const NewParameter& NewParameters::operator() (std::string key) const
 {
   NewParameter* p = find_parameter(key);
   if (!p)
-    error("Unable to access parameter \"%s\", parameter not defined.",
-          key.c_str());
+    error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter not defined.",
+          key.c_str(), this->key().c_str());
   return *p;
 }
 //-----------------------------------------------------------------------------
 NewParameters& NewParameters::operator[] (std::string key)
 {
-  NewParameters* p = find_database(key);
+  NewParameters* p = find_parameter_set(key);
   if (!p)
-    error("Unable to access parameter database \"%s\", database not defined.",
-          key.c_str());
+    error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter set not defined.",
+          key.c_str(), this->key().c_str());
   return *p;
 }
 //-----------------------------------------------------------------------------
 const NewParameters& NewParameters::operator[] (std::string key) const
 {
-  NewParameters* p = find_database(key);
+  NewParameters* p = find_parameter_set(key);
   if (!p)
-    error("Unable to access parameter database \"%s\", database not defined.",
-          key.c_str());
+    error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter set not defined.",
+          key.c_str(), this->key().c_str());
   return *p;
 }
 //-----------------------------------------------------------------------------
 const NewParameters& NewParameters::operator= (const NewParameters& parameters)
 {
-  // Clear database
+  // Clear all parameters
   clear();
 
   // Note: We're relying on the default copy constructors for the
@@ -253,20 +304,22 @@ const NewParameters& NewParameters::operator= (const NewParameters& parameters)
       q = new NewIntParameter(dynamic_cast<const NewIntParameter&>(p));
     else if (p.type_str() == "double")
       q = new NewDoubleParameter(dynamic_cast<const NewDoubleParameter&>(p));
+    else if (p.type_str() == "bool")
+      q = new NewBoolParameter(dynamic_cast<const NewBoolParameter&>(p));
     else if (p.type_str() == "string")
       q = new NewStringParameter(dynamic_cast<const NewStringParameter&>(p));
     else
-      error("Unable to copy parameter, unknown type: \"%s\".",
-            p.type_str().c_str());
+      error("Unable to copy parameter from parameter set \"%s\" to parameter set \"%s\", unknown type: \"%s\".",
+            parameters.key().c_str(), key().c_str(), p.type_str().c_str());
     _parameters[p.key()] = q;
   }
 
-  // Copy databases
-  for (const_database_iterator it = parameters._databases.begin();
-       it != parameters._databases.end(); ++it)
+  // Copy parameter sets
+  for (const_parameter_set_iterator it = parameters._parameter_sets.begin();
+       it != parameters._parameter_sets.end(); ++it)
   {
     const NewParameters& p = *it->second;
-    _databases[p.key()] = new NewParameters(p);
+    _parameter_sets[p.key()] = new NewParameters(p);
   }
 
   return *this;
@@ -276,7 +329,7 @@ std::string NewParameters::str() const
 {
   std::stringstream s;
 
-  if (_parameters.size() == 0 && _databases.size() == 0)
+  if (_parameters.size() == 0 && _parameter_sets.size() == 0)
   {
     s << key() << " (empty)";
     return s.str();
@@ -294,11 +347,8 @@ std::string NewParameters::str() const
   }
   s << t.str();
 
-  if (_databases.size() > 0)
-    s << "\n";
-
-  for (const_database_iterator it = _databases.begin(); it != _databases.end(); ++it)
-    s << "\n" << indent(it->second->str());
+  for (const_parameter_set_iterator it = _parameter_sets.begin(); it != _parameter_sets.end(); ++it)
+    s << "\n\n" << indent(it->second->str());
 
   return s.str();
 }
@@ -310,14 +360,16 @@ void NewParameters::parameter_keys(std::vector<std::string>& keys) const
     keys.push_back(it->first);
 }
 //-----------------------------------------------------------------------------
-void NewParameters::database_keys(std::vector<std::string>& keys) const
+void NewParameters::parameter_set_keys(std::vector<std::string>& keys) const
 {
-  keys.reserve(_databases.size());
-  for (const_database_iterator it = _databases.begin(); it != _databases.end(); ++it)
+  keys.reserve(_parameter_sets.size());
+  for (const_parameter_set_iterator it = _parameter_sets.begin(); it != _parameter_sets.end(); ++it)
     keys.push_back(it->first);
  }
 //-----------------------------------------------------------------------------
-void NewParameters::add_database_to_po(po::options_description& desc, const NewParameters &parameters, std::string base_name) const
+void NewParameters::add_parameter_set_to_po(po::options_description& desc,
+                                            const NewParameters &parameters,
+                                            std::string base_name) const
 {
   for (const_parameter_iterator it = parameters._parameters.begin();
        it != parameters._parameters.end(); ++it)
@@ -332,9 +384,9 @@ void NewParameters::add_database_to_po(po::options_description& desc, const NewP
       desc.add_options()(param_name.c_str(), po::value<std::string>(), p.description().c_str());
   }
   
-  for (const_database_iterator it = parameters._databases.begin(); it != parameters._databases.end(); ++it)
+  for (const_parameter_set_iterator it = parameters._parameter_sets.begin(); it != parameters._parameter_sets.end(); ++it)
   {
-    add_database_to_po(desc, *it->second, base_name + it->first + ".");
+    add_parameter_set_to_po(desc, *it->second, base_name + it->first + ".");
   }
 }
 //-----------------------------------------------------------------------------
@@ -365,11 +417,11 @@ void NewParameters::read_vm(po::variables_map& vm, NewParameters &parameters, st
         p = v.as<std::string>();
     }
   }
-  for (database_iterator it = parameters._databases.begin(); it != parameters._databases.end(); ++it)
+
+  for (parameter_set_iterator it = parameters._parameter_sets.begin(); it != parameters._parameter_sets.end(); ++it)
   {
     read_vm(vm, *it->second, base_name + it->first + ".");
   }
-  
 }
 //-----------------------------------------------------------------------------
 NewParameter* NewParameters::find_parameter(std::string key) const
@@ -380,10 +432,10 @@ NewParameter* NewParameters::find_parameter(std::string key) const
   return p->second;
 }
 //-----------------------------------------------------------------------------
-NewParameters* NewParameters::find_database(std::string key) const
+NewParameters* NewParameters::find_parameter_set(std::string key) const
 {
-  const_database_iterator p = _databases.find(key);
-  if (p == _databases.end())
+  const_parameter_set_iterator p = _parameter_sets.find(key);
+  if (p == _parameter_sets.end())
     return 0;
   return p->second;
 }

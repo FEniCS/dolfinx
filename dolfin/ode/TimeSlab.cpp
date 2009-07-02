@@ -18,11 +18,11 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeSlab::TimeSlab(ODE& ode) :
   N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(0),
-  save_final(ode.get("ODE save final solution"))
+  save_final(ode.parameters("save_final_solution"))
 {
   // Choose method
-  std::string m = ode.get("ODE method");
-  int q = ode.get("ODE order");
+  std::string m = ode.parameters("method");
+  int q = ode.parameters("order");
   if ( m == "cg" || m == "mcg" )
   {
     if ( q < 1 )
