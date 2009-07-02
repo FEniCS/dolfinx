@@ -72,6 +72,7 @@ options = [
     BoolVariable("enableDocs", "Build documentation", 0),
     BoolVariable("enableDemos", "Build demos", 0),
     BoolVariable("enableTests", "Build tests", 0),
+    BoolVariable("enableBenchmarks", "Build benchmark programs", 0),
     BoolVariable("enableCodeCoverage", "Enable code coverage", 0),
     BoolVariable("enableResolveCompiler", "Run tests to verify compiler", 1),
     # Enable or disable external packages.
@@ -170,7 +171,8 @@ For SCons specific options, run
 buildDataHash = {"shlibs": [], "extModules": [], "docs": [], "headers": [],
                  "pythonModules": [], "pythonScripts": [], "pkgconfig": [],
                  "pythonPackageDirs": [], "data": [], "tests": [], "progs": [],
-                 "demos": [], "dolfin_header": "", "swigfiles": []}
+                 "demos": [], "dolfin_header": "", "swigfiles": [],
+                 "benchmarks": []}
 
 if "configure" in COMMAND_LINE_TARGETS:
   # This Configure class handles both command-line options (which are merged
@@ -378,7 +380,9 @@ if not env.GetOption('help'):
   # default build-targets: shared libs, extension modules, programs, demos, and
   # documentation.
   for n in buildDataHash["shlibs"] + buildDataHash["extModules"] + \
-          buildDataHash["progs"] + buildDataHash["demos"], buildDataHash["docs"], buildDataHash["tests"]:
+          buildDataHash["progs"] + buildDataHash["demos"] + \
+          buildDataHash["benchmarks"], buildDataHash["docs"], \
+          buildDataHash["tests"]:
     env.Default(n)
 
   # ----------------------------------------------------------------------------
