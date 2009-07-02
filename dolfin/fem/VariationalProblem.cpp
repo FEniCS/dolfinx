@@ -27,7 +27,7 @@ VariationalProblem::VariationalProblem(const Form& a,
     interior_facet_domains(0), nonlinear(nonlinear), _newton_solver(0)
 
 {
-  // Set default parameters
+  // Set default parameter values
   parameters = default_parameters();
 
   // FIXME: Is this comment still valid?
