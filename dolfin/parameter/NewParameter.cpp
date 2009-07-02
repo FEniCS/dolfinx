@@ -17,7 +17,8 @@ NewParameter::NewParameter(std::string key)
   : _access_count(0), _change_count(0),
     _key(key), _description("missing description")
 {
-  // Do nothing
+  // Check that key name is allowed
+  check_key(key);
 }
 //-----------------------------------------------------------------------------
 NewParameter::~NewParameter()
@@ -131,6 +132,17 @@ NewParameter::operator bool() const
   error("Unable to convert parameter \"%s\" of type %s to bool.",
         _key.c_str(), type_str().c_str());
   return 0;
+}
+//-----------------------------------------------------------------------------
+void NewParameter::check_key(std::string key)
+{
+  // Space and punctuation not allowed in key names
+  for (uint i = 0; i < key.size(); i++)
+  {
+    if (key[i] == ' ' || key[i] == '.')
+      error("Illegal character '%c' in parameter key \"%s\".",
+            key[i], key.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 // class IntParameter

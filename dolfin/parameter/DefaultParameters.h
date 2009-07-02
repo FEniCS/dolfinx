@@ -21,21 +21,6 @@ add("optimize", false);                   // All of the above
 add("timer prefix",  "");                      // Prefix for timer tasks
 add("plot file name", "dolfin_plot_data.xml"); // Name of temporary files for plot data
 
-// FIXME: Need to cleanup among parameters below
-
-//--- Parameters for input/output ---
-
-add("save each mesh", false);
-
-//--- Parameters for homotopy solver ---
-add("homotopy maximum size", std::numeric_limits<int>::max());
-add("homotopy maximum degree", std::numeric_limits<int>::max());
-add("homotopy solution tolerance", 1e-12);
-add("homotopy divergence tolerance", 10.0);
-add("homotopy randomize", true);
-add("homotopy monitoring", false);
-add("homotopy solution file name", "solution.data");
-
 //--- Mesh partitioning ---
 add("report edge cut", false);
 

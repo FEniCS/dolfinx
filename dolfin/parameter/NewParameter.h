@@ -88,6 +88,9 @@ namespace dolfin
 
     /// Return short string description
     virtual std::string str() const = 0;
+    
+    // Check that key name is allowed
+    static void check_key(std::string key);
 
   protected:
 

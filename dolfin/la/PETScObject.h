@@ -19,7 +19,7 @@ namespace dolfin
   {
   public:
 
-    PETScObject() { SubSystemsManager::initPETSc(); }
+    PETScObject() { SubSystemsManager::init_petsc(); }
 
   };
 

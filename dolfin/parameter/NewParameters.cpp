@@ -27,7 +27,8 @@ typedef std::map<std::string, NewParameters*>::const_iterator const_parameter_se
 //-----------------------------------------------------------------------------
 NewParameters::NewParameters(std::string key) : _key(key)
 {
-  // Do nothing
+  // Check that key name is allowed
+  NewParameter::check_key(key);
 }
 //-----------------------------------------------------------------------------
 NewParameters::~NewParameters()

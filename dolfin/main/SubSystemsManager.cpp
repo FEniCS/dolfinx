@@ -43,8 +43,8 @@ SubSystemsManager::SubSystemsManager(const SubSystemsManager& sub_sys_manager)
 SubSystemsManager::~SubSystemsManager()
 {
   // Finalize subsystems in the correct order
-  finalizePETSc();
-  finalizeMPI();
+  finalize_petsc();
+  finalize_mpi();
 
   // Clean up libxml2 parser
   xmlCleanupParser();
@@ -78,7 +78,7 @@ void SubSystemsManager::init_petsc()
   char** argv = NULL;
 
   // Initialize PETSc
-  initPETSc(argc, argv, false);
+  init_petsc(argc, argv, false);
 #else
   error("DOLFIN has not been configured for PETSc.");
 #endif
@@ -91,7 +91,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[], bool cmd_line_args)
     return;
 
   // Get status of MPI before PETSc initialisation
-  const bool mpi_init_status = MPIinitialized();
+  const bool mpi_init_status = mpi_initialized();
 
   // Print message if PETSc is intialised with command line arguments
   if(cmd_line_args)
@@ -108,7 +108,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[], bool cmd_line_args)
   sub_systems_manager.petsc_initialized = true;
 
   // Determine if PETSc initialised MPI (and is therefore responsible for MPI finalization)
-  if(MPIinitialized() and !mpi_init_status)
+  if (mpi_initialized() and !mpi_init_status)
     sub_systems_manager.control_mpi = false;
 #else
   error("DOLFIN has not been configured for PETSc.");
@@ -156,4 +156,3 @@ bool SubSystemsManager::mpi_initialized()
 #endif
 }
 //-----------------------------------------------------------------------------
-

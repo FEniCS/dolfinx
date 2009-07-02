@@ -37,13 +37,13 @@ MPI_Comm& dolfin::MPICommunicator::operator*()
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::process_number()
 {
-  SubSystemsManager::initMPI();
+  SubSystemsManager::init_mpi();
   return static_cast<uint>(COMM_WORLD.Get_rank());
 }
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::num_processes()
 {
-  SubSystemsManager::initMPI();
+  SubSystemsManager::init_mpi();
   return static_cast<uint>(COMM_WORLD.Get_size());
 }
 //-----------------------------------------------------------------------------

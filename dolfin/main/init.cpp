@@ -15,7 +15,7 @@ void dolfin::dolfin_init(int argc, char* argv[])
   info("Initializing DOLFIN version %s.", DOLFIN_VERSION);
 
 #ifdef HAS_PETSC
-  SubSystemsManager::initPETSc(argc, argv);
+  SubSystemsManager::init_petsc(argc, argv);
 #endif
 }
 //-----------------------------------------------------------------------------
