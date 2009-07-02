@@ -1,3 +1,4 @@
+ - Remove OutflowFacet from SpecialFunctions
  - Experimental support for parallel assembly and solve
  - Rename interpolate(double*) --> interpolate_vertex_values(double*)
  - Add Python version of Cahn-Hilliard demo
