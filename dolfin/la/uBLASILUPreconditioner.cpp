@@ -1,10 +1,10 @@
-// Copyright (C) 2006 Garth N. Wells.
+// Copyright (C) 2006-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2006-2008.
 //
 // First added:  2006-06-23
-// Last changed: 2008-04-22
+// Last changed: 2006-07-03
 
 #include <dolfin/common/constants.h>
 #include "uBLASVector.h"
@@ -14,51 +14,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBLASILUPreconditioner::uBLASILUPreconditioner() : uBLASPreconditioner()
+uBLASILUPreconditioner::uBLASILUPreconditioner(const NewParameters& krylov_parameters) 
+                                     : krylov_parameters(krylov_parameters)
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-uBLASILUPreconditioner::uBLASILUPreconditioner(const uBLASMatrix<ublas_sparse_matrix>& A)
-  : uBLASPreconditioner()
-{
-  // Initialize preconditioner
-  init(A);
 }
 //-----------------------------------------------------------------------------
 uBLASILUPreconditioner::~uBLASILUPreconditioner()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-void uBLASILUPreconditioner::solve(uBLASVector& x, const uBLASVector& b) const
-{
-  // Get uderlying uBLAS matrices and vectors
-  ublas_vector& _x = x.vec();
-  const ublas_vector& _b = b.vec();
-  const ublas_sparse_matrix & _M = M.mat();
-
-  dolfin_assert( _x.size() == _M.size1() );
-  dolfin_assert( _x.size() == _b.size());
-
-  // Solve in-place
-  _x.assign(_b);
-
-  // Perform substutions for compressed row storage. This is the fastest.
-  const uint size = _M.size1();
-  for(uint i =0; i < size; ++i)
-  {
-    uint k;
-    for(k = _M.index1_data () [i]; k < diagonal[i]; ++k)
-      _x(i) -= ( _M.value_data () [k] )*x[ _M.index2_data () [k] ];
-  }
-  for(int i =size-1; i >= 0; --i)
-  {
-    uint k;
-    for(k = _M.index1_data () [i+1]-1; k > diagonal[i]; --k)
-      _x(i) -= ( _M.value_data () [k] )*x[ _M.index2_data () [k] ];
-    _x(i) /= ( _M.value_data () [k] );
-  }
 }
 //-----------------------------------------------------------------------------
 void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& A)
@@ -70,10 +34,9 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& A)
   _M.assign(A.mat());
 
   // Add term to diagonal to avoid negative pivots
-   // FIXME: Update this for new parameters system
-  //const double zero_shift = get("Krylov shift nonzero");
-  //if(zero_shift > 0.0)
-  //  _M.plus_assign( zero_shift*ublas::identity_matrix<double>(size) );
+  const double zero_shift = krylov_parameters("shift_nonzero");
+  if(zero_shift > 0.0)
+    _M.plus_assign( zero_shift*ublas::identity_matrix<double>(size) );
 
   /*
   // Straightforward and very slow implementation. This is used for verification
@@ -170,3 +133,35 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& A)
   } // k
 }
 //-----------------------------------------------------------------------------
+void uBLASILUPreconditioner::solve(uBLASVector& x, const uBLASVector& b) const
+{
+  // Get uderlying uBLAS matrices and vectors
+  ublas_vector& _x = x.vec();
+  const ublas_vector& _b = b.vec();
+  const ublas_sparse_matrix & _M = M.mat();
+
+  dolfin_assert(_M.size1() > 0 && _M.size2() > 0);
+  dolfin_assert( _x.size() == _M.size1() );
+  dolfin_assert( _x.size() == _b.size());
+
+  // Solve in-place
+  _x.assign(_b);
+
+  // Perform substutions for compressed row storage. This is the fastest.
+  const uint size = _M.size1();
+  for(uint i =0; i < size; ++i)
+  {
+    uint k;
+    for(k = _M.index1_data () [i]; k < diagonal[i]; ++k)
+      _x(i) -= ( _M.value_data () [k] )*x[ _M.index2_data () [k] ];
+  }
+  for(int i =size-1; i >= 0; --i)
+  {
+    uint k;
+    for(k = _M.index1_data () [i+1]-1; k > diagonal[i]; --k)
+      _x(i) -= ( _M.value_data () [k] )*x[ _M.index2_data () [k] ];
+    _x(i) /= ( _M.value_data () [k] );
+  }
+}
+//-----------------------------------------------------------------------------
+

@@ -115,7 +115,7 @@ NewParameter::operator uint() const
 //-----------------------------------------------------------------------------
 NewParameter::operator double() const
 {
-  error("Unable to convert paramete \"%s\"r of type %s to double.",
+  error("Unable to convert parameter \"%s\"r of type %s to double.",
         _key.c_str(), type_str().c_str());
   return 0;
 }

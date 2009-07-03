@@ -1,10 +1,10 @@
-// Copyright (C) 2006 Garth N. Wells.
+// Copyright (C) 2006-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-06-23
-// Last changed: 2006-07-04
+// Last changed: 2009-07-03
 
 #ifndef __UBLAS_ILU_PRECONDITIONER_H
 #define __UBLAS_ILU_PRECONDITIONER_H
@@ -27,27 +27,26 @@ namespace dolfin
   public:
 
     /// Constructor
-    uBLASILUPreconditioner();
-
-    /// Constructor
-    uBLASILUPreconditioner(const uBLASMatrix<ublas_sparse_matrix>& A);
+    uBLASILUPreconditioner(const NewParameters& krylov_parameters);
 
     /// Destructor
     ~uBLASILUPreconditioner();
+
+    // Initialize preconditioner
+    void init(const uBLASMatrix<ublas_sparse_matrix>& A);
 
     /// Solve linear system Ax = b approximately
     void solve(uBLASVector& x, const uBLASVector& b) const;
 
   private:
 
-    // Initialize preconditioner
-    void init(const uBLASMatrix<ublas_sparse_matrix>& A);
-
     // Preconditioner matrix
     uBLASMatrix<ublas_sparse_matrix> M;
 
     // Diagonal
     std::vector<uint> diagonal;
+
+    const NewParameters& krylov_parameters;
 
   };
 

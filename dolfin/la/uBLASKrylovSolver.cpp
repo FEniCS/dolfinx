@@ -84,13 +84,13 @@ void uBLASKrylovSolver::select_preconditioner(std::string pc_type)
   if(pc_type == "none")
     pc = new uBLASDummyPreconditioner();
   else if (pc_type == "ilu")
-    pc = new uBLASILUPreconditioner();
+    pc = new uBLASILUPreconditioner(parameters);
   else if (pc_type == "default")
-    pc = new uBLASILUPreconditioner();
+    pc = new uBLASILUPreconditioner(parameters);
   else
   {
     warning("Requested preconditioner is not available for uBLAS Krylov solver. Using ILU.");
-    pc = new uBLASILUPreconditioner();
+    pc = new uBLASILUPreconditioner(parameters);
   }
 }
 //-----------------------------------------------------------------------------

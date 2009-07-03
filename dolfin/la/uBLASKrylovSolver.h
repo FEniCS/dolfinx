@@ -59,7 +59,7 @@ namespace dolfin
     /// Default parameter values
     static NewParameters default_parameters()
     {
-      NewParameters p("lu_solver");
+      NewParameters p("krylov_solver");
 
       p.add("relative_tolerance",  1e-15);
       p.add("absolute_tolerance",  1e-15);
@@ -68,6 +68,7 @@ namespace dolfin
       p.add("gmres_restart",       30);
       p.add("report",              true);
       p.add("monitor_convergence", false);
+      p.add("shift_nonzero",       0.0);
 
       return p;
     }

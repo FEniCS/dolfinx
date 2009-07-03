@@ -10,7 +10,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBLASDummyPreconditioner::uBLASDummyPreconditioner() : uBLASPreconditioner()
+uBLASDummyPreconditioner::uBLASDummyPreconditioner()
 {
   // Do nothing
 }

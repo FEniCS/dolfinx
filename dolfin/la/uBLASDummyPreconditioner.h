@@ -25,6 +25,12 @@ namespace dolfin
     /// Destructor
     ~uBLASDummyPreconditioner();
 
+    /// Initialise preconditioner (dense matrix)
+    void init(const uBLASMatrix<ublas_sparse_matrix>& A) {};
+
+    /// Initialise preconditioner (virtual matrix)
+    void init(const uBLASKrylovMatrix& A) {};
+
     /// Solve linear system Ax = b approximately
     void solve(uBLASVector& x, const uBLASVector& b) const;
 
