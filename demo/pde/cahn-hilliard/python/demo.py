@@ -30,8 +30,8 @@ class CahnHilliardEquation(NonlinearProblem):
 # Create mesh and define function space
 lmbda  = 1.0e-02  # surface parameter
 factor = 100      # chemical free energy multiplier
-dt     = 5.0e-06
-theta  = 0.5 
+dt     = 5.0e-06  # time step
+theta  = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson   
 
 # Define function spaces
 mesh = UnitSquare(64, 64)
@@ -61,7 +61,7 @@ L1 = q*c*dx - q*c0*dx + dt*dot(grad(q), grad(k_mid))*dx
 L2 = v*k*dx - v*mu*dx - lmbda*dot(grad(v), grad(c))*dx
 
 L = L1 + L2
-a = derivative(L1, u, du) + derivative(L2, u, du)
+a = derivative(L, u, du)
 #------------------------------------------------------------------------------
 
 # Create intial conditions and interpolate
