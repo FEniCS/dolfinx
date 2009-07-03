@@ -48,7 +48,7 @@ dolfin::uint LinearSolver::solve(const GenericMatrix& A, GenericVector& x,
   }
   else
   {
-    lu_solver->parameters.update(parameters["krylov_solver"]);
+    krylov_solver->parameters.update(parameters["krylov_solver"]);
     return krylov_solver->solve(A, x, b);
   }
 }

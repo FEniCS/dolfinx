@@ -70,9 +70,10 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& A)
   _M.assign(A.mat());
 
   // Add term to diagonal to avoid negative pivots
-  const double zero_shift = get("Krylov shift nonzero");
-  if(zero_shift > 0.0)
-    _M.plus_assign( zero_shift*ublas::identity_matrix<double>(size) );
+   // FIXME: Update this for new parameters system
+  //const double zero_shift = get("Krylov shift nonzero");
+  //if(zero_shift > 0.0)
+  //  _M.plus_assign( zero_shift*ublas::identity_matrix<double>(size) );
 
   /*
   // Straightforward and very slow implementation. This is used for verification
