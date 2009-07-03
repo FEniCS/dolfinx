@@ -42,7 +42,7 @@ def keys(self):
     for i in xrange(len(_keys)):
         ret.append(_keys[i])
     _keys.clear()
-    self._database_keys(_keys)
+    self._parameter_set_keys(_keys)
     for i in xrange(len(_keys)):
         ret.append(_keys[i])
     return ret
@@ -92,9 +92,9 @@ def __getitem__(self,key):
             raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type,key)
     
     _keys.clear()
-    self._database_keys(_keys)
+    self._parameter_set_keys(_keys)
     if key in _keys:
-        return self._get_database(key)
+        return self._get_parameter_set(key)
     raise KeyError, "'%s'"%key
 
 def __setitem__(self,key,value):

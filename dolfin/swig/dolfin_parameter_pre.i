@@ -6,8 +6,8 @@
 
 // Renames and ignores for NewParameters
 %rename (_parameter_keys) dolfin::NewParameters::parameter_keys;
-%rename (_database_keys) dolfin::NewParameters::database_keys;
-%rename (_get_database) dolfin::NewParameters::operator[];
+%rename (_parameter_set_keys) dolfin::NewParameters::parameter_set_keys;
+%rename (_get_parameter_set) dolfin::NewParameters::operator[];
 %rename (_get_parameter) dolfin::NewParameters::operator();
 %rename (__str__) dolfin::NewParameters::str const;
 %ignore dolfin::NewParameters::parse;

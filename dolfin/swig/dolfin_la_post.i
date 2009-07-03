@@ -187,10 +187,10 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         return ret
 
     def __delitem__(self):
-        raise ValueError, "cannor delete Vector elements"
+        raise ValueError, "cannot delete Vector elements"
     
     def __delslice__(self):
-        raise ValueError, "cannor delete Vector elements"
+        raise ValueError, "cannot delete Vector elements"
     
     def __setslice__(self,i,j,values):
         if i == 0 and (j >= len(self) or j == -1) and isinstance(values, (float, int, GenericVector)):
