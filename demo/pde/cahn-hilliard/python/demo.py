@@ -72,8 +72,8 @@ u0.interpolate(u_init)
 # Create nonlinear problem and Newton solver
 problem = CahnHilliardEquation(a, L)
 solver = NewtonSolver("lu")
-solver.set("Newton convergence criterion", "incremental");
-solver.set("Newton relative tolerance", 1e-6);
+solver.parameters["convergence_criterion"] = "incremental"
+solver.parameters["relative_tolerance"] = 1e-6
 
 # Output file
 file = File("output.pvd")

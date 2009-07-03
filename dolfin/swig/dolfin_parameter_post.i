@@ -1,27 +1,29 @@
 %extend dolfin::NewParameters
 {
- void _parse(PyObject *op)
- {
-   if (PyList_Check(op)) {
-     int i;
-     int argc = PyList_Size(op);
-     char **argv = (char **) malloc((argc+1)*sizeof(char *));
-     for (i = 0; i < argc; i++) {
-       PyObject *o = PyList_GetItem(op,i);
-       if (PyString_Check(o))
-	 argv[i] = PyString_AsString(o);
-       else
-       {
-	 free(argv);
-	 throw std::runtime_error("list must contain strings");
-       }
-     }
-     argv[i] = 0;
-     self->parse(argc, argv);
-   } 
-   else 
+  void _parse(PyObject *op)
+  {
+    if (PyList_Check(op)) 
+    {
+      int i;
+      int argc = PyList_Size(op);
+      char **argv = (char **) malloc((argc+1)*sizeof(char *));
+      for (i = 0; i < argc; i++) 
+      {
+        PyObject *o = PyList_GetItem(op,i);
+        if (PyString_Check(o))
+          argv[i] = PyString_AsString(o);
+        else
+        {
+          free(argv);
+          throw std::runtime_error("list must contain strings");
+        }
+      }
+      argv[i] = 0;
+      self->parse(argc, argv);
+    } 
+    else 
      throw std::runtime_error("not a list");
- }
+  }
     
 %pythoncode%{
 
