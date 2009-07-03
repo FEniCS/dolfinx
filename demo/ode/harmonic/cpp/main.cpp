@@ -57,7 +57,7 @@ int main()
 {
   for (int q = 1; q <= 8; q++)
   {
-    dolfin_set("output destination", "silent");
+    logging(false);
 
     Harmonic ode;
     ode.parameters("fixed_time_step") = true;
@@ -66,7 +66,7 @@ int main()
     ode.parameters("order") = q;
     ode.solve();
 
-    dolfin_set("output destination", "terminal");
+    logging(true);
     info("cG(%d): e = %.3e", q, to_double(ode.error()));
   }
 
@@ -74,7 +74,7 @@ int main()
 
   for (int q = 0; q <= 8; q++)
   {
-    dolfin_set("output destination", "silent");
+    logging(false);
 
     Harmonic ode;
     ode.parameters("fixed_time_step") = true;
@@ -84,7 +84,7 @@ int main()
 
     ode.solve();
 
-    dolfin_set("output destination", "terminal");
+    logging(true);
     info("dG(%d): e = %.3e", q, to_double(ode.error()));
   }
 

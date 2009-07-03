@@ -17,7 +17,7 @@ using namespace dolfin;
 
 int main()
 {
-  dolfin_set("debug level", 1);
+  set_log_level(1);
 
   // Sub domain for no-slip (everything except inflow and outflow)
   class Noslip : public SubDomain
