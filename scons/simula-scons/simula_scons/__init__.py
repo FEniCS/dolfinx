@@ -2,12 +2,13 @@ import re
 import os.path
 import datetime
 import sys
+import warnings
+
 from distutils import sysconfig
 from subprocess import Popen, PIPE
 
 from SCons.Builder import Builder
 from SCons.Action import Action
-from SCons.Options import Options
 from SCons.Variables import Variables
 from SCons.Environment import Environment
 from ExtendedEnvironment import ExtendedEnvironment
@@ -250,8 +251,8 @@ class Configure(object):
                         continue
                     del args[o[0]]
 
-        opts = Options(optsCache, args=args)
-        opts.AddOptions(*options)
+        opts = Variables(optsCache, args=args)
+        opts.AddVariables(*options)
         opts.Update(env)
         # Cache options if asked to
         cacheOptions = env.get("cacheOptions", False)
@@ -360,6 +361,7 @@ def PathOption(dir, explanation, default):
     adds a restrictive path validator by default. 
     Used when setting commandline options in the Configure object.
     """
+    warnings.warn("Depricated, use PathVariable from SCons",DeprecationWarning)
     return (dir, "%s ( /path/to/%s )" % (explanation, dir), default, pathValidator)
 
 def defaultCxxCompiler():
