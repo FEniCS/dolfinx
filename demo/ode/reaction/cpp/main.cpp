@@ -54,9 +54,9 @@ public:
   /// Right-hand side, multi-adaptive version
   double f(const real* u, double t, unsigned int i)
   {
-    const double ui = u[i];
+    const real ui = u[i];
     
-    double sum = 0.0;
+    real sum = 0.0;
     if ( i == 0 )
       sum = u[i + 1] - ui;
     else if (i == (N - 1))
@@ -69,22 +69,22 @@ public:
 
 public:
 
-  double L;       // Length of domain
-  double epsilon; // Diffusivity
-  double gamma;   // Reaction rate
-  double h;       // Mesh size
-  double lambda;  // Parameter for initial data
-  double v;       // Speed of reaction front
+  real L;       // Length of domain
+  real epsilon; // Diffusivity
+  real gamma;   // Reaction rate
+  real h;       // Mesh size
+  real lambda;  // Parameter for initial data
+  real v;       // Speed of reaction front
 
 };
 
 int main()
 {
   // Set some parameters
-  const double T = 0.01;
-  const double epsilon = 0.01;
-  const double gamma = 1000.0;
-  const double L = 1.0;
+  const real T = 0.01;
+  const real epsilon = 0.01;
+  const real gamma = 1000.0;
+  const real L = 1.0;
   const unsigned int N = 5000;
 
   // Create ODE
