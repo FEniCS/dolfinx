@@ -47,9 +47,9 @@ namespace dolfin
     uint get_iteration() const;
 
     /// Default parameter values
-    static NewParameters default_parameters()
+    static Parameters default_parameters()
     {
-      NewParameters p("newton_solver");
+      Parameters p("newton_solver");
  
       p.add("maximum_iterations",    50);
       p.add("relative_tolerance",    1e-9);

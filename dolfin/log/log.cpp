@@ -16,7 +16,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/parameter/NewParameters.h>
+#include <dolfin/parameter/Parameters.h>
 #include "LogManager.h"
 #include "log.h"
 
@@ -70,7 +70,7 @@ void dolfin::info(const Variable& variable)
   info(variable.str());
 }
 //-----------------------------------------------------------------------------
-void dolfin::info(const NewParameters& parameters)
+void dolfin::info(const Parameters& parameters)
 {
   // Need separate function for Parameters since we can't make Parameters
   // a subclass of Variable (gives cyclic dependencies)

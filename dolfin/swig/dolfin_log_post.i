@@ -37,7 +37,7 @@ def update(self, other):
 
 %pythoncode %{
 def info(*args):
-    if len(args) > 0 and isinstance(args[0],(Variable,NewParameters)):
+    if len(args) > 0 and isinstance(args[0],(Variable,Parameters)):
         _info(args[0].__str__())
     else:
         _info(*args)

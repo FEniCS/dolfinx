@@ -27,7 +27,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    uBLASILUPreconditioner(const NewParameters& krylov_parameters);
+    uBLASILUPreconditioner(const Parameters& krylov_parameters);
 
     /// Destructor
     ~uBLASILUPreconditioner();
@@ -46,7 +46,7 @@ namespace dolfin
     // Diagonal
     std::vector<uint> diagonal;
 
-    const NewParameters& krylov_parameters;
+    const Parameters& krylov_parameters;
 
   };
 

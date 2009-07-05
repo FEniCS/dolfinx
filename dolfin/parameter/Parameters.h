@@ -12,7 +12,7 @@
 #include <set>
 #include <map>
 #include <vector>
-#include "NewParameter.h"
+#include "Parameter.h"
 
 namespace boost
 {
@@ -69,18 +69,18 @@ namespace dolfin
   /// Note: spaces in parameter keys are not allowed (to simplify
   /// usage from command-line).
 
-  class NewParameters
+  class Parameters
   {
   public:
 
     /// Create empty parameter set
-    NewParameters(std::string key="parameters");
+    Parameters(std::string key="parameters");
 
     /// Destructor
-    ~NewParameters();
+    ~Parameters();
 
     /// Copy constructor
-    NewParameters(const NewParameters& parameters);
+    Parameters(const Parameters& parameters);
 
     /// Return key for parameter set
     std::string key() const;
@@ -116,28 +116,28 @@ namespace dolfin
     void add(std::string key, bool value);
 
     /// Add nested parameter set
-    void add(const NewParameters& parameters);
+    void add(const Parameters& parameters);
 
     /// Parse parameters from command-line
     void parse(int argc, char* argv[]);
 
     /// Update parameters with another set of parameters
-    void update(const NewParameters& parameters);
+    void update(const Parameters& parameters);
 
     /// Return parameter for given key
-    NewParameter& operator() (std::string key);
+    Parameter& operator() (std::string key);
 
     /// Return parameter for given key (const version)
-    const NewParameter& operator() (std::string key) const;
+    const Parameter& operator() (std::string key) const;
 
     /// Return nested parameter set for given key
-    NewParameters& operator[] (std::string key);
+    Parameters& operator[] (std::string key);
 
     /// Return nested parameter set for given key (const)
-    const NewParameters& operator[] (std::string key) const;
+    const Parameters& operator[] (std::string key) const;
 
     /// Assignment operator
-    const NewParameters& operator= (const NewParameters& parameters);
+    const Parameters& operator= (const Parameters& parameters);
 
     /// Return informal string representation (pretty-print)
     std::string str() const;
@@ -155,28 +155,28 @@ namespace dolfin
 
     // Add all parameters as options to a boost::program_option instance
     void add_parameter_set_to_po(boost::program_options::options_description& desc,
-                                 const NewParameters &parameters, 
+                                 const Parameters &parameters, 
                                  std::string base_name = "") const;
 
     // Read in values from the boost::variable_map
     void read_vm(boost::program_options::variables_map& vm, 
-                 NewParameters &parameters, 
+                 Parameters &parameters, 
                  std::string base_name = "");
 
     // Return pointer to parameter for given key and 0 if not found
-    NewParameter* find_parameter(std::string key) const;
+    Parameter* find_parameter(std::string key) const;
 
     // Return pointer to parameter set for given key and 0 if not found
-    NewParameters* find_parameter_set(std::string key) const;
+    Parameters* find_parameter_set(std::string key) const;
 
     // Parameter set key
     std::string _key;
 
     // Map from key to parameter
-    std::map<std::string, NewParameter*> _parameters;
+    std::map<std::string, Parameter*> _parameters;
 
     // Map from key to parameter sets
-    std::map<std::string, NewParameters*> _parameter_sets;
+    std::map<std::string, Parameters*> _parameter_sets;
 
   };
 

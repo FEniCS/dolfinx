@@ -118,9 +118,9 @@ namespace dolfin
     }
 
     /// Default parameter values
-    static NewParameters default_parameters()
+    static Parameters default_parameters()
     {
-      NewParameters p("lu_solver");
+      Parameters p("lu_solver");
       p.add("report", true);
       return p;
     }

@@ -12,7 +12,7 @@
 namespace dolfin
 {
 
-  class NewParameters;
+  class Parameters;
   class XMLFile;
 
   // FIXME: Need to handle nested parameters and ranges in XML format
@@ -21,12 +21,12 @@ namespace dolfin
   {
   public:
 
-    XMLParameters(NewParameters& parameters, XMLFile& parser);
+    XMLParameters(Parameters& parameters, XMLFile& parser);
 
     void start_element(const xmlChar *name, const xmlChar **attrs);
     void end_element  (const xmlChar *name);
 
-    static void write(const NewParameters& parameters, std::ostream& outgile, uint indentation_level=0);
+    static void write(const Parameters& parameters, std::ostream& outgile, uint indentation_level=0);
 
   private:
 
@@ -34,7 +34,7 @@ namespace dolfin
 
     void read_parameter(const xmlChar *name, const xmlChar **attrs);
 
-    NewParameters& parameters;
+    Parameters& parameters;
     parser_state state;
 
   };

@@ -16,15 +16,15 @@ namespace dolfin
 
   /// Base class for parameters.
 
-  class NewParameter
+  class Parameter
   {
   public:
 
     /// Create parameter for given key
-    NewParameter(std::string key);
+    Parameter(std::string key);
 
     /// Destructor
-    virtual ~NewParameter();
+    virtual ~Parameter();
 
     /// Return parameter key
     std::string key() const;
@@ -48,19 +48,19 @@ namespace dolfin
     virtual void set_range(const std::set<std::string>& range);
 
     /// Assignment from int
-    virtual const NewParameter& operator= (int value);
+    virtual const Parameter& operator= (int value);
 
     /// Assignment from double
-    virtual const NewParameter& operator= (double value);
+    virtual const Parameter& operator= (double value);
 
     /// Assignment from string
-    virtual const NewParameter& operator= (std::string value);
+    virtual const Parameter& operator= (std::string value);
 
     /// Assignment from string
-    virtual const NewParameter& operator= (const char* value);
+    virtual const Parameter& operator= (const char* value);
 
     /// Assignment from bool
-    virtual const NewParameter& operator= (bool value);
+    virtual const Parameter& operator= (bool value);
 
     /// Cast parameter to int
     virtual operator int() const;
@@ -111,7 +111,7 @@ namespace dolfin
   };
 
   /// Parameter with value type int
-  class NewIntParameter : public NewParameter
+  class NewIntParameter : public Parameter
   {
   public:
 
@@ -156,7 +156,7 @@ namespace dolfin
   };
 
   /// Parameter with value type double
-  class NewDoubleParameter : public NewParameter
+  class NewDoubleParameter : public Parameter
   {
   public:
 
@@ -198,7 +198,7 @@ namespace dolfin
   };
 
   /// Parameter with value type string
-  class NewStringParameter : public NewParameter
+  class NewStringParameter : public Parameter
   {
   public:
 
@@ -243,7 +243,7 @@ namespace dolfin
   };
 
   /// Parameter with value type bool
-  class NewBoolParameter : public NewParameter
+  class NewBoolParameter : public Parameter
   {
   public:
 

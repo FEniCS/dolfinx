@@ -49,10 +49,10 @@ namespace dolfin
     void disp() const;
 
     /// Default parameter values
-    static NewParameters default_parameters()
+    static Parameters default_parameters()
     {
       // FIXME: Change name to petsc_lu_solver?
-      NewParameters p("lu_solver");
+      Parameters p("lu_solver");
       p.add("report", false);
       return p;
     }

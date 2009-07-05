@@ -11,7 +11,7 @@
 #include <dolfin/common/real.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/Event.h>
-#include <dolfin/parameter/NewParameters.h>
+#include <dolfin/parameter/Parameters.h>
 #include "Dependencies.h"
 #include "Sample.h"
 #include "GMPObject.h"
@@ -142,9 +142,9 @@ namespace dolfin
     void get_state(real* u);
 
     /// Default parameter values
-    static NewParameters default_parameters()
+    static Parameters default_parameters()
     {
-      NewParameters p("ode");
+      Parameters p("ode");
 
       // FIXME: These parameters need to be cleaned up
 

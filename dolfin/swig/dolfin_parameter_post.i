@@ -1,4 +1,4 @@
-%extend dolfin::NewParameters
+%extend dolfin::Parameters
 {
   void _parse(PyObject *op)
   {
@@ -153,7 +153,7 @@ __setattr__ = __setitem__
 }
 
 %pythoncode%{
-old_init = NewParameters.__init__
+old_init = Parameters.__init__
 def __new_Parameter_init__(self,*args,**kwargs):
     """ Initialize Parameters
 
@@ -193,7 +193,7 @@ def __new_Parameter_init__(self,*args,**kwargs):
         else:
             self.add(key,value)
 
-NewParameters.__init__ = __new_Parameter_init__
+Parameters.__init__ = __new_Parameter_init__
 
 %}
 

@@ -6,14 +6,14 @@
 
 #include <sstream>
 #include <dolfin/log/log.h>
-#include "NewParameter.h"
+#include "Parameter.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 // class Parameter
 //-----------------------------------------------------------------------------
-NewParameter::NewParameter(std::string key)
+Parameter::Parameter(std::string key)
   : _access_count(0), _change_count(0),
     _key(key), _description("missing description")
 {
@@ -21,120 +21,120 @@ NewParameter::NewParameter(std::string key)
   check_key(key);
 }
 //-----------------------------------------------------------------------------
-NewParameter::~NewParameter()
+Parameter::~Parameter()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::string NewParameter::key() const
+std::string Parameter::key() const
 {
   return _key;
 }
 //-----------------------------------------------------------------------------
-std::string NewParameter::description() const
+std::string Parameter::description() const
 {
   return _description;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint NewParameter::access_count() const
+dolfin::uint Parameter::access_count() const
 {
   return _access_count;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint NewParameter::change_count() const
+dolfin::uint Parameter::change_count() const
 {
   return _change_count;
 }
 //-----------------------------------------------------------------------------
-void NewParameter::set_range(int min_value, int max_value)
+void Parameter::set_range(int min_value, int max_value)
 {
   error("Cannot set double-valued range for parameter \"%s\" of type %s.",
         _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
-void NewParameter::set_range(double min_value, double max_value)
+void Parameter::set_range(double min_value, double max_value)
 {
   error("Cannot set int-valued range for parameter \"%s\" of type %s.",
         _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
-void NewParameter::set_range(const std::set<std::string>& range)
+void Parameter::set_range(const std::set<std::string>& range)
 {
   error("Cannot set string-valued range for parameter \"%s\" of type %s.",
         _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
-const NewParameter& NewParameter::operator= (int value)
+const Parameter& Parameter::operator= (int value)
 {
   error("Cannot assign int-value to parameter \"%s\" of type %s.",
         _key.c_str(), type_str().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
-const NewParameter& NewParameter::operator= (double value)
+const Parameter& Parameter::operator= (double value)
 {
   error("Cannot assign double-value to parameter \"%s\" of type %s.",
         _key.c_str(), type_str().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
-const NewParameter& NewParameter::operator= (std::string value)
+const Parameter& Parameter::operator= (std::string value)
 {
   error("Cannot assign string-value to parameter \"%s\" of type %s.",
         _key.c_str(), type_str().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
-const NewParameter& NewParameter::operator= (const char* value)
+const Parameter& Parameter::operator= (const char* value)
 {
   error("Cannot assign string-value to parameter \"%s\" of type %s.",
         _key.c_str(), type_str().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
-const NewParameter& NewParameter::operator= (bool value)
+const Parameter& Parameter::operator= (bool value)
 {
   error("Cannot assign bool-value to parameter \"%s\" of type %s.",
         _key.c_str(), type_str().c_str());
   return *this;
 }
 //-----------------------------------------------------------------------------
-NewParameter::operator int() const
+Parameter::operator int() const
 {
   error("Unable to convert parameter \"%s\" of type %s to int.",
         _key.c_str(), type_str().c_str());
   return 0;
 }
 //-----------------------------------------------------------------------------
-NewParameter::operator uint() const
+Parameter::operator uint() const
 {
   error("Unable to convert parameter \"%s\" of type %s to uint.",
         _key.c_str(), type_str().c_str());
   return 0;
 }
 //-----------------------------------------------------------------------------
-NewParameter::operator double() const
+Parameter::operator double() const
 {
   error("Unable to convert parameter \"%s\"r of type %s to double.",
         _key.c_str(), type_str().c_str());
   return 0;
 }
 //-----------------------------------------------------------------------------
-NewParameter::operator std::string() const
+Parameter::operator std::string() const
 {
   error("Unable to convert parameter \"%s\" of type %s to string.",
         _key.c_str(), type_str().c_str());
   return 0;
 }
 //-----------------------------------------------------------------------------
-NewParameter::operator bool() const
+Parameter::operator bool() const
 {
   error("Unable to convert parameter \"%s\" of type %s to bool.",
         _key.c_str(), type_str().c_str());
   return 0;
 }
 //-----------------------------------------------------------------------------
-void NewParameter::check_key(std::string key)
+void Parameter::check_key(std::string key)
 {
   // Space and punctuation not allowed in key names
   for (uint i = 0; i < key.size(); i++)
@@ -148,7 +148,7 @@ void NewParameter::check_key(std::string key)
 // class IntParameter
 //-----------------------------------------------------------------------------
 NewIntParameter::NewIntParameter(std::string key, int value)
-  : NewParameter(key), _value(value), _min(0), _max(0)
+  : Parameter(key), _value(value), _min(0), _max(0)
 {
   // Do nothing
 }
@@ -236,7 +236,7 @@ std::string NewIntParameter::str() const
 // class DoubleParameter
 //-----------------------------------------------------------------------------
 NewDoubleParameter::NewDoubleParameter(std::string key, double value)
-  : NewParameter(key), _value(value), _min(0), _max(0)
+  : Parameter(key), _value(value), _min(0), _max(0)
 {
   // Do nothing
 }
@@ -314,7 +314,7 @@ std::string NewDoubleParameter::str() const
 // class StringParameter
 //-----------------------------------------------------------------------------
 NewStringParameter::NewStringParameter(std::string key, std::string value)
-  : NewParameter(key), _value(value)
+  : Parameter(key), _value(value)
 {
   // Do nothing
 }
@@ -412,7 +412,7 @@ std::string NewStringParameter::str() const
 // class BoolParameter
 //-----------------------------------------------------------------------------
 NewBoolParameter::NewBoolParameter(std::string key, bool value)
-  : NewParameter(key), _value(value)
+  : Parameter(key), _value(value)
 {
   // Do nothing
 }

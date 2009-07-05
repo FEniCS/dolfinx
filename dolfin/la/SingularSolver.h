@@ -49,9 +49,9 @@ namespace dolfin
                const GenericMatrix& M);
 
     /// Default parameter values
-    static NewParameters default_parameters()
+    static Parameters default_parameters()
     {
-      NewParameters p("singular_solver");
+      Parameters p("singular_solver");
       
       p.add(LinearSolver::default_parameters());
 

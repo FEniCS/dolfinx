@@ -8,7 +8,7 @@
 #define __VARIABLE_H
 
 #include <string>
-#include <dolfin/parameter/NewParameters.h>
+#include <dolfin/parameter/Parameters.h>
 
 namespace dolfin
 {
@@ -41,7 +41,7 @@ namespace dolfin
     virtual std::string str() const;
 
     // Parameters
-    NewParameters parameters;
+    Parameters parameters;
     
   private:
 

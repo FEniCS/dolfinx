@@ -16,7 +16,7 @@ namespace dolfin
 {
 
   class Variable;
-  class NewParameters;
+  class Parameters;
 
   /// The DOLFIN log system provides the following set of functions for
   /// uniform handling of log messages, warnings and errors. In addition,
@@ -36,7 +36,7 @@ namespace dolfin
   void info(const Variable& variable);
 
   /// Print variable (using output of str() method)
-  void info(const NewParameters& parameters);
+  void info(const Parameters& parameters);
 
   /// Print message to stream
   void info_stream(std::ostream& out, std::string msg);

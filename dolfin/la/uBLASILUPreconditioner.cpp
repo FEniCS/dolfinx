@@ -14,7 +14,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBLASILUPreconditioner::uBLASILUPreconditioner(const NewParameters& krylov_parameters) 
+uBLASILUPreconditioner::uBLASILUPreconditioner(const Parameters& krylov_parameters) 
                                      : krylov_parameters(krylov_parameters)
 {
   // Do nothing

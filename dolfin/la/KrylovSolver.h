@@ -11,7 +11,7 @@
 #define __KRYLOV_SOLVER_H
 
 #include <dolfin/common/Timer.h>
-#include <dolfin/parameter/NewParameters.h>
+#include <dolfin/parameter/Parameters.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "uBLASKrylovSolver.h"
@@ -120,9 +120,9 @@ namespace dolfin
     }
 
     /// Default parameter values
-    static NewParameters default_parameters()
+    static Parameters default_parameters()
     {
-      NewParameters p("krylov_solver");
+      Parameters p("krylov_solver");
 
       p.add("relative_tolerance",  1e-15);
       p.add("absolute_tolerance",  1e-15);

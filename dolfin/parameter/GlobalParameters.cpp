@@ -12,10 +12,10 @@ using namespace dolfin;
 GlobalParameters dolfin::parameters;
 
 //-----------------------------------------------------------------------------
-GlobalParameters::GlobalParameters() : NewParameters("dolfin")
+GlobalParameters::GlobalParameters() : Parameters("dolfin")
 {
   // Set default parameter values
-  *static_cast<NewParameters*>(this) = default_parameters();
+  *static_cast<Parameters*>(this) = default_parameters();
 }
 //-----------------------------------------------------------------------------
 GlobalParameters::~GlobalParameters()

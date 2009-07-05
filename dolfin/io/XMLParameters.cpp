@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/parameter/NewParameters.h>
+#include <dolfin/parameter/Parameters.h>
 #include "XMLIndent.h"
 #include "XMLFile.h"
 #include "XMLParameters.h"
@@ -14,7 +14,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLParameters::XMLParameters(NewParameters& parameters, XMLFile& parser)
+XMLParameters::XMLParameters(Parameters& parameters, XMLFile& parser)
   : XMLHandler(parser), parameters(parameters), state(OUTSIDE)
 {
   // Clear all parameters
@@ -63,7 +63,7 @@ void XMLParameters::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLParameters::write(const NewParameters& parameters,
+void XMLParameters::write(const Parameters& parameters,
                           std::ostream& outfile,
                           uint indentation_level)
 {
@@ -81,7 +81,7 @@ void XMLParameters::write(const NewParameters& parameters,
   ++indent;
   for (uint i = 0; i < parameter_keys.size(); ++i)
   {
-    const NewParameter& parameter = parameters(parameter_keys[i]);
+    const Parameter& parameter = parameters(parameter_keys[i]);
     outfile << indent();
     if (parameter.type_str() == "int")
     {

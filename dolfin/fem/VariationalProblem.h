@@ -105,9 +105,9 @@ namespace dolfin
     NewtonSolver& newton_solver();
 
     /// Default parameter values
-    static NewParameters default_parameters()
+    static Parameters default_parameters()
     {
-      NewParameters p("variational_problem");
+      Parameters p("variational_problem");
       
       p.add("linear_solver", "direct");
       p.add("symmetric", false);

@@ -57,9 +57,9 @@ namespace dolfin
     uint solve(const uBLASKrylovMatrix& A, uBLASVector& x, const uBLASVector& b);
 
     /// Default parameter values
-    static NewParameters default_parameters()
+    static Parameters default_parameters()
     {
-      NewParameters p("krylov_solver");
+      Parameters p("krylov_solver");
 
       p.add("relative_tolerance",  1e-15);
       p.add("absolute_tolerance",  1e-15);

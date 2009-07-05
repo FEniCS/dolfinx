@@ -7,14 +7,14 @@
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
 
-#include "NewParameters.h"
+#include "Parameters.h"
 
 namespace dolfin
 {
 
   /// This class defines the global DOLFIN parameter database.
 
-  class GlobalParameters : public NewParameters
+  class GlobalParameters : public Parameters
   {
   public:
 
@@ -25,9 +25,9 @@ namespace dolfin
     ~GlobalParameters();
 
     /// Default parameter values
-    static NewParameters default_parameters()
+    static Parameters default_parameters()
     {
-      NewParameters p;
+      Parameters p;
 
       // General
       p.add("timer_prefix", "");                      // Prefix for timer tasks

@@ -7,7 +7,7 @@
 #include <dolfin/log/dolfin_log.h>
 
 #include <sstream>
-#include <dolfin/parameter/NewParameters.h>
+#include <dolfin/parameter/Parameters.h>
 #include "Variable.h"
 
 using namespace dolfin;

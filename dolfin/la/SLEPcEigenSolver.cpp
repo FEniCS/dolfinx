@@ -19,6 +19,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver()
 {
+  // Set default parameter values
+  parameters = default_parameters();
+
   // Set up solver environment
   EPSCreate(PETSC_COMM_SELF, &eps);
 }
@@ -37,7 +40,7 @@ void SLEPcEigenSolver::solve(const PETScMatrix& A)
 void SLEPcEigenSolver::solve(const PETScMatrix& A, uint n)
 {
   solve(&A, 0, n);
-}
+5~}
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(const PETScMatrix& A, const PETScMatrix& B)
 {
@@ -144,17 +147,14 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   #endif
   EPSGetType(eps, &eps_type);
   info("Eigenvalue solver (%s) converged in %d iterations.",
-          eps_type, num_iterations);
+       eps_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::read_parameters()
 {
-  if (has("eigenvalue spectrum"))
-    set_spectrum(get("eigenvalue spectrum"));
-  if (has("eigenvalue solver"))
-    set_solver(get("eigenvalue solver"));
-  if (has("eigenvalue tolerance") && has("eigenvalue iterations"))
-    set_tolerance(get("eigenvalue tolerance"), get("eigenvalue iterations"));
+  set_spectrum(parameters("spectrum"));
+  set_solver(parameters("solver"));
+  set_tolerance(parameters("tolerance"), parameters("maximum iterations"));
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_spectrum(std::string spectrum)
@@ -177,10 +177,7 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
   else if (spectrum == "smallest imaginary")
     EPSSetWhichEigenpairs(eps, EPS_SMALLEST_IMAGINARY);
   else
-  {
-    warning("Requested spectrum unknown. Using largest magnitude.");
-    EPSSetWhichEigenpairs(eps, EPS_LARGEST_MAGNITUDE);
-  }
+    error("Unknown spectrum: \"%s\".", spectrum.c_str());
 
   // FIXME: Need to add some test here as most algorithms only compute
   // FIXME: largest eigenvalues. Asking for smallest leads to a PETSc error.
@@ -206,10 +203,7 @@ void SLEPcEigenSolver::set_solver(std::string solver)
   else if (solver == "lapack")
     EPSSetType(eps, EPSLAPACK);
   else
-  {
-    warning("Requested Krylov method unknown. Using Krylov-Schur.");
-    EPSSetType(eps, EPSKRYLOVSCHUR);
-  }
+    error("Unknown method: \"%s\".", solver.c_str());
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_tolerance(double tolerance, uint maxiter)

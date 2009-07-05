@@ -37,9 +37,9 @@ namespace dolfin
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
     /// Default parameter values
-    static NewParameters default_parameters()
+    static Parameters default_parameters()
     {
-      NewParameters p("ode");
+      Parameters p("ode");
 
       p.add(LUSolver::default_parameters());
       p.add(KrylovSolver::default_parameters());
