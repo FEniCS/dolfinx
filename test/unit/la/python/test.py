@@ -12,7 +12,7 @@ class AbstractBaseTest(object):
     count = 0
     def setUp(self):
         if self.backend != "default":
-            dolfin_set("linear algebra backend",self.backend)
+            parameters["linear_algebra_backend"] = self.backend
         type(self).count += 1
         if type(self).count == 1:
             # Only print this message once per class instance
