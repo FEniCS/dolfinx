@@ -1,3 +1,5 @@
+ - Rewrite parameter system with improved support for command-line parsing,
+   localization of parameters (per class) and usability from Python
  - Remove OutflowFacet from SpecialFunctions
  - Experimental support for parallel assembly and solve
  - Rename interpolate(double*) --> interpolate_vertex_values(double*)

@@ -31,6 +31,34 @@ void bar();
 void foo_bar(...);
 \end{code}
 
+Functions returning a value should be given the name of that value,
+for example:
+\begin{code}
+class Array:
+{
+public:
+
+  /// Return size of array (number of entries)
+  uint size() const;
+
+};
+\end{code}
+
+In the above example, the function should be named \texttt{size} rather
+than \texttt{get\_size}. On the other hand, a function not returning a
+value but rather taking a variable (by reference) and assigning a value
+to it, should use the \texttt{get\_foo} naming scheme, for example:
+\begin{code}
+class Parameters:
+{
+public:
+
+  /// Retrieve all parameter keys
+  void get_parameter_keys(std::vector<std::string>& parameter_keys) const;
+
+};
+\end{code}
+
 \subsection{Variable names}
 
 Use lower-case for variable names and underscore to separate words:
