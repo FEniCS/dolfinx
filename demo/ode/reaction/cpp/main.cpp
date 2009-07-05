@@ -23,11 +23,11 @@ class Reaction : public ODE
 public:
 
   /// Constructor
-  Reaction(unsigned int N, double T, double L, double epsilon, double gamma)
+  Reaction(unsigned int N, real T, real L, real epsilon, real gamma)
     : ODE(N, T), L(L), epsilon(epsilon), gamma(gamma)
   {
     // Compute parameters
-    h = L / static_cast<double>(N - 1);
+    h = L / static_cast<real>(N - 1);
     lambda = 0.5*sqrt(2.0*gamma/epsilon);
     v = 0.5*sqrt(2.0*gamma*epsilon);
     
@@ -46,13 +46,13 @@ public:
   {
     for (unsigned int i = 0; i < N; i++)
     {
-      const double x = static_cast<double>(i)*h;
+      const real x = static_cast<real>(i)*h;
       u[i] = 1.0 / (1.0 + exp(lambda*(x - 1.0)));
     }
   }
 
   /// Right-hand side, multi-adaptive version
-  double f(const real* u, double t, unsigned int i)
+  real f(const real* u, real t, unsigned int i)
   {
     const real ui = u[i];
     
