@@ -23,7 +23,7 @@ except:
     exit()
 
 # Make sure we use the PETSc backend
-dolfin_set("linear algebra backend", "PETSc")
+parameters["linear_algebra_backend"] = "PETSc"
 
 # Build stiftness matrix
 mesh = UnitSquare(64, 64)
@@ -36,7 +36,7 @@ assemble(dot(grad(v), grad(u))*dx, tensor=A)
 # Compute the first n eigenvalues
 n = 10
 esolver = SLEPcEigenSolver()
-esolver.set("eigenvalue spectrum", "smallest magnitude")
+esolver.parameters["spectrum"] = "smallest magnitude"
 esolver.solve(A, n)
 
 print "Eigenvalue solver converged in %d iterations" % (esolver.get_iteration_number(),)

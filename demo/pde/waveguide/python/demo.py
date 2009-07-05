@@ -33,7 +33,7 @@ except:
     exit()
 
 # Make sure we use the PETSc backend
-dolfin_set("linear algebra backend", "PETSc")
+parameters["linear_algebra_backend"] = "PETSc"
 
 # Create mesh
 width = 1.0
@@ -65,8 +65,8 @@ assemble(t, tensor=T)
 
 # Solve the eigensystem
 esolver = SLEPcEigenSolver()
-esolver.set("eigenvalue spectrum", "smallest real")
-esolver.set("eigenvalue solver", "lapack")
+esolver.parmeters["spectrum"] = "smallest real"
+esolver.parmeters["solver"] = "lapack"
 esolver.solve(S, T)
 
 # The result should have real eigenvalues but due to rounding errors, some of
