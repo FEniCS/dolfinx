@@ -104,9 +104,9 @@ namespace dolfin
     int get_iteration_number();
 
     /// Default parameter values
-    static NewParameters default_parameters()
+    static Parameters default_parameters()
     {
-      NewParameters p("slepc_eigenvalue_solver");
+      Parameters p("slepc_eigenvalue_solver");
 
       p.add("spectrum",           "largest magnitude");
       p.add("solver",             "krylov-schur");

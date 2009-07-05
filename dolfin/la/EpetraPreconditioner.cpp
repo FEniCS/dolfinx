@@ -5,6 +5,7 @@
 
 #ifdef HAS_TRILINOS
 
+#include <dolfin/log/dolfin_log.h>
 #include "EpetraPreconditioner.h"
 
 using namespace dolfin;
