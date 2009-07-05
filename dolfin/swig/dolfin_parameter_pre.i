@@ -1,12 +1,14 @@
 // Renames for Parameter
+// For some obscure reason we need to rename Parameter
+%rename (NewParameter) dolfin::Parameter;
 %rename (__int__) dolfin::Parameter::operator int() const;
 %rename (__float__) dolfin::Parameter::operator double() const;
 %rename (__str__) dolfin::Parameter::operator std::string() const;
 %rename (_assign) dolfin::Parameter::operator=;
 
 // Renames and ignores for Parameters
-%rename (_parameter_keys) dolfin::Parameters::parameter_keys;
-%rename (_parameter_set_keys) dolfin::Parameters::parameter_set_keys;
+%rename (_get_parameter_keys) dolfin::Parameters::get_parameter_keys;
+%rename (_get_parameter_set_keys) dolfin::Parameters::get_parameter_set_keys;
 %rename (_get_parameter_set) dolfin::Parameters::operator[];
 %rename (_get_parameter) dolfin::Parameters::operator();
 %rename (__str__) dolfin::Parameters::str const;

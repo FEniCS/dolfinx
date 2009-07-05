@@ -38,11 +38,11 @@ def keys(self):
     "Returns a list of the parameter keys"
     ret = []
     _keys = STLVectorString()
-    self._parameter_keys(_keys)
+    self._get_parameter_keys(_keys)
     for i in xrange(len(_keys)):
         ret.append(_keys[i])
     _keys.clear()
-    self._parameter_set_keys(_keys)
+    self._get_parameter_set_keys(_keys)
     for i in xrange(len(_keys)):
         ret.append(_keys[i])
     return ret
@@ -70,7 +70,7 @@ def iteritems(self):
 def set_range(self,key,*arg):
     "Set the range for the given parameter" 
     _keys = STLVectorString()
-    self._parameter_keys(_keys)
+    self._get_parameter_keys(_keys)
     if key not in _keys:
         raise KeyError, "no parameter with name '%s'"%key
     self._get_parameter(key).set_range(*arg)
@@ -78,7 +78,7 @@ def set_range(self,key,*arg):
 def __getitem__(self,key):
     "Return the parameter corresponding to the given key"
     _keys = STLVectorString()
-    self._parameter_keys(_keys)
+    self._get_parameter_keys(_keys)
     if key in _keys:
         par = self._get_parameter(key)
         val_type = par.type_str()
@@ -92,7 +92,7 @@ def __getitem__(self,key):
             raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type,key)
     
     _keys.clear()
-    self._parameter_set_keys(_keys)
+    self._get_parameter_set_keys(_keys)
     if key in _keys:
         return self._get_parameter_set(key)
     raise KeyError, "'%s'"%key
@@ -100,7 +100,7 @@ def __getitem__(self,key):
 def __setitem__(self,key,value):
     "Set the parameter 'key', with given 'value'"
     _keys = STLVectorString()
-    self._parameter_keys(_keys)
+    self._get_parameter_keys(_keys)
     if key not in _keys:
         raise KeyError, "%s is not a parameter"%key
     if not isinstance(value,(int,str,float)):
@@ -197,3 +197,11 @@ Parameters.__init__ = __new_Parameter_init__
 
 %}
 
+// Expose the global variable parameters for the Python interface
+%inline %{
+extern dolfin::GlobalParameters dolfin::parameters;
+%}
+
+%pythoncode%{
+parameters = cvar.parameters
+%}
