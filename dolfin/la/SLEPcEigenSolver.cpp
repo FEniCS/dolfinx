@@ -40,7 +40,7 @@ void SLEPcEigenSolver::solve(const PETScMatrix& A)
 void SLEPcEigenSolver::solve(const PETScMatrix& A, uint n)
 {
   solve(&A, 0, n);
-5~}
+}
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(const PETScMatrix& A, const PETScMatrix& B)
 {
@@ -154,7 +154,7 @@ void SLEPcEigenSolver::read_parameters()
 {
   set_spectrum(parameters("spectrum"));
   set_solver(parameters("solver"));
-  set_tolerance(parameters("tolerance"), parameters("maximum iterations"));
+  set_tolerance(parameters("tolerance"), parameters("maximum_iterations"));
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_spectrum(std::string spectrum)

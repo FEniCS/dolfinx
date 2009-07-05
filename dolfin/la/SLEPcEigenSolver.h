@@ -27,7 +27,7 @@ namespace dolfin
   ///
   /// The following parameters may be specified to control the solver.
   ///
-  /// 1. "eigenvalue_spectrum"
+  /// 1. "eigenvalue spectrum"
   ///
   /// This parameter controls which part of the spectrum to compute.
   /// Possible values are
@@ -40,7 +40,7 @@ namespace dolfin
   ///   "smallest imaginary"  (eigenvalues with smallest imaginary part)
   ///   "default spectrum"    (default spectrum)
   ///
-  /// 2. "eigenvalue_solver"
+  /// 2. "eigenvalue solver"
   ///
   /// This parameter controls which algorithm is used by SLEPc.
   /// Possible values are
@@ -53,12 +53,12 @@ namespace dolfin
   ///   "lapack"              (LAPACK, all values, direct, only for small systems)
   ///   "default"             (default algorithm)
   ///
-  /// 3. "eigenvalue_tolerance"
+  /// 3. "eigenvalue tolerance"
   ///
   /// This parameter controls the tolerance used by SLEPc.
   /// Possible values are positive double numbers.
   ///
-  /// 4. "eigenvalue_iterations"
+  /// 4. "eigenvalue iterations"
   ///
   /// This parameter controls the maximum number of iterations used by SLEPc.
   /// Possible values are positive integers.
@@ -66,7 +66,7 @@ namespace dolfin
   /// Note that both the tolerance and the number of iterations must be
   /// specified if either one is specified.
 
-  class SLEPcEigenSolver : public PETScObject
+  class SLEPcEigenSolver : public Variable, public PETScObject
   {
   public:
 
@@ -102,6 +102,19 @@ namespace dolfin
 
     // Get the number of iterations used by the solver
     int get_iteration_number();
+
+    /// Default parameter values
+    static NewParameters default_parameters()
+    {
+      NewParameters p("slepc_eigenvalue_solver");
+
+      p.add("spectrum",           "largest magnitude");
+      p.add("solver",             "krylov-schur");
+      p.add("tolerance",          1e-15);
+      p.add("maximum_iterations", 10000);
+
+      return p;
+    }
 
   private:
 
