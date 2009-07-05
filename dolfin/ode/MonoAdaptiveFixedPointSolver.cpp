@@ -5,7 +5,6 @@
 // Last changed: 2008-10-07
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/parameter/parameters.h>
 #include "Alloc.h"
 #include "Method.h"
 #include "MonoAdaptiveTimeSlab.h"

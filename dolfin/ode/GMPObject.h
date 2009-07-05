@@ -15,8 +15,8 @@
 #include <gmpxx.h>
 #endif
 
+#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/common/real.h>
-#include <dolfin/parameter/parameters.h>
 
 namespace dolfin
 {
@@ -32,14 +32,15 @@ namespace dolfin
     {
 #ifdef HAS_GMP
       // Compute the number of bits needed
-      const uint decimal_prec = dolfin_get("floating-point precision");
+      const uint decimal_prec = parameters("floating_point_precision");
       mpf_set_default_prec(static_cast<uint>(decimal_prec*BITS_PR_DIGIT));
 
       // Compute epsilon
       real_init();
 
+      // FIXME: Handle this for new parameter system, "discrete_tolerance" now a local option for ODE object
       // Set the default discrete tolerance
-      dolfin_set("ODE discrete tolerance", to_double(real_sqrt(real_epsilon())));
+      //dolfin_set("ODE discrete tolerance", to_double(real_sqrt(real_epsilon())));
 
       // Display number of digits
       char msg[100];
@@ -47,7 +48,7 @@ namespace dolfin
       info("Using %d bits per digit, eps = %s", mpf_get_default_prec(), msg);
 
 #else
-      if (dolfin_changed("floating-point precision"))
+      if (parameters("floating_point_precision").change_count() > 0)
 	warning("Can't change floating-point precision when using type double");
 #endif
     }

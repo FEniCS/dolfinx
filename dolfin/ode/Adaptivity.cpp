@@ -4,7 +4,6 @@
 // First added:  2005-11-04
 // Last changed: 2008-02-11
 
-#include <dolfin/parameter/parameters.h>
 #include "Adaptivity.h"
 
 using namespace dolfin;

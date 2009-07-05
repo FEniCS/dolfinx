@@ -5,7 +5,6 @@
 // Last changed: 2008-02-11
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/parameter/parameters.h>
 #include "Alloc.h"
 #include "ODE.h"
 #include "Method.h"

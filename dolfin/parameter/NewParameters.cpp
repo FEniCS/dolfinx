@@ -354,14 +354,14 @@ std::string NewParameters::str() const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void NewParameters::parameter_keys(std::vector<std::string>& keys) const
+void NewParameters::get_parameter_keys(std::vector<std::string>& keys) const
 {
   keys.reserve(_parameters.size());
   for (const_parameter_iterator it = _parameters.begin(); it != _parameters.end(); ++it)
     keys.push_back(it->first);
 }
 //-----------------------------------------------------------------------------
-void NewParameters::parameter_set_keys(std::vector<std::string>& keys) const
+void NewParameters::get_parameter_set_keys(std::vector<std::string>& keys) const
 {
   keys.reserve(_parameter_sets.size());
   for (const_parameter_set_iterator it = _parameter_sets.begin(); it != _parameter_sets.end(); ++it)

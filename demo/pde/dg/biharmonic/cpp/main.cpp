@@ -49,7 +49,8 @@ int main()
   // Create mesh
   UnitSquare mesh(32, 32);
 
-  dolfin_set("linear algebra backend", "uBLAS");
+  // Use uBLAS
+  parameters("linear algebra backend") = "uBLAS";
 
   // Create functions
   Source f;

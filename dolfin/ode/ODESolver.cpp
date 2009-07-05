@@ -7,7 +7,6 @@
 // Last changed: 2009-02-09
 
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/parameter/parameters.h>
 #include <dolfin/common/timing.h>
 #include "ODE.h"
 #include "TimeStepper.h"
@@ -74,7 +73,7 @@ void ODESolver::solve_dual(ODESolution& u)
   // Create dual problem
   Dual dual(ode, u);
 
-  if (dolfin_changed("floating-point precision"))
+  if (parameters("floating_point_precision").change_count() > 0)
   {
     warning("Solving dual with extended precision, not supported. Using double precision.");
     // Set discrete tolerance to default value.

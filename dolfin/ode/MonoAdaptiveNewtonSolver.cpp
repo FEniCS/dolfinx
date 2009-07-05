@@ -8,7 +8,6 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
-#include <dolfin/parameter/parameters.h>
 #include <dolfin/la/uBLASKrylovSolver.h>
 #include <dolfin/la/UmfpackLUSolver.h>
 #include <dolfin/la/KrylovSolver.h>

@@ -30,7 +30,6 @@ namespace dolfin
   class Function;
   class BoundaryMesh;
   class XMLMesh;
-  class XMLMesh;
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
   ///

@@ -6,7 +6,6 @@
 
 #include <stdio.h>
 #include <string>
-#include <dolfin/parameter/parameters.h>
 #include <dolfin/la/uBLASVector.h>
 #include "ODE.h"
 #include "cGqMethod.h"

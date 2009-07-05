@@ -4,11 +4,9 @@
 // Generated list of include files for PyDOLFIN
 
 // DOLFIN headers included from parameter
-%include "dolfin/parameter/Parametrized.h"
-%include "dolfin/parameter/Parameter.h"
-%include "dolfin/parameter/parameters.h"
 %include "dolfin/parameter/NewParameter.h"
 %include "dolfin/parameter/NewParameters.h"
+%include "dolfin/parameter/GlobalParameters.h"
 
 // DOLFIN headers included from common
 %include "dolfin/common/types.h"

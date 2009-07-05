@@ -5,7 +5,6 @@
 // Last changed: 2008-02-11
 
 #include <cmath>
-#include <dolfin/parameter/parameters.h>
 #include "ODE.h"
 #include "Method.h"
 #include "MonoAdaptivity.h"

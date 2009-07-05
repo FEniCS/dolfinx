@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/parameter/parameters.h>
 #include "ODE.h"
 #include "Dependencies.h"
 #include "Method.h"

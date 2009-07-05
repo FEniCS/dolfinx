@@ -2,29 +2,31 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-16
-// Last changed: 2009-03-16
+// Last changed: 2009-07-03
 
-#ifndef __XMLPARAMETERLIST_H
-#define __XMLPARAMETERLIST_H
+#ifndef __XML_PARAMETERS_H
+#define __XML_PARAMETERS_H
 
 #include "XMLHandler.h"
 
 namespace dolfin
 {
 
-  class ParameterList;
+  class NewParameters;
   class XMLFile;
 
-  class XMLParameterList : public XMLHandler
+  // FIXME: Need to handle nested parameters and ranges in XML format
+
+  class XMLParameters : public XMLHandler
   {
   public:
 
-    XMLParameterList(ParameterList& parameters, XMLFile& parser);
+    XMLParameters(NewParameters& parameters, XMLFile& parser);
 
     void start_element(const xmlChar *name, const xmlChar **attrs);
     void end_element  (const xmlChar *name);
 
-    static void write(const ParameterList& parameters, std::ostream& outgile, uint indentation_level=0);
+    static void write(const NewParameters& parameters, std::ostream& outgile, uint indentation_level=0);
 
   private:
 
@@ -32,7 +34,7 @@ namespace dolfin
 
     void read_parameter(const xmlChar *name, const xmlChar **attrs);
 
-    ParameterList& parameters;
+    NewParameters& parameters;
     parser_state state;
 
   };

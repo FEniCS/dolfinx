@@ -6,7 +6,7 @@
 
 #include <cmath>
 #include <dolfin/common/constants.h>
-#include <dolfin/parameter/parameters.h>
+#include <dolfin/log/dolfin_log.h>
 #include "TimeSlab.h"
 #include "TimeSlabSolver.h"
 
