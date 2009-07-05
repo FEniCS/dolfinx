@@ -23,7 +23,7 @@ if not has_linear_algebra_backend("Epetra"):
     print "Exiting."
     exit()
 
-dolfin_set("linear algebra backend", "Epetra")
+parameters["linear_algebra_backend"] = "Epetra"
 
 # Create mesh and finite element
 mesh = UnitSquare(20,20)

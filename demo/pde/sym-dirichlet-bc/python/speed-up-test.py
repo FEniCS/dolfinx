@@ -42,7 +42,7 @@ for backend in backends:
         print "DOLFIN not compiled with % linear algebra backend."%backend
         continue
 
-    dolfin_set("linear algebra backend", backend)
+    parameters["linear_algebra_backend"] = backend
 
     t0 = time.time()
     A = assemble(a)

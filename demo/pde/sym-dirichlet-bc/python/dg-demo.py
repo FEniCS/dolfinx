@@ -15,7 +15,7 @@ from dolfin import *
 # Create mesh and finite element
 mesh = UnitSquare(10,10)
 
-dolfin_set("linear algebra backend", "uBLAS")
+parameters["linear_algebra_backend"] = "uBLAS"
 
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):

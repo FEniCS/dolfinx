@@ -14,7 +14,7 @@ if not has_linear_algebra_backend("Epetra"):
     print "Exiting."
     exit()
 
-dolfin_set("linear algebra backend","Epetra")
+parameters["linear_algebra_backend"] = "Epetra"
 
 class LeftSide(SubDomain):
     def inside(self, x, on_boundary):
