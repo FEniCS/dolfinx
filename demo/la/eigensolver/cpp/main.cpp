@@ -17,7 +17,7 @@ int main()
   #ifdef HAS_SLEPC
 
   // Make sure we use the PETSc backend
-  dolfin_set("linear algebra backend", "PETSc");
+  parameters("linear_algebra_backend") = "PETSc";
 
   // Build stiftness matrix
   UnitSquare mesh(64, 64);

@@ -10,7 +10,6 @@
 #include <dolfin/common/real.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
-#include <dolfin/parameter/parameters.h>
 #include "MultiAdaptivity.h"
 #include "Partition.h"
 

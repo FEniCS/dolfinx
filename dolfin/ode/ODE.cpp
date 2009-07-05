@@ -6,7 +6,6 @@
 
 #include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
-#include <dolfin/parameter/parameters.h>
 #include "ODESolver.h"
 #include "TimeStepper.h"
 #include "ODE.h"

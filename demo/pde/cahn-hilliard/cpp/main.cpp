@@ -36,7 +36,7 @@ public:
 };
 
 // User defined nonlinear problem
-class CahnHilliardEquation : public NonlinearProblem, public Parametrized
+class CahnHilliardEquation : public NonlinearProblem
 {
   public:
 

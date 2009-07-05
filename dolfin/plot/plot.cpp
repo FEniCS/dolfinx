@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <sstream>
 
-#include <dolfin/parameter/parameters.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/io/File.h>
 #include "FunctionPlotData.h"
 #include "plot.h"
@@ -25,7 +25,7 @@ void plot_object(const T& t, std::string mode)
           t.name().c_str(), t.label().c_str());
 
   // Save to file
-  const std::string filename = dolfin_get("plot file name");
+  const std::string filename = parameters("plot_filename");
   File file(filename);
   file << t;
 

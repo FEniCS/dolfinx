@@ -9,7 +9,7 @@
 #ifndef __UBLAS_PRECONDITIONER_H
 #define __UBLAS_PRECONDITIONER_H
 
-#include <dolfin/parameter/Parametrized.h>
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
@@ -21,7 +21,7 @@ namespace dolfin
   /// This class specifies the interface for preconditioners for the
   /// uBLAS Krylov solver.
 
-  class uBLASPreconditioner : public Parametrized
+  class uBLASPreconditioner
   {
   public:
 

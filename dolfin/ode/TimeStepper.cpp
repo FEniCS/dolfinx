@@ -11,7 +11,6 @@
 #include <dolfin/io/File.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/constants.h>
-#include <dolfin/parameter/parameters.h>
 #include "ODE.h"
 #include "Sample.h"
 #include "MonoAdaptiveTimeSlab.h"

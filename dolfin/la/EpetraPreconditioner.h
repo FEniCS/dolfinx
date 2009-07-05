@@ -9,7 +9,6 @@
 #define __EPETRA_PRECONDITIONER_SOLVER_H
 
 #include <dolfin/common/types.h>
-#include <dolfin/parameter/Parametrized.h>
 
 #endif
 
@@ -23,7 +22,7 @@ namespace dolfin
   /// EpetraPreconditioner needs only supply a function that approximately
   /// solves the linear system given a right-hand side.
 
-  class EpetraPreconditioner : public Parametrized
+  class EpetraPreconditioner
   {
   public:
     /// Constructor

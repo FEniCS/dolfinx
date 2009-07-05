@@ -7,6 +7,7 @@
 #ifndef __TIME_SLAB_H
 #define __TIME_SLAB_H
 
+#include <dolfin/common/real.h>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -15,6 +16,7 @@ namespace dolfin
   class ODE;
   class Method;
   class uBLASVector;
+  class LogStream;
 
   /// This is the base class for time slabs, the collections of
   /// degrees of freedom for the solution of an ODE between two

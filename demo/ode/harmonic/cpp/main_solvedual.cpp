@@ -54,13 +54,14 @@ private:
 
 int main()
 {
-  dolfin_set("ODE fixed time step", true);
-  dolfin_set("ODE discrete tolerance", 1e-14);
-
-  dolfin_set("ODE method", "cg");
-  dolfin_set("ODE order", 10);
-  dolfin_set("ODE solve dual problem", true);
-
+  // Create ODE
   Harmonic ode;
+  ode.parameters("fixed_time_step") = true;
+  ode.parameters("discrete_tolerance") = 1e-14;
+  ode.parameters("method") = "cg";
+  ode.parameters("order") = 10;
+  ode.parameters("solve_dual_problem") = true;
+
+  // Solve ODE
   ode.solve();
 }

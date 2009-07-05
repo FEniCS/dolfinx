@@ -9,7 +9,7 @@
 
 #include <iostream>
 
-#include <dolfin/parameter/parameters.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/log/LogManager.h>
 #include "timing.h"
 
@@ -38,7 +38,7 @@ namespace dolfin
 
     /// Create timer
     Timer(std::string task) : task(""), t(time()), stopped(false)
-    { const std::string prefix = dolfin_get("timer prefix"); this->task = prefix + task; }
+    { const std::string prefix = parameters("timer_prefix"); this->task = prefix + task; }
 
     /// Destructor
     ~Timer()

@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <boost/scoped_array.hpp>
+#include <dolfin/log/dolfin_log.h>
 #include "ODESolution.h"
 #include "Sample.h"
 #include "ODE.h"

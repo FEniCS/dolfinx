@@ -26,6 +26,8 @@ namespace boost
 namespace dolfin
 {
 
+  class XMLParameters;
+
   /// This class stores a set of parameters. Each parameter is
   /// identified by a unique string (the key) and a value of some
   /// given value type. Parameter sets can be nested at arbitrary
@@ -141,10 +143,13 @@ namespace dolfin
     std::string str() const;
 
     /// Return a vector of parameter keys
-    void parameter_keys(std::vector<std::string>& keys) const;
+    void get_parameter_keys(std::vector<std::string>& keys) const;
 
     /// Return a vector of parameter set keys
-    void parameter_set_keys(std::vector<std::string>& keys) const;
+    void get_parameter_set_keys(std::vector<std::string>& keys) const;
+
+    /// Define XMLHandler for use in new XML reader/writer
+    typedef XMLParameters XMLHandler;
 
   private:
 

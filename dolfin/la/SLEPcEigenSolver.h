@@ -13,7 +13,6 @@
 #ifdef HAS_SLEPC
 
 #include <slepceps.h>
-#include <dolfin/parameter/Parametrized.h>
 #include "PETScObject.h"
 
 namespace dolfin
@@ -28,7 +27,7 @@ namespace dolfin
   ///
   /// The following parameters may be specified to control the solver.
   ///
-  /// 1. "eigenvalue spectrum"
+  /// 1. "eigenvalue_spectrum"
   ///
   /// This parameter controls which part of the spectrum to compute.
   /// Possible values are
@@ -41,7 +40,7 @@ namespace dolfin
   ///   "smallest imaginary"  (eigenvalues with smallest imaginary part)
   ///   "default spectrum"    (default spectrum)
   ///
-  /// 2. "eigenvalue solver"
+  /// 2. "eigenvalue_solver"
   ///
   /// This parameter controls which algorithm is used by SLEPc.
   /// Possible values are
@@ -54,12 +53,12 @@ namespace dolfin
   ///   "lapack"              (LAPACK, all values, direct, only for small systems)
   ///   "default"             (default algorithm)
   ///
-  /// 3. "eigenvalue tolerance"
+  /// 3. "eigenvalue_tolerance"
   ///
   /// This parameter controls the tolerance used by SLEPc.
   /// Possible values are positive double numbers.
   ///
-  /// 4. "eigenvalue iterations"
+  /// 4. "eigenvalue_iterations"
   ///
   /// This parameter controls the maximum number of iterations used by SLEPc.
   /// Possible values are positive integers.
@@ -67,7 +66,7 @@ namespace dolfin
   /// Note that both the tolerance and the number of iterations must be
   /// specified if either one is specified.
 
-  class SLEPcEigenSolver : public Parametrized, public PETScObject
+  class SLEPcEigenSolver : public PETScObject
   {
   public:
 

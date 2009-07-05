@@ -5,7 +5,6 @@
 // Last changed: 2006-04-20
 
 #include <cmath>
-#include <dolfin/parameter/parameters.h>
 #include "ODE.h"
 #include "Method.h"
 #include "MultiAdaptiveTimeSlab.h"
