@@ -47,7 +47,7 @@ public:
     for (unsigned int i = 0; i < N; i++)
     {
       const real x = static_cast<real>(i)*h;
-      u[i] = 1.0 / (1.0 + exp(lambda*(x - 1.0)));
+      u[i] = 1.0 / (1.0 + real_exp(lambda*(x - 1.0)));
     }
   }
 
