@@ -88,6 +88,8 @@ def __getitem__(self,key):
             return float(par)
         elif  val_type == "int":
             return int(par)
+        elif val_type == "bool":
+            return bool(par)
         else:
             raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type,key)
     
