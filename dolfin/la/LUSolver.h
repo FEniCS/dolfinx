@@ -39,8 +39,12 @@ namespace dolfin
 
     LUSolver(std::string matrix_type = "nonsymmetric") : cholmod_solver(0),
              umfpack_solver(0), petsc_solver(0), epetra_solver(0),
-             matrix_type(matrix_type) {}
-
+             matrix_type(matrix_type) 
+    {
+      // Set default parameters
+      parameters = default_parameters();
+    }
+    
     ~LUSolver()
     {
       delete cholmod_solver;
