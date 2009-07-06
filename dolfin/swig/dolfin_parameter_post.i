@@ -27,6 +27,13 @@
     
 %pythoncode%{
 
+def add(self,*args):
+    """ Add a parameter to the parameter set"""
+    if len(args) == 2 and isinstance(args[1],bool):
+        self._add_bool(*args)
+    else:
+        self._add(*args)
+
 def parse(self,argv=None):
     "Parse command line arguments"
     if argv is None:
@@ -105,10 +112,13 @@ def __setitem__(self,key,value):
     self._get_parameter_keys(_keys)
     if key not in _keys:
         raise KeyError, "%s is not a parameter"%key
-    if not isinstance(value,(int,str,float)):
-        raise TypeError, "can ony set 'int', 'float' and 'str' parameters"
+    if not isinstance(value,(int,str,float,bool)):
+        raise TypeError, "can only set 'int', 'bool', 'float' and 'str' parameters"
     par = self._get_parameter(key)
-    par._assign(value)
+    if isinstance(value,bool):
+        par._assign_bool(value)
+    else:
+        par._assign(value)
 
 def update(self, other):
     "A recursive update that handles parameter subsets correctly."

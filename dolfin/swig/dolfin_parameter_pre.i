@@ -5,6 +5,9 @@
 %rename (__float__) dolfin::Parameter::operator double() const;
 %rename (__str__) dolfin::Parameter::operator std::string() const;
 %rename (_assign) dolfin::Parameter::operator=;
+%rename (_assign_bool) dolfin::Parameter::operator= (bool value);
+%rename (_add) dolfin::Parameters::add;
+%rename (_add_bool) dolfin::Parameters::add(std::string key, bool value);
 
 // Renames and ignores for Parameters
 %rename (_get_parameter_keys) dolfin::Parameters::get_parameter_keys;
