@@ -43,6 +43,8 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
+  parameters("linear_algebra_backend") = "uBLAS";
+
   // Create mesh and function space
   UnitSquare mesh(32, 32);
   Poisson::FunctionSpace V(mesh);
@@ -60,6 +62,7 @@ int main()
 
   // Compute solution
   VariationalProblem problem(a, L, bc);
+  problem.parameters("linear_solver") = "iterative";
   Function u;
   problem.solve(u);
 

@@ -75,7 +75,8 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
   : method(method), pc_petsc(pc_type), pc_dolfin(0),
     ksp(static_cast<KSP*>(0), PETScKSPDeleter()), M(0), N(0), parameters_read(false), pc_set(false)
 {
-  // Do nothing
+  // Set parameter values
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
@@ -291,22 +292,22 @@ void PETScKrylovSolver::read_parameters()
     return;
 
   // Set monitor
-  if (parameters("monitor convergence"))
+  if (parameters("monitor_convergence"))
     KSPMonitorSet(*ksp, KSPMonitorTrueResidualNorm, 0, 0);
 
   // Set tolerances
   KSPSetTolerances(*ksp,
-		   parameters("relative tolerance"),
-		   parameters("absolute tolerance"),
-		   parameters("divergence limit"),
-		   parameters("maximum iterations"));
+		   parameters("relative_tolerance"),
+		   parameters("absolute_tolerance"),
+		   parameters("divergence_limit"),
+		   parameters("maximum_iterations"));
 
   // Set nonzero shift for preconditioner
   if (!pc_dolfin)
   {
     PC pc;
     KSPGetPC(*ksp, &pc);
-    PCFactorSetShiftNonzero(pc, parameters("shift nonzero"));
+    PCFactorSetShiftNonzero(pc, parameters("shift_nonzero"));
   }
 
   // Remember that we have read parameters

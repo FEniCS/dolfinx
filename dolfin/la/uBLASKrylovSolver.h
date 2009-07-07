@@ -59,7 +59,7 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters()
     {
-      Parameters p("krylov_solver");
+      Parameters p("ublas_krylov_solver");
 
       p.add("relative_tolerance",  1e-15);
       p.add("absolute_tolerance",  1e-15);

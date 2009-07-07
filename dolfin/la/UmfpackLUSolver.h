@@ -52,7 +52,6 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters()
     {
-      // FIXME: Change name to petsc_lu_solver?
       Parameters p("umfpack_lu_solver");
       p.add("report", false);
       return p;

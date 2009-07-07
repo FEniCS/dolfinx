@@ -52,7 +52,7 @@ namespace dolfin
     static Parameters default_parameters()
     {
       // FIXME: Change name to petsc_lu_solver?
-      Parameters p("lu_solver");
+      Parameters p("petsc_lu_solver");
       p.add("report", false);
       return p;
     }
