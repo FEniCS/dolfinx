@@ -81,7 +81,8 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
 				     PETScPreconditioner& preconditioner)
   : method(method), pc_petsc("default"), pc_dolfin(&preconditioner),
-    ksp(static_cast<KSP*>(0), PETScKSPDeleter()), M(0), N(0), parameters_read(false), pc_set(false)
+    ksp(static_cast<KSP*>(0), PETScKSPDeleter()), M(0), N(0), 
+    parameters_read(false), pc_set(false)
 {
   // Do nothing
 }

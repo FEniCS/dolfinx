@@ -27,6 +27,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UmfpackLUSolver::UmfpackLUSolver()
 {
+  // Set parameter values
+  parameters = default_parameters();
+
   // Do nothing
 }
 //-----------------------------------------------------------------------------

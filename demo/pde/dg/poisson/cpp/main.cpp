@@ -21,7 +21,6 @@
 
 #include <dolfin.h>
 #include "Poisson.h"
-#include "P1Projection.h"
 
 using namespace dolfin;
 
@@ -65,7 +64,7 @@ int main()
   Function u;
   problem.solve(u);
 
-  // Plot solution projected
+  // Plot solution
   plot(u);
 
   // Save solution in VTK format

@@ -49,6 +49,15 @@ namespace dolfin
     /// Solve factorized system (UMFPACK).
     virtual uint factorized_solve(GenericVector& x, const GenericVector& b) const;
 
+    /// Default parameter values
+    static Parameters default_parameters()
+    {
+      // FIXME: Change name to petsc_lu_solver?
+      Parameters p("umfpack_lu_solver");
+      p.add("report", false);
+      return p;
+    }
+
   private:
 
 #ifdef HAS_UMFPACK
