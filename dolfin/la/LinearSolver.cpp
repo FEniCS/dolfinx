@@ -16,18 +16,10 @@ LinearSolver::LinearSolver(std::string solver_type, std::string pc_type)
   parameters = default_parameters();
 
   // Choose solver
-  if (solver_type == "lu")
-  {
+  if (solver_type == "lu" || solver_type == "cholesky")
     lu_solver = new LUSolver("nonsymmetric");
-  }
-  else if (solver_type == "cholesky")
-  {
-    lu_solver = new LUSolver("symmetric");
-  }
   else
-  {
     krylov_solver = new KrylovSolver(solver_type, pc_type);
-  }
 }
 //-----------------------------------------------------------------------------
 LinearSolver::~LinearSolver()

@@ -39,7 +39,7 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters()
     {
-      Parameters p("ode");
+      Parameters p("linear_solver");
 
       p.add(LUSolver::default_parameters());
       p.add(KrylovSolver::default_parameters());
