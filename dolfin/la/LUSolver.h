@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Garth N. Wells.
+// Copyright (C) 2007-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2008.
@@ -7,7 +7,7 @@
 // Modified by Kent-Andre Mardal, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2009-06-29
+// Last changed: 2009-07-07
 
 #ifndef __LU_SOLVER_H
 #define __LU_SOLVER_H
@@ -33,7 +33,10 @@ namespace dolfin
   class LUSolver : public GenericLinearSolver
   {
 
-  /// LU solver for the built-in LA backends.
+  /// LU solver for the built-in LA backends. The type can be "lu" or 
+  /// "cholesky". Cholesky is suitable only for symmetric positive-definite
+  /// matrices. Cholesky is not yet suppprted for all backends (which will 
+  /// default to LU. 
 
   public:
 
