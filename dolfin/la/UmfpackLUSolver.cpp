@@ -30,6 +30,7 @@ Parameters UmfpackLUSolver::default_parameters()
 {
   Parameters p("umfpack_lu_solver");
   p.add(LUSolver::default_parameters());
+  p.add("report", true);
   return p;
 }
 //-----------------------------------------------------------------------------
