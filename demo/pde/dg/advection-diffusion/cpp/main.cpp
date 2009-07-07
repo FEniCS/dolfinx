@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
   // Mesh-related functions
   FacetNormal N;
-  AvgMeshSize h;
+  CellSize h;
 
   // Penalty parameter
   Constant alpha(5.0);

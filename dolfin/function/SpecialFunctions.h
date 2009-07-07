@@ -43,16 +43,16 @@ namespace dolfin
 
   };
 
-  /// This Function represents the local mesh size on a given mesh.
-  class MeshSize : public Function
+  /// This Function represents the local cell size on a given mesh.
+  class CellSize : public Function
   {
   public:
 
     /// Constructor
-    MeshSize();
+    CellSize();
 
     /// Constructor
-    MeshSize(const FunctionSpace& V);
+    CellSize(const FunctionSpace& V);
 
     /// Function evaluation
     void eval(double* values, const Data& data) const;
@@ -62,40 +62,6 @@ namespace dolfin
 
     /// Compute maximal cell diameter
     double max() const;
-
-  };
-
-  /// This Function represents the inverse of the local cell size on a given
-  /// mesh.
-  class InvMeshSize : public Function
-  {
-  public:
-
-    /// Constructor
-    InvMeshSize();
-
-    /// Constructor
-    InvMeshSize(const FunctionSpace& V);
-
-    /// Function evaluation
-    void eval(double* values, const Data& data) const;
-
-  };
-
-  /// This Function represents the average of the local cell size (average of
-  /// cell sharing a facet) on a given mesh.
-  class AvgMeshSize : public Function
-  {
-  public:
-
-    /// Constructor
-    AvgMeshSize();
-
-    /// Constructor
-    AvgMeshSize(const FunctionSpace& V);
-
-    /// Function evaluation
-    void eval(double* values, const Data& data) const;
 
   };
 
@@ -130,22 +96,6 @@ namespace dolfin
 
     /// Constructor
     FacetArea(const FunctionSpace& V);
-
-    /// Function evaluation
-    void eval(double* values, const Data& data) const;
-
-  };
-
-  /// This function represents the inverse area/length of a cell facet.
-  class InvFacetArea : public Function
-  {
-  public:
-
-    /// Constructor
-    InvFacetArea();
-
-    /// Constructor
-    InvFacetArea(const FunctionSpace& V);
 
     /// Function evaluation
     void eval(double* values, const Data& data) const;

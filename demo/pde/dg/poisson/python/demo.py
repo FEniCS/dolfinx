@@ -33,7 +33,8 @@ u = TrialFunction(V)
 
 # Define normal component, mesh size and right-hand side
 n = FacetNormal(mesh)
-h = AvgMeshSize(mesh)
+h = CellSize(mesh)
+h_avg = (h('+') + h('-'))/2
 f = Function(V, "500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 
 # Define parameters
@@ -44,7 +45,7 @@ gamma = 8.0
 a = dot(grad(v), grad(u))*dx \
    - dot(avg(grad(v)), jump(u, n))*dS \
    - dot(jump(v, n), avg(grad(u)))*dS \
-   + alpha/h('+')*dot(jump(v, n), jump(u, n))*dS \
+   + alpha/h_avg*dot(jump(v, n), jump(u, n))*dS \
    - dot(grad(v), u*n)*ds \
    - dot(v*n, grad(u))*ds \
    + gamma/h*v*u*ds

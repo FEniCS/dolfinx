@@ -41,22 +41,22 @@ void MeshCoordinates::eval(double* values, const Data& data) const
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-MeshSize::MeshSize() : Function()
+CellSize::CellSize() : Function()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MeshSize::MeshSize(const FunctionSpace& V) : Function(V)
+CellSize::CellSize(const FunctionSpace& V) : Function(V)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshSize::eval(double* values, const Data& data) const
+void CellSize::eval(double* values, const Data& data) const
 {
   values[0] = data.cell().diameter();
 }
 //-----------------------------------------------------------------------------
-double MeshSize::min() const
+double CellSize::min() const
 {
   CellIterator c(function_space().mesh());
   double hmin = c->diameter();
@@ -65,80 +65,13 @@ double MeshSize::min() const
   return hmin;
 }
 //-----------------------------------------------------------------------------
-double MeshSize::max() const
+double CellSize::max() const
 {
   CellIterator c(function_space().mesh());
   double hmax = c->diameter();
   for (; !c.end(); ++c)
     hmax = std::max(hmax, c->diameter());
   return hmax;
-}
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-InvMeshSize::InvMeshSize() : Function()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-InvMeshSize::InvMeshSize(const FunctionSpace& V) : Function(V)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void InvMeshSize::eval(double* values, const Data& data) const
-{
-  values[0] = 1.0 / data.cell().diameter();
-}
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-AvgMeshSize::AvgMeshSize() : Function()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-AvgMeshSize::AvgMeshSize(const FunctionSpace& V) : Function(V)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void AvgMeshSize::eval(double* values, const Data& data) const
-{
-  // Get the cell
-  const Cell& cell = data.cell();
-
-  // If there is no facet (assembling on interior), return cell diameter
-  if (!data.on_facet())
-  {
-    values[0] = cell.diameter();
-    return;
-  }
-  else
-  {
-    // Get the facet and the mesh
-    const uint facet = data.facet();
-    const Mesh& mesh = cell.mesh();
-
-    // Create facet from the global facet number
-    Facet facet0(mesh, cell.entities(mesh.topology().dim() - 1)[facet]);
-
-    // If there are two cells connected to the facet
-    if (facet0.num_entities(mesh.topology().dim()) == 2)
-    {
-      // Create the two connected cells and return the average of their diameter
-      Cell cell0(mesh, facet0.entities(mesh.topology().dim())[0]);
-      Cell cell1(mesh, facet0.entities(mesh.topology().dim())[1]);
-
-      values[0] = (cell0.diameter() + cell1.diameter())/2.0;
-      return;
-    }
-    // Else there is only one cell connected to the facet and the average is
-    // the cell diameter
-    else
-    {
-      values[0] = cell.diameter();
-      return;
-    }
-  }
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -200,24 +133,6 @@ void FacetArea::eval(double* values, const Data& data) const
     values[0] = 0.0;
 }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-InvFacetArea::InvFacetArea() : Function()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-InvFacetArea::InvFacetArea(const FunctionSpace& V) : Function(V)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void InvFacetArea::eval(double* values, const Data& data) const
-{
-  if (data.on_facet() >= 0)
-    values[0] = 1.0 / data.cell().facet_area(data.facet());
-  else
-    values[0] = 0.0;
-}
 //-----------------------------------------------------------------------------
 SUPGStabilizer::SUPGStabilizer(const FunctionSpace& V, const Function& f, double sigma_)
   :Function(V),sigma(sigma_),field(&f)

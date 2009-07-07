@@ -22,6 +22,7 @@ f = Function(element)
 # Normal component, mesh size and right-hand side
 n  = VectorConstant(triangle)
 h  = Constant(triangle)
+h_avg = (h('+') + h('-'))/2
 
 # Parameters
 alpha = Constant(triangle)
@@ -30,7 +31,7 @@ alpha = Constant(triangle)
 a = inner(div(grad(v)), div(grad(u)))*dx \
   - inner(avg(div(grad(v))), jump(grad(u), n))*dS \
   - inner(jump(grad(v), n), avg(div(grad(u))))*dS \
-  + alpha('+')/h('+')*inner(jump(grad(v),n), jump(grad(u),n))*dS
+  + alpha('+')/h_avg*inner(jump(grad(v),n), jump(grad(u),n))*dS
 
 # Linear form
 L = v*f*dx

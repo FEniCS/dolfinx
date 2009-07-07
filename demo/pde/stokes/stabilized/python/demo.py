@@ -45,7 +45,7 @@ bcs = [bc0, bc1, bc2]
 (u, p) = TrialFunctions(system)
 
 f = Constant(mesh, (0, 0))
-h = MeshSize(mesh)
+h = CellSize(mesh)
 
 beta  = 0.2
 delta = beta*h*h

@@ -19,10 +19,10 @@ u  = Function(vector)
 f  = Function(scalar)
 n  = VectorConstant(triangle)
 h  = Constant(triangle)
+h_avg = (h('+') + h('-'))/2
 
 kappa = Constant(triangle)
 alpha = Constant(triangle)
-
 
 # ( dot(v, n) + |dot(v, n)| )/2.0 
 un = (dot(u, n) + abs(dot(u, n)))/2.0
@@ -30,7 +30,7 @@ un = (dot(u, n) + abs(dot(u, n)))/2.0
 # Bilinear form
 a_int = dot(grad(v), kappa*grad(phi) - u*phi)*dx
 
-a_fac = kappa('+')*(alpha('+')/h('+'))*dot(jump(v, n), jump(phi, n))*dS \
+a_fac = kappa('+')*(alpha('+')/h_avg)*dot(jump(v, n), jump(phi, n))*dS \
       - kappa('+')*dot(avg(grad(v)), jump(phi, n))*dS \
       - kappa('+')*dot(jump(v, n), avg(grad(phi)))*dS
 

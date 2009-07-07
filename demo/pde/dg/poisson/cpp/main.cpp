@@ -42,12 +42,12 @@ int main()
   UnitSquare mesh(24, 24);
 
   // Use uBLAS
-  parameters("linear algebra backend") = "uBLAS";
+  parameters("linear_algebra_backend") = "uBLAS";
 
   // Create functions
   Source f;
   FacetNormal n;
-  AvgMeshSize h;
+  CellSize h;
 
   // Create funtion space
   Poisson::FunctionSpace V(mesh);

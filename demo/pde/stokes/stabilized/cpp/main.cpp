@@ -65,7 +65,7 @@ int main()
   bcs.push_back(&bc0); bcs.push_back(&bc1); bcs.push_back(&bc2);
 
   // Set up PDE
-  MeshSize h;
+  CellSize h;
   Constant f(2, 0.0);
   Stokes::BilinearForm a(W, W);
   a.h = h;

@@ -46,7 +46,8 @@ u = TrialFunction(V)
 
 # Define normal component, mesh size and right-hand side
 n = FacetNormal(mesh)
-h = AvgMeshSize(mesh)
+h = CellSize(mesh)
+h_avg = (h('+') + h('-'))/2
 f = Source(V)
 
 # Define parameters
@@ -56,7 +57,7 @@ alpha = Constant(mesh, 8.0)
 a = inner(div(grad(v)), div(grad(u)))*dx \
   - inner(avg(div(grad(v))), jump(grad(u), n))*dS \
   - inner(jump(grad(v), n), avg(div(grad(u))))*dS \
-  + alpha('+')/h('+')*inner(jump(grad(v),n), jump(grad(u),n))*dS
+  + alpha('+')/h_avg*inner(jump(grad(v),n), jump(grad(u),n))*dS
 
 # Define linear form
 L = v*f*dx
