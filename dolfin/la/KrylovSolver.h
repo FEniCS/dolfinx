@@ -78,7 +78,9 @@ namespace dolfin
           ublas_solver = new uBLASKrylovSolver(solver_type, pc_type);
           ublas_solver->parameters.update(parameters);
         }
-        return ublas_solver->solve(A.down_cast<uBLASDenseMatrix>(), x.down_cast<uBLASVector>(), b.down_cast<uBLASVector>());
+        return ublas_solver->solve(A.down_cast<uBLASDenseMatrix>(), 
+                                   x.down_cast<uBLASVector>(), 
+                                   b.down_cast<uBLASVector>());
       }
 
 #ifdef HAS_PETSC

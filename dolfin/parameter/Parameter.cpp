@@ -147,18 +147,18 @@ void Parameter::check_key(std::string key)
 //-----------------------------------------------------------------------------
 // class IntParameter
 //-----------------------------------------------------------------------------
-NewIntParameter::NewIntParameter(std::string key, int value)
+IntParameter::IntParameter(std::string key, int value)
   : Parameter(key), _value(value), _min(0), _max(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewIntParameter::~NewIntParameter()
+IntParameter::~IntParameter()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NewIntParameter::set_range(int min_value, int max_value)
+void IntParameter::set_range(int min_value, int max_value)
 {
   // Check range
   if (min_value > max_value)
@@ -170,7 +170,7 @@ void NewIntParameter::set_range(int min_value, int max_value)
   _max = max_value;
 }
 //-----------------------------------------------------------------------------
-const NewIntParameter& NewIntParameter::operator= (int value)
+const IntParameter& IntParameter::operator= (int value)
 {
   // Check value
   if (_min != _max && (value < _min || value > _max))
@@ -184,13 +184,13 @@ const NewIntParameter& NewIntParameter::operator= (int value)
   return *this;
 }
 //-----------------------------------------------------------------------------
-NewIntParameter::operator int() const
+IntParameter::operator int() const
 {
   _access_count++;
   return _value;
 }
 //-----------------------------------------------------------------------------
-NewIntParameter::operator dolfin::uint() const
+IntParameter::operator dolfin::uint() const
 {
   if (_value < 0)
     error("Unable to convert value %d for parameter \"%s\" to uint (unsigned integer), value is negative.",
@@ -200,19 +200,19 @@ NewIntParameter::operator dolfin::uint() const
   return _value;
 }
 //-----------------------------------------------------------------------------
-std::string NewIntParameter::type_str() const
+std::string IntParameter::type_str() const
 {
   return "int";
 }
 //-----------------------------------------------------------------------------
-std::string NewIntParameter::value_str() const
+std::string IntParameter::value_str() const
 {
   std::stringstream s;
   s << _value;
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::string NewIntParameter::range_str() const
+std::string IntParameter::range_str() const
 {
   std::stringstream s;
   if (_min == _max)
@@ -222,7 +222,7 @@ std::string NewIntParameter::range_str() const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::string NewIntParameter::str() const
+std::string IntParameter::str() const
 {
   std::stringstream s;
   s << "<int-valued parameter named \""
@@ -235,18 +235,18 @@ std::string NewIntParameter::str() const
 //-----------------------------------------------------------------------------
 // class DoubleParameter
 //-----------------------------------------------------------------------------
-NewDoubleParameter::NewDoubleParameter(std::string key, double value)
+DoubleParameter::DoubleParameter(std::string key, double value)
   : Parameter(key), _value(value), _min(0), _max(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewDoubleParameter::~NewDoubleParameter()
+DoubleParameter::~DoubleParameter()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NewDoubleParameter::set_range(double min_value, double max_value)
+void DoubleParameter::set_range(double min_value, double max_value)
 {
   // Check range
   if (min_value > max_value)
@@ -258,7 +258,7 @@ void NewDoubleParameter::set_range(double min_value, double max_value)
   _max = max_value;
 }
 //-----------------------------------------------------------------------------
-const NewDoubleParameter& NewDoubleParameter::operator= (double value)
+const DoubleParameter& DoubleParameter::operator= (double value)
 {
   // Check value
   if (_min != _max && (value < _min || value > _max))
@@ -272,25 +272,25 @@ const NewDoubleParameter& NewDoubleParameter::operator= (double value)
   return *this;
 }
 //-----------------------------------------------------------------------------
-NewDoubleParameter::operator double() const
+DoubleParameter::operator double() const
 {
   _access_count++;
   return _value;
 }
 //-----------------------------------------------------------------------------
-std::string NewDoubleParameter::type_str() const
+std::string DoubleParameter::type_str() const
 {
   return "double";
 }
 //-----------------------------------------------------------------------------
-std::string NewDoubleParameter::value_str() const
+std::string DoubleParameter::value_str() const
 {
   std::stringstream s;
   s << _value;
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::string NewDoubleParameter::range_str() const
+std::string DoubleParameter::range_str() const
 {
   std::stringstream s;
   if (_min == _max)
@@ -300,7 +300,7 @@ std::string NewDoubleParameter::range_str() const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::string NewDoubleParameter::str() const
+std::string DoubleParameter::str() const
 {
   std::stringstream s;
   s << "<double-valued parameter named \""
@@ -313,23 +313,23 @@ std::string NewDoubleParameter::str() const
 //-----------------------------------------------------------------------------
 // class StringParameter
 //-----------------------------------------------------------------------------
-NewStringParameter::NewStringParameter(std::string key, std::string value)
+StringParameter::StringParameter(std::string key, std::string value)
   : Parameter(key), _value(value)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewStringParameter::~NewStringParameter()
+StringParameter::~StringParameter()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NewStringParameter::set_range(const std::set<std::string>& range)
+void StringParameter::set_range(const std::set<std::string>& range)
 {
   _range = range;
 }
 //-----------------------------------------------------------------------------
-const NewStringParameter& NewStringParameter::operator= (std::string value)
+const StringParameter& StringParameter::operator= (std::string value)
 {
   // Check value
   if (_range.size() > 0 && _range.find(value) == _range.end())
@@ -346,7 +346,7 @@ const NewStringParameter& NewStringParameter::operator= (std::string value)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const NewStringParameter& NewStringParameter::operator= (const char* value)
+const StringParameter& StringParameter::operator= (const char* value)
 {
   std::string s(value);
 
@@ -365,23 +365,23 @@ const NewStringParameter& NewStringParameter::operator= (const char* value)
   return *this;
 }
 //-----------------------------------------------------------------------------
-NewStringParameter::operator std::string() const
+StringParameter::operator std::string() const
 {
   _access_count++;
   return _value;
 }
 //-----------------------------------------------------------------------------
-std::string NewStringParameter::type_str() const
+std::string StringParameter::type_str() const
 {
   return "string";
 }
 //-----------------------------------------------------------------------------
-std::string NewStringParameter::value_str() const
+std::string StringParameter::value_str() const
 {
   return _value;
 }
 //-----------------------------------------------------------------------------
-std::string NewStringParameter::range_str() const
+std::string StringParameter::range_str() const
 {
   std::stringstream s;
   s << "[";
@@ -398,7 +398,7 @@ std::string NewStringParameter::range_str() const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::string NewStringParameter::str() const
+std::string StringParameter::str() const
 {
   std::stringstream s;
   s << "<string-valued parameter named \""
@@ -411,18 +411,18 @@ std::string NewStringParameter::str() const
 //-----------------------------------------------------------------------------
 // class BoolParameter
 //-----------------------------------------------------------------------------
-NewBoolParameter::NewBoolParameter(std::string key, bool value)
+BoolParameter::BoolParameter(std::string key, bool value)
   : Parameter(key), _value(value)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewBoolParameter::~NewBoolParameter()
+BoolParameter::~BoolParameter()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const NewBoolParameter& NewBoolParameter::operator= (bool value)
+const BoolParameter& BoolParameter::operator= (bool value)
 {
   // Set value
   _value = value;
@@ -431,18 +431,18 @@ const NewBoolParameter& NewBoolParameter::operator= (bool value)
   return *this;
 }
 //-----------------------------------------------------------------------------
-NewBoolParameter::operator bool() const
+BoolParameter::operator bool() const
 {
   _access_count++;
   return _value;
 }
 //-----------------------------------------------------------------------------
-std::string NewBoolParameter::type_str() const
+std::string BoolParameter::type_str() const
 {
   return "bool";
 }
 //-----------------------------------------------------------------------------
-std::string NewBoolParameter::value_str() const
+std::string BoolParameter::value_str() const
 {
   if (_value)
     return "true";
@@ -450,12 +450,12 @@ std::string NewBoolParameter::value_str() const
     return "false";
 }
 //-----------------------------------------------------------------------------
-std::string NewBoolParameter::range_str() const
+std::string BoolParameter::range_str() const
 {
   return "{true, false}";
 }
 //-----------------------------------------------------------------------------
-std::string NewBoolParameter::str() const
+std::string BoolParameter::str() const
 {
   std::stringstream s;
   s << "<bool-valued parameter named \""

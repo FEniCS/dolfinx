@@ -6,8 +6,8 @@
 // First added:  2009-05-08
 // Last changed: 2009-06-30
 
-#ifndef __NEWPARAMETERS_H
-#define __NEWPARAMETERS_H
+#ifndef __PARAMETERS_H
+#define __PARAMETERS_H
 
 #include <set>
 #include <map>

@@ -18,7 +18,9 @@
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "PETScKrylovMatrix.h"
+#include "KrylovSolver.h"
 
+//-----------------------------------------------------------------------------
 namespace dolfin
 {
   class PETScKSPDeleter
@@ -31,9 +33,7 @@ namespace dolfin
     }
   };
 }
-
-using namespace dolfin;
-
+//-----------------------------------------------------------------------------
 // Monitor function
 namespace dolfin
 {
@@ -43,6 +43,10 @@ namespace dolfin
     return 0;
   }
 }
+//-----------------------------------------------------------------------------
+
+using namespace dolfin;
+
 
 // Available solvers
 #if PETSC_VERSION_MAJOR > 2
@@ -54,7 +58,7 @@ const std::map<std::string, KSPType> PETScKrylovSolver::methods
                               ("cg",       KSPCG)
                               ("gmres",    KSPGMRES)
                               ("bicgstab", KSPBCGS); 
-
+//-----------------------------------------------------------------------------
 // Available preconditioners
 #if PETSC_VERSION_MAJOR > 2
 const std::map<std::string, const PCType> PETScKrylovSolver::pc_methods 
@@ -69,7 +73,13 @@ const std::map<std::string, PCType> PETScKrylovSolver::pc_methods
                               ("icc",       PCICC)
                               ("amg_hypre", PCHYPRE)
                               ("amg_ml",    PCML); 
-
+//-----------------------------------------------------------------------------
+Parameters PETScKrylovSolver::default_parameters()
+{
+  Parameters p("petsc_krylov_solver");
+  p.add(KrylovSolver::default_parameters());
+  return p;
+}
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
   : method(method), pc_petsc(pc_type), pc_dolfin(0),

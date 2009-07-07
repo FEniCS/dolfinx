@@ -5,13 +5,14 @@
 // Modified by Dag Lindbo 2008.
 //
 // First added:  2006-06-01
-// Last changed: 2008-09-05
+// Last changed: 2008-07-08
 
 #include <dolfin/log/dolfin_log.h>
 #include "UmfpackLUSolver.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "KrylovSolver.h"
+#include "LUSolver.h"
 #include "uBLASKrylovMatrix.h"
 #include "uBLASVector.h"
 
@@ -24,6 +25,13 @@ extern "C"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+Parameters UmfpackLUSolver::default_parameters()
+{
+  Parameters p("umfpack_lu_solver");
+  p.add(LUSolver::default_parameters());
+  return p;
+}
 //-----------------------------------------------------------------------------
 UmfpackLUSolver::UmfpackLUSolver()
 {

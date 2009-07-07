@@ -10,6 +10,7 @@
 #include "uBLASILUPreconditioner.h"
 #include "uBLASDummyPreconditioner.h"
 #include "uBLASKrylovSolver.h"
+#include "KrylovSolver.h"
 
 using namespace dolfin;
 
@@ -19,6 +20,13 @@ const std::set<std::string> uBLASKrylovSolver::solver_types
   ("gmres")
   ("bicgstab"); 
 
+//-----------------------------------------------------------------------------
+Parameters uBLASKrylovSolver::default_parameters()
+{
+  Parameters p("ublas_krylov_solver");
+  p.add(KrylovSolver::default_parameters());
+  return p;
+}
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type, std::string pc_type)
   : solver_type(solver_type), pc_user(false), report(false), 

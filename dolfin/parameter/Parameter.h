@@ -4,8 +4,8 @@
 // First added:  2009-05-08
 // Last changed: 2009-06-30
 
-#ifndef __NEWPARAMETER_H
-#define __NEWPARAMETER_H
+#ifndef __PARAMETER_H
+#define __PARAMETER_H
 
 #include <set>
 #include <string>
@@ -111,21 +111,21 @@ namespace dolfin
   };
 
   /// Parameter with value type int
-  class NewIntParameter : public Parameter
+  class IntParameter : public Parameter
   {
   public:
 
     /// Create int-valued parameter
-    NewIntParameter(std::string key, int value);
+    IntParameter(std::string key, int value);
 
     /// Destructor
-    ~NewIntParameter();
+    ~IntParameter();
 
     /// Set range
     void set_range(int min_value, int max_value);
 
     /// Assignment
-    const NewIntParameter& operator= (int value);
+    const IntParameter& operator= (int value);
 
     /// Cast parameter to int
     operator int() const;
@@ -156,21 +156,21 @@ namespace dolfin
   };
 
   /// Parameter with value type double
-  class NewDoubleParameter : public Parameter
+  class DoubleParameter : public Parameter
   {
   public:
 
     /// Create double-valued parameter
-    NewDoubleParameter(std::string key, double value);
+    DoubleParameter(std::string key, double value);
 
     /// Destructor
-    ~NewDoubleParameter();
+    ~DoubleParameter();
 
     /// Set range
     void set_range(double min_value, double max_value);
 
     /// Assignment
-    const NewDoubleParameter& operator= (double value);
+    const DoubleParameter& operator= (double value);
 
     /// Cast parameter to double
     operator double() const;
@@ -198,24 +198,24 @@ namespace dolfin
   };
 
   /// Parameter with value type string
-  class NewStringParameter : public Parameter
+  class StringParameter : public Parameter
   {
   public:
 
     /// Create string-valued parameter
-    NewStringParameter(std::string key, std::string value);
+    StringParameter(std::string key, std::string value);
 
     /// Destructor
-    ~NewStringParameter();
+    ~StringParameter();
 
     /// Set range
     void set_range(const std::set<std::string>& range);
 
     /// Assignment
-    const NewStringParameter& operator= (std::string value);
+    const StringParameter& operator= (std::string value);
 
     /// Assignment
-    const NewStringParameter& operator= (const char* value);
+    const StringParameter& operator= (const char* value);
 
     /// Cast parameter to string
     operator std::string() const;
@@ -243,18 +243,18 @@ namespace dolfin
   };
 
   /// Parameter with value type bool
-  class NewBoolParameter : public Parameter
+  class BoolParameter : public Parameter
   {
   public:
 
     /// Create bool-valued parameter
-    NewBoolParameter(std::string key, bool value);
+    BoolParameter(std::string key, bool value);
 
     /// Destructor
-    ~NewBoolParameter();
+    ~BoolParameter();
 
     /// Assignment
-    const NewBoolParameter& operator= (bool value);
+    const BoolParameter& operator= (bool value);
 
     /// Cast parameter to bool
     operator bool() const;

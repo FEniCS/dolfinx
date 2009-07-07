@@ -63,21 +63,7 @@ namespace dolfin
     void disp() const;
 
     /// Default parameter values
-    static Parameters default_parameters()
-    {
-      Parameters p("petsc_krylov_solver");
-
-      p.add("relative_tolerance",  1e-15);
-      p.add("absolute_tolerance",  1e-15);
-      p.add("divergence_limit",    1e4);
-      p.add("maximum_iterations",  10000);
-      p.add("gmres_restart",       30);
-      p.add("report",              true);
-      p.add("monitor_convergence", false);
-      p.add("shift_nonzero",       0.0);
-
-      return p;
-    }
+    static Parameters default_parameters();
 
   private:
 

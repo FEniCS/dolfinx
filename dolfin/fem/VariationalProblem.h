@@ -8,9 +8,11 @@
 #define __VARIATIONAL_PROBLEM_H
 
 #include <vector>
-
 #include <dolfin/common/Variable.h>
 #include <dolfin/nls/NonlinearProblem.h>
+#include <dolfin/nls/NewtonSolver.h>
+#include <dolfin/la/KrylovSolver.h>
+#include <dolfin/la/LUSolver.h>
 
 namespace dolfin
 {

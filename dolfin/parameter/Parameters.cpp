@@ -69,7 +69,7 @@ void Parameters::add(std::string key, int value)
     error("Unable to add parameter \"%s\", already defined.", key.c_str());
 
   // Add parameter
-  _parameters[key] = new NewIntParameter(key, value);
+  _parameters[key] = new IntParameter(key, value);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, int value,
@@ -91,7 +91,7 @@ void Parameters::add(std::string key, double value)
     error("Unable to add parameter \"%s\", already defined.", key.c_str());
 
   // Add parameter
-  _parameters[key] = new NewDoubleParameter(key, value);
+  _parameters[key] = new DoubleParameter(key, value);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, double value,
@@ -113,7 +113,7 @@ void Parameters::add(std::string key, std::string value)
     error("Unable to add parameter \"%s\", already defined.", key.c_str());
 
   // Add parameter
-  _parameters[key] = new NewStringParameter(key, value);
+  _parameters[key] = new StringParameter(key, value);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, const char* value)
@@ -126,7 +126,7 @@ void Parameters::add(std::string key, const char* value)
     error("Unable to add parameter \"%s\", already defined.", key.c_str());
 
   // Add parameter
-  _parameters[key] = new NewStringParameter(key, value);
+  _parameters[key] = new StringParameter(key, value);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, std::string value, std::set<std::string> range)
@@ -161,7 +161,7 @@ void Parameters::add(std::string key, bool value)
     error("Unable to add parameter \"%s\", already defined.", key.c_str());
 
   // Add parameter
-  _parameters[key] = new NewBoolParameter(key, value);
+  _parameters[key] = new BoolParameter(key, value);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(const Parameters& parameters)
@@ -302,13 +302,13 @@ const Parameters& Parameters::operator= (const Parameters& parameters)
     const Parameter& p = *it->second;
     Parameter* q = 0;
     if (p.type_str() == "int")
-      q = new NewIntParameter(dynamic_cast<const NewIntParameter&>(p));
+      q = new IntParameter(dynamic_cast<const IntParameter&>(p));
     else if (p.type_str() == "double")
-      q = new NewDoubleParameter(dynamic_cast<const NewDoubleParameter&>(p));
+      q = new DoubleParameter(dynamic_cast<const DoubleParameter&>(p));
     else if (p.type_str() == "bool")
-      q = new NewBoolParameter(dynamic_cast<const NewBoolParameter&>(p));
+      q = new BoolParameter(dynamic_cast<const BoolParameter&>(p));
     else if (p.type_str() == "string")
-      q = new NewStringParameter(dynamic_cast<const NewStringParameter&>(p));
+      q = new StringParameter(dynamic_cast<const StringParameter&>(p));
     else
       error("Unable to copy parameter from parameter set \"%s\" to parameter set \"%s\", unknown type: \"%s\".",
             parameters.key().c_str(), key().c_str(), p.type_str().c_str());

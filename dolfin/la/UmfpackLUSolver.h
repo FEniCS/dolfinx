@@ -1,11 +1,11 @@
-// Copyright (C) 2006-2008 Garth N. Wells.
+// Copyright (C) 2006-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006.
 // Modified by Dag Lindbo 2008.
 //
 // First added:  2006-05-31
-// Last changed: 2008-09-05
+// Last changed: 2009-07-08
 
 #ifndef __UMFPACK_LU_SOLVER_H
 #define __UMFPACK_LU_SOLVER_H
@@ -50,12 +50,7 @@ namespace dolfin
     virtual uint factorized_solve(GenericVector& x, const GenericVector& b) const;
 
     /// Default parameter values
-    static Parameters default_parameters()
-    {
-      Parameters p("umfpack_lu_solver");
-      p.add("report", false);
-      return p;
-    }
+    static Parameters default_parameters();
 
   private:
 

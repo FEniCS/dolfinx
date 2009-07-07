@@ -11,8 +11,8 @@
 #define __LINEAR_SOLVER_H
 
 #include <dolfin/common/types.h>
-#include "LUSolver.h"
 #include "KrylovSolver.h"
+#include "LUSolver.h"
 #include "GenericLinearSolver.h"
 
 namespace dolfin
@@ -42,7 +42,7 @@ namespace dolfin
       Parameters p("linear_solver");
 
       p.add(LUSolver::default_parameters());
-      p.add(KrylovSolver::default_parameters());
+      //p.add(KrylovSolver::default_parameters());
 
       return p;
     }
