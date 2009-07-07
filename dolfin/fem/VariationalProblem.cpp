@@ -235,15 +235,15 @@ void VariationalProblem::solve_linear(Function& u)
   }
   else if (solver_type == "iterative")
   {
-    if ("symmetric")
+    if (symmetric)
     {
-      KrylovSolver solver("gmres");
+      KrylovSolver solver("cg");
       solver.parameters.update(parameters["krylov_solver"]);
       solver.solve(A, u.vector(), b);
     }
     else
     {
-      KrylovSolver solver("cg");
+      KrylovSolver solver("gmres");
       solver.parameters.update(parameters["krylov_solver"]);
       solver.solve(A, u.vector(), b);
     }
