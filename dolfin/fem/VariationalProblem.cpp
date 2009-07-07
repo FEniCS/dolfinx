@@ -235,7 +235,7 @@ void VariationalProblem::solve_linear(Function& u)
   }
   else if (solver_type == "iterative")
   {
-    if ("symmetric")
+    if (symmetric)
     {
       KrylovSolver solver("cg");
       solver.parameters.update(parameters["krylov_solver"]);
