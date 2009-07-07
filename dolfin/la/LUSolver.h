@@ -37,9 +37,9 @@ namespace dolfin
 
   public:
 
-    LUSolver(std::string matrix_type = "nonsymmetric") : cholmod_solver(0),
+    LUSolver(std::string type = "lu") : cholmod_solver(0),
              umfpack_solver(0), petsc_solver(0), epetra_solver(0),
-             matrix_type(matrix_type) 
+             type(type) 
     {
       // Set default parameters
       parameters = default_parameters();
@@ -81,7 +81,7 @@ namespace dolfin
 #endif
 
       // Default LU solvers
-      if (matrix_type == "symmetric")
+      if (type == "cholesky")
       {
         if (!cholmod_solver)
         {
@@ -90,7 +90,7 @@ namespace dolfin
         }
         return cholmod_solver->solve(A, x, b);
       }
-      else
+      else if (type == "lu")
       {
         if (!umfpack_solver)
         {
@@ -98,6 +98,11 @@ namespace dolfin
           umfpack_solver->parameters.update(parameters);
         }
         return umfpack_solver->solve(A, x, b);
+      }
+      else
+      {
+        error("Unknown LU solver type. Options are \"cholesky\" or \"lu\"."); 
+        return 0;
       }
     }
 
@@ -149,7 +154,7 @@ namespace dolfin
     int* epetra_solver;
 #endif
 
-    std::string  matrix_type;
+    std::string type;
 
   };
 }
