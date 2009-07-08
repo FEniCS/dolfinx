@@ -109,7 +109,7 @@ int main()
 
   // Solve system
   GenericVector& x = u.vector();
-  LUSolver solver("symmetric");
+  LUSolver solver("cholesky");
   solver.solve(A, x, b);
 
   // Plot solution
