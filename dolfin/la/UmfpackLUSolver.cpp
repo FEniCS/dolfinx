@@ -29,7 +29,7 @@ using namespace dolfin;
 Parameters UmfpackLUSolver::default_parameters()
 {
   Parameters p(LUSolver::default_parameters());
-  p.set_key("umfpack_lu_solver");
+  p.rename("umfpack_lu_solver");
   return p;
 }
 //-----------------------------------------------------------------------------

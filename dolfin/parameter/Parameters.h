@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hake, 2009
+// Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-06-30
+// Last changed: 2009-07-08
 
 #ifndef __PARAMETERS_H
 #define __PARAMETERS_H
@@ -82,11 +83,11 @@ namespace dolfin
     /// Copy constructor
     Parameters(const Parameters& parameters);
 
-    /// Return key for parameter set
-    std::string key() const;
+    /// Return name for parameter set
+    std::string name() const;
     
-    /// Set key for parameter set
-    void set_key(std::string key);
+    /// Rename parameter set
+    void rename(std::string key);
 
     /// Clear parameter set
     void clear();

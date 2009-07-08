@@ -23,7 +23,7 @@ using namespace dolfin;
 Parameters PETScLUSolver::default_parameters()
 {
   Parameters p(LUSolver::default_parameters());
-  p.set_key("petsc_lu_solver");
+  p.rename("petsc_lu_solver");
   return p;
 }
 //-----------------------------------------------------------------------------

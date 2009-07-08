@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hake, 2009
+// Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-06-30
+// Last changed: 2009-07-08
 
 #include <sstream>
 #include <boost/program_options.hpp>
@@ -41,12 +42,12 @@ Parameters::Parameters(const Parameters& parameters)
   *this = parameters;
 }
 //-----------------------------------------------------------------------------
-std::string Parameters::key() const
+std::string Parameters::name() const
 {
   return _key;
 }
 //-----------------------------------------------------------------------------
-void Parameters::set_key(std::string key)
+void Parameters::rename(std::string key)
 {
   Parameter::check_key(key);
   _key = key;
@@ -173,14 +174,14 @@ void Parameters::add(std::string key, bool value)
 void Parameters::add(const Parameters& parameters)
 {
   // Check key name
-  if (find_parameter_set(parameters.key()))
+  if (find_parameter_set(parameters.name()))
     error("Unable to add parameter set \"%s\", already defined.",
-          parameters.key().c_str());
+          parameters.name().c_str());
 
   // Add parameter set
   Parameters* p = new Parameters("");
   *p = parameters;
-  _parameter_sets[parameters.key()] = p;
+  _parameter_sets[parameters.name()] = p;
 }
 //-----------------------------------------------------------------------------
 void Parameters::parse(int argc, char* argv[])
@@ -228,7 +229,7 @@ void Parameters::update(const Parameters& parameters)
     if (!self)
     {
       warning("Ignoring unknown parameter \"%s\" in parameter set \"%s\" when updating parameter set \"%s\".",
-              other.key().c_str(), parameters.key().c_str(), key().c_str());
+              other.key().c_str(), parameters.name().c_str(), name().c_str());
       continue;
     }
     
@@ -258,7 +259,7 @@ Parameter& Parameters::operator() (std::string key)
   Parameter* p = find_parameter(key);
   if (!p)
     error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter not defined.",
-          key.c_str(), this->key().c_str());
+          key.c_str(), this->name().c_str());
   return *p;
 }
 //-----------------------------------------------------------------------------
@@ -267,7 +268,7 @@ const Parameter& Parameters::operator() (std::string key) const
   Parameter* p = find_parameter(key);
   if (!p)
     error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter not defined.",
-          key.c_str(), this->key().c_str());
+          key.c_str(), this->name().c_str());
   return *p;
 }
 //-----------------------------------------------------------------------------
@@ -276,7 +277,7 @@ Parameters& Parameters::operator[] (std::string key)
   Parameters* p = find_parameter_set(key);
   if (!p)
     error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter set not defined.",
-          key.c_str(), this->key().c_str());
+          key.c_str(), this->name().c_str());
   return *p;
 }
 //-----------------------------------------------------------------------------
@@ -285,7 +286,7 @@ const Parameters& Parameters::operator[] (std::string key) const
   Parameters* p = find_parameter_set(key);
   if (!p)
     error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter set not defined.",
-          key.c_str(), this->key().c_str());
+          key.c_str(), this->name().c_str());
   return *p;
 }
 //-----------------------------------------------------------------------------
@@ -317,7 +318,7 @@ const Parameters& Parameters::operator= (const Parameters& parameters)
       q = new StringParameter(dynamic_cast<const StringParameter&>(p));
     else
       error("Unable to copy parameter from parameter set \"%s\" to parameter set \"%s\", unknown type: \"%s\".",
-            parameters.key().c_str(), key().c_str(), p.type_str().c_str());
+            parameters.name().c_str(), name().c_str(), p.type_str().c_str());
     _parameters[p.key()] = q;
   }
 
@@ -326,7 +327,7 @@ const Parameters& Parameters::operator= (const Parameters& parameters)
        it != parameters._parameter_sets.end(); ++it)
   {
     const Parameters& p = *it->second;
-    _parameter_sets[p.key()] = new Parameters(p);
+    _parameter_sets[p.name()] = new Parameters(p);
   }
 
   return *this;
@@ -338,12 +339,13 @@ std::string Parameters::str() const
 
   if (_parameters.size() == 0 && _parameter_sets.size() == 0)
   {
-    s << key() << " (empty)";
+    s << name() << " (empty)";
     return s.str();
   }
 
   Table t(_key);
-  for (const_parameter_iterator it = _parameters.begin(); it != _parameters.end(); ++it)
+  for (const_parameter_iterator it = _parameters.begin(); 
+        it != _parameters.end(); ++it)
   {
     Parameter* p = it->second;
     t(p->key(), "type") = p->type_str();
@@ -354,7 +356,8 @@ std::string Parameters::str() const
   }
   s << t.str();
 
-  for (const_parameter_set_iterator it = _parameter_sets.begin(); it != _parameter_sets.end(); ++it)
+  for (const_parameter_set_iterator it = _parameter_sets.begin(); 
+         it != _parameter_sets.end(); ++it)
     s << "\n\n" << indent(it->second->str());
 
   return s.str();

@@ -77,7 +77,7 @@ const std::map<std::string, PCType> PETScKrylovSolver::pc_methods
 Parameters PETScKrylovSolver::default_parameters()
 {
   Parameters p(KrylovSolver::default_parameters());
-  p.set_key("petsc_krylov_solver");
+  p.rename("petsc_krylov_solver");
   return p;
 }
 //-----------------------------------------------------------------------------
