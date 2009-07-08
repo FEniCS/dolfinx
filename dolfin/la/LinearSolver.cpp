@@ -17,7 +17,7 @@ LinearSolver::LinearSolver(std::string solver_type, std::string pc_type)
 
   // Choose solver
   if (solver_type == "lu" || solver_type == "cholesky")
-    lu_solver = new LUSolver("nonsymmetric");
+    lu_solver = new LUSolver(solver_type);
   else
     krylov_solver = new KrylovSolver(solver_type, pc_type);
 }
@@ -34,14 +34,8 @@ dolfin::uint LinearSolver::solve(const GenericMatrix& A, GenericVector& x,
   dolfin_assert(lu_solver || krylov_solver);
 
   if (lu_solver)
-  {
-    lu_solver->parameters.update(parameters["lu_solver"]);
     return lu_solver->solve(A, x, b);
-  }
   else
-  {
-    krylov_solver->parameters.update(parameters["krylov_solver"]);
     return krylov_solver->solve(A, x, b);
-  }
 }
 //-----------------------------------------------------------------------------

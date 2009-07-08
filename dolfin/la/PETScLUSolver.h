@@ -1,8 +1,10 @@
 // Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2009.
+//
 // First added:  2005
-// Last changed: 2006-08-15
+// Last changed: 2009-07-08
 
 #ifndef __PETSC_LU_SOLVER_H
 #define __PETSC_LU_SOLVER_H
@@ -49,13 +51,7 @@ namespace dolfin
     void disp() const;
 
     /// Default parameter values
-    static Parameters default_parameters()
-    {
-      // FIXME: Change name to petsc_lu_solver?
-      Parameters p("petsc_lu_solver");
-      p.add("report", false);
-      return p;
-    }
+    static Parameters default_parameters();
 
   private:
 
