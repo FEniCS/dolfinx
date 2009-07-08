@@ -45,30 +45,33 @@ if env["PLATFORM"].startswith("win"):
 else:
   default_prefix = os.path.join(os.path.sep,"usr","local")
 
+# Set a global path_validator
+path_validator = PathVariable.PathAccept
+
 # Build the commandline options for SCons:
 options = [
     # configurable options for installation:
     PathVariable("prefix", "Installation prefix", default_prefix, 
-                 PathVariable.PathIsDirCreate),
+                 path_validator),
     PathVariable("DESTDIR",
                  "Prepend DESTDIR to each installed target file", None, 
-                 PathVariable.PathIsDirCreate),
+                 path_validator),
     PathVariable("binDir", "Binary installation directory",
-                 os.path.join("$prefix","bin"), PathVariable.PathIsDirCreate),
+                 os.path.join("$prefix","bin"), path_validator),
     PathVariable("manDir", "Manual page installation directory",
-                 os.path.join("$prefix", "share", "man"), PathVariable.PathIsDirCreate),
+                 os.path.join("$prefix", "share", "man"), path_validator),
     PathVariable("libDir", "Library installation directory",
-                 os.path.join("$prefix","lib"), PathVariable.PathIsDirCreate),
+                 os.path.join("$prefix","lib"), path_validator),
     PathVariable("pkgConfDir", "Directory for installation of pkg-config files",
-                 os.path.join("$prefix","lib","pkgconfig"), PathVariable.PathIsDirCreate),
+                 os.path.join("$prefix","lib","pkgconfig"), path_validator),
     PathVariable("includeDir", "C/C++ header installation directory",
-                 os.path.join("$prefix","include"), PathVariable.PathIsDirCreate),
+                 os.path.join("$prefix","include"), path_validator),
     PathVariable("pythonModuleDir", "Python module installation directory", 
                  scons.defaultPythonLib(prefix="$prefix"),
-                 PathVariable.PathAccept),
+                 path_validator),
     PathVariable("pythonExtDir", "Python extension module installation directory", 
                  scons.defaultPythonLib(prefix="$prefix", plat_specific=True),
-                 PathVariable.PathAccept),
+                 path_validator),
     # configurable options for how we want to build:
     BoolVariable("enableDebug", "Build with debug information", 1),
     BoolVariable("enableDebugUblas", "Add some extra Ublas debug information", 0),
@@ -102,18 +105,18 @@ options = [
     # It may be neccessary to specify the installation path to the above packages.
     # One can either use the options below (with<Package>Dir) or define the
     # <PACKAGE>_DIR environment variable.
-    PathVariable("withPetscDir", "Specify path to PETSc", None, PathVariable.PathAccept),
-    PathVariable("withSlepcDir", "Specify path to SLEPc", None, PathVariable.PathAccept),
-    PathVariable("withScotchDir", "Specify path to SCOTCH", None, PathVariable.PathAccept),
-    PathVariable("withUmfpackDir", "Specify path to UMFPACK", None, PathVariable.PathAccept),
-    PathVariable("withTrilinosDir", "Specify path to Trilinos", None, PathVariable.PathAccept),
-    PathVariable("withCholmodDir", "Specify path to CHOLMOD", None, PathVariable.PathAccept),
-    PathVariable("withMtl4Dir", "Specify path to MTL4", None, PathVariable.PathAccept),
-    PathVariable("withParmetisDir", "Specify path to ParMETIS", None, PathVariable.PathAccept),
-    PathVariable("withGmpDir", "Specify path to GMP", None, PathVariable.PathAccept),
-    PathVariable("withBoostDir", "Specify path to Boost", None, PathVariable.PathAccept),
-    PathVariable("withLibxml2Dir", "Specify path to libXML2", None, PathVariable.PathAccept),
-    PathVariable("withGtsDir", "Specify path to GTS", None, PathVariable.PathAccept),
+    PathVariable("withPetscDir", "Specify path to PETSc", None, path_validator),
+    PathVariable("withSlepcDir", "Specify path to SLEPc", None, path_validator),
+    PathVariable("withScotchDir", "Specify path to SCOTCH", None, path_validator),
+    PathVariable("withUmfpackDir", "Specify path to UMFPACK", None, path_validator),
+    PathVariable("withTrilinosDir", "Specify path to Trilinos", None, path_validator),
+    PathVariable("withCholmodDir", "Specify path to CHOLMOD", None, path_validator),
+    PathVariable("withMtl4Dir", "Specify path to MTL4", None, path_validator),
+    PathVariable("withParmetisDir", "Specify path to ParMETIS", None, path_validator),
+    PathVariable("withGmpDir", "Specify path to GMP", None, path_validator),
+    PathVariable("withBoostDir", "Specify path to Boost", None, path_validator),
+    PathVariable("withLibxml2Dir", "Specify path to libXML2", None, path_validator),
+    PathVariable("withGtsDir", "Specify path to GTS", None, path_validator),
     #
     # a few more options originally from PyCC:
     #BoolVariable("autoFetch", "Automatically fetch datafiles from (password protected) SSH repository", 0),
