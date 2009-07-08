@@ -15,6 +15,7 @@ using namespace dolfin;
 ///
 /// The solution is a reaction front sweeping across the domain.
 
+/*
 class Reaction : public ODE
 {
 public:
@@ -97,6 +98,7 @@ public:
   double v;       // Speed of reaction front
 
 };
+*/
 
 int main(int argc, char* argv[])
 {
