@@ -46,6 +46,12 @@ std::string Parameters::key() const
   return _key;
 }
 //-----------------------------------------------------------------------------
+void Parameters::set_key(std::string key)
+{
+  Parameter::check_key(key);
+  _key = key;
+}
+//-----------------------------------------------------------------------------
 void Parameters::clear()
 {
   // Delete parameters

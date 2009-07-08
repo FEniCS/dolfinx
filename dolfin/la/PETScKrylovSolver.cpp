@@ -77,13 +77,25 @@ const std::map<std::string, PCType> PETScKrylovSolver::pc_methods
 Parameters PETScKrylovSolver::default_parameters()
 {
   Parameters p("petsc_krylov_solver");
-  p.add(KrylovSolver::default_parameters());
+
+  p.add("relative_tolerance",  1e-15);
+  p.add("absolute_tolerance",  1e-15);
+  p.add("divergence_limit",    1e4);
+  p.add("maximum_iterations",  10000);
+  p.add("gmres_restart",       30);
+  p.add("shift_nonzero",       0.0);
+  p.add("report",              true);
+  p.add("monitor_convergence", false);
+
+  //p.add(KrylovSolver::default_parameters());
+  //p = KrylovSolver::default_parameters();
   return p;
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
   : method(method), pc_petsc(pc_type), pc_dolfin(0),
-    ksp(static_cast<KSP*>(0), PETScKSPDeleter()), M(0), N(0), parameters_read(false), pc_set(false)
+    ksp(static_cast<KSP*>(0), PETScKSPDeleter()), M(0), N(0), 
+    parameters_read(false), pc_set(false)
 {
   // Set parameter values
   parameters = default_parameters();

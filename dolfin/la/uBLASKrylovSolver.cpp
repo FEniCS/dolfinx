@@ -23,8 +23,8 @@ const std::set<std::string> uBLASKrylovSolver::solver_types
 //-----------------------------------------------------------------------------
 Parameters uBLASKrylovSolver::default_parameters()
 {
-  Parameters p("ublas_krylov_solver");
-  p.add(KrylovSolver::default_parameters());
+  Parameters p(KrylovSolver::default_parameters());
+  p.set_key("ublas_krylov_solver");
   return p;
 }
 //-----------------------------------------------------------------------------
