@@ -28,9 +28,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Parameters UmfpackLUSolver::default_parameters()
 {
-  Parameters p("umfpack_lu_solver");
-  p.add(LUSolver::default_parameters());
-  p.add("report", true);
+  Parameters p(LUSolver::default_parameters());
+  p.set_key("umfpack_lu_solver");
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -38,8 +37,6 @@ UmfpackLUSolver::UmfpackLUSolver()
 {
   // Set parameter values
   parameters = default_parameters();
-
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 UmfpackLUSolver::~UmfpackLUSolver()

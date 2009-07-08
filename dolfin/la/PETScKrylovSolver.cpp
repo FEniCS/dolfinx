@@ -76,19 +76,8 @@ const std::map<std::string, PCType> PETScKrylovSolver::pc_methods
 //-----------------------------------------------------------------------------
 Parameters PETScKrylovSolver::default_parameters()
 {
-  Parameters p("petsc_krylov_solver");
-
-  p.add("relative_tolerance",  1e-15);
-  p.add("absolute_tolerance",  1e-15);
-  p.add("divergence_limit",    1e4);
-  p.add("maximum_iterations",  10000);
-  p.add("gmres_restart",       30);
-  p.add("shift_nonzero",       0.0);
-  p.add("report",              true);
-  p.add("monitor_convergence", false);
-
-  //p.add(KrylovSolver::default_parameters());
-  //p = KrylovSolver::default_parameters();
+  Parameters p(KrylovSolver::default_parameters());
+  p.set_key("petsc_krylov_solver");
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -107,14 +96,16 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
     ksp(static_cast<KSP*>(0), PETScKSPDeleter()), M(0), N(0), 
     parameters_read(false), pc_set(false)
 {
-  // Do nothing
+  // Set parameter values
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(boost::shared_ptr<KSP> ksp)
   : method("default"), pc_petsc("default"), pc_dolfin(0),
     ksp(ksp), M(0), N(0), parameters_read(false), pc_set(false)
 {
-  // Do nothing
+  // Set parameter values
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 

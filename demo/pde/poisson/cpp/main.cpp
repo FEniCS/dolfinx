@@ -43,7 +43,7 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
-  parameters("linear_algebra_backend") = "uBLAS";
+  //parameters("linear_algebra_backend") = "uBLAS";
 
   // Create mesh and function space
   UnitSquare mesh(32, 32);

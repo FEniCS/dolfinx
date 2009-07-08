@@ -40,10 +40,6 @@ namespace dolfin
     static Parameters default_parameters()
     {
       Parameters p("linear_solver");
-
-      p.add(LUSolver::default_parameters());
-      //p.add(KrylovSolver::default_parameters());
-
       return p;
     }
 

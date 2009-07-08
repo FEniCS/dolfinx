@@ -1,8 +1,10 @@
 // Copyright (C) 2005-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2009.
+//
 // First added:  2005
-// Last changed: 2009-07-01
+// Last changed: 2009-07-08
 
 #ifdef HAS_PETSC
 
@@ -13,9 +15,17 @@
 #include "PETScVector.h"
 #include "PETScKrylovMatrix.h"
 #include "PETScLUSolver.h"
+#include "LUSolver.h"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+Parameters PETScLUSolver::default_parameters()
+{
+  Parameters p(LUSolver::default_parameters());
+  p.set_key("petsc_lu_solver");
+  return p;
+}
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver() : ksp(0), B(0), idxm(0), idxn(0)
 {
