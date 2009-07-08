@@ -85,6 +85,9 @@ namespace dolfin
     /// Return key for parameter set
     std::string key() const;
     
+    /// Set key for parameter set
+    void set_key(std::string key);
+
     /// Clear parameter set
     void clear();
 
