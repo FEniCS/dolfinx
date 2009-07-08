@@ -32,9 +32,11 @@ public:
     for (unsigned int i = 0; i < N; i++)
     {
       dependencies.setsize(i, 3);
-      if ( i > 0 ) dependencies.set(i, i - 1);
+      if ( i > 0 ) 
+        dependencies.set(i, i - 1);
       dependencies.set(i, i);
-      if ( i < (N - 1) ) dependencies.set(i, i + 1);
+      if ( i < (N - 1) ) 
+        dependencies.set(i, i + 1);
     }
   }
 
@@ -58,11 +60,11 @@ public:
 
       double sum = 0.0;
       if (i == 0)
-	sum = u[i + 1] - ui;
+        sum = u[i + 1] - ui;
       else if (i == (N - 1))
-	sum = u[i - 1] - ui;
+        sum = u[i - 1] - ui;
       else
-	sum = u[i + 1] - 2.0*ui + u[i - 1];
+        sum = u[i + 1] - 2.0*ui + u[i - 1];
 
       y[i] = epsilon * sum / (h*h) + gamma * ui*ui * (1.0 - ui);
     }
@@ -98,6 +100,8 @@ public:
 
 int main(int argc, char* argv[])
 {
+  info("Please update for new parameter system.");
+  /*
   // Parse command line arguments
   if ( argc != 7 )
   {
@@ -132,9 +136,9 @@ int main(int argc, char* argv[])
   ode.solve();
 
   // Set solver parameters from command-line arguments
-  ode.set("ODE method", method);
-  ode.set("ODE nonlinear solver", solver);
-  ode.set("ODE tolerance", tol);
-
+  ode.parameters("method") = method;
+  ode.parameters("nonlinear_solver") = solver;
+  ode.parameters("tolerance") = tol;
+  */
   return 0;
 }

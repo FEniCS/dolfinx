@@ -20,9 +20,12 @@ class WaveEquation : public ODE
 {
 public:
 
-  WaveEquation(Mesh& mesh) : ODE(2*mesh.numVertices(), 1.0), mesh(mesh),
+  WaveEquation(Mesh& mesh) : ODE(2*mesh.num_vertices(), 1.0), mesh(mesh),
 			     A(mesh), offset(N/2), h(N/2)
   {
+
+    error("This class needs to be updated.");
+    /*
     // Width of initial wave
     w = 0.25;
 
@@ -39,12 +42,12 @@ public:
 
       // Dependencies for second half of system
       int ncols = 0;
-      Array<int> columns;
-      Array<double> values;
+      std::vector<int> columns;
+      std::vector<double> values;
       A.getrow(i, ncols, columns, values);
       dependencies.setsize(i + offset, ncols);
       for (int j = 0; j < ncols; j++)
-	dependencies.set(i + offset, columns[j]);
+        dependencies.set(i + offset, columns[j]);
     }
 
     // Get local mesh size (check smallest neighboring triangle)
@@ -55,21 +58,24 @@ public:
       double dmin = 1.0;
       for (CellIterator c(*v); !c.end(); ++c)
       {
-	const double d = c->diameter();
-	if ( d < dmin )
-	  dmin = d;
+        const double d = c->diameter();
+        if ( d < dmin )
+          dmin = d;
       }
       h[v->index()] = dmin;
       if ( dmin < hmin )
-	hmin = dmin;
+        hmin = dmin;
     }
     dolfin::cout << "Minimum mesh size: h = " << hmin << dolfin::endl;
     dolfin::cout << "Maximum time step: k = " << 0.25*hmin << dolfin::endl;
+    */
   }
 
   // Initial condition: a wave coming in from the right
   void u0(uBLASVector& u)
   {
+    error("This function needs to be updated.");
+    /*
     for (unsigned int i = 0; i < N; i++)
     {
       const double x0 = 1.0 - 0.5*w;
@@ -78,17 +84,18 @@ public:
       if ( i < offset )
       {
         const double x = mesh.geometry().x(i, 0);
-	if ( std::abs(x - x0) < 0.5*w )
-	  u(i) = 0.5*(cos(2.0*DOLFIN_PI*(x - x0)/w) + 1.0);
+        if ( std::abs(x - x0) < 0.5*w )
+          u(i) = 0.5*(cos(2.0*DOLFIN_PI*(x - x0)/w) + 1.0);
       }
       else
       {
         const double x = mesh.geometry().x(i - offset, 0);
-	if ( std::abs(x - x0) < 0.5*w )
-	  u(i) = -(DOLFIN_PI/w)*sin(2.0*DOLFIN_PI*(x - x0)/w);
+        if ( std::abs(x - x0) < 0.5*w )
+          u(i) = -(DOLFIN_PI/w)*sin(2.0*DOLFIN_PI*(x - x0)/w);
       }
     }
-  }
+    */ 
+ }
 
   // Global time step
   double timestep(double t, double k0) const
@@ -105,6 +112,8 @@ public:
   // Right-hand side, mono-adaptive version
   void f(const uBLASVector& u, double t, uBLASVector& y)
   {
+    error("This function needs to be updated.");
+    /*
     // First half of system
     for (unsigned int i = 0; i < offset; i++)
     {
@@ -115,13 +124,17 @@ public:
     for (unsigned int i = offset; i < N; i++)
     {
       const unsigned int j = i - offset;
-      y(i) = - inner_prod(row(A, j), u) / m(j);
+      y(i) = -inner_prod(row(A, j), u) / m(j);
     }
+    */
   }
 
   // Right-hand side, multi-adaptive version
   double f(const uBLASVector& u, double t, unsigned int i)
   {
+    error("This function needs to be updated.");
+    return 0.0;
+    /*
     // First half of system
     if ( i < offset )
       return u(i + offset);
@@ -129,7 +142,8 @@ public:
     // Second half of system
     const unsigned int j = i - offset;
 
-    return - inner_prod(row(A, j), u) / m(j);
+    return -inner_prod(row(A, j), u) / m(j);
+    */
   }
  
 private:
@@ -138,7 +152,7 @@ private:
   uBLASStiffnessMatrix A; // Stiffness matrix
   uBLASVector m;          // Lumped mass matrix
   unsigned int offset;    // N/2, number of vertices
-  Array<double> h;          // Local mesh size
+  std::vector<double> h;  // Local mesh size
   double hmin;              // Minimum mesh size
   double w;                 // Width of initial wave
 
@@ -146,6 +160,8 @@ private:
 
 int main(int argc, char* argv[])
 {
+  info("Needs updating for new parameter system"); 
+  /*
   // Parse command line arguments
   if ( argc != 2 )
   {
@@ -167,6 +183,6 @@ int main(int argc, char* argv[])
   Mesh mesh("slit.xml.gz");
   WaveEquation ode(mesh);
   ode.solve();
-
+  */
   return 0;
 }

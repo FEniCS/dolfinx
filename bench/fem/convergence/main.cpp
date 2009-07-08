@@ -105,7 +105,7 @@ double solve2D(int q, int n)
 
   // Solve the linear system
   KrylovSolver solver("gmres");
-  solver.set("Krylov relative tolerance", 1e-14); 
+  solver.parameters("relative_tolerance") = 1e-14; 
   solver.solve(A, x, b);
 
   // Compute maximum norm of error
@@ -188,7 +188,7 @@ double solve3D(int q, int n)
 
   // Solve the linear system
   KrylovSolver solver("gmres");
-  solver.set("Krylov relative tolerance", 1e-14); 
+  solver.parameters("relative_tolerance") = -1e-14; 
   solver.solve(A, x, b);
 
   // Compute maximum norm of error
@@ -213,7 +213,7 @@ double solve3D(int q, int n)
 
 int main()
 {
-  dolfin_set("output destination", "silent");
+  logging(false);
 
   const int qmax = 5;
   const int num_meshes = 3;

@@ -35,7 +35,7 @@ double reassemble_form(Form& form)
 
 int main()
 {
-  dolfin_set("output destination", "silent");
+  logging(false);
 
   // Backends
   std::vector<std::string> backends;
@@ -68,8 +68,8 @@ int main()
   // Benchmark assembly
   for (unsigned int i = 0; i < backends.size(); i++)
   {
-    dolfin_set("linear algebra backend", backends[i]);
-    dolfin_set("timer prefix", backends[i]);
+    parameters("linear_algebra_backend") = backends[i];
+    parameters("timer_prefix") = backends[i];
     std::cout << "BENCH Backend: " << backends[i] << std::endl;
     for (unsigned int j = 0; j < forms.size(); j++)
     {
@@ -93,8 +93,8 @@ int main()
   // Benchmark reassembly
   for (unsigned int i = 0; i < backends.size(); i++)
   {
-    dolfin_set("linear algebra backend", backends[i]);
-    dolfin_set("timer prefix", backends[i]);
+    parameters("linear_algebra_backend") = backends[i];
+    parameters("timer_prefix") = backends[i];
     std::cout << "BENCH Backend: " << backends[i] << std::endl;
     for (unsigned int j = 0; j < forms.size(); j++)
     {
@@ -104,7 +104,7 @@ int main()
   }
 
   // Display results
-  dolfin_set("output destination", "terminal");
+  logging(true);
   std::cout << std::endl; info(t0);
   std::cout << std::endl; info(t1);
   std::cout << std::endl; info(t2);

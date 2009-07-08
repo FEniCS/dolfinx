@@ -1,8 +1,10 @@
-import commands
+import os, commands
 
 # Get compiler from pkg-config
 compiler = commands.getoutput('pkg-config --variable=compiler dolfin')
-env      = Environment(CXX = compiler)
+
+# Create a SCons Environment based on the main os environment
+env = Environment(ENV=os.environ, CXX=compiler)
 
 # Get compiler flags from pkg-config
 env.ParseConfig('pkg-config --cflags --libs dolfin')

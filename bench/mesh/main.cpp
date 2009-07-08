@@ -37,11 +37,11 @@ void bench(unsigned int n, unsigned int M)
   info("  Iterate over entities: %.3e (sum = %u)", t, sum);
   
   // Uniform refinement
-  dolfin_set("output destination", "silent");
+  logging(false);
   tic();
   mesh.refine();
   t = toc();
-  dolfin_set("output destination", "terminal");
+  logging(true);
   info("  Uniform refinement:    %.3e", t);
 }
 
@@ -63,10 +63,12 @@ int main(int argc, char** argv)
     bench(n);
   }
   else
-  for (unsigned int n = 1; n <= 32; n++)
   {
-    // Run a series of benchmarks
-    bench(n, 100);
+    for (unsigned int n = 1; n <= 32; n++)
+    {
+      // Run a series of benchmarks
+      bench(n, 100);
+    }
   }
 
   return 0;

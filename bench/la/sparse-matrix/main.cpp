@@ -15,13 +15,15 @@ using namespace dolfin;
 using namespace boost::tuples;
 
 //-----------------------------------------------------------------------------
+/*
 template<class Mat, class Vec = uBLASVector>
 struct MatrixAssemble
 {
+
   //---------------------------------------------------------------------------
   static double assemble(Form& a, const dolfin::uint N)
   {
-    dolfin_set("output destination", "silent");  
+    logging(false);  
     UnitSquare mesh(N, N);
     Mat A;
   
@@ -32,7 +34,7 @@ struct MatrixAssemble
   //---------------------------------------------------------------------------
   static double assemble(Form& a, Mat& A, const dolfin::uint N)
   {
-    dolfin_set("output destination", "silent");  
+    logging(false);  
     UnitSquare mesh(N, N);
 
     tic();
@@ -42,7 +44,7 @@ struct MatrixAssemble
   //---------------------------------------------------------------------------
   static tuple<double, double> assemble(dolfin::uint N)
   {
-    dolfin_set("output destination", "silent");
+    logging(false);  
     tuple<double, double> timing;
     Mat A;
     A.init(2*N, 2*N);
@@ -59,7 +61,6 @@ struct MatrixAssemble
       jpos[0] = i+1; jpos[1] = i;   jpos[2] = N+i+1; jpos[3] = N+i;
       A.add(block, 4, ipos, 4, jpos);
     }
-//    get<0>(timing) = toc();  
     timing.get<0>() = toc();  
   
     tic();
@@ -71,8 +72,8 @@ struct MatrixAssemble
   //---------------------------------------------------------------------------
   static double vector_multiply(const dolfin::uint N, const dolfin::uint n)
   {
-    dolfin_set("output destination", "silent");
-    VectorPoissonBilinearForm a;
+    logging(false);
+    VectorPoisson::BilinearForm a;
     Mat A;
     Vec x, y;
     UnitSquare mesh(N,N);  
@@ -94,8 +95,8 @@ void AssemblePoissonMatrix()
   double time;
   const dolfin::uint n = 3;
   const dolfin::uint N[n] = {5, 10, 40};
-  PoissonBilinearForm a;
-  VectorPoissonBilinearForm a_vector;
+  Poisson::BilinearForm a;
+  VectorPoisson::BilinearForm a_vector;
 
   begin("Assemble a sparse matrix for scalar Poisson equation on an square N x N mesh");
 #ifdef HAS_PETSC  
@@ -138,7 +139,7 @@ void AssembleSparseMatrices()
   const dolfin::uint N = 5000;
   tuple<double, double> timing;
 
-  dolfin_set("output destination", "terminal");
+  logging(true);  
   begin("Assemble a sparse matrix in quasi-random order (size = 2N x 2N)" );
 #ifdef HAS_PETSC  
   timing = MatrixAssemble< PETScMatrix >::assemble(N);
@@ -161,7 +162,7 @@ void MatrixVectorMultiply()
   const dolfin::uint N = 20;
   double time;
 
-  dolfin_set("output destination", "terminal");
+  logging(true);  
   begin("Sparse matrix-vector multiplication (size N x N, repeated n times)");
 #ifdef HAS_PETSC 
   time = MatrixAssemble< PETScMatrix, PETScVector >::vector_multiply(N, n);
@@ -174,14 +175,16 @@ void MatrixVectorMultiply()
 
   end();
 }
+*/
 //-----------------------------------------------------------------------------
 int main()
 {
-  cout << "Initialisation of a sparse matrix needs updating for this benchmark." << endl;
+  info("Initialisation of a sparse matrix needs updating for this benchmark.");
   return 0;  
 
+  /*
   begin("Sparse matrix benchmark timings");
-  dolfin_set("output destination", "silent");
+  logging(false);  
 
   // Assembly of a sparse matrix
   AssembleSparseMatrices();  
@@ -193,4 +196,7 @@ int main()
   MatrixVectorMultiply();  
 
   return 0;
+  */
 }
+//-----------------------------------------------------------------------------
+

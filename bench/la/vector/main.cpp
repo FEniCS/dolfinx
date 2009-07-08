@@ -13,12 +13,13 @@ using namespace dolfin;
 using namespace boost::tuples;
 
 //-----------------------------------------------------------------------------
+/*
 template<class Vec>
 struct VectorAssign
 {
   static tuple<double, double> benchVectorAssign(const dolfin::uint N, const dolfin::uint n)
   {
-    dolfin_set("output destination", "silent");
+    logging(false);
 
     tuple<double, double> timing;
     Vec x(N);
@@ -39,9 +40,12 @@ struct VectorAssign
     return timing;
   }
 };
+*/
 //-----------------------------------------------------------------------------
 int main()
 {
+  info("Benchmark needs to be updated."); 
+ /*
   // Bechmark elementwise assignment and access
   const dolfin::uint N[3] = {6, 6, 100};
   const dolfin::uint n[3] = {100000, 100000000, 1000000};
@@ -64,7 +68,7 @@ int main()
 #endif
 
   // Output assignment timings
-  dolfin_set("output destination", "terminal");
+  logging(true);
   begin("Assign values to a vector of length N elementwise n times");
 #ifdef HAS_PETSC  
   cout << "PETScVector (N="<< N[0] << ", n=" << n[0] << "): " << get<0>(petsc_timing[0]) << endl;
@@ -84,6 +88,7 @@ int main()
 
   end();
   end();
-
+  */
   return 0;
 }
+//-----------------------------------------------------------------------------
