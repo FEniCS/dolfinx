@@ -15,17 +15,16 @@ using namespace dolfin;
 ///
 /// The solution is a reaction front sweeping across the domain.
 
-/*
 class Reaction : public ODE
 {
 public:
 
   /// Constructor
-  Reaction(unsigned int N, double T, double L, double epsilon, double gamma)
+  Reaction(unsigned int N, real T, real L, real epsilon, real gamma)
     : ODE(N, T), L(L), epsilon(epsilon), gamma(gamma)
   {
     // Compute parameters
-    h = L / static_cast<double>(N - 1);
+    h = L / static_cast<real>(N - 1);
     lambda = 0.5*sqrt(2.0*gamma/epsilon);
     v = 0.5*sqrt(2.0*gamma*epsilon);
     
@@ -46,20 +45,20 @@ public:
   {
     for (unsigned int i = 0; i < N; i++)
     {
-      const double x = static_cast<double>(i)*h;
-      u[i] = 1.0 / (1.0 + exp(lambda*(x - 1.0)));
+      const real x = static_cast<real>(i)*h;
+      u[i] = 1.0 / (1.0 + real_exp(lambda*(x - 1.0)));
     }
   }
 
   /// Right-hand side, mono-adaptive version
-  void f(const real* u, double t, real* y)
+  void f(const real* u, real t, real* y)
   {
     printf("MONO!\n");
     for (unsigned int i = 0; i < N; i++)
     {
-      const double ui = u[i];
+      const real ui = u[i];
 
-      double sum = 0.0;
+      real sum = 0.0;
       if (i == 0)
         sum = u[i + 1] - ui;
       else if (i == (N - 1))
@@ -72,12 +71,12 @@ public:
   }
 
   /// Right-hand side, multi-adaptive version
-  double f(const real* u, double t, unsigned int i)
+  real f(const real* u, real t, unsigned int i)
   {
     printf("MULTI!\n");
-    const double ui = u[i];
+    const real ui = u[i];
     
-    double sum = 0.0;
+    real sum = 0.0;
     if ( i == 0 )
       sum = u[i + 1] - ui;
     else if (i == (N - 1))
@@ -90,15 +89,14 @@ public:
 
 public:
 
-  double L;       // Length of domain
-  double epsilon; // Diffusivity
-  double gamma;   // Reaction rate
-  double h;       // Mesh size
-  double lambda;  // Parameter for initial data
-  double v;       // Speed of reaction front
+  real L;       // Length of domain
+  real epsilon; // Diffusivity
+  real gamma;   // Reaction rate
+  real h;       // Mesh size
+  real lambda;  // Parameter for initial data
+  real v;       // Speed of reaction front
 
 };
-*/
 
 int main(int argc, char* argv[])
 {
@@ -119,9 +117,9 @@ int main(int argc, char* argv[])
   }
   const char* method = argv[1];
   const char* solver = argv[2];
-  const double tol = static_cast<double>(atof(argv[3]));
+  const real tol = static_cast<real>(atof(argv[3]));
   const unsigned int N = static_cast<unsigned int>(atoi(argv[4]));
-  const double L = static_cast<unsigned int>(atof(argv[5]));
+  const real L = static_cast<unsigned int>(atof(argv[5]));
   const char* params = argv[6];
   
   // Load solver parameters from file
@@ -129,9 +127,9 @@ int main(int argc, char* argv[])
   file >> ParameterSystem::parameters;
 
   // Set fixed parameters for test problem
-  const double T = 1.0;
-  const double epsilon = 0.01;
-  const double gamma = 1000.0;
+  const real T = 1.0;
+  const real epsilon = 0.01;
+  const real gamma = 1000.0;
 
   // Solve system of ODEs
   Reaction ode(N, T, L, epsilon, gamma);
