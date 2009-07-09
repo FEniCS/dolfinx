@@ -15,6 +15,7 @@
 #ifdef HAS_PETSC
 
 #include <map>
+#include <petscksp.h>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"

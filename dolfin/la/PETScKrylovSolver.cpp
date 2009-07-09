@@ -10,7 +10,6 @@
 #ifdef HAS_PETSC
 
 #include <boost/assign/list_of.hpp>
-#include <private/pcimpl.h>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/main/MPI.h>
@@ -19,6 +18,8 @@
 #include "PETScVector.h"
 #include "PETScKrylovMatrix.h"
 #include "KrylovSolver.h"
+
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 namespace dolfin
@@ -35,20 +36,6 @@ namespace dolfin
   };
 }
 //-----------------------------------------------------------------------------
-// Monitor function
-namespace dolfin
-{
-  int monitor(KSP ksp, int iteration, double rnorm, void *mctx)
-  {
-    info("Iteration %d: residual = %g", iteration, rnorm);
-    return 0;
-  }
-}
-//-----------------------------------------------------------------------------
-
-using namespace dolfin;
-
-
 // Available solvers
 #if PETSC_VERSION_MAJOR > 2
 const std::map<std::string, const KSPType> PETScKrylovSolver::methods 
@@ -184,7 +171,8 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b)
+dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, 
+                                      PETScVector& x, const PETScVector& b)
 {
   // Check dimensions
   uint M = A.size(0);
