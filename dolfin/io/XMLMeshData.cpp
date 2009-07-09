@@ -31,6 +31,9 @@ XMLMeshData::~XMLMeshData()
   delete iam;
   delete uam;
   delete dam;
+  delete xml_array;
+  delete xml_map;
+  delete xml_mesh_function;
 }
 //-----------------------------------------------------------------------------
 void XMLMeshData::start_element (const xmlChar* name, const xmlChar** attrs)
