@@ -8,16 +8,24 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/KrylovSolver.h>
-#include "UmfpackLUSolver.h"
 #include "CholmodCholeskySolver.h"
+#include "UmfpackLUSolver.h"
+#include "LUSolver.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+Parameters CholmodCholeskySolver::default_parameters()
+{
+  Parameters p(LUSolver::default_parameters());
+  p.rename("cholmod_lu_solver");
+  return p;
+}
+//-----------------------------------------------------------------------------
 CholmodCholeskySolver::CholmodCholeskySolver()
 {
-  // Do nothing
+  // Set parameter values
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 CholmodCholeskySolver::~CholmodCholeskySolver()

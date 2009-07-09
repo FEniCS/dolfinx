@@ -32,8 +32,6 @@ namespace dolfin
 
     void release();
 
-    //void validate(std::string filename);
-
     /// Callback for start of XML element
     virtual void start_element(const xmlChar* name, const xmlChar** attrs) = 0;
 
@@ -47,22 +45,29 @@ namespace dolfin
   protected:
 
     // Parse an integer value
-    int parse_int(const xmlChar* name, const xmlChar** attrs, const char *attribute);
+    int parse_int(const xmlChar* name, const xmlChar** attrs, 
+                  const char *attribute);
 
     // Parse an unsigned integer value
-    uint parse_uint(const xmlChar* name, const xmlChar** attrs, const char *attribute);
+    uint parse_uint(const xmlChar* name, const xmlChar** attrs, 
+                    const char *attribute);
 
     // Parse a double value
-    double parse_float(const xmlChar* name, const xmlChar** attrs, const char* attribute);
+    double parse_float(const xmlChar* name, const xmlChar** attrs, 
+                       const char* attribute);
 
     // Parse a string
-    std::string parse_string(const xmlChar* name, const xmlChar** attrs, const char* attribute);
+    std::string parse_string(const xmlChar* name, const xmlChar** attrs, 
+                             const char* attribute);
 
     // Parse a string with some forgiveness!
-    std::string parse_string_optional(const xmlChar* name, const xmlChar** attrs, const char* attribute);
+    std::string parse_string_optional(const xmlChar* name, 
+                                      const xmlChar** attrs, 
+                                      const char* attribute);
 
     // Parse a bool
-    bool parse_bool(const xmlChar* name, const xmlChar** attrs, const char* attribute);
+    bool parse_bool(const xmlChar* name, const xmlChar** attrs, 
+                    const char* attribute);
 
     XMLFile& parser;
     std::ofstream outfile;

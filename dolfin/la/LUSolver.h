@@ -104,8 +104,7 @@ namespace dolfin
       }
       else
       {
-        std::cout << "Testing solver " << type << std::endl; 
-        error("Unknown LU solver type. Options are \"cholesky\" or \"lu\"."); 
+        error("Unknown LU solver type %s. Options are \"cholesky\" or \"lu\".", type.c_str()); 
         return 0;
       }
     }

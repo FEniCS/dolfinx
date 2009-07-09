@@ -29,11 +29,6 @@ VariationalProblem::VariationalProblem(const Form& a,
 {
   // Set default parameter values
   parameters = default_parameters();
-
-  // FIXME: Is this comment still valid?
-  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system
-  // Add parameter "symmetric"
-  //add("symmetric", false);
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& a,
@@ -48,10 +43,6 @@ VariationalProblem::VariationalProblem(const Form& a,
 
   // Store boundary condition
   bcs.push_back(&bc);
-
-  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system
-  // Add parameter "symmetric"
-  //add("symmetric", false);
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& a,
@@ -67,10 +58,6 @@ VariationalProblem::VariationalProblem(const Form& a,
   // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
     this->bcs.push_back(bcs[i]);
-
-  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system
-  // Add parameter "symmetric"
-  //add("symmetric", false);
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& a,
@@ -91,10 +78,6 @@ VariationalProblem::VariationalProblem(const Form& a,
   // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
     this->bcs.push_back(bcs[i]);
-
-  // FIXME: Must be set in DefaultParameters.h because of bug in cross-platform parameter system
-  // Add parameter "symmetric"
-  //add("symmetric", false);
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::~VariationalProblem()

@@ -25,7 +25,7 @@ namespace dolfin
   /// This class implements the direct solution (Cholesky factorization) of
   /// linear systems of the form Ax = b. Sparse matrices
   /// are solved using CHOLMOD http://www.cise.ufl.edu/research/sparse/cholmod/
-  /// is installed.
+  /// if installed.
 
   class CholmodCholeskySolver : public GenericLinearSolver
   {
@@ -46,6 +46,9 @@ namespace dolfin
 
     /// Solve factorized system (CHOLMOD).
     virtual uint factorized_solve(GenericVector& x, const GenericVector& b);
+
+    /// Default parameter values
+    static Parameters default_parameters();
 
   private:
 

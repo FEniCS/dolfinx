@@ -12,7 +12,6 @@
 #include <vector>
 #include <map>
 #include "XMLHandler.h"
-//#include "XMLFile.h"
 
 namespace dolfin
 {
@@ -36,12 +35,18 @@ namespace dolfin
     void end_element   (const xmlChar *name);
 
     /// Write to file
-    static void write(const std::map<uint, int>& map, std::ostream& outfile, uint indentation_level=0);
-    static void write(const std::map<uint, uint>& map, std::ostream& outfile, uint indentation_level=0);
-    static void write(const std::map<uint, double>& map, std::ostream& outfile, uint indentation_level=0);
-    static void write(const std::map<uint, std::vector<int> >& map, std::ostream& outfile, uint indentation_level=0);
-    static void write(const std::map<uint, std::vector<uint> >& map, std::ostream& outfile, uint indentation_level=0);
-    static void write(const std::map<uint, std::vector<double> >& map, std::ostream& outfile, uint indentation_level=0);
+    static void write(const std::map<uint, int>& map, std::ostream& outfile, 
+                      uint indentation_level=0);
+    static void write(const std::map<uint, uint>& map, std::ostream& outfile, 
+                      uint indentation_level=0);
+    static void write(const std::map<uint, double>& map, std::ostream& outfile, 
+                      uint indentation_level=0);
+    static void write(const std::map<uint, std::vector<int> >& map, 
+                      std::ostream& outfile, uint indentation_level=0);
+    static void write(const std::map<uint, std::vector<uint> >& map, 
+                      std::ostream& outfile, uint indentation_level=0);
+    static void write(const std::map<uint, std::vector<double> >& map, 
+                      std::ostream& outfile, uint indentation_level=0);
 
   private:
 

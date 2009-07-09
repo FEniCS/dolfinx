@@ -13,8 +13,6 @@
 #include "GenericVector.h"
 #include "KrylovSolver.h"
 #include "LUSolver.h"
-#include "uBLASKrylovMatrix.h"
-#include "uBLASVector.h"
 
 extern "C"
 {

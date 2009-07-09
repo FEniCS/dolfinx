@@ -27,7 +27,7 @@ namespace dolfin
   /// linear systems of the form Ax = b using uBLAS data types. Dense
   /// matrices are solved using uBLAS LU factorisation, and sparse matrices
   /// are solved using UMFPACK (http://www.cise.ufl.edu/research/sparse/umfpack/)
-  /// is installed. Matrices can also be inverted.
+  /// if installed. Matrices can also be inverted.
 
   class UmfpackLUSolver : public GenericLinearSolver
   {
