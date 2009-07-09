@@ -257,7 +257,7 @@ void PETScKrylovSolver::init(uint M, uint N)
   {
     if (!ksp.unique())
       error("Cannot create new KSP Krylov solver. More than one object points to the underlying PETSc object.");
-    KSPDestroy(*ksp);
+    ksp.reset();
   }
   else
   {
