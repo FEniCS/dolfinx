@@ -30,6 +30,7 @@ namespace dolfin
     {
       if (ksp)
         KSPDestroy(*ksp);
+      delete ksp;
     }
   };
 }
