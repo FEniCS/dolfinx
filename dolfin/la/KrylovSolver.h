@@ -53,9 +53,21 @@ namespace dolfin
 
     // Solvers
     uBLASKrylovSolver* ublas_solver;
+#ifdef HAS_PETSC
     PETScKrylovSolver* petsc_solver;
+#else
+    int* petsc_solver;
+#endif
+#ifdef HAS_TRILINOS
     EpetraKrylovSolver* epetra_solver;
+#else
+    int* epetra_solver;
+#endif
+#ifdef HAS_MTL4
     ITLKrylovSolver* itl_solver;
+#else
+    int* itl_solver;
+#endif
 
   };
 }
