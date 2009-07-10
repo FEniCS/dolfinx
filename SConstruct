@@ -74,7 +74,7 @@ options = [
                  path_validator),
     # configurable options for how we want to build:
     BoolVariable("enableDebug", "Build with debug information", 1),
-    BoolVariable("enableDebugMacro", "Add some extra debgging by using -DDEBUG", 0),
+    BoolVariable("enableDebugUblas", "Add some extra Ublas debug information", 0),
     BoolVariable("enableOptimize", "Compile with optimization", 0),
     BoolVariable("enableDocs", "Build documentation", 0),
     BoolVariable("enableDemos", "Build demos", 0),
@@ -228,12 +228,10 @@ if "configure" in COMMAND_LINE_TARGETS:
 
   # If Debug is enabled, add -g:
   if env["enableDebug"]:
-    env.Append(CXXFLAGS=" -g")
+    env.Append(CXXFLAGS=" -DDEBUG -g")
 
-  if env["enableDebugMacro"]:
-    env.Append(CXXFLAGS=" -DDEBUG")
-  else:
-    env.Append(CXXFLAGS=" -DNDEBUG")
+  if not env["enableDebugUblas"]:
+    env.Append(CXXFLAGS=" -BOOST_UBLAS_NDEBUG")
 
   # if Optimization is requested, use -O3
   if env["enableOptimize"]:
