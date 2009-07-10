@@ -136,13 +136,13 @@ bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
   // Output iteration number and residual
   //FIXME: allow precision to be set for dolfin::cout<<
   std::cout.precision(3);
-  if(report && newton_iteration >0)
+  if(report && newton_iteration > 0)
     std::cout << "  Iteration " << newton_iteration
               << ":"
-              << " r = " << std::scientific << residual
-              << " (atol = " << std::scientific << atol << ")"
-              << " r = " << std::scientific << relative_residual
-              << " (rtol = " << std::scientific << rtol << ")"
+              << " r (abs) = " << std::scientific << residual
+              << " (tol = " << std::scientific << atol << ")"
+              << " r (rel) = " << std::scientific << relative_residual
+              << " (tol = " << std::scientific << rtol << ")"
               << std::endl;
 
   // Return true of convergence criterion is met
