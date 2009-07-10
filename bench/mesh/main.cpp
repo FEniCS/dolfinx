@@ -7,10 +7,10 @@
 #include <dolfin.h>
 
 // sleep is not defined in MinGW
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #define sleep(n) Sleep(1000 * n)
-#endif /* WIN32 */
+#endif /* _WIN32 */
 
 using namespace dolfin;
 
