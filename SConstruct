@@ -227,8 +227,6 @@ if "configure" in COMMAND_LINE_TARGETS:
   #env["SHFORTRANFLAGS"] = "-Wall -pipe -fPIC"
 
   # If Debug is enabled, add -g:
-  if env["enableDebug"]:
-    env.Append(CXXFLAGS=" -DDEBUG -g")
 
   if not env["enableDebugUblas"]:
     env.Append(CXXFLAGS=" -BOOST_UBLAS_NDEBUG")
@@ -236,6 +234,8 @@ if "configure" in COMMAND_LINE_TARGETS:
   # if Optimization is requested, use -O3
   if env["enableOptimize"]:
     env.Append(CXXFLAGS=" -O3")
+  elif env["enableDebug"]:
+    env.Append(CXXFLAGS=" -DDEBUG -g -O2")
   else:
     # FIXME: why are we optimizing when enableOptimize is False?
     env.Append(CXXFLAGS=" -O2")
