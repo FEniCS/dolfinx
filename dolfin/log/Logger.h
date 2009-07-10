@@ -80,9 +80,6 @@ namespace dolfin
     /// Helper function for dolfin_debug macro
     void __debug(std::string msg) const;
 
-    /// Helper function for dolfin_assert macro
-    void __assert(std::string msg) const;
-
   private:
 
     // Write message

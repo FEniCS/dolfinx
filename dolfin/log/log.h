@@ -10,6 +10,7 @@
 #define __LOG_H
 
 #include <string>
+#include <cassert>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -80,9 +81,6 @@ namespace dolfin
   // Helper function for dolfin_debug macro
   void __debug(std::string file, unsigned long line, std::string function, std::string format, ...);
 
-  // Helper function for dolfin_assert macro
-  void __dolfin_assert(std::string file, unsigned long line, std::string function, std::string format, ...);
-
 }
 
 // Debug macros (with varying number of arguments)
@@ -91,12 +89,7 @@ namespace dolfin
 #define dolfin_debug2(msg, a0, a1)     do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1); } while (false)
 #define dolfin_debug3(msg, a0, a1, a2) do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2); } while (false)
 
-// Assertion, only active if DEBUG is defined
-#ifdef DEBUG
-#define dolfin_assert(check) do { if ( !(check) ) { dolfin::__dolfin_assert(__FILE__, __LINE__, __FUNCTION__, "(" #check ")"); } } while (false)
-#else
-#define dolfin_assert(check)
-#endif
+#define dolfin_assert(check) assert(check)
 
 // Not implemented error, reporting function name and line number
 #define dolfin_not_implemented() do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, "Sorry, this function has not been implemented."); error("Not implemented"); } while (false)

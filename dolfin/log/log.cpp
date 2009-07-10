@@ -178,13 +178,4 @@ void dolfin::__debug(std::string file, unsigned long line,
   LogManager::logger.__debug(msg);
 }
 //-----------------------------------------------------------------------------
-void dolfin::__dolfin_assert(std::string file, unsigned long line,
-                      std::string function, std::string format, ...)
-{
-  read(buffer.get(), format);
-  std::ostringstream ost;
-  ost << file << ":" << line << " in " << function << "()";
-  std::string msg = std::string(buffer.get()) + " [at " + ost.str() + "]";
-  LogManager::logger.__assert(msg);
-}
-//-----------------------------------------------------------------------------
+

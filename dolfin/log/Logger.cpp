@@ -210,12 +210,6 @@ void Logger::__debug(std::string msg) const
   write(0, s);
 }
 //-----------------------------------------------------------------------------
-void Logger::__assert(std::string msg) const
-{
-  std::string s = std::string("*** Assertion ") + msg;
-  throw std::runtime_error(s);
-}
-//-----------------------------------------------------------------------------
 void Logger::write(int log_level, std::string msg) const
 {
   // Check log level
