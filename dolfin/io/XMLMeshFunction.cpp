@@ -178,7 +178,7 @@ void XMLMeshFunction::start_mesh_function(const xmlChar *name, const xmlChar **a
   switch ( mf_type )
   {
     case INT:
-      dolfin_assert(imf);
+      assert(imf);
       if ( _type.compare("int") != 0 )
         error("MeshFunction file of type '%s', expected 'int'.", _type.c_str());
       imf->init(dim);
@@ -186,7 +186,7 @@ void XMLMeshFunction::start_mesh_function(const xmlChar *name, const xmlChar **a
       break;
 
     case UINT:
-      dolfin_assert(umf);
+      assert(umf);
       if ( _type.compare("uint") != 0 )
         error("MeshFunction file of type '%s', expected 'uint'.", _type.c_str());
       umf->init(dim);
@@ -194,7 +194,7 @@ void XMLMeshFunction::start_mesh_function(const xmlChar *name, const xmlChar **a
       break;
 
     case DOUBLE:
-      dolfin_assert(dmf);
+      assert(dmf);
       if ( _type.compare("double") != 0 )
         error("MeshFunction file of type '%s', expected 'double'.", _type.c_str());
       dmf->init(dim);
@@ -220,19 +220,19 @@ void XMLMeshFunction::read_entity(const xmlChar *name, const xmlChar **attrs)
   switch ( mf_type )
   {
     case INT:
-      dolfin_assert(imf);
+      assert(imf);
       imf->set(index, parse_int(name, attrs, "value"));
 
       break;
 
      case UINT:
-      dolfin_assert(umf);
+      assert(umf);
       umf->set(index, parse_uint(name, attrs, "value"));
 
       break;
 
      case DOUBLE:
-      dolfin_assert(dmf);
+      assert(dmf);
       dmf->set(index, parse_float(name, attrs, "value"));
 
       break;

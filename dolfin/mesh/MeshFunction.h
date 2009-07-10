@@ -77,7 +77,7 @@ namespace dolfin
     }
 
     /// Return mesh associated with mesh function
-    const Mesh& mesh() const { dolfin_assert(_mesh); return *_mesh; }
+    const Mesh& mesh() const { assert(_mesh); return *_mesh; }
 
     /// Return topological dimension
     uint dim() const { return _dim; }
@@ -94,20 +94,20 @@ namespace dolfin
     /// Return value at given entity
     T& operator() (const MeshEntity& entity)
     {
-      dolfin_assert(_values);
-      dolfin_assert(&entity.mesh() == _mesh);
-      dolfin_assert(entity.dim() == _dim);
-      dolfin_assert(entity.index() < _size);
+      assert(_values);
+      assert(&entity.mesh() == _mesh);
+      assert(entity.dim() == _dim);
+      assert(entity.index() < _size);
       return _values[entity.index()];
     }
 
     /// Return value at given entity (const version)
     const T& operator() (const MeshEntity& entity) const
     {
-      dolfin_assert(_values);
-      dolfin_assert(&entity.mesh() == _mesh);
-      dolfin_assert(entity.dim() == _dim);
-      dolfin_assert(entity.index() < _size);
+      assert(_values);
+      assert(&entity.mesh() == _mesh);
+      assert(entity.dim() == _dim);
+      assert(entity.index() < _size);
       return _values[entity.index()];
     }
 
@@ -161,7 +161,7 @@ namespace dolfin
     {
       // Initialize mesh for entities of given dimension
       mesh.init(dim);
-      dolfin_assert(mesh.size(dim) == size);
+      assert(mesh.size(dim) == size);
 
       // Initialize data
       _mesh = &mesh;
@@ -175,43 +175,43 @@ namespace dolfin
     /// Get value at given entity
     inline T get(const MeshEntity& entity) const
     {
-      dolfin_assert(_values);
-      dolfin_assert(&entity.mesh() == _mesh);
-      dolfin_assert(entity.dim() == _dim);
-      dolfin_assert(entity.index() < _size);
+      assert(_values);
+      assert(&entity.mesh() == _mesh);
+      assert(entity.dim() == _dim);
+      assert(entity.index() < _size);
       return _values[entity.index()];
     }
 
     /// Get value at given entity
     inline T get(uint index) const
     {
-      dolfin_assert(_values);
-      dolfin_assert(index < _size);
+      assert(_values);
+      assert(index < _size);
       return _values[index];
     }
 
     /// Set value at given entity
     inline void set(const MeshEntity& entity, const T& value)
     {
-      dolfin_assert(_values);
-      dolfin_assert(&entity.mesh() == _mesh);
-      dolfin_assert(entity.dim() == _dim);
-      dolfin_assert(entity.index() < _size);
+      assert(_values);
+      assert(&entity.mesh() == _mesh);
+      assert(entity.dim() == _dim);
+      assert(entity.index() < _size);
       _values[entity.index()] = value;
     }
 
     /// Set value at given entity
     inline void set(uint index, const T& value)
     {
-      dolfin_assert(_values);
-      dolfin_assert(index < _size);
+      assert(_values);
+      assert(index < _size);
       _values[index] = value;
     }
 
     /// Set all values to given value
     inline void set_all(const T& value)
     {
-      dolfin_assert(_values);
+      assert(_values);
       for (uint i = 0; i < _size; i++)
         _values[i] = value;
     }

@@ -226,14 +226,14 @@ namespace dolfin
   template <class Mat>
   uint uBLASMatrix<Mat>::size(uint dim) const
   {
-    dolfin_assert( dim < 2 );
+    assert( dim < 2 );
     return (dim == 0 ? A.Mat::size1() : A.Mat::size2());
   }
   //---------------------------------------------------------------------------
   template <class Mat>
   void uBLASMatrix<Mat>::getrow(uint row_idx, std::vector<uint>& columns, std::vector<double>& values) const
   {
-    dolfin_assert(row_idx < this->size(0));
+    assert(row_idx < this->size(0));
 
     // Reference to matrix row (throw away const-ness and trust uBLAS)
     ublas::matrix_row<Mat> row( *(const_cast<Mat*>(&A)) , row_idx);
@@ -252,11 +252,11 @@ namespace dolfin
   template <class Mat>
   void uBLASMatrix<Mat>::setrow(uint row_idx, const std::vector<uint>& columns, const std::vector<double>& values)
   {
-    dolfin_assert(columns.size() == values.size());
-    dolfin_assert(row_idx < this->size(0));
+    assert(columns.size() == values.size());
+    assert(row_idx < this->size(0));
 
     ublas::matrix_row<Mat> row(A, row_idx);
-    dolfin_assert(columns.size() <= row.size());
+    assert(columns.size() <= row.size());
 
     row *= 0;
     for(uint i = 0; i < columns.size(); i++)
@@ -318,7 +318,7 @@ namespace dolfin
   void uBLASMatrix<Mat>::solveInPlace(uBLASVector& x, const uBLASVector& b)
   {
     const uint M = A.size1();
-    dolfin_assert(M == b.size());
+    assert(M == b.size());
 
     // Initialise solution vector
     if( x.vec().size() != M )
@@ -333,7 +333,7 @@ namespace dolfin
   void uBLASMatrix<Mat>::invert()
   {
     const uint M = A.size1();
-    dolfin_assert(M == A.size2());
+    assert(M == A.size2());
 
     // Create indentity matrix
     Mat X(M, M);
@@ -510,7 +510,7 @@ namespace dolfin
   void uBLASMatrix<Mat>::solveInPlace(B& X)
   {
     const uint M = A.size1();
-    dolfin_assert( M == A.size2() );
+    assert( M == A.size2() );
 
     // Create permutation matrix
     ublas::permutation_matrix<std::size_t> pmatrix(M);

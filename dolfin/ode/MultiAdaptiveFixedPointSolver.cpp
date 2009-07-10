@@ -58,7 +58,7 @@ bool MultiAdaptiveFixedPointSolver::retry()
     return false;
 
   // Otherwise, use damping
-  dolfin_assert(dfdu == 0);
+  assert(dfdu == 0);
   diagonal_newton_damping = true;
   dfdu = new real[ts.N];
   for (uint i = 0; i < ts.N; i++)

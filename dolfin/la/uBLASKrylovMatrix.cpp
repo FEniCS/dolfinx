@@ -19,8 +19,8 @@ void uBLASKrylovMatrix::solve(uBLASVector& x, const uBLASVector& b)
   // Check dimensions
   const uint M  = size(0);
   const uint N  = size(1);
-  dolfin_assert(M == N);
-  dolfin_assert(M == b.size());
+  assert(M == N);
+  assert(M == b.size());
 
   // Initialize temporary data if not already done
   if ( !AA )

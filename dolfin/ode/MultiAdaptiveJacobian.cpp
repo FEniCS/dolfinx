@@ -215,8 +215,8 @@ void MultiAdaptiveJacobian::cg_mult(const uBLASVector& x, uBLASVector& y) const
 	  {
 	    const double tau = (a0 + k0* to_double(method.qpoint(m))  - a1) / k1;
 	    const double tmp1 = to_double( method.nweight(n, m) );
-	    dolfin_assert(tau >= -real_epsilon());
-	    dolfin_assert(tau <= 1.0 + real_epsilon());
+	    assert(tau >= -real_epsilon());
+	    assert(tau <= 1.0 + real_epsilon());
 
 	    // Add dependency to dof of initial value if any
 	    const int ep = ts.ee[e1];
@@ -250,7 +250,7 @@ void MultiAdaptiveJacobian::cg_mult(const uBLASVector& x, uBLASVector& y) const
     // Compute number of such dependencies for each nodal point
     const uint end = ( e0 < (ts.ne - 1) ? ts.ed[e0 + 1] : ts.nd );
     const uint ndep = (end - d) / method.nsize();
-    dolfin_assert(ndep * method.nsize() == (end - d));
+    assert(ndep * method.nsize() == (end - d));
 
     // Iterate over quadrature points of current element
     for (uint m = 1; m < method.qsize(); m++)
@@ -422,7 +422,7 @@ void MultiAdaptiveJacobian::dg_mult(const uBLASVector& x, uBLASVector& y) const
     // Compute number of such dependencies for each nodal point
     const uint end = ( e0 < (ts.ne - 1) ? ts.ed[e0 + 1] : ts.nd );
     const uint ndep = (end - d) / method.nsize();
-    dolfin_assert(ndep * method.nsize() == (end - d));
+    assert(ndep * method.nsize() == (end - d));
 
     // Iterate over quadrature points of current element
     for (uint m = 0; m < method.qsize(); m++)

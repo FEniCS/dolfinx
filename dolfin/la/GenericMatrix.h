@@ -36,7 +36,7 @@ namespace dolfin
 
     /// Resize tensor with given dimensions
     virtual void resize(uint rank, const uint* dims)
-    { dolfin_assert(rank == 2); resize(dims[0], dims[1]); }
+    { assert(rank == 2); resize(dims[0], dims[1]); }
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;

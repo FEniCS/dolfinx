@@ -56,8 +56,8 @@ dolfin::uint LocalMeshData::local_vertex_number(uint global_vertex_number) const
   uint start;
   uint stop;
   initial_vertex_range(start, stop);
-  dolfin_assert(global_vertex_number >= start);
-  dolfin_assert(global_vertex_number <= stop);
+  assert(global_vertex_number >= start);
+  assert(global_vertex_number <= stop);
   return global_vertex_number - start;
 }
 //-----------------------------------------------------------------------------

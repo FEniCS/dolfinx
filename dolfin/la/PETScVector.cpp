@@ -103,7 +103,7 @@ void PETScVector::resize(uint N)
     info("Local range is [%d, %d].", range.first, range.second);
 
     const uint n = range.second - range.first;
-    dolfin_assert(n > 0);
+    assert(n > 0);
     VecCreateMPI(PETSC_COMM_WORLD, n, N, x.get());
   }
 }
@@ -116,7 +116,7 @@ PETScVector* PETScVector::copy() const
 //-----------------------------------------------------------------------------
 void PETScVector::get(double* values) const
 {
-  dolfin_assert(x);
+  assert(x);
 
   int m = static_cast<int>(size());
   int* rows = new int[m];
@@ -130,7 +130,7 @@ void PETScVector::get(double* values) const
 //-----------------------------------------------------------------------------
 void PETScVector::set(double* values)
 {
-  dolfin_assert(x);
+  assert(x);
 
   int m = static_cast<int>(size());
   int* rows = new int[m];
@@ -144,7 +144,7 @@ void PETScVector::set(double* values)
 //-----------------------------------------------------------------------------
 void PETScVector::add(double* values)
 {
-  dolfin_assert(x);
+  assert(x);
 
   int m = static_cast<int>(size());
   int* rows = new int[m];
@@ -158,34 +158,34 @@ void PETScVector::add(double* values)
 //-----------------------------------------------------------------------------
 void PETScVector::get(double* block, uint m, const uint* rows) const
 {
-  dolfin_assert(x);
+  assert(x);
   VecGetValues(*x, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), block);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set(const double* block, uint m, const uint* rows)
 {
-  dolfin_assert(x);
+  assert(x);
   VecSetValues(*x, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), block,
                INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add(const double* block, uint m, const uint* rows)
 {
-  dolfin_assert(x);
+  assert(x);
   VecSetValues(*x, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), block,
                ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::apply()
 {
-  dolfin_assert(x);
+  assert(x);
   VecAssemblyBegin(*x);
   VecAssemblyEnd(*x);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::zero()
 {
-  dolfin_assert(x);
+  assert(x);
   double a = 0.0;
   VecSet(*x, a);
 }
@@ -206,7 +206,7 @@ const GenericVector& PETScVector::operator= (const GenericVector& v)
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (const PETScVector& v)
 {
-  dolfin_assert(v.x);
+  assert(v.x);
 
   // Check for self-assignment
   if (this != &v)
@@ -219,7 +219,7 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator= (double a)
 {
-  dolfin_assert(x);
+  assert(x);
   VecSet(*x, a);
   return *this;
 }
@@ -238,17 +238,17 @@ const PETScVector& PETScVector::operator-= (const GenericVector& x)
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator*= (const double a)
 {
-  dolfin_assert(x);
+  assert(x);
   VecScale(*x, a);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator*= (const GenericVector& y)
 {
-  dolfin_assert(x);
+  assert(x);
   
   const PETScVector& v = y.down_cast<PETScVector>();
-  dolfin_assert(v.x);
+  assert(v.x);
 
   if (size() != v.size())
     error("The vectors must be of the same size.");  
@@ -259,8 +259,8 @@ const PETScVector& PETScVector::operator*= (const GenericVector& y)
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator/= (const double a)
 {
-  dolfin_assert(x);
-  dolfin_assert(a != 0.0);
+  assert(x);
+  assert(a != 0.0);
 
   const double b = 1.0/a;
   VecScale(*x, b);
@@ -269,10 +269,10 @@ const PETScVector& PETScVector::operator/= (const double a)
 //-----------------------------------------------------------------------------
 double PETScVector::inner(const GenericVector& y) const
 {
-  dolfin_assert(x);
+  assert(x);
 
   const PETScVector& v = y.down_cast<PETScVector>();
-  dolfin_assert(v.x);
+  assert(v.x);
 
   double a;
   VecDot(*(v.x), *x, &a);
@@ -281,10 +281,10 @@ double PETScVector::inner(const GenericVector& y) const
 //-----------------------------------------------------------------------------
 void PETScVector::axpy(double a, const GenericVector& y)
 {
-  dolfin_assert(x);
+  assert(x);
 
   const PETScVector& v = y.down_cast<PETScVector>();
-  dolfin_assert(v.x);
+  assert(v.x);
 
   if (size() != v.size())
     error("The vectors must be of the same size.");
@@ -294,7 +294,7 @@ void PETScVector::axpy(double a, const GenericVector& y)
 //-----------------------------------------------------------------------------
 double PETScVector::norm(std::string norm_type) const
 {
-  dolfin_assert(x);
+  assert(x);
   if (norm_types.count(norm_type) == 0)
     error("Norm type for PETScVector unknown.");
 
@@ -305,7 +305,7 @@ double PETScVector::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 double PETScVector::min() const
 {
-  dolfin_assert(x);
+  assert(x);
 
   double value = 0.0;
   int position = 0;
@@ -315,7 +315,7 @@ double PETScVector::min() const
 //-----------------------------------------------------------------------------
 double PETScVector::max() const
 {
-  dolfin_assert(x);
+  assert(x);
 
   double value = 0.0;
   int position = 0;
@@ -325,7 +325,7 @@ double PETScVector::max() const
 //-----------------------------------------------------------------------------
 double PETScVector::sum() const
 {
-  dolfin_assert(x);
+  assert(x);
 
   double value = 0.0;
   VecSum(*x, &value);

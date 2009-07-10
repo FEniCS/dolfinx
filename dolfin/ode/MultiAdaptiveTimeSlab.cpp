@@ -143,8 +143,8 @@ bool MultiAdaptiveTimeSlab::shift(bool end)
   {
     // Get last element of component
     const int e = elast[i];
-    dolfin_assert(e != -1);
-    dolfin_assert(sb[es[e]] == _b);
+    assert(e != -1);
+    assert(sb[es[e]] == _b);
 
     // Get end-time value of component
     const int j = e * method->nsize();
@@ -199,7 +199,7 @@ real MultiAdaptiveTimeSlab::usample(uint i, real t)
 {
   // Get element
   const int e = elast[i];
-  dolfin_assert(e != -1);
+  assert(e != -1);
 
   // Get element data
   const uint s = es[e];
@@ -224,7 +224,7 @@ real MultiAdaptiveTimeSlab::ksample(uint i, real t)
 {
   // Get element
   const int e = elast[i];
-  dolfin_assert(e != -1);
+  assert(e != -1);
 
   // Get element data
   const uint s = es[e];
@@ -255,8 +255,8 @@ real MultiAdaptiveTimeSlab::rsample(uint i, real t)
   {
     // Get last element of component
     const int e = elast[pos];
-    dolfin_assert(e != -1);
-    dolfin_assert(sb[es[e]] == _b);
+    assert(e != -1);
+    assert(sb[es[e]] == _b);
 
     // Get end-time value of component
     const int j = e * method->nsize();
@@ -267,7 +267,7 @@ real MultiAdaptiveTimeSlab::rsample(uint i, real t)
 
   // Get last element of component
   const int e = elast[i];
-  dolfin_assert(e != -1);
+  assert(e != -1);
 
   // Get element data
   const uint s = es[e];
@@ -362,7 +362,7 @@ real MultiAdaptiveTimeSlab::createTimeSlab(real a, real b, uint offset)
 //-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::create_s(real a0, real b0, uint offset, uint end)
 {
-  dolfin_assert(size_s.next < size_s.size);
+  assert(size_s.next < size_s.size);
 
   // Get next available position
   uint pos = size_s.next++;
@@ -380,7 +380,7 @@ void MultiAdaptiveTimeSlab::create_s(real a0, real b0, uint offset, uint end)
   {
     const uint index = partition.index(n);
     const int element = elast[index];
-    dolfin_assert(element != -1);
+    assert(element != -1);
 
     // Count number of dependencies from element
     size_d.next += count_dependencies(index, b0);
@@ -395,7 +395,7 @@ void MultiAdaptiveTimeSlab::create_s(real a0, real b0, uint offset, uint end)
 //-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::create_e(uint index, uint subslab, real a, real b)
 {
-  dolfin_assert(size_e.next < size_e.size);
+  assert(size_e.next < size_e.size);
 
   // Get next available position
   uint pos = size_e.next++;
@@ -422,7 +422,7 @@ void MultiAdaptiveTimeSlab::create_e(uint index, uint subslab, real a, real b)
 //-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::create_j(uint index)
 {
-  dolfin_assert((size_j.next + method->nsize() - 1) < size_j.size);
+  assert((size_j.next + method->nsize() - 1) < size_j.size);
 
   // Get next available position
   uint pos = size_j.next;
@@ -498,7 +498,7 @@ void MultiAdaptiveTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0
 	    break;
 	  }
 	}
-	dolfin_assert(found);
+	assert(found);
       }
     }
   }
@@ -875,7 +875,7 @@ void MultiAdaptiveTimeSlab::cg_feval(real* f, uint s0, uint e0, uint i0,
   // Compute number of such dependencies for each nodal point
   const uint end = ( e0 < (ne - 1) ? ed[e0 + 1] : nd );
   const uint ndep = (end - d) / nn;
-  dolfin_assert(ndep * nn == (end - d));
+  assert(ndep * nn == (end - d));
 
   // Evaluate the right-hand side at all quadrature points but the first
   for (uint m = 1; m < method->qsize(); m++)
@@ -923,7 +923,7 @@ void MultiAdaptiveTimeSlab::cg_feval(real* f, uint s0, uint e0, uint i0,
     {
       // Get element
       const int e1 = de[d++];
-      dolfin_assert(e1 != -1);
+      assert(e1 != -1);
 
       // Get initial value for element
       const int ep = ee[e1];
@@ -960,7 +960,7 @@ void MultiAdaptiveTimeSlab::dg_feval(real* f, uint s0, uint e0, uint i0,
   // Compute number of such dependencies for each nodal point
   const uint end = ( e0 < (ne - 1) ? ed[e0 + 1] : nd );
   const uint ndep = (end - d) / nn;
-  dolfin_assert(ndep * nn == (end - d));
+  assert(ndep * nn == (end - d));
 
   // Evaluate the right-hand side at all quadrature points
   for (uint m = 0; m < method->qsize(); m++)
@@ -1005,7 +1005,7 @@ void MultiAdaptiveTimeSlab::dg_feval(real* f, uint s0, uint e0, uint i0,
     {
       // Get element
       const int e1 = de[d++];
-      dolfin_assert(e1 != -1);
+      assert(e1 != -1);
 
       // Interpolate value from smaller element
       const uint i1 = ei[e1];

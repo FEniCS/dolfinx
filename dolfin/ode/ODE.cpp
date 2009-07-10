@@ -223,7 +223,7 @@ void ODE::sparse()
 //-----------------------------------------------------------------------------
 void ODE::solve()
 {
-  dolfin_assert(!time_stepper);
+  assert(!time_stepper);
 
   // Solve ODE on entire time interval
   ODESolver ode_solver(*this);
@@ -232,7 +232,7 @@ void ODE::solve()
 //-----------------------------------------------------------------------------
 void ODE::solve(ODESolution& u)
 {
-  dolfin_assert(!time_stepper);
+  assert(!time_stepper);
 
   // Solve ODE on entire time interval
   ODESolver ode_solver(*this);

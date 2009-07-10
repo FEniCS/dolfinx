@@ -103,7 +103,7 @@ MeshFunction<dolfin::uint>* MeshData::create_mesh_function(std::string name)
 
   // Create new data
   MeshFunction<uint>* f = new MeshFunction<uint>(mesh);
-  dolfin_assert(f);
+  assert(f);
 
   // Add to map
   mesh_functions[name] = f;

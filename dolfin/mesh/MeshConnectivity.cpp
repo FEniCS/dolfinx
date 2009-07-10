@@ -108,16 +108,16 @@ void MeshConnectivity::init(std::vector<uint>& num_connections)
 //-----------------------------------------------------------------------------
 void MeshConnectivity::set(uint entity, uint connection, uint pos)
 {
-  dolfin_assert(entity < num_entities);
-  dolfin_assert(pos < offsets[entity + 1] - offsets[entity]);
+  assert(entity < num_entities);
+  assert(pos < offsets[entity + 1] - offsets[entity]);
 
   connections[offsets[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::set(uint entity, const std::vector<uint>& connections)
 {
-  dolfin_assert(entity < num_entities);
-  dolfin_assert(connections.size() == offsets[entity + 1] - offsets[entity]);
+  assert(entity < num_entities);
+  assert(connections.size() == offsets[entity + 1] - offsets[entity]);
 
   // Copy data
   for (uint i = 0; i < connections.size(); i++)
@@ -126,8 +126,8 @@ void MeshConnectivity::set(uint entity, const std::vector<uint>& connections)
 //-----------------------------------------------------------------------------
 void MeshConnectivity::set(uint entity, uint* connections)
 {
-  dolfin_assert(entity < num_entities);
-  dolfin_assert(connections);
+  assert(entity < num_entities);
+  assert(connections);
 
   // Copy data
   const uint num_connections = offsets[entity + 1] - offsets[entity];

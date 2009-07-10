@@ -111,8 +111,8 @@ dolfin::uint PETScKrylovMatrix::size(uint dim) const
   int M = 0;
   int N = 0;
   MatGetSize(A, &M, &N);
-  dolfin_assert(M >= 0);
-  dolfin_assert(N >= 0);
+  assert(M >= 0);
+  assert(N >= 0);
 
   return (dim == 0 ? static_cast<uint>(M) : static_cast<uint>(N));
 }

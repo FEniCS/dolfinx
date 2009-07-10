@@ -39,19 +39,19 @@ IntersectionDetector::~IntersectionDetector()
 //-----------------------------------------------------------------------------
 void IntersectionDetector::intersection(const Point& p, std::vector<uint>& cells)
 {
-  dolfin_assert(gts);
+  assert(gts);
   gts->intersection(p, cells);
 }
 //-----------------------------------------------------------------------------
 void IntersectionDetector::intersection(const Point& p0, const Point& p1, std::vector<uint>& cells)
 {
-  dolfin_assert(gts);
+  assert(gts);
   gts->intersection(p0, p1, cells);
 }
 //-----------------------------------------------------------------------------
 void IntersectionDetector::intersection(const Cell& c, std::vector<uint>& cells)
 {
-  dolfin_assert(gts);
+  assert(gts);
   gts->intersection(c, cells);
 }
 //-----------------------------------------------------------------------------
@@ -159,7 +159,7 @@ void IntersectionDetector::compute_polygon(const Mesh& mesh1,
                                            const Cell& c0,
                                            const std::vector<uint>& intersections) const
 {
-  dolfin_assert(intersections.size() > 0);
+  assert(intersections.size() > 0);
 
   // Can only handle triangles and edges
   if (c0.mesh().topology().dim() != 2)

@@ -282,7 +282,7 @@ void MeshEditor::add_higher_order_cell_data(uint c, uint v0, uint v1, uint v2,
 void MeshEditor::close(bool order)
 {
   // Order mesh if requested
-  dolfin_assert(mesh);
+  assert(mesh);
   if (order && !mesh->ordered())
     mesh->order();
 
@@ -414,9 +414,9 @@ void MeshEditor::compute_boundary_indicators()
   if (!facet_cells || !facet_numbers)
     error("Mesh has boundary indicators, but missing data for \"boundary facet cells\" and \"boundary facet numbers\".");
   const uint num_facets = facet_cells->size();
-  dolfin_assert(facet_numbers->size() == num_facets);
-  dolfin_assert(indicators->size() == num_facets);
-  dolfin_assert(num_facets > 0);
+  assert(facet_numbers->size() == num_facets);
+  assert(indicators->size() == num_facets);
+  assert(num_facets > 0);
 
   // Create mesh function "exterior_facet_domains"
   MeshFunction<uint>* exterior_facet_domains =

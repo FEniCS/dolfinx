@@ -26,7 +26,7 @@ namespace dolfin
   template <typename T>
   void distribute(std::vector<T>& values, std::vector<uint>& partition)
   {
-    dolfin_assert(values.size() == partition.size());
+    assert(values.size() == partition.size());
 
     // Get number of processes and process number
     const uint num_processes = MPI::num_processes();
@@ -38,7 +38,7 @@ namespace dolfin
     {
       // Get process number data should be sent to
       const uint p = partition[i];
-      dolfin_assert(p < send_data.size());
+      assert(p < send_data.size());
 
       // Append data to array for process p
       send_data[p].push_back(values[i]);
@@ -68,8 +68,8 @@ namespace dolfin
     MPI_Allreduce(&send_buffer_size, &recv_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, MPI_COMM_WORLD);
 
     // Allocate memory for send and receive buffers
-    // dolfin_assert(send_buffer_size > 0);
-    // dolfin_assert(recv_buffer_size > 0);
+    // assert(send_buffer_size > 0);
+    // assert(recv_buffer_size > 0);
     T* send_buffer = new T[send_buffer_size];
     T* recv_buffer = new T[recv_buffer_size];
 
@@ -91,7 +91,7 @@ namespace dolfin
                                                recv_buffer, recv_buffer_size,       source);
 
       // Copy data from receive buffer
-      dolfin_assert(num_received <= recv_buffer_size);
+      assert(num_received <= recv_buffer_size);
       for (uint j = 0; j < num_received; j++)
       {
         values.push_back(recv_buffer[j]);

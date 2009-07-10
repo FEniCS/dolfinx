@@ -16,8 +16,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Method::Method(unsigned int q, unsigned int nq, unsigned int nn)
 {
-  dolfin_assert(nq > 0);
-  dolfin_assert(nn > 0);
+  assert(nq > 0);
+  assert(nn > 0);
 
   this->q = q;
   this->nq = nq;

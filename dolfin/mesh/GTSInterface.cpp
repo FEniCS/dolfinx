@@ -190,7 +190,7 @@ GtsBBox* GTSInterface::create_box(const Cell& cell)
 //-----------------------------------------------------------------------------
 void GTSInterface::buildCellTree()
 {
-  dolfin_assert(tree == 0);
+  assert(tree == 0);
 
   // Build list of bounding boxes for cells
   GSList* bboxes = 0;

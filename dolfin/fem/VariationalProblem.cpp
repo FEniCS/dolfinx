@@ -159,7 +159,7 @@ NewtonSolver& VariationalProblem::newton_solver()
     _newton_solver->parameters.update(parameters["newton_solver"]);
   }
 
-  dolfin_assert(_newton_solver);
+  assert(_newton_solver);
   return *_newton_solver;
 }
 //-----------------------------------------------------------------------------
@@ -170,7 +170,7 @@ void VariationalProblem::solve_linear(Function& u)
   // Set function space if missing
   if (!u.has_function_space())
   {
-    dolfin_assert(a._function_spaces.size() == 2);
+    assert(a._function_spaces.size() == 2);
     u._function_space = a._function_spaces[1];
   }
 
@@ -244,7 +244,7 @@ void VariationalProblem::solve_nonlinear(Function& u)
   // Set function space if missing
   if (!u.has_function_space())
   {
-    dolfin_assert(a._function_spaces.size() == 2);
+    assert(a._function_spaces.size() == 2);
     u._function_space = a._function_spaces[1];
   }
 

@@ -129,8 +129,8 @@ void dGqMethod::compute_quadrature()
 //-----------------------------------------------------------------------------
 void dGqMethod::compute_basis()
 {
-  dolfin_assert(!trial);
-  dolfin_assert(!test);
+  assert(!trial);
+  assert(!test);
 
   // Compute Lagrange basis for trial space
   trial = new Lagrange(q);

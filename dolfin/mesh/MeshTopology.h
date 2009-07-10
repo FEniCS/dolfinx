@@ -45,7 +45,7 @@ namespace dolfin
 
     /// Return number of entities for given dimension
     inline uint size(uint dim) const
-    { dolfin_assert(dim <= _dim); return num_entities[dim]; }
+    { assert(dim <= _dim); return num_entities[dim]; }
 
     /// Clear all data
     void clear();
@@ -58,11 +58,11 @@ namespace dolfin
 
     /// Return connectivity for given pair of topological dimensions
     inline dolfin::MeshConnectivity& operator() (uint d0, uint d1)
-    { dolfin_assert(d0 <= _dim && d1 <= _dim); return connectivity[d0][d1]; }
+    { assert(d0 <= _dim && d1 <= _dim); return connectivity[d0][d1]; }
 
     /// Return connectivity for given pair of topological dimensions
     inline const dolfin::MeshConnectivity& operator() (uint d0, uint d1) const
-    { dolfin_assert(d0 <= _dim && d1 <= _dim); return connectivity[d0][d1]; }
+    { assert(d0 <= _dim && d1 <= _dim); return connectivity[d0][d1]; }
 
     /// Display data
     void disp() const;

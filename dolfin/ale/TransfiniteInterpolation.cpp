@@ -25,8 +25,8 @@ void TransfiniteInterpolation::move(Mesh& mesh, Mesh& new_boundary, Interpolatio
   // Get vertex and cell maps
   const MeshFunction<uint>* vertex_map = new_boundary.data().mesh_function("vertex map");
   const MeshFunction<uint>* cell_map   = new_boundary.data().mesh_function("cell map");
-  dolfin_assert(vertex_map);
-  dolfin_assert(cell_map);
+  assert(vertex_map);
+  assert(cell_map);
 
   // Extract old coordinates
   const uint dim = mesh.geometry().dim();

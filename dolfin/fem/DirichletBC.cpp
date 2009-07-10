@@ -269,7 +269,7 @@ void DirichletBC::check(GenericMatrix* A,
                         GenericVector* b,
                         const GenericVector* x) const
 {
-  dolfin_assert(V);
+  assert(V);
 
   // Check matrix and vector dimensions
   if (A && x && A->size(0) != x->size())
@@ -298,7 +298,7 @@ void DirichletBC::check(GenericMatrix* A,
 //-----------------------------------------------------------------------------
 void DirichletBC::init_from_sub_domain(const SubDomain& sub_domain)
 {
-  dolfin_assert(facets.size() == 0);
+  assert(facets.size() == 0);
 
   // FIXME: This can be made more efficient, we should be able to
   // FIXME: extract the facets without first creating a MeshFunction on
@@ -326,7 +326,7 @@ void DirichletBC::init_from_sub_domain(const SubDomain& sub_domain)
 void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
                                           uint sub_domain)
 {
-  dolfin_assert(facets.size() == 0);
+  assert(facets.size() == 0);
 
   // Make sure we have the facet - cell connectivity
   const uint dim = V->mesh().topology().dim();
@@ -352,7 +352,7 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
 //-----------------------------------------------------------------------------
 void DirichletBC::init_from_mesh(uint sub_domain)
 {
-  dolfin_assert(facets.size() == 0);
+  assert(facets.size() == 0);
 
   // For this to work, the mesh *needs* to be ordered according to
   // the UFC ordering before it gets here. So reordering the mesh
@@ -386,8 +386,8 @@ void DirichletBC::init_from_mesh(uint sub_domain)
 
   // Get size
   const uint size = facet_cells->size();
-  dolfin_assert(size == facet_numbers->size());
-  dolfin_assert(size == indicators->size());
+  assert(size == facet_numbers->size());
+  assert(size == indicators->size());
 
   // Build set of boundary facets
   for (uint i = 0; i < size; i++)
@@ -542,7 +542,7 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
 void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
                                        BoundaryCondition::LocalData& data) const
 {
-  dolfin_assert(user_sub_domain);
+  assert(user_sub_domain);
 
   // Get mesh and dofmap
   const Mesh& mesh = V->mesh();

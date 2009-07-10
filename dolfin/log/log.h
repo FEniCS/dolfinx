@@ -89,8 +89,6 @@ namespace dolfin
 #define dolfin_debug2(msg, a0, a1)     do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1); } while (false)
 #define dolfin_debug3(msg, a0, a1, a2) do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2); } while (false)
 
-#define dolfin_assert(check) assert(check)
-
 // Not implemented error, reporting function name and line number
 #define dolfin_not_implemented() do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, "Sorry, this function has not been implemented."); error("Not implemented"); } while (false)
 

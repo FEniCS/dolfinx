@@ -54,7 +54,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _function_space(V),
     _vector(reference_to_no_delete_pointer(x))
 {
-  dolfin_assert(V->dofmap().global_dimension() == x.size());
+  assert(V->dofmap().global_dimension() == x.size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -63,7 +63,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _function_space(V),
     _vector(x)
 {
-  dolfin_assert(V->dofmap().global_dimension() == x->size());
+  assert(V->dofmap().global_dimension() == x->size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, GenericVector& x)
@@ -71,7 +71,7 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
     _function_space(reference_to_no_delete_pointer(V)),
     _vector(reference_to_no_delete_pointer(x))
 {
-  dolfin_assert(V.dofmap().global_dimension() == x.size());
+  assert(V.dofmap().global_dimension() == x.size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
@@ -172,7 +172,7 @@ const Function& Function::operator= (const Function& v)
   // Copy values or interpolate
   if (v.has_vector())
   {
-    dolfin_assert(_vector->size() == v._vector->size());
+    assert(_vector->size() == v._vector->size());
     *_vector = *v._vector;
   }
   else
@@ -196,7 +196,7 @@ SubFunction Function::operator[] (uint i) const
 //-----------------------------------------------------------------------------
 const FunctionSpace& Function::function_space() const
 {
-  dolfin_assert(_function_space);
+  assert(_function_space);
   return *_function_space;
 }
 //-----------------------------------------------------------------------------
@@ -211,7 +211,7 @@ GenericVector& Function::vector()
   if (!_vector)
     init();
 
-  dolfin_assert(_vector);
+  assert(_vector);
   return *_vector;
 }
 //-----------------------------------------------------------------------------
@@ -221,7 +221,7 @@ const GenericVector& Function::vector() const
   if (!_vector)
     error("Requesting vector of degrees of freedom for function, but vector has not been initialized.");
 
-  dolfin_assert(_vector);
+  assert(_vector);
   return *_vector;
 }
 //-----------------------------------------------------------------------------
@@ -243,19 +243,19 @@ bool Function::in(const FunctionSpace& V) const
 //-----------------------------------------------------------------------------
 dolfin::uint Function::geometric_dimension() const
 {
-  dolfin_assert(_function_space);
+  assert(_function_space);
   return _function_space->mesh().geometry().dim();
 }
 //-----------------------------------------------------------------------------
 void Function::eval(double* values, const double* x) const
 {
-  dolfin_assert(values);
-  dolfin_assert(x);
+  assert(values);
+  assert(x);
 
   // Use vector of dofs if available
   if (_vector)
   {
-    dolfin_assert(_function_space);
+    assert(_function_space);
     _function_space->eval(values, x, *this);
     return;
   }
@@ -266,13 +266,13 @@ void Function::eval(double* values, const double* x) const
 //-----------------------------------------------------------------------------
 void Function::eval(double* values, const Data& data) const
 {
-  dolfin_assert(values);
-  dolfin_assert(data.x);
+  assert(values);
+  assert(data.x);
 
   // Use vector of dofs if available
   if (_vector)
   {
-    dolfin_assert(_function_space);
+    assert(_function_space);
     _function_space->eval(values, data.x, *this);
     return;
   }
@@ -283,7 +283,7 @@ void Function::eval(double* values, const Data& data) const
 //-----------------------------------------------------------------------------
 void Function::eval(double* values, const double* x, const ufc::cell& ufc_cell, uint cell_index) const
 {
-  dolfin_assert(_function_space);
+  assert(_function_space);
   _function_space->eval(values, x, *this, ufc_cell, cell_index);
 }
 //-----------------------------------------------------------------------------
@@ -292,8 +292,8 @@ void Function::interpolate(double* coefficients,
                            uint cell_index,
                            int local_facet) const
 {
-  dolfin_assert(coefficients);
-  dolfin_assert(_function_space);
+  assert(coefficients);
+  assert(_function_space);
   interpolate(coefficients, *_function_space, ufc_cell, cell_index, local_facet);
 }
 //-----------------------------------------------------------------------------
@@ -303,7 +303,7 @@ void Function::interpolate(double* coefficients,
                            uint cell_index,
                            int local_facet) const
 {
-  dolfin_assert(coefficients);
+  assert(coefficients);
 
   // Either pick values or evaluate dof functionals
   if (in(V) && _vector)
@@ -339,15 +339,15 @@ void Function::interpolate(double* coefficients,
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Function& v)
 {
-  dolfin_assert(has_function_space());
-  dolfin_assert(v.has_function_space());
+  assert(has_function_space());
+  assert(v.has_function_space());
   function_space().interpolate(this->vector(), v, "non-matching");
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate_vertex_values(double* vertex_values) const
 {
-  dolfin_assert(vertex_values);
-  dolfin_assert(_function_space);
+  assert(vertex_values);
+  assert(_function_space);
   _function_space->interpolate_vertex_values(vertex_values, *this);
 }
 //-----------------------------------------------------------------------------
@@ -363,7 +363,7 @@ void Function::collect_global_dof_values(std::map<uint, double> dof_values) cons
   dof_values.clear();
 
   // Get mesh
-  dolfin_assert(_function_space);
+  assert(_function_space);
   const Mesh& mesh = _function_space->mesh();
 
   // Iterate over mesh and check which dofs are needed
@@ -408,7 +408,7 @@ void Function::interpolate()
 void Function::init()
 {
   // Get size
-  dolfin_assert(_function_space);
+  assert(_function_space);
   const uint N = _function_space->dofmap().global_dimension();
 
   // Create vector of dofs
@@ -420,7 +420,7 @@ void Function::init()
   }
 
   // Initialize vector of dofs
-  dolfin_assert(_vector);
+  assert(_vector);
   _vector->resize(N);
   _vector->zero();
 }

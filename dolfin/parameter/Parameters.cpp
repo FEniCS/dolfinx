@@ -87,7 +87,7 @@ void Parameters::add(std::string key, int value,
 
   // Set range
   Parameter* p = find_parameter(key);
-  dolfin_assert(p);
+  assert(p);
   p->set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
@@ -109,7 +109,7 @@ void Parameters::add(std::string key, double value,
 
   // Set range
   Parameter* p = find_parameter(key);
-  dolfin_assert(p);
+  assert(p);
   p->set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
@@ -143,7 +143,7 @@ void Parameters::add(std::string key, std::string value, std::set<std::string> r
 
   // Set range
   Parameter* p = find_parameter(key);
-  dolfin_assert(p);
+  assert(p);
   p->set_range(range);
 }
 //-----------------------------------------------------------------------------
@@ -157,7 +157,7 @@ void Parameters::add(std::string key, const char* value, std::set<std::string> r
 
   // Set range
   Parameter* p = find_parameter(key);
-  dolfin_assert(p);
+  assert(p);
   p->set_range(range);
 }
 //-----------------------------------------------------------------------------

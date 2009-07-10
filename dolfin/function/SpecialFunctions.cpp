@@ -154,8 +154,8 @@ SUPGStabilizer::SUPGStabilizer(const FunctionSpace& V, const Function& f, double
 //-----------------------------------------------------------------------------
 void SUPGStabilizer::eval(double* values, const Data& data) const
 {
-  dolfin_assert(values);
-  dolfin_assert(field);
+  assert(values);
+  assert(field);
   double field_norm = 0.0;
   double tau = 0.0;
   const double h = data.cell().diameter();

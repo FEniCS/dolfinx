@@ -54,7 +54,7 @@ Form::~Form()
 //-----------------------------------------------------------------------------
 dolfin::uint Form::rank() const
 {
-  dolfin_assert(_ufc_form);
+  assert(_ufc_form);
   return _ufc_form->rank();
 }
 //-----------------------------------------------------------------------------
@@ -80,13 +80,13 @@ const Mesh& Form::mesh() const
       error("Unable to extract mesh from form (nonmatching meshes for function spaces).");
 
   // Return first mesh
-  dolfin_assert(meshes[0]);
+  assert(meshes[0]);
   return *meshes[0];
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& Form::function_space(dolfin::uint i) const
 {
-  dolfin_assert(i < _function_spaces.size());
+  assert(i < _function_spaces.size());
   return *_function_spaces[i];
 }
 //-----------------------------------------------------------------------------
@@ -101,7 +101,7 @@ std::vector<const FunctionSpace*> Form::function_spaces() const
 //-----------------------------------------------------------------------------
 const Function& Form::coefficient(dolfin::uint i) const
 {
-  dolfin_assert(i < _coefficients.size());
+  assert(i < _coefficients.size());
   return *_coefficients[i];
 }
 //-----------------------------------------------------------------------------
@@ -131,7 +131,7 @@ std::string Form::coefficient_name(dolfin::uint i) const
 //-----------------------------------------------------------------------------
 const ufc::form& Form::ufc_form() const
 {
-  dolfin_assert(_ufc_form);
+  assert(_ufc_form);
   return *_ufc_form;
 }
 //-----------------------------------------------------------------------------
@@ -151,7 +151,7 @@ void Form::check() const
   for (uint i = 0; i < _function_spaces.size(); ++i)
   {
     std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
-    dolfin_assert(element.get());
+    assert(element.get());
     if (element->signature() != _function_spaces[i]->element().signature())
       error("Wrong type of function space for argument %d, form expects\n%s\nbut we got\n%s\n...",
         i, element->signature(), _function_spaces[i]->element().signature().c_str());
@@ -164,7 +164,7 @@ void Form::check() const
       error("Coefficient %d with name '%s' has not been defined.", i, coefficient_name(i).c_str());
 
     std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(_ufc_form->rank() + i));
-    dolfin_assert(element.get());
+    assert(element.get());
     if (element->signature() != _coefficients[i]->function_space().element().signature())
       error("Wrong type of function space for coefficient %d with name '%s', form expects\n%s\nbut we got\n%s\n...",
         i, coefficient_name(i).c_str(), element->signature(), _coefficients[i]->function_space().element().signature().c_str());

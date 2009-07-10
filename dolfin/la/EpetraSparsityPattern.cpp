@@ -79,7 +79,7 @@ uint EpetraSparsityPattern::size(uint i) const
   
   if (_rank == 2)
   {
-    dolfin_assert(epetra_graph);
+    assert(epetra_graph);
     if (i == 0)
       return epetra_graph->NumGlobalRows();
     else
@@ -120,7 +120,7 @@ void EpetraSparsityPattern::num_nonzeros_off_diagonal(uint* num_nonzeros) const
 //-----------------------------------------------------------------------------
 void EpetraSparsityPattern::apply()
 {
-  dolfin_assert(epetra_graph);
+  assert(epetra_graph);
 
   // Could employ eg. OptimizeStorage. Not sure if this is wanted,
   // the graph would then depend on the equations, not only the method.

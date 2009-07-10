@@ -95,8 +95,8 @@ void MeshTopology::init(uint dim)
 //-----------------------------------------------------------------------------
 void MeshTopology::init(uint dim, uint size)
 {
-  dolfin_assert(num_entities);
-  dolfin_assert(dim <= _dim);
+  assert(num_entities);
+  assert(dim <= _dim);
 
   num_entities[dim] = size;
 }

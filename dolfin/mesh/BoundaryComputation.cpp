@@ -74,7 +74,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh, BoundaryMesh& bound
   if (num_boundary_vertices > 0)
   {
     vertex_map = boundary.data().create_mesh_function("vertex map");
-    dolfin_assert(vertex_map);
+    assert(vertex_map);
     vertex_map->init(boundary, 0, num_boundary_vertices);
   }
 
@@ -83,7 +83,7 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh, BoundaryMesh& bound
   if (num_boundary_cells > 0)
   {
     cell_map = boundary.data().create_mesh_function("cell map");
-    dolfin_assert(cell_map);
+    assert(cell_map);
     cell_map->init(boundary, D - 1, num_boundary_cells);
   }
 
@@ -164,7 +164,7 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices, const Facet& face
     break;
   case CellType::triangle:
     {
-      dolfin_assert(facet.num_entities(0) == 2);
+      assert(facet.num_entities(0) == 2);
 
       Point p0 = mesh.geometry().point(facet.entities(0)[0]);
       Point p1 = mesh.geometry().point(facet.entities(0)[1]);
@@ -181,7 +181,7 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices, const Facet& face
     break;
   case CellType::tetrahedron:
     {
-      dolfin_assert(facet.num_entities(0) == 3);
+      assert(facet.num_entities(0) == 3);
 
       Point p0 = mesh.geometry().point(facet.entities(0)[0]);
       Point p1 = mesh.geometry().point(facet.entities(0)[1]);

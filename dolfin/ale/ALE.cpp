@@ -50,10 +50,10 @@ void ALE::move(Mesh& mesh0, Mesh& mesh1, ALEType method)
   MeshFunction<uint>* local_to_global_1  = mesh1.data().mesh_function("global vertex indices");
   MeshFunction<uint>* boundary_to_mesh_0 = boundary0.data().mesh_function("vertex map");
   MeshFunction<uint>* boundary_to_mesh_1 = boundary1.data().mesh_function("vertex map");
-  dolfin_assert(local_to_global_0);
-  dolfin_assert(local_to_global_1);
-  dolfin_assert(boundary_to_mesh_0);
-  dolfin_assert(boundary_to_mesh_1);
+  assert(local_to_global_0);
+  assert(local_to_global_1);
+  assert(boundary_to_mesh_0);
+  assert(boundary_to_mesh_1);
 
   // Build global-to-local vertex mapping for mesh
   std::map<uint, uint> global_to_local_0;

@@ -85,19 +85,19 @@ const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
 //-----------------------------------------------------------------------------
 const Mesh& FunctionSpace::mesh() const
 {
-  dolfin_assert(_mesh);
+  assert(_mesh);
   return *_mesh;
 }
 //-----------------------------------------------------------------------------
 const FiniteElement& FunctionSpace::element() const
 {
-  dolfin_assert(_element);
+  assert(_element);
   return *_element;
 }
 //-----------------------------------------------------------------------------
 const DofMap& FunctionSpace::dofmap() const
 {
-  dolfin_assert(_dofmap);
+  assert(_dofmap);
   return *_dofmap;
 }
 //-----------------------------------------------------------------------------
@@ -110,12 +110,12 @@ void FunctionSpace::eval(double* values,
                          const double* x,
                          const Function& v) const
 {
-  dolfin_assert(values);
-  dolfin_assert(x);
-  dolfin_assert(v.in(*this));
-  dolfin_assert(_mesh);
-  dolfin_assert(_element);
-  dolfin_assert(_dofmap);
+  assert(values);
+  assert(x);
+  assert(v.in(*this));
+  assert(_mesh);
+  assert(_element);
+  assert(_dofmap);
 
   // Initialize intersection detector if not done before
   if (!intersection_detector)
@@ -140,12 +140,12 @@ void FunctionSpace::eval(double* values,
                          const ufc::cell& ufc_cell,
                          uint cell_index) const
 {
-  dolfin_assert(values);
-  dolfin_assert(x);
-  dolfin_assert(v.in(*this));
-  dolfin_assert(_mesh);
-  dolfin_assert(_element);
-  dolfin_assert(_dofmap);
+  assert(values);
+  assert(x);
+  assert(v.in(*this));
+  assert(_mesh);
+  assert(_element);
+  assert(_dofmap);
 
   // Interpolate function to cell
   v.interpolate(scratch.coefficients, *this, ufc_cell, cell_index);
@@ -164,12 +164,12 @@ void FunctionSpace::eval(double* values,
 void FunctionSpace::interpolate(GenericVector& coefficients,
                                 const Function& v, std::string meshes) const
 {
-  dolfin_assert(_mesh);
-  dolfin_assert(_element);
-  dolfin_assert(_dofmap);
+  assert(_mesh);
+  assert(_element);
+  assert(_dofmap);
   
   if (meshes == "matching")
-    dolfin_assert(&v.function_space().mesh() == &mesh());
+    assert(&v.function_space().mesh() == &mesh());
   else if (meshes != "non-matching")
     error("Unknown mesh matching string %s in FunctionSpace::interpolate", meshes.c_str());
 
@@ -198,11 +198,11 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
 void FunctionSpace::interpolate_vertex_values(double* vertex_values,
                                               const Function& v) const
 {
-  dolfin_assert(vertex_values);
-  dolfin_assert(v.in(*this));
-  dolfin_assert(_mesh);
-  dolfin_assert(_element);
-  dolfin_assert(_dofmap);
+  assert(vertex_values);
+  assert(v.in(*this));
+  assert(_mesh);
+  assert(_element);
+  assert(_dofmap);
 
   // Local data for interpolation on each cell
   const uint num_cell_vertices = _mesh->type().num_vertices(_mesh->topology().dim());
@@ -239,9 +239,9 @@ void FunctionSpace::interpolate_vertex_values(double* vertex_values,
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 {
-  dolfin_assert(_mesh);
-  dolfin_assert(_element);
-  dolfin_assert(_dofmap);
+  assert(_mesh);
+  assert(_element);
+  assert(_dofmap);
 
   // Create unique identifier string for sub space
   std::ostringstream identifier;

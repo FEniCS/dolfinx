@@ -100,7 +100,7 @@ whenever you assume something about about a variable in your code,
 such as assuming that given input to a function is valid. \dolfin{}
 provides the macro \texttt{dolfin\_assert()} for creating assertions:
 \begin{code}
-dolfin_assert(check);
+assert(check);
 \end{code}
 This macro accepts a boolean expression and if the expression
 evaluates to false, an error message is displayed, including the
@@ -109,10 +109,10 @@ segmentation fault is raised (to enable easy attachment to a
 debugger). The following examples illustrate the use of
 \texttt{dolfin\_assert()}:
 \begin{code}
-dolfin_assert(i >= 0);
-dolfin_assert(i < n);
-dolfin_assert(cell.type() == Cell::triangle);
-dolfin_assert(cell.type() == Cell::tetrahedron);
+assert(i >= 0);
+assert(i < n);
+assert(cell.type() == Cell::triangle);
+assert(cell.type() == Cell::tetrahedron);
 \end{code}
 Note that assertions are only active when compiling
 \dolfin{} and your program with \texttt{DEBUG} defined (configure

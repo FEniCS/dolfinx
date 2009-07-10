@@ -136,7 +136,7 @@ void EqualityBC::apply(GenericMatrix& A,
 //-----------------------------------------------------------------------------
 void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
 {
-  dolfin_assert(equal_dofs.size() == 0);
+  assert(equal_dofs.size() == 0);
 
   // Get mesh and dofmap
   const Mesh& mesh = V->mesh();
@@ -191,7 +191,7 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
 //-----------------------------------------------------------------------------
 void EqualityBC::init_from_mesh(uint sub_domain)
 {
-  dolfin_assert(equal_dofs.size() == 0);
+  assert(equal_dofs.size() == 0);
 
   // Get data from MeshData
   std::vector<uint>* facet_cells   = const_cast<Mesh&>(V->mesh()).data().array("boundary facet cells");
@@ -217,8 +217,8 @@ void EqualityBC::init_from_mesh(uint sub_domain)
 
   // Get size
   const uint size = facet_cells->size();
-  dolfin_assert(size == facet_numbers->size());
-  dolfin_assert(size == indicators->size());
+  assert(size == facet_numbers->size());
+  assert(size == indicators->size());
 
   // Get mesh and dofmap
   const Mesh& mesh = V->mesh();

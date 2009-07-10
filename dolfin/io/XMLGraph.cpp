@@ -122,10 +122,10 @@ void XMLGraph::write(const Graph& graph, std::ostream& outfile, uint indentation
   const uint* vertex_weights = graph.vertex_weights();
 
   // Make sure data is fine
-  dolfin_assert(connections);
-  dolfin_assert(offsets);
-  dolfin_assert(edge_weights);
-  dolfin_assert(vertex_weights);
+  assert(connections);
+  assert(offsets);
+  assert(edge_weights);
+  assert(vertex_weights);
 
   // Get number of vertices
   const uint num_vertices = graph.num_vertices();

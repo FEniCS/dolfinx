@@ -32,7 +32,7 @@ namespace dolfin
 
     /// Resize tensor with given dimensions
     virtual void resize(uint rank, const uint* dims)
-    { dolfin_assert(rank == 1); resize(dims[0]); }
+    { assert(rank == 1); resize(dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
     inline void init(const GenericSparsityPattern& sparsity_pattern)
@@ -47,7 +47,7 @@ namespace dolfin
 
     /// Return size of given dimension
     virtual uint size(uint dim) const
-    { dolfin_assert(dim == 0); return size(); }
+    { assert(dim == 0); return size(); }
 
     /// Get block of values
     virtual void get(double* block, const uint* num_rows, const uint * const * rows) const

@@ -39,10 +39,10 @@ namespace dolfin
     ~Point() {};
 
     /// Return address of coordinate in direction i
-    inline double& operator[] (uint i) { dolfin_assert(i < 3); return _x[i]; }
+    inline double& operator[] (uint i) { assert(i < 3); return _x[i]; }
 
     /// Return coordinate in direction i
-    inline double operator[] (uint i) const { dolfin_assert(i < 3); return _x[i]; }
+    inline double operator[] (uint i) const { assert(i < 3); return _x[i]; }
 
     /// Return x-coordinate
     inline double x() const { return _x[0]; }

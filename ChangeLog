@@ -1,6 +1,6 @@
  - Remove SCons deprecation warnings
  - Memory leak fix in PETScKrylovSolver
- - Use C++ assert function in place of DOLFIN version
+ - Rename dolfin_assert -> assert and use C++ version
  - Fix debug/optimise flags
  - Remove AvgMeshSize, InvMeshSize, InvFacetArea from SpecialFunctions
  - Rename MeshSize -> CellSize

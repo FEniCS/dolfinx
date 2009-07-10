@@ -271,49 +271,49 @@ void XMLMap::start_map(const xmlChar *name, const xmlChar **attrs)
   std::string value_type = parse_string(name, attrs, "value_type");
 
   // Make sure key is an unsigned integer
-  dolfin_assert( key_type.compare("uint") == 0 );
+  assert( key_type.compare("uint") == 0 );
 
   // Initialize map
   switch ( mtype )
   {
     case INT:
-      dolfin_assert( value_type.compare("int") == 0 );
-      dolfin_assert(im);
+      assert( value_type.compare("int") == 0 );
+      assert(im);
       im->clear();
 
       break;
 
     case UINT:
-      dolfin_assert( value_type.compare("uint") == 0 );
-      dolfin_assert(um);
+      assert( value_type.compare("uint") == 0 );
+      assert(um);
       um->clear();
 
       break;
 
     case DOUBLE:
-      dolfin_assert( value_type.compare("double") == 0 );
-      dolfin_assert(dm);
+      assert( value_type.compare("double") == 0 );
+      assert(dm);
       dm->clear();
 
       break;
 
     case INT_ARRAY:
-      dolfin_assert( value_type.compare("array") == 0 );
-      dolfin_assert(iam);
+      assert( value_type.compare("array") == 0 );
+      assert(iam);
       iam->clear();
 
       break;
 
     case UINT_ARRAY:
-      dolfin_assert( value_type.compare("array") == 0 );
-      dolfin_assert(uam);
+      assert( value_type.compare("array") == 0 );
+      assert(uam);
       uam->clear();
 
       break;
 
     case DOUBLE_ARRAY:
-      dolfin_assert( value_type.compare("array") == 0 );
-      dolfin_assert(dam);
+      assert( value_type.compare("array") == 0 );
+      assert(dam);
       dam->clear();
 
       break;
@@ -331,7 +331,7 @@ void XMLMap::read_map_entry(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMap::read_int(const xmlChar *name, const xmlChar **attrs)
 {
-  dolfin_assert(im);
+  assert(im);
   if (! mtype == INT)
     error("Map of value type 'double' initialized, but value type in file is not.");
   (*im)[current_key] = parse_int(name, attrs, "value");
@@ -339,7 +339,7 @@ void XMLMap::read_int(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMap::read_uint(const xmlChar *name, const xmlChar **attrs)
 {
-  dolfin_assert(um);
+  assert(um);
   if (! mtype == UINT )
     error("Map of value type 'uint' initialized, but value type in file is not.");
   (*um)[current_key] = parse_uint(name, attrs, "value");
@@ -347,7 +347,7 @@ void XMLMap::read_uint(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMap::read_double(const xmlChar *name, const xmlChar **attrs)
 {
-  dolfin_assert(dm);
+  assert(dm);
   if (! mtype == DOUBLE)
     error("Map of value type 'double' initialized, but value type in file is not.");
   (*dm)[current_key] = parse_float(name, attrs, "value");

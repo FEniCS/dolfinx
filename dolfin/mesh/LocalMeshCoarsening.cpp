@@ -202,7 +202,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
 
   BoundaryMesh boundary(mesh);
   MeshFunction<uint>* bnd_vertex_map = boundary.data().mesh_function("vertex map");
-  dolfin_assert(bnd_vertex_map);
+  assert(bnd_vertex_map);
   for (VertexIterator v(boundary); !v.end(); ++v)
     vertex_boundary.set(bnd_vertex_map->get(v->index()),true);
 

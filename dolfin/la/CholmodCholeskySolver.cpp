@@ -57,9 +57,9 @@ dolfin::uint CholmodCholeskySolver::factorize(const GenericMatrix& A)
   std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A.data();
   const uint M   = A.size(0);
   const uint nnz = std::tr1::get<3>(data);
-  dolfin_assert(A.size(0) == A.size(1));
+  assert(A.size(0) == A.size(1));
 
-  dolfin_assert(nnz >= M);
+  assert(nnz >= M);
 
   // Initialise cholmod data
   // NOTE: Casting away const here

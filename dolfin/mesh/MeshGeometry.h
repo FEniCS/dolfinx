@@ -46,10 +46,10 @@ namespace dolfin
     inline uint size() const { return _size; }
 
     /// Return value of coordinate n in direction i
-    inline double& x(uint n, uint i) { dolfin_assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
+    inline double& x(uint n, uint i) { assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
 
     /// Return value of coordinate n in direction i
-    inline double x(uint n, uint i) const { dolfin_assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
+    inline double x(uint n, uint i) const { assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
 
     /// Return array of values for coordinate n
     inline double* x(uint n) { return coordinates + n*_dim; }

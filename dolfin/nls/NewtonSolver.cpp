@@ -45,9 +45,9 @@ NewtonSolver::~NewtonSolver()
 //-----------------------------------------------------------------------------
 dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVector& x)
 {
-  dolfin_assert(A);
-  dolfin_assert(b);
-  dolfin_assert(dx);
+  assert(A);
+  assert(b);
+  assert(dx);
 
   const uint maxiter = parameters("maximum_iterations");
 

@@ -126,10 +126,10 @@ namespace dolfin
     const MeshData& data() const { return _data; }
 
     /// Return mesh cell type
-    inline CellType& type() { dolfin_assert(_cell_type); return *_cell_type; }
+    inline CellType& type() { assert(_cell_type); return *_cell_type; }
 
     /// Return mesh cell type
-    inline const CellType& type() const { dolfin_assert(_cell_type); return *_cell_type; }
+    inline const CellType& type() const { assert(_cell_type); return *_cell_type; }
 
     /// Compute entities of given topological dimension and return number of entities
     uint init(uint dim) const;

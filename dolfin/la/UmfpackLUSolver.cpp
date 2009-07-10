@@ -64,9 +64,9 @@ dolfin::uint UmfpackLUSolver::factorize(const GenericMatrix& A)
   std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A.data();
   const uint M   = A.size(0);
   const uint nnz = std::tr1::get<3>(data);
-  dolfin_assert(A.size(0) == A.size(1));
+  assert(A.size(0) == A.size(1));
 
-  dolfin_assert(nnz >= M);
+  assert(nnz >= M);
 
   // Initialise umfpack data
   umfpack.init((const long int*) std::tr1::get<0>(data),
@@ -191,11 +191,11 @@ void UmfpackLUSolver::Umfpack::init_transpose(const long int* Ap, const long int
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::factorize()
 {
-  dolfin_assert(Rp);
-  dolfin_assert(Ri);
-  dolfin_assert(Rx);
-  dolfin_assert(!Symbolic);
-  dolfin_assert(!Numeric);
+  assert(Rp);
+  assert(Ri);
+  assert(Rx);
+  assert(!Symbolic);
+  assert(!Numeric);
 
   long int status;
 
@@ -218,10 +218,10 @@ void UmfpackLUSolver::Umfpack::factorize()
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::Umfpack::factorized_solve(double*x, const double* b, bool transpose) const
 {
-  dolfin_assert(Rp);
-  dolfin_assert(Ri);
-  dolfin_assert(Rx);
-  dolfin_assert(Numeric);
+  assert(Rp);
+  assert(Ri);
+  assert(Rx);
+  assert(Numeric);
 
   long int status;
   if(transpose)

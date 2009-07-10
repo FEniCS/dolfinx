@@ -35,7 +35,7 @@ dolfin::uint Partition::size() const
 //-----------------------------------------------------------------------------
 dolfin::uint Partition::index(uint i) const
 {
-  dolfin_assert(i < indices.size());
+  assert(i < indices.size());
   return indices[i];
 }
 //-----------------------------------------------------------------------------

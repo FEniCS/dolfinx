@@ -219,7 +219,7 @@ void XMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation_le
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     const uint* vertices = c->entities(0);
-    dolfin_assert(vertices);
+    assert(vertices);
     outfile << indent();
 
     switch ( cell_type )
@@ -379,8 +379,8 @@ void XMLMesh::read_mesh_entity(const xmlChar* name, const xmlChar** attrs)
   const uint index = parse_uint(name, attrs, "index");
 
   // Read and set value
-  dolfin_assert(f);
-  dolfin_assert(index < f->size());
+  assert(f);
+  assert(index < f->size());
   const uint value = parse_uint(name, attrs, "value");
   f->set(index, value);
 }

@@ -118,13 +118,13 @@ void XMLFile::push(XMLHandler* handler)
 //-----------------------------------------------------------------------------
 void XMLFile::pop()
 {
-  dolfin_assert( !handlers.empty() );
+  assert( !handlers.empty() );
   handlers.pop();
 }
 //-----------------------------------------------------------------------------
 XMLHandler* XMLFile:: top()
 {
-  dolfin_assert( !handlers.empty() );
+  assert( !handlers.empty() );
   return handlers.top();
 }
 //-----------------------------------------------------------------------------

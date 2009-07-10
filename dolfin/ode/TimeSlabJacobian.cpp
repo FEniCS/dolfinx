@@ -61,7 +61,7 @@ void TimeSlabJacobian::update()
 //-----------------------------------------------------------------------------
 const uBLASDenseMatrix& TimeSlabJacobian::matrix() const
 {
-  dolfin_assert(A.size(0) == ode.size());
+  assert(A.size(0) == ode.size());
   return A;
 }
 //-----------------------------------------------------------------------------

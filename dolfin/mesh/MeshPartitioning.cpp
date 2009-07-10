@@ -67,8 +67,8 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   // Get global vertex indices and overlap
   MeshFunction<uint>* global_vertex_indices = mesh.data().mesh_function("global entity indices 0");
   std::map<uint, std::vector<uint> >* overlap = mesh.data().vector_mapping("overlap");
-  dolfin_assert(global_vertex_indices);
-  dolfin_assert(overlap);
+  assert(global_vertex_indices);
+  assert(overlap);
 
   // Sort overlap
   for (std::map<uint, std::vector<uint> >::iterator it = (*overlap).begin(); it != (*overlap).end(); ++it)
@@ -271,7 +271,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     if (entity_processes.count(entity) > 0 )
     {
       std::vector<uint> common_processes = entity_processes[entity];
-      dolfin_assert(common_processes.size() > 0);
+      assert(common_processes.size() > 0);
       const uint max_proc = *(std::max_element(common_processes.begin(), common_processes.end()));
 
       if ( max_proc > process_number )
@@ -329,7 +329,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
 
   // Store number of global entities
   std::vector<uint>* num_global_entities = mesh.data().array("num global entities");
-  dolfin_assert(num_global_entities);
+  assert(num_global_entities);
   (*num_global_entities)[d] = num_global;
 
   // Number owned entities
@@ -349,7 +349,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     // Get entity index
     const uint e = (*it).second;
     const int entity_index = entity_indices[e];
-    dolfin_assert(entity_index != -1);
+    assert(entity_index != -1);
 
     // Get entity vertices (global vertex indices)
     const std::vector<uint>& entity = (*it).first;
@@ -443,7 +443,7 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
   int* eind = new int[num_local_cells * num_cell_vertices];
   for (uint i = 0; i < num_local_cells; i++)
   {
-    dolfin_assert(mesh_data.cell_vertices[i].size() == num_cell_vertices);
+    assert(mesh_data.cell_vertices[i].size() == num_cell_vertices);
     eptr[i] = i * num_cell_vertices;
     for (uint j = 0; j < num_cell_vertices; j++)
       eind[eptr[i] + j] = mesh_data.cell_vertices[i][j];
@@ -583,7 +583,7 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   }
   needed_vertex_indices.clear(); 
   MPI::distribute(vertex_indices, vertex_partition);
-  dolfin_assert(vertex_indices.size() == vertex_partition.size());
+  assert(vertex_indices.size() == vertex_partition.size());
 
   // Distribute vertex coordinates
   std::vector<double> vertex_coordinates;
@@ -592,7 +592,7 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   for (uint i = 0; i < vertex_partition.size(); ++i)
   {
     const std::vector<double>& x = mesh_data.vertex_coordinates[mesh_data.local_vertex_number(vertex_indices[i])];
-    dolfin_assert(x.size() == vertex_size);
+    assert(x.size() == vertex_size);
     for (uint j = 0; j < vertex_size; ++j)
     {
       vertex_coordinates.push_back(x[j]);
@@ -654,7 +654,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Construct local to global mapping based on the global to local mapping
   MeshFunction<uint>* global_vertex_indices = mesh.data().create_mesh_function("global entity indices 0", 0);
-  dolfin_assert(global_vertex_indices);
+  assert(global_vertex_indices);
   for (std::map<uint, uint>::const_iterator iter = glob2loc.begin(); iter != glob2loc.end(); ++iter)
     global_vertex_indices->set((*iter).second, (*iter).first);
 
@@ -670,7 +670,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Construct boundary mesh 
   BoundaryMesh bmesh(mesh);
   MeshFunction<uint>* boundary_vertex_map = bmesh.data().mesh_function("vertex map");
-  dolfin_assert(boundary_vertex_map);
+  assert(boundary_vertex_map);
   const uint boundary_size = boundary_vertex_map->size();
 
   // Build sorted array of global boundary vertex indices (global numbering)

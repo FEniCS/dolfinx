@@ -97,7 +97,7 @@ bool CellType::ordered(const Cell& cell) const
   // Get vertices
   const uint num_vertices = topology(dim, 0).size(c);
   const uint* vertices = topology(dim, 0)(c);
-  dolfin_assert(vertices);
+  assert(vertices);
 
   // Check that vertices are in ascending order
   for (uint v = 1; v < num_vertices; v++)
@@ -144,8 +144,8 @@ bool CellType::increasing(uint n0, const uint* v0,
                           uint n1, const uint* v1,
                           uint num_vertices, const uint* vertices)
 {
-  dolfin_assert(n0 == n1);
-  dolfin_assert(num_vertices > n0);
+  assert(n0 == n1);
+  assert(num_vertices > n0);
   const uint num_non_incident = num_vertices - n0;
 
   // Compute non-incident vertices for first entity
@@ -166,7 +166,7 @@ bool CellType::increasing(uint n0, const uint* v0,
     if (!incident)
       w0[k++] = v;
   }
-  dolfin_assert(k == num_non_incident);
+  assert(k == num_non_incident);
 
   // Compute non-incident vertices for second entity
   std::vector<uint> w1(num_non_incident);
@@ -186,7 +186,7 @@ bool CellType::increasing(uint n0, const uint* v0,
     if (!incident)
       w1[k++] = v;
   }
-  dolfin_assert(k == num_non_incident);
+  assert(k == num_non_incident);
 
   // Compare lexicographic ordering of w0 and w1
   for (uint k = 0; k < num_non_incident; k++)

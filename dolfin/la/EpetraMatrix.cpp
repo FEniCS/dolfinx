@@ -101,7 +101,7 @@ EpetraMatrix* EpetraMatrix::copy() const
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraMatrix::size(uint dim) const
 {
-  dolfin_assert(A);
+  assert(A);
   int M = A->NumGlobalRows();
   int N = A->NumGlobalCols();
   return (dim == 0 ? M : N);
@@ -111,7 +111,7 @@ void EpetraMatrix::get(double* block,
 		       uint m, const uint* rows,
 		       uint n, const uint* cols) const
 {
-  dolfin_assert(A);
+  assert(A);
 
   int num_entities    = 0;
   int * indices;
@@ -157,7 +157,7 @@ void EpetraMatrix::set(const double* block,
                        uint m, const uint* rows,
                        uint n, const uint* cols)
 {
-  dolfin_assert(A);
+  assert(A);
   int err = A->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows),
                                    n, reinterpret_cast<const int*>(cols), block);
   if (err!= 0)
@@ -169,7 +169,7 @@ void EpetraMatrix::add(const double* block,
                        uint n, const uint* cols)
 {
   Timer t0("Matrix add");
-  dolfin_assert(A);
+  assert(A);
 
   int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
                                    n, reinterpret_cast<const int*>(cols), block,
@@ -193,7 +193,7 @@ void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_patt
 //-----------------------------------------------------------------------------
 void EpetraMatrix::zero()
 {
-  dolfin_assert(A);
+  assert(A);
   int err = A->PutScalar(0.0);
   if (err!= 0)
     error("EpetraMatrix::zero: Did not manage to perform Epetra_CrsMatrix::PutScalar.");
@@ -201,7 +201,7 @@ void EpetraMatrix::zero()
 //-----------------------------------------------------------------------------
 void EpetraMatrix::apply()
 {
-  dolfin_assert(A);
+  assert(A);
   int err = A->GlobalAssemble();
   if (err!= 0)
     error("EpetraMatrix::apply: Did not manage to perform Epetra_CrsMatrix::GlobalAssemble.");
@@ -211,13 +211,13 @@ void EpetraMatrix::apply()
 //-----------------------------------------------------------------------------
 void EpetraMatrix::disp(uint precision) const
 {
-  dolfin_assert(A);
+  assert(A);
   A->Print(std::cout);
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::ident(uint m, const uint* rows)
 {
-  dolfin_assert(A);
+  assert(A);
   double* values;
   int* indices;
   int* row_size = new int;
@@ -244,7 +244,7 @@ void EpetraMatrix::ident(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void EpetraMatrix::zero(uint m, const uint* rows)
 {
-  dolfin_assert(A);
+  assert(A);
   double* values;
   int* indices;
   int* row_size = new int;
@@ -263,7 +263,7 @@ void EpetraMatrix::zero(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transposed) const
 {
-  dolfin_assert(A);
+  assert(A);
 
   const EpetraVector* x = dynamic_cast<const EpetraVector*>(x_.instance());
   if (!x)
@@ -291,7 +291,7 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transp
 //-----------------------------------------------------------------------------
 void EpetraMatrix::getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const
 {
-  dolfin_assert(A);
+  assert(A);
 
   // Temporary variables
   int *indices;
@@ -327,13 +327,13 @@ LinearAlgebraFactory& EpetraMatrix::factory() const
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Epetra_FECrsMatrix> EpetraMatrix::mat() const
 {
-  dolfin_assert(A);
+  assert(A);
   return A;
 }
 //-----------------------------------------------------------------------------
 const EpetraMatrix& EpetraMatrix::operator*= (double a)
 {
-  dolfin_assert(A);
+  assert(A);
   int err = A->Scale(a);
   if (err!=0)
     error("EpetraMatrix::operator*=: Did not manage to perform Epetra_CrsMatrix::Scale.");
@@ -342,7 +342,7 @@ const EpetraMatrix& EpetraMatrix::operator*= (double a)
 //-----------------------------------------------------------------------------
 const EpetraMatrix& EpetraMatrix::operator/= (double a)
 {
-  dolfin_assert(A);
+  assert(A);
   int err = A->Scale(1.0/a);
   if (err!=0)
     error("EpetraMatrix::operator/=: Did not manage to perform Epetra_CrsMatrix::Scale.");
@@ -357,7 +357,7 @@ const GenericMatrix& EpetraMatrix::operator= (const GenericMatrix& A)
 //-----------------------------------------------------------------------------
 const EpetraMatrix& EpetraMatrix::operator= (const EpetraMatrix& A)
 {
-  dolfin_assert(A.mat());
+  assert(A.mat());
   *(this->A) = *A.mat();
   return *this;
 }

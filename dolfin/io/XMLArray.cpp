@@ -149,7 +149,7 @@ void XMLArray::read_array_tag(const xmlChar *name, const xmlChar **attrs)
   switch ( atype )
   {
     case INT:
-      dolfin_assert(ix);
+      assert(ix);
       if (!array_type.compare("int") == 0)
         error("Array file of type '%s', expected 'int'.", array_type.c_str());
       ix->clear();
@@ -158,7 +158,7 @@ void XMLArray::read_array_tag(const xmlChar *name, const xmlChar **attrs)
       break;
 
     case UINT:
-      dolfin_assert(ux);
+      assert(ux);
       if (! array_type.compare("uint") == 0 )
         error("Array file of type '%s', expected 'uint'.", array_type.c_str());
       ux->clear();
@@ -167,7 +167,7 @@ void XMLArray::read_array_tag(const xmlChar *name, const xmlChar **attrs)
       break;
 
     case DOUBLE:
-      dolfin_assert(dx);
+      assert(dx);
       if (! array_type.compare("double") == 0 )
         error("Array file of type '%s', expected 'double'.", array_type.c_str());
       dx->clear();
@@ -198,19 +198,19 @@ void XMLArray::read_entry(const xmlChar *name, const xmlChar **attrs)
   switch ( atype )
   {
     case INT:
-      dolfin_assert(ix);
+      assert(ix);
       ivalue = parse_int(name, attrs, "value");
       (*ix)[index] = ivalue;
       break;
 
      case UINT:
-      dolfin_assert(ux);
+      assert(ux);
       uvalue = parse_uint(name, attrs, "value");
       (*ux)[index] = uvalue;
       break;
 
      case DOUBLE:
-      dolfin_assert(dx);
+      assert(dx);
       dvalue = parse_float(name, attrs, "value");
       (*dx)[index] = dvalue;
       break;

@@ -73,7 +73,7 @@ void dolfin::MPI::distribute(std::vector<double>& values,
 //-----------------------------------------------------------------------------
 void dolfin::MPI::gather(std::vector<uint>& values)
 {
-  dolfin_assert(values.size() == num_processes());
+  assert(values.size() == num_processes());
 
   // Prepare arrays
   uint send_value = values[process_number()];
@@ -118,7 +118,7 @@ dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest
   // Check number of received values
   int num_received = 0;
   MPI_Get_count(&status, MPI_UNSIGNED, &num_received);
-  dolfin_assert(num_received >= 0);
+  assert(num_received >= 0);
 
   return static_cast<uint>(num_received);
 }
@@ -139,7 +139,7 @@ dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint de
   // Check number of received values
   int num_received = 0;
   MPI_Get_count(&status, MPI_DOUBLE, &num_received);
-  dolfin_assert(num_received >= 0);
+  assert(num_received >= 0);
 
   return static_cast<uint>(num_received);
 }
@@ -172,7 +172,7 @@ std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint N)
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::index_owner(uint index, uint N)
 {
-  dolfin_assert(index < N);
+  assert(index < N);
 
   // Get number of processes
   const uint _num_processes = num_processes();
@@ -257,7 +257,7 @@ std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint N)
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::index_owner(uint i, uint N)
 {
-  dolfin_assert(i < N);
+  assert(i < N);
   return 0;
 }
 //-----------------------------------------------------------------------------

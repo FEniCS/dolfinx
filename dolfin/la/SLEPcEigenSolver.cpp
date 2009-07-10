@@ -97,11 +97,11 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
                              uint n)
 {
   // Associate matrix (matrices) with eigenvalue solver
-  dolfin_assert(A);
-  dolfin_assert(A->size(0) == A->size(1));
+  assert(A);
+  assert(A->size(0) == A->size(1));
   if (B)
   {
-    dolfin_assert(B->size(0) == B->size(1) && B->size(0) == A->size(0));
+    assert(B->size(0) == B->size(1) && B->size(0) == A->size(0));
     EPSSetOperators(eps, *A->mat(), *B->mat());
   }
   else
@@ -110,7 +110,7 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   }
 
   // Set number of eigenpairs to compute
-  dolfin_assert(n <= A->size(0));
+  assert(n <= A->size(0));
   const uint nn = static_cast<int>(n);
   #if SLEPC_VERSION_MAJOR > 2
   EPSSetDimensions(eps, nn, PETSC_DECIDE, PETSC_DECIDE);
@@ -208,7 +208,7 @@ void SLEPcEigenSolver::set_solver(std::string solver)
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_tolerance(double tolerance, uint maxiter)
 {
-  dolfin_assert(tolerance > 0.0);
+  assert(tolerance > 0.0);
   EPSSetTolerances(eps, tolerance, static_cast<int>(maxiter));
 }
 //-----------------------------------------------------------------------------

@@ -29,7 +29,7 @@ void UFCFunction::evaluate(double* values,
                            const double* coordinates,
                            const ufc::cell& cell) const
 {
-  dolfin_assert(values);
+  assert(values);
 
   // Set coordinates
   data.x = coordinates;

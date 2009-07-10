@@ -147,14 +147,14 @@ void PETScMatrix::resize(uint M, uint N)
 void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
   // Get global dimensions and local range
-  dolfin_assert(sparsity_pattern.rank() == 2);
+  assert(sparsity_pattern.rank() == 2);
   const uint M = sparsity_pattern.size(0);
   const uint N = sparsity_pattern.size(1);
   const std::pair<uint, uint> row_range = sparsity_pattern.row_range();
   const std::pair<uint, uint> col_range = sparsity_pattern.col_range();
   const uint m = row_range.second - row_range.first;
   const uint n = col_range.second - col_range.first;
-  dolfin_assert(M > 0 && N > 0 && m > 0 && n > 0);
+  assert(M > 0 && N > 0 && m > 0 && n > 0);
 
   // Create matrix (any old matrix is destroyed automatically)
   if (!A.unique())
@@ -167,7 +167,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   {
     // Get number of nonzeros for each row from sparsity pattern
     uint* num_nonzeros = new uint[M];
-    dolfin_assert(num_nonzeros);
+    assert(num_nonzeros);
     sparsity_pattern.num_nonzeros_diagonal(num_nonzeros);
 
     // FIXME: Does this need to be cleaned up? Seems like a mix of
@@ -200,8 +200,8 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     // Get number of nonzeros for each row from sparsity pattern
     uint* num_nonzeros_diagonal = new uint[m];
     uint* num_nonzeros_off_diagonal = new uint[n];
-    dolfin_assert(num_nonzeros_diagonal);
-    dolfin_assert(num_nonzeros_off_diagonal);
+    assert(num_nonzeros_diagonal);
+    assert(num_nonzeros_off_diagonal);
     sparsity_pattern.num_nonzeros_diagonal(num_nonzeros_diagonal);
     sparsity_pattern.num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
 
@@ -229,7 +229,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 //-----------------------------------------------------------------------------
 PETScMatrix* PETScMatrix::copy() const
 {
-  dolfin_assert(A);
+  assert(A);
 
   PETScMatrix* Acopy = new PETScMatrix();
   boost::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
@@ -241,7 +241,7 @@ PETScMatrix* PETScMatrix::copy() const
 //-----------------------------------------------------------------------------
 dolfin::uint PETScMatrix::size(uint dim) const
 {
-  dolfin_assert(A);
+  assert(A);
   int M = 0;
   int N = 0;
   MatGetSize(*A, &M, &N);
@@ -252,7 +252,7 @@ void PETScMatrix::get(double* block,
                       uint m, const uint* rows,
                       uint n, const uint* cols) const
 {
-  dolfin_assert(A);
+  assert(A);
   MatGetValues(*A,
                static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)),
                static_cast<int>(n), reinterpret_cast<int*>(const_cast<uint*>(cols)),
@@ -263,7 +263,7 @@ void PETScMatrix::set(const double* block,
                       uint m, const uint* rows,
                       uint n, const uint* cols)
 {
-  dolfin_assert(A);
+  assert(A);
   MatSetValues(*A,
                static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)),
                static_cast<int>(n), reinterpret_cast<int*>(const_cast<uint*>(cols)),
@@ -274,7 +274,7 @@ void PETScMatrix::add(const double* block,
                       uint m, const uint* rows,
                       uint n, const uint* cols)
 {
-  dolfin_assert(A);
+  assert(A);
   MatSetValues(*A,
                static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)),
                static_cast<int>(n), reinterpret_cast<int*>(const_cast<uint*>(cols)),
@@ -284,8 +284,8 @@ void PETScMatrix::add(const double* block,
 void PETScMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
 {
   const PETScMatrix* AA = &A.down_cast<PETScMatrix>();
-  dolfin_assert(this->A);
-  dolfin_assert(AA->mat());
+  assert(this->A);
+  assert(AA->mat());
   if (same_nonzero_pattern)
     MatAXPY(*(this->A), a, *AA->mat(), SAME_NONZERO_PATTERN);
   else
@@ -296,7 +296,7 @@ void PETScMatrix::getrow(uint row,
                          std::vector<uint>& columns,
                          std::vector<double>& values) const
 {
-  dolfin_assert(A);
+  assert(A);
 
   const int *cols = 0;
   const double *vals = 0;
@@ -314,7 +314,7 @@ void PETScMatrix::setrow(uint row,
                          const std::vector<uint>& columns,
                          const std::vector<double>& values)
 {
-  dolfin_assert(A);
+  assert(A);
 
   // Check size of arrays
   if (columns.size() != values.size())
@@ -344,7 +344,7 @@ void PETScMatrix::setrow(uint row,
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero(uint m, const uint* rows)
 {
-  dolfin_assert(A);
+  assert(A);
 
   IS is = 0;
   ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), &is);
@@ -355,7 +355,7 @@ void PETScMatrix::zero(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void PETScMatrix::ident(uint m, const uint* rows)
 {
-  dolfin_assert(A);
+  assert(A);
 
   IS is = 0;
   ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), &is);
@@ -366,7 +366,7 @@ void PETScMatrix::ident(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void PETScMatrix::mult(const GenericVector& x, GenericVector& y, bool transposed) const
 {
-  dolfin_assert(A);
+  assert(A);
 
   const PETScVector& xx = x.down_cast<PETScVector>();
   PETScVector& yy       = y.down_cast<PETScVector>();
@@ -389,7 +389,7 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y, bool transposed
 //-----------------------------------------------------------------------------
 double PETScMatrix::norm(std::string norm_type) const
 {
-  dolfin_assert(A);
+  assert(A);
   
   // Check that norm is known
   if( norm_types.count(norm_type) == 0)  
@@ -402,27 +402,27 @@ double PETScMatrix::norm(std::string norm_type) const
 //-----------------------------------------------------------------------------
 void PETScMatrix::apply()
 {
-  dolfin_assert(A);
+  assert(A);
   MatAssemblyBegin(*A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(*A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()
 {
-  dolfin_assert(A);
+  assert(A);
   MatZeroEntries(*A);
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator*= (double a)
 {
-  dolfin_assert(A);
+  assert(A);
   MatScale(*A, a);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator/= (double a)
 {
-  dolfin_assert(A);
+  assert(A);
   MatScale(*A, 1.0 / a);
   return *this;
 }
@@ -435,7 +435,7 @@ const GenericMatrix& PETScMatrix::operator= (const GenericMatrix& A)
 //-----------------------------------------------------------------------------
 const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
 {
-  dolfin_assert(A.mat());
+  assert(A.mat());
 
   // Check for self-assignment
   if (this != &A)
@@ -465,7 +465,7 @@ std::string PETScMatrix::type() const
 //-----------------------------------------------------------------------------
 void PETScMatrix::disp(uint precision) const
 {
-  dolfin_assert(A);
+  assert(A);
 
   // FIXME: Maybe this could be an option?
   if (MPI::num_processes() > 1)
@@ -486,7 +486,7 @@ boost::shared_ptr<Mat> PETScMatrix::mat() const
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_type()
 {
-  dolfin_assert(A);
+  assert(A);
   #if PETSC_VERSION_MAJOR > 2
   const MatType mat_type = get_petsc_type();
   #else

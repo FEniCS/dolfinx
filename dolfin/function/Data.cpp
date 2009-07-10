@@ -55,7 +55,7 @@ bool Data::on_facet() const
 //-----------------------------------------------------------------------------
 dolfin::uint Data::geometric_dimension() const
 {
-  dolfin_assert(_cell);
+  assert(_cell);
   return _cell->mesh().geometry().dim();
 }
 //-----------------------------------------------------------------------------

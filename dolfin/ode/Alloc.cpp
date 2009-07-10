@@ -17,7 +17,7 @@ Alloc::Alloc() : size(0), next(0)
 //-----------------------------------------------------------------------------
 void Alloc::realloc(int** data, uint oldsize, uint newsize)
 {
-  dolfin_assert(newsize > oldsize);
+  assert(newsize > oldsize);
 
   // Allocate new data
   int* newdata = new int[newsize];
@@ -37,7 +37,7 @@ void Alloc::realloc(int** data, uint oldsize, uint newsize)
 //-----------------------------------------------------------------------------
 void Alloc::realloc(uint** data, uint oldsize, uint newsize)
 {
-  dolfin_assert(newsize > oldsize);
+  assert(newsize > oldsize);
 
   // Allocate new data
   uint* newdata = new uint[newsize];
@@ -57,7 +57,7 @@ void Alloc::realloc(uint** data, uint oldsize, uint newsize)
 //-----------------------------------------------------------------------------
 void Alloc::realloc(real** data, uint oldsize, uint newsize)
 {
-  dolfin_assert(newsize > oldsize);
+  assert(newsize > oldsize);
 
   // Allocate new data
   real* newdata = new real[newsize];

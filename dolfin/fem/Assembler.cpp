@@ -208,7 +208,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   // Create boundary mesh
   BoundaryMesh boundary(mesh);
   MeshFunction<uint>* cell_map = boundary.data().mesh_function("cell map");
-  dolfin_assert(cell_map);
+  assert(cell_map);
 
   // Assemble over exterior facets (the cells of the boundary)
   Progress p(progress_message(A.rank(), "exterior facets"), boundary.num_cells());
@@ -228,7 +228,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     }
 
     // Get mesh cell to which mesh facet belongs (pick first, there is only one)
-    dolfin_assert(mesh_facet.num_entities(mesh.topology().dim()) == 1);
+    assert(mesh_facet.num_entities(mesh.topology().dim()) == 1);
     Cell mesh_cell(mesh, mesh_facet.entities(mesh.topology().dim())[0]);
 
     // Get local index of facet with respect to the cell
@@ -280,7 +280,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   // Compute facets and facet - cell connectivity if not already computed
   mesh.init(mesh.topology().dim() - 1);
   mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
-  dolfin_assert(mesh.ordered());
+  assert(mesh.ordered());
 
   // Assemble over interior facets (the facets of the mesh)
   Progress p(progress_message(A.rank(), "interior facets"), mesh.num_facets());
@@ -395,7 +395,7 @@ You may need to provide the dimension of a user defined Function.", j, i, dim, f
   if (a.ufc_form().rank() + a.ufc_form().num_coefficients() > 0)
   {
     ufc::finite_element* element = a.ufc_form().create_finite_element(0);
-    dolfin_assert(element);
+    assert(element);
     if (mesh.type().cell_type() == CellType::interval && element->cell_shape() != ufc::interval)
       error("Mesh cell type (intervals) does not match cell type of form.");
     if (mesh.type().cell_type() == CellType::triangle && element->cell_shape() != ufc::triangle)

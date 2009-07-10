@@ -27,7 +27,7 @@ Constant::Constant(uint size, double value)
   : Function(),
     _size(size), _values(0)
 {
-  dolfin_assert(size > 0);
+  assert(size > 0);
 
   _values = new double[size];
   for (uint i = 0; i < size; i++)
@@ -38,7 +38,7 @@ Constant::Constant(const std::vector<double>& values)
   : Function(),
     _size(values.size()), _values(0)
 {
-  dolfin_assert(values.size() > 0);
+  assert(values.size() > 0);
 
   _values = new double[values.size()];
   for (uint i = 0; i < values.size(); i++)
@@ -50,8 +50,8 @@ Constant::Constant(const std::vector<uint>& shape,
   : Function(),
     _size(0), _values(0)
 {
-  dolfin_assert(shape.size() > 0);
-  dolfin_assert(values.size() > 0);
+  assert(shape.size() > 0);
+  assert(values.size() > 0);
 
   // Compute size
   _size = 1;
@@ -59,7 +59,7 @@ Constant::Constant(const std::vector<uint>& shape,
     _size *= shape[i];
 
   // Copy values
-  dolfin_assert(values.size() == _size);
+  assert(values.size() == _size);
   for (uint i = 0; i < values.size(); i++)
     _values[i] = values[i];
 }
@@ -73,8 +73,8 @@ Constant::Constant(const Constant& c)
 //-----------------------------------------------------------------------------
 const Constant& Constant::operator= (const Constant& c)
 {
-  dolfin_assert(c._size > 0);
-  dolfin_assert(c._values);
+  assert(c._size > 0);
+  assert(c._values);
 
   delete _values;
   _size = c._size;
@@ -92,8 +92,8 @@ Constant::~Constant()
 //-----------------------------------------------------------------------------
 void Constant::eval(double* values, const Data& data) const
 {
-  dolfin_assert(values);
-  dolfin_assert(_values);
+  assert(values);
+  assert(_values);
 
   // Copy values
   for (uint i = 0; i < _size; i++)

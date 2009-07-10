@@ -122,13 +122,13 @@ real TimeStepper::step(ODESolution& u, real t0, real t1)
 //-----------------------------------------------------------------------------
 void TimeStepper::set_state(const real* u)
 {
-  dolfin_assert(timeslab);
+  assert(timeslab);
   timeslab->set_state(u);
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::get_state(real* u)
 {
-  dolfin_assert(timeslab);
+  assert(timeslab);
   timeslab->get_state(u);
 }
 //-----------------------------------------------------------------------------
@@ -192,7 +192,7 @@ void TimeStepper::save_adaptive_samples(ODESolution& u)
     save_sample(u, 0.0);
 
   // Compute distance between samples
-  dolfin_assert(sample_density >= 1);
+  assert(sample_density >= 1);
   real k = (t1 - t0) / static_cast<real>(sample_density);
 
   // Save samples

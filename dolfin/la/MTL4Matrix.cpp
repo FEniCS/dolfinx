@@ -186,7 +186,7 @@ void MTL4Matrix::zero(uint m, const uint* rows)
       cursor += rows[i] -rows[i-1];
 
     // Check that we haven't gone beyond last row
-    dolfin_assert(*cursor <= *cend);
+    assert(*cursor <= *cend);
 
     // Zero row and place one on the diagonal
     for (ic_type icursor(mtl::begin<mtl::tag::nz>(cursor)), icend(mtl::end<mtl::tag::nz>(cursor)); icursor != icend; ++icursor)
@@ -210,7 +210,7 @@ void MTL4Matrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transpos
 void MTL4Matrix::getrow(uint row_idx, std::vector<uint>& columns, std::vector<double>& values) const
 {
   assert_no_inserter();
-  dolfin_assert(row_idx < this->size(0));
+  assert(row_idx < this->size(0));
 
   columns.clear();
   values.clear();
@@ -235,8 +235,8 @@ void MTL4Matrix::getrow(uint row_idx, std::vector<uint>& columns, std::vector<do
 //-----------------------------------------------------------------------------
 void MTL4Matrix::setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values)
 {
-  dolfin_assert(columns.size() == values.size());
-  dolfin_assert(row < this->size(0));
+  assert(columns.size() == values.size());
+  assert(row < this->size(0));
 
   if(!ins)
     init_inserter();

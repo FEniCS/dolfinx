@@ -54,7 +54,7 @@ void Coefficient::attach(boost::shared_ptr<Function> v)
   }
 
   // Set coefficient for form
-  dolfin_assert(number() < form._coefficients.size());
+  assert(number() < form._coefficients.size());
   form._coefficients[number()] = v;
 }
 //-----------------------------------------------------------------------------

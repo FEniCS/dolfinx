@@ -31,7 +31,7 @@ LinearSolver::~LinearSolver()
 dolfin::uint LinearSolver::solve(const GenericMatrix& A, GenericVector& x,
                                  const GenericVector& b)
 {
-  dolfin_assert(lu_solver || krylov_solver);
+  assert(lu_solver || krylov_solver);
 
   if (lu_solver)
     return lu_solver->solve(A, x, b);

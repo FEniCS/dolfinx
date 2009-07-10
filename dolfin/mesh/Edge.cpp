@@ -17,7 +17,7 @@ using namespace dolfin;
 double Edge::length()
 {
   const uint* vertices = entities(0);
-  dolfin_assert(vertices);
+  assert(vertices);
 
   const Vertex v0(_mesh, vertices[0]);
   const Vertex v1(_mesh, vertices[1]);
@@ -35,7 +35,7 @@ double Edge::length()
 Point Edge::midpoint()
 {
   const uint* vertices = entities(0);
-  dolfin_assert(vertices);
+  assert(vertices);
 
   const Vertex v0(_mesh, vertices[0]);
   const Vertex v1(_mesh, vertices[1]);

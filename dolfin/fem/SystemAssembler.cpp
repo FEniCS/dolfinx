@@ -106,7 +106,7 @@ You may need to provide the dimension of a user defined Function.", j, i, dim, f
   if (a.ufc_form().rank() + a.ufc_form().num_coefficients() > 0)
   {
     ufc::finite_element* element = a.ufc_form().create_finite_element(0);
-    dolfin_assert(element);
+    assert(element);
     if (mesh.type().cell_type() == CellType::interval && element->cell_shape() != ufc::interval)
       error("Mesh cell type (intervals) does not match cell type of form.");
     if (mesh.type().cell_type() == CellType::triangle && element->cell_shape() != ufc::triangle)
@@ -217,7 +217,7 @@ void SystemAssembler::assemble_system(GenericMatrix& A,
   if (x0)
   {
     warning("Symmetric application of Dirichlet boundary conditions for incremental problems is untested.");
-    dolfin_assert( x0->size() == N);
+    assert( x0->size() == N);
     double* x0_values = new double[N];
     x0->get(x0_values);
     for (uint i = 0; i < N; i++)
@@ -1032,7 +1032,7 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
   if (x0)
   {
     warning("Symmetric application of Dirichlet boundary conditions for incremental problems is untested.");
-    dolfin_assert(x0->size() == N);
+    assert(x0->size() == N);
     double* x0_values = new double[N];
     x0->get(x0_values);
     for (uint i = 0; i < N; i++)
