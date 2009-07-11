@@ -107,7 +107,7 @@ real Lagrange::ddx(uint i, real x)
     if (j != i) 
     {
       real t = x - points[j];
-      if (abs(t) < real_epsilon()) 
+      if (real_abs(t) < real_epsilon()) 
       {
 	x_equals_point = true;
       } else 
