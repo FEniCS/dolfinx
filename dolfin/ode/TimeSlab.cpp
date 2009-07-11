@@ -126,7 +126,6 @@ void TimeSlab::copy(const uBLASVector& x, uint xoffset, real y[], uint yoffset, 
 {
   for (uint i = 0; i < n; i++)
   {
-    //Note: Precision lost if working with GMP
     y[yoffset + i] = x[xoffset + i];
   }
 }
@@ -134,6 +133,7 @@ void TimeSlab::copy(const uBLASVector& x, uint xoffset, real y[], uint yoffset, 
 void TimeSlab::copy(const real x[], uint xoffset, uBLASVector& y, uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
+    //Note: Precision lost if working with GMP
     y[yoffset + i] = to_double(x[xoffset + i]);
 
 }

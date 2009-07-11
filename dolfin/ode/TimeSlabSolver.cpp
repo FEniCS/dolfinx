@@ -90,7 +90,8 @@ bool TimeSlabSolver::solve(uint attempt)
 
     // Check divergence
     // FIXME: implement better check and make this a parameter
-    // Is it ok to convert a gmp type to double and then check if it is normal?
+    // Note that the last check is skipped when working extended precision
+    // as GMP has no notion of NaN or inifinity
     if ((iter > 0 && d2 > 1000.0 * d1) || !isnormal(d2))
     {
       warning("Time slab system seems to be diverging.");
@@ -123,16 +124,13 @@ void TimeSlabSolver::end()
 //-----------------------------------------------------------------------------
 void TimeSlabSolver::choose_tolerance()
 {
-  const double TOL   = ode.parameters("tolerance");
-  const double alpha = ode.parameters("discrete_tolerance_factor");
+  tol = ode.parameters("discrete_tolerance").get_real();
 
-  double tmp = ode.parameters("discrete_tolerance");
-
-  tol = tmp;
   if ( !ode.parameters("fixed_time_step") )
   {
-    tmp = std::min(tmp, alpha*TOL);
-    tol = tmp;
+    const real TOL   = ode.parameters("tolerance").get_real();
+    const real alpha = ode.parameters("discrete_tolerance_factor").get_real();
+    tol = real_min(tol, alpha*TOL);
   }
   cout << "Using discrete tolerance tol = " << tol << "." << endl;
 }

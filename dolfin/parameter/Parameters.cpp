@@ -91,6 +91,30 @@ void Parameters::add(std::string key, int value,
   p->set_range(min_value, max_value);
 }
 //-----------------------------------------------------------------------------
+#ifdef HAS_GMP
+void Parameters::add(std::string key, real value)
+{
+  // Check key name
+  if (find_parameter(key))
+    error("Unable to add parameter \"%s\", already defined.", key.c_str());
+
+  // Add parameter
+  _parameters[key] = new RealParameter(key, value);
+}
+//-----------------------------------------------------------------------------
+void Parameters::add(std::string key, real value,
+                        real min_value, real max_value)
+{
+  // Add parameter
+  add(key, value);
+
+  // Set range
+  Parameter* p = find_parameter(key);
+  assert(p);
+  p->set_range(min_value, max_value);
+}
+#endif
+//-----------------------------------------------------------------------------
 void Parameters::add(std::string key, double value)
 {
   // Check key name
@@ -98,14 +122,14 @@ void Parameters::add(std::string key, double value)
     error("Unable to add parameter \"%s\", already defined.", key.c_str());
 
   // Add parameter
-  _parameters[key] = new DoubleParameter(key, value);
+  _parameters[key] = new RealParameter(key, to_real(value));
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, double value,
                         double min_value, double max_value)
 {
   // Add parameter
-  add(key, value);
+  add(key, to_real(value));
 
   // Set range
   Parameter* p = find_parameter(key);
@@ -310,8 +334,8 @@ const Parameters& Parameters::operator= (const Parameters& parameters)
     Parameter* q = 0;
     if (p.type_str() == "int")
       q = new IntParameter(dynamic_cast<const IntParameter&>(p));
-    else if (p.type_str() == "double")
-      q = new DoubleParameter(dynamic_cast<const DoubleParameter&>(p));
+    else if (p.type_str() == "real")
+      q = new RealParameter(dynamic_cast<const RealParameter&>(p));
     else if (p.type_str() == "bool")
       q = new BoolParameter(dynamic_cast<const BoolParameter&>(p));
     else if (p.type_str() == "string")

@@ -46,8 +46,8 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
     y = x;
 
   // Compute size of time step
-  const real a = to_double(ts.starttime());
-  const real k = to_double(ts.length());
+  const real a = ts.starttime();
+  const real k = ts.length();
 
   // Compute product y = Mx for each stage for implicit system
   if (implicit)

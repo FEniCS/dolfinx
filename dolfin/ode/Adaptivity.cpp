@@ -12,10 +12,10 @@ using namespace dolfin;
 Adaptivity::Adaptivity(const ODE& ode, const Method& method)
   : ode(ode), method(method)
 {
-  double tmp = ode.parameters("tolerance");   tol    = tmp;
-  tmp = ode.parameters("maximum_time_step");  _kmax  = tmp;
-  tmp = ode.parameters("interval_threshold"); beta   = tmp;
-  tmp =  ode.parameters("safety_factor");     safety = tmp;
+  tol    = ode.parameters("tolerance").get_real();
+  _kmax  = ode.parameters("maximum_time_step").get_real();
+  beta   = ode.parameters("interval_threshold").get_real();
+  safety =  ode.parameters("safety_factor").get_real();
   kfixed = ode.parameters("fixed_time_step");
 
   safety_old = safety;

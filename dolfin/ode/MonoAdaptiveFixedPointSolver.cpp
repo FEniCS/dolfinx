@@ -18,11 +18,9 @@ MonoAdaptiveFixedPointSolver::MonoAdaptiveFixedPointSolver
   : TimeSlabSolver(timeslab), ts(timeslab), xold(0),
     stabilize(ode.parameters("fixed-point_stabilize")), mi(0), li(0), ramp(1.0)
 {
-  double tmp = ode.parameters("fixed-point_stabilization_ramp");
-  rampfactor = tmp;
+  rampfactor = ode.parameters("fixed-point_stabilization_ramp").get_real();
 
-  tmp = ode.parameters("fixed-point_damping");
-  alpha = tmp;
+  alpha = ode.parameters("fixed-point_damping").get_real();
 
   // Initialize old values at right end-point
   xold = new real[ts.N];

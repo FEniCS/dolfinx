@@ -104,6 +104,14 @@ namespace dolfin
     /// Add double-valued parameter with given range
     void add(std::string key, double value, double min_value, double max_value);
 
+#ifdef HAS_GMP
+    /// Add double-valued parameter
+    void add(std::string key, real value);
+
+    /// Add double-valued parameter with given range
+    void add(std::string key, real value, real min_value, real max_value);
+#endif
+
     /// Add string-valued parameter
     void add(std::string key, std::string value);
 
