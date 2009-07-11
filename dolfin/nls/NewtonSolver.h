@@ -44,7 +44,7 @@ namespace dolfin
     uint solve(NonlinearProblem& nonlinear_function, GenericVector& x);
 
     /// Return Newton iteration number
-    uint get_iteration() const;
+    uint iteration() const;
 
     /// Default parameter values
     static Parameters default_parameters()

@@ -99,7 +99,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
   return newton_iteration;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint NewtonSolver::get_iteration() const
+dolfin::uint NewtonSolver::iteration() const
 {
   return newton_iteration;
 }
