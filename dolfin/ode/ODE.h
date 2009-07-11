@@ -14,7 +14,6 @@
 #include <dolfin/parameter/Parameters.h>
 #include "Dependencies.h"
 #include "Sample.h"
-#include "GMPObject.h"
 
 namespace dolfin
 {
@@ -25,7 +24,7 @@ namespace dolfin
   /// An ODE represents an initial value problem of the form
   ///
   ///     u'(t) = f(u(t), t) on [0, T],
-  ///
+  ///         
   ///     u(0)  = u0,
   ///
   /// where u(t) is a vector of length N.

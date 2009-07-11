@@ -15,12 +15,19 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Legendre::Legendre(uint n)
+Legendre::Legendre(uint n) : n(n), cache_x(0.0)
 {
-  if (n < 0)
-    error("Degree for Legendre polynomial must be non-negative.");
-
-  this->n = n;
+  cache = new real[n+1];
+  cache[0] = 1.0; //constant value
+  
+  //eval to initialize cache
+  real tmp = eval(n, -1.0);
+  tmp++; //avoid compiler warning
+}
+//-----------------------------------------------------------------------------
+Legendre::~Legendre() 
+{
+  delete [] cache;
 }
 //-----------------------------------------------------------------------------
 real Legendre::operator() (real x)
@@ -38,32 +45,31 @@ real Legendre::d2dx(real x)
   return d2dx(n, x);
 }
 //-----------------------------------------------------------------------------
-real Legendre::eval(uint n, real x)
+real Legendre::eval(uint nn, real x)
 {
   //recursive formula, BETA page 254
-  //return ( (2.0*nn-1.0)*x*eval(n-1, x) - (nn-1.0)*eval(n-2, x) ) / nn;
+  //return ( (2.0*nn-1.0)*x*eval(nn-1, x) - (nn-1.0)*eval(nn-2, x) ) / nn;
 
 
   //The special cases
   if (n == 0) return 1.0;
   if (n == 1) return x;
-
-  //previous computed values
-  real prevprev = 1.0;
-  real prev     = x;
-  real current  = 0.0;
-
-  for (uint i = 2; i <= n; ++i)
+  
+  //check cache
+  if (x != cache_x) 
   {
-    real ii(i);
+  
+    cache[1] = x;
 
-    current = ( (2.0*ii-1.0)*x*prev - (ii-1.0)*prevprev ) / ii;
-
-    prevprev = prev;
-    prev = current;
+    for (uint i = 2; i <= n; ++i) 
+    {
+      real ii(i);
+      cache[i] = ( (2.0*ii-1.0)*x*cache[i-1] - (ii-1.0)*cache[i-2] ) / ii;
+    }
+    cache_x = x;
   }
-
-  return current;
+  
+  return cache[nn];
 }
 //-----------------------------------------------------------------------------
 real Legendre::ddx(uint n, real x)

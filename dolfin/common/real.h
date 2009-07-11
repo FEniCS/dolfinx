@@ -36,8 +36,12 @@ namespace dolfin
   // Store the epsilon value
   extern real _real_epsilon;
 
-  // Initialize value of real_epsilon()
-  void real_init();
+  // Set precision and initialize extended precision
+  void dolfin_set_precision(uint prec);
+
+  //Store the epsilon value
+  extern real _real_epsilon;
+  extern bool _real_initialized;
 
   // Convert to double (if necessary)
   inline double to_double(real x)
@@ -76,6 +80,27 @@ namespace dolfin
     return std::pow(to_double(x), to_double(y));
 #endif
   }
+  
+  // Power function
+  inline real pow(real x, real y)
+  {
+#ifdef HAS_GMP
+    error("Multiprecision pow function not implemented.");
+    return 0.0;
+#else
+    return std::pow(to_double(x), to_double(y));
+#endif
+  }
+
+  inline int isnormal(real x) {
+#ifdef HAS_GMP
+    // NOTE: Not implemented. 
+    // GMP has no notion of infinity or NaN
+    return 1;
+#else
+    return std::isnormal(to_double(x));
+#endif
+  }
 
   // Power function (note: not full precision!)
   inline real real_pow(real x, real y)
@@ -87,6 +112,7 @@ namespace dolfin
   /// Compute pi
   real real_pi();
 
+  double real_frexp(int* exp, real x);
   /// Exponential function (note: not full precision!)
   inline real real_exp(real x)
   { return to_real(exp(to_double(x))); }
@@ -96,8 +122,11 @@ namespace dolfin
   { return to_real(log(to_double(x))); }
 
   // Get computed epsilon
-  inline const real real_epsilon()
-  { return _real_epsilon; }
+  inline const real real_epsilon() {return _real_epsilon;}
+
+  // Get precision in decimal digits
+  // Usefull when writing with full precision to text (ascii) files
+  int real_decimal_prec();
 
   // Set array to given array (copy values)
   inline void real_set(uint n, real* x, const real* y)

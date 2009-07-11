@@ -11,6 +11,10 @@
 #include "cGqMethod.h"
 #include "dGqMethod.h"
 #include "TimeSlab.h"
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+
 
 using namespace dolfin;
 
@@ -95,19 +99,21 @@ void TimeSlab::write(uint N, const real* u)
 {
   // FIXME: Make this a parameter?
   std::string filename = "solution.data";
+  
+  message("Saving solution at final time to file \"%s\".", filename.c_str());
 
-  info("Saving solution at final time to file \"%s\".", filename.c_str());
-  #ifdef HAS_GMP
-    warning("Precision in solution file lost. Saving with double precision");
-  #endif
+  std::ofstream fp(filename.c_str());
+  if (!fp.is_open())
+    error("Unable to open file %s", filename.c_str());
 
-  FILE* fp = fopen(filename.c_str(), "w");
+  fp << std::setprecision(real_decimal_prec());
+
   for (uint i = 0; i < N; i++)
-  {
-    fprintf(fp, "%.15e ", to_double(u[i]));
+  {  
+    fp << u[i] << " ";
   }
-  fprintf(fp, "\n");
-  fclose(fp);
+  fp << std::endl;
+  fp.close();
 }
 //-----------------------------------------------------------------------------
 void TimeSlab::copy(const real x[], uint xoffset, real y[], uint yoffset, uint n)

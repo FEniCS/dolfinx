@@ -3,10 +3,11 @@
 //
 // Modified by Garth N. Wells 2005.
 // Modified by Rolv E. Bredesen 2008.
+// Modified by Benjamin Kehlet 2009.
 
 // First added:  2003-05-06
-// Last changed: 2008-04-08
-//
+// Last changed: 2009-03-17
+// 
 
 #include <stdio.h>
 #include <dolfin/log/dolfin_log.h>
@@ -16,6 +17,9 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/ode/Sample.h>
 #include "PythonFile.h"
+#include <iostream>
+#include <fstream>
+#include <iomanip>
 
 using namespace dolfin;
 
@@ -30,9 +34,6 @@ PythonFile::PythonFile(const std::string filename) : GenericFile(filename)
   filename_k = prefix + "_k.data";
   filename_r = prefix + "_r.data";
 
-  #ifdef HAS_GMP
-  warning("PythonFile: Precision lost. Values will be saved with double precision");
-  #endif
 }
 //-----------------------------------------------------------------------------
 PythonFile::~PythonFile()
@@ -42,102 +43,84 @@ PythonFile::~PythonFile()
 //-----------------------------------------------------------------------------
 void PythonFile::operator<<(const Sample& sample)
 {
-  FILE* fp_t = 0;
-  FILE* fp_u = 0;
-  FILE* fp_k = 0;
-  FILE* fp_r = 0;
-
-  // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
-  if (!fp)
-    error("Unable to open file %s", filename.c_str());
-
-  // Open sub-files
+  
+  // First time
   if ( counter2 == 0 )
   {
-    // Open files (first time)
-    fp_t = fopen(filename_t.c_str(), "w");
-    if (!fp_t)
-      error("Unable to open file %s", filename_t.c_str());
-    fp_u = fopen(filename_u.c_str(), "w");
-    if (!fp_u)
-      error("Unable to open file %s", filename_u.c_str());
-    fp_k = fopen(filename_k.c_str(), "w");
-    if (!fp_k)
-      error("Unable to open file %s", filename_k.c_str());
-    fp_r = fopen(filename_r.c_str(), "w");
-    if (!fp_r)
-      error("Unable to open file %s", filename_r.c_str());
-  }
-  else
-  {
-    // Open files
-    fp_t = fopen(filename_t.c_str(), "a");
-    if (!fp_t)
-      error("Unable to open file %s", filename_t.c_str());
-    fp_u = fopen(filename_u.c_str(), "a");
-    if (!fp_u)
-      error("Unable to open file %s", filename_u.c_str());
-    fp_k = fopen(filename_k.c_str(), "a");
-    if (!fp_k)
-      error("Unable to open file %s", filename_k.c_str());
-    fp_r = fopen(filename_r.c_str(), "a");
-    if (!fp_r)
-      error("Unable to open file %s", filename_r.c_str());
+    std::ofstream fp(filename.c_str());
+    if (!fp.is_open())
+      error("Unable to open file %s", filename.c_str());
+
+    fp << "from numpy import fromfile" << std::endl << std::endl;
+    fp << "t = fromfile('" << filename_t << "', sep=' ')" << std::endl;
+    fp << "u = fromfile('" << filename_u << "', sep=' ')" << std::endl;
+    fp << "k = fromfile('" << filename_k << "', sep=' ')" << std::endl;
+    fp << "r = fromfile('" << filename_r << "', sep=' ')" << std::endl;
+    fp << std::endl;
+    fp << "u.shape = len(u) //" << sample.size() << ", " << sample.size() << std::endl;
+    fp << "k.shape = len(k) //" << sample.size() << ", " << sample.size() << std::endl;
+    fp << "r.shape = len(r) //" << sample.size() << ", " << sample.size() << std::endl;
+    fp << std::endl;
+    fp.close();
   }
 
-  // Python wrapper file
-  if ( counter2 == 0 )
-  {
-    fprintf(fp, "from numpy import fromfile\n");
-    fprintf(fp, "\n");
-    fprintf(fp, "t = fromfile(\"%s\", sep=\" \")\n", filename_t.c_str());
-    fprintf(fp, "u = fromfile(\"%s\", sep=\" \")\n", filename_u.c_str());
-    fprintf(fp, "k = fromfile(\"%s\", sep=\" \")\n", filename_k.c_str());
-    fprintf(fp, "r = fromfile(\"%s\", sep=\" \")\n", filename_r.c_str());
-    fprintf(fp, "\n");
-    fprintf(fp, "u.shape = len(u)//%d, %d\n", sample.size(), sample.size());
-    fprintf(fp, "k.shape = len(k)//%d, %d\n", sample.size(), sample.size());
-    fprintf(fp, "r.shape = len(r)//%d, %d\n", sample.size(), sample.size());
-    fprintf(fp, "\n");
-  }
+  //sub files filemode:  append unless this is the first sample
+  std::ios_base::openmode filemode = (counter2 == 0 ? 
+				        std::ios_base::out : 
+				        std::ios_base::out| std::ios_base::app);
+
+  //get precision
+  int prec = real_decimal_prec();
+
+  // Open sub files
+  std::ofstream fp_t(filename_t.c_str(), filemode);
+  if (!fp_t.is_open())
+    error("Unable to open file %s", filename_t.c_str());
+  
+  std::ofstream fp_u(filename_u.c_str(), filemode);
+  if (!fp_u.is_open())
+    error("Unable to open file %s", filename_u.c_str());
+
+  std::ofstream fp_k(filename_k.c_str(), filemode);
+  if (!fp_k.is_open())
+    error("Unable to open file %s", filename_k.c_str());
+
+  std::ofstream fp_r(filename_r.c_str(), filemode);
+  if (!fp_r.is_open())
+    error("Unable to open file %s", filename_r.c_str());
 
   // Save time
-  fprintf(fp_t, "%.15e\n", to_double(sample.t()));
+  fp_t << std::setprecision(prec) << sample.t() << std::endl;
 
   // Save solution
-  for (unsigned int i = 0; i < sample.size(); i++)
+  for (uint i = 0; i < sample.size(); i++)
   {
-    fprintf(fp_u, "%.15e ", to_double(sample.u(i)));
+    fp_u << std::setprecision(prec) << sample.u(i) << " ";
   }
-  fprintf(fp_u, "\n");
+  fp_u << std::endl;
 
   // Save time steps
-  for (unsigned int i = 0; i < sample.size(); i++)
+  for (uint i = 0; i < sample.size(); i++)
   {
-    fprintf(fp_k, "%.15e ", to_double(sample.k(i)));
+    fp_k << std::setprecision(prec) << sample.k(i) << " ";  
   }
-  fprintf(fp_k, "\n");
+  fp_k << std::endl;
 
   // Save residuals
-  for (unsigned int i = 0; i < sample.size(); i++)
+  for (uint i = 0; i < sample.size(); i++)
   {
-    fprintf(fp_r, "%.15e ", to_double(sample.r(i)));
+    fp_r << std::setprecision(prec) << sample.r(i) << " ";  
   }
-  fprintf(fp_r, "\n");
+  fp_r << std::endl;
 
 
   // Increase frame counter
   counter2++;
 
   // Close files
-  fclose(fp_t);
-  fclose(fp_u);
-  fclose(fp_k);
-  fclose(fp_r);
-
-  // Close file
-  fclose(fp);
-
+  fp_t.close();
+  fp_u.close();
+  fp_k.close();
+  fp_r.close();
 }
 //-----------------------------------------------------------------------------

@@ -28,6 +28,7 @@ namespace dolfin
   public:
 
     Legendre(uint n);
+    ~Legendre();
 
     /// Evaluation at given point
     real operator() (real x);
@@ -38,13 +39,20 @@ namespace dolfin
     /// Evaluation of second derivative at given point
     real d2dx(real x);
 
-  private:
+    /// Evaluation of arbitrary order, nn <= n (usefull ie in RadauQuadrature)
+    real eval(uint nn, real x);
 
-    real eval(uint n, real x);
     real ddx(uint n, real x);
     real d2dx(uint n, real x);
 
+
+  private:
+    
+
     uint n;
+
+    real cache_x;
+    real* cache;
 
   };
 

@@ -10,20 +10,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void SORSolver::SOR(uint n,
-		    const real* A,
-		    real* x,
-		    const real* b,
-		    const real& epsilon)
+void SORSolver::SOR(uint n, 
+		    const real* A, 
+		    real* x, 
+		    const real* b, 
+		    const real& tol) 
 {
   real prev[n];
 
   uint iterations = 0;
   real diff = 1000.0; //some big number
 
-  uint count = 0;
-
-  while ( diff > 200.0*epsilon )
+  while ( diff > tol ) 
   {
     ++count;
 
@@ -33,10 +31,10 @@ void SORSolver::SOR(uint n,
     }
 
     real_set(n, prev, x);
+    
+    SOR_iteration(n, A, b, x, prev);
 
-    _SOR_iteration(n, A, b, x, prev);
-
-
+    
     // Check precision
     real_sub(n, prev, x);
     diff = real_max_abs(n, prev);
@@ -45,45 +43,59 @@ void SORSolver::SOR(uint n,
   }
 }
 //-----------------------------------------------------------------------------
-void SORSolver::_SOR_iteration(uint n,
-                               const real* A,
-                               const real* b,
-                               real* x_new,
+void SORSolver::SOR_iteration(uint n, 
+                               const real* A, 
+                               const real* b, 
+                               real* x_new, 
                                const real* x_prev)
 {
   for (uint i = 0; i < n; ++i)
   {
-    x_new[i] = b[i]/A[i*n+i];
-
+    x_new[i] = b[i];
+    
     // j < i
-    for (uint j = 0; j < i; ++j)
-    { x_new[i] -= (A[i*n+j]/A[i*n+i]) * x_new[j]; }
-
+    for (uint j = 0; j < i; ++j) 
+    { x_new[i] -= (A[i*n+j] * x_new[j]); }
+    
     // j > i
-    for (uint j = i+1; j < n; ++j)
-    { x_new[i] -= (A[i*n+j]/A[i*n+i]) * x_prev[j]; }
+    for (uint j = i+1; j < n; ++j) 
+    { x_new[i] -= (A[i*n+j]* x_prev[j]); }
+
+    x_new[i] /= A[i*n + i];
   }
 }
 //-----------------------------------------------------------------------------
-void SORSolver::precondition(uint n, const uBLASDenseMatrix& A_inv,
-			     real* A, real* b,
-			     real* Ainv_A, real* Ainv_b)
+void SORSolver::SOR_precond(uint n, 
+			    const real* A, 
+			    real *x,
+			    const real* b,
+			    const uBLASDenseMatrix& Precond,
+			    const real& tol)
 {
-  //Compute A*A_inv and A_inv*b with extended precision
+  real A_precond[n*n];
+  real b_precond[n];
+
+  //Compute Precond*A and Precond*b with extended precision
   for (uint i=0; i < n; ++i)
   {
-    Ainv_b[i] = 0.0;
+    b_precond[i] = 0.0;
     for (uint j = 0; j < n; ++j)
     {
-      Ainv_b[i] += A_inv(i,j)*b[j];
+      b_precond[i] += Precond(i,j)*b[j];
 
-      Ainv_A[i*n+j] = 0.0;
+      A_precond[i*n+j] = 0.0;
       for (uint k = 0; k < n; ++k)
       {
-	Ainv_A[i*n+j] += A_inv(i, k)* A[k*n+j];
+	A_precond[i*n+j] += Precond(i, k)* A[k*n+j];
       }
     }
   }
+
+  // use Precond*b as initial guess
+  real_set(n, x, b_precond);
+
+  // solve the system
+  SOR(n, A_precond, x, b_precond, tol);
 }
 //-----------------------------------------------------------------------------
 real SORSolver::err(uint n, const real* A, const real* x, const real* b) {

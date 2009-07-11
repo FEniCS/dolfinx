@@ -50,7 +50,7 @@ void GaussianQuadrature::compute_weights()
   ublas_dense_matrix& _A = A.mat();
   real A_real[n*n];
 
-  uBLASVector x(n), b(n);
+  uBLASVector b(n);  
   ublas_vector& _b = b.vec();
   real b_real[n];
 
@@ -69,47 +69,30 @@ void GaussianQuadrature::compute_weights()
   _b[0] = 2.0;
   b_real[0] = 2.0;
 
+#ifndef HAS_GMP
   // Solve the system of equations
   // FIXME: Do we get high enough precision?
   //LU lu;
   //lu.set("LU report", false);
   //lu.solve(A, x, b);
+  uBLASVector x(n);
   A.solve(x, b);
 
-#ifndef HAS_GMP
   ublas_vector& _x = x.vec();
 
   // Save the weights
   for (uint i = 0; i < n; i++)
     weights[i] = _x[i];
-#else
+
+#else 
   //With extended precision: Use the double precision result as initial guess for the
   //extended precision SOR solver.
-  real x_real[n];
 
-  for (uint i = 0; i < n; ++i) {
-    x_real[i] = x[i];
-  }
+  uBLASDenseMatrix A_inv(A);
+  A_inv.invert();
 
-  uBLASDenseMatrix Ainv(A);
-  Ainv.invert();
-
-  // Allocate memory for holding the preconditioned system
-  real Ainv_A[n*n];
-  real Ainv_b[n];
-
-  SORSolver::precondition(n, Ainv, A_real, b_real, Ainv_A, Ainv_b);
-
-  // Solve the preconditioned system
-  SORSolver::SOR(n, Ainv_A, x_real, Ainv_b, real_epsilon());
-  /*
-  real err = SORSolver::err(n, A_real, x_real, b_real);
-  gmp_printf("Residual: %.3Fe\n", err.get_mpf_t());
-  */
-  for (uint i = 0; i < n; ++i)
-  {
-    weights[i] = x_real[i];
-  }
+  // Solve using A_inv as preconditioner
+  SORSolver::SOR_precond(n, A_real, weights, b_real, A_inv, real_epsilon());
 
 #endif
 }

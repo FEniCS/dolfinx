@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2006.
+// Modified by Benjamin Kehlet, 2009
 //
 // First added:  2003-06-12
-// Last changed: 2008-04-22
+// Last changed: 2009-03-20
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/real.h>
@@ -93,15 +94,39 @@ real Lagrange::eval(unsigned int i, real x)
   return product;
 }
 //-----------------------------------------------------------------------------
-real Lagrange::ddx(unsigned int i, real x)
+real Lagrange::ddx(uint i, real x)
 {
-  assert(i <= q);
+  dolfin_assert(i <= q);
+  
+  real s(0.0);
+  real prod(1.0);
+  bool x_equals_point = false;
 
+  for (uint j = 0; j < n; ++j) 
+  {
+    if (j != i) 
+    {
+      real t = x - points[j];
+      if (abs(t) < real_epsilon()) 
+      {
+	x_equals_point = true;
+      } else 
+      {
+	s += 1/t;
+	prod *= t;
+      }
+    }
+  }
+
+  if (x_equals_point) return prod*constants[i];
+  else                return prod*constants[i]*s;
+  
+  /*
   real sum(0);
-  for (unsigned int j = 0; j < n; j++) {
+  for (uint j = 0; j < n; j++) {
     if ( j != i ) {
       real product = 1.0;
-      for (unsigned int k = 0; k < n; k++)
+      for (uint k = 0; k < n; k++)
 	if ( k != i && k != j )
 	  product *= x - points[k];
       sum += product;
@@ -109,6 +134,7 @@ real Lagrange::ddx(unsigned int i, real x)
   }
 
   return sum * constants[i];
+  */
 }
 //-----------------------------------------------------------------------------
 real Lagrange::dqdx(unsigned int i)

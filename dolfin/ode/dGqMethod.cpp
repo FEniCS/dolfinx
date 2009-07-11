@@ -151,6 +151,23 @@ void dGqMethod::compute_weights()
   real A_real[nn*nn];
   real_zero(nn*nn, A_real);
 
+  real trial_ddx[nn * nq];
+  real test_eval[nn * nq];
+
+  real trial_eval_0[nn];
+  real test_eval_0[nn];
+
+
+  for (uint a = 0; a < nn; ++a) {
+    trial_eval_0[a] = trial->eval(a, 0.0);
+    test_eval_0[a]  = test->eval(a, 0.0);
+
+    for (uint b = 0; b < nq; ++b) {
+      trial_ddx[a*nq + b] = trial->ddx(a, qpoints[b]);
+      test_eval[a*nq + b] = test->eval(a, qpoints[b]);
+    }
+  }
+
   // Compute matrix coefficients
   for (unsigned int i = 0; i < nn; i++)
   {
@@ -160,19 +177,19 @@ void dGqMethod::compute_weights()
       real integral = 0.0;
       for (unsigned int k = 0; k < nq; k++)
       {
-        real x = qpoints[k];
-        integral += qweights[k] * trial->ddx(j, x) * test->eval(i, x);
-      }
+        //real x = qpoints[k];
+        //integral += qweights[k] * trial->ddx(j, x) * test->eval(i, x);
+        integral += qweights[k] * trial_ddx[j*nq + k] * test_eval[i*nq + k];
 
-      A_real[i*nn+j] = integral + trial->eval(j, 0.0) * test->eval(i, 0.0);
+      }     
+      
+      A_real[i*nn+j] = integral + trial_eval_0[j] * test_eval_0[i];
       _A(i, j) = to_double(A_real[i*nn+j]);
     }
   }
 
   uBLASVector b(nn);
-  uBLASVector w(nn);
   ublas_vector& _b = b.vec();
-  ublas_vector& _w = w.vec();
 
   real b_real[nn];
 
@@ -180,44 +197,36 @@ void dGqMethod::compute_weights()
   for (unsigned int i = 0; i < nq; i++)
   {
     // Get nodal point
-    real x = qpoints[i];
-
+    //real x = qpoints[i];
+    
     // Evaluate test functions at current nodal point
     for (unsigned int j = 0; j < nn; j++)
     {
-      b_real[j] = test->eval(j, x);
+      b_real[j] = test_eval[j*nq + i];
       _b[j] = to_double(b_real[j]);
     }
 
+#ifndef HAS_GMP
+    uBLASVector w(nn);
+    ublas_vector& _w = w.vec();
+
     // Solve for the weight functions at the nodal point
     A.solve(w, b);
-
-#ifndef HAS_GMP
 
     // Save weights including quadrature
     for (uint j = 0; j < nn; j++)
       nweights[j][i] = qweights[i] * _w[j];
 
-#else
-
-    // Use the double precision solution as initial guess for the SOR iterator
+#else 
+    
     real w_real[nn];
-
-    for (uint j = 0; j < nn; ++j)
-      w_real[j] = _w[j];
-
+    
+    // Solve system using the double precision invert as preconditioner
     uBLASDenseMatrix A_inv(A);
     A_inv.invert();
-
-    // Allocate memory for the preconditioned system
-    real Ainv_A[nn*nn];
-    real Ainv_b[nn];
-
-    SORSolver::precondition(nn, A_inv, A_real, b_real, Ainv_A, Ainv_b);
-
-    SORSolver::SOR(nn, Ainv_A, w_real, Ainv_b, real_epsilon());
-
-
+    
+    SORSolver::SOR_precond(nn, A_real, w_real, b_real, A_inv, real_epsilon());
+    
     for (uint j = 0; j < nn; ++j)
       nweights[j][i] = qweights[i] * w_real[j];
 

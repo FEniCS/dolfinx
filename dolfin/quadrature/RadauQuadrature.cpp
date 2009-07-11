@@ -50,12 +50,12 @@ void RadauQuadrature::compute_points()
     return;
   }
 
-  Legendre p1(n-1), p2(n);
+  Legendre p(n);
   real x, dx, step, sign;
 
   // Set size of stepping for seeking starting points
-  step = 2.0 / ( double(n-1) * 10.0 );
-
+  step = 1.0 / ( double(n-1) * 15.0 );
+  
   // Set the first nodal point which is -1
   points[0] = -1.0;
 
@@ -63,19 +63,19 @@ void RadauQuadrature::compute_points()
   x = -1.0 + step;
 
   // Set the sign at -1 + epsilon
-  sign = ( (p1(x) + p2(x)) > 0 ? 1.0 : -1.0 );
-
+  sign = ( (p.eval(n-1,x) + p(x)) > 0 ? 1.0 : -1.0 );
+  
   // Compute the rest of the nodes by Newton's method
   for (unsigned int i = 1; i < n; i++) {
 
     // Step to a sign change
-    while ( (p1(x) + p2(x))*sign > 0.0 )
+    while ( (p.eval(n-1, x) + p(x))*sign > 0.0 )
       x += step;
 
     // Newton's method
     do
     {
-      dx = - (p1(x) + p2(x)) / (p1.ddx(x) + p2.ddx(x));
+      dx = - (p.eval(n-1, x) + p(x)) / (p.ddx(n-1, x) + p.ddx(x));
       x  = x + dx;
     } while (real_abs(dx) > real_epsilon());
 
@@ -94,3 +94,4 @@ void RadauQuadrature::compute_points()
 
 }
 //-----------------------------------------------------------------------------
+

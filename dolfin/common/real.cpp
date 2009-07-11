@@ -2,22 +2,27 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-01-25
-// Last changed: 2009-02-09
+// Last changed: 2009-03-27
 
 #include "real.h"
 #include "constants.h"
 
 using namespace dolfin;
 
+
 real dolfin::_real_epsilon = DOLFIN_EPS;
+// Used to give warning if extended precision is not initialized
+bool dolfin::_real_initialized = false;
 
 //-----------------------------------------------------------------------------
-void dolfin::real_init()
+void dolfin::dolfin_set_precision(uint decimal_prec) 
 {
-#ifndef HAS_GMP
-  _real_epsilon = DOLFIN_EPS;
-#else
-  //computing precision
+#ifdef HAS_GMP
+  // Compute the number of bits needed
+  // set the GMP default precision
+  mpf_set_default_prec(static_cast<uint>(decimal_prec*std::log(10)/std::log(2)));
+  
+  // Compute epsilon
   real eps = 0.1;
   real one = real("1.0");
   while (eps + one != one)
@@ -28,6 +33,29 @@ void dolfin::real_init()
   eps *= 2;
 
   _real_epsilon = eps;
+  
+  // Set the default discrete tolerance unless user has explicitly set it
+  if (!dolfin_changed("ODE discrete tolerance"))
+    dolfin_set("ODE discrete tolerance", to_double(real_sqrt(real_epsilon())));
+  
+  int d = mpf_get_default_prec();
+  // Display number of digits
+  cout << "Using " << d << " bits pr digit, epsilon = " << real_epsilon() << endl;
+  _real_initialized = true;
+#else 
+    warning("Can't change floating-point precision when using type double.");
+#endif
+
+}
+//-----------------------------------------------------------------------------
+int dolfin::real_decimal_prec() {
+#ifndef HAS_GMP
+  return 15;
+#else 
+  int prec;
+  double dummy = real_frexp(&prec, real_epsilon());
+  dummy++; //avoid compiler warning about unused variable
+  return std::abs(static_cast<int>( prec * std::log(2)/std::log(10) ));
 #endif
 }
 //-----------------------------------------------------------------------------
@@ -45,13 +73,7 @@ real dolfin::real_sqrt(real a)
     x = prev - (prev*prev - a)/(2*prev);
     ++k;
   }
-
-  real test = x*x;
-  test = test-a;
-  /*
-  printf("Computed square root in %d iterations\n", k);
-  gmp_printf("sqrt, diff: %.20Fe\n", test.get_mpf_t());
-  */
+  
   return x;
 }
 //-----------------------------------------------------------------------------
@@ -101,3 +123,15 @@ real dolfin::real_pi()
 #endif
 }
 //-----------------------------------------------------------------------------
+double dolfin::real_frexp(int* exp, real x)
+{
+#ifdef HAS_GMP
+  long tmp_long = *exp;
+  double tmp_double = mpf_get_d_2exp(&tmp_long, x.get_mpf_t());
+  *exp = static_cast<int>(tmp_long);
+  return tmp_double;
+
+#else
+  return frexp(x, exp);
+#endif
+}
