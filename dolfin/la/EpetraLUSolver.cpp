@@ -5,18 +5,26 @@
 
 #ifdef HAS_TRILINOS
 
+#include "EpetraLUSolver.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
-#include "EpetraLUSolver.h"
+#include "LUSolver.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+Parameters EpetraLUSolver::default_parameters()
+{
+  Parameters p(LUSolver::default_parameters());
+  p.rename("epetra_lu_solver");
+  return p;
+}
+//-----------------------------------------------------------------------------
 EpetraLUSolver::EpetraLUSolver()
 {
-  // Do nothing
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 EpetraLUSolver::~EpetraLUSolver()

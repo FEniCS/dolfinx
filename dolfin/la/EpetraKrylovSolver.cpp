@@ -7,19 +7,19 @@
 
 #ifdef HAS_TRILINOS
 
-#include "Epetra_ConfigDefs.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_LinearProblem.h"
-#include "Epetra_Map.h"
-#include "AztecOO.h"
-#include "ml_include.h"
-#include "Epetra_LinearProblem.h"
-#include "ml_MultiLevelOperator.h"
-#include "ml_epetra_utils.h"
+#include <Epetra_ConfigDefs.h>
+#include <Epetra_Vector.h>
+#include <Epetra_FEVector.h>
+#include <Epetra_RowMatrix.h>
+#include <Epetra_CrsMatrix.h>
+#include <Epetra_FECrsMatrix.h>
+#include <Epetra_LinearProblem.h>
+#include <Epetra_Map.h>
+#include <AztecOO.h>
+#include <ml_include.h>
+#include <Epetra_LinearProblem.h>
+#include <ml_MultiLevelOperator.h>
+#include <ml_epetra_utils.h>
 
 #include <boost/assign/list_of.hpp>
 #include <dolfin/log/dolfin_log.h>
@@ -28,9 +28,10 @@
 #include "EpetraKrylovSolver.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
+#include "EpetraPreconditioner.h"
+#include "KrylovSolver.h"
 
 using namespace dolfin;
-
 // Available solvers
 const std::map<std::string, int> EpetraKrylovSolver::methods 
   = boost::assign::map_list_of("default",  AZ_gmres)
@@ -48,10 +49,17 @@ const std::map<std::string, int> EpetraKrylovSolver::pc_methods
                               ("amg_ml",  -1); 
 
 //-----------------------------------------------------------------------------
+Parameters EpetraKrylovSolver::default_parameters()
+{
+  Parameters p(KrylovSolver::default_parameters());
+  p.rename("epetra_krylov_solver");
+  return p;
+}
+//-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
                     : method(method), pc_type(pc_type), prec(0)
 {
-  // Do nothing
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method, 
@@ -60,6 +68,7 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                                        prec(&prec)
 {
   error("Initialisation of EpetraKrylovSolver with a EpetraPreconditioner needs to be implemented.");
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::~EpetraKrylovSolver()
@@ -175,7 +184,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   info("Starting to iterate");
 
   // FIXME: Parameters should come from the parameter system
-  linear_solver.Iterate(1000, 1.0e-9);
+  linear_solver.Iterate(parameters("maximum_iterations"), parameters("relative_tolerance"));
 
   return linear_solver.NumIters();
 }

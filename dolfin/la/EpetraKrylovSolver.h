@@ -15,7 +15,6 @@
 #include <string>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
-#include "EpetraPreconditioner.h"
 
 namespace dolfin
 {
@@ -26,6 +25,7 @@ namespace dolfin
   class EpetraMatrix;
   class EpetraVector;
   class EpetraKrylovMatrix;
+  class EpetraPreconditioner;
 
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
@@ -50,6 +50,9 @@ namespace dolfin
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
+
+    /// Default parameter values
+    static Parameters default_parameters();
 
     /// Display solver data
     void disp() const;

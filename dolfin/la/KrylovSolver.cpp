@@ -34,7 +34,7 @@ Parameters KrylovSolver::default_parameters()
 {
   Parameters p("krylov_solver");
 
-  p.add("relative_tolerance",  1e-15);
+  p.add("relative_tolerance",  1e-6);
   p.add("absolute_tolerance",  1e-15);
   p.add("divergence_limit",    1e4);
   p.add("maximum_iterations",  10000);

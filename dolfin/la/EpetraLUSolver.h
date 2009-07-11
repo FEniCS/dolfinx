@@ -37,6 +37,9 @@ namespace dolfin
     /// Solve linear system Ax = b
     uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
 
+    /// Default parameter values
+    static Parameters default_parameters();
+
     /// Display LU solver data
     void disp() const;
   };

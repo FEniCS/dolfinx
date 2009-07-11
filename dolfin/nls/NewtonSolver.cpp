@@ -53,8 +53,6 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
 
   begin("Starting Newton solve.");
 
-  logging(false);
-
   // Compute F(u) and J
   nonlinear_problem.F(*b, x);
   nonlinear_problem.J(*A, x);
@@ -69,9 +67,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
     // Perform linear solve and update total number of Krylov iterations
     if (dx->size() > 0)
       dx->zero();
-    logging(false);
     krylov_iterations += solver->solve(*A, *dx, *b);
-    logging(true);
 
     // Compute initial residual
     if (newton_iteration == 0)
