@@ -188,9 +188,6 @@ void cGqMethod::compute_weights()
   ublas_vector& _b = b.vec();
   real b_real[q];
 
-  uBLASVector w(q);
-  ublas_vector& _w = w.vec();
-
   // Compute nodal weights for each degree of freedom (loop over points)
   for (uint i = 0; i < nq; i++)
   {
@@ -211,8 +208,6 @@ void cGqMethod::compute_weights()
 
     // Solve for the weight functions at the nodal point
     A.solve(w, b);
-
-#ifndef HAS_GMP
 
     // Save weights including quadrature
     for (uint j = 0; j < nn; j++)

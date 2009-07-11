@@ -8,6 +8,7 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/timing.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "ODE.h"
 #include "TimeStepper.h"
 #include "ODESolver.h"

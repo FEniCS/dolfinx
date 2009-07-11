@@ -6,6 +6,7 @@
 
 #include "real.h"
 #include "constants.h"
+#include <dolfin/log/LogStream.h>
 
 using namespace dolfin;
 
@@ -18,6 +19,9 @@ bool dolfin::_real_initialized = false;
 void dolfin::dolfin_set_precision(uint decimal_prec) 
 {
 #ifdef HAS_GMP
+  if (_real_initialized)
+    error("dolfin_set_precision called twice");
+
   // Compute the number of bits needed
   // set the GMP default precision
   mpf_set_default_prec(static_cast<uint>(decimal_prec*std::log(10)/std::log(2)));
@@ -33,10 +37,6 @@ void dolfin::dolfin_set_precision(uint decimal_prec)
   eps *= 2;
 
   _real_epsilon = eps;
-  
-  // Set the default discrete tolerance unless user has explicitly set it
-  if (!dolfin_changed("ODE discrete tolerance"))
-    dolfin_set("ODE discrete tolerance", to_double(real_sqrt(real_epsilon())));
   
   int d = mpf_get_default_prec();
   // Display number of digits
@@ -55,7 +55,7 @@ int dolfin::real_decimal_prec() {
   int prec;
   double dummy = real_frexp(&prec, real_epsilon());
   dummy++; //avoid compiler warning about unused variable
-  return std::abs(static_cast<int>( prec * std::log(2)/std::log(10) ));
+  return static_cast<int>(std::abs( prec * std::log(2)/std::log(10) ));
 #endif
 }
 //-----------------------------------------------------------------------------

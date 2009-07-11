@@ -22,6 +22,14 @@ ODE::ODE(uint N, real T)
 {
   info("Creating ODE of size %d.", N);
   parameters = default_parameters();
+
+
+  #ifdef HAS_GMP
+    if (!_real_initialized)
+      error("Extended precision not initialized. Use dolfin_set_precision(uint desimal_prec) before declaring any real variables and instansiating ODE");
+  #endif
+
+
 }
 //-----------------------------------------------------------------------------
 ODE::~ODE()

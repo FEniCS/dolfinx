@@ -23,8 +23,6 @@ void SORSolver::SOR(uint n,
 
   while ( diff > tol ) 
   {
-    ++count;
-
     if ( iterations > SOR_MAX_ITERATIONS )
     {
       error("SOR: System seems not to converge");

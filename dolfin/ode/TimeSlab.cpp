@@ -100,7 +100,7 @@ void TimeSlab::write(uint N, const real* u)
   // FIXME: Make this a parameter?
   std::string filename = "solution.data";
   
-  message("Saving solution at final time to file \"%s\".", filename.c_str());
+  info("Saving solution at final time to file \"%s\".", filename.c_str());
 
   std::ofstream fp(filename.c_str());
   if (!fp.is_open())

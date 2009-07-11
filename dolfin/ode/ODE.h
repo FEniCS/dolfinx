@@ -67,7 +67,7 @@ namespace dolfin
   /// This mode allows the state to be specified and retrieved in
   /// between intervals by calling set_state() and get_state().
 
-  class ODE : public Variable, public GMPObject
+  class ODE : public Variable
   {
   public:
 

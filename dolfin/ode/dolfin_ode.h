@@ -3,7 +3,6 @@
 
 // DOLFIN ode interface
 
-#include <dolfin/ode/GMPObject.h>
 #include <dolfin/ode/ODE.h>
 #include <dolfin/ode/ODECollection.h>
 #include <dolfin/ode/ComplexODE.h>

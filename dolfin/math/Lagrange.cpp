@@ -96,7 +96,7 @@ real Lagrange::eval(unsigned int i, real x)
 //-----------------------------------------------------------------------------
 real Lagrange::ddx(uint i, real x)
 {
-  dolfin_assert(i <= q);
+  assert(i <= q);
   
   real s(0.0);
   real prod(1.0);
