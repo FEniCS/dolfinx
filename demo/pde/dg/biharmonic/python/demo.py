@@ -1,6 +1,6 @@
 """This demo program solves the Biharmonic equation,
 
-    - nabla^4 u(x, y) = f(x, y)
+    nabla^4 u(x, y) = f(x, y)
 
 on the unit square with source f given by
 
@@ -8,7 +8,7 @@ on the unit square with source f given by
 
 and boundary conditions given by
 
-    u(x, y)     = 0
+    u(x, y)         = 0
     nabla^2 u(x, y) = 0
 
 using a discontinuous Galerkin formulation (interior penalty method).
@@ -25,7 +25,7 @@ from dolfin import *
 mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "CG", 2)
 
-# Define Dirichlet boundary (x = 0 or x = 1)
+# Define Dirichlet boundary
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return on_boundary
@@ -47,17 +47,17 @@ u = TrialFunction(V)
 # Define normal component, mesh size and right-hand side
 n = FacetNormal(mesh)
 h = CellSize(mesh)
-h_avg = (h('+') + h('-'))/2
+h_avg = (h('+') + h('-'))/2.0
 f = Source(V)
 
 # Define parameters
-alpha = Constant(mesh, 8.0)
+alpha = 8.0
 
 # Define bilinear form
 a = inner(div(grad(v)), div(grad(u)))*dx \
   - inner(avg(div(grad(v))), jump(grad(u), n))*dS \
   - inner(jump(grad(v), n), avg(div(grad(u))))*dS \
-  + alpha('+')/h_avg*inner(jump(grad(v),n), jump(grad(u),n))*dS
+  + alpha/h_avg*inner(jump(grad(v),n), jump(grad(u),n))*dS
 
 # Define linear form
 L = v*f*dx

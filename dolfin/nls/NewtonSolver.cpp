@@ -53,13 +53,13 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
 
   begin("Starting Newton solve.");
 
-  // Compute F(u) and J
-  nonlinear_problem.F(*b, x);
-  nonlinear_problem.J(*A, x);
-
   uint krylov_iterations = 0;
   newton_iteration = 0;
   bool newton_converged = false;
+
+  // Compute F(u) and J
+  nonlinear_problem.F(*b, x);
+  nonlinear_problem.J(*A, x);
 
   // Start iterations
   while (!newton_converged && newton_iteration < maxiter)

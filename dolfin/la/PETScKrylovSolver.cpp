@@ -43,9 +43,10 @@ const std::map<std::string, const KSPType> PETScKrylovSolver::methods
 const std::map<std::string, KSPType> PETScKrylovSolver::methods 
 #endif
   = boost::assign::map_list_of("default",  "")
-                              ("cg",       KSPCG)
-                              ("gmres",    KSPGMRES)
-                              ("bicgstab", KSPBCGS); 
+                              ("cg",         KSPCG)
+                              ("gmres",      KSPGMRES)
+                              ("richardson", KSPRICHARDSON)
+                              ("bicgstab",   KSPBCGS); 
 //-----------------------------------------------------------------------------
 // Available preconditioners
 #if PETSC_VERSION_MAJOR > 2
