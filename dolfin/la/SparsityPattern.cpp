@@ -208,7 +208,6 @@ void SparsityPattern::apply()
     // Figure out correct process for each non-local entry
     assert(non_local.size() % 2 == 0);
     std::vector<uint> partition(non_local.size());
-    const uint process_number = MPI::process_number();
     for (uint i = 0; i < non_local.size(); i+= 2)
     {
       // Get row for non-local entry
@@ -217,7 +216,7 @@ void SparsityPattern::apply()
       // Figure out which process owns the row
       const uint p = MPI::index_owner(I, shape[0]);
       assert(p < MPI::num_processes());
-      assert(p != process_number);
+      assert(p != MPI::process_number());
       partition[i] = p;
       partition[i + 1] = p;
     }

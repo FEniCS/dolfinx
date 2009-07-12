@@ -84,7 +84,6 @@ int main()
 
   // FIXME: Does not work with GMP enabled
 
-  /*
   // Set some parameters
   const real T = 0.01;
   const real epsilon = 0.01;
@@ -105,7 +104,6 @@ int main()
 
   // Solve ODE
   ode.solve();
-  */
 
   return 0;
 }
