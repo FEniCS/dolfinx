@@ -40,6 +40,9 @@ namespace dolfin
     /// Compute error estimate (modulo stability factor)
     real error(real k, real r) const;
 
+    /// Replace the solution values with the nodal values solution polynomial  
+    void get_nodal_values(const real& x0, const real* x, real* nodal_values) const;
+
     /// Display method data
     void disp() const;
 

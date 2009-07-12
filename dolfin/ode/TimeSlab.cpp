@@ -85,6 +85,10 @@ void TimeSlab::get_state(real* u)
     u[i] = u0[i];
 }
 //-----------------------------------------------------------------------------
+const Lagrange TimeSlab::get_trial() const {
+  return method->get_trial();
+}
+//-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream,
 				      const TimeSlab& timeslab)
 {

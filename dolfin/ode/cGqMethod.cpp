@@ -66,6 +66,17 @@ real cGqMethod::error(real k, real r) const
   return real_pow(k, static_cast<real>(q)) * real_abs(r);
 }
 //-----------------------------------------------------------------------------
+void cGqMethod::get_nodal_values(const real& u0, const real* x, real* nodal_values) const
+{
+  //printf("  cGqMethod::get_nodal_values()\n");
+  nodal_values[0] = u0;
+
+  for (uint i = 0; i < nn; i++)
+    nodal_values[i+1] = x[i];
+
+  //printf("  exit() cGqMethod::get_nodal_values()\n");
+}
+//-----------------------------------------------------------------------------
 void cGqMethod::disp() const
 {
   info("Data for the cG(%d) method", q);

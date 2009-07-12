@@ -14,9 +14,11 @@ namespace dolfin
 {
 
   class ODE;
+  class ODESolution;
   class Method;
   class uBLASVector;
   class LogStream;
+  class Lagrange;
 
   /// This is the base class for time slabs, the collections of
   /// degrees of freedom for the solution of an ODE between two
@@ -65,6 +67,8 @@ namespace dolfin
     /// Get state for ODE
     void get_state(real* u);
 
+    const Lagrange get_trial() const;
+
     /// Sample solution value of given component at given time
     virtual real usample(uint i, real t) = 0;
 
@@ -73,6 +77,9 @@ namespace dolfin
 
     /// Sample residual for given component at given time
     virtual real rsample(uint i, real t) = 0;
+
+    /// Save to ODESolution object
+    virtual void save_solution(ODESolution& u) = 0;
 
     /// Display time slab data
     virtual void disp() const = 0;

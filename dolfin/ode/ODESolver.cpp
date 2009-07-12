@@ -30,7 +30,7 @@ ODESolver::~ODESolver()
 //------------------------------------------------------------------------
 void ODESolver::solve()
 {
-  ODESolution u(ode);
+  ODESolution u(ode.size());
   solve(u);
 }
 //-----------------------------------------------------------------------
@@ -63,7 +63,7 @@ void ODESolver::solve_primal(ODESolution& u)
 
   TimeStepper time_stepper(ode);
   time_stepper.solve(u);
-
+  u.flush();
   end();
 }
 //------------------------------------------------------------------------
@@ -85,11 +85,13 @@ void ODESolver::solve_dual(ODESolution& u)
   dual.parameters("save_final_solution") = true;
 
   // Create dummy object to hold the solution of the dual
-  ODESolution z(dual);
+  ODESolution z(dual.size());
+  z.set_filename("dual_odesolution");
 
   // Solve dual problem
   TimeStepper time_stepper(dual);
   time_stepper.solve(z);
+  z.flush();
 
   end();
 }

@@ -18,6 +18,7 @@ namespace dolfin
   class ODE;
   class Method;
   class TimeSlabSolver;
+  class ODESolution;
 
   /// This class represents a mono-adaptive time slab of length k = b - a
   /// holding the degrees of freedom for the solution of an ODE between
@@ -56,6 +57,9 @@ namespace dolfin
 
     /// Sample residual for given component at given time
     real rsample(uint i, real t);
+
+    /// Save to ODESolution object
+    void save_solution(ODESolution& u);
 
     /// Display time slab data
     void disp() const;

@@ -10,7 +10,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ODECollection::ODECollection(ODE& ode, uint num_systems)
-  : ode(ode), u(ode), num_systems(num_systems), states(0)
+  : ode(ode), u(ode.size()), num_systems(num_systems), states(0)
 {
   info("Creating ODE collection of size %d x %d.", num_systems, ode.size());
 

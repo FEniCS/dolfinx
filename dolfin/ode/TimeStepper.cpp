@@ -59,6 +59,8 @@ void TimeStepper::solve(ODESolution& u, real t0, real t1)
   begin("Time-stepping over the time interval [%g, %g]",
         to_double(t0), to_double(t1));
 
+  u.init(timeslab->get_trial());
+
   // Do time-stepping on [t0, t1]
   t = t0;
   while (!at_end(t, t1) && !_stopped)
@@ -134,6 +136,10 @@ void TimeStepper::get_state(real* u)
 //-----------------------------------------------------------------------------
 void TimeStepper::save(ODESolution& u)
 {
+  //save to ODESolution object
+  timeslab->save_solution(u);
+
+
   // Check if we should save the solution
   if (!save_solution)
     return;
@@ -214,7 +220,7 @@ void TimeStepper::save_sample(ODESolution& u, real t)
   file << sample;
 
   // Add sample to ODE solution
-  u.add_sample(sample);
+  //u.add_sample(sample);
 
   // Let user save sample (optional)
   ode.save(sample);

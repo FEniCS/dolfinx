@@ -8,6 +8,7 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
 #include "ODE.h"
+#include "ODESolution.h"
 #include "Method.h"
 #include "MonoAdaptiveFixedPointSolver.h"
 #include "MonoAdaptiveNewtonSolver.h"
@@ -204,6 +205,27 @@ real MonoAdaptiveTimeSlab::rsample(uint i, real t)
   const real r = method->residual(x0, dofs, fq[foffset + i], k);
 
   return r;
+}
+//-----------------------------------------------------------------------------
+void MonoAdaptiveTimeSlab::save_solution(ODESolution& u) 
+{
+  //printf("MonoAdaptiveTimeSlab::save_solution\n");
+  // Prepare array of values
+  real* data = new real[N*u.nsize()];
+
+  for (uint i = 0; i < N; ++i) {
+    for (uint n = 0; n < method->nsize(); n++)
+      dofs[n] = x[n*N + i];
+    
+    method->get_nodal_values(u0[i], dofs, &data[i*u.nsize()]);
+  }
+  
+  u.add_timeslab(starttime(), 
+		 endtime(), 
+		 data);
+  
+  delete [] data;
+  //printf("exit MonoAdaptiveTimeSlab::save_solution\n");
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveTimeSlab::disp() const

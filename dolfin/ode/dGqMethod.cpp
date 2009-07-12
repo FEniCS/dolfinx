@@ -70,6 +70,11 @@ real dGqMethod::error(real k, real r) const
   return real_pow(k, static_cast<real>(q + 1)) * real_abs(r);
 }
 //-----------------------------------------------------------------------------
+void dGqMethod::get_nodal_values(const real& x0, const real* x, real* nodal_values) const
+{
+  real_set(nn, nodal_values, x);
+}
+//-----------------------------------------------------------------------------
 void dGqMethod::disp() const
 {
   info("Data for the dG(%d) method", q);

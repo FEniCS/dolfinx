@@ -85,6 +85,10 @@ namespace dolfin
     /// Compute error estimate (modulo stability factor)
     virtual real error(real k, real r) const = 0;
 
+    virtual void get_nodal_values(const real& x0, const real* x, real* nodal_values) const = 0;
+
+    inline const Lagrange get_trial() const { return *trial; }
+
     /// Display method data
     virtual void disp() const = 0;
 

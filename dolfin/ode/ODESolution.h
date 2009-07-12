@@ -2,92 +2,99 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
-//
+// 
 // First added:  2008-06-11
-// Last changed: 2008-10-06
+// Last changed: 2009-07-12
 
 #ifndef __ODESOLUTION_H
 #define __ODESOLUTION_H
 
-#include <iostream>
-#include <fstream>
 #include <vector>
+#include <tr1/tuple>
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
-
-#define ODESOLUTION_INITIAL_ALLOC 1000000
-#define ODESOLUTION_MAX_ALLOC     16000000
+#include "Method.h"
 
 namespace dolfin
 {
 
-  // Forward declarations
-  class ODE;
-  class Sample;
-
-  /// ODESolution stores the samples from the ODE solver, primarily to
-  /// be able to solve the dual problem. To be able to evaluate the
-  /// solution in an arbitrary point, ODESolution makes a simple linear
-  /// interpolation between the the closest samples. A number of
-  /// interpolated values is cached, since the ODE solver repeatedly
-  /// requests evaluation of the same t.
-  ///
+  /// ODESolution stores the solution from the ODE solver, primarily to
+  /// be able to solve the dual problem. A number of interpolated values 
+  /// is cached, since the ODE solver repeatedly requests evaluation of 
+  /// the same t.
+  /// 
   /// The samples are stored in memory if possible, otherwise stored
   /// in a temporary file and fetched from disk in blocks when needed.
   ///
-  /// Since GMP at the moment doesn't support saving operands on disk,
-  /// this class uses double for all variables.
+  /// Since GMP at the moment doesn't support saving binary operands
+  /// on disk this class uses ascii files for storage. 
+  /// Storing binary operands on disk is fortunately planned on the next major 
+  /// release of GMP.
+
+  //a, k, nodal values
+  typedef std::tr1::tuple<real, real, real*> Timeslabdata;
+
+  class Lagrange;
 
   class ODESolution
   {
   public:
 
     /// Create solution data for given ODE
-    ODESolution(ODE& ode);
+    ODESolution(uint N);
+    ODESolution(std::string filename, uint number_of_files = 1); //load data from file
 
     /// Destructor
     ~ODESolution();
 
-    /// Evaluate (interpolate) value of solution at given time
-    void eval(const real& t, real* y);
+    //set the trial space (must be called before starting to add data)
+    void init(const Lagrange& trial);
 
-    // Add sample
-    void add_sample(Sample& sample);
+    // Add solution data. Must be in write_mode
+    void add_timeslab(const real& a, const real& b, real* values);
 
-    // Flush values (make values available for interpolation)
+    /// Make object ready for evaluating
     void flush();
 
+    /// Evaluate (interpolate) value of solution at given time    
+    void eval(const real t, real* y);
+
+    void set_filename(std::string filename);
+    void save_to_file();
+
+    void disp();
+
+    inline uint nsize() const {return nodal_size;}
+    inline real endtime() const {return T;}
+
   private:
+    Lagrange* trial;
+    uint N; //number of components
+    uint nodal_size;
+    real T; //endtime. Updated when new timeslabs are added 
+    std::vector<Timeslabdata> data; //data in memory
+    std::vector<real> file_table; //table mapping t values to files
+    bool initialized;
+    bool read_mode; //true when 
 
-    ODE& ode;
+    // Stuff related to file storage
+    bool data_on_disk;
+    uint max_timeslabs; //number of timeslabs pr file and in memory
     std::string filename;
-    std::fstream file;
-    std::pair<double, double*>* cache;
+    int number_of_files;
 
-    uint cache_size;
-    uint ringbufcounter;
+    static const uint max_filesize = 1000000000; //approx 1GB
 
-    // Sorted vector with pair. Each entry representents a mapping from t value to index in file/buffer
-    std::vector<double> bintree;
-    uint step;
+    void read_file(uint file_number);
+    void add_data(const real& a, const real& b, real* data);
 
-    double* buffer;
-    double* tmp;
-    uint buffer_size;
-    uint buffer_offset;
-    uint buffer_count; //actual number of entries in buffer
-    bool dataondisk;
+    inline real a_in_memory() {return std::tr1::get<0>(data[0]);}
+    inline real b_in_memory() {return std::tr1::get<0>(data[data.size()-1])+std::tr1::get<1>(data[data.size()-1]);}
 
-    // Linear interpolation
-    void interpolate(const double* v0, const double t0,
-                     const double* v1, const double t1,
-                     const double t, double* result);
-
-    // Read entry from buffer, fetch from disk if necessary
-    void get_from_buffer(double* u, uint index);
-
+    //callback function used by std::lower_bound() when searching
+    static bool t_cmp( const real& t, const Timeslabdata& a);
   };
-
 }
+
 
 #endif

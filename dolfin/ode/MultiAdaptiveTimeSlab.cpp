@@ -292,6 +292,11 @@ real MultiAdaptiveTimeSlab::rsample(uint i, real t)
   return adaptivity.residual(i);
 }
 //-----------------------------------------------------------------------------
+void MultiAdaptiveTimeSlab::save_solution(ODESolution& u) 
+{
+  //Not implemented
+}
+//-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::disp() const
 {
   cout << "--------------------------------------------------------" << endl;

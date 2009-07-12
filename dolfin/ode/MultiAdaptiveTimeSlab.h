@@ -64,6 +64,9 @@ namespace dolfin
     /// Sample residual for given component at given time
     real rsample(uint i, real t);
 
+    /// Save to ODESolution object (currently not implemented)
+    void save_solution(ODESolution& u);
+
     /// Display time slab data
     void disp() const;
 
