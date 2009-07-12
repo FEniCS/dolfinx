@@ -13,9 +13,7 @@
 #define __SOR_SOLVER_H
 
 #include <dolfin/common/types.h>
-#include <dolfin/log/log.h>
 #include <dolfin/common/real.h>
-#include <iostream>
 #include <dolfin/la/uBLASDenseMatrix.h>
 
 #define SOR_MAX_ITERATIONS 1000
