@@ -260,7 +260,7 @@ void Parameters::update(const Parameters& parameters)
     // Set value (will give an error if the type is wrong)
     if (other.type_str() == "int")
       *self = static_cast<int>(other);
-    else if (other.type_str() == "double")
+    else if (other.type_str() == "real")
       *self = static_cast<double>(other);
     else if (other.type_str() == "bool")
       *self = static_cast<bool>(other);
