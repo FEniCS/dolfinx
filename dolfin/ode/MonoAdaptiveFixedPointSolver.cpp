@@ -33,8 +33,8 @@ MonoAdaptiveFixedPointSolver::~MonoAdaptiveFixedPointSolver()
   delete [] xold;
 }
 //-----------------------------------------------------------------------------
-real MonoAdaptiveFixedPointSolver::iteration(real tol, uint iter,
-                                             real d0, real d1)
+real MonoAdaptiveFixedPointSolver::iteration(const real& tol, uint iter,
+                                             const real& d0, const real& d1)
 {
   // FIXME: Cleanup stabilization
 

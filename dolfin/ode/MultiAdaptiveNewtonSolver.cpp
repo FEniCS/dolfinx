@@ -84,7 +84,7 @@ void MultiAdaptiveNewtonSolver::start()
   //A->disp(true, 10);
 }
 //-----------------------------------------------------------------------------
-real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
+real MultiAdaptiveNewtonSolver::iteration(const real& tol, uint iter, const real& d0, const real& d1)
 {
   // Evaluate b = -F(x) at current x
   Feval(b);

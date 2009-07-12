@@ -89,8 +89,8 @@ void MultiAdaptiveFixedPointSolver::end()
   num_elements_mono += ts.length() / ts.kmin * static_cast<real>(ts.ode.size());
 }
 //-----------------------------------------------------------------------------
-real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
-					      real d0, real d1)
+real MultiAdaptiveFixedPointSolver::iteration(const real& tol, uint iter,
+					      const real& d0, const real& d1)
 {
   // Reset dof
   uint j = 0;

@@ -35,7 +35,7 @@ namespace dolfin
   protected:
 
     // Make an iteration
-    real iteration(real tol, uint iter, real d0, real d1);
+    real iteration(const real& tol, uint iter, const real& d0, const real& d1);
 
     /// Size of system
     uint size() const;
