@@ -62,15 +62,15 @@ namespace dolfin
   { return x >= 0.0 ? x : -1.0*x; }
 
   // Maximum
-  inline real real_max(real x, real y)
+  inline real real_max(const real& x, const real& y)
   { return x > y ? x : y; }
 
   // Minimum
-  inline real real_min(real x, real y)
+  inline real real_min(const real& x, const real& y)
   { return x < y ? x : y; }
 
   // Power function
-  inline real real_pow(real x, uint y)
+  inline real real_pow(const real& x, uint y)
   {
 #ifdef HAS_GMP
     real res;
@@ -82,7 +82,7 @@ namespace dolfin
   }
   
   // Power function
-  inline real pow(real x, real y)
+  inline real pow(const real& x, const real& y)
   {
 #ifdef HAS_GMP
     error("Multiprecision pow function not implemented.");
@@ -92,7 +92,7 @@ namespace dolfin
 #endif
   }
 
-  inline int isnormal(real x) {
+  inline int isnormal(const real& x) {
 #ifdef HAS_GMP
     // NOTE: Not implemented. 
     // GMP has no notion of infinity or NaN
@@ -103,26 +103,26 @@ namespace dolfin
   }
 
   // Power function (note: not full precision!)
-  inline real real_pow(real x, real y)
+  inline real real_pow(const real& x, const real& y)
   { return std::pow(to_double(x), to_double(y)); }
 
  /// Square root
-  real real_sqrt(real a);
+  real real_sqrt(const real& a);
 
   /// Compute pi
   real real_pi();
 
-  double real_frexp(int* exp, real x);
+  double real_frexp(int* exp, const real& x);
   /// Exponential function (note: not full precision!)
   inline real real_exp(real x)
   { return to_real(exp(to_double(x))); }
 
   /// Logarithmic function (note: not full precision!)
-  inline real real_log(real x)
+  inline real real_log(const real& x)
   { return to_real(log(to_double(x))); }
 
   // Get computed epsilon
-  inline const real real_epsilon() {return _real_epsilon;}
+  inline const real& real_epsilon() {return _real_epsilon;}
 
   // Get precision in decimal digits
   // Usefull when writing with full precision to text (ascii) files
@@ -133,7 +133,7 @@ namespace dolfin
   { for (uint i = 0; i < n; i++) x[i] = y[i]; }
 
   // Set array to given number
-  inline void real_set(uint n, real* x, real value)
+  inline void real_set(uint n, real* x, const real& value)
   { for (uint i = 0; i < n; i++) x[i] = value; }
 
   // Set array to zero
@@ -149,11 +149,11 @@ namespace dolfin
   { for (uint i = 0; i < n; i++) x[i] -= y[i]; }
 
   // Add multiple of array, x += a*y (AXPY operation)
-  inline void real_axpy(uint n, real* x, real a, const real* y)
+  inline void real_axpy(uint n, real* x, const real& a, const real* y)
   { for (uint i = 0; i < n; i++) x[i] += a*y[i]; }
 
   // Multiply array with given number
-  inline void real_mult(uint n, real* x, real a)
+  inline void real_mult(uint n, real* x, const real& a)
   { for (uint i = 0; i < n; i++) x[i] *= a; }
 
   // Compute inner products of array

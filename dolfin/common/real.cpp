@@ -59,7 +59,7 @@ int dolfin::real_decimal_prec() {
 #endif
 }
 //-----------------------------------------------------------------------------
-real dolfin::real_sqrt(real a)
+real dolfin::real_sqrt(const real& a)
 {
   //Solving x^2 - a = 0 using newtons method
   real x(1.0);
@@ -123,7 +123,7 @@ real dolfin::real_pi()
 #endif
 }
 //-----------------------------------------------------------------------------
-double dolfin::real_frexp(int* exp, real x)
+double dolfin::real_frexp(int* exp, const real& x)
 {
 #ifdef HAS_GMP
   long tmp_long = *exp;
