@@ -211,7 +211,7 @@ void MonoAdaptiveTimeSlab::save_solution(ODESolution& u)
 {
   //printf("MonoAdaptiveTimeSlab::save_solution\n");
   // Prepare array of values
-  real* data = new real[N*u.nsize()];
+  real data[N*u.nsize()];
 
   for (uint i = 0; i < N; ++i) {
     for (uint n = 0; n < method->nsize(); n++)
@@ -224,7 +224,6 @@ void MonoAdaptiveTimeSlab::save_solution(ODESolution& u)
 		 endtime(), 
 		 data);
   
-  delete [] data;
   //printf("exit MonoAdaptiveTimeSlab::save_solution\n");
 }
 //-----------------------------------------------------------------------------
@@ -245,29 +244,30 @@ void MonoAdaptiveTimeSlab::disp() const
 //-----------------------------------------------------------------------------
 void MonoAdaptiveTimeSlab::feval(uint m)
 {
-  // Evaluation depends on the choice of method
-  if (method->type() == Method::cG)
-  {
-    // Special case: m = 0
-    if (m == 0)
+    // Evaluation depends on the choice of method
+    if (method->type() == Method::cG)
     {
-      // We don't need to evaluate f at t = a since we evaluated
-      // f at t = b for the previous time slab
-      return;
-    }
+      // Special case: m = 0
+      if (m == 0)
+      {
+	// We don't need to evaluate f at t = a since we evaluated
+	// f at t = b for the previous time slab
+	return;
+      }
 
-    const real t = _a + method->qpoint(m) * (_b - _a);
-    copy(x, (m - 1)*N, u, 0, N);
-    ode.f(u, t, f);
-    copy(f, 0, fq, m*N, N);
-  }
-  else
-  {
-    const real t = _a + method->qpoint(m) * (_b - _a);
-    copy(x, m*N, u, 0, N);
-    ode.f(u, t, f);
-    copy(f, 0, fq, m*N, N);
-  }
+      const real t = _a + method->qpoint(m) * (_b - _a);
+      copy(x, (m - 1)*N, u, 0, N);
+      ode.f(u, t, f);
+      copy(f, 0, fq, m*N, N);
+    }
+    else
+    {
+      const real t = _a + method->qpoint(m) * (_b - _a);
+      //copy(x, m*N, u, 0, N);
+      ode.f(&x[m*N], t, &fq[m*N]);
+      //copy(f, 0, fq, m*N, N);
+    }
+  
 }
 //-----------------------------------------------------------------------------
 TimeSlabSolver* MonoAdaptiveTimeSlab::choose_solver()
