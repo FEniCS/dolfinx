@@ -12,6 +12,8 @@
 #ifndef __VECTOR_H
 #define __VECTOR_H
 
+#include <iostream>
+#include <typeinfo>
 #include <dolfin/common/Variable.h>
 #include "DefaultFactory.h"
 #include "GenericVector.h"
@@ -38,6 +40,11 @@ namespace dolfin
     explicit Vector(const Vector& x) : Variable("x", "DOLFIN vector"),
                                        vector(x.vector->copy())
     {}
+
+    /// Create a Vector from a GenericVetor
+    explicit Vector(const GenericVector& x) : Variable("x", "DOLFIN vector"),
+                                       vector(x.factory().create_vector())
+    { vector = x.copy(); }
 
     /// Destructor
     virtual ~Vector()

@@ -1,3 +1,4 @@
+ - Add constructor Vector::Vector(const GenericVector& x)
  - Remove SCons deprecation warnings
  - Memory leak fix in PETScKrylovSolver
  - Rename dolfin_assert -> assert and use C++ version
