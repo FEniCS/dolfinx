@@ -163,7 +163,7 @@ void ODESolution::set_filename(std::string filename)
 //----------------------------------------------------------------------------- 
 void ODESolution::save_to_file() 
 {
-  if (read_mode) error("Can not save to file in read mode");
+  //if (read_mode) error("Can not save to file in read mode");
 
   if (data.size() == 0) return;
 
