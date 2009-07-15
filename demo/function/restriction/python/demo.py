@@ -5,24 +5,13 @@ __date__ = "2009-02-9"
 __copyright__ = "Copyright (C) 2008 Kent-Andre Mardal"
 __license__  = "GNU LGPL Version 2.1"
 
-
-
 from dolfin import *
-
-if not has_linear_algebra_backend("Epetra"):
-    print "*** Warning: Dolfin is not compiled with Trilinos linear algebra backend"
-    print "Exiting."
-    exit()
-
-parameters["linear_algebra_backend"] = "Epetra"
 
 class LeftSide(SubDomain):
     def inside(self, x, on_boundary):
         return bool(x[0] < 0.5 + DOLFIN_EPS)
 
-
 mesh = UnitSquare(2,2)
-#mesh.disp()
 mesh_function = MeshFunction("bool", mesh, mesh.topology().dim())
 subdomain = LeftSide()
 for cell in cells(mesh):
@@ -39,8 +28,7 @@ m  = uv*vv*dx
 L0 = fv*vv*dx
 M  = assemble(m)
 b  = assemble(L0)
-
-print "size of matrix on the whole domain is ",M.size(0),"x",M.size(1)
+print "size of matrix on the whole domain is ", M.size(0), "x", M.size(1)
 
 W = V.restriction(mesh_function)
 fw = Function(W, cppexpr='1.0')
@@ -51,9 +39,7 @@ m  = uw*vw*dx
 L1 = fw*vw*dx
 M  = assemble(m)
 b  = assemble(L1)
-
-print "size of matrix on the smaller domain is ",M.size(0),"x",M.size(1)
-
+print "size of matrix on the smaller domain is ", M.size(0), "x", M.size(1)
 
 m = uw*vv*dx
 M = assemble(m)
@@ -63,11 +49,7 @@ print "size of matrix with trial functions on the smaller domain and test functi
 
 m = uv*vw*dx
 M = assemble(m)
-
 print "size of matrix with test functions on the smaller domain and trial functions on the whole domain ", M.size(0), "x", M.size(1)
-
-
-
 
 # FIXME: the following is currently not working
 #
