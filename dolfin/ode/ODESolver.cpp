@@ -74,13 +74,6 @@ void ODESolver::solve_dual(ODESolution& u)
   // Create dual problem
   Dual dual(ode, u);
 
-  if (parameters("floating_point_precision").change_count() > 0)
-  {
-    warning("Solving dual with extended precision, not supported. Using double precision.");
-    // Set discrete tolerance to default value.
-    dual.parameters("discrete_tolerance") = DOLFIN_SQRT_EPS;
-  }
-
   dual.parameters("solution_file_name") = "solution_dual.py";
   dual.parameters("save_final_solution") = true;
 
