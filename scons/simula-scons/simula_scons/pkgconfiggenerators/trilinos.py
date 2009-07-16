@@ -50,14 +50,15 @@ def pkgVersion(sconsEnv=None):
     # If TRILINOS_DIR/lib/python{version}/site_packages is not in PYTHONPATH
     # the loading of PyTrilinos will fail. Add it and message user.
     pyversion = ".".join([str(s) for s in sys.version_info[0:2]])
-    pytrilinos_dir = "%s/lib/python%s/site-packages" % \
-                     (getTrilinosDir(sconsEnv=sconsEnv),pyversion)
-    try: 
-        sys.path.index(pytrilinos_dir)
-    except:
-        sys.path.append(pytrilinos_dir)
+    package_locations = ["site-packages", "dist-packages"]
+    pytrilinos_dir = []
+    for location in package_locations:
+       pytrilinos_dir.append("%s/lib/python%s/%s" % \
+                     (getTrilinosDir(sconsEnv=sconsEnv), pyversion, location))
+
+    if len(set(pytrilinos_dir).intersection(set(sys.path))) ==  0:
         print """The Python site-packages directory for Trilinos is not 
-in your PYTHONPATH, consider adding 
+in your PYTHONPATH, consider adding one of
 %s 
 to PYTHONPATH in your environment. You will probably need to adjust
 LD_LIBRARY_PATH/DYLD_LIBRARY_PATH as well.
