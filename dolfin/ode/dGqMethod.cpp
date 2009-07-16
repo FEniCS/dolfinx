@@ -162,14 +162,13 @@ void dGqMethod::compute_weights()
   real trial_eval_0[nn];
   real test_eval_0[nn];
 
-
   for (uint a = 0; a < nn; ++a) {
     trial_eval_0[a] = trial->eval(a, 0.0);
     test_eval_0[a]  = test->eval(a, 0.0);
 
     for (uint b = 0; b < nq; ++b) {
-      trial_ddx[a*nq + b] = trial->ddx(a, qpoints[b]);
-      test_eval[a*nq + b] = test->eval(a, qpoints[b]);
+      trial_ddx[a + nq*b] = trial->ddx(a, qpoints[b]);
+      test_eval[a + nq*b] = test->eval(a, qpoints[b]);
     }
   }
 
@@ -184,12 +183,12 @@ void dGqMethod::compute_weights()
       {
         //real x = qpoints[k];
         //integral += qweights[k] * trial->ddx(j, x) * test->eval(i, x);
-        integral += qweights[k] * trial_ddx[j*nq + k] * test_eval[i*nq + k];
+        integral += qweights[k] * trial_ddx[j + nq*k] * test_eval[i + nq*k];
 
       }     
       
-      A_real[i*nn+j] = integral + trial_eval_0[j] * test_eval_0[i];
-      _A(i, j) = to_double(A_real[i*nn+j]);
+      A_real[i + nn*j] = integral + trial_eval_0[j] * test_eval_0[i];
+      _A(i, j) = to_double(A_real[i + nn*j]);
     }
   }
 
@@ -207,7 +206,7 @@ void dGqMethod::compute_weights()
     // Evaluate test functions at current nodal point
     for (unsigned int j = 0; j < nn; j++)
     {
-      b_real[j] = test_eval[j*nq + i];
+      b_real[j] = test_eval[i + j*nq];
       _b[j] = to_double(b_real[j]);
     }
 

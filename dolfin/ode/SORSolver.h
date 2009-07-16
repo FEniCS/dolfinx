@@ -39,6 +39,12 @@ namespace dolfin
 			    const real* b,
 			    const uBLASDenseMatrix& precond,
 			    const real& tol );
+
+    static void SOR_mat_with_preconditioning(uint n, 
+					     const real* A,
+					     real* X,
+					     const real* B,
+					     const real& tol);
     
     static real err(uint n, const real* A, const real* x, const real* b);
 

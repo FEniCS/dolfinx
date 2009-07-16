@@ -38,6 +38,7 @@ void SORSolver::SOR(uint n,
     diff = real_max_abs(n, prev);
 
     ++iterations;
+    //cout << "Iteration: " << iterations << endl;
   }
 }
 //-----------------------------------------------------------------------------
@@ -53,13 +54,13 @@ void SORSolver::SOR_iteration(uint n,
     
     // j < i
     for (uint j = 0; j < i; ++j) 
-    { x_new[i] -= (A[i*n+j] * x_new[j]); }
+    { x_new[i] -= (A[i + n*j] * x_new[j]); }
     
     // j > i
     for (uint j = i+1; j < n; ++j) 
-    { x_new[i] -= (A[i*n+j]* x_prev[j]); }
+    { x_new[i] -= (A[i + n*j]* x_prev[j]); }
 
-    x_new[i] /= A[i*n + i];
+    x_new[i] /= A[i + n*i];
   }
 }
 //-----------------------------------------------------------------------------
@@ -81,13 +82,14 @@ void SORSolver::SOR_precond(uint n,
     {
       b_precond[i] += Precond(i,j)*b[j];
 
-      A_precond[i*n+j] = 0.0;
+      A_precond[i + n*j] = 0.0;
       for (uint k = 0; k < n; ++k)
       {
-	A_precond[i*n+j] += Precond(i, k)* A[k*n+j];
+	A_precond[i + n*j] += Precond(i, k)* A[k + n*j];
       }
     }
   }
+
 
   // use Precond*b as initial guess
   real_set(n, x, b_precond);
@@ -105,11 +107,36 @@ real SORSolver::err(uint n, const real* A, const real* x, const real* b) {
     _err[i] = 0.0;
     for (uint j = 0; j < n; ++j)
     {
-      _err[i] += A[i*n+j]*x[j];
+      _err[i] += A[i + n*j]*x[j];
     }
     _err[i] -= b[i];
   }
   real e =  real_max_abs(n, _err);
 
   return e;
+}
+//-----------------------------------------------------------------------------
+void SORSolver::SOR_mat_with_preconditioning(uint n, 
+					     const real* A,
+					     real* X,
+					     const real* B,
+					     const real& tol)
+{
+  
+  uBLASDenseMatrix Preconditioner(n,n);
+  ublas_dense_matrix& _prec = Preconditioner.mat();
+  //set the preconditioner matrix
+  for (uint i=0; i<n; i++) {
+    for (uint j=0; j<n; j++) {
+      _prec(i,j) = to_double(A[i + n*j]);
+    }
+  }
+
+  Preconditioner.invert();
+  
+  //solve each row as a Ax=b system
+  for (uint i=0; i < n; ++i)
+  {
+    SOR_precond(n, A, &X[i*n], &B[i*n], Preconditioner, tol);
+  }
 }

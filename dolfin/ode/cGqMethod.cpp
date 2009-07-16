@@ -170,8 +170,8 @@ void cGqMethod::compute_weights()
 
   for (uint a = 0; a < nn; ++a) {
     for (uint b = 0; b < nq; ++b) {
-      trial_ddx[a*nq + b] = trial->ddx(a+1, qpoints[b]);
-      test_eval[a*nq + b] = test->eval(a, qpoints[b]);
+      trial_ddx[a + nn*b] = trial->ddx(a+1, qpoints[b]);
+      test_eval[a + nn*b] = test->eval(a, qpoints[b]);
     }
   }
 
@@ -186,14 +186,16 @@ void cGqMethod::compute_weights()
       {
         //real x = qpoints[k];
         //integral += qweights[k] * trial->ddx(j + 1, x) * test->eval(i, x);
-	integral += qweights[k] * trial_ddx[j*nq + k] * test_eval[i*nq + k];
+	integral += qweights[k] * trial_ddx[j + nn*k] * test_eval[i + nn*k];
       }
 
-      A_real[i*q+j] = integral;
+      A_real[i + nn*j] = integral;
       _A(i, j) = to_double(integral);
 
     }
   }
+
+  //A.disp();
 
   uBLASVector b(q);
   ublas_vector& _b = b.vec();
@@ -208,9 +210,11 @@ void cGqMethod::compute_weights()
     // Evaluate test functions at current nodal point
     for (uint j = 0; j < nn; j++)
     {
-      b_real[j] = test_eval[j*nq + i];
+      b_real[j] = test_eval[i*nn + j];
       _b[j] = to_double(b_real[j]);
     }
+
+    //b.disp();
 
 #ifndef HAS_GMP
 
@@ -238,6 +242,7 @@ void cGqMethod::compute_weights()
       nweights[j][i] = qweights[i] * w_real[j];
 #endif
 
+    //disp();
   }
 }
 //-----------------------------------------------------------------------------

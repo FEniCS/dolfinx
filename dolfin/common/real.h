@@ -112,6 +112,9 @@ namespace dolfin
   /// Compute pi
   real real_pi();
 
+  /// Compute matrix exponential using Pade approximation og degree p
+  void real_mat_exp(uint n, real* res, const real* A, const uint p=6);
+
   double real_frexp(int* exp, const real& x);
   /// Exponential function (note: not full precision!)
   inline real real_exp(real x)
@@ -164,6 +167,40 @@ namespace dolfin
   inline real real_max_abs(uint n, const real* x)
   { real _max = 0.0; for (uint i = 0; i < n; i++) _max = real_max(real_abs(x[i]), _max); return _max; }
 
+  // Matrix multiplication
+  inline void real_mat_prod(uint n, real* res, const real* A, const real* B) 
+  {
+    //Compute Precond*A and Precond*b with extended precision
+    for (uint i=0; i < n; ++i)
+    {
+      for (uint j = 0; j < n; ++j)
+      {
+	res[i + n*j] = 0.0;
+	for (uint k = 0; k < n; ++k)
+	{
+	  res[i+n*j] += A[i + n*k]* B[k + n*j];
+	}
+      }
+    }
+  }
+
+
+  // Matrix multiplication A = A * B
+  inline void real_mat_prod_inplace(uint n, real* A, const real* B)
+  {
+    real tmp[n*n];
+    real_set(n*n, tmp, A);
+    real_mat_prod(n, A, tmp, B);
+  }
+
+  // Set A (a multippel of) to identity
+  inline void real_identity(uint n, real* A, real value=1.0)
+  {
+    real_zero(n*n, A);
+
+    for (uint i=0; i < n; ++i)
+      A[i*n+i] = value;
+  }
 }
 
 #endif
