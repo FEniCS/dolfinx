@@ -20,7 +20,8 @@ v = Function(P2, "sin(10.0*x[0])*sin(10.0*x[1])")
 Pv = project(v, P1)
 
 # Compute interpolation (evaluating dofs)
-PIv = interpolate(v, P1)
+PIv = Function(P1)
+PIv.interpolate(v)
 
 # Plot functions
 plot(v,   title="v")
