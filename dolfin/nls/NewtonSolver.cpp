@@ -20,6 +20,20 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+Parameters NewtonSolver::default_parameters()
+{
+  Parameters p("newton_solver");
+ 
+  p.add("maximum_iterations",    50);
+  p.add("relative_tolerance",    1e-9);
+  p.add("absolute_tolerance",    1e-10);
+  p.add("convergence_criterion", "residual");
+  p.add("method",                "full");
+  p.add("report",                true);
+ 
+  return p;
+}
+//-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(std::string solver_type, std::string pc_type)
              : solver(new LinearSolver(solver_type, pc_type)),
                A(new Matrix), dx(new Vector), b(new Vector)

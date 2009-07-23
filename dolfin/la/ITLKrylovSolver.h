@@ -47,6 +47,9 @@ namespace dolfin
     /// Display solver data
     void disp() const;
 
+    /// Default parameter values
+    static Parameters default_parameters();
+
   private:
 
     // Solver type

@@ -14,16 +14,25 @@
 #include "MTL4Matrix.h"
 #include "MTL4Vector.h"
 #include <boost/numeric/itl/itl.hpp>
+#include "KrylovSolver.h"
 
 using namespace dolfin;
 using namespace itl;
 using namespace mtl;
 
 //-----------------------------------------------------------------------------
+Parameters ITLKrylovSolver::default_parameters()
+{
+  Parameters p(KrylovSolver::default_parameters());
+  p.rename("mtl4_krylov_solver");
+  return p;
+}
+//-----------------------------------------------------------------------------
 ITLKrylovSolver::ITLKrylovSolver(std::string method, std::string pc_type)
                                : method(method), pc_type(pc_type)
 {
-  // Do nothing
+  // Set parameter values
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 ITLKrylovSolver::~ITLKrylovSolver()
@@ -42,21 +51,21 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
                                     const MTL4Vector& b)
 {
   // Fall back in default method if unknown
-  if(method != "cg" && method != "bicgstab")
+  if(method != "cg" && method != "bicgstab" && method != "default")
   {
     warning("Requested ITL Krylov method unknown. Using BiCGStab.");
     method = "bicgstab";
   }
   // Fall back in default preconditioner if unknown
-  if(pc_type != "ilu" && pc_type != "icc" && pc_type != "none")
+  if(pc_type != "ilu" && pc_type != "icc" && pc_type != "none" && pc_type != "default")
   {
-    warning("Requested ITL preconditioner unknown. Using ilu.");
+    warning("Requested ITL preconditioner unknown. Using ILU.");
     pc_type = "ilu";
   }
 
   // Set convergence criteria
-  // FIXME: These should come from the parameter system
-  itl::basic_iteration<double> iter(b.vec(), 500, 1.0e-6);
+  itl::basic_iteration<double> iter(b.vec(), parameters("maximum_iterations"), 
+                                             parameters("relative_tolerance"));
 
   // Check vector size
   if( x.size() != b.size() )
@@ -71,12 +80,12 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
   // Developers note: the following code is not very elegant.
   // The problem is that ITL are all templates, but DOLFIN selects
   // solvers at runtime. All solvers and preconditioners are instantiated.
-  if(pc_type == "ilu")
+  if(pc_type == "ilu" || pc_type == "default")
   {
     itl::pc::ilu_0<mtl4_sparse_matrix> P(A.mat());
     if(method == "cg")
       errno_ = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
-    else if(method == "bicgstab")
+    else if(method == "bicgstab" || method == "default")
       errno_ = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
   }
   else if(pc_type == "icc")
@@ -84,7 +93,7 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
     itl::pc::ic_0<mtl4_sparse_matrix> P(A.mat());
     if(method == "cg")
       errno_ = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
-    else if(method == "bicgstab")
+    else if(method == "bicgstab" || method == "default")
       errno_ = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
   }
   else if(pc_type == "none")
@@ -92,7 +101,7 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
     itl::pc::identity<mtl4_sparse_matrix> P(A.mat());
     if(method == "cg")
       errno_ = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
-    else if(method == "bicgstab")
+    else if(method == "bicgstab" || method == "default")
       errno_ = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
   }
 
