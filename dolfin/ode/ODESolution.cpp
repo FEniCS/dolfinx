@@ -30,9 +30,7 @@ ODESolution::ODESolution(uint N) :
   filename("odesolution"),
   number_of_files(0)
 {
-
   cout << "Creating ODESolution of size " << N << endl;
-
 }
 //-----------------------------------------------------------------------------
 ODESolution::ODESolution(std::string filename, uint number_of_files) : 
@@ -70,6 +68,9 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
 //-----------------------------------------------------------------------------
 ODESolution::~ODESolution() 
 {
+  for (uint i = 0; i < cache_size; ++i)
+    delete [] cache[i].second;
+  delete [] cache;
 }
 //-----------------------------------------------------------------------------
 void ODESolution::init(const Lagrange& trial_space) 
@@ -78,6 +79,17 @@ void ODESolution::init(const Lagrange& trial_space)
   trial = new Lagrange(trial_space);
   nodal_size = trial->size();
   max_timeslabs = max_filesize/(real_decimal_prec()*(nodal_size*N + 2));
+
+  // Initalize cache
+  cache_size = nodal_size+1;
+  cache = new std::pair<real, real*>[cache_size];
+  for (uint i = 0; i < cache_size; ++i) 
+  {
+    cache[i].first = -1;
+    cache[i].second = new real[N];
+  }
+  ringbufcounter = 0;
+
   initialized = true;
 
 }
@@ -111,9 +123,25 @@ void ODESolution::flush() {
 void ODESolution::eval(real t, real* y) 
 {
   //cout << "ODESolution::eval(" << t << ")" << endl;
-
   if (!read_mode) error("Can not evaluate solution");
   if(t > T) error("Requested t > T");
+  
+  // Scan the cache
+  for (uint i = 0; i < cache_size; ++i) 
+  {
+    // Empty position, skip
+    if (cache[i].first < 0)
+      continue;
+    
+    // Copy values
+    if (cache[i].first == t) 
+    {
+      real_set(N, y, cache[i].second);
+      return;
+    }
+  }
+  
+
 
   if (data_on_disk && (t < a_in_memory() || t > b_in_memory()))
   {
@@ -151,6 +179,11 @@ void ODESolution::eval(real t, real* y)
     for (uint j = 0; j < nodal_size; j++)
       y[i] += values[i*nodal_size + j] * trial->eval(j, tau);
   }
+
+  //store in cache
+  cache[ringbufcounter].first = t;
+  real_set(N, cache[ringbufcounter].second, y);
+  ringbufcounter = (ringbufcounter + 1) % cache_size;
 }
 //----------------------------------------------------------------------------- 
 void ODESolution::set_filename(std::string filename)

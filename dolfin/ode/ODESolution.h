@@ -74,6 +74,11 @@ namespace dolfin
     real T; //endtime. Updated when new timeslabs are added 
     std::vector<Timeslabdata> data; //data in memory
     std::vector<real> file_table; //table mapping t values to files
+
+    std::pair<real, real*>* cache;    
+    uint cache_size;
+    uint ringbufcounter;
+
     bool initialized;
     bool read_mode; //true when 
 
