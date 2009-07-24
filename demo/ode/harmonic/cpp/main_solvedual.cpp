@@ -15,7 +15,7 @@ class Harmonic : public ODE
 {
 public:
 
-  Harmonic() : ODE(2, 4.0 * DOLFIN_PI), e(0.0) {}
+  Harmonic() : ODE(2, 4.0 * real_pi()), e(0.0) {}
 
   void u0(real* u)
   {
@@ -29,6 +29,12 @@ public:
     y[1] = - u[0];
   }
 
+  void JT(const real* x, real* y, const real* u, real t) 
+  {
+    y[0] = x[1];
+    y[1] = -x[0];
+  }
+
   bool update(const real* u, real t, bool end)
   {
     if (!end)
@@ -36,7 +42,7 @@ public:
 
     real e0 = u[0] - 0.0;
     real e1 = u[1] - 1.0;
-    e = max(abs(e0), abs(e1));
+    e = real_max(abs(e0), abs(e1));
 
     return true;
   }
@@ -57,9 +63,10 @@ int main()
   // Create ODE
   Harmonic ode;
   ode.parameters("fixed_time_step") = true;
-  ode.parameters("discrete_tolerance") = 1e-14;
+  ode.parameters("discrete_tolerance") = real_epsilon();
   ode.parameters("method") = "cg";
   ode.parameters("order") = 10;
+  ode.parameters("initial_time_step") = 0.1;
   ode.parameters("solve_dual_problem") = true;
 
   // Solve ODE
