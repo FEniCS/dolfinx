@@ -23,7 +23,7 @@
 #include <Epetra_MultiVector.h>
 #include <Epetra_SerialComm.h>
 
-// FIXME: A cleanup is needed with respect to correct use of parallell vectors.
+// FIXME: A cleanup is needed with respect to correct use of parallel vectors.
 //        This depends on decisions w.r.t. dofmaps etc in dolfin.
 
 using namespace dolfin;

@@ -99,7 +99,19 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   //FIXME need the ifdef AztecOO
 
 
-  // FIXME: check vector size
+  // Check dimensions
+  uint M = A.size(0);
+  uint N = A.size(1);
+  if (N != b.size())
+    error("Non-matching dimensions for linear system.");
+
+  // Reinitialize solution vector if necessary
+  if (x.size() != M)
+  {
+    x.resize(M);
+    x.zero();
+  }
+
   // FIXME: permit initial guess
 
   // Cast matrix and vectors to proper type
@@ -135,6 +147,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     linear_solver.SetAztecOption(AZ_precond, pc_methods.find(pc_type)->second);
   else if (pc_type == "amg_ml")
   {
+    // FIXME: Move configuration of ML to another function
     //error("The EpetraKrylovSolver interface for the ML preconditioner needs to be fixed.");
 
     #ifdef HAVE_ML_AZTECOO
