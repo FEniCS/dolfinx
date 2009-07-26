@@ -378,8 +378,7 @@ void PETScKrylovSolver::set_petsc_preconditioner()
 void PETScKrylovSolver::write_report(int num_iterations)
 {
   // Check if we should write the report
-  bool report = parameters("report");
-  if (!report)
+  if (!parameters("report"))
     return;
 
   // Get name of solver and preconditioner

@@ -11,7 +11,7 @@
 #ifndef __EPETRA_KRYLOV_SOLVER_H
 #define __EPETRA_KRYLOV_SOLVER_H
 
-#include <set>
+#include <map>
 #include <string>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
