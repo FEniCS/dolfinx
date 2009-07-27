@@ -46,7 +46,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh
-  UnitSquare mesh(2, 2);
+  UnitSquare mesh(12, 12);
 
   // Use uBLAS
   parameters("linear_algebra_backend") = "uBLAS";

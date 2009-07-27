@@ -561,7 +561,7 @@ void SystemAssembler::assemble_system(GenericMatrix& A,
           uint ii = A_ufc.macro_dofs[1][i];
           if (indicators[ii] > 0)
           {
-            be[i] = g[ii];
+            be_macro[i] = g[ii];
             for (uint k=0; k<n; k++)
               Ae_macro[k+i*n] = 0.0;
             for (uint j=0; j<m; j++)
@@ -1049,10 +1049,10 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
     uint b_num_entries = 1;
     for (uint i = 0; i < L.rank(); i++)
       b_num_entries *= L.function_space(i).dofmap().max_local_dimension();
-    uint b_macro_num_entries = b_num_entries*2;
+    uint b_macro_num_entries = 2*b_num_entries;
     be = new double[b_num_entries];
     double* be_macro = new double[b_macro_num_entries];
-
+   
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
     {
       // Check if we have an interior facet
@@ -1067,10 +1067,12 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
         Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
         Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
 
-        compute_tensor_on_one_interior_facet(a, A_ufc, cell0, cell1, *facet, 
+        if (A_ufc.form.num_interior_facet_integrals() > 0)
+          compute_tensor_on_one_interior_facet(a, A_ufc, cell0, cell1, *facet, 
                                              A_coefficients, interior_facet_domains);  
 
-        compute_tensor_on_one_interior_facet(L, b_ufc, cell0, cell1, *facet, 
+        if (b_ufc.form.num_interior_facet_integrals() > 0)
+          compute_tensor_on_one_interior_facet(L, b_ufc, cell0, cell1, *facet, 
                                              b_coefficients, interior_facet_domains);  
 
         for (uint i=0; i<A_macro_num_entries; i++)
@@ -1079,9 +1081,8 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
         for (uint i=0; i<b_macro_num_entries; i++)
           be_macro[i] += b_ufc.macro_A[i];
 
-
-        uint facet0 = cell0.index(*facet);
-        uint facet1 = cell1.index(*facet);
+        const uint facet0 = cell0.index(*facet);
+        const uint facet1 = cell1.index(*facet);
 
         if (facet0 == 0)
         {
@@ -1090,8 +1091,8 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
             // FIXME: check that this is cell0 
             compute_tensor_on_one_cell(a, A_ufc, cell0, A_coefficients, cell_domains); 
 
-            uint nn = A_ufc.local_dimensions[0];
-            uint mm = A_ufc.local_dimensions[1];
+            const uint nn = A_ufc.local_dimensions[0];
+            const uint mm = A_ufc.local_dimensions[1];
             for (uint i=0; i<mm; i++)
               for (uint j=0; j<nn; j++)
                 Ae_macro[2*i*nn+j] += A_ufc.A[i*nn+j];
@@ -1099,13 +1100,10 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
 
           if (b_ufc.form.num_cell_integrals() > 0) 
           {
-            compute_tensor_on_one_cell(a, b_ufc, cell0, b_coefficients, cell_domains); 
-
-            uint nn = A_ufc.local_dimensions[0];
-            uint mm = A_ufc.local_dimensions[1];
-            for (uint i=0; i<mm; i++)
-              for (uint j=0; j<nn; j++)
-                be_macro[2*i*nn+j] += b_ufc.A[i*nn+j];
+            compute_tensor_on_one_cell(L, b_ufc, cell0, b_coefficients, cell_domains); 
+            const uint nn = b_ufc.local_dimensions[0];
+            for (uint i=0; i < nn; i++)
+              be_macro[i] += b_ufc.A[i];
           }
         }
 
@@ -1114,9 +1112,8 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
           if (A_ufc.form.num_cell_integrals() > 0) 
           {
             compute_tensor_on_one_cell(a, A_ufc, cell1, A_coefficients, cell_domains); 
-
-            uint nn = A_ufc.local_dimensions[0];
-            uint mm = A_ufc.local_dimensions[1];
+            const uint nn = A_ufc.local_dimensions[0];
+            const uint mm = A_ufc.local_dimensions[1];
             for (uint i=0; i<mm; i++)
               for (uint j=0; j<nn; j++)
                 Ae_macro[2*nn*mm + 2*i*nn + nn + j] += A_ufc.A[i*nn+j];
@@ -1125,29 +1122,24 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
           if (b_ufc.form.num_cell_integrals() > 0) 
           {
             compute_tensor_on_one_cell(a, b_ufc, cell1, b_coefficients, cell_domains); 
-
-            uint nn = A_ufc.local_dimensions[0];
-            uint mm = A_ufc.local_dimensions[1];
-            for (uint i=0; i<mm; i++)
-              for (uint j=0; j<nn; j++)
-                be_macro[2*nn*mm + 2*i*nn + nn + j] += b_ufc.A[i*nn+j];
+            const uint nn = b_ufc.local_dimensions[0];
+            for (uint i=0; i < nn; i++)
+              be_macro[i + nn] += b_ufc.A[i];
           }
         }
 
-        // enforce BC  ---------------------------------------
-
+        // Enforce BC
         const uint m = A_ufc.macro_local_dimensions[0];
         const uint n = A_ufc.macro_local_dimensions[1];
-
-        for (uint i=0; i<n; i++)
+        for (uint i=0; i < n; i++)
         {
-          uint ii = A_ufc.macro_dofs[1][i];
+          const uint ii = A_ufc.macro_dofs[1][i];
           if (indicators[ii] > 0)
           {
-            be[i] = g[ii];
-            for (uint k=0; k<n; k++)
+            be_macro[i] = g[ii];
+            for (uint k = 0; k < n; k++)
               Ae_macro[k+i*n] = 0.0;
-            for (uint j=0; j<m; j++)
+            for (uint j = 0; j < m; j++)
             {
               be_macro[j] -= Ae_macro[i+j*n]*g[ii];
               Ae_macro[i+j*n] = 0.0;
@@ -1155,7 +1147,6 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
             Ae_macro[i+i*n] = 1.0;
           }
         }
-        // enforce BC done  ------------------------------------------
 
         // Add entries to global tensor
         A.add(Ae_macro, A_ufc.macro_local_dimensions, A_ufc.macro_dofs);
@@ -1196,11 +1187,9 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
             Ae[i] += A_ufc.A[i];
         }
 
-        // enforce BC  ---------------------------------------
-
+        // Enforce BC
         uint m = A_ufc.local_dimensions[0];
         uint n = A_ufc.local_dimensions[1];
-
         for (uint i=0; i<n; i++)
         {
           uint ii = A_ufc.dofs[1][i];
@@ -1217,8 +1206,6 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
             Ae[i+i*n] = 1.0;
           }
         }
-
-        // enforce BC done  ------------------------------------------
 
         // Add entries to global tensor
         A.add(Ae, A_ufc.local_dimensions, A_ufc.dofs);
