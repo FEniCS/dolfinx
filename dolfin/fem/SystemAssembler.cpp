@@ -205,7 +205,7 @@ void SystemAssembler::assemble_system(GenericMatrix& A,
         }
         // Tabulate cell tensor
         b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
-        for (uint i=0; i<b_num_entries; i++)
+        for (uint i=0; i < b_num_entries; i++)
           be[i] += b_ufc.A[i];
       }
 
@@ -260,7 +260,7 @@ void SystemAssembler::assemble_system(GenericMatrix& A,
                 b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, cell->index(), local_facet);
 
               b_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell, local_facet);
-              for (uint i=0; i<b_num_entries; i++)
+              for (uint i=0; i < b_num_entries; i++)
                 be[i] += b_ufc.A[i];
             }
           }
@@ -268,8 +268,8 @@ void SystemAssembler::assemble_system(GenericMatrix& A,
       }
 
       // Enforce Dirichlet boundary conditions
-      uint m = A_ufc.local_dimensions[0];
-      uint n = A_ufc.local_dimensions[1];
+      const uint m = A_ufc.local_dimensions[0];
+      const uint n = A_ufc.local_dimensions[1];
       for (uint i=0; i<n; i++)
       {
         uint ii = A_ufc.dofs[1][i];
@@ -1034,8 +1034,9 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
         b.add(be, b_ufc.local_dimensions, b_ufc.dofs);
       }
     }
-  } else { // interior facets 
-
+  } 
+  else // interior facets  
+  { 
     // Create temporary storage for Ae, Ae_macro
     uint A_num_entries = 1;
     for (uint i = 0; i < a.rank(); i++)
@@ -1084,9 +1085,8 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
 
         if (facet0 == 0)
         {
-
-          if (A_ufc.form.num_cell_integrals() > 0) {
-
+          if (A_ufc.form.num_cell_integrals() > 0) 
+          {
             // FIXME: check that this is cell0 
             compute_tensor_on_one_cell(a, A_ufc, cell0, A_coefficients, cell_domains); 
 
@@ -1097,8 +1097,8 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
                 Ae_macro[2*i*nn+j] += A_ufc.A[i*nn+j];
           }
 
-          if (b_ufc.form.num_cell_integrals() > 0) {
-
+          if (b_ufc.form.num_cell_integrals() > 0) 
+          {
             compute_tensor_on_one_cell(a, b_ufc, cell0, b_coefficients, cell_domains); 
 
             uint nn = A_ufc.local_dimensions[0];
@@ -1111,9 +1111,8 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
 
         if (facet1 == 0)
         {
-
-          if (A_ufc.form.num_cell_integrals() > 0) {
-
+          if (A_ufc.form.num_cell_integrals() > 0) 
+          {
             compute_tensor_on_one_cell(a, A_ufc, cell1, A_coefficients, cell_domains); 
 
             uint nn = A_ufc.local_dimensions[0];
@@ -1123,8 +1122,8 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
                 Ae_macro[2*nn*mm + 2*i*nn + nn + j] += A_ufc.A[i*nn+j];
           }
 
-          if (b_ufc.form.num_cell_integrals() > 0) {
-
+          if (b_ufc.form.num_cell_integrals() > 0) 
+          {
             compute_tensor_on_one_cell(a, b_ufc, cell1, b_coefficients, cell_domains); 
 
             uint nn = A_ufc.local_dimensions[0];
@@ -1167,9 +1166,9 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
       if ( facet->num_entities(mesh.topology().dim()) != 2 )
       {
         // set element matrix and vector to zero
-        for (uint i=0; i<A_num_entries; i++)
+        for (uint i=0; i < A_num_entries; i++)
           Ae[i] = 0.0;
-        for (uint i=0; i<b_num_entries; i++)
+        for (uint i=0; i < b_num_entries; i++)
           be[i] = 0.0;
 
         // Get mesh cell to which mesh facet belongs (pick first, there is only one)
