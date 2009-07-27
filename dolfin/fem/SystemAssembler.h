@@ -112,31 +112,6 @@ namespace dolfin
 
   private:
 
-    static void compute_tensor_on_one_cell(const Form& a,
-                                           UFC& ufc, 
-                                           const Cell& cell, 
-                                           const std::vector<const Function*>& coefficients, 
-                                           const MeshFunction<uint>* cell_domains); 
-    
-    static void compute_tensor_on_one_exterior_facet(const Form& a,
-                                               UFC& ufc, 
-                                               const Cell& cell, 
-                                               const Facet& facet,
-                                               const std::vector<const Function*>& coefficients, 
-                                                      const MeshFunction<uint>* exterior_facet_domains); 
-
-
-    static void compute_tensor_on_one_interior_facet(const Form& a,
-                                                      UFC& ufc, 
-                                                      const Cell& cell1, 
-                                                      const Cell& cell2, 
-                                                      const Facet& facet,
-                                                      const std::vector<const Function*>& coefficients, 
-                                                      const MeshFunction<uint>* exterior_facet_domains); 
-
-    static void apply_bc(double* A, double* b, const uint* indicators, 
-                         const double* g, uint** global_dofs, uint m, uint n); 
-   
     // Class to hold data
     class Scratch
     {
@@ -159,6 +134,45 @@ namespace dolfin
       double* g;
     };
 
+    static void compute_tensor_on_one_cell(const Form& a,
+                                           UFC& ufc, 
+                                           const Cell& cell, 
+                                           const std::vector<const Function*>& coefficients, 
+                                           const MeshFunction<uint>* cell_domains); 
+    
+    static void compute_tensor_on_one_exterior_facet(const Form& a,
+                                               UFC& ufc, 
+                                               const Cell& cell, 
+                                               const Facet& facet,
+                                               const std::vector<const Function*>& coefficients, 
+                                                      const MeshFunction<uint>* exterior_facet_domains); 
+
+
+    static void compute_tensor_on_one_interior_facet(const Form& a,
+                                                      UFC& ufc, 
+                                                      const Cell& cell1, 
+                                                      const Cell& cell2, 
+                                                      const Facet& facet,
+                                                      const std::vector<const Function*>& coefficients, 
+                                                      const MeshFunction<uint>* exterior_facet_domains); 
+
+    static void cell_assembly(GenericMatrix& A, GenericVector& b,
+                              const Form& a, const Form& L, 
+                              UFC& A_ufc, UFC& b_ufc, Scratch& data, 
+                              const MeshFunction<uint>* cell_domains,
+                              const MeshFunction<uint>* exterior_facet_domains,
+                              const MeshFunction<uint>* interior_facet_domains); 
+
+    static void facet_assembly(GenericMatrix& A, GenericVector& b,
+                              const Form& a, const Form& L, 
+                              UFC& A_ufc, UFC& b_ufc, Scratch& data, 
+                              const MeshFunction<uint>* cell_domains,
+                              const MeshFunction<uint>* exterior_facet_domains,
+                              const MeshFunction<uint>* interior_facet_domains); 
+
+    static void apply_bc(double* A, double* b, const uint* indicators, 
+                         const double* g, uint** global_dofs, const uint* dims); 
+   
   };
 
 }

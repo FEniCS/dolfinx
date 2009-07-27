@@ -34,7 +34,7 @@
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A,
                          const Form& a,
                          bool reset_tensor)
@@ -286,7 +286,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   Progress p(progress_message(A.rank(), "interior facets"), mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
-    // Check if we have an interior facet
+    // Check if we have an exterior facet
     if (facet->num_entities(mesh.topology().dim()) != 2)
     {
       p++;
