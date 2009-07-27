@@ -118,7 +118,7 @@ namespace dolfin
                                            const std::vector<const Function*>& coefficients, 
                                            const MeshFunction<uint>* cell_domains); 
     
-    static void compute_tensor_on_one_exterior_facet (const Form& a,
+    static void compute_tensor_on_one_exterior_facet(const Form& a,
                                                UFC& ufc, 
                                                const Cell& cell, 
                                                const Facet& facet,
@@ -126,7 +126,7 @@ namespace dolfin
                                                       const MeshFunction<uint>* exterior_facet_domains); 
 
 
-    static void compute_tensor_on_one_interior_facet (const Form& a,
+    static void compute_tensor_on_one_interior_facet(const Form& a,
                                                       UFC& ufc, 
                                                       const Cell& cell1, 
                                                       const Cell& cell2, 
@@ -134,6 +134,8 @@ namespace dolfin
                                                       const std::vector<const Function*>& coefficients, 
                                                       const MeshFunction<uint>* exterior_facet_domains); 
 
+    static void apply_bc(double* A, double* b, const uint* indicators, 
+                         const double* g, const uint* global_dofs, uint m, uint n); 
    
     // Class to hold data
     class Scratch
