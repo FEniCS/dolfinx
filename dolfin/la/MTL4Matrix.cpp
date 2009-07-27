@@ -307,7 +307,7 @@ void MTL4Matrix::init_inserter(void)
   if(nnz_row > 0)
     ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<double> >(A, nnz_row);
   else
-    ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<double> >(A, 50);
+    ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<double> >(A, 100);
 }
 //-----------------------------------------------------------------------------
 inline void MTL4Matrix::assert_no_inserter(void) const

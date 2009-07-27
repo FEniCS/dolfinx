@@ -137,7 +137,7 @@ void Assembler::assemble_cells(GenericTensor& A,
   Progress p(progress_message(A.rank(), "cells"), mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    // FIXME will move this check into a separate function.
+    // FIXME: will move this check into a separate function.
     // Need to check the coefficients as well.
     bool compute_on_cell = true;
     for (uint i = 0; i < num_function_spaces; i++)

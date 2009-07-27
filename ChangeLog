@@ -1,3 +1,4 @@
+ - Efficiency improvements in NewtonSolver
  - Rename NewtonSolver::get_iteration() to NewtonSolver::iteration()
  - Improvements to EpetraKrylovSolver::solve
  - Add constructor Vector::Vector(const GenericVector& x)

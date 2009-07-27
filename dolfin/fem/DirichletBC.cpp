@@ -243,6 +243,7 @@ void DirichletBC::apply(GenericMatrix* A,
     A->ident(boundary_values.size(), dofs);
     A->apply();
   }
+  info("Finished applying boundary conditions to linear system.");
 
   // Clear temporary arrays
   delete [] dofs;

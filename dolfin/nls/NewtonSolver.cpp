@@ -71,13 +71,15 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
   newton_iteration = 0;
   bool newton_converged = false;
 
-  // Compute F(u) and J
+  // Compute F(u)
   nonlinear_problem.F(*b, x);
-  nonlinear_problem.J(*A, x);
 
   // Start iterations
   while (!newton_converged && newton_iteration < maxiter)
   {
+    // Compute Jacobian
+    nonlinear_problem.J(*A, x);
+
     // Perform linear solve and update total number of Krylov iterations
     if (dx->size() > 0)
       dx->zero();
@@ -94,9 +96,8 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
     ++newton_iteration;
 
     //FIXME: this step is not needed if residual is based on dx and this has converged.
-    // Compute F(u) and J
+    // Compute F
     nonlinear_problem.F(*b, x);
-    nonlinear_problem.J(*A, x);
 
     // Test for convergence
     newton_converged = converged(*b, *dx, nonlinear_problem);

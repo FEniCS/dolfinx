@@ -13,7 +13,9 @@
 #ifndef __ASSEMBLE_H
 #define __ASSEMBLE_H
 
+#include <vector>
 #include <dolfin/mesh/MeshFunction.h>
+#include "DirichletBC.h"
 
 namespace dolfin
 {
