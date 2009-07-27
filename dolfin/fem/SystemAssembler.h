@@ -120,8 +120,8 @@ namespace dolfin
       Scratch(const Form& a, const Form& L);
       ~Scratch();
 
-      void init_cell();
-      void init_macro();
+      void zero_cell();
+      void zero_macro();
 
       uint A_num_entries, b_num_entries;
       uint A_macro_num_entries, b_macro_num_entries;
@@ -160,8 +160,7 @@ namespace dolfin
                               const Form& a, const Form& L, 
                               UFC& A_ufc, UFC& b_ufc, Scratch& data, 
                               const MeshFunction<uint>* cell_domains,
-                              const MeshFunction<uint>* exterior_facet_domains,
-                              const MeshFunction<uint>* interior_facet_domains); 
+                              const MeshFunction<uint>* exterior_facet_domains); 
 
     static void facet_assembly(GenericMatrix& A, GenericVector& b,
                               const Form& a, const Form& L, 

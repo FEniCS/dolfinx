@@ -103,6 +103,7 @@ int main()
   Elasticity::LinearForm L(V);
   L.f = f;
   VariationalProblem problem(a, L, bcs);
+  problem.parameters("symmetric") = true;
 
   // Solve PDE (using direct solver)
   Function u;
