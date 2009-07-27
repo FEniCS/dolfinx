@@ -135,7 +135,7 @@ namespace dolfin
                                                       const MeshFunction<uint>* exterior_facet_domains); 
 
     static void apply_bc(double* A, double* b, const uint* indicators, 
-                         const double* g, const uint* global_dofs, uint m, uint n); 
+                         const double* g, uint** global_dofs, uint m, uint n); 
    
     // Class to hold data
     class Scratch
