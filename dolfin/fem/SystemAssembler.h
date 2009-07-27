@@ -134,6 +134,29 @@ namespace dolfin
                                                       const std::vector<const Function*>& coefficients, 
                                                       const MeshFunction<uint>* exterior_facet_domains); 
 
+   
+    // Class to hold data
+    class Scratch
+    {
+      public:
+
+      Scratch(const Form& a, const Form& L);
+      ~Scratch();
+
+      void init_cell();
+      void init_macro();
+
+      uint A_num_entries, b_num_entries;
+      uint A_macro_num_entries, b_macro_num_entries;
+
+      double* Ae;
+      double* be; 
+      double* Ae_macro;
+      double* be_macro;
+      uint* indicators;
+      double* g;
+    };
+
   };
 
 }
