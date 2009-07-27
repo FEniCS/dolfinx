@@ -29,6 +29,7 @@
 #include "SparsityPatternBuilder.h"
 #include "DirichletBC.h"
 #include "FiniteElement.h"
+#include "Assembler.h"
 #include "SystemAssembler.h"
 
 using namespace dolfin;
@@ -66,109 +67,6 @@ void SystemAssembler::assemble_system(GenericMatrix& A,
   assemble_system(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::check(const Form& a)
-{
-  // Check the form
-  a.check();
-
-  // Extract mesh and coefficients
-  const Mesh& mesh = a.mesh();
-  const std::vector<const Function*>& coefficients = a.coefficients();
-
-  // Check that we get the correct number of coefficients
-  if (coefficients.size() != a.ufc_form().num_coefficients())
-    error("Incorrect number of coefficients for form: %d given but %d required.",
-          coefficients.size(), a.ufc_form().num_coefficients());
-
-  // Check that all coefficients have valid value dimensions
-  for (uint i = 0; i < coefficients.size(); ++i)
-  {
-    if(!coefficients[i])
-      error("Got NULL Function as coefficient %d.", i);
-
-    try
-    {
-      // auto_ptr deletes its object when it exits its scope
-      std::auto_ptr<ufc::finite_element> fe( a.ufc_form().create_finite_element(i+a.rank()) );
-
-      uint r = coefficients[i]->function_space().element().value_rank();
-      uint fe_r = fe->value_rank();
-      if (fe_r != r)
-        warning("Invalid value rank of Function %d, got %d but expecting %d. \
-You may need to provide the rank of a user defined Function.", i, r, fe_r);
-
-      for (uint j = 0; j < r; ++j)
-      {
-        uint dim = coefficients[i]->function_space().element().value_dimension(j);
-        uint fe_dim = fe->value_dimension(j);
-        if (dim != fe_dim)
-          warning("Invalid value dimension %d of Function %d, got %d but expecting %d. \
-You may need to provide the dimension of a user defined Function.", j, i, dim, fe_dim);
-      }
-    }
-    catch(std::exception & e)
-    {
-      warning("Function %d is invalid.", i);
-    }
-  }
-
-  // Check that the cell dimension matches the mesh dimension
-  if (a.ufc_form().rank() + a.ufc_form().num_coefficients() > 0)
-  {
-    ufc::finite_element* element = a.ufc_form().create_finite_element(0);
-    assert(element);
-    if (mesh.type().cell_type() == CellType::interval && element->cell_shape() != ufc::interval)
-      error("Mesh cell type (intervals) does not match cell type of form.");
-    if (mesh.type().cell_type() == CellType::triangle && element->cell_shape() != ufc::triangle)
-      error("Mesh cell type (triangles) does not match cell type of form.");
-    if (mesh.type().cell_type() == CellType::tetrahedron && element->cell_shape() != ufc::tetrahedron)
-      error("Mesh cell type (tetrahedra) does not match cell type of form.");
-    delete element;
-  }
-
-  // Check that the mesh is ordered
-  if (!mesh.ordered())
-    error("Unable to assemble, mesh is not correctly ordered (consider calling mesh.order()).");
-}
-//-----------------------------------------------------------------------------
-void SystemAssembler::init_global_tensor(GenericTensor& A,
-                                         const Form& a,
-                                         UFC& ufc, bool reset_tensor)
-{
-  if (reset_tensor)
-  {
-    // Build sparsity pattern
-    Timer t0("Build sparsity");
-    GenericSparsityPattern* sparsity_pattern = A.factory().create_pattern();
-    if (sparsity_pattern)
-    {
-      std::vector<const DofMap*> dof_maps(0);
-      for (uint i=0; i < a.rank(); ++i)
-        dof_maps.push_back(&(a.function_space(i).dofmap()));
-      SparsityPatternBuilder::build(*sparsity_pattern, a, ufc);
-    }
-    t0.stop();
-
-    // Initialize tensor
-    Timer t1("Init tensor");
-    if (sparsity_pattern)
-      A.init(*sparsity_pattern);
-    else
-    {
-      A.resize(ufc.form.rank(), ufc.global_dimensions);
-      A.zero();
-    }
-    t1.stop();
-
-    // Delete sparsity pattern
-    Timer t2("Delete sparsity");
-    delete sparsity_pattern;
-    t2.stop();
-  }
-  else
-    A.zero();
-}
-//-----------------------------------------------------------------------------
 void SystemAssembler::assemble_system(GenericMatrix& A,
                                       GenericVector& b,
                                       const Form& a,
@@ -188,8 +86,8 @@ void SystemAssembler::assemble_system(GenericMatrix& A,
   // FIXME: 3. Some things can be simplified since we know it's a matrix and a vector
 
   // Check arguments
-  check(a);
-  check(L);
+  Assembler::check(a);
+  Assembler::check(L);
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
@@ -201,8 +99,8 @@ void SystemAssembler::assemble_system(GenericMatrix& A,
   UFC b_ufc(L);
 
   // Initialize global tensor
-  init_global_tensor(A, a, A_ufc, reset_tensors);
-  init_global_tensor(b, L, b_ufc, reset_tensors);
+  Assembler::init_global_tensor(A, a, A_ufc, reset_tensors);
+  Assembler::init_global_tensor(b, L, b_ufc, reset_tensors);
 
   // Pointers to element matrix and vector
   double* Ae = 0;
@@ -1009,8 +907,8 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
   // FIXME: 3. Some things can be simplified since we know it's a matrix and a vector
 
   // Check arguments
-  check(a);
-  check(L);
+  Assembler::check(a);
+  Assembler::check(L);
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
@@ -1022,8 +920,8 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
   UFC b_ufc(L);
 
   // Initialize global tensor
-  init_global_tensor(A, a, A_ufc, reset_tensors);
-  init_global_tensor(b, L, b_ufc, reset_tensors);
+  Assembler::init_global_tensor(A, a, A_ufc, reset_tensors);
+  Assembler::init_global_tensor(b, L, b_ufc, reset_tensors);
 
   // Pointers to element matrix and vector
   double* Ae = 0; 

@@ -112,19 +112,6 @@ namespace dolfin
 
   private:
 
-    // Check form
-    static void check(const Form& a);
-
-    // Initialize global tensor
-    static void init_global_tensor(GenericTensor& A,
-                                   const Form& a,
-                                   UFC& ufc,
-                                   bool reset_tensor);
-
-    // Pretty-printing for progress bar
-    static std::string progress_message(uint rank,
-                                        std::string integral_type);
-
     static void compute_tensor_on_one_cell(const Form& a,
                                            UFC& ufc, 
                                            const Cell& cell, 
