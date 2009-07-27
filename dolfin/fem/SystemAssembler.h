@@ -40,6 +40,13 @@ namespace dolfin
   {
   public:
 
+    /// Assemble system (A, b)
+    static void assemble_system(GenericMatrix& A,
+                                GenericVector& b,
+                                const Form& a,
+                                const Form& L,
+                                bool reset_tensors=true);
+
     /// Assemble system (A, b) and apply Dirichlet boundary condition
     static void assemble_system(GenericMatrix& A,
                                 GenericVector& b,
@@ -66,6 +73,13 @@ namespace dolfin
                                 const MeshFunction<uint>* exterior_facet_domains,
                                 const MeshFunction<uint>* interior_facet_domains,
                                 const GenericVector* x0,
+                                bool reset_tensors=true);
+
+    /// Assemble system (A, b)
+    static void assemble_system_new(GenericMatrix& A,
+                                GenericVector& b,
+                                const Form& a,
+                                const Form& L,
                                 bool reset_tensors=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary condition

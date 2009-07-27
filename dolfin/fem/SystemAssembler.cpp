@@ -38,6 +38,16 @@ void SystemAssembler::assemble_system(GenericMatrix& A,
                                       GenericVector& b,
                                       const Form& a,
                                       const Form& L,
+                                      bool reset_tensors)
+{
+  std::vector<const DirichletBC*> bcs;
+  assemble_system(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
+}
+//-----------------------------------------------------------------------------
+void SystemAssembler::assemble_system(GenericMatrix& A,
+                                      GenericVector& b,
+                                      const Form& a,
+                                      const Form& L,
                                       const DirichletBC& bc,
                                       bool reset_tensors)
 {
@@ -172,9 +182,6 @@ void SystemAssembler::assemble_system(GenericMatrix& A,
 {
   Timer timer("Assemble system");
   info("Assembling linear system and applying boundary conditions...");
-
-  // Note the importance of treating empty mesh functions as null pointers
-  // for the PyDOLFIN interface.
 
   // FIXME: 1. Need consistency check between a and L
   // FIXME: 2. We assume that we get a bilinear and linear form, need to check this
@@ -952,6 +959,16 @@ void SystemAssembler::compute_tensor_on_one_interior_facet
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble_system_new(GenericMatrix& A,
+                                      GenericVector& b,
+                                      const Form& a,
+                                      const Form& L,
+                                      bool reset_tensors)
+{
+  std::vector<const DirichletBC*> bcs;
+  assemble_system_new(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
+}
+//-----------------------------------------------------------------------------
+void SystemAssembler::assemble_system_new(GenericMatrix& A,
                                           GenericVector& b,
                                           const Form& a,
                                           const Form& L,
@@ -960,7 +977,7 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
 {
   std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
-  assemble_system(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
+  assemble_system_new(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble_system_new(GenericMatrix& A,
@@ -970,7 +987,7 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
                                           std::vector<const DirichletBC*>& bcs,
                                           bool reset_tensors)
 {
-  assemble_system(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
+  assemble_system_new(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble_system_new(GenericMatrix& A,
@@ -986,10 +1003,6 @@ void SystemAssembler::assemble_system_new(GenericMatrix& A,
 {
   Timer timer("Assemble system");
   info("Assembling linear system and applying boundary conditions...");
-
- 
-  // Note the importance of treating empty mesh functions as null pointers
-  // for the PyDOLFIN interface.
 
   // FIXME: 1. Need consistency check between a and L
   // FIXME: 2. We assume that we get a bilinear and linear form, need to check this

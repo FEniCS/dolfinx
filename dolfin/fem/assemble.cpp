@@ -37,7 +37,17 @@ void dolfin::assemble(GenericTensor& A,
                       const MeshFunction<uint>* interior_facet_domains,
                       bool reset_tensor)
 {
-  Assembler::assemble(A, a, cell_domains, exterior_facet_domains, interior_facet_domains, reset_tensor);
+  Assembler::assemble(A, a, cell_domains, exterior_facet_domains, 
+                      interior_facet_domains, reset_tensor);
+}
+//-----------------------------------------------------------------------------
+void dolfin::assemble_system(GenericMatrix& A,
+                             GenericVector& b,
+                             const Form& a,
+                             const Form& L,
+                             bool reset_tensors)
+{
+  SystemAssembler::assemble_system(A, b, a, L, reset_tensors);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -72,8 +82,18 @@ void dolfin::assemble_system(GenericMatrix& A,
                              bool reset_tensors)
 {
   SystemAssembler::assemble_system(A, b, a, L, bcs,
-                                   cell_domains, exterior_facet_domains, interior_facet_domains,
+                                   cell_domains, exterior_facet_domains, 
+                                   interior_facet_domains,
                                    x0, reset_tensors);
+}
+//-----------------------------------------------------------------------------
+void dolfin::assemble_system_new(GenericMatrix& A,
+                             GenericVector& b,
+                             const Form& a,
+                             const Form& L,
+                             bool reset_tensors)
+{
+  SystemAssembler::assemble_system(A, b, a, L, reset_tensors);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system_new(GenericMatrix& A,
@@ -108,7 +128,8 @@ void dolfin::assemble_system_new(GenericMatrix& A,
                              bool reset_tensors)
 {
   SystemAssembler::assemble_system_new(A, b, a, L, bcs, 
-                                       cell_domains, exterior_facet_domains, interior_facet_domains,
+                                       cell_domains, exterior_facet_domains, 
+                                       interior_facet_domains,
                                        x0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
@@ -139,7 +160,8 @@ double dolfin::assemble(const Form& a,
 {
   if (a.rank() != 0) error("Unable to assemble, form is not scalar.");
   Scalar s;
-  Assembler::assemble(s, a, cell_domains, exterior_facet_domains, interior_facet_domains, reset_tensor);
+  Assembler::assemble(s, a, cell_domains, exterior_facet_domains, 
+                      interior_facet_domains, reset_tensor);
   return s;
 }
 //-----------------------------------------------------------------------------

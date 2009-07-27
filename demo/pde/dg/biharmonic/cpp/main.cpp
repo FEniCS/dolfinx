@@ -46,7 +46,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh
-  UnitSquare mesh(32, 32);
+  UnitSquare mesh(2, 2);
 
   // Use uBLAS
   parameters("linear_algebra_backend") = "uBLAS";
@@ -72,6 +72,7 @@ int main()
 
   // Create PDE
   VariationalProblem pde(a, L, bc);
+  //pde.parameters("symmetric") = true;
 
   // Solve PDE
   Function u;
