@@ -1,3 +1,6 @@
+ - Add fem unit test (Python)
+ - Clean up SystemAssembler
+ - Enable assemble_system through PyDOLFIN
  - Add 'norm' to GenericMatrix
  - Efficiency improvements in NewtonSolver
  - Rename NewtonSolver::get_iteration() to NewtonSolver::iteration()
