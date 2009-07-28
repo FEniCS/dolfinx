@@ -60,24 +60,6 @@ int dolfin::real_decimal_prec() {
 #endif
 }
 //-----------------------------------------------------------------------------
-real dolfin::real_sqrt(const real& a)
-{
-  //Solving x^2 - a = 0 using newtons method
-  real x(1.0);
-  real prev(0.0);
-
-  int k = 0;
-
-  while (real_abs(x - prev) > real_epsilon())
-  {
-    prev = x;
-    x = prev - (prev*prev - a)/(2*prev);
-    ++k;
-  }
-  
-  return x;
-}
-//-----------------------------------------------------------------------------
 real dolfin::real_pi()
 {
 #ifndef HAS_GMP

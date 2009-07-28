@@ -107,7 +107,7 @@ namespace dolfin
   { return std::pow(to_double(x), to_double(y)); }
 
  /// Square root
-  real real_sqrt(const real& a);
+  inline real real_sqrt(const real& a) {return sqrt(a); } 
 
   /// Compute pi
   real real_pi();
