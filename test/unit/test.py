@@ -19,7 +19,7 @@ def getoutput(cmd):
     return output
 
 # Tests to run
-tests = ["function", "mesh", "meshconvert", "la", "io"]
+tests = ["fem", "function", "mesh", "meshconvert", "la", "io"]
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
 
