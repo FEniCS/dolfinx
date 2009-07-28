@@ -87,6 +87,27 @@ void dolfin::assemble_system(GenericMatrix& A,
                                    x0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
+void dolfin::assemble_system_swig(GenericMatrix& A,
+                             GenericVector& b,
+                             const Form& a,
+                             const Form& L,
+                             std::vector<DirichletBC*>& bcs,
+                             const MeshFunction<uint>* cell_domains,
+                             const MeshFunction<uint>* exterior_facet_domains,
+                             const MeshFunction<uint>* interior_facet_domains,
+                             const GenericVector* x0,
+                             bool reset_tensors)
+{
+  // Create const-version of boundary condition vector
+  std::vector<const DirichletBC*> _bcs;
+  for(uint i=0; i < bcs.size(); ++i)
+    _bcs.push_back(bcs[i]); 
+  SystemAssembler::assemble_system(A, b, a, L, _bcs,
+                                   cell_domains, exterior_facet_domains, 
+                                   interior_facet_domains,
+                                   x0, reset_tensors);
+}
+//-----------------------------------------------------------------------------
 void dolfin::assemble_system_new(GenericMatrix& A,
                              GenericVector& b,
                              const Form& a,

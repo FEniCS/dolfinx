@@ -1,7 +1,7 @@
 // Copyright (C) 2007-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008-2009.
 //
 // First added:  2007-01-17
 // Last changed: 2009-03-06
@@ -77,6 +77,20 @@ namespace dolfin
                        const Form& a,
                        const Form& L,
                        std::vector<const DirichletBC*>& bcs,
+                       const MeshFunction<uint>* cell_domains,
+                       const MeshFunction<uint>* exterior_facet_domains,
+                       const MeshFunction<uint>* interior_facet_domains,
+                       const GenericVector* x0,
+                       bool reset_tensors=true);
+
+  /// Assemble system (A, b) on sub domains and apply Dirichlet boundary conditions
+  /// This function removes const from std::vector<const DirichletBC*> since
+  /// SWIG cannot handle it.
+  void assemble_system_swig(GenericMatrix& A,
+                       GenericVector& b,
+                       const Form& a,
+                       const Form& L,
+                       std::vector<DirichletBC*>& bcs,
                        const MeshFunction<uint>* cell_domains,
                        const MeshFunction<uint>* exterior_facet_domains,
                        const MeshFunction<uint>* interior_facet_domains,
