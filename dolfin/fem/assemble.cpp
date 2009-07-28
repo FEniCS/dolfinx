@@ -47,7 +47,7 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const Form& L,
                              bool reset_tensors)
 {
-  SystemAssembler::assemble_system(A, b, a, L, reset_tensors);
+  SystemAssembler::assemble(A, b, a, L, reset_tensors);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -57,7 +57,7 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const DirichletBC& bc,
                              bool reset_tensors)
 {
-  SystemAssembler::assemble_system(A, b, a, L, bc, reset_tensors);
+  SystemAssembler::assemble(A, b, a, L, bc, reset_tensors);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -67,7 +67,7 @@ void dolfin::assemble_system(GenericMatrix& A,
                              std::vector<const DirichletBC*>& bcs,
                              bool reset_tensors)
 {
-  SystemAssembler::assemble_system(A, b, a, L, bcs, reset_tensors);
+  SystemAssembler::assemble(A, b, a, L, bcs, reset_tensors);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system(GenericMatrix& A,
@@ -81,10 +81,9 @@ void dolfin::assemble_system(GenericMatrix& A,
                              const GenericVector* x0,
                              bool reset_tensors)
 {
-  SystemAssembler::assemble_system(A, b, a, L, bcs,
-                                   cell_domains, exterior_facet_domains, 
-                                   interior_facet_domains,
-                                   x0, reset_tensors);
+  SystemAssembler::assemble(A, b, a, L, bcs,
+                            cell_domains, exterior_facet_domains, 
+                            interior_facet_domains, x0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
 void dolfin::assemble_system_swig(GenericMatrix& A,
@@ -102,10 +101,9 @@ void dolfin::assemble_system_swig(GenericMatrix& A,
   std::vector<const DirichletBC*> _bcs;
   for(uint i=0; i < bcs.size(); ++i)
     _bcs.push_back(bcs[i]); 
-  SystemAssembler::assemble_system(A, b, a, L, _bcs,
-                                   cell_domains, exterior_facet_domains, 
-                                   interior_facet_domains,
-                                   x0, reset_tensors);
+  SystemAssembler::assemble(A, b, a, L, _bcs,
+                            cell_domains, exterior_facet_domains, 
+                            interior_facet_domains, x0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a,

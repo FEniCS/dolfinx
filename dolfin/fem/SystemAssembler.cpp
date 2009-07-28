@@ -35,17 +35,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble_system(GenericMatrix& A,
+void SystemAssembler::assemble(GenericMatrix& A,
                                       GenericVector& b,
                                       const Form& a,
                                       const Form& L,
                                       bool reset_tensors)
 {
   std::vector<const DirichletBC*> bcs;
-  assemble_system(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
+  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble_system(GenericMatrix& A,
+void SystemAssembler::assemble(GenericMatrix& A,
                                           GenericVector& b,
                                           const Form& a,
                                           const Form& L,
@@ -54,20 +54,20 @@ void SystemAssembler::assemble_system(GenericMatrix& A,
 {
   std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
-  assemble_system(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
+  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble_system(GenericMatrix& A,
+void SystemAssembler::assemble(GenericMatrix& A,
                                           GenericVector& b,
                                           const Form& a,
                                           const Form& L,
                                           std::vector<const DirichletBC*>& bcs,
                                           bool reset_tensors)
 {
-  assemble_system(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
+  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble_system(GenericMatrix& A,
+void SystemAssembler::assemble(GenericMatrix& A,
                                           GenericVector& b,
                                           const Form& a,
                                           const Form& L,

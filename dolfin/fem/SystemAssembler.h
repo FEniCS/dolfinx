@@ -41,14 +41,14 @@ namespace dolfin
   public:
 
     /// Assemble system (A, b)
-    static void assemble_system(GenericMatrix& A,
+    static void assemble(GenericMatrix& A,
                                 GenericVector& b,
                                 const Form& a,
                                 const Form& L,
                                 bool reset_tensors=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary condition
-    static void assemble_system(GenericMatrix& A,
+    static void assemble(GenericMatrix& A,
                                 GenericVector& b,
                                 const Form& a,
                                 const Form& L,
@@ -56,7 +56,7 @@ namespace dolfin
                                 bool reset_tensors=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions
-    static void assemble_system(GenericMatrix& A,
+    static void assemble(GenericMatrix& A,
                                 GenericVector& b,
                                 const Form& a,
                                 const Form& L, 
@@ -64,7 +64,7 @@ namespace dolfin
                                 bool reset_tensors=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions
-    static void assemble_system(GenericMatrix& A,
+    static void assemble(GenericMatrix& A,
                                 GenericVector& b,
                                 const Form& a,
                                 const Form& L,
