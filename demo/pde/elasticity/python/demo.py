@@ -78,7 +78,10 @@ bcs = [bcl, bcr]
 
 # Set up PDE and solve
 problem = VariationalProblem(a, L, bcs)
+problem.parameters["symmetric"] = True
 u = problem.solve()
+
+A, b = assemble_system(a, L, bcs)
 
 # Save solution to VTK format
 vtk_file = File("elasticity.pvd")

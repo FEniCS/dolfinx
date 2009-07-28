@@ -99,11 +99,6 @@ int main()
   assemble_system(A, b, a, L, bc);
   table("Symmetric", "Assembly time") = toc();
 
-  // Assemble A and b together
-  tic();
-  assemble_system_new(A, b, a, L, bc);
-  table("Symmetric New", "Assembly time") = toc();
-
   // Display summary
   info(table);
 

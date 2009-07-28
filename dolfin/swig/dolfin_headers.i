@@ -161,6 +161,7 @@
 %include "dolfin/fem/assemble.h"
 %include "dolfin/fem/Form.h"
 %include "dolfin/fem/Assembler.h"
+%include "dolfin/fem/SystemAssembler.h"
 %include "dolfin/fem/VariationalProblem.h"
 
 // DOLFIN headers included from mf
