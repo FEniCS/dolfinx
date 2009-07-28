@@ -1,3 +1,4 @@
+ - Add 'norm' to GenericMatrix
  - Efficiency improvements in NewtonSolver
  - Rename NewtonSolver::get_iteration() to NewtonSolver::iteration()
  - Improvements to EpetraKrylovSolver::solve

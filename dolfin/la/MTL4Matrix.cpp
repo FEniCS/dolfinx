@@ -1,10 +1,10 @@
 // Copyright (C) 2008 Dag Lindbo
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008. 2009.
 //
 // First added:  2008-07-06
-// Last changed: 2008-10-04
+// Last changed: 2008-07-28
 
 #ifdef HAS_MTL4
 
@@ -118,7 +118,7 @@ void MTL4Matrix::add(const double* block, uint m, const uint* rows, uint n, cons
   */
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::MTL4Matrix::axpy(double a, const GenericMatrix& A,
+void MTL4Matrix::axpy(double a, const GenericMatrix& A,
                                   bool same_nonzero_pattern)
   {
     // Check for same size
@@ -128,6 +128,21 @@ void MTL4Matrix::MTL4Matrix::axpy(double a, const GenericMatrix& A,
     // Do we need to check for same sparsity pattern?
     this->A += (a)*(A.down_cast<MTL4Matrix>().mat());
   }
+//-----------------------------------------------------------------------------
+double MTL4Matrix::norm(std::string norm_type) const
+{
+  if (norm_type == "l1")
+    return one_norm(A);
+  else if (norm_type == "linf")
+    return infinity_norm(A);
+  else if (norm_type == "frobenius")
+    return frobenius_norm(A);
+  else
+  {
+    error("Unknown norm type in MTL4Matrix.");
+    return 0.0;
+  }  
+}
 //-----------------------------------------------------------------------------
 void MTL4Matrix::zero()
 {

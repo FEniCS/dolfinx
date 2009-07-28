@@ -8,7 +8,7 @@
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2006-07-05
-// Last changed: 2009-06-02
+// Last changed: 2009-07-28
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -104,6 +104,9 @@ namespace dolfin
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false);
+
+    /// Return norm of matrix
+    virtual double norm(std::string norm_type = "frobenius") const;
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;
@@ -228,6 +231,22 @@ namespace dolfin
   {
     assert( dim < 2 );
     return (dim == 0 ? A.Mat::size1() : A.Mat::size2());
+  }
+  //---------------------------------------------------------------------------
+  template <class Mat>
+  double uBLASMatrix<Mat>::norm(std::string norm_type) const
+  {
+    if (norm_type == "l1")
+      return norm_1(A);
+    else if (norm_type == "linf")
+      return norm_inf(A);
+    else if (norm_type == "frobenius")
+      return norm_frobenius(A);
+    else
+    {
+      error("Unknown norm type in uBLASMatrix.");
+      return 0.0;
+    }
   }
   //---------------------------------------------------------------------------
   template <class Mat>

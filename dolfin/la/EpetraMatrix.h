@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008, 2009.
 //
 // First added:  2008-04-21
-// Last changed: 2008-13-30
+// Last changed: 2009-07-28
 
 #ifndef __EPETRA_MATRIX_H
 #define __EPETRA_MATRIX_H
@@ -92,6 +92,9 @@ namespace dolfin
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false);
+
+    /// Return norm of matrix
+    virtual double norm(std::string norm_type = "frobenius") const;
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;

@@ -1,10 +1,10 @@
 // Copyright (C) 2008 Dag Lindbo
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008, 2009.
 //
 // First added:  2008-07-06
-// Last changed: 2008-07-20
+// Last changed: 2009-07-28
 
 #ifdef HAS_MTL4
 
@@ -83,6 +83,9 @@ namespace dolfin
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A,  bool same_nonzero_pattern = false);
+
+    /// Return norm of matrix
+    virtual double norm(std::string norm_type = "frobenius") const;
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;

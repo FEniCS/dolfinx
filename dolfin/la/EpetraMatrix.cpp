@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008, 2008.
 //
 // First added:  2008-04-21
-// Last changed: 2008-12-30
+// Last changed: 2009-07-28
 
 #ifdef HAS_TRILINOS
 
@@ -189,6 +189,21 @@ void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_patt
   int err = EpetraExt::MatrixMatrix::Add(*(AA->mat()), false, a, *(this->A), 1.0);
   if (err != 0)
     error("EpetraMatrDid::axpy: Did not manage to perform EpetraExt::MatrixMatrix::Add. If the matrix has been assembled, the nonzero patterns must match.");
+}
+//-----------------------------------------------------------------------------
+double EpetraMatrix::norm(std::string norm_type) const
+{
+  if (norm_type == "l1")
+    return A->NormOne();
+  else if (norm_type == "linf")
+    return A->NormInf();
+  else if (norm_type == "frobenius")
+    return A->NormFrobenius();
+  else
+  {
+    error("Unknown norm type in EpetraMatrix.");
+    return 0.0;
+  }  
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::zero()

@@ -91,6 +91,10 @@ namespace dolfin
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false)
     { matrix->axpy(a, A, same_nonzero_pattern); }
 
+    /// Return norm of matrix
+    virtual double norm(std::string norm_type = "frobenius") const
+    { return matrix->norm(norm_type); }
+
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const
     { matrix->getrow(row, columns, values); }
