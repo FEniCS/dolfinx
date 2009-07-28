@@ -72,6 +72,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
   bool newton_converged = false;
 
   // Compute F(u)
+  nonlinear_problem.form(*A, *b, x);
   nonlinear_problem.F(*b, x);
 
   // Start iterations
@@ -97,6 +98,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
 
     //FIXME: this step is not needed if residual is based on dx and this has converged.
     // Compute F
+    nonlinear_problem.form(*A, *b, x);
     nonlinear_problem.F(*b, x);
 
     // Test for convergence
