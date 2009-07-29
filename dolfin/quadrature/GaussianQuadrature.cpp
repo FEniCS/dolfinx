@@ -60,8 +60,8 @@ void GaussianQuadrature::compute_weights()
     Legendre p(i);
     for (unsigned int j = 0; j < n; j++)
     {
-      A_real[i*n+j] = p(points[j]);
-      _A(i, j) = to_double(A_real[i*n+j]);
+      A_real[i + n*j] = p(points[j]);
+      _A(i, j) = to_double(A_real[i + n*j]);
     _b[i] = 0.0;
     b_real[i] = 0.0;
     }
