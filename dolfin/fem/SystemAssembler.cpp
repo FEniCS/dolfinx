@@ -147,6 +147,7 @@ void SystemAssembler::cell_assembly(GenericMatrix& A, GenericVector& b,
   const std::vector<const Function*>& A_coefficients = a.coefficients();
   const std::vector<const Function*>& b_coefficients = L.coefficients();
 
+  Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell) 
   {
     // Update to current cell
@@ -192,6 +193,8 @@ void SystemAssembler::cell_assembly(GenericMatrix& A, GenericVector& b,
     // Add entries to global tensor
     A.add(data.Ae, A_ufc.local_dimensions, A_ufc.dofs);
     b.add(data.be, b_ufc.local_dimensions, b_ufc.dofs);
+
+    p++;
   }
 } 
 //-----------------------------------------------------------------------------
@@ -206,6 +209,7 @@ void SystemAssembler::facet_assembly(GenericMatrix& A, GenericVector& b,
   const std::vector<const Function*>& A_coefficients = a.coefficients();
   const std::vector<const Function*>& b_coefficients = L.coefficients();
 
+  Progress p("Assembling system (facet-wise)", mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Interior facet
@@ -365,6 +369,8 @@ void SystemAssembler::facet_assembly(GenericMatrix& A, GenericVector& b,
       A.add(data.Ae, A_ufc.local_dimensions, A_ufc.dofs);
       b.add(data.be, b_ufc.local_dimensions, b_ufc.dofs);
     }
+  
+    p++;
   }
 }
 //-----------------------------------------------------------------------------
