@@ -30,7 +30,7 @@ ODESolver::~ODESolver()
 //------------------------------------------------------------------------
 void ODESolver::solve()
 {
-  ODESolution u(ode.size());
+  ODESolution u;
   solve(u);
 }
 //-----------------------------------------------------------------------
@@ -74,11 +74,8 @@ void ODESolver::solve_dual(ODESolution& u)
   // Create dual problem
   Dual dual(ode, u);
 
-  dual.parameters("solution_file_name") = "solution_dual.py";
-  dual.parameters("save_final_solution") = true;
-
   // Create dummy object to hold the solution of the dual
-  ODESolution z(dual.size());
+  ODESolution z;
   z.set_filename("dual_odesolution");
 
   // Solve dual problem
