@@ -134,7 +134,7 @@ void Parameters::add(std::string key, double value,
   // Set range
   Parameter* p = find_parameter(key);
   assert(p);
-  p->set_range(min_value, max_value);
+  p->set_range(to_real(min_value), to_real(max_value));
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, std::string value)
