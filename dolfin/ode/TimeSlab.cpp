@@ -89,6 +89,10 @@ const Lagrange TimeSlab::get_trial() const {
   return method->get_trial();
 }
 //-----------------------------------------------------------------------------
+const real* TimeSlab::get_quadrature_weights() const {
+  return method->get_quadrature_weights();
+}
+//-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream,
 				      const TimeSlab& timeslab)
 {

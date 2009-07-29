@@ -59,7 +59,10 @@ void TimeStepper::solve(ODESolution& u, real t0, real t1)
   begin("Time-stepping over the time interval [%g, %g]",
         to_double(t0), to_double(t1));
 
-  u.init(timeslab->get_trial());
+  u.init(ode.size(),
+	 timeslab->get_trial(), 
+	 timeslab->get_quadrature_weights());
+
 
   // Do time-stepping on [t0, t1]
   t = t0;

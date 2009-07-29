@@ -68,6 +68,7 @@ namespace dolfin
     void get_state(real* u);
 
     const Lagrange get_trial() const;
+    const real* get_quadrature_weights() const;
 
     /// Sample solution value of given component at given time
     virtual real usample(uint i, real t) = 0;
