@@ -77,49 +77,15 @@ namespace dolfin
 
   private:
 
-    // Class to hold data
-    class Scratch
-    {
-      public:
-
-      Scratch(const Form& a, const Form& L);
-      ~Scratch();
-
-      void zero_cell();
-      void zero_macro();
-
-      uint A_num_entries, b_num_entries;
-      uint A_macro_num_entries, b_macro_num_entries;
-
-      double* Ae;
-      double* be; 
-      double* Ae_macro;
-      double* be_macro;
-      uint* indicators;
-      double* g;
-    };
-
-    static void compute_tensor_on_one_cell(const Form& a,
-                                           UFC& ufc, 
-                                           const Cell& cell, 
-                                           const std::vector<const Function*>& coefficients, 
-                                           const MeshFunction<uint>* cell_domains); 
-    
-    static void compute_tensor_on_one_exterior_facet(const Form& a,
-                                               UFC& ufc, 
-                                               const Cell& cell, 
-                                               const Facet& facet,
-                                               const std::vector<const Function*>& coefficients, 
-                                                      const MeshFunction<uint>* exterior_facet_domains); 
-
+    class Scratch;    
 
     static void compute_tensor_on_one_interior_facet(const Form& a,
-                                                      UFC& ufc, 
-                                                      const Cell& cell1, 
-                                                      const Cell& cell2, 
-                                                      const Facet& facet,
-                                                      const std::vector<const Function*>& coefficients, 
-                                                      const MeshFunction<uint>* exterior_facet_domains); 
+                             UFC& ufc, 
+                             const Cell& cell1, 
+                             const Cell& cell2, 
+                             const Facet& facet,
+                             const std::vector<const Function*>& coefficients, 
+                             const MeshFunction<uint>* exterior_facet_domains); 
 
     static void cell_assembly(GenericMatrix& A, GenericVector& b,
                               const Form& a, const Form& L, 
@@ -134,9 +100,44 @@ namespace dolfin
                               const MeshFunction<uint>* exterior_facet_domains,
                               const MeshFunction<uint>* interior_facet_domains); 
 
+    static void assemble(GenericMatrix& A, GenericVector& b,
+                         UFC& A_ufc, UFC& b_ufc, 
+                         const Form& a,
+                         const Form& L,
+                         const std::vector<const Function*>& A_coefficients,
+                         const std::vector<const Function*>& b_coefficients,
+                         const Cell& cell0, const Cell& cell1, const Facet& facet,
+                         const Scratch& data); 
+
+    static void assemble(GenericMatrix& A, GenericVector& b,
+                         UFC& A_ufc, UFC& b_ufc, 
+                         const Form& a,
+                         const Form& L,
+                         const std::vector<const Function*>& A_coefficients,
+                         const std::vector<const Function*>& b_coefficients,
+                         const Cell& cell, const Facet& facet,
+                         const Scratch& data); 
+
     static void apply_bc(double* A, double* b, const uint* indicators, 
                          const double* g, uint** global_dofs, const uint* dims); 
    
+    // Class to hold temporary data
+    class Scratch
+    {
+      public:
+
+      Scratch(const Form& a, const Form& L);
+      ~Scratch();
+
+      void zero_cell();
+
+      uint A_num_entries, b_num_entries;
+
+      double* Ae;
+      double* be; 
+      uint* indicators;
+      double* g;
+    };
   };
 
 }
