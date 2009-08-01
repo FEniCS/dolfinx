@@ -79,14 +79,6 @@ namespace dolfin
 
     class Scratch;    
 
-    static void compute_tensor_on_one_exterior_facet(const Form& a,
-                             UFC& ufc, 
-                             const Cell& cell, 
-                             const Facet& facet,
-                             const std::vector<const Function*>& coefficients, 
-                             const MeshFunction<uint>* exterior_facet_domains); 
-
-
     static void compute_tensor_on_one_interior_facet(const Form& a,
                              UFC& ufc, 
                              const Cell& cell1, 
@@ -114,10 +106,16 @@ namespace dolfin
                          const Form& L,
                          const std::vector<const Function*>& A_coefficients,
                          const std::vector<const Function*>& b_coefficients,
-                         const MeshFunction<uint>* cell_domains,
-                         const MeshFunction<uint>* exterior_facet_domains,
-                         const MeshFunction<uint>* interior_facet_domains,
                          const Cell& cell0, const Cell& cell1, const Facet& facet,
+                         const Scratch& data); 
+
+    static void assemble(GenericMatrix& A, GenericVector& b,
+                         UFC& A_ufc, UFC& b_ufc, 
+                         const Form& a,
+                         const Form& L,
+                         const std::vector<const Function*>& A_coefficients,
+                         const std::vector<const Function*>& b_coefficients,
+                         const Cell& cell, const Facet& facet,
                          const Scratch& data); 
 
     static void apply_bc(double* A, double* b, const uint* indicators, 
