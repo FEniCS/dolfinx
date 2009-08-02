@@ -25,6 +25,7 @@ __license__  = "GNU LGPL Version 2.1"
 
 # Original implementation (../cpp/main.cpp) by Garth N. Wells.
 # Modified by Anders Logg, 2008.
+# Modified by Harish Narayanan, 2009.
 
 from dolfin import *
 
@@ -48,8 +49,8 @@ U = Function(V)
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-a = v.dx(i)*(1.0 + U*U)*u.dx(i)*dx + v.dx(i)*(2.0*U*u)*U.dx(i)*dx
-L = v.dx(i)*(1.0 + U*U)*U.dx(i)*dx - v*f*dx
+L = inner(grad(v), (1 + U**2)*grad(U))*dx - v*f*dx
+a = derivative(L, U, u)
 
 # Solve nonlinear variational problem
 problem = VariationalProblem(a, L, bc, nonlinear=True)

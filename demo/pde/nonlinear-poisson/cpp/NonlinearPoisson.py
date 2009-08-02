@@ -14,6 +14,8 @@ element = None
 # Copyright (C) 2005 Garth N. Wells.
 # Licensed under the GNU LGPL Version 2.1.
 #
+# Modified by Harish Narayanan, 2009.
+#
 # The linearised bilinear form a(v, U) and linear form L(v) for
 # the nonlinear equation - div (1+u^2) grad u = f
 #
@@ -25,7 +27,8 @@ v = TestFunction(element)
 u = TrialFunction(element)
 f = Function(element)
 U = Function(element)
-a = v.dx(i)*(1.0 + U*U)*u.dx(i)*dx + v.dx(i)*(2.0*U*u)*U.dx(i)*dx
-L = v.dx(i)*(1.0 + U*U)*U.dx(i)*dx - v*f*dx
+L = inner(grad(v), (1 + U**2)*grad(U))*dx - v*f*dx
+a = derivative(L, U, u)
 
-compile([a, L, M, element], "NonlinearPoisson", {'log_level': 20, 'format': 'dolfin', 'form_postfix': True, 'quadrature_order': 'auto', 'precision': '15', 'cpp optimize': False, 'split_implementation': False, 'cache_dir': None, 'output_dir': '.', 'representation': 'auto', 'optimize': True}, globals())
+
+compile([a, L, M, element], "NonlinearPoisson", {'log_level': 20, 'format': 'dolfin', 'form_postfix': True, 'precision': '15', 'quadrature_order': 'auto', 'cpp optimize': False, 'cache_dir': None, 'split': False, 'representation': 'auto', 'optimize': False, 'quadrature_rule': None, 'output_dir': '.'}, globals())
