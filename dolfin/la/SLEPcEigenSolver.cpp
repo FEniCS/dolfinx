@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2008.
-// Modified by Anders Logg, 2008.
+// Modified by Anders Logg, 2008-2009.
 //
 // First added:  2005-08-31
-// Last changed: 2009-02-04
+// Last changed: 2009-08-02
 
 #ifdef HAS_SLEPC
 
@@ -121,8 +121,11 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   // Set algorithm type (Hermitian matrix)
   //EPSSetProblemType(eps, EPS_NHEP);
 
-  // Set options from database
+  // Set parameters from PETSc parameter database
   EPSSetFromOptions(eps);
+
+  // Set parameters from local parameters
+  read_parameters();
 
   // Solve
   EPSSolve(eps);
