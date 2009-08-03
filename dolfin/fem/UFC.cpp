@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2009
+// Modified by Garth N. Wells, 2009
 //
 // First added:  2007-01-17
-// Last changed: 2009-05-13
+// Last changed: 2009-08-03
 
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -17,7 +18,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 UFC::UFC(const Form& form)
- : form(form.ufc_form()), cell(form.mesh()), cell0(form.mesh()), cell1(form.mesh())
+ : form(form.ufc_form()), cell(form.mesh()), cell0(form.mesh()), 
+   cell1(form.mesh()), coefficients(form.coefficients())
 {
   // Create finite elements
   finite_elements = new FiniteElement*[this->form.rank()];
@@ -191,15 +193,34 @@ void UFC::update(const Cell& cell)
   // Update UFC cell
   this->cell.update(cell);
 
-  // FIXME: Update coefficients
+  // Interpolate coefficients on cell
+  for (uint i = 0; i < coefficients.size(); i++)
+    coefficients[i]->interpolate(w[i], this->cell, cell.index());
 }
 //-----------------------------------------------------------------------------
-void UFC::update(const Cell& cell0, const Cell& cell1)
+void UFC::update(const Cell& cell, uint local_facet)
+{
+  // Update UFC cell
+  this->cell.update(cell);
+
+  // Interpolate coefficients on facet
+  for (uint i = 0; i < coefficients.size(); i++)
+    coefficients[i]->interpolate(w[i], this->cell, cell.index(), local_facet);
+}
+//-----------------------------------------------------------------------------
+void UFC::update(const Cell& cell0, uint local_facet0, 
+                 const Cell& cell1, uint local_facet1)
 {
   // Update UFC cells
   this->cell0.update(cell0);
   this->cell1.update(cell1);
 
-  // FIXME: Update coefficients
+  // Interpolate coefficients on cell
+  for (uint i = 0; i < coefficients.size(); i++)
+  {
+    const uint offset = coefficient_elements[i]->space_dimension();
+    coefficients[i]->interpolate(macro_w[i],          this->cell0, cell0.index(), local_facet0);
+    coefficients[i]->interpolate(macro_w[i] + offset, this->cell1, cell1.index(), local_facet1);
+  }
 }
 //-----------------------------------------------------------------------------
