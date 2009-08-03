@@ -346,13 +346,25 @@ void Function::collect_global_dof_values(std::map<uint, double> dof_values) cons
   // on another process. We build the map in two steps. First, we compute
   // which dofs are needed and send requests to the processes that own the
   // dofs. Then all processes send the requested values back.
-  
+
   // Clear map
   dof_values.clear();
+
+  std::map<uint, uint> dof_owner;
 
   // Get mesh
   assert(_function_space);
   const Mesh& mesh = _function_space->mesh();
+
+  // Storage for each cell dofs
+  const DofMap& dofmap = _function_space->dofmap();
+  const uint num_dofs_per_cell = _function_space->element().space_dimension();
+  const uint num_dofs_global = vector().size();
+  uint* dofs = new uint[num_dofs_per_cell];
+  for (uint i=0; i < num_dofs_per_cell; i++)
+    dofs[i] = 0;
+
+  const uint dof_offset = MPI::local_range(num_dofs_global).first;
 
   // Iterate over mesh and check which dofs are needed
   UFCCell ufc_cell(mesh);
@@ -362,8 +374,25 @@ void Function::collect_global_dof_values(std::map<uint, double> dof_values) cons
     ufc_cell.update(*cell);
 
     // Tabulate dofs on cell
-    
+    dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());
 
+    for (uint d=0; d < num_dofs_per_cell; ++d)
+    {
+      const uint dof = dofs[d];
+      const uint index_owner = MPI::index_owner(dof, num_dofs_global);
+      
+      if (index_owner == MPI::process_number())
+      {
+        if (dof_values.find(dof) == dof_values.end())
+          dof_values[dof] = (*_vector)[dof - dof_offset];
+      }
+      else
+      {
+        if (dof_owner.find(dof) == dof_owner.end())
+          // Put unique new dof in communication map
+          dof_owner[dof] = index_owner;
+      }
+    }
   }
 
   // Request dofs from other processes
