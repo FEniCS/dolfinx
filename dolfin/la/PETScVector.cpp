@@ -334,7 +334,8 @@ double PETScVector::sum() const
 //-----------------------------------------------------------------------------
 void PETScVector::disp(uint precision) const
 {
-  VecView(*x, PETSC_VIEWER_STDOUT_SELF);
+  //VecView(*x, PETSC_VIEWER_STDOUT_SELF);
+  VecView(*x, PETSC_VIEWER_STDOUT_WORLD);	 
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Vec> PETScVector::vec() const
