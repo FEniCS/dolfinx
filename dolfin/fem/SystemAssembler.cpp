@@ -10,25 +10,19 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/Scalar.h>
-#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
-#include <dolfin/mesh/MeshData.h>
-#include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include "DofMap.h"
+#include "FiniteElement.h"
 #include "Form.h"
 #include "UFC.h"
-#include "SparsityPatternBuilder.h"
 #include "DirichletBC.h"
-#include "FiniteElement.h"
 #include "Assembler.h"
 #include "SystemAssembler.h"
 
@@ -150,8 +144,8 @@ void SystemAssembler::cell_assembly(GenericMatrix& A, GenericVector& b,
   // related terms to cut down on code repetition.
 
   const Mesh& mesh = a.mesh();
-  const std::vector<const Function*>& A_coefficients = a.coefficients();
-  const std::vector<const Function*>& b_coefficients = L.coefficients();
+  const std::vector<const Function*> A_coefficients = a.coefficients();
+  const std::vector<const Function*> b_coefficients = L.coefficients();
 
   // Cell integrals
   ufc::cell_integral* A_integral = A_ufc.cell_integrals[0];
@@ -246,8 +240,8 @@ void SystemAssembler::facet_assembly(GenericMatrix& A, GenericVector& b,
                                     const MeshFunction<uint>* interior_facet_domains)
 {
   const Mesh& mesh = a.mesh();
-  const std::vector<const Function*>& A_coefficients = a.coefficients();
-  const std::vector<const Function*>& b_coefficients = L.coefficients();
+  const std::vector<const Function*> A_coefficients = a.coefficients();
+  const std::vector<const Function*> b_coefficients = L.coefficients();
 
   Progress p("Assembling system (facet-wise)", mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)

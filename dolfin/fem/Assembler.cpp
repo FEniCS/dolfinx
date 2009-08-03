@@ -127,7 +127,7 @@ void Assembler::assemble_cells(GenericTensor& A,
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
-  const std::vector<const Function*>& coefficients = a.coefficients();
+  const std::vector<const Function*> coefficients = a.coefficients();
 
   // Cell integral
   ufc::cell_integral* integral = ufc.cell_integrals[0];
@@ -200,7 +200,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
-  const std::vector<const Function*>& coefficients = a.coefficients();
+  const std::vector<const Function*> coefficients = a.coefficients();
 
   // Exterior facet integral
   ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
@@ -272,7 +272,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
-  const std::vector<const Function*>& coefficients = a.coefficients();
+  const std::vector<const Function*> coefficients = a.coefficients();
 
   // Interior facet integral
   ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0];
@@ -352,7 +352,7 @@ void Assembler::check(const Form& a)
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
-  const std::vector<const Function*>& coefficients = a.coefficients();
+  const std::vector<const Function*> coefficients = a.coefficients();
 
   // Check that we get the correct number of coefficients
   if (coefficients.size() != a.ufc_form().num_coefficients())
