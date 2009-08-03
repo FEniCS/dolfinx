@@ -9,7 +9,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2009-06-19
+// Last changed: 2009-08-03
 
 #include <boost/filesystem.hpp>
 #include <dolfin/main/MPI.h>
@@ -19,7 +19,6 @@
 #include "MatlabFile.h"
 #include "OctaveFile.h"
 #include "PythonFile.h"
-#include "PVTKFile.h"
 #include "VTKFile.h"
 #include "RAWFile.h"
 #include "XYZFile.h"
@@ -48,12 +47,7 @@ File::File(const std::string filename)
   else if (extension == ".py")
     file = new PythonFile(filename);
   else if (extension == ".pvd")
-  {
-    //if (MPI::num_processes() > 1)
-    //  file = new PVTKFile(filename);
-    //else
       file = new VTKFile(filename);
-  }
   else if (extension == ".raw")
     file = new RAWFile(filename);
   else if (extension == ".xyz")

@@ -75,7 +75,8 @@ namespace dolfin
     /// Destructor
     virtual ~Function();
 
-    /// Assignment from function
+    /// Assignment from function. Will perform interpolation for user-defined
+    /// functions
     const Function& operator= (const Function& v);
 
     /// Extract sub function
