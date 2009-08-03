@@ -22,7 +22,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
                                    const Form& a,
-                                   UFC& ufc)
+                                   const UFC& ufc)
 {
   const Mesh& mesh = a.mesh();
 
@@ -36,8 +36,13 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Build sparsity pattern for cell integrals
   if (ufc.form.num_cell_integrals() != 0)
   {
+    UFCCell ufc_cell(mesh);
+
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
+      // Update to current cell
+      ufc_cell.update(*cell);
+
       // FIXME: Use new restricted iterators for this (avoid continue)
       bool compute_on_cell = true;
       for (uint i = 0; i < a.function_spaces().size(); i++)
@@ -48,14 +53,11 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       if (!compute_on_cell)
         continue;
 
-      // Update to current cell
-      ufc.update(*cell);
-
       // Tabulate dofs for each dimension and get local dimensions
       for (uint i = 0; i < ufc.form.rank(); ++i)
       {
-        a.function_space(i).dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
-        ufc.local_dimensions[i] = a.function_space(i).dofmap().local_dimension(ufc.cell);
+        a.function_space(i).dofmap().tabulate_dofs(ufc.dofs[i], ufc_cell, cell->index());
+        ufc.local_dimensions[i] = a.function_space(i).dofmap().local_dimension(ufc_cell);
       }
 
       // Fill sparsity pattern.
@@ -63,13 +65,17 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     }
   }
 
-  // FIXME: The below note is not true when there are no cell integrals, e.g. finite volume method
+  // FIXME: The below note is not true when there are no cell integrals, 
+  //        e.g. finite volume method
   // Note: no need to iterate over exterior facets since those dofs
   // are included when tabulating dofs on all cells
 
   // Build sparsity pattern for interior facet integrals
   if (ufc.form.num_interior_facet_integrals() != 0)
   {
+    UFCCell ufc_cell0(mesh);
+    UFCCell ufc_cell1(mesh);
+
     // Compute facets and facet - cell connectivity if not already computed
     mesh.init(mesh.topology().dim() - 1);
     mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
@@ -85,16 +91,17 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
       Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
 
-      // Update to current pair of cells
-      ufc.update(cell0, cell1);
+      // Update to current cell
+      ufc_cell0.update(cell0);
+      ufc_cell1.update(cell1);
 
       // Tabulate dofs for each dimension on macro element
       for (uint i = 0; i < ufc.form.rank(); ++i)
       {
-        const uint offset = a.function_space(i).dofmap().local_dimension(ufc.cell0);
-        ufc.macro_local_dimensions[i] = offset + a.function_space(i).dofmap().local_dimension(ufc.cell1);
-        a.function_space(i).dofmap().tabulate_dofs(ufc.macro_dofs[i], ufc.cell0, cell0.index());
-        a.function_space(i).dofmap().tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
+        const uint offset = a.function_space(i).dofmap().local_dimension(ufc_cell0);
+        ufc.macro_local_dimensions[i] = offset + a.function_space(i).dofmap().local_dimension(ufc_cell1);
+        a.function_space(i).dofmap().tabulate_dofs(ufc.macro_dofs[i], ufc_cell0, cell0.index());
+        a.function_space(i).dofmap().tabulate_dofs(ufc.macro_dofs[i] + offset, ufc_cell1, cell1.index());
       }
 
       // Fill sparsity pattern.

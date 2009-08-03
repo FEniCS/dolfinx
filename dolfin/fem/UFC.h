@@ -1,14 +1,17 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2009
+//
 // First added:  2007-01-17
-// Last changed: 2008-10-26
+// Last changed: 2009-08-03
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
 
 #include <vector>
 #include <ufc.h>
+#include <dolfin/function/Function.h>
 #include "UFCCell.h"
 #include "UFCMesh.h"
 
@@ -40,8 +43,12 @@ namespace dolfin
     /// Update current cell
     void update(const Cell& cell);
 
+    /// Update current cell and facet
+    void update(const Cell& cell, uint local_facet);
+
     /// Update current pair of cells for macro element
-    void update(const Cell& cell0, const Cell& cell1);
+    void update(const Cell& cell0, uint local_facet0, 
+                const Cell& cell1, uint local_facet1);
 
     // std::vector of finite elements for primary arguments
     FiniteElement** finite_elements;
@@ -97,6 +104,11 @@ namespace dolfin
 
     // std::vector of coefficients on macro element
     double** macro_w;
+
+  private:    
+
+    // Coefficient functions
+    const std::vector<const Function*> coefficients;
 
   };
 }

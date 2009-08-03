@@ -84,7 +84,6 @@ namespace dolfin
                              const Cell& cell1, 
                              const Cell& cell2, 
                              const Facet& facet,
-                             const std::vector<const Function*>& coefficients, 
                              const MeshFunction<uint>* exterior_facet_domains); 
 
     static void cell_assembly(GenericMatrix& A, GenericVector& b,
@@ -104,8 +103,6 @@ namespace dolfin
                          UFC& A_ufc, UFC& b_ufc, 
                          const Form& a,
                          const Form& L,
-                         const std::vector<const Function*>& A_coefficients,
-                         const std::vector<const Function*>& b_coefficients,
                          const Cell& cell0, const Cell& cell1, const Facet& facet,
                          const Scratch& data); 
 
@@ -113,8 +110,6 @@ namespace dolfin
                          UFC& A_ufc, UFC& b_ufc, 
                          const Form& a,
                          const Form& L,
-                         const std::vector<const Function*>& A_coefficients,
-                         const std::vector<const Function*>& b_coefficients,
                          const Cell& cell, const Facet& facet,
                          const Scratch& data); 
 

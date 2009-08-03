@@ -10,25 +10,19 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/Scalar.h>
-#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
-#include <dolfin/mesh/MeshData.h>
-#include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include "DofMap.h"
+#include "FiniteElement.h"
 #include "Form.h"
 #include "UFC.h"
-#include "SparsityPatternBuilder.h"
 #include "DirichletBC.h"
-#include "FiniteElement.h"
 #include "Assembler.h"
 #include "SystemAssembler.h"
 
@@ -150,8 +144,6 @@ void SystemAssembler::cell_assembly(GenericMatrix& A, GenericVector& b,
   // related terms to cut down on code repetition.
 
   const Mesh& mesh = a.mesh();
-  const std::vector<const Function*>& A_coefficients = a.coefficients();
-  const std::vector<const Function*>& b_coefficients = L.coefficients();
 
   // Cell integrals
   ufc::cell_integral* A_integral = A_ufc.cell_integrals[0];
@@ -168,18 +160,10 @@ void SystemAssembler::cell_assembly(GenericMatrix& A, GenericVector& b,
     A_ufc.update(*cell);
     b_ufc.update(*cell);
 
-    // Interpolate coefficients on cell (A)
-    for (uint i = 0; i < A_coefficients.size(); i++)
-      A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, cell->index());
-
     // Tabulate cell tensor (A)
     A_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell);
     for (uint i = 0; i < data.A_num_entries; i++)
       data.Ae[i] = A_ufc.A[i];
-
-    // Interpolate coefficients on cell (b)
-    for (uint i = 0; i < b_coefficients.size(); i++)
-      b_coefficients[i]->interpolate(b_ufc.w[i], A_ufc.cell, cell->index());
 
     // Tabulate cell tensor (b)
     b_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
@@ -199,9 +183,7 @@ void SystemAssembler::cell_assembly(GenericMatrix& A, GenericVector& b,
           const uint local_facet = cell->index(*facet);
           if (A_ufc.form.num_exterior_facet_integrals() > 0) 
           {
-            // Interpolate coefficients on cell
-            for (uint i = 0; i < A_coefficients.size(); i++)
-              A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, cell->index(), local_facet);
+            A_ufc.update(*cell, local_facet);
 
             A_facet_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell, local_facet);
             for (uint i = 0; i < data.A_num_entries; i++)
@@ -209,9 +191,7 @@ void SystemAssembler::cell_assembly(GenericMatrix& A, GenericVector& b,
           }  
           if (b_ufc.form.num_exterior_facet_integrals() > 0) 
           {
-            // Interpolate coefficients on cell
-            for (uint i = 0; i < b_coefficients.size(); i++)
-              b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, cell->index(), local_facet);
+            b_ufc.update(*cell, local_facet);
 
             b_facet_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell, local_facet);
             for (uint i = 0; i < data.b_num_entries; i++)
@@ -246,8 +226,8 @@ void SystemAssembler::facet_assembly(GenericMatrix& A, GenericVector& b,
                                     const MeshFunction<uint>* interior_facet_domains)
 {
   const Mesh& mesh = a.mesh();
-  const std::vector<const Function*>& A_coefficients = a.coefficients();
-  const std::vector<const Function*>& b_coefficients = L.coefficients();
+  const std::vector<const Function*> A_coefficients = a.coefficients();
+  const std::vector<const Function*> b_coefficients = L.coefficients();
 
   Progress p("Assembling system (facet-wise)", mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
@@ -264,12 +244,16 @@ void SystemAssembler::facet_assembly(GenericMatrix& A, GenericVector& b,
       // Get cells incident with facet and update UFC objects
       Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
       Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
-      A_ufc.update(cell0, cell1);
-      b_ufc.update(cell0, cell1);
+
+      // Get local facet index
+      const uint local_facet0 = cell0.index(*facet);
+      const uint local_facet1 = cell1.index(*facet);
+
+      A_ufc.update(cell0, local_facet0, cell1, local_facet1);
+      b_ufc.update(cell0, local_facet0, cell1, local_facet1);
 
       // Assemble interior facet and neighbouring cells if needed
-      assemble(A, b, A_ufc, b_ufc, a, L, A_coefficients, b_coefficients, 
-               cell0, cell1, *facet, data);
+      assemble(A, b, A_ufc, b_ufc, a, L, cell0, cell1, *facet, data);
     }
 
     // Exterior facet
@@ -282,8 +266,7 @@ void SystemAssembler::facet_assembly(GenericMatrix& A, GenericVector& b,
       data.zero_cell();
 
       // Assemble exterior facet and attached cells if needed
-      assemble(A, b, A_ufc, b_ufc, a, L, A_coefficients, b_coefficients, 
-               cell, *facet, data);
+      assemble(A, b, A_ufc, b_ufc, a, L, cell, *facet, data);
     }
   
     p++;
@@ -292,9 +275,10 @@ void SystemAssembler::facet_assembly(GenericMatrix& A, GenericVector& b,
 //-----------------------------------------------------------------------------
 void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a, 
             UFC& ufc, const Cell& cell0, const Cell& cell1, const Facet& facet,  
-            const std::vector<const Function*>& coefficients, 
             const MeshFunction<uint>* interior_facet_domains)
 {
+  const std::vector<const Function*> coefficients = a.coefficients();
+
   // Facet integral
   ufc::interior_facet_integral* interior_facet_integral = ufc.interior_facet_integrals[0];
 
@@ -306,24 +290,16 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
       interior_facet_integral = ufc.interior_facet_integrals[domain];
   }
 
-  // Update to current pair of cells
-  ufc.update(cell0, cell1);
-
   // Get local index of facet with respect to each cell
-  uint facet0 = cell0.index(facet);
-  uint facet1 = cell1.index(facet);
+  uint local_facet0 = cell0.index(facet);
+  uint local_facet1 = cell1.index(facet);
 
-  // Interpolate coefficients on cell
-  for (uint i = 0; i < coefficients.size(); i++)
-  {
-    const uint offset = ufc.coefficient_elements[i]->space_dimension();
-    coefficients[i]->interpolate(ufc.macro_w[i],          ufc.cell0, cell0.index(), facet0);
-    coefficients[i]->interpolate(ufc.macro_w[i] + offset, ufc.cell1, cell1.index(), facet1);
-  }
+  // Update to current pair of cells
+  ufc.update(cell0, local_facet0, cell1, local_facet1);
 
   interior_facet_integral->tabulate_tensor(ufc.macro_A, ufc.macro_w, 
                                            ufc.cell0, ufc.cell1, 
-                                           facet0, facet1);
+                                           local_facet0, local_facet1);
 }
 //-----------------------------------------------------------------------------
 inline void SystemAssembler::apply_bc(double* A, double* b, 
@@ -399,8 +375,6 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                UFC& A_ufc, UFC& b_ufc, 
                                const Form& a,
                                const Form& L,
-                               const std::vector<const Function*>& A_coefficients,
-                               const std::vector<const Function*>& b_coefficients,
                                const Cell& cell0, const Cell& cell1, const Facet& facet,
                                const Scratch& data)
 {
@@ -410,13 +384,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 
   // Compute facet contribution to A
   if (A_ufc.form.num_interior_facet_integrals() > 0)
-    compute_tensor_on_one_interior_facet(a, A_ufc, cell0, cell1, facet, 
-                                         A_coefficients, 0);    
+    compute_tensor_on_one_interior_facet(a, A_ufc, cell0, cell1, facet, 0);    
 
   // Compute facet contribution to 
   if (b_ufc.form.num_interior_facet_integrals() > 0)
-    compute_tensor_on_one_interior_facet(L, b_ufc, cell0, cell1, facet, 
-                                         b_coefficients, 0);  
+    compute_tensor_on_one_interior_facet(L, b_ufc, cell0, cell1, facet, 0);  
 
   // Get local facet index
   const uint facet0 = cell0.index(facet);
@@ -428,10 +400,6 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     if (A_ufc.form.num_cell_integrals() > 0) 
     {
       A_ufc.update(cell0);
-
-      // Interpolate coefficients on cell
-      for (uint i = 0; i < A_coefficients.size(); i++)
-        A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, cell0.index());
 
       A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell);
       const uint nn = A_ufc.local_dimensions[0];
@@ -445,10 +413,6 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     {
       b_ufc.update(cell0);
 
-      // Interpolate coefficients on cell
-      for (uint i = 0; i < b_coefficients.size(); i++)
-        b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, cell0.index());
-
       b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
       for (uint i = 0; i < b_ufc.local_dimensions[0]; i++)
         b_ufc.macro_A[i] += b_ufc.A[i];
@@ -461,9 +425,6 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     if (A_ufc.form.num_cell_integrals() > 0) 
     {
       A_ufc.update(cell1);
-      // Interpolate coefficients on cell
-      for (uint i = 0; i < A_coefficients.size(); i++)
-        A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, cell1.index());
 
       A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell);
       const uint nn = A_ufc.local_dimensions[0];
@@ -476,10 +437,6 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     if (b_ufc.form.num_cell_integrals() > 0) 
     {
       b_ufc.update(cell1);
-
-      // Interpolate coefficients on cell
-      for (uint i = 0; i < b_coefficients.size(); i++)
-        b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, cell1.index());
 
       b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
       for (uint i=0; i < b_ufc.local_dimensions[0]; i++)
@@ -515,8 +472,6 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
                                UFC& A_ufc, UFC& b_ufc, 
                                const Form& a,
                                const Form& L,
-                               const std::vector<const Function*>& A_coefficients,
-                               const std::vector<const Function*>& b_coefficients,
                                const Cell& cell, const Facet& facet,
                                const Scratch& data)
 {
@@ -528,16 +483,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   ufc::exterior_facet_integral* A_facet_integral = A_ufc.exterior_facet_integrals[0]; 
   ufc::exterior_facet_integral* b_facet_integral = b_ufc.exterior_facet_integrals[0]; 
 
-
   const uint local_facet = cell.index(facet);
 
   if (A_ufc.form.num_exterior_facet_integrals() > 0 )
   {
-    A_ufc.update(cell);
-
-    // Interpolate coefficients on cell
-    for (uint i = 0; i < A_coefficients.size(); i++)
-      A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, cell.index(), local_facet);
+    A_ufc.update(cell, local_facet);
 
     A_facet_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell, local_facet);
     for (uint i = 0; i < data.A_num_entries; i++)
@@ -545,11 +495,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   }
   if (b_ufc.form.num_exterior_facet_integrals() > 0 )
   {
-    b_ufc.update(cell);
-
-    // Interpolate coefficients on cell
-    for (uint i = 0; i < b_coefficients.size(); i++)
-      b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, cell.index(), local_facet);
+    b_ufc.update(cell, local_facet);
 
     b_facet_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell, local_facet);
     for (uint i = 0; i < data.b_num_entries; i++)
@@ -561,9 +507,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   {
     if (A_ufc.form.num_cell_integrals() > 0 )
     { 
-      // Interpolate coefficients on cell
-      for (uint i = 0; i < A_coefficients.size(); i++)
-        A_coefficients[i]->interpolate(A_ufc.w[i], A_ufc.cell, cell.index());
+      A_ufc.update(cell);
 
       A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell);
       for (uint i = 0; i < data.A_num_entries; i++)
@@ -572,9 +516,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 
     if (b_ufc.form.num_cell_integrals() > 0 )
     {
-      // Interpolate coefficients on cell
-      for (uint i = 0; i < b_coefficients.size(); i++)
-        b_coefficients[i]->interpolate(b_ufc.w[i], b_ufc.cell, cell.index());
+      A_ufc.update(cell);
 
       b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
       for (uint i = 0; i < data.b_num_entries; i++)
