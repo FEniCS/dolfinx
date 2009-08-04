@@ -50,7 +50,11 @@ namespace dolfin
 
     /// Stop timer
     void stop()
-    { LogManager::logger.register_timing(task, time() - t); stopped = true; }
+    { t = time() - t; LogManager::logger.register_timing(task, t); stopped = true; }
+    
+    /// Return value of timer (or time at start if not stopped)
+    double value() const
+    { return t; }
 
   private:
 

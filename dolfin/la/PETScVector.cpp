@@ -105,7 +105,11 @@ void PETScVector::resize(uint N)
   // Figure out vector type
   std::string type;
   uint n = 0; 
+  #if PETSC_VERSION_MAJOR > 2
   const VecType petsc_type;
+  #else
+  VecType petsc_type;
+  #endif
   VecGetType(*x, &petsc_type);
   if (strcmp(petsc_type, VECSEQ) == 0)
     type = "sequential";

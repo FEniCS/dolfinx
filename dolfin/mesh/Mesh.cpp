@@ -55,7 +55,7 @@ Mesh::Mesh(std::string filename)
   if (MPI::num_processes() > 1)
   {
     // Read local mesh data
-    Timer timer("Parse local mesh data");
+    Timer timer("PARALLEL 0: Parse local mesh data");
     File file(filename);
     LocalMeshData data;
     file >> data;
