@@ -338,6 +338,14 @@ void PETScVector::disp(uint precision) const
   VecView(*x, PETSC_VIEWER_STDOUT_WORLD);	 
 }
 //-----------------------------------------------------------------------------
+PETScVector PETScVector::gather(const uint* global_indices, 
+                                const uint* local_indices, uint num_indices) const
+{
+  error("PETSc::gather not yet programmed");
+  PETScVector a(10);
+  return a;
+}
+//-----------------------------------------------------------------------------
 boost::shared_ptr<Vec> PETScVector::vec() const
 {
   return x;

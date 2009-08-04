@@ -388,8 +388,8 @@ void Function::collect_global_dof_values(std::map<uint, double> dof_values) cons
       }
       else
       {
+        // Put unique new dof in communication map
         if (dof_owner.find(dof) == dof_owner.end())
-          // Put unique new dof in communication map
           dof_owner[dof] = index_owner;
       }
     }

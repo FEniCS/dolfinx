@@ -46,7 +46,7 @@ namespace dolfin
     explicit PETScVector(uint N);
 
     /// Copy constructor
-    explicit PETScVector(const PETScVector& x);
+    PETScVector(const PETScVector& x);
 
     /// Create vector from given PETSc Vec pointer
     explicit PETScVector(boost::shared_ptr<Vec> x);
@@ -145,6 +145,9 @@ namespace dolfin
 
     /// Assignment operator
     const PETScVector& operator= (const PETScVector& x);
+
+    PETScVector gather(const uint* global_indices, const uint* local_indices, 
+                       uint num_indices) const;
 
     friend class PETScMatrix;
 
