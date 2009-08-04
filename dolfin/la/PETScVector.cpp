@@ -55,7 +55,7 @@ PETScVector::PETScVector(uint N):
     Variable("x", "a sparse vector"),
     x(static_cast<Vec*>(0), PETScVectorDeleter())
 {
-  // FIXME: Type should be passed as an argument
+  // FIXME: type should be passed as an argument
   std::string type = "global";
   if (type == "global")
   {
@@ -358,7 +358,18 @@ double PETScVector::sum() const
 //-----------------------------------------------------------------------------
 void PETScVector::disp(uint precision) const
 {
-  VecView(*x, PETSC_VIEWER_STDOUT_WORLD);	 
+  // Get vector type
+  #if PETSC_VERSION_MAJOR > 2
+  const VecType petsc_type;
+  #else
+  VecType petsc_type;
+  #endif
+  VecGetType(*x, &petsc_type);
+
+  if (strcmp(petsc_type, VECSEQ) == 0)
+    VecView(*x, PETSC_VIEWER_STDOUT_SELF);	 
+  else
+    VecView(*x, PETSC_VIEWER_STDOUT_WORLD);	 
 }
 //-----------------------------------------------------------------------------
 PETScVector PETScVector::gather(const uint* global_indices, 
