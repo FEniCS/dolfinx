@@ -45,6 +45,9 @@ namespace dolfin
     /// Create vector of size N
     explicit PETScVector(uint N);
 
+    /// Create vector of size N
+    //PETScVector(uint N, std::string type = "global");
+
     /// Copy constructor
     PETScVector(const PETScVector& x);
 
@@ -152,6 +155,9 @@ namespace dolfin
     friend class PETScMatrix;
 
   private:
+
+    // Initialise PETSc vector
+    void init(uint N, uint n, std::string type);
 
     // PETSc Vec pointer
     boost::shared_ptr<Vec> x;

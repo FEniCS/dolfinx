@@ -45,15 +45,34 @@ PETScVector::PETScVector():
     Variable("x", "a sparse vector"),
     x(static_cast<Vec*>(0), PETScVectorDeleter())
 {
- // Do nothing
+  if (dolfin::MPI::num_processes() > 1)
+    init(0, 0, "mpi");
+  else
+    init(0, 0, "sequential");
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(uint N):
     Variable("x", "a sparse vector"),
     x(static_cast<Vec*>(0), PETScVectorDeleter())
 {
-  // Create PETSc vector
-  resize(N);
+  // FIXME: Type should be passed as an argument
+  std::string type = "global";
+  if (type == "global")
+  {
+    // Get local range
+    const std::pair<uint, uint> range = MPI::local_range(N);
+    if (range.first == 0 && range.second == N)
+      init(N, 0, "sequential");
+    else
+    {
+      const uint n = range.second - range.first;
+      init(N, n, "mpi");
+    }
+  }
+  else if (type == "local")
+    init(0, 0, "sequential");
+  else
+    error("PETScVector type not known.");
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(boost::shared_ptr<Vec> x):
@@ -80,32 +99,27 @@ void PETScVector::resize(uint N)
   if (x && this->size() == N)
     return;
 
-  // Create vector
-  if (!x.unique())
-    error("Cannot resize PETScVector. More than one object points to the underlying PETSc object.");
-  boost::shared_ptr<Vec> _x(new Vec, PETScVectorDeleter());
-  x = _x;
+  if (!x)
+    error("PETSc vector has not been initialised. Cannot call PETScVector::resize.");
 
-  // Get local range
-  const std::pair<uint, uint> range = MPI::local_range(N);
-  
-  // Initialize vector, either default or MPI vector
-  if (range.first == 0 && range.second == N)
+  // Figure out vector type
+  std::string type;
+  uint n = 0; 
+  const VecType petsc_type;
+  VecGetType(*x, &petsc_type);
+  if (strcmp(petsc_type, VECSEQ) == 0)
+    type = "sequential";
+  else if (strcmp(petsc_type, VECMPI) == 0)
   {
-    // FIXME: Should we just use MatCreateSeq here?
-    VecCreate(PETSC_COMM_SELF, x.get());
-    VecSetSizes(*x, PETSC_DECIDE, N);
-    VecSetFromOptions(*x);
+    const std::pair<uint, uint> range = MPI::local_range(N);
+    n = range.second - range.first;
+    type = "mpi";
   }
   else
-  {
-    info("Initializing parallel PETSc vector (MPI) of size %d.", N);
-    info("Local range is [%d, %d].", range.first, range.second);
+    error("Unknown PETSc vector type.");
 
-    const uint n = range.second - range.first;
-    assert(n > 0);
-    VecCreateMPI(PETSC_COMM_WORLD, n, N, x.get());
-  }
+  // Initialise vector
+  init(N, n, type);
 }
 //-----------------------------------------------------------------------------
 PETScVector* PETScVector::copy() const
@@ -211,7 +225,13 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
   // Check for self-assignment
   if (this != &v)
   {
-    resize(v.size());
+    boost::shared_ptr<Vec> _x(new Vec, PETScVectorDeleter());
+    x = _x;
+
+    // Create new vector 
+    VecDuplicate(*(v.x), x.get());
+
+    // Copy data 
     VecCopy(*(v.x), *x);
   }
   return *this;
@@ -334,16 +354,50 @@ double PETScVector::sum() const
 //-----------------------------------------------------------------------------
 void PETScVector::disp(uint precision) const
 {
-  //VecView(*x, PETSC_VIEWER_STDOUT_SELF);
   VecView(*x, PETSC_VIEWER_STDOUT_WORLD);	 
 }
 //-----------------------------------------------------------------------------
 PETScVector PETScVector::gather(const uint* global_indices, 
                                 const uint* local_indices, uint num_indices) const
 {
-  error("PETSc::gather not yet programmed");
+  error("PETScVector::gather not yet programmed");
+
+  int* _global_indices = reinterpret_cast<int*>(const_cast<uint*>(global_indices));
+  int* _local_indices  = reinterpret_cast<int*>(const_cast<uint*>(local_indices));
+
+  // Create index sets
+  IS from, to;
+  ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(num_indices), _global_indices, &from);
+  ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(num_indices), _local_indices, &to);
+
   PETScVector a(10);
   return a;
+}
+//-----------------------------------------------------------------------------
+void PETScVector::init(uint N, uint n, std::string type)
+{
+  // Create vector
+  if (!x.unique())
+    error("Cannot init/resize PETScVector. More than one object points to the underlying PETSc object.");
+  boost::shared_ptr<Vec> _x(new Vec, PETScVectorDeleter());
+  x = _x;
+
+  // Initialize vector, either default or MPI vector
+  if (type == "sequential")
+  {
+    VecCreateSeq(PETSC_COMM_SELF, N, x.get());
+    VecSetFromOptions(*x);
+  }
+  else if (type == "mpi")
+  {
+    info("Initializing parallel PETSc vector (MPI) of size %d.", N);
+    info("Local range is [%d, %d].", n, N);
+
+    //assert(n > 0);
+    VecCreateMPI(PETSC_COMM_WORLD, n, N, x.get());
+  }
+  else
+    error("Unknown vector type in PETScVector::init.");
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Vec> PETScVector::vec() const
