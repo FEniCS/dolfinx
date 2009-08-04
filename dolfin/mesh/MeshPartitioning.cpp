@@ -2,12 +2,13 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2009-06-29
+// Last changed: 2009-08-04
 
 #include <vector>
 #include <algorithm>
 #include <dolfin/log/log.h>
 #include <dolfin/main/MPI.h>
+#include <dolfin/common/Timer.h>
 #include "LocalMeshData.h"
 #include "Point.h"
 #include "Vertex.h"
@@ -27,6 +28,7 @@ using namespace dolfin;
 void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 {
   dolfin_debug("Partitioning mesh...");
+  Timer timer("Partition mesh (total)");
 
   // Compute cell partition
   std::vector<uint> cell_partition;
@@ -45,6 +47,8 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 //-----------------------------------------------------------------------------
 void MeshPartitioning::number_entities(Mesh& mesh, uint d)
 {
+  Timer timer("Number mesh entities");
+
   // Check for vertices
   if (d == 0)
     error("Unable to number entities of dimension 0. Vertex indices must already exist.");
@@ -417,6 +421,7 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
   // ParMETIS, and then collects the results from ParMETIS.
 
   dolfin_debug("Computing cell partition using ParMETIS...");
+  Timer timer("Compute partition (calling ParMETIS)");
 
   // Get number of processes and process number
   const uint num_processes = MPI::num_processes();
@@ -515,6 +520,7 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
   // global vertex indices of all cells).
 
   dolfin_debug("Distributing cells...");
+  Timer timer("Distribute cells");
 
   // Get dimensions of local mesh_data
   uint num_local_cells = mesh_data.cell_vertices.size();
@@ -561,6 +567,7 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   // it needs to send its vertices.
 
   dolfin_debug("Distributing vertices...");
+  Timer timer("Distribute vertices");
   
   // Compute which vertices we need
   std::set<uint> needed_vertex_indices;
@@ -626,6 +633,8 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
                                   const LocalMeshData& mesh_data,
                                   std::map<uint, uint>& glob2loc)
 {
+  Timer timer("Build mesh (from local mesh data)");
+
   // Open mesh for editing
   MeshEditor editor;
   editor.open(mesh, mesh_data.cell_type->cell_type(), mesh_data.gdim, mesh_data.tdim);

@@ -15,6 +15,7 @@
 #include <dolfin/main/MPI.h>
 #include <dolfin/ale/ALE.h>
 #include <dolfin/io/File.h>
+#include <dolfin/common/Timer.h>
 #include "UniformMeshRefinement.h"
 #include "LocalMeshRefinement.h"
 #include "LocalMeshCoarsening.h"
@@ -54,9 +55,11 @@ Mesh::Mesh(std::string filename)
   if (MPI::num_processes() > 1)
   {
     // Read local mesh data
+    Timer timer("Parse local mesh data");
     File file(filename);
     LocalMeshData data;
     file >> data;
+    timer.stop();
 
     // Partition data
     MeshPartitioning::partition(*this, data);
