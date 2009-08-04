@@ -133,7 +133,7 @@ namespace dolfin
     void interpolate_vertex_values(double* vertex_values) const;
 
     /// Collect global dof values for all dofs located on local mesh
-    void collect_global_dof_values(std::map<uint, double> dof_values) const;
+    void collect_global_dof_values() const; 
 
     /// Friends
     friend class Coefficient;
@@ -151,6 +151,8 @@ namespace dolfin
 
     // The vector of expansion coefficients
     boost::shared_ptr<GenericVector> _vector;
+
+    mutable std::map<uint, double> dof_values;
 
   };
 

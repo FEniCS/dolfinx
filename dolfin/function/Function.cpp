@@ -300,11 +300,19 @@ void Function::interpolate(double* coefficients,
     const DofMap& dofmap = V.dofmap();
 
     // Tabulate dofs
-    uint* dofs = new uint[dofmap.max_local_dimension()];
+    uint* dofs = new uint[dofmap.local_dimension(ufc_cell)];
     dofmap.tabulate_dofs(dofs, ufc_cell, cell_index);
 
-    // Pick values from global vector
-    _vector->get(coefficients, dofmap.local_dimension(ufc_cell), dofs);
+    if (MPI::num_processes() == 1)
+    {
+      // Pick values from global vector
+      _vector->get(coefficients, dofmap.local_dimension(ufc_cell), dofs);
+    }
+    else
+    {
+      for (uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
+        coefficients[i] = dof_values[dofs[i]];
+    }
     delete [] dofs;
   }
   else
@@ -339,7 +347,7 @@ void Function::interpolate_vertex_values(double* vertex_values) const
   _function_space->interpolate_vertex_values(vertex_values, *this);
 }
 //-----------------------------------------------------------------------------
-void Function::collect_global_dof_values(std::map<uint, double> dof_values) const
+void Function::collect_global_dof_values() const
 {
   // This function collects the global dof values for all dofs located on
   // the local mesh. These dofs may be stored in a portion of the vector
@@ -364,7 +372,7 @@ void Function::collect_global_dof_values(std::map<uint, double> dof_values) cons
   for (uint i = 0; i < num_dofs_per_cell; i++)
     dofs[i] = 0;
 
-  const uint dof_offset = MPI::local_range(num_dofs_global).first;
+  //const uint dof_offset = MPI::local_range(num_dofs_global).first;
 
   // Iterate over mesh and check which dofs are needed
   UFCCell ufc_cell(mesh);
@@ -384,13 +392,14 @@ void Function::collect_global_dof_values(std::map<uint, double> dof_values) cons
       if (index_owner == MPI::process_number())
       {
         if (dof_values.find(dof) == dof_values.end())
-          dof_values[dof] = (*_vector)[dof - dof_offset];
+          //dof_values[dof] = (*_vector)[dof - dof_offset];
+          dof_values[dof] = (*_vector)[dof];
       }
       else
       {
         // Put unique new dof in communication map
         if (dof_owner.find(dof) == dof_owner.end())
-          dof_owner[dof] = index_owner;
+        dof_owner[dof] = index_owner;
       }
     }
   }
@@ -400,7 +409,6 @@ void Function::collect_global_dof_values(std::map<uint, double> dof_values) cons
   std::vector<uint> req_procs;
 
   std::map<uint, std::vector<uint> > proc_dofs;
-
 
   for (std::map<uint, uint>::const_iterator it = dof_owner.begin(); it != dof_owner.end(); ++it)
   {
@@ -415,7 +423,8 @@ void Function::collect_global_dof_values(std::map<uint, double> dof_values) cons
 
   // Collect dofs belonging to other  processes
   for (uint i = 0; i < req_dofs.size(); ++i)
-    send_dof_values.push_back((*_vector)[req_dofs[i] - dof_offset]);
+    //send_dof_values.push_back((*_vector)[req_dofs[i] - dof_offset]);
+    send_dof_values.push_back((*_vector)[req_dofs[i]]);
 
   // Send and receive dofs from other processes
   MPI::distribute(send_dof_values, req_procs);
