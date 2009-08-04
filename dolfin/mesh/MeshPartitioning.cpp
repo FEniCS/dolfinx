@@ -634,6 +634,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 {
   Timer timer("PARALLEL 3: Build mesh (from local mesh data)");
 
+  Timer timer_mesh("PARALLEL 4: MeshEditor");
   // Open mesh for editing
   MeshEditor editor;
   editor.open(mesh, mesh_data.cell_type->cell_type(), mesh_data.gdim, mesh_data.tdim);
@@ -659,12 +660,15 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     editor.add_cell(i, cell);
   }
   editor.close();
+  timer_mesh.stop();
 
+  Timer timer_mapping("PARALLEL 4: Constructing local to global mapping");
   // Construct local to global mapping based on the global to local mapping
   MeshFunction<uint>* global_vertex_indices = mesh.data().create_mesh_function("global entity indices 0", 0);
   assert(global_vertex_indices);
   for (std::map<uint, uint>::const_iterator iter = glob2loc.begin(); iter != glob2loc.end(); ++iter)
     global_vertex_indices->set((*iter).second, (*iter).first);
+  timer_mapping.stop();
 
   // Construct array of length topology().dim() that holds the number of global mesh entities
   std::vector<uint>* num_global_entities = mesh.data().create_array("num global entities", mesh_data.tdim + 1);
@@ -675,6 +679,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   /// Communicate global number of boundary vertices to all processes
 
+  Timer timer_overlap("PARALLEL 4: Computing overlap");
   // Construct boundary mesh 
   BoundaryMesh bmesh(mesh);
   MeshFunction<uint>* boundary_vertex_map = bmesh.data().mesh_function("vertex map");
@@ -727,6 +732,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     for (std::vector<uint>::const_iterator index = intersection.begin(); index != intersection_end; ++index)
       (*overlap)[*index].push_back(q);
   }
+  timer_overlap.stop();
 }
 //-----------------------------------------------------------------------------
 
