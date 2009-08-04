@@ -24,6 +24,37 @@
 
 using namespace dolfin;
 
+// Utility functions for debugging/printing
+template<typename InputIterator> void print_container(std::ostream& ostr, InputIterator itbegin, InputIterator itend, const char* delimiter=", ")
+{
+  std::copy(itbegin, itend, std::ostream_iterator<typename InputIterator::value_type>(ostr, delimiter));
+}
+
+template<typename InputIterator> void print_container(std::string msg, InputIterator itbegin, InputIterator itend, const char* delimiter=", ")
+{
+  std::stringstream msg_stream;
+  msg_stream << msg;
+  print_container(msg_stream, itbegin, itend);
+  info(msg_stream.str());
+}
+
+template<typename Map> void print_vec_map(std::ostream& ostr, Map map, const char* delimiter=", ")
+{
+  for (typename Map::iterator it = map.begin(); it !=map.end(); ++it)
+  {
+    print_container(ostr, (*it).first.begin(), (*it).first.end(), " ");
+    ostr << ":" << (*it).second << delimiter;
+  }
+}
+
+template<typename Map> void print_vec_map(std::string msg, Map map, const char* delimiter=", ")
+{
+  std::stringstream msg_stream;
+  msg_stream << msg;
+  print_vec_map(msg_stream, map, delimiter);
+  info(msg_stream.str());
+}
+
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 {
@@ -128,7 +159,6 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
         const uint v = entity[i];
         intersection_end = std::set_intersection(intersection.begin(), intersection_end, 
                                                  (*overlap)[v].begin(), (*overlap)[v].end(), intersection.begin());
-
       }
       entity_processes = std::vector<uint>(intersection.begin(), intersection_end);
     }
@@ -159,15 +189,16 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     }
   }
 
-  // Qualify boundary entities
+  // Qualify boundary entities:
   // We need to find out if the ignored (shared with lower ranked process) entities are entities of a lower ranked process.
   // If not, this process becomes the lower ranked process for the entity in question, and is therefore responsible for 
   // communicating values to the higher ranked processes (if any).
 
-  // Communicate common entitis, starting with the entities we think should be ignored 
+  // Communicate common entities, starting with the entities we think should be ignored
   std::vector<uint> common_entity_values;
   std::vector<uint> common_entity_partition;
-  for (std::map<std::vector<uint>, std::vector<uint> >::const_iterator it = ignored_entity_processes.begin(); it != ignored_entity_processes.end(); ++it)
+  for (std::map<std::vector<uint>, std::vector<uint> >::const_iterator it = ignored_entity_processes.begin(); 
+       it != ignored_entity_processes.end(); ++it)
   {
     // Get entity vertices (global vertex indices)
     const std::vector<uint>& entity = (*it).first;
@@ -179,8 +210,10 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     for (uint j = 0; j < entity_processes.size(); ++j)
     {   
       const uint p = entity_processes[j];
-      if ( p < process_number)
+      dolfin_debug("check");
+      if (p < process_number)
       {
+        dolfin_debug("check");
         common_entity_values.push_back(entity.size());
         common_entity_values.insert(common_entity_values.end(), entity.begin(), entity.end());
         common_entity_partition.insert(common_entity_partition.end(), entity.size() + 1, p);
@@ -188,7 +221,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     }
   }
 
-  // Communicate common entitis, add the entities we think should be shared as well 
+  // Communicate common entities, add the entities we think should be shared as well 
   for (std::map<std::vector<uint>, std::vector<uint> >::const_iterator it = shared_entity_processes.begin(); it != shared_entity_processes.end(); ++it)
   {
     // Get entity vertices (global vertex indices)
@@ -201,18 +234,19 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     for (uint j = 0; j < entity_processes.size(); ++j)
     {   
       const uint p = entity_processes[j];
-      if ( p < process_number)
+      if (p > process_number)
       {
         common_entity_values.push_back(entity.size());
         common_entity_values.insert(common_entity_values.end(), entity.begin(), entity.end());
         common_entity_partition.insert(common_entity_partition.end(), entity.size() + 1, p);
       }
     }
-
   }
 
   // Send data
+  dolfin_debug1("common_entity_values.size() = %d", common_entity_values.size());
   MPI::distribute(common_entity_values, common_entity_partition);
+  dolfin_debug1("common_entity_values.size() = %d", common_entity_values.size());
 
   std::vector<uint> is_entity_values;
   std::vector<uint> is_entity_partition;
@@ -221,19 +255,19 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     const uint p = common_entity_partition[i];
     const uint entity_size = common_entity_values[i++];
     std::vector<uint> entity;
-    uint is_entity = 0;
-    for (uint j=0; j < entity_size; ++j)
+    for (uint j = 0; j < entity_size; ++j)
       entity.push_back(common_entity_values[i++]);
 
-    if ( (ignored_entity_indices.count(entity) > 0 ) or ( shared_entity_indices.count(entity) > 0 ) )
+    uint is_entity = 0;
+    if ((ignored_entity_indices.count(entity) > 0 ) or ( shared_entity_indices.count(entity) > 0 ))
     {
-        is_entity = 1;
+      is_entity = 1;
     }
     
     is_entity_values.push_back(entity_size);
     is_entity_partition.push_back(p);
 
-    for (uint k=0; k < entity_size; ++k)
+    for (uint k = 0; k < entity_size; ++k)
     {
       is_entity_values.push_back(entity[k]);
       is_entity_partition.push_back(p);
@@ -244,23 +278,25 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
 
   common_entity_values.clear();
   common_entity_partition.clear();
+  
+  print_container("is_entity_values: ", is_entity_values.begin(), is_entity_values.end());
 
   // Send data back (list of entities that should not be ignored by the process)
   MPI::distribute(is_entity_values, is_entity_partition);
 
-  // entity_processes is the list of edges in the overlap that are actually edges
+  // entity_processes is the list of entities in the overlap that are actually entities
   std::map<std::vector<uint>, std::vector<uint> > entity_processes;
   for (uint i = 0; i < is_entity_values.size();)
   {
     const uint p = is_entity_partition[i];
     const uint entity_size = is_entity_values[i++];
     std::vector<uint> entity;
-    for (uint j=0; j < entity_size; ++j)
+    for (uint j = 0; j < entity_size; ++j)
       entity.push_back(is_entity_values[i++]);
     const uint is_entity = is_entity_values[i++];
     if (is_entity == 1)
     {
-      // The local entity is an entity of a lower ranked process, so we can safely ignore it.
+      // The local entity is an entity of a lower ranked process, so we can safely ignore it
       entity_processes[entity].push_back(p);
     }
   }
@@ -273,13 +309,13 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   {
     const std::vector<uint> entity = (*it).first;
     const uint e = (*it).second;
-    if (entity_processes.count(entity) > 0 )
+    if (entity_processes.count(entity) > 0)
     {
       std::vector<uint> common_processes = entity_processes[entity];
       assert(common_processes.size() > 0);
       const uint max_proc = *(std::max_element(common_processes.begin(), common_processes.end()));
 
-      if ( max_proc > process_number )
+      if (max_proc > process_number)
       {
         // Move from ignored to shared
         shared_entity_indices[entity] = e;
@@ -296,18 +332,20 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       // Move from ignored to owned
       owned_entity_indices[entity] = e;
 
-      // Add entity to list of entities that should be removed from the ignored entity list.
+      // Add entity to list of entities that should be removed from the ignored entity list
       ignored_entity_indices.erase(entity);
       ignored_entity_processes.erase(entity);
     }
   }
 
+  dolfin_debug1("shared_entity_indices.size() = %d", shared_entity_indices.size());
+
   // Fix the list of entities we share 
   for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
   {
-    const std::vector<uint> entity = (*it).first;
+    const std::vector<uint>& entity = (*it).first;
     const uint e = (*it).second;
-    if (entity_processes.count(entity) == 0 )
+    if (entity_processes.count(entity) == 0)
     {
       // Move from ignored to owned
       owned_entity_indices[entity] = e;
@@ -315,6 +353,9 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       shared_entity_processes.erase(entity);
     }
   }
+
+  dolfin_debug1("owned_entity_indices.size() = %d", owned_entity_indices.size());
+  dolfin_debug1("shared_entity_indices.size() = %d", shared_entity_indices.size());
 
   // Communicate all offsets
   std::vector<uint> offsets(num_processes);
@@ -349,8 +390,12 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   // Communicate indices for shared entities
   std::vector<uint> values;
   std::vector<uint> partition;
+
+  dolfin_debug1("shared_entity_indices.size() = %d", shared_entity_indices.size());
   for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
   {
+    dolfin_debug("ITERATING");
+
     // Get entity index
     const uint e = (*it).second;
     const int entity_index = entity_indices[e];
@@ -411,7 +456,10 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   // Create mesh data
   global_entity_indices = mesh.data().create_mesh_function(mesh_data_name.str(), d);
   for (uint i = 0; i < entity_indices.size(); ++i)
-    global_entity_indices->set(i, entity_indices[i]);
+  {
+    assert(entity_indices[i] >= 0);
+    global_entity_indices->set(i, static_cast<uint>(entity_indices[i]));
+  }
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
