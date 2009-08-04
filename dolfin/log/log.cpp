@@ -16,6 +16,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/main/MPI.h>
 #include <dolfin/parameter/Parameters.h>
 #include "LogManager.h"
 #include "log.h"
@@ -159,7 +160,14 @@ std::string dolfin::indent(std::string s)
 //-----------------------------------------------------------------------------
 void dolfin::summary(bool reset)
 {
-  if (!LogManager::logger.is_active()) return; // optimization
+  // Optimization
+  if (!LogManager::logger.is_active())
+    return;
+  
+  // Only print summary for process 0
+  if (MPI::process_number() != 0)
+    return;
+  
   LogManager::logger.summary(reset);
 }
 //-----------------------------------------------------------------------------
