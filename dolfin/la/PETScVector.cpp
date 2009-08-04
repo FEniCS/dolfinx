@@ -370,7 +370,23 @@ PETScVector PETScVector::gather(const uint* global_indices,
   ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(num_indices), _global_indices, &from);
   ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(num_indices), _local_indices, &to);
 
-  PETScVector a(10);
+  // Create local PETSc vector
+  boost::shared_ptr<Vec> a_vec(new Vec, PETScVectorDeleter());
+  VecCreateSeq(PETSC_COMM_SELF, num_indices, a_vec.get());
+
+  // Perform scatter
+  VecScatter scatter;
+  VecScatterCreate(*x, from, *a_vec, to, &scatter);
+  VecScatterBegin(scatter, *x, *a_vec, INSERT_VALUES, SCATTER_FORWARD);
+  VecScatterEnd(scatter,   *x, *a_vec, INSERT_VALUES, SCATTER_FORWARD);
+
+  // Clean up
+  ISDestroy(from);
+  ISDestroy(to);
+  VecScatterDestroy(scatter);
+
+  // Create PETScVector
+  PETScVector a(a_vec);
   return a;
 }
 //-----------------------------------------------------------------------------
