@@ -399,7 +399,7 @@ void Function::collect_global_dof_values() const
       {
         // Put unique new dof in communication map
         if (dof_owner.find(dof) == dof_owner.end())
-        dof_owner[dof] = index_owner;
+          dof_owner[dof] = index_owner;
       }
     }
   }

@@ -149,6 +149,9 @@ namespace dolfin
     /// Assignment operator
     const PETScVector& operator= (const PETScVector& x);
 
+    /// Gather vector entries into a local vector. If local_indices = 0, then
+    /// a local index array is created such that the order of the values in the
+    /// return array is the same as the order in global_indices.
     PETScVector gather(const uint* global_indices, const uint* local_indices, 
                        uint num_indices) const;
 

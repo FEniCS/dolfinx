@@ -360,10 +360,20 @@ void PETScVector::disp(uint precision) const
 PETScVector PETScVector::gather(const uint* global_indices, 
                                 const uint* local_indices, uint num_indices) const
 {
-  error("PETScVector::gather not yet programmed");
+  int* _local_indices = 0;
+  int* local_set = 0;
+
+  if (!local_indices)
+  {
+    local_set = new int[num_indices];
+    for (uint i = 0; i < num_indices; ++i)
+      local_set[i] = i;      
+    _local_indices = local_set;
+  }
+  else
+    _local_indices  = reinterpret_cast<int*>(const_cast<uint*>(local_indices));
 
   int* _global_indices = reinterpret_cast<int*>(const_cast<uint*>(global_indices));
-  int* _local_indices  = reinterpret_cast<int*>(const_cast<uint*>(local_indices));
 
   // Create index sets
   IS from, to;
@@ -384,6 +394,7 @@ PETScVector PETScVector::gather(const uint* global_indices,
   ISDestroy(from);
   ISDestroy(to);
   VecScatterDestroy(scatter);
+  delete local_set;
 
   // Create PETScVector
   PETScVector a(a_vec);
