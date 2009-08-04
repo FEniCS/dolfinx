@@ -399,14 +399,15 @@ void Function::collect_global_dof_values(std::map<uint, double> dof_values) cons
   std::vector<uint> req_dofs;
   std::vector<uint> req_procs;
 
+  std::map<uint, std::vector<uint> > proc_dofs;
+
 
   for (std::map<uint, uint>::const_iterator it = dof_owner.begin(); it != dof_owner.end(); ++it)
   {
     req_dofs.push_back(it->first);
     req_procs.push_back(it->second);
+    proc_dofs[it->second].push_back(it->first);
   }
-
-  std::vector<uint> req_dofs_copy = req_dofs;
 
   MPI::distribute(req_dofs, req_procs);
 
@@ -420,7 +421,12 @@ void Function::collect_global_dof_values(std::map<uint, double> dof_values) cons
   MPI::distribute(send_dof_values, req_procs);
 
   for (uint i = 0; i < send_dof_values.size(); ++i)
-    dof_values[req_dofs_copy[i]] = send_dof_values[i];
+  {
+    std::vector<uint>& dof_vec = proc_dofs[req_procs[i]];
+    const uint dof = dof_vec.front();
+    dof_vec.erase(dof_vec.begin());
+    dof_values[dof] = send_dof_values[i];
+  }
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate()
