@@ -28,18 +28,19 @@ using namespace dolfin;
 void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 {
   dolfin_debug("Partitioning mesh...");
-  Timer timer("Partition mesh (total)");
 
   // Compute cell partition
   std::vector<uint> cell_partition;
   compute_partition(cell_partition, mesh_data);
 
   // Distribute cells
+  Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
   distribute_cells(mesh_data, cell_partition);
 
   // Distribute vertices
   std::map<uint, uint> glob2loc;
   distribute_vertices(mesh_data, glob2loc);
+  timer.stop();
 
   // Build mesh
   build_mesh(mesh, mesh_data, glob2loc);
@@ -47,7 +48,7 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 //-----------------------------------------------------------------------------
 void MeshPartitioning::number_entities(Mesh& mesh, uint d)
 {
-  Timer timer("Number mesh entities");
+  Timer timer("PARALLEL x: Number mesh entities");
 
   // Check for vertices
   if (d == 0)
@@ -421,7 +422,7 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
   // ParMETIS, and then collects the results from ParMETIS.
 
   dolfin_debug("Computing cell partition using ParMETIS...");
-  Timer timer("Compute partition (calling ParMETIS)");
+  Timer timer("PARALLEL 1: Compute partition (calling ParMETIS)");
 
   // Get number of processes and process number
   const uint num_processes = MPI::num_processes();
@@ -520,7 +521,6 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
   // global vertex indices of all cells).
 
   dolfin_debug("Distributing cells...");
-  Timer timer("Distribute cells");
 
   // Get dimensions of local mesh_data
   uint num_local_cells = mesh_data.cell_vertices.size();
@@ -567,7 +567,6 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   // it needs to send its vertices.
 
   dolfin_debug("Distributing vertices...");
-  Timer timer("Distribute vertices");
   
   // Compute which vertices we need
   std::set<uint> needed_vertex_indices;
@@ -633,7 +632,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
                                   const LocalMeshData& mesh_data,
                                   std::map<uint, uint>& glob2loc)
 {
-  Timer timer("Build mesh (from local mesh data)");
+  Timer timer("PARALLEL 3: Build mesh (from local mesh data)");
 
   // Open mesh for editing
   MeshEditor editor;

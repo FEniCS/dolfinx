@@ -11,7 +11,6 @@
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshData.h>
@@ -133,8 +132,6 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map,
 //-----------------------------------------------------------------------------
 void DofMap::init()
 {
-  Timer timer("Init dof map");
-
   // Check that mesh has been ordered
   if (!dolfin_mesh->ordered())
     error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
