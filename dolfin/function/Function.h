@@ -16,8 +16,6 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
 
-#include "dolfin/la/PETScVector.h"
-
 namespace ufc
 {
   // Forward declarations
@@ -26,6 +24,9 @@ namespace ufc
 
 namespace dolfin
 {
+
+  // FIXME: Temporary
+  class PETScVector;
 
   // Forward declarations
   class FunctionSpace;
@@ -165,7 +166,7 @@ namespace dolfin
 
     // The vector of expansion coefficients
     //boost::shared_ptr<GenericVector> _off_process_vector;
-    mutable PETScVector _off_process_vector;
+    mutable PETScVector* _off_process_vector;
 
     mutable std::map<uint, uint> global_to_local;
     mutable std::vector<uint> _off_process_dofs;

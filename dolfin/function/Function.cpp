@@ -30,7 +30,8 @@ using namespace dolfin;
 Function::Function()
   :  Variable("v", "unnamed function"),
      _function_space(static_cast<FunctionSpace*>(0)),
-     _vector(static_cast<GenericVector*>(0))
+     _vector(static_cast<GenericVector*>(0)),
+     _off_process_vector(new PETScVector())
 {
   // Do nothing
 }
@@ -38,7 +39,8 @@ Function::Function()
 Function::Function(const FunctionSpace& V)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
-    _vector(static_cast<GenericVector*>(0))
+    _vector(static_cast<GenericVector*>(0)),
+     _off_process_vector(new PETScVector())
 {
   // Do nothing
 }
@@ -46,7 +48,8 @@ Function::Function(const FunctionSpace& V)
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : Variable("v", "unnamed function"),
     _function_space(V),
-    _vector(static_cast<GenericVector*>(0))
+    _vector(static_cast<GenericVector*>(0)),
+     _off_process_vector(new PETScVector())
 {
   // Do nothing
 }
@@ -55,7 +58,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    GenericVector& x)
   : Variable("v", "unnamed function"),
     _function_space(V),
-    _vector(reference_to_no_delete_pointer(x))
+    _vector(reference_to_no_delete_pointer(x)),
+    _off_process_vector(new PETScVector())
 {
   assert(V->dofmap().global_dimension() == x.size());
 }
@@ -64,7 +68,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    boost::shared_ptr<GenericVector> x)
   : Variable("v", "unnamed function"),
     _function_space(V),
-    _vector(x)
+    _vector(x),
+    _off_process_vector(new PETScVector())
 {
   assert(V->dofmap().global_dimension() == x->size());
 }
@@ -72,7 +77,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 Function::Function(const FunctionSpace& V, GenericVector& x)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
-    _vector(reference_to_no_delete_pointer(x))
+    _vector(reference_to_no_delete_pointer(x)),
+    _off_process_vector(new PETScVector())
 {
   assert(V.dofmap().global_dimension() == x.size());
 }
@@ -80,7 +86,8 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
 Function::Function(const FunctionSpace& V, std::string filename)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
-    _vector(static_cast<GenericVector*>(0))
+    _vector(static_cast<GenericVector*>(0)),
+    _off_process_vector(new PETScVector())
 {
   // Initialize vector
   init();
@@ -97,7 +104,8 @@ Function::Function(const FunctionSpace& V, std::string filename)
 Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filename)
   : Variable("v", "unnamed function"),
     _function_space(V),
-    _vector(static_cast<GenericVector*>(0))
+    _vector(static_cast<GenericVector*>(0)),
+    _off_process_vector(new PETScVector())
 {
   // Initialize vector
   init();
@@ -114,7 +122,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
 Function::Function(const SubFunction& v)
   : Variable("v", "unnamed function"),
     _function_space(v.v.function_space().extract_sub_space(v.component)),
-    _vector(static_cast<GenericVector*>(0))
+    _vector(static_cast<GenericVector*>(0)),
+    _off_process_vector(new PETScVector())
 {
   // Initialize vector
   init();
@@ -138,14 +147,18 @@ Function::Function(const SubFunction& v)
 Function::Function(const Function& v)
   : Variable("v", "unnamed function"),
     _function_space(static_cast<FunctionSpace*>(0)),
-    _vector(static_cast<GenericVector*>(0))
+    _vector(static_cast<GenericVector*>(0)),
+    _off_process_vector(new PETScVector())
 {
   *this = v;
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
 {
-  // Do nothing;
+  // Do nothing
+
+  // FIXME: Temporary
+  delete _off_process_vector;
 }
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Function& v)
@@ -336,7 +349,7 @@ void Function::interpolate(double* coefficients,
   else
   {
     // Create data
-    const Cell cell(V.mesh(), ufc_cell.entity_indices[V.mesh().topology().dim()][0]);
+    const Cell cell(V.mesh(), cell_index);
     Data data(cell, local_facet);
 
     // Create UFC wrapper for this function
@@ -633,7 +646,7 @@ void Function::get(double* block, uint m, const uint* rows) const
     _vector->get(local_block, n_local, local_rows);
 
     // Get off process coefficients
-    _off_process_vector.get(nonlocal_block, n_nonlocal, nonlocal_rows);
+    _off_process_vector->get(nonlocal_block, n_nonlocal, nonlocal_rows);
 
     // Copy result into block
     for (uint i = 0; i < n_local; ++i)
