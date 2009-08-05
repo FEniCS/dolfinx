@@ -588,7 +588,7 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
   // Compute cell partition
   std::vector<uint> cell_partition;
   compute_partition(cell_partition, mesh_data);
-  //debug_partition(cell_partition);
+  debug_partition(cell_partition);
   print_container("checking partition: ", cell_partition.begin(), cell_partition.end());
 
   // Distribute cells
@@ -602,6 +602,12 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 
   // Build mesh
   build_mesh(mesh, mesh_data, glob2loc);
+
+  // Debugging
+  std::stringstream fname;
+  fname << "overlap_p" << dolfin::MPI::process_number() << ".xml";
+  File overlap(fname.str());
+  overlap << *mesh.data().vector_mapping("overlap");
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::number_entities(Mesh& mesh, uint d)
