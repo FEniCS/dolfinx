@@ -305,20 +305,13 @@ void Function::interpolate(double* coefficients,
     // Tabulate dofs
     uint* dofs = new uint[dofmap.local_dimension(ufc_cell)];
     dofmap.tabulate_dofs(dofs, ufc_cell, cell_index);
-
-    /*
-    // Parallel stuff 
-    if (MPI::num_processes() > 1)
-    {
-      compute_off_process_dofs();
-      const PETScVector& vec = _vector->down_cast<PETScVector>();
-      _off_process_vector = vec.gather(_off_process_dofs);
-    }
     
     // Pick values from vector(s)
+    //cout << "Get coeffs " << endl;
     get(coefficients, dofmap.local_dimension(ufc_cell), dofs);
-    */
-
+    //cout << "End get coeffs " << endl;
+ 
+    /*
     if (MPI::num_processes() == 1)
     {
       // Pick values from global vector
@@ -326,11 +319,10 @@ void Function::interpolate(double* coefficients,
     }
     else
     {
-      //if(
-      //x->get(coefficients, dofmap.local_dimension(ufc_cell), dofs);
       for (uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
         coefficients[i] = dof_values[dofs[i]];
     }
+    */
     delete [] dofs;
   }
   else
@@ -392,8 +384,6 @@ void Function::collect_global_dof_values() const
   for (uint i = 0; i < num_dofs_per_cell; i++)
     dofs[i] = 0;
 
-  //const uint dof_offset = MPI::local_range(num_dofs_global).first;
-
   // Iterate over mesh and check which dofs are needed
   UFCCell ufc_cell(mesh);
   //uint ii = 0;
@@ -410,9 +400,6 @@ void Function::collect_global_dof_values() const
       const uint dof = dofs[d];
       const uint index_owner = MPI::index_owner(dof, num_dofs_global);
       
-      //if (global_to_local.find(dof) == global_to_local.end())
-      //  global_to_local[dof] = ii++;
-
       if (index_owner == MPI::process_number())
       {
         if (dof_values.find(dof) == dof_values.end())
@@ -428,38 +415,6 @@ void Function::collect_global_dof_values() const
     }
   }
 
-  //std::vector<uint> ghosts = ghost_dofs();
-  /*
-  if(dolfin::MPI::process_number() == 1)
-  {
-    cout << "Ghosts dofs " << endl;
-    for (uint i = 0; i < ghosts.size(); ++i)
-      cout << ghosts[i] << endl;
-  }
-  */
-  //const PETScVector& vec = _vector->down_cast<PETScVector>();
-  //const PETScVector ghosted_vector = vec.ghosted(ghosts);
-
-
-  // Testing
-  //cout << "dof_values " << endl;
-  //uint* tmp = new uint[global_to_local.size()];
-  //ii = 0;
-  //for (std::map<uint, uint>::const_iterator it = global_to_local.begin(); it != global_to_local.end(); ++it)
-  //  tmp[ii++] = it->first;
-  
-  //const PETScVector& vec = _vector->down_cast<PETScVector>();
-  //PETScVector xx = vec.gather(tmp, 0, ii);
-  ///*
-  //if (dolfin::MPI::process_number() == 1)
-  //{
-  //  cout << "Size (A) " << xx.size() << endl;
-  //  for (uint i = 0; i < xx.size(); ++i)
-  //    cout << xx[i] << "  " << tmp[i] << endl;
-  //}
-  //*/
-  //delete tmp;
-    
   // Request dofs from other processes
   std::vector<uint> req_dofs;
   std::vector<uint> req_procs;
@@ -492,16 +447,6 @@ void Function::collect_global_dof_values() const
     dof_vec.erase(dof_vec.begin());
     dof_values[dof] = send_dof_values[i];
   }
-
-  /*
-  if (dolfin::MPI::process_number() == 1)
-  {
-    cout << endl;
-    cout << "Size (B) " << dof_values.size() << endl;
-    for (std::map<uint, double>::const_iterator it = dof_values.begin(); it != dof_values.end(); ++it)
-      cout << it->second << "  " << it->first << endl;
-  }
-  */
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate()
@@ -597,6 +542,7 @@ void Function::get(double* block, uint m, const uint* rows) const
   {
     //error("Function::get is a work in progress for parallel assembly");    
 
+    // FIXME: Allocate scratch data elsewhere to allow re-use.
     uint* local_rows       = new uint[_function_space->dofmap().max_local_dimension()];
     uint* nonlocal_rows    = new uint[_function_space->dofmap().max_local_dimension()];
     double* local_block    = new double[_function_space->dofmap().max_local_dimension()];
@@ -612,12 +558,12 @@ void Function::get(double* block, uint m, const uint* rows) const
     uint n0(0), n1(0);  
     VecGetOwnershipRange(*(vec.vec()), (int*) &n0, (int*) &n1);
 
-    //Build lists of local and nonlocal coefficients
+    // Build lists of local and nonlocal coefficients
     uint n_local    = 0;
     uint n_nonlocal = 0;
     for (uint i = 0; i < m; ++i)
     {
-      if(rows[i] < n1 && rows[i] > n0)
+      if(rows[i] < n1 && rows[i] >= n0)
       {
         local_index[n_local]  = i;
         local_rows[n_local++] = rows[i];
@@ -648,6 +594,17 @@ void Function::get(double* block, uint m, const uint* rows) const
 
     delete [] local_index; 
     delete [] nonlocal_index; 
+  }
+}
+//-----------------------------------------------------------------------------
+void Function::update()
+{
+  // Gather pff-process coefficients
+  if (MPI::num_processes() > 1)
+  {
+    compute_off_process_dofs();
+    const PETScVector& vec = _vector->down_cast<PETScVector>();
+    _off_process_vector = vec.gather(_off_process_dofs);
   }
 }
 //-----------------------------------------------------------------------------

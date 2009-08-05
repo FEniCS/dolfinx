@@ -144,6 +144,8 @@ namespace dolfin
 
     void compute_off_process_dofs() const; 
 
+    void update(); 
+
     /// Friends
     friend class Coefficient;
     friend class VariationalProblem;
