@@ -372,32 +372,26 @@ void PETScVector::disp(uint precision) const
     VecView(*x, PETSC_VIEWER_STDOUT_WORLD);	 
 }
 //-----------------------------------------------------------------------------
-PETScVector PETScVector::gather(const uint* global_indices, 
-                                const uint* local_indices, uint num_indices) const
+PETScVector PETScVector::gather(const std::vector<uint>& indices) const
 {
-  int* _local_indices = 0;
-  int* local_set = 0;
+  const int n = indices.size();
+  int* local_indices  = new int[n];
+  int* global_indices = new int[n];
 
-  if (!local_indices)
+  for (int i = 0; i < n; ++i)
   {
-    local_set = new int[num_indices];
-    for (uint i = 0; i < num_indices; ++i)
-      local_set[i] = i;      
-    _local_indices = local_set;
+    global_indices[i] = indices[i];      
+    local_indices[i]  = i;      
   }
-  else
-    _local_indices  = reinterpret_cast<int*>(const_cast<uint*>(local_indices));
-
-  int* _global_indices = reinterpret_cast<int*>(const_cast<uint*>(global_indices));
 
   // Create index sets
   IS from, to;
-  ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(num_indices), _global_indices, &from);
-  ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(num_indices), _local_indices, &to);
+  ISCreateGeneral(PETSC_COMM_SELF, n, global_indices, &from);
+  ISCreateGeneral(PETSC_COMM_SELF, n, local_indices,  &to);
 
   // Create local PETSc vector
   boost::shared_ptr<Vec> a_vec(new Vec, PETScVectorDeleter());
-  VecCreateSeq(PETSC_COMM_SELF, num_indices, a_vec.get());
+  VecCreateSeq(PETSC_COMM_SELF, n, a_vec.get());
 
   // Perform scatter
   VecScatter scatter;
@@ -409,56 +403,11 @@ PETScVector PETScVector::gather(const uint* global_indices,
   ISDestroy(from);
   ISDestroy(to);
   VecScatterDestroy(scatter);
-  delete local_set;
+  delete [] local_indices;
+  delete [] global_indices;
 
   // Create PETScVector
   PETScVector a(a_vec);
-  return a;
-}
-//-----------------------------------------------------------------------------
-const PETScVector PETScVector::ghosted(const std::vector<uint> ghosts) const
-{
-  // Get sizes (global and local)
-  int N, n;
-  VecGetSize(*x, &N);
-  VecGetLocalSize(*x, &n);
-
-  // Get range
-  int low, high;
-  VecGetOwnershipRange(*x, &low, &high);
-  
-  //cout << "Test range " << high - low << "  " << n << endl;
-  //cout << "Ghost size " << ghosts.size() << endl;
-
-  // Copy local values to array
-  double* x_values = new double[N];
-  int* rows = new int[n];
-  for (int i = 0; i < n; i++)
-    rows[i] = low + i;
-  VecGetValues(*x, n, rows, x_values);
-
-  // Prepare data to create PETSc ghosted vector
-  int num_ghost = ghosts.size();  
-  uint* _ghosts = new uint[ghosts.size()];
-  std::copy(ghosts.begin(), ghosts.end(), _ghosts) ;
-
-  // Create ghosted vector
-  boost::shared_ptr<Vec> a_vec(new Vec, PETScVectorDeleter());
-  VecCreateGhost(PETSC_COMM_WORLD, n, N, num_ghost, (int*) _ghosts, a_vec.get());
-
-  // Set values
-  VecSetValues(*a_vec, n, rows, x_values, INSERT_VALUES);
-
-  // Clean up
-  delete [] rows;
-  delete [] x_values;
-  delete [] _ghosts;
-
-  // Apply changes
-  VecGhostUpdateBegin(*a_vec, INSERT_VALUES, SCATTER_FORWARD);
-  VecGhostUpdateEnd(*a_vec,   INSERT_VALUES, SCATTER_FORWARD);
-
-  PETScVector a(a_vec);  
   return a;
 }
 //-----------------------------------------------------------------------------
