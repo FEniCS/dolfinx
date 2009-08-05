@@ -25,9 +25,8 @@ MeshEntity::MeshEntity(const Mesh& mesh, uint dim, uint index)
     return;
 
   // Illegal index range
-  info("Hint: Did you forget to call mesh.init(%d)?", dim);
   error("Mesh entity index %d out of range [0, %d] for entity of dimension %d.",
-          index, mesh.num_entities(dim), dim);
+        index, mesh.num_entities(dim), dim);
 }
 //-----------------------------------------------------------------------------
 MeshEntity::~MeshEntity()
