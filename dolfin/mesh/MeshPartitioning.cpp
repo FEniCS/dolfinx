@@ -55,6 +55,531 @@ template<typename Map> void print_vec_map(std::string msg, Map map, const char* 
   info(msg_stream.str());
 }
 
+// Debugging partition of unitsquare.xml.gz that Niclas gets on his machine
+void debug_partition(std::vector<unsigned int>& cell_partition)
+{
+  cell_partition.clear();
+
+  if (dolfin::MPI::process_number() == 0)
+  {
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+  }
+  else
+  {
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(0);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+    cell_partition.push_back(1);
+  }
+}
+
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 {
@@ -63,6 +588,8 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
   // Compute cell partition
   std::vector<uint> cell_partition;
   compute_partition(cell_partition, mesh_data);
+  debug_partition(cell_partition);
+  print_container("checking partition: ", cell_partition.begin(), cell_partition.end());
 
   // Distribute cells
   Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
@@ -75,6 +602,12 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 
   // Build mesh
   build_mesh(mesh, mesh_data, glob2loc);
+
+  // Debugging
+  std::stringstream fname;
+  fname << "overlap_p" << dolfin::MPI::process_number() << ".xml";
+  File overlap(fname.str());
+  overlap << *mesh.data().vector_mapping("overlap");
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::number_entities(Mesh& mesh, uint d)
@@ -210,10 +743,8 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     for (uint j = 0; j < entity_processes.size(); ++j)
     {   
       const uint p = entity_processes[j];
-      dolfin_debug("check");
       if (p < process_number)
       {
-        dolfin_debug("check");
         common_entity_values.push_back(entity.size());
         common_entity_values.insert(common_entity_values.end(), entity.begin(), entity.end());
         common_entity_partition.insert(common_entity_partition.end(), entity.size() + 1, p);
@@ -243,11 +774,8 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     }
   }
 
-  // Send data
-  dolfin_debug1("common_entity_values.size() = %d", common_entity_values.size());
+  // Communicate common entities
   MPI::distribute(common_entity_values, common_entity_partition);
-  dolfin_debug1("common_entity_values.size() = %d", common_entity_values.size());
-
   std::vector<uint> is_entity_values;
   std::vector<uint> is_entity_partition;
   for (uint i = 0; i < common_entity_values.size();)
@@ -259,7 +787,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       entity.push_back(common_entity_values[i++]);
 
     uint is_entity = 0;
-    if ((ignored_entity_indices.count(entity) > 0 ) or ( shared_entity_indices.count(entity) > 0 ))
+    if ((ignored_entity_indices.count(entity) > 0 ) or (shared_entity_indices.count(entity) > 0 ))
     {
       is_entity = 1;
     }
@@ -275,12 +803,9 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     is_entity_values.push_back(is_entity);
     is_entity_partition.push_back(p);
   }
-
   common_entity_values.clear();
   common_entity_partition.clear();
   
-  print_container("is_entity_values: ", is_entity_values.begin(), is_entity_values.end());
-
   // Send data back (list of entities that should not be ignored by the process)
   MPI::distribute(is_entity_values, is_entity_partition);
 
@@ -338,8 +863,6 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     }
   }
 
-  dolfin_debug1("shared_entity_indices.size() = %d", shared_entity_indices.size());
-
   // Fix the list of entities we share 
   for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
   {
@@ -353,9 +876,6 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       shared_entity_processes.erase(entity);
     }
   }
-
-  dolfin_debug1("owned_entity_indices.size() = %d", owned_entity_indices.size());
-  dolfin_debug1("shared_entity_indices.size() = %d", shared_entity_indices.size());
 
   // Communicate all offsets
   std::vector<uint> offsets(num_processes);
@@ -390,12 +910,8 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   // Communicate indices for shared entities
   std::vector<uint> values;
   std::vector<uint> partition;
-
-  dolfin_debug1("shared_entity_indices.size() = %d", shared_entity_indices.size());
   for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
   {
-    dolfin_debug("ITERATING");
-
     // Get entity index
     const uint e = (*it).second;
     const int entity_index = entity_indices[e];
@@ -442,7 +958,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       msg << "Received illegal entity given by ";
       print_container(msg, entity.begin(), entity.end());
       msg << " with global index " << global_index;
-      warning(msg.str());
+      error(msg.str());
     }
 
     entity_indices[ignored_entity_indices[entity]] = global_index;
@@ -479,7 +995,6 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
   // Get dimensions of local mesh_data
   const uint num_local_cells = mesh_data.cell_vertices.size();
   const uint num_cell_vertices = mesh_data.cell_vertices[0].size();
-  dolfin_debug1("num_local_cells = %d", num_local_cells);
 
   // Communicate number of cells between all processors
   std::vector<uint> num_cells(num_processes);
