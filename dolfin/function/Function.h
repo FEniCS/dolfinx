@@ -115,13 +115,17 @@ namespace dolfin
     virtual void eval(double* values, const Data& data) const;
 
     /// Evaluate function v at given point in given cell
-    void eval(double* values, const double* x, const ufc::cell& ufc_cell, uint cell_index) const;
+    void eval(double* values, const double* x, const ufc::cell& ufc_cell, 
+              uint cell_index) const;
 
     /// Interpolate function to local function space on cell
-    void interpolate(double* coefficients, const ufc::cell& ufc_cell, uint cell_index, int local_facet=-1) const;
+    void interpolate(double* coefficients, const ufc::cell& ufc_cell, 
+                     uint cell_index, int local_facet=-1) const;
 
     /// Interpolate function to local function space on cell with check on function space
-    void interpolate(double* coefficients, const FunctionSpace& V, const ufc::cell& ufc_cell, uint cell_index, int local_facet=-1) const;
+    void interpolate(double* coefficients, const FunctionSpace& V, 
+                     const ufc::cell& ufc_cell, uint cell_index, 
+                     int local_facet=-1) const;
 
     /// Interpolate function (possibly non-matching meshes)
     void interpolate(const Function& v);
@@ -149,8 +153,15 @@ namespace dolfin
     // Initialize vector
     void init();
 
+    void gather();
+
     // The vector of expansion coefficients
     boost::shared_ptr<GenericVector> _vector;
+
+    // The vector of expansion coefficients
+    boost::shared_ptr<GenericVector> _gathered_vector;
+
+    mutable std::map<uint, uint> global_to_local;
 
     mutable std::map<uint, double> dof_values;
 
