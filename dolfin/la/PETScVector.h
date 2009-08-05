@@ -155,6 +155,8 @@ namespace dolfin
     PETScVector gather(const uint* global_indices, const uint* local_indices, 
                        uint num_indices) const;
 
+    const PETScVector ghosted(const std::vector<uint> ghosts) const;
+
     friend class PETScMatrix;
 
   private:

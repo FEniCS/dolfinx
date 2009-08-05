@@ -589,7 +589,7 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
   std::vector<uint> cell_partition;
   compute_partition(cell_partition, mesh_data);
   //debug_partition(cell_partition);
-  print_container("checking partition: ", cell_partition.begin(), cell_partition.end());
+  //print_container("checking partition: ", cell_partition.begin(), cell_partition.end());
 
   // Distribute cells
   Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
@@ -1063,6 +1063,7 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
 
   // Number of nodes shared for dual graph (partition along facets)
   int ncommonnodes = num_cell_vertices - 1;
+  info("Number of common vertices for adding edge in dual graph: %d", ncommonnodes);
 
   // Number of partitions (one for each process)
   int nparts = num_processes;
@@ -1078,9 +1079,9 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
 
   // Options for ParMETIS, use default
   int options[3];
-  options[0] = 0;
+  options[0] = 1;
   options[1] = 0;
-  options[2] = 0;
+  options[2] = 15;
   
   // Partitioning array to be computed by ParMETIS (note bug in manual: vertices, not cells!)
   int* part = new int[num_local_cells];
@@ -1151,12 +1152,14 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
 
   // Put mesh_data back into mesh_data.cell_vertices
   mesh_data.cell_vertices.clear();
-  num_local_cells = cell_vertices.size()/num_cell_vertices;
+  assert(cell_vertices.size() % num_cell_vertices == 0);
+  num_local_cells = cell_vertices.size() / num_cell_vertices;
+  mesh_data.cell_vertices.reserve(num_local_cells);
   for (uint i = 0; i < num_local_cells; ++i)
   {
     std::vector<uint> cell(num_cell_vertices);
     for (uint j = 0; j < num_cell_vertices; ++j)
-      cell[j] = cell_vertices[i*num_cell_vertices+j];
+      cell[j] = cell_vertices[i*num_cell_vertices + j];
     mesh_data.cell_vertices.push_back(cell);
   }
 }

@@ -4,10 +4,10 @@
 // Modified by Anders Logg 2005-2006.
 // Modified by Kristian Oelgaard 2006.
 // Modified by Martin Alnes 2008.
-// Modified by Niclas Jansson 2008.
+// Modified by Niclas Jansson 2009.
 //
 // First added:  2005-07-05
-// Last changed: 2009-06-23
+// Last changed: 2009-07-05
 
 #include <cmath>
 #include <sstream>
@@ -106,17 +106,20 @@ void VTKFile::finalize(std::string vtu_filename)
   vtk_header_close(vtu_filename);
 
   // Parallel-specfic files
-  if (MPI::process_number() == 0 && MPI::num_processes() > 1)
+  if (MPI::num_processes() > 1)
   { 
-    // Get pvtu file name and clear file
-    std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
-    clear_file(pvtu_filename);
- 
-    // Write pvtu file
-    pvtu_file_write(pvtu_filename, vtu_filename);
-
-    // Write pvd file (parallel)
-    pvd_file_write(counter, pvtu_filename);  
+    if (MPI::process_number() == 0)
+    {
+      // Get pvtu file name and clear file
+      std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
+      clear_file(pvtu_filename);
+      
+      // Write pvtu file
+      pvtu_file_write(pvtu_filename, vtu_filename);
+      
+      // Write pvd file (parallel)
+      pvd_file_write(counter, pvtu_filename);  
+    }
   }
   else
   {
