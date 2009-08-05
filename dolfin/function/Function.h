@@ -11,6 +11,7 @@
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
+#include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
@@ -138,6 +139,8 @@ namespace dolfin
 
     /// Collect global dof values for all dofs located on local mesh
     void collect_global_dof_values() const; 
+
+    std::vector<dolfin::uint> ghost_dofs() const; 
 
     /// Friends
     friend class Coefficient;
