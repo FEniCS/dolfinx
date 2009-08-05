@@ -16,6 +16,8 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
 
+#include "dolfin/la/PETScVector.h"
+
 namespace ufc
 {
   // Forward declarations
@@ -140,7 +142,7 @@ namespace dolfin
     /// Collect global dof values for all dofs located on local mesh
     void collect_global_dof_values() const; 
 
-    std::vector<dolfin::uint> ghost_dofs() const; 
+    void compute_off_process_dofs() const; 
 
     /// Friends
     friend class Coefficient;
@@ -156,15 +158,17 @@ namespace dolfin
     // Initialize vector
     void init();
 
-    void gather();
-
+    void get(double* block, uint m, const uint* rows) const;
+  
     // The vector of expansion coefficients
     boost::shared_ptr<GenericVector> _vector;
 
     // The vector of expansion coefficients
-    boost::shared_ptr<GenericVector> _gathered_vector;
+    //boost::shared_ptr<GenericVector> _off_process_vector;
+    mutable PETScVector _off_process_vector;
 
     mutable std::map<uint, uint> global_to_local;
+    mutable std::vector<uint> _off_process_dofs;
 
     mutable std::map<uint, double> dof_values;
 
