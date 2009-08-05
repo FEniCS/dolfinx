@@ -7,6 +7,7 @@
 // First added:  2003-11-28
 // Last changed: 2009-06-22
 
+#include <algorithm>
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/io/File.h>
@@ -367,7 +368,7 @@ void Function::collect_global_dof_values() const
 
   std::map<uint, uint> dof_owner;
 
-  std::map<uint, uint> global_to_local;
+  //std::map<uint, uint> global_to_local;
 
   // Get mesh
   assert(_function_space);
@@ -385,7 +386,7 @@ void Function::collect_global_dof_values() const
 
   // Iterate over mesh and check which dofs are needed
   UFCCell ufc_cell(mesh);
-  uint ii = 0;
+  //uint ii = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update to current cell
@@ -399,8 +400,8 @@ void Function::collect_global_dof_values() const
       const uint dof = dofs[d];
       const uint index_owner = MPI::index_owner(dof, num_dofs_global);
       
-      if (global_to_local.find(dof) == global_to_local.end())
-        global_to_local[dof] = ii++;
+      //if (global_to_local.find(dof) == global_to_local.end())
+      //  global_to_local[dof] = ii++;
 
       if (index_owner == MPI::process_number())
       {
@@ -417,26 +418,38 @@ void Function::collect_global_dof_values() const
     }
   }
 
-  // Testing
-  //cout << "dof_values " << endl;
-  uint* tmp = new uint[global_to_local.size()];
-  ii = 0;
-  for (std::map<uint, uint>::const_iterator it = global_to_local.begin(); it != global_to_local.end(); ++it)
-    tmp[ii++] = it->first;
-  
-  const PETScVector& vec = _vector->down_cast<PETScVector>();
-  PETScVector xx = vec.gather(tmp, 0, ii);
+  //std::vector<uint> ghosts = ghost_dofs();
   /*
-  if (dolfin::MPI::process_number() == 1)
+  if(dolfin::MPI::process_number() == 1)
   {
-    cout << "Size (A) " << xx.size() << endl;
-    for (uint i = 0; i < xx.size(); ++i)
-      cout << xx[i] << "  " << tmp[i] << endl;
+    cout << "Ghosts dofs " << endl;
+    for (uint i = 0; i < ghosts.size(); ++i)
+      cout << ghosts[i] << endl;
   }
   */
-  delete tmp;
-    
+  //const PETScVector& vec = _vector->down_cast<PETScVector>();
+  //const PETScVector ghosted_vector = vec.ghosted(ghosts);
 
+
+  // Testing
+  //cout << "dof_values " << endl;
+  //uint* tmp = new uint[global_to_local.size()];
+  //ii = 0;
+  //for (std::map<uint, uint>::const_iterator it = global_to_local.begin(); it != global_to_local.end(); ++it)
+  //  tmp[ii++] = it->first;
+  
+  //const PETScVector& vec = _vector->down_cast<PETScVector>();
+  //PETScVector xx = vec.gather(tmp, 0, ii);
+  ///*
+  //if (dolfin::MPI::process_number() == 1)
+  //{
+  //  cout << "Size (A) " << xx.size() << endl;
+  //  for (uint i = 0; i < xx.size(); ++i)
+  //    cout << xx[i] << "  " << tmp[i] << endl;
+  //}
+  //*/
+  //delete tmp;
+    
   // Request dofs from other processes
   std::vector<uint> req_dofs;
   std::vector<uint> req_procs;
@@ -501,6 +514,46 @@ void Function::interpolate()
   *_vector = *coefficients;
 }
 //-----------------------------------------------------------------------------
+std::vector<dolfin::uint> Function::ghost_dofs() const
+{
+  std::vector<uint> ghosts;
+
+  // Get mesh
+  assert(_function_space);
+  const Mesh& mesh = _function_space->mesh();
+
+  // Storage for each cell dofs
+  const DofMap& dofmap = _function_space->dofmap();
+  const uint num_dofs_per_cell = _function_space->element().space_dimension();
+  const uint num_dofs_global = vector().size();
+  uint* dofs = new uint[num_dofs_per_cell];
+  for (uint i = 0; i < num_dofs_per_cell; i++)
+    dofs[i] = 0;
+
+  // Iterate over mesh and check which dofs are needed
+  UFCCell ufc_cell(mesh);
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update to current cell
+    ufc_cell.update(*cell);
+
+    // Tabulate dofs on cell
+    dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());
+
+    for (uint d = 0; d < num_dofs_per_cell; ++d)
+    {
+      const uint dof = dofs[d];
+      const uint index_owner = MPI::index_owner(dof, num_dofs_global);
+      if (index_owner != MPI::process_number())
+      {
+        if (std::find(ghosts.begin(), ghosts.end(), dof) == ghosts.end())
+          ghosts.push_back(dof);
+      }
+    }
+  }
+  return ghosts;
+}
+//-----------------------------------------------------------------------------
 void Function::init()
 {
   // Get size
@@ -530,10 +583,9 @@ void Function::gather()
   // Storage for each cell dofs
   const DofMap& dofmap = _function_space->dofmap();
   const uint num_dofs_per_cell = _function_space->element().space_dimension();
-  //const uint num_dofs_global = vector().size();
   uint* dofs = new uint[num_dofs_per_cell];
-  for (uint i = 0; i < num_dofs_per_cell; i++)
-    dofs[i] = 0;
+  //for (uint i = 0; i < num_dofs_per_cell; i++)
+  //  dofs[i] = 0;
 
   // Compute global-to-local mapping
   uint ii = 0;
