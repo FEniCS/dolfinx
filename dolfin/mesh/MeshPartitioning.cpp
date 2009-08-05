@@ -271,12 +271,9 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     is_entity_values.push_back(is_entity);
     is_entity_partition.push_back(p);
   }
-
   common_entity_values.clear();
   common_entity_partition.clear();
   
-  print_container("is_entity_values: ", is_entity_values.begin(), is_entity_values.end());
-
   // Send data back (list of entities that should not be ignored by the process)
   MPI::distribute(is_entity_values, is_entity_partition);
 
@@ -429,7 +426,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       msg << "Received illegal entity given by ";
       print_container(msg, entity.begin(), entity.end());
       msg << " with global index " << global_index;
-      warning(msg.str());
+      error(msg.str());
     }
 
     entity_indices[ignored_entity_indices[entity]] = global_index;
