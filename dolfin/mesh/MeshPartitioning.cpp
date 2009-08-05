@@ -63,6 +63,7 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
   // Compute cell partition
   std::vector<uint> cell_partition;
   compute_partition(cell_partition, mesh_data);
+  print_container("checking partition: ", cell_partition.begin(), cell_partition.end());
 
   // Distribute cells
   Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
@@ -210,10 +211,8 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     for (uint j = 0; j < entity_processes.size(); ++j)
     {   
       const uint p = entity_processes[j];
-      dolfin_debug("check");
       if (p < process_number)
       {
-        dolfin_debug("check");
         common_entity_values.push_back(entity.size());
         common_entity_values.insert(common_entity_values.end(), entity.begin(), entity.end());
         common_entity_partition.insert(common_entity_partition.end(), entity.size() + 1, p);
@@ -243,11 +242,8 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     }
   }
 
-  // Send data
-  dolfin_debug1("common_entity_values.size() = %d", common_entity_values.size());
+  // Communicate common entities
   MPI::distribute(common_entity_values, common_entity_partition);
-  dolfin_debug1("common_entity_values.size() = %d", common_entity_values.size());
-
   std::vector<uint> is_entity_values;
   std::vector<uint> is_entity_partition;
   for (uint i = 0; i < common_entity_values.size();)
@@ -338,8 +334,6 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
     }
   }
 
-  dolfin_debug1("shared_entity_indices.size() = %d", shared_entity_indices.size());
-
   // Fix the list of entities we share 
   for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
   {
@@ -353,9 +347,6 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       shared_entity_processes.erase(entity);
     }
   }
-
-  dolfin_debug1("owned_entity_indices.size() = %d", owned_entity_indices.size());
-  dolfin_debug1("shared_entity_indices.size() = %d", shared_entity_indices.size());
 
   // Communicate all offsets
   std::vector<uint> offsets(num_processes);
@@ -390,12 +381,8 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   // Communicate indices for shared entities
   std::vector<uint> values;
   std::vector<uint> partition;
-
-  dolfin_debug1("shared_entity_indices.size() = %d", shared_entity_indices.size());
   for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
   {
-    dolfin_debug("ITERATING");
-
     // Get entity index
     const uint e = (*it).second;
     const int entity_index = entity_indices[e];
@@ -479,7 +466,6 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
   // Get dimensions of local mesh_data
   const uint num_local_cells = mesh_data.cell_vertices.size();
   const uint num_cell_vertices = mesh_data.cell_vertices[0].size();
-  dolfin_debug1("num_local_cells = %d", num_local_cells);
 
   // Communicate number of cells between all processors
   std::vector<uint> num_cells(num_processes);
