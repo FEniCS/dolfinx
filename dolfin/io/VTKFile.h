@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006.
+// Modified by NIclas Jansson 2009.
 //
 // First added:  2005-07-05
-// Last changed: 2007-05-08
+// Last changed: 2009-08-06
 
 #ifndef __VTK_FILE_H
 #define __VTK_FILE_H
@@ -40,10 +41,15 @@ namespace dolfin
 
     void pvd_file_write(uint u, std::string file);
 
-    void pvtu_file_write(std::string pvtu_file, std::string vtu_file) const;
+    void pvtu_mesh_write(std::string pvtu_filename, std::string vtu_filename) const;
+
+    void pvtu_results_write(const Function& u, std::string pvtu_filename) const;
 
     void vtk_header_open(uint num_vertices, uint num_cells, std::string file) const;
     void vtk_header_close(std::string file) const;
+
+    void pvtu_header_open(std::string pvtu_filename) const;
+    void pvtu_header_close(std::string pvtu_filename) const;
 
     std::string vtu_name(const int process, const int num_processes,
                          const int counter, std::string ext) const;
