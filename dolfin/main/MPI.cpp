@@ -71,6 +71,105 @@ void dolfin::MPI::distribute(std::vector<double>& values,
   dolfin::distribute(values, partition);
 }
 //-----------------------------------------------------------------------------
+void dolfin::MPI::scatter(std::vector<uint>& values, uint sending_process)
+{
+  // Prepare receive buffer (size 1)
+  int receive_buffer = 0;
+
+  /// Create communicator (copy of MPI_COMM_WORLD)
+  MPICommunicator comm;
+  
+  // Prepare arguments differently depending on whether we're sending
+  if (process_number() == sending_process)
+  {
+    // Check size of values
+    if (values.size() != num_processes())
+      error("Number of values to scatter must be equal to the number of processes.");
+
+    // Prepare send buffer
+    uint* send_buffer = new uint[values.size()];
+    for (uint i = 0; i < values.size(); i++)
+      send_buffer[i] = values[i];
+    
+    // Call MPI to send values
+    MPI_Scatter(send_buffer,
+                values.size(),
+                MPI_UNSIGNED,
+                &receive_buffer,
+                1,
+                MPI_UNSIGNED,
+                sending_process,
+                *comm);
+
+    // Cleanup
+    delete [] send_buffer;
+  }
+  else
+  {
+    // Call MPI to send values
+    MPI_Scatter(0,
+                0,
+                MPI_UNSIGNED,
+                &receive_buffer,
+                1,
+                MPI_UNSIGNED,
+                sending_process,
+                *comm);
+  }
+
+  // Collect values
+  values.clear();
+  values.push_back(receive_buffer);
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::scatter(std::vector<std::vector<uint> >& values,
+                          uint sending_process)
+{
+  /*
+  dolfin_assert(values.size() == num_processes());
+
+
+
+  
+
+  // Prepare array containing size of data to send to each process
+  uint total_size = 1;
+  int* sizes = new int[values.size()];
+  for (uint i = 0; i < values.size(); i++)
+  {
+    total_size += values[i].size();
+    sizes[i] = values[i].size();
+  }
+
+  // Prepare array containing offsets into send data
+  int* offsets = new int[values.size()];
+  offsets[0] = 0;
+  for (uint i = 1; i < values.size(); i++)
+    offsets[i] = offsets[i - 1] + sizes[i - 1];
+
+  // Prepare array of values to send
+  int* send_buffer = new int[total_size];
+  uint k = 0;
+  for (uint i = 0; i < values.size(); i++)
+    for (uint j = 0; j < values[i].size(); j++)
+      send_buffer[k++] = values[i][j];
+
+  MPI_Scatterv(send_buffer,
+               send_counts,
+               offsets,
+               MPI_UNSIGNED, 
+               void *recvbuf, 
+               int recvcnt,  
+               MPI_Datatype recvtype, 
+               static_cast<uint>(sending_process),
+               *comm);
+
+  // Cleanup arrays
+  delete [] send_counts;
+  delete [] offsets;
+  */
+}
+//-----------------------------------------------------------------------------
 void dolfin::MPI::gather(std::vector<uint>& values)
 {
   assert(values.size() == num_processes());
@@ -81,6 +180,7 @@ void dolfin::MPI::gather(std::vector<uint>& values)
 
   /// Create communicator (copy of MPI_COMM_WORLD)
   MPICommunicator comm;
+
   // Call MPI
   MPI_Allgather(&send_value,     1, MPI_UNSIGNED,
                 received_values, 1, MPI_UNSIGNED, *comm);

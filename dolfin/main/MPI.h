@@ -66,7 +66,13 @@ namespace dolfin
     /// Distribute local arrays on all processors according to given partition
     static void distribute(std::vector<double>& values, std::vector<uint>& partition);
 
-    /// Gather values (wrapper for MPI_Allgather)
+    /// Scatter values, one to each process
+    static void scatter(std::vector<uint>& values, uint sending_process=0);
+
+    /// Scatter values (wrapper for MPI_Scatterv)
+    static void scatter(std::vector<std::vector<uint> >& values, uint sending_process=0);
+
+    /// Gather values, one from each process (wrapper for MPI_Allgather)
     static void gather(std::vector<uint>& values);
 
     /// Find global max value (wrapper for MPI_Allredue with MPI_MAX as reduction op)
