@@ -550,6 +550,10 @@ void Function::get(double* block, uint m, const uint* rows) const
     _vector->get(block, m, rows);
   else
   {
+
+    // FIXME: Temporary until Garth fixes this, you can't just push and the go home and sleep. ;-)
+    return;
+
     //error("Function::get is a work in progress for parallel assembly");    
 
     // FIXME: Allocate scratch data elsewhere to allow re-use.
@@ -568,11 +572,11 @@ void Function::get(double* block, uint m, const uint* rows) const
     VecGetOwnershipRange(*(vec.vec()), (int*) &n0, (int*) &n1);
 
     // Build lists of local and nonlocal coefficients
-    uint n_local    = 0;
+    uint n_local = 0;
     uint n_nonlocal = 0;
     for (uint i = 0; i < m; ++i)
     {
-      if(rows[i] < n1 && rows[i] >= n0)
+      if (rows[i] < n1 && rows[i] >= n0)
       {
         local_index[n_local]  = i;
         local_rows[n_local++] = rows[i];
