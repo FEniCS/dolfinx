@@ -27,7 +27,41 @@ LocalMeshData::LocalMeshData(const Mesh& mesh)
   : num_global_vertices(0), num_global_cells(0),
     gdim(0), tdim(0)
 {
+  error("This should not be called");
   dolfin_debug("check");
+
+  // Extract data on main process and split among processes
+  if (MPI::is_broadcaster())
+  {
+    extract_mesh_data(mesh);
+    broadcast_mesh_data();
+  }
+  else
+  {
+    receive_mesh_data();
+  }
+}
+//-----------------------------------------------------------------------------
+LocalMeshData::~LocalMeshData()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void LocalMeshData::clear()
+{
+  vertex_coordinates.clear();
+  vertex_indices.clear();
+  cell_vertices.clear();
+  num_global_vertices = 0;
+  num_global_cells = 0;
+  gdim = 0;
+  tdim = 0;
+}
+//-----------------------------------------------------------------------------
+void LocalMeshData::extract_mesh_data(const Mesh& mesh)
+{
+  // Clear old data
+  clear();
 
   // Set scalar data
   gdim = mesh.geometry().dim();
@@ -61,19 +95,19 @@ LocalMeshData::LocalMeshData(const Mesh& mesh)
     }
     cell_vertices.push_back(vertices);
   }
+}
+//-----------------------------------------------------------------------------
+void LocalMeshData::broadcast_mesh_data()
+{
+  // Get local ranges
 
-  dolfin_debug("check");
+
+  
 }
 //-----------------------------------------------------------------------------
-LocalMeshData::~LocalMeshData()
+void LocalMeshData::receive_mesh_data()
 {
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void LocalMeshData::clear()
-{
-  vertex_coordinates.clear();
-  vertex_indices.clear();
-  cell_vertices.clear();
+
+
 }
 //-----------------------------------------------------------------------------

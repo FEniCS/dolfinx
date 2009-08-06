@@ -166,6 +166,9 @@ void XMLLocalMeshData::end_element(const xmlChar* name)
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::read_mesh(const xmlChar* name, const xmlChar** attrs)
 {
+  // Clear all data
+  mesh_data.clear();
+
   // Parse values
   std::string type = parse_string(name, attrs, "celltype");
   gdim = parse_uint(name, attrs, "dim");
@@ -177,9 +180,6 @@ void XMLLocalMeshData::read_mesh(const xmlChar* name, const xmlChar** attrs)
   // Get number of entities for topological dimension 0
   mesh_data.tdim = tdim;
   mesh_data.gdim = gdim;
-
-  // Clear all data
-  mesh_data.clear();
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::read_vertices(const xmlChar* name, const xmlChar** attrs)
