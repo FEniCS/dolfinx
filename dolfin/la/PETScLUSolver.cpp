@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2009.
+// Modified by Niclas Jansson, 2009.
 //
 // First added:  2005
-// Last changed: 2009-07-08
+// Last changed: 2009-08-06
 
 #ifdef HAS_PETSC
 
@@ -64,16 +65,34 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   MatGetType(*A.mat(), &solver_type);
   #endif
 
-  // Convert to UMFPACK matrix if matrix type is MATSEQAIJ and UMFPACK is available.
-  #if PETSC_HAVE_UMFPACK && PETSC_VERSION_MAJOR < 3
+  #if PETSC_VERSION_MAJOR < 3
   std::string _mat_type = solver_type;
+
+  // Convert to UMFPACK matrix if matrix type is MATSEQAIJ and UMFPACK is available.
+  #if PETSC_HAVE_UMFPACK 
   if (_mat_type == MATSEQAIJ)
   {
     Mat Atemp = *A.mat();
     MatConvert(*A.mat(), MATUMFPACK, MAT_REUSE_MATRIX, &Atemp);
   }
+
+  // Convert to MUMPS matrix if matrix type is MATMPIAIJ and MUMPS is available.  
+  #elif PETSC_HAVE_MUMPS 
+  if (_mat_type == MATMPIAIJ) 
+  {
+    Mat Atemp = *A.mat();
+    MatConvert(*A.mat(), MATAIJMUMPS, MAT_REUSE_MATRIX, &Atemp);    
+  }
+
   #endif
 
+  // Make sure the parallel matrix has been converted
+  if (_mat_type == MATMPIAIJ)
+  {
+    error("MUMPS is required for parallel symbolic LU.");
+  }    
+  #endif
+  
   // Get parameters
   const bool report = parameters("report");
 
