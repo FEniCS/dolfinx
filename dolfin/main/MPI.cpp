@@ -219,12 +219,11 @@ void dolfin::MPI::scatter(std::vector<std::vector<uint> >& values,
 
   }
 
-  values.clear();
+  values.resize(1);
  
   std::vector<uint> thevalues;
   for (uint i = 0; i < sizes[0]; ++i)
-    thevalues.push_back(recv_buffer[i]);
-  values.push_back(thevalues);
+    values[0].push_back(recv_buffer[i]);
 
   delete [] recv_buffer;
 }
@@ -324,20 +323,12 @@ void dolfin::MPI::scatter(std::vector<std::vector<double> >& values,
 
   }
 
-  values.clear();
+  values.resize(1);
  
-  std::vector<double> thevalues;
   for (uint i = 0; i < sizes[0]; ++i)
-    thevalues.push_back(recv_buffer[i]);
-  values.push_back(thevalues);
+    values[0].push_back(recv_buffer[i]);
 
   delete [] recv_buffer;
-}
-//-----------------------------------------------------------------------------
-void dolfin::MPI::scatter(std::vector<std::vector<double> >& values,
-                          uint sending_process)
-{
-  // Not implemented, fix this
 }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::gather(std::vector<uint>& values)
