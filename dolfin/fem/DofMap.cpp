@@ -4,9 +4,10 @@
 // Modified by Martin Alnes, 2008
 // Modified by Kent-Andre Mardal, 2009
 // Modified by Ola Skavhaug, 2009
+// Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-05-17
+// Last changed: 2009-08-06
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
@@ -41,6 +42,10 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<Mesh> 
 
   // Initialize dof map
   init();
+  
+  // Renumber parallel dof map
+  if (parallel)
+    DofMapBuilder::build(*this, *dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const Mesh> mesh)
@@ -57,6 +62,10 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const 
 
   // Initialize dof map
   init();
+
+  // Renumber parallel dof map
+  if (parallel)
+    DofMapBuilder::build(*this, *dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()

@@ -4,9 +4,10 @@
 // Modified by Garth N. Wells, 2007, 2008.
 // Modified by Anders Logg, 2007-2009.
 // Modified by Ola Skavhaug, 2008-2009.
+// Modified by Niclas Jansson, 2009.
 //
 // First added:  2007-11-30
-// Last changed: 2009-06-20
+// Last changed: 2009-08-06
 
 #include <dolfin/log/dolfin_log.h>
 #include <numeric>
@@ -295,6 +296,25 @@ dolfin::uint dolfin::MPI::global_maximum(uint size)
   return recv_size;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::global_offset(uint range, bool exclusive)
+{
+  uint offset = 0;
+
+  // Create communicator (copy of MPI_COMM_WORLD)
+  MPICommunicator comm; 
+
+  // Compute inclusive or exclusive partial reduction
+  if (exclusive)
+  {
+    MPI_Exscan(&range, &offset, 1, MPI_UNSIGNED, MPI_SUM, *comm);
+  }
+  else 
+  {
+    MPI_Scan(&range, &offset, 1, MPI_UNSIGNED, MPI_SUM, *comm);
+  }
+  return offset;
+}
+//-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::send_recv(uint* send_buffer, uint send_size, uint dest,
                                     uint* recv_buffer, uint recv_size, uint source)
 {
@@ -426,6 +446,13 @@ void dolfin::MPI::gather(std::vector<uint>& values)
 dolfin::uint dolfin::MPI::global_maximum(uint size)
 {
   error("MPI::global_maximum() requires MPI.");
+  return 0;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::global_offset(uint* send_buffer, uint* recv_buffer, 
+					uint size, bool exclusive)
+{
+  error("MPI::global_offset() requires MPI.");
   return 0;
 }
 //-----------------------------------------------------------------------------

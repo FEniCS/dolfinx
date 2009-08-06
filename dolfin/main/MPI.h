@@ -4,9 +4,10 @@
 // Modified by Garth N. Wells, 2008.
 // Modified by Ola Skavhaug, 2008-2009.
 // Modified by Anders Logg, 2008-2009.
+// Modified by Niclas Jansson, 2009.
 //
 // First added:  2007-11-30
-// Last changed: 2009-05-25
+// Last changed: 2009-08-06
 
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H
@@ -78,6 +79,9 @@ namespace dolfin
     /// Find global max value (wrapper for MPI_Allredue with MPI_MAX as reduction op)
     static uint global_maximum(uint size);
 
+    /// Find global offset (index) (wrapper for MPI_(Ex)Scan with MPI_SUM as reduction op)
+    static uint global_offset(uint range, bool exclusive);
+    
     /// Send-receive and return number of received values (wrapper for MPI_Sendrecv)
     static uint send_recv(uint* send_buffer, uint send_size, uint dest,
                           uint* recv_buffer, uint recv_size, uint source);
