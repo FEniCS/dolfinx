@@ -372,7 +372,7 @@ void PETScVector::disp(uint precision) const
     VecView(*x, PETSC_VIEWER_STDOUT_WORLD);	 
 }
 //-----------------------------------------------------------------------------
-PETScVector PETScVector::gather(const std::vector<uint>& indices) const
+boost::shared_ptr<PETScVector> PETScVector::gather(const std::vector<uint>& indices) const
 {
   const int n = indices.size();
   int* local_indices  = new int[n];
@@ -407,7 +407,7 @@ PETScVector PETScVector::gather(const std::vector<uint>& indices) const
   delete [] global_indices;
 
   // Create PETScVector
-  PETScVector a(a_vec);
+  boost::shared_ptr<PETScVector> a(new PETScVector(a_vec)); 
   return a;
 }
 //-----------------------------------------------------------------------------

@@ -168,7 +168,7 @@ namespace dolfin
 
     // The vector of expansion coefficients
     //boost::shared_ptr<GenericVector> _off_process_vector;
-    mutable PETScVector* _off_process_vector;
+    mutable boost::shared_ptr<PETScVector> _off_process_vector;
 
     mutable std::map<uint, uint> global_to_local;
     mutable std::vector<uint> _off_process_dofs;
