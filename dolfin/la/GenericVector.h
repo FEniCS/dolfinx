@@ -104,6 +104,9 @@ namespace dolfin
     /// Add values to each entry
     virtual void add(double* values) = 0;
 
+    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const
+    { error("GenericVector::gather is not implemented for this backend."); }
+
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x) = 0;
 

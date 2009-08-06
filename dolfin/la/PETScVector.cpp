@@ -45,18 +45,16 @@ PETScVector::PETScVector(std::string type):
     Variable("x", "a sparse vector"),
     x(static_cast<Vec*>(0), PETScVectorDeleter())
 {
-  if (dolfin::MPI::num_processes() > 1)
+  if (type == "global" && dolfin::MPI::num_processes() > 1)
     init(0, 0, "mpi");
   else
     init(0, 0, "sequential");
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(uint N):
+PETScVector::PETScVector(uint N, std::string type):
     Variable("x", "a sparse vector"),
     x(static_cast<Vec*>(0), PETScVectorDeleter())
 {
-  // FIXME: type should be passed as an argument
-  std::string type = "global";
   if (type == "global")
   {
     // Get local range
@@ -380,11 +378,27 @@ void PETScVector::disp(uint precision) const
     VecView(*x, PETSC_VIEWER_STDOUT_WORLD);	 
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<PETScVector> PETScVector::gather(const std::vector<uint>& indices) const
+void PETScVector::gather(GenericVector& y, 
+                         const std::vector<uint>& indices) const
 {
+  // Down cast to a PETScVector
+  PETScVector& _y = y.down_cast<PETScVector>();
+
+  // Check that x is a local vector
+  #if PETSC_VERSION_MAJOR > 2
+  const VecType petsc_type;
+  #else
+  VecType petsc_type;
+  #endif
+  VecGetType(*(_y.vec()), &petsc_type);
+  if (strcmp(petsc_type, VECSEQ) != 0)
+    error("PETScVector::gather can only gather into local vectors");
+
+  // Prepare data for index sets
   const int n = indices.size();
   int* local_indices  = new int[n];
   int* global_indices = new int[n];
+  //std::copy(indices.begin(), indices.end(), global_indices);
 
   for (int i = 0; i < n; ++i)
   {
@@ -397,15 +411,14 @@ boost::shared_ptr<PETScVector> PETScVector::gather(const std::vector<uint>& indi
   ISCreateGeneral(PETSC_COMM_SELF, n, global_indices, &from);
   ISCreateGeneral(PETSC_COMM_SELF, n, local_indices,  &to);
 
-  // Create local PETSc vector
-  boost::shared_ptr<Vec> a_vec(new Vec, PETScVectorDeleter());
-  VecCreateSeq(PETSC_COMM_SELF, n, a_vec.get());
+  // Resize vector if required
+  y.resize(n);
 
   // Perform scatter
   VecScatter scatter;
-  VecScatterCreate(*x, from, *a_vec, to, &scatter);
-  VecScatterBegin(scatter, *x, *a_vec, INSERT_VALUES, SCATTER_FORWARD);
-  VecScatterEnd(scatter,   *x, *a_vec, INSERT_VALUES, SCATTER_FORWARD);
+  VecScatterCreate(*x, from, *(_y.vec()), to, &scatter);
+  VecScatterBegin(scatter, *x, *(_y.vec()), INSERT_VALUES, SCATTER_FORWARD);
+  VecScatterEnd(scatter,   *x, *(_y.vec()), INSERT_VALUES, SCATTER_FORWARD);
 
   // Clean up
   ISDestroy(from);
@@ -413,10 +426,6 @@ boost::shared_ptr<PETScVector> PETScVector::gather(const std::vector<uint>& indi
   VecScatterDestroy(scatter);
   delete [] local_indices;
   delete [] global_indices;
-
-  // Create PETScVector
-  boost::shared_ptr<PETScVector> a(new PETScVector(a_vec)); 
-  return a;
 }
 //-----------------------------------------------------------------------------
 void PETScVector::init(uint N, uint n, std::string type)
