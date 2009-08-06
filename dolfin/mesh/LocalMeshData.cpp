@@ -126,6 +126,7 @@ void LocalMeshData::broadcast_mesh_data()
       }
     }
     MPI::scatter(values);
+    unpack_vertex_coordinates(values[0]);
   }
 
   /// Broadcast global vertex indices
@@ -138,6 +139,7 @@ void LocalMeshData::broadcast_mesh_data()
         values[p].push_back(vertex_indices[i]);
     }
     MPI::scatter(values);
+    unpack_vertex_indices(values[0]);
   }
 
   /// Broadcast cell vertices
@@ -153,6 +155,7 @@ void LocalMeshData::broadcast_mesh_data()
       }
     }
     MPI::scatter(values);
+    unpack_cell_vertices(values[0]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -173,44 +176,59 @@ void LocalMeshData::receive_mesh_data()
   {
     std::vector<std::vector<double> > values;
     MPI::scatter(values);
-    assert(values[0].size() % gdim == 0);
-    vertex_coordinates.clear();
-    const uint num_vertices = values[0].size() / gdim;
-    uint k = 0;
-    for (uint i = 0; i < num_vertices; i++)
-    {
-      std::vector<double> coordinates(gdim);
-      for (uint j = 0; j < gdim; j++)
-        coordinates[j] = values[0][k++];
-      vertex_coordinates.push_back(coordinates);
-    }
+    unpack_vertex_coordinates(values[0]);
   }
 
   /// Receive global vertex indices
   {
     std::vector<std::vector<uint> > values;
     MPI::scatter(values);
-    assert(values[0].size() == vertex_coordinates.size());
-    vertex_indices.clear();
-    for (uint i = 0; i < values[0].size(); i++)
-      vertex_indices.push_back(values[0][i]);
+    unpack_vertex_indices(values[0]);
   }
 
   /// Receive coordinates for vertices
   {
     std::vector<std::vector<uint> > values;
     MPI::scatter(values);
-    assert(values[0].size() % (tdim + 1) == 0);
-    cell_vertices.clear();
-    const uint num_cells = values[0].size() / (tdim + 1);
-    uint k = 0;
-    for (uint i = 0; i < num_cells; i++)
-    {
-      std::vector<uint> vertices(tdim + 1);
-      for (uint j = 0; j < tdim + 1; j++)
-        vertices[j] = values[0][k++];
-      cell_vertices.push_back(vertices);
-    }
+    unpack_cell_vertices(values[0]);
+  }
+}
+//-----------------------------------------------------------------------------
+void LocalMeshData::unpack_vertex_coordinates(const std::vector<double>& values)
+{
+  assert(values.size() % gdim == 0);
+  vertex_coordinates.clear();
+  const uint num_vertices = values.size() / gdim;
+  uint k = 0;
+  for (uint i = 0; i < num_vertices; i++)
+  {
+    std::vector<double> coordinates(gdim);
+    for (uint j = 0; j < gdim; j++)
+      coordinates[j] = values[k++];
+    vertex_coordinates.push_back(coordinates);
+  }
+}
+//-----------------------------------------------------------------------------
+void LocalMeshData::unpack_vertex_indices(const std::vector<uint>& values)
+{
+  assert(values.size() == vertex_coordinates.size());
+  vertex_indices.clear();
+  for (uint i = 0; i < values.size(); i++)
+    vertex_indices.push_back(values[i]);
+}
+//-----------------------------------------------------------------------------
+void LocalMeshData::unpack_cell_vertices(const std::vector<uint>& values)
+{
+  assert(values.size() % (tdim + 1) == 0);
+  cell_vertices.clear();
+  const uint num_cells = values.size() / (tdim + 1);
+  uint k = 0;
+  for (uint i = 0; i < num_cells; i++)
+  {
+    std::vector<uint> vertices(tdim + 1);
+    for (uint j = 0; j < tdim + 1; j++)
+      vertices[j] = values[k++];
+    cell_vertices.push_back(vertices);
   }
 }
 //-----------------------------------------------------------------------------

@@ -58,16 +58,13 @@ template<typename Map> void print_vec_map(std::string msg, Map map, const char* 
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh)
 {
-  // Create local mesh data on one process
+  // Create and distribute local mesh data
   dolfin_debug("creating local mesh data");
   LocalMeshData mesh_data(mesh);
   dolfin_debug("created local mesh data");
 
-  // Partition local mesh data among processes (linear split)
-  
-
   // Partition mesh based on local mesh data
-  //partition(mesh, mesh_data);
+  partition(mesh, mesh_data);
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)

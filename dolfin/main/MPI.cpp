@@ -219,49 +219,14 @@ void dolfin::MPI::scatter(std::vector<std::vector<uint> >& values,
 
   }
 
-  values.clear();
- 
-  std::vector<uint> thevalues;
+  // Collect values
+  values.resize(0);
+  values[0].clear();
   for (uint i = 0; i < sizes[0]; ++i)
-    thevalues.push_back(recv_buffer[i]);
-  values.push_back(thevalues);
+    values[0].push_back(recv_buffer[i]);
 
+  // Cleanup
   delete [] recv_buffer;
-
-  /*
-  dolfin_assert(values.size() == num_processes());
-
-
-
-  
-
-  // Prepare array containing size of data to send to each process
-  uint total_size = 1;
-  int* sizes = new int[values.size()];
-  for (uint i = 0; i < values.size(); i++)
-  {
-    total_size += values[i].size();
-    sizes[i] = values[i].size();
-  }
-
-  // Prepare array containing offsets into send data
-  int* offsets = new int[values.size()];
-  offsets[0] = 0;
-  for (uint i = 1; i < values.size(); i++)
-    offsets[i] = offsets[i - 1] + sizes[i - 1];
-
-  // Prepare array of values to send
-  int* send_buffer = new int[total_size];
-  uint k = 0;
-  for (uint i = 0; i < values.size(); i++)
-    for (uint j = 0; j < values[i].size(); j++)
-      send_buffer[k++] = values[i][j];
-
-
-  // Cleanup arrays
-  delete [] send_counts;
-  delete [] offsets;
-  */
 }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::scatter(std::vector<std::vector<double> >& values,

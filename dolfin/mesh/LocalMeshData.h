@@ -66,6 +66,15 @@ namespace dolfin
     /// Receive mesh data from main process
     void receive_mesh_data();
 
+    // Unpack received vertex coordinates
+    void unpack_vertex_coordinates(const std::vector<double>& values);
+
+    // Unpack received vertex indices
+    void unpack_vertex_indices(const std::vector<uint>& values);
+
+    // Unpack received cell vertices
+    void unpack_cell_vertices(const std::vector<uint>& values);
+
     /// Coordinates for all vertices stored on local processor
     std::vector<std::vector<double> > vertex_coordinates;
 
