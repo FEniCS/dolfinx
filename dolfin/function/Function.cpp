@@ -553,13 +553,12 @@ void Function::get(double* block, uint m, const uint* rows) const
     //error("Function::get is a work in progress for parallel assembly");    
 
     // FIXME: Allocate scratch data elsewhere to allow re-use.
-    uint* local_rows       = new uint[_function_space->dofmap().max_local_dimension()];
-    uint* nonlocal_rows    = new uint[_function_space->dofmap().max_local_dimension()];
-    double* local_block    = new double[_function_space->dofmap().max_local_dimension()];
-    double* nonlocal_block = new double[_function_space->dofmap().max_local_dimension()];
-
-    uint* local_index      = new uint[_function_space->dofmap().max_local_dimension()];
-    uint* nonlocal_index   = new uint[_function_space->dofmap().max_local_dimension()];
+    uint* local_rows       = scratch.local_rows;
+    uint* nonlocal_rows    = scratch.nonlocal_rows;
+    double* local_block    = scratch.local_block;
+    double* nonlocal_block = scratch.nonlocal_block;
+    uint* local_index      = scratch.local_index;
+    uint* nonlocal_index   = scratch.nonlocal_index;
 
     for (uint i = 0; i < m; ++i)
       block[i] = 0.0;
@@ -596,26 +595,19 @@ void Function::get(double* block, uint m, const uint* rows) const
       block[local_index[i]] = local_block[i];      
     for (uint i = 0; i < n_nonlocal; ++i)
       block[nonlocal_index[i]] = nonlocal_block[i];      
-
-    delete [] local_rows;
-    delete [] nonlocal_rows;
-    delete [] local_block;
-    delete [] nonlocal_block; 
-
-    delete [] local_index; 
-    delete [] nonlocal_index; 
   }
 }
 //-----------------------------------------------------------------------------
 void Function::update()
 {
-  // Gather pff-process coefficients
-  if (MPI::num_processes() > 1)
+  // Gather off-process coefficients if running in parallel
+  if (MPI::num_processes() > 1 || has_vector())
   {
+    assert(_function_space);
+    scratch.init(_function_space->dofmap().max_local_dimension());
     compute_off_process_dofs();
     const PETScVector& vec = _vector->down_cast<PETScVector>();
     _off_process_vector = vec.gather(_off_process_dofs);
   }
 }
 //-----------------------------------------------------------------------------
-

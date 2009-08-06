@@ -175,6 +175,49 @@ namespace dolfin
 
     mutable std::map<uint, double> dof_values;
 
+    // Scratch data
+    class Scratch 
+    {
+    public:
+      
+      Scratch() : local_rows(0), nonlocal_rows(0), local_block(0), 
+                  nonlocal_block(0), local_index(0), nonlocal_index(0)
+      {}
+
+      ~Scratch()
+      {
+        clear();
+      }      
+
+      void init(uint dim)
+      {
+        clear();
+        local_rows     = new uint[dim];
+        nonlocal_rows  = new uint[dim];
+        local_block    = new double[dim];
+        nonlocal_block = new double[dim];
+        local_index    = new uint[dim];
+        nonlocal_index = new uint[dim];
+      }
+
+      void clear()
+      {
+        delete [] local_rows;
+        delete [] nonlocal_rows;
+        delete [] local_block;
+        delete [] nonlocal_block;
+        delete [] local_index;
+        delete [] nonlocal_index;
+      }
+  
+      uint* local_rows;
+      uint* nonlocal_rows;
+      double* local_block;
+      double* nonlocal_block;
+      uint* local_index;
+      uint* nonlocal_index;
+    };
+    Scratch scratch;
   };
 
 }
