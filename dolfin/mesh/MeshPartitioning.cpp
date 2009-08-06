@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2009-08-04
+// Last changed: 2009-08-06
 
 #include <vector>
 #include <algorithm>
@@ -369,6 +369,25 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   }
   unshare_entities.clear();
 
+
+  // Create mesh markers for exterior facets
+  MeshFunction<uint>* exterior = 0;
+  if (d == (mesh.topology().dim() - 1))
+  {
+    exterior = mesh.data().create_mesh_function("exterior facets", d);
+    
+    // Mark all facets as exterior
+    exterior->set_all(1);
+    
+    // Remove all facets in the overlap
+    for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); 
+	 it != shared_entity_indices.end(); ++it)
+      exterior->set(entities[it->first], 0);
+    for (std::map<std::vector<uint>, uint>::const_iterator it = ignored_entity_indices.begin();
+	 it != ignored_entity_indices.end(); ++it)
+      exterior->set(entities[it->first], 0);
+  }
+
   // Communicate number of entities to number
   std::vector<uint> num_entities_to_number(num_processes);
   std::fill(num_entities_to_number.begin(), num_entities_to_number.end(), 0);
@@ -428,7 +447,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
       partition.insert(partition.end(), entity.size() + 2, entity_processes[j]);
     }
   }
-  
+
   // Clean up no longer needed data structures
   entity_processes.clear();
   shared_entity_indices.clear();
