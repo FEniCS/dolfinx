@@ -130,28 +130,17 @@ void Assembler::assemble_cells(GenericTensor& A,
     return;
   Timer timer("Assemble cells");
 
-  // Extract mesh and coefficients
+  // Extract mesh
   const Mesh& mesh = a.mesh();
 
   // Cell integral
   ufc::cell_integral* integral = ufc.cell_integrals[0];
 
   // Assemble over cells
-  uint num_function_spaces = a.function_spaces().size();
+  //uint num_function_spaces = a.function_spaces().size();
   Progress p(progress_message(A.rank(), "cells"), mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    // FIXME: will move this check into a separate function.
-    // Need to check the coefficients as well.
-    bool compute_on_cell = true;
-    for (uint i = 0; i < num_function_spaces; i++)
-    {
-      if (!a.function_space(i).is_inside_restriction(cell->index()))
-        compute_on_cell = false;
-    }
-    if (!compute_on_cell)
-      continue;
-
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
@@ -357,8 +346,8 @@ void Assembler::check(const Form& a)
       // auto_ptr deletes its object when it exits its scope
       std::auto_ptr<ufc::finite_element> fe( a.ufc_form().create_finite_element(i+a.rank()) );
 
-      uint r = coefficients[i]->function_space().element().value_rank();
-      uint fe_r = fe->value_rank();
+      const uint r = coefficients[i]->function_space().element().value_rank();
+      const uint fe_r = fe->value_rank();
       if (fe_r != r)
         warning("Invalid value rank of Function %d, got %d but expecting %d. \
 You may need to provide the rank of a user defined Function.", i, r, fe_r);
