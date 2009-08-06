@@ -57,7 +57,7 @@ namespace dolfin
     double facet_area(const Cell& cell, uint facet) const;
 
     /// Order entities locally
-    void order(Cell& cell) const;
+    void order(Cell& cell, MeshFunction<uint>* global_vertex_indices) const;
 
     /// Check for intersection with point
     bool intersects(const MeshEntity& entity, const Point& p) const;

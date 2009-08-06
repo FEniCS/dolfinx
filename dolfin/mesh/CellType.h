@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2009-04-27
+// Last changed: 2009-08-06
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -20,6 +20,7 @@ namespace dolfin
   class MeshEditor;
   class MeshEntity;
   class Point;
+  template <class T> class MeshFunction;
 
   /// This class provides a common interface for different cell types.
   /// Each cell type implements mesh functionality that is specific to
@@ -93,10 +94,10 @@ namespace dolfin
     // FIXME: implementation for all cell types, just as we have for ordered()
 
     /// Order entities locally
-    virtual void order(Cell& cell) const = 0;
+    virtual void order(Cell& cell, MeshFunction<uint>* global_vertex_indices) const = 0;
 
     /// Check if entities are ordered
-    bool ordered(const Cell& cell) const;
+    bool ordered(const Cell& cell, MeshFunction<uint>* global_vertex_indices) const;
 
     /// Check for intersection with point
     virtual bool intersects(const MeshEntity& entity, const Point& p) const = 0;

@@ -1,10 +1,10 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman 2006.
 //
 // First added:  2006-06-01
-// Last changed: 2008-11-13
+// Last changed: 2009-08-06
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -60,12 +60,12 @@ namespace dolfin
     { return _mesh.type().facet_area(*this, facet); }
 
     /// Order entities locally
-    inline void order()
-    { _mesh.type().order(*this); }
+    inline void order(MeshFunction<uint>* global_vertex_indices)
+    { _mesh.type().order(*this, global_vertex_indices); }
 
     /// Check if entities are ordered
-    inline bool ordered() const
-    { return _mesh.type().ordered(*this); }
+    inline bool ordered(MeshFunction<uint>* global_vertex_indices)
+    { return _mesh.type().ordered(*this, global_vertex_indices); }
 
     /// Check for intersection with point
     inline bool intersects(const Point& p) const

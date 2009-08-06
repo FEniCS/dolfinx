@@ -1,10 +1,10 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2008-11-18
+// Last changed: 2009-08-06
 
 #include <dolfin/log/dolfin_log.h>
 #include "PointCell.h"
@@ -87,8 +87,11 @@ std::string CellType::type2string(Type type)
   return "";
 }
 //-----------------------------------------------------------------------------
-bool CellType::ordered(const Cell& cell) const
+bool CellType::ordered(const Cell& cell,
+                       MeshFunction<uint>* global_vertex_indices) const
 {
+  // FIXME: Use global_vertex_indices here!
+
   // Get mesh topology
   const MeshTopology& topology = cell.mesh().topology();
   const uint dim = topology.dim();
