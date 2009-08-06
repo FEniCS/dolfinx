@@ -41,7 +41,7 @@ const std::map<std::string, NormType> PETScVector::norm_types
                               ("linf", NORM_INFINITY); 
 
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector():
+PETScVector::PETScVector(std::string type):
     Variable("x", "a sparse vector"),
     x(static_cast<Vec*>(0), PETScVectorDeleter())
 {
@@ -216,7 +216,7 @@ dolfin::uint PETScVector::size() const
   return static_cast<uint>(n);
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint> PETScVector::ownership_range() const
+std::pair<dolfin::uint, dolfin::uint> PETScVector::local_range() const
 { 
   std::pair<uint, uint> range;
   VecGetOwnershipRange(*x, (int*) &range.first, (int*) &range.second);

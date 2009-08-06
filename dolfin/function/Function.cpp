@@ -562,8 +562,8 @@ void Function::get(double* block, uint m, const uint* rows) const
     for (uint i = 0; i < m; ++i)
       block[i] = 0.0;
 
-    // Get ownership range
-    std::pair<uint, uint> range = _vector->ownership_range();
+    // Get local ownership range
+    std::pair<uint, uint> range = _vector->local_range();
 
     // Build lists of local and nonlocal coefficients
     uint n_local = 0;
