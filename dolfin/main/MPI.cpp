@@ -215,6 +215,12 @@ void dolfin::MPI::scatter(std::vector<std::vector<uint> >& values,
   */
 }
 //-----------------------------------------------------------------------------
+void dolfin::MPI::scatter(std::vector<std::vector<double> >& values,
+                          uint sending_process)
+{
+  // Not implemented, fix this
+}
+//-----------------------------------------------------------------------------
 void dolfin::MPI::gather(std::vector<uint>& values)
 {
   assert(values.size() == num_processes());
@@ -291,9 +297,13 @@ dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint de
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint N)
 {
+  return local_range(process_number(), N);
+}
+//-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint process, uint N)
+{
   // Get number of processes and process number
   const uint _num_processes = num_processes();
-  const uint _process_number = process_number();
 
   // Compute number of items per process and remainder
   const uint n = N / _num_processes;
@@ -301,14 +311,14 @@ std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint N)
 
   // Compute local range
   std::pair<uint, uint> range;
-  if (_process_number < r)
+  if (process < r)
   {
-    range.first = _process_number*(n + 1);
+    range.first = process*(n + 1);
     range.second = range.first + n + 1;
   }
   else
   {
-    range.first = _process_number*n + r;
+    range.first = process*n + r;
     range.second = range.first + n;
   }
 

@@ -72,6 +72,9 @@ namespace dolfin
     /// Scatter values (wrapper for MPI_Scatterv)
     static void scatter(std::vector<std::vector<uint> >& values, uint sending_process=0);
 
+    /// Scatter values (wrapper for MPI_Scatterv)
+    static void scatter(std::vector<std::vector<double> >& values, uint sending_process=0);
+
     /// Gather values, one from each process (wrapper for MPI_Allgather)
     static void gather(std::vector<uint>& values);
 
@@ -86,8 +89,11 @@ namespace dolfin
     static uint send_recv(double* send_buffer, uint send_size, uint dest,
                           double* recv_buffer, uint recv_size, uint source);
 
-    /// Return local range, splitting [0, N - 1] into num_processes() portions of almost equal size
+    /// Return local range for local process, splitting [0, N - 1] into num_processes() portions of almost equal size
     static std::pair<uint, uint> local_range(uint N);
+
+    /// Return local range for given process, splitting [0, N - 1] into num_processes() portions of almost equal size
+    static std::pair<uint, uint> local_range(uint process, uint N);
     
     /// Return which process owns index (inverse of local_range)
     static uint index_owner(uint index, uint N);
