@@ -193,6 +193,9 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
     // Copy dofs to vector
     coefficients.set(scratch.coefficients, _dofmap->local_dimension(ufc_cell), scratch.dofs);
   }
+
+  // Finalise changes
+  coefficients.apply();
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_vertex_values(double* vertex_values,
