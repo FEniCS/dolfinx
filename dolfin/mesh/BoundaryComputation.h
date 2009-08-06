@@ -1,8 +1,10 @@
 // Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Niclas Jansson 2009.
+//
 // First added:  2006-06-21
-// Last changed: 2008-05-28
+// Last changed: 2009-08-06
 
 #ifndef __BOUNDARY_COMPUTATION_H
 #define __BOUNDARY_COMPUTATION_H
@@ -24,11 +26,19 @@ namespace dolfin
   {
   public:
 
-    /// Compute the boundary of a given mesh
+    /// Compute the exterior boundary of a given mesh
     static void compute_boundary(const Mesh& mesh, BoundaryMesh& boundary);
+
+    /// Compute the interior boundary of a given mesh 
+    static void compute_interior_boundary(const Mesh& mesh, BoundaryMesh& boundary);
 
   private:
 
+    /// Compute the boundary of a given mesh
+    static void compute_boundary_common(const Mesh& mesh, 
+					BoundaryMesh& boundary,
+					bool interior_boundary);
+					
     /// Reorder vertices so facet is right-oriented w.r.t. facet normal
     static void reorder(std::vector<uint>& vertices, const Facet& facet);
 
