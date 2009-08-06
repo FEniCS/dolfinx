@@ -231,6 +231,8 @@ void dolfin::MPI::scatter(std::vector<std::vector<uint> >& values,
 void dolfin::MPI::scatter(std::vector<std::vector<double> >& values,
                           uint sending_process)
 {
+  info("scatter of vector of size %d in process %d",
+       values.size(), process_number());
 
   /// Create communicator (copy of MPI_COMM_WORLD)
   MPICommunicator comm;

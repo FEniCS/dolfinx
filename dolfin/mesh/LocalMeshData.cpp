@@ -27,9 +27,6 @@ LocalMeshData::LocalMeshData(const Mesh& mesh)
   : num_global_vertices(0), num_global_cells(0),
     gdim(0), tdim(0)
 {
-  error("This should not be called");
-  dolfin_debug("check");
-
   // Extract data on main process and split among processes
   if (MPI::is_broadcaster())
   {
@@ -102,17 +99,21 @@ void LocalMeshData::broadcast_mesh_data()
   // Get number of processes
   const uint num_processes = MPI::num_processes();
 
+  dolfin_debug("check");
   // Broadcast simple scalar data
   {
-    std::vector<uint> values;
-    values.clear();
-    values.push_back(gdim);
-    values.push_back(tdim);
-    values.push_back(num_global_vertices);
-    values.push_back(num_global_cells);
+    std::vector<std::vector<uint> > values(num_processes);
+    for (uint p = 0; p < num_processes; p++)
+    {
+      values[p].push_back(gdim);
+      values[p].push_back(tdim);
+      values[p].push_back(num_global_vertices);
+      values[p].push_back(num_global_cells);
+    }
     MPI::scatter(values);
   }
 
+  dolfin_debug("check");
   /// Broadcast coordinates for vertices
   {
     std::vector<std::vector<double> > values(num_processes);
@@ -129,6 +130,7 @@ void LocalMeshData::broadcast_mesh_data()
     unpack_vertex_coordinates(values[0]);
   }
 
+  dolfin_debug("check");
   /// Broadcast global vertex indices
   {
     std::vector<std::vector<uint> > values(num_processes);
@@ -142,6 +144,7 @@ void LocalMeshData::broadcast_mesh_data()
     unpack_vertex_indices(values[0]);
   }
 
+  dolfin_debug("check");
   /// Broadcast cell vertices
   {
     std::vector<std::vector<uint> > values(num_processes);
@@ -161,17 +164,19 @@ void LocalMeshData::broadcast_mesh_data()
 //-----------------------------------------------------------------------------
 void LocalMeshData::receive_mesh_data()
 {
+  dolfin_debug("check");
   // Receive simple scalar data
   {
-    std::vector<uint> values;
+    std::vector<std::vector<uint> > values;
     MPI::scatter(values);
-    assert(values.size() == 4);
-    gdim = values[0];
-    tdim = values[1];
-    num_global_vertices = values[2];
-    num_global_cells = values[3];
+    assert(values[0].size() == 4);
+    gdim = values[0][0];
+    tdim = values[0][1];
+    num_global_vertices = values[0][2];
+    num_global_cells = values[0][3];
   }
 
+  dolfin_debug("check");
   /// Receive coordinates for vertices
   {
     std::vector<std::vector<double> > values;
@@ -179,6 +184,7 @@ void LocalMeshData::receive_mesh_data()
     unpack_vertex_coordinates(values[0]);
   }
 
+  dolfin_debug("check");
   /// Receive global vertex indices
   {
     std::vector<std::vector<uint> > values;
@@ -186,6 +192,7 @@ void LocalMeshData::receive_mesh_data()
     unpack_vertex_indices(values[0]);
   }
 
+  dolfin_debug("check");
   /// Receive coordinates for vertices
   {
     std::vector<std::vector<uint> > values;
