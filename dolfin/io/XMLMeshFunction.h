@@ -13,6 +13,8 @@
 namespace dolfin
 {
 
+  class XMLSkipper;
+
   class XMLMeshFunction : public XMLHandler
   {
   public:
@@ -25,6 +27,9 @@ namespace dolfin
 
     XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser);
     XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser, uint size, uint dim);
+
+    /// Destructor
+    ~XMLMeshFunction();
 
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
@@ -45,6 +50,8 @@ namespace dolfin
     MeshFunction<int>*  imf;
     MeshFunction<uint>* umf;
     MeshFunction<double>* dmf;
+    XMLSkipper* xml_skipper;
+
     parser_state state;
     mesh_function_type mf_type;
 
