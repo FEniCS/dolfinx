@@ -158,7 +158,8 @@ double IntervalCell::facet_area(const Cell& cell, uint facet) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::order(Cell& cell) const
+void IntervalCell::order(Cell& cell,
+                         MeshFunction<uint>* global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0
 

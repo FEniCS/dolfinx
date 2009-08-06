@@ -352,7 +352,8 @@ double TetrahedronCell::facet_area(const Cell& cell, uint facet) const
   return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
 }
 //-----------------------------------------------------------------------------
-void TetrahedronCell::order(Cell& cell) const
+void TetrahedronCell::order(Cell& cell,
+                            MeshFunction<uint>* global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
 
