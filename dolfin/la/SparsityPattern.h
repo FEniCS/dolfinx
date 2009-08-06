@@ -43,19 +43,18 @@ namespace dolfin
     /// Return global size for dimension i
     uint size(uint i) const;
 
-    /// Return local range for rows
-    std::pair<uint, uint> row_range() const;
+    /// Return local range for dimension dim
+    virtual std::pair<uint, uint> local_range(uint dim) const ;
 
-    /// Return local range for columns
-    std::pair<uint, uint> col_range() const;
-
-    /// Return total number of nonzeros in local rows
+    /// Return total number of nonzeros in local_range for dimension 0
     uint num_nonzeros() const;
 
-    /// Fill array with number of nonzeros per local row for diagonal block
+    /// Fill array with number of nonzeros for diagonal block in local_range for dimension 0 
+    /// For matrices, fill array with number of nonzeros per local row for diagonal block
     void num_nonzeros_diagonal(uint* num_nonzeros) const;
 
-    /// Fill array with number of nonzeros per local row for off-diagonal block
+    /// Fill array with number of nonzeros for off-diagonal block in local_range for dimension 0 
+    /// For matrices, fill array with number of nonzeros per local row for off-diagonal block
     void num_nonzeros_off_diagonal(uint* num_nonzeros) const;
 
     /// Finalize sparsity pattern
