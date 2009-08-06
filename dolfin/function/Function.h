@@ -137,9 +137,8 @@ namespace dolfin
     /// Interpolate function to vertices of mesh
     void interpolate_vertex_values(double* vertex_values) const;
 
-    void compute_off_process_dofs() const; 
-
-    void update(); 
+    /// Collect off-process coefficients to prepare for interpolation
+    void gather() const; 
 
     /// Friends
     friend class Coefficient;
@@ -151,6 +150,8 @@ namespace dolfin
     boost::shared_ptr<const FunctionSpace> _function_space;
 
   private:
+
+    void compute_off_process_dofs() const; 
 
     // Initialize vector
     void init();
@@ -209,7 +210,7 @@ namespace dolfin
       uint* local_index;
       uint* nonlocal_index;
     };
-    Scratch scratch;
+    mutable Scratch scratch;
   };
 
 }

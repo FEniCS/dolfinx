@@ -98,6 +98,11 @@ void Assembler::assemble(GenericTensor& A,
   // Create data structure for local assembly data
   UFC ufc(a);
 
+  // Gather off-process coefficients
+  const std::vector<const Function*> coefficients = a.coefficients();
+  for (uint i = 0; i < coefficients.size(); ++i)
+    coefficients[i]->gather();
+
   // Initialize global tensor
   init_global_tensor(A, a, ufc, reset_tensor);
 
@@ -193,7 +198,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     return;
   Timer timer("Assemble exterior facets");
 
-  // Extract mesh and coefficients
+  // Extract mesh
   const Mesh& mesh = a.mesh();
 
   // Exterior facet integral
@@ -262,7 +267,6 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
-  const std::vector<const Function*> coefficients = a.coefficients();
 
   // Interior facet integral
   ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0];

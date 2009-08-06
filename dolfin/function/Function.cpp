@@ -444,7 +444,7 @@ void Function::get(double* block, uint m, const uint* rows) const
   else
   {
     if (!_off_process_vector.get())
-      error("Function has not been prepared with off-process data. Did you forget to call Function::update()?");
+      error("Function has not been prepared with off-process data. Did you forget to call Function::gather()?");
 
     // FIXME: Perform some more sanity checks
 
@@ -482,10 +482,10 @@ void Function::get(double* block, uint m, const uint* rows) const
   }
 }
 //-----------------------------------------------------------------------------
-void Function::update()
+void Function::gather() const
 {
-  // Gather off-process coefficients if running in parallel
-  if (MPI::num_processes() > 1 || has_vector())
+  // Gather off-process coefficients if running in parallel and function has a vector
+  if (MPI::num_processes() > 1 && has_vector())
   {
     assert(_function_space);
 

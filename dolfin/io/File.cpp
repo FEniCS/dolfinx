@@ -14,6 +14,7 @@
 #include <boost/filesystem.hpp>
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/function/Function.h>
 #include "File.h"
 #include "XMLFile.h"
 #include "MatlabFile.h"
@@ -92,4 +93,10 @@ File::~File()
   file = 0;
 }
 //-----------------------------------------------------------------------------
-
+void File::operator<<(const Function& u)
+{
+  u.gather();
+  file->write();
+  *file << u;
+}
+//-----------------------------------------------------------------------------

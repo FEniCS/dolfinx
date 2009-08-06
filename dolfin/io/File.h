@@ -52,6 +52,9 @@ namespace dolfin
       *file >> t;
     }
 
+    /// Write Function to file
+    void operator<<(const Function& u);
+
     /// Write to file
     template<class T> void operator<<(const T& t)
     {
