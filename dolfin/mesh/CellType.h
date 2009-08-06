@@ -125,23 +125,15 @@ namespace dolfin
 
   private:
 
-    /*
     // Check if list of vertices is increasing
     static bool increasing(uint num_vertices, const uint* vertices,
                            const MeshFunction<uint>* global_vertex_indices);
 
-    // Check if <entity e0 with vertices v0> <= <entity e1 with vertices v1>
+    // Check that <entity e0 with vertices v0> <= <entity e1 with vertices v1>
     static bool increasing(uint n0, const uint* v0,
                            uint n1, const uint* v1,
                            uint num_vertices, const uint* vertices,
                            const MeshFunction<uint>* global_vertex_indices);
-    */
-
-    // Check that <entity e0 with vertices v0> <= <entity e1 with vertices v1>
-    static bool increasing(uint n0, const uint* v0,
-                           uint n1, const uint* v1,
-                           uint num_vertices, const uint* vertices);
-
    
   };
 

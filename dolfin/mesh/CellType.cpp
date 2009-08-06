@@ -105,13 +105,9 @@ std::string CellType::type2string(Type type)
   return "";
 }
 //-----------------------------------------------------------------------------
-
-/*
 bool CellType::ordered(const Cell& cell,
-                       const MeshFunction<uint>* global_vertex_indices) const
+                       MeshFunction<uint>* global_vertex_indices) const
 {
-  // FIXME: Use global_vertex_indices here!
-
   // Get mesh topology
   const MeshTopology& topology = cell.mesh().topology();
   const uint dim = topology.dim();
@@ -122,8 +118,9 @@ bool CellType::ordered(const Cell& cell,
   const uint* vertices = topology(dim, 0)(c);
   assert(vertices);
 
-  // Check if vertices are in ascending order
-  return !increasing(num_vertices, vertices, global_vertex_indices);
+  // Check that vertices are in ascending order
+  if (!increasing(num_vertices, vertices, global_vertex_indices))
+    return false;
 
   // Note the comparison below: d + 1 < dim, not d < dim - 1
   // Otherwise, d < dim - 1 will evaluate to true for dim = 0 with uint
@@ -160,9 +157,6 @@ bool CellType::ordered(const Cell& cell,
 
   return true;
 }
-*/
-
-
 //-----------------------------------------------------------------------------
 void CellType::sort_entities(uint num_vertices,
                              uint* vertices,
@@ -184,15 +178,13 @@ void CellType::sort_entities(uint num_vertices,
   }
 }
 //-----------------------------------------------------------------------------
-
-/*
 bool CellType::increasing(uint num_vertices, const uint* vertices,
                           const MeshFunction<uint>* global_vertex_indices)
 {
   // Two cases here, either check vertices directly (when running in serial)
   // or check based on the global indices (when running in parallel)
 
-  if (global_vertex_indices == 0 || true)
+  if (global_vertex_indices == 0)
   {
     for (uint v = 1; v < num_vertices; v++)
       if (vertices[v - 1] >= vertices[v])
@@ -213,85 +205,6 @@ bool CellType::increasing(uint n0, const uint* v0,
                           uint n1, const uint* v1,
                           uint num_vertices, const uint* vertices,
                           const MeshFunction<uint>* global_vertex_indices)
-{
-  // Two cases here, either check vertices directly (when running in serial)
-  // or check based on the global indices (when running in parallel)
-
-  assert(n0 == n1);
-  assert(num_vertices > n0);
-  const uint num_non_incident = num_vertices - n0;
-
-  // Compute non-incident vertices for first entity
-  std::vector<uint> w0(num_non_incident);
-  uint k = 0;
-  for (uint i = 0; i < num_vertices; i++)
-  {
-    const uint v = vertices[i];
-    bool incident = false;
-    for (uint j = 0; j < n0; j++)
-    {
-      if (v0[j] == v)
-      {
-        incident = true;
-        break;
-      }
-    }
-    if (!incident)
-      w0[k++] = v;
-  }
-  assert(k == num_non_incident);
-
-  // Compute non-incident vertices for second entity
-  std::vector<uint> w1(num_non_incident);
-  k = 0;
-  for (uint i = 0; i < num_vertices; i++)
-  {
-    const uint v = vertices[i];
-    bool incident = false;
-    for (uint j = 0; j < n1; j++)
-    {
-      if (v1[j] == v)
-      {
-        incident = true;
-        break;
-      }
-    }
-    if (!incident)
-      w1[k++] = v;
-  }
-  assert(k == num_non_incident);
-
-  // Compare lexicographic ordering of w0 and w1
-  for (uint k = 0; k < num_non_incident; k++)
-  {
-    if (global_vertex_indices == 0 || true)
-    {
-      if (w0[k] < w1[k])
-        return true;
-      else if (w0[k] > w1[k])
-        return false;
-    }
-    else
-    {
-      if (global_vertex_indices->get(w0[k]) <
-          global_vertex_indices->get(w1[k]))
-        return true;
-      else if (global_vertex_indices->get(w0[k]) >
-               global_vertex_indices->get(w1[k]))
-        return false;
-    }
-  }
-
-  return true;
-}
-//-----------------------------------------------------------------------------
-
-*/
-
-
-bool CellType::increasing(uint n0, const uint* v0,
-                          uint n1, const uint* v1,
-                          uint num_vertices, const uint* vertices)
 {
   assert(n0 == n1);
   assert(num_vertices > n0);
@@ -341,68 +254,22 @@ bool CellType::increasing(uint n0, const uint* v0,
   // Compare lexicographic ordering of w0 and w1
   for (uint k = 0; k < num_non_incident; k++)
   {
-    if (w0[k] < w1[k])
-      return true;
-    else if (w0[k] > w1[k])
-      return false;
-  }
-
-  return true;
-}
-
-
-bool CellType::ordered(const Cell& cell,
-                       MeshFunction<uint>* global_vertex_indices) const
-{
-  // FIXME: Use global_vertex_indices here!
-
-  // Get mesh topology
-  const MeshTopology& topology = cell.mesh().topology();
-  const uint dim = topology.dim();
-  const uint c = cell.index();
-
-  // Get vertices
-  const uint num_vertices = topology(dim, 0).size(c);
-  const uint* vertices = topology(dim, 0)(c);
-  assert(vertices);
-
-  // Check that vertices are in ascending order
-  for (uint v = 1; v < num_vertices; v++)
-    if (vertices[v - 1] >= vertices[v])
-      return false;
-
-  // Note the comparison below: d + 1 < dim, not d < dim - 1
-  // Otherwise, d < dim - 1 will evaluate to true for dim = 0 with uint
-
-  // Check numbering of entities of positive dimension and codimension
-  for (uint d = 1; d + 1 < dim; d++)
-  {
-    // Check if entities exist, otherwise skip
-    const MeshConnectivity& connectivity = topology(d, 0);
-    if (connectivity.size() == 0) continue;
-
-    // Get entities
-    const uint num_entities = topology(dim, d).size(c);
-    const uint* entities = topology(dim, d)(c);
-
-    // Iterate over entities
-    for (uint e = 1; e < num_entities; e++)
+    if (global_vertex_indices == 0)
     {
-      // Get vertices for first entity
-      const uint  e0 = entities[e - 1];
-      const uint  n0 = connectivity.size(e0);
-      const uint* v0 = connectivity(e0);
-
-      // Get vertices for second entity
-      const uint  e1 = entities[e];
-      const uint  n1 = connectivity.size(e1);
-      const uint* v1 = connectivity(e1);
-
-      // Check ordering of entities
-      if (!increasing(n0, v0, n1, v1, num_vertices, vertices))
+      if (w0[k] < w1[k])
+        return true;
+      else if (w0[k] > w1[k])
+        return false;
+    }
+    else
+    {
+      if (global_vertex_indices->get(w0[k]) < global_vertex_indices->get(w1[k]))
+        return true;
+      else if (global_vertex_indices->get(w0[k]) > global_vertex_indices->get(w1[k]))
         return false;
     }
   }
 
   return true;
 }
+//-----------------------------------------------------------------------------
