@@ -72,12 +72,6 @@ namespace dolfin
     /// Global number of cells
     uint num_global_cells;
 
-    /// Number of processes
-    uint num_processes;
-
-    /// Local processes number
-    uint process_number;
-
     /// Geometrical dimension
     uint gdim;
 

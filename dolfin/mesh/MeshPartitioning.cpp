@@ -659,6 +659,9 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   // That information is then distributed so that each process learns where
   // it needs to send its vertices.
 
+  // Get number of processes
+  const uint num_processes = MPI::num_processes();
+
   // Compute which vertices we need
   std::set<uint> needed_vertex_indices;
   std::vector<std::vector<uint> >& cell_vertices = mesh_data.cell_vertices;
@@ -668,7 +671,7 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
 
   // Compute where (process number) the vertices we need are located
   std::vector<uint> vertex_partition;
-  std::vector<std::vector<uint> > vertex_location(mesh_data.num_processes);
+  std::vector<std::vector<uint> > vertex_location(num_processes);
   std::vector<uint> vertex_indices;
   std::set<uint>::const_iterator it;
   for (it = needed_vertex_indices.begin(); it != needed_vertex_indices.end(); ++it)
@@ -702,7 +705,7 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   MPI::distribute(vertex_coordinates, vertex_coordinates_partition);
 
   // Set index counters to first position in recieve buffers
-  std::vector<uint> index_counters(mesh_data.num_processes);
+  std::vector<uint> index_counters(num_processes);
   std::fill(index_counters.begin(), index_counters.end(), 0);
 
   // Store coordinates and construct global to local mapping

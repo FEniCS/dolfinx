@@ -18,9 +18,7 @@ using namespace dolfin;
 XMLLocalMeshData::XMLLocalMeshData(LocalMeshData& mesh_data, XMLFile& parser)
   : XMLHandler(parser), mesh_data(mesh_data), state(OUTSIDE)
 {
-  // Get number of processes and process number
-  mesh_data.num_processes = MPI::num_processes();
-  mesh_data.process_number = MPI::process_number();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLLocalMeshData::~XMLLocalMeshData()
