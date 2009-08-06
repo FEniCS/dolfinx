@@ -16,6 +16,7 @@
 namespace dolfin
 {
 
+  class Mesh;
   class XMLLocalMeshData;
 
   /// This class stores mesh data on a local processor corresponding
@@ -39,8 +40,11 @@ namespace dolfin
   {
   public:
 
-    /// Constructor
+    /// Create empty local mesh data
     LocalMeshData();
+
+    /// Create local mesh data for given mesh
+    LocalMeshData(const Mesh& mesh);
 
     /// Destructor
     ~LocalMeshData();
@@ -53,29 +57,11 @@ namespace dolfin
     /// Clear all data
     void clear();
 
-    /// Compute process number for vertex
-    uint initial_vertex_location(uint vertex_index) const;
-
-    /// Compute process number for vertex
-    uint initial_cell_location(uint cell_index) const;
-
-    /// Compute local number for given global vertex number
-    uint local_vertex_number(uint global_vertex_number) const;
-
-    /// Compute vertex range for local process
-    void initial_vertex_range(uint& start, uint& stop) const;
-
-    /// Compute with simple formula process number for vertex
-    void initial_cell_range(uint& start, uint& stop) const;
-
     /// Coordinates for all vertices stored on local processor
     std::vector<std::vector<double> > vertex_coordinates;
 
     /// Global vertex indices for all vertices stored on local processor
     std::vector<uint> vertex_indices;
-
-    /// Global to local mapping for all vertices stored on local processor
-    std::map<uint, uint> glob2loc;
 
     /// Global vertex indices for all cells stored on local processor
     std::vector<std::vector<uint> > cell_vertices;

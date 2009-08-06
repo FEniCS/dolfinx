@@ -56,6 +56,20 @@ template<typename Map> void print_vec_map(std::string msg, Map map, const char* 
 }
 
 //-----------------------------------------------------------------------------
+void MeshPartitioning::partition(Mesh& mesh)
+{
+  // Create local mesh data on one process
+  dolfin_debug("creating local mesh data");
+  LocalMeshData mesh_data(mesh);
+  dolfin_debug("created local mesh data");
+
+  // Partition local mesh data among processes (linear split)
+  
+
+  // Partition mesh based on local mesh data
+  //partition(mesh, mesh_data);
+}
+//-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 {
   // Compute cell partition
@@ -659,7 +673,7 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   std::set<uint>::const_iterator it;
   for (it = needed_vertex_indices.begin(); it != needed_vertex_indices.end(); ++it)
   {
-    const uint location = mesh_data.initial_vertex_location(*it);
+    const uint location = MPI::index_owner(*it, mesh_data.num_global_vertices);
     vertex_partition.push_back(location);
     vertex_indices.push_back(*it);
     vertex_location[location].push_back(*it);
@@ -672,9 +686,12 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   std::vector<double> vertex_coordinates;
   std::vector<uint> vertex_coordinates_partition;
   const uint vertex_size =  mesh_data.vertex_coordinates[0].size();
+  std::pair<uint, uint> local_vertex_range = MPI::local_range(mesh_data.num_global_vertices);
   for (uint i = 0; i < vertex_partition.size(); ++i)
   {
-    const std::vector<double>& x = mesh_data.vertex_coordinates[mesh_data.local_vertex_number(vertex_indices[i])];
+    assert(vertex_indices[i] >= local_vertex_range.first && vertex_indices[i] < local_vertex_range.second);
+    const uint location = vertex_indices[i] - local_vertex_range.first;
+    const std::vector<double>& x = mesh_data.vertex_coordinates[location];
     assert(x.size() == vertex_size);
     for (uint j = 0; j < vertex_size; ++j)
     {
@@ -710,6 +727,10 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
                                   std::map<uint, uint>& glob2loc)
 {
   Timer timer("PARALLEL 3: Build mesh (from local mesh data)");
+
+  // Get number of processes and process number
+  const uint num_processes = MPI::num_processes();
+  const uint process_number = MPI::process_number();
 
   // Open mesh for editing
   MeshEditor editor;
@@ -755,8 +776,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   /// Communicate global number of boundary vertices to all processes
 
-  // Construct boundary mesh 
-
+  // Construct boundary mesh
   BoundaryMesh bmesh(mesh);
   MeshFunction<uint>* boundary_vertex_map = bmesh.data().mesh_function("vertex map");
   assert(boundary_vertex_map);
@@ -767,10 +787,6 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   for (uint i = 0; i < boundary_size; ++i)
     global_vertex_send[i] = global_vertex_indices->get(boundary_vertex_map->get(i));
   std::sort(global_vertex_send, global_vertex_send + boundary_size);
-
-  // Get number of processes and process number
-  const uint num_processes = MPI::num_processes();
-  const uint process_number = MPI::process_number();
 
   // Distribute boundaries' sizes
   std::vector<uint> boundary_sizes(num_processes);

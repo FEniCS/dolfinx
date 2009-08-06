@@ -7,11 +7,11 @@
 // First added:  2005-12-02
 // Last changed: 2008-11-13
 
-#include "MeshEditor.h"
-#include "Box.h"
 #include <dolfin/common/constants.h>
 #include <dolfin/main/MPI.h>
-#include "MPIMeshCommunicator.h"
+#include "MeshPartitioning.h"
+#include "MeshEditor.h"
+#include "Box.h"
 
 using namespace dolfin;
 
@@ -21,7 +21,7 @@ Box::Box(double x0, double y0, double z0,
          uint nx, uint ny, uint nz) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
+  if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
 
   const double a = x0;
   const double b = x1;
@@ -91,6 +91,6 @@ Box::Box(double x0, double y0, double z0,
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
+  if (MPI::is_broadcaster()) { MeshPartitioning::partition(*this); return; }
 }
 //-----------------------------------------------------------------------------

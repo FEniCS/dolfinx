@@ -66,12 +66,12 @@ int main()
   Function u;
   problem.solve(u);
 
-  // Plot solution
-  plot(u);
-
   // Save solution in VTK format
   File file("poisson.pvd");
   file << u;
+
+  // Plot solution
+  plot(u);
 
   return 0;
 }

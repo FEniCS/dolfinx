@@ -47,13 +47,13 @@ dolfin::uint dolfin::MPI::num_processes()
   return static_cast<uint>(COMM_WORLD.Get_size());
 }
 //-----------------------------------------------------------------------------
-bool dolfin::MPI::broadcast()
+bool dolfin::MPI::is_broadcaster()
 {
   // Always broadcast from processor number 0
   return num_processes() > 1 && process_number() == 0;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::MPI::receive()
+bool dolfin::MPI::is_receiver()
 {
   // Always receive on processors with numbers > 0
   return num_processes() > 1 && process_number() > 0;
