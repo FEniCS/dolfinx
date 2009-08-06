@@ -59,8 +59,11 @@ namespace dolfin
     // Topological mesh dimesion
     uint tdim;
 
-    uint vertex_index_start, vertex_index_stop;
-    uint cell_index_start, cell_index_stop;
+    // Range for vertices
+    std::pair<uint, uint> vertex_range;
+
+    // Range for cells
+    std::pair<uint, uint> cell_range;
 
     // Result object to build
     LocalMeshData& mesh_data;

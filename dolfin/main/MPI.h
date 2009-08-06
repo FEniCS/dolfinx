@@ -50,12 +50,12 @@ namespace dolfin
 
     /// Return number of processes
     static uint num_processes();
-
+    
     /// Determine whether we should broadcast (based on current parallel policy)
-    static bool broadcast();
+    static bool is_broadcaster();
 
     /// Determine whether we should receive (based on current parallel policy)
-    static bool receive();
+    static bool is_receiver();
 
     // FIXME: Write documentation for this very fancy and versatile function!
     // FIXME: The mother of all MPI calls! It does everything anyone would ever need to do with MPI... :-)

@@ -22,8 +22,6 @@
 #include "SubFunction.h"
 #include "Function.h"
 
-#include <dolfin/la/PETScVector.h>
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -319,18 +317,7 @@ void Function::interpolate(double* coefficients,
     // Pick values from vector(s)
     get(coefficients, dofmap.local_dimension(ufc_cell), dofs);
  
-    /*
-    if (MPI::num_processes() == 1)
-    {
-      // Pick values from global vector
-      _vector->get(coefficients, dofmap.local_dimension(ufc_cell), dofs);
-    }
-    else
-    {
-      for (uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
-        coefficients[i] = dof_values[dofs[i]];
-    }
-    */
+    // Clean up
     delete [] dofs;
   }
   else
@@ -459,16 +446,7 @@ void Function::get(double* block, uint m, const uint* rows) const
     if (!_off_process_vector.get())
       error("Function has not been prepared with off-process data. Did you forget to call Function::update()?");
 
-    // FIXME: Allocate scratch data elsewhere to allow re-use.
-    uint* local_rows       = scratch.local_rows;
-    uint* nonlocal_rows    = scratch.nonlocal_rows;
-    double* local_block    = scratch.local_block;
-    double* nonlocal_block = scratch.nonlocal_block;
-    uint* local_index      = scratch.local_index;
-    uint* nonlocal_index   = scratch.nonlocal_index;
-
-    for (uint i = 0; i < m; ++i)
-      block[i] = 0.0;
+    // FIXME: Perform some more sanity checks
 
     // Get local ownership range
     std::pair<uint, uint> range = _vector->local_range();
@@ -480,27 +458,27 @@ void Function::get(double* block, uint m, const uint* rows) const
     {
       if (rows[i] >= range.first && rows[i] < range.second)
       {
-        local_index[n_local]  = i;
-        local_rows[n_local++] = rows[i];
+        scratch.local_index[n_local]  = i;
+        scratch.local_rows[n_local++] = rows[i];
      }
       else 
       {
-        nonlocal_index[n_nonlocal]  = i;
-        nonlocal_rows[n_nonlocal++] = global_to_local[rows[i]];
+        scratch.nonlocal_index[n_nonlocal]  = i;
+        scratch.nonlocal_rows[n_nonlocal++] = global_to_local[rows[i]];
       }
     }
 
     // Get local coefficients
-    _vector->get(local_block, n_local, local_rows);
+    _vector->get(scratch.local_block, n_local, scratch.local_rows);
 
     // Get off process coefficients
-    _off_process_vector->get(nonlocal_block, n_nonlocal, nonlocal_rows);
+    _off_process_vector->get(scratch.nonlocal_block, n_nonlocal, scratch.nonlocal_rows);
 
     // Copy result into block
     for (uint i = 0; i < n_local; ++i)
-      block[local_index[i]] = local_block[i];      
+      block[scratch.local_index[i]] = scratch.local_block[i];      
     for (uint i = 0; i < n_nonlocal; ++i)
-      block[nonlocal_index[i]] = nonlocal_block[i];      
+      block[scratch.nonlocal_index[i]] = scratch.nonlocal_block[i];      
   }
 }
 //-----------------------------------------------------------------------------
@@ -517,10 +495,6 @@ void Function::update()
     // Compute lists of off-process dofs
     compute_off_process_dofs();
 
-    // FIXME: Add gather to GenericVector
-    // Gather off-process dofs
-
-
     // Create off process vector if it doesn't exist
     if (!_off_process_vector.get())
     {
@@ -530,13 +504,6 @@ void Function::update()
 
     // Gather off process coefficients
     _vector->gather(*_off_process_vector, _off_process_dofs);
-    //#ifdef HAS_PETSC
-    //const PETScVector& vec = _vector->down_cast<PETScVector>();
-    //_off_process_vector = vec.gather(_off_process_dofs);
-    //#else
-    //error("PETSc required for parallel assembly while under development.");
-    //#endif
-
   }
 }
 //-----------------------------------------------------------------------------

@@ -7,11 +7,11 @@
 // First added:  2005-12-02
 // Last changed: 2009-02-11
 
-#include "MeshEditor.h"
-#include "Rectangle.h"
 #include <dolfin/common/constants.h>
 #include <dolfin/main/MPI.h>
-#include "MPIMeshCommunicator.h"
+#include "MeshPartitioning.h"
+#include "MeshEditor.h"
+#include "Rectangle.h"
 
 using namespace dolfin;
 
@@ -19,19 +19,17 @@ using namespace dolfin;
 Rectangle::Rectangle(double x0, double y0, double x1, double y1,
                      uint nx, uint ny, std::string diagonal) : Mesh()
 {
+  // Receive mesh according to parallel policy
+  if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; } 
+
+  // Check options
   if(diagonal != "left" && diagonal != "right" && diagonal != "crossed")
     error("Unknown mesh diagonal in Rectangle. Allowed options are \"left\", \"right\" and \"crossed\".");
-
-  // Receive mesh according to parallel policy
-  if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
 
   const double a = x0;
   const double b = x1;
   const double c = y0;
   const double d = y1;
-
-  // Receive mesh according to parallel policy
-  if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
 
   if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS)
     error("Rectangle must have nonzero width and height.");
@@ -135,6 +133,6 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
+  if (MPI::is_broadcaster()) { MeshPartitioning::partition(*this); return; }
 }
 //-----------------------------------------------------------------------------

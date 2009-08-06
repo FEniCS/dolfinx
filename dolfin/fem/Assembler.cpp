@@ -407,7 +407,9 @@ void Assembler::init_global_tensor(GenericTensor& A,
       std::vector<const DofMap*> dof_maps(0);
       for (uint i = 0; i < a.rank(); ++i)
         dof_maps.push_back(&(a.function_space(i).dofmap()));
-      SparsityPatternBuilder::build(*sparsity_pattern, a, ufc);
+      SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dof_maps,
+                                    a.ufc_form().num_cell_integrals(), 
+                                    a.ufc_form().num_interior_facet_integrals());
     }
     t0.stop();
 
