@@ -4,6 +4,8 @@
 // First added:  2007-11-23
 // Last changed: 2008-11-13
 
+#include <dolfin/main/MPI.h>
+#include "MeshPartitioning.h"
 #include "MeshEditor.h"
 #include "UnitInterval.h"
 
@@ -12,6 +14,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UnitInterval::UnitInterval(uint nx) : Mesh()
 {
+  // Receive mesh according to parallel policy
+  if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
+
   if ( nx < 1 )
     error("Size of unit interval must be at least 1.");
 
@@ -41,5 +46,8 @@ UnitInterval::UnitInterval(uint nx) : Mesh()
 
   // Close mesh editor
   editor.close();
+
+  // Broadcast mesh according to parallel policy
+  if (MPI::is_broadcaster()) { MeshPartitioning::partition(*this); return; }
 }
 //-----------------------------------------------------------------------------

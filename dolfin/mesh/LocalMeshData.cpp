@@ -2,11 +2,15 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
-// Last changed: 2008-12-17
+// Last changed: 2009-08-06
 //
-// Modified by Anders Logg, 2008.
+// Modified by Anders Logg, 2008-2009.
 
 #include <dolfin/log/log.h>
+#include <dolfin/main/MPI.h>
+#include "Mesh.h"
+#include "Vertex.h"
+#include "Cell.h"
 #include "LocalMeshData.h"
 
 using namespace dolfin;
@@ -20,6 +24,52 @@ LocalMeshData::LocalMeshData()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+LocalMeshData::LocalMeshData(const Mesh& mesh)
+  : num_global_vertices(0), num_global_cells(0),
+    num_processes(0), process_number(0),
+    gdim(0), tdim(0), cell_type(0)
+{
+  dolfin_debug("check");
+
+  // Set scalar data
+  gdim = mesh.geometry().dim();
+  tdim = mesh.topology().dim();
+  num_global_vertices = mesh.num_vertices();
+  num_global_cells = mesh.num_cells();
+  num_processes = MPI::num_processes();
+  process_number = MPI::process_number();
+  cell_type = CellType::create(mesh.type().cell_type()); // ugly!
+
+  /// Get coordinates for all vertices stored on local processor
+  vertex_coordinates.reserve(mesh.num_vertices());
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+  {
+    std::vector<double> coordinates(gdim);
+    for (uint i = 0; i < gdim; ++i)
+      coordinates[i] = vertex->x()[i];
+    vertex_coordinates.push_back(coordinates);
+  }
+  
+  /// Get global vertex indices for all vertices stored on local processor
+  vertex_indices.reserve(mesh.num_vertices());
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+    vertex_indices.push_back(vertex->index());
+  
+  /// Get global vertex indices for all cells stored on local processor
+  cell_vertices.reserve(mesh.num_cells());
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    std::vector<uint> vertices(cell->num_entities(0));
+    for (uint i = 0; i < cell->num_entities(0); ++i)
+    {
+      vertices[i] = cell->entities(0)[i];
+    }
+    cell_vertices.push_back(vertices);
+  }
+
+  dolfin_debug("check");
+}
+//-----------------------------------------------------------------------------
 LocalMeshData::~LocalMeshData()
 {
   delete cell_type;
@@ -30,69 +80,5 @@ void LocalMeshData::clear()
   vertex_coordinates.clear();
   vertex_indices.clear();
   cell_vertices.clear();
-}
-//-----------------------------------------------------------------------------
-dolfin::uint LocalMeshData::initial_vertex_location(uint vertex_index) const
-{
-  const uint num_vertices_per_process = num_global_vertices / num_processes;
-  const uint remainder = num_global_vertices % num_processes;
-  const uint breakpoint = remainder*(num_vertices_per_process + 1);
-  if (vertex_index  < breakpoint)
-    return vertex_index / (num_vertices_per_process + 1);
-  return (vertex_index - breakpoint) / num_vertices_per_process + remainder;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint LocalMeshData::initial_cell_location(uint cell_index) const
-{
-  const uint num_cells_per_process = num_global_cells / num_processes;
-  const uint remainder = num_global_cells % num_processes;
-  if (cell_index < remainder)
-    return cell_index / (num_cells_per_process + 1);
-  return cell_index / num_cells_per_process;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint LocalMeshData::local_vertex_number(uint global_vertex_number) const
-{
-  uint start;
-  uint stop;
-  initial_vertex_range(start, stop);
-  assert(global_vertex_number >= start);
-  assert(global_vertex_number <= stop);
-  return global_vertex_number - start;
-}
-//-----------------------------------------------------------------------------
-void LocalMeshData::initial_vertex_range(uint& start, uint& stop) const
-{
-  // Compute number of vertices per process and remainder
-  const uint n = num_global_vertices / num_processes;
-  const uint r = num_global_vertices % num_processes;
-
-  if (process_number < r)
-  {
-    start = process_number*(n + 1);
-    stop = start + n;
-  }
-  else
-  {
-    start = process_number*n + r;
-    stop = start + n - 1;
-  }
-}
-//-----------------------------------------------------------------------------
-void LocalMeshData::initial_cell_range(uint& start, uint& stop) const
-{
-  // Compute number of cells per process and remainder
-  const uint n = num_global_cells / num_processes;
-  const uint r = num_global_cells % num_processes;
-  if (process_number < r)
-  {
-    start = process_number*(n + 1);
-    stop = start + n;
-  }
-  else
-  {
-    start = process_number*n + r;
-    stop = start + n - 1;
-  }
 }
 //-----------------------------------------------------------------------------

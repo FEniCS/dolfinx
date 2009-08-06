@@ -7,11 +7,11 @@
 // First added:  2005-12-02
 // Last changed: 2008-11-13
 
-#include "MeshEditor.h"
-#include "UnitCircle.h"
 #include <dolfin/common/constants.h>
 #include <dolfin/main/MPI.h>
-#include "MPIMeshCommunicator.h"
+#include "MeshPartitioning.h"
+#include "MeshEditor.h"
+#include "UnitCircle.h"
 
 using namespace dolfin;
 
@@ -20,7 +20,7 @@ UnitCircle::UnitCircle(uint nx, std::string diagonal,
                        std::string transformation) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
+  if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
 
   if(diagonal != "left" && diagonal != "right" && diagonal != "crossed")
     error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\" and \"crossed\".");
@@ -31,7 +31,7 @@ UnitCircle::UnitCircle(uint nx, std::string diagonal,
 
   warning("UnitCircle is experimental. It may be of poor quality.");
 
-  uint ny=nx;
+  uint ny = nx;
 
   if ( nx < 1 || ny < 1 )
     error("Size of unit square must be at least 1 in each dimension.");
@@ -136,7 +136,7 @@ UnitCircle::UnitCircle(uint nx, std::string diagonal,
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
+  if (MPI::is_broadcaster()) { MeshPartitioning::partition(*this); return; }
 }
 //-----------------------------------------------------------------------------
 void UnitCircle::transform(double* trans, double x, double y, std::string transformation)
