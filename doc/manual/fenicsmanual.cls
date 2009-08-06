@@ -23,7 +23,6 @@
 \RequirePackage{stmaryrd}
 \RequirePackage{makeidx}
 \RequirePackage{url}
-\RequirePackage{here}
 \RequirePackage[latin1]{inputenc}
 \RequirePackage[colorlinks]{hyperref}
 \RequirePackage[small]{caption}

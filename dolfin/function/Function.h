@@ -25,9 +25,6 @@ namespace ufc
 namespace dolfin
 {
 
-  // FIXME: Temporary
-  class PETScVector;
-
   // Forward declarations
   class FunctionSpace;
   class GenericVector;
@@ -161,21 +158,21 @@ namespace dolfin
     // Initialize vector
     void init();
 
+    // Get coefficients from the vector(s)
     void get(double* block, uint m, const uint* rows) const;
   
-    // The vector of expansion coefficients
+    // The vector of expansion coefficients (local)
     boost::shared_ptr<GenericVector> _vector;
 
-    // The vector of expansion coefficients
-    //boost::shared_ptr<GenericVector> _off_process_vector;
-    mutable boost::shared_ptr<PETScVector> _off_process_vector;
+    // The vector of expansion coefficients (off-process)
+    mutable boost::shared_ptr<GenericVector> _off_process_vector;
 
     mutable std::map<uint, uint> global_to_local;
     mutable std::vector<uint> _off_process_dofs;
 
     mutable std::map<uint, double> dof_values;
 
-    // Scratch data
+    // Scratch data used in extracting coefficients from parallel vectors 
     class Scratch 
     {
     public:

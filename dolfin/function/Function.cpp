@@ -31,7 +31,7 @@ Function::Function()
   :  Variable("v", "unnamed function"),
      _function_space(static_cast<FunctionSpace*>(0)),
      _vector(static_cast<GenericVector*>(0)),
-     _off_process_vector(static_cast<PETScVector*>(0))
+     _off_process_vector(static_cast<GenericVector*>(0))
 {
   // Do nothing
 }
@@ -40,7 +40,7 @@ Function::Function(const FunctionSpace& V)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
     _vector(static_cast<GenericVector*>(0)),
-     _off_process_vector(static_cast<PETScVector*>(0))
+     _off_process_vector(static_cast<GenericVector*>(0))
 {
   // Do nothing
 }
@@ -49,7 +49,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : Variable("v", "unnamed function"),
     _function_space(V),
     _vector(static_cast<GenericVector*>(0)),
-     _off_process_vector(static_cast<PETScVector*>(0))
+     _off_process_vector(static_cast<GenericVector*>(0))
 {
   // Do nothing
 }
@@ -59,7 +59,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   : Variable("v", "unnamed function"),
     _function_space(V),
     _vector(reference_to_no_delete_pointer(x)),
-    _off_process_vector(static_cast<PETScVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
   assert(V->dofmap().global_dimension() == x.size());
 }
@@ -69,7 +69,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   : Variable("v", "unnamed function"),
     _function_space(V),
     _vector(x),
-    _off_process_vector(static_cast<PETScVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
   assert(V->dofmap().global_dimension() == x->size());
 }
@@ -78,7 +78,7 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
     _vector(reference_to_no_delete_pointer(x)),
-    _off_process_vector(static_cast<PETScVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
   assert(V.dofmap().global_dimension() == x.size());
 }
@@ -87,7 +87,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
     _vector(static_cast<GenericVector*>(0)),
-    _off_process_vector(static_cast<PETScVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
   // Initialize vector
   init();
@@ -105,7 +105,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
   : Variable("v", "unnamed function"),
     _function_space(V),
     _vector(static_cast<GenericVector*>(0)),
-    _off_process_vector(static_cast<PETScVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
   // Initialize vector
   init();
@@ -123,7 +123,7 @@ Function::Function(const SubFunction& v)
   : Variable("v", "unnamed function"),
     _function_space(v.v.function_space().extract_sub_space(v.component)),
     _vector(static_cast<GenericVector*>(0)),
-    _off_process_vector(static_cast<PETScVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
   // Initialize vector
   init();
@@ -148,7 +148,7 @@ Function::Function(const Function& v)
   : Variable("v", "unnamed function"),
     _function_space(static_cast<FunctionSpace*>(0)),
     _vector(static_cast<GenericVector*>(0)),
-    _off_process_vector(static_cast<PETScVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
   *this = v;
 }
@@ -317,9 +317,7 @@ void Function::interpolate(double* coefficients,
     dofmap.tabulate_dofs(dofs, ufc_cell, cell_index);
     
     // Pick values from vector(s)
-    //cout << "Get coeffs " << endl;
     get(coefficients, dofmap.local_dimension(ufc_cell), dofs);
-    //cout << "End get coeffs " << endl;
  
     /*
     if (MPI::num_processes() == 1)
@@ -550,11 +548,8 @@ void Function::get(double* block, uint m, const uint* rows) const
     _vector->get(block, m, rows);
   else
   {
-
-    // FIXME: Temporary until Garth fixes this, you can't just push and the go home and sleep. ;-)
-    return;
-
-    //error("Function::get is a work in progress for parallel assembly");    
+    if (!_off_process_vector.get())
+      error("Function has not been prepared with off-process data. Did you forget to call Function::update()?");
 
     // FIXME: Allocate scratch data elsewhere to allow re-use.
     uint* local_rows       = scratch.local_rows;
@@ -567,16 +562,15 @@ void Function::get(double* block, uint m, const uint* rows) const
     for (uint i = 0; i < m; ++i)
       block[i] = 0.0;
 
-    const PETScVector& vec = _vector->down_cast<PETScVector>();
-    uint n0(0), n1(0);  
-    VecGetOwnershipRange(*(vec.vec()), (int*) &n0, (int*) &n1);
+    // Get ownership range
+    std::pair<uint, uint> range = _vector->ownership_range();
 
     // Build lists of local and nonlocal coefficients
     uint n_local = 0;
     uint n_nonlocal = 0;
     for (uint i = 0; i < m; ++i)
     {
-      if (rows[i] < n1 && rows[i] >= n0)
+      if (rows[i] >= range.first && rows[i] < range.second)
       {
         local_index[n_local]  = i;
         local_rows[n_local++] = rows[i];
@@ -608,10 +602,23 @@ void Function::update()
   if (MPI::num_processes() > 1 || has_vector())
   {
     assert(_function_space);
+
+    // Initialise scratch space
     scratch.init(_function_space->dofmap().max_local_dimension());
+
+    // Compute lists of off-process dofs
     compute_off_process_dofs();
+
+    // FIXME: Add gather to GenericVector
+    // Gather off-process dofs
+
+    #ifdef HAS_PETSC
     const PETScVector& vec = _vector->down_cast<PETScVector>();
     _off_process_vector = vec.gather(_off_process_dofs);
+    #else
+    error("PETSc required for parallel assembly while under development.");
+    #endif
+
   }
 }
 //-----------------------------------------------------------------------------

@@ -216,6 +216,14 @@ dolfin::uint PETScVector::size() const
   return static_cast<uint>(n);
 }
 //-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> PETScVector::ownership_range() const
+{ 
+  std::pair<uint, uint> range;
+  VecGetOwnershipRange(*x, (int*) &range.first, (int*) &range.second);
+  assert(range.first <= range.second);
+  return range;
+}
+//-----------------------------------------------------------------------------
 const GenericVector& PETScVector::operator= (const GenericVector& v)
 {
   *this = v.down_cast<PETScVector>();
