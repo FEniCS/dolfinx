@@ -98,9 +98,9 @@ double PointCell::facet_area(const Cell& cell, uint facet) const
 }
 //-----------------------------------------------------------------------------
 void PointCell::order(Cell& cell,
-                      MeshFunction<uint>* global_vertex_indices) const
+                      const MeshFunction<uint>* global_vertex_indices) const
 {
-//  error("PointCell::order() not defined.");
+  //  error("PointCell::order() not defined.");
 }
 //-----------------------------------------------------------------------------
 bool PointCell::intersects(const MeshEntity& entity, const Point& p) const

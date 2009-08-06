@@ -94,7 +94,7 @@ namespace dolfin
     // FIXME: implementation for all cell types, just as we have for ordered()
 
     /// Order entities locally
-    virtual void order(Cell& cell, MeshFunction<uint>* global_vertex_indices) const = 0;
+    virtual void order(Cell& cell, const MeshFunction<uint>* global_vertex_indices) const = 0;
 
     /// Check if entities are ordered
     bool ordered(const Cell& cell, MeshFunction<uint>* global_vertex_indices) const;
@@ -118,13 +118,23 @@ namespace dolfin
     Type _cell_type;
     Type _facet_type;
 
+    // Sort vertices based on global entity indices
+    static void sort_entities(uint num_vertices,
+                              uint* vertices,
+                              const MeshFunction<uint>* global_vertex_indices);
+
   private:
+
+    // Check if list of vertices is increasing
+    static bool increasing(uint num_vertices, const uint* vertices,
+                           const MeshFunction<uint>* global_vertex_indices);
 
     // Check that <entity e0 with vertices v0> <= <entity e1 with vertices v1>
     static bool increasing(uint n0, const uint* v0,
                            uint n1, const uint* v1,
-                           uint num_vertices, const uint* vertices);
-
+                           uint num_vertices, const uint* vertices,
+                           const MeshFunction<uint>* global_vertex_indices);
+   
   };
 
 }

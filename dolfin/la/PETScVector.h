@@ -40,7 +40,7 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    PETScVector();
+    PETScVector(std::string = "global");
 
     /// Create vector of size N
     explicit PETScVector(uint N);
@@ -80,7 +80,7 @@ namespace dolfin
     virtual uint size() const;
 
     /// Return ownership range of a vector
-    virtual std::pair<uint, uint> ownership_range() const;
+    virtual std::pair<uint, uint> local_range() const;
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows) const;
