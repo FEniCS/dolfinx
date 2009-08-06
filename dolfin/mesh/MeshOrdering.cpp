@@ -17,7 +17,7 @@ void MeshOrdering::order(Mesh& mesh)
   // Special case
   if (mesh.num_cells() == 0)
     return;
-
+  
   // Get global vertex numbering (important when running in parallel)
   MeshFunction<uint>* global_vertex_indices = mesh.data().mesh_function("global entity indices 0");
 

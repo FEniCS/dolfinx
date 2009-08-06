@@ -435,8 +435,6 @@ void PETScVector::init(uint N, uint n, std::string type)
   }
   else if (type == "mpi")
   {
-    info("Initializing parallel PETSc vector (MPI) of size %d, local size is %d.", N, n);
-
     //assert(n > 0);
     VecCreateMPI(PETSC_COMM_WORLD, n, N, x.get());
   }

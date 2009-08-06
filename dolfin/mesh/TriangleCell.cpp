@@ -28,35 +28,35 @@ dolfin::uint TriangleCell::dim() const
 //-----------------------------------------------------------------------------
 dolfin::uint TriangleCell::num_entities(uint dim) const
 {
-  switch ( dim )
-    {
-    case 0:
-      return 3; // vertices
-    case 1:
-      return 3; // edges
-    case 2:
-      return 1; // cells
-    default:
-      error("Illegal topological dimension %d for triangle.", dim);
-    }
-
+  switch (dim)
+  {
+  case 0:
+    return 3; // vertices
+  case 1:
+    return 3; // edges
+  case 2:
+    return 1; // cells
+  default:
+    error("Illegal topological dimension %d for triangle.", dim);
+  }
+  
   return 0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint TriangleCell::num_vertices(uint dim) const
 {
-  switch ( dim )
-    {
-    case 0:
-      return 1; // vertices
-    case 1:
-      return 2; // edges
-    case 2:
-      return 3; // cells
-    default:
-      error("Illegal topological dimension %d for triangle.", dim);
-    }
-
+  switch (dim)
+  {
+  case 0:
+    return 1; // vertices
+  case 1:
+    return 2; // edges
+  case 2:
+    return 3; // cells
+  default:
+    error("Illegal topological dimension %d for triangle.", dim);
+  }
+  
   return 0;
 }
 //-----------------------------------------------------------------------------
@@ -263,7 +263,7 @@ double TriangleCell::facet_area(const Cell& cell, uint facet) const
 }
 //-----------------------------------------------------------------------------
 void TriangleCell::order(Cell& cell,
-                         MeshFunction<uint>* global_vertex_indices) const
+                         const MeshFunction<uint>* global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1
 
@@ -282,7 +282,7 @@ void TriangleCell::order(Cell& cell,
     for (uint i = 0; i < 3; i++)
     {
       uint* edge_vertices = const_cast<uint*>(topology(1, 0)(cell_edges[i]));
-      std::sort(edge_vertices, edge_vertices + 2);
+      sort_entities(2, edge_vertices, global_vertex_indices);
     }
   }
 
@@ -290,11 +290,11 @@ void TriangleCell::order(Cell& cell,
   if ( topology(2, 0).size() > 0 )
   {
     uint* cell_vertices = const_cast<uint*>(cell.entities(0));
-    std::sort(cell_vertices, cell_vertices + 3);
+    sort_entities(3, cell_vertices, global_vertex_indices);
   }
 
   // Sort local edges on cell after non-incident vertex, connectivity 2 - 1
-  if ( topology(2, 1).size() > 0 )
+  if (topology(2, 1).size() > 0)
   {
     assert(topology(2, 1).size() > 0);
 
@@ -305,13 +305,13 @@ void TriangleCell::order(Cell& cell,
     // Loop over vertices on cell
     for (uint i = 0; i < 3; i++)
     {
-  	  // Loop over edges on cell
-  	  for (uint j = i; j < 3; j++)
-  	  {
-  	    const uint* edge_vertices = topology(1, 0)(cell_edges[j]);
-
-  	    // Check if the ith vertex of the cell is non-incident with edge j
-  	    if ( std::count(edge_vertices, edge_vertices + 2, cell_vertices[i]) == 0 )
+      // Loop over edges on cell
+      for (uint j = i; j < 3; j++)
+      {
+        const uint* edge_vertices = topology(1, 0)(cell_edges[j]);
+        
+        // Check if the ith vertex of the cell is non-incident with edge j
+        if (std::count(edge_vertices, edge_vertices + 2, cell_vertices[i]) == 0)
         {
           // Swap edge numbers
           uint tmp = cell_edges[i];

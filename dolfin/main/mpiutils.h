@@ -1,6 +1,8 @@
 // Copyright (C) 2008-2009 Niclas Jansson, Anders Logg and Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Credits to Scott Baden for suggesting the algorithm
+//
 // First added:  2008-12-09
 // Last changed: 2009-06-29
 //

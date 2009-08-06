@@ -191,14 +191,10 @@ void XMLLocalMeshData::read_vertices(const xmlChar* name, const xmlChar** attrs)
 {
   // Parse the number of global vertices
   const uint num_global_vertices = parse_uint(name, attrs, "size");
-  dolfin_debug1("num_global_vertices = %d", num_global_vertices);
   mesh_data.num_global_vertices = num_global_vertices;
 
   // Compute vertex range
   mesh_data.initial_vertex_range(vertex_index_start, vertex_index_stop);
-
-  dolfin_debug3("vertex range: [%d, %d] size = %d",
-                vertex_index_start, vertex_index_stop, num_local_vertices());
 
   // Reserve space for local-to-global vertex map and vertex coordinates
   mesh_data.vertex_indices.reserve(num_local_vertices());
@@ -254,14 +250,10 @@ void XMLLocalMeshData::read_cells(const xmlChar* name, const xmlChar** attrs)
 {
   // Parse the number of global cells
   const uint num_global_cells = parse_uint(name, attrs, "size");
-  dolfin_debug1("num_global_cells = %d", num_global_cells);
   mesh_data.num_global_cells = num_global_cells;
 
   // Compute cell range
   mesh_data.initial_cell_range(cell_index_start, cell_index_stop);
-
-  dolfin_debug3("cell range: [%d, %d] size = %d",
-                cell_index_start, cell_index_stop, num_local_cells());
 
   // Reserve space for cells
   mesh_data.cell_vertices.reserve(num_local_cells());

@@ -134,7 +134,7 @@ void DofMap::init()
 {
   // Check that mesh has been ordered
   if (!dolfin_mesh->ordered())
-    error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
+     error("Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
 
   // Initialize UFC mesh data (must be done after entities are created)
   ufc_mesh.init(*dolfin_mesh);
