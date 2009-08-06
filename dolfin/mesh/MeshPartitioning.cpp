@@ -734,7 +734,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 
   // Open mesh for editing
   MeshEditor editor;
-  editor.open(mesh, mesh_data.cell_type->cell_type(), mesh_data.gdim, mesh_data.tdim);
+  editor.open(mesh, mesh_data.gdim, mesh_data.tdim);
 
   // Add vertices
   editor.init_vertices(mesh_data.vertex_coordinates.size());
@@ -748,7 +748,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   
   // Add cells
   editor.init_cells(mesh_data.cell_vertices.size());
-  const uint num_cell_vertices = mesh_data.cell_type->num_entities(0);
+  const uint num_cell_vertices = mesh_data.tdim + 1;
   std::vector<uint> cell(num_cell_vertices);
   for (uint i = 0; i < mesh_data.cell_vertices.size(); ++i)
   {

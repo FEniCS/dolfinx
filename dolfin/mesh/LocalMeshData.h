@@ -84,9 +84,6 @@ namespace dolfin
     /// Topological dimension
     uint tdim;
 
-    /// Cell Type
-    CellType* cell_type;
-
     // Friends
     friend class XMLLocalMeshData;
     friend class MeshPartitioning;

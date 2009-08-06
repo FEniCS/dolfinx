@@ -177,8 +177,6 @@ void XMLLocalMeshData::read_mesh(const xmlChar* name, const xmlChar** attrs)
   tdim = cell_type->dim();
 
   // Get number of entities for topological dimension 0
-  //num_cell_vertices = cell_type->num_entities(0);
-  mesh_data.cell_type = CellType::create(type);
   mesh_data.tdim = tdim;
   mesh_data.gdim = gdim;
 

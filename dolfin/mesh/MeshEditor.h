@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-16
-// Last changed: 2009-06-22
+// Last changed: 2009-08-06
 
 #ifndef __MESH_EDITOR_H
 #define __MESH_EDITOR_H
@@ -29,6 +29,9 @@ namespace dolfin
 
     /// Destructor
     ~MeshEditor();
+
+    /// Open mesh of given topological and geometrical dimension
+    void open(Mesh& mesh, uint tdim, uint gdim);
 
     /// Open mesh of given cell type, topological and geometrical dimension
     void open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim);

@@ -29,6 +29,27 @@ MeshEditor::~MeshEditor()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+void MeshEditor::open(Mesh& mesh, uint tdim, uint gdim)
+{
+  switch (tdim)
+  {
+  case 0:
+    open(mesh, CellType::point, tdim, gdim);
+    break;
+  case 1:
+    open(mesh, CellType::interval, tdim, gdim);
+    break;
+  case 2:
+    open(mesh, CellType::triangle, tdim, gdim);
+    break;
+  case 3:
+    open(mesh, CellType::tetrahedron, tdim, gdim);
+    break;
+  default:
+    error("Unhandled cell type of topological dimension %d.", tdim);
+  }
+}
+//-----------------------------------------------------------------------------
 void MeshEditor::open(Mesh& mesh, CellType::Type type, uint tdim, uint gdim)
 {
   // Clear old mesh data

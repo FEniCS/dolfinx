@@ -19,7 +19,7 @@ using namespace dolfin;
 LocalMeshData::LocalMeshData()
   : num_global_vertices(0), num_global_cells(0),
     num_processes(0), process_number(0),
-    gdim(0), tdim(0), cell_type(0)
+    gdim(0), tdim(0)
 {
   // Do nothing
 }
@@ -27,7 +27,7 @@ LocalMeshData::LocalMeshData()
 LocalMeshData::LocalMeshData(const Mesh& mesh)
   : num_global_vertices(0), num_global_cells(0),
     num_processes(0), process_number(0),
-    gdim(0), tdim(0), cell_type(0)
+    gdim(0), tdim(0)
 {
   dolfin_debug("check");
 
@@ -38,7 +38,6 @@ LocalMeshData::LocalMeshData(const Mesh& mesh)
   num_global_cells = mesh.num_cells();
   num_processes = MPI::num_processes();
   process_number = MPI::process_number();
-  cell_type = CellType::create(mesh.type().cell_type()); // ugly!
 
   /// Get coordinates for all vertices stored on local processor
   vertex_coordinates.reserve(mesh.num_vertices());
@@ -72,7 +71,7 @@ LocalMeshData::LocalMeshData(const Mesh& mesh)
 //-----------------------------------------------------------------------------
 LocalMeshData::~LocalMeshData()
 {
-  delete cell_type;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void LocalMeshData::clear()
