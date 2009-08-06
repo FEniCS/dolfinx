@@ -208,9 +208,6 @@ void FunctionSpace::interpolate_vertex_values(double* vertex_values,
   const uint num_cell_vertices = _mesh->type().num_vertices(_mesh->topology().dim());
   double* local_vertex_values = new double[scratch.size*num_cell_vertices];
   
-  if (MPI::num_processes() > 1)
-    v.collect_global_dof_values();
-
   // Interpolate vertex values on each cell (using latest value if not continuous)
   UFCCell ufc_cell(*_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)

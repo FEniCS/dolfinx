@@ -137,9 +137,6 @@ namespace dolfin
     /// Interpolate function to vertices of mesh
     void interpolate_vertex_values(double* vertex_values) const;
 
-    /// Collect global dof values for all dofs located on local mesh
-    void collect_global_dof_values() const; 
-
     void compute_off_process_dofs() const; 
 
     void update(); 
@@ -169,8 +166,6 @@ namespace dolfin
 
     mutable std::map<uint, uint> global_to_local;
     mutable std::vector<uint> _off_process_dofs;
-
-    mutable std::map<uint, double> dof_values;
 
     // Scratch data used in extracting coefficients from parallel vectors 
     class Scratch 

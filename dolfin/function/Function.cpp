@@ -22,6 +22,8 @@
 #include "SubFunction.h"
 #include "Function.h"
 
+#include <dolfin/la/PETScVector.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -52,6 +54,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    GenericVector& x)
   : Variable("v", "unnamed function"),
     _function_space(V),
@@ -362,98 +365,6 @@ void Function::interpolate_vertex_values(double* vertex_values) const
   _function_space->interpolate_vertex_values(vertex_values, *this);
 }
 //-----------------------------------------------------------------------------
-void Function::collect_global_dof_values() const
-{
-  // This function collects the global dof values for all dofs located on
-  // the local mesh. These dofs may be stored in a portion of the vector
-  // on another process. We build the map in two steps. First, we compute
-  // which dofs are needed and send requests to the processes that own the
-  // dofs. Then all processes send the requested values back.
-
-  // Clear map
-  dof_values.clear();
-
-  std::map<uint, uint> dof_owner;
-
-  //std::map<uint, uint> global_to_local;
-
-  // Get mesh
-  assert(_function_space);
-  const Mesh& mesh = _function_space->mesh();
-
-  // Storage for each cell dofs
-  const DofMap& dofmap = _function_space->dofmap();
-  const uint num_dofs_per_cell = _function_space->element().space_dimension();
-  const uint num_dofs_global = vector().size();
-  uint* dofs = new uint[num_dofs_per_cell];
-  for (uint i = 0; i < num_dofs_per_cell; i++)
-    dofs[i] = 0;
-
-  // Iterate over mesh and check which dofs are needed
-  UFCCell ufc_cell(mesh);
-  //uint ii = 0;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Update to current cell
-    ufc_cell.update(*cell);
-
-    // Tabulate dofs on cell
-    dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());
-
-    for (uint d = 0; d < num_dofs_per_cell; ++d)
-    {
-      const uint dof = dofs[d];
-      const uint index_owner = MPI::index_owner(dof, num_dofs_global);
-      
-      if (index_owner == MPI::process_number())
-      {
-        if (dof_values.find(dof) == dof_values.end())
-          //dof_values[dof] = (*_vector)[dof - dof_offset];
-          dof_values[dof] = (*_vector)[dof];
-      }
-      else
-      {
-        // Put unique new dof in communication map
-        if (dof_owner.find(dof) == dof_owner.end())
-          dof_owner[dof] = index_owner;
-      }
-    }
-  }
-
-  // Request dofs from other processes
-  std::vector<uint> req_dofs;
-  std::vector<uint> req_procs;
-
-  std::map<uint, std::vector<uint> > proc_dofs;
-
-  for (std::map<uint, uint>::const_iterator it = dof_owner.begin(); it != dof_owner.end(); ++it)
-  {
-    req_dofs.push_back(it->first);
-    req_procs.push_back(it->second);
-    proc_dofs[it->second].push_back(it->first);
-  }
-
-  MPI::distribute(req_dofs, req_procs);
-
-  std::vector<double> send_dof_values;
-
-  // Collect dofs belonging to other  processes
-  for (uint i = 0; i < req_dofs.size(); ++i)
-    //send_dof_values.push_back((*_vector)[req_dofs[i] - dof_offset]);
-    send_dof_values.push_back((*_vector)[req_dofs[i]]);
-
-  // Send and receive dofs from other processes
-  MPI::distribute(send_dof_values, req_procs);
-
-  for (uint i = 0; i < send_dof_values.size(); ++i)
-  {
-    std::vector<uint>& dof_vec = proc_dofs[req_procs[i]];
-    const uint dof = dof_vec.front();
-    dof_vec.erase(dof_vec.begin());
-    dof_values[dof] = send_dof_values[i];
-  }
-}
-//-----------------------------------------------------------------------------
 void Function::interpolate()
 {
   // Check that function is not already discrete
@@ -619,6 +530,13 @@ void Function::update()
 
     // Gather off process coefficients
     _vector->gather(*_off_process_vector, _off_process_dofs);
+    //#ifdef HAS_PETSC
+    //const PETScVector& vec = _vector->down_cast<PETScVector>();
+    //_off_process_vector = vec.gather(_off_process_dofs);
+    //#else
+    //error("PETSc required for parallel assembly while under development.");
+    //#endif
+
   }
 }
 //-----------------------------------------------------------------------------
