@@ -317,9 +317,7 @@ void Function::interpolate(double* coefficients,
     dofmap.tabulate_dofs(dofs, ufc_cell, cell_index);
     
     // Pick values from vector(s)
-    //cout << "Get coeffs " << endl;
     get(coefficients, dofmap.local_dimension(ufc_cell), dofs);
-    //cout << "End get coeffs " << endl;
  
     /*
     if (MPI::num_processes() == 1)
@@ -550,11 +548,8 @@ void Function::get(double* block, uint m, const uint* rows) const
     _vector->get(block, m, rows);
   else
   {
-
-    // FIXME: Temporary until Garth fixes this, you can't just push and the go home and sleep. ;-)
-    return;
-
-    //error("Function::get is a work in progress for parallel assembly");    
+    if (!_off_process_vector.get())
+      error("Function has not been prepared with off-process data. Did you forget to call Function::update()?");
 
     // FIXME: Allocate scratch data elsewhere to allow re-use.
     uint* local_rows       = scratch.local_rows;
@@ -567,6 +562,7 @@ void Function::get(double* block, uint m, const uint* rows) const
     for (uint i = 0; i < m; ++i)
       block[i] = 0.0;
 
+    // FIXME: Add ownership range to GenericVector
     const PETScVector& vec = _vector->down_cast<PETScVector>();
     uint n0(0), n1(0);  
     VecGetOwnershipRange(*(vec.vec()), (int*) &n0, (int*) &n1);
@@ -608,9 +604,21 @@ void Function::update()
   if (MPI::num_processes() > 1 || has_vector())
   {
     assert(_function_space);
+
+    // Initialise scratch space
     scratch.init(_function_space->dofmap().max_local_dimension());
+
+    // Compute lists of off-process dofs
     compute_off_process_dofs();
+
+    // FIXME: Add gather GenericVector
+    #ifdef HAS_PETSC
     const PETScVector& vec = _vector->down_cast<PETScVector>();
+    #else
+    error("PETSc required for parallel assembly while under development.");
+    #endif
+
+    // Gather off-process dofs
     _off_process_vector = vec.gather(_off_process_dofs);
   }
 }
