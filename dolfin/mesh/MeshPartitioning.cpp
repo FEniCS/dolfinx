@@ -58,8 +58,6 @@ template<typename Map> void print_vec_map(std::string msg, Map map, const char* 
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 {
-  dolfin_debug("Partitioning mesh...");
-
   // Compute cell partition
   std::vector<uint> cell_partition;
   compute_partition(cell_partition, mesh_data);
@@ -67,7 +65,7 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
   // Distribute cells
   Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
   distribute_cells(mesh_data, cell_partition);
-
+ 
   // Distribute vertices
   std::map<uint, uint> glob2loc;
   distribute_vertices(mesh_data, glob2loc);
@@ -93,8 +91,6 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   // Already computed the global entity numbers; do nothing
   if (global_entity_indices != NULL)
     return;
-
-  info("Computing global numbers for mesh entities of dimension %d", d);
 
   // Get number of processes and process number
   const uint num_processes = MPI::num_processes();
@@ -493,7 +489,7 @@ void MeshPartitioning::number_entities(Mesh& mesh, uint d)
   for (uint i = 0; i < entity_indices.size(); ++i)
   {
     if (entity_indices[i] < 0)
-      info("entity indicies[%d] = %d", i, entity_indices[i]);
+      info("Missing global number for local entity (%d, %d).", d, i);
     assert(entity_indices[i] >= 0);
     global_entity_indices->set(i, static_cast<uint>(entity_indices[i]));
   }
@@ -506,7 +502,6 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
   // since ParMETIS has the worst possible interface), calls
   // ParMETIS, and then collects the results from ParMETIS.
 
-  dolfin_debug("Computing cell partition using ParMETIS...");
   Timer timer("PARALLEL 1: Compute partition (calling ParMETIS)");
 
   // Get number of processes and process number
@@ -542,7 +537,6 @@ void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
 
   // Number of nodes shared for dual graph (partition along facets)
   int ncommonnodes = num_cell_vertices - 1;
-  info("Number of common vertices for adding edge in dual graph: %d", ncommonnodes);
 
   // Number of partitions (one for each process)
   int nparts = num_processes;
@@ -605,8 +599,6 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
   // process belongs. We use MPI::distribute to redistribute all cells (the
   // global vertex indices of all cells).
 
-  dolfin_debug("Distributing cells...");
-
   // Get dimensions of local mesh_data
   uint num_local_cells = mesh_data.cell_vertices.size();
   const uint num_cell_vertices = mesh_data.cell_vertices[0].size();
@@ -653,8 +645,6 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
   // That information is then distributed so that each process learns where
   // it needs to send its vertices.
 
-  dolfin_debug("Distributing vertices...");
-  
   // Compute which vertices we need
   std::set<uint> needed_vertex_indices;
   std::vector<std::vector<uint> >& cell_vertices = mesh_data.cell_vertices;
@@ -745,13 +735,16 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
       cell[j] = glob2loc[mesh_data.cell_vertices[i][j]];
     editor.add_cell(i, cell);
   }
-  editor.close();
 
   // Construct local to global mapping based on the global to local mapping
   MeshFunction<uint>* global_vertex_indices = mesh.data().create_mesh_function("global entity indices 0", 0);
   assert(global_vertex_indices);
   for (std::map<uint, uint>::const_iterator iter = glob2loc.begin(); iter != glob2loc.end(); ++iter)
     global_vertex_indices->set((*iter).second, (*iter).first);
+
+  // Close mesh: Note that this must be done after creating the global vertex map or
+  // otherwise the ordering in mesh.close() will be wrong (based on local numbers).
+  editor.close();
 
   // Construct array of length topology().dim() that holds the number of global mesh entities
   std::vector<uint>* num_global_entities = mesh.data().create_array("num global entities", mesh_data.tdim + 1);

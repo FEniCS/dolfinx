@@ -221,12 +221,8 @@ void SparsityPattern::apply()
       partition[i + 1] = p;
     }
 
-    info("Communicating %d non-local sparsity pattern entries.", non_local.size() / 2);
-
     // Communicate non-local entries
     MPI::distribute(non_local, partition);
-
-    info("Received %d non-local sparsity pattern entries.", non_local.size() / 2);
 
     // Insert non-local entries received from other processes
     assert(non_local.size() % 2 == 0);

@@ -193,9 +193,9 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   }
   else
   {
-    info("Initializing parallel PETSc matrix (MPIAIJ) of size %d x %d.", M, N);
-    info("Local range is [%d, %d] x [%d, %d].",
-         row_range.first, row_range.second, col_range.first, col_range.second);
+    //info("Initializing parallel PETSc matrix (MPIAIJ) of size %d x %d.", M, N);
+    //info("Local range is [%d, %d] x [%d, %d].",
+    //     row_range.first, row_range.second, col_range.first, col_range.second);
 
     // Get number of nonzeros for each row from sparsity pattern
     uint* num_nonzeros_diagonal = new uint[m];
