@@ -22,8 +22,6 @@
 #include "SubFunction.h"
 #include "Function.h"
 
-#include <dolfin/la/PETScVector.h>
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -54,7 +52,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    GenericVector& x)
   : Variable("v", "unnamed function"),
     _function_space(V),
@@ -612,13 +609,16 @@ void Function::update()
     // FIXME: Add gather to GenericVector
     // Gather off-process dofs
 
-    #ifdef HAS_PETSC
-    const PETScVector& vec = _vector->down_cast<PETScVector>();
-    _off_process_vector = vec.gather(_off_process_dofs);
-    #else
-    error("PETSc required for parallel assembly while under development.");
-    #endif
 
+    // Create off process vector if it doesn't exist
+    if (!_off_process_vector.get())
+    {
+      boost::shared_ptr<GenericVector> _tmp(_vector->factory().create_local_vector());
+      _off_process_vector = _tmp;
+    }  
+
+    // Gather off process coefficients
+    _vector->gather(*_off_process_vector, _off_process_dofs);
   }
 }
 //-----------------------------------------------------------------------------

@@ -40,13 +40,10 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    PETScVector(std::string = "global");
+    explicit PETScVector(std::string = "global");
 
     /// Create vector of size N
-    explicit PETScVector(uint N);
-
-    /// Create vector of size N
-    //PETScVector(uint N, std::string type = "global");
+    PETScVector(uint N, std::string type = "global");
 
     /// Copy constructor
     PETScVector(const PETScVector& x);
@@ -155,7 +152,7 @@ namespace dolfin
     /// Gather vector entries into a local vector. If local_indices = 0, then
     /// a local index array is created such that the order of the values in the
     /// return array is the same as the order in global_indices.
-    boost::shared_ptr<PETScVector> gather(const std::vector<uint>& indices) const;
+    virtual void gather(GenericVector& y, const std::vector<uint>& indices) const;
 
     friend class PETScMatrix;
 
