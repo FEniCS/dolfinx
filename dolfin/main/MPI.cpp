@@ -489,12 +489,12 @@ dolfin::uint dolfin::MPI::num_processes()
   return 1;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::MPI::broadcast()
+bool dolfin::MPI::is_broadcaster()
 {
   return false;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::MPI::receive()
+bool dolfin::MPI::is_receiver()
 {
   return false;
 }
@@ -522,8 +522,7 @@ dolfin::uint dolfin::MPI::global_maximum(uint size)
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint dolfin::MPI::global_offset(uint* send_buffer, uint* recv_buffer, 
-					uint size, bool exclusive)
+dolfin::uint dolfin::MPI::global_offset(uint range, bool exclusive)
 {
   error("MPI::global_offset() requires MPI.");
   return 0;
