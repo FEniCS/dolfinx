@@ -152,7 +152,7 @@ namespace dolfin
     /// Gather vector entries into a local vector. If local_indices = 0, then
     /// a local index array is created such that the order of the values in the
     /// return array is the same as the order in global_indices.
-    PETScVector gather(const std::vector<uint>& indices) const;
+    boost::shared_ptr<PETScVector> gather(const std::vector<uint>& indices) const;
 
     friend class PETScMatrix;
 
