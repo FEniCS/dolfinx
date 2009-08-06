@@ -562,22 +562,15 @@ void Function::get(double* block, uint m, const uint* rows) const
     for (uint i = 0; i < m; ++i)
       block[i] = 0.0;
 
-    // FIXME: Add ownership range to GenericVector
-    uint n0(0), n1(0);  
-
-    #ifdef HAS_PETSC
-    const PETScVector& vec = _vector->down_cast<PETScVector>();
-    VecGetOwnershipRange(*(vec.vec()), (int*) &n0, (int*) &n1);
-    #else
-    error("PETSc required to run in parallel while under development");
-    #endif
+    // Get ownership range
+    std::pair<uint, uint> range = _vector->ownership_range();
 
     // Build lists of local and nonlocal coefficients
     uint n_local = 0;
     uint n_nonlocal = 0;
     for (uint i = 0; i < m; ++i)
     {
-      if (rows[i] < n1 && rows[i] >= n0)
+      if (rows[i] >= range.first && rows[i] < range.second)
       {
         local_index[n_local]  = i;
         local_rows[n_local++] = rows[i];

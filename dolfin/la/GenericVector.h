@@ -12,6 +12,7 @@
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
 
+#include <utility>
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
 
@@ -77,6 +78,11 @@ namespace dolfin
 
     /// Return size of vector
     virtual uint size() const = 0;
+
+    /// Return ownership range of a vector
+    virtual std::pair<uint, uint> ownership_range() const
+    { error("GenericVector::range not yet implemented for this backend."); 
+      return std::make_pair(0, 0); }
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows) const = 0;
