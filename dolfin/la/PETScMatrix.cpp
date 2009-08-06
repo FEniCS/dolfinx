@@ -3,11 +3,11 @@
 //
 // Modified by Garth N. Wells 2005-2009.
 // Modified by Andy R. Terrel 2005.
-// Modified by Ola Skavhaug 2007.
+// Modified by Ola Skavhaug 2007-2009.
 // Modified by Magnus Vikstrøm 2007-2008.
 //
 // First added:  2004
-// Last changed: 2009-05-22
+// Last changed: 2009-08-06
 
 #ifdef HAS_PETSC
 
@@ -150,8 +150,8 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   assert(sparsity_pattern.rank() == 2);
   const uint M = sparsity_pattern.size(0);
   const uint N = sparsity_pattern.size(1);
-  const std::pair<uint, uint> row_range = sparsity_pattern.row_range();
-  const std::pair<uint, uint> col_range = sparsity_pattern.col_range();
+  const std::pair<uint, uint> row_range = sparsity_pattern.local_range(0);
+  const std::pair<uint, uint> col_range = sparsity_pattern.local_range(1);
   const uint m = row_range.second - row_range.first;
   const uint n = col_range.second - col_range.first;
   assert(M > 0 && N > 0 && m > 0 && n > 0);

@@ -3,9 +3,10 @@
 //
 // Modified by Magnus Vikstrom, 2008.
 // Modified by Anders Logg, 2008-2009.
+// Modified by Ola Skavhaug, 2009.
 //
 // First added:  2007-03-13
-// Last changed: 2009-06-19
+// Last changed: 2009-08-06
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -40,6 +41,9 @@ SparsityPattern::~SparsityPattern()
 //-----------------------------------------------------------------------------
 void SparsityPattern::init(uint rank, const uint* dims)
 {
+  // Only rank 1 and 2 sparsity patterns are supported
+  assert(rank < 3); 
+
   // Store dimensions
   shape.resize(rank);
   for (uint i = 0; i < rank; ++i)
@@ -55,8 +59,8 @@ void SparsityPattern::init(uint rank, const uint* dims)
     return;
 
   // Get local range
-  std::pair<uint, uint> _row_range = row_range();
-  std::pair<uint, uint> _col_range = col_range();
+  std::pair<uint, uint> _row_range = local_range(0);
+  std::pair<uint, uint> _col_range = local_range(1);
   row_range_min = _row_range.first;
   row_range_max = _row_range.second;
   col_range_min = _col_range.first;
@@ -151,14 +155,10 @@ dolfin::uint SparsityPattern::size(uint i) const
   return shape[i];
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint> SparsityPattern::row_range() const
+std::pair<dolfin::uint, dolfin::uint> SparsityPattern::local_range(uint dim) const
 {
-  return MPI::local_range(size(0));
-}
-//-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint> SparsityPattern::col_range() const
-{
-  return MPI::local_range(size(1));
+  assert(dim < 2);
+  return MPI::local_range(size(dim));
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::num_nonzeros() const
