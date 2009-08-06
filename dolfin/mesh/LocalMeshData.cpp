@@ -99,15 +99,118 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
 //-----------------------------------------------------------------------------
 void LocalMeshData::broadcast_mesh_data()
 {
-  // Get local ranges
+  // Get number of processes
+  const uint num_processes = MPI::num_processes();
 
+  // Broadcast simple scalar data
+  {
+    std::vector<uint> values;
+    values.clear();
+    values.push_back(gdim);
+    values.push_back(tdim);
+    values.push_back(num_global_vertices);
+    values.push_back(num_global_cells);
+    MPI::scatter(values);
+  }
 
-  
+  /// Broadcast coordinates for vertices
+  {
+    std::vector<std::vector<double> > values(num_processes);
+    for (uint p = 0; p < num_processes; p++)
+    {
+      std::pair<uint, uint> local_range = MPI::local_range(p, num_global_vertices);
+      for (uint i = local_range.first; i < local_range.second; i++)
+      {
+        for (uint j = 0; j < vertex_coordinates[i].size(); j++)
+          values[p].push_back(vertex_coordinates[i][j]);
+      }
+    }
+    MPI::scatter(values);
+  }
+
+  /// Broadcast global vertex indices
+  {
+    std::vector<std::vector<uint> > values(num_processes);
+    for (uint p = 0; p < num_processes; p++)
+    {
+      std::pair<uint, uint> local_range = MPI::local_range(p, num_global_vertices);
+      for (uint i = local_range.first; i < local_range.second; i++)
+        values[p].push_back(vertex_indices[i]);
+    }
+    MPI::scatter(values);
+  }
+
+  /// Broadcast cell vertices
+  {
+    std::vector<std::vector<uint> > values(num_processes);
+    for (uint p = 0; p < num_processes; p++)
+    {
+      std::pair<uint, uint> local_range = MPI::local_range(p, num_global_cells);
+      for (uint i = local_range.first; i < local_range.second; i++)
+      {
+        for (uint j = 0; j < cell_vertices[i].size(); j++)
+          values[p].push_back(cell_vertices[i][j]);
+      }
+    }
+    MPI::scatter(values);
+  }
 }
 //-----------------------------------------------------------------------------
 void LocalMeshData::receive_mesh_data()
 {
+  // Receive simple scalar data
+  {
+    std::vector<uint> values;
+    MPI::scatter(values);
+    assert(values.size() == 4);
+    gdim = values[0];
+    tdim = values[1];
+    num_global_vertices = values[2];
+    num_global_cells = values[3];
+  }
 
+  /// Receive coordinates for vertices
+  {
+    std::vector<std::vector<double> > values;
+    MPI::scatter(values);
+    assert(values[0].size() % gdim == 0);
+    vertex_coordinates.clear();
+    const uint num_vertices = values[0].size() / gdim;
+    uint k = 0;
+    for (uint i = 0; i < num_vertices; i++)
+    {
+      std::vector<double> coordinates(gdim);
+      for (uint j = 0; j < gdim; j++)
+        coordinates[j] = values[0][k++];
+      vertex_coordinates.push_back(coordinates);
+    }
+  }
 
+  /// Receive global vertex indices
+  {
+    std::vector<std::vector<uint> > values;
+    MPI::scatter(values);
+    assert(values[0].size() == vertex_coordinates.size());
+    vertex_indices.clear();
+    for (uint i = 0; i < values[0].size(); i++)
+      vertex_indices.push_back(values[0][i]);
+  }
+
+  /// Receive coordinates for vertices
+  {
+    std::vector<std::vector<uint> > values;
+    MPI::scatter(values);
+    assert(values[0].size() % (tdim + 1) == 0);
+    cell_vertices.clear();
+    const uint num_cells = values[0].size() / (tdim + 1);
+    uint k = 0;
+    for (uint i = 0; i < num_cells; i++)
+    {
+      std::vector<uint> vertices(tdim + 1);
+      for (uint j = 0; j < tdim + 1; j++)
+        vertices[j] = values[0][k++];
+      cell_vertices.push_back(vertices);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
