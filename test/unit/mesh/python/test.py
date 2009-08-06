@@ -130,11 +130,16 @@ class MeshFunctions(unittest.TestCase):
     def testRead(self):
         """Construct and save a simple meshfunction. Then read it back from
         file."""
+        mf = self.mesh.data().create_mesh_function("mesh_data_function", 2)
+        mf.set(0,3)
+        mf.set(1,4)
+
         self.f.set(0,1)
         self.f.set(1,2)
         file = File("saved_mesh_function.xml")
         file << self.f
         f = MeshFunction('int', self.mesh, "saved_mesh_function.xml")
+        assert all(f.values() == self.f.values())
       
 class InputOutput(unittest.TestCase):
 
