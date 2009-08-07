@@ -233,7 +233,8 @@ void DofMap::build(const MeshFunction<bool>& meshfunction)
     // If the dof is new then it is set to dof_counter.
     // The reason why this simple algorithm works is that all already have
     // an unique global numbers. We only need to leave out some of them
-    // and have the other numbered in increasing order like 1,2,3,4 (without gaps like 1,3,4).
+    // and have the other numbered in increasing order like 1,2,3,4 (without 
+    // gaps like 1,3,4).
     if (use_cell) 
     {
       for (uint k=0; k<n; k++) 
@@ -327,7 +328,8 @@ void DofMap::disp() const
           for(uint j=0; j<num_dofs; j++)
           {
             cout << dofs[j];
-            if(j < num_dofs-1) cout << ", ";
+            if(j < num_dofs-1) 
+              cout << ", ";
           }
           cout << endl;
         }
@@ -353,7 +355,8 @@ void DofMap::disp() const
       for(uint j=0; j<num_dofs; j++)
       {
         cout << dofs[j];
-        if(j < num_dofs-1) cout << ", ";
+        if(j < num_dofs-1) 
+          cout << ", ";
       }
       cout << endl;
     }
@@ -382,7 +385,8 @@ void DofMap::disp() const
       for(uint j = 0; j < num_dofs; j++)
       {
         cout << dofs[j];
-        if(j < num_dofs-1) cout << ", ";
+        if(j < num_dofs-1) 
+          cout << ", ";
       }
       cout << endl;
     }
@@ -395,14 +399,12 @@ void DofMap::disp() const
   cout << "---------------------------" << endl;
   begin("");
   {
-    uint tdim = dolfin_mesh->topology().dim();
-    uint gdim = ufc_dof_map->geometric_dimension();
-    uint max_num_dofs = ufc_dof_map->max_local_dimension();
+    const uint tdim = dolfin_mesh->topology().dim();
+    const uint gdim = ufc_dof_map->geometric_dimension();
+    const uint max_num_dofs = ufc_dof_map->max_local_dimension();
     double** coordinates = new double*[max_num_dofs];
     for(uint k=0; k<max_num_dofs; k++)
-    {
       coordinates[k] = new double[gdim];
-    }
     CellIterator cell(*dolfin_mesh);
     UFCCell ufc_cell(*cell);
     for (; !cell.end(); ++cell)
@@ -419,7 +421,8 @@ void DofMap::disp() const
         for(uint k=0; k<gdim; k++)
         {
           cout << coordinates[j][k];
-          if(k < gdim-1) cout << ", ";
+          if(k < gdim-1) 
+            cout << ", ";
         }
         cout << ")";
         if(j < num_dofs-1) cout << ",  ";

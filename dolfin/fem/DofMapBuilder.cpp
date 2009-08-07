@@ -63,22 +63,22 @@ void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
       dof_map.tabulate_dofs(dofs, ufc_cell, c->index());        
       for (uint i = 0; i < n; i++)
       {
-	// Assign an ownership vote for each "shared" dof
-	if (shared_dofs.find(dofs[i]) == shared_dofs.end()) 
-	{
-	  shared_dofs.insert(dofs[i]);
-	  dof_vote[dofs[i]] = (uint) rand();     
-	  send_buffer.push_back(dofs[i]);
-	  send_buffer.push_back(dof_vote[dofs[i]]);
-	}
+        // Assign an ownership vote for each "shared" dof
+        if (shared_dofs.find(dofs[i]) == shared_dofs.end()) 
+        {
+          shared_dofs.insert(dofs[i]);
+          dof_vote[dofs[i]] = (uint) rand();     
+          send_buffer.push_back(dofs[i]);
+          send_buffer.push_back(dof_vote[dofs[i]]);
+        }
       }
     }
   }
 
   // Decide ownership of "shared" dofs
   uint src, dest, recv_count;
-  uint num_proc = MPI::num_processes();
-  uint proc_num = MPI::process_number();
+  const uint num_proc = MPI::num_processes();
+  const uint proc_num = MPI::process_number();
   uint max_recv = MPI::global_maximum(send_buffer.size());
   uint *recv_buffer = new uint[max_recv];
   for(uint k = 1; k < MPI::num_processes(); ++k)
@@ -93,11 +93,12 @@ void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
     {
       if (shared_dofs.find(recv_buffer[i]) != shared_dofs.end())
       {
-	// Move dofs with higher ownership votes from shared to forbidden
-	if (recv_buffer[i+1] < dof_vote[recv_buffer[i]] ) {
-	  forbidden_dofs.insert(recv_buffer[i]);
-	  shared_dofs.erase(recv_buffer[i]);
-	}
+        // Move dofs with higher ownership votes from shared to forbidden
+        if (recv_buffer[i+1] < dof_vote[recv_buffer[i]] ) 
+        {
+          forbidden_dofs.insert(recv_buffer[i]);
+          shared_dofs.erase(recv_buffer[i]);
+        }
       }
     }
   }
@@ -113,8 +114,8 @@ void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
     {
       if (forbidden_dofs.find(dofs[i]) == forbidden_dofs.end())
       {
-	// Mark dof as owned
-	owned_dofs.insert(dofs[i]);
+        // Mark dof as owned
+        owned_dofs.insert(dofs[i]);
       }
       
       // Create mapping from dof to dof_map offset
@@ -123,7 +124,7 @@ void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
   }
   
   // Compute offset for owned and non shared dofs
-  uint range = owned_dofs.size();
+  const uint range = owned_dofs.size();
   uint offset = MPI::global_offset(range, true);   
 
   // Compute renumbering for local and owned shared dofs
@@ -131,8 +132,8 @@ void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
        it != owned_dofs.end(); ++it, offset++)
   {
     for(std::vector<uint>::iterator di = dof2index[*it].begin();
-	di != dof2index[*it].end(); ++di)
-      _dof_map[*di] = offset;
+      di != dof2index[*it].end(); ++di)
+    _dof_map[*di] = offset;
     
     if (shared_dofs.find(*it) != shared_dofs.end())
     {
@@ -158,9 +159,9 @@ void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
       // Assign new dof number for shared dofs
       if (forbidden_dofs.find(recv_buffer[i]) != forbidden_dofs.end())
       {
-	for(std::vector<uint>::iterator di = dof2index[recv_buffer[i]].begin();
-	    di != dof2index[recv_buffer[i]].end(); ++di)
-	_dof_map[*di] = recv_buffer[i+1];
+        for(std::vector<uint>::iterator di = dof2index[recv_buffer[i]].begin();
+            di != dof2index[recv_buffer[i]].end(); ++di)
+        _dof_map[*di] = recv_buffer[i+1];
       }
     }
   }
