@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2007-11-30
-// Last changed: 2009-08-06
+// Last changed: 2009-08-07
 
 #include <dolfin/log/dolfin_log.h>
 #include <numeric>
@@ -95,7 +95,7 @@ void dolfin::MPI::scatter(std::vector<uint>& values, uint sending_process)
     
     // Call MPI to send values
     MPI_Scatter(send_buffer,
-                values.size(),
+                1,
                 MPI_UNSIGNED,
                 &receive_buffer,
                 1,
@@ -174,7 +174,7 @@ void dolfin::MPI::scatter(std::vector<std::vector<uint> >& values,
       if (i > 0)
         offsets[i] = offsets[i-1] + send_counts[i-1];
       for (uint j = 0; j < values[i].size(); ++j)
-        send_buffer[offset++] = values[i][j];
+        send_buffer[offset++] = values[i][j];      
     }
 
     // Construct receive data
