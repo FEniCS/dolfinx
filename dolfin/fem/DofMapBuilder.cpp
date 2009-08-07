@@ -131,7 +131,7 @@ void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
   for (std::set<uint>::const_iterator it = owned_dofs.begin(); 
                it != owned_dofs.end(); ++it, offset++)
   {
-    for(std::vector<uint>::iterator di = dof2index[*it].begin();
+    for(std::vector<uint>::const_iterator di = dof2index[*it].begin();
       di != dof2index[*it].end(); ++di)
     _dof_map[*di] = offset;
     
