@@ -128,8 +128,8 @@ void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
   uint offset = MPI::global_offset(range, true);   
 
   // Compute renumbering for local and owned shared dofs
-  for (std::set<uint>::iterator it = owned_dofs.begin(); 
-       it != owned_dofs.end(); ++it, offset++)
+  for (std::set<uint>::const_iterator it = owned_dofs.begin(); 
+               it != owned_dofs.end(); ++it, offset++)
   {
     for(std::vector<uint>::iterator di = dof2index[*it].begin();
       di != dof2index[*it].end(); ++di)
@@ -159,9 +159,9 @@ void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
       // Assign new dof number for shared dofs
       if (forbidden_dofs.find(recv_buffer[i]) != forbidden_dofs.end())
       {
-        for(std::vector<uint>::iterator di = dof2index[recv_buffer[i]].begin();
-            di != dof2index[recv_buffer[i]].end(); ++di)
-        _dof_map[*di] = recv_buffer[i+1];
+        for(std::vector<uint>::const_iterator di = dof2index[recv_buffer[i]].begin();
+                  di != dof2index[recv_buffer[i]].end(); ++di)
+          _dof_map[*di] = recv_buffer[i+1];
       }
     }
   }

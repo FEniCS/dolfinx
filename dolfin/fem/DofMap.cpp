@@ -24,7 +24,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<Mesh> mesh)
+DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map,
+               boost::shared_ptr<Mesh> mesh)
   : dof_map(0), dof_map_size(0), cell_map(0),
     ufc_dof_map(dof_map), _offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
@@ -48,7 +49,8 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<Mesh> 
     DofMapBuilder::build(*this, *dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const Mesh> mesh)
+DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map, 
+    boost::shared_ptr<const Mesh> mesh)
   : dof_map(0), dof_map_size(0), cell_map(0),
     ufc_dof_map(dof_map), _offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
@@ -84,7 +86,8 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
   offset = 0;
 
   // Recursively extract sub dofmap
-  boost::shared_ptr<ufc::dof_map> sub_dof_map(extract_sub_dofmap(*ufc_dof_map, offset, component));
+  boost::shared_ptr<ufc::dof_map> sub_dof_map(extract_sub_dofmap(*ufc_dof_map, 
+                                              offset, component));
   info(2, "Extracted dof map for sub system: %s", sub_dof_map->signature());
   info(2, "Offset for sub system: %d", offset);
 
@@ -133,7 +136,8 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map,
   std::vector<uint> sub_component;
   for (uint i = 1; i < component.size(); i++)
     sub_component.push_back(component[i]);
-  ufc::dof_map* sub_sub_dof_map = extract_sub_dofmap(*sub_dof_map, offset, sub_component);
+  ufc::dof_map* sub_sub_dof_map = extract_sub_dofmap(*sub_dof_map, offset, 
+                                                     sub_component);
   delete sub_dof_map;
 
   return sub_sub_dof_map;
@@ -163,7 +167,8 @@ void DofMap::init()
   }
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_index) const
+void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, 
+                           uint cell_index) const
 {
   // Either lookup pretabulated values (if build() has been called)
   // or ask the ufc::dof_map to tabulate the values
@@ -201,8 +206,9 @@ void DofMap::build(const MeshFunction<bool>& meshfunction)
   cell_map = new int[dolfin_mesh->num_cells()];
   int* restriction_mapping = new int[n*dolfin_mesh->num_cells()];
 
-  // dof_map, restriction_mapping, and cell_map are initialized to -1 to indicate that an error
-  // has occured when used outside the subdomain described by meshfunction
+  // dof_map, restriction_mapping, and cell_map are initialized to -1 to 
+  // indicate that an error has occured when used outside the subdomain 
+  // described by meshfunction
   for (uint i=0; i<n*dolfin_mesh->num_cells(); i++)
     dof_map[i]  = -1;
   for (uint i=0; i<ufc_dof_map->global_dimension(); i++)
@@ -289,9 +295,11 @@ void DofMap::disp() const
   cout << "Number of facet dofs:    " << ufc_dof_map->num_facet_dofs() << endl;
 
   for(uint d = 0; d <= dolfin_mesh->topology().dim(); d++)
-    cout << "Number of entity dofs (dim " << d << "): " << ufc_dof_map->num_entity_dofs(d) << endl;
+    cout << "Number of entity dofs (dim " << d << "): " 
+            << ufc_dof_map->num_entity_dofs(d) << endl;
   for(uint d = 0; d <= dolfin_mesh->topology().dim(); d++)
-    cout << "Needs mesh entities (dim " << d << "):   " << ufc_dof_map->needs_mesh_entities(d) << endl;
+    cout << "Needs mesh entities (dim " << d << "):   " 
+            << ufc_dof_map->needs_mesh_entities(d) << endl;
   cout << endl;
   end();
 
@@ -309,8 +317,10 @@ void DofMap::disp() const
   cout << endl;
   end();
 
-  cout << "Local cell dofs associated with cell entities (tabulate_entity_dofs output):" << endl;
-  cout << "----------------------------------------------------------------------------" << endl;
+  cout << "Local cell dofs associated with cell entities (tabulate_entity_dofs output):" 
+          << endl;
+  cout << "----------------------------------------------------------------------------" 
+          << endl;
   begin("");
   {
     uint tdim = dolfin_mesh->topology().dim();
@@ -425,7 +435,8 @@ void DofMap::disp() const
             cout << ", ";
         }
         cout << ")";
-        if(j < num_dofs-1) cout << ",  ";
+        if(j < num_dofs-1) 
+          cout << ",  ";
       }
       cout << endl;
     }
