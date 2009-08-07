@@ -179,9 +179,7 @@ void PETScLUSolver::init()
     KSPCreate(PETSC_COMM_WORLD, &ksp);
   }
   else
-  {
     KSPCreate(PETSC_COMM_SELF, &ksp);
-  }
 
   // Set preconditioner to LU factorization
   PC pc;
@@ -189,7 +187,13 @@ void PETScLUSolver::init()
   PCSetType(pc, PCLU);
 
   #if PETSC_HAVE_UMFPACK && PETSC_VERSION_MAJOR > 2
-  PCFactorSetMatSolverPackage(pc, MAT_SOLVER_UMFPACK);
+  if (MPI::num_processes() == 1)
+    PCFactorSetMatSolverPackage(pc, MAT_SOLVER_UMFPACK);
+  #endif
+
+  #if PETSC_HAVE_MUMPS && PETSC_VERSION_MAJOR > 2
+  if (MPI::num_processes() > 1)
+    PCFactorSetMatSolverPackage(pc, MAT_SOLVER_MUMPS);
   #endif
 
   // Allow matrices with zero diagonals to be solved
