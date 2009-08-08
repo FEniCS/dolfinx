@@ -92,6 +92,9 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
     }
     cell_vertices.push_back(vertices);
   }
+
+  cout << "Number of global vertices: " << num_global_vertices << endl;
+  cout << "Number of global cells: "    << num_global_cells << endl;
 }
 //-----------------------------------------------------------------------------
 void LocalMeshData::broadcast_mesh_data()
@@ -120,6 +123,8 @@ void LocalMeshData::broadcast_mesh_data()
     for (uint p = 0; p < num_processes; p++)
     {
       std::pair<uint, uint> local_range = MPI::local_range(p, num_global_vertices);
+      info("Sending %d vertices to process %d, range is (%d, %d)",
+           local_range.second - local_range.first, p, local_range.first, local_range.second);
       for (uint i = local_range.first; i < local_range.second; i++)
       {
         for (uint j = 0; j < vertex_coordinates[i].size(); j++)
@@ -151,6 +156,8 @@ void LocalMeshData::broadcast_mesh_data()
     for (uint p = 0; p < num_processes; p++)
     {
       std::pair<uint, uint> local_range = MPI::local_range(p, num_global_cells);
+      info("Sending %d cells to process %d, range is (%d, %d)",
+           local_range.second - local_range.first, p, local_range.first, local_range.second);
       for (uint i = local_range.first; i < local_range.second; i++)
       {
         for (uint j = 0; j < cell_vertices[i].size(); j++)
@@ -214,6 +221,9 @@ void LocalMeshData::unpack_vertex_coordinates(const std::vector<double>& values)
       coordinates[j] = values[k++];
     vertex_coordinates.push_back(coordinates);
   }
+  
+  info("Received %d vertex coordinates", vertex_coordinates.size());
+
 }
 //-----------------------------------------------------------------------------
 void LocalMeshData::unpack_vertex_indices(const std::vector<uint>& values)
@@ -222,6 +232,8 @@ void LocalMeshData::unpack_vertex_indices(const std::vector<uint>& values)
   vertex_indices.clear();
   for (uint i = 0; i < values.size(); i++)
     vertex_indices.push_back(values[i]);
+
+  info("Received %d vertex indices", vertex_coordinates.size());
 }
 //-----------------------------------------------------------------------------
 void LocalMeshData::unpack_cell_vertices(const std::vector<uint>& values)
@@ -237,5 +249,7 @@ void LocalMeshData::unpack_cell_vertices(const std::vector<uint>& values)
       vertices[j] = values[k++];
     cell_vertices.push_back(vertices);
   }
+
+  info("Received %d cell vertices", vertex_coordinates.size());
 }
 //-----------------------------------------------------------------------------
