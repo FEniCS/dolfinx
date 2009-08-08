@@ -2,15 +2,16 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
-// Last changed: 2008-12-17
+// Last changed: 2009-08-08
 //
-// Modified by Anders Logg, 2008.
+// Modified by Anders Logg, 2008-2009.
 
 #ifndef __LOCAL_MESH_DATA_H
 #define __LOCAL_MESH_DATA_H
 
 #include <vector>
 #include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 #include "CellType.h"
 
 namespace dolfin
@@ -36,7 +37,7 @@ namespace dolfin
   /// data, at that point corresponding to topologically connected
   /// meshes instead of local mesh data.
 
-  class LocalMeshData
+  class LocalMeshData : public Variable
   {
   public:
 
@@ -48,6 +49,9 @@ namespace dolfin
 
     /// Destructor
     ~LocalMeshData();
+
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
     /// Define XMLHandler for use in new XML reader/writer
     typedef XMLLocalMeshData XMLHandler;

@@ -44,6 +44,56 @@ LocalMeshData::~LocalMeshData()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+std::string LocalMeshData::str(bool verbose) const
+{
+  std::stringstream s;
+  
+  if (verbose)
+  {
+    s << str(false);
+    s << std::endl;
+    
+    s << "  Vertex coordinates" << std::endl;
+    s << "  ------------------" << std::endl;
+    for (uint i = 0; i < vertex_coordinates.size(); i++)
+    {
+      s << "    " << i << ":";
+      for (uint j = 0; j < vertex_coordinates[i].size(); j++)
+        s << " " << vertex_coordinates[i][j];
+      s << std::endl;
+    }
+    s << std::endl;
+
+    s << "  Vertex indices" << std::endl;
+    s << "  --------------" << std::endl;
+    for (uint i = 0; i < vertex_coordinates.size(); i++)
+      s << "    " << i << ": " << vertex_indices[i] << std::endl;
+    s << std::endl;    
+
+    s << "  Cell vertces" << std::endl;
+    s << "  ------------" << std::endl;
+    for (uint i = 0; i < cell_vertices.size(); i++)
+    {
+      s << "    " << i << ":";
+      for (uint j = 0; j < cell_vertices[i].size(); j++)
+        s << " " << cell_vertices[i][j];
+      s << std::endl;
+    }
+    s << std::endl;
+  }
+  else
+  {
+    s << "<LocalMeshData on process "
+      << MPI::process_number() << " with "
+      << vertex_coordinates.size() << " vertices (out of "
+      << num_global_vertices << ") and "
+      << cell_vertices.size() << " cells (out of "
+      << num_global_cells << ")>";
+  }
+
+  return s.str();
+}
+//-----------------------------------------------------------------------------
 void LocalMeshData::clear()
 {
   vertex_coordinates.clear();
@@ -250,6 +300,6 @@ void LocalMeshData::unpack_cell_vertices(const std::vector<uint>& values)
     cell_vertices.push_back(vertices);
   }
 
-  info("Received %d cell vertices", vertex_coordinates.size());
+  info("Received %d cell vertices", cell_vertices.size());
 }
 //-----------------------------------------------------------------------------

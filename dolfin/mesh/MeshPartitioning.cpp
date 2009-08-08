@@ -63,6 +63,9 @@ void MeshPartitioning::partition(Mesh& mesh)
   LocalMeshData mesh_data(mesh);
   dolfin_debug("created local mesh data");
 
+  if (MPI::process_number() == 0)
+    info(mesh_data.str(true));
+  
   // Partition mesh based on local mesh data
   partition(mesh, mesh_data);
 }

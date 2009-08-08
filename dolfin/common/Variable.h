@@ -37,6 +37,8 @@ namespace dolfin
     /// Return label (description)
     const std::string& label() const;
 
+    // FIXME: Add verbose=false argument and make output like <Foo ...>
+
     /// Return informal string representation (pretty-print)
     virtual std::string str() const;
 

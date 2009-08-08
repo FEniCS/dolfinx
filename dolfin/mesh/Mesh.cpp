@@ -382,13 +382,13 @@ void Mesh::disp() const
 std::string Mesh::str() const
 {
   std::ostringstream stream;
-  stream << "[Mesh of topological dimension "
+  stream << "<Mesh of topological dimension "
          << topology().dim()
          << " with "
          << num_vertices()
          << " vertices and "
          << num_cells()
-         << " cells]";
+         << " cells>";
   return stream.str();
 }
 //-----------------------------------------------------------------------------
