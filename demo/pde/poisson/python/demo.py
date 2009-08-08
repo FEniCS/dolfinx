@@ -42,6 +42,9 @@ L = v*f*dx
 problem = VariationalProblem(a, L, bc)
 u = problem.solve()
 
+# FIXME: Temporary while testing parallel assembly
+print "Norm of solution vector: %.15g" % u.vector().norm()
+
 # Plot solution
 plot(u)
 
