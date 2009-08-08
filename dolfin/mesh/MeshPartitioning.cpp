@@ -832,6 +832,11 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+void MeshPartitioning::partition(Mesh& mesh)
+{
+  error("Mesh partitioning requires MPI and ParMETIS.");
+}
+//-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& data)
 {
   error("Mesh partitioning requires MPI and ParMETIS.");

@@ -511,6 +511,23 @@ void dolfin::MPI::distribute(std::vector<double>& values,
   error("MPI::distribute() requires MPI.");
 }
 //-----------------------------------------------------------------------------
+void dolfin::MPI::scatter(std::vector<uint>& values, uint sending_process)
+{
+  error("MPI::scatter() requires MPI.");
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::scatter(std::vector<std::vector<uint> >& values, 
+                          uint sending_process)
+{
+  error("MPI::scatter() requires MPI.");
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::scatter(std::vector<std::vector<double> >& values, 
+                          uint sending_process)
+{
+  error("MPI::scatter() requires MPI.");
+}
+//-----------------------------------------------------------------------------
 void dolfin::MPI::gather(std::vector<uint>& values)
 {
   error("MPI::gather() requires MPI.");
@@ -544,6 +561,13 @@ dolfin::uint dolfin::MPI::send_recv(double* send_buffer, uint send_size, uint de
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint N)
 {
+  return std::make_pair(0, N);
+}
+//-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint process, uint N)
+{
+  if (process != 0 || num_processes() > 1)
+    error("MPI is required for local_range with more than one process.");
   return std::make_pair(0, N);
 }
 //-----------------------------------------------------------------------------
