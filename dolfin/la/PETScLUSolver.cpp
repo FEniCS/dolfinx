@@ -5,7 +5,7 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2005
-// Last changed: 2009-08-06
+// Last changed: 2009-08-08
 
 #ifdef HAS_PETSC
 
@@ -75,18 +75,19 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
     Mat Atemp = *A.mat();
     MatConvert(*A.mat(), MATUMFPACK, MAT_REUSE_MATRIX, &Atemp);
   }
+  #endif
 
   // Convert to MUMPS matrix if matrix type is MATMPIAIJ and MUMPS is available.  
-  #elif PETSC_HAVE_MUMPS 
+  #if PETSC_HAVE_MUMPS 
   if (_mat_type == MATMPIAIJ) 
   {
     Mat Atemp = *A.mat();
     MatConvert(*A.mat(), MATAIJMUMPS, MAT_REUSE_MATRIX, &Atemp);    
   }
-
   #endif
 
   // Make sure the parallel matrix has been converted
+  _mat_type = solver_type;
   if (_mat_type == MATMPIAIJ)
   {
     error("MUMPS is required for parallel symbolic LU.");
