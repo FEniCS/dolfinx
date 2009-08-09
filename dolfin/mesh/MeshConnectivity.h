@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-09
-// Last changed: 2007-11-30
+// Last changed: 2009-08-09
 
 #ifndef __MESH_CONNECTIVITY_H
 #define __MESH_CONNECTIVITY_H
@@ -72,8 +72,8 @@ namespace dolfin
     /// Set all connections for all entities
     void set(const std::vector<std::vector<uint> >& connectivity);
 
-    /// Display data
-    void disp() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   private:
 

@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-07-02
+// Last changed: 2009-08-10
 
 #include <boost/scoped_array.hpp>
 #include <cstdarg>
@@ -65,6 +65,11 @@ void dolfin::info(int log_level, std::string msg, ...)
   LogManager::logger.info(buffer.get(), log_level);
 }
 //-----------------------------------------------------------------------------
+//void dolfin::info(const Variable& variable, bool verbose)
+//{
+//  if (!LogManager::logger.is_active()) return; // optimization
+//  info(variable.str(verbose));
+//}
 void dolfin::info(const Variable& variable)
 {
   if (!LogManager::logger.is_active()) return; // optimization
@@ -75,6 +80,7 @@ void dolfin::info(const Parameters& parameters)
 {
   // Need separate function for Parameters since we can't make Parameters
   // a subclass of Variable (gives cyclic dependencies)
+
   if (!LogManager::logger.is_active()) return; // optimization
   info(parameters.str());
 }
@@ -143,31 +149,16 @@ dolfin::uint dolfin::get_log_level()
   return LogManager::logger.get_log_level();
 }
 //-----------------------------------------------------------------------------
-std::string dolfin::indent(std::string s)
-{
-  const std::string indentation("  ");
-  std::stringstream is;
-  is << indentation;
-  for (uint i = 0; i < s.size(); ++i)
-  {
-    is << s[i];
-    if (s[i] == '\n') // && i < s.size() - 1)
-      is << indentation;
-  }
-
-  return is.str();
-}
-//-----------------------------------------------------------------------------
 void dolfin::summary(bool reset)
 {
   // Optimization
   if (!LogManager::logger.is_active())
     return;
-  
+
   // Only print summary for process 0
   if (MPI::process_number() != 0)
     return;
-  
+
   LogManager::logger.summary(reset);
 }
 //-----------------------------------------------------------------------------

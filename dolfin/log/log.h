@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2008 Anders Logg and Jim Tilander.
+// Copyright (C) 2003-2009 Anders Logg and Jim Tilander.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-07-02
+// Last changed: 2009-08-10
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -34,6 +34,7 @@ namespace dolfin
   void info(int debug_level, std::string msg, ...);
 
   /// Print variable (using output of str() method)
+  //void info(const Variable& variable, bool verbose=false);
   void info(const Variable& variable);
 
   /// Print variable (using output of str() method)
@@ -59,7 +60,7 @@ namespace dolfin
 
   /// End task (decrease indentation level)
   void end();
-  
+
   /// Turn logging on or off
   void logging(bool active=true);
 
@@ -68,9 +69,6 @@ namespace dolfin
 
   /// Get log level
   uint get_log_level();
-
-  /// Indent string
-  std::string indent(std::string s);
 
   /// Print summary of timings and tasks, optionally clearing stored timings
   void summary(bool reset=false);

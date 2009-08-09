@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-02-26
-// Last changed: 2009-06-30
+// Last changed: 2009-09-30
 
 #ifndef __VARIABLE_H
 #define __VARIABLE_H
@@ -40,7 +40,7 @@ namespace dolfin
     // FIXME: Add verbose=false argument and make output like <Foo ...>
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str() const;
+    virtual std::string str(bool verbose=false) const;
 
     // Parameters
     Parameters parameters;

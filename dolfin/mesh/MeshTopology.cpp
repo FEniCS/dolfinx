@@ -1,10 +1,11 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-08
-// Last changed: 2006-11-01
+// Last changed: 2009-08-09
 
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/utils.h>
 #include "MeshConnectivity.h"
 #include "MeshTopology.h"
 
@@ -101,70 +102,54 @@ void MeshTopology::init(uint dim, uint size)
   num_entities[dim] = size;
 }
 //-----------------------------------------------------------------------------
-void MeshTopology::disp() const
+std::string MeshTopology::str(bool verbose) const
 {
-  // Begin indentation
-  cout << "Mesh topology" << endl;
-  begin("-------------");
-  cout << endl;
+  std::stringstream s;
 
-  // Check if empty
-  if ( _dim == 0 )
+  if (verbose)
   {
-    cout << "empty" << endl << endl;
-    end();
-    return;
-  }
+    s << str(false) << std::endl;
 
-  // Display topological dimension
-  cout << "Topological dimension: " << _dim << endl << endl;
+    s << "Number of entities:" << std::endl;
+    for (uint d = 0; d <= _dim; d++)
+      s << "dim = " << d << ": " << num_entities[d] << std::endl;
+    s << std::endl;
 
-  // Display number of entities for each topological dimension
-  cout << "Number of entities:" << endl;
-  begin("");
-  for (uint d = 0; d <= _dim; d++)
-    cout << "dim = " << d << ": " << num_entities[d] << endl;
-  end();
-  cout << endl;
-
-  // Display matrix of connectivities
-  cout << "Connectivity:" << endl;
-  begin("");
-  cout << " ";
-  for (uint d1 = 0; d1 <= _dim; d1++)
-    cout << " " << d1;
-  cout << endl;
-  for (uint d0 = 0; d0 <= _dim; d0++)
-  {
-    cout << d0;
+    s << "Connectivity:" << std::endl;
+    s << " ";
     for (uint d1 = 0; d1 <= _dim; d1++)
+      s << " " << d1;
+    s << std::endl;
+    for (uint d0 = 0; d0 <= _dim; d0++)
     {
-      if ( connectivity[d0][d1].size() > 0 )
-	cout << " x";
-      else
-	cout << " -";
+      s << d0;
+      for (uint d1 = 0; d1 <= _dim; d1++)
+      {
+        if ( connectivity[d0][d1].size() > 0 )
+          s << " x";
+        else
+          s << " -";
+      }
+      s << std::endl;
     }
-    cout << endl;
-  }
-  cout << endl;
-  end();
+    s << std::endl;
 
-  // Display connectivity for each topological dimension
-  for (uint d0 = 0; d0 <= _dim; d0++)
-  {
-    for (uint d1 = 0; d1 <= _dim; d1++)
+    for (uint d0 = 0; d0 <= _dim; d0++)
     {
-      if ( connectivity[d0][d1].size() == 0 )
-	continue;
-      cout << "Connectivity " << d0 << " -- " << d1 << ":" << endl;
-      begin("");
-      connectivity[d0][d1].disp();
-      end();
-      cout << endl;
+      for (uint d1 = 0; d1 <= _dim; d1++)
+      {
+        if ( connectivity[d0][d1].size() == 0 )
+          continue;
+        s << "Connectivity " << d0 << " -- " << d1 << ":" << std::endl;
+        s << indent(connectivity[d0][d1].str());
+        s << std::endl;
+      }
     }
   }
+  {
+    s << "<MeshTopology of dimension " << _dim << ">";
+  }
 
-  // End indentation
-  end();
+  return s.str();
 }
 //-----------------------------------------------------------------------------

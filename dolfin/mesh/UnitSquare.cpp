@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2005-12-02
-// Last changed: 2008-11-13
+// Last changed: 2009-08-09
 
 #include <dolfin/main/MPI.h>
 #include "MeshPartitioning.h"
@@ -16,13 +16,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
 {
-  dolfin_debug("Creating unit square");
-
   // Receive mesh according to parallel policy
-  if (MPI::is_receiver()) {
-    dolfin_debug("Receiving unit square");
-    MeshPartitioning::partition(*this); return;
-  }
+  if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
 
   if (diagonal != "left" && diagonal != "right" && diagonal != "crossed")
     error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\" and \"crossed\".");
@@ -127,10 +122,6 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::is_broadcaster())
-  {
-    dolfin_debug("Broadcasting unit square");
-    MeshPartitioning::partition(*this); return;
-  }
+  if (MPI::is_broadcaster()) { MeshPartitioning::partition(*this); return; }
 }
 //-----------------------------------------------------------------------------

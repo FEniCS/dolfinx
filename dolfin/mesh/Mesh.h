@@ -8,7 +8,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2009-05-15
+// Last changed: 2009-08-09
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -188,11 +188,8 @@ namespace dolfin
     /// Compute intersection with mesh
     void intersection(Mesh& mesh, std::vector<unsigned int>& cells, bool fixed_mesh=true);
 
-    /// Display mesh data
-    void disp() const;
-
-    /// Return a short desriptive string
-    std::string str() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const Mesh& mesh);

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-09
-// Last changed: 2007-03-01
+// Last changed: 2009-08-09
 
 #include <dolfin/log/dolfin_log.h>
 #include "MeshConnectivity.h"
@@ -158,22 +158,27 @@ void MeshConnectivity::set(const std::vector<std::vector<uint> >& connections)
       this->connections[offsets[e] + i] = connections[e][i];
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::disp() const
+std::string MeshConnectivity::str(bool verbose) const
 {
-  // Check if there are any connections
-  if ( _size == 0 )
+  std::stringstream s;
+
+  if (verbose)
   {
-    cout << "empty" << endl;
-    return;
+    s << str(false) << std::endl;
+
+    for (uint e = 0; e < num_entities; e++)
+    {
+      s << e << ":";
+      for (uint i = offsets[e]; i < offsets[e + 1]; i++)
+        s << " " << connections[i];
+      s << std::endl;
+    }
+  }
+  else
+  {
+    s << "<MeshConnectivity of size " << _size << ">";
   }
 
-  // Display all connections
-  for (uint e = 0; e < num_entities; e++)
-  {
-    cout << e << ":";
-    for (uint i = offsets[e]; i < offsets[e + 1]; i++)
-      cout << " " << connections[i];
-    cout << endl;
-  }
+  return s.str();
 }
 //-----------------------------------------------------------------------------

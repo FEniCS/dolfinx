@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2009-02-25
+// Last changed: 2009-08-09
 
 #include <sstream>
 
@@ -16,6 +16,7 @@
 #include <dolfin/ale/ALE.h>
 #include <dolfin/io/File.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/utils.h>
 #include "UniformMeshRefinement.h"
 #include "LocalMeshRefinement.h"
 #include "LocalMeshCoarsening.h"
@@ -341,55 +342,29 @@ void Mesh::intersection(Mesh& mesh, std::vector<uint>& intersection, bool fixed_
   detector->intersection(mesh, intersection);
 }
 //-----------------------------------------------------------------------------
-void Mesh::disp() const
+std::string Mesh::str(bool verbose) const
 {
-  // Begin indentation
-  cout << "Mesh data" << endl;
-  begin("---------");
-  cout << endl;
+  std::stringstream s;
 
-  // Display topology and geometry
-  _topology.disp();
-  _geometry.disp();
+  if (verbose)
+  {
+    s << str(false) << std::endl;
 
-  // Display cell type
-  cout << "Cell type" << endl;
-  cout << "---------" << endl;
-  begin("");
-  if (_cell_type)
-    cout << _cell_type->description() << endl;
+    s << indent(_topology.str(true));
+    s << indent(_geometry.str(true));
+    s << indent(_data.str(true));
+  }
   else
-    cout << "undefined" << endl;
-  end();
+  {
+    s << "<Mesh of topological dimension "
+      << topology().dim() << " ("
+      << (_cell_type ? _cell_type->description() : "undefined") << ") with "
+      << num_vertices() << " vertices and "
+      << num_cells() << " cells, "
+      << (_ordered ? "ordered" : "unordered") << ">";
+  }
 
-  // Display mesh data
-  _data.disp();
-
-  // Display ordering
-  cout << "Ordering" << endl;
-  cout << "--------" << endl;
-  begin("");
-  if (_ordered)
-    cout << "Mesh is ordered" << endl;
-  else
-    cout << "Mesh may not be ordered" << endl;
-  end();
-
-  // End indentation
-  end();
-}
-//-----------------------------------------------------------------------------
-std::string Mesh::str() const
-{
-  std::ostringstream stream;
-  stream << "<Mesh of topological dimension "
-         << topology().dim()
-         << " with "
-         << num_vertices()
-         << " vertices and "
-         << num_cells()
-         << " cells>";
-  return stream.str();
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Mesh& mesh)
