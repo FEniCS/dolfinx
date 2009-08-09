@@ -39,27 +39,52 @@ void plot_object(const T& t, std::string mode)
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Function& v, std::string mode)
 {
+  if (dolfin::MPI::num_processes() > 1)
+  {
+    warning("Built-in plotting needs to be updated when running in parallel.");
+    return;
+  }  
   FunctionPlotData w(v);
   plot_object(w, mode);
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Mesh& mesh)
 {
+  if (dolfin::MPI::num_processes() > 1)
+  {
+    warning("Built-in plotting needs to be updated when running in parallel.");
+    return;
+  }  
   plot_object(mesh, "auto");
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<uint>& f)
 {
+  if (dolfin::MPI::num_processes() > 1)
+  {
+    warning("Built-in plotting needs to be updated when running in parallel.");
+    return;
+  }  
   plot_object(f, "auto");
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<double>& f)
 {
+  if (dolfin::MPI::num_processes() > 1)
+  {
+    warning("Built-in plotting needs to be updated when running in parallel.");
+    return;
+  }  
   plot_object(f, "auto");
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<bool>& f)
 {
+  if (dolfin::MPI::num_processes() > 1)
+  {
+    warning("Built-in plotting needs to be updated when running in parallel.");
+    return;
+  }  
   plot_object(f, "auto");
 }
 //-----------------------------------------------------------------------------
