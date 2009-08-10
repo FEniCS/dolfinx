@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman, 2007.
 //
 // First added:  2006-05-22
-// Last changed: 2009-03-16
+// Last changed: 2009-08-10
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -14,7 +14,6 @@
 #include <dolfin/io/File.h>
 #include "MeshEntity.h"
 #include <dolfin/main/MPI.h>
-#include "MPIMeshCommunicator.h"
 
 namespace dolfin
 {
@@ -234,8 +233,6 @@ namespace dolfin
     typedef XMLMeshFunction XMLHandler;
 
   private:
-
-    friend class MPIMeshCommunicator;
 
     /// Values at the set of mesh entities
     T* _values;

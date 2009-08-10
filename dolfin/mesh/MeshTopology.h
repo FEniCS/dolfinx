@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-08
-// Last changed: 2009-08-09
+// Last changed: 2009-08-10
 
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
@@ -68,8 +68,6 @@ namespace dolfin
     std::string str(bool verbose=false) const;
 
   private:
-
-    friend class MPIMeshCommunicator;
 
     // Topological dimension
     uint _dim;

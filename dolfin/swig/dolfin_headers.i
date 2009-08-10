@@ -93,7 +93,6 @@
 %include "dolfin/mesh/DynamicMeshEditor.h"
 %include "dolfin/mesh/MeshFunction.h"
 %include "dolfin/mesh/Mesh.h"
-%include "dolfin/mesh/MPIMeshCommunicator.h"
 %include "dolfin/mesh/MeshPartitioning.h"
 %include "dolfin/mesh/LocalMeshData.h"
 %include "dolfin/mesh/SubDomain.h"

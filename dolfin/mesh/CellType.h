@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2009-08-06
+// Last changed: 2009-08-10
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -113,8 +113,6 @@ namespace dolfin
 
   protected:
 
-    friend class MPIMeshCommunicator;
-
     Type _cell_type;
     Type _facet_type;
 
@@ -134,7 +132,7 @@ namespace dolfin
                            uint n1, const uint* v1,
                            uint num_vertices, const uint* vertices,
                            const MeshFunction<uint>* global_vertex_indices);
-   
+
   };
 
 }

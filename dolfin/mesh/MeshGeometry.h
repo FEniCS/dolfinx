@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2009-08-09
+// Last changed: 2009-08-10
 
 #ifndef __MESH_GEOMETRY_H
 #define __MESH_GEOMETRY_H
@@ -129,8 +129,6 @@ namespace dolfin
     std::string str(bool verbose=false) const;
 
   private:
-
-    friend class MPIMeshCommunicator;
 
     // Euclidean dimension
     uint _dim;
