@@ -191,9 +191,6 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose=false) const;
 
-    /// Output
-    friend LogStream& operator<< (LogStream& stream, const Mesh& mesh);
-
     /// Define XMLHandler for use in new XML reader/writer
     typedef XMLMesh XMLHandler;
 

@@ -367,9 +367,3 @@ std::string Mesh::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Mesh& mesh)
-{
-  stream << mesh.str();
-  return stream;
-}
-//-----------------------------------------------------------------------------

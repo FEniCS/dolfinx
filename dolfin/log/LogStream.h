@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-03-13
-// Last changed: 2005-12-09
+// Last changed: 2009-08-10
 
 #ifndef __LOG_STREAM_H
 #define __LOG_STREAM_H
@@ -16,8 +16,11 @@
 namespace dolfin
 {
 
-  // FIXME: This class uses a fixed buffer size and needs to be
-  // FIXME: redesigned, possibly using std::stringstream.
+  class Variable;
+
+  /// This class provides functionality similar to standard C++
+  /// streams (std::cout, std::endl) for output but working through
+  /// the DOLFIN log system.
 
   class LogStream
   {
@@ -34,7 +37,9 @@ namespace dolfin
     LogStream& operator<<(unsigned int a);
     LogStream& operator<<(double a);
     LogStream& operator<<(complex z);
+    LogStream& operator<<(const Variable& variable);
     LogStream& operator<<(const LogStream& stream);
+
 #ifdef HAS_GMP
     LogStream& operator<<(real a);
 #endif

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-02-26
-// Last changed: 2009-09-30
+// Last changed: 2009-08-10
 
 #ifndef __VARIABLE_H
 #define __VARIABLE_H
@@ -14,11 +14,11 @@ namespace dolfin
 {
 
   /// Common base class for DOLFIN variables.
-  
+
   class Variable
   {
   public:
-    
+
     /// Create unnamed variable
     Variable();
 
@@ -30,21 +30,19 @@ namespace dolfin
 
     /// Rename variable
     void rename(const std::string name, const std::string label);
-    
+
     /// Return name
     const std::string& name()  const;
 
     /// Return label (description)
     const std::string& label() const;
 
-    // FIXME: Add verbose=false argument and make output like <Foo ...>
-
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose=false) const;
 
     // Parameters
     Parameters parameters;
-    
+
   private:
 
     // Name

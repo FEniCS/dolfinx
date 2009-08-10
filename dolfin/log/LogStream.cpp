@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-04-09
+// Last changed: 2009-08-10
 
 #include <stdio.h>
 #include <cmath>
@@ -12,6 +12,7 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
+#include <dolfin/common/Variable.h>
 #include "log.h"
 #include "LogManager.h"
 #include "LogStream.h"
@@ -111,11 +112,16 @@ LogStream& LogStream::operator<<(complex z)
   return *this;
 }
 //-----------------------------------------------------------------------------
+LogStream& LogStream::operator<<(const Variable& variable)
+{
+  return *this << variable.str();
+}
+//-----------------------------------------------------------------------------
 void LogStream::disp() const
 {
   // This is used for debugging
 
-  printf("This i a LogStream of type ");
+  printf("This is a LogStream of type ");
   switch ( type ) {
   case COUT:
     printf("cout.\n");
@@ -144,4 +150,3 @@ void LogStream::add(const char* msg)
   buffer[current] = '\0';
 }
 //-----------------------------------------------------------------------------
-
