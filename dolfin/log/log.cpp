@@ -65,15 +65,10 @@ void dolfin::info(int log_level, std::string msg, ...)
   LogManager::logger.info(buffer.get(), log_level);
 }
 //-----------------------------------------------------------------------------
-//void dolfin::info(const Variable& variable, bool verbose)
-//{
-//  if (!LogManager::logger.is_active()) return; // optimization
-//  info(variable.str(verbose));
-//}
-void dolfin::info(const Variable& variable)
+void dolfin::info(const Variable& variable, bool verbose)
 {
   if (!LogManager::logger.is_active()) return; // optimization
-  info(variable.str());
+  info(variable.str(verbose));
 }
 //-----------------------------------------------------------------------------
 void dolfin::info(const Parameters& parameters)

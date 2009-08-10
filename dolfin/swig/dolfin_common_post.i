@@ -8,9 +8,9 @@
 
 %extend dolfin::Variable
 {
-  const std::string __str__() const
+  const std::string __str__(bool verbose=false) const
   {
-    return self->str();
+    return self->str(verbose);
   }
-   
+
 }
