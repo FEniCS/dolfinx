@@ -39,7 +39,7 @@ def update(self, other):
 def info(*args):
     if len(args) > 0 and isinstance(args[0],(Variable,Parameters)):
         if len(args) > 1:
-            _info(args[0].__str__(args[1]))
+            _info(args[0].__str__(*args[1:]))
         else:
             _info(args[0].__str__())
     else:

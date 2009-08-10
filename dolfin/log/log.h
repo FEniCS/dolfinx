@@ -33,11 +33,11 @@ namespace dolfin
   /// Print message at given debug level
   void info(int debug_level, std::string msg, ...);
 
+  /// Print parameter (using output of str() method)
+  void info(const Parameters& parameters, bool verbose=false);
+
   /// Print variable (using output of str() method)
   void info(const Variable& variable, bool verbose=false);
-
-  /// Print parameter (using output of str() method)
-  void info(const Parameters& parameters);
 
   /// Print message to stream
   void info_stream(std::ostream& out, std::string msg);

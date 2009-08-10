@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-08-09
+// Last changed: 2009-08-10
 
 #ifndef __PARAMETERS_H
 #define __PARAMETERS_H
@@ -75,7 +75,7 @@ namespace dolfin
   public:
 
     /// Create empty parameter set
-    Parameters(std::string key="parameters");
+    explicit Parameters(std::string key="parameters");
 
     /// Destructor
     ~Parameters();
