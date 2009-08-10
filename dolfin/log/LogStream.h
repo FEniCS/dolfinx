@@ -10,6 +10,7 @@
 #define __LOG_STREAM_H
 
 #include <string>
+#include <sstream>
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
 
@@ -26,37 +27,55 @@ namespace dolfin
   {
   public:
 
+    /// Stream types
     enum Type {COUT, ENDL};
 
+    /// Create log stream of given type
     LogStream(Type type);
+
+    /// Destructor
     ~LogStream();
 
-    LogStream& operator<<(const char* s);
-    LogStream& operator<<(const std::string& s);
-    LogStream& operator<<(int a);
-    LogStream& operator<<(unsigned int a);
-    LogStream& operator<<(double a);
-    LogStream& operator<<(complex z);
-    LogStream& operator<<(const Variable& variable);
-    LogStream& operator<<(const LogStream& stream);
+    /// Output for log stream
+    LogStream& operator<< (const LogStream& stream);
+
+    /// Output for string
+    LogStream& operator<< (const std::string& s);
+
+    /// Output for int
+    LogStream& operator<< (int a);
+
+    /// Output for unsigned int
+    LogStream& operator<< (uint a);
+
+    /// Output for double
+    LogStream& operator<< (double a);
+
+    /// Output for complex
+    LogStream& operator<< (complex z);
+
+    /// Output for variable (calling str() method)
+    LogStream& operator<< (const Variable& variable);
 
 #ifdef HAS_GMP
-    LogStream& operator<<(real a);
+    /// Output for real
+    LogStream& operator<< (real a);
 #endif
-
-    void disp() const;
 
   private:
 
-    void add(const char* msg);
-
+    // Type of stream
     Type type;
-    char* buffer;
-    int current;
+
+    // Buffer
+    std::stringstream buffer;
 
   };
 
+  /// dolfin::cout
   extern LogStream cout;
+
+  /// dolfin::endl;
   extern LogStream endl;
 
 }
