@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2008-11-14
+// Last changed: 2009-08-10
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -589,10 +589,11 @@ bool TetrahedronCell::intersects(const MeshEntity& entity, const Cell& cell) con
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-std::string TetrahedronCell::description() const
+std::string TetrahedronCell::description(bool plural) const
 {
-  std::string s = "tetrahedron (simplex of topological dimension 3)";
-  return s;
+  if (plural)
+    return "tetrahedra";
+  return "tetrahedron";
 }
 //-----------------------------------------------------------------------------
 dolfin::uint TetrahedronCell::find_edge(uint i, const Cell& cell) const

@@ -5,7 +5,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2008-11-14
+// Last changed: 2009-08-10
 
 #ifndef __POINT_CELL_H
 #define __POINT_CELL_H
@@ -73,7 +73,7 @@ namespace dolfin
     bool intersects(const MeshEntity& entity, const Cell& cell) const;
 
     /// Return description of cell type
-    std::string description() const;
+    std::string description(bool plural=false) const;
 
   private:
 

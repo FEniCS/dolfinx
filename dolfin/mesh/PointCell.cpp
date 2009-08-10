@@ -5,7 +5,7 @@
 // Modified by Kristoffer Sleim, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2008-11-17
+// Last changed: 2009-08-10
 
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
@@ -124,10 +124,11 @@ bool PointCell::intersects(const MeshEntity& entity,
 }
 
 //-----------------------------------------------------------------------------
-std::string PointCell::description() const
+std::string PointCell::description(bool plural) const
 {
-  std::string s = "point (simplex of topological dimension 0)";
-  return s;
+  if (plural)
+    return "points";
+  return "points";
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PointCell::find_edge(uint i, const Cell& cell) const

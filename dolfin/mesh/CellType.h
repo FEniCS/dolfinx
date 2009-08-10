@@ -109,7 +109,7 @@ namespace dolfin
     virtual bool intersects(const MeshEntity& entity, const Cell& cell) const = 0;
 
     /// Return description of cell type
-    virtual std::string description() const = 0;
+    virtual std::string description(bool plural=false) const = 0;
 
   protected:
 

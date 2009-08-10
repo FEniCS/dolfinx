@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim, 2008
 //
 // First added:  2006-06-05
-// Last changed: 2008-11-14
+// Last changed: 2009-08-10
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -39,7 +39,7 @@ dolfin::uint TriangleCell::num_entities(uint dim) const
   default:
     error("Illegal topological dimension %d for triangle.", dim);
   }
-  
+
   return 0;
 }
 //-----------------------------------------------------------------------------
@@ -56,7 +56,7 @@ dolfin::uint TriangleCell::num_vertices(uint dim) const
   default:
     error("Illegal topological dimension %d for triangle.", dim);
   }
-  
+
   return 0;
 }
 //-----------------------------------------------------------------------------
@@ -309,7 +309,7 @@ void TriangleCell::order(Cell& cell,
       for (uint j = i; j < 3; j++)
       {
         const uint* edge_vertices = topology(1, 0)(cell_edges[j]);
-        
+
         // Check if the ith vertex of the cell is non-incident with edge j
         if (std::count(edge_vertices, edge_vertices + 2, cell_vertices[i]) == 0)
         {
@@ -485,10 +485,11 @@ bool TriangleCell::intersects(const MeshEntity& triangle, const Cell& cell) cons
   return false;
 }
 //-----------------------------------------------------------------------------
-std::string TriangleCell::description() const
+std::string TriangleCell::description(bool plural) const
 {
-  std::string s = "triangle (simplex of topological dimension 2)";
-  return s;
+  if (plural)
+    return "triangles";
+  return "triangle";
 }
 //-----------------------------------------------------------------------------
 dolfin::uint TriangleCell::find_edge(uint i, const Cell& cell) const

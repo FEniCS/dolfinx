@@ -5,7 +5,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-19
-// Last changed: 2009-08-09
+// Last changed: 2009-08-10
 
 #include <dolfin/log/dolfin_log.h>
 #include "MeshGeometry.h"
@@ -195,16 +195,16 @@ std::string MeshGeometry::str(bool verbose) const
 
   if (verbose)
   {
-    s << str(false) << std::endl;
+    s << str(false) << std::endl << std::endl;
 
     for (uint i = 0; i < _size; i++)
     {
-      cout << i << ":";
+      s << "  " << i << ":";
       for (uint d = 0; d < _dim; d++)
-        cout << " " << x(i, d);
-      cout << endl;
+        s << " " << x(i, d);
+      s << std::endl;
     }
-    cout << endl;
+    s << std::endl;
   }
   else
   {

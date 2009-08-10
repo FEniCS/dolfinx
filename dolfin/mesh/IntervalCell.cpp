@@ -5,7 +5,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2008-11-13
+// Last changed: 2009-08-10
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -194,9 +194,10 @@ bool IntervalCell::intersects(const MeshEntity& entity, const Cell& cell) const
   return false;
 }
 //-----------------------------------------------------------------------------
-std::string IntervalCell::description() const
+std::string IntervalCell::description(bool plural) const
 {
-  std::string s = "interval (simplex of topological dimension 1)";
-  return s;
+  if (plural)
+    return "intervals";
+  return "interval";
 }
 //-----------------------------------------------------------------------------

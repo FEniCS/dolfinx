@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2009-08-09
+// Last changed: 2009-08-10
 
 #include <sstream>
 
@@ -348,7 +348,7 @@ std::string Mesh::str(bool verbose) const
 
   if (verbose)
   {
-    s << str(false) << std::endl;
+    s << str(false) << std::endl << std::endl;
 
     s << indent(_topology.str(true));
     s << indent(_geometry.str(true));
@@ -358,7 +358,7 @@ std::string Mesh::str(bool verbose) const
   {
     s << "<Mesh of topological dimension "
       << topology().dim() << " ("
-      << (_cell_type ? _cell_type->description() : "undefined") << ") with "
+      << _cell_type->description(true) << ") with "
       << num_vertices() << " vertices and "
       << num_cells() << " cells, "
       << (_ordered ? "ordered" : "unordered") << ">";

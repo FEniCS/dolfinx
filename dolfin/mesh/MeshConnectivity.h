@@ -25,8 +25,8 @@ namespace dolfin
   {
   public:
 
-    /// Create empty connectivity
-    MeshConnectivity();
+    /// Create empty connectivity between given dimensions (d0 -- d1)
+    MeshConnectivity(uint d0, uint d1);
 
     /// Copy constructor
     MeshConnectivity(const MeshConnectivity& connectivity);
@@ -76,6 +76,9 @@ namespace dolfin
     std::string str(bool verbose=false) const;
 
   private:
+
+    /// Dimensions (only used for pretty-printing)
+    uint d0, d1;
 
     /// Total number of connections
     uint _size;

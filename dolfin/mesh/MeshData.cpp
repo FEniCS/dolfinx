@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2008-05-19
-// Last changed: 2009-08-09
+// Last changed: 2009-08-10
 
 #include <sstream>
 
@@ -279,7 +279,7 @@ std::string MeshData::str(bool verbose) const
 
   if (verbose)
   {
-    s << str(false) << std::endl;
+    s << str(false) << std::endl << std::endl;
 
     // Mesh functions
     s << "  MeshFunction<uint>" << std::endl;
@@ -309,10 +309,11 @@ std::string MeshData::str(bool verbose) const
       s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
     s << std::endl;
   }
+  else
   {
     const uint num_objects =
       mesh_functions.size() + arrays.size() + mappings.size() + vector_mappings.size();
-    s << "<MeshData containging " << num_objects << " objects>";
+    s << "<MeshData containing " << num_objects << " objects>";
   }
 
   return s.str();

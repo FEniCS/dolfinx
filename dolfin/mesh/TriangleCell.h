@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2008-11-14
+// Last changed: 2009-08-10
 
 #ifndef __TRIANGLE_CELL_H
 #define __TRIANGLE_CELL_H
@@ -69,7 +69,7 @@ namespace dolfin
     bool intersects(const MeshEntity& entity, const Cell& cell) const;
 
     /// Return description of cell type
-    std::string description() const;
+    std::string description(bool plural=false) const;
 
   private:
 
