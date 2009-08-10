@@ -71,13 +71,13 @@ void dolfin::info(const Variable& variable, bool verbose)
   info(variable.str(verbose));
 }
 //-----------------------------------------------------------------------------
-void dolfin::info(const Parameters& parameters)
+void dolfin::info(const Parameters& parameters, bool verbose)
 {
   // Need separate function for Parameters since we can't make Parameters
   // a subclass of Variable (gives cyclic dependencies)
 
   if (!LogManager::logger.is_active()) return; // optimization
-  info(parameters.str());
+  info(parameters.str(verbose));
 }
 //-----------------------------------------------------------------------------
 void dolfin::info_stream(std::ostream& out, std::string msg)
