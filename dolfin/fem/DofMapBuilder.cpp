@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstring>
 #include <ctime>
+#include <dolfin/common/Set.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Edge.h>
@@ -42,10 +43,12 @@ void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
   interior_boundary.init_interior(mesh);
   MeshFunction<uint>* cell_map = interior_boundary.data().mesh_function("cell map");
   
-  typedef std::set<uint> set;
-  typedef std::set<uint>::const_iterator set_iterator;
+  //typedef std::set<uint> set;
+  //typedef std::set<uint>::const_iterator set_iterator;
+  typedef Set<uint> set;
+  typedef Set<uint>::const_iterator set_iterator;
+  typedef std::vector<uint>::const_iterator vector_iterator;
   set shared_dofs, forbidden_dofs, owned_dofs;
-
   std::vector<uint> send_buffer;
   std::map<uint, uint> dof_vote;
   std::map<uint, std::vector<uint> > dof2index;
@@ -131,11 +134,9 @@ void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
   uint offset = MPI::global_offset(range, true);   
 
   // Compute renumbering for local and owned shared dofs
-  for (set_iterator it = owned_dofs.begin(); 
-               it != owned_dofs.end(); ++it, offset++)
+  for (set_iterator it = owned_dofs.begin(); it != owned_dofs.end(); ++it, offset++)
   {
-    for(std::vector<uint>::const_iterator di = dof2index[*it].begin();
-      di != dof2index[*it].end(); ++di)
+    for(vector_iterator di = dof2index[*it].begin(); di != dof2index[*it].end(); ++di)
     _dof_map[*di] = offset;
     
     if (shared_dofs.find(*it) != shared_dofs.end())
@@ -162,7 +163,7 @@ void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
       // Assign new dof number for shared dofs
       if (forbidden_dofs.find(recv_buffer[i]) != forbidden_dofs.end())
       {
-        for(std::vector<uint>::const_iterator di = dof2index[recv_buffer[i]].begin();
+        for(vector_iterator di = dof2index[recv_buffer[i]].begin();
                   di != dof2index[recv_buffer[i]].end(); ++di)
           _dof_map[*di] = recv_buffer[i+1];
       }

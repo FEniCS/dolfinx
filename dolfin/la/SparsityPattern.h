@@ -10,6 +10,7 @@
 #define __SPARSITY_PATTERN_H
 
 #include <vector>
+#include "dolfin/common/Set.h"
 #include "GenericSparsityPattern.h"
 
 namespace dolfin
@@ -64,7 +65,7 @@ namespace dolfin
     std::string str() const;
     
     /// Return underlying sparsity pattern
-    const std::vector<std::vector<uint> >& pattern() const;
+    const std::vector<Set<uint> >& pattern() const;
 
   private:
 
@@ -90,8 +91,10 @@ namespace dolfin
     uint col_range_max;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
-    std::vector<std::vector<uint> > diagonal;
-    std::vector<std::vector<uint> > off_diagonal;
+    //std::vector<std::vector<uint> > diagonal;
+    //std::vector<std::vector<uint> > off_diagonal;
+    std::vector<Set<uint> > diagonal;
+    std::vector<Set<uint> > off_diagonal;
 
     // Sparsity pattern for non-local entries stored as [i, j, i, j, ...]
     std::vector<uint> non_local;
