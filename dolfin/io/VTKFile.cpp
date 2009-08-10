@@ -24,6 +24,9 @@
 #include <dolfin/la/Vector.h>
 #include "VTKFile.h"
 
+#include <boost/archive/iterators/base64_from_binary.hpp>
+#include <boost/archive/iterators/transform_width.hpp>
+
 
 using namespace dolfin;
 
@@ -380,9 +383,36 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
           ss << " " << values[vertex->index() + i*mesh.num_vertices()];
       }
       ss << std::endl;
-
       fp << ss.str();
     }
+
+typedef 
+//     boost::archive::iterators::insert_linebreaks<         // insert line breaks every 72 characters
+         boost::archive::iterators::base64_from_binary<    // convert binary values ot base64 characters
+             boost::archive::iterators::transform_width<   // retrieve 6 bit integers from a sequence of 8 bit bytes
+                 const char *,
+                 6,
+                8
+             >
+         > 
+//         ,72
+//     > 
+     base64_text; // compose all the above operations in to a new iterator
+    
+    // Encode vertex data
+    //std::stringstream base64_data;
+    //std::copy(base64_text(&values[0]), base64_text(&values[size]), std::ostream_iterator<char>(base64_data));
+    //std::cout << base64_data.str() << std::endl;
+
+    // Encode size of data
+    //int _size = size*sizeof(double);
+    //std::stringstream base64_size;
+    //std::copy(base64_text(&_size), base64_text(&_size+1), std::ostream_iterator<char>(base64_size));
+
+    //std::string output = base64_size.str() + "==" + base64_data.str();
+    //fp << output;
+    //fp << std::endl;
+
     fp << "</DataArray> " << std::endl;
     fp << "</PointData> " << std::endl;
 
