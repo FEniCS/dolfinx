@@ -11,7 +11,6 @@
 #ifndef __MTL4_VECTOR_H
 #define __MTL4_VECTOR_H
 
-#include <dolfin/common/Variable.h>
 #include "mtl4.h"
 #include "GenericVector.h"
 
@@ -29,7 +28,7 @@
 namespace dolfin
 {
 
-  class MTL4Vector: public GenericVector, public Variable
+  class MTL4Vector: public GenericVector
   {
   public:
 

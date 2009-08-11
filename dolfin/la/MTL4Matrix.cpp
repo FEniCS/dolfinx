@@ -18,25 +18,22 @@ using namespace dolfin;
 using namespace mtl;
 
 //-----------------------------------------------------------------------------
-MTL4Matrix::MTL4Matrix(): Variable("A", "MTL4 matrix"), ins(0), nnz_row(0)
+MTL4Matrix::MTL4Matrix() : ins(0), nnz_row(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MTL4Matrix::MTL4Matrix(uint M, uint N): Variable("A", "MTL4 matrix"), ins(0),
-                                        nnz_row(0)
+MTL4Matrix::MTL4Matrix(uint M, uint N) :ins(0), nnz_row(0)
 {
   resize(M, N);
 }
 //-----------------------------------------------------------------------------
-MTL4Matrix::MTL4Matrix(uint M, uint N, uint nz): Variable("A", "MTL4 matrix"),
-                                                 ins(0), nnz_row(nz)
+MTL4Matrix::MTL4Matrix(uint M, uint N, uint nz) : ins(0), nnz_row(nz)
 {
   resize(M, N);
 }
 //-----------------------------------------------------------------------------
-MTL4Matrix::MTL4Matrix(const MTL4Matrix& mat): Variable("A", "MTL4 matrix"),
-                                               ins(0), nnz_row(0)
+MTL4Matrix::MTL4Matrix(const MTL4Matrix& mat) : ins(0), nnz_row(0)
 {
   assert_no_inserter();
 
