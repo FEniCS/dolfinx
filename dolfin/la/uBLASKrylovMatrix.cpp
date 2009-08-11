@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-07-07
-// Last changed: 2006-07-07
+// Last changed: 2009-08-10
 
 #include "uBLASVector.h"
 #include "uBLASSparseMatrix.h"
@@ -23,7 +23,7 @@ void uBLASKrylovMatrix::solve(uBLASVector& x, const uBLASVector& b)
   assert(M == b.size());
 
   // Initialize temporary data if not already done
-  if ( !AA )
+  if (!AA)
   {
     AA = new uBLASMatrix<ublas_dense_matrix>(M, N);
     ej = new uBLASVector(N);
@@ -64,32 +64,19 @@ void uBLASKrylovMatrix::solve(uBLASVector& x, const uBLASVector& b)
  (*AA).solve(x, b);
 }
 //-----------------------------------------------------------------------------
-/*
-void uBLASKrylovMatrix::disp(const int precision) const
+std::string uBLASKrylovMatrix::str(bool verbose) const
 {
-  // Since we don't really have the matrix, we create the matrix by
-  // performing multiplication with unit vectors. Used only for debugging.
+  std::stringstream s;
 
-  uint M = size(0);
-  uint N = size(1);
-  uBLASVector x(N), y(M);
-  uBLASMatrix<ublas_sparse_matrix> A(M, N);
-
-  x = 0.0;
-  for (unsigned int j = 0; j < N; j++)
+  if (verbose)
   {
-    x(j) = 1.0;
-    mult(x, y);
-    for (unsigned int i = 0; i < M; i++)
-    {
-      const double value = y(i);
-      if ( fabs(value) > DOLFIN_EPS )
-        A(i, j) = value;
-    }
-    x(j) = 0.0;
+    warning("Verbose output for uBLASKrylovMatrix not implemented.");
+  }
+  else
+  {
+    s << "<uBLASKrylovMatrix of size " << size(0) << " x " << size(1) << ">";
   }
 
-  A.disp(precision);
+  return s.str();
 }
 //-----------------------------------------------------------------------------
-*/

@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2003-06-12
-// Last changed: 2008-04-22
+// Last changed: 2009-08-11
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/real.h>
@@ -121,19 +121,23 @@ real Lagrange::dqdx(unsigned int i)
   return product;
 }
 //-----------------------------------------------------------------------------
-LogStream& dolfin::operator<<(LogStream& stream, const Lagrange& p)
+std::string Lagrange::str(bool verbose) const
 {
-  stream << "[ Lagrange polynomial of degree " << p.q << " with " << p.n << " points ]";
-  return stream;
-}
-//-----------------------------------------------------------------------------
-void Lagrange::disp() const
-{
-  info("Lagrange polynomial of degree %d with %d points.", q, n);
-  info("----------------------------------------------");
+  std::stringstream s;
 
-  for (unsigned int i = 0; i < n; i++)
-    info("x[%d] = %f", i, to_double(points[i]));
+  if (verbose)
+  {
+    s << str(false) << std::endl << std::endl;
+
+    for (unsigned int i = 0; i < n; i++)
+      s << "  x[" << i << "] = " << to_double(points[i]);
+  }
+  else
+  {
+    s << "<Lagrange polynomial of degree " << q << " with " << n << " points>";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 void Lagrange::init()

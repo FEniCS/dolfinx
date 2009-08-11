@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 // Modified by Garth N. Wells, 2009.
 //
-// Last changed: 2009-05-23
+// Last changed: 2009-08-10
 
 #ifdef HAS_TRILINOS
 
@@ -54,8 +54,8 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
-    /// Display solver data
-    void disp() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   private:
 
@@ -66,8 +66,8 @@ namespace dolfin
     std::string pc_type;
 
     // Available solvers and preconditioners
-    static const std::map<std::string, int> methods; 
-    static const std::map<std::string, int> pc_methods; 
+    static const std::map<std::string, int> methods;
+    static const std::map<std::string, int> pc_methods;
 
     EpetraPreconditioner* prec;
 

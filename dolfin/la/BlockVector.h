@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-08-25
-// Last changed: 2008-12-12
+// Last changed: 2009-08-10
 //
 // Modified by Anders Logg, 2008.
 
@@ -74,8 +74,8 @@ namespace dolfin
     /// Number of vectors
     uint size() const;
 
-    /// Display vectors
-    virtual void disp(uint precision=2) const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   private:
 

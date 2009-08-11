@@ -7,14 +7,12 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-10-28
+// Last changed: 2009-08-11
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
 
 #include <boost/shared_ptr.hpp>
-#include <dolfin/log/LogStream.h>
-#include <dolfin/common/Variable.h>
 #include "ublas.h"
 #include "GenericVector.h"
 
@@ -32,7 +30,7 @@ namespace dolfin
   /// uBLAS interface which is documented at
   /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
 
-  class uBLASVector : public GenericVector, public Variable
+  class uBLASVector : public GenericVector
   {
   public:
 
@@ -66,8 +64,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply();
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const;
 
     //--- Implementation of the GenericVector interface ---
 
@@ -174,8 +172,6 @@ namespace dolfin
     boost::shared_ptr<ublas_vector> x;
 
   };
-
-  LogStream& operator<< (LogStream& stream, const uBLASVector& x);
 
 }
 

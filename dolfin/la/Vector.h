@@ -7,14 +7,13 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-08-25
+// Last changed: 2009-08-11
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
 
 #include <iostream>
 #include <typeinfo>
-#include <dolfin/common/Variable.h>
 #include "DefaultFactory.h"
 #include "GenericVector.h"
 
@@ -24,26 +23,24 @@ namespace dolfin
   /// This class provides the default DOLFIN vector class,
   /// based on the default DOLFIN linear algebra backend.
 
-  class Vector : public GenericVector, public Variable
+  class Vector : public GenericVector
   {
   public:
 
     /// Create empty vector
-    Vector() : Variable("x", "DOLFIN vector"), vector(0)
+    Vector() : vector(0)
     { DefaultFactory factory; vector = factory.create_vector(); }
 
     /// Create vector of size N
-    explicit Vector(uint N) : Variable("x", "DOLFIN vector"), vector(0)
+    explicit Vector(uint N) : vector(0)
     { DefaultFactory factory; vector = factory.create_vector(); vector->resize(N); }
 
     /// Copy constructor
-    explicit Vector(const Vector& x) : Variable("x", "DOLFIN vector"),
-                                       vector(x.vector->copy())
+    explicit Vector(const Vector& x) : vector(x.vector->copy())
     {}
 
     /// Create a Vector from a GenericVetor
-    explicit Vector(const GenericVector& x) : Variable("x", "DOLFIN vector"),
-                                       vector(x.factory().create_vector())
+    explicit Vector(const GenericVector& x) : vector(x.factory().create_vector())
     { vector = x.copy(); }
 
     /// Destructor
@@ -64,9 +61,9 @@ namespace dolfin
     virtual void apply()
     { vector->apply(); }
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const
-    { vector->disp(precision); }
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const
+    { return vector->str(verbose); }
 
     //--- Implementation of the GenericVector interface ---
 

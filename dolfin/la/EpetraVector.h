@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2008-2008.
 //
 // First added:  2008-04-21
-// Last changed: 2009-02-16
+// Last changed: 2009-08-10
 
 #ifndef __EPETRA_VECTOR_H
 #define __EPETRA_VECTOR_H
@@ -13,8 +13,6 @@
 #ifdef HAS_TRILINOS
 
 #include <boost/shared_ptr.hpp>
-
-#include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
 #include "GenericVector.h"
 
@@ -65,8 +63,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply();
 
-    /// Display vector
-    virtual void disp(uint precision = 2) const;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const;
 
     //--- Implementation of the GenericVector interface ---
 
@@ -152,8 +150,6 @@ namespace dolfin
     boost::shared_ptr<Epetra_FEVector> x;
 
   };
-
-  LogStream& operator<< (LogStream& stream, const EpetraVector& A);
 
 }
 

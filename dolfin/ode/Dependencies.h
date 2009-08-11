@@ -2,11 +2,12 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-06
-// Last changed: 2008-10-07
+// Last changed: 2009-08-10
 
 #ifndef __DEPENDENCIES_H
 #define __DEPENDENCIES_H
 
+#include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -20,7 +21,7 @@ namespace dolfin
   /// of the ODE. By default, a dense pattern is created (but not
   /// stored).
 
-  class Dependencies
+  class Dependencies : public Variable
   {
   public:
 
@@ -51,8 +52,8 @@ namespace dolfin
     /// Get dependencies for given component (inline optimized)
     inline const std::vector<uint>& operator[] (uint i) const { return ( _sparse ? sdep[i] : ddep ); }
 
-    /// Display dependencies
-    void disp() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   private:
 

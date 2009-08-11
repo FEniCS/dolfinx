@@ -7,7 +7,7 @@
 // Modified by Magnus Vikstrøm 2007-2008.
 //
 // First added:  2004
-// Last changed: 2009-08-06
+// Last changed: 2009-08-11
 
 #ifdef HAS_PETSC
 
@@ -61,7 +61,6 @@ const std::map<std::string, NormType> PETScMatrix::norm_types
 
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const std::string type):
-    Variable("A", "a sparse matrix"),
     A(static_cast<Mat*>(0), PETScMatrixDeleter()),
     _type(type)
 {
@@ -70,7 +69,6 @@ PETScMatrix::PETScMatrix(const std::string type):
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A):
-    Variable("A", "a sparse matrix"),
     A(A),
     _type("default")
 {
@@ -79,7 +77,6 @@ PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A):
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(uint M, uint N, std::string type):
-    Variable("A", "a sparse matrix"),
     A(static_cast<Mat*>(0), PETScMatrixDeleter()),
     _type(type)
 {
@@ -91,7 +88,6 @@ PETScMatrix::PETScMatrix(uint M, uint N, std::string type):
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const PETScMatrix& A):
-  Variable("A", "PETSc matrix"),
   A(static_cast<Mat*>(0), PETScMatrixDeleter()),
   _type(A._type)
 {
@@ -212,7 +208,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
                     PETSC_NULL, reinterpret_cast<int*>(num_nonzeros_diagonal),
                     PETSC_NULL, reinterpret_cast<int*>(num_nonzeros_off_diagonal),
                     A.get());
-    
+
     // Set some options
     #if PETSC_VERSION_MAJOR > 2
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
@@ -390,9 +386,9 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y, bool transposed
 double PETScMatrix::norm(std::string norm_type) const
 {
   assert(A);
-  
+
   // Check that norm is known
-  if( norm_types.count(norm_type) == 0)  
+  if( norm_types.count(norm_type) == 0)
     error("Unknown PETSc matrix norm type.");
 
   double value = 0.0;
@@ -463,15 +459,27 @@ std::string PETScMatrix::type() const
   return _type;
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::disp(uint precision) const
+std::string PETScMatrix::str(bool verbose) const
 {
-  assert(A);
+  std::stringstream s;
 
-  // FIXME: Maybe this could be an option?
-  if (MPI::num_processes() > 1)
-    MatView(*A, PETSC_VIEWER_STDOUT_WORLD);
+  if (verbose)
+  {
+    warning("Verbose output for PETScMatrix not implemented, calling PETSc MatView directly.");
+
+    // FIXME: Maybe this could be an option?
+    assert(A);
+    if (MPI::num_processes() > 1)
+      MatView(*A, PETSC_VIEWER_STDOUT_WORLD);
+    else
+      MatView(*A, PETSC_VIEWER_STDOUT_SELF);
+  }
   else
-    MatView(*A, PETSC_VIEWER_STDOUT_SELF);
+  {
+    s << "<PETScMatrix of size " << size(0) << " x " << size(1) << ">";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScMatrix::factory() const
@@ -537,12 +545,6 @@ MatType PETScMatrix::get_petsc_type() const
     error("Unknown PETSc matrix type.");
 
   return types.find(_type)->second;
-}
-//-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const PETScMatrix& A)
-{
-  stream << "[ PETSc matrix of size " << A.size(0) << " x " << A.size(1) << " ]";
-  return stream;
 }
 //-----------------------------------------------------------------------------
 

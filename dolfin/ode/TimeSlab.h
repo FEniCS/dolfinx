@@ -2,13 +2,14 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2009-02-10
+// Last changed: 2009-08-10
 
 #ifndef __TIME_SLAB_H
 #define __TIME_SLAB_H
 
 #include <dolfin/common/real.h>
 #include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -16,13 +17,12 @@ namespace dolfin
   class ODE;
   class Method;
   class uBLASVector;
-  class LogStream;
 
   /// This is the base class for time slabs, the collections of
   /// degrees of freedom for the solution of an ODE between two
   /// synchronized time levels a and b.
 
-  class TimeSlab
+  class TimeSlab : public Variable
   {
   public:
 
@@ -73,12 +73,6 @@ namespace dolfin
 
     /// Sample residual for given component at given time
     virtual real rsample(uint i, real t) = 0;
-
-    /// Display time slab data
-    virtual void disp() const = 0;
-
-    /// Output
-    friend LogStream& operator<<(LogStream& stream, const TimeSlab& timeslab);
 
     /// Friends
     friend class TimeSlabJacobian;

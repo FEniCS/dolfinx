@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-04-03
-// Last changed: 2008-08-17
+// Last changed: 2009-08-10
 
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
@@ -145,7 +145,7 @@ dolfin::uint GraphPartition::edgecut(Graph& graph, uint num_part, uint* vtx_part
   return edge_cut;
 }
 //-----------------------------------------------------------------------------
-void GraphPartition::disp(Graph& graph, uint num_part, uint* vtx_part)
+void GraphPartition::display(Graph& graph, uint num_part, uint* vtx_part)
 {
   cout << "Number of partitions: " << num_part << endl;
   cout << "Partition vector" << endl;

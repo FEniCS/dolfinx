@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2008-04-21
-// Last changed:  2008-12-29
+// Last changed: 2009-08-11
 
 #ifdef HAS_TRILINOS
 
@@ -117,25 +117,24 @@ void EpetraVector::apply()
   //x->OptimizeStorage();
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::disp(uint precision) const
+std::string EpetraVector::str(bool verbose=false) const
 {
   assert(x);
 
-  // TODO: Make this use the dolfin::cout, doesn't compile for some reason.
-  x->Print(std::cout);
-}
-//-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const EpetraVector& x)
-{
-  // Check if matrix has been defined
-  if ( x.size() == 0 )
-  {
-    stream << "[ Epetra vector (empty) ]";
-    return stream;
-  }
-  stream << "[ Epetra vector of size " << x.size() << " ]";
+  std::stringstream s;
 
-  return stream;
+  if (verbose)
+  {
+    warning("Verbose output for EpetraVector not implemented, calling Epetra Print directly.");
+
+    x->Print(std::cout);
+  }
+  else
+  {
+    s << "<EpetraVector of size " << size() << ">";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::get(double* values) const
@@ -315,14 +314,14 @@ const EpetraVector& EpetraVector::operator*= (double a)
 const EpetraVector& EpetraVector::operator*= (const GenericVector& y)
 {
   assert(x);
-  
+
   const EpetraVector& v = y.down_cast<EpetraVector>();
-  if (!v.x) 
+  if (!v.x)
     error("Given vector is not initialized.");
-  
+
   if (size() != v.size())
-    error("The vectors must be of the same size.");  
-  
+    error("The vectors must be of the same size.");
+
   int err = x->Multiply(1.0,*x,*v.x,0.0);
   if (err!= 0)
     error("EpetraVector::operator*=: Did not manage to perform Epetra_Vector::Multiply.");

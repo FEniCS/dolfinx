@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2008-10-07
+// Last changed: 2009-08-10
 
 #ifndef __CGQ_METHOD_H
 #define __CGQ_METHOD_H
@@ -40,8 +40,8 @@ namespace dolfin
     /// Compute error estimate (modulo stability factor)
     real error(real k, real r) const;
 
-    /// Display method data
-    void disp() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   protected:
 

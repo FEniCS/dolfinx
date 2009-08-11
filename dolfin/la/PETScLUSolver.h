@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2005
-// Last changed: 2009-07-08
+// Last changed: 2009-08-10
 
 #ifndef __PETSC_LU_SOLVER_H
 #define __PETSC_LU_SOLVER_H
@@ -47,8 +47,8 @@ namespace dolfin
     /// Solve linear system Ax = b
     uint solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);
 
-    /// Display LU solver data
-    void disp() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
     /// Default parameter values
     static Parameters default_parameters();

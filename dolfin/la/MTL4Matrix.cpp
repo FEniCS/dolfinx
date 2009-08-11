@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008. 2009.
 //
 // First added:  2008-07-06
-// Last changed: 2008-07-28
+// Last changed: 2009-08-11
 
 #ifdef HAS_MTL4
 
@@ -108,9 +108,9 @@ void MTL4Matrix::add(const double* block, uint m, const uint* rows, uint n, cons
     init_inserter();
 
   // Block insertion
-  *ins << element_array(mtl::dense2D<double>(m, n, const_cast<double*>(block)), 
+  *ins << element_array(mtl::dense2D<double>(m, n, const_cast<double*>(block)),
                         mtl::dense_vector<uint>(m, const_cast<uint*>(rows)),
-                        mtl::dense_vector<uint>(n, const_cast<uint*>(cols))); 
+                        mtl::dense_vector<uint>(n, const_cast<uint*>(cols)));
   /*
   for (uint i = 0; i < m; i++)
     for (uint j = 0; j < n; j++)
@@ -141,7 +141,7 @@ double MTL4Matrix::norm(std::string norm_type) const
   {
     error("Unknown norm type in MTL4Matrix.");
     return 0.0;
-  }  
+  }
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::zero()
@@ -157,14 +157,24 @@ void MTL4Matrix::apply()
   ins = 0;
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::disp(uint precision) const
+std::string MTL4Matrix::str(bool verbose) const
 {
   assert_no_inserter();
 
-  // FIXME: This ignores precision
-  std::stringstream stream;
-  stream << A;
-  cout << stream.str() << endl;
+  std::stringstream s;
+
+  if (verbose)
+  {
+    s << str(false) << std::endl << std::endl;
+
+    s << A;
+  }
+  else
+  {
+    s << "MTL4Matrix of size " << size(0) << " x " << size(1) << ">";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::ident(uint m, const uint* rows)
@@ -329,17 +339,6 @@ inline void MTL4Matrix::assert_no_inserter(void) const
 {
   if(ins)
     error("MTL4: Matrix read operation attempted while inserter active. Did you forget to apply()?");
-}
-//-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const  MTL4Matrix& A)
-{
-  // FIXME: "Redirect" mtl::matix::op<< to the dolfin log stream
-
-  int M = mtl::matrix::num_rows(A.mat());
-  int N = mtl::matrix::num_cols(A.mat());
-
-  stream << "[ MTL4 Matrix of size " << M << "x" << N << " ]";
-  return stream;
 }
 //-----------------------------------------------------------------------------
 

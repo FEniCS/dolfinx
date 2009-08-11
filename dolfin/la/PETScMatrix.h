@@ -7,7 +7,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2009-06-21
+// Last changed: 2009-08-11
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -19,8 +19,6 @@
 #include <boost/shared_ptr.hpp>
 #include <petscmat.h>
 
-#include <dolfin/log/LogStream.h>
-#include <dolfin/common/Variable.h>
 #include "PETScObject.h"
 #include "GenericMatrix.h"
 
@@ -37,11 +35,11 @@ namespace dolfin
   /// access the PETSc Mat pointer using the function mat() and
   /// use the standard PETSc interface.
   ///
-  /// std::string type is the type of PETSc matrix. Options are "default", 
+  /// std::string type is the type of PETSc matrix. Options are "default",
   /// "spooles", "superlu" and "umfpack". Note: Setting the matrix type may
   /// not be necessary in the future with PETSc version 3.
 
-  class PETScMatrix : public GenericMatrix, public PETScObject, public Variable
+  class PETScMatrix : public GenericMatrix, public PETScObject
   {
   public:
 
@@ -77,8 +75,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply();
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const;
 
     //--- Implementation of the GenericMatrix interface --
 
@@ -171,9 +169,6 @@ namespace dolfin
     std::string _type;
 
   };
-
-  /// Output of PETScMatrix
-  LogStream& operator<< (LogStream& stream, const PETScMatrix& A);
 
 }
 

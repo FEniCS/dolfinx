@@ -7,7 +7,7 @@
 // Modified by Martin Sandve Alnes, 2009.
 //
 // First added:  2006-04-25
-// Last changed: 2009-03-09
+// Last changed: 2009-08-10
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -68,8 +68,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply() = 0;
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const = 0;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const = 0;
 
     //--- Vector interface ---
 
@@ -81,9 +81,9 @@ namespace dolfin
 
     /// Return local ownership range of a vector
     virtual std::pair<uint, uint> local_range() const
-    { 
-      error("GenericVector::range not yet implemented for this backend."); 
-      return std::make_pair(0, 0); 
+    {
+      error("GenericVector::range not yet implemented for this backend.");
+      return std::make_pair(0, 0);
     }
 
     /// Get block of values
@@ -175,6 +175,7 @@ namespace dolfin
     { set(&value, 1, &i); }
 
     typedef XMLVector XMLHandler;
+
   };
 
 }

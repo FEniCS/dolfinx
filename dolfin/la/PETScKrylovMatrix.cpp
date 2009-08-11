@@ -4,7 +4,7 @@
 // Modified by Andy R. Terrel, 2005.
 //
 // First added:  2005-01-17
-// Last changed: 2006-05-17
+// Last changed: 2009-08-10
 
 #ifdef HAS_PETSC
 
@@ -122,51 +122,20 @@ Mat PETScKrylovMatrix::mat() const
   return A;
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovMatrix::disp(bool sparse, int precision) const
+std::string PETScKrylovMatrix::str(bool verbose) const
 {
-  // Since we don't really have the matrix, we create the matrix by
-  // performing multiplication with unit vectors. Used only for debugging.
+  std::stringstream s;
 
-  warning("Display of PETScKrylovMatrix needs to be fixed.");
-
-/*
-  uint M = size(0);
-  uint N = size(1);
-  PETScVector x(N), y(M);
-  PETScMatrix A(M, N);
-
-  x = 0.0;
-  for (unsigned int j = 0; j < N; j++)
+  if (verbose)
   {
-    x(j) = 1.0;
-    mult(x, y);
-    for (unsigned int i = 0; i < M; i++)
-    {
-      const double value = y(i);
-      if ( fabs(value) > DOLFIN_EPS )
-	      A(i, j) = value;
-    }
-    x(j) = 0.0;
+    warning("Verbose output for PETScKrylovMatrix not implemented.");
+  }
+  else
+  {
+    s << "<PETScKrylovMatrix of size " << size(0) << " x " << size(1) << ">";
   }
 
-  A.disp(sparse, precision);
-*/
-}
-//-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const PETScKrylovMatrix& A)
-{
-  #if PETSC_VERSION_MAJOR > 2
-  const MatType type = 0;
-  #else
-  MatType type = 0;
-  #endif
-  MatGetType(A.mat(), &type);
-  int m = A.size(0);
-  int n = A.size(1);
-  stream << "[ PETSc matrix (type " << type << ") of size "
-	 << m << " x " << n << " ]";
-
-  return stream;
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 

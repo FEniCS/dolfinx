@@ -5,7 +5,7 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2005
-// Last changed: 2009-08-08
+// Last changed: 2009-08-10
 
 #ifdef HAS_PETSC
 
@@ -69,7 +69,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   std::string _mat_type = solver_type;
 
   // Convert to UMFPACK matrix if matrix type is MATSEQAIJ and UMFPACK is available.
-  #if PETSC_HAVE_UMFPACK 
+  #if PETSC_HAVE_UMFPACK
   if (_mat_type == MATSEQAIJ)
   {
     Mat Atemp = *A.mat();
@@ -77,12 +77,12 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   }
   #endif
 
-  // Convert to MUMPS matrix if matrix type is MATMPIAIJ and MUMPS is available.  
-  #if PETSC_HAVE_MUMPS 
-  if (_mat_type == MATMPIAIJ) 
+  // Convert to MUMPS matrix if matrix type is MATMPIAIJ and MUMPS is available.
+  #if PETSC_HAVE_MUMPS
+  if (_mat_type == MATMPIAIJ)
   {
     Mat Atemp = *A.mat();
-    MatConvert(*A.mat(), MATAIJMUMPS, MAT_REUSE_MATRIX, &Atemp);    
+    MatConvert(*A.mat(), MATAIJMUMPS, MAT_REUSE_MATRIX, &Atemp);
   }
   #endif
 
@@ -91,9 +91,9 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   if (_mat_type == MATMPIAIJ)
   {
     error("MUMPS is required for parallel symbolic LU.");
-  }    
+  }
   #endif
-  
+
   // Get parameters
   const bool report = parameters("report");
 
@@ -157,9 +157,22 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A, PETScVector& x,
   return 1;
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::disp() const
+std::string PETScLUSolver::str(bool verbose) const
 {
-  KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
+  std::stringstream s;
+
+  if (verbose)
+  {
+    warning("Verbose output for PETScLUSolver not implemented, calling PETSc KSPView directly.");
+
+    KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
+  }
+  else
+  {
+    s << "<PETScLUSolver>";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 double PETScLUSolver::copy_to_dense(const PETScKrylovMatrix& A)

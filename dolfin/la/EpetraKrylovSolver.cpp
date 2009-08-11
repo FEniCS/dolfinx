@@ -3,7 +3,7 @@
 //
 // Modified by Garth N. Wells, 2009.
 //
-// Last changed: 2009-07-26
+// Last changed: 2009-08-10
 
 #ifdef HAS_TRILINOS
 
@@ -34,20 +34,20 @@
 using namespace dolfin;
 
 // Available solvers
-const std::map<std::string, int> EpetraKrylovSolver::methods 
+const std::map<std::string, int> EpetraKrylovSolver::methods
   = boost::assign::map_list_of("default",  AZ_gmres)
                               ("cg",       AZ_cg)
                               ("gmres",    AZ_gmres)
-                              ("bicgstab", AZ_bicgstab); 
+                              ("bicgstab", AZ_bicgstab);
 
 // Available preconditioners
-const std::map<std::string, int> EpetraKrylovSolver::pc_methods 
+const std::map<std::string, int> EpetraKrylovSolver::pc_methods
   = boost::assign::map_list_of("default", AZ_ilu)
                               ("ilu",     AZ_ilu)
                               ("jacobi",  AZ_Jacobi)
                               ("sor",     AZ_sym_GS)
                               ("icc",     AZ_icc)
-                              ("amg_ml",  -1); 
+                              ("amg_ml",  -1);
 
 //-----------------------------------------------------------------------------
 Parameters EpetraKrylovSolver::default_parameters()
@@ -63,9 +63,9 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-EpetraKrylovSolver::EpetraKrylovSolver(std::string method, 
+EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                                        EpetraPreconditioner& prec)
-                                     : method(method), pc_type("default"), 
+                                     : method(method), pc_type("default"),
                                        prec(&prec)
 {
   error("Initialisation of EpetraKrylovSolver with a EpetraPreconditioner needs to be implemented.");
@@ -91,11 +91,11 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 
   // Check that requsted solver is supported
   if (methods.count(method) == 0 )
-    error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str()); 
+    error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str());
 
   // Check that requsted preconditioner is supported
   if (pc_methods.count(pc_type) == 0 )
-    error("Requested EpetraKrylovSolver preconditioner '%s' in unknown", pc_type.c_str()); 
+    error("Requested EpetraKrylovSolver preconditioner '%s' in unknown", pc_type.c_str());
 
   //FIXME: need the ifdef AztecOO
   //FIXME: We should test for AztecOO during configuration
@@ -136,7 +136,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   // Set output level
   if(parameters("monitor_convergence"))
    linear_solver.SetAztecOption(AZ_output, 1);
-  else  
+  else
     linear_solver.SetAztecOption(AZ_output, AZ_none);
 
   // Set preconditioner
@@ -205,10 +205,10 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   return linear_solver.NumIters();
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::disp() const
+std::string EpetraKrylovSolver::str(bool verbose) const
 {
-  error("EpetraKrylovSolver::disp not implemented");
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
-#endif
 
+#endif

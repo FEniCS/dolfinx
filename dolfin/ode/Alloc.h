@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2004-12-21
-// Last changed: 2005
+// Last changed: 2009-08-10
 
 #ifndef __ALLOC_H
 #define __ALLOC_H
@@ -36,16 +36,17 @@ namespace dolfin
     static void realloc(real** data, uint oldsize, uint newsize);
 
     /// Display array of ints
-    static void disp(uint* data, uint size);
+    static void display(uint* data, uint size);
 
     /// Display array of uints
-    static void disp(int* data, uint size);
+    static void display(int* data, uint size);
 
     /// Display array of reals
-    static void disp(real* data, uint size);
+    static void display(real* data, uint size);
 
     uint size; // Allocated size
     uint next; // Next available position (used size)
+
   };
 
 }

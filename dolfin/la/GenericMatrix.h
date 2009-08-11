@@ -8,7 +8,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2009-07-28
+// Last changed: 2009-08-10
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -69,8 +69,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply() = 0;
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const = 0;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const = 0;
 
     //--- Matrix interface ---
 
@@ -152,8 +152,8 @@ namespace dolfin
     virtual void setitem(std::pair<uint, uint> ij, double value)
     { set(&value, 1, &ij.first, 1, &ij.second); }
 
-
     typedef XMLMatrix XMLHandler;
+
   };
 
 }

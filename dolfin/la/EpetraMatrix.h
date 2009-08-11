@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2008, 2009.
 //
 // First added:  2008-04-21
-// Last changed: 2009-07-28
+// Last changed: 2009-08-10
 
 #ifndef __EPETRA_MATRIX_H
 #define __EPETRA_MATRIX_H
@@ -14,7 +14,6 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
 #include "GenericMatrix.h"
 
@@ -73,8 +72,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply();
 
-    /// Display tensor
-    virtual void disp(uint precision = 2) const;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const;
 
     //--- Implementation of the GenericMatrix interface ---
 
@@ -139,8 +138,6 @@ namespace dolfin
     boost::shared_ptr<Epetra_FECrsMatrix> A;
 
   };
-
-  LogStream& operator<< (LogStream& stream, const EpetraMatrix& A);
 
 }
 

@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2005-2009.
 //
 // First added:  2005-12-02
-// Last changed: 2009-06-21
+// Last changed: 2009-08-10
 
 #ifdef HAS_PETSC
 
@@ -38,21 +38,21 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Available solvers
 #if PETSC_VERSION_MAJOR > 2
-const std::map<std::string, const KSPType> PETScKrylovSolver::methods 
+const std::map<std::string, const KSPType> PETScKrylovSolver::methods
 #else
-const std::map<std::string, KSPType> PETScKrylovSolver::methods 
+const std::map<std::string, KSPType> PETScKrylovSolver::methods
 #endif
   = boost::assign::map_list_of("default",  "")
                               ("cg",         KSPCG)
                               ("gmres",      KSPGMRES)
                               ("richardson", KSPRICHARDSON)
-                              ("bicgstab",   KSPBCGS); 
+                              ("bicgstab",   KSPBCGS);
 //-----------------------------------------------------------------------------
 // Available preconditioners
 #if PETSC_VERSION_MAJOR > 2
-const std::map<std::string, const PCType> PETScKrylovSolver::pc_methods 
+const std::map<std::string, const PCType> PETScKrylovSolver::pc_methods
 #else
-const std::map<std::string, PCType> PETScKrylovSolver::pc_methods 
+const std::map<std::string, PCType> PETScKrylovSolver::pc_methods
 #endif
   = boost::assign::map_list_of("default",   "")
                               ("none",      PCNONE)
@@ -61,7 +61,7 @@ const std::map<std::string, PCType> PETScKrylovSolver::pc_methods
                               ("sor",       PCSOR)
                               ("icc",       PCICC)
                               ("amg_hypre", PCHYPRE)
-                              ("amg_ml",    PCML); 
+                              ("amg_ml",    PCML);
 //-----------------------------------------------------------------------------
 Parameters PETScKrylovSolver::default_parameters()
 {
@@ -72,7 +72,7 @@ Parameters PETScKrylovSolver::default_parameters()
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
   : method(method), pc_petsc(pc_type), pc_dolfin(0),
-    ksp(static_cast<KSP*>(0), PETScKSPDeleter()), M(0), N(0), 
+    ksp(static_cast<KSP*>(0), PETScKSPDeleter()), M(0), N(0),
     parameters_read(false), pc_set(false)
 {
   // Set parameter values
@@ -82,7 +82,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
 				     PETScPreconditioner& preconditioner)
   : method(method), pc_petsc("default"), pc_dolfin(&preconditioner),
-    ksp(static_cast<KSP*>(0), PETScKSPDeleter()), M(0), N(0), 
+    ksp(static_cast<KSP*>(0), PETScKSPDeleter()), M(0), N(0),
     parameters_read(false), pc_set(false)
 {
   // Set parameter values
@@ -146,7 +146,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   // Solve linear system
   KSPSetOperators(*ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
 
-  // FIXME: Preconditioner being set here and not in init() to avoid PETSc bug 
+  // FIXME: Preconditioner being set here and not in init() to avoid PETSc bug
   //        with Hypre. See explanation inside PETScKrylovSolver:init().
   if (!pc_set)
   {
@@ -172,7 +172,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A, 
+dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A,
                                       PETScVector& x, const PETScVector& b)
 {
   // Check dimensions
@@ -227,9 +227,22 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A,
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::disp() const
+std::string PETScKrylovSolver::str(bool verbose) const
 {
-  KSPView(*ksp, PETSC_VIEWER_STDOUT_WORLD);
+  std::stringstream s;
+
+  if (verbose)
+  {
+    warning("Verbose output for PETScKrylovSolver not implemented, calling PETSc KSPView directly.");
+
+    KSPView(*ksp, PETSC_VIEWER_STDOUT_WORLD);
+  }
+  else
+  {
+    s << "<PETScKrylovSolver>";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::init(uint M, uint N)
@@ -272,7 +285,7 @@ void PETScKrylovSolver::init(uint M, uint N)
 
   // Check that the requested method is known
   if (methods.count(method) == 0)
-    error("Requested PETSc Krylov solver '%s' is unknown,", method.c_str());  
+    error("Requested PETSc Krylov solver '%s' is unknown,", method.c_str());
 
   // Set solver
   if (method != "default")
@@ -332,7 +345,7 @@ void PETScKrylovSolver::set_petsc_preconditioner()
 
   // Check that the requested method is known
   if (pc_methods.count(pc_petsc) == 0)
-    error("Requested PETSc procondition '%s' is unknown,", pc_petsc.c_str());  
+    error("Requested PETSc procondition '%s' is unknown,", pc_petsc.c_str());
 
   // Get PETSc PC pointer
   PC pc;

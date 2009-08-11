@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2009-05-22
+// Last changed: 2009-08-11
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -19,8 +19,6 @@
 #include <boost/shared_ptr.hpp>
 #include <petscvec.h>
 
-#include <dolfin/log/LogStream.h>
-#include <dolfin/common/Variable.h>
 #include "PETScObject.h"
 #include "GenericVector.h"
 
@@ -35,7 +33,7 @@ namespace dolfin
   /// access the PETSc Vec pointer using the function vec() and
   /// use the standard PETSc interface.
 
-  class PETScVector : public GenericVector, public PETScObject, public Variable
+  class PETScVector : public GenericVector, public PETScObject
   {
   public:
 
@@ -65,8 +63,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply();
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const;
 
     //--- Implementation of the GenericVector interface ---
 
@@ -168,9 +166,6 @@ namespace dolfin
     static const std::map<std::string, NormType> norm_types;
 
   };
-
-  /// Output of PETScVector
-  LogStream& operator<< (LogStream& stream, const PETScVector& x);
 
 }
 

@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2006-06-12
-// Last changed: 2008-12-22
+// Last changed: 2009-08-11
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -95,8 +95,10 @@ namespace dolfin
     /// Compute dot product with given vector
     double dot(const Point& p) const;
 
-    /// Output
-    friend LogStream& operator<< (LogStream& stream, const Point& p);
+    // Note: Not a subclass of Variable for efficiency!
+
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   private:
 
@@ -106,9 +108,6 @@ namespace dolfin
 
   /// Multiplication with scalar
   inline Point operator*(double a, const Point& p) { return p*a; }
-
-  /// Output
-  LogStream& operator<< (LogStream& stream, const Point& p);
 
 }
 

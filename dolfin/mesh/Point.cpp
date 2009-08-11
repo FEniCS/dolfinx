@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2006-06-12
-// Last changed: 2008-10-01
+// Last changed: 2009-08-11
 
 #include <cmath>
 #include "Point.h"
@@ -42,9 +42,13 @@ double Point::dot(const Point& p) const
   return _x[0]*p._x[0] + _x[1]*p._x[1] + _x[2]*p._x[2];
 }
 //-----------------------------------------------------------------------------
-dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Point& p)
+std::string Point::str(bool verbose) const
 {
-   stream << "[Point x = " << p.x() << " y = " << p.y() << " z = " << p.z() << "]";
-   return stream;
+  if (verbose)
+    warning("Verbose output for MeshEntityIterator not implemented.");
+
+  std::stringstream s;
+  s << "<Point x = " << x() << " y = " << y() << " z = " << z() << ">";
+  return s.str();
 }
 //-----------------------------------------------------------------------------

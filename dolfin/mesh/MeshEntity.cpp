@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-11
-// Last changed: 2009-05-21
+// Last changed: 2009-08-11
 
 #include <dolfin/log/dolfin_log.h>
 #include "MeshEntity.h"
@@ -74,11 +74,14 @@ dolfin::uint MeshEntity::index(const MeshEntity& entity) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::LogStream& dolfin::operator<< (LogStream& stream,
-				       const MeshEntity& entity)
+std::string MeshEntity::str(bool verbose) const
 {
-  stream << "[Mesh entity " << entity.index()
-	 << " of topological dimension " << entity.dim() << "]";
-  return stream;
+  if (verbose)
+    warning("Verbose output for MeshEntityIterator not implemented.");
+
+  std::stringstream s;
+  s << "<Mesh entity " << index()
+    << " of topological dimension " << dim() << ">";
+  return s.str();
 }
 //-----------------------------------------------------------------------------

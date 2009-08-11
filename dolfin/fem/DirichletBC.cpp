@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008
 //
 // First added:  2007-04-10
-// Last changed: 2009-02-26
+// Last changed: 2009-08-11
 
 #include <boost/assign/list_of.hpp>
 
@@ -258,7 +258,7 @@ void DirichletBC::check() const
 
   // Check that boundary condition method is known
   if (methods.count(method) == 0)
-    error("Unknown method for applying Dirichlet boundary condtions."); 
+    error("Unknown method for applying Dirichlet boundary condtions.");
 
 
   // Check that the mesh is ordered

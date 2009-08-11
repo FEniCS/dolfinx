@@ -4,14 +4,13 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-07-06
-// Last changed: 2008-08-25
+// Last changed: 2009-08-10
 
 #ifdef HAS_MTL4
 
 #ifndef __MTL4_VECTOR_H
 #define __MTL4_VECTOR_H
 
-#include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
 #include "mtl4.h"
 #include "GenericVector.h"
@@ -57,8 +56,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply();
 
-    /// Display vector
-    virtual void disp(uint precision=2) const;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const;
 
     //--- Implementation of the GenericVector interface ---
 
@@ -155,8 +154,6 @@ namespace dolfin
     mtl4_vector x;
 
   };
-
-  LogStream& operator<< (LogStream& stream, const MTL4Vector& A);
 
 }
 

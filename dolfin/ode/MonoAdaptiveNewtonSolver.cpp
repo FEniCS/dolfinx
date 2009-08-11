@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2009-07-01
+// Last changed: 2009-08-11
 
 #include <dolfin/common/real.h>
 #include <dolfin/common/constants.h>
@@ -305,6 +305,6 @@ void MonoAdaptiveNewtonSolver::debug()
   delete [] F1;
   delete [] F2;
 
-  B.disp();
+  info(B);
 }
 //-----------------------------------------------------------------------------

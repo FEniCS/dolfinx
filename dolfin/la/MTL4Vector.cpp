@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2008-07-06
-// Last changed: 2008-07-20
+// Last changed: 2009-08-10
 
 #ifdef HAS_MTL4
 
@@ -68,24 +68,31 @@ void MTL4Vector::apply()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::disp(uint precision) const
+std::string Mesh::str(bool verbose) const
 {
-  dolfin::cout << "[ ";
-  for (uint i = 0; i < size(); ++i)
+  std::stringstream s;
+
+  if (verbose)
   {
-    std::stringstream entry;
-    entry << std::setiosflags(std::ios::scientific);
-    entry << std::setprecision(precision);
-    entry << x[i] << " ";
-    dolfin::cout << entry.str().c_str() << dolfin::endl;
+    s << str(false) << std::endl << std::endl;
+
+    s << "[ ";
+    for (uint i = 0; i < size(); ++i)
+    {
+      std::stringstream entry;
+      //entry << std::setiosflags(std::ios::scientific);
+      //entry << std::setprecision(precision);
+      entry << x[i] << " ";
+      s << entry.str().c_str() << std::endl;
+    }
+    s << " ]" << endl;
   }
-  dolfin::cout << " ]" << endl;
-}
-//-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const MTL4Vector& x)
-{
-  dolfin_not_implemented();
-  return stream;
+  else
+  {
+    s << "<MTL4Vector of size " << size() << ">";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::get(double* values) const
@@ -179,15 +186,15 @@ const MTL4Vector& MTL4Vector::operator*= (double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const MTL4Vector& MTL4Vector::operator*= (const GenericVector& y) 
-{ 
-  if ( size() != y.size() )  
+const MTL4Vector& MTL4Vector::operator*= (const GenericVector& y)
+{
+  if ( size() != y.size() )
     error("Vectors must be of same size.");
   dolfin_not_implemented();
   //mtl4_vector vv =  y.down_cast<MTL4Vector>().vec();
   //
   //x = mtl::operator*(x,vv);
-  return *this;     
+  return *this;
 }
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator= (const MTL4Vector& v)
@@ -216,7 +223,7 @@ double MTL4Vector::norm(std::string norm_type) const
     return mtl::two_norm(x);
   else if (norm_type == "linf")
     return mtl::infinity_norm(x);
-  else 
+  else
     error("Requested vector norm type for MTL4Vector unknown");
 
   return 0.0;

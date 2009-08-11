@@ -8,7 +8,7 @@
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2006-07-05
-// Last changed: 2009-07-28
+// Last changed: 2009-08-11
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -17,8 +17,6 @@
 #include <iomanip>
 #include <tr1/tuple>
 
-#include <dolfin/log/LogStream.h>
-#include <dolfin/common/Variable.h>
 #include "LinearAlgebraFactory.h"
 #include "SparsityPattern.h"
 #include "ublas.h"
@@ -48,7 +46,7 @@ namespace dolfin
   /// inlined to avoid link errors.
 
   template<class Mat>
-  class uBLASMatrix : public GenericMatrix, public Variable
+  class uBLASMatrix : public GenericMatrix
   {
   public:
 
@@ -85,8 +83,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply();
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const;
 
     //--- Implementation of the GenericMatrix interface ---
 
@@ -444,24 +442,37 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
-  void uBLASMatrix<Mat>::disp(uint precision) const
+  std::string uBLASMatrix<Mat>::str(bool verbose) const
   {
     typename Mat::const_iterator1 it1;  // Iterator over rows
     typename Mat::const_iterator2 it2;  // Iterator over entries
 
-    for (it1 = A.begin1(); it1 != A.end1(); ++it1)
+    std::stringstream s;
+
+    if (verbose)
     {
-      dolfin::cout << "|";
-      for (it2 = it1.begin(); it2 != it1.end(); ++it2)
+      s << str(false) << std::endl << std::endl;
+
+      for (it1 = A.begin1(); it1 != A.end1(); ++it1)
       {
-        std::stringstream entry;
-        entry << std::setiosflags(std::ios::scientific);
-        entry << std::setprecision(precision);
-        entry << " (" << it2.index1() << ", " << it2.index2() << ", " << *it2 << ")";
-        dolfin::cout << entry.str().c_str();
+        s << "|";
+        for (it2 = it1.begin(); it2 != it1.end(); ++it2)
+        {
+          std::stringstream entry;
+          entry << std::setiosflags(std::ios::scientific);
+          entry << std::setprecision(16);
+          entry << " (" << it2.index1() << ", " << it2.index2() << ", " << *it2 << ")";
+          s << entry.str();
+        }
+        s << " |" << std::endl;
       }
-      dolfin::cout  << " |" << dolfin::endl;
     }
+    else
+    {
+      s << "<uBLASMatrix of size " << size(0) << " x " << size(1) << ">";
+    }
+
+    return s.str();
   }
   //-----------------------------------------------------------------------------
   // Specialised member functions (must be inlined to avoid link errors)
@@ -474,13 +485,13 @@ namespace dolfin
 
     // Reserve space for non-zeroes
     A.reserve(sparsity_pattern.num_nonzeros());
-    
+
     // Get underlying pattern
     const SparsityPattern* pattern_pointer = dynamic_cast<const SparsityPattern*>(&sparsity_pattern);
     if (!pattern_pointer)
       error("Cannot convert GenericSparsityPattern to concrete SparsityPattern type. Aborting.");
     const std::vector<Set<uint> >& pattern = pattern_pointer->pattern();
-    
+
     // Add entries
     std::vector<Set<uint> >::const_iterator row;
     Set<uint>::const_iterator element;
@@ -541,23 +552,6 @@ namespace dolfin
 
     // Back substitute
     ublas::lu_substitute(A, pmatrix, X);
-  }
-  //-----------------------------------------------------------------------------
-  template <class Mat>
-  inline LogStream& operator<< (LogStream& stream, const uBLASMatrix<Mat>& B)
-  {
-    // Check if matrix has been defined
-    if ( B.size(0) == 0 || B.size(1) == 0 )
-    {
-      stream << "[ uBLASMatrix matrix (empty) ]";
-      return stream;
-    }
-
-    uint M = B.size(0);
-    uint N = B.size(1);
-    stream << "[ uBLASMatrix matrix of size " << M << " x " << N << " ]";
-
-    return stream;
   }
   //-----------------------------------------------------------------------------
 }

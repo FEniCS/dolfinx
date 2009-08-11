@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008, 2009.
 //
 // First added:  2008-07-06
-// Last changed: 2009-07-28
+// Last changed: 2009-08-10
 
 #ifdef HAS_MTL4
 
@@ -13,7 +13,6 @@
 
 #include <tr1/tuple>
 #include <dolfin/common/Variable.h>
-#include <dolfin/log/LogStream.h>
 #include "GenericMatrix.h"
 #include "mtl4.h"
 
@@ -64,8 +63,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply();
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const;
 
     //--- Implementation of the GenericMatrix interface ---
 
@@ -145,8 +144,6 @@ namespace dolfin
 
     uint nnz_row;
   };
-
-  LogStream& operator<< (LogStream& stream, const MTL4Matrix& A);
 
 }
 

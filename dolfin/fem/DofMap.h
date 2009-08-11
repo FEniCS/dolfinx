@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-05-17
+// Last changed: 2009-08-10
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -15,6 +15,7 @@
 #include <map>
 #include <vector>
 #include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include "UFC.h"
@@ -30,7 +31,7 @@ namespace dolfin
   /// It wraps a ufc::dof_map on a specific mesh and provides
   /// optional precomputation and reordering of dofs.
 
-  class DofMap
+  class DofMap : public Variable
   {
   public:
 
@@ -62,9 +63,9 @@ namespace dolfin
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const
     {
-      if (dof_map) 
+      if (dof_map)
         return dof_map_size;
-      else 
+      else
         return ufc_dof_map->global_dimension();
     }
 
@@ -106,8 +107,8 @@ namespace dolfin
     /// Return offset into parent's vector of coefficients
     uint offset() const;
 
-    /// Display mapping
-    void disp() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   private:
 

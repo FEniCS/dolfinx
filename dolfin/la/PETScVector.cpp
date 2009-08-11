@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes 2008
 //
 // First added:  2004
-// Last changed: 2008-05-22
+// Last changed: 2009-08-11
 
 #ifdef HAS_PETSC
 
@@ -35,15 +35,14 @@ namespace dolfin
 
 using namespace dolfin;
 
-const std::map<std::string, NormType> PETScVector::norm_types 
+const std::map<std::string, NormType> PETScVector::norm_types
   = boost::assign::map_list_of("l1",   NORM_1)
                               ("l2",   NORM_2)
-                              ("linf", NORM_INFINITY); 
+                              ("linf", NORM_INFINITY);
 
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(std::string type):
-    Variable("x", "a sparse vector"),
-    x(static_cast<Vec*>(0), PETScVectorDeleter())
+  x(static_cast<Vec*>(0), PETScVectorDeleter())
 {
   if (type == "global" && dolfin::MPI::num_processes() > 1)
     init(0, 0, "mpi");
@@ -52,8 +51,7 @@ PETScVector::PETScVector(std::string type):
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(uint N, std::string type):
-    Variable("x", "a sparse vector"),
-    x(static_cast<Vec*>(0), PETScVectorDeleter())
+  x(static_cast<Vec*>(0), PETScVectorDeleter())
 {
   if (type == "global")
   {
@@ -73,16 +71,13 @@ PETScVector::PETScVector(uint N, std::string type):
     error("PETScVector type not known.");
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(boost::shared_ptr<Vec> x):
-    Variable("x", "a vector"),
-    x(x)
+PETScVector::PETScVector(boost::shared_ptr<Vec> x): x(x)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(const PETScVector& v):
-    Variable("x", "a vector"),
-    x(static_cast<Vec*>(0), PETScVectorDeleter())
+  x(static_cast<Vec*>(0), PETScVectorDeleter())
 {
   *this = v;
 }
@@ -102,7 +97,7 @@ void PETScVector::resize(uint N)
 
   // Figure out vector type
   std::string type;
-  uint n = 0; 
+  uint n = 0;
   #if PETSC_VERSION_MAJOR > 2
   const VecType petsc_type;
   #else
@@ -215,7 +210,7 @@ dolfin::uint PETScVector::size() const
 }
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> PETScVector::local_range() const
-{ 
+{
   std::pair<uint, uint> range;
   VecGetOwnershipRange(*x, (int*) &range.first, (int*) &range.second);
   assert(range.first <= range.second);
@@ -238,10 +233,10 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
     boost::shared_ptr<Vec> _x(new Vec, PETScVectorDeleter());
     x = _x;
 
-    // Create new vector 
+    // Create new vector
     VecDuplicate(*(v.x), x.get());
 
-    // Copy data 
+    // Copy data
     VecCopy(*(v.x), *x);
   }
   return *this;
@@ -276,12 +271,12 @@ const PETScVector& PETScVector::operator*= (const double a)
 const PETScVector& PETScVector::operator*= (const GenericVector& y)
 {
   assert(x);
-  
+
   const PETScVector& v = y.down_cast<PETScVector>();
   assert(v.x);
 
   if (size() != v.size())
-    error("The vectors must be of the same size.");  
+    error("The vectors must be of the same size.");
 
   VecPointwiseMult(*x,*x,*v.x);
   return *this;
@@ -362,23 +357,36 @@ double PETScVector::sum() const
   return value;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::disp(uint precision) const
+std::string PETScVector::str(bool verbose) const
 {
-  // Get vector type
-  #if PETSC_VERSION_MAJOR > 2
-  const VecType petsc_type;
-  #else
-  VecType petsc_type;
-  #endif
-  VecGetType(*x, &petsc_type);
+  std::stringstream s;
 
-  if (strcmp(petsc_type, VECSEQ) == 0)
-    VecView(*x, PETSC_VIEWER_STDOUT_SELF);	 
+  if (verbose)
+  {
+    warning("Verbose output for PETScVector not implemented, calling PETSc VecView directly.");
+
+    // Get vector type
+#if PETSC_VERSION_MAJOR > 2
+    const VecType petsc_type;
+#else
+    VecType petsc_type;
+#endif
+    VecGetType(*x, &petsc_type);
+
+    if (strcmp(petsc_type, VECSEQ) == 0)
+      VecView(*x, PETSC_VIEWER_STDOUT_SELF);
+    else
+      VecView(*x, PETSC_VIEWER_STDOUT_WORLD);
+  }
   else
-    VecView(*x, PETSC_VIEWER_STDOUT_WORLD);	 
+  {
+    s << "<PETScVector of size " << size() << ">";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(GenericVector& y, 
+void PETScVector::gather(GenericVector& y,
                          const std::vector<uint>& indices) const
 {
   // Down cast to a PETScVector
@@ -402,8 +410,8 @@ void PETScVector::gather(GenericVector& y,
 
   for (int i = 0; i < n; ++i)
   {
-    global_indices[i] = indices[i];      
-    local_indices[i]  = i;      
+    global_indices[i] = indices[i];
+    local_indices[i]  = i;
   }
 
   // Create index sets
@@ -459,12 +467,6 @@ boost::shared_ptr<Vec> PETScVector::vec() const
 LinearAlgebraFactory& PETScVector::factory() const
 {
   return PETScFactory::instance();
-}
-//-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const PETScVector& x)
-{
-  stream << "[ PETSc vector of size " << x.size() << " ]";
-  return stream;
 }
 //-----------------------------------------------------------------------------
 

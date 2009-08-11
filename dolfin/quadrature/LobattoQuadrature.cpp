@@ -2,8 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-06-03
-// Last changed: 2006-10-23
+// Last changed: 2009-08-11
 
+#include <iomanip>
 #include <dolfin/common/real.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
@@ -26,16 +27,33 @@ LobattoQuadrature::LobattoQuadrature(unsigned int n) : GaussianQuadrature(n)
   //info("Lobatto quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
-void LobattoQuadrature::disp() const
+std::string LobattoQuadrature::str(bool verbose) const
 {
-  cout << "Lobatto quadrature points and weights on [-1,1] for n = "
-       << n << ":" << endl;
+  std::stringstream s;
 
-  cout << " i    points                   weights" << endl;
-  cout << "-----------------------------------------------------" << endl;
+  if (verbose)
+  {
+    s << str(false) << std::endl << std::endl;
 
-  for (unsigned int i = 0; i < n; i++)
-    info("%2d   %.16e   %.16e", i, to_double(points[i]), to_double(weights[i]));
+    s << " i    points                   weights" << std::endl;
+    s << "-----------------------------------------------------" << std::endl;
+
+    s << std::setiosflags(std::ios::scientific) << std::setprecision(16);
+
+    for (uint i = 0; i < n; i++)
+    {
+      s << i << " "
+        << to_double(points[i]) << " "
+        << to_double(weights[i]) << " "
+        << std::endl;
+    }
+  }
+  else
+  {
+    s << "<LobattoQuadrature with " << n << " points on [-1, 1]>";
+  }
+
+  return s.str();
 }
 //----------------------------------------------------------------------------
 void LobattoQuadrature::compute_points()

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-08-25
-// Last changed: 2008-12-12
+// Last changed: 2009-08-10
 //
 // Modified by Anders Logg, 2008.
 
@@ -20,6 +20,8 @@ namespace dolfin
   class BlockMatrix
   {
   public:
+
+    // FIXME: Change order of m and n
 
     // Constructor
     BlockMatrix(uint n=0, uint m=0, bool owner=false);
@@ -48,8 +50,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     void apply();
 
-    /// Display tensor
-    void disp(uint precision=2) const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
     /// Matrix-vector product, y = Ax
     void mult(const BlockVector& x, BlockVector& y, bool transposed=false) const;

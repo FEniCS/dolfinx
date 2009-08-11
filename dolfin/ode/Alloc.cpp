@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2004-12-21
-// Last changed: 2005
+// Last changed: 2009-08-10
 
 #include <dolfin/log/dolfin_log.h>
 #include "Alloc.h"
@@ -75,7 +75,7 @@ void Alloc::realloc(real** data, uint oldsize, uint newsize)
   *data = newdata;
 }
 //-----------------------------------------------------------------------------
-void Alloc::disp(uint* data, uint size)
+void Alloc::display(uint* data, uint size)
 {
   cout << "[ ";
   for (uint i = 0; i < size; i++)
@@ -83,7 +83,7 @@ void Alloc::disp(uint* data, uint size)
   cout << "]" << endl;
 }
 //-----------------------------------------------------------------------------
-void Alloc::disp(int* data, uint size)
+void Alloc::display(int* data, uint size)
 {
   cout << "[ ";
   for (uint i = 0; i < size; i++)
@@ -91,7 +91,7 @@ void Alloc::disp(int* data, uint size)
   cout << "]" << endl;
 }
 //-----------------------------------------------------------------------------
-void Alloc::disp(real* data, uint size)
+void Alloc::display(real* data, uint size)
 {
   cout << "[ ";
   for (uint i = 0; i < size; i++)

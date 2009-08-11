@@ -1,7 +1,7 @@
 // Copyright (C) 2008 Kent-Andre Mardal.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Last changed: 2008-05-16
+// Last changed: 2009-08-10
 
 #ifdef HAS_TRILINOS
 
@@ -46,10 +46,11 @@ dolfin::uint EpetraLUSolver::solve(const EpetraMatrix&A, EpetraVector& x,
   return 0;
 }
 //-----------------------------------------------------------------------------
-void EpetraLUSolver::disp() const
+std::string EpetraLUSolver::str(bool verbose) const
 {
-  error("EpetraLUSolver::disp not implemented");
+  dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
+
 #endif
 

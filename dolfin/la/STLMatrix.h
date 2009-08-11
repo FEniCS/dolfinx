@@ -6,7 +6,7 @@
 // Modified by Ilmar Wilbers, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2009-07-28
+// Last changed: 2009-08-10
 
 #ifndef __STL_MATRIX_H
 #define __STL_MATRIX_H
@@ -14,7 +14,6 @@
 #include <vector>
 #include <map>
 
-#include <dolfin/log/LogStream.h>
 #include "GenericSparsityPattern.h"
 #include "GenericMatrix.h"
 
@@ -69,8 +68,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply() {}
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const;
 
     //--- Implementation of the GenericMatrix interface ---
 

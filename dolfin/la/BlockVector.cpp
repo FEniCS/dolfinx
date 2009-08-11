@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-08-25
-// Last changed: 2008-12-12
+// Last changed: 2009-08-11
 //
 // Modified by Anders Logg, 2008.
 
@@ -10,6 +10,7 @@
 #include <iostream>
 #include <cmath>
 #include <climits>
+#include <dolfin/common/utils.h>
 #include "Vector.h"
 #include "BlockVector.h"
 
@@ -162,13 +163,26 @@ const BlockVector& BlockVector::operator= (double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void BlockVector::disp(uint precision) const
+std::string BlockVector::str(bool verbose) const
 {
-  for(uint i = 0; i < n; i++)
+  std::stringstream s;
+
+  if (verbose)
   {
-    std::cout <<"BlockVector("<<i<<"):"<<std::endl;
-    this->get(i).disp(precision);
+    s << str(false) << std::endl << std::endl;
+
+    for (uint i = 0; i < n; i++)
+    {
+      s << "  BlockVector " << i << std::endl << std::endl;
+      s << indent(indent(get(i).str(true))) << std::endl;
+    }
   }
+  else
+  {
+    s << "<BlockVector containing " << n << " blocks>";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 void BlockVector::set(uint i, Vector& v)

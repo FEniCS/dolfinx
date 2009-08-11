@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells
 //
 // First added:  2005-01-27
-// Last changed: 2008-10-07
+// Last changed: 2009-08-11
 
 #include <string>
 #include <algorithm>
@@ -82,7 +82,7 @@ real MultiAdaptiveTimeSlab::build(real a, real b)
   kmin = ode.endtime();
   b = createTimeSlab(a, b, 0);
 
-  //cout << "de = "; Alloc::disp(de, nd);
+  //cout << "de = "; Alloc::display(de, nd);
 
   // Save start and end time
   _a = a;
@@ -292,32 +292,45 @@ real MultiAdaptiveTimeSlab::rsample(uint i, real t)
   return adaptivity.residual(i);
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveTimeSlab::disp() const
+std::string MultiAdaptiveTimeSlab::str(bool verbose) const
 {
-  cout << "--------------------------------------------------------" << endl;
+  std::stringstream s;
 
-  info("s: size = %d alloc = %d", ns, size_s.size);
-  info("e: size = %d alloc = %d", ne, size_e.size);
-  info("j: size = %d alloc = %d", nj, size_j.size);
-  info("d: size = %d alloc = %d", nd, size_d.size);
+  if (verbose)
+  {
+    s << str(false) << std::endl << std::endl;
 
-  cout << "sa = "; Alloc::disp(sa, ns);
-  cout << "sb = "; Alloc::disp(sb, ns);
+    warning("Verbose output for PETScVector not implemented, calling info() directly.");
 
-  cout << endl;
+    info("s: size = %d alloc = %d", ns, size_s.size);
+    info("e: size = %d alloc = %d", ne, size_e.size);
+    info("j: size = %d alloc = %d", nj, size_j.size);
+    info("d: size = %d alloc = %d", nd, size_d.size);
 
-  cout << "ei = "; Alloc::disp(ei, ne);
-  cout << "es = "; Alloc::disp(es, ne);
-  cout << "ee = "; Alloc::disp(ee, ne);
-  cout << "ed = "; Alloc::disp(ed, ne);
+    cout << "sa = "; Alloc::display(sa, ns);
+    cout << "sb = "; Alloc::display(sb, ns);
 
-  cout << endl;
+    cout << endl;
 
-  cout << "jx = "; Alloc::disp(jx, nj);
+    cout << "ei = "; Alloc::display(ei, ne);
+    cout << "es = "; Alloc::display(es, ne);
+    cout << "ee = "; Alloc::display(ee, ne);
+    cout << "ed = "; Alloc::display(ed, ne);
 
-  cout << endl;
+    cout << endl;
 
-  cout << "de = "; Alloc::disp(de, nd);
+    cout << "jx = "; Alloc::display(jx, nj);
+
+    cout << endl;
+
+    cout << "de = "; Alloc::display(de, nd);
+  }
+  else
+  {
+    s << "<MultiAdaptiveTimeSlab with " << nj << " degrees of freedom>";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::alloc_data(real a, real b)
@@ -486,8 +499,8 @@ void MultiAdaptiveTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0
 
 	//cout << "    --- Creating dependency to element = " << element << endl;
 	//cout << "    --- Starting at ed = " << ed[e1] << endl;
-	//cout << "    de = "; Alloc::disp(ed, ne);
-	//cout << "    nd = "; Alloc::disp(de, nd);
+	//cout << "    de = "; Alloc::display(ed, ne);
+	//cout << "    nd = "; Alloc::display(de, nd);
 
 	for (uint d = ed[e1]; d < ed[e1 + 1]; d++)
 	{

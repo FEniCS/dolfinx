@@ -6,7 +6,7 @@
 // Modified by Ilmar Wilbers, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-08-06
+// Last changed: 2009-08-11
 
 #include <sstream>
 #include <iomanip>
@@ -17,21 +17,34 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void STLMatrix::disp(uint precision) const
+std::string STLMatrix::str(bool verbose) const
 {
-  for (uint i = 0; i < dims[0]; i++)
+  std::stringstream s;
+
+  if (verbose)
   {
-    std::stringstream line;
-    line << std::setiosflags(std::ios::scientific);
-    line << std::setprecision(precision);
+    s << str(false) << std::endl << std::endl;
 
-    line << "|";
-    for (std::map<uint, double>::const_iterator it = A[i].begin(); it != A[i].end(); it++)
-      line << " (" << i << ", " << it->first << ", " << it->second << ")";
-    line << " |";
+    for (uint i = 0; i < dims[0]; i++)
+    {
+      std::stringstream line;
+      line << std::setiosflags(std::ios::scientific);
+      line << std::setprecision(16);
 
-    dolfin::cout << line.str().c_str() << dolfin::endl;
+      line << "|";
+      for (std::map<uint, double>::const_iterator it = A[i].begin(); it != A[i].end(); it++)
+        line << " (" << i << ", " << it->first << ", " << it->second << ")";
+      line << " |";
+
+      s << line.str().c_str() << std::endl;
+    }
   }
+  else
+  {
+    s << "<STLMatrix of size " << size(0) << " x " << size(1) << ">";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& STLMatrix::factory() const

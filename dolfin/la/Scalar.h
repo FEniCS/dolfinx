@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2007-03-15
-// Last changed: 2008-08-07
+// Last changed: 2009-08-10
 
 #ifndef __SCALAR_H
 #define __SCALAR_H
@@ -75,9 +75,13 @@ namespace dolfin
     void apply()
     {}
 
-    /// Display tensor
-    void disp(uint precision=2) const
-    { cout << "Scalar value: " << value << endl; }
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const
+    {
+      std::stringstream s;
+      s << "<Scalar value " << value << ">";
+      return s.str();
+    }
 
     //--- Scalar interface ---
 

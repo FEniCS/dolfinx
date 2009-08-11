@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2008, 2008.
 //
 // First added:  2008-04-21
-// Last changed: 2009-07-28
+// Last changed: 2009-08-11
 
 #ifdef HAS_TRILINOS
 
@@ -203,7 +203,7 @@ double EpetraMatrix::norm(std::string norm_type) const
   {
     error("Unknown norm type in EpetraMatrix.");
     return 0.0;
-  }  
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::zero()
@@ -224,10 +224,24 @@ void EpetraMatrix::apply()
   //A->OptimizeStorage();
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::disp(uint precision) const
+std::string EpetraMatrix::str(bool verbose=false) const
 {
   assert(A);
-  A->Print(std::cout);
+
+  std::stringstream s;
+
+  if (verbose)
+  {
+    warning("Verbose output for EpetraMatrix not implemented, calling Epetra Print directly.");
+
+    A->Print(std::cout);
+  }
+  else
+  {
+    s << "<EpetraMatrix of size " << size(0) << " x " << size(1) << ">";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::ident(uint m, const uint* rows)
@@ -377,10 +391,5 @@ const EpetraMatrix& EpetraMatrix::operator= (const EpetraMatrix& A)
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const EpetraMatrix& A)
-{
-  stream << "[ Epetra matrix of size " << A.size(0) << " x " << A.size(1) << " ]";
-  return stream;
-}
-//-----------------------------------------------------------------------------
+
 #endif

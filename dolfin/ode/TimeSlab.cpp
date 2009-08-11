@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2008-10-06
+// Last changed: 2009-08-11
 
 #include <stdio.h>
 #include <string>
@@ -79,16 +79,6 @@ void TimeSlab::get_state(real* u)
 {
   for (uint i = 0; i < N; i++)
     u[i] = u0[i];
-}
-//-----------------------------------------------------------------------------
-dolfin::LogStream& dolfin::operator<<(LogStream& stream,
-				      const TimeSlab& timeslab)
-{
-  stream << "[ TimeSlab of length " << timeslab.length()
-	 << " between a = " << timeslab.starttime()
-	 << " and b = " << timeslab.endtime() << " ]";
-
-  return stream;
 }
 //-----------------------------------------------------------------------------
 void TimeSlab::write(uint N, const real* u)

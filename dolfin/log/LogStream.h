@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-03-13
-// Last changed: 2009-08-10
+// Last changed: 2009-08-11
 
 #ifndef __LOG_STREAM_H
 #define __LOG_STREAM_H
@@ -18,6 +18,9 @@ namespace dolfin
 {
 
   class Variable;
+  class MeshEntity;
+  class MeshEntityIterator;
+  class Point;
 
   /// This class provides functionality similar to standard C++
   /// streams (std::cout, std::endl) for output but working through
@@ -56,6 +59,15 @@ namespace dolfin
 
     /// Output for variable (calling str() method)
     LogStream& operator<< (const Variable& variable);
+
+    /// Output for mesh entity (not subclass of Variable for efficiency)
+    LogStream& operator<< (const MeshEntity& entity);
+
+    /// Output for mesh entity iterator (not subclass of Variable for efficiency)
+    LogStream& operator<< (const MeshEntityIterator& iterator);
+
+    /// Output for point (not subclass of Variable for efficiency)
+    LogStream& operator<< (const Point& point);
 
 #ifdef HAS_GMP
     /// Output for real

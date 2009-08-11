@@ -4,9 +4,12 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-08-10
+// Last changed: 2009-08-11
 
 #include <dolfin/common/Variable.h>
+#include <dolfin/mesh/MeshEntity.h>
+#include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/Point.h>
 #include "log.h"
 #include "LogStream.h"
 
@@ -86,6 +89,24 @@ LogStream& LogStream::operator<< (complex z)
 LogStream& LogStream::operator<< (const Variable& variable)
 {
   buffer << variable.str();
+  return *this;
+}
+//-----------------------------------------------------------------------------
+LogStream& LogStream::operator<< (const MeshEntity& entity)
+{
+  buffer << entity.str();
+  return *this;
+}
+//-----------------------------------------------------------------------------
+LogStream& LogStream::operator<< (const MeshEntityIterator& iterator)
+{
+  buffer << iterator.str();
+  return *this;
+}
+//-----------------------------------------------------------------------------
+LogStream& LogStream::operator<< (const Point& point)
+{
+  buffer << point.str();
   return *this;
 }
 //-----------------------------------------------------------------------------
