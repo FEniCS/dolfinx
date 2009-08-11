@@ -9,6 +9,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+/*
 std::string MeshEntityIterator::str(bool verbose) const
 {
   if (verbose)
@@ -19,4 +20,5 @@ std::string MeshEntityIterator::str(bool verbose) const
     << _pos << " stepping from 0 to " << pos_end - 1 << ">";
   return s.str();
 }
+*/
 //-----------------------------------------------------------------------------

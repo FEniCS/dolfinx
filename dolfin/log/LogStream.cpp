@@ -99,12 +99,6 @@ LogStream& LogStream::operator<< (const MeshEntity& entity)
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<< (const MeshEntityIterator& iterator)
-{
-  buffer << iterator.str();
-  return *this;
-}
-//-----------------------------------------------------------------------------
 LogStream& LogStream::operator<< (const Point& point)
 {
   buffer << point.str();

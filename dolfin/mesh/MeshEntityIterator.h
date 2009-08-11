@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-09
-// Last changed: 2009-08-10
+// Last changed: 2009-08-11
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -95,9 +95,9 @@ namespace dolfin
     inline MeshEntity* operator->() { entity._index = (index ? index[_pos] : _pos); return &entity; }
 
     // Note: Not a subclass of Variable for efficiency!
-
+    // Commented out to avoid warning about shadowing str() for MeshEntity
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    //std::string str(bool verbose=false) const;
 
   private:
 

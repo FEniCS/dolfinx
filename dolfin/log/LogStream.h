@@ -63,9 +63,6 @@ namespace dolfin
     /// Output for mesh entity (not subclass of Variable for efficiency)
     LogStream& operator<< (const MeshEntity& entity);
 
-    /// Output for mesh entity iterator (not subclass of Variable for efficiency)
-    LogStream& operator<< (const MeshEntityIterator& iterator);
-
     /// Output for point (not subclass of Variable for efficiency)
     LogStream& operator<< (const Point& point);
 
