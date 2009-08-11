@@ -34,10 +34,10 @@ namespace dolfin
     enum Type {xml, matlab, octave, vtk, python, raw, xyz};
 
     /// Create a file with given name
-    File(const std::string filename);
+    File(const std::string filename, std::string encoding = "ascii");
 
     /// Create a file with given name and type (format)
-    File(const std::string filename, Type type);
+    File(const std::string filename, Type type, std::string encoding = "ascii");
 
     /// Create a outfile object writing to stream
     File(std::ostream& outstream);

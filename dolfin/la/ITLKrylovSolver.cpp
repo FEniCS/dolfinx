@@ -119,6 +119,7 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
 std::string ITLKrylovSolver::str(bool verbose) const
 {
   dolfin_not_implemented();
+  return std::string();
 }
 //-----------------------------------------------------------------------------
 

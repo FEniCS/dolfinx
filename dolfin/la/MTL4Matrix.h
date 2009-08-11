@@ -12,7 +12,6 @@
 #define __MTL4_MATRIX_H
 
 #include <tr1/tuple>
-#include <dolfin/common/Variable.h>
 #include "GenericMatrix.h"
 #include "mtl4.h"
 
@@ -30,7 +29,7 @@
 namespace dolfin
 {
 
-  class MTL4Matrix: public GenericMatrix, public Variable
+  class MTL4Matrix: public GenericMatrix
   {
   public:
 

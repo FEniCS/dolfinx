@@ -22,17 +22,16 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MTL4Vector::MTL4Vector(): Variable("x", "a sparse vector")
-{
+MTL4Vector::MTL4Vector(){
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MTL4Vector::MTL4Vector(uint N): Variable("x", "a sparse vector")
+MTL4Vector::MTL4Vector(uint N)
 {
   resize(N);
 }
 //-----------------------------------------------------------------------------
-MTL4Vector::MTL4Vector(const MTL4Vector& v): Variable("x", "a vector")
+MTL4Vector::MTL4Vector(const MTL4Vector& v)
 {
   *this = v;
 }
@@ -68,7 +67,7 @@ void MTL4Vector::apply()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::string Mesh::str(bool verbose) const
+std::string MTL4Vector::str(bool verbose) const
 {
   std::stringstream s;
 
@@ -85,7 +84,7 @@ std::string Mesh::str(bool verbose) const
       entry << x[i] << " ";
       s << entry.str().c_str() << std::endl;
     }
-    s << " ]" << endl;
+    s << " ]" << std::endl;
   }
   else
   {

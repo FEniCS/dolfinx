@@ -69,8 +69,8 @@ int main()
   // FIXME: Temporary while testing parallel assembly
   info("Norm of solution vector: %.15g", u.vector().norm());
 
-  // Save solution in VTK format
-  File file("poisson.pvd");
+  // Save solution in VTK format (using base64 encoding)
+  File file("poisson.pvd", "base64");
   file << u;
 
   // Plot solution

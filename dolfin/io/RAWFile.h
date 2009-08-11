@@ -19,9 +19,9 @@ namespace dolfin
     {
     public:
 
-      //Write results in raw format
-      //Much lighter than the other formats
-      //A Xd3d format for instance
+      /// Write results in raw format
+      /// Much lighter than the other formats
+      /// A Xd3d format for instance
 
       RAWFile(const std::string filename);
       ~RAWFile();
