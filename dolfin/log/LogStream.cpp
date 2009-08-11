@@ -4,8 +4,9 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-08-10
+// Last changed: 2009-08-11
 
+#include <dolfin/common/constants.h>
 #include <dolfin/common/Variable.h>
 #include "log.h"
 #include "LogStream.h"
