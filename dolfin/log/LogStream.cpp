@@ -6,6 +6,7 @@
 // First added:  2003-03-13
 // Last changed: 2009-08-11
 
+#include <dolfin/common/constants.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshEntityIterator.h>

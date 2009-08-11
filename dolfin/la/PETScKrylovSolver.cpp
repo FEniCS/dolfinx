@@ -139,8 +139,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
 
   if (!ksp)
   {
-    boost::shared_ptr<KSP> _ksp(new KSP, PETScKSPDeleter());
-    ksp = _ksp;
+    ksp.reset(new KSP, PETScKSPDeleter());
   }
 
   // Solve linear system
@@ -256,17 +255,10 @@ void PETScKrylovSolver::init(uint M, uint N)
   this->N = N;
 
   // Destroy old solver environment if necessary
-  if (ksp)
-  {
-    if (!ksp.unique())
-      error("Cannot create new KSP Krylov solver. More than one object points to the underlying PETSc object.");
-    ksp.reset();
-  }
-  else
-  {
-    boost::shared_ptr<KSP> _ksp(new KSP, PETScKSPDeleter());
-    ksp = _ksp;
-  }
+  if (!ksp.unique())
+    error("Cannot create new KSP Krylov solver. More than one object points to the underlying PETSc object.");
+
+  ksp.reset(new KSP, PETScKSPDeleter());
 
   // Set up solver environment
   if (MPI::num_processes() > 1)
