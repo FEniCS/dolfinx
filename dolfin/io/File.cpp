@@ -27,7 +27,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-File::File(const std::string filename)
+File::File(const std::string filename, std::string encoding)
 {
   // Choose file type base on suffix.
   const boost::filesystem::path path(filename);
@@ -48,7 +48,7 @@ File::File(const std::string filename)
   else if (extension == ".py")
     file = new PythonFile(filename);
   else if (extension == ".pvd")
-      file = new VTKFile(filename);
+      file = new VTKFile(filename, encoding);
   else if (extension == ".raw")
     file = new RAWFile(filename);
   else if (extension == ".xyz")
@@ -57,7 +57,7 @@ File::File(const std::string filename)
     error("Unknown file type for \"%s\".", filename.c_str());
 }
 //-----------------------------------------------------------------------------
-File::File(const std::string filename, Type type)
+File::File(const std::string filename, Type type, std::string encoding)
 {
   switch (type) 
   {
@@ -71,7 +71,7 @@ File::File(const std::string filename, Type type)
     file = new OctaveFile(filename);
     break;
   case vtk:
-    file = new VTKFile(filename);
+    file = new VTKFile(filename, encoding);
     break;
   case python:
     file = new PythonFile(filename);

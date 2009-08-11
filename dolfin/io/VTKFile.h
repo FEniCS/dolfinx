@@ -21,7 +21,7 @@ namespace dolfin
   {
   public:
 
-    VTKFile(const std::string filename);
+    VTKFile(const std::string filename, std::string encoding);
     ~VTKFile();
 
     void operator<< (const Mesh& mesh);
@@ -67,6 +67,10 @@ namespace dolfin
     // Most recent position in pvd file
     std::ios::pos_type mark;
 
+    // File encoding
+    const std::string encoding;
+
+    std::string encode_string;
   };
 
 }

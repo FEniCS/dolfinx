@@ -12,6 +12,7 @@
 #include <cmath>
 #include <sstream>
 #include <fstream>
+#include <boost/cstdint.hpp>
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -22,18 +23,24 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/Vector.h>
+#include "Encoder.h"
 #include "VTKFile.h"
 
-#include <boost/archive/iterators/base64_from_binary.hpp>
-#include <boost/archive/iterators/transform_width.hpp>
-
+// FIXME: Use boost::int#_t to be sure of the length
 
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-VTKFile::VTKFile(const std::string filename) : GenericFile(filename)
+VTKFile::VTKFile(const std::string filename, std::string encoding) 
+               : GenericFile(filename), encoding(encoding)
 {
-  type = "VTK";
+  if (encoding != "ascii" && encoding != "base64")
+    error("Requested VTK file encoding '%s' is unknown. Options are 'ascii' \nor 'base64'");
+
+  if (encoding == "ascii")
+    encode_string = "ascii";
+  else if (encoding == "base64")
+    encode_string = "binary";
 }
 //----------------------------------------------------------------------------
 VTKFile::~VTKFile()
@@ -171,49 +178,133 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
 
   // Write vertex positions
   fprintf(fp, "<Points>  \n");
-  fprintf(fp, "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\"ascii\">  \n");
-  for (VertexIterator v(mesh); !v.end(); ++v)
+  fprintf(fp, "<DataArray  type=\"Float32\"  NumberOfComponents=\"3\"  format=\"%s\">  \n", encode_string.c_str());
+  if (encoding == "ascii")
   {
-    Point p = v->point();
-    fprintf(fp," %f %f %f \n", p.x(), p.y(), p.z());
+    for (VertexIterator v(mesh); !v.end(); ++v)
+    {
+      Point p = v->point();
+      fprintf(fp," %f %f %f \n", p.x(), p.y(), p.z());
+    }
+  }
+  else if (encoding == "base64")
+  {
+    std::vector<float> data;
+    data.resize(3*mesh.num_vertices());
+    std::vector<float>::iterator entry = data.begin();
+    for (VertexIterator v(mesh); !v.end(); ++v)
+    {
+      Point p = v->point();
+      *entry++ = p.x();     
+      *entry++ = p.y();     
+      *entry++ = p.z();     
+    }
+    // Create encoded stream
+    std::stringstream base64_stream;
+    const int _size = data.size()*sizeof(float);
+    Encoder::encode_base64(&_size, 1, base64_stream);
+    base64_stream << "==";
+    Encoder::encode_base64(data, base64_stream);
+    fprintf(fp, "%s", base64_stream.str().c_str());
+    fprintf(fp, "\n");
   }
   fprintf(fp, "</DataArray>  \n");
   fprintf(fp, "</Points>  \n");
 
   // Write cell connectivity
   fprintf(fp, "<Cells>  \n");
-  fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"connectivity\"  format=\"ascii\">  \n");
-  for (CellIterator c(mesh); !c.end(); ++c)
+  fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"connectivity\"  format=\"%s\">  \n", encode_string.c_str());
+  if (encoding == "ascii")
   {
-    for (VertexIterator v(*c); !v.end(); ++v)
-      fprintf(fp," %8u ",v->index());
-    fprintf(fp," \n");
+    for (CellIterator c(mesh); !c.end(); ++c)
+    {
+      for (VertexIterator v(*c); !v.end(); ++v)
+        fprintf(fp," %8u ",v->index());
+      fprintf(fp," \n");
+    }
+  }
+  else if (encoding == "base64")
+  {
+    const uint size = mesh.num_cells()*mesh.type().num_entities(0);
+    std::vector<int> data;
+    data.resize(size);
+    std::vector<int>::iterator entry = data.begin();
+    for (CellIterator c(mesh); !c.end(); ++c)
+    {
+      for (VertexIterator v(*c); !v.end(); ++v)
+        *entry++ = v->index();
+    }
+
+    // Create encoded stream
+    std::stringstream base64_stream;
+    const int _size = data.size()*sizeof(int);
+    Encoder::encode_base64(&_size, 1, base64_stream);
+    base64_stream << "==";
+    Encoder::encode_base64(data, base64_stream);
+    fprintf(fp, "%s", base64_stream.str().c_str());
+    fprintf(fp, "\n");
   }
   fprintf(fp, "</DataArray> \n");
 
   // Write offset into connectivity array for the end of each cell
-  fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"offsets\"  format=\"ascii\">  \n");
-  for (uint offsets = 1; offsets <= mesh.num_cells(); offsets++)
+  fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"offsets\"  format=\"%s\">  \n", encode_string.c_str());
+  const uint num_cell_vertices = mesh.type().num_entities(0);
+  if (encoding == "ascii")
   {
-    if (mesh.type().cell_type() == CellType::tetrahedron )
-      fprintf(fp, " %8u \n",  offsets*4);
-    if (mesh.type().cell_type() == CellType::triangle )
-      fprintf(fp, " %8u \n", offsets*3);
-    if (mesh.type().cell_type() == CellType::interval )
-      fprintf(fp, " %8u \n",  offsets*2);
+    for (uint offsets = 1; offsets <= mesh.num_cells(); offsets++)
+      fprintf(fp, " %8u \n",  offsets*num_cell_vertices);
+  }
+  else if (encoding == "base64")
+  {
+    std::vector<int> data;
+    data.resize(mesh.num_cells()*num_cell_vertices);
+    std::vector<int>::iterator entry = data.begin();
+    for (uint offsets = 1; offsets <= mesh.num_cells(); offsets++)
+      *entry++ = offsets*num_cell_vertices;
+
+    // Create encoded stream
+    std::stringstream base64_stream;
+    const int _size = data.size()*sizeof(int);
+    Encoder::encode_base64(&_size, 1, base64_stream);
+    base64_stream << "==";
+    Encoder::encode_base64(data, base64_stream);
+    fprintf(fp, "%s", base64_stream.str().c_str());
+    fprintf(fp, "\n");
   }
   fprintf(fp, "</DataArray> \n");
 
+  //FIXME: Why doesn't UInt16 work for binary output
   //Write cell type
-  fprintf(fp, "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"ascii\">  \n");
-  for (uint types = 1; types <= mesh.num_cells(); types++)
+  fprintf(fp, "<DataArray  type=\"UInt16\"  Name=\"types\"  format=\"%s\">  \n", encode_string.c_str());
+  boost::uint16_t vtk_cell_type = 0;
+  if (mesh.type().cell_type() == CellType::tetrahedron)
+    vtk_cell_type = 10;
+  if (mesh.type().cell_type() == CellType::triangle)
+    vtk_cell_type = 5;
+  if (mesh.type().cell_type() == CellType::interval)
+    vtk_cell_type = 3;
+  if (encoding == "ascii")
   {
-    if (mesh.type().cell_type() == CellType::tetrahedron )
-      fprintf(fp, " 10 \n");
-    if (mesh.type().cell_type() == CellType::triangle )
-      fprintf(fp, " 5 \n");
-    if (mesh.type().cell_type() == CellType::interval )
-      fprintf(fp, " 3 \n");
+    for (uint types = 0; types < mesh.num_cells(); types++)
+      fprintf(fp, " %8u \n", vtk_cell_type);
+  }
+  else if (encoding == "base64")
+  {  
+    std::vector<boost::uint16_t> data;
+    data.resize(mesh.num_cells());
+    std::vector<boost::uint16_t>::iterator entry = data.begin();
+    for (uint types = 0; types < mesh.num_cells(); types++)
+      *entry++ = vtk_cell_type;
+
+    // Create encoded stream
+    std::stringstream base64_stream;
+    const int _size = data.size()*sizeof(boost::uint16_t);
+    Encoder::encode_base64(&_size, 1, base64_stream);
+    base64_stream << "==";
+    Encoder::encode_base64(data, base64_stream);
+    fprintf(fp, "%s", base64_stream.str().c_str());
+    fprintf(fp, "\n");
+
   }
   fprintf(fp, "</DataArray> \n");
   fprintf(fp, "</Cells> \n");
@@ -267,59 +358,114 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
     if (rank == 0)
     {
       fp << "<CellData  Scalars=\"U\"> " << std::endl;
-      fp << "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\"> " << std::endl;
+      fp << "<DataArray  type=\"Float32\"  Name=\"U\"  format=\""<< encode_string <<"\">" << std::endl;
     }
     else if (rank == 1)
     {
       if(!(dim == 2 || dim == 3))
         error("don't know what to do with vector function with dim other than 2 or 3.");
       fp << "<CellData  Vectors=\"U\"> " << std::endl;
-      fp << "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\"> " << std::endl;
+      fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
     }
     else if (rank == 2)
     {
       if(!(dim == 4 || dim == 9))
         error("Don't know what to do with tensor function with dim other than 4 or 9.");
       fp << "<CellData  Tensors=\"U\"> " << std::endl;
-      fp << "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"9\" format=\"ascii\">     " << std::endl;
+      fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
     }
 
-    std::ostringstream ss;
-    ss << std::scientific;
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    if (encoding == "ascii")
     {
-      ss.str("");
-
-      if (rank == 1 && dim == 2)
+      std::ostringstream ss;
+      ss << std::scientific;
+      for (CellIterator cell(mesh); !cell.end(); ++cell)
       {
-        // Append 0.0 to 2D vectors to make them 3D
-        for(uint i = 0; i < dim; i++)
-          ss << " " << values[cell->index() + i*mesh.num_cells()];
-        ss << " " << 0.0;
-      }
-      else if (rank == 2 && dim == 4)
-      {
-        // Pad with 0.0 to 2D tensors to make them 3D
-        for(uint i = 0; i < 2; i++)
+        if (rank == 1 && dim == 2)
         {
-          ss << " " << values[cell->index() + (2*i+0)*mesh.num_cells()];
-          ss << " " << values[cell->index() + (2*i+1)*mesh.num_cells()];
+          // Append 0.0 to 2D vectors to make them 3D
+          for(uint i = 0; i < dim; i++)
+            ss << " " << values[cell->index() + i*mesh.num_cells()];
           ss << " " << 0.0;
         }
-        ss << " " << 0.0;
-        ss << " " << 0.0;
-        ss << " " << 0.0;
+        else if (rank == 2 && dim == 4)
+        {
+          // Pad with 0.0 to 2D tensors to make them 3D
+          for(uint i = 0; i < 2; i++)
+          {
+            ss << " " << values[cell->index() + (2*i+0)*mesh.num_cells()];
+            ss << " " << values[cell->index() + (2*i+1)*mesh.num_cells()];
+            ss << " " << 0.0;
+          }
+          ss << " " << 0.0;
+          ss << " " << 0.0;
+          ss << " " << 0.0;
+        }
+        else
+        {
+          // Write all components
+          for (uint i = 0; i < dim; i++)
+            ss << " " << values[cell->index() + i*mesh.num_cells()];
+        }
+        ss << std::endl;
       }
-      else
-      {
-        // Write all components
-        for (uint i = 0; i < dim; i++)
-          ss << " " << values[cell->index() + i*mesh.num_cells()];
-      }
-      ss << std::endl;
-
+  
+      // Send to file
       fp << ss.str();
     }
+    else if (encoding == "base64")
+    {
+      std::vector<float> data;
+      if (rank == 1 && dim == 2)
+        data.resize(size + size/2); 
+      else if (rank == 2 && dim == 4)
+        data.resize(size + 4*size/5); 
+      else
+        data.resize(size); 
+
+      std::vector<float>::iterator entry = data.begin();
+      for (CellIterator cell(mesh); !cell.end(); ++cell)
+      {
+        if (rank == 1 && dim == 2)
+        {
+          // Append 0.0 to 2D vectors to make them 3D
+          *entry++ = values[cell->index()];
+          *entry++ = values[cell->index() + mesh.num_cells()];
+          *entry++ = 0.0;
+        }
+        else if (rank == 2 && dim == 4)
+        {
+          // Pad with 0.0 to 2D tensors to make them 3D
+          for(uint i = 0; i < 2; i++)
+          {
+            *entry++ = values[cell->index() + (2*i+0)*mesh.num_cells()];
+            *entry++ = values[cell->index() + (2*i+1)*mesh.num_cells()];
+            *entry++ = 0.0;
+          }
+          *entry++ = 0.0;
+          *entry++ = 0.0;
+          *entry++ = 0.0;
+        }
+        else
+        {
+          // Write all components
+          for (uint i = 0; i < dim; i++)
+            *entry++ = values[cell->index() + i*mesh.num_cells()];
+        }
+      }
+
+      // Create encoded stream
+      std::stringstream base64_stream;
+      int _size = data.size()*sizeof(float);
+      Encoder::encode_base64(&_size, 1, base64_stream);
+      base64_stream << "==";
+      Encoder::encode_base64(data, base64_stream);
+
+      // Send stream to file
+      fp << base64_stream.str();
+      fp << std::endl;
+    }
+
     fp << "</DataArray> " << std::endl;
     fp << "</CellData> " << std::endl;
 
@@ -328,7 +474,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
   else if (data_type == "point")
   {
     // Allocate memory for function values at vertices
-    uint size = mesh.num_vertices()*dim;
+    const uint size = mesh.num_vertices()*dim;
     double* values = new double[size];
 
     // Get function values at vertices
@@ -337,81 +483,109 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
     if (rank == 0)
     {
       fp << "<PointData  Scalars=\"U\"> " << std::endl;
-      fp << "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\"> " << std::endl;
+      fp << "<DataArray  type=\"Float32\"  Name=\"U\"  format=\""<< encode_string <<"\">" << std::endl;
     }
     else if (rank == 1)
     {
       fp << "<PointData  Vectors=\"U\"> " << std::endl;
-      fp << "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">  " << std::endl;
+      fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
     }
     else if (rank == 2)
     {
       fp << "<PointData  Tensors=\"U\"> " << std::endl;
-      fp << "<DataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"9\" format=\"ascii\">  " << std::endl;
+      fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
     }
 
-    std::ostringstream ss;
-    ss << std::scientific;
-    for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+    if (encoding == "ascii")
     {
-      ss.str("");
-
-      if(rank == 1 && dim == 2)
+      std::ostringstream ss;
+      ss << std::scientific;
+      for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
       {
-        // Append 0.0 to 2D vectors to make them 3D
-        for(uint i = 0; i < dim; i++)
-          ss << " " << values[vertex->index() + i*mesh.num_vertices()];
-        ss << " " << 0.0;
-      }
-      else if (rank == 2 && dim == 4)
-      {
-        // Pad with 0.0 to 2D tensors to make them 3D
-        for(uint i = 0; i < 2; i++)
+        if(rank == 1 && dim == 2)
         {
-          ss << " " << values[vertex->index() + (2*i+0)*mesh.num_vertices()];
-          ss << " " << values[vertex->index() + (2*i+1)*mesh.num_vertices()];
+          // Append 0.0 to 2D vectors to make them 3D
+          for(uint i = 0; i < 2; i++)
+            ss << " " << values[vertex->index() + i*mesh.num_vertices()];
           ss << " " << 0.0;
         }
-        ss << " " << 0.0;
-        ss << " " << 0.0;
-        ss << " " << 0.0;
+        else if (rank == 2 && dim == 4)
+        {
+          // Pad with 0.0 to 2D tensors to make them 3D
+          for(uint i = 0; i < 2; i++)
+          {
+            ss << " " << values[vertex->index() + (2*i+0)*mesh.num_vertices()];
+            ss << " " << values[vertex->index() + (2*i+1)*mesh.num_vertices()];
+            ss << " " << 0.0;
+          }
+          ss << " " << 0.0;
+          ss << " " << 0.0;
+          ss << " " << 0.0;
+        }
+        else
+        {
+          // Write all components
+          for(uint i = 0; i < dim; i++)
+            ss << " " << values[vertex->index() + i*mesh.num_vertices()];
+        }
+        ss << std::endl;
       }
-      else
-      {
-        // Write all components
-        for(uint i = 0; i < dim; i++)
-          ss << " " << values[vertex->index() + i*mesh.num_vertices()];
-      }
-      ss << std::endl;
+
+      // Send to file
       fp << ss.str();
     }
+    else if (encoding == "base64")
+    {
+      std::vector<float> data;
+      if (rank == 1 && dim == 2)
+        data.resize(size + size/2); 
+      else if (rank == 2 && dim == 4)
+        data.resize(size + 4*size/5); 
+      else
+        data.resize(size); 
+        
+      std::vector<float>::iterator entry = data.begin();
+      for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+      {
+        if(rank == 1 && dim == 2)
+        {
+          // Append 0.0 to 2D vectors to make them 3D
+          for(uint i = 0; i < dim; i++)
+            *entry++ = values[vertex->index() + i*mesh.num_vertices()];
+          *entry++ = 0.0;
+        }
+        else if (rank == 2 && dim == 4)
+        {
+          // Pad with 0.0 to 2D tensors to make them 3D
+          for(uint i = 0; i < 2; i++)
+          {
+            *entry++ = values[vertex->index() + (2*i+0)*mesh.num_vertices()];
+            *entry++ = values[vertex->index() + (2*i+1)*mesh.num_vertices()];
+            *entry++ = 0.0;
+          }
+          *entry++ = 0.0;
+          *entry++ = 0.0;
+          *entry++ = 0.0;
+        }
+        else
+        {
+          // Write all components
+          for(uint i = 0; i < dim; i++)
+            *entry++ = values[vertex->index() + i*mesh.num_vertices()];
+        }
+      }
 
-typedef 
-//     boost::archive::iterators::insert_linebreaks<         // insert line breaks every 72 characters
-         boost::archive::iterators::base64_from_binary<    // convert binary values ot base64 characters
-             boost::archive::iterators::transform_width<   // retrieve 6 bit integers from a sequence of 8 bit bytes
-                 const char *,
-                 6,
-                8
-             >
-         > 
-//         ,72
-//     > 
-     base64_text; // compose all the above operations in to a new iterator
-    
-    // Encode vertex data
-    //std::stringstream base64_data;
-    //std::copy(base64_text(&values[0]), base64_text(&values[size]), std::ostream_iterator<char>(base64_data));
-    //std::cout << base64_data.str() << std::endl;
+      // Create encoded stream
+      std::stringstream base64_stream;
+      int _size = data.size()*sizeof(float);
+      Encoder::encode_base64(&_size, 1, base64_stream);
+      base64_stream << "==";
+      Encoder::encode_base64(data, base64_stream);
 
-    // Encode size of data
-    //int _size = size*sizeof(double);
-    //std::stringstream base64_size;
-    //std::copy(base64_text(&_size), base64_text(&_size+1), std::ostream_iterator<char>(base64_size));
-
-    //std::string output = base64_size.str() + "==" + base64_data.str();
-    //fp << output;
-    //fp << std::endl;
+      // Send stream to file
+      fp << base64_stream.str();
+      fp << std::endl;
+    }
 
     fp << "</DataArray> " << std::endl;
     fp << "</PointData> " << std::endl;
@@ -471,7 +645,7 @@ void VTKFile::pvtu_mesh_write(std::string pvtu_filename, std::string vtu_filenam
   pvtu_file << "</PCellData>" << std::endl;
 
   pvtu_file << "<PPoints>" <<std::endl;
-  pvtu_file << "<PDataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\"ascii\"/>" << std::endl;
+  pvtu_file << "<PDataArray  type=\"Float32\"  NumberOfComponents=\"3\"  format=\"ascii\"/>" << std::endl;
   pvtu_file << "</PPoints>" << std::endl;
 
   for(uint i=0; i< MPI::num_processes(); i++)
@@ -523,21 +697,21 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
     if (rank == 0)
     {
       pvtu_file << "<PCellData  Scalars=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\"> " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  format=\"ascii\"> " << std::endl;
     }
     else if (rank == 1)
     {
       if(!(dim == 2 || dim == 3))
         error("don't know what to do with vector function with dim other than 2 or 3.");
       pvtu_file << "<PCellData  Vectors=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\"> " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\"> " << std::endl;
     }
     else if (rank == 2)
     {
       if(!(dim == 4 || dim == 9))
         error("Don't know what to do with tensor function with dim other than 4 or 9.");
       pvtu_file << "<PCellData  Tensors=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"9\" format=\"ascii\">     " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\" format=\"ascii\">     " << std::endl;
     }
 
     pvtu_file << "</PDataArray> " << std::endl;
@@ -549,17 +723,17 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
     if (rank == 0)
     {
       pvtu_file << "<PPointData  Scalars=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\"> " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  format=\"ascii\"> " << std::endl;
     }
     else if (rank == 1)
     {
       pvtu_file << "<PPointData  Vectors=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">  " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">  " << std::endl;
     }
     else if (rank == 2)
     {
       pvtu_file << "<PPointData  Tensors=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float64\"  Name=\"U\"  NumberOfComponents=\"9\" format=\"ascii\">  " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\" format=\"ascii\">  " << std::endl;
     }
     
     pvtu_file << "</PDataArray> " << std::endl;
@@ -669,7 +843,7 @@ void VTKFile::mesh_function_write(T& meshfunction)
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
 
   fp << "<CellData  Scalars=\"U\">" << std::endl;
-  fp << "<DataArray  type=\"Float64\"  Name=\"U\"  format=\"ascii\">" << std::endl;
+  fp << "<DataArray  type=\"Float32\"  Name=\"U\"  format=\"ascii\">" << std::endl;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     fp << meshfunction.get( cell->index() )  << std::endl;
   fp << "</DataArray>" << std::endl;
