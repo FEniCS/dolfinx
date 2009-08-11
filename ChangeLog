@@ -1,4 +1,5 @@
  - Experimental support for parallel assembly and solve
+ - Remove disp() functions and replace by info(foo, true)
  - Add fem unit test (Python)
  - Clean up SystemAssembler
  - Enable assemble_system through PyDOLFIN

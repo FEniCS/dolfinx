@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-02-26
-// Last changed: 2009-08-09
+// Last changed: 2009-08-11
 
 #include <dolfin/log/dolfin_log.h>
 
@@ -52,5 +52,10 @@ std::string Variable::str(bool verbose) const
   s << "<DOLFIN object "
     << _name << " (" << _label << ")>";
   return s.str();
+}
+//-----------------------------------------------------------------------------
+void Variable::disp() const
+{
+  warning("disp() function is deprecated, use info(foo) or info(foo, true) instead.");
 }
 //-----------------------------------------------------------------------------
