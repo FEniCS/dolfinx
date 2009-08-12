@@ -32,14 +32,12 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix():
-    Variable("A", "Epetra matrix"),
     A(static_cast<Epetra_FECrsMatrix*>(0))
 {
   // TODO: call Epetra_Init or something?
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(uint M, uint N):
-    Variable("A", "Epetra matrix"),
     A(static_cast<Epetra_FECrsMatrix*>(0))
 {
   // TODO: call Epetra_Init or something?
@@ -48,7 +46,6 @@ EpetraMatrix::EpetraMatrix(uint M, uint N):
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(const EpetraMatrix& A):
-  Variable("A", "Epetra matrix"),
   A(static_cast<Epetra_FECrsMatrix*>(0))
 {
   if (A.mat())
@@ -59,14 +56,12 @@ EpetraMatrix::EpetraMatrix(const EpetraMatrix& A):
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A):
-    Variable("A", "a sparse matrix"),
     A(A)
 {
   // TODO: call Epetra_Init or something?
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph):
-    Variable("A", "a sparse matrix"),
     A(new Epetra_FECrsMatrix(Copy, graph))
 {
   // TODO: call Epetra_Init or something?

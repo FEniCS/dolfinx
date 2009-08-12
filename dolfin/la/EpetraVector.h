@@ -30,7 +30,7 @@ namespace dolfin
   /// access the Epetra_FEVector object using the function vec() or vec_ptr()
   /// and use the standard Epetra interface.
 
-  class EpetraVector: public GenericVector, public Variable
+  class EpetraVector: public GenericVector
   {
   public:
 

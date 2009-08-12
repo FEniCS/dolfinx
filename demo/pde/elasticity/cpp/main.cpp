@@ -115,7 +115,7 @@ int main()
 
   // Displace mesh and plot displaced mesh
   mesh.move(u);
-  //plot(mesh);
+  plot(mesh);
 
   // Save solution in VTK format
   File vtk_file("elasticity.pvd");

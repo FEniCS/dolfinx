@@ -33,7 +33,7 @@ namespace dolfin
   /// access the Epetra_FECrsMatrix object using the function mat() and
   /// use the standard Epetra interface.
 
-  class EpetraMatrix: public GenericMatrix, public Variable
+  class EpetraMatrix: public GenericMatrix
   {
   public:
 

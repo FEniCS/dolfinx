@@ -29,38 +29,30 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector():
-    Variable("x", "a sparse vector"),
-    x(static_cast<Epetra_FEVector*>(0))
+EpetraVector::EpetraVector() : x(static_cast<Epetra_FEVector*>(0))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(uint N):
-    Variable("x", "a sparse vector"),
-    x(static_cast<Epetra_FEVector*>(0))
+EpetraVector::EpetraVector(uint N) : x(static_cast<Epetra_FEVector*>(0))
 {
   // Create Epetra vector
   resize(N);
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(boost::shared_ptr<Epetra_FEVector> x):
-    Variable("x", "a vector"),
-    x(x)
+EpetraVector::EpetraVector(boost::shared_ptr<Epetra_FEVector> x) : x(x)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(const Epetra_Map& map):
-    Variable("x", "a vector"),
-    x(static_cast<Epetra_FEVector*>(0))
+EpetraVector::EpetraVector(const Epetra_Map& map) 
+                         : x(static_cast<Epetra_FEVector*>(0))
 {
   dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(const EpetraVector& v):
-    Variable("x", "a vector"),
-    x(static_cast<Epetra_FEVector*>(0))
+EpetraVector::EpetraVector(const EpetraVector& v) 
+                         : x(static_cast<Epetra_FEVector*>(0))
 {
   *this = v;
 }
