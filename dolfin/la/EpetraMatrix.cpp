@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2008, 2008.
 //
 // First added:  2008-04-21
-// Last changed: 2009-08-11
+// Last changed: 2009-08-12
 
 #ifdef HAS_TRILINOS
 
@@ -224,7 +224,7 @@ void EpetraMatrix::apply()
   //A->OptimizeStorage();
 }
 //-----------------------------------------------------------------------------
-std::string EpetraMatrix::str(bool verbose=false) const
+std::string EpetraMatrix::str(bool verbose) const
 {
   assert(A);
 
