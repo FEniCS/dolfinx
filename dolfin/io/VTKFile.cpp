@@ -26,8 +26,6 @@
 #include "Encoder.h"
 #include "VTKFile.h"
 
-// FIXME: Use boost::int#_t to be sure of the length
-
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
@@ -222,10 +220,10 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   }
   else if (encoding == "base64")
   {
-    const uint size = mesh.num_cells()*mesh.type().num_entities(0);
-    std::vector<int> data;
+    const int size = mesh.num_cells()*mesh.type().num_entities(0);
+    std::vector<boost::int32_t> data;
     data.resize(size);
-    std::vector<int>::iterator entry = data.begin();
+    std::vector<boost::int32_t>::iterator entry = data.begin();
     for (CellIterator c(mesh); !c.end(); ++c)
     {
       for (VertexIterator v(*c); !v.end(); ++v)
@@ -250,9 +248,9 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   }
   else if (encoding == "base64")
   {
-    std::vector<int> data;
+    std::vector<boost::int32_t> data;
     data.resize(mesh.num_cells()*num_cell_vertices);
-    std::vector<int>::iterator entry = data.begin();
+    std::vector<boost::int32_t>::iterator entry = data.begin();
     for (uint offsets = 1; offsets <= mesh.num_cells(); offsets++)
       *entry++ = offsets*num_cell_vertices;
 
@@ -266,8 +264,8 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
 
   //FIXME: Why doesn't UInt16 work for binary output
   //Write cell type
-  fprintf(fp, "<DataArray  type=\"UInt16\"  Name=\"types\"  format=\"%s\">  \n", encode_string.c_str());
-  boost::uint16_t vtk_cell_type = 0;
+  fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"types\"  format=\"%s\">  \n", encode_string.c_str());
+  boost::int32_t vtk_cell_type = 0;
   if (mesh.type().cell_type() == CellType::tetrahedron)
     vtk_cell_type = 10;
   if (mesh.type().cell_type() == CellType::triangle)
@@ -281,9 +279,9 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   }
   else if (encoding == "base64")
   {  
-    std::vector<boost::uint16_t> data;
+    std::vector<boost::int32_t> data;
     data.resize(mesh.num_cells());
-    std::vector<boost::uint16_t>::iterator entry = data.begin();
+    std::vector<boost::int32_t>::iterator entry = data.begin();
     for (uint types = 0; types < mesh.num_cells(); types++)
       *entry++ = vtk_cell_type;
 
@@ -623,7 +621,7 @@ void VTKFile::pvtu_mesh_write(std::string pvtu_filename, std::string vtu_filenam
   pvtu_file << "<PCellData>" << std::endl;
   pvtu_file << "<PDataArray  type=\"Int32\"  Name=\"connectivity\"/>" << std::endl;
   pvtu_file << "<PDataArray  type=\"Int32\"  Name=\"offsets\"/>" << std::endl;
-  pvtu_file << "<PDataArray  type=\"UInt8\"  Name=\"types\"/>"  << std::endl;
+  pvtu_file << "<PDataArray  type=\"Int32\"  Name=\"types\"/>"  << std::endl;
   pvtu_file << "</PCellData>" << std::endl;
 
   pvtu_file << "<PPoints>" <<std::endl;
@@ -734,7 +732,8 @@ void VTKFile::vtk_header_open(uint num_vertices, uint num_cells,
     error("Unable to open file %s", filename.c_str());
 
   // Write headers
-  fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\"   >\n");
+  fprintf(fp, "<?xml version=\"1.0\"?> \n");
+  fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\" byte_order=\"LittleEndian\"  >\n");
   fprintf(fp, "<UnstructuredGrid>  \n");
   fprintf(fp, "<Piece  NumberOfPoints=\" %8u\"  NumberOfCells=\" %8u\">  \n",
           num_vertices, num_cells);
@@ -765,7 +764,7 @@ void VTKFile::pvtu_header_open(std::string pvtu_filename) const
   
   // Write header
   pvtu_file << "<?xml version=\"1.0\"?> " << std::endl;
-  pvtu_file << "<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\">" << std::endl;
+  pvtu_file << "<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\" >" << std::endl;
   pvtu_file << "<PUnstructuredGrid GhostLevel=\"0\">" << std::endl;  
   pvtu_file.close();
 }
