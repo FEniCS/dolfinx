@@ -71,7 +71,6 @@ int main()
 
   // Save solution in VTK format (using base64 encoding)
   File file("poisson.pvd", "base64");
-  //File file("poisson.pvd");
   file << u;
 
   // Plot solution

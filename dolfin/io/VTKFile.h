@@ -1,11 +1,11 @@
-// Copyright (C) 2005-2009 Garth N. Wells.
+// Copyright (C) 2005-2007 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006.
-// Modified by Niclas Jansson 2009.
+// Modified by NIclas Jansson 2009.
 //
 // First added:  2005-07-05
-// Last changed: 2009-08-11
+// Last changed: 2009-08-06
 
 #ifndef __VTK_FILE_H
 #define __VTK_FILE_H
@@ -22,7 +22,6 @@ namespace dolfin
   public:
 
     VTKFile(const std::string filename, std::string encoding);
-
     ~VTKFile();
 
     void operator<< (const Mesh& mesh);

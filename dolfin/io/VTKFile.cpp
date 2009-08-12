@@ -7,9 +7,9 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2005-07-05
-// Last changed: 2009-08-11
+// Last changed: 2009-08-06
 
-//#include <cmath>
+#include <cmath>
 #include <sstream>
 #include <fstream>
 #include <boost/cstdint.hpp>
@@ -25,6 +25,8 @@
 #include <dolfin/la/Vector.h>
 #include "Encoder.h"
 #include "VTKFile.h"
+
+// FIXME: Use boost::int#_t to be sure of the length
 
 using namespace dolfin;
 
@@ -208,7 +210,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
 
   // Write cell connectivity
   fprintf(fp, "<Cells>  \n");
-  fprintf(fp, "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\"%s\">  \n", encode_string.c_str());
+  fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"connectivity\"  format=\"%s\">  \n", encode_string.c_str());
   if (encoding == "ascii")
   {
     for (CellIterator c(mesh); !c.end(); ++c)
@@ -221,9 +223,9 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   else if (encoding == "base64")
   {
     const uint size = mesh.num_cells()*mesh.type().num_entities(0);
-    std::vector<boost::uint32_t> data;
+    std::vector<int> data;
     data.resize(size);
-    std::vector<boost::uint32_t>::iterator entry = data.begin();
+    std::vector<int>::iterator entry = data.begin();
     for (CellIterator c(mesh); !c.end(); ++c)
     {
       for (VertexIterator v(*c); !v.end(); ++v)
@@ -239,7 +241,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   fprintf(fp, "</DataArray> \n");
 
   // Write offset into connectivity array for the end of each cell
-  fprintf(fp, "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\"%s\">  \n", encode_string.c_str());
+  fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"offsets\"  format=\"%s\">  \n", encode_string.c_str());
   const uint num_cell_vertices = mesh.type().num_entities(0);
   if (encoding == "ascii")
   {
@@ -248,9 +250,9 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   }
   else if (encoding == "base64")
   {
-    std::vector<boost::uint32_t> data;
+    std::vector<int> data;
     data.resize(mesh.num_cells()*num_cell_vertices);
-    std::vector<boost::uint32_t>::iterator entry = data.begin();
+    std::vector<int>::iterator entry = data.begin();
     for (uint offsets = 1; offsets <= mesh.num_cells(); offsets++)
       *entry++ = offsets*num_cell_vertices;
 
@@ -262,11 +264,10 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   }
   fprintf(fp, "</DataArray> \n");
 
-  //FIXME: Why doesn't UInt8 (boost::uint8_t) or UInt16, work for binary output? (chuck missing)
+  //FIXME: Why doesn't UInt16 work for binary output
   //Write cell type
-  //fprintf(fp, "<DataArray  type=\"UInt32\"  Name=\"types\" format=\"ascii\">  \n");
-  fprintf(fp, "<DataArray  type=\"UInt32\"  Name=\"types\" format=\"%s\">  \n", encode_string.c_str());
-  boost::uint32_t vtk_cell_type = 0;
+  fprintf(fp, "<DataArray  type=\"UInt16\"  Name=\"types\"  format=\"%s\">  \n", encode_string.c_str());
+  boost::uint16_t vtk_cell_type = 0;
   if (mesh.type().cell_type() == CellType::tetrahedron)
     vtk_cell_type = 10;
   if (mesh.type().cell_type() == CellType::triangle)
@@ -280,9 +281,9 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   }
   else if (encoding == "base64")
   {  
-    std::vector<boost::uint32_t> data;
+    std::vector<boost::uint16_t> data;
     data.resize(mesh.num_cells());
-    std::vector<boost::uint32_t>::iterator entry = data.begin();
+    std::vector<boost::uint16_t>::iterator entry = data.begin();
     for (uint types = 0; types < mesh.num_cells(); types++)
       *entry++ = vtk_cell_type;
 
@@ -291,8 +292,8 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
     encode_inline_base64(base64_stream, data);
     fprintf(fp, "%s", base64_stream.str().c_str());
     fprintf(fp, "\n");
+
   }
-  
   fprintf(fp, "</DataArray> \n");
   fprintf(fp, "</Cells> \n");
 
@@ -442,8 +443,8 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
       }
 
       // Create encoded stream
-    std::stringstream base64_stream;
-    encode_inline_base64(base64_stream, data);
+      std::stringstream base64_stream;
+      encode_inline_base64(base64_stream, data);
 
       // Send stream to file
       fp << base64_stream.str();
@@ -620,14 +621,13 @@ void VTKFile::pvtu_mesh_write(std::string pvtu_filename, std::string vtu_filenam
   pvtu_file.open(pvtu_filename.c_str(), std::ios::out|std::ios::app);
 
   pvtu_file << "<PCellData>" << std::endl;
-  pvtu_file << "<PDataArray  type=\"Int32\"  Name=\"connectivity\"  format=\""<< encode_string <<"\">" << std::endl;
-  pvtu_file << "<PDataArray  type=\"Int32\"  Name=\"offsets\"  format=\""<< encode_string <<"\">" << std::endl;
-  //pvtu_file << "<PDataArray  type=\"UInt32\"  Name=\"types\"  format=\""<< encode_string <<"\">" << std::endl;
-  pvtu_file << "<PDataArray  type=\"UInt32\"  Name=\"types\"  format=\"ascii\">" << std::endl;
+  pvtu_file << "<PDataArray  type=\"Int32\"  Name=\"connectivity\"/>" << std::endl;
+  pvtu_file << "<PDataArray  type=\"Int32\"  Name=\"offsets\"/>" << std::endl;
+  pvtu_file << "<PDataArray  type=\"UInt8\"  Name=\"types\"/>"  << std::endl;
   pvtu_file << "</PCellData>" << std::endl;
 
   pvtu_file << "<PPoints>" <<std::endl;
-  pvtu_file << "<PDataArray  type=\"Float32\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
+  pvtu_file << "<PDataArray  type=\"Float32\"  NumberOfComponents=\"3\"/>" << std::endl;
   pvtu_file << "</PPoints>" << std::endl;
 
   for(uint i=0; i< MPI::num_processes(); i++)
@@ -679,21 +679,21 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
     if (rank == 0)
     {
       pvtu_file << "<PCellData  Scalars=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  format=\""<< encode_string <<"\">" << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\">" << std::endl;
     }
     else if (rank == 1)
     {
       if(!(dim == 2 || dim == 3))
         error("don't know what to do with vector function with dim other than 2 or 3.");
       pvtu_file << "<PCellData  Vectors=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\">" << std::endl;
     }
     else if (rank == 2)
     {
       if(!(dim == 4 || dim == 9))
         error("Don't know what to do with tensor function with dim other than 4 or 9.");
       pvtu_file << "<PCellData  Tensors=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\">" << std::endl;
     }
 
     pvtu_file << "</PDataArray> " << std::endl;
@@ -705,17 +705,17 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
     if (rank == 0)
     {
       pvtu_file << "<PPointData  Scalars=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  format=\""<< encode_string <<"\">" << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\">" << std::endl;
     }
     else if (rank == 1)
     {
       pvtu_file << "<PPointData  Vectors=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\">" << std::endl;
     }
     else if (rank == 2)
     {
       pvtu_file << "<PPointData  Tensors=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\">" << std::endl;
     }
     
     pvtu_file << "</PDataArray> " << std::endl;
@@ -825,7 +825,7 @@ void VTKFile::mesh_function_write(T& meshfunction)
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
 
   fp << "<CellData  Scalars=\"U\">" << std::endl;
-  fp << "<DataArray  type=\"Float32\"  Name=\"U\"  format=\""<< encode_string <<"\">" << std::endl;
+  fp << "<DataArray  type=\"Float32\"  Name=\"U\"  format=\"ascii\">" << std::endl;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     fp << meshfunction.get( cell->index() )  << std::endl;
   fp << "</DataArray>" << std::endl;
