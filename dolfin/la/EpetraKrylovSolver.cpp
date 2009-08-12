@@ -208,6 +208,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 std::string EpetraKrylovSolver::str(bool verbose) const
 {
   dolfin_not_implemented();
+  return std::string();
 }
 //-----------------------------------------------------------------------------
 

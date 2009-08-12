@@ -49,6 +49,7 @@ dolfin::uint EpetraLUSolver::solve(const EpetraMatrix&A, EpetraVector& x,
 std::string EpetraLUSolver::str(bool verbose) const
 {
   dolfin_not_implemented();
+  return std::string();
 }
 //-----------------------------------------------------------------------------
 
