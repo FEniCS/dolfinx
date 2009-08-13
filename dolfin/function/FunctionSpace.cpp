@@ -213,7 +213,8 @@ void FunctionSpace::interpolate_vertex_values(double* vertex_values,
   const uint num_cell_vertices = _mesh->type().num_vertices(_mesh->topology().dim());
   double* local_vertex_values = new double[scratch.size*num_cell_vertices];
   
-  // Interpolate vertex values on each cell (using latest value if not continuous)
+  // Interpolate vertex values on each cell (using last computed value if not 
+  // continuous, e.g. discontinuous Galerkin methods)
   UFCCell ufc_cell(*_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {

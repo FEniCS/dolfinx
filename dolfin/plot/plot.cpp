@@ -41,7 +41,7 @@ void dolfin::plot(const Function& v, std::string mode)
 {
   if (dolfin::MPI::num_processes() > 1)
   {
-    warning("Built-in plotting needs to be updated when running in parallel.");
+    info("Built-in plotting via Viper needs to be updated when running in parallel.");
     return;
   }  
   FunctionPlotData w(v);
