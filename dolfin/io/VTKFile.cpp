@@ -588,7 +588,7 @@ void VTKFile::pvd_file_write(uint num, std::string _filename)
 
     // Write header
     pvd_file << "<?xml version=\"1.0\"?> " << std::endl;
-    pvd_file << "<VTKFile type=\"Collection\" version=\"0.1\" > " << std::endl;
+    pvd_file << "<VTKFile type=\"Collection\" version=\"0.1\">" << std::endl;
     pvd_file << "<Collection> " << std::endl;
   }
   else
@@ -606,8 +606,8 @@ void VTKFile::pvd_file_write(uint num, std::string _filename)
   mark = pvd_file.tellp();
 
   // Close headers
-  pvd_file << "</Collection> " << std::endl;
-  pvd_file << "</VTKFile> " << std::endl;
+  pvd_file << "</Collection>" << std::endl;
+  pvd_file << "</VTKFile>" << std::endl;
 
   // Close file
   pvd_file.close();
@@ -782,8 +782,8 @@ void VTKFile::pvtu_header_open(std::string pvtu_filename) const
   pvtu_file.open(pvtu_filename.c_str(), std::ios::out|std::ios::trunc);
   
   // Write header
-  pvtu_file << "<?xml version=\"1.0\"?> " << std::endl;
-  pvtu_file << "<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\" >" << std::endl;
+  pvtu_file << "<?xml version=\"1.0\"?>" << std::endl;
+  pvtu_file << "<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\">" << std::endl;
   pvtu_file << "<PUnstructuredGrid GhostLevel=\"0\">" << std::endl;  
   pvtu_file.close();
 }
