@@ -98,6 +98,7 @@ options = [
     BoolVariable("enableMtl4", "Compile with support for MTL4", "yes"),
     BoolVariable("enableParmetis", "Compile with support for ParMETIS", "yes"),
     BoolVariable("enableGmp", "Compile with support for GMP", "no"),
+    BoolVariable("enableZlib", "Compile with support for zlib", "yes"),
     BoolVariable("enablePython", "Compile the Python wrappers", "yes"),
     BoolVariable("enablePydolfin", "Compile the Python wrappers of DOLFIN *deprecated*", "yes"),
     # some of the above may need extra options (like petscDir), should we
@@ -117,6 +118,7 @@ options = [
     PathVariable("withBoostDir", "Specify path to Boost", None, path_validator),
     PathVariable("withLibxml2Dir", "Specify path to libXML2", None, path_validator),
     PathVariable("withGtsDir", "Specify path to GTS", None, path_validator),
+    PathVariable("withZlibDir", "Specify path to zlib", None, path_validator),
     #
     # a few more options originally from PyCC:
     #BoolVariable("autoFetch", "Automatically fetch datafiles from (password protected) SSH repository", 0),
