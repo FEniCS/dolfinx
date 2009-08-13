@@ -28,21 +28,10 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 {
   const uint rank = dof_maps.size();
 
-  // Allocate space
+  // Get global dimensions
   boost::scoped_array<uint> global_dimensions(new uint[rank]);  
-  boost::scoped_array<uint> local_dimensions(new uint[rank]);  
-  boost::scoped_array<uint> macro_local_dimensions(new uint[rank]);
-  uint** dofs = new uint*[rank];
-  uint** macro_dofs = new uint*[rank];
   for (uint i = 0; i < rank; ++i)
-  {
     global_dimensions[i] = dof_maps[i]->global_dimension();
-    local_dimensions[i] = dof_maps[i]->max_local_dimension();
-    macro_local_dimensions[i] = 2*dof_maps[i]->max_local_dimension();
-
-    dofs[i] = new uint[local_dimensions[i]];
-    macro_dofs[i] = new uint[macro_local_dimensions[i]];
-  }
 
   // Initialise sparsity pattern
   sparsity_pattern.init(rank, global_dimensions.get());
@@ -50,6 +39,20 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Only build for rank >= 2 (matrices and higher order tensors)
   if (rank < 2)
     return;
+
+  // Allocate soem more space
+  boost::scoped_array<uint> local_dimensions(new uint[rank]);  
+  boost::scoped_array<uint> macro_local_dimensions(new uint[rank]);
+  uint** dofs = new uint*[rank];
+  uint** macro_dofs = new uint*[rank];
+  for (uint i = 0; i < rank; ++i)
+  {
+    local_dimensions[i] = dof_maps[i]->max_local_dimension();
+    macro_local_dimensions[i] = 2*dof_maps[i]->max_local_dimension();
+
+    dofs[i] = new uint[local_dimensions[i]];
+    macro_dofs[i] = new uint[macro_local_dimensions[i]];
+  }
 
   // Build sparsity pattern for cell integrals
   if (cells)
