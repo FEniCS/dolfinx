@@ -1,3 +1,4 @@
+ - Add support for compressed base64 encoded VTK files (using zlib)
  - Add support for base64 encoded VTK files
  - Experimental support for parallel assembly and solve
  - Bug fix in project() function, update to UFL syntax

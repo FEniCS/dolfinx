@@ -1,1 +1,5 @@
 The TODO list has moved to http://www.fenics.org/wiki/DOLFIN_road_map
+
+* Status of demos in parallel
+demo/pde/poisson/cpp      working
+demo/pde/poisson/python   ?

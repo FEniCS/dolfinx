@@ -9,6 +9,9 @@
 #include <algorithm>
 #include <cstring>
 #include <ctime>
+#include <set>
+#include <tr1/unordered_set>
+
 #include <dolfin/common/Set.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/BoundaryMesh.h>
@@ -23,6 +26,19 @@
 #include "DofMapBuilder.h"
 
 using namespace dolfin;
+
+// FIXME: Test which 'set' is most efficient
+
+//typedef std::set<dolfin::uint> set;
+//typedef std::set<dolfin::uint>::const_iterator set_iterator;
+
+//typedef Set<dolfin::uint> set;
+//typedef Set<dolfin::uint>::const_iterator set_iterator;
+
+typedef std::tr1::unordered_set<dolfin::uint> set;
+typedef std::tr1::unordered_set<dolfin::uint>::const_iterator set_iterator;
+
+typedef std::vector<dolfin::uint>::const_iterator vector_iterator;
 
 //-----------------------------------------------------------------------------
 void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
@@ -43,11 +59,6 @@ void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
   interior_boundary.init_interior(mesh);
   MeshFunction<uint>* cell_map = interior_boundary.data().mesh_function("cell map");
   
-  //typedef std::set<uint> set;
-  //typedef std::set<uint>::const_iterator set_iterator;
-  typedef Set<uint> set;
-  typedef Set<uint>::const_iterator set_iterator;
-  typedef std::vector<uint>::const_iterator vector_iterator;
   set shared_dofs, forbidden_dofs, owned_dofs;
   std::vector<uint> send_buffer;
   std::map<uint, uint> dof_vote;
@@ -180,5 +191,7 @@ void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
   memcpy(dof_map.dof_map, _dof_map, n*mesh.num_cells() * sizeof(int));  
 
   delete [] _dof_map;
+
+  info("Finished building parallel dof map");
 }
 //-----------------------------------------------------------------------------
