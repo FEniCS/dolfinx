@@ -1,12 +1,13 @@
-// Copyright (C) 2007-2008 Garth N. Wells.
+// Copyright (C) 2007-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2007.
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2007-05-24
-// Last changed: 2009-05-19
+// Last changed: 2009-08-13
 
+#include <boost/scoped_array.hpp>  	
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
@@ -28,9 +29,9 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   const uint rank = dof_maps.size();
 
   // Allocate space
-  uint* global_dimensions = new uint[rank];
-  uint* local_dimensions = new uint[rank];
-  uint* macro_local_dimensions = new uint[rank];
+  boost::scoped_array<uint> global_dimensions(new uint[rank]);  
+  boost::scoped_array<uint> local_dimensions(new uint[rank]);  
+  boost::scoped_array<uint> macro_local_dimensions(new uint[rank]);
   uint** dofs = new uint*[rank];
   uint** macro_dofs = new uint*[rank];
   for (uint i = 0; i < rank; ++i)
@@ -44,7 +45,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   }
 
   // Initialise sparsity pattern
-  sparsity_pattern.init(rank, global_dimensions);
+  sparsity_pattern.init(rank, global_dimensions.get());
 
   // Only build for rank >= 2 (matrices and higher order tensors)
   if (rank < 2)
@@ -68,7 +69,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       }
 
       // Fill sparsity pattern.
-      sparsity_pattern.insert(local_dimensions, dofs);
+      sparsity_pattern.insert(local_dimensions.get(), dofs);
     }
   }
 
@@ -112,7 +113,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       }
 
       // Fill sparsity pattern.
-      sparsity_pattern.insert(macro_local_dimensions, macro_dofs);
+      sparsity_pattern.insert(macro_local_dimensions.get(), macro_dofs);
     }
   }
 
@@ -120,9 +121,6 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   sparsity_pattern.apply();
 
   // Clean up
-  delete [] global_dimensions;
-  delete [] local_dimensions;
-  delete [] macro_local_dimensions;
   for (uint i = 0; i < rank; i++)
   {
     delete [] dofs[i];
