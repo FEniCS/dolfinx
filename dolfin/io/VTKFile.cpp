@@ -7,9 +7,8 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2005-07-05
-// Last changed: 2009-08-06
+// Last changed: 2009-08-13
 
-#include <cmath>
 #include <sstream>
 #include <fstream>
 #include <boost/cstdint.hpp>
@@ -18,11 +17,11 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/la/Vector.h>
 #include "Encoder.h"
 #include "VTKFile.h"
 
@@ -32,13 +31,15 @@ using namespace dolfin;
 VTKFile::VTKFile(const std::string filename, std::string encoding) 
                : GenericFile(filename), encoding(encoding)
 {
-  if (encoding != "ascii" && encoding != "base64")
-    error("Requested VTK file encoding '%s' is unknown. Options are 'ascii' \nor 'base64'");
+  if (encoding != "ascii" && encoding != "base64" && encoding != "compressed")
+    error("Requested VTK file encoding '%s' is unknown. Options are 'ascii', \n 'base64' or 'compressed'.");
 
   if (encoding == "ascii")
     encode_string = "ascii";
-  else if (encoding == "base64")
+  else if (encoding == "base64" || encoding == "compressed")
     encode_string = "binary";
+  else
+    error("Unknown encoding type.");
 }
 //----------------------------------------------------------------------------
 VTKFile::~VTKFile()
@@ -185,7 +186,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
       fprintf(fp," %f %f %f \n", p.x(), p.y(), p.z());
     }
   }
-  else if (encoding == "base64")
+  else if (encoding == "base64" || encoding == "compressed")
   {
     std::vector<float> data;
     data.resize(3*mesh.num_vertices());
@@ -199,7 +200,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
     }
     // Create encoded stream
     std::stringstream base64_stream;
-    encode_inline_base64(base64_stream, data);
+    encode_stream(base64_stream, data);
     fprintf(fp, "%s", base64_stream.str().c_str());
     fprintf(fp, "\n");
   }
@@ -218,7 +219,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
       fprintf(fp," \n");
     }
   }
-  else if (encoding == "base64")
+  else if (encoding == "base64" || encoding == "compressed")
   {
     const int size = mesh.num_cells()*mesh.type().num_entities(0);
     std::vector<boost::uint32_t> data;
@@ -232,7 +233,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
 
     // Create encoded stream
     std::stringstream base64_stream;
-    encode_inline_base64(base64_stream, data);
+    encode_stream(base64_stream, data);
     fprintf(fp, "%s", base64_stream.str().c_str());
     fprintf(fp, "\n");
   }
@@ -246,7 +247,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
     for (uint offsets = 1; offsets <= mesh.num_cells(); offsets++)
       fprintf(fp, " %8u \n",  offsets*num_cell_vertices);
   }
-  else if (encoding == "base64")
+  else if (encoding == "base64" || encoding == "compressed")
   {
     std::vector<boost::uint32_t> data;
     data.resize(mesh.num_cells()*num_cell_vertices);
@@ -256,7 +257,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
 
     // Create encoded stream
     std::stringstream base64_stream;
-    encode_inline_base64(base64_stream, data);
+    encode_stream(base64_stream, data);
     fprintf(fp, "%s", base64_stream.str().c_str());
     fprintf(fp, "\n");
   }
@@ -276,7 +277,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
     for (uint types = 0; types < mesh.num_cells(); types++)
       fprintf(fp, " %8u \n", vtk_cell_type);
   }
-  else if (encoding == "base64")
+  else if (encoding == "base64" || encoding == "compressed")
   {  
     std::vector<boost::uint8_t> data;
     data.resize(mesh.num_cells());
@@ -286,7 +287,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
 
     // Create encoded stream
     std::stringstream base64_stream;
-    encode_inline_base64(base64_stream, data);
+    encode_stream(base64_stream, data);
 
     fprintf(fp, "%s", base64_stream.str().c_str());
     fprintf(fp, "\n");
@@ -398,7 +399,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
       // Send to file
       fp << ss.str();
     }
-    else if (encoding == "base64")
+    else if (encoding == "base64" || encoding == "compressed")
     {
       std::vector<float> data;
       if (rank == 1 && dim == 2)
@@ -441,7 +442,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
 
       // Create encoded stream
       std::stringstream base64_stream;
-      encode_inline_base64(base64_stream, data);
+      encode_stream(base64_stream, data);
 
       // Send stream to file
       fp << base64_stream.str();
@@ -516,7 +517,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
       // Send to file
       fp << ss.str();
     }
-    else if (encoding == "base64")
+    else if (encoding == "base64" || encoding == "compressed")
     {
       std::vector<float> data;
       if (rank == 1 && dim == 2)
@@ -559,7 +560,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
 
       // Create encoded stream
       std::stringstream base64_stream;
-      encode_inline_base64(base64_stream, data);
+      encode_stream(base64_stream, data);
 
       // Send stream to file
       fp << base64_stream.str();
@@ -732,7 +733,10 @@ void VTKFile::vtk_header_open(uint num_vertices, uint num_cells,
 
   // Write headers
   fprintf(fp, "<?xml version=\"1.0\"?> \n");
-  fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\" byte_order=\"LittleEndian\"  >\n");
+  if (encoding == "compressed")
+    fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">\n");
+  else
+    fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\" byte_order=\"LittleEndian\">\n");
   fprintf(fp, "<UnstructuredGrid>  \n");
   fprintf(fp, "<Piece  NumberOfPoints=\" %8u\"  NumberOfCells=\" %8u\">  \n",
           num_vertices, num_cells);
@@ -749,7 +753,7 @@ void VTKFile::vtk_header_close(std::string vtu_filename) const
     error("Unable to open file %s", filename.c_str());
 
   // Close headers
-  fprintf(fp, "</Piece> \n </UnstructuredGrid> \n </VTKFile>");
+  fprintf(fp, "</Piece> \n</UnstructuredGrid> \n</VTKFile>");
 
   // Close file
   fclose(fp);
@@ -857,11 +861,53 @@ std::string VTKFile::strip_path(std::string file) const
 }
 //----------------------------------------------------------------------------
 template<typename T>
-void VTKFile::encode_inline_base64(std::stringstream& stream, const std::vector<T>& data) const
+void VTKFile::encode_stream(std::stringstream& stream, 
+                            const std::vector<T>& data) const
+{
+  if (encoding == "compressed")
+  {
+  #ifdef HAS_ZLIB
+    encode_inline_compressed_base64(stream, data);
+  #else
+    warning("zlib must be configured to enable compressed VTK output. Using uncompressed base64 encoding instead.");
+    encode_inline_base64(stream, data);
+  #endif
+  }
+  else
+    encode_inline_base64(stream, data);
+}
+//----------------------------------------------------------------------------
+template<typename T>
+void VTKFile::encode_inline_base64(std::stringstream& stream, 
+                                   const std::vector<T>& data) const
 {
   const boost::uint32_t size = data.size()*sizeof(T);
   Encoder::encode_base64(&size, 1, stream);
   Encoder::encode_base64(data, stream);
 }
+//----------------------------------------------------------------------------
+#ifdef HAS_ZLIB
+template<typename T>
+void VTKFile::encode_inline_compressed_base64(std::stringstream& stream, 
+                                              const std::vector<T>& data) const
+{
+  boost::uint32_t header[4];
+  header[0] = 1;
+  header[1] = data.size()*sizeof(T);
+  header[2] = 0;
+
+  // Compress data
+  std::pair<boost::shared_array<unsigned char>, dolfin::uint> compressed_data = Encoder::compress_data(data);
+
+  // Length of compressed data
+  header[3] = compressed_data.second;
+
+  // Encode header
+  Encoder::encode_base64(&header[0], 4, stream);
+
+  // Encode data
+  Encoder::encode_base64(compressed_data.first.get(), compressed_data.second, stream);
+}
+#endif
 //----------------------------------------------------------------------------
 

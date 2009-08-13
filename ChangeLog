@@ -1,3 +1,4 @@
+ - Add support for base64 encoded VTK files
  - Experimental support for parallel assembly and solve
  - Bug fix in project() function, update to UFL syntax
  - Remove disp() functions and replace by info(foo, true)
