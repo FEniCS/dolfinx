@@ -207,6 +207,8 @@ void FunctionSpace::interpolate_vertex_values(double* vertex_values,
   assert(_element);
   assert(_dofmap);
 
+  v.gather();
+
   // Local data for interpolation on each cell
   const uint num_cell_vertices = _mesh->type().num_vertices(_mesh->topology().dim());
   double* local_vertex_values = new double[scratch.size*num_cell_vertices];
