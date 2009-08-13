@@ -70,7 +70,7 @@ int main()
   info("Norm of solution vector: %.15g", u.vector().norm());
 
   // Save solution in VTK format (using base64 encoding)
-  File file("poisson.pvd", "base64");
+  File file("poisson.pvd", "compressed");
   file << u;
 
   // Plot solution

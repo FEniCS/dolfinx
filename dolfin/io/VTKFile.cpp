@@ -12,6 +12,7 @@
 #include <sstream>
 #include <fstream>
 #include <boost/cstdint.hpp>
+#include <boost/detail/endian.hpp>
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -731,12 +732,27 @@ void VTKFile::vtk_header_open(uint num_vertices, uint num_cells,
   if (!fp)
     error("Unable to open file %s", filename.c_str());
 
+  // Figure out endianness of machine
+  std::string endianness = "";
+  if (encode_string == "binary")
+  {
+  #if defined BOOST_LITTLE_ENDIAN
+    endianness = "byte_order=\"LittleEndian\"";
+  #elif defined BOOST_BIG_ENDIAN
+    endianness = "byte_order=\"BigEndian\"";;
+  #else
+    error("Unable to determine the endianness of the machine for VTK binary output.");
+  #endif
+  }
+
+  // Compression string
+  std::string compressor = "";
+  if (encoding == "compressed")
+    compressor = "compressor=\"vtkZLibDataCompressor\"";
+
   // Write headers
   fprintf(fp, "<?xml version=\"1.0\"?> \n");
-  if (encoding == "compressed")
-    fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">\n");
-  else
-    fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\" byte_order=\"LittleEndian\">\n");
+  fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\" %s  %s>\n", endianness.c_str(), compressor.c_str());
   fprintf(fp, "<UnstructuredGrid>  \n");
   fprintf(fp, "<Piece  NumberOfPoints=\" %8u\"  NumberOfCells=\" %8u\">  \n",
           num_vertices, num_cells);
