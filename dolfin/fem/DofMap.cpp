@@ -26,7 +26,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map,
                boost::shared_ptr<Mesh> mesh)
-  : dof_map(0), dof_map_size(0), cell_map(0),
+  : _global_dimension(dof_map->global_dimension()), cell_map(0),
     ufc_dof_map(dof_map), _offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
@@ -51,7 +51,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map,
     boost::shared_ptr<const Mesh> mesh)
-  : dof_map(0), dof_map_size(0), cell_map(0),
+  : _global_dimension(dof_map->global_dimension()), cell_map(0),
     ufc_dof_map(dof_map), _offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
@@ -79,7 +79,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
                                    uint& offset) const
 {
   // Check that dof map has not be re-ordered
-  if (dof_map)
+  if (dof_map.size() > 0)
     error("Dof map has been re-ordered. Don't yet know how to extract sub dof maps.");
 
   // Reset offset
@@ -173,7 +173,7 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
   // Either lookup pretabulated values (if build() has been called)
   // or ask the ufc::dof_map to tabulate the values
 
-  if (dof_map)
+  if (dof_map.size() > 0)
   {
     // FIXME: This will only work for problem where local_dimension is the
     //        same for all cells since the offset will not be computed correctly.
@@ -274,6 +274,9 @@ std::map<dolfin::uint, dolfin::uint> DofMap::get_map() const
 //-----------------------------------------------------------------------------
 dolfin::uint DofMap::offset() const
 {
+  if(parallel && _offset > 0)
+    warning("DofMap::offset() should be removed. It will not work in parallel."); 
+
   return _offset;
 }
 //-----------------------------------------------------------------------------
@@ -321,7 +324,7 @@ std::string DofMap::str(bool verbose) const
     s << "  --------------------"
       << std::endl;
     {
-      uint tdim = dolfin_mesh->topology().dim();
+      const uint tdim = dolfin_mesh->topology().dim();
       for (uint d=0; d<=tdim; d++)
       {
         uint num_dofs = ufc_dof_map->num_entity_dofs(d);
@@ -350,9 +353,9 @@ std::string DofMap::str(bool verbose) const
     s << "  tabulate_facet_dofs output" << std::endl;
     s << "  --------------------------" << std::endl;
     {
-      uint tdim = dolfin_mesh->topology().dim();
-      uint num_dofs = ufc_dof_map->num_facet_dofs();
-      uint num_facets = dolfin_mesh->type().num_entities(tdim-1);
+      const uint tdim = dolfin_mesh->topology().dim();
+      const uint num_dofs = ufc_dof_map->num_facet_dofs();
+      const uint num_facets = dolfin_mesh->type().num_entities(tdim-1);
       uint* dofs = new uint[num_dofs];
       for (uint i = 0; i<num_facets; i++)
       {

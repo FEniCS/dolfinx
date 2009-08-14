@@ -47,7 +47,7 @@ namespace dolfin
     /// Return a string identifying the dof map
     std::string signature() const
     {
-      if (!dof_map)
+      if (dof_map.size() == 0)
         return ufc_dof_map->signature();
       else
       {
@@ -63,10 +63,7 @@ namespace dolfin
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const
     {
-      if (dof_map)
-        return dof_map_size;
-      else
-        return ufc_dof_map->global_dimension();
+      return _global_dimension;
     }
 
     /// Return the dimension of the local finite element function space on a cell
@@ -124,10 +121,10 @@ namespace dolfin
                                      const std::vector<uint>& component) const;
 
     // Precomputed dof map
-    int* dof_map;
+    std::vector<int> dof_map;
 
-    // Size of dof_map
-    uint dof_map_size;
+    // Global dimension
+    const uint _global_dimension;
 
     // Cell map for restriction
     int* cell_map;
