@@ -23,7 +23,7 @@ namespace dolfin
   public:
 
     /// Build dof map
-    static void build(DofMap& dof_map, const Mesh& mesh);
+    static void parallel_build(DofMap& dof_map, const Mesh& mesh);
 
   };
 

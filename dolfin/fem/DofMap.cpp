@@ -48,7 +48,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
 
   // Renumber dof map for running in parallel   
   if (parallel)
-    DofMapBuilder::build(*this, *dolfin_mesh);
+    DofMapBuilder::parallel_build(*this, *dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
@@ -71,7 +71,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
 
   // Renumber dof map for running in parallel   
   if (parallel)
-    DofMapBuilder::build(*this, *dolfin_mesh);
+    DofMapBuilder::parallel_build(*this, *dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()

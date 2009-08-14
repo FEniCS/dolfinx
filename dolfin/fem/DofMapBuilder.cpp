@@ -41,7 +41,7 @@ typedef std::tr1::unordered_set<dolfin::uint>::const_iterator set_iterator;
 typedef std::vector<dolfin::uint>::const_iterator vector_iterator;
 
 //-----------------------------------------------------------------------------
-void DofMapBuilder::build(DofMap& dof_map, const Mesh& mesh)
+void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
 {
   info("Building parallel dof map");
 
