@@ -96,7 +96,7 @@ namespace dolfin
     void build(UFC& ufc);
 
     /// Build dof map on only a subdomain of the mesh (meshfunction contains booleans for each cell)
-    void build(const MeshFunction<bool>& meshfunction);
+    //void build(const MeshFunction<bool>& meshfunction);
 
     /// Return renumbering (used for testing)
     std::map<uint, uint> get_map() const;

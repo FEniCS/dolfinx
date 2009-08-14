@@ -207,6 +207,8 @@ void FunctionSpace::interpolate_vertex_values(double* vertex_values,
   assert(_element);
   assert(_dofmap);
 
+  // FIXME: Should this go here or in Function?
+  // Gather off-process dofs
   v.gather();
 
   // Local data for interpolation on each cell
@@ -278,12 +280,15 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vec
 //-----------------------------------------------------------------------------
 void FunctionSpace::attach(MeshFunction<bool>& restriction)
 {
+  error("FunctionSpace::attach is not working. Please fix the dof map builder.");
+  /*
   if (restriction.dim() == (*_mesh).topology().dim())
   {
     _restriction.reset(&restriction);
     //FIXME: hack to cast away the const
     const_cast<DofMap&>(*_dofmap).build(restriction);
   }
+  */
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace> FunctionSpace::restriction(MeshFunction<bool>& restriction)

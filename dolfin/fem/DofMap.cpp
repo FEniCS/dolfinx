@@ -44,7 +44,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map,
   // Initialize dof map
   init();
 
-  // Renumber parallel dof map
+  // Renumber dof map for running in parallel   
   if (parallel)
     DofMapBuilder::build(*this, *dolfin_mesh);
 }
@@ -65,7 +65,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> dof_map,
   // Initialize dof map
   init();
 
-  // Renumber parallel dof map
+  // Renumber dof map for running in parallel   
   if (parallel)
     DofMapBuilder::build(*this, *dolfin_mesh);
 }
@@ -176,7 +176,7 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
   if (dof_map)
   {
     // FIXME: This will only work for problem where local_dimension is the
-    //        same for all cells
+    //        same for all cells since the offset will not be computed correctly.
     const uint n = local_dimension(ufc_cell);
     uint offset = 0;
     offset = n*cell_index;
@@ -184,6 +184,7 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
       dofs[i] = dof_map[offset + i];
     // FIXME: Maybe memcpy() can be used to speed this up? Test this!
     //memcpy(dofs, dof_map[cell_index], sizeof(uint)*local_dimension());
+    //std::copy(&dof_map[offset], &dof_map[offset+n], &dofs);
   }
   else
     ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
@@ -195,6 +196,7 @@ void DofMap::build(UFC& ufc)
   //DofMapBuilder::build(*this, ufc, *dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
+/*
 void DofMap::build(const MeshFunction<bool>& meshfunction)
 {
   // FIXME: This should be moved to DofMapBuilder
@@ -263,6 +265,7 @@ void DofMap::build(const MeshFunction<bool>& meshfunction)
   delete [] dofs;
   delete [] restriction_mapping;
 }
+*/
 //-----------------------------------------------------------------------------
 std::map<dolfin::uint, dolfin::uint> DofMap::get_map() const
 {
