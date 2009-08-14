@@ -110,16 +110,18 @@ int main()
   problem.parameters("linear_solver") = "direct";
   problem.solve(u);
 
+  cout << "Norm " << u.vector().norm() << endl;
+
   // Save solution in VTK format
   File vtk_file("elasticity.pvd", "compressed");
   vtk_file << u;
 
   // Plot solution
-  plot(u, "displacement");
+  //plot(u, "displacement");
 
   // Displace mesh and plot displaced mesh
-  mesh.move(u);
-  plot(mesh);
+  //mesh.move(u);
+  //plot(mesh);
 
   return 0;
 }
