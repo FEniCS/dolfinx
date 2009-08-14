@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2007, 2008.
+// Modified by Johan Hake 2009.
 //
 // First added:  2008-06-18
-// Last changed: 2008-11-03
+// Last changed: 2009-08-14
 
 #ifndef __BOUNDARY_CONDITION_H
 #define __BOUNDARY_CONDITION_H
@@ -27,6 +28,9 @@ namespace dolfin
 
     /// Constructor
     BoundaryCondition(const FunctionSpace& V);
+
+    /// Constructor
+    BoundaryCondition(boost::shared_ptr<const FunctionSpace> V);
 
     /// Destructor
     virtual ~BoundaryCondition();

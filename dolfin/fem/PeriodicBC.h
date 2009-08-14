@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2007
+// Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2008-11-15
+// Last changed: 2009-08-14
 
 #ifndef __PERIODIC_BC_H
 #define __PERIODIC_BC_H
@@ -46,6 +47,10 @@ namespace dolfin
 
     /// Create periodic boundary condition for sub domain
     PeriodicBC(const FunctionSpace& V,
+               const SubDomain& sub_domain);
+
+    /// Create periodic boundary condition for sub domain
+    PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
                const SubDomain& sub_domain);
 
     /// Destructor

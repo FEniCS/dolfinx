@@ -2,13 +2,15 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2007
+// Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2008-12-03
+// Last changed: 2009-08-14
 
 #include <vector>
 #include <map>
 
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Mesh.h>
@@ -49,6 +51,13 @@ struct lt_coordinate
 
 //-----------------------------------------------------------------------------
 PeriodicBC::PeriodicBC(const FunctionSpace& V,
+                       const SubDomain& sub_domain)
+  : BoundaryCondition(V), sub_domain(sub_domain)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+PeriodicBC::PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
                        const SubDomain& sub_domain)
   : BoundaryCondition(V), sub_domain(sub_domain)
 {
