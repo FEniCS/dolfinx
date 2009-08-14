@@ -1,10 +1,13 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Niclas Jansson 2009.
+//
 // First added:  2007-04-24
-// Last changed: 2008-12-03
+// Last changed: 2009-08-14
 
 #include <dolfin/log/log.h>
+#include "MeshData.h"
 #include "MeshEntityIterator.h"
 #include "Vertex.h"
 #include "SubDomain.h"
@@ -55,12 +58,16 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
   // Always false when not marking facets
   bool on_boundary = false;
 
+  // Extract exterior (non shared) facets markers
+  MeshFunction<uint>* exterior = mesh.data().mesh_function("exterior facets");
+
   // Compute sub domain markers
   for (MeshEntityIterator entity(mesh, dim); !entity.end(); ++entity)
   {
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)
-      on_boundary = entity->num_entities(D) == 1;
+      on_boundary = (entity->num_entities(D) == 1 && 
+		     (!exterior || ((exterior->get(*entity)))));
 
     bool all_vertices_inside = true;
     // Dimension of facet > 0, check incident vertices
