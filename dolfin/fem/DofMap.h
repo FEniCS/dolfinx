@@ -36,10 +36,21 @@ namespace dolfin
   public:
 
     /// Create dof map on mesh
-    DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<Mesh> mesh);
+    DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map, 
+           boost::shared_ptr<Mesh> mesh);
 
     /// Create dof map on mesh (const mesh version)
-    DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const Mesh> mesh);
+    DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map, 
+           boost::shared_ptr<const Mesh> mesh);
+
+  private:
+
+    /// Create dof map on mesh with a std::vector dof map
+    DofMap(std::auto_ptr<std::vector<int> > map, 
+           boost::shared_ptr<ufc::dof_map> ufc_dof_map, 
+           boost::shared_ptr<const Mesh> mesh);
+
+  public:
 
     /// Destructor
     ~DofMap();
@@ -47,7 +58,7 @@ namespace dolfin
     /// Return a string identifying the dof map
     std::string signature() const
     {
-      if (!dof_map.get())
+      if (!map.get())
         return ufc_dof_map->signature();
       else
       {
@@ -115,7 +126,7 @@ namespace dolfin
     // FIXME: Should this be a std::vector<std::vector<int> >, 
     //        e.g. a std::vector for each cell? 
     // Precomputed dof map 
-    std::auto_ptr<std::vector<int> >dof_map;
+    std::auto_ptr<std::vector<int> > map;
 
     // Global dimension
     uint _global_dimension;

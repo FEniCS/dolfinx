@@ -74,6 +74,24 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
     DofMapBuilder::parallel_build(*this, *dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
+DofMap::DofMap(std::auto_ptr<std::vector<int> > map, 
+       boost::shared_ptr<ufc::dof_map> ufc_dof_map, 
+       boost::shared_ptr<const Mesh> mesh) 
+      : map(map), _global_dimension(0), ufc_dof_map(ufc_dof_map), _offset(0),
+       dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
+
+{
+  // Check that we have all mesh entities (const so we can't generate them)
+  for (uint d = 0; d <= mesh->topology().dim(); ++d)
+  {
+    if (ufc_dof_map->needs_mesh_entities(d) && mesh->num_entities(d) == 0)
+      error("Unable to create function space, missing entities of dimension %d. Try calling mesh.init(%d).", d, d);
+  }
+
+  // Set the global dimension
+  _global_dimension = ufc_dof_map->global_dimension();
+}
+//-----------------------------------------------------------------------------
 DofMap::~DofMap()
 {
   // Do nothing
@@ -82,34 +100,44 @@ DofMap::~DofMap()
 DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
                                    uint& offset) const
 {
-  // Check that dof map has not be re-ordered
-  if (dof_map.get())
-    error("Dof map has been re-ordered. Don't yet know how to extract sub dof maps.");
-
   // Reset offset
   offset = 0;
 
-  // Recursively extract sub dofmap
-  boost::shared_ptr<ufc::dof_map> sub_dof_map(extract_sub_dofmap(*ufc_dof_map,
+  // Recursively extract UFC sub dofmap
+  boost::shared_ptr<ufc::dof_map> ufc_sub_dof_map(extract_sub_dofmap(*ufc_dof_map,
                                               offset, component));
-  info(2, "Extracted dof map for sub system: %s", sub_dof_map->signature());
+  info(2, "Extracted dof map for sub system: %s", ufc_sub_dof_map->signature());
   info(2, "Offset for sub system: %d", offset);
 
   // Create dofmap
-  DofMap* dofmap = new DofMap(sub_dof_map, dolfin_mesh);
+  DofMap* sub_dofmap = 0;
+  if (map.get())
+  {
+    error("Dof map has been re-ordered. Don't yet know how to extract sub dof maps.");
+
+    // Create vector for new map
+    std::auto_ptr<std::vector<int> > sub_map;
+
+    // Map map into sub_map
+
+    // Create new dof map
+    sub_dofmap = new DofMap(sub_map, ufc_sub_dof_map, dolfin_mesh);
+  }
+  else
+    sub_dofmap = new DofMap(ufc_sub_dof_map, dolfin_mesh);
 
   // Set offset
-  dofmap->_offset = offset;
+  sub_dofmap->_offset = offset;
 
-  return dofmap;
+  return sub_dofmap;
 }
 //-----------------------------------------------------------------------------
-ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map,
+ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dof_map,
                                          uint& offset,
                                          const std::vector<uint>& component) const
 {
   // Check if there are any sub systems
-  if (dof_map.num_sub_dof_maps() == 0)
+  if (ufc_dof_map.num_sub_dof_maps() == 0)
     error("Unable to extract sub system (there are no sub systems).");
 
   // Check that a sub system has been specified
@@ -117,20 +145,19 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& dof_map,
     error("Unable to extract sub system (no sub system specified).");
 
   // Check the number of available sub systems
-  if (component[0] >= dof_map.num_sub_dof_maps())
+  if (component[0] >= ufc_dof_map.num_sub_dof_maps())
     error("Unable to extract sub system %d (only %d sub systems defined).",
-                  component[0], dof_map.num_sub_dof_maps());
+                  component[0], ufc_dof_map.num_sub_dof_maps());
 
   // Add to offset if necessary
   for (uint i = 0; i < component[0]; i++)
   {
-    boost::shared_ptr<ufc::dof_map> _ufc_dof_map(dof_map.create_sub_dof_map(i));
-    DofMap dof_map_test(_ufc_dof_map, dolfin_mesh);
+    boost::shared_ptr<ufc::dof_map> _ufc_dof_map(ufc_dof_map.create_sub_dof_map(i));
     offset += _ufc_dof_map->global_dimension();
   }
 
-  // Create sub system
-  ufc::dof_map* sub_dof_map = dof_map.create_sub_dof_map(component[0]);
+  // Create UFC sub system
+  ufc::dof_map* sub_dof_map = ufc_dof_map.create_sub_dof_map(component[0]);
 
   // Return sub system if sub sub system should not be extracted
   if (component.size() == 1)
@@ -173,10 +200,8 @@ void DofMap::init_ufc()
 void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
                            uint cell_index) const
 {
-  // Either lookup pretabulated values (if build() has been called)
-  // or ask the ufc::dof_map to tabulate the values
-
-  if (dof_map.get())
+  // Lookup pretabulated values or ask the ufc::dof_map to tabulate the values
+  if (map.get())
   {
     // FIXME: This will only work for problem where local_dimension is the
     //        same for all cells since the offset will not be computed correctly.
@@ -184,7 +209,7 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
     uint offset = 0;
     offset = n*cell_index;
     for (uint i = 0; i < n; i++)
-      dofs[i] = (*dof_map)[offset + i];
+      dofs[i] = (*map)[offset + i];
     // FIXME: Maybe memcpy() can be used to speed this up? Test this!
     //memcpy(dofs, dof_map[cell_index], sizeof(uint)*local_dimension());
     //std::copy(&dof_map[offset], &dof_map[offset+n], &dofs);
@@ -206,7 +231,7 @@ std::string DofMap::str(bool verbose) const
   // TODO: Display information on renumbering?
   // TODO: Display information on parallel stuff?
 
-  if (dof_map.get())
+  if (map.get())
   {
     warning("DofMap::str has not been updated for re-numbered dof maps.");
     return std::string();

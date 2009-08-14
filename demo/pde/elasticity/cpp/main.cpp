@@ -117,11 +117,11 @@ int main()
   vtk_file << u;
 
   // Plot solution
-  //plot(u, "displacement");
+  plot(u, "displacement");
 
   // Displace mesh and plot displaced mesh
-  //mesh.move(u);
-  //plot(mesh);
+  mesh.move(u);
+  plot(mesh);
 
   return 0;
 }

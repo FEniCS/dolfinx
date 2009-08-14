@@ -46,7 +46,7 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
   info("Building parallel dof map");
 
   // Check that dof map has not been built
-  if (dof_map.dof_map.get())
+  if (dof_map.map.get())
     error("Local-to-global mapping has already been computed.");
   
   const uint n = dof_map.max_local_dimension();
@@ -184,12 +184,12 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
   delete[] dofs;
 
   // Copy dof map  
-  if (dof_map.dof_map.get())
-    dof_map.dof_map->resize(n*mesh.num_cells()); 
+  if (dof_map.map.get())
+    dof_map.map->resize(n*mesh.num_cells()); 
   else
-    dof_map.dof_map.reset(new std::vector<int>(n*mesh.num_cells()));
+    dof_map.map.reset(new std::vector<int>(n*mesh.num_cells()));
   // FIXME: Can this step be avoided?
-  std::copy(_dof_map, _dof_map + n*mesh.num_cells(), dof_map.dof_map->begin());  
+  std::copy(_dof_map, _dof_map + n*mesh.num_cells(), dof_map.map->begin());  
 
   delete [] _dof_map;
 
