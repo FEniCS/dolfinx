@@ -23,12 +23,12 @@ element = None
 
 element = FiniteElement("Lagrange", "triangle", 1)
 
-v = TestFunction(element)
-u = TrialFunction(element)
-f = Function(element)
-U = Function(element)
-L = inner(grad(v), (1 + U**2)*grad(U))*dx - v*f*dx
-a = derivative(L, U, u)
+v  = TestFunction(element)
+du = TrialFunction(element)
+f  = Function(element)
+u  = Function(element)
+L  = inner(grad(v), (1 + u**2)*grad(u))*dx - v*f*dx
+a  = derivative(L, u, du)
 
 
 compile([a, L, M, element], "NonlinearPoisson", {'log_level': 20, 'format': 'dolfin', 'form_postfix': True, 'quadrature_order': 'auto', 'precision': '15', 'cpp optimize': False, 'cache_dir': None, 'split': False, 'representation': 'auto', 'optimize': True, 'quadrature_rule': None, 'output_dir': '.'}, globals())

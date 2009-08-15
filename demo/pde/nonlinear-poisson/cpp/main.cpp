@@ -61,24 +61,24 @@ int main()
 
   // Define source and solution functions
   Source f;
-  Function U;
+  Function u;
 
   // Create forms
   NonlinearPoisson::BilinearForm a(V, V);
-  a.U = U;
+  a.u = u;
   NonlinearPoisson::LinearForm L(V);
-  L.U = U; L.f = f;
+  L.u = u; L.f = f;
 
   // Solve nonlinear variational problem
   VariationalProblem problem(a, L, bc, true);
-  problem.solve(U);
+  problem.solve(u);
 
   // Plot solution
-  plot(U);
+  plot(u);
 
   // Save solution in VTK format
   File file("nonlinear_poisson.pvd");
-  file << U;
+  file << u;
 
   return 0;
 }
