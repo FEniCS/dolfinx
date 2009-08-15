@@ -31,4 +31,4 @@ L = inner(grad(v), (1 + U**2)*grad(U))*dx - v*f*dx
 a = derivative(L, U, u)
 
 
-compile([a, L, M, element], "NonlinearPoisson", {'log_level': 20, 'format': 'dolfin', 'form_postfix': True, 'precision': '15', 'quadrature_order': 'auto', 'cpp optimize': False, 'cache_dir': None, 'split': False, 'representation': 'auto', 'optimize': False, 'quadrature_rule': None, 'output_dir': '.'}, globals())
+compile([a, L, M, element], "NonlinearPoisson", {'log_level': 20, 'format': 'dolfin', 'form_postfix': True, 'quadrature_order': 'auto', 'precision': '15', 'cpp optimize': False, 'cache_dir': None, 'split': False, 'representation': 'auto', 'optimize': True, 'quadrature_rule': None, 'output_dir': '.'}, globals())

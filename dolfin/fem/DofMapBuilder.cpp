@@ -6,6 +6,8 @@
 // First added:  2008-08-12
 // Last changed: 2009-08-06
 
+#include <iostream>
+
 #include <algorithm>
 #include <cstring>
 #include <ctime>
@@ -38,21 +40,25 @@ using namespace dolfin;
 typedef std::tr1::unordered_set<dolfin::uint> set;
 typedef std::tr1::unordered_set<dolfin::uint>::const_iterator set_iterator;
 
-typedef std::vector<dolfin::uint>::const_iterator vector_iterator;
+typedef std::vector<dolfin::uint>::const_iterator vector_it;
 
 //-----------------------------------------------------------------------------
 void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
 {
+  // FIXME: Split this function into two; deciding ownership and then renumbering 
+
   info("Building parallel dof map");
 
   // Check that dof map has not been built
   if (dof_map.map.get())
     error("Local-to-global mapping has already been computed.");
   
-  const uint n = dof_map.max_local_dimension();
+  dof_map.ufc_to_map.clear();
+
+  const uint max_local_dimension = dof_map.max_local_dimension();
   
   // Allocate scratch _dof_map
-  int* _dof_map = new int[n*mesh.num_cells()];   
+  int* _dof_map = new int[max_local_dimension*mesh.num_cells()];   
 
   // Extract the interior boundary
   BoundaryMesh interior_boundary;
@@ -64,12 +70,12 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
   std::map<uint, uint> dof_vote;
   std::map<uint, std::vector<uint> > dof2index;
   
-  UFCCell ufc_cell(mesh);
-  uint *dofs = new uint[n];
-
   // Initialize random number generator differently on each process
   srand((uint)time(0) + MPI::process_number());
   
+  UFCCell ufc_cell(mesh);
+  uint *old_dofs = new uint[max_local_dimension];
+
   // Decide ownership of shared dofs
   for (CellIterator bc(interior_boundary); !bc.end(); ++bc) 
   {
@@ -77,16 +83,16 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
     for (CellIterator c(f); !c.end(); ++c)
     {      
       ufc_cell.update(*c);
-      dof_map.tabulate_dofs(dofs, ufc_cell, c->index());        
-      for (uint i = 0; i < n; i++)
+      dof_map.tabulate_dofs(old_dofs, ufc_cell, c->index());        
+      for (uint i = 0; i < dof_map.local_dimension(ufc_cell); i++)
       {
         // Assign an ownership vote for each "shared" dof
-        if (shared_dofs.find(dofs[i]) == shared_dofs.end()) 
+        if (shared_dofs.find(old_dofs[i]) == shared_dofs.end()) 
         {
-          shared_dofs.insert(dofs[i]);
-          dof_vote[dofs[i]] = (uint) rand();     
-          send_buffer.push_back(dofs[i]);
-          send_buffer.push_back(dof_vote[dofs[i]]);
+          shared_dofs.insert(old_dofs[i]);
+          dof_vote[old_dofs[i]] = (uint) rand();     
+          send_buffer.push_back(old_dofs[i]);
+          send_buffer.push_back(dof_vote[old_dofs[i]]);
         }
       }
     }
@@ -104,7 +110,7 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
     dest = (proc_num +k) % num_proc;
     
     recv_count = MPI::send_recv(&send_buffer[0], send_buffer.size(), dest,
-				recv_buffer, max_recv, src);
+				                        recv_buffer, max_recv, src);
 
     for (uint i = 0; i < recv_count; i += 2)
     {
@@ -126,29 +132,32 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     ufc_cell.update(*c);
-    dof_map.tabulate_dofs(dofs, ufc_cell, c->index());  
-    for (uint i = 0; i < n; i++)
+    dof_map.tabulate_dofs(old_dofs, ufc_cell, c->index());  
+    const uint local_dimension = dof_map.local_dimension(ufc_cell); 
+    for (uint i = 0; i < local_dimension; i++)
     {
-      if (forbidden_dofs.find(dofs[i]) == forbidden_dofs.end())
-      {
-        // Mark dof as owned
-        owned_dofs.insert(dofs[i]);
-      }
+      // Mark dof as owned if not forbidden
+      if (forbidden_dofs.find(old_dofs[i]) == forbidden_dofs.end())
+        owned_dofs.insert(old_dofs[i]);
       
-      // Create mapping from dof to dof_map offset
-      dof2index[dofs[i]].push_back(c->index() * n + i);
+      // Create map from dof to dof_map offset
+      dof2index[old_dofs[i]].push_back(c->index()*local_dimension + i);
     }    
   }
+  delete[] old_dofs;
   
-  // Compute offset for owned and non shared dofs
+  // Compute offset for owned and non-shared dofs
   const uint range = owned_dofs.size();
   uint offset = MPI::global_offset(range, true);   
-
+  
   // Compute renumbering for local and owned shared dofs
   for (set_iterator it = owned_dofs.begin(); it != owned_dofs.end(); ++it, offset++)
   {
-    for(vector_iterator di = dof2index[*it].begin(); di != dof2index[*it].end(); ++di)
-    _dof_map[*di] = offset;
+    dof_map.ufc_to_map[*it] = offset;
+    for(vector_it di = dof2index[*it].begin(); di != dof2index[*it].end(); ++di)
+    {
+      _dof_map[*di] = offset;
+    }
     
     if (shared_dofs.find(*it) != shared_dofs.end())
     {
@@ -163,33 +172,38 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
   recv_buffer = new uint[max_recv];
   for(uint k = 1; k < MPI::num_processes(); ++k)
   {
-    src = (proc_num - k + num_proc) % num_proc;
+    src  = (proc_num - k + num_proc) % num_proc;
     dest = (proc_num +k) % num_proc;
     
     recv_count = MPI::send_recv(&send_buffer[0], send_buffer.size(), dest,
-				recv_buffer, max_recv, src);
+				                        recv_buffer, max_recv, src);
 
     for (uint i = 0; i < recv_count; i += 2)
     {
+      dof_map.ufc_to_map[recv_buffer[i]] = recv_buffer[i+1];
+  
       // Assign new dof number for shared dofs
       if (forbidden_dofs.find(recv_buffer[i]) != forbidden_dofs.end())
       {
-        for(vector_iterator di = dof2index[recv_buffer[i]].begin();
-                  di != dof2index[recv_buffer[i]].end(); ++di)
+        for(vector_it di = dof2index[recv_buffer[i]].begin();
+                       di != dof2index[recv_buffer[i]].end(); ++di)
+        {
           _dof_map[*di] = recv_buffer[i+1];
+        }
       }
     }
   }
   delete[] recv_buffer;
-  delete[] dofs;
+
 
   // Copy dof map  
   if (dof_map.map.get())
-    dof_map.map->resize(n*mesh.num_cells()); 
+    dof_map.map->resize(max_local_dimension*mesh.num_cells()); 
   else
-    dof_map.map.reset(new std::vector<int>(n*mesh.num_cells()));
+    dof_map.map.reset(new std::vector<int>(max_local_dimension*mesh.num_cells()));
+
   // FIXME: Can this step be avoided?
-  std::copy(_dof_map, _dof_map + n*mesh.num_cells(), dof_map.map->begin());  
+  std::copy(_dof_map, _dof_map + max_local_dimension*mesh.num_cells(), dof_map.map->begin());  
 
   delete [] _dof_map;
 

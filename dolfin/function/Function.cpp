@@ -387,8 +387,6 @@ void Function::compute_off_process_dofs() const
   const uint num_dofs_per_cell = _function_space->element().space_dimension();
   const uint num_dofs_global = vector().size();
   uint* dofs = new uint[num_dofs_per_cell];
-  for (uint i = 0; i < num_dofs_per_cell; i++)
-    dofs[i] = 0;
 
   // Iterate over mesh and check which dofs are needed
   UFCCell ufc_cell(mesh);

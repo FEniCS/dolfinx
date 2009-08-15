@@ -26,7 +26,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
                boost::shared_ptr<Mesh> mesh)
-  : _global_dimension(0), ufc_dof_map(ufc_dof_map), _offset(0),
+  : _global_dimension(0), ufc_dof_map(ufc_dof_map), _ufc_offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
   // Generate and number all mesh entities
@@ -53,7 +53,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
     boost::shared_ptr<const Mesh> mesh)
-  : _global_dimension(0), ufc_dof_map(ufc_dof_map), _offset(0),
+  : _global_dimension(0), ufc_dof_map(ufc_dof_map), _ufc_offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
   // Check that we have all mesh entities (const so we can't generate them)
@@ -77,7 +77,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
 DofMap::DofMap(std::auto_ptr<std::vector<int> > map, 
        boost::shared_ptr<ufc::dof_map> ufc_dof_map, 
        boost::shared_ptr<const Mesh> mesh) 
-      : map(map), _global_dimension(0), ufc_dof_map(ufc_dof_map), _offset(0),
+      : map(map), _global_dimension(0), ufc_dof_map(ufc_dof_map), _ufc_offset(0),
        dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 
 {
@@ -97,17 +97,39 @@ DofMap::~DofMap()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
+                           uint cell_index) const
+{
+  // Lookup pretabulated values or ask the ufc::dof_map to tabulate the values
+  if (map.get())
+  {
+    // FIXME: Add assertion to test that this process has the dof
+
+    // FIXME: This will only work for problem where local_dimension is the
+    //        same for all cells since the offset will not be computed correctly.
+    const uint n = local_dimension(ufc_cell);
+    const uint offset = n*cell_index;
+    for (uint i = 0; i < n; i++)
+      dofs[i] = (*map)[offset + i];
+    // FIXME: Maybe memcpy() can be used to speed this up? Test this!
+    //memcpy(dofs, dof_map[cell_index], sizeof(uint)*local_dimension());
+    //std::copy(&dof_map[offset], &dof_map[offset+n], &dofs);
+  }
+  else
+    ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
+}
+//-----------------------------------------------------------------------------
 DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
-                                   uint& offset) const
+                                   uint& ufc_offset) const
 {
   // Reset offset
-  offset = 0;
+  ufc_offset = 0;
 
   // Recursively extract UFC sub dofmap
   boost::shared_ptr<ufc::dof_map> ufc_sub_dof_map(extract_sub_dofmap(*ufc_dof_map,
-                                              offset, component));
+                                                  ufc_offset, component));
   info(2, "Extracted dof map for sub system: %s", ufc_sub_dof_map->signature());
-  info(2, "Offset for sub system: %d", offset);
+  info(2, "Offset for sub system: %d", ufc_offset);
 
   // Create dofmap
   DofMap* sub_dofmap = 0;
@@ -118,7 +140,26 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
     // Create vector for new map
     std::auto_ptr<std::vector<int> > sub_map;
 
-    // Map map into sub_map
+    assert(ufc_to_map.size() == map->size());
+    
+/*
+    // Create sub-map vector
+    UFCCell ufc_cell(mesh);
+    uint i = 0;
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      // Update to current cell
+      ufc_cell.update(*cell);
+
+      // Tabulate dofs on cell (UFC map)
+      dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());
+
+      const uint n = local_dimension(ufc_cell);
+      const uint cell_offset = n*cell_index;
+      for (uint i = 0; i < n; i++)
+        dofs[i] = (*map)[cell_offset + i];
+    }
+*/
 
     // Create new dof map
     sub_dofmap = new DofMap(sub_map, ufc_sub_dof_map, dolfin_mesh);
@@ -127,13 +168,13 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
     sub_dofmap = new DofMap(ufc_sub_dof_map, dolfin_mesh);
 
   // Set offset
-  sub_dofmap->_offset = offset;
+  sub_dofmap->_ufc_offset = ufc_offset;
 
   return sub_dofmap;
 }
 //-----------------------------------------------------------------------------
 ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dof_map,
-                                         uint& offset,
+                                         uint& ufc_offset,
                                          const std::vector<uint>& component) const
 {
   // Check if there are any sub systems
@@ -153,7 +194,7 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dof_map,
   for (uint i = 0; i < component[0]; i++)
   {
     boost::shared_ptr<ufc::dof_map> _ufc_dof_map(ufc_dof_map.create_sub_dof_map(i));
-    offset += _ufc_dof_map->global_dimension();
+    ufc_offset += _ufc_dof_map->global_dimension();
   }
 
   // Create UFC sub system
@@ -167,7 +208,7 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dof_map,
   std::vector<uint> sub_component;
   for (uint i = 1; i < component.size(); i++)
     sub_component.push_back(component[i]);
-  ufc::dof_map* sub_sub_dof_map = extract_sub_dofmap(*sub_dof_map, offset,
+  ufc::dof_map* sub_sub_dof_map = extract_sub_dofmap(*sub_dof_map, ufc_offset,
                                                      sub_component);
   delete sub_dof_map;
 
@@ -197,33 +238,12 @@ void DofMap::init_ufc()
   }
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
-                           uint cell_index) const
-{
-  // Lookup pretabulated values or ask the ufc::dof_map to tabulate the values
-  if (map.get())
-  {
-    // FIXME: This will only work for problem where local_dimension is the
-    //        same for all cells since the offset will not be computed correctly.
-    const uint n = local_dimension(ufc_cell);
-    uint offset = 0;
-    offset = n*cell_index;
-    for (uint i = 0; i < n; i++)
-      dofs[i] = (*map)[offset + i];
-    // FIXME: Maybe memcpy() can be used to speed this up? Test this!
-    //memcpy(dofs, dof_map[cell_index], sizeof(uint)*local_dimension());
-    //std::copy(&dof_map[offset], &dof_map[offset+n], &dofs);
-  }
-  else
-    ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
-}
-//-----------------------------------------------------------------------------
 dolfin::uint DofMap::offset() const
 {
-  if(MPI::num_processes() > 1 && _offset > 0)
+  if(MPI::num_processes() > 1 && _ufc_offset > 0)
     warning("DofMap::offset() should be removed. It will not work in parallel."); 
 
-  return _offset;
+  return _ufc_offset;
 }
 //-----------------------------------------------------------------------------
 std::string DofMap::str(bool verbose) const

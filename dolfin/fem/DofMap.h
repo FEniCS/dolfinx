@@ -104,6 +104,7 @@ namespace dolfin
     /// Extract sub dofmap and offset for component
     DofMap* extract_sub_dofmap(const std::vector<uint>& component, uint& offset) const;
 
+    // FIXME: This function should be removed.
     /// Return offset into parent's vector of coefficients
     uint offset() const;
 
@@ -125,11 +126,15 @@ namespace dolfin
 
     // FIXME: Should this be a std::vector<std::vector<int> >, 
     //        e.g. a std::vector for each cell? 
+    // FIXME: Document layout of map
     // Precomputed dof map 
     std::auto_ptr<std::vector<int> > map;
 
     // Global dimension
     uint _global_dimension;
+
+    // Map from UFC dofs to renumbered dof 
+    std::map<uint, int> ufc_to_map;
 
     // UFC dof map
     boost::shared_ptr<ufc::dof_map> ufc_dof_map;
@@ -137,8 +142,8 @@ namespace dolfin
     // UFC mesh
     UFCMesh ufc_mesh;
 
-    // Offset into parent's vector of coefficients
-    uint _offset;
+    // UFC dof map offset into parent's vector of coefficients
+    uint _ufc_offset;
 
     // Mesh we live in
     boost::shared_ptr<const Mesh> dolfin_mesh;
