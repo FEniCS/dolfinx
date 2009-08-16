@@ -461,7 +461,8 @@ void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values
     // Pick values for facet
     for (uint i = 0; i < dofmap.num_facet_dofs(); i++)
     {
-      const uint dof = dofmap.offset() + data.cell_dofs[data.facet_dofs[i]];
+      //const uint dof = dofmap.offset() + data.cell_dofs[data.facet_dofs[i]];
+      const uint dof = data.cell_dofs[data.facet_dofs[i]];
       const double value = data.w[data.facet_dofs[i]];
       boundary_values[dof] = value;
       //cout << "Setting BC value: i = " << i << ", dof = " << dof << ", value = " << value << endl;
@@ -531,7 +532,7 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
           }
 
           // Set boundary value
-          const uint dof = dofmap.offset() + data.cell_dofs[i];
+          const uint dof = data.cell_dofs[i];
           const double value = data.w[i];
           boundary_values[dof] = value;
         }
@@ -580,7 +581,7 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
       }
 
       // Set boundary value
-      const uint dof = dofmap.offset() + data.cell_dofs[i];
+      const uint dof = data.cell_dofs[i];
       const double value = data.w[i];
       boundary_values[dof] = value;
     }

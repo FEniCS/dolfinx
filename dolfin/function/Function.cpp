@@ -123,18 +123,20 @@ Function::Function(const SubFunction& v)
     _vector(static_cast<GenericVector*>(0)),
     _off_process_vector(static_cast<GenericVector*>(0))
 {
-  info("Assign from sub-function");
   // Initialize vector
-  info("Assign from sub-function (init)");
   init();
+
+  if (function_space().dofmap().renumbered())
+    error("Extraction of sub-Functions not yet supputed after renumbering of the dof map.");
+
+  // FIXME: This function needs to be fixed for dof maps that have been renumbered.
 
   // Copy subset of coefficients
   const uint n = _vector->size();
-  const uint offset = function_space().dofmap().offset();
   uint* rows = new uint[n];
   double* values = new double[n];
   for (uint i = 0; i < n; i++)
-    rows[i] = offset + i;
+    rows[i] = i;
   v.v.vector().get(values, n, rows);
   _vector->set(values);
   _vector->apply();

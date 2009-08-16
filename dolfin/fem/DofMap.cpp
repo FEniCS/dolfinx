@@ -120,7 +120,33 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
     //std::copy(&dof_map[offset], &dof_map[offset+n], &dofs);
   }
   else
+  {
     ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
+    if (_ufc_offset > 0)
+    {
+      const uint local_dim = local_dimension(ufc_cell);
+      for (uint i = 0; i < local_dim; i++)
+        dofs[i] += _ufc_offset;
+    }  
+  }
+}
+//-----------------------------------------------------------------------------
+void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const
+{
+  // Lookup pretabulated values or ask the ufc::dof_map to tabulate the values
+  if (map.get())
+    error("DofMap::tabulate_facet_dofs not yet implemented for for renumbered dof maps.");
+  else
+  {
+    ufc_dof_map->tabulate_facet_dofs(dofs, local_facet);
+    if (_ufc_offset > 0)
+    {
+      UFCCell ufc_cell(*dolfin_mesh);
+      const uint local_dim = 2*local_dimension(ufc_cell);
+      for (uint i = 0; i < local_dim; i++)
+        dofs[i] += _ufc_offset;
+    }  
+  }
 }
 //-----------------------------------------------------------------------------
 DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
@@ -243,14 +269,6 @@ void DofMap::init_ufc()
     }
     ufc_dof_map->init_cell_finalize();
   }
-}
-//-----------------------------------------------------------------------------
-dolfin::uint DofMap::offset() const
-{
-  if(MPI::num_processes() > 1 && _ufc_offset > 0)
-    warning("DofMap::offset() should be removed. It will not work in parallel."); 
-
-  return _ufc_offset;
 }
 //-----------------------------------------------------------------------------
 std::string DofMap::str(bool verbose) const
