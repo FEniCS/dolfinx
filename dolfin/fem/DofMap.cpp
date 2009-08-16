@@ -161,34 +161,37 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
   DofMap* sub_dofmap = 0;
   if (map.get())
   {
-    error("Dof map has been re-ordered. Don't yet know how to extract sub dof maps.");
+    if (ufc_to_map.size() == 0)
+      error("Cannnot yet extract sub-sub dof maps after renumbering yet.");
 
-    // Create vector for new map
-    std::auto_ptr<std::vector<int> > sub_map;
-
-    assert(ufc_to_map.size() == map->size());
-
-/*
-    // Create sub-map vector
-    UFCCell ufc_cell(mesh);
-    uint i = 0;
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    const uint max_local_dim = ufc_sub_dof_map->max_local_dimension();
+    const uint num_cells = dolfin_mesh->num_cells();
+ 
+     // Create vector for new map
+    std::auto_ptr<std::vector<int> > sub_map(new std::vector<int>);
+    sub_map->resize(max_local_dim*num_cells); 
+  
+    // Create new dof map (this will initialise the UFC dof map)
+    sub_dofmap = new DofMap(sub_map, ufc_sub_dof_map, dolfin_mesh);
+ 
+    // Build sub-map vector
+    UFCCell ufc_cell(*dolfin_mesh);
+    uint* ufc_dofs = new uint[ufc_sub_dof_map->max_local_dimension()];
+    for (CellIterator cell(*dolfin_mesh); !cell.end(); ++cell)
     {
       // Update to current cell
       ufc_cell.update(*cell);
 
-      // Tabulate dofs on cell (UFC map)
-      dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());
+     // Tabulate dofs on cell (UFC map)
+     ufc_sub_dof_map->tabulate_dofs(ufc_dofs, ufc_mesh, ufc_cell);
 
-      const uint n = local_dimension(ufc_cell);
-      const uint cell_offset = n*cell_index;
-      for (uint i = 0; i < n; i++)
-        dofs[i] = (*map)[cell_offset + i];
+     const uint cell_index = cell->index();
+     const uint sub_local_dim = sub_dofmap->local_dimension(ufc_cell);
+     const uint cell_offset = sub_local_dim*cell_index;
+     for (uint i = 0; i < sub_local_dim; i++)
+       (*sub_dofmap->map)[cell_offset + i] = ufc_to_map.find(ufc_dofs[i] + ufc_offset)->second;
     }
-*/
-
-    // Create new dof map
-    sub_dofmap = new DofMap(sub_map, ufc_sub_dof_map, dolfin_mesh);
+    delete [] ufc_dofs;
   }
   else
     sub_dofmap = new DofMap(ufc_sub_dof_map, dolfin_mesh);
