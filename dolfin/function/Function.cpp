@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-06-22
+// Last changed: 2009-08-16
 
 #include <algorithm>
 #include <dolfin/log/log.h>
@@ -313,10 +313,10 @@ void Function::interpolate(double* coefficients,
     // Tabulate dofs
     uint* dofs = new uint[dofmap.local_dimension(ufc_cell)];
     dofmap.tabulate_dofs(dofs, ufc_cell, cell_index);
-    
+
     // Pick values from vector(s)
     get(coefficients, dofmap.local_dimension(ufc_cell), dofs);
- 
+
     // Clean up
     delete [] dofs;
   }
@@ -365,7 +365,7 @@ void Function::interpolate()
   // Interpolate to vector
   DefaultFactory factory;
   boost::shared_ptr<GenericVector> coefficients(factory.create_vector());
-  function_space().interpolate(*coefficients, *this);  
+  function_space().interpolate(*coefficients, *this);
 
   // Set values
   init();
@@ -459,7 +459,7 @@ void Function::get(double* block, uint m, const uint* rows) const
         scratch.local_index[n_local]  = i;
         scratch.local_rows[n_local++] = rows[i];
      }
-      else 
+      else
       {
         scratch.nonlocal_index[n_nonlocal]  = i;
         scratch.nonlocal_rows[n_nonlocal++] = global_to_local[rows[i]];
@@ -474,9 +474,9 @@ void Function::get(double* block, uint m, const uint* rows) const
 
     // Copy result into block
     for (uint i = 0; i < n_local; ++i)
-      block[scratch.local_index[i]] = scratch.local_block[i];      
+      block[scratch.local_index[i]] = scratch.local_block[i];
     for (uint i = 0; i < n_nonlocal; ++i)
-      block[scratch.nonlocal_index[i]] = scratch.nonlocal_block[i];      
+      block[scratch.nonlocal_index[i]] = scratch.nonlocal_block[i];
   }
 }
 //-----------------------------------------------------------------------------
@@ -498,7 +498,7 @@ void Function::gather() const
     {
       boost::shared_ptr<GenericVector> _tmp(_vector->factory().create_local_vector());
       _off_process_vector = _tmp;
-    }  
+    }
 
     // Gather off process coefficients
     _vector->gather(*_off_process_vector, _off_process_dofs);

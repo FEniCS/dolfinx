@@ -52,7 +52,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
-    boost::shared_ptr<const Mesh> mesh)
+               boost::shared_ptr<const Mesh> mesh)
   : _global_dimension(0), ufc_dof_map(ufc_dof_map), _ufc_offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
