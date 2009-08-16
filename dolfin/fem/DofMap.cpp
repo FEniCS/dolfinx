@@ -145,11 +145,10 @@ void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const
   }
 }
 //-----------------------------------------------------------------------------
-DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
-                                   uint& ufc_offset) const
+DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component) const
 {
   // Reset offset
-  ufc_offset = 0;
+  uint ufc_offset = 0;
 
   // Recursively extract UFC sub dofmap
   boost::shared_ptr<ufc::dof_map> ufc_sub_dof_map(extract_sub_dofmap(*ufc_dof_map,

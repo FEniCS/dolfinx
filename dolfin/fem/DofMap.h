@@ -101,8 +101,8 @@ namespace dolfin
     void tabulate_coordinates(double** coordinates, const ufc::cell& ufc_cell) const
     { ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell); }
 
-    /// Extract sub dofmap and offset for component
-    DofMap* extract_sub_dofmap(const std::vector<uint>& component, uint& offset) const;
+    /// Extract sub dofmap and offset for component. If 
+    DofMap* extract_sub_dofmap(const std::vector<uint>& component) const;
 
     /// Test whether dof map has been renumbered
     bool renumbered() const

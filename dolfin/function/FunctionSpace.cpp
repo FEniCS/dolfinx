@@ -266,8 +266,7 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vec
   boost::shared_ptr<const FiniteElement> element(_element->extract_sub_element(component));
 
   // Extract sub dofmap and offset
-  uint offset = 0;
-  boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component, offset));
+  boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component));
 
   // Create new sub space
   boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
