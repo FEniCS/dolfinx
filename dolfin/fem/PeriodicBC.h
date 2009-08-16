@@ -51,7 +51,7 @@ namespace dolfin
 
     /// Create periodic boundary condition for sub domain
     PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
-               const SubDomain& sub_domain);
+               boost::shared_ptr<const SubDomain> sub_domain);
 
     /// Destructor
     ~PeriodicBC();
@@ -74,7 +74,7 @@ namespace dolfin
   private:
 
     // The subdomain
-    const SubDomain& sub_domain;
+    boost::shared_ptr<const SubDomain> sub_domain;
 
   };
 

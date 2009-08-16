@@ -42,22 +42,22 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
                          std::string method)
   : BoundaryCondition(V),
     g(reference_to_no_delete_pointer(g)),
-    method(method), user_sub_domain(&sub_domain)
+    method(method), user_sub_domain(reference_to_no_delete_pointer(sub_domain))
 {
   check();
-  init_from_sub_domain(sub_domain);
+  init_from_sub_domain(user_sub_domain);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const Function> g,
-                         const SubDomain& sub_domain,
+                         boost::shared_ptr<const SubDomain> sub_domain,
                          std::string method)
   : BoundaryCondition(V),
     g(g),
-    method(method), user_sub_domain(&sub_domain)
+    method(method), user_sub_domain(sub_domain)
 {
   check();
-  init_from_sub_domain(sub_domain);
+  init_from_sub_domain(user_sub_domain);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V,
@@ -67,7 +67,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
                          std::string method)
   : BoundaryCondition(V),
     g(reference_to_no_delete_pointer(g)),
-    method(method), user_sub_domain(0)
+    method(method), user_sub_domain(static_cast<SubDomain*>(0))
 {
   check();
   init_from_mesh_function(sub_domains, sub_domain);
@@ -80,7 +80,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          std::string method)
   : BoundaryCondition(V),
     g(g),
-    method(method), user_sub_domain(0)
+    method(method), user_sub_domain(static_cast<SubDomain*>(0))
 {
   check();
   init_from_mesh_function(sub_domains, sub_domain);
@@ -92,7 +92,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
                          std::string method)
   : BoundaryCondition(V),
     g(reference_to_no_delete_pointer(g)),
-    method(method), user_sub_domain(0)
+    method(method), user_sub_domain(static_cast<SubDomain*>(0))
 {
   check();
   init_from_mesh(sub_domain);
@@ -104,7 +104,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          std::string method)
   : BoundaryCondition(V),
     g(g),
-    method(method), user_sub_domain(0)
+    method(method), user_sub_domain(static_cast<SubDomain*>(0))
 {
   check();
   init_from_mesh(sub_domain);
@@ -336,7 +336,7 @@ void DirichletBC::check(GenericMatrix* A,
   // FIXME: Check case A.size() > V->dim() for subspaces
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::init_from_sub_domain(const SubDomain& sub_domain)
+void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain)
 {
   assert(facets.size() == 0);
 
@@ -351,13 +351,13 @@ void DirichletBC::init_from_sub_domain(const SubDomain& sub_domain)
   MeshFunction<uint> sub_domains(const_cast<Mesh&>(V->mesh()), dim - 1);
 
   // Set geometric dimension (needed for SWIG interface)
-  sub_domain._geometric_dimension = V->mesh().geometry().dim();
+  sub_domain->_geometric_dimension = V->mesh().geometry().dim();
 
   // Mark everything as sub domain 1
   sub_domains = 1;
 
   // Mark the sub domain as sub domain 0
-  sub_domain.mark(sub_domains, 0);
+  sub_domain->mark(sub_domains, 0);
 
   // Initialize from mesh function
   init_from_mesh_function(sub_domains, 0);
