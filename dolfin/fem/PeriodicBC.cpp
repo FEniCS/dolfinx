@@ -131,7 +131,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     {
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
-      const int global_dof = static_cast<int>(dofmap.offset() + data.cell_dofs[local_dof]);
+      const int global_dof = data.cell_dofs[local_dof];
       double* x = data.coordinates[local_dof];
 
       // Map coordinate from H to G
@@ -214,15 +214,6 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     p++;
   }
 
-  /*
-  // Insert 1 at (dof0, dof1)
-  uint* rows = new uint[coordinate_dofs.size()];
-  uint i = 0;
-  for (iterator it = coordinate_dofs.begin(); it != coordinate_dofs.end(); ++it)
-  rows[i++] = static_cast<uint>(it->second.first);
-  A.ident(coordinate_dofs.size(), rows);
-  */
-
   // Insert -1 at (dof0, dof1) and 0 on right-hand side
   uint* rows = new uint[1];
   uint* cols = new uint[1];
@@ -254,8 +245,8 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     //        from within a loop.
 
     // Set x_i - x_j = 0
-    rows[0] = static_cast<uint>(dof0);
-    cols[0] = static_cast<uint>(dof1);
+    rows[0] = dof0;
+    cols[0] = dof1;
     vals[0] = -1;
     zero[0] = 0.0;
 

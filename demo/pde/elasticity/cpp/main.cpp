@@ -117,18 +117,18 @@ int main()
   vtk_file << u;
 
   // Plot solution
-  //plot(u, "displacement");
+  plot(u, "displacement");
 
   // Displace mesh and plot displaced mesh
-  //mesh.move(u);
-  //plot(mesh);
+  mesh.move(u);
+  plot(mesh);
 
   //Function u0 = u[0];
   std::vector<dolfin::uint> component;
   component.push_back(0);
   dolfin::uint off = 0;
   DofMap* sub_dof = u.function_space().dofmap().extract_sub_dofmap(component, off);
-  cout << "Test " << sub_dof->offset() << endl;
+  cout << "Test " << sub_dof->renumbered() << endl;
   delete sub_dof;
 
   return 0;

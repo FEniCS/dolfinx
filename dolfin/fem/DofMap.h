@@ -95,8 +95,7 @@ namespace dolfin
     void tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_index) const;
 
     /// Tabulate local-local facet dofs
-    void tabulate_facet_dofs(uint* dofs, uint local_facet) const
-    { ufc_dof_map->tabulate_facet_dofs(dofs, local_facet); }
+    void tabulate_facet_dofs(uint* dofs, uint local_facet) const;
 
     /// Tabulate the coordinates of all dofs on a cell
     void tabulate_coordinates(double** coordinates, const ufc::cell& ufc_cell) const
@@ -105,9 +104,13 @@ namespace dolfin
     /// Extract sub dofmap and offset for component
     DofMap* extract_sub_dofmap(const std::vector<uint>& component, uint& offset) const;
 
-    // FIXME: This function should be removed.
-    /// Return offset into parent's vector of coefficients
-    uint offset() const;
+    bool renumbered() const
+    {
+      if (map.get())
+        return true;
+      else
+        return false;
+    }
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -116,7 +119,6 @@ namespace dolfin
 
     /// Friends
     friend class DofMapBuilder;
-    //friend class DofMap;
 
     /// Initialise UFC dof map
     void init_ufc();
