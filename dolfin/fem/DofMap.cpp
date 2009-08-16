@@ -145,8 +145,12 @@ void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const
   }
 }
 //-----------------------------------------------------------------------------
-DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component) const
+DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component, 
+                                   bool is_view) const
 {
+  if (!is_view)
+    warning("Sub-dofmaps which are not views are under development.");    
+
   // Reset offset
   uint ufc_offset = 0;
 

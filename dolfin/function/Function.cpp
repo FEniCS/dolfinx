@@ -119,7 +119,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
 //-----------------------------------------------------------------------------
 Function::Function(const SubFunction& v)
   : Variable("v", "unnamed function"),
-    _function_space(v.v.function_space().extract_sub_space(v.component)),
+    _function_space(v.v.function_space().extract_sub_space(v.component, false)),
     _vector(static_cast<GenericVector*>(0)),
     _off_process_vector(static_cast<GenericVector*>(0))
 {
