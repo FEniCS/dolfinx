@@ -123,7 +123,9 @@ Function::Function(const SubFunction& v)
     _vector(static_cast<GenericVector*>(0)),
     _off_process_vector(static_cast<GenericVector*>(0))
 {
+  info("Assign from sub-function");
   // Initialize vector
+  info("Assign from sub-function (init)");
   init();
 
   // Copy subset of coefficients
@@ -189,7 +191,9 @@ SubFunction Function::operator[] (uint i) const
   if (!_vector)
     error("Unable to extract sub function, missing coefficients (user-defined function).");
 
+  info("Create sub function");
   SubFunction sub_function(*this, i);
+  info("Finish create sub function");
   return sub_function;
 }
 //-----------------------------------------------------------------------------
@@ -280,7 +284,8 @@ void Function::eval(double* values, const Data& data) const
   eval(values, data.x);
 }
 //-----------------------------------------------------------------------------
-void Function::eval(double* values, const double* x, const ufc::cell& ufc_cell, uint cell_index) const
+void Function::eval(double* values, const double* x, const ufc::cell& ufc_cell, 
+                    uint cell_index) const
 {
   assert(_function_space);
   _function_space->eval(values, x, *this, ufc_cell, cell_index);

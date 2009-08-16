@@ -11,6 +11,7 @@
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
 
+#include <map>
 #include <memory>
 #include <vector>
 #include <boost/shared_ptr.hpp>
@@ -115,6 +116,7 @@ namespace dolfin
 
     /// Friends
     friend class DofMapBuilder;
+    //friend class DofMap;
 
     /// Initialise UFC dof map
     void init_ufc();
@@ -134,7 +136,7 @@ namespace dolfin
     uint _global_dimension;
 
     // Map from UFC dofs to renumbered dof 
-    std::map<uint, int> ufc_to_map;
+    std::map<dolfin::uint, int> ufc_to_map;
 
     // UFC dof map
     boost::shared_ptr<ufc::dof_map> ufc_dof_map;

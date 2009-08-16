@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-08-14
+// Last changed: 2009-08-16
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
@@ -88,6 +88,9 @@ DofMap::DofMap(std::auto_ptr<std::vector<int> > map,
       error("Unable to create function space, missing entities of dimension %d. Try calling mesh.init(%d).", d, d);
   }
 
+  // Initialize UFC dof map
+  init_ufc();
+
   // Set the global dimension
   _global_dimension = ufc_dof_map->global_dimension();
 }
@@ -107,10 +110,11 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
 
     // FIXME: This will only work for problem where local_dimension is the
     //        same for all cells since the offset will not be computed correctly.
-    const uint n = local_dimension(ufc_cell);
-    const uint offset = n*cell_index;
-    for (uint i = 0; i < n; i++)
-      dofs[i] = (*map)[offset + i];
+    const uint local_dim = local_dimension(ufc_cell);
+    const uint cell_offset = local_dim*cell_index;
+    for (uint i = 0; i < local_dim; i++)
+      dofs[i] = (*map)[cell_offset + i];
+
     // FIXME: Maybe memcpy() can be used to speed this up? Test this!
     //memcpy(dofs, dof_map[cell_index], sizeof(uint)*local_dimension());
     //std::copy(&dof_map[offset], &dof_map[offset+n], &dofs);
@@ -135,39 +139,42 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
   DofMap* sub_dofmap = 0;
   if (map.get())
   {
-    error("Dof map has been re-ordered. Don't yet know how to extract sub dof maps.");
+    if (ufc_to_map.size() == 0)
+      error("Cannnot yet extract sub-sub dof maps after renumbering yet.");
+
+    const uint max_local_dim = ufc_sub_dof_map->max_local_dimension();
+    const uint num_cells = dolfin_mesh->num_cells();
 
     // Create vector for new map
-    std::auto_ptr<std::vector<int> > sub_map;
+    std::auto_ptr<std::vector<int> > sub_map(new std::vector<int>);
+    sub_map->resize(max_local_dim*num_cells); 
+  
+    // Create new dof map (this will initialise the UFC dof map)
+    sub_dofmap = new DofMap(sub_map, ufc_sub_dof_map, dolfin_mesh);
 
-    assert(ufc_to_map.size() == map->size());
-    
-/*
-    // Create sub-map vector
-    UFCCell ufc_cell(mesh);
-    uint i = 0;
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    // Build sub-map vector
+    UFCCell ufc_cell(*dolfin_mesh);
+    uint* ufc_dofs = new uint[ufc_sub_dof_map->max_local_dimension()];
+    for (CellIterator cell(*dolfin_mesh); !cell.end(); ++cell)
     {
       // Update to current cell
       ufc_cell.update(*cell);
 
       // Tabulate dofs on cell (UFC map)
-      dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());
+      ufc_sub_dof_map->tabulate_dofs(ufc_dofs, ufc_mesh, ufc_cell);
 
-      const uint n = local_dimension(ufc_cell);
-      const uint cell_offset = n*cell_index;
-      for (uint i = 0; i < n; i++)
-        dofs[i] = (*map)[cell_offset + i];
+      const uint cell_index = cell->index();
+      const uint sub_local_dim = sub_dofmap->local_dimension(ufc_cell);
+      const uint cell_offset = sub_local_dim*cell_index;
+      for (uint i = 0; i < sub_local_dim; i++)
+        (*sub_dofmap->map)[cell_offset + i] = ufc_to_map.find(ufc_dofs[i] + ufc_offset)->second;
     }
-*/
-
-    // Create new dof map
-    sub_dofmap = new DofMap(sub_map, ufc_sub_dof_map, dolfin_mesh);
+    delete [] ufc_dofs;
   }
   else
     sub_dofmap = new DofMap(ufc_sub_dof_map, dolfin_mesh);
 
-  // Set offset
+  // Set UFC offset
   sub_dofmap->_ufc_offset = ufc_offset;
 
   return sub_dofmap;
