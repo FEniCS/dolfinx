@@ -3,9 +3,10 @@
 //
 // Modified by Garth N. Wells 2007, 2008.
 // Modified by Martin Alnes, 2008.
+// Modified by Johan Hake, 2009.
 //
 // First added:  2008-06-18
-// Last changed: 2008-12-04
+// Last changed: 2009-08-14
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -18,6 +19,12 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 BoundaryCondition::BoundaryCondition(const FunctionSpace& V)
   : V(reference_to_no_delete_pointer(V))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+BoundaryCondition::BoundaryCondition(boost::shared_ptr<const FunctionSpace> V)
+  : V(V)
 {
   // Do nothing
 }

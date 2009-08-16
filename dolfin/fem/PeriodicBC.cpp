@@ -2,13 +2,15 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2007
+// Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2008-12-03
+// Last changed: 2009-08-14
 
 #include <vector>
 #include <map>
 
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Mesh.h>
@@ -50,6 +52,13 @@ struct lt_coordinate
 //-----------------------------------------------------------------------------
 PeriodicBC::PeriodicBC(const FunctionSpace& V,
                        const SubDomain& sub_domain)
+  : BoundaryCondition(V), sub_domain(reference_to_no_delete_pointer(sub_domain))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+PeriodicBC::PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
+                       boost::shared_ptr<const SubDomain> sub_domain)
   : BoundaryCondition(V), sub_domain(sub_domain)
 {
   // Do nothing
@@ -84,7 +93,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
   const DofMap& dofmap = V->dofmap();
 
   // Set geometric dimension (needed for SWIG interface)
-  sub_domain._geometric_dimension = mesh.geometry().dim();
+  sub_domain->_geometric_dimension = mesh.geometry().dim();
 
   // Table of mappings from coordinates to dofs
   std::map<std::vector<double>, std::pair<int, int>, lt_coordinate> coordinate_dofs;
@@ -137,11 +146,11 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
       // Map coordinate from H to G
       for (uint j = 0; j < mesh.geometry().dim(); j++)
         y[j] = x[j];
-      sub_domain.map(x, y);
+      sub_domain->map(x, y);
 
       // Check if coordinate is inside the domain G or in H
       const bool on_boundary = facet->num_entities(D) == 1;
-      if (sub_domain.inside(x, on_boundary))
+      if (sub_domain->inside(x, on_boundary))
       {
         // Coordinate x is in G
         //cout << "Inside: " << x[0] << " " << x[1] << endl;
@@ -175,7 +184,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
           coordinate_dofs[xx] = dofs;
         }
       }
-      else if (sub_domain.inside(y, on_boundary))
+      else if (sub_domain->inside(y, on_boundary))
       {
         // y = F(x) is in G, so coordinate x is in H
         //cout << "Mapped: " << x[0] << " " << x[1] << endl;
