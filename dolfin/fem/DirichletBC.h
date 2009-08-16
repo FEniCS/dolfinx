@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristian Oelgaard, 2007
+// Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2008-12-12
+// Last changed: 2009-08-14
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -86,15 +87,33 @@ namespace dolfin
                 const SubDomain& sub_domain,
                 std::string method="topological");
 
+    /// Create boundary condition for subdomain
+    DirichletBC(boost::shared_ptr<const FunctionSpace> V,
+                boost::shared_ptr<const Function> g,
+                boost::shared_ptr<const SubDomain> sub_domain,
+                std::string method="topological");
+
     /// Create boundary condition for subdomain specified by index
     DirichletBC(const FunctionSpace& V,
                 const Function& g,
                 const MeshFunction<uint>& sub_domains, uint sub_domain,
                 std::string method="topological");
 
+    /// Create boundary condition for subdomain specified by index
+    DirichletBC(boost::shared_ptr<const FunctionSpace> V,
+                boost::shared_ptr<const Function> g,
+                const MeshFunction<uint>& sub_domains, uint sub_domain,
+                std::string method="topological");
+
     /// Create boundary condition for boundary data included in the mesh
     DirichletBC(const FunctionSpace& V,
                 const Function& g,
+                uint sub_domain,
+                std::string method="topological");
+
+    /// Create boundary condition for boundary data included in the mesh
+    DirichletBC(boost::shared_ptr<const FunctionSpace> V,
+                boost::shared_ptr<const Function> g,
                 uint sub_domain,
                 std::string method="topological");
 
@@ -137,7 +156,7 @@ namespace dolfin
     void check(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
 
     // Initialize sub domain markers from sub domain
-    void init_from_sub_domain(const SubDomain& sub_domain);
+    void init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain);
 
     // Initialize sub domain markers from MeshFunction
     void init_from_mesh_function(const MeshFunction<uint>& sub_domains, uint sub_domain);
@@ -165,7 +184,7 @@ namespace dolfin
     bool on_facet(double* coordinates, Facet& facet) const;
 
     // The function
-    const Function& g;
+    boost::shared_ptr<const Function> g;
 
     // Search method
     std::string method;
@@ -174,7 +193,7 @@ namespace dolfin
     static const std::set<std::string> methods;
 
     // User defined sub domain
-    const SubDomain* user_sub_domain;
+    boost::shared_ptr<const SubDomain> user_sub_domain;
 
     // Boundary facets, stored as pairs (cell, local facet number)
     std::vector< std::pair<uint, uint> > facets;

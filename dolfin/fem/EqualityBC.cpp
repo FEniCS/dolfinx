@@ -1,8 +1,10 @@
 // Copyright (C) 2009 Bartosz Sawicki.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Johan Hake, 2009
+//
 // First added:  2009-04-03
-// Last changed: 2009-04-10
+// Last changed: 2009-08-14
 
 #include <vector>
 
@@ -31,7 +33,21 @@ EqualityBC::EqualityBC(const FunctionSpace& V,
   init_from_sub_domain(sub_domain);
 }
 //-----------------------------------------------------------------------------
+EqualityBC::EqualityBC(boost::shared_ptr<const FunctionSpace> V,
+                       const SubDomain& sub_domain)
+  : BoundaryCondition(V)
+{
+  init_from_sub_domain(sub_domain);
+}
+//-----------------------------------------------------------------------------
 EqualityBC::EqualityBC(const FunctionSpace& V,
+                         uint sub_domain)
+  : BoundaryCondition(V)
+{
+  init_from_mesh(sub_domain);
+}
+//-----------------------------------------------------------------------------
+EqualityBC::EqualityBC(boost::shared_ptr<const FunctionSpace> V,
                          uint sub_domain)
   : BoundaryCondition(V)
 {

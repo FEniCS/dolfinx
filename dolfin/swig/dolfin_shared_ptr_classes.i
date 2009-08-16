@@ -32,6 +32,9 @@ SWIG_SHARED_PTR_DERIVED(Box,dolfin::Mesh,dolfin::Box)
 SWIG_SHARED_PTR_DERIVED(Rectangle,dolfin::Mesh,dolfin::Rectangle)
 SWIG_SHARED_PTR_DERIVED(UnitSphere,dolfin::Mesh,dolfin::UnitSphere)
 
+SWIG_SHARED_PTR(SubDomain,dolfin::SubDomain)
+SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
+
 // This macro exposes the Variable interface for the derived classes
 // This is a hack to get around the problem that Variable is not declared
 // as a shared_ptr class.
