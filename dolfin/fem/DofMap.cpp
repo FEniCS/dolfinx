@@ -182,7 +182,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
       // Update to current cell
       ufc_cell.update(*cell);
 
-     // Tabulate dofs on cell (UFC map)
+     // Tabulate sub-dofs on cell (UFC map)
      ufc_sub_dof_map->tabulate_dofs(ufc_dofs, ufc_mesh, ufc_cell);
 
      const uint cell_index = cell->index();

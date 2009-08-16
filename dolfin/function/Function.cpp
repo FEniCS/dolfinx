@@ -126,10 +126,10 @@ Function::Function(const SubFunction& v)
   // Initialize vector
   init();
 
+  // FIXME: This function needs to be fixed for dof maps that have been renumbered.
   if (function_space().dofmap().renumbered())
     error("Extraction of sub-Functions not yet supputed after renumbering of the dof map.");
 
-  // FIXME: This function needs to be fixed for dof maps that have been renumbered.
 
   // Copy subset of coefficients
   const uint n = _vector->size();

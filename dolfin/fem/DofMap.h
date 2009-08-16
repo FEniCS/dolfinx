@@ -104,6 +104,7 @@ namespace dolfin
     /// Extract sub dofmap and offset for component
     DofMap* extract_sub_dofmap(const std::vector<uint>& component, uint& offset) const;
 
+    /// Test whether dof map has been renumbered
     bool renumbered() const
     {
       if (map.get())
