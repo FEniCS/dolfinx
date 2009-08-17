@@ -1,8 +1,8 @@
-"""Run all tests, including unit tests and regression tests"""
+"Run all tests"
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-06-09 -- 2008-11-21"
-__copyright__ = "Copyright (C) 2007-2008 Anders Logg"
+__date__ = "2007-06-09 -- 2009-08-17"
+__copyright__ = "Copyright (C) 2007-2009 Anders Logg"
 __license__  = "GNU LGPL version 2.1"
 
 import re, sys, os
@@ -10,7 +10,7 @@ import re, sys, os
 pwd = os.path.dirname(os.path.abspath(__file__))
 
 # Tests to run
-tests = ["unit", "system", "memory"]
+tests = ["unit", "regression", "memory"]
 
 failed = []
 
