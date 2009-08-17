@@ -9,6 +9,7 @@
 // First added:  2005-07-05
 // Last changed: 2009-08-13
 
+#include <vector>
 #include <sstream>
 #include <fstream>
 #include <boost/cstdint.hpp>
@@ -19,6 +20,7 @@
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/la/GenericVector.h>
+#include <dolfin/la/LinearAlgebraFactory.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
@@ -335,13 +337,12 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
   if (data_type == "cell")
   {
     // Allocate memory for function values at cell centres
-    const uint size = u.vector().size();
-    double* values = new double[size];
-
+    const uint size = mesh.num_cells()*dim;
+    double* values = new double[dofmap.max_local_dimension()];
     uint* dofs = new uint[dofmap.max_local_dimension()];
 
     // Get function values on cells
-    u.vector().get(values);
+    const GenericVector* x = 0;//u.vector();
 
     // Write headers
     if (rank == 0)
@@ -364,24 +365,55 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
       fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
     }
 
+    // FIXME: This is an awful hack to work in parallel. Functionality should be moved elsewhere.
+    // Gather data onto this process
     UFCCell ufc_cell(mesh);
+    std::map<uint, uint> dof_map;
+    std::auto_ptr<GenericVector> xx;
+    if (MPI::num_processes > 0) 
+    {
+      std::vector<uint> dof_set;
+      uint ii = 0;
+      for (CellIterator cell(mesh); !cell.end(); ++cell)
+      {
+        // Tabulate dofs
+        ufc_cell.update(*cell);
+        dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());
+        for(uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
+        {
+          dof_set.push_back(dofs[i]);
+          dof_map[dofs[i]] = ii++;
+        }
+      }
+      xx.reset(u.vector().factory().create_local_vector());
+      u.vector().gather(*xx, dof_set);
+      x = xx.get();
+    }
+    else  
+      x = &u.vector();
+
     if (encoding == "ascii")
     {
       std::ostringstream ss;
       ss << std::scientific;
       for (CellIterator cell(mesh); !cell.end(); ++cell)
       {
-        // Tabulate dofs
+        // Tabulate dofs and get values
         ufc_cell.update(*cell);
-        dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());
+        dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());  
+        if (MPI::num_processes > 0)
+        {
+          for(uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
+            dofs[i] = dof_map.find(dofs[i])->second;
+        }
+        x->get(values, dofmap.local_dimension(ufc_cell), dofs);         
+          
 
         if (rank == 1 && dim == 2)
         {
           // Append 0.0 to 2D vectors to make them 3D
-          ss << " " << values[dofs[0]];
-          ss << " " << values[dofs[1]];
-          ss << " " << 0.0;
-          ss << " " << 0.0;
+          ss << " " << values[0];
+          ss << " " << values[1];
           ss << " " << 0.0;
         }
         else if (rank == 2 && dim == 4)
@@ -389,8 +421,8 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
           // Pad with 0.0 to 2D tensors to make them 3D
           for(uint i = 0; i < 2; i++)
           {
-            ss << " " << values[dofs[2*i]];
-            ss << " " << values[dofs[2*i+1]];
+            ss << " " << values[2*i];
+            ss << " " << values[2*i+1];
             ss << " " << 0.0;
           }
           ss << " " << 0.0;
@@ -401,7 +433,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
         {
           // Write all components
           for (uint i = 0; i < dim; i++)
-            ss << " " << values[dofs[i]];
+            ss << " " << values[i];
         }
         ss << std::endl;
       }
@@ -421,15 +453,21 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
       std::vector<float>::iterator entry = data.begin();
       for (CellIterator cell(mesh); !cell.end(); ++cell)
       {
-        // Tabulate dofs
+        // Tabulate dofs and get values
         ufc_cell.update(*cell);
-        dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());
+        dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());  
+        if (MPI::num_processes > 0)
+        {
+          for(uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
+            dofs[i] = dof_map.find(dofs[i])->second;
+        }
+        x->get(values, dofmap.local_dimension(ufc_cell), dofs);         
 
         if (rank == 1 && dim == 2)
         {
           // Append 0.0 to 2D vectors to make them 3D
-          *entry++ = values[dofs[0]];
-          *entry++ = values[dofs[1]];
+          *entry++ = values[0];
+          *entry++ = values[1];
           *entry++ = 0.0;
         }
         else if (rank == 2 && dim == 4)
@@ -437,8 +475,8 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
           // Pad with 0.0 to 2D tensors to make them 3D
           for(uint i = 0; i < 2; i++)
           {
-            *entry++ = values[dofs[2*i]];
-            *entry++ = values[dofs[2*i+1]];
+            *entry++ = values[2*i];
+            *entry++ = values[2*i+1];
             *entry++ = 0.0;
           }
           *entry++ = 0.0;
@@ -449,7 +487,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
         {
           // Write all components
           for (uint i = 0; i < dim; i++)
-            *entry++ = values[dofs[i]];
+            *entry++ = values[i];
         }
       }
 
@@ -461,7 +499,6 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
       fp << base64_stream.str();
       fp << std::endl;
     }
-
     fp << "</DataArray> " << std::endl;
     fp << "</CellData> " << std::endl;
 

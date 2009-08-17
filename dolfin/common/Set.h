@@ -64,6 +64,9 @@ namespace dolfin
     T operator[](uint n) const
     { return _x[n]; }
 
+    const std::vector<T> set() const
+    { return _x; }
+
   private:
 
     std::vector<T> _x;

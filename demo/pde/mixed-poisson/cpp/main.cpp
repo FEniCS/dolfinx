@@ -41,7 +41,7 @@ int main()
   };
 
   // Create mesh and source term
-  UnitSquare mesh(16, 16);
+  UnitSquare mesh(32, 32);
   Source f;
 
   // Define PDE
