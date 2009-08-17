@@ -40,8 +40,11 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
     }
   }
 
+  // Initialize the UFC mesh
+  init_ufc_mesh();
+
   // Initialize UFC dof map
-  init_ufc();
+  init_ufc_dofmap(*ufc_dof_map);
 
   // Set the global dimension
   _global_dimension = ufc_dof_map->global_dimension();
@@ -56,15 +59,11 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
   : _global_dimension(0), ufc_dof_map(ufc_dof_map), _ufc_offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
-  // Check that we have all mesh entities (const so we can't generate them)
-  for (uint d = 0; d <= mesh->topology().dim(); ++d)
-  {
-    if (ufc_dof_map->needs_mesh_entities(d) && mesh->num_entities(d) == 0)
-      error("Unable to create function space, missing entities of dimension %d. Try calling mesh.init(%d).", d, d);
-  }
+  // Initialize the UFC mesh
+  init_ufc_mesh();
 
   // Initialize UFC dof map
-  init_ufc();
+  init_ufc_dofmap(*ufc_dof_map);
 
   // Set the global dimension
   _global_dimension = ufc_dof_map->global_dimension();
@@ -132,12 +131,8 @@ void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const
   ufc_dof_map->tabulate_facet_dofs(dofs, local_facet);
 }
 //-----------------------------------------------------------------------------
-DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component, 
-                                   bool is_view) const
+DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component) const
 {
-  if (!is_view)
-    warning("Sub-dofmaps which are not views are under development.");    
-
   // Reset offset
   uint ufc_offset = 0;
 
@@ -193,7 +188,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
 }
 //-----------------------------------------------------------------------------
 ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dof_map,
-                                         uint& ufc_offset,
+                                         uint& offset,
                                          const std::vector<uint>& component) const
 {
   // Check if there are any sub systems
@@ -212,8 +207,14 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dof_map,
   // Add to offset if necessary
   for (uint i = 0; i < component[0]; i++)
   {
+    // Extract sub dofmap
     boost::shared_ptr<ufc::dof_map> _ufc_dof_map(ufc_dof_map.create_sub_dof_map(i));
-    ufc_offset += _ufc_dof_map->global_dimension();
+
+    // Initialise
+    init_ufc_dofmap(*_ufc_dof_map);
+
+    // Get offset
+    offset += _ufc_dof_map->global_dimension();
   }
 
   // Create UFC sub system
@@ -227,14 +228,14 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dof_map,
   std::vector<uint> sub_component;
   for (uint i = 1; i < component.size(); i++)
     sub_component.push_back(component[i]);
-  ufc::dof_map* sub_sub_dof_map = extract_sub_dofmap(*sub_dof_map, ufc_offset,
+  ufc::dof_map* sub_sub_dof_map = extract_sub_dofmap(*sub_dof_map, offset,
                                                      sub_component);
   delete sub_dof_map;
 
   return sub_sub_dof_map;
 }
 //-----------------------------------------------------------------------------
-void DofMap::init_ufc()
+void DofMap::init_ufc_mesh()
 {
   // Check that mesh has been ordered
   if (!dolfin_mesh->ordered())
@@ -242,18 +243,28 @@ void DofMap::init_ufc()
 
   // Initialize UFC mesh data (must be done after entities are created)
   ufc_mesh.init(*dolfin_mesh);
+}
+//-----------------------------------------------------------------------------
+void DofMap::init_ufc_dofmap(ufc::dof_map& dofmap) const
+{
+  // Check that we have all mesh entities
+  for (uint d = 0; d <= dolfin_mesh->topology().dim(); ++d)
+  {
+    if (dofmap.needs_mesh_entities(d) && dolfin_mesh->num_entities(d) == 0)
+      error("Unable to create function space, missing entities of dimension %d. Try calling mesh.init(%d).", d, d);
+  }
 
   // Initialize UFC dof map
-  const bool init_cells = ufc_dof_map->init_mesh(ufc_mesh);
+  const bool init_cells = dofmap.init_mesh(ufc_mesh);
   if (init_cells)
   {
     UFCCell ufc_cell(*dolfin_mesh);
     for (CellIterator cell(*dolfin_mesh); !cell.end(); ++cell)
     {
       ufc_cell.update(*cell);
-      ufc_dof_map->init_cell(ufc_mesh, ufc_cell);
+      dofmap.init_cell(ufc_mesh, ufc_cell);
     }
-    ufc_dof_map->init_cell_finalize();
+    dofmap.init_cell_finalize();
   }
 }
 //-----------------------------------------------------------------------------

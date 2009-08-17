@@ -245,8 +245,8 @@ void FunctionSpace::interpolate_vertex_values(double* vertex_values,
   delete [] local_vertex_values;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vector<uint>& component,
-                                                bool is_view) const
+boost::shared_ptr<FunctionSpace> 
+     FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 {
   assert(_mesh);
   assert(_element);
@@ -255,7 +255,7 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vec
   // Create unique identifier string for sub space
   std::ostringstream identifier;
   for (uint i = 0; i < component.size(); ++i)
-    identifier << component[i] << "." << is_view;
+    identifier << component[i] << ".";
 
   // Check if sub space is aleady in the cache
   std::map<std::string, boost::shared_ptr<FunctionSpace> >::iterator subspace;
@@ -266,8 +266,8 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vec
   // Extract sub element
   boost::shared_ptr<const FiniteElement> element(_element->extract_sub_element(component));
 
-  // Extract sub dofmap and offset
-  boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component, is_view));
+  // Extract sub dofmap
+  boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component));
 
   // Create new sub space
   boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
