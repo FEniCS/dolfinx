@@ -335,8 +335,10 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
   if (data_type == "cell")
   {
     // Allocate memory for function values at cell centres
-    const uint size = mesh.num_cells()*dim;
+    const uint size = u.vector().size();
     double* values = new double[size];
+
+    uint* dofs = new uint[dofmap.max_local_dimension()];
 
     // Get function values on cells
     u.vector().get(values);
@@ -371,15 +373,15 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
       {
         // Tabulate dofs
         ufc_cell.update(*cell);
-        uint dof;
-        dofmap.tabulate_dofs(&dof, ufc_cell, cell->index());
+        dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());
 
         if (rank == 1 && dim == 2)
         {
           // Append 0.0 to 2D vectors to make them 3D
-          for(uint i = 0; i < dim; i++)
-            ss << " " << values[dof];
-            //ss << " " << values[cell->index() + i*mesh.num_cells()];
+          ss << " " << values[dofs[0]];
+          ss << " " << values[dofs[1]];
+          ss << " " << 0.0;
+          ss << " " << 0.0;
           ss << " " << 0.0;
         }
         else if (rank == 2 && dim == 4)
@@ -387,8 +389,8 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
           // Pad with 0.0 to 2D tensors to make them 3D
           for(uint i = 0; i < 2; i++)
           {
-            ss << " " << values[cell->index() + (2*i+0)*mesh.num_cells()];
-            ss << " " << values[cell->index() + (2*i+1)*mesh.num_cells()];
+            ss << " " << values[dofs[2*i]];
+            ss << " " << values[dofs[2*i+1]];
             ss << " " << 0.0;
           }
           ss << " " << 0.0;
@@ -399,12 +401,10 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
         {
           // Write all components
           for (uint i = 0; i < dim; i++)
-            //ss << " " << values[cell->index() + i*mesh.num_cells()];
-            ss << " " << values[dof];
+            ss << " " << values[dofs[i]];
         }
         ss << std::endl;
       }
-  
       // Send to file
       fp << ss.str();
     }
@@ -423,14 +423,13 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
       {
         // Tabulate dofs
         ufc_cell.update(*cell);
-        uint dof;
-        dofmap.tabulate_dofs(&dof, ufc_cell, cell->index());
+        dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());
 
         if (rank == 1 && dim == 2)
         {
           // Append 0.0 to 2D vectors to make them 3D
-          *entry++ = values[cell->index()];
-          *entry++ = values[cell->index() + mesh.num_cells()];
+          *entry++ = values[dofs[0]];
+          *entry++ = values[dofs[1]];
           *entry++ = 0.0;
         }
         else if (rank == 2 && dim == 4)
@@ -438,8 +437,8 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
           // Pad with 0.0 to 2D tensors to make them 3D
           for(uint i = 0; i < 2; i++)
           {
-            *entry++ = values[cell->index() + (2*i+0)*mesh.num_cells()];
-            *entry++ = values[cell->index() + (2*i+1)*mesh.num_cells()];
+            *entry++ = values[dofs[2*i]];
+            *entry++ = values[dofs[2*i+1]];
             *entry++ = 0.0;
           }
           *entry++ = 0.0;
@@ -450,7 +449,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
         {
           // Write all components
           for (uint i = 0; i < dim; i++)
-            *entry++ = values[cell->index() + i*mesh.num_cells()];
+            *entry++ = values[dofs[i]];
         }
       }
 
@@ -466,6 +465,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
     fp << "</DataArray> " << std::endl;
     fp << "</CellData> " << std::endl;
 
+    delete [] dofs;
     delete [] values;
   }
   else if (data_type == "point")
