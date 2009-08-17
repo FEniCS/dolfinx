@@ -106,6 +106,9 @@ namespace dolfin
     /// Check if function is a member of the given function space
     bool in(const FunctionSpace& V) const;
 
+    /// Return geometric dimension
+    uint geometric_dimension() const;
+
     /// Function evaluation (overload for user-defined function, simple version)
     virtual void eval(double* values, const double* x) const;
 

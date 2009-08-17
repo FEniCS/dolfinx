@@ -228,6 +228,12 @@ bool Function::in(const FunctionSpace& V) const
   return !_function_space || _function_space.get() == &V;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint Function::geometric_dimension() const
+{
+  assert(_function_space);
+  return _function_space->mesh().geometry().dim();
+}
+//-----------------------------------------------------------------------------
 void Function::eval(double* values, const double* x) const
 {
   assert(values);
