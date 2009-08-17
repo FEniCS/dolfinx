@@ -1,29 +1,18 @@
 """Run all demos."""
 
 __author__ = "Ilmar Wilbers (ilmarw@simula.no)"
-__date__ = "2008-04-08 -- 2008-04-09"
+__date__ = "2008-04-08 -- 2008-08-17"
 __copyright__ = "Copyright (C) 2008 Ilmar Wilbers"
 __license__  = "GNU LGPL Version 2.1"
 
-# Modified by Anders Logg 2008
-# Modified by Johannes Ring 2009
+# Modified by Anders Logg, 2008.
+# Modified by Johannes Ring, 2009.
 
 import sys, os, re
 import platform
 from time import time
 from subprocess import Popen, PIPE, STDOUT
-
-# Taken from (since commands.getstatusoutput does not work in Windows):
-# http://ivory.idyll.org/blog/mar-07/replacing-commands-with-subprocess
-def get_status_output(cmd, input=None, cwd=None, env=None):
-    pipe = Popen(cmd, shell=True, cwd=cwd, env=env, stdout=PIPE, stderr=STDOUT)
-
-    (output, errout) = pipe.communicate(input=input)
-    assert not errout
-
-    status = pipe.returncode
-
-    return (status, output)
+from dolfin.utils import getstatusoutput
 
 # Location of all demos
 demodir = os.path.join(os.curdir, "..", "..", "demo")
@@ -38,7 +27,7 @@ for dpath, dnames, fnames in os.walk(demodir):
     elif os.path.basename(dpath) == 'python':
         if os.path.isfile(os.path.join(dpath, 'demo.py')):
             pydemos.append(dpath)
-    
+
 # Set non-interactive
 os.putenv('DOLFIN_NOPLOT', '1')
 
@@ -61,10 +50,10 @@ if platform.system() == 'Windows':
 pyslow = []
 cppslow = []
 for s in pyslow:
-    pydemos.remove(s) 
+    pydemos.remove(s)
     pydemos.append(s)
 for s in cppslow:
-    cppdemos.remove(s) 
+    cppdemos.remove(s)
     cppdemos.append(s)
 
 # Remove overly slow demos
