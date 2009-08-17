@@ -93,8 +93,8 @@ namespace dolfin
                                    const Function& v) const;
 
     /// Extract sub space for component
-    boost::shared_ptr<FunctionSpace> extract_sub_space(const std::vector<uint>& component, 
-                                                       bool is_view) const;
+    boost::shared_ptr<FunctionSpace> 
+                  extract_sub_space(const std::vector<uint>& component) const;
 
     // Attach restriction meshfunction
     void attach(MeshFunction<bool>& restriction);

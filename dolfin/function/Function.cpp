@@ -119,31 +119,11 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
 //-----------------------------------------------------------------------------
 Function::Function(const SubFunction& v)
   : Variable("v", "unnamed function"),
-    _function_space(v.v.function_space().extract_sub_space(v.component, false)),
-    _vector(static_cast<GenericVector*>(0)),
-    _off_process_vector(static_cast<GenericVector*>(0))
+    _function_space(v.v.function_space().extract_sub_space(v.component)),
+    _vector(v.v._vector),
+    _off_process_vector(v.v._off_process_vector)
 {
-  // Initialize vector
-  init();
-
-  // FIXME: This function needs to be fixed for dof maps that have been renumbered.
-  if (function_space().dofmap().renumbered())
-    error("Extraction of sub-Functions not yet supputed after renumbering of the dof map.");
-
-
-  // Copy subset of coefficients
-  const uint n = _vector->size();
-  uint* rows = new uint[n];
-  double* values = new double[n];
-  for (uint i = 0; i < n; i++)
-    rows[i] = i;
-  v.v.vector().get(values, n, rows);
-  _vector->set(values);
-  _vector->apply();
-
-  // Clean up
-  delete [] rows;
-  delete [] values;
+  // FIXME: Do we need to check that we have a discrete function?  
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
@@ -193,9 +173,7 @@ SubFunction Function::operator[] (uint i) const
   if (!_vector)
     error("Unable to extract sub function, missing coefficients (user-defined function).");
 
-  info("Create sub function");
   SubFunction sub_function(*this, i);
-  info("Finish create sub function");
   return sub_function;
 }
 //-----------------------------------------------------------------------------
