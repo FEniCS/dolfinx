@@ -362,17 +362,24 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
       fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
     }
 
+    UFCCell ufc_cell(mesh);
     if (encoding == "ascii")
     {
       std::ostringstream ss;
       ss << std::scientific;
       for (CellIterator cell(mesh); !cell.end(); ++cell)
       {
+        // Tabulate dofs
+        ufc_cell.update(*cell);
+        uint dof;
+        dofmap.tabulate_dofs(&dof, ufc_cell, cell->index());
+
         if (rank == 1 && dim == 2)
         {
           // Append 0.0 to 2D vectors to make them 3D
           for(uint i = 0; i < dim; i++)
-            ss << " " << values[cell->index() + i*mesh.num_cells()];
+            ss << " " << values[dof];
+            //ss << " " << values[cell->index() + i*mesh.num_cells()];
           ss << " " << 0.0;
         }
         else if (rank == 2 && dim == 4)
@@ -392,7 +399,8 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
         {
           // Write all components
           for (uint i = 0; i < dim; i++)
-            ss << " " << values[cell->index() + i*mesh.num_cells()];
+            //ss << " " << values[cell->index() + i*mesh.num_cells()];
+            ss << " " << values[dof];
         }
         ss << std::endl;
       }
@@ -413,6 +421,11 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
       std::vector<float>::iterator entry = data.begin();
       for (CellIterator cell(mesh); !cell.end(); ++cell)
       {
+        // Tabulate dofs
+        ufc_cell.update(*cell);
+        uint dof;
+        dofmap.tabulate_dofs(&dof, ufc_cell, cell->index());
+
         if (rank == 1 && dim == 2)
         {
           // Append 0.0 to 2D vectors to make them 3D
