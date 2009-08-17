@@ -420,6 +420,8 @@ void Function::compute_off_process_dofs() const
       }
     }
   }
+
+  delete [] dofs;
 }
 //-----------------------------------------------------------------------------
 void Function::init()
