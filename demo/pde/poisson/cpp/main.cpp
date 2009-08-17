@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2008-12-26
+// Last changed: 2009-08-17
 //
 // This demo program solves Poisson's equation
 //
@@ -62,7 +62,9 @@ int main()
 
   // Compute solution
   VariationalProblem problem(a, L, bc);
+  // FIXME: Temporary while testing parallel assembly
   problem.parameters("linear_solver") = "iterative";
+  problem.parameters["krylov_solver"]("relative_tolerance") = 1e-20;
   Function u;
   problem.solve(u);
 

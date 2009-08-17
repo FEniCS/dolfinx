@@ -5,7 +5,7 @@ The TODO list has moved to http://www.fenics.org/wiki/DOLFIN_road_map
 Demo                            | Status
 ---------------------------------------------
 demo/pde/poisson/cpp            | working
-demo/pde/poisson/python         | ?
+demo/pde/poisson/python         | working
                                 |
 demo/pde/elasticity/cpp         | working
 demo/pde/poisson/python         | ?

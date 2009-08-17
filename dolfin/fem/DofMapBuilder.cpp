@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2008-08-12
-// Last changed: 2009-08-16
+// Last changed: 2009-08-17
 
 #include <iostream>
 
@@ -72,6 +72,9 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
 
   // Initialize random number generator differently on each process
   srand((uint)time(0) + MPI::process_number());
+
+  // FIXME: Temporary while debugging (to get same results in each run)
+  //srand(MPI::process_number());
 
   UFCCell ufc_cell(mesh);
   uint *old_dofs = new uint[max_local_dimension];
