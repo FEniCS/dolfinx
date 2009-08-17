@@ -22,7 +22,7 @@ SubSpace::SubSpace(const FunctionSpace& V, uint component)
   c.push_back(component);
 
   // Extract subspace and assign
-  boost::shared_ptr<FunctionSpace> _V(V.extract_sub_space(c, true));
+  boost::shared_ptr<FunctionSpace> _V(V.extract_sub_space(c));
   *static_cast<FunctionSpace*>(this) = *_V;
 }
 //-----------------------------------------------------------------------------
@@ -37,7 +37,7 @@ SubSpace::SubSpace(const FunctionSpace& V, uint component, uint sub_component)
   c.push_back(sub_component);
 
   // Extract subspace and assign
-  boost::shared_ptr<FunctionSpace> _V(V.extract_sub_space(c, true));
+  boost::shared_ptr<FunctionSpace> _V(V.extract_sub_space(c));
   *static_cast<FunctionSpace*>(this) = *_V;
 }
 //-----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ SubSpace::SubSpace(const FunctionSpace& V, const std::vector<uint>& component)
                   reference_to_no_delete_pointer(V.dofmap()))
 {
   // Extract subspace and assign
-  boost::shared_ptr<FunctionSpace> _V(V.extract_sub_space(component, true));
+  boost::shared_ptr<FunctionSpace> _V(V.extract_sub_space(component));
   *static_cast<FunctionSpace*>(this) = *_V;
 }
 //-----------------------------------------------------------------------------

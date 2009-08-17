@@ -5,9 +5,10 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-08-16
+// Last changed: 2009-08-17
 
 #include <algorithm>
+#include <boost/assign/list_of.hpp>
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/io/File.h>
@@ -19,7 +20,7 @@
 #include "Data.h"
 #include "UFCFunction.h"
 #include "FunctionSpace.h"
-#include "SubFunction.h"
+#include "SubFunctionData.h"
 #include "Function.h"
 
 using namespace dolfin;
@@ -117,33 +118,13 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
 }
 //-----------------------------------------------------------------------------
-Function::Function(const SubFunction& v)
+Function::Function(const SubFunctionData& v)
   : Variable("v", "unnamed function"),
-    _function_space(v.v.function_space().extract_sub_space(v.component, false)),
-    _vector(static_cast<GenericVector*>(0)),
+    _function_space(v._function_space),
+    _vector(v._vector),
     _off_process_vector(static_cast<GenericVector*>(0))
 {
-  // Initialize vector
-  init();
-
-  // FIXME: This function needs to be fixed for dof maps that have been renumbered.
-  if (function_space().dofmap().renumbered())
-    error("Extraction of sub-Functions not yet supputed after renumbering of the dof map.");
-
-
-  // Copy subset of coefficients
-  const uint n = _vector->size();
-  uint* rows = new uint[n];
-  double* values = new double[n];
-  for (uint i = 0; i < n; i++)
-    rows[i] = i;
-  v.v.vector().get(values, n, rows);
-  _vector->set(values);
-  _vector->apply();
-
-  // Clean up
-  delete [] rows;
-  delete [] values;
+  // FIXME: Do we need to check that we have a discrete function?  
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
@@ -187,16 +168,17 @@ const Function& Function::operator= (const Function& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-SubFunction Function::operator[] (uint i) const
+SubFunctionData Function::operator[] (uint i) const
 {
   // Check that vector exists
   if (!_vector)
     error("Unable to extract sub function, missing coefficients (user-defined function).");
 
-  info("Create sub function");
-  SubFunction sub_function(*this, i);
-  info("Finish create sub function");
-  return sub_function;
+  std::vector<uint> component = boost::assign::list_of(i);
+  boost::shared_ptr<const FunctionSpace> space(this->function_space().extract_sub_space(component));
+ 
+  // Create sub-Function data holder
+  return SubFunctionData(space, this->_vector);
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& Function::function_space() const

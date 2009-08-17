@@ -101,9 +101,8 @@ namespace dolfin
     void tabulate_coordinates(double** coordinates, const ufc::cell& ufc_cell) const
     { ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell); }
 
-    /// Extract sub dofmap component. If is_view == true, then the sub dofmap is a 
-    /// 'view' into the super dofmap. 
-    DofMap* extract_sub_dofmap(const std::vector<uint>& component, bool is_view) const;
+    /// Extract sub dofmap component 
+    DofMap* extract_sub_dofmap(const std::vector<uint>& component) const;
 
     /// Test whether dof map has been renumbered
     bool renumbered() const
@@ -122,8 +121,11 @@ namespace dolfin
     /// Friends
     friend class DofMapBuilder;
 
-    /// Initialise UFC dof map
-    void init_ufc();
+    /// Initialise the UFCMesh
+    void init_ufc_mesh();
+
+    /// Initialise a UFC dof map
+    void init_ufc_dofmap(ufc::dof_map& dofmap) const;
 
     // Recursively extract sub dofmap
     ufc::dof_map* extract_sub_dofmap(const ufc::dof_map& dof_map,
