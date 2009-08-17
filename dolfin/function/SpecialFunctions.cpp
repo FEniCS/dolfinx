@@ -135,7 +135,7 @@ void FacetArea::eval(double* values, const Data& data) const
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 SUPGStabilizer::SUPGStabilizer(const FunctionSpace& V, const Function& f, double sigma_)
-  :Function(V),sigma(sigma_),field(&f)
+  : Function(V), sigma(sigma_), field(&f)
 {
   // Some simple sanity checks on function
   if (&V.mesh() != &f.function_space().mesh())
@@ -144,7 +144,8 @@ SUPGStabilizer::SUPGStabilizer(const FunctionSpace& V, const Function& f, double
   if (f.function_space().element().value_rank() != 1)
     error("The provided field function need to be a vector valued function.");
 
-  if (f.function_space().element().value_dimension(0) != geometric_dimension())
+  const uint geometric_dimension =  _function_space->mesh().geometry().dim();
+  if (f.function_space().element().value_dimension(0) != geometric_dimension)
     error("The provided field function value dimension need to be the same as the geometric dimension.");
 
   if (sigma_ < 0.0)
@@ -155,16 +156,18 @@ void SUPGStabilizer::eval(double* values, const Data& data) const
 {
   assert(values);
   assert(field);
+  const uint geometric_dimension =  _function_space->mesh().geometry().dim();
   double field_norm = 0.0;
   double tau = 0.0;
   const double h = data.cell().diameter();
   UFCCell ufc_cell(data.cell());
 
+
   // Evaluate the advective field
   field->eval(values, data.x, ufc_cell, data.cell().index());
 
   // Compute the norm of the field
-  for (uint i = 0;i < geometric_dimension(); ++i)
+  for (uint i = 0; i < geometric_dimension; ++i)
     field_norm += values[i]*values[i];
   field_norm = sqrt(field_norm);
 
@@ -177,7 +180,7 @@ void SUPGStabilizer::eval(double* values, const Data& data) const
 
   // Weight the field with the norm, together with the cell size and
   // the local stabilizing factor
-  for (uint i = 0; i < geometric_dimension(); ++i)
+  for (uint i = 0; i < geometric_dimension; ++i)
     values[i] *= 0.5*h*tau/field_norm;
 }
 //-----------------------------------------------------------------------------
