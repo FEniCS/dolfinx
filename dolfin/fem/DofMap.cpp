@@ -129,20 +129,7 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const
 {
-  // Lookup pretabulated values or ask the ufc::dof_map to tabulate the values
-  if (map.get())
-    error("DofMap::tabulate_facet_dofs not yet implemented for for renumbered dof maps.");
-  else
-  {
-    ufc_dof_map->tabulate_facet_dofs(dofs, local_facet);
-    if (_ufc_offset > 0)
-    {
-      UFCCell ufc_cell(*dolfin_mesh);
-      const uint local_dim = 2*local_dimension(ufc_cell);
-      for (uint i = 0; i < local_dim; i++)
-        dofs[i] += _ufc_offset;
-    }  
-  }
+  ufc_dof_map->tabulate_facet_dofs(dofs, local_facet);
 }
 //-----------------------------------------------------------------------------
 DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component, 

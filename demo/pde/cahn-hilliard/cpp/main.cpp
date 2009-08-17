@@ -24,7 +24,7 @@ public:
 
   InitialConditions(boost::shared_ptr<const FunctionSpace> V) : Function(V)
   {
-    dolfin::seed(2);
+    dolfin::seed(2 + dolfin::MPI::process_number());
   }
 
   void eval(double* values, const Data& data) const
@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
 
   // Save initial condition to file
   File file("cahn_hilliard.pvd");
-  file << u[1];
+  //file << u[1];
 
   // Solve
   while (t < T)
@@ -155,11 +155,12 @@ int main(int argc, char* argv[])
     newton_solver.solve(cahn_hilliard, u.vector());
 
     // Save function to file
-    file << u[1];
+    file << u;
+    //file << u[1];
   }
 
   // Plot solution
-  plot(u[1]);
+  //plot(u[1]);
 
   return 0;
 }
