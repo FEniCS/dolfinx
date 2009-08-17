@@ -149,7 +149,6 @@ SUPGStabilizer::SUPGStabilizer(const FunctionSpace& V, const Function& f, double
 
   if (sigma_ < 0.0)
     error("Provide a positive value for sigma");
-
 }
 //-----------------------------------------------------------------------------
 void SUPGStabilizer::eval(double* values, const Data& data) const

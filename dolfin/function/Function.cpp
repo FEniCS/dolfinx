@@ -5,9 +5,10 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-08-16
+// Last changed: 2009-08-17
 
 #include <algorithm>
+#include <boost/assign/list_of.hpp>
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/io/File.h>
@@ -19,7 +20,7 @@
 #include "Data.h"
 #include "UFCFunction.h"
 #include "FunctionSpace.h"
-#include "SubFunction.h"
+#include "SubFunctionData.h"
 #include "Function.h"
 
 using namespace dolfin;
@@ -117,11 +118,11 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
 }
 //-----------------------------------------------------------------------------
-Function::Function(const SubFunction& v)
+Function::Function(const SubFunctionData& v)
   : Variable("v", "unnamed function"),
-    _function_space(v.v.function_space().extract_sub_space(v.component)),
-    _vector(v.v._vector),
-    _off_process_vector(v.v._off_process_vector)
+    _function_space(v._function_space),
+    _vector(v._vector),
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
   // FIXME: Do we need to check that we have a discrete function?  
 }
@@ -167,14 +168,17 @@ const Function& Function::operator= (const Function& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-SubFunction Function::operator[] (uint i) const
+SubFunctionData Function::operator[] (uint i) const
 {
   // Check that vector exists
   if (!_vector)
     error("Unable to extract sub function, missing coefficients (user-defined function).");
 
-  SubFunction sub_function(*this, i);
-  return sub_function;
+  std::vector<uint> component = boost::assign::list_of(i);
+  boost::shared_ptr<const FunctionSpace> space(this->function_space().extract_sub_space(component));
+ 
+  // Create sub-Function data holder
+  return SubFunctionData(space, this->_vector);
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& Function::function_space() const

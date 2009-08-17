@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-06-23
+// Last changed: 2009-08-17
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -29,7 +29,7 @@ namespace dolfin
   class FunctionSpace;
   class GenericVector;
   class Data;
-  class SubFunction;
+  class SubFunctionData;
 
   /// This class represents a function u_h in a finite element
   /// function space V_h, given by
@@ -67,10 +67,10 @@ namespace dolfin
     /// Create function from vector of dofs stored to file (shared data)
     Function(boost::shared_ptr<const FunctionSpace> V, std::string filename);
 
-    /// Create function from sub function
-    Function(const SubFunction& v);
+    /// Create function from sub function data
+    Function(const SubFunctionData& v);
 
-    /// Copy constructor
+    /// Copy constructor 
     Function(const Function& v);
 
     /// Destructor
@@ -80,8 +80,8 @@ namespace dolfin
     /// functions
     const Function& operator= (const Function& v);
 
-    /// Extract sub function
-    SubFunction operator[] (uint i) const;
+    /// Extract sub function data
+    SubFunctionData operator[] (uint i) const;
 
     /// Return the function space
     const FunctionSpace& function_space() const;
