@@ -74,7 +74,7 @@ int main()
   problem.solve(u);
 
   // Plot solution
-  //plot(u);
+  plot(u);
 
   // Save solution in VTK format
   File file("nonlinear_poisson.pvd");

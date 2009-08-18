@@ -249,15 +249,14 @@ void DirichletBC::apply(GenericMatrix* A,
   compute_bc(boundary_values, data);
 
   // Copy boundary value data to arrays
-  uint* dofs   = new uint[boundary_values.size()];
-  std::vector<uint> _dofs(boundary_values.size());
-  double* values = new double[boundary_values.size()];
+  const uint size = boundary_values.size();
+  std::vector<uint> dofs(size);
+  std::vector<double> values(size);
   std::map<uint, double>::const_iterator boundary_value;
   uint i = 0;
   for (boundary_value = boundary_values.begin(); boundary_value != boundary_values.end(); ++boundary_value)
   {
     dofs[i]     = boundary_value->first;
-    _dofs[i]    = dofs[i];
     values[i++] = boundary_value->second;
   }
 
@@ -265,12 +264,11 @@ void DirichletBC::apply(GenericMatrix* A,
   if (x)
   { 
     boost::scoped_ptr<GenericVector> _x(x->factory().create_local_vector());
-    x->gather(*_x, _dofs);
-    double* x_values = new double[boundary_values.size()];
-    _x->get(x_values);
-    for (uint i = 0; i < boundary_values.size(); i++)
+    x->gather(*_x, dofs);
+    std::vector<double> x_values(size);
+    _x->get(&x_values[0]);
+    for (uint i = 0; i < size; i++)
       values[i] = x_values[i] - values[i];
-    delete [] x_values;
   }
 
   info("Applying boundary conditions to linear system.");
@@ -278,21 +276,17 @@ void DirichletBC::apply(GenericMatrix* A,
   // Modify RHS vector (b[i] = value) and apply changes
   if (b)
   {
-    b->set(values, boundary_values.size(), dofs);
+    b->set(&values[0], size, &dofs[0]);
     b->apply();
   }
 
   // Modify linear system (A_ii = 1) and apply changes
   if (A)
   {
-    A->ident(boundary_values.size(), dofs);
+    A->ident(size, &dofs[0]);
     A->apply();
   }
   info("Finished applying boundary conditions to linear system.");
-
-  // Clear temporary arrays
-  delete [] dofs;
-  delete [] values;
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::check() const
