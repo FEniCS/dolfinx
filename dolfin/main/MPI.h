@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2007-11-30
-// Last changed: 2009-08-06
+// Last changed: 2009-08-18
 
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H
@@ -51,12 +51,15 @@ namespace dolfin
 
     /// Return number of processes
     static uint num_processes();
-    
+
     /// Determine whether we should broadcast (based on current parallel policy)
     static bool is_broadcaster();
 
     /// Determine whether we should receive (based on current parallel policy)
     static bool is_receiver();
+
+    /// Set a barrier (synchronization point)
+    static void barrier();
 
     // FIXME: Write documentation for this very fancy and versatile function!
     // FIXME: The mother of all MPI calls! It does everything anyone would ever need to do with MPI... :-)
@@ -86,7 +89,7 @@ namespace dolfin
 
     /// Find global offset (index) (wrapper for MPI_(Ex)Scan with MPI_SUM as reduction op)
     static uint global_offset(uint range, bool exclusive);
-    
+
     /// Send-receive and return number of received values (wrapper for MPI_Sendrecv)
     static uint send_recv(uint* send_buffer, uint send_size, uint dest,
                           uint* recv_buffer, uint recv_size, uint source);
@@ -100,7 +103,7 @@ namespace dolfin
 
     /// Return local range for given process, splitting [0, N - 1] into num_processes() portions of almost equal size
     static std::pair<uint, uint> local_range(uint process, uint N);
-    
+
     /// Return which process owns index (inverse of local_range)
     static uint index_owner(uint index, uint N);
 

@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2007-11-30
-// Last changed: 2009-08-07
+// Last changed: 2009-08-18
 
 #include <dolfin/log/dolfin_log.h>
 #include <numeric>
@@ -61,6 +61,12 @@ bool dolfin::MPI::is_receiver()
   return num_processes() > 1 && process_number() > 0;
 }
 //-----------------------------------------------------------------------------
+void dolfin::MPI::barrier()
+{
+  MPICommunicator comm;
+  MPI_Barrier(*comm);
+}
+//-----------------------------------------------------------------------------
 void dolfin::MPI::distribute(std::vector<uint>& values,
                              std::vector<uint>& partition)
 {
@@ -80,7 +86,7 @@ void dolfin::MPI::scatter(std::vector<uint>& values, uint sending_process)
 
   // Create communicator (copy of MPI_COMM_WORLD)
   MPICommunicator comm;
-  
+
   // Prepare arguments differently depending on whether we're sending
   if (process_number() == sending_process)
   {
@@ -92,7 +98,7 @@ void dolfin::MPI::scatter(std::vector<uint>& values, uint sending_process)
     uint* send_buffer = new uint[values.size()];
     for (uint i = 0; i < values.size(); i++)
       send_buffer[i] = values[i];
-    
+
     // Call MPI to send values
     MPI_Scatter(send_buffer,
                 1,
@@ -158,7 +164,7 @@ void dolfin::MPI::scatter(std::vector<std::vector<uint> >& values,
       send_counts[i] = sizes[i];
       send_offsets[i] = offset;
       for (uint j = 0; j < values[i].size(); ++j)
-        send_buffer[offset++] = values[i][j];      
+        send_buffer[offset++] = values[i][j];
     }
 
     // Scatter number of values that will be scattered (note that sizes will be modified)
@@ -250,7 +256,7 @@ void dolfin::MPI::scatter(std::vector<std::vector<double> >& values,
       send_counts[i] = sizes[i];
       send_offsets[i] = offset;
       for (uint j = 0; j < values[i].size(); ++j)
-        send_buffer[offset++] = values[i][j];      
+        send_buffer[offset++] = values[i][j];
     }
 
     // Scatter number of values that will be scattered (note that sizes will be modified)
@@ -345,14 +351,14 @@ dolfin::uint dolfin::MPI::global_offset(uint range, bool exclusive)
   uint offset = 0;
 
   // Create communicator (copy of MPI_COMM_WORLD)
-  MPICommunicator comm; 
+  MPICommunicator comm;
 
   // Compute inclusive or exclusive partial reduction
   if (exclusive)
   {
     MPI_Exscan(&range, &offset, 1, MPI_UNSIGNED, MPI_SUM, *comm);
   }
-  else 
+  else
   {
     MPI_Scan(&range, &offset, 1, MPI_UNSIGNED, MPI_SUM, *comm);
   }
@@ -441,7 +447,7 @@ dolfin::uint dolfin::MPI::index_owner(uint index, uint N)
   // Compute number of items per process and remainder
   const uint n = N / _num_processes;
   const uint r = N % _num_processes;
-  
+
   // First r processes own n + 1 indices
   if (index < r * (n + 1))
     return index / (n + 1);
@@ -491,13 +497,13 @@ void dolfin::MPI::scatter(std::vector<uint>& values, uint sending_process)
   error("MPI::scatter() requires MPI.");
 }
 //-----------------------------------------------------------------------------
-void dolfin::MPI::scatter(std::vector<std::vector<uint> >& values, 
+void dolfin::MPI::scatter(std::vector<std::vector<uint> >& values,
                           uint sending_process)
 {
   error("MPI::scatter() requires MPI.");
 }
 //-----------------------------------------------------------------------------
-void dolfin::MPI::scatter(std::vector<std::vector<double> >& values, 
+void dolfin::MPI::scatter(std::vector<std::vector<double> >& values,
                           uint sending_process)
 {
   error("MPI::scatter() requires MPI.");
