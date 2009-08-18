@@ -11,4 +11,10 @@ demo/pde/elasticity/cpp           | working
 demo/pde/elasticity/python        | working
                                   |
 demo/pde/nonlinear-poisson/cpp    | working
-demo/pde/nonlinear-poisson/python         | ?
+demo/pde/nonlinear-poisson/python | working
+
+demo/pde/mixed-poisson/cpp        | working
+demo/pde/mixed-poisson/python     | working
+
+demo/pde/functional/cpp           | runs, but computes functional on each sub-domain
+demo/pde/functional/python        | 

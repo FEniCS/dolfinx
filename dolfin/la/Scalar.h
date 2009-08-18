@@ -1,15 +1,18 @@
 // Copyright (C) 2007-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2007.
+// Modified by Garth N. Wells, 2007-2009.
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2007-03-15
-// Last changed: 2009-08-10
+// Last changed: 2009-08-18
 
 #ifndef __SCALAR_H
 #define __SCALAR_H
 
+#include <numeric>
+#include <vector>
+#include <dolfin/main/MPI.h>
 #include "uBLASFactory.h"
 #include "GenericTensor.h"
 
@@ -73,10 +76,21 @@ namespace dolfin
 
     /// Finalize assembly of tensor
     void apply()
-    {}
+    {
+      if (MPI::num_processes() > 0)
+      {
+        // Get values from other processes 
+        std::vector<double> values(MPI::num_processes());
+        values[MPI::process_number()] = value;
+        MPI::gather(values);
+      
+        // Sum contribution from each process
+        value = std::accumulate(values.begin(), values.end(), 0.0);
+      }
+    }
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const
+    std::string str(bool verbose) const
     {
       std::stringstream s;
       s << "<Scalar value " << value << ">";

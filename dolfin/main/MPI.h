@@ -84,6 +84,9 @@ namespace dolfin
     /// Gather values, one from each process (wrapper for MPI_Allgather)
     static void gather(std::vector<uint>& values);
 
+    /// Gather values, one from each process (wrapper for MPI_Allgather)
+    static void gather(std::vector<double>& values);
+
     /// Find global max value (wrapper for MPI_Allredue with MPI_MAX as reduction op)
     static uint global_maximum(uint size);
 
