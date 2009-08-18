@@ -8,6 +8,7 @@
 // First added:  2007-04-10
 // Last changed: 2009-08-14
 
+#include <boost/scoped_ptr.hpp>
 #include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/NoDeleter.h>
@@ -25,6 +26,7 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
+#include <dolfin/la/LinearAlgebraFactory.h>
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "UFCMesh.h"
@@ -248,20 +250,24 @@ void DirichletBC::apply(GenericMatrix* A,
 
   // Copy boundary value data to arrays
   uint* dofs   = new uint[boundary_values.size()];
+  std::vector<uint> _dofs(boundary_values.size());
   double* values = new double[boundary_values.size()];
   std::map<uint, double>::const_iterator boundary_value;
   uint i = 0;
   for (boundary_value = boundary_values.begin(); boundary_value != boundary_values.end(); ++boundary_value)
   {
     dofs[i]     = boundary_value->first;
+    _dofs[i]    = dofs[i];
     values[i++] = boundary_value->second;
   }
 
   // Modify boundary values for nonlinear problems
   if (x)
-  {
+  { 
+    boost::scoped_ptr<GenericVector> _x(x->factory().create_local_vector());
+    x->gather(*_x, _dofs);
     double* x_values = new double[boundary_values.size()];
-    x->get(x_values, boundary_values.size(), dofs);
+    _x->get(x_values);
     for (uint i = 0; i < boundary_values.size(); i++)
       values[i] = x_values[i] - values[i];
     delete [] x_values;
