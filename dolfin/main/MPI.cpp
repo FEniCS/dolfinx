@@ -537,6 +537,11 @@ void dolfin::MPI::gather(std::vector<uint>& values)
   error("MPI::gather() requires MPI.");
 }
 //-----------------------------------------------------------------------------
+void dolfin::MPI::gather(std::vector<double>& values)
+{
+  error("MPI::gather() requires MPI.");
+}
+//-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::global_maximum(uint size)
 {
   error("MPI::global_maximum() requires MPI.");
