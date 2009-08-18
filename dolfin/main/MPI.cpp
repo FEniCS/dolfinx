@@ -1,7 +1,7 @@
 // Copyright (C) 2007 Magnus Vikstrøm.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2007, 2008.
+// Modified by Garth N. Wells, 2007-2009.
 // Modified by Anders Logg, 2007-2009.
 // Modified by Ola Skavhaug, 2008-2009.
 // Modified by Niclas Jansson, 2009.
@@ -328,6 +328,29 @@ void dolfin::MPI::gather(std::vector<uint>& values)
   // Call MPI
   MPI_Allgather(&send_value,     1, MPI_UNSIGNED,
                 received_values, 1, MPI_UNSIGNED, *comm);
+
+  // Copy values
+  for (uint i = 0; i < values.size(); i++)
+    values[i] = received_values[i];
+
+  // Cleanup
+  delete [] received_values;
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::gather(std::vector<double>& values)
+{
+  assert(values.size() == num_processes());
+
+  // Prepare arrays
+  double send_value = values[process_number()];
+  double* received_values = new double[values.size()];
+
+  // Create communicator (copy of MPI_COMM_WORLD)
+  MPICommunicator comm;
+
+  // Call MPI
+  MPI_Allgather(&send_value,     1, MPI_DOUBLE,
+                received_values, 1, MPI_DOUBLE, *comm);
 
   // Copy values
   for (uint i = 0; i < values.size(); i++)
