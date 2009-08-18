@@ -2,13 +2,13 @@ The TODO list has moved to http://www.fenics.org/wiki/DOLFIN_road_map
 
 * Status of demos in parallel
 
-Demo                            | Status
+Demo                              | Status
 ---------------------------------------------
-demo/pde/poisson/cpp            | working
-demo/pde/poisson/python         | working
-                                |
-demo/pde/elasticity/cpp         | working
-demo/pde/elasticity/python      | working
-                                |
-demo/pde/nonlinear-poisson/cpp  | broken for np > 2
-demo/pde/poisson/python         | ?
+demo/pde/poisson/cpp              | working
+demo/pde/poisson/python           | working
+                                  | 
+demo/pde/elasticity/cpp           | working
+demo/pde/elasticity/python        | working
+                                  |
+demo/pde/nonlinear-poisson/cpp    | working
+demo/pde/nonlinear-poisson/python         | ?
