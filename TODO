@@ -16,5 +16,5 @@ demo/pde/nonlinear-poisson/python | working
 demo/pde/mixed-poisson/cpp        | working
 demo/pde/mixed-poisson/python     | working
 
-demo/pde/functional/cpp           | runs, but computes functional on each sub-domain
-demo/pde/functional/python        | 
+demo/pde/functional/cpp           | working
+demo/pde/functional/python        | working
