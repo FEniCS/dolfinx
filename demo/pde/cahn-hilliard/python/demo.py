@@ -11,7 +11,7 @@ from dolfin import *
 
 class InitialConditions(Function):
     def __init__(self, V):
-        random.seed(2)
+        random.seed(2 + MPI.process_number())
     def eval(self, values, x):
         values[0] = 0.0
         values[1] = 0.63 + 0.02*(0.5 - random.random())

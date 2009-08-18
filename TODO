@@ -2,19 +2,40 @@ The TODO list has moved to http://www.fenics.org/wiki/DOLFIN_road_map
 
 * Status of demos in parallel
 
-Demo                              | Status
+Demo                         | Status
 ---------------------------------------------
-demo/pde/poisson/cpp              | working
-demo/pde/poisson/python           | working
-                                  | 
-demo/pde/elasticity/cpp           | working
-demo/pde/elasticity/python        | working
-                                  |
-demo/pde/nonlinear-poisson/cpp    | working
-demo/pde/nonlinear-poisson/python | working
+pde/adaptive-poisson/cpp     | broken (mesh refinement not supported in parallel)
+pde/adaptive-poisson/python  | broken
+                             |
+pde/advection-diffsion/cpp   | broken (reading MeshFunctions broken)
+pde/advection-diffsion/python| broken
+                             |
+pde/bcs/cpp                  | broken (cannot read auxiliary mesh data in parallel)
+pde/bcs/python               | broken
+                             |
+pde/cahn-hilliard/cpp        | works
+pde/cahn-hilliard/python     | broken (u0.vector()[:] = u.vector()[:] is the problem)
+                             |
+pde/curl-curl/cpp            | works
+pde/curl-curl/python         | works
+                             |
+pde/dg                       | All broken
+                             |
+pde/elasticity/cpp           | working
+pde/elasticity/python        | working
+                             |
+pde/functional/cpp           | working
+pde/functional/python        | working
+                             |
+pde/lift-drag/cpp            | runs, incorrect result
+pde/lift-drag/python         | runs, incorrect result
+                             | 
+pde/mixed-poisson/cpp        | working
+pde/mixed-poisson/python     | working
+                             |
+pde/nonlinear-poisson/cpp    | working
+pde/nonlinear-poisson/python | working
+                             |
+pde/poisson/cpp              | working
+pde/poisson/python           | working
 
-demo/pde/mixed-poisson/cpp        | working
-demo/pde/mixed-poisson/python     | working
-
-demo/pde/functional/cpp           | working
-demo/pde/functional/python        | working

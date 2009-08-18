@@ -58,5 +58,8 @@ J = Jproblem.solve()
 # Plot solution
 plot(J)
 
+file=File("current_density.pvd")
+file << J
+
 # Hold plot
 interactive()
