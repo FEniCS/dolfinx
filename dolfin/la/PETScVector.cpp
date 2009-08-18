@@ -128,12 +128,14 @@ PETScVector* PETScVector::copy() const
 void PETScVector::get(double* values) const
 {
   assert(x);
-
   int m = static_cast<int>(size());
+  if (m == 0)
+    return;
+
   int* rows = new int[m];
   for (int i = 0; i < m; i++)
     rows[i] = i;
-
+ 
   VecGetValues(*x, m, rows, values);
 
   delete [] rows;
@@ -142,8 +144,10 @@ void PETScVector::get(double* values) const
 void PETScVector::set(double* values)
 {
   assert(x);
-
   int m = static_cast<int>(size());
+  if (m == 0)
+    return;
+
   int* rows = new int[m];
   for (int i = 0; i < m; i++)
     rows[i] = i;
@@ -156,8 +160,10 @@ void PETScVector::set(double* values)
 void PETScVector::add(double* values)
 {
   assert(x);
-
   int m = static_cast<int>(size());
+  if (m == 0)
+    return;
+
   int* rows = new int[m];
   for (int i = 0; i < m; i++)
     rows[i] = i;
@@ -170,21 +176,40 @@ void PETScVector::add(double* values)
 void PETScVector::get(double* block, uint m, const uint* rows) const
 {
   assert(x);
-  VecGetValues(*x, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), block);
+  if (m == 0)
+    return;
+  else
+  {
+    int _m =  static_cast<int>(m);
+    const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
+    VecGetValues(*x, _m, _rows, block);
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set(const double* block, uint m, const uint* rows)
 {
   assert(x);
-  VecSetValues(*x, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), block,
-               INSERT_VALUES);
+  if (m == 0)
+    return;
+  else
+  {
+    int _m =  static_cast<int>(m);
+    const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
+    VecSetValues(*x, _m, _rows, block, INSERT_VALUES);
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add(const double* block, uint m, const uint* rows)
 {
   assert(x);
-  VecSetValues(*x, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), block,
-               ADD_VALUES);
+  if (m == 0)
+    return;
+  else
+  {
+    int _m =  static_cast<int>(m);
+    const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
+    VecSetValues(*x, _m, _rows, block, ADD_VALUES);
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScVector::apply()
@@ -405,14 +430,9 @@ void PETScVector::gather(GenericVector& y,
   // Prepare data for index sets
   const int n = indices.size();
   int* local_indices  = new int[n];
-  int* global_indices = new int[n];
-  //std::copy(indices.begin(), indices.end(), global_indices);
-
+  const int* global_indices = reinterpret_cast<int*>(const_cast<uint*>(&indices[0]));
   for (int i = 0; i < n; ++i)
-  {
-    global_indices[i] = indices[i];
     local_indices[i]  = i;
-  }
 
   // Create index sets
   IS from, to;
@@ -433,7 +453,6 @@ void PETScVector::gather(GenericVector& y,
   ISDestroy(to);
   VecScatterDestroy(scatter);
   delete [] local_indices;
-  delete [] global_indices;
 }
 //-----------------------------------------------------------------------------
 void PETScVector::init(uint N, uint n, std::string type)
