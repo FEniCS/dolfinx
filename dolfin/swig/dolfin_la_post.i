@@ -195,7 +195,8 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     def __setslice__(self,i,j,values):
         if i == 0 and (j >= len(self) or j == -1) and isinstance(values, (float, int, GenericVector)):
             if isinstance(values, (float, int)) or len(values) == len(self):
-                return self.assign(values)
+                self.assign(values)
+                return
             else:
                 raise ValueError, "dimension error"
         self.__setitem__(slice(i,j,1),values)
