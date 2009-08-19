@@ -77,7 +77,7 @@ namespace dolfin
     /// Finalize assembly of tensor
     void apply()
     {
-      if (MPI::num_processes() > 0)
+      if (MPI::num_processes() > 1)
       {
         // Get values from other processes 
         std::vector<double> values(MPI::num_processes());
