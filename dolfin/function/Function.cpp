@@ -420,8 +420,7 @@ void Function::init()
   if (!_vector)
   {
     DefaultFactory factory;
-    boost::shared_ptr<GenericVector> _vec(factory.create_vector());
-    _vector = _vec;
+    _vector.reset(factory.create_vector());
   }
 
   // Initialize vector of dofs
@@ -490,10 +489,7 @@ void Function::gather() const
 
     // Create off process vector if it doesn't exist
     if (!_off_process_vector.get())
-    {
-      boost::shared_ptr<GenericVector> _tmp(_vector->factory().create_local_vector());
-      _off_process_vector = _tmp;
-    }
+      _off_process_vector.reset(_vector->factory().create_local_vector());
 
     // Gather off process coefficients
     _vector->gather(*_off_process_vector, _off_process_dofs);

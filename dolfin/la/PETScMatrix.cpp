@@ -110,8 +110,7 @@ void PETScMatrix::resize(uint M, uint N)
   // Create matrix (any old matrix is destroyed automatically)
   if (!A.unique())
     error("Cannot resize PETScMatrix. More than one object points to the underlying PETSc object.");
-  boost::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
-  A = _A;
+  A.reset(new Mat, PETScMatrixDeleter());
 
   // FIXME: maybe 50 should be a parameter?
   // FIXME: it should definitely be a parameter
@@ -155,8 +154,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   // Create matrix (any old matrix is destroyed automatically)
   if (!A.unique())
     error("Cannot initialise PETScMatrix. More than one object points to the underlying PETSc object.");
-  boost::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
-  A = _A;
+  A.reset(new Mat, PETScMatrixDeleter());
 
   // Initialize matrix
   if (row_range.first == 0 && row_range.second == M)
@@ -227,11 +225,12 @@ PETScMatrix* PETScMatrix::copy() const
 {
   assert(A);
 
-  PETScMatrix* Acopy = new PETScMatrix();
-  boost::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
-  Acopy->A = _A;
+  // Create copy of PETSc matrix
+  boost::shared_ptr<Mat> _Acopy(new Mat, PETScMatrixDeleter());
+  MatDuplicate(*A, MAT_COPY_VALUES, _Acopy.get());
 
-  MatDuplicate(*A, MAT_COPY_VALUES, Acopy->A.get());
+  // Create PETScMatrix
+  PETScMatrix* Acopy = new PETScMatrix(_Acopy);
   return Acopy;
 }
 //-----------------------------------------------------------------------------
@@ -444,8 +443,7 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
       // Create matrix (any old matrix is destroyed automatically)
       if (!this->A.unique())
         error("Cannot assign PETScMatrix with different non-zero pattern because more than one object points to the underlying PETSc object.");
-      boost::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
-      this->A = _A;
+      this->A.reset(new Mat, PETScMatrixDeleter());
 
       // Duplicate with the same pattern as A.A
       MatDuplicate(*A.mat(), MAT_COPY_VALUES, this->A.get());

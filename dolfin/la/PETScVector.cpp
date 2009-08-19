@@ -255,8 +255,7 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
   // Check for self-assignment
   if (this != &v)
   {
-    boost::shared_ptr<Vec> _x(new Vec, PETScVectorDeleter());
-    x = _x;
+    x.reset(new Vec, PETScVectorDeleter());
 
     // Create new vector
     VecDuplicate(*(v.x), x.get());
@@ -428,16 +427,17 @@ void PETScVector::gather(GenericVector& y,
     error("PETScVector::gather can only gather into local vectors");
 
   // Prepare data for index sets
-  const int n = indices.size();
-  int* local_indices  = new int[n];
   const int* global_indices = reinterpret_cast<int*>(const_cast<uint*>(&indices[0]));
+  const int n = indices.size();
+  std::vector<int> local_indices;
+  local_indices.reserve(n);
   for (int i = 0; i < n; ++i)
-    local_indices[i]  = i;
+    local_indices.push_back(i);
 
   // Create index sets
   IS from, to;
-  ISCreateGeneral(PETSC_COMM_SELF, n, global_indices, &from);
-  ISCreateGeneral(PETSC_COMM_SELF, n, local_indices,  &to);
+  ISCreateGeneral(PETSC_COMM_SELF, n, global_indices,    &from);
+  ISCreateGeneral(PETSC_COMM_SELF, n, &local_indices[0], &to);
 
   // Resize vector if required
   y.resize(n);
@@ -452,7 +452,6 @@ void PETScVector::gather(GenericVector& y,
   ISDestroy(from);
   ISDestroy(to);
   VecScatterDestroy(scatter);
-  delete [] local_indices;
 }
 //-----------------------------------------------------------------------------
 void PETScVector::init(uint N, uint n, std::string type)
