@@ -263,10 +263,19 @@ void DirichletBC::apply(GenericMatrix* A,
   // Modify boundary values for nonlinear problems
   if (x)
   { 
-    boost::scoped_ptr<GenericVector> _x(x->factory().create_local_vector());
-    x->gather(*_x, dofs);
+    // FIXME: Merge code once we have a parallel 'get'
+    // Gather values
     std::vector<double> x_values(size);
-    _x->get(&x_values[0]);
+    if (MPI::num_processes() > 1)
+    {
+      boost::scoped_ptr<GenericVector> _x(x->factory().create_local_vector());
+      x->gather(*_x, dofs);
+      _x->get(&x_values[0]);
+    }
+    else
+      x->get(&x_values[0], dofs.size(), &dofs[0]);
+
+    // Modify RHS entries
     for (uint i = 0; i < size; i++)
       values[i] = x_values[i] - values[i];
   }
