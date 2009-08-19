@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2007-11-30
-// Last changed: 2009-08-18
+// Last changed: 2009-08-19
 
 #include <dolfin/log/dolfin_log.h>
 #include <numeric>
@@ -501,6 +501,11 @@ bool dolfin::MPI::is_broadcaster()
 bool dolfin::MPI::is_receiver()
 {
   return false;
+}
+//-----------------------------------------------------------------------------
+void dolfin::MPI::barrier()
+{
+  error("MPI::barrier() requires MPI.");
 }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::distribute(std::vector<uint>& values,
