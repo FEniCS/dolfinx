@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2008-08-12
-// Last changed: 2009-08-17
+// Last changed: 2009-08-19
 
 #include <iostream>
 
@@ -78,29 +78,40 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
 
   UFCCell ufc_cell(mesh);
   uint *old_dofs = new uint[max_local_dimension];
+  uint *facet_dofs = new uint[dof_map.num_facet_dofs()];
 
   // Decide ownership of shared dofs
   for (CellIterator bc(interior_boundary); !bc.end(); ++bc)
   {
+    // Get boundary facet
     Facet f(mesh, cell_map->get(*bc));
-    for (CellIterator c(f); !c.end(); ++c)
+
+    // Get cell to which facet belongs (pick first)
+    Cell c(mesh, f.entities(mesh.topology().dim())[0]);
+
+    // Get local index of facet with respect to the cell
+    const uint local_facet = c.index(f);
+
+    ufc_cell.update(c);
+    
+    // Tabulate dofs on cell
+    dof_map.tabulate_dofs(old_dofs, ufc_cell, c.index());
+    
+    // Tabulate which dofs are on the facet
+    dof_map.tabulate_facet_dofs(facet_dofs, local_facet);
+    
+    for (uint i = 0; i < dof_map.num_facet_dofs(); i++)
     {
-      ufc_cell.update(*c);
-      dof_map.tabulate_dofs(old_dofs, ufc_cell, c->index());
-      for (uint i = 0; i < dof_map.local_dimension(ufc_cell); i++)
-      {
-        // Assign an ownership vote for each "shared" dof
-        if (shared_dofs.find(old_dofs[i]) == shared_dofs.end())
-        {
-          shared_dofs.insert(old_dofs[i]);
-          dof_vote[old_dofs[i]] = (uint) rand();
-          send_buffer.push_back(old_dofs[i]);
-          send_buffer.push_back(dof_vote[old_dofs[i]]);
-        }
+      if (shared_dofs.find(old_dofs[facet_dofs[i]]) == shared_dofs.end())
+	{
+	shared_dofs.insert(old_dofs[facet_dofs[i]]);
+	dof_vote[old_dofs[facet_dofs[i]]] = (uint) rand();
+	send_buffer.push_back(old_dofs[facet_dofs[i]]);
+	send_buffer.push_back(dof_vote[old_dofs[facet_dofs[i]]]);	
       }
     }
   }
-
+  
   // Decide ownership of "shared" dofs
   uint src, dest, recv_count;
   const uint num_proc = MPI::num_processes();
@@ -147,6 +158,7 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
       dof2index[old_dofs[i]].push_back(c->index()*local_dimension + i);
     }
   }
+  delete[] facet_dofs;
   delete[] old_dofs;
 
   // Compute offset for owned and non-shared dofs
