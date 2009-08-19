@@ -10,9 +10,11 @@ enum DolfinCompareType {dolfin_gt, dolfin_ge, dolfin_lt, dolfin_le, dolfin_eq, d
 
 // Returns the values from a Vector. 
 // copied_values are true if the returned values are copied and need clean up.
-double* _get_vector_values( dolfin::GenericVector* self, bool &copied_values){
+double* _get_vector_values( dolfin::GenericVector* self, bool &copied_values)
+{
   double * values;
-  try{
+  try
+  {
     // Try accessing the value pointer directly
     values = self->data();
   }
@@ -26,7 +28,8 @@ double* _get_vector_values( dolfin::GenericVector* self, bool &copied_values){
 }
 
 // A contains function for Vectors
-bool _contains( dolfin::GenericVector* self, double value ){
+bool _contains( dolfin::GenericVector* self, double value )
+{
   bool contains = false;
   bool copied_values = false;;
   dolfin::uint i;
@@ -47,7 +50,8 @@ bool _contains( dolfin::GenericVector* self, double value ){
 
 // A general compare function for Vector vs scalar comparison
 // The function returns a boolean numpy array
-PyObject* _compare_vector_with_value( dolfin::GenericVector* self, double value, DolfinCompareType cmp_type ){
+PyObject* _compare_vector_with_value( dolfin::GenericVector* self, double value, DolfinCompareType cmp_type )
+{
   bool copied_values = false;;
   dolfin::uint i;
   npy_intp size = self->size();
@@ -100,9 +104,10 @@ PyObject* _compare_vector_with_value( dolfin::GenericVector* self, double value,
 
 // A general compare function for Vector vs Vector comparison
 // The function returns a boolean numpy array
-PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::GenericVector* other, DolfinCompareType cmp_type ){
-  bool copied_values_self = false;;
-  bool copied_values_other = false;;
+PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::GenericVector* other, DolfinCompareType cmp_type )
+{
+  bool copied_values_self = false;
+  bool copied_values_other = false;
   
   if (self->size() != other->size())
     throw std::runtime_error("non matching dimensions");
@@ -161,7 +166,8 @@ PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::Gene
 }
 
 // Get single Vector item 
-double _get_vector_single_item( dolfin::GenericVector* self, int index ) {
+double _get_vector_single_item( dolfin::GenericVector* self, int index ) 
+{
   double value; 
   dolfin::uint i(Indices::check_index(index, self->size()));
   self->get(&value, 1, &i); 
@@ -169,7 +175,8 @@ double _get_vector_single_item( dolfin::GenericVector* self, int index ) {
 }
 
 // Get item for slice, list, or numpy array object
-dolfin::GenericVector* _get_vector_sub_vector( const dolfin::GenericVector* self, PyObject* op ){
+dolfin::GenericVector* _get_vector_sub_vector( const dolfin::GenericVector* self, PyObject* op )
+{
   
   Indices* inds;
   double* values;
@@ -214,8 +221,8 @@ dolfin::GenericVector* _get_vector_sub_vector( const dolfin::GenericVector* self
 }
 
 // Set items using a GenericVector
-void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin::GenericVector& other ){
-  
+void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin::GenericVector& other )
+{  
   // Get the correct Indices
   Indices* inds;
   double* values;
@@ -227,18 +234,21 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
     throw std::runtime_error("index must be either a slice, a list or a Numpy array of integer");
   
   // Check for size of indices
-  if ( inds->size() != other.size() ){
+  if ( inds->size() != other.size() )
+  {
     delete inds;
     throw std::runtime_error("non matching dimensions on input");
   }
   
   // Get the indices
-  try {
+  try 
+  {
     indices = inds->indices();
   }
   
   // We can only throw and catch runtime_errors. These will be caught by swig.
-  catch (std::runtime_error e){
+  catch (std::runtime_error e)
+  {
     delete inds;
     throw;
   }
@@ -256,8 +266,8 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
 }
 
 // Set items using a GenericVector
-void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op, PyObject* other ){
-  
+void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op, PyObject* other )
+{  
   Indices* inds;
   double* values;
   dolfin::uint* indices;
@@ -273,7 +283,8 @@ void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op
     throw std::runtime_error("index must be either a slice, a list or a Numpy array of integer");
   
   // Check for size of indices
-  if ( inds->size() != static_cast<dolfin::uint>(PyArray_DIM(other,0)) ){
+  if ( inds->size() != static_cast<dolfin::uint>(PyArray_DIM(other,0)) )
+  {
     delete inds;
     throw std::runtime_error("non matching dimensions on input");
   }
@@ -284,7 +295,8 @@ void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op
   }
   
   // We can only throw and catch runtime_errors. These will be caught by swig.
-  catch (std::runtime_error e){
+  catch (std::runtime_error e)
+  {
     delete inds;
     throw;
   }
@@ -299,8 +311,8 @@ void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op
 }
 
 // Set item(s) using single value
-void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double value ){
-  
+void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double value )
+{  
   // Get the correct Indices
   Indices* inds;
   if ( (inds = indice_chooser(op, self->size())) == 0 ) {
@@ -314,8 +326,8 @@ void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double 
   }
   
   // The op is a Indices
-  else {
-  
+  else 
+  {  
     double* values;
     dolfin::uint* indices;
     dolfin::uint i;
@@ -343,7 +355,8 @@ void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double 
 }
 
 // Get single item from Matrix
-double _get_matrix_single_item( const dolfin::GenericMatrix* self, int m, int n ) {
+double _get_matrix_single_item( const dolfin::GenericMatrix* self, int m, int n ) 
+{
   double value; 
   dolfin::uint _m(Indices::check_index(m, self->size(0)));
   dolfin::uint _n(Indices::check_index(n, self->size(1)));
@@ -352,20 +365,22 @@ double _get_matrix_single_item( const dolfin::GenericMatrix* self, int m, int n 
  }
 
 // Get items for slice, list, or numpy array object
-dolfin::GenericVector* _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolfin::uint single, PyObject* op, bool row ){
-  
+dolfin::GenericVector* _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolfin::uint single, PyObject* op, bool row )
+{  
   // Get the correct Indices
   Indices* inds;
   if ( (inds = indice_chooser(op, self->size(row ? 1 : 0))) == 0 )
     throw std::runtime_error("index must be either a slice, a list or a Numpy array of integer");
 
   dolfin::uint* indices;
-  try {
+  try 
+  {
     // Get the indices in a c array
     indices = inds->indices();
   }
   // We can only throw and catch runtime_errors. These will be caught by swig.
-  catch (std::runtime_error e){
+  catch (std::runtime_error e)
+  {
     delete inds;
     throw;
   }
@@ -392,8 +407,8 @@ dolfin::GenericVector* _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolf
 }
 
 // Get items for slice, list, or numpy array object
-dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self, PyObject* row_op, PyObject* col_op ){
-  
+dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self, PyObject* row_op, PyObject* col_op )
+{  
   dolfin::GenericMatrix * return_mat;
   dolfin::uint i, j, k, m, n, nz_i;
   dolfin::uint *col_index_array;
@@ -411,12 +426,13 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self
   m = row_inds->size();
   
   // If None is provided for col_op we assume symmetric indices
-  if ( col_op == Py_None ){
-    
+  if ( col_op == Py_None )
+  {    
     same_indices = true;
       
     // Check size of cols
-    if ( m > self->size(1) ){
+    if ( m > self->size(1) )
+    {
       delete row_inds;
       throw std::runtime_error("num indices excedes the number of columns");
     }
@@ -428,12 +444,12 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self
   }
   // Non symetric rows and cols
   else
-  {
-    
+  {    
     same_indices = false;
       
     // Instantiate the col indices
-    if ( ( col_inds = indice_chooser( col_op, self->size(1))) == 0 ){
+    if ( ( col_inds = indice_chooser( col_op, self->size(1))) == 0 )
+    {
       delete row_inds;
       throw std::runtime_error("col indices must be either a slice, a list or a Numpy array of integer");
     }
@@ -444,12 +460,14 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self
   }
 
   // Access the collumn indices
-  try {
+  try 
+  {
     col_index_array = col_inds->indices();
   }
   
   // We can only throw and catch runtime_errors. These will be caught by swig.
-  catch (std::runtime_error e){
+  catch (std::runtime_error e)
+  {
     delete row_inds;
     if ( !same_indices )
       delete col_inds;
@@ -466,18 +484,20 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self
   // Fill the get the values from me and set non zero values in return matrix
   tmp_index_array = new dolfin::uint[n];
   values = new double[n];
-  for ( i = 0; i < row_inds->size(); i++ ){
-    
+  for ( i = 0; i < row_inds->size(); i++ )
+  {    
     // Get all column values
     k = row_inds->index(i);
     self->get(values, 1, &k, n, col_index_array);
     // Collect non zero values
     nz_i = 0;
-    for ( j = 0; j < col_inds->size(); j++ ){
-      if ( !( fabs(values[j]) < DOLFIN_EPS ) ){
-	tmp_index_array[nz_i] = j;
-	values[nz_i] = values[j];
-	nz_i++;
+    for ( j = 0; j < col_inds->size(); j++ )
+    {
+      if ( !( fabs(values[j]) < DOLFIN_EPS ) )
+      {
+        tmp_index_array[nz_i] = j;
+        values[nz_i] = values[j];
+        nz_i++;
       }
     }
 
@@ -498,7 +518,8 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self
 }
 
 // Set single item in Matrix
-void _set_matrix_single_item( dolfin::GenericMatrix* self, int m, int n, double value ) {
+void _set_matrix_single_item( dolfin::GenericMatrix* self, int m, int n, double value ) 
+{
   dolfin::uint _m(Indices::check_index(m, self->size(0)));
   dolfin::uint _n(Indices::check_index(n, self->size(1)));
   self->set(&value, 1, &_m, 1, &_n); 
