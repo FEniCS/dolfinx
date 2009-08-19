@@ -69,7 +69,7 @@ namespace dolfin
     virtual void apply() = 0;
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose=false) const = 0;
+    virtual std::string str(bool verbose) const = 0;
 
     //--- Vector interface ---
 

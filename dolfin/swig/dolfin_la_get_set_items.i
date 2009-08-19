@@ -18,7 +18,8 @@ double* _get_vector_values( dolfin::GenericVector* self, bool &copied_values)
     // Try accessing the value pointer directly
     values = self->data();
   }
-  catch (std::runtime_error e){
+  catch (std::runtime_error e)
+  {
     // We couldn't acces the values directly
     copied_values = true;
     values = new double[self->size()];
@@ -36,8 +37,10 @@ bool _contains( dolfin::GenericVector* self, double value )
   double* values = _get_vector_values(self, copied_values);
   
   // Check if value is in values
-  for ( i = 0; i < self->size(); i++){
-    if ( fabs(values[i]-value) < DOLFIN_EPS ){
+  for ( i = 0; i < self->size(); i++)
+  {
+    if ( fabs(values[i]-value) < DOLFIN_EPS )
+    {
       contains = true;
       break;
     }

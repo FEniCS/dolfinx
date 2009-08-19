@@ -13,8 +13,8 @@ pde/advection-diffsion/python| broken
 pde/bcs/cpp                  | broken (cannot read auxiliary mesh data in parallel)
 pde/bcs/python               | broken
                              |
-pde/cahn-hilliard/cpp        | works
-pde/cahn-hilliard/python     | broken (u0.vector()[:] = u.vector()[:] is the problem)
+pde/cahn-hilliard/cpp        | working
+pde/cahn-hilliard/python     | working
                              |
 pde/curl-curl/cpp            | works
 pde/curl-curl/python         | works
