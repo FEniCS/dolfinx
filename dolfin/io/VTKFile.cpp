@@ -336,14 +336,6 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
   // Write function data at mesh cells
   if (data_type == "cell")
   {
-    // Allocate memory for function values at cell centres
-    const uint size = mesh.num_cells()*dim;
-    double* values = new double[dofmap.max_local_dimension()];
-    uint* dofs = new uint[dofmap.max_local_dimension()];
-
-    // Get function values on cells
-    const GenericVector* x = 0;//u.vector();
-
     // Write headers
     if (rank == 0)
     {
@@ -365,12 +357,20 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
       fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
     }
 
+    // Allocate memory for function values at cell centres
+    const uint size = mesh.num_cells()*dim;
+    double* values = new double[dofmap.max_local_dimension()];
+    uint* dofs = new uint[dofmap.max_local_dimension()];
+
+    // Get function values on cells
+    const GenericVector* x = 0;;
+
     // FIXME: This is an awful hack to work in parallel. Functionality should be moved elsewhere.
     // Gather data onto this process
     UFCCell ufc_cell(mesh);
     std::map<uint, uint> dof_map;
     std::auto_ptr<GenericVector> xx;
-    if (MPI::num_processes > 0) 
+    if (MPI::num_processes() > 1) 
     {
       std::vector<uint> dof_set;
       uint ii = 0;
@@ -401,7 +401,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
         // Tabulate dofs and get values
         ufc_cell.update(*cell);
         dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());  
-        if (MPI::num_processes > 0)
+        if (MPI::num_processes() > 1)
         {
           for(uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
             dofs[i] = dof_map.find(dofs[i])->second;
@@ -456,7 +456,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
         // Tabulate dofs and get values
         ufc_cell.update(*cell);
         dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());  
-        if (MPI::num_processes > 0)
+        if (MPI::num_processes() > 1)
         {
           for(uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
             dofs[i] = dof_map.find(dofs[i])->second;
