@@ -6,10 +6,15 @@ __copyright__ = "Copyright (C) 2008 Kent-Andre Mardal"
 __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
+import sys
 
 class LeftSide(SubDomain):
     def inside(self, x, on_boundary):
         return bool(x[0] < 0.5 + DOLFIN_EPS)
+
+
+print "Function restrictions are not working during the parallel transition"
+sys.exit()
 
 mesh = UnitSquare(2,2)
 mesh_function = MeshFunction("bool", mesh, mesh.topology().dim())
