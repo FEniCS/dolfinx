@@ -199,6 +199,10 @@ GenericVector& Function::vector()
     init();
 
   assert(_vector);
+
+  if (_vector->size() != _function_space->dofmap().global_dimension())
+    warning("You are extracting the vector from a sub-Function. You will receive the longer vector of the original function.");
+
   return *_vector;
 }
 //-----------------------------------------------------------------------------
