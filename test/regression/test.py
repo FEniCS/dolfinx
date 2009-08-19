@@ -88,7 +88,7 @@ for demo in cppdemos:
         cppdemo_ext = '.exe'
     if os.path.isfile(os.path.join(demo, 'demo' + cppdemo_ext)):
         t1 = time()
-        output = get_status_output("cd %s && .%sdemo%s" % \
+        output = getstatusoutput("cd %s && .%sdemo%s" % \
                                    (demo, os.path.sep, cppdemo_ext))
         t2 = time()
         timing += [(t2 - t1, demo)]
@@ -108,7 +108,7 @@ for demo in pydemos:
     print ""
     if os.path.isfile(os.path.join(demo, 'demo.py')):
         t1 = time()
-        output = get_status_output("cd %s && python ./demo.py" % demo)
+        output = getstatusoutput("cd %s && python ./demo.py" % demo)
         t2 = time()
         timing += [(t2 - t1, demo)]
         success = not output[0]
