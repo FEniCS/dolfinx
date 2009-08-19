@@ -63,6 +63,7 @@ cppdemos.remove('./../../demo/ode/stiff/cpp')
 # Demos that are too time consuming to Valgrind
 cppdemos.remove('./../../demo/pde/elastodynamics/cpp')
 cppdemos.remove('./../../demo/pde/cahn-hilliard/cpp')
+cppdemos.remove('./../../demo/ode/reaction/cpp')
 
 re_def_lost = re.compile("definitely lost: 0 bytes in 0 blocks.")
 re_pos_lost = re.compile("possibly lost: 0 bytes in 0 blocks.")
