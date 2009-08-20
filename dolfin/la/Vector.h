@@ -92,11 +92,11 @@ namespace dolfin
     { vector->get(values); }
 
     /// Set all values
-    virtual void set(double* values)
+    virtual void set(const double* values)
     { vector->set(values); }
 
     /// Add values to each entry
-    virtual void add(double* values)
+    virtual void add(const double* values)
     { vector->add(values); }
 
     /// Add multiple of given vector (AXPY operation)

@@ -7,7 +7,7 @@
 # The bilinear form and linear form for linear elastodynamics
 # using the generalised-alpha method
 #
-# Compile this form with FFC: ffc -l dolfin ElastoDynamics.form.
+# Compile this form with FFC: ffc -l dolfin ElastoDynamics.ufl.
 
 element   = VectorElement("Lagrange", "triangle", 1)
 vconstant = VectorElement("Discontinuous Lagrange", "triangle", 0)

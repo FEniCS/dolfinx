@@ -77,13 +77,13 @@ void uBLASVector::get(double* values) const
     values[i] = (*x)(i);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::set(double* values)
+void uBLASVector::set(const double* values)
 {
   for (uint i = 0; i < size(); i++)
     (*x)(i) = values[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::add(double* values)
+void uBLASVector::add(const double* values)
 {
   for (uint i = 0; i < size(); i++)
     (*x)(i) += values[i];

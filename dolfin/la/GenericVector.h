@@ -99,10 +99,10 @@ namespace dolfin
     virtual void get(double* values) const = 0;
 
     /// Set all values
-    virtual void set(double* values) = 0;
+    virtual void set(const double* values) = 0;
 
     /// Add values to each entry
-    virtual void add(double* values) = 0;
+    virtual void add(const double* values) = 0;
 
     virtual void gather(GenericVector& x, const std::vector<uint>& indices) const
     { error("GenericVector::gather is not implemented for this backend."); }

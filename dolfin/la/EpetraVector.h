@@ -87,10 +87,10 @@ namespace dolfin
     virtual void get(double* values) const;
 
     /// Set all values
-    virtual void set(double* values);
+    virtual void set(const double* values);
 
     /// Add all values to each entry
-    virtual void add(double* values);
+    virtual void add(const double* values);
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);

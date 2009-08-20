@@ -127,6 +127,9 @@ PETScVector* PETScVector::copy() const
 //-----------------------------------------------------------------------------
 void PETScVector::get(double* values) const
 {
+  if (local_range().first > 0 || size() > local_range().second)
+    error("PETScVector::get(double*) should not be used in parallel");
+
   assert(x);
   int m = static_cast<int>(size());
   if (m == 0)
@@ -141,8 +144,11 @@ void PETScVector::get(double* values) const
   delete [] rows;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set(double* values)
+void PETScVector::set(const double* values)
 {
+  if (local_range().first > 0 || size() > local_range().second)
+    error("PETScVector::set(const double*) should not be used for distributed vectors.");
+
   assert(x);
   int m = static_cast<int>(size());
   if (m == 0)
@@ -157,8 +163,11 @@ void PETScVector::set(double* values)
   delete [] rows;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::add(double* values)
+void PETScVector::add(const double* values)
 {
+  if (local_range().first > 0 || size() > local_range().second)
+    error("PETScVector::add(const double*) should not be used for distributed vectors.");
+
   assert(x);
   int m = static_cast<int>(size());
   if (m == 0)

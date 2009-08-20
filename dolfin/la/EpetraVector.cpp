@@ -139,7 +139,7 @@ void EpetraVector::get(double* values) const
     error("EpetraVector::get: Did not manage to perform Epetra_Vector::ExtractCopy.");
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::set(double* values)
+void EpetraVector::set(const double* values)
 {
   assert(x);
 
@@ -166,7 +166,7 @@ void EpetraVector::set(double* values)
   */
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::add(double* values)
+void EpetraVector::add(const double* values)
 {
   assert(x);
 

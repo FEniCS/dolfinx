@@ -174,8 +174,8 @@ int main(int argc, char* argv[])
   Function eps_xx(Vdg);
 
   // Create output files
-	File file_u("u.pvd");
-	File file_eps("eps_xx.pvd");
+	File file_u("u.pvd", "compressed");
+	File file_eps("eps_xx.pvd", "compressed");
 
   // Start time stepping
   dolfin::uint step = 0;
