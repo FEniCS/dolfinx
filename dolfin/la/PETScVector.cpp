@@ -150,9 +150,6 @@ void PETScVector::set(const double* values)
 
   assert(x);
   int m = static_cast<int>(size());
-  if (m == 0)
-    return;
-
   int* rows = new int[m];
   for (int i = 0; i < m; i++)
     rows[i] = i;
@@ -168,9 +165,6 @@ void PETScVector::add(const double* values)
 
   assert(x);
   int m = static_cast<int>(size());
-  if (m == 0)
-    return;
-
   int* rows = new int[m];
   for (int i = 0; i < m; i++)
     rows[i] = i;
@@ -182,14 +176,21 @@ void PETScVector::add(const double* values)
 void PETScVector::get(double* block, uint m, const uint* rows) const
 {
   assert(x);
-  if (m == 0)
-    return;
-
-  int _m =  static_cast<int>(m);
   const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
+  int _m =  static_cast<int>(m);
 
-  if (local_range().first == 0 || size() == local_range().second)
+  // If vector is local, just get the values. For distributed vectors, perform 
+  // first a gather into a local vector
+  if (local_range().first == 0 && local_range().second == size())
+  {
+    if (m == 0)
+    {
+      _rows = &_m;
+      double tmp = 0.0;
+      block = &tmp;
+    }
     VecGetValues(*x, _m, _rows, block);
+  }
   else
   {
     PETScVector y("local");
@@ -202,41 +203,62 @@ void PETScVector::get(double* block, uint m, const uint* rows) const
       indices.push_back(rows[i]);
       local_indices.push_back(i);
     }
+    
+    const int* _local_indices = &local_indices[0];  
+    if (m == 0)
+    {
+      _local_indices = &_m;
+      double tmp = 0.0;
+      block = &tmp;
+    }
+
+    // Gather values into y
     gather(y, indices);
-    VecGetValues(*(y.vec()), _m, &local_indices[0], block);
+
+    // Get entries of y
+    VecGetValues(*(y.vec()), _m, _local_indices, block);
   }
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(double* block, uint m, const uint* rows) const
 {
   assert(x);
-  if (m == 0)
-    return;
-
-  int _m =  static_cast<int>(m);
+  int _m = static_cast<int>(m);
   const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
+  if (m == 0)
+  {
+    _rows = &_m;
+    double tmp = 0.0;
+    block = &tmp;
+  }
   VecGetValues(*x, _m, _rows, block);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set(const double* block, uint m, const uint* rows)
 {
   assert(x);
-  if (m == 0)
-    return;
-
   int _m =  static_cast<int>(m);
   const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
+  if (m == 0)
+  {
+    _rows = &_m;
+    double tmp = 0;
+    block = &tmp;
+  }
   VecSetValues(*x, _m, _rows, block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add(const double* block, uint m, const uint* rows)
 {
   assert(x);
-  if (m == 0)
-    return;
-
   int _m =  static_cast<int>(m);
   const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
+  if (m == 0)
+  {
+    _rows = &_m;
+    double tmp = 0;
+    block = &tmp;
+  }
   VecSetValues(*x, _m, _rows, block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
@@ -461,6 +483,11 @@ void PETScVector::gather(GenericVector& y,
   const int* global_indices = reinterpret_cast<int*>(const_cast<uint*>(&indices[0]));
   for (int i = 0; i < n; ++i)
     local_indices[i]  = i;
+
+  // PETSc will bail out if it received a NULL pointer even though m == 0.
+  // Can't return from function as this will cause a lock up in parallel
+  if (n == 0)
+    global_indices = &n;    
 
   // Create index sets
   IS from, to;
