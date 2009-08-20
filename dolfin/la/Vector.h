@@ -75,6 +75,10 @@ namespace dolfin
     virtual uint size() const
     { return vector->size(); }
 
+    /// Return local ownership range of a vector
+    virtual std::pair<uint, uint> local_range() const
+    { return vector->local_range(); }
+
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows) const
     { vector->get(block, m, rows); }
@@ -92,11 +96,11 @@ namespace dolfin
     { vector->get(values); }
 
     /// Set all values
-    virtual void set(double* values)
+    virtual void set(const double* values)
     { vector->set(values); }
 
     /// Add values to each entry
-    virtual void add(double* values)
+    virtual void add(const double* values)
     { vector->add(values); }
 
     /// Add multiple of given vector (AXPY operation)

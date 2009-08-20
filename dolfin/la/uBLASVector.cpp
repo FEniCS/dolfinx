@@ -66,6 +66,11 @@ dolfin::uint uBLASVector::size() const
   return x->size();
 }
 //-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> uBLASVector::local_range() const
+{
+  return std::make_pair(0, size());
+}
+//-----------------------------------------------------------------------------
 uBLASVector* uBLASVector::copy() const
 {
   return new uBLASVector(*this);
@@ -77,13 +82,13 @@ void uBLASVector::get(double* values) const
     values[i] = (*x)(i);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::set(double* values)
+void uBLASVector::set(const double* values)
 {
   for (uint i = 0; i < size(); i++)
     (*x)(i) = values[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::add(double* values)
+void uBLASVector::add(const double* values)
 {
   for (uint i = 0; i < size(); i++)
     (*x)(i) += values[i];

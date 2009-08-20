@@ -100,13 +100,13 @@ void MTL4Vector::get(double* values) const
     values[i] = x[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::set(double* values)
+void MTL4Vector::set(const double* values)
 {
   for (uint i = 0; i < size(); i++)
     x[i] = values[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::add(double* values)
+void MTL4Vector::add(const double* values)
 {
   for (uint i = 0; i < size(); i++)
     x(i) += values[i];

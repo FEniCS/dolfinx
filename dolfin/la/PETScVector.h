@@ -77,8 +77,11 @@ namespace dolfin
     /// Return ownership range of a vector
     virtual std::pair<uint, uint> local_range() const;
 
-    /// Get block of values
+    /// Get block of values (values may live on any process)
     virtual void get(double* block, uint m, const uint* rows) const;
+
+    /// Get block of values (values must all live on the local process)
+    virtual void get_local(double* block, uint m, const uint* rows) const;
 
     /// Set block of values
     virtual void set(const double* block, uint m, const uint* rows);
@@ -90,10 +93,10 @@ namespace dolfin
     virtual void get(double* values) const;
 
     /// Set all values
-    virtual void set(double* values);
+    virtual void set(const double* values);
 
     /// Add values to each entry
-    virtual void add(double* values);
+    virtual void add(const double* values);
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);

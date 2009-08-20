@@ -51,7 +51,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh and define function space
-  UnitSquare mesh(16, 16);
+  UnitSquare mesh(4, 4);
   NonlinearPoisson::FunctionSpace V(mesh);
 
   // Define boundary condition

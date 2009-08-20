@@ -8,7 +8,7 @@
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2006-07-05
-// Last changed: 2009-08-11
+// Last changed: 2009-08-20
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -372,7 +372,7 @@ namespace dolfin
   {
     // Set all non-zero values to zero without detroying non-zero pattern
     // It might be faster to iterate through entries?
-    A *= 0.0;
+    A.clear();
   }
   //-----------------------------------------------------------------------------
   template <class Mat>

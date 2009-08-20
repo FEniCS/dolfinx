@@ -5,6 +5,7 @@
 %template(STLVectorUInt) std::vector<dolfin::uint>;
 %template(STLVectorDouble) std::vector<double>;
 %template(STLVectorString) std::vector<std::string>;
+%template(STLPairUInt) std::pair<dolfin::uint,dolfin::uint>;
 
 %extend dolfin::Variable
 {

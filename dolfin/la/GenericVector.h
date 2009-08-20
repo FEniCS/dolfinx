@@ -82,12 +82,16 @@ namespace dolfin
     /// Return local ownership range of a vector
     virtual std::pair<uint, uint> local_range() const
     {
-      error("GenericVector::range not yet implemented for this backend.");
+      error("GenericVector::local_range not yet implemented for this backend.");
       return std::make_pair(0, 0);
     }
 
-    /// Get block of values
+    /// Get block of values (values may live on any process)
     virtual void get(double* block, uint m, const uint* rows) const = 0;
+
+    /// Get block of values (values must all live on the local process)
+    virtual void get_local(double* block, uint m, const uint* rows) const
+      { error("GenericVector::get_local not yet implemented for this backend."); }
 
     /// Set block of values
     virtual void set(const double* block, uint m, const uint* rows) = 0;
@@ -99,10 +103,10 @@ namespace dolfin
     virtual void get(double* values) const = 0;
 
     /// Set all values
-    virtual void set(double* values) = 0;
+    virtual void set(const double* values) = 0;
 
     /// Add values to each entry
-    virtual void add(double* values) = 0;
+    virtual void add(const double* values) = 0;
 
     virtual void gather(GenericVector& x, const std::vector<uint>& indices) const
     { error("GenericVector::gather is not implemented for this backend."); }
