@@ -45,6 +45,7 @@ import_array();
 %include "std_string.i"
 %include "std_vector.i"
 //%include "std_map.i" // FIXME: Make this work
+%include "std_pair.i"
 %include "stl.i"
 %include "carrays.i"
 %array_functions(double, doubleArray);

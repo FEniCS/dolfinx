@@ -48,12 +48,14 @@ u = problem.solve()
 # FIXME: Temporary while testing parallel assembly
 print "Norm of solution vector: %.15g" % u.vector().norm()
 
+print u.vector().local_range()
+
 # Plot solution
-plot(u)
-
-# Save solution in VTK format
-file = File("poisson.pvd")
-file << u
-
-# Hold plot
-interactive()
+#plot(u)
+#
+## Save solution in VTK format
+#file = File("poisson.pvd")
+#file << u
+#
+## Hold plot
+#interactive()
