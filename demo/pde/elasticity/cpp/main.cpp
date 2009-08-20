@@ -117,11 +117,11 @@ int main()
   vtk_file << u;
 
   // Plot solution
-  plot(u, "displacement");
+  plot(u, "Displacement", "displacement");
 
   // Displace mesh and plot displaced mesh
   mesh.move(u);
-  plot(mesh);
+  plot(mesh, "Deformed mesh");
 
   return 0;
 }

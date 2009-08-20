@@ -73,7 +73,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
     DofMapBuilder::parallel_build(*this, *dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::auto_ptr<std::vector<int> > map,
+DofMap::DofMap(std::auto_ptr<std::vector<dolfin::uint> > map,
        boost::shared_ptr<ufc::dof_map> ufc_dof_map,
        boost::shared_ptr<const Mesh> mesh)
       : map(map), _global_dimension(0), ufc_dof_map(ufc_dof_map), _ufc_offset(0),
@@ -110,13 +110,15 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
     const uint offset = n*cell_index;
     for (uint i = 0; i < n; i++)
       dofs[i] = (*map)[offset + i];
-    // FIXME: Maybe memcpy() can be used to speed this up? Test this!
-    //memcpy(dofs, dof_map[cell_index], sizeof(uint)*local_dimension());
-    //std::copy(&dof_map[offset], &dof_map[offset+n], &dofs);
+    // FIXME: Maybe std::copy be used to speed this up?
+    std::copy(&(*map)[offset], &(*map)[offset+n], dofs);
   }
   else
   {
+    // Tabulate UFC dof map
     ufc_dof_map->tabulate_dofs(dofs, ufc_mesh, ufc_cell);
+
+    // Add offset if necessary
     if (_ufc_offset > 0)
     {
       const uint local_dim = local_dimension(ufc_cell);
@@ -153,7 +155,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component) const
     const uint num_cells = dolfin_mesh->num_cells();
  
      // Create vector for new map
-    std::auto_ptr<std::vector<int> > sub_map(new std::vector<int>);
+    std::auto_ptr<std::vector<uint> > sub_map(new std::vector<uint>);
     sub_map->resize(max_local_dim*num_cells); 
   
     // Create new dof map (this will initialise the UFC dof map)

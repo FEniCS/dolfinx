@@ -21,19 +21,19 @@ namespace dolfin
   /// For plotting to work, PyDOLFIN and Viper must be installed.
 
   /// Plot function
-  void plot(const Function& v, std::string mode="auto");
+  void plot(const Function& v, std::string title="Untitled Function", std::string mode="auto");
 
   /// Plot mesh
-  void plot(const Mesh& mesh);
+  void plot(const Mesh& mesh, std::string title="Untitled Mesh");
 
   /// Plot mesh function
-  void plot(const MeshFunction<uint>& f);
+  void plot(const MeshFunction<uint>& f, std::string title="Untitled MeshFunction");
 
   /// Plot mesh function
-  void plot(const MeshFunction<double>& f);
+  void plot(const MeshFunction<double>& f, std::string title="Untitled MeshFunction");
 
   /// Plot mesh function
-  void plot(const MeshFunction<bool>& f);
+  void plot(const MeshFunction<bool>& f, std::string title="Untitled MeshFunction");
 
 }
 

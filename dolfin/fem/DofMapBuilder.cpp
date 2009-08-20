@@ -216,7 +216,7 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
   if (dof_map.map.get())
     dof_map.map->resize(max_local_dimension*mesh.num_cells());
   else
-    dof_map.map.reset(new std::vector<int>(max_local_dimension*mesh.num_cells()));
+    dof_map.map.reset(new std::vector<uint>(max_local_dimension*mesh.num_cells()));
 
   // FIXME: Can this step be avoided?
   std::copy(_dof_map, _dof_map + max_local_dimension*mesh.num_cells(), dof_map.map->begin());
