@@ -153,10 +153,12 @@ const Function& Function::operator= (const Function& v)
   // Initialize vector and copy values
   init();
 
+  // FIXME: For sub Functions, we can just copy a portion of the vector 
+  //        instead of using interpolate
   // Copy values or interpolate
-  if (v.has_vector())
+  if (v.has_vector() && _vector->size() == v._vector->size())
   {
-    assert(_vector->size() == v._vector->size());
+    //assert(_vector->size() == v._vector->size());
     *_vector = *v._vector;
   }
   else
