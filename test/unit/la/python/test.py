@@ -12,7 +12,7 @@ class AbstractBaseTest(object):
     count = 0
     def setUp(self):
         if self.backend != "default":
-            parameters["linear_algebra_backend"] = self.backend
+            parameters.linear_algebra_backend = self.backend
         type(self).count += 1
         if type(self).count == 1:
             # Only print this message once per class instance
@@ -55,37 +55,47 @@ class AbstractBaseTest(object):
                 A[0]
             elif type == 2:
                 A[0,0,0]
-        
+
+        # Test wrong getitem
         self.assertRaises(TypeError,wrong_getitem,0)
         self.assertRaises(TypeError,wrong_getitem,1)
         self.assertRaises(TypeError,wrong_getitem,2)
 
+        # Test __imul__ operator
         B *= 0.5
         A *= 2
         self.assertAlmostEqual(A[5,5],4*B[5,5])
         
+        # Test __idiv__ operator
         B /= 2
         A /= 0.5
         self.assertAlmostEqual(A[5,5],16*B[5,5])
         
+        # Test __iadd__ operator
         A += B
         self.assertAlmostEqual(A[5,5],17)
         
+        # Test __isub__ operator
         A -= B
         self.assertAlmostEqual(A[5,5],16)
         
+        # Test __mul__ operator
         C = 16*B
         self.assertAlmostEqual(A[5,5],C[5,5])
         
+        # Test __mul__ and __add__ operator
         D = (C+B)*5
         self.assertAlmostEqual(D[5,5],85)
         
+        # Test __div__ and __sub__ operator
         F = (A-B)/4
         self.assertAlmostEqual(F[5,5],3.75)
         
+        # Test axpy
         A.axpy(100,B)
         self.assertAlmostEqual(A[5,5],116)
         
+        # Test to NumPy array 
         A2 = A.array()
         self.assertTrue(isinstance(A2,ndarray))
         self.assertEqual(A2.shape,(16,16))
@@ -96,6 +106,7 @@ class AbstractBaseTest(object):
             A[5,5] = 15.
             self.assertEqual(A[5,5],15.)
 
+        # Test Matrix.getslice
         B = A[0,:]
         self.assertEqual(B.size(),A.size(1))
         self.assertEqual(B[1],A[0,1])
@@ -357,6 +368,9 @@ if has_linear_algebra_backend("MTL4"):
         backend    = "MTL4"
 
 if __name__ == "__main__":
+    # Turn of DOLFIN output
+    logging(False)
+
     print ""
     print "Testing basic PyDOLFIN linear algebra operations"
     print "------------------------------------------------"
