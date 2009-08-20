@@ -6,8 +6,9 @@
 // Modified by Garth N. Wells 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2009-06-20
+// Last changed: 2009-08-20
 
+#include <fstream>
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include "GenericFile.h"
@@ -16,13 +17,13 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 GenericFile::GenericFile(const std::string filename) : filename(filename),
-                                                       type("Unknown file type"),
-                                                       opened_read(false),
-                                                       opened_write(false),
-                                                       check_header(false),
-                                                       counter(0),
-                                                       counter1(0),
-                                                       counter2(0)
+                                                     type("Unknown file type"),
+                                                     opened_read(false),
+                                                     opened_write(false),
+                                                     check_header(false),
+                                                     counter(0),
+                                                     counter1(0),
+                                                     counter2(0)
 {
   // Do nothing
 }
@@ -232,17 +233,20 @@ void GenericFile::operator<< (const std::map<uint, double>& map)
   read_not_impl("std::map<uint, double>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const std::map<uint, std::vector<int> >& array_map)
+void GenericFile::operator<< (const std::map<uint, 
+                              std::vector<int> >& array_map)
 {
   read_not_impl("std::map<uint, std::vector<int> >");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const std::map<uint, std::vector<uint> >& array_map)
+void GenericFile::operator<< (const std::map<uint, 
+                              std::vector<uint> >& array_map)
 {
   read_not_impl("std::map<uint, std::vector<uint> >");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const std::map<uint, std::vector<double> >& array_map)
+void GenericFile::operator<< (const std::map<uint, 
+                              std::vector<double> >& array_map)
 {
   read_not_impl("std::map<uint, std::vector<double> >");
 }
@@ -254,18 +258,18 @@ void GenericFile::read()
 //-----------------------------------------------------------------------------
 void GenericFile::write()
 {
-  //FIXME .pvd files should only be cleared by one processor
-  if ( type == "VTK" && MPI::process_number() > 0)
+  // pvd files should only be cleared by one process
+  if (type == "VTK" && MPI::process_number() > 0)
     opened_write = true;
 
-  if ( !opened_write ) {
+  if (!opened_write) 
+  {
     // Clear file
-    FILE* fp = fopen(filename.c_str(), "w");
-    if (!fp)
+    std::ofstream file(filename.c_str(), std::ios::trunc);
+    if (!file.good())
       error("Unable to open file %s", filename.c_str());
-    fclose(fp);
+    file.close();
   }
-
   opened_write = true;
 }
 //-----------------------------------------------------------------------------
