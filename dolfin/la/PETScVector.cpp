@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes 2008
 //
 // First added:  2004
-// Last changed: 2009-08-11
+// Last changed: 2009-08-20
 
 #ifdef HAS_PETSC
 
@@ -140,7 +140,6 @@ void PETScVector::get(double* values) const
     rows[i] = i;
  
   VecGetValues(*x, m, rows, values);
-
   delete [] rows;
 }
 //-----------------------------------------------------------------------------
@@ -159,7 +158,6 @@ void PETScVector::set(const double* values)
     rows[i] = i;
 
   VecSetValues(*x, m, rows, values, INSERT_VALUES);
-
   delete [] rows;
 }
 //-----------------------------------------------------------------------------
@@ -178,7 +176,6 @@ void PETScVector::add(const double* values)
     rows[i] = i;
 
   VecSetValues(*x, m, rows, values, ADD_VALUES);
-
   delete [] rows;
 }
 //-----------------------------------------------------------------------------
@@ -187,12 +184,38 @@ void PETScVector::get(double* block, uint m, const uint* rows) const
   assert(x);
   if (m == 0)
     return;
+
+  int _m =  static_cast<int>(m);
+  const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
+
+  if (local_range().first == 0 || size() == local_range().second)
+    VecGetValues(*x, _m, _rows, block);
   else
   {
-    int _m =  static_cast<int>(m);
-    const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
-    VecGetValues(*x, _m, _rows, block);
+    PETScVector y("local");
+    std::vector<uint> indices;
+    std::vector<int> local_indices;
+    indices.reserve(m);
+    local_indices.reserve(m);
+    for (uint i = 0; i < m; ++i)
+    {
+      indices.push_back(rows[i]);
+      local_indices.push_back(i);
+    }
+    gather(y, indices);
+    VecGetValues(*(y.vec()), _m, &local_indices[0], block);
   }
+}
+//-----------------------------------------------------------------------------
+void PETScVector::get_local(double* block, uint m, const uint* rows) const
+{
+  assert(x);
+  if (m == 0)
+    return;
+
+  int _m =  static_cast<int>(m);
+  const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
+  VecGetValues(*x, _m, _rows, block);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set(const double* block, uint m, const uint* rows)
@@ -200,12 +223,10 @@ void PETScVector::set(const double* block, uint m, const uint* rows)
   assert(x);
   if (m == 0)
     return;
-  else
-  {
-    int _m =  static_cast<int>(m);
-    const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
-    VecSetValues(*x, _m, _rows, block, INSERT_VALUES);
-  }
+
+  int _m =  static_cast<int>(m);
+  const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
+  VecSetValues(*x, _m, _rows, block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add(const double* block, uint m, const uint* rows)
@@ -213,12 +234,10 @@ void PETScVector::add(const double* block, uint m, const uint* rows)
   assert(x);
   if (m == 0)
     return;
-  else
-  {
-    int _m =  static_cast<int>(m);
-    const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
-    VecSetValues(*x, _m, _rows, block, ADD_VALUES);
-  }
+
+  int _m =  static_cast<int>(m);
+  const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
+  VecSetValues(*x, _m, _rows, block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::apply()

@@ -86,8 +86,12 @@ namespace dolfin
       return std::make_pair(0, 0);
     }
 
-    /// Get block of values
+    /// Get block of values (values may live on any process)
     virtual void get(double* block, uint m, const uint* rows) const = 0;
+
+    /// Get block of values (values must all live on the local process)
+    virtual void get_local(double* block, uint m, const uint* rows) const
+      { error("GenericVector::get_local not yet implemented for this backend."); }
 
     /// Set block of values
     virtual void set(const double* block, uint m, const uint* rows) = 0;

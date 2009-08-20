@@ -434,7 +434,10 @@ void Function::init()
 //-----------------------------------------------------------------------------
 void Function::get(double* block, uint m, const uint* rows) const
 {
-  if (dolfin::MPI::num_processes() == 1)
+  // Get local ownership range
+  const std::pair<uint, uint> range = _vector->local_range();
+
+  if (range.first == 0 && range.second == _vector->size())
     _vector->get(block, m, rows);
   else
   {
@@ -442,9 +445,6 @@ void Function::get(double* block, uint m, const uint* rows) const
       error("Function has not been prepared with off-process data. Did you forget to call Function::gather()?");
 
     // FIXME: Perform some more sanity checks
-
-    // Get local ownership range
-    std::pair<uint, uint> range = _vector->local_range();
 
     // Build lists of local and nonlocal coefficients
     uint n_local = 0;
@@ -464,10 +464,10 @@ void Function::get(double* block, uint m, const uint* rows) const
     }
 
     // Get local coefficients
-    _vector->get(scratch.local_block, n_local, scratch.local_rows);
+    _vector->get_local(scratch.local_block, n_local, scratch.local_rows);
 
     // Get off process coefficients
-    _off_process_vector->get(scratch.nonlocal_block, n_nonlocal, scratch.nonlocal_rows);
+    _off_process_vector->get_local(scratch.nonlocal_block, n_nonlocal, scratch.nonlocal_rows);
 
     // Copy result into block
     for (uint i = 0; i < n_local; ++i)
