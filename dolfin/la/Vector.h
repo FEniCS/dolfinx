@@ -75,6 +75,10 @@ namespace dolfin
     virtual uint size() const
     { return vector->size(); }
 
+    /// Return local ownership range of a vector
+    virtual std::pair<uint, uint> local_range() const
+    { return vector->local_range(); }
+
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows) const
     { vector->get(block, m, rows); }

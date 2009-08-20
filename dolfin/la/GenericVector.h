@@ -82,7 +82,7 @@ namespace dolfin
     /// Return local ownership range of a vector
     virtual std::pair<uint, uint> local_range() const
     {
-      error("GenericVector::range not yet implemented for this backend.");
+      error("GenericVector::local_range not yet implemented for this backend.");
       return std::make_pair(0, 0);
     }
 
