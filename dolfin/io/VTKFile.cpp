@@ -359,61 +359,46 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
 
     // Allocate memory for function values at cell centres
     const uint size = mesh.num_cells()*dim;
-    double* values = new double[dofmap.max_local_dimension()];
-    uint* dofs = new uint[dofmap.max_local_dimension()];
+    std::vector<uint> dofs(dofmap.max_local_dimension());
 
-    // Get function values on cells
-    const GenericVector* x = 0;;
-
-    // FIXME: This is an awful hack to work in parallel. Functionality should be moved elsewhere.
-    // Gather data onto this process
+    // Build lists of dofs and create map
     UFCCell ufc_cell(mesh);
-    std::map<uint, uint> dof_map;
-    std::auto_ptr<GenericVector> xx;
-    if (MPI::num_processes() > 1) 
+    std::vector<uint> dof_set;
+    std::vector<uint> offset(size+1);    
+    std::vector<uint>::iterator cell_offset = offset.begin();    
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      std::vector<uint> dof_set;
-      uint ii = 0;
-      for (CellIterator cell(mesh); !cell.end(); ++cell)
-      {
-        // Tabulate dofs
-        ufc_cell.update(*cell);
-        dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());
-        for(uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
-        {
-          dof_set.push_back(dofs[i]);
-          dof_map[dofs[i]] = ii++;
-        }
-      }
-      xx.reset(u.vector().factory().create_local_vector());
-      u.vector().gather(*xx, dof_set);
-      x = xx.get();
+      // Tabulate dofs
+      ufc_cell.update(*cell);
+      dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());
+      for(uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
+        dof_set.push_back(dofs[i]);
+
+      // Add local dimension to cell offset and increment
+      *(cell_offset + 1) = *(cell_offset) + dofmap.local_dimension(ufc_cell);
+      ++cell_offset;
     }
-    else  
-      x = &u.vector();
+
+    // Get  values
+    std::vector<double> values(dof_set.size());
+    u.vector().get(&values[0], dof_set.size(), &dof_set[0]);
 
     if (encoding == "ascii")
     {
       std::ostringstream ss;
       ss << std::scientific;
+      cell_offset = offset.begin();
       for (CellIterator cell(mesh); !cell.end(); ++cell)
       {
         // Tabulate dofs and get values
         ufc_cell.update(*cell);
-        dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());  
-        if (MPI::num_processes() > 1)
-        {
-          for(uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
-            dofs[i] = dof_map.find(dofs[i])->second;
-        }
-        x->get(values, dofmap.local_dimension(ufc_cell), dofs);         
-          
+        dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());  
 
         if (rank == 1 && dim == 2)
         {
           // Append 0.0 to 2D vectors to make them 3D
-          ss << " " << values[0];
-          ss << " " << values[1];
+          ss << " " << values[*cell_offset];
+          ss << " " << values[*cell_offset+1];
           ss << " " << 0.0;
         }
         else if (rank == 2 && dim == 4)
@@ -421,8 +406,8 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
           // Pad with 0.0 to 2D tensors to make them 3D
           for(uint i = 0; i < 2; i++)
           {
-            ss << " " << values[2*i];
-            ss << " " << values[2*i+1];
+            ss << " " << values[*cell_offset + 2*i];
+            ss << " " << values[*cell_offset + 2*i+1];
             ss << " " << 0.0;
           }
           ss << " " << 0.0;
@@ -433,9 +418,10 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
         {
           // Write all components
           for (uint i = 0; i < dim; i++)
-            ss << " " << values[i];
+            ss << " " << values[*cell_offset + i];
         }
         ss << std::endl;
+        ++cell_offset;
       }
       // Send to file
       fp << ss.str();
@@ -450,24 +436,19 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
       else
         data.resize(size); 
 
+      cell_offset = offset.begin();
       std::vector<float>::iterator entry = data.begin();
       for (CellIterator cell(mesh); !cell.end(); ++cell)
       {
         // Tabulate dofs and get values
         ufc_cell.update(*cell);
-        dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());  
-        if (MPI::num_processes() > 1)
-        {
-          for(uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
-            dofs[i] = dof_map.find(dofs[i])->second;
-        }
-        x->get(values, dofmap.local_dimension(ufc_cell), dofs);         
+        dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());  
 
         if (rank == 1 && dim == 2)
         {
           // Append 0.0 to 2D vectors to make them 3D
-          *entry++ = values[0];
-          *entry++ = values[1];
+          *entry++ = values[*cell_offset];
+          *entry++ = values[*cell_offset + 1];
           *entry++ = 0.0;
         }
         else if (rank == 2 && dim == 4)
@@ -475,8 +456,8 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
           // Pad with 0.0 to 2D tensors to make them 3D
           for(uint i = 0; i < 2; i++)
           {
-            *entry++ = values[2*i];
-            *entry++ = values[2*i+1];
+            *entry++ = values[*cell_offset + 2*i];
+            *entry++ = values[*cell_offset + 2*i+1];
             *entry++ = 0.0;
           }
           *entry++ = 0.0;
@@ -487,8 +468,9 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
         {
           // Write all components
           for (uint i = 0; i < dim; i++)
-            *entry++ = values[i];
+            *entry++ = values[*cell_offset + i];
         }
+        ++cell_offset;
       }
 
       // Create encoded stream
@@ -501,9 +483,6 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
     }
     fp << "</DataArray> " << std::endl;
     fp << "</CellData> " << std::endl;
-
-    delete [] dofs;
-    delete [] values;
   }
   else if (data_type == "point")
   {
