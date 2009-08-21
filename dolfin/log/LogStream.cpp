@@ -65,6 +65,12 @@ LogStream& LogStream::operator<< (uint a)
   return *this;
 }
 //-----------------------------------------------------------------------------
+LogStream& LogStream::operator<< (std::size_t a)
+{
+  buffer << a;
+  return *this;
+}
+//-----------------------------------------------------------------------------
 LogStream& LogStream::operator<< (double a)
 {
   buffer << a;
