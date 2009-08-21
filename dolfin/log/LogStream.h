@@ -51,8 +51,11 @@ namespace dolfin
     /// Output for unsigned int
     LogStream& operator<< (uint a);
 
-    /// Output for size_t
-    LogStream& operator<< (std::size_t a);
+    /// Output for long int
+    LogStream& operator<< (long int a);
+
+    /// Output for long int
+    LogStream& operator<< (long unsigned int a);
 
     /// Output for double
     LogStream& operator<< (double a);

@@ -31,7 +31,7 @@ namespace dolfin
     /// Function called by Newton solver before requesting F or J. 
     /// This can be used when it is used to comoute F and J together 
     virtual void form(GenericMatrix& A, GenericVector& b, const GenericVector& x) 
-    { /* Do nothing if not supplied bu the user */ };
+      { /* Do nothing if not supplied by the user */ };
 
     /// Compute F at current point x
     virtual void F(GenericVector& b, const GenericVector& x) = 0;
