@@ -111,7 +111,7 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
     for (uint i = 0; i < n; i++)
       dofs[i] = (*map)[offset + i];
     // FIXME: Maybe std::copy be used to speed this up?
-    std::copy(&(*map)[offset], &(*map)[offset+n], dofs);
+    //std::copy(&(*map)[offset], &(*map)[offset+n], dofs);
   }
   else
   {
