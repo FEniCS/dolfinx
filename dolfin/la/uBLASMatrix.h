@@ -372,8 +372,14 @@ namespace dolfin
   {
     // Set all non-zero values to zero without detroying non-zero pattern
     // It might be faster to iterate through entries?
-    A  *= 0.0;
+    //A  *= 0.0;
     //A.clear();
+
+    typename Mat::iterator1 row;    // Iterator over rows
+    typename Mat::iterator2 entry;  // Iterator over entries
+    for (row = A.begin1(); row != A.end1(); ++row)
+      for (entry = row.begin(); entry != row.end(); ++entry)
+        *entry = 0;
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
