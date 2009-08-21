@@ -372,7 +372,8 @@ namespace dolfin
   {
     // Set all non-zero values to zero without detroying non-zero pattern
     // It might be faster to iterate through entries?
-    A.clear();
+    A  *= 0.0;
+    //A.clear();
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
