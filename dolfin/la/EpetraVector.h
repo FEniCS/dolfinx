@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
-// Modified by Garth N. Wells, 2008-2008.
+// Modified by Garth N. Wells, 2008-2009.
 //
 // First added:  2008-04-21
-// Last changed: 2009-08-10
+// Last changed: 2009-08-22
 
 #ifndef __EPETRA_VECTOR_H
 #define __EPETRA_VECTOR_H
@@ -73,6 +73,9 @@ namespace dolfin
 
     /// Return size of vector
     virtual uint size() const;
+
+    /// Return local ownership range of a vector
+    virtual std::pair<uint, uint> local_range() const;
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows) const;

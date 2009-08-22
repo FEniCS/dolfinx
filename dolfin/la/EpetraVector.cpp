@@ -1,22 +1,22 @@
 // Copyright (C) 2008 Martin Sandve Alnes, Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008-2009.
 //
 // First added:  2008-04-21
-// Last changed: 2009-08-12
+// Last changed: 2009-08-22
 
 #ifdef HAS_TRILINOS
 
 #include <cmath>
 #include <cstring>
+#include <dolfin/main/MPI.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
 #include "EpetraVector.h"
 #include "uBLASVector.h"
 #include "PETScVector.h"
 #include "EpetraFactory.h"
-
 
 #include <Epetra_FEVector.h>
 #include <Epetra_Map.h>
@@ -88,6 +88,14 @@ EpetraVector* EpetraVector::copy() const
 dolfin::uint EpetraVector::size() const
 {
   return x ? x->GlobalLength(): 0;
+}
+//-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> EpetraVector::local_range() const
+{
+  if (MPI::num_processes() > 1)
+    error("EpetraVector::local_range() is not implemented in parallel");
+  
+  return std::make_pair<uint, uint>(0, size());
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::zero()

@@ -1,10 +1,11 @@
 // Copyright (C) 2008 Kent-Andre Mardal.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2008.
+//
 // First added:  2008-08-25
 // Last changed: 2009-08-10
 //
-// Modified by Anders Logg, 2008.
 
 #ifndef __BLOCKVECTOR_H
 #define __BLOCKVECTOR_H

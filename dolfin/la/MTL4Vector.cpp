@@ -1,17 +1,12 @@
 // Copyright (C) 2008 Dag Lindbo
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008-2009.
 //
 // First added:  2008-07-06
-// Last changed: 2009-08-10
+// Last changed: 2009-08-22
 
 #ifdef HAS_MTL4
-
-//#include <cstring>
-//#include <iostream>
-//#include <sstream>
-//#include <iomanip>
 
 #include <cmath>
 #include <dolfin/math/dolfin_math.h>
@@ -22,7 +17,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MTL4Vector::MTL4Vector(){
+MTL4Vector::MTL4Vector()
+{
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -55,6 +51,11 @@ MTL4Vector* MTL4Vector::copy() const
 dolfin::uint MTL4Vector::size() const
 {
   return mtl::num_rows(x);
+}
+//-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> MTL4Vector::local_range() const
+{
+  return std::make_pair<uint, uint>(0, size());
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::zero()
@@ -192,7 +193,7 @@ const MTL4Vector& MTL4Vector::operator*= (const GenericVector& y)
   dolfin_not_implemented();
   //mtl4_vector vv =  y.down_cast<MTL4Vector>().vec();
   //
-  //x = mtl::operator*(x,vv);
+  //x = mtl::operator*(x, vv);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -243,5 +244,4 @@ double MTL4Vector::sum() const
   return mtl::sum(x);
 }
 //-----------------------------------------------------------------------------
-
 #endif

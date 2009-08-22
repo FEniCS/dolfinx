@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2007 Garth N. Wells.
+// Copyright (C) 2006-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2006-2008.
@@ -7,7 +7,7 @@
 // Modified by Martin Sandve Alnes, 2009.
 //
 // First added:  2006-04-25
-// Last changed: 2009-08-10
+// Last changed: 2009-08-22
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -80,11 +80,7 @@ namespace dolfin
     virtual uint size() const = 0;
 
     /// Return local ownership range of a vector
-    virtual std::pair<uint, uint> local_range() const
-    {
-      error("GenericVector::local_range not yet implemented for this backend.");
-      return std::make_pair(0, 0);
-    }
+    virtual std::pair<uint, uint> local_range() const = 0;
 
     /// Get block of values (values may live on any process)
     virtual void get(double* block, uint m, const uint* rows) const = 0;

@@ -12,8 +12,8 @@
 #ifndef __VECTOR_H
 #define __VECTOR_H
 
-#include <iostream>
-#include <typeinfo>
+//#include <iostream>
+//#include <typeinfo>
 #include "DefaultFactory.h"
 #include "GenericVector.h"
 
