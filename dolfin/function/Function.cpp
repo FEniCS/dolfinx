@@ -144,14 +144,14 @@ const Function& Function::operator= (const Function& v)
   // Initialize vector
   init();
 
-  // FIXME: For hard copies of subfunctions, we need to implement extraction 
+  // FIXME: For deep copies of subfunctions, we need to implement extraction 
   // and 'reset' of dof maps, and copying of parts of the vector.
   bool discrete_subfunction = false;
   if (v.has_vector())
   {
     if (v._vector->size() != v._function_space->dofmap().global_dimension())
     {
-      warning("Proper copying of sub-Functions not yet implemented. You will receive deep copy, but with a copy of the longer vector of the original function.");
+      //warning("Proper copying of sub-Functions not yet implemented. You will receive deep copy, but with a copy of the longer vector of the original function.");
       _vector->resize(v._vector->size());
       discrete_subfunction = true;
     }
