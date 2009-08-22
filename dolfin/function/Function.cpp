@@ -20,7 +20,6 @@
 #include "Data.h"
 #include "UFCFunction.h"
 #include "FunctionSpace.h"
-#include "SubFunctionData.h"
 #include "Function.h"
 
 using namespace dolfin;
@@ -70,7 +69,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(x),
     _off_process_vector(static_cast<GenericVector*>(0))
 {
-  assert(V->dofmap().global_dimension() == x->size());
+  assert(V->dofmap().global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, GenericVector& x)
@@ -118,15 +117,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
 }
 //-----------------------------------------------------------------------------
-Function::Function(const SubFunctionData& v)
-  : Variable("v", "unnamed function"),
-    _function_space(v._function_space),
-    _vector(v._vector),
-    _off_process_vector(static_cast<GenericVector*>(0))
-{
-  // FIXME: Do we need to check that we have a discrete function?  
-}
-//-----------------------------------------------------------------------------
 Function::Function(const Function& v)
   : Variable("v", "unnamed function"),
     _function_space(static_cast<FunctionSpace*>(0)),
@@ -147,18 +137,30 @@ const Function& Function::operator= (const Function& v)
   if (!v.has_function_space())
     error("Cannot copy Functions which do not have a FunctionSpace.");
 
+  cout << "Copy functions space in assignment" << endl;
   // Copy function space
   _function_space = v._function_space;
 
-  // Initialize vector and copy values
+  // Initialize vector
   init();
 
-  // FIXME: For sub Functions, we can just copy a portion of the vector 
-  //        instead of using interpolate
-  // Copy values or interpolate
-  if (v.has_vector() && _vector->size() == v._vector->size())
+  // FIXME: For hard copies of subfunctions, we need to implement extraction 
+  // and 'reset' of dof maps, and copying of parts of the vector.
+  bool discrete_subfunction = false;
+  if (v.has_vector())
   {
-    //assert(_vector->size() == v._vector->size());
+    if (v._vector->size() != v._function_space->dofmap().global_dimension())
+    {
+      warning("Proper copying of sub-Functions not yet implemented. You will receive deep copy, but with a copy of the longer vector of the original function.");
+      _vector->resize(v._vector->size());
+      discrete_subfunction = true;
+    }
+  }
+
+  // Copy values or interpolate
+  if (v.has_vector())
+  {
+    assert(_vector->size() == v._vector->size());
     *_vector = *v._vector;
   }
   else
@@ -170,17 +172,26 @@ const Function& Function::operator= (const Function& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-SubFunctionData Function::operator[] (uint i) const
+Function& Function::operator[] (uint i)
 {
   // Check that vector exists
   if (!_vector)
     error("Unable to extract sub function, missing coefficients (user-defined function).");
 
-  std::vector<uint> component = boost::assign::list_of(i);
-  boost::shared_ptr<const FunctionSpace> space(this->function_space().extract_sub_space(component));
- 
-  // Create sub-Function data holder
-  return SubFunctionData(space, this->_vector);
+  // Check if sub-Function is in the cache, otherwise create and add to cache
+  boost::ptr_map<uint, Function>::iterator sub_function = sub_functions.find(i);
+  if (sub_function != sub_functions.end())
+    return *(sub_function->second);
+  else
+  {
+    // Extract function subspace
+    std::vector<uint> component = boost::assign::list_of(i);
+    boost::shared_ptr<const FunctionSpace> sub_space(this->function_space().extract_sub_space(component));
+
+    // Insert sub-Function into map and return reference
+    sub_functions.insert(i, new Function(sub_space, this->_vector));
+    return *(sub_functions.find(i)->second);
+  }
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& Function::function_space() const

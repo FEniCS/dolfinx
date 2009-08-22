@@ -10,7 +10,6 @@
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/function/Function.h>
-#include <dolfin/function/SubFunctionData.h>
 #include "assemble.h"
 #include "Form.h"
 #include "BoundaryCondition.h"

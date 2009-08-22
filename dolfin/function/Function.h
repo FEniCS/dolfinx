@@ -11,7 +11,9 @@
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
+#include <map>
 #include <vector>
+#include <boost/ptr_container/ptr_map.hpp>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
@@ -29,7 +31,6 @@ namespace dolfin
   class FunctionSpace;
   class GenericVector;
   class Data;
-  class SubFunctionData;
 
   /// This class represents a function u_h in a finite element
   /// function space V_h, given by
@@ -67,9 +68,6 @@ namespace dolfin
     /// Create function from vector of dofs stored to file (shared data)
     Function(boost::shared_ptr<const FunctionSpace> V, std::string filename);
 
-    /// Create function from sub function data
-    Function(const SubFunctionData& v);
-
     /// Copy constructor 
     Function(const Function& v);
 
@@ -81,7 +79,7 @@ namespace dolfin
     const Function& operator= (const Function& v);
 
     /// Extract sub function data
-    SubFunctionData operator[] (uint i) const;
+    Function& operator[] (uint i);
 
     /// Return the function space
     const FunctionSpace& function_space() const;
@@ -150,6 +148,11 @@ namespace dolfin
     boost::shared_ptr<const FunctionSpace> _function_space;
 
   private:
+
+    // Collection of sub-functions which share data of the function
+    //mutable std::map<uint, Function> sub_functions; 
+    //std::map<uint, boost::shared_ptr<Function> > sub_functions; 
+    boost::ptr_map<uint, Function> sub_functions;
 
     void compute_off_process_dofs() const; 
 

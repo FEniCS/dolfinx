@@ -21,7 +21,6 @@ namespace dolfin
   class Form;
   class UFC;
   class FunctionSpace;
-  class SubFunctionData;
   class Data;
 
   // FIXME: Need to add checks for all these functions that
@@ -149,7 +148,7 @@ namespace dolfin
     DiscreteFunction(boost::shared_ptr<const FunctionSpace> V, std::string filename) : Function(V,filename){}
 
     // Constructor
-    DiscreteFunction(const SubFunctionData& v) : Function(v) {}
+    //DiscreteFunction(const SubFunctionData& v) : Function(v) {}
 
     ~DiscreteFunction(){}
   };
