@@ -679,13 +679,13 @@ DOWN_CAST_MACRO(EpetraMatrix)
 _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
 %}
 
-%extend dolfin::EpetraMatrix
-{
-  Epetra_FECrsMatrix& ref_mat() const
-  {
-    return *self->mat();
-  }
-}
+//%extend dolfin::EpetraMatrix
+//{
+//  Epetra_FECrsMatrix& ref_mat() const
+//  {
+//    return *self->mat();
+//  }
+//}
 
 %extend dolfin::EpetraVector
 {

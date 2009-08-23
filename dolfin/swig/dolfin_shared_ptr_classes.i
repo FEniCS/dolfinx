@@ -67,4 +67,39 @@ SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
 IMPLEMENT_VARIABLE_INTERFACE(Function)
 IMPLEMENT_VARIABLE_INTERFACE(Mesh)
 
+// FIXME: Make these const aware...
+%define FOREIGN_SHARED_PTR_TYPEMAPS(TYPE)
+// Define some dummy classes so SWIG becomes aware of these types
+%inline %{
+  class TYPE
+  {
+  };
+%}
+
+%typedef SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> Shared ## TYPE;
+
+%typecheck(0) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> {
+  int res = SWIG_ConvertPtr($input, 0, SWIGTYPE_p_ ## TYPE,0);
+  $1 = SWIG_CheckState(res);
+}
+
+%typemap(in) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> {
+  void *argp = 0;
+  TYPE * arg = 0;
+  int res = SWIG_ConvertPtr($input, &argp, SWIGTYPE_p_ ## TYPE,0);
+  if (SWIG_IsOK(res)) {
+    arg = reinterpret_cast<TYPE *>(argp);
+    $1 = dolfin::reference_to_no_delete_pointer(*arg);
+  }
+  else
+    SWIG_exception(SWIG_TypeError, "expected an  ## TYPE");
+}
+
+%typemap(out) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> {
+  TYPE * out = $1.get();
+  $result = SWIG_NewPointerObj(SWIG_as_voidptr(out), SWIGTYPE_p_ ## TYPE, 0 |  0 );
+}
+%enddef
+
+
 #endif

@@ -5,6 +5,7 @@
 %{
 #define protected public
 #include <dolfin/dolfin.h>
+#include <dolfin/common/NoDeleter.h>
 #define PY_ARRAY_UNIQUE_SYMBOL PyDolfin
 #include <numpy/arrayobject.h>
 using namespace dolfin;
