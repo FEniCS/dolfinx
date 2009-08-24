@@ -117,16 +117,11 @@ int main()
   vtk_file << u;
 
   // Plot solution
-  //plot(u, "Displacement", "displacement");
-  plot(u[1], "Displacement", "displacement");
-
-  Function u1 = u[1];
-  cout << "Vec sizes " << u.vector().size() << "  " << u1.vector().size() << endl;
-  plot(u1, "Displacement", "displacement");
+  plot(u, "Displacement", "displacement");
 
   // Displace mesh and plot displaced mesh
-  //mesh.move(u);
-  //plot(mesh, "Deformed mesh");
+  mesh.move(u);
+  plot(mesh, "Deformed mesh");
 
   return 0;
 }

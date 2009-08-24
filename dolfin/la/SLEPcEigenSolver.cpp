@@ -10,6 +10,7 @@
 #ifdef HAS_SLEPC
 
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/main/MPI.h>
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "SLEPcEigenSolver.h"
@@ -23,13 +24,17 @@ SLEPcEigenSolver::SLEPcEigenSolver()
   parameters = default_parameters();
 
   // Set up solver environment
-  EPSCreate(PETSC_COMM_SELF, &eps);
+  if (dolfin::MPI::num_processes() > 1)
+    EPSCreate(PETSC_COMM_WORLD, &eps);
+  else
+    EPSCreate(PETSC_COMM_SELF, &eps);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::~SLEPcEigenSolver()
 {
   // Destroy solver environment
-  if (eps) EPSDestroy(eps);
+  if (eps) 
+    EPSDestroy(eps);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(const PETScMatrix& A)
@@ -57,7 +62,8 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc)
   get_eigenvalue(lr, lc, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c)
+void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, 
+                                     PETScVector& r, PETScVector& c)
 {
   get_eigenpair(lr, lc, r, c, 0);
 }
