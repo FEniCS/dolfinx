@@ -240,12 +240,14 @@ GenericVector& Function::vector()
   // Initialize vector of dofs if not initialized
   if (!_vector)
     init();
+  else
+  {
+    // Check that this is not a sub function.
+    if (_vector->size() != _function_space->dofmap().global_dimension())
+      error("You are attempting to access a non-const the vector from a sub-Function.");
+  }
 
   assert(_vector);
-
-  if (_vector->size() != _function_space->dofmap().global_dimension())
-    warning("You are extracting the vector from a sub-Function. You will receive the longer vector of the original function.");
-
   return *_vector;
 }
 //-----------------------------------------------------------------------------
