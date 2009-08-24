@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-08-17
+// Last changed: 2009-08-24
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -137,38 +137,68 @@ const Function& Function::operator= (const Function& v)
   if (!v.has_function_space())
     error("Cannot copy Functions which do not have a FunctionSpace.");
 
-  cout << "Copy functions space in assignment" << endl;
-  // Copy function space
-  _function_space = v._function_space;
-
-  // Initialize vector
-  init();
-
-  // FIXME: For deep copies of subfunctions, we need to implement extraction 
-  // and 'reset' of dof maps, and copying of parts of the vector.
-  bool discrete_subfunction = false;
+  // If v has a vector, we can either make a copy of all the data, or if v
+  // is a sub-function, then we collapse the dof map and copy only the 
+  // relevant entries from the vetor of v
   if (v.has_vector())
   {
-    if (v._vector->size() != v._function_space->dofmap().global_dimension())
+    // Copy function (collapse dof_map if we have a sub function)
+    if (v._vector->size() == v._function_space->dofmap().global_dimension())
     {
-      //warning("Proper copying of sub-Functions not yet implemented. You will receive deep copy, but with a copy of the longer vector of the original function.");
-      _vector->resize(v._vector->size());
-      discrete_subfunction = true;
-    }
-  }
+      // Copy function space
+      _function_space = v._function_space;
 
-  // Copy values or interpolate
-  if (v.has_vector())
-  {
-    assert(_vector->size() == v._vector->size());
-    *_vector = *v._vector;
+      // Initialize vector
+      init();
+
+      // Copy vector
+      *_vector = *v._vector;
+    }
+    else
+    {
+      // Create collapsed dof map
+      std::map<uint, uint> collapsed_map;
+      boost::shared_ptr<DofMap> collapsed_dof_map(v._function_space->dofmap().collapse(collapsed_map));
+
+      // Create new FunctionsSpapce
+      _function_space = v._function_space->collapse_sub_space(collapsed_dof_map);
+
+      assert(collapsed_map.size() ==  _function_space->dofmap().global_dimension());   
+
+      // Create new vector
+      const uint size = collapsed_dof_map->global_dimension();
+      _vector.reset(v.vector().factory().create_vector());
+      _vector->resize(size);
+      
+      // Get rows of original and new vectors
+      std::map<uint, uint>::const_iterator entry;
+      std::vector<uint> new_rows(size);
+      std::vector<uint> old_rows(size);
+      uint i = 0;
+      for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
+      {
+        new_rows[i] = entry->first;
+        old_rows[i++] = entry->second;
+      }
+
+      // Get old values and set new values
+      v.gather();
+      std::vector<double> values(size);
+      v.get(&values[0], size, &old_rows[0]);
+      this->_vector->set(&values[0], size, &new_rows[0]);
+    }
   }
   else
   {
+    // Copy function space
+    _function_space = v._function_space;
+
+    // Initialize vector
+    init();
+
     info("Assignment from user-defined function, interpolating.");
     function_space().interpolate(*_vector, v);
   }
-
   return *this;
 }
 //-----------------------------------------------------------------------------

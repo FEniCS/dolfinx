@@ -113,6 +113,9 @@ namespace dolfin
         return false;
     }
 
+    /// "Collapse" a sub dofmap 
+    DofMap* collapse(std::map<uint, uint>& collapsed_map) const;
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
@@ -142,7 +145,7 @@ namespace dolfin
     uint _global_dimension;
 
     // Map from UFC dofs to renumbered dof 
-    std::map<dolfin::uint, int> ufc_to_map;
+    std::map<dolfin::uint, uint> ufc_to_map;
 
     // UFC dof map
     boost::shared_ptr<ufc::dof_map> ufc_dof_map;

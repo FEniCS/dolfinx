@@ -140,6 +140,7 @@ namespace dolfin
 
     /// Friends
     friend class Coefficient;
+    friend class DiscreteFunction;
     friend class VariationalProblem;
 
   protected:
@@ -149,9 +150,7 @@ namespace dolfin
 
   private:
 
-    // Collection of sub-functions which share data of the function
-    //mutable std::map<uint, Function> sub_functions; 
-    //std::map<uint, boost::shared_ptr<Function> > sub_functions; 
+    // Collection of sub-functions which share data with the function
     boost::ptr_map<uint, Function> sub_functions;
 
     void compute_off_process_dofs() const; 

@@ -149,7 +149,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component) const
   if (map.get())
   {
     if (ufc_to_map.size() == 0)
-      error("Cannnot yet extract sub-sub dof maps after renumbering yet.");
+      error("Cannnot yet extract sub dofmaps of a sub DofMap after renumbering yet.");
 
     const uint max_local_dim = ufc_sub_dof_map->max_local_dimension();
     const uint num_cells = dolfin_mesh->num_cells();
@@ -187,6 +187,47 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component) const
   sub_dofmap->_ufc_offset = ufc_offset;
 
   return sub_dofmap;
+}
+//-----------------------------------------------------------------------------
+DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map) const
+{
+  DofMap* collapsed_dof_map = 0;
+  if (map.get())
+  {
+    error("Cannot yet collapse renumbered dof maps.");
+  }
+  else
+  {
+    // Create a new DofMap
+    collapsed_dof_map = new DofMap(ufc_dof_map, dolfin_mesh); 
+  }
+
+  assert(collapsed_dof_map->global_dimension() == this->global_dimension()); 
+
+  // Clear map
+  collapsed_map.clear();
+
+  // Build map from collapsed to original dofs
+  UFCCell ufc_cell(*dolfin_mesh);
+  uint* dofs = new uint[this->max_local_dimension()];
+  uint* collapsed_dofs = new uint[collapsed_dof_map->max_local_dimension()];
+  for (CellIterator cell(*dolfin_mesh); !cell.end(); ++cell)
+  {
+    // Update to current cell
+    ufc_cell.update(*cell);
+
+   // Tabulate dofs
+   this->tabulate_dofs(dofs, ufc_cell, cell->index());
+   collapsed_dof_map->tabulate_dofs(collapsed_dofs, ufc_cell, cell->index());
+  
+    // Add to map
+    for (uint i = 0; i < collapsed_dof_map->local_dimension(ufc_cell); ++i)
+      collapsed_map[collapsed_dofs[i]] = dofs[i];
+  }
+  delete [] dofs;
+  delete [] collapsed_dofs;
+
+  return collapsed_dof_map;
 }
 //-----------------------------------------------------------------------------
 ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dof_map,

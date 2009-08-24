@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-06-23
+// Last changed: 2009-08-24
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/fem/UFC.h>
@@ -276,6 +276,13 @@ boost::shared_ptr<FunctionSpace>
   subspaces.insert(std::pair<std::string, boost::shared_ptr<FunctionSpace> >(identifier.str(), new_sub_space));
 
   return new_sub_space;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<FunctionSpace> 
+     FunctionSpace::collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const
+{
+  boost::shared_ptr<FunctionSpace> collapsed_sub_space(new FunctionSpace(_mesh, _element, dofmap));
+  return collapsed_sub_space;
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::attach(MeshFunction<bool>& restriction)
