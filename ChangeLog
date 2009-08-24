@@ -1,3 +1,8 @@
+ - Fix typmaps for uint in python 2.6
+ - Use TypeError instead of ValueError in typechecks in typmaps.i
+ - Add in/out shared_ptr<Epetra_FEFoo> typemaps for PyDOLFIN
+ - Fix JIT compiling in parallel
+ - Add a compile_extension_module function in PyDOLFIN
  - Fix bug in Python vector assignment
  - Add support for compressed base64 encoded VTK files (using zlib)
  - Add support for base64 encoded VTK files

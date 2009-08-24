@@ -2,8 +2,26 @@
 // Type maps for PyDOLFIN
 
 // Basic typemaps
-%typemap(in)  dolfin::uint = int;
-%typemap(out) dolfin::uint = int;
+//%typemap(in)  dolfin::uint = int;
+//%typemap(out) dolfin::uint = int;
+
+// A hack to get around incompatabilities with PyInt_Check and numpy int 
+// types in python 2.6
+%typecheck(SWIG_TYPECHECK_INTEGER) dolfin::uint{
+    $1 = PyType_IsSubtype($input->ob_type, &PyInt_Type) ? 1 : 0;
+}
+
+%typemap(in) dolfin::uint{
+  if (PyType_IsSubtype($input->ob_type, &PyInt_Type)){
+    long tmp = PyInt_AsLong($input);
+    if (tmp>=0)
+      $1 = static_cast<dolfin::uint>(tmp);
+    else
+      SWIG_exception(SWIG_ValueError, "positive 'int' expected");
+  }
+  else
+    SWIG_exception(SWIG_TypeError, "positive 'int' expected");
+}
 
 // Typemap for values (in Function)
 %typemap(directorin) double* values {
