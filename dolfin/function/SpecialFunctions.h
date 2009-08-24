@@ -153,30 +153,26 @@ namespace dolfin
     DiscreteFunction(boost::shared_ptr<const FunctionSpace> V, 
                      std::string filename) : Function(V, filename){}
 
-    /// Constructor (deep copy)
+    /// Constructor (deep copy of the vector)
     DiscreteFunction(const Function& v) : Function(v) {}
 
-/*
-    /// Sub-function constructor (shallow copy)
-    DiscreteFunction(const Function& v, uint i)
+    /// Sub-function constructor (shallow copy of the vector)
+    DiscreteFunction(Function& v, uint i)
     {
       // Check that vector exists
       if (!v.has_vector())
         error("Unable to extract sub function, missing coefficients (user-defined function).");
 
-      // Check if sub-Function is in the cache, otherwise create and add to cache
-      boost::ptr_map<uint, Function>::const_iterator sub_function = v.sub_functions.find(i);
-      if (sub_function == v.sub_functions.end())
-      {
-        // Extract function subspace
-        std::vector<uint> component = boost::assign::list_of(i);
-        boost::shared_ptr<const FunctionSpace> sub_space(v.function_space().extract_sub_space(component));
+      // Get sub-function (Function will store pointer to sub-Function)
+      Function& sub_function = v[i]; 
+      
+      // Copy function space pointer
+      this->_function_space = sub_function._function_space;
 
-        // Insert sub-Function into map and return reference
-        //sub_functions.insert(i, new Function(sub_space, v._vector));
-      }
+      // Copy vector pointer
+      this->_vector = sub_function._vector;
     }
-*/
+
     /// Destructor
     ~DiscreteFunction() {}
 
