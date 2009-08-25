@@ -40,6 +40,9 @@ namespace dolfin
     /// Assignment operator
     const Constant& operator= (const Constant& c);
 
+    /// Assignment operator
+    const Constant& operator= (double c);
+
     /// Destructor
     ~Constant();
 

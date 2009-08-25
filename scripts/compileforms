@@ -9,8 +9,8 @@
 import os
 
 # Forms that need special options
-special = {"CahnHilliard2D.ufl": "-fsplit_implementation",
-           "CahnHilliard3D.ufl": "-fsplit_implementation"}
+special = {"CahnHilliard2D.ufl": "-fsplit",
+           "CahnHilliard3D.ufl": "-fsplit"}
 
 # Compile all form files
 cwd = os.getcwd()

@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2005-08-31
-// Last changed: 2009-08-02
+// Last changed: 2009-08-24
 
 #ifdef HAS_SLEPC
 
