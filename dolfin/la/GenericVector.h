@@ -12,7 +12,9 @@
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
 
+#include <algorithm>
 #include <utility>
+#include <boost/lambda/lambda.hpp>
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
 
@@ -145,6 +147,29 @@ namespace dolfin
 
     /// Assignment operator
     virtual const GenericVector& operator= (double a) = 0;
+
+    /// Apply lambda function
+    template<typename T> void lambda(const T function)
+    {
+      // FIXME: This could be more efficient by acting on the underling vector data
+      std::vector<double> values(size());
+      get(&values[0]);
+      std::for_each(values.begin(), values.end(), function);
+      set(&values[0]);
+    }
+
+    /// Apply lambda function
+    template<typename T> void lambda(const GenericVector& x, const T function)
+    {
+      // FIXME: This could be more efficient by acting on the underling vector data
+      assert(x.size() == this->size());
+      std::vector<double> values(size());
+      std::vector<double> x_values(size());
+      this->get(&values[0]);
+      x.get(&x_values[0]);
+      std::transform(x_values.begin(), x_values.end(), values.begin(), function);
+      this->set(&values[0]);
+    }
 
     /// Return pointer to underlying data (const version)
     virtual const double* data() const
