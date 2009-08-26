@@ -137,6 +137,17 @@ namespace dolfin
     /// Solve dual problem given an approximate solution u of the primal problem
     void solve_dual(ODESolution& u, ODESolution& z);
 
+    /// Compute stability factors as function of t (implicitly solves the dual problem)
+
+    /// General stability factor q given 
+    void stability_factors(uint q, ODESolution& u);
+
+    /// Stability factor with respect to discretization scheme
+    void stability_discretization(ODESolution& u);
+
+    /// Stability factor with respect to computional (round off) errors
+    void stability_computation(ODESolution& u);
+    
     /// Set state for ODE (only available during interval stepping)
     void set_state(const real* u);
 
@@ -197,6 +208,7 @@ namespace dolfin
       p.add("nonlinear_solver", "default");
       p.add("linear_solver", "auto");
       p.add("solution_file_name", "solution.py");
+
 
       return p;
     }
