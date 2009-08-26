@@ -19,7 +19,83 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UFC::UFC(const Form& form)
  : form(form.ufc_form()), cell(form.mesh()), cell0(form.mesh()), 
-   cell1(form.mesh()), coefficients(form.coefficients())
+   cell1(form.mesh()), coefficients(form.coefficients()), dolfin_form(form)
+{
+  init(form);
+}
+//-----------------------------------------------------------------------------
+UFC::UFC(const UFC& ufc) : form(ufc.dolfin_form.ufc_form()), 
+   cell(ufc.dolfin_form.mesh()),  cell0(ufc.dolfin_form.mesh()), 
+   cell1(ufc.dolfin_form.mesh()), coefficients(ufc.dolfin_form.coefficients()), 
+   dolfin_form(ufc.dolfin_form)
+{
+  this->init(ufc.dolfin_form);
+}
+//-----------------------------------------------------------------------------
+UFC::~UFC()
+{
+  // Delete finite elements
+  for (uint i = 0; i < this->form.rank(); i++)
+    delete finite_elements[i];
+  delete [] finite_elements;
+
+  // Delete coefficient finite elements
+  for (uint i = 0; i < this->form.num_coefficients(); i++)
+    delete coefficient_elements[i];
+  delete [] coefficient_elements;
+
+  // Delete cell integrals
+  for (uint i = 0; i < this->form.num_cell_integrals(); i++)
+    delete cell_integrals[i];
+  delete [] cell_integrals;
+
+  // Delete exterior facet integrals
+  for (uint i = 0; i < this->form.num_exterior_facet_integrals(); i++)
+    delete exterior_facet_integrals[i];
+  delete [] exterior_facet_integrals;
+
+  // Delete interior facet integrals
+  for (uint i = 0; i < this->form.num_interior_facet_integrals(); i++)
+    delete interior_facet_integrals[i];
+  delete [] interior_facet_integrals;
+
+  // Delete local tensor
+  delete [] A;
+
+  // Delete local tensor for macro element
+  delete [] macro_A;
+
+  // Delete local dimensions
+  delete [] local_dimensions;
+
+  // Delete global dimensions
+  delete [] global_dimensions;
+
+  // Delete local dimensions for macro element
+  delete [] macro_local_dimensions;
+
+  // Delete dofs
+  for (uint i = 0; i < this->form.rank(); i++)
+    delete [] dofs[i];
+  delete [] dofs;
+
+  // Delete macro dofs
+  for (uint i = 0; i < this->form.rank(); i++)
+    delete [] macro_dofs[i];
+  delete [] macro_dofs;
+
+  // Delete coefficients
+  for (uint i = 0; i < this->form.num_coefficients(); i++)
+    delete [] w[i];
+  delete [] w;
+
+  // Delete macro coefficients
+  for (uint i = 0; i < this->form.num_coefficients(); i++)
+    delete [] macro_w[i];
+  delete [] macro_w;
+}
+//-----------------------------------------------------------------------------
+void UFC::init(const Form& form)
 {
   // Create finite elements
   finite_elements = new FiniteElement*[this->form.rank()];
@@ -123,69 +199,6 @@ UFC::UFC(const Form& form)
     for (uint j = 0; j < n; j++)
       macro_w[i][j] = 0.0;
   }
-}
-//-----------------------------------------------------------------------------
-UFC::~UFC()
-{
-  // Delete finite elements
-  for (uint i = 0; i < this->form.rank(); i++)
-    delete finite_elements[i];
-  delete [] finite_elements;
-
-  // Delete coefficient finite elements
-  for (uint i = 0; i < this->form.num_coefficients(); i++)
-    delete coefficient_elements[i];
-  delete [] coefficient_elements;
-
-  // Delete cell integrals
-  for (uint i = 0; i < this->form.num_cell_integrals(); i++)
-    delete cell_integrals[i];
-  delete [] cell_integrals;
-
-  // Delete exterior facet integrals
-  for (uint i = 0; i < this->form.num_exterior_facet_integrals(); i++)
-    delete exterior_facet_integrals[i];
-  delete [] exterior_facet_integrals;
-
-  // Delete interior facet integrals
-  for (uint i = 0; i < this->form.num_interior_facet_integrals(); i++)
-    delete interior_facet_integrals[i];
-  delete [] interior_facet_integrals;
-
-  // Delete local tensor
-  delete [] A;
-
-  // Delete local tensor for macro element
-  delete [] macro_A;
-
-  // Delete local dimensions
-  delete [] local_dimensions;
-
-  // Delete global dimensions
-  delete [] global_dimensions;
-
-  // Delete local dimensions for macro element
-  delete [] macro_local_dimensions;
-
-  // Delete dofs
-  for (uint i = 0; i < this->form.rank(); i++)
-    delete [] dofs[i];
-  delete [] dofs;
-
-  // Delete macro dofs
-  for (uint i = 0; i < this->form.rank(); i++)
-    delete [] macro_dofs[i];
-  delete [] macro_dofs;
-
-  // Delete coefficients
-  for (uint i = 0; i < this->form.num_coefficients(); i++)
-    delete [] w[i];
-  delete [] w;
-
-  // Delete macro coefficients
-  for (uint i = 0; i < this->form.num_coefficients(); i++)
-    delete [] macro_w[i];
-  delete [] macro_w;
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell)

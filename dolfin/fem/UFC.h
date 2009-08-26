@@ -37,8 +37,14 @@ namespace dolfin
     /// Constructor
     UFC(const Form& form);
 
+    /// Copy constructor
+    UFC(const UFC& ufc);
+
     /// Destructor
     ~UFC();
+
+    /// Initialise memory
+    void init(const Form& form);
 
     /// Update current cell
     void update(const Cell& cell);
@@ -109,6 +115,8 @@ namespace dolfin
 
     // Coefficient functions
     const std::vector<const Function*> coefficients;
+
+    const Form& dolfin_form;
 
   };
 }
