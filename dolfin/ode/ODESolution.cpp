@@ -46,7 +46,6 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
 {
   cout << "Reading ODESolution from file" << endl;
 
-  real tmp; 
   std::ifstream file;
   no_timeslabs = open_and_read_header(file, 0u);
   file.close();
