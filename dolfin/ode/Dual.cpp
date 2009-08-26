@@ -19,6 +19,8 @@ Dual::Dual(ODE& primal, ODESolution& u)
 {
   // Get parameters from primal
   parameters.update(primal.parameters);
+
+  parameters("solution_file_name") = "solution_dual.py";  
 }
 //------------------------------------------------------------------------
 Dual::~Dual()
@@ -77,4 +79,4 @@ real Dual::time(real t) const
 {
   return endtime() - t;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------
