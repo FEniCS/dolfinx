@@ -223,7 +223,7 @@ if "configure" in COMMAND_LINE_TARGETS:
 
   # Set default compiler and linker flags (defining CXXFLAGS/LINKFLAGS
   # will override this)
-  env['CXXFLAGS'] = os.environ.get("CXXFLAGS", "-Wall -pipe -ansi -Werror")
+  env['CXXFLAGS'] = os.environ.get("CXXFLAGS", "-Wall -pipe -ansi")
   env["LINKFLAGS"] = os.environ.get("LINKFLAGS", "")  # FIXME: "" OK as default?
 
   # Default FORTRAN flags
@@ -238,7 +238,7 @@ if "configure" in COMMAND_LINE_TARGETS:
   if env["enableOptimize"]:
     env.Append(CXXFLAGS=" -O3")
   elif env["enableDebug"]:
-    env.Append(CXXFLAGS=" -DDEBUG -g -O2")
+    env.Append(CXXFLAGS=" -DDEBUG -g -O2  -Werror")
   else:
     # FIXME: why are we optimizing when enableOptimize is False?
     env.Append(CXXFLAGS=" -O2")
