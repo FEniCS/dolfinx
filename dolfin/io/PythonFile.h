@@ -10,10 +10,12 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
 #include "GenericFile.h"
+#include <tr1/tuple>
 
 namespace dolfin
 {
   class Sample;
+
 
   // Represents input/output of data in a format readable by Python
   // (Numeric). The data is written to several files (the variable
@@ -32,6 +34,7 @@ namespace dolfin
     // Output
 
     void operator<< (const Sample& sample);
+    void operator<< (const std::tr1::tuple<uint, real, real*>&);
 
     std::string filename_t, filename_u, filename_k, filename_r;
 

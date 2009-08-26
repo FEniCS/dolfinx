@@ -124,3 +124,52 @@ void PythonFile::operator<<(const Sample& sample)
   fp_r.close();
 }
 //-----------------------------------------------------------------------------
+void PythonFile::operator<<(const std::tr1::tuple<uint, real, real*>& sample)
+{  
+  const uint& n = std::tr1::get<0>(sample);
+  const real& t = std::tr1::get<1>(sample);
+  const real* u = std::tr1::get<2>(sample);
+
+  // First time
+  if ( counter2 == 0 )
+  {
+    std::ofstream fp(filename.c_str());
+    if (!fp.is_open())
+      error("Unable to open file %s", filename.c_str());
+
+    fp << "from numpy import fromfile" << std::endl << std::endl;
+    fp << "t = fromfile('" << filename_t << "', sep=' ')" << std::endl;
+    fp << "u = fromfile('" << filename_u << "', sep=' ')" << std::endl;
+    fp << std::endl;
+    fp << "u.shape = len(u) //" << n << ", " << n << std::endl;
+    fp << std::endl;
+    fp.close();
+  }
+   
+  //sub files filemode:  append unless this is the first sample
+  std::ios_base::openmode filemode = (counter2 == 0 ? 
+				      std::ios_base::out : 
+				      std::ios_base::out| std::ios_base::app);
+    
+  //get precision
+  int prec = real_decimal_prec();
+    
+  // Open sub files
+  std::ofstream fp_t(filename_t.c_str(), filemode);
+  if (!fp_t.is_open())
+    error("Unable to open file %s", filename_t.c_str());
+    
+  std::ofstream fp_u(filename_u.c_str(), filemode);
+  if (!fp_u.is_open())
+    error("Unable to open file %s", filename_u.c_str());
+
+  // Save time
+  fp_t << std::setprecision(prec) << t << std::endl;
+  
+  // Save solution
+  for (uint i=0; i<n; ++i)
+    fp_u << std::setprecision(prec) << u[i] << " ";
+  fp_u << std::endl;
+
+  counter2++;
+}
