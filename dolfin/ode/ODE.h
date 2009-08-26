@@ -128,11 +128,14 @@ namespace dolfin
     /// Solve ODE on [0, T]
     void solve();
 
-    /// Solve ODE on [0, T]
+    /// Solve ODE on [0, T]. Save solution in u
     void solve(ODESolution& u);
 
     /// Solve ODE on [t0, t1]
     void solve(ODESolution& u, real t0, real t1);
+
+    /// Solve dual problem given an approximate solution u of the primal problem
+    void solve_dual(ODESolution& u, ODESolution& z);
 
     /// Set state for ODE (only available during interval stepping)
     void set_state(const real* u);

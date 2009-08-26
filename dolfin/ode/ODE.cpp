@@ -9,6 +9,7 @@
 #include "ODESolver.h"
 #include "TimeStepper.h"
 #include "ODE.h"
+#include "Dual.h"
 
 using namespace dolfin;
 
@@ -262,6 +263,18 @@ void ODE::solve(ODESolution& u, real t0, real t1)
 
   // Solve ODE on given time interval
   time_stepper->solve(u, t0, t1);
+}
+//-----------------------------------------------------------------------------
+void ODE::solve_dual(ODESolution& u, ODESolution& z) {
+  begin("Solving dual problem");
+
+  // Create dual problem
+  Dual dual(*this, u);
+  
+  // Solve dual problem
+  dual.solve(z);
+
+  end();
 }
 //-----------------------------------------------------------------------------
 void ODE::set_state(const real* u)
