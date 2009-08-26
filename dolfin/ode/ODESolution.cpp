@@ -20,6 +20,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ODESolution::ODESolution() : 
+  dummy(false),
   trial(0),
   N(0),
   nodal_size(0),
@@ -29,12 +30,13 @@ ODESolution::ODESolution() :
   initialized(false),
   read_mode(false),
   data_on_disk(false),
-  filename("odesolution"),
-  number_of_files(0)
+  dirty(false),
+  filename("odesolution")
 {
 }
 //-----------------------------------------------------------------------------
 ODESolution::ODESolution(std::string filename, uint number_of_files) : 
+  dummy(false),
   trial(0),
   N(0),
   nodal_size(0),
@@ -42,9 +44,10 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
   no_timeslabs(0),
   initialized(false),
   data_on_disk(true),
+  dirty(false),
   filename(filename)
 {
-  cout << "Reading ODESolution from file" << endl;
+  //cout << "Reading ODESolution from file" << endl;
 
   std::ifstream file;
   no_timeslabs = open_and_read_header(file, 0u);
@@ -55,32 +58,23 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
   for (uint i=1; i < number_of_files; i++) 
   {
     std::ifstream file;
-    uint size = open_and_read_header(file, i);
+    uint timeslabs_in_file = open_and_read_header(file, i);
     real t;
     file >> t;
-    file_table.push_back(t);
+    file_table.push_back( std::pair<real, uint>(t, no_timeslabs) );
     file.close();
 
-    file_offset_table.push_back(no_timeslabs);
-    no_timeslabs += size;
+    no_timeslabs += timeslabs_in_file;
   }
 
-  cout << "Timeslabs: " << no_timeslabs << endl;
+  //cout << "Timeslabs: " << no_timeslabs << endl;
 
-  uint count=0;
-  for (std::vector<real>::iterator it=file_table.begin(); it != file_table.end(); it++)  {
-    cout <<  "Filetable: " << count << ": " << *it << endl;
-    count++;
-  }
+  // load the last file into memory
+  read_file(file_table.size()-1);
 
-  //load the last file into memory
-  read_file(number_of_files-1);
-
-  ODESolution_data& last = data[data.size()-1];
+  ODESolutionData& last = data[data.size()-1];
   T = last.a+last.k;
   read_mode = true;
-
-  cout << "Done reading ODESolution from file. T=" << T << endl;
 }
 //-----------------------------------------------------------------------------
 ODESolution::~ODESolution() 
@@ -122,7 +116,9 @@ void ODESolution::init(uint N, const Lagrange& trial_space, const real* quad_wei
 //-----------------------------------------------------------------------------
 void ODESolution::add_timeslab(const real& a, const real& b, const real* nodal_values) 
 {
-  //Public method. Does some checks and calls add_data
+  if (dummy) return;
+
+   //Public method. Does some checks and calls add_data
   if (!initialized) error("ODE Solution not initialized");
   if (read_mode) error("ODE Solution in read mode");
   assert(b-a > 0);
@@ -130,18 +126,23 @@ void ODESolution::add_timeslab(const real& a, const real& b, const real* nodal_v
 
   if (data.size() > max_timeslabs) {
     save_to_file();
+    data.clear();
   }
 
   //cout << "Adding timeslab, a=" << a << ", b=" << b << endl;
   add_data(a, b, nodal_values);
 
+  dirty = true;
   no_timeslabs++;
   T = b;
 }
 //-----------------------------------------------------------------------------
 void ODESolution::flush() {
+  if (read_mode) error("Cannot flush. ODESolution already in read mode");
   if (data_on_disk)
+  {
     save_to_file();
+  }
 
   read_mode = true;
 }
@@ -149,7 +150,6 @@ void ODESolution::flush() {
 //-----------------------------------------------------------------------------
 void ODESolution::eval(const real& t, real* y) 
 {
-  //cout << "ODESolution::eval(" << t << ")" << endl;
   if (!read_mode) error("Can not evaluate solution");
   if(t > T) error("Requested t > T. t=%f, T=%f", to_double(t), to_double(T));
   
@@ -172,25 +172,24 @@ void ODESolution::eval(const real& t, real* y)
   if (data_on_disk && (t < a_in_memory() || t > b_in_memory()))
   {
     //get file number
-    std::vector<real>::iterator lower = std::upper_bound(file_table.begin(),
-							 file_table.end(),
-							 t);
+    std::vector< std::pair<real, uint> >::iterator lower = std::lower_bound(file_table.begin(),
+							       file_table.end(),
+							       t,
+							       real_filetable_cmp);
     uint index = lower-file_table.begin();
     
     read_file(index);
   }
 
   // Find position in buffer
-  std::vector<ODESolution_data>::iterator lower = std::upper_bound(data.begin(), 
-  							       data.end(), 
-							       t,
-							       t_cmp);
-  uint index = lower-data.begin()-1;
+  std::vector<ODESolutionData>::iterator lower = std::lower_bound(data.begin(), 
+								  data.end(), 
+								  t,
+								  real_data_cmp);
+  uint index = lower-data.begin();
 
-  ODESolution_data& a = data[index];
+  ODESolutionData& a = data[index];
   real tau = (t-a.a)/a.k;
-
-  //cout << "a = " << t_a << ", k = " << k << ", tau = " << tau << endl;
 
   assert(tau <= 1.0+real_epsilon());
 
@@ -209,22 +208,27 @@ void ODESolution::eval(const real& t, real* y)
   ringbufcounter = (ringbufcounter + 1) % cache_size;
 }
 //----------------------------------------------------------------------------- 
-ODESolution_data& ODESolution::get_timeslab(uint index) 
+ODESolutionData& ODESolution::get_timeslab(uint index) 
 {
+
   if (index >= no_timeslabs)
     error("Requested timeslabs %u out of range %u", index, no_timeslabs);
 
-  if (data_on_disk && index > a_index+data.size())
+  if ( data_on_disk && (index > b_index_in_memory() || index < a_index_in_memory()))
   {
-    std::vector<uint>::iterator lower = std::upper_bound(file_offset_table.begin(),
-							 file_offset_table.end(),
-							 index);
-    uint fileno = lower-file_offset_table.begin();
+    std::vector< std::pair<real, uint> >::iterator lower = std::lower_bound(file_table.begin(),
+									    file_table.end(),
+									    index,
+									    uint_filetable_cmp);
+    uint fileno = lower-file_table.begin();
     
     read_file(fileno);
   }
 
-  return data[index-a_index];
+  assert(index-a_index_in_memory() < data.size());
+
+
+  return data[index - a_index_in_memory()];
 }
 //----------------------------------------------------------------------------- 
 const real* ODESolution::get_weights() const {
@@ -241,18 +245,17 @@ void ODESolution::set_filename(std::string filename)
 //----------------------------------------------------------------------------- 
 void ODESolution::save_to_file() 
 {
-  if (data.size() == 0) return;
-
-  std::stringstream f(filename, std::ios_base::app | std::ios_base::out);  
-  if (number_of_files > 0) 
-  {
-    f << "_" << (number_of_files);
+  if (!dirty) {
+    return;
   }
 
-  cout << "Saving solution data to file: " << f.str() << ". a = " << a_in_memory() << ", b = " << b_in_memory() << endl;
+  std::stringstream f(filename, std::ios_base::app | std::ios_base::out);  
+  if (file_table.size() > 0) 
+  {
+    f << "_" << ( file_table.size());
+  }
 
-  file_table.push_back(a_in_memory());
-  file_offset_table.push_back(no_timeslabs - data.size());
+  file_table.push_back( std::pair<real, uint> (a_in_memory(), no_timeslabs - data.size()) );
 
   std::ofstream file(f.str().c_str());
   if (!file.is_open()) 
@@ -280,12 +283,8 @@ void ODESolution::save_to_file()
   file << "end_of_header" << std::endl;
 
   // then write the timeslab data
-  for (std::vector<ODESolution_data>::iterator it = data.begin(); it != data.end(); ++it) 
+  for (std::vector<ODESolutionData>::iterator it = data.begin(); it != data.end(); ++it) 
   {
-    //real& t = std::tr1::get<0>(*it);
-    //real& k = std::tr1::get<1>(*it);
-    //real* values = std::tr1::get<2>(*it);
-
     file << std::setprecision(real_decimal_prec()) << it->a << " " << it->k << " ";
     for (uint i = 0; i < N*nodal_size; ++i) 
     {
@@ -293,12 +292,13 @@ void ODESolution::save_to_file()
     }
     file << std::endl;
   }
-
   file.close();
 
-  number_of_files++;
-  data.clear();
   data_on_disk = true;
+  fileno_in_memory = file_table.size()-1;
+  dirty = false;
+
+  // Note: Don't clear data from memory. Caller should take care of this
   
 }
 //-----------------------------------------------------------------------------
@@ -362,6 +362,8 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
 void ODESolution::read_file(uint file_number)
 {
 
+  //cout << "Reading from file: " << file_number << endl;
+
   if (data.size() > 0) 
     data.clear();
 
@@ -396,22 +398,30 @@ void ODESolution::read_file(uint file_number)
     error("File data in file %u inconsistent with header. Header said: %d, read %d", 
 	  file_number, timeslabs, count);
 
-  //cout << "Done fetching from file " << file_number << 
-  //  ". In memory: " << a_in_memory() << " <---> " << b_in_memory() << endl;
+  fileno_in_memory = file_number;
+
 }
 //-----------------------------------------------------------------------------
 void ODESolution::add_data(const real& a, const real& b, const real* nodal_values) 
 {
   //Private method. Called from either add_timeslab or read_file
-  data.push_back(ODESolution_data(a, 
-				  b-a,
-				  nodal_size,
-				  N,
-				  nodal_values));
+  data.push_back(ODESolutionData(a, 
+				 b-a,
+				 nodal_size,
+				 N,
+				 nodal_values));
 }
 //----------------------------------------------------------------------------- 
-bool ODESolution::t_cmp(const real& t, const ODESolution_data& a) {
-  return (t < a.a);
+bool ODESolution::real_data_cmp( const ODESolutionData& a, const real& t ) {
+  return (a.a < t);
+}
+//----------------------------------------------------------------------------- 
+bool ODESolution::real_filetable_cmp(const std::pair<real, uint>& a, const real& t) {
+  return (a.first < t);
+}
+//----------------------------------------------------------------------------- 
+bool ODESolution::uint_filetable_cmp(const std::pair<real, uint>& a, const uint& i) {
+  return ( a.second < i);
 }
 //----------------------------------------------------------------------------- 
 void ODESolution::disp() 
@@ -444,4 +454,3 @@ ODESolution::iterator ODESolution::end()
 {
   return ODESolution::iterator(*this, no_timeslabs);
 }
-

@@ -31,6 +31,7 @@ ODESolver::~ODESolver()
 void ODESolver::solve()
 {
   ODESolution u;
+  u.dummy=true;
   solve(u);
 }
 //-----------------------------------------------------------------------
@@ -43,7 +44,6 @@ void ODESolver::solve(ODESolution& u)
 
   // Solve primal problem
   solve_primal(u);
-  u.flush();
 
   // Check if we should solve the dual problem
   if (ode.parameters("solve_dual_problem"))
@@ -76,12 +76,11 @@ void ODESolver::solve_dual(ODESolution& u)
 
   // Create dummy object to hold the solution of the dual
   ODESolution z;
-  z.set_filename("dual_odesolution");
+  z.dummy=true;
 
   // Solve dual problem
   TimeStepper time_stepper(dual);
   time_stepper.solve(z);
-  z.flush();
 
   end();
 }

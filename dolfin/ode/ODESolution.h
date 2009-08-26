@@ -30,22 +30,22 @@ namespace dolfin
   ///
   /// Since GMP at the moment doesn't support saving binary operands
   /// on disk this class uses ascii files for storage. 
-  /// Storing binary operands on disk is fortunately planned on the next major 
-  /// release of GMP.
+  /// Fortunately storing operands on disk in binary is planned in 
+  /// the next major release of GMP.
 
 
   class Lagrange;
-  class ODESolution_iterator;
+  class ODESolutionIterator;
 
 
 //----------------------------------------------------------------------------- 
 //-------------------------------- timeslabdata -------------------------------
 //----------------------------------------------------------------------------- 
-  class ODESolution_data
+  class ODESolutionData
   {
 
   public:
-  ODESolution_data(const real& a, const real& k, uint nodal_size, uint N, const real* values) :
+  ODESolutionData(const real& a, const real& k, uint nodal_size, uint N, const real* values) :
     a(a), k(k) 
     { 
       size = nodal_size*N;
@@ -54,7 +54,7 @@ namespace dolfin
     }
 
    //copy constructor
-    ODESolution_data(const ODESolution_data& cp)
+    ODESolutionData(const ODESolutionData& cp)
     {
       a = cp.a;
       k = cp.k;
@@ -63,7 +63,7 @@ namespace dolfin
       real_set(size, nv, cp.nv);
     }
     
-    ~ODESolution_data() {
+    ~ODESolutionData() {
       delete [] nv; 
     }
 
@@ -104,7 +104,7 @@ namespace dolfin
     void eval(const real& t, real* y);
 
     /// Get timeslab (used when iterating)
-    ODESolution_data& get_timeslab(uint index);
+    ODESolutionData& get_timeslab(uint index);
 
     /// Get pointer to weights
     const real* get_weights() const;
@@ -119,9 +119,11 @@ namespace dolfin
     inline real endtime() const {return T;}
 
     //iterator
-    typedef ODESolution_iterator iterator;
+    typedef ODESolutionIterator iterator;
     iterator begin();
     iterator end();
+
+    bool dummy;
 
   private:
     Lagrange* trial;
@@ -130,11 +132,7 @@ namespace dolfin
     real T; //endtime. Updated when new timeslabs are added 
 
     uint no_timeslabs;
-    std::vector<ODESolution_data> data; //data in memory
-    std::vector<real> file_table; //table mapping t values to files
-    std::vector<uint> file_offset_table;
-    uint fileno_in_memory; //which file is currently in memory
-    uint a_index; //offset of memory
+    std::vector<ODESolutionData> data; //data in memory
 
     real* quadrature_weights;
 
@@ -147,46 +145,53 @@ namespace dolfin
     bool read_mode;
 
     // Stuff related to file storage
-    static const uint max_filesize = 1000000000; //approx 1GB
-    bool data_on_disk;
-    uint max_timeslabs; //number of timeslabs pr file and in memory
+    static const uint max_filesize = 1000000000;        // approx 1GB
+    std::vector< std::pair<real, uint> > file_table; // table mapping t values and index to files
+    uint fileno_in_memory;                           // which file is currently in memory
+    bool data_on_disk;                               // 
+    uint max_timeslabs;                              // number of timeslabs pr file and in memory
+    bool dirty;                                      // all data written to disk
     std::string filename;
-    int number_of_files;
     void read_file(uint file_number);
     dolfin::uint open_and_read_header(std::ifstream& file, uint filenumber); 
 
     void add_data(const real& a, const real& b, const real* data);
 
+    //some functions for convenience
     inline real a_in_memory() {return data[0].a;}
     inline real b_in_memory() {return data[data.size()-1].a + data[data.size()-1].k;}
+    inline uint a_index_in_memory() {return data_on_disk ? file_table[fileno_in_memory].second : 0;}
+    inline uint b_index_in_memory() {return a_index_in_memory() + data.size()-1;}
 
-    //callback function used by std::lower_bound() when searching
-    static bool t_cmp( const real& t, const ODESolution_data& a);
+    //callback functions used by std::lower_bound() when searching
+    static bool real_data_cmp(const ODESolutionData& a,  const real& t);
+    static bool real_filetable_cmp( const std::pair<real, uint>& a,  const real& t);
+    static bool uint_filetable_cmp(const std::pair<real, uint>& a,  const uint& i);
   };
 
 //----------------------------------------------------------------------------- 
 //-------------------------------- iterator -----------------------------------
 //----------------------------------------------------------------------------- 
-  class ODESolution_iterator : 
-    public std::iterator<std::input_iterator_tag, ODESolution_data*>
+  class ODESolutionIterator : 
+    public std::iterator<std::input_iterator_tag, ODESolutionData*>
   {
   public:
-    ODESolution_iterator(ODESolution& u) : u(u), index(0) {}
-    ODESolution_iterator(ODESolution& u, uint index) : u(u), index(index) {}
-    ODESolution_iterator(const ODESolution_iterator& it) :   
+    ODESolutionIterator(ODESolution& u) : u(u), index(0) {}
+    ODESolutionIterator(ODESolution& u, int index) : u(u), index(index) {}
+    ODESolutionIterator(const ODESolutionIterator& it) :   
       u(it.get_ODESolution()), index(it.get_index()) {}
 
-    ODESolution_iterator& operator++() {++index;return *this;}
+    ODESolutionIterator& operator++() {++index;return *this;}
     void operator++(int) {++index;}
 
     uint get_index() const {return index;}
 
     ODESolution& get_ODESolution() const {return u;};
 
-    bool operator==(const ODESolution_iterator& rhs) {return index == rhs.get_index();}
-    bool operator!=(const ODESolution_iterator& rhs) {return index != rhs.get_index();}
+    bool operator==(const ODESolutionIterator& rhs) {return index == rhs.get_index();}
+    bool operator!=(const ODESolutionIterator& rhs) {return index != rhs.get_index();}
 
-    ODESolution_data& operator*() {return u.get_timeslab(index);}
+    ODESolutionData& operator*() {return u.get_timeslab(index);}
 
   private:
     ODESolution& u;
