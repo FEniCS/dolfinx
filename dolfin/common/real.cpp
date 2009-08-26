@@ -223,3 +223,41 @@ void dolfin::real_mat_exp(uint n, real* E, const real* A, const uint p)
     real_mat_prod(n, E, _A, _A);
   }
 }
+
+//-----------------------------------------------------------------------------
+// Matrix multiplication res = A*B
+void dolfin::real_mat_prod(uint n, real* res, const real* A, const real* B) 
+{
+  for (uint i=0; i < n; ++i)
+  {
+    for (uint j = 0; j < n; ++j)
+    {
+      res[i + n*j] = 0.0;
+      for (uint k = 0; k < n; ++k)
+      {
+	res[i+n*j] += A[i + n*k]* B[k + n*j];
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+// Matrix multiplication A = A * B
+void dolfin::real_mat_prod_inplace(uint n, real* A, const real* B)
+{
+  real tmp[n*n];
+  real_set(n*n, tmp, A);
+  real_mat_prod(n, A, tmp, B);
+}
+//-----------------------------------------------------------------------------
+// Matrix vector product y = Ax
+void dolfin::real_mat_vector_prod(uint n, real* y, const real* A, const real* x)
+{
+  for (uint i = 0; i < n; ++i) 
+  {
+    y[i] = 0;
+    for (uint j=0; j < n; ++j) 
+    {
+      y[i] += A[i + n*j] * x[j];
+    }
+  }
+}

@@ -19,9 +19,9 @@
 #endif
 
 #include "types.h"
-#include <dolfin/log/log.h>
 #include <cmath>
 #include <iostream>
+#include <dolfin/log/log.h>
 
 namespace dolfin
 {
@@ -159,6 +159,10 @@ namespace dolfin
   inline void real_mult(uint n, real* x, const real& a)
   { for (uint i = 0; i < n; i++) x[i] *= a; }
 
+  // Divide array with given number
+  inline void real_div(uint n, real* x, const real& a)
+  { for (uint i = 0; i < n; i++) x[i] /= a; }
+
   // Compute inner products of array
   inline real real_inner(uint n, const real* x, const real* y)
   { real sum = 0.0; for (uint i = 0; i < n; i++) sum += x[i]*y[i]; return sum; }
@@ -167,40 +171,21 @@ namespace dolfin
   inline real real_max_abs(uint n, const real* x)
   { real _max = 0.0; for (uint i = 0; i < n; i++) _max = real_max(real_abs(x[i]), _max); return _max; }
 
-  // Matrix multiplication
-  inline void real_mat_prod(uint n, real* res, const real* A, const real* B) 
-  {
-    //Compute Precond*A and Precond*b with extended precision
-    for (uint i=0; i < n; ++i)
-    {
-      for (uint j = 0; j < n; ++j)
-      {
-	res[i + n*j] = 0.0;
-	for (uint k = 0; k < n; ++k)
-	{
-	  res[i+n*j] += A[i + n*k]* B[k + n*j];
-	}
-      }
-    }
-  }
+  // Compute eucleadien norm
+  inline real real_norm(uint n, const real* x)
+  {real sum=0.0; for (uint i=0; i<n; ++i) sum += x[i]*x[i]; return real_sqrt(sum);}
 
+  // Set matrix A to (a multippel of) identity
+  inline void real_identity(uint n, real* A, real value=1.0)
+  { real_zero(n*n, A); for (uint i=0; i < n; ++i) A[i*n+i] = value; }
+
+  // Matrix multiplication res = A*B
+  void real_mat_prod(uint n, real* res, const real* A, const real* B); 
 
   // Matrix multiplication A = A * B
-  inline void real_mat_prod_inplace(uint n, real* A, const real* B)
-  {
-    real tmp[n*n];
-    real_set(n*n, tmp, A);
-    real_mat_prod(n, A, tmp, B);
-  }
+  void real_mat_prod_inplace(uint n, real* A, const real* B);
 
-  // Set A (a multippel of) to identity
-  inline void real_identity(uint n, real* A, real value=1.0)
-  {
-    real_zero(n*n, A);
-
-    for (uint i=0; i < n; ++i)
-      A[i*n+i] = value;
-  }
+  // Matrix vector product y = Ax
+  void real_mat_vector_prod(uint n, real* y, const real* A, const real* x);
 }
-
 #endif
