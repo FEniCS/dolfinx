@@ -69,6 +69,8 @@ int main()
     }
   };
 
+  //parameters("linear_algebra_backend") = "uBLAS";
+
   // Read mesh and create function space
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
   Elasticity::FunctionSpace V(mesh);
