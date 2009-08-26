@@ -41,7 +41,7 @@ void dolfin::dolfin_set_precision(uint decimal_prec)
   
   int d = mpf_get_default_prec();
   // Display number of digits
-  cout << "Using " << d << " bits pr digit, epsilon = " << real_epsilon() << endl;
+  cout << "Using " << d << " bits pr number, epsilon = " << real_epsilon() << endl;
   _real_initialized = true;
 #else 
     warning("Can't change floating-point precision when using type double.");
