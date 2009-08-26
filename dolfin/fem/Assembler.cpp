@@ -127,8 +127,6 @@ void Assembler::assemble_cells(GenericTensor& A,
                                const MeshFunction<uint>* domains,
                                std::vector<double>* values)
 {
-  //UFC ufc(a);
-
   // Skip assembly if there are no cell integrals
   if (ufc.form.num_cell_integrals() == 0)
     return;
@@ -142,13 +140,8 @@ void Assembler::assemble_cells(GenericTensor& A,
 
   // Assemble over cells
   Progress p(progress_message(A.rank(), "cells"), mesh.num_cells());
-  //#pragma omp parallel for firstprivate(ufc)
-  //for (int i = 0; i < (int)mesh.num_cells(); ++i)
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    //Cell _cell(mesh, i);
-    //Cell* cell = &_cell;
-
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
@@ -160,10 +153,7 @@ void Assembler::assemble_cells(GenericTensor& A,
     }
 
     // Update to current cell
-    //#pragma omp critical
-    //{
     ufc.update(*cell);
-    //}
 
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
@@ -180,10 +170,7 @@ void Assembler::assemble_cells(GenericTensor& A,
       // Get local dimensions
       for (uint i = 0; i < a.rank(); i++)
         ufc.local_dimensions[i] = a.function_space(i).dofmap().local_dimension(ufc.cell);
-      //#pragma omp critical
-      //{
       A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
-      //}
     }
     p++;
   }
