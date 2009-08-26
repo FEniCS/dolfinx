@@ -7,7 +7,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2009-08-11
+// Last changed: 2009-08-25
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -94,6 +94,10 @@ namespace dolfin
     /// Get all values
     virtual void get(double* values) const
     { vector->get(values); }
+
+    /// Get block of values (values must all live on the local process)
+    virtual void get_local(double* block, uint m, const uint* rows) const
+    { vector->get_local(block,m,rows); }
 
     /// Set all values
     virtual void set(const double* values)
