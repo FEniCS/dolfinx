@@ -143,14 +143,17 @@ const Function& Function::operator= (const Function& v)
   if (v.has_vector())
   {
     // Copy function (collapse dof_map if we have a sub function)
-    if (v._vector->size() == v._function_space->dofmap().global_dimension())
+    if (v._vector->size() == v._function_space->dim())
     {
       // Copy function space
       _function_space = v._function_space;
 
-      // Initialize vector
-      init();
-
+      // Initialize vector if required
+      if (!has_vector())
+        init();
+      else if (_vector->size() != v._function_space->dim())
+        init();
+  
       // Copy vector
       *_vector = *v._vector;
     }
