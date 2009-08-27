@@ -87,14 +87,14 @@ namespace dolfin
     /// Add block of values
     virtual void add(const double* block, uint m, const uint* rows);
 
-    /// Get all values
-    virtual void get(double* values) const;
+    /// Get all values on local process
+    virtual void get_local(double* values) const;
 
-    /// Set all values
-    virtual void set(const double* values);
+    /// Set all values on local process
+    virtual void set_local(const double* values);
 
-    /// Add values to each entry
-    virtual void add(const double* values);
+    /// Add values to each entry on local process
+    virtual void add_local(const double* values);
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);

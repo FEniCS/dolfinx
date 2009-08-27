@@ -32,7 +32,7 @@ FunctionPlotData::FunctionPlotData(const Function& v)
   // Interpolate vertex values
   double* values = new double[N];
   v.interpolate_vertex_values(values);
-  vertex_values.set(values);
+  vertex_values.set_local(values);
   delete [] values;
 
   // Get shape and dimension

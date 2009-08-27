@@ -83,6 +83,10 @@ namespace dolfin
     virtual void get(double* block, uint m, const uint* rows) const
     { vector->get(block, m, rows); }
 
+    /// Get block of values (values must all live on the local process)
+    virtual void get_local(double* block, uint m, const uint* rows) const
+    { vector->get_local(block,m,rows); }
+
     /// Set block of values
     virtual void set(const double* block, uint m, const uint* rows)
     { vector->set(block, m, rows); }
@@ -91,21 +95,17 @@ namespace dolfin
     virtual void add(const double* block, uint m, const uint* rows)
     { vector->add(block, m, rows); }
 
-    /// Get all values
-    virtual void get(double* values) const
-    { vector->get(values); }
+    /// Get all values on local process
+    virtual void get_local(double* values) const
+    { vector->get_local(values); }
 
-    /// Get block of values (values must all live on the local process)
-    virtual void get_local(double* block, uint m, const uint* rows) const
-    { vector->get_local(block,m,rows); }
+    /// Set all values on local process
+    virtual void set_local(const double* values)
+    { vector->set_local(values); }
 
-    /// Set all values
-    virtual void set(const double* values)
-    { vector->set(values); }
-
-    /// Add values to each entry
-    virtual void add(const double* values)
-    { vector->add(values); }
+    /// Add values to each entry on local process
+    virtual void add_local(const double* values)
+    { vector->add_local(values); }
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x)

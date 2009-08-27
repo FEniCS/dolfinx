@@ -53,15 +53,18 @@ namespace dolfin
     { assert(dim == 0); return size(); }
 
     /// Get block of values
-    virtual void get(double* block, const uint* num_rows, const uint * const * rows) const
+    virtual void get(double* block, const uint* num_rows, 
+                     const uint * const * rows) const
     { get(block, num_rows[0], rows[0]); }
 
     /// Set block of values
-    virtual void set(const double* block, const uint* num_rows, const uint * const * rows)
+    virtual void set(const double* block, const uint* num_rows, 
+                     const uint * const * rows)
     { set(block, num_rows[0], rows[0]); }
 
     /// Add block of values
-    virtual void add(const double* block, const uint* num_rows, const uint * const * rows)
+    virtual void add(const double* block, const uint* num_rows, 
+                     const uint * const * rows)
     { add(block, num_rows[0], rows[0]); }
 
     /// Set all entries to zero and keep any sparse structure
@@ -97,14 +100,14 @@ namespace dolfin
     /// Add block of values
     virtual void add(const double* block, uint m, const uint* rows) = 0;
 
-    /// Get all values
-    virtual void get(double* values) const = 0;
+    /// Get all values on local process
+    virtual void get_local(double* values) const = 0;
 
-    /// Set all values
-    virtual void set(const double* values) = 0;
+    /// Set all values on local process
+    virtual void set_local(const double* values) = 0;
 
-    /// Add values to each entry
-    virtual void add(const double* values) = 0;
+    /// Add values to each entry on local process
+    virtual void add_local(const double* values) = 0;
 
     virtual void gather(GenericVector& x, const std::vector<uint>& indices) const
     { error("GenericVector::gather is not implemented for this backend."); }
@@ -151,24 +154,26 @@ namespace dolfin
     /// Apply lambda function
     template<typename T> void lambda(const T function)
     {
-      // FIXME: This could be more efficient by acting on the underling vector data
+      // FIXME: This could be more efficient by acting on the underling vector 
+      //        data
       std::vector<double> values(size());
-      get(&values[0]);
+      get_local(&values[0]);
       std::for_each(values.begin(), values.end(), function);
-      set(&values[0]);
+      set_local(&values[0]);
     }
 
     /// Apply lambda function
     template<typename T> void lambda(const GenericVector& x, const T function)
     {
-      // FIXME: This could be more efficient by acting on the underling vector data
+      // FIXME: This could be more efficient by acting on the underling vector 
+      //        data
       assert(x.size() == this->size());
       std::vector<double> values(size());
       std::vector<double> x_values(size());
-      this->get(&values[0]);
-      x.get(&x_values[0]);
+      this->get_local(&values[0]);
+      x.get_local(&x_values[0]);
       std::transform(x_values.begin(), x_values.end(), values.begin(), function);
-      this->set(&values[0]);
+      this->set_local(&values[0]);
     }
 
     /// Return pointer to underlying data (const version)

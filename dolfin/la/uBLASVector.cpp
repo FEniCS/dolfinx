@@ -76,19 +76,19 @@ uBLASVector* uBLASVector::copy() const
   return new uBLASVector(*this);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::get(double* values) const
+void uBLASVector::get_local(double* values) const
 {
   for (uint i = 0; i < size(); i++)
     values[i] = (*x)(i);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::set(const double* values)
+void uBLASVector::set_local(const double* values)
 {
   for (uint i = 0; i < size(); i++)
     (*x)(i) = values[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::add(const double* values)
+void uBLASVector::add_local(const double* values)
 {
   for (uint i = 0; i < size(); i++)
     (*x)(i) += values[i];

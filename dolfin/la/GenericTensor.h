@@ -48,13 +48,16 @@ namespace dolfin
     virtual uint size(uint dim) const = 0;
 
     /// Get block of values
-    virtual void get(double* block, const uint* num_rows, const uint * const * rows) const = 0;
+    virtual void get(double* block, const uint* num_rows, 
+                     const uint * const * rows) const = 0;
 
     /// Set block of values
-    virtual void set(const double* block, const uint* num_rows, const uint * const * rows) = 0;
+    virtual void set(const double* block, const uint* num_rows, 
+                     const uint * const * rows) = 0;
 
     /// Add block of values
-    virtual void add(const double* block, const uint* num_rows, const uint * const * rows) = 0;
+    virtual void add(const double* block, const uint* num_rows, 
+                     const uint * const * rows) = 0;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;

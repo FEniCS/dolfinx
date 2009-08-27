@@ -137,7 +137,7 @@ std::string EpetraVector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::get(double* values) const
+void EpetraVector::get_local(double* values) const
 {
   assert(x);
 
@@ -147,7 +147,7 @@ void EpetraVector::get(double* values) const
     error("EpetraVector::get: Did not manage to perform Epetra_Vector::ExtractCopy.");
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::set(const double* values)
+void EpetraVector::set_local(const double* values)
 {
   assert(x);
 
@@ -174,7 +174,7 @@ void EpetraVector::set(const double* values)
   */
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::add(const double* values)
+void EpetraVector::add_local(const double* values)
 {
   assert(x);
 

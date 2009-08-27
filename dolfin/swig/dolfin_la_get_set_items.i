@@ -23,7 +23,7 @@ double* _get_vector_values( dolfin::GenericVector* self, bool &copied_values)
     // We couldn't acces the values directly
     copied_values = true;
     values = new double[self->size()];
-    self->get(values);
+    self->get_local(values);
   }
   return values;
 }
@@ -400,7 +400,7 @@ dolfin::GenericVector* _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolf
   // Create the return vector and set the values
   dolfin::GenericVector * return_vec = self->factory().create_vector();
   return_vec->resize(inds->size());
-  return_vec->set(values);
+  return_vec->set_local(values);
   
   // Clean up
   delete[] values;

@@ -95,19 +95,19 @@ std::string MTL4Vector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::get(double* values) const
+void MTL4Vector::get_local(double* values) const
 {
   for (uint i = 0; i < size(); i++)
     values[i] = x[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::set(const double* values)
+void MTL4Vector::set_local(const double* values)
 {
   for (uint i = 0; i < size(); i++)
     x[i] = values[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::add(const double* values)
+void MTL4Vector::add_local(const double* values)
 {
   for (uint i = 0; i < size(); i++)
     x(i) += values[i];

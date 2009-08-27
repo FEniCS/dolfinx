@@ -69,7 +69,7 @@ void XMLVector::write(const GenericVector& vector, std::ostream& outfile, uint i
 
   uint size = vector.size();
   double vector_values[size];
-  vector.get(vector_values);
+  vector.get_local(vector_values);
 
   // Convert Vector values to std::vector<double>
   std::vector<double> arr;
@@ -106,6 +106,6 @@ void XMLVector::end_vector()
   double v[values.size()];
   for (uint i = 0; i< values.size(); ++i)
     v[i] = values[i];
-  x.set(v);
+  x.set_local(v);
 }
 //-----------------------------------------------------------------------------

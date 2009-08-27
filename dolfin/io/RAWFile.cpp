@@ -103,7 +103,7 @@ void RAWFile::ResultsWrite(const Function& u) const
       double* values = new double[size];
 
       // Get function values on cells
-      u.vector().get(values);
+      u.vector().get_local(values);
 
       // Write function data at cells
       uint num_cells = mesh.num_cells();
