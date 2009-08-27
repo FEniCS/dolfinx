@@ -9,6 +9,7 @@ EnsureSConsVersion(0, 98, 5)
 
 # Import the local 'scons'
 sys.path.insert(0, os.path.abspath(os.path.join("scons", "simula-scons")))
+print os.path.abspath(os.path.join("scons", "simula-scons"))
 import simula_scons as scons
  
 # Import local exceptions
