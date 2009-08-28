@@ -63,8 +63,8 @@ int main()
   // Compute solution
   VariationalProblem problem(a, L, bc);
   // FIXME: Temporary while testing parallel assembly
-  problem.parameters("linear_solver") = "iterative";
-  problem.parameters["krylov_solver"]("relative_tolerance") = 1e-20;
+  //problem.parameters("linear_solver") = "iterative";
+  //problem.parameters["krylov_solver"]("relative_tolerance") = 1e-20;
   Function u;
   problem.solve(u);
 
@@ -72,8 +72,8 @@ int main()
   info("Norm of solution vector: %.15g", u.vector().norm());
 
   // Save solution in VTK format (using base64 encoding)
-  File file("poisson.pvd", "compressed");
-  file << u;
+  //File file("poisson.pvd", "compressed");
+  //file << u;
 
   // Plot solution
   plot(u);

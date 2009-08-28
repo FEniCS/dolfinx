@@ -149,9 +149,9 @@ const Function& Function::operator= (const Function& v)
       _function_space = v._function_space;
 
       // Initialize vector if required
-      if (!has_vector())
+      if (!this->has_vector())
         init();
-      else if (_vector->size() != v._function_space->dim())
+      else if (this->_vector->size() != v._function_space->dim())
         init();
   
       // Copy vector

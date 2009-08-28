@@ -90,7 +90,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   _mat_type = solver_type;
   if (_mat_type == MATMPIAIJ)
   {
-    error("MUMPS is required for parallel symbolic LU.");
+    error("MUMPS is required for parallel LU with PETSc version < 3.");
   }
   #endif
 
@@ -205,9 +205,17 @@ void PETScLUSolver::init()
     PCFactorSetMatSolverPackage(pc, MAT_SOLVER_UMFPACK);
   #endif
 
-  #if PETSC_HAVE_MUMPS && PETSC_VERSION_MAJOR > 2
+  #if PETSC_VERSION_MAJOR > 2
   if (MPI::num_processes() > 1)
+  {
+    #if PETSC_HAVE_MUMPS
     PCFactorSetMatSolverPackage(pc, MAT_SOLVER_MUMPS);
+    # elif PETSC_HAVE_SPOOLES
+    PCFactorSetMatSolverPackage(pc, MAT_SOLVER_SPOOLES);
+    #else
+    error("No suitable solver for parallel LU. Considering configuring PETSc with MUMPS or  SPOOLES.");
+    #endif
+  }
   #endif
 
   // Allow matrices with zero diagonals to be solved
