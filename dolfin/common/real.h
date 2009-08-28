@@ -187,5 +187,9 @@ namespace dolfin
 
   // Matrix vector product y = Ax
   void real_mat_vector_prod(uint n, real* y, const real* A, const real* x);
+
+  // Matrix power A = B^q
+  void real_mat_pow(uint n, real* A, const real* B, uint q);
+
 }
 #endif

@@ -10,6 +10,7 @@
 #include "TimeStepper.h"
 #include "ODE.h"
 #include "Dual.h"
+#include "StabilityAnalysis.h"
 
 using namespace dolfin;
 
@@ -275,6 +276,26 @@ void ODE::solve_dual(ODESolution& u, ODESolution& z) {
   dual.solve(z);
 
   end();
+}
+//-----------------------------------------------------------------------------
+void ODE::analyze_stability( uint q, ODESolution& u) {
+  StabilityAnalysis S(*this, u);
+  S.analyze_integral(q);
+}
+//-----------------------------------------------------------------------------
+void ODE::analyze_stability_discretization(ODESolution& u) {
+  StabilityAnalysis S(*this, u);
+  S.analyze_integral(parameters("order"));
+}
+//-----------------------------------------------------------------------------
+void ODE::analyze_stability_computation(ODESolution& u) {
+  StabilityAnalysis S(*this, u);
+  S.analyze_integral(0);
+}
+//-----------------------------------------------------------------------------
+void ODE::analyze_stability_initial(ODESolution& u) {
+  StabilityAnalysis S(*this, u);
+  S.analyze_endpoint();
 }
 //-----------------------------------------------------------------------------
 void ODE::set_state(const real* u)

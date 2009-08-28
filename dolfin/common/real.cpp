@@ -261,3 +261,13 @@ void dolfin::real_mat_vector_prod(uint n, real* y, const real* A, const real* x)
     }
   }
 }
+//-----------------------------------------------------------------------------
+// Matrix power A = B^q
+void dolfin::real_mat_pow(uint n, real* A, const real* B, uint q)
+{
+  // TODO : Minimize number of matrix multiplications
+
+  real_identity(n, A);
+  for (uint i = 0; i < q; ++i)
+    real_mat_prod_inplace(n, A, B);
+}

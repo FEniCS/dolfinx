@@ -10,5 +10,6 @@
 #include <dolfin/ode/cGqMethod.h>
 #include <dolfin/ode/dGqMethod.h>
 #include <dolfin/ode/ODESolution.h>
+#include <dolfin/ode/StabilityAnalysis.h>
 
 #endif
