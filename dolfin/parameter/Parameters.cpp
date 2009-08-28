@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-08-09
+// Last changed: 2009-08-27
 
 #include <sstream>
 #include <boost/program_options.hpp>
@@ -376,7 +376,7 @@ std::string Parameters::str(bool verbose) const
 
     for (const_parameter_set_iterator it = _parameter_sets.begin();
          it != _parameter_sets.end(); ++it)
-      s << "\n\n" << indent(it->second->str());
+      s << "\n\n" << indent(it->second->str(verbose));
   }
   else
   {
