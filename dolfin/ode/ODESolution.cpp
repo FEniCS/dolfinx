@@ -47,18 +47,16 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
   dirty(false),
   filename(filename)
 {
-  //cout << "Reading ODESolution from file" << endl;
-
   std::ifstream file;
-  no_timeslabs = open_and_read_header(file, 0u);
+  uint timeslabs_in_file = open_and_read_header(file, 0u);
   file.close();
 
 
   //collect number of timeslabs and first t value from all files
-  for (uint i=1; i < number_of_files; i++) 
+  for (uint i=0; i < number_of_files; i++) 
   {
     std::ifstream file;
-    uint timeslabs_in_file = open_and_read_header(file, i);
+    timeslabs_in_file = open_and_read_header(file, i);
     real t;
     file >> t;
     file_table.push_back( std::pair<real, uint>(t, no_timeslabs) );
@@ -66,8 +64,6 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
 
     no_timeslabs += timeslabs_in_file;
   }
-
-  //cout << "Timeslabs: " << no_timeslabs << endl;
 
   // load the last file into memory
   read_file(file_table.size()-1);
@@ -305,6 +301,7 @@ void ODESolution::save_to_file()
 dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenumber)
 {
   std::stringstream f(filename, std::ios_base::app | std::ios_base::out);
+
   if (filenumber > 0)
     f << "_" << filenumber;
 
@@ -361,8 +358,6 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
 //-----------------------------------------------------------------------------
 void ODESolution::read_file(uint file_number)
 {
-
-  //cout << "Reading from file: " << file_number << endl;
 
   if (data.size() > 0) 
     data.clear();

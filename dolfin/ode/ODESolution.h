@@ -145,7 +145,7 @@ namespace dolfin
     bool read_mode;
 
     // Stuff related to file storage
-    static const uint max_filesize = 1000000000;        // approx 1GB
+    static const uint max_filesize = 3000000000;     // approx 3GB
     std::vector< std::pair<real, uint> > file_table; // table mapping t values and index to files
     uint fileno_in_memory;                           // which file is currently in memory
     bool data_on_disk;                               // 
