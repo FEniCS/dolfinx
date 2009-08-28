@@ -14,6 +14,10 @@ import sys, os, re
 import platform
 from commands import getstatusoutput
 
+if "--only-python" in sys.argv:
+    print "Skipping C++ only memory tests"
+    sys.exit()
+
 if platform.system() in ['Darwin', 'Windows']:
     print "No support for Valgrind on this platform."
     sys.exit(0)
