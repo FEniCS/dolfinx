@@ -128,42 +128,45 @@ PETScVector* PETScVector::copy() const
 void PETScVector::get_local(double* values) const
 {
   assert(x);
-  int m = static_cast<int>(size());
-  if (m == 0)
+  if (size() == 0)
     return;
 
-  int* rows = new int[m];
-  for (int i = 0; i < m; i++)
+  const int local_size = local_range().second - local_range().first;
+  int* rows = new int[local_size];
+  for (int i = 0; i < local_size; i++)
     rows[i] = i;
  
-  VecGetValues(*x, m, rows, values);
+  VecGetValues(*x, local_size, rows, values);
   delete [] rows;
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set_local(const double* values)
 {
   assert(x);
-  int m = static_cast<int>(size());
-  int* rows = new int[m];
-  for (int i = 0; i < m; i++)
+  if (size() == 0)
+    return;
+
+  const int local_size = local_range().second - local_range().first;
+  int* rows = new int[local_size];
+  for (int i = 0; i < local_size; i++)
     rows[i] = i;
 
-  VecSetValues(*x, m, rows, values, INSERT_VALUES);
+  VecSetValues(*x, local_size, rows, values, INSERT_VALUES);
   delete [] rows;
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add_local(const double* values)
 {
-  if (local_range().first > 0 || size() > local_range().second)
-    error("PETScVector::add(const double*) should not be used for distributed vectors.");
-
   assert(x);
-  int m = static_cast<int>(size());
-  int* rows = new int[m];
-  for (int i = 0; i < m; i++)
+  if (size() == 0)
+    return;
+
+  const int local_size = local_range().second - local_range().first;
+  int* rows = new int[local_size];
+  for (int i = 0; i < local_size; i++)
     rows[i] = i;
 
-  VecSetValues(*x, m, rows, values, ADD_VALUES);
+  VecSetValues(*x, local_size, rows, values, ADD_VALUES);
   delete [] rows;
 }
 //-----------------------------------------------------------------------------
