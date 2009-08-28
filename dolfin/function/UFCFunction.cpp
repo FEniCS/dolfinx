@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-05-08
-// Last changed: 2008-11-04
+// Last changed: 2009-08-29
 
 #include <dolfin/log/log.h>
 #include "Data.h"
@@ -31,10 +31,14 @@ void UFCFunction::evaluate(double* values,
 {
   assert(values);
 
-  // Set coordinates
+  // Set coordinates and UFC cell
   data.x = coordinates;
+  data._ufc_cell = &cell;
 
   // Call eval for function
   v.eval(values, data);
+
+  // Invalidate eval data
+  data.invalidate();
 }
 //-----------------------------------------------------------------------------

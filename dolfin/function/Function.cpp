@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-08-24
+// Last changed: 2009-08-29
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -138,7 +138,7 @@ const Function& Function::operator= (const Function& v)
     error("Cannot copy Functions which do not have a FunctionSpace.");
 
   // If v has a vector, we can either make a copy of all the data, or if v
-  // is a sub-function, then we collapse the dof map and copy only the 
+  // is a sub-function, then we collapse the dof map and copy only the
   // relevant entries from the vetor of v
   if (v.has_vector())
   {
@@ -153,7 +153,7 @@ const Function& Function::operator= (const Function& v)
         init();
       else if (this->_vector->size() != v._function_space->dim())
         init();
-  
+
       // Copy vector
       *_vector = *v._vector;
     }
@@ -166,13 +166,13 @@ const Function& Function::operator= (const Function& v)
       // Create new FunctionsSpapce
       _function_space = v._function_space->collapse_sub_space(collapsed_dof_map);
 
-      assert(collapsed_map.size() ==  _function_space->dofmap().global_dimension());   
+      assert(collapsed_map.size() ==  _function_space->dofmap().global_dimension());
 
       // Create new vector
       const uint size = collapsed_dof_map->global_dimension();
       _vector.reset(v.vector().factory().create_vector());
       _vector->resize(size);
-      
+
       // Get rows of original and new vectors
       std::map<uint, uint>::const_iterator entry;
       std::vector<uint> new_rows(size);
@@ -312,15 +312,26 @@ void Function::eval(double* values, const Data& data) const
   if (_vector)
   {
     assert(_function_space);
-    _function_space->eval(values, data.x, *this);
-    return;
-  }
 
-  // Try simple eval function
-  eval(values, data.x);
+    // Use UFC cell if available
+    if (data._ufc_cell)
+    {
+      const uint cell_index = data._ufc_cell->entity_indices[data._ufc_cell->topological_dimension][0];
+      _function_space->eval(values, data.x, *this, *data._ufc_cell, cell_index);
+    }
+    else
+      _function_space->eval(values, data.x, *this);
+  }
+  else
+  {
+    // Try simple eval function
+    eval(values, data.x);
+  }
 }
 //-----------------------------------------------------------------------------
-void Function::eval(double* values, const double* x, const ufc::cell& ufc_cell, 
+void Function::eval(double* values,
+                    const double* x,
+                    const ufc::cell& ufc_cell,
                     uint cell_index) const
 {
   assert(_function_space);
