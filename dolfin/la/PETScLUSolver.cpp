@@ -5,7 +5,7 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2005
-// Last changed: 2009-08-10
+// Last changed: 2009-08-28
 
 #ifdef HAS_PETSC
 
@@ -213,7 +213,7 @@ void PETScLUSolver::init()
     # elif PETSC_HAVE_SPOOLES
     PCFactorSetMatSolverPackage(pc, MAT_SOLVER_SPOOLES);
     #else
-    error("No suitable solver for parallel LU. Considering configuring PETSc with MUMPS or  SPOOLES.");
+    error("No suitable solver for parallel LU. Consider configuring PETSc with MUMPS or SPOOLES.");
     #endif
   }
   #endif
