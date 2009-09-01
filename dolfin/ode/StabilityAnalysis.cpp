@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-20
-// Last changed: 2009-07-20
+// Last changed: 2009-09-01
 
 #include "StabilityAnalysis.h"
 #include "ODESolution.h"
@@ -12,6 +12,7 @@
 #include <dolfin/io/PythonFile.h>
 #include <dolfin/common/real.h>
 #include <vector>
+#include <boost/scoped_array.hpp>
 
 using namespace dolfin;
 
@@ -31,9 +32,9 @@ void StabilityAnalysis::analyze_integral(uint q)
   // Collect 
   std::vector< std::pair<real, real*> > s;
 
-  real tmp[n];
-  real A[n*n];
-  real B[n*n];
+  boost::scoped_array<real> tmp_array(new real [n]); real* tmp = tmp_array.get();
+  boost::scoped_array<real> A_array(new real[n*n]);  real* A = A_array.get();
+  boost::scoped_array<real> B_array(new real[n*n]);  real* B = B_array.get();
 
   uint count = 0;
   
@@ -47,6 +48,7 @@ void StabilityAnalysis::analyze_integral(uint q)
     ODESolutionData& timestep = *it;
     real& t = timestep.a;
 
+    //allocate matrices to be pushed on s. Will be deleted at end of function
     real* C = new real[n*n];
 
     u.eval(t, tmp);
@@ -74,8 +76,8 @@ void StabilityAnalysis::analyze_integral(uint q)
     s.push_back( std::pair<real, real*> (t+timestep.k, C) );
 
     // Now compute the stability factor for T=t
-    real sample[n];
-    real_zero(n, sample);
+    boost::scoped_array<real> sample(new real[n]);
+    real_zero(n, sample.get());
 
     real prev = 0.0;
     
@@ -95,12 +97,22 @@ void StabilityAnalysis::analyze_integral(uint q)
       prev = t;
     }
 
-    file << std::tr1::tuple<uint, real, real*>(n, t, sample);
+    file << std::tr1::tuple<uint, real, real*>(n, t, sample.get());
 
     // update progress
     p = to_double( (t*t+t)/progress_end );
     count++;
   }
+
+  //delete the allocated C matrices
+  for (std::vector< std::pair<real, real*> >::iterator s_iterator = s.begin(); 
+       s_iterator != s.end(); ++s_iterator)
+  {
+    real* Z = s_iterator->second;
+    
+    delete [] Z;
+  }
+  
 
   end();
 }

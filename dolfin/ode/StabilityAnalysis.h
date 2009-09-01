@@ -2,6 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-20
+// Last changed: 2009-08-28
 
 #ifndef __STABILITYFACTORS_H
 #define __STABILITYFACTORS_H
