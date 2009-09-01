@@ -7,8 +7,7 @@
 // Last changed: 2009-03-23
 
 #include <dolfin/common/constants.h>
-#include <dolfin/log/dolfin_log.h>
-#include <dolfin/math/dolfin_math.h>
+#include <dolfin/log/log.h>
 #include <dolfin/math/Lagrange.h>
 #include <dolfin/quadrature/LobattoQuadrature.h>
 #include <dolfin/la/uBLASVector.h>
@@ -66,6 +65,7 @@ real cGqMethod::error(real k, real r) const
   return real_pow(k, static_cast<real>(q)) * real_abs(r);
 }
 //-----------------------------------------------------------------------------
+
 void cGqMethod::get_nodal_values(const real& u0, const real* x, real* nodal_values) const
 {
   nodal_values[0] = u0;
@@ -74,44 +74,54 @@ void cGqMethod::get_nodal_values(const real& u0, const real* x, real* nodal_valu
     nodal_values[i+1] = x[i];
 }
 //-----------------------------------------------------------------------------
-void cGqMethod::disp() const
+std::string cGqMethod::str(bool verbose) const
 {
-  info("Data for the cG(%d) method", q);
-  info("=========================");
-  info("");
+  std::stringstream s;
 
-  info("Lobatto quadrature points and weights on [0,1]:");
-  info("");
-  info(" i   points                   weights");
-  info("----------------------------------------------------");
-
-  for (unsigned int i = 0; i < nq; i++)
-    info("%2d   %.15e   %.15e", i, to_double(qpoints[i]), to_double(qweights[i]));
-  info("");
-
-  for (uint i = 0; i < nn; i++)
+  if (verbose)
   {
-    info("");
-    info("cG(%d) weights for degree of freedom %d:", q, i);
-    info("");
-    info(" i   weights");
-    info("---------------------------");
-    for (unsigned int j = 0; j < nq; j++)
-      info("%2d   %.15e", j, to_double(nweights[i][j]));
-  }
-  info("");
+    s << str(false) << std::endl << std::endl;
 
-  info("cG(%d) weights in matrix format:", q);
-  if ( q < 10 )
-    info("-------------------------------");
+    s << std::setiosflags(std::ios::scientific) << std::setprecision(16);
+
+    s << "  Lobatto quadrature points and weights on [0, 1]" << std::endl;
+    s << "  -----------------------------------------------" << std::endl;
+    s << "" << std::endl;
+    s << "    i  points                  weights" << std::endl;
+    s << "    ----------------------------------------------------" << std::endl;
+    for (unsigned int i = 0; i < nq; i++)
+      s << "    " << i << "  "
+        << to_double(qpoints[i]) << "  "
+        << to_double(qweights[i]) << std::endl;
+
+    for (unsigned int i = 0; i < nn; i++)
+    {
+      s << std::endl;
+      s << "  Weights for degree of freedom " << i << ": " << std::endl;
+      s << "  --------------------------------";
+      s << "" << std::endl;
+      for (unsigned int j = 0; j < nq; j++)
+        s << "  " << j << "  " << nweights[i][j];
+      s << std::endl;
+    }
+
+    s << std::endl;
+    s << "  Weights in matrix format" << std::endl;
+    s << "  ------------------------" << std::endl;
+    for (unsigned int i = 0; i < nn; i++)
+    {
+      s << "  ";
+      for (unsigned int j = 0; j < nq; j++)
+        s << nweights[i][j] << " ";
+      s << std::endl;
+    }
+  }
   else
-    info("--------------------------------");
-  for (unsigned int i = 0; i < nn; i++)
   {
-    for (uint j = 0; j < nq; j++)
-      cout << nweights[i][j] << " ";
-    cout << endl;
+    s << "<cGqMethod for q = " << q << ">";
   }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 void cGqMethod::compute_quadrature()
@@ -239,7 +249,8 @@ void cGqMethod::compute_weights()
       nweights[j][i] = qweights[i] * w_real[j];
 #endif
 
-    //disp();
   }
 }
 //-----------------------------------------------------------------------------
+
+

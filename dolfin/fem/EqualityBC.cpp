@@ -1,8 +1,10 @@
 // Copyright (C) 2009 Bartosz Sawicki.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Johan Hake, 2009
+//
 // First added:  2009-04-03
-// Last changed: 2009-04-10
+// Last changed: 2009-08-14
 
 #include <vector>
 
@@ -31,7 +33,21 @@ EqualityBC::EqualityBC(const FunctionSpace& V,
   init_from_sub_domain(sub_domain);
 }
 //-----------------------------------------------------------------------------
+EqualityBC::EqualityBC(boost::shared_ptr<const FunctionSpace> V,
+                       const SubDomain& sub_domain)
+  : BoundaryCondition(V)
+{
+  init_from_sub_domain(sub_domain);
+}
+//-----------------------------------------------------------------------------
 EqualityBC::EqualityBC(const FunctionSpace& V,
+                         uint sub_domain)
+  : BoundaryCondition(V)
+{
+  init_from_mesh(sub_domain);
+}
+//-----------------------------------------------------------------------------
+EqualityBC::EqualityBC(boost::shared_ptr<const FunctionSpace> V,
                          uint sub_domain)
   : BoundaryCondition(V)
 {
@@ -81,11 +97,12 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
     const int dof1 = *it;
 
     // Avoid modification for reference
-    if (dof1 == dof0) continue;
+    if (dof1 == dof0) 
+      continue;
 
     // Set x_0 - x_i = 0
-    rows[0] = static_cast<uint>(dof0);
-    cols[0] = static_cast<uint>(dof1);
+    rows[0] = dof0;
+    cols[0] = dof1;
     vals[0] = -1.0;
     zero[0] = 0.0;
 
@@ -176,7 +193,7 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
     {
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
-      const int global_dof = static_cast<int>(dofmap.offset() + data.cell_dofs[local_dof]);
+      const int global_dof = data.cell_dofs[local_dof];
       double* x = data.coordinates[local_dof];
 
       // Check if coordinate is inside the domain
@@ -255,7 +272,7 @@ void EqualityBC::init_from_mesh(uint sub_domain)
     {
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
-      const int global_dof = static_cast<int>(dofmap.offset() + data.cell_dofs[local_dof]);
+      const int global_dof = data.cell_dofs[local_dof];
 
       // Store dof
       equal_dofs.push_back(global_dof);

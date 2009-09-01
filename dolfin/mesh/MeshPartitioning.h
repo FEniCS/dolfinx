@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2009-06-29
+// Last changed: 2009-08-06
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -16,20 +16,6 @@ namespace dolfin
 {
 
   class Mesh;
-
-  template<typename InputIterator> void print_container(std::ostream& ostr, InputIterator itbegin, InputIterator itend, const char* delimiter=", ")
-  {
-    std::copy(itbegin, itend, std::ostream_iterator<typename InputIterator::value_type>(ostr, delimiter));
-  }
-
-  template<typename Map> void print_vec_map(std::ostream& ostr, Map map, const char* delimiter=", ")
-  {
-    for (typename Map::iterator it = map.begin(); it !=map.end(); ++it)
-    {
-      print_container(ostr, (*it).first.begin(), (*it).first.end(), " ");
-      ostr << ":" << (*it).second << delimiter;
-    }
-  }
 
   class LocalMeshData;
 
@@ -76,7 +62,10 @@ namespace dolfin
   {
   public:
 
-    /// Create a partitioned mesh based on partitioned local mesh data
+    /// Create a partitioned mesh based on local meshes
+    static void partition(Mesh& mesh);
+
+    /// Create a partitioned mesh based on local mesh data
     static void partition(Mesh& mesh, LocalMeshData& data);
 
     /// Create global entity indices for entities of dimension d

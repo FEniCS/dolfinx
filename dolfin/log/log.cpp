@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-07-02
+// Last changed: 2009-08-10
 
 #include <boost/scoped_array.hpp>
 #include <cstdarg>
@@ -16,6 +16,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/main/MPI.h>
 #include <dolfin/parameter/Parameters.h>
 #include "LogManager.h"
 #include "log.h"
@@ -34,6 +35,7 @@ void allocate_buffer(std::string msg)
   // ok in most cases.
   unsigned int new_size = std::max(static_cast<unsigned int>(2*msg.size()),
                                    static_cast<unsigned int>(DOLFIN_LINELENGTH));
+  //static_cast<unsigned int>(DOLFIN_LINELENGTH));
   if (new_size > buffer_size)
   {
     buffer.reset(new char[new_size]);
@@ -64,18 +66,19 @@ void dolfin::info(int log_level, std::string msg, ...)
   LogManager::logger.info(buffer.get(), log_level);
 }
 //-----------------------------------------------------------------------------
-void dolfin::info(const Variable& variable)
+void dolfin::info(const Variable& variable, bool verbose)
 {
   if (!LogManager::logger.is_active()) return; // optimization
-  info(variable.str());
+  info(variable.str(verbose));
 }
 //-----------------------------------------------------------------------------
-void dolfin::info(const Parameters& parameters)
+void dolfin::info(const Parameters& parameters, bool verbose)
 {
   // Need separate function for Parameters since we can't make Parameters
   // a subclass of Variable (gives cyclic dependencies)
+
   if (!LogManager::logger.is_active()) return; // optimization
-  info(parameters.str());
+  info(parameters.str(verbose));
 }
 //-----------------------------------------------------------------------------
 void dolfin::info_stream(std::ostream& out, std::string msg)
@@ -142,24 +145,16 @@ dolfin::uint dolfin::get_log_level()
   return LogManager::logger.get_log_level();
 }
 //-----------------------------------------------------------------------------
-std::string dolfin::indent(std::string s)
-{
-  const std::string indentation("  ");
-  std::stringstream is;
-  is << indentation;
-  for (uint i = 0; i < s.size(); ++i)
-  {
-    is << s[i];
-    if (s[i] == '\n') // && i < s.size() - 1)
-      is << indentation;
-  }
-
-  return is.str();
-}
-//-----------------------------------------------------------------------------
 void dolfin::summary(bool reset)
 {
-  if (!LogManager::logger.is_active()) return; // optimization
+  // Optimization
+  if (!LogManager::logger.is_active())
+    return;
+
+  // Only print summary for process 0
+  if (MPI::process_number() != 0)
+    return;
+
   LogManager::logger.summary(reset);
 }
 //-----------------------------------------------------------------------------

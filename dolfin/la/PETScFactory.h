@@ -27,8 +27,11 @@ namespace dolfin
     /// Create empty matrix
     PETScMatrix* create_matrix() const;
 
-    /// Create empty vector
+    /// Create empty vector (global)
     PETScVector* create_vector() const;
+
+    /// Create empty vector (local)
+    PETScVector* create_local_vector() const;
 
     /// Create empty sparsity pattern
     SparsityPattern* create_pattern() const;

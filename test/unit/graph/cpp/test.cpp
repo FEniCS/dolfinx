@@ -9,8 +9,6 @@
 #include <dolfin.h>
 #include <dolfin/common/unittest.h>
 #include <cstdlib>
-//#include <iostream>
-//#include <fstream>
 
 using namespace dolfin;
 
@@ -221,7 +219,7 @@ public:
 
     GraphPartition::partition(graph, num_part, parts);
     GraphPartition::eval(graph, num_part, parts);
-    GraphPartition::disp(graph, num_part, parts);
+    GraphPartition::display(graph, num_part, parts);
     GraphPartition::check(graph, num_part, parts);
     GraphPartition::edgecut(graph, num_part, parts);
   }

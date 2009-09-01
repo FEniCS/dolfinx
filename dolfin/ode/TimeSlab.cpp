@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2008-10-06
+// Last changed: 2009-08-11
 
 #include <stdio.h>
 #include <string>
@@ -93,16 +93,6 @@ const real* TimeSlab::get_quadrature_weights() const {
   return method->get_quadrature_weights();
 }
 //-----------------------------------------------------------------------------
-dolfin::LogStream& dolfin::operator<<(LogStream& stream,
-				      const TimeSlab& timeslab)
-{
-  stream << "[ TimeSlab of length " << timeslab.length()
-	 << " between a = " << timeslab.starttime()
-	 << " and b = " << timeslab.endtime() << " ]";
-
-  return stream;
-}
-//-----------------------------------------------------------------------------
 void TimeSlab::write(uint N, const real* u)
 {
   // FIXME: Make this a parameter?
@@ -152,3 +142,4 @@ void TimeSlab::copy(const uBLASVector& x, uint xoffset, uBLASVector& y, uint yof
     y[yoffset + i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
+

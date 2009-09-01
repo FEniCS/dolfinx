@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-09
-// Last changed: 2007-11-30
+// Last changed: 2009-08-10
 
 #ifndef __MESH_CONNECTIVITY_H
 #define __MESH_CONNECTIVITY_H
@@ -25,8 +25,8 @@ namespace dolfin
   {
   public:
 
-    /// Create empty connectivity
-    MeshConnectivity();
+    /// Create empty connectivity between given dimensions (d0 -- d1)
+    MeshConnectivity(uint d0, uint d1);
 
     /// Copy constructor
     MeshConnectivity(const MeshConnectivity& connectivity);
@@ -72,12 +72,13 @@ namespace dolfin
     /// Set all connections for all entities
     void set(const std::vector<std::vector<uint> >& connectivity);
 
-    /// Display data
-    void disp() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   private:
 
-    friend class MPIMeshCommunicator;
+    /// Dimensions (only used for pretty-printing)
+    uint d0, d1;
 
     /// Total number of connections
     uint _size;

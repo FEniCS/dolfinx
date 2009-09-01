@@ -69,6 +69,8 @@ int main()
     }
   };
 
+  //parameters("linear_algebra_backend") = "uBLAS";
+
   // Read mesh and create function space
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
   Elasticity::FunctionSpace V(mesh);
@@ -103,22 +105,25 @@ int main()
   Elasticity::LinearForm L(V);
   L.f = f;
   VariationalProblem problem(a, L, bcs);
+  problem.parameters("symmetric") = true;
 
   // Solve PDE (using direct solver)
   Function u;
   problem.parameters("linear_solver") = "direct";
   problem.solve(u);
 
+  cout << "Norm " << u.vector().norm() << endl;
+
+  // Save solution in VTK format
+  File vtk_file("elasticity.pvd", "compressed");
+  vtk_file << u;
+
   // Plot solution
-  plot(u, "displacement");
+  plot(u, "Displacement", "displacement");
 
   // Displace mesh and plot displaced mesh
   mesh.move(u);
-  plot(mesh);
-
-  // Save solution in VTK format
-  File vtk_file("elasticity.pvd");
-  vtk_file << u;
+  plot(mesh, "Deformed mesh");
 
   return 0;
 }

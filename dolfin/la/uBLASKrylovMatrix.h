@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-30
-// Last changed: 2006-07-03
+// Last changed: 2009-08-10
 
 #ifndef __UBLAS_KRYLOV_MATRIX_H
 #define __UBLAS_KRYLOV_MATRIX_H
@@ -41,8 +41,8 @@ namespace dolfin
     /// Solve linear system Ax = b for a Krylov matrix using uBLAS and dense matrices
     void solve(uBLASVector& x, const uBLASVector& b);
 
-    /// Display matrix
-    //void disp(const int precision = 2) const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   private:
 

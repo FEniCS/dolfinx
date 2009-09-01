@@ -131,7 +131,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         " Return a numpy array representation of Vector"
         from numpy import zeros
         v = zeros(self.size())
-        self.get(v)
+        self.get_local(v)
         return v
     
     def __contains__(self,value):
@@ -196,7 +196,8 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         if i == 0 and (j >= len(self) or j == -1) and isinstance(values, (float, int, GenericVector)):
             if isinstance(values, (float, int)) or len(values) == len(self):
                 self.assign(values)
-            else :
+                return
+            else:
                 raise ValueError, "dimension error"
         self.__setitem__(slice(i,j,1),values)
     
@@ -514,11 +515,11 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
                 raise ValueError, "Provide a NumPy array with length %d"%self.size(1)
             vec_type = _matrix_vector_mul_map[get_tensor_type(self)][0]
             vec  = vec_type(vec_size)
-            vec.set(other)
+            vec.set_local(other)
             result_vec = vec.copy()
             self.mult(vec, result_vec)
             ret = other.copy()
-            result_vec.get(ret)
+            result_vec.get_local(ret)
             return ret
         return NotImplemented
     
@@ -678,13 +679,13 @@ DOWN_CAST_MACRO(EpetraMatrix)
 _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
 %}
 
-%extend dolfin::EpetraMatrix
-{
-  Epetra_FECrsMatrix& ref_mat() const
-  {
-    return *self->mat();
-  }
-}
+//%extend dolfin::EpetraMatrix
+//{
+//  Epetra_FECrsMatrix& ref_mat() const
+//  {
+//    return *self->mat();
+//  }
+//}
 
 %extend dolfin::EpetraVector
 {

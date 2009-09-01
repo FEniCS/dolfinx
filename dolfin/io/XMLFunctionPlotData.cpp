@@ -116,3 +116,4 @@ void XMLFunctionPlotData::read_vector(const xmlChar* name, const xmlChar** attrs
   // Parse the rest of the vector
   xml_vector->handle();
 }
+//-----------------------------------------------------------------------------

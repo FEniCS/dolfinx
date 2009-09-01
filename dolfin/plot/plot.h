@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-05-02
-// Last changed: 2009-03-16
+// Last changed: 2009-08-28
 
 #ifndef __PLOT_H
 #define __PLOT_H
@@ -21,19 +21,19 @@ namespace dolfin
   /// For plotting to work, PyDOLFIN and Viper must be installed.
 
   /// Plot function
-  void plot(const Function& v, std::string mode="auto");
+  void plot(const Function& v, std::string title="Function", std::string mode="auto");
 
   /// Plot mesh
-  void plot(const Mesh& mesh);
+  void plot(const Mesh& mesh, std::string title="Mesh");
 
   /// Plot mesh function
-  void plot(const MeshFunction<uint>& f);
+  void plot(const MeshFunction<uint>& f, std::string title="DOLFIN MeshFunction<uint>");
 
   /// Plot mesh function
-  void plot(const MeshFunction<double>& f);
+  void plot(const MeshFunction<double>& f, std::string title="MeshFunction<double>");
 
   /// Plot mesh function
-  void plot(const MeshFunction<bool>& f);
+  void plot(const MeshFunction<bool>& f, std::string title="MeshFunction<bool>");
 
 }
 

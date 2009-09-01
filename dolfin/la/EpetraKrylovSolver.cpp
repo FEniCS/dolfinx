@@ -3,23 +3,23 @@
 //
 // Modified by Garth N. Wells, 2009.
 //
-// Last changed: 2009-05-23
+// Last changed: 2009-08-10
 
 #ifdef HAS_TRILINOS
 
-#include "Epetra_ConfigDefs.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_LinearProblem.h"
-#include "Epetra_Map.h"
-#include "AztecOO.h"
-#include "ml_include.h"
-#include "Epetra_LinearProblem.h"
-#include "ml_MultiLevelOperator.h"
-#include "ml_epetra_utils.h"
+#include <Epetra_ConfigDefs.h>
+#include <Epetra_Vector.h>
+#include <Epetra_FEVector.h>
+#include <Epetra_RowMatrix.h>
+#include <Epetra_CrsMatrix.h>
+#include <Epetra_FECrsMatrix.h>
+#include <Epetra_LinearProblem.h>
+#include <Epetra_Map.h>
+#include <AztecOO.h>
+#include <ml_include.h>
+#include <Epetra_LinearProblem.h>
+#include <ml_MultiLevelOperator.h>
+#include <ml_epetra_utils.h>
 
 #include <boost/assign/list_of.hpp>
 #include <dolfin/log/dolfin_log.h>
@@ -28,38 +28,48 @@
 #include "EpetraKrylovSolver.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
+#include "EpetraPreconditioner.h"
+#include "KrylovSolver.h"
 
 using namespace dolfin;
 
 // Available solvers
-const std::map<std::string, int> EpetraKrylovSolver::methods 
+const std::map<std::string, int> EpetraKrylovSolver::methods
   = boost::assign::map_list_of("default",  AZ_gmres)
                               ("cg",       AZ_cg)
                               ("gmres",    AZ_gmres)
-                              ("bicgstab", AZ_bicgstab); 
+                              ("bicgstab", AZ_bicgstab);
 
 // Available preconditioners
-const std::map<std::string, int> EpetraKrylovSolver::pc_methods 
+const std::map<std::string, int> EpetraKrylovSolver::pc_methods
   = boost::assign::map_list_of("default", AZ_ilu)
                               ("ilu",     AZ_ilu)
                               ("jacobi",  AZ_Jacobi)
                               ("sor",     AZ_sym_GS)
                               ("icc",     AZ_icc)
-                              ("amg_ml",  -1); 
+                              ("amg_ml",  -1);
 
+//-----------------------------------------------------------------------------
+Parameters EpetraKrylovSolver::default_parameters()
+{
+  Parameters p(KrylovSolver::default_parameters());
+  p.rename("epetra_krylov_solver");
+  return p;
+}
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
                     : method(method), pc_type(pc_type), prec(0)
 {
-  // Do nothing
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-EpetraKrylovSolver::EpetraKrylovSolver(std::string method, 
+EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                                        EpetraPreconditioner& prec)
-                                     : method(method), pc_type("default"), 
+                                     : method(method), pc_type("default"),
                                        prec(&prec)
 {
   error("Initialisation of EpetraKrylovSolver with a EpetraPreconditioner needs to be implemented.");
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::~EpetraKrylovSolver()
@@ -81,31 +91,38 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 
   // Check that requsted solver is supported
   if (methods.count(method) == 0 )
-    error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str()); 
+    error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str());
 
   // Check that requsted preconditioner is supported
   if (pc_methods.count(pc_type) == 0 )
-    error("Requested EpetraKrylovSolver preconditioner '%s' in unknown", pc_type.c_str()); 
+    error("Requested EpetraKrylovSolver preconditioner '%s' in unknown", pc_type.c_str());
 
-  //FIXME need the ifdef AztecOO
+  //FIXME: need the ifdef AztecOO
+  //FIXME: We should test for AztecOO during configuration
 
+  // Check dimensions
+  uint M = A.size(0);
+  uint N = A.size(1);
+  if (N != b.size())
+    error("Non-matching dimensions for linear system.");
 
-  // FIXME: check vector size
+  // Write a message
+  if (parameters("report"))
+    info("Solving linear system of size %d x %d (Krylov solver).", M, N);
+
+  // Reinitialize solution vector if necessary
+  if (x.size() != M)
+  {
+    x.resize(M);
+    x.zero();
+  }
+
   // FIXME: permit initial guess
 
   // Cast matrix and vectors to proper type
   Epetra_RowMatrix* row_matrix = dynamic_cast<Epetra_RowMatrix*>(A.mat().get());
   Epetra_MultiVector* x_vec    = dynamic_cast<Epetra_MultiVector*>(x.vec().get());
   Epetra_MultiVector* b_vec    = dynamic_cast<Epetra_MultiVector*>(b.vec().get());
-
-  /*
-  // Create linear system
-  Epetra_LinearProblem linear_system;
-  linear_system.SetOperator(row_matrix);
-  linear_system.SetLHS(x_vec);
-  linear_system.SetRHS(b_vec);
-  AztecOO linear_solver(linear_system);;
-  */
 
   // Create solver
   AztecOO linear_solver;
@@ -115,6 +132,12 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 
   // Set solver type
   linear_solver.SetAztecOption(AZ_solver, methods.find(method)->second);
+
+  // Set output level
+  if(parameters("monitor_convergence"))
+   linear_solver.SetAztecOption(AZ_output, 1);
+  else
+    linear_solver.SetAztecOption(AZ_output, AZ_none);
 
   // Set preconditioner
   if (pc_type == "default" || pc_type == "ilu")
@@ -126,6 +149,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     linear_solver.SetAztecOption(AZ_precond, pc_methods.find(pc_type)->second);
   else if (pc_type == "amg_ml")
   {
+    // FIXME: Move configuration of ML to another function
     //error("The EpetraKrylovSolver interface for the ML preconditioner needs to be fixed.");
 
     #ifdef HAVE_ML_AZTECOO
@@ -172,18 +196,20 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     #endif
   }
 
-  info("Starting to iterate");
+  // Start solve
+  linear_solver.Iterate(parameters("maximum_iterations"), parameters("relative_tolerance"));
 
-  // FIXME: Parameters should come from the parameter system
-  linear_solver.Iterate(1000, 1.0e-9);
+  info("AztecOO Krylov solver (%s, %s) converged in %d iterations.",
+          method.c_str(), pc_type.c_str(), linear_solver.NumIters());
 
   return linear_solver.NumIters();
 }
 //-----------------------------------------------------------------------------
-void EpetraKrylovSolver::disp() const
+std::string EpetraKrylovSolver::str(bool verbose) const
 {
-  error("EpetraKrylovSolver::disp not implemented");
+  dolfin_not_implemented();
+  return std::string();
 }
 //-----------------------------------------------------------------------------
-#endif
 
+#endif

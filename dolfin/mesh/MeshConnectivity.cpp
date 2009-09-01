@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-09
-// Last changed: 2007-03-01
+// Last changed: 2009-08-10
 
 #include <dolfin/log/dolfin_log.h>
 #include "MeshConnectivity.h"
@@ -10,14 +10,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshConnectivity::MeshConnectivity()
-  : _size(0), num_entities(0), connections(0), offsets(0)
+MeshConnectivity::MeshConnectivity(uint d0, uint d1)
+  : d0(d0), d1(d1), _size(0), num_entities(0), connections(0), offsets(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshConnectivity::MeshConnectivity(const MeshConnectivity& connectivity)
-  : _size(0), num_entities(0), connections(0), offsets(0)
+  : d0(d0), d1(d1), _size(0), num_entities(0), connections(0), offsets(0)
 {
   *this = connectivity;
 }
@@ -39,6 +39,8 @@ const MeshConnectivity& MeshConnectivity::operator= (const MeshConnectivity& con
   offsets = new uint[num_entities + 1];
 
   // Copy data
+  d0 = connectivity.d0;
+  d1 = connectivity.d1;
   for (uint i = 0; i < _size; i++)
     connections[i] = connectivity.connections[i];
   if ( num_entities > 0 )
@@ -158,22 +160,27 @@ void MeshConnectivity::set(const std::vector<std::vector<uint> >& connections)
       this->connections[offsets[e] + i] = connections[e][i];
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::disp() const
+std::string MeshConnectivity::str(bool verbose) const
 {
-  // Check if there are any connections
-  if ( _size == 0 )
+  std::stringstream s;
+
+  if (verbose)
   {
-    cout << "empty" << endl;
-    return;
+    s << str(false) << std::endl << std::endl;
+
+    for (uint e = 0; e < num_entities; e++)
+    {
+      s << "  " << e << ":";
+      for (uint i = offsets[e]; i < offsets[e + 1]; i++)
+        s << " " << connections[i];
+      s << std::endl;
+    }
+  }
+  else
+  {
+    s << "<MeshConnectivity " << d0 << " -- " << d1 << " of size " << _size << ">";
   }
 
-  // Display all connections
-  for (uint e = 0; e < num_entities; e++)
-  {
-    cout << e << ":";
-    for (uint i = offsets[e]; i < offsets[e + 1]; i++)
-      cout << " " << connections[i];
-    cout << endl;
-  }
+  return s.str();
 }
 //-----------------------------------------------------------------------------

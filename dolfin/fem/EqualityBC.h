@@ -1,8 +1,10 @@
 // Copyright (C) 2009 Bartosz Sawicki.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Johan Hake, 2009
+//
 // First added:  2009-04-03
-// Last changed: 2009-04-21
+// Last changed: 2009-08-14
 
 #ifndef __EQUALITY_BC_H
 #define __EQUALITY_BC_H
@@ -50,8 +52,16 @@ namespace dolfin
     EqualityBC(const FunctionSpace& V,
                const SubDomain& sub_domain);
 
+    // Create equality boundary condition for sub domain
+    EqualityBC(boost::shared_ptr<const FunctionSpace> V,
+               const SubDomain& sub_domain);
+
     // Create boundary condition for boundary data included in the mesh
     EqualityBC(const FunctionSpace& V,
+               uint sub_domain);
+
+    // Create boundary condition for boundary data included in the mesh
+    EqualityBC(boost::shared_ptr<const FunctionSpace> V,
                uint sub_domain);
 
     // Destructor

@@ -2,18 +2,19 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-02-06
-// Last changed: 2006-10-23
+// Last changed: 2009-08-10
 
 #ifndef __QUADRATURE_H
 #define __QUADRATURE_H
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
 
-  class Quadrature
+  class Quadrature : public Variable
   {
   public:
 
@@ -34,9 +35,6 @@ namespace dolfin
 
     /// Return sum of weights (length, area, volume)
     real measure() const;
-
-    /// Display quadrature data
-    virtual void disp() const = 0;
 
   protected:
 

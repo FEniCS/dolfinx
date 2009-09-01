@@ -3,9 +3,10 @@
 //
 // Modified by Johan Jansson 2006.
 // Modified by Ola Skavhaug 2006.
+// Modified by Niclas Jansson 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2008-05-28
+// Last changed: 2008-08-06
 
 #include <dolfin/log/dolfin_log.h>
 #include "Mesh.h"
@@ -22,7 +23,21 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void BoundaryComputation::compute_boundary(const Mesh& mesh, BoundaryMesh& boundary)
+void BoundaryComputation::compute_boundary(const Mesh& mesh,
+					   BoundaryMesh& boundary)
+{
+  compute_boundary_common(mesh, boundary, false);
+}
+//-----------------------------------------------------------------------------
+void BoundaryComputation::compute_interior_boundary(const Mesh& mesh, 
+						 BoundaryMesh& boundary)
+{
+  compute_boundary_common(mesh, boundary, true);
+}
+//-----------------------------------------------------------------------------
+void BoundaryComputation::compute_boundary_common(const Mesh& mesh, 
+						  BoundaryMesh& boundary,
+						  bool interior_boundary)
 {
   // We iterate over all facets in the mesh and check if they are on
   // the boundary. A facet is on the boundary if it is connected to
@@ -44,13 +59,18 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh, BoundaryMesh& bound
   std::vector<uint> boundary_vertices(num_vertices);
   std::fill(boundary_vertices.begin(), boundary_vertices.end(), num_vertices);
 
+  // Extract exterior (non shared) facets markers
+  MeshFunction<uint>* exterior = mesh.data().mesh_function("exterior facets");
+
   // Count boundary vertices and facets, and assign vertex indices
   uint num_boundary_vertices = 0;
   uint num_boundary_cells = 0;
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
-    if (f->num_entities(D) == 1)
+    if (f->num_entities(D) == 1 && 
+	(!exterior || ((exterior->get(*f) && !interior_boundary) || 
+		       (!exterior->get(*f) && interior_boundary))))
     {
       // Count boundary vertices and assign indices
       for (VertexIterator v(*f); !v.end(); ++v)
@@ -107,8 +127,10 @@ void BoundaryComputation::compute_boundary(const Mesh& mesh, BoundaryMesh& bound
   uint current_cell = 0;
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
-    // Boundary facets are connected to exactly one cell
-    if (f->num_entities(D) == 1)
+    // Boundary facets are connected to exactly one cell    
+    if (f->num_entities(D) == 1 && 
+	(!exterior || ((exterior->get(*f) && !interior_boundary) || 
+		       (!exterior->get(*f) && interior_boundary))))
     {
       // Compute new vertex numbers for cell
       const uint* vertices = f->entities(0);

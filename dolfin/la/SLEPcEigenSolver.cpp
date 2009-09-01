@@ -2,14 +2,15 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2008.
-// Modified by Anders Logg, 2008.
+// Modified by Anders Logg, 2008-2009.
 //
 // First added:  2005-08-31
-// Last changed: 2009-02-04
+// Last changed: 2009-08-24
 
 #ifdef HAS_SLEPC
 
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/main/MPI.h>
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "SLEPcEigenSolver.h"
@@ -23,13 +24,17 @@ SLEPcEigenSolver::SLEPcEigenSolver()
   parameters = default_parameters();
 
   // Set up solver environment
-  EPSCreate(PETSC_COMM_SELF, &eps);
+  if (dolfin::MPI::num_processes() > 1)
+    EPSCreate(PETSC_COMM_WORLD, &eps);
+  else
+    EPSCreate(PETSC_COMM_SELF, &eps);
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::~SLEPcEigenSolver()
 {
   // Destroy solver environment
-  if (eps) EPSDestroy(eps);
+  if (eps) 
+    EPSDestroy(eps);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(const PETScMatrix& A)
@@ -57,7 +62,8 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc)
   get_eigenvalue(lr, lc, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c)
+void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, 
+                                     PETScVector& r, PETScVector& c)
 {
   get_eigenpair(lr, lc, r, c, 0);
 }
@@ -121,8 +127,11 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   // Set algorithm type (Hermitian matrix)
   //EPSSetProblemType(eps, EPS_NHEP);
 
-  // Set options from database
+  // Set parameters from PETSc parameter database
   EPSSetFromOptions(eps);
+
+  // Set parameters from local parameters
+  read_parameters();
 
   // Solve
   EPSSolve(eps);

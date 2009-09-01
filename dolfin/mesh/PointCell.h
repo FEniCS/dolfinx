@@ -5,7 +5,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2008-11-14
+// Last changed: 2009-08-10
 
 #ifndef __POINT_CELL_H
 #define __POINT_CELL_H
@@ -40,7 +40,7 @@ namespace dolfin
     void create_entities(uint** e, uint dim, const uint* v) const;
 
     /// Order entities locally (connectivity 1-0, 2-0, 2-1)
-    void order_entities(Cell& cell) const;
+    void order(Cell& cell, const MeshFunction<uint>* global_vertex_indices) const;
 
     /// Refine cell uniformly
     void refine_cell(Cell& cell, MeshEditor& editor, uint& current_cell) const;
@@ -73,7 +73,7 @@ namespace dolfin
     bool intersects(const MeshEntity& entity, const Cell& cell) const;
 
     /// Return description of cell type
-    std::string description() const;
+    std::string description(bool plural=false) const;
 
   private:
 

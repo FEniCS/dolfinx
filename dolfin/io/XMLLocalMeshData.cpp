@@ -18,9 +18,7 @@ using namespace dolfin;
 XMLLocalMeshData::XMLLocalMeshData(LocalMeshData& mesh_data, XMLFile& parser)
   : XMLHandler(parser), mesh_data(mesh_data), state(OUTSIDE)
 {
-  // Get number of processes and process number
-  mesh_data.num_processes = MPI::num_processes();
-  mesh_data.process_number = MPI::process_number();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLLocalMeshData::~XMLLocalMeshData()
@@ -168,37 +166,30 @@ void XMLLocalMeshData::end_element(const xmlChar* name)
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::read_mesh(const xmlChar* name, const xmlChar** attrs)
 {
+  // Clear all data
+  mesh_data.clear();
+
   // Parse values
   std::string type = parse_string(name, attrs, "celltype");
   gdim = parse_uint(name, attrs, "dim");
 
   // Create cell type to get topological dimension
   std::auto_ptr<CellType> cell_type(CellType::create(type));
-
   tdim = cell_type->dim();
 
   // Get number of entities for topological dimension 0
-  //num_cell_vertices = cell_type->num_entities(0);
-  mesh_data.cell_type = CellType::create(type);
   mesh_data.tdim = tdim;
   mesh_data.gdim = gdim;
-
-  // Clear all data
-  mesh_data.clear();
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::read_vertices(const xmlChar* name, const xmlChar** attrs)
 {
   // Parse the number of global vertices
   const uint num_global_vertices = parse_uint(name, attrs, "size");
-  dolfin_debug1("num_global_vertices = %d", num_global_vertices);
   mesh_data.num_global_vertices = num_global_vertices;
 
   // Compute vertex range
-  mesh_data.initial_vertex_range(vertex_index_start, vertex_index_stop);
-
-  dolfin_debug3("vertex range: [%d, %d] size = %d",
-                vertex_index_start, vertex_index_stop, num_local_vertices());
+  vertex_range = MPI::local_range(num_global_vertices);
 
   // Reserve space for local-to-global vertex map and vertex coordinates
   mesh_data.vertex_indices.reserve(num_local_vertices());
@@ -211,7 +202,7 @@ void XMLLocalMeshData::read_vertex(const xmlChar* name, const xmlChar** attrs)
   const uint v = parse_uint(name, attrs, "index");
 
   // Skip vertices not in range for this process
-  if (v < vertex_index_start || v > vertex_index_stop)
+  if (v < vertex_range.first || v >= vertex_range.second)
     return;
 
   std::vector<double> coordinate;
@@ -254,14 +245,10 @@ void XMLLocalMeshData::read_cells(const xmlChar* name, const xmlChar** attrs)
 {
   // Parse the number of global cells
   const uint num_global_cells = parse_uint(name, attrs, "size");
-  dolfin_debug1("num_global_cells = %d", num_global_cells);
   mesh_data.num_global_cells = num_global_cells;
 
   // Compute cell range
-  mesh_data.initial_cell_range(cell_index_start, cell_index_stop);
-
-  dolfin_debug3("cell range: [%d, %d] size = %d",
-                cell_index_start, cell_index_stop, num_local_cells());
+  cell_range = MPI::local_range(num_global_cells);
 
   // Reserve space for cells
   mesh_data.cell_vertices.reserve(num_local_cells());
@@ -277,7 +264,7 @@ void XMLLocalMeshData::read_interval(const xmlChar *name, const xmlChar **attrs)
   const uint c = parse_uint(name, attrs, "index");
 
   // Skip cells not in range for this process
-  if (c < cell_index_start || c > cell_index_stop)
+  if (c < cell_range.first || c >= cell_range.second)
     return;
 
   // Parse values
@@ -299,7 +286,7 @@ void XMLLocalMeshData::read_triangle(const xmlChar *name, const xmlChar **attrs)
   const uint c = parse_uint(name, attrs, "index");
 
   // Skip cells not in range for this process
-  if (c < cell_index_start || c > cell_index_stop)
+  if (c < cell_range.first || c >= cell_range.second)
     return;
 
   // Parse values
@@ -322,7 +309,7 @@ void XMLLocalMeshData::read_tetrahedron(const xmlChar *name, const xmlChar **att
   const uint c = parse_uint(name, attrs, "index");
 
   // Skip cells not in range for this process
-  if (c < cell_index_start || c > cell_index_stop)
+  if (c < cell_range.first || c >= cell_range.second)
     return;
 
   // Parse values
@@ -348,11 +335,11 @@ void XMLLocalMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
 //-----------------------------------------------------------------------------
 dolfin::uint XMLLocalMeshData::num_local_vertices() const
 {
-  return vertex_index_stop - vertex_index_start + 1;
+  return vertex_range.second - vertex_range.first;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint XMLLocalMeshData::num_local_cells() const
 {
-  return cell_index_stop - cell_index_start + 1;
+  return cell_range.second - cell_range.first;
 }
 //-----------------------------------------------------------------------------

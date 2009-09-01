@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-06-23
+// Last changed: 2009-08-24
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/fem/UFC.h>
@@ -193,6 +193,9 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
     // Copy dofs to vector
     coefficients.set(scratch.coefficients, _dofmap->local_dimension(ufc_cell), scratch.dofs);
   }
+
+  // Finalise changes
+  coefficients.apply();
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_vertex_values(double* vertex_values,
@@ -204,11 +207,16 @@ void FunctionSpace::interpolate_vertex_values(double* vertex_values,
   assert(_element);
   assert(_dofmap);
 
+  // FIXME: Should this go here or in Function?
+  // Gather off-process dofs
+  v.gather();
+
   // Local data for interpolation on each cell
   const uint num_cell_vertices = _mesh->type().num_vertices(_mesh->topology().dim());
   double* local_vertex_values = new double[scratch.size*num_cell_vertices];
-
-  // Interpolate vertex values on each cell (using latest value if not continuous)
+  
+  // Interpolate vertex values on each cell (using last computed value if not 
+  // continuous, e.g. discontinuous Galerkin methods)
   UFCCell ufc_cell(*_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
@@ -237,7 +245,8 @@ void FunctionSpace::interpolate_vertex_values(double* vertex_values,
   delete [] local_vertex_values;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
+boost::shared_ptr<FunctionSpace> 
+     FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 {
   assert(_mesh);
   assert(_element);
@@ -257,9 +266,8 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vec
   // Extract sub element
   boost::shared_ptr<const FiniteElement> element(_element->extract_sub_element(component));
 
-  // Extract sub dofmap and offset
-  uint offset = 0;
-  boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component, offset));
+  // Extract sub dofmap
+  boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component));
 
   // Create new sub space
   boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
@@ -270,14 +278,24 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::extract_sub_space(const std::vec
   return new_sub_space;
 }
 //-----------------------------------------------------------------------------
+boost::shared_ptr<FunctionSpace> 
+     FunctionSpace::collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const
+{
+  boost::shared_ptr<FunctionSpace> collapsed_sub_space(new FunctionSpace(_mesh, _element, dofmap));
+  return collapsed_sub_space;
+}
+//-----------------------------------------------------------------------------
 void FunctionSpace::attach(MeshFunction<bool>& restriction)
 {
+  error("FunctionSpace::attach is not working. Please fix the dof map builder.");
+  /*
   if (restriction.dim() == (*_mesh).topology().dim())
   {
     _restriction.reset(&restriction);
     //FIXME: hack to cast away the const
     const_cast<DofMap&>(*_dofmap).build(restriction);
   }
+  */
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace> FunctionSpace::restriction(MeshFunction<bool>& restriction)

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-27
-// Last changed: 2008-02-11
+// Last changed: 2009-08-11
 
 #include <dolfin/log/dolfin_log.h>
 #include "Alloc.h"
@@ -151,7 +151,7 @@ real MultiAdaptiveFixedPointSolver::iteration(const real& tol, uint iter,
 	  ts.cg_feval(f, s, e, i, a, b, k);
 	else
 	  ts.dg_feval(f, s, e, i, a, b, k);
-	//cout << "f = "; Alloc::disp(f, method.qsize());
+	//cout << "f = "; Alloc::display(f, method.qsize());
 
 	// Update values on element using fixed-point iteration
 	if ( diagonal_newton_damping )
@@ -164,7 +164,7 @@ real MultiAdaptiveFixedPointSolver::iteration(const real& tol, uint iter,
 	{
 	  method.update(x0, f, k, ts.jx + j);
 	}
-	//cout << "x = "; Alloc::disp(ts.jx + j, method.nsize());
+	//cout << "x = "; Alloc::display(ts.jx + j, method.nsize());
 
 	// Compute increment
 	const real increment = real_abs(ts.jx[j + method.nsize() - 1] - x1);

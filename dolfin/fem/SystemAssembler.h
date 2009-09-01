@@ -40,8 +40,15 @@ namespace dolfin
   {
   public:
 
+    /// Assemble system (A, b)
+    static void assemble(GenericMatrix& A,
+                                GenericVector& b,
+                                const Form& a,
+                                const Form& L,
+                                bool reset_tensors=true);
+
     /// Assemble system (A, b) and apply Dirichlet boundary condition
-    static void assemble_system(GenericMatrix& A,
+    static void assemble(GenericMatrix& A,
                                 GenericVector& b,
                                 const Form& a,
                                 const Form& L,
@@ -49,15 +56,15 @@ namespace dolfin
                                 bool reset_tensors=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions
-    static void assemble_system(GenericMatrix& A,
+    static void assemble(GenericMatrix& A,
                                 GenericVector& b,
                                 const Form& a,
-                                const Form& L,
+                                const Form& L, 
                                 std::vector<const DirichletBC*>& bcs,
                                 bool reset_tensors=true);
 
-    /// Assemble system (A, b) on sub domains and apply Dirichlet boundary conditions
-    static void assemble_system(GenericMatrix& A,
+    /// Assemble system (A, b) and apply Dirichlet boundary conditions
+    static void assemble(GenericMatrix& A,
                                 GenericVector& b,
                                 const Form& a,
                                 const Form& L,
@@ -68,71 +75,64 @@ namespace dolfin
                                 const GenericVector* x0,
                                 bool reset_tensors=true);
 
-    /// Assemble system (A, b) and apply Dirichlet boundary condition
-    static void assemble_system_new(GenericMatrix& A,
-                                    GenericVector& b,
-                                    const Form& a,
-                                    const Form& L,
-                                    const DirichletBC& bc,
-                                    bool reset_tensors=true);
-
-    /// Assemble system (A, b) and apply Dirichlet boundary conditions
-    static void assemble_system_new(GenericMatrix& A,
-                                    GenericVector& b,
-                                    const Form& a,
-                                    const Form& L, 
-                                    std::vector<const DirichletBC*>& bcs,
-                                    bool reset_tensors=true);
-
-    /// Assemble system (A, b) and apply Dirichlet boundary conditions
-    static void assemble_system_new(GenericMatrix& A,
-                                    GenericVector& b,
-                                    const Form& a,
-                                    const Form& L,
-                                    std::vector<const DirichletBC*>& bcs,
-                                    const MeshFunction<uint>* cell_domains,
-                                    const MeshFunction<uint>* exterior_facet_domains,
-                                    const MeshFunction<uint>* interior_facet_domains,
-                                    const GenericVector* x0,
-                                    bool reset_tensors=true);
-
   private:
 
-    // Check form
-    static void check(const Form& a);
+    class Scratch;    
 
-    // Initialize global tensor
-    static void init_global_tensor(GenericTensor& A,
-                                   const Form& a,
-                                   UFC& ufc,
-                                   bool reset_tensor);
+    static void compute_tensor_on_one_interior_facet(const Form& a,
+                             UFC& ufc, 
+                             const Cell& cell1, 
+                             const Cell& cell2, 
+                             const Facet& facet,
+                             const MeshFunction<uint>* exterior_facet_domains); 
 
-    // Pretty-printing for progress bar
-    static std::string progress_message(uint rank,
-                                        std::string integral_type);
+    static void cell_assembly(GenericMatrix& A, GenericVector& b,
+                              const Form& a, const Form& L, 
+                              UFC& A_ufc, UFC& b_ufc, Scratch& data, 
+                              const MeshFunction<uint>* cell_domains,
+                              const MeshFunction<uint>* exterior_facet_domains); 
 
-    static void compute_tensor_on_one_cell(const Form& a,
-                                           UFC& ufc, 
-                                           const Cell& cell, 
-                                           const std::vector<const Function*>& coefficients, 
-                                           const MeshFunction<uint>* cell_domains); 
-    
-    static void compute_tensor_on_one_exterior_facet (const Form& a,
-                                               UFC& ufc, 
-                                               const Cell& cell, 
-                                               const Facet& facet,
-                                               const std::vector<const Function*>& coefficients, 
-                                                      const MeshFunction<uint>* exterior_facet_domains); 
+    static void facet_assembly(GenericMatrix& A, GenericVector& b,
+                              const Form& a, const Form& L, 
+                              UFC& A_ufc, UFC& b_ufc, Scratch& data, 
+                              const MeshFunction<uint>* cell_domains,
+                              const MeshFunction<uint>* exterior_facet_domains,
+                              const MeshFunction<uint>* interior_facet_domains); 
 
+    static void assemble(GenericMatrix& A, GenericVector& b,
+                         UFC& A_ufc, UFC& b_ufc, 
+                         const Form& a,
+                         const Form& L,
+                         const Cell& cell0, const Cell& cell1, const Facet& facet,
+                         const Scratch& data); 
 
-    static void compute_tensor_on_one_interior_facet (const Form& a,
-                                                      UFC& ufc, 
-                                                      const Cell& cell1, 
-                                                      const Cell& cell2, 
-                                                      const Facet& facet,
-                                                      const std::vector<const Function*>& coefficients, 
-                                                      const MeshFunction<uint>* exterior_facet_domains); 
+    static void assemble(GenericMatrix& A, GenericVector& b,
+                         UFC& A_ufc, UFC& b_ufc, 
+                         const Form& a,
+                         const Form& L,
+                         const Cell& cell, const Facet& facet,
+                         const Scratch& data); 
 
+    static void apply_bc(double* A, double* b, const uint* indicators, 
+                         const double* g, uint** global_dofs, const uint* dims); 
+   
+    // Class to hold temporary data
+    class Scratch
+    {
+      public:
+
+      Scratch(const Form& a, const Form& L);
+      ~Scratch();
+
+      void zero_cell();
+
+      uint A_num_entries, b_num_entries;
+
+      double* Ae;
+      double* be; 
+      uint* indicators;
+      double* g;
+    };
   };
 
 }

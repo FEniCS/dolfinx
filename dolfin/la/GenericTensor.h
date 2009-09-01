@@ -6,13 +6,14 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2008-08-07
+// Last changed: 2009-08-10
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
 
-#include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
+#include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -22,7 +23,7 @@ namespace dolfin
 
   /// This class defines a common interface for arbitrary rank tensors.
 
-  class GenericTensor
+  class GenericTensor : public Variable
   {
   public:
 
@@ -47,13 +48,16 @@ namespace dolfin
     virtual uint size(uint dim) const = 0;
 
     /// Get block of values
-    virtual void get(double* block, const uint* num_rows, const uint * const * rows) const = 0;
+    virtual void get(double* block, const uint* num_rows, 
+                     const uint * const * rows) const = 0;
 
     /// Set block of values
-    virtual void set(const double* block, const uint* num_rows, const uint * const * rows) = 0;
+    virtual void set(const double* block, const uint* num_rows, 
+                     const uint * const * rows) = 0;
 
     /// Add block of values
-    virtual void add(const double* block, const uint* num_rows, const uint * const * rows) = 0;
+    virtual void add(const double* block, const uint* num_rows, 
+                     const uint * const * rows) = 0;
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;
@@ -61,8 +65,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply() = 0;
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const = 0;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const = 0;
 
     //--- Special functions, downcasting to concrete types ---
 

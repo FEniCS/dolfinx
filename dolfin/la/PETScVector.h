@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2009-05-22
+// Last changed: 2009-08-11
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -19,8 +19,6 @@
 #include <boost/shared_ptr.hpp>
 #include <petscvec.h>
 
-#include <dolfin/log/LogStream.h>
-#include <dolfin/common/Variable.h>
 #include "PETScObject.h"
 #include "GenericVector.h"
 
@@ -35,18 +33,18 @@ namespace dolfin
   /// access the PETSc Vec pointer using the function vec() and
   /// use the standard PETSc interface.
 
-  class PETScVector : public GenericVector, public PETScObject, public Variable
+  class PETScVector : public GenericVector, public PETScObject
   {
   public:
 
     /// Create empty vector
-    PETScVector();
+    explicit PETScVector(std::string = "global");
 
     /// Create vector of size N
-    explicit PETScVector(uint N);
+    PETScVector(uint N, std::string type = "global");
 
     /// Copy constructor
-    explicit PETScVector(const PETScVector& x);
+    PETScVector(const PETScVector& x);
 
     /// Create vector from given PETSc Vec pointer
     explicit PETScVector(boost::shared_ptr<Vec> x);
@@ -65,8 +63,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply();
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const;
 
     //--- Implementation of the GenericVector interface ---
 
@@ -76,8 +74,14 @@ namespace dolfin
     /// Return size of vector
     virtual uint size() const;
 
-    /// Get block of values
+    /// Return ownership range of a vector
+    virtual std::pair<uint, uint> local_range() const;
+
+    /// Get block of values (values may live on any process)
     virtual void get(double* block, uint m, const uint* rows) const;
+
+    /// Get block of values (values must all live on the local process)
+    virtual void get_local(double* block, uint m, const uint* rows) const;
 
     /// Set block of values
     virtual void set(const double* block, uint m, const uint* rows);
@@ -85,14 +89,14 @@ namespace dolfin
     /// Add block of values
     virtual void add(const double* block, uint m, const uint* rows);
 
-    /// Get all values
-    virtual void get(double* values) const;
+    /// Get all values on local process
+    virtual void get_local(double* values) const;
 
-    /// Set all values
-    virtual void set(double* values);
+    /// Set all values on local process
+    virtual void set_local(const double* values);
 
-    /// Add values to each entry
-    virtual void add(double* values);
+    /// Add values to each entry on local process
+    virtual void add_local(const double* values);
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);
@@ -146,9 +150,17 @@ namespace dolfin
     /// Assignment operator
     const PETScVector& operator= (const PETScVector& x);
 
+    /// Gather vector entries into a local vector. If local_indices = 0, then
+    /// a local index array is created such that the order of the values in the
+    /// return array is the same as the order in global_indices.
+    virtual void gather(GenericVector& y, const std::vector<uint>& indices) const;
+
     friend class PETScMatrix;
 
   private:
+
+    // Initialise PETSc vector
+    void init(uint N, uint n, std::string type);
 
     // PETSc Vec pointer
     boost::shared_ptr<Vec> x;
@@ -157,9 +169,6 @@ namespace dolfin
     static const std::map<std::string, NormType> norm_types;
 
   };
-
-  /// Output of PETScVector
-  LogStream& operator<< (LogStream& stream, const PETScVector& x);
 
 }
 

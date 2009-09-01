@@ -4,7 +4,7 @@
 // Modified by Andy R. Terrel, 2005.
 //
 // First added:  2005-01-17
-// Last changed: 2006-05-17
+// Last changed: 2009-08-10
 
 #ifndef __PETSC_KRYLOV_MATRIX_H
 #define __PETSC_KRYLOV_MATRIX_H
@@ -63,11 +63,8 @@ namespace dolfin
     /// Compute product y = Ax
     virtual void mult(const PETScVector& x, PETScVector& y) const = 0;
 
-    /// Display matrix (sparse output is default)
-    void disp(bool sparse = true, int precision = 2) const;
-
-    /// Output
-    friend LogStream& operator<< (LogStream& stream, const PETScKrylovMatrix& A);
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   private:
 
@@ -75,8 +72,6 @@ namespace dolfin
     Mat A;
 
   };
-
-  LogStream& operator<< (LogStream& stream, const PETScKrylovMatrix& A);
 
 }
 

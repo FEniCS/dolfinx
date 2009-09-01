@@ -5,6 +5,7 @@
 %{
 #define protected public
 #include <dolfin/dolfin.h>
+#include <dolfin/common/NoDeleter.h>
 #define PY_ARRAY_UNIQUE_SYMBOL PyDolfin
 #include <numpy/arrayobject.h>
 using namespace dolfin;
@@ -45,6 +46,7 @@ import_array();
 %include "std_string.i"
 %include "std_vector.i"
 //%include "std_map.i" // FIXME: Make this work
+%include "std_pair.i"
 %include "stl.i"
 %include "carrays.i"
 %array_functions(double, doubleArray);
@@ -55,6 +57,7 @@ import_array();
 // Fixes for specific kernel modules (pre)
 %include "dolfin_common_pre.i"
 %include "dolfin_log_pre.i"
+%include "dolfin_fem_pre.i"
 %include "dolfin_la_pre.i"
 %include "dolfin_mesh_pre.i"
 %include "dolfin_function_pre.i"

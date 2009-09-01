@@ -39,7 +39,26 @@ def next(self):
 
 %pythoncode
 %{
+_doc_string = MeshFunctionInt.__doc__
+_doc_string += """     
+    Arguments
+    ---------
+    @param tp:
+      String defining the type of the MeshFunction
+      Allowed: 'int', 'uint', 'double', and 'bool'
+    @param mesh:
+      A DOLFIN mesh.
+      Optional.
+    @param dim:
+      The topological dimension of the MeshFunction.
+      Optional.
+    @param filename:
+      A filename with a stored MeshFunction.
+      Optional.
+
+"""
 class MeshFunction(object):
+    __doc__ = _doc_string
     def __new__(self, tp, *args):
         if tp == "int":
             return MeshFunctionInt(*args)
@@ -50,12 +69,15 @@ class MeshFunction(object):
         elif tp == "bool":
             return MeshFunctionBool(*args)
         else:
-            raise RuntimeError, "Cannot create a MeshFunction of %s" % (tp,)
+            raise RuntimeError, "Cannot create a MeshFunction of type '%s'." % (tp,)
+
+del _doc_string
 
 MeshFunctionInt.__call__    = MeshFunctionInt.get
 MeshFunctionUInt.__call__   = MeshFunctionUInt.get
 MeshFunctionDouble.__call__ = MeshFunctionDouble.get
 MeshFunctionBool.__call__   = MeshFunctionBool.get
+
 
 %}
 

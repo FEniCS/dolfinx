@@ -85,6 +85,14 @@ const Constant& Constant::operator= (const Constant& c)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const Constant& Constant::operator= (double c)
+{
+  if(_size > 1)
+    error("Cannot convert non-scalar Constant to a double.");
+  _values[0] = c;
+  return *this;
+}
+//-----------------------------------------------------------------------------
 Constant::~Constant()
 {
   delete [] _values;

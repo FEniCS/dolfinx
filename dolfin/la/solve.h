@@ -19,7 +19,7 @@ namespace dolfin
 
   /// Solve linear system Ax = b
   void solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b,
-             std::string solver_type = "lu", std::string pc_type = "ilu");
+             std::string solver_type = "lu", std::string pc_type = "default");
 
   /// Compute residual ||Ax - b||
   double residual(const GenericMatrix& A, const GenericVector& x, const GenericVector& b);

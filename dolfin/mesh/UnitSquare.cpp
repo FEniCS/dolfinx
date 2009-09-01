@@ -4,12 +4,12 @@
 // Modified by Garth N. Wells 2007.
 //
 // First added:  2005-12-02
-// Last changed: 2008-11-13
+// Last changed: 2009-08-09
 
+#include <dolfin/main/MPI.h>
+#include "MeshPartitioning.h"
 #include "MeshEditor.h"
 #include "UnitSquare.h"
-#include <dolfin/main/MPI.h>
-#include "MPIMeshCommunicator.h"
 
 using namespace dolfin;
 
@@ -17,12 +17,12 @@ using namespace dolfin;
 UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
+  if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
 
-  if(diagonal != "left" && diagonal != "right" && diagonal != "crossed")
+  if (diagonal != "left" && diagonal != "right" && diagonal != "crossed")
     error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\" and \"crossed\".");
 
-  if ( nx < 1 || ny < 1 )
+  if (nx < 1 || ny < 1)
     error("Size of unit square must be at least 1 in each dimension.");
 
   rename("mesh", "Mesh of the unit square (0,1) x (0,1)");
@@ -122,6 +122,6 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
+  if (MPI::is_broadcaster()) { MeshPartitioning::partition(*this); return; }
 }
 //-----------------------------------------------------------------------------

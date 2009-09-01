@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-03
-// Last changed: 2007-04-22
+// Last changed: 2009-08-10
 
 #ifndef __GRAPH_PARTITIONING_H
 #define __GRAPH_PARTITIONING_H
@@ -28,7 +28,7 @@ namespace dolfin
     static void eval(Graph& graph, uint num_part, uint* vtx_part);
 
     /// Display partitioning
-    static void disp(Graph& graph, uint num_part, uint* vtx_part);
+    static void display(Graph& graph, uint num_part, uint* vtx_part);
 
     /// Calculate edge_cut
     static uint edgecut(Graph& graph, uint num_part, uint* vtx_part);

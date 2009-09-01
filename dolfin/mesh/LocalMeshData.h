@@ -2,20 +2,22 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
-// Last changed: 2008-12-17
+// Last changed: 2009-08-08
 //
-// Modified by Anders Logg, 2008.
+// Modified by Anders Logg, 2008-2009.
 
 #ifndef __LOCAL_MESH_DATA_H
 #define __LOCAL_MESH_DATA_H
 
 #include <vector>
 #include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 #include "CellType.h"
 
 namespace dolfin
 {
 
+  class Mesh;
   class XMLLocalMeshData;
 
   /// This class stores mesh data on a local processor corresponding
@@ -35,15 +37,21 @@ namespace dolfin
   /// data, at that point corresponding to topologically connected
   /// meshes instead of local mesh data.
 
-  class LocalMeshData
+  class LocalMeshData : public Variable
   {
   public:
 
-    /// Constructor
+    /// Create empty local mesh data
     LocalMeshData();
+
+    /// Create local mesh data for given mesh
+    LocalMeshData(const Mesh& mesh);
 
     /// Destructor
     ~LocalMeshData();
+
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
     /// Define XMLHandler for use in new XML reader/writer
     typedef XMLLocalMeshData XMLHandler;
@@ -53,29 +61,29 @@ namespace dolfin
     /// Clear all data
     void clear();
 
-    /// Compute process number for vertex
-    uint initial_vertex_location(uint vertex_index) const;
+    /// Copy data from mesh
+    void extract_mesh_data(const Mesh& mesh);
 
-    /// Compute process number for vertex
-    uint initial_cell_location(uint cell_index) const;
+    /// Broadcast mesh data from main process
+    void broadcast_mesh_data();
 
-    /// Compute local number for given global vertex number
-    uint local_vertex_number(uint global_vertex_number) const;
+    /// Receive mesh data from main process
+    void receive_mesh_data();
 
-    /// Compute vertex range for local process
-    void initial_vertex_range(uint& start, uint& stop) const;
+    // Unpack received vertex coordinates
+    void unpack_vertex_coordinates(const std::vector<double>& values);
 
-    /// Compute with simple formula process number for vertex
-    void initial_cell_range(uint& start, uint& stop) const;
+    // Unpack received vertex indices
+    void unpack_vertex_indices(const std::vector<uint>& values);
+
+    // Unpack received cell vertices
+    void unpack_cell_vertices(const std::vector<uint>& values);
 
     /// Coordinates for all vertices stored on local processor
     std::vector<std::vector<double> > vertex_coordinates;
 
     /// Global vertex indices for all vertices stored on local processor
     std::vector<uint> vertex_indices;
-
-    /// Global to local mapping for all vertices stored on local processor
-    std::map<uint, uint> glob2loc;
 
     /// Global vertex indices for all cells stored on local processor
     std::vector<std::vector<uint> > cell_vertices;
@@ -86,20 +94,11 @@ namespace dolfin
     /// Global number of cells
     uint num_global_cells;
 
-    /// Number of processes
-    uint num_processes;
-
-    /// Local processes number
-    uint process_number;
-
     /// Geometrical dimension
     uint gdim;
 
     /// Topological dimension
     uint tdim;
-
-    /// Cell Type
-    CellType* cell_type;
 
     // Friends
     friend class XMLLocalMeshData;

@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2008-05-19
-// Last changed: 2009-06-18
+// Last changed: 2009-08-10
 
 #include <sstream>
 
@@ -273,77 +273,48 @@ void MeshData::erase_vector_mapping(const std::string name)
   }
 }
 //-----------------------------------------------------------------------------
-void MeshData::disp() const
-{
-  // FIXME: Remove this function and use str() instead
-
-  // Begin indentation
-  begin("Auxiliary mesh data");
-
-  // Print mesh functions
-  for (mf_const_iterator it = mesh_functions.begin(); it != mesh_functions.end(); ++it)
-  {
-    cout << "MeshFunction<uint> of size "
-         << it->second->size()
-         << " on entities of topological dimension "
-         << it->second->dim()
-         << ": \"" << it->first << "\"" << endl;
-  }
-
-  // Print arrays
-  for (a_const_iterator it = arrays.begin(); it != arrays.end(); ++it)
-    cout << "std::vector<uint> of size " << static_cast<uint>(it->second->size())
-         << ": \"" << it->first << "\"" << endl;
-
-  // Print mappings
-  for (m_const_iterator it = mappings.begin(); it != mappings.end(); ++it)
-    cout << "map<uint, uint> of size " << static_cast<uint>(it->second->size())
-         << ": \"" << it->first << "\"" << endl;
-
-  // Print vector mappings
-  for (mvec_const_iterator it = vector_mappings.begin(); it != vector_mappings.end(); ++it)
-    cout << "map<uint, vector<uint> > of size " << static_cast<uint>(it->second->size())
-         << ": \"" << it->first << "\"" << endl;
-
-  // End indentation
-  end();
-}
-//-----------------------------------------------------------------------------
-std::string MeshData::str() const
+std::string MeshData::str(bool verbose) const
 {
   std::stringstream s;
 
-  // Header
-  s << "Mesh data" << std::endl;
-  s << "---------" << std::endl << std::endl;
+  if (verbose)
+  {
+    s << str(false) << std::endl << std::endl;
 
-  // Mesh functions
-  s << "  MeshFunction<uint>" << std::endl;
-  s << "  ------------------" << std::endl;
-  for (mf_const_iterator it = mesh_functions.begin(); it != mesh_functions.end(); ++it)
-    s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
-  s << std::endl;
+    // Mesh functions
+    s << "  MeshFunction<uint>" << std::endl;
+    s << "  ------------------" << std::endl;
+    for (mf_const_iterator it = mesh_functions.begin(); it != mesh_functions.end(); ++it)
+      s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
+    s << std::endl;
 
-  // Arrays
-  s << "  std::vector<uint>" << std::endl;
-  s << "  -----------------" << std::endl;
-  for (a_const_iterator it = arrays.begin(); it != arrays.end(); ++it)
-    s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
-  s << std::endl;
+    // Arrays
+    s << "  std::vector<uint>" << std::endl;
+    s << "  -----------------" << std::endl;
+    for (a_const_iterator it = arrays.begin(); it != arrays.end(); ++it)
+      s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
+    s << std::endl;
 
-  // Mappings
-  s << "  std::map<uint, uint>" << std::endl;
-  s << "  --------------------" << std::endl;
-  for (m_const_iterator it = mappings.begin(); it != mappings.end(); ++it)
-    s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
-  s << std::endl;
+    // Mappings
+    s << "  std::map<uint, uint>" << std::endl;
+    s << "  --------------------" << std::endl;
+    for (m_const_iterator it = mappings.begin(); it != mappings.end(); ++it)
+      s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
+    s << std::endl;
 
-  // Vector mappings
-  s << "  std::map<uint, std::vector<uint>" << std::endl;
-  s << "  --------------------------------" << std::endl;
-  for (mvec_const_iterator it = vector_mappings.begin(); it != vector_mappings.end(); ++it)
-    s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
-  s << std::endl;
+    // Vector mappings
+    s << "  std::map<uint, std::vector<uint>" << std::endl;
+    s << "  --------------------------------" << std::endl;
+    for (mvec_const_iterator it = vector_mappings.begin(); it != vector_mappings.end(); ++it)
+      s << "  " << it->first << " (size = " << it->second->size() << ")" << std::endl;
+    s << std::endl;
+  }
+  else
+  {
+    const uint num_objects =
+      mesh_functions.size() + arrays.size() + mappings.size() + vector_mappings.size();
+    s << "<MeshData containing " << num_objects << " objects>";
+  }
 
   return s.str();
 }

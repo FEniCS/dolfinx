@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008, 2009.
 //
 // First added:  2008-04-21
-// Last changed: 2008-13-30
+// Last changed: 2009-08-10
 
 #ifndef __EPETRA_MATRIX_H
 #define __EPETRA_MATRIX_H
@@ -14,7 +14,6 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
 #include "GenericMatrix.h"
 
@@ -34,7 +33,7 @@ namespace dolfin
   /// access the Epetra_FECrsMatrix object using the function mat() and
   /// use the standard Epetra interface.
 
-  class EpetraMatrix: public GenericMatrix, public Variable
+  class EpetraMatrix: public GenericMatrix
   {
   public:
 
@@ -73,8 +72,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply();
 
-    /// Display tensor
-    virtual void disp(uint precision = 2) const;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const;
 
     //--- Implementation of the GenericMatrix interface ---
 
@@ -92,6 +91,9 @@ namespace dolfin
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false);
+
+    /// Return norm of matrix
+    virtual double norm(std::string norm_type = "frobenius") const;
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;
@@ -136,8 +138,6 @@ namespace dolfin
     boost::shared_ptr<Epetra_FECrsMatrix> A;
 
   };
-
-  LogStream& operator<< (LogStream& stream, const EpetraMatrix& A);
 
 }
 

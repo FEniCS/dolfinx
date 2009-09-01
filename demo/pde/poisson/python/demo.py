@@ -40,7 +40,13 @@ L = v*f*dx
 
 # Compute solution
 problem = VariationalProblem(a, L, bc)
+# FIXME: Temporary while testing parallel assembly
+problem.parameters["linear_solver"] = "iterative"
+problem.parameters["krylov_solver"]["relative_tolerance"] = 1e-20
 u = problem.solve()
+
+# FIXME: Temporary while testing parallel assembly
+print "Norm of solution vector: %.15g" % u.vector().norm()
 
 # Plot solution
 plot(u)

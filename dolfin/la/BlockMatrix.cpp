@@ -2,11 +2,12 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-08-25
-// Last changed: 2008-12-12
+// Last changed: 2009-08-11
 //
 // Modified by Anders Logg, 2008.
 
 #include <stdexcept>
+#include <dolfin/common/utils.h>
 #include "BlockVector.h"
 #include "BlockMatrix.h"
 #include "DefaultFactory.h"
@@ -74,16 +75,29 @@ void BlockMatrix::apply()
       this->get(i,j).apply();
 }
 //-----------------------------------------------------------------------------
-void BlockMatrix::disp(uint precision) const
+std::string BlockMatrix::str(bool verbose) const
 {
-  for(uint i = 0; i < n; i++)
+  std::stringstream s;
+
+  if (verbose)
   {
-    for(uint j = 0; j < n; j++)
+    s << str(false) << std::endl << std::endl;
+
+    for (uint i = 0; i < n; i++)
     {
-      std::cout <<"BlockMatrix("<<i<<","<<j<<"):"<<std::endl;
-      this->get(i, j).disp(precision);
+      for (uint j = 0; i < m; j++)
+      {
+        s << "  BlockMatrix (" << i << ", " << j << ")" << std::endl << std::endl;
+        s << indent(indent(get(i, j).str(true))) << std::endl;
+      }
     }
   }
+  else
+  {
+    s << "<BlockMatrix containing " << n << " x " << m << " blocks>";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 void BlockMatrix::mult(const BlockVector& x, BlockVector& y, bool transposed) const

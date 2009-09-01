@@ -9,6 +9,7 @@ EnsureSConsVersion(0, 98, 5)
 
 # Import the local 'scons'
 sys.path.insert(0, os.path.abspath(os.path.join("scons", "simula-scons")))
+print os.path.abspath(os.path.join("scons", "simula-scons"))
 import simula_scons as scons
  
 # Import local exceptions
@@ -98,6 +99,7 @@ options = [
     BoolVariable("enableMtl4", "Compile with support for MTL4", "yes"),
     BoolVariable("enableParmetis", "Compile with support for ParMETIS", "yes"),
     BoolVariable("enableGmp", "Compile with support for GMP", "no"),
+    BoolVariable("enableZlib", "Compile with support for zlib", "yes"),
     BoolVariable("enablePython", "Compile the Python wrappers", "yes"),
     BoolVariable("enablePydolfin", "Compile the Python wrappers of DOLFIN *deprecated*", "yes"),
     # some of the above may need extra options (like petscDir), should we
@@ -117,6 +119,7 @@ options = [
     PathVariable("withBoostDir", "Specify path to Boost", None, path_validator),
     PathVariable("withLibxml2Dir", "Specify path to libXML2", None, path_validator),
     PathVariable("withGtsDir", "Specify path to GTS", None, path_validator),
+    PathVariable("withZlibDir", "Specify path to zlib", None, path_validator),
     #
     # a few more options originally from PyCC:
     #BoolVariable("autoFetch", "Automatically fetch datafiles from (password protected) SSH repository", 0),
@@ -134,6 +137,7 @@ options = [
     #('usePackages','Override or add dependency packages, separate with comma', ""),
     #('customDefaultPackages','Override the default set of packages (%r), separate package names with commas' % (DefaultPackages,)),
     ("SSLOG", "Set Simula scons log file", os.path.join(os.getcwd(),"scons","simula_scons.log")),
+    ("withPetscArch", "The architecture PETSc is configured with", None),
     ]
 
 
@@ -220,7 +224,7 @@ if "configure" in COMMAND_LINE_TARGETS:
 
   # Set default compiler and linker flags (defining CXXFLAGS/LINKFLAGS
   # will override this)
-  env['CXXFLAGS'] = os.environ.get("CXXFLAGS", "-Wall -pipe -ansi -Werror")
+  env['CXXFLAGS'] = os.environ.get("CXXFLAGS", "-Wall -pipe -ansi")
   env["LINKFLAGS"] = os.environ.get("LINKFLAGS", "")  # FIXME: "" OK as default?
 
   # Default FORTRAN flags
@@ -235,7 +239,7 @@ if "configure" in COMMAND_LINE_TARGETS:
   if env["enableOptimize"]:
     env.Append(CXXFLAGS=" -O3")
   elif env["enableDebug"]:
-    env.Append(CXXFLAGS=" -DDEBUG -g -O2")
+    env.Append(CXXFLAGS=" -DDEBUG -g -O2  -Werror")
   else:
     # FIXME: why are we optimizing when enableOptimize is False?
     env.Append(CXXFLAGS=" -O2")

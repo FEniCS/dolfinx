@@ -2,13 +2,15 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2007
+// Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2008-12-03
+// Last changed: 2009-08-14
 
 #include <vector>
 #include <map>
 
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Mesh.h>
@@ -50,6 +52,13 @@ struct lt_coordinate
 //-----------------------------------------------------------------------------
 PeriodicBC::PeriodicBC(const FunctionSpace& V,
                        const SubDomain& sub_domain)
+  : BoundaryCondition(V), sub_domain(reference_to_no_delete_pointer(sub_domain))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+PeriodicBC::PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
+                       boost::shared_ptr<const SubDomain> sub_domain)
   : BoundaryCondition(V), sub_domain(sub_domain)
 {
   // Do nothing
@@ -84,7 +93,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
   const DofMap& dofmap = V->dofmap();
 
   // Set geometric dimension (needed for SWIG interface)
-  sub_domain._geometric_dimension = mesh.geometry().dim();
+  sub_domain->_geometric_dimension = mesh.geometry().dim();
 
   // Table of mappings from coordinates to dofs
   std::map<std::vector<double>, std::pair<int, int>, lt_coordinate> coordinate_dofs;
@@ -131,17 +140,17 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     {
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
-      const int global_dof = static_cast<int>(dofmap.offset() + data.cell_dofs[local_dof]);
+      const int global_dof = data.cell_dofs[local_dof];
       double* x = data.coordinates[local_dof];
 
       // Map coordinate from H to G
       for (uint j = 0; j < mesh.geometry().dim(); j++)
         y[j] = x[j];
-      sub_domain.map(x, y);
+      sub_domain->map(x, y);
 
       // Check if coordinate is inside the domain G or in H
       const bool on_boundary = facet->num_entities(D) == 1;
-      if (sub_domain.inside(x, on_boundary))
+      if (sub_domain->inside(x, on_boundary))
       {
         // Coordinate x is in G
         //cout << "Inside: " << x[0] << " " << x[1] << endl;
@@ -175,7 +184,7 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
           coordinate_dofs[xx] = dofs;
         }
       }
-      else if (sub_domain.inside(y, on_boundary))
+      else if (sub_domain->inside(y, on_boundary))
       {
         // y = F(x) is in G, so coordinate x is in H
         //cout << "Mapped: " << x[0] << " " << x[1] << endl;
@@ -214,15 +223,6 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     p++;
   }
 
-  /*
-  // Insert 1 at (dof0, dof1)
-  uint* rows = new uint[coordinate_dofs.size()];
-  uint i = 0;
-  for (iterator it = coordinate_dofs.begin(); it != coordinate_dofs.end(); ++it)
-  rows[i++] = static_cast<uint>(it->second.first);
-  A.ident(coordinate_dofs.size(), rows);
-  */
-
   // Insert -1 at (dof0, dof1) and 0 on right-hand side
   uint* rows = new uint[1];
   uint* cols = new uint[1];
@@ -254,8 +254,8 @@ void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
     //        from within a loop.
 
     // Set x_i - x_j = 0
-    rows[0] = static_cast<uint>(dof0);
-    cols[0] = static_cast<uint>(dof1);
+    rows[0] = dof0;
+    cols[0] = dof1;
     vals[0] = -1;
     zero[0] = 0.0;
 

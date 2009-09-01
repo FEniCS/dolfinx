@@ -64,8 +64,6 @@ namespace dolfin
                        const BoundaryCondition& bc,
                        bool nonlinear=false);
 
-    // FIXME: Pointers need to be const here to work with SWIG. Is there a fix for this?
-
     /// Define variational problem with a list of Dirichlet boundary conditions
     VariationalProblem(const Form& a,
                        const Form& L,

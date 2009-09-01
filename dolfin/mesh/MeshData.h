@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2008-05-19
-// Last changed: 2009-06-18
+// Last changed: 2009-08-09
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
@@ -89,11 +89,8 @@ namespace dolfin
 
     //--- Misc ---
 
-    /// Display data
-    void disp() const;
-
     /// Return informal string representation (pretty-print)
-    std::string str() const;
+    std::string str(bool verbose=false) const;
 
     /// Friends
     friend class XMLFile;

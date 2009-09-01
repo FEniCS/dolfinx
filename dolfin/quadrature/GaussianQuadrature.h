@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-06-03
-// Last changed: 2006-10-23
+// Last changed: 2009-08-10
 
 #ifndef __GAUSSIAN_QUADRATURE_H
 #define __GAUSSIAN_QUADRATURE_H
@@ -37,9 +37,6 @@ namespace dolfin {
 
     // Check that quadrature is exact for given degree q
     bool check(unsigned int q) const;
-
-    /// Display quadrature data
-    virtual void disp() const = 0;
 
   };
 

@@ -7,12 +7,13 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2008-08-25
+// Last changed: 2009-08-25
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
 
-#include <dolfin/common/Variable.h>
+//#include <iostream>
+//#include <typeinfo>
 #include "DefaultFactory.h"
 #include "GenericVector.h"
 
@@ -22,22 +23,25 @@ namespace dolfin
   /// This class provides the default DOLFIN vector class,
   /// based on the default DOLFIN linear algebra backend.
 
-  class Vector : public GenericVector, public Variable
+  class Vector : public GenericVector
   {
   public:
 
     /// Create empty vector
-    Vector() : Variable("x", "DOLFIN vector"), vector(0)
+    Vector() : vector(0)
     { DefaultFactory factory; vector = factory.create_vector(); }
 
     /// Create vector of size N
-    explicit Vector(uint N) : Variable("x", "DOLFIN vector"), vector(0)
+    explicit Vector(uint N) : vector(0)
     { DefaultFactory factory; vector = factory.create_vector(); vector->resize(N); }
 
     /// Copy constructor
-    explicit Vector(const Vector& x) : Variable("x", "DOLFIN vector"),
-                                       vector(x.vector->copy())
+    explicit Vector(const Vector& x) : vector(x.vector->copy())
     {}
+
+    /// Create a Vector from a GenericVetor
+    explicit Vector(const GenericVector& x) : vector(x.factory().create_vector())
+    { vector = x.copy(); }
 
     /// Destructor
     virtual ~Vector()
@@ -57,9 +61,9 @@ namespace dolfin
     virtual void apply()
     { vector->apply(); }
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const
-    { vector->disp(precision); }
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const
+    { return vector->str(verbose); }
 
     //--- Implementation of the GenericVector interface ---
 
@@ -71,9 +75,17 @@ namespace dolfin
     virtual uint size() const
     { return vector->size(); }
 
+    /// Return local ownership range of a vector
+    virtual std::pair<uint, uint> local_range() const
+    { return vector->local_range(); }
+
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows) const
     { vector->get(block, m, rows); }
+
+    /// Get block of values (values must all live on the local process)
+    virtual void get_local(double* block, uint m, const uint* rows) const
+    { vector->get_local(block,m,rows); }
 
     /// Set block of values
     virtual void set(const double* block, uint m, const uint* rows)
@@ -83,17 +95,17 @@ namespace dolfin
     virtual void add(const double* block, uint m, const uint* rows)
     { vector->add(block, m, rows); }
 
-    /// Get all values
-    virtual void get(double* values) const
-    { vector->get(values); }
+    /// Get all values on local process
+    virtual void get_local(double* values) const
+    { vector->get_local(values); }
 
-    /// Set all values
-    virtual void set(double* values)
-    { vector->set(values); }
+    /// Set all values on local process
+    virtual void set_local(const double* values)
+    { vector->set_local(values); }
 
-    /// Add values to each entry
-    virtual void add(double* values)
-    { vector->add(values); }
+    /// Add values to each entry on local process
+    virtual void add_local(const double* values)
+    { vector->add_local(values); }
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x)

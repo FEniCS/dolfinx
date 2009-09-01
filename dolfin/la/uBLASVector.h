@@ -7,14 +7,12 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2008-10-28
+// Last changed: 2009-08-11
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
 
 #include <boost/shared_ptr.hpp>
-#include <dolfin/log/LogStream.h>
-#include <dolfin/common/Variable.h>
 #include "ublas.h"
 #include "GenericVector.h"
 
@@ -32,7 +30,7 @@ namespace dolfin
   /// uBLAS interface which is documented at
   /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
 
-  class uBLASVector : public GenericVector, public Variable
+  class uBLASVector : public GenericVector
   {
   public:
 
@@ -66,8 +64,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply();
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const;
 
     //--- Implementation of the GenericVector interface ---
 
@@ -76,6 +74,9 @@ namespace dolfin
 
     /// Return size of vector
     virtual uint size() const;
+
+    /// Return local ownership range of a vector
+    virtual std::pair<uint, uint> local_range() const;
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows) const;
@@ -86,14 +87,14 @@ namespace dolfin
     /// Add block of values
     virtual void add(const double* block, uint m, const uint* rows);
 
-    /// Get all values
-    virtual void get(double* values) const;
+    /// Get all values on local process
+    virtual void get_local(double* values) const;
 
-    /// Set all values
-    virtual void set(double* values);
+    /// Set all values on local process
+    virtual void set_local(const double* values);
 
-    /// Add values to each entry
-    virtual void add(double* values);
+    /// Add values to each entry on local process
+    virtual void add_local(const double* values);
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);
@@ -174,8 +175,6 @@ namespace dolfin
     boost::shared_ptr<ublas_vector> x;
 
   };
-
-  LogStream& operator<< (LogStream& stream, const uBLASVector& x);
 
 }
 

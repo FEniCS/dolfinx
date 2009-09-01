@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim, 2008
 //
 // First added:  2006-06-05
-// Last changed: 2008-11-14
+// Last changed: 2009-08-10
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -28,34 +28,34 @@ dolfin::uint TriangleCell::dim() const
 //-----------------------------------------------------------------------------
 dolfin::uint TriangleCell::num_entities(uint dim) const
 {
-  switch ( dim )
-    {
-    case 0:
-      return 3; // vertices
-    case 1:
-      return 3; // edges
-    case 2:
-      return 1; // cells
-    default:
-      error("Illegal topological dimension %d for triangle.", dim);
-    }
+  switch (dim)
+  {
+  case 0:
+    return 3; // vertices
+  case 1:
+    return 3; // edges
+  case 2:
+    return 1; // cells
+  default:
+    error("Illegal topological dimension %d for triangle.", dim);
+  }
 
   return 0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint TriangleCell::num_vertices(uint dim) const
 {
-  switch ( dim )
-    {
-    case 0:
-      return 1; // vertices
-    case 1:
-      return 2; // edges
-    case 2:
-      return 3; // cells
-    default:
-      error("Illegal topological dimension %d for triangle.", dim);
-    }
+  switch (dim)
+  {
+  case 0:
+    return 1; // vertices
+  case 1:
+    return 2; // edges
+  case 2:
+    return 3; // cells
+  default:
+    error("Illegal topological dimension %d for triangle.", dim);
+  }
 
   return 0;
 }
@@ -262,7 +262,8 @@ double TriangleCell::facet_area(const Cell& cell, uint facet) const
   return std::sqrt(d);
 }
 //-----------------------------------------------------------------------------
-void TriangleCell::order(Cell& cell) const
+void TriangleCell::order(Cell& cell,
+                         const MeshFunction<uint>* global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1
 
@@ -281,7 +282,7 @@ void TriangleCell::order(Cell& cell) const
     for (uint i = 0; i < 3; i++)
     {
       uint* edge_vertices = const_cast<uint*>(topology(1, 0)(cell_edges[i]));
-      std::sort(edge_vertices, edge_vertices + 2);
+      sort_entities(2, edge_vertices, global_vertex_indices);
     }
   }
 
@@ -289,11 +290,11 @@ void TriangleCell::order(Cell& cell) const
   if ( topology(2, 0).size() > 0 )
   {
     uint* cell_vertices = const_cast<uint*>(cell.entities(0));
-    std::sort(cell_vertices, cell_vertices + 3);
+    sort_entities(3, cell_vertices, global_vertex_indices);
   }
 
   // Sort local edges on cell after non-incident vertex, connectivity 2 - 1
-  if ( topology(2, 1).size() > 0 )
+  if (topology(2, 1).size() > 0)
   {
     assert(topology(2, 1).size() > 0);
 
@@ -304,13 +305,13 @@ void TriangleCell::order(Cell& cell) const
     // Loop over vertices on cell
     for (uint i = 0; i < 3; i++)
     {
-  	  // Loop over edges on cell
-  	  for (uint j = i; j < 3; j++)
-  	  {
-  	    const uint* edge_vertices = topology(1, 0)(cell_edges[j]);
+      // Loop over edges on cell
+      for (uint j = i; j < 3; j++)
+      {
+        const uint* edge_vertices = topology(1, 0)(cell_edges[j]);
 
-  	    // Check if the ith vertex of the cell is non-incident with edge j
-  	    if ( std::count(edge_vertices, edge_vertices + 2, cell_vertices[i]) == 0 )
+        // Check if the ith vertex of the cell is non-incident with edge j
+        if (std::count(edge_vertices, edge_vertices + 2, cell_vertices[i]) == 0)
         {
           // Swap edge numbers
           uint tmp = cell_edges[i];
@@ -484,10 +485,11 @@ bool TriangleCell::intersects(const MeshEntity& triangle, const Cell& cell) cons
   return false;
 }
 //-----------------------------------------------------------------------------
-std::string TriangleCell::description() const
+std::string TriangleCell::description(bool plural) const
 {
-  std::string s = "triangle (simplex of topological dimension 2)";
-  return s;
+  if (plural)
+    return "triangles";
+  return "triangle";
 }
 //-----------------------------------------------------------------------------
 dolfin::uint TriangleCell::find_edge(uint i, const Cell& cell) const

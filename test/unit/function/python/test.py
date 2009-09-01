@@ -36,18 +36,18 @@ class Eval(unittest.TestCase):
           f0.eval(u0,x);f1.eval(u1,x);f2.eval(u2,x)
 
           same_result = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
-          self.assertAlmostEqual(u0[0],same_result)
-          self.assertAlmostEqual(u1[0],same_result)
-          self.assertAlmostEqual(u2[0],same_result)
+          self.assertAlmostEqual(u0[0], same_result)
+          self.assertAlmostEqual(u1[0], same_result)
+          self.assertAlmostEqual(u2[0], same_result)
           
           if not HAS_GTS:
                return
           
-          V2 = FunctionSpace(mesh,'CG',2)
-          g = project(f3,V2)
-          f3.eval(u0,x)
-          g.eval(u1,x)
-          self.assertAlmostEqual(u0[0],u1[0])
+          V2 = FunctionSpace(mesh, 'CG', 2)
+          g = project(f3, V2)
+          f3.eval(u0, x)
+          g.eval(u1, x)
+          self.assertAlmostEqual(u0[0],u1[0], places=5)
 
 class Instantiation(unittest.TestCase):
      def testSameBases(self):

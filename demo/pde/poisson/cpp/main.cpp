@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2008-12-26
+// Last changed: 2009-08-17
 //
 // This demo program solves Poisson's equation
 //
@@ -62,16 +62,21 @@ int main()
 
   // Compute solution
   VariationalProblem problem(a, L, bc);
-  problem.parameters("linear_solver") = "iterative";
+  // FIXME: Temporary while testing parallel assembly
+  //problem.parameters("linear_solver") = "iterative";
+  //problem.parameters["krylov_solver"]("relative_tolerance") = 1e-20;
   Function u;
   problem.solve(u);
 
+  // FIXME: Temporary while testing parallel assembly
+  info("Norm of solution vector: %.15g", u.vector().norm());
+
+  // Save solution in VTK format (using base64 encoding)
+  //File file("poisson.pvd", "compressed");
+  //file << u;
+
   // Plot solution
   plot(u);
-
-  // Save solution in VTK format
-  File file("poisson.pvd");
-  file << u;
 
   return 0;
 }

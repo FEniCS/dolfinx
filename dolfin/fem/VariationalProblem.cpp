@@ -10,7 +10,6 @@
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/function/Function.h>
-#include <dolfin/function/SubFunction.h>
 #include "assemble.h"
 #include "Form.h"
 #include "BoundaryCondition.h"
@@ -195,7 +194,7 @@ void VariationalProblem::solve_linear(Function& u)
     }
 
     // Assemble linear system and apply boundary conditions
-    assemble_system(A, b, a, L, _bcs, cell_domains, exterior_facet_domains, interior_facet_domains, 0);
+    assemble_system(A, b, a, L, _bcs, cell_domains, exterior_facet_domains, interior_facet_domains, 0, true);
   }
   else
   {

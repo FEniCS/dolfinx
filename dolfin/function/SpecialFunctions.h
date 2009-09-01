@@ -11,7 +11,12 @@
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
 
+#include <map>
 #include <vector>
+#include <boost/assign/list_of.hpp>
+#include <boost/ptr_container/ptr_map.hpp>
+
+#include <dolfin/common/types.h>
 #include <dolfin/fem/UFC.h>
 #include "Function.h"
 
@@ -21,7 +26,6 @@ namespace dolfin
   class Form;
   class UFC;
   class FunctionSpace;
-  class SubFunction;
   class Data;
 
   // FIXME: Need to add checks for all these functions that
@@ -136,22 +140,42 @@ namespace dolfin
   {
   public:
 
-    // Constructor
-    DiscreteFunction() : Function(){}
+    /// Constructor
+    DiscreteFunction() : Function() {}
 
-    // Constructor
+    /// Constructor
     DiscreteFunction(boost::shared_ptr<const FunctionSpace> V) : Function(V)
     {
       vector();
     }
 
-    // Constructor
-    DiscreteFunction(boost::shared_ptr<const FunctionSpace> V, std::string filename) : Function(V,filename){}
+    /// Constructor
+    DiscreteFunction(boost::shared_ptr<const FunctionSpace> V, 
+                     std::string filename) : Function(V, filename){}
 
-    // Constructor
-    DiscreteFunction(const SubFunction& v) : Function(v){}
+    /// Constructor (deep copy of the vector)
+    DiscreteFunction(const Function& v) : Function(v) {}
 
-    ~DiscreteFunction(){}
+    /// Sub-function constructor (shallow copy of the vector)
+    DiscreteFunction(Function& v, uint i)
+    {
+      // Check that vector exists
+      if (!v.has_vector())
+        error("Unable to extract sub function, missing coefficients (user-defined function).");
+
+      // Get sub-function (Function will store pointer to sub-Function)
+      Function& sub_function = v[i]; 
+      
+      // Copy function space pointer
+      this->_function_space = sub_function._function_space;
+
+      // Copy vector pointer
+      this->_vector = sub_function._vector;
+    }
+
+    /// Destructor
+    ~DiscreteFunction() {}
+
   };
 }
 

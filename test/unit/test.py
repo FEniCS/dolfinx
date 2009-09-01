@@ -9,17 +9,10 @@ __license__  = "GNU LGPL Version 2.1"
 
 import sys, os, re
 import platform
-from subprocess import Popen, PIPE, STDOUT
-
-# commands.getoutput does not work on Windows
-def getoutput(cmd):
-    p = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT, bufsize=-1)
-    r = p.wait()
-    output, error = p.communicate()
-    return output
+from dolfin.utils import getoutput
 
 # Tests to run
-tests = ["function", "mesh", "meshconvert", "la", "io"]
+tests = ["fem", "function", "mesh", "meshconvert", "la", "io"]
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
 
@@ -50,7 +43,7 @@ for test in tests:
             failed += [(test, "C++", output)]
     else:
         print "Skipping"
-    
+
     print "Python:",
     output = getoutput("cd %s%spython && python .%stest.py" % \
                        (test, os.path.sep, os.path.sep))

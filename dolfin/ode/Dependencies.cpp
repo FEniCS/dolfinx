@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-06
-// Last changed: 2008-10-06
+// Last changed: 2009-08-11
 
 #include <dolfin/common/real.h>
 #include <dolfin/common/constants.h>
@@ -177,21 +177,33 @@ bool Dependencies::sparse() const
   return _sparse;
 }
 //-----------------------------------------------------------------------------
-void Dependencies::disp() const
+std::string Dependencies::str(bool verbose) const
 {
-  if ( _sparse )
+  std::stringstream s;
+
+  if (verbose)
   {
-    info("Dependency pattern:");
-    for (uint i = 0; i < N; i++)
+    s << str(false) << std::endl << std::endl;
+
+    if (_sparse)
     {
-      cout << i << ":";
-      for (uint pos = 0; pos < sdep[i].size(); ++pos)
-        cout << " " << sdep[i][pos];
-      cout << endl;
+      for (uint i = 0; i < N; i++)
+      {
+        s << "  " << i << ":";
+        for (uint pos = 0; pos < sdep[i].size(); ++pos)
+          s << " " << sdep[i][pos];
+        s << std::endl;
+      }
     }
+    else
+      s << "  " << "dense" << std::endl;
   }
   else
-    info("Dependency pattern: dense");
+  {
+    s << "<Dependencies of size " << N << ">";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 bool Dependencies::check_dependency(ODE& ode, real* u, real f0,

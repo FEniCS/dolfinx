@@ -6,15 +6,17 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-05-17
+// Last changed: 2009-08-14
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
 
-#include <boost/shared_ptr.hpp>
 #include <map>
+#include <memory>
 #include <vector>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include "UFC.h"
@@ -30,15 +32,26 @@ namespace dolfin
   /// It wraps a ufc::dof_map on a specific mesh and provides
   /// optional precomputation and reordering of dofs.
 
-  class DofMap
+  class DofMap : public Variable
   {
   public:
 
     /// Create dof map on mesh
-    DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<Mesh> mesh);
+    DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map, 
+           boost::shared_ptr<Mesh> mesh);
 
     /// Create dof map on mesh (const mesh version)
-    DofMap(boost::shared_ptr<ufc::dof_map> dof_map, boost::shared_ptr<const Mesh> mesh);
+    DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map, 
+           boost::shared_ptr<const Mesh> mesh);
+
+  private:
+
+    /// Create dof map on mesh with a std::vector dof map
+    DofMap(std::auto_ptr<std::vector<dolfin::uint> > map, 
+           boost::shared_ptr<ufc::dof_map> ufc_dof_map, 
+           boost::shared_ptr<const Mesh> mesh);
+
+  public:
 
     /// Destructor
     ~DofMap();
@@ -46,7 +59,7 @@ namespace dolfin
     /// Return a string identifying the dof map
     std::string signature() const
     {
-      if (!dof_map)
+      if (!map.get())
         return ufc_dof_map->signature();
       else
       {
@@ -62,10 +75,8 @@ namespace dolfin
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const
     {
-      if (dof_map) 
-        return dof_map_size;
-      else 
-        return ufc_dof_map->global_dimension();
+      assert(_global_dimension > 0);
+      return _global_dimension;
     }
 
     /// Return the dimension of the local finite element function space on a cell
@@ -84,52 +95,57 @@ namespace dolfin
     void tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_index) const;
 
     /// Tabulate local-local facet dofs
-    void tabulate_facet_dofs(uint* dofs, uint local_facet) const
-    { ufc_dof_map->tabulate_facet_dofs(dofs, local_facet); }
+    void tabulate_facet_dofs(uint* dofs, uint local_facet) const;
 
     /// Tabulate the coordinates of all dofs on a cell
     void tabulate_coordinates(double** coordinates, const ufc::cell& ufc_cell) const
     { ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell); }
 
-    /// Build parallel dof map
-    void build(UFC& ufc);
+    /// Extract sub dofmap component 
+    DofMap* extract_sub_dofmap(const std::vector<uint>& component) const;
 
-    /// Build dof map on only a subdomain of the mesh (meshfunction contains booleans for each cell)
-    void build(const MeshFunction<bool>& meshfunction);
+    /// Test whether dof map has been renumbered
+    bool renumbered() const
+    {
+      if (map.get())
+        return true;
+      else
+        return false;
+    }
 
-    /// Return renumbering (used for testing)
-    std::map<uint, uint> get_map() const;
+    /// "Collapse" a sub dofmap 
+    DofMap* collapse(std::map<uint, uint>& collapsed_map) const;
 
-    /// Extract sub dofmap and offset for component
-    DofMap* extract_sub_dofmap(const std::vector<uint>& component, uint& offset) const;
-
-    /// Return offset into parent's vector of coefficients
-    uint offset() const;
-
-    /// Display mapping
-    void disp() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose) const;
 
   private:
 
     /// Friends
     friend class DofMapBuilder;
 
-    /// Initialise DofMap
-    void init();
+    /// Initialise the UFCMesh
+    void init_ufc_mesh();
+
+    /// Initialise a UFC dof map
+    void init_ufc_dofmap(ufc::dof_map& dofmap) const;
 
     // Recursively extract sub dofmap
     ufc::dof_map* extract_sub_dofmap(const ufc::dof_map& dof_map,
                                      uint& offset,
                                      const std::vector<uint>& component) const;
 
-    // Precomputed dof map
-    int* dof_map;
+    // FIXME: Should this be a std::vector<std::vector<int> >, 
+    //        e.g. a std::vector for each cell? 
+    // FIXME: Document layout of map
+    // Precomputed dof map 
+    std::auto_ptr<std::vector<dolfin::uint> > map;
 
-    // Size of dof_map
-    uint dof_map_size;
+    // Global dimension
+    uint _global_dimension;
 
-    // Cell map for restriction
-    int* cell_map;
+    // Map from UFC dofs to renumbered dof 
+    std::map<dolfin::uint, uint> ufc_to_map;
 
     // UFC dof map
     boost::shared_ptr<ufc::dof_map> ufc_dof_map;
@@ -137,11 +153,8 @@ namespace dolfin
     // UFC mesh
     UFCMesh ufc_mesh;
 
-    // Provide easy access to map for testing
-    std::map<uint, uint> map;
-
-    // Offset into parent's vector of coefficients
-    uint _offset;
+    // UFC dof map offset into parent's vector of coefficients
+    uint _ufc_offset;
 
     // Mesh we live in
     boost::shared_ptr<const Mesh> dolfin_mesh;

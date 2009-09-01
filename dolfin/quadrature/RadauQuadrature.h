@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-06-03
-// Last changed: 2005-12-09
+// Last changed: 2009-08-10
 
 #ifndef __RADAU_QUADRATURE_H
 #define __RADAU_QUADRATURE_H
@@ -28,9 +28,11 @@ namespace dolfin
   {
   public:
 
+    /// Create Radau quadrature with n points
     RadauQuadrature(unsigned int n);
 
-    void disp() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   private:
 

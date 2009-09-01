@@ -1,3 +1,23 @@
+ - Add function interpolate() in Python interface
+ - Fix typmaps for uint in python 2.6
+ - Use TypeError instead of ValueError in typechecks in typmaps.i
+ - Add in/out shared_ptr<Epetra_FEFoo> typemaps for PyDOLFIN
+ - Fix JIT compiling in parallel
+ - Add a compile_extension_module function in PyDOLFIN
+ - Fix bug in Python vector assignment
+ - Add support for compressed base64 encoded VTK files (using zlib)
+ - Add support for base64 encoded VTK files
+ - Experimental support for parallel assembly and solve
+ - Bug fix in project() function, update to UFL syntax
+ - Remove disp() functions and replace by info(foo, true)
+ - Add fem unit test (Python)
+ - Clean up SystemAssembler
+ - Enable assemble_system through PyDOLFIN
+ - Add 'norm' to GenericMatrix
+ - Efficiency improvements in NewtonSolver
+ - Rename NewtonSolver::get_iteration() to NewtonSolver::iteration()
+ - Improvements to EpetraKrylovSolver::solve
+ - Add constructor Vector::Vector(const GenericVector& x)
  - Remove SCons deprecation warnings
  - Memory leak fix in PETScKrylovSolver
  - Rename dolfin_assert -> assert and use C++ version
@@ -7,7 +27,6 @@
  - Rewrite parameter system with improved support for command-line parsing,
    localization of parameters (per class) and usability from Python
  - Remove OutflowFacet from SpecialFunctions
- - Experimental support for parallel assembly and solve
  - Rename interpolate(double*) --> interpolate_vertex_values(double*)
  - Add Python version of Cahn-Hilliard demo
  - Fix bug in assemble.py
@@ -24,7 +43,7 @@
  - Add call to clean up libxml2 parser at exit
  - Remove unecessary arguments in DofMap member functions
  - Remove reference constructors from DofMap, FiniteElement and FunctionSpace
- - Use a shared_ptr to store the mesh in DofMap objects 
+ - Use a shared_ptr to store the mesh in DofMap objects
  - Interface change for wrapper code: PoissonBilinearForm --> Poisson::BilinearForm
  - Add function info_underline() for writing underlined messages
  - Rename message() --> info() for "compatibility" with Python logging module
@@ -45,7 +64,6 @@
  - Remove class Array (using std::vector instead)
  - Add vector_mapping data to MeshData
  - Use std::vector instead of Array in MeshData
-
  - Add assignment operator and copy constructor for MeshFunction
  - Add function mesh.move(other_mesh) for moving mesh according to matching mesh (for FSI)
  - Add function mesh.move(u) for moving mesh according to displacement function (for FSI)
@@ -219,7 +237,7 @@
 0.6.3 [2006-10-27]
  - Move to new mesh library
  - Remove dolfin-config and move to pkg-config
- - Remove unused classes PArray, PList, Table, Tensor	
+ - Remove unused classes PArray, PList, Table, Tensor
  - Visualization of 2D solutions in OpenDX is now supported (3D supported before)
  - Add support for evaluation of functionals
  - Fix bug in Vector::sum() for uBLAS vectors
@@ -271,8 +289,8 @@
  - Remove KrylovSolver::solver()
  - Fix bug in convection-diffusion demo (boundary condition for pressure), use direct solver
  - LinearPDE and NewonSolver use umfpack LU solver by default (if available) when doing direct solve
- - Set PETSc matrix type through Matrix constructor 
- - Allow linear solver and preconditioner type to be passed to NewtonSolver 
+ - Set PETSc matrix type through Matrix constructor
+ - Allow linear solver and preconditioner type to be passed to NewtonSolver
  - Fix bug in Stokes demos (wrong boundary conditions)
  - Cleanup Krylov solver
  - Remove KrylovSolver::setPreconditioner() etc. and move to constructors
@@ -285,7 +303,7 @@
 0.6.0 [2006-03-01]
  - Fix bug in XML output format (writing multiple objects)
  - Fix bug in XML matrix output format (handle zero rows)
- - Add new nonlinear PDE demo 
+ - Add new nonlinear PDE demo
  - Restructure PDE class to use envelope-letter design
  - Add precompiled finite elements for q <= 5
  - Add FiniteElementSpec and factor function for FiniteElement
@@ -311,8 +329,8 @@
  - Fix sparse matrix output format for MATLAB
  - Modify demo problem for Stokes, add exact solution and compute error
  - Change interface for boundary conditions: operator() --> eval()
- - Add two benchmark problems for the Navier-Stokes solver 	
- - Add support for 2D/3D selection in Navier-Stokes solver 
+ - Add two benchmark problems for the Navier-Stokes solver
+ - Add support for 2D/3D selection in Navier-Stokes solver
  - Move tic()/toc() to timing.h
  - Navier-Stokes solver back online
  - Make Solver a subclass of Parametrized
@@ -331,7 +349,7 @@
  - Clean out old sparse matrix code
  - Update chapter on Functions in manual
  - Use std::map to store parameters
- - Implement class KrylovSolver 
+ - Implement class KrylovSolver
  - Name change: Node --> Vertex
  - Add nonlinear solver demos
  - Add support for picking sub functions and components of functions
@@ -369,7 +387,7 @@
  - Add chapters to manual: about, log system, parameters, reference elements,
    installation, contributing, license
  - Use new template fenicsmanual.cls for manual
- - Add compiler flag -U__STRICT_ANSI__ when compiling under Cygwin 
+ - Add compiler flag -U__STRICT_ANSI__ when compiling under Cygwin
  - Add class EigenvalueSolver
 0.5.8 [2005-07-05]
  - Add new output format Paraview/VTK (Garth N. Wells)
@@ -397,7 +415,7 @@
  - Implement automatic detection of sparsity pattern from given matrix
  - Clean up homotopy solver
  - Implement automatic computation of Jacobian
- - Add support for assembly of non-square systems (Andy Terrel)	
+ - Add support for assembly of non-square systems (Andy Terrel)
  - Make ODE solver report average number of iterations
  - Make progress bar write first update at 0%
  - Initialize all values of u before solution in multi-adaptive solver,
@@ -468,7 +486,7 @@
  - Update PETSc wrappers NewVector, NewMatrix, and NewGMRES
  - Fix initialization of PETSc
  - Add mono-adaptive cG(q) and dG(q) solvers (experimental)
- - Implementation of new assebly: NewFEM, using output from FFC 
+ - Implementation of new assebly: NewFEM, using output from FFC
  - Add access to mesh for nodes, cells, faces and edges
  - Add Tecplot I/O interface; contributed by Garth N. Wells
 0.5.2 [2005-01-26]
@@ -503,7 +521,7 @@
  - New classes Preconditioner and LinearSolver
  - Bug fix for tetrahedral mesh refinement (ingelstrom)
  - Add iterators for Edge and Face on Boundary
- - Add functionality to Map: bdet() and cell() 
+ - Add functionality to Map: bdet() and cell()
  - Add connectivity face-cell and edge-cell
  - New interface for assembly: Galerkin --> FEM
  - Bug fix for PDE systems of size > 3
@@ -590,7 +608,7 @@
 0.4.4
  - Add support for 3D graphics in Octave using Open Inventor (jj)
 0.4.3
- - Stabilization of multi-adaptive solver (experimental) 
+ - Stabilization of multi-adaptive solver (experimental)
  - Improved non-support for curses (--disable-curses)
  - New class MechanicalSystem for simulating mechanical systems
  - Save debug info from primal and dual (plotslab.m)
@@ -630,10 +648,10 @@
  - Initiation of the FEniCS project
  - Change syntax of mesh files: grid -> mesh
  - Create symbolic links instead of copying files
- - Tanganyika -> ODE 
+ - Tanganyika -> ODE
  - Add Heat module
  - Grid -> Mesh
- - Move forms and mappings to separate libraries 
+ - Move forms and mappings to separate libraries
  - Fix missing include of DirectSolver.h
 0.3.12
  - Adaptive grid refinement (!)
@@ -671,7 +689,7 @@
  - Make GMRES work with user defined matrix, only mult() needed
  - GMRES now uses only one function to compute residual()
  - Change Matrix structure (a modified envelope/letter)
- - Update script checkerror.m for Poisson 
+ - Update script checkerror.m for Poisson
  - Add function dolfin_info_aptr()
  - Add cast to element pointer for iterators
  - Clean up and improve the Tensor class

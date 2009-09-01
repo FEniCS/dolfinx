@@ -12,7 +12,7 @@ def __contains__(self,u):
 def sub(self,i):
     """ Return a sub function
 
-    A sub function can be extracted from a discrete function that is in a
+    A sub function can be extracted from a discrete function that is in
     a MixedFunctionSpace or in a VectorFunctionSpace. The sub function is a
     function that resides in a sub space of the mixed space.
 

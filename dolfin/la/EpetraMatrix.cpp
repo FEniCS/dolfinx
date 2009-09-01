@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008, 2008.
 //
 // First added:  2008-04-21
-// Last changed: 2008-12-30
+// Last changed: 2009-08-12
 
 #ifdef HAS_TRILINOS
 
@@ -32,14 +32,12 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix():
-    Variable("A", "Epetra matrix"),
     A(static_cast<Epetra_FECrsMatrix*>(0))
 {
   // TODO: call Epetra_Init or something?
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(uint M, uint N):
-    Variable("A", "Epetra matrix"),
     A(static_cast<Epetra_FECrsMatrix*>(0))
 {
   // TODO: call Epetra_Init or something?
@@ -48,7 +46,6 @@ EpetraMatrix::EpetraMatrix(uint M, uint N):
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(const EpetraMatrix& A):
-  Variable("A", "Epetra matrix"),
   A(static_cast<Epetra_FECrsMatrix*>(0))
 {
   if (A.mat())
@@ -59,14 +56,12 @@ EpetraMatrix::EpetraMatrix(const EpetraMatrix& A):
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A):
-    Variable("A", "a sparse matrix"),
     A(A)
 {
   // TODO: call Epetra_Init or something?
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph):
-    Variable("A", "a sparse matrix"),
     A(new Epetra_FECrsMatrix(Copy, graph))
 {
   // TODO: call Epetra_Init or something?
@@ -191,6 +186,21 @@ void EpetraMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_patt
     error("EpetraMatrDid::axpy: Did not manage to perform EpetraExt::MatrixMatrix::Add. If the matrix has been assembled, the nonzero patterns must match.");
 }
 //-----------------------------------------------------------------------------
+double EpetraMatrix::norm(std::string norm_type) const
+{
+  if (norm_type == "l1")
+    return A->NormOne();
+  else if (norm_type == "linf")
+    return A->NormInf();
+  else if (norm_type == "frobenius")
+    return A->NormFrobenius();
+  else
+  {
+    error("Unknown norm type in EpetraMatrix.");
+    return 0.0;
+  }
+}
+//-----------------------------------------------------------------------------
 void EpetraMatrix::zero()
 {
   assert(A);
@@ -209,10 +219,24 @@ void EpetraMatrix::apply()
   //A->OptimizeStorage();
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::disp(uint precision) const
+std::string EpetraMatrix::str(bool verbose) const
 {
   assert(A);
-  A->Print(std::cout);
+
+  std::stringstream s;
+
+  if (verbose)
+  {
+    warning("Verbose output for EpetraMatrix not implemented, calling Epetra Print directly.");
+
+    A->Print(std::cout);
+  }
+  else
+  {
+    s << "<EpetraMatrix of size " << size(0) << " x " << size(1) << ">";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::ident(uint m, const uint* rows)
@@ -362,10 +386,5 @@ const EpetraMatrix& EpetraMatrix::operator= (const EpetraMatrix& A)
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const EpetraMatrix& A)
-{
-  stream << "[ Epetra matrix of size " << A.size(0) << " x " << A.size(1) << " ]";
-  return stream;
-}
-//-----------------------------------------------------------------------------
+
 #endif

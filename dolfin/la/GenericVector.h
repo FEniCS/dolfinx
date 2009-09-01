@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2007 Garth N. Wells.
+// Copyright (C) 2006-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2006-2008.
@@ -7,11 +7,14 @@
 // Modified by Martin Sandve Alnes, 2009.
 //
 // First added:  2006-04-25
-// Last changed: 2009-03-09
+// Last changed: 2009-08-22
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
 
+#include <algorithm>
+#include <utility>
+#include <boost/lambda/lambda.hpp>
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
 
@@ -50,15 +53,18 @@ namespace dolfin
     { assert(dim == 0); return size(); }
 
     /// Get block of values
-    virtual void get(double* block, const uint* num_rows, const uint * const * rows) const
+    virtual void get(double* block, const uint* num_rows, 
+                     const uint * const * rows) const
     { get(block, num_rows[0], rows[0]); }
 
     /// Set block of values
-    virtual void set(const double* block, const uint* num_rows, const uint * const * rows)
+    virtual void set(const double* block, const uint* num_rows, 
+                     const uint * const * rows)
     { set(block, num_rows[0], rows[0]); }
 
     /// Add block of values
-    virtual void add(const double* block, const uint* num_rows, const uint * const * rows)
+    virtual void add(const double* block, const uint* num_rows, 
+                     const uint * const * rows)
     { add(block, num_rows[0], rows[0]); }
 
     /// Set all entries to zero and keep any sparse structure
@@ -67,8 +73,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply() = 0;
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const = 0;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose) const = 0;
 
     //--- Vector interface ---
 
@@ -78,8 +84,15 @@ namespace dolfin
     /// Return size of vector
     virtual uint size() const = 0;
 
-    /// Get block of values
+    /// Return local ownership range of a vector
+    virtual std::pair<uint, uint> local_range() const = 0;
+
+    /// Get block of values (values may live on any process)
     virtual void get(double* block, uint m, const uint* rows) const = 0;
+
+    /// Get block of values (values must all live on the local process)
+    virtual void get_local(double* block, uint m, const uint* rows) const
+      { error("GenericVector::get_local not yet implemented for this backend."); }
 
     /// Set block of values
     virtual void set(const double* block, uint m, const uint* rows) = 0;
@@ -87,14 +100,17 @@ namespace dolfin
     /// Add block of values
     virtual void add(const double* block, uint m, const uint* rows) = 0;
 
-    /// Get all values
-    virtual void get(double* values) const = 0;
+    /// Get all values on local process
+    virtual void get_local(double* values) const = 0;
 
-    /// Set all values
-    virtual void set(double* values) = 0;
+    /// Set all values on local process
+    virtual void set_local(const double* values) = 0;
 
-    /// Add values to each entry
-    virtual void add(double* values) = 0;
+    /// Add values to each entry on local process
+    virtual void add_local(const double* values) = 0;
+
+    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const
+    { error("GenericVector::gather is not implemented for this backend."); }
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x) = 0;
@@ -135,6 +151,31 @@ namespace dolfin
     /// Assignment operator
     virtual const GenericVector& operator= (double a) = 0;
 
+    /// Apply lambda function
+    template<typename T> void lambda(const T function)
+    {
+      // FIXME: This could be more efficient by acting on the underling vector 
+      //        data
+      std::vector<double> values(size());
+      get_local(&values[0]);
+      std::for_each(values.begin(), values.end(), function);
+      set_local(&values[0]);
+    }
+
+    /// Apply lambda function
+    template<typename T> void lambda(const GenericVector& x, const T function)
+    {
+      // FIXME: This could be more efficient by acting on the underling vector 
+      //        data
+      assert(x.size() == this->size());
+      std::vector<double> values(size());
+      std::vector<double> x_values(size());
+      this->get_local(&values[0]);
+      x.get_local(&x_values[0]);
+      std::transform(x_values.begin(), x_values.end(), values.begin(), function);
+      this->set_local(&values[0]);
+    }
+
     /// Return pointer to underlying data (const version)
     virtual const double* data() const
     {
@@ -163,8 +204,8 @@ namespace dolfin
     virtual void setitem(uint i, double value)
     { set(&value, 1, &i); }
 
-
     typedef XMLVector XMLHandler;
+
   };
 
 }

@@ -111,9 +111,13 @@ def getPetscDir(sconsEnv=None):
     return petsc_dir
 
 def getPetscArch(sconsEnv=None):
-    if os.environ.has_key('PETSC_ARCH'):
+    if sconsEnv is not None and sconsEnv.get("withPetscArch", None):
+        return sconsEnv["withPetscArch"]
+    elif os.environ.has_key('PETSC_ARCH'):
         return os.environ["PETSC_ARCH"]
     elif os.path.exists(getPetscDir(sconsEnv=sconsEnv)+"/linux-gnu-c-opt"):
+        return "linux-gnu-c-opt"
+    elif os.path.exists(getPetscDir(sconsEnv=sconsEnv)+"/lib/linux-gnu-c-opt"):
         return "linux-gnu-c-opt"
     else:
         return ""

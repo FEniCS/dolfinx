@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-07-08
+// Last changed: 2009-08-10
 
 #ifndef __PARAMETERS_H
 #define __PARAMETERS_H
@@ -75,7 +75,7 @@ namespace dolfin
   public:
 
     /// Create empty parameter set
-    Parameters(std::string key="parameters");
+    explicit Parameters(std::string key="parameters");
 
     /// Destructor
     ~Parameters();
@@ -85,7 +85,7 @@ namespace dolfin
 
     /// Return name for parameter set
     std::string name() const;
-    
+
     /// Rename parameter set
     void rename(std::string key);
 
@@ -93,7 +93,7 @@ namespace dolfin
     void clear();
 
     /// Add int-valued parameter
-    void add(std::string key, int value);    
+    void add(std::string key, int value);
 
     /// Add int-valued parameter with given range
     void add(std::string key, int value, int min_value, int max_value);
@@ -151,14 +151,14 @@ namespace dolfin
     /// Assignment operator
     const Parameters& operator= (const Parameters& parameters);
 
-    /// Return informal string representation (pretty-print)
-    std::string str() const;
-
     /// Return a vector of parameter keys
     void get_parameter_keys(std::vector<std::string>& keys) const;
 
     /// Return a vector of parameter set keys
     void get_parameter_set_keys(std::vector<std::string>& keys) const;
+
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
     /// Define XMLHandler for use in new XML reader/writer
     typedef XMLParameters XMLHandler;
@@ -167,12 +167,12 @@ namespace dolfin
 
     // Add all parameters as options to a boost::program_option instance
     void add_parameter_set_to_po(boost::program_options::options_description& desc,
-                                 const Parameters &parameters, 
+                                 const Parameters &parameters,
                                  std::string base_name = "") const;
 
     // Read in values from the boost::variable_map
-    void read_vm(boost::program_options::variables_map& vm, 
-                 Parameters &parameters, 
+    void read_vm(boost::program_options::variables_map& vm,
+                 Parameters &parameters,
                  std::string base_name = "");
 
     // Return pointer to parameter for given key and 0 if not found

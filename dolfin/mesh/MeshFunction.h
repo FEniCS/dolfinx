@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman, 2007.
 //
 // First added:  2006-05-22
-// Last changed: 2009-03-16
+// Last changed: 2009-08-11
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -14,7 +14,6 @@
 #include <dolfin/io/File.h>
 #include "MeshEntity.h"
 #include <dolfin/main/MPI.h>
-#include "MPIMeshCommunicator.h"
 
 namespace dolfin
 {
@@ -216,26 +215,30 @@ namespace dolfin
         _values[i] = value;
     }
 
-    /// Display mesh function data
-    void disp() const
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const
     {
-      cout << "Mesh function data" << endl;
-      cout << "------------------" << endl;
-      begin("");
-      cout << "Topological dimension: " << _dim << endl;
-      cout << "Number of values:      " << _size << endl;
-      cout << endl;
-      for (uint i = 0; i < _size; i++)
-        cout << "(" << _dim << ", " << i << "): " << _values[i] << endl;
-      end();
+      std::stringstream s;
+
+      if (verbose)
+      {
+        warning("Verbose display of MeshFunctions is not possible as it is a templated class.");
+        //s << str(false) << std::endl << std::endl;
+        //for (uint i = 0; i < _size; i++)
+        //  s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
+      }
+      else
+      {
+        s << "MeshFuncton of topological dimension " << _dim << " containing " << _size << " values>";
+      }
+
+      return s.str();
     }
 
     // Input and output
     typedef XMLMeshFunction XMLHandler;
 
   private:
-
-    friend class MPIMeshCommunicator;
 
     /// Values at the set of mesh entities
     T* _values;

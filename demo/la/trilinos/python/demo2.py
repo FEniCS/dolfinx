@@ -42,12 +42,12 @@ u0 = Constant(mesh, 0.0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
 # Create linear system
-A, b = assemble_system(a, L, bc, mesh)
+A, b = assemble_system(a, L, bc)
 
 # Create solution vector (also used as start vector)
 U = Function(V)
 
-solve(A, U.vector(), b, cg, ilu)
+solve(A, U.vector(), b, "cg", "ilu")
 
 # plot the solution
 plot(U)

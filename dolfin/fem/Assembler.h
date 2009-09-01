@@ -42,6 +42,9 @@ namespace dolfin
 
   class Assembler
   {
+
+  friend class SystemAssembler;
+
   public:
 
     /// Assemble tensor

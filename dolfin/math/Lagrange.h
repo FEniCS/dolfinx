@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-06-12
-// Last changed: 2005-12-09
+// Last changed: 2009-08-10
 
 #ifndef __LAGRANGE_H
 #define __LAGRANGE_H
@@ -10,6 +10,7 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -26,7 +27,7 @@ namespace dolfin
   ///   p(0,x) = 1 - x   (one at x = 0, zero at x = 1)
   ///   p(1,x) = x       (zero at x = 0, one at x = 1)
 
-  class Lagrange
+  class Lagrange : public Variable
   {
   public:
 
@@ -63,9 +64,8 @@ namespace dolfin
     /// Return derivative q (a constant) of polynomial
     real dqdx(unsigned int i);
 
-    /// Output
-    friend LogStream& operator<<(LogStream& stream, const Lagrange& p);
-    void disp() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   private:
 
@@ -77,8 +77,6 @@ namespace dolfin
     real* constants;
 
   };
-
-  LogStream& operator<<(LogStream& stream, const Lagrange& p);
 
 }
 

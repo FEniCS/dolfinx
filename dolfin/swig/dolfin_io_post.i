@@ -24,7 +24,6 @@
 %template(__lshift__) dolfin::File::operator<< <MeshFunction<bool> >;
 %template(__lshift__) dolfin::File::operator<< <Sample>;
 %template(__lshift__) dolfin::File::operator<< <Parameters>;
-%template(__lshift__) dolfin::File::operator<< <Function>;
 %template(__lshift__) dolfin::File::operator<< <FunctionPlotData>;
 
 

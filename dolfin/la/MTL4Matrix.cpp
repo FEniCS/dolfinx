@@ -1,10 +1,10 @@
 // Copyright (C) 2008 Dag Lindbo
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008. 2009.
 //
 // First added:  2008-07-06
-// Last changed: 2008-10-04
+// Last changed: 2009-08-11
 
 #ifdef HAS_MTL4
 
@@ -18,25 +18,22 @@ using namespace dolfin;
 using namespace mtl;
 
 //-----------------------------------------------------------------------------
-MTL4Matrix::MTL4Matrix(): Variable("A", "MTL4 matrix"), ins(0), nnz_row(0)
+MTL4Matrix::MTL4Matrix() : ins(0), nnz_row(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MTL4Matrix::MTL4Matrix(uint M, uint N): Variable("A", "MTL4 matrix"), ins(0),
-                                        nnz_row(0)
+MTL4Matrix::MTL4Matrix(uint M, uint N) :ins(0), nnz_row(0)
 {
   resize(M, N);
 }
 //-----------------------------------------------------------------------------
-MTL4Matrix::MTL4Matrix(uint M, uint N, uint nz): Variable("A", "MTL4 matrix"),
-                                                 ins(0), nnz_row(nz)
+MTL4Matrix::MTL4Matrix(uint M, uint N, uint nz) : ins(0), nnz_row(nz)
 {
   resize(M, N);
 }
 //-----------------------------------------------------------------------------
-MTL4Matrix::MTL4Matrix(const MTL4Matrix& mat): Variable("A", "MTL4 matrix"),
-                                               ins(0), nnz_row(0)
+MTL4Matrix::MTL4Matrix(const MTL4Matrix& mat) : ins(0), nnz_row(0)
 {
   assert_no_inserter();
 
@@ -108,9 +105,9 @@ void MTL4Matrix::add(const double* block, uint m, const uint* rows, uint n, cons
     init_inserter();
 
   // Block insertion
-  *ins << element_array(mtl::dense2D<double>(m, n, const_cast<double*>(block)), 
+  *ins << element_array(mtl::dense2D<double>(m, n, const_cast<double*>(block)),
                         mtl::dense_vector<uint>(m, const_cast<uint*>(rows)),
-                        mtl::dense_vector<uint>(n, const_cast<uint*>(cols))); 
+                        mtl::dense_vector<uint>(n, const_cast<uint*>(cols)));
   /*
   for (uint i = 0; i < m; i++)
     for (uint j = 0; j < n; j++)
@@ -118,7 +115,7 @@ void MTL4Matrix::add(const double* block, uint m, const uint* rows, uint n, cons
   */
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::MTL4Matrix::axpy(double a, const GenericMatrix& A,
+void MTL4Matrix::axpy(double a, const GenericMatrix& A,
                                   bool same_nonzero_pattern)
   {
     // Check for same size
@@ -128,6 +125,21 @@ void MTL4Matrix::MTL4Matrix::axpy(double a, const GenericMatrix& A,
     // Do we need to check for same sparsity pattern?
     this->A += (a)*(A.down_cast<MTL4Matrix>().mat());
   }
+//-----------------------------------------------------------------------------
+double MTL4Matrix::norm(std::string norm_type) const
+{
+  if (norm_type == "l1")
+    return one_norm(A);
+  else if (norm_type == "linf")
+    return infinity_norm(A);
+  else if (norm_type == "frobenius")
+    return frobenius_norm(A);
+  else
+  {
+    error("Unknown norm type in MTL4Matrix.");
+    return 0.0;
+  }
+}
 //-----------------------------------------------------------------------------
 void MTL4Matrix::zero()
 {
@@ -142,14 +154,24 @@ void MTL4Matrix::apply()
   ins = 0;
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::disp(uint precision) const
+std::string MTL4Matrix::str(bool verbose) const
 {
   assert_no_inserter();
 
-  // FIXME: This ignores precision
-  std::stringstream stream;
-  stream << A;
-  cout << stream.str() << endl;
+  std::stringstream s;
+
+  if (verbose)
+  {
+    s << str(false) << std::endl << std::endl;
+
+    s << A;
+  }
+  else
+  {
+    s << "MTL4Matrix of size " << size(0) << " x " << size(1) << ">";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::ident(uint m, const uint* rows)
@@ -307,24 +329,13 @@ void MTL4Matrix::init_inserter(void)
   if(nnz_row > 0)
     ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<double> >(A, nnz_row);
   else
-    ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<double> >(A, 50);
+    ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<double> >(A, 100);
 }
 //-----------------------------------------------------------------------------
 inline void MTL4Matrix::assert_no_inserter(void) const
 {
   if(ins)
     error("MTL4: Matrix read operation attempted while inserter active. Did you forget to apply()?");
-}
-//-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const  MTL4Matrix& A)
-{
-  // FIXME: "Redirect" mtl::matix::op<< to the dolfin log stream
-
-  int M = mtl::matrix::num_rows(A.mat());
-  int N = mtl::matrix::num_cols(A.mat());
-
-  stream << "[ MTL4 Matrix of size " << M << "x" << N << " ]";
-  return stream;
 }
 //-----------------------------------------------------------------------------
 

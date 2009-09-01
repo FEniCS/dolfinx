@@ -2,17 +2,16 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
+// Modified by Garth N. Wells, 2009.
 //
 // First added:  2008-07-06
-// Last changed: 2008-08-25
+// Last changed: 2009-08-22
 
 #ifdef HAS_MTL4
 
 #ifndef __MTL4_VECTOR_H
 #define __MTL4_VECTOR_H
 
-#include <dolfin/log/LogStream.h>
-#include <dolfin/common/Variable.h>
 #include "mtl4.h"
 #include "GenericVector.h"
 
@@ -30,7 +29,7 @@
 namespace dolfin
 {
 
-  class MTL4Vector: public GenericVector, public Variable
+  class MTL4Vector: public GenericVector
   {
   public:
 
@@ -57,8 +56,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply();
 
-    /// Display vector
-    virtual void disp(uint precision=2) const;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const;
 
     //--- Implementation of the GenericVector interface ---
 
@@ -67,6 +66,9 @@ namespace dolfin
 
     /// Return size of vector
     virtual uint size() const;
+
+    /// Return local ownership range of a vector
+    virtual std::pair<uint, uint> local_range() const;
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows) const;
@@ -77,14 +79,14 @@ namespace dolfin
     /// Add block of values
     virtual void add(const double* block, uint m, const uint* rows);
 
-    /// Get all values
-    virtual void get(double* values) const;
+    /// Get all values on local process
+    virtual void get_local(double* values) const;
 
-    /// Set all values
-    virtual void set(double* values);
+    /// Set all values on local process
+    virtual void set_local(const double* values);
 
-    /// Add all values to each entry
-    virtual void add(double* values);
+    /// Add all values to each entry on local process
+    virtual void add_local(const double* values);
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);
@@ -155,8 +157,6 @@ namespace dolfin
     mtl4_vector x;
 
   };
-
-  LogStream& operator<< (LogStream& stream, const MTL4Vector& A);
 
 }
 

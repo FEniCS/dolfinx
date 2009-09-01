@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
   newton_solver.parameters("absolute_tolerance") = 1e-15;
 
   // Save initial condition to file
-  File file("cahn_hilliard.pvd");
+  File file("cahn_hilliard.pvd", "compressed");
   file << u[1];
 
   // Solve

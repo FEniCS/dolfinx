@@ -44,22 +44,10 @@ namespace dolfin
     uint solve(NonlinearProblem& nonlinear_function, GenericVector& x);
 
     /// Return Newton iteration number
-    uint get_iteration() const;
+    uint iteration() const;
 
     /// Default parameter values
-    static Parameters default_parameters()
-    {
-      Parameters p("newton_solver");
- 
-      p.add("maximum_iterations",    50);
-      p.add("relative_tolerance",    1e-9);
-      p.add("absolute_tolerance",    1e-10);
-      p.add("convergence_criterion", "residual");
-      p.add("method",                "full");
-      p.add("report",                true);
- 
-      return p;
-    }
+    static Parameters default_parameters();
 
   private:
 

@@ -28,7 +28,6 @@ void StabilityAnalysis::analyze_integral(uint q)
 
   real progress_end = ode.endtime()*ode.endtime() + ode.endtime();
 
-
   // Collect 
   std::vector< std::pair<real, real*> > s;
 

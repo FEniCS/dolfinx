@@ -47,7 +47,17 @@ L = inner(v, f)*dx
 
 # Compute solution
 problem = VariationalProblem(a, L, bcs)
-(u, p) = problem.solve().split()
+U = problem.solve()
+
+# Split the mixed solution using deepcopy
+# (needed for further computation on coefficient vector)
+(u, p) = U.split(True)
+
+print "Norm of velocity coefficient vector: %.15g" % u.vector().norm()
+print "Norm of pressure coefficient vector: %.15g" % p.vector().norm()
+
+# Split the mixed solution using a shallow copy
+(u, p) = U.split()
 
 # Save solution in VTK format
 ufile_pvd = File("velocity.pvd")

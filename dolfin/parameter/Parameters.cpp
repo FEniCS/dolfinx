@@ -5,14 +5,14 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-07-08
+// Last changed: 2009-08-27
 
 #include <sstream>
 #include <boost/program_options.hpp>
-
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/log/Table.h>
+#include <dolfin/common/utils.h>
 #include "Parameter.h"
 #include "Parameters.h"
 
@@ -215,7 +215,7 @@ void Parameters::parse(int argc, char* argv[])
   // Add list of allowed options to po::options_description
   po::options_description desc("Allowed options");
   add_parameter_set_to_po(desc, *this);
-  
+
   // Add help option
   desc.add_options()("help", "show help text");
 
@@ -234,7 +234,7 @@ void Parameters::parse(int argc, char* argv[])
     info(s.str());
     exit(1);
   }
-  
+
   // Read values from the parsed variable map
   read_vm(vm, *this);
 }
@@ -248,7 +248,7 @@ void Parameters::update(const Parameters& parameters)
     // Get parameters
     const Parameter& other = *it->second;
     Parameter* self = find_parameter(other.key());
-    
+
     // Skip parameters not in this parameter set (no new parameters added)
     if (!self)
     {
@@ -256,7 +256,7 @@ void Parameters::update(const Parameters& parameters)
               other.key().c_str(), parameters.name().c_str(), name().c_str());
       continue;
     }
-    
+
     // Set value (will give an error if the type is wrong)
     if (other.type_str() == "int")
       *self = static_cast<int>(other);
@@ -270,7 +270,7 @@ void Parameters::update(const Parameters& parameters)
       error("Unable to use parameter \"%s\", unknown type: \"%s\".",
             other.key().c_str(), other.type_str().c_str());
   }
-  
+
   // Update nested parameter sets
   for (const_parameter_set_iterator it = parameters._parameter_sets.begin(); it != parameters._parameter_sets.end(); ++it)
   {
@@ -327,7 +327,7 @@ const Parameters& Parameters::operator= (const Parameters& parameters)
   _key = parameters._key;
 
   // Copy parameters
-  for (const_parameter_iterator it = parameters._parameters.begin(); 
+  for (const_parameter_iterator it = parameters._parameters.begin();
        it != parameters._parameters.end(); ++it)
   {
     const Parameter& p = *it->second;
@@ -357,36 +357,6 @@ const Parameters& Parameters::operator= (const Parameters& parameters)
   return *this;
 }
 //-----------------------------------------------------------------------------
-std::string Parameters::str() const
-{
-  std::stringstream s;
-
-  if (_parameters.size() == 0 && _parameter_sets.size() == 0)
-  {
-    s << name() << " (empty)";
-    return s.str();
-  }
-
-  Table t(_key);
-  for (const_parameter_iterator it = _parameters.begin(); 
-        it != _parameters.end(); ++it)
-  {
-    Parameter* p = it->second;
-    t(p->key(), "type") = p->type_str();
-    t(p->key(), "value") = p->value_str();
-    t(p->key(), "range") = p->range_str();
-    t(p->key(), "access") = p->access_count();
-    t(p->key(), "change") = p->change_count();
-  }
-  s << t.str();
-
-  for (const_parameter_set_iterator it = _parameter_sets.begin(); 
-         it != _parameter_sets.end(); ++it)
-    s << "\n\n" << indent(it->second->str());
-
-  return s.str();
-}
-//-----------------------------------------------------------------------------
 void Parameters::get_parameter_keys(std::vector<std::string>& keys) const
 {
   keys.reserve(_parameters.size());
@@ -401,7 +371,48 @@ void Parameters::get_parameter_set_keys(std::vector<std::string>& keys) const
     keys.push_back(it->first);
  }
 //-----------------------------------------------------------------------------
-void Parameters::add_parameter_set_to_po(po::options_description& desc,
+std::string Parameters::str(bool verbose) const
+{
+  std::stringstream s;
+
+  if (verbose)
+  {
+    s << str(false) << std::endl;
+
+    if (_parameters.size() == 0 && _parameter_sets.size() == 0)
+    {
+      s << name() << " (empty)";
+      return s.str();
+    }
+
+    Table t(_key);
+    for (const_parameter_iterator it = _parameters.begin();
+         it != _parameters.end(); ++it)
+    {
+      Parameter* p = it->second;
+      t(p->key(), "type") = p->type_str();
+      t(p->key(), "value") = p->value_str();
+      t(p->key(), "range") = p->range_str();
+      t(p->key(), "access") = p->access_count();
+      t(p->key(), "change") = p->change_count();
+    }
+    s << t.str();
+
+    for (const_parameter_set_iterator it = _parameter_sets.begin();
+         it != _parameter_sets.end(); ++it)
+      s << "\n\n" << indent(it->second->str(verbose));
+  }
+  else
+  {
+    s << "<Parameter set containing "
+      << _parameters.size() << " parameters and "
+      << _parameter_sets.size() << " nested parameter sets>";
+  }
+
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+  void Parameters::add_parameter_set_to_po(po::options_description& desc,
                                             const Parameters &parameters,
                                             std::string base_name) const
 {
@@ -417,7 +428,7 @@ void Parameters::add_parameter_set_to_po(po::options_description& desc,
     else if (p.type_str() == "string")
       desc.add_options()(param_name.c_str(), po::value<std::string>(), p.description().c_str());
   }
-  
+
   for (const_parameter_set_iterator it = parameters._parameter_sets.begin(); it != parameters._parameter_sets.end(); ++it)
   {
     add_parameter_set_to_po(desc, *it->second, base_name + it->first + ".");

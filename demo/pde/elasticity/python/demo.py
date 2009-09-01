@@ -78,6 +78,7 @@ bcs = [bcl, bcr]
 
 # Set up PDE and solve
 problem = VariationalProblem(a, L, bcs)
+problem.parameters["symmetric"] = True
 u = problem.solve()
 
 # Save solution to VTK format

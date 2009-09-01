@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2008-06-11
+// Last changed: 2009-08-11
 
 #ifndef __MONO_ADAPTIVE_TIME_SLAB_H
 #define __MONO_ADAPTIVE_TIME_SLAB_H
@@ -61,8 +61,8 @@ namespace dolfin
     /// Save to ODESolution object
     void save_solution(ODESolution& u);
 
-    /// Display time slab data
-    void disp() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
     /// Friends
     friend class MonoAdaptiveFixedPointSolver;
@@ -96,3 +96,5 @@ namespace dolfin
 }
 
 #endif
+
+

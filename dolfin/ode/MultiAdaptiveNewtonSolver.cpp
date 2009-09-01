@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-27
-// Last changed: 2009-07-01
+// Last changed: 2009-08-11
 
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
@@ -81,7 +81,7 @@ void MultiAdaptiveNewtonSolver::start()
   A->init();
 
   //debug();
-  //A->disp(true, 10);
+  //info(A);
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptiveNewtonSolver::iteration(const real& tol, uint iter, const real& d0, const real& d1)
@@ -198,6 +198,6 @@ void MultiAdaptiveNewtonSolver::debug()
     }
   }
 
-  B.disp();
+  info(B);
 }
 //-----------------------------------------------------------------------------

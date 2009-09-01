@@ -7,10 +7,10 @@
 // First added:  2005-12-02
 // Last changed: 2008-11-13
 
+#include <dolfin/main/MPI.h>
+#include "MeshPartitioning.h"
 #include "MeshEditor.h"
 #include "UnitSphere.h"
-#include <dolfin/main/MPI.h>
-#include "MPIMeshCommunicator.h"
 
 using namespace dolfin;
 
@@ -18,7 +18,7 @@ using namespace dolfin;
 UnitSphere::UnitSphere(uint nx) : Mesh()
 {
   // Receive mesh according to parallel policy
-  if (MPI::receive()) { MPIMeshCommunicator::receive(*this); return; }
+  if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
 
   info("UnitSphere is experimental. It may be of poor quality mesh");
 
@@ -86,7 +86,7 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
   editor.close();
 
   // Broadcast mesh according to parallel policy
-  if (MPI::broadcast()) { MPIMeshCommunicator::broadcast(*this); }
+  if (MPI::is_broadcaster()) { MeshPartitioning::partition(*this); }
 }
 //-----------------------------------------------------------------------------
 double UnitSphere::transformx(double x,double y,double z)

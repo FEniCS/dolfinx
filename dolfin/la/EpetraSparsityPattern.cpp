@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2009.
+// Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-04-21
-// Last changed: 2009-06-21
+// Last changed: 2009-08-06
 
 #ifdef HAS_TRILINOS
 
@@ -88,14 +89,7 @@ uint EpetraSparsityPattern::size(uint i) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint> EpetraSparsityPattern::row_range() const
-{
-  dolfin_not_implemented();
-  std::pair<uint, uint> r;
-  return r;
-}
-//-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint> EpetraSparsityPattern::col_range() const
+std::pair<dolfin::uint, dolfin::uint> EpetraSparsityPattern::local_range(uint dim) const
 {
   dolfin_not_implemented();
   std::pair<uint, uint> r;

@@ -29,8 +29,9 @@ namespace dolfin
 
     /// Build sparsity pattern for assembly of given form
     static void build(GenericSparsityPattern& sparsity_pattern,
-                      const Form& a,
-                      UFC& ufc);
+                      const Mesh& mesh,
+                      std::vector<const DofMap*>& dof_maps,
+                      bool cells, bool interior_facets);
 
   };
 

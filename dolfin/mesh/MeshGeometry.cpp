@@ -5,7 +5,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-19
-// Last changed: 2008-10-28
+// Last changed: 2009-08-10
 
 #include <dolfin/log/dolfin_log.h>
 #include "MeshGeometry.h"
@@ -159,7 +159,7 @@ void MeshGeometry::init_affine_indicator(uint num_cells)
 {
   // Clear it if it was already allocated
   delete affine_cell;
-  
+
   // Allocate new data
   affine_cell = new bool[num_cells];
 
@@ -189,32 +189,28 @@ void MeshGeometry::set_higher_order_cell_data(uint N, std::vector<uint> vector_c
     higher_order_cell_data[N*_higher_order_num_dof + i] = vector_cell_data[i];
 }
 //-----------------------------------------------------------------------------
-void MeshGeometry::disp() const
+std::string MeshGeometry::str(bool verbose) const
 {
-  // Begin indentation
-  cout << "Mesh geometry" << endl;
-  begin("-------------");
-  cout << endl;
+  std::stringstream s;
 
-  // Check if empty
-  if ( _dim == 0 )
+  if (verbose)
   {
-    cout << "empty" << endl << endl;
-    end();
-    return;
+    s << str(false) << std::endl << std::endl;
+
+    for (uint i = 0; i < _size; i++)
+    {
+      s << "  " << i << ":";
+      for (uint d = 0; d < _dim; d++)
+        s << " " << x(i, d);
+      s << std::endl;
+    }
+    s << std::endl;
+  }
+  else
+  {
+    s << "<MeshGeometry of dimension " << _dim << " and size " << _size << ">";
   }
 
-  // Display coordinates for all vertices
-  for (uint i = 0; i < _size; i++)
-  {
-    cout << i << ":";
-    for (uint d = 0; d < _dim; d++)
-      cout << " " << x(i, d);
-    cout << endl;
-  }
-  cout << endl;
-
-  // End indentation
-  end();
+  return s.str();
 }
 //-----------------------------------------------------------------------------

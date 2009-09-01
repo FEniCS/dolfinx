@@ -5,6 +5,7 @@
 // Last changed: 2009-03-17
 
 #include <dolfin/log/dolfin_log.h>
+#include "XMLSkipper.h"
 #include "XMLIndent.h"
 #include "XMLFile.h"
 #include "XMLMeshFunction.h"
@@ -13,25 +14,30 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XMLMeshFunction::XMLMeshFunction(MeshFunction<int>& imf, XMLFile& parser)
-  : XMLHandler(parser), imf(&imf), umf(0), dmf(0), state(OUTSIDE_MESHFUNCTION), mf_type(INT), size(0), dim(0)
+  : XMLHandler(parser), imf(&imf), umf(0), dmf(0), xml_skipper(0),
+    state(OUTSIDE_MESHFUNCTION), mf_type(INT), size(0), dim(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLMeshFunction::XMLMeshFunction(MeshFunction<uint>& umf, XMLFile& parser)
-  : XMLHandler(parser), imf(0), umf(&umf), dmf(0), state(OUTSIDE_MESHFUNCTION), mf_type(UINT), size(0), dim(0)
+  : XMLHandler(parser), imf(0), umf(&umf), dmf(0), xml_skipper(0),
+    state(OUTSIDE_MESHFUNCTION), mf_type(UINT), size(0), dim(0)
 {
+  info("Outside MeshFunction to start with.");
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLMeshFunction::XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser)
-  : XMLHandler(parser), imf(0), umf(0), dmf(&dmf), state(OUTSIDE_MESHFUNCTION), mf_type(DOUBLE), size(0)
+  : XMLHandler(parser), imf(0), umf(0), dmf(&dmf), xml_skipper(0),
+    state(OUTSIDE_MESHFUNCTION), mf_type(DOUBLE), size(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLMeshFunction::XMLMeshFunction(MeshFunction<int>& imf, XMLFile& parser, uint size, uint dim)
-  : XMLHandler(parser), imf(&imf), umf(0), dmf(0), state(INSIDE_MESHFUNCTION), mf_type(INT), size(size), dim(dim)
+  : XMLHandler(parser), imf(&imf), umf(0), dmf(0), xml_skipper(0),
+    state(INSIDE_MESHFUNCTION), mf_type(INT), size(size), dim(dim)
 {
   // Initialize mesh function
   this->imf->init(dim);
@@ -41,7 +47,8 @@ XMLMeshFunction::XMLMeshFunction(MeshFunction<int>& imf, XMLFile& parser, uint s
 }
 //-----------------------------------------------------------------------------
 XMLMeshFunction::XMLMeshFunction(MeshFunction<uint>& umf, XMLFile& parser, uint size, uint dim)
-  : XMLHandler(parser), imf(0), umf(&umf), dmf(0), state(INSIDE_MESHFUNCTION), mf_type(UINT), size(size), dim(dim)
+  : XMLHandler(parser), imf(0), umf(&umf), dmf(0), xml_skipper(0),
+    state(INSIDE_MESHFUNCTION), mf_type(UINT), size(size), dim(dim)
 {
   // Initialize mesh function
   this->umf->init(dim);
@@ -51,7 +58,8 @@ XMLMeshFunction::XMLMeshFunction(MeshFunction<uint>& umf, XMLFile& parser, uint 
 }
 //-----------------------------------------------------------------------------
 XMLMeshFunction::XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser, uint size, uint dim)
-  : XMLHandler(parser), imf(0), umf(0), dmf(&dmf), state(INSIDE_MESHFUNCTION), mf_type(DOUBLE), size(size), dim(dim)
+  : XMLHandler(parser), imf(0), umf(0), dmf(&dmf), xml_skipper(0),
+    state(INSIDE_MESHFUNCTION), mf_type(DOUBLE), size(size), dim(dim)
 {
   // Initialize mesh function
   this->dmf->init(dim);
@@ -59,7 +67,11 @@ XMLMeshFunction::XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser, uin
   // Set all values to zero
   *(this->dmf) = 0;
 }
-
+//-----------------------------------------------------------------------------
+XMLMeshFunction::~XMLMeshFunction()
+{
+  delete xml_skipper;
+}
 //-----------------------------------------------------------------------------
 void XMLMeshFunction::start_element(const xmlChar *name, const xmlChar **attrs)
 {
@@ -71,6 +83,12 @@ void XMLMeshFunction::start_element(const xmlChar *name, const xmlChar **attrs)
     {
       start_mesh_function(name, attrs);
       state = INSIDE_MESHFUNCTION;
+    }
+    else
+    {
+      delete xml_skipper;
+      xml_skipper = new XMLSkipper(std::string((const char*)(name)), parser);
+      xml_skipper->handle();
     }
 
     break;

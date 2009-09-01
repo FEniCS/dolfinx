@@ -12,9 +12,7 @@
 %include "dolfin/common/types.h"
 %include "dolfin/common/constants.h"
 %include "dolfin/common/timing.h"
-%include "dolfin/common/List.h"
 %include "dolfin/common/Timer.h"
-%include "dolfin/common/TimeDependent.h"
 %include "dolfin/common/Variable.h"
 
 // DOLFIN headers included from log
@@ -94,7 +92,6 @@
 %include "dolfin/mesh/DynamicMeshEditor.h"
 %include "dolfin/mesh/MeshFunction.h"
 %include "dolfin/mesh/Mesh.h"
-%include "dolfin/mesh/MPIMeshCommunicator.h"
 %include "dolfin/mesh/MeshPartitioning.h"
 %include "dolfin/mesh/LocalMeshData.h"
 %include "dolfin/mesh/SubDomain.h"
@@ -115,7 +112,6 @@
 %include "dolfin/function/Data.h"
 %include "dolfin/function/Function.h"
 %include "dolfin/function/FunctionSpace.h"
-%include "dolfin/function/SubFunction.h"
 %include "dolfin/function/SubSpace.h"
 %include "dolfin/function/Constant.h"
 %include "dolfin/function/SpecialFunctions.h"
@@ -161,6 +157,7 @@
 %include "dolfin/fem/assemble.h"
 %include "dolfin/fem/Form.h"
 %include "dolfin/fem/Assembler.h"
+%include "dolfin/fem/SystemAssembler.h"
 %include "dolfin/fem/VariationalProblem.h"
 
 // DOLFIN headers included from mf

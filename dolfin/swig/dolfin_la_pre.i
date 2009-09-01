@@ -125,11 +125,9 @@ LA_PRE_VEC_INTERFACE(EpetraVector)
 LA_PRE_MAT_INTERFACE(EpetraMatrix)
 LA_PRE_FACTORY(EpetraFactory)
 
-// Rename functions returning shared_ptr to underlying matrix/vector
-%rename (shared_mat) dolfin::EpetraMatrix::mat;
-%rename (mat) dolfin::EpetraMatrix::ref_mat;
-%rename (shared_vec) dolfin::EpetraVector::vec;
-%rename (vec) dolfin::EpetraVector::ref_vec;
+ // Create in and out typemaps for boost::shared_ptr<Foo>
+FOREIGN_SHARED_PTR_TYPEMAPS(Epetra_FECrsMatrix)
+FOREIGN_SHARED_PTR_TYPEMAPS(Epetra_FEVector)
 #endif
 
 #ifdef HAS_MTL4

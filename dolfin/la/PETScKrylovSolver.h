@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells, 2005-2009.
 //
 // First added:  2005-12-02
-// Last changed: 2009-06-21
+// Last changed: 2009-08-10
 
 #ifndef __PETSC_KRYLOV_SOLVER_H
 #define __PETSC_KRYLOV_SOLVER_H
@@ -60,8 +60,8 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);
 
-    /// Display solver data
-    void disp() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -88,11 +88,11 @@ namespace dolfin
 
     // Available solvers and preconditioners
     #if PETSC_VERSION_MAJOR > 2
-    static const std::map<std::string, const KSPType> methods; 
-    static const std::map<std::string, const PCType> pc_methods; 
+    static const std::map<std::string, const KSPType> methods;
+    static const std::map<std::string, const PCType> pc_methods;
     #else
-    static const std::map<std::string, KSPType> methods; 
-    static const std::map<std::string, PCType> pc_methods; 
+    static const std::map<std::string, KSPType> methods;
+    static const std::map<std::string, PCType> pc_methods;
     #endif
 
     /// DOLFIN PETScPreconditioner

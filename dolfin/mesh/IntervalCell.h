@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2008-11-14
+// Last changed: 2009-08-10
 
 #ifndef __INTERVAL_CELL_H
 #define __INTERVAL_CELL_H
@@ -57,7 +57,7 @@ namespace dolfin
     double facet_area(const Cell& cell, uint facet) const;
 
     /// Order entities locally
-    void order(Cell& cell) const;
+    void order(Cell& cell, const MeshFunction<uint>* global_vertex_indices) const;
 
     /// Check for intersection with point
     bool intersects(const MeshEntity& entity, const Point& p) const;
@@ -69,7 +69,7 @@ namespace dolfin
     bool intersects(const MeshEntity& entity, const Cell& cell) const;
 
     /// Return description of cell type
-    std::string description() const;
+    std::string description(bool plural=false) const;
 
   };
 

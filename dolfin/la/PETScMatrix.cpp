@@ -3,11 +3,11 @@
 //
 // Modified by Garth N. Wells 2005-2009.
 // Modified by Andy R. Terrel 2005.
-// Modified by Ola Skavhaug 2007.
+// Modified by Ola Skavhaug 2007-2009.
 // Modified by Magnus Vikstrøm 2007-2008.
 //
 // First added:  2004
-// Last changed: 2009-05-22
+// Last changed: 2009-08-11
 
 #ifdef HAS_PETSC
 
@@ -61,7 +61,6 @@ const std::map<std::string, NormType> PETScMatrix::norm_types
 
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const std::string type):
-    Variable("A", "a sparse matrix"),
     A(static_cast<Mat*>(0), PETScMatrixDeleter()),
     _type(type)
 {
@@ -70,7 +69,6 @@ PETScMatrix::PETScMatrix(const std::string type):
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A):
-    Variable("A", "a sparse matrix"),
     A(A),
     _type("default")
 {
@@ -79,7 +77,6 @@ PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A):
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(uint M, uint N, std::string type):
-    Variable("A", "a sparse matrix"),
     A(static_cast<Mat*>(0), PETScMatrixDeleter()),
     _type(type)
 {
@@ -91,7 +88,6 @@ PETScMatrix::PETScMatrix(uint M, uint N, std::string type):
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const PETScMatrix& A):
-  Variable("A", "PETSc matrix"),
   A(static_cast<Mat*>(0), PETScMatrixDeleter()),
   _type(A._type)
 {
@@ -114,8 +110,7 @@ void PETScMatrix::resize(uint M, uint N)
   // Create matrix (any old matrix is destroyed automatically)
   if (!A.unique())
     error("Cannot resize PETScMatrix. More than one object points to the underlying PETSc object.");
-  boost::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
-  A = _A;
+  A.reset(new Mat, PETScMatrixDeleter());
 
   // FIXME: maybe 50 should be a parameter?
   // FIXME: it should definitely be a parameter
@@ -150,8 +145,8 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   assert(sparsity_pattern.rank() == 2);
   const uint M = sparsity_pattern.size(0);
   const uint N = sparsity_pattern.size(1);
-  const std::pair<uint, uint> row_range = sparsity_pattern.row_range();
-  const std::pair<uint, uint> col_range = sparsity_pattern.col_range();
+  const std::pair<uint, uint> row_range = sparsity_pattern.local_range(0);
+  const std::pair<uint, uint> col_range = sparsity_pattern.local_range(1);
   const uint m = row_range.second - row_range.first;
   const uint n = col_range.second - col_range.first;
   assert(M > 0 && N > 0 && m > 0 && n > 0);
@@ -159,8 +154,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   // Create matrix (any old matrix is destroyed automatically)
   if (!A.unique())
     error("Cannot initialise PETScMatrix. More than one object points to the underlying PETSc object.");
-  boost::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
-  A = _A;
+  A.reset(new Mat, PETScMatrixDeleter());
 
   // Initialize matrix
   if (row_range.first == 0 && row_range.second == M)
@@ -193,9 +187,9 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   }
   else
   {
-    info("Initializing parallel PETSc matrix (MPIAIJ) of size %d x %d.", M, N);
-    info("Local range is [%d, %d] x [%d, %d].",
-         row_range.first, row_range.second, col_range.first, col_range.second);
+    //info("Initializing parallel PETSc matrix (MPIAIJ) of size %d x %d.", M, N);
+    //info("Local range is [%d, %d] x [%d, %d].",
+    //     row_range.first, row_range.second, col_range.first, col_range.second);
 
     // Get number of nonzeros for each row from sparsity pattern
     uint* num_nonzeros_diagonal = new uint[m];
@@ -212,7 +206,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
                     PETSC_NULL, reinterpret_cast<int*>(num_nonzeros_diagonal),
                     PETSC_NULL, reinterpret_cast<int*>(num_nonzeros_off_diagonal),
                     A.get());
-    
+
     // Set some options
     #if PETSC_VERSION_MAJOR > 2
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
@@ -231,11 +225,12 @@ PETScMatrix* PETScMatrix::copy() const
 {
   assert(A);
 
-  PETScMatrix* Acopy = new PETScMatrix();
-  boost::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
-  Acopy->A = _A;
+  // Create copy of PETSc matrix
+  boost::shared_ptr<Mat> _Acopy(new Mat, PETScMatrixDeleter());
+  MatDuplicate(*A, MAT_COPY_VALUES, _Acopy.get());
 
-  MatDuplicate(*A, MAT_COPY_VALUES, Acopy->A.get());
+  // Create PETScMatrix
+  PETScMatrix* Acopy = new PETScMatrix(_Acopy);
   return Acopy;
 }
 //-----------------------------------------------------------------------------
@@ -390,9 +385,9 @@ void PETScMatrix::mult(const GenericVector& x, GenericVector& y, bool transposed
 double PETScMatrix::norm(std::string norm_type) const
 {
   assert(A);
-  
+
   // Check that norm is known
-  if( norm_types.count(norm_type) == 0)  
+  if( norm_types.count(norm_type) == 0)
     error("Unknown PETSc matrix norm type.");
 
   double value = 0.0;
@@ -448,8 +443,7 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
       // Create matrix (any old matrix is destroyed automatically)
       if (!this->A.unique())
         error("Cannot assign PETScMatrix with different non-zero pattern because more than one object points to the underlying PETSc object.");
-      boost::shared_ptr<Mat> _A(new Mat, PETScMatrixDeleter());
-      this->A = _A;
+      this->A.reset(new Mat, PETScMatrixDeleter());
 
       // Duplicate with the same pattern as A.A
       MatDuplicate(*A.mat(), MAT_COPY_VALUES, this->A.get());
@@ -463,15 +457,27 @@ std::string PETScMatrix::type() const
   return _type;
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::disp(uint precision) const
+std::string PETScMatrix::str(bool verbose) const
 {
-  assert(A);
+  std::stringstream s;
 
-  // FIXME: Maybe this could be an option?
-  if (MPI::num_processes() > 1)
-    MatView(*A, PETSC_VIEWER_STDOUT_WORLD);
+  if (verbose)
+  {
+    warning("Verbose output for PETScMatrix not implemented, calling PETSc MatView directly.");
+
+    // FIXME: Maybe this could be an option?
+    assert(A);
+    if (MPI::num_processes() > 1)
+      MatView(*A, PETSC_VIEWER_STDOUT_WORLD);
+    else
+      MatView(*A, PETSC_VIEWER_STDOUT_SELF);
+  }
   else
-    MatView(*A, PETSC_VIEWER_STDOUT_SELF);
+  {
+    s << "<PETScMatrix of size " << size(0) << " x " << size(1) << ">";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScMatrix::factory() const
@@ -537,12 +543,6 @@ MatType PETScMatrix::get_petsc_type() const
     error("Unknown PETSc matrix type.");
 
   return types.find(_type)->second;
-}
-//-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const PETScMatrix& A)
-{
-  stream << "[ PETSc matrix of size " << A.size(0) << " x " << A.size(1) << " ]";
-  return stream;
 }
 //-----------------------------------------------------------------------------
 

@@ -5,8 +5,10 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-06-22
+// Last changed: 2009-08-29
 
+#include <algorithm>
+#include <boost/assign/list_of.hpp>
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/io/File.h>
@@ -18,7 +20,6 @@
 #include "Data.h"
 #include "UFCFunction.h"
 #include "FunctionSpace.h"
-#include "SubFunction.h"
 #include "Function.h"
 
 using namespace dolfin;
@@ -27,7 +28,8 @@ using namespace dolfin;
 Function::Function()
   :  Variable("v", "unnamed function"),
      _function_space(static_cast<FunctionSpace*>(0)),
-     _vector(static_cast<GenericVector*>(0))
+     _vector(static_cast<GenericVector*>(0)),
+     _off_process_vector(static_cast<GenericVector*>(0))
 {
   // Do nothing
 }
@@ -35,7 +37,8 @@ Function::Function()
 Function::Function(const FunctionSpace& V)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
-    _vector(static_cast<GenericVector*>(0))
+    _vector(static_cast<GenericVector*>(0)),
+     _off_process_vector(static_cast<GenericVector*>(0))
 {
   // Do nothing
 }
@@ -43,7 +46,8 @@ Function::Function(const FunctionSpace& V)
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : Variable("v", "unnamed function"),
     _function_space(V),
-    _vector(static_cast<GenericVector*>(0))
+    _vector(static_cast<GenericVector*>(0)),
+     _off_process_vector(static_cast<GenericVector*>(0))
 {
   // Do nothing
 }
@@ -52,7 +56,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    GenericVector& x)
   : Variable("v", "unnamed function"),
     _function_space(V),
-    _vector(reference_to_no_delete_pointer(x))
+    _vector(reference_to_no_delete_pointer(x)),
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
   assert(V->dofmap().global_dimension() == x.size());
 }
@@ -61,15 +66,17 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    boost::shared_ptr<GenericVector> x)
   : Variable("v", "unnamed function"),
     _function_space(V),
-    _vector(x)
+    _vector(x),
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
-  assert(V->dofmap().global_dimension() == x->size());
+  assert(V->dofmap().global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, GenericVector& x)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
-    _vector(reference_to_no_delete_pointer(x))
+    _vector(reference_to_no_delete_pointer(x)),
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
   assert(V.dofmap().global_dimension() == x.size());
 }
@@ -77,7 +84,8 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
 Function::Function(const FunctionSpace& V, std::string filename)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
-    _vector(static_cast<GenericVector*>(0))
+    _vector(static_cast<GenericVector*>(0)),
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
   // Initialize vector
   init();
@@ -94,7 +102,8 @@ Function::Function(const FunctionSpace& V, std::string filename)
 Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filename)
   : Variable("v", "unnamed function"),
     _function_space(V),
-    _vector(static_cast<GenericVector*>(0))
+    _vector(static_cast<GenericVector*>(0)),
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
   // Initialize vector
   init();
@@ -108,41 +117,18 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
 }
 //-----------------------------------------------------------------------------
-Function::Function(const SubFunction& v)
-  : Variable("v", "unnamed function"),
-    _function_space(v.v.function_space().extract_sub_space(v.component)),
-    _vector(static_cast<GenericVector*>(0))
-{
-  // Initialize vector
-  init();
-
-  // Copy subset of coefficients
-  const uint n = _vector->size();
-  const uint offset = function_space().dofmap().offset();
-  uint* rows = new uint[n];
-  double* values = new double[n];
-  for (uint i = 0; i < n; i++)
-    rows[i] = offset + i;
-  v.v.vector().get(values, n, rows);
-  _vector->set(values);
-  _vector->apply();
-
-  // Clean up
-  delete [] rows;
-  delete [] values;
-}
-//-----------------------------------------------------------------------------
 Function::Function(const Function& v)
   : Variable("v", "unnamed function"),
     _function_space(static_cast<FunctionSpace*>(0)),
-    _vector(static_cast<GenericVector*>(0))
+    _vector(static_cast<GenericVector*>(0)),
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
   *this = v;
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
 {
-  // Do nothing;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Function& v)
@@ -151,47 +137,94 @@ const Function& Function::operator= (const Function& v)
   if (!v.has_function_space())
     error("Cannot copy Functions which do not have a FunctionSpace.");
 
-  /* Old version, remove after agreement on automatic interpolation
-  if (!v.has_vector())
-    error("Cannot copy Functions which do not have a Vector (user-defined Functions).");
-
-  // Copy function space
-  _function_space = v._function_space;
-
-  // Initialize vector and copy values
-  init();
-  *_vector = *v._vector;
-  */
-
-  // Copy function space
-  _function_space = v._function_space;
-
-  // Initialize vector and copy values
-  init();
-
-  // Copy values or interpolate
+  // If v has a vector, we can either make a copy of all the data, or if v
+  // is a sub-function, then we collapse the dof map and copy only the
+  // relevant entries from the vetor of v
   if (v.has_vector())
   {
-    assert(_vector->size() == v._vector->size());
-    *_vector = *v._vector;
+    // Copy function (collapse dof_map if we have a sub function)
+    if (v._vector->size() == v._function_space->dim())
+    {
+      // Copy function space
+      _function_space = v._function_space;
+
+      // Initialize vector if required
+      if (!this->has_vector())
+        init();
+      else if (this->_vector->size() != v._function_space->dim())
+        init();
+
+      // Copy vector
+      *_vector = *v._vector;
+    }
+    else
+    {
+      // Create collapsed dof map
+      std::map<uint, uint> collapsed_map;
+      boost::shared_ptr<DofMap> collapsed_dof_map(v._function_space->dofmap().collapse(collapsed_map));
+
+      // Create new FunctionsSpapce
+      _function_space = v._function_space->collapse_sub_space(collapsed_dof_map);
+
+      assert(collapsed_map.size() ==  _function_space->dofmap().global_dimension());
+
+      // Create new vector
+      const uint size = collapsed_dof_map->global_dimension();
+      _vector.reset(v.vector().factory().create_vector());
+      _vector->resize(size);
+
+      // Get rows of original and new vectors
+      std::map<uint, uint>::const_iterator entry;
+      std::vector<uint> new_rows(size);
+      std::vector<uint> old_rows(size);
+      uint i = 0;
+      for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
+      {
+        new_rows[i] = entry->first;
+        old_rows[i++] = entry->second;
+      }
+
+      // Get old values and set new values
+      v.gather();
+      std::vector<double> values(size);
+      v.get(&values[0], size, &old_rows[0]);
+      this->_vector->set(&values[0], size, &new_rows[0]);
+    }
   }
   else
   {
+    // Copy function space
+    _function_space = v._function_space;
+
+    // Initialize vector
+    init();
+
     info("Assignment from user-defined function, interpolating.");
     function_space().interpolate(*_vector, v);
   }
-
   return *this;
 }
 //-----------------------------------------------------------------------------
-SubFunction Function::operator[] (uint i) const
+Function& Function::operator[] (uint i)
 {
   // Check that vector exists
   if (!_vector)
     error("Unable to extract sub function, missing coefficients (user-defined function).");
 
-  SubFunction sub_function(*this, i);
-  return sub_function;
+  // Check if sub-Function is in the cache, otherwise create and add to cache
+  boost::ptr_map<uint, Function>::iterator sub_function = sub_functions.find(i);
+  if (sub_function != sub_functions.end())
+    return *(sub_function->second);
+  else
+  {
+    // Extract function subspace
+    std::vector<uint> component = boost::assign::list_of(i);
+    boost::shared_ptr<const FunctionSpace> sub_space(this->function_space().extract_sub_space(component));
+
+    // Insert sub-Function into map and return reference
+    sub_functions.insert(i, new Function(sub_space, this->_vector));
+    return *(sub_functions.find(i)->second);
+  }
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& Function::function_space() const
@@ -210,6 +243,12 @@ GenericVector& Function::vector()
   // Initialize vector of dofs if not initialized
   if (!_vector)
     init();
+  else
+  {
+    // Check that this is not a sub function.
+    if (_vector->size() != _function_space->dofmap().global_dimension())
+      error("You are attempting to access a non-const the vector from a sub-Function.");
+  }
 
   assert(_vector);
   return *_vector;
@@ -273,15 +312,27 @@ void Function::eval(double* values, const Data& data) const
   if (_vector)
   {
     assert(_function_space);
-    _function_space->eval(values, data.x, *this);
-    return;
-  }
 
-  // Try simple eval function
-  eval(values, data.x);
+    // Use UFC cell if available
+    if (data._ufc_cell)
+    {
+      const uint cell_index = data._ufc_cell->entity_indices[data._ufc_cell->topological_dimension][0];
+      _function_space->eval(values, data.x, *this, *data._ufc_cell, cell_index);
+    }
+    else
+      _function_space->eval(values, data.x, *this);
+  }
+  else
+  {
+    // Try simple eval function
+    eval(values, data.x);
+  }
 }
 //-----------------------------------------------------------------------------
-void Function::eval(double* values, const double* x, const ufc::cell& ufc_cell, uint cell_index) const
+void Function::eval(double* values,
+                    const double* x,
+                    const ufc::cell& ufc_cell,
+                    uint cell_index) const
 {
   assert(_function_space);
   _function_space->eval(values, x, *this, ufc_cell, cell_index);
@@ -312,17 +363,19 @@ void Function::interpolate(double* coefficients,
     const DofMap& dofmap = V.dofmap();
 
     // Tabulate dofs
-    uint* dofs = new uint[dofmap.max_local_dimension()];
+    uint* dofs = new uint[dofmap.local_dimension(ufc_cell)];
     dofmap.tabulate_dofs(dofs, ufc_cell, cell_index);
 
-    // Pick values from global vector
-    _vector->get(coefficients, dofmap.local_dimension(ufc_cell), dofs);
+    // Pick values from vector(s)
+    get(coefficients, dofmap.local_dimension(ufc_cell), dofs);
+
+    // Clean up
     delete [] dofs;
   }
   else
   {
     // Create data
-    const Cell cell(V.mesh(), ufc_cell.entity_indices[V.mesh().topology().dim()][0]);
+    const Cell cell(V.mesh(), cell_index);
     Data data(cell, local_facet);
 
     // Create UFC wrapper for this function
@@ -351,40 +404,6 @@ void Function::interpolate_vertex_values(double* vertex_values) const
   _function_space->interpolate_vertex_values(vertex_values, *this);
 }
 //-----------------------------------------------------------------------------
-void Function::collect_global_dof_values(std::map<uint, double> dof_values) const
-{
-  // This function collects the global dof values for all dofs located on
-  // the local mesh. These dofs may be stored in a portion of the vector
-  // on another process. We build the map in two steps. First, we compute
-  // which dofs are needed and send requests to the processes that own the
-  // dofs. Then all processes send the requested values back.
-  
-  // Clear map
-  dof_values.clear();
-
-  // Get mesh
-  assert(_function_space);
-  const Mesh& mesh = _function_space->mesh();
-
-  // Iterate over mesh and check which dofs are needed
-  UFCCell ufc_cell(mesh);
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Update to current cell
-    ufc_cell.update(*cell);
-
-    // Tabulate dofs on cell
-    
-
-  }
-
-  // Request dofs from other processes
-
-
-  // Receive dofs from other processes
-
-}
-//-----------------------------------------------------------------------------
 void Function::interpolate()
 {
   // Check that function is not already discrete
@@ -398,11 +417,56 @@ void Function::interpolate()
   // Interpolate to vector
   DefaultFactory factory;
   boost::shared_ptr<GenericVector> coefficients(factory.create_vector());
-  function_space().interpolate(*coefficients, *this);  
+  function_space().interpolate(*coefficients, *this);
 
   // Set values
   init();
   *_vector = *coefficients;
+}
+//-----------------------------------------------------------------------------
+void Function::compute_off_process_dofs() const
+{
+  // Clear data
+  _off_process_dofs.clear();
+  global_to_local.clear();
+
+  // Get mesh
+  assert(_function_space);
+  const Mesh& mesh = _function_space->mesh();
+
+  // Storage for each cell dofs
+  const DofMap& dofmap = _function_space->dofmap();
+  const uint num_dofs_per_cell = _function_space->element().space_dimension();
+  const uint num_dofs_global = vector().size();
+  uint* dofs = new uint[num_dofs_per_cell];
+
+  // Iterate over mesh and check which dofs are needed
+  UFCCell ufc_cell(mesh);
+  uint i = 0;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update to current cell
+    ufc_cell.update(*cell);
+
+    // Tabulate dofs on cell
+    dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());
+
+    for (uint d = 0; d < num_dofs_per_cell; ++d)
+    {
+      const uint dof = dofs[d];
+      const uint index_owner = MPI::index_owner(dof, num_dofs_global);
+      if (index_owner != MPI::process_number())
+      {
+        if (std::find(_off_process_dofs.begin(), _off_process_dofs.end(), dof) == _off_process_dofs.end())
+        {
+          _off_process_dofs.push_back(dof);
+          global_to_local[dof] = i++;
+        }
+      }
+    }
+  }
+
+  delete [] dofs;
 }
 //-----------------------------------------------------------------------------
 void Function::init()
@@ -415,13 +479,79 @@ void Function::init()
   if (!_vector)
   {
     DefaultFactory factory;
-    boost::shared_ptr<GenericVector> _vec(factory.create_vector());
-    _vector = _vec;
+    _vector.reset(factory.create_vector());
   }
 
   // Initialize vector of dofs
   assert(_vector);
   _vector->resize(N);
   _vector->zero();
+}
+//-----------------------------------------------------------------------------
+void Function::get(double* block, uint m, const uint* rows) const
+{
+  // Get local ownership range
+  const std::pair<uint, uint> range = _vector->local_range();
+
+  if (range.first == 0 && range.second == _vector->size())
+    _vector->get(block, m, rows);
+  else
+  {
+    if (!_off_process_vector.get())
+      error("Function has not been prepared with off-process data. Did you forget to call Function::gather()?");
+
+    // FIXME: Perform some more sanity checks
+
+    // Build lists of local and nonlocal coefficients
+    uint n_local = 0;
+    uint n_nonlocal = 0;
+    for (uint i = 0; i < m; ++i)
+    {
+      if (rows[i] >= range.first && rows[i] < range.second)
+      {
+        scratch.local_index[n_local]  = i;
+        scratch.local_rows[n_local++] = rows[i];
+     }
+      else
+      {
+        scratch.nonlocal_index[n_nonlocal]  = i;
+        scratch.nonlocal_rows[n_nonlocal++] = global_to_local[rows[i]];
+      }
+    }
+
+    // Get local coefficients
+    _vector->get_local(scratch.local_block, n_local, scratch.local_rows);
+
+    // Get off process coefficients
+    _off_process_vector->get_local(scratch.nonlocal_block, n_nonlocal, scratch.nonlocal_rows);
+
+    // Copy result into block
+    for (uint i = 0; i < n_local; ++i)
+      block[scratch.local_index[i]] = scratch.local_block[i];
+    for (uint i = 0; i < n_nonlocal; ++i)
+      block[scratch.nonlocal_index[i]] = scratch.nonlocal_block[i];
+  }
+}
+//-----------------------------------------------------------------------------
+void Function::gather() const
+{
+  // Gather off-process coefficients if running in parallel and function has a vector
+  if (MPI::num_processes() > 1 && has_vector())
+  {
+    assert(_function_space);
+
+    // Initialise scratch space
+    scratch.init(_function_space->dofmap().max_local_dimension());
+
+    // Compute lists of off-process dofs
+    compute_off_process_dofs();
+
+    // Create off process vector if it doesn't exist
+    if (!_off_process_vector.get())
+      _off_process_vector.reset(_vector->factory().create_local_vector());
+
+    // Gather off process coefficients
+    _vector->gather(*_off_process_vector, _off_process_dofs);
+  }
 }
 //-----------------------------------------------------------------------------

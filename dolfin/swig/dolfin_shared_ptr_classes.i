@@ -32,6 +32,9 @@ SWIG_SHARED_PTR_DERIVED(Box,dolfin::Mesh,dolfin::Box)
 SWIG_SHARED_PTR_DERIVED(Rectangle,dolfin::Mesh,dolfin::Rectangle)
 SWIG_SHARED_PTR_DERIVED(UnitSphere,dolfin::Mesh,dolfin::UnitSphere)
 
+SWIG_SHARED_PTR(SubDomain,dolfin::SubDomain)
+SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
+
 // This macro exposes the Variable interface for the derived classes
 // This is a hack to get around the problem that Variable is not declared
 // as a shared_ptr class.
@@ -47,15 +50,15 @@ SWIG_SHARED_PTR_DERIVED(UnitSphere,dolfin::Mesh,dolfin::UnitSphere)
   {
     return self->name();
   }
-    
+
   const std::string& label() const
   {
     return self->label();
   }
-  
-  const std::string __str__() const
+
+  const std::string __str__(bool verbose=false) const
   {
-    return self->str();
+    return self->str(verbose);
   }
 
 }
@@ -63,5 +66,40 @@ SWIG_SHARED_PTR_DERIVED(UnitSphere,dolfin::Mesh,dolfin::UnitSphere)
 
 IMPLEMENT_VARIABLE_INTERFACE(Function)
 IMPLEMENT_VARIABLE_INTERFACE(Mesh)
+
+// FIXME: Make these const aware...
+%define FOREIGN_SHARED_PTR_TYPEMAPS(TYPE)
+// Define some dummy classes so SWIG becomes aware of these types
+%inline %{
+  class TYPE
+  {
+  };
+%}
+
+%typedef SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> Shared ## TYPE;
+
+%typecheck(0) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> {
+  int res = SWIG_ConvertPtr($input, 0, SWIGTYPE_p_ ## TYPE,0);
+  $1 = SWIG_CheckState(res);
+}
+
+%typemap(in) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> {
+  void *argp = 0;
+  TYPE * arg = 0;
+  int res = SWIG_ConvertPtr($input, &argp, SWIGTYPE_p_ ## TYPE,0);
+  if (SWIG_IsOK(res)) {
+    arg = reinterpret_cast<TYPE *>(argp);
+    $1 = dolfin::reference_to_no_delete_pointer(*arg);
+  }
+  else
+    SWIG_exception(SWIG_TypeError, "expected an  ## TYPE");
+}
+
+%typemap(out) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> {
+  TYPE * out = $1.get();
+  $result = SWIG_NewPointerObj(SWIG_as_voidptr(out), SWIGTYPE_p_ ## TYPE, 0 |  0 );
+}
+%enddef
+
 
 #endif

@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-02-12
-// Last changed: 2009-04-27
+// Last changed: 2009-08-11
 
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
@@ -75,25 +75,38 @@ bool Graph::adjacent(uint u, uint v)
   return false;
 }
 //-----------------------------------------------------------------------------
-void Graph::disp()
+std::string Graph::str(bool verbose) const
 {
-  cout << "Graph type: " << typestr() << endl;
-  cout << "Number of vertices = " << _num_vertices << endl;
-  cout << "Number of edges = " << _num_edges << endl;
-  cout << "Connectivity" << endl;
-  cout << "Vertex: Edges" << endl;
-  for(uint i=0; i < _num_vertices - 1; ++i)
+  std::stringstream s;
+
+  if (verbose)
   {
-    cout << i << ": ";
-    for(uint j = _vertices[i]; j < _vertices[i+1]; ++j)
-      cout << _edges[j] << " ";
-    cout << endl;
+    s << str(false) << std::endl << std::endl;
+
+    s << "Graph type: " << typestr() << std::endl;
+    s << "Number of vertices = " << _num_vertices << std::endl;
+    s << "Number of edges = " << _num_edges << std::endl;
+    s << "Connectivity" << std::endl;
+    s << "Vertex: Edges" << std::endl;
+
+    for (uint i = 0; i < _num_vertices - 1; ++i)
+    {
+      s << i << ": ";
+      for(uint j = _vertices[i]; j < _vertices[i+1]; ++j)
+        s << _edges[j] << " ";
+      s << std::endl;
+    }
+    s << _num_vertices - 1 << ": ";
+    for (uint i = _vertices[_num_vertices - 1]; i < _num_edges; ++i)
+      s << _edges[i] << " ";
+    s << std::endl;
   }
-  // last vertex
-  cout << _num_vertices-1 << ": ";
-  for(uint i = _vertices[_num_vertices - 1]; i < _num_edges; ++i)
-    cout << _edges[i] << " ";
-  cout << endl;
+  else
+  {
+    s << "<Graph with " << _num_vertices << " vertices  and " << _num_edges << " edges>";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 void Graph::partition(uint num_part, uint* vtx_part)

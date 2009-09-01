@@ -72,6 +72,7 @@ int main()
 
   // Create PDE
   VariationalProblem pde(a, L, bc);
+  pde.parameters("symmetric") = true;
 
   // Solve PDE
   Function u;

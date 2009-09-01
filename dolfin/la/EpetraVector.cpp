@@ -1,15 +1,16 @@
 // Copyright (C) 2008 Martin Sandve Alnes, Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008-2009.
 //
 // First added:  2008-04-21
-// Last changed:  2008-12-29
+// Last changed: 2009-08-22
 
 #ifdef HAS_TRILINOS
 
 #include <cmath>
 #include <cstring>
+#include <dolfin/main/MPI.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
 #include "EpetraVector.h"
@@ -17,50 +18,41 @@
 #include "PETScVector.h"
 #include "EpetraFactory.h"
 
-
 #include <Epetra_FEVector.h>
 #include <Epetra_Map.h>
 #include <Epetra_MultiVector.h>
 #include <Epetra_SerialComm.h>
 
-// FIXME: A cleanup is needed with respect to correct use of parallell vectors.
+// FIXME: A cleanup is needed with respect to correct use of parallel vectors.
 //        This depends on decisions w.r.t. dofmaps etc in dolfin.
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector():
-    Variable("x", "a sparse vector"),
-    x(static_cast<Epetra_FEVector*>(0))
+EpetraVector::EpetraVector() : x(static_cast<Epetra_FEVector*>(0))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(uint N):
-    Variable("x", "a sparse vector"),
-    x(static_cast<Epetra_FEVector*>(0))
+EpetraVector::EpetraVector(uint N) : x(static_cast<Epetra_FEVector*>(0))
 {
   // Create Epetra vector
   resize(N);
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(boost::shared_ptr<Epetra_FEVector> x):
-    Variable("x", "a vector"),
-    x(x)
+EpetraVector::EpetraVector(boost::shared_ptr<Epetra_FEVector> x) : x(x)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(const Epetra_Map& map):
-    Variable("x", "a vector"),
-    x(static_cast<Epetra_FEVector*>(0))
+EpetraVector::EpetraVector(const Epetra_Map& map) 
+                         : x(static_cast<Epetra_FEVector*>(0))
 {
   dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(const EpetraVector& v):
-    Variable("x", "a vector"),
-    x(static_cast<Epetra_FEVector*>(0))
+EpetraVector::EpetraVector(const EpetraVector& v) 
+                         : x(static_cast<Epetra_FEVector*>(0))
 {
   *this = v;
 }
@@ -98,6 +90,14 @@ dolfin::uint EpetraVector::size() const
   return x ? x->GlobalLength(): 0;
 }
 //-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> EpetraVector::local_range() const
+{
+  if (MPI::num_processes() > 1)
+    error("EpetraVector::local_range() is not implemented in parallel");
+  
+  return std::make_pair<uint, uint>(0, size());
+}
+//-----------------------------------------------------------------------------
 void EpetraVector::zero()
 {
   assert(x);
@@ -117,28 +117,27 @@ void EpetraVector::apply()
   //x->OptimizeStorage();
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::disp(uint precision) const
+std::string EpetraVector::str(bool verbose) const
 {
   assert(x);
 
-  // TODO: Make this use the dolfin::cout, doesn't compile for some reason.
-  x->Print(std::cout);
-}
-//-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const EpetraVector& x)
-{
-  // Check if matrix has been defined
-  if ( x.size() == 0 )
-  {
-    stream << "[ Epetra vector (empty) ]";
-    return stream;
-  }
-  stream << "[ Epetra vector of size " << x.size() << " ]";
+  std::stringstream s;
 
-  return stream;
+  if (verbose)
+  {
+    warning("Verbose output for EpetraVector not implemented, calling Epetra Print directly.");
+
+    x->Print(std::cout);
+  }
+  else
+  {
+    s << "<EpetraVector of size " << size() << ">";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::get(double* values) const
+void EpetraVector::get_local(double* values) const
 {
   assert(x);
 
@@ -148,7 +147,7 @@ void EpetraVector::get(double* values) const
     error("EpetraVector::get: Did not manage to perform Epetra_Vector::ExtractCopy.");
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::set(double* values)
+void EpetraVector::set_local(const double* values)
 {
   assert(x);
 
@@ -175,7 +174,7 @@ void EpetraVector::set(double* values)
   */
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::add(double* values)
+void EpetraVector::add_local(const double* values)
 {
   assert(x);
 
@@ -315,14 +314,14 @@ const EpetraVector& EpetraVector::operator*= (double a)
 const EpetraVector& EpetraVector::operator*= (const GenericVector& y)
 {
   assert(x);
-  
+
   const EpetraVector& v = y.down_cast<EpetraVector>();
-  if (!v.x) 
+  if (!v.x)
     error("Given vector is not initialized.");
-  
+
   if (size() != v.size())
-    error("The vectors must be of the same size.");  
-  
+    error("The vectors must be of the same size.");
+
   int err = x->Multiply(1.0,*x,*v.x,0.0);
   if (err!= 0)
     error("EpetraVector::operator*=: Did not manage to perform Epetra_Vector::Multiply.");

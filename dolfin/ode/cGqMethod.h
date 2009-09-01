@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet 2009
+//
 // First added:  2005-05-02
-// Last changed: 2008-10-07
+// Last changed: 2009-08-10
 
 #ifndef __CGQ_METHOD_H
 #define __CGQ_METHOD_H
@@ -43,8 +45,8 @@ namespace dolfin
     /// Replace the solution values with the nodal values solution polynomial  
     void get_nodal_values(const real& x0, const real* x, real* nodal_values) const;
 
-    /// Display method data
-    void disp() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   protected:
 
@@ -57,3 +59,5 @@ namespace dolfin
 }
 
 #endif
+
+

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2008-10-06
+// Last changed: 2009-08-11
 
 #include <string>
 #include <dolfin/common/constants.h>
@@ -224,22 +224,32 @@ void MonoAdaptiveTimeSlab::save_solution(ODESolution& u)
 		 endtime(), 
 		 data);
   
-  //printf("exit MonoAdaptiveTimeSlab::save_solution\n");
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveTimeSlab::disp() const
+std::string MonoAdaptiveTimeSlab::str(bool verbose) const
 {
-  cout << "--- Mono-adaptive time slab ------------------------------" << endl;
-  cout << "nj = " << nj << endl;
-  cout << "x =";
-  for (uint j = 0; j < nj; j++)
-    cout << " " << x[j];
-  cout << endl;
-  cout << "f =";
-  for (uint j = 0; j < (method->nsize() * N); j++)
-    cout << " " << fq[j];
-  cout << endl;
-  cout << "----------------------------------------------------------" << endl;
+  std::stringstream s;
+
+  if (verbose)
+  {
+    s << str(false) << std::endl << std::endl;
+
+    s << "  nj = " << nj << std::endl;;
+    s << "  x =";
+    for (uint j = 0; j < nj; j++)
+      s << " " << x[j];
+    s << std::endl;;
+    s << "  f =";
+    for (uint j = 0; j < (method->nsize() * N); j++)
+      s << " " << fq[j];
+    s << std::endl;;
+  }
+  else
+  {
+    s << "<MonoAdaptiveTimeSlab with " << N << " components>";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveTimeSlab::feval(uint m)
@@ -331,3 +341,5 @@ real* MonoAdaptiveTimeSlab::tmp()
     return fq;
 }
 //-----------------------------------------------------------------------------
+
+

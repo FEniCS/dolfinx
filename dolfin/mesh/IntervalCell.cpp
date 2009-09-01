@@ -5,7 +5,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2008-11-13
+// Last changed: 2009-08-10
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -158,7 +158,8 @@ double IntervalCell::facet_area(const Cell& cell, uint facet) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::order(Cell& cell) const
+void IntervalCell::order(Cell& cell,
+                         const MeshFunction<uint>* global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0
 
@@ -169,7 +170,7 @@ void IntervalCell::order(Cell& cell) const
   if ( topology(1, 0).size() > 0 )
   {
     uint* cell_vertices = const_cast<uint*>(cell.entities(0));
-    std::sort(cell_vertices, cell_vertices + 2);
+    sort_entities(2, cell_vertices, global_vertex_indices);
   }
 }
 //-----------------------------------------------------------------------------
@@ -193,9 +194,10 @@ bool IntervalCell::intersects(const MeshEntity& entity, const Cell& cell) const
   return false;
 }
 //-----------------------------------------------------------------------------
-std::string IntervalCell::description() const
+std::string IntervalCell::description(bool plural) const
 {
-  std::string s = "interval (simplex of topological dimension 1)";
-  return s;
+  if (plural)
+    return "intervals";
+  return "interval";
 }
 //-----------------------------------------------------------------------------

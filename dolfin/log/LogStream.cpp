@@ -4,144 +4,116 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-04-09
+// Last changed: 2009-08-11
 
-#include <stdio.h>
-#include <cmath>
-#include <string>
 #include <dolfin/common/constants.h>
-#include <dolfin/common/types.h>
-#include <dolfin/common/real.h>
+#include <dolfin/common/Variable.h>
+#include <dolfin/mesh/MeshEntity.h>
+#include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/Point.h>
 #include "log.h"
-#include "LogManager.h"
 #include "LogStream.h"
 
 using namespace dolfin;
 
-// Definition of the global cout and endl variables
+// Definition of the global dolfin::cout and dolfin::endl variables
 LogStream dolfin::cout(LogStream::COUT);
 LogStream dolfin::endl(LogStream::ENDL);
 
 //-----------------------------------------------------------------------------
-LogStream::LogStream(Type type) : type(type),
-                                  buffer(new char[DOLFIN_LINELENGTH]),
-                                  current(0)
+LogStream::LogStream(Type type) : type(type)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 LogStream::~LogStream()
 {
-  delete [] buffer;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<<(const char* s)
-{
-  add(s);
-  return *this;
-}
-//-----------------------------------------------------------------------------
-LogStream& LogStream::operator<<(const std::string& s)
-{
-  add(s.c_str());
-  return *this;
-}
-//-----------------------------------------------------------------------------
-LogStream& LogStream::operator<<(const LogStream& stream)
+LogStream& LogStream::operator<< (const LogStream& stream)
 {
   if (stream.type == ENDL)
   {
-    LogManager::logger.info(buffer);
-    current = 0;
-    buffer[0] = '\0';
+    // Send buffer to log system
+    info(buffer.str());
+
+    // Reset buffer
+    buffer.str("");
   }
   else
-    add(stream.buffer);
+    buffer << stream.buffer;
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<<(int a)
+LogStream& LogStream::operator<< (const std::string& s)
 {
-  char tmp[DOLFIN_LINELENGTH];
-  snprintf(tmp, DOLFIN_LINELENGTH, "%d", a);
-  add(tmp);
+  buffer << s;
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<<(unsigned int a)
+LogStream& LogStream::operator<< (int a)
 {
-  char tmp[DOLFIN_LINELENGTH];
-  snprintf(tmp, DOLFIN_LINELENGTH, "%u", a);
-  add(tmp);
+  buffer << a;
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<<(double a)
+LogStream& LogStream::operator<< (uint a)
 {
-  char tmp[DOLFIN_LINELENGTH];
-  /*
-    if (fabs(a) < 1e-5 || fabs(a) > 1e5)
-    sprintf(tmp, "%e", a);
-    else
-    sprintf(tmp, "%f", a);
-  */
-  snprintf(tmp, DOLFIN_LINELENGTH, "%.3g", a);
-  add(tmp);
+  buffer << a;
   return *this;
 }
-
+//-----------------------------------------------------------------------------
+LogStream& LogStream::operator<< (long int a)
+{
+  buffer << a;
+  return *this;
+}
+//-----------------------------------------------------------------------------
+LogStream& LogStream::operator<< (long unsigned int a)
+{
+  buffer << a;
+  return *this;
+}
+//-----------------------------------------------------------------------------
+LogStream& LogStream::operator<< (double a)
+{
+  buffer << a;
+  return *this;
+}
 //-----------------------------------------------------------------------------
 #ifdef HAS_GMP
-LogStream& LogStream::operator<<(real a)
+LogStream& LogStream::operator<< (real a)
 {
   char tmp[DOLFIN_LINELENGTH];
-  gmp_snprintf(tmp, DOLFIN_LINELENGTH, "%.3Fg", a.get_mpf_t());
-
-  add(tmp);
+  gmp_snprintf(tmp, DOLFIN_LINELENGTH, "%.16Fg...", a.get_mpf_t());
+  buffer << tmp;
   return *this;
 }
 #endif
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<<(complex z)
+LogStream& LogStream::operator<< (complex z)
 {
-  char tmp[DOLFIN_LINELENGTH];
-  snprintf(tmp, DOLFIN_LINELENGTH, "%f + %fi", z.real(), z.imag());
-  add(tmp);
+  buffer << z.real() << " + " << z.imag() << "i";
   return *this;
 }
 //-----------------------------------------------------------------------------
-void LogStream::disp() const
+LogStream& LogStream::operator<< (const Variable& variable)
 {
-  // This is used for debugging
-
-  printf("This i a LogStream of type ");
-  switch ( type ) {
-  case COUT:
-    printf("cout.\n");
-    break;
-  default:
-    printf("endl.\n");
-  }
-
-  printf("The buffer size is %d. Currently at position %d. \n",
-	 DOLFIN_LINELENGTH, current);
+  buffer << variable.str();
+  return *this;
 }
 //-----------------------------------------------------------------------------
-void LogStream::add(const char* msg)
+LogStream& LogStream::operator<< (const MeshEntity& entity)
 {
-  for (int i = 0; msg[i]; i++)
-  {
-    if (current >= (DOLFIN_LINELENGTH-1))
-    {
-      LogManager::logger.info(buffer);
-      current = 0;
-      buffer[0] = '\0';
-      return;
-    }
-    buffer[current++] = msg[i];
-  }
-  buffer[current] = '\0';
+  buffer << entity.str();
+  return *this;
 }
 //-----------------------------------------------------------------------------
-
+LogStream& LogStream::operator<< (const Point& point)
+{
+  buffer << point.str();
+  return *this;
+}
+//-----------------------------------------------------------------------------

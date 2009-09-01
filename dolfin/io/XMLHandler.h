@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-03
-// Last changed: 2009-03-04
+// Last changed: 2009-08-12
 
 #ifndef __XMLHANDLER_H
 #define __XMLHANDLER_H
@@ -12,6 +12,7 @@
 #include <libxml/parser.h>
 #include <libxml/xmlreader.h>
 #include <libxml/relaxng.h>
+#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -45,28 +46,28 @@ namespace dolfin
   protected:
 
     // Parse an integer value
-    int parse_int(const xmlChar* name, const xmlChar** attrs, 
+    int parse_int(const xmlChar* name, const xmlChar** attrs,
                   const char *attribute);
 
     // Parse an unsigned integer value
-    uint parse_uint(const xmlChar* name, const xmlChar** attrs, 
+    uint parse_uint(const xmlChar* name, const xmlChar** attrs,
                     const char *attribute);
 
     // Parse a double value
-    double parse_float(const xmlChar* name, const xmlChar** attrs, 
+    double parse_float(const xmlChar* name, const xmlChar** attrs,
                        const char* attribute);
 
     // Parse a string
-    std::string parse_string(const xmlChar* name, const xmlChar** attrs, 
+    std::string parse_string(const xmlChar* name, const xmlChar** attrs,
                              const char* attribute);
 
     // Parse a string with some forgiveness!
-    std::string parse_string_optional(const xmlChar* name, 
-                                      const xmlChar** attrs, 
+    std::string parse_string_optional(const xmlChar* name,
+                                      const xmlChar** attrs,
                                       const char* attribute);
 
     // Parse a bool
-    bool parse_bool(const xmlChar* name, const xmlChar** attrs, 
+    bool parse_bool(const xmlChar* name, const xmlChar** attrs,
                     const char* attribute);
 
     XMLFile& parser;

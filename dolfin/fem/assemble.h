@@ -1,19 +1,22 @@
 // Copyright (C) 2007-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008, 2009.
 //
 // First added:  2007-01-17
 // Last changed: 2009-03-06
 //
-// This file duplicates the Assembler::assemble* functions in
-// namespace dolfin, and adds special versions returning the value
-// directly for scalars. For documentation, refer to Assemble.h.
+// This file duplicates the Assembler::assemble* and SystemAssembler::assemble*
+// functions in namespace dolfin, and adds special versions returning the value
+// directly for scalars. For documentation, refer to Assemble.h and 
+// SystemAssemble.h
 
 #ifndef __ASSEMBLE_H
 #define __ASSEMBLE_H
 
+#include <vector>
 #include <dolfin/mesh/MeshFunction.h>
+#include "DirichletBC.h"
 
 namespace dolfin
 {
@@ -46,6 +49,13 @@ namespace dolfin
                 const MeshFunction<uint>* interior_facet_domains,
                 bool reset_tensor=true);
 
+  /// Assemble system (A, b)
+  void assemble_system(GenericMatrix& A,
+                       GenericVector& b,
+                       const Form& a,
+                       const Form& L,
+                       bool reset_tensors=true);
+
   /// Assemble system (A, b) and apply Dirichlet boundary condition
   void assemble_system(GenericMatrix& A,
                        GenericVector& b,
@@ -74,28 +84,14 @@ namespace dolfin
                        const GenericVector* x0,
                        bool reset_tensors=true);
 
-  /// Assemble system (A, b) and apply Dirichlet boundary condition
-  void assemble_system_new(GenericMatrix& A,
-                       GenericVector& b,
-                       const Form& a,
-                       const Form& L,
-                       const DirichletBC& bc,
-                       bool reset_tensors=true);
- 
-  /// Assemble system (A, b) and apply Dirichlet boundary conditions
-  void assemble_system_new(GenericMatrix& A,
-                       GenericVector& b,
-                       const Form& a,
-                       const Form& L, 
-                       std::vector<const DirichletBC*>& bcs,
-                       bool reset_tensors=true);
-
   /// Assemble system (A, b) on sub domains and apply Dirichlet boundary conditions
-  void assemble_system_new(GenericMatrix& A,
+  /// This function removes const from std::vector<const DirichletBC*> since
+  /// SWIG cannot handle it.
+  void assemble_system_swig(GenericMatrix& A,
                        GenericVector& b,
                        const Form& a,
                        const Form& L,
-                       std::vector<const DirichletBC*>& bcs,
+                       std::vector<DirichletBC*>& bcs,
                        const MeshFunction<uint>* cell_domains,
                        const MeshFunction<uint>* exterior_facet_domains,
                        const MeshFunction<uint>* interior_facet_domains,

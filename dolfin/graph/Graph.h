@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2007-02-12
-// Last changed: 2009-04-27
+// Last changed: 2009-08-10
 
 #ifndef __GRAPH_H
 #define __GRAPH_H
@@ -16,7 +16,6 @@
 namespace dolfin
 {
   class XMLGraph;
-  class LogStream;
   class Mesh;
 
   /// A Graph consists of a set of vertices and edges.
@@ -116,14 +115,11 @@ namespace dolfin
     /// Return graph type as a string
     std::string typestr() const;
 
-    /// Display graph data
-    void disp();
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
     /// Clear graph data
     void clear();
-
-    /// Output
-    friend LogStream& operator<< (LogStream& stream, const Graph& graph);
 
     typedef XMLGraph XMLHandler;
 

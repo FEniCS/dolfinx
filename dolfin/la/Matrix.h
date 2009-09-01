@@ -6,13 +6,12 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-05-15
-// Last changed: 2008-05-17
+// Last changed: 2009-08-11
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
 
 #include <tr1/tuple>
-#include <dolfin/common/Variable.h>
 #include "DefaultFactory.h"
 #include "GenericMatrix.h"
 
@@ -22,21 +21,20 @@ namespace dolfin
   /// This class provides the default DOLFIN matrix class,
   /// based on the default DOLFIN linear algebra backend.
 
-  class Matrix : public GenericMatrix, public Variable
+  class Matrix : public GenericMatrix
   {
   public:
 
     /// Create empty matrix
-    Matrix() : Variable("A", "DOLFIN matrix"), matrix(0)
+    Matrix() : matrix(0)
     { DefaultFactory factory; matrix = factory.create_matrix(); }
 
     /// Create M x N matrix
-    Matrix(uint M, uint N) : Variable("A", "DOLFIN matrix"), matrix(0)
+    Matrix(uint M, uint N) : matrix(0)
     { DefaultFactory factory; matrix = factory.create_matrix(); matrix->resize(M, N); }
 
     /// Copy constructor
-    explicit Matrix(const Matrix& A) : Variable("A", "DOLFIN matrix"),
-                                       matrix(A.matrix->copy())
+    explicit Matrix(const Matrix& A) : matrix(A.matrix->copy())
     {}
 
     /// Destructor
@@ -65,9 +63,9 @@ namespace dolfin
     virtual void apply()
     { matrix->apply(); }
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const
-    { matrix->disp(precision); }
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const
+    { return matrix->str(verbose); }
 
     //--- Implementation of the GenericMatrix interface ---
 
@@ -90,6 +88,10 @@ namespace dolfin
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false)
     { matrix->axpy(a, A, same_nonzero_pattern); }
+
+    /// Return norm of matrix
+    virtual double norm(std::string norm_type = "frobenius") const
+    { return matrix->norm(norm_type); }
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const

@@ -1,7 +1,7 @@
 // Copyright (C) 2008 Kent-Andre Mardal.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Last changed: 2008-05-16
+// Last changed: 2009-08-10
 
 #ifdef HAS_TRILINOS
 #ifndef __EPETRA_LU_SOLVER_H
@@ -37,8 +37,12 @@ namespace dolfin
     /// Solve linear system Ax = b
     uint solve(const EpetraMatrix& A, EpetraVector& x, const EpetraVector& b);
 
-    /// Display LU solver data
-    void disp() const;
+    /// Default parameter values
+    static Parameters default_parameters();
+
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
+
   };
 
 }

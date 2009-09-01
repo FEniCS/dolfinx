@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes 2008.
 //
 // First added:  2006-04-04
-// Last changed: 2008-09-07
+// Last changed: 2009-08-11
 
 #include <iostream>
 #include <sstream>
@@ -27,20 +27,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(): Variable("x", "uBLAS vector"), x(new ublas_vector(0))
+uBLASVector::uBLASVector(): x(new ublas_vector(0))
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(uint N): Variable("x", "uBLAS vector"),
-                                  x(new ublas_vector(N))
+uBLASVector::uBLASVector(uint N): x(new ublas_vector(N))
 {
   // Clear vector
   x->clear();
 }
 //-----------------------------------------------------------------------------
-uBLASVector::uBLASVector(const uBLASVector& x): Variable("x", "uBLAS vector"),
-                         x(new ublas_vector(*(x.x)))
+uBLASVector::uBLASVector(const uBLASVector& x): x(new ublas_vector(*(x.x)))
 {
   //Do nothing
 }
@@ -68,24 +66,29 @@ dolfin::uint uBLASVector::size() const
   return x->size();
 }
 //-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> uBLASVector::local_range() const
+{
+  return std::make_pair(0, size());
+}
+//-----------------------------------------------------------------------------
 uBLASVector* uBLASVector::copy() const
 {
   return new uBLASVector(*this);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::get(double* values) const
+void uBLASVector::get_local(double* values) const
 {
   for (uint i = 0; i < size(); i++)
     values[i] = (*x)(i);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::set(double* values)
+void uBLASVector::set_local(const double* values)
 {
   for (uint i = 0; i < size(); i++)
     (*x)(i) = values[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::add(double* values)
+void uBLASVector::add_local(const double* values)
 {
   for (uint i = 0; i < size(); i++)
     (*x)(i) += values[i];
@@ -187,8 +190,8 @@ const uBLASVector& uBLASVector::operator*= (const double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const uBLASVector& uBLASVector::operator*= (const GenericVector& y) 
-{ 
+const uBLASVector& uBLASVector::operator*= (const GenericVector& y)
+{
   *x = ublas::element_prod(*x,y.down_cast<uBLASVector>().vec());
   return *this;
 }
@@ -211,31 +214,31 @@ const uBLASVector& uBLASVector::operator-= (const GenericVector& y)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::disp(uint precision) const
+std::string uBLASVector::str(bool verbose) const
 {
-  dolfin::cout << "[ ";
-  for (ublas_vector::const_iterator it = x->begin(); it != x->end(); ++it)
-  {
-    std::stringstream entry;
-    entry << std::setiosflags(std::ios::scientific);
-    entry << std::setprecision(precision);
-    entry << *it << " ";
-    dolfin::cout << entry.str().c_str() << dolfin::endl;
-  }
-  dolfin::cout << " ]" << endl;
-}
-//-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const uBLASVector& x)
-{
-  // Check if vector has been defined
-  if ( x.size() == 0 )
-  {
-    stream << "[ uBLASVector (empty) ]";
-    return stream;
-  }
-  stream << "[ uBLASVector of size " << x.size() << " ]";
+  std::stringstream s;
 
-  return stream;
+  if (verbose)
+  {
+    s << str(false) << std::endl << std::endl;
+
+    s << "[";
+    for (ublas_vector::const_iterator it = x->begin(); it != x->end(); ++it)
+    {
+      std::stringstream entry;
+      entry << std::setiosflags(std::ios::scientific);
+      entry << std::setprecision(16);
+      entry << *it << " ";
+      s << entry.str() << std::endl;
+    }
+    s << "]";
+  }
+  else
+  {
+    s << "<uBLASVector of size " << size() << ">";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& uBLASVector::factory() const

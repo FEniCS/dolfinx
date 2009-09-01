@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-11
-// Last changed: 2009-05-20
+// Last changed: 2009-08-10
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
@@ -48,8 +48,10 @@ namespace dolfin
     /// Compute local index of given incident entity (error if not found)
     uint index(const MeshEntity& entity) const;
 
-    /// Output
-    friend LogStream& operator<< (LogStream& stream, const MeshEntity& entity);
+    // Note: Not a subclass of Variable for efficiency!
+
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   protected:
 

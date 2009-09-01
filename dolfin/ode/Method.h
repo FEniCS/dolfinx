@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2008-10-07
+// Last changed: 2009-08-11
 
 #ifndef __METHOD_H
 #define __METHOD_H
@@ -10,6 +10,7 @@
 #include <dolfin/math/Lagrange.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -19,11 +20,11 @@ namespace dolfin
   /// Base class for cGqMethod and dGqMethod, which contain all numeric constants,
   /// such as nodal points and nodal weights, needed for the method.
 
-  class Method
+  class Method : public Variable
   {
   public:
 
-    enum Type { cG, dG, none };
+    enum Type {cG, dG, none};
 
     /// Constructor
     Method(unsigned int q, unsigned int nq, unsigned int nn);
@@ -90,8 +91,8 @@ namespace dolfin
     inline const Lagrange get_trial() const { return *trial; }
     inline const real* get_quadrature_weights() const {return qweights; }
 
-    /// Display method data
-    virtual void disp() const = 0;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const = 0;
 
   protected:
 
@@ -124,3 +125,5 @@ namespace dolfin
 }
 
 #endif
+
+

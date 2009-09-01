@@ -32,9 +32,11 @@
 #include "DirichletBC.h"
 #include "FiniteElement.h"
 
+//#include <omp.h>
+
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A,
                          const Form& a,
                          bool reset_tensor)
@@ -98,6 +100,11 @@ void Assembler::assemble(GenericTensor& A,
   // Create data structure for local assembly data
   UFC ufc(a);
 
+  // Gather off-process coefficients
+  const std::vector<const Function*> coefficients = a.coefficients();
+  for (uint i = 0; i < coefficients.size(); ++i)
+    coefficients[i]->gather();
+
   // Initialize global tensor
   init_global_tensor(A, a, ufc, reset_tensor);
 
@@ -125,29 +132,16 @@ void Assembler::assemble_cells(GenericTensor& A,
     return;
   Timer timer("Assemble cells");
 
-  // Extract mesh and coefficients
+  // Extract mesh
   const Mesh& mesh = a.mesh();
-  const std::vector<const Function*>& coefficients = a.coefficients();
 
   // Cell integral
   ufc::cell_integral* integral = ufc.cell_integrals[0];
 
   // Assemble over cells
-  uint num_function_spaces = a.function_spaces().size();
   Progress p(progress_message(A.rank(), "cells"), mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    // FIXME will move this check into a separate function.
-    // Need to check the coefficients as well.
-    bool compute_on_cell = true;
-    for (uint i = 0; i < num_function_spaces; i++)
-    {
-      if (!a.function_space(i).is_inside_restriction(cell->index()))
-        compute_on_cell = false;
-    }
-    if (!compute_on_cell)
-      continue;
-
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
@@ -160,10 +154,6 @@ void Assembler::assemble_cells(GenericTensor& A,
 
     // Update to current cell
     ufc.update(*cell);
-
-    // Interpolate coefficients on cell
-    for (uint i = 0; i < coefficients.size(); i++)
-      coefficients[i]->interpolate(ufc.w[i], ufc.cell, cell->index());
 
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
@@ -182,7 +172,6 @@ void Assembler::assemble_cells(GenericTensor& A,
         ufc.local_dimensions[i] = a.function_space(i).dofmap().local_dimension(ufc.cell);
       A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
     }
-
     p++;
   }
 }
@@ -198,9 +187,8 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     return;
   Timer timer("Assemble exterior facets");
 
-  // Extract mesh and coefficients
+  // Extract mesh
   const Mesh& mesh = a.mesh();
-  const std::vector<const Function*>& coefficients = a.coefficients();
 
   // Exterior facet integral
   ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
@@ -235,11 +223,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     const uint local_facet = mesh_cell.index(mesh_facet);
 
     // Update to current cell
-    ufc.update(mesh_cell);
-
-    // Interpolate coefficients on cell
-    for (uint i = 0; i < coefficients.size(); i++)
-      coefficients[i]->interpolate(ufc.w[i], ufc.cell, mesh_cell.index(), local_facet);
+    ufc.update(mesh_cell, local_facet);
 
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
@@ -272,7 +256,6 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
-  const std::vector<const Function*>& coefficients = a.coefficients();
 
   // Interior facet integral
   ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0];
@@ -286,7 +269,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   Progress p(progress_message(A.rank(), "interior facets"), mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
-    // Check if we have an interior facet
+    // Check if we have an exterior facet
     if (facet->num_entities(mesh.topology().dim()) != 2)
     {
       p++;
@@ -308,19 +291,11 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
 
     // Get local index of facet with respect to each cell
-    uint facet0 = cell0.index(*facet);
-    uint facet1 = cell1.index(*facet);
+    uint local_facet0 = cell0.index(*facet);
+    uint local_facet1 = cell1.index(*facet);
 
     // Update to current pair of cells
-    ufc.update(cell0, cell1);
-
-    // Interpolate coefficients on cell
-    for (uint i = 0; i < coefficients.size(); i++)
-    {
-      const uint offset = ufc.coefficient_elements[i]->space_dimension();
-      coefficients[i]->interpolate(ufc.macro_w[i],          ufc.cell0, cell0.index(), facet0);
-      coefficients[i]->interpolate(ufc.macro_w[i] + offset, ufc.cell1, cell1.index(), facet1);
-    }
+    ufc.update(cell0, local_facet0, cell1, local_facet1);
 
     // Tabulate dofs for each dimension on macro element
     for (uint i = 0; i < a.rank(); i++)
@@ -331,7 +306,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     }
 
     // Tabulate exterior interior facet tensor on macro element
-    integral->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1, facet0, facet1);
+    integral->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1, 
+                              local_facet0, local_facet1);
 
     // Get local dimensions
     for (uint i = 0; i < a.rank(); i++)
@@ -352,7 +328,7 @@ void Assembler::check(const Form& a)
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
-  const std::vector<const Function*>& coefficients = a.coefficients();
+  const std::vector<const Function*> coefficients = a.coefficients();
 
   // Check that we get the correct number of coefficients
   if (coefficients.size() != a.ufc_form().num_coefficients())
@@ -370,8 +346,8 @@ void Assembler::check(const Form& a)
       // auto_ptr deletes its object when it exits its scope
       std::auto_ptr<ufc::finite_element> fe( a.ufc_form().create_finite_element(i+a.rank()) );
 
-      uint r = coefficients[i]->function_space().element().value_rank();
-      uint fe_r = fe->value_rank();
+      const uint r = coefficients[i]->function_space().element().value_rank();
+      const uint fe_r = fe->value_rank();
       if (fe_r != r)
         warning("Invalid value rank of Function %d, got %d but expecting %d. \
 You may need to provide the rank of a user defined Function.", i, r, fe_r);
@@ -422,9 +398,11 @@ void Assembler::init_global_tensor(GenericTensor& A,
     if (sparsity_pattern)
     {
       std::vector<const DofMap*> dof_maps(0);
-      for (uint i=0; i < a.rank(); ++i)
+      for (uint i = 0; i < a.rank(); ++i)
         dof_maps.push_back(&(a.function_space(i).dofmap()));
-      SparsityPatternBuilder::build(*sparsity_pattern, a, ufc);
+      SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dof_maps,
+                                    a.ufc_form().num_cell_integrals(), 
+                                    a.ufc_form().num_interior_facet_integrals());
     }
     t0.stop();
 

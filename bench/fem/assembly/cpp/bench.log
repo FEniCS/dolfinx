@@ -149,3 +149,19 @@ Epetra            |         1.91         2.58         5.49        5.81          
 MTL4              |         0.26         1.03         4.18        4.42           1.5          3.11           6.75
 STL               |         0.18         0.79         3.53        3.58          1.04          2.26           5.95
 
+Date: Mon Aug 10 00:37:35 BST 2009
+-------------------------------------------------------------------------------
+
+Linux garth-laptop 2.6.28-14-generic #47-Ubuntu SMP Sat Jul 25 01:19:55 UTC 2009 x86_64 GNU/Linux
+
+changeset:   6679:5735a37350fe
+tag:         tip
+parent:      6678:978ee2bc8f9f
+parent:      6676:8a2a80d3a3e8
+user:        "Garth N. Wells <gnw20@cam.ac.uk>"
+date:        Sun Aug 09 23:25:53 2009 +0100
+summary:     merge.
+
+
+Total time: Command terminated by signal 6 0:00.39
+

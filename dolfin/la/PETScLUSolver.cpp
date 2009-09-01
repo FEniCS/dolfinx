@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2009.
+// Modified by Niclas Jansson, 2009.
 //
 // First added:  2005
-// Last changed: 2009-07-08
+// Last changed: 2009-08-28
 
 #ifdef HAS_PETSC
 
@@ -64,13 +65,32 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   MatGetType(*A.mat(), &solver_type);
   #endif
 
-  // Convert to UMFPACK matrix if matrix type is MATSEQAIJ and UMFPACK is available.
-  #if PETSC_HAVE_UMFPACK && PETSC_VERSION_MAJOR < 3
+  #if PETSC_VERSION_MAJOR < 3
   std::string _mat_type = solver_type;
+
+  // Convert to UMFPACK matrix if matrix type is MATSEQAIJ and UMFPACK is available.
+  #if PETSC_HAVE_UMFPACK
   if (_mat_type == MATSEQAIJ)
   {
     Mat Atemp = *A.mat();
     MatConvert(*A.mat(), MATUMFPACK, MAT_REUSE_MATRIX, &Atemp);
+  }
+  #endif
+
+  // Convert to MUMPS matrix if matrix type is MATMPIAIJ and MUMPS is available.
+  #if PETSC_HAVE_MUMPS
+  if (_mat_type == MATMPIAIJ)
+  {
+    Mat Atemp = *A.mat();
+    MatConvert(*A.mat(), MATAIJMUMPS, MAT_REUSE_MATRIX, &Atemp);
+  }
+  #endif
+
+  // Make sure the parallel matrix has been converted
+  _mat_type = solver_type;
+  if (_mat_type == MATMPIAIJ)
+  {
+    error("MUMPS is required for parallel LU with PETSc version < 3.");
   }
   #endif
 
@@ -137,9 +157,22 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A, PETScVector& x,
   return 1;
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::disp() const
+std::string PETScLUSolver::str(bool verbose) const
 {
-  KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
+  std::stringstream s;
+
+  if (verbose)
+  {
+    warning("Verbose output for PETScLUSolver not implemented, calling PETSc KSPView directly.");
+
+    KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
+  }
+  else
+  {
+    s << "<PETScLUSolver>";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
 double PETScLUSolver::copy_to_dense(const PETScKrylovMatrix& A)
@@ -160,9 +193,7 @@ void PETScLUSolver::init()
     KSPCreate(PETSC_COMM_WORLD, &ksp);
   }
   else
-  {
     KSPCreate(PETSC_COMM_SELF, &ksp);
-  }
 
   // Set preconditioner to LU factorization
   PC pc;
@@ -170,7 +201,21 @@ void PETScLUSolver::init()
   PCSetType(pc, PCLU);
 
   #if PETSC_HAVE_UMFPACK && PETSC_VERSION_MAJOR > 2
-  PCFactorSetMatSolverPackage(pc, MAT_SOLVER_UMFPACK);
+  if (MPI::num_processes() == 1)
+    PCFactorSetMatSolverPackage(pc, MAT_SOLVER_UMFPACK);
+  #endif
+
+  #if PETSC_VERSION_MAJOR > 2
+  if (MPI::num_processes() > 1)
+  {
+    #if PETSC_HAVE_MUMPS
+    PCFactorSetMatSolverPackage(pc, MAT_SOLVER_MUMPS);
+    # elif PETSC_HAVE_SPOOLES
+    PCFactorSetMatSolverPackage(pc, MAT_SOLVER_SPOOLES);
+    #else
+    error("No suitable solver for parallel LU. Consider configuring PETSc with MUMPS or SPOOLES.");
+    #endif
+  }
   #endif
 
   // Allow matrices with zero diagonals to be solved

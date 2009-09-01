@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2009.
 //
 // First added:  2007-11-30
-// Last changed: 2009-06-21
+// Last changed: 2009-08-06
 
 #ifndef __GENERIC_SPARSITY_PATTERN_H
 #define __GENERIC_SPARSITY_PATTERN_H
@@ -41,19 +41,16 @@ namespace dolfin
     /// Return global size for dimension i
     virtual uint size(uint i) const = 0;
 
-    /// Return local range for rows
-    virtual std::pair<uint, uint> row_range() const = 0;
+    /// Return local range for dimension dim
+    virtual std::pair<uint, uint> local_range(uint dim) const = 0;
 
-    /// Return local range for columns
-    virtual std::pair<uint, uint> col_range() const = 0;
-
-    /// Return total number of nonzeros in local rows
+    /// Return total number of nonzeros in local_range for dimension 0
     virtual uint num_nonzeros() const = 0;
 
-    /// Fill array with number of nonzeros per local row for diagonal block
+    /// Fill array with number of nonzeros for diagonal block in local_range for dimension 0 
     virtual void num_nonzeros_diagonal(uint* num_nonzeros) const = 0;
 
-    /// Fill array with number of nonzeros per local row for off-diagonal block
+    /// Fill array with number of nonzeros for off-diagonal block in local_range for dimension 0 
     virtual void num_nonzeros_off_diagonal(uint* num_nonzeros) const = 0;
 
     /// Finalize sparsity pattern

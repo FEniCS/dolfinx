@@ -25,6 +25,7 @@ __license__  = "GNU LGPL Version 2.1"
 
 # Original implementation (../cpp/main.cpp) by Garth N. Wells.
 # Modified by Anders Logg, 2008.
+# Modified by Harish Narayanan, 2009.
 
 from dolfin import *
 
@@ -43,23 +44,23 @@ bc = DirichletBC(V, g, DirichletBoundary())
 
 # Define source and solution functions
 f = Function(V, "x[0]*sin(x[1])")
-U = Function(V)
+u = Function(V)
 
 # Define variational problem
-v = TestFunction(V)
-u = TrialFunction(V)
-a = v.dx(i)*(1.0 + U*U)*u.dx(i)*dx + v.dx(i)*(2.0*U*u)*U.dx(i)*dx
-L = v.dx(i)*(1.0 + U*U)*U.dx(i)*dx - v*f*dx
+v  = TestFunction(V)
+du = TrialFunction(V)
+L  = inner(grad(v), (1 + u**2)*grad(u))*dx - v*f*dx
+a  = derivative(L, u, du)
 
 # Solve nonlinear variational problem
 problem = VariationalProblem(a, L, bc, nonlinear=True)
-problem.solve(U)
+problem.solve(u)
 
 # Plot solution and solution gradient
-plot(U, title="Solution")
-plot(grad(U), title="Solution gradient")
+plot(u, title="Solution")
+plot(grad(u), title="Solution gradient")
 interactive()
 
 # Save solution in VTK format
 file = File("nonlinear_poisson.pvd")
-file << U
+file << u

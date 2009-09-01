@@ -40,10 +40,7 @@ void Coefficient::attach(boost::shared_ptr<Function> v)
 
   // Set function space if not set
   if (!v->_function_space)
-  {
-    boost::shared_ptr<const FunctionSpace> _V(create_function_space());
-    v->_function_space = _V;
-  }
+    v->_function_space.reset(create_function_space());
 
   // Set variable name
   if (v->label() == "unnamed function")

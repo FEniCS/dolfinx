@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2008-09-10
+// Last changed: 2009-08-10
 
 #ifndef __MESH_GEOMETRY_H
 #define __MESH_GEOMETRY_H
@@ -62,7 +62,7 @@ namespace dolfin
 
     /// Return array of values for all coordinates
     inline const double* x() const { return coordinates; }
-    
+
     /// Return array of values for higher order coordinate n
     inline double* higher_order_x(uint n) { return higher_order_coordinates + n*_dim; }
 
@@ -77,7 +77,7 @@ namespace dolfin
 
     /// Return number of vertices used (per cell) to represent the higher order geometry
     inline uint num_higher_order_vertices_per_cell() const { return _higher_order_num_dof; }
-    
+
     /// Return array of higher order vertex indices for a specific higher order cell
     inline uint* higher_order_cell(uint c)
     { return (higher_order_cell_data + (c*_higher_order_num_dof)); }
@@ -125,12 +125,10 @@ namespace dolfin
     /// Set higher order cell data for cell # N in direction i
     void set_higher_order_cell_data(uint N, std::vector<uint> vector_cell_data);
 
-    /// Display data
-    void disp() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   private:
-
-    friend class MPIMeshCommunicator;
 
     // Euclidean dimension
     uint _dim;

@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-08
-// Last changed: 2007-11-30
+// Last changed: 2009-08-10
 
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
@@ -58,18 +58,16 @@ namespace dolfin
 
     /// Return connectivity for given pair of topological dimensions
     inline dolfin::MeshConnectivity& operator() (uint d0, uint d1)
-    { assert(d0 <= _dim && d1 <= _dim); return connectivity[d0][d1]; }
+    { assert(d0 <= _dim && d1 <= _dim); return *connectivity[d0][d1]; }
 
     /// Return connectivity for given pair of topological dimensions
     inline const dolfin::MeshConnectivity& operator() (uint d0, uint d1) const
-    { assert(d0 <= _dim && d1 <= _dim); return connectivity[d0][d1]; }
+    { assert(d0 <= _dim && d1 <= _dim); return *connectivity[d0][d1]; }
 
-    /// Display data
-    void disp() const;
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose=false) const;
 
   private:
-
-    friend class MPIMeshCommunicator;
 
     // Topological dimension
     uint _dim;
@@ -78,7 +76,7 @@ namespace dolfin
     uint* num_entities;
 
     // Connectivity for pairs of topological dimensions
-    MeshConnectivity** connectivity;
+    MeshConnectivity*** connectivity;
 
   };
 

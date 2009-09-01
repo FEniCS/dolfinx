@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Garth N. Wells.
+// Copyright (C) 2006-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Jansson, 2006.
@@ -8,7 +8,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2008-08-07
+// Last changed: 2009-08-10
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -52,15 +52,18 @@ namespace dolfin
     virtual uint size(uint dim) const = 0;
 
     /// Get block of values
-    virtual void get(double* block, const uint* num_rows, const uint * const * rows) const
+    virtual void get(double* block, const uint* num_rows, 
+                     const uint * const * rows) const
     { get(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Set block of values
-    virtual void set(const double* block, const uint* num_rows, const uint * const * rows)
+    virtual void set(const double* block, const uint* num_rows, 
+                     const uint * const * rows)
     { set(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Add block of values
-    virtual void add(const double* block, const uint* num_rows, const uint * const * rows)
+    virtual void add(const double* block, const uint* num_rows, 
+                     const uint * const * rows)
     { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Set all entries to zero and keep any sparse structure
@@ -69,8 +72,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply() = 0;
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const = 0;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const = 0;
 
     //--- Matrix interface ---
 
@@ -78,22 +81,31 @@ namespace dolfin
     virtual void resize(uint M, uint N) = 0;
 
     /// Get block of values
-    virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const = 0;
+    virtual void get(double* block, uint m, const uint* rows, uint n, 
+                     const uint* cols) const = 0;
 
     /// Set block of values
-    virtual void set(const double* block, uint m, const uint* rows, uint n, const uint* cols) = 0;
+    virtual void set(const double* block, uint m, const uint* rows, uint n, 
+                     const uint* cols) = 0;
 
     /// Add block of values
-    virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols) = 0;
+    virtual void add(const double* block, uint m, const uint* rows, uint n, 
+                     const uint* cols) = 0;
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false) = 0;
+    virtual void axpy(double a, const GenericMatrix& A, 
+                      bool same_nonzero_pattern = false) = 0;
+
+    /// Return norm of matrix
+    virtual double norm(std::string norm_type = "frobenius") const = 0;
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const = 0;
+    virtual void getrow(uint row, std::vector<uint>& columns, 
+                        std::vector<double>& values) const = 0;
 
     /// Set values for given row
-    virtual void setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values) = 0;
+    virtual void setrow(uint row, const std::vector<uint>& columns, 
+                        const std::vector<double>& values) = 0;
 
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows) = 0;
@@ -102,7 +114,8 @@ namespace dolfin
     virtual void ident(uint m, const uint* rows) = 0;
 
     /// Matrix-vector product, y = Ax
-    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const = 0;
+    virtual void mult(const GenericVector& x, GenericVector& y, 
+                      bool transposed=false) const = 0;
 
     /// Multiply matrix by given number
     virtual const GenericMatrix& operator*= (double a) = 0;
@@ -128,11 +141,14 @@ namespace dolfin
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
 
     /// Return pointers to underlying compresssed row/column storage data
-    /// For compressed row storage, data = (row_pointer[#rows +1], column_index[#nz], matrix_values[#nz], nz)
-    virtual std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data() const
+    /// For compressed row storage, data = (row_pointer[#rows +1], 
+    /// column_index[#nz], matrix_values[#nz], nz)
+    virtual std::tr1::tuple<const std::size_t*, const std::size_t*,
+                                            const double*, int> data() const
     {
       error("Unable to return pointers to underlying matrix data.");
-      return std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int>(0, 0, 0, 0);
+      return std::tr1::tuple<const std::size_t*, const std::size_t*, 
+                                               const double*, int>(0, 0, 0, 0);
     }
 
     //--- Convenience functions ---
@@ -149,8 +165,8 @@ namespace dolfin
     virtual void setitem(std::pair<uint, uint> ij, double value)
     { set(&value, 1, &ij.first, 1, &ij.second); }
 
-
     typedef XMLMatrix XMLHandler;
+
   };
 
 }

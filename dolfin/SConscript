@@ -58,6 +58,8 @@ if "configure" in COMMAND_LINE_TARGETS:
         disabled_packages.append("parmetis")
     if not env["enableGmp"]:
         disabled_packages.append("gmp")
+    if not env["enableZlib"]:
+        disabled_packages.append("zlib")
 
     # Find modules in the project and dependencies:
     # only modules and configuredPackages will be used in this code:

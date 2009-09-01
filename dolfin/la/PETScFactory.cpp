@@ -24,7 +24,12 @@ PETScMatrix* PETScFactory::create_matrix() const
 //-----------------------------------------------------------------------------
 PETScVector* PETScFactory:: create_vector() const
 {
-  return new PETScVector();
+  return new PETScVector("global");
+}
+//-----------------------------------------------------------------------------
+PETScVector* PETScFactory:: create_local_vector() const
+{
+  return new PETScVector("local");
 }
 //-----------------------------------------------------------------------------
 SparsityPattern* PETScFactory::create_pattern() const

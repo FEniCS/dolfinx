@@ -11,7 +11,7 @@ from dolfin import *
 
 class InitialConditions(Function):
     def __init__(self, V):
-        random.seed(2)
+        random.seed(2 + MPI.process_number())
     def eval(self, values, x):
         values[0] = 0.0
         values[1] = 0.63 + 0.02*(0.5 - random.random())
@@ -21,10 +21,12 @@ class CahnHilliardEquation(NonlinearProblem):
         NonlinearProblem.__init__(self)
         self.L = L
         self.a = a
+        self.reset_tensor = True
     def F(self, b, x):
         assemble(self.L, tensor=b)
     def J(self, A, x):
-        assemble(self.a, tensor=A)
+        assemble(self.a, tensor=A, reset_tensor=self.reset_tensor)
+        self.reset_tensor = False
 
 #------------------------------------------------------------------------------
 # Create mesh and define function space
@@ -34,7 +36,7 @@ dt     = 5.0e-06  # time step
 theta  = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson   
 
 # Define function spaces
-mesh = UnitSquare(64, 64)
+mesh = UnitSquare(96, 96)
 V = FunctionSpace(mesh, "CG", 1)
 ME = V + V
 
@@ -76,7 +78,7 @@ solver.parameters["convergence_criterion"] = "incremental"
 solver.parameters["relative_tolerance"] = 1e-6
 
 # Output file
-file = File("output.pvd")
+file = File("output.pvd", "compressed")
 
 t = 0.0
 T = 80*dt

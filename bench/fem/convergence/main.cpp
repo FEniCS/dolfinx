@@ -111,7 +111,7 @@ double solve2D(int q, int n)
   // Compute maximum norm of error
   double emax = 0.0;
   double* U = new double[x.size()];
-  x.get(U);
+  x.get_local(U);
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const Point p = v->point();
@@ -194,7 +194,7 @@ double solve3D(int q, int n)
   // Compute maximum norm of error
   double emax = 0.0;
   double* U = new double[x.size()];
-  x.get(U);
+  x.get_local(U);
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const Point p = v->point();

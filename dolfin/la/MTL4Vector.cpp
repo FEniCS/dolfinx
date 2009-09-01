@@ -1,17 +1,12 @@
 // Copyright (C) 2008 Dag Lindbo
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2008.
+// Modified by Garth N. Wells, 2008-2009.
 //
 // First added:  2008-07-06
-// Last changed: 2008-07-20
+// Last changed: 2009-08-22
 
 #ifdef HAS_MTL4
-
-//#include <cstring>
-//#include <iostream>
-//#include <sstream>
-//#include <iomanip>
 
 #include <cmath>
 #include <dolfin/math/dolfin_math.h>
@@ -22,17 +17,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MTL4Vector::MTL4Vector(): Variable("x", "a sparse vector")
+MTL4Vector::MTL4Vector()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MTL4Vector::MTL4Vector(uint N): Variable("x", "a sparse vector")
+MTL4Vector::MTL4Vector(uint N)
 {
   resize(N);
 }
 //-----------------------------------------------------------------------------
-MTL4Vector::MTL4Vector(const MTL4Vector& v): Variable("x", "a vector")
+MTL4Vector::MTL4Vector(const MTL4Vector& v)
 {
   *this = v;
 }
@@ -58,6 +53,11 @@ dolfin::uint MTL4Vector::size() const
   return mtl::num_rows(x);
 }
 //-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> MTL4Vector::local_range() const
+{
+  return std::make_pair<uint, uint>(0, size());
+}
+//-----------------------------------------------------------------------------
 void MTL4Vector::zero()
 {
   x = 0.0;
@@ -68,39 +68,46 @@ void MTL4Vector::apply()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::disp(uint precision) const
+std::string MTL4Vector::str(bool verbose) const
 {
-  dolfin::cout << "[ ";
-  for (uint i = 0; i < size(); ++i)
+  std::stringstream s;
+
+  if (verbose)
   {
-    std::stringstream entry;
-    entry << std::setiosflags(std::ios::scientific);
-    entry << std::setprecision(precision);
-    entry << x[i] << " ";
-    dolfin::cout << entry.str().c_str() << dolfin::endl;
+    s << str(false) << std::endl << std::endl;
+
+    s << "[ ";
+    for (uint i = 0; i < size(); ++i)
+    {
+      std::stringstream entry;
+      //entry << std::setiosflags(std::ios::scientific);
+      //entry << std::setprecision(precision);
+      entry << x[i] << " ";
+      s << entry.str().c_str() << std::endl;
+    }
+    s << " ]" << std::endl;
   }
-  dolfin::cout << " ]" << endl;
+  else
+  {
+    s << "<MTL4Vector of size " << size() << ">";
+  }
+
+  return s.str();
 }
 //-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const MTL4Vector& x)
-{
-  dolfin_not_implemented();
-  return stream;
-}
-//-----------------------------------------------------------------------------
-void MTL4Vector::get(double* values) const
+void MTL4Vector::get_local(double* values) const
 {
   for (uint i = 0; i < size(); i++)
     values[i] = x[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::set(double* values)
+void MTL4Vector::set_local(const double* values)
 {
   for (uint i = 0; i < size(); i++)
     x[i] = values[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::add(double* values)
+void MTL4Vector::add_local(const double* values)
 {
   for (uint i = 0; i < size(); i++)
     x(i) += values[i];
@@ -179,15 +186,15 @@ const MTL4Vector& MTL4Vector::operator*= (double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const MTL4Vector& MTL4Vector::operator*= (const GenericVector& y) 
-{ 
-  if ( size() != y.size() )  
+const MTL4Vector& MTL4Vector::operator*= (const GenericVector& y)
+{
+  if ( size() != y.size() )
     error("Vectors must be of same size.");
   dolfin_not_implemented();
   //mtl4_vector vv =  y.down_cast<MTL4Vector>().vec();
   //
-  //x = mtl::operator*(x,vv);
-  return *this;     
+  //x = mtl::operator*(x, vv);
+  return *this;
 }
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator= (const MTL4Vector& v)
@@ -216,7 +223,7 @@ double MTL4Vector::norm(std::string norm_type) const
     return mtl::two_norm(x);
   else if (norm_type == "linf")
     return mtl::infinity_norm(x);
-  else 
+  else
     error("Requested vector norm type for MTL4Vector unknown");
 
   return 0.0;
@@ -237,5 +244,4 @@ double MTL4Vector::sum() const
   return mtl::sum(x);
 }
 //-----------------------------------------------------------------------------
-
 #endif

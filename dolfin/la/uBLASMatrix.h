@@ -8,7 +8,7 @@
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2006-07-05
-// Last changed: 2009-06-02
+// Last changed: 2009-08-20
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -17,8 +17,6 @@
 #include <iomanip>
 #include <tr1/tuple>
 
-#include <dolfin/log/LogStream.h>
-#include <dolfin/common/Variable.h>
 #include "LinearAlgebraFactory.h"
 #include "SparsityPattern.h"
 #include "ublas.h"
@@ -48,7 +46,7 @@ namespace dolfin
   /// inlined to avoid link errors.
 
   template<class Mat>
-  class uBLASMatrix : public GenericMatrix, public Variable
+  class uBLASMatrix : public GenericMatrix
   {
   public:
 
@@ -85,8 +83,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply();
 
-    /// Display tensor
-    virtual void disp(uint precision=2) const;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const;
 
     //--- Implementation of the GenericMatrix interface ---
 
@@ -104,6 +102,9 @@ namespace dolfin
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false);
+
+    /// Return norm of matrix
+    virtual double norm(std::string norm_type = "frobenius") const;
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;
@@ -231,6 +232,22 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>
+  double uBLASMatrix<Mat>::norm(std::string norm_type) const
+  {
+    if (norm_type == "l1")
+      return norm_1(A);
+    else if (norm_type == "linf")
+      return norm_inf(A);
+    else if (norm_type == "frobenius")
+      return norm_frobenius(A);
+    else
+    {
+      error("Unknown norm type in uBLASMatrix.");
+      return 0.0;
+    }
+  }
+  //---------------------------------------------------------------------------
+  template <class Mat>
   void uBLASMatrix<Mat>::getrow(uint row_idx, std::vector<uint>& columns, std::vector<double>& values) const
   {
     assert(row_idx < this->size(0));
@@ -355,7 +372,14 @@ namespace dolfin
   {
     // Set all non-zero values to zero without detroying non-zero pattern
     // It might be faster to iterate through entries?
-    A *= 0.0;
+    //A  *= 0.0;
+    //A.clear();
+
+    typename Mat::iterator1 row;    // Iterator over rows
+    typename Mat::iterator2 entry;  // Iterator over entries
+    for (row = A.begin1(); row != A.end1(); ++row)
+      for (entry = row.begin(); entry != row.end(); ++entry)
+        *entry = 0;
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
@@ -425,24 +449,37 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
-  void uBLASMatrix<Mat>::disp(uint precision) const
+  std::string uBLASMatrix<Mat>::str(bool verbose) const
   {
     typename Mat::const_iterator1 it1;  // Iterator over rows
     typename Mat::const_iterator2 it2;  // Iterator over entries
 
-    for (it1 = A.begin1(); it1 != A.end1(); ++it1)
+    std::stringstream s;
+
+    if (verbose)
     {
-      dolfin::cout << "|";
-      for (it2 = it1.begin(); it2 != it1.end(); ++it2)
+      s << str(false) << std::endl << std::endl;
+
+      for (it1 = A.begin1(); it1 != A.end1(); ++it1)
       {
-        std::stringstream entry;
-        entry << std::setiosflags(std::ios::scientific);
-        entry << std::setprecision(precision);
-        entry << " (" << it2.index1() << ", " << it2.index2() << ", " << *it2 << ")";
-        dolfin::cout << entry.str().c_str();
+        s << "|";
+        for (it2 = it1.begin(); it2 != it1.end(); ++it2)
+        {
+          std::stringstream entry;
+          entry << std::setiosflags(std::ios::scientific);
+          entry << std::setprecision(16);
+          entry << " (" << it2.index1() << ", " << it2.index2() << ", " << *it2 << ")";
+          s << entry.str();
+        }
+        s << " |" << std::endl;
       }
-      dolfin::cout  << " |" << dolfin::endl;
     }
+    else
+    {
+      s << "<uBLASMatrix of size " << size(0) << " x " << size(1) << ">";
+    }
+
+    return s.str();
   }
   //-----------------------------------------------------------------------------
   // Specialised member functions (must be inlined to avoid link errors)
@@ -455,16 +492,16 @@ namespace dolfin
 
     // Reserve space for non-zeroes
     A.reserve(sparsity_pattern.num_nonzeros());
-    
+
     // Get underlying pattern
     const SparsityPattern* pattern_pointer = dynamic_cast<const SparsityPattern*>(&sparsity_pattern);
     if (!pattern_pointer)
       error("Cannot convert GenericSparsityPattern to concrete SparsityPattern type. Aborting.");
-    const std::vector< std::vector<uint> >& pattern = pattern_pointer->pattern();
-    
+    const std::vector<Set<uint> >& pattern = pattern_pointer->pattern();
+
     // Add entries
-    std::vector< std::vector<uint> >::const_iterator row;
-    std::vector<uint>::const_iterator element;
+    std::vector<Set<uint> >::const_iterator row;
+    Set<uint>::const_iterator element;
     for(row = pattern.begin(); row != pattern.end(); ++row)
       for(element = row->begin(); element != row->end(); ++element)
         A.push_back(row - pattern.begin(), *element, 0.0);
@@ -522,23 +559,6 @@ namespace dolfin
 
     // Back substitute
     ublas::lu_substitute(A, pmatrix, X);
-  }
-  //-----------------------------------------------------------------------------
-  template <class Mat>
-  inline LogStream& operator<< (LogStream& stream, const uBLASMatrix<Mat>& B)
-  {
-    // Check if matrix has been defined
-    if ( B.size(0) == 0 || B.size(1) == 0 )
-    {
-      stream << "[ uBLASMatrix matrix (empty) ]";
-      return stream;
-    }
-
-    uint M = B.size(0);
-    uint N = B.size(1);
-    stream << "[ uBLASMatrix matrix of size " << M << " x " << N << " ]";
-
-    return stream;
   }
   //-----------------------------------------------------------------------------
 }

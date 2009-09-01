@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
-// Modified by Garth N. Wells, 2008-2008.
+// Modified by Garth N. Wells, 2008-2009.
 //
 // First added:  2008-04-21
-// Last changed: 2009-02-16
+// Last changed: 2009-08-22
 
 #ifndef __EPETRA_VECTOR_H
 #define __EPETRA_VECTOR_H
@@ -13,8 +13,6 @@
 #ifdef HAS_TRILINOS
 
 #include <boost/shared_ptr.hpp>
-
-#include <dolfin/log/LogStream.h>
 #include <dolfin/common/Variable.h>
 #include "GenericVector.h"
 
@@ -32,7 +30,7 @@ namespace dolfin
   /// access the Epetra_FEVector object using the function vec() or vec_ptr()
   /// and use the standard Epetra interface.
 
-  class EpetraVector: public GenericVector, public Variable
+  class EpetraVector: public GenericVector
   {
   public:
 
@@ -65,8 +63,8 @@ namespace dolfin
     /// Finalize assembly of tensor
     virtual void apply();
 
-    /// Display vector
-    virtual void disp(uint precision = 2) const;
+    /// Return informal string representation (pretty-print)
+    virtual std::string str(bool verbose=false) const;
 
     //--- Implementation of the GenericVector interface ---
 
@@ -75,6 +73,9 @@ namespace dolfin
 
     /// Return size of vector
     virtual uint size() const;
+
+    /// Return local ownership range of a vector
+    virtual std::pair<uint, uint> local_range() const;
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows) const;
@@ -85,14 +86,14 @@ namespace dolfin
     /// Add block of values
     virtual void add(const double* block, uint m, const uint* rows);
 
-    /// Get all values
-    virtual void get(double* values) const;
+    /// Get all values on local process
+    virtual void get_local(double* values) const;
 
-    /// Set all values
-    virtual void set(double* values);
+    /// Set all values on local process
+    virtual void set_local(const double* values);
 
-    /// Add all values to each entry
-    virtual void add(double* values);
+    /// Add all values to each entry on local process
+    virtual void add_local(const double* values);
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);
@@ -152,8 +153,6 @@ namespace dolfin
     boost::shared_ptr<Epetra_FEVector> x;
 
   };
-
-  LogStream& operator<< (LogStream& stream, const EpetraVector& A);
 
 }
 

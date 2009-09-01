@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2008-11-14
+// Last changed: 2009-08-10
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -352,7 +352,8 @@ double TetrahedronCell::facet_area(const Cell& cell, uint facet) const
   return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
 }
 //-----------------------------------------------------------------------------
-void TetrahedronCell::order(Cell& cell) const
+void TetrahedronCell::order(Cell& cell,
+                            const MeshFunction<uint>* global_vertex_indices) const
 {
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
 
@@ -371,7 +372,7 @@ void TetrahedronCell::order(Cell& cell) const
     for (uint i = 0; i < 6; i++)
     {
       uint* edge_vertices = const_cast<uint*>(topology(1, 0)(cell_edges[i]));
-      std::sort(edge_vertices, edge_vertices + 2);
+      sort_entities(2, edge_vertices, global_vertex_indices);
     }
   }
 
@@ -387,7 +388,7 @@ void TetrahedronCell::order(Cell& cell) const
     for (uint i = 0; i < 4; i++)
     {
       uint* facet_vertices = const_cast<uint*>(topology(2, 0)(cell_facets[i]));
-      std::sort(facet_vertices, facet_vertices + 3);
+      sort_entities(3, facet_vertices, global_vertex_indices);
     }
   }
 
@@ -439,7 +440,7 @@ void TetrahedronCell::order(Cell& cell) const
   if ( topology(3, 0).size() > 0 )
   {
     uint* cell_vertices = const_cast<uint*>(cell.entities(0));
-    std::sort(cell_vertices, cell_vertices+4);
+    sort_entities(4, cell_vertices, global_vertex_indices);
   }
 
   // Sort local edges on cell after non-incident vertex tuble, connectivity 3-1
@@ -588,10 +589,11 @@ bool TetrahedronCell::intersects(const MeshEntity& entity, const Cell& cell) con
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-std::string TetrahedronCell::description() const
+std::string TetrahedronCell::description(bool plural) const
 {
-  std::string s = "tetrahedron (simplex of topological dimension 3)";
-  return s;
+  if (plural)
+    return "tetrahedra";
+  return "tetrahedron";
 }
 //-----------------------------------------------------------------------------
 dolfin::uint TetrahedronCell::find_edge(uint i, const Cell& cell) const

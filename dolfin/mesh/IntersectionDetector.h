@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2008-01-12
+// Last changed: 2009-08-27
 
 #ifndef __INTERSECTION_DETECTOR_H
 #define __INTERSECTION_DETECTOR_H
@@ -41,13 +41,13 @@ namespace dolfin
     void intersection(const Cell& cell, std::vector<uint>& cells);
 
     /// Compute overlap with curve defined by points
-    void intersection(std::vector<Point>& points, std::vector<uint>& intersection);
+    void intersection(std::vector<Point>& points, std::vector<uint>& cells);
 
     /// Compute overlap with mesh
-    void intersection(const Mesh& mesh1, std::vector<uint>& intersection);
+    void intersection(const Mesh& mesh1, std::vector<uint>& cells);
 
     /// Compute overlap with mesh (test version)
-    void new_intersection(const Mesh& mesh1, std::vector<uint>& intersection);
+    void new_intersection(const Mesh& mesh1, std::vector<uint>& cells);
 
 
   private:

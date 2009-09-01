@@ -20,6 +20,20 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+Parameters NewtonSolver::default_parameters()
+{
+  Parameters p("newton_solver");
+ 
+  p.add("maximum_iterations",    50);
+  p.add("relative_tolerance",    1e-9);
+  p.add("absolute_tolerance",    1e-10);
+  p.add("convergence_criterion", "residual");
+  p.add("method",                "full");
+  p.add("report",                true);
+ 
+  return p;
+}
+//-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(std::string solver_type, std::string pc_type)
              : solver(new LinearSolver(solver_type, pc_type)),
                A(new Matrix), dx(new Vector), b(new Vector)
@@ -53,25 +67,24 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
 
   begin("Starting Newton solve.");
 
-  logging(false);
-
-  // Compute F(u) and J
-  nonlinear_problem.F(*b, x);
-  nonlinear_problem.J(*A, x);
-
   uint krylov_iterations = 0;
   newton_iteration = 0;
   bool newton_converged = false;
 
+  // Compute F(u)
+  nonlinear_problem.form(*A, *b, x);
+  nonlinear_problem.F(*b, x);
+
   // Start iterations
   while (!newton_converged && newton_iteration < maxiter)
   {
+    // Compute Jacobian
+    nonlinear_problem.J(*A, x);
+
     // Perform linear solve and update total number of Krylov iterations
     if (dx->size() > 0)
       dx->zero();
-    logging(false);
     krylov_iterations += solver->solve(*A, *dx, *b);
-    logging(true);
 
     // Compute initial residual
     if (newton_iteration == 0)
@@ -84,9 +97,9 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
     ++newton_iteration;
 
     //FIXME: this step is not needed if residual is based on dx and this has converged.
-    // Compute F(u) and J
+    // Compute F
+    nonlinear_problem.form(*A, *b, x);
     nonlinear_problem.F(*b, x);
-    nonlinear_problem.J(*A, x);
 
     // Test for convergence
     newton_converged = converged(*b, *dx, nonlinear_problem);
@@ -103,7 +116,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
   return newton_iteration;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint NewtonSolver::get_iteration() const
+dolfin::uint NewtonSolver::iteration() const
 {
   return newton_iteration;
 }
