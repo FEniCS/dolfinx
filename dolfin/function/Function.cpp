@@ -387,6 +387,10 @@ void Function::interpolate(double* coefficients,
     // Evaluate each dof to get coefficients for nodal basis expansion
     for (uint i = 0; i < element.space_dimension(); i++)
       coefficients[i] = element.evaluate_dof(i, v, ufc_cell);
+
+    // FIXME: Is this necessary?
+    // Invalidate eval data
+    data.invalidate();
   }
 }
 //-----------------------------------------------------------------------------
