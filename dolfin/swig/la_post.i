@@ -1,14 +1,29 @@
-// Instantiate uBLAS matrix and Factory types
+/* -*- C -*- */
+// ===========================================================================
+// SWIG directives for the DOLFIN la kernel module (post)
+//
+// The directives in this file are applied _after_ the header files of the
+// modules has been loaded.
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// Instantiate uBLAS template classes
+// ---------------------------------------------------------------------------
 %template(uBLASSparseMatrix) dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>;
 %template(uBLASDenseMatrix) dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>;
 %template(uBLASSparseFactory) dolfin::uBLASFactory<dolfin::ublas_sparse_matrix>;
 %template(uBLASDenseFactory) dolfin::uBLASFactory<dolfin::ublas_dense_matrix>;
 
+// ---------------------------------------------------------------------------
 // Define names for uBLAS matrix types
-// These are needed so returned type from down_cast get correctly wrapped
+// These are needed so returned uBLASMatrices from down_cast get correctly wrapped
+// ---------------------------------------------------------------------------
 %typedef dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix> uBLASSparseMatrix;
 %typedef dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>  uBLASDenseMatrix;
 
+// ---------------------------------------------------------------------------
+// SLEPc specific extension code 
+// ---------------------------------------------------------------------------
 #ifdef HAS_SLEPC
 %extend dolfin::SLEPcEigenSolver {
 
@@ -37,6 +52,9 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 }
 #endif
 
+// ---------------------------------------------------------------------------
+// C++ and Python extension code for BlockVector
+// ---------------------------------------------------------------------------
 %extend dolfin::BlockVector {
     Vector& getitem(int i) 
     { 
@@ -44,11 +62,9 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     }
     void setitem(int i, Vector& v)
     {
-      self->set(i,v); 
+      self->set(i, v); 
     }
-}
-
-%extend dolfin::BlockVector {
+    
   %pythoncode %{
 
     def __add__(self, v): 
@@ -71,8 +87,9 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   %}
 }
 
-
-
+// ---------------------------------------------------------------------------
+// C++ and Python extension code for BlockMatrix
+// ---------------------------------------------------------------------------
 %extend dolfin::BlockMatrix {
 %pythoncode
 %{
@@ -85,18 +102,26 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 
 %pythoncode
 %{
-  def BlockMatrix_get(self,t):
+  def BlockMatrix_get(self, t):
     i,j = t
-    return self.get(i,j)
+    return self.get(i, j)
 
-  def BlockMatrix_set(self,t,m): 
+  def BlockMatrix_set(self, t, m): 
     i,j = t 
-    return self.set(i,j,m)
+    return self.set(i, j, m)
 
   BlockMatrix.__getitem__ = BlockMatrix_get
   BlockMatrix.__setitem__ = BlockMatrix_set
 %}
 
+// ---------------------------------------------------------------------------
+// Indices.i defines helper functions to extract C++ indices from Python 
+// indices. These functions are not wrapped to the Python interface. They are
+// only included in the C++ wrapper file.
+//
+// dolfin_la_get_set_items.i defines helper functions that are wrapped to the
+// Python. These are then used in the extended Python classes. See below.
+// ---------------------------------------------------------------------------
 %{
 #include "Indices.i"
 #include "dolfin_la_get_set_items.i"
@@ -104,7 +129,9 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 
 %include "dolfin_la_get_set_items.i"
 
-// Vector la interface macro
+// ---------------------------------------------------------------------------
+// Macro with C++ and Python extension code for GenericVector types in PyDOLFIN
+// ---------------------------------------------------------------------------
 %define LA_POST_VEC_INTERFACE(VEC_TYPE)
 %extend dolfin::VEC_TYPE
 {
@@ -117,67 +144,72 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
   {
     (*self)*=other;
   }
-
+// ---------------------------------------------------------------------------
   %pythoncode
   %{
-    def __is_compatibable(self,other):
+    def __in_parallel(self):
+        first, last = self.local_range()
+        return first > 0 or len(self) > last
+        
+       
+    def __is_compatibable(self, other):
         "Returns True if self, and other are compatible Vectors"
-        if not isinstance(other,GenericVector):
+        if not isinstance(other, GenericVector):
             return False
         self_type = get_tensor_type(self)
         return self_type == get_tensor_type(other)
-        
+    
     def array(self):
         " Return a numpy array representation of Vector"
-        from numpy import zeros
+        from numpy import zeros, arange, uint0
         v = zeros(self.size())
         self.get_local(v)
         return v
     
-    def __contains__(self,value):
-        if not isinstance(value,(int,float)):
+    def __contains__(self, value):
+        if not isinstance(value, (int, float)):
             raise TypeError, "expected scalar"
         return _contains(self,value)
 
-    def __gt__(self,value):
-        if isinstance(value,(int,float)):
+    def __gt__(self, value):
+        if isinstance(value, (int, float)):
             return _compare_vector_with_value(self, value, dolfin_gt)
         if isinstance(value,GenericVector):
             return _compare_vector_with_vector(self, value, dolfin_gt)
         return NotImplemented
     
     def __ge__(self,value):
-        if isinstance(value,(int,float)):
+        if isinstance(value, (int, float)):
             return _compare_vector_with_value(self, value, dolfin_ge)
-        if isinstance(value,GenericVector):
+        if isinstance(value, GenericVector):
             return _compare_vector_with_vector(self, value, dolfin_ge)
         return NotImplemented
     
     def __lt__(self,value):
-        if isinstance(value,(int,float)):
+        if isinstance(value, (int, float)):
             return _compare_vector_with_value(self, value, dolfin_lt)
-        if isinstance(value,GenericVector):
+        if isinstance(value, GenericVector):
             return _compare_vector_with_vector(self, value, dolfin_lt)
         return NotImplemented
     
     def __le__(self,value):
-        if isinstance(value,(int,float)):
+        if isinstance(value, (int, float)):
             return _compare_vector_with_value(self, value, dolfin_le)
-        if isinstance(value,GenericVector):
+        if isinstance(value, GenericVector):
             return _compare_vector_with_vector(self, value, dolfin_le)
         return NotImplemented
     
     def __eq__(self,value):
-        if isinstance(value,(int,float)):
+        if isinstance(value, (int, float)):
             return _compare_vector_with_value(self, value, dolfin_eq)
-        if isinstance(value,GenericVector):
+        if isinstance(value, GenericVector):
             return _compare_vector_with_vector(self, value, dolfin_eq)
         return NotImplemented
     
     def __neq__(self,value):
-        if isinstance(value,(int,float)):
+        if isinstance(value, (int, float)):
             return _compare_vector_with_value(self, value, dolfin_neq)
-        if isinstance(value,GenericVector):
+        if isinstance(value, GenericVector):
             return _compare_vector_with_vector(self, value, dolfin_neq)
         return NotImplemented
 
@@ -199,12 +231,12 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
                 return
             else:
                 raise ValueError, "dimension error"
-        self.__setitem__(slice(i,j,1),values)
+        self.__setitem__(slice(i, j, 1), values)
     
-    def __getslice__(self,i,j):
+    def __getslice__(self, i, j):
         if i == 0 and (j >= len(self) or j == -1):
             return self.copy()
-        return self.__getitem__(slice(i,j,1))
+        return self.__getitem__(slice(i, j, 1))
     
     def __getitem__(self, indices):
         from numpy import ndarray
@@ -247,7 +279,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         """x.__add__(y) <==> x+y"""
         if self.__is_compatibable(other):
             ret = self.copy()
-            ret.axpy(1.0,other)
+            ret.axpy(1.0, other)
             return ret
         return NotImplemented
     
@@ -302,14 +334,14 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     def __iadd__(self,other):
         """x.__iadd__(y) <==> x+y"""
         if self.__is_compatibable(other):
-            self.axpy(1.0,other)
+            self.axpy(1.0, other)
             return self
         return NotImplemented
     
     def __isub__(self,other):
         """x.__isub__(y) <==> x-y"""
         if self.__is_compatibable(other):
-            self.axpy(-1.0,other)
+            self.axpy(-1.0, other)
             return self
         return NotImplemented
     
@@ -325,7 +357,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 
     def __idiv__(self,other):
         """x.__idiv__(y) <==> x/y"""
-        if isinstance(other,(float,int)):
+        if isinstance(other, (float, int)):
             self._scale(1.0/other)
             return self
         return NotImplemented
@@ -334,7 +366,9 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 }
 %enddef
 
-// Matrix la interface macro
+// ---------------------------------------------------------------------------
+// Macro with C++ and Python extension code for GenericMatrix types in PyDOLFIN
+// ---------------------------------------------------------------------------
 %define LA_POST_MAT_INTERFACE(MAT_TYPE)
 %extend dolfin::MAT_TYPE
 {
@@ -364,7 +398,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     
     return Py_BuildValue("NNN",rows, cols, values);
   }
-
+// ---------------------------------------------------------------------------
   %pythoncode
   %{
     def __is_compatibable(self,other):
@@ -378,11 +412,9 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         " Return a numpy array representation of Matrix"
         from numpy import zeros
         A = zeros((self.size(0), self.size(1)))
-        c = STLVectorUInt()
-        v = STLVectorDouble()
         for i in xrange(self.size(0)):
-            self.getrow(i, c, v)
-            A[i,c] = v
+            column, values = self.getrow(i)
+            A[i,column] = values
         return A
 
     def data(self):
@@ -393,7 +425,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     def __getitem__(self,indices):
         from numpy import ndarray
         from types import SliceType
-        if not (isinstance(indices,tuple) and len(indices) == 2):
+        if not (isinstance(indices, tuple) and len(indices) == 2):
             raise TypeError, "expected two indices"
         if not all(isinstance(ind,(int,SliceType,list,ndarray)) for ind in indices):
             raise TypeError, "an int, slice, list or numpy array as indices"
@@ -583,7 +615,11 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 }
 %enddef
 
-// Vector la interface macro
+// ---------------------------------------------------------------------------
+// Macro with C++ and Python extension code for GenericVector types in PyDOLFIN
+// that are able to return a pointer to the underlaying contigious data 
+// only used for the uBLAS and MTL4 backends
+// ---------------------------------------------------------------------------
 %define LA_VEC_DATA_ACCESS(VEC_TYPE)
 %extend dolfin::VEC_TYPE
 {
@@ -605,7 +641,9 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 }
 %enddef
 
-// Down cast macro
+// ---------------------------------------------------------------------------
+// Macro with code for down casting GenericTensors
+// ---------------------------------------------------------------------------
 %define DOWN_CAST_MACRO(TENSOR_TYPE)
 %inline %{
 bool has_type_ ## TENSOR_TYPE(dolfin::GenericTensor & tensor)
@@ -622,7 +660,9 @@ _down_cast_map[TENSOR_TYPE] = down_cast_ ## TENSOR_TYPE
 
 %enddef
 
-// Initialize tensor type maps
+// ---------------------------------------------------------------------------
+// Define Python lookup maps for down_casting
+// ---------------------------------------------------------------------------
 %pythoncode %{
 _has_type_map = {}
 _down_cast_map = {}
@@ -630,7 +670,9 @@ _down_cast_map = {}
 _matrix_vector_mul_map = {}
 %}
 
-// Run the interface macros
+// ---------------------------------------------------------------------------
+// Run the LS interface macros
+// ---------------------------------------------------------------------------
 LA_POST_VEC_INTERFACE(GenericVector)
 LA_POST_MAT_INTERFACE(GenericMatrix)
 //LA_VEC_DATA_ACCESS(GenericVector)
@@ -646,16 +688,24 @@ LA_POST_MAT_INTERFACE(uBLASMatrix<dolfin::ublas_sparse_matrix>)
 LA_POST_MAT_INTERFACE(uBLASMatrix<dolfin::ublas_dense_matrix>)
 LA_VEC_DATA_ACCESS(uBLASVector)
 
+// ---------------------------------------------------------------------------
 // Run the downcast macro
+// ---------------------------------------------------------------------------
 DOWN_CAST_MACRO(uBLASVector)
 DOWN_CAST_MACRO(uBLASSparseMatrix)
 DOWN_CAST_MACRO(uBLASDenseMatrix)
 
+// ---------------------------------------------------------------------------
+// Fill lookup map
+// ---------------------------------------------------------------------------
 %pythoncode %{
 _matrix_vector_mul_map[uBLASSparseMatrix] = [uBLASVector]
 _matrix_vector_mul_map[uBLASDenseMatrix]  = [uBLASVector]
 %}
 
+// ---------------------------------------------------------------------------
+// Run backend specific macros
+// ---------------------------------------------------------------------------
 #ifdef HAS_PETSC
 LA_POST_VEC_INTERFACE(PETScVector)
 LA_POST_MAT_INTERFACE(PETScMatrix)
@@ -678,22 +728,6 @@ DOWN_CAST_MACRO(EpetraMatrix)
 %pythoncode %{
 _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
 %}
-
-//%extend dolfin::EpetraMatrix
-//{
-//  Epetra_FECrsMatrix& ref_mat() const
-//  {
-//    return *self->mat();
-//  }
-//}
-
-%extend dolfin::EpetraVector
-{
-  Epetra_FEVector& ref_vec() const
-  {
-    return *self->vec();
-  }
-}
 #endif
 
 #ifdef HAS_MTL4
@@ -709,7 +743,10 @@ _matrix_vector_mul_map[MTL4Matrix] = [MTL4Vector]
 %}
 #endif
 
-// Dynamic wrappers for GenericTensor::down_cast and GenericTensor::has_type, using dict of tensor types to select from C++ template instantiations
+// ---------------------------------------------------------------------------
+// Dynamic wrappers for GenericTensor::down_cast and GenericTensor::has_type, 
+// using dict of tensor types to select from C++ template instantiations
+// ---------------------------------------------------------------------------
 %pythoncode %{
 def get_tensor_type(tensor):
     "Return the concrete subclass of tensor."
@@ -740,6 +777,9 @@ def down_cast(tensor, subclass=None):
 
 %}
 
+// ---------------------------------------------------------------------------
+// Define a function that return True if a specific la backend is supported
+// ---------------------------------------------------------------------------
 %feature("docstring") has_linear_algebra_backend "
 Returns True if a linear algebra backend is available.
 ";
@@ -782,4 +822,3 @@ bool has_linear_algebra_backend(std::string backend)
   return false;
 }
 %}
-

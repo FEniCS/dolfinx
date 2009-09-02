@@ -42,9 +42,7 @@ def next(self):
 _doc_string = MeshFunctionInt.__doc__
 _doc_string += """     
     Arguments
-    ---------
-    @param tp:
-      String defining the type of the MeshFunction
+//-----------------------------------------------------------------------------\n      String defining the type of the MeshFunction
       Allowed: 'int', 'uint', 'double', and 'bool'
     @param mesh:
       A DOLFIN mesh.

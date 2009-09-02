@@ -20,6 +20,7 @@
       }
       argv[i] = 0;
       self->parse(argc, argv);
+      free(argv);
     } 
     else 
      throw std::runtime_error("not a list");
@@ -43,15 +44,8 @@ def parse(self,argv=None):
 
 def keys(self):
     "Returns a list of the parameter keys"
-    ret = []
-    _keys = STLVectorString()
-    self._get_parameter_keys(_keys)
-    for i in xrange(len(_keys)):
-        ret.append(_keys[i])
-    _keys.clear()
-    self._get_parameter_set_keys(_keys)
-    for i in xrange(len(_keys)):
-        ret.append(_keys[i])
+    ret = self._get_parameter_keys()
+    ret += self._get_parameter_set_keys()
     return ret
 
 def iterkeys(self):
@@ -76,17 +70,13 @@ def iteritems(self):
 
 def set_range(self,key,*arg):
     "Set the range for the given parameter" 
-    _keys = STLVectorString()
-    self._get_parameter_keys(_keys)
-    if key not in _keys:
+    if key not in self._get_parameter_keys():
         raise KeyError, "no parameter with name '%s'"%key
     self._get_parameter(key).set_range(*arg)
 
 def __getitem__(self,key):
     "Return the parameter corresponding to the given key"
-    _keys = STLVectorString()
-    self._get_parameter_keys(_keys)
-    if key in _keys:
+    if key in self._get_parameter_keys():
         par = self._get_parameter(key)
         val_type = par.type_str()
         if val_type == "string":
@@ -100,18 +90,15 @@ def __getitem__(self,key):
         else:
             raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type,key)
     
-    _keys.clear()
-    self._get_parameter_set_keys(_keys)
-    if key in _keys:
+    if key in self._get_parameter_set_keys():
         return self._get_parameter_set(key)
+    
     raise KeyError, "'%s'"%key
 
 def __setitem__(self,key,value):
     "Set the parameter 'key', with given 'value'"
-    _keys = STLVectorString()
-    self._get_parameter_keys(_keys)
-    if key not in _keys:
-        raise KeyError, "%s is not a parameter"%key
+    if key not in self._get_parameter_keys():
+        raise KeyError, "'%s' is not a parameter"%key
     if not isinstance(value,(int,str,float,bool)):
         raise TypeError, "can only set 'int', 'bool', 'float' and 'str' parameters"
     par = self._get_parameter(key)

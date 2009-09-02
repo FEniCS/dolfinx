@@ -30,14 +30,11 @@ while theta < 2*DOLFIN_PI:
 
     # Compute intersection with boundary of square
     boundary = BoundaryMesh(omega1)
-    cells = STLVectorUInt()
-    omega0.intersection(boundary, cells, False)
+    cells = omega0.intersection(boundary, False)
 
-    # Copy values to mesh function for plotting
-    for j in range(intersection.size()):
-        intersection.set(j, 0)
-    for j in range(cells.size()):
-        intersection.set(cells[j], 1)
+    # Mark intersected values
+    intersection.values()[:] = 0
+    intersection.values()[cells] = 1
 
     # Plot intersection
     if _first:

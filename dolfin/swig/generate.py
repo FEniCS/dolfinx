@@ -17,7 +17,7 @@ excludes = ["plot.h", "ParameterSystem.h", "ParameterList.h", \
             "ConvectionMatrix.h", "MassMatrix.h", "StiffnessMatrix.h", "LoadVector.h"]
 
 # Name of SWIG interface file to be generated
-interface_file = "dolfin_headers.i"
+interface_file = "headers.i"
 
 # Extract modules from dolfin.h
 modules = []
@@ -49,9 +49,6 @@ for module in modules:
 # Generate list of header files
 print "Generating file %s" % interface_file
 f = open(interface_file, "w")
-f.write("// Generated file to include docstrings\n")  # Added for docstring extraction
-f.write("%include \"dolfin_docstrings.i\"\n\n")  # Added for docstring extraction
-
 f.write("// Generated list of include files for PyDOLFIN\n")
 for (module, module_headers) in headers:
     f.write("\n// DOLFIN headers included from %s\n" % module)
@@ -62,7 +59,7 @@ f.close()
 # Added for docstring extraction
 from generate_docstrings import DocstringGenerator
 
-g = DocstringGenerator(header_files = docstring_headers, swig_directory = ".", docstring_file_base = "dolfin")
+g = DocstringGenerator(header_files = docstring_headers, swig_directory = ".", docstring_file_base = "")
 g.generate_doxygen_documentation()
 g.generate_interface_file_from_index()
 g.clean()

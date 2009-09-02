@@ -71,8 +71,10 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
 
 %ignore dolfin::Mesh::cells;
 %ignore dolfin::Mesh::coordinates;
+%ignore dolfin::Mesh::partition(dolfin::uint num_partitions, dolfin::MeshFunction<dolfin::uint>& partitions);
 %ignore dolfin::MeshFunction::values;
 %ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, uint, uint);
+
 
 //--- Mesh iterators ---
 
@@ -129,5 +131,6 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
 %}
 }
 
+%ignore dolfin::MeshGeometry::x(uint n, uint i) const;
 %ignore dolfin::MeshConnectivity::operator();
 %ignore dolfin::MeshEntity::entities;

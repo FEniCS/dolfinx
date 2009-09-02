@@ -393,7 +393,8 @@ class DocstringGenerator:
         if docstring_file_base == "Use working directory":
             # If the not provided then use current directory
             docstring_file_base = self._directory.split(os.path.sep)[-1]
-        self._docstring_file = os.path.join(self._swig_directory,docstring_file_base + "_docstrings.i")
+        docstring_file = "docstrings.i" if docstring_file_base is "" else docstring_file_base + "_docstrings.i"
+        self._docstring_file = os.path.join(self._swig_directory, docstring_file)
 
     def generate_doxygen_documentation(self):
         """

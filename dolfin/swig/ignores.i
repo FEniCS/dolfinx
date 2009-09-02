@@ -1,30 +1,26 @@
-// Things to ignore for PyDOLFIN
-// TODO: Clean up this mess :)
+// Copyright (C) 2006-2009 Anders Logg
+// Licensed under the GNU LGPL Version 2.1.
+//
+// Modified by Ola Skavhaug, 2007-2008.
+// Modified by Johan Hake, 2008-2009.
+//
+// First added:  2006-04-16
+// Last changed: 2009-09-02
 
+//-----------------------------------------------------------------------------
+// Global ignores
+//-----------------------------------------------------------------------------
 %ignore *::operator=;
 %ignore *::operator[];
 %ignore *::operator++;
+%ignore *::operator<<(unsigned int);
+
 %ignore operator<<;
 %ignore operator dolfin::uint;
 %ignore operator std::string;
 %ignore operator bool;
 
-%ignore dolfin::Mesh::partition(dolfin::uint num_partitions, dolfin::MeshFunction<dolfin::uint>& partitions);
-//%ignore operator<< <Mat>;
-%ignore dolfin::Parameter;
-%ignore dolfin::Parametrized::get;
-%ignore dolfin::Parametrized::set;
-%ignore dolfin::Parametrized::add;
-%ignore dolfin::Parameters::add(std::string, char const *);
-%ignore dolfin::Parameters::add(std::string, char const *, std::set<std::string>);
-%ignore dolfin::Parameter::operator =(char const *);
-%ignore dolfin::LogStream;
-%ignore dolfin::ElementLibrary::create_finite_element(char const *);
-%ignore dolfin::ElementLibrary::create_dof_map(char const *);
-%ignore dolfin::MeshGeometry::x(uint n, uint i) const;
-%ignore dolfin::uBLASVector::operator ()(uint i) const;
-%ignore dolfin::cout;
-%ignore dolfin::endl;
-%ignore *::operator<<(unsigned int);
-%ignore dolfin::MeshConnectivity::set(uint entity, uint* connections);
-%ignore dolfin::MPI::send_recv;
+// SWIG gets confused wrt overloading of these functions
+//%ignore dolfin::MPI::send_recv;
+//%ignore dolfin::MPI::gather;
+//%ignore dolfin::MPI::distribute;

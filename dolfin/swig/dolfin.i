@@ -1,6 +1,18 @@
-%module(package="dolfin", directors="1") cpp
+/* -*- C -*- */
+// Copyright (C) 2005-2006 Johan Jansson
+// Licensed under the GNU LGPL Version 2.1.
+//
+// Modified by Anders logg, 2005-2009.
+// Modified by Ola Skavhaug, 2007-2009.
+// Modified by Kent-Andre Mardal, 2008-2009.
+// Modified by Johan Hake, 2008-2009.
+// Modified by Garth N. Wells, 2009.
+//
+// First added:  2005-10-24
+// Last changed: 2009-09-02
 
-%feature("autodoc", "1");
+// The PyDOLFIN extension module
+%module(package="dolfin", directors="1") cpp
 
 %{
 #define protected public
@@ -11,74 +23,62 @@
 using namespace dolfin;
 %}
 
-
 %init%{
 import_array();
 %}
 
-// Renames
-%include "renames.i"
+// Global shared ptr declarations
+%include "dolfin/swig/shared_ptr_classes.i"
 
-// Ignores
-%include "ignores.i"
+// Global renames
+%include "dolfin/swig/renames.i"
 
-// Typemaps
-%include "typemaps.i"
+// Global ignores
+%include "dolfin/swig/ignores.i"
 
-// Directors
-%include "directors.i"
+// Global typemaps
+%include "dolfin/swig/typemaps.i"
+%include "dolfin/swig/numpy_typemaps.i"
+%include "dolfin/swig/std_vector_typemaps.i"
 
-// Exceptions
-%include "dolfin_exceptions.i"
+// Global directors
+%include "dolfin/swig/directors.i"
 
-// Handle shared_ptr only available for swig version >= 1.3.35
-#if SWIG_VERSION >= 0x010335
-// Un comment these lines to use std::tr1, only works with patched swig
-//#define SWIG_SHARED_PTR_NAMESPACE std
-//#define SWIG_SHARED_PTR_SUBNAMESPACE tr1
-%include "boost_shared_ptr.i"
-%include "dolfin_shared_ptr_classes.i"
-#endif
+// Global exceptions
+%include <exception.i>
+%include "dolfin/swig/exceptions.i"
 
-// FIXME: what are these doing?
-%include "cpointer.i"
-%include "std_sstream.i"
-%include "std_string.i"
-%include "std_vector.i"
-//%include "std_map.i" // FIXME: Make this work
-%include "std_pair.i"
-%include "stl.i"
-%include "carrays.i"
-%array_functions(double, doubleArray);
-%array_functions(int, intArray);
-%pointer_class(int, intp);
-%pointer_class(double, doublep);
+// STL SWIG string class
+%include <std_string.i>
 
-// Fixes for specific kernel modules (pre)
-%include "dolfin_common_pre.i"
-%include "dolfin_log_pre.i"
-%include "dolfin_fem_pre.i"
-%include "dolfin_la_pre.i"
-%include "dolfin_mesh_pre.i"
-%include "dolfin_function_pre.i"
-%include "dolfin_pde_pre.i"
-%include "dolfin_parameter_pre.i"
+// SWIG directives for specific kernel modules (pre)
+%include "dolfin/swig/common_pre.i"
+%include "dolfin/swig/log_pre.i"
+%include "dolfin/swig/fem_pre.i"
+%include "dolfin/swig/la_pre.i"
+%include "dolfin/swig/mesh_pre.i"
+%include "dolfin/swig/function_pre.i"
+%include "dolfin/swig/parameter_pre.i"
+
+// Include doxygen generated docstrings and turn on 
+// signature documentation
+%include "dolfin/swig/docstrings.i"
+%feature("autodoc", "1");
 
 // DOLFIN interface
-%import "dolfin/common/types.h"
-%include "dolfin_headers.i"
+%import  "dolfin/common/types.h"
+%include "dolfin/swig/headers.i"
 
-// Fixes for specific kernel modules (post)
-%include "dolfin_common_post.i"
-%include "dolfin_log_post.i"
-%include "dolfin_la_post.i"
-%include "dolfin_mesh_post.i"
-%include "dolfin_function_post.i"
-%include "dolfin_parameter_post.i"
-%include "dolfin_io_post.i"
+// SWIG directives for specific kernel modules (post)
+%include "dolfin/swig/common_post.i"
+%include "dolfin/swig/log_post.i"
+%include "dolfin/swig/la_post.i"
+%include "dolfin/swig/mesh_post.i"
+%include "dolfin/swig/function_post.i"
+%include "dolfin/swig/parameter_post.i"
+%include "dolfin/swig/io_post.i"
 
 // Include information about swig version
-%include "dolfin_swig_version.i"
+%include "dolfin/swig/swig_version.i"
+ //%include "dolfin/swig/defines.i"
 
-//%typedef         std::map<dolfin::uint, dolfin::uint> iimap; //FIXME: Make this work
-//%template(iimap) std::map<dolfin::uint, dolfin::uint>; //FIXME: Make this work

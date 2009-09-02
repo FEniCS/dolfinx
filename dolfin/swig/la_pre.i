@@ -26,8 +26,9 @@
 
 // Typemaps for GenericMatrix get and set functions
 %typemap(in) const double* block = double* _array;
-%typemap(in) (dolfin::uint m, const dolfin::uint* rows) = (int _array_dim, unsigned int* _array);
-%typemap(in) (dolfin::uint n, const dolfin::uint* cols) = (int _array_dim, unsigned int* _array);
+%typemap(in) (dolfin::uint m, const dolfin::uint* rows) = (dolfin::uint _array_dim, dolfin::uint* _array);
+%typemap(in) (dolfin::uint n, const dolfin::uint* cols) = (dolfin::uint _array_dim, dolfin::uint* _array);
+//%apply dolfin::uint _array_dim, dolfin::uint* _array {dolfin::uint n, const dolfin::uint* cols}
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (dolfin::uint m, const dolfin::uint* rows)
 {
     // rows typemap
@@ -45,6 +46,8 @@
 %ignore dolfin::GenericTensor::set(const double* , const uint* , const uint * const *);
 %ignore dolfin::GenericTensor::add(const double* , const uint* , const uint * const *);
 %ignore dolfin::GenericTensor::instance;
+
+%ignore dolfin::uBLASVector::operator ()(uint i) const;
 
 // Declare newobject for vector and matrix get functions
 %newobject _get_vector_sub_vector;

@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008.
+// Modified by Johan Hake, 2009.
 //
 // First added:  2007-01-17
-// Last changed: 2009-06-22
+// Last changed: 2009-09-02
 
 #include <dolfin/la/Scalar.h>
 #include "Form.h"
@@ -86,30 +87,10 @@ void dolfin::assemble_system(GenericMatrix& A,
                             interior_facet_domains, x0, reset_tensors);
 }
 //-----------------------------------------------------------------------------
-void dolfin::assemble_system_swig(GenericMatrix& A,
-                             GenericVector& b,
-                             const Form& a,
-                             const Form& L,
-                             std::vector<DirichletBC*>& bcs,
-                             const MeshFunction<uint>* cell_domains,
-                             const MeshFunction<uint>* exterior_facet_domains,
-                             const MeshFunction<uint>* interior_facet_domains,
-                             const GenericVector* x0,
-                             bool reset_tensors)
-{
-  // Create const-version of boundary condition vector
-  std::vector<const DirichletBC*> _bcs;
-  for(uint i=0; i < bcs.size(); ++i)
-    _bcs.push_back(bcs[i]); 
-  SystemAssembler::assemble(A, b, a, L, _bcs,
-                            cell_domains, exterior_facet_domains, 
-                            interior_facet_domains, x0, reset_tensors);
-}
-//-----------------------------------------------------------------------------
 double dolfin::assemble(const Form& a,
                         bool reset_tensor)
 {
-  if (a.rank() != 0) 
+  if (a.rank() != 0)
     error("Unable to assemble, form is not scalar.");
   Scalar s;
   Assembler::assemble(s, a, reset_tensor);
@@ -120,7 +101,7 @@ double dolfin::assemble(const Form& a,
                         const SubDomain& sub_domain,
                         bool reset_tensor)
 {
-  if (a.rank() != 0) 
+  if (a.rank() != 0)
     error("Unable to assemble, form is not scalar.");
   Scalar s;
   Assembler::assemble(s, a, sub_domain, reset_tensor);

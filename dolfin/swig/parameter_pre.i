@@ -46,3 +46,24 @@
   $1 = tmp;
 }
 
+%typemap(in, numinputs=0) std::vector<std::string>& keys (std::vector<std::string> tmp_vec){
+  $1 = &tmp_vec;
+}
+
+%typemap(argout) std::vector<std::string>& keys 
+{
+  int size = $1->size();
+  PyObject* ret = PyList_New(size);
+  PyObject* tmp_Py_str = 0;
+  for (int i=0; i < size; i++) 
+  {
+    tmp_Py_str = PyString_FromString((*$1)[i].c_str());
+    if (PyList_SetItem(ret,i,tmp_Py_str)<0)
+    {
+      PyErr_SetString(PyExc_ValueError,"something wrong happened when copying std::string to Python");
+      return NULL;
+    }
+  }
+  $result = ret;
+}
+

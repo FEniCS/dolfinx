@@ -1,9 +1,9 @@
-/* -*- C -*-  (for syntax highlighting) */
+/* -*- C -*- */
 // Copyright (C) 2009 Johan Hake
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-04-27
-// Last changed:  2009-04-27
+// Last changed: 2009-08-31
 
 class Indices
 {
