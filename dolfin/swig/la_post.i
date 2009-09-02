@@ -119,15 +119,15 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 // indices. These functions are not wrapped to the Python interface. They are
 // only included in the C++ wrapper file.
 //
-// dolfin_la_get_set_items.i defines helper functions that are wrapped to the
+// la_get_set_items.i defines helper functions that are wrapped to the
 // Python. These are then used in the extended Python classes. See below.
 // ---------------------------------------------------------------------------
 %{
 #include "Indices.i"
-#include "dolfin_la_get_set_items.i"
+#include "la_get_set_items.i"
 %}
 
-%include "dolfin_la_get_set_items.i"
+%include "la_get_set_items.i"
 
 // ---------------------------------------------------------------------------
 // Macro with C++ and Python extension code for GenericVector types in PyDOLFIN
