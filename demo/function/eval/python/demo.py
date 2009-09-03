@@ -8,6 +8,10 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 from numpy import array
 
+if not has_gts():
+    print "DOLFIN must be compiled with GTS to run this demo."
+    exit(0)
+
 # Create mesh and a point in the mesh
 mesh = UnitCube(8, 8, 8);
 x = array((0.31, 0.32, 0.33))

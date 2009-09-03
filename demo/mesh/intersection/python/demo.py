@@ -10,6 +10,10 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 from numpy import *
 
+if not has_gts():
+    print "DOLFIN must be compiled with GTS to run this demo."
+    exit(0)
+
 # Create meshes (omega0 overlapped by omega1)
 omega0 = UnitCircle(20)
 omega1 = UnitSquare(20, 20)
