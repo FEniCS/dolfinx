@@ -42,10 +42,6 @@ import pprint
 pydemos.remove(os.path.join(demodir, 'ode', 'aliev-panfilov', 'python'))
 pydemos.remove(os.path.join(demodir, 'ode', 'lorenz', 'python'))
 
-# Disable demos on Windows that pop up a window that has to be clicked
-if platform.system() == 'Windows':
-    pydemos.remove(os.path.join(demodir, 'mesh', 'intersection', 'python'))
-
 # Push slow demos to the end
 pyslow = []
 cppslow = []
