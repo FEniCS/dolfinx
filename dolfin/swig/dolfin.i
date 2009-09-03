@@ -9,7 +9,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2005-10-24
-// Last changed: 2009-09-02
+// Last changed: 2009-09-03
 
 // The PyDOLFIN extension module
 %module(package="dolfin", directors="1") cpp
@@ -80,5 +80,5 @@ import_array();
 
 // Include information about swig version
 %include "dolfin/swig/swig_version.i"
- //%include "dolfin/swig/defines.i"
+%include "dolfin/swig/defines.i"
 

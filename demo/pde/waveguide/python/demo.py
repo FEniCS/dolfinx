@@ -21,15 +21,12 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 
 # Test for PETSc and SLEPc
-try:
-    PETScMatrix()
-except:
-    print "PyDOLFIN has not been configured with PETSc. Exiting."
+if not has_la_backend("PETSc"):
+    print "DOLFIN has not been configured with PETSc. Exiting."
     exit()
-try:
-    SLEPcEigenSolver()
-except:
-    print "PyDOLFIN has not been configured with SLEPc. Exiting."
+    
+if not has_slepc():
+    print "DOLFIN has not been configured with SLEPc. Exiting."
     exit()
 
 # Make sure we use the PETSc backend

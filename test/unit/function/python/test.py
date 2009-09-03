@@ -13,12 +13,6 @@ from numpy  import array, zeros
 mesh = UnitCube(8, 8, 8)
 V = FunctionSpace(mesh,'CG',1)
 
-try:
-     IntersectionDetector(mesh)
-     HAS_GTS = True
-except:
-     HAS_GTS = False
-     
 class Eval(unittest.TestCase):
 
      def testArbitraryEval(self):
@@ -40,7 +34,7 @@ class Eval(unittest.TestCase):
           self.assertAlmostEqual(u1[0], same_result)
           self.assertAlmostEqual(u2[0], same_result)
           
-          if not HAS_GTS:
+          if not has_gts():
                return
           
           V2 = FunctionSpace(mesh, 'CG', 2)
