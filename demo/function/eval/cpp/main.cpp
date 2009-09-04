@@ -11,6 +11,8 @@
 
 using namespace dolfin;
 
+#ifdef HAS_GTS
+
 class F : public Function
 {
 public:
@@ -47,3 +49,13 @@ int main()
   g.eval(&value, x);
   info("g(x) = %g", value);
 }
+
+#else
+
+int main()
+{
+  info("DOLFIN must be compiled with GTS to run this demo.");
+  return 0;
+}
+
+#endif

@@ -13,12 +13,6 @@ from numpy  import array, zeros
 mesh = UnitCube(8, 8, 8)
 V = FunctionSpace(mesh,'CG',1)
 
-try:
-     IntersectionDetector(mesh)
-     HAS_GTS = True
-except:
-     HAS_GTS = False
-     
 class Eval(unittest.TestCase):
 
      def testArbitraryEval(self):
@@ -32,23 +26,74 @@ class Eval(unittest.TestCase):
                             "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]",V=V)
           
           x = array([0.31, 0.32, 0.33])
-          u0 = zeros(1);u1 = zeros(1);u2 = zeros(1)
-          f0.eval(u0,x);f1.eval(u1,x);f2.eval(u2,x)
-
-          same_result = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
-          self.assertAlmostEqual(u0[0], same_result)
-          self.assertAlmostEqual(u1[0], same_result)
-          self.assertAlmostEqual(u2[0], same_result)
+          u00 = zeros(1); u01 = zeros(1)
+          u10 = zeros(1); u20 = zeros(1)
           
-          if not HAS_GTS:
+          # Test original and vs short evaluation
+          f0.eval(u00,x)
+          f0(u01,x)
+          self.assertAlmostEqual(u00[0], u01[0])
+          
+          # Evaluation with and without return value
+          f1(u10,x);
+          u11 = f1(x);
+          self.assertAlmostEqual(u10[0], u11)
+
+          # Test *args for coordinate argument
+          f2(u20, 0.31, 0.32, 0.33)
+          u21 = f2(0.31, 0.32, 0.33)
+          self.assertAlmostEqual(u20[0], u21)
+          
+          same_result = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
+          self.assertAlmostEqual(u00[0], same_result)
+          self.assertAlmostEqual(u11, same_result)
+          self.assertAlmostEqual(u21, same_result)
+          
+          # Test ufl evalutation:
+          def N(x):
+               return x[0]**2 + x[1]
+          
+          self.assertEqual(f0((2.0, 1.0), { f0: N }),5)
+
+          a = f0**2
+          b = a((2.0, 1.0), { f0: N })
+          self.assertEqual(b, 25)
+
+          # Projection requires gts
+          if not has_gts():
                return
           
           V2 = FunctionSpace(mesh, 'CG', 2)
           g = project(f3, V2)
-          f3.eval(u0, x)
-          g.eval(u1, x)
-          self.assertAlmostEqual(u0[0],u1[0], places=5)
+          u3 = f3(x)
+          u4 = g(x)
+          self.assertAlmostEqual(u3,u4, places=5)
 
+     def testWrongEval(self):
+          # Test wrong evaluation
+          class F0(Function):
+               def eval(self,values,x):
+                    values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
+          
+          f0 = F0(V)
+          f1 = Function(V,"sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])")
+          f2,f3 = Functions("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
+                            "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]",V=V)
+          
+          
+          for f in [f0,f1,f2,f3]:
+               self.assertRaises(TypeError,f,"s")
+               self.assertRaises(TypeError,f,[])
+               self.assertRaises(TypeError,f,zeros(2))
+               self.assertRaises(TypeError,f,zeros(3,'i'),0.5,0.5,0.5)
+               self.assertRaises(TypeError,f,zeros(4))
+               self.assertRaises(ValueError,f,[0.3,0.2,[]])
+               self.assertRaises(TypeError,f,0.3,0.2,{})
+               self.assertRaises(TypeError,f,0.3,0.2)
+               self.assertRaises(TypeError,f,[0.5,0.2,0.1,0.2])
+               self.assertRaises(TypeError,f,zeros(3),zeros(4))
+               self.assertRaises(TypeError,f,zeros(4),zeros(3))
+          
 class Instantiation(unittest.TestCase):
      def testSameBases(self):
           c = Constant(mesh,2)

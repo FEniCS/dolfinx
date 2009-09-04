@@ -355,15 +355,15 @@ class uBLASDenseTester(AbstractBaseTest,DataTester,unittest.TestCase):
     backend     = "uBLAS"
     sub_backend = "Dense"
 
-if has_linear_algebra_backend("PETSc"):
+if has_la_backend("PETSc"):
     class PETScTester(AbstractBaseTest,DataNotWorkingTester,unittest.TestCase):
         backend    = "PETSc"
 
-if has_linear_algebra_backend("Epetra"):
+if has_la_backend("Epetra"):
     class EpetraTester(AbstractBaseTest,DataNotWorkingTester,unittest.TestCase):
         backend    = "Epetra"
 
-if has_linear_algebra_backend("MTL4"):
+if has_la_backend("MTL4"):
     class MTL4Tester(AbstractBaseTest,DataTester,unittest.TestCase):
         backend    = "MTL4"
 

@@ -1,13 +1,3 @@
-%pythoncode
-%{
-
-def debug(message):
-    import traceback
-    file, line, func, txt = traceback.extract_stack(None, 2)[0]
-    __debug(file, line, func, message)
-
-%}
-
 %extend dolfin::Progress {
 
 void __add(int incr) {
@@ -36,6 +26,11 @@ def update(self, other):
 }
 
 %pythoncode %{
+def debug(message):
+    import traceback
+    file, line, func, txt = traceback.extract_stack(None, 2)[0]
+    __debug(file, line, func, message)
+
 def info(*args):
     if len(args) > 0 and isinstance(args[0],(Variable,Parameters)):
         if len(args) > 1:

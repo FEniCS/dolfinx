@@ -11,6 +11,8 @@
 
 using namespace dolfin;
 
+#ifdef HAS_GTS
+
 int main()
 {
   // Create meshes (omega0 overlapped by omega1)
@@ -57,3 +59,13 @@ int main()
     }
   }
 }
+
+#else
+
+int main()
+{
+  info("DOLFIN must be compiled with GTS to run this demo.");
+  return 0;
+}
+
+#endif

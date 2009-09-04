@@ -10,6 +10,10 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 from numpy import *
 
+if not has_gts():
+    print "DOLFIN must be compiled with GTS to run this demo."
+    exit(0)
+
 # Create meshes (omega0 overlapped by omega1)
 omega0 = UnitCircle(20)
 omega1 = UnitSquare(20, 20)
@@ -30,14 +34,11 @@ while theta < 2*DOLFIN_PI:
 
     # Compute intersection with boundary of square
     boundary = BoundaryMesh(omega1)
-    cells = STLVectorUInt()
-    omega0.intersection(boundary, cells, False)
+    cells = omega0.intersection(boundary, False)
 
-    # Copy values to mesh function for plotting
-    for j in range(intersection.size()):
-        intersection.set(j, 0)
-    for j in range(cells.size()):
-        intersection.set(cells[j], 1)
+    # Mark intersected values
+    intersection.values()[:] = 0
+    intersection.values()[cells] = 1
 
     # Plot intersection
     if _first:

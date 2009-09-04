@@ -1,95 +1,79 @@
-/* -*- C -*-  (not really, but good for syntax highlighting) */
-// Type maps for PyDOLFIN
+/* -*- C -*- */
+// Copyright (C) 2007-2009 Anders logg
+// Licensed under the GNU LGPL Version 2.1.
+//
+// Modified by Ola Skavhaug, 2007-2009.
+// Modified by Garth N. Wells, 2007.
+// Modified by Johan Hake, 2008-2009.
+//
+// First added:  2006-04-16
+// Last changed: 2009-09-02
 
-// Basic typemaps
-//%typemap(in)  dolfin::uint = int;
-//%typemap(out) dolfin::uint = int;
+//=============================================================================
+// General typemaps for PyDOLFIN
+//=============================================================================
 
+//-----------------------------------------------------------------------------
 // A hack to get around incompatabilities with PyInt_Check and numpy int 
 // types in python 2.6
-%typecheck(SWIG_TYPECHECK_INTEGER) dolfin::uint{
-    $1 = PyType_IsSubtype($input->ob_type, &PyInt_Type) ? 1 : 0;
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Typemap function reducing code bloat.
+//-----------------------------------------------------------------------------
+//%{
+//static bool convert_PyInt_to_uint(PyObject *input, dolfin::uint& ret)
+//{
+//  if (PyInt_Check(input) || PyType_IsSubtype(input->ob_type, &PyInt_Type))
+//  {
+//    long tmp = PyInt_AsLong(input);
+//    if (tmp>=0)
+//    {
+//      ret = static_cast<dolfin::uint>(tmp);
+//      return true;
+//    }
+//  }
+//  PyErr_SetString(PyExc_TypeError,"positive 'int' expected");
+//  return false;
+//}
+//%}
+
+//-----------------------------------------------------------------------------
+// The typecheck
+//-----------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_INTEGER) dolfin::uint
+{
+    $1 = PyInt_Check($input) || PyType_IsSubtype($input->ob_type, &PyInt_Type) ? 1 : 0;
 }
 
-%typemap(in) dolfin::uint{
-  if (PyType_IsSubtype($input->ob_type, &PyInt_Type)){
+//-----------------------------------------------------------------------------
+// The typemap
+//-----------------------------------------------------------------------------
+%typemap(in) dolfin::uint
+{
+//if (!convert_PyInt_to_uint($input,$1))
+//    return NULL;
+  if (PyInt_Check($input) || PyType_IsSubtype($input->ob_type, &PyInt_Type))
+  {
     long tmp = PyInt_AsLong($input);
     if (tmp>=0)
       $1 = static_cast<dolfin::uint>(tmp);
     else
-      SWIG_exception(SWIG_ValueError, "positive 'int' expected");
+      SWIG_exception(SWIG_TypeError, "positive 'int' expected");
   }
   else
     SWIG_exception(SWIG_TypeError, "positive 'int' expected");
 }
 
-// Typemap for values (in Function)
-%typemap(directorin) double* values {
-  {
-    // Compute size of value (number of entries in tensor value)
-    dolfin::uint size = 1;
-    for (dolfin::uint i = 0; i < this->function_space().element().value_rank(); i++)
-      size *= this->function_space().element().value_dimension(i);
+//-----------------------------------------------------------------------------
+// Apply the builtin out-typemap for int to dolfin::uint
+//-----------------------------------------------------------------------------
+%typemap(out) dolfin::uint = int;
 
-    npy_intp dims[1] = {size};
-    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
-  }
+//-----------------------------------------------------------------------------
+// Out typemap for std::pair<uint,uint>
+//-----------------------------------------------------------------------------
+%typemap(out) std::pair<dolfin::uint,dolfin::uint>
+{
+  $result = Py_BuildValue("ii",$1.first,$1.second);
 }
-
-// Typemap for coordinates (in Function and SubDomain)
-%typemap(directorin) const double* x {
-  {
-    // Compute size of x
-    npy_intp dims[1] = {this->geometric_dimension()};
-    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(const_cast<double*>($1_name)));
-  }
-}
-
-%typemap(directorin) double* y {
-  {
-    // Compute size of x
-    npy_intp dims[1] = {this->geometric_dimension()};
-    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
-  }
-}
-
-//%apply const double* x { const double* y };
-
-// Typemap check
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) double* {
-    // General typemap
-    $1 = PyArray_Check($input) ? 1 : 0;
-}
-
-// Typemap check
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::uint* {
-    // General typemap
-    $1 = PyArray_Check($input) ? 1 : 0;
-}
-
-// Typemap for sending numpy arrays as input to functions expecting a C array of real
-%typemap(in) double* {
-    if PyArray_Check($input) {
-        PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
-        if ( PyArray_TYPE(xa) == NPY_DOUBLE )
-            $1  = static_cast<double*>(PyArray_DATA(xa));
-        else
-            SWIG_exception(SWIG_TypeError, "numpy array of doubles expected");
-    } else
-        SWIG_exception(SWIG_TypeError, "numpy array expected");
-}
-
-// Typemap for sending numpy arrays as input to functions expecting a C array of uint
-%typemap(in) dolfin::uint* {
-    if PyArray_Check($input) {
-        PyArrayObject *xa = (PyArrayObject*)($input);
-        printf("*** Checking: xa->descr->type = %c\n", xa->descr->type);
-        if (xa->descr->type == 'L')
-            $1 = (dolfin::uint *)(*xa).data;
-        else
-            SWIG_exception(SWIG_TypeError, "numpy array of unsigned integers expected");
-    } else
-        SWIG_exception(SWIG_TypeError, "numpy array expected");
-}
-
-%include numpy_typemaps.i

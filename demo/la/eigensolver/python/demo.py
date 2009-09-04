@@ -11,14 +11,11 @@ from dolfin import *
 import numpy
 
 # Test for PETSc and SLEPc
-try:
-    PETScMatrix()
-except:
+if not has_la_backend("PETSc"):
     print "DOLFIN has not been configured with PETSc. Exiting."
     exit()
-try:
-    SLEPcEigenSolver()
-except:
+    
+if not has_slepc():
     print "DOLFIN has not been configured with SLEPc. Exiting."
     exit()
 

@@ -1,3 +1,9 @@
+ - Extend comments to SWIG interface files
+ - Add copyright statements to SWIG interface files (not finished yet)
+ - Add typemaps for misc std::vector<types> in PyDOLFIN
+ - Remove dependencies on std_vector.i reducing SWIG wrapper code size
+ - Use relative %includes in dolfin.i 
+ - Changed names on SWIG interface files dolfin_foo.i -> foo.i
  - Add function interpolate() in Python interface
  - Fix typmaps for uint in python 2.6
  - Use TypeError instead of ValueError in typechecks in typmaps.i

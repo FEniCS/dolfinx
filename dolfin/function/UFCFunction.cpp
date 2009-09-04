@@ -37,8 +37,5 @@ void UFCFunction::evaluate(double* values,
 
   // Call eval for function
   v.eval(values, data);
-
-  // Invalidate eval data
-  data.invalidate();
 }
 //-----------------------------------------------------------------------------
