@@ -27,8 +27,8 @@ ODE::ODE(uint N, real T)
 
 
   #ifdef HAS_GMP
-    if (!_real_initialized)
-      error("Extended precision not initialized. Use dolfin_set_precision(uint desimal_prec) before declaring any real variables and instansiating ODE");
+  if (!_real_initialized)
+      warning("Extended precision not initialized. Use dolfin_set_precision(uint decimal_prec) before declaring any real variables and instansiating ODE");
   #endif
 
 
