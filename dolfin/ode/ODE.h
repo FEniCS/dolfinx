@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2009-06-29
+// Last changed: 2009-09-04
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -24,7 +24,7 @@ namespace dolfin
   /// An ODE represents an initial value problem of the form
   ///
   ///     u'(t) = f(u(t), t) on [0, T],
-  ///         
+  ///
   ///     u(0)  = u0,
   ///
   /// where u(t) is a vector of length N.
@@ -137,20 +137,22 @@ namespace dolfin
     /// Solve dual problem given an approximate solution u of the primal problem
     void solve_dual(ODESolution& u, ODESolution& z);
 
-    /// Compute stability factors as function of t (implicitly solves the dual problem)
-
-    /// General stability factor. Compute integral of q'th derivative of dual
+    /// Compute stability factors as function of T (including solving the dual problem).
+    /// The stability factor is the integral of the norm of the q'th derivative of the dual.
     void analyze_stability(uint q, ODESolution& u);
 
-    /// Stability factors with respect to discretization scheme
+    /// Compute stability factors as function of T (including solving the dual problem).
+    /// The stability factor accounts for stability wrt the discretization scheme.
     void analyze_stability_discretization(ODESolution& u);
 
-    /// Stability factors with respect to computional (round off) errors
+    /// Compute stability factors as function of T (including solving the dual problem).
+    /// The stability factor accounts for stability wrt the round-off errors.
     void analyze_stability_computation(ODESolution& u);
 
-    /// Stability factors with respect to initial data
+    /// Compute stability factors as function of T (including solving the dual problem).
+    /// The stability factor accounts for stability wrt errors in initial data.
     void analyze_stability_initial(ODESolution& u);
-    
+
     /// Set state for ODE (only available during interval stepping)
     void set_state(const real* u);
 
@@ -177,7 +179,7 @@ namespace dolfin
       p.add("updated_jacobian", false);           // only multi-adaptive Newton
       p.add("diagonal_newton_damping", false);    // only multi-adaptive fixed-point
       p.add("matrix-free_jacobian", true);
-  
+
       p.add("order", 1);
       p.add("number_of_samples", 100);
       p.add("sample_density", 1);

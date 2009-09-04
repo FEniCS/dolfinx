@@ -161,7 +161,6 @@
 %include "dolfin/mf/MatrixFactory.h"
 
 // DOLFIN headers included from ode
-%include "dolfin/ode/GMPObject.h"
 %include "dolfin/ode/ODE.h"
 %include "dolfin/ode/ODECollection.h"
 %include "dolfin/ode/ComplexODE.h"
@@ -169,6 +168,7 @@
 %include "dolfin/ode/cGqMethod.h"
 %include "dolfin/ode/dGqMethod.h"
 %include "dolfin/ode/ODESolution.h"
+%include "dolfin/ode/StabilityAnalysis.h"
 
 // DOLFIN headers included from plot
 %include "dolfin/plot/FunctionPlotData.h"

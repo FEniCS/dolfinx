@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2009-02-09
+// Last changed: 2009-09-04
 
 #include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
@@ -25,13 +25,10 @@ ODE::ODE(uint N, real T)
   info("Creating ODE of size %d.", N);
   parameters = default_parameters();
 
-
   #ifdef HAS_GMP
   if (!_real_initialized)
       warning("Extended precision not initialized. Use dolfin_set_precision(uint decimal_prec) before declaring any real variables and instansiating ODE");
   #endif
-
-
 }
 //-----------------------------------------------------------------------------
 ODE::~ODE()
@@ -271,7 +268,7 @@ void ODE::solve_dual(ODESolution& u, ODESolution& z) {
 
   // Create dual problem
   Dual dual(*this, u);
-  
+
   // Solve dual problem
   dual.solve(z);
 

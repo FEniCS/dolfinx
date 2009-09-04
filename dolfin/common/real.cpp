@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-01-25
-// Last changed: 2009-03-27
+// Last changed: 2009-09-04
 
 #include "real.h"
 #include "constants.h"
@@ -11,13 +11,12 @@
 
 using namespace dolfin;
 
-
 real dolfin::_real_epsilon = DOLFIN_EPS;
 // Used to give warning if extended precision is not initialized
 bool dolfin::_real_initialized = false;
 
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_set_precision(uint decimal_prec) 
+void dolfin::dolfin_set_precision(uint decimal_prec)
 {
 #ifdef HAS_GMP
   if (_real_initialized)
@@ -26,7 +25,7 @@ void dolfin::dolfin_set_precision(uint decimal_prec)
   // Compute the number of bits needed
   // set the GMP default precision
   mpf_set_default_prec(static_cast<uint>(decimal_prec*std::log(10)/std::log(2)));
-  
+
   // Compute epsilon
   real eps = 0.1;
   real one = real("1.0");
@@ -38,21 +37,22 @@ void dolfin::dolfin_set_precision(uint decimal_prec)
   eps *= 2;
 
   _real_epsilon = eps;
-  
+
   int d = mpf_get_default_prec();
   // Display number of digits
   cout << "Using " << d << " bits pr number, epsilon = " << real_epsilon() << endl;
   _real_initialized = true;
-#else 
+#else
     warning("Can't change floating-point precision when using type double.");
 #endif
 
 }
 //-----------------------------------------------------------------------------
-int dolfin::real_decimal_prec() {
+int dolfin::real_decimal_prec()
+{
 #ifndef HAS_GMP
   return 15;
-#else 
+#else
   int prec;
   double dummy = real_frexp(&prec, real_epsilon());
   dummy++; //avoid compiler warning about unused variable
@@ -118,12 +118,11 @@ double dolfin::real_frexp(int* exp, const real& x)
   return frexp(x, exp);
 #endif
 }
-
 //-----------------------------------------------------------------------------
-//  This is a port of the routine padm( A, p) from the software package 
-//  expokit. 
+//  This is a port of the routine padm( A, p) from the software package
+//  expokit.
 //  See: http://www.maths.uq.edu.au/expokit/
-//
+//-----------------------------------------------------------------------------
 void dolfin::real_mat_exp(uint n, real* E, const real* A, const uint p)
 {
   real _A[n*n];
@@ -136,8 +135,8 @@ void dolfin::real_mat_exp(uint n, real* E, const real* A, const uint p)
 
   // Calcuate Pade coefficients  (1-based instead of 0-based as in litterature)
   real c[p+2];
-  c[1]=1.0;  
-  for(uint k = 1; k <= p; ++k) 
+  c[1] = 1.0;
+  for (uint k = 1; k <= p; ++k)
   {
     c[k+1] = c[k] * ((p + 1.0 - k) / (k * (2 * p + 1 - k)));
   }
@@ -147,7 +146,7 @@ void dolfin::real_mat_exp(uint n, real* E, const real* A, const uint p)
   // Scaling
 
   // compute infinty norm of A
-  for(uint i=0; i<n; ++i)
+  for (uint i = 0; i < n; ++i)
   {
     real tmp = 0.0;
     for(uint j = 0; j < n; j++)
@@ -158,7 +157,7 @@ void dolfin::real_mat_exp(uint n, real* E, const real* A, const uint p)
 
   uint s=0;
 
-  if(norm > 0.5)
+  if (norm > 0.5)
   {
     s = std::max(0, static_cast<int>(std::log(to_double(norm)) / std::log(2.0)) + 2);
     real_mult(n*n, _A, 1.0/real_pow(2, s));
@@ -166,15 +165,13 @@ void dolfin::real_mat_exp(uint n, real* E, const real* A, const uint p)
 
   // Horner evaluation of the irreducible fraction
   real_mat_prod(n, A2, _A, _A);
-
   real_identity(n, Q, c[p+1]);
   real_identity(n, P, c[p]);
-
 
   bool odd = true;
   for( uint k = p-1; k > 0; --k)
   {
-    if( odd )
+    if (odd)
     {
       //Q = Q*A2
       real_mat_prod_inplace(n, Q, A2);
@@ -191,7 +188,7 @@ void dolfin::real_mat_exp(uint n, real* E, const real* A, const uint p)
     odd = !odd;
   }
 
-  if( odd )
+  if (odd)
   {
     // Q = Q*A
     real_mat_prod_inplace(n, Q, _A);
@@ -202,7 +199,7 @@ void dolfin::real_mat_exp(uint n, real* E, const real* A, const uint p)
     // find Q\P
     SORSolver::SOR_mat_with_preconditioning(n, Q, E, P, real_epsilon());
     real_mult(n*n, E, -2);
-    // 
+    //
     for (uint i=0; i < n; ++i) E[i + n*i] -= 1.0;
   }
   else
@@ -215,7 +212,7 @@ void dolfin::real_mat_exp(uint n, real* E, const real* A, const uint p)
     for (uint i=0; i < n; ++i) E[i + n*i] += 1.0;
   }
 
-  // Squaring 
+  // Squaring
   for(uint i = 0; i < s; ++i)
   {
     //use _A as temporary matrix
@@ -226,7 +223,7 @@ void dolfin::real_mat_exp(uint n, real* E, const real* A, const uint p)
 
 //-----------------------------------------------------------------------------
 // Matrix multiplication res = A*B
-void dolfin::real_mat_prod(uint n, real* res, const real* A, const real* B) 
+void dolfin::real_mat_prod(uint n, real* res, const real* A, const real* B)
 {
   for (uint i=0; i < n; ++i)
   {
@@ -252,10 +249,10 @@ void dolfin::real_mat_prod_inplace(uint n, real* A, const real* B)
 // Matrix vector product y = Ax
 void dolfin::real_mat_vector_prod(uint n, real* y, const real* A, const real* x)
 {
-  for (uint i = 0; i < n; ++i) 
+  for (uint i = 0; i < n; ++i)
   {
     y[i] = 0;
-    for (uint j=0; j < n; ++j) 
+    for (uint j=0; j < n; ++j)
     {
       y[i] += A[i + n*j] * x[j];
     }
@@ -271,3 +268,4 @@ void dolfin::real_mat_pow(uint n, real* A, const real* B, uint q)
   for (uint i = 0; i < q; ++i)
     real_mat_prod_inplace(n, A, B);
 }
+//-----------------------------------------------------------------------------

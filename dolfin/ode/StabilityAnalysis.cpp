@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-20
-// Last changed: 2009-09-01
+// Last changed: 2009-09-04
 
 #include "StabilityAnalysis.h"
 #include "ODESolution.h"
@@ -16,11 +16,17 @@
 
 using namespace dolfin;
 
-
-StabilityAnalysis::StabilityAnalysis(ODE& ode, ODESolution& u) : 
-  ode(ode), u(u), write_to_file(ode.parameters("save_solution")), n(ode.size()) {}
 //-----------------------------------------------------------------------------
-StabilityAnalysis::~StabilityAnalysis(){}
+StabilityAnalysis::StabilityAnalysis(ODE& ode, ODESolution& u) :
+  ode(ode), u(u), write_to_file(ode.parameters("save_solution")), n(ode.size())
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+StabilityAnalysis::~StabilityAnalysis()
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 void StabilityAnalysis::analyze_integral(uint q)
 {
@@ -28,7 +34,7 @@ void StabilityAnalysis::analyze_integral(uint q)
 
   real progress_end = ode.endtime()*ode.endtime() + ode.endtime();
 
-  // Collect 
+  // Collect
   std::vector< std::pair<real, real*> > s;
 
   boost::scoped_array<real> tmp_array(new real [n]); real* tmp = tmp_array.get();
@@ -36,7 +42,7 @@ void StabilityAnalysis::analyze_integral(uint q)
   boost::scoped_array<real> B_array(new real[n*n]);  real* B = B_array.get();
 
   uint count = 0;
-  
+
   PythonFile file("stability_factors.py");
 
   Progress p("Computing stability factors");
@@ -55,7 +61,7 @@ void StabilityAnalysis::analyze_integral(uint q)
     get_JT(A, tmp, t);
 
     real_mat_pow(n, C, A, q);
-    
+
     // Multiply A with length of timestep
     // A = k*JT(U)
     real_mult(n*n, A, timestep.k);
@@ -64,7 +70,7 @@ void StabilityAnalysis::analyze_integral(uint q)
     real_mat_exp(n, B, A, 10);
 
     // multiply each matrix in s with B from right
-    for (std::vector< std::pair<real, real*> >::iterator s_iterator = s.begin(); 
+    for (std::vector< std::pair<real, real*> >::iterator s_iterator = s.begin();
 	 s_iterator != s.end(); ++s_iterator)
     {
       real_mat_prod_inplace(n, (*s_iterator).second, B);
@@ -74,13 +80,13 @@ void StabilityAnalysis::analyze_integral(uint q)
 
     s.push_back( std::pair<real, real*> (t+timestep.k, C) );
 
-    // Now compute the stability factor for T=t
+    // Now compute the stability factor for T = t
     boost::scoped_array<real> sample(new real[n]);
     real_zero(n, sample.get());
 
     real prev = 0.0;
-    
-    for (std::vector< std::pair<real, real*> >::iterator s_iterator = s.begin(); 
+
+    for (std::vector< std::pair<real, real*> >::iterator s_iterator = s.begin();
 	 s_iterator != s.end(); ++s_iterator)
     {
       real t  = s_iterator->first;
@@ -89,7 +95,7 @@ void StabilityAnalysis::analyze_integral(uint q)
       // Since the initial data is the unity vectors, we don't have to multiply.
       // We can just pick outthe columns of Z
 
-      for (uint i=0; i<n; ++i) 
+      for (uint i=0; i<n; ++i)
       {
 	sample[i] += real_norm(n, &Z[n*i]) * real_abs(t-prev);
       }
@@ -98,26 +104,24 @@ void StabilityAnalysis::analyze_integral(uint q)
 
     file << std::tr1::tuple<uint, real, real*>(n, t, sample.get());
 
-    // update progress
+    // Update progress
     p = to_double( (t*t+t)/progress_end );
     count++;
   }
 
-  //delete the allocated C matrices
-  for (std::vector< std::pair<real, real*> >::iterator s_iterator = s.begin(); 
+  // Delete the allocated C matrices
+  for (std::vector< std::pair<real, real*> >::iterator s_iterator = s.begin();
        s_iterator != s.end(); ++s_iterator)
   {
     real* Z = s_iterator->second;
-    
     delete [] Z;
   }
-  
 
   end();
 }
 //-----------------------------------------------------------------------------
-// Compute z(0) (the endtime of the dual) as function of (primal) endtime T
-void StabilityAnalysis::analyze_endpoint() {
+void StabilityAnalysis::analyze_endpoint()
+{
   begin("Computing stability factor");
 
   Progress p("Computing stability factors");
@@ -150,7 +154,7 @@ void StabilityAnalysis::analyze_endpoint() {
 
     real_mat_prod_inplace(n, s, B);
 
-    for (uint i=0; i<n; ++i) 
+    for (uint i=0; i<n; ++i)
     {
       tmp[i] = real_norm(n, &s[i*n]);
     }
@@ -160,7 +164,7 @@ void StabilityAnalysis::analyze_endpoint() {
     p = to_double(t/endtime);
 
   }
-  
+
   end();
 }
 //-----------------------------------------------------------------------------
@@ -168,11 +172,12 @@ void StabilityAnalysis::get_JT(real* JT, const real* u, real& t)
 {
   real e[n];
 
-  for (uint i=0; i<n; ++i) 
+  for (uint i = 0; i < n; ++i)
   {
-    // fill out each column of A
+    // Fill out each column of A
     real_zero(n, e);
     e[i] = 1.0;
     ode.JT(e, &JT[i*n], u, t);
   }
 }
+//-----------------------------------------------------------------------------
