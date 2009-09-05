@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-08-27
+// Last changed: 2009-09-05
 
 #include <sstream>
 #include <boost/program_options.hpp>
@@ -377,11 +377,11 @@ std::string Parameters::str(bool verbose) const
 
   if (verbose)
   {
-    s << str(false) << std::endl;
+    s << str(false) << std::endl << std::endl;
 
     if (_parameters.size() == 0 && _parameter_sets.size() == 0)
     {
-      s << name() << " (empty)";
+      s << name() << indent("(empty)");
       return s.str();
     }
 
@@ -396,7 +396,7 @@ std::string Parameters::str(bool verbose) const
       t(p->key(), "access") = p->access_count();
       t(p->key(), "change") = p->change_count();
     }
-    s << t.str();
+    s << indent(t.str());
 
     for (const_parameter_set_iterator it = _parameter_sets.begin();
          it != _parameter_sets.end(); ++it)
