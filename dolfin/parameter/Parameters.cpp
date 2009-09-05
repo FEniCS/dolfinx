@@ -412,9 +412,9 @@ std::string Parameters::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-  void Parameters::add_parameter_set_to_po(po::options_description& desc,
-                                            const Parameters &parameters,
-                                            std::string base_name) const
+void Parameters::add_parameter_set_to_po(po::options_description& desc,
+                                         const Parameters &parameters,
+                                         std::string base_name) const
 {
   for (const_parameter_iterator it = parameters._parameters.begin();
        it != parameters._parameters.end(); ++it)
