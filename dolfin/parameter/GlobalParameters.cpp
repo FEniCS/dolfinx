@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-02
-// Last changed: 2009-07-02
+// Last changed: 2009-09-05
 
 #include "GlobalParameters.h"
 

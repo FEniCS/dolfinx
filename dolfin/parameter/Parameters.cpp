@@ -9,10 +9,13 @@
 
 #include <sstream>
 #include <boost/program_options.hpp>
+#include <boost/scoped_array.hpp>
+
 #include <dolfin/log/log.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/log/Table.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/main/SubSystemsManager.h>
 #include "Parameter.h"
 #include "Parameters.h"
 
@@ -212,31 +215,84 @@ void Parameters::parse(int argc, char* argv[])
 {
   info("Parsing command-line arguments...");
 
-  // Add list of allowed options to po::options_description
-  po::options_description desc("Allowed options");
-  add_parameter_set_to_po(desc, *this);
-
-  // Add help option
-  desc.add_options()("help", "show help text");
-
-  // Read command-line arguments into po::variables_map
-  po::variables_map vm;
-  po::store(po::parse_command_line(argc, argv, desc), vm);
-  po::notify(vm);
-
-  // FIXME: Should we exit after printing help text?
-
-  // Show help text
-  if (vm.count("help"))
+  // Only try to extract PETSc options for the global DOLFIN parameter set
+  if (_key != "dolfin")
   {
-    std::stringstream s;
-    s << desc;
-    info(s.str());
-    exit(1);
+    parse_dolfin(argc, argv);
+    return;
   }
 
-  // Read values from the parsed variable map
-  read_vm(vm, *this);
+  // Extract DOLFIN and PETSc arguments
+  std::vector<std::string> args_dolfin;
+  std::vector<std::string> args_petsc;
+  std::vector<std::string>* current = 0;
+  args_dolfin.push_back(argv[0]);
+  args_petsc.push_back(argv[0]);
+  for (int i = 1; i < argc; ++i)
+  {
+    std::string arg(argv[i]);
+
+    if (arg.size() > 2 && arg.substr(0, 2) == "--")
+    {
+      if (arg.size() > 8 && arg.substr(0, 8) == "--petsc.")
+      {
+        current = &args_petsc;
+        current->push_back("-" + arg.substr(8));
+      }
+      else
+      {
+        current = &args_dolfin;
+        current->push_back(arg);
+      }
+    }
+    else
+    {
+      if (current)
+        current->push_back(arg);
+      else
+        error("Illegal command-line options.");
+    }
+  }
+
+  // Copy to argv lists
+  char** argv_dolfin = new char*[args_dolfin.size()];
+  for (uint i = 0; i < args_dolfin.size(); ++i)
+  {
+    argv_dolfin[i] = new char[args_dolfin[i].size() + 1];
+    sprintf(argv_dolfin[i], "%s", args_dolfin[i].c_str());
+  }
+  char** argv_petsc = new char*[args_petsc.size()];
+  for (uint i = 0; i < args_petsc.size(); ++i)
+  {
+    argv_petsc[i] = new char[args_petsc[i].size() + 1];
+    sprintf(argv_petsc[i], "%s", args_petsc[i].c_str());
+  }
+
+  // Debugging
+  const bool debug = true;
+  if (debug)
+  {
+    cout << "DOLFIN args:";
+    for (uint i = 0; i < args_dolfin.size(); i++)
+      cout << " " << args_dolfin[i];
+    cout << endl;
+    cout << "PETSc args: ";
+    for (uint i = 0; i < args_petsc.size(); i++)
+      cout << " " << args_petsc[i];
+    cout << endl;
+  }
+
+  // Parse DOLFIN and PETSc options
+  parse_dolfin(args_dolfin.size(), argv_dolfin);
+  parse_petsc(args_petsc.size(), argv_petsc);
+
+  // Cleanup
+  for (uint i = 0; i < args_dolfin.size(); ++i)
+    delete [] argv_dolfin[i];
+  for (uint i = 0; i < args_petsc.size(); ++i)
+    delete [] argv_petsc[i];
+  delete [] argv_dolfin;
+  delete [] argv_petsc;
 }
 //-----------------------------------------------------------------------------
 void Parameters::update(const Parameters& parameters)
@@ -410,6 +466,47 @@ std::string Parameters::str(bool verbose) const
   }
 
   return s.str();
+}
+//-----------------------------------------------------------------------------
+void Parameters::parse_dolfin(int argc, char* argv[])
+{
+  // Add list of allowed options to po::options_description
+  po::options_description desc("Allowed options");
+  add_parameter_set_to_po(desc, *this);
+
+  // Add help option
+  desc.add_options()("help", "show help text");
+
+  // Read command-line arguments into po::variables_map
+  po::variables_map vm;
+  po::store(po::parse_command_line(argc, argv, desc), vm);
+  po::notify(vm);
+
+  // FIXME: Should we exit after printing help text?
+
+  // Show help text
+  if (vm.count("help"))
+  {
+    std::stringstream s;
+    s << desc;
+    info(s.str());
+    exit(1);
+  }
+
+  // Read values from the parsed variable map
+  read_vm(vm, *this);
+}
+//-----------------------------------------------------------------------------
+void Parameters::parse_petsc(int argc, char* argv[])
+{
+  // Print options
+  cout << "Passing options to PETSc:";
+  for (int i = 1; i < argc; i++)
+    cout << " " << argv[i];
+  cout << endl;
+
+  // Pass options to PETSc
+  SubSystemsManager::init_petsc(argc, argv);
 }
 //-----------------------------------------------------------------------------
 void Parameters::add_parameter_set_to_po(po::options_description& desc,

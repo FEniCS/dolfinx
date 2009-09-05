@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-01-07
-// Last changed: 2008-08-13
+// Last changed: 2009-09-05
 
 #ifndef __SUB_SYSTEMS_MANAGER_H
 #define __SUB_SYSTEMS_MANAGER_H
@@ -23,8 +23,10 @@ namespace dolfin
     /// Initialize PETSc without command-line arguments
     static void init_petsc();
 
-    /// Initialize PETSc with command-line arguments
-    static void init_petsc(int argc, char* argv[], bool cmd_line_args = true);
+    /// Initialize PETSc with command-line arguments. Note that PETSc
+    /// command-line arguments may also be filtered and sent to PETSc
+    /// by parameters.parse(argc, argv).
+    static void init_petsc(int argc, char* argv[]);
 
   private:
 

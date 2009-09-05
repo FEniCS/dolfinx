@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-08-10
+// Last changed: 2009-09-05
 
 #ifndef __PARAMETERS_H
 #define __PARAMETERS_H
@@ -165,15 +165,21 @@ namespace dolfin
 
   private:
 
+    /// Parse filtered options (everything except PETSc options)
+    void parse_dolfin(int argc, char* argv[]);
+
+    /// Parse filtered options (only PETSc options)
+    void parse_petsc(int argc, char* argv[]);
+
     // Add all parameters as options to a boost::program_option instance
     void add_parameter_set_to_po(boost::program_options::options_description& desc,
                                  const Parameters &parameters,
-                                 std::string base_name = "") const;
+                                 std::string base_name="") const;
 
     // Read in values from the boost::variable_map
     void read_vm(boost::program_options::variables_map& vm,
                  Parameters &parameters,
-                 std::string base_name = "");
+                 std::string base_name="");
 
     // Return pointer to parameter for given key and 0 if not found
     Parameter* find_parameter(std::string key) const;

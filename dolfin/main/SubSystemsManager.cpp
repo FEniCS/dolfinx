@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-01-07
-// Last changed: 2008-08-13
+// Last changed: 2009-09-05
 
 #ifdef HAS_PETSC
 #include <petsc.h>
@@ -78,13 +78,13 @@ void SubSystemsManager::init_petsc()
   char** argv = NULL;
 
   // Initialize PETSc
-  init_petsc(argc, argv, false);
+  init_petsc(argc, argv);
 #else
   error("DOLFIN has not been configured for PETSc.");
 #endif
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::init_petsc(int argc, char* argv[], bool cmd_line_args)
+void SubSystemsManager::init_petsc(int argc, char* argv[])
 {
 #ifdef HAS_PETSC
   if ( sub_systems_manager.petsc_initialized )
@@ -94,7 +94,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[], bool cmd_line_args)
   const bool mpi_init_status = mpi_initialized();
 
   // Print message if PETSc is intialised with command line arguments
-  if(cmd_line_args)
+  if (argc > 1)
     info(1, "Initializing PETSc with given command-line arguments.");
 
   // Initialize PETSc
@@ -119,7 +119,7 @@ void SubSystemsManager::finalize_mpi()
 {
 #ifdef HAS_MPI
   //Finalise MPI if required
-  if ( MPI::Is_initialized() and sub_systems_manager.control_mpi )
+  if (MPI::Is_initialized() and sub_systems_manager.control_mpi)
     MPI::Finalize();
 #else
   // Do nothing
@@ -129,13 +129,13 @@ void SubSystemsManager::finalize_mpi()
 void SubSystemsManager::finalize_petsc()
 {
 #ifdef HAS_PETSC
- if ( sub_systems_manager.petsc_initialized )
+  if (sub_systems_manager.petsc_initialized)
   {
     PetscFinalize();
 
-    #ifdef HAS_SLEPC
+#ifdef HAS_SLEPC
     SlepcFinalize();
-    #endif
+#endif
   }
 #else
   // Do nothing

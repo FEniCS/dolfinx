@@ -5,6 +5,10 @@
 // Last changed: 2009-09-05
 //
 // This demo demonstrates the DOLFIN parameter system.
+//
+// Try running this demo with
+//
+// ./demo --bar 1 --solver_parameters.max_iterations 1000
 
 #include <dolfin.h>
 

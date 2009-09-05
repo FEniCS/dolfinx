@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-02
-// Last changed: 2009-07-02
+// Last changed: 2009-09-05
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -27,7 +27,7 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters()
     {
-      Parameters p;
+      Parameters p("dolfin");
 
       // General
       p.add("timer_prefix", "");                      // Prefix for timer tasks
