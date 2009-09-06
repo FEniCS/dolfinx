@@ -12,8 +12,8 @@ and boundary conditions given by
 """
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-08-16 -- 2008-12-13"
-__copyright__ = "Copyright (C) 2007-2008 Anders Logg"
+__date__ = "2007-08-16 -- 2009-09-06"
+__copyright__ = "Copyright (C) 2007-2009 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
@@ -40,13 +40,7 @@ L = v*f*dx
 
 # Compute solution
 problem = VariationalProblem(a, L, bc)
-# FIXME: Temporary while testing parallel assembly
-problem.parameters["linear_solver"] = "iterative"
-problem.parameters["krylov_solver"]["relative_tolerance"] = 1e-20
 u = problem.solve()
-
-# FIXME: Temporary while testing parallel assembly
-print "Norm of solution vector: %.15g" % u.vector().norm()
 
 # Plot solution
 plot(u)

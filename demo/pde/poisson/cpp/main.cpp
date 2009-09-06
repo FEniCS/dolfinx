@@ -1,8 +1,8 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2009-08-17
+// Last changed: 2009-09-06
 //
 // This demo program solves Poisson's equation
 //
@@ -43,8 +43,6 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
-  //parameters("linear_algebra_backend") = "uBLAS";
-
   // Create mesh and function space
   UnitSquare mesh(32, 32);
   Poisson::FunctionSpace V(mesh);
@@ -62,18 +60,12 @@ int main()
 
   // Compute solution
   VariationalProblem problem(a, L, bc);
-  // FIXME: Temporary while testing parallel assembly
-  //problem.parameters("linear_solver") = "iterative";
-  //problem.parameters["krylov_solver"]("relative_tolerance") = 1e-20;
   Function u;
   problem.solve(u);
 
-  // FIXME: Temporary while testing parallel assembly
-  info("Norm of solution vector: %.15g", u.vector().norm());
-
-  // Save solution in VTK format (using base64 encoding)
-  //File file("poisson.pvd", "compressed");
-  //file << u;
+  // Save solution in VTK format
+  File file("poisson.pvd");
+  file << u;
 
   // Plot solution
   plot(u);
