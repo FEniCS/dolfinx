@@ -8,7 +8,7 @@
 //
 // Try running this demo with
 //
-// ./demo --bar 1 --solver_parameters.max_iterations 1000
+// ./demo --bar 1 --solver_parameters.max_iterations 1000 --petsc.info
 
 #include <dolfin.h>
 
