@@ -13,7 +13,8 @@ num_processes = 2 # Should really be 9 here, but the JIT compilation takes forev
 
 # Run solver.py
 output = getoutput("mpirun -n %d python solver.py" % num_processes)
-#print output
+if len(sys.argv) > 1 and sys.argv[1] == "--debug":
+    print output
 
 # Return exit status
 if "ERROR" in output:

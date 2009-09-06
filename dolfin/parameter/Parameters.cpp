@@ -499,6 +499,10 @@ void Parameters::parse_dolfin(int argc, char* argv[])
 //-----------------------------------------------------------------------------
 void Parameters::parse_petsc(int argc, char* argv[])
 {
+  // Return if there are no arguments
+  if (argc <= 1)
+    return;
+
   // Print options
   cout << "Passing options to PETSc:";
   for (int i = 1; i < argc; i++)

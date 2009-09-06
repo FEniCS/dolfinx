@@ -2,7 +2,7 @@
 
 Try running this demo with
 
-  python demo.py --bar 1 --solver_parameters.max_iterations 1000 --petsc.info
+  python demo.py --bar 1 --solver_parameters.max_iterations 1000
 """
 
 __author__ = "Johan Hake (hake@simula.no) and Anders Logg (logg@simula.no)"
