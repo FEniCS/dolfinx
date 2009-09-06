@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-09-05
+// Last changed: 2009-09-06
 
 #include <sstream>
 #include <boost/program_options.hpp>
@@ -269,7 +269,7 @@ void Parameters::parse(int argc, char* argv[])
   }
 
   // Debugging
-  const bool debug = true;
+  const bool debug = false;
   if (debug)
   {
     cout << "DOLFIN args:";
