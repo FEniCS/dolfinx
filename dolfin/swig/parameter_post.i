@@ -2,12 +2,12 @@
 {
   void _parse(PyObject *op)
   {
-    if (PyList_Check(op)) 
+    if (PyList_Check(op))
     {
       int i;
       int argc = PyList_Size(op);
       char **argv = (char **) malloc((argc+1)*sizeof(char *));
-      for (i = 0; i < argc; i++) 
+      for (i = 0; i < argc; i++)
       {
         PyObject *o = PyList_GetItem(op,i);
         if (PyString_Check(o))
@@ -21,11 +21,11 @@
       argv[i] = 0;
       self->parse(argc, argv);
       free(argv);
-    } 
-    else 
+    }
+    else
      throw std::runtime_error("not a list");
   }
-    
+
 %pythoncode%{
 
 def add(self,*args):
@@ -56,7 +56,7 @@ def iterkeys(self):
 def values(self):
     "Returns a list of the parameter values"
     return [self[key] for key in self.keys()]
-            
+
 def itervalues(self):
     "Returns an iterator to the parameter values"
     return (self[key] for key in self.keys())
@@ -69,7 +69,7 @@ def iteritems(self):
         yield key, value
 
 def set_range(self,key,*arg):
-    "Set the range for the given parameter" 
+    "Set the range for the given parameter"
     if key not in self._get_parameter_keys():
         raise KeyError, "no parameter with name '%s'"%key
     self._get_parameter(key).set_range(*arg)
@@ -87,12 +87,16 @@ def __getitem__(self,key):
             return int(par)
         elif val_type == "bool":
             return bool(par)
+        elif val_type == "real":
+            # FIXME: Is it possible to convert real to some high-precision Python type?
+            print "Warning: Converting real-valued parameter to double, might loose precision."
+            return float(par)
         else:
             raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type,key)
-    
+
     if key in self._get_parameter_set_keys():
         return self._get_parameter_set(key)
-    
+
     raise KeyError, "'%s'"%key
 
 def __setitem__(self,key,value):
@@ -142,13 +146,13 @@ def option_string(self):
             else:
                 ret_list.append(basename + key + " " + str(value))
         return ret_list
-    
+
     return " ".join(option_list(self,"--"))
 
 __getattr__ = __getitem__
 __setattr__ = __setitem__
 
-%}  
+%}
 }
 
 %pythoncode%{
@@ -159,13 +163,13 @@ def __new_Parameter_init__(self,*args,**kwargs):
     Usage:
     Parameters("parameters")
        returns an empty Parameters
-       
+
     Parameters(other_parameters)
        returns a copy of the other_parameters
-       
+
     Parameters("parameters",dim=3,tol=0.1,name='Name')
        returns a parameters with the given values
-       
+
     Parameters("parameters",dim=(3,0,4),name=("Name",["Name","Blame"])
       returns a parameters with the given values and ranges
     """
