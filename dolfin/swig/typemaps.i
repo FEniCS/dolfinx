@@ -7,7 +7,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2006-04-16
-// Last changed: 2009-09-02
+// Last changed: 2009-09-07
 
 //=============================================================================
 // General typemaps for PyDOLFIN
@@ -17,26 +17,6 @@
 // A hack to get around incompatabilities with PyInt_Check and numpy int 
 // types in python 2.6
 //-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// Typemap function reducing code bloat.
-//-----------------------------------------------------------------------------
-//%{
-//static bool convert_PyInt_to_uint(PyObject *input, dolfin::uint& ret)
-//{
-//  if (PyInt_Check(input) || PyType_IsSubtype(input->ob_type, &PyInt_Type))
-//  {
-//    long tmp = PyInt_AsLong(input);
-//    if (tmp>=0)
-//    {
-//      ret = static_cast<dolfin::uint>(tmp);
-//      return true;
-//    }
-//  }
-//  PyErr_SetString(PyExc_TypeError,"positive 'int' expected");
-//  return false;
-//}
-//%}
 
 //-----------------------------------------------------------------------------
 // The typecheck
@@ -51,8 +31,6 @@
 //-----------------------------------------------------------------------------
 %typemap(in) dolfin::uint
 {
-//if (!convert_PyInt_to_uint($input,$1))
-//    return NULL;
   if (PyInt_Check($input) || PyType_IsSubtype($input->ob_type, &PyInt_Type))
   {
     long tmp = PyInt_AsLong($input);
