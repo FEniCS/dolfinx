@@ -136,7 +136,7 @@ IMPLEMENT_VARIABLE_INTERFACE(Mesh)
 %typemap(in) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> {
   void *argp = 0;
   TYPE * arg = 0;
-  int res = SWIG_ConvertPtr($input, &argp, $descriptor(TYPE), 0);
+  int res = SWIG_ConvertPtr($input, &argp, $descriptor(TYPE*), 0);
   if (SWIG_IsOK(res)) {
     arg = reinterpret_cast<TYPE *>(argp);
     $1 = dolfin::reference_to_no_delete_pointer(*arg);
@@ -150,7 +150,7 @@ IMPLEMENT_VARIABLE_INTERFACE(Mesh)
 //-----------------------------------------------------------------------------
 %typemap(out) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> {
   TYPE * out = $1.get();
-  $result = SWIG_NewPointerObj(SWIG_as_voidptr(out), $descriptor(TYPE*), 0 |  0 );
+  $result = SWIG_NewPointerObj(SWIG_as_voidptr(out), $descriptor(TYPE*), 0 | 0 );
 }
 %enddef
 
