@@ -9,7 +9,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2005-10-24
-// Last changed: 2009-09-03
+// Last changed: 2009-09-07
 
 // The PyDOLFIN extension module
 %module(package="dolfin", directors="1") cpp
@@ -54,6 +54,7 @@ import_array();
 // SWIG directives for specific kernel modules (pre)
 %include "dolfin/swig/common_pre.i"
 %include "dolfin/swig/log_pre.i"
+%include "dolfin/swig/ode_pre.i"
 %include "dolfin/swig/fem_pre.i"
 %include "dolfin/swig/la_pre.i"
 %include "dolfin/swig/mesh_pre.i"
