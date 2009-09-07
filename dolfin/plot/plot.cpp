@@ -5,11 +5,12 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-05-02
-// Last changed: 2009-08-28
+// Last changed: 2009-09-08
 
 #include <stdlib.h>
 #include <sstream>
 
+#include <dolfin/main/MPI.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/io/File.h>
 #include "FunctionPlotData.h"
@@ -24,8 +25,20 @@ void plot_object(const T& t, std::string title, std::string mode)
   info("Plotting %s (%s), press 'q' to continue...",
           t.name().c_str(), t.label().c_str());
 
+  // Get filename prefix
+  std::string prefix = parameters("plot_filename_prefix");
+
+  // Special treatment when running in parallel
+  if (dolfin::MPI::num_processes() > 1)
+  {
+    std::stringstream p;
+    p << dolfin::MPI::process_number();
+    prefix += std::string("_p") + p.str();
+    title += " (process " + p.str();
+  }
+
   // Save to file
-  const std::string filename = parameters("plot_filename");
+  std::string filename = prefix + std::string(".xml");
   File file(filename);
   file << t;
 
@@ -38,52 +51,28 @@ void plot_object(const T& t, std::string title, std::string mode)
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Function& v, std::string title, std::string mode)
 {
-  if (dolfin::MPI::num_processes() > 1)
-  {
-    info("Built-in plotting via Viper needs to be updated when running in parallel.");
-    return;
-  }
   FunctionPlotData w(v);
   plot_object(w, title, mode);
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Mesh& mesh, std::string title)
 {
-  if (dolfin::MPI::num_processes() > 1)
-  {
-    info("Built-in plotting via Viper needs to be updated when running in parallel.");
-    return;
-  }
+
   plot_object(mesh, title, "auto");
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<uint>& f, std::string title)
 {
-  if (dolfin::MPI::num_processes() > 1)
-  {
-    info("Built-in plotting via Viper needs to be updated when running in parallel.");
-    return;
-  }
   plot_object(f, title, "auto");
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<double>& f, std::string title)
 {
-  if (dolfin::MPI::num_processes() > 1)
-  {
-    info("Built-in plotting via Viper needs to be updated when running in parallel.");
-    return;
-  }
   plot_object(f, title, "auto");
 }
 //-----------------------------------------------------------------------------
 void dolfin::plot(const MeshFunction<bool>& f, std::string title)
 {
-  if (dolfin::MPI::num_processes() > 1)
-  {
-    info("Built-in plotting via Viper needs to be updated when running in parallel.");
-    return;
-  }
   plot_object(f, title, "auto");
 }
 //-----------------------------------------------------------------------------
