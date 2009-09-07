@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008.
+// Modified by Johannes Ring, 2009.
 //
 // First added:  2007-05-24
-// Last changed: 2008-07-17
+// Last changed: 2009-09-07
 //
 // Unit tests for the function library
 
@@ -57,7 +58,7 @@ public:
 
     // Test evaluation of a user-defined function
     f0.eval(&u[0], data);
-    CPPUNIT_ASSERT(u[0] == sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]));
+    CPPUNIT_ASSERT_EQUAL(u[0], sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]));
 
 #ifdef HAS_GTS
     // Test evaluation of a discrete function
