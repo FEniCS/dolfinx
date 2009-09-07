@@ -4,8 +4,6 @@
 int dolfin_swigversion() { return  SWIGVERSION; }
 %}
 
-int dolfin_swigversion();
-
 %pythoncode %{
 """Preliminary code for adding swig version to cpp module. Someone (tm) finish
 this.
