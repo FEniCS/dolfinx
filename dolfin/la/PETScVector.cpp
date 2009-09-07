@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes 2008
 //
 // First added:  2004
-// Last changed: 2009-08-20
+// Last changed: 2009-09-07
 
 #ifdef HAS_PETSC
 

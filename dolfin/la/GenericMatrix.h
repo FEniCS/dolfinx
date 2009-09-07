@@ -8,7 +8,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2009-08-10
+// Last changed: 2009-09-07
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -97,7 +97,7 @@ namespace dolfin
                       bool same_nonzero_pattern = false) = 0;
 
     /// Return norm of matrix
-    virtual double norm(std::string norm_type = "frobenius") const = 0;
+    virtual double norm(std::string norm_type) const = 0;
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, 

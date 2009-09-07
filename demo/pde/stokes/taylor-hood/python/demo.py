@@ -53,8 +53,8 @@ U = problem.solve()
 # (needed for further computation on coefficient vector)
 (u, p) = U.split(True)
 
-print "Norm of velocity coefficient vector: %.15g" % u.vector().norm()
-print "Norm of pressure coefficient vector: %.15g" % p.vector().norm()
+print "Norm of velocity coefficient vector: %.15g" % u.vector().norm("l2")
+print "Norm of pressure coefficient vector: %.15g" % p.vector().norm("l2")
 
 # Split the mixed solution using a shallow copy
 (u, p) = U.split()

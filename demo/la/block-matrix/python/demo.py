@@ -40,4 +40,4 @@ yy[1] = y
 
 # Multiply
 AA.mult(xx, yy)
-print "||Ax|| =", y.norm()
+print "||Ax|| =", y.norm("l2")

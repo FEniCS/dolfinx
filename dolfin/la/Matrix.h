@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-05-15
-// Last changed: 2009-08-11
+// Last changed: 2009-09-07
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -90,7 +90,7 @@ namespace dolfin
     { matrix->axpy(a, A, same_nonzero_pattern); }
 
     /// Return norm of matrix
-    virtual double norm(std::string norm_type = "frobenius") const
+    virtual double norm(std::string norm_type) const
     { return matrix->norm(norm_type); }
 
     /// Get non-zero values of given row

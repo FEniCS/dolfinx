@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2008-2009.
 //
 // First added:  2008-04-21
-// Last changed: 2009-08-22
+// Last changed: 2009-09-07
 
 #ifndef __EPETRA_VECTOR_H
 #define __EPETRA_VECTOR_H
@@ -102,7 +102,7 @@ namespace dolfin
     virtual double inner(const GenericVector& vector) const;
 
     /// Return norm of vector
-    virtual double norm(std::string norm_type = "l2") const;
+    virtual double norm(std::string norm_type) const;
 
     /// Return minimum value of vector
     virtual double min() const;

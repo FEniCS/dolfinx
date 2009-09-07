@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2008, 2009.
 //
 // First added:  2008-04-21
-// Last changed: 2009-08-10
+// Last changed: 2009-09-07
 
 #ifndef __EPETRA_MATRIX_H
 #define __EPETRA_MATRIX_H
@@ -93,7 +93,7 @@ namespace dolfin
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false);
 
     /// Return norm of matrix
-    virtual double norm(std::string norm_type = "frobenius") const;
+    virtual double norm(std::string norm_type) const;
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;

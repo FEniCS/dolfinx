@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2009-08-11
+// Last changed: 2009-09-07
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -103,7 +103,7 @@ namespace dolfin
     virtual double inner(const GenericVector& x) const;
 
     /// Compute norm of vector
-    virtual double norm(std::string norm_type = "l2") const;
+    virtual double norm(std::string norm_type) const;
 
     /// Return minimum value of vector
     virtual double min() const;

@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2008
 //
 // First added:  2006-02-07
-// Last changed: 2009-02-25
+// Last changed: 2009-09-07
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -112,7 +112,7 @@ int main()
   problem.parameters("linear_solver") = "direct";
   problem.solve(u);
 
-  cout << "Norm " << u.vector().norm() << endl;
+  cout << "Norm " << u.vector().norm("l2") << endl;
 
   // Save solution in VTK format
   File vtk_file("elasticity.pvd", "compressed");

@@ -8,7 +8,7 @@
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2006-07-05
-// Last changed: 2009-08-20
+// Last changed: 2009-09-07
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -104,7 +104,7 @@ namespace dolfin
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false);
 
     /// Return norm of matrix
-    virtual double norm(std::string norm_type = "frobenius") const;
+    virtual double norm(std::string norm_type) const;
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;

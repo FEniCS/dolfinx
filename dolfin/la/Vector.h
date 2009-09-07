@@ -7,7 +7,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2009-08-25
+// Last changed: 2009-09-07
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -116,7 +116,7 @@ namespace dolfin
     { return vector->inner(x); }
 
     /// Return norm of vector
-    virtual double norm(std::string norm_type = "l2") const
+    virtual double norm(std::string norm_type) const
     { return vector->norm(norm_type); }
 
     /// Return minimum value of vector

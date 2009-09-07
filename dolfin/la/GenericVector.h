@@ -7,7 +7,7 @@
 // Modified by Martin Sandve Alnes, 2009.
 //
 // First added:  2006-04-25
-// Last changed: 2009-08-22
+// Last changed: 2009-09-07
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -119,7 +119,7 @@ namespace dolfin
     virtual double inner(const GenericVector& x) const = 0;
 
     /// Return norm of vector
-    virtual double norm(std::string norm_type = "l2") const = 0;
+    virtual double norm(std::string norm_type) const = 0;
 
     /// Return minimum value of vector
     virtual double min() const = 0;

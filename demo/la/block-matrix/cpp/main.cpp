@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-12-12
-// Last changed: 2008-12-12
+// Last changed: 2009-09-07
 //
 // This demo illustrates basic usage of block matrices and vectors.
 
@@ -41,5 +41,5 @@ int main()
 
   // Multiply
   AA.mult(xx,yy);
-  info("||Ax|| = %g", y.norm());
+  info("||Ax|| = %g", y.norm("l2"));
 };

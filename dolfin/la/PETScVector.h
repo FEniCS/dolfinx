@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2009-08-11
+// Last changed: 2009-09-07
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -105,7 +105,7 @@ namespace dolfin
     virtual double inner(const GenericVector& v) const;
 
     /// Return norm of vector
-    virtual double norm(std::string norm_type = "l2") const;
+    virtual double norm(std::string norm_type) const;
 
     /// Return minimum value of vector
     virtual double min() const;

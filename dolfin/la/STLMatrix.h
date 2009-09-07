@@ -6,7 +6,7 @@
 // Modified by Ilmar Wilbers, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2009-08-10
+// Last changed: 2009-09-07
 
 #ifndef __STL_MATRIX_H
 #define __STL_MATRIX_H
@@ -109,7 +109,7 @@ namespace dolfin
     { error("Not implemented."); }
 
     /// Return norm of matrix
-    virtual double norm(std::string norm_type = "frobenius") const
+    virtual double norm(std::string norm_type) const
     { error("Not implemented."); return 0.0; }
 
     /// Get non-zero values of given row
