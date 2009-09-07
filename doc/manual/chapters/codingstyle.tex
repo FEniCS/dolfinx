@@ -245,3 +245,15 @@ class Foo
   explicit Foo(uint i);
 };
 \end{code}
+
+\section{Use of libraries}
+
+\subsection{Prefer C++ strings and streams to old C-style \texttt{char*}}
+
+Use std::string instead of \texttt{const char*} and use std::istream and
+std::ostream instead of \texttt{FILE}. Avoid \texttt{printf},
+\texttt{sprintf} and the like.
+
+There are exceptions to this rule where we need to use old C-style
+function calls. One such exception is handling of command-line
+arguments (\texttt{char* argv[]}).
