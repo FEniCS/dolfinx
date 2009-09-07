@@ -77,6 +77,8 @@ namespace dolfin
     LogStream& operator<< (real a);
 #endif
 
+    void setprecision(uint n);
+
   private:
 
     // Type of stream

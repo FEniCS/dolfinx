@@ -69,6 +69,6 @@ int main()
 
   // Plot solution
   plot(u);
-
+  
   return 0;
 }
