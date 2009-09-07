@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2009-09-02
+// Last changed: 2009-09-07
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -150,7 +150,7 @@ IMPLEMENT_VARIABLE_INTERFACE(Mesh)
 //-----------------------------------------------------------------------------
 %typemap(out) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE> {
   TYPE * out = $1.get();
-  $result = SWIG_NewPointerObj(SWIG_as_voidptr(out), $descriptor(TYPE), 0 |  0 );
+  $result = SWIG_NewPointerObj(SWIG_as_voidptr(out), $descriptor(TYPE*), 0 |  0 );
 }
 %enddef
 
