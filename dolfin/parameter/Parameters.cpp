@@ -8,6 +8,7 @@
 // Last changed: 2009-09-06
 
 #include <sstream>
+#include <stdio.h>
 #include <boost/program_options.hpp>
 #include <boost/scoped_array.hpp>
 
