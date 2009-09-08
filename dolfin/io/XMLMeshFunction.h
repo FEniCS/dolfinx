@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-10
-// Last changed: 2009-03-11
+// Last changed: 2009-09-08
 
 #ifndef __XMLMESHFUNCTION_H
 #define __XMLMESHFUNCTION_H
@@ -47,10 +47,15 @@ namespace dolfin
     void start_mesh_function(const xmlChar *name, const xmlChar **attrs);
     void read_entity (const xmlChar *name, const xmlChar **attrs);
 
+    void build_mapping(uint entity_dimension);
+
     MeshFunction<int>*  imf;
     MeshFunction<uint>* umf;
     MeshFunction<double>* dmf;
     XMLSkipper* xml_skipper;
+    const Mesh& mesh;
+    std::map<uint, uint> glob2loc; // In parallel, use this global to local mapping to assign values
+
 
     parser_state state;
     mesh_function_type mf_type;

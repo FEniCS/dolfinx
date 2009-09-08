@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Skavhaug.
+// Copyright (C) 2006 Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-10
-// Last changed: 2009-03-10
+// Last changed: 2009-09-08
 
 #ifndef __XMLLOCALMESHDATA_H
 #define __XMLLOCALMESHDATA_H
@@ -46,6 +46,7 @@ namespace dolfin
     void read_tetrahedron (const xmlChar* name, const xmlChar** attrs);
     void read_mesh_function(const xmlChar* name, const xmlChar** attrs);
     void read_array        (const xmlChar* name, const xmlChar** attrs);
+    void read_mesh_data    (const xmlChar* name, const xmlChar** attrs);
 
     // Number of local vertices
     uint num_local_vertices() const;

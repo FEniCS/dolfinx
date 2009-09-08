@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-02
-// Last changed: 2009-03-17
+// Last changed: 2009-09-08
 
 #include <dolfin/log/dolfin_log.h>
 #include "XMLSkipper.h"
@@ -14,14 +14,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XMLMeshFunction::XMLMeshFunction(MeshFunction<int>& imf, XMLFile& parser)
-  : XMLHandler(parser), imf(&imf), umf(0), dmf(0), xml_skipper(0),
+  : XMLHandler(parser), imf(&imf), umf(0), dmf(0), xml_skipper(0), mesh(imf.mesh()),
     state(OUTSIDE_MESHFUNCTION), mf_type(INT), size(0), dim(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLMeshFunction::XMLMeshFunction(MeshFunction<uint>& umf, XMLFile& parser)
-  : XMLHandler(parser), imf(0), umf(&umf), dmf(0), xml_skipper(0),
+  : XMLHandler(parser), imf(0), umf(&umf), dmf(0), xml_skipper(0), mesh(umf.mesh()),
     state(OUTSIDE_MESHFUNCTION), mf_type(UINT), size(0), dim(0)
 {
   info("Outside MeshFunction to start with.");
@@ -29,14 +29,14 @@ XMLMeshFunction::XMLMeshFunction(MeshFunction<uint>& umf, XMLFile& parser)
 }
 //-----------------------------------------------------------------------------
 XMLMeshFunction::XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser)
-  : XMLHandler(parser), imf(0), umf(0), dmf(&dmf), xml_skipper(0),
+  : XMLHandler(parser), imf(0), umf(0), dmf(&dmf), xml_skipper(0), mesh(dmf.mesh()),
     state(OUTSIDE_MESHFUNCTION), mf_type(DOUBLE), size(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLMeshFunction::XMLMeshFunction(MeshFunction<int>& imf, XMLFile& parser, uint size, uint dim)
-  : XMLHandler(parser), imf(&imf), umf(0), dmf(0), xml_skipper(0),
+  : XMLHandler(parser), imf(&imf), umf(0), dmf(0), xml_skipper(0), mesh(imf.mesh()),
     state(INSIDE_MESHFUNCTION), mf_type(INT), size(size), dim(dim)
 {
   // Initialize mesh function
@@ -44,10 +44,14 @@ XMLMeshFunction::XMLMeshFunction(MeshFunction<int>& imf, XMLFile& parser, uint s
 
   // Set all values to zero
   *(this->imf) = 0;
+
+  // Build global to local mapping for dimension
+  if (MPI::num_processes() > 1)
+    build_mapping(dim);
 }
 //-----------------------------------------------------------------------------
 XMLMeshFunction::XMLMeshFunction(MeshFunction<uint>& umf, XMLFile& parser, uint size, uint dim)
-  : XMLHandler(parser), imf(0), umf(&umf), dmf(0), xml_skipper(0),
+  : XMLHandler(parser), imf(0), umf(&umf), dmf(0), xml_skipper(0), mesh(umf.mesh()),
     state(INSIDE_MESHFUNCTION), mf_type(UINT), size(size), dim(dim)
 {
   // Initialize mesh function
@@ -55,10 +59,14 @@ XMLMeshFunction::XMLMeshFunction(MeshFunction<uint>& umf, XMLFile& parser, uint 
 
   // Set all values to zero
   *(this->umf) = 0;
+
+  // Build global to local mapping for dimension
+  if (MPI::num_processes() > 1)
+    build_mapping(dim);
 }
 //-----------------------------------------------------------------------------
 XMLMeshFunction::XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser, uint size, uint dim)
-  : XMLHandler(parser), imf(0), umf(0), dmf(&dmf), xml_skipper(0),
+  : XMLHandler(parser), imf(0), umf(0), dmf(&dmf), xml_skipper(0), mesh(dmf.mesh()),
     state(INSIDE_MESHFUNCTION), mf_type(DOUBLE), size(size), dim(dim)
 {
   // Initialize mesh function
@@ -66,6 +74,10 @@ XMLMeshFunction::XMLMeshFunction(MeshFunction<double>& dmf, XMLFile& parser, uin
 
   // Set all values to zero
   *(this->dmf) = 0;
+
+  // Build global to local mapping for dimension
+  if (MPI::num_processes() > 1)
+    build_mapping(dim);
 }
 //-----------------------------------------------------------------------------
 XMLMeshFunction::~XMLMeshFunction()
@@ -192,6 +204,10 @@ void XMLMeshFunction::start_mesh_function(const xmlChar *name, const xmlChar **a
 
   uint dim = parse_uint(name, attrs, "dim");
 
+  // Build global to local mapping for dimension
+  if (MPI::num_processes() > 1)
+    build_mapping(dim);
+
   // Initialize mesh function
   switch ( mf_type )
   {
@@ -234,6 +250,16 @@ void XMLMeshFunction::read_entity(const xmlChar *name, const xmlChar **attrs)
     error("Illegal XML data for MeshFunction: row index %d out of range (0 - %d)",
           index, size - 1);
 
+  if (MPI::num_processes() > 1)
+  {
+    // Only read owned entities (belonging to local mesh)
+    std::map<uint, uint>::const_iterator it = glob2loc.find(index);
+    if (it != glob2loc.end())
+      index = (*it).second;
+    else
+      return;
+  }
+
   // Parse value and insert in array
   switch ( mf_type )
   {
@@ -258,5 +284,18 @@ void XMLMeshFunction::read_entity(const xmlChar *name, const xmlChar **attrs)
      default:
       ;
   }
+}
+//-----------------------------------------------------------------------------
+void XMLMeshFunction::build_mapping(uint entity_dimension)
+{
+  // Read global entity indices from mesh
+  std::stringstream mesh_data_name;
+  mesh_data_name << "global entity indices " << entity_dimension;
+  MeshFunction<uint>* global_entity_indices = mesh.data().mesh_function(mesh_data_name.str());
+  assert(global_entity_indices);
+
+  // Build global to local mapping
+  for (uint i = 0; i < global_entity_indices->size(); ++i)
+    glob2loc[global_entity_indices->get(i)] = i;
 }
 //-----------------------------------------------------------------------------

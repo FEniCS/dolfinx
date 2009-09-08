@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
-// Last changed: 2008-12-15
+// Last changed: 2009-09-08
 //
 // Modified by Anders Logg, 2008.
 
@@ -54,8 +54,8 @@ void XMLLocalMeshData::start_element(const xmlChar* name, const xmlChar** attrs)
     }
     else if (xmlStrcasecmp(name, (xmlChar* ) "data") == 0)
     {
-      error("Unable to read auxiliary mesh data in parallel, not implemented (yet).");
       state = INSIDE_DATA;
+      read_mesh_data(name, attrs);
     }
 
     break;
@@ -331,6 +331,11 @@ void XMLLocalMeshData::read_mesh_function(const xmlChar* name, const xmlChar** a
 void XMLLocalMeshData::read_array(const xmlChar* name, const xmlChar** attrs)
 {
   error("Local mesh data can not read arrays.");
+}
+//-----------------------------------------------------------------------------
+void XMLLocalMeshData::read_mesh_data(const xmlChar* name, const xmlChar** attrs)
+{
+  error("Unable to read auxiliary mesh data in parallel, not implemented (yet).");
 }
 //-----------------------------------------------------------------------------
 dolfin::uint XMLLocalMeshData::num_local_vertices() const
