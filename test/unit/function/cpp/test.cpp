@@ -58,7 +58,9 @@ public:
 
     // Test evaluation of a user-defined function
     f0.eval(&u[0], data);
-    CPPUNIT_ASSERT_EQUAL(u[0], sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]));
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(u[0], 
+				 sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
+				 DOLFIN_EPS);
 
 #ifdef HAS_GTS
     // Test evaluation of a discrete function
