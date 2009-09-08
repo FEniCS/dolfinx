@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2005-2009.
 //
 // First added:  2005-12-02
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifdef HAS_PETSC
 
@@ -120,7 +120,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
     error("Non-matching dimensions for linear system.");
 
   // Write a message
-  if (parameters("report"))
+  if (parameters["report"])
     info("Solving linear system of size %d x %d (Krylov solver).", M, N);
 
   // Reinitialize KSP solver if necessary
@@ -181,7 +181,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A,
     error("Non-matching dimensions for linear system.");
 
   // Write a message
-  if (parameters("report"))
+  if (parameters["report"])
     info("Solving virtual linear system of size %d x %d (Krylov solver).", M, N);
 
   // Reinitialize KSP solver if necessary
@@ -300,22 +300,22 @@ void PETScKrylovSolver::read_parameters()
     return;
 
   // Set monitor
-  if (parameters("monitor_convergence"))
+  if (parameters["monitor_convergence"])
     KSPMonitorSet(*ksp, KSPMonitorTrueResidualNorm, 0, 0);
 
   // Set tolerances
   KSPSetTolerances(*ksp,
-		   parameters("relative_tolerance"),
-		   parameters("absolute_tolerance"),
-		   parameters("divergence_limit"),
-		   parameters("maximum_iterations"));
+		   parameters["relative_tolerance"],
+		   parameters["absolute_tolerance"],
+		   parameters["divergence_limit"],
+		   parameters["maximum_iterations"]);
 
   // Set nonzero shift for preconditioner
   if (!pc_dolfin)
   {
     PC pc;
     KSPGetPC(*ksp, &pc);
-    PCFactorSetShiftNonzero(pc, parameters("shift_nonzero"));
+    PCFactorSetShiftNonzero(pc, parameters["shift_nonzero"]);
   }
 
   // Remember that we have read parameters
@@ -383,7 +383,7 @@ void PETScKrylovSolver::set_petsc_preconditioner()
 void PETScKrylovSolver::write_report(int num_iterations)
 {
   // Check if we should write the report
-  if (!parameters("report"))
+  if (!parameters["report"])
     return;
 
   // Get name of solver and preconditioner

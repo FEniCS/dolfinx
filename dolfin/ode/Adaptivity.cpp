@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-11-04
-// Last changed: 2008-02-11
+// Last changed: 2009-09-08
 
 #include "Adaptivity.h"
 
@@ -12,11 +12,11 @@ using namespace dolfin;
 Adaptivity::Adaptivity(const ODE& ode, const Method& method)
   : ode(ode), method(method)
 {
-  tol    = ode.parameters("tolerance").get_real();
-  _kmax  = ode.parameters("maximum_time_step").get_real();
-  beta   = ode.parameters("interval_threshold").get_real();
-  safety =  ode.parameters("safety_factor").get_real();
-  kfixed = ode.parameters("fixed_time_step");
+  tol    = ode.parameters["tolerance"].get_real();
+  _kmax  = ode.parameters["maximum_time_step"].get_real();
+  beta   = ode.parameters["interval_threshold"].get_real();
+  safety = ode.parameters["safety_factor"].get_real();
+  kfixed = ode.parameters["fixed_time_step"];
 
   safety_old = safety;
   safety_max = safety;

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-10-21
-// Last changed: 2009-09-04
+// Last changed: 2009-09-08
 
 #include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
@@ -282,7 +282,7 @@ void ODE::analyze_stability( uint q, ODESolution& u) {
 //-----------------------------------------------------------------------------
 void ODE::analyze_stability_discretization(ODESolution& u) {
   StabilityAnalysis S(*this, u);
-  S.analyze_integral(parameters("order"));
+  S.analyze_integral(parameters["order"]);
 }
 //-----------------------------------------------------------------------------
 void ODE::analyze_stability_computation(ODESolution& u) {

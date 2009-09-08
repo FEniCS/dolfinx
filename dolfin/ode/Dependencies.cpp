@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-06
-// Last changed: 2009-08-11
+// Last changed: 2009-09-08
 
 #include <dolfin/common/real.h>
 #include <dolfin/common/constants.h>
@@ -129,7 +129,7 @@ void Dependencies::transp(const Dependencies& dependencies)
 void Dependencies::detect(ODE& ode)
 {
   // Get size of increment
-  increment = ode.parameters("sparsity_check_increment").get_real();
+  increment = ode.parameters["sparsity_check_increment"].get_real();
 
   // Prepare sparse pattern if necessary
   make_sparse();

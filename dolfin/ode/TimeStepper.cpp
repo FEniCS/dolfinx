@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2008
 //
 // First added:  2003
-// Last changed: 2009-02-10
+// Last changed: 2009-09-08
 
 #include <cmath>
 #include <string>
@@ -23,18 +23,18 @@ using namespace dolfin;
 TimeStepper::TimeStepper(ODE& ode) :
   ode(ode),
   timeslab(0),
-  file(ode.parameters("solution_file_name")),
+  file(ode.parameters["solution_file_name"]),
   p("Time-stepping"),
   t(0),
   _stopped(false),
-  save_solution(ode.parameters("save_solution")),
-  adaptive_samples(ode.parameters("adaptive_samples")),
-  num_samples(ode.parameters("number_of_samples")),
-  sample_density(ode.parameters("sample_density"))
+  save_solution(ode.parameters["save_solution"]),
+  adaptive_samples(ode.parameters["adaptive_samples"]),
+  num_samples(ode.parameters["number_of_samples"]),
+  sample_density(ode.parameters["sample_density"])
 {
   // Create time slab
-  std::string method = ode.parameters("method");
-  if ( method == "mcg" || method == "mdg" )
+  std::string method = ode.parameters["method"];
+  if (method == "mcg" || method == "mdg")
   {
     timeslab = new MultiAdaptiveTimeSlab(ode);
   }
@@ -60,7 +60,7 @@ void TimeStepper::solve(ODESolution& u, real t0, real t1)
         to_double(t0), to_double(t1));
 
   u.init(ode.size(),
-	 timeslab->get_trial(), 
+	 timeslab->get_trial(),
 	 timeslab->get_quadrature_weights());
 
 

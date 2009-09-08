@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-05
-// Last changed: 2009-09-06
+// Last changed: 2009-09-08
 //
 // This demo demonstrates the DOLFIN parameter system.
 //
@@ -19,8 +19,8 @@ int main(int argc, char* argv[])
   //--- Demo of global DOLFIN parameters ---
 
   // Set some global DOLFIN parameters
-  parameters("linear_algebra_backend") = "uBLAS";
-  parameters("floating_point_precision") = 32;
+  parameters["linear_algebra_backend"] = "uBLAS";
+  parameters["floating_point_precision"] = 32;
 
   // Print global DOLFIN parameters
   info(parameters, true);
@@ -55,11 +55,11 @@ int main(int argc, char* argv[])
   solver_parameters.add("relative_tolerance", 1e-16, 1e-16, 1.0);
 
   // Set range for parameter
-  solver_parameters("max_iterations").set_range(0, 1000);
+  solver_parameters["max_iterations"].set_range(0, 1000);
 
   // Set some parameter values
-  solver_parameters("max_iterations") = 500;
-  solver_parameters("relative_tolerance") = 0.1;
+  solver_parameters["max_iterations"] = 500;
+  solver_parameters["relative_tolerance"] = 0.1;
 
   // Set solver parameters as nested parameters of application parameters
   application_parameters.add(solver_parameters);
@@ -68,9 +68,9 @@ int main(int argc, char* argv[])
   application_parameters.parse(argc, argv);
 
   // Access parameter values
-  double foo = application_parameters("foo");
-  int bar = application_parameters("bar");
-  double tol = application_parameters["solver_parameters"]("tolerance");
+  double foo = application_parameters["foo"];
+  int bar = application_parameters["bar"];
+  double tol = application_parameters("solver_parameters")["tolerance"];
 
   // Print parameter values
   cout << "foo = " << foo << endl;
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
 
   // Set a parameter for the Krylov solver
   KrylovSolver solver;
-  solver.parameters("relative_tolerance") = 1e-20;
+  solver.parameters["relative_tolerance"] = 1e-20;
 
   // Print Krylov solver parameters
   info(solver.parameters, true);

@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells
 //
 // First added:  2005-01-27
-// Last changed: 2009-08-11
+// Last changed: 2009-09-08
 
 #include <string>
 #include <algorithm>
@@ -292,7 +292,7 @@ real MultiAdaptiveTimeSlab::rsample(uint i, real t)
   return adaptivity.residual(i);
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveTimeSlab::save_solution(ODESolution& u) 
+void MultiAdaptiveTimeSlab::save_solution(ODESolution& u)
 {
   //Not implemented
 }
@@ -1043,8 +1043,8 @@ void MultiAdaptiveTimeSlab::dg_feval(real* f, uint s0, uint e0, uint i0,
 //-----------------------------------------------------------------------------
 TimeSlabSolver* MultiAdaptiveTimeSlab::choose_solver()
 {
-  bool implicit = ode.parameters("implicit");
-  std::string solver = ode.parameters("nonlinear_solver");
+  bool implicit = ode.parameters["implicit"];
+  std::string solver = ode.parameters["nonlinear_solver"];
 
   if ( implicit )
     error("Multi-adaptive solver cannot solver implicit ODEs. Use cG(q) or dG(q) instead.");

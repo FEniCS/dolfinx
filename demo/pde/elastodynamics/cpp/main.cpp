@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-01-22
-// Last changed: 2009-01-27
+// Last changed: 2009-09-08
 //
 
 #include <dolfin.h>
@@ -14,11 +14,13 @@ using namespace dolfin;
 // External load
 class Pressure : public Function
 {
-  public:
-    Pressure(const double &t, const double &dt, bool old): t(t), dt(dt), old(old) {}
+public:
 
-  private:
-    void eval(double* values, const Data& data) const
+  Pressure(const double& t, const double& dt, bool old): t(t), dt(dt), old(old) {}
+
+private:
+
+  void eval(double* values, const Data& data) const
     {
       double time = t;
       if(old && time > 0.0)
@@ -27,18 +29,20 @@ class Pressure : public Function
       const double cutoff_time = 10.0*1.0/32.0;
       if (time < cutoff_time)
       {
-  		  values[0] = 1.0*time/cutoff_time;
-  		  values[1] = 0.0;
+        values[0] = 1.0*time/cutoff_time;
+        values[1] = 0.0;
       }
       else
       {
-  		  values[0] = 1.0;
-  		  values[1] = 0.0;
+        values[0] = 1.0;
+        values[1] = 0.0;
       }
     }
+
     const double& t;
     const double& dt;
     const bool    old;
+
 };
 
 
@@ -47,7 +51,7 @@ class RightBoundary : public SubDomain
 {
   bool inside(const double* x, bool on_boundary) const
   {
-    if( 1.0-x[0] < DOLFIN_EPS && on_boundary)
+    if (1.0 - x[0] < DOLFIN_EPS && on_boundary)
       return true;
     else
       return false;
@@ -58,7 +62,7 @@ class LeftBoundary : public SubDomain
 {
   bool inside(const double* x, bool on_boundary) const
   {
-    if( x[0] < DOLFIN_EPS )
+    if (x[0] < DOLFIN_EPS)
       return true;
     else
       return false;

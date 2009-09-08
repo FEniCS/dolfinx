@@ -137,16 +137,19 @@ namespace dolfin
     void update(const Parameters& parameters);
 
     /// Return parameter for given key
-    Parameter& operator() (std::string key);
+    Parameter& operator[] (std::string key);
 
     /// Return parameter for given key (const version)
-    const Parameter& operator() (std::string key) const;
+    const Parameter& operator[] (std::string key) const;
+
+    // Note: We would have liked to use [] also for access of nested parameter
+    // sets just like we do in Python but we can't overload on return type.
 
     /// Return nested parameter set for given key
-    Parameters& operator[] (std::string key);
+    Parameters& operator() (std::string key);
 
     /// Return nested parameter set for given key (const)
-    const Parameters& operator[] (std::string key) const;
+    const Parameters& operator() (std::string key) const;
 
     /// Assignment operator
     const Parameters& operator= (const Parameters& parameters);

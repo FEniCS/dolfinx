@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-26
-// Last changed: 2009-09-06
+// Last changed: 2009-09-08
 
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
@@ -155,7 +155,7 @@ NewtonSolver& VariationalProblem::newton_solver()
   if (!_newton_solver)
   {
     _newton_solver = new NewtonSolver();
-    _newton_solver->parameters.update(parameters["newton_solver"]);
+    _newton_solver->parameters.update(parameters("newton_solver"));
   }
 
   assert(_newton_solver);
@@ -174,7 +174,7 @@ void VariationalProblem::solve_linear(Function& u)
   }
 
   // Check if system is symmetric
-  const bool symmetric = parameters("symmetric");
+  const bool symmetric = parameters["symmetric"];
 
   // Create matrix and vector
   Matrix A;
@@ -208,11 +208,11 @@ void VariationalProblem::solve_linear(Function& u)
   }
 
   // Solve linear system
-  const std::string solver_type = parameters("linear_solver");
+  const std::string solver_type = parameters["linear_solver"];
   if (solver_type == "direct")
   {
     LUSolver solver;
-    solver.parameters.update(parameters["lu_solver"]);
+    solver.parameters.update(parameters("lu_solver"));
     solver.solve(A, u.vector(), b);
   }
   else if (solver_type == "iterative")
@@ -220,13 +220,13 @@ void VariationalProblem::solve_linear(Function& u)
     if (symmetric)
     {
       KrylovSolver solver("cg");
-      solver.parameters.update(parameters["krylov_solver"]);
+      solver.parameters.update(parameters("krylov_solver"));
       solver.solve(A, u.vector(), b);
     }
     else
     {
       KrylovSolver solver("gmres");
-      solver.parameters.update(parameters["krylov_solver"]);
+      solver.parameters.update(parameters("krylov_solver"));
       solver.solve(A, u.vector(), b);
     }
   }

@@ -26,7 +26,7 @@ void plot_object(const T& t, std::string title, std::string mode)
           t.name().c_str(), t.label().c_str());
 
   // Get filename prefix
-  std::string prefix = parameters("plot_filename_prefix");
+  std::string prefix = parameters["plot_filename_prefix"];
 
   // Special treatment when running in parallel
   if (dolfin::MPI::num_processes() > 1)

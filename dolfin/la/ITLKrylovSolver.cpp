@@ -4,7 +4,7 @@
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2008-05-16
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifdef HAS_MTL4
 
@@ -64,8 +64,8 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
   }
 
   // Set convergence criteria
-  itl::basic_iteration<double> iter(b.vec(), parameters("maximum_iterations"),
-                                             parameters("relative_tolerance"));
+  itl::basic_iteration<double> iter(b.vec(), parameters["maximum_iterations"],
+                                             parameters["relative_tolerance"]);
 
   // Check vector size
   if( x.size() != b.size() )

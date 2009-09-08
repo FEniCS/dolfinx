@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2006-2008.
 //
 // First added:  2006-06-23
-// Last changed: 2006-07-03
+// Last changed: 2009-09-08
 
 #include <dolfin/common/constants.h>
 #include "uBLASVector.h"
@@ -14,7 +14,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBLASILUPreconditioner::uBLASILUPreconditioner(const Parameters& krylov_parameters) 
+uBLASILUPreconditioner::uBLASILUPreconditioner(const Parameters& krylov_parameters)
                                      : krylov_parameters(krylov_parameters)
 {
   // Do nothing
@@ -34,7 +34,7 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& A)
   _M.assign(A.mat());
 
   // Add term to diagonal to avoid negative pivots
-  const double zero_shift = krylov_parameters("shift_nonzero");
+  const double zero_shift = krylov_parameters["shift_nonzero"];
   if(zero_shift > 0.0)
     _M.plus_assign( zero_shift*ublas::identity_matrix<double>(size) );
 

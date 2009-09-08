@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003
-// Last changed: 2006-08-21
+// Last changed: 2009-09-08
 //
 // Stiff test problems for the ODE solver.
 
@@ -23,13 +23,13 @@ using namespace dolfin;
 
 void set_parameters(ODE& ode)
 {
-  ode.parameters("method") = "dg";
-  ode.parameters("order") = 1;
-  ode.parameters("maximum time step") = 5.0;
-  ode.parameters("tolerance") = 0.01;
-  ode.parameters("nonlinear solver") = "newton";
-  ode.parameters("adaptive samples") = true;
-  ode.parameters("solve dual problem") = false;
+  ode.parameters["method"] = "dg";
+  ode.parameters["order"] = 1;
+  ode.parameters["maximum time step"] = 5.0;
+  ode.parameters["tolerance"] = 0.01;
+  ode.parameters["nonlinear solver"] = "newton";
+  ode.parameters["adaptive samples"] = true;
+  ode.parameters["solve dual problem"] = false;
 }
 
 int main(int argc, char* argv[])

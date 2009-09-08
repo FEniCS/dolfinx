@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-10-14
-// Last changed: 2009-06-29
+// Last changed: 2009-09-08
 
 #include <dolfin.h>
 
@@ -30,7 +30,7 @@ public:
     h = L / static_cast<real>(N - 1);
     lambda = 0.5*sqrt(2.0*gamma/epsilon);
     v = 0.5*sqrt(2.0*gamma*epsilon);
-    
+
     // Set sparse dependency pattern
     for (unsigned int i = 0; i < N; i++)
     {
@@ -55,7 +55,7 @@ public:
   real f(const real* u, real t, unsigned int i)
   {
     const real ui = u[i];
-    
+
     real sum = 0.0;
     if ( i == 0 )
       sum = u[i + 1] - ui;
@@ -63,7 +63,7 @@ public:
       sum = u[i - 1] - ui;
     else
       sum = u[i + 1] - 2.0*ui + u[i - 1];
-    
+
     return epsilon * sum / (h*h) + gamma * ui*ui * (1.0 - ui);
   }
 
@@ -93,14 +93,14 @@ int main()
 
   // Create ODE
   Reaction ode(N, T, L, epsilon, gamma);
-  ode.parameters("method") = "mcg";
-  ode.parameters("order") = 1;
-  ode.parameters("nonlinear_solver") = "fixed-point";
-  ode.parameters("tolerance") = 1e-3;
-  ode.parameters("partitioning_threshold") = 0.5;
-  ode.parameters("initial_time_step") = 1e-5;
-  ode.parameters("maximum_time_step") = 1e-3;
-  ode.parameters("adaptive_samples") = true;
+  ode.parameters["method"] = "mcg";
+  ode.parameters["order"] = 1;
+  ode.parameters["nonlinear_solver"] = "fixed-point";
+  ode.parameters["tolerance"] = 1e-3;
+  ode.parameters["partitioning_threshold"] = 0.5;
+  ode.parameters["initial_time_step"] = 1e-5;
+  ode.parameters["maximum_time_step"] = 1e-3;
+  ode.parameters["adaptive_samples"] = true;
 
   // Solve ODE
   ode.solve();

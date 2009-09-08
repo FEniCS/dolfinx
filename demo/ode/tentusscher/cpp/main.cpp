@@ -5,7 +5,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-05-24
-// Last changed: 2008-10-07
+// Last changed: 2009-09-08
 //
 // This demo solves the Courtemanche model for cardiac excitation.
 
@@ -17,11 +17,11 @@ using namespace dolfin;
 int main()
 {
   Tentusscher ode(500);
-  ode.parameters("tolerance") = 1.0e-5;
-  ode.parameters("maximum_time_step") = 100.0;
-  ode.parameters("nonlinear_solver") = "newton";
-  ode.parameters("linear_solver") = "iterative";
-  ode.parameters("initial_time_step") = 0.25;
+  ode.parameters["tolerance"] = 1.0e-5;
+  ode.parameters["maximum_time_step"] = 100.0;
+  ode.parameters["nonlinear_solver"] = "newton";
+  ode.parameters["linear_solver"] = "iterative";
+  ode.parameters["initial_time_step"] = 0.25;
 
   ode.solve();
 

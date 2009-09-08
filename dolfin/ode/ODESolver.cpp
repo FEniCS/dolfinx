@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2008
 //
 // First added:  2003
-// Last changed: 2009-02-09
+// Last changed: 2009-09-08
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/timing.h>
@@ -46,7 +46,7 @@ void ODESolver::solve(ODESolution& u)
   solve_primal(u);
 
   // Check if we should solve the dual problem
-  if (ode.parameters("solve_dual_problem"))
+  if (ode.parameters["solve_dual_problem"])
     solve_dual(u);
   else
     cout << "Not solving the dual problem as requested." << endl;

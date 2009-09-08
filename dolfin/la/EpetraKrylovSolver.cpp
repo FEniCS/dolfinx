@@ -3,7 +3,7 @@
 //
 // Modified by Garth N. Wells, 2009.
 //
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifdef HAS_TRILINOS
 
@@ -107,7 +107,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     error("Non-matching dimensions for linear system.");
 
   // Write a message
-  if (parameters("report"))
+  if (parameters["report"])
     info("Solving linear system of size %d x %d (Krylov solver).", M, N);
 
   // Reinitialize solution vector if necessary
@@ -134,7 +134,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   linear_solver.SetAztecOption(AZ_solver, methods.find(method)->second);
 
   // Set output level
-  if(parameters("monitor_convergence"))
+  if(parameters["monitor_convergence"])
    linear_solver.SetAztecOption(AZ_output, 1);
   else
     linear_solver.SetAztecOption(AZ_output, AZ_none);
@@ -197,7 +197,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   }
 
   // Start solve
-  linear_solver.Iterate(parameters("maximum_iterations"), parameters("relative_tolerance"));
+  linear_solver.Iterate(parameters["maximum_iterations"], parameters["relative_tolerance"]);
 
   info("AztecOO Krylov solver (%s, %s) converged in %d iterations.",
           method.c_str(), pc_type.c_str(), linear_solver.NumIters());

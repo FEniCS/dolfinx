@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-09-06
+// Last changed: 2009-09-08
 
 #include <sstream>
 #include <stdio.h>
@@ -331,11 +331,11 @@ void Parameters::update(const Parameters& parameters)
   // Update nested parameter sets
   for (const_parameter_set_iterator it = parameters._parameter_sets.begin(); it != parameters._parameter_sets.end(); ++it)
   {
-    (*this)[it->first].update(*it->second);
+    (*this)(it->first).update(*it->second);
   }
 }
 //-----------------------------------------------------------------------------
-Parameter& Parameters::operator() (std::string key)
+Parameter& Parameters::operator[] (std::string key)
 {
   Parameter* p = find_parameter(key);
   if (!p)
@@ -344,7 +344,7 @@ Parameter& Parameters::operator() (std::string key)
   return *p;
 }
 //-----------------------------------------------------------------------------
-const Parameter& Parameters::operator() (std::string key) const
+const Parameter& Parameters::operator[] (std::string key) const
 {
   Parameter* p = find_parameter(key);
   if (!p)
@@ -353,7 +353,7 @@ const Parameter& Parameters::operator() (std::string key) const
   return *p;
 }
 //-----------------------------------------------------------------------------
-Parameters& Parameters::operator[] (std::string key)
+Parameters& Parameters::operator() (std::string key)
 {
   Parameters* p = find_parameter_set(key);
   if (!p)
@@ -362,7 +362,7 @@ Parameters& Parameters::operator[] (std::string key)
   return *p;
 }
 //-----------------------------------------------------------------------------
-const Parameters& Parameters::operator[] (std::string key) const
+const Parameters& Parameters::operator() (std::string key) const
 {
   Parameters* p = find_parameter_set(key);
   if (!p)

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2004
-// Last changed: 2008-12-11
+// Last changed: 2009-09-08
 
 #include <algorithm>
 #include <cmath>
@@ -48,7 +48,7 @@ real Partition::update(uint offset, uint& end, MultiAdaptivity& adaptivity,
   // Get parameter for threshold (only first time)
   if (threshold == 0.0)
   {
-    threshold = adaptivity.ode.parameters("partitioning_threshold").get_real();
+    threshold = adaptivity.ode.parameters["partitioning_threshold"].get_real();
   }
 
   // Compute time step for partitioning

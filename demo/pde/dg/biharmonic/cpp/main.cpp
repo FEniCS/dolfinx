@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-06-26
-// Last changed: 2009-06-26
+// Last changed: 2009-09-08
 //
 // This demo program solves the Biharmonic equation,
 //
@@ -42,14 +42,13 @@ class DirichletBoundary : public SubDomain
   }
 };
 
-
 int main()
 {
   // Create mesh
   UnitSquare mesh(32, 32);
 
   // Use uBLAS
-  parameters("linear_algebra_backend") = "uBLAS";
+  parameters["linear_algebra_backend"] = "uBLAS";
 
   // Create functions
   Source f;
@@ -72,7 +71,7 @@ int main()
 
   // Create PDE
   VariationalProblem pde(a, L, bc);
-  pde.parameters("symmetric") = true;
+  pde.parameters["symmetric"] = true;
 
   // Solve PDE
   Function u;

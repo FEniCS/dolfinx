@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-08-22
-// Last changed: 2008-12-17
+// Last changed: 2009-09-08
 //
 // Modified by Anders Logg, 2008.
 //
@@ -49,8 +49,8 @@ int main()
 
   // Solve the eigen system
   SLEPcEigenSolver esolver;
-  esolver.parameters("spectrum") = "smallest real";
-  esolver.parameters("solver") = "lapack";
+  esolver.parameters["spectrum"] = "smallest real";
+  esolver.parameters["solver"] = "lapack";
   esolver.solve(S, T);
 
   // The result should have real eigenvalues but due to rounding errors, some of

@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet, 2008.
 //
 // First added:  2003-07-02
-// Last changed: 2008-10-07
+// Last changed: 2009-09-08
 
 #include <stdio.h>
 #include <dolfin.h>
@@ -65,16 +65,16 @@ int main()
 {
   Lorenz lorenz;
 
-  lorenz.parameters("number_of_samples") = 500;
-  lorenz.parameters("initial_time_step") = 0.01;
-  lorenz.parameters("fixed_time_step") = true;
-  lorenz.parameters("method") = "cg";
-  lorenz.parameters("order") = 5;
-  lorenz.parameters("discrete_tolerance") = 1e-10;
-  lorenz.parameters("save_solution") = true;
-  lorenz.parameters("solve_dual_problem") = true;
+  lorenz.parameters["number_of_samples"] = 500;
+  lorenz.parameters["initial_time_step"] = 0.01;
+  lorenz.parameters["fixed_time_step"] = true;
+  lorenz.parameters["method"] = "cg";
+  lorenz.parameters["order"] = 5;
+  lorenz.parameters["discrete_tolerance"] = 1e-10;
+  lorenz.parameters["save_solution"] = true;
+  lorenz.parameters["solve_dual_problem"] = true;
 
   lorenz.solve();
-                    
+
   return 0;
 }

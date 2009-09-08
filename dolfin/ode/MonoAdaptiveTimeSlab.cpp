@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2009-08-11
+// Last changed: 2009-09-08
 
 #include <string>
 #include <dolfin/common/constants.h>
@@ -207,7 +207,7 @@ real MonoAdaptiveTimeSlab::rsample(uint i, real t)
   return r;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveTimeSlab::save_solution(ODESolution& u) 
+void MonoAdaptiveTimeSlab::save_solution(ODESolution& u)
 {
   //printf("MonoAdaptiveTimeSlab::save_solution\n");
   // Prepare array of values
@@ -216,14 +216,14 @@ void MonoAdaptiveTimeSlab::save_solution(ODESolution& u)
   for (uint i = 0; i < N; ++i) {
     for (uint n = 0; n < method->nsize(); n++)
       dofs[n] = x[n*N + i];
-    
+
     method->get_nodal_values(u0[i], dofs, &data[i*u.nsize()]);
   }
-  
-  u.add_timeslab(starttime(), 
-		 endtime(), 
+
+  u.add_timeslab(starttime(),
+		 endtime(),
 		 data);
-  
+
 }
 //-----------------------------------------------------------------------------
 std::string MonoAdaptiveTimeSlab::str(bool verbose) const
@@ -277,13 +277,13 @@ void MonoAdaptiveTimeSlab::feval(uint m)
       ode.f(&x[m*N], t, &fq[m*N]);
       //copy(f, 0, fq, m*N, N);
     }
-  
+
 }
 //-----------------------------------------------------------------------------
 TimeSlabSolver* MonoAdaptiveTimeSlab::choose_solver()
 {
-  bool implicit = ode.parameters("implicit");
-  std::string solver = ode.parameters("nonlinear_solver");
+  bool implicit = ode.parameters["implicit"];
+  std::string solver = ode.parameters["nonlinear_solver"];
 
   if (solver == "fixed-point")
   {

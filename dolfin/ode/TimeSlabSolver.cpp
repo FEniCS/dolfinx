@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2008 Anders Logg.
+// Copyright (C) 2005-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-05
-// Last changed: 2008-06-11
+// Last changed: 2009-09-08
 
 #include <cmath>
 #include <dolfin/common/constants.h>
@@ -15,7 +15,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
   : ode(timeslab.ode), method(*timeslab.method), tol(0.0), maxiter(0),
-    monitor(ode.parameters("monitor_convergence")),
+    monitor(ode.parameters["monitor_convergence"]),
     num_timeslabs(0), num_global_iterations(0), num_local_iterations(0),
     xnorm(0.0)
 {
@@ -23,7 +23,7 @@ TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
   choose_tolerance();
 
   // Get maximum number of iterations
-  maxiter = ode.parameters("maximum_iterations");
+  maxiter = ode.parameters["maximum_iterations"];
 }
 //-----------------------------------------------------------------------------
 TimeSlabSolver::~TimeSlabSolver()
@@ -124,12 +124,12 @@ void TimeSlabSolver::end()
 //-----------------------------------------------------------------------------
 void TimeSlabSolver::choose_tolerance()
 {
-  tol = ode.parameters("discrete_tolerance").get_real();
+  tol = ode.parameters["discrete_tolerance"].get_real();
 
-  if ( !ode.parameters("fixed_time_step") )
+  if (!ode.parameters["fixed_time_step"])
   {
-    const real TOL   = ode.parameters("tolerance").get_real();
-    const real alpha = ode.parameters("discrete_tolerance_factor").get_real();
+    const real TOL = ode.parameters["tolerance"].get_real();
+    const real alpha = ode.parameters["discrete_tolerance_factor"].get_real();
     tol = real_min(tol, alpha*TOL);
   }
   cout << "Using discrete tolerance tol = " << tol << "." << endl;

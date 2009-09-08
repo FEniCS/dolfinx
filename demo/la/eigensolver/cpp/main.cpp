@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-03-08
-// Last changed: 2008-08-28
+// Last changed: 2009-09-08
 //
 // This simple program illustrates the use of the SLEPc eigenvalue solver.
 
@@ -17,7 +17,7 @@ int main()
   #ifdef HAS_SLEPC
 
   // Make sure we use the PETSc backend
-  parameters("linear_algebra_backend") = "PETSc";
+  parameters["linear_algebra_backend"] = "PETSc";
 
   // Build stiftness matrix
   UnitSquare mesh(64, 64);
@@ -30,7 +30,7 @@ int main()
   // Compute the first n eigenvalues
   unsigned int n = 10;
   SLEPcEigenSolver esolver;
-  esolver.parameters("spectrum") = "smallest magnitude";
+  esolver.parameters["spectrum"] = "smallest magnitude";
   esolver.solve(AA, n);
 
   cout << "Solver converted in " << esolver.get_iteration_number() << " iterations" << endl;
