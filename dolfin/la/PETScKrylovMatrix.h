@@ -4,7 +4,7 @@
 // Modified by Andy R. Terrel, 2005.
 //
 // First added:  2005-01-17
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifndef __PETSC_KRYLOV_MATRIX_H
 #define __PETSC_KRYLOV_MATRIX_H
@@ -64,7 +64,7 @@ namespace dolfin
     virtual void mult(const PETScVector& x, PETScVector& y) const = 0;
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
   private:
 

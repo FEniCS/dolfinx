@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2005
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifndef __PETSC_LU_SOLVER_H
 #define __PETSC_LU_SOLVER_H
@@ -48,7 +48,7 @@ namespace dolfin
     uint solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
     /// Default parameter values
     static Parameters default_parameters();

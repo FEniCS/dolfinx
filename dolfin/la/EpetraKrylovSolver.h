@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 // Modified by Garth N. Wells, 2009.
 //
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifdef HAS_TRILINOS
 
@@ -55,7 +55,7 @@ namespace dolfin
     static Parameters default_parameters();
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
   private:
 

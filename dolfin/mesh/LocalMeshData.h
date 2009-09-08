@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
-// Last changed: 2009-08-08
+// Last changed: 2009-09-08
 //
 // Modified by Anders Logg, 2008-2009.
 
@@ -51,7 +51,7 @@ namespace dolfin
     ~LocalMeshData();
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
     /// Define XMLHandler for use in new XML reader/writer
     typedef XMLLocalMeshData XMLHandler;

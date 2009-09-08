@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2009
 //
 // First added:  2005-05-02
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifndef __DGQ_METHOD_H
 #define __DGQ_METHOD_H
@@ -45,7 +45,7 @@ namespace dolfin
     void get_nodal_values(const real& x0, const real* x, real* nodal_values) const;
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
   protected:
 

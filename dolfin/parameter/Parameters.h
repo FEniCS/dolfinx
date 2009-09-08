@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-09-05
+// Last changed: 2009-09-08
 
 #ifndef __PARAMETERS_H
 #define __PARAMETERS_H
@@ -158,7 +158,7 @@ namespace dolfin
     void get_parameter_set_keys(std::vector<std::string>& keys) const;
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
     /// Define XMLHandler for use in new XML reader/writer
     typedef XMLParameters XMLHandler;

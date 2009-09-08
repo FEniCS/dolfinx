@@ -8,7 +8,7 @@
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2006-07-05
-// Last changed: 2009-09-07
+// Last changed: 2009-09-08
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -84,7 +84,7 @@ namespace dolfin
     virtual void apply();
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose=false) const;
+    virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericMatrix interface ---
 
@@ -101,7 +101,8 @@ namespace dolfin
     virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false);
+    virtual void axpy(double a, const GenericMatrix& A,
+                      bool same_nonzero_pattern);
 
     /// Return norm of matrix
     virtual double norm(std::string norm_type) const;
@@ -119,7 +120,10 @@ namespace dolfin
     virtual void ident(uint m, const uint* rows);
 
     /// Matrix-vector product, y = Ax
-    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const;
+    virtual void mult(const GenericVector& x, GenericVector& y) const;
+
+    /// Matrix-vector product, y = A^T x
+    virtual void transpmult(const GenericVector& x, GenericVector& y) const;
 
     /// Multiply matrix by given number
     virtual const uBLASMatrix<Mat>& operator*= (double a);
@@ -398,12 +402,15 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  void uBLASMatrix<Mat>::mult(const GenericVector& x, GenericVector& y, bool transposed) const
+  void uBLASMatrix<Mat>::mult(const GenericVector& x, GenericVector& y) const
   {
-    if (transposed == true)
-      error("The transposed version of the uBLAS matrix-vector product is not yet implemented");
-
     ublas::axpy_prod(A, x.down_cast<uBLASVector>().vec(), y.down_cast<uBLASVector>().vec(), true);
+  }
+  //-----------------------------------------------------------------------------
+  template <class Mat>
+  void uBLASMatrix<Mat>::transpmult(const GenericVector& x, GenericVector& y) const
+  {
+    error("The transposed version of the uBLAS matrix-vector product is not yet implemented");
   }
   //-----------------------------------------------------------------------------
   template <class Mat>

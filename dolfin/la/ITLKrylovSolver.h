@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-07-16
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifdef HAS_MTL4
 
@@ -45,7 +45,7 @@ namespace dolfin
     uint solve(const MTL4Matrix& A, MTL4Vector& x, const MTL4Vector& b);
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
     /// Default parameter values
     static Parameters default_parameters();

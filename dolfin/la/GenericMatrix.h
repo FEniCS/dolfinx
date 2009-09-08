@@ -8,7 +8,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2009-09-07
+// Last changed: 2009-09-08
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -52,17 +52,17 @@ namespace dolfin
     virtual uint size(uint dim) const = 0;
 
     /// Get block of values
-    virtual void get(double* block, const uint* num_rows, 
+    virtual void get(double* block, const uint* num_rows,
                      const uint * const * rows) const
     { get(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Set block of values
-    virtual void set(const double* block, const uint* num_rows, 
+    virtual void set(const double* block, const uint* num_rows,
                      const uint * const * rows)
     { set(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
     /// Add block of values
-    virtual void add(const double* block, const uint* num_rows, 
+    virtual void add(const double* block, const uint* num_rows,
                      const uint * const * rows)
     { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
@@ -73,7 +73,7 @@ namespace dolfin
     virtual void apply() = 0;
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose=false) const = 0;
+    virtual std::string str(bool verbose) const = 0;
 
     //--- Matrix interface ---
 
@@ -81,30 +81,30 @@ namespace dolfin
     virtual void resize(uint M, uint N) = 0;
 
     /// Get block of values
-    virtual void get(double* block, uint m, const uint* rows, uint n, 
+    virtual void get(double* block, uint m, const uint* rows, uint n,
                      const uint* cols) const = 0;
 
     /// Set block of values
-    virtual void set(const double* block, uint m, const uint* rows, uint n, 
+    virtual void set(const double* block, uint m, const uint* rows, uint n,
                      const uint* cols) = 0;
 
     /// Add block of values
-    virtual void add(const double* block, uint m, const uint* rows, uint n, 
+    virtual void add(const double* block, uint m, const uint* rows, uint n,
                      const uint* cols) = 0;
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A, 
-                      bool same_nonzero_pattern = false) = 0;
+    virtual void axpy(double a, const GenericMatrix& A,
+                      bool same_nonzero_pattern) = 0;
 
     /// Return norm of matrix
     virtual double norm(std::string norm_type) const = 0;
 
     /// Get non-zero values of given row
-    virtual void getrow(uint row, std::vector<uint>& columns, 
+    virtual void getrow(uint row, std::vector<uint>& columns,
                         std::vector<double>& values) const = 0;
 
     /// Set values for given row
-    virtual void setrow(uint row, const std::vector<uint>& columns, 
+    virtual void setrow(uint row, const std::vector<uint>& columns,
                         const std::vector<double>& values) = 0;
 
     /// Set given rows to zero
@@ -114,8 +114,10 @@ namespace dolfin
     virtual void ident(uint m, const uint* rows) = 0;
 
     /// Matrix-vector product, y = Ax
-    virtual void mult(const GenericVector& x, GenericVector& y, 
-                      bool transposed=false) const = 0;
+    virtual void mult(const GenericVector& x, GenericVector& y) const = 0;
+
+    /// Matrix-vector product, y = A^T x
+    virtual void transpmult(const GenericVector& x, GenericVector& y) const = 0;
 
     /// Multiply matrix by given number
     virtual const GenericMatrix& operator*= (double a) = 0;
@@ -126,14 +128,14 @@ namespace dolfin
     /// Add given matrix
     const GenericMatrix& operator+= (const GenericMatrix& A)
     {
-      axpy(1.0,A);
+      axpy(1.0, A, false);
       return *this;
     }
 
     /// Subtract given matrix
     const GenericMatrix& operator-= (const GenericMatrix& A)
     {
-      axpy(-1.0,A);
+      axpy(-1.0, A, false);
       return *this;
     }
 
@@ -141,13 +143,13 @@ namespace dolfin
     virtual const GenericMatrix& operator= (const GenericMatrix& x) = 0;
 
     /// Return pointers to underlying compresssed row/column storage data
-    /// For compressed row storage, data = (row_pointer[#rows +1], 
+    /// For compressed row storage, data = (row_pointer[#rows +1],
     /// column_index[#nz], matrix_values[#nz], nz)
     virtual std::tr1::tuple<const std::size_t*, const std::size_t*,
                                             const double*, int> data() const
     {
       error("Unable to return pointers to underlying matrix data.");
-      return std::tr1::tuple<const std::size_t*, const std::size_t*, 
+      return std::tr1::tuple<const std::size_t*, const std::size_t*,
                                                const double*, int>(0, 0, 0, 0);
     }
 

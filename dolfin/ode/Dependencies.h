@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-06
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifndef __DEPENDENCIES_H
 #define __DEPENDENCIES_H
@@ -53,7 +53,7 @@ namespace dolfin
     inline const std::vector<uint>& operator[] (uint i) const { return ( _sparse ? sdep[i] : ddep ); }
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
   private:
 

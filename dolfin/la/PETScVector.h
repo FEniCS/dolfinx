@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2009-09-07
+// Last changed: 2009-09-08
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -38,10 +38,10 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    explicit PETScVector(std::string = "global");
+    explicit PETScVector(std::string="global");
 
     /// Create vector of size N
-    PETScVector(uint N, std::string type = "global");
+    PETScVector(uint N, std::string type="global");
 
     /// Copy constructor
     PETScVector(const PETScVector& x);
@@ -64,7 +64,7 @@ namespace dolfin
     virtual void apply();
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose=false) const;
+    virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericVector interface ---
 
@@ -150,9 +150,10 @@ namespace dolfin
     /// Assignment operator
     const PETScVector& operator= (const PETScVector& x);
 
-    /// Gather vector entries into a local vector. If local_indices = 0, then
-    /// a local index array is created such that the order of the values in the
-    /// return array is the same as the order in global_indices.
+    /// Gather vector entries into a local vector. If local_indices is
+    /// 0, then a local index array is created such that the order of
+    /// the values in the return array is the same as the order in
+    /// global_indices.
     virtual void gather(GenericVector& y, const std::vector<uint>& indices) const;
 
     friend class PETScMatrix;

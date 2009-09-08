@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-06-03
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifndef __GAUSS_QUADRATURE_H
 #define __GAUSS_QUADRATURE_H
@@ -30,7 +30,7 @@ namespace dolfin
     GaussQuadrature(unsigned int n);
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
   private:
 

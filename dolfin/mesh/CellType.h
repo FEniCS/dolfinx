@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -109,7 +109,7 @@ namespace dolfin
     virtual bool intersects(const MeshEntity& entity, const Cell& cell) const = 0;
 
     /// Return description of cell type
-    virtual std::string description(bool plural=false) const = 0;
+    virtual std::string description(bool plural) const = 0;
 
   protected:
 

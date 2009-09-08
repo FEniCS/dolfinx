@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008. 2009.
 //
 // First added:  2008-07-06
-// Last changed: 2009-08-11
+// Last changed: 2009-09-08
 
 #ifdef HAS_MTL4
 
@@ -216,17 +216,20 @@ void MTL4Matrix::zero(uint m, const uint* rows)
   }
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transposed) const
+void MTL4Matrix::mult(const GenericVector& x_, GenericVector& Ax_) const
+{
+  assert_no_inserter();
+  Ax_.down_cast<MTL4Vector>().vec() = A*x_.down_cast<MTL4Vector>().vec();
+}
+//-----------------------------------------------------------------------------
+void MTL4Matrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 {
   assert_no_inserter();
 
   // FIXME: Transposed view multiply, e.g. y = trans(A)*x
   // does not work in const-declared member function.
 
-  if(transposed)
-    error("MTL4Matrix: Transposed view multiply is not implemented yet.");
-  else
-    Ax_.down_cast<MTL4Vector>().vec() = A*x_.down_cast<MTL4Vector>().vec();
+  error("MTL4Matrix: Transposed view multiply is not implemented yet.");
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::getrow(uint row_idx, std::vector<uint>& columns, std::vector<double>& values) const

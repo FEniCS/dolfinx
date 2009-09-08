@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2008-2009.
 //
 // First added:  2008-04-21
-// Last changed: 2009-09-07
+// Last changed: 2009-09-08
 
 #ifndef __EPETRA_VECTOR_H
 #define __EPETRA_VECTOR_H
@@ -64,7 +64,7 @@ namespace dolfin
     virtual void apply();
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose=false) const;
+    virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericVector interface ---
 

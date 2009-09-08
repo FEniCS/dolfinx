@@ -7,7 +7,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2009-09-07
+// Last changed: 2009-09-08
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -62,7 +62,7 @@ namespace dolfin
     { vector->apply(); }
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose=false) const
+    virtual std::string str(bool verbose) const
     { return vector->str(verbose); }
 
     //--- Implementation of the GenericVector interface ---

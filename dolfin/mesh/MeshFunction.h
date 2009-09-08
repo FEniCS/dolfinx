@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman, 2007.
 //
 // First added:  2006-05-22
-// Last changed: 2009-08-11
+// Last changed: 2009-09-08
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -216,7 +216,7 @@ namespace dolfin
     }
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const
+    std::string str(bool verbose) const
     {
       std::stringstream s;
 

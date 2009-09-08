@@ -6,7 +6,7 @@
 // Modified by Ilmar Wilbers, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2009-09-07
+// Last changed: 2009-09-08
 
 #ifndef __STL_MATRIX_H
 #define __STL_MATRIX_H
@@ -69,7 +69,7 @@ namespace dolfin
     virtual void apply() {}
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose=false) const;
+    virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericMatrix interface ---
 
@@ -105,7 +105,7 @@ namespace dolfin
     }
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false)
+    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
     { error("Not implemented."); }
 
     /// Return norm of matrix
@@ -138,7 +138,11 @@ namespace dolfin
     { error("Not implemented."); }
 
     // Matrix-vector product, y = Ax
-    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const
+    virtual void mult(const GenericVector& x, GenericVector& y) const
+    { error("Not implemented."); }
+
+    // Matrix-vector product, y = A^T x
+    virtual void transpmult(const GenericVector& x, GenericVector& y) const
     { error("Not implemented."); }
 
     /// Multiply matrix by given number
@@ -159,10 +163,10 @@ namespace dolfin
     virtual LinearAlgebraFactory& factory() const;
 
     /// Resize tensor of given rank and dimensions
-    virtual void resize(uint rank, const uint* dims, bool reset=true)
+    virtual void resize(uint rank, const uint* dims, bool reset)
     {
       // Check that the rank is 2
-      if ( rank != 2 )
+      if (rank != 2)
         error("Illegal tensor rank (%d) for matrix. Rank must be 2.", rank);
 
       // Initialize matrix

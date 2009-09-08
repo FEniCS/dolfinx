@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-08-11
+// Last changed: 2009-09-08
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/Variable.h>
@@ -91,19 +91,19 @@ LogStream& LogStream::operator<< (complex z)
 //-----------------------------------------------------------------------------
 LogStream& LogStream::operator<< (const Variable& variable)
 {
-  buffer << variable.str();
+  buffer << variable.str(false);
   return *this;
 }
 //-----------------------------------------------------------------------------
 LogStream& LogStream::operator<< (const MeshEntity& entity)
 {
-  buffer << entity.str();
+  buffer << entity.str(false);
   return *this;
 }
 //-----------------------------------------------------------------------------
 LogStream& LogStream::operator<< (const Point& point)
 {
-  buffer << point.str();
+  buffer << point.str(false);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ LogStream& LogStream::operator<< (real a)
 //-----------------------------------------------------------------------------
 void LogStream::setprecision(uint n)
 {
-  buffer.precision(n);  
+  buffer.precision(n);
 }
 //-----------------------------------------------------------------------------
 

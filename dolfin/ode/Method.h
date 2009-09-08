@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2009-08-11
+// Last changed: 2009-09-08
 
 #ifndef __METHOD_H
 #define __METHOD_H
@@ -86,13 +86,17 @@ namespace dolfin
     /// Compute error estimate (modulo stability factor)
     virtual real error(real k, real r) const = 0;
 
+    /// Get nodal values
     virtual void get_nodal_values(const real& x0, const real* x, real* nodal_values) const = 0;
 
+    /// Get trial functions
     inline const Lagrange get_trial() const { return *trial; }
+
+    /// Get quadrature weights
     inline const real* get_quadrature_weights() const {return qweights; }
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose=false) const = 0;
+    virtual std::string str(bool verbose) const = 0;
 
   protected:
 
@@ -125,5 +129,3 @@ namespace dolfin
 }
 
 #endif
-
-

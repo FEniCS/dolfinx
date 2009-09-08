@@ -7,7 +7,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2009-08-11
+// Last changed: 2009-09-08
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
@@ -44,10 +44,10 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    explicit PETScMatrix(std::string type = "default");
+    explicit PETScMatrix(std::string type="default");
 
     /// Create M x N matrix
-    PETScMatrix(uint M, uint N, std::string type = "default");
+    PETScMatrix(uint M, uint N, std::string type="default");
 
     /// Copy constructor
     explicit PETScMatrix(const PETScMatrix& A);
@@ -76,7 +76,7 @@ namespace dolfin
     virtual void apply();
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose=false) const;
+    virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericMatrix interface --
 
@@ -93,7 +93,7 @@ namespace dolfin
     virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false);
+    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern);
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const;
@@ -108,7 +108,10 @@ namespace dolfin
     virtual void ident(uint m, const uint* rows);
 
     // Matrix-vector product, y = Ax
-    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const;
+    virtual void mult(const GenericVector& x, GenericVector& y) const;
+
+    // Matrix-vector product, y = A^T x
+    virtual void transpmult(const GenericVector& x, GenericVector& y) const;
 
     /// Multiply matrix by given number
     virtual const PETScMatrix& operator*= (double a);

@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2007-02-12
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifndef __GRAPH_H
 #define __GRAPH_H
@@ -116,7 +116,7 @@ namespace dolfin
     std::string typestr() const;
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
     /// Clear graph data
     void clear();
