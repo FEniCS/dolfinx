@@ -111,7 +111,7 @@ namespace dolfin
     virtual void mult(const GenericVector& x, GenericVector& y) const;
 
     // Matrix-vector product, y = A^T x
-    virtual void mult(const GenericVector& x, GenericVector& y) const;
+    virtual void transpmult(const GenericVector& x, GenericVector& y) const;
 
     /// Multiply matrix by given number
     virtual const EpetraMatrix& operator*= (double a);
