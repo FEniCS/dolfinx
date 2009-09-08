@@ -24,6 +24,9 @@ namespace dolfin
     /// Destructor
     ~GlobalParameters();
 
+    /// Parse parameters from command-line
+    virtual void parse(int argc, char* argv[]);
+
     /// Default parameter values
     static Parameters default_parameters()
     {

@@ -131,7 +131,7 @@ namespace dolfin
     void add(const Parameters& parameters);
 
     /// Parse parameters from command-line
-    void parse(int argc, char* argv[]);
+    virtual void parse(int argc, char* argv[]);
 
     /// Update parameters with another set of parameters
     void update(const Parameters& parameters);
@@ -166,13 +166,15 @@ namespace dolfin
     /// Define XMLHandler for use in new XML reader/writer
     typedef XMLParameters XMLHandler;
 
-  private:
+  protected:
 
     /// Parse filtered options (everything except PETSc options)
     void parse_dolfin(int argc, char* argv[]);
 
     /// Parse filtered options (only PETSc options)
     void parse_petsc(int argc, char* argv[]);
+
+  private:
 
     // Add all parameters as options to a boost::program_option instance
     void add_parameter_set_to_po(boost::program_options::options_description& desc,
