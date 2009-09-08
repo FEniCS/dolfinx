@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2006-2008.
 //
 // First added:  2006-05-31
-// Last changed: 2009-05-23
+// Last changed: 2009-09-08
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
@@ -30,8 +30,8 @@ namespace dolfin
   public:
 
     /// Create Krylov solver for a particular method and preconditioner
-    uBLASKrylovSolver(std::string solver_type = "default",
-                      std::string pc_type = "default");
+    uBLASKrylovSolver(std::string solver_type="default",
+                      std::string pc_type="default");
 
     /// Create Krylov solver for a particular uBLASPreconditioner
     uBLASKrylovSolver(uBLASPreconditioner& pc);
@@ -67,7 +67,7 @@ namespace dolfin
 
     /// Solve linear system Ax = b using CG
     template<class Mat>
-    uint solveCG(const Mat& A, uBLASVector& x, const uBLASVector& b, 
+    uint solveCG(const Mat& A, uBLASVector& x, const uBLASVector& b,
                  bool& converged) const;
 
     /// Solve linear system Ax = b using restarted GMRES
@@ -111,7 +111,7 @@ namespace dolfin
   // Implementation of template functions
   //---------------------------------------------------------------------------
   template<class Mat>
-  dolfin::uint uBLASKrylovSolver::solve_krylov(const Mat& A, 
+  dolfin::uint uBLASKrylovSolver::solve_krylov(const Mat& A,
                                                uBLASVector& x,
                                                const uBLASVector& b)
   {
@@ -167,7 +167,7 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   template<class Mat>
   dolfin::uint uBLASKrylovSolver::solveCG(const Mat& A, uBLASVector& x,
-					                                const uBLASVector& b, 
+					                                const uBLASVector& b,
                                           bool& converged) const
   {
     warning("Conjugate-gradient method not yet programmed for uBLASKrylovSolver. Using GMRES.");

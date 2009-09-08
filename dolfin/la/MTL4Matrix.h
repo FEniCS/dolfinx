@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008, 2009.
 //
 // First added:  2008-07-06
-// Last changed: 2009-09-07
+// Last changed: 2009-09-08
 
 #ifdef HAS_MTL4
 
@@ -63,7 +63,7 @@ namespace dolfin
     virtual void apply();
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose=false) const;
+    virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericMatrix interface ---
 
@@ -80,7 +80,7 @@ namespace dolfin
     virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A,  bool same_nonzero_pattern = false);
+    virtual void axpy(double a, const GenericMatrix& A,  bool same_nonzero_pattern);
 
     /// Return norm of matrix
     virtual double norm(std::string norm_type) const;
@@ -98,7 +98,10 @@ namespace dolfin
     virtual void ident(uint m, const uint* rows);
 
     // Matrix-vector product, y = Ax
-    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const;
+    virtual void mult(const GenericVector& x, GenericVector& y) const;
+
+    // Matrix-vector product, y = A^T x
+    virtual void transpmult(const GenericVector& x, GenericVector& y) const;
 
     /// Multiply matrix by given number
     virtual const MTL4Matrix& operator*= (double a);

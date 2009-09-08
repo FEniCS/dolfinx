@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2008-07-06
-// Last changed: 2009-09-07
+// Last changed: 2009-09-08
 
 #ifdef HAS_MTL4
 
@@ -57,7 +57,7 @@ namespace dolfin
     virtual void apply();
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose=false) const;
+    virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericVector interface ---
 

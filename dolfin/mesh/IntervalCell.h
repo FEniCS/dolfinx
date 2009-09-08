@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifndef __INTERVAL_CELL_H
 #define __INTERVAL_CELL_H
@@ -69,7 +69,7 @@ namespace dolfin
     bool intersects(const MeshEntity& entity, const Cell& cell) const;
 
     /// Return description of cell type
-    std::string description(bool plural=false) const;
+    std::string description(bool plural) const;
 
   };
 

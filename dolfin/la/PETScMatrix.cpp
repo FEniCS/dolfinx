@@ -7,7 +7,7 @@
 // Modified by Magnus Vikstrøm 2007-2008.
 //
 // First added:  2004
-// Last changed: 2009-08-11
+// Last changed: 2009-09-08
 
 #ifdef HAS_PETSC
 
@@ -359,27 +359,30 @@ void PETScMatrix::ident(uint m, const uint* rows)
   ISDestroy(is);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::mult(const GenericVector& x, GenericVector& y, bool transposed) const
+void PETScMatrix::mult(const GenericVector& x, GenericVector& y) const
 {
   assert(A);
 
   const PETScVector& xx = x.down_cast<PETScVector>();
-  PETScVector& yy       = y.down_cast<PETScVector>();
+  PETScVector& yy = y.down_cast<PETScVector>();
 
-  if (transposed)
-  {
-    if (size(0) != xx.size())
-      error("Matrix and vector dimensions don't match for matrix-vector product.");
-    yy.resize(size(1));
-    MatMultTranspose(*A, *xx.vec(), *yy.vec());
-  }
-  else
-  {
-    if (size(1) != xx.size())
-      error("Matrix and vector dimensions don't match for matrix-vector product.");
-    yy.resize(size(0));
-    MatMult(*A, *xx.vec(), *yy.vec());
-  }
+  if (size(1) != xx.size())
+    error("Matrix and vector dimensions don't match for matrix-vector product.");
+  yy.resize(size(0));
+  MatMult(*A, *xx.vec(), *yy.vec());
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::transpmult(const GenericVector& x, GenericVector& y) const
+{
+  assert(A);
+
+  const PETScVector& xx = x.down_cast<PETScVector>();
+  PETScVector& yy = y.down_cast<PETScVector>();
+
+  if (size(0) != xx.size())
+    error("Matrix and vector dimensions don't match for matrix-vector product.");
+  yy.resize(size(1));
+  MatMultTranspose(*A, *xx.vec(), *yy.vec());
 }
 //-----------------------------------------------------------------------------
 double PETScMatrix::norm(std::string norm_type) const

@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2009-09-07
+// Last changed: 2009-09-08
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -65,7 +65,7 @@ namespace dolfin
     virtual void apply();
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose=false) const;
+    virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericVector interface ---
 
@@ -115,13 +115,13 @@ namespace dolfin
     virtual double sum() const;
 
     /// Multiply vector by given number
-    virtual const uBLASVector& operator *= (double a);
+    virtual const uBLASVector& operator*= (double a);
 
     /// Multiply vector by another vector pointwise
     virtual const uBLASVector& operator*= (const GenericVector& x);
 
     /// Divide vector by given number
-    virtual const uBLASVector& operator /= (double a);
+    virtual const uBLASVector& operator/= (double a);
 
     /// Add given vector
     virtual const uBLASVector& operator+= (const GenericVector& x);

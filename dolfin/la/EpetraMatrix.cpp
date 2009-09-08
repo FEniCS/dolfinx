@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2008, 2008.
 //
 // First added:  2008-04-21
-// Last changed: 2009-08-12
+// Last changed: 2009-09-08
 
 #ifdef HAS_TRILINOS
 
@@ -285,7 +285,7 @@ void EpetraMatrix::zero(uint m, const uint* rows)
   delete row_size;
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transposed) const
+void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 {
   assert(A);
 
@@ -297,20 +297,35 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_, bool transp
   if (!Ax)
     error("EpetraMatrix::mult: The vector Ax should be of type EpetraVector.");
 
-  if (transposed) {
-    if (size(0) != x->size())
-      error("EpetraMatrix::mult: Matrix and vector dimensions don't match for (transposed) matrix-vector product.");
-    Ax->resize(size(1));
-  } else {
-    if (size(1) != x->size())
-      error("EpetraMatrix::mult: Matrix and vector dimensions don't match for matrix-vector product.");
-    Ax->resize(size(0));
-  }
+  if (size(1) != x->size())
+    error("EpetraMatrix::mult: Matrix and vector dimensions don't match for matrix-vector product.");
+  Ax->resize(size(0));
 
-  int err = A->Multiply(transposed, *(x->vec()), *(Ax->vec()));
+  int err = A->Multiply(false, *(x->vec()), *(Ax->vec()));
   if (err!= 0)
     error("EpetraMatrix::mult: Did not manage to perform Epetra_CRSMatrix::Multiply.");
 
+}
+//-----------------------------------------------------------------------------
+void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
+{
+  assert(A);
+
+  const EpetraVector* x = dynamic_cast<const EpetraVector*>(x_.instance());
+  if (!x)
+    error("EpetraMatrix::transpmult: The vector x should be of type EpetraVector.");
+
+  EpetraVector* Ax = dynamic_cast<EpetraVector*>(Ax_.instance());
+  if (!Ax)
+    error("EpetraMatrix::transpmult: The vector Ax should be of type EpetraVector.");
+
+  if (size(0) != x->size())
+    error("EpetraMatrix::transpmult: Matrix and vector dimensions don't match for (transposed) matrix-vector product.");
+  Ax->resize(size(1));
+
+  int err = A->Multiply(true, *(x->vec()), *(Ax->vec()));
+  if (err!= 0)
+    error("EpetraMatrix::transpmult: Did not manage to perform Epetra_CRSMatrix::Multiply.");
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const

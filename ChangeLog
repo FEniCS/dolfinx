@@ -1,3 +1,4 @@
+ - Split mult into mult and transpmult
  - Filter out PETSc argument when parsing command-line parameters
  - Extend comments to SWIG interface files
  - Add copyright statements to SWIG interface files (not finished yet)

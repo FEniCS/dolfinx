@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-06-12
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifndef __LAGRANGE_H
 #define __LAGRANGE_H
@@ -65,7 +65,7 @@ namespace dolfin
     real dqdx(unsigned int i);
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
   private:
 
