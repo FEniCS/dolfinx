@@ -222,14 +222,16 @@ namespace dolfin
 
       if (verbose)
       {
-        warning("Verbose display of MeshFunctions is not possible as it is a templated class.");
-        //s << str(false) << std::endl << std::endl;
-        //for (uint i = 0; i < _size; i++)
-        //  s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
+        s << str(false) << std::endl << std::endl;
+        
+        //warning("Verbose display of MeshFunctions is not possible as it is a templated class.");
+        s << str(false) << std::endl << std::endl;
+        for (uint i = 0; i < _size; i++)
+          s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
       }
       else
       {
-        s << "MeshFuncton of topological dimension " << _dim << " containing " << _size << " values>";
+        s << "<MeshFuncton of topological dimension " << _dim << " containing " << _size << " values>";
       }
 
       return s.str();
