@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-08-16
+// Last changed: 2009-09-08
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
@@ -124,8 +124,14 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
       const uint local_dim = local_dimension(ufc_cell);
       for (uint i = 0; i < local_dim; i++)
         dofs[i] += _ufc_offset;
-    }  
+    }
   }
+}
+//-----------------------------------------------------------------------------
+void DofMap::tabulate_dofs(uint* dofs, const Cell& cell) const
+{
+  UFCCell ufc_cell(cell);
+  tabulate_dofs(dofs, ufc_cell, cell.index());
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const
@@ -153,14 +159,14 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component) const
 
     const uint max_local_dim = ufc_sub_dof_map->max_local_dimension();
     const uint num_cells = dolfin_mesh->num_cells();
- 
+
      // Create vector for new map
     std::auto_ptr<std::vector<uint> > sub_map(new std::vector<uint>);
-    sub_map->resize(max_local_dim*num_cells); 
-  
+    sub_map->resize(max_local_dim*num_cells);
+
     // Create new dof map (this will initialise the UFC dof map)
     sub_dofmap = new DofMap(sub_map, ufc_sub_dof_map, dolfin_mesh);
- 
+
     // Build sub-map vector
     UFCCell ufc_cell(*dolfin_mesh);
     uint* ufc_dofs = new uint[ufc_sub_dof_map->max_local_dimension()];
@@ -199,10 +205,10 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map) const
   else
   {
     // Create a new DofMap
-    collapsed_dof_map = new DofMap(ufc_dof_map, dolfin_mesh); 
+    collapsed_dof_map = new DofMap(ufc_dof_map, dolfin_mesh);
   }
 
-  assert(collapsed_dof_map->global_dimension() == this->global_dimension()); 
+  assert(collapsed_dof_map->global_dimension() == this->global_dimension());
 
   // Clear map
   collapsed_map.clear();
@@ -219,7 +225,7 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map) const
    // Tabulate dofs
    this->tabulate_dofs(dofs, ufc_cell, cell->index());
    collapsed_dof_map->tabulate_dofs(collapsed_dofs, ufc_cell, cell->index());
-  
+
     // Add to map
     for (uint i = 0; i < collapsed_dof_map->local_dimension(ufc_cell); ++i)
       collapsed_map[collapsed_dofs[i]] = dofs[i];
