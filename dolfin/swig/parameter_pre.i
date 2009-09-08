@@ -12,8 +12,8 @@
 // Renames and ignores for Parameters
 %rename (_get_parameter_keys) dolfin::Parameters::get_parameter_keys;
 %rename (_get_parameter_set_keys) dolfin::Parameters::get_parameter_set_keys;
-%rename (_get_parameter_set) dolfin::Parameters::operator[];
-%rename (_get_parameter) dolfin::Parameters::operator();
+%rename (_get_parameter_set) dolfin::Parameters::operator();
+%rename (_get_parameter) dolfin::Parameters::operator[];
 %rename (__str__) dolfin::Parameters::str const;
 %ignore dolfin::Parameters::parse;
 %ignore dolfin::Parameters::update;
@@ -31,7 +31,7 @@
   }
   int list_length = PyList_Size($input);
   if (!list_length > 0){
-    PyErr_SetString(PyExc_ValueError,"expected a list with length > 0");	
+    PyErr_SetString(PyExc_ValueError,"expected a list with length > 0");
     return NULL;
   }
   for (i = 0; i < list_length; i++) {
@@ -50,12 +50,12 @@
   $1 = &tmp_vec;
 }
 
-%typemap(argout) std::vector<std::string>& keys 
+%typemap(argout) std::vector<std::string>& keys
 {
   int size = $1->size();
   PyObject* ret = PyList_New(size);
   PyObject* tmp_Py_str = 0;
-  for (int i=0; i < size; i++) 
+  for (int i=0; i < size; i++)
   {
     tmp_Py_str = PyString_FromString((*$1)[i].c_str());
     if (PyList_SetItem(ret,i,tmp_Py_str)<0)
