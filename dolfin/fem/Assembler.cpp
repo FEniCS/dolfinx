@@ -39,20 +39,22 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A,
                          const Form& a,
-                         bool reset_tensor)
+                         bool reset_sparsity,
+                         bool add_values)
 {
   // Extract boundary indicators (if any)
   MeshFunction<uint>* exterior_facet_domains
     = a.mesh().data().mesh_function("exterior facet domains"); 
   
   // Assemble
-  assemble(A, a, 0, exterior_facet_domains, 0, reset_tensor);
+  assemble(A, a, 0, exterior_facet_domains, 0, reset_sparsity, add_values);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(GenericTensor& A,
                          const Form& a,
                          const SubDomain& sub_domain,
-                         bool reset_tensor)
+                         bool reset_sparsity, 
+                         bool add_values)
 {
   // Extract mesh
   const Mesh& mesh = a.mesh();
@@ -77,7 +79,7 @@ void Assembler::assemble(GenericTensor& A,
   }
 
   // Assemble
-  assemble(A, a, cell_domains, facet_domains, facet_domains, reset_tensor);
+  assemble(A, a, cell_domains, facet_domains, facet_domains, reset_sparsity, add_values);
 
   // Delete domains
   delete cell_domains;
@@ -89,7 +91,8 @@ void Assembler::assemble(GenericTensor& A,
                          const MeshFunction<uint>* cell_domains,
                          const MeshFunction<uint>* exterior_facet_domains,
                          const MeshFunction<uint>* interior_facet_domains,
-                         bool reset_tensor)
+                         bool reset_sparsity,
+                         bool add_values)
 {
   // Note the importance of treating empty mesh functions as null pointers
   // for the PyDOLFIN interface.
@@ -106,7 +109,7 @@ void Assembler::assemble(GenericTensor& A,
     coefficients[i]->gather();
 
   // Initialize global tensor
-  init_global_tensor(A, a, ufc, reset_tensor);
+  init_global_tensor(A, a, ufc, reset_sparsity, add_values);
 
   // Assemble over cells
   assemble_cells(A, a, ufc, cell_domains, 0);
@@ -388,10 +391,14 @@ You may need to provide the dimension of a user defined Function.", j, i, dim, f
 //-----------------------------------------------------------------------------
 void Assembler::init_global_tensor(GenericTensor& A,
                                    const Form& a,
-                                   UFC& ufc, bool reset_tensor)
+                                   UFC& ufc, 
+                                   bool reset_sparsity,
+                                   bool add_values)
 {
-  if (reset_tensor)
+  if (reset_sparsity)
   {
+    if (add_values)
+      error("Can not add values when the sparsity pattern is reset"); 
     // Build sparsity pattern
     Timer t0("Build sparsity");
     GenericSparsityPattern* sparsity_pattern = A.factory().create_pattern();
@@ -423,7 +430,8 @@ void Assembler::init_global_tensor(GenericTensor& A,
     t2.stop();
   }
   else
-    A.zero();
+    if (!add_values) 
+      A.zero();
 }
 //-----------------------------------------------------------------------------
 std::string Assembler::progress_message(uint rank, std::string integral_type)

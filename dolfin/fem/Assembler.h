@@ -50,13 +50,15 @@ namespace dolfin
     /// Assemble tensor
     static void assemble(GenericTensor& A,
                          const Form& a,
-                         bool reset_tensor=true);
+                         bool reset_sparsity=true, 
+                         bool add_values=false);
 
     /// Assemble tensor on sub domain
     static void assemble(GenericTensor& A,
                          const Form& a,
                          const SubDomain& sub_domain,
-                         bool reset_tensor=true);
+                         bool reset_sparsity=true,
+                         bool add_values=false);
 
     /// Assemble tensor on sub domains
     static void assemble(GenericTensor& A,
@@ -64,7 +66,8 @@ namespace dolfin
                          const MeshFunction<uint>* cell_domains,
                          const MeshFunction<uint>* exterior_facet_domains,
                          const MeshFunction<uint>* interior_facet_domains,
-                         bool reset_tensor=true);
+                         bool reset_sparsity=true,
+                         bool add_values=false);
 
   private:
 
@@ -96,7 +99,8 @@ namespace dolfin
     static void init_global_tensor(GenericTensor& A,
                                    const Form& a,
                                    UFC& ufc,
-                                   bool reset_tensor);
+                                   bool reset_sparsity,
+                                   bool add_values);
 
     // Pretty-printing for progress bar
     static std::string progress_message(uint rank,

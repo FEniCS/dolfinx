@@ -29,7 +29,7 @@ def bench_form(form, mesh, reps=1):
     totaltime += time() - t0
     for i in range(reps - 1):
         t0 = time()
-        assemble(form, mesh, tensor=A, reset_tensor=False)
+        assemble(form, mesh, tensor=A, reset_sparsity=False)
         totaltime += time() - t0
     return totaltime / float(reps)
 

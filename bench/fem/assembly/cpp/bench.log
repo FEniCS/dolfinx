@@ -165,3 +165,19 @@ summary:     merge.
 
 Total time: Command terminated by signal 6 0:00.39
 
+Date: Mon Sep 7 17:46:46 CEST 2009
+-------------------------------------------------------------------------------
+
+Linux kent-and-laptop 2.6.28-15-generic #49-Ubuntu SMP Tue Aug 18 18:40:08 UTC 2009 i686 GNU/Linux
+
+changeset:   6962:e81ee6b4c985
+tag:         tip
+parent:      6961:1159f2ee0a69
+parent:      6960:7d63ee768f5b
+user:        Anders Logg <logg@simula.no>
+date:        Mon Sep 07 12:24:14 2009 +0200
+summary:     merge
+
+
+Total time: Command terminated by signal 6 0:01.17
+

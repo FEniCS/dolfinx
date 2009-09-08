@@ -33,10 +33,11 @@ void SystemAssembler::assemble(GenericMatrix& A,
                                       GenericVector& b,
                                       const Form& a,
                                       const Form& L,
-                                      bool reset_tensors)
+                                      bool reset_sparsitys,
+                                      bool add_values)
 {
   std::vector<const DirichletBC*> bcs;
-  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
+  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_sparsitys, add_values);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A,
@@ -44,11 +45,12 @@ void SystemAssembler::assemble(GenericMatrix& A,
                                           const Form& a,
                                           const Form& L,
                                           const DirichletBC& bc,
-                                          bool reset_tensors)
+                                          bool reset_sparsitys, 
+                                          bool add_values)
 {
   std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
-  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
+  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_sparsitys, add_values);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A,
@@ -56,9 +58,10 @@ void SystemAssembler::assemble(GenericMatrix& A,
                                           const Form& a,
                                           const Form& L,
                                           std::vector<const DirichletBC*>& bcs,
-                                          bool reset_tensors)
+                                          bool reset_sparsitys, 
+                                          bool add_values)
 {
-  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_tensors);
+  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_sparsitys, add_values);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A,
@@ -70,7 +73,8 @@ void SystemAssembler::assemble(GenericMatrix& A,
                                           const MeshFunction<uint>* exterior_facet_domains,
                                           const MeshFunction<uint>* interior_facet_domains,
                                           const GenericVector* x0,
-                                          bool reset_tensors)
+                                          bool reset_sparsitys, 
+                                          bool add_values)
 {
   Timer timer("Assemble system");
   info("Assembling linear system and applying boundary conditions...");
@@ -94,8 +98,8 @@ void SystemAssembler::assemble(GenericMatrix& A,
   UFC b_ufc(L);
 
   // Initialize global tensor
-  Assembler::init_global_tensor(A, a, A_ufc, reset_tensors);
-  Assembler::init_global_tensor(b, L, b_ufc, reset_tensors);
+  Assembler::init_global_tensor(A, a, A_ufc, reset_sparsitys, add_values);
+  Assembler::init_global_tensor(b, L, b_ufc, reset_sparsitys, add_values);
 
   // Allocate data
   Scratch data(a, L);
