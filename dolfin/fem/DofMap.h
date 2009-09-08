@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-08-14
+// Last changed: 2009-09-08
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -37,18 +37,18 @@ namespace dolfin
   public:
 
     /// Create dof map on mesh
-    DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map, 
+    DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
            boost::shared_ptr<Mesh> mesh);
 
     /// Create dof map on mesh (const mesh version)
-    DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map, 
+    DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
            boost::shared_ptr<const Mesh> mesh);
 
   private:
 
     /// Create dof map on mesh with a std::vector dof map
-    DofMap(std::auto_ptr<std::vector<dolfin::uint> > map, 
-           boost::shared_ptr<ufc::dof_map> ufc_dof_map, 
+    DofMap(std::auto_ptr<std::vector<dolfin::uint> > map,
+           boost::shared_ptr<ufc::dof_map> ufc_dof_map,
            boost::shared_ptr<const Mesh> mesh);
 
   public:
@@ -91,8 +91,11 @@ namespace dolfin
     unsigned int num_facet_dofs() const
     { return ufc_dof_map->num_facet_dofs(); }
 
-    /// Tabulate the local-to-global mapping of dofs on a cell
+    /// Tabulate the local-to-global mapping of dofs on a cell (UFC cell version)
     void tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_index) const;
+
+    /// Tabulate the local-to-global mapping of dofs on a cell (DOLFIN cell version)
+    void tabulate_dofs(uint* dofs, const Cell& cell) const;
 
     /// Tabulate local-local facet dofs
     void tabulate_facet_dofs(uint* dofs, uint local_facet) const;
@@ -101,7 +104,7 @@ namespace dolfin
     void tabulate_coordinates(double** coordinates, const ufc::cell& ufc_cell) const
     { ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell); }
 
-    /// Extract sub dofmap component 
+    /// Extract sub dofmap component
     DofMap* extract_sub_dofmap(const std::vector<uint>& component) const;
 
     /// Test whether dof map has been renumbered
@@ -113,7 +116,7 @@ namespace dolfin
         return false;
     }
 
-    /// "Collapse" a sub dofmap 
+    /// "Collapse" a sub dofmap
     DofMap* collapse(std::map<uint, uint>& collapsed_map) const;
 
     /// Return informal string representation (pretty-print)
@@ -135,16 +138,16 @@ namespace dolfin
                                      uint& offset,
                                      const std::vector<uint>& component) const;
 
-    // FIXME: Should this be a std::vector<std::vector<int> >, 
-    //        e.g. a std::vector for each cell? 
+    // FIXME: Should this be a std::vector<std::vector<int> >,
+    //        e.g. a std::vector for each cell?
     // FIXME: Document layout of map
-    // Precomputed dof map 
+    // Precomputed dof map
     std::auto_ptr<std::vector<dolfin::uint> > map;
 
     // Global dimension
     uint _global_dimension;
 
-    // Map from UFC dofs to renumbered dof 
+    // Map from UFC dofs to renumbered dof
     std::map<dolfin::uint, uint> ufc_to_map;
 
     // UFC dof map
