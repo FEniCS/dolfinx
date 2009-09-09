@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-22
-// Last changed: 2009-05-20
+// Last changed: 2009-09-09
 
 #include <string>
 #include <vector>
@@ -68,8 +68,8 @@ int main()
   // Benchmark assembly
   for (unsigned int i = 0; i < backends.size(); i++)
   {
-    parameters("linear_algebra_backend") = backends[i];
-    parameters("timer_prefix") = backends[i];
+    parameters["linear_algebra_backend"]= backends[i];
+    parameters["timer_prefix"] = backends[i];
     std::cout << "BENCH Backend: " << backends[i] << std::endl;
     for (unsigned int j = 0; j < forms.size(); j++)
     {
@@ -93,8 +93,8 @@ int main()
   // Benchmark reassembly
   for (unsigned int i = 0; i < backends.size(); i++)
   {
-    parameters("linear_algebra_backend") = backends[i];
-    parameters("timer_prefix") = backends[i];
+    parameters["linear_algebra_backend"]= backends[i];
+    parameters["timer_prefix"] = backends[i];
     std::cout << "BENCH Backend: " << backends[i] << std::endl;
     for (unsigned int j = 0; j < forms.size(); j++)
     {

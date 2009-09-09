@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005
-// Last changed: 2009-06-17
+// Last changed: 2009-09-09
 
 #include <dolfin.h>
 #include "Poisson2D_1.h"
@@ -105,7 +105,7 @@ double solve2D(int q, int n)
 
   // Solve the linear system
   KrylovSolver solver("gmres");
-  solver.parameters("relative_tolerance") = 1e-14; 
+  solver.parameters["relative_tolerance"] = 1e-14; 
   solver.solve(A, x, b);
 
   // Compute maximum norm of error
@@ -188,7 +188,7 @@ double solve3D(int q, int n)
 
   // Solve the linear system
   KrylovSolver solver("gmres");
-  solver.parameters("relative_tolerance") = -1e-14; 
+  solver.parameters["relative_tolerance"] = -1e-14; 
   solver.solve(A, x, b);
 
   // Compute maximum norm of error
