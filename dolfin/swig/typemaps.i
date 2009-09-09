@@ -7,11 +7,16 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2006-04-16
-// Last changed: 2009-09-07
+// Last changed: 2009-09-08
 
 //=============================================================================
 // General typemaps for PyDOLFIN
 //=============================================================================
+
+//-----------------------------------------------------------------------------
+// Apply the builtin out-typemap for int to dolfin::uint
+//-----------------------------------------------------------------------------
+%typemap(out) dolfin::uint = int;
 
 //-----------------------------------------------------------------------------
 // A hack to get around incompatabilities with PyInt_Check and numpy int 
@@ -42,11 +47,6 @@
   else
     SWIG_exception(SWIG_TypeError, "positive 'int' expected");
 }
-
-//-----------------------------------------------------------------------------
-// Apply the builtin out-typemap for int to dolfin::uint
-//-----------------------------------------------------------------------------
-%typemap(out) dolfin::uint = int;
 
 //-----------------------------------------------------------------------------
 // Out typemap for std::pair<uint,uint>

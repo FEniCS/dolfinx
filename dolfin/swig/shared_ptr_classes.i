@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2009-09-07
+// Last changed: 2009-09-09
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -79,6 +79,8 @@ SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
 // the Variable interface for derived types of Variable.
 //-----------------------------------------------------------------------------
 %define IMPLEMENT_VARIABLE_INTERFACE(DERIVED_TYPE)
+%ignore dolfin::DERIVED_TYPE::str;
+
 %extend dolfin::DERIVED_TYPE
 {
   void rename(const std::string name, const std::string label)
@@ -86,7 +88,7 @@ SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
     self->rename(name,label);
   }
 
-  const std::string& name()  const
+  const std::string& name() const
   {
     return self->name();
   }
@@ -96,12 +98,25 @@ SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
     return self->label();
   }
 
-  const std::string __str__(bool verbose=false) const
+  std::string __str__() const
+  {
+    return self->str(false);
+  }
+
+  std::string _str(bool verbose) const
   {
     return self->str(verbose);
   }
 
+%pythoncode %{
+    def str(self,verbose):
+        "Return a string representation of it self"
+        return self._str(verbose)
+%}
+
 }
+
+
 %enddef
 
 //-----------------------------------------------------------------------------

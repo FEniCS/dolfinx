@@ -6,7 +6,7 @@
 // Modified by Anders logg, 2009.
 //
 // First added:  2007-12-16
-// Last changed: 2009-09-02
+// Last changed: 2009-09-08
 
 //-----------------------------------------------------------------------------
 // Add numpy typemaps and macro for numpy typemaps
@@ -51,7 +51,7 @@ static bool convert_numpy_to_ ## TYPE_NAME ## _array_no_check(PyObject* input, T
 //-----------------------------------------------------------------------------
 // The typecheck
 //-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER) TYPE *
+%typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY) TYPE *
 {
     $1 = PyArray_Check($input) ? 1 : 0;
 }

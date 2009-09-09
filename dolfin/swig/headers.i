@@ -1,9 +1,11 @@
 // Generated list of include files for PyDOLFIN
 
 // DOLFIN headers included from parameter
+%include "dolfin/swig/parameter_pre.i"
 %include "dolfin/parameter/Parameter.h"
 %include "dolfin/parameter/Parameters.h"
 %include "dolfin/parameter/GlobalParameters.h"
+%include "dolfin/swig/parameter_post.i"
 
 // DOLFIN headers included from common
 %include "dolfin/common/types.h"
@@ -11,15 +13,19 @@
 %include "dolfin/common/timing.h"
 %include "dolfin/common/Timer.h"
 %include "dolfin/common/Variable.h"
+%include "dolfin/swig/common_post.i"
 
 // DOLFIN headers included from log
+%include "dolfin/swig/log_pre.i"
 %include "dolfin/log/log.h"
 %include "dolfin/log/Event.h"
 %include "dolfin/log/LogStream.h"
 %include "dolfin/log/Progress.h"
 %include "dolfin/log/Table.h"
+%include "dolfin/swig/log_post.i"
 
 // DOLFIN headers included from la
+%include "dolfin/swig/la_pre.i"
 %include "dolfin/la/ublas.h"
 %include "dolfin/la/GenericTensor.h"
 %include "dolfin/la/GenericMatrix.h"
@@ -65,12 +71,14 @@
 %include "dolfin/la/solve.h"
 %include "dolfin/la/BlockVector.h"
 %include "dolfin/la/BlockMatrix.h"
+%include "dolfin/swig/la_post.i"
 
 // DOLFIN headers included from nls
 %include "dolfin/nls/NewtonSolver.h"
 %include "dolfin/nls/NonlinearProblem.h"
 
 // DOLFIN headers included from mesh
+%include "dolfin/swig/mesh_pre.i"
 %include "dolfin/mesh/CellType.h"
 %include "dolfin/mesh/MeshEntity.h"
 %include "dolfin/mesh/MeshEntityIterator.h"
@@ -104,14 +112,17 @@
 %include "dolfin/mesh/Rectangle.h"
 %include "dolfin/mesh/UnitSphere.h"
 %include "dolfin/mesh/IntersectionDetector.h"
+%include "dolfin/swig/mesh_post.i"
 
 // DOLFIN headers included from function
+%include "dolfin/swig/function_pre.i"
 %include "dolfin/function/Data.h"
 %include "dolfin/function/Function.h"
 %include "dolfin/function/FunctionSpace.h"
 %include "dolfin/function/SubSpace.h"
 %include "dolfin/function/Constant.h"
 %include "dolfin/function/SpecialFunctions.h"
+%include "dolfin/swig/function_post.i"
 
 // DOLFIN headers included from graph
 %include "dolfin/graph/Graph.h"
@@ -123,6 +134,7 @@
 
 // DOLFIN headers included from io
 %include "dolfin/io/File.h"
+%include "dolfin/swig/io_post.i"
 
 // DOLFIN headers included from main
 %include "dolfin/main/init.h"
@@ -145,6 +157,7 @@
 %include "dolfin/ale/ALE.h"
 
 // DOLFIN headers included from fem
+%include "dolfin/swig/fem_pre.i"
 %include "dolfin/fem/DofMap.h"
 %include "dolfin/fem/FiniteElement.h"
 %include "dolfin/fem/BoundaryCondition.h"
@@ -161,6 +174,7 @@
 %include "dolfin/mf/MatrixFactory.h"
 
 // DOLFIN headers included from ode
+%include "dolfin/swig/ode_pre.i"
 %include "dolfin/ode/ODE.h"
 %include "dolfin/ode/ODECollection.h"
 %include "dolfin/ode/ComplexODE.h"
