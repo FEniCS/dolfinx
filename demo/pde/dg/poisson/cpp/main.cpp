@@ -58,7 +58,7 @@ int main()
 
   // Create variational problem
   VariationalProblem problem(a, L);
-  problem.parameters("symmetric") = true;
+  problem.parameters["symmetric"] = true;
 
   // Solve variational problem
   Function u;
