@@ -25,11 +25,10 @@ void set_parameters(ODE& ode)
 {
   ode.parameters["method"] = "dg";
   ode.parameters["order"] = 1;
-  ode.parameters["maximum time step"] = 5.0;
+  ode.parameters["maximum_time_step"] = 5.0;
   ode.parameters["tolerance"] = 0.01;
-  ode.parameters["nonlinear solver"] = "newton";
-  ode.parameters["adaptive samples"] = true;
-  ode.parameters["solve dual problem"] = false;
+  ode.parameters["nonlinear_solver"] = "newton";
+  ode.parameters["adaptive_samples"] = true;
 }
 
 int main(int argc, char* argv[])
