@@ -5,6 +5,7 @@
 // Last changed: 2009-09-08
 
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include "XMLSkipper.h"
 #include "XMLIndent.h"
 #include "XMLFile.h"
@@ -250,6 +251,8 @@ void XMLMeshFunction::read_entity(const xmlChar *name, const xmlChar **attrs)
     error("Illegal XML data for MeshFunction: row index %d out of range (0 - %d)",
           index, size - 1);
 
+  cout << "Reading global entity index " << index << endl;
+
   if (MPI::num_processes() > 1)
   {
     // Only read owned entities (belonging to local mesh)
@@ -257,8 +260,13 @@ void XMLMeshFunction::read_entity(const xmlChar *name, const xmlChar **attrs)
     if (it != glob2loc.end())
       index = (*it).second;
     else
+    {
+      cout << "Skipping" << endl;
       return;
+    }
   }
+  cout << "Corresponding local entity number is " << index << endl;
+
 
   // Parse value and insert in array
   switch ( mf_type )
@@ -271,6 +279,7 @@ void XMLMeshFunction::read_entity(const xmlChar *name, const xmlChar **attrs)
 
      case UINT:
       assert(umf);
+      cout << "Setting value to " << parse_uint(name, attrs, "value") << endl;
       umf->set(index, parse_uint(name, attrs, "value"));
 
       break;
@@ -292,9 +301,15 @@ void XMLMeshFunction::build_mapping(uint entity_dimension)
   std::stringstream mesh_data_name;
   mesh_data_name << "global entity indices " << entity_dimension;
   MeshFunction<uint>* global_entity_indices = mesh.data().mesh_function(mesh_data_name.str());
+  if (global_entity_indices == NULL)
+  {
+    MeshPartitioning::number_entities(mesh, entity_dimension);
+    global_entity_indices = mesh.data().mesh_function(mesh_data_name.str());
+  }
   assert(global_entity_indices);
 
   // Build global to local mapping
+  glob2loc.clear();
   for (uint i = 0; i < global_entity_indices->size(); ++i)
     glob2loc[global_entity_indices->get(i)] = i;
 }

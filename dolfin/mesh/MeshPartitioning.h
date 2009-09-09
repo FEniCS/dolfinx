@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2009-08-06
+// Last changed: 2009-09-09
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -69,7 +69,7 @@ namespace dolfin
     static void partition(Mesh& mesh, LocalMeshData& data);
 
     /// Create global entity indices for entities of dimension d
-    static void number_entities(Mesh& mesh, uint d);
+    static void number_entities(const Mesh& mesh, uint d);
 
   private:
 

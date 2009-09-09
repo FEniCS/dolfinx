@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2009-08-06
+// Last changed: 2009-09-09
 
 #include <vector>
 #include <algorithm>
@@ -86,9 +86,10 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
   build_mesh(mesh, mesh_data, glob2loc);
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::number_entities(Mesh& mesh, uint d)
+void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
 {
   Timer timer("PARALLEL x: Number mesh entities");
+  Mesh& mesh = const_cast<Mesh&>(_mesh);
 
   // Check for vertices
   if (d == 0)
