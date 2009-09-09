@@ -123,11 +123,11 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 // Python. These are then used in the extended Python classes. See below.
 // ---------------------------------------------------------------------------
 %{
-#include "Indices.i"
-#include "la_get_set_items.i"
+#include "dolfin/swig/Indices.i"
+#include "dolfin/swig/la_get_set_items.i"
 %}
 
-%include "la_get_set_items.i"
+%include "dolfin/swig/la_get_set_items.i"
 
 // ---------------------------------------------------------------------------
 // Macro with C++ and Python extension code for GenericVector types in PyDOLFIN

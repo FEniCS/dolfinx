@@ -1,9 +1,9 @@
-/* -*- C -*-  (for syntax highlighting) */
+/* -*- C -*- */
 // Copyright (C) 2009 Johan Hake
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-04-27
-// Last changed:  2009-04-27
+// Last changed: 2009-09-09
 
 // Enum for comparison functions
 enum DolfinCompareType {dolfin_gt, dolfin_ge, dolfin_lt, dolfin_le, dolfin_eq, dolfin_neq};
@@ -20,7 +20,7 @@ double* _get_vector_values( dolfin::GenericVector* self, bool &copied_values)
   }
   catch (std::runtime_error e)
   {
-    // We couldn't acces the values directly
+    // We couldn't access the values directly
     copied_values = true;
     values = new double[self->size()];
     self->get_local(values);
@@ -217,6 +217,7 @@ dolfin::GenericVector* _get_vector_sub_vector( const dolfin::GenericVector* self
   
   self->get(values, m, indices);
   return_vec->set(values, m, range);
+  return_vec->apply();
 
   delete inds;
   delete[] values;
@@ -263,6 +264,7 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
   // Get and set values
   other.get(values, m, range);
   self->set(values, m, indices);
+  self->apply();
   
   delete inds;
   delete[] values;
@@ -351,6 +353,7 @@ void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double 
       values[i] = value;
     
     self->set(values, inds->size(), indices);
+    self->apply();
 
     delete inds;
     delete[] values;
@@ -401,6 +404,7 @@ dolfin::GenericVector* _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolf
   dolfin::GenericVector * return_vec = self->factory().create_vector();
   return_vec->resize(inds->size());
   return_vec->set_local(values);
+  return_vec->apply();
   
   // Clean up
   delete[] values;
