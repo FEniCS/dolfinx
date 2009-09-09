@@ -13,7 +13,6 @@
 #include "TimeStepper.h"
 #include "ODESolver.h"
 #include "ODESolution.h"
-#include "Dual.h"
 
 using namespace dolfin;
 
@@ -43,13 +42,9 @@ void ODESolver::solve(ODESolution& u)
   tic();
 
   // Solve primal problem
-  solve_primal(u);
-
-  // Check if we should solve the dual problem
-  if (ode.parameters["solve_dual_problem"])
-    solve_dual(u);
-  else
-    cout << "Not solving the dual problem as requested." << endl;
+  TimeStepper time_stepper(ode);
+  time_stepper.solve(u);
+  u.flush();
 
   // Report elapsed time
   info("ODE solution computed in %.3f seconds.", toc());
@@ -57,31 +52,4 @@ void ODESolver::solve(ODESolution& u)
   end();
 }
 //------------------------------------------------------------------------
-void ODESolver::solve_primal(ODESolution& u)
-{
-  begin("Solving primal problem");
 
-  TimeStepper time_stepper(ode);
-  time_stepper.solve(u);
-  u.flush();
-  end();
-}
-//------------------------------------------------------------------------
-void ODESolver::solve_dual(ODESolution& u)
-{
-  begin("Solving dual problem");
-
-  // Create dual problem
-  Dual dual(ode, u);
-
-  // Create dummy object to hold the solution of the dual
-  ODESolution z;
-  z.dummy=true;
-
-  // Solve dual problem
-  TimeStepper time_stepper(dual);
-  time_stepper.solve(z);
-
-  end();
-}
-//------------------------------------------------------------------------

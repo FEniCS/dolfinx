@@ -44,9 +44,6 @@ namespace dolfin
     // Solve primal problem
     void solve_primal(ODESolution& u);
 
-    // Solve dual problem
-    void solve_dual(ODESolution& u);
-
     // The ODE
     ODE& ode;
 

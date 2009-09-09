@@ -72,9 +72,13 @@ int main()
   lorenz.parameters["order"] = 5;
   lorenz.parameters["discrete_tolerance"] = 1e-10;
   lorenz.parameters["save_solution"] = true;
-  lorenz.parameters["solve_dual_problem"] = true;
 
-  lorenz.solve();
+  ODESolution u;
+
+  lorenz.solve(u);
+
+  lorenz.solve_dual(u);
+  
 
   return 0;
 }
