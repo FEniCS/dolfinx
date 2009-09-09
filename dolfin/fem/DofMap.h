@@ -87,6 +87,10 @@ namespace dolfin
     unsigned int max_local_dimension() const
     { return ufc_dof_map->max_local_dimension(); }
 
+    // Return the geometric dimension of the coordinates this dof map provides
+    unsigned int geometric_dimension() const
+    { return ufc_dof_map->geometric_dimension(); }
+
     /// Return number of facet dofs
     unsigned int num_facet_dofs() const
     { return ufc_dof_map->num_facet_dofs(); }
@@ -106,6 +110,10 @@ namespace dolfin
 
     /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version)
     void tabulate_coordinates(double** coordinates, const Cell& cell) const;
+
+    // FIXME: This is a temporary workaround until double** is wrapped correctly to Python
+    /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version with flattened coordinates)
+    void tabulate_coordinates(double* coordinates, const Cell& cell) const;
 
     /// Extract sub dofmap component
     DofMap* extract_sub_dofmap(const std::vector<uint>& component) const;

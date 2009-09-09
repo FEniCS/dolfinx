@@ -9,6 +9,8 @@
 // First added:  2007-03-01
 // Last changed: 2009-09-09
 
+#include <boost/scoped_array.hpp>
+
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/common/NoDeleter.h>
@@ -143,6 +145,19 @@ void DofMap::tabulate_coordinates(double** coordinates, const Cell& cell) const
 {
   UFCCell ufc_cell(cell);
   tabulate_coordinates(coordinates, ufc_cell);
+}
+//-----------------------------------------------------------------------------
+void DofMap::tabulate_coordinates(double* coordinates, const Cell& cell) const
+{
+  // Set up 2D array from flattened array
+  const uint n = max_local_dimension();
+  const uint d = geometric_dimension();
+  boost::scoped_array<double*> c(new double*[n]);
+  for (uint i = 0; i < n; i++)
+    c[i] = coordinates + i*d;
+
+  // Call tabulate_coordinates with 2D array
+  tabulate_coordinates(c.get(), cell);
 }
 //-----------------------------------------------------------------------------
 DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component) const
