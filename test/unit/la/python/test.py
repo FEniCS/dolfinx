@@ -92,7 +92,7 @@ class AbstractBaseTest(object):
         self.assertAlmostEqual(F[5,5],3.75)
         
         # Test axpy
-        A.axpy(100,B)
+        A.axpy(100,B,True)
         self.assertAlmostEqual(A[5,5],116)
         
         # Test to NumPy array 

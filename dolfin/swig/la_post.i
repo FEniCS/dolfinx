@@ -509,7 +509,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         """x.__add__(y) <==> x+y"""
         if self.__is_compatibable(other):
             ret = self.copy()
-            ret.axpy(1.0,other)
+            ret.axpy(1.0, other, False)
             return ret
         return NotImplemented
     
@@ -517,7 +517,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         """x.__sub__(y) <==> x-y"""
         if self.__is_compatibable(other):
             ret = self.copy()
-            ret.axpy(-1.0,other)
+            ret.axpy(-1.0, other, False)
             return ret
         return NotImplemented
     
@@ -586,14 +586,14 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     def __iadd__(self,other):
         """x.__iadd__(y) <==> x+y"""
         if self.__is_compatibable(other):
-            self.axpy(1.0,other)
+            self.axpy(1.0, other, False)
             return self
         return NotImplemented
     
     def __isub__(self,other):
         """x.__isub__(y) <==> x-y"""
         if self.__is_compatibable(other):
-            self.axpy(-1.0,other)
+            self.axpy(-1.0, other, False)
             return self
         return NotImplemented
     
