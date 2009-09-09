@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-09-08
+// Last changed: 2009-09-09
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
@@ -137,6 +137,12 @@ void DofMap::tabulate_dofs(uint* dofs, const Cell& cell) const
 void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const
 {
   ufc_dof_map->tabulate_facet_dofs(dofs, local_facet);
+}
+//-----------------------------------------------------------------------------
+void DofMap::tabulate_coordinates(double** coordinates, const Cell& cell) const
+{
+  UFCCell ufc_cell(cell);
+  tabulate_coordinates(coordinates, ufc_cell);
 }
 //-----------------------------------------------------------------------------
 DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component) const

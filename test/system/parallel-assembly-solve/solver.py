@@ -22,8 +22,9 @@ def solve(mesh_file, degree):
     v = TestFunction(V)
     u = TrialFunction(V)
     f = Function(V, "sin(x[0])")
+    g = Function(V, "x[0]*x[1]")
     a = (grad(v), grad(u)) + (v, u)
-    L = (v, f)
+    L = (v, f) + (v, -g, ds)
 
     # Compute solution
     problem = VariationalProblem(a, L)
@@ -32,7 +33,7 @@ def solve(mesh_file, degree):
     u = problem.solve()
 
     # Return norm of solution vector
-    return u.vector().norm()
+    return u.vector().norm("l2")
 
 def print_reference(results):
     "Print nicely formatted values for gluing into code as a reference"
@@ -74,16 +75,24 @@ def check_results(results, reference, tol):
     return status
 
 # Reference values for norm of solution vector
-reference = { ("unitsquare.xml.gz", 1): 7.821707395007537 ,
-              ("unitsquare.xml.gz", 2): 15.18829494599347 ,
-              ("unitsquare.xml.gz", 3): 22.55234140275229 ,
-              ("unitsquare.xml.gz", 4): 29.91638783448794 ,
-              ("unitsquare.xml.gz", 5): 37.28043428001642 ,
-              ("unitcube.xml.gz", 1): 3.647913575216382 ,
-              ("unitcube.xml.gz", 2): 8.523874310611367 ,
-              ("unitcube.xml.gz", 3): 14.55432230797502 ,
-              ("unitcube.xml.gz", 4): 21.57286638104142 ,
-              ("unitcube.xml.gz", 5): 29.45598181177814 }
+#reference = { ("unitsquare.xml.gz", 1): 7.821707395007537 ,
+#              ("unitsquare.xml.gz", 2): 15.18829494599347 ,
+#              ("unitsquare.xml.gz", 3): 22.55234140275229 ,
+#              ("unitsquare.xml.gz", 4): 29.91638783448794 ,
+#              ("unitsquare.xml.gz", 5): 37.28043428001642 ,
+#              ("unitcube.xml.gz", 1): 3.647913575216382 ,
+#              ("unitcube.xml.gz", 2): 8.523874310611367 ,
+#              ("unitcube.xml.gz", 3): 14.55432230797502 ,
+#              ("unitcube.xml.gz", 4): 21.57286638104142 ,
+#              ("unitcube.xml.gz", 5): 29.45598181177814 }
+reference = { ("unitsquare.xml.gz", 1): 9.547454087327344 ,
+              ("unitsquare.xml.gz", 2): 18.42366670418527 ,
+              ("unitsquare.xml.gz", 3): 27.29583104741712 ,
+              ("unitsquare.xml.gz", 4): 36.1686712809094 ,
+              ("unitcube.xml.gz", 1): 8.876490653853809 ,
+              ("unitcube.xml.gz", 2): 19.99081167299566 ,
+              ("unitcube.xml.gz", 3): 33.85477561286852 ,
+              ("unitcube.xml.gz", 4): 49.97357666762962 }
 
 # Mesh files and degrees to check
 mesh_files = ["unitsquare.xml.gz", "unitcube.xml.gz"]
@@ -97,7 +106,7 @@ for mesh_file in mesh_files:
         results.append((mesh_file, degree, norm))
 
 # Uncomment to print results for use as reference
-#print_reference(results)
+print_reference(results)
 
 # Check results
 status = check_results(results, reference, 1e-10)
