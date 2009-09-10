@@ -149,10 +149,10 @@ class AbstractBaseTest(object):
         from numpy import uint,uint0,uint16,uint32,uint64 
         org = self.get_Vector()
 
-        # Test access
-        val0 = org[0]
+        # Test set and access with different integers
         for t in [int,int0,int16,int32,int64,uint,uint0,uint16,uint32,uint64]:
-            self.assertAlmostEqual(val0,org[t(0)])
+            org[t(0)] = 2.0
+            self.assertAlmostEqual(org[t(0)],2.0)
 
         A = org.copy()
         B = down_cast(org.copy())

@@ -49,7 +49,7 @@ bool PyInteger_Check(PyObject* in)
 {
   if (PyInteger_Check($input))
   {
-    long tmp = PyInt_AsLong($input);
+    long tmp = static_cast<long>(PyInt_AsLong($input));
     if (tmp>=0)
       $1 = static_cast<dolfin::uint>(tmp);
     else
@@ -76,7 +76,7 @@ bool PyInteger_Check(PyObject* in)
   
   if (PyInteger_Check($input))
   {
-    long tmp = PyInt_AsLong($input);
+    long tmp = static_cast<long>(PyInt_AsLong($input));
     $1 = static_cast<int>(tmp);
   }
   else
