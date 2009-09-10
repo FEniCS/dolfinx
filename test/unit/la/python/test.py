@@ -145,7 +145,14 @@ class AbstractBaseTest(object):
 
     def test_vector(self):
         from numpy import ndarray, linspace, array, fromiter
+        from numpy import int,int0,int16,int32,int64 
+        from numpy import uint,uint0,uint16,uint32,uint64 
         org = self.get_Vector()
+
+        # Test access
+        val0 = org[0]
+        for t in [int,int0,int16,int32,int64,uint,uint0,uint16,uint32,uint64]:
+            self.assertAlmostEqual(val0,org[t(0)])
 
         A = org.copy()
         B = down_cast(org.copy())
@@ -254,6 +261,7 @@ class AbstractBaseTest(object):
         self.assertRaises(RuntimeError,wrong_dim,[0,2],[0,2,4])
         self.assertRaises(RuntimeError,wrong_dim,[0,2],slice(0,4,1))
         self.assertRaises(TypeError,wrong_dim,0,slice(0,4,1))
+
 
         if self.backend == "MTL4":
             print "Testing of pointwise vector multiplication is turned of "
