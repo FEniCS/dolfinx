@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-09-08
+// Last changed: 2009-09-10
 
 #ifndef __PARAMETERS_H
 #define __PARAMETERS_H
@@ -78,7 +78,7 @@ namespace dolfin
     explicit Parameters(std::string key="parameters");
 
     /// Destructor
-    ~Parameters();
+    virtual ~Parameters();
 
     /// Copy constructor
     Parameters(const Parameters& parameters);

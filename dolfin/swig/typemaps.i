@@ -14,31 +14,42 @@
 //=============================================================================
 
 //-----------------------------------------------------------------------------
+// A home brewed type check for checking integers 
+// Needed due to problems with PyInt_Check from python 2.6 and NumPy
+//-----------------------------------------------------------------------------
+%{
+bool PyInteger_Check(PyObject* in)
+{
+  return  PyInt_Check(in) || (PyArray_CheckScalar(in) && 
+			      PyArray_IsScalar(in,Integer));
+}
+%}
+
+//-----------------------------------------------------------------------------
 // Apply the builtin out-typemap for int to dolfin::uint
 //-----------------------------------------------------------------------------
 %typemap(out) dolfin::uint = int;
 
 //-----------------------------------------------------------------------------
-// A hack to get around incompatabilities with PyInt_Check and numpy int 
-// types in python 2.6
+// Typemaps for dolfin::uint and int
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// The typecheck
+// The typecheck (dolfin::uint)
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_INTEGER) dolfin::uint
 {
-    $1 = PyInt_Check($input) || PyType_IsSubtype($input->ob_type, &PyInt_Type) ? 1 : 0;
+  $1 = PyInteger_Check($input) ? 1 : 0;
 }
 
 //-----------------------------------------------------------------------------
-// The typemap
+// The typemap (dolfin::uint)
 //-----------------------------------------------------------------------------
 %typemap(in) dolfin::uint
 {
-  if (PyInt_Check($input) || PyType_IsSubtype($input->ob_type, &PyInt_Type))
+  if (PyInteger_Check($input))
   {
-    long tmp = PyInt_AsLong($input);
+    long tmp = static_cast<long>(PyInt_AsLong($input));
     if (tmp>=0)
       $1 = static_cast<dolfin::uint>(tmp);
     else
@@ -49,21 +60,23 @@
 }
 
 //-----------------------------------------------------------------------------
-// The typecheck
+// The typecheck (int)
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_INTEGER) int
 {
-    $1 = PyInt_Check($input) || PyType_IsSubtype($input->ob_type, &PyInt_Type) ? 1 : 0;
+    $1 =  PyInteger_Check($input) ? 1 : 0;
 }
 
 //-----------------------------------------------------------------------------
-// The typemap
+// The typemap (int)
 //-----------------------------------------------------------------------------
 %typemap(in) int
 {
-  if (PyInt_Check($input) || PyType_IsSubtype($input->ob_type, &PyInt_Type))
+
+  
+  if (PyInteger_Check($input))
   {
-    long tmp = PyInt_AsLong($input);
+    long tmp = static_cast<long>(PyInt_AsLong($input));
     $1 = static_cast<int>(tmp);
   }
   else

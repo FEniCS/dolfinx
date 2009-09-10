@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-09-09
+// Last changed: 2009-09-10
 
 #include <boost/scoped_array.hpp>
 
@@ -34,7 +34,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
   // Generate and number all mesh entities
   for (uint d = 1; d <= mesh->topology().dim(); ++d)
   {
-    if (ufc_dof_map->needs_mesh_entities(d) || 
+    if (ufc_dof_map->needs_mesh_entities(d) ||
     	(parallel && d == (mesh->topology().dim() - 1)))
     {
       mesh->init(d);
@@ -146,19 +146,6 @@ void DofMap::tabulate_coordinates(double** coordinates, const Cell& cell) const
 {
   UFCCell ufc_cell(cell);
   tabulate_coordinates(coordinates, ufc_cell);
-}
-//-----------------------------------------------------------------------------
-void DofMap::tabulate_coordinates(double* coordinates, const Cell& cell) const
-{
-  // Set up 2D array from flattened array
-  const uint n = max_local_dimension();
-  const uint d = geometric_dimension();
-  boost::scoped_array<double*> c(new double*[n]);
-  for (uint i = 0; i < n; i++)
-    c[i] = coordinates + i*d;
-
-  // Call tabulate_coordinates with 2D array
-  tabulate_coordinates(c.get(), cell);
 }
 //-----------------------------------------------------------------------------
 DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component) const

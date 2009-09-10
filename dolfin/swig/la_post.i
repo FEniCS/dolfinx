@@ -249,10 +249,10 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             raise TypeError, "expected an int, slice, list or numpy array of integers"
 
     def __setitem__(self, indices, values):
-        from numpy import ndarray
+        from numpy import ndarray, integer
         from types import SliceType
-        if isinstance(indices, int):
-            if isinstance(values,(float, int)):
+        if isinstance(indices, (int,integer)):
+            if isinstance(values,(float, int, integer)):
                 return _set_vector_items_value(self, indices, values)
             else:
                 raise TypeError, "provide a scalar to set single item"
