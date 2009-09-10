@@ -6,6 +6,7 @@
 // First added:  2003-10-21
 // Last changed: 2009-09-10
 
+#include <dolfin/log/log.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
 #include "ODESolver.h"
@@ -24,6 +25,8 @@ ODE::ODE(uint N, real T)
     not_impl_J("Warning: consider implementing Jacobian ODE::J() to improve efficiency."),
     not_impl_JT("Warning: consider implementing Jacobian transpose ODE::JT() to improve efficiency")
 {
+  not_working_in_parallel("ODE solver ");
+
   info("Creating ODE of size %d.", N);
   parameters = default_parameters();
 

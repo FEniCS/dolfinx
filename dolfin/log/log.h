@@ -75,6 +75,9 @@ namespace dolfin
   /// Return timing (average) for given task, optionally clearing timing for task
   double timing(std::string task, bool reset=false);
 
+  /// Report that functionality has not (yet) been implemented to work in parallel
+  void not_working_in_parallel(std::string what);
+
   // Helper function for dolfin_debug macro
   void __debug(std::string file, unsigned long line, std::string function, std::string format, ...);
 
@@ -92,14 +95,6 @@ namespace dolfin
   { \
     dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, "Sorry, this function has not been implemented."); \
     error("Not implemented."); \
-  } while (false)
-
-// Not working in parallel, reporting function name and line number
-#define dolfin_not_in_parallel() \
-  do \
-  { \
-    dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, "Sorry, this function does not yet work when running in parallel."); \
-    error("Does not work in parallel."); \
   } while (false)
 
 #endif

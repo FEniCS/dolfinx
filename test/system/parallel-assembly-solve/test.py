@@ -9,7 +9,7 @@ import sys
 from dolfin.utils import getoutput
 
 # If it works on nine processes, it works for any number of processes (N. Jansson, 2009)
-num_processes = 5 # Should really be 9 here, but it breaks
+num_processes = 9 # Should really be 9 here, but it breaks
 
 # Run solver.py
 output = getoutput("mpirun -n %d python solver.py" % num_processes)
