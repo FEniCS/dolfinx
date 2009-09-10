@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-09-09
+// Last changed: 2009-09-10
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -110,10 +110,6 @@ namespace dolfin
 
     /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version)
     void tabulate_coordinates(double** coordinates, const Cell& cell) const;
-
-    // FIXME: This is a temporary workaround until double** is wrapped correctly to Python
-    /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version with flattened coordinates)
-    void tabulate_coordinates(double* coordinates, const Cell& cell) const;
 
     /// Extract sub dofmap component
     DofMap* extract_sub_dofmap(const std::vector<uint>& component) const;
