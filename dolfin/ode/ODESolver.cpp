@@ -29,9 +29,19 @@ ODESolver::~ODESolver()
 //------------------------------------------------------------------------
 void ODESolver::solve()
 {
-  ODESolution u;
-  u.dummy=true;
-  solve(u);
+  begin("Solving ODE over the time interval [0.0, %g]", to_double(ode.endtime()));
+
+  // Start timing
+  tic();
+
+  // Solve primal problem
+  TimeStepper time_stepper(ode);
+  time_stepper.solve();
+
+  // Report elapsed time
+  info("ODE solution computed in %.3f seconds.", toc());
+
+  end();
 }
 //-----------------------------------------------------------------------
 void ODESolver::solve(ODESolution& u)
@@ -42,8 +52,8 @@ void ODESolver::solve(ODESolution& u)
   tic();
 
   // Solve primal problem
-  TimeStepper time_stepper(ode);
-  time_stepper.solve(u);
+  TimeStepper time_stepper(ode, u);
+  time_stepper.solve();
   u.flush();
 
   // Report elapsed time

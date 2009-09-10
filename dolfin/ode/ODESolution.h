@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 // 
 // First added:  2008-06-11
-// Last changed: 2009-07-12
+// Last changed: 2009-09-10
 
 #ifndef __ODESOLUTION_H
 #define __ODESOLUTION_H
@@ -122,8 +122,6 @@ namespace dolfin
     typedef ODESolutionIterator iterator;
     iterator begin();
     iterator end();
-
-    bool dummy;
 
   private:
     Lagrange* trial;

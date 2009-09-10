@@ -20,7 +20,6 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ODESolution::ODESolution() : 
-  dummy(false),
   trial(0),
   N(0),
   nodal_size(0),
@@ -36,7 +35,6 @@ ODESolution::ODESolution() :
 }
 //-----------------------------------------------------------------------------
 ODESolution::ODESolution(std::string filename, uint number_of_files) : 
-  dummy(false),
   trial(0),
   N(0),
   nodal_size(0),
@@ -112,8 +110,6 @@ void ODESolution::init(uint N, const Lagrange& trial_space, const real* quad_wei
 //-----------------------------------------------------------------------------
 void ODESolution::add_timeslab(const real& a, const real& b, const real* nodal_values) 
 {
-  if (dummy) return;
-
    //Public method. Does some checks and calls add_data
   if (!initialized) error("ODE Solution not initialized");
   if (read_mode) error("ODE Solution in read mode");

@@ -257,10 +257,10 @@ void ODE::solve(ODESolution& u, real t0, real t1)
 
   // Create time stepper if not created before
   if (!time_stepper)
-    time_stepper = new TimeStepper(*this);
+    time_stepper = new TimeStepper(*this, u);
 
   // Solve ODE on given time interval
-  time_stepper->solve(u, t0, t1);
+  time_stepper->solve(t0, t1);
 }
 //-----------------------------------------------------------------------------
 void ODE::solve_dual(ODESolution& u) {
