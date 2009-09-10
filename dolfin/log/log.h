@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-08-10
+// Last changed: 2009-09-10
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -87,6 +87,19 @@ namespace dolfin
 #define dolfin_debug3(msg, a0, a1, a2) do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2); } while (false)
 
 // Not implemented error, reporting function name and line number
-#define dolfin_not_implemented() do { dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, "Sorry, this function has not been implemented."); error("Not implemented"); } while (false)
+#define dolfin_not_implemented() \
+  do \
+  { \
+    dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, "Sorry, this function has not been implemented."); \
+    error("Not implemented."); \
+  } while (false)
+
+// Not working in parallel, reporting function name and line number
+#define dolfin_not_in_parallel() \
+  do \
+  { \
+    dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, "Sorry, this function does not yet work when running in parallel."); \
+    error("Does not work in parallel."); \
+  } while (false)
 
 #endif
