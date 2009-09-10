@@ -199,6 +199,13 @@ class AbstractBaseTest(object):
         
         ind = [1,3,6,9,15]
         ind1 = array([1,3,6,9,15])
+
+        # These two just to check that one can use numpy arrays and list of uints
+        ind2 = array([1,3,6,9,15],'I')
+        ind3 = list(array([1,3,6,9,15],'I'))
+        A[ind2]
+        A[ind3]
+        
         G  = A[ind]
         G1 = A[ind1]
         G2 = A2[ind]

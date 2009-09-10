@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-04-27
-// Last changed: 2009-08-31
+// Last changed: 2009-09-10
 
 class Indices
 {
@@ -157,11 +157,11 @@ public:
       throw std::runtime_error("invalid index");
     
     // Check for int
-    if (!PyInt_Check(op))
+    if (!PyInteger_Check(op))
       throw std::runtime_error("invalid index, must be int");
     
     // Return checked index
-    return check_index(PyInt_AsLong(op));
+    return check_index(static_cast<long>(PyInt_AsLong(op)));
   }
   
   // Check bounds of index by calling static function in base class
@@ -185,7 +185,7 @@ public:
   IntArrayIndices( PyObject* op, unsigned int vector_size )
     :Indices(), _numpy_array(NULL), _vector_size(vector_size)
   {
-    if ( op == Py_None or !( PyArray_Check(op) and PyArray_ISINTEGER(op) ) )
+    if ( op == Py_None or !( PyArray_Check(op) and PyTypeNum_ISINTEGER(PyArray_TYPE(op)) ) )
       throw std::runtime_error("expected numpy array of integers");
     
     // An initial check of the length of the array
@@ -316,13 +316,12 @@ Indices* indice_chooser( PyObject* op, unsigned int vector_size )
     inds = new ListIndices( op, vector_size );
 
   // If the provided indices are in a Numpy array of boolean
-  else if (PyArray_Check(op) and PyArray_ISBOOL(op))
+  else if (PyArray_Check(op) and PyArray_TYPE(op) == NPY_BOOL)
     inds = new BoolArrayIndices( op, vector_size );
   
   // If the provided indices are in a Numpy array of integers
-  else if (PyArray_Check(op) and PyArray_ISINTEGER(op))
+  else if (PyArray_Check(op) and PyTypeNum_ISINTEGER(PyArray_TYPE(op)))
     inds = new IntArrayIndices( op, vector_size );
-  
   else
     return 0;
   //throw std::runtime_error("index must be either a slice, a list or a Numpy array of integer");
