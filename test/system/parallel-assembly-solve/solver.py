@@ -106,7 +106,7 @@ for mesh_file in mesh_files:
         results.append((mesh_file, degree, norm))
 
 # Uncomment to print results for use as reference
-print_reference(results)
+#print_reference(results)
 
 # Check results
 status = check_results(results, reference, 1e-10)
