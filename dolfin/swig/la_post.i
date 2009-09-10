@@ -239,9 +239,9 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         return self.__getitem__(slice(i, j, 1))
     
     def __getitem__(self, indices):
-        from numpy import ndarray
+        from numpy import ndarray, integer
         from types import SliceType
-        if isinstance(indices, int):
+        if isinstance(indices, (int,integer)):
             return _get_vector_single_item(self, indices)
         elif isinstance(indices, (SliceType, ndarray, list) ):
             return down_cast(_get_vector_sub_vector(self, indices))

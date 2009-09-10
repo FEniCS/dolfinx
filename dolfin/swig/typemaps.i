@@ -7,7 +7,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2006-04-16
-// Last changed: 2009-09-08
+// Last changed: 2009-09-10
 
 //=============================================================================
 // General typemaps for PyDOLFIN
@@ -42,10 +42,32 @@
     if (tmp>=0)
       $1 = static_cast<dolfin::uint>(tmp);
     else
-      SWIG_exception(SWIG_TypeError, "positive 'int' expected");
+      SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
   }
   else
-    SWIG_exception(SWIG_TypeError, "positive 'int' expected");
+    SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
+}
+
+//-----------------------------------------------------------------------------
+// The typecheck
+//-----------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_INTEGER) int
+{
+    $1 = PyInt_Check($input) || PyType_IsSubtype($input->ob_type, &PyInt_Type) ? 1 : 0;
+}
+
+//-----------------------------------------------------------------------------
+// The typemap
+//-----------------------------------------------------------------------------
+%typemap(in) int
+{
+  if (PyInt_Check($input) || PyType_IsSubtype($input->ob_type, &PyInt_Type))
+  {
+    long tmp = PyInt_AsLong($input);
+    $1 = static_cast<int>(tmp);
+  }
+  else
+    SWIG_exception(SWIG_TypeError, "expected 'int' for argument $argnum");
 }
 
 //-----------------------------------------------------------------------------
