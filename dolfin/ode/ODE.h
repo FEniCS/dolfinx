@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2009 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet 2009
+//
 // First added:  2003-10-21
-// Last changed: 2009-09-04
+// Last changed: 2009-09-10
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -128,10 +130,13 @@ namespace dolfin
     /// Solve ODE on [0, T]
     void solve();
 
+    /// Solve ODE on [t0, t1]
+    void solve(real t0, real t1);
+
     /// Solve ODE on [0, T]. Save solution in u
     void solve(ODESolution& u);
 
-    /// Solve ODE on [t0, t1]
+    /// Solve ODE on [t0, t1]. Save solution in u
     void solve(ODESolution& u, real t0, real t1);
 
     /// Solve dual problem given an approximate solution u of the primal problem

@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2009 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet 2009
+//
 // First added:  2003-10-21
-// Last changed: 2009-09-08
+// Last changed: 2009-09-10
 
 #include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
@@ -235,6 +237,23 @@ void ODE::solve()
   // Solve ODE on entire time interval
   ODESolver ode_solver(*this);
   ode_solver.solve();
+}
+//-----------------------------------------------------------------------------
+void ODE::solve(real t0, real t1)
+{
+  // Check time interval
+  if (t0 < 0.0 - real_epsilon() || t1 > endtime() + real_epsilon())
+  {
+    error("Illegal time interval [%g, %g] for ODE system, not contained in [%g, %g].",
+          to_double(t0), to_double(t1), to_double(0.0), to_double(endtime()));
+  }
+
+  // Create time stepper if not created before
+  if (!time_stepper)
+    time_stepper = new TimeStepper(*this);
+
+  // Solve ODE on given time interval
+  time_stepper->solve(t0, t1);
 }
 //-----------------------------------------------------------------------------
 void ODE::solve(ODESolution& u)

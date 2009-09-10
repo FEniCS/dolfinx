@@ -1,8 +1,10 @@
 // Copyright (C) 2009 Anders Logg and Ola Skavhaug.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet 2009
+//
 // First added:  2009-02-09
-// Last changed: 2009-02-12
+// Last changed: 2009-09-10
 
 #include "ODECollection.h"
 
@@ -10,7 +12,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ODECollection::ODECollection(ODE& ode, uint num_systems)
-  : ode(ode), u(), num_systems(num_systems), states(0)
+  : ode(ode), num_systems(num_systems), states(0)
 {
   info("Creating ODE collection of size %d x %d.", num_systems, ode.size());
 
@@ -43,7 +45,7 @@ void ODECollection::solve(real t0, real t1)
     update(states + offset, t0, system);
 
     // Time-stepping
-    ode.solve(u, t0, t1);
+    ode.solve(t0, t1);
 
     // Copy final state to state vector
     ode.get_state(states + offset);
