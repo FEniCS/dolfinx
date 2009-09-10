@@ -11,6 +11,7 @@
 
 #include <boost/scoped_array.hpp>
 #include <cstdarg>
+#include <cstdlib>
 #include <stdio.h>
 #include <sstream>
 #include <dolfin/common/types.h>
@@ -167,9 +168,13 @@ void dolfin::not_working_in_parallel(std::string what)
 {
   if (MPI::num_processes() > 1)
   {
-    std::string url("https://bugs.launchpad.net/dolfin");
-    error("%s is not (yet) working in parallel. Consider filing a bug report at %s.",
-          what.c_str(), url.c_str());
+    if (MPI::process_number() == 0)
+    {
+      std::string url("https://bugs.launchpad.net/dolfin");
+      info("%s is not (yet) working in parallel. Consider filing a bug report at %s",
+           what.c_str(), url.c_str());
+    }
+    exit(10);
   }
 }
 //-----------------------------------------------------------------------------

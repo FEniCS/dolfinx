@@ -25,7 +25,7 @@ ODE::ODE(uint N, real T)
     not_impl_J("Warning: consider implementing Jacobian ODE::J() to improve efficiency."),
     not_impl_JT("Warning: consider implementing Jacobian transpose ODE::JT() to improve efficiency")
 {
-  not_working_in_parallel("ODE solver ");
+  not_working_in_parallel("ODE solver");
 
   info("Creating ODE of size %d.", N);
   parameters = default_parameters();
