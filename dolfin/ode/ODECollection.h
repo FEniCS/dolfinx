@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-02-09
-// Last changed: 2009-02-10
+// Last changed: 2009-09-10
 
 #ifndef __ODE_COLLECTION_H
 #define __ODE_COLLECTION_H
