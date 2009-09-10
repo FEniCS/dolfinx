@@ -34,7 +34,8 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
   // Generate and number all mesh entities
   for (uint d = 1; d <= mesh->topology().dim(); ++d)
   {
-    if (ufc_dof_map->needs_mesh_entities(d))
+    if (ufc_dof_map->needs_mesh_entities(d) || 
+    	(parallel && d == (mesh->topology().dim() - 1)))
     {
       mesh->init(d);
       if (parallel)
