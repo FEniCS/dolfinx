@@ -67,8 +67,11 @@ int main()
   ode.parameters["method"] = "cg";
   ode.parameters["order"] = 10;
   ode.parameters["initial_time_step"] = 0.1;
-  ode.parameters["solve_dual_problem"] = true;
 
   // Solve ODE
-  ode.solve();
+  ODESolution u;
+
+  ode.solve(u);
+
+  ode.solve_dual(u);
 }

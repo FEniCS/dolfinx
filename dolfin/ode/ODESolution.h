@@ -112,7 +112,7 @@ namespace dolfin
     void set_filename(std::string filename);
     void save_to_file();
 
-    void disp();
+    std::string str(bool verbose) const;
 
     inline uint size() const {return no_timeslabs;}
     inline uint nsize() const {return nodal_size;}

@@ -263,6 +263,18 @@ void ODE::solve(ODESolution& u, real t0, real t1)
   time_stepper->solve(u, t0, t1);
 }
 //-----------------------------------------------------------------------------
+void ODE::solve_dual(ODESolution& u) {
+  begin("Solving dual problem");
+
+  // Create dual problem
+  Dual dual(*this, u);
+
+  // Solve dual problem
+  dual.solve();
+
+  end();
+}
+//-----------------------------------------------------------------------------
 void ODE::solve_dual(ODESolution& u, ODESolution& z) {
   begin("Solving dual problem");
 
