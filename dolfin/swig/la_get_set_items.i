@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-04-27
-// Last changed: 2009-09-10
+// Last changed: 2009-09-11
 
 // Enum for comparison functions
 enum DolfinCompareType {dolfin_gt, dolfin_ge, dolfin_lt, dolfin_le, dolfin_eq, dolfin_neq};
@@ -320,8 +320,9 @@ void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op
 
   // Clean casted array
   if (casted)
+  {
     Py_DECREF(other);
-
+  }
   delete inds;
 }
 
