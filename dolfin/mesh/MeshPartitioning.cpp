@@ -867,7 +867,7 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& data)
   error("Mesh partitioning requires MPI and ParMETIS.");
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::number_entities(Mesh& mesh, uint d)
+void MeshPartitioning::number_entities(const Mesh& mesh, uint d)
 {
   error("Mesh partitioning requires MPI and ParMETIS.");
 }
