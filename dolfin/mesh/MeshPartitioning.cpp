@@ -613,12 +613,6 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
 
   // Get dimensions of local mesh_data
   uint num_local_cells = mesh_data.cell_vertices.size();
-  /*
-  cout << "num_local_cells = " << num_local_cells << endl;
-  cout << "mesh_data.global_cell_indices.size() = " << mesh_data.global_cell_indices.size() << endl;
-  for (uint i = 0; i < mesh_data.global_cell_indices.size(); ++i)
-    cout << "md.gci[" << i << "] = " << mesh_data.global_cell_indices[i] << endl;
-  */
   assert(mesh_data.global_cell_indices.size() == num_local_cells);
   const uint num_cell_vertices = mesh_data.cell_vertices[0].size();
 
@@ -658,8 +652,6 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
       cell[j] = cell_vertices[i*(num_cell_vertices + 1) + j + 1];
     mesh_data.cell_vertices.push_back(cell);
   }
-  for (uint i = 0; i < mesh_data.global_cell_indices.size(); ++i)
-    cout << "md.gci[" << i << "] = " << mesh_data.global_cell_indices[i] << endl;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
