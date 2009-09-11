@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-08
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
@@ -65,7 +65,7 @@ namespace dolfin
     { assert(d0 <= _dim && d1 <= _dim); return *connectivity[d0][d1]; }
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
   private:
 

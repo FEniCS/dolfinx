@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-28
-// Last changed: 2008-10-07
+// Last changed: 2009-09-08
 
 #include <dolfin/log/dolfin_log.h>
 #include "Alloc.h"
@@ -16,11 +16,11 @@ using namespace dolfin;
 MonoAdaptiveFixedPointSolver::MonoAdaptiveFixedPointSolver
 (MonoAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), xold(0),
-    stabilize(ode.parameters("fixed-point_stabilize")), mi(0), li(0), ramp(1.0)
+    stabilize(ode.parameters["fixed-point_stabilize"]), mi(0), li(0), ramp(1.0)
 {
-  rampfactor = ode.parameters("fixed-point_stabilization_ramp").get_real();
+  rampfactor = ode.parameters["fixed-point_stabilization_ramp"].get_real();
 
-  alpha = ode.parameters("fixed-point_damping").get_real();
+  alpha = ode.parameters["fixed-point_damping"].get_real();
 
   // Initialize old values at right end-point
   xold = new real[ts.N];
@@ -51,14 +51,14 @@ real MonoAdaptiveFixedPointSolver::iteration(const real& tol, uint iter,
     if (iter == 0 || (d1 > d0 && li == 0))
     {
       ramp = 1.0;
-      mi = ode.parameters("fixed-point_stabilization_m");
+      mi = ode.parameters["fixed-point_stabilization_m"];
       //mi = (int)ceil(log10(K * 1.0e4));
     }
 
     if (mi == 0 && li == 0)
     {
       // Choose number of ramping iterations
-      li = ode.parameters("fixed-point_stabilization_l");
+      li = ode.parameters["fixed-point_stabilization_l"];
     }
 
     if (mi == 0)

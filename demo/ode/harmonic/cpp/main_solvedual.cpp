@@ -29,7 +29,7 @@ public:
     y[1] = - u[0];
   }
 
-  void JT(const real* x, real* y, const real* u, real t) 
+  void JT(const real* x, real* y, const real* u, real t)
   {
     y[0] = x[1];
     y[1] = -x[0];
@@ -42,7 +42,7 @@ public:
 
     real e0 = u[0] - 0.0;
     real e1 = u[1] - 1.0;
-    e = real_max(abs(e0), abs(e1));
+    e = real_max(real_abs(e0), real_abs(e1));
 
     return true;
   }
@@ -62,13 +62,16 @@ int main()
 {
   // Create ODE
   Harmonic ode;
-  ode.parameters("fixed_time_step") = true;
-  ode.parameters("discrete_tolerance") = real_epsilon();
-  ode.parameters("method") = "cg";
-  ode.parameters("order") = 10;
-  ode.parameters("initial_time_step") = 0.1;
-  ode.parameters("solve_dual_problem") = true;
+  ode.parameters["fixed_time_step"] = true;
+  ode.parameters["discrete_tolerance"] = real_epsilon();
+  ode.parameters["method"] = "cg";
+  ode.parameters["order"] = 10;
+  ode.parameters["initial_time_step"] = 0.1;
 
   // Solve ODE
-  ode.solve();
+  ODESolution u;
+
+  ode.solve(u);
+
+  ode.solve_dual(u);
 }

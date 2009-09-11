@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-12-05
-// Last changed: 2008-12-18
+// Last changed: 2009-09-08
 //
 // This demo program solves Poisson's equation,
 //
@@ -41,7 +41,7 @@ int main()
   UnitSquare mesh(24, 24);
 
   // Use uBLAS
-  parameters("linear_algebra_backend") = "uBLAS";
+  parameters["linear_algebra_backend"] = "uBLAS";
 
   // Create functions
   Source f;
@@ -58,7 +58,7 @@ int main()
 
   // Create variational problem
   VariationalProblem problem(a, L);
-  problem.parameters("symmetric") = true;
+  problem.parameters["symmetric"] = true;
 
   // Solve variational problem
   Function u;

@@ -7,46 +7,81 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2006-04-16
-// Last changed: 2009-09-07
+// Last changed: 2009-09-10
 
 //=============================================================================
 // General typemaps for PyDOLFIN
 //=============================================================================
 
 //-----------------------------------------------------------------------------
-// A hack to get around incompatabilities with PyInt_Check and numpy int 
-// types in python 2.6
+// A home brewed type check for checking integers 
+// Needed due to problems with PyInt_Check from python 2.6 and NumPy
 //-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-// The typecheck
-//-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_INTEGER) dolfin::uint
+%{
+bool PyInteger_Check(PyObject* in)
 {
-    $1 = PyInt_Check($input) || PyType_IsSubtype($input->ob_type, &PyInt_Type) ? 1 : 0;
+  return  PyInt_Check(in) || (PyArray_CheckScalar(in) && 
+			      PyArray_IsScalar(in,Integer));
 }
-
-//-----------------------------------------------------------------------------
-// The typemap
-//-----------------------------------------------------------------------------
-%typemap(in) dolfin::uint
-{
-  if (PyInt_Check($input) || PyType_IsSubtype($input->ob_type, &PyInt_Type))
-  {
-    long tmp = PyInt_AsLong($input);
-    if (tmp>=0)
-      $1 = static_cast<dolfin::uint>(tmp);
-    else
-      SWIG_exception(SWIG_TypeError, "positive 'int' expected");
-  }
-  else
-    SWIG_exception(SWIG_TypeError, "positive 'int' expected");
-}
+%}
 
 //-----------------------------------------------------------------------------
 // Apply the builtin out-typemap for int to dolfin::uint
 //-----------------------------------------------------------------------------
 %typemap(out) dolfin::uint = int;
+
+//-----------------------------------------------------------------------------
+// Typemaps for dolfin::uint and int
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// The typecheck (dolfin::uint)
+//-----------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_INTEGER) dolfin::uint
+{
+  $1 = PyInteger_Check($input) ? 1 : 0;
+}
+
+//-----------------------------------------------------------------------------
+// The typemap (dolfin::uint)
+//-----------------------------------------------------------------------------
+%typemap(in) dolfin::uint
+{
+  if (PyInteger_Check($input))
+  {
+    long tmp = static_cast<long>(PyInt_AsLong($input));
+    if (tmp>=0)
+      $1 = static_cast<dolfin::uint>(tmp);
+    else
+      SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
+  }
+  else
+    SWIG_exception(SWIG_TypeError, "expected positive 'int' for argument $argnum");
+}
+
+//-----------------------------------------------------------------------------
+// The typecheck (int)
+//-----------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_INTEGER) int
+{
+    $1 =  PyInteger_Check($input) ? 1 : 0;
+}
+
+//-----------------------------------------------------------------------------
+// The typemap (int)
+//-----------------------------------------------------------------------------
+%typemap(in) int
+{
+
+  
+  if (PyInteger_Check($input))
+  {
+    long tmp = static_cast<long>(PyInt_AsLong($input));
+    $1 = static_cast<int>(tmp);
+  }
+  else
+    SWIG_exception(SWIG_TypeError, "expected 'int' for argument $argnum");
+}
 
 //-----------------------------------------------------------------------------
 // Out typemap for std::pair<uint,uint>

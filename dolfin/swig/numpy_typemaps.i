@@ -6,7 +6,7 @@
 // Modified by Anders logg, 2009.
 //
 // First added:  2007-12-16
-// Last changed: 2009-09-02
+// Last changed: 2009-09-10
 
 //-----------------------------------------------------------------------------
 // Add numpy typemaps and macro for numpy typemaps
@@ -51,7 +51,7 @@ static bool convert_numpy_to_ ## TYPE_NAME ## _array_no_check(PyObject* input, T
 //-----------------------------------------------------------------------------
 // The typecheck
 //-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER) TYPE *
+%typecheck(SWIG_TYPECHECK_ ## TYPE_UPPER ## _ARRAY) TYPE *
 {
     $1 = PyArray_Check($input) ? 1 : 0;
 }
@@ -211,7 +211,9 @@ namespace __private {
     DppDeleter () {amat = 0;}
     ~DppDeleter ()
     {
-      free(amat);
+      delete[] amat;
+      //free(amat);
+      amat = 0;
     }
   };
 }
@@ -220,19 +222,18 @@ namespace __private {
 //-----------------------------------------------------------------------------
 // Typemap for 2D NumPy arrays to C++ functions expecting double **
 //-----------------------------------------------------------------------------
-%typemap(in) double** (__private::DppDeleter tmp)
+%typemap(in) double**
 {
     if PyArray_Check($input) {
         PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
         if ( PyArray_TYPE(xa) == NPY_DOUBLE ) {
             if ( PyArray_NDIM(xa) == 2 ) {
-                const int n = PyArray_DIM(xa,0);
-                double **amat = static_cast<double**>(malloc(n*sizeof*amat));
+	        const int m = PyArray_DIM(xa,0);
+	        const int n = PyArray_DIM(xa,1);
+                $1 = new double*[m];
                 double *data = reinterpret_cast<double*>((*xa).data);
-                for (int i=0;i<n;++i)
-                    amat[i] = data + i*n;
-                $1 = amat;
-                tmp.amat = amat;
+                for (int i=0;i<m;++i)
+                    $1[i] = &data[i*n];
             } else {
                 SWIG_exception(SWIG_ValueError, "2d Array expected");
             }
@@ -242,6 +243,14 @@ namespace __private {
     } else {
         SWIG_exception(SWIG_TypeError, "Array expected");
     }
+}
+
+//-----------------------------------------------------------------------------
+// Delete temporary data
+//-----------------------------------------------------------------------------
+%typemap(freearg) double**
+{
+  delete[] $1;
 }
 
 //-----------------------------------------------------------------------------

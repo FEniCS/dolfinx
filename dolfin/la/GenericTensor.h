@@ -6,7 +6,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
@@ -48,15 +48,15 @@ namespace dolfin
     virtual uint size(uint dim) const = 0;
 
     /// Get block of values
-    virtual void get(double* block, const uint* num_rows, 
+    virtual void get(double* block, const uint* num_rows,
                      const uint * const * rows) const = 0;
 
     /// Set block of values
-    virtual void set(const double* block, const uint* num_rows, 
+    virtual void set(const double* block, const uint* num_rows,
                      const uint * const * rows) = 0;
 
     /// Add block of values
-    virtual void add(const double* block, const uint* num_rows, 
+    virtual void add(const double* block, const uint* num_rows,
                      const uint * const * rows) = 0;
 
     /// Set all entries to zero and keep any sparse structure
@@ -66,7 +66,7 @@ namespace dolfin
     virtual void apply() = 0;
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose=false) const = 0;
+    virtual std::string str(bool verbose) const = 0;
 
     //--- Special functions, downcasting to concrete types ---
 

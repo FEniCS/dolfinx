@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-02-09
-// Last changed: 2009-02-09
+// Last changed: 2009-09-08
 //
 // This demo illustrates how to use the ODECollection class to solve a
 // collection of ODEs all governed by the same equation but with
@@ -44,7 +44,7 @@ int main()
 
   // Create ODE and collection of ODE systems
   Harmonic ode(T);
-  ode.parameters("adaptive_samples") = true;
+  ode.parameters["adaptive_samples"] = true;
   ODECollection collection(ode, n);
 
   // Set initial states for all ODE systems

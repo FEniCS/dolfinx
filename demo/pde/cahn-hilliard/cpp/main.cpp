@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-03-02
-// Last changed: 2008-12-27
+// Last changed: 2009-09-08
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving
 // the Cahn-Hilliard equation.
@@ -29,8 +29,8 @@ public:
 
   void eval(double* values, const Data& data) const
   {
-    values[0]= 0.0; 
-    values[1]= 0.63 + 0.02*(0.5 - dolfin::rand()); 
+    values[0]= 0.0;
+    values[1]= 0.63 + 0.02*(0.5 - dolfin::rand());
   }
 
 };
@@ -135,10 +135,10 @@ int main(int argc, char* argv[])
 
   // Create nonlinear solver and set parameters
   NewtonSolver newton_solver("lu");
-  newton_solver.parameters("convergence_criterion") = "incremental";
-  newton_solver.parameters("maximum_iterations") = 10;
-  newton_solver.parameters("relative_tolerance") = 1e-6;
-  newton_solver.parameters("absolute_tolerance") = 1e-15;
+  newton_solver.parameters["convergence_criterion"] = "incremental";
+  newton_solver.parameters["maximum_iterations"] = 10;
+  newton_solver.parameters["relative_tolerance"] = 1e-6;
+  newton_solver.parameters["absolute_tolerance"] = 1e-15;
 
   // Save initial condition to file
   File file("cahn_hilliard.pvd", "compressed");

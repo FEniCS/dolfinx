@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-27
-// Last changed: 2009-08-11
+// Last changed: 2009-09-08
 
 #include <dolfin/common/constants.h>
 #include <dolfin/log/dolfin_log.h>
@@ -23,16 +23,16 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
 (MultiAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), A(0),
     mpc(timeslab, method), solver(mpc), f(0), u(0), num_elements(0), num_elements_mono(0),
-    updated_jacobian(ode.parameters("updated_jacobian"))
+    updated_jacobian(ode.parameters["updated_jacobian"])
 {
   // Initialize local arrays
   f = new real[method.qsize()];
   u = new real[method.nsize()];
 
   // Set parameters for Krylov solver
-  solver.parameters("report") = monitor;
-  solver.parameters("absolute_tolerance") = 0.01;
-  solver.parameters("relative_tolerance") = 0.01 * to_double(tol);
+  solver.parameters["report"] = monitor;
+  solver.parameters["absolute_tolerance"] = 0.01;
+  solver.parameters["relative_tolerance"] = 0.01 * to_double(tol);
 
   // Initialize Jacobian
   if ( updated_jacobian )

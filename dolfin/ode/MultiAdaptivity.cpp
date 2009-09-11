@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-29
-// Last changed: 2006-04-20
+// Last changed: 2009-09-08
 
 #include <cmath>
 #include "ODE.h"
@@ -28,7 +28,7 @@ MultiAdaptivity::MultiAdaptivity(const ODE& ode, const Method& method)
     f[i] = 0.0;
 
   // Set initial time steps
-  real k0 = static_cast<double>(ode.parameters("initial_time_step"));
+  real k0 = static_cast<double>(ode.parameters["initial_time_step"]);
   if ( kfixed )
   {
     for (uint i = 0; i < ode.size(); i++)

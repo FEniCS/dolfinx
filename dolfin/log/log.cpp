@@ -7,10 +7,11 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-08-10
+// Last changed: 2009-09-10
 
 #include <boost/scoped_array.hpp>
 #include <cstdarg>
+#include <cstdlib>
 #include <stdio.h>
 #include <sstream>
 #include <dolfin/common/types.h>
@@ -163,6 +164,20 @@ double dolfin::timing(std::string task, bool reset)
   return LogManager::logger.timing(task, reset);
 }
 //-----------------------------------------------------------------------------
+void dolfin::not_working_in_parallel(std::string what)
+{
+  if (MPI::num_processes() > 1)
+  {
+    if (MPI::process_number() == 0)
+    {
+      std::string url("https://bugs.launchpad.net/dolfin");
+      info("%s is not (yet) working in parallel. Consider filing a bug report at %s",
+           what.c_str(), url.c_str());
+    }
+    exit(10);
+  }
+}
+//-----------------------------------------------------------------------------
 void dolfin::__debug(std::string file, unsigned long line,
                      std::string function, std::string format, ...)
 {
@@ -173,4 +188,3 @@ void dolfin::__debug(std::string file, unsigned long line,
   LogManager::logger.__debug(msg);
 }
 //-----------------------------------------------------------------------------
-

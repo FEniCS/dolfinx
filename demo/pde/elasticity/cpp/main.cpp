@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2008
 //
 // First added:  2006-02-07
-// Last changed: 2009-09-07
+// Last changed: 2009-09-09
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -69,8 +69,6 @@ int main()
     }
   };
 
-  //parameters("linear_algebra_backend") = "uBLAS";
-
   // Read mesh and create function space
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
   Elasticity::FunctionSpace V(mesh);
@@ -105,11 +103,11 @@ int main()
   Elasticity::LinearForm L(V);
   L.f = f;
   VariationalProblem problem(a, L, bcs);
-  problem.parameters("symmetric") = true;
+  problem.parameters["symmetric"] = true;
 
   // Solve PDE (using direct solver)
   Function u;
-  problem.parameters("linear_solver") = "direct";
+  problem.parameters["linear_solver"] = "direct";
   problem.solve(u);
 
   cout << "Norm " << u.vector().norm("l2") << endl;

@@ -2,12 +2,14 @@
 #
 # Generate list of include files for SWIG interface file.
 #
-# Modified by <aasmund@simula.no>
 
 __author__ = "Anders Logg (logg@simula.no)"
 __date__ = "2007-04-12 -- 2007-05-02"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
+
+# Modified by <aasmund@simula.no>
+# Modified by Johan Hake, 2009
 
 import os
 import re
@@ -52,8 +54,12 @@ f = open(interface_file, "w")
 f.write("// Generated list of include files for PyDOLFIN\n")
 for (module, module_headers) in headers:
     f.write("\n// DOLFIN headers included from %s\n" % module)
+    if os.path.isfile(module+"_pre.i"):
+        f.write("%%include \"dolfin/swig/%s_pre.i\"\n" % module)
     for header in module_headers:
         f.write("%%include \"%s\"\n" % header)
+    if os.path.isfile(module+"_post.i"):
+        f.write("%%include \"dolfin/swig/%s_post.i\"\n" % module)
 f.close()
 
 # Added for docstring extraction

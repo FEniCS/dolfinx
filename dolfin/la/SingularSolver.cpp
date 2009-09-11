@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-15
-// Last changed: 2009-07-01
+// Last changed: 2009-09-08
 
 #include "LinearAlgebraFactory.h"
 #include "GenericMatrix.h"
@@ -34,7 +34,7 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
   info("Solving singular system...");
 
   // Propagate parameters
-  linear_solver.parameters.update(parameters["linear_solver"]);
+  linear_solver.parameters.update(parameters("linear_solver"));
 
   // Initialize data structures for extended system
   init(A);
@@ -63,7 +63,7 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
   info("Solving singular system...");
 
   // Propagate parameters
-  linear_solver.parameters.update(parameters["linear_solver"]);
+  linear_solver.parameters.update(parameters("linear_solver"));
 
   // Initialize data structures for extended system
   init(A);

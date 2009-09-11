@@ -1,9 +1,12 @@
 // Copyright (C) 2003-2009 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet 2009
+//
 // First added:  2003-10-21
-// Last changed: 2009-09-04
+// Last changed: 2009-09-10
 
+#include <dolfin/log/log.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/math/dolfin_math.h>
 #include "ODESolver.h"
@@ -22,6 +25,8 @@ ODE::ODE(uint N, real T)
     not_impl_J("Warning: consider implementing Jacobian ODE::J() to improve efficiency."),
     not_impl_JT("Warning: consider implementing Jacobian transpose ODE::JT() to improve efficiency")
 {
+  not_working_in_parallel("ODE solver");
+
   info("Creating ODE of size %d.", N);
   parameters = default_parameters();
 
@@ -237,6 +242,23 @@ void ODE::solve()
   ode_solver.solve();
 }
 //-----------------------------------------------------------------------------
+void ODE::solve(real t0, real t1)
+{
+  // Check time interval
+  if (t0 < 0.0 - real_epsilon() || t1 > endtime() + real_epsilon())
+  {
+    error("Illegal time interval [%g, %g] for ODE system, not contained in [%g, %g].",
+          to_double(t0), to_double(t1), to_double(0.0), to_double(endtime()));
+  }
+
+  // Create time stepper if not created before
+  if (!time_stepper)
+    time_stepper = new TimeStepper(*this);
+
+  // Solve ODE on given time interval
+  time_stepper->solve(t0, t1);
+}
+//-----------------------------------------------------------------------------
 void ODE::solve(ODESolution& u)
 {
   assert(!time_stepper);
@@ -257,10 +279,22 @@ void ODE::solve(ODESolution& u, real t0, real t1)
 
   // Create time stepper if not created before
   if (!time_stepper)
-    time_stepper = new TimeStepper(*this);
+    time_stepper = new TimeStepper(*this, u);
 
   // Solve ODE on given time interval
-  time_stepper->solve(u, t0, t1);
+  time_stepper->solve(t0, t1);
+}
+//-----------------------------------------------------------------------------
+void ODE::solve_dual(ODESolution& u) {
+  begin("Solving dual problem");
+
+  // Create dual problem
+  Dual dual(*this, u);
+
+  // Solve dual problem
+  dual.solve();
+
+  end();
 }
 //-----------------------------------------------------------------------------
 void ODE::solve_dual(ODESolution& u, ODESolution& z) {
@@ -282,7 +316,7 @@ void ODE::analyze_stability( uint q, ODESolution& u) {
 //-----------------------------------------------------------------------------
 void ODE::analyze_stability_discretization(ODESolution& u) {
   StabilityAnalysis S(*this, u);
-  S.analyze_integral(parameters("order"));
+  S.analyze_integral(parameters["order"]);
 }
 //-----------------------------------------------------------------------------
 void ODE::analyze_stability_computation(ODESolution& u) {

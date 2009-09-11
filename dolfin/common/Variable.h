@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-02-26
-// Last changed: 2009-08-11
+// Last changed: 2009-09-08
 
 #ifndef __VARIABLE_H
 #define __VARIABLE_H
@@ -38,7 +38,7 @@ namespace dolfin
     const std::string& label() const;
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose=false) const;
+    virtual std::string str(bool verbose) const;
 
     /// Deprecated, to be removed
     void disp() const;

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-20
-// Last changed: 2009-09-04
+// Last changed: 2009-09-08
 
 #include "StabilityAnalysis.h"
 #include "ODESolution.h"
@@ -18,7 +18,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 StabilityAnalysis::StabilityAnalysis(ODE& ode, ODESolution& u) :
-  ode(ode), u(u), write_to_file(ode.parameters("save_solution")), n(ode.size())
+  ode(ode), u(u), write_to_file(ode.parameters["save_solution"]), n(ode.size())
 {
   // Do nothing
 }

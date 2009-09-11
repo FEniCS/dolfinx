@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-29
-// Last changed: 2008-02-11
+// Last changed: 2009-09-08
 
 #include <cmath>
 #include "ODE.h"
@@ -16,7 +16,7 @@ MonoAdaptivity::MonoAdaptivity(const ODE& ode, const Method& method)
   : Adaptivity(ode, method), k(0)
 {
   // Specify initial time step
-  real k0 = ode.parameters("initial_time_step").get_real();
+  real k0 = ode.parameters["initial_time_step"].get_real();
   if ( kfixed )
   {
     k = ode.timestep(0.0, k0);

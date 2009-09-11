@@ -92,7 +92,7 @@ class AbstractBaseTest(object):
         self.assertAlmostEqual(F[5,5],3.75)
         
         # Test axpy
-        A.axpy(100,B)
+        A.axpy(100,B,True)
         self.assertAlmostEqual(A[5,5],116)
         
         # Test to NumPy array 
@@ -145,7 +145,14 @@ class AbstractBaseTest(object):
 
     def test_vector(self):
         from numpy import ndarray, linspace, array, fromiter
+        from numpy import int,int0,int16,int32,int64 
+        from numpy import uint,uint0,uint16,uint32,uint64 
         org = self.get_Vector()
+
+        # Test set and access with different integers
+        for t in [int,int0,int16,int32,int64,uint,uint0,uint16,uint32,uint64]:
+            org[t(0)] = 2.0
+            self.assertAlmostEqual(org[t(0)],2.0)
 
         A = org.copy()
         B = down_cast(org.copy())
@@ -192,6 +199,13 @@ class AbstractBaseTest(object):
         
         ind = [1,3,6,9,15]
         ind1 = array([1,3,6,9,15])
+
+        # These two just to check that one can use numpy arrays and list of uints
+        ind2 = array([1,3,6,9,15],'I')
+        ind3 = list(array([1,3,6,9,15],'I'))
+        A[ind2] = ind2
+        A2[ind3] = ind2
+        
         G  = A[ind]
         G1 = A[ind1]
         G2 = A2[ind]
@@ -220,9 +234,10 @@ class AbstractBaseTest(object):
         self.assertTrue(a in A)
         self.assertTrue(b not in A)
         self.assertTrue((A3==A2).all())
+        A[:] = A==A
+        self.assertTrue(A.sum()==len(A))
 
         A[:] = A2
-
         self.assertTrue((A==A2).all())
         
         H  = A.copy()
@@ -254,6 +269,7 @@ class AbstractBaseTest(object):
         self.assertRaises(RuntimeError,wrong_dim,[0,2],[0,2,4])
         self.assertRaises(RuntimeError,wrong_dim,[0,2],slice(0,4,1))
         self.assertRaises(TypeError,wrong_dim,0,slice(0,4,1))
+
 
         if self.backend == "MTL4":
             print "Testing of pointwise vector multiplication is turned of "

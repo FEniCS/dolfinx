@@ -20,7 +20,6 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ODESolution::ODESolution() : 
-  dummy(false),
   trial(0),
   N(0),
   nodal_size(0),
@@ -36,7 +35,6 @@ ODESolution::ODESolution() :
 }
 //-----------------------------------------------------------------------------
 ODESolution::ODESolution(std::string filename, uint number_of_files) : 
-  dummy(false),
   trial(0),
   N(0),
   nodal_size(0),
@@ -112,8 +110,6 @@ void ODESolution::init(uint N, const Lagrange& trial_space, const real* quad_wei
 //-----------------------------------------------------------------------------
 void ODESolution::add_timeslab(const real& a, const real& b, const real* nodal_values) 
 {
-  if (dummy) return;
-
    //Public method. Does some checks and calls add_data
   if (!initialized) error("ODE Solution not initialized");
   if (read_mode) error("ODE Solution in read mode");
@@ -148,7 +144,7 @@ void ODESolution::eval(const real& t, real* y)
 {
   if (!read_mode) error("Can not evaluate solution");
   if(t > T) error("Requested t > T. t=%f, T=%f", to_double(t), to_double(T));
-  
+ 
   // Scan the cache
   for (uint i = 0; i < cache_size; ++i) 
   {
@@ -182,7 +178,7 @@ void ODESolution::eval(const real& t, real* y)
 								  data.end(), 
 								  t,
 								  real_data_cmp);
-  uint index = lower-data.begin();
+  uint index = lower-data.begin()-1;
 
   ODESolutionData& a = data[index];
   real tau = (t-a.a)/a.k;
@@ -408,36 +404,44 @@ void ODESolution::add_data(const real& a, const real& b, const real* nodal_value
 }
 //----------------------------------------------------------------------------- 
 bool ODESolution::real_data_cmp( const ODESolutionData& a, const real& t ) {
-  return (a.a < t);
+  return (a.a <= t);
 }
 //----------------------------------------------------------------------------- 
 bool ODESolution::real_filetable_cmp(const std::pair<real, uint>& a, const real& t) {
-  return (a.first < t);
+  return (a.first <= t);
 }
 //----------------------------------------------------------------------------- 
 bool ODESolution::uint_filetable_cmp(const std::pair<real, uint>& a, const uint& i) {
-  return ( a.second < i);
+  return ( a.second <= i);
 }
 //----------------------------------------------------------------------------- 
-void ODESolution::disp() 
+std::string ODESolution::str(bool verbose) const 
 {
-  cout << "--- ODE solution ------------------------------" << endl;
-  if (initialized)
+  std::stringstream s;
+
+  if (!initialized)
   {
-    cout << "Size = " << N << endl;
-    cout << "T = " << T << endl;
-    cout << "Number of nodal points = " << nodal_size << endl;
-    cout << "Nodal points: ";
-    for (uint i = 0; i < nodal_size; i++)
-      cout << " " << trial->point(i);
-    cout << endl;
-    cout << "Number of timeslabs = " << (uint) data.size() << endl;
-  } else 
+    s << "ODESolution: Not initialized";
+  } else
   {
-    cout << "Not initialized" << endl;
+    if (verbose) 
+    {
+
+      s << "Size = " << N << std::endl;
+      s << "T = " << T << std::endl;
+      s << "Number of nodal points = " << nodal_size << std::endl;
+      s << "Nodal points: ";
+      for (uint i = 0; i < nodal_size; i++)
+	s << " " << trial->point(i);
+      s << std::endl;
+      s << "Number of timeslabs = " << (uint) data.size() << std::endl;
+    } else 
+    {
+      s << "<ODESolution of size" << N << " on interval [0,"<< endtime() << "]>";
+    }
   }
 
-  cout << "----------------------------------------------------------" << endl;  
+  return s.str();
 }
 //----------------------------------------------------------------------------- 
 ODESolution::iterator ODESolution::begin()

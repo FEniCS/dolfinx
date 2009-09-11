@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2005-10-23
-// Last changed: 2009-06-30
+// Last changed: 2009-09-08
 
 #include "NewtonSolver.h"
 #include "NonlinearProblem.h"
@@ -23,14 +23,14 @@ using namespace dolfin;
 Parameters NewtonSolver::default_parameters()
 {
   Parameters p("newton_solver");
- 
+
   p.add("maximum_iterations",    50);
   p.add("relative_tolerance",    1e-9);
   p.add("absolute_tolerance",    1e-10);
   p.add("convergence_criterion", "residual");
   p.add("method",                "full");
   p.add("report",                true);
- 
+
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
   assert(b);
   assert(dx);
 
-  const uint maxiter = parameters("maximum_iterations");
+  const uint maxiter = parameters["maximum_iterations"];
 
   begin("Starting Newton solve.");
 
@@ -124,10 +124,10 @@ dolfin::uint NewtonSolver::iteration() const
 bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
                              const NonlinearProblem& nonlinear_problem)
 {
-  const std::string convergence_criterion = parameters("convergence_criterion");
-  const double rtol = parameters("relative_tolerance");
-  const double atol = parameters("absolute_tolerance");
-  const bool report = parameters("report");
+  const std::string convergence_criterion = parameters["convergence_criterion"];
+  const double rtol = parameters["relative_tolerance"];
+  const double atol = parameters["absolute_tolerance"];
+  const bool report = parameters["report"];
 
   double residual = 1.0;
 

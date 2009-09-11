@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-06-13
-// Last changed: 2008-07-23
+// Last changed: 2009-09-08
 
 #ifndef __TIMER_H
 #define __TIMER_H
@@ -38,7 +38,7 @@ namespace dolfin
 
     /// Create timer
     Timer(std::string task) : task(""), t(time()), stopped(false)
-    { const std::string prefix = parameters("timer_prefix"); this->task = prefix + task; }
+    { const std::string prefix = parameters["timer_prefix"]; this->task = prefix + task; }
 
     /// Destructor
     ~Timer()
@@ -51,7 +51,7 @@ namespace dolfin
     /// Stop timer
     void stop()
     { t = time() - t; LogManager::logger.register_timing(task, t); stopped = true; }
-    
+
     /// Return value of timer (or time at start if not stopped)
     double value() const
     { return t; }

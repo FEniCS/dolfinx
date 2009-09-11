@@ -51,33 +51,15 @@ import_array();
 // STL SWIG string class
 %include <std_string.i>
 
-// SWIG directives for specific kernel modules (pre)
-%include "dolfin/swig/common_pre.i"
-%include "dolfin/swig/log_pre.i"
-%include "dolfin/swig/ode_pre.i"
-%include "dolfin/swig/fem_pre.i"
-%include "dolfin/swig/la_pre.i"
-%include "dolfin/swig/mesh_pre.i"
-%include "dolfin/swig/function_pre.i"
-%include "dolfin/swig/parameter_pre.i"
-
-// Include doxygen generated docstrings and turn on 
-// signature documentation
+// Include doxygen generated docstrings and turn on SWIG generated signature documentation
 %include "dolfin/swig/docstrings.i"
 %feature("autodoc", "1");
 
-// DOLFIN interface
+// Import the dolfin::uint type
 %import  "dolfin/common/types.h"
-%include "dolfin/swig/headers.i"
 
-// SWIG directives for specific kernel modules (post)
-%include "dolfin/swig/common_post.i"
-%include "dolfin/swig/log_post.i"
-%include "dolfin/swig/la_post.i"
-%include "dolfin/swig/mesh_post.i"
-%include "dolfin/swig/function_post.i"
-%include "dolfin/swig/parameter_post.i"
-%include "dolfin/swig/io_post.i"
+// DOLFIN interface
+%include "dolfin/swig/headers.i"
 
 // Include information about swig version
 %include "dolfin/swig/swig_version.i"

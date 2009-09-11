@@ -5,7 +5,7 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2005
-// Last changed: 2009-08-28
+// Last changed: 2009-09-08
 
 #ifdef HAS_PETSC
 
@@ -95,7 +95,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   #endif
 
   // Get parameters
-  const bool report = parameters("report");
+  const bool report = parameters["report"];
 
   // Initialize solution vector (remains untouched if dimensions match)
   x.resize(A.size(1));
@@ -122,7 +122,7 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A, PETScVector& x,
   init();
 
   // Get parameters
-  const bool report = parameters("report");
+  const bool report = parameters["report"];
 
   // Copy data to dense matrix
   const double Anorm = copy_to_dense(A);

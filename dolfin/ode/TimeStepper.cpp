@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2008
 //
 // First added:  2003
-// Last changed: 2009-02-10
+// Last changed: 2009-09-08
 
 #include <cmath>
 #include <string>
@@ -23,18 +23,20 @@ using namespace dolfin;
 TimeStepper::TimeStepper(ODE& ode) :
   ode(ode),
   timeslab(0),
-  file(ode.parameters("solution_file_name")),
+  file(ode.parameters["solution_file_name"]),
   p("Time-stepping"),
   t(0),
   _stopped(false),
-  save_solution(ode.parameters("save_solution")),
-  adaptive_samples(ode.parameters("adaptive_samples")),
-  num_samples(ode.parameters("number_of_samples")),
-  sample_density(ode.parameters("sample_density"))
+  save_solution(ode.parameters["save_solution"]),
+  adaptive_samples(ode.parameters["adaptive_samples"]),
+  num_samples(ode.parameters["number_of_samples"]),
+  sample_density(ode.parameters["sample_density"]),
+  save_to_odesolution(false),
+  u(0)
 {
   // Create time slab
-  std::string method = ode.parameters("method");
-  if ( method == "mcg" || method == "mdg" )
+  std::string method = ode.parameters["method"];
+  if (method == "mcg" || method == "mdg")
   {
     timeslab = new MultiAdaptiveTimeSlab(ode);
   }
@@ -44,32 +46,60 @@ TimeStepper::TimeStepper(ODE& ode) :
   }
 }
 //-----------------------------------------------------------------------
+TimeStepper::TimeStepper(ODE& ode, ODESolution& u) :
+  ode(ode),
+  timeslab(0),
+  file(ode.parameters["solution_file_name"]),
+  p("Time-stepping"),
+  t(0),
+  _stopped(false),
+  save_solution(ode.parameters["save_solution"]),
+  adaptive_samples(ode.parameters["adaptive_samples"]),
+  num_samples(ode.parameters["number_of_samples"]),
+  sample_density(ode.parameters["sample_density"]),
+  save_to_odesolution(true),
+  u(&u)
+{
+  // Create time slab
+  std::string method = ode.parameters["method"];
+  if (method == "mcg" || method == "mdg")
+  {
+    timeslab = new MultiAdaptiveTimeSlab(ode);
+  }
+  else
+  {
+    timeslab = new MonoAdaptiveTimeSlab(ode);
+  }
+
+  // initialize ODESolution object
+  u.init(ode.size(),
+	 timeslab->get_trial(),
+	 timeslab->get_quadrature_weights());
+
+}
+
+//-----------------------------------------------------------------------
 TimeStepper::~TimeStepper()
 {
   delete timeslab;
 }
 //----------------------------------------------------------------------
-void TimeStepper::solve(ODESolution& u)
+void TimeStepper::solve()
 {
-  solve(u, 0.0, ode.endtime());
+  solve(0.0, ode.endtime());
 }
 //----------------------------------------------------------------------
-void TimeStepper::solve(ODESolution& u, real t0, real t1)
+void TimeStepper::solve(real t0, real t1)
 {
   begin("Time-stepping over the time interval [%g, %g]",
         to_double(t0), to_double(t1));
-
-  u.init(ode.size(),
-	 timeslab->get_trial(), 
-	 timeslab->get_quadrature_weights());
-
 
   // Do time-stepping on [t0, t1]
   t = t0;
   while (!at_end(t, t1) && !_stopped)
   {
     // Make time step
-    t = step(u);
+    t = step();
 
     // Update progress
     p = to_double(t / ode.endtime());
@@ -78,12 +108,12 @@ void TimeStepper::solve(ODESolution& u, real t0, real t1)
   end();
 }
 //-------------------------------------------------------------------------
-real TimeStepper::step(ODESolution& u)
+real TimeStepper::step()
 {
-  return step(u, t, ode.endtime());
+  return step(t, ode.endtime());
 }
 //-------------------------------------------------------------------------
-real TimeStepper::step(ODESolution& u, real t0, real t1)
+real TimeStepper::step(real t0, real t1)
 {
   // FIXME: Change type of time slab if solution does not converge
 
@@ -113,7 +143,7 @@ real TimeStepper::step(ODESolution& u, real t0, real t1)
   }
 
   // Save solution
-  save(u);
+  save();
 
   // Update for next time slab
   if (!timeslab->shift(at_end(t, ode.endtime())))
@@ -137,10 +167,11 @@ void TimeStepper::get_state(real* u)
   timeslab->get_state(u);
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::save(ODESolution& u)
+void TimeStepper::save()
 {
   //save to ODESolution object
-  timeslab->save_solution(u);
+  if (save_to_odesolution)
+    timeslab->save_solution(*u);
 
 
   // Check if we should save the solution
@@ -149,12 +180,12 @@ void TimeStepper::save(ODESolution& u)
 
   // Choose method for saving the solution
   if (adaptive_samples)
-    save_adaptive_samples(u);
+    save_adaptive_samples();
   else
-    save_fixed_samples(u);
+    save_fixed_samples();
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::save_fixed_samples(ODESolution& u)
+void TimeStepper::save_fixed_samples()
 {
   // Get start time and end time of time slab
   real t0 = timeslab->starttime();
@@ -162,7 +193,7 @@ void TimeStepper::save_fixed_samples(ODESolution& u)
 
   // Save initial value
   if (t0 < real_epsilon())
-    save_sample(u, 0.0);
+    save_sample(0.0);
 
   // Compute distance between samples
   real K = ode.endtime() / static_cast<real>(num_samples);
@@ -182,15 +213,15 @@ void TimeStepper::save_fixed_samples(ODESolution& u)
     if (real_abs(t - t1) < real_epsilon())
       t = t1;
 
-    save_sample(u, t);
+    save_sample(t);
   }
 
   // Save final value
   if (at_end(t1, ode.endtime()))
-    save_sample(u, ode.endtime());
+    save_sample(ode.endtime());
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::save_adaptive_samples(ODESolution& u)
+void TimeStepper::save_adaptive_samples()
 {
   // Get start time and end time of time slab
   real t0 = timeslab->starttime();
@@ -198,7 +229,7 @@ void TimeStepper::save_adaptive_samples(ODESolution& u)
 
   // Save initial value
   if (t0 < real_epsilon())
-    save_sample(u, 0.0);
+    save_sample(0.0);
 
   // Compute distance between samples
   assert(sample_density >= 1);
@@ -210,20 +241,17 @@ void TimeStepper::save_adaptive_samples(ODESolution& u)
     real t = t0 + static_cast<real>(n + 1)*k;
     if (n == (sample_density - 1))
       t = t1;
-    save_sample(u, t);
+    save_sample(t);
   }
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::save_sample(ODESolution& u, real t)
+void TimeStepper::save_sample(real t)
 {
   // Create sample
   Sample sample(*timeslab, t, "u", "ODE solution");
 
   // Save to file
   file << sample;
-
-  // Add sample to ODE solution
-  //u.add_sample(sample);
 
   // Let user save sample (optional)
   ode.save(sample);

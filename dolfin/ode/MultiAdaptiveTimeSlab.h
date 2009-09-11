@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-27
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifndef __MULTI_ADAPTIVE_TIME_SLAB_H
 #define __MULTI_ADAPTIVE_TIME_SLAB_H
@@ -68,7 +68,7 @@ namespace dolfin
     void save_solution(ODESolution& u);
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
     /// Friends
     friend class MultiAdaptiveFixedPointSolver;

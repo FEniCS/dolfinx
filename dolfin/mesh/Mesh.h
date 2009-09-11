@@ -8,7 +8,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2009-08-27
+// Last changed: 2009-09-08
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -189,7 +189,7 @@ namespace dolfin
     void intersection(Mesh& mesh, std::vector<uint>& cells, bool fixed_mesh=true);
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
     /// Define XMLHandler for use in new XML reader/writer
     typedef XMLMesh XMLHandler;

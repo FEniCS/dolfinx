@@ -51,7 +51,7 @@ namespace dolfin
     ~LocalMeshData();
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
     /// Define XMLHandler for use in new XML reader/writer
     typedef XMLLocalMeshData XMLHandler;

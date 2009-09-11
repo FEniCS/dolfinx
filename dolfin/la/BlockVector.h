@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-08-25
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 //
 
 #ifndef __BLOCKVECTOR_H
@@ -76,7 +76,7 @@ namespace dolfin
     uint size() const;
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
   private:
 

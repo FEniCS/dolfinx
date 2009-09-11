@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2005-08-31
-// Last changed: 2009-08-24
+// Last changed: 2009-09-08
 
 #ifdef HAS_SLEPC
 
@@ -33,7 +33,7 @@ SLEPcEigenSolver::SLEPcEigenSolver()
 SLEPcEigenSolver::~SLEPcEigenSolver()
 {
   // Destroy solver environment
-  if (eps) 
+  if (eps)
     EPSDestroy(eps);
 }
 //-----------------------------------------------------------------------------
@@ -62,7 +62,7 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc)
   get_eigenvalue(lr, lc, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, 
+void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
                                      PETScVector& r, PETScVector& c)
 {
   get_eigenpair(lr, lc, r, c, 0);
@@ -161,9 +161,9 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::read_parameters()
 {
-  set_spectrum(parameters("spectrum"));
-  set_solver(parameters("solver"));
-  set_tolerance(parameters("tolerance"), parameters("maximum_iterations"));
+  set_spectrum(parameters["spectrum"]);
+  set_solver(parameters["solver"]);
+  set_tolerance(parameters["tolerance"], parameters["maximum_iterations"]);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_spectrum(std::string spectrum)

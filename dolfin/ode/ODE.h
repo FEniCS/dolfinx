@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2009 Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Benjamin Kehlet 2009
+//
 // First added:  2003-10-21
-// Last changed: 2009-09-04
+// Last changed: 2009-09-10
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -128,13 +130,19 @@ namespace dolfin
     /// Solve ODE on [0, T]
     void solve();
 
+    /// Solve ODE on [t0, t1]
+    void solve(real t0, real t1);
+
     /// Solve ODE on [0, T]. Save solution in u
     void solve(ODESolution& u);
 
-    /// Solve ODE on [t0, t1]
+    /// Solve ODE on [t0, t1]. Save solution in u
     void solve(ODESolution& u, real t0, real t1);
 
     /// Solve dual problem given an approximate solution u of the primal problem
+    void solve_dual(ODESolution& u);
+
+    /// Solve dual and save soution in z
     void solve_dual(ODESolution& u, ODESolution& z);
 
     /// Compute stability factors as function of T (including solving the dual problem).
@@ -167,7 +175,6 @@ namespace dolfin
       // FIXME: These parameters need to be cleaned up
 
       p.add("fixed_time_step", false);
-      p.add("solve_dual_problem", false);
       p.add("save_solution", true);
       p.add("save_final_solution", false);
       p.add("adaptive_samples", false);
@@ -213,7 +220,6 @@ namespace dolfin
       p.add("nonlinear_solver", "default");
       p.add("linear_solver", "auto");
       p.add("solution_file_name", "solution.py");
-      p.add("number_of_threads", 1);
 
       return p;
     }

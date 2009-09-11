@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-09-05
+// Last changed: 2009-09-10
 
 #ifndef __PARAMETERS_H
 #define __PARAMETERS_H
@@ -78,7 +78,7 @@ namespace dolfin
     explicit Parameters(std::string key="parameters");
 
     /// Destructor
-    ~Parameters();
+    virtual ~Parameters();
 
     /// Copy constructor
     Parameters(const Parameters& parameters);
@@ -131,22 +131,25 @@ namespace dolfin
     void add(const Parameters& parameters);
 
     /// Parse parameters from command-line
-    void parse(int argc, char* argv[]);
+    virtual void parse(int argc, char* argv[]);
 
     /// Update parameters with another set of parameters
     void update(const Parameters& parameters);
 
     /// Return parameter for given key
-    Parameter& operator() (std::string key);
+    Parameter& operator[] (std::string key);
 
     /// Return parameter for given key (const version)
-    const Parameter& operator() (std::string key) const;
+    const Parameter& operator[] (std::string key) const;
+
+    // Note: We would have liked to use [] also for access of nested parameter
+    // sets just like we do in Python but we can't overload on return type.
 
     /// Return nested parameter set for given key
-    Parameters& operator[] (std::string key);
+    Parameters& operator() (std::string key);
 
     /// Return nested parameter set for given key (const)
-    const Parameters& operator[] (std::string key) const;
+    const Parameters& operator() (std::string key) const;
 
     /// Assignment operator
     const Parameters& operator= (const Parameters& parameters);
@@ -158,18 +161,20 @@ namespace dolfin
     void get_parameter_set_keys(std::vector<std::string>& keys) const;
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
     /// Define XMLHandler for use in new XML reader/writer
     typedef XMLParameters XMLHandler;
 
-  private:
+  protected:
 
     /// Parse filtered options (everything except PETSc options)
     void parse_dolfin(int argc, char* argv[]);
 
     /// Parse filtered options (only PETSc options)
     void parse_petsc(int argc, char* argv[]);
+
+  private:
 
     // Add all parameters as options to a boost::program_option instance
     void add_parameter_set_to_po(boost::program_options::options_description& desc,

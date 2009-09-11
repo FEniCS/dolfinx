@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet
 //
 // First added:  2003-11-28
-// Last changed: 2008-10-06
+// Last changed: 2009-09-08
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
@@ -20,7 +20,7 @@ Dual::Dual(ODE& primal, ODESolution& u)
   // Get parameters from primal
   parameters.update(primal.parameters);
 
-  parameters("solution_file_name") = "solution_dual.py";  
+  parameters["solution_file_name"] = "solution_dual.py";
 }
 //------------------------------------------------------------------------
 Dual::~Dual()

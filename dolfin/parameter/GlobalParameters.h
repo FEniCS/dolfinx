@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-02
-// Last changed: 2009-09-08
+// Last changed: 2009-09-10
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -22,7 +22,10 @@ namespace dolfin
     GlobalParameters();
 
     /// Destructor
-    ~GlobalParameters();
+    virtual ~GlobalParameters();
+
+    /// Parse parameters from command-line
+    virtual void parse(int argc, char* argv[]);
 
     /// Default parameter values
     static Parameters default_parameters()

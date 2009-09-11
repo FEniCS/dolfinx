@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-06-22
+// Last changed: 2009-09-10
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -44,8 +44,8 @@ void Assembler::assemble(GenericTensor& A,
 {
   // Extract boundary indicators (if any)
   MeshFunction<uint>* exterior_facet_domains
-    = a.mesh().data().mesh_function("exterior facet domains"); 
-  
+    = a.mesh().data().mesh_function("exterior facet domains");
+
   // Assemble
   assemble(A, a, 0, exterior_facet_domains, 0, reset_sparsity, add_values);
 }
@@ -53,7 +53,7 @@ void Assembler::assemble(GenericTensor& A,
 void Assembler::assemble(GenericTensor& A,
                          const Form& a,
                          const SubDomain& sub_domain,
-                         bool reset_sparsity, 
+                         bool reset_sparsity,
                          bool add_values)
 {
   // Extract mesh
@@ -198,6 +198,12 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
 
   // Create boundary mesh
   BoundaryMesh boundary(mesh);
+
+  // Skip assembly if boundary is empty (may happen when running in parallel)
+  if (boundary.num_cells() == 0)
+    return;
+
+  // Get mapping from facets (boundary cells) to mesh cells
   MeshFunction<uint>* cell_map = boundary.data().mesh_function("cell map");
   assert(cell_map);
 
@@ -309,7 +315,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     }
 
     // Tabulate exterior interior facet tensor on macro element
-    integral->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1, 
+    integral->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1,
                               local_facet0, local_facet1);
 
     // Get local dimensions
@@ -391,14 +397,14 @@ You may need to provide the dimension of a user defined Function.", j, i, dim, f
 //-----------------------------------------------------------------------------
 void Assembler::init_global_tensor(GenericTensor& A,
                                    const Form& a,
-                                   UFC& ufc, 
+                                   UFC& ufc,
                                    bool reset_sparsity,
                                    bool add_values)
 {
   if (reset_sparsity)
   {
     if (add_values)
-      error("Can not add values when the sparsity pattern is reset"); 
+      error("Can not add values when the sparsity pattern is reset");
     // Build sparsity pattern
     Timer t0("Build sparsity");
     GenericSparsityPattern* sparsity_pattern = A.factory().create_pattern();
@@ -408,7 +414,7 @@ void Assembler::init_global_tensor(GenericTensor& A,
       for (uint i = 0; i < a.rank(); ++i)
         dof_maps.push_back(&(a.function_space(i).dofmap()));
       SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dof_maps,
-                                    a.ufc_form().num_cell_integrals(), 
+                                    a.ufc_form().num_cell_integrals(),
                                     a.ufc_form().num_interior_facet_integrals());
     }
     t0.stop();
@@ -430,7 +436,7 @@ void Assembler::init_global_tensor(GenericTensor& A,
     t2.stop();
   }
   else
-    if (!add_values) 
+    if (!add_values)
       A.zero();
 }
 //-----------------------------------------------------------------------------

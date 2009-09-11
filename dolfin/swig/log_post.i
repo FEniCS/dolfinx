@@ -1,3 +1,20 @@
+/* -*- C -*- */
+// Copyright (C) 2009 Johan Hake
+// Licensed under the GNU LGPL Version 2.1.
+//
+// First added:  2009-05-10
+// Last changed: 2009-09-11
+
+//=============================================================================
+// SWIG directives for the DOLFIN log kernel module (post)
+//
+// The directives in this file are applied _before_ the header files of the
+// modules has been loaded.
+//=============================================================================
+
+//-----------------------------------------------------------------------------
+// Make progress available from Python through the __iadd__ interface
+//-----------------------------------------------------------------------------
 %extend dolfin::Progress {
 
 void __add(int incr) {
@@ -25,6 +42,10 @@ def update(self, other):
 
 }
 
+//-----------------------------------------------------------------------------
+// Use traceback in debug message
+// Reimplement info
+//-----------------------------------------------------------------------------
 %pythoncode %{
 def debug(message):
     import traceback
@@ -34,9 +55,9 @@ def debug(message):
 def info(*args):
     if len(args) > 0 and isinstance(args[0],(Variable,Parameters)):
         if len(args) > 1:
-            _info(args[0].__str__(*args[1:]))
+            _info(args[0].str(*args[1:]))
         else:
-            _info(args[0].__str__())
+            _info(args[0].str(False))
     else:
         _info(*args)
 %}

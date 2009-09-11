@@ -206,5 +206,5 @@ extern dolfin::GlobalParameters dolfin::parameters;
 %}
 
 %pythoncode%{
-parameters = cvar.parameters
+parameters = _cpp.cvar.parameters
 %}

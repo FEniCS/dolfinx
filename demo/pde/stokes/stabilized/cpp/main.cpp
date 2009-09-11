@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2008-12-12
+// Last changed: 2009-09-08
 //
 // This demo solves the Stokes equations, using stabilized
 // first order elements for the velocity and pressure. The
@@ -75,7 +75,7 @@ int main()
 
   // Solve PDE
   Function w;
-  problem.parameters("linear_solver") = "direct";
+  problem.parameters["linear_solver"] = "direct";
   problem.solve(w);
 
   // Extract subfunctions

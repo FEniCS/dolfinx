@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-30
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 
 #ifndef __UBLAS_KRYLOV_MATRIX_H
 #define __UBLAS_KRYLOV_MATRIX_H
@@ -42,7 +42,7 @@ namespace dolfin
     void solve(uBLASVector& x, const uBLASVector& b);
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
   private:
 

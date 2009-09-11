@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-17
-// Last changed: 2008-08-07
+// Last changed: 2009-09-08
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include "uBLASFactory.h"
@@ -37,7 +37,7 @@ LinearAlgebraFactory& DefaultFactory::factory() const
   typedef uBLASFactory<> DefaultFactory;
 
   // Get backend from parameter system
-  std::string backend = parameters("linear_algebra_backend");
+  std::string backend = parameters["linear_algebra_backend"];
 
   // Choose backend
   if (backend == "uBLAS")

@@ -123,11 +123,11 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 // Python. These are then used in the extended Python classes. See below.
 // ---------------------------------------------------------------------------
 %{
-#include "Indices.i"
-#include "la_get_set_items.i"
+#include "dolfin/swig/Indices.i"
+#include "dolfin/swig/la_get_set_items.i"
 %}
 
-%include "la_get_set_items.i"
+%include "dolfin/swig/la_get_set_items.i"
 
 // ---------------------------------------------------------------------------
 // Macro with C++ and Python extension code for GenericVector types in PyDOLFIN
@@ -239,9 +239,9 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         return self.__getitem__(slice(i, j, 1))
     
     def __getitem__(self, indices):
-        from numpy import ndarray
+        from numpy import ndarray, integer
         from types import SliceType
-        if isinstance(indices, int):
+        if isinstance(indices, (int,integer)):
             return _get_vector_single_item(self, indices)
         elif isinstance(indices, (SliceType, ndarray, list) ):
             return down_cast(_get_vector_sub_vector(self, indices))
@@ -249,10 +249,10 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
             raise TypeError, "expected an int, slice, list or numpy array of integers"
 
     def __setitem__(self, indices, values):
-        from numpy import ndarray
+        from numpy import ndarray, integer
         from types import SliceType
-        if isinstance(indices, int):
-            if isinstance(values,(float, int)):
+        if isinstance(indices, (int,integer)):
+            if isinstance(values,(float, int, integer)):
                 return _set_vector_items_value(self, indices, values)
             else:
                 raise TypeError, "provide a scalar to set single item"
@@ -509,7 +509,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         """x.__add__(y) <==> x+y"""
         if self.__is_compatibable(other):
             ret = self.copy()
-            ret.axpy(1.0,other)
+            ret.axpy(1.0, other, False)
             return ret
         return NotImplemented
     
@@ -517,7 +517,7 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
         """x.__sub__(y) <==> x-y"""
         if self.__is_compatibable(other):
             ret = self.copy()
-            ret.axpy(-1.0,other)
+            ret.axpy(-1.0, other, False)
             return ret
         return NotImplemented
     
@@ -586,14 +586,14 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
     def __iadd__(self,other):
         """x.__iadd__(y) <==> x+y"""
         if self.__is_compatibable(other):
-            self.axpy(1.0,other)
+            self.axpy(1.0, other, False)
             return self
         return NotImplemented
     
     def __isub__(self,other):
         """x.__isub__(y) <==> x-y"""
         if self.__is_compatibable(other):
-            self.axpy(-1.0,other)
+            self.axpy(-1.0, other, False)
             return self
         return NotImplemented
     

@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-05-15
-// Last changed: 2009-09-07
+// Last changed: 2009-09-08
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -64,7 +64,7 @@ namespace dolfin
     { matrix->apply(); }
 
     /// Return informal string representation (pretty-print)
-    virtual std::string str(bool verbose=false) const
+    virtual std::string str(bool verbose) const
     { return matrix->str(verbose); }
 
     //--- Implementation of the GenericMatrix interface ---
@@ -86,7 +86,7 @@ namespace dolfin
     { matrix->add(block, m, rows, n, cols); }
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern = false)
+    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
     { matrix->axpy(a, A, same_nonzero_pattern); }
 
     /// Return norm of matrix
@@ -110,8 +110,12 @@ namespace dolfin
     { matrix->ident(m, rows); }
 
     // Matrix-vector product, y = Ax
-    virtual void mult(const GenericVector& x, GenericVector& y, bool transposed=false) const
-    { matrix->mult(x, y, transposed); }
+    virtual void mult(const GenericVector& x, GenericVector& y) const
+    { matrix->mult(x, y); }
+
+    // Matrix-vector product, y = Ax
+    virtual void transpmult(const GenericVector& x, GenericVector& y) const
+    { matrix->transpmult(x, y); }
 
     /// Multiply matrix by given number
     virtual const Matrix& operator*= (double a)

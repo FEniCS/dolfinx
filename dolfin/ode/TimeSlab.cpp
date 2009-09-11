@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-05-02
-// Last changed: 2009-08-11
+// Last changed: 2009-09-08
 
 #include <stdio.h>
 #include <string>
@@ -21,11 +21,11 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeSlab::TimeSlab(ODE& ode) :
   N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(0),
-  save_final(ode.parameters("save_final_solution"))
+  save_final(ode.parameters["save_final_solution"])
 {
   // Choose method
-  std::string m = ode.parameters("method");
-  int q = ode.parameters("order");
+  std::string m = ode.parameters["method"];
+  int q = ode.parameters["order"];
   if ( m == "cg" || m == "mcg" )
   {
     if ( q < 1 )
@@ -97,7 +97,7 @@ void TimeSlab::write(uint N, const real* u)
 {
   // FIXME: Make this a parameter?
   std::string filename = "solution.data";
-  
+
   info("Saving solution at final time to file \"%s\".", filename.c_str());
 
   std::ofstream fp(filename.c_str());
@@ -107,7 +107,7 @@ void TimeSlab::write(uint N, const real* u)
   fp << std::setprecision(real_decimal_prec());
 
   for (uint i = 0; i < N; i++)
-  {  
+  {
     fp << u[i] << " ";
   }
   fp << std::endl;

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-16
-// Last changed: 2009-07-03
+// Last changed: 2009-09-08
 
 #include <stdlib.h>
 #include <dolfin/log/dolfin_log.h>
@@ -81,7 +81,7 @@ void XMLParameters::write(const Parameters& parameters,
   ++indent;
   for (uint i = 0; i < parameter_keys.size(); ++i)
   {
-    const Parameter& parameter = parameters(parameter_keys[i]);
+    const Parameter& parameter = parameters[parameter_keys[i]];
     outfile << indent();
     if (parameter.type_str() == "int")
     {

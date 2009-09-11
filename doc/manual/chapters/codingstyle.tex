@@ -246,6 +246,25 @@ class Foo
 };
 \end{code}
 
+\subsection{Virtual functions}
+
+Always declare inherited virtual functions as virtual in the subclasses. This makes it
+easier to spot which functions are virtual.
+
+\begin{code}
+class Foo
+{
+  virtual void foo();
+  virtual void bar() = 0;
+};
+
+class Bar
+{
+  virtual void foo();
+  virtual void bar();
+};
+\end{code}
+
 \section{Use of libraries}
 
 \subsection{Prefer C++ strings and streams to old C-style \texttt{char*}}

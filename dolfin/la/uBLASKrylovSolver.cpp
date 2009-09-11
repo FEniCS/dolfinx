@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2006-2009.
 //
 // First added:  2006-05-31
-// Last changed: 2009-07-01
+// Last changed: 2009-09-08
 
 #include <boost/assign/list_of.hpp>
 #include "uBLASILUPreconditioner.h"
@@ -14,11 +14,11 @@
 
 using namespace dolfin;
 
-const std::set<std::string> uBLASKrylovSolver::solver_types 
+const std::set<std::string> uBLASKrylovSolver::solver_types
 = boost::assign::list_of("default")
   ("cg")
   ("gmres")
-  ("bicgstab"); 
+  ("bicgstab");
 
 //-----------------------------------------------------------------------------
 Parameters uBLASKrylovSolver::default_parameters()
@@ -29,7 +29,7 @@ Parameters uBLASKrylovSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type, std::string pc_type)
-  : solver_type(solver_type), pc_user(false), report(false), 
+  : solver_type(solver_type), pc_user(false), report(false),
     parameters_read(false)
 {
   // Set parameter values
@@ -40,7 +40,7 @@ uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type, std::string pc_typ
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
-  : solver_type("default"), pc(&pc), pc_user(true), report(false), 
+  : solver_type("default"), pc(&pc), pc_user(true), report(false),
     parameters_read(false)
 {
   // Set parameter values
@@ -48,7 +48,7 @@ uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type, uBLASPreconditioner& pc)
-  : solver_type(solver_type), pc(&pc), pc_user(true), report(false), 
+  : solver_type(solver_type), pc(&pc), pc_user(true), report(false),
     parameters_read(false)
 {
   // Set parameter values
@@ -105,12 +105,12 @@ void uBLASKrylovSolver::select_preconditioner(std::string pc_type)
 void uBLASKrylovSolver::read_parameters()
 {
   // Set tolerances and other parameters
-  rtol    = parameters("relative_tolerance");
-  atol    = parameters("absolute_tolerance");
-  div_tol = parameters("divergence_limit");
-  max_it  = parameters("maximum_iterations");
-  restart = parameters("gmres_restart");
-  report  = parameters("report");
+  rtol    = parameters["relative_tolerance"];
+  atol    = parameters["absolute_tolerance"];
+  div_tol = parameters["divergence_limit"];
+  max_it  = parameters["maximum_iterations"];
+  restart = parameters["gmres_restart"];
+  report  = parameters["report"];
 
   // Remember that we have read parameters
   parameters_read = true;

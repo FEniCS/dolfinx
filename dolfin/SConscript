@@ -135,28 +135,29 @@ if "configure" in COMMAND_LINE_TARGETS:
     else:
         print "Disabling compilation of Python wrappers"
 
-swigFlags = "-python -c++ -shadow -O -I%s" % os.path.join("include","swig")
-swigFlags = swigFlags.split()
+if env["enablePython"]:
+    swigFlags = "-python -c++ -shadow -O -I%s" % os.path.join("include","swig")
+    swigFlags = swigFlags.split()
 
-#if scons.checkVersion(swig_version, "1.3.28"):
-#    swigFlags.append("-O")
+    #if scons.checkVersion(swig_version, "1.3.28"):
+    #    swigFlags.append("-O")
 
-# This swig environment
-swigEnv = env.Clone()
-swigEnv["SWIGFLAGS"] = swigFlags
-swigEnv["SHLIBPREFIX"] = "_"
-if env["PLATFORM"] == "darwin":
-    swigEnv = scons.Customize.darwinSwig(swigEnv)
-elif env["PLATFORM"].startswith("win"):
-    swigEnv = scons.Customize.winSwig(swigEnv)
+    # This swig environment
+    swigEnv = env.Clone()
+    swigEnv["SWIGFLAGS"] = swigFlags
+    swigEnv["SHLIBPREFIX"] = "_"
+    if env["PLATFORM"] == "darwin":
+        swigEnv = scons.Customize.darwinSwig(swigEnv)
+    elif env["PLATFORM"].startswith("win"):
+        swigEnv = scons.Customize.winSwig(swigEnv)
 
-cFileBldr = swigEnv["BUILDERS"]["CFile"]
-cxxFileBldr = swigEnv["BUILDERS"]["CXXFile"]
+    cFileBldr = swigEnv["BUILDERS"]["CFile"]
+    cxxFileBldr = swigEnv["BUILDERS"]["CXXFile"]
 
-for bldr in cFileBldr, cxxFileBldr:
-    bldr.add_emitter(".i", scons.Customize.swigEmitter)
+    for bldr in cFileBldr, cxxFileBldr:
+        bldr.add_emitter(".i", scons.Customize.swigEmitter)
 
-swigEnv.Prepend(SCANNERS=scons.Customize.swigscanner)
+    swigEnv.Prepend(SCANNERS=scons.Customize.swigscanner)
 
 #### XXX
 #### Messy code

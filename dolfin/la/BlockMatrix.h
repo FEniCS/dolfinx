@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-08-25
-// Last changed: 2009-08-10
+// Last changed: 2009-09-08
 //
 // Modified by Anders Logg, 2008.
 
@@ -51,7 +51,7 @@ namespace dolfin
     void apply();
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
     /// Matrix-vector product, y = Ax
     void mult(const BlockVector& x, BlockVector& y, bool transposed=false) const;

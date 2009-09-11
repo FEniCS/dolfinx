@@ -7,7 +7,9 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-09-08
+// Last changed: 2009-09-10
+
+#include <boost/scoped_array.hpp>
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
@@ -32,7 +34,8 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
   // Generate and number all mesh entities
   for (uint d = 1; d <= mesh->topology().dim(); ++d)
   {
-    if (ufc_dof_map->needs_mesh_entities(d))
+    if (ufc_dof_map->needs_mesh_entities(d) ||
+    	(parallel && d == (mesh->topology().dim() - 1)))
     {
       mesh->init(d);
       if (parallel)
@@ -137,6 +140,12 @@ void DofMap::tabulate_dofs(uint* dofs, const Cell& cell) const
 void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const
 {
   ufc_dof_map->tabulate_facet_dofs(dofs, local_facet);
+}
+//-----------------------------------------------------------------------------
+void DofMap::tabulate_coordinates(double** coordinates, const Cell& cell) const
+{
+  UFCCell ufc_cell(cell);
+  tabulate_coordinates(coordinates, ufc_cell);
 }
 //-----------------------------------------------------------------------------
 DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component) const

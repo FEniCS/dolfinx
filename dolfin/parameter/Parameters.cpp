@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-09-06
+// Last changed: 2009-09-08
 
 #include <sstream>
 #include <stdio.h>
@@ -215,85 +215,7 @@ void Parameters::add(const Parameters& parameters)
 void Parameters::parse(int argc, char* argv[])
 {
   info("Parsing command-line arguments...");
-
-  // Only try to extract PETSc options for the global DOLFIN parameter set
-  if (_key != "dolfin")
-  {
-    parse_dolfin(argc, argv);
-    return;
-  }
-
-  // Extract DOLFIN and PETSc arguments
-  std::vector<std::string> args_dolfin;
-  std::vector<std::string> args_petsc;
-  std::vector<std::string>* current = 0;
-  args_dolfin.push_back(argv[0]);
-  args_petsc.push_back(argv[0]);
-  for (int i = 1; i < argc; ++i)
-  {
-    std::string arg(argv[i]);
-
-    if (arg.size() > 2 && arg.substr(0, 2) == "--")
-    {
-      if (arg.size() > 8 && arg.substr(0, 8) == "--petsc.")
-      {
-        current = &args_petsc;
-        current->push_back("-" + arg.substr(8));
-      }
-      else
-      {
-        current = &args_dolfin;
-        current->push_back(arg);
-      }
-    }
-    else
-    {
-      if (current)
-        current->push_back(arg);
-      else
-        error("Illegal command-line options.");
-    }
-  }
-
-  // Copy to argv lists
-  char** argv_dolfin = new char*[args_dolfin.size()];
-  for (uint i = 0; i < args_dolfin.size(); ++i)
-  {
-    argv_dolfin[i] = new char[args_dolfin[i].size() + 1];
-    sprintf(argv_dolfin[i], "%s", args_dolfin[i].c_str());
-  }
-  char** argv_petsc = new char*[args_petsc.size()];
-  for (uint i = 0; i < args_petsc.size(); ++i)
-  {
-    argv_petsc[i] = new char[args_petsc[i].size() + 1];
-    sprintf(argv_petsc[i], "%s", args_petsc[i].c_str());
-  }
-
-  // Debugging
-  const bool debug = false;
-  if (debug)
-  {
-    cout << "DOLFIN args:";
-    for (uint i = 0; i < args_dolfin.size(); i++)
-      cout << " " << args_dolfin[i];
-    cout << endl;
-    cout << "PETSc args: ";
-    for (uint i = 0; i < args_petsc.size(); i++)
-      cout << " " << args_petsc[i];
-    cout << endl;
-  }
-
-  // Parse DOLFIN and PETSc options
-  parse_dolfin(args_dolfin.size(), argv_dolfin);
-  parse_petsc(args_petsc.size(), argv_petsc);
-
-  // Cleanup
-  for (uint i = 0; i < args_dolfin.size(); ++i)
-    delete [] argv_dolfin[i];
-  for (uint i = 0; i < args_petsc.size(); ++i)
-    delete [] argv_petsc[i];
-  delete [] argv_dolfin;
-  delete [] argv_petsc;
+  parse_dolfin(argc, argv);
 }
 //-----------------------------------------------------------------------------
 void Parameters::update(const Parameters& parameters)
@@ -331,11 +253,11 @@ void Parameters::update(const Parameters& parameters)
   // Update nested parameter sets
   for (const_parameter_set_iterator it = parameters._parameter_sets.begin(); it != parameters._parameter_sets.end(); ++it)
   {
-    (*this)[it->first].update(*it->second);
+    (*this)(it->first).update(*it->second);
   }
 }
 //-----------------------------------------------------------------------------
-Parameter& Parameters::operator() (std::string key)
+Parameter& Parameters::operator[] (std::string key)
 {
   Parameter* p = find_parameter(key);
   if (!p)
@@ -344,7 +266,7 @@ Parameter& Parameters::operator() (std::string key)
   return *p;
 }
 //-----------------------------------------------------------------------------
-const Parameter& Parameters::operator() (std::string key) const
+const Parameter& Parameters::operator[] (std::string key) const
 {
   Parameter* p = find_parameter(key);
   if (!p)
@@ -353,7 +275,7 @@ const Parameter& Parameters::operator() (std::string key) const
   return *p;
 }
 //-----------------------------------------------------------------------------
-Parameters& Parameters::operator[] (std::string key)
+Parameters& Parameters::operator() (std::string key)
 {
   Parameters* p = find_parameter_set(key);
   if (!p)
@@ -362,7 +284,7 @@ Parameters& Parameters::operator[] (std::string key)
   return *p;
 }
 //-----------------------------------------------------------------------------
-const Parameters& Parameters::operator[] (std::string key) const
+const Parameters& Parameters::operator() (std::string key) const
 {
   Parameters* p = find_parameter_set(key);
   if (!p)

@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-05-02
-// Last changed: 2009-09-08
+// Last changed: 2009-09-10
 
 #include <stdlib.h>
 #include <sstream>
@@ -13,6 +13,7 @@
 #include <dolfin/main/MPI.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/io/File.h>
+#include <dolfin/log/log.h>
 #include "FunctionPlotData.h"
 #include "plot.h"
 
@@ -22,11 +23,13 @@ using namespace dolfin;
 template <class T>
 void plot_object(const T& t, std::string title, std::string mode)
 {
+  not_working_in_parallel("C++ plotting");
+
   info("Plotting %s (%s), press 'q' to continue...",
           t.name().c_str(), t.label().c_str());
 
   // Get filename prefix
-  std::string prefix = parameters("plot_filename_prefix");
+  std::string prefix = parameters["plot_filename_prefix"];
 
   // Special treatment when running in parallel
   if (dolfin::MPI::num_processes() > 1)

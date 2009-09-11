@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2006-06-12
-// Last changed: 2009-08-11
+// Last changed: 2009-09-08
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -98,7 +98,7 @@ namespace dolfin
     // Note: Not a subclass of Variable for efficiency!
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose=false) const;
+    std::string str(bool verbose) const;
 
   private:
 

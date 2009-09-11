@@ -50,20 +50,23 @@ namespace dolfin
     /// Constructor
     TimeStepper(ODE& ode);
 
+    // Save computed solution to u
+    TimeStepper(ODE& ode, ODESolution& u);
+
     /// Destructor
     ~TimeStepper();
 
     // Solve ODE on [0, T]
-    void solve(ODESolution& u);
+    void solve();
 
     // Solve ODE on [t0, t1]
-    void solve(ODESolution& u, real t0, real t1);
+    void solve(real t0, real t1);
 
     /// Step solution, return current time
-    real step(ODESolution& u);
+    real step();
 
     /// Step solution from t0 to t <= t1, return current time
-    real step(ODESolution& u, real t0, real t1);
+    real step(real t0, real t1);
 
     /// Set state for ODE
     void set_state(const real* u);
@@ -73,17 +76,17 @@ namespace dolfin
 
   private:
 
-    // Save interpolated solution (when necessary)
-    void save(ODESolution& u);
+    // Save to ODESolution object and interpolated samples (when necessary)
+    void save();
 
     // Save at fixed sample points
-    void save_fixed_samples(ODESolution& u);
+    void save_fixed_samples();
 
     // Save using adaptive samples
-    void save_adaptive_samples(ODESolution& u);
+    void save_adaptive_samples();
 
     // Save sample at time t
-    void save_sample(ODESolution& u, real t);
+    void save_sample(real t);
 
     // Check if we have reached end time
     bool at_end(real t, real T) const;
@@ -119,6 +122,10 @@ namespace dolfin
 
     // Density of sampling (for adaptive sampling)
     unsigned int sample_density;
+
+    // 
+    bool save_to_odesolution;
+    ODESolution* u;
 
   };
 

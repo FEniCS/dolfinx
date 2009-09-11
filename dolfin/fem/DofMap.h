@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-09-08
+// Last changed: 2009-09-10
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -87,6 +87,10 @@ namespace dolfin
     unsigned int max_local_dimension() const
     { return ufc_dof_map->max_local_dimension(); }
 
+    // Return the geometric dimension of the coordinates this dof map provides
+    unsigned int geometric_dimension() const
+    { return ufc_dof_map->geometric_dimension(); }
+
     /// Return number of facet dofs
     unsigned int num_facet_dofs() const
     { return ufc_dof_map->num_facet_dofs(); }
@@ -100,9 +104,12 @@ namespace dolfin
     /// Tabulate local-local facet dofs
     void tabulate_facet_dofs(uint* dofs, uint local_facet) const;
 
-    /// Tabulate the coordinates of all dofs on a cell
+    /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
     void tabulate_coordinates(double** coordinates, const ufc::cell& ufc_cell) const
     { ufc_dof_map->tabulate_coordinates(coordinates, ufc_cell); }
+
+    /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version)
+    void tabulate_coordinates(double** coordinates, const Cell& cell) const;
 
     /// Extract sub dofmap component
     DofMap* extract_sub_dofmap(const std::vector<uint>& component) const;

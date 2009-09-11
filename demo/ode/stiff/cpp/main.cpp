@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003
-// Last changed: 2006-08-21
+// Last changed: 2009-09-09
 //
 // Stiff test problems for the ODE solver.
 
@@ -23,13 +23,12 @@ using namespace dolfin;
 
 void set_parameters(ODE& ode)
 {
-  ode.parameters("method") = "dg";
-  ode.parameters("order") = 1;
-  ode.parameters("maximum time step") = 5.0;
-  ode.parameters("tolerance") = 0.01;
-  ode.parameters("nonlinear solver") = "newton";
-  ode.parameters("adaptive samples") = true;
-  ode.parameters("solve dual problem") = false;
+  ode.parameters["method"] = "dg";
+  ode.parameters["order"] = 1;
+  ode.parameters["maximum_time_step"] = 5.0;
+  ode.parameters["tolerance"] = 0.01;
+  ode.parameters["nonlinear_solver"] = "newton";
+  ode.parameters["adaptive_samples"] = true;
 }
 
 int main(int argc, char* argv[])
@@ -64,7 +63,7 @@ int main(int argc, char* argv[])
       info("Solving test problem number 1.");
       TestProblem1 test_problem;
       set_parameters(test_problem);
-      test_problem.parameters("solution_file_name") = "solution_1.py";
+      test_problem.parameters["solution_file_name"] = "solution_1.py";
       test_problem.solve();
     }
     break;
@@ -73,7 +72,7 @@ int main(int argc, char* argv[])
       info("Solving test problem number 2.");
       TestProblem2 test_problem;
       set_parameters(test_problem);
-      test_problem.parameters("solution_file_name") = "solution_2.py";
+      test_problem.parameters["solution_file_name"] = "solution_2.py";
       test_problem.solve();
     }
     break;
@@ -82,7 +81,7 @@ int main(int argc, char* argv[])
       info("Solving test problem number 3.");
       TestProblem3 test_problem;
       set_parameters(test_problem);
-      test_problem.parameters("solution_file_name") = "solution_3.py";
+      test_problem.parameters["solution_file_name"] = "solution_3.py";
       test_problem.solve();
     }
     break;
@@ -91,7 +90,7 @@ int main(int argc, char* argv[])
       info("Solving test problem number 4.");
       TestProblem4 test_problem;
       set_parameters(test_problem);
-      test_problem.parameters("solution_file_name") = "solution_4.py";
+      test_problem.parameters["solution_file_name"] = "solution_4.py";
       test_problem.solve();
     }
     break;
@@ -100,7 +99,7 @@ int main(int argc, char* argv[])
       info("Solving test problem number 5.");
       TestProblem5 test_problem;
       set_parameters(test_problem);
-      test_problem.parameters("solution_file_name") = "solution_5.py";
+      test_problem.parameters["solution_file_name"] = "solution_5.py";
       test_problem.solve();
     }
     break;
@@ -109,7 +108,7 @@ int main(int argc, char* argv[])
       info("Solving test problem number 6.");
       TestProblem6 test_problem;
       set_parameters(test_problem);
-      test_problem.parameters("solution_file_name") = "solution_6.py";
+      test_problem.parameters["solution_file_name"] = "solution_6.py";
       test_problem.solve();
     }
     break;
@@ -118,7 +117,7 @@ int main(int argc, char* argv[])
       info("Solving test problem number 7.");
       TestProblem7 test_problem;
       set_parameters(test_problem);
-      test_problem.parameters("solution_file_name") = "solution_7.py";
+      test_problem.parameters["solution_file_name"] = "solution_7.py";
       test_problem.solve();
     }
     break;
@@ -127,7 +126,7 @@ int main(int argc, char* argv[])
       info("Solving test problem number 8.");
       TestProblem8 test_problem;
       set_parameters(test_problem);
-      test_problem.parameters("solution_file_name") = "solution_8.py";
+      test_problem.parameters["solution_file_name"] = "solution_8.py";
       test_problem.solve();
     }
     break;
@@ -136,7 +135,7 @@ int main(int argc, char* argv[])
       info("Solving test problem number 9.");
       TestProblem9 test_problem;
       set_parameters(test_problem);
-      test_problem.parameters("solution_file_name") = "solution_9.py";
+      test_problem.parameters["solution_file_name"] = "solution_9.py";
       test_problem.solve();
     }
     break;

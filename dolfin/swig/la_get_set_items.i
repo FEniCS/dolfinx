@@ -1,9 +1,9 @@
-/* -*- C -*-  (for syntax highlighting) */
+/* -*- C -*- */
 // Copyright (C) 2009 Johan Hake
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-04-27
-// Last changed:  2009-04-27
+// Last changed: 2009-09-10
 
 // Enum for comparison functions
 enum DolfinCompareType {dolfin_gt, dolfin_ge, dolfin_lt, dolfin_le, dolfin_eq, dolfin_neq};
@@ -20,7 +20,7 @@ double* _get_vector_values( dolfin::GenericVector* self, bool &copied_values)
   }
   catch (std::runtime_error e)
   {
-    // We couldn't acces the values directly
+    // We couldn't access the values directly
     copied_values = true;
     values = new double[self->size()];
     self->get_local(values);
@@ -217,6 +217,7 @@ dolfin::GenericVector* _get_vector_sub_vector( const dolfin::GenericVector* self
   
   self->get(values, m, indices);
   return_vec->set(values, m, range);
+  return_vec->apply();
 
   delete inds;
   delete[] values;
@@ -263,6 +264,7 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
   // Get and set values
   other.get(values, m, range);
   self->set(values, m, indices);
+  self->apply();
   
   delete inds;
   delete[] values;
@@ -270,16 +272,22 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
 
 // Set items using a GenericVector
 void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op, PyObject* other )
-{  
+{
   Indices* inds;
   double* values;
   dolfin::uint* indices;
   dolfin::uint m;
+  bool casted = false;
 
   // Check type of values
-  if ( !(other != Py_None and PyArray_Check(other) and 
-	 PyArray_TYPE(other) == NPY_DOUBLE and PyArray_NDIM(other) == 1 ) )
-    throw std::runtime_error("expected a 1D numpy array of float");
+  if ( !(other != Py_None and PyArray_Check(other) and PyArray_ISNUMBER(other) and PyArray_NDIM(other) == 1 ))
+    throw std::runtime_error("expected a 1D numpy array of numbers");
+  if (PyArray_TYPE(other)!=NPY_DOUBLE)
+  {
+    casted = true;
+    other = PyArray_Cast(reinterpret_cast<PyArrayObject*>(other),NPY_DOUBLE);
+  }
+  
   
   // Get the correct Indices
   if ( (inds = indice_chooser(op, self->size())) == 0 )
@@ -310,6 +318,10 @@ void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op
   values = (double*) PyArray_DATA(other);
   self->set(values, m, indices);
 
+  // Clean casted array
+  if (casted)
+    Py_DECREF(other);
+
   delete inds;
 }
 
@@ -321,8 +333,8 @@ void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double 
   if ( (inds = indice_chooser(op, self->size())) == 0 ) {
     
     // If the index is an integer
-    if( op != Py_None and PyInt_Check(op))
-      self->setitem(Indices::check_index(PyInt_AsLong(op), self->size()), value);
+    if( op != Py_None and PyInteger_Check(op))
+      self->setitem(Indices::check_index(static_cast<long>(PyInt_AsLong(op)), self->size()), value);
     else
       throw std::runtime_error("index must be either an integer, a slice, a list or a Numpy array of integer");
 
@@ -351,6 +363,7 @@ void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double 
       values[i] = value;
     
     self->set(values, inds->size(), indices);
+    self->apply();
 
     delete inds;
     delete[] values;
@@ -401,6 +414,7 @@ dolfin::GenericVector* _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolf
   dolfin::GenericVector * return_vec = self->factory().create_vector();
   return_vec->resize(inds->size());
   return_vec->set_local(values);
+  return_vec->apply();
   
   // Clean up
   delete[] values;
