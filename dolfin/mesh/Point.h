@@ -9,6 +9,8 @@
 #ifndef __POINT_H
 #define __POINT_H
 
+#include <iostream>
+#include <dolfin/log/dolfin_log.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
 
@@ -108,6 +110,9 @@ namespace dolfin
 
   /// Multiplication with scalar
   inline Point operator*(double a, const Point& p) { return p*a; }
+
+  inline std::ostream& operator<<(std::ostream& stream, const Point& point)
+  { stream << point.str(false); return stream; }
 
 }
 
