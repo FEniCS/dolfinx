@@ -1,3 +1,6 @@
+ - Add possibilities to use any number numpy array when assigning matrices and vectors
+ - Add possibilities to use any integer numpy array for indices in matrices and vectors
+ - Fix for int typemaps in PyDOLFIN
  - Split mult into mult and transpmult
  - Filter out PETSc argument when parsing command-line parameters
  - Extend comments to SWIG interface files
