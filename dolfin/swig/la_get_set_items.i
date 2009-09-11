@@ -272,16 +272,22 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
 
 // Set items using a GenericVector
 void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op, PyObject* other )
-{  
+{
   Indices* inds;
   double* values;
   dolfin::uint* indices;
   dolfin::uint m;
+  bool casted = false;
 
   // Check type of values
-  if ( !(other != Py_None and PyArray_Check(other) and 
-	 PyArray_TYPE(other) == NPY_DOUBLE and PyArray_NDIM(other) == 1 ) )
-    throw std::runtime_error("expected a 1D numpy array of float");
+  if ( !(other != Py_None and PyArray_Check(other) and PyArray_ISNUMBER(other) and PyArray_NDIM(other) == 1 ))
+    throw std::runtime_error("expected a 1D numpy array of numbers");
+  if (PyArray_TYPE(other)!=NPY_DOUBLE)
+  {
+    casted = true;
+    other = PyArray_Cast(reinterpret_cast<PyArrayObject*>(other),NPY_DOUBLE);
+  }
+  
   
   // Get the correct Indices
   if ( (inds = indice_chooser(op, self->size())) == 0 )
@@ -311,6 +317,10 @@ void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op
   // Get the contigous data from the numpy array
   values = (double*) PyArray_DATA(other);
   self->set(values, m, indices);
+
+  // Clean casted array
+  if (casted)
+    Py_DECREF(other);
 
   delete inds;
 }

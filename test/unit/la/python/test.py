@@ -203,8 +203,8 @@ class AbstractBaseTest(object):
         # These two just to check that one can use numpy arrays and list of uints
         ind2 = array([1,3,6,9,15],'I')
         ind3 = list(array([1,3,6,9,15],'I'))
-        A[ind2]
-        A[ind3]
+        A[ind2] = ind2
+        A2[ind3] = ind2
         
         G  = A[ind]
         G1 = A[ind1]
@@ -234,9 +234,10 @@ class AbstractBaseTest(object):
         self.assertTrue(a in A)
         self.assertTrue(b not in A)
         self.assertTrue((A3==A2).all())
+        A[:] = A==A
+        self.assertTrue(A.sum()==len(A))
 
         A[:] = A2
-
         self.assertTrue((A==A2).all())
         
         H  = A.copy()

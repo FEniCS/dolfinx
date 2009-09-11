@@ -320,7 +320,7 @@ Indices* indice_chooser( PyObject* op, unsigned int vector_size )
     inds = new BoolArrayIndices( op, vector_size );
   
   // If the provided indices are in a Numpy array of integers
-  else if (PyArray_Check(op) and PyTypeNum_ISINTEGER(PyArray_TYPE(op)))
+  else if (PyArray_Check(op) and PyArray_ISINTEGER(op))
     inds = new IntArrayIndices( op, vector_size );
   else
     return 0;
