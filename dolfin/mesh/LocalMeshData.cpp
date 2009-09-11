@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
-// Last changed: 2009-08-06
+// Last changed: 2009-09-11
 //
 // Modified by Anders Logg, 2008-2009.
 
@@ -99,6 +99,7 @@ void LocalMeshData::clear()
   vertex_coordinates.clear();
   vertex_indices.clear();
   cell_vertices.clear();
+  global_cell_indices.clear();
   num_global_vertices = 0;
   num_global_cells = 0;
   gdim = 0;
@@ -133,8 +134,10 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
   
   /// Get global vertex indices for all cells stored on local processor
   cell_vertices.reserve(mesh.num_cells());
+  global_cell_indices.reserve(mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    global_cell_indices.push_back((*cell).index());
     std::vector<uint> vertices(cell->num_entities(0));
     for (uint i = 0; i < cell->num_entities(0); ++i)
     {
@@ -210,6 +213,7 @@ void LocalMeshData::broadcast_mesh_data()
            local_range.second - local_range.first, p, local_range.first, local_range.second);
       for (uint i = local_range.first; i < local_range.second; i++)
       {
+        values[p].push_back(global_cell_indices[i]);
         for (uint j = 0; j < cell_vertices[i].size(); j++)
           values[p].push_back(cell_vertices[i][j]);
       }
@@ -288,12 +292,14 @@ void LocalMeshData::unpack_vertex_indices(const std::vector<uint>& values)
 //-----------------------------------------------------------------------------
 void LocalMeshData::unpack_cell_vertices(const std::vector<uint>& values)
 {
-  assert(values.size() % (tdim + 1) == 0);
+  assert(values.size() % (tdim + 2) == 0);
   cell_vertices.clear();
-  const uint num_cells = values.size() / (tdim + 1);
+  global_cell_indices.clear();
+  const uint num_cells = values.size() / (tdim + 2);
   uint k = 0;
   for (uint i = 0; i < num_cells; i++)
   {
+    global_cell_indices.push_back(values[k++]);
     std::vector<uint> vertices(tdim + 1);
     for (uint j = 0; j < tdim + 1; j++)
       vertices[j] = values[k++];

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2009-09-09
+// Last changed: 2009-09-11
 
 #include <vector>
 #include <algorithm>
@@ -613,15 +613,25 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
 
   // Get dimensions of local mesh_data
   uint num_local_cells = mesh_data.cell_vertices.size();
+  /*
+  cout << "num_local_cells = " << num_local_cells << endl;
+  cout << "mesh_data.global_cell_indices.size() = " << mesh_data.global_cell_indices.size() << endl;
+  for (uint i = 0; i < mesh_data.global_cell_indices.size(); ++i)
+    cout << "md.gci[" << i << "] = " << mesh_data.global_cell_indices[i] << endl;
+  */
+  assert(mesh_data.global_cell_indices.size() == num_local_cells);
   const uint num_cell_vertices = mesh_data.cell_vertices[0].size();
 
   // Build array of cell-vertex connectivity and partition vector
+  // Distribute the global cell number as well
   std::vector<uint> cell_vertices;
   std::vector<uint> cell_vertices_partition;
-  cell_vertices.reserve(num_local_cells*num_cell_vertices);
-  cell_vertices_partition.reserve(num_local_cells*num_cell_vertices);
+  cell_vertices.reserve(num_local_cells*(num_cell_vertices+1));
+  cell_vertices_partition.reserve(num_local_cells*(num_cell_vertices+1));
   for (uint i = 0; i < num_local_cells; i++)
   {
+    cell_vertices.push_back(mesh_data.global_cell_indices[i]);
+    cell_vertices_partition.push_back(cell_partition[i]);
     for (uint j = 0; j < num_cell_vertices; j++)
     {
       cell_vertices.push_back(mesh_data.cell_vertices[i][j]);
@@ -635,16 +645,21 @@ void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
 
   // Put mesh_data back into mesh_data.cell_vertices
   mesh_data.cell_vertices.clear();
-  assert(cell_vertices.size() % num_cell_vertices == 0);
-  num_local_cells = cell_vertices.size() / num_cell_vertices;
+  mesh_data.global_cell_indices.clear();
+  assert(cell_vertices.size() % (num_cell_vertices + 1) == 0);
+  num_local_cells = cell_vertices.size() / (num_cell_vertices + 1);
   mesh_data.cell_vertices.reserve(num_local_cells);
+  mesh_data.global_cell_indices.reserve(num_local_cells);
   for (uint i = 0; i < num_local_cells; ++i)
   {
+    mesh_data.global_cell_indices.push_back(cell_vertices[i*(num_cell_vertices + 1)]);
     std::vector<uint> cell(num_cell_vertices);
     for (uint j = 0; j < num_cell_vertices; ++j)
-      cell[j] = cell_vertices[i*num_cell_vertices + j];
+      cell[j] = cell_vertices[i*(num_cell_vertices + 1) + j + 1];
     mesh_data.cell_vertices.push_back(cell);
   }
+  for (uint i = 0; i < mesh_data.global_cell_indices.size(); ++i)
+    cout << "md.gci[" << i << "] = " << mesh_data.global_cell_indices[i] << endl;
 }
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
@@ -763,6 +778,15 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   assert(global_vertex_indices);
   for (std::map<uint, uint>::const_iterator iter = glob2loc.begin(); iter != glob2loc.end(); ++iter)
     global_vertex_indices->set((*iter).second, (*iter).first);
+
+  // Construct local to global mapping for cells
+  std::stringstream cell_name;
+  cell_name << "global entity indices " << mesh_data.tdim;
+  MeshFunction<uint>* global_cell_indices = mesh.data().create_mesh_function(cell_name.str(), mesh_data.tdim);
+  assert(global_cell_indices);
+  const std::vector<uint>& gci = mesh_data.global_cell_indices;
+  for(uint i=0; i < gci.size(); ++i)
+    global_cell_indices->set(i, gci[i]);
 
   // Close mesh: Note that this must be done after creating the global vertex map or
   // otherwise the ordering in mesh.close() will be wrong (based on local numbers).

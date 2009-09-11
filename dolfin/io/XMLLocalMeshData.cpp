@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
-// Last changed: 2009-09-08
+// Last changed: 2009-09-11
 //
 // Modified by Anders Logg, 2008.
 
@@ -252,6 +252,9 @@ void XMLLocalMeshData::read_cells(const xmlChar* name, const xmlChar** attrs)
 
   // Reserve space for cells
   mesh_data.cell_vertices.reserve(num_local_cells());
+
+  // Reserve space for global cell indices
+  mesh_data.global_cell_indices.reserve(num_local_cells());
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::read_interval(const xmlChar *name, const xmlChar **attrs)
@@ -274,6 +277,9 @@ void XMLLocalMeshData::read_interval(const xmlChar *name, const xmlChar **attrs)
 
   // Add cell
   mesh_data.cell_vertices.push_back(cell);
+
+  // Add global cell index
+  mesh_data.global_cell_indices.push_back(c);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::read_triangle(const xmlChar *name, const xmlChar **attrs)
@@ -297,6 +303,9 @@ void XMLLocalMeshData::read_triangle(const xmlChar *name, const xmlChar **attrs)
 
   // Add cell
   mesh_data.cell_vertices.push_back(cell);
+
+  // Add global cell index
+  mesh_data.global_cell_indices.push_back(c);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
@@ -321,6 +330,9 @@ void XMLLocalMeshData::read_tetrahedron(const xmlChar *name, const xmlChar **att
 
   // Add cell
   mesh_data.cell_vertices.push_back(cell);
+
+  // Add global cell index
+  mesh_data.global_cell_indices.push_back(c);
 }
 //-----------------------------------------------------------------------------
 void XMLLocalMeshData::read_mesh_function(const xmlChar* name, const xmlChar** attrs)

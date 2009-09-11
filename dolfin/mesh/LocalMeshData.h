@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
-// Last changed: 2009-08-08
+// Last changed: 2009-09-11
 //
 // Modified by Anders Logg, 2008-2009.
 
@@ -87,6 +87,9 @@ namespace dolfin
 
     /// Global vertex indices for all cells stored on local processor
     std::vector<std::vector<uint> > cell_vertices;
+
+    /// Global cell numbers for all cells stored on local processor
+    std::vector<uint> global_cell_indices;
 
     /// Global number of vertices
     uint num_global_vertices;
