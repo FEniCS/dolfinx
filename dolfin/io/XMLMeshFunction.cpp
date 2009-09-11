@@ -25,7 +25,6 @@ XMLMeshFunction::XMLMeshFunction(MeshFunction<uint>& umf, XMLFile& parser)
   : XMLHandler(parser), imf(0), umf(&umf), dmf(0), xml_skipper(0), mesh(umf.mesh()),
     state(OUTSIDE_MESHFUNCTION), mf_type(UINT), size(0), dim(0)
 {
-  info("Outside MeshFunction to start with.");
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -251,8 +250,6 @@ void XMLMeshFunction::read_entity(const xmlChar *name, const xmlChar **attrs)
     error("Illegal XML data for MeshFunction: row index %d out of range (0 - %d)",
           index, size - 1);
 
-  cout << "Reading global entity index " << index << endl;
-
   if (MPI::num_processes() > 1)
   {
     // Only read owned entities (belonging to local mesh)
@@ -261,12 +258,9 @@ void XMLMeshFunction::read_entity(const xmlChar *name, const xmlChar **attrs)
       index = (*it).second;
     else
     {
-      cout << "Skipping" << endl;
       return;
     }
   }
-  cout << "Corresponding local entity number is " << index << endl;
-
 
   // Parse value and insert in array
   switch ( mf_type )
@@ -279,7 +273,6 @@ void XMLMeshFunction::read_entity(const xmlChar *name, const xmlChar **attrs)
 
      case UINT:
       assert(umf);
-      cout << "Setting value to " << parse_uint(name, attrs, "value") << endl;
       umf->set(index, parse_uint(name, attrs, "value"));
 
       break;
@@ -297,7 +290,10 @@ void XMLMeshFunction::read_entity(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMeshFunction::build_mapping(uint entity_dimension)
 {
-  // Read global entity indices from mesh
+  // Exit gracefully if wrong entity dimension is asked for (only vertices and cells working)
+  if (entity_dimension > 0 and entity_dimension < mesh.topology().dim())
+    not_working_in_parallel("XMLMeshFunction for faces and facets");
+  // Read global entity indices from mesh, currently only working for vertices and cells
   std::stringstream mesh_data_name;
   mesh_data_name << "global entity indices " << entity_dimension;
   MeshFunction<uint>* global_entity_indices = mesh.data().mesh_function(mesh_data_name.str());
