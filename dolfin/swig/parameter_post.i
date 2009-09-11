@@ -149,6 +149,10 @@ def option_string(self):
 
     return " ".join(option_list(self,"--"))
 
+def __str__(self):
+    "p.__str__() <==> str(x)"
+    return self.str(False)
+
 __getattr__ = __getitem__
 __setattr__ = __setitem__
 

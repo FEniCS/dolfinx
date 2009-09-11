@@ -14,7 +14,6 @@
 %rename (_get_parameter_set_keys) dolfin::Parameters::get_parameter_set_keys;
 %rename (_get_parameter_set) dolfin::Parameters::operator();
 %rename (_get_parameter) dolfin::Parameters::operator[];
-%rename (__str__) dolfin::Parameters::str const;
 %ignore dolfin::Parameters::parse;
 %ignore dolfin::Parameters::update;
 
