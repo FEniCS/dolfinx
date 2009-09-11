@@ -325,7 +325,7 @@ int main()
   ode.parameters["maximum_time_step"] = 100.0;
   ode.parameters["nonlinear_solver"] = "newton";
   ode.parameters["linear_solver"] = "iterative";
-  ode.parameters["initial_time_step"] = 0.25;
+  ode.parameters["initial_time_step"] = 0.1;
 
   // Solve ODE
   ode.solve();
