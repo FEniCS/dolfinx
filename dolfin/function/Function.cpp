@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-08-29
+// Last changed: 2009-09-13
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -247,7 +247,7 @@ GenericVector& Function::vector()
   {
     // Check that this is not a sub function.
     if (_vector->size() != _function_space->dofmap().global_dimension())
-      error("You are attempting to access a non-const the vector from a sub-Function.");
+      error("You are attempting to access a non-const vector from a sub-Function.");
   }
 
   assert(_vector);
