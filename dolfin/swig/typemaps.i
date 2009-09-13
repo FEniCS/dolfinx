@@ -7,7 +7,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2006-04-16
-// Last changed: 2009-09-10
+// Last changed: 2009-09-13
 
 //=============================================================================
 // General typemaps for PyDOLFIN
@@ -72,8 +72,6 @@ bool PyInteger_Check(PyObject* in)
 //-----------------------------------------------------------------------------
 %typemap(in) int
 {
-
-  
   if (PyInteger_Check($input))
   {
     long tmp = static_cast<long>(PyInt_AsLong($input));
