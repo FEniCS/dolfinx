@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-04-27
-// Last changed: 2009-09-10
+// Last changed: 2009-09-13
 
 class Indices
 {
@@ -56,7 +56,7 @@ public:
   unsigned int size(){ return _index_size; }
 
   // Check bounds of index and change from any negative to positive index
-  static unsigned int check_index(long index, unsigned int vector_size){
+  static unsigned int check_index(int index, unsigned int vector_size){
     // Check bounds
     if ( index >= static_cast<int>(vector_size) or 
          index < -static_cast<int>(vector_size) )
@@ -161,11 +161,11 @@ public:
       throw std::runtime_error("invalid index, must be int");
     
     // Return checked index
-    return check_index(static_cast<long>(PyInt_AsLong(op)));
+    return check_index(PyArray_PyIntAsInt(op));
   }
   
   // Check bounds of index by calling static function in base class
-  unsigned int check_index(long index){
+  unsigned int check_index(int index){
     return Indices::check_index(index, _vector_size);
   }
 
@@ -217,11 +217,11 @@ public:
       throw std::runtime_error("index out of range");
     
     // Return checked index
-    return check_index(*static_cast<long*>(PyArray_GETPTR1(_numpy_array,i)));
+    return check_index(*static_cast<int*>(PyArray_GETPTR1(_numpy_array,i)));
   }
   
   // Check bounds of index by calling static function in base class
-  unsigned int check_index(long index){
+  unsigned int check_index(int index){
     return Indices::check_index(index, _vector_size);
   }
 
@@ -261,7 +261,7 @@ public:
 
     // Sum the array to get the numbers of indices
     
-    sum_res = PyArray_Sum(npy_op, 0, NPY_LONG, (PyArrayObject*)Py_None);
+    sum_res = PyArray_Sum(npy_op, 0, NPY_INT, (PyArrayObject*)Py_None);
     _index_size = PyInt_AsLong(sum_res);
     Py_DECREF(sum_res);
     
@@ -275,7 +275,6 @@ public:
 	nz_ind++;
       }
     }
-    std::cout << std::endl;
   }
   
   // Destructor

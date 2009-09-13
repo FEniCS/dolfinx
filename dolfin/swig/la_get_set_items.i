@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-04-27
-// Last changed: 2009-09-11
+// Last changed: 2009-09-13
 
 // Enum for comparison functions
 enum DolfinCompareType {dolfin_gt, dolfin_ge, dolfin_lt, dolfin_le, dolfin_eq, dolfin_neq};
@@ -335,7 +335,7 @@ void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double 
     
     // If the index is an integer
     if( op != Py_None and PyInteger_Check(op))
-      self->setitem(Indices::check_index(static_cast<long>(PyInt_AsLong(op)), self->size()), value);
+      self->setitem(Indices::check_index(static_cast<int>(PyInt_AsLong(op)), self->size()), value);
     else
       throw std::runtime_error("index must be either an integer, a slice, a list or a Numpy array of integer");
 
