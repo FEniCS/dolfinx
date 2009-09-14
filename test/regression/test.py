@@ -5,7 +5,7 @@ __date__ = "2008-04-08 -- 2008-08-17"
 __copyright__ = "Copyright (C) 2008 Ilmar Wilbers"
 __license__  = "GNU LGPL Version 2.1"
 
-# Modified by Anders Logg, 2008.
+# Modified by Anders Logg, 2008-2009.
 # Modified by Johannes Ring, 2009.
 
 import sys, os, re
@@ -56,7 +56,7 @@ for s in cppslow:
 pydemos.remove(os.path.join(demodir, 'pde', 'cahn-hilliard', 'python'))
 cppdemos.remove(os.path.join(demodir, 'pde', 'cahn-hilliard', 'cpp'))
 
-# Demos that need command line arguments are treated separately
+# Demos that need command-line arguments are treated separately
 pydemos.remove(os.path.join(demodir, 'quadrature', 'python'))
 cppdemos.remove(os.path.join(demodir, 'quadrature', 'cpp'))
 cppdemos.remove(os.path.join(demodir, 'ode', 'method-weights', 'cpp'))
@@ -71,50 +71,55 @@ if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
 else:
     only_python = False
 
-# Run C++ demos
+# Check if we should skip C++ demos
 if only_python:
     print "Skipping C++ demos"
     cppdemos = []
-for demo in cppdemos:
-    print "----------------------------------------------------------------------"
-    print "Running C++ demo %s" % demo
-    print ""
-    cppdemo_ext = ''
-    if platform.system() == 'Windows':
-        cppdemo_ext = '.exe'
-    if os.path.isfile(os.path.join(demo, 'demo' + cppdemo_ext)):
-        t1 = time()
-        output = getstatusoutput("cd %s && .%sdemo%s" % \
-                                   (demo, os.path.sep, cppdemo_ext))
-        t2 = time()
-        timing += [(t2 - t1, demo)]
-        success = not output[0]
-        if success:
-            print "OK"
-        else:
-            print "*** Failed"
-            failed += [(demo, "C++", output[1])]
-    else:
-        print "*** Warning: missing demo"
 
-# Run Python demos
-for demo in pydemos:
-    print "----------------------------------------------------------------------"
-    print "Running Python demo %s" % demo
-    print ""
-    if os.path.isfile(os.path.join(demo, 'demo.py')):
-        t1 = time()
-        output = getstatusoutput("cd %s && python ./demo.py" % demo)
-        t2 = time()
-        timing += [(t2 - t1, demo)]
-        success = not output[0]
-        if success:
-            print "OK"
+# Run in serial, then in parallel
+for prefix in ["", "mpirun -n 2 "]:
+
+    # Run C++ demos
+    for demo in cppdemos:
+        print "----------------------------------------------------------------------"
+        print "Running C++ demo %s%s" % (prefix, demo)
+        print ""
+        cppdemo_ext = ''
+        if platform.system() == 'Windows':
+            cppdemo_ext = '.exe'
+        if os.path.isfile(os.path.join(demo, 'demo' + cppdemo_ext)):
+            t1 = time()
+            output = getstatusoutput("cd %s && %s .%sdemo%s" % \
+                                         (demo, prefix, os.path.sep, cppdemo_ext))
+            t2 = time()
+            timing += [(t2 - t1, demo)]
+            success = not output[0]
+            if success:
+                print "OK"
+            else:
+                print "*** Failed"
+                failed += [(demo, "C++", prefix, output[1])]
         else:
-            print "*** Failed"
-            failed += [(demo, "Python", output[1])]
-    else:
-        print "*** Warning: missing demo"
+            print "*** Warning: missing demo"
+
+    # Run Python demos
+    for demo in pydemos:
+        print "----------------------------------------------------------------------"
+        print "Running Python demo %s%s" % (prefix, demo)
+        print ""
+        if os.path.isfile(os.path.join(demo, 'demo.py')):
+            t1 = time()
+            output = getstatusoutput("cd %s && %s python ./demo.py" % (prefix, demo))
+            t2 = time()
+            timing += [(t2 - t1, demo)]
+            success = not output[0]
+            if success:
+                print "OK"
+            else:
+                print "*** Failed"
+                failed += [(demo, "Python", prefix, output[1])]
+        else:
+            print "*** Warning: missing demo"
 
 # Print summary of time to run demos
 timing.sort()
@@ -132,9 +137,9 @@ if len(failed) > 0:
     print "%d demo(s) out of %d failed, see demo.log for details." % \
           (len(failed), total_no_demos)
     file = open("demo.log", "w")
-    for (test, interface, output) in failed:
+    for (test, interface, prefix, output) in failed:
         file.write("----------------------------------------------------------------------\n")
-        file.write("%s (%s)\n" % (test, interface))
+        file.write("%s%s (%s)\n" % (prefix, test, interface))
         file.write("\n")
         file.write(output)
         file.write("\n")
