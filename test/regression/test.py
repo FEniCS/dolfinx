@@ -79,6 +79,9 @@ if only_python:
 # Run in serial, then in parallel
 for prefix in ["", "mpirun -n 2 "]:
 
+    cppdemos = []
+    pydemos = ["./../../demo/pde/poisson/python"]
+
     # Run C++ demos
     for demo in cppdemos:
         print "----------------------------------------------------------------------"
@@ -110,7 +113,7 @@ for prefix in ["", "mpirun -n 2 "]:
         print ""
         if os.path.isfile(os.path.join(demo, 'demo.py')):
             t1 = time()
-            output = getstatusoutput("cd %s && %s python demo.py" % (prefix, demo))
+            output = getstatusoutput("cd %s && %s python demo.py" % (demo, prefix))
             t2 = time()
             timing += [(t2 - t1, demo)]
             if output[0] == 0:
