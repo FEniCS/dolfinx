@@ -10,7 +10,7 @@ import re, sys, os
 pwd = os.path.dirname(os.path.abspath(__file__))
 
 # Tests to run
-tests = ["unit", "regression", "memory"]
+tests = ["unit", "regression", "memory", "system"]
 
 failed = []
 
