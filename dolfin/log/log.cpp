@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-09-10
+// Last changed: 2009-09-14
 
 #include <boost/scoped_array.hpp>
 #include <cstdarg>
@@ -171,8 +171,8 @@ void dolfin::not_working_in_parallel(std::string what)
     if (MPI::process_number() == 0)
     {
       std::string url("https://bugs.launchpad.net/dolfin");
-      info("%s is not (yet) working in parallel. Consider filing a bug report at %s",
-           what.c_str(), url.c_str());
+      std::cout << what << " is not (yet) working in parallel. Consider filing a bug report at "
+                << url << std::endl;
     }
     exit(10);
   }

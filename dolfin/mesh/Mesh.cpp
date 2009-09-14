@@ -7,10 +7,11 @@
 // Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2009-09-05
+// Last changed: 2009-09-14
 
 #include <sstream>
 
+#include <dolfin/log/log.h>
 #include <dolfin/io/File.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/ale/ALE.h>
@@ -190,6 +191,8 @@ bool Mesh::ordered() const
 //-----------------------------------------------------------------------------
 void Mesh::refine()
 {
+  not_working_in_parallel("Mesh refinement");
+
   info("No cells marked for refinement, assuming uniform mesh refinement.");
   UniformMeshRefinement::refine(*this);
 
@@ -208,7 +211,11 @@ void Mesh::refine()
 //-----------------------------------------------------------------------------
 void Mesh::refine(MeshFunction<bool>& cell_markers)
 {
-//  LocalMeshRefinement::refineIterativelyByEdgeBisection(*this, cell_markers);
+  cout << "check in Mesh" << endl;
+  not_working_in_parallel("Mesh refinement");
+  cout << "check after" << endl;
+
+  //LocalMeshRefinement::refineIterativelyByEdgeBisection(*this, cell_markers);
   LocalMeshRefinement::refineRecursivelyByEdgeBisection(*this, cell_markers);
 
   // Mesh may not be ordered

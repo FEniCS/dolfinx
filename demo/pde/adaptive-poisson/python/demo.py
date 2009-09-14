@@ -23,6 +23,8 @@ from dolfin import *
 from numpy import array, sqrt
 from math import pow
 
+not_working_in_parallel("This demo")
+
 TOL = 5e-4          # Error tolerance
 REFINE_RATIO = 0.50 # Refine 50 % of the cells in each iteration
 MAX_ITER = 20       # Maximal number of iterations
