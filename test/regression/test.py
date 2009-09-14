@@ -77,7 +77,8 @@ if only_python:
     cppdemos = []
 
 # Run in serial, then in parallel
-for prefix in ["", "mpirun -n 2 "]:
+#for prefix in ["", "mpirun -n 2 "]:
+for prefix in ["mpirun -n 2 "]:
 
     # Run C++ demos
     for demo in cppdemos:

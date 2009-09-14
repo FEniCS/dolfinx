@@ -4,10 +4,11 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2009-04-03
-// Last changed: 2009-08-14
+// Last changed: 2009-09-14
 
 #include <vector>
 
+#include <dolfin/log/log.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Mesh.h>
@@ -30,6 +31,7 @@ EqualityBC::EqualityBC(const FunctionSpace& V,
                        const SubDomain& sub_domain)
   : BoundaryCondition(V)
 {
+  not_working_in_parallel("Equality boundary conditions");
   init_from_sub_domain(sub_domain);
 }
 //-----------------------------------------------------------------------------
@@ -37,6 +39,7 @@ EqualityBC::EqualityBC(boost::shared_ptr<const FunctionSpace> V,
                        const SubDomain& sub_domain)
   : BoundaryCondition(V)
 {
+  not_working_in_parallel("Equality boundary conditions");
   init_from_sub_domain(sub_domain);
 }
 //-----------------------------------------------------------------------------
@@ -44,6 +47,7 @@ EqualityBC::EqualityBC(const FunctionSpace& V,
                          uint sub_domain)
   : BoundaryCondition(V)
 {
+  not_working_in_parallel("Equality boundary conditions");
   init_from_mesh(sub_domain);
 }
 //-----------------------------------------------------------------------------
@@ -51,6 +55,7 @@ EqualityBC::EqualityBC(boost::shared_ptr<const FunctionSpace> V,
                          uint sub_domain)
   : BoundaryCondition(V)
 {
+  not_working_in_parallel("Equality boundary conditions");
   init_from_mesh(sub_domain);
 }
 //-----------------------------------------------------------------------------
@@ -97,7 +102,7 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
     const int dof1 = *it;
 
     // Avoid modification for reference
-    if (dof1 == dof0) 
+    if (dof1 == dof0)
       continue;
 
     // Set x_0 - x_i = 0
