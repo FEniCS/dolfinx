@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-09-10
+// Last changed: 2009-09-14
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -258,6 +258,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
                                          const MeshFunction<uint>* domains,
                                          std::vector<double>* values)
 {
+  not_working_in_parallel("Assembly over interior facets");
+
   // Skip assembly if there are no interior facet integrals
   if (ufc.form.num_interior_facet_integrals() == 0)
     return;

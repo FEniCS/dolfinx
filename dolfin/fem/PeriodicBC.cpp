@@ -5,11 +5,12 @@
 // Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2009-08-14
+// Last changed: 2009-09-14
 
 #include <vector>
 #include <map>
 
+#include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -54,6 +55,8 @@ PeriodicBC::PeriodicBC(const FunctionSpace& V,
                        const SubDomain& sub_domain)
   : BoundaryCondition(V), sub_domain(reference_to_no_delete_pointer(sub_domain))
 {
+  not_working_in_parallel("Periodic boundary conditions");
+
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -61,6 +64,8 @@ PeriodicBC::PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
                        boost::shared_ptr<const SubDomain> sub_domain)
   : BoundaryCondition(V), sub_domain(sub_domain)
 {
+  not_working_in_parallel("Periodic boundary conditions");
+
   // Do nothing
 }
 //-----------------------------------------------------------------------------
