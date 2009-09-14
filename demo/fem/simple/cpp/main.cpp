@@ -50,19 +50,19 @@ int main()
   // Display matrices
   cout << endl;
   cout << "Assembled stiffness matrix:" << endl;
-  A.disp();
+  info(A, true);
   cout << endl;
 
   cout << "Reference stiffness matrix:" << endl;
-  A0.disp();
+  info(A0, true);
   cout << endl;
 
   cout << "Assembled mass matrix:" << endl;
-  M.disp();
+  info(M, true);
   cout << endl;
 
   cout << "Reference mass matrix:" << endl;
-  M0.disp();
+  info(M0, true);
   cout << endl;
 
   return 0;

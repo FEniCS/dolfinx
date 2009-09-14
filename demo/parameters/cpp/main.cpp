@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-05
-// Last changed: 2009-09-08
+// Last changed: 2009-09-14
 //
 // This demo demonstrates the DOLFIN parameter system.
 //
@@ -26,14 +26,10 @@ int main(int argc, char* argv[])
   info(parameters, true);
   cout << endl;
 
-  // Save parameters to file
-  File file("parameters.xml");
-  file << parameters;
-
   // Read parameters from file
-  Parameters parameters_copy;
-  file >> parameters_copy;
-  info(parameters_copy, true);
+  File file("parameters.xml");
+  file >> parameters;
+  info(parameters, true);
   cout << endl;
 
   //--- Demo of nested parameter sets ---

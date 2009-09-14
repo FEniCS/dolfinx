@@ -22,14 +22,11 @@ parameters["floating_point_precision"] = 32
 info(parameters, True)
 print
 
-# Save parameters to file
-file = File("parameters.xml")
-file << parameters
-
 # Read parameters from file
-parameters_copy = Parameters("copy")
-file >> parameters_copy
-info(parameters_copy, True)
+file = File("parameters.xml")
+parameters = Parameters("parameters")
+file >> parameters
+info(parameters, True)
 print
 
 #--- Demo of nested parameter sets ---
