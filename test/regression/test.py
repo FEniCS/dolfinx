@@ -79,9 +79,6 @@ if only_python:
 # Run in serial, then in parallel
 for prefix in ["", "mpirun -n 2 "]:
 
-    cppdemos = []
-    pydemos = ["./../../demo/pde/poisson/python"]
-
     # Run C++ demos
     for demo in cppdemos:
         print "----------------------------------------------------------------------"
