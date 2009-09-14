@@ -109,7 +109,7 @@ for prefix in ["", "mpirun -n 2 "]:
         print ""
         if os.path.isfile(os.path.join(demo, 'demo.py')):
             t1 = time()
-            output = getstatusoutput("cd %s && %s python ./demo.py" % (prefix, demo))
+            output = getstatusoutput("cd %s && %s python demo.py" % (prefix, demo))
             t2 = time()
             timing += [(t2 - t1, demo)]
             success = not output[0]
