@@ -5,7 +5,7 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2005
-// Last changed: 2009-09-08
+// Last changed: 2009-09-14
 
 #ifdef HAS_PETSC
 
@@ -76,6 +76,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
     MatConvert(*A.mat(), MATUMFPACK, MAT_REUSE_MATRIX, &Atemp);
   }
   #endif
+
 
   // Convert to MUMPS matrix if matrix type is MATMPIAIJ and MUMPS is available.
   #if PETSC_HAVE_MUMPS

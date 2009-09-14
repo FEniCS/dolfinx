@@ -93,9 +93,10 @@ for prefix in ["", "mpirun -n 2 "]:
                                          (demo, prefix, os.path.sep, cppdemo_ext))
             t2 = time()
             timing += [(t2 - t1, demo)]
-            success = not output[0]
-            if success:
+            if output[0] == 0:
                 print "OK"
+            elif output[0] == 10: # Failing but exiting gracefully
+                print "ok (graceful exit on fail)"
             else:
                 print "*** Failed"
                 failed += [(demo, "C++", prefix, output[1])]
@@ -112,9 +113,10 @@ for prefix in ["", "mpirun -n 2 "]:
             output = getstatusoutput("cd %s && %s python demo.py" % (prefix, demo))
             t2 = time()
             timing += [(t2 - t1, demo)]
-            success = not output[0]
-            if success:
+            if output[0] == 0:
                 print "OK"
+            elif output[0] == 10: # Failing but exiting gracefully
+                print "ok (graceful exit on fail)"
             else:
                 print "*** Failed"
                 failed += [(demo, "Python", prefix, output[1])]
