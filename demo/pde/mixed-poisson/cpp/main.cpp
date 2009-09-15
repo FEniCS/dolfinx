@@ -69,15 +69,15 @@ int main()
   Function sigma_p;
   pde_project.solve(sigma_p);
 
+  // Plot solution
+  plot(sigma_p);
+  plot(u);
+
   // Save solution in VTK format
   File f3("sigma.pvd");
   File f4("u.pvd");
   f3 << sigma_p;
   f4 << u;
-
-  // Plot solution
-  plot(sigma_p);
-  plot(u);
 
   return 0;
 }

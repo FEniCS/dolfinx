@@ -23,7 +23,12 @@ using namespace dolfin;
 template <class T>
 void plot_object(const T& t, std::string title, std::string mode)
 {
-  not_working_in_parallel("C++ plotting");
+  if (dolfin::MPI::num_processes() > 1)
+  {
+    if (dolfin::MPI::process_number() == 0)
+      info("On screen plotting from C++ not yet working in parallel");
+    return;
+  }
 
   info("Plotting %s (%s), press 'q' to continue...",
           t.name().c_str(), t.label().c_str());
