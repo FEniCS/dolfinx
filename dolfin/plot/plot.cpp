@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-05-02
-// Last changed: 2009-09-10
+// Last changed: 2009-09-15
 
 #include <stdlib.h>
 #include <sstream>
@@ -26,7 +26,7 @@ void plot_object(const T& t, std::string title, std::string mode)
   if (dolfin::MPI::num_processes() > 1)
   {
     if (dolfin::MPI::process_number() == 0)
-      info("On screen plotting from C++ not yet working in parallel");
+      info("On screen plotting from C++ not yet working in parallel.");
     return;
   }
 
