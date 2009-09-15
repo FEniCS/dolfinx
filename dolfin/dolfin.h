@@ -11,6 +11,7 @@
 #include <dolfin/mesh/dolfin_mesh.h>
 #include <dolfin/function/dolfin_function.h>
 #include <dolfin/graph/dolfin_graph.h>
+#include <dolfin/plot/dolfin_plot.h>
 #include <dolfin/io/dolfin_io.h>
 #include <dolfin/main/dolfin_main.h>
 #include <dolfin/math/dolfin_math.h>
@@ -19,6 +20,5 @@
 #include <dolfin/fem/dolfin_fem.h>
 #include <dolfin/mf/dolfin_mf.h>
 #include <dolfin/ode/dolfin_ode.h>
-#include <dolfin/plot/dolfin_plot.h>
 
 #endif

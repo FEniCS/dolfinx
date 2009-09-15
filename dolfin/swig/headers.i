@@ -132,6 +132,9 @@
 %include "dolfin/graph/UndirectedClique.h"
 %include "dolfin/graph/DirectedClique.h"
 
+// DOLFIN headers included from plot
+%include "dolfin/plot/FunctionPlotData.h"
+
 // DOLFIN headers included from io
 %include "dolfin/io/File.h"
 %include "dolfin/swig/io_post.i"
@@ -183,6 +186,3 @@
 %include "dolfin/ode/dGqMethod.h"
 %include "dolfin/ode/ODESolution.h"
 %include "dolfin/ode/StabilityAnalysis.h"
-
-// DOLFIN headers included from plot
-%include "dolfin/plot/FunctionPlotData.h"
