@@ -32,7 +32,7 @@ v = TestFunction(V)
 u = TrialFunction(V)
 
 # Define normal component, mesh size and right-hand side
-n = FacetNormal(mesh)
+n = triangle.n
 h = CellSize(mesh)
 h_avg = (h('+') + h('-'))/2
 f = Function(V, "500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
@@ -57,27 +57,6 @@ L = v*f*dx
 problem = VariationalProblem(a, L)
 u = problem.solve()
 
-# Test new computation of the normal vector of FFC
-v2 = TestFunction(V)
-u2 = TrialFunction(V)
-
-n2 = triangle.n
-a2 = dot(grad(v2), grad(u2))*dx \
-   - dot(avg(grad(v2)), jump(u2, n2))*dS \
-   - dot(jump(v2, n2), avg(grad(u2)))*dS \
-   + alpha/h_avg*dot(jump(v2, n2), jump(u2, n2))*dS \
-   - dot(grad(v2), u2*n2)*ds \
-   - dot(v2*n2, grad(u2))*ds \
-   + gamma/h*v2*u2*ds
-L2 = v2*f*dx
-
-problem2 = VariationalProblem(a2, L2)
-u2 = problem2.solve()
-
-# Print norm of vector for both problems
-print "u  ", u.vector().norm("l2")
-print "u2 ", u2.vector().norm("l2")
-
 # Project solution to piecewise linears
 P1 = FunctionSpace(mesh, "CG", 1)
 u_proj = project(u, P1)
@@ -89,12 +68,3 @@ file << u_proj
 # Plot solution
 plot(u_proj, interactive=True)
 
-
-
-# Test code
-
-# Project solution to piecewise linears
-u_proj2 = project(u2, P1)
-
-# Plot solution
-plot(u_proj2, interactive=True)
