@@ -313,6 +313,9 @@ void Function::eval(double* values, const Data& data) const
   {
     assert(_function_space);
 
+    // FIXME: Dangerous since we can' be sure this cell originates from the
+    // FIXME: same mesh!
+
     // Use UFC cell if available
     if (data._ufc_cell)
     {
