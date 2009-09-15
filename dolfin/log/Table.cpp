@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-19
-// Last changed: 2009-06-15
+// Last changed: 2009-09-15
 
 #include <iostream>
 
@@ -140,61 +140,68 @@ const Table& Table::operator= (const Table& table)
   return *this;
 }
 //-----------------------------------------------------------------------------
-std::string Table::str() const
+std::string Table::str(bool verbose) const
 {
-  if (rows.size() == 0 || cols.size() == 0)
-    return "Empty table";
-
-  std::vector<std::vector<std::string> > tvalues;
-  std::vector<uint> col_sizes;
-
-  // Format values and compute column sizes
-  col_sizes.push_back(_title.size());
-  for (uint j = 0; j < cols.size(); j++)
-    col_sizes.push_back(cols[j].size());
-  for (uint i = 0; i < rows.size(); i++)
-  {
-    tvalues.push_back(std::vector<std::string>());
-    col_sizes[0] = std::max(col_sizes[0], (dolfin::uint)(rows[i].size()));
-    for (uint j = 0; j < cols.size(); j++)
-    {
-      std::string value = get(rows[i], cols[j]);
-      tvalues[i].push_back(value);
-      col_sizes[j + 1] = std::max(col_sizes[j + 1], (dolfin::uint)(value.size()));
-    }
-  }
-  uint row_size = 2*col_sizes.size() + 1;
-  for (uint j = 0; j < col_sizes.size(); j++)
-    row_size += col_sizes[j];
-
-  // Write table
   std::stringstream s;
-  s << _title;
-  for (uint k = 0; k < col_sizes[0] - _title.size(); k++)
-    s << " ";
-  s << "  |";
-  for (uint j = 0; j < cols.size(); j++)
+
+  if (verbose)
   {
-    for (uint k = 0; k < col_sizes[j + 1] - cols[j].size(); k++)
-      s << " ";
-    s << "  " << cols[j];
-  }
-  s << "\n";
-  for (uint k = 0; k < row_size; k++)
-    s << "-";
-  for (uint i = 0; i < rows.size(); i++)
-  {
-    s << "\n";
-    s << rows[i];
-    for (uint k = 0; k < col_sizes[0] - rows[i].size(); k++)
+    //s << str(false) << std::endl << std::endl;
+
+    std::vector<std::vector<std::string> > tvalues;
+    std::vector<uint> col_sizes;
+
+    // Format values and compute column sizes
+    col_sizes.push_back(_title.size());
+    for (uint j = 0; j < cols.size(); j++)
+      col_sizes.push_back(cols[j].size());
+    for (uint i = 0; i < rows.size(); i++)
+    {
+      tvalues.push_back(std::vector<std::string>());
+      col_sizes[0] = std::max(col_sizes[0], (dolfin::uint)(rows[i].size()));
+      for (uint j = 0; j < cols.size(); j++)
+      {
+        std::string value = get(rows[i], cols[j]);
+        tvalues[i].push_back(value);
+        col_sizes[j + 1] = std::max(col_sizes[j + 1], (dolfin::uint)(value.size()));
+      }
+    }
+    uint row_size = 2*col_sizes.size() + 1;
+    for (uint j = 0; j < col_sizes.size(); j++)
+      row_size += col_sizes[j];
+
+    // Write table
+    s << _title;
+    for (uint k = 0; k < col_sizes[0] - _title.size(); k++)
       s << " ";
     s << "  |";
     for (uint j = 0; j < cols.size(); j++)
     {
-      for (uint k = 0; k < col_sizes[j + 1] - tvalues[i][j].size(); k++)
+      for (uint k = 0; k < col_sizes[j + 1] - cols[j].size(); k++)
         s << " ";
-      s << "  " << tvalues[i][j];
+      s << "  " << cols[j];
     }
+    s << "\n";
+    for (uint k = 0; k < row_size; k++)
+      s << "-";
+    for (uint i = 0; i < rows.size(); i++)
+    {
+      s << "\n";
+      s << rows[i];
+      for (uint k = 0; k < col_sizes[0] - rows[i].size(); k++)
+        s << " ";
+      s << "  |";
+      for (uint j = 0; j < cols.size(); j++)
+      {
+        for (uint k = 0; k < col_sizes[j + 1] - tvalues[i][j].size(); k++)
+          s << " ";
+        s << "  " << tvalues[i][j];
+      }
+    }
+  }
+  else
+  {
+    s << "<Table of size " << rows.size() << " x " << cols.size() << ">";
   }
 
   return s.str();

@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-05-08
+// Last changed: 2009-09-15
 
 #include <string>
 #include <iostream>
@@ -175,7 +175,7 @@ void Logger::summary(bool reset)
     table(task, "Total time")   = total_time;
     table(task, "Reps")         = num_timings;
   }
-  info(table.str());
+  info(table.str(true));
 
   // Clear timings
   if (reset)

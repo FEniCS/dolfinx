@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-19
-// Last changed: 2009-06-15
+// Last changed: 2009-09-15
 
 #ifndef __TABLE_H
 #define __TABLE_H
@@ -66,9 +66,9 @@ namespace dolfin
 
     /// Assignment operator
     const Table& operator= (const Table& table);
- 
+
     /// Return informal string representation (pretty-print)
-    std::string str() const;
+    std::string str(bool verbose) const;
 
     /// Return informal string representation for LaTeX
     std::string str_latex() const;

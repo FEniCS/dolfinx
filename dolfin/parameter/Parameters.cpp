@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-09-08
+// Last changed: 2009-09-15
 
 #include <sstream>
 #include <stdio.h>
@@ -375,7 +375,7 @@ std::string Parameters::str(bool verbose) const
       t(p->key(), "access") = p->access_count();
       t(p->key(), "change") = p->change_count();
     }
-    s << indent(t.str());
+    s << indent(t.str(true));
 
     for (const_parameter_set_iterator it = _parameter_sets.begin();
          it != _parameter_sets.end(); ++it)
