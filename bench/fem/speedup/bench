@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+
+__author__ = "Anders Logg (logg@simula.no)"
+__date__ = "2009-09-15 -- 2009-09-15"
+__copyright__ = "Copyright (C) 2009 Anders Logg"
+__license__  = "GNU LGPL Version 2.1"
+
+from dolfin.utils import getoutput
+from dolfin import Table, info
+
+# This script runs the two programs assemble-poisson and solve-poisson
+# in parallel for a range of processes and collects results.
+
+# Number of processes to use
+max_num_processes = 8
+
+# Size of mesh
+n = 16 # should be increased
+
+# Iterate over number of processes
+p = range(1, max_num_processes + 1)
+t1 = []
+t2 = []
+for num_processes in p:
+
+    print "Checking speedup on %d processes..." % num_processes
+
+    # Special handling for one processes
+    if num_processes == 1:
+        prefix = ""
+    else:
+        prefix = "mpirun -n %d " % num_processes
+
+    # Time assembly
+    output = getoutput("%s./assemble-poisson %d" % (prefix, n))
+    t1.append(float([line for line in output.split("\n") if "TIME:" in line][0].split("TIME: ")[-1]))
+
+    # Time solve
+    output = getoutput("%s./solve-poisson %d" % (prefix, n))
+    t2.append(float([line for line in output.split("\n") if "TIME:" in line][0].split("TIME: ")[-1]))
+
+# Compute speedups
+s1 = [t / t1[0] for t in t1]
+s2 = [t / t2[0] for t in t2]
+
+# Print results
+table = Table("Speedup")
+for i in range(num_processes):
+    table.set(str(p[i]), "Assemble",         s1[i])
+    table.set(str(p[i]), "Assemble + solve", s2[i])
+info(table, True)
