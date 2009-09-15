@@ -54,6 +54,7 @@ int main()
   // Solve PDE
   Function w;
   pde.solve(w);
+  cout << "Finished solve" << endl;
 
   // Extract sub functions
   Function sigma = w[0];
