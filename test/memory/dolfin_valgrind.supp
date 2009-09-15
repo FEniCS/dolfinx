@@ -164,8 +164,6 @@
    fun:orte_init
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
-   fun:_ZN6dolfin3MPI13num_processesEv
 }
 {
    <insert a suppression name here>
@@ -197,8 +195,6 @@
    fun:modex
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
-   fun:_ZN6dolfin3MPI13num_processesEv
 }
 {
    <insert a suppression name here>
@@ -211,8 +207,8 @@
    fun:orte_init
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
-   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:*
+   fun:*
    fun:_ZN6dolfin6LoggerC1Ev
    fun:_Z41__static_initialization_and_destruction_0ii
 }
@@ -243,8 +239,8 @@
    fun:orte_init
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
-   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:*
+   fun:*
    fun:_ZN6dolfin6LoggerC1Ev
    fun:_Z41__static_initialization_and_destruction_0ii
 }
@@ -263,7 +259,6 @@
    fun:orte_init
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
 }
 {
    <insert a suppression name here>
@@ -276,8 +271,8 @@
    fun:orte_init
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
-   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:*
+   fun:*
    fun:_ZN6dolfin6LoggerC1Ev
    fun:_Z41__static_initialization_and_destruction_0ii
 }
@@ -291,8 +286,8 @@
    fun:orte_init
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
-   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:*
+   fun:*
    fun:_ZN6dolfin6LoggerC1Ev
    fun:_Z41__static_initialization_and_destruction_0ii
    obj:*libdolfin.so*
@@ -341,8 +336,8 @@
    fun:orte_init
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
-   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:*
+   fun:*
    fun:_ZN6dolfin6LoggerC1Ev
 }
 {
@@ -358,8 +353,6 @@
    fun:orte_init
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
-   fun:_ZN6dolfin3MPI13num_processesEv
 }
 {
    <insert a suppression name here>
@@ -372,8 +365,8 @@
    fun:orte_init
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
-   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:*
+   fun:*
    fun:_ZN6dolfin6LoggerC1Ev
    fun:_Z41__static_initialization_and_destruction_0ii
 }
@@ -387,8 +380,8 @@
    fun:opal_init_util
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
-   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:*
+   fun:*
    fun:_ZN6dolfin6LoggerC1Ev
    fun:_Z41__static_initialization_and_destruction_0ii
    obj:*libdolfin.so*
@@ -403,8 +396,8 @@
    fun:orte_init
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
-   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:*
+   fun:*
    fun:_ZN6dolfin6LoggerC1Ev
    fun:_Z41__static_initialization_and_destruction_0ii
    obj:*libdolfin.so*
@@ -417,8 +410,8 @@
    obj:*
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
-   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:*
+   fun:*
    fun:_ZN6dolfin6LoggerC1Ev
    fun:_Z41__static_initialization_and_destruction_0ii
    obj:*libdolfin.so*
@@ -455,7 +448,7 @@
    fun:orte_init
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
+   fun:*
 }
 {
    <insert a suppression name here>
@@ -467,8 +460,8 @@
    fun:opal_init_util
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
-   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:*
+   fun:*
    fun:_ZN6dolfin6LoggerC1Ev
    fun:_Z41__static_initialization_and_destruction_0ii
    obj:*libdolfin.so*
@@ -485,8 +478,8 @@
    fun:mca_pml_base_open
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
-   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:*
+   fun:*
    fun:_ZN6dolfin6LoggerC1Ev
 }
 {
@@ -701,7 +694,7 @@
    fun:orte_init_stage1
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
+   fun:*
 }
 {
    <insert a suppression name here>
@@ -714,8 +707,8 @@
    fun:opal_init
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
-   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:*
+   fun:*
    fun:_ZN6dolfin6LoggerC1Ev
    fun:_Z41__static_initialization_and_destruction_0ii
 }
@@ -753,7 +746,7 @@
    fun:orte_init_stage1
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
+   fun:*
 }
 {
    <insert a suppression name here>
@@ -842,7 +835,7 @@
    fun:opal_init
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
+   fun:*
 }
 {
    <insert a suppression name here>
@@ -924,7 +917,7 @@
    fun:orte_init_stage1
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
+   fun:*
 }
 {
    <insert a suppression name here>
@@ -950,7 +943,7 @@
    fun:orte_init_stage1
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
+   fun:*
 }
 {
    <insert a suppression name here>
@@ -966,7 +959,7 @@
    fun:orte_init_stage1
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
+   fun:*
 }
 {
    <insert a suppression name here>
@@ -977,7 +970,7 @@
    fun:orte_init_stage1
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN6dolfin17SubSystemsManager7initMPIEv
+   fun:*
 }
 {
    <insert a suppression name here>
