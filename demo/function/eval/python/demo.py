@@ -10,6 +10,8 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 from numpy import array
 
+not_working_in_parallel("This demo")
+
 if not has_gts():
     print "DOLFIN must be compiled with GTS to run this demo."
     exit(0)

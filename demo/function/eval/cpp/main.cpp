@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-03-11
-// Last changed: 2008-11-19
+// Last changed: 2009-09-15
 //
 // Demonstrating function evaluation at arbitrary points.
 
@@ -24,6 +24,8 @@ public:
 
 int main()
 {
+  not_working_in_parallel("This demo");
+
   // Create mesh and a point in the mesh
   UnitCube mesh(8, 8, 8);
   double x[3] = {0.31, 0.32, 0.33};
