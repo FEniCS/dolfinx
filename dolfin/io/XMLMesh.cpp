@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-06
-// Last changed:  2009-03-17
+// Last changed: 2009-09-15
 
 #include <cstring>
 #include <dolfin/log/dolfin_log.h>
@@ -29,12 +29,11 @@ XMLMesh::XMLMesh(Mesh& mesh, XMLFile& parser)
 XMLMesh::~XMLMesh()
 {
   delete xml_mesh_data;
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
 {
-  switch ( state )
+  switch (state )
   {
   case OUTSIDE:
 
@@ -47,27 +46,27 @@ void XMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
 
   case INSIDE_MESH:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "vertices") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "vertices") == 0)
     {
       read_vertices(name, attrs);
       state = INSIDE_VERTICES;
     }
-    else if ( xmlStrcasecmp(name, (xmlChar *) "cells") == 0 )
+    else if (xmlStrcasecmp(name, (xmlChar *) "cells") == 0)
     {
       read_cells(name, attrs);
       state = INSIDE_CELLS;
     }
-    else if ( xmlStrcasecmp(name, (xmlChar *) "data") == 0 )
+    else if (xmlStrcasecmp(name, (xmlChar *) "data") == 0)
     {
       read_mesh_data(name, attrs);
       state = INSIDE_MESH;
     }
-    else if ( xmlStrcasecmp(name, (xmlChar *) "higher_order_coordinates") == 0 )
+    else if (xmlStrcasecmp(name, (xmlChar *) "higher_order_coordinates") == 0)
     {
       read_higher_order_vertices(name, attrs);
       state = INSIDE_HIGHERORDERVERTICES;
     }
-    else if ( xmlStrcasecmp(name, (xmlChar *) "higher_order_cells") == 0 )
+    else if (xmlStrcasecmp(name, (xmlChar *) "higher_order_cells") == 0)
     {
       read_higher_order_cells(name, attrs);
       state = INSIDE_HIGHERORDERCELLS;
@@ -77,32 +76,32 @@ void XMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
 
   case INSIDE_VERTICES:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "vertex") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "vertex") == 0)
       read_vertex(name, attrs);
 
     break;
 
   case INSIDE_CELLS:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "interval") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "interval") == 0)
       read_interval(name, attrs);
-    else if ( xmlStrcasecmp(name, (xmlChar *) "triangle") == 0 )
+    else if (xmlStrcasecmp(name, (xmlChar *) "triangle") == 0)
       read_triangle(name, attrs);
-    else if ( xmlStrcasecmp(name, (xmlChar *) "tetrahedron") == 0 )
+    else if (xmlStrcasecmp(name, (xmlChar *) "tetrahedron") == 0)
       read_tetrahedron(name, attrs);
 
     break;
 
   case INSIDE_HIGHERORDERVERTICES:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "vertex") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "vertex") == 0)
       read_higher_order_vertex(name, attrs);
 
     break;
 
   case INSIDE_HIGHERORDERCELLS:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "cell") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "cell") == 0)
       read_higher_order_cell_data(name, attrs);
 
     break;
@@ -114,11 +113,11 @@ void XMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMesh::end_element(const xmlChar *name)
 {
-  switch ( state )
+  switch (state)
   {
   case INSIDE_MESH:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "mesh") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "mesh") == 0)
     {
       close_mesh();
       state = DONE;
@@ -129,7 +128,7 @@ void XMLMesh::end_element(const xmlChar *name)
 
   case INSIDE_VERTICES:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "vertices") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "vertices") == 0)
     {
       state = INSIDE_MESH;
     }
@@ -138,7 +137,7 @@ void XMLMesh::end_element(const xmlChar *name)
 
   case INSIDE_CELLS:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "cells") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "cells") == 0)
     {
       state = INSIDE_MESH;
     }
@@ -147,7 +146,7 @@ void XMLMesh::end_element(const xmlChar *name)
 
   case INSIDE_HIGHERORDERVERTICES:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "higher_order_coordinates") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "higher_order_coordinates") == 0)
     {
       state = INSIDE_MESH;
     }
@@ -156,7 +155,7 @@ void XMLMesh::end_element(const xmlChar *name)
 
   case INSIDE_HIGHERORDERCELLS:
 
-    if ( xmlStrcasecmp(name, (xmlChar *) "higher_order_cells") == 0 )
+    if (xmlStrcasecmp(name, (xmlChar *) "higher_order_cells") == 0)
     {
       state = INSIDE_MESH;
     }
@@ -191,7 +190,7 @@ void XMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation_le
     Point p = v->point();
     outfile << indent();
 
-    switch ( mesh.geometry().dim() ) {
+    switch (mesh.geometry().dim()) {
     case 1:
       outfile << "<vertex index=\"" << v->index() << "\" x=\"" << p.x() << "\"/>" << std::endl;
       break;
@@ -222,7 +221,7 @@ void XMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation_le
     assert(vertices);
     outfile << indent();
 
-    switch ( cell_type )
+    switch (cell_type)
     {
     case CellType::interval:
       outfile << "<interval index=\"" <<  c->index() << "\" v0=\"" << vertices[0] << "\" v1=\"" << vertices[1] << "\"/>" << std::endl;
@@ -254,6 +253,9 @@ void XMLMesh::write(const Mesh& mesh, std::ostream& outfile, uint indentation_le
 //-----------------------------------------------------------------------------
 void XMLMesh::read_mesh_tag(const xmlChar *name, const xmlChar **attrs)
 {
+  if (MPI::num_processes() > 1)
+    warning("Reading entire mesh to one processor. If this is not what you intended, initialize the mesh directly from the filename.");
+
   // Set state
   state = INSIDE_MESH;
 
@@ -294,7 +296,7 @@ void XMLMesh::read_vertex(const xmlChar *name, const xmlChar **attrs)
   uint v = parse_uint(name, attrs, "index");
 
   // Handle differently depending on geometric dimension
-  switch ( _mesh.geometry().dim() )
+  switch (_mesh.geometry().dim())
   {
   case 1:
     {
@@ -325,7 +327,7 @@ void XMLMesh::read_vertex(const xmlChar *name, const xmlChar **attrs)
 void XMLMesh::read_interval(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
-  if ( _mesh.topology().dim() != 1 )
+  if (_mesh.topology().dim() != 1)
     error("Mesh entity (interval) does not match dimension of mesh (%d).",
 		 _mesh.topology().dim());
 
@@ -341,7 +343,7 @@ void XMLMesh::read_interval(const xmlChar *name, const xmlChar **attrs)
 void XMLMesh::read_triangle(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
-  if ( _mesh.topology().dim() != 2 )
+  if (_mesh.topology().dim() != 2)
     error("Mesh entity (triangle) does not match dimension of mesh (%d).",
 		 _mesh.topology().dim());
 
@@ -358,7 +360,7 @@ void XMLMesh::read_triangle(const xmlChar *name, const xmlChar **attrs)
 void XMLMesh::read_tetrahedron(const xmlChar *name, const xmlChar **attrs)
 {
   // Check dimension
-  if ( _mesh.topology().dim() != 3 )
+  if (_mesh.topology().dim() != 3)
     error("Mesh entity (tetrahedron) does not match dimension of mesh (%d).",
 		 _mesh.topology().dim());
 
@@ -416,7 +418,7 @@ void XMLMesh::read_higher_order_vertex(const xmlChar *name, const xmlChar **attr
   uint v = parse_uint(name, attrs, "index");
 
   // Handle differently depending on geometric dimension
-  switch ( _mesh.geometry().dim() )
+  switch (_mesh.geometry().dim())
   {
   case 1:
     {
@@ -449,7 +451,7 @@ void XMLMesh::read_higher_order_cell_data(const xmlChar *name, const xmlChar **a
   // for now assume a P2 triangle!
 
   // Check dimension
-  if ( _mesh.topology().dim() != 2 )
+  if (_mesh.topology().dim() != 2)
     error("Mesh entity must be a triangle; does not match dimension of mesh (%d).",
 		 _mesh.topology().dim());
 
