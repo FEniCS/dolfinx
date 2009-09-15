@@ -88,3 +88,13 @@ file << u_proj
 
 # Plot solution
 plot(u_proj, interactive=True)
+
+
+
+# Test code
+
+# Project solution to piecewise linears
+u_proj2 = project(u2, P1)
+
+# Plot solution
+plot(u_proj2, interactive=True)

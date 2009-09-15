@@ -137,7 +137,7 @@ const Function& Function::operator= (const Function& v)
   if (!v.has_function_space())
     error("Cannot copy Functions which do not have a FunctionSpace.");
 
-  // If v has a vector, we can either make a copy of all the data, or if v
+  // If v has a vector, we make a copy of all the data, or if v
   // is a sub-function, then we collapse the dof map and copy only the
   // relevant entries from the vetor of v
   if (v.has_vector())

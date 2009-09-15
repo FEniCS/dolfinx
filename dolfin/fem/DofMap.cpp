@@ -90,6 +90,12 @@ DofMap::DofMap(std::auto_ptr<std::vector<dolfin::uint> > map,
       error("Unable to create function space, missing entities of dimension %d. Try calling mesh.init(%d).", d, d);
   }
 
+  // Initialize the UFC mesh
+  init_ufc_mesh();
+
+  // Initialize UFC dof map
+  init_ufc_dofmap(*ufc_dof_map);
+
   // Set the global dimension
   _global_dimension = ufc_dof_map->global_dimension();
 }
