@@ -56,9 +56,9 @@ int main()
   pde.solve(w);
   cout << "Finished solve" << endl;
 
-  // Extract sub functions
-  Function sigma = w[0];
-  Function u = w[1];
+  // Extract sub functions (function views)
+  Function& sigma = w[0];
+  Function& u = w[1];
 
   // Project sigma onto P1 continuous Lagrange for post-processing
   P1Projection::FunctionSpace Vp(mesh);
@@ -69,15 +69,15 @@ int main()
   Function sigma_p;
   pde_project.solve(sigma_p);
 
-  // Plot solution
-  plot(sigma_p);
-  plot(u);
-
   // Save solution in VTK format
   File f3("sigma.pvd");
   File f4("u.pvd");
   f3 << sigma_p;
   f4 << u;
+
+  // Plot solution
+  plot(sigma_p);
+  plot(u);
 
   return 0;
 }
