@@ -12,6 +12,8 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 from numpy import array
 
+not_working_in_parallel("This demo")
+
 # Load reference mesh (just a simple tetrahedron)
 mesh = Mesh("../tetrahedron.xml.gz");
 

@@ -16,6 +16,8 @@ using namespace dolfin;
 
 int main()
 {
+  not_working_in_parallel("This demo");
+
   // Load reference mesh (just a simple tetrahedron)
   Mesh mesh("../tetrahedron.xml.gz");
 
