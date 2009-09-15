@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-05-08
-// Last changed: 2009-08-29
+// Last changed: 2009-09-15
 
 #include <dolfin/log/log.h>
 #include "Data.h"
@@ -31,9 +31,13 @@ void UFCFunction::evaluate(double* values,
 {
   assert(values);
 
-  // Set coordinates and UFC cell
+  // Set coordinates
   data.x = coordinates;
-  data._ufc_cell = &cell;
+
+  // If we store the cell here, we also need to store the mesh. The
+  // cell data might otherwise be falsely used when interpolating to
+  // another mesh.
+  //data._ufc_cell = &cell;
 
   // Call eval for function
   v.eval(values, data);

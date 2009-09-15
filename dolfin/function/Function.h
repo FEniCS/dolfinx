@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-08-17
+// Last changed: 2009-09-15
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -61,14 +61,14 @@ namespace dolfin
 
     /// Create function on given function space with a given vector (shared data)
     Function(boost::shared_ptr<const FunctionSpace> V, boost::shared_ptr<GenericVector> x);
-    
+
     /// Create function from vector of dofs stored to file
     Function(const FunctionSpace& V, std::string filename);
 
     /// Create function from vector of dofs stored to file (shared data)
     Function(boost::shared_ptr<const FunctionSpace> V, std::string filename);
 
-    /// Copy constructor 
+    /// Copy constructor
     Function(const Function& v);
 
     /// Destructor
@@ -114,16 +114,16 @@ namespace dolfin
     virtual void eval(double* values, const Data& data) const;
 
     /// Evaluate function v at given point in given cell
-    void eval(double* values, const double* x, const ufc::cell& ufc_cell, 
+    void eval(double* values, const double* x, const ufc::cell& ufc_cell,
               uint cell_index) const;
 
     /// Interpolate function to local function space on cell
-    void interpolate(double* coefficients, const ufc::cell& ufc_cell, 
+    void interpolate(double* coefficients, const ufc::cell& ufc_cell,
                      uint cell_index, int local_facet=-1) const;
 
     /// Interpolate function to local function space on cell with check on function space
-    void interpolate(double* coefficients, const FunctionSpace& V, 
-                     const ufc::cell& ufc_cell, uint cell_index, 
+    void interpolate(double* coefficients, const FunctionSpace& V,
+                     const ufc::cell& ufc_cell, uint cell_index,
                      int local_facet=-1) const;
 
     /// Interpolate function (possibly non-matching meshes)
@@ -136,7 +136,7 @@ namespace dolfin
     void interpolate_vertex_values(double* vertex_values) const;
 
     /// Collect off-process coefficients to prepare for interpolation
-    void gather() const; 
+    void gather() const;
 
     /// Friends
     friend class Coefficient;
@@ -153,14 +153,14 @@ namespace dolfin
     // Collection of sub-functions which share data with the function
     boost::ptr_map<uint, Function> sub_functions;
 
-    void compute_off_process_dofs() const; 
+    void compute_off_process_dofs() const;
 
     // Initialize vector
     void init();
 
     // Get coefficients from the vector(s)
     void get(double* block, uint m, const uint* rows) const;
-  
+
     // The vector of expansion coefficients (local)
     boost::shared_ptr<GenericVector> _vector;
 
@@ -170,19 +170,19 @@ namespace dolfin
     mutable std::map<uint, uint> global_to_local;
     mutable std::vector<uint> _off_process_dofs;
 
-    // Scratch data used in extracting coefficients from parallel vectors 
-    class Scratch 
+    // Scratch data used in extracting coefficients from parallel vectors
+    class Scratch
     {
     public:
-      
-      Scratch() : local_rows(0), nonlocal_rows(0), local_block(0), 
+
+      Scratch() : local_rows(0), nonlocal_rows(0), local_block(0),
                   nonlocal_block(0), local_index(0), nonlocal_index(0)
       {}
 
       ~Scratch()
       {
         clear();
-      }      
+      }
 
       void init(uint dim)
       {
@@ -204,7 +204,7 @@ namespace dolfin
         delete [] local_index;
         delete [] nonlocal_index;
       }
-  
+
       uint* local_rows;
       uint* nonlocal_rows;
       double* local_block;

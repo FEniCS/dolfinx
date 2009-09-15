@@ -1,4 +1,4 @@
-"""This script demonstrates how to interpolate functions between different 
+"""This script demonstrates how to interpolate functions between different
 finite element spaces on non-matching meshes."""
 
 __author__ = "Garth N. Wells (gnw20@cam.ac.uk)"
@@ -26,3 +26,6 @@ v1.interpolate(v0)
 plot(v0, title="v0")
 plot(v1, title="v1")
 interactive()
+
+print norm(v0)
+print norm(v1)
