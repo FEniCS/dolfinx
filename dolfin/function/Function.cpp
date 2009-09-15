@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-09-13
+// Last changed: 2009-09-15
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -139,7 +139,7 @@ const Function& Function::operator= (const Function& v)
 
   // If v has a vector, we make a copy of all the data, or if v
   // is a sub-function, then we collapse the dof map and copy only the
-  // relevant entries from the vetor of v
+  // relevant entries from the vector of v
   if (v.has_vector())
   {
     // Copy function (collapse dof_map if we have a sub function)
