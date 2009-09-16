@@ -7,6 +7,7 @@
 // First added:  2007-07-08
 // Last changed: 2009-09-16
 
+#include <boost/scoped_array.hpp>
 #include <vector>
 #include <map>
 
@@ -23,7 +24,6 @@
 #include <dolfin/la/GenericVector.h>
 #include "DofMap.h"
 #include "UFCMesh.h"
-#include "UFCCell.h"
 #include "BoundaryCondition.h"
 #include "PeriodicBC.h"
 
@@ -56,28 +56,38 @@ struct lt_coordinate
   }
 };
 
+// Mapping from coordinates to dof pairs
+typedef std::map<std::vector<double>, std::pair<int, int>, lt_coordinate> coordinate_map;
+typedef coordinate_map::iterator coordinate_iterator;
+
 //-----------------------------------------------------------------------------
 PeriodicBC::PeriodicBC(const FunctionSpace& V,
                        const SubDomain& sub_domain)
-  : BoundaryCondition(V), sub_domain(reference_to_no_delete_pointer(sub_domain))
+  : BoundaryCondition(V), sub_domain(reference_to_no_delete_pointer(sub_domain)),
+    num_dof_pairs(0), master_dofs(0), slave_dofs(0), zeros(0)
 {
   not_working_in_parallel("Periodic boundary conditions");
 
-  // Do nothing
+  // Build mapping
+  rebuild();
 }
 //-----------------------------------------------------------------------------
 PeriodicBC::PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
                        boost::shared_ptr<const SubDomain> sub_domain)
-  : BoundaryCondition(V), sub_domain(sub_domain)
+  : BoundaryCondition(V), sub_domain(sub_domain),
+    num_dof_pairs(0), master_dofs(0), slave_dofs(0), zeros(0)
 {
   not_working_in_parallel("Periodic boundary conditions");
 
-  // Do nothing
+  // Build mapping
+  rebuild();
 }
 //-----------------------------------------------------------------------------
 PeriodicBC::~PeriodicBC()
 {
-  // Do nothing
+  delete [] master_dofs;
+  delete [] slave_dofs;
+  delete [] zeros;
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A) const
@@ -92,216 +102,44 @@ void PeriodicBC::apply(GenericVector& b) const
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
 {
+  assert(num_dof_pairs > 0);
+  assert(master_dofs);
+  assert(slave_dofs);
+  assert(zeros);
+
   cout << "Applying periodic boundary conditions to linear system." << endl;
 
-  // FIXME: Make this work for non-scalar subsystems, like vector-valued
-  // FIXME: Lagrange where more than one per element is associated with
-  // FIXME: each coordinate. Note that globally there may very well be
-  // FIXME: more than one dof per coordinate (for conforming elements).
-
-  // Get mesh and dofmap
-  const Mesh& mesh = V->mesh();
-  const DofMap& dofmap = V->dofmap();
-
-  // Set geometric dimension (needed for SWIG interface)
-  sub_domain->_geometric_dimension = mesh.geometry().dim();
-
-  // Table of mappings from coordinates to dofs
-  std::map<std::vector<double>, std::pair<int, int>, lt_coordinate> coordinate_dofs;
-  typedef std::map<std::vector<double>, std::pair<int, int>, lt_coordinate>::iterator iterator;
-  std::vector<double> xx(mesh.geometry().dim());
-
-  // std::vector used for mapping coordinates
-  double* y = new double[mesh.geometry().dim()];
-  for (uint i = 0; i < mesh.geometry().dim(); i++)
-    y[i] = 0.0;
-
-  // Create local data for application of boundary conditions
-  BoundaryCondition::LocalData data(*V);
-
-  // Make sure we have the facet - cell connectivity
-  const uint D = mesh.topology().dim();
-  mesh.init(D - 1, D);
-
-  // Create UFC view of mesh
-  UFCMesh ufc_mesh(mesh);
-
-  // Iterate over the facets of the mesh
-  Progress p("Applying periodic boundary conditions", mesh.size(D - 1));
-  for (FacetIterator facet(mesh); !facet.end(); ++facet)
+  // Add slave rows to master rows
+  std::vector<uint> columns;
+  std::vector<double> values;
+  for (uint i = 0; i < num_dof_pairs; ++i)
   {
-    // Get cell to which facet belongs (there may be two, but pick first)
-    Cell cell(mesh, facet->entities(D)[0]);
-    UFCCell ufc_cell(cell);
+    // Add slave row to master row in A
+    A.getrow(slave_dofs[i], columns, values);
+    A.add(&values[0], 1, &master_dofs[i], columns.size(), &columns[0]);
 
-    // Get local index of facet with respect to the cell
-    const uint local_facet = cell.index(*facet);
+    // Add slave row to master row in b
+    b.get(&values[0], 1, &slave_dofs[i]);
+    b.add(&values[0], 1, &master_dofs[i]);
 
-    // Tabulate dofs on cell
-    dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell.index());
-
-    // Tabulate coordinates on cell
-    dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
-
-    // Tabulate which dofs are on the facet
-    dofmap.tabulate_facet_dofs(data.facet_dofs, local_facet);
-
-    // Iterate over facet dofs
-    for (uint i = 0; i < dofmap.num_facet_dofs(); i++)
-    {
-      // Get dof and coordinate of dof
-      const uint local_dof = data.facet_dofs[i];
-      const int global_dof = data.cell_dofs[local_dof];
-      double* x = data.coordinates[local_dof];
-
-      // Map coordinate from H to G
-      for (uint j = 0; j < mesh.geometry().dim(); j++)
-        y[j] = x[j];
-      sub_domain->map(x, y);
-
-      // Check if coordinate is inside the domain G or in H
-      const bool on_boundary = facet->num_entities(D) == 1;
-      if (sub_domain->inside(x, on_boundary))
-      {
-        // Coordinate x is in G
-        //cout << "Inside: " << x[0] << " " << x[1] << endl;
-
-        // Copy coordinate to std::vector
-        for (uint j = 0; j < mesh.geometry().dim(); j++)
-          xx[j] = x[j];
-
-        // Check if coordinate exists from before
-        iterator it = coordinate_dofs.find(xx);
-        if (it != coordinate_dofs.end())
-        {
-          // Check that we don't have more than one dof per coordinate
-          /*
-          if (it->second.first != -1)
-          {
-            cout << "Coordinate: x =";
-            for (uint j = 0; j < mesh.geometry().dim(); j++)
-              cout << " " << xx[j];
-            cout << endl;
-            cout << "Degrees of freedom: " << it->second.first << " " << global_dof << endl;
-            error("More than one dof associated with coordinate. Did you forget to specify the subsystem?");
-          }
-          */
-          it->second.first = global_dof;
-        }
-        else
-        {
-          // Doesn't exist, so create new pair (with illegal second value)
-          std::pair<int, int> dofs(global_dof, -1);
-          coordinate_dofs[xx] = dofs;
-        }
-      }
-      else if (sub_domain->inside(y, on_boundary))
-      {
-        // y = F(x) is in G, so coordinate x is in H
-        //cout << "Mapped: " << x[0] << " " << x[1] << endl;
-
-        // Copy coordinate to std::vector
-        for (uint j = 0; j < mesh.geometry().dim(); j++)
-          xx[j] = y[j];
-
-        // Check if coordinate exists from before
-        iterator it = coordinate_dofs.find(xx);
-        if (it != coordinate_dofs.end())
-        {
-          // Check that we don't have more than one dof per coordinate
-          /*
-          if (it->second.second != -1)
-          {
-            cout << "Coordinate: x =";
-            for (uint j = 0; j < mesh.geometry().dim(); j++)
-              cout << " " << xx[j];
-            cout << endl;
-            cout << "Degrees of freedom: " << it->second.second << " " << global_dof << endl;
-            error("More than one dof associated with coordinate. Did you forget to specify the subsystem?");
-          }
-          */
-          it->second.second = global_dof;
-        }
-        else
-        {
-          // Doesn't exist, so create new pair (with illegal first value)
-          std::pair<int, int> dofs(-1, global_dof);
-          coordinate_dofs[xx] = dofs;
-        }
-      }
-    }
-
-    p++;
-  }
-
-  // Insert -1 at (dof0, dof1) and 0 on right-hand side
-  uint* rows = new uint[1];
-  uint* cols = new uint[1];
-  double* vals = new double[1];
-  double* zero = new double[1];
-  for (iterator it = coordinate_dofs.begin(); it != coordinate_dofs.end(); ++it)
-  {
-    // Check that we got both dofs
-    const int dof0 = it->second.first;
-    const int dof1 = it->second.second;
-
-    //cout << dof0 << " " << dof1 <<endl;
-
-    if (dof0 == -1 || dof1 == -1)
-    {
-      cout << "At coordinate: x =";
-      for (uint j = 0; j < mesh.geometry().dim(); j++)
-        cout << " " << it->first[j];
-      cout << endl;
-      error("Unable to find a pair of matching dofs for periodic boundary condition.");
-    }
-
-    //cout << "Setting periodic bc at x =";
-    //for (uint j = 0; j < mesh.geometry().dim(); j++)
-    //  cout << " " << it->first[j];
-    //cout << ": " << dof0 << " " << dof1 << endl;
-
-    // FIXME: This can be done more efficiently. A.apply() should not be called
-    //        from within a loop.
-
-    // Set x_i - x_j = 0
-    rows[0] = dof0;
-    cols[0] = dof1;
-    vals[0] = -1;
-    zero[0] = 0.0;
-
-    std::vector<uint> columns;
-    std::vector<double> values;
-
-    // Add slave-dof-row to master-dof-row
-    A.getrow(dof0, columns, values);
-    A.add(&values[0], 1, &cols[0], columns.size(), &columns[0]);
-
-    // Add slave-dof-entry to master-dof-entry
-    values.resize(1);
-    b.get(&values[0], 1, &rows[0]);
-    b.add(&values[0], 1, &cols[0]);
-
-    // Apply changes before using set
-    A.apply();
-    b.apply();
-
-    // Replace slave-dof equation by relation enforcing periodicity
-    A.ident(1, rows);
-    A.set(vals, 1, rows, 1, cols);
-    b.set(zero, 1, rows);
-
-    // Apply changes
+    // Apply, needed between calls to get and add
     A.apply();
     b.apply();
   }
 
-  // Cleanup
-  delete [] rows;
-  delete [] cols;
-  delete [] vals;
-  delete [] zero;
-  delete [] y;
+  // Zero slave rows and insert 1 on the diagonal
+  A.ident(num_dof_pairs, slave_dofs);
+  b.set(zeros, num_dof_pairs, slave_dofs);
+
+  // Insert -1 for master dofs in slave rows
+  for (uint i = 0; i < num_dof_pairs; ++i)
+  {
+    const double value = -1;
+    A.set(&value, 1, &slave_dofs[i], 1, &master_dofs[i]);
+  }
+
+  A.apply();
+  b.apply();
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericVector& b, const GenericVector& x) const
@@ -314,5 +152,153 @@ void PeriodicBC::apply(GenericMatrix& A,
                        const GenericVector& x) const
 {
   dolfin_not_implemented();
+}
+//-----------------------------------------------------------------------------
+void PeriodicBC::rebuild()
+{
+  // FIXME: Make this work for non-scalar subsystems, like vector-valued
+  // FIXME: Lagrange where more than one per element is associated with
+  // FIXME: each coordinate. Note that globally there may very well be
+  // FIXME: more than one dof per coordinate (for conforming elements).
+
+  cout << "Building mapping between periodic degrees of freedom." << endl;
+
+  // Get mesh and dofmap
+  assert(V);
+  const Mesh& mesh = V->mesh();
+  const DofMap& dofmap = V->dofmap();
+
+  // Get dimensions
+  const uint tdim = mesh.topology().dim();
+  const uint gdim = mesh.geometry().dim();
+
+  // Set geometric dimension (needed for SWIG interface)
+  sub_domain->_geometric_dimension = gdim;
+
+  // Make sure we have the facet - cell connectivity
+  mesh.init(tdim - 1, tdim);
+
+  // Create local data for application of boundary conditions
+  BoundaryCondition::LocalData data(*V);
+
+  // Arrays used for mapping coordinates
+  std::vector<double> xx(gdim);
+  boost::scoped_array<double> y(new double[gdim]);
+
+  // Mapping from coordinates to dof pairs
+  coordinate_map coordinate_dof_pairs;
+
+  // Iterate over all facets of the mesh (not only the boundary)
+  Progress p("Applying periodic boundary conditions", mesh.size(tdim - 1));
+  for (FacetIterator facet(mesh); !facet.end(); ++facet)
+  {
+    // Get cell (there may be two, but pick first) and local facet index
+    Cell cell(mesh, facet->entities(tdim)[0]);
+    const uint local_facet = cell.index(*facet);
+
+    // Tabulate dofs and coordinates on cell
+    dofmap.tabulate_dofs(data.cell_dofs, cell);
+    dofmap.tabulate_coordinates(data.coordinates, cell);
+
+    // Tabulate which dofs are on the facet
+    dofmap.tabulate_facet_dofs(data.facet_dofs, local_facet);
+
+    // Iterate over facet dofs
+    for (uint i = 0; i < dofmap.num_facet_dofs(); ++i)
+    {
+      // Get dof and coordinate of dof
+      const uint local_dof = data.facet_dofs[i];
+      const int global_dof = data.cell_dofs[local_dof];
+      const double* x = data.coordinates[local_dof];
+
+      // Set y = x
+      for (uint j = 0; j < gdim; ++j)
+        y[j] = x[j];
+
+      // Map coordinate from H to G
+      sub_domain->map(x, y.get());
+
+      // Check if coordinate is inside the domain G or in H
+      const bool on_boundary = facet->num_entities(tdim) == 1;
+      if (sub_domain->inside(x, on_boundary))
+      {
+        // Copy coordinate to std::vector
+        for (uint j = 0; j < gdim; ++j)
+          xx[j] = x[j];
+
+        // Check if coordinate exists from before
+        coordinate_iterator it = coordinate_dof_pairs.find(xx);
+        if (it != coordinate_dof_pairs.end())
+        {
+          // Exists from before, so set dof associated with x
+          it->second.first = global_dof;
+        }
+        else
+        {
+          // Doesn't exist, so create new pair (with illegal second value)
+          std::pair<int, int> dofs(global_dof, -1);
+          coordinate_dof_pairs[xx] = dofs;
+        }
+      }
+      else if (sub_domain->inside(y.get(), on_boundary))
+      {
+        // Copy coordinate to std::vector
+        for (uint j = 0; j < gdim; ++j)
+          xx[j] = y[j];
+
+        // Check if coordinate exists from before
+        coordinate_iterator it = coordinate_dof_pairs.find(xx);
+        if (it != coordinate_dof_pairs.end())
+        {
+          // Exists from before, so set dof associated with y
+          it->second.second = global_dof;
+        }
+        else
+        {
+          // Doesn't exist, so create new pair (with illegal first value)
+          std::pair<int, int> dofs(-1, global_dof);
+          coordinate_dof_pairs[xx] = dofs;
+        }
+      }
+    }
+
+    p++;
+  }
+
+  // Delete old arrays if necessary
+  if (master_dofs)
+    delete [] master_dofs;
+  if (slave_dofs)
+    delete [] slave_dofs;
+  if (zeros)
+    delete [] zeros;
+
+  // Initialize arrays
+  num_dof_pairs = coordinate_dof_pairs.size();
+  master_dofs = new uint[num_dof_pairs];
+  slave_dofs = new uint[num_dof_pairs];
+  zeros = new double[num_dof_pairs];
+  uint pos = 0;
+
+  // Store master and slave dofs
+  for (coordinate_iterator it = coordinate_dof_pairs.begin(); it != coordinate_dof_pairs.end(); ++it)
+  {
+    // Check dofs
+    if (it->second.first == -1 || it->second.second == -1)
+    {
+      cout << "At coordinate: x =";
+      for (uint j = 0; j < gdim; ++j)
+        cout << " " << it->first[j];
+      cout << endl;
+      error("Unable to find a pair of matching dofs for periodic boundary condition.");
+    }
+
+    // Store dofs
+    master_dofs[pos] = it->second.first;
+    slave_dofs[pos] = it->second.second;
+    zeros[pos] = 0.0;
+
+    pos++;
+  }
 }
 //-----------------------------------------------------------------------------

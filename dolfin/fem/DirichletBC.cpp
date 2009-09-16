@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2009-08-14
+// Last changed: 2009-09-16
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/assign/list_of.hpp>
@@ -262,7 +262,7 @@ void DirichletBC::apply(GenericMatrix* A,
 
   // Modify boundary values for nonlinear problems
   if (x)
-  { 
+  {
     // Gather values
     std::vector<double> x_values(size);
     x->get(&x_values[0], dofs.size(), &dofs[0]);
@@ -287,7 +287,6 @@ void DirichletBC::apply(GenericMatrix* A,
     A->ident(size, &dofs[0]);
     A->apply();
   }
-  info("Finished applying boundary conditions to linear system.");
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::check() const

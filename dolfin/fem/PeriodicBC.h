@@ -5,7 +5,7 @@
 // Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2009-08-14
+// Last changed: 2009-09-16
 
 #ifndef __PERIODIC_BC_H
 #define __PERIODIC_BC_H
@@ -32,10 +32,18 @@ namespace dolfin
   ///
   /// where F : H --> G is a map from a subdomain H to a subdomain G.
   ///
-  /// A PeriodicBC is specified by a Mesh and a SubDomain. The given
-  /// subdomain must overload both the inside() function, which
-  /// specifies the points of G, and the map() function, which
-  /// specifies the map from the points of H to the points of G.
+  /// A periodic boundary condition must be defined by the domain G
+  /// and the map F pulling coordinates back from H to G. The domain
+  /// and the map are both defined by a subclass of SubDomain which
+  /// must must overload both the inside() function, which specifies
+  /// the points of G, and the map() function, which specifies the map
+  /// from the points of H to the points of G.
+  ///
+  /// The implementation is based on matching degrees of freedom on G
+  /// with degrees of freedom on H and only works when the mapping F
+  /// is bijective between the sets of coordinates associated with the
+  /// two domains. In other words, the nodes (degrees of freedom) must
+  /// be aligned on G and H.
   ///
   /// For mixed systems (vector-valued and mixed elements), an
   /// optional set of parameters may be used to specify for which sub
@@ -71,10 +79,25 @@ namespace dolfin
     /// Apply boundary condition to a linear system for a nonlinear problem
     void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const;
 
+    /// Rebuild mapping between dofs
+    void rebuild();
+
   private:
 
     // The subdomain
     boost::shared_ptr<const SubDomain> sub_domain;
+
+    // Number of dof pairs
+    uint num_dof_pairs;
+
+    // Array of master dofs (size num_dof_pairs)
+    uint* master_dofs;
+
+    // Array of slave dofs (size num_dof_pairs)
+    uint* slave_dofs;
+
+    // Zeros, used for zeroing entries in right-hand side (size num_dof_pairs)
+    double* zeros;
 
   };
 
