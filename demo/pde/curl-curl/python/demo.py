@@ -22,7 +22,7 @@ from dolfin import *
 mesh = UnitSphere(8)
 
 # Define function spaces
-PN = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 0)
+PN = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1)
 P1 = VectorFunctionSpace(mesh, "CG", 1)
 
 # Define test and trial functions
