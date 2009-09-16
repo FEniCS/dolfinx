@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-08-24
+// Last changed: 2009-09-16
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -93,12 +93,14 @@ namespace dolfin
                                    const Function& v) const;
 
     /// Extract sub space for component
-    boost::shared_ptr<FunctionSpace> 
-                  extract_sub_space(const std::vector<uint>& component) const;
+    boost::shared_ptr<FunctionSpace> operator[] (uint i) const;
+
+    /// Extract sub space for component
+    boost::shared_ptr<FunctionSpace> extract_sub_space(const std::vector<uint>& component) const;
 
     /// Return function space with a new dof map
-    boost::shared_ptr<FunctionSpace> 
-                  collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const;
+    boost::shared_ptr<FunctionSpace>
+    collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const;
 
     // Attach restriction meshfunction
     void attach(MeshFunction<bool>& restriction);

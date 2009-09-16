@@ -23,6 +23,7 @@
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include "DofMap.h"
+#include "FiniteElement.h"
 #include "UFCMesh.h"
 #include "BoundaryCondition.h"
 #include "PeriodicBC.h"
@@ -156,17 +157,59 @@ void PeriodicBC::apply(GenericMatrix& A,
 //-----------------------------------------------------------------------------
 void PeriodicBC::rebuild()
 {
-  // FIXME: Make this work for non-scalar subsystems, like vector-valued
-  // FIXME: Lagrange where more than one per element is associated with
-  // FIXME: each coordinate. Note that globally there may very well be
-  // FIXME: more than one dof per coordinate (for conforming elements).
+  assert(V);
 
   cout << "Building mapping between periodic degrees of freedom." << endl;
 
+  // Build list of dof pairs
+  std::vector<std::pair<uint, uint> > dof_pairs;
+  extract_dof_pairs(*V, dof_pairs);
+
+  // Delete old arrays if necessary
+  if (master_dofs)
+    delete [] master_dofs;
+  if (slave_dofs)
+    delete [] slave_dofs;
+  if (zeros)
+    delete [] zeros;
+
+  // Initialize arrays
+  num_dof_pairs = dof_pairs.size();
+  master_dofs = new uint[num_dof_pairs];
+  slave_dofs = new uint[num_dof_pairs];
+  zeros = new double[num_dof_pairs];
+
+  // Store master and slave dofs
+  for (uint i = 0; i < dof_pairs.size(); ++i)
+  {
+    // Store dofs
+    master_dofs[i] = dof_pairs[i].first;
+    slave_dofs[i] = dof_pairs[i].second;
+    zeros[i] = 0.0;
+  }
+}
+//-----------------------------------------------------------------------------
+void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
+                                   std::vector<std::pair<uint, uint> >& dof_pairs)
+{
+  // Call recursively for subspaces, should work for arbitrary nesting
+  const uint num_sub_spaces = function_space.element().num_sub_elements();
+  if (num_sub_spaces > 1)
+  {
+    for (uint i = 0; i < num_sub_spaces; ++i)
+    {
+      cout << "Extracting matching degrees of freedom for sub space " << i << "." << endl;
+      extract_dof_pairs((*function_space[i]), dof_pairs);
+    }
+    return;
+  }
+
+  // Assuming we have a non-mixed element
+  assert(function_space.element().num_sub_elements() == 1);
+
   // Get mesh and dofmap
-  assert(V);
-  const Mesh& mesh = V->mesh();
-  const DofMap& dofmap = V->dofmap();
+  const Mesh& mesh = function_space.mesh();
+  const DofMap& dofmap = function_space.dofmap();
 
   // Get dimensions
   const uint tdim = mesh.topology().dim();
@@ -265,22 +308,7 @@ void PeriodicBC::rebuild()
     p++;
   }
 
-  // Delete old arrays if necessary
-  if (master_dofs)
-    delete [] master_dofs;
-  if (slave_dofs)
-    delete [] slave_dofs;
-  if (zeros)
-    delete [] zeros;
-
-  // Initialize arrays
-  num_dof_pairs = coordinate_dof_pairs.size();
-  master_dofs = new uint[num_dof_pairs];
-  slave_dofs = new uint[num_dof_pairs];
-  zeros = new double[num_dof_pairs];
-  uint pos = 0;
-
-  // Store master and slave dofs
+  // Fill up list of dof pairs
   for (coordinate_iterator it = coordinate_dof_pairs.begin(); it != coordinate_dof_pairs.end(); ++it)
   {
     // Check dofs
@@ -294,11 +322,7 @@ void PeriodicBC::rebuild()
     }
 
     // Store dofs
-    master_dofs[pos] = it->second.first;
-    slave_dofs[pos] = it->second.second;
-    zeros[pos] = 0.0;
-
-    pos++;
+    dof_pairs.push_back(it->second);
   }
 }
 //-----------------------------------------------------------------------------

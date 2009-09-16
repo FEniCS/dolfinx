@@ -84,6 +84,9 @@ namespace dolfin
 
   private:
 
+    // Extract dof pairs for sub space and append to list
+    void extract_dof_pairs(const FunctionSpace& function_space, std::vector<std::pair<uint, uint> >& dof_pairs);
+
     // The subdomain
     boost::shared_ptr<const SubDomain> sub_domain;
 
