@@ -166,12 +166,9 @@ void PeriodicBC::rebuild()
   extract_dof_pairs(*V, dof_pairs);
 
   // Delete old arrays if necessary
-  if (master_dofs)
-    delete [] master_dofs;
-  if (slave_dofs)
-    delete [] slave_dofs;
-  if (zeros)
-    delete [] zeros;
+  delete [] master_dofs;
+  delete [] slave_dofs;
+  delete [] zeros;
 
   // Initialize arrays
   num_dof_pairs = dof_pairs.size();
