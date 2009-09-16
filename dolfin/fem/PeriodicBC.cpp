@@ -5,7 +5,7 @@
 // Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2009-09-14
+// Last changed: 2009-09-16
 
 #include <vector>
 #include <map>
@@ -35,14 +35,20 @@ struct lt_coordinate
 {
   bool operator() (const std::vector<double>& x, const std::vector<double>& y) const
   {
-    if (x.size() > (y.size() + DOLFIN_EPS))
-      return false;
-
-    for (unsigned int i = 0; i < x.size(); i++)
+    unsigned int n = std::max(x.size(), y.size());
+    for (unsigned int i = 0; i < n; ++i)
     {
-      if (x[i] < (y[i] - DOLFIN_EPS))
+      double xx = 0.0;
+      double yy = 0.0;
+
+      if (i < x.size())
+        xx = x[i];
+      if (i < y.size())
+        yy = y[i];
+
+      if (xx < (yy - DOLFIN_EPS))
         return true;
-      else if (x[i] > (y[i] + DOLFIN_EPS))
+      else if (xx > (yy + DOLFIN_EPS))
         return false;
     }
 
