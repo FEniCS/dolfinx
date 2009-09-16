@@ -35,8 +35,8 @@ namespace dolfin
   /// A periodic boundary condition must be defined by the domain G
   /// and the map F pulling coordinates back from H to G. The domain
   /// and the map are both defined by a subclass of SubDomain which
-  /// must must overload both the inside() function, which specifies
-  /// the points of G, and the map() function, which specifies the map
+  /// must overload both the inside() function, which specifies the
+  /// points of G, and the map() function, which specifies the map
   /// from the points of H to the points of G.
   ///
   /// The implementation is based on matching degrees of freedom on G
@@ -45,9 +45,10 @@ namespace dolfin
   /// two domains. In other words, the nodes (degrees of freedom) must
   /// be aligned on G and H.
   ///
-  /// For mixed systems (vector-valued and mixed elements), an
-  /// optional set of parameters may be used to specify for which sub
-  /// system the boundary condition should be specified.
+  /// The matching of degrees of freedom is done at the construction
+  /// of the periodic boundary condition and is reused on subsequent
+  /// applications to a linear system. The matching may be recomputed
+  /// by calling the rebuild() function.
 
   class PeriodicBC : public BoundaryCondition
   {
