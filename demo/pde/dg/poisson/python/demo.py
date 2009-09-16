@@ -32,7 +32,7 @@ v = TestFunction(V)
 u = TrialFunction(V)
 
 # Define normal component, mesh size and right-hand side
-n = triangle.n
+n = V.cell().n
 h = CellSize(mesh)
 h_avg = (h('+') + h('-'))/2
 f = Function(V, "500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
