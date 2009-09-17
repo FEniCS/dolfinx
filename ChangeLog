@@ -1,3 +1,4 @@
+ - Make norm() function handle both vectors and functions in Python
  - Speedup periodic boundary conditions and make work for mixed (vector-valued) elements
  - Add possibilities to use any number numpy array when assigning matrices and vectors
  - Add possibilities to use any integer numpy array for indices in matrices and vectors
