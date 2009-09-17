@@ -6,7 +6,7 @@
 # Utilities for running benchmark
 
 from scipy.io.array_import import read_array
-from commands import getoutput
+from dolfin_utils.commands import getoutput
 from shutil import copy, move
 
 def check_error(solution, reference):

@@ -1,7 +1,7 @@
 """Run all demos."""
 
 __author__ = "Ilmar Wilbers (ilmarw@simula.no)"
-__date__ = "2008-04-08 -- 2008-08-17"
+__date__ = "2008-04-08 -- 2009-09-16"
 __copyright__ = "Copyright (C) 2008 Ilmar Wilbers"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -11,8 +11,7 @@ __license__  = "GNU LGPL Version 2.1"
 import sys, os, re
 import platform
 from time import time
-from subprocess import Popen, PIPE, STDOUT
-from dolfin.utils import getstatusoutput
+from dolfin_utils.commands import getstatusoutput
 
 # Location of all demos
 demodir = os.path.join(os.curdir, "..", "..", "demo")

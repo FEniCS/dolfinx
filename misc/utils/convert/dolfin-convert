@@ -18,7 +18,7 @@
 import getopt
 import sys
 import os
-from commands import getoutput
+from dolfin_utils.commands import getoutput
 import re
 import warnings
 import os.path

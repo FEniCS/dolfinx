@@ -5,7 +5,7 @@
 #
 # Utility for running benchmarks
 
-from commands import getoutput
+from dolfin_utils.commands import getoutput
 from time import time, localtime
 from os import uname
 from getopt import getopt

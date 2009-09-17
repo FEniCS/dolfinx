@@ -1,7 +1,7 @@
 """Run all unit tests."""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2006-08-09 -- 2007-08-03"
+__date__ = "2006-08-09 -- 2009-09-16"
 __copyright__ = "Copyright (C) 2006-2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -9,7 +9,7 @@ __license__  = "GNU LGPL Version 2.1"
 
 import sys, os, re
 import platform
-from dolfin.utils import getoutput
+from dolfin_utils.commands import getoutput
 
 # Tests to run
 tests = ["fem", "function", "mesh", "meshconvert", "la", "io"]
