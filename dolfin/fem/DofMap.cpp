@@ -28,7 +28,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
                boost::shared_ptr<Mesh> mesh)
-  : _global_dimension(0), ufc_dof_map(ufc_dof_map), _ufc_offset(0),
+  : ufc_dof_map(ufc_dof_map), _ufc_offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
   // Generate and number all mesh entities
@@ -49,9 +49,6 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
   // Initialize UFC dof map
   init_ufc_dofmap(*ufc_dof_map);
 
-  // Set the global dimension
-  _global_dimension = ufc_dof_map->global_dimension();
-
   // Renumber dof map for running in parallel
   if (parallel)
     DofMapBuilder::parallel_build(*this, *dolfin_mesh);
@@ -59,7 +56,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
                boost::shared_ptr<const Mesh> mesh)
-  : _global_dimension(0), ufc_dof_map(ufc_dof_map), _ufc_offset(0),
+  : ufc_dof_map(ufc_dof_map), _ufc_offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
   // Initialize the UFC mesh
@@ -67,9 +64,6 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
 
   // Initialize UFC dof map
   init_ufc_dofmap(*ufc_dof_map);
-
-  // Set the global dimension
-  _global_dimension = ufc_dof_map->global_dimension();
 
   // Renumber dof map for running in parallel
   if (parallel)
@@ -79,7 +73,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
 DofMap::DofMap(std::auto_ptr<std::vector<dolfin::uint> > map,
        boost::shared_ptr<ufc::dof_map> ufc_dof_map,
        boost::shared_ptr<const Mesh> mesh)
-      : map(map), _global_dimension(0), ufc_dof_map(ufc_dof_map), _ufc_offset(0),
+      : map(map), ufc_dof_map(ufc_dof_map), _ufc_offset(0),
        dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 
 {
@@ -95,9 +89,6 @@ DofMap::DofMap(std::auto_ptr<std::vector<dolfin::uint> > map,
 
   // Initialize UFC dof map
   init_ufc_dofmap(*ufc_dof_map);
-
-  // Set the global dimension
-  _global_dimension = ufc_dof_map->global_dimension();
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()

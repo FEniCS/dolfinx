@@ -75,8 +75,8 @@ namespace dolfin
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const
     {
-      assert(_global_dimension > 0);
-      return _global_dimension;
+      assert(ufc_dof_map->global_dimension() > 0);
+      return ufc_dof_map->global_dimension();
     }
 
     /// Return the dimension of the local finite element function space on a cell
@@ -150,9 +150,6 @@ namespace dolfin
     // FIXME: Document layout of map
     // Precomputed dof map
     std::auto_ptr<std::vector<dolfin::uint> > map;
-
-    // Global dimension
-    uint _global_dimension;
 
     // Map from UFC dofs to renumbered dof
     std::map<dolfin::uint, uint> ufc_to_map;
