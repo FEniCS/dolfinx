@@ -24,7 +24,7 @@ from dolfin import *
 if not has_la_backend("PETSc"):
     print "DOLFIN has not been configured with PETSc. Exiting."
     exit()
-    
+
 if not has_slepc():
     print "DOLFIN has not been configured with SLEPc. Exiting."
     exit()
@@ -38,7 +38,7 @@ height = 0.5
 mesh = Rectangle(0, 0, width, height, 4, 2)
 
 # Define the function space
-V = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 2)
+V = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 3)
 
 # Define the test and trial functions
 v = TestFunction(V)

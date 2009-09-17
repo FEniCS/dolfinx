@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-08-24
+// Last changed: 2009-09-16
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/fem/UFC.h>
@@ -167,7 +167,7 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
   assert(_mesh);
   assert(_element);
   assert(_dofmap);
-  
+
   if (meshes == "matching")
     assert(&v.function_space().mesh() == &mesh());
   else if (meshes != "non-matching")
@@ -214,8 +214,8 @@ void FunctionSpace::interpolate_vertex_values(double* vertex_values,
   // Local data for interpolation on each cell
   const uint num_cell_vertices = _mesh->type().num_vertices(_mesh->topology().dim());
   double* local_vertex_values = new double[scratch.size*num_cell_vertices];
-  
-  // Interpolate vertex values on each cell (using last computed value if not 
+
+  // Interpolate vertex values on each cell (using last computed value if not
   // continuous, e.g. discontinuous Galerkin methods)
   UFCCell ufc_cell(*_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
@@ -245,7 +245,14 @@ void FunctionSpace::interpolate_vertex_values(double* vertex_values,
   delete [] local_vertex_values;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<FunctionSpace> 
+boost::shared_ptr<FunctionSpace> FunctionSpace::operator[] (uint i) const
+{
+  std::vector<uint> component;
+  component.push_back(i);
+  return extract_sub_space(component);
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<FunctionSpace>
      FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 {
   assert(_mesh);
@@ -278,7 +285,7 @@ boost::shared_ptr<FunctionSpace>
   return new_sub_space;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<FunctionSpace> 
+boost::shared_ptr<FunctionSpace>
      FunctionSpace::collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const
 {
   boost::shared_ptr<FunctionSpace> collapsed_sub_space(new FunctionSpace(_mesh, _element, dofmap));
