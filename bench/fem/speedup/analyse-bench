@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+
+__author__ = "Anders Logg (logg@simula.no)"
+__date__ = "2009-09-15 -- 2009-09-17"
+__copyright__ = "Copyright (C) 2009 Anders Logg"
+__license__  = "GNU LGPL Version 2.1"
+
+# modified by Johan Hake 2009
+
+# FIXME: Not checked if working!
+
+from dolfin import *
+from glob import glob
+
+# Number of processes to use
+max_num_processes = 16
+
+# Size of mesh
+n = 100 # should be increased
+
+# Iterate over number of processes
+p = range(1, max_num_processes + 1)
+t1 = []
+t2 = []
+
+for np in xrange(1,max_num_processes+1):
+    try:
+        filename = glob("assemble-poisson_np_%d_size_%d*"%(np,n))[0]
+    except:
+        raise IOError, "Could not find: %s"%("assemble-poisson_np_%d_size_%d*"%(np,n))
+    t1.append(float([line for line in opens(filename).getlines() if "TIME:" in line][0].split("TIME: ")[-1]))
+    try:
+        filename = glob("solve-poisson_np_%d_size_%d*"%(np,n))[0]
+    except:
+        raise IOError, "Could not find: %s"%("solve-poisson_np_%d_size_%d*"%(np,n))
+    t2.append(float([line for line in output.split("\n") if "TIME:" in line][0].split("TIME: ")[-1]))
+
+# Compute speedups
+s1 = [t / t1[0] for t in t1]
+s2 = [t / t2[0] for t in t2]
+
+# Print results
+table = Table("Speedup")
+for i in range(num_processes):
+    table.set(str(p[i]), "Assemble",         s1[i])
+    table.set(str(p[i]), "Assemble + solve", s2[i])
+
+info(table, True)
