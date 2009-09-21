@@ -33,10 +33,12 @@ for num_processes in p:
 
     # Time assembly
     output = getoutput("%s./assemble-poisson %d" % (prefix, n))
+    print output
     t1.append(float([line for line in output.split("\n") if "TIME:" in line][0].split("TIME: ")[-1]))
 
     # Time solve
     output = getoutput("%s./solve-poisson %d" % (prefix, n))
+    print output
     t2.append(float([line for line in output.split("\n") if "TIME:" in line][0].split("TIME: ")[-1]))
 
 # Compute speedups

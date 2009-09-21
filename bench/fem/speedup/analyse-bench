@@ -5,7 +5,7 @@ __date__ = "2009-09-15 -- 2009-09-17"
 __copyright__ = "Copyright (C) 2009 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
-# modified by Johan Hake 2009
+# Modified by Johan Hake, 2009.
 
 # FIXME: Not checked if working!
 
