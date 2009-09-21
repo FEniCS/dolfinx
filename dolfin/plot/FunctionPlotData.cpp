@@ -25,14 +25,15 @@ FunctionPlotData::FunctionPlotData(const Function& v)
   for (uint i = 0; i < v.function_space().element().value_rank(); i++)
     size *= v.function_space().element().value_dimension(i);
 
-  // Initialize vector
+  // Initialize local vector
   const uint N = size*mesh.num_vertices();
-  vertex_values.resize(N);
+  vertex_values.reset(v.vector().factory().create_local_vector());
+  vertex_values->resize(N);
 
   // Interpolate vertex values
   double* values = new double[N];
   v.interpolate_vertex_values(values);
-  vertex_values.set_local(values);
+  vertex_values->set_local(values);
   delete [] values;
 
   // Get shape and dimension

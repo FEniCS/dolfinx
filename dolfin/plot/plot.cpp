@@ -65,7 +65,6 @@ void dolfin::plot(const Function& v, std::string title, std::string mode)
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Mesh& mesh, std::string title)
 {
-
   plot_object(mesh, title, "auto");
 }
 //-----------------------------------------------------------------------------
