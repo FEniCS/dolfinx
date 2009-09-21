@@ -1,3 +1,4 @@
+ - Add global parameter "ffc_representation" for form representation in FFC JIT compiler
  - Make norm() function handle both vectors and functions in Python
  - Speedup periodic boundary conditions and make work for mixed (vector-valued) elements
  - Add possibilities to use any number numpy array when assigning matrices and vectors
