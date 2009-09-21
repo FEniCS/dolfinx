@@ -25,8 +25,11 @@ namespace dolfin
     /// Create empty matrix
     virtual dolfin::GenericMatrix* create_matrix() const;
 
-    /// Create empty vector
+    /// Create empty vector (global)
     virtual dolfin::GenericVector* create_vector() const;
+
+    /// Create empty vector (local)
+    virtual dolfin::GenericVector* create_local_vector() const;
 
     /// Create empty sparsity pattern
     virtual dolfin::GenericSparsityPattern * create_pattern() const;

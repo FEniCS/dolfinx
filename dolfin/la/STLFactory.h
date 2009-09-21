@@ -28,8 +28,12 @@ namespace dolfin
     STLMatrix* create_matrix() const
     { return new STLMatrix(); }
 
-    /// Create empty vector
+    /// Create empty vector (global)
     uBLASVector* create_vector() const
+    { return new uBLASVector(); }
+
+    /// Create empty vector (local)
+    uBLASVector* create_local_vector() const
     { return new uBLASVector(); }
 
     /// Create empty sparsity pattern

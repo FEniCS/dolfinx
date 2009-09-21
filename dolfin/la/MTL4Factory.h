@@ -30,8 +30,12 @@ namespace dolfin
     MTL4Matrix* create_matrix() const
     { return new MTL4Matrix(); }
 
-    /// Create empty vector
+    /// Create empty vector (global)
     MTL4Vector* create_vector() const
+    { return new MTL4Vector(); }
+
+    /// Create empty vector (local)
+    MTL4Vector* create_local_vector() const
     { return new MTL4Vector(); }
 
     /// Dummy sparsity pattern

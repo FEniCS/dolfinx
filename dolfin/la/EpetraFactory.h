@@ -30,8 +30,11 @@ namespace dolfin
     /// Create empty matrix
     EpetraMatrix* create_matrix() const;
 
-    /// Create empty vector
+    /// Create empty vector (global)
     EpetraVector* create_vector() const;
+
+    /// Create empty vector (local)
+    EpetraVector* create_local_vector() const;
 
     /// Create empty sparsity pattern
     EpetraSparsityPattern* create_pattern() const;

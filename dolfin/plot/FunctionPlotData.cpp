@@ -9,13 +9,14 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/fem/FiniteElement.h>
+#include <dolfin/la/DefaultFactory.h>
 #include "FunctionPlotData.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 FunctionPlotData::FunctionPlotData(const Function& v)
-  : Variable(v.name(), v.label())
+  : Variable(v.name(), v.label()) 
 {
   // Copy mesh
   mesh = v.function_space().mesh();
@@ -26,8 +27,10 @@ FunctionPlotData::FunctionPlotData(const Function& v)
     size *= v.function_space().element().value_dimension(i);
 
   // Initialize local vector
+  DefaultFactory factory;
+  _vertex_values.reset(factory.create_local_vector());
+  assert(_vertex_values);
   const uint N = size*mesh.num_vertices();
-  _vertex_values.reset(v.vector().factory().create_local_vector());
   _vertex_values->resize(N);
 
   // Interpolate vertex values
@@ -44,7 +47,8 @@ FunctionPlotData::FunctionPlotData(const Function& v)
 //-----------------------------------------------------------------------------
 FunctionPlotData::FunctionPlotData() : rank(0)
 {
-  // Do nothing
+  DefaultFactory factory;
+  _vertex_values.reset(factory.create_local_vector());
 }
 //-----------------------------------------------------------------------------
 FunctionPlotData::~FunctionPlotData()

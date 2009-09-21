@@ -39,6 +39,10 @@ namespace dolfin
     uBLASVector* create_vector() const
     { return new uBLASVector(); }
 
+    /// Create empty vector (local)
+    uBLASVector* create_local_vector() const
+    { return new uBLASVector(); }
+
     static uBLASFactory<Mat>& instance()
     { return factory; }
 

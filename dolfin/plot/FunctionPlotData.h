@@ -11,13 +11,12 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/la/Vector.h>
+#include <dolfin/la/GenericVector.h>
 
 namespace dolfin
 {
 
   class XMLFunctionPlotData;
-
   class Function;
 
   /// This class is used for communicating plot data for functions
@@ -42,9 +41,9 @@ namespace dolfin
     Mesh mesh;
 
     GenericVector& vertex_values() const
-    {
-      assert(_vertex_values);
-      return *_vertex_values;
+    { 
+      assert (_vertex_values);
+      return *_vertex_values; 
     }
 
     // Value rank
