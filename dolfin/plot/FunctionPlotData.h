@@ -7,6 +7,7 @@
 #ifndef __FUNCTION_PLOT_DATA_H
 #define __FUNCTION_PLOT_DATA_H
 
+#include <boost/scoped_ptr.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/mesh/Mesh.h>
@@ -41,7 +42,8 @@ namespace dolfin
     Mesh mesh;
 
     // The vertex values
-    Vector vertex_values;
+    //Vector vertex_values;
+    boost::scoped_ptr<GenericVector> vertex_values;
 
     // Value rank
     uint rank;

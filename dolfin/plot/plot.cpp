@@ -59,11 +59,6 @@ void plot_object(const T& t, std::string title, std::string mode)
 //-----------------------------------------------------------------------------
 void dolfin::plot(const Function& v, std::string title, std::string mode)
 {
-  if (dolfin::MPI::num_processes() > 1)
-  {
-    info("Built-in plotting via Viper needs to be updated when running in parallel.");
-    return;
-  }
   FunctionPlotData w(v);
   plot_object(w, title, mode);
 }
