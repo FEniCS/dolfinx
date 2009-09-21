@@ -8,9 +8,9 @@
 
 #ifdef HAS_MTL4
 
+#include "MTL4Vector.h"
 #include <dolfin/log/dolfin_log.h>
 #include "GenericSparsityPattern.h"
-#include "MTL4Vector.h"
 #include "MTL4Matrix.h"
 #include "MTL4Factory.h"
 

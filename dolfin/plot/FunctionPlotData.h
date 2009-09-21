@@ -1,8 +1,10 @@
 // Copyright (C) 2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2009.
+//
 // First added:  2009-03-16
-// Last changed: 2009-03-16
+// Last changed: 2009-09-21
 
 #ifndef __FUNCTION_PLOT_DATA_H
 #define __FUNCTION_PLOT_DATA_H
@@ -42,7 +44,7 @@ namespace dolfin
 
     GenericVector& vertex_values() const
     { 
-      assert (_vertex_values);
+      assert(_vertex_values);
       return *_vertex_values; 
     }
 

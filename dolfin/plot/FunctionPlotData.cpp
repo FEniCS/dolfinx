@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2009-03-16
-// Last changed: 2009-04-01
+// Last changed: 2009-09-21
 
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -49,6 +49,7 @@ FunctionPlotData::FunctionPlotData() : rank(0)
 {
   DefaultFactory factory;
   _vertex_values.reset(factory.create_local_vector());
+  assert(_vertex_values);
 }
 //-----------------------------------------------------------------------------
 FunctionPlotData::~FunctionPlotData()
