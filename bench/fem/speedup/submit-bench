@@ -34,12 +34,12 @@ for np in num_processes:
     submit("%s./assemble-poisson %d" % (run_cmd, size),
            nodes=max(1, np/8),
            ppn=8,
-           name="assemble-poisson_np_%d_size_%d" % (np, size),
+           name="assemble-poisson_np_%d_size_%d.log" % (np, size),
            dryrun=dryrun)
 
     # Submit solve benchmark
     submit("%s./solve-poisson %d" % (run_cmd, size),
            nodes=max(1, np/8),
            ppn=8,
-           name="solve-poisson_np_%d_size_%d" % (np, size),
+           name="solve-poisson_np_%d_size_%d.log" % (np, size),
            dryrun=dryrun)
