@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2007-04-24
-// Last changed: 2009-08-14
+// Last changed: 2009-09-21
 
 #include <dolfin/log/log.h>
 #include "MeshData.h"
@@ -62,11 +62,12 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
   MeshFunction<uint>* exterior = mesh.data().mesh_function("exterior facets");
 
   // Compute sub domain markers
+  Progress p("Computing sub domain markers", mesh.num_entities(dim));
   for (MeshEntityIterator entity(mesh, dim); !entity.end(); ++entity)
   {
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)
-      on_boundary = (entity->num_entities(D) == 1 && 
+      on_boundary = (entity->num_entities(D) == 1 &&
 		     (!exterior || ((exterior->get(*entity)))));
 
     bool all_vertices_inside = true;
@@ -92,6 +93,8 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
     // Mark entity with all vertices inside
     if (all_vertices_inside)
       sub_domains(*entity) = sub_domain;
+
+    p++;
   }
 }
 //-----------------------------------------------------------------------------
