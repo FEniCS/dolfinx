@@ -80,7 +80,7 @@ void XMLFunctionPlotData::write(const FunctionPlotData& data,
   XMLMesh::write(data.mesh, outfile, indent.level());
 
   // Write vector
-  XMLVector::write(*(data.vertex_values), outfile, indent.level());
+  XMLVector::write(data.vertex_values(), outfile, indent.level());
 
   --indent;
 
@@ -109,7 +109,7 @@ void XMLFunctionPlotData::read_mesh(const xmlChar* name, const xmlChar** attrs)
 void XMLFunctionPlotData::read_vector(const xmlChar* name, const xmlChar** attrs)
 {
   delete xml_vector;
-  xml_vector = new XMLVector(*(data.vertex_values), parser);
+  xml_vector = new XMLVector(data.vertex_values(), parser);
 
   // Let the xml vector read its own the vector tag
   xml_vector->read_vector_tag(name, attrs);

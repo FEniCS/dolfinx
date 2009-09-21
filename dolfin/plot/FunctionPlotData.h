@@ -41,14 +41,21 @@ namespace dolfin
     // The mesh
     Mesh mesh;
 
-    // The vertex values
-    //Vector vertex_values;
-    boost::scoped_ptr<GenericVector> vertex_values;
+    GenericVector& vertex_values() const
+    {
+      assert(_vertex_values);
+      return *_vertex_values;
+    }
 
     // Value rank
     uint rank;
 
     typedef XMLFunctionPlotData XMLHandler;
+
+  private:
+
+    // The vertex values
+    boost::scoped_ptr<GenericVector> _vertex_values;
 
   };
 
