@@ -1605,3 +1605,902 @@
    fun:PyEval_EvalFrameEx
    fun:PyEval_EvalCodeEx
 }
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   sched_setaffinity(mask)
+   fun:syscall
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:opal_paffinity_base_select
+   fun:opal_init
+   fun:orte_init
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   fun:writev
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Free
+   fun:free
+   obj:/lib/libc-2.9.so
+   obj:/lib/libc-2.9.so
+   fun:_vgnU_freeres
+   fun:exit
+   fun:(below main)
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:opal_paffinity_base_select
+   fun:opal_init
+   fun:orte_init
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:opal_paffinity_base_select
+   fun:opal_init
+   fun:orte_init
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:calloc
+   obj:*
+   obj:*
+   fun:opal_event_init
+   fun:opal_init
+   fun:orte_init
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:ompi_proc_all
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN6dolfin17SubSystemsManager12finalize_mpiEv
+   fun:_ZN6dolfin17SubSystemsManagerD1Ev
+   fun:__cxa_finalize
+   obj:*
+   obj:*
+   fun:exit
+   fun:(below main)
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   fun:opal_event_init
+   fun:opal_init
+   fun:orte_init
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:realloc
+   fun:opal_util_keyval_parse
+   fun:mca_base_param_recache_files
+   fun:mca_base_param_init
+   fun:opal_init_util
+   obj:
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+   obj:*
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:opal_paffinity_base_select
+   fun:opal_init
+   fun:orte_init
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:calloc
+   obj:*
+   fun:dlopen
+   obj:*
+   obj:*
+   obj:*
+   fun:lt_dlopenadvise
+   fun:lt_dlopenext
+   obj:*
+   fun:mca_base_component_find
+   fun:mca_base_components_open
+   fun:opal_paffinity_base_open
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:opal_paffinity_base_select
+   fun:opal_init
+   fun:orte_init
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   fun:opal_dss_unpack_buffer
+   obj:*
+   fun:orte_grpcomm_base_update_modex_entries
+   obj:*
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:calloc
+   obj:*
+   obj:*
+   fun:opal_event_init
+   fun:opal_init
+   fun:orte_init
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:strdup
+   fun:opal_argv_append_nosize
+   fun:opal_argv_append
+   obj:*
+   fun:orte_init
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:realloc
+   fun:opal_argv_append_nosize
+   fun:opal_argv_append
+   obj:*
+   fun:orte_init
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+   obj:*
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:__vasprintf_chk
+   fun:__asprintf_chk
+   fun:opal_output_init
+   fun:opal_init_util
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+   obj:*
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   fun:__nss_database_lookup
+   obj:*
+   obj:*
+   fun:getpwuid_r
+   fun:getpwuid
+   fun:orte_session_dir_get_name
+   fun:orte_session_dir
+   fun:orte_ess_base_app_setup
+   obj:*
+   fun:orte_init
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:__nss_lookup_function
+   obj:*
+   obj:*
+   fun:getpwuid_r
+   fun:getpwuid
+   fun:orte_session_dir_get_name
+   fun:orte_session_dir
+   fun:orte_ess_base_app_setup
+   obj:*
+   fun:orte_init
+   obj:*
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   fun:orte_ess_base_app_setup
+   obj:*
+   fun:orte_init
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:orte_ess_base_app_setup
+   obj:*
+   fun:orte_init
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:ompi_attr_set_fortran_mpi1
+   obj:*
+   obj:*
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+   obj:*
+   obj:*
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:realloc
+   obj:*
+   fun:opal_pointer_array_set_item
+   fun:orte_dt_init
+   fun:orte_ess_base_std_prolog
+   obj:*
+   fun:orte_init
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   fun:PMPI_Attr_put
+   fun:_Z18PetscCommDuplicateP19ompi_communicator_tPS0_Pi
+   fun:_Z25PetscHeaderCreate_PrivateP14_p_PetscObjectiiPKcP19ompi_communicator_tPFiS0_EPFiS0_P14_p_PetscViewerE
+   fun:_Z9VecCreateP19ompi_communicator_tPP6_p_Vec
+   fun:_Z12VecCreateSeqP19ompi_communicator_tiPP6_p_Vec
+   fun:_ZN6dolfin11PETScVector4initEjjSs
+   fun:_ZN6dolfin11PETScVectorC1ESs
+   fun:_ZNK6dolfin12PETScFactory13create_vectorEv
+   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
+   fun:main
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   fun:opal_hash_table_set_value_uint32
+   obj:*
+   fun:PMPI_Attr_put
+   fun:_Z18PetscCommDuplicateP19ompi_communicator_tPS0_Pi
+   fun:_Z25PetscHeaderCreate_PrivateP14_p_PetscObjectiiPKcP19ompi_communicator_tPFiS0_EPFiS0_P14_p_PetscViewerE
+   fun:_Z9VecCreateP19ompi_communicator_tPP6_p_Vec
+   fun:_Z12VecCreateSeqP19ompi_communicator_tiPP6_p_Vec
+   fun:_ZN6dolfin11PETScVector4initEjjSs
+   fun:_ZN6dolfin11PETScVectorC1ESs
+   fun:_ZNK6dolfin12PETScFactory13create_vectorEv
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   obj:*
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+   obj:*
+   obj:*
+   obj:*
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   fun:opal_hash_table_set_value_uint32
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:calloc
+   obj:*
+   fun:opal_event_init
+   fun:opal_init
+   fun:orte_init
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+   obj:*
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:realloc
+   fun:opal_class_initialize
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+   obj:*
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:realloc
+   obj:*
+   obj:*
+   fun:opal_event_add_i
+   fun:orte_wait_init
+   fun:orte_ess_base_std_prolog
+   obj:*
+   fun:orte_init
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:ompi_free_list_grow
+   obj:*
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+   obj:*
+   obj:*
+   obj:*
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:*
+   fun:opal_dss_open
+   fun:opal_init_util
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+   obj:*
+   obj:*
+}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:malloc
+#   fun:_Z16PetscMallocAlignmiPKcS0_S0_PPv
+#   fun:_Z20PetscTrMallocDefaultmiPKcS0_S0_PPv
+#   fun:_Z18PetscCommDuplicateP19ompi_communicator_tPS0_Pi
+#   fun:_Z25PetscHeaderCreate_PrivateP14_p_PetscObjectiiPKcP19ompi_communicator_tPFiS0_EPFiS0_P14_p_PetscViewerE
+#   fun:_Z9VecCreateP19ompi_communicator_tPP6_p_Vec
+#   fun:_Z12VecCreateSeqP19ompi_communicator_tiPP6_p_Vec
+#   fun:_ZN6dolfin11PETScVector4initEjjSs
+#   fun:_ZN6dolfin11PETScVectorC1ESs
+#   fun:_ZNK6dolfin12PETScFactory13create_vectorEv
+#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
+#   fun:main
+#}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:strdup
+   fun:opal_install_dirs_expand
+   fun:opal_installdirs_base_open
+   fun:opal_init_util
+   obj:*
+   fun:PMPI_Init
+   fun:_ZN6dolfin17SubSystemsManager8init_mpiEv
+   fun:_ZN6dolfin3MPI13num_processesEv
+   fun:_ZN6dolfin6LoggerC1Ev
+   fun:_GLOBAL__I_LogManager.cpp
+   obj:*
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:realloc
+   fun:opal_value_array_set_size
+   obj:*
+   fun:mca_base_param_reg_int
+   fun:mca_btl_base_param_register
+   obj:*
+   fun:mca_base_components_open
+   fun:mca_btl_base_open
+   obj:*
+   fun:mca_base_components_open
+   fun:mca_pml_base_open
+   obj:*
+}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:calloc
+#   fun:g_malloc0
+#   fun:gts_object_class_new
+#   fun:gts_object_class
+#   fun:gts_bbox_class
+#   fun:_ZN6dolfin12GTSInterface10create_boxERKNS_4CellE
+#   fun:_ZN6dolfin12GTSInterface13buildCellTreeEv
+#   fun:_ZN6dolfin12GTSInterfaceC1ERKNS_4MeshE
+#   fun:_ZN6dolfin20IntersectionDetectorC1ERKNS_4MeshE
+#   fun:_ZNK6dolfin13FunctionSpace4evalEPdPKdRKNS_8FunctionE
+#   fun:_ZNK6dolfin8Function4evalEPdPKd
+#   fun:main
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:calloc
+#   fun:g_malloc0
+#   fun:gts_object_class_new
+#   fun:gts_object_class
+#   fun:gts_bbox_class
+#   fun:_ZN6dolfin12GTSInterface10create_boxERKNS_4CellE
+#   fun:_ZN6dolfin12GTSInterface13buildCellTreeEv
+#   fun:_ZN6dolfin12GTSInterfaceC1ERKNS_4MeshE
+#   fun:_ZN6dolfin20IntersectionDetectorC1ERKNS_4MeshE
+#   fun:_ZN6dolfin4Mesh12intersectionERS0_RSt6vectorIjSaIjEEb
+#   fun:main
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:malloc
+#   obj:*
+#   fun:PMPI_Attr_put
+#   fun:_Z18PetscCommDuplicateP19ompi_communicator_tPS0_Pi
+#   fun:_Z25PetscHeaderCreate_PrivateP14_p_PetscObjectiiPKcP19ompi_communicator_tPFiS0_EPFiS0_P14_p_PetscViewerE
+#   fun:_Z9VecCreateP19ompi_communicator_tPP6_p_Vec
+#   fun:_Z12VecCreateSeqP19ompi_communicator_tiPP6_p_Vec
+#   fun:_ZN6dolfin11PETScVector4initEjjSs
+#   fun:_ZN6dolfin11PETScVector6resizeEj
+#   fun:_ZN6dolfin8Function4initEv
+#   fun:_ZN6dolfin8FunctionC1ERKNS_13FunctionSpaceESs
+#   fun:main
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:malloc
+#   obj:*
+#   fun:opal_hash_table_set_value_uint32
+#   obj:*
+#   fun:PMPI_Attr_put
+#   fun:_Z18PetscCommDuplicateP19ompi_communicator_tPS0_Pi
+#   fun:_Z25PetscHeaderCreate_PrivateP14_p_PetscObjectiiPKcP19ompi_communicator_tPFiS0_EPFiS0_P14_p_PetscViewerE
+#   fun:_Z9VecCreateP19ompi_communicator_tPP6_p_Vec
+#   fun:_Z12VecCreateSeqP19ompi_communicator_tiPP6_p_Vec
+#   fun:_ZN6dolfin11PETScVector4initEjjSs
+#   fun:_ZN6dolfin11PETScVector6resizeEj
+#   fun:_ZN6dolfin8Function4initEv
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:malloc
+#   fun:_Z16PetscMallocAlignmiPKcS0_S0_PPv
+#   fun:_Z20PetscTrMallocDefaultmiPKcS0_S0_PPv
+#   fun:_Z18PetscCommDuplicateP19ompi_communicator_tPS0_Pi
+#   fun:_Z25PetscHeaderCreate_PrivateP14_p_PetscObjectiiPKcP19ompi_communicator_tPFiS0_EPFiS0_P14_p_PetscViewerE
+#   fun:_Z9VecCreateP19ompi_communicator_tPP6_p_Vec
+#   fun:_Z12VecCreateSeqP19ompi_communicator_tiPP6_p_Vec
+#   fun:_ZN6dolfin11PETScVector4initEjjSs
+#   fun:_ZN6dolfin11PETScVector6resizeEj
+#   fun:_ZN6dolfin8Function4initEv
+#   fun:_ZN6dolfin8FunctionC1ERKNS_13FunctionSpaceESs
+#   fun:main
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:malloc
+#   obj:*
+#   obj:*
+#   fun:PMPI_Attr_put
+#   fun:_Z18PetscCommDuplicateP19ompi_communicator_tPS0_Pi
+#   fun:_Z25PetscHeaderCreate_PrivateP14_p_PetscObjectiiPKcP19ompi_communicator_tPFiS0_EPFiS0_P14_p_PetscViewerE
+#   fun:_Z9VecCreateP19ompi_communicator_tPP6_p_Vec
+#   fun:_Z12VecCreateSeqP19ompi_communicator_tiPP6_p_Vec
+#   fun:_ZN6dolfin11PETScVector4initEjjSs
+#   fun:_ZN6dolfin11PETScVectorC1ESs
+#   fun:_ZNK6dolfin12PETScFactory13create_vectorEv
+#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:malloc
+#   fun:_Z16PetscMallocAlignmiPKcS0_S0_PPv
+#   fun:_Z20PetscTrMallocDefaultmiPKcS0_S0_PPv
+#   fun:_Z15PetscStrallocpyPKcPPc
+#   fun:PCCreate_LU
+#   fun:_Z9PCSetTypeP5_p_PCPKc
+#   fun:_ZN6dolfin13PETScLUSolver4initEv
+#   fun:_ZN6dolfin13PETScLUSolverC1Ev
+#   fun:_ZN6dolfin8LUSolver5solveERKNS_13GenericMatrixERNS_13GenericVectorERKS4_
+#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
+#   fun:main
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:malloc
+#   fun:_Z16PetscMallocAlignmiPKcS0_S0_PPv
+#   fun:_Z20PetscTrMallocDefaultmiPKcS0_S0_PPv
+#   fun:_Z15PetscStrallocpyPKcPPc
+#   fun:PCFactorSetMatSolverPackage_Factor
+#   fun:_Z27PCFactorSetMatSolverPackageP5_p_PCPKc
+#   fun:_ZN6dolfin13PETScLUSolver4initEv
+#   fun:_ZN6dolfin13PETScLUSolverC1Ev
+#   fun:_ZN6dolfin8LUSolver5solveERKNS_13GenericMatrixERNS_13GenericVectorERKS4_
+#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
+#   fun:main
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:malloc
+#   fun:_Z16PetscMallocAlignmiPKcS0_S0_PPv
+#   fun:_Z20PetscTrMallocDefaultmiPKcS0_S0_PPv
+#   fun:_Z9KSPCreateP19ompi_communicator_tPP6_p_KSP
+#   fun:_ZN6dolfin13PETScLUSolver4initEv
+#   fun:_ZN6dolfin13PETScLUSolverC1Ev
+#   fun:_ZN6dolfin8LUSolver5solveERKNS_13GenericMatrixERNS_13GenericVectorERKS4_
+#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
+#   fun:main
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Addr8
+#   fun:_ZN6dolfin15SystemAssembler8assembleERNS_13GenericMatrixERNS_13GenericVectorERNS_3UFCES6_RKNS_4FormES9_RKNS_4CellERKNS_5FacetERKNS0_7ScratchE
+#   fun:_ZN6dolfin15SystemAssembler14facet_assemblyERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RNS_3UFCES9_RNS0_7ScratchEPKNS_12MeshFunctionIjEESF_SF_
+#   fun:_ZN6dolfin15SystemAssembler8assembleERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RSt6vectorIPKNS_11DirichletBCESaISB_EEPKNS_12MeshFunctionIjEESI_SI_PKS3_bb
+#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
+#   fun:main
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Addr8
+#   fun:_ZN6dolfin15SystemAssembler8assembleERNS_13GenericMatrixERNS_13GenericVectorERNS_3UFCES6_RKNS_4FormES9_RKNS_4CellERKNS_5FacetERKNS0_7ScratchE
+#   fun:_ZN6dolfin15SystemAssembler14facet_assemblyERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RNS_3UFCES9_RNS0_7ScratchEPKNS_12MeshFunctionIjEESF_SF_
+#   fun:_ZN6dolfin15SystemAssembler8assembleERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RSt6vectorIPKNS_11DirichletBCESaISB_EEPKNS_12MeshFunctionIjEESI_SI_PKS3_bb
+#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
+#   fun:main
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Addr8
+#   fun:_ZN6dolfin15SystemAssembler13cell_assemblyERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RNS_3UFCES9_RNS0_7ScratchEPKNS_12MeshFunctionIjEESF_
+#   fun:_ZN6dolfin15SystemAssembler8assembleERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RSt6vectorIPKNS_11DirichletBCESaISB_EEPKNS_12MeshFunctionIjEESI_SI_PKS3_bb
+#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
+#   fun:main
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Addr8
+#   fun:_ZN6dolfin15SystemAssembler13cell_assemblyERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RNS_3UFCES9_RNS0_7ScratchEPKNS_12MeshFunctionIjEESF_
+#   fun:_ZN6dolfin15SystemAssembler8assembleERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RSt6vectorIPKNS_11DirichletBCESaISB_EEPKNS_12MeshFunctionIjEESI_SI_PKS3_bb
+#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
+#   fun:main
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:malloc
+#   obj:*
+#   fun:PMPI_Attr_put
+#   fun:_Z18PetscCommDuplicateP19ompi_communicator_tPS0_Pi
+#   fun:_Z25PetscHeaderCreate_PrivateP14_p_PetscObjectiiPKcP19ompi_communicator_tPFiS0_EPFiS0_P14_p_PetscViewerE
+#   fun:_Z9VecCreateP19ompi_communicator_tPP6_p_Vec
+#   fun:_Z12VecCreateSeqP19ompi_communicator_tiPP6_p_Vec
+#   fun:_ZN6dolfin11PETScVector4initEjjSs
+#   fun:_ZN6dolfin11PETScVector6resizeEj
+#   fun:_ZN6dolfin8Function4initEv
+#   fun:_ZN6dolfin8Function6vectorEv
+#   fun:_ZN6dolfin18VariationalProblem15solve_nonlinearERNS_8FunctionE
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:malloc
+#   fun:_Z16PetscMallocAlignmiPKcS0_S0_PPv
+#   fun:_Z20PetscTrMallocDefaultmiPKcS0_S0_PPv
+#   fun:_Z18PetscCommDuplicateP19ompi_communicator_tPS0_Pi
+#   fun:_Z25PetscHeaderCreate_PrivateP14_p_PetscObjectiiPKcP19ompi_communicator_tPFiS0_EPFiS0_P14_p_PetscViewerE
+#   fun:_Z9VecCreateP19ompi_communicator_tPP6_p_Vec
+#   fun:_Z12VecCreateSeqP19ompi_communicator_tiPP6_p_Vec
+#   fun:_ZN6dolfin11PETScVector4initEjjSs
+#   fun:_ZN6dolfin11PETScVector6resizeEj
+#   fun:_ZN6dolfin8Function4initEv
+#   fun:_ZN6dolfin8Function6vectorEv
+#   fun:_ZN6dolfin18VariationalProblem15solve_nonlinearERNS_8FunctionE
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:malloc
+#   fun:_Z16PetscMallocAlignmiPKcS0_S0_PPv
+#   fun:_Z20PetscTrMallocDefaultmiPKcS0_S0_PPv
+#   fun:PCCreate_LU
+#   fun:_Z9PCSetTypeP5_p_PCPKc
+#   fun:_ZN6dolfin13PETScLUSolver4initEv
+#   fun:_ZN6dolfin13PETScLUSolverC1Ev
+#   fun:_ZN6dolfin8LUSolver5solveERKNS_13GenericMatrixERNS_13GenericVectorERKS4_
+#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
+#   fun:main
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:malloc
+#   fun:_Z16PetscMallocAlignmiPKcS0_S0_PPv
+#   fun:_Z20PetscTrMallocDefaultmiPKcS0_S0_PPv
+#   fun:_Z15PetscStrallocpyPKcPPc
+#   fun:_Z25PetscObjectChangeTypeNameP14_p_PetscObjectPKc
+#   fun:_Z9PCSetTypeP5_p_PCPKc
+#   fun:_ZN6dolfin13PETScLUSolver4initEv
+#   fun:_ZN6dolfin13PETScLUSolverC1Ev
+#   fun:_ZN6dolfin8LUSolver5solveERKNS_13GenericMatrixERNS_13GenericVectorERKS4_
+#   fun:_ZN6dolfin18VariationalProblem12solve_linearERNS_8FunctionE
+#   fun:main
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Addr8
+#   fun:_ZN6dolfin15SystemAssembler13cell_assemblyERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RNS_3UFCES9_RNS0_7ScratchEPKNS_12MeshFunctionIjEESF_
+#   fun:_ZN6dolfin15SystemAssembler8assembleERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RSt6vectorIPKNS_11DirichletBCESaISB_EEPKNS_12MeshFunctionIjEESI_SI_PKS3_bb
+#   fun:_ZN6dolfin15SystemAssembler8assembleERNS_13GenericMatrixERNS_13GenericVectorERKNS_4FormES7_RKNS_11DirichletBCEbb
+#   fun:main
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:malloc
+#   obj:*
+#   fun:PMPI_Attr_put
+#   fun:_Z18PetscCommDuplicateP19ompi_communicator_tPS0_Pi
+#   fun:_Z25PetscHeaderCreate_PrivateP14_p_PetscObjectiiPKcP19ompi_communicator_tPFiS0_EPFiS0_P14_p_PetscViewerE
+#   fun:_Z9VecCreateP19ompi_communicator_tPP6_p_Vec
+#   fun:_Z12VecCreateSeqP19ompi_communicator_tiPP6_p_Vec
+#   fun:_ZN6dolfin11PETScVector4initEjjSs
+#   fun:_ZN6dolfin11PETScVectorC1ESs
+#   fun:_ZNK6dolfin12PETScFactory13create_vectorEv
+#   fun:main
+#}
+
+#{
+#   <insert a suppression name here>
+#   Memcheck:Leak
+#   fun:malloc
+#   fun:_Z16PetscMallocAlignmiPKcS0_S0_PPv
+#   fun:_Z20PetscTrMallocDefaultmiPKcS0_S0_PPv
+#   fun:_Z18PetscCommDuplicateP19ompi_communicator_tPS0_Pi
+#   fun:_Z25PetscHeaderCreate_PrivateP14_p_PetscObjectiiPKcP19ompi_communicator_tPFiS0_EPFiS0_P14_p_PetscViewerE
+#   fun:_Z9VecCreateP19ompi_communicator_tPP6_p_Vec
+#   fun:_Z12VecCreateSeqP19ompi_communicator_tiPP6_p_Vec
+#   fun:_ZN6dolfin11PETScVector4initEjjSs
+#   fun:_ZN6dolfin11PETScVectorC1ESs
+#   fun:_ZNK6dolfin12PETScFactory13create_vectorEv
+#   fun:main
+#}
