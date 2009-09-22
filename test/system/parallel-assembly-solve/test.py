@@ -7,14 +7,6 @@ __license__  = "GNU LGPL version 2.1"
 
 # Modified by Johan Hake
 
-# Suggestions for improvments:
-#
-# 1. MUMPS vs UMFPACK gives skewed results (MUMPS faster?)
-# 2. Run on 128 x 128 x 128
-# 3. Time assemble_cells and apply separately
-# 4. Time solve separately
-# 5. Use barriers between timings
-
 import sys
 from dolfin_utils.commands import getoutput
 from dolfin import has_mpi, has_parmetis
