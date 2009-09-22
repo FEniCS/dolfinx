@@ -11,6 +11,9 @@ __license__  = "GNU LGPL version 2.1"
 import sys
 from dolfin import *
 
+# Relative tolerance for regression test
+tol = 1e-10
+
 def solve(mesh_file, degree):
     "Solve on given mesh file and degree of function space."
 
@@ -62,13 +65,13 @@ def check_results(results, reference, tol):
         print "(%s, %d):\t" % (mesh_file, degree),
         if (mesh_file, degree) in reference:
             ref = reference[(mesh_file, degree)]
-            diff =  abs(norm - ref)
+            diff =  abs(norm - ref) / abs(ref)
             if diff < tol:
                 print "OK",
             else:
                 status = False
                 print "*** ERROR",
-            print "(norm = %.16g, reference = %.16g, diff = %.16g)" % (norm, ref, diff)
+            print "(norm = %.16g, reference = %.16g, relative diff = %.16g)" % (norm, ref, diff)
         else:
             print "missing reference"
 
@@ -109,7 +112,7 @@ for mesh_file in mesh_files:
 #print_reference(results)
 
 # Check results
-status = check_results(results, reference, 1e-10)
+status = check_results(results, reference, tol)
 
 # Resturn exit status
 sys.exit(status)
