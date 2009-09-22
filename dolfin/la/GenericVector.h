@@ -109,8 +109,8 @@ namespace dolfin
     /// Add values to each entry on local process
     virtual void add_local(const double* values) = 0;
 
-    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const
-    { error("GenericVector::gather is not implemented for this backend."); }
+    /// Gather entries into local vector x
+    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const = 0;
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x) = 0;

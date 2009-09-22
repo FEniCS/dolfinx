@@ -88,6 +88,10 @@ namespace dolfin
     /// Add all values to each entry on local process
     virtual void add_local(const double* values);
 
+    /// Gather entries into local vector x
+    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const
+    { not_working_in_parallel("MTL4::gather()"); }
+
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);
 
