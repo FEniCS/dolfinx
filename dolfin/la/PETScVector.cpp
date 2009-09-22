@@ -511,8 +511,7 @@ void PETScVector::init(uint N, uint n, std::string type)
   // Create vector
   if (!x.unique())
     error("Cannot init/resize PETScVector. More than one object points to the underlying PETSc object.");
-  boost::shared_ptr<Vec> _x(new Vec, PETScVectorDeleter());
-  x = _x;
+  x.reset(new Vec, PETScVectorDeleter());
 
   // Initialize vector, either default or MPI vector
   if (type == "sequential")
