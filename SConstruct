@@ -413,6 +413,13 @@ if not env.GetOption('help'):
   pythonExtDir = env["pythonExtDir"].replace("$prefix", install_prefix)
   manDir = env["manDir"].replace("$prefix", install_prefix)
 
+  # If necessary, replace site-packages with dist-packages when prefix is
+  # either /usr or /usr/local (hack for Python 2.6 on Debian/Ubuntu)
+  if env.subst("$prefix").rstrip("/") in ("/usr", "/usr/local") and \
+         "dist-packages" in sysconfig.get_python_lib():
+    for tgt_dir in ["pythonModuleDir", "pythonExtDir"]:
+      env[tgt_dir] = env[tgt_dir].replace("site-packages", "dist-packages")
+
   # install dolfin-convert into binDir:
   env.Install(binDir, os.path.join("misc","utils","convert","dolfin-convert"))
 

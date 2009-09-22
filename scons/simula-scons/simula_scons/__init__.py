@@ -701,7 +701,7 @@ def getModulesAndDependencies(directory=".",
     # See which packages that can be resolved with PkgConfig right away
     # We can get a configuredPackages dict as input. If so, check that 
     # the package is not already there.
-    for d in alldependencies.keys(): 
+    for d in sorted(alldependencies.keys()): 
         if configuredPackages.has_key(d):
           continue
         if d in disabled_packages:
