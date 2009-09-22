@@ -56,6 +56,7 @@ for s in cppslow:
 # Remove overly slow demos
 pydemos.remove(os.path.join(demodir, 'pde', 'cahn-hilliard', 'python'))
 cppdemos.remove(os.path.join(demodir, 'pde', 'cahn-hilliard', 'cpp'))
+cppdemos.remove(os.path.join(demodir, 'pde', 'elastodynamics', 'cpp'))
 
 # Demos that need command-line arguments are treated separately
 pydemos.remove(os.path.join(demodir, 'quadrature', 'python'))
