@@ -4,6 +4,8 @@ import os, os.path, sys
 import warnings
 import pickle
 
+from distutils import sysconfig
+
 # Make sure that we have a good scons-version
 EnsureSConsVersion(0, 98, 5)
 
