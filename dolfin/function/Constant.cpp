@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Martin Sandve Alnes, 2008.
+// Modified by Garth N. Wells, 2009.
 //
 // First added:  2006-02-09
-// Last changed: 2008-11-17
+// Last changed: 2009-09-22
 
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/log/dolfin_log.h>
@@ -60,6 +61,7 @@ Constant::Constant(const std::vector<uint>& shape,
 
   // Copy values
   assert(values.size() == _size);
+  _values = new double[values.size()];
   for (uint i = 0; i < values.size(); i++)
     _values[i] = values[i];
 }
@@ -69,6 +71,11 @@ Constant::Constant(const Constant& c)
     _size(0), _values(0)
 {
   *this = c;
+}
+//-----------------------------------------------------------------------------
+Constant::~Constant()
+{
+  delete [] _values;
 }
 //-----------------------------------------------------------------------------
 const Constant& Constant::operator= (const Constant& c)
@@ -91,11 +98,6 @@ const Constant& Constant::operator= (double c)
     error("Cannot convert non-scalar Constant to a double.");
   _values[0] = c;
   return *this;
-}
-//-----------------------------------------------------------------------------
-Constant::~Constant()
-{
-  delete [] _values;
 }
 //-----------------------------------------------------------------------------
 void Constant::eval(double* values, const Data& data) const

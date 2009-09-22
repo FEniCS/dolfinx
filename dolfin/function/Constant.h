@@ -37,14 +37,14 @@ namespace dolfin
     /// Copy constructor
     Constant(const Constant& c);
 
+    /// Destructor
+    ~Constant();
+
     /// Assignment operator
     const Constant& operator= (const Constant& c);
 
     /// Assignment operator
     const Constant& operator= (double c);
-
-    /// Destructor
-    ~Constant();
 
     /// Function evaluation
     void eval(double* values, const Data& data) const;
