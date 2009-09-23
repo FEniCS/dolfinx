@@ -6,16 +6,16 @@
 // First added:  2008-01-07
 // Last changed: 2009-09-05
 
+#ifdef HAS_MPI
+#include <mpi.h>
+#endif
+
 #ifdef HAS_PETSC
 #include <petsc.h>
 #endif
 
 #ifdef HAS_SLEPC
 #include <slepc.h>
-#endif
-
-#ifdef HAS_MPI
-#include <mpi.h>
 #endif
 
 #include <libxml/parser.h>
