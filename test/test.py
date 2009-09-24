@@ -10,7 +10,11 @@ import re, sys, os
 pwd = os.path.dirname(os.path.abspath(__file__))
 
 # Tests to run
-tests = ["unit", "regression", "memory", "system"]
+tests = ["unit", "regression", "system"]
+
+# Check if we should enable memory testing
+if len(sys.argv) == 2 and sys.argv[1] == "--enable-memory-test":
+    tests.append("memory")
 
 failed = []
 
