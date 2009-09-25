@@ -111,6 +111,9 @@ namespace dolfin
     // Evaluate restriction
     bool is_inside_restriction(uint c) const;
 
+    /// Update function space when mesh has changed
+    void update();
+
   private:
 
     // Scratch space, used for storing temporary local data
