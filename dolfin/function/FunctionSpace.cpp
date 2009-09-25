@@ -365,4 +365,10 @@ bool FunctionSpace::is_inside_restriction(uint c) const
     return true;
 }
 //-----------------------------------------------------------------------------
-
+void FunctionSpace::update()
+{
+  // FIXME: Ugly hack until we've figured out what the correct constness
+  // FIXME: should be for DofMap, also affects generated code.
+  const_cast<DofMap&>(*_dofmap).update();
+}
+//-----------------------------------------------------------------------------

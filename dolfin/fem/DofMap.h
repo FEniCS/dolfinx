@@ -44,6 +44,9 @@ namespace dolfin
     DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
            boost::shared_ptr<const Mesh> mesh);
 
+    /// Update dof map when mesh has changed
+    void update();
+
   private:
 
     /// Create dof map on mesh with a std::vector dof map
