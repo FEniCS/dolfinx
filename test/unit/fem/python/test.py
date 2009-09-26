@@ -37,14 +37,16 @@ class Assembly(unittest.TestCase):
         # Define linear form
         L = v*f*dx
 
-        A_frobenius_norm = 157.867392939
-        b_l2_norm = 1.48087142739
-        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 8)
-        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 8)
+        A_frobenius_norm = 157.86739293864508
+        b_l2_norm = 1.4808714273876828
+
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 12)
+        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 12)
 
         A, b = assemble_system(a, L)
-        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 8)
-        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 8)
+        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 12)
+        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 12)
+
 
     def test_cell_assembly(self):
 
