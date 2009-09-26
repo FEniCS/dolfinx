@@ -34,13 +34,15 @@ namespace dolfin
     }
 
     /// Create UFC cell from DOLFIN cell
-    UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0)
+    UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0), 
+                                num_higher_order_vertices(0)
     {
       init(cell);
     }
 
     /// Create UFC cell for first DOLFIN cell in mesh
-    UFCCell(const Mesh& mesh) : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0)
+    UFCCell(const Mesh& mesh) : ufcexp::cell(), num_vertices(0), 
+                                num_higher_order_vertices(0)
     {
       CellIterator cell(mesh);
       init(*cell);
