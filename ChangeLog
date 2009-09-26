@@ -1,3 +1,4 @@
+ - Remove FacetNormal Function. Use UFL facet normal instead.
  - Add update() function to FunctionSpace and DofMap for use in adaptive mesh refinement
 0.9.3 [2009-09-25]
  - Add global parameter "ffc_representation" for form representation in FFC JIT compiler
