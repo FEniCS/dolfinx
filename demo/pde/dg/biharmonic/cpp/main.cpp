@@ -52,7 +52,6 @@ int main()
 
   // Create functions
   Source f;
-  FacetNormal n;
   CellSize h;
   Constant alpha(8.0);
 
@@ -67,7 +66,7 @@ int main()
   // Define forms and attach functions
   Biharmonic::BilinearForm a(V, V);
   Biharmonic::LinearForm L(V);
-  a.n = n; a.h = h; a.alpha = alpha; L.f = f;
+  a.h = h; a.alpha = alpha; L.f = f;
 
   // Create PDE
   VariationalProblem pde(a, L, bc);

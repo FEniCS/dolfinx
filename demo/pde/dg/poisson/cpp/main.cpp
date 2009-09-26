@@ -45,7 +45,6 @@ int main()
 
   // Create functions
   Source f;
-  FacetNormal n;
   CellSize h;
 
   // Create funtion space
@@ -54,7 +53,7 @@ int main()
   // Define forms and attach functions
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
-  a.n = n; a.h = h; L.f = f;
+  a.h = h; L.f = f;
 
   // Create variational problem
   VariationalProblem problem(a, L);

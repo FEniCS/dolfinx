@@ -15,11 +15,11 @@ constant = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 v   = TestFunction(scalar)
 phi = TrialFunction(scalar)
 
-u  = Function(vector)
-f  = Function(scalar)
-n  = VectorConstant(triangle)
-h  = Constant(triangle)
+u = Function(vector)
+f = Function(scalar)
+h = Constant(triangle)
 h_avg = (h('+') + h('-'))/2
+n = scalar.cell().n
 
 kappa = Constant(triangle)
 alpha = Constant(triangle)

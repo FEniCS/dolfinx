@@ -44,9 +44,8 @@ int main()
   Function p(Vp, "../pressure.xml.gz");
 
   // Functionals for lift and drag
-  FacetNormal n;
-  Lift::Functional L(p, n);
-  Drag::Functional D(p, n);
+  Lift::Functional L(p);
+  Drag::Functional D(p);
 
   // Assemble functionals over sub domain
   Fish fish;

@@ -75,46 +75,6 @@ double CellSize::max() const
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-FacetNormal::FacetNormal() : Function()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-FacetNormal::FacetNormal(const FunctionSpace& V) : Function(V)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void FacetNormal::eval(double* values, const Data& data) const
-{
-  const Cell& cell = data.cell();
-
-  if (data.on_facet())
-  {
-    const uint facet = data.facet();
-    for (uint i = 0; i < cell.dim(); i++)
-      values[i] = cell.normal(facet, i);
-  }
-  else
-  {
-    for (uint i = 0; i < cell.dim(); i++)
-      values[i] = 0.0;
-  }
-}
-//-----------------------------------------------------------------------------
-dolfin::uint FacetNormal::rank() const
-{
-  return 1;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint FacetNormal::dim(uint i) const
-{
-  if(i > 0)
-    error("Invalid dimension %d in FacetNormal::dim.", i);
-  return function_space().mesh().geometry().dim();
-}
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 FacetArea::FacetArea() : Function()
 {
   // Do nothing

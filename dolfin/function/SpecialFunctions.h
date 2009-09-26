@@ -69,27 +69,6 @@ namespace dolfin
 
   };
 
-  /// This Function represents the outward unit normal on cell facets.
-  /// Note that it is only nonzero on cell facets (not on cells).
-  class FacetNormal : public Function
-  {
-  public:
-
-    /// Constructor
-    FacetNormal();
-
-    /// Constructor
-    FacetNormal(const FunctionSpace& V);
-
-    /// Function evaluation
-    void eval(double* values, const Data& data) const;
-
-    uint rank() const;
-
-    uint dim(uint i) const;
-
-  };
-
   /// This function represents the area/length of a cell facet.
   class FacetArea : public Function
   {

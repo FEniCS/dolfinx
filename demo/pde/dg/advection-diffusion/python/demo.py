@@ -40,7 +40,7 @@ f = Constant(mesh, 0.0)
 alpha = Constant(mesh, 5.0)
 
 # Mesh-related functions
-n = FacetNormal(mesh)
+n = V_dg.cell().n
 h = CellSize(mesh)
 h_avg = (h('+') + h('-'))/2
 

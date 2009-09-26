@@ -23,6 +23,7 @@ f = Function(element)
 n  = VectorConstant(triangle)
 h  = Constant(triangle)
 h_avg = (h('+') + h('-'))/2
+n  = element.cell().n
 
 # Parameters
 alpha = Constant(triangle)

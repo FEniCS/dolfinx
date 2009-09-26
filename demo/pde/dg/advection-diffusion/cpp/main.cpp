@@ -54,7 +54,6 @@ int main(int argc, char *argv[])
   Constant f(0.0);
 
   // Mesh-related functions
-  FacetNormal N;
   CellSize h;
 
   // Penalty parameter
@@ -65,7 +64,7 @@ int main(int argc, char *argv[])
 
   // Create forms and attach functions
   AdvectionDiffusion::BilinearForm a(V, V);
-  a.u = u; a.n = N; a.h = h; a.kappa = c; a.alpha = alpha;
+  a.u = u; a.h = h; a.kappa = c; a.alpha = alpha;
   AdvectionDiffusion::LinearForm L(V);
   L.f = f;
 

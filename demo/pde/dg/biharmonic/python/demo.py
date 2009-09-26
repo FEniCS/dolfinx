@@ -45,9 +45,9 @@ v = TestFunction(V)
 u = TrialFunction(V)
 
 # Define normal component, mesh size and right-hand side
-n = FacetNormal(mesh)
 h = CellSize(mesh)
 h_avg = (h('+') + h('-'))/2.0
+n = V.cell().n
 f = Source(V)
 
 # Define parameters
@@ -69,6 +69,7 @@ u = problem.solve()
 # Save solution to file
 file = File("biharmonic.pvd")
 file << u
+print u.vector().str(True)
 
 # Plot solution
 plot(u, interactive=True)

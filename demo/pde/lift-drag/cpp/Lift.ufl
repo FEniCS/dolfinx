@@ -11,6 +11,6 @@
 
 element = FiniteElement("Lagrange", "triangle", 1)
 
+n = element.cell().n
 p = Function(element)
-n  = VectorConstant(triangle)
 M = p*n[1]*ds
