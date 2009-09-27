@@ -147,17 +147,10 @@ namespace dolfin
     void set_type();
 
     // Return PETSc matrix type
-    #if PETSC_VERSION_MAJOR > 2
     const MatType get_petsc_type() const;
 
     // Possible PETSc matrix types
     static const std::map<std::string, const MatType> types;
-    #else
-    MatType get_petsc_type() const;
-
-    // Possible PETSc matrix types
-    static const std::map<std::string, MatType> types;
-    #endif
 
     // Check that requested type has been compiled into PETSc
     void check_type();

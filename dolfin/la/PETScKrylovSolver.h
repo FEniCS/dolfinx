@@ -87,13 +87,8 @@ namespace dolfin
     std::string pc_petsc;
 
     // Available solvers and preconditioners
-    #if PETSC_VERSION_MAJOR > 2
     static const std::map<std::string, const KSPType> methods;
     static const std::map<std::string, const PCType> pc_methods;
-    #else
-    static const std::map<std::string, KSPType> methods;
-    static const std::map<std::string, PCType> pc_methods;
-    #endif
 
     /// DOLFIN PETScPreconditioner
     PETScPreconditioner* pc_dolfin;

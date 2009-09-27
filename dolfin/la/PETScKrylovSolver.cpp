@@ -37,11 +37,7 @@ namespace dolfin
 }
 //-----------------------------------------------------------------------------
 // Available solvers
-#if PETSC_VERSION_MAJOR > 2
 const std::map<std::string, const KSPType> PETScKrylovSolver::methods
-#else
-const std::map<std::string, KSPType> PETScKrylovSolver::methods
-#endif
   = boost::assign::map_list_of("default",  "")
                               ("cg",         KSPCG)
                               ("gmres",      KSPGMRES)
@@ -49,11 +45,7 @@ const std::map<std::string, KSPType> PETScKrylovSolver::methods
                               ("bicgstab",   KSPBCGS);
 //-----------------------------------------------------------------------------
 // Available preconditioners
-#if PETSC_VERSION_MAJOR > 2
 const std::map<std::string, const PCType> PETScKrylovSolver::pc_methods
-#else
-const std::map<std::string, PCType> PETScKrylovSolver::pc_methods
-#endif
   = boost::assign::map_list_of("default",   "")
                               ("none",      PCNONE)
                               ("ilu",       PCILU)
@@ -387,13 +379,8 @@ void PETScKrylovSolver::write_report(int num_iterations)
     return;
 
   // Get name of solver and preconditioner
-  #if PETSC_VERSION_MAJOR > 2
   const KSPType ksp_type;
   const PCType pc_type;
-  #else
-  KSPType ksp_type;
-  PCType pc_type;
-  #endif
 
   PC pc;
   KSPGetType(*ksp, &ksp_type);

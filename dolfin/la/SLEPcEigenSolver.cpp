@@ -118,11 +118,7 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   // Set number of eigenpairs to compute
   assert(n <= A->size(0));
   const uint nn = static_cast<int>(n);
-  #if SLEPC_VERSION_MAJOR > 2
   EPSSetDimensions(eps, nn, PETSC_DECIDE, PETSC_DECIDE);
-  #else
-  EPSSetDimensions(eps, nn, PETSC_DECIDE);
-  #endif
 
   // Set algorithm type (Hermitian matrix)
   //EPSSetProblemType(eps, EPS_NHEP);
@@ -149,11 +145,7 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   int num_iterations = 0;
   EPSGetIterationNumber(eps, &num_iterations);
 
-  #if SLEPC_VERSION_MAJOR > 2
   const EPSType eps_type = 0;
-  #else
-  EPSType eps_type = 0;
-  #endif
   EPSGetType(eps, &eps_type);
   info("Eigenvalue solver (%s) converged in %d iterations.",
        eps_type, num_iterations);

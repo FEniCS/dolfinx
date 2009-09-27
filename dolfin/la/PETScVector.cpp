@@ -98,11 +98,7 @@ void PETScVector::resize(uint N)
   // Figure out vector type
   std::string type;
   uint n = 0;
-  #if PETSC_VERSION_MAJOR > 2
   const VecType petsc_type;
-  #else
-  VecType petsc_type;
-  #endif
   VecGetType(*x, &petsc_type);
   if (strcmp(petsc_type, VECSEQ) == 0)
     type = "sequential";
@@ -437,11 +433,7 @@ std::string PETScVector::str(bool verbose) const
     warning("Verbose output for PETScVector not implemented, calling PETSc VecView directly.");
 
     // Get vector type
-#if PETSC_VERSION_MAJOR > 2
     const VecType petsc_type;
-#else
-    VecType petsc_type;
-#endif
     VecGetType(*x, &petsc_type);
 
     if (strcmp(petsc_type, VECSEQ) == 0)
@@ -464,11 +456,7 @@ void PETScVector::gather(GenericVector& y,
   PETScVector& _y = y.down_cast<PETScVector>();
 
   // Check that x is a local vector
-  #if PETSC_VERSION_MAJOR > 2
   const VecType petsc_type;
-  #else
-  VecType petsc_type;
-  #endif
   VecGetType(*(_y.vec()), &petsc_type);
   if (strcmp(petsc_type, VECSEQ) != 0)
     error("PETScVector::gather can only gather into local vectors");

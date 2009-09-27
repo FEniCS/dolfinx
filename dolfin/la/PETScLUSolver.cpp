@@ -55,45 +55,10 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   // Initialise solver
   init();
 
-  #if PETSC_VERSION_MAJOR > 2
   const MatSolverPackage solver_type;
   PC pc;
   KSPGetPC(ksp, &pc);
   PCFactorGetMatSolverPackage(pc, &solver_type);
-  #else
-  MatType solver_type;
-  MatGetType(*A.mat(), &solver_type);
-  #endif
-
-  #if PETSC_VERSION_MAJOR < 3
-  std::string _mat_type = solver_type;
-
-  // Convert to UMFPACK matrix if matrix type is MATSEQAIJ and UMFPACK is available.
-  #if PETSC_HAVE_UMFPACK
-  if (_mat_type == MATSEQAIJ)
-  {
-    Mat Atemp = *A.mat();
-    MatConvert(*A.mat(), MATUMFPACK, MAT_REUSE_MATRIX, &Atemp);
-  }
-  #endif
-
-
-  // Convert to MUMPS matrix if matrix type is MATMPIAIJ and MUMPS is available.
-  #if PETSC_HAVE_MUMPS
-  if (_mat_type == MATMPIAIJ)
-  {
-    Mat Atemp = *A.mat();
-    MatConvert(*A.mat(), MATAIJMUMPS, MAT_REUSE_MATRIX, &Atemp);
-  }
-  #endif
-
-  // Make sure the parallel matrix has been converted
-  _mat_type = solver_type;
-  if (_mat_type == MATMPIAIJ)
-  {
-    error("MUMPS is required for parallel LU with PETSc version < 3.");
-  }
-  #endif
 
   // Get parameters
   const bool report = parameters["report"];
@@ -201,12 +166,9 @@ void PETScLUSolver::init()
   KSPGetPC(ksp, &pc);
   PCSetType(pc, PCLU);
 
-  #if PETSC_HAVE_UMFPACK && PETSC_VERSION_MAJOR > 2
   if (MPI::num_processes() == 1)
     PCFactorSetMatSolverPackage(pc, MAT_SOLVER_UMFPACK);
-  #endif
 
-  #if PETSC_VERSION_MAJOR > 2
   if (MPI::num_processes() > 1)
   {
     #if PETSC_HAVE_MUMPS
@@ -217,7 +179,6 @@ void PETScLUSolver::init()
     error("No suitable solver for parallel LU. Consider configuring PETSc with MUMPS or SPOOLES.");
     #endif
   }
-  #endif
 
   // Allow matrices with zero diagonals to be solved
   PCFactorSetShiftNonzero(pc, PETSC_DECIDE);

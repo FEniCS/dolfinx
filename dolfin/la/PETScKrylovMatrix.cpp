@@ -20,6 +20,7 @@ using namespace dolfin;
 
 // Mult function
 // FIXME: Add an explanation why this function is needed
+
 namespace dolfin
 {
 

@@ -40,19 +40,11 @@ namespace dolfin
 
 using namespace dolfin;
 
-#if PETSC_VERSION_MAJOR > 2
 const std::map<std::string, const MatType> PETScMatrix::types
   = boost::assign::map_list_of("default", MATSEQAIJ)
                               ("spooles", MAT_SOLVER_SPOOLES)
                               ("superlu", MAT_SOLVER_SUPERLU)
                               ("umfpack", MAT_SOLVER_UMFPACK);
-#else
-const std::map<std::string, MatType> PETScMatrix::types
-  = boost::assign::map_list_of("default", MATSEQAIJ)
-                              ("spooles", MATSEQAIJSPOOLES)
-                              ("superlu", MATSUPERLU)
-                              ("umfpack", MATUMFPACK);
-#endif
 
 const std::map<std::string, NormType> PETScMatrix::norm_types
   = boost::assign::map_list_of("l1",        NORM_1)
@@ -130,11 +122,7 @@ void PETScMatrix::resize(uint M, uint N)
     MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, A.get());
 
     set_type();
-    #if PETSC_VERSION_MAJOR > 2
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
-    #else
-    MatSetOption(*A, MAT_KEEP_ZEROED_ROWS);
-    #endif
     MatSetFromOptions(*A);
   }
 }
@@ -167,6 +155,9 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     // FIXME: Does this need to be cleaned up? Seems like a mix of
     // FIXME: of MatSeqAIJ and MatSetFromOptions?
 
+    // FIXME: It can be cleaned up with PETSc 3 since the matrix
+    //        does not have to be set for different linear solvers
+
     // Initialize PETSc matrix
     MatCreate(PETSC_COMM_SELF, A.get());
     MatSetSizes(*A, PETSC_DECIDE, PETSC_DECIDE, M, N);
@@ -174,11 +165,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     MatSeqAIJSetPreallocation(*A, PETSC_DEFAULT, reinterpret_cast<int*>(num_nonzeros));
 
     // Set some options
-    #if PETSC_VERSION_MAJOR > 2
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
-    #else
-    MatSetOption(*A, MAT_KEEP_ZEROED_ROWS);
-    #endif
     MatSetFromOptions(*A);
     MatZeroEntries(*A);
 
@@ -208,11 +195,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
                     A.get());
 
     // Set some options
-    #if PETSC_VERSION_MAJOR > 2
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
-    #else
-    MatSetOption(*A, MAT_KEEP_ZEROED_ROWS);
-    #endif
     MatZeroEntries(*A);
 
     // Cleanup
@@ -438,12 +421,6 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
   // Check for self-assignment
   if (this != &A)
   {
-    // If the NonzeroPattern is the same we just copy the values
-    //if (sameNonzeroPattern(A))
-    //  MatCopy(*A.mat(), *(this->A), SAME_NONZERO_PATTERN);
-    //else
-    //{
-      // Create matrix (any old matrix is destroyed automatically)
       if (!this->A.unique())
         error("Cannot assign PETScMatrix with different non-zero pattern because more than one object points to the underlying PETSc object.");
       this->A.reset(new Mat, PETScMatrixDeleter());
@@ -496,17 +473,14 @@ boost::shared_ptr<Mat> PETScMatrix::mat() const
 void PETScMatrix::set_type()
 {
   assert(A);
-  #if PETSC_VERSION_MAJOR > 2
   const MatType mat_type = get_petsc_type();
-  #else
-  MatType mat_type = get_petsc_type();
-  #endif
-
   MatSetType(*A, mat_type);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::check_type()
 {
+  // FIXME: Can this function be removed for PETSc 3 and greater?
+
   if (_type == "default")
     return;
 
@@ -536,11 +510,7 @@ void PETScMatrix::check_type()
     error("Requested matrix type unknown. Using default.");
 }
 //-----------------------------------------------------------------------------
-#if PETSC_VERSION_MAJOR > 2
 const MatType PETScMatrix::get_petsc_type() const
-#else
-MatType PETScMatrix::get_petsc_type() const
-#endif
 {
   if (types.count(_type) == 0)
     error("Unknown PETSc matrix type.");
