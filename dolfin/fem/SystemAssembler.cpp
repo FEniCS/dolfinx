@@ -520,7 +520,6 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
     if (A_ufc.form.num_cell_integrals() > 0 )
     {
       A_ufc.update(cell);
-
       A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell);
       for (uint i = 0; i < data.A_num_entries; i++)
         data.Ae[i] += A_ufc.A[i];
@@ -529,7 +528,6 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
     if (b_ufc.form.num_cell_integrals() > 0 )
     {
       b_ufc.update(cell);
-
       b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
       for (uint i = 0; i < data.b_num_entries; i++)
         data.be[i] += b_ufc.A[i];
