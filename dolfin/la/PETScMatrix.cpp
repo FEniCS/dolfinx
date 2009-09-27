@@ -40,48 +40,33 @@ namespace dolfin
 
 using namespace dolfin;
 
-const std::map<std::string, const MatType> PETScMatrix::types
-  = boost::assign::map_list_of("default", MATSEQAIJ)
-                              ("spooles", MAT_SOLVER_SPOOLES)
-                              ("superlu", MAT_SOLVER_SUPERLU)
-                              ("umfpack", MAT_SOLVER_UMFPACK);
-
 const std::map<std::string, NormType> PETScMatrix::norm_types
   = boost::assign::map_list_of("l1",        NORM_1)
                               ("lif",       NORM_INFINITY)
                               ("frobenius", NORM_FROBENIUS);
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const std::string type):
-    A(static_cast<Mat*>(0), PETScMatrixDeleter()),
-    _type(type)
+PETScMatrix::PETScMatrix() :
+    A(static_cast<Mat*>(0), PETScMatrixDeleter())
 {
-  // Check type
-  check_type();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A):
-    A(A),
-    _type("default")
+PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A) :
+    A(A)
 {
-  // FIXME: get PETSc matrix type and set
-  _type = "default";
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(uint M, uint N, std::string type):
-    A(static_cast<Mat*>(0), PETScMatrixDeleter()),
-    _type(type)
+PETScMatrix::PETScMatrix(uint M, uint N) :
+    A(static_cast<Mat*>(0), PETScMatrixDeleter())
 {
-  // Check type
-  check_type();
-
   // Create PETSc matrix
   resize(M, N);
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const PETScMatrix& A):
-  A(static_cast<Mat*>(0), PETScMatrixDeleter()),
-  _type(A._type)
+  A(static_cast<Mat*>(0), PETScMatrixDeleter())
 {
   *this = A;
 }
@@ -120,8 +105,6 @@ void PETScMatrix::resize(uint M, uint N)
   {
     // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in thise case)
     MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, A.get());
-
-    set_type();
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
     MatSetFromOptions(*A);
   }
@@ -159,14 +142,11 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     //        does not have to be set for different linear solvers
 
     // Initialize PETSc matrix
-    MatCreate(PETSC_COMM_SELF, A.get());
-    MatSetSizes(*A, PETSC_DECIDE, PETSC_DECIDE, M, N);
-    set_type();
-    MatSeqAIJSetPreallocation(*A, PETSC_DEFAULT, reinterpret_cast<int*>(num_nonzeros));
+    MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, PETSC_NULL, 
+                    reinterpret_cast<int*>(num_nonzeros), A.get());
 
     // Set some options
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
-    MatSetFromOptions(*A);
     MatZeroEntries(*A);
 
     // Cleanup
@@ -432,11 +412,6 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
   return *this;
 }
 //-----------------------------------------------------------------------------
-std::string PETScMatrix::type() const
-{
-  return _type;
-}
-//-----------------------------------------------------------------------------
 std::string PETScMatrix::str(bool verbose) const
 {
   std::stringstream s;
@@ -468,54 +443,6 @@ LinearAlgebraFactory& PETScMatrix::factory() const
 boost::shared_ptr<Mat> PETScMatrix::mat() const
 {
   return A;
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::set_type()
-{
-  assert(A);
-  const MatType mat_type = get_petsc_type();
-  MatSetType(*A, mat_type);
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::check_type()
-{
-  // FIXME: Can this function be removed for PETSc 3 and greater?
-
-  if (_type == "default")
-    return;
-
-  // Check that requested matrix type is available in PETSc
-  if (_type == "spooles")
-  {
-    #if !PETSC_HAVE_SPOOLES
-    warning("PETSc has not been complied with Spooles. Using default matrix type");
-    _type = "default";
-    #endif
-  }
-  else if (_type == "superlu")
-  {
-    #if !PETSC_HAVE_SUPERLU
-      warning("PETSc has not been complied with Super LU. Using default matrix type");
-      _type = "default";
-    #endif
-  }
-  else if (_type == "umfpack")
-  {
-    #if !PETSC_HAVE_UMFPACK
-      warning("PETSc has not been complied with UMFPACK. Using default matrix type");
-      _type = "default";
-    #endif
-  }
-  else
-    error("Requested matrix type unknown. Using default.");
-}
-//-----------------------------------------------------------------------------
-const MatType PETScMatrix::get_petsc_type() const
-{
-  if (types.count(_type) == 0)
-    error("Unknown PETSc matrix type.");
-
-  return types.find(_type)->second;
 }
 //-----------------------------------------------------------------------------
 

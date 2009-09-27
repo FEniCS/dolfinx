@@ -44,10 +44,10 @@ namespace dolfin
   public:
 
     /// Create empty matrix
-    explicit PETScMatrix(std::string type="default");
+    PETScMatrix();
 
     /// Create M x N matrix
-    PETScMatrix(uint M, uint N, std::string type="default");
+    PETScMatrix(uint M, uint N);
 
     /// Copy constructor
     explicit PETScMatrix(const PETScMatrix& A);
@@ -132,9 +132,6 @@ namespace dolfin
     /// Return PETSc Mat pointer
     boost::shared_ptr<Mat> mat() const;
 
-    /// Return PETSc matrix type
-    std::string type() const;
-
     /// Return norm of matrix
     double norm(std::string norm_type) const;
 
@@ -143,26 +140,11 @@ namespace dolfin
 
   private:
 
-    // Set PETSc matrix type
-    void set_type();
-
-    // Return PETSc matrix type
-    const MatType get_petsc_type() const;
-
-    // Possible PETSc matrix types
-    static const std::map<std::string, const MatType> types;
-
-    // Check that requested type has been compiled into PETSc
-    void check_type();
-
-    // PETSc Mat pointer
-    boost::shared_ptr<Mat> A;
-
     // PETSc norm types
     static const std::map<std::string, NormType> norm_types;
 
-    // PETSc matrix type
-    std::string _type;
+    // PETSc Mat pointer
+    boost::shared_ptr<Mat> A;
 
   };
 
