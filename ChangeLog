@@ -1,3 +1,5 @@
+ - Fix bug in SystemAssembler
+ - Remove support for PETSc 2.3 and support PETSc 3.0.0 only 
  - Remove FacetNormal Function. Use UFL facet normal instead.
  - Add update() function to FunctionSpace and DofMap for use in adaptive mesh refinement
 0.9.3 [2009-09-25]
