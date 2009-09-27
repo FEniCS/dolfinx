@@ -123,16 +123,16 @@ void SystemAssembler::assemble(GenericMatrix& A,
   if (A_ufc.form.num_interior_facet_integrals() == 0 && b_ufc.form.num_interior_facet_integrals() == 0)
   {
     // Assemble cell-wise (no interior facet integrals)
-    cell_assembly(A, b, a, L, A_ufc, b_ufc, data, cell_domains,
-                  exterior_facet_domains);
+    cell_wise_assembly(A, b, a, L, A_ufc, b_ufc, data, cell_domains,
+                       exterior_facet_domains);
   }
   else
   {
     not_working_in_parallel("Assembly over interior facets");
 
     // Assemble facet-wise (including cell assembly)
-    facet_assembly(A, b, a, L, A_ufc, b_ufc, data, cell_domains,
-                  exterior_facet_domains, interior_facet_domains);
+    facet_wise_assembly(A, b, a, L, A_ufc, b_ufc, data, cell_domains,
+                        exterior_facet_domains, interior_facet_domains);
   }
 
   // Finalise assembly
@@ -140,7 +140,7 @@ void SystemAssembler::assemble(GenericMatrix& A,
   b.apply();
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::cell_assembly(GenericMatrix& A, GenericVector& b,
+void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
                                     const Form& a, const Form& L,
                                     UFC& A_ufc, UFC& b_ufc, Scratch& data,
                                     const MeshFunction<uint>* cell_domains,
@@ -177,7 +177,7 @@ void SystemAssembler::cell_assembly(GenericMatrix& A, GenericVector& b,
       data.be[i] = b_ufc.A[i];
 
     // FIXME: Can be the assembly over facets be more efficient?
-    // Compute exterior facet integral
+    // Compute exterior facet integral if present
     if (A_ufc.form.num_exterior_facet_integrals() > 0 || b_ufc.form.num_exterior_facet_integrals() > 0)
     {
       const uint D = mesh.topology().dim();
@@ -224,7 +224,7 @@ void SystemAssembler::cell_assembly(GenericMatrix& A, GenericVector& b,
   }
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::facet_assembly(GenericMatrix& A, GenericVector& b,
+void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
                                     const Form& a, const Form& L,
                                     UFC& A_ufc, UFC& b_ufc, Scratch& data,
                                     const MeshFunction<uint>* cell_domains,
@@ -242,9 +242,9 @@ void SystemAssembler::facet_assembly(GenericMatrix& A, GenericVector& b,
     if (facet->num_entities(mesh.topology().dim()) == 2)
     {
       // Reset some temp data
-      for (uint i = 0; i < A_ufc.local_dimensions[0]*A_ufc.local_dimensions[1]; i++)
+      for (uint i = 0; i < A_ufc.macro_local_dimensions[0]*A_ufc.macro_local_dimensions[1]; i++)
         A_ufc.macro_A[i] = 0.0;
-      for (uint i = 0; i < b_ufc.local_dimensions[0]; i++)
+      for (uint i = 0; i < b_ufc.macro_local_dimensions[0]; i++)
         b_ufc.macro_A[i] = 0.0;
 
       // Get cells incident with facet and update UFC objects
@@ -259,12 +259,18 @@ void SystemAssembler::facet_assembly(GenericMatrix& A, GenericVector& b,
       b_ufc.update(cell0, local_facet0, cell1, local_facet1);
 
       // Assemble interior facet and neighbouring cells if needed
-      assemble(A, b, A_ufc, b_ufc, a, L, cell0, cell1, *facet, data);
+      assemble_interior_facet(A, b, A_ufc, b_ufc, a, L, cell0, cell1, *facet, data);
     }
 
     // Exterior facet
     if ( facet->num_entities(mesh.topology().dim()) != 2 )
     {
+      // Reset some temp data
+      for (uint i = 0; i < A_ufc.local_dimensions[0]*A_ufc.local_dimensions[1]; i++)
+        A_ufc.A[i] = 0.0;
+      for (uint i = 0; i < b_ufc.local_dimensions[0]; i++)
+        b_ufc.A[i] = 0.0;
+
       // Get mesh cell to which mesh facet belongs (pick first, there is only one)
       Cell cell(mesh, facet->entities(mesh.topology().dim())[0]);
 
@@ -272,7 +278,7 @@ void SystemAssembler::facet_assembly(GenericMatrix& A, GenericVector& b,
       data.zero_cell();
 
       // Assemble exterior facet and attached cells if needed
-      assemble(A, b, A_ufc, b_ufc, a, L, cell, *facet, data);
+      assemble_exterior_facet(A, b, A_ufc, b_ufc, a, L, cell, *facet, data);
     }
 
     p++;
@@ -377,7 +383,7 @@ inline void SystemAssembler::Scratch::zero_cell()
   }
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
+void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b,
                                UFC& A_ufc, UFC& b_ufc,
                                const Form& a,
                                const Form& L,
@@ -474,7 +480,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   b.add(b_ufc.macro_A, b_ufc.macro_local_dimensions, b_ufc.macro_dofs);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
+void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b,
                                UFC& A_ufc, UFC& b_ufc,
                                const Form& a,
                                const Form& L,
@@ -522,7 +528,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 
     if (b_ufc.form.num_cell_integrals() > 0 )
     {
-      A_ufc.update(cell);
+      b_ufc.update(cell);
 
       b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
       for (uint i = 0; i < data.b_num_entries; i++)

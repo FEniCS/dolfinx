@@ -37,16 +37,15 @@ class Assembly(unittest.TestCase):
         # Define linear form
         L = v*f*dx
 
+        # Assemble system
+        A, b = assemble_system(a, L)
+
         A_frobenius_norm = 157.86739293864508
         b_l2_norm = 1.4808714273876828
-
         self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 12)
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 12)
-
-        A, b = assemble_system(a, L)
         self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 12)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 12)
-
 
     def test_cell_assembly(self):
 
@@ -63,14 +62,14 @@ class Assembly(unittest.TestCase):
         a = inner(epsilon(v), epsilon(u))*dx
         L = inner(v, f)*dx
 
-        A_frobenius_norm =  4.39696865276
-        b_l2_norm = 0.954703269782
-        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 8)
-        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 8)
+        A_frobenius_norm =  4.3969686527582512;
+        b_l2_norm = 0.95470326978246278;
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 12)
+        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 12)
 
         A, b = assemble_system(a, L)
-        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 8)
-        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 8)
+        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 12)
+        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 12)
 
 
 if __name__ == "__main__":

@@ -90,27 +90,27 @@ namespace dolfin
                              const Facet& facet,
                              const MeshFunction<uint>* exterior_facet_domains); 
 
-    static void cell_assembly(GenericMatrix& A, GenericVector& b,
+    static void cell_wise_assembly(GenericMatrix& A, GenericVector& b,
                               const Form& a, const Form& L, 
                               UFC& A_ufc, UFC& b_ufc, Scratch& data, 
                               const MeshFunction<uint>* cell_domains,
                               const MeshFunction<uint>* exterior_facet_domains); 
 
-    static void facet_assembly(GenericMatrix& A, GenericVector& b,
+    static void facet_wise_assembly(GenericMatrix& A, GenericVector& b,
                               const Form& a, const Form& L, 
                               UFC& A_ufc, UFC& b_ufc, Scratch& data, 
                               const MeshFunction<uint>* cell_domains,
                               const MeshFunction<uint>* exterior_facet_domains,
                               const MeshFunction<uint>* interior_facet_domains); 
 
-    static void assemble(GenericMatrix& A, GenericVector& b,
+    static void assemble_interior_facet(GenericMatrix& A, GenericVector& b,
                          UFC& A_ufc, UFC& b_ufc, 
                          const Form& a,
                          const Form& L,
                          const Cell& cell0, const Cell& cell1, const Facet& facet,
                          const Scratch& data); 
 
-    static void assemble(GenericMatrix& A, GenericVector& b,
+    static void assemble_exterior_facet(GenericMatrix& A, GenericVector& b,
                          UFC& A_ufc, UFC& b_ufc, 
                          const Form& a,
                          const Form& L,
