@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2008-05-08
-// Last changed: 2009-08-28
+// Last changed: 2009-09-28
 
 #ifndef __UFC_FUNCTION_H
 #define __UFC_FUNCTION_H
@@ -19,6 +19,8 @@ namespace dolfin
 
   /// This is a utility class used by Function to wrap callbacks from
   /// ufc::finite_element::evaluate_dof to ufc::function::evaluate.
+
+  // FIXME: Remove this class
 
   class UFCFunction : public ufc::function
   {

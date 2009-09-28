@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-09-15
+// Last changed: 2009-09-28
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>

@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2007-01-17
-// Last changed: 2009-08-03
+// Last changed: 2009-09-28
 
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -18,15 +18,15 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 UFC::UFC(const Form& form)
- : form(form.ufc_form()), cell(form.mesh()), cell0(form.mesh()), 
+ : form(form.ufc_form()), cell(form.mesh()), cell0(form.mesh()),
    cell1(form.mesh()), coefficients(form.coefficients()), dolfin_form(form)
 {
   init(form);
 }
 //-----------------------------------------------------------------------------
-UFC::UFC(const UFC& ufc) : form(ufc.dolfin_form.ufc_form()), 
-   cell(ufc.dolfin_form.mesh()),  cell0(ufc.dolfin_form.mesh()), 
-   cell1(ufc.dolfin_form.mesh()), coefficients(ufc.dolfin_form.coefficients()), 
+UFC::UFC(const UFC& ufc) : form(ufc.dolfin_form.ufc_form()),
+   cell(ufc.dolfin_form.mesh()),  cell0(ufc.dolfin_form.mesh()),
+   cell1(ufc.dolfin_form.mesh()), coefficients(ufc.dolfin_form.coefficients()),
    dolfin_form(ufc.dolfin_form)
 {
   this->init(ufc.dolfin_form);
@@ -221,7 +221,7 @@ void UFC::update(const Cell& cell, uint local_facet)
     coefficients[i]->interpolate(w[i], this->cell, cell.index(), local_facet);
 }
 //-----------------------------------------------------------------------------
-void UFC::update(const Cell& cell0, uint local_facet0, 
+void UFC::update(const Cell& cell0, uint local_facet0,
                  const Cell& cell1, uint local_facet1)
 {
   // Update UFC cells

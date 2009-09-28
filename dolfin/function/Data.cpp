@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-11
-// Last changed: 2009-09-15
+// Last changed: 2009-09-28
 
 #include <dolfin/mesh/Cell.h>
 #include "Data.h"
@@ -11,13 +11,13 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Data::Data()
-  : x(0), t(0.0), _cell(0), _ufc_cell(0), _facet(-1)
+  : x(0), _dolfin_cell(0), _ufc_cell(0), _facet(-1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Data::Data(const Cell& cell, int facet)
-  : x(0), t(0.0), _cell(&cell), _ufc_cell(0), _facet(facet)
+  : x(0), _dolfin_cell(&cell), _ufc_cell(0), _facet(facet)
 {
   // Do nothing
 }
@@ -29,10 +29,10 @@ Data::~Data()
 //-----------------------------------------------------------------------------
 const Cell& Data::cell() const
 {
-  if (!_cell)
+  if (!_dolfin_cell)
     error("Current cell is unknown.");
 
-  return *_cell;
+  return *_dolfin_cell;
 }
 //-----------------------------------------------------------------------------
 const ufc::cell& Data::ufc_cell() const
@@ -56,23 +56,44 @@ Point Data::normal() const
   return cell().normal(facet());
 }
 //-----------------------------------------------------------------------------
+dolfin::uint Data::geometric_dimension() const
+{
+  assert(_dolfin_cell);
+  return _dolfin_cell->mesh().geometry().dim();
+}
+//-----------------------------------------------------------------------------
 bool Data::on_facet() const
 {
   return _facet >= 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Data::geometric_dimension() const
+bool Data::is_valid() const
 {
-  assert(_cell);
-  return _cell->mesh().geometry().dim();
+  return _dolfin_cell != 0;
 }
 //-----------------------------------------------------------------------------
 void Data::invalidate()
 {
   x = 0;
-  //t = 0.0;
-  _cell = 0;
+
+  _dolfin_cell = 0;
   _ufc_cell = 0;
   _facet = -1;
+}
+//-----------------------------------------------------------------------------
+void Data::update(const Cell& dolfin_cell,
+                  const ufc::cell ufc_cell,
+                  int local_facet)
+{
+  // Invalidate old data
+  invalidate();
+
+  // Set new data
+  _dolfin_cell = &dolfin_cell;
+  _ufc_cell = &ufc_cell;
+  _facet = -1;
+
+  // FIXME: Don't keep UFC cell until we've fixed logic in Function class
+  _ufc_cell = 0;
 }
 //-----------------------------------------------------------------------------
