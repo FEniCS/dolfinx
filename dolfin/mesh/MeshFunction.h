@@ -256,6 +256,9 @@ namespace dolfin
     uint _size;
   };
 
+  template<> std::string MeshFunction<double>::str(bool verbose) const;
+  template<> std::string MeshFunction<uint>::str(bool verbose) const;
+
 }
 
 #endif
