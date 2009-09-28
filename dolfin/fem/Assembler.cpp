@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-09-14
+// Last changed: 2009-09-28
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -171,7 +171,7 @@ void Assembler::assemble_cells(GenericTensor& A,
     else
     {
       // Get local dimensions
-      for (uint i = 0; i < a.rank(); i++)
+      for (uint i = 0; i < ufc.form.rank(); i++)
         ufc.local_dimensions[i] = a.function_space(i).dofmap().local_dimension(ufc.cell);
       A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
     }
@@ -242,7 +242,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
 
     // Get local dimensions
-    for (uint i = 0; i < a.rank(); i++)
+    for (uint i = 0; i < ufc.form.rank(); i++)
       ufc.local_dimensions[i] = a.function_space(i).dofmap().local_dimension(ufc.cell);
 
     // Add entries to global tensor
@@ -309,7 +309,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     ufc.update(cell0, local_facet0, cell1, local_facet1);
 
     // Tabulate dofs for each dimension on macro element
-    for (uint i = 0; i < a.rank(); i++)
+    for (uint i = 0; i < ufc.form.rank(); i++)
     {
       const uint offset = a.function_space(i).dofmap().local_dimension(ufc.cell0);
       a.function_space(i).dofmap().tabulate_dofs(ufc.macro_dofs[i],          ufc.cell0, cell0.index());
@@ -321,7 +321,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
                               local_facet0, local_facet1);
 
     // Get local dimensions
-    for (uint i = 0; i < a.rank(); i++)
+    for (uint i = 0; i < ufc.form.rank(); i++)
       ufc.macro_local_dimensions[i] = a.function_space(i).dofmap().local_dimension(ufc.cell0)
                                     + a.function_space(i).dofmap().local_dimension(ufc.cell1);
 
@@ -355,7 +355,7 @@ void Assembler::check(const Form& a)
     try
     {
       // auto_ptr deletes its object when it exits its scope
-      std::auto_ptr<ufc::finite_element> fe( a.ufc_form().create_finite_element(i+a.rank()) );
+      std::auto_ptr<ufc::finite_element> fe(a.ufc_form().create_finite_element(i + a.rank()));
 
       const uint r = coefficients[i]->function_space().element().value_rank();
       const uint fe_r = fe->value_rank();
@@ -413,7 +413,7 @@ void Assembler::init_global_tensor(GenericTensor& A,
     if (sparsity_pattern)
     {
       std::vector<const DofMap*> dof_maps(0);
-      for (uint i = 0; i < a.rank(); ++i)
+      for (uint i = 0; i < ufc.form.rank(); ++i)
         dof_maps.push_back(&(a.function_space(i).dofmap()));
       SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dof_maps,
                                     a.ufc_form().num_cell_integrals(),

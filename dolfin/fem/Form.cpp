@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2008-12-15
+// Last changed: 2009-09-28
 
 #include <string>
 #include <dolfin/common/NoDeleter.h>
@@ -56,6 +56,12 @@ dolfin::uint Form::rank() const
 {
   assert(_ufc_form);
   return _ufc_form->rank();
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Form::num_coefficients() const
+{
+  assert(_ufc_form);
+  return _ufc_form->num_coefficients();
 }
 //-----------------------------------------------------------------------------
 const Mesh& Form::mesh() const

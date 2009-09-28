@@ -6,7 +6,6 @@
 
 #include <dolfin/log/log.h>
 #include <dolfin/fem/FiniteElement.h>
-#include "FunctionSpace.h"
 #include "Data.h"
 #include "Expression.h"
 
@@ -29,7 +28,7 @@ void Expression::eval(double* values, const double* x) const
   assert(x);
 
   // Missing eval method if we reach this point
-  error("Missing eval() for user-defined function (must be overloaded).");
+  error("Missing eval() for expression (must be overloaded).");
 }
 //-----------------------------------------------------------------------------
 void Expression::eval(double* values, const Data& data) const
@@ -42,9 +41,9 @@ void Expression::eval(double* values, const Data& data) const
 }
 //-----------------------------------------------------------------------------
 void Expression::restrict(double* w,
+                          const FiniteElement& element,
                           const Cell& dolfin_cell,
                           const ufc::cell& ufc_cell,
-                          const FunctionSpace& V,
                           int local_facet) const
 {
   assert(w);
@@ -53,7 +52,6 @@ void Expression::restrict(double* w,
   data.update(dolfin_cell, ufc_cell, local_facet);
 
   // Evaluate each dof to get the expansion coefficients
-  const FiniteElement& element = V.element();
   for (uint i = 0; i < element.space_dimension(); ++i)
     w[i] = element.evaluate_dof(i, *this, ufc_cell);
 

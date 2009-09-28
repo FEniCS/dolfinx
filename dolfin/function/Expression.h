@@ -22,7 +22,7 @@ namespace dolfin
   /// An expression is defined by overloading the eval() method. Users
   /// may choose to overload either a simple version of eval(), in the
   /// case of expressions only depending on the coordinate x, or an
-  /// optional version for functions depending on x, t or mesh data
+  /// optional version for functions depending on x and mesh data
   /// like cell indices or facet normals.
 
   class Expression : public NewCoefficient, public ufc::function
@@ -43,9 +43,9 @@ namespace dolfin
 
     /// Implementation of Coefficient interface
     virtual void restrict(double* w,
+                          const FiniteElement& element,
                           const Cell& dolfin_cell,
                           const ufc::cell& ufc_cell,
-                          const FunctionSpace& V,
                           int local_facet) const;
 
     /// Implementation of ufc::function interface

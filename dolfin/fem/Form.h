@@ -1,11 +1,11 @@
-// Copyright (C) 2007-2008 Anders Logg.
+// Copyright (C) 2007-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008.
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2008-12-26
+// Last changed: 2009-09-28
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -53,6 +53,9 @@ namespace dolfin
     /// Return rank of form (bilinear form = 2, linear form = 1, functional = 0, etc)
     uint rank() const;
 
+    /// Return number of coefficients
+    uint num_coefficients() const;
+
     /// Return mesh
     const Mesh& mesh() const;
 
@@ -96,6 +99,8 @@ namespace dolfin
 
     // The UFC form
     boost::shared_ptr<const ufc::form> _ufc_form;
+
+
 
   };
 

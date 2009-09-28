@@ -206,9 +206,9 @@ void UFC::update(const Cell& cell)
   // Update UFC cell
   this->cell.update(cell);
 
-  // Interpolate coefficients on cell
-  for (uint i = 0; i < coefficients.size(); i++)
-    coefficients[i]->interpolate(w[i], this->cell, cell.index());
+  // Restrict coefficients to cell
+  for (uint i = 0; i < coefficients.size(); ++i)
+    coefficients[i]->restrict(w[i], *coefficient_elements[i], cell, this->cell, -1);
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell, uint local_facet)
@@ -216,9 +216,9 @@ void UFC::update(const Cell& cell, uint local_facet)
   // Update UFC cell
   this->cell.update(cell);
 
-  // Interpolate coefficients on facet
-  for (uint i = 0; i < coefficients.size(); i++)
-    coefficients[i]->interpolate(w[i], this->cell, cell.index(), local_facet);
+  // Restrict coefficients to facet
+  for (uint i = 0; i < coefficients.size(); ++i)
+    coefficients[i]->restrict(w[i], *coefficient_elements[i], cell, this->cell, local_facet);
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell0, uint local_facet0,

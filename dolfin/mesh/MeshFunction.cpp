@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 
 // First added:  2009-09-25
-// Last changed: 2009-09-25
+// Last changed: 2009-09-28
 
 // Template specializations of str for simple types
 
@@ -10,6 +10,7 @@
 
 namespace dolfin
 {
+
 //-----------------------------------------------------------------------------
 template<> std::string MeshFunction<double>::str(bool verbose) const
 {
@@ -17,7 +18,7 @@ template<> std::string MeshFunction<double>::str(bool verbose) const
 
   if (verbose)
   {
-    s << str(false) << std::endl << std::endl;        
+    s << str(false) << std::endl << std::endl;
 
     for (uint i = 0; i < _size; i++)
       s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
@@ -33,7 +34,7 @@ template<> std::string MeshFunction<dolfin::uint>::str(bool verbose) const
 
   if (verbose)
   {
-    s << str(false) << std::endl << std::endl;        
+    s << str(false) << std::endl << std::endl;
 
     for (uint i = 0; i < _size; i++)
       s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
@@ -43,4 +44,5 @@ template<> std::string MeshFunction<dolfin::uint>::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+
 }

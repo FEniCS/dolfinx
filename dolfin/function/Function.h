@@ -17,6 +17,7 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
+#include "NewCoefficient.h"
 
 namespace ufc
 {
@@ -40,7 +41,7 @@ namespace dolfin
   /// where {phi_i}_i is a basis for V_h, and U is a vector of
   /// expansion coefficients for u_h.
 
-  class Function : public Variable
+  class Function : public Variable, public NewCoefficient
   {
   public:
 
@@ -137,6 +138,13 @@ namespace dolfin
 
     /// Collect off-process coefficients to prepare for interpolation
     void gather() const;
+
+    /// Implementation of Coefficient interface
+    virtual void restrict(double* w,
+                          const FiniteElement& element,
+                          const Cell& dolfin_cell,
+                          const ufc::cell& ufc_cell,
+                          int local_facet) const;
 
     /// Friends
     friend class Coefficient;

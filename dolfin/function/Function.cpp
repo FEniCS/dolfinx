@@ -562,3 +562,15 @@ void Function::gather() const
   }
 }
 //-----------------------------------------------------------------------------
+void Function::restrict(double* w,
+                        const FiniteElement& element,
+                        const Cell& dolfin_cell,
+                        const ufc::cell& ufc_cell,
+                        int local_facet) const
+{
+  // FIXME: Put local interpolation code here when new Expression class
+  // FIXME: design is in place.
+
+  interpolate(w, ufc_cell, dolfin_cell.index(), local_facet);
+}
+//-----------------------------------------------------------------------------

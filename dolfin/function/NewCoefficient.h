@@ -13,7 +13,7 @@ namespace dolfin
 {
 
   class Cell;
-  class FunctionSpace;
+  class FiniteElement;
 
   /// This class represents a coefficient appearing in a finite
   /// element variational form. A coefficient can be either a
@@ -39,19 +39,12 @@ namespace dolfin
     /// Destructor
     virtual ~NewCoefficient() {}
 
-    /// Restrict coefficient to local element (compute expansion coefficients w)
+    /// Restrict coefficient to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
+                          const FiniteElement& element,
                           const Cell& dolfin_cell,
                           const ufc::cell& ufc_cell,
-                          const FunctionSpace& V,
                           int local_facet) const = 0;
-
-    /// Restrict coefficient to local facet (compute expansion coefficients w)
-    inline void restrict(double* w,
-                         const Cell& dolfin_cell,
-                         const ufc::cell& ufc_cell,
-                         const FunctionSpace& V)
-    { restrict(w, dolfin_cell, ufc_cell, V, -1); }
 
   };
 
