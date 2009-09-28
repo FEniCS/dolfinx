@@ -1,11 +1,11 @@
-// Copyright (C) 2008-2009 Kent-Andre Mardal.
+\// Copyright (C) 2008-2009 Kent-Andre Mardal.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008-2009.
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2009-06-22
-// Last changed: 2009-06-22
+// Last changed: 2009-09-28
 
 #ifndef __SYSTEM_ASSEMBLER_H
 #define __SYSTEM_ASSEMBLER_H
@@ -25,11 +25,11 @@ namespace dolfin
   class Mesh;
   class SubDomain;
   class UFC;
-  class Cell; 
-  class Facet; 
+  class Cell;
+  class Facet;
   class Function;
   template<class T> class MeshFunction;
-  
+
   /// This class provides implements an assembler for systems
   /// of the form Ax = b. It differs from the default DOLFIN
   /// assembler in that it assembles both A and b and the same
@@ -42,88 +42,88 @@ namespace dolfin
 
     /// Assemble system (A, b)
     static void assemble(GenericMatrix& A,
-                                GenericVector& b,
-                                const Form& a,
-                                const Form& L,
-                                bool reset_sparsitys=true,
-                                bool add_values=false);
+                         GenericVector& b,
+                         const Form& a,
+                         const Form& L,
+                         bool reset_sparsitys=true,
+                         bool add_values=false);
 
     /// Assemble system (A, b) and apply Dirichlet boundary condition
     static void assemble(GenericMatrix& A,
-                                GenericVector& b,
-                                const Form& a,
-                                const Form& L,
-                                const DirichletBC& bc,
-                                bool reset_sparsitys=true,
-                                bool add_values=true);
+                         GenericVector& b,
+                         const Form& a,
+                         const Form& L,
+                         const DirichletBC& bc,
+                         bool reset_sparsitys=true,
+                         bool add_values=true);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions
     static void assemble(GenericMatrix& A,
-                                GenericVector& b,
-                                const Form& a,
-                                const Form& L, 
-                                std::vector<const DirichletBC*>& bcs,
-                                bool reset_sparsitys=true,
-                                bool add_values=false);
+                         GenericVector& b,
+                         const Form& a,
+                         const Form& L,
+                         std::vector<const DirichletBC*>& bcs,
+                         bool reset_sparsitys=true,
+                         bool add_values=false);
 
     /// Assemble system (A, b) and apply Dirichlet boundary conditions
     static void assemble(GenericMatrix& A,
-                                GenericVector& b,
-                                const Form& a,
-                                const Form& L,
-                                std::vector<const DirichletBC*>& bcs,
-                                const MeshFunction<uint>* cell_domains,
-                                const MeshFunction<uint>* exterior_facet_domains,
-                                const MeshFunction<uint>* interior_facet_domains,
-                                const GenericVector* x0,
-                                bool reset_sparsitys=true,
-                                bool add_values=false);
+                         GenericVector& b,
+                         const Form& a,
+                         const Form& L,
+                         std::vector<const DirichletBC*>& bcs,
+                         const MeshFunction<uint>* cell_domains,
+                         const MeshFunction<uint>* exterior_facet_domains,
+                         const MeshFunction<uint>* interior_facet_domains,
+                         const GenericVector* x0,
+                         bool reset_sparsitys=true,
+                         bool add_values=false);
 
   private:
 
-    class Scratch;    
+    class Scratch;
 
     static void compute_tensor_on_one_interior_facet(const Form& a,
-                             UFC& ufc, 
-                             const Cell& cell1, 
-                             const Cell& cell2, 
-                             const Facet& facet,
-                             const MeshFunction<uint>* exterior_facet_domains); 
+                                                     UFC& ufc,
+                                                     const Cell& cell1,
+                                                     const Cell& cell2,
+                                                     const Facet& facet,
+                                                     const MeshFunction<uint>* exterior_facet_domains);
 
     static void cell_wise_assembly(GenericMatrix& A, GenericVector& b,
-                              const Form& a, const Form& L, 
-                              UFC& A_ufc, UFC& b_ufc, Scratch& data, 
-                              const MeshFunction<uint>* cell_domains,
-                              const MeshFunction<uint>* exterior_facet_domains); 
+                                   const Form& a, const Form& L,
+                                   UFC& A_ufc, UFC& b_ufc, Scratch& data,
+                                   const MeshFunction<uint>* cell_domains,
+                                   const MeshFunction<uint>* exterior_facet_domains);
 
     static void facet_wise_assembly(GenericMatrix& A, GenericVector& b,
-                              const Form& a, const Form& L, 
-                              UFC& A_ufc, UFC& b_ufc, Scratch& data, 
-                              const MeshFunction<uint>* cell_domains,
-                              const MeshFunction<uint>* exterior_facet_domains,
-                              const MeshFunction<uint>* interior_facet_domains); 
+                                    const Form& a, const Form& L,
+                                    UFC& A_ufc, UFC& b_ufc, Scratch& data,
+                                    const MeshFunction<uint>* cell_domains,
+                                    const MeshFunction<uint>* exterior_facet_domains,
+                                    const MeshFunction<uint>* interior_facet_domains);
 
     static void assemble_interior_facet(GenericMatrix& A, GenericVector& b,
-                         UFC& A_ufc, UFC& b_ufc, 
-                         const Form& a,
-                         const Form& L,
-                         const Cell& cell0, const Cell& cell1, const Facet& facet,
-                         const Scratch& data); 
+                                        UFC& A_ufc, UFC& b_ufc,
+                                        const Form& a,
+                                        const Form& L,
+                                        const Cell& cell0, const Cell& cell1, const Facet& facet,
+                                        const Scratch& data);
 
     static void assemble_exterior_facet(GenericMatrix& A, GenericVector& b,
-                         UFC& A_ufc, UFC& b_ufc, 
-                         const Form& a,
-                         const Form& L,
-                         const Cell& cell, const Facet& facet,
-                         const Scratch& data); 
+                                        UFC& A_ufc, UFC& b_ufc,
+                                        const Form& a,
+                                        const Form& L,
+                                        const Cell& cell, const Facet& facet,
+                                        const Scratch& data);
 
-    static void apply_bc(double* A, double* b, const uint* indicators, 
-                         const double* g, uint** global_dofs, const uint* dims); 
-   
+    static void apply_bc(double* A, double* b, const uint* indicators,
+                         const double* g, uint** global_dofs, const uint* dims);
+
     // Class to hold temporary data
     class Scratch
     {
-      public:
+    public:
 
       Scratch(const Form& a, const Form& L);
       ~Scratch();
@@ -133,10 +133,11 @@ namespace dolfin
       uint A_num_entries, b_num_entries;
 
       double* Ae;
-      double* be; 
+      double* be;
       uint* indicators;
       double* g;
     };
+
   };
 
 }
