@@ -27,7 +27,7 @@ def generate_pcFunc(replaceDict):
 
     includeDir = env["includeDir"]
     libDir = env["libDir"]
-    prefix = env["prefix"]
+    prefix = os.path.abspath(env["prefix"])
     f = file(str(target[0]), "w")
 
     # compiler:
