@@ -5,7 +5,7 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2005
-// Last changed: 2009-09-14
+// Last changed: 2009-09-28
 
 #ifdef HAS_PETSC
 
@@ -167,17 +167,22 @@ void PETScLUSolver::init()
   PCSetType(pc, PCLU);
 
   if (MPI::num_processes() == 1)
-    PCFactorSetMatSolverPackage(pc, MAT_SOLVER_UMFPACK);
-
-  if (MPI::num_processes() > 1)
   {
-    #if PETSC_HAVE_MUMPS
+#if PETSC_HAVE_MUMPS
     PCFactorSetMatSolverPackage(pc, MAT_SOLVER_MUMPS);
-    # elif PETSC_HAVE_SPOOLES
+#else
+    PCFactorSetMatSolverPackage(pc, MAT_SOLVER_UMFPACK);
+#endif
+  }
+  else
+  {
+#if PETSC_HAVE_MUMPS
+    PCFactorSetMatSolverPackage(pc, MAT_SOLVER_MUMPS);
+#elif PETSC_HAVE_SPOOLES
     PCFactorSetMatSolverPackage(pc, MAT_SOLVER_SPOOLES);
-    #else
+#else
     error("No suitable solver for parallel LU. Consider configuring PETSc with MUMPS or SPOOLES.");
-    #endif
+#endif
   }
 
   // Allow matrices with zero diagonals to be solved
