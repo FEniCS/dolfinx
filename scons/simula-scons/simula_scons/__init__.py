@@ -608,7 +608,10 @@ def getModules(configuredPackages, resolve_deps=True,
     for key, value in modules.items():
       for d in disabled_packages:
         if d in value.optDependencies:
-          value.optDependencies.remove(d)
+          if isinstance(value.optDependencies, dict):
+            del value.optDependencies[d]
+          else:
+            value.optDependencies.remove(d)
         
     if resolve_deps:
         modules = resolveModuleDependencies(modules, configuredPackages)
@@ -1135,7 +1138,7 @@ def resolveModuleDependencies(modules, configuredPackages, packcfgObjs,
                 if not found:
                     not_found_packages.append("%s (version %s)" % (package,request_version))
                 else:
-                    found.append("%s (version %s)" % (package,request_version))
+                    found_packages.append("%s (version %s)" % (package,request_version))
         else:
             for package in mod.optDependencies:
                 found = False
