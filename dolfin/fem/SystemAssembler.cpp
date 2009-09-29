@@ -1,7 +1,6 @@
-// Copyright (C) 2008-2009 Kent-Andre Mardal.
+// Copyright (C) 2008-2009 Kent-Andre Mardal and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2008-2009.
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2009-06-22

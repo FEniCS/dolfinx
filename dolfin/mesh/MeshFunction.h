@@ -172,7 +172,7 @@ namespace dolfin
     }
 
     /// Get value at given entity
-    inline T get(const MeshEntity& entity) const
+    T get(const MeshEntity& entity) const
     {
       assert(_values);
       assert(&entity.mesh() == _mesh);
@@ -182,7 +182,7 @@ namespace dolfin
     }
 
     /// Get value at given entity
-    inline T get(uint index) const
+    T get(uint index) const
     {
       assert(_values);
       assert(index < _size);
@@ -190,7 +190,7 @@ namespace dolfin
     }
 
     /// Set value at given entity
-    inline void set(const MeshEntity& entity, const T& value)
+    void set(const MeshEntity& entity, const T& value)
     {
       assert(_values);
       assert(&entity.mesh() == _mesh);
@@ -200,7 +200,7 @@ namespace dolfin
     }
 
     /// Set value at given entity
-    inline void set(uint index, const T& value)
+    void set(uint index, const T& value)
     {
       assert(_values);
       assert(index < _size);
@@ -208,7 +208,7 @@ namespace dolfin
     }
 
     /// Set all values to given value
-    inline void set_all(const T& value)
+    void set_all(const T& value)
     {
       assert(_values);
       for (uint i = 0; i < _size; i++)
