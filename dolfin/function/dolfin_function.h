@@ -3,7 +3,9 @@
 
 // DOLFIN function interface
 
+#include <dolfin/function/Coefficient.h>
 #include <dolfin/function/Data.h>
+#include <dolfin/function/Expression.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SubSpace.h>

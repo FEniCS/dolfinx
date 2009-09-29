@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-09-28
+// Last changed: 2009-09-29
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -540,6 +540,18 @@ void Function::get(double* block, uint m, const uint* rows) const
   }
 }
 //-----------------------------------------------------------------------------
+void Function::restrict(double* w,
+                        const FiniteElement& element,
+                        const Cell& dolfin_cell,
+                        const ufc::cell& ufc_cell,
+                        int local_facet) const
+{
+  // FIXME: Put local interpolation code here when new Expression class
+  // FIXME: design is in place.
+
+  interpolate(w, ufc_cell, dolfin_cell.index(), local_facet);
+}
+//-----------------------------------------------------------------------------
 void Function::gather() const
 {
   // Gather off-process coefficients if running in parallel and function has a vector
@@ -560,17 +572,5 @@ void Function::gather() const
     // Gather off process coefficients
     _vector->gather(*_off_process_vector, _off_process_dofs);
   }
-}
-//-----------------------------------------------------------------------------
-void Function::restrict(double* w,
-                        const FiniteElement& element,
-                        const Cell& dolfin_cell,
-                        const ufc::cell& ufc_cell,
-                        int local_facet) const
-{
-  // FIXME: Put local interpolation code here when new Expression class
-  // FIXME: design is in place.
-
-  interpolate(w, ufc_cell, dolfin_cell.index(), local_facet);
 }
 //-----------------------------------------------------------------------------

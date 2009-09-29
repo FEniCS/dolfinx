@@ -2,13 +2,13 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-09-28
+// Last changed: 2009-09-29
 
 #ifndef __EXPRESSION_H
 #define __EXPRESSION_H
 
 #include <ufc.h>
-#include "NewCoefficient.h"
+#include "Coefficient.h"
 
 namespace dolfin
 {
@@ -25,7 +25,7 @@ namespace dolfin
   /// optional version for functions depending on x and mesh data
   /// like cell indices or facet normals.
 
-  class Expression : public NewCoefficient, public ufc::function
+  class Expression : public Coefficient, public ufc::function
   {
   public:
 

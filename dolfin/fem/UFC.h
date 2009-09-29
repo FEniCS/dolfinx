@@ -4,14 +4,13 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2007-01-17
-// Last changed: 2009-09-28
+// Last changed: 2009-09-29
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
 
 #include <vector>
 #include <ufc.h>
-#include <dolfin/function/Function.h>
 #include "UFCCell.h"
 #include "UFCMesh.h"
 
@@ -20,6 +19,7 @@ namespace dolfin
 
   class FiniteElement;
   class FunctionSpace;
+  class Coefficient;
   class Mesh;
   class Cell;
   class Form;
@@ -113,8 +113,8 @@ namespace dolfin
 
   private:
 
-    // Coefficient functions
-    const std::vector<const Function*> coefficients;
+    // Coefficients
+    const std::vector<const Coefficient*> coefficients;
 
     // The form
     const Form& dolfin_form;
