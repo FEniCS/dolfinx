@@ -2,10 +2,11 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2007.
-// Modified by Nuno Lopes 2008
+// Modified by Nuno Lopes 2008.
+// Modified by Kristian B. Oelgaard 2009.
 //
 // First added:  2005-12-02
-// Last changed: 2009-02-11
+// Last changed: 2009-09-29
 
 #include <dolfin/common/constants.h>
 #include <dolfin/main/MPI.h>
@@ -23,8 +24,8 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
   if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; } 
 
   // Check options
-  if(diagonal != "left" && diagonal != "right" && diagonal != "crossed")
-    error("Unknown mesh diagonal in Rectangle. Allowed options are \"left\", \"right\" and \"crossed\".");
+  if (diagonal != "left" && diagonal != "right" && diagonal != "right/left" && diagonal != "crossed")
+    error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\", \"right/left\" and \"crossed\".");
 
   const double a = x0;
   const double b = x1;
@@ -102,10 +103,19 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
       }
     }
   }
-  else if (diagonal == "left" || diagonal == "right")
+  else if (diagonal == "left" || diagonal == "right" || diagonal == "right/left")
   {
+    std::string local_diagonal = diagonal;
     for (uint iy = 0; iy < ny; iy++)
     {
+      // Set up alternating diagonal
+      if (diagonal == "right/left")
+      {
+        if (iy % 2)
+          local_diagonal = "right";
+        else
+          local_diagonal = "left";
+      }
       for (uint ix = 0; ix < nx; ix++)
       {
         const uint v0 = iy*(nx + 1) + ix;
@@ -113,15 +123,19 @@ Rectangle::Rectangle(double x0, double y0, double x1, double y1,
         const uint v2 = v0 + (nx + 1);
         const uint v3 = v1 + (nx + 1);
 
-        if(diagonal == "left")
+        if(local_diagonal == "left")
         {
           editor.add_cell(cell++, v0, v1, v2);
           editor.add_cell(cell++, v1, v2, v3);
+          if (diagonal == "right/left")
+            local_diagonal = "right";
         }
         else
         {
           editor.add_cell(cell++, v0, v1, v3);
           editor.add_cell(cell++, v0, v2, v3);
+          if (diagonal == "right/left")
+            local_diagonal = "left";
         }
       }
     }

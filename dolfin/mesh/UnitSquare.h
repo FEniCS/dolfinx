@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-12-02
-// Last changed: 2006-08-07
+// Last changed: 2009-09-29
 
 #ifndef __UNIT_SQUARE_H
 #define __UNIT_SQUARE_H
@@ -17,8 +17,8 @@ namespace dolfin
   /// the total number of triangles will be 2*nx*ny and the
   /// total number of vertices will be (nx + 1)*(ny + 1).
 
-  /// std::string diagonal ("left", "right" or "crossed") indicates the 
-  /// direction of the diagonals.
+  /// std::string diagonal ("left", "right", "right/left" or "crossed")
+  /// indicates the direction of the diagonals.
 
   class UnitSquare : public Mesh
   {

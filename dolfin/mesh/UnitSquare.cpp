@@ -1,10 +1,11 @@
-// Copyright (C) 2005-2008 Anders Logg.
+// Copyright (C) 2005-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells 2007.
+// Modified by Kristian B. Oelgaard 2009.
 //
 // First added:  2005-12-02
-// Last changed: 2009-08-09
+// Last changed: 2009-09-29
 
 #include <dolfin/main/MPI.h>
 #include "MeshPartitioning.h"
@@ -19,8 +20,8 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
   // Receive mesh according to parallel policy
   if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
 
-  if (diagonal != "left" && diagonal != "right" && diagonal != "crossed")
-    error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\" and \"crossed\".");
+  if (diagonal != "left" && diagonal != "right" && diagonal != "right/left" && diagonal != "crossed")
+    error("Unknown mesh diagonal in UnitSquare. Allowed options are \"left\", \"right\", \"right/left\" and \"crossed\".");
 
   if (nx < 1 || ny < 1)
     error("Size of unit square must be at least 1 in each dimension.");
@@ -91,10 +92,20 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
       }
     }
   }
-  else if (diagonal == "left" || diagonal == "right")
+  else if (diagonal == "left" || diagonal == "right" || diagonal == "right/left")
   {
+    std::string local_diagonal = diagonal;
     for (uint iy = 0; iy < ny; iy++)
     {
+      // Set up alternating diagonal
+      if (diagonal == "right/left")
+      {
+        if (iy % 2)
+          local_diagonal = "right";
+        else
+          local_diagonal = "left";
+      }
+
       for (uint ix = 0; ix < nx; ix++)
       {
         const uint v0 = iy*(nx + 1) + ix;
@@ -102,15 +113,19 @@ UnitSquare::UnitSquare(uint nx, uint ny, std::string diagonal) : Mesh()
         const uint v2 = v0 + (nx + 1);
         const uint v3 = v1 + (nx + 1);
 
-        if(diagonal == "left")
+        if(local_diagonal == "left")
         {
           editor.add_cell(cell++, v0, v1, v2);
           editor.add_cell(cell++, v1, v2, v3);
+          if (diagonal == "right/left")
+            local_diagonal = "right";
         }
         else
         {
           editor.add_cell(cell++, v0, v1, v3);
           editor.add_cell(cell++, v0, v2, v3);
+          if (diagonal == "right/left")
+            local_diagonal = "left";
         }
       }
     }

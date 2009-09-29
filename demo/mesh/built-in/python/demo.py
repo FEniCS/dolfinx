@@ -25,9 +25,17 @@ mesh = UnitSquare(10, 10, "crossed")
 print "Plotting a UnitSquare"
 plot(mesh, title="Unit square (crossed)")
 
+mesh = UnitSquare(10, 10, "right/left")
+print "Plotting a UnitSquare"
+plot(mesh, title="Unit square (right/left)")
+
 mesh = Rectangle(0.0, 0.0, 10.0, 4.0, 10, 10)
 print "Plotting a Rectangle"
 plot(mesh, title="Rectangle")
+
+mesh = Rectangle(-3.0, 2.0, 7.0, 6.0, 10, 10, "right/left")
+print "Plotting a Rectangle"
+plot(mesh, title="Rectangle (right/left)")
 
 mesh = UnitCircle(20, "right", "rotsumn")
 print "Plotting a UnitCircle"

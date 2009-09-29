@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-12-02
-// Last changed: 2009-02-11
+// Last changed: 2009-09-29
 
 #ifndef __RECTANGLE_H
 #define __RECTANGLE_H
@@ -17,8 +17,8 @@ namespace dolfin
   /// the total number of triangles will be 2*nx*ny and the
   /// total number of vertices will be (nx + 1)*(ny + 1).
   ///
-  /// std::string diagonal ("left", "right" or "crossed") indicates the 
-  /// direction of the diagonals.
+  /// std::string diagonal ("left", "right", "right/left" or "crossed")
+  /// indicates the direction of the diagonals.
 
   class Rectangle : public Mesh
   {
