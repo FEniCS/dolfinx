@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2009-06-22
-// Last changed: 2009-09-14
+// Last changed: 2009-09-29
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -16,7 +16,7 @@
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/SubDomain.h>
-#include <dolfin/function/Function.h>
+#include <dolfin/function/Coefficient.h>
 #include <dolfin/function/FunctionSpace.h>
 #include "DofMap.h"
 #include "FiniteElement.h"
@@ -232,8 +232,8 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
                                     const MeshFunction<uint>* interior_facet_domains)
 {
   const Mesh& mesh = a.mesh();
-  const std::vector<const Function*> A_coefficients = a.coefficients();
-  const std::vector<const Function*> b_coefficients = L.coefficients();
+  const std::vector<const Coefficient*> A_coefficients = a.coefficients();
+  const std::vector<const Coefficient*> b_coefficients = L.coefficients();
 
   Progress p("Assembling system (facet-wise)", mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
@@ -289,7 +289,7 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
             UFC& ufc, const Cell& cell0, const Cell& cell1, const Facet& facet,
             const MeshFunction<uint>* interior_facet_domains)
 {
-  const std::vector<const Function*> coefficients = a.coefficients();
+  const std::vector<const Coefficient*> coefficients = a.coefficients();
 
   // Facet integral
   ufc::interior_facet_integral* interior_facet_integral = ufc.interior_facet_integrals[0];

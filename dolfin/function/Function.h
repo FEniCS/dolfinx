@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-09-28
+// Last changed: 2009-09-29
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -17,7 +17,7 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
-#include "NewCoefficient.h"
+#include "Coefficient.h"
 
 namespace ufc
 {
@@ -41,7 +41,7 @@ namespace dolfin
   /// where {phi_i}_i is a basis for V_h, and U is a vector of
   /// expansion coefficients for u_h.
 
-  class Function : public Variable, public NewCoefficient
+  class Function : public Variable, public Coefficient
   {
   public:
 
@@ -136,15 +136,17 @@ namespace dolfin
     /// Interpolate function to vertices of mesh
     void interpolate_vertex_values(double* vertex_values) const;
 
-    /// Collect off-process coefficients to prepare for interpolation
-    void gather() const;
+    //--- Implementation of Coefficient interface ---
 
-    /// Implementation of Coefficient interface
+    /// Restrict coefficient to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
                           const ufc::cell& ufc_cell,
                           int local_facet) const;
+
+    /// Collect off-process coefficients to prepare for interpolation
+    virtual void gather() const;
 
     /// Friends
     friend class Coefficient;

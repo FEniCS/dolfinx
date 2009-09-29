@@ -1,61 +1,50 @@
-// Copyright (C) 2008 Anders Logg.
+// Copyright (C) 2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2008-10-28
-// Last changed: 2008-11-06
+// First added:  2009-09-28
+// Last changed: 2009-09-29
 
 #ifndef __COEFFICIENT_H
 #define __COEFFICIENT_H
 
-#include <boost/shared_ptr.hpp>
+#include <ufc.h>
 
 namespace dolfin
 {
 
-  // Forward declarations
-  class Form;
-  class Function;
-  class FunctionSpace;
+  class Cell;
+  class FiniteElement;
 
-  /// This class is used for assignment of functions to the
-  /// coefficients of a form, which allows magic like
+  /// This class represents a coefficient appearing in a finite
+  /// element variational form. A coefficient can be either a
+  /// user-defined expression (class Expression), or a function
+  /// (class Function) obtained as the solution of a variational
+  /// problem.
   ///
-  ///   a.f = f
-  ///   a.g = g
-  ///
-  /// which at the same time will attach functions to the
-  /// coefficients of a form and set the correct function
-  /// spaces (if missing) for the functions.
+  /// This abstract base class defines the interface for all kinds
+  /// of coefficients. Sub classes need to implement the restrict()
+  /// method which is responsible for computing the expansion
+  /// coefficients on a given local element.
 
   class Coefficient
   {
   public:
 
     /// Constructor
-    Coefficient(Form& form);
+    Coefficient() {}
 
     /// Destructor
-    virtual ~Coefficient();
+    virtual ~Coefficient() {}
 
-    // Attach function to coefficient
-    void attach(Function& v);
+    /// Restrict coefficient to local cell (compute expansion coefficients w)
+    virtual void restrict(double* w,
+                          const FiniteElement& element,
+                          const Cell& dolfin_cell,
+                          const ufc::cell& ufc_cell,
+                          int local_facet) const = 0;
 
-    // Attach function to coefficient
-    void attach(boost::shared_ptr<Function> v);
-
-    /// Create function space for coefficient
-    virtual const FunctionSpace* create_function_space() const = 0;
-
-    /// Return coefficient number
-    virtual uint number() const = 0;
-
-    /// Return coefficient name
-    virtual std::string name() const = 0;
-
-  protected:
-
-    // The form
-    Form& form;
+    /// Collect off-process coefficients to prepare for interpolation
+    virtual void gather() const {}
 
   };
 

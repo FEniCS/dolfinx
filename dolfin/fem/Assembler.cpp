@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-09-28
+// Last changed: 2009-09-29
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -22,7 +22,7 @@
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/SubDomain.h>
-#include <dolfin/function/Function.h>
+#include <dolfin/function/Coefficient.h>
 #include <dolfin/function/FunctionSpace.h>
 #include "DofMap.h"
 #include "Form.h"
@@ -104,7 +104,7 @@ void Assembler::assemble(GenericTensor& A,
   UFC ufc(a);
 
   // Gather off-process coefficients
-  const std::vector<const Function*> coefficients = a.coefficients();
+  const std::vector<const Coefficient*> coefficients = a.coefficients();
   for (uint i = 0; i < coefficients.size(); ++i)
     coefficients[i]->gather();
 
@@ -339,7 +339,7 @@ void Assembler::check(const Form& a)
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
-  const std::vector<const Function*> coefficients = a.coefficients();
+  const std::vector<const Coefficient*> coefficients = a.coefficients();
 
   // Check that we get the correct number of coefficients
   if (coefficients.size() != a.ufc_form().num_coefficients())
@@ -357,6 +357,8 @@ void Assembler::check(const Form& a)
       // auto_ptr deletes its object when it exits its scope
       std::auto_ptr<ufc::finite_element> fe(a.ufc_form().create_finite_element(i + a.rank()));
 
+      // Checks outcommented since they only work for Functions, not Expressions
+      /*
       const uint r = coefficients[i]->function_space().element().value_rank();
       const uint fe_r = fe->value_rank();
       if (fe_r != r)
@@ -371,6 +373,7 @@ You may need to provide the rank of a user defined Function.", i, r, fe_r);
           warning("Invalid value dimension %d of Function %d, got %d but expecting %d. \
 You may need to provide the dimension of a user defined Function.", j, i, dim, fe_dim);
       }
+      */
     }
     catch(std::exception & e)
     {

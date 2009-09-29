@@ -5,10 +5,11 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2007-01-17
-// Last changed: 2009-09-28
+// Last changed: 2009-09-29
 
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/Coefficient.h>
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "Form.h"
@@ -228,12 +229,12 @@ void UFC::update(const Cell& cell0, uint local_facet0,
   this->cell0.update(cell0);
   this->cell1.update(cell1);
 
-  // Interpolate coefficients on cell
-  for (uint i = 0; i < coefficients.size(); i++)
+  // Restrict coefficients to facet
+  for (uint i = 0; i < coefficients.size(); ++i)
   {
     const uint offset = coefficient_elements[i]->space_dimension();
-    coefficients[i]->interpolate(macro_w[i],          this->cell0, cell0.index(), local_facet0);
-    coefficients[i]->interpolate(macro_w[i] + offset, this->cell1, cell1.index(), local_facet1);
+    coefficients[i]->restrict(w[i],          *coefficient_elements[i], cell0, this->cell0, local_facet0);
+    coefficients[i]->restrict(w[i] + offset, *coefficient_elements[i], cell1, this->cell1, local_facet1);
   }
 }
 //-----------------------------------------------------------------------------

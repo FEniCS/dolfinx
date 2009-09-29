@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2009-09-28
+// Last changed: 2009-09-29
 
 #include <string>
 #include <dolfin/common/NoDeleter.h>
@@ -13,7 +13,7 @@
 #include <dolfin/log/LogStream.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/Function.h>
+#include <dolfin/function/Coefficient.h>
 #include "UFC.h"
 #include "Form.h"
 
@@ -22,7 +22,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Form::Form()
 {
-  // Do nothing (TODO: Remove?)
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Form::Form(dolfin::uint rank, dolfin::uint num_coefficients)
@@ -34,7 +34,7 @@ Form::Form(dolfin::uint rank, dolfin::uint num_coefficients)
 //-----------------------------------------------------------------------------
 Form::Form(const ufc::form& ufc_form,
            const std::vector<FunctionSpace*>& function_spaces,
-           const std::vector<Function*>& coefficients)
+           const std::vector<Coefficient*>& coefficients)
   : _function_spaces(function_spaces.size()),
     _coefficients(coefficients.size())
 {
@@ -72,9 +72,10 @@ const Mesh& Form::mesh() const
     if (_function_spaces[i])
       meshes.push_back(&_function_spaces[i]->mesh());
 
-  for (uint i = 0; i < _coefficients.size(); i++)
-    if (_coefficients[i])
-      meshes.push_back(&_coefficients[i]->function_space().mesh());
+  // Unable to extract meshes for coefficients (only works for Functions)
+  //for (uint i = 0; i < _coefficients.size(); i++)
+  //  if (_coefficients[i])
+  //    meshes.push_back(&_coefficients[i]->function_space().mesh());
 
   // Check that we have at least one mesh
   if (meshes.size() == 0)
@@ -105,15 +106,15 @@ std::vector<const FunctionSpace*> Form::function_spaces() const
   return V;
 }
 //-----------------------------------------------------------------------------
-const Function& Form::coefficient(dolfin::uint i) const
+const Coefficient& Form::coefficient(dolfin::uint i) const
 {
   assert(i < _coefficients.size());
   return *_coefficients[i];
 }
 //-----------------------------------------------------------------------------
-std::vector<const Function*> Form::coefficients() const
+std::vector<const Coefficient*> Form::coefficients() const
 {
-  std::vector<const Function*> V;
+  std::vector<const Coefficient*> V;
   for (uint i = 0; i < _coefficients.size(); ++i)
     V.push_back(_coefficients[i].get());
 
@@ -163,6 +164,9 @@ void Form::check() const
         i, element->signature(), _function_spaces[i]->element().signature().c_str());
   }
 
+  // Unable to check function spaces for coefficients (only works for Functions)
+
+  /*
   // Check coefficients
   for (uint i = 0; i < _coefficients.size(); ++i)
   {
@@ -174,6 +178,7 @@ void Form::check() const
     if (element->signature() != _coefficients[i]->function_space().element().signature())
       error("Wrong type of function space for coefficient %d with name '%s', form expects\n%s\nbut we got\n%s\n...",
         i, coefficient_name(i).c_str(), element->signature(), _coefficients[i]->function_space().element().signature().c_str());
-}
+  }
+  */
 }
 //-----------------------------------------------------------------------------
