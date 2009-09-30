@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-09-29
+// Last changed: 2009-09-30
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -216,7 +216,9 @@ namespace dolfin
       uint* local_index;
       uint* nonlocal_index;
     };
+
     mutable Scratch scratch;
+
   };
 
 }

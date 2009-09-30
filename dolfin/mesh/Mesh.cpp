@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2009-09-15
+// Last changed: 2009-09-30
 
 #include <sstream>
 
@@ -347,6 +347,26 @@ void Mesh::intersection(Mesh& mesh, std::vector<uint>& intersection, bool fixed_
     detector = new IntersectionDetector(*this);
 
   detector->intersection(mesh, intersection);
+}
+//-----------------------------------------------------------------------------
+double Mesh::hmin() const
+{
+  CellIterator cell(*this);
+  double h = cell->diameter();
+  for (; !cell.end(); ++cell)
+    h = std::min(h, cell->diameter());
+
+  return h;
+}
+//-----------------------------------------------------------------------------
+double Mesh::hmax() const
+{
+  CellIterator cell(*this);
+  double h = cell->diameter();
+  for (; !cell.end(); ++cell)
+    h = std::max(h, cell->diameter());
+
+  return h;
 }
 //-----------------------------------------------------------------------------
 std::string Mesh::str(bool verbose) const

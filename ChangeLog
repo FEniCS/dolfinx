@@ -1,3 +1,7 @@
+ - Introduce new class Expression replacing user-defined Functions
+ - Cleanup logic in Function class as a result of new Expression class
+ - Introduce new Coefficient base class for form coefficients
+ - Replace CellSize::min,max by Mesh::hmin,hmax
  - Use MUMPS instead of UMFPACK as default direct solver in both serial and parallel
  - Fix bug in SystemAssembler
  - Remove support for PETSc 2.3 and support PETSc 3.0.0 only
