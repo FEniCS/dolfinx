@@ -45,17 +45,22 @@ class CahnHilliardEquation : public NonlinearProblem
                          Constant& theta, Constant& lambda, Constant& mu_factor)
                        : a(0), L(0), reset_Jacobian(true)
     {
-      // Create forms
       if (mesh.topology().dim() == 2)
       {
-        CahnHilliard2D::CoefficientSet coeffs;
-        coeffs.u = u; coeffs.u0 = u0;
-        coeffs.lmbda = lambda; coeffs.muFactor = mu_factor;
-        coeffs.dt = dt; coeffs.theta = theta;
-
+        // Create forms
         boost::shared_ptr<CahnHilliard2D::FunctionSpace> V(new CahnHilliard2D::FunctionSpace(mesh));
-        a = new CahnHilliard2D::BilinearForm(V, V, coeffs);
-        L = new CahnHilliard2D::LinearForm(V, coeffs);
+        a = new CahnHilliard2D::BilinearForm(V, V);
+        L = new CahnHilliard2D::LinearForm(V);
+
+        // Attach coefficients
+        CahnHilliard2D::BilinearForm* _a = dynamic_cast<CahnHilliard2D::BilinearForm*>(a);
+        CahnHilliard2D::LinearForm*   _L = dynamic_cast<CahnHilliard2D::LinearForm*>(L);
+        _a->u = u;
+        _a->lmbda = lambda; _a->muFactor = mu_factor;
+        _a->dt = dt; _a->theta = theta;
+        _L->u = u; _L->u0 = u0;
+        _L->lmbda = lambda; _L->muFactor = mu_factor;
+        _L->dt = dt; _L->theta = theta;
 
         // Set solution to intitial condition
         InitialConditions u_initial(V);
@@ -63,14 +68,19 @@ class CahnHilliardEquation : public NonlinearProblem
       }
       else if (mesh.topology().dim() == 3)
       {
-        CahnHilliard3D::CoefficientSet coeffs;
-        coeffs.u = u; coeffs.u0 = u0;
-        coeffs.lmbda = lambda; coeffs.muFactor = mu_factor;
-        coeffs.dt = dt; coeffs.theta = theta;
-
         boost::shared_ptr<CahnHilliard3D::FunctionSpace> V(new CahnHilliard3D::FunctionSpace(mesh));
-        a = new CahnHilliard3D::BilinearForm(V, V, coeffs);
-        L = new CahnHilliard3D::LinearForm(V, coeffs);
+        a = new CahnHilliard3D::BilinearForm(V, V);
+        L = new CahnHilliard3D::LinearForm(V);
+
+        // Attach coefficients
+        CahnHilliard3D::BilinearForm* _a = dynamic_cast<CahnHilliard3D::BilinearForm*>(a);
+        CahnHilliard3D::LinearForm*   _L = dynamic_cast<CahnHilliard3D::LinearForm*>(L);
+        _a->u = u;
+        _a->lmbda = lambda; _a->muFactor = mu_factor;
+        _a->dt = dt; _a->theta = theta;
+        _L->u = u; _L->u0 = u0;
+        _L->lmbda = lambda; _L->muFactor = mu_factor;
+        _L->dt = dt; _L->theta = theta;
 
         // Set solution to intitial condition
         InitialConditions u_initial(V);
