@@ -86,7 +86,7 @@ int main()
   // Define source and solution functions
   Constant B(3, 0.0);
   Constant T(3, 0.0);
-  Function u;
+  Function u(V);
 
   // Set material parameters
   double E  = 10.0;
@@ -106,12 +106,12 @@ int main()
   VariationalProblem problem(a, L, bcs, true);
   problem.solve(u);
 
-  // Plot solution
-  plot(u);
-
   // Save solution in VTK format
   File file("displacement.pvd");
   file << u;
+
+  // Plot solution
+  plot(u);
 
   return 0;
 }
