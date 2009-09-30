@@ -136,10 +136,6 @@ Function::~Function()
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Function& v)
 {
-  // Check for function space and vector
-  if (!v.has_function_space())
-    error("Cannot copy Functions which do not have a FunctionSpace.");
-
   // Make a copy of all the data, or if v is a sub-function, then we collapse 
   // the dof map and copy only the relevant entries from the vector of v.
   if (v._vector->size() == v._function_space->dim())
@@ -245,11 +241,6 @@ const GenericVector& Function::vector() const
   return *_vector;
 }
 //-----------------------------------------------------------------------------
-bool Function::has_function_space() const
-{
-  return _function_space.get();
-}
-//-----------------------------------------------------------------------------
 bool Function::in(const FunctionSpace& V) const
 {
   return _function_space.get() == &V;
@@ -299,8 +290,6 @@ void Function::eval(double* values,
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Function& v)
 {
-  assert(has_function_space());
-  assert(v.has_function_space());
   function_space().interpolate(this->vector(), v, "non-matching");
 }
 //-----------------------------------------------------------------------------

@@ -96,9 +96,6 @@ namespace dolfin
     /// initialized to zero if coefficients have not been computed (const version)
     const GenericVector& vector() const;
 
-    /// Check if function has a function space
-    bool has_function_space() const;
-
     /// Check if function is a member of the given function space
     bool in(const FunctionSpace& V) const;
 

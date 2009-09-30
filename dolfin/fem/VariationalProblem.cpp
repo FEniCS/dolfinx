@@ -170,13 +170,6 @@ void VariationalProblem::solve_linear(Function& u)
 {
   begin("Solving linear variational problem");
 
-  // Set function space if missing
-  if (!u.has_function_space())
-  {
-    assert(a._function_spaces.size() == 2);
-    u._function_space = a._function_spaces[1];
-  }
-
   // Check if system is symmetric
   const bool symmetric = parameters["symmetric"];
 
@@ -243,13 +236,6 @@ void VariationalProblem::solve_linear(Function& u)
 void VariationalProblem::solve_nonlinear(Function& u)
 {
   begin("Solving nonlinear variational problem");
-
-  // Set function space if missing
-  if (!u.has_function_space())
-  {
-    assert(a._function_spaces.size() == 2);
-    u._function_space = a._function_spaces[1];
-  }
 
   // Call Newton solver
   newton_solver().solve(*this, u.vector());
