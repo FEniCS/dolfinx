@@ -112,10 +112,10 @@ namespace dolfin
     uint geometric_dimension() const;
 
     /// Function evaluation (overload for user-defined function, simple version)
-    virtual void eval(double* values, const double* x) const;
+    void eval(double* values, const double* x) const;
 
     /// Function evaluation (overload for user-defined function, alternate version)
-    virtual void eval(double* values, const Data& data) const;
+    void eval(double* values, const Data& data) const;
 
     /// Evaluate function v at given point in given cell
     void eval(double* values, const double* x, const ufc::cell& ufc_cell,

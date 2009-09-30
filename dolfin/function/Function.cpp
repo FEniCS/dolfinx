@@ -29,28 +29,34 @@ using namespace dolfin;
 Function::Function()
   :  Variable("v", "unnamed function"),
      _function_space(static_cast<FunctionSpace*>(0)),
-     _vector(static_cast<GenericVector*>(0)),
      _off_process_vector(static_cast<GenericVector*>(0))
 {
-  // Do nothing
+  // Create vector
+  DefaultFactory factory;
+  _vector.reset(factory.create_vector());
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
-    _vector(static_cast<GenericVector*>(0)),
-     _off_process_vector(static_cast<GenericVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
-  // Do nothing
+  // Create vector
+  DefaultFactory factory;
+  _vector.reset(factory.create_vector());
+
+  // FIXME: Should we resize the vector immediately?
+
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : Variable("v", "unnamed function"),
     _function_space(V),
-    _vector(static_cast<GenericVector*>(0)),
-     _off_process_vector(static_cast<GenericVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0))
 {
-  // Do nothing
+  // Create vector
+  DefaultFactory factory;
+  _vector.reset(factory.create_vector());
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -85,9 +91,12 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
 Function::Function(const FunctionSpace& V, std::string filename)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
-    _vector(static_cast<GenericVector*>(0)),
     _off_process_vector(static_cast<GenericVector*>(0))
 {
+  // Create vector
+  DefaultFactory factory;
+  _vector.reset(factory.create_vector());
+
   // Initialize vector
   init();
 
@@ -103,9 +112,12 @@ Function::Function(const FunctionSpace& V, std::string filename)
 Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filename)
   : Variable("v", "unnamed function"),
     _function_space(V),
-    _vector(static_cast<GenericVector*>(0)),
     _off_process_vector(static_cast<GenericVector*>(0))
 {
+  // Create vector
+  DefaultFactory factory;
+  _vector.reset(factory.create_vector());
+
   // Initialize vector
   init();
 
@@ -138,70 +150,56 @@ const Function& Function::operator= (const Function& v)
   if (!v.has_function_space())
     error("Cannot copy Functions which do not have a FunctionSpace.");
 
-  // If v has a vector, we make a copy of all the data, or if v
+  // Make a copy of all the data, or if v
   // is a sub-function, then we collapse the dof map and copy only the
   // relevant entries from the vector of v
-  if (v.has_vector())
-  {
-    // Copy function (collapse dof_map if we have a sub function)
-    if (v._vector->size() == v._function_space->dim())
-    {
-      // Copy function space
-      _function_space = v._function_space;
-
-      // Initialize vector if required
-      if (!this->has_vector())
-        init();
-      else if (this->_vector->size() != v._function_space->dim())
-        init();
-
-      // Copy vector
-      *_vector = *v._vector;
-    }
-    else
-    {
-      // Create collapsed dof map
-      std::map<uint, uint> collapsed_map;
-      boost::shared_ptr<DofMap> collapsed_dof_map(v._function_space->dofmap().collapse(collapsed_map));
-
-      // Create new FunctionsSpapce
-      _function_space = v._function_space->collapse_sub_space(collapsed_dof_map);
-
-      assert(collapsed_map.size() ==  _function_space->dofmap().global_dimension());
-
-      // Create new vector
-      const uint size = collapsed_dof_map->global_dimension();
-      _vector.reset(v.vector().factory().create_vector());
-      _vector->resize(size);
-
-      // Get rows of original and new vectors
-      std::map<uint, uint>::const_iterator entry;
-      std::vector<uint> new_rows(size);
-      std::vector<uint> old_rows(size);
-      uint i = 0;
-      for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
-      {
-        new_rows[i] = entry->first;
-        old_rows[i++] = entry->second;
-      }
-
-      // Get old values and set new values
-      v.gather();
-      std::vector<double> values(size);
-      v.get(&values[0], size, &old_rows[0]);
-      this->_vector->set(&values[0], size, &new_rows[0]);
-    }
-  }
-  else
+  // Copy function (collapse dof_map if we have a sub function)
+  if (v._vector->size() == v._function_space->dim())
   {
     // Copy function space
     _function_space = v._function_space;
 
-    // Initialize vector
-    init();
+    // Initialize vector if required
+    if (!this->has_vector())
+      init();
+    else if (this->_vector->size() != v._function_space->dim())
+      init();
 
-    info("Assignment from user-defined function, interpolating.");
-    function_space().interpolate(*_vector, v);
+    // Copy vector
+    *_vector = *v._vector;
+  }
+  else
+  {
+    // Create collapsed dof map
+    std::map<uint, uint> collapsed_map;
+    boost::shared_ptr<DofMap> collapsed_dof_map(v._function_space->dofmap().collapse(collapsed_map));
+
+    // Create new FunctionsSpapce
+    _function_space = v._function_space->collapse_sub_space(collapsed_dof_map);
+
+    assert(collapsed_map.size() ==  _function_space->dofmap().global_dimension());
+
+    // Create new vector
+    const uint size = collapsed_dof_map->global_dimension();
+    _vector.reset(v.vector().factory().create_vector());
+    _vector->resize(size);
+
+    // Get rows of original and new vectors
+    std::map<uint, uint>::const_iterator entry;
+    std::vector<uint> new_rows(size);
+    std::vector<uint> old_rows(size);
+    uint i = 0;
+    for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
+    {
+      new_rows[i] = entry->first;
+      old_rows[i++] = entry->second;
+    }
+
+    // Get old values and set new values
+    v.gather();
+    std::vector<double> values(size);
+    v.get(&values[0], size, &old_rows[0]);
+    this->_vector->set(&values[0], size, &new_rows[0]);
   }
   return *this;
 }
@@ -209,15 +207,19 @@ const Function& Function::operator= (const Function& v)
 const Function& Function::operator= (const Expression& v)
 {
   error("Not implemented");
+
+  // The below is copied from Function& Function::operator=
+
+  // Initialize vector
+  init();
+
+  info("Assignment from expression, interpolating.");
+  function_space().interpolate(*_vector, v);
   return *this;
 }
 //-----------------------------------------------------------------------------
 Function& Function::operator[] (uint i)
 {
-  // Check that vector exists
-  if (!_vector)
-    error("Unable to extract sub function, missing coefficients (user-defined function).");
-
   // Check if sub-Function is in the cache, otherwise create and add to cache
   boost::ptr_map<uint, Function>::iterator sub_function = sub_functions.find(i);
   if (sub_function != sub_functions.end())
@@ -263,10 +265,6 @@ GenericVector& Function::vector()
 //-----------------------------------------------------------------------------
 const GenericVector& Function::vector() const
 {
-  // Check if vector of dofs has been initialized
-  if (!_vector)
-    error("Requesting vector of degrees of freedom for function, but vector has not been initialized.");
-
   assert(_vector);
   return *_vector;
 }
@@ -297,46 +295,27 @@ void Function::eval(double* values, const double* x) const
 {
   assert(values);
   assert(x);
-
-  // Use vector of dofs if available
-  if (_vector)
-  {
-    assert(_function_space);
-    _function_space->eval(values, x, *this);
-    return;
-  }
-
-  // Missing eval() function if we get here
-  error("Missing eval() for user-defined function (must be overloaded).");
+  assert(_function_space);
+  _function_space->eval(values, x, *this);
 }
 //-----------------------------------------------------------------------------
 void Function::eval(double* values, const Data& data) const
 {
   assert(values);
   assert(data.x);
+  assert(_function_space);
 
-  // Use vector of dofs if available
-  if (_vector)
+  // FIXME: Dangerous since we can' be sure this cell originates from the
+  // FIXME: same mesh!
+
+  // Use UFC cell if available
+  if (data._ufc_cell)
   {
-    assert(_function_space);
-
-    // FIXME: Dangerous since we can' be sure this cell originates from the
-    // FIXME: same mesh!
-
-    // Use UFC cell if available
-    if (data._ufc_cell)
-    {
-      const uint cell_index = data._ufc_cell->entity_indices[data._ufc_cell->topological_dimension][0];
-      _function_space->eval(values, data.x, *this, *data._ufc_cell, cell_index);
-    }
-    else
-      _function_space->eval(values, data.x, *this);
+    const uint cell_index = data._ufc_cell->entity_indices[data._ufc_cell->topological_dimension][0];
+    _function_space->eval(values, data.x, *this, *data._ufc_cell, cell_index);
   }
   else
-  {
-    // Try simple eval function
-    eval(values, data.x);
-  }
+    _function_space->eval(values, data.x, *this);
 }
 //-----------------------------------------------------------------------------
 void Function::eval(double* values,
