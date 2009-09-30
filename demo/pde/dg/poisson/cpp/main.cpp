@@ -60,7 +60,7 @@ int main()
   problem.parameters["symmetric"] = true;
 
   // Solve variational problem
-  Function u;
+  Function u(V);
   problem.solve(u);
 
   // Plot solution

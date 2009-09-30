@@ -73,7 +73,7 @@ int main()
   pde.parameters["symmetric"] = true;
 
   // Solve PDE
-  Function u;
+  Function u(V);
   pde.solve(u);
 
   // Plot solution

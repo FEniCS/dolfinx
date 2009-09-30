@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
   VariationalProblem pde(ap, Lp);
 
   // Compute projection
-  Function phi_p;
+  Function phi_p(Vp);
   pde.solve(phi_p);
 
   // Save projected solution in VTK format
