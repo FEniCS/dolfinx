@@ -150,20 +150,12 @@ const Function& Function::operator= (const Function& v)
   if (!v.has_function_space())
     error("Cannot copy Functions which do not have a FunctionSpace.");
 
-  // Make a copy of all the data, or if v
-  // is a sub-function, then we collapse the dof map and copy only the
-  // relevant entries from the vector of v
-  // Copy function (collapse dof_map if we have a sub function)
+  // Make a copy of all the data, or if v is a sub-function, then we collapse 
+  // the dof map and copy only the relevant entries from the vector of v.
   if (v._vector->size() == v._function_space->dim())
   {
     // Copy function space
     _function_space = v._function_space;
-
-    // Initialize vector if required
-    if (!this->has_vector())
-      init();
-    else if (this->_vector->size() != v._function_space->dim())
-      init();
 
     // Copy vector
     *_vector = *v._vector;
@@ -206,8 +198,6 @@ const Function& Function::operator= (const Function& v)
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Expression& v)
 {
-  error("Not implemented");
-
   // The below is copied from Function& Function::operator=
 
   // Initialize vector
@@ -238,7 +228,6 @@ Function& Function::operator[] (uint i)
 //-----------------------------------------------------------------------------
 const FunctionSpace& Function::function_space() const
 {
-  assert(_function_space);
   return *_function_space;
 }
 //-----------------------------------------------------------------------------
@@ -258,14 +247,11 @@ GenericVector& Function::vector()
     if (_vector->size() != _function_space->dofmap().global_dimension())
       error("You are attempting to access a non-const vector from a sub-Function.");
   }
-
-  assert(_vector);
   return *_vector;
 }
 //-----------------------------------------------------------------------------
 const GenericVector& Function::vector() const
 {
-  assert(_vector);
   return *_vector;
 }
 //-----------------------------------------------------------------------------
@@ -274,15 +260,9 @@ bool Function::has_function_space() const
   return _function_space.get();
 }
 //-----------------------------------------------------------------------------
-bool Function::has_vector() const
-{
-  return _vector.get();
-}
-//-----------------------------------------------------------------------------
 bool Function::in(const FunctionSpace& V) const
 {
-  // Function is in any space if V is not defined
-  return !_function_space || _function_space.get() == &V;
+  return _function_space.get() == &V;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Function::geometric_dimension() const
@@ -343,10 +323,6 @@ void Function::interpolate_vertex_values(double* vertex_values) const
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Expression& v)
 {
-  // Check that we have a function space
-  if (!has_function_space())
-    error("Unable to interpolate function, missing function space.");
-
   // Interpolate to vector
   DefaultFactory factory;
   boost::shared_ptr<GenericVector> coefficients(factory.create_vector());
@@ -493,7 +469,7 @@ void Function::restrict(double* w,
 void Function::gather() const
 {
   // Gather off-process coefficients if running in parallel and function has a vector
-  if (MPI::num_processes() > 1 && has_vector())
+  if (MPI::num_processes() > 1)
   {
     assert(_function_space);
 
