@@ -148,22 +148,30 @@ int main(int argc, char* argv[])
   v0.vector().zero();
   a0.vector().zero();
 
-  // Create forms and attach functions
-  ElastoDynamics::CoefficientSet coeffs;
-  coeffs.lmbda = lambda; coeffs.mu = mu; coeffs.rho = rho;
-  coeffs.eta = eta;
-  coeffs.beta = beta;
-  coeffs.gamma = gamma;
-  coeffs.dt = dt;
-  coeffs.alpha_m = alpha_m;
-  coeffs.alpha_f = alpha_f;
-  coeffs.u0 = u0; coeffs.v0 = v0; coeffs.a0 = a0;
-  coeffs.f = f;
-  coeffs.p = p;
-  coeffs.p0 = p0;
+  // Create forms
+  ElastoDynamics::BilinearForm a_form(V, V);
+  ElastoDynamics::LinearForm L(V);
 
-  ElastoDynamics::BilinearForm a_form(V, V, coeffs);
-  ElastoDynamics::LinearForm L(V, coeffs);
+  // Attach functions
+  a_form.lmbda = lambda; a_form.mu = mu; a_form.rho = rho;
+  a_form.eta = eta;
+  a_form.beta = beta;
+  a_form.gamma = gamma;
+  a_form.dt = dt;
+  a_form.alpha_m = alpha_m;
+  a_form.alpha_f = alpha_f;
+
+  L.lmbda = lambda; L.mu = mu; L.rho = rho;
+  L.eta = eta;
+  L.beta = beta;
+  L.gamma = gamma;
+  L.dt = dt;
+  L.alpha_m = alpha_m;
+  L.alpha_f = alpha_f;
+  L.u0 = u0; L.v0 = v0; L.a0 = a0;
+  L.f = f;
+  L.p = p;
+  L.p0 = p0;
 
   // Create variational problem
   VariationalProblem pde(a_form, L, bc, 0, &right_boundary_function, 0);
