@@ -52,7 +52,7 @@ int main()
   VariationalProblem pde(a, L);
 
   // Solve PDE
-  Function w;
+  Function w(V);
   pde.solve(w);
   cout << "Finished solve" << endl;
 
@@ -66,7 +66,7 @@ int main()
   P1Projection::LinearForm L_p(Vp);
   L_p.f = sigma;
   VariationalProblem pde_project(a_p, L_p);
-  Function sigma_p;
+  Function sigma_p(Vp);
   pde_project.solve(sigma_p);
 
   // Plot solution

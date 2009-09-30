@@ -106,7 +106,7 @@ int main()
   problem.parameters["symmetric"] = true;
 
   // Solve PDE (using direct solver)
-  Function u;
+  Function u(V);
   problem.parameters["linear_solver"] = "direct";
   problem.solve(u);
 
