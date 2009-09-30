@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-09-29
+// Last changed: 2009-09-30
 
 #ifndef __COEFFICIENT_H
 #define __COEFFICIENT_H
@@ -25,6 +25,9 @@ namespace dolfin
   /// of coefficients. Sub classes need to implement the restrict()
   /// method which is responsible for computing the expansion
   /// coefficients on a given local element.
+  ///
+  /// Sub classes may optionally implement the gather() function that
+  /// will be called prior to restriction when running in parallel.
 
   class Coefficient
   {
@@ -45,6 +48,13 @@ namespace dolfin
 
     /// Collect off-process coefficients to prepare for interpolation
     virtual void gather() const {}
+
+    /// Convenience function for restriction when facet is unknown
+    void restrict(double* w,
+                  const FiniteElement& element,
+                  const Cell& dolfin_cell,
+                  const ufc::cell& ufc_cell) const
+    { restrict(w, element, dolfin_cell, ufc_cell, -1); }
 
   };
 

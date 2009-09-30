@@ -6,14 +6,14 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2009-09-16
+// Last changed: 2009-09-30
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/constants.h>
-#include <dolfin/function/Function.h>
+#include <dolfin/function/Coefficient.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -39,7 +39,7 @@ const std::set<std::string> DirichletBC::methods = boost::assign::list_of("topol
 
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V,
-                         const Function& g,
+                         const Coefficient& g,
                          const SubDomain& sub_domain,
                          std::string method)
   : BoundaryCondition(V),
@@ -51,7 +51,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                         boost::shared_ptr<const Function> g,
+                         boost::shared_ptr<const Coefficient> g,
                          boost::shared_ptr<const SubDomain> sub_domain,
                          std::string method)
   : BoundaryCondition(V),
@@ -63,7 +63,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V,
-                         const Function& g,
+                         const Coefficient& g,
                          const MeshFunction<uint>& sub_domains,
                          uint sub_domain,
                          std::string method)
@@ -76,7 +76,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                         boost::shared_ptr<const Function> g,
+                         boost::shared_ptr<const Coefficient> g,
                          const MeshFunction<uint>& sub_domains,
                          uint sub_domain,
                          std::string method)
@@ -89,7 +89,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V,
-                         const Function& g,
+                         const Coefficient& g,
                          uint sub_domain,
                          std::string method)
   : BoundaryCondition(V),
@@ -101,7 +101,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                         boost::shared_ptr<const Function> g,
+                         boost::shared_ptr<const Coefficient> g,
                          uint sub_domain,
                          std::string method)
   : BoundaryCondition(V),
@@ -172,7 +172,7 @@ void DirichletBC::zero(GenericMatrix& A) const
   delete [] dofs;
 }
 //-----------------------------------------------------------------------------
-bool DirichletBC::is_compatible(Function& v) const
+bool DirichletBC::is_compatible(Coefficient& v) const
 {
   // This function only checks the values at vertices when it should
   // really check that the dof functionals agree. The check here is
@@ -180,6 +180,9 @@ bool DirichletBC::is_compatible(Function& v) const
   // boundary conditions but a more robust test requires access to the
   // function space.
 
+  error("is_compatible() has not been updated for the new Function class interface.");
+
+  /*
   // Compute value size
   uint size = 1;
   const uint rank = g->function_space().element().value_rank();
@@ -201,7 +204,7 @@ bool DirichletBC::is_compatible(Function& v) const
     Facet facet(mesh, facet_number);
 
     // Make cell and facet available to user-defined function
-    error("Does the new Function class need an 'update' function?");
+    error("Does the new Coefficient class need an 'update' function?");
     //g->update(cell, facet_number);
     //v.update(cell, facet_number);
 
@@ -229,6 +232,8 @@ bool DirichletBC::is_compatible(Function& v) const
 
   delete [] g_values;
   delete [] v_values;
+  */
+
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -458,6 +463,9 @@ void DirichletBC::compute_bc(std::map<uint, double>& boundary_values,
 void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values,
                                          BoundaryCondition::LocalData& data) const
 {
+  assert(V);
+  assert(g);
+
   // Special case
   if (facets.size() == 0)
   {
@@ -481,8 +489,8 @@ void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values
     Cell cell(mesh, cell_number);
     UFCCell ufc_cell(cell);
 
-    // Interpolate function on cell
-    g->interpolate(data.w, *V, ufc_cell, cell.index(), facet_number);
+    /// Restrict coefficient to cell
+    g->restrict(data.w, V->element(), cell, ufc_cell, facet_number);
 
     // Tabulate dofs on cell
     dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell_number);
@@ -512,6 +520,9 @@ void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values
 void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
                                        BoundaryCondition::LocalData& data) const
 {
+  assert(V);
+  assert(g);
+
   // Special case
   if (facets.size() == 0)
   {
@@ -559,13 +570,13 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
           if (!on_facet(data.coordinates[i], facet))
             continue;
 
-          if(!interpolated)
+          if (!interpolated)
           {
             // Tabulate dofs on cell
             dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, c->index());
 
-            // Interpolate function on cell
-            g->interpolate(data.w, *V, ufc_cell, c->index());
+            /// Restrict coefficient to cell
+            g->restrict(data.w, V->element(), cell, ufc_cell);
           }
 
           // Set boundary value
@@ -581,6 +592,8 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
 void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
                                        BoundaryCondition::LocalData& data) const
 {
+  assert(V);
+  assert(g);
   assert(user_sub_domain);
 
   // Get mesh and dofmap
@@ -613,8 +626,8 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
         // Tabulate dofs on cell
         dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell->index());
 
-        // Interpolate function on cell
-        g->interpolate(data.w, *V, ufc_cell, cell->index());
+        /// Restrict coefficient to cell
+        g->restrict(data.w, V->element(), *cell, ufc_cell);
       }
 
       // Set boundary value

@@ -1,32 +1,27 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Martin Sandve Alnes, 2008.
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2006-02-09
-// Last changed: 2009-09-22
+// Last changed: 2009-09-30
 
-#include <dolfin/fem/FiniteElement.h>
-#include <dolfin/log/dolfin_log.h>
-#include <dolfin/mesh/Mesh.h>
+#include <dolfin/log/log.h>
 #include "Constant.h"
-#include "FunctionSpace.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Constant::Constant(double value)
-  : Function(),
-    _size(1), _values(0)
+  : _size(1), _values(0)
 {
   _values = new double[1];
   _values[0] = value;
 }
 //-----------------------------------------------------------------------------
 Constant::Constant(uint size, double value)
-  : Function(),
-    _size(size), _values(0)
+  : _size(size), _values(0)
 {
   assert(size > 0);
 
@@ -36,8 +31,7 @@ Constant::Constant(uint size, double value)
 }
 //-----------------------------------------------------------------------------
 Constant::Constant(const std::vector<double>& values)
-  : Function(),
-    _size(values.size()), _values(0)
+  : _size(values.size()), _values(0)
 {
   assert(values.size() > 0);
 
@@ -48,8 +42,7 @@ Constant::Constant(const std::vector<double>& values)
 //-----------------------------------------------------------------------------
 Constant::Constant(const std::vector<uint>& shape,
                    const std::vector<double>& values)
-  : Function(),
-    _size(0), _values(0)
+  : _size(0), _values(0)
 {
   assert(shape.size() > 0);
   assert(values.size() > 0);
@@ -67,8 +60,7 @@ Constant::Constant(const std::vector<uint>& shape,
 }
 //-----------------------------------------------------------------------------
 Constant::Constant(const Constant& c)
-  : Function(),
-    _size(0), _values(0)
+  : _size(0), _values(0)
 {
   *this = c;
 }
