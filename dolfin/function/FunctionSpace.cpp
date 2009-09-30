@@ -15,13 +15,14 @@
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/IntersectionDetector.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/la/GenericVector.h>
-#include "Function.h"
+#include "Coefficient.h"
 #include "FunctionSpace.h"
 
 using namespace dolfin;
@@ -108,11 +109,11 @@ dolfin::uint FunctionSpace::dim() const
 //-----------------------------------------------------------------------------
 void FunctionSpace::eval(double* values,
                          const double* x,
-                         const Function& v) const
+                         const Coefficient& v) const
 {
   assert(values);
   assert(x);
-  assert(v.in(*this));
+  //assert(v.in(*this));
   assert(_mesh);
   assert(_element);
   assert(_dofmap);
@@ -136,19 +137,20 @@ void FunctionSpace::eval(double* values,
 //-----------------------------------------------------------------------------
 void FunctionSpace::eval(double* values,
                          const double* x,
-                         const Function& v,
+                         const Coefficient& v,
                          const ufc::cell& ufc_cell,
                          uint cell_index) const
 {
   assert(values);
   assert(x);
-  assert(v.in(*this));
+  //assert(v.in(*this));
   assert(_mesh);
   assert(_element);
   assert(_dofmap);
 
-  // Interpolate function to cell
-  v.interpolate(scratch.coefficients, *this, ufc_cell, cell_index);
+  // Restrict function to cell
+  Cell cell(this->mesh(), cell_index);
+  v.restrict(scratch.coefficients, this->element(), cell, ufc_cell, -1);
 
   // Compute linear combination
   for (uint j = 0; j < scratch.size; j++)
@@ -162,16 +164,17 @@ void FunctionSpace::eval(double* values,
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(GenericVector& coefficients,
-                                const Function& v, std::string meshes) const
+                                const Coefficient& v, std::string meshes) const
 {
   assert(_mesh);
   assert(_element);
   assert(_dofmap);
 
-  if (meshes == "matching")
-    assert(&v.function_space().mesh() == &mesh());
-  else if (meshes != "non-matching")
-    error("Unknown mesh matching string %s in FunctionSpace::interpolate", meshes.c_str());
+  warning("FunctionSpace::interpolate requires revision."); 
+  //if (meshes == "matching")
+  //  assert(&v.function_space().mesh() == &mesh());
+  //else if (meshes != "non-matching")
+  //  error("Unknown mesh matching string %s in FunctionSpace::interpolate", meshes.c_str());
 
   // Initialize vector of coefficients
   coefficients.resize(_dofmap->global_dimension());
@@ -184,8 +187,8 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
     // Update to current cell
     ufc_cell.update(*cell);
 
-    // Interpolate on cell
-    v.interpolate(scratch.coefficients, *this, ufc_cell, cell->index());
+    // Restrict function to cell
+    v.restrict(scratch.coefficients, this->element(), *cell, ufc_cell, -1);
 
     // Tabulate dofs
     _dofmap->tabulate_dofs(scratch.dofs, ufc_cell, cell->index());
@@ -199,10 +202,11 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_vertex_values(double* vertex_values,
-                                              const Function& v) const
+                                              const Coefficient& v) const
 {
+  warning("FunctionSpace::interpolate_vertex_values requires revision."); 
   assert(vertex_values);
-  assert(v.in(*this));
+  //assert(v.in(*this));
   assert(_mesh);
   assert(_element);
   assert(_dofmap);
@@ -224,7 +228,8 @@ void FunctionSpace::interpolate_vertex_values(double* vertex_values,
     ufc_cell.update(*cell);
 
     // Pick values from global vector
-    v.interpolate(scratch.coefficients, ufc_cell, cell->index());
+    v.restrict(scratch.coefficients, this->element(), *cell, ufc_cell, -1);
+    //v.interpolate(scratch.coefficients, ufc_cell, cell->index());
 
     // Interpolate values at the vertices
     _element->interpolate_vertex_values(local_vertex_values, scratch.coefficients, ufc_cell);

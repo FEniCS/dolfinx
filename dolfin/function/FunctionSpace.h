@@ -28,7 +28,7 @@ namespace dolfin
   class Mesh;
   class FiniteElement;
   class DofMap;
-  class Function;
+  class Coefficient;
   class IntersectionDetector;
   class GenericVector;
   template <class T> class MeshFunction;
@@ -75,22 +75,22 @@ namespace dolfin
     /// Evaluate function v in function space at given point
     void eval(double* values,
               const double* x,
-              const Function& v) const;
+              const Coefficient& v) const;
 
     /// Evaluate function v in function space at given point in given cell
     void eval(double* values,
               const double* x,
-              const Function& v,
+              const Coefficient& v,
               const ufc::cell& ufc_cell,
               uint cell_index) const;
 
     /// Interpolate function v in function space (meshes = "matching" or "non-matching")
     void interpolate(GenericVector& coefficients,
-                     const Function& v, std::string meshes = "matching") const;
+                     const Coefficient& v, std::string meshes = "matching") const;
 
     /// Interpolate function v in function space to vertices of mesh
     void interpolate_vertex_values(double* vertex_values,
-                                   const Function& v) const;
+                                   const Coefficient& v) const;
 
     /// Extract sub space for component
     boost::shared_ptr<FunctionSpace> operator[] (uint i) const;
