@@ -31,9 +31,8 @@ Function::Function(const FunctionSpace& V)
     _function_space(reference_to_no_delete_pointer(V)),
     _off_process_vector(static_cast<GenericVector*>(0))
 {
-  // Create vector
-  DefaultFactory factory;
-  _vector.reset(factory.create_vector());
+  // Initialize vector
+  init_vector();
 
   // FIXME: Should we resize the vector immediately?
 
@@ -44,9 +43,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
     _function_space(V),
     _off_process_vector(static_cast<GenericVector*>(0))
 {
-  // Create vector
-  DefaultFactory factory;
-  _vector.reset(factory.create_vector());
+  // Initialize vector
+  init_vector();
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -83,12 +81,8 @@ Function::Function(const FunctionSpace& V, std::string filename)
     _function_space(reference_to_no_delete_pointer(V)),
     _off_process_vector(static_cast<GenericVector*>(0))
 {
-  // Create vector
-  DefaultFactory factory;
-  _vector.reset(factory.create_vector());
-
   // Initialize vector
-  init();
+  init_vector();
 
   // Read vector from file
   File file(filename);
@@ -109,7 +103,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
   _vector.reset(factory.create_vector());
 
   // Initialize vector
-  init();
+  init_vector();
 
   // Read vector from file
   File file(filename);
@@ -186,8 +180,8 @@ const Function& Function::operator= (const Expression& v)
 {
   // The below is copied from Function& Function::operator=
 
-  // Initialize vector
-  init();
+  // Resize vector if required
+  init_vector();
 
   info("Assignment from expression, interpolating.");
   function_space().interpolate(*_vector, v);
@@ -224,15 +218,9 @@ boost::shared_ptr<const FunctionSpace> Function::function_space_ptr() const
 //-----------------------------------------------------------------------------
 GenericVector& Function::vector()
 {
-  // Initialize vector of dofs if not initialized
-  if (!_vector)
-    init();
-  else
-  {
-    // Check that this is not a sub function.
-    if (_vector->size() != _function_space->dofmap().global_dimension())
-      error("You are attempting to access a non-const vector from a sub-Function.");
-  }
+  // Check that this is not a sub function.
+  if (_vector->size() != _function_space->dofmap().global_dimension())
+    error("You are attempting to access a non-const vector from a sub-Function.");
   return *_vector;
 }
 //-----------------------------------------------------------------------------
@@ -308,7 +296,7 @@ void Function::interpolate(const Expression& v)
   function_space().interpolate(*coefficients, *this);
 
   // Set values
-  init();
+  init_vector();
   *_vector = *coefficients;
 }
 //-----------------------------------------------------------------------------
@@ -357,10 +345,9 @@ void Function::compute_off_process_dofs() const
   delete [] dofs;
 }
 //-----------------------------------------------------------------------------
-void Function::init()
+void Function::init_vector()
 {
   // Get size
-  assert(_function_space);
   const uint N = _function_space->dofmap().global_dimension();
 
   // Create vector of dofs

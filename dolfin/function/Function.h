@@ -151,7 +151,7 @@ namespace dolfin
     void compute_off_process_dofs() const;
 
     // Initialize vector
-    void init();
+    void init_vector();
 
     // Get coefficients from the vector(s)
     void get(double* block, uint m, const uint* rows) const;
