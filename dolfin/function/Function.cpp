@@ -19,6 +19,7 @@
 #include <dolfin/fem/UFC.h>
 #include "Data.h"
 #include "UFCFunction.h"
+#include "Expression.h"
 #include "FunctionSpace.h"
 #include "Function.h"
 
@@ -202,6 +203,12 @@ const Function& Function::operator= (const Function& v)
     info("Assignment from user-defined function, interpolating.");
     function_space().interpolate(*_vector, v);
   }
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const Function& Function::operator= (const Expression& v)
+{
+  error("Not implemented");
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -411,12 +418,8 @@ void Function::interpolate_vertex_values(double* vertex_values) const
   _function_space->interpolate_vertex_values(vertex_values, *this);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate()
+void Function::interpolate(const Expression& v)
 {
-  // Check that function is not already discrete
-  if (has_vector())
-    error("Unable to interpolate function, already interpolated (has a vector).");
-
   // Check that we have a function space
   if (!has_function_space())
     error("Unable to interpolate function, missing function space.");

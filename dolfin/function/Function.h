@@ -29,6 +29,7 @@ namespace dolfin
 {
 
   // Forward declarations
+  class Expression;
   class FunctionSpace;
   class GenericVector;
   class Data;
@@ -75,9 +76,11 @@ namespace dolfin
     /// Destructor
     virtual ~Function();
 
-    /// Assignment from function. Will perform interpolation for user-defined
-    /// functions
+    /// Assignment from function
     const Function& operator= (const Function& v);
+
+    /// Assignment from Expression using interpolation
+    const Function& operator= (const Expression& v);
 
     /// Extract sub function data
     Function& operator[] (uint i);
@@ -130,8 +133,8 @@ namespace dolfin
     /// Interpolate function (possibly non-matching meshes)
     void interpolate(const Function& v);
 
-    /// Interpolate function to its function space (if not already a discrete function)
-    void interpolate();
+    /// Interpolate expreesion a function space
+    void interpolate(const Expression& v);
 
     /// Interpolate function to vertices of mesh
     void interpolate_vertex_values(double* vertex_values) const;
