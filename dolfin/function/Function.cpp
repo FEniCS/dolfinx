@@ -26,16 +26,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Function::Function()
-  :  Variable("v", "unnamed function"),
-     _function_space(static_cast<FunctionSpace*>(0)),
-     _off_process_vector(static_cast<GenericVector*>(0))
-{
-  // Create vector
-  DefaultFactory factory;
-  _vector.reset(factory.create_vector());
-}
-//-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),

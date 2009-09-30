@@ -46,9 +46,6 @@ namespace dolfin
   {
   public:
 
-    /// Create function (and let DOLFIN figure out the correct function space)
-    Function();
-
     /// Create function on given function space
     explicit Function(const FunctionSpace& V);
 
