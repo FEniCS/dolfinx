@@ -145,7 +145,8 @@ namespace dolfin
     }
 
     // Update cell entities and coordinates
-    inline void update(const Cell cell)
+    // Note: We use MeshEntity& rather than Cell& to avoid a gcc 4.4.1 warning
+    inline void update(const MeshEntity& cell)
     {
       // Note handling of local and global mesh entity indices.
       // If mappings from local to global entities are available in
