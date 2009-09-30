@@ -160,7 +160,7 @@ void Assembler::assemble_cells(GenericTensor& A,
 
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
-      a.function_space(i).dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
+      a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
 
     // Tabulate cell tensor
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
@@ -172,7 +172,7 @@ void Assembler::assemble_cells(GenericTensor& A,
     {
       // Get local dimensions
       for (uint i = 0; i < ufc.form.rank(); i++)
-        ufc.local_dimensions[i] = a.function_space(i).dofmap().local_dimension(ufc.cell);
+        ufc.local_dimensions[i] = a.function_space(i)->dofmap().local_dimension(ufc.cell);
       A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
     }
     p++;
@@ -236,14 +236,14 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
 
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
-      a.function_space(i).dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, mesh_cell.index());
+      a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, mesh_cell.index());
 
     // Tabulate exterior facet tensor
     integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
 
     // Get local dimensions
     for (uint i = 0; i < ufc.form.rank(); i++)
-      ufc.local_dimensions[i] = a.function_space(i).dofmap().local_dimension(ufc.cell);
+      ufc.local_dimensions[i] = a.function_space(i)->dofmap().local_dimension(ufc.cell);
 
     // Add entries to global tensor
     A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
@@ -311,9 +311,9 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     // Tabulate dofs for each dimension on macro element
     for (uint i = 0; i < ufc.form.rank(); i++)
     {
-      const uint offset = a.function_space(i).dofmap().local_dimension(ufc.cell0);
-      a.function_space(i).dofmap().tabulate_dofs(ufc.macro_dofs[i],          ufc.cell0, cell0.index());
-      a.function_space(i).dofmap().tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
+      const uint offset = a.function_space(i)->dofmap().local_dimension(ufc.cell0);
+      a.function_space(i)->dofmap().tabulate_dofs(ufc.macro_dofs[i],          ufc.cell0, cell0.index());
+      a.function_space(i)->dofmap().tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
     }
 
     // Tabulate exterior interior facet tensor on macro element
@@ -322,8 +322,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
 
     // Get local dimensions
     for (uint i = 0; i < ufc.form.rank(); i++)
-      ufc.macro_local_dimensions[i] = a.function_space(i).dofmap().local_dimension(ufc.cell0)
-                                    + a.function_space(i).dofmap().local_dimension(ufc.cell1);
+      ufc.macro_local_dimensions[i] = a.function_space(i)->dofmap().local_dimension(ufc.cell0)
+                                    + a.function_space(i)->dofmap().local_dimension(ufc.cell1);
 
     // Add entries to global tensor
     A.add(ufc.macro_A, ufc.macro_local_dimensions, ufc.macro_dofs);
@@ -417,7 +417,7 @@ void Assembler::init_global_tensor(GenericTensor& A,
     {
       std::vector<const DofMap*> dof_maps(0);
       for (uint i = 0; i < ufc.form.rank(); ++i)
-        dof_maps.push_back(&(a.function_space(i).dofmap()));
+        dof_maps.push_back(&(a.function_space(i)->dofmap()));
       SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dof_maps,
                                     a.ufc_form().num_cell_integrals(),
                                     a.ufc_form().num_interior_facet_integrals());

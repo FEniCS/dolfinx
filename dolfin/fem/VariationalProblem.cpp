@@ -95,8 +95,10 @@ void VariationalProblem::solve(Function& u)
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve(Function& u0, Function& u1)
 {
+  // Create function 
+  Function u(a.function_space(0));
+  
   // Solve variational problem
-  Function u;
   solve(u);
 
   // Extract subfunctions
@@ -106,8 +108,10 @@ void VariationalProblem::solve(Function& u0, Function& u1)
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve(Function& u0, Function& u1, Function& u2)
 {
+  // Create function 
+  Function u(a.function_space(0));
+
   // Solve variational problem
-  Function u;
   solve(u);
 
   // Extract subfunctions

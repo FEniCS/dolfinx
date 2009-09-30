@@ -110,7 +110,7 @@ void SystemAssembler::assemble(GenericMatrix& A,
   // Modify boundary values for incremental (typically nonlinear) problems
   if (x0)
   {
-    const uint N = a.function_space(1).dofmap().global_dimension();
+    const uint N = a.function_space(1)->dofmap().global_dimension();
     assert(x0->size() == N);
     double* x0_values = new double[N];
     x0->get_local(x0_values);
@@ -207,9 +207,9 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     }
 
     // Tabulate dofs for each dimension
-    a.function_space(0).dofmap().tabulate_dofs(A_ufc.dofs[0], A_ufc.cell, cell->index());
-    L.function_space(0).dofmap().tabulate_dofs(b_ufc.dofs[0], b_ufc.cell, cell->index());
-    a.function_space(1).dofmap().tabulate_dofs(A_ufc.dofs[1], A_ufc.cell, cell->index());
+    a.function_space(0)->dofmap().tabulate_dofs(A_ufc.dofs[0], A_ufc.cell, cell->index());
+    L.function_space(0)->dofmap().tabulate_dofs(b_ufc.dofs[0], b_ufc.cell, cell->index());
+    a.function_space(1)->dofmap().tabulate_dofs(A_ufc.dofs[1], A_ufc.cell, cell->index());
 
     // Modify local matrix/element for Dirichlet boundary conditions
     apply_bc(data.Ae, data.be, data.indicators, data.g, A_ufc.dofs,
@@ -343,14 +343,14 @@ SystemAssembler::Scratch::Scratch(const Form& a, const Form& L)
   : A_num_entries(1), b_num_entries(1), Ae(0), be(0), indicators(0), g(0)
 {
   for (uint i = 0; i < a.rank(); i++)
-    A_num_entries *= a.function_space(i).dofmap().max_local_dimension();
+    A_num_entries *= a.function_space(i)->dofmap().max_local_dimension();
   Ae = new double[A_num_entries];
 
   for (uint i = 0; i < L.rank(); i++)
-    b_num_entries *= L.function_space(i).dofmap().max_local_dimension();
+    b_num_entries *= L.function_space(i)->dofmap().max_local_dimension();
   be = new double[b_num_entries];
 
-  const uint N = a.function_space(1).dofmap().global_dimension();
+  const uint N = a.function_space(1)->dofmap().global_dimension();
   indicators = new uint[N];
   g = new double[N];
   for (uint i = 0; i < N; i++)
@@ -459,15 +459,15 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
   for (uint i = 0; i < A_ufc.form.rank(); i++)
   {
     const uint offset = A_ufc.local_dimensions[i];
-    a.function_space(i).dofmap().tabulate_dofs(A_ufc.macro_dofs[i],
+    a.function_space(i)->dofmap().tabulate_dofs(A_ufc.macro_dofs[i],
                                                A_ufc.cell0, cell0.index());
-    a.function_space(i).dofmap().tabulate_dofs(A_ufc.macro_dofs[i] + offset,
+    a.function_space(i)->dofmap().tabulate_dofs(A_ufc.macro_dofs[i] + offset,
                                                A_ufc.cell1, cell1.index());
   }
   const uint offset = b_ufc.local_dimensions[0];
-  L.function_space(0).dofmap().tabulate_dofs(b_ufc.macro_dofs[0],
+  L.function_space(0)->dofmap().tabulate_dofs(b_ufc.macro_dofs[0],
                                              b_ufc.cell0, cell0.index());
-  L.function_space(0).dofmap().tabulate_dofs(b_ufc.macro_dofs[0] + offset,
+  L.function_space(0)->dofmap().tabulate_dofs(b_ufc.macro_dofs[0] + offset,
                                              b_ufc.cell1, cell1.index());
 
   // Modify local matrix/element for Dirichlet boundary conditions
@@ -535,9 +535,9 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
 
   // Tabulate dofs
   for (uint i = 0; i < A_ufc.form.rank(); i++)
-    a.function_space(i).dofmap().tabulate_dofs(A_ufc.dofs[i],
+    a.function_space(i)->dofmap().tabulate_dofs(A_ufc.dofs[i],
                                              A_ufc.cell, cell.index());
-  L.function_space(0).dofmap().tabulate_dofs(b_ufc.dofs[0],
+  L.function_space(0)->dofmap().tabulate_dofs(b_ufc.dofs[0],
                                              b_ufc.cell, cell.index());
 
   // Modify local matrix/element for Dirichlet boundary conditions

@@ -91,10 +91,10 @@ const Mesh& Form::mesh() const
   return *meshes[0];
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace& Form::function_space(dolfin::uint i) const
+const boost::shared_ptr<const FunctionSpace> Form::function_space(dolfin::uint i) const
 {
   assert(i < _function_spaces.size());
-  return *_function_spaces[i];
+  return _function_spaces[i];
 }
 //-----------------------------------------------------------------------------
 std::vector<const FunctionSpace*> Form::function_spaces() const

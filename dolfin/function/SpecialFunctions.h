@@ -138,10 +138,6 @@ namespace dolfin
     /// Sub-function constructor (shallow copy of the vector)
     DiscreteFunction(Function& v, uint i)
     {
-      // Check that vector exists
-      if (!v.has_vector())
-        error("Unable to extract sub function, missing coefficients (user-defined function).");
-
       // Get sub-function (Function will store pointer to sub-Function)
       Function& sub_function = v[i]; 
       

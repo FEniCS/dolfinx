@@ -59,7 +59,7 @@ namespace dolfin
     const Mesh& mesh() const;
 
     /// Return function space for given argument
-    const FunctionSpace& function_space(uint i) const;
+    const boost::shared_ptr<const FunctionSpace> function_space(uint i) const;
 
     /// Return function spaces for arguments
     std::vector<const FunctionSpace*> function_spaces() const;
