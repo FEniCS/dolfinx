@@ -131,7 +131,7 @@ void UFC::init(const Form& form)
   this->mesh.init(form.mesh());
 
   // Get function spaces for arguments
-  std::vector<const FunctionSpace*> V = form.function_spaces();
+  std::vector<boost::shared_ptr<const FunctionSpace> > V = form.function_spaces();
 
   // Initialize local tensor
   uint num_entries = 1;

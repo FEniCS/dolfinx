@@ -18,6 +18,7 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/fem/UFC.h>
+#include "Expression.h"
 #include "Function.h"
 
 namespace dolfin
@@ -32,15 +33,12 @@ namespace dolfin
   // FIXME: the function spaces make sense (scalar, vector etc)
 
   /// This Function represents the mesh coordinates on a given mesh.
-  class MeshCoordinates : public Function
+  class MeshCoordinates : public Expression
   {
   public:
 
     /// Constructor
     MeshCoordinates();
-
-    /// Constructor
-    MeshCoordinates(const FunctionSpace& V);
 
     /// Function evaluation
     void eval(double* values, const Data& data) const;
@@ -48,37 +46,31 @@ namespace dolfin
   };
 
   /// This Function represents the local cell size on a given mesh.
-  class CellSize : public Function
+  class CellSize : public Expression
   {
   public:
 
     /// Constructor
     CellSize();
 
-    /// Constructor
-    CellSize(const FunctionSpace& V);
-
     /// Function evaluation
     void eval(double* values, const Data& data) const;
 
     /// Compute minimal cell diameter
-    double min() const;
+    //double min() const;
 
     /// Compute maximal cell diameter
-    double max() const;
+    //double max() const;
 
   };
 
   /// This function represents the area/length of a cell facet.
-  class FacetArea : public Function
+  class FacetArea : public Expression
   {
   public:
 
     /// Constructor
     FacetArea();
-
-    /// Constructor
-    FacetArea(const FunctionSpace& V);
 
     /// Function evaluation
     void eval(double* values, const Data& data) const;
@@ -120,7 +112,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    DiscreteFunction() : Function() {}
+    //DiscreteFunction() : Function() {}
 
     /// Constructor
     DiscreteFunction(boost::shared_ptr<const FunctionSpace> V) : Function(V)
@@ -136,7 +128,7 @@ namespace dolfin
     DiscreteFunction(const Function& v) : Function(v) {}
 
     /// Sub-function constructor (shallow copy of the vector)
-    DiscreteFunction(Function& v, uint i)
+    DiscreteFunction(Function& v, uint i) : Function (v)
     {
       // Get sub-function (Function will store pointer to sub-Function)
       Function& sub_function = v[i]; 

@@ -24,12 +24,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshCoordinates::MeshCoordinates() : Function()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-MeshCoordinates::MeshCoordinates(const FunctionSpace& V) : Function(V)
+MeshCoordinates::MeshCoordinates() : Expression()
 {
   // Do nothing
 }
@@ -41,12 +36,7 @@ void MeshCoordinates::eval(double* values, const Data& data) const
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-CellSize::CellSize() : Function()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-CellSize::CellSize(const FunctionSpace& V) : Function(V)
+CellSize::CellSize() : Expression()
 {
   // Do nothing
 }
@@ -56,6 +46,7 @@ void CellSize::eval(double* values, const Data& data) const
   values[0] = data.cell().diameter();
 }
 //-----------------------------------------------------------------------------
+/*
 double CellSize::min() const
 {
   CellIterator c(function_space().mesh());
@@ -73,14 +64,10 @@ double CellSize::max() const
     hmax = std::max(hmax, c->diameter());
   return hmax;
 }
+*/
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-FacetArea::FacetArea() : Function()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-FacetArea::FacetArea(const FunctionSpace& V) : Function(V)
+FacetArea::FacetArea() : Expression()
 {
   // Do nothing
 }

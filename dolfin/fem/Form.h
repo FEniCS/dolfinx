@@ -62,7 +62,7 @@ namespace dolfin
     const boost::shared_ptr<const FunctionSpace> function_space(uint i) const;
 
     /// Return function spaces for arguments
-    std::vector<const FunctionSpace*> function_spaces() const;
+    std::vector<boost::shared_ptr<const FunctionSpace> > function_spaces() const;
 
     /// Return given coefficient
     const Coefficient& coefficient(uint i) const;

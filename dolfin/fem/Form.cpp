@@ -97,13 +97,9 @@ const boost::shared_ptr<const FunctionSpace> Form::function_space(dolfin::uint i
   return _function_spaces[i];
 }
 //-----------------------------------------------------------------------------
-std::vector<const FunctionSpace*> Form::function_spaces() const
+std::vector<boost::shared_ptr<const FunctionSpace> > Form::function_spaces() const
 {
-  std::vector<const FunctionSpace*> V;
-  for (uint i = 0; i < _function_spaces.size(); ++i)
-    V.push_back(_function_spaces[i].get());
-
-  return V;
+  return _function_spaces;
 }
 //-----------------------------------------------------------------------------
 const Coefficient& Form::coefficient(dolfin::uint i) const
