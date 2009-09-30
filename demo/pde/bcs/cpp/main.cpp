@@ -41,7 +41,7 @@ int main()
 
   // Solve PDE and plot solution
   VariationalProblem pde(a, L, bcs);
-  Function u;
+  Function u(V);
   pde.solve(u);
   plot(u);
 

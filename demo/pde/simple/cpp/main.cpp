@@ -36,7 +36,7 @@ int main()
   
   // Compute and plot solution
   VariationalProblem problem(a, L);
-  Function u;
+  Function u(V);
   problem.solve(u);
   plot(u);
  

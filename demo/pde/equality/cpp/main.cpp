@@ -80,7 +80,7 @@ int main()
   VariationalProblem pde(a, L, bcs);
 
   // Solve PDE
-  Function u;
+  Function u(V);
   pde.solve(u);
 
   // Plot solution

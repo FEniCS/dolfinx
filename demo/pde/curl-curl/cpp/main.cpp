@@ -61,8 +61,6 @@ int main()
   // Define functions
   Source dbdt;
   Zero zero;
-  Function T;
-  Function J;
 
   // Define function space and boundary condition
   EddyCurrents::FunctionSpace V(mesh);
@@ -76,6 +74,7 @@ int main()
   VariationalProblem problem (a, L,  bc);
 
   // Solve problem using default solver
+  Function T(V);
   problem.solve(T);
 
   // Define variational problem for current density (J)
@@ -86,6 +85,7 @@ int main()
   VariationalProblem problem1(a1, L1);
 
   // Solve problem using default solver
+  Function J(V1);
   problem1.solve(J);
 
   // Plot solution

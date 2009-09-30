@@ -74,7 +74,7 @@ int main()
   VariationalProblem problem(a, L, bcs);
 
   // Solve PDE
-  Function w;
+  Function w(W);
   problem.parameters["linear_solver"] = "direct";
   problem.solve(w);
 

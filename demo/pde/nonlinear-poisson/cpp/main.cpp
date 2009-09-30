@@ -60,7 +60,7 @@ int main()
 
   // Define source and solution functions
   Source f;
-  Function u;
+  Function u(V);
 
   // Create forms
   NonlinearPoisson::BilinearForm a(V, V);

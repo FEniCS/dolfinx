@@ -74,7 +74,7 @@ int main()
   VariationalProblem pde(a, L, bc);
 
   // Solve PDE
-  Function u;
+  Function u(V);
   pde.solve(u);
 
   // Save solution in VTK format

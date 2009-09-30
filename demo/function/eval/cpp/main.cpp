@@ -39,7 +39,7 @@ int main()
   Projection::LinearForm L(V);
   L.f = f;
   VariationalProblem pde(a, L);
-  Function g;
+  Function g(V);
   pde.solve(g);
 
   // Evaluate user-defined function f
