@@ -76,7 +76,7 @@ namespace dolfin
     /// Assignment from function
     const Function& operator= (const Function& v);
 
-    /// Assignment from Expression using interpolation
+    /// Assignment from expression using interpolation
     const Function& operator= (const Expression& v);
 
     /// Extract sub function data
@@ -85,15 +85,13 @@ namespace dolfin
     /// Return the function space
     const FunctionSpace& function_space() const;
 
-    /// Return the function space
+    /// Return shared pointer to the function space
     boost::shared_ptr<const FunctionSpace> function_space_ptr() const;
 
-    /// Return the vector of expansion coefficients, automatically
-    /// initialized to zero if coefficients have not been computed (non-const version)
+    /// Return the vector of expansion coefficients (non-const version)
     GenericVector& vector();
 
-    /// Return the vector of expansion coefficients, automatically
-    /// initialized to zero if coefficients have not been computed (const version)
+    /// Return the vector of expansion coefficients (const version)
     const GenericVector& vector() const;
 
     /// Check if function is a member of the given function space
@@ -102,20 +100,20 @@ namespace dolfin
     /// Return geometric dimension
     uint geometric_dimension() const;
 
-    /// Function evaluation (overload for user-defined function, simple version)
+    /// Function evaluation
     void eval(double* values, const double* x) const;
 
-    /// Function evaluation (overload for user-defined function, alternate version)
+    /// Function evaluation
     void eval(double* values, const Data& data) const;
 
-    /// Evaluate function v at given point in given cell
-    void eval(double* values, const double* x, const ufc::cell& ufc_cell,
-              uint cell_index) const;
+    /// Evaluate function at given point in given cell
+    void eval(double* values, const double* x,
+              const ufc::cell& ufc_cell, uint cell_index) const;
 
     /// Interpolate function (possibly non-matching meshes)
     void interpolate(const Function& v);
 
-    /// Interpolate expreesion a function space
+    /// Interpolate expression
     void interpolate(const Expression& v);
 
     /// Interpolate function to vertices of mesh
@@ -206,6 +204,7 @@ namespace dolfin
       double* nonlocal_block;
       uint* local_index;
       uint* nonlocal_index;
+
     };
 
     mutable Scratch scratch;
