@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2009-09-29
+// Last changed: 2009-09-30
 //
 // This demo program solves Poisson's equation
 //

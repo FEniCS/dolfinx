@@ -15,12 +15,8 @@
 
 using namespace dolfin;
 
-class MyFunction : public Function
+class MyExpression : public Expression
 {
-  public:
-
-  MyFunction(FunctionSpace& V) : Function(V) {}
-
   void eval(double* values, const double* x) const
   {
     values[0] = sin(10.0*x[0])*sin(10.0*x[1]);
@@ -38,13 +34,15 @@ int main()
   P3::FunctionSpace V0(mesh0);
   P1::FunctionSpace V1(mesh1);
 
-  // Create function on P2 space
-  MyFunction f0(V0);
-
-  // Create function on P1 space
+  // Create functions
+  Function f0(V0);
   Function f1(V1);
 
-  // Interpolate P2 function (coarse mesh) on P1 function space (fine mesh) 
+  // Interpolate expression into V0
+  MyExpression e;
+  f0.interpolate(e);
+
+  // Interpolate V0 function (coarse mesh) into V1 function space (fine mesh) 
   f1.interpolate(f0);
 
   // Plot results

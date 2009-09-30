@@ -22,17 +22,12 @@ using namespace dolfin;
 int main()
 {
   // The function v
-  class MyFunction : public Function
+  class MyFunction : public Expression
   {
-  public:
-
-    MyFunction(const FunctionSpace& V) : Function(V) {}
-
     void eval(double* values, const double* x) const
     {
       values[0] = sin(x[0]) + cos(x[1]);
     }
-
   };
 
   // Define functional

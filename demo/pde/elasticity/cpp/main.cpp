@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2008
 //
 // First added:  2006-02-07
-// Last changed: 2009-09-09
+// Last changed: 2009-09-30
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -18,7 +18,7 @@ using namespace dolfin;
 int main()
 {
   // Dirichlet boundary condition for clamp at left end
-  class Clamp : public Function
+  class Clamp : public Expression
   {
     void eval(double* values, const double* x) const
     {
@@ -38,7 +38,7 @@ int main()
   };
 
   // Dirichlet boundary condition for rotation at right end
-  class Rotation : public Function
+  class Rotation : public Expression
   {
     void eval(double* values, const double* x) const
     {

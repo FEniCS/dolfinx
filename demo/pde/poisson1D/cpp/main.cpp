@@ -32,7 +32,7 @@ class DirichletBoundary : public SubDomain
 };
 
 // Source term
-class Source : public Function
+class Source : public Expression
 {
   void eval(double* values, const double* x) const
   {
@@ -41,7 +41,7 @@ class Source : public Function
 };
 
 // Neumann boundary condition
-class Flux : public Function
+class Flux : public Expression
 {
   void eval(double* values, const double* x) const
   {

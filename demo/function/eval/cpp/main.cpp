@@ -13,9 +13,8 @@ using namespace dolfin;
 
 #ifdef HAS_GTS
 
-class F : public Function
+class F : public Expression
 {
-public:
   void eval(double* values, const double* x) const
   {
     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);

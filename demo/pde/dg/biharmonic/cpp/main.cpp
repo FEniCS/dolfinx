@@ -24,14 +24,14 @@
 
 using namespace dolfin;
 
-  // Source term
-  class Source : public Function
+// Source term
+class Source : public Expression
+{
+  void eval(double* values, const double* x) const
   {
-    void eval(double* values, const double* x) const
-    {
-      values[0] = 4.0 * DOLFIN_PI * DOLFIN_PI * DOLFIN_PI * DOLFIN_PI * sin(DOLFIN_PI*x[0]) * sin(DOLFIN_PI*x[1]);
-    }
-  };
+    values[0] = 4.0 * DOLFIN_PI * DOLFIN_PI * DOLFIN_PI * DOLFIN_PI * sin(DOLFIN_PI*x[0]) * sin(DOLFIN_PI*x[1]);
+  }
+};
 
 // Sub domain for Dirichlet boundary condition
 class DirichletBoundary : public SubDomain

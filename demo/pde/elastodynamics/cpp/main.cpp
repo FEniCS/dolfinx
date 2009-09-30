@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-01-22
-// Last changed: 2009-09-08
+// Last changed: 2009-09-30
 //
 
 #include <dolfin.h>
@@ -12,39 +12,38 @@
 using namespace dolfin;
 
 // External load
-class Pressure : public Function
+class Pressure : public Expression
 {
 public:
 
   Pressure(const double& t, const double& dt, bool old): t(t), dt(dt), old(old) {}
 
+  void eval(double* values, const Data& data) const
+  {
+    double time = t;
+    if(old && time > 0.0)
+      time -= dt;
+
+    const double cutoff_time = 10.0*1.0/32.0;
+    if (time < cutoff_time)
+    {
+      values[0] = 1.0*time/cutoff_time;
+      values[1] = 0.0;
+    }
+    else
+    {
+      values[0] = 1.0;
+      values[1] = 0.0;
+    }
+  }
+
 private:
 
-  void eval(double* values, const Data& data) const
-    {
-      double time = t;
-      if(old && time > 0.0)
-        time -= dt;
-
-      const double cutoff_time = 10.0*1.0/32.0;
-      if (time < cutoff_time)
-      {
-        values[0] = 1.0*time/cutoff_time;
-        values[1] = 0.0;
-      }
-      else
-      {
-        values[0] = 1.0;
-        values[1] = 0.0;
-      }
-    }
-
-    const double& t;
-    const double& dt;
-    const bool    old;
+  const double& t;
+  const double& dt;
+  const bool    old;
 
 };
-
 
 // Right boundary
 class RightBoundary : public SubDomain

@@ -17,7 +17,7 @@
 using namespace dolfin;
 
 // Source term
-class Source : public Function
+class Source : public Expression
 {
   void eval(double* values, const double* x) const
   {

@@ -25,9 +25,8 @@ using namespace dolfin;
 int main()
 {
   // Homogenous external magnetic field (dB/dt)
-  class Source : public Function
+  class Source : public Expression
   {
-  public:
     void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
@@ -37,9 +36,8 @@ int main()
   };
 
   // Zero Dirichlet BC
-  class Zero : public Function
+  class Zero : public Expression
   {
-  public:
     void eval(double* values, const double* x) const
     {
       values[0] = 0.0;

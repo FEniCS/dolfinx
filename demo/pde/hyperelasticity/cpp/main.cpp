@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-29
-// Last changed: 
+// Last changed:
 //
 // This demo program solves a hyperelastic problem
 
@@ -30,7 +30,7 @@ class Right : public SubDomain
 };
 
 // Dirichlet boundary condition for clamp at left end
-class Clamp : public Function
+class Clamp : public Expression
 {
   void eval(double* values, const double* x) const
   {
@@ -41,7 +41,7 @@ class Clamp : public Function
 };
 
 // Dirichlet boundary condition for rotation at right end
-class Rotation : public Function
+class Rotation : public Expression
 {
   void eval(double* values, const double* x) const
   {
@@ -83,7 +83,7 @@ int main()
   bcs.push_back(&bcl);
   bcs.push_back(&bcr);
 
-  // Define source and solution functions  
+  // Define source and solution functions
   Constant B(3, 0.0);
   Constant T(3, 0.0);
   Function u;

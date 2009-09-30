@@ -16,7 +16,7 @@
 using namespace dolfin;
 
 // Dirichlet boundary condition
-class BC : public Function
+class BC : public Expression
 {
   void eval(double* values, const double* x) const
   {

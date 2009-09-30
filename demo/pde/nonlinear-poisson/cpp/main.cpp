@@ -30,9 +30,8 @@
 using namespace dolfin;
 
 // Right-hand side
-class Source : public Function
+class Source : public Expression
 {
-public:
   void eval(double* values, const double* x) const
   {
     values[0] = x[0]*sin(x[1]);
