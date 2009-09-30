@@ -121,15 +121,6 @@ namespace dolfin
     void eval(double* values, const double* x, const ufc::cell& ufc_cell,
               uint cell_index) const;
 
-    /// Interpolate function to local function space on cell
-    //void interpolate(double* coefficients, const ufc::cell& ufc_cell,
-    //                 uint cell_index, int local_facet=-1) const;
-
-    /// Interpolate function to local function space on cell with check on function space
-    //void interpolate(double* coefficients, const FunctionSpace& V,
-    //                 const ufc::cell& ufc_cell, uint cell_index,
-    //                 int local_facet=-1) const;
-
     /// Interpolate function (possibly non-matching meshes)
     void interpolate(const Function& v);
 

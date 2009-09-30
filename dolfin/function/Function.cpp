@@ -348,64 +348,6 @@ void Function::eval(double* values,
   _function_space->eval(values, x, *this, ufc_cell, cell_index);
 }
 //-----------------------------------------------------------------------------
-/*
-void Function::interpolate(double* coefficients,
-                           const ufc::cell& ufc_cell,
-                           uint cell_index,
-                           int local_facet) const
-{
-  assert(coefficients);
-  assert(_function_space);
-  interpolate(coefficients, *_function_space, ufc_cell, cell_index, local_facet);
-}
-//-----------------------------------------------------------------------------
-void Function::interpolate(double* coefficients,
-                           const FunctionSpace& V,
-                           const ufc::cell& ufc_cell,
-                           uint cell_index,
-                           int local_facet) const
-{
-  assert(coefficients);
-
-  // Either pick values or evaluate dof functionals
-  if (in(V) && _vector)
-  {
-    // Get dofmap
-    const DofMap& dofmap = V.dofmap();
-
-    // Tabulate dofs
-    uint* dofs = new uint[dofmap.local_dimension(ufc_cell)];
-    dofmap.tabulate_dofs(dofs, ufc_cell, cell_index);
-
-    // Pick values from vector(s)
-    get(coefficients, dofmap.local_dimension(ufc_cell), dofs);
-
-    // Clean up
-    delete [] dofs;
-  }
-  else
-  {
-    // Create data
-    const Cell cell(V.mesh(), cell_index);
-    Data data(cell, local_facet);
-
-    // Create UFC wrapper for this function
-    UFCFunction v(*this, data);
-
-    // Get element
-    const FiniteElement& element = V.element();
-
-    // Evaluate each dof to get coefficients for nodal basis expansion
-    for (uint i = 0; i < element.space_dimension(); i++)
-      coefficients[i] = element.evaluate_dof(i, v, ufc_cell);
-
-    // FIXME: Is this necessary?
-    // Invalidate eval data
-    data.invalidate();
-  }
-}
-*/
-//-----------------------------------------------------------------------------
 void Function::interpolate(const Function& v)
 {
   assert(has_function_space());
