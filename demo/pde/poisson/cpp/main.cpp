@@ -72,7 +72,7 @@ int main()
 
   // Compute solution
   VariationalProblem problem(a, L, bc);
-  Function u;
+  Function u(V);
   problem.solve(u);
 
   // Save solution in VTK format

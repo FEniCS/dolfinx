@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-02-09
-// Last changed: 2009-03-11
+// Last changed: 2009-09-30
 
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
@@ -55,12 +55,6 @@ namespace dolfin
 
     /// Function evaluation
     void eval(double* values, const Data& data) const;
-
-    /// Compute minimal cell diameter
-    //double min() const;
-
-    /// Compute maximal cell diameter
-    //double max() const;
 
   };
 
@@ -121,7 +115,7 @@ namespace dolfin
     }
 
     /// Constructor
-    DiscreteFunction(boost::shared_ptr<const FunctionSpace> V, 
+    DiscreteFunction(boost::shared_ptr<const FunctionSpace> V,
                      std::string filename) : Function(V, filename){}
 
     /// Constructor (deep copy of the vector)
@@ -131,8 +125,8 @@ namespace dolfin
     DiscreteFunction(Function& v, uint i) : Function (v)
     {
       // Get sub-function (Function will store pointer to sub-Function)
-      Function& sub_function = v[i]; 
-      
+      Function& sub_function = v[i];
+
       // Copy function space pointer
       this->_function_space = sub_function._function_space;
 

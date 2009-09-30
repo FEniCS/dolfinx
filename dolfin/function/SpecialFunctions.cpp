@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2008-07-17
-// Last changed: 2009-03-11
+// Last changed: 2009-09-30
 
 #include <cmath>
 
@@ -45,26 +45,6 @@ void CellSize::eval(double* values, const Data& data) const
 {
   values[0] = data.cell().diameter();
 }
-//-----------------------------------------------------------------------------
-/*
-double CellSize::min() const
-{
-  CellIterator c(function_space().mesh());
-  double hmin = c->diameter();
-  for (; !c.end(); ++c)
-    hmin = std::min(hmin, c->diameter());
-  return hmin;
-}
-//-----------------------------------------------------------------------------
-double CellSize::max() const
-{
-  CellIterator c(function_space().mesh());
-  double hmax = c->diameter();
-  for (; !c.end(); ++c)
-    hmax = std::max(hmax, c->diameter());
-  return hmax;
-}
-*/
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 FacetArea::FacetArea() : Expression()

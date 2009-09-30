@@ -8,7 +8,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2009-09-08
+// Last changed: 2009-09-30
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -187,6 +187,12 @@ namespace dolfin
 
     /// Compute intersection with mesh
     void intersection(Mesh& mesh, std::vector<uint>& cells, bool fixed_mesh=true);
+
+    /// Compute minimum cell diameter
+    double hmin() const;
+
+    /// Compute maximum cell diameter
+    double hmax() const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
