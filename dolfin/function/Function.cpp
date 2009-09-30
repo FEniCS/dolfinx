@@ -348,6 +348,7 @@ void Function::eval(double* values,
   _function_space->eval(values, x, *this, ufc_cell, cell_index);
 }
 //-----------------------------------------------------------------------------
+/*
 void Function::interpolate(double* coefficients,
                            const ufc::cell& ufc_cell,
                            uint cell_index,
@@ -403,6 +404,7 @@ void Function::interpolate(double* coefficients,
     data.invalidate();
   }
 }
+*/
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Function& v)
 {
@@ -549,51 +551,22 @@ void Function::restrict(double* w,
                         const ufc::cell& ufc_cell,
                         int local_facet) const
 {
-  /*
-  assert(coefficients);
+  assert(w);
 
-  // Either pick values or evaluate dof functionals
-  if (in(V) && _vector)
-  {
-    // Get dofmap
-    const DofMap& dofmap = V.dofmap();
+  // FIXME: Avoid new/delete in this function
 
-    // Tabulate dofs
-    uint* dofs = new uint[dofmap.local_dimension(ufc_cell)];
-    dofmap.tabulate_dofs(dofs, ufc_cell, cell_index);
+  // Get dofmap
+  const DofMap& dofmap = _function_space->dofmap();
 
-    // Pick values from vector(s)
-    get(coefficients, dofmap.local_dimension(ufc_cell), dofs);
+  // Tabulate dofs
+  uint* dofs = new uint[dofmap.local_dimension(ufc_cell)];
+  dofmap.tabulate_dofs(dofs, ufc_cell, dolfin_cell.index());
 
-    // Clean up
-    delete [] dofs;
-  }
-  else
-  {
-    // Create data
-    const Cell cell(V.mesh(), cell_index);
-    Data data(cell, local_facet);
+  // Pick values from vector(s)
+  get(w, dofmap.local_dimension(ufc_cell), dofs);
 
-    // Create UFC wrapper for this function
-    UFCFunction v(*this, data);
-
-    // Get element
-    const FiniteElement& element = V.element();
-
-    // Evaluate each dof to get coefficients for nodal basis expansion
-    for (uint i = 0; i < element.space_dimension(); i++)
-      coefficients[i] = element.evaluate_dof(i, v, ufc_cell);
-
-    // FIXME: Is this necessary?
-    // Invalidate eval data
-    data.invalidate();
-  }
-*/
-
-  // FIXME: Put local interpolation code here when new Expression class
-  // FIXME: design is in place.
-
-  interpolate(w, ufc_cell, dolfin_cell.index(), local_facet);
+  // Clean up
+  delete [] dofs;
 }
 //-----------------------------------------------------------------------------
 void Function::gather() const
