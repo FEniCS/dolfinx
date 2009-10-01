@@ -76,10 +76,6 @@ namespace dolfin
     void interpolate(GenericVector& coefficients,
                      const Coefficient& v, std::string meshes = "matching") const;
 
-    /// Interpolate function v in function space to vertices of mesh
-    void interpolate_vertex_values(double* vertex_values,
-                                   const Coefficient& v) const;
-
     /// Extract sub space for component
     boost::shared_ptr<FunctionSpace> operator[] (uint i) const;
 
@@ -152,9 +148,6 @@ namespace dolfin
 
     // Scratch space, used for storing temporary local data
     mutable Scratch scratch;
-
-    // Intersection detector, used for evaluation at arbitrary points
-    mutable IntersectionDetector* intersection_detector;
 
   };
 

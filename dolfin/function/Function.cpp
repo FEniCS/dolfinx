@@ -18,6 +18,7 @@
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/mesh/IntersectionDetector.h>
+#include <dolfin/mesh/Vertex.h>
 #include "Data.h"
 #include "Expression.h"
 #include "FunctionSpace.h"
@@ -311,9 +312,47 @@ void Function::interpolate(const Function& v)
 //-----------------------------------------------------------------------------
 void Function::interpolate_vertex_values(double* vertex_values) const
 {
+  warning("FunctionSpace::interpolate_vertex_values requires revision."); 
   assert(vertex_values);
-  assert(_function_space);
-  _function_space->interpolate_vertex_values(vertex_values, *this);
+
+  // Gather off-process dofs
+  gather();
+
+  const Mesh& mesh = _function_space->mesh();
+  const FiniteElement& element = _function_space->element();
+
+  // Local data for interpolation on each cell
+  const uint num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
+  double* local_vertex_values = new double[scratch0.size*num_cell_vertices];
+
+  // Interpolate vertex values on each cell (using last computed value if not
+  // continuous, e.g. discontinuous Galerkin methods)
+  UFCCell ufc_cell(mesh);
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update to current cell
+    ufc_cell.update(*cell);
+
+    // Pick values from global vector
+    restrict(scratch0.coefficients, element, *cell, ufc_cell, -1);
+
+    // Interpolate values at the vertices
+    element.interpolate_vertex_values(local_vertex_values, scratch0.coefficients, ufc_cell);
+
+    // Copy values to array of vertex values
+    for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
+    {
+      for (uint i = 0; i < scratch0.size; ++i)
+      {
+        const uint local_index  = vertex.pos()*scratch0.size + i;
+        const uint global_index = i*mesh.num_vertices() + vertex->index();
+        vertex_values[global_index] = local_vertex_values[local_index];
+      }
+    }
+  }
+
+  // Delete local data
+  delete [] local_vertex_values;
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Expression& v)

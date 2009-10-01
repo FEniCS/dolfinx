@@ -33,7 +33,7 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
                              boost::shared_ptr<const DofMap> dofmap)
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0)),
-    scratch(*element), intersection_detector(0)
+    scratch(*element)
 {
   // Do nothing
 }
@@ -43,7 +43,7 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
                              boost::shared_ptr<const DofMap> dofmap)
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0)),
-    scratch(*element), intersection_detector(0)
+    scratch(*element)
 {
   // Do nothing
 }
@@ -58,12 +58,11 @@ FunctionSpace::FunctionSpace(const FunctionSpace& V)
 
   // Reinitialize scratch space and intersection detector
   scratch.init(*_element);
-  intersection_detector = 0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::~FunctionSpace()
 {
-  delete intersection_detector;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
@@ -76,11 +75,6 @@ const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
 
   // Reinitialize scratch space and intersection detector
   scratch.init(*_element);
-  if (intersection_detector)
-  {
-    delete intersection_detector;
-    intersection_detector = 0;
-  }
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -143,55 +137,6 @@ void FunctionSpace::interpolate(GenericVector& coefficients,
 
   // Finalise changes
   coefficients.apply();
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::interpolate_vertex_values(double* vertex_values,
-                                              const Coefficient& v) const
-{
-  warning("FunctionSpace::interpolate_vertex_values requires revision."); 
-  assert(vertex_values);
-  //assert(v.in(*this));
-  assert(_mesh);
-  assert(_element);
-  assert(_dofmap);
-
-  // FIXME: Should this go here or in Function?
-  // Gather off-process dofs
-  v.gather();
-
-  // Local data for interpolation on each cell
-  const uint num_cell_vertices = _mesh->type().num_vertices(_mesh->topology().dim());
-  double* local_vertex_values = new double[scratch.size*num_cell_vertices];
-
-  // Interpolate vertex values on each cell (using last computed value if not
-  // continuous, e.g. discontinuous Galerkin methods)
-  UFCCell ufc_cell(*_mesh);
-  for (CellIterator cell(*_mesh); !cell.end(); ++cell)
-  {
-    // Update to current cell
-    ufc_cell.update(*cell);
-
-    // Pick values from global vector
-    v.restrict(scratch.coefficients, this->element(), *cell, ufc_cell, -1);
-    //v.interpolate(scratch.coefficients, ufc_cell, cell->index());
-
-    // Interpolate values at the vertices
-    _element->interpolate_vertex_values(local_vertex_values, scratch.coefficients, ufc_cell);
-
-    // Copy values to array of vertex values
-    for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
-    {
-      for (uint i = 0; i < scratch.size; ++i)
-      {
-        const uint local_index  = vertex.pos()*scratch.size + i;
-        const uint global_index = i*_mesh->num_vertices() + vertex->index();
-        vertex_values[global_index] = local_vertex_values[local_index];
-      }
-    }
-  }
-
-  // Delete local data
-  delete [] local_vertex_values;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace> FunctionSpace::operator[] (uint i) const
