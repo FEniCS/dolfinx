@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-06-18
+// Last changed: 2009-10-01
 
 #ifndef __UFC_CELL_H
 #define __UFC_CELL_H
@@ -34,20 +34,20 @@ namespace dolfin
     }
 
     /// Create UFC cell from DOLFIN cell
-    UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0), 
+    UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0),
                                 num_higher_order_vertices(0)
     {
       init(cell);
     }
 
     /// Create UFC cell for first DOLFIN cell in mesh
-    UFCCell(const Mesh& mesh) : ufcexp::cell(), num_vertices(0), 
+    UFCCell(const Mesh& mesh) : ufcexp::cell(), num_vertices(0),
                                 num_higher_order_vertices(0)
     {
       CellIterator cell(mesh);
       init(*cell);
     }
-    
+
     /// Destructor
     ~UFCCell()
     {
@@ -89,7 +89,7 @@ namespace dolfin
       entity_indices = new uint*[topological_dimension + 1];
       for (uint d = 0; d < topological_dimension; d++)
       {
-        // Store number of cell entities allocated for (this can change between 
+        // Store number of cell entities allocated for (this can change between
         // init() and update() which is why it's stored)
         num_cell_entities.push_back(cell.num_entities(d));
         if (cell.num_entities(d) > 0)
@@ -108,7 +108,7 @@ namespace dolfin
         // This pointer may be zero, in which case local entity indices are used
         global_entities[d] = cell.mesh().data().mesh_function(name.str());
       }
-      
+
       // Allocate vertex coordinates
       coordinates = new double*[num_vertices];
 
