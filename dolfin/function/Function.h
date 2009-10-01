@@ -14,6 +14,7 @@
 #include <map>
 #include <vector>
 #include <boost/ptr_container/ptr_map.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
@@ -33,6 +34,7 @@ namespace dolfin
   class FunctionSpace;
   class GenericVector;
   class Data;
+  class IntersectionDetector;
 
   /// This class represents a function u_h in a finite element
   /// function space V_h, given by
@@ -161,6 +163,42 @@ namespace dolfin
 
     mutable std::map<uint, uint> global_to_local;
     mutable std::vector<uint> _off_process_dofs;
+
+    // Intersection detector, used for evaluation at arbitrary points
+    mutable boost::scoped_ptr<IntersectionDetector> intersection_detector;
+
+    // Scratch space, used for storing temporary local data
+    class Scratch0
+    {
+    public:
+
+      // Constructor
+      Scratch0(const FiniteElement& element);
+
+      // Constructor
+      Scratch0();
+
+      // Destructor
+      ~Scratch0();
+
+      // Initialize scratch space
+      void init(const FiniteElement& element);
+
+      // Value size (number of entries in tensor value)
+      uint size;
+
+      // Local array for mapping of dofs
+      uint* dofs;
+
+      // Local array for expansion coefficients
+      double* coefficients;
+
+      // Local array for values
+      double* values;
+
+    };
+
+    mutable Scratch0 scratch0;
 
     // Scratch data used in extracting coefficients from parallel vectors
     class Scratch

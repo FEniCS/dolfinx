@@ -17,6 +17,7 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/UFC.h>
+#include <dolfin/mesh/IntersectionDetector.h>
 #include "Data.h"
 #include "Expression.h"
 #include "FunctionSpace.h"
@@ -28,7 +29,7 @@ using namespace dolfin;
 Function::Function(const FunctionSpace& V)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
-    _off_process_vector(static_cast<GenericVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V.element())
 {
   // Initialize vector
   init_vector();
@@ -40,7 +41,7 @@ Function::Function(const FunctionSpace& V)
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : Variable("v", "unnamed function"),
     _function_space(V),
-    _off_process_vector(static_cast<GenericVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
   // Initialize vector
   init_vector();
@@ -51,7 +52,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   : Variable("v", "unnamed function"),
     _function_space(V),
     _vector(reference_to_no_delete_pointer(x)),
-    _off_process_vector(static_cast<GenericVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
   assert(V->dofmap().global_dimension() == x.size());
 }
@@ -61,7 +62,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   : Variable("v", "unnamed function"),
     _function_space(V),
     _vector(x),
-    _off_process_vector(static_cast<GenericVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
   assert(V->dofmap().global_dimension() <= x->size());
 }
@@ -70,7 +71,7 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
     _vector(reference_to_no_delete_pointer(x)),
-    _off_process_vector(static_cast<GenericVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V.element())
 {
   assert(V.dofmap().global_dimension() == x.size());
 }
@@ -78,7 +79,7 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
 Function::Function(const FunctionSpace& V, std::string filename)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
-    _off_process_vector(static_cast<GenericVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V.element())
 {
   // Initialize vector
   init_vector();
@@ -95,7 +96,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
 Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filename)
   : Variable("v", "unnamed function"),
     _function_space(V),
-    _off_process_vector(static_cast<GenericVector*>(0))
+    _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
   // Create vector
   DefaultFactory factory;
@@ -172,6 +173,8 @@ const Function& Function::operator= (const Function& v)
     v.get(&values[0], size, &old_rows[0]);
     this->_vector->set(&values[0], size, &new_rows[0]);
   }
+  scratch0.init(this->_function_space->element());
+
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -242,16 +245,28 @@ dolfin::uint Function::geometric_dimension() const
 void Function::eval(double* values, const double* x) const
 {
   assert(values);
-  assert(x);
-  assert(_function_space);
-  _function_space->eval(values, x, *this);
+
+  // Initialize intersection detector if not done before
+  if (!intersection_detector)
+    intersection_detector.reset(new IntersectionDetector(_function_space->mesh()));
+
+  // Find the cell that contains x
+  Point point(_function_space->mesh().geometry().dim(), x);
+  std::vector<uint> cells;
+  intersection_detector->intersection(point, cells);
+  if (cells.size() < 1)
+    error("Unable to evaluate function at given point (not inside domain).");
+  Cell cell(_function_space->mesh(), cells[0]);
+  UFCCell ufc_cell(cell);
+
+  // Evaluate
+  eval(values, x, ufc_cell, cell.index());
 }
 //-----------------------------------------------------------------------------
 void Function::eval(double* values, const Data& data) const
 {
   assert(values);
   assert(data.x);
-  assert(_function_space);
 
   // FIXME: Dangerous since we can' be sure this cell originates from the
   // FIXME: same mesh!
@@ -260,7 +275,7 @@ void Function::eval(double* values, const Data& data) const
   if (data._ufc_cell)
   {
     const uint cell_index = data._ufc_cell->entity_indices[data._ufc_cell->topological_dimension][0];
-    _function_space->eval(values, data.x, *this, *data._ufc_cell, cell_index);
+   eval(values, data.x, *data._ufc_cell, cell_index);
   }
   else
     _function_space->eval(values, data.x, *this);
@@ -271,8 +286,22 @@ void Function::eval(double* values,
                     const ufc::cell& ufc_cell,
                     uint cell_index) const
 {
-  assert(_function_space);
-  _function_space->eval(values, x, *this, ufc_cell, cell_index);
+  assert(values);
+  assert(x);
+
+  // Restrict function to cell
+  Cell cell(_function_space->mesh(), cell_index);
+  restrict(scratch0.coefficients, _function_space->element(), cell, ufc_cell, -1);
+
+  // Compute linear combination
+  for (uint j = 0; j < scratch0.size; j++)
+    values[j] = 0.0;
+  for (uint i = 0; i < _function_space->element().space_dimension(); i++)
+  {
+    _function_space->element().evaluate_basis(i, scratch0.values, x, ufc_cell);
+    for (uint j = 0; j < scratch0.size; j++)
+      values[j] += (scratch0.coefficients[i])*(scratch0.values[j]);
+  }
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Function& v)
@@ -453,3 +482,50 @@ void Function::gather() const
   }
 }
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+Function::Scratch0::Scratch0(const FiniteElement& element)
+  : size(0), dofs(0), coefficients(0), values(0)
+{
+  init(element);
+}
+//-----------------------------------------------------------------------------
+Function::Scratch0::Scratch0()
+  : size(0), dofs(0), coefficients(0), values(0)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+Function::Scratch0::~Scratch0()
+{
+  delete [] dofs;
+  delete [] coefficients;
+  delete [] values;
+}
+//-----------------------------------------------------------------------------
+void Function::Scratch0::init(const FiniteElement& element)
+{
+  // Compute size of value (number of entries in tensor value)
+  size = 1;
+  for (uint i = 0; i < element.value_rank(); i++)
+    size *= element.value_dimension(i);
+
+  // Initialize local array for mapping of dofs
+  delete [] dofs;
+  dofs = new uint[element.space_dimension()];
+  for (uint i = 0; i < element.space_dimension(); i++)
+    dofs[i] = 0;
+
+  // Initialize local array for expansion coefficients
+  delete [] coefficients;
+  coefficients = new double[element.space_dimension()];
+  for (uint i = 0; i < element.space_dimension(); i++)
+    coefficients[i] = 0.0;
+
+  // Initialize local array for values
+  delete [] values;
+  values = new double[size];
+  for (uint i = 0; i < size; i++)
+    values[i] = 0.0;
+}
+//-----------------------------------------------------------------------------
+
