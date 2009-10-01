@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-11
-// Last changed: 2009-09-28
+// Last changed: 2009-10-01
 
 #ifndef __DATA_H
 #define __DATA_H
@@ -25,11 +25,6 @@ namespace dolfin
 
     /// Constructor
     Data();
-
-    // FIXME: Remove this constructor after removing UFCFunction
-
-    /// Constructor
-    Data(const Cell& cell, int facet);
 
     /// Destructor
     ~Data();

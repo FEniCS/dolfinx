@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-11
-// Last changed: 2009-09-28
+// Last changed: 2009-10-01
 
 #include <dolfin/mesh/Cell.h>
 #include "Data.h"
@@ -12,12 +12,6 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Data::Data()
   : x(0), _dolfin_cell(0), _ufc_cell(0), _facet(-1)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Data::Data(const Cell& cell, int facet)
-  : x(0), _dolfin_cell(&cell), _ufc_cell(0), _facet(facet)
 {
   // Do nothing
 }
