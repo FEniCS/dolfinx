@@ -75,12 +75,17 @@ void VTKFile::operator<<(const Mesh& mesh)
           mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------
-void VTKFile::operator<<(const MeshFunction<int>& meshfunction)
+void VTKFile::operator<<(const MeshFunction<bool>& meshfunction)
 {
   mesh_function_write(meshfunction);
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<unsigned int>& meshfunction)
+{
+  mesh_function_write(meshfunction);
+}
+//----------------------------------------------------------------------------
+void VTKFile::operator<<(const MeshFunction<int>& meshfunction)
 {
   mesh_function_write(meshfunction);
 }
