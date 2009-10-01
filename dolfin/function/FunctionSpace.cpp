@@ -107,62 +107,6 @@ dolfin::uint FunctionSpace::dim() const
   return dofmap().global_dimension();
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::eval(double* values,
-                         const double* x,
-                         const Coefficient& v) const
-{
-  assert(values);
-  assert(x);
-  //assert(v.in(*this));
-  assert(_mesh);
-  assert(_element);
-  assert(_dofmap);
-
-  // Initialize intersection detector if not done before
-  if (!intersection_detector)
-    intersection_detector = new IntersectionDetector(*_mesh);
-
-  // Find the cell that contains x
-  Point point(_mesh->geometry().dim(), x);
-  std::vector<uint> cells;
-  intersection_detector->intersection(point, cells);
-  if (cells.size() < 1)
-    error("Unable to evaluate function at given point (not inside domain).");
-  Cell cell(*_mesh, cells[0]);
-  UFCCell ufc_cell(cell);
-
-  // Evaluate at point
-  eval(values, x, v, ufc_cell, cell.index());
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::eval(double* values,
-                         const double* x,
-                         const Coefficient& v,
-                         const ufc::cell& ufc_cell,
-                         uint cell_index) const
-{
-  assert(values);
-  assert(x);
-  //assert(v.in(*this));
-  assert(_mesh);
-  assert(_element);
-  assert(_dofmap);
-
-  // Restrict function to cell
-  Cell cell(this->mesh(), cell_index);
-  v.restrict(scratch.coefficients, this->element(), cell, ufc_cell, -1);
-
-  // Compute linear combination
-  for (uint j = 0; j < scratch.size; j++)
-    values[j] = 0.0;
-  for (uint i = 0; i < _element->space_dimension(); i++)
-  {
-    _element->evaluate_basis(i, scratch.values, x, ufc_cell);
-    for (uint j = 0; j < scratch.size; j++)
-      values[j] += scratch.coefficients[i] * scratch.values[j];
-  }
-}
-//-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(GenericVector& coefficients,
                                 const Coefficient& v, std::string meshes) const
 {

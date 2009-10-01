@@ -278,7 +278,7 @@ void Function::eval(double* values, const Data& data) const
    eval(values, data.x, *data._ufc_cell, cell_index);
   }
   else
-    _function_space->eval(values, data.x, *this);
+    eval(values, data.x);
 }
 //-----------------------------------------------------------------------------
 void Function::eval(double* values,

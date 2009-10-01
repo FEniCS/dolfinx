@@ -72,18 +72,6 @@ namespace dolfin
     /// Return dimension of function space
     uint dim() const;
 
-    /// Evaluate function v in function space at given point
-    void eval(double* values,
-              const double* x,
-              const Coefficient& v) const;
-
-    /// Evaluate function v in function space at given point in given cell
-    void eval(double* values,
-              const double* x,
-              const Coefficient& v,
-              const ufc::cell& ufc_cell,
-              uint cell_index) const;
-
     /// Interpolate function v in function space (meshes = "matching" or "non-matching")
     void interpolate(GenericVector& coefficients,
                      const Coefficient& v, std::string meshes = "matching") const;
