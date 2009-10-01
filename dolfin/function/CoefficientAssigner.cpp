@@ -4,7 +4,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2008-10-28
-// Last changed: 2009-09-29
+// Last changed: 2009-10-01
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/Form.h>
@@ -26,7 +26,6 @@ CoefficientAssigner::~CoefficientAssigner()
 //-----------------------------------------------------------------------------
 void CoefficientAssigner::operator= (const Coefficient& coefficient)
 {
-  assert(number < form._coefficients.size());
-  form._coefficients[number] = reference_to_no_delete_pointer(coefficient);
+  form.set_coefficient(number, coefficient);
 }
 //-----------------------------------------------------------------------------

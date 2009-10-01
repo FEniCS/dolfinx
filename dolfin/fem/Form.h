@@ -5,11 +5,12 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2009-09-29
+// Last changed: 2009-10-01
 
 #ifndef __FORM_H
 #define __FORM_H
 
+#include <map>
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
@@ -64,10 +65,31 @@ namespace dolfin
     /// Return function spaces for arguments
     std::vector<boost::shared_ptr<const FunctionSpace> > function_spaces() const;
 
-    /// Return given coefficient
+    /// Set coefficient with given number
+    void set_coefficient(uint i, const Coefficient& coefficient);
+
+    /// Set coefficient with given number (shared pointer version)
+    void set_coefficient(uint i, boost::shared_ptr<const Coefficient> coefficient);
+
+    /// Set coefficient with given name
+    void set_coefficient(std::string name, const Coefficient& coefficient);
+
+    /// Set coefficient with given name (shared pointer version)
+    void set_coefficient(std::string name, boost::shared_ptr<const Coefficient> coefficient);
+
+    /// Set all coefficients in given map, possibly a subset
+    void set_coefficients(std::map<std::string, const Coefficient*> coefficients);
+
+    /// Set all coefficients in given map, possibly a subset  (shared pointer version)
+    void set_coefficients(std::map<std::string, boost::shared_ptr<const Coefficient> > coefficients);
+
+    /// Return coefficient with given number
     const Coefficient& coefficient(uint i) const;
 
-    /// Return coefficients
+    /// Return coefficient with given name
+    const Coefficient& coefficient(std::string name) const;
+
+    /// Return all coefficients
     std::vector<const Coefficient*> coefficients() const;
 
     /// Return the number of the coefficient with this name
@@ -83,7 +105,6 @@ namespace dolfin
     void check() const;
 
     /// Friends
-    friend class CoefficientAssigner;
     friend class LinearPDE;
     friend class NonlinearPDE;
     friend class VariationalProblem;

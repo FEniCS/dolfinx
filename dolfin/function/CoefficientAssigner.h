@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-28
-// Last changed: 2009-09-29
+// Last changed: 2009-10-01
 
 #ifndef __COEFFICIENT_ASSIGNER_H
 #define __COEFFICIENT_ASSIGNER_H
