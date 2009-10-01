@@ -134,7 +134,6 @@ namespace dolfin
     /// Friends
     friend class Coefficient;
     friend class DiscreteFunction;
-    friend class VariationalProblem;
 
   protected:
 
