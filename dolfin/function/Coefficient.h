@@ -7,12 +7,16 @@
 #ifndef __COEFFICIENT_H
 #define __COEFFICIENT_H
 
-#include <ufc.h>
+namespace ufc
+{
+  class cell;
+}
 
 namespace dolfin
 {
 
   class Cell;
+  class Data;
   class FiniteElement;
 
   /// This class represents a coefficient appearing in a finite
@@ -38,6 +42,9 @@ namespace dolfin
 
     /// Destructor
     virtual ~Coefficient() {}
+
+    /// Evaluate coefficient function
+    virtual void eval(double* values, const Data& data) const = 0;
 
     /// Restrict coefficient to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
