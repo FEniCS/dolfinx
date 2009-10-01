@@ -44,6 +44,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
     _function_space(V),
     _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
+  assert(V);
+
   // Initialize vector
   init_vector();
 }
@@ -55,6 +57,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(reference_to_no_delete_pointer(x)),
     _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
+  assert(V);
   assert(V->dofmap().global_dimension() == x.size());
 }
 //-----------------------------------------------------------------------------
@@ -65,6 +68,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(x),
     _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
+  assert(V);
   assert(V->dofmap().global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
@@ -99,6 +103,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
     _function_space(V),
     _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
+  assert(V);
+
   // Create vector
   DefaultFactory factory;
   _vector.reset(factory.create_vector());
