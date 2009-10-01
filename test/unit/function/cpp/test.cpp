@@ -25,7 +25,7 @@ public:
 
   void testArbitraryEval()
   {
-    class F0 : public Function
+    class F0 : public Expression
     {
     public:
       void eval(double* values, const Data& data) const
@@ -35,7 +35,7 @@ public:
       }
     };
  
-    class F1 : public Function
+    class F1 : public Expression
     {
     public:
       void eval(double* values, const Data& data) const
