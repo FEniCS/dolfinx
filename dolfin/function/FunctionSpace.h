@@ -100,37 +100,6 @@ namespace dolfin
 
   private:
 
-    // Scratch space, used for storing temporary local data
-    class Scratch
-    {
-    public:
-
-      // Constructor
-      Scratch(const FiniteElement& element);
-
-      // Constructor
-      Scratch();
-
-      // Destructor
-      ~Scratch();
-
-      // Initialize scratch space
-      void init(const FiniteElement& element);
-
-      // Value size (number of entries in tensor value)
-      uint size;
-
-      // Local array for mapping of dofs
-      uint* dofs;
-
-      // Local array for expansion coefficients
-      double* coefficients;
-
-      // Local array for values
-      double* values;
-
-    };
-
     // The mesh
     boost::shared_ptr<const Mesh> _mesh;
 
@@ -145,9 +114,6 @@ namespace dolfin
 
     // Cache of sub spaces
     mutable std::map<std::string, boost::shared_ptr<FunctionSpace> > subspaces;
-
-    // Scratch space, used for storing temporary local data
-    mutable Scratch scratch;
 
   };
 
