@@ -199,15 +199,15 @@ namespace dolfin
     mutable Scratch0 scratch0;
 
     // Scratch data used in extracting coefficients from parallel vectors
-    class Scratch
+    class GatherScratch
     {
     public:
 
-      Scratch() : local_rows(0), nonlocal_rows(0), local_block(0),
+      GatherScratch() : local_rows(0), nonlocal_rows(0), local_block(0),
                   nonlocal_block(0), local_index(0), nonlocal_index(0)
       {}
 
-      ~Scratch()
+      ~GatherScratch()
       {
         clear();
       }
@@ -242,7 +242,7 @@ namespace dolfin
 
     };
 
-    mutable Scratch scratch;
+    mutable GatherScratch gather_scratch;
 
   };
 

@@ -432,27 +432,27 @@ void Function::get(double* block, uint m, const uint* rows) const
     {
       if (rows[i] >= range.first && rows[i] < range.second)
       {
-        scratch.local_index[n_local]  = i;
-        scratch.local_rows[n_local++] = rows[i];
+        gather_scratch.local_index[n_local]  = i;
+        gather_scratch.local_rows[n_local++] = rows[i];
      }
       else
       {
-        scratch.nonlocal_index[n_nonlocal]  = i;
-        scratch.nonlocal_rows[n_nonlocal++] = global_to_local[rows[i]];
+        gather_scratch.nonlocal_index[n_nonlocal]  = i;
+        gather_scratch.nonlocal_rows[n_nonlocal++] = global_to_local[rows[i]];
       }
     }
 
     // Get local coefficients
-    _vector->get_local(scratch.local_block, n_local, scratch.local_rows);
+    _vector->get_local(gather_scratch.local_block, n_local, gather_scratch.local_rows);
 
     // Get off process coefficients
-    _off_process_vector->get_local(scratch.nonlocal_block, n_nonlocal, scratch.nonlocal_rows);
+    _off_process_vector->get_local(gather_scratch.nonlocal_block, n_nonlocal, gather_scratch.nonlocal_rows);
 
     // Copy result into block
     for (uint i = 0; i < n_local; ++i)
-      block[scratch.local_index[i]] = scratch.local_block[i];
+      block[gather_scratch.local_index[i]] = gather_scratch.local_block[i];
     for (uint i = 0; i < n_nonlocal; ++i)
-      block[scratch.nonlocal_index[i]] = scratch.nonlocal_block[i];
+      block[gather_scratch.nonlocal_index[i]] = gather_scratch.nonlocal_block[i];
   }
 }
 //-----------------------------------------------------------------------------
@@ -488,7 +488,7 @@ void Function::gather() const
     assert(_function_space);
 
     // Initialise scratch space
-    scratch.init(_function_space->dofmap().max_local_dimension());
+    gather_scratch.init(_function_space->dofmap().max_local_dimension());
 
     // Compute lists of off-process dofs
     compute_off_process_dofs();
