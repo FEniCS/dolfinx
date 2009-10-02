@@ -62,8 +62,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(x),
     _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
-  // FIXME: Is this assertion correct, should it be ==?
-  assert(V->dofmap().global_dimension() <= x->size());
+  assert(V->dofmap().global_dimension() == x->size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, GenericVector& x)
