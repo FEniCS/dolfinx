@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-09-16
+// Last changed: 2009-10-02
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -72,9 +72,8 @@ namespace dolfin
     /// Return dimension of function space
     uint dim() const;
 
-    /// Interpolate function v in function space (meshes = "matching" or "non-matching")
-    void interpolate(GenericVector& coefficients,
-                     const Coefficient& v, std::string meshes = "matching") const;
+    /// Interpolate v into function space, returning the vector of expansion coefficients
+    void interpolate(GenericVector& expansion_coefficients, const Coefficient& v) const;
 
     /// Extract sub space for component
     boost::shared_ptr<FunctionSpace> operator[] (uint i) const;

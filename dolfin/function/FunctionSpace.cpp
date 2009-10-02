@@ -8,7 +8,9 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-09-16
+// Last changed: 2009-10-02
+
+#include <boost/scoped_array.hpp>
 
 #include <dolfin/main/MPI.h>
 #include <dolfin/fem/UFC.h>
@@ -94,49 +96,43 @@ dolfin::uint FunctionSpace::dim() const
   return dofmap().global_dimension();
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(GenericVector& coefficients,
-                                const Coefficient& v, std::string meshes) const
+void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
+                                const Coefficient& v) const
 {
   assert(_mesh);
   assert(_element);
   assert(_dofmap);
 
-  warning("FunctionSpace::interpolate requires revision."); 
-  //if (meshes == "matching")
-  //  assert(&v.function_space().mesh() == &mesh());
-  //else if (meshes != "non-matching")
-  //  error("Unknown mesh matching string %s in FunctionSpace::interpolate", meshes.c_str());
+  // Initialize vector of expansion coefficients
+  expansion_coefficients.resize(_dofmap->global_dimension());
+  expansion_coefficients.zero();
 
-  // Initialize vector of coefficients
-  coefficients.resize(_dofmap->global_dimension());
-  coefficients.zero();
-
-  double* coeffs = new double[_element->space_dimension()];
-  uint* dofs     = new uint[_element->space_dimension()];
+  // Initialize local arrays
+  const uint max_local_dimension = _dofmap->max_local_dimension();
+  boost::scoped_array<double> cell_coefficients(new double[max_local_dimension]);
+  boost::scoped_array<uint> cell_dofs(new uint[max_local_dimension]);
 
   // Iterate over mesh and interpolate on each cell
-  UFCCell ufc_cell(*_mesh);
+  UFCCell ufc_cell;
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
     // Update to current cell
     ufc_cell.update(*cell);
 
     // Restrict function to cell
-    v.restrict(coeffs, this->element(), *cell, ufc_cell, -1);
+    v.restrict(cell_coefficients.get(), this->element(), *cell, ufc_cell);
 
     // Tabulate dofs
-    _dofmap->tabulate_dofs(dofs, ufc_cell, cell->index());
+    _dofmap->tabulate_dofs(cell_dofs.get(), ufc_cell, cell->index());
 
     // Copy dofs to vector
-    coefficients.set(coeffs, _dofmap->local_dimension(ufc_cell), dofs);
+    expansion_coefficients.set(cell_coefficients.get(),
+                               _dofmap->local_dimension(ufc_cell),
+                               cell_dofs.get());
   }
 
   // Finalise changes
-  coefficients.apply();
-
-  // Clean up
-  delete [] coeffs;
-  delete [] dofs;
+  expansion_coefficients.apply();
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace> FunctionSpace::operator[] (uint i) const
