@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2005-07-05
-// Last changed: 2009-08-13
+// Last changed: 2009-10-02
 
 #include <vector>
 #include <sstream>
@@ -31,7 +31,7 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-VTKFile::VTKFile(const std::string filename, std::string encoding) 
+VTKFile::VTKFile(const std::string filename, std::string encoding)
                : GenericFile(filename), encoding(encoding)
 {
   if (encoding != "ascii" && encoding != "base64" && encoding != "compressed")
@@ -51,7 +51,7 @@ VTKFile::~VTKFile()
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const Mesh& mesh)
-{ 
+{
   // Get vtu file name and intialise out files
   std::string vtu_filename = init(mesh);
 
@@ -62,7 +62,7 @@ void VTKFile::operator<<(const Mesh& mesh)
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
-    
+
     // Write parallel Mesh
     pvtu_mesh_write(pvtu_filename, vtu_filename);
 
@@ -70,7 +70,7 @@ void VTKFile::operator<<(const Mesh& mesh)
 
   // Finalise and write pvd files
   finalize(vtu_filename);
- 
+
   info(1, "Saved mesh %s (%s) to file %s in VTK format.",
           mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
 }
@@ -107,12 +107,12 @@ void VTKFile::operator<<(const Function& u)
 
   // Write results
   results_write(u, vtu_filename);
-  
+
   // Parallel-specfic files
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
-    
+
     // Write parallel Mesh
     pvtu_mesh_write(pvtu_filename, vtu_filename);
 
@@ -135,16 +135,16 @@ std::string VTKFile::init(const Mesh& mesh) const
 
   // Write headers
   vtk_header_open(mesh.num_vertices(), mesh.num_cells(), vtu_filename);
-  
+
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
-  {    
+  {
     // Get pvtu file name and clear file
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
     clear_file(pvtu_filename);
-    
+
     pvtu_header_open(pvtu_filename);
   }
-    
+
   return vtu_filename;
 }
 //----------------------------------------------------------------------------
@@ -155,21 +155,21 @@ void VTKFile::finalize(std::string vtu_filename)
 
   // Parallel-specfic files
   if (MPI::num_processes() > 1)
-  { 
+  {
     if (MPI::process_number() == 0)
-    {    
+    {
       // Close pvtu headers
       std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
       pvtu_header_close(pvtu_filename);
-      
+
       // Write pvd file (parallel)
-      pvd_file_write(counter, pvtu_filename);  
+      pvd_file_write(counter, pvtu_filename);
     }
   }
   else
   {
     // Write pvd file (serial)
-    pvd_file_write(counter, vtu_filename);  
+    pvd_file_write(counter, vtu_filename);
   }
 
   // Increase the number of times we have saved the object
@@ -202,9 +202,9 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
     for (VertexIterator v(mesh); !v.end(); ++v)
     {
       Point p = v->point();
-      *entry++ = p.x();     
-      *entry++ = p.y();     
-      *entry++ = p.z();     
+      *entry++ = p.x();
+      *entry++ = p.y();
+      *entry++ = p.z();
     }
     // Create encoded stream
     std::stringstream base64_stream;
@@ -286,7 +286,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
       fprintf(fp, " %8u \n", vtk_cell_type);
   }
   else if (encoding == "base64" || encoding == "compressed")
-  {  
+  {
     std::vector<boost::uint8_t> data;
     data.resize(mesh.num_cells());
     std::vector<boost::uint8_t>::iterator entry = data.begin();
@@ -369,8 +369,8 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
     // Build lists of dofs and create map
     UFCCell ufc_cell(mesh);
     std::vector<uint> dof_set;
-    std::vector<uint> offset(size+1);    
-    std::vector<uint>::iterator cell_offset = offset.begin();    
+    std::vector<uint> offset(size+1);
+    std::vector<uint>::iterator cell_offset = offset.begin();
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Tabulate dofs
@@ -397,7 +397,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
       {
         // Tabulate dofs and get values
         ufc_cell.update(*cell);
-        dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());  
+        dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());
 
         if (rank == 1 && dim == 2)
         {
@@ -435,11 +435,11 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
     {
       std::vector<float> data;
       if (rank == 1 && dim == 2)
-        data.resize(size + size/2); 
+        data.resize(size + size/2);
       else if (rank == 2 && dim == 4)
-        data.resize(size + 4*size/5); 
+        data.resize(size + 4*size/5);
       else
-        data.resize(size); 
+        data.resize(size);
 
       cell_offset = offset.begin();
       std::vector<float>::iterator entry = data.begin();
@@ -447,7 +447,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
       {
         // Tabulate dofs and get values
         ufc_cell.update(*cell);
-        dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());  
+        dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());
 
         if (rank == 1 && dim == 2)
         {
@@ -496,7 +496,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
     double* values = new double[size];
 
     // Get function values at vertices
-    u.interpolate_vertex_values(values);
+    u.compute_vertex_values(values);
 
     if (rank == 0)
     {
@@ -556,12 +556,12 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
     {
       std::vector<float> data;
       if (rank == 1 && dim == 2)
-        data.resize(size + size/2); 
+        data.resize(size + size/2);
       else if (rank == 2 && dim == 4)
-        data.resize(size + 4*size/5); 
+        data.resize(size + 4*size/5);
       else
-        data.resize(size); 
-        
+        data.resize(size);
+
       std::vector<float>::iterator entry = data.begin();
       for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
       {
@@ -676,38 +676,38 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
 {
   // Type of data (point or cell). Point by default.
   std::string data_type = "point";
-  
+
   // For brevity
   const FunctionSpace& V = u.function_space();
   const Mesh& mesh(V.mesh());
   const FiniteElement& element(V.element());
   const DofMap& dofmap(V.dofmap());
-  
+
   // Get rank of Function
   const uint rank = element.value_rank();
   if(rank > 2)
     error("Only scalar, vector and tensor functions can be saved in VTK format.");
-  
+
   // Get number of components
   uint dim = 1;
   for (uint i = 0; i < rank; i++)
     dim *= element.value_dimension(i);
-  
+
   // Test for cell-based element type
   uint cell_based_dim = 1;
   for (uint i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
   if (dofmap.max_local_dimension() == cell_based_dim)
     data_type = "cell";
-  
+
   // Open pvtu file
   std::fstream pvtu_file;
   pvtu_file.open(pvtu_filename.c_str(), std::ios::out|std::ios::app);
-  
+
   // Write function data at mesh cells
   if (data_type == "cell")
   {
-    
+
     // Write headers
     if (rank == 0)
     {
@@ -750,15 +750,15 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
       pvtu_file << "<PPointData  Tensors=\"U\"> " << std::endl;
       pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\">" << std::endl;
     }
-    
+
     pvtu_file << "</PDataArray> " << std::endl;
     pvtu_file << "</PPointData> " << std::endl;
   }
-    
+
     pvtu_file.close();
 }
 //----------------------------------------------------------------------------
-void VTKFile::vtk_header_open(uint num_vertices, uint num_cells, 
+void VTKFile::vtk_header_open(uint num_vertices, uint num_cells,
                               std::string vtu_filename) const
 {
   // Open file
@@ -814,11 +814,11 @@ void VTKFile::pvtu_header_open(std::string pvtu_filename) const
   // Open pvtu file
   std::fstream pvtu_file;
   pvtu_file.open(pvtu_filename.c_str(), std::ios::out|std::ios::trunc);
-  
+
   // Write header
   pvtu_file << "<?xml version=\"1.0\"?>" << std::endl;
   pvtu_file << "<VTKFile type=\"PUnstructuredGrid\" version=\"0.1\">" << std::endl;
-  pvtu_file << "<PUnstructuredGrid GhostLevel=\"0\">" << std::endl;  
+  pvtu_file << "<PUnstructuredGrid GhostLevel=\"0\">" << std::endl;
   pvtu_file.close();
 }
 //----------------------------------------------------------------------------
@@ -911,7 +911,7 @@ std::string VTKFile::strip_path(std::string file) const
 }
 //----------------------------------------------------------------------------
 template<typename T>
-void VTKFile::encode_stream(std::stringstream& stream, 
+void VTKFile::encode_stream(std::stringstream& stream,
                             const std::vector<T>& data) const
 {
   if (encoding == "compressed")
@@ -928,7 +928,7 @@ void VTKFile::encode_stream(std::stringstream& stream,
 }
 //----------------------------------------------------------------------------
 template<typename T>
-void VTKFile::encode_inline_base64(std::stringstream& stream, 
+void VTKFile::encode_inline_base64(std::stringstream& stream,
                                    const std::vector<T>& data) const
 {
   const boost::uint32_t size = data.size()*sizeof(T);
@@ -938,7 +938,7 @@ void VTKFile::encode_inline_base64(std::stringstream& stream,
 //----------------------------------------------------------------------------
 #ifdef HAS_ZLIB
 template<typename T>
-void VTKFile::encode_inline_compressed_base64(std::stringstream& stream, 
+void VTKFile::encode_inline_compressed_base64(std::stringstream& stream,
                                               const std::vector<T>& data) const
 {
   boost::uint32_t header[4];

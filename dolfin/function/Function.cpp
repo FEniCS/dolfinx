@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-10-01
+// Last changed: 2009-10-02
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -316,9 +316,9 @@ void Function::interpolate(const Function& v)
   function_space().interpolate(this->vector(), v, "non-matching");
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate_vertex_values(double* vertex_values) const
+void Function::compute_vertex_values(double* vertex_values) const
 {
-  warning("FunctionSpace::interpolate_vertex_values requires revision."); 
+  warning("FunctionSpace::interpolate_vertex_values requires revision.");
   assert(vertex_values);
 
   // Gather off-process dofs

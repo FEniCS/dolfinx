@@ -67,15 +67,11 @@ void XYZFile::ResultsWrite(const Function& u) const
   double* values = new double[size];
 
   // Get function values at vertices
-  u.interpolate_vertex_values(values);
+  u.compute_vertex_values(values);
 
   // Write function data at mesh vertices
-
   if ( dim > 1 )
     error("Cannot handle XYZ file for non-scalar functions. ");
-
-
-
   std::ostringstream ss;
   ss << std::scientific;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
@@ -85,7 +81,6 @@ void XYZFile::ResultsWrite(const Function& u) const
         ss<<std::endl;
         fp<<ss.str( );
   }
-
 
   delete [] values;
 }

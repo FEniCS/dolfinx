@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-09-30
+// Last changed: 2009-10-02
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -118,8 +118,8 @@ namespace dolfin
     /// Interpolate expression
     void interpolate(const Expression& v);
 
-    /// Interpolate function to vertices of mesh
-    void interpolate_vertex_values(double* vertex_values) const;
+    /// Compute values at all mesh vertices
+    void compute_vertex_values(double* vertex_values) const;
 
     //--- Implementation of Coefficient interface ---
 
