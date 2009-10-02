@@ -17,15 +17,11 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 
-namespace ufc
-{
-  class cell;
-}
-
 namespace dolfin
 {
 
   class Mesh;
+  class Cell;
   class FiniteElement;
   class DofMap;
   class Coefficient;
@@ -85,10 +81,13 @@ namespace dolfin
     boost::shared_ptr<FunctionSpace>
     collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const;
 
-    // Attach restriction meshfunction
+    /// Check if function space has given element
+    bool has_element(const FiniteElement& element, const Cell& cell) const;
+
+    /// Attach restriction meshfunction
     void attach(MeshFunction<bool>& restriction);
 
-    // Create function space based on the restriction
+    /// Create function space based on the restriction
     boost::shared_ptr<FunctionSpace> restriction(MeshFunction<bool>& restriction);
 
     // Evaluate restriction

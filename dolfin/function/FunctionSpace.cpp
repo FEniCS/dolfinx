@@ -176,10 +176,19 @@ boost::shared_ptr<FunctionSpace>
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace>
-     FunctionSpace::collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const
+FunctionSpace::collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const
 {
   boost::shared_ptr<FunctionSpace> collapsed_sub_space(new FunctionSpace(_mesh, _element, dofmap));
   return collapsed_sub_space;
+}
+//-----------------------------------------------------------------------------
+bool FunctionSpace::has_element(const FiniteElement& element,
+                                const Cell& cell) const
+{
+  assert(_mesh);
+  assert(_element);
+
+  return &element == &*_element && &cell.mesh() == &*_mesh;
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::attach(MeshFunction<bool>& restriction)
