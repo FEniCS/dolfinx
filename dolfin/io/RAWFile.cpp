@@ -73,8 +73,7 @@ void RAWFile::ResultsWrite(const Function& u) const
   const Mesh& mesh(V.mesh());
   const DofMap& dofmap(V.dofmap());
 
-
-  //Get rank of Function
+  // Get rank of Function
   const uint rank = u.function_space().element().value_rank();
   if(rank > 1)
     error("Only scalar and vectors functions can be saved in Raw format.");
@@ -130,7 +129,7 @@ void RAWFile::ResultsWrite(const Function& u) const
       double* values = new double[size];
 
       // Get function values at vertices
-      u.interpolate_vertex_values(values);
+      u.compute_vertex_values(values);
 
       // Write function data at mesh vertices
       uint num_vertices = mesh.num_vertices();

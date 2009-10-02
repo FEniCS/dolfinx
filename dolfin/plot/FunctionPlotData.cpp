@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2009-03-16
-// Last changed: 2009-09-21
+// Last changed: 2009-10-02
 
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -16,7 +16,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 FunctionPlotData::FunctionPlotData(const Function& v)
-  : Variable(v.name(), v.label()) 
+  : Variable(v.name(), v.label())
 {
   // Copy mesh
   mesh = v.function_space().mesh();
@@ -33,9 +33,9 @@ FunctionPlotData::FunctionPlotData(const Function& v)
   const uint N = size*mesh.num_vertices();
   _vertex_values->resize(N);
 
-  // Interpolate vertex values
+  // Compute vertex values
   double* values = new double[N];
-  v.interpolate_vertex_values(values);
+  v.compute_vertex_values(values);
   _vertex_values->set_local(values);
   delete [] values;
 

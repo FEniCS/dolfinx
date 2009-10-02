@@ -1,4 +1,5 @@
  - Introduce new class Expression replacing user-defined Functions
+ - interpolate_vertex_values --> compute_vertex_values
  - std::map<std::string, Coefficient> replaces generated CoefficientSet code
  - Cleanup logic in Function class as a result of new Expression class
  - Introduce new Coefficient base class for form coefficients
