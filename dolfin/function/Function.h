@@ -82,6 +82,7 @@ namespace dolfin
     const Function& operator= (const Expression& v);
 
     /// Extract sub function data
+    // FIXME: Should this be const?
     Function& operator[] (uint i);
 
     /// Return the function space
