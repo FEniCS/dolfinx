@@ -463,21 +463,30 @@ void Function::restrict(double* w,
                         int local_facet) const
 {
   assert(w);
+  assert(_function_space);
 
   // FIXME: This is where we need to handle non-matching meshes etc.
   // FIXME: We need to check whether we are on the same mesh and have
   // FIXME: the same element and then use this simple version. Otherwise
   // FIXME: work a bit harder to get the local expansion coefficients.
 
-  // Get dofmap
-  const DofMap& dofmap = _function_space->dofmap();
+  // Check if we are restricting to an element of this function space
+  if (_function_space->has_element(element, dolfin_cell))
+  {
+    // Get dofmap
+    const DofMap& dofmap = _function_space->dofmap();
 
-  // Tabulate dofs
-  boost::scoped_array<uint> dofs(new uint[dofmap.local_dimension(ufc_cell)]);
-  dofmap.tabulate_dofs(dofs.get(), ufc_cell, dolfin_cell.index());
+    // Tabulate dofs
+    boost::scoped_array<uint> dofs(new uint[dofmap.local_dimension(ufc_cell)]);
+    dofmap.tabulate_dofs(dofs.get(), ufc_cell, dolfin_cell.index());
 
-  // Pick values from vector(s)
-  get(w, dofmap.local_dimension(ufc_cell), dofs.get());
+    // Pick values from vector(s)
+    get(w, dofmap.local_dimension(ufc_cell), dofs.get());
+  }
+  else
+  {
+    error("Restriction to element not part of function space not implemented.");
+  }
 }
 //-----------------------------------------------------------------------------
 void Function::gather() const
