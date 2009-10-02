@@ -12,7 +12,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Point Cell::midpoint()
+Point Cell::midpoint() const
 {
   uint num_vertices = 0;
 

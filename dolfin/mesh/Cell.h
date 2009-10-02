@@ -45,7 +45,7 @@ namespace dolfin
     { return _mesh.type().diameter(*this); }
 
     /// Compute midpoint of cell
-    Point midpoint();
+    Point midpoint() const;
 
     /// Compute component i of normal of given facet with respect to the cell
     inline double normal(uint facet, uint i) const
