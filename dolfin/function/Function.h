@@ -112,11 +112,8 @@ namespace dolfin
     void eval(double* values, const double* x,
               const ufc::cell& ufc_cell, uint cell_index) const;
 
-    /// Interpolate function (possibly non-matching meshes)
-    void interpolate(const Function& v);
-
-    /// Interpolate expression
-    void interpolate(const Expression& v);
+    /// Interpolate coefficient (possibly non-matching meshes)
+    void interpolate(const Coefficient& v);
 
     /// Compute values at all mesh vertices
     void compute_vertex_values(double* vertex_values) const;

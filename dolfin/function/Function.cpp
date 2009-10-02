@@ -313,10 +313,9 @@ void Function::eval(double* values,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(const Function& v)
+void Function::interpolate(const Coefficient& v)
 {
-  // FIXME: One common interpolate for Coefficients?
-
+  init_vector();
   function_space().interpolate(this->vector(), v);
 }
 //-----------------------------------------------------------------------------
@@ -363,20 +362,6 @@ void Function::compute_vertex_values(double* vertex_values) const
 
   // Delete local data
   delete [] local_vertex_values;
-}
-//-----------------------------------------------------------------------------
-void Function::interpolate(const Expression& v)
-{
-  // FIXME: One common interpolate for Coefficients?
-
-  // Interpolate to vector
-  DefaultFactory factory;
-  boost::shared_ptr<GenericVector> coefficients(factory.create_vector());
-  function_space().interpolate(*coefficients, *this);
-
-  // Set values
-  init_vector();
-  *_vector = *coefficients;
 }
 //-----------------------------------------------------------------------------
 void Function::compute_off_process_dofs() const
