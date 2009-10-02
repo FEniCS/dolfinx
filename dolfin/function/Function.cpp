@@ -34,11 +34,7 @@ Function::Function(const FunctionSpace& V)
     _function_space(reference_to_no_delete_pointer(V)),
     _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V.element())
 {
-  // Initialize vector
   init_vector();
-
-  // FIXME: Should we resize the vector immediately?
-
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
@@ -46,7 +42,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
     _function_space(V),
     _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
-  // Initialize vector
   init_vector();
 }
 //-----------------------------------------------------------------------------
@@ -67,6 +62,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(x),
     _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
+  // FIXME: Is this assertion correct, should it be ==?
   assert(V->dofmap().global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
@@ -101,8 +97,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
     _function_space(V),
     _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
-  assert(V);
-
   // Create vector
   DefaultFactory factory;
   _vector.reset(factory.create_vector());
@@ -208,11 +202,13 @@ Function& Function::operator[] (uint i)
 //-----------------------------------------------------------------------------
 const FunctionSpace& Function::function_space() const
 {
+  assert(_function_space);
   return *_function_space;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const FunctionSpace> Function::function_space_ptr() const
 {
+  assert(_function_space);
   return _function_space;
 }
 //-----------------------------------------------------------------------------
@@ -226,11 +222,13 @@ GenericVector& Function::vector()
 //-----------------------------------------------------------------------------
 const GenericVector& Function::vector() const
 {
+  assert(_vector);
   return *_vector;
 }
 //-----------------------------------------------------------------------------
 bool Function::in(const FunctionSpace& V) const
 {
+  assert(_function_space);
   return _function_space.get() == &V;
 }
 //-----------------------------------------------------------------------------
@@ -243,6 +241,7 @@ dolfin::uint Function::geometric_dimension() const
 void Function::eval(double* values, const double* x) const
 {
   assert(values);
+  assert(x);
 
   // Initialize intersection detector if not done before
   if (!intersection_detector)
@@ -266,7 +265,7 @@ void Function::eval(double* values, const Data& data) const
   assert(values);
   assert(data.x);
 
-  // FIXME: Dangerous since we can' be sure this cell originates from the
+  // FIXME: Dangerous since we can't be sure this cell originates from the
   // FIXME: same mesh!
 
   // Use UFC cell if available
@@ -316,12 +315,13 @@ void Function::compute_vertex_values(double* vertex_values) const
   // Gather off-process dofs
   gather();
 
+  // Get mesh and finite element
   const Mesh& mesh = _function_space->mesh();
   const FiniteElement& element = _function_space->element();
 
   // Local data for interpolation on each cell
   const uint num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
-  double* local_vertex_values = new double[scratch0.size*num_cell_vertices];
+  boost::scoped_array<double> local_vertex_values(new double[scratch0.size*num_cell_vertices]);
 
   // Interpolate vertex values on each cell (using last computed value if not
   // continuous, e.g. discontinuous Galerkin methods)
@@ -335,7 +335,7 @@ void Function::compute_vertex_values(double* vertex_values) const
     restrict(scratch0.coefficients, element, *cell, ufc_cell, -1);
 
     // Interpolate values at the vertices
-    element.interpolate_vertex_values(local_vertex_values, scratch0.coefficients, ufc_cell);
+    element.interpolate_vertex_values(local_vertex_values.get(), scratch0.coefficients, ufc_cell);
 
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
@@ -348,9 +348,6 @@ void Function::compute_vertex_values(double* vertex_values) const
       }
     }
   }
-
-  // Delete local data
-  delete [] local_vertex_values;
 }
 //-----------------------------------------------------------------------------
 void Function::compute_off_process_dofs() const
@@ -367,7 +364,7 @@ void Function::compute_off_process_dofs() const
   const DofMap& dofmap = _function_space->dofmap();
   const uint num_dofs_per_cell = _function_space->element().space_dimension();
   const uint num_dofs_global = vector().size();
-  uint* dofs = new uint[num_dofs_per_cell];
+  boost::scoped_array<uint> dofs(new uint[num_dofs_per_cell]);
 
   // Iterate over mesh and check which dofs are needed
   UFCCell ufc_cell(mesh);
@@ -378,7 +375,7 @@ void Function::compute_off_process_dofs() const
     ufc_cell.update(*cell);
 
     // Tabulate dofs on cell
-    dofmap.tabulate_dofs(dofs, ufc_cell, cell->index());
+    dofmap.tabulate_dofs(dofs.get(), ufc_cell, cell->index());
 
     for (uint d = 0; d < num_dofs_per_cell; ++d)
     {
@@ -394,8 +391,6 @@ void Function::compute_off_process_dofs() const
       }
     }
   }
-
-  delete [] dofs;
 }
 //-----------------------------------------------------------------------------
 void Function::init_vector()
@@ -421,6 +416,7 @@ void Function::get(double* block, uint m, const uint* rows) const
   // Get local ownership range
   const std::pair<uint, uint> range = _vector->local_range();
 
+  // Get local values when running in serial or collect values in parallel
   if (range.first == 0 && range.second == _vector->size())
     _vector->get(block, m, rows);
   else
@@ -553,4 +549,3 @@ void Function::Scratch0::init(const FiniteElement& element)
     values[i] = 0.0;
 }
 //-----------------------------------------------------------------------------
-
