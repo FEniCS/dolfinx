@@ -7,6 +7,8 @@
 // First added:  2003-11-28
 // Last changed: 2009-10-02
 
+#include <boost/scoped_array.hpp>
+
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
 #include <dolfin/log/log.h>
@@ -313,7 +315,9 @@ void Function::eval(double* values,
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Function& v)
 {
-  function_space().interpolate(this->vector(), v, "non-matching");
+  // FIXME: One common interpolate for Coefficients?
+
+  function_space().interpolate(this->vector(), v);
 }
 //-----------------------------------------------------------------------------
 void Function::compute_vertex_values(double* vertex_values) const
@@ -363,6 +367,8 @@ void Function::compute_vertex_values(double* vertex_values) const
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Expression& v)
 {
+  // FIXME: One common interpolate for Coefficients?
+
   // Interpolate to vector
   DefaultFactory factory;
   boost::shared_ptr<GenericVector> coefficients(factory.create_vector());
@@ -489,20 +495,20 @@ void Function::restrict(double* w,
 {
   assert(w);
 
-  // FIXME: Avoid new/delete in this function
+  // FIXME: This is where we need to handle non-matching meshes etc.
+  // FIXME: We need to check whether we are on the same mesh and have
+  // FIXME: the same element and then use this simple version. Otherwise
+  // FIXME: work a bit harder to get the local expansion coefficients.
 
   // Get dofmap
   const DofMap& dofmap = _function_space->dofmap();
 
   // Tabulate dofs
-  uint* dofs = new uint[dofmap.local_dimension(ufc_cell)];
-  dofmap.tabulate_dofs(dofs, ufc_cell, dolfin_cell.index());
+  boost::scoped_array<uint> dofs(new uint[dofmap.local_dimension(ufc_cell)]);
+  dofmap.tabulate_dofs(dofs.get(), ufc_cell, dolfin_cell.index());
 
   // Pick values from vector(s)
-  get(w, dofmap.local_dimension(ufc_cell), dofs);
-
-  // Clean up
-  delete [] dofs;
+  get(w, dofmap.local_dimension(ufc_cell), dofs.get());
 }
 //-----------------------------------------------------------------------------
 void Function::gather() const
