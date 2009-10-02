@@ -113,7 +113,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   boost::scoped_array<uint> cell_dofs(new uint[max_local_dimension]);
 
   // Iterate over mesh and interpolate on each cell
-  UFCCell ufc_cell;
+  UFCCell ufc_cell(*_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
     // Update to current cell
