@@ -46,8 +46,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
     _function_space(V),
     _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
-  assert(V);
-
   // Initialize vector
   init_vector();
 }
@@ -59,7 +57,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(reference_to_no_delete_pointer(x)),
     _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
-  assert(V);
   assert(V->dofmap().global_dimension() == x.size());
 }
 //-----------------------------------------------------------------------------
@@ -70,7 +67,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(x),
     _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
-  assert(V);
   assert(V->dofmap().global_dimension() == x->size());
 }
 //-----------------------------------------------------------------------------
@@ -157,8 +153,7 @@ const Function& Function::operator= (const Function& v)
 
     // Create new FunctionsSpapce
     _function_space = v._function_space->collapse_sub_space(collapsed_dof_map);
-
-    assert(collapsed_map.size() ==  _function_space->dofmap().global_dimension());
+    assert(collapsed_map.size() == _function_space->dofmap().global_dimension());
 
     // Create new vector
     const uint size = collapsed_dof_map->global_dimension();
@@ -189,13 +184,7 @@ const Function& Function::operator= (const Function& v)
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Expression& v)
 {
-  // The below is copied from Function& Function::operator=
-
-  // Resize vector if required
-  init_vector();
-
-  info("Assignment from expression, interpolating.");
-  function_space().interpolate(*_vector, v);
+  interpolate(v);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -316,7 +305,7 @@ void Function::eval(double* values,
 void Function::interpolate(const Coefficient& v)
 {
   init_vector();
-  function_space().interpolate(this->vector(), v);
+  function_space().interpolate(*_vector, v);
 }
 //-----------------------------------------------------------------------------
 void Function::compute_vertex_values(double* vertex_values) const

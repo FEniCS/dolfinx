@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-10-01
+// Last changed: 2009-10-02
 
 #ifndef __UFC_CELL_H
 #define __UFC_CELL_H
@@ -27,11 +27,6 @@ namespace dolfin
   class UFCCell : public ufcexp::cell
   {
   public:
-
-    /// Create emtpy UFC cell
-    UFCCell() : ufcexp::cell(), num_vertices(0), num_higher_order_vertices(0)
-    {
-    }
 
     /// Create UFC cell from DOLFIN cell
     UFCCell(const Cell& cell) : ufcexp::cell(), num_vertices(0),
