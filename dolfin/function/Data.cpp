@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-11
-// Last changed: 2009-10-01
+// Last changed: 2009-10-03
 
 #include <dolfin/mesh/Cell.h>
 #include "Data.h"
@@ -76,18 +76,17 @@ void Data::invalidate()
 }
 //-----------------------------------------------------------------------------
 void Data::update(const Cell& dolfin_cell,
-                  const ufc::cell ufc_cell,
+                  const ufc::cell& ufc_cell,
                   int local_facet)
 {
-  // Invalidate old data
-  invalidate();
-
-  // Set new data
   _dolfin_cell = &dolfin_cell;
   _ufc_cell = &ufc_cell;
   _facet = -1;
-
-  // FIXME: Don't keep UFC cell until we've fixed logic in Function class
-  _ufc_cell = 0;
+}
+//-----------------------------------------------------------------------------
+void Data::update(const ufc::cell& ufc_cell, const double* x)
+{
+  _ufc_cell = &ufc_cell;
+  this->x = x;
 }
 //-----------------------------------------------------------------------------

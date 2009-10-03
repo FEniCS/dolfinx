@@ -28,14 +28,11 @@ void Coefficient::evaluate(double* values,
   assert(coordinates);
   assert(data.is_valid());
 
-  // Update coordinates
-  data.x = coordinates;
+  // Update data
+  data.update(cell, coordinates);
 
   // Redirect to eval
   eval(values, data);
-
-  // Reset coordinates
-  data.x = 0;
 }
 //-----------------------------------------------------------------------------
 void Coefficient::restrict_as_ufc_function(double* w,

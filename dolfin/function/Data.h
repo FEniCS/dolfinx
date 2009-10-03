@@ -54,7 +54,10 @@ namespace dolfin
     const double* x;
 
     /// Update cell data
-    void update(const Cell& dolfin_cell, const ufc::cell ufc_cell, int local_facet);
+    void update(const Cell& dolfin_cell, const ufc::cell& ufc_cell, int local_facet);
+
+    /// Update cell data
+    void update(const ufc::cell& ufc_cell, const double* x);
 
   private:
 
