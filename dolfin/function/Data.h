@@ -53,6 +53,9 @@ namespace dolfin
     /// The coordinates
     const double* x;
 
+    /// Update cell data
+    void update(const Cell& dolfin_cell, const ufc::cell ufc_cell, int local_facet);
+
   private:
 
     // Friends
@@ -60,9 +63,6 @@ namespace dolfin
 
     // FIXME: Remove this
     friend class Function;
-
-    /// Update cell data
-    void update(const Cell& dolfin_cell, const ufc::cell ufc_cell, int local_facet);
 
     /// Invalidate cell data
     void invalidate();
