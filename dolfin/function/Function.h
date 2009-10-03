@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-10-03
+// Last changed: 2009-10-04
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -18,7 +18,7 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
-#include "Coefficient.h"
+#include "GenericFunction.h"
 
 namespace ufc
 {
@@ -44,7 +44,7 @@ namespace dolfin
   /// where {phi_i}_i is a basis for V_h, and U is a vector of
   /// expansion coefficients for u_h.
 
-  class Function : public Variable, public Coefficient
+  class Function : public Variable, public GenericFunction
   {
   public:
 
@@ -113,15 +113,15 @@ namespace dolfin
     void eval(double* values, const double* x,
               const ufc::cell& ufc_cell, uint cell_index) const;
 
-    /// Interpolate coefficient (possibly non-matching meshes)
-    void interpolate(const Coefficient& v);
+    /// Interpolate function (possibly non-matching meshes)
+    void interpolate(const GenericFunction& v);
 
     /// Compute values at all mesh vertices
     void compute_vertex_values(double* vertex_values) const;
 
-    //--- Implementation of Coefficient interface ---
+    //--- Implementation of GenericFunction interface ---
 
-    /// Restrict coefficient to local cell (compute expansion coefficients w)
+    /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
@@ -131,8 +131,10 @@ namespace dolfin
     /// Collect off-process coefficients to prepare for interpolation
     virtual void gather() const;
 
+    // FIXME: Remove these
+
     /// Friends
-    friend class Coefficient;
+    friend class GenericFunction;
     friend class DiscreteFunction;
 
   protected:

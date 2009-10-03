@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2009-10-01
+// Last changed: 2009-10-03
 
 #include <string>
 #include <dolfin/common/NoDeleter.h>
@@ -13,7 +13,7 @@
 #include <dolfin/log/LogStream.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/Coefficient.h>
+#include <dolfin/function/GenericFunction.h>
 #include "UFC.h"
 #include "Form.h"
 
@@ -34,7 +34,7 @@ Form::Form(uint rank, uint num_coefficients)
 //-----------------------------------------------------------------------------
 Form::Form(const ufc::form& ufc_form,
            const std::vector<FunctionSpace*>& function_spaces,
-           const std::vector<Coefficient*>& coefficients)
+           const std::vector<GenericFunction*>& coefficients)
   : _function_spaces(function_spaces.size()),
     _coefficients(coefficients.size())
 {
@@ -102,59 +102,59 @@ std::vector<boost::shared_ptr<const FunctionSpace> > Form::function_spaces() con
   return _function_spaces;
 }
 //-----------------------------------------------------------------------------
-void Form::set_coefficient(uint i, const Coefficient& coefficient)
+void Form::set_coefficient(uint i, const GenericFunction& coefficient)
 {
   assert(i < _coefficients.size());
   _coefficients[i] = reference_to_no_delete_pointer(coefficient);
 }
 //-----------------------------------------------------------------------------
 void Form::set_coefficient(uint i,
-                           boost::shared_ptr<const Coefficient> coefficient)
+                           boost::shared_ptr<const GenericFunction> coefficient)
 {
   assert(i < _coefficients.size());
   _coefficients[i] = coefficient;
 }
 //-----------------------------------------------------------------------------
 void Form::set_coefficient(std::string name,
-                           const Coefficient& coefficient)
+                           const GenericFunction& coefficient)
 {
   set_coefficient(coefficient_number(name), coefficient);
 }
 //-----------------------------------------------------------------------------
 void Form::set_coefficient(std::string name,
-                           boost::shared_ptr<const Coefficient> coefficient)
+                           boost::shared_ptr<const GenericFunction> coefficient)
 {
   set_coefficient(coefficient_number(name), coefficient);
 }
 //-----------------------------------------------------------------------------
-void Form::set_coefficients(std::map<std::string, const Coefficient*> coefficients)
+void Form::set_coefficients(std::map<std::string, const GenericFunction*> coefficients)
 {
-  std::map<std::string, const Coefficient*>::iterator it;
+  std::map<std::string, const GenericFunction*>::iterator it;
   for (it = coefficients.begin(); it != coefficients.end(); ++it)
     set_coefficient(it->first, *it->second);
 }
 //-----------------------------------------------------------------------------
-void Form::set_coefficients(std::map<std::string, boost::shared_ptr<const Coefficient> > coefficients)
+void Form::set_coefficients(std::map<std::string, boost::shared_ptr<const GenericFunction> > coefficients)
 {
-  std::map<std::string, boost::shared_ptr<const Coefficient> >::iterator it;
+  std::map<std::string, boost::shared_ptr<const GenericFunction> >::iterator it;
   for (it = coefficients.begin(); it != coefficients.end(); ++it)
     set_coefficient(it->first, *it->second);
 }
 //-----------------------------------------------------------------------------
-const Coefficient& Form::coefficient(uint i) const
+const GenericFunction& Form::coefficient(uint i) const
 {
   assert(i < _coefficients.size());
   return *_coefficients[i];
 }
 //-----------------------------------------------------------------------------
-const Coefficient& Form::coefficient(std::string name) const
+const GenericFunction& Form::coefficient(std::string name) const
 {
   return coefficient(coefficient_number(name));
 }
 //-----------------------------------------------------------------------------
-std::vector<const Coefficient*> Form::coefficients() const
+std::vector<const GenericFunction*> Form::coefficients() const
 {
-  std::vector<const Coefficient*> V;
+  std::vector<const GenericFunction*> V;
   for (uint i = 0; i < _coefficients.size(); ++i)
     V.push_back(_coefficients[i].get());
 

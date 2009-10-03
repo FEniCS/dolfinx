@@ -6,14 +6,14 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2009-09-30
+// Last changed: 2009-10-04
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/constants.h>
-#include <dolfin/function/Coefficient.h>
+#include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -39,7 +39,7 @@ const std::set<std::string> DirichletBC::methods = boost::assign::list_of("topol
 
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V,
-                         const Coefficient& g,
+                         const GenericFunction& g,
                          const SubDomain& sub_domain,
                          std::string method)
   : BoundaryCondition(V),
@@ -51,7 +51,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                         boost::shared_ptr<const Coefficient> g,
+                         boost::shared_ptr<const GenericFunction> g,
                          boost::shared_ptr<const SubDomain> sub_domain,
                          std::string method)
   : BoundaryCondition(V),
@@ -63,7 +63,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V,
-                         const Coefficient& g,
+                         const GenericFunction& g,
                          const MeshFunction<uint>& sub_domains,
                          uint sub_domain,
                          std::string method)
@@ -76,7 +76,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                         boost::shared_ptr<const Coefficient> g,
+                         boost::shared_ptr<const GenericFunction> g,
                          const MeshFunction<uint>& sub_domains,
                          uint sub_domain,
                          std::string method)
@@ -89,7 +89,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V,
-                         const Coefficient& g,
+                         const GenericFunction& g,
                          uint sub_domain,
                          std::string method)
   : BoundaryCondition(V),
@@ -101,7 +101,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                         boost::shared_ptr<const Coefficient> g,
+                         boost::shared_ptr<const GenericFunction> g,
                          uint sub_domain,
                          std::string method)
   : BoundaryCondition(V),
@@ -172,7 +172,7 @@ void DirichletBC::zero(GenericMatrix& A) const
   delete [] dofs;
 }
 //-----------------------------------------------------------------------------
-bool DirichletBC::is_compatible(Coefficient& v) const
+bool DirichletBC::is_compatible(GenericFunction& v) const
 {
   // This function only checks the values at vertices when it should
   // really check that the dof functionals agree. The check here is
@@ -204,7 +204,7 @@ bool DirichletBC::is_compatible(Coefficient& v) const
     Facet facet(mesh, facet_number);
 
     // Make cell and facet available to user-defined function
-    error("Does the new Coefficient class need an 'update' function?");
+    error("Does the new GenericFunction class need an 'update' function?");
     //g->update(cell, facet_number);
     //v.update(cell, facet_number);
 

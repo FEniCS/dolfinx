@@ -4,7 +4,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2008-10-28
-// Last changed: 2009-10-01
+// Last changed: 2009-10-04
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/fem/Form.h>
@@ -24,7 +24,7 @@ CoefficientAssigner::~CoefficientAssigner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void CoefficientAssigner::operator= (const Coefficient& coefficient)
+void CoefficientAssigner::operator= (const GenericFunction& coefficient)
 {
   form.set_coefficient(number, coefficient);
 }

@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-09-29
+// Last changed: 2009-10-03
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -22,7 +22,7 @@
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/SubDomain.h>
-#include <dolfin/function/Coefficient.h>
+#include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
 #include "DofMap.h"
 #include "Form.h"
@@ -104,7 +104,7 @@ void Assembler::assemble(GenericTensor& A,
   UFC ufc(a);
 
   // Gather off-process coefficients
-  const std::vector<const Coefficient*> coefficients = a.coefficients();
+  const std::vector<const GenericFunction*> coefficients = a.coefficients();
   for (uint i = 0; i < coefficients.size(); ++i)
     coefficients[i]->gather();
 
@@ -339,7 +339,7 @@ void Assembler::check(const Form& a)
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
-  const std::vector<const Coefficient*> coefficients = a.coefficients();
+  const std::vector<const GenericFunction*> coefficients = a.coefficients();
 
   // Check that we get the correct number of coefficients
   if (coefficients.size() != a.ufc_form().num_coefficients())

@@ -5,11 +5,11 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2007-01-17
-// Last changed: 2009-09-29
+// Last changed: 2009-10-03
 
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/Coefficient.h>
+#include <dolfin/function/GenericFunction.h>
 #include "DofMap.h"
 #include "FiniteElement.h"
 #include "Form.h"

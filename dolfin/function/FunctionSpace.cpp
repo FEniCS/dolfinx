@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-10-02
+// Last changed: 2009-10-04
 
 #include <boost/scoped_array.hpp>
 
@@ -24,7 +24,7 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/la/GenericVector.h>
-#include "Coefficient.h"
+#include "GenericFunction.h"
 #include "FunctionSpace.h"
 
 using namespace dolfin;
@@ -97,7 +97,7 @@ dolfin::uint FunctionSpace::dim() const
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
-                                const Coefficient& v) const
+                                const GenericFunction& v) const
 {
   assert(_mesh);
   assert(_element);

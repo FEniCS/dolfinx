@@ -2,27 +2,27 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-03
+// Last changed: 2009-10-04
 
 #include <dolfin/fem/FiniteElement.h>
-#include "Coefficient.h"
+#include "GenericFunction.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Coefficient::Coefficient()
+GenericFunction::GenericFunction()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Coefficient::~Coefficient()
+GenericFunction::~GenericFunction()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Coefficient::evaluate(double* values,
-                           const double* coordinates,
-                           const ufc::cell& cell) const
+void GenericFunction::evaluate(double* values,
+                               const double* coordinates,
+                               const ufc::cell& cell) const
 {
   assert(values);
   assert(coordinates);
@@ -35,11 +35,11 @@ void Coefficient::evaluate(double* values,
   eval(values, data);
 }
 //-----------------------------------------------------------------------------
-void Coefficient::restrict_as_ufc_function(double* w,
-                                           const FiniteElement& element,
-                                           const Cell& dolfin_cell,
-                                           const ufc::cell& ufc_cell,
-                                           int local_facet) const
+void GenericFunction::restrict_as_ufc_function(double* w,
+                                               const FiniteElement& element,
+                                               const Cell& dolfin_cell,
+                                               const ufc::cell& ufc_cell,
+                                               int local_facet) const
 {
   assert(w);
 

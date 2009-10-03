@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-28
-// Last changed: 2009-10-01
+// Last changed: 2009-10-04
 
 #ifndef __COEFFICIENT_ASSIGNER_H
 #define __COEFFICIENT_ASSIGNER_H
@@ -11,7 +11,7 @@ namespace dolfin
 {
 
   class Form;
-  class Coefficient;
+  class GenericFunction;
 
   /// This class is used for assignment of coefficients to
   /// forms, which allows magic like
@@ -33,7 +33,7 @@ namespace dolfin
     ~CoefficientAssigner();
 
     /// Assign coefficient
-    void operator= (const Coefficient& coefficient);
+    void operator= (const GenericFunction& coefficient);
 
   private:
 

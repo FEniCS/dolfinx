@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-03
+// Last changed: 2009-10-04
 
-#ifndef __COEFFICIENT_H
-#define __COEFFICIENT_H
+#ifndef __GENERIC_FUNCTION_H
+#define __GENERIC_FUNCTION_H
 
 #include <ufc.h>
 #include "Data.h"
@@ -16,29 +16,26 @@ namespace dolfin
   class Cell;
   class FiniteElement;
 
-  /// This class represents a coefficient appearing in a finite
-  /// element variational form. A coefficient can be either a
-  /// user-defined expression (class Expression), or a function
-  /// (class Function) obtained as the solution of a variational
-  /// problem.
+  /// This is a common base class for functions. Functions can be
+  /// evaluated at a given point and they can be restricted to a given
+  /// cell in a finite element mesh. This functionality is implemented
+  /// by subclasses that implement the eval() and restrict() functions.
   ///
-  /// This abstract base class defines the interface for all kinds
-  /// of coefficients. Sub classes need to implement the restrict()
-  /// method which is responsible for computing the expansion
-  /// coefficients on a given local element.
+  /// DOLFIN provides two implementations of the GenericFunction
+  /// interface in the form of the classes Function and Expression.
   ///
   /// Sub classes may optionally implement the gather() function that
   /// will be called prior to restriction when running in parallel.
 
-  class Coefficient : public ufc::function
+  class GenericFunction : public ufc::function
   {
   public:
 
     /// Constructor
-    Coefficient();
+    GenericFunction();
 
     /// Destructor
-    virtual ~Coefficient();
+    virtual ~GenericFunction();
 
     /// Evaluate coefficient function
     virtual void eval(double* values, const Data& data) const = 0;

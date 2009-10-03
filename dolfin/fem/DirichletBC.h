@@ -5,7 +5,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2009-09-30
+// Last changed: 2009-10-04
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -24,7 +24,7 @@
 
 namespace dolfin
 {
-  class Coefficient;
+  class GenericFunction;
   class FunctionSpace;
   class Facet;
   class GenericMatrix;
@@ -41,7 +41,7 @@ namespace dolfin
   /// where u is the solution to be computed, g is a function
   /// and G is a sub domain of the mesh.
   ///
-  /// A DirichletBC is specified by the Coefficient g, the FunctionSpace
+  /// A DirichletBC is specified by the function g, the function space
   /// (trial space) and boundary indicators on (a subset of) the mesh
   /// boundary.
   ///
@@ -82,37 +82,37 @@ namespace dolfin
 
     /// Create boundary condition for subdomain
     DirichletBC(const FunctionSpace& V,
-                const Coefficient& g,
+                const GenericFunction& g,
                 const SubDomain& sub_domain,
                 std::string method="topological");
 
     /// Create boundary condition for subdomain
     DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                boost::shared_ptr<const Coefficient> g,
+                boost::shared_ptr<const GenericFunction> g,
                 boost::shared_ptr<const SubDomain> sub_domain,
                 std::string method="topological");
 
     /// Create boundary condition for subdomain specified by index
     DirichletBC(const FunctionSpace& V,
-                const Coefficient& g,
+                const GenericFunction& g,
                 const MeshFunction<uint>& sub_domains, uint sub_domain,
                 std::string method="topological");
 
     /// Create boundary condition for subdomain specified by index
     DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                boost::shared_ptr<const Coefficient> g,
+                boost::shared_ptr<const GenericFunction> g,
                 const MeshFunction<uint>& sub_domains, uint sub_domain,
                 std::string method="topological");
 
     /// Create boundary condition for boundary data included in the mesh
     DirichletBC(const FunctionSpace& V,
-                const Coefficient& g,
+                const GenericFunction& g,
                 uint sub_domain,
                 std::string method="topological");
 
     /// Create boundary condition for boundary data included in the mesh
     DirichletBC(boost::shared_ptr<const FunctionSpace> V,
-                boost::shared_ptr<const Coefficient> g,
+                boost::shared_ptr<const GenericFunction> g,
                 uint sub_domain,
                 std::string method="topological");
 
@@ -141,7 +141,7 @@ namespace dolfin
     void get_bc(uint* indicators, double* values) const;
 
     /// Check if given function is compatible with boundary condition (checking only vertex values)
-    bool is_compatible(Coefficient& v) const;
+    bool is_compatible(GenericFunction& v) const;
 
   private:
 
@@ -183,7 +183,7 @@ namespace dolfin
     bool on_facet(double* coordinates, Facet& facet) const;
 
     // The function
-    boost::shared_ptr<const Coefficient> g;
+    boost::shared_ptr<const GenericFunction> g;
 
     // Search method
     std::string method;

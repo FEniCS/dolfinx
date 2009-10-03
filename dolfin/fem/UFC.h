@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2007-01-17
-// Last changed: 2009-09-29
+// Last changed: 2009-10-03
 
 #ifndef __UFC_DATA_H
 #define __UFC_DATA_H
@@ -19,7 +19,7 @@ namespace dolfin
 
   class FiniteElement;
   class FunctionSpace;
-  class Coefficient;
+  class GenericFunction;
   class Mesh;
   class Cell;
   class Form;
@@ -114,7 +114,7 @@ namespace dolfin
   private:
 
     // Coefficients
-    const std::vector<const Coefficient*> coefficients;
+    const std::vector<const GenericFunction*> coefficients;
 
     // The form
     const Form& dolfin_form;

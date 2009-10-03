@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-10-02
+// Last changed: 2009-10-04
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -24,7 +24,7 @@ namespace dolfin
   class Cell;
   class FiniteElement;
   class DofMap;
-  class Coefficient;
+  class GenericFunction;
   class IntersectionDetector;
   class GenericVector;
   template <class T> class MeshFunction;
@@ -68,8 +68,8 @@ namespace dolfin
     /// Return dimension of function space
     uint dim() const;
 
-    /// Interpolate v into function space, returning the vector of expansion coefficients
-    void interpolate(GenericVector& expansion_coefficients, const Coefficient& v) const;
+    /// Interpolate function v into function space, returning the vector of expansion coefficients
+    void interpolate(GenericVector& expansion_coefficients, const GenericFunction& v) const;
 
     /// Extract sub space for component
     boost::shared_ptr<FunctionSpace> operator[] (uint i) const;

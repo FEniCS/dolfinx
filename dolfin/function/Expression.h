@@ -2,12 +2,12 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-03
+// Last changed: 2009-10-04
 
 #ifndef __EXPRESSION_H
 #define __EXPRESSION_H
 
-#include "Coefficient.h"
+#include "GenericFunction.h"
 
 namespace dolfin
 {
@@ -24,7 +24,7 @@ namespace dolfin
   /// optional version for functions depending on x and mesh data
   /// like cell indices or facet normals.
 
-  class Expression : public Coefficient
+  class Expression : public GenericFunction
   {
   public:
 
@@ -40,9 +40,9 @@ namespace dolfin
     /// Evaluate expression, must be overloaded by user (optional version)
     virtual void eval(double* values, const Data& data) const;
 
-    //--- Implementation of Coefficient interface ---
+    //--- Implementation of GenericFunction interface ---
 
-    /// Restrict coefficient to local cell (compute expansion coefficients w)
+    /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,

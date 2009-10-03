@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-10-03
+// Last changed: 2009-10-04
 
 #include <boost/scoped_array.hpp>
 
@@ -303,7 +303,7 @@ void Function::eval(double* values,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(const Coefficient& v)
+void Function::interpolate(const GenericFunction& v)
 {
   init_vector();
   function_space().interpolate(*_vector, v);
