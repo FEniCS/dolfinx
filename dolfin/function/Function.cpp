@@ -62,7 +62,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(x),
     _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
 {
-  assert(V->dofmap().global_dimension() == x->size());
+  // This assert used '<=' to deal with sub-functions
+  assert(V->dofmap().global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, GenericVector& x)
