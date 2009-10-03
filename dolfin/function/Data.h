@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-11
-// Last changed: 2009-10-01
+// Last changed: 2009-10-03
 
 #ifndef __DATA_H
 #define __DATA_H
@@ -56,10 +56,9 @@ namespace dolfin
   private:
 
     // Friends
-    friend class Expression;
+    friend class Coefficient;
 
-    // FIXME: Remove these
-    friend class UFCFunction;
+    // FIXME: Remove this
     friend class Function;
 
     /// Update cell data

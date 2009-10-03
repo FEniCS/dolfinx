@@ -2,13 +2,11 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-09-30
+// Last changed: 2009-10-03
 
 #ifndef __EXPRESSION_H
 #define __EXPRESSION_H
 
-#include <ufc.h>
-#include "Data.h"
 #include "Coefficient.h"
 
 namespace dolfin
@@ -26,7 +24,7 @@ namespace dolfin
   /// optional version for functions depending on x and mesh data
   /// like cell indices or facet normals.
 
-  class Expression : public Coefficient, public ufc::function
+  class Expression : public Coefficient
   {
   public:
 
@@ -42,22 +40,14 @@ namespace dolfin
     /// Evaluate expression, must be overloaded by user (optional version)
     virtual void eval(double* values, const Data& data) const;
 
-    /// Implementation of Coefficient interface
+    //--- Implementation of Coefficient interface ---
+
+    /// Restrict coefficient to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
                           const ufc::cell& ufc_cell,
                           int local_facet) const;
-
-    /// Implementation of ufc::function interface
-    virtual void evaluate(double* values,
-                          const double* coordinates,
-                          const ufc::cell& cell) const;
-
-  private:
-
-    // Function call data
-    mutable Data data;
 
   };
 

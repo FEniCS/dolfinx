@@ -2,10 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-09-28
+// Last changed: 2009-10-03
 
 #include <dolfin/log/log.h>
-#include <dolfin/fem/FiniteElement.h>
 #include "Data.h"
 #include "Expression.h"
 
@@ -46,34 +45,7 @@ void Expression::restrict(double* w,
                           const ufc::cell& ufc_cell,
                           int local_facet) const
 {
-  assert(w);
-
-  // Update cell data
-  data.update(dolfin_cell, ufc_cell, local_facet);
-
-  // Evaluate each dof to get the expansion coefficients
-  for (uint i = 0; i < element.space_dimension(); ++i)
-    w[i] = element.evaluate_dof(i, *this, ufc_cell);
-
-  // Invalidate cell data
-  data.invalidate();
-}
-//-----------------------------------------------------------------------------
-void Expression::evaluate(double* values,
-                          const double* coordinates,
-                          const ufc::cell& cell) const
-{
-  assert(values);
-  assert(coordinates);
-  assert(data.is_valid());
-
-  // Update coordinates
-  data.x = coordinates;
-
-  // Redirect to eval
-  eval(values, data);
-
-  // Reset coordinates
-  data.x = 0;
+  // Restrict as UFC function (by calling eval)
+  restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet);
 }
 //-----------------------------------------------------------------------------

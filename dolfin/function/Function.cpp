@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-10-02
+// Last changed: 2009-10-03
 
 #include <boost/scoped_array.hpp>
 
@@ -485,7 +485,8 @@ void Function::restrict(double* w,
   }
   else
   {
-    error("Restriction to element not part of function space not implemented.");
+    // Restrict as UFC function (by calling eval)
+    restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet);
   }
 }
 //-----------------------------------------------------------------------------

@@ -2,21 +2,18 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-09-30
+// Last changed: 2009-10-03
 
 #ifndef __COEFFICIENT_H
 #define __COEFFICIENT_H
 
-namespace ufc
-{
-  class cell;
-}
+#include <ufc.h>
+#include "Data.h"
 
 namespace dolfin
 {
 
   class Cell;
-  class Data;
   class FiniteElement;
 
   /// This class represents a coefficient appearing in a finite
@@ -33,15 +30,15 @@ namespace dolfin
   /// Sub classes may optionally implement the gather() function that
   /// will be called prior to restriction when running in parallel.
 
-  class Coefficient
+  class Coefficient : public ufc::function
   {
   public:
 
     /// Constructor
-    Coefficient() {}
+    Coefficient();
 
     /// Destructor
-    virtual ~Coefficient() {}
+    virtual ~Coefficient();
 
     /// Evaluate coefficient function
     virtual void eval(double* values, const Data& data) const = 0;
@@ -62,6 +59,25 @@ namespace dolfin
                   const Cell& dolfin_cell,
                   const ufc::cell& ufc_cell) const
     { restrict(w, element, dolfin_cell, ufc_cell, -1); }
+
+    /// Implementation of ufc::function interface
+    virtual void evaluate(double* values,
+                          const double* coordinates,
+                          const ufc::cell& cell) const;
+
+  protected:
+
+    /// Restrict as UFC function (by calling eval)
+    void restrict_as_ufc_function(double* w,
+                                  const FiniteElement& element,
+                                  const Cell& dolfin_cell,
+                                  const ufc::cell& ufc_cell,
+                                  int local_facet) const;
+
+  private:
+
+    // Function call data
+    mutable Data data;
 
   };
 
