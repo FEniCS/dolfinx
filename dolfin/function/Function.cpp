@@ -32,7 +32,7 @@ using namespace dolfin;
 Function::Function(const FunctionSpace& V)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
-    _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V.element())
+    scratch0(V.element())
 {
   init_vector();
 }
@@ -40,7 +40,7 @@ Function::Function(const FunctionSpace& V)
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : Variable("v", "unnamed function"),
     _function_space(V),
-    _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
+    scratch0(V->element())
 {
   init_vector();
 }
@@ -50,7 +50,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   : Variable("v", "unnamed function"),
     _function_space(V),
     _vector(reference_to_no_delete_pointer(x)),
-    _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
+    scratch0(V->element())
 {
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x.size());
@@ -61,7 +61,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   : Variable("v", "unnamed function"),
     _function_space(V),
     _vector(x),
-    _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
+    scratch0(V->element())
 {
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x->size());
@@ -71,7 +71,7 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
     _vector(reference_to_no_delete_pointer(x)),
-    _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V.element())
+    scratch0(V.element())
 {
   // Assertion uses '<=' to deal with sub-functions
   assert(V.dofmap().global_dimension() == x.size());
@@ -80,7 +80,7 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
 Function::Function(const FunctionSpace& V, std::string filename)
   : Variable("v", "unnamed function"),
     _function_space(reference_to_no_delete_pointer(V)),
-    _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V.element())
+    scratch0(V.element())
 {
   // Initialize vector
   init_vector();
@@ -96,8 +96,8 @@ Function::Function(const FunctionSpace& V, std::string filename)
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filename)
   : Variable("v", "unnamed function"),
-    _function_space(V),
-    _off_process_vector(static_cast<GenericVector*>(0)), scratch0(V->element())
+    _function_space(V), 
+    scratch0(V->element())
 {
   // Create vector
   DefaultFactory factory;
@@ -117,9 +117,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
   : Variable("v", "unnamed function"),
-    _function_space(static_cast<FunctionSpace*>(0)),
-    _vector(static_cast<GenericVector*>(0)),
-    _off_process_vector(static_cast<GenericVector*>(0))
 {
   *this = v;
 }
