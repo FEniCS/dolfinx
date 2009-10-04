@@ -180,7 +180,7 @@ const Function& Function::operator= (const Expression& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-Function& Function::operator[] (uint i)
+Function& Function::operator[] (uint i) const
 {
   // Check if sub-Function is in the cache, otherwise create and add to cache
   boost::ptr_map<uint, Function>::iterator sub_function = sub_functions.find(i);

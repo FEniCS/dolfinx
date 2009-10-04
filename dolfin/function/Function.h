@@ -83,7 +83,7 @@ namespace dolfin
 
     /// Extract sub function data
     // FIXME: Should this be const?
-    Function& operator[] (uint i);
+    Function& operator[] (uint i) const;
 
     /// Return the function space
     const FunctionSpace& function_space() const;
@@ -145,7 +145,7 @@ namespace dolfin
   private:
 
     // Collection of sub-functions which share data with the function
-    boost::ptr_map<uint, Function> sub_functions;
+    mutable boost::ptr_map<uint, Function> sub_functions;
 
     void compute_off_process_dofs() const;
 
