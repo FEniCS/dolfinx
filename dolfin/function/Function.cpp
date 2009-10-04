@@ -7,10 +7,10 @@
 // First added:  2003-11-28
 // Last changed: 2009-10-04
 
-#include <boost/scoped_array.hpp>
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
+#include <boost/scoped_array.hpp>
 #include <dolfin/log/log.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/io/File.h>
@@ -116,7 +116,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
-  : Variable("v", "unnamed function"),
+  : Variable("v", "unnamed function")
 {
   *this = v;
 }
