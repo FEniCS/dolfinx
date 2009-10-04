@@ -7,7 +7,6 @@
 // First added:  2003-11-28
 // Last changed: 2009-10-04
 
-
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
 #include <boost/scoped_array.hpp>
@@ -153,7 +152,7 @@ const Function& Function::operator= (const Function& v)
     _vector.reset(v.vector().factory().create_vector());
     _vector->resize(size);
 
-    // Get rows of original and new vectors
+    // Get row indices of original and new vectors
     std::map<uint, uint>::const_iterator entry;
     std::vector<uint> new_rows(size);
     std::vector<uint> old_rows(size);
@@ -252,10 +251,12 @@ void Function::eval(double* values, const double* x) const
   intersection_detector->intersection(point, cells);
   if (cells.size() < 1)
     error("Unable to evaluate function at given point (not inside domain).");
+
+  // Create cell
   Cell cell(_function_space->mesh(), cells[0]);
   UFCCell ufc_cell(cell);
 
-  // Evaluate
+  // Evaluate function
   eval(values, x, ufc_cell, cell.index());
 }
 //-----------------------------------------------------------------------------
@@ -271,7 +272,7 @@ void Function::eval(double* values, const Data& data) const
   if (data._ufc_cell)
   {
     const uint cell_index = data._ufc_cell->entity_indices[data._ufc_cell->topological_dimension][0];
-   eval(values, data.x, *data._ufc_cell, cell_index);
+    eval(values, data.x, *data._ufc_cell, cell_index);
   }
   else
     eval(values, data.x);
