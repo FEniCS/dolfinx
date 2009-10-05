@@ -8,6 +8,7 @@
 // Last changed: 2009-10-05
 
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/Mesh.h>
 #include "Constant.h"
 
 using namespace dolfin;
@@ -20,16 +21,37 @@ Constant::Constant(uint geometric_dimension, double value)
   _values[0] = value;
 }
 //-----------------------------------------------------------------------------
+Constant::Constant(const Mesh& mesh, double value)
+  : Expression(mesh.geometry().dim())
+{
+  _values.resize(1);
+  _values[0] = value;
+}
+//-----------------------------------------------------------------------------
 Constant::Constant(uint geometric_dimension, const std::vector<double>& values)
   : Expression(geometric_dimension, values.size()), _values(values)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+Constant::Constant(const Mesh& mesh, const std::vector<double>& values)
+  : Expression(mesh.geometry().dim(), values.size()), _values(values)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 Constant::Constant(uint geometric_dimension,
-         const std::vector<uint>& value_shape,
-         const std::vector<double>& values)
+                   const std::vector<uint>& value_shape,
+                   const std::vector<double>& values)
   : Expression(geometric_dimension, value_shape), _values(values)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+Constant::Constant(const Mesh& mesh,
+                   const std::vector<uint>& value_shape,
+                   const std::vector<double>& values)
+  : Expression(mesh.geometry().dim(), value_shape), _values(values)
 {
   // Do nothing
 }
