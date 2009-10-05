@@ -21,6 +21,24 @@ Constant::Constant(uint geometric_dimension, double value)
   _values[0] = value;
 }
 //-----------------------------------------------------------------------------
+Constant::Constant(uint geometric_dimension, double value0, double value1)
+  : Expression(geometric_dimension, 2)
+{
+  _values.resize(2);
+  _values[0] = value0;
+  _values[1] = value1;
+}
+//-----------------------------------------------------------------------------
+Constant::Constant(uint geometric_dimension, double value0, double value1, 
+                                             double value2)
+  : Expression(geometric_dimension, 3)
+{
+  _values.resize(3);
+  _values[0] = value0;
+  _values[1] = value1;
+  _values[2] = value2;
+}
+//-----------------------------------------------------------------------------
 Constant::Constant(const Mesh& mesh, double value)
   : Expression(mesh.geometry().dim())
 {

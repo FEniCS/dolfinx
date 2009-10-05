@@ -26,6 +26,12 @@ namespace dolfin
     /// Create scalar constant
     Constant(uint geometric_dimension, double value);
 
+    /// Create vector constant (dim = 2)
+    Constant(uint geometric_dimension, double value0, double value1);
+
+    /// Create vector constant (dim = 3)
+    Constant(uint geometric_dimension, double value0, double value1, double value2);
+
     /// Create scalar constant with geometric dimension derived from mesh
     Constant(const Mesh& mesh, double value);
 

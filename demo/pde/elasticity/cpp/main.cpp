@@ -84,7 +84,7 @@ int main()
   Elasticity::FunctionSpace V(mesh);
 
   // Create right-hand side
-  Constant f(3, 0.0);
+  Constant f(3, 0.0, 0.0, 0.0);
 
   // Set up boundary condition at left end
   Clamp c;
