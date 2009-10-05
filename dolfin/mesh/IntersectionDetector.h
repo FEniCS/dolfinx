@@ -32,22 +32,22 @@ namespace dolfin
     ~IntersectionDetector();
 
     /// Compute cells overlapping point
-    void intersection(const Point& p, std::vector<uint>& cells);
+    void intersection(const Point& p, std::vector<uint>& cells) const;
 
     /// Compute cells overlapping line defined by points
-    void intersection(const Point& p1, const Point& p2, std::vector<uint>& cells);
+    void intersection(const Point& p1, const Point& p2, std::vector<uint>& cells) const;
 
     /// Compute cells overlapping cell
-    void intersection(const Cell& cell, std::vector<uint>& cells);
+    void intersection(const Cell& cell, std::vector<uint>& cells) const;
 
     /// Compute overlap with curve defined by points
-    void intersection(std::vector<Point>& points, std::vector<uint>& cells);
+    void intersection(std::vector<Point>& points, std::vector<uint>& cells) const;
 
     /// Compute overlap with mesh
-    void intersection(const Mesh& mesh1, std::vector<uint>& cells);
+    void intersection(const Mesh& mesh1, std::vector<uint>& cells) const;
 
     /// Compute overlap with mesh (test version)
-    void new_intersection(const Mesh& mesh1, std::vector<uint>& cells);
+    void new_intersection(const Mesh& mesh1, std::vector<uint>& cells) const;
 
 
   private:
