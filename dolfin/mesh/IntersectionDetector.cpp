@@ -37,25 +37,29 @@ IntersectionDetector::~IntersectionDetector()
   delete gts;
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(const Point& p, std::vector<uint>& cells)
+void IntersectionDetector::intersection(const Point& p, 
+                                        std::vector<uint>& cells) const
 {
   assert(gts);
   gts->intersection(p, cells);
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(const Point& p0, const Point& p1, std::vector<uint>& cells)
+void IntersectionDetector::intersection(const Point& p0, const Point& p1, 
+                                        std::vector<uint>& cells) const
 {
   assert(gts);
   gts->intersection(p0, p1, cells);
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(const Cell& c, std::vector<uint>& cells)
+void IntersectionDetector::intersection(const Cell& c, 
+                                        std::vector<uint>& cells) const
 {
   assert(gts);
   gts->intersection(c, cells);
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(std::vector<Point>& points, std::vector<uint>& cells)
+void IntersectionDetector::intersection(std::vector<Point>& points, 
+                                        std::vector<uint>& cells) const
 {
   // Intersect each segment with mesh
   std::vector<uint> cc;
@@ -69,7 +73,8 @@ void IntersectionDetector::intersection(std::vector<Point>& points, std::vector<
   cc.resize(it - cc.begin());
 }
 //-----------------------------------------------------------------------------
-void IntersectionDetector::intersection(const Mesh& mesh1, std::vector<uint>& cells)
+void IntersectionDetector::intersection(const Mesh& mesh1, 
+                                        std::vector<uint>& cells) const
 {
   // Intersect each cell with mesh
   for (CellIterator cell(mesh1); !cell.end(); ++cell)
@@ -83,7 +88,7 @@ void IntersectionDetector::intersection(const Mesh& mesh1, std::vector<uint>& ce
 }
 //-----------------------------------------------------------------------------
 void IntersectionDetector::new_intersection(const Mesh& mesh1,
-                                            std::vector<uint>& cells)
+                                            std::vector<uint>& cells) const
 {
   // Note that two different meshes are used in this function:
   //
@@ -156,8 +161,8 @@ void IntersectionDetector::new_intersection(const Mesh& mesh1,
 }
 //-----------------------------------------------------------------------------
 void IntersectionDetector::compute_polygon(const Mesh& mesh1,
-                                           const Cell& c0,
-                                           const std::vector<uint>& intersections) const
+                                  const Cell& c0,
+                                  const std::vector<uint>& intersections) const
 {
   assert(intersections.size() > 0);
 
@@ -296,22 +301,22 @@ IntersectionDetector::IntersectionDetector(const Mesh& mesh) : mesh0(mesh)
 IntersectionDetector::~IntersectionDetector() {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::intersection(const Point& p,
-                                        std::vector<uint>& cells) {}
+                                        std::vector<uint>& cells) const {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::intersection(const Point& p1, const Point& p2,
-                                        std::vector<uint>& cells) {}
+                                        std::vector<uint>& cells) const {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::intersection(const Cell& cell,
-                                        std::vector<uint>& cells) {}
+                                        std::vector<uint>& cells) const {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::intersection(std::vector<Point>& points,
-                                        std::vector<uint>& intersection) {}
+                                        std::vector<uint>& intersection) const {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::intersection(const Mesh& mesh1,
-                                        std::vector<uint>& intersection) {}
+                                        std::vector<uint>& intersection) const {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::new_intersection(const Mesh& mesh1,
-                                            std::vector<uint>& intersection) {}
+                                            std::vector<uint>& intersection) const {}
 //-----------------------------------------------------------------------------
 void IntersectionDetector::compute_polygon(const Mesh& mesh1,
                                            const Cell& c0,
