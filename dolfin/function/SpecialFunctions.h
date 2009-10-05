@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-02-09
-// Last changed: 2009-09-30
+// Last changed: 2009-10-05
 
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
@@ -78,7 +78,7 @@ namespace dolfin
   ///
   /// where h is the local size of the mesh, tau the local stabilizing factor
   /// calculated from the local Peclet number, a the advective field.
-  class SUPGStabilizer : public Function
+  /*  class SUPGStabilizer : public Function
   {
   public:
 
@@ -96,12 +96,12 @@ namespace dolfin
 
     const Function* field;
   };
-
+  */
   /// This function is used for the Python interface. By inheriting
   /// from this function instead of dolfin::Function, we avoid unnecessary
   /// calls through the SWIG created director class, when dealing
   /// with discrete functions in PyDOLFIN.
-  class DiscreteFunction : public Function
+/*  class DiscreteFunction : public Function
   {
   public:
 
@@ -138,6 +138,6 @@ namespace dolfin
     ~DiscreteFunction() {}
 
   };
+*/
 }
-
 #endif

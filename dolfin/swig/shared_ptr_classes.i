@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2009-09-09
+// Last changed: 2009-10-05
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -45,13 +45,13 @@ SWIG_SHARED_PTR(FiniteElement,dolfin::FiniteElement)
 SWIG_SHARED_PTR(FunctionSpace,dolfin::FunctionSpace)
 SWIG_SHARED_PTR_DERIVED(SubSpace,dolfin::FunctionSpace,dolfin::SubSpace)
 
-SWIG_SHARED_PTR(Function,dolfin::Function)
-SWIG_SHARED_PTR_DERIVED(Constant,dolfin::Function,dolfin::Constant)
-SWIG_SHARED_PTR_DERIVED(MeshCoordinates,dolfin::Function,dolfin::MeshCoordinates)
-SWIG_SHARED_PTR_DERIVED(CellSize,dolfin::Function,dolfin::CellSize)
-SWIG_SHARED_PTR_DERIVED(FacetArea,dolfin::Function,dolfin::FacetArea)
-SWIG_SHARED_PTR_DERIVED(SUPGStabilizer,dolfin::Function,dolfin::SUPGStabilizer)
-SWIG_SHARED_PTR_DERIVED(DiscreteFunction,dolfin::Function,dolfin::DiscreteFunction)
+SWIG_SHARED_PTR(GenericFunction,dolfin::GenericFunction)
+SWIG_SHARED_PTR_DERIVED(Function,dolfin::GenericFunction,dolfin::Function)
+SWIG_SHARED_PTR_DERIVED(Expression,dolfin::GenericFunction,dolfin::Expression)
+SWIG_SHARED_PTR_DERIVED(FacetArea,dolfin::Expression,dolfin::FacetArea)
+SWIG_SHARED_PTR_DERIVED(CellSize,dolfin::Expression,dolfin::CellSize)
+SWIG_SHARED_PTR_DERIVED(Constant,dolfin::Expression,dolfin::Constant)
+SWIG_SHARED_PTR_DERIVED(MeshCoordinates,dolfin::Expression,dolfin::MeshCoordinates)
 
 SWIG_SHARED_PTR(Mesh,dolfin::Mesh)
 SWIG_SHARED_PTR_DERIVED(BoundaryMesh,dolfin::Mesh,dolfin::BoundaryMesh)
@@ -114,7 +114,6 @@ SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
 %}
 
 }
-
 
 %enddef
 

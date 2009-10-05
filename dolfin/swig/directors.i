@@ -5,22 +5,24 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-04-17
-// Last changed: 2009-09-02
+// Last changed: 2009-10-05
 
 //-----------------------------------------------------------------------------
 // SWIG directives for directors for PyDOLFIN
 //
 // Directors facilitates python callbacks to the C++ library
 //-----------------------------------------------------------------------------
-%feature("director") Function;
+%feature("director") Expression;
 %feature("director") SubDomain;
 %feature("director") NonlinearProblem;
 %feature("director") ODE;
 %feature("director") PETScKrylovMatrix;
 %feature("director") uBLASKrylovMatrix;
 
+/* FIXME: OUTCOMMENT the director typemaps until we have a substitute for value_rank 
+   FIXME: and geometrical dimensions
 //-----------------------------------------------------------------------------
-// Typemap for values (in Function)
+// Typemap for values (in Expression)
 //-----------------------------------------------------------------------------
 %typemap(directorin) double* values {
   {
@@ -35,7 +37,7 @@
 }
 
 //-----------------------------------------------------------------------------
-// Typemap for coordinates (in Function and SubDomain)
+// Typemap for coordinates (in Expression and SubDomain)
 //-----------------------------------------------------------------------------
 %typemap(directorin) const double* x {
   {
@@ -52,4 +54,4 @@
     $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
   }
 }
-
+*/

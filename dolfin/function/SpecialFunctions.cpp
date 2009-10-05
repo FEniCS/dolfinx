@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2008-07-17
-// Last changed: 2009-09-30
+// Last changed: 2009-10-05
 
 #include <cmath>
 
@@ -35,7 +35,6 @@ void MeshCoordinates::eval(double* values, const Data& data) const
     values[i] = data.x[i];
 }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 CellSize::CellSize() : Expression()
 {
   // Do nothing
@@ -45,7 +44,6 @@ void CellSize::eval(double* values, const Data& data) const
 {
   values[0] = data.cell().diameter();
 }
-//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 FacetArea::FacetArea() : Expression()
 {
@@ -60,7 +58,7 @@ void FacetArea::eval(double* values, const Data& data) const
     values[0] = 0.0;
 }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
+/*
 SUPGStabilizer::SUPGStabilizer(const FunctionSpace& V, const Function& f, double sigma_)
   : Function(V), sigma(sigma_), field(&f)
 {
@@ -111,3 +109,4 @@ void SUPGStabilizer::eval(double* values, const Data& data) const
     values[i] *= 0.5*h*tau/field_norm;
 }
 //-----------------------------------------------------------------------------
+*/
