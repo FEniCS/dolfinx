@@ -71,7 +71,7 @@ You may need to provide the dimension of a user defined Function.", j, i, dim, f
     }
     catch(std::exception & e)
     {
-      warning("Function %d is invalid.", i);
+      error("Function %d is invalid.", i);
     }
   }
 

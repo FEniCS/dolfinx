@@ -73,7 +73,7 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
     scratch0(V.element())
 {
   // Assertion uses '<=' to deal with sub-functions
-  assert(V.dofmap().global_dimension() == x.size());
+  assert(V.dofmap().global_dimension() <= x.size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
