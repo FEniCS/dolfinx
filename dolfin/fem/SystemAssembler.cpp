@@ -22,7 +22,7 @@
 #include "Form.h"
 #include "UFC.h"
 #include "DirichletBC.h"
-#include "Assembler.h"
+#include "AssemblerTools.h"
 #include "SystemAssembler.h"
 
 using namespace dolfin;
@@ -85,8 +85,8 @@ void SystemAssembler::assemble(GenericMatrix& A,
     error("SystemAssembler does not yet support subdomains.");
 
   // Check arguments
-  Assembler::check(a);
-  Assembler::check(L);
+  AssemblerTools::check(a);
+  AssemblerTools::check(L);
 
   // Check that we have a bilinear and a linear form
   assert(a.rank() == 2);
@@ -97,8 +97,8 @@ void SystemAssembler::assemble(GenericMatrix& A,
   UFC b_ufc(L);
 
   // Initialize global tensor
-  Assembler::init_global_tensor(A, a, A_ufc, reset_sparsitys, add_values);
-  Assembler::init_global_tensor(b, L, b_ufc, reset_sparsitys, add_values);
+  AssemblerTools::init_global_tensor(A, a, A_ufc, reset_sparsitys, add_values);
+  AssemblerTools::init_global_tensor(b, L, b_ufc, reset_sparsitys, add_values);
 
   // Allocate data
   Scratch data(a, L);

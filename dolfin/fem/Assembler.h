@@ -17,17 +17,10 @@ namespace dolfin
 {
 
   // Forward declarations
-  class DirichletBC;
-  class GenericMatrix;
   class GenericTensor;
-  class GenericVector;
   class Form;
-  class Mesh;
   class SubDomain;
   class UFC;
-  class Cell; 
-  class Facet; 
-  class Function;
   template<class T> class MeshFunction;
 
   /// This class provides automated assembly of linear systems, or
@@ -42,8 +35,6 @@ namespace dolfin
 
   class Assembler
   {
-
-  friend class SystemAssembler;
 
   public:
 
@@ -91,20 +82,6 @@ namespace dolfin
                                          UFC& ufc,
                                          const MeshFunction<uint>* domains,
                                          std::vector<double>* values);
-
-    // Check form
-    static void check(const Form& a);
-
-    // Initialize global tensor
-    static void init_global_tensor(GenericTensor& A,
-                                   const Form& a,
-                                   UFC& ufc,
-                                   bool reset_sparsity,
-                                   bool add_values);
-
-    // Pretty-printing for progress bar
-    static std::string progress_message(uint rank,
-                                        std::string integral_type);
 
   };
 

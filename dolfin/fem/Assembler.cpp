@@ -10,11 +10,7 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericTensor.h>
-#include <dolfin/la/GenericVector.h>
-#include <dolfin/la/Scalar.h>
-#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
@@ -27,12 +23,9 @@
 #include "DofMap.h"
 #include "Form.h"
 #include "UFC.h"
+#include "AssemblerTools.h"
 #include "Assembler.h"
-#include "SparsityPatternBuilder.h"
-#include "DirichletBC.h"
 #include "FiniteElement.h"
-
-//#include <omp.h>
 
 using namespace dolfin;
 
@@ -98,7 +91,7 @@ void Assembler::assemble(GenericTensor& A,
   // for the PyDOLFIN interface.
 
   // Check form
-  check(a);
+  AssemblerTools::check(a);
 
   // Create data structure for local assembly data
   UFC ufc(a);
@@ -109,7 +102,7 @@ void Assembler::assemble(GenericTensor& A,
     coefficients[i]->gather();
 
   // Initialize global tensor
-  init_global_tensor(A, a, ufc, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(A, a, ufc, reset_sparsity, add_values);
 
   // Assemble over cells
   assemble_cells(A, a, ufc, cell_domains, 0);
@@ -142,7 +135,7 @@ void Assembler::assemble_cells(GenericTensor& A,
   ufc::cell_integral* integral = ufc.cell_integrals[0];
 
   // Assemble over cells
-  Progress p(progress_message(A.rank(), "cells"), mesh.num_cells());
+  Progress p(AssemblerTools::progress_message(A.rank(), "cells"), mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get integral for sub domain (if any)
@@ -208,7 +201,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   assert(cell_map);
 
   // Assemble over exterior facets (the cells of the boundary)
-  Progress p(progress_message(A.rank(), "exterior facets"), boundary.num_cells());
+  Progress p(AssemblerTools::progress_message(A.rank(), "exterior facets"), boundary.num_cells());
   for (CellIterator boundary_cell(boundary); !boundary_cell.end(); ++boundary_cell)
   {
     // Get mesh facet corresponding to boundary cell
@@ -277,7 +270,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   assert(mesh.ordered());
 
   // Assemble over interior facets (the facets of the mesh)
-  Progress p(progress_message(A.rank(), "interior facets"), mesh.num_facets());
+  Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"), mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Check if we have an exterior facet
@@ -332,142 +325,4 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::check(const Form& a)
-{
-  // Check the form
-  a.check();
 
-  // Extract mesh and coefficients
-  const Mesh& mesh = a.mesh();
-  const std::vector<const GenericFunction*> coefficients = a.coefficients();
-
-  // Check that we get the correct number of coefficients
-  if (coefficients.size() != a.ufc_form().num_coefficients())
-    error("Incorrect number of coefficients for form: %d given but %d required.",
-          coefficients.size(), a.ufc_form().num_coefficients());
-
-  // Check that all coefficients have valid value dimensions
-  for (uint i = 0; i < coefficients.size(); ++i)
-  {
-    if(!coefficients[i])
-      error("Got NULL Function as coefficient %d.", i);
-
-    try
-    {
-      // auto_ptr deletes its object when it exits its scope
-      std::auto_ptr<ufc::finite_element> fe(a.ufc_form().create_finite_element(i + a.rank()));
-
-      // Checks outcommented since they only work for Functions, not Expressions
-      /*
-      const uint r = coefficients[i]->function_space().element().value_rank();
-      const uint fe_r = fe->value_rank();
-      if (fe_r != r)
-        warning("Invalid value rank of Function %d, got %d but expecting %d. \
-You may need to provide the rank of a user defined Function.", i, r, fe_r);
-
-      for (uint j = 0; j < r; ++j)
-      {
-        uint dim = coefficients[i]->function_space().element().value_dimension(j);
-        uint fe_dim = fe->value_dimension(j);
-        if (dim != fe_dim)
-          warning("Invalid value dimension %d of Function %d, got %d but expecting %d. \
-You may need to provide the dimension of a user defined Function.", j, i, dim, fe_dim);
-      }
-      */
-    }
-    catch(std::exception & e)
-    {
-      warning("Function %d is invalid.", i);
-    }
-  }
-
-  // Check that the cell dimension matches the mesh dimension
-  if (a.ufc_form().rank() + a.ufc_form().num_coefficients() > 0)
-  {
-    ufc::finite_element* element = a.ufc_form().create_finite_element(0);
-    assert(element);
-    if (mesh.type().cell_type() == CellType::interval && element->cell_shape() != ufc::interval)
-      error("Mesh cell type (intervals) does not match cell type of form.");
-    if (mesh.type().cell_type() == CellType::triangle && element->cell_shape() != ufc::triangle)
-      error("Mesh cell type (triangles) does not match cell type of form.");
-    if (mesh.type().cell_type() == CellType::tetrahedron && element->cell_shape() != ufc::tetrahedron)
-      error("Mesh cell type (tetrahedra) does not match cell type of form.");
-    delete element;
-  }
-
-  // Check that the mesh is ordered
-  if (!mesh.ordered())
-    error("Unable to assemble, mesh is not correctly ordered (consider calling mesh.order()).");
-}
-//-----------------------------------------------------------------------------
-void Assembler::init_global_tensor(GenericTensor& A,
-                                   const Form& a,
-                                   UFC& ufc,
-                                   bool reset_sparsity,
-                                   bool add_values)
-{
-  if (reset_sparsity)
-  {
-    if (add_values)
-      error("Can not add values when the sparsity pattern is reset");
-    // Build sparsity pattern
-    Timer t0("Build sparsity");
-    GenericSparsityPattern* sparsity_pattern = A.factory().create_pattern();
-    if (sparsity_pattern)
-    {
-      std::vector<const DofMap*> dof_maps(0);
-      for (uint i = 0; i < ufc.form.rank(); ++i)
-        dof_maps.push_back(&(a.function_space(i)->dofmap()));
-      SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dof_maps,
-                                    a.ufc_form().num_cell_integrals(),
-                                    a.ufc_form().num_interior_facet_integrals());
-    }
-    t0.stop();
-
-    // Initialize tensor
-    Timer t1("Init tensor");
-    if (sparsity_pattern)
-      A.init(*sparsity_pattern);
-    else
-    {
-      A.resize(ufc.form.rank(), ufc.global_dimensions);
-      A.zero();
-    }
-    t1.stop();
-
-    // Delete sparsity pattern
-    Timer t2("Delete sparsity");
-    delete sparsity_pattern;
-    t2.stop();
-  }
-  else
-    if (!add_values)
-      A.zero();
-}
-//-----------------------------------------------------------------------------
-std::string Assembler::progress_message(uint rank, std::string integral_type)
-{
-  std::stringstream s;
-  s << "Assembling ";
-
-  switch (rank)
-  {
-  case 0:
-    s << "scalar value over ";
-    break;
-  case 1:
-    s << "vector over ";
-    break;
-  case 2:
-    s << "matrix over ";
-    break;
-  default:
-    s << "rank " << rank << " tensor over ";
-    break;
-  }
-
-  s << integral_type;
-
-  return s.str();
-}
-//-----------------------------------------------------------------------------
