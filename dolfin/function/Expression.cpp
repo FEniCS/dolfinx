@@ -20,20 +20,20 @@ Expression::Expression(uint geometric_dimension)
 Expression::Expression(uint geometric_dimension, uint dim)
   : _geometric_dimension(geometric_dimension)
 {
-  _value_shape.resize(1);
-  _value_shape[0] = dim;
+  value_shape.resize(1);
+  value_shape[0] = dim;
 }
 //-----------------------------------------------------------------------------
 Expression::Expression(uint geometric_dimension,
                        const std::vector<uint>& value_shape)
-  : _geometric_dimension(geometric_dimension), _value_shape(value_shape)
+  : value_shape(value_shape), _geometric_dimension(geometric_dimension)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Expression::Expression(const Expression& expression)
-  : _geometric_dimension(expression._geometric_dimension),
-    _value_shape(expression._value_shape)
+  : value_shape(expression.value_shape),
+    _geometric_dimension(expression._geometric_dimension)
 {
   // Do nothing
 }
@@ -50,20 +50,15 @@ dolfin::uint Expression::geometric_dimension() const
 //-----------------------------------------------------------------------------
 dolfin::uint Expression::value_rank() const
 {
-  return _value_shape.size();
+  return value_shape.size();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Expression::value_dimension(uint i) const
 {
-  if (i > _value_shape.size())
+  if (i > value_shape.size())
     error("Illegal axis %d for value dimension for value of rank %d.",
-          i, _value_shape.size());
-  return _value_shape[i];
-}
-//-----------------------------------------------------------------------------
-const std::vector<uint>& Expression::value_shape() const
-{
-  return _value_shape;
+          i, value_shape.size());
+  return value_shape[i];
 }
 //-----------------------------------------------------------------------------
 void Expression::eval(double* values, const double* x) const

@@ -70,7 +70,7 @@ Constant::~Constant()
 const Constant& Constant::operator= (const Constant& constant)
 {
   // Check value shape
-  if (constant.value_shape() != value_shape())
+  if (constant.value_shape != value_shape)
     error("Unable to assign value to constant, value shape mismatch.");
 
   // Assign values
@@ -82,7 +82,7 @@ const Constant& Constant::operator= (const Constant& constant)
 const Constant& Constant::operator= (double constant)
 {
   // Check value shape
-  if (value_shape().size() != 0)
+  if (value_shape.size() != 0)
     error("Unable to assign value to constant, not a scalar.");
 
   // Assign value
@@ -95,7 +95,7 @@ const Constant& Constant::operator= (double constant)
 Constant::operator double() const
 {
   // Check value shape
-  if (value_shape().size() != 0)
+  if (value_shape.size() != 0)
     error("Unable to convert constant to double, not a scalar.");
 
   // Return value
