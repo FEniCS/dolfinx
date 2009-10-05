@@ -28,6 +28,9 @@ public:
     class F0 : public Expression
     {
     public:
+
+      F0(const Mesh& mesh) : Expression(mesh.topology().dim()) {}
+
       void eval(double* values, const Data& data) const
       { 
         const double* x = data.x;
@@ -38,6 +41,9 @@ public:
     class F1 : public Expression
     {
     public:
+
+      F1(const Mesh& mesh) : Expression(mesh.topology().dim()) {}
+
       void eval(double* values, const Data& data) const
       { 
         const double* x = data.x;
@@ -53,8 +59,8 @@ public:
     data.x = x;
 
     // User-defined functions (one from finite element space, one not)
-    F0 f0;
-    F1 f1;
+    F0 f0(mesh);
+    F1 f1(mesh);
 
     // Test evaluation of a user-defined function
     f0.eval(&u[0], data);

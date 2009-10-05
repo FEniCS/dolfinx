@@ -60,7 +60,7 @@ int main()
 
   // Define boundary condition
   DirichletBoundary dirichlet_boundary;
-  Constant g(1.0);
+  Constant g(mesh, 1.0);
   DirichletBC bc(V, g, dirichlet_boundary);
 
   // Define source and solution functions
