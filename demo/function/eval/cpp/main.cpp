@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-03-11
-// Last changed: 2009-09-15
+// Last changed: 2009-10-05
 //
 // Demonstrating function evaluation at arbitrary points.
 
@@ -16,10 +16,14 @@ using namespace dolfin;
 class F : public Expression
 {
 public:
+
+  F() : Expression(3) {}
+
   void eval(double* values, const double* x) const
   {
     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
   }
+
 };
 
 int main()

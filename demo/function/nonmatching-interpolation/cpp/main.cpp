@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-06-17
-// Last changed: 
+// Last changed:
 
 //
-// This program demonstrates the interpolation of functions on non-matching 
+// This program demonstrates the interpolation of functions on non-matching
 // meshes.
 //
 
@@ -17,10 +17,15 @@ using namespace dolfin;
 
 class MyExpression : public Expression
 {
+public:
+
+  MyExpression() : Expression(2) {}
+
   void eval(double* values, const double* x) const
   {
     values[0] = sin(10.0*x[0])*sin(10.0*x[1]);
   }
+
 };
 
 
@@ -42,7 +47,7 @@ int main()
   MyExpression e;
   f0.interpolate(e);
 
-  // Interpolate V0 function (coarse mesh) into V1 function space (fine mesh) 
+  // Interpolate V0 function (coarse mesh) into V1 function space (fine mesh)
   f1.interpolate(f0);
 
   // Plot results

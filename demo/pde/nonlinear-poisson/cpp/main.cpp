@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2005-2008.
 //
 // First added:  2005
-// Last changed: 2008-12-27
+// Last changed: 2009-10-05
 //
 // This demo illustrates how to use of DOLFIN for solving a nonlinear
 // PDE, in this case a nonlinear variant of Poisson's equation,
@@ -32,10 +32,15 @@ using namespace dolfin;
 // Right-hand side
 class Source : public Expression
 {
+public:
+
+  Source() : Expression(2) {}
+
   void eval(double* values, const double* x) const
   {
     values[0] = x[0]*sin(x[1]);
   }
+
 };
 
 // Sub domain for Dirichlet boundary condition

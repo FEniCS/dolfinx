@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-06-26
-// Last changed: 2009-09-08
+// Last changed: 2009-10-05
 //
 // This demo program solves the Biharmonic equation,
 //
@@ -27,10 +27,15 @@ using namespace dolfin;
 // Source term
 class Source : public Expression
 {
+public:
+
+  Source() : Expression(2) {}
+
   void eval(double* values, const double* x) const
   {
     values[0] = 4.0 * DOLFIN_PI * DOLFIN_PI * DOLFIN_PI * DOLFIN_PI * sin(DOLFIN_PI*x[0]) * sin(DOLFIN_PI*x[1]);
   }
+
 };
 
 // Sub domain for Dirichlet boundary condition

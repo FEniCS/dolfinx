@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-11-23
-// Last changed: 2008-12-12
+// Last changed: 2009-10-05
 //
 // This demo program solves Poisson's equation,
 //
@@ -34,10 +34,15 @@ class DirichletBoundary : public SubDomain
 // Source term
 class Source : public Expression
 {
+public:
+
+  Source() : Expression(1) {}
+
   void eval(double* values, const double* x) const
   {
     values[0] = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0]);
   }
+
 };
 
 // Neumann boundary condition

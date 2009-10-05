@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-01-22
-// Last changed: 2009-09-30
+// Last changed: 2009-10-05
 //
 
 #include <dolfin.h>
@@ -16,7 +16,8 @@ class Pressure : public Expression
 {
 public:
 
-  Pressure(const double& t, const double& dt, bool old): t(t), dt(dt), old(old) {}
+  Pressure(const double& t, const double& dt, bool old)
+    : Expression(2, 2), t(t), dt(dt), old(old) {}
 
   void eval(double* values, const Data& data) const
   {
@@ -41,8 +42,7 @@ private:
 
   const double& t;
   const double& dt;
-  const bool    old;
-
+  const bool old;
 };
 
 // Right boundary

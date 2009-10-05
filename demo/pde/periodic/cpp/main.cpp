@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-07-11
-// Last changed: 2008-12-12
+// Last changed: 2009-10-05
 //
 // This demo program solves Poisson's equation,
 //
@@ -21,12 +21,17 @@ int main()
   // Source term
   class Source : public Expression
   {
+  public:
+
+    Source() : Expression(3) {}
+
     void eval(double* values, const double* x) const
     {
       double dx = x[0] - 0.5;
       double dy = x[1] - 0.5;
       values[0] = x[0]*sin(5.0*DOLFIN_PI*x[1]) + 1.0*exp(-(dx*dx + dy*dy)/0.02);
     }
+
   };
 
   // Sub domain for Dirichlet boundary condition

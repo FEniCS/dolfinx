@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-09-19
-// Last changed: 2008-12-13
+// Last changed: 2009-10-05
 //
 // This demo program computes the value of the functional
 //
@@ -24,10 +24,15 @@ int main()
   // The function v
   class MyFunction : public Expression
   {
+  public:
+
+    MyFunction() : Expression(2) {}
+
     void eval(double* values, const double* x) const
     {
       values[0] = sin(x[0]) + cos(x[1]);
     }
+
   };
 
   // Define functional

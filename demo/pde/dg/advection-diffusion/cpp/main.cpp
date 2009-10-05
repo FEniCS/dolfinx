@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-06-29
-// Last changed: 2008-12-23
+// Last changed: 2009-10-05
 //
 // Steady state advection-diffusion equation, discontinuous
 // formulation using full upwinding.
@@ -18,10 +18,15 @@ using namespace dolfin;
 // Dirichlet boundary condition
 class BC : public Expression
 {
+public:
+
+  BC() : Expression(2) {}
+
   void eval(double* values, const double* x) const
   {
     values[0] = sin(DOLFIN_PI*5.0*x[1]);
   }
+
 };
 
 // Sub domain for Dirichlet boundary condition

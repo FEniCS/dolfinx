@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-02-07
-// Last changed: 2008-12-12
+// Last changed: 2009-10-05
 //
 // This demo program solves Poisson's equation,
 //
@@ -30,17 +30,26 @@ int main()
   // Source term
   class Source : public Expression
   {
+  public:
+
+    Source() : Expression(2) {}
+
     void eval(double* values, const double* x) const
     {
       double dx = x[0] - 0.5;
       double dy = x[1] - 0.5;
       values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
+
   };
 
   // Neumann boundary condition
   class Flux : public Expression
   {
+  public:
+
+    Flux() : Expression(2) {}
+
     void eval(double* values, const double* x) const
     {
       if (x[0] > (1.0 - DOLFIN_EPS))
@@ -48,6 +57,7 @@ int main()
       else
         values[0] = 0.0;
     }
+
   };
 
   // Sub domain for Dirichlet boundary condition

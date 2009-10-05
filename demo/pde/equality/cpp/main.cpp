@@ -4,7 +4,7 @@
 // Adapted for EqualityBC demo by Bartosz Sawicki.
 //
 // First added:  2009-04-15
-// Last changed: 2009-04-21
+// Last changed: 2009-10-05
 //
 // This demo program solves Poisson's equation,
 //
@@ -24,12 +24,17 @@ int main()
   // Source term
   class Source : public Expression
   {
+  public:
+
+    Source() : Expression(2) {}
+
     void eval(double* values, const double* x) const
     {
       double dx = x[0] - 0.75;
       double dy = x[1] - 0.5;
       values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
+
   };
 
   // Sub domain for Dirichlet boundary condition

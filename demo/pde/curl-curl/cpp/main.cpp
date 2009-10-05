@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-30
-// Last changed: 2009-03-30
+// Last changed: 2009-10-05
 //
 // Eddy currents phenomena in low conducting body can be
 // described using electric vector potential and curl-curl operator:
@@ -27,23 +27,33 @@ int main()
   // Homogenous external magnetic field (dB/dt)
   class Source : public Expression
   {
+  public:
+
+    Source() : Expression(3, 3);
+
     void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
       values[2] = 1.0;
     }
+
   };
 
   // Zero Dirichlet BC
   class Zero : public Expression
   {
+  public:
+
+    Source() : Expression(3, 3);
+
     void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
       values[2] = 0.0;
     }
+
   };
 
   // Everywhere on external surface

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-12-05
-// Last changed: 2009-09-08
+// Last changed: 2009-10-05
 //
 // This demo program solves Poisson's equation,
 //
@@ -29,12 +29,17 @@ int main()
   // Source term
   class Source : public Expression
   {
+  public:
+
+    Source() : Expression(2) {}
+
     void eval(double* values, const double* x) const
     {
       double dx = x[0] - 0.5;
       double dy = x[1] - 0.5;
       values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
+
   };
 
   // Create mesh

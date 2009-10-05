@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-06-15
-// Last changed: 2009-06-15
+// Last changed: 2009-10-05
 //
 // This demo program solves the reaction-diffusion equation
 //
@@ -19,10 +19,15 @@ using namespace dolfin;
 // Source term
 class Source : public Expression
 {
+public:
+
+  Expression() : Source(2) {}
+
   void eval(double* values, const double* x) const
   {
     values[0] = sin(x[0])*sin(x[1]);
   }
+
 };
 
 int main()
@@ -33,12 +38,12 @@ int main()
   ReactionDiffusion::FunctionSpace V(mesh);
   ReactionDiffusion::BilinearForm a(V, V);
   ReactionDiffusion::LinearForm L(V, f);
-  
+
   // Compute and plot solution
   VariationalProblem problem(a, L);
   Function u(V);
   problem.solve(u);
   plot(u);
- 
+
   return 0;
 }

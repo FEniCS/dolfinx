@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-03-02
-// Last changed: 2009-09-30
+// Last changed: 2009-10-05
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving
 // the Cahn-Hilliard equation.
@@ -21,6 +21,8 @@ using namespace dolfin;
 class InitialConditions: public Expression
 {
 public:
+
+  // FIXME: Missing constructor
 
   InitialConditions(boost::shared_ptr<const FunctionSpace> V)
   {
@@ -133,7 +135,7 @@ class CahnHilliardEquation : public NonlinearProblem
     // Pointers to FunctionSpace and forms
     Form* a;
     Form* L;
-    Function* _u; 
+    Function* _u;
     Function* _u0;
     bool reset_Jacobian;
 };

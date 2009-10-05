@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2008
 //
 // First added:  2006-02-07
-// Last changed: 2009-09-30
+// Last changed: 2009-10-05
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -20,12 +20,17 @@ int main()
   // Dirichlet boundary condition for clamp at left end
   class Clamp : public Expression
   {
+  public:
+
+    Clamp() : Expression(3, 3) {}
+
     void eval(double* values, const double* x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
       values[2] = 0.0;
     }
+
   };
 
   // Sub domain for clamp at left end
@@ -40,6 +45,10 @@ int main()
   // Dirichlet boundary condition for rotation at right end
   class Rotation : public Expression
   {
+  public:
+
+    Rotation() : Expression(3, 3) {}
+
     void eval(double* values, const double* x) const
     {
       // Center of rotation
@@ -58,6 +67,7 @@ int main()
       values[1] = y - x[1];
       values[2] = z - x[2];
     }
+
   };
 
   // Sub domain for rotation at right end

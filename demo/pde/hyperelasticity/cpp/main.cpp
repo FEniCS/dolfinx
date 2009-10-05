@@ -32,17 +32,26 @@ class Right : public SubDomain
 // Dirichlet boundary condition for clamp at left end
 class Clamp : public Expression
 {
+public:
+
+  Clamp() : Expression(3, 3) {}
+
   void eval(double* values, const double* x) const
   {
     values[0] = 0.0;
     values[1] = 0.0;
     values[2] = 0.0;
   }
+
 };
 
 // Dirichlet boundary condition for rotation at right end
 class Rotation : public Expression
 {
+public:
+
+  Rotation() : Expression(3, 3) {}
+
   void eval(double* values, const double* x) const
   {
     // Center of rotation
@@ -61,6 +70,7 @@ class Rotation : public Expression
     values[1] = y - x[1];
     values[2] = z - x[2];
   }
+
 };
 
 int main()
