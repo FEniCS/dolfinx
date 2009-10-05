@@ -57,14 +57,14 @@ int main()
 
   // Create functions
   Source f;
-  CellSize h;
-  Constant alpha(8.0);
+  CellSize h(mesh);
+  Constant alpha(mesh, 8.0);
 
   // Create funtion space
   Biharmonic::FunctionSpace V(mesh);
 
   // Define boundary condition
-  Constant u0(0.0);
+  Constant u0(mesh, 0.0);
   DirichletBoundary boundary;
   DirichletBC bc(V, u0, boundary);
 

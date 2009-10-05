@@ -59,7 +59,7 @@ int main()
   // Create functions for boundary conditions
   Noslip noslip;
   Inflow inflow;
-  Constant zero(0.0);
+  Constant zero(mesh, 0.0);
 
   // No-slip boundary condition for velocity
   DirichletBC bc0(W0, noslip, sub_domains, 0);
@@ -75,8 +75,8 @@ int main()
   bcs.push_back(&bc0); bcs.push_back(&bc1); bcs.push_back(&bc2);
 
   // Set up PDE
-  CellSize h;
-  Constant f(2, 0.0);
+  CellSize h(mesh);
+  Constant f(mesh, 0.0);
   Stokes::BilinearForm a(W, W);
   a.h = h;
   Stokes::LinearForm L(W);

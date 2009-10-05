@@ -101,8 +101,8 @@ int main()
   // Set material parameters
   double E  = 10.0;
   double nu = 0.3;
-  Constant mu(E / (2*(1 + nu)));
-  Constant lambda(E*nu / ((1 + nu)*(1 - 2*nu)));
+  Constant mu(mesh, E / (2*(1 + nu)));
+  Constant lambda(mesh, E*nu / ((1 + nu)*(1 - 2*nu)));
 
   // Create forms
   HyperElasticity::BilinearForm a(V, V);

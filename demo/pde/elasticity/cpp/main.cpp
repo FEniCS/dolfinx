@@ -104,8 +104,8 @@ int main()
   // Set elasticity parameters
   double E  = 10.0;
   double nu = 0.3;
-  Constant mu(E / (2*(1 + nu)));
-  Constant lambda(E*nu / ((1 + nu)*(1 - 2*nu)));
+  Constant mu(mesh, E / (2*(1 + nu)));
+  Constant lambda(mesh, E*nu / ((1 + nu)*(1 - 2*nu)));
 
   // Set up PDE (symmetric)
   Elasticity::BilinearForm a(V, V);

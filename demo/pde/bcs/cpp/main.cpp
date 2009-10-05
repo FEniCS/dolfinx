@@ -20,17 +20,17 @@ int main()
   Mesh mesh("../../../../data/meshes/aneurysm.xml.gz");
 
   // Define variational problem
-  Constant f(0.0);
+  Constant f(mesh, 0.0);
   Poisson::FunctionSpace V(mesh);
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
   L.f = f;
 
   // Define boundary condition values
-  Constant u0(0.0);
-  Constant u1(1.0);
-  Constant u2(2.0);
-  Constant u3(3.0);
+  Constant u0(mesh, 0.0);
+  Constant u1(mesh, 1.0);
+  Constant u2(mesh, 2.0);
+  Constant u3(mesh, 3.0);
 
   // Define boundary conditions
   DirichletBC bc0(V, u0, 0);

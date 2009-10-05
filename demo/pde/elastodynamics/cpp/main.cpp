@@ -106,19 +106,19 @@ int main(int argc, char* argv[])
   ElastoDynamics::FunctionSpace V(mesh);
 
   // Material parameters
-  Constant rho(1.0);                           // mass density
-  Constant eta(0.25);                          // damping coefficient
+  Constant rho(mesh, 1.0);                           // mass density
+  Constant eta(mesh, 0.25);                          // damping coefficient
   double E  = 1.0;                             // Youngs modulus
   double nu = 0.0;                             // Poisson ratio
-  Constant lambda((nu*E)/((1.0+nu)*(1.0-nu))); // Lame coefficient
-  Constant mu(E/(2.0*(1.0+nu)));               // Lame coefficient
+  Constant lambda(mesh, (nu*E)/((1.0+nu)*(1.0-nu))); // Lame coefficient
+  Constant mu(mesh, E/(2.0*(1.0+nu)));               // Lame coefficient
 
   // Time stepping parameters
-  Constant alpha_m(0.2);
-  Constant alpha_f(0.4);
-  Constant beta(0.36);
-  Constant gamma(0.7);
-  Constant dt(1.0/32.0);               // time step
+  Constant alpha_m(mesh, 0.2);
+  Constant alpha_f(mesh, 0.4);
+  Constant beta(mesh, 0.36);
+  Constant gamma(mesh, 0.7);
+  Constant dt(mesh, 1.0/32.0);               // time step
   double t = 0.0;                      // initial time
   double T = 200*dt;              // final time
 

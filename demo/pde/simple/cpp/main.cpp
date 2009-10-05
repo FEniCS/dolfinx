@@ -21,7 +21,7 @@ class Source : public Expression
 {
 public:
 
-  Expression() : Source(2) {}
+  Source() : Expression(2) {}
 
   void eval(double* values, const double* x) const
   {

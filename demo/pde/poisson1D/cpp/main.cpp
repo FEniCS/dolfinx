@@ -48,6 +48,10 @@ public:
 // Neumann boundary condition
 class Flux : public Expression
 {
+public:
+
+  Flux() : Expression(1) {}
+
   void eval(double* values, const double* x) const
   {
     values[0] = 3.0*DOLFIN_PI*cos(3.0*DOLFIN_PI*x[0]);
@@ -63,7 +67,7 @@ int main()
   Poisson::FunctionSpace V(mesh);
 
   // Set up BCs
-  Constant zero(0.0);
+  Constant zero(mesh, 0.0);
   DirichletBoundary boundary;
   DirichletBC bc(V, zero, boundary);
 

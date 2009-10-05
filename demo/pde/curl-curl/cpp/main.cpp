@@ -29,7 +29,7 @@ int main()
   {
   public:
 
-    Source() : Expression(3, 3);
+    Source() : Expression(3, 3) {}
 
     void eval(double* values, const double* x) const
     {
@@ -45,7 +45,7 @@ int main()
   {
   public:
 
-    Source() : Expression(3, 3);
+    Zero() : Expression(3, 3) {}
 
     void eval(double* values, const double* x) const
     {

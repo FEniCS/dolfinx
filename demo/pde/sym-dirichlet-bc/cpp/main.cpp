@@ -83,7 +83,7 @@ int main()
   L.f = f; L.g = g;
 
   // Create boundary condition
-  Constant u0(0.0);
+  Constant u0(mesh, 0.0);
   DirichletBoundary boundary;
   DirichletBC bc(V, u0, boundary);
 
