@@ -46,6 +46,8 @@ int main(int argc, char *argv[])
   // Read mesh
   Mesh mesh("../mesh.xml.gz");
 
+  const unsigned int dim = mesh.topology().dim();
+
   // Create velocity FunctionSpace
   Velocity::FunctionSpace V_u(mesh);
 
@@ -53,16 +55,16 @@ int main(int argc, char *argv[])
   Function u(V_u, "../velocity.xml.gz");
 
   // Diffusivity
-  Constant c(0.0);
+  Constant c(dim, 0.0);
 
   //Source term
-  Constant f(0.0);
+  Constant f(dim, 0.0);
 
   // Mesh-related functions
-  CellSize h;
+  CellSize h(mesh);
 
   // Penalty parameter
-  Constant alpha(5.0);
+  Constant alpha(dim, 5.0);
 
   // Create function space
   AdvectionDiffusion::FunctionSpace V(mesh);

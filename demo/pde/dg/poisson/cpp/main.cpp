@@ -50,7 +50,7 @@ int main()
 
   // Create functions
   Source f;
-  CellSize h;
+  CellSize h(mesh);
 
   // Create funtion space
   Poisson::FunctionSpace V(mesh);

@@ -15,7 +15,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshCoordinates::MeshCoordinates(const Mesh& mesh)
+MeshCoordinates::MeshCoordinates(const Mesh& mesh) 
   : Expression(mesh.geometry().dim(), mesh.geometry().dim()), mesh(mesh)
 {
   // Do nothing
