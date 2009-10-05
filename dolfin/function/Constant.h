@@ -4,7 +4,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2006-02-09
-// Last changed: 2009-09-30
+// Last changed: 2009-10-05
 
 #ifndef __CONSTANT_H
 #define __CONSTANT_H
@@ -21,56 +21,41 @@ namespace dolfin
   {
   public:
 
-    /// Create constant scalar function with given value
-    explicit Constant(double value);
+    /// Create scalar constant
+    Constant(uint geometric_dimension, double value);
 
-    /// Create constant vector function with given size and value
-    Constant(uint size, double value);
+    /// Create vector-valued constant
+    Constant(uint geometric_dimension, const std::vector<double>& values);
 
-    /// Create constant vector function with given size and values
-    Constant(const std::vector<double>& values);
-
-    /// Create constant tensor function with given shape and values
-    Constant(const std::vector<uint>& shape, const std::vector<double>& values);
+    /// Create tensor-valued constant for flattened array of values
+    Constant(uint geometric_dimension,
+             const std::vector<uint>& value_shape,
+             const std::vector<double>& values);
 
     /// Copy constructor
-    Constant(const Constant& c);
+    Constant(const Constant& constant);
 
     /// Destructor
     ~Constant();
 
     /// Assignment operator
-    const Constant& operator= (const Constant& c);
+    const Constant& operator= (const Constant& constant);
 
     /// Assignment operator
-    const Constant& operator= (double c);
+    const Constant& operator= (double constant);
 
-    /// Function evaluation
-    void eval(double* values, const Data& data) const;
+    /// Cast to double (for scalar constants)
+    operator double() const;
 
-    /// Return size
-    uint size() const
-    { return _size; }
+    //--- Implementation of Expression interface ---
 
-    /// Return values
-    operator double() const
-    {
-      if (_size > 1)
-        error("Cannot convert non-scalar Constant to a double.");
-      return _values[0];
-    }
-
-    /// Return values
-    const double* values() const
-    { return _values; }
+    /// Evaluate function
+    virtual void eval(double* values, const Data& data) const;
 
   private:
 
-    // Size of value (number of entries in tensor value)
-    uint _size;
-
     // Values of constant function
-    double* _values;
+    std::vector<double> _values;
 
   };
 

@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2006-02-09
-// Last changed: 2009-09-30
+// Last changed: 2009-10-05
 
 #include <dolfin/log/log.h>
 #include "Constant.h"
@@ -13,92 +13,80 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Constant::Constant(double value)
-  : _size(1), _values(0)
+Constant::Constant(uint geometric_dimension, double value)
+  : Expression(geometric_dimension)
 {
-  _values = new double[1];
+  _values.resize(1);
   _values[0] = value;
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(uint size, double value)
-  : _size(size), _values(0)
+Constant::Constant(uint geometric_dimension, const std::vector<double>& values)
+  : Expression(geometric_dimension, values.size()), _values(values)
 {
-  assert(size > 0);
-
-  _values = new double[size];
-  for (uint i = 0; i < size; i++)
-    _values[i] = value;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(const std::vector<double>& values)
-  : _size(values.size()), _values(0)
+Constant::Constant(uint geometric_dimension,
+         const std::vector<uint>& value_shape,
+         const std::vector<double>& values)
+  : Expression(geometric_dimension, value_shape), _values(values)
 {
-  assert(values.size() > 0);
-
-  _values = new double[values.size()];
-  for (uint i = 0; i < values.size(); i++)
-    _values[i] = values[i];
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(const std::vector<uint>& shape,
-                   const std::vector<double>& values)
-  : _size(0), _values(0)
+Constant::Constant(const Constant& constant)
+  : Expression(constant)
 {
-  assert(shape.size() > 0);
-  assert(values.size() > 0);
-
-  // Compute size
-  _size = 1;
-  for (uint i = 0; i < shape.size(); i++)
-    _size *= shape[i];
-
-  // Copy values
-  assert(values.size() == _size);
-  _values = new double[values.size()];
-  for (uint i = 0; i < values.size(); i++)
-    _values[i] = values[i];
-}
-//-----------------------------------------------------------------------------
-Constant::Constant(const Constant& c)
-  : _size(0), _values(0)
-{
-  *this = c;
+  *this = constant;
 }
 //-----------------------------------------------------------------------------
 Constant::~Constant()
 {
-  delete [] _values;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-const Constant& Constant::operator= (const Constant& c)
+const Constant& Constant::operator= (const Constant& constant)
 {
-  assert(c._size > 0);
-  assert(c._values);
+  // Check value shape
+  if (constant.value_shape() != value_shape())
+    error("Unable to assign value to constant, value shape mismatch.");
 
-  delete _values;
-  _size = c._size;
-  _values = new double[c._size];
-  for (uint i = 0; i < c._size; i++)
-    _values[i] = c._values[i];
+  // Assign values
+  _values = constant._values;
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Constant& Constant::operator= (double c)
+const Constant& Constant::operator= (double constant)
 {
-  if(_size > 1)
-    error("Cannot convert non-scalar Constant to a double.");
-  _values[0] = c;
+  // Check value shape
+  if (value_shape().size() != 0)
+    error("Unable to assign value to constant, not a scalar.");
+
+  // Assign value
+  assert(_values.size() == 1);
+  _values[0] = constant;
+
   return *this;
+}
+//-----------------------------------------------------------------------------
+Constant::operator double() const
+{
+  // Check value shape
+  if (value_shape().size() != 0)
+    error("Unable to convert constant to double, not a scalar.");
+
+  // Return value
+  assert(_values.size() == 1);
+  return _values[0];
 }
 //-----------------------------------------------------------------------------
 void Constant::eval(double* values, const Data& data) const
 {
   assert(values);
-  assert(_values);
 
   // Copy values
-  for (uint i = 0; i < _size; i++)
+  for (uint i = 0; i < _values.size(); i++)
     values[i] = _values[i];
 }
 //-----------------------------------------------------------------------------

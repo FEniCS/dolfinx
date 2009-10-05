@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-04
+// Last changed: 2009-10-05
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
@@ -37,10 +37,10 @@ namespace dolfin
     /// Destructor
     virtual ~GenericFunction();
 
-    /// Evaluate coefficient function
+    /// Evaluate function
     virtual void eval(double* values, const Data& data) const = 0;
 
-    /// Restrict coefficient to local cell (compute expansion coefficients w)
+    /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,

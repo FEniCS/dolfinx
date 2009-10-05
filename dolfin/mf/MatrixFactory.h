@@ -1,8 +1,8 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-08-21
-// Last changed: 2006-08-21
+// Last changed: 2009-10-05
 
 #ifndef __MATRIX_FACTORY_H
 #define __MATRIX_FACTORY_H
@@ -28,17 +28,25 @@ namespace dolfin
   public:
 
     /// Compute mass matrix on a given mesh
-    static void computeMassMatrix(GenericMatrix& A, Mesh& mesh);
+    static void compute_mass_matrix(GenericMatrix& A,
+                                    Mesh& mesh);
 
     /// Compute stiffness matrix with diffusivity c on a given mesh
-    static void computeStiffnessMatrix(GenericMatrix& A, Mesh& mesh, double c = 1.0);
+    static void compute_stiffness_matrix(GenericMatrix& A,
+                                         Mesh& mesh,
+                                         double c=1.0);
 
     /// Compute convection matrix with constant velocity c on a given mesh
-    static void computeConvectionMatrix(GenericMatrix& A, Mesh& mesh,
-					double cx = 1.0, double cy = 0.0, double cz = 0.0);
+    static void compute_convection_matrix(GenericMatrix& A,
+                                          Mesh& mesh,
+                                          double cx=1.0,
+                                          double cy=0.0,
+                                          double cz=0.0);
 
     /// Construct load vector with constant load c on a given mesh
-    static void computeLoadVector(GenericVector& x, Mesh& mesh, double c = 1.0);
+    static void compute_load_vector(GenericVector& x,
+                                    Mesh& mesh,
+                                    double c = 1.0);
 
   };
 
