@@ -28,29 +28,29 @@ Constant::Constant(const Mesh& mesh, double value)
   _values[0] = value;
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(uint geometric_dimension, const std::vector<double>& values)
+Constant::Constant(uint geometric_dimension, std::vector<double> values)
   : Expression(geometric_dimension, values.size()), _values(values)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(const Mesh& mesh, const std::vector<double>& values)
+Constant::Constant(const Mesh& mesh, std::vector<double> values)
   : Expression(mesh.geometry().dim(), values.size()), _values(values)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Constant::Constant(uint geometric_dimension,
-                   const std::vector<uint>& value_shape,
-                   const std::vector<double>& values)
+                   std::vector<uint> value_shape,
+                   std::vector<double> values)
   : Expression(geometric_dimension, value_shape), _values(values)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Constant::Constant(const Mesh& mesh,
-                   const std::vector<uint>& value_shape,
-                   const std::vector<double>& values)
+                   std::vector<uint> value_shape,
+                   std::vector<double> values)
   : Expression(mesh.geometry().dim(), value_shape), _values(values)
 {
   // Do nothing

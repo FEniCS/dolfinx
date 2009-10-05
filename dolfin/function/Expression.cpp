@@ -25,7 +25,7 @@ Expression::Expression(uint geometric_dimension, uint dim)
 }
 //-----------------------------------------------------------------------------
 Expression::Expression(uint geometric_dimension,
-                       const std::vector<uint>& value_shape)
+                       std::vector<uint> value_shape)
   : value_shape(value_shape), _geometric_dimension(geometric_dimension)
 {
   // Do nothing
