@@ -32,6 +32,8 @@ namespace dolfin
              const std::vector<uint>& value_shape,
              const std::vector<double>& values);
 
+
+
     /// Copy constructor
     Constant(const Constant& constant);
 

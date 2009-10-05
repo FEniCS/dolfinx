@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-08-21
-// Last changed: 2006-08-21
+// Last changed: 2009-10-05
 
 #ifndef __STIFFNESS_MATRIX_H
 #define __STIFFNESS_MATRIX_H
@@ -29,7 +29,7 @@ namespace dolfin
     /// Construct stiffness matrix with constant diffusivity c on a given mesh
     StiffnessMatrix(Mesh& mesh, double c = 1.0) : Matrix()
     {
-      MatrixFactory::computeStiffnessMatrix(*this, mesh, c);
+      MatrixFactory::compute_stiffness_matrix(*this, mesh, c);
     }
 
   };
@@ -47,7 +47,7 @@ namespace dolfin
     /// Construct stiffness matrix with constant diffusivity c on a given mesh
     PETScStiffnessMatrix(Mesh& mesh, double c = 1.0) : PETScMatrix()
     {
-      MatrixFactory::computeStiffnessMatrix(*this, mesh, c);
+      MatrixFactory::compute_stiffness_matrix(*this, mesh, c);
     }
 
   };
@@ -65,7 +65,7 @@ namespace dolfin
     /// Construct stiffness matrix with constant diffusivity c on a given mesh
     uBLASStiffnessMatrix(Mesh& mesh, double c = 1.0) : uBLASSparseMatrix()
     {
-      MatrixFactory::computeStiffnessMatrix(*this, mesh, c);
+      MatrixFactory::compute_stiffness_matrix(*this, mesh, c);
     }
 
   };

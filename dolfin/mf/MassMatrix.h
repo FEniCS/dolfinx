@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-08-21
-// Last changed: 2006-08-21
+// Last changed: 2009-10-05
 
 #ifndef __MASS_MATRIX_H
 #define __MASS_MATRIX_H
@@ -28,7 +28,7 @@ namespace dolfin
     /// Construct mass matrix on a given mesh
     MassMatrix(Mesh& mesh) : Matrix()
     {
-      MatrixFactory::computeMassMatrix(*this, mesh);
+      MatrixFactory::compute_mass_matrix(*this, mesh);
     }
 
   };
@@ -45,7 +45,7 @@ namespace dolfin
     /// Construct mass matrix on a given mesh
     PETScMassMatrix(Mesh& mesh) : PETScMatrix()
     {
-      MatrixFactory::computeMassMatrix(*this, mesh);
+      MatrixFactory::compute_mass_matrix(*this, mesh);
     }
 
   };
@@ -62,7 +62,7 @@ namespace dolfin
     /// Construct mass matrix on a given mesh
     uBLASMassMatrix(Mesh& mesh) : uBLASSparseMatrix()
     {
-      MatrixFactory::computeMassMatrix(*this, mesh);
+      MatrixFactory::compute_mass_matrix(*this, mesh);
     }
 
   };

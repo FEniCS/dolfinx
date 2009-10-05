@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-08-21
-// Last changed: 2006-08-21
+// Last changed: 2009-10-05
 
 #ifndef __LOAD_VECTOR_H
 #define __LOAD_VECTOR_H
@@ -28,7 +28,7 @@ namespace dolfin
     /// Construct load vector with constant load c on a given mesh
     LoadVector(Mesh& mesh, double c = 1.0) : Vector()
     {
-      MatrixFactory::computeLoadVector(*this, mesh, c);
+      MatrixFactory::compute_load_vector(*this, mesh, c);
     }
 
   };
@@ -45,7 +45,7 @@ namespace dolfin
     /// Construct load vector with constant load c on a given mesh
     PETScLoadVector(Mesh& mesh, double c = 1.0) : PETScVector()
     {
-      MatrixFactory::computeLoadVector(*this, mesh, c);
+      MatrixFactory::compute_load_vector(*this, mesh, c);
     }
 
   };
@@ -63,7 +63,7 @@ namespace dolfin
     /// Construct load vector with constant load c on a given mesh
     uBLASLoadVector(Mesh& mesh, double c = 1.0) : uBLASVector()
     {
-      MatrixFactory::computeLoadVector(*this, mesh, c);
+      MatrixFactory::compute_load_vector(*this, mesh, c);
     }
 
   };

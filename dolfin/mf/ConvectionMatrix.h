@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-08-21
-// Last changed: 2006-08-21
+// Last changed: 2009-10-05
 
 #ifndef __CONVECTION_MATRIX_H
 #define __CONVECTION_MATRIX_H
@@ -29,7 +29,7 @@ namespace dolfin
     /// Construct convection matrix with constant velocity c on a given mesh
     ConvectionMatrix(Mesh& mesh, double cx = 1.0, double cy = 0.0, double cz = 0.0) : Matrix()
     {
-      MatrixFactory::computeConvectionMatrix(*this, mesh, cx, cy, cz);
+      MatrixFactory::compute_convection_matrix(*this, mesh, cx, cy, cz);
     }
 
   };
@@ -47,7 +47,7 @@ namespace dolfin
     /// Construct convection matrix with constant velocity c on a given mesh
     PETScConvectionMatrix(Mesh& mesh, double cx = 1.0, double cy = 0.0, double cz = 0.0) : PETScMatrix()
     {
-      MatrixFactory::computeConvectionMatrix(*this, mesh, cx, cy, cz);
+      MatrixFactory::compute_convection_matrix(*this, mesh, cx, cy, cz);
     }
 
   };
@@ -65,7 +65,7 @@ namespace dolfin
     /// Construct convection matrix with constant velocity c on a given mesh
     uBLASConvectionMatrix(Mesh& mesh, double cx = 1.0, double cy = 0.0, double cz = 0.0) : uBLASSparseMatrix()
     {
-      MatrixFactory::computeConvectionMatrix(*this, mesh, cx, cy, cz);
+      MatrixFactory::compute_convection_matrix(*this, mesh, cx, cy, cz);
     }
 
   };

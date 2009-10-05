@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2009-09-30
+// Last changed: 2009-10-05
 //
 // This demo program solves Poisson's equation
 //
@@ -25,21 +25,31 @@ using namespace dolfin;
 // Source term (right-hand side)
 class Source : public Expression
 {
+public:
+
+  Source() : Expression(2) {}
+
   void eval(double* values, const double* x) const
   {
     double dx = x[0] - 0.5;
     double dy = x[1] - 0.5;
     values[0] = 10*exp(-(dx*dx + dy*dy) / 0.02);
   }
+
 };
 
 // Boundary flux (Neumann boundary condition)
 class Flux : public Expression
 {
+public:
+
+  Flux() : Expression(2) {}
+
   void eval(double* values, const double* x) const
   {
     values[0] = sin(5*x[0]);
   }
+
 };
 
 // Sub domain for Dirichlet boundary condition
@@ -58,7 +68,7 @@ int main()
   Poisson::FunctionSpace V(mesh);
 
   // Define boundary condition
-  Constant u0(0.0);
+  Constant u0(mesh, 0.0);
   DirichletBoundary boundary;
   DirichletBC bc(V, u0, boundary);
 
