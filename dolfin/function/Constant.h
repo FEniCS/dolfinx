@@ -30,21 +30,21 @@ namespace dolfin
     Constant(const Mesh& mesh, double value);
 
     /// Create vector-valued constant
-    Constant(uint geometric_dimension, const std::vector<double>& values);
+    Constant(uint geometric_dimension, std::vector<double> values);
 
     /// Create vector-valued constant with geometric dimension derived from mesh
-    Constant(const Mesh& mesh, const std::vector<double>& values);
+    Constant(const Mesh& mesh, std::vector<double> values);
 
     /// Create tensor-valued constant for flattened array of values
     Constant(uint geometric_dimension,
-             const std::vector<uint>& value_shape,
-             const std::vector<double>& values);
+             std::vector<uint> value_shape,
+             std::vector<double> values);
 
     /// Create tensor-valued constant for flattened array of values,
     /// with geometric dimension derived from mesh
     Constant(const Mesh& mesh,
-             const std::vector<uint>& value_shape,
-             const std::vector<double>& values);
+             std::vector<uint> value_shape,
+             std::vector<double> values);
 
     /// Copy constructor
     Constant(const Constant& constant);

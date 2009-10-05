@@ -40,7 +40,7 @@ namespace dolfin
     Expression(uint geometric_dimension, uint dim);
 
     /// Create tensor-valued expression with given shape
-    Expression(uint geometric_dimension, const std::vector<uint>& value_shape);
+    Expression(uint geometric_dimension, std::vector<uint> value_shape);
 
     /// Copy constructor
     Expression(const Expression& expression);
