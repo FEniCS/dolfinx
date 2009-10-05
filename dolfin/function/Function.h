@@ -102,6 +102,12 @@ namespace dolfin
     /// Return geometric dimension
     uint geometric_dimension() const;
 
+    /// Return value rank
+    uint value_rank() const;
+
+    /// Return value dimension for given axis
+    uint value_dimension(uint i) const;
+
     /// Function evaluation
     void eval(double* values, const double* x) const;
 

@@ -16,6 +16,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/GenericFunction.h>
 #include "DofMap.h"
 #include "Form.h"
 #include "UFC.h"
@@ -53,8 +54,7 @@ void AssemblerTools::check(const Form& a)
       std::auto_ptr<ufc::finite_element> fe(a.ufc_form().create_finite_element(i + a.rank()));
 
       // Checks outcommented since they only work for Functions, not Expressions
-      /*
-      const uint r = coefficients[i]->function_space().element().value_rank();
+      const uint r = coefficients[i]->value_rank();
       const uint fe_r = fe->value_rank();
       if (fe_r != r)
         warning("Invalid value rank of Function %d, got %d but expecting %d. \
@@ -62,13 +62,12 @@ You may need to provide the rank of a user defined Function.", i, r, fe_r);
 
       for (uint j = 0; j < r; ++j)
       {
-        uint dim = coefficients[i]->function_space().element().value_dimension(j);
+        uint dim = coefficients[i]->value_dimension(j);
         uint fe_dim = fe->value_dimension(j);
         if (dim != fe_dim)
           warning("Invalid value dimension %d of Function %d, got %d but expecting %d. \
 You may need to provide the dimension of a user defined Function.", j, i, dim, fe_dim);
       }
-      */
     }
     catch(std::exception & e)
     {

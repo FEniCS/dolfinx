@@ -236,6 +236,16 @@ dolfin::uint Function::geometric_dimension() const
   return _function_space->mesh().geometry().dim();
 }
 //-----------------------------------------------------------------------------
+dolfin::uint Function::value_rank() const
+{ 
+  return _function_space->element().value_rank(); 
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Function::value_dimension(uint i) const
+{
+  return _function_space->element().value_dimension(i);
+}
+//-----------------------------------------------------------------------------
 void Function::eval(double* values, const double* x) const
 {
   assert(values);

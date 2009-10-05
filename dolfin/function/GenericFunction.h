@@ -1,6 +1,8 @@
 // Copyright (C) 2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2009.
+//
 // First added:  2009-09-28
 // Last changed: 2009-10-05
 
@@ -36,6 +38,12 @@ namespace dolfin
 
     /// Destructor
     virtual ~GenericFunction();
+
+    /// Return value rank
+    virtual uint value_rank() const = 0;
+
+    /// Return value dimension for given axis
+    virtual uint value_dimension(uint i) const = 0;
 
     /// Evaluate function
     virtual void eval(double* values, const Data& data) const = 0;
