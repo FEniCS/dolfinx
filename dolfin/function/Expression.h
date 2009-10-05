@@ -57,9 +57,6 @@ namespace dolfin
     /// Return value dimension for given axis
     uint value_dimension(uint i) const;
 
-    /// Return value shape
-    const std::vector<uint>& value_shape() const;
-
     //--- User-supplied callbacks for expression evaluation ---
 
     /// Evaluate expression, must be overloaded by user (simple version)
@@ -77,13 +74,15 @@ namespace dolfin
                           const ufc::cell& ufc_cell,
                           int local_facet) const;
 
+  protected:
+
+    // Value shape
+    std::vector<uint> value_shape;
+
   private:
 
     // Geometric dimension
     uint _geometric_dimension;
-
-    // Value shape
-    std::vector<uint> _value_shape;
 
   };
 
