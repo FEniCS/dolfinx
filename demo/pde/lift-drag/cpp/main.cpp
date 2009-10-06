@@ -4,7 +4,7 @@
 // Modified by Garthn N. Wells, 2009
 //
 // First added:  2007-05-14
-// Last changed: 2009-03-14
+// Last changed: 2009-10-06
 //
 // This demo demonstrates how to compute functionals (or forms in
 // general) over subsets of the mesh. The two functionals lift and
@@ -44,8 +44,8 @@ int main()
   Function p(Vp, "../pressure.xml.gz");
 
   // Functionals for lift and drag
-  Lift::Functional L(p);
-  Drag::Functional D(p);
+  Lift::Functional L(mesh, p);
+  Drag::Functional D(mesh, p);
 
   // Assemble functionals over sub domain
   Fish fish;
