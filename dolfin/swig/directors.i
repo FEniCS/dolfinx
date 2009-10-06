@@ -12,12 +12,16 @@
 //
 // Directors facilitates python callbacks to the C++ library
 //-----------------------------------------------------------------------------
-%feature("director") Expression;
-%feature("director") SubDomain;
-%feature("director") NonlinearProblem;
-%feature("director") ODE;
-%feature("director") PETScKrylovMatrix;
-%feature("director") uBLASKrylovMatrix;
+%feature("director") dolfin::Expression;
+%feature("nodirector") dolfin::Expression::restrict;
+%feature("nodirector") dolfin::Expression::gather;
+%feature("nodirector") dolfin::Expression::value_dimension;
+%feature("nodirector") dolfin::Expression::value_rank;
+%feature("director") dolfin::SubDomain;
+%feature("director") dolfin::NonlinearProblem;
+%feature("director") dolfin::ODE;
+%feature("director") dolfin::PETScKrylovMatrix;
+%feature("director") dolfin::uBLASKrylovMatrix;
 
 //-----------------------------------------------------------------------------
 // Typemap for values (in Expression)
