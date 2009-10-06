@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2009-10-03
+// Last changed: 2009-10-06
 
 #include <string>
 #include <dolfin/common/NoDeleter.h>
@@ -33,8 +33,8 @@ Form::Form(uint rank, uint num_coefficients)
 }
 //-----------------------------------------------------------------------------
 Form::Form(const ufc::form& ufc_form,
-           const std::vector<FunctionSpace*>& function_spaces,
-           const std::vector<GenericFunction*>& coefficients)
+           const std::vector<const FunctionSpace*>& function_spaces,
+           const std::vector<const GenericFunction*>& coefficients)
   : _function_spaces(function_spaces.size()),
     _coefficients(coefficients.size())
 {

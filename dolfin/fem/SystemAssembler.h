@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2009-06-22
-// Last changed: 2009-09-28
+// Last changed: 2009-10-06
 
 #ifndef __SYSTEM_ASSEMBLER_H
 #define __SYSTEM_ASSEMBLER_H
@@ -61,7 +61,7 @@ namespace dolfin
                          GenericVector& b,
                          const Form& a,
                          const Form& L,
-                         std::vector<const DirichletBC*>& bcs,
+                         const std::vector<const DirichletBC*>& bcs,
                          bool reset_sparsitys=true,
                          bool add_values=false);
 
@@ -70,7 +70,7 @@ namespace dolfin
                          GenericVector& b,
                          const Form& a,
                          const Form& L,
-                         std::vector<const DirichletBC*>& bcs,
+                         const std::vector<const DirichletBC*>& bcs,
                          const MeshFunction<uint>* cell_domains,
                          const MeshFunction<uint>* exterior_facet_domains,
                          const MeshFunction<uint>* interior_facet_domains,

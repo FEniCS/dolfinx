@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-26
-// Last changed: 2009-06-29
+// Last changed: 2009-10-06
 
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
@@ -67,14 +67,14 @@ namespace dolfin
     /// Define variational problem with a list of Dirichlet boundary conditions
     VariationalProblem(const Form& a,
                        const Form& L,
-                       std::vector<BoundaryCondition*>& bcs,
+                       const std::vector<const BoundaryCondition*>& bcs,
                        bool nonlinear=false);
 
     /// Define variational problem with a list of Dirichlet boundary conditions
     /// and subdomains
     VariationalProblem(const Form& a,
                        const Form& L,
-                       std::vector<BoundaryCondition*>& bcs,
+                       const std::vector<const BoundaryCondition*>& bcs,
                        const MeshFunction<uint>* cell_domains,
                        const MeshFunction<uint>* exterior_facet_domains,
                        const MeshFunction<uint>* interior_facet_domains,

@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2009-10-03
+// Last changed: 2009-10-06
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -44,8 +44,8 @@ namespace dolfin
 
     /// Create form from given Constructor used in the python interface
     Form(const ufc::form& ufc_form,
-         const std::vector<FunctionSpace*>& function_spaces,
-         const std::vector<GenericFunction*>& coefficients);
+         const std::vector<const FunctionSpace*>& function_spaces,
+         const std::vector<const GenericFunction*>& coefficients);
 
     /// Destructor
     virtual ~Form();

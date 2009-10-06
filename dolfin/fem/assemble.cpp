@@ -5,7 +5,7 @@
 // Modified by Johan Hake, 2009.
 //
 // First added:  2007-01-17
-// Last changed: 2009-09-02
+// Last changed: 2009-10-06
 
 #include <dolfin/la/Scalar.h>
 #include "Form.h"
@@ -70,7 +70,7 @@ void dolfin::assemble_system(GenericMatrix& A,
                              GenericVector& b,
                              const Form& a,
                              const Form& L,
-                             std::vector<const DirichletBC*>& bcs,
+                             const std::vector<const DirichletBC*>& bcs,
                              bool reset_sparsitys, 
                              bool add_values)
 {
@@ -81,7 +81,7 @@ void dolfin::assemble_system(GenericMatrix& A,
                              GenericVector& b,
                              const Form& a,
                              const Form& L,
-                             std::vector<const DirichletBC*>& bcs,
+                             const std::vector<const DirichletBC*>& bcs,
                              const MeshFunction<uint>* cell_domains,
                              const MeshFunction<uint>* exterior_facet_domains,
                              const MeshFunction<uint>* interior_facet_domains,

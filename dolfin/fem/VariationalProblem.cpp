@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-26
-// Last changed: 2009-09-08
+// Last changed: 2009-10-06
 
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
@@ -46,7 +46,7 @@ VariationalProblem::VariationalProblem(const Form& a,
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& a,
                                        const Form& L,
-                                       std::vector<BoundaryCondition*>& bcs,
+                                       const std::vector<const BoundaryCondition*>& bcs,
                                        bool nonlinear)
   : a(a), L(L), cell_domains(0), exterior_facet_domains(0),
     interior_facet_domains(0), nonlinear(nonlinear), _newton_solver(0)
@@ -61,7 +61,7 @@ VariationalProblem::VariationalProblem(const Form& a,
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& a,
                                        const Form& L,
-                                       std::vector<BoundaryCondition*>& bcs,
+                                       const std::vector<const BoundaryCondition*>& bcs,
                                        const MeshFunction<uint>* cell_domains,
                                        const MeshFunction<uint>* exterior_facet_domains,
                                        const MeshFunction<uint>* interior_facet_domains,

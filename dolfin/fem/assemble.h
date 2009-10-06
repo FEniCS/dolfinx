@@ -75,7 +75,7 @@ namespace dolfin
                        GenericVector& b,
                        const Form& a,
                        const Form& L,
-                       std::vector<const DirichletBC*>& bcs,
+                       const std::vector<const DirichletBC*>& bcs,
                        bool reset_sparsitys=true,
                        bool add_values=false);
 
@@ -84,7 +84,7 @@ namespace dolfin
                        GenericVector& b,
                        const Form& a,
                        const Form& L,
-                       std::vector<const DirichletBC*>& bcs,
+                       const std::vector<const DirichletBC*>& bcs,
                        const MeshFunction<uint>* cell_domains,
                        const MeshFunction<uint>* exterior_facet_domains,
                        const MeshFunction<uint>* interior_facet_domains,

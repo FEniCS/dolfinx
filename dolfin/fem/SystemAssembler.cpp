@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2009-06-22
-// Last changed: 2009-10-03
+// Last changed: 2009-10-06
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -56,7 +56,7 @@ void SystemAssembler::assemble(GenericMatrix& A,
                                           GenericVector& b,
                                           const Form& a,
                                           const Form& L,
-                                          std::vector<const DirichletBC*>& bcs,
+                                          const std::vector<const DirichletBC*>& bcs,
                                           bool reset_sparsitys,
                                           bool add_values)
 {
@@ -67,7 +67,7 @@ void SystemAssembler::assemble(GenericMatrix& A,
                                           GenericVector& b,
                                           const Form& a,
                                           const Form& L,
-                                          std::vector<const DirichletBC*>& bcs,
+                                          const std::vector<const DirichletBC*>& bcs,
                                           const MeshFunction<uint>* cell_domains,
                                           const MeshFunction<uint>* exterior_facet_domains,
                                           const MeshFunction<uint>* interior_facet_domains,
