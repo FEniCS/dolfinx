@@ -494,6 +494,9 @@ void Function::restrict(double* w,
   }
   else
   {
+    // FIXME: Temporary until we know this only gets called when it should
+    error("Treating Function as UFC function. Is that correct?");
+
     // Restrict as UFC function (by calling eval)
     restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet);
   }
