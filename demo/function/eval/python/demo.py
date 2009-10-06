@@ -1,7 +1,7 @@
 "Demonstrating function evaluation at arbitrary points."
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2008-03-17 -- 2009-09-04"
+__date__ = "2008-03-17 -- 2009-10-06"
 __copyright__ = "Copyright (C) 2008 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -23,9 +23,9 @@ x = (0.31, 0.32, 0.33)
 # A user-defined function
 Vs = FunctionSpace(mesh, "CG", 2)
 Vv = VectorFunctionSpace(mesh, "CG", 2)
-fs = Function(Vs, "sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])")
-fv = Function(Vv, ("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
-                   "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]","2"))
+fs = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", V = Vs)
+fv = Expression(("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
+               "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]","2"), element = Vv.ufl_element())
 
 # Project to a discrete function
 g = project(fs, Vs)

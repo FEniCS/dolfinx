@@ -16,14 +16,14 @@ P1 = FunctionSpace(mesh1, "CG", 1)
 P3 = FunctionSpace(mesh0, "CG", 3)
 
 # Define function
-v0 = Function(P3, "sin(10.0*x[0])*sin(10.0*x[1])")
+v0 = Expression("sin(10.0*x[0])*sin(10.0*x[1])", V = P3)
 v1 = Function(P1)
 
 # Interpolate
 v1.interpolate(v0)
 
 # Plot functions
-plot(v0, title="v0")
+#plot(v0, title="v0")
 plot(v1, title="v1")
 interactive()
 

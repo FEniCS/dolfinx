@@ -9,8 +9,8 @@ __license__  = "GNU LGPL Version 2.1"
 import random
 from dolfin import *
 
-class InitialConditions(Function):
-    def __init__(self, V):
+class InitialConditions(Expression):
+    def __init__(self):
         random.seed(2 + MPI.process_number())
     def eval(self, values, x):
         values[0] = 0.0
@@ -67,7 +67,7 @@ a = derivative(L, u, du)
 #------------------------------------------------------------------------------
 
 # Create intial conditions and interpolate
-u_init = InitialConditions(ME)
+u_init = InitialConditions(V = ME)
 u.interpolate(u_init)
 u0.interpolate(u_init)
 

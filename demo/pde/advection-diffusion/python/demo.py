@@ -9,7 +9,7 @@
 # Modified by Garth N. Wells, 2009
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-14 -- 2008-01-04"
+__date__ = "2007-11-14 -- 2009-10-06"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -27,7 +27,7 @@ V = VectorFunctionSpace(mesh, "CG", 2)
 velocity = Function(V, "../velocity.xml.gz");
 
 # Initialise source function and previous solution function
-f  = Function(Q, "0.0")
+f  = Constant(mesh, 0.0)
 u0 = Function(Q)
 
 # Parameters

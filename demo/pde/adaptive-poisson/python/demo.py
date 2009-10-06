@@ -13,7 +13,7 @@ edge (jump) terms and the size of the interpolation constant.
 """
 
 __author__ = "Rolv Erlend Bredesen <rolv@simula.no>"
-__date__ = "2008-04-03 -- 2008-12-19"
+__date__ = "2008-04-03 -- 2009-10-06"
 __copyright__ = "Copyright (C) 2008 Rolv Erlend Bredesen"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -40,7 +40,7 @@ for level in xrange(MAX_ITER):
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
     u = TrialFunction(V)
-    f = Function(V, source_str)
+    f = Expression(source_str, V = V)
     a = dot(grad(v), grad(u))*dx
     L = v*f*dx
 
