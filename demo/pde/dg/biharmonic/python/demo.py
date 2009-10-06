@@ -30,9 +30,7 @@ class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
         return on_boundary
 
-class Source(Function):
-    def __init__(self, V):
-        Function.__init__(V)
+class Source(Expression):
     def eval(self, values, x):
         values[0] = 4.0*DOLFIN_PI*DOLFIN_PI*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*x[0])*sin(DOLFIN_PI*x[1])
 
@@ -48,7 +46,7 @@ u = TrialFunction(V)
 h = CellSize(mesh)
 h_avg = (h('+') + h('-'))/2.0
 n = V.cell().n
-f = Source(V)
+f = Source(V = V)
 
 # Define parameters
 alpha = 8.0
@@ -69,7 +67,6 @@ u = problem.solve()
 # Save solution to file
 file = File("biharmonic.pvd")
 file << u
-print u.vector().str(True)
 
 # Plot solution
 plot(u, interactive=True)
