@@ -86,7 +86,7 @@ while (t < T):
     t += dt
     u0.vector()[:] = u.vector()[:]
     solver.solve(problem, u.vector())
-    file << u.sub(1)
+    file << u.split()[1]
 
-plot(u.sub(1))
+plot(u.split()[1])
 interactive()

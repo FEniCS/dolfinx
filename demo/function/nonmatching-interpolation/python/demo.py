@@ -27,5 +27,5 @@ v1.interpolate(v0)
 plot(v1, title="v1")
 interactive()
 
-print norm(v0)
+print norm(v0, mesh = mesh1)
 print norm(v1)
