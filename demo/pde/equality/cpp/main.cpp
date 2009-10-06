@@ -77,7 +77,7 @@ int main()
   EqualityBC bc1(V, equality_boundary);
 
   // Collect boundary conditions
-  std::vector<BoundaryCondition*> bcs;
+  std::vector<const BoundaryCondition*> bcs;
   bcs.push_back(&bc0);
   bcs.push_back(&bc1);
 

@@ -89,7 +89,7 @@ int main()
   DirichletBC bcl(V, c, left);
   DirichletBC bcr(V, r, right);
 
-  std::vector<BoundaryCondition*> bcs;
+  std::vector<const BoundaryCondition*> bcs;
   bcs.push_back(&bcl);
   bcs.push_back(&bcr);
 
