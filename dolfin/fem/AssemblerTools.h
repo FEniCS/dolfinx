@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2009-06-22
+// Last changed: 2009-10-06
 
 #ifndef __ASSEMBLER_TOOLS_H
 #define __ASSEMBLER_TOOLS_H
@@ -21,19 +21,11 @@ namespace dolfin
   class Form;
   class UFC;
 
-  /// This class provides automated assembly of linear systems, or
-  /// more generally, assembly of a sparse tensor from a given
-  /// variational form.
-  ///
-  /// The MeshFunction arguments can be used to specify assembly over
-  /// subdomains of the mesh cells, exterior facets or interior
-  /// facets. Either a null pointer or an empty MeshFunction may be
-  /// used to specify that the tensor should be assembled over the
-  /// entire set of cells or facets.
+  /// This class provides some common functions used in the
+  /// Assembler and SystemAssembler classes.
 
   class AssemblerTools
   {
-
   public:
 
     // Check form
