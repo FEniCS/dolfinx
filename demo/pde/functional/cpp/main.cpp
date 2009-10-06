@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-09-19
-// Last changed: 2009-10-05
+// Last changed: 2009-10-06
 //
 // This demo program computes the value of the functional
 //
@@ -37,11 +37,8 @@ int main()
 
   // Define functional
   UnitSquare mesh(16, 16);
-  EnergyNorm::CoefficientSpace_v V(mesh);
-  //MyFunction v(V);
   MyFunction v;
-  EnergyNorm::Functional M;
-  M.v = v;
+  EnergyNorm::Functional M(mesh, v);
 
   // Evaluate functional
   double approximate_value = assemble(M);
