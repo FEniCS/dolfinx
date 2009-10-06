@@ -77,6 +77,7 @@ options = [
                  path_validator),
     # configurable options for how we want to build:
     BoolVariable("enableDebug", "Build with debug information", 1),
+    BoolVariable("enableExtraDebug", "Build with extra debug information (no -O2)", 1),
     BoolVariable("enableDebugUblas", "Add some extra Ublas debug information", 0),
     BoolVariable("enableOptimize", "Compile with optimization", 0),
     BoolVariable("enableDocs", "Build documentation", 0),
@@ -240,6 +241,8 @@ if "configure" in COMMAND_LINE_TARGETS:
   # if Optimization is requested, use -O3
   if env["enableOptimize"]:
     env.Append(CXXFLAGS=" -O3")
+  elif env["enableExtraDebug"]:
+    env.Append(CXXFLAGS=" -DDEBUG -g -Werror")
   elif env["enableDebug"]:
     env.Append(CXXFLAGS=" -DDEBUG -g -O2  -Werror")
   else:
