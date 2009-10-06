@@ -39,8 +39,8 @@ L = p*n[1]*ds
 
 # Assemble functionals over sub domain
 fish = Fish()
-drag = assemble(D, exterior_facet_domains=fish)
-lift = assemble(L, exterior_facet_domains=fish)
+drag = assemble(D, mesh=mesh, exterior_facet_domains=fish)
+lift = assemble(L, mesh=mesh, exterior_facet_domains=fish)
 
 print "Lift: %f" %lift
 print "Drag: %f" %drag
