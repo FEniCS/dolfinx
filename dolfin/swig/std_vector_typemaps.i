@@ -41,7 +41,7 @@ namespace std
 // Run the macros for the combination of const and no const of
 // {const} std::vector<{const} dolfin::TYPE *>
 //-----------------------------------------------------------------------------
-IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,,)
+//IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,,)
 IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,)
 IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,,const)
 IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
@@ -181,7 +181,7 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 //-----------------------------------------------------------------------------
 IN_TYPEMAPS_STD_VECTOR_OF_POINTERS(DirichletBC)
 IN_TYPEMAPS_STD_VECTOR_OF_POINTERS(BoundaryCondition)
-IN_TYPEMAPS_STD_VECTOR_OF_POINTERS(Function)
+IN_TYPEMAPS_STD_VECTOR_OF_POINTERS(GenericFunction)
 IN_TYPEMAPS_STD_VECTOR_OF_POINTERS(FunctionSpace)
 
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, cells, NPY_INT)
