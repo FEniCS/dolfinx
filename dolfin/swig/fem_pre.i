@@ -22,18 +22,18 @@
 //-----------------------------------------------------------------------------
 %ignore dolfin::EqualityBC::EqualityBC(const FunctionSpace&, uint);
 %ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&, 
-					 const Function&, 
+					 const GenericFunction&, 
 					 const SubDomain&,
 					 std::string method="topological");
 
 %ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&, 
-					 const Function&,
+					 const GenericFunction&,
 					 const MeshFunction<uint>&, 
 					 uint,
 					 std::string method="topological");
 
 %ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&, 
-					 const Function&, 
+					 const GenericFunction&, 
 					 uint,
 					 std::string method="topological");
 
