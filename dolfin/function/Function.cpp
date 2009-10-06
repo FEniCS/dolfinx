@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-10-04
+// Last changed: 2009-10-06
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -95,7 +95,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filename)
   : Variable("v", "unnamed function"),
-    _function_space(V), 
+    _function_space(V),
     scratch0(V->element())
 {
   // Create vector
@@ -237,8 +237,8 @@ dolfin::uint Function::geometric_dimension() const
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Function::value_rank() const
-{ 
-  return _function_space->element().value_rank(); 
+{
+  return _function_space->element().value_rank();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Function::value_dimension(uint i) const
@@ -478,11 +478,6 @@ void Function::restrict(double* w,
 {
   assert(w);
   assert(_function_space);
-
-  // FIXME: This is where we need to handle non-matching meshes etc.
-  // FIXME: We need to check whether we are on the same mesh and have
-  // FIXME: the same element and then use this simple version. Otherwise
-  // FIXME: work a bit harder to get the local expansion coefficients.
 
   // Check if we are restricting to an element of this function space
   if (_function_space->has_element(element, dolfin_cell))

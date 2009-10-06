@@ -2,17 +2,16 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed: 2009-09-10
+// Last changed: 2009-10-06
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
 
-#include <dolfin/log/log.h>
 #include <boost/shared_ptr.hpp>
 #include <vector>
+#include <dolfin/common/types.h>
 #include "UFC.h"
 #include "UFCCell.h"
-#include <dolfin/common/types.h>
 
 namespace dolfin
 {
@@ -24,13 +23,17 @@ namespace dolfin
   public:
 
     /// Create finite element from UFC finite element (data may be shared)
-    FiniteElement(boost::shared_ptr<const ufc::finite_element> element) : element(element) {}
+    FiniteElement(boost::shared_ptr<const ufc::finite_element> element);
 
     /// Destructor
     ~FiniteElement() {}
 
     std::string signature() const
     { return element->signature(); }
+
+    /// Return simple hash of the signature string
+    uint hash() const
+    { return _hash; }
 
     uint value_rank() const
     { return element->value_rank(); }
@@ -83,6 +86,9 @@ namespace dolfin
 
     // UFC finite element
     boost::shared_ptr<const ufc::finite_element> element;
+
+    // Simple hash of the signature string
+    uint _hash;
 
   };
 
