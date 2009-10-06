@@ -322,7 +322,6 @@ void Function::interpolate(const GenericFunction& v)
 //-----------------------------------------------------------------------------
 void Function::compute_vertex_values(double* vertex_values) const
 {
-  warning("FunctionSpace::interpolate_vertex_values requires revision.");
   assert(vertex_values);
 
   // Gather off-process dofs
