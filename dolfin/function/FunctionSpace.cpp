@@ -8,10 +8,12 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-10-04
+// Last changed: 2009-10-06
 
+#include <iostream>
 #include <boost/scoped_array.hpp>
 
+#include <dolfin/common/utils.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/log/log.h>
@@ -188,7 +190,7 @@ bool FunctionSpace::has_element(const FiniteElement& element,
   assert(_mesh);
   assert(_element);
 
-  return &element == &*_element && &cell.mesh() == &*_mesh;
+  return element.hash() == _element->hash() && &cell.mesh() == &*_mesh;
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::attach(MeshFunction<bool>& restriction)

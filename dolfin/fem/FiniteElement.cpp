@@ -2,13 +2,20 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-14
-// Last changed: 2008-11-03
+// Last changed: 2009-10-06
 
+#include <dolfin/common/utils.h>
 #include <dolfin/log/log.h>
 #include "FiniteElement.h"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+FiniteElement::FiniteElement(boost::shared_ptr<const ufc::finite_element> element)
+  : element(element), _hash(dolfin::hash(signature()))
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const FiniteElement> FiniteElement::extract_sub_element(const std::vector<uint>& component) const
 {
