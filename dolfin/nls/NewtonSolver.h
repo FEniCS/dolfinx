@@ -9,6 +9,7 @@
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
 
+#include <utility>
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/la/GenericLinearSolver.h>
@@ -41,7 +42,7 @@ namespace dolfin
 
     /// Solve abstract nonlinear problem F(x) = 0 for given vector F and
     /// Jacobian dF/dx
-    uint solve(NonlinearProblem& nonlinear_function, GenericVector& x);
+    std::pair<uint, bool> solve(NonlinearProblem& nonlinear_function, GenericVector& x);
 
     /// Return Newton iteration number
     uint iteration() const;

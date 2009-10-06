@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
   LeftBoundary left_boundary;
   Constant zero(2, 0.0);
   DirichletBC bc0(V, zero, left_boundary);
-  std::vector<BoundaryCondition*> bc;
+  std::vector<const BoundaryCondition*> bc;
   bc.push_back(&bc0);
 
   // Define solution vectors

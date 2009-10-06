@@ -57,7 +57,8 @@ NewtonSolver::~NewtonSolver()
   delete b;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVector& x)
+std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_problem, 
+                                                  GenericVector& x)
 {
   assert(A);
   assert(b);
@@ -113,7 +114,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, GenericVec
 
   end();
 
-  return newton_iteration;
+  return std::make_pair(newton_iteration, newton_converged);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewtonSolver::iteration() const
