@@ -5,7 +5,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-04-17
-// Last changed: 2009-10-05
+// Last changed: 2009-10-06
 
 //-----------------------------------------------------------------------------
 // SWIG directives for directors for PyDOLFIN
@@ -19,8 +19,6 @@
 %feature("director") PETScKrylovMatrix;
 %feature("director") uBLASKrylovMatrix;
 
-/* FIXME: OUTCOMMENT the director typemaps until we have a substitute for value_rank 
-   FIXME: and geometrical dimensions
 //-----------------------------------------------------------------------------
 // Typemap for values (in Expression)
 //-----------------------------------------------------------------------------
@@ -28,8 +26,8 @@
   {
     // Compute size of value (number of entries in tensor value)
     dolfin::uint size = 1;
-    for (dolfin::uint i = 0; i < this->function_space().element().value_rank(); i++)
-      size *= this->function_space().element().value_dimension(i);
+    for (dolfin::uint i = 0; i < this->value_rank(); i++)
+      size *= this->value_dimension(i);
 
     npy_intp dims[1] = {size};
     $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
@@ -54,4 +52,4 @@
     $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
   }
 }
-*/
+
