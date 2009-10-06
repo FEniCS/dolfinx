@@ -37,7 +37,7 @@
 //-----------------------------------------------------------------------------
 // Rename eval(val, data) function
 //-----------------------------------------------------------------------------
-%rename(eval_data) dolfin::Function::eval(double* values, const Data& data) const;
+%rename(eval_data) dolfin::GenericFunction::eval(double* values, const Data& data) const;
 
 //-----------------------------------------------------------------------------
 // Ignore the Data.x, pointer to the coordinates in the Data object
