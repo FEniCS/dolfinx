@@ -2,7 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-05
+// Last changed: 2009-10-06
+
+// Modified by Johan Hake, 2009
 
 #include <dolfin/log/log.h>
 #include "Data.h"
@@ -55,7 +57,7 @@ dolfin::uint Expression::value_rank() const
 //-----------------------------------------------------------------------------
 dolfin::uint Expression::value_dimension(uint i) const
 {
-  if (i > value_shape.size())
+  if (i >= value_shape.size())
     error("Illegal axis %d for value dimension for value of rank %d.",
           i, value_shape.size());
   return value_shape[i];
