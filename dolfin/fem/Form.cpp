@@ -20,11 +20,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Form::Form()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 Form::Form(uint rank, uint num_coefficients)
   : _function_spaces(rank),
     _coefficients(num_coefficients)
@@ -64,22 +59,37 @@ dolfin::uint Form::num_coefficients() const
   return _ufc_form->num_coefficients();
 }
 //-----------------------------------------------------------------------------
+void Form::set_mesh(const Mesh& mesh)
+{
+  _mesh = reference_to_no_delete_pointer(mesh);
+}
+//-----------------------------------------------------------------------------
+void Form::set_mesh(boost::shared_ptr<const Mesh> mesh)
+{
+  _mesh = mesh;
+}
+//-----------------------------------------------------------------------------
 const Mesh& Form::mesh() const
 {
+  // In the case when there are no function spaces (in the case of a
+  // a functional) the (generated) subclass must set the mesh directly
+  // by calling set_mesh().
+
   // Extract all meshes
   std::vector<const Mesh*> meshes;
   for (uint i = 0; i < _function_spaces.size(); i++)
     if (_function_spaces[i])
       meshes.push_back(&_function_spaces[i]->mesh());
 
-  // Unable to extract meshes for coefficients (only works for Functions)
-  //for (uint i = 0; i < _coefficients.size(); i++)
-  //  if (_coefficients[i])
-  //    meshes.push_back(&_coefficients[i]->function_space().mesh());
+  // Add common mesh if any
+  if (_mesh)
+    meshes.push_back(&*_mesh);
 
   // Check that we have at least one mesh
   if (meshes.size() == 0)
-    error("Unable to extract mesh from form (no mesh found).");
+  {
+    error("Unable to extract mesh from form (no mesh found). Are you trying to assemble a functional and forgot to specify the mesh?");
+  }
 
   // Check that all meshes are the same
   for (uint i = 1; i < meshes.size(); i++)

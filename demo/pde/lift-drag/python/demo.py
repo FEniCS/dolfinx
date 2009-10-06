@@ -24,7 +24,6 @@ mesh =  Mesh("../mesh.xml.gz")
 
 # Create FunctionSpace for pressure field
 Vp = FunctionSpace(mesh, "CG", 1)
-
 p = Function(Vp, "../pressure.xml.gz")
 
 # Define sub domain for the dolphin
@@ -39,9 +38,9 @@ D = -p*n[0]*ds
 L = p*n[1]*ds
 
 # Assemble functionals over sub domain
-fish =  Fish()
-drag = assemble(D, exterior_facet_domains = fish)
-lift = assemble(L, exterior_facet_domains = fish)
+fish = Fish()
+drag = assemble(D, exterior_facet_domains=fish)
+lift = assemble(L, exterior_facet_domains=fish)
 
 print "Lift: %f" %lift
 print "Drag: %f" %drag

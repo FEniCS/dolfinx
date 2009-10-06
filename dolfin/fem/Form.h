@@ -34,13 +34,8 @@ namespace dolfin
   {
   public:
 
-    /// Constructor
-    Form();
-
     /// Create form of given rank with given number of coefficients
     Form(dolfin::uint rank, dolfin::uint num_coefficients);
-
-    // FIXME: Pointers need to be const here to work with SWIG. Is there a fix for this?
 
     /// Create form from given Constructor used in the python interface
     Form(const ufc::form& ufc_form,
@@ -55,6 +50,12 @@ namespace dolfin
 
     /// Return number of coefficients
     uint num_coefficients() const;
+
+    /// Set mesh, necessary for functionals when there are no function spaces
+    void set_mesh(const Mesh& mesh);
+
+    /// Set mesh, necessary for functionals when there are no function spaces
+    void set_mesh(boost::shared_ptr<const Mesh> mesh);
 
     /// Return mesh
     const Mesh& mesh() const;
@@ -110,6 +111,9 @@ namespace dolfin
     friend class VariationalProblem;
 
   protected:
+
+    // The mesh (needed for functionals when we don't have any spaces)
+    boost::shared_ptr<const Mesh> _mesh;
 
     // Function spaces (one for each argument)
     std::vector<boost::shared_ptr<const FunctionSpace> > _function_spaces;
