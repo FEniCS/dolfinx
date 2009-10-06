@@ -313,6 +313,9 @@ void Function::eval(double* values,
 //-----------------------------------------------------------------------------
 void Function::interpolate(const GenericFunction& v)
 {
+  // Gather off-process dofs
+  v.gather();
+
   init_vector();
   function_space().interpolate(*_vector, v);
 }
