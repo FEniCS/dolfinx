@@ -11,7 +11,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Data::Data()
-  : x(0), _dolfin_cell(0), _ufc_cell(0), _facet(-1)
+  : x(0), _dolfin_cell(0), _ufc_cell(0), _facet(-1), _matching_cell(false)
 {
   // Do nothing
 }
@@ -61,6 +61,11 @@ bool Data::on_facet() const
   return _facet >= 0;
 }
 //-----------------------------------------------------------------------------
+bool Data::matching_cell() const
+{
+  return _matching_cell;
+}
+//-----------------------------------------------------------------------------
 bool Data::is_valid() const
 {
   return _dolfin_cell != 0;
@@ -73,15 +78,18 @@ void Data::invalidate()
   _dolfin_cell = 0;
   _ufc_cell = 0;
   _facet = -1;
+  _matching_cell = false;
 }
 //-----------------------------------------------------------------------------
 void Data::update(const Cell& dolfin_cell,
                   const ufc::cell& ufc_cell,
-                  int local_facet)
+                  int local_facet,
+                  bool matching_cell)
 {
   _dolfin_cell = &dolfin_cell;
   _ufc_cell = &ufc_cell;
   _facet = local_facet;
+  _matching_cell = matching_cell;
 }
 //-----------------------------------------------------------------------------
 void Data::update(const ufc::cell& ufc_cell, const double* x)

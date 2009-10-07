@@ -47,6 +47,9 @@ namespace dolfin
     /// Check if we are on a facet
     bool on_facet() const;
 
+    /// Check for matching cells
+    bool matching_cell() const;
+
     /// Check if data is valid
     bool is_valid() const;
 
@@ -54,7 +57,7 @@ namespace dolfin
     const double* x;
 
     /// Update cell data
-    void update(const Cell& dolfin_cell, const ufc::cell& ufc_cell, int local_facet);
+    void update(const Cell& dolfin_cell, const ufc::cell& ufc_cell, int local_facet, bool matching_cell);
 
     /// Update cell data
     void update(const ufc::cell& ufc_cell, const double* x);
@@ -78,6 +81,9 @@ namespace dolfin
 
     // The current facet (if any, otherwise -1)
     int _facet;
+
+    /// Whether or not the cells are matching
+    bool _matching_cell;
 
   };
 

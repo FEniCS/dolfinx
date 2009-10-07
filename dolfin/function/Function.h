@@ -114,7 +114,7 @@ namespace dolfin
     void eval(double* values, const Data& data) const;
 
     /// Evaluate function at given point in given cell
-    void eval(double* values, const double* x,
+    void eval(double* values, const double* x, const Cell& dolfin_cell, 
               const ufc::cell& ufc_cell, uint cell_index) const;
 
     /// Interpolate function (possibly non-matching meshes)

@@ -259,7 +259,7 @@ void Function::eval(double* values, const double* x) const
   UFCCell ufc_cell(cell);
 
   // Evaluate function
-  eval(values, x, ufc_cell, cell.index());
+  eval(values, x, cell, ufc_cell, cell.index());
 }
 //-----------------------------------------------------------------------------
 void Function::eval(double* values, const Data& data) const
@@ -267,21 +267,20 @@ void Function::eval(double* values, const Data& data) const
   assert(values);
   assert(data.x);
 
-  // FIXME: Dangerous since we can't be sure this cell originates from the
-  // FIXME: same mesh!
-
-  // Use UFC cell if available
-  //if (data._ufc_cell)
-  //{
-  //  const uint cell_index = data._ufc_cell->entity_indices[data._ufc_cell->topological_dimension][0];
-  //  eval(values, data.x, *data._ufc_cell, cell_index);
- // }
-  //else
+  // Use UFC cell if available and cell match
+  if (data._ufc_cell && data.matching_cell())
+  {
+    const uint cell_index = data._ufc_cell->entity_indices[data._ufc_cell->topological_dimension][0];
+    Cell cell(_function_space->mesh(), cell_index);
+    eval(values, data.x, *data._dolfin_cell, *data._ufc_cell, data._dolfin_cell->index());
+  }
+  else
     eval(values, data.x);
 }
 //-----------------------------------------------------------------------------
 void Function::eval(double* values,
-                    const double* x,
+                    const double* x, 
+                    const Cell& dolfin_cell,
                     const ufc::cell& ufc_cell,
                     uint cell_index) const
 {
@@ -289,8 +288,7 @@ void Function::eval(double* values,
   assert(x);
 
   // Restrict function to cell
-  Cell cell(_function_space->mesh(), cell_index);
-  restrict(local_scratch.coefficients, _function_space->element(), cell, ufc_cell, -1);
+  restrict(local_scratch.coefficients, _function_space->element(), dolfin_cell, ufc_cell, -1);
 
   // Compute linear combination
   for (uint j = 0; j < local_scratch.size; j++)
@@ -442,11 +440,11 @@ void Function::restrict(double* w,
   }
   else
   {
-    // FIXME: Temporary until we know this only gets called when it should
-    //error("Treating Function as UFC function. Is that correct?");
-
     // Restrict as UFC function (by calling eval)
-    restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet);
+    if (&dolfin_cell.mesh() == &_function_space->mesh())
+      restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet, true);
+    else
+      restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet, false);
   }
 }
 //-----------------------------------------------------------------------------

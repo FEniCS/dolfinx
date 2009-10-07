@@ -93,7 +93,7 @@ void Expression::restrict(double* w,
                           int local_facet) const
 {
   // Restrict as UFC function (by calling eval)
-  restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet);
+  restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet, false);
 }
 //-----------------------------------------------------------------------------
 void Expression::compute_vertex_values(double* vertex_values,
@@ -112,7 +112,7 @@ void Expression::compute_vertex_values(double* vertex_values,
   {
     // Update cell data
     ufc_cell.update(*cell);
-    data.update(*cell, ufc_cell, -1);
+    data.update(*cell, ufc_cell, -1, true);
 
     // Iterate over cell vertices
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)

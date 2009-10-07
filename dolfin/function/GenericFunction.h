@@ -86,7 +86,7 @@ namespace dolfin
                                   const FiniteElement& element,
                                   const Cell& dolfin_cell,
                                   const ufc::cell& ufc_cell,
-                                  int local_facet) const;
+                                  int local_facet, bool matching_cell) const;
 
   private:
 
