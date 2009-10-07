@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-10-06
+// Last changed: 2009-10-07
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
@@ -182,15 +182,6 @@ FunctionSpace::collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const
 {
   boost::shared_ptr<FunctionSpace> collapsed_sub_space(new FunctionSpace(_mesh, _element, dofmap));
   return collapsed_sub_space;
-}
-//-----------------------------------------------------------------------------
-bool FunctionSpace::has_element(const FiniteElement& element,
-                                const Cell& cell) const
-{
-  assert(_mesh);
-  assert(_element);
-
-  return element.hash() == _element->hash() && &cell.mesh() == &*_mesh;
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::attach(MeshFunction<bool>& restriction)

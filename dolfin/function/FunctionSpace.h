@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-10-04
+// Last changed: 2009-10-07
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -16,13 +16,13 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
+#include <dolfin/fem/FiniteElement.h>
 
 namespace dolfin
 {
 
   class Mesh;
   class Cell;
-  class FiniteElement;
   class DofMap;
   class GenericFunction;
   class IntersectionDetector;
@@ -82,7 +82,10 @@ namespace dolfin
     collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const;
 
     /// Check if function space has given element
-    bool has_element(const FiniteElement& element, const Cell& cell) const;
+    bool has_element(const FiniteElement& element, const Cell& cell) const
+    {
+      return element.hash() == _element->hash() && &cell.mesh() == &*_mesh;
+    }
 
     /// Attach restriction meshfunction
     void attach(MeshFunction<bool>& restriction);
