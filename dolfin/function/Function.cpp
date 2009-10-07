@@ -30,14 +30,14 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V)
   : _function_space(reference_to_no_delete_pointer(V)),
-    scratch0(V.element())
+    local_scratch(V.element())
 {
   init_vector();
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : _function_space(V),
-    scratch0(V->element())
+    local_scratch(V->element())
 {
   init_vector();
 }
@@ -46,7 +46,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    GenericVector& x)
   : _function_space(V),
     _vector(reference_to_no_delete_pointer(x)),
-    scratch0(V->element())
+    local_scratch(V->element())
 {
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x.size());
@@ -56,7 +56,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    boost::shared_ptr<GenericVector> x)
   : _function_space(V),
     _vector(x),
-    scratch0(V->element())
+    local_scratch(V->element())
 {
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x->size());
@@ -65,7 +65,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 Function::Function(const FunctionSpace& V, GenericVector& x)
   : _function_space(reference_to_no_delete_pointer(V)),
     _vector(reference_to_no_delete_pointer(x)),
-    scratch0(V.element())
+    local_scratch(V.element())
 {
   // Assertion uses '<=' to deal with sub-functions
   assert(V.dofmap().global_dimension() <= x.size());
@@ -73,7 +73,7 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
   : _function_space(reference_to_no_delete_pointer(V)),
-    scratch0(V.element())
+    local_scratch(V.element())
 {
   // Initialize vector
   init_vector();
@@ -89,7 +89,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filename)
   : _function_space(V),
-    scratch0(V->element())
+    local_scratch(V->element())
 {
   // Create vector
   DefaultFactory factory;
@@ -161,7 +161,7 @@ const Function& Function::operator= (const Function& v)
     v.get(&values[0], size, &old_rows[0]);
     this->_vector->set(&values[0], size, &new_rows[0]);
   }
-  scratch0.init(this->_function_space->element());
+  local_scratch.init(this->_function_space->element());
 
   return *this;
 }
@@ -290,16 +290,16 @@ void Function::eval(double* values,
 
   // Restrict function to cell
   Cell cell(_function_space->mesh(), cell_index);
-  restrict(scratch0.coefficients, _function_space->element(), cell, ufc_cell, -1);
+  restrict(local_scratch.coefficients, _function_space->element(), cell, ufc_cell, -1);
 
   // Compute linear combination
-  for (uint j = 0; j < scratch0.size; j++)
+  for (uint j = 0; j < local_scratch.size; j++)
     values[j] = 0.0;
   for (uint i = 0; i < _function_space->element().space_dimension(); i++)
   {
-    _function_space->element().evaluate_basis(i, scratch0.values, x, ufc_cell);
-    for (uint j = 0; j < scratch0.size; j++)
-      values[j] += (scratch0.coefficients[i])*(scratch0.values[j]);
+    _function_space->element().evaluate_basis(i, local_scratch.values, x, ufc_cell);
+    for (uint j = 0; j < local_scratch.size; j++)
+      values[j] += (local_scratch.coefficients[i])*(local_scratch.values[j]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -435,11 +435,10 @@ void Function::restrict(double* w,
     const DofMap& dofmap = _function_space->dofmap();
 
     // Tabulate dofs
-    boost::scoped_array<uint> dofs(new uint[dofmap.local_dimension(ufc_cell)]);
-    dofmap.tabulate_dofs(dofs.get(), ufc_cell, dolfin_cell.index());
+    dofmap.tabulate_dofs(local_scratch.dofs, ufc_cell, dolfin_cell.index());
 
     // Pick values from vector(s)
-    get(w, dofmap.local_dimension(ufc_cell), dofs.get());
+    get(w, dofmap.local_dimension(ufc_cell), local_scratch.dofs);
   }
   else
   {
@@ -465,7 +464,7 @@ void Function::compute_vertex_values(double* vertex_values,
 
   // Local data for interpolation on each cell
   const uint num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
-  boost::scoped_array<double> local_vertex_values(new double[scratch0.size*num_cell_vertices]);
+  boost::scoped_array<double> local_vertex_values(new double[local_scratch.size*num_cell_vertices]);
 
   // Interpolate vertex values on each cell (using last computed value if not
   // continuous, e.g. discontinuous Galerkin methods)
@@ -476,17 +475,17 @@ void Function::compute_vertex_values(double* vertex_values,
     ufc_cell.update(*cell);
 
     // Pick values from global vector
-    restrict(scratch0.coefficients, element, *cell, ufc_cell, -1);
+    restrict(local_scratch.coefficients, element, *cell, ufc_cell, -1);
 
     // Interpolate values at the vertices
-    element.interpolate_vertex_values(local_vertex_values.get(), scratch0.coefficients, ufc_cell);
+    element.interpolate_vertex_values(local_vertex_values.get(), local_scratch.coefficients, ufc_cell);
 
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
-      for (uint i = 0; i < scratch0.size; ++i)
+      for (uint i = 0; i < local_scratch.size; ++i)
       {
-        const uint local_index  = vertex.pos()*scratch0.size + i;
+        const uint local_index  = vertex.pos()*local_scratch.size + i;
         const uint global_index = i*mesh.num_vertices() + vertex->index();
         vertex_values[global_index] = local_vertex_values[local_index];
       }
@@ -517,26 +516,26 @@ void Function::gather() const
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-Function::Scratch0::Scratch0(const FiniteElement& element)
+Function::LocalScratch::LocalScratch(const FiniteElement& element)
   : size(0), dofs(0), coefficients(0), values(0)
 {
   init(element);
 }
 //-----------------------------------------------------------------------------
-Function::Scratch0::Scratch0()
+Function::LocalScratch::LocalScratch()
   : size(0), dofs(0), coefficients(0), values(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Function::Scratch0::~Scratch0()
+Function::LocalScratch::~LocalScratch()
 {
   delete [] dofs;
   delete [] coefficients;
   delete [] values;
 }
 //-----------------------------------------------------------------------------
-void Function::Scratch0::init(const FiniteElement& element)
+void Function::LocalScratch::init(const FiniteElement& element)
 {
   // Compute size of value (number of entries in tensor value)
   size = 1;

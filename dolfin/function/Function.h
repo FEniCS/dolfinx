@@ -173,18 +173,18 @@ namespace dolfin
     mutable boost::scoped_ptr<IntersectionDetector> intersection_detector;
 
     // Scratch space, used for storing temporary local data
-    class Scratch0
+    class LocalScratch
     {
     public:
 
       // Constructor
-      Scratch0(const FiniteElement& element);
+      LocalScratch(const FiniteElement& element);
 
       // Constructor
-      Scratch0();
+      LocalScratch();
 
       // Destructor
-      ~Scratch0();
+      ~LocalScratch();
 
       // Initialize scratch space
       void init(const FiniteElement& element);
@@ -203,7 +203,7 @@ namespace dolfin
 
     };
 
-    mutable Scratch0 scratch0;
+    mutable LocalScratch local_scratch;
 
     // Scratch data used in extracting coefficients from parallel vectors
     class GatherScratch
