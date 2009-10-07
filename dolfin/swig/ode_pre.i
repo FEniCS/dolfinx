@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-07
-// Last changed: 2009-09-23
+// Last changed: 2009-10-07
 
 //=============================================================================
 // SWIG directives for the DOLFIN ode kernel module (pre)
@@ -30,3 +30,8 @@ namespace std
 // Ignore operator++ so SWIG stop complaining
 //-----------------------------------------------------------------------------
 %ignore dolfin::ODESolutionIterator::operator++;
+
+//-----------------------------------------------------------------------------
+// Add director classes
+//-----------------------------------------------------------------------------
+%feature("director") dolfin::ODE;

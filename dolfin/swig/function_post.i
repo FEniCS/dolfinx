@@ -1,13 +1,18 @@
+//-----------------------------------------------------------------------------
+// Extend FunctionSpace so one can check if a Function is in a FunctionSpace
+//-----------------------------------------------------------------------------
 %extend dolfin::FunctionSpace {
 %pythoncode %{
 def __contains__(self,u):
     " Check whether a function is in the FunctionSpace"
-    assert(isinstance(u,cpp_Function))
+    assert(isinstance(u,Function))
     return u._in(self)
 %}
 }
 
+//-----------------------------------------------------------------------------
 // Extend the Data class with an accessor function for the x coordinates
+//-----------------------------------------------------------------------------
 %extend dolfin::Data {
   PyObject* x_() {
     npy_intp adims[1];
@@ -19,3 +24,8 @@ def __contains__(self,u):
   }
 }
 
+//-----------------------------------------------------------------------------
+// Clear director typemaps
+//-----------------------------------------------------------------------------
+%clear const double* x;
+%clear double* y;

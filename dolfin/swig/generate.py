@@ -4,7 +4,7 @@
 #
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-04-12 -- 2007-05-02"
+__date__ = "2007-04-12 -- 2009-10-07"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -19,7 +19,7 @@ excludes = ["plot.h", "ParameterSystem.h", "ParameterList.h", \
             "ConvectionMatrix.h", "MassMatrix.h", "StiffnessMatrix.h", "LoadVector.h"]
 
 # Name of SWIG interface file to be generated
-interface_file = "headers.i"
+interface_file = "kernel_modules.i"
 
 # Extract modules from dolfin.h
 modules = []

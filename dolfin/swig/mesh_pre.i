@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 // 
 // First added:  2006-09-20
-// Last changed: 2009-09-23
+// Last changed: 2009-10-07
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (pre)
@@ -181,4 +181,26 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
 %}
 }
 
+//-----------------------------------------------------------------------------
+// Add director classes
+//-----------------------------------------------------------------------------
+%feature("director") dolfin::SubDomain;
 
+//-----------------------------------------------------------------------------
+// Director typemap for coordinates in SubDomain)
+//-----------------------------------------------------------------------------
+%typemap(directorin) const double* x {
+  {
+    // Compute size of x
+    npy_intp dims[1] = {this->geometric_dimension()};
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(const_cast<double*>($1_name)));
+  }
+}
+
+%typemap(directorin) double* y {
+  {
+    // Compute size of y
+    npy_intp dims[1] = {this->geometric_dimension()};
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
+  }
+}

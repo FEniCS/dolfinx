@@ -92,3 +92,9 @@ MeshFunctionBool.__call__   = MeshFunctionBool.get
   double __getitem__(int i) { return (*self)[i]; }
   void __setitem__(int i, double val) { (*self)[i] = val; }
 }
+
+//-----------------------------------------------------------------------------
+// Clear director typemaps
+//-----------------------------------------------------------------------------
+%clear const double* x;
+%clear double* values;

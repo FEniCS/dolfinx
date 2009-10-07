@@ -9,7 +9,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2005-10-24
-// Last changed: 2009-09-23
+// Last changed: 2009-10-07
 
 // The PyDOLFIN extension module
 %module(package="dolfin", directors="1") cpp
@@ -32,9 +32,6 @@ import_array();
 %include "dolfin/swig/numpy_typemaps.i"
 %include "dolfin/swig/std_vector_typemaps.i"
 
-// Global directors
-%include "dolfin/swig/directors.i"
-
 // Global exceptions
 %include <exception.i>
 %include "dolfin/swig/exceptions.i"
@@ -48,7 +45,7 @@ import_array();
 %include "dolfin/swig/docstrings.i"
 
 // DOLFIN interface (Need to run generate.py to update this file)
-%include "dolfin/swig/headers.i"
+%include "dolfin/swig/kernel_modules.i"
 
 // Include information about swig version
 %include "dolfin/swig/swig_version.i"

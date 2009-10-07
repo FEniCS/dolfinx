@@ -109,3 +109,40 @@ namespace dolfin
     SWIG_exception(SWIG_TypeError, "expected list of positive int");
   }
 }
+
+//-----------------------------------------------------------------------------
+// Add director classes
+//-----------------------------------------------------------------------------
+%feature("director") dolfin::Expression;
+%feature("nodirector") dolfin::Expression::evaluate;
+%feature("nodirector") dolfin::Expression::restrict;
+%feature("nodirector") dolfin::Expression::gather;
+%feature("nodirector") dolfin::Expression::value_dimension;
+%feature("nodirector") dolfin::Expression::value_rank;
+
+//-----------------------------------------------------------------------------
+// Director typemap for values in Expression
+//-----------------------------------------------------------------------------
+%typemap(directorin) double* values {
+  {
+    // Compute size of value (number of entries in tensor value)
+    dolfin::uint size = 1;
+    for (dolfin::uint i = 0; i < this->value_rank(); i++)
+      size *= this->value_dimension(i);
+
+    npy_intp dims[1] = {size};
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
+  }
+}
+
+//-----------------------------------------------------------------------------
+// Director typemap for coordinates in Expression
+//-----------------------------------------------------------------------------
+%typemap(directorin) const double* x {
+  {
+    // Compute size of x
+    npy_intp dims[1] = {this->geometric_dimension()};
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(const_cast<double*>($1_name)));
+  }
+}
+

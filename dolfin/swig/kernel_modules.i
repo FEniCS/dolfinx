@@ -78,6 +78,7 @@
 %include "dolfin/swig/la_post.i"
 
 // DOLFIN headers included from nls
+%include "dolfin/swig/nls_pre.i"
 %include "dolfin/nls/NewtonSolver.h"
 %include "dolfin/nls/NonlinearProblem.h"
 
