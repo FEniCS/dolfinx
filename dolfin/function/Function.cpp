@@ -271,12 +271,12 @@ void Function::eval(double* values, const Data& data) const
   // FIXME: same mesh!
 
   // Use UFC cell if available
-  if (data._ufc_cell)
-  {
-    const uint cell_index = data._ufc_cell->entity_indices[data._ufc_cell->topological_dimension][0];
-    eval(values, data.x, *data._ufc_cell, cell_index);
-  }
-  else
+  //if (data._ufc_cell)
+  //{
+  //  const uint cell_index = data._ufc_cell->entity_indices[data._ufc_cell->topological_dimension][0];
+  //  eval(values, data.x, *data._ufc_cell, cell_index);
+ // }
+  //else
     eval(values, data.x);
 }
 //-----------------------------------------------------------------------------
@@ -443,7 +443,7 @@ void Function::restrict(double* w,
   else
   {
     // FIXME: Temporary until we know this only gets called when it should
-    error("Treating Function as UFC function. Is that correct?");
+    //error("Treating Function as UFC function. Is that correct?");
 
     // Restrict as UFC function (by calling eval)
     restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet);
