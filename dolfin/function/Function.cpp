@@ -266,20 +266,27 @@ void Function::eval(double* values, const Data& data) const
 {
   assert(values);
   assert(data.x);
+  assert(data._dolfin_cell);
+  assert(data._ufc_cell);
+  assert(_function_space);
 
-  // Use UFC cell if available and cell match
-  if (data._ufc_cell && data.matching_cell())
+  // Check if UFC cell if available and cell matches
+  if (_function_space->has_cell(*data._dolfin_cell)) // && data.matching_cell())
   {
+    // Efficient evaluation on given cell
     const uint cell_index = data._ufc_cell->entity_indices[data._ufc_cell->topological_dimension][0];
     Cell cell(_function_space->mesh(), cell_index);
     eval(values, data.x, *data._dolfin_cell, *data._ufc_cell, data._dolfin_cell->index());
   }
   else
+  {
+    // Redirect to point-based evaluation
     eval(values, data.x);
+  }
 }
 //-----------------------------------------------------------------------------
 void Function::eval(double* values,
-                    const double* x, 
+                    const double* x,
                     const Cell& dolfin_cell,
                     const ufc::cell& ufc_cell,
                     uint cell_index) const
@@ -427,7 +434,7 @@ void Function::restrict(double* w,
   assert(_function_space);
 
   // Check if we are restricting to an element of this function space
-  if (_function_space->has_element(element, dolfin_cell))
+  if (_function_space->has_element(element) && _function_space->has_cell(dolfin_cell))
   {
     // Get dofmap
     const DofMap& dofmap = _function_space->dofmap();

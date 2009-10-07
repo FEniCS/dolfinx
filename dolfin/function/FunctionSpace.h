@@ -81,10 +81,16 @@ namespace dolfin
     boost::shared_ptr<FunctionSpace>
     collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const;
 
-    /// Check if function space has given element
-    bool has_element(const FiniteElement& element, const Cell& cell) const
+    /// Check if function space has given cell
+    bool has_cell(const Cell& cell) const
     {
-      return element.hash() == _element->hash() && &cell.mesh() == &(*_mesh);
+      return &cell.mesh() == &(*_mesh);
+    }
+
+    /// Check if function space has given element
+    bool has_element(const FiniteElement& element) const
+    {
+      return element.hash() == _element->hash();
     }
 
     /// Attach restriction meshfunction
