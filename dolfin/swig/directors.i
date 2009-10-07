@@ -5,7 +5,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-04-17
-// Last changed: 2009-10-06
+// Last changed: 2009-10-07
 
 //-----------------------------------------------------------------------------
 // SWIG directives for directors for PyDOLFIN
@@ -13,6 +13,7 @@
 // Directors facilitates python callbacks to the C++ library
 //-----------------------------------------------------------------------------
 %feature("director") dolfin::Expression;
+%feature("nodirector") dolfin::Expression::evaluate;
 %feature("nodirector") dolfin::Expression::restrict;
 %feature("nodirector") dolfin::Expression::gather;
 %feature("nodirector") dolfin::Expression::value_dimension;

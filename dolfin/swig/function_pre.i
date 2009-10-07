@@ -9,7 +9,7 @@
 // Modified by Kent-Andre Mardal, 2009
 // 
 // First added:  2007-08-16
-// Last changed: 2009-10-06
+// Last changed: 2009-10-07
 
 // ===========================================================================
 // SWIG directives for the DOLFIN function kernel module (pre)
@@ -35,7 +35,9 @@
 %rename(_in) dolfin::Function::in;
 
 //-----------------------------------------------------------------------------
-// Rename eval(val, data) function
+// Rename eval(val, data) method
+// We need to rename the method in the base class as the Python callback ends
+// up here.
 //-----------------------------------------------------------------------------
 %rename(eval_data) dolfin::GenericFunction::eval(double* values, const Data& data) const;
 
