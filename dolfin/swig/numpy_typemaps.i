@@ -6,7 +6,7 @@
 // Modified by Anders logg, 2009.
 //
 // First added:  2007-12-16
-// Last changed: 2009-09-10
+// Last changed: 2009-09-24
 
 //-----------------------------------------------------------------------------
 // Add numpy typemaps and macro for numpy typemaps
@@ -32,7 +32,7 @@
 //-----------------------------------------------------------------------------
 // Typemap function (Reducing wrapper code size)
 //-----------------------------------------------------------------------------
-static bool convert_numpy_to_ ## TYPE_NAME ## _array_no_check(PyObject* input, TYPE*& ret)
+SWIGINTERN bool convert_numpy_to_ ## TYPE_NAME ## _array_no_check(PyObject* input, TYPE*& ret)
 {
   if PyArray_Check(input) 
   {
@@ -88,7 +88,7 @@ if (!convert_numpy_to_ ## TYPE_NAME ## _array_no_check($input,$1))
 //-----------------------------------------------------------------------------
 // Typemap function (Reducing wrapper code size)
 //-----------------------------------------------------------------------------
-static bool convert_numpy_to_ ## TYPE_NAME ## _array_with_check(PyObject* input, dolfin::uint& _array_dim, TYPE*& _array)
+SWIGINTERN bool convert_numpy_to_ ## TYPE_NAME ## _array_with_check(PyObject* input, dolfin::uint& _array_dim, TYPE*& _array)
 {
   if PyArray_Check(input) 
   {

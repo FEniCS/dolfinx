@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-08-31
-// Last changed: 2009-09-02
+// Last changed: 2009-09-29
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -113,7 +113,6 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
   }
 }
 
-//-----------------------------------------------------------------------------
 %enddef
 
 //-----------------------------------------------------------------------------

@@ -19,6 +19,14 @@
 // ===========================================================================
 
 //-----------------------------------------------------------------------------
+// Forward declare FiniteElement
+//-----------------------------------------------------------------------------
+namespace dolfin
+{
+  class FiniteElement;
+}
+
+//-----------------------------------------------------------------------------
 // Ignore reference (to FunctionSpaces) constructors of Function
 //-----------------------------------------------------------------------------
 %ignore dolfin::Function::Function(const FunctionSpace&);
@@ -35,6 +43,12 @@
 %rename(_in) dolfin::Function::in;
 
 //-----------------------------------------------------------------------------
+// Modifying the interface of FunctionSpace
+//-----------------------------------------------------------------------------
+%rename(sub) dolfin::FunctionSpace::operator[];
+%rename(assign) dolfin::FunctionSpace::operator=;
+
+//-----------------------------------------------------------------------------
 // Rename eval(val, data) method
 // We need to rename the method in the base class as the Python callback ends
 // up here.
@@ -47,6 +61,11 @@
 %ignore dolfin::Data::x;
 %rename (x) dolfin::Data::x_();
 
+//-----------------------------------------------------------------------------
+// Modifying the interface of Constant
+//-----------------------------------------------------------------------------
+%rename (__float__) dolfin::Constant::operator double() const;
+%ignore dolfin::Constant::operator=;
 
 //-----------------------------------------------------------------------------
 // Turn off value wrapper for std::vector<dolfin::uint>

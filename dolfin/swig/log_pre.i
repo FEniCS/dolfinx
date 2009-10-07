@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-05-10
-// Last changed: 2009-09-02
+// Last changed: 2009-09-23
 
 //=============================================================================
 // SWIG directives for the DOLFIN log kernel module (pre)
@@ -25,6 +25,15 @@
 // Need to ignore these dues to SWIG confusion of overloaded functions
 //-----------------------------------------------------------------------------
 %ignore dolfin::Table::set(std::string,std::string,uint);
+
+//-----------------------------------------------------------------------------
+// Ignore operators so SWIG stop complaining
+//-----------------------------------------------------------------------------
+%ignore dolfin::TableEntry::operator std::string;
+%ignore dolfin::Progress::operator++;
+%ignore dolfin::Progress::operator=;
+%ignore dolfin::Table::operator=;
+%ignore dolfin::TableEntry::operator=;
 
 //-----------------------------------------------------------------------------
 // Ignore DOLFIN C++ stream handling

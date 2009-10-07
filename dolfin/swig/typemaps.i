@@ -18,7 +18,7 @@
 // Needed due to problems with PyInt_Check from python 2.6 and NumPy
 //-----------------------------------------------------------------------------
 %{
-bool PyInteger_Check(PyObject* in)
+SWIGINTERNINLINE bool PyInteger_Check(PyObject* in)
 {
   return  PyInt_Check(in) || (PyArray_CheckScalar(in) && 
 			      PyArray_IsScalar(in,Integer));
@@ -29,6 +29,30 @@ bool PyInteger_Check(PyObject* in)
 // Apply the builtin out-typemap for int to dolfin::uint
 //-----------------------------------------------------------------------------
 %typemap(out) dolfin::uint = int;
+
+//-----------------------------------------------------------------------------
+// Typemaps for dolfin::real
+// We do not pass any high precision values here. This might change in future
+// FIXME: We need to find out what to do with Parameters of real. Now they are 
+// treated the same as double, and need to have a different typecheck value than
+// DOUBLE 90!= 95. However this will render real parameters unusefull if we do
+// not pick something else thatn PyFloat_Check in the typecheck.
+//-----------------------------------------------------------------------------
+%typecheck(95) dolfin::real
+{
+  // When implementing high precision type, check for that here.
+  $1 = PyFloat_Check($input) ? 1 : 0;
+}
+
+%typemap(in) dolfin::real
+{
+  $1 = dolfin::to_real(PyFloat_AsDouble($input));
+}
+
+%typemap(out) dolfin::real
+{
+  $result = SWIG_From_double(dolfin::to_double($1));
+}
 
 //-----------------------------------------------------------------------------
 // Typemaps for dolfin::uint and int

@@ -30,23 +30,13 @@
 PyObject* get_eigenvalue(const int emode) {
     double err, ecc;
     self->get_eigenvalue(err, ecc, emode);
-
-    PyObject* result = PyTuple_New(2);
-    PyTuple_SET_ITEM(result, 0, PyFloat_FromDouble(err));
-    PyTuple_SET_ITEM(result, 1, PyFloat_FromDouble(ecc));
-    Py_INCREF(result);
-    return result;
+    return Py_BuildValue("dd",err,ecc);
 }
 
 PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const int emode) {
     double err, ecc;
     self->get_eigenpair(err, ecc, rr, cc, emode);
-
-    PyObject* result = PyTuple_New(2);
-    PyTuple_SET_ITEM(result, 0, PyFloat_FromDouble(err));
-    PyTuple_SET_ITEM(result, 1, PyFloat_FromDouble(ecc));
-    Py_INCREF(result);
-    return result;
+    return Py_BuildValue("dd",err,ecc);
 }
 
 }
@@ -56,17 +46,14 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 // C++ and Python extension code for BlockVector
 // ---------------------------------------------------------------------------
 %extend dolfin::BlockVector {
-    Vector& getitem(int i) 
-    { 
-      return self->get(i);
-    }
-    void setitem(int i, Vector& v)
-    {
-      self->set(i, v); 
-    }
-    
   %pythoncode %{
 
+    def __getitem__(self, i):
+        return self.get(i, j)
+    
+    def __setitem__(self, i, m): 
+        self.set(i, m)
+        
     def __add__(self, v): 
       a = self.copy() 
       a += v
@@ -94,26 +81,20 @@ PyObject* getEigenpair(dolfin::PETScVector& rr, dolfin::PETScVector& cc, const i
 %pythoncode
 %{
     def __mul__(self, other):
-      v = BlockVector(self.size(0))
-      self.mult(other, v)
-      return v
+        v = BlockVector(self.size(0))
+        self.mult(other, v)
+        return v
+  
+    def __getitem__(self, t):
+        i,j = t
+        return self.get(i, j)
+
+    def __setitem__(self, t, m): 
+        i,j = t 
+        self.set(i, j, m)
+        
 %}
 }
-
-%pythoncode
-%{
-  def BlockMatrix_get(self, t):
-    i,j = t
-    return self.get(i, j)
-
-  def BlockMatrix_set(self, t, m): 
-    i,j = t 
-    return self.set(i, j, m)
-
-  BlockMatrix.__getitem__ = BlockMatrix_get
-  BlockMatrix.__setitem__ = BlockMatrix_set
-%}
-
 // ---------------------------------------------------------------------------
 // Indices.i defines helper functions to extract C++ indices from Python 
 // indices. These functions are not wrapped to the Python interface. They are

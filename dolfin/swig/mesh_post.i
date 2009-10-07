@@ -21,12 +21,13 @@ def __iter__(self):
   return self
 
 def next(self):
+  self.first = self.first if hasattr(self,"first") else True
   if not self.first:
-    self.increment()
+    self._increment()
   if self.end():
     raise StopIteration
   self.first = False
-  return self.dereference()
+  return self._dereference()
 %}
 }
 
@@ -75,8 +76,6 @@ MeshFunctionInt.__call__    = MeshFunctionInt.get
 MeshFunctionUInt.__call__   = MeshFunctionUInt.get
 MeshFunctionDouble.__call__ = MeshFunctionDouble.get
 MeshFunctionBool.__call__   = MeshFunctionBool.get
-
-
 %}
 
 //%extend dolfin::Mesh {
@@ -90,17 +89,6 @@ MeshFunctionBool.__call__   = MeshFunctionBool.get
 //--- Extend Point interface with Python selectors ---
 
 %extend dolfin::Point {
-  double get(int i) { return (*self)[i]; }
-  void set(int i, double val) { (*self)[i] = val; }
+  double __getitem__(int i) { return (*self)[i]; }
+  void __setitem__(int i, double val) { (*self)[i] = val; }
 }
-
-%pythoncode
-%{
-  def __getitem__(self, i):
-      return self.get(i)
-  def __setitem__(self, i, val):
-      self.set(i, val)
-
-  Point.__getitem__ = __getitem__
-  Point.__setitem__ = __setitem__
-%}

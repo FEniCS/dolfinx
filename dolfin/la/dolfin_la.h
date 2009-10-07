@@ -24,8 +24,10 @@
 #include <dolfin/la/MTL4Vector.h>
 #include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/la/SparsityPattern.h>
+#include <dolfin/la/EpetraSparsityPattern.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
 #include <dolfin/la/DefaultFactory.h>
+#include <dolfin/la/PETScPreconditioner.h>
 #include <dolfin/la/PETScFactory.h>
 #include <dolfin/la/EpetraFactory.h>
 #include <dolfin/la/MTL4Factory.h>
