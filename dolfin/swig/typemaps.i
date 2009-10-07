@@ -7,7 +7,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2006-04-16
-// Last changed: 2009-09-13
+// Last changed: 2009-10-07
 
 //=============================================================================
 // General typemaps for PyDOLFIN
@@ -82,9 +82,13 @@ bool PyInteger_Check(PyObject* in)
 }
 
 //-----------------------------------------------------------------------------
-// Out typemap for std::pair<uint,uint>
+// Out typemap for std::pair<TYPE,TYPE>
 //-----------------------------------------------------------------------------
 %typemap(out) std::pair<dolfin::uint,dolfin::uint>
 {
   $result = Py_BuildValue("ii",$1.first,$1.second);
+}
+%typemap(out) std::pair<dolfin::uint,bool>
+{
+  $result = Py_BuildValue("ib",$1.first,$1.second);
 }
