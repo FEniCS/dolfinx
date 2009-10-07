@@ -5,7 +5,7 @@ used in this simulation are computed by the demo program in
 src/demo/mesh/subdomains."""
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-16 -- 2008-12-05"
+__date__ = "2007-11-16 -- 2009-10-07"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -28,7 +28,7 @@ noslip = Constant(mesh, (0, 0))
 bc0 = DirichletBC(W.sub(0), noslip, sub_domains, 0)
 
 # Inflow boundary condition for velocity
-inflow = Function(V, ("-sin(x[1]*pi)", "0.0"))
+inflow = Expression(("-sin(x[1]*pi)", "0.0"), V = V)
 bc1 = DirichletBC(W.sub(0), inflow, sub_domains, 1)
 
 # Boundary condition for pressure at outflow
@@ -41,7 +41,7 @@ bcs = [bc0, bc1, bc2]
 # Define variational problem
 (v, q) = TestFunctions(W)
 (u, p) = TrialFunctions(W)
-f = Constant(mesh, (0, 0, 0))
+f = Constant(mesh, (0, 0))
 a = (inner(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
 L = inner(v, f)*dx
 

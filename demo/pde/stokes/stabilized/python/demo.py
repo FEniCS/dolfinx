@@ -8,7 +8,7 @@
 #
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-15 -- 2008-12-13"
+__date__ = "2007-11-15 -- 2009-10-07"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -25,7 +25,7 @@ system = vector + scalar
 
 # Create functions for boundary conditions
 noslip = Constant(mesh, (0, 0))
-inflow = Function(vector, ("-sin(x[1]*pi)", "0"))
+inflow = Expression(("-sin(x[1]*pi)", "0"), V = vector)
 zero   = Constant(mesh, 0.0)
 
 # No-slip boundary condition for velocity

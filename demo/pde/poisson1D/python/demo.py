@@ -13,7 +13,7 @@ and boundary conditions given by
 """
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-28 -- 2008-12-19"
+__date__ = "2007-11-28 -- 2009-10-07"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -31,8 +31,8 @@ class DirichletBoundary(SubDomain):
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Function(V, "9.0*pi*pi*sin(3.0*pi*x[0])")
-g = Function(V, "3.0*pi*cos(3.0*pi*x[0])")
+f = Expression("9.0*pi*pi*sin(3.0*pi*x[0])", V = V)
+g = Expression("3.0*pi*cos(3.0*pi*x[0])", V = V)
 
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds

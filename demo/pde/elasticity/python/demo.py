@@ -3,7 +3,7 @@
 for a gear clamped at two of its ends and twisted 30 degrees."""
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-14 -- 2009-02-25"
+__date__ = "2007-11-14 -- 2009-10-07"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -21,7 +21,7 @@ class Left(SubDomain):
         return x[0] < 0.5 and on_boundary
 
 # Dirichlet boundary condition for rotation at right end
-class Rotation(Function):
+class Rotation(Expression):
     def eval(self, values, x):
 
         # Center of rotation
@@ -70,7 +70,7 @@ c = Constant(mesh, [0, 0, 0])
 bcl = DirichletBC(V, c, Left())
 
 # Set up boundary condition at right end
-r = Rotation(V)
+r = Rotation(V = V)
 bcr = DirichletBC(V, r, Right())
 
 # Set up boundary conditions

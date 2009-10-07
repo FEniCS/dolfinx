@@ -1,5 +1,5 @@
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2008-10-17 -- 2008-12-17"
+__date__ = "2008-10-17 -- 2009-10-07"
 __copyright__ = "Copyright (C) 2008 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -22,7 +22,7 @@ u  = Function(P1)
 z  = Function(P1)
 f  = Constant(mesh, 1.0)
 p  = Function(P0)
-u0 = Function(P1, "x[0]*(1.0 - x[0])*x[1]*(1.0 - x[1])")
+u0 = Expression("x[0]*(1.0 - x[0])*x[1]*(1.0 - x[1])", V = P1)
 
 # Dirichlet boundary
 class DirichletBoundary(SubDomain):
@@ -36,18 +36,17 @@ bc = DirichletBC(P1, u0, DirichletBoundary())
 J = (u - u0)*(u - u0)*dx
 
 # Forward problem
-problem = (dot(grad(v1), p*grad(w1))*dx, v1*f*dx)
+problem = (inner(grad(v1), p*grad(w1))*dx, v1*f*dx)
 
 # Adjoint problem
-adjoint = (dot(grad(w1), p*grad(v1))*dx, -2*v1*(u - u0)*dx)
+adjoint = (inner(grad(w1), p*grad(v1))*dx, -2*v1*(u - u0)*dx)
 
 # Update of parameter
-gradient = -dot(grad(z), w0*grad(u))*dx
+gradient = -inner(grad(z), w0*grad(u))*dx
 px = p.vector()
 
 # Set initial value for parameter
-for i in range(px.size()):
-    px[i] = 1.0
+px[:] = 1.0
 
 # Iterate until convergence
 for i in range(100):
@@ -70,7 +69,7 @@ for i in range(100):
     px -= dp
 
     # Print value of functional
-    jval = assemble(J)
+    jval = assemble(J, mesh = mesh)
     print "J = ", jval
     print max(u.vector().array())
 
@@ -78,7 +77,7 @@ for i in range(100):
 plot(u,  title="Solution",  rescale=True)
 plot(z,  title="Adjoint",   rescale=True)
 plot(p,  title="Parameter", rescale=True)
-plot(u0, title="Reference", rescale=True)
+#plot(u0, title="Reference", rescale=True)
 
 # Hold plot
 interactive()

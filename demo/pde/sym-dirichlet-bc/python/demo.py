@@ -4,7 +4,7 @@ boundary conditions."""
 # Modified by Kristian Oelgaard, 2008
 
 __author__ = "Kent-Andre Mardal (kent-and@simula.no)"
-__date__ = "2008-08-13 -- 2008-12-19"
+__date__ = "2008-08-13 -- 2009-10-07"
 __copyright__ = "Copyright (C) 2008 Kent-Andre Mardal"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -15,14 +15,14 @@ mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Source term
-class Source(Function):
+class Source(Expression):
     def eval(self, values, x):
         dx = x[0] - 0.5
         dy = x[1] - 0.5
         values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02)
 
 # Neumann boundary condition
-class Flux(Function):
+class Flux(Expression):
     def eval(self, values, x):
         if x[0] > DOLFIN_EPS:
             values[0] = 25.0*sin(5.0*DOLFIN_PI*x[1])
@@ -37,10 +37,10 @@ class DirichletBoundary(SubDomain):
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Source(V)
-g = Flux(V)
+f = Source(V = V)
+g = Flux(V = V)
 
-a = dot(grad(v), grad(u))*dx
+a = inner(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds
 
 # Define boundary condition

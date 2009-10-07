@@ -10,7 +10,7 @@ the world's maybe shortest PDE solver.
 """
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2009-06-15 -- 2009-06-15"
+__date__ = "2009-06-15 -- 2009-10-07"
 __copyright__ = "Copyright (C) 2009 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -21,7 +21,7 @@ mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Function(V, "sin(x[0])*sin(x[1])")
+f = Expression("sin(x[0])*sin(x[1])", V = V)
 a = (grad(v), grad(u)) + (v, u)
 L = (v, f)
 

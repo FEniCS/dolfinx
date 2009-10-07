@@ -12,7 +12,7 @@
 #     u(x,y)      = V  for y = 0
 
 __author__ = "Kristen Kaasbjerg (cosby@fys.ku.dk)"
-__date__ = "2008-02-14 -- 2008-12-13"
+__date__ = "2008-02-14 -- 2009-10-07"
 __copyright__ = ""
 __license__  = "GNU LGPL Version 2.1"
 
@@ -50,7 +50,7 @@ V2 = FunctionSpace(mesh, "CG", 2) # last argument: order of the polynomial
 V0 = FunctionSpace(mesh, "DG", 0) # 0'th order are possible for DG elements
 
 # Exact solution
-class Exact(Function):
+class Exact(Expression):
     def eval(self, values, x):
         u = 0
         N = 20 # N needs to be rather large (~200) in other to have u=V for y=0 !
@@ -76,7 +76,7 @@ class Exact(Function):
         values[0] = u
 
 # Dielectric constant
-class Coefficient(Function):
+class Coefficient(Expression):
     def eval(self, values, x):
         if x[1] <= h_:
             values[0] = e_r
@@ -84,7 +84,7 @@ class Coefficient(Function):
             values[0] = 1.0
 
 # Dirichlet boundary condition
-class DirichletFunction(Function):
+class DirichletFunction(Expression):
     def eval(self, values, x):
         if x[1] < DOLFIN_EPS:
             values[0] = V
@@ -100,12 +100,12 @@ class DirichletBoundary(SubDomain):
 v = TestFunction(V2)
 u = TrialFunction(V2)
 f = Constant(mesh, 0)
-b = Coefficient(V0)
+b = Coefficient(V = V0)
 a = b*dot(grad(v), grad(u))*dx
 L = v*f*dx
 
 # Define boundary condition
-u0 = DirichletFunction(V2)
+u0 = DirichletFunction(V = V2)
 bc = DirichletBC(V2, u0, DirichletBoundary())
 
 # Solve PDE and plot solution
@@ -119,10 +119,10 @@ plot(u)
 # because it is an interpolation of the exact solution
 # in the finite element space!
 Pk = FunctionSpace(mesh, "CG", 5)
-exact = Exact(Pk)
+exact = Exact(V = Pk)
 
 e = u - exact
 L2_norm = e*e*dx
-norm = sqrt(assemble(L2_norm))
+norm = sqrt(assemble(L2_norm, mesh = mesh))
 
 print "L2-norm of error is: ", norm

@@ -43,7 +43,7 @@ g = Constant(mesh, 1)
 bc = DirichletBC(V, g, DirichletBoundary())
 
 # Define source and solution functions
-f = Function(V, "x[0]*sin(x[1])")
+f = Expression("x[0]*sin(x[1])", V = V)
 u = Function(V)
 
 # Define variational problem
