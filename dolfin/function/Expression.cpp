@@ -80,7 +80,6 @@ void Expression::eval(double* values, const double* x) const
 void Expression::eval(double* values, const Data& data) const
 {
   assert(values);
-  assert(data.is_valid());
 
   // Redirect to simple eval
   eval(values, data.x);

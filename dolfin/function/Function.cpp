@@ -265,15 +265,13 @@ void Function::eval(double* values, const double* x) const
 void Function::eval(double* values, const Data& data) const
 {
   assert(values);
-  assert(data.x);
-  assert(data._dolfin_cell);
-  assert(data._ufc_cell);
   assert(_function_space);
 
   // Check if UFC cell if available and cell matches
-  if (_function_space->has_cell(*data._dolfin_cell)) // && data.matching_cell())
+  if (data._dolfin_cell && _function_space->has_cell(*data._dolfin_cell))
   {
     // Efficient evaluation on given cell
+    assert(data._ufc_cell);
     const uint cell_index = data._ufc_cell->entity_indices[data._ufc_cell->topological_dimension][0];
     Cell cell(_function_space->mesh(), cell_index);
     eval(values, data.x, *data._dolfin_cell, *data._ufc_cell, data._dolfin_cell->index());

@@ -34,7 +34,6 @@ void GenericFunction::evaluate(double* values,
 {
   assert(values);
   assert(coordinates);
-  assert(data.is_valid());
 
   // Update data
   data.update(cell, coordinates);
