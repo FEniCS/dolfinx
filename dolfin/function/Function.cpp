@@ -112,7 +112,9 @@ Function::Function(const Function& v)
   *this = v;
 }
 //-----------------------------------------------------------------------------
-Function::Function(const Function& v, uint i)
+Function::Function(const Function& v, uint i) 
+   : local_scratch(v[i]._function_space->element())
+
 {
   // Copy function space pointer
   this->_function_space = v[i]._function_space;
