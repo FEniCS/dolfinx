@@ -20,7 +20,7 @@
 %feature("nodirector") dolfin::Expression::value_rank;
 %feature("director") dolfin::SubDomain;
 %feature("director") dolfin::NonlinearProblem;
-%feature("director") dolfin::ODE;
+%feature("nodirector") dolfin::ODE;
 %feature("director") dolfin::PETScKrylovMatrix;
 %feature("director") dolfin::uBLASKrylovMatrix;
 
