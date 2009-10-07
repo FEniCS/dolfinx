@@ -1,5 +1,25 @@
-// --- Return NumPy arrays for Mesh::cells() and Mesh::coordinates() ---
+/* -*- C -*- */
+// Copyright (C) 2006-2009 Anders Logg
+// Licensed under the GNU LGPL Version 2.1.
+//
+// Modified by Johan Jansson 2006-2007
+// Modified by Ola Skavhaug 2006-2007
+// Modified by Garth Wells 2007
+// Modified by Johan Hake 2008-2009
+// 
+// First added:  2006-09-20
+// Last changed: 2009-09-23
 
+//=============================================================================
+// SWIG directives for the DOLFIN Mesh kernel module (pre)
+//
+// The directives in this file are applied _before_ the header files of the
+// modules has been loaded.
+//=============================================================================
+
+//-----------------------------------------------------------------------------
+// Macro for constructing a NumPy array from a data ponter
+//-----------------------------------------------------------------------------
 %define MAKE_ARRAY(dim_size, m, n, dataptr, TYPE)
         npy_intp adims[dim_size];
 
@@ -13,6 +33,9 @@
 %enddef
 
 
+//-----------------------------------------------------------------------------
+// Return NumPy arrays for Mesh::cells() and Mesh::coordinates()
+//-----------------------------------------------------------------------------
 %define ALL_COORDINATES(name)
 %extend name {
     PyObject* coordinates() {
@@ -49,6 +72,9 @@
 }
 %enddef
 
+//-----------------------------------------------------------------------------
+// Return NumPy arrays for MeshFunction.values
+//-----------------------------------------------------------------------------
 %define ALL_VALUES(name, TYPE)
 %extend name {
     PyObject* values() {
@@ -62,6 +88,9 @@
 }
 %enddef
 
+//-----------------------------------------------------------------------------
+// Run the macros
+//-----------------------------------------------------------------------------
 ALL_COORDINATES(dolfin::Mesh)
 ALL_CELLS(dolfin::Mesh)
 ALL_VALUES(dolfin::MeshFunction<double>, NPY_DOUBLE)
@@ -69,20 +98,36 @@ ALL_VALUES(dolfin::MeshFunction<int>, NPY_INT)
 ALL_VALUES(dolfin::MeshFunction<bool>, NPY_BOOL)
 ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
 
+//-----------------------------------------------------------------------------
+// Ignore methods that is superseded by extended versions
+//-----------------------------------------------------------------------------
 %ignore dolfin::Mesh::cells;
 %ignore dolfin::Mesh::coordinates;
-%ignore dolfin::Mesh::partition(dolfin::uint num_partitions, dolfin::MeshFunction<dolfin::uint>& partitions);
 %ignore dolfin::MeshFunction::values;
+
+//-----------------------------------------------------------------------------
+// Misc ignores 
+//-----------------------------------------------------------------------------
+%ignore dolfin::Mesh::partition(dolfin::uint num_partitions, dolfin::MeshFunction<dolfin::uint>& partitions);
 %ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, uint, uint);
+%ignore dolfin::Point::operator=;
+%ignore dolfin::Point::operator[];
+%ignore dolfin::Mesh::operator=;
+%ignore dolfin::MeshData::operator=;
+%ignore dolfin::MeshFunction::operator=;
+%ignore dolfin::MeshGeometry::operator=;
+%ignore dolfin::MeshTopology::operator=;
+%ignore dolfin::MeshConnectivity::operator=;
 
-
-//--- Mesh iterators ---
-
+//-----------------------------------------------------------------------------
 // Map increment operator and dereference operators for iterators
-%rename(increment) dolfin::MeshEntityIterator::operator++;
-%rename(dereference) dolfin::MeshEntityIterator::operator*;
+//-----------------------------------------------------------------------------
+%rename(_increment) dolfin::MeshEntityIterator::operator++;
+%rename(_dereference) dolfin::MeshEntityIterator::operator*;
 
+//-----------------------------------------------------------------------------
 // Rename the iterators to better match the Python syntax
+//-----------------------------------------------------------------------------
 %rename(vertices) dolfin::VertexIterator;
 %rename(edges) dolfin::EdgeIterator;
 %rename(faces) dolfin::FaceIterator;
@@ -90,7 +135,12 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
 %rename(cells) dolfin::CellIterator;
 %rename(entities) dolfin::MeshEntityIterator;
 
-// --- Return NumPy arrays for MeshConnectivity() and MeshEntity.entities() ---
+//-----------------------------------------------------------------------------
+// Return NumPy arrays for MeshConnectivity() and MeshEntity.entities()
+//-----------------------------------------------------------------------------
+%ignore dolfin::MeshGeometry::x(uint n, uint i) const;
+%ignore dolfin::MeshConnectivity::operator();
+%ignore dolfin::MeshEntity::entities;
 
 %extend dolfin::MeshConnectivity {
     PyObject* _connections() {
@@ -131,6 +181,4 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
 %}
 }
 
-%ignore dolfin::MeshGeometry::x(uint n, uint i) const;
-%ignore dolfin::MeshConnectivity::operator();
-%ignore dolfin::MeshEntity::entities;
+

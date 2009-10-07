@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-07
-// Last changed: 2009-09-07
+// Last changed: 2009-09-23
 
 //=============================================================================
 // SWIG directives for the DOLFIN ode kernel module (pre)
@@ -25,3 +25,8 @@ namespace std
 }
 
 %template () std::iterator<std::input_iterator_tag, dolfin::ODESolutionData*>;
+
+//-----------------------------------------------------------------------------
+// Ignore operator++ so SWIG stop complaining
+//-----------------------------------------------------------------------------
+%ignore dolfin::ODESolutionIterator::operator++;

@@ -118,6 +118,13 @@ SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
 %enddef
 
 //-----------------------------------------------------------------------------
+// Include knowledge of the NoDeleter template, used in macros below
+//-----------------------------------------------------------------------------
+%{
+#include <dolfin/common/NoDeleter.h>
+%}
+
+//-----------------------------------------------------------------------------
 // Run the macros on derived classes of Variable that is defined shared_ptr
 //-----------------------------------------------------------------------------
 IMPLEMENT_VARIABLE_INTERFACE(Function)

@@ -1,19 +1,21 @@
 // Generated list of include files for PyDOLFIN
 
+// DOLFIN headers included from common
+%include "dolfin/swig/common_pre.i"
+%include "dolfin/common/types.h"
+%include "dolfin/common/real.h"
+%include "dolfin/common/constants.h"
+%include "dolfin/common/timing.h"
+%include "dolfin/common/Timer.h"
+%include "dolfin/common/Variable.h"
+%include "dolfin/swig/common_post.i"
+
 // DOLFIN headers included from parameter
 %include "dolfin/swig/parameter_pre.i"
 %include "dolfin/parameter/Parameter.h"
 %include "dolfin/parameter/Parameters.h"
 %include "dolfin/parameter/GlobalParameters.h"
 %include "dolfin/swig/parameter_post.i"
-
-// DOLFIN headers included from common
-%include "dolfin/common/types.h"
-%include "dolfin/common/constants.h"
-%include "dolfin/common/timing.h"
-%include "dolfin/common/Timer.h"
-%include "dolfin/common/Variable.h"
-%include "dolfin/swig/common_post.i"
 
 // DOLFIN headers included from log
 %include "dolfin/swig/log_pre.i"
@@ -45,8 +47,10 @@
 %include "dolfin/la/MTL4Vector.h"
 %include "dolfin/la/GenericSparsityPattern.h"
 %include "dolfin/la/SparsityPattern.h"
+%include "dolfin/la/EpetraSparsityPattern.h"
 %include "dolfin/la/LinearAlgebraFactory.h"
 %include "dolfin/la/DefaultFactory.h"
+%include "dolfin/la/PETScPreconditioner.h"
 %include "dolfin/la/PETScFactory.h"
 %include "dolfin/la/EpetraFactory.h"
 %include "dolfin/la/MTL4Factory.h"
@@ -137,10 +141,6 @@
 // DOLFIN headers included from plot
 %include "dolfin/plot/FunctionPlotData.h"
 
-// DOLFIN headers included from io
-%include "dolfin/io/File.h"
-%include "dolfin/swig/io_post.i"
-
 // DOLFIN headers included from main
 %include "dolfin/main/init.h"
 %include "dolfin/main/MPI.h"
@@ -180,6 +180,7 @@
 
 // DOLFIN headers included from ode
 %include "dolfin/swig/ode_pre.i"
+%include "dolfin/ode/Sample.h"
 %include "dolfin/ode/ODE.h"
 %include "dolfin/ode/ODECollection.h"
 %include "dolfin/ode/ComplexODE.h"
@@ -188,3 +189,7 @@
 %include "dolfin/ode/dGqMethod.h"
 %include "dolfin/ode/ODESolution.h"
 %include "dolfin/ode/StabilityAnalysis.h"
+
+// DOLFIN headers included from io
+%include "dolfin/io/File.h"
+%include "dolfin/swig/io_post.i"

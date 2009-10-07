@@ -1,23 +1,27 @@
-// Renames for Parameter
+
+// Renames and ignores for Parameter
 // For some obscure reason we need to rename Parameter
-%rename (NewParameter) dolfin::Parameter;
-%rename (__int__) dolfin::Parameter::operator int() const;
-%rename (__float__) dolfin::Parameter::operator double() const;
-%rename (__str__) dolfin::Parameter::operator std::string() const;
+%rename (ParameterValue) dolfin::Parameter;
+%rename (__nonzero__) dolfin::Parameter::operator bool;
+%rename (__int__) dolfin::Parameter::operator int;
+%rename (__float__) dolfin::Parameter::operator double;
+%rename (__str__) dolfin::Parameter::operator std::string;
 %rename (_assign) dolfin::Parameter::operator=;
 %rename (_assign_bool) dolfin::Parameter::operator= (bool value);
 %rename (_add) dolfin::Parameters::add;
 %rename (_add_bool) dolfin::Parameters::add(std::string key, bool value);
+%ignore dolfin::Parameter::operator dolfin::uint;
 
 // Renames and ignores for Parameters
 %rename (_get_parameter_keys) dolfin::Parameters::get_parameter_keys;
 %rename (_get_parameter_set_keys) dolfin::Parameters::get_parameter_set_keys;
 %rename (_get_parameter_set) dolfin::Parameters::operator();
 %rename (_get_parameter) dolfin::Parameters::operator[];
+%rename (assign) dolfin::Parameters::operator=;
 %ignore dolfin::Parameters::parse;
 %ignore dolfin::Parameters::update;
 
-// Typemaps (in) for std::vectors<std::string>
+// Typemaps (in) for std::set<std::string>
 %typecheck(SWIG_TYPECHECK_STRING_ARRAY) std::set<std::string> {
     $1 = PySequence_Check($input) ? 1 : 0;
 }

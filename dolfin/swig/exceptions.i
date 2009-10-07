@@ -5,7 +5,7 @@
 // Modified by Johan Hake, 2009.
 //
 // First added:  2007-05-15
-// Last changed: 2009-09-02
+// Last changed: 2009-09-24
 
 // ===========================================================================
 // SWIG directives for exception handling in PyDOLFIN
@@ -15,7 +15,7 @@
 // Function that handles exceptions. Reduces code bloat.
 // ---------------------------------------------------------------------------
 %{
-static void handle_dolfin_exceptions()
+SWIGINTERN void handle_dolfin_exceptions()
 {
   // Re-throw any exception
   try {

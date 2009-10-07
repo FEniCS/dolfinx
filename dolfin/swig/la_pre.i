@@ -5,29 +5,19 @@
   namespace boost{ namespace numeric{ namespace ublas{}}}
 %}
 
-// Typemaps for GenericMatrix getitem and setitem functions
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::pair<dolfin::uint, dolfin::uint> ij {
- $1 = PyTuple_Check($input) ? 1 : 0;
-}
-
-%typemap(in) std::pair<dolfin::uint,dolfin::uint> ij (std::pair<dolfin::uint, dolfin::uint> ij) {
-  if (!PyTuple_Check($input)) {
-    PyErr_SetString(PyExc_TypeError,"expected a tuple of size 2");
-    return NULL;
-  }
-  if (PyTuple_Size($input) != 2){
-    PyErr_SetString(PyExc_TypeError,"expected a tuple with size 2");
-    return NULL;
-  }
-   ij.first   = PyLong_AsUnsignedLong(PyTuple_GetItem($input,0));
-   ij.second  = PyLong_AsUnsignedLong(PyTuple_GetItem($input,1));
-   $1 = ij;
-}
+// Rename the double operator to a __float__ method
+%rename(__float__) dolfin::Scalar::operator double;
+%rename(assign) dolfin::Scalar::operator=;
+%ignore dolfin::GenericTensor::operator=;
+%ignore dolfin::BlockVector::operator=;
+%ignore dolfin::SubVector::operator=;
+%ignore dolfin::SubMatrix::operator=;
 
 // Typemaps for GenericMatrix get and set functions
 %typemap(in) const double* block = double* _array;
 %typemap(in) (dolfin::uint m, const dolfin::uint* rows) = (dolfin::uint _array_dim, dolfin::uint* _array);
 %typemap(in) (dolfin::uint n, const dolfin::uint* cols) = (dolfin::uint _array_dim, dolfin::uint* _array);
+
 //%apply dolfin::uint _array_dim, dolfin::uint* _array {dolfin::uint n, const dolfin::uint* cols}
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (dolfin::uint m, const dolfin::uint* rows)
 {
@@ -49,6 +39,9 @@
 
 %ignore dolfin::uBLASVector::operator ()(uint i) const;
 
+// Ignore wrapping of the Set variable (Might add typemap for this in future...)
+%ignore dolfin::SparsityPattern::pattern;
+
 // Declare newobject for vector and matrix get functions
 %newobject _get_vector_sub_vector;
 %newobject _get_matrix_sub_vector;
@@ -59,13 +52,13 @@
 %newobject dolfin::FACTORY_TYPE::create_matrix;
 %newobject dolfin::FACTORY_TYPE::create_pattern;
 %newobject dolfin::FACTORY_TYPE::create_vector;
-
 %enddef
 
 // Define a macro for the vector interface
 %define LA_PRE_VEC_INTERFACE(VEC_TYPE)
 %rename(assign) dolfin::VEC_TYPE::operator=;
 
+%ignore dolfin::VEC_TYPE::operator[];
 %ignore dolfin::VEC_TYPE::operator*=;
 %ignore dolfin::VEC_TYPE::operator/=;
 %ignore dolfin::VEC_TYPE::operator+=;
@@ -134,10 +127,11 @@ FOREIGN_SHARED_PTR_TYPEMAPS(Epetra_FEVector)
 #endif
 
 #ifdef HAS_MTL4
-//%ignore dolfin::MTL4Factory;
 LA_PRE_VEC_INTERFACE(MTL4Vector)
 LA_PRE_MAT_INTERFACE(MTL4Matrix)
 LA_PRE_FACTORY(MTL4Factory)
+%ignore dolfin::MTL4Vector::vec;
+%ignore dolfin::MTL4Matrix::mat;
 #endif
 
 
