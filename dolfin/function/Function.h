@@ -71,6 +71,9 @@ namespace dolfin
     /// Copy constructor
     Function(const Function& v);
 
+    /// Sub-function constructor (shallow copy). Used in Python interface
+    Function(const Function& v, uint i);
+
     /// Destructor
     virtual ~Function();
 
