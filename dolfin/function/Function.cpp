@@ -448,10 +448,7 @@ void Function::restrict(double* w,
   else
   {
     // Restrict as UFC function (by calling eval)
-    if (&dolfin_cell.mesh() == &_function_space->mesh())
-      restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet, true);
-    else
-      restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet, false);
+    restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet);
   }
 }
 //-----------------------------------------------------------------------------

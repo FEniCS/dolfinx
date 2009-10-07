@@ -47,13 +47,12 @@ void GenericFunction::restrict_as_ufc_function(double* w,
                                                const FiniteElement& element,
                                                const Cell& dolfin_cell,
                                                const ufc::cell& ufc_cell,
-                                               int local_facet, 
-                                               bool matching_cell) const
+                                               int local_facet) const
 {
   assert(w);
 
   // Update cell data
-  data.update(dolfin_cell, ufc_cell, local_facet, matching_cell);
+  data.update(dolfin_cell, ufc_cell, local_facet);
 
   // Evaluate each dof to get the expansion coefficients
   for (uint i = 0; i < element.space_dimension(); ++i)
