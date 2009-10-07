@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-05-02
-// Last changed: 2009-09-15
+// Last changed: 2009-10-07
 
 #include <stdlib.h>
 #include <sstream>
@@ -14,6 +14,9 @@
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/io/File.h>
 #include <dolfin/log/log.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/Function.h>
+#include <dolfin/function/Expression.h>
 #include "FunctionPlotData.h"
 #include "plot.h"
 
@@ -57,28 +60,40 @@ void plot_object(const T& t, std::string title, std::string mode)
     warning("Unable to plot.");
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(const Function& v, std::string title, std::string mode)
+void dolfin::plot(const Function& v,
+                  std::string title, std::string mode)
 {
-  FunctionPlotData w(v);
+  FunctionPlotData w(v, v.function_space().mesh());
   plot_object(w, title, mode);
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(const Mesh& mesh, std::string title)
+void dolfin::plot(const Expression& v, const Mesh& mesh,
+                  std::string title, std::string mode)
+{
+  FunctionPlotData w(v, mesh);
+  plot_object(w, title, mode);
+}
+//-----------------------------------------------------------------------------
+void dolfin::plot(const Mesh& mesh,
+                  std::string title)
 {
   plot_object(mesh, title, "auto");
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(const MeshFunction<uint>& f, std::string title)
+void dolfin::plot(const MeshFunction<uint>& f,
+                  std::string title)
 {
   plot_object(f, title, "auto");
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(const MeshFunction<double>& f, std::string title)
+void dolfin::plot(const MeshFunction<double>& f,
+                  std::string title)
 {
   plot_object(f, title, "auto");
 }
 //-----------------------------------------------------------------------------
-void dolfin::plot(const MeshFunction<bool>& f, std::string title)
+void dolfin::plot(const MeshFunction<bool>& f,
+                  std::string title)
 {
   plot_object(f, title, "auto");
 }

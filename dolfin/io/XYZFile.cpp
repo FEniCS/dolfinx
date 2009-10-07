@@ -67,7 +67,7 @@ void XYZFile::ResultsWrite(const Function& u) const
   double* values = new double[size];
 
   // Get function values at vertices
-  u.compute_vertex_values(values);
+  u.compute_vertex_values(values, mesh);
 
   // Write function data at mesh vertices
   if ( dim > 1 )

@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-10-04
+// Last changed: 2009-10-07
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -16,7 +16,6 @@
 #include <boost/ptr_container/ptr_map.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
-#include <dolfin/common/Variable.h>
 #include <dolfin/log/log.h>
 #include "GenericFunction.h"
 
@@ -44,7 +43,7 @@ namespace dolfin
   /// where {phi_i}_i is a basis for V_h, and U is a vector of
   /// expansion coefficients for u_h.
 
-  class Function : public Variable, public GenericFunction
+  class Function : public GenericFunction
   {
   public:
 
@@ -121,9 +120,6 @@ namespace dolfin
     /// Interpolate function (possibly non-matching meshes)
     void interpolate(const GenericFunction& v);
 
-    /// Compute values at all mesh vertices
-    void compute_vertex_values(double* vertex_values) const;
-
     //--- Implementation of GenericFunction interface ---
 
     /// Restrict function to local cell (compute expansion coefficients w)
@@ -132,6 +128,10 @@ namespace dolfin
                           const Cell& dolfin_cell,
                           const ufc::cell& ufc_cell,
                           int local_facet) const;
+
+    /// Compute values at all mesh vertices
+    virtual void compute_vertex_values(double* vertex_values,
+                                       const Mesh& mesh) const;
 
     /// Collect off-process coefficients to prepare for interpolation
     virtual void gather() const;

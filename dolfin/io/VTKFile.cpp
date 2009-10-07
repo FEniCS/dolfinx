@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2005-07-05
-// Last changed: 2009-10-02
+// Last changed: 2009-10-07
 
 #include <vector>
 #include <sstream>
@@ -496,7 +496,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
     double* values = new double[size];
 
     // Get function values at vertices
-    u.compute_vertex_values(values);
+    u.compute_vertex_values(values, mesh);
 
     if (rank == 0)
     {

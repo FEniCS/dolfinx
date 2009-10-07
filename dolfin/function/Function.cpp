@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-10-06
+// Last changed: 2009-10-07
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -29,16 +29,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V)
-  : Variable("v", "unnamed function"),
-    _function_space(reference_to_no_delete_pointer(V)),
+  : _function_space(reference_to_no_delete_pointer(V)),
     scratch0(V.element())
 {
   init_vector();
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
-  : Variable("v", "unnamed function"),
-    _function_space(V),
+  : _function_space(V),
     scratch0(V->element())
 {
   init_vector();
@@ -46,8 +44,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    GenericVector& x)
-  : Variable("v", "unnamed function"),
-    _function_space(V),
+  : _function_space(V),
     _vector(reference_to_no_delete_pointer(x)),
     scratch0(V->element())
 {
@@ -57,8 +54,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    boost::shared_ptr<GenericVector> x)
-  : Variable("v", "unnamed function"),
-    _function_space(V),
+  : _function_space(V),
     _vector(x),
     scratch0(V->element())
 {
@@ -67,8 +63,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, GenericVector& x)
-  : Variable("v", "unnamed function"),
-    _function_space(reference_to_no_delete_pointer(V)),
+  : _function_space(reference_to_no_delete_pointer(V)),
     _vector(reference_to_no_delete_pointer(x)),
     scratch0(V.element())
 {
@@ -77,8 +72,7 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
-  : Variable("v", "unnamed function"),
-    _function_space(reference_to_no_delete_pointer(V)),
+  : _function_space(reference_to_no_delete_pointer(V)),
     scratch0(V.element())
 {
   // Initialize vector
@@ -94,8 +88,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filename)
-  : Variable("v", "unnamed function"),
-    _function_space(V),
+  : _function_space(V),
     scratch0(V->element())
 {
   // Create vector
@@ -115,7 +108,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filenam
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
-  : Variable("v", "unnamed function")
 {
   *this = v;
 }
@@ -320,48 +312,6 @@ void Function::interpolate(const GenericFunction& v)
   function_space().interpolate(*_vector, v);
 }
 //-----------------------------------------------------------------------------
-void Function::compute_vertex_values(double* vertex_values) const
-{
-  assert(vertex_values);
-
-  // Gather off-process dofs
-  gather();
-
-  // Get mesh and finite element
-  const Mesh& mesh = _function_space->mesh();
-  const FiniteElement& element = _function_space->element();
-
-  // Local data for interpolation on each cell
-  const uint num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
-  boost::scoped_array<double> local_vertex_values(new double[scratch0.size*num_cell_vertices]);
-
-  // Interpolate vertex values on each cell (using last computed value if not
-  // continuous, e.g. discontinuous Galerkin methods)
-  UFCCell ufc_cell(mesh);
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Update to current cell
-    ufc_cell.update(*cell);
-
-    // Pick values from global vector
-    restrict(scratch0.coefficients, element, *cell, ufc_cell, -1);
-
-    // Interpolate values at the vertices
-    element.interpolate_vertex_values(local_vertex_values.get(), scratch0.coefficients, ufc_cell);
-
-    // Copy values to array of vertex values
-    for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
-    {
-      for (uint i = 0; i < scratch0.size; ++i)
-      {
-        const uint local_index  = vertex.pos()*scratch0.size + i;
-        const uint global_index = i*mesh.num_vertices() + vertex->index();
-        vertex_values[global_index] = local_vertex_values[local_index];
-      }
-    }
-  }
-}
-//-----------------------------------------------------------------------------
 void Function::compute_off_process_dofs() const
 {
   // Clear data
@@ -498,6 +448,49 @@ void Function::restrict(double* w,
 
     // Restrict as UFC function (by calling eval)
     restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet);
+  }
+}
+//-----------------------------------------------------------------------------
+void Function::compute_vertex_values(double* vertex_values,
+                                     const Mesh& mesh) const
+{
+  assert(vertex_values);
+  assert(&mesh == &_function_space->mesh());
+
+  // Gather off-process dofs
+  gather();
+
+  // Get finite element
+  const FiniteElement& element = _function_space->element();
+
+  // Local data for interpolation on each cell
+  const uint num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
+  boost::scoped_array<double> local_vertex_values(new double[scratch0.size*num_cell_vertices]);
+
+  // Interpolate vertex values on each cell (using last computed value if not
+  // continuous, e.g. discontinuous Galerkin methods)
+  UFCCell ufc_cell(mesh);
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update to current cell
+    ufc_cell.update(*cell);
+
+    // Pick values from global vector
+    restrict(scratch0.coefficients, element, *cell, ufc_cell, -1);
+
+    // Interpolate values at the vertices
+    element.interpolate_vertex_values(local_vertex_values.get(), scratch0.coefficients, ufc_cell);
+
+    // Copy values to array of vertex values
+    for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
+    {
+      for (uint i = 0; i < scratch0.size; ++i)
+      {
+        const uint local_index  = vertex.pos()*scratch0.size + i;
+        const uint global_index = i*mesh.num_vertices() + vertex->index();
+        vertex_values[global_index] = local_vertex_values[local_index];
+      }
+    }
   }
 }
 //-----------------------------------------------------------------------------

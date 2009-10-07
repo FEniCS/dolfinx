@@ -1,8 +1,8 @@
-// Copyright (C) 2007 Anders Logg.
+// Copyright (C) 2007-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-05-02
-// Last changed: 2009-08-28
+// Last changed: 2009-10-07
 
 #ifndef __PLOT_H
 #define __PLOT_H
@@ -15,25 +15,35 @@ namespace dolfin
 {
 
   class Function;
+  class Expression;
   class Mesh;
 
   /// Simple built-in plot commands for plotting functions and meshes.
   /// For plotting to work, PyDOLFIN and Viper must be installed.
 
   /// Plot function
-  void plot(const Function& v, std::string title="Function", std::string mode="auto");
+  void plot(const Function& v,
+            std::string title="Function", std::string mode="auto");
+
+  /// Plot function
+  void plot(const Expression& v, const Mesh& mesh,
+            std::string title="Expression", std::string mode="auto");
 
   /// Plot mesh
-  void plot(const Mesh& mesh, std::string title="Mesh");
+  void plot(const Mesh& mesh,
+            std::string title="Mesh");
 
   /// Plot mesh function
-  void plot(const MeshFunction<uint>& f, std::string title="DOLFIN MeshFunction<uint>");
+  void plot(const MeshFunction<uint>& f,
+            std::string title="DOLFIN MeshFunction<uint>");
 
   /// Plot mesh function
-  void plot(const MeshFunction<double>& f, std::string title="MeshFunction<double>");
+  void plot(const MeshFunction<double>& f,
+            std::string title="MeshFunction<double>");
 
   /// Plot mesh function
-  void plot(const MeshFunction<bool>& f, std::string title="MeshFunction<bool>");
+  void plot(const MeshFunction<bool>& f,
+            std::string title="MeshFunction<bool>");
 
 }
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-16
-// Last changed: 2009-03-17
+// Last changed: 2009-10-07
 
 #include <dolfin/io/XMLFile.h>
 #include <dolfin/plot/FunctionPlotData.h>
@@ -65,7 +65,7 @@ void XMLFunctionPlotData::end_element(const xmlChar* name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLFunctionPlotData::write(const FunctionPlotData& data, 
+void XMLFunctionPlotData::write(const FunctionPlotData& data,
                                 std::ostream& outfile, uint indentation_level)
 {
   XMLIndent indent(indentation_level);

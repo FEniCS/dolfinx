@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-10-02
+// Last changed: 2009-10-07
 
 #ifndef __UFC_CELL_H
 #define __UFC_CELL_H
@@ -15,7 +15,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/main/MPI.h>
-#include "UFC.h"
 #include <dolfin/fem/ufcexp.h>
 
 namespace dolfin

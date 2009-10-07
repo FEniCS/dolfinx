@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-05
+// Last changed: 2009-10-07
 
 #ifndef __EXPRESSION_H
 #define __EXPRESSION_H
@@ -14,6 +14,7 @@ namespace dolfin
 {
 
   class Data;
+  class Mesh;
 
   /// This class represents a user-defined expression. Expressions can
   /// be used as coefficients in variational forms or interpolated
@@ -73,6 +74,10 @@ namespace dolfin
                           const Cell& dolfin_cell,
                           const ufc::cell& ufc_cell,
                           int local_facet) const;
+
+    /// Compute values at all mesh vertices
+    virtual void compute_vertex_values(double* vertex_values,
+                                       const Mesh& mesh) const;
 
   protected:
 

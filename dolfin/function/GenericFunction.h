@@ -4,17 +4,19 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-05
+// Last changed: 2009-10-07
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
 
 #include <ufc.h>
+#include <dolfin/common/Variable.h>
 #include "Data.h"
 
 namespace dolfin
 {
 
+  class Mesh;
   class Cell;
   class FiniteElement;
 
@@ -29,7 +31,7 @@ namespace dolfin
   /// Sub classes may optionally implement the gather() function that
   /// will be called prior to restriction when running in parallel.
 
-  class GenericFunction : public ufc::function
+  class GenericFunction : public ufc::function, public Variable
   {
   public:
 
@@ -44,6 +46,9 @@ namespace dolfin
 
     /// Return value dimension for given axis
     virtual uint value_dimension(uint i) const = 0;
+
+    /// Return value size (product of value dimensions)
+    uint value_size() const;
 
     /// Evaluate function
     virtual void eval(double* values, const Data& data) const = 0;
@@ -69,6 +74,10 @@ namespace dolfin
     virtual void evaluate(double* values,
                           const double* coordinates,
                           const ufc::cell& cell) const;
+
+    /// Compute values at all mesh vertices
+    virtual void compute_vertex_values(double* vertex_values,
+                                       const Mesh& mesh) const = 0;
 
   protected:
 

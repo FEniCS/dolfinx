@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-04
+// Last changed: 2009-10-07
 
 #include <dolfin/fem/FiniteElement.h>
 #include "GenericFunction.h"
@@ -18,6 +18,14 @@ GenericFunction::GenericFunction()
 GenericFunction::~GenericFunction()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+dolfin::uint GenericFunction::value_size() const
+{
+  uint size = 1;
+  for (uint i = 0; i < value_rank(); ++i)
+    size *= value_dimension(i);
+  return size;
 }
 //-----------------------------------------------------------------------------
 void GenericFunction::evaluate(double* values,
