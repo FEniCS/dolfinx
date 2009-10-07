@@ -114,9 +114,6 @@ Function::Function(const Function& v)
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v, uint i)
 {
- // Get sub-function (Function will store pointer to sub-Function)
- //Function& sub_function = v[i]; 
- 
   // Copy function space pointer
   this->_function_space = v[i]._function_space;
 
