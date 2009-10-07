@@ -84,7 +84,7 @@ namespace dolfin
     /// Check if function space has given element
     bool has_element(const FiniteElement& element, const Cell& cell) const
     {
-      return element.hash() == _element->hash() && &cell.mesh() == &*_mesh;
+      return element.hash() == _element->hash() && &cell.mesh() == &(*_mesh);
     }
 
     /// Attach restriction meshfunction
