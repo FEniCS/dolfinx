@@ -81,7 +81,7 @@ void Data::update(const Cell& dolfin_cell,
 {
   _dolfin_cell = &dolfin_cell;
   _ufc_cell = &ufc_cell;
-  _facet = -1;
+  _facet = local_facet;
 }
 //-----------------------------------------------------------------------------
 void Data::update(const ufc::cell& ufc_cell, const double* x)
