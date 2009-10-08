@@ -1,3 +1,9 @@
+ - Remove set, get and operator() methods from MeshFunction
+ - Added const and none const T &operator[uint/MeshEntity] to MeshFunction
+ - More clean up in SWIG interface files, remove global renames and ignores
+ - Update Python interface to Expression, with extended tests for value ranks
+ - Removed DiscreteFunction class
+ - Require value_shape and geometric_dimension in Expression
  - Introduce new class Expression replacing user-defined Functions
  - interpolate_vertex_values --> compute_vertex_values
  - std::map<std::string, Coefficient> replaces generated CoefficientSet code
