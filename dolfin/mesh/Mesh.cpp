@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2009-09-30
+// Last changed: 2009-10-08
 
 #include <sstream>
 
@@ -230,7 +230,7 @@ void Mesh::coarsen()
   MeshFunction<bool> cell_marker(*this);
   cell_marker.init(this->topology().dim());
   for (CellIterator c(*this); !c.end(); ++c)
-    cell_marker.set(c->index(),true);
+    cell_marker[c->index()] = true;
 
   LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(*this, cell_marker);
 

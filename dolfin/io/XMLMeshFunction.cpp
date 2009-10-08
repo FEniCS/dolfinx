@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-02
-// Last changed: 2009-09-08
+// Last changed: 2009-10-08
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/MeshPartitioning.h>
@@ -148,7 +148,7 @@ void XMLMeshFunction::write(const MeshFunction<int>& mf, std::ostream& outfile, 
   for (uint i = 0; i < mf.size(); ++i)
   {
     outfile << indent();
-    outfile << "<entity index=\"" << i << "\" value=\"" << mf.get(i) << "\"/>" << std::endl;
+    outfile << "<entity index=\"" << i << "\" value=\"" << mf[i] << "\"/>" << std::endl;
   }
   --indent;
   outfile << indent() << "</meshfunction>" << std::endl;
@@ -166,7 +166,7 @@ void XMLMeshFunction::write(const MeshFunction<uint>& mf, std::ostream& outfile,
   for (uint i = 0; i < mf.size(); ++i)
   {
     outfile << indent();
-    outfile << "<entity index=\"" << i << "\" value=\"" << mf.get(i) << "\"/>" << std::endl;
+    outfile << "<entity index=\"" << i << "\" value=\"" << mf[i] << "\"/>" << std::endl;
   }
   --indent;
   outfile << indent() << "</meshfunction>" << std::endl;
@@ -185,7 +185,7 @@ void XMLMeshFunction::write(const MeshFunction<double>& mf, std::ostream& outfil
   for (uint i = 0; i < mf.size(); ++i)
   {
     outfile << indent();
-    outfile << "<entity index=\"" << i << "\" value=\"" << mf.get(i) << "\"/>" << std::endl;
+    outfile << "<entity index=\"" << i << "\" value=\"" << mf[i] << "\"/>" << std::endl;
   }
   --indent;
   outfile << indent() << "</meshfunction>" << std::endl;
@@ -267,19 +267,19 @@ void XMLMeshFunction::read_entity(const xmlChar *name, const xmlChar **attrs)
   {
     case INT:
       assert(imf);
-      imf->set(index, parse_int(name, attrs, "value"));
+      (*imf)[index] = parse_int(name, attrs, "value");
 
       break;
 
      case UINT:
       assert(umf);
-      umf->set(index, parse_uint(name, attrs, "value"));
+      (*umf)[index] = parse_uint(name, attrs, "value");
 
       break;
 
      case DOUBLE:
       assert(dmf);
-      dmf->set(index, parse_float(name, attrs, "value"));
+      (*dmf)[index] = parse_float(name, attrs, "value");
 
       break;
 
@@ -307,6 +307,6 @@ void XMLMeshFunction::build_mapping(uint entity_dimension)
   // Build global to local mapping
   glob2loc.clear();
   for (uint i = 0; i < global_entity_indices->size(); ++i)
-    glob2loc[global_entity_indices->get(i)] = i;
+    glob2loc[(*global_entity_indices)[i]] = i;
 }
 //-----------------------------------------------------------------------------

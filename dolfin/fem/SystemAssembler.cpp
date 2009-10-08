@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2009-06-22
-// Last changed: 2009-10-06
+// Last changed: 2009-10-08
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -296,7 +296,7 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
   // Get integral for sub domain (if any)
   if (interior_facet_domains && interior_facet_domains->size() > 0)
   {
-    const uint domain = (*interior_facet_domains)(facet);
+    const uint domain = (*interior_facet_domains)[facet];
     if (domain < ufc.form.num_interior_facet_integrals())
       interior_facet_integral = ufc.interior_facet_integrals[domain];
   }

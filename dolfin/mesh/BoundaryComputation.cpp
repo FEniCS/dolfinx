@@ -6,7 +6,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2008-08-06
+// Last changed: 2009-10-08
 
 #include <dolfin/log/dolfin_log.h>
 #include "Mesh.h"
@@ -69,8 +69,8 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   {
     // Boundary facets are connected to exactly one cell
     if (f->num_entities(D) == 1 && 
-	(!exterior || ((exterior->get(*f) && !interior_boundary) || 
-		       (!exterior->get(*f) && interior_boundary))))
+	(!exterior || (((*exterior)[*f] && !interior_boundary) || 
+		       (!(*exterior)[*f] && interior_boundary))))
     {
       // Count boundary vertices and assign indices
       for (VertexIterator v(*f); !v.end(); ++v)
@@ -115,7 +115,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
     {
       // Create mapping from boundary vertex to mesh vertex if requested
       if ( vertex_map )
-        vertex_map->set(vertex_index, v->index());
+        (*vertex_map)[vertex_index] = v->index();
 
       // Add vertex
       editor.add_vertex(vertex_index, v->point());
@@ -129,8 +129,8 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   {
     // Boundary facets are connected to exactly one cell    
     if (f->num_entities(D) == 1 && 
-	(!exterior || ((exterior->get(*f) && !interior_boundary) || 
-		       (!exterior->get(*f) && interior_boundary))))
+	(!exterior || (((*exterior)[*f] && !interior_boundary) || 
+		       (!(*exterior)[*f] && interior_boundary))))
     {
       // Compute new vertex numbers for cell
       const uint* vertices = f->entities(0);
@@ -142,7 +142,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
 
       // Create mapping from boundary cell to mesh facet if requested
       if (cell_map)
-        cell_map->set(current_cell, f->index());
+        (*cell_map)[current_cell] = f->index();
 
       // Add cell
       editor.add_cell(current_cell++, cell);

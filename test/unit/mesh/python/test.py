@@ -1,7 +1,7 @@
 """Unit tests for the mesh library"""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2006-08-08 -- 2007-05-23"
+__date__ = "2006-08-08 -- 2009-10-08"
 __copyright__ = "Copyright (C) 2006 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -115,15 +115,15 @@ class MeshFunctions(unittest.TestCase):
     def testAssign(self):
         """Assign value of mesh function."""
         f = self.f
-        f.set(3, 10)
+        f[3] = 10
         v = Vertex(self.mesh, 3)
-        self.assertEqual(f(v), 10)
+        self.assertEqual(f[v], 10)
 
     def testWrite(self):
         """Construct and save a simple meshfunction."""
         f = self.f
-        f.set(0,1)
-        f.set(1,2)
+        f[0] = 1
+        f[1] = 2
         file = File("saved_mesh_function.xml")
         file << f
 
@@ -131,11 +131,11 @@ class MeshFunctions(unittest.TestCase):
         """Construct and save a simple meshfunction. Then read it back from
         file."""
         mf = self.mesh.data().create_mesh_function("mesh_data_function", 2)
-        mf.set(0,3)
-        mf.set(1,4)
+        mf[0] = 3
+        mf[1] = 4
 
-        self.f.set(0,1)
-        self.f.set(1,2)
+        self.f[0] =1
+        self.f[1] =2
         file = File("saved_mesh_function.xml")
         file << self.f
         f = MeshFunction('int', self.mesh, "saved_mesh_function.xml")
@@ -172,16 +172,16 @@ class InputOutput(unittest.TestCase):
         """Write and read mesh function to/from file"""
         mesh = UnitSquare(1, 1)
         f = MeshFunction('int', mesh, 0)
-        f.set(0, 2)
-        f.set(1, 4)
-        f.set(2, 6)
-        f.set(3, 8)
+        f[0] = 2
+        f[1] = 4
+        f[2] = 6
+        f[3] = 8
         file = File("meshfunction.xml")
         file << f
         g = MeshFunction('int', mesh, 0)
         file >> g
         for v in vertices(mesh):
-            self.assertEqual(f(v), g(v))
+            self.assertEqual(f[v], g[v])
 
 class PyCCInterface(unittest.TestCase):
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-08
-// Last changed: 2008-12-18
+// Last changed: 2009-10-08
 //
 // Modified by Anders Logg, 2008.
 
@@ -43,7 +43,7 @@ int main()
     MeshFunction<unsigned int> intersection(omega0, omega0.topology().dim());
     intersection = 0;
     for (unsigned int i = 0; i < cells.size(); i++)
-      intersection.set(cells[i], 1);
+      intersection[cells[i]] = 1;
 
     // Plot intersection
     //plot(intersection);

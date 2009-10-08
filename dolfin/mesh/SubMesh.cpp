@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-02-11
-// Last changed: 2009-02-12
+// Last changed: 2009-10-08
 
 #include <map>
 #include <vector>
@@ -51,7 +51,7 @@ void SubMesh::init(const Mesh& mesh,
   std::set<uint> cells;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    if (sub_domains(*cell) == sub_domain)
+    if (sub_domains[*cell] == sub_domain)
       cells.insert(cell->index());
   }
 
@@ -99,6 +99,6 @@ void SubMesh::init(const Mesh& mesh,
   // Build local-to-global mapping for vertices
   MeshFunction<uint>* global_vertex_indices = data().create_mesh_function("global vertex indices", 0);
   for (std::map<uint, uint>::iterator it = local_vertex_indices.begin(); it != local_vertex_indices.end(); ++it)
-    global_vertex_indices->set(it->second, it->first);
+    (*global_vertex_indices)[it->second] = it->first;
 }
 //-----------------------------------------------------------------------------

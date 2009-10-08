@@ -193,7 +193,7 @@ void RAWFile::MeshFunctionWrite(T& meshfunction)
 
   fp<<mesh.num_cells( ) <<std::endl;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
-    fp << meshfunction.get( cell->index() )  << std::endl;
+    fp << meshfunction[cell->index()] << std::endl;
 
   // Close file
   fp.close();

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-06
-// Last changed: 2009-09-15
+// Last changed: 2009-10-08
 
 #include <cstring>
 #include <dolfin/log/dolfin_log.h>
@@ -384,7 +384,7 @@ void XMLMesh::read_mesh_entity(const xmlChar* name, const xmlChar** attrs)
   assert(f);
   assert(index < f->size());
   const uint value = parse_uint(name, attrs, "value");
-  f->set(index, value);
+  (*f)[index] = value;
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::read_mesh_data(const xmlChar* name, const xmlChar** attrs)

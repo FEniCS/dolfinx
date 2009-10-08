@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2009-10-04
+// Last changed: 2009-10-08
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/assign/list_of.hpp>
@@ -381,7 +381,7 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
   for (FacetIterator facet(V->mesh()); !facet.end(); ++facet)
   {
     // Skip facets not on this boundary
-    if (sub_domains(*facet) != sub_domain)
+    if (sub_domains[*facet] != sub_domain)
       continue;
 
     // Get cell to which facet belongs (there may be two, but pick first)

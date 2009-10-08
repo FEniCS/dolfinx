@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2007-04-24
-// Last changed: 2009-09-21
+// Last changed: 2009-10-08
 
 #include <dolfin/log/log.h>
 #include "MeshData.h"
@@ -68,7 +68,7 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)
       on_boundary = (entity->num_entities(D) == 1 &&
-		     (!exterior || ((exterior->get(*entity)))));
+		     (!exterior || (((*exterior)[*entity]))));
 
     bool all_vertices_inside = true;
     // Dimension of facet > 0, check incident vertices
@@ -92,7 +92,7 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
 
     // Mark entity with all vertices inside
     if (all_vertices_inside)
-      sub_domains(*entity) = sub_domain;
+      sub_domains[*entity] = sub_domain;
 
     p++;
   }

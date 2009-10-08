@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-10-03
+// Last changed: 2009-10-08
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -141,7 +141,7 @@ void Assembler::assemble_cells(GenericTensor& A,
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
-      const uint domain = (*domains)(*cell);
+      const uint domain = (*domains)[*cell];
       if (domain < ufc.form.num_cell_integrals())
         integral = ufc.cell_integrals[domain];
       else
@@ -205,12 +205,12 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   for (CellIterator boundary_cell(boundary); !boundary_cell.end(); ++boundary_cell)
   {
     // Get mesh facet corresponding to boundary cell
-    Facet mesh_facet(mesh, (*cell_map)(*boundary_cell));
+    Facet mesh_facet(mesh, (*cell_map)[*boundary_cell]);
 
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
-      const uint domain = (*domains)(mesh_facet);
+      const uint domain = (*domains)[mesh_facet];
       if (domain < ufc.form.num_exterior_facet_integrals())
         integral = ufc.exterior_facet_integrals[domain];
       else
@@ -283,7 +283,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
-      const uint domain = (*domains)(*facet);
+      const uint domain = (*domains)[*facet];
       if (domain < ufc.form.num_interior_facet_integrals())
         integral = ufc.interior_facet_integrals[domain];
       else

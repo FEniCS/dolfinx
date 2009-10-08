@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-01
-// Last changed: 2009-09-11
+// Last changed: 2009-10-08
 
 #include <vector>
 #include <algorithm>
@@ -127,7 +127,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   {
     std::vector<uint> entity;
     for (VertexIterator vertex(*e); !vertex.end(); ++vertex)
-      entity.push_back(global_vertex_indices->get(vertex->index()));
+      entity.push_back((*global_vertex_indices)[vertex->index()]);
     std::sort(entity.begin(), entity.end());
     entities[entity] = e->index();
   }
@@ -390,10 +390,10 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     // Remove all facets in the overlap
     for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); 
 	 it != shared_entity_indices.end(); ++it)
-      exterior->set(entities[it->first], 0);
+      (*exterior)[entities[it->first]] = 0;
     for (std::map<std::vector<uint>, uint>::const_iterator it = ignored_entity_indices.begin();
 	 it != ignored_entity_indices.end(); ++it)
-      exterior->set(entities[it->first], 0);
+      (*exterior)[entities[it->first]] = 0;
   }
 
   // Communicate number of entities to number
@@ -503,7 +503,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     if (entity_indices[i] < 0)
       info("Missing global number for local entity (%d, %d).", d, i);
     assert(entity_indices[i] >= 0);
-    global_entity_indices->set(i, static_cast<uint>(entity_indices[i]));
+    (*global_entity_indices)[i] = static_cast<uint>(entity_indices[i]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -769,7 +769,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   MeshFunction<uint>* global_vertex_indices = mesh.data().create_mesh_function("global entity indices 0", 0);
   assert(global_vertex_indices);
   for (std::map<uint, uint>::const_iterator iter = glob2loc.begin(); iter != glob2loc.end(); ++iter)
-    global_vertex_indices->set((*iter).second, (*iter).first);
+    (*global_vertex_indices)[(*iter).second] = (*iter).first;
 
   // Construct local to global mapping for cells
   std::stringstream cell_name;
@@ -778,7 +778,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   assert(global_cell_indices);
   const std::vector<uint>& gci = mesh_data.global_cell_indices;
   for(uint i=0; i < gci.size(); ++i)
-    global_cell_indices->set(i, gci[i]);
+    (*global_cell_indices)[i] = gci[i];
 
   // Close mesh: Note that this must be done after creating the global vertex map or
   // otherwise the ordering in mesh.close() will be wrong (based on local numbers).
@@ -802,7 +802,7 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
   // Build sorted array of global boundary vertex indices (global numbering)
   uint global_vertex_send[boundary_size];
   for (uint i = 0; i < boundary_size; ++i)
-    global_vertex_send[i] = global_vertex_indices->get(boundary_vertex_map->get(i));
+    global_vertex_send[i] = (*global_vertex_indices)[(*boundary_vertex_map)[i]];
   std::sort(global_vertex_send, global_vertex_send + boundary_size);
 
   // Distribute boundaries' sizes

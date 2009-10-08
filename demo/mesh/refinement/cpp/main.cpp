@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman 2006.
 //
 // First added:  2006-10-26
-// Last changed: 2009-03-04
+// Last changed: 2009-10-08
 
 #include <dolfin.h>
 
@@ -35,7 +35,7 @@ int main()
     for (CellIterator c(mesh); !c.end(); ++c)
     {
       if (c->midpoint().distance(p) < 0.1)
-        cell_markers(*c) = true;
+        cell_markers[*c] = true;
     }
 
     // Refine mesh

@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-10-07
+// Last changed: 2009-10-08
 
 #ifndef __UFC_CELL_H
 #define __UFC_CELL_H
@@ -168,11 +168,11 @@ namespace dolfin
         if (global_entities[d])
         {
           for (uint i = 0; i < num_cell_entities[d]; ++i)
-            entity_indices[d][i] = global_entities[d]->get(entity_indices[d][i]);
+            entity_indices[d][i] = (*global_entities[d])[entity_indices[d][i]];
         }
       }
       if (global_entities[D])
-        entity_indices[D][0] = global_entities[D]->get(entity_indices[D][0]);
+        entity_indices[D][0] = (*global_entities[D])[entity_indices[D][0]];
 
       /// Set vertex coordinates
       const uint* vertices = cell.entities(0);

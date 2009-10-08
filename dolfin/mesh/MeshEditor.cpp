@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-16
-// Last changed: 2009-06-25
+// Last changed: 2009-10-08
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -457,7 +457,7 @@ void MeshEditor::compute_boundary_indicators()
     const uint global_facet = mesh->_topology(D, D - 1)(cell_index)[local_facet];
         
     // Set boundary indicator for facet
-    exterior_facet_domains->set(global_facet, (*indicators)[i]);
+    (*exterior_facet_domains)[global_facet] = (*indicators)[i];
   }
 }
 //-----------------------------------------------------------------------------

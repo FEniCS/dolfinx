@@ -4,7 +4,7 @@
 // Modified by Johan Hoffman, 2007.
 //
 // First added:  2006-05-22
-// Last changed: 2009-09-08
+// Last changed: 2009-10-08
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -91,7 +91,7 @@ namespace dolfin
     T* values() { return _values; }
 
     /// Return value at given entity
-    T& operator() (const MeshEntity& entity)
+    T& operator[] (const MeshEntity& entity)
     {
       assert(_values);
       assert(&entity.mesh() == _mesh);
@@ -101,13 +101,29 @@ namespace dolfin
     }
 
     /// Return value at given entity (const version)
-    const T& operator() (const MeshEntity& entity) const
+    const T& operator[] (const MeshEntity& entity) const
     {
       assert(_values);
       assert(&entity.mesh() == _mesh);
       assert(entity.dim() == _dim);
       assert(entity.index() < _size);
       return _values[entity.index()];
+    }
+
+    /// Return value at given index
+    T& operator[] (uint index)
+    {
+      assert(_values);
+      assert(index < _size);
+      return _values[index];
+    }
+
+    /// Return value at given index  (const version)
+    const T& operator[] (uint index) const
+    {
+      assert(_values);
+      assert(index < _size);
+      return _values[index];
     }
 
     /// Assign mesh function
@@ -169,42 +185,6 @@ namespace dolfin
       delete [] _values;
       _values = new T[size];
       std::fill(_values, _values + size, static_cast<T>(0));
-    }
-
-    /// Get value at given entity
-    T get(const MeshEntity& entity) const
-    {
-      assert(_values);
-      assert(&entity.mesh() == _mesh);
-      assert(entity.dim() == _dim);
-      assert(entity.index() < _size);
-      return _values[entity.index()];
-    }
-
-    /// Get value at given entity
-    T get(uint index) const
-    {
-      assert(_values);
-      assert(index < _size);
-      return _values[index];
-    }
-
-    /// Set value at given entity
-    void set(const MeshEntity& entity, const T& value)
-    {
-      assert(_values);
-      assert(&entity.mesh() == _mesh);
-      assert(entity.dim() == _dim);
-      assert(entity.index() < _size);
-      _values[entity.index()] = value;
-    }
-
-    /// Set value at given entity
-    void set(uint index, const T& value)
-    {
-      assert(_values);
-      assert(index < _size);
-      _values[index] = value;
     }
 
     /// Set all values to given value

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2009-01-12
+// Last changed: 2009-10-08
 
 #include <string.h>
 #include <dolfin/common/constants.h>
@@ -64,7 +64,7 @@ void TransfiniteInterpolation::mean_value(double* new_x, uint dim, Mesh& new_bou
   // Check if the point is on the boundary (no need to compute new coordinate)
   for (VertexIterator v(new_boundary); !v.end(); ++v)
   {
-    if (vertex_map(*v) == vertex.index())
+    if (vertex_map[*v] == vertex.index())
     {
       memcpy(new_x, v->x(), dim*sizeof(double));
       return;
@@ -82,7 +82,7 @@ void TransfiniteInterpolation::mean_value(double* new_x, uint dim, Mesh& new_bou
     const double* x = vertex.x();
 
     // Old position of vertex v in boundary
-    const double* p = mesh.geometry().x(vertex_map(*v));
+    const double* p = mesh.geometry().x(vertex_map[*v]);
 
     // Distance from x to each point at the boundary
     d[v->index()] = dist(p, x, dim);
@@ -283,7 +283,7 @@ void TransfiniteInterpolation::normals(double** dfdn, uint dim, Mesh& new_bounda
       {
         if(v->index() == w->index())
         {
-          Facet mesh_facet(mesh, cell_map(*c));
+          Facet mesh_facet(mesh, cell_map[*c]);
           Cell mesh_cell(mesh, mesh_facet.entities(mesh.topology().dim())[0]);
           const uint facet_index = mesh_cell.index(mesh_facet);
           Point n=mesh_cell.normal(facet_index);
@@ -320,10 +320,10 @@ void TransfiniteInterpolation::integral(double* new_x, uint dim, Mesh& new_bound
     {
 
       // Old position of point x
-      const double* x = mesh.geometry().x(vertex_map(vertex));
+      const double* x = mesh.geometry().x(vertex_map[vertex]);
 
       // Old position of vertex v in boundary
-      const double* p = mesh.geometry().x(vertex_map(*v));
+      const double* p = mesh.geometry().x(vertex_map[*v]);
 
       // Distance from x to each point at the boundary
       d[ind] = dist(p, x, dim);

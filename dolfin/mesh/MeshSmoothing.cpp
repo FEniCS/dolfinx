@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-16
-// Last changed: 2008-07-16
+// Last changed: 2009-10-08
 
 #include <dolfin/common/constants.h>
 #include "Mesh.h"
@@ -31,7 +31,7 @@ void MeshSmoothing::smooth(Mesh& mesh)
   MeshFunction<bool> on_boundary(mesh, 0);
   on_boundary = false;
   for (VertexIterator v(boundary); !v.end(); ++v)
-    on_boundary.set((*vertex_map)(*v), true);
+    on_boundary[(*vertex_map)[*v]] = true;
 
   // Iterate over all vertices
   const uint d = mesh.geometry().dim();
@@ -39,7 +39,7 @@ void MeshSmoothing::smooth(Mesh& mesh)
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     // Skip vertices on the boundary
-    if (on_boundary(*v))
+    if (on_boundary[*v])
       continue;
 
     // Get coordinates of vertex

@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 // 
 // First added:  2006-09-20
-// Last changed: 2009-10-07
+// Last changed: 2009-10-08
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (pre)
@@ -32,16 +32,11 @@
         PyArray_INCREF(array);
 %enddef
 
-
 //-----------------------------------------------------------------------------
 // Return NumPy arrays for Mesh::cells() and Mesh::coordinates()
 //-----------------------------------------------------------------------------
-%define ALL_COORDINATES(name)
-%extend name {
+%extend dolfin::Mesh {
     PyObject* coordinates() {
-        // Get coordinates for all vertices in structure.
-        // returns a 3xnum_vertices numpy array, x in array[0], y in array[1]
-        // and z in array[2]
         int m = self->num_vertices();
         int n = self->geometry().dim();
 
@@ -49,15 +44,11 @@
 
         return reinterpret_cast<PyObject*>(array);
     }
-}
-%enddef
-
-%define ALL_CELLS(name)
-%extend name {
+    
     PyObject* cells() {
-       // Get the node-id for all vertices.
         int m = self->num_cells();
         int n = 0;
+	
         if(self->topology().dim() == 1)
           n = 2;
         else if(self->topology().dim() == 2)
@@ -70,7 +61,6 @@
         return reinterpret_cast<PyObject*>(array);
     }
 }
-%enddef
 
 //-----------------------------------------------------------------------------
 // Return NumPy arrays for MeshFunction.values
@@ -91,12 +81,10 @@
 //-----------------------------------------------------------------------------
 // Run the macros
 //-----------------------------------------------------------------------------
-ALL_COORDINATES(dolfin::Mesh)
-ALL_CELLS(dolfin::Mesh)
 ALL_VALUES(dolfin::MeshFunction<double>, NPY_DOUBLE)
 ALL_VALUES(dolfin::MeshFunction<int>, NPY_INT)
 ALL_VALUES(dolfin::MeshFunction<bool>, NPY_BOOL)
-ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
+ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
 
 //-----------------------------------------------------------------------------
 // Ignore methods that is superseded by extended versions
@@ -115,6 +103,7 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
 %ignore dolfin::Mesh::operator=;
 %ignore dolfin::MeshData::operator=;
 %ignore dolfin::MeshFunction::operator=;
+%ignore dolfin::MeshFunction::operator[];
 %ignore dolfin::MeshGeometry::operator=;
 %ignore dolfin::MeshTopology::operator=;
 %ignore dolfin::MeshConnectivity::operator=;
@@ -163,7 +152,7 @@ ALL_VALUES(dolfin::MeshFunction<unsigned int>, NPY_UINT)
 
 %pythoncode
 %{
-    def __call__(self, entity=None):
+    def __call__(self, entity = None):
         """ Return the number of connections"""
         # If return all connections
         if entity is None:

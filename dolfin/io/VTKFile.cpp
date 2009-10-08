@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2005-07-05
-// Last changed: 2009-10-07
+// Last changed: 2009-10-08
 
 #include <vector>
 #include <sstream>
@@ -879,7 +879,7 @@ void VTKFile::mesh_function_write(T& meshfunction)
   fp << "<CellData  Scalars=\"U\">" << std::endl;
   fp << "<DataArray  type=\"Float32\"  Name=\"U\"  format=\"ascii\">" << std::endl;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
-    fp << meshfunction.get( cell->index() )  << std::endl;
+    fp << meshfunction[cell->index()] << std::endl;
   fp << "</DataArray>" << std::endl;
   fp << "</CellData>" << std::endl;
 

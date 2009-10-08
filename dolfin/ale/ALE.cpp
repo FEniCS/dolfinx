@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-02
-// Last changed: 2009-10-07
+// Last changed: 2009-10-08
 
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -58,19 +58,19 @@ void ALE::move(Mesh& mesh0, Mesh& mesh1, ALEType method)
   // Build global-to-local vertex mapping for mesh
   std::map<uint, uint> global_to_local_0;
   for (uint i = 0; i < local_to_global_0->size(); i++)
-    global_to_local_0[local_to_global_0->get(i)] = i;
+    global_to_local_0[(*local_to_global_0)[i]] = i;
 
   // Build mapping from mesh vertices to boundary vertices
   std::map<uint, uint> mesh_to_boundary_0;
   for (uint i = 0; i < boundary_to_mesh_0->size(); i++)
-    mesh_to_boundary_0[boundary_to_mesh_0->get(i)] = i;
+    mesh_to_boundary_0[(*boundary_to_mesh_0)[i]] = i;
 
   // Iterate over vertices in boundary1
   const uint dim = mesh0.geometry().dim();
   for (VertexIterator v(boundary1); !v.end(); ++v)
   {
     // Get global vertex index (steps 1 and 2)
-    const uint global_vertex_index = local_to_global_1->get(boundary_to_mesh_1->get(v->index()));
+    const uint global_vertex_index = (*local_to_global_1)[(*boundary_to_mesh_1)[v->index()]];
 
     // Get local vertex index for mesh0 if possible (step 3)
     std::map<uint, uint>::const_iterator it;

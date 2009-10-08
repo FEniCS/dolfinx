@@ -1,7 +1,7 @@
 "This demo illustrates mesh refinement."
 
 __author__ = "Anders Logg"
-__date__ = "2007-06-01 -- 2009-03-04"
+__date__ = "2007-06-01 -- 2009-10-08"
 __copyright__ = "Copyright (C) 2007-2009 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -23,9 +23,9 @@ for i in range(5):
     cell_markers = MeshFunction("bool", mesh, mesh.topology().dim())
     for c in cells(mesh):
         if c.midpoint().distance(p) < 0.1:
-            cell_markers.set(c, True)
+            cell_markers[c] = True
         else:
-            cell_markers.set(c, False)
+            cell_markers[c] = False
 
     # Refine mesh
     mesh.refine(cell_markers)

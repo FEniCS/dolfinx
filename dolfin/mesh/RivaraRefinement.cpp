@@ -32,7 +32,7 @@ void RivaraRefinement::refine(Mesh& mesh,
   std::vector<bool> dmarked(mesh.num_cells());
   for (CellIterator ci(mesh); !ci.end(); ++ci)
   {
-    if(cell_marker.get(ci->index()) == true)
+    if(cell_marker[ci->index()] == true)
       dmarked[ci->index()] = true;
     else
       dmarked[ci->index()] = false;
@@ -67,7 +67,7 @@ void RivaraRefinement::refine(Mesh& mesh,
   // Generate cell mesh function map
   cell_map.init(mesh, dim);
   for (CellIterator c(mesh); !c.end(); ++c)
-    cell_map.set(c->index(), new2old_cell_arr[c->index()]);
+    cell_map[c->index()] = new2old_cell_arr[c->index()];
 
   //Generate facet map array
   std::vector<int> new_facet_map(new2old_facet_arr.size());

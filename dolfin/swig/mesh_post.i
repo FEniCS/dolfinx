@@ -1,5 +1,25 @@
-//--- Extend mesh entity iterators to work as Python iterators ---
+/* -*- C -*- */
+// Copyright (C) 2006-2009 Anders Logg
+// Licensed under the GNU LGPL Version 2.1.
+//
+// Modified by Johan Jansson 2006-2007
+// Modified by Ola Skavhaug 2006-2007
+// Modified by Garth Wells 2007-2009
+// Modified by Johan Hake 2008-2009
+// 
+// First added:  2006-09-20
+// Last changed: 2009-10-08
 
+//=============================================================================
+// SWIG directives for the DOLFIN Mesh kernel module (post)
+//
+// The directives in this file are applied _after_ the header files of the
+// modules has been loaded.
+//=============================================================================
+
+//-----------------------------------------------------------------------------
+// Extend mesh entity iterators to work as Python iterators
+//-----------------------------------------------------------------------------
 %feature("docstring")  dolfin::MeshFunction::fill "
 
 Set all values to given value";
@@ -31,12 +51,29 @@ def next(self):
 %}
 }
 
-//--- Map MeshFunction template to Python ---
+//-----------------------------------------------------------------------------
+// MeshFunction macro
+//-----------------------------------------------------------------------------
+%define MESH_FUNCTION(TYPE,TYPENAME)
+%template(MeshFunction ## TYPENAME) dolfin::MeshFunction<TYPE>;
+//%typedef dolfin::MeshFunction<TYPE> MeshFunction ## TYPENAME;
+%extend dolfin::MeshFunction<TYPE> 
+{
+  TYPE __getitem__(unsigned int i) { return (*self)[i]; }
+  void __setitem__(unsigned int i, TYPE val) { (*self)[i] = val; }
+  
+  TYPE __getitem__(dolfin::MeshEntity& e) { return (*self)[e]; }
+  void __setitem__(dolfin::MeshEntity& e, TYPE val) { (*self)[e] = val; }
+}
+%enddef
 
-%template(MeshFunctionInt) dolfin::MeshFunction<int>;
-%template(MeshFunctionUInt) dolfin::MeshFunction<unsigned int>;
-%template(MeshFunctionDouble) dolfin::MeshFunction<double>;
-%template(MeshFunctionBool) dolfin::MeshFunction<bool>;
+//-----------------------------------------------------------------------------
+// Run MeshFunction macros
+//-----------------------------------------------------------------------------
+MESH_FUNCTION(int,Int)
+MESH_FUNCTION(dolfin::uint,UInt)
+MESH_FUNCTION(double,Double)
+MESH_FUNCTION(bool,Bool)
 
 %pythoncode
 %{
@@ -72,22 +109,11 @@ class MeshFunction(object):
 
 del _doc_string
 
-MeshFunctionInt.__call__    = MeshFunctionInt.get
-MeshFunctionUInt.__call__   = MeshFunctionUInt.get
-MeshFunctionDouble.__call__ = MeshFunctionDouble.get
-MeshFunctionBool.__call__   = MeshFunctionBool.get
 %}
 
-//%extend dolfin::Mesh {
-//  dolfin::MeshFunction<uint>* partition(dolfin::uint n) {
-//    dolfin::MeshFunction<dolfin::uint>* partitions = new dolfin::MeshFunction<dolfin::uint>;
-//   self->partition(*partitions, n);
-//    return partitions;
-//  }
-//}
-
-//--- Extend Point interface with Python selectors ---
-
+//-----------------------------------------------------------------------------
+// Extend Point interface with Python selectors
+//-----------------------------------------------------------------------------
 %extend dolfin::Point {
   double __getitem__(int i) { return (*self)[i]; }
   void __setitem__(int i, double val) { (*self)[i] = val; }

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-05-14
-// Last changed: 2007-05-24
+// Last changed: 2009-10-08
 //
 // Unit tests for the mesh library
 
@@ -197,9 +197,9 @@ public:
     /// Assign value of mesh function
     UnitSquare mesh(3, 3);
     MeshFunction<int> f(mesh, 0);
-    f.set(3, 10);
+    f[3] = 10;
     Vertex v(mesh, 3);
-    CPPUNIT_ASSERT(f(v) == 10);
+    CPPUNIT_ASSERT(f[v] == 10);
   }
   
 };
@@ -251,16 +251,16 @@ public:
     // Write and read mesh function to/from file
     UnitSquare mesh(1, 1);
     MeshFunction<int> f(mesh, 0);
-    f.set(0, 2);
-    f.set(1, 4);
-    f.set(2, 6);
-    f.set(3, 8);
+    f[0] = 2;
+    f[1] = 4;
+    f[2] = 6;
+    f[3] = 8;
     File file("meshfunction.xml");
     file << f;
     MeshFunction<int> g(mesh, 0);
     file >> g;
     for (VertexIterator v(mesh); !v.end(); ++v)
-      CPPUNIT_ASSERT(f(*v) == g(*v));
+      CPPUNIT_ASSERT(f[*v] == g[*v]);
   }
 
 };

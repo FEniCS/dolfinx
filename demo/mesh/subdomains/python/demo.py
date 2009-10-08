@@ -7,7 +7,7 @@ for the Stokes demo programs.
 """
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-15 -- 2008-12-07"
+__date__ = "2007-11-15 -- 2009-10-08"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -39,8 +39,7 @@ mesh = Mesh("../../../../data/meshes/dolfin-2.xml.gz")
 sub_domains = MeshFunction("uint", mesh, mesh.topology().dim() - 1)
 
 # Mark all facets as sub domain 3
-for i in range(sub_domains.size()):
-    sub_domains.set(i, 3)
+sub_domains.set_all(3)
 
 # Mark no-slip facets as sub domain 0
 noslip = Noslip()

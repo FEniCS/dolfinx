@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2008-08-12
-// Last changed: 2009-08-19
+// Last changed: 2009-10-08
 
 #include <iostream>
 
@@ -84,7 +84,7 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
   for (CellIterator bc(interior_boundary); !bc.end(); ++bc)
   {
     // Get boundary facet
-    Facet f(mesh, cell_map->get(*bc));
+    Facet f(mesh, (*cell_map)[*bc]);
 
     // Get cell to which facet belongs (pick first)
     Cell c(mesh, f.entities(mesh.topology().dim())[0]);

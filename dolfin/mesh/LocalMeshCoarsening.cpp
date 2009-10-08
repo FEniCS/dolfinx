@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2006-11-01
-// Last changed: 2008-05-28
+// Last changed: 2009-10-08
 
 #include <list>
 
@@ -59,7 +59,7 @@ void LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(Mesh& mesh,
   MeshFunction<bool> cell_forbidden(mesh);
   cell_forbidden.init(mesh.topology().dim());
   for (CellIterator c(mesh); !c.end(); ++c)
-    cell_forbidden.set(c->index(),false);
+    cell_forbidden[c->index()] = false;
 
   // Init new vertices and cells
   std::vector<int> old2new_cell(mesh.num_cells());
@@ -70,7 +70,7 @@ void LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(Mesh& mesh,
   // Compute cells to delete
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    if (cell_marker.get(*c) == true)
+    if (cell_marker[*c] == true)
     {
       cells_to_coarsen.push_back(c->index());
       //cout << "coarsen midpoint: " << c->midpoint() << endl;
@@ -156,7 +156,7 @@ void LocalMeshCoarsening::collapse_edge(Mesh& mesh, Edge& edge,
 
   for (CellIterator c(vertex_to_remove); !c.end(); ++c)
   {
-    if ( cell_to_remove.get(*c) == false )
+    if ( cell_to_remove[*c] == false )
     {
       uint cv_idx = 0;
       for (VertexIterator v(*c); !v.end(); ++v)
@@ -192,25 +192,25 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   MeshFunction<bool> vertex_forbidden(mesh);
   vertex_forbidden.init(0);
   for (VertexIterator v(mesh); !v.end(); ++v)
-    vertex_forbidden.set(v->index(),false);
+    vertex_forbidden[v->index()] = false;
 
   // Initialise boundary verticies
   MeshFunction<bool> vertex_boundary(mesh);
   vertex_boundary.init(0);
   for (VertexIterator v(mesh); !v.end(); ++v)
-    vertex_boundary.set(v->index(),false);
+    vertex_boundary[v->index()] = false;
 
   BoundaryMesh boundary(mesh);
   MeshFunction<uint>* bnd_vertex_map = boundary.data().mesh_function("vertex map");
   assert(bnd_vertex_map);
   for (VertexIterator v(boundary); !v.end(); ++v)
-    vertex_boundary.set(bnd_vertex_map->get(v->index()),true);
+    vertex_boundary[(*bnd_vertex_map)[v->index()]] = true;
 
   // If coarsen boundary is forbidden
   if ( coarsen_boundary == false )
   {
     for (VertexIterator v(boundary); !v.end(); ++v)
-      vertex_forbidden.set(bnd_vertex_map->get(v->index()),true);
+      vertex_forbidden[(*bnd_vertex_map)[v->index()]] = true;
   }
   // Initialise data for finding which vertex to remove
   bool _collapse_edge = false;
@@ -232,12 +232,12 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   cell_to_remove.init(mesh.topology().dim());
 
   for (CellIterator ci(mesh); !ci.end(); ++ci)
-    cell_to_remove.set(ci->index(), false);
+    cell_to_remove[ci->index()] = false;
 
   MeshFunction<bool> cell_to_regenerate(mesh);
   cell_to_regenerate.init(mesh.topology().dim());
   for (CellIterator ci(mesh); !ci.end(); ++ci)
-    cell_to_regenerate.set(ci->index(), false);
+    cell_to_regenerate[ci->index()] = false;
 
   // Find shortest edge of cell c
   _collapse_edge = false;
@@ -245,7 +245,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   for (EdgeIterator e(c); !e.end(); ++e)
   {
     edge_vertex = e->entities(0);
-    if ( !vertex_forbidden.get(edge_vertex[0]) || !vertex_forbidden.get(edge_vertex[1]) )
+    if ( !vertex_forbidden[edge_vertex[0]] || !vertex_forbidden[edge_vertex[1]] )
     {
       l = e->length();
       if ( lmin > l )
@@ -267,8 +267,8 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   {
     edge_vertex = shortest_edge.entities(0);
 
-    if(vertex_forbidden.get(edge_vertex[0]) &&
-       vertex_forbidden.get(edge_vertex[1]))
+    if(vertex_forbidden[edge_vertex[0]] &&
+       vertex_forbidden[edge_vertex[1]])
     {
       // Both vertices are forbidden, cannot coarsen
 
@@ -277,13 +277,13 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
       editor.close();
       return false;
     }
-    if(vertex_forbidden.get(edge_vertex[0]) == true)
+    if(vertex_forbidden[edge_vertex[0]] == true)
       vert2remove_idx = edge_vertex[1];
-    else if(vertex_forbidden.get(edge_vertex[1]) == true)
+    else if(vertex_forbidden[edge_vertex[1]] == true)
       vert2remove_idx = edge_vertex[0];
-    else if(vertex_boundary.get(edge_vertex[1]) == true && vertex_boundary.get(edge_vertex[0]) == false)
+    else if(vertex_boundary[edge_vertex[1]] == true && vertex_boundary[edge_vertex[0]] == false)
       vert2remove_idx = edge_vertex[0];
-    else if(vertex_boundary.get(edge_vertex[0]) == true && vertex_boundary.get(edge_vertex[1]) == false)
+    else if(vertex_boundary[edge_vertex[0]] == true && vertex_boundary[edge_vertex[1]] == false)
       vert2remove_idx = edge_vertex[1];
     else if ( edge_vertex[0] > edge_vertex[1] )
       vert2remove_idx = edge_vertex[0];
@@ -308,7 +308,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   num_cells_to_remove = 0;
   for (CellIterator cn(shortest_edge); !cn.end(); ++cn)
   {
-    cell_to_remove.set(cn->index(),true);
+    cell_to_remove[cn->index()] = true;
     num_cells_to_remove++;
 
     // Update cell map
@@ -318,7 +318,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   // Regenerate cells around vertex
   for (CellIterator cn(vertex_to_remove); !cn.end(); ++cn)
   {
-    cell_to_regenerate.set(cn->index(),true);
+    cell_to_regenerate[cn->index()] = true;
 
     // Update cell map (will be filled in with correct index)
     old2new_cell[cn->index()] = -1;
@@ -351,7 +351,7 @@ bool LocalMeshCoarsening::coarsen_cell(Mesh& mesh, Mesh& coarse_mesh,
   std::vector<uint> cell_vertices(cell_type.num_entities(0));
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    if(cell_to_remove.get(*c) == false && cell_to_regenerate(*c) == false)
+    if(cell_to_remove[*c] == false && cell_to_regenerate[*c] == false)
     {
       cv_idx = 0;
       for (VertexIterator v(*c); !v.end(); ++v)

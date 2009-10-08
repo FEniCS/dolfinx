@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2009-08-06
+// Last changed: 2009-10-08
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -29,7 +29,7 @@ namespace dolfin
   public:
     
     GlobalSort(const MeshFunction<uint>* global_vertex_indices) : g(global_vertex_indices) {}
-    bool operator() (const uint& l, const uint& r) { return g->get(l) < g->get(r); }
+    bool operator() (const uint& l, const uint& r) { return (*g)[l] < (*g)[r]; }
     const MeshFunction<uint>* g;    
     
   };
@@ -193,8 +193,8 @@ bool CellType::increasing(uint num_vertices, const uint* vertices,
   else
   {
     for (uint v = 1; v < num_vertices; v++)
-      if (global_vertex_indices->get(vertices[v - 1]) >= 
-          global_vertex_indices->get(vertices[v]))
+      if ((*global_vertex_indices)[vertices[v - 1]] >= 
+          (*global_vertex_indices)[vertices[v]])
         return false;
   }
 
@@ -263,9 +263,9 @@ bool CellType::increasing(uint n0, const uint* v0,
     }
     else
     {
-      if (global_vertex_indices->get(w0[k]) < global_vertex_indices->get(w1[k]))
+      if ((*global_vertex_indices)[w0[k]] < (*global_vertex_indices)[w1[k]])
         return true;
-      else if (global_vertex_indices->get(w0[k]) > global_vertex_indices->get(w1[k]))
+      else if ((*global_vertex_indices)[w0[k]] > (*global_vertex_indices)[w1[k]])
         return false;
     }
   }

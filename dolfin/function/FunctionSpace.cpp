@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-10-07
+// Last changed: 2009-10-08
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
@@ -207,7 +207,7 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::restriction(MeshFunction<bool>& 
 bool FunctionSpace::is_inside_restriction(uint c) const
 {
   if (_restriction)
-    return _restriction->get(c);
+    return (*_restriction)[c];
   else
     return true;
 }
