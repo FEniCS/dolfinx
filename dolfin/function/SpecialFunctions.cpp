@@ -41,10 +41,14 @@ CellSize::CellSize(const Mesh& mesh)
 void CellSize::eval(double* values, const Data& data) const
 {
   assert(values);
-  assert(data.geometric_dimension() == geometric_dimension());
-  assert(&data.cell().mesh() == &mesh);
+  //assert(data.geometric_dimension() == geometric_dimension());
+  //assert(&data.cell().mesh() == &mesh);
 
-  values[0] = data.cell().diameter();
+  const uint cell_index = data.ufc_cell().entity_indices[data.ufc_cell().topological_dimension][0];
+  Cell cell(mesh, cell_index);
+
+  values[0] = cell.diameter();
+  //values[0] = data.cell().diameter();
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
