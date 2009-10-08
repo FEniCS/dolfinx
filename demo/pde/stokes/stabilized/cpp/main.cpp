@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2009-10-05
+// Last changed: 2009-10-08
 //
 // This demo solves the Stokes equations, using stabilized
 // first order elements for the velocity and pressure. The
@@ -59,7 +59,7 @@ int main()
   // Create functions for boundary conditions
   Noslip noslip;
   Inflow inflow;
-  Constant zero(mesh, 0.0);
+  Constant zero(2, 0.0);
 
   // No-slip boundary condition for velocity
   DirichletBC bc0(W0, noslip, sub_domains, 0);
@@ -76,7 +76,7 @@ int main()
 
   // Set up PDE
   CellSize h(mesh);
-  Constant f(mesh, 0.0);
+  Constant f(2, 0.0, 0.0);
   Stokes::BilinearForm a(W, W);
   a.h = h;
   Stokes::LinearForm L(W);
