@@ -94,8 +94,8 @@ int main()
   bcs.push_back(&bcr);
 
   // Define source and solution functions
-  Constant B(3, 0.0);
-  Constant T(3, 0.0);
+  Constant B(3, 0.0, 0.0, 0.0);
+  Constant T(3, 0.0, 0.0, 0.0);
   Function u(V);
 
   // Set material parameters
