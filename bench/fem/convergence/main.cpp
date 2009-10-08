@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005
-// Last changed: 2009-09-09
+// Last changed: 2009-10-08
 
 #include <dolfin.h>
 #include "Poisson2D_1.h"
@@ -28,21 +28,31 @@ class DirichletBoundary : public SubDomain
 };
 
 // Right-hand side, 2D
-class Source2D : public Function
+class Source2D : public Expression
 {
+public:
+
+  Source2D() : Expression(2) {}
+
   void eval(double* values, const double* x) const
   {
     values[0] = 2.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*x[0])*sin(DOLFIN_PI*x[1]);
   }
+
 };
 
 // Right-hand side, 3D
-class Source3D : public Function
+class Source3D : public Expression
 {
+public:
+
+  Source3D() : Expression(3) {}
+
   void eval(double* values, const double* x) const
   {
     values[0] = 3.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*x[0])*sin(DOLFIN_PI*x[1])*sin(DOLFIN_PI*x[2]);
   }
+
 };
 
 // Solve equation and compute error, 2D
@@ -55,7 +65,7 @@ double solve2D(int q, int n)
   // Set up problem
   UnitSquare mesh(n, n);
   Source2D f;
-  Constant zero(0.0);
+  Constant zero(2, 0.0);
 
   // Choose forms
   Form* a = 0;
@@ -90,7 +100,7 @@ double solve2D(int q, int n)
     break;
   default:
     error("Forms not compiled for q = %d.", q);
-  }    
+  }
 
   // Set up boundary conditions
   DirichletBoundary boundary;
@@ -105,7 +115,7 @@ double solve2D(int q, int n)
 
   // Solve the linear system
   KrylovSolver solver("gmres");
-  solver.parameters["relative_tolerance"] = 1e-14; 
+  solver.parameters["relative_tolerance"] = 1e-14;
   solver.solve(A, x, b);
 
   // Compute maximum norm of error
@@ -122,9 +132,9 @@ double solve2D(int q, int n)
   delete [] U;
 
   delete a;
-  delete L; 
+  delete L;
   delete V;
-  
+
   return emax;
 }
 
@@ -138,7 +148,7 @@ double solve3D(int q, int n)
   // Set up problem
   UnitCube mesh(n, n, n);
   Source3D f;
-  Constant zero(0.0);
+  Constant zero(3, 0.0);
 
   // Choose forms
   Form* a = 0;
@@ -173,7 +183,7 @@ double solve3D(int q, int n)
     break;
   default:
     error("Forms not compiled for q = %d.", q);
-  }    
+  }
 
   // Set up boundary conditions
   DirichletBoundary boundary;
@@ -188,7 +198,7 @@ double solve3D(int q, int n)
 
   // Solve the linear system
   KrylovSolver solver("gmres");
-  solver.parameters["relative_tolerance"] = -1e-14; 
+  solver.parameters["relative_tolerance"] = -1e-14;
   solver.solve(A, x, b);
 
   // Compute maximum norm of error

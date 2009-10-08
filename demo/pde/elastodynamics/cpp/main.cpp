@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-01-22
-// Last changed: 2009-10-05
+// Last changed: 2009-10-07
 //
 
 #include <dolfin.h>
@@ -108,8 +108,8 @@ int main(int argc, char* argv[])
   // Material parameters
   Constant rho(mesh, 1.0);                           // mass density
   Constant eta(mesh, 0.25);                          // damping coefficient
-  double E  = 1.0;                             // Youngs modulus
-  double nu = 0.0;                             // Poisson ratio
+  double E  = 1.0;                                   // Youngs modulus
+  double nu = 0.0;                                   // Poisson ratio
   Constant lambda(mesh, (nu*E)/((1.0+nu)*(1.0-nu))); // Lame coefficient
   Constant mu(mesh, E/(2.0*(1.0+nu)));               // Lame coefficient
 
@@ -118,8 +118,8 @@ int main(int argc, char* argv[])
   Constant alpha_f(mesh, 0.4);
   Constant beta(mesh, 0.36);
   Constant gamma(mesh, 0.7);
-  Constant dt(mesh, 1.0/32.0);               // time step
-  double t = 0.0;                      // initial time
+  Constant dt(mesh, 1.0/32.0);    // time step
+  double t = 0.0;                 // initial time
   double T = 200*dt;              // final time
 
   // Body force
@@ -185,12 +185,12 @@ int main(int argc, char* argv[])
   Function eps_xx(Vdg);
 
   // Create output files
-	File file_u("u.pvd", "compressed");
-	File file_eps("eps_xx.pvd", "compressed");
+  File file_u("u.pvd", "compressed");
+  File file_eps("eps_xx.pvd", "compressed");
 
   // Start time stepping
   dolfin::uint step = 0;
-  while( t < T)
+  while (t < T)
   {
     // Update for next time step
     t += dt;
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
     u0 = u; v0 = v; a0 = a;
 
     // Save solutions to file
-    if( step % 2 == 0)
+    if (step % 2 == 0)
     {
       file_u << u;
       file_eps << eps_xx;
