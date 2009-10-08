@@ -30,7 +30,7 @@ int main()
   // Compute the first n eigenvalues
   unsigned int n = 10;
   SLEPcEigenSolver esolver;
-  esolver.parameters["spectrum"] = "smallest magnitude";
+  esolver.parameters["spectrum"] = "largest magnitude";
   esolver.solve(AA, n);
 
   cout << "Solver converted in " << esolver.get_iteration_number() << " iterations" << endl;

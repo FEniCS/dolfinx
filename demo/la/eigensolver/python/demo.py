@@ -33,7 +33,7 @@ assemble(dot(grad(v), grad(u))*dx, tensor=A)
 # Compute the first n eigenvalues
 n = 10
 esolver = SLEPcEigenSolver()
-esolver.parameters["spectrum"] = "smallest magnitude"
+esolver.parameters["spectrum"] = "largest magnitude"
 esolver.solve(A, n)
 
 print "Eigenvalue solver converged in %d iterations" % (esolver.get_iteration_number(),)
