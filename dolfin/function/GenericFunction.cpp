@@ -35,7 +35,7 @@ void GenericFunction::evaluate(double* values,
   assert(values);
   assert(coordinates);
 
-  // Update data
+  // Add ufc::cel and coordinates to data
   data.update(cell, coordinates);
 
   // Redirect to eval
@@ -50,8 +50,8 @@ void GenericFunction::restrict_as_ufc_function(double* w,
 {
   assert(w);
 
-  // Update cell data
-  data.update(dolfin_cell, ufc_cell, local_facet);
+  // Reset cell data
+  data.reset(dolfin_cell, ufc_cell, local_facet);
 
   // Evaluate each dof to get the expansion coefficients
   for (uint i = 0; i < element.space_dimension(); ++i)

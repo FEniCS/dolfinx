@@ -53,6 +53,12 @@ namespace dolfin
     /// The coordinates
     const double* x;
 
+    /// Update cell data and invalidate existing data
+    void reset(const Cell& dolfin_cell, const ufc::cell& ufc_cell, int local_facet);
+
+    /// Update cell data and invalidate existing data
+    void reset(const ufc::cell& ufc_cell, const double* x);
+
     /// Update cell data
     void update(const Cell& dolfin_cell, const ufc::cell& ufc_cell, int local_facet);
 
