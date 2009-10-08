@@ -254,6 +254,8 @@ void Function::eval(double* values, const double* x) const
   assert(values);
   assert(x);
 
+  not_working_in_parallel("Function::eval at arbitray points.");
+
   // Initialize intersection detector if not done before
   if (!intersection_detector)
     intersection_detector.reset(new IntersectionDetector(_function_space->mesh()));
