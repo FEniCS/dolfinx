@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-10-03
+// Last changed: 2009-10-08
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -48,30 +48,23 @@ void AssemblerTools::check(const Form& a)
     if(!coefficients[i])
       error("Got NULL Function as coefficient %d.", i);
 
-    try
-    {
-      // auto_ptr deletes its object when it exits its scope
-      std::auto_ptr<ufc::finite_element> fe(a.ufc_form().create_finite_element(i + a.rank()));
+    // auto_ptr deletes its object when it exits its scope
+    std::auto_ptr<ufc::finite_element> fe(a.ufc_form().create_finite_element(i + a.rank()));
 
-      // Checks outcommented since they only work for Functions, not Expressions
-      const uint r = coefficients[i]->value_rank();
-      const uint fe_r = fe->value_rank();
-      if (fe_r != r)
-        warning("Invalid value rank of Function %d, got %d but expecting %d. \
-You may need to provide the rank of a user defined Function.", i, r, fe_r);
+    // Checks outcommented since they only work for Functions, not Expressions
+    const uint r = coefficients[i]->value_rank();
+    const uint fe_r = fe->value_rank();
+    if (fe_r != r)
+      error("Invalid value rank for coefficient %d, got %d but expecting %d. \
+Did you forget to specify the value rank correctly in an Expression sub class?", i, r, fe_r);
 
-      for (uint j = 0; j < r; ++j)
-      {
-        uint dim = coefficients[i]->value_dimension(j);
-        uint fe_dim = fe->value_dimension(j);
-        if (dim != fe_dim)
-          warning("Invalid value dimension %d of Function %d, got %d but expecting %d. \
-You may need to provide the dimension of a user defined Function.", j, i, dim, fe_dim);
-      }
-    }
-    catch(std::exception & e)
+    for (uint j = 0; j < r; ++j)
     {
-      error("Function %d is invalid.", i);
+      uint dim = coefficients[i]->value_dimension(j);
+      uint fe_dim = fe->value_dimension(j);
+      if (dim != fe_dim)
+        error("Invalid value dimension %d for coefficient %d, got %d but expecting %d. \
+Did you forget to specify the value dimension correctly in an Expression sub class?", j, i, dim, fe_dim);
     }
   }
 
@@ -139,7 +132,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A,
       A.zero();
 }
 //-----------------------------------------------------------------------------
-std::string AssemblerTools::progress_message(uint rank, 
+std::string AssemblerTools::progress_message(uint rank,
                                              std::string integral_type)
 {
   std::stringstream s;
