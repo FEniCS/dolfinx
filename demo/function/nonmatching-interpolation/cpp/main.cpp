@@ -15,6 +15,8 @@
 
 using namespace dolfin;
 
+#ifdef HAS_GTS
+
 class MyExpression : public Expression
 {
 public:
@@ -27,7 +29,6 @@ public:
   }
 
 };
-
 
 int main()
 {
@@ -56,3 +57,13 @@ int main()
 
   return 0;
 }
+
+#else
+
+int main()
+{
+  info("DOLFIN must be compiled with GTS to run this demo.");
+  return 0;
+}
+
+#endif
