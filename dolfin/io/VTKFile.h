@@ -41,6 +41,11 @@ namespace dolfin
 
     void results_write(const Function& u, std::string file) const;
 
+    void write_point_data(const GenericFunction& u, const Mesh& mesh, 
+                          std::string file) const;
+
+    void write_cell_data(const Function& u, std::string file) const;
+
     void pvd_file_write(uint u, std::string file);
 
     void pvtu_mesh_write(std::string pvtu_filename, std::string vtu_filename) const;

@@ -309,306 +309,334 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
 //----------------------------------------------------------------------------
 void VTKFile::results_write(const Function& u, std::string vtu_filename) const
 {
-  // Type of data (point or cell). Point by default.
-  std::string data_type = "point";
-
-  // For brevity
-  const FunctionSpace& V = u.function_space();
-  const Mesh& mesh(V.mesh());
-  const FiniteElement& element(V.element());
-  const DofMap& dofmap(V.dofmap());
-
   // Get rank of Function
-  const uint rank = element.value_rank();
+  const uint rank = u.value_rank();
   if(rank > 2)
     error("Only scalar, vector and tensor functions can be saved in VTK format.");
 
   // Get number of components
   uint dim = 1;
   for (uint i = 0; i < rank; i++)
-    dim *= element.value_dimension(i);
+    dim *= u.value_dimension(i);
+
+  // Check that function type can be handled
+  if (rank == 1)
+  {
+    if(!(dim == 2 || dim == 3))
+      error("Don't know what to do with vector function with dim other than 2 or 3.");
+  }
+  else if (rank == 2)
+  {
+    if(!(dim == 4 || dim == 9))
+      error("Don't know what to do with tensor function with dim other than 4 or 9.");
+  }
 
   // Test for cell-based element type
+  const Mesh& mesh(u.function_space().mesh());
   uint cell_based_dim = 1;
   for (uint i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
+
+
+  const DofMap& dofmap(u.function_space().dofmap());
   if (dofmap.max_local_dimension() == cell_based_dim)
-    data_type = "cell";
+    write_cell_data(u, vtu_filename);
+  else 
+    write_point_data(u, mesh, vtu_filename);
+}
+//----------------------------------------------------------------------------
+void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
+                               std::string vtu_filename) const
+{
+  const uint rank = u.value_rank();
+
+  // Get number of components
+  uint dim = 1;
+  for (uint i = 0; i < rank; i++)
+    dim *= u.value_dimension(i);
 
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
 
-  // Write function data at mesh cells
-  if (data_type == "cell")
+  // Allocate memory for function values at vertices
+  const uint size = mesh.num_vertices()*dim;
+  double* values = new double[size];
+
+  // Get function values at vertices
+  u.compute_vertex_values(values, mesh);
+
+  if (rank == 0)
   {
-    // Write headers
-    if (rank == 0)
+    fp << "<PointData  Scalars=\"U\"> " << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"U\"  format=\""<< encode_string <<"\">" << std::endl;
+  }
+  else if (rank == 1)
+  {
+    fp << "<PointData  Vectors=\"U\"> " << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
+  }
+  else if (rank == 2)
+  {
+    fp << "<PointData  Tensors=\"U\"> " << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
+  }
+
+  if (encoding == "ascii")
+  {
+    std::ostringstream ss;
+    ss << std::scientific;
+    for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
     {
-      fp << "<CellData  Scalars=\"U\"> " << std::endl;
-      fp << "<DataArray  type=\"Float32\"  Name=\"U\"  format=\""<< encode_string <<"\">" << std::endl;
-    }
-    else if (rank == 1)
-    {
-      if(!(dim == 2 || dim == 3))
-        error("don't know what to do with vector function with dim other than 2 or 3.");
-      fp << "<CellData  Vectors=\"U\"> " << std::endl;
-      fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
-    }
-    else if (rank == 2)
-    {
-      if(!(dim == 4 || dim == 9))
-        error("Don't know what to do with tensor function with dim other than 4 or 9.");
-      fp << "<CellData  Tensors=\"U\"> " << std::endl;
-      fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
+      if(rank == 1 && dim == 2)
+      {
+        // Append 0.0 to 2D vectors to make them 3D
+        for(uint i = 0; i < 2; i++)
+          ss << " " << values[vertex->index() + i*mesh.num_vertices()];
+        ss << " " << 0.0;
+      }
+      else if (rank == 2 && dim == 4)
+      {
+        // Pad with 0.0 to 2D tensors to make them 3D
+        for(uint i = 0; i < 2; i++)
+        {
+          ss << " " << values[vertex->index() + (2*i+0)*mesh.num_vertices()];
+          ss << " " << values[vertex->index() + (2*i+1)*mesh.num_vertices()];
+          ss << " " << 0.0;
+        }
+        ss << " " << 0.0;
+        ss << " " << 0.0;
+        ss << " " << 0.0;
+      }
+      else
+      {
+        // Write all components
+        for(uint i = 0; i < dim; i++)
+          ss << " " << values[vertex->index() + i*mesh.num_vertices()];
+      }
+      ss << std::endl;
     }
 
-    // Allocate memory for function values at cell centres
-    const uint size = mesh.num_cells()*dim;
-    std::vector<uint> dofs(dofmap.max_local_dimension());
+    // Send to file
+    fp << ss.str();
+  }
+  else if (encoding == "base64" || encoding == "compressed")
+  {
+    std::vector<float> data;
+    if (rank == 1 && dim == 2)
+      data.resize(size + size/2);
+    else if (rank == 2 && dim == 4)
+      data.resize(size + 4*size/5);
+    else
+      data.resize(size);
 
-    // Build lists of dofs and create map
-    UFCCell ufc_cell(mesh);
-    std::vector<uint> dof_set;
-    std::vector<uint> offset(size+1);
-    std::vector<uint>::iterator cell_offset = offset.begin();
+    std::vector<float>::iterator entry = data.begin();
+    for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+    {
+      if(rank == 1 && dim == 2)
+      {
+        // Append 0.0 to 2D vectors to make them 3D
+        for(uint i = 0; i < dim; i++)
+          *entry++ = values[vertex->index() + i*mesh.num_vertices()];
+        *entry++ = 0.0;
+      }
+      else if (rank == 2 && dim == 4)
+      {
+        // Pad with 0.0 to 2D tensors to make them 3D
+        for(uint i = 0; i < 2; i++)
+        {
+          *entry++ = values[vertex->index() + (2*i+0)*mesh.num_vertices()];
+          *entry++ = values[vertex->index() + (2*i+1)*mesh.num_vertices()];
+          *entry++ = 0.0;
+        }
+        *entry++ = 0.0;
+        *entry++ = 0.0;
+        *entry++ = 0.0;
+      }
+      else
+      {
+        // Write all components
+        for(uint i = 0; i < dim; i++)
+          *entry++ = values[vertex->index() + i*mesh.num_vertices()];
+      }
+    }
+
+    // Create encoded stream
+    std::stringstream base64_stream;
+    encode_stream(base64_stream, data);
+
+    // Send stream to file
+    fp << base64_stream.str();
+    fp << std::endl;
+  }
+
+  fp << "</DataArray> " << std::endl;
+  fp << "</PointData> " << std::endl;
+
+  delete [] values;
+}
+//----------------------------------------------------------------------------
+void VTKFile::write_cell_data(const Function& u, std::string vtu_filename) const
+{
+  // For brevity
+  const Mesh& mesh(u.function_space().mesh());
+  const DofMap& dofmap(u.function_space().dofmap());
+
+  // Get rank of Function
+  const uint rank = u.value_rank();
+  if(rank > 2)
+    error("Only scalar, vector and tensor functions can be saved in VTK format.");
+
+  // Get number of components
+  uint dim = 1;
+  for (uint i = 0; i < rank; i++)
+    dim *= u.value_dimension(i);
+
+  // Open file
+  std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
+
+  // Write headers
+  if (rank == 0)
+  {
+    fp << "<CellData  Scalars=\"U\"> " << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"U\"  format=\""<< encode_string <<"\">" << std::endl;
+  }
+  else if (rank == 1)
+  {
+    fp << "<CellData  Vectors=\"U\"> " << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
+  }
+  else if (rank == 2)
+  {
+    fp << "<CellData  Tensors=\"U\"> " << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
+  }
+
+  // Allocate memory for function values at cell centres
+  const uint size = mesh.num_cells()*dim;
+  std::vector<uint> dofs(dofmap.max_local_dimension());
+
+  // Build lists of dofs and create map
+  UFCCell ufc_cell(mesh);
+  std::vector<uint> dof_set;
+  std::vector<uint> offset(size+1);
+  std::vector<uint>::iterator cell_offset = offset.begin();
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Tabulate dofs
+    ufc_cell.update(*cell);
+    dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());
+    for(uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
+      dof_set.push_back(dofs[i]);
+
+    // Add local dimension to cell offset and increment
+    *(cell_offset + 1) = *(cell_offset) + dofmap.local_dimension(ufc_cell);
+    ++cell_offset;
+  }
+
+  // Get  values
+  std::vector<double> values(dof_set.size());
+  u.vector().get(&values[0], dof_set.size(), &dof_set[0]);
+
+  if (encoding == "ascii")
+  {
+    std::ostringstream ss;
+    ss << std::scientific;
+    cell_offset = offset.begin();
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      // Tabulate dofs
+      // Tabulate dofs and get values
       ufc_cell.update(*cell);
       dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());
-      for(uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
-        dof_set.push_back(dofs[i]);
 
-      // Add local dimension to cell offset and increment
-      *(cell_offset + 1) = *(cell_offset) + dofmap.local_dimension(ufc_cell);
+      if (rank == 1 && dim == 2)
+      {
+        // Append 0.0 to 2D vectors to make them 3D
+        ss << " " << values[*cell_offset];
+        ss << " " << values[*cell_offset+1];
+        ss << " " << 0.0;
+      }
+      else if (rank == 2 && dim == 4)
+      {
+        // Pad with 0.0 to 2D tensors to make them 3D
+        for(uint i = 0; i < 2; i++)
+        {
+          ss << " " << values[*cell_offset + 2*i];
+          ss << " " << values[*cell_offset + 2*i+1];
+          ss << " " << 0.0;
+        }
+        ss << " " << 0.0;
+        ss << " " << 0.0;
+        ss << " " << 0.0;
+      }
+      else
+      {
+        // Write all components
+        for (uint i = 0; i < dim; i++)
+          ss << " " << values[*cell_offset + i];
+      }
+      ss << std::endl;
+      ++cell_offset;
+    }
+    // Send to file
+    fp << ss.str();
+  }
+  else if (encoding == "base64" || encoding == "compressed")
+  {
+    std::vector<float> data;
+    if (rank == 1 && dim == 2)
+      data.resize(size + size/2);
+    else if (rank == 2 && dim == 4)
+      data.resize(size + 4*size/5);
+    else
+      data.resize(size);
+
+    cell_offset = offset.begin();
+    std::vector<float>::iterator entry = data.begin();
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      // Tabulate dofs and get values
+      ufc_cell.update(*cell);
+      dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());
+
+      if (rank == 1 && dim == 2)
+      {
+        // Append 0.0 to 2D vectors to make them 3D
+        *entry++ = values[*cell_offset];
+        *entry++ = values[*cell_offset + 1];
+        *entry++ = 0.0;
+      }
+      else if (rank == 2 && dim == 4)
+      {
+        // Pad with 0.0 to 2D tensors to make them 3D
+        for(uint i = 0; i < 2; i++)
+        {
+          *entry++ = values[*cell_offset + 2*i];
+          *entry++ = values[*cell_offset + 2*i+1];
+          *entry++ = 0.0;
+        }
+        *entry++ = 0.0;
+        *entry++ = 0.0;
+        *entry++ = 0.0;
+      }
+      else
+      {
+        // Write all components
+        for (uint i = 0; i < dim; i++)
+          *entry++ = values[*cell_offset + i];
+      }
       ++cell_offset;
     }
 
-    // Get  values
-    std::vector<double> values(dof_set.size());
-    u.vector().get(&values[0], dof_set.size(), &dof_set[0]);
+    // Create encoded stream
+    std::stringstream base64_stream;
+    encode_stream(base64_stream, data);
 
-    if (encoding == "ascii")
-    {
-      std::ostringstream ss;
-      ss << std::scientific;
-      cell_offset = offset.begin();
-      for (CellIterator cell(mesh); !cell.end(); ++cell)
-      {
-        // Tabulate dofs and get values
-        ufc_cell.update(*cell);
-        dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());
-
-        if (rank == 1 && dim == 2)
-        {
-          // Append 0.0 to 2D vectors to make them 3D
-          ss << " " << values[*cell_offset];
-          ss << " " << values[*cell_offset+1];
-          ss << " " << 0.0;
-        }
-        else if (rank == 2 && dim == 4)
-        {
-          // Pad with 0.0 to 2D tensors to make them 3D
-          for(uint i = 0; i < 2; i++)
-          {
-            ss << " " << values[*cell_offset + 2*i];
-            ss << " " << values[*cell_offset + 2*i+1];
-            ss << " " << 0.0;
-          }
-          ss << " " << 0.0;
-          ss << " " << 0.0;
-          ss << " " << 0.0;
-        }
-        else
-        {
-          // Write all components
-          for (uint i = 0; i < dim; i++)
-            ss << " " << values[*cell_offset + i];
-        }
-        ss << std::endl;
-        ++cell_offset;
-      }
-      // Send to file
-      fp << ss.str();
-    }
-    else if (encoding == "base64" || encoding == "compressed")
-    {
-      std::vector<float> data;
-      if (rank == 1 && dim == 2)
-        data.resize(size + size/2);
-      else if (rank == 2 && dim == 4)
-        data.resize(size + 4*size/5);
-      else
-        data.resize(size);
-
-      cell_offset = offset.begin();
-      std::vector<float>::iterator entry = data.begin();
-      for (CellIterator cell(mesh); !cell.end(); ++cell)
-      {
-        // Tabulate dofs and get values
-        ufc_cell.update(*cell);
-        dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());
-
-        if (rank == 1 && dim == 2)
-        {
-          // Append 0.0 to 2D vectors to make them 3D
-          *entry++ = values[*cell_offset];
-          *entry++ = values[*cell_offset + 1];
-          *entry++ = 0.0;
-        }
-        else if (rank == 2 && dim == 4)
-        {
-          // Pad with 0.0 to 2D tensors to make them 3D
-          for(uint i = 0; i < 2; i++)
-          {
-            *entry++ = values[*cell_offset + 2*i];
-            *entry++ = values[*cell_offset + 2*i+1];
-            *entry++ = 0.0;
-          }
-          *entry++ = 0.0;
-          *entry++ = 0.0;
-          *entry++ = 0.0;
-        }
-        else
-        {
-          // Write all components
-          for (uint i = 0; i < dim; i++)
-            *entry++ = values[*cell_offset + i];
-        }
-        ++cell_offset;
-      }
-
-      // Create encoded stream
-      std::stringstream base64_stream;
-      encode_stream(base64_stream, data);
-
-      // Send stream to file
-      fp << base64_stream.str();
-      fp << std::endl;
-    }
-    fp << "</DataArray> " << std::endl;
-    fp << "</CellData> " << std::endl;
+    // Send stream to file
+    fp << base64_stream.str();
+    fp << std::endl;
   }
-  else if (data_type == "point")
-  {
-    // Allocate memory for function values at vertices
-    const uint size = mesh.num_vertices()*dim;
-    double* values = new double[size];
-
-    // Get function values at vertices
-    u.compute_vertex_values(values, mesh);
-
-    if (rank == 0)
-    {
-      fp << "<PointData  Scalars=\"U\"> " << std::endl;
-      fp << "<DataArray  type=\"Float32\"  Name=\"U\"  format=\""<< encode_string <<"\">" << std::endl;
-    }
-    else if (rank == 1)
-    {
-      fp << "<PointData  Vectors=\"U\"> " << std::endl;
-      fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
-    }
-    else if (rank == 2)
-    {
-      fp << "<PointData  Tensors=\"U\"> " << std::endl;
-      fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
-    }
-
-    if (encoding == "ascii")
-    {
-      std::ostringstream ss;
-      ss << std::scientific;
-      for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-      {
-        if(rank == 1 && dim == 2)
-        {
-          // Append 0.0 to 2D vectors to make them 3D
-          for(uint i = 0; i < 2; i++)
-            ss << " " << values[vertex->index() + i*mesh.num_vertices()];
-          ss << " " << 0.0;
-        }
-        else if (rank == 2 && dim == 4)
-        {
-          // Pad with 0.0 to 2D tensors to make them 3D
-          for(uint i = 0; i < 2; i++)
-          {
-            ss << " " << values[vertex->index() + (2*i+0)*mesh.num_vertices()];
-            ss << " " << values[vertex->index() + (2*i+1)*mesh.num_vertices()];
-            ss << " " << 0.0;
-          }
-          ss << " " << 0.0;
-          ss << " " << 0.0;
-          ss << " " << 0.0;
-        }
-        else
-        {
-          // Write all components
-          for(uint i = 0; i < dim; i++)
-            ss << " " << values[vertex->index() + i*mesh.num_vertices()];
-        }
-        ss << std::endl;
-      }
-
-      // Send to file
-      fp << ss.str();
-    }
-    else if (encoding == "base64" || encoding == "compressed")
-    {
-      std::vector<float> data;
-      if (rank == 1 && dim == 2)
-        data.resize(size + size/2);
-      else if (rank == 2 && dim == 4)
-        data.resize(size + 4*size/5);
-      else
-        data.resize(size);
-
-      std::vector<float>::iterator entry = data.begin();
-      for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-      {
-        if(rank == 1 && dim == 2)
-        {
-          // Append 0.0 to 2D vectors to make them 3D
-          for(uint i = 0; i < dim; i++)
-            *entry++ = values[vertex->index() + i*mesh.num_vertices()];
-          *entry++ = 0.0;
-        }
-        else if (rank == 2 && dim == 4)
-        {
-          // Pad with 0.0 to 2D tensors to make them 3D
-          for(uint i = 0; i < 2; i++)
-          {
-            *entry++ = values[vertex->index() + (2*i+0)*mesh.num_vertices()];
-            *entry++ = values[vertex->index() + (2*i+1)*mesh.num_vertices()];
-            *entry++ = 0.0;
-          }
-          *entry++ = 0.0;
-          *entry++ = 0.0;
-          *entry++ = 0.0;
-        }
-        else
-        {
-          // Write all components
-          for(uint i = 0; i < dim; i++)
-            *entry++ = values[vertex->index() + i*mesh.num_vertices()];
-        }
-      }
-
-      // Create encoded stream
-      std::stringstream base64_stream;
-      encode_stream(base64_stream, data);
-
-      // Send stream to file
-      fp << base64_stream.str();
-      fp << std::endl;
-    }
-
-    fp << "</DataArray> " << std::endl;
-    fp << "</PointData> " << std::endl;
-
-    delete [] values;
-  }
-  else
-    error("Unknown VTK data type.");
+  fp << "</DataArray> " << std::endl;
+  fp << "</CellData> " << std::endl;
 }
 //----------------------------------------------------------------------------
 void VTKFile::pvd_file_write(uint num, std::string _filename)

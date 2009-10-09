@@ -41,10 +41,12 @@ namespace dolfin
     ~Point() {};
 
     /// Return address of coordinate in direction i
-    inline double& operator[] (uint i) { assert(i < 3); return _x[i]; }
+    inline double& operator[] (uint i) 
+    { assert(i < 3); return _x[i]; }
 
     /// Return coordinate in direction i
-    inline double operator[] (uint i) const { assert(i < 3); return _x[i]; }
+    inline double operator[] (uint i) const 
+    { assert(i < 3); return _x[i]; }
 
     /// Return x-coordinate
     inline double x() const { return _x[0]; }
@@ -56,34 +58,44 @@ namespace dolfin
     inline double z() const { return _x[2]; }
 
     /// Return coordinate array
-    inline const double* coordinates() const { return _x; }
+    inline const double* coordinates() const 
+    { return _x; }
 
     /// Compute sum of two points
-    Point operator+ (const Point& p) const { Point q(_x[0] + p._x[0], _x[1] + p._x[1], _x[2] + p._x[2]); return q; }
+    Point operator+ (const Point& p) const 
+    { Point q(_x[0] + p._x[0], _x[1] + p._x[1], _x[2] + p._x[2]); return q; }
 
     /// Compute difference of two points
-    Point operator- (const Point& p) const { Point q(_x[0] - p._x[0], _x[1] - p._x[1], _x[2] - p._x[2]); return q; }
+    Point operator- (const Point& p) const 
+    { Point q(_x[0] - p._x[0], _x[1] - p._x[1], _x[2] - p._x[2]); return q; }
 
     /// Add given point
-    const Point& operator+= (const Point& p) { _x[0] += p._x[0]; _x[1] += p._x[1]; _x[2] += p._x[2]; return *this; }
+    const Point& operator+= (const Point& p) 
+    { _x[0] += p._x[0]; _x[1] += p._x[1]; _x[2] += p._x[2]; return *this; }
 
     /// Subtract given point
-    const Point& operator-= (const Point& p) { _x[0] -= p._x[0]; _x[1] -= p._x[1]; _x[2] -= p._x[2]; return *this; }
+    const Point& operator-= (const Point& p) 
+    { _x[0] -= p._x[0]; _x[1] -= p._x[1]; _x[2] -= p._x[2]; return *this; }
 
     /// Multiplication with scalar
-    Point operator* (double a) const { Point p(a*_x[0], a*_x[1], a*_x[2]); return p; }
+    Point operator* (double a) const 
+    { Point p(a*_x[0], a*_x[1], a*_x[2]); return p; }
 
     /// Incremental multiplication with scalar
-    const Point& operator*= (double a) { _x[0] *= a; _x[1] *= a; _x[2] *= a; return *this; }
+    const Point& operator*= (double a) 
+    { _x[0] *= a; _x[1] *= a; _x[2] *= a; return *this; }
 
     /// Division by scalar
-    Point operator/ (double a) const { Point p(_x[0]/a, _x[1]/a, _x[2]/a); return p; }
+    Point operator/ (double a) const 
+    { Point p(_x[0]/a, _x[1]/a, _x[2]/a); return p; }
 
     /// Incremental division by scalar
-    const Point& operator/= (double a) { _x[0] /= a; _x[1] /= a; _x[2] /= a; return *this; }
+    const Point& operator/= (double a) 
+    { _x[0] /= a; _x[1] /= a; _x[2] /= a; return *this; }
 
     /// Assignment operator
-    const Point& operator= (const Point& p) { _x[0] = p._x[0]; _x[1] = p._x[1]; _x[2] = p._x[2]; return *this; }
+    const Point& operator= (const Point& p) 
+    { _x[0] = p._x[0]; _x[1] = p._x[1]; _x[2] = p._x[2]; return *this; }
 
     /// Compute distance to given point
     double distance(const Point& p) const;
