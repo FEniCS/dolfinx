@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2005-08-31
-// Last changed: 2008-08-27
+// Last changed: 2009-10-09
 
 #ifndef __SLEPC_EIGEN_SOLVER_H
 #define __SLEPC_EIGEN_SOLVER_H
@@ -135,6 +135,9 @@ namespace dolfin
 
     // SLEPc solver pointer
     EPS eps;
+
+    // System size
+    uint system_size;
 
   };
 

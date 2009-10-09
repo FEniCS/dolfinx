@@ -10,7 +10,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-01-21
-// Last changed: 2009-10-07
+// Last changed: 2009-10-09
 
 //=============================================================================
 // SWIG directives for the DOLFIN la kernel module (pre)
@@ -18,6 +18,14 @@
 // The directives in this file are applied _before_ the header files of the
 // modules has been loaded.
 //=============================================================================
+
+//-----------------------------------------------------------------------------
+// Ignore the get_eigen{value,pair} methods (reimplemented in post)
+//-----------------------------------------------------------------------------
+#ifdef HAS_SLEPC
+%ignore dolfin::SLEPcEigenSolver::get_eigenvalue;
+%ignore dolfin::SLEPcEigenSolver::get_eigenpair;
+#endif
 
 //-----------------------------------------------------------------------------
 // Fix problem with missing uBLAS namespace
@@ -39,7 +47,6 @@
 //-----------------------------------------------------------------------------
 %rename(__float__) dolfin::Scalar::operator double;
 %rename(assign) dolfin::Scalar::operator=;
-
 
 //-----------------------------------------------------------------------------
 // Typemaps for GenericMatrix get and set functions
