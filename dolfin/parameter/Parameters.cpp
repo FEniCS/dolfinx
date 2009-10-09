@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-09-15
+// Last changed: 2009-10-09
 
 #include <sstream>
 #include <stdio.h>
@@ -84,7 +84,7 @@ void Parameters::add(std::string key, int value)
 }
 //-----------------------------------------------------------------------------
 void Parameters::add(std::string key, int value,
-                        int min_value, int max_value)
+                     int min_value, int max_value)
 {
   // Add parameter
   add(key, value);

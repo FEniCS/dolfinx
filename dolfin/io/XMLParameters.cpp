@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-16
-// Last changed: 2009-09-08
+// Last changed: 2009-10-09
 
 #include <stdlib.h>
 #include <dolfin/log/dolfin_log.h>
@@ -88,9 +88,10 @@ void XMLParameters::write(const Parameters& parameters,
       outfile << "<parameter key=\"" << parameter.key() << "\" type=\"int\" value=\""
               << static_cast<int>(parameter) << "\"/>" << std::endl;
     }
-    else if (parameter.type_str() == "double")
+    else if (parameter.type_str() == "real")
     {
-      outfile << "<parameter key=\"" << parameter.key() << "\" type=\"double\" value=\""
+      // FIXME: Cast to double here, extended precision lost
+      outfile << "<parameter key=\"" << parameter.key() << "\" type=\"real\" value=\""
               << static_cast<double>(parameter) << "\"/>" << std::endl;
     }
     else if (parameter.type_str() == "bool")
@@ -125,7 +126,7 @@ void XMLParameters::read_parameter(const xmlChar *name, const xmlChar **attrs)
   std::string string_value = parse_string(name, attrs, "value");
 
   // Set parameter
-  if (type == "double")
+  if (type == "double" || type == "real")
   {
     std::istringstream ss(string_value);
     double value;
