@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 // 
 // First added:  2006-09-20
-// Last changed: 2009-10-08
+// Last changed: 2009-10-09
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (post)
@@ -20,19 +20,6 @@
 //-----------------------------------------------------------------------------
 // Extend mesh entity iterators to work as Python iterators
 //-----------------------------------------------------------------------------
-%feature("docstring")  dolfin::MeshFunction::fill "
-
-Set all values to given value";
-
-%extend dolfin::MeshFunction {
-
-void fill(const T& value)
-{
-  (*self) = value;
-}
-
-}
-
 %extend dolfin::MeshEntityIterator {
 %pythoncode
 %{

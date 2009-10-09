@@ -1,7 +1,7 @@
 "This simple program illustrates the use of the SLEPc eigenvalue solver."
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-28 -- 2008-12-12"
+__date__ = "2007-11-28 -- 2009-10-09"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -40,5 +40,6 @@ print "Eigenvalue solver converged in %d iterations" % (esolver.get_iteration_nu
 
 # Display eigenvalues
 for i in range(n):
-    (lr, lc) = esolver.get_eigenvalue(i)
+    lr, lc, r_vec, c_vec = esolver.get_eigenpair(i)
     print "Eigenvalue " + str(i) + ": " + str(lr)
+    print "Eigenvector " + str(i) + ": " + str(r_vec.array())
