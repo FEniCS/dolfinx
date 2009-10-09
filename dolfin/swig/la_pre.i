@@ -204,8 +204,3 @@ LA_PRE_FACTORY(MTL4Factory)
 //-----------------------------------------------------------------------------
 %feature("director") dolfin::PETScKrylovMatrix;
 %feature("director") dolfin::uBLASKrylovMatrix;
-
-
-
-
-
