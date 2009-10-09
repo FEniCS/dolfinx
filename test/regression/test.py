@@ -1,7 +1,7 @@
 """Run all demos."""
 
 __author__ = "Ilmar Wilbers (ilmarw@simula.no)"
-__date__ = "2008-04-08 -- 2009-10-07"
+__date__ = "2008-04-08 -- 2009-10-09"
 __copyright__ = "Copyright (C) 2008 Ilmar Wilbers"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -54,7 +54,6 @@ for s in cppslow:
     cppdemos.append(s)
 
 # Remove overly slow demos
-pydemos.remove(os.path.join(demodir, 'pde', 'curl-curl', 'python'))
 pydemos.remove(os.path.join(demodir, 'pde', 'cahn-hilliard', 'python'))
 cppdemos.remove(os.path.join(demodir, 'pde', 'cahn-hilliard', 'cpp'))
 cppdemos.remove(os.path.join(demodir, 'pde', 'elastodynamics', 'cpp'))
