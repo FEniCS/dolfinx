@@ -27,13 +27,7 @@
 #ifdef HAS_SLEPC
 %extend dolfin::SLEPcEigenSolver {
 
-PyObject* get_eigenvalue() {
-    double lr, lc;
-    self->get_eigenvalue(lr, lc);
-    return Py_BuildValue("dd", lr, lc);
-}
-
-PyObject* get_eigenvalue(const int i) {
+PyObject* _get_eigenvalue(const int i) {
     double lr, lc;
     self->get_eigenvalue(lr, lc, i);
     return Py_BuildValue("dd", lr, lc);
@@ -52,6 +46,10 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         c_vec = c_vec or PETScVector()
         lr, lc = self._get_eigenpair(r_vec, c_vec, i)
         return lr, lc, r_vec, c_vec
+
+    def get_eigenvalue(self, i = 0):
+        """Gets the i-th eigenvalue of the eigenproblem"""
+        return self._get_eigenvalue(i)
 %}
 
 }
