@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 // 
 // First added:  2006-09-20
-// Last changed: 2009-10-08
+// Last changed: 2009-10-09
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (pre)
@@ -132,33 +132,23 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
 %ignore dolfin::MeshEntity::entities;
 
 %extend dolfin::MeshConnectivity {
-    PyObject* _connections() {
-        int m = self->size();
-        int n = 0;
+  PyObject* __call__() {
+    int m = self->size();
+    int n = 0;
 
-        MAKE_ARRAY(1, m, n, self->operator()(), NPY_UINT)
+    MAKE_ARRAY(1, m, n, (*self)(), NPY_UINT)
 
-        return reinterpret_cast<PyObject*>(array);
-    }
+      return reinterpret_cast<PyObject*>(array);
+  }
 
-    PyObject* _connections(dolfin::uint entity) {
-        int m = self->size(entity);
-        int n = 0;
+  PyObject* __call__(dolfin::uint entity) {
+    int m = self->size(entity);
+    int n = 0;
+    
+    MAKE_ARRAY(1, m, n, (*self)(entity), NPY_UINT)
 
-        MAKE_ARRAY(1, m, n, self->operator()(entity), NPY_UINT)
-
-        return reinterpret_cast<PyObject*>(array);
-    }
-
-%pythoncode
-%{
-    def __call__(self, entity = None):
-        """ Return the number of connections"""
-        # If return all connections
-        if entity is None:
-            return self._connections()
-        return self._connections(entity)
-%}
+      return reinterpret_cast<PyObject*>(array);
+  }
 }
 
 %extend dolfin::MeshEntity {
@@ -186,10 +176,4 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
   }
 }
 
-%typemap(directorin) double* y {
-  {
-    // Compute size of y
-    npy_intp dims[1] = {this->geometric_dimension()};
-    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
-  }
-}
+%typemap(directorin) double* y = const double* x;

@@ -77,7 +77,7 @@ options = [
                  path_validator),
     # configurable options for how we want to build:
     BoolVariable("enableDebug", "Build with debug information", 1),
-    BoolVariable("enableExtraDebug", "Build with extra debug information (no -O2)", 1),
+    BoolVariable("enableExtraDebug", "Build with extra debug information (no -O2)", 0),
     BoolVariable("enableDebugUblas", "Add some extra Ublas debug information", 0),
     BoolVariable("enableOptimize", "Compile with optimization", 0),
     BoolVariable("enableDocs", "Build documentation", 0),

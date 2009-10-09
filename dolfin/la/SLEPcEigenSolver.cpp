@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2005-08-31
-// Last changed: 2009-09-08
+// Last changed: 2009-10-09
 
 #ifdef HAS_SLEPC
 
@@ -18,7 +18,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver()
+SLEPcEigenSolver::SLEPcEigenSolver() : system_size(0)
 {
   // Set default parameter values
   parameters = default_parameters();
@@ -93,7 +93,16 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
   if (ii < num_computed_eigenvalues)
+  {
+    // Check size of passed vectors
+    if (system_size != r.size())
+      r.resize(system_size);
+  
+    if (system_size != c.size())
+      c.resize(system_size);
+
     EPSGetEigenpair(eps, ii, &lr, &lc, *r.vec(), *c.vec());
+  }
   else
     error("Requested eigenvalue/vector has not been computed");
 }
@@ -115,8 +124,11 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
     EPSSetOperators(eps, *A->mat(), PETSC_NULL);
   }
 
+  // Store the size of the eigenvalue system
+  system_size = A->size(0);
+
   // Set number of eigenpairs to compute
-  assert(n <= A->size(0));
+  assert(n <= system_size);
   const uint nn = static_cast<int>(n);
   EPSSetDimensions(eps, nn, PETSC_DECIDE, PETSC_DECIDE);
 
