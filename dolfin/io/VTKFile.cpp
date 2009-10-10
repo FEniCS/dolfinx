@@ -360,10 +360,10 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
 
   // Allocate memory for function values at vertices
   const uint size = mesh.num_vertices()*dim;
-  double* values = new double[size];
+  std::vector<double> values(size);
 
   // Get function values at vertices
-  u.compute_vertex_values(values, mesh);
+  u.compute_vertex_values(&values[0], mesh);
 
   if (rank == 0)
   {
@@ -471,8 +471,6 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
 
   fp << "</DataArray> " << std::endl;
   fp << "</PointData> " << std::endl;
-
-  delete [] values;
 }
 //----------------------------------------------------------------------------
 void VTKFile::write_cell_data(const Function& u, std::string vtu_filename) const

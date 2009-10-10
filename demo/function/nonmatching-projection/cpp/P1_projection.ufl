@@ -1,0 +1,20 @@
+# Copyright (C) 2009 Garth N. Wells.
+# Licensed under the GNU LGPL Version 2.1.
+#
+# First added:  2009-10-10
+# Last changed: 
+#
+# The bilinear form a(v, u) and linear form L(v) for
+# projection onto piecewise linears.
+#
+# Compile this form with FFC: ffc -l dolfin P1_projection.ufl
+
+P3 = FiniteElement("Lagrange", "triangle", 3)
+P1 = FiniteElement("Lagrange", "triangle", 1)
+
+v = TestFunction(P1)
+u = TrialFunction(P1)
+f = Function(P3)
+
+a = v*u*dx
+L = v*f*dx
