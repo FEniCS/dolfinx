@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-11
-// Last changed: 2009-10-07
+// Last changed: 2009-10-11
 
 #ifndef __DATA_H
 #define __DATA_H
@@ -47,23 +47,17 @@ namespace dolfin
     /// Check if we are on a facet
     bool on_facet() const;
 
-    /// Check if data is valid
-    bool is_valid() const;
-
     /// The coordinates
     const double* x;
 
-    /// Update cell data and invalidate existing data
-    void reset(const Cell& dolfin_cell, const ufc::cell& ufc_cell, int local_facet);
+    /// Set cell and facet data
+    void set(const Cell& dolfin_cell, const ufc::cell& ufc_cell, int local_facet);
 
-    /// Update cell data and invalidate existing data
-    void reset(const ufc::cell& ufc_cell, const double* x);
+    /// Set UFC cell and coordinate
+    void set(const ufc::cell& ufc_cell, const double* x);
 
-    /// Update cell data
-    void update(const Cell& dolfin_cell, const ufc::cell& ufc_cell, int local_facet);
-
-    /// Update cell data
-    void update(const ufc::cell& ufc_cell, const double* x);
+    /// Clear all cell data
+    void clear();
 
   private:
 
@@ -72,9 +66,6 @@ namespace dolfin
 
     // FIXME: Remove this
     friend class Function;
-
-    /// Invalidate cell data
-    void invalidate();
 
     // The current cell (if any, otherwise 0)
     const Cell* _dolfin_cell;

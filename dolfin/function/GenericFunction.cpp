@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-07
+// Last changed: 2009-10-11
 
 #include <dolfin/fem/FiniteElement.h>
 #include "GenericFunction.h"
@@ -35,8 +35,8 @@ void GenericFunction::evaluate(double* values,
   assert(values);
   assert(coordinates);
 
-  // Add ufc::cel and coordinates to data
-  data.update(cell, coordinates);
+  // Add ufc::cell and coordinates to data
+  data.set(cell, coordinates);
 
   // Redirect to eval
   eval(values, data);
@@ -50,14 +50,15 @@ void GenericFunction::restrict_as_ufc_function(double* w,
 {
   assert(w);
 
-  // Reset cell data
-  data.reset(dolfin_cell, ufc_cell, local_facet);
+  // Set cell data
+  data.clear();
+  data.set(dolfin_cell, ufc_cell, local_facet);
 
   // Evaluate each dof to get the expansion coefficients
   for (uint i = 0; i < element.space_dimension(); ++i)
     w[i] = element.evaluate_dof(i, *this, ufc_cell);
 
-  // Invalidate cell data
-  data.invalidate();
+  // Clear cell data
+  data.clear();
 }
 //-----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-07
+// Last changed: 2009-10-11
 
 #ifndef __EXPRESSION_H
 #define __EXPRESSION_H
@@ -52,21 +52,16 @@ namespace dolfin
     /// Return geometric dimension
     uint geometric_dimension() const;
 
+    //--- Implementation of GenericFunction interface ---
+
     /// Return value rank
-    uint value_rank() const;
+    virtual uint value_rank() const;
 
     /// Return value dimension for given axis
-    uint value_dimension(uint i) const;
+    virtual uint value_dimension(uint i) const;
 
-    //--- User-supplied callbacks for expression evaluation ---
-
-    /// Evaluate expression, must be overloaded by user (simple version)
-    virtual void eval(double* values, const double* x) const;
-
-    /// Evaluate expression, must be overloaded by user (optional version)
+    /// Evaluate function for given data
     virtual void eval(double* values, const Data& data) const;
-
-    //--- Implementation of GenericFunction interface ---
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
@@ -78,6 +73,11 @@ namespace dolfin
     /// Compute values at all mesh vertices
     virtual void compute_vertex_values(double* vertex_values,
                                        const Mesh& mesh) const;
+
+    //--- User-supplied callback for expression evaluation ---
+
+    /// Evaluate expression, must be overloaded by user (simple version)
+    virtual void eval(double* values, const double* x) const;
 
   protected:
 

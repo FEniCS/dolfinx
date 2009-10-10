@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-10-07
+// Last changed: 2009-10-11
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -42,14 +42,13 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
   init_vector();
 }
 //-----------------------------------------------------------------------------
-Function::Function(boost::shared_ptr<const FunctionSpace> V,
-                   GenericVector& x)
-  : _function_space(V),
+Function::Function(const FunctionSpace& V, GenericVector& x)
+  : _function_space(reference_to_no_delete_pointer(V)),
     _vector(reference_to_no_delete_pointer(x)),
-    local_scratch(V->element())
+    local_scratch(V.element())
 {
   // Assertion uses '<=' to deal with sub-functions
-  assert(V->dofmap().global_dimension() <= x.size());
+  assert(V.dofmap().global_dimension() <= x.size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -62,13 +61,14 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   assert(V->dofmap().global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
-Function::Function(const FunctionSpace& V, GenericVector& x)
-  : _function_space(reference_to_no_delete_pointer(V)),
+Function::Function(boost::shared_ptr<const FunctionSpace> V,
+                   GenericVector& x)
+  : _function_space(V),
     _vector(reference_to_no_delete_pointer(x)),
-    local_scratch(V.element())
+    local_scratch(V->element())
 {
   // Assertion uses '<=' to deal with sub-functions
-  assert(V.dofmap().global_dimension() <= x.size());
+  assert(V->dofmap().global_dimension() <= x.size());
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
@@ -87,7 +87,8 @@ Function::Function(const FunctionSpace& V, std::string filename)
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
 }
 //-----------------------------------------------------------------------------
-Function::Function(boost::shared_ptr<const FunctionSpace> V, std::string filename)
+Function::Function(boost::shared_ptr<const FunctionSpace> V,
+                   std::string filename)
   : _function_space(V),
     local_scratch(V->element())
 {
@@ -112,7 +113,7 @@ Function::Function(const Function& v)
   *this = v;
 }
 //-----------------------------------------------------------------------------
-Function::Function(const Function& v, uint i) 
+Function::Function(const Function& v, uint i)
    : local_scratch(v[i]._function_space->element())
 
 {
@@ -239,16 +240,6 @@ dolfin::uint Function::geometric_dimension() const
   return _function_space->mesh().geometry().dim();
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Function::value_rank() const
-{
-  return _function_space->element().value_rank();
-}
-//-----------------------------------------------------------------------------
-dolfin::uint Function::value_dimension(uint i) const
-{
-  return _function_space->element().value_dimension(i);
-}
-//-----------------------------------------------------------------------------
 void Function::eval(double* values, const double* x) const
 {
   assert(values);
@@ -272,35 +263,13 @@ void Function::eval(double* values, const double* x) const
   UFCCell ufc_cell(cell);
 
   // Evaluate function
-  eval(values, x, cell, ufc_cell, cell.index());
-}
-//-----------------------------------------------------------------------------
-void Function::eval(double* values, const Data& data) const
-{
-  assert(values);
-  assert(_function_space);
-
-  // Check if UFC cell if available and cell matches
-  if (data._dolfin_cell && _function_space->has_cell(*data._dolfin_cell))
-  {
-    // Efficient evaluation on given cell
-    assert(data._ufc_cell);
-    const uint cell_index = data._ufc_cell->entity_indices[data._ufc_cell->topological_dimension][0];
-    Cell cell(_function_space->mesh(), cell_index);
-    eval(values, data.x, *data._dolfin_cell, *data._ufc_cell, data._dolfin_cell->index());
-  }
-  else
-  {
-    // Redirect to point-based evaluation
-    eval(values, data.x);
-  }
+  eval(values, x, cell, ufc_cell);
 }
 //-----------------------------------------------------------------------------
 void Function::eval(double* values,
                     const double* x,
                     const Cell& dolfin_cell,
-                    const ufc::cell& ufc_cell,
-                    uint cell_index) const
+                    const ufc::cell& ufc_cell) const
 {
   assert(values);
   assert(x);
@@ -326,6 +295,130 @@ void Function::interpolate(const GenericFunction& v)
 
   init_vector();
   function_space().interpolate(*_vector, v);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Function::value_rank() const
+{
+  return _function_space->element().value_rank();
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Function::value_dimension(uint i) const
+{
+  return _function_space->element().value_dimension(i);
+}
+//-----------------------------------------------------------------------------
+void Function::eval(double* values, const Data& data) const
+{
+  assert(values);
+  assert(_function_space);
+
+  // Check if UFC cell if available and cell matches
+  if (data._dolfin_cell && _function_space->has_cell(*data._dolfin_cell))
+  {
+    // Efficient evaluation on given cell
+    assert(data._ufc_cell);
+    const uint cell_index = data._ufc_cell->entity_indices[data._ufc_cell->topological_dimension][0];
+    Cell cell(_function_space->mesh(), cell_index);
+    eval(values, data.x, *data._dolfin_cell, *data._ufc_cell);
+  }
+  else
+  {
+    // Redirect to point-based evaluation
+    eval(values, data.x);
+  }
+}
+//-----------------------------------------------------------------------------
+void Function::restrict(double* w,
+                        const FiniteElement& element,
+                        const Cell& dolfin_cell,
+                        const ufc::cell& ufc_cell,
+                        int local_facet) const
+{
+  assert(w);
+  assert(_function_space);
+
+  // Check if we are restricting to an element of this function space
+  if (_function_space->has_element(element) && _function_space->has_cell(dolfin_cell))
+  {
+    // Get dofmap
+    const DofMap& dofmap = _function_space->dofmap();
+
+    // Tabulate dofs
+    dofmap.tabulate_dofs(local_scratch.dofs, ufc_cell, dolfin_cell.index());
+
+    // Pick values from vector(s)
+    get(w, dofmap.local_dimension(ufc_cell), local_scratch.dofs);
+  }
+  else
+  {
+    // Restrict as UFC function (by calling eval)
+    restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet);
+  }
+}
+//-----------------------------------------------------------------------------
+void Function::compute_vertex_values(double* vertex_values,
+                                     const Mesh& mesh) const
+{
+  assert(vertex_values);
+  assert(&mesh == &_function_space->mesh());
+
+  // Gather off-process dofs
+  gather();
+
+  // Get finite element
+  const FiniteElement& element = _function_space->element();
+
+  // Local data for interpolation on each cell
+  const uint num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
+  boost::scoped_array<double> local_vertex_values(new double[local_scratch.size*num_cell_vertices]);
+
+  // Interpolate vertex values on each cell (using last computed value if not
+  // continuous, e.g. discontinuous Galerkin methods)
+  UFCCell ufc_cell(mesh);
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update to current cell
+    ufc_cell.update(*cell);
+
+    // Pick values from global vector
+    restrict(local_scratch.coefficients, element, *cell, ufc_cell, -1);
+
+    // Interpolate values at the vertices
+    element.interpolate_vertex_values(local_vertex_values.get(), local_scratch.coefficients, ufc_cell);
+
+    // Copy values to array of vertex values
+    for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
+    {
+      for (uint i = 0; i < local_scratch.size; ++i)
+      {
+        const uint local_index  = vertex.pos()*local_scratch.size + i;
+        const uint global_index = i*mesh.num_vertices() + vertex->index();
+        vertex_values[global_index] = local_vertex_values[local_index];
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void Function::gather() const
+{
+  // Gather off-process coefficients if running in parallel and function has a vector
+  if (MPI::num_processes() > 1)
+  {
+    assert(_function_space);
+
+    // Initialise scratch space
+    gather_scratch.init(_function_space->dofmap().max_local_dimension());
+
+    // Compute lists of off-process dofs
+    compute_off_process_dofs();
+
+    // Create off process vector if it doesn't exist
+    if (!_off_process_vector.get())
+      _off_process_vector.reset(_vector->factory().create_local_vector());
+
+    // Gather off process coefficients
+    _vector->gather(*_off_process_vector, _off_process_dofs);
+  }
 }
 //-----------------------------------------------------------------------------
 void Function::compute_off_process_dofs() const
@@ -432,99 +525,6 @@ void Function::get(double* block, uint m, const uint* rows) const
       block[gather_scratch.local_index[i]] = gather_scratch.local_block[i];
     for (uint i = 0; i < n_nonlocal; ++i)
       block[gather_scratch.nonlocal_index[i]] = gather_scratch.nonlocal_block[i];
-  }
-}
-//-----------------------------------------------------------------------------
-void Function::restrict(double* w,
-                        const FiniteElement& element,
-                        const Cell& dolfin_cell,
-                        const ufc::cell& ufc_cell,
-                        int local_facet) const
-{
-  assert(w);
-  assert(_function_space);
-
-  // Check if we are restricting to an element of this function space
-  if (_function_space->has_element(element) && _function_space->has_cell(dolfin_cell))
-  {
-    // Get dofmap
-    const DofMap& dofmap = _function_space->dofmap();
-
-    // Tabulate dofs
-    dofmap.tabulate_dofs(local_scratch.dofs, ufc_cell, dolfin_cell.index());
-
-    // Pick values from vector(s)
-    get(w, dofmap.local_dimension(ufc_cell), local_scratch.dofs);
-  }
-  else
-  {
-    // Restrict as UFC function (by calling eval)
-    restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet);
-  }
-}
-//-----------------------------------------------------------------------------
-void Function::compute_vertex_values(double* vertex_values,
-                                     const Mesh& mesh) const
-{
-  assert(vertex_values);
-  assert(&mesh == &_function_space->mesh());
-
-  // Gather off-process dofs
-  gather();
-
-  // Get finite element
-  const FiniteElement& element = _function_space->element();
-
-  // Local data for interpolation on each cell
-  const uint num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
-  boost::scoped_array<double> local_vertex_values(new double[local_scratch.size*num_cell_vertices]);
-
-  // Interpolate vertex values on each cell (using last computed value if not
-  // continuous, e.g. discontinuous Galerkin methods)
-  UFCCell ufc_cell(mesh);
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Update to current cell
-    ufc_cell.update(*cell);
-
-    // Pick values from global vector
-    restrict(local_scratch.coefficients, element, *cell, ufc_cell, -1);
-
-    // Interpolate values at the vertices
-    element.interpolate_vertex_values(local_vertex_values.get(), local_scratch.coefficients, ufc_cell);
-
-    // Copy values to array of vertex values
-    for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
-    {
-      for (uint i = 0; i < local_scratch.size; ++i)
-      {
-        const uint local_index  = vertex.pos()*local_scratch.size + i;
-        const uint global_index = i*mesh.num_vertices() + vertex->index();
-        vertex_values[global_index] = local_vertex_values[local_index];
-      }
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-void Function::gather() const
-{
-  // Gather off-process coefficients if running in parallel and function has a vector
-  if (MPI::num_processes() > 1)
-  {
-    assert(_function_space);
-
-    // Initialise scratch space
-    gather_scratch.init(_function_space->dofmap().max_local_dimension());
-
-    // Compute lists of off-process dofs
-    compute_off_process_dofs();
-
-    // Create off process vector if it doesn't exist
-    if (!_off_process_vector.get())
-      _off_process_vector.reset(_vector->factory().create_local_vector());
-
-    // Gather off process coefficients
-    _vector->gather(*_off_process_vector, _off_process_dofs);
   }
 }
 //-----------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-// Copyright (C) 2003-2008 Anders Logg.
+// Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2005-2009.
@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-10-07
+// Last changed: 2009-10-10
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -16,7 +16,6 @@
 #include <boost/ptr_container/ptr_map.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
-#include <dolfin/log/log.h>
 #include "GenericFunction.h"
 
 namespace ufc
@@ -54,24 +53,29 @@ namespace dolfin
     explicit Function(boost::shared_ptr<const FunctionSpace> V);
 
     /// Create function on given function space with a given vector
-    Function(const FunctionSpace& V, GenericVector& x);
-
-    /// Create function on given function space with a given vector (shared FunctionSpace, needed for the PyDOLFIN interface)
-    Function(boost::shared_ptr<const FunctionSpace> V, GenericVector& x);
+    Function(const FunctionSpace& V,
+             GenericVector& x);
 
     /// Create function on given function space with a given vector (shared data)
-    Function(boost::shared_ptr<const FunctionSpace> V, boost::shared_ptr<GenericVector> x);
+    Function(boost::shared_ptr<const FunctionSpace> V,
+             boost::shared_ptr<GenericVector> x);
+
+    /// Create function on given function space with a given vector (used by Python interface)
+    Function(boost::shared_ptr<const FunctionSpace> V,
+             GenericVector& x);
 
     /// Create function from vector of dofs stored to file
-    Function(const FunctionSpace& V, std::string filename);
+    Function(const FunctionSpace& V,
+             std::string filename);
 
     /// Create function from vector of dofs stored to file (shared data)
-    Function(boost::shared_ptr<const FunctionSpace> V, std::string filename);
+    Function(boost::shared_ptr<const FunctionSpace> V,
+             std::string filename);
 
     /// Copy constructor
     Function(const Function& v);
 
-    /// Sub-function constructor (shallow copy). Used in Python interface
+    /// Sub-function constructor with shallow copy of vector (used in Python interface)
     Function(const Function& v, uint i);
 
     /// Destructor
@@ -83,19 +87,19 @@ namespace dolfin
     /// Assignment from expression using interpolation
     const Function& operator= (const Expression& v);
 
-    /// Extract sub function data
+    /// Extract sub-function
     Function& operator[] (uint i) const;
 
-    /// Return the function space
+    /// Return function space
     const FunctionSpace& function_space() const;
 
-    /// Return shared pointer to the function space
+    /// Return shared pointer to function space
     boost::shared_ptr<const FunctionSpace> function_space_ptr() const;
 
-    /// Return the vector of expansion coefficients (non-const version)
+    /// Return vector of expansion coefficients (non-const version)
     GenericVector& vector();
 
-    /// Return the vector of expansion coefficients (const version)
+    /// Return vector of expansion coefficients (const version)
     const GenericVector& vector() const;
 
     /// Check if function is a member of the given function space
@@ -104,26 +108,28 @@ namespace dolfin
     /// Return geometric dimension
     uint geometric_dimension() const;
 
-    /// Return value rank
-    uint value_rank() const;
-
-    /// Return value dimension for given axis
-    uint value_dimension(uint i) const;
-
-    /// Function evaluation
+    /// Evaluate function for given coordinate
     void eval(double* values, const double* x) const;
 
-    /// Function evaluation
-    void eval(double* values, const Data& data) const;
-
-    /// Evaluate function at given point in given cell
-    void eval(double* values, const double* x, const Cell& dolfin_cell, 
-              const ufc::cell& ufc_cell, uint cell_index) const;
+    /// Evaluate function for given coordinate in given cell
+    void eval(double* values,
+              const double* x,
+              const Cell& dolfin_cell,
+              const ufc::cell& ufc_cell) const;
 
     /// Interpolate function (possibly non-matching meshes)
     void interpolate(const GenericFunction& v);
 
     //--- Implementation of GenericFunction interface ---
+
+    /// Return value rank
+    virtual uint value_rank() const;
+
+    /// Return value dimension for given axis
+    virtual uint value_dimension(uint i) const;
+
+    /// Evaluate function for given data
+    virtual void eval(double* values, const Data& data) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
@@ -139,12 +145,6 @@ namespace dolfin
     /// Collect off-process coefficients to prepare for interpolation
     virtual void gather() const;
 
-    // FIXME: Remove these
-
-    /// Friends
-    friend class GenericFunction;
-    friend class DiscreteFunction;
-
   protected:
 
     // The function space
@@ -155,6 +155,7 @@ namespace dolfin
     // Collection of sub-functions which share data with the function
     mutable boost::ptr_map<uint, Function> sub_functions;
 
+    // Compute lists of off-process dofs
     void compute_off_process_dofs() const;
 
     // Initialize vector
@@ -168,7 +169,6 @@ namespace dolfin
 
     // The vector of expansion coefficients (off-process)
     mutable boost::shared_ptr<GenericVector> _off_process_vector;
-
     mutable std::map<uint, uint> global_to_local;
     mutable std::vector<uint> _off_process_dofs;
 
@@ -214,7 +214,7 @@ namespace dolfin
     public:
 
       GatherScratch() : local_rows(0), nonlocal_rows(0), local_block(0),
-                  nonlocal_block(0), local_index(0), nonlocal_index(0)
+                        nonlocal_block(0), local_index(0), nonlocal_index(0)
       {}
 
       ~GatherScratch()
