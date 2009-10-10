@@ -2,9 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-07
-
-// Modified by Johan Hake, 2009
+// Last changed: 2009-10-11
+//
+// Modified by Johan Hake, 2009.
 
 #include <boost/scoped_array.hpp>
 #include <dolfin/log/log.h>
@@ -68,15 +68,6 @@ dolfin::uint Expression::value_dimension(uint i) const
   return value_shape[i];
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(double* values, const double* x) const
-{
-  assert(values);
-  assert(x);
-
-  // Missing eval method if we reach this point
-  error("Missing eval() for expression (must be overloaded).");
-}
-//-----------------------------------------------------------------------------
 void Expression::eval(double* values, const Data& data) const
 {
   assert(values);
@@ -111,7 +102,7 @@ void Expression::compute_vertex_values(double* vertex_values,
   {
     // Update cell data
     ufc_cell.update(*cell);
-    data.update(*cell, ufc_cell, -1);
+    data.set(*cell, ufc_cell, -1);
 
     // Iterate over cell vertices
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
@@ -130,5 +121,14 @@ void Expression::compute_vertex_values(double* vertex_values,
       }
     }
   }
+}
+//-----------------------------------------------------------------------------
+void Expression::eval(double* values, const double* x) const
+{
+  assert(values);
+  assert(x);
+
+  // Missing eval method if we reach this point
+  error("Missing eval() for expression (must be overloaded).");
 }
 //-----------------------------------------------------------------------------

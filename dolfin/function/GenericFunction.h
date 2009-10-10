@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-07
+// Last changed: 2009-10-11
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
@@ -23,12 +23,12 @@ namespace dolfin
   /// This is a common base class for functions. Functions can be
   /// evaluated at a given point and they can be restricted to a given
   /// cell in a finite element mesh. This functionality is implemented
-  /// by subclasses that implement the eval() and restrict() functions.
+  /// by sub-classes that implement the eval() and restrict() functions.
   ///
   /// DOLFIN provides two implementations of the GenericFunction
   /// interface in the form of the classes Function and Expression.
   ///
-  /// Sub classes may optionally implement the gather() function that
+  /// Sub-classes may optionally implement the gather() function that
   /// will be called prior to restriction when running in parallel.
 
   class GenericFunction : public ufc::function, public Variable
@@ -41,16 +41,15 @@ namespace dolfin
     /// Destructor
     virtual ~GenericFunction();
 
+    //--- Functions that must be implemented by sub-classes ---
+
     /// Return value rank
     virtual uint value_rank() const = 0;
 
     /// Return value dimension for given axis
     virtual uint value_dimension(uint i) const = 0;
 
-    /// Return value size (product of value dimensions)
-    uint value_size() const;
-
-    /// Evaluate function
+    /// Evaluate function for given data
     virtual void eval(double* values, const Data& data) const = 0;
 
     /// Restrict function to local cell (compute expansion coefficients w)
@@ -60,8 +59,19 @@ namespace dolfin
                           const ufc::cell& ufc_cell,
                           int local_facet) const = 0;
 
+    /// Compute values at all mesh vertices
+    virtual void compute_vertex_values(double* vertex_values,
+                                       const Mesh& mesh) const = 0;
+
+    //--- Optional functions to be implemented by sub-classes ---
+
     /// Collect off-process coefficients to prepare for interpolation
     virtual void gather() const {}
+
+    //--- Convenience functions ---
+
+    /// Return value size (product of value dimensions)
+    uint value_size() const;
 
     /// Convenience function for restriction when facet is unknown
     void restrict(double* w,
@@ -70,18 +80,16 @@ namespace dolfin
                   const ufc::cell& ufc_cell) const
     { restrict(w, element, dolfin_cell, ufc_cell, -1); }
 
-    /// Implementation of ufc::function interface
+    //--- Implementation of ufc::function interface ---
+
+    /// Evaluate function at given point in cell
     virtual void evaluate(double* values,
                           const double* coordinates,
                           const ufc::cell& cell) const;
 
-    /// Compute values at all mesh vertices
-    virtual void compute_vertex_values(double* vertex_values,
-                                       const Mesh& mesh) const = 0;
-
   protected:
 
-    /// Restrict as UFC function (by calling eval)
+    // Restrict as UFC function (by calling eval)
     void restrict_as_ufc_function(double* w,
                                   const FiniteElement& element,
                                   const Cell& dolfin_cell,
