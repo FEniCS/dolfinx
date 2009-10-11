@@ -101,64 +101,53 @@
 %enddef
 
 //-----------------------------------------------------------------------------
-// Define a macro for the vector interface
+// Modify the GenericVector interface
 //-----------------------------------------------------------------------------
-%define LA_PRE_VEC_INTERFACE(VEC_TYPE)
-%rename(assign) dolfin::VEC_TYPE::operator=;
+%rename(_assign) dolfin::GenericVector::operator=;
 
-%ignore dolfin::VEC_TYPE::operator[];
-%ignore dolfin::VEC_TYPE::operator*=;
-%ignore dolfin::VEC_TYPE::operator/=;
-%ignore dolfin::VEC_TYPE::operator+=;
-%ignore dolfin::VEC_TYPE::operator-=;
-%ignore dolfin::VEC_TYPE::getitem;
-%ignore dolfin::VEC_TYPE::setitem;
+%ignore dolfin::GenericVector::operator[];
+%ignore dolfin::GenericVector::operator*=;
+%ignore dolfin::GenericVector::operator/=;
+%ignore dolfin::GenericVector::operator+=;
+%ignore dolfin::GenericVector::operator-=;
+%ignore dolfin::GenericVector::getitem;
+%ignore dolfin::GenericVector::setitem;
 
 //-----------------------------------------------------------------------------
 // Ignore the get and set functions used for blocks
 // NOTE: The %ignore have to be set using the actuall type used in the declaration
 // so we cannot use dolfin::uint or unsigned int for uint. Strange...
 //-----------------------------------------------------------------------------
-%ignore dolfin::VEC_TYPE::get(double*, uint, const uint*) const;
-%ignore dolfin::VEC_TYPE::set(const double* , uint m, const uint*);
+%ignore dolfin::GenericVector::get(double*, uint, const uint*) const;
+%ignore dolfin::GenericVector::set(const double* , uint m, const uint*);
 
-%newobject dolfin::VEC_TYPE::copy;
+%newobject dolfin::GenericVector::copy;
 
-%ignore dolfin::VEC_TYPE::data() const;
-%ignore dolfin::VEC_TYPE::data();
-
-%enddef
+%ignore dolfin::GenericVector::data() const;
+%ignore dolfin::GenericVector::data();
 
 //-----------------------------------------------------------------------------
-// Define a macro for the matrix interface
+// Modify the GenericMatrix interface
 //-----------------------------------------------------------------------------
-%define LA_PRE_MAT_INTERFACE(MAT_TYPE)
-%rename(assign) dolfin::MAT_TYPE::operator=;
+%rename(assign) dolfin::GenericMatrix::operator=;
 
-%ignore dolfin::MAT_TYPE::operator*=;
-%ignore dolfin::MAT_TYPE::operator/=;
-%ignore dolfin::MAT_TYPE::operator+=;
-%ignore dolfin::MAT_TYPE::operator-=;
+%ignore dolfin::GenericMatrix::operator*=;
+%ignore dolfin::GenericMatrix::operator/=;
+%ignore dolfin::GenericMatrix::operator+=;
+%ignore dolfin::GenericMatrix::operator-=;
 
-%newobject dolfin::MAT_TYPE::copy;
+%newobject dolfin::GenericMatrix::copy;
 
-%ignore dolfin::MAT_TYPE::data;
-%ignore dolfin::MAT_TYPE::getitem;
-%ignore dolfin::MAT_TYPE::setitem;
-%ignore dolfin::MAT_TYPE::operator();
-%enddef
+%ignore dolfin::GenericMatrix::data;
+%ignore dolfin::GenericMatrix::getitem;
+%ignore dolfin::GenericMatrix::setitem;
+%ignore dolfin::GenericMatrix::operator();
 
 //-----------------------------------------------------------------------------
-// Run the macros for default uBLAS backend
+// Modify uBLAS matrices, as these are not renamed by the GenericMatrix rename
 //-----------------------------------------------------------------------------
-LA_PRE_VEC_INTERFACE(GenericVector)
-LA_PRE_VEC_INTERFACE(Vector)
-LA_PRE_VEC_INTERFACE(uBLASVector)
-
-LA_PRE_MAT_INTERFACE(GenericMatrix)
-LA_PRE_MAT_INTERFACE(Matrix)
-LA_PRE_MAT_INTERFACE(uBLASMatrix<dolfin::ublas_sparse_matrix>)
-LA_PRE_MAT_INTERFACE(uBLASMatrix<dolfin::ublas_dense_matrix>)
+%rename(assign) dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>::operator=;
+%rename(assign) dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>::operator=;
 
 LA_PRE_FACTORY(DefaultFactory)
 LA_PRE_FACTORY(uBLASFactory<dolfin::ublas_sparse_matrix>)
@@ -168,8 +157,6 @@ LA_PRE_FACTORY(uBLASFactory<dolfin::ublas_dense_matrix>)
 // Run macros for PETSc backend
 //-----------------------------------------------------------------------------
 #ifdef HAS_PETSC
-LA_PRE_VEC_INTERFACE(PETScVector)
-LA_PRE_MAT_INTERFACE(PETScMatrix)
 LA_PRE_FACTORY(PETScFactory)
 #endif
 
@@ -177,8 +164,6 @@ LA_PRE_FACTORY(PETScFactory)
 // Run macros for Trilinos backend
 //-----------------------------------------------------------------------------
 #ifdef HAS_TRILINOS
-LA_PRE_VEC_INTERFACE(EpetraVector)
-LA_PRE_MAT_INTERFACE(EpetraMatrix)
 LA_PRE_FACTORY(EpetraFactory)
 
 //-----------------------------------------------------------------------------
@@ -192,8 +177,6 @@ FOREIGN_SHARED_PTR_TYPEMAPS(Epetra_FEVector)
 // Run macros for MTL4 backend
 //-----------------------------------------------------------------------------
 #ifdef HAS_MTL4
-LA_PRE_VEC_INTERFACE(MTL4Vector)
-LA_PRE_MAT_INTERFACE(MTL4Matrix)
 LA_PRE_FACTORY(MTL4Factory)
 %ignore dolfin::MTL4Vector::vec;
 %ignore dolfin::MTL4Matrix::mat;

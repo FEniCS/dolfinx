@@ -124,19 +124,18 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 %include "dolfin/swig/la_get_set_items.i"
 
 // ---------------------------------------------------------------------------
-// Macro with C++ and Python extension code for GenericVector types in PyDOLFIN
+// Modify the GenericVector interface
 // ---------------------------------------------------------------------------
-%define LA_POST_VEC_INTERFACE(VEC_TYPE)
-%extend dolfin::VEC_TYPE
+%extend dolfin::GenericVector
 {
   void _scale(double a)
   {
-    (*self)*=a;
+    (*self) *= a;
   }
   
   void _vec_mul(const GenericVector& other)
   {
-    (*self)*=other;
+    (*self) *= other;
   }
 // ---------------------------------------------------------------------------
   %pythoncode
@@ -146,7 +145,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return first > 0 or len(self) > last
         
        
-    def __is_compatibable(self, other):
+    def __is_compatible(self, other):
         "Returns True if self, and other are compatible Vectors"
         if not isinstance(other, GenericVector):
             return False
@@ -168,7 +167,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def __gt__(self, value):
         if isinstance(value, (int, float)):
             return _compare_vector_with_value(self, value, dolfin_gt)
-        if isinstance(value,GenericVector):
+        if isinstance(value, GenericVector):
             return _compare_vector_with_vector(self, value, dolfin_gt)
         return NotImplemented
     
@@ -221,7 +220,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def __setslice__(self,i,j,values):
         if i == 0 and (j >= len(self) or j == -1) and isinstance(values, (float, int, GenericVector)):
             if isinstance(values, (float, int)) or len(values) == len(self):
-                self.assign(values)
+                self._assign(values)
                 return
             else:
                 raise ValueError, "dimension error"
@@ -235,7 +234,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def __getitem__(self, indices):
         from numpy import ndarray, integer
         from types import SliceType
-        if isinstance(indices, (int,integer)):
+        if isinstance(indices, (int, integer)):
             return _get_vector_single_item(self, indices)
         elif isinstance(indices, (SliceType, ndarray, list) ):
             return down_cast(_get_vector_sub_vector(self, indices))
@@ -269,9 +268,9 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         for i in xrange(self.size()):
             yield _get_vector_single_item(self, i)
 
-    def __add__(self,other):
+    def __add__(self, other):
         """x.__add__(y) <==> x+y"""
-        if self.__is_compatibable(other):
+        if self.__is_compatible(other):
             ret = self.copy()
             ret.axpy(1.0, other)
             return ret
@@ -279,9 +278,9 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     
     def __sub__(self,other):
         """x.__sub__(y) <==> x-y"""
-        if self.__is_compatibable(other):
+        if self.__is_compatible(other):
             ret = self.copy()
-            ret.axpy(-1.0,other)
+            ret.axpy(-1.0, other)
             return ret
         return NotImplemented
     
@@ -299,9 +298,9 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     
     def __div__(self,other):
         """x.__div__(y) <==> x/y"""
-        if isinstance(other,(int,float)):
+        if isinstance(other, (int, float)):
             ret = self.copy()
-            ret._scale(1.0/other)
+            ret._scale(1.0 / other)
             return ret
         return NotImplemented
     
@@ -327,24 +326,24 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     
     def __iadd__(self,other):
         """x.__iadd__(y) <==> x+y"""
-        if self.__is_compatibable(other):
+        if self.__is_compatible(other):
             self.axpy(1.0, other)
             return self
         return NotImplemented
     
     def __isub__(self,other):
         """x.__isub__(y) <==> x-y"""
-        if self.__is_compatibable(other):
+        if self.__is_compatible(other):
             self.axpy(-1.0, other)
             return self
         return NotImplemented
     
     def __imul__(self,other):
         """x.__imul__(y) <==> x*y"""
-        if isinstance(other,(float,int)):
+        if isinstance(other, (float, int)):
             self._scale(other)
             return self
-        if isinstance(other,GenericVector):
+        if isinstance(other, GenericVector):
             self._vec_mul(other)
             return self
         return NotImplemented
@@ -352,19 +351,17 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def __idiv__(self,other):
         """x.__idiv__(y) <==> x/y"""
         if isinstance(other, (float, int)):
-            self._scale(1.0/other)
+            self._scale(1.0 / other)
             return self
         return NotImplemented
     
   %}
 }
-%enddef
 
 // ---------------------------------------------------------------------------
-// Macro with C++ and Python extension code for GenericMatrix types in PyDOLFIN
+// Modify the GenericMatrix interface
 // ---------------------------------------------------------------------------
-%define LA_POST_MAT_INTERFACE(MAT_TYPE)
-%extend dolfin::MAT_TYPE
+%extend dolfin::GenericMatrix
 {
   void _scale(double a)
   {
@@ -395,7 +392,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 // ---------------------------------------------------------------------------
   %pythoncode
   %{
-    def __is_compatibable(self,other):
+    def __is_compatible(self,other):
         "Returns True if self, and other are compatible Vectors"
         if not isinstance(other,GenericMatrix):
             return False
@@ -421,11 +418,11 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         from types import SliceType
         if not (isinstance(indices, tuple) and len(indices) == 2):
             raise TypeError, "expected two indices"
-        if not all(isinstance(ind,(int,SliceType,list,ndarray)) for ind in indices):
+        if not all(isinstance(ind, (int, SliceType, list, ndarray)) for ind in indices):
             raise TypeError, "an int, slice, list or numpy array as indices"
         
-        if isinstance(indices[0],int):
-            if isinstance(indices[1],int):
+        if isinstance(indices[0], int):
+            if isinstance(indices[1], int):
                 return _get_matrix_single_item(self,indices[0],indices[1])
             return down_cast(_get_matrix_sub_vector(self,indices[0], indices[1], True))
         elif isinstance(indices[1],int):
@@ -444,19 +441,19 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             else:
                 return down_cast(_get_matrix_sub_matrix(self, indices[0], indices[1]))
             
-    def __setitem__(self,indices, values):
+    def __setitem__(self, indices, values):
         from numpy import ndarray
         from types import SliceType
-        if not (isinstance(indices,tuple) and len(indices) == 2):
+        if not (isinstance(indices, tuple) and len(indices) == 2):
             raise TypeError, "expected two indices"
-        if not all(isinstance(ind,(int,SliceType,list,ndarray)) for ind in indices):
+        if not all(isinstance(ind, (int, SliceType, list, ndarray)) for ind in indices):
             raise TypeError, "an int, slice, list or numpy array as indices"
         
-        if isinstance(indices[0],int):
-            if isinstance(indices[1],int):
-                if not isinstance(values,(float,int)):
+        if isinstance(indices[0], int):
+            if isinstance(indices[1], int):
+                if not isinstance(values, (float, int)):
                     raise TypeError, "expected scalar for single value assigment"
-                _set_matrix_single_item(self,indices[0],indices[1],values)
+                _set_matrix_single_item(self, indices[0], indices[1], values)
             else:
                 raise NotImplementedError
                 if isinstance(values,GenericVector):
@@ -465,11 +462,11 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
                     _set_matrix_items_array_of_float(self, indices[0], indices[1], values, True)
                 else:
                     raise TypeError, "expected a GenericVector or numpy array of float"
-        elif isinstance(indices[1],int):
+        elif isinstance(indices[1], int):
             raise NotImplementedError
-            if isinstance(values,GenericVector):
+            if isinstance(values, GenericVector):
                 _set_matrix_items_vector(self, indices[1], indices[0], values, False)
-            elif isinstance(values,ndarray):
+            elif isinstance(values, ndarray):
                 _set_matrix_items_array_of_float(self, indices[1], indices[0], values, False)
             else:
                 raise TypeError, "expected a GenericVector or numpy array of float"
@@ -479,7 +476,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             same_indices = id(indices[0]) == id(indices[1])
             
             if not same_indices and ( type(indices[0]) == type(indices[1]) ):
-                if isinstance(indices[0],(list,SliceType)):
+                if isinstance(indices[0], (list, SliceType)):
                     same_indices = indices[0] == indices[1]
                 else:
                     same_indices = (indices[0] == indices[1]).all()
@@ -487,7 +484,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             if same_indices:
                 if isinstance(values,GenericMatrix):
                     _set_matrix_items_matrix(self, indices[0], None, values)
-                elif isinstance(values,ndarray) and len(values.shape)==2:
+                elif isinstance(values, ndarray) and len(values.shape)==2:
                     _set_matrix_items_array_of_float(self, indices[0], None, values)
                 else:
                     raise TypeError, "expected a GenericMatrix or 2D numpy array of float"
@@ -501,7 +498,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             
     def __add__(self,other):
         """x.__add__(y) <==> x+y"""
-        if self.__is_compatibable(other):
+        if self.__is_compatible(other):
             ret = self.copy()
             ret.axpy(1.0, other, False)
             return ret
@@ -509,7 +506,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     
     def __sub__(self,other):
         """x.__sub__(y) <==> x-y"""
-        if self.__is_compatibable(other):
+        if self.__is_compatible(other):
             ret = self.copy()
             ret.axpy(-1.0, other, False)
             return ret
@@ -567,7 +564,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     
     def __rmul__(self,other):
         """x.__rmul__(y) <==> y*x"""
-        if isinstance(other,(int,float)):
+        if isinstance(other, (int, float)):
             ret = self.copy()
             ret._scale(other)
             return ret
@@ -579,35 +576,34 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     
     def __iadd__(self,other):
         """x.__iadd__(y) <==> x+y"""
-        if self.__is_compatibable(other):
+        if self.__is_compatible(other):
             self.axpy(1.0, other, False)
             return self
         return NotImplemented
     
     def __isub__(self,other):
         """x.__isub__(y) <==> x-y"""
-        if self.__is_compatibable(other):
+        if self.__is_compatible(other):
             self.axpy(-1.0, other, False)
             return self
         return NotImplemented
     
     def __imul__(self,other):
         """x.__imul__(y) <==> x*y"""
-        if isinstance(other,(float,int)):
+        if isinstance(other, (float, int)):
             self._scale(other)
             return self
         return NotImplemented
 
     def __idiv__(self,other):
         """x.__idiv__(y) <==> x/y"""
-        if isinstance(other,(float,int)):
-            self._scale(1.0/other)
+        if isinstance(other, (float, int)):
+            self._scale(1.0 / other)
             return self
         return NotImplemented
 
   %}
 }
-%enddef
 
 // ---------------------------------------------------------------------------
 // Macro with C++ and Python extension code for GenericVector types in PyDOLFIN
@@ -655,6 +651,12 @@ _down_cast_map[TENSOR_TYPE] = down_cast_ ## TENSOR_TYPE
 %enddef
 
 // ---------------------------------------------------------------------------
+// Run the data macro
+// ---------------------------------------------------------------------------
+LA_VEC_DATA_ACCESS(uBLASVector)
+LA_VEC_DATA_ACCESS(Vector)
+
+// ---------------------------------------------------------------------------
 // Define Python lookup maps for down_casting
 // ---------------------------------------------------------------------------
 %pythoncode %{
@@ -663,24 +665,6 @@ _down_cast_map = {}
 # A map with matrix types as keys and list of possible vector types as values
 _matrix_vector_mul_map = {}
 %}
-
-// ---------------------------------------------------------------------------
-// Run the LS interface macros
-// ---------------------------------------------------------------------------
-LA_POST_VEC_INTERFACE(GenericVector)
-LA_POST_MAT_INTERFACE(GenericMatrix)
-//LA_VEC_DATA_ACCESS(GenericVector)
-
-LA_POST_VEC_INTERFACE(Vector)
-LA_POST_MAT_INTERFACE(Matrix)
-LA_VEC_DATA_ACCESS(Vector)
-
-LA_POST_VEC_INTERFACE(uBLASVector)
-// NOTE: The uBLAS macros need to be run using the whole template type
-// I have tried using the typmaped one from above but with no luck.
-LA_POST_MAT_INTERFACE(uBLASMatrix<dolfin::ublas_sparse_matrix>)
-LA_POST_MAT_INTERFACE(uBLASMatrix<dolfin::ublas_dense_matrix>)
-LA_VEC_DATA_ACCESS(uBLASVector)
 
 // ---------------------------------------------------------------------------
 // Run the downcast macro
@@ -701,9 +685,6 @@ _matrix_vector_mul_map[uBLASDenseMatrix]  = [uBLASVector]
 // Run backend specific macros
 // ---------------------------------------------------------------------------
 #ifdef HAS_PETSC
-LA_POST_VEC_INTERFACE(PETScVector)
-LA_POST_MAT_INTERFACE(PETScMatrix)
-
 DOWN_CAST_MACRO(PETScVector)
 DOWN_CAST_MACRO(PETScMatrix)
 
@@ -713,9 +694,6 @@ _matrix_vector_mul_map[PETScMatrix] = [PETScVector]
 #endif
 
 #ifdef HAS_TRILINOS
-LA_POST_VEC_INTERFACE(EpetraVector)
-LA_POST_MAT_INTERFACE(EpetraMatrix)
-
 DOWN_CAST_MACRO(EpetraVector)
 DOWN_CAST_MACRO(EpetraMatrix)
 
@@ -725,8 +703,6 @@ _matrix_vector_mul_map[EpetraMatrix] = [EpetraVector]
 #endif
 
 #ifdef HAS_MTL4
-LA_POST_VEC_INTERFACE(MTL4Vector)
-LA_POST_MAT_INTERFACE(MTL4Matrix)
 LA_VEC_DATA_ACCESS(MTL4Vector)
 
 DOWN_CAST_MACRO(MTL4Vector)

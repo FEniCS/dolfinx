@@ -1,7 +1,7 @@
 """Unit tests for the linear algebra interface"""
 
 __author__ = "Johan Hake (hake@simula.no)"
-__date__ = "2008-09-30 -- 2008-10-06"
+__date__ = "2008-09-30 -- 2009-10-09"
 __copyright__ = "Copyright (C) 2008 Johan Hake"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -241,11 +241,11 @@ class AbstractBaseTest(object):
         self.assertTrue((A==A2).all())
         
         H  = A.copy()
-        H.assign(0.0)
+        H._assign(0.0)
         H[ind] = G
         
         C[:] = 2
-        D.assign(2)
+        D._assign(2)
         self.assertAlmostEqual(C[0],2)
         self.assertAlmostEqual(C[-1],2)
         self.assertAlmostEqual(C.sum(),D.sum())
