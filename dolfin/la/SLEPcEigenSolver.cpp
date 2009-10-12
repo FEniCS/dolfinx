@@ -3,9 +3,10 @@
 //
 // Modified by Ola Skavhaug, 2008.
 // Modified by Anders Logg, 2008-2009.
+// Modified by Marie Rognes, 2009.
 //
 // First added:  2005-08-31
-// Last changed: 2009-10-09
+// Last changed: 2009-10-12
 
 #ifdef HAS_SLEPC
 
@@ -97,7 +98,7 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
     // Check size of passed vectors
     if (system_size != r.size())
       r.resize(system_size);
-  
+
     if (system_size != c.size())
       c.resize(system_size);
 
@@ -106,6 +107,15 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
   else
     error("Requested eigenvalue/vector has not been computed");
 }
+
+
+int SLEPcEigenSolver::get_number_converged()
+{
+  int num_conv;
+  EPSGetConverged(eps, &num_conv);
+  return num_conv;
+}
+
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(const PETScMatrix* A,
                              const PETScMatrix* B,
@@ -168,8 +178,31 @@ void SLEPcEigenSolver::read_parameters()
   set_spectrum(parameters["spectrum"]);
   set_solver(parameters["solver"]);
   set_tolerance(parameters["tolerance"], parameters["maximum_iterations"]);
+  set_spectral_transform(parameters["spectral_transform"],
+                         parameters["spectral_shift"]);
+
 }
 //-----------------------------------------------------------------------------
+
+
+void SLEPcEigenSolver::set_spectral_transform(std::string transform,
+                                              double shift)
+{
+  if (transform == "default")
+    return;
+
+  ST st;
+  EPSGetST(eps, &st);
+  if (transform == "shift-and-invert")
+    {
+      STSetType(st, STSINV);
+      STSetShift(st, shift);
+    }
+  else
+    error("Unknown transform: \"%s\".", transform.c_str());
+}
+
+
 void SLEPcEigenSolver::set_spectrum(std::string spectrum)
 {
   // Do nothing if default type is specified

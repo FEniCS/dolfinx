@@ -3,9 +3,10 @@
 //
 // Modified by Ola Skavhaug, 2008.
 // Modified by Anders Logg, 2008.
+// Modified by Marie Rognes, 2009.
 //
 // First added:  2005-08-31
-// Last changed: 2009-10-09
+// Last changed: 2009-10-12
 
 #ifndef __SLEPC_EIGEN_SOLVER_H
 #define __SLEPC_EIGEN_SOLVER_H
@@ -103,6 +104,9 @@ namespace dolfin
     // Get the number of iterations used by the solver
     int get_iteration_number();
 
+    // Get the number of converged eigenvalues
+    int get_number_converged();
+
     /// Default parameter values
     static Parameters default_parameters()
     {
@@ -112,6 +116,8 @@ namespace dolfin
       p.add("solver",             "krylov-schur");
       p.add("tolerance",          1e-15);
       p.add("maximum_iterations", 10000);
+      p.add("spectral_transform", "default");
+      p.add("spectral_shift",     0.0);
 
       return p;
     }
@@ -123,6 +129,9 @@ namespace dolfin
 
     /// Callback for changes in parameter values
     void read_parameters();
+
+    // Set spectral transform
+    void set_spectral_transform(std::string transform, double shift);
 
     // Set spectrum
     void set_spectrum(std::string solver);
