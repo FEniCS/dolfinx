@@ -1,3 +1,73 @@
+/* -*- C -*- */
+// Copyright (C) 2006-2009 Johan Hake
+// Licensed under the GNU LGPL Version 2.1.
+//
+// First added:  2009-05-12
+// Last changed: 2009-10-12
+//
+// ===========================================================================
+// SWIG directives for the DOLFIN parameter kernel module (post)
+//
+// The directives in this file are applied _after_ the header files of the
+// modules has been loaded.
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// Modifications of Parameter interface
+// ---------------------------------------------------------------------------
+%extend dolfin::Parameter
+{
+%pythoncode%{
+def value(self):
+    val_type = self.type_str()
+    if val_type == "string":
+        return str(self)
+    elif  val_type == "int":
+        return int(self)
+    elif val_type == "bool":
+        return bool(self)
+    elif val_type == "real":
+        if has_gmp():
+            # FIXME: Is it possible to convert real to some high-precision Python type?
+            print "Warning: Converting real-valued parameter to double, might loose precision."
+        return float(self)
+    else:
+        raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type,key)
+
+def get_range(self):
+    val_type = self.type_str()
+    if val_type == "string":
+        local_range = self._get_string_range()
+        if len(local_range) == 0:
+            return
+        return local_range
+    elif  val_type == "int":
+        local_range = self._get_int_range()
+        if local_range[0] == 0 and local_range[0] == local_range[0]:
+            return
+        return local_range
+    elif val_type == "bool":
+        return 
+    elif val_type == "real":
+        if has_gmp():
+            # FIXME: Is it possible to convert real to some high-precision Python type?
+            print "Warning: Converting real-valued parameter to double, might loose precision."
+        local_range = self._get_real_range()
+        if local_range[0] == 0 and local_range[0] == local_range[0]:
+            return
+        return local_range
+    else:
+        raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type,key)
+
+def data(self):
+    return self.value(), self.get_range(), self.access_count(), self.change_count()
+%}
+
+}
+
+// ---------------------------------------------------------------------------
+// Modifications of Parameters interface
+// ---------------------------------------------------------------------------
 %extend dolfin::Parameters
 {
   void _parse(PyObject *op)
@@ -65,41 +135,27 @@ def items(self):
     return zip(self.keys(),self.values())
 
 def iteritems(self):
+    "Returns an iterator over the (key, value) items of the Parameters"
     for key, value in self.items():
         yield key, value
 
-def set_range(self,key,*arg):
+def set_range(self, key, *arg):
     "Set the range for the given parameter"
     if key not in self._get_parameter_keys():
         raise KeyError, "no parameter with name '%s'"%key
     self._get_parameter(key).set_range(*arg)
 
-def __getitem__(self,key):
+def __getitem__(self, key):
     "Return the parameter corresponding to the given key"
     if key in self._get_parameter_keys():
-        par = self._get_parameter(key)
-        val_type = par.type_str()
-        if val_type == "string":
-            return str(par)
-        elif val_type == "double":
-            return float(par)
-        elif  val_type == "int":
-            return int(par)
-        elif val_type == "bool":
-            return bool(par)
-        elif val_type == "real":
-            # FIXME: Is it possible to convert real to some high-precision Python type?
-            print "Warning: Converting real-valued parameter to double, might loose precision."
-            return float(par)
-        else:
-            raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type,key)
-
+        return self._get_parameter(key).value()
+        
     if key in self._get_parameter_set_keys():
         return self._get_parameter_set(key)
 
     raise KeyError, "'%s'"%key
 
-def __setitem__(self,key,value):
+def __setitem__(self, key, value):
     "Set the parameter 'key', with given 'value'"
     if key not in self._get_parameter_keys():
         raise KeyError, "'%s' is not a parameter"%key
@@ -156,7 +212,27 @@ def __str__(self):
 __getattr__ = __getitem__
 __setattr__ = __setitem__
 
+def iterdata(self):
+    """Returns an iterator of a tuple of a parameter key together with its value"""
+    for key in self.iterkeys():
+        yield key, self.get(key)
+
+def get(self, key):
+    """Return all data available for a certain parameter
+
+    The data is returned in a tuple:
+    value, range, access_count, change_count = parameters.get('name')
+    """
+    if key in self._get_parameter_keys():
+        return self._get_parameter(key).data()
+        
+    if key in self._get_parameter_set_keys():
+        return self._get_parameter_set(key)
+
+    raise KeyError, "'%s'"%key
+    
 %}
+
 }
 
 %pythoncode%{

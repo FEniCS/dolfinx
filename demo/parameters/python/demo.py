@@ -1,4 +1,4 @@
-"""This demo demonstrates the DOLFIN parameter system."
+"""This demo demonstrates the DOLFIN parameter system.
 
 Try running this demo with
 
@@ -6,7 +6,7 @@ Try running this demo with
 """
 
 __author__ = "Johan Hake (hake@simula.no) and Anders Logg (logg@simula.no)"
-__date__ = "2009-09-06 -- 2009-09-06"
+__date__ = "2009-09-06 -- 2009-10-12"
 __copyright__ = "Copyright (C) 2009 Johan Hake and Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -116,15 +116,31 @@ parameter_subset = {"foo": 1.5, "solver_parameters": {"max_iterations": 50}}
 application_parameters.update(parameter_subset)
 
 # Print command-line option string
+print "\nCommand-line option string"
 print application_parameters.option_string()
 
+# Demostrate access to full info of parameters
+def print_data(par, indent=""):
+    print "\n" + indent + "Content of:", par.name()
+    for key, par_info in par.iterdata():
+        if isinstance(par_info,Parameters):
+            print_data(par_info, indent + "    ")
+        else:
+            print indent + key, par_info
+
+print_data(application_parameters)
+
 # Direct creation of application parameter set
-application_parameters = Parameters("application_parameters",
-                                    foo = 1.0,
-                                    bar = 100,
-                                    pc = "amg",
-                                    solver_parameters = Parameters("solver",
-                                                                   max_iterations = 100,
-                                                                   tolerance = 1e-16,
-                                                                   relative_tolerance = (1e-16, 1e-16, 1.0),
-                                                                   pcs = ("ilu", ["ilu","amg","icc","sor"])))
+new_application_parameters = Parameters(
+    "application_parameters",
+    foo = 1.0,
+    bar = 100,
+    pc = "amg",
+    solver_parameters = Parameters(
+        "solver",
+        max_iterations = 100,
+        tolerance = 1e-16,
+        relative_tolerance = (1e-16, 1e-16, 1.0),
+        pcs = ("ilu", ["ilu","amg","icc","sor"])
+        )
+    )

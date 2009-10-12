@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-05-08
-// Last changed: 2009-06-30
+// Last changed: 2009-10-12
 
 #ifndef __PARAMETER_H
 #define __PARAMETER_H
@@ -46,7 +46,16 @@ namespace dolfin
     virtual void set_range(real min_value, real max_value);
 
     /// Set range for string-valued parameter
-    virtual void set_range(const std::set<std::string>& range);
+    virtual void set_range(std::set<std::string> range);
+
+    /// Get range for int-valued parameter
+    virtual void get_range(int& min_value, int& max_value) const;
+
+    /// Get range for double-valued parameter
+    virtual void get_range(real& min_value, real& max_value) const;
+
+    /// Get range for string-valued parameter
+    virtual void get_range(std::set<std::string>& range) const;
 
     /// Assignment from int
     virtual const Parameter& operator= (int value);
@@ -133,6 +142,9 @@ namespace dolfin
     /// Set range
     void set_range(int min_value, int max_value);
 
+    /// Get range
+    void get_range(int &min_value, int &max_value) const;
+
     /// Assignment
     const IntParameter& operator= (int value);
 
@@ -177,6 +189,9 @@ namespace dolfin
 
     /// Set range
     void set_range(real min_value, real max_value);
+
+    /// Get range
+    void get_range(real &min_value, real &max_value) const;
 
     /// Assignment
     const RealParameter& operator= (double value);
@@ -224,7 +239,10 @@ namespace dolfin
     ~StringParameter();
 
     /// Set range
-    void set_range(const std::set<std::string>& range);
+    void set_range(std::set<std::string> range);
+
+    /// Get range
+    void get_range(std::set<std::string>& range) const;
 
     /// Assignment
     const StringParameter& operator= (std::string value);
