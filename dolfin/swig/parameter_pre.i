@@ -117,7 +117,7 @@
 %typemap(argout) (dolfin::real &min_value, dolfin::real &max_value)
 {
 #ifdef HAS_GMP
-  $result = Py_BuildValue("dd", to_double($1), to_double($2));
+  $result = Py_BuildValue("dd", $1->get_d(), $2->get_d());
 #else
   $result = Py_BuildValue("dd", *$1, *$2);
 #endif
