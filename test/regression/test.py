@@ -1,7 +1,7 @@
 """Run all demos."""
 
 __author__ = "Ilmar Wilbers (ilmarw@simula.no)"
-__date__ = "2008-04-08 -- 2009-10-09"
+__date__ = "2008-04-08 -- 2009-10-11"
 __copyright__ = "Copyright (C) 2008 Ilmar Wilbers"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -80,10 +80,10 @@ if only_python:
 
 # Build prefix list
 prefixes = [""]
-if has_mpi() and has_parmetis():
-    prefixes.append("mpirun -n 2 ")
-else:
-    print "DOLFIN has not been compiled with mpi and Parmetis. Regression test will not be run in parallel."
+#if has_mpi() and has_parmetis():
+#    prefixes.append("mpirun -n 2 ")
+#else:
+#    print "DOLFIN has not been compiled with mpi and Parmetis. Regression test will not be run in parallel."
 
 # Run in serial, then in parallel
 for prefix in prefixes:

@@ -1,18 +1,38 @@
+/* -*- C -*- */
+// Copyright (C) 2006-2009 Johan Hake
+// Licensed under the GNU LGPL Version 2.1.
+//
+// First added:  2009-05-12
+// Last changed: 2009-10-12
+//
+// ===========================================================================
+// SWIG directives for the DOLFIN parameter kernel module (pre)
+//
+// The directives in this file are applied _before_ the header files of the
+// modules has been loaded.
+// ===========================================================================
 
+// ---------------------------------------------------------------------------
 // Renames and ignores for Parameter
 // For some obscure reason we need to rename Parameter
+// ---------------------------------------------------------------------------
 %rename (ParameterValue) dolfin::Parameter;
 %rename (__nonzero__) dolfin::Parameter::operator bool;
 %rename (__int__) dolfin::Parameter::operator int;
 %rename (__float__) dolfin::Parameter::operator double;
 %rename (__str__) dolfin::Parameter::operator std::string;
 %rename (_assign) dolfin::Parameter::operator=;
+%rename (_get_int_range) dolfin::Parameter::get_range(int& min_value, int& max_value) const;
+%rename (_get_real_range) dolfin::Parameter::get_range(real& min_value, real& max_value) const;
+%rename (_get_string_range) dolfin::Parameter::get_range(std::set<std::string>& range) const;
+%ignore dolfin::Parameter::operator dolfin::uint;
+
+// ---------------------------------------------------------------------------
+// Renames and ignores for Parameters
+// ---------------------------------------------------------------------------
 %rename (_assign_bool) dolfin::Parameter::operator= (bool value);
 %rename (_add) dolfin::Parameters::add;
 %rename (_add_bool) dolfin::Parameters::add(std::string key, bool value);
-%ignore dolfin::Parameter::operator dolfin::uint;
-
-// Renames and ignores for Parameters
 %rename (_get_parameter_keys) dolfin::Parameters::get_parameter_keys;
 %rename (_get_parameter_set_keys) dolfin::Parameters::get_parameter_set_keys;
 %rename (_get_parameter_set) dolfin::Parameters::operator();
@@ -21,7 +41,9 @@
 %ignore dolfin::Parameters::parse;
 %ignore dolfin::Parameters::update;
 
+// ---------------------------------------------------------------------------
 // Typemaps (in) for std::set<std::string>
+// ---------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_STRING_ARRAY) std::set<std::string> {
     $1 = PySequence_Check($input) ? 1 : 0;
 }
@@ -49,6 +71,9 @@
   $1 = tmp;
 }
 
+// ---------------------------------------------------------------------------
+// Typemaps (argout) for std::vector<std::string>&
+// ---------------------------------------------------------------------------
 %typemap(in, numinputs=0) std::vector<std::string>& keys (std::vector<std::string> tmp_vec){
   $1 = &tmp_vec;
 }
@@ -66,6 +91,61 @@
       PyErr_SetString(PyExc_ValueError,"something wrong happened when copying std::string to Python");
       return NULL;
     }
+  }
+  $result = ret;
+}
+
+// ---------------------------------------------------------------------------
+// Typemaps (argout) for int &min_value, int &max_value
+// ---------------------------------------------------------------------------
+%typemap(in, numinputs=0) (int &min_value, int &max_value) (int min_temp, int max_temp){
+  $1 = &min_temp; $2 = &max_temp;
+}
+
+%typemap(argout) (int &min_value, int &max_value)
+{
+  $result = Py_BuildValue("ii", *$1, *$2);
+}
+
+// ---------------------------------------------------------------------------
+// Typemaps (argout) for real &min_value, real &max_value
+// ---------------------------------------------------------------------------
+%typemap(in, numinputs=0) (dolfin::real &min_value, dolfin::real &max_value) ( dolfin::real min_temp, dolfin::real max_temp){
+  $1 = &min_temp; $2 = &max_temp;
+}
+
+%typemap(argout) (dolfin::real &min_value, dolfin::real &max_value)
+{
+#ifdef HAS_GMP
+  $result = Py_BuildValue("dd", to_double($1), to_double($2));
+#else
+  $result = Py_BuildValue("dd", *$1, *$2);
+#endif
+}
+
+// ---------------------------------------------------------------------------
+// Typemaps (argout) for std::set<std::string>&
+// ---------------------------------------------------------------------------
+%typemap(in, numinputs=0) std::set<std::string>& range (std::set<std::string> tmp_set){
+  $1 = &tmp_set;
+}
+
+%typemap(argout) std::set<std::string>& range
+{
+  int size = $1->size();
+  PyObject* ret = PyList_New(size);
+  PyObject* tmp_Py_str = 0;
+  std::set<std::string>::iterator it;
+  int i = 0;
+  for ( it=$1->begin() ; it != $1->end(); it++ )
+  {
+    tmp_Py_str = PyString_FromString(it->c_str());
+    if (PyList_SetItem(ret, i, tmp_Py_str)<0)
+    {
+      PyErr_SetString(PyExc_ValueError,"something wrong happened when copying std::string to Python");
+      return NULL;
+    }
+    i++;
   }
   $result = ret;
 }

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-05-08
-// Last changed: 2009-06-29
+// Last changed: 2009-10-12
 
 #include <sstream>
 #include <dolfin/log/log.h>
@@ -48,19 +48,37 @@ dolfin::uint Parameter::change_count() const
 //-----------------------------------------------------------------------------
 void Parameter::set_range(int min_value, int max_value)
 {
-  error("Cannot set double-valued range for parameter \"%s\" of type %s.",
+  error("Cannot set int-valued range for parameter \"%s\" of type %s.",
         _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
 void Parameter::set_range(real min_value, real max_value)
 {
-  error("Cannot set int-valued range for parameter \"%s\" of type %s.",
+  error("Cannot set real-valued range for parameter \"%s\" of type %s.",
         _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
-void Parameter::set_range(const std::set<std::string>& range)
+void Parameter::set_range(std::set<std::string> range)
 {
   error("Cannot set string-valued range for parameter \"%s\" of type %s.",
+        _key.c_str(), type_str().c_str());
+}
+//-----------------------------------------------------------------------------
+void Parameter::get_range(int& min_value, int& max_value) const 
+{
+  error("Cannot get int-valued range for parameter \"%s\" of type %s.",
+        _key.c_str(), type_str().c_str());
+}
+//-----------------------------------------------------------------------------
+void Parameter::get_range(real& min_value, real& max_value) const
+{
+  error("Cannot get double-valued range for parameter \"%s\" of type %s.",
+        _key.c_str(), type_str().c_str());
+}
+//-----------------------------------------------------------------------------
+void Parameter::get_range(std::set<std::string>& range) const
+{
+  error("Cannot get string-valued range for parameter \"%s\" of type %s.",
         _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
@@ -182,8 +200,15 @@ void IntParameter::set_range(int min_value, int max_value)
           min_value, max_value);
 
   // Set range
-  _min = min_value;
+  _min  = min_value;
   _max = max_value;
+}
+//-----------------------------------------------------------------------------
+void IntParameter::get_range(int& min_value, int& max_value) const
+{
+  // Get range
+  min_value = _min;
+  max_value = _max;
 }
 //-----------------------------------------------------------------------------
 const IntParameter& IntParameter::operator= (int value)
@@ -252,7 +277,7 @@ std::string IntParameter::str() const
 // class RealParameter
 //-----------------------------------------------------------------------------
 RealParameter::RealParameter(std::string key, real value)
-  : Parameter(key), _value(value), _min(0), _max(0)
+  : Parameter(key), _value(value), _min(0.0), _max(0.0)
 {
   // Do nothing
 }
@@ -272,6 +297,13 @@ void RealParameter::set_range(real min_value, real max_value)
   // Set range
   _min = min_value;
   _max = max_value;
+}
+//-----------------------------------------------------------------------------
+void RealParameter::get_range(real& min_value, real& max_value) const
+{
+  // Get range
+  min_value = _min;
+  max_value = _max;
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_GMP
@@ -362,9 +394,15 @@ StringParameter::~StringParameter()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void StringParameter::set_range(const std::set<std::string>& range)
+void StringParameter::set_range(std::set<std::string> range)
 {
   _range = range;
+}
+//-----------------------------------------------------------------------------
+void StringParameter::get_range(std::set<std::string>& range) const
+{
+  // Get range
+  range = _range;
 }
 //-----------------------------------------------------------------------------
 const StringParameter& StringParameter::operator= (std::string value)
