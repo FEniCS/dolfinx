@@ -13,7 +13,7 @@ EnsureSConsVersion(0, 98, 5)
 sys.path.insert(0, os.path.abspath(os.path.join("scons", "simula-scons")))
 print os.path.abspath(os.path.join("scons", "simula-scons"))
 import simula_scons as scons
- 
+
 # Import local exceptions
 from simula_scons.Errors import PkgconfigError, PkgconfigMissing
 
@@ -27,13 +27,13 @@ env.ARGUMENTS = ARGUMENTS
 env["projectname"] = "dolfin"
 
 # Set version
-env["PACKAGE_VERSION"] = "0.9.3"
+env["PACKAGE_VERSION"] = "0.9.4"
 
 scons.setDefaultEnv(env)
 
 # Specify a file where SCons store file signatures, used to figure out what is
 # changed. We store it in the 'scons' subdirectory to avoid mixing signatures
-# with the files in this project. 
+# with the files in this project.
 project_sconsignfile = os.path.abspath(os.path.join("scons", ".sconsign"))
 env.SConsignFile(project_sconsignfile)
 
@@ -54,10 +54,10 @@ path_validator = PathVariable.PathAccept
 # Build the commandline options for SCons:
 options = [
     # configurable options for installation:
-    PathVariable("prefix", "Installation prefix", default_prefix, 
+    PathVariable("prefix", "Installation prefix", default_prefix,
                  path_validator),
     PathVariable("DESTDIR",
-                 "Prepend DESTDIR to each installed target file", None, 
+                 "Prepend DESTDIR to each installed target file", None,
                  path_validator),
     PathVariable("binDir", "Binary installation directory",
                  os.path.join("$prefix","bin"), path_validator),
@@ -69,10 +69,10 @@ options = [
                  os.path.join("$prefix","lib","pkgconfig"), path_validator),
     PathVariable("includeDir", "C/C++ header installation directory",
                  os.path.join("$prefix","include"), path_validator),
-    PathVariable("pythonModuleDir", "Python module installation directory", 
+    PathVariable("pythonModuleDir", "Python module installation directory",
                  scons.defaultPythonLib(prefix="$prefix"),
                  path_validator),
-    PathVariable("pythonExtDir", "Python extension module installation directory", 
+    PathVariable("pythonExtDir", "Python extension module installation directory",
                  scons.defaultPythonLib(prefix="$prefix", plat_specific=True),
                  path_validator),
     # configurable options for how we want to build:
@@ -87,7 +87,7 @@ options = [
     BoolVariable("enableCodeCoverage", "Enable code coverage", 0),
     BoolVariable("enableResolveCompiler", "Run tests to verify compiler", 1),
     # Enable or disable external packages.
-    # These will also be listed in scons.cfg files, but if they are 
+    # These will also be listed in scons.cfg files, but if they are
     # disabled here, that will override scons.cfg. Remark that unless the
     # module is listed as OptDependencies in scons.cfg, the whole module
     # will be turned off.
@@ -252,7 +252,7 @@ if "configure" in COMMAND_LINE_TARGETS:
   # Not sure we need this - but lets leave it for completeness sake - if people
   # use if for PyCC, and know that dolfin use the same system, they will expect
   # it to be here. We should probably discuss whether that is a good argument or
-  # not. 
+  # not.
   # Append whatever custom flags given
   if env["customCxxFlags"]:
     env.Append(CXXFLAGS=" " + env["customCxxFlags"])
@@ -273,7 +273,7 @@ if "configure" in COMMAND_LINE_TARGETS:
     # Several cases for mpi_cxx depending on CXX from os.environ:
     # CXX=                           - not OK
     # CXX=cxx_compiler               - not OK
-    # CXX=/path/to/cxx_compiler      - not OK 
+    # CXX=/path/to/cxx_compiler      - not OK
     # CXX=mpi_cxx_compiler           - OK
     # CXX=/path/to/mpi_cxx_compiler  - OK (use os.path.basename)
     # CXX="ccache cxx_compiler"      - OK (use mpi_cxx.split()[-1])
@@ -302,7 +302,7 @@ if "configure" in COMMAND_LINE_TARGETS:
   #env["usePackages"] = scons.resolvePackages(env["usePackages"].split(','),\
   #        env.get("customDefaultPackages", DefaultPackages).split(","))
 
-  # Figure out if we should fetch datafiles, and set an option in env. 
+  # Figure out if we should fetch datafiles, and set an option in env.
   #doFetch = "fetch" in COMMAND_LINE_TARGETS or (env["autoFetch"]) and not env.GetOption("clean")
   #env["doFetch"] = doFetch
 
@@ -352,7 +352,7 @@ if "configure" in COMMAND_LINE_TARGETS:
     print """---------------------------------------------------------
 Configuration of DOLFIN finished. Now run
 
-    scons 
+    scons
 
 to build DOLFIN. To see available configure options, run
 
@@ -450,7 +450,7 @@ if not env.GetOption('help'):
     dpath = os.path.dirname(h.srcnode().path).split(os.path.sep, 1)[1]
     env.Install(os.path.join(includeDir, env["projectname"], dpath), h)
   # Also, we want the special 'dolfin.h' file to be installed directly in the
-  # toplevel includeDir. 
+  # toplevel includeDir.
   if buildDataHash.has_key("dolfin_header") and buildDataHash["dolfin_header"] != "":
     env.Install(includeDir, buildDataHash["dolfin_header"])
 

@@ -1,4 +1,4 @@
-0.9.4 [2009-10-09]
+0.9.4 [2009-10-12]
  - Remove set, get and operator() methods from MeshFunction
  - Added const and none const T &operator[uint/MeshEntity] to MeshFunction
  - More clean up in SWIG interface files, remove global renames and ignores
