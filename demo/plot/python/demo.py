@@ -1,7 +1,7 @@
 "This demo illustrate basic plotting."
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-05-29 -- 2008-12-07"
+__date__ = "2007-05-29 -- 2009-10-15"
 __copyright__ = "Copyright (C) 2007-2008 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -59,7 +59,7 @@ if 1 in demos:
     f.t = 0.0
     for i in range(100):
         f.t += 0.01
-        plot(f, rescale=True, title="Scalar function")
+        plot(f, mesh=mesh, rescale=True, title="Scalar function")
 
 # Plot vector function
 if 2 in demos:
@@ -70,7 +70,7 @@ if 2 in demos:
     f.t = 0.0
     for i in range(200):
         f.t += 0.005
-        plot(f, rescale=True, title="Vector function")
+        plot(f, mesh=mesh, rescale=True, title="Vector function")
 
 if 3 in demos:
     import numpy
@@ -88,8 +88,5 @@ if 3 in demos:
     f.t = 0.0
     for i in range(150):
         f.t += 0.005
-        plot(f, eval_pts=pts, rescale=True, title="Vector function")
+        plot(f, mesh=mesh, eval_pts=pts, rescale=True, title="Vector function")
 
-
-#    plot(f,eval_pts=pts)
-#    interactive()

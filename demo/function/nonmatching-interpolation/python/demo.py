@@ -23,7 +23,7 @@ v1 = Function(P1)
 v1.interpolate(v0)
 
 # Plot functions
-#plot(v0, title="v0")
+plot(v0, mesh=mesh0, title="v0")
 plot(v1, title="v1")
 interactive()
 

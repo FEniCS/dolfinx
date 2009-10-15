@@ -2,7 +2,7 @@
 between different finite element spaces."""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2008-10-06 -- 2009-10-06"
+__date__ = "2008-10-06 -- 2009-10-15"
 __copyright__ = "Copyright (C) 2008 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -24,7 +24,7 @@ PIv = Function(P1)
 PIv.interpolate(v)
 
 # Plot functions
-#plot(v,   title="v")
+plot(v, mesh=mesh,  title="v")
 plot(Pv,  title="Pv")
 plot(PIv, title="PI v")
 interactive()

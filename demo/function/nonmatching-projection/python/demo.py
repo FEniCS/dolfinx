@@ -29,7 +29,7 @@ problem = VariationalProblem(a, L)
 u1 = problem.solve()
 
 # Plot functions
-#plot(u0, title="u0")
+plot(u0, mesh=mesh0, title="u0")
 plot(u1, title="u1")
 interactive()
 
