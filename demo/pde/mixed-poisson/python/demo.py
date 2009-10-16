@@ -25,8 +25,23 @@ from dolfin import *
 
 # Create mesh and define function spaces
 mesh = UnitSquare(16, 16)
+
+# Works!
 BDM = FunctionSpace(mesh, "BDM", 1)
 DG = FunctionSpace(mesh, "DG", 0)
+
+# Does not work!
+#BDM = FunctionSpace(mesh, "BDM", 1)
+#DG = FunctionSpace(mesh, "CG", 1)
+
+# Does not work!
+#BDM = VectorFunctionSpace(mesh, "CG", 2)
+#DG = FunctionSpace(mesh, "DG", 0)
+
+# Does not work!
+BDM = VectorFunctionSpace(mesh, "CG", 2)
+DG = FunctionSpace(mesh, "CG", 1)
+
 V = BDM + DG
 
 # Define variational problem
@@ -34,8 +49,17 @@ V = BDM + DG
 (sigma, u) = TrialFunctions(V)
 f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", V = DG)
 
-a = (dot(tau, sigma) - div(tau)*u + w*div(sigma))*dx
+#a = (dot(tau, sigma) - div(tau)*u + w*div(sigma))*dx
+#L = w*f*dx
+
+a = dot(tau, sigma)*dx + dot(tau, grad(u))*dx - dot(grad(w), sigma)*dx + 0.00001*w*u*dx
 L = w*f*dx
+
+#a = (dot(tau, sigma) + inner(tau, grad(u)) - inner(grad(w), sigma))*dx #+ 0.01*w*u*dx
+#L = w*f*dx
+
+#zero = Constant(mesh, 0)
+#bc = DirichletBC(V.sub(1), zero, DomainBoundary())
 
 # Compute solution
 problem = VariationalProblem(a, L)
@@ -45,6 +69,14 @@ problem = VariationalProblem(a, L)
 P1 = VectorFunctionSpace(mesh, "CG", 1)
 sigma_proj = project(sigma, P1)
 # FIXME: Strange result here when interpolating!
+
+print "||div(sigma)|| =", norm(div(sigma))
+print "||f|| =", norm(f)
+print "||div(sigma) - f|| =", norm(div(sigma) - f)
+
+V = VectorFunctionSpace(mesh, "CG", 2)
+
+print norm(div(project(sigma, V)) - f)
 
 # Plot solution
 plot(sigma_proj)
