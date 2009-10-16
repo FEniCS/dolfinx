@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-10-11
+// Last changed: 2009-10-17
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -317,8 +317,6 @@ void Function::eval(double* values, const Data& data) const
   {
     // Efficient evaluation on given cell
     assert(data._ufc_cell);
-    const uint cell_index = data._ufc_cell->entity_indices[data._ufc_cell->topological_dimension][0];
-    Cell cell(_function_space->mesh(), cell_index);
     eval(values, data.x, *data._dolfin_cell, *data._ufc_cell);
   }
   else
