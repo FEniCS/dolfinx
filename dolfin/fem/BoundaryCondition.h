@@ -5,7 +5,7 @@
 // Modified by Johan Hake 2009.
 //
 // First added:  2008-06-18
-// Last changed: 2009-08-14
+// Last changed: 2009-10-18
 
 #ifndef __BOUNDARY_CONDITION_H
 #define __BOUNDARY_CONDITION_H
@@ -51,6 +51,11 @@ namespace dolfin
     virtual void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const = 0;
 
   protected:
+
+    // Check arguments
+    void check_arguments(GenericMatrix* A,
+                         GenericVector* b,
+                         const GenericVector* x) const;
 
     // Local data for application of boundary conditions
     class LocalData

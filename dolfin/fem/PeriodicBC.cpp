@@ -5,7 +5,7 @@
 // Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2009-09-16
+// Last changed: 2009-10-18
 
 #include <boost/scoped_array.hpp>
 #include <vector>
@@ -93,66 +93,34 @@ PeriodicBC::~PeriodicBC()
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A) const
 {
-  dolfin_not_implemented();
+  dolfin_debug("check");
+  apply(&A, 0, 0);
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericVector& b) const
 {
-  dolfin_not_implemented();
+  dolfin_debug("check");
+  apply(0, &b, 0);
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
 {
-  assert(num_dof_pairs > 0);
-  assert(master_dofs);
-  assert(slave_dofs);
-  assert(zeros);
-
-  cout << "Applying periodic boundary conditions to linear system." << endl;
-
-  // Add slave rows to master rows
-  std::vector<uint> columns;
-  std::vector<double> values;
-  for (uint i = 0; i < num_dof_pairs; ++i)
-  {
-    // Add slave row to master row in A
-    A.getrow(slave_dofs[i], columns, values);
-    A.add(&values[0], 1, &master_dofs[i], columns.size(), &columns[0]);
-
-    // Add slave row to master row in b
-    b.get(&values[0], 1, &slave_dofs[i]);
-    b.add(&values[0], 1, &master_dofs[i]);
-
-    // Apply, needed between calls to get and add
-    A.apply();
-    b.apply();
-  }
-
-  // Zero slave rows and insert 1 on the diagonal
-  A.ident(num_dof_pairs, slave_dofs);
-  b.set(zeros, num_dof_pairs, slave_dofs);
-
-  // Insert -1 for master dofs in slave rows
-  for (uint i = 0; i < num_dof_pairs; ++i)
-  {
-    const double value = -1;
-    A.set(&value, 1, &slave_dofs[i], 1, &master_dofs[i]);
-  }
-
-  A.apply();
-  b.apply();
+  dolfin_debug("check");
+  apply(&A, &b, 0);
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericVector& b, const GenericVector& x) const
 {
-  dolfin_not_implemented();
+  dolfin_debug("check");
+  apply(0, &b, &x);
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A,
                        GenericVector& b,
                        const GenericVector& x) const
 {
-  dolfin_not_implemented();
+  dolfin_debug("check");
+  apply(&A, &b, &x);
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::rebuild()
@@ -183,6 +151,72 @@ void PeriodicBC::rebuild()
     master_dofs[i] = dof_pairs[i].first;
     slave_dofs[i] = dof_pairs[i].second;
     zeros[i] = 0.0;
+  }
+}
+//-----------------------------------------------------------------------------
+void PeriodicBC::apply(GenericMatrix* A,
+                       GenericVector* b,
+                       const GenericVector* x) const
+{
+  assert(num_dof_pairs > 0);
+  assert(master_dofs);
+  assert(slave_dofs);
+  assert(zeros);
+
+  cout << "Applying periodic boundary conditions to linear system." << endl;
+
+  // Check arguments
+  check_arguments(A, b, x);
+
+  // Add slave rows to master rows
+  std::vector<uint> columns;
+  std::vector<double> values;
+  for (uint i = 0; i < num_dof_pairs; ++i)
+  {
+    // Add slave row to master row in A
+    if (A)
+    {
+      A->getrow(slave_dofs[i], columns, values);
+      A->add(&values[0], 1, &master_dofs[i], columns.size(), &columns[0]);
+      A->apply();
+    }
+
+    // Add slave row to master row in b
+    if (b)
+    {
+      b->get(&values[0], 1, &slave_dofs[i]);
+      b->add(&values[0], 1, &master_dofs[i]);
+      b->apply();
+    }
+  }
+
+  // Zero slave rows and insert 1 on the diagonal, -1 in master column
+  if (A)
+  {
+    A->ident(num_dof_pairs, slave_dofs);
+    for (uint i = 0; i < num_dof_pairs; ++i)
+    {
+      const double value = -1;
+      A->set(&value, 1, &slave_dofs[i], 1, &master_dofs[i]);
+    }
+    A->apply();
+  }
+
+  // Zero slave rows in right-hand side
+  if (b)
+  {
+    b->set(zeros, num_dof_pairs, slave_dofs);
+    b->apply();
+
+    // Modify boundary values for nonlinear problems
+    if (x)
+    {
+      for (uint i = 0; i < num_dof_pairs; i++)
+      {
+        const uint dof = slave_dofs[i];
+        b[dof] = (*x)[dof];
+      }
+    }
   }
 }
 //-----------------------------------------------------------------------------

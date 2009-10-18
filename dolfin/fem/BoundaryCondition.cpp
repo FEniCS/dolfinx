@@ -6,9 +6,11 @@
 // Modified by Johan Hake, 2009.
 //
 // First added:  2008-06-18
-// Last changed: 2009-08-14
+// Last changed: 2009-10-18
 
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/la/GenericMatrix.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/function/FunctionSpace.h>
 #include "DofMap.h"
 #include "Form.h"
@@ -32,6 +34,37 @@ BoundaryCondition::BoundaryCondition(boost::shared_ptr<const FunctionSpace> V)
 BoundaryCondition::~BoundaryCondition()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+void BoundaryCondition::check_arguments(GenericMatrix* A,
+                                        GenericVector* b,
+                                        const GenericVector* x) const
+{
+  assert(V);
+
+  // Check matrix and vector dimensions
+  if (A && x && A->size(0) != x->size())
+    error("Matrix dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions.",
+          A->size(0), x->size());
+  if (A && b && A->size(0) != b->size())
+    error("Matrix dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions.",
+          A->size(0), b->size());
+  if (x && b && x->size() != b->size())
+    error("Vector dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions.",
+          x->size(), b->size());
+
+  // Check dimension of function space
+  if (A && A->size(0) < V->dim())
+    error("Dimension of function space (%d) too large for application of boundary conditions to linear system (%d rows).",
+          V->dim(), A->size(0));
+  if (x && x->size() < V->dim())
+    error("Dimension of function space (%d) too large for application to boundary conditions linear system (%d rows).",
+          V->dim(), x->size());
+  if (b && b->size() < V->dim())
+    error("Dimension of function space (%d) too large for application to boundary conditions linear system (%d rows).",
+          V->dim(), b->size());
+
+  // FIXME: Check case A.size() > V->dim() for subspaces
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)

@@ -5,7 +5,7 @@
 // Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2009-09-16
+// Last changed: 2009-10-18
 
 #ifndef __PERIODIC_BC_H
 #define __PERIODIC_BC_H
@@ -84,6 +84,9 @@ namespace dolfin
     void rebuild();
 
   private:
+
+    // Apply boundary conditions, common method
+    void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
 
     // Extract dof pairs for sub space and append to list
     void extract_dof_pairs(const FunctionSpace& function_space, std::vector<std::pair<uint, uint> >& dof_pairs);

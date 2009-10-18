@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2009-10-08
+// Last changed: 2009-10-18
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/assign/list_of.hpp>
@@ -242,7 +242,7 @@ void DirichletBC::apply(GenericMatrix* A,
                         const GenericVector* x) const
 {
   // Check arguments
-  check(A, b, x);
+  check_arguments(A, b, x);
 
   // A map to hold the mapping from boundary dofs to boundary values
   std::map<uint, double> boundary_values;
@@ -304,41 +304,9 @@ void DirichletBC::check() const
   if (methods.count(method) == 0)
     error("Unknown method for applying Dirichlet boundary condtions.");
 
-
   // Check that the mesh is ordered
   if (!V->mesh().ordered())
     error("Unable to create boundary condition, mesh is not correctly ordered (consider calling mesh.order()).");
-}
-//-----------------------------------------------------------------------------
-void DirichletBC::check(GenericMatrix* A,
-                        GenericVector* b,
-                        const GenericVector* x) const
-{
-  assert(V);
-
-  // Check matrix and vector dimensions
-  if (A && x && A->size(0) != x->size())
-    error("Matrix dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions.",
-          A->size(0), x->size());
-  if (A && b && A->size(0) != b->size())
-    error("Matrix dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions.",
-          A->size(0), b->size());
-  if (x && b && x->size() != b->size())
-    error("Vector dimension (%d rows) does not match vector dimension (%d) for application of boundary conditions.",
-          x->size(), b->size());
-
-  // Check dimension of function space
-  if (A && A->size(0) < V->dim())
-    error("Dimension of function space (%d) too large for application to linear system (%d rows).",
-          V->dim(), A->size(0));
-  if (x && x->size() < V->dim())
-    error("Dimension of function space (%d) too large for application to linear system (%d rows).",
-          V->dim(), x->size());
-  if (b && b->size() < V->dim())
-    error("Dimension of function space (%d) too large for application to linear system (%d rows).",
-          V->dim(), b->size());
-
-  // FIXME: Check case A.size() > V->dim() for subspaces
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain)

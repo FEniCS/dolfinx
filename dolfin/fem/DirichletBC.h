@@ -5,7 +5,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2009-10-04
+// Last changed: 2009-10-18
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -145,14 +145,14 @@ namespace dolfin
 
   private:
 
-    // Apply boundary conditions
+    // FIXME: Make this function pure virtual in BoundaryCondition and reuse code
+    // for different apply methods
+
+    // Apply boundary conditions, common method
     void apply(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
 
     // Check input data to constructor
     void check() const;
-
-    // Check input data to apply()
-    void check(GenericMatrix* A, GenericVector* b, const GenericVector* x) const;
 
     // Initialize sub domain markers from sub domain
     void init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain);
