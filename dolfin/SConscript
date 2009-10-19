@@ -231,7 +231,6 @@ for modName, mod in modules.items():
 
     if mod.swigSources and env["enablePython"]:
         # Register swig wrapper targets in the module
-        mod.cxxFlags += ["-fno-strict-aliasing"]
 
         modEnv = swigEnv.Clone(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags + linkOpts)
         modEnv.Append(SWIGFLAGS=mod.swigFlags + ["-I%s" % i for i in swigcppPath])
