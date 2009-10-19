@@ -1,3 +1,4 @@
+ - Support apply(A), apply(b) and apply(b, x) in PeriodicBC
  - Enable setting spectral transformation for SLEPc eigenvalue solver
 0.9.4 [2009-10-12]
  - Remove set, get and operator() methods from MeshFunction
