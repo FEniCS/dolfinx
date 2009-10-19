@@ -5,7 +5,7 @@
 // Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2009-10-18
+// Last changed: 2009-10-19
 
 #include <boost/scoped_array.hpp>
 #include <vector>
@@ -65,7 +65,7 @@ typedef coordinate_map::iterator coordinate_iterator;
 PeriodicBC::PeriodicBC(const FunctionSpace& V,
                        const SubDomain& sub_domain)
   : BoundaryCondition(V), sub_domain(reference_to_no_delete_pointer(sub_domain)),
-    num_dof_pairs(0), master_dofs(0), slave_dofs(0), zeros(0)
+    num_dof_pairs(0), master_dofs(0), slave_dofs(0), rhs_values(0)
 {
   not_working_in_parallel("Periodic boundary conditions");
 
@@ -76,7 +76,7 @@ PeriodicBC::PeriodicBC(const FunctionSpace& V,
 PeriodicBC::PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
                        boost::shared_ptr<const SubDomain> sub_domain)
   : BoundaryCondition(V), sub_domain(sub_domain),
-    num_dof_pairs(0), master_dofs(0), slave_dofs(0), zeros(0)
+    num_dof_pairs(0), master_dofs(0), slave_dofs(0), rhs_values(0)
 {
   not_working_in_parallel("Periodic boundary conditions");
 
@@ -88,30 +88,26 @@ PeriodicBC::~PeriodicBC()
 {
   delete [] master_dofs;
   delete [] slave_dofs;
-  delete [] zeros;
+  delete [] rhs_values;
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A) const
 {
-  dolfin_debug("check");
   apply(&A, 0, 0);
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericVector& b) const
 {
-  dolfin_debug("check");
   apply(0, &b, 0);
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A, GenericVector& b) const
 {
-  dolfin_debug("check");
   apply(&A, &b, 0);
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericVector& b, const GenericVector& x) const
 {
-  dolfin_debug("check");
   apply(0, &b, &x);
 }
 //-----------------------------------------------------------------------------
@@ -119,7 +115,6 @@ void PeriodicBC::apply(GenericMatrix& A,
                        GenericVector& b,
                        const GenericVector& x) const
 {
-  dolfin_debug("check");
   apply(&A, &b, &x);
 }
 //-----------------------------------------------------------------------------
@@ -136,13 +131,13 @@ void PeriodicBC::rebuild()
   // Delete old arrays if necessary
   delete [] master_dofs;
   delete [] slave_dofs;
-  delete [] zeros;
+  delete [] rhs_values;
 
   // Initialize arrays
   num_dof_pairs = dof_pairs.size();
   master_dofs = new uint[num_dof_pairs];
   slave_dofs = new uint[num_dof_pairs];
-  zeros = new double[num_dof_pairs];
+  rhs_values = new double[num_dof_pairs];
 
   // Store master and slave dofs
   for (uint i = 0; i < dof_pairs.size(); ++i)
@@ -150,7 +145,7 @@ void PeriodicBC::rebuild()
     // Store dofs
     master_dofs[i] = dof_pairs[i].first;
     slave_dofs[i] = dof_pairs[i].second;
-    zeros[i] = 0.0;
+    rhs_values[i] = 0.0;
   }
 }
 //-----------------------------------------------------------------------------
@@ -161,7 +156,7 @@ void PeriodicBC::apply(GenericMatrix* A,
   assert(num_dof_pairs > 0);
   assert(master_dofs);
   assert(slave_dofs);
-  assert(zeros);
+  assert(rhs_values);
 
   cout << "Applying periodic boundary conditions to linear system." << endl;
 
@@ -169,13 +164,13 @@ void PeriodicBC::apply(GenericMatrix* A,
   check_arguments(A, b, x);
 
   // Add slave rows to master rows
-  std::vector<uint> columns;
-  std::vector<double> values;
   for (uint i = 0; i < num_dof_pairs; ++i)
   {
     // Add slave row to master row in A
     if (A)
     {
+      std::vector<uint> columns;
+      std::vector<double> values;
       A->getrow(slave_dofs[i], columns, values);
       A->add(&values[0], 1, &master_dofs[i], columns.size(), &columns[0]);
       A->apply();
@@ -184,8 +179,9 @@ void PeriodicBC::apply(GenericMatrix* A,
     // Add slave row to master row in b
     if (b)
     {
-      b->get(&values[0], 1, &slave_dofs[i]);
-      b->add(&values[0], 1, &master_dofs[i]);
+      double value;
+      b->get(&value, 1, &slave_dofs[i]);
+      b->add(&value, 1, &master_dofs[i]);
       b->apply();
     }
   }
@@ -202,21 +198,22 @@ void PeriodicBC::apply(GenericMatrix* A,
     A->apply();
   }
 
+  // Modify boundary values for nonlinear problems
+  if (x)
+  {
+    x->get(rhs_values, num_dof_pairs, slave_dofs);
+  }
+  else
+  {
+    for (uint i = 0; i < num_dof_pairs; i++)
+      rhs_values[i] = 0.0;
+  }
+
   // Zero slave rows in right-hand side
   if (b)
   {
-    b->set(zeros, num_dof_pairs, slave_dofs);
+    b->set(rhs_values, num_dof_pairs, slave_dofs);
     b->apply();
-
-    // Modify boundary values for nonlinear problems
-    if (x)
-    {
-      for (uint i = 0; i < num_dof_pairs; i++)
-      {
-        const uint dof = slave_dofs[i];
-        b[dof] = (*x)[dof];
-      }
-    }
   }
 }
 //-----------------------------------------------------------------------------
