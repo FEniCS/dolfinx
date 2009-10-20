@@ -45,7 +45,7 @@ u = TrialFunction(V)
 # Define normal component, mesh size and right-hand side
 h = CellSize(mesh)
 h_avg = (h('+') + h('-'))/2.0
-n = V.cell().n
+n = FacetNormal(mesh)
 f = Source(V = V)
 
 # Define parameters

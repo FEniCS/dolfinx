@@ -33,7 +33,7 @@ class Fish(SubDomain):
                x[1] > DOLFIN_EPS and x[1] < (1.0 - DOLFIN_EPS)
 
 # Define functionals for drag and lift
-n = Vp.cell().n
+n = FacetNormal(mesh)
 D = -p*n[0]*ds
 L = p*n[1]*ds
 

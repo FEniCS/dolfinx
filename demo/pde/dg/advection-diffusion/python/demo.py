@@ -40,11 +40,11 @@ f = Constant(mesh, 0.0)
 alpha = Constant(mesh, 5.0)
 
 # Mesh-related functions
-n = V_dg.cell().n
+n = FacetNormal(mesh)
 h = CellSize(mesh)
 h_avg = (h('+') + h('-'))/2
 
-# ( dot(v, n) + |dot(v, n)| )/2.0 
+# ( dot(v, n) + |dot(v, n)| )/2.0
 un = (dot(u, n) + abs(dot(u, n)))/2.0
 
 # Bilinear form
