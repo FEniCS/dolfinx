@@ -193,14 +193,22 @@ void PeriodicBC::apply(GenericMatrix* A,
     }
   }
 
-  // Zero slave rows and insert 1 on the diagonal, -1 in master column
+  // Insert 1 in master columns and -1 in slave columns in slave rows
   if (A)
   {
-    A->ident(num_dof_pairs, slave_dofs);
+    // Zero out slave rows
+    A->zero(num_dof_pairs, slave_dofs);
+    A->apply();
+
+    // Insert 1 and -1
+    uint cols[2];
+    double vals[2] = {1.0, -1.0};
     for (uint i = 0; i < num_dof_pairs; ++i)
     {
-      const double value = -1;
-      A->set(&value, 1, &slave_dofs[i], 1, &master_dofs[i]);
+      const uint row = slave_dofs[i];
+      cols[0] = master_dofs[i];
+      cols[1] = slave_dofs[i];
+      A->set(vals, 1, &row, 2, cols);
     }
     A->apply();
   }
