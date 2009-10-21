@@ -5,7 +5,7 @@
 // Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2009-10-19
+// Last changed: 2009-10-21
 
 #include <boost/scoped_array.hpp>
 #include <vector>
@@ -65,7 +65,8 @@ typedef coordinate_map::iterator coordinate_iterator;
 PeriodicBC::PeriodicBC(const FunctionSpace& V,
                        const SubDomain& sub_domain)
   : BoundaryCondition(V), sub_domain(reference_to_no_delete_pointer(sub_domain)),
-    num_dof_pairs(0), master_dofs(0), slave_dofs(0), rhs_values(0)
+    num_dof_pairs(0), master_dofs(0), slave_dofs(0),
+    rhs_values_master(0), rhs_values_slave(0)
 {
   not_working_in_parallel("Periodic boundary conditions");
 
@@ -76,7 +77,8 @@ PeriodicBC::PeriodicBC(const FunctionSpace& V,
 PeriodicBC::PeriodicBC(boost::shared_ptr<const FunctionSpace> V,
                        boost::shared_ptr<const SubDomain> sub_domain)
   : BoundaryCondition(V), sub_domain(sub_domain),
-    num_dof_pairs(0), master_dofs(0), slave_dofs(0), rhs_values(0)
+    num_dof_pairs(0), master_dofs(0), slave_dofs(0),
+    rhs_values_master(0), rhs_values_slave(0)
 {
   not_working_in_parallel("Periodic boundary conditions");
 
@@ -88,7 +90,8 @@ PeriodicBC::~PeriodicBC()
 {
   delete [] master_dofs;
   delete [] slave_dofs;
-  delete [] rhs_values;
+  delete [] rhs_values_master;
+  delete [] rhs_values_slave;
 }
 //-----------------------------------------------------------------------------
 void PeriodicBC::apply(GenericMatrix& A) const
@@ -131,13 +134,15 @@ void PeriodicBC::rebuild()
   // Delete old arrays if necessary
   delete [] master_dofs;
   delete [] slave_dofs;
-  delete [] rhs_values;
+  delete [] rhs_values_master;
+  delete [] rhs_values_slave;
 
   // Initialize arrays
   num_dof_pairs = dof_pairs.size();
   master_dofs = new uint[num_dof_pairs];
   slave_dofs = new uint[num_dof_pairs];
-  rhs_values = new double[num_dof_pairs];
+  rhs_values_master = new double[num_dof_pairs];
+  rhs_values_slave = new double[num_dof_pairs];
 
   // Store master and slave dofs
   for (uint i = 0; i < dof_pairs.size(); ++i)
@@ -145,7 +150,8 @@ void PeriodicBC::rebuild()
     // Store dofs
     master_dofs[i] = dof_pairs[i].first;
     slave_dofs[i] = dof_pairs[i].second;
-    rhs_values[i] = 0.0;
+    rhs_values_master[i] = 0.0;
+    rhs_values_slave[i] = 0.0;
   }
 }
 //-----------------------------------------------------------------------------
@@ -156,7 +162,8 @@ void PeriodicBC::apply(GenericMatrix* A,
   assert(num_dof_pairs > 0);
   assert(master_dofs);
   assert(slave_dofs);
-  assert(rhs_values);
+  assert(rhs_values_master);
+  assert(rhs_values_slave);
 
   cout << "Applying periodic boundary conditions to linear system." << endl;
 
@@ -201,18 +208,21 @@ void PeriodicBC::apply(GenericMatrix* A,
   // Modify boundary values for nonlinear problems
   if (x)
   {
-    x->get(rhs_values, num_dof_pairs, slave_dofs);
+    x->get(rhs_values_master, num_dof_pairs, master_dofs);
+    x->get(rhs_values_slave,  num_dof_pairs, slave_dofs);
+    for (uint i = 0; i < num_dof_pairs; i++)
+      rhs_values_slave[i] = rhs_values_master[i] - rhs_values_slave[i];
   }
   else
   {
     for (uint i = 0; i < num_dof_pairs; i++)
-      rhs_values[i] = 0.0;
+      rhs_values_slave[i] = 0.0;
   }
 
   // Zero slave rows in right-hand side
   if (b)
   {
-    b->set(rhs_values, num_dof_pairs, slave_dofs);
+    b->set(rhs_values_slave, num_dof_pairs, slave_dofs);
     b->apply();
   }
 }

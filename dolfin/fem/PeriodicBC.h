@@ -5,7 +5,7 @@
 // Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2009-10-19
+// Last changed: 2009-10-21
 
 #ifndef __PERIODIC_BC_H
 #define __PERIODIC_BC_H
@@ -104,7 +104,8 @@ namespace dolfin
     uint* slave_dofs;
 
     // Right-hand side values, used for zeroing entries in right-hand side (size num_dof_pairs)
-    double* rhs_values;
+    double* rhs_values_master;
+    double* rhs_values_slave;
 
   };
 
