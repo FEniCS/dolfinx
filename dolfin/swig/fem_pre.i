@@ -39,5 +39,10 @@
 
 %ignore dolfin::PeriodicBC::PeriodicBC(const FunctionSpace&, const SubDomain&);
 
+%ignore dolfin::DirichletBC(const FunctionSpace&,
+                            const GenericFunction&,
+                            const std::vector<std::pair<uint, uint> >&,
+                            std::string method="topological");
+
 // Ignore operator= for DirichletBC to avoid warning
 %ignore dolfin::DirichletBC::operator=;
