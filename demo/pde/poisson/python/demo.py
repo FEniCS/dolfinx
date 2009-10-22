@@ -24,13 +24,12 @@ mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Define Dirichlet boundary (x = 0 or x = 1)
-class DirichletBoundary(SubDomain):
-    def inside(self, x, on_boundary):
-        return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
+def boundary(x):
+    return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
 
 # Define boundary condition
 u0 = Constant(mesh, 0.0)
-bc = DirichletBC(V, u0, DirichletBoundary())
+bc = DirichletBC(V, u0, boundary)
 
 # Define variational problem
 v = TestFunction(V)
@@ -44,12 +43,10 @@ L = v*f*dx - v*g*ds
 problem = VariationalProblem(a, L, bc)
 u = problem.solve()
 
-# Plot solution
-plot(u)
-
 # Save solution in VTK format
 file = File("poisson.pvd")
 file << u
 
-# Hold plot
+# Plot solution
+plot(u)
 interactive()

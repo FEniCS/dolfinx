@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2008-12-03
+// Last changed: 2009-10-22
 
 #ifndef __SUB_DOMAIN_H
 #define __SUB_DOMAIN_H
@@ -30,7 +30,7 @@ namespace dolfin
     /// Return true for points inside the subdomain
     virtual bool inside(const double* x, bool on_boundary) const;
 
-    /// Map coordinate x in domain H to coordinate y in domain G (used for 
+    /// Map coordinate x in domain H to coordinate y in domain G (used for
     /// periodic boundary conditions)
     virtual void map(const double* x, double* y) const;
 
@@ -46,7 +46,7 @@ namespace dolfin
     friend class DirichletBC;
     friend class PeriodicBC;
 
-    // Geometric dimension, needed for SWIG interface, will be set before 
+    // Geometric dimension, needed for SWIG interface, will be set before
     // calls to inside() and map()
     mutable uint _geometric_dimension;
 
