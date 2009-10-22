@@ -7,7 +7,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-08-16
-// Last changed: 2009-09-02
+// Last changed: 2009-10-22
 
 // ===========================================================================
 // SWIG directives for the DOLFIN fem kernel module (pre)
@@ -21,20 +21,23 @@
 // version of constructors to these types
 //-----------------------------------------------------------------------------
 %ignore dolfin::EqualityBC::EqualityBC(const FunctionSpace&, uint);
-%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&, 
-					 const GenericFunction&, 
+%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
+					 const GenericFunction&,
 					 const SubDomain&,
 					 std::string method="topological");
 
-%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&, 
+%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
 					 const GenericFunction&,
-					 const MeshFunction<uint>&, 
+					 const MeshFunction<uint>&,
 					 uint,
 					 std::string method="topological");
 
-%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&, 
-					 const GenericFunction&, 
+%ignore dolfin::DirichletBC::DirichletBC(const FunctionSpace&,
+					 const GenericFunction&,
 					 uint,
 					 std::string method="topological");
 
 %ignore dolfin::PeriodicBC::PeriodicBC(const FunctionSpace&, const SubDomain&);
+
+// Ignore operator= for DirichletBC to avoid warning
+%ignore dolfin::DirichletBC::operator=;

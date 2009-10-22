@@ -5,7 +5,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2009-10-18
+// Last changed: 2009-10-22
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -116,8 +116,14 @@ namespace dolfin
                 uint sub_domain,
                 std::string method="topological");
 
+    /// Copy constructor
+    DirichletBC(const DirichletBC& bc);
+
     /// Destructor
     ~DirichletBC();
+
+    /// Assignment operator
+    const DirichletBC& operator= (const DirichletBC& bc);
 
     /// Apply boundary condition to a matrix
     void apply(GenericMatrix& A) const;
@@ -142,6 +148,12 @@ namespace dolfin
 
     /// Check if given function is compatible with boundary condition (checking only vertex values)
     bool is_compatible(GenericFunction& v) const;
+
+    /// Set value g for boundary condition, domain remains unchanged
+    void set_value(const GenericFunction& g);
+
+    /// Set value g for boundary condition, domain remains unchanged
+    void set_value(boost::shared_ptr<const GenericFunction> g);
 
   private:
 

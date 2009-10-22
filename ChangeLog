@@ -1,3 +1,4 @@
+ - Add copy constructor and possibility to change value for DirichletBC
  - Add simple wrapper for ufl.cell.n. FacetNormal(mesh) now works again in Python.
  - Support apply(A), apply(b) and apply(b, x) in PeriodicBC
  - Enable setting spectral transformation for SLEPc eigenvalue solver

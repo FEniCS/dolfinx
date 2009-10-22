@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2009-10-18
+// Last changed: 2009-10-22
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/assign/list_of.hpp>
@@ -112,9 +112,26 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
   init_from_mesh(sub_domain);
 }
 //-----------------------------------------------------------------------------
+DirichletBC::DirichletBC(const DirichletBC& bc)
+  : BoundaryCondition(bc.V)
+{
+  *this = bc;
+}
+//-----------------------------------------------------------------------------
 DirichletBC::~DirichletBC()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+const DirichletBC& DirichletBC::operator= (const DirichletBC& bc)
+{
+  V = bc.V;
+  g = bc.g;
+  method = bc.method;
+  user_sub_domain = bc.user_sub_domain;
+  facets = bc.facets;
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix& A) const
@@ -235,6 +252,16 @@ bool DirichletBC::is_compatible(GenericFunction& v) const
   */
 
   return true;
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::set_value(const GenericFunction& g)
+{
+  this->g = reference_to_no_delete_pointer(g);
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::set_value(boost::shared_ptr<const GenericFunction> g)
+{
+  this->g = g;
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix* A,
