@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2009.
 //
 // First added:  2008-06-18
-// Last changed: 2009-10-18
+// Last changed: 2009-10-22
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericMatrix.h>
@@ -34,6 +34,16 @@ BoundaryCondition::BoundaryCondition(boost::shared_ptr<const FunctionSpace> V)
 BoundaryCondition::~BoundaryCondition()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace& BoundaryCondition::function_space() const
+{
+  return *V;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const FunctionSpace> BoundaryCondition::function_space_ptr() const
+{
+  return V;
 }
 //-----------------------------------------------------------------------------
 void BoundaryCondition::check_arguments(GenericMatrix* A,

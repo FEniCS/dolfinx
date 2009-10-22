@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-10-10
+// Last changed: 2009-10-22
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H

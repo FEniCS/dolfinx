@@ -116,6 +116,18 @@ namespace dolfin
                 uint sub_domain,
                 std::string method="topological");
 
+    // Create boundary condition for subdomain by boundary markers (cells, local facet numbers)
+    DirichletBC(const FunctionSpace& V,
+                const GenericFunction& g,
+                const std::vector<std::pair<uint, uint> >& markers,
+                std::string method="topological");
+
+    // Create boundary condition for subdomain by boundary markers (cells, local facet numbers)
+    DirichletBC(boost::shared_ptr<const FunctionSpace> V,
+                boost::shared_ptr<const GenericFunction> g,
+                const std::vector<std::pair<uint, uint> >& markers,
+                std::string method="topological");
+
     /// Copy constructor
     DirichletBC(const DirichletBC& bc);
 
@@ -142,6 +154,15 @@ namespace dolfin
 
     /// Make row associated with boundary conditions zero, useful for non-diagonal matrices in a block matrix.
     void zero(GenericMatrix& A) const;
+
+    /// Return boundary markers (facets stored as pairs of cells and local facet numbers)
+    const std::vector<std::pair<uint, uint> >& markers();
+
+    /// Return boundary value g
+    const GenericFunction& value();
+
+    /// Return shared pointer to boundary value g
+    boost::shared_ptr<const GenericFunction> value_ptr();
 
     /// Get Dirichlet values and indicators
     void get_bc(uint* indicators, double* values) const;
@@ -207,7 +228,7 @@ namespace dolfin
     boost::shared_ptr<const SubDomain> user_sub_domain;
 
     // Boundary facets, stored as pairs (cell, local facet number)
-    std::vector< std::pair<uint, uint> > facets;
+    std::vector<std::pair<uint, uint> > facets;
 
   };
 

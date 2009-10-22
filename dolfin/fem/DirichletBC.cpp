@@ -112,6 +112,30 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
   init_from_mesh(sub_domain);
 }
 //-----------------------------------------------------------------------------
+DirichletBC::DirichletBC(const FunctionSpace& V,
+                         const GenericFunction& g,
+                         const std::vector<std::pair<uint, uint> >& markers,
+                         std::string method)
+  : BoundaryCondition(V),
+    g(reference_to_no_delete_pointer(g)),
+    method(method), user_sub_domain(static_cast<SubDomain*>(0)),
+    facets(markers)
+{
+  check();
+}
+//-----------------------------------------------------------------------------
+DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
+                         boost::shared_ptr<const GenericFunction> g,
+                         const std::vector<std::pair<uint, uint> >& markers,
+                         std::string method)
+  : BoundaryCondition(V),
+    g(g),
+    method(method), user_sub_domain(static_cast<SubDomain*>(0)),
+    facets(markers)
+{
+  check();
+}
+//-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const DirichletBC& bc)
   : BoundaryCondition(bc.V)
 {
@@ -187,6 +211,21 @@ void DirichletBC::zero(GenericMatrix& A) const
 
   // Clear temporary arrays
   delete [] dofs;
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::pair<dolfin::uint, dolfin::uint> >& DirichletBC::markers()
+{
+  return facets;
+}
+//-----------------------------------------------------------------------------
+const GenericFunction& DirichletBC::value()
+{
+  return *g;
+}
+//-----------------------------------------------------------------------------
+boost::shared_ptr<const GenericFunction> DirichletBC::value_ptr()
+{
+  return g;
 }
 //-----------------------------------------------------------------------------
 bool DirichletBC::is_compatible(GenericFunction& v) const
