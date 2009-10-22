@@ -11,6 +11,18 @@ def __contains__(self,u):
 }
 
 //-----------------------------------------------------------------------------
+// Extend Function so f.function_space() return a dolfin.FunctionSpace
+//-----------------------------------------------------------------------------
+%extend dolfin::Function {
+%pythoncode %{
+def function_space(self):
+    " Return the FunctionSpace"
+    from functionspace import FunctionSpaceFromCpp
+    return FunctionSpaceFromCpp(self._function_space())
+%}
+}
+
+//-----------------------------------------------------------------------------
 // Extend the Data class with an accessor function for the x coordinates
 //-----------------------------------------------------------------------------
 %extend dolfin::Data {

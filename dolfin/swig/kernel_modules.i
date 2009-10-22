@@ -175,6 +175,7 @@
 %include "dolfin/fem/Assembler.h"
 %include "dolfin/fem/SystemAssembler.h"
 %include "dolfin/fem/VariationalProblem.h"
+%include "dolfin/swig/fem_post.i"
 
 // DOLFIN headers included from mf
 %include "dolfin/mf/MatrixFactory.h"

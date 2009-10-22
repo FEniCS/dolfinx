@@ -44,5 +44,13 @@
                             const std::vector<std::pair<uint, uint> >&,
                             std::string method="topological");
 
+//-----------------------------------------------------------------------------
 // Ignore operator= for DirichletBC to avoid warning
+//-----------------------------------------------------------------------------
 %ignore dolfin::DirichletBC::operator=;
+
+//-----------------------------------------------------------------------------
+// Modifying the interface of BoundaryCondition
+//-----------------------------------------------------------------------------
+%ignore dolfin::BoundaryCondition::function_space;
+%rename (_function_space) dolfin::BoundaryCondition::function_space_ptr;

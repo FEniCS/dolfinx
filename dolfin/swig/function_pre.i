@@ -32,12 +32,12 @@ namespace dolfin
 %ignore dolfin::Function::Function(const FunctionSpace&);
 %ignore dolfin::Function::Function(const FunctionSpace&, GenericVector&);
 %ignore dolfin::Function::Function(const FunctionSpace&, std::string);
-%ignore dolfin::Function::function_space;
-%rename (function_space) dolfin::Function::function_space_ptr;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Function
 //-----------------------------------------------------------------------------
+%ignore dolfin::Function::function_space;
+%rename (_function_space) dolfin::Function::function_space_ptr;
 %rename(_sub) dolfin::Function::operator[];
 %rename(assign) dolfin::Function::operator=;
 %rename(_in) dolfin::Function::in;
