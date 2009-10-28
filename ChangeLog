@@ -1,3 +1,4 @@
+ - Fix handling of Constants in Python interface to avoid repeated JIT compilation
  - Allow simple specification of subdomains in Python without needing to subclass SubDomain
  - Add function homogenize() for simple creation of homogeneous BCs from given BCs
  - Add copy constructor and possibility to change value for DirichletBC
