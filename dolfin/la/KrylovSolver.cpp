@@ -5,10 +5,11 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2009-06-30
+// Last changed: 2009-10-28
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/Parameters.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "uBLASKrylovSolver.h"
@@ -47,11 +48,11 @@ Parameters KrylovSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(std::string solver_type, std::string pc_type)
-       : solver_type(solver_type), pc_type(pc_type), ublas_solver(0), 
+       : solver_type(solver_type), pc_type(pc_type), ublas_solver(0),
          petsc_solver(0), epetra_solver(0), itl_solver(0)
 {
   // Set default parameters
-  parameters = default_parameters();
+  parameters = dolfin::parameters("krylov_solver");
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::~KrylovSolver()
@@ -62,7 +63,7 @@ KrylovSolver::~KrylovSolver()
   delete itl_solver;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint KrylovSolver::solve(const GenericMatrix& A, GenericVector& x, 
+dolfin::uint KrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                  const GenericVector& b)
 {
   Timer timer("Krylov solver");
@@ -84,8 +85,8 @@ dolfin::uint KrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
       ublas_solver = new uBLASKrylovSolver(solver_type, pc_type);
       ublas_solver->parameters.update(parameters);
     }
-    return ublas_solver->solve(A.down_cast<uBLASDenseMatrix>(), 
-                               x.down_cast<uBLASVector>(), 
+    return ublas_solver->solve(A.down_cast<uBLASDenseMatrix>(),
+                               x.down_cast<uBLASVector>(),
                                b.down_cast<uBLASVector>());
   }
 

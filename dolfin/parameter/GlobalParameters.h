@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-02
-// Last changed: 2009-09-10
+// Last changed: 2009-10-28
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
