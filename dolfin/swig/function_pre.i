@@ -111,6 +111,49 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
+// Turn off value wrapper for std::vector<double>
+//-----------------------------------------------------------------------------
+%feature("novaluewrapper") std::vector<double>; 
+
+//-----------------------------------------------------------------------------
+// Instantiate a dummy std::vector<dolfin::uint> so value wrapper is not used
+//-----------------------------------------------------------------------------
+%template () std::vector<double>; 
+
+//-----------------------------------------------------------------------------
+// Typemap for std::vector<dolfin::uint> values
+//-----------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::vector<double> values
+{
+  $1 = PyList_Check($input) ? 1 : 0;
+}
+
+%typemap (in) std::vector<double> values
+{
+  if (PyList_Check($input))
+  {  
+    PyObject * py_item = 0;
+    int size = PyList_Size($input);
+    double item = 0;
+    $1.reserve(size);
+    for (int i = 0; i < size; i++)
+    {
+      py_item = PyList_GetItem($input,i);
+      if (!PyFloat_Check(py_item))
+	SWIG_exception(SWIG_TypeError, "expected list of floats");
+      item = static_cast<double>(PyFloat_AsDouble(py_item));
+      if (item < 0)
+	SWIG_exception(SWIG_TypeError, "expected list of floats");
+      $1.push_back(item);
+    }
+  }
+  else
+  {
+    SWIG_exception(SWIG_TypeError, "expected list of floats");
+  }
+}
+
+//-----------------------------------------------------------------------------
 // Add director classes
 //-----------------------------------------------------------------------------
 %feature("director") dolfin::Expression;
