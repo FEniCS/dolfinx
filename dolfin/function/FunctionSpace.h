@@ -17,6 +17,7 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/fem/FiniteElement.h>
 
 namespace dolfin
@@ -104,8 +105,11 @@ namespace dolfin
     // Evaluate restriction
     bool is_inside_restriction(uint c) const;
 
-    /// Update function space when mesh has changed
-    void update();
+    /// Refine function space uniformly
+    void refine();
+
+    /// Refine function space according to cells marked for refinement
+    void refine(MeshFunction<bool>& cell_markers);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -114,6 +118,9 @@ namespace dolfin
 
     // Function is a friend
     friend class Function;
+
+    /// Common refinement function
+    void refine(MeshFunction<bool>* cell_markers);
 
     // Register member of function space
     void register_member(Function* v) const;

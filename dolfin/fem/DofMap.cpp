@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-09-10
+// Last changed: 2009-10-29
 
 #include <boost/scoped_array.hpp>
 
@@ -31,7 +31,27 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
   : ufc_dof_map(ufc_dof_map), _ufc_offset(0),
     dolfin_mesh(mesh), parallel(MPI::num_processes() > 1)
 {
-  update();
+  // Generate and number all mesh entities
+  for (uint d = 1; d <= dolfin_mesh->topology().dim(); ++d)
+  {
+    if (ufc_dof_map->needs_mesh_entities(d) ||
+    	(parallel && d == (dolfin_mesh->topology().dim() - 1)))
+    {
+      dolfin_mesh->init(d);
+      if (parallel)
+        MeshPartitioning::number_entities(*dolfin_mesh, d);
+    }
+  }
+
+  // Initialize the UFC mesh
+  init_ufc_mesh();
+
+  // Initialize UFC dof map
+  init_ufc_dofmap(*ufc_dof_map);
+
+  // Renumber dof map for running in parallel
+  if (parallel)
+    DofMapBuilder::parallel_build(*this, *dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
@@ -74,33 +94,6 @@ DofMap::DofMap(std::auto_ptr<std::vector<dolfin::uint> > map,
 DofMap::~DofMap()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-void DofMap::update()
-{
-  // FIXME: Perhaps something should be cleared or deleted first?
-
-  // Generate and number all mesh entities
-  for (uint d = 1; d <= dolfin_mesh->topology().dim(); ++d)
-  {
-    if (ufc_dof_map->needs_mesh_entities(d) ||
-    	(parallel && d == (dolfin_mesh->topology().dim() - 1)))
-    {
-      dolfin_mesh->init(d);
-      if (parallel)
-        MeshPartitioning::number_entities(*dolfin_mesh, d);
-    }
-  }
-
-  // Initialize the UFC mesh
-  init_ufc_mesh();
-
-  // Initialize UFC dof map
-  init_ufc_dofmap(*ufc_dof_map);
-
-  // Renumber dof map for running in parallel
-  if (parallel)
-    DofMapBuilder::parallel_build(*this, *dolfin_mesh);  
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,

@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-09-10
+// Last changed: 2009-10-29
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -43,9 +43,6 @@ namespace dolfin
     /// Create dof map on mesh (const mesh version)
     DofMap(boost::shared_ptr<ufc::dof_map> ufc_dof_map,
            boost::shared_ptr<const Mesh> mesh);
-
-    /// Update dof map when mesh has changed
-    void update();
 
   private:
 
@@ -136,6 +133,7 @@ namespace dolfin
 
     /// Friends
     friend class DofMapBuilder;
+    friend class FunctionSpace;
 
     /// Initialise the UFCMesh
     void init_ufc_mesh();

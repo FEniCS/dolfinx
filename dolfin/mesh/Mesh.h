@@ -8,7 +8,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2009-09-30
+// Last changed: 2009-10-29
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -152,7 +152,7 @@ namespace dolfin
     /// Refine mesh uniformly
     void refine();
 
-    /// Refine mesh according to cells marked for refinement,
+    /// Refine mesh according to cells marked for refinement
     void refine(MeshFunction<bool>& cell_markers);
 
     /// Coarsen mesh uniformly

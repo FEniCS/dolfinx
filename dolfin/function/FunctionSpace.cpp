@@ -27,6 +27,7 @@
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/la/GenericVector.h>
 #include "GenericFunction.h"
+#include "Function.h"
 #include "FunctionSpace.h"
 
 using namespace dolfin;
@@ -71,6 +72,7 @@ const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
   _element = V._element;
   _dofmap  = V._dofmap;
   _restriction = V._restriction;
+  _members = V._members;
 
   return *this;
 }
@@ -212,11 +214,14 @@ bool FunctionSpace::is_inside_restriction(uint c) const
     return true;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::update()
+void FunctionSpace::refine()
 {
-  // FIXME: Ugly hack until we've figured out what the correct constness
-  // FIXME: should be for DofMap, also affects generated code.
-  const_cast<DofMap&>(*_dofmap).update();
+  refine(0);
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::refine(MeshFunction<bool>& cell_markers)
+{
+  refine(&cell_markers);
 }
 //-----------------------------------------------------------------------------
 std::string FunctionSpace::str(bool verbose) const
@@ -239,6 +244,47 @@ std::string FunctionSpace::str(bool verbose) const
   }
 
   return s.str();
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::refine(MeshFunction<bool>* cell_markers)
+{
+  assert(_mesh);
+  assert(_element);
+  assert(_dofmap);
+
+  cout << "Refining function space." << endl;
+
+  // Create new mesh (copy) and refine
+  boost::shared_ptr<Mesh> refined_mesh(new Mesh(*_mesh));
+  if (cell_markers)
+    refined_mesh->refine(*cell_markers);
+  else
+    refined_mesh->refine();
+
+  // Create new element (shared)
+  boost::shared_ptr<const FiniteElement> refined_element = _element;
+
+  // Create new dofmap (mesh copy but shared UFC dofmap)
+  boost::shared_ptr<const DofMap> refined_dofmap(new DofMap(_dofmap->ufc_dof_map, refined_mesh));
+
+  // Create new refined function space
+  boost::shared_ptr<FunctionSpace> W(new FunctionSpace(refined_mesh,
+                                                       refined_element,
+                                                       refined_dofmap));
+
+  // Overwrite members with their interpolations to the refined function space
+  for (std::set<Function*>::iterator it = _members.begin(); it != _members.end(); ++it)
+  {
+    cout << "Interpolating function to refined function space." << endl;
+    boost::shared_ptr<Function> w(new Function(*W));
+    w->interpolate(**it);
+    **it = *w;
+  }
+
+  // Overwrite data of this function space
+  std::set<Function*> old_members = _members;
+  *this = *W;
+  _members = old_members;
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::register_member(Function* v) const
