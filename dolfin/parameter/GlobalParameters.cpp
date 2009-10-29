@@ -22,8 +22,8 @@ GlobalParameters::GlobalParameters() : Parameters("dolfin")
   // Set default parameter values
   *static_cast<Parameters*>(this) = default_parameters();
 
-      // FIXME: Consider adding the default parameter sets for all
-      // FIXME: classes as nested parameter sets here.
+  // FIXME: Consider adding the default parameter sets for all
+  // FIXME: classes as nested parameter sets here.
 
   // Add nested parameter sets
   this->add(KrylovSolver::default_parameters());
