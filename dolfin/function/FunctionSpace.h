@@ -116,7 +116,7 @@ namespace dolfin
 
   private:
 
-    // Function is a friend
+    // Friends
     friend class Function;
 
     /// Common refinement function

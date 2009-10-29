@@ -278,7 +278,7 @@ void FunctionSpace::refine(MeshFunction<bool>* cell_markers)
     cout << "Interpolating function to refined function space." << endl;
     boost::shared_ptr<Function> w(new Function(*W));
     w->interpolate(**it);
-    **it = *w;
+    *((*it)->_vector) = *w->_vector;
   }
 
   // Overwrite data of this function space

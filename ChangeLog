@@ -1,3 +1,4 @@
+ - Refinement of function spaces and automatic interpolation of member functions
  - Allow setting global parameters for Krylov solver
  - Fix handling of Constants in Python interface to avoid repeated JIT compilation
  - Allow simple specification of subdomains in Python without needing to subclass SubDomain
