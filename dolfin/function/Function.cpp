@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-10-17
+// Last changed: 2009-10-29
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -32,14 +32,22 @@ Function::Function(const FunctionSpace& V)
   : _function_space(reference_to_no_delete_pointer(V)),
     local_scratch(V.element())
 {
+  // Initialize vector
   init_vector();
+
+  // Register function as member of function space
+  V.register_member(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : _function_space(V),
     local_scratch(V->element())
 {
+  // Initialize vector
   init_vector();
+
+  // Register function as member of function space
+  V->register_member(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, GenericVector& x)
@@ -49,6 +57,9 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
 {
   // Assertion uses '<=' to deal with sub-functions
   assert(V.dofmap().global_dimension() <= x.size());
+
+  // Register function as member of function space
+  V.register_member(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -59,6 +70,9 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 {
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x->size());
+
+  // Register function as member of function space
+  V->register_member(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -69,6 +83,9 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 {
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x.size());
+
+  // Register function as member of function space
+  V->register_member(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
@@ -85,6 +102,9 @@ Function::Function(const FunctionSpace& V, std::string filename)
   // Check size of vector
   if (_vector->size() != _function_space->dim())
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
+
+  // Register function as member of function space
+  V.register_member(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -106,15 +126,22 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   // Check size of vector
   if (_vector->size() != _function_space->dim())
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
+
+  // Register function as member of function space
+  V->register_member(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
 {
+  // Assign data
   *this = v;
+
+  // Register function as member of function space
+  this->_function_space->register_member(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v, uint i)
-   : local_scratch(v[i]._function_space->element())
+  : local_scratch(v[i]._function_space->element())
 
 {
   // Copy function space pointer
@@ -122,11 +149,15 @@ Function::Function(const Function& v, uint i)
 
   // Copy vector pointer
   this->_vector = v[i]._vector;
+
+  // Register function as member of function space
+  this->_function_space->register_member(this);
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
 {
-  // Do nothing
+  // Deregister function from functon space
+  _function_space->deregister_member(this);
 }
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Function& v)

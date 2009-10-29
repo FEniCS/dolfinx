@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-10-07
+// Last changed: 2009-10-29
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -16,6 +16,7 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 #include <dolfin/fem/FiniteElement.h>
 
 namespace dolfin
@@ -24,6 +25,7 @@ namespace dolfin
   class Mesh;
   class Cell;
   class DofMap;
+  class Function;
   class GenericFunction;
   class IntersectionDetector;
   class GenericVector;
@@ -33,7 +35,7 @@ namespace dolfin
   /// a mesh, a finite element, and a local-to-global mapping of the
   /// degrees of freedom (dofmap).
 
-  class FunctionSpace
+  class FunctionSpace : public Variable
   {
   public:
 
@@ -105,7 +107,19 @@ namespace dolfin
     /// Update function space when mesh has changed
     void update();
 
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose) const;
+
   private:
+
+    // Function is a friend
+    friend class Function;
+
+    // Register member of function space
+    void register_member(Function* v) const;
+
+    // Deregister member of function space
+    void deregister_member(Function* v) const;
 
     // The mesh
     boost::shared_ptr<const Mesh> _mesh;
@@ -118,6 +132,9 @@ namespace dolfin
 
     // The restriction meshfunction
     boost::shared_ptr<const MeshFunction<bool> > _restriction;
+
+    // Members of function space
+    mutable std::set<Function*> _members;
 
     // Cache of sub spaces
     mutable std::map<std::string, boost::shared_ptr<FunctionSpace> > subspaces;

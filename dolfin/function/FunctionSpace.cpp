@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-10-08
+// Last changed: 2009-10-29
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
@@ -217,5 +217,45 @@ void FunctionSpace::update()
   // FIXME: Ugly hack until we've figured out what the correct constness
   // FIXME: should be for DofMap, also affects generated code.
   const_cast<DofMap&>(*_dofmap).update();
+}
+//-----------------------------------------------------------------------------
+std::string FunctionSpace::str(bool verbose) const
+{
+  std::stringstream s;
+
+  if (verbose)
+  {
+    s << str(false) << std::endl << std::endl;
+
+    // No verbose output implemented
+  }
+  else
+  {
+    s << "<FunctionSpace of dimension "
+      << dim()
+      << " with "
+      << _members.size()
+      << " member(s)>";
+  }
+
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::register_member(Function* v) const
+{
+  _members.insert(v);
+
+  cout << "Registering function, function space has "
+       << _members.size() << " members." << endl;
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::deregister_member(Function* v) const
+{
+  for (std::set<Function*>::iterator it = _members.begin(); it != _members.end(); ++it)
+    if (*it == v)
+      _members.erase(*it);
+
+  cout << "Deregistering function, function space has "
+       << _members.size() << " members." << endl;
 }
 //-----------------------------------------------------------------------------
