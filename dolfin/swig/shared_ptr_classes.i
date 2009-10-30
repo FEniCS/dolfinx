@@ -128,6 +128,7 @@ SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
 // Run the macros on derived classes of Variable that is defined shared_ptr
 //-----------------------------------------------------------------------------
 IMPLEMENT_VARIABLE_INTERFACE(Function)
+IMPLEMENT_VARIABLE_INTERFACE(FunctionSpace)
 IMPLEMENT_VARIABLE_INTERFACE(Mesh)
 
 //-----------------------------------------------------------------------------
