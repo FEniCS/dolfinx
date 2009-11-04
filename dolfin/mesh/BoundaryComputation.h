@@ -36,8 +36,8 @@ namespace dolfin
 
     /// Compute the boundary of a given mesh
     static void compute_boundary_common(const Mesh& mesh, 
-					BoundaryMesh& boundary,
-					bool interior_boundary);
+					                              BoundaryMesh& boundary,
+					                              bool interior_boundary);
 					
     /// Reorder vertices so facet is right-oriented w.r.t. facet normal
     static void reorder(std::vector<uint>& vertices, const Facet& facet);

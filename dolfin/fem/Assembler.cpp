@@ -254,7 +254,6 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   // Skip assembly if there are no interior facet integrals
   if (ufc.form.num_interior_facet_integrals() == 0)
     return;
-  not_working_in_parallel("Assembly over interior facets");
 
   Timer timer("Assemble interior facets");
 
@@ -273,8 +272,8 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"), mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
-    // Check if we have an exterior facet
-    if (facet->num_entities(mesh.topology().dim()) != 2)
+    // Check if we have an exterior facet or a facet belonging to another process
+    if (!facet->interior())
     {
       p++;
       continue;
