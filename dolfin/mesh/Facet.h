@@ -28,9 +28,23 @@ namespace dolfin
     /// Destructor
     ~Facet() {}
 
-    /// Return adjacent cells
+    // FIXME: This function should take care of facet 'ownership' when a mesh
+    //        is distributed across processes 
+    /// Determine whether or not facet is an interior facet. This is 'relative'
+    /// to the given partition of the mesh if the mesh is distributed
+    bool interior() const
+    {
+      not_working_in_parallel("Getting adjacent cell");
+
+      if (num_entities(dim() + 1) == 2)
+        return true;
+      else
+        return false;
+    }
+
     // FIXME: This function should take care of the case where adjacent cells
     //        live on different processes
+    /// Return adjacent cells
     std::pair<const Cell, const Cell> adjacent_cells() const
     { 
        assert(num_entities(dim() + 1) == 2);

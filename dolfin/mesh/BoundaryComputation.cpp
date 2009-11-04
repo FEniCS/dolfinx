@@ -24,20 +24,20 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void BoundaryComputation::compute_boundary(const Mesh& mesh,
-					   BoundaryMesh& boundary)
+					                                 BoundaryMesh& boundary)
 {
   compute_boundary_common(mesh, boundary, false);
 }
 //-----------------------------------------------------------------------------
 void BoundaryComputation::compute_interior_boundary(const Mesh& mesh, 
-						 BoundaryMesh& boundary)
+						                                        BoundaryMesh& boundary)
 {
   compute_boundary_common(mesh, boundary, true);
 }
 //-----------------------------------------------------------------------------
 void BoundaryComputation::compute_boundary_common(const Mesh& mesh, 
-						  BoundaryMesh& boundary,
-						  bool interior_boundary)
+						                                      BoundaryMesh& boundary,
+						                                      bool interior_boundary)
 {
   // We iterate over all facets in the mesh and check if they are on
   // the boundary. A facet is on the boundary if it is connected to
@@ -153,7 +153,8 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   editor.close();
 }
 //-----------------------------------------------------------------------------
-void BoundaryComputation::reorder(std::vector<uint>& vertices, const Facet& facet)
+void BoundaryComputation::reorder(std::vector<uint>& vertices, 
+                                  const Facet& facet)
 {
   // Get mesh
   const Mesh& mesh = facet.mesh();
