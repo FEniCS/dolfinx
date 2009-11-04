@@ -1,12 +1,15 @@
 // Copyright (C) 2006-2007 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2009.
+//
 // First added:  2006-06-02
-// Last changed: 2007-05-02
+// Last changed: 2009-11-04
 
 #ifndef __FACET_H
 #define __FACET_H
 
+#include "Cell.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
 
@@ -24,6 +27,16 @@ namespace dolfin
 
     /// Destructor
     ~Facet() {}
+
+    /// Return adjacent cells
+    // FIXME: This function should take care of the case where adjacent cells
+    //        live on different processes
+    std::pair<const Cell, const Cell> adjacent_cells() const
+    { 
+       assert(num_entities(dim() + 1) == 2);
+       return std::make_pair(Cell(mesh(), entities(dim() + 1)[0]),
+                             Cell(mesh(), entities(dim() + 1)[1]));
+    }
 
   };
 
