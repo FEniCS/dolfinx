@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-10-29
+// Last changed: 2009-11-03
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -154,6 +154,7 @@ namespace dolfin
 
     // Friends
     friend class FunctionSpace;
+    friend class Adaptive;
 
     // Collection of sub-functions which share data with the function
     mutable boost::ptr_map<uint, Function> sub_functions;

@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-10-29
+// Last changed: 2009-11-04
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
@@ -265,7 +265,7 @@ void FunctionSpace::refine(MeshFunction<bool>* cell_markers)
   boost::shared_ptr<const FiniteElement> refined_element = _element;
 
   // Create new dofmap (mesh copy but shared UFC dofmap)
-  boost::shared_ptr<const DofMap> refined_dofmap(new DofMap(_dofmap->ufc_dof_map, refined_mesh));
+  boost::shared_ptr<const DofMap> refined_dofmap(new DofMap(_dofmap->_ufc_dofmap, refined_mesh));
 
   // Create new refined function space
   boost::shared_ptr<FunctionSpace> W(new FunctionSpace(refined_mesh,
