@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2008-08-12
-// Last changed: 2009-10-08
+// Last changed: 2009-11-04
 
 #include <iostream>
 
@@ -43,22 +43,22 @@ typedef std::tr1::unordered_set<dolfin::uint>::const_iterator set_iterator;
 typedef std::vector<dolfin::uint>::const_iterator vector_it;
 
 //-----------------------------------------------------------------------------
-void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
+void DofMapBuilder::parallel_build(DofMap& dofmap, const Mesh& mesh)
 {
   // FIXME: Split this function into two; deciding ownership and then renumbering
 
   info("Building parallel dof map");
 
   // Check that dof map has not been built
-  if (dof_map.map.get())
+  if (dofmap._map.get())
     error("Local-to-global mapping has already been computed.");
 
-  dof_map.ufc_to_map.clear();
+  dofmap._ufc_to_map.clear();
 
-  const uint max_local_dimension = dof_map.max_local_dimension();
+  const uint max_local_dimension = dofmap.max_local_dimension();
 
-  // Allocate scratch _dof_map
-  int* _dof_map = new int[max_local_dimension*mesh.num_cells()];
+  // Allocate scratch _dofmap
+  int* _dofmap = new int[max_local_dimension*mesh.num_cells()];
 
   // Extract the interior boundary
   BoundaryMesh interior_boundary;
@@ -78,7 +78,7 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
 
   UFCCell ufc_cell(mesh);
   uint *old_dofs = new uint[max_local_dimension];
-  uint *facet_dofs = new uint[dof_map.num_facet_dofs()];
+  uint *facet_dofs = new uint[dofmap.num_facet_dofs()];
 
   // Decide ownership of shared dofs
   for (CellIterator bc(interior_boundary); !bc.end(); ++bc)
@@ -93,25 +93,25 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
     const uint local_facet = c.index(f);
 
     ufc_cell.update(c);
-    
+
     // Tabulate dofs on cell
-    dof_map.tabulate_dofs(old_dofs, ufc_cell, c.index());
-    
+    dofmap.tabulate_dofs(old_dofs, ufc_cell, c.index());
+
     // Tabulate which dofs are on the facet
-    dof_map.tabulate_facet_dofs(facet_dofs, local_facet);
-    
-    for (uint i = 0; i < dof_map.num_facet_dofs(); i++)
+    dofmap.tabulate_facet_dofs(facet_dofs, local_facet);
+
+    for (uint i = 0; i < dofmap.num_facet_dofs(); i++)
     {
       if (shared_dofs.find(old_dofs[facet_dofs[i]]) == shared_dofs.end())
 	{
 	shared_dofs.insert(old_dofs[facet_dofs[i]]);
 	dof_vote[old_dofs[facet_dofs[i]]] = (uint) rand();
 	send_buffer.push_back(old_dofs[facet_dofs[i]]);
-	send_buffer.push_back(dof_vote[old_dofs[facet_dofs[i]]]);	
+	send_buffer.push_back(dof_vote[old_dofs[facet_dofs[i]]]);
       }
     }
   }
-  
+
   // Decide ownership of "shared" dofs
   uint src, dest, recv_count;
   const uint num_proc = MPI::num_processes();
@@ -146,15 +146,15 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     ufc_cell.update(*c);
-    dof_map.tabulate_dofs(old_dofs, ufc_cell, c->index());
-    const uint local_dimension = dof_map.local_dimension(ufc_cell);
+    dofmap.tabulate_dofs(old_dofs, ufc_cell, c->index());
+    const uint local_dimension = dofmap.local_dimension(ufc_cell);
     for (uint i = 0; i < local_dimension; i++)
     {
       // Mark dof as owned if not forbidden
       if (forbidden_dofs.find(old_dofs[i]) == forbidden_dofs.end())
         owned_dofs.insert(old_dofs[i]);
 
-      // Create map from dof to dof_map offset
+      // Create map from dof to dofmap offset
       dof2index[old_dofs[i]].push_back(c->index()*local_dimension + i);
     }
   }
@@ -168,10 +168,10 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
   // Compute renumbering for local and owned shared dofs
   for (set_iterator it = owned_dofs.begin(); it != owned_dofs.end(); ++it, offset++)
   {
-    dof_map.ufc_to_map[*it] = offset;
+    dofmap._ufc_to_map[*it] = offset;
     for (vector_it di = dof2index[*it].begin(); di != dof2index[*it].end(); ++di)
     {
-      _dof_map[*di] = offset;
+      _dofmap[*di] = offset;
     }
 
     if (shared_dofs.find(*it) != shared_dofs.end())
@@ -197,7 +197,7 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
 
     for (uint i = 0; i < recv_count; i += 2)
     {
-      dof_map.ufc_to_map[recv_buffer[i]] = recv_buffer[i+1];
+      dofmap._ufc_to_map[recv_buffer[i]] = recv_buffer[i+1];
 
       // Assign new dof number for shared dofs
       if (forbidden_dofs.find(recv_buffer[i]) != forbidden_dofs.end())
@@ -205,7 +205,7 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
         for (vector_it di = dof2index[recv_buffer[i]].begin();
                        di != dof2index[recv_buffer[i]].end(); ++di)
         {
-          _dof_map[*di] = recv_buffer[i+1];
+          _dofmap[*di] = recv_buffer[i+1];
         }
       }
     }
@@ -213,15 +213,15 @@ void DofMapBuilder::parallel_build(DofMap& dof_map, const Mesh& mesh)
   delete [] recv_buffer;
 
   // Copy dof map
-  if (dof_map.map.get())
-    dof_map.map->resize(max_local_dimension*mesh.num_cells());
+  if (dofmap._map.get())
+    dofmap._map->resize(max_local_dimension*mesh.num_cells());
   else
-    dof_map.map.reset(new std::vector<uint>(max_local_dimension*mesh.num_cells()));
+    dofmap._map.reset(new std::vector<uint>(max_local_dimension*mesh.num_cells()));
 
   // FIXME: Can this step be avoided?
-  std::copy(_dof_map, _dof_map + max_local_dimension*mesh.num_cells(), dof_map.map->begin());
+  std::copy(_dofmap, _dofmap + max_local_dimension*mesh.num_cells(), dofmap._map->begin());
 
-  delete [] _dof_map;
+  delete [] _dofmap;
 
   info("Finished building parallel dof map");
 }

@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2009-10-29
+// Last changed: 2009-11-03
 
 #include <sstream>
 

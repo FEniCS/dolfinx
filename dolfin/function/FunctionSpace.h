@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-10-29
+// Last changed: 2009-11-04
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -118,6 +118,7 @@ namespace dolfin
 
     // Friends
     friend class Function;
+    friend class Adaptive;
 
     /// Common refinement function
     void refine(MeshFunction<bool>* cell_markers);

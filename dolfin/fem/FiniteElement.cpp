@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-14
-// Last changed: 2009-10-06
+// Last changed: 2009-11-04
 
 #include <dolfin/common/utils.h>
 #include <dolfin/log/log.h>
@@ -12,7 +12,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(boost::shared_ptr<const ufc::finite_element> element)
-  : element(element), _hash(dolfin::hash(signature()))
+  : _ufc_element(element), _hash(dolfin::hash(signature()))
 {
   // Do nothing
 }
@@ -26,8 +26,9 @@ boost::shared_ptr<const FiniteElement> FiniteElement::extract_sub_element(const 
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
-boost::shared_ptr<const FiniteElement> FiniteElement::extract_sub_element(const FiniteElement& finite_element,
-                                      const std::vector<uint>& component)
+boost::shared_ptr<const FiniteElement>
+FiniteElement::extract_sub_element(const FiniteElement& finite_element,
+                                   const std::vector<uint>& component)
 {
   // Check if there are any sub systems
   if (finite_element.num_sub_elements() == 0)

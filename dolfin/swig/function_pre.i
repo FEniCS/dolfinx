@@ -142,8 +142,6 @@ namespace dolfin
       if (!PyFloat_Check(py_item))
 	SWIG_exception(SWIG_TypeError, "expected list of floats");
       item = static_cast<double>(PyFloat_AsDouble(py_item));
-      if (item < 0)
-	SWIG_exception(SWIG_TypeError, "expected list of floats");
       $1.push_back(item);
     }
   }
