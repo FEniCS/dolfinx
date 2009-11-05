@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-11-04
+// Last changed: 2009-11-05
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
@@ -168,7 +168,7 @@ boost::shared_ptr<FunctionSpace>
   boost::shared_ptr<const FiniteElement> element(_element->extract_sub_element(component));
 
   // Extract sub dofmap
-  boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component));
+  boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component, *_mesh));
 
   // Create new sub space
   boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
@@ -248,6 +248,7 @@ std::string FunctionSpace::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void FunctionSpace::refine(MeshFunction<bool>* cell_markers)
 {
+  /*
   assert(_mesh);
   assert(_element);
   assert(_dofmap);
@@ -285,6 +286,7 @@ void FunctionSpace::refine(MeshFunction<bool>* cell_markers)
   std::set<Function*> old_members = _members;
   *this = *W;
   _members = old_members;
+  */
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::register_member(Function* v) const

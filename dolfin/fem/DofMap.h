@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-11-04
+// Last changed: 2009-11-05
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -38,18 +38,18 @@ namespace dolfin
 
     /// Create dof map on mesh
     DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
-           boost::shared_ptr<Mesh> mesh);
+           Mesh& dolfin_mesh);
 
     /// Create dof map on mesh (const mesh version)
     DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
-           boost::shared_ptr<const Mesh> mesh);
+           const Mesh& dolfin_mesh);
 
   private:
 
     /// Create dof map on mesh with a std::vector dof map
     DofMap(std::auto_ptr<std::vector<dolfin::uint> > map,
            boost::shared_ptr<ufc::dof_map> ufc_dofmap,
-           boost::shared_ptr<const Mesh> mesh);
+           const Mesh& dolfin_mesh);
 
   public:
 
@@ -111,20 +111,14 @@ namespace dolfin
     /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version)
     void tabulate_coordinates(double** coordinates, const Cell& cell) const;
 
-    /// Extract sub dofmap component
-    DofMap* extract_sub_dofmap(const std::vector<uint>& component) const;
-
     /// Test whether dof map has been renumbered
-    bool renumbered() const
-    {
-      if (_map.get())
-        return true;
-      else
-        return false;
-    }
+    bool renumbered() const { return _map.get(); }
+
+    /// Extract sub dofmap component
+    DofMap* extract_sub_dofmap(const std::vector<uint>& component, const Mesh& dolfin_mesh) const;
 
     /// "Collapse" a sub dofmap
-    DofMap* collapse(std::map<uint, uint>& collapsed_map) const;
+    DofMap* collapse(std::map<uint, uint>& collapsed_map, const Mesh& dolfin_mesh) const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -169,9 +163,6 @@ namespace dolfin
 
     // UFC dof map offset into parent's vector of coefficients
     uint _ufc_offset;
-
-    // DOLFIN mesh
-    boost::shared_ptr<const Mesh> _dolfin_mesh;
 
     // True iff running in parallel
     bool _parallel;

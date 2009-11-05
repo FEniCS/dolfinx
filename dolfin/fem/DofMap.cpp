@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-11-04
+// Last changed: 2009-11-05
 
 #include <boost/scoped_array.hpp>
 
@@ -27,68 +27,68 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
-               boost::shared_ptr<Mesh> mesh)
+               Mesh& dolfin_mesh)
   : _ufc_dofmap(ufc_dofmap), _ufc_offset(0),
-    _dolfin_mesh(mesh), _parallel(MPI::num_processes() > 1)
+    _parallel(MPI::num_processes() > 1)
 {
   // Generate and number all mesh entities
-  for (uint d = 1; d <= _dolfin_mesh->topology().dim(); ++d)
+  for (uint d = 1; d <= dolfin_mesh.topology().dim(); ++d)
   {
     if (_ufc_dofmap->needs_mesh_entities(d) ||
-    	(_parallel && d == (_dolfin_mesh->topology().dim() - 1)))
+    	(_parallel && d == (dolfin_mesh.topology().dim() - 1)))
     {
-      _dolfin_mesh->init(d);
+      dolfin_mesh.init(d);
       if (_parallel)
-        MeshPartitioning::number_entities(*_dolfin_mesh, d);
+        MeshPartitioning::number_entities(dolfin_mesh, d);
     }
   }
 
   // Initialize the UFC mesh
-  init_ufc_mesh(_ufc_mesh, *_dolfin_mesh);
+  init_ufc_mesh(_ufc_mesh, dolfin_mesh);
 
   // Initialize UFC dof map
-  init_ufc_dofmap(*_ufc_dofmap, _ufc_mesh, *_dolfin_mesh);
+  init_ufc_dofmap(*_ufc_dofmap, _ufc_mesh, dolfin_mesh);
 
   // Renumber dof map for running in parallel
   if (_parallel)
-    DofMapBuilder::parallel_build(*this, *_dolfin_mesh);
+    DofMapBuilder::parallel_build(*this, dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
-               boost::shared_ptr<const Mesh> mesh)
+               const Mesh& dolfin_mesh)
   : _ufc_dofmap(ufc_dofmap), _ufc_offset(0),
-    _dolfin_mesh(mesh), _parallel(MPI::num_processes() > 1)
+    _parallel(MPI::num_processes() > 1)
 {
   // Initialize the UFC mesh
-  init_ufc_mesh(_ufc_mesh, *_dolfin_mesh);
+  init_ufc_mesh(_ufc_mesh, dolfin_mesh);
 
   // Initialize UFC dof map
-  init_ufc_dofmap(*_ufc_dofmap, _ufc_mesh, *_dolfin_mesh);
+  init_ufc_dofmap(*_ufc_dofmap, _ufc_mesh, dolfin_mesh);
 
   // Renumber dof map for running in parallel
   if (_parallel)
-    DofMapBuilder::parallel_build(*this, *_dolfin_mesh);
+    DofMapBuilder::parallel_build(*this, dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::auto_ptr<std::vector<dolfin::uint> > map,
-       boost::shared_ptr<ufc::dof_map> ufc_dofmap,
-       boost::shared_ptr<const Mesh> mesh)
+               boost::shared_ptr<ufc::dof_map> ufc_dofmap,
+               const Mesh& dolfin_mesh)
   : _map(map), _ufc_dofmap(ufc_dofmap), _ufc_offset(0),
-    _dolfin_mesh(mesh), _parallel(MPI::num_processes() > 1)
+    _parallel(MPI::num_processes() > 1)
 
 {
   // Check that we have all mesh entities (const so we can't generate them)
-  for (uint d = 0; d <= mesh->topology().dim(); ++d)
+  for (uint d = 0; d <= dolfin_mesh.topology().dim(); ++d)
   {
-    if (_ufc_dofmap->needs_mesh_entities(d) && mesh->num_entities(d) == 0)
+    if (_ufc_dofmap->needs_mesh_entities(d) && dolfin_mesh.num_entities(d) == 0)
       error("Unable to create function space, missing entities of dimension %d. Try calling mesh.init(%d).", d, d);
   }
 
   // Initialize the UFC mesh
-  init_ufc_mesh(_ufc_mesh, *_dolfin_mesh);
+  init_ufc_mesh(_ufc_mesh, dolfin_mesh);
 
   // Initialize UFC dof map
-  init_ufc_dofmap(*_ufc_dofmap, _ufc_mesh, *_dolfin_mesh);
+  init_ufc_dofmap(*_ufc_dofmap, _ufc_mesh, dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
@@ -145,14 +145,15 @@ void DofMap::tabulate_coordinates(double** coordinates, const Cell& cell) const
   tabulate_coordinates(coordinates, ufc_cell);
 }
 //-----------------------------------------------------------------------------
-DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component) const
+DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
+                                   const Mesh& dolfin_mesh) const
 {
   // Reset offset
   uint ufc_offset = 0;
 
   // Recursively extract UFC sub dofmap
   boost::shared_ptr<ufc::dof_map>
-    ufc_sub_dof_map(extract_sub_dofmap(*_ufc_dofmap, ufc_offset, component, _ufc_mesh, *_dolfin_mesh));
+    ufc_sub_dof_map(extract_sub_dofmap(*_ufc_dofmap, ufc_offset, component, _ufc_mesh, dolfin_mesh));
   info(2, "Extracted dof map for sub system: %s", ufc_sub_dof_map->signature());
   info(2, "Offset for sub system: %d", ufc_offset);
 
@@ -164,19 +165,19 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component) const
       error("Cannnot yet extract sub dofmaps of a sub DofMap after renumbering yet.");
 
     const uint max_local_dim = ufc_sub_dof_map->max_local_dimension();
-    const uint num_cells = _dolfin_mesh->num_cells();
+    const uint num_cells = dolfin_mesh.num_cells();
 
      // Create vector for new map
     std::auto_ptr<std::vector<uint> > sub_map(new std::vector<uint>);
     sub_map->resize(max_local_dim*num_cells);
 
     // Create new dof map (this will initialise the UFC dof map)
-    sub_dofmap = new DofMap(sub_map, ufc_sub_dof_map, _dolfin_mesh);
+    sub_dofmap = new DofMap(sub_map, ufc_sub_dof_map, dolfin_mesh);
 
     // Build sub-map vector
-    UFCCell ufc_cell(*_dolfin_mesh);
+    UFCCell ufc_cell(dolfin_mesh);
     uint* ufc_dofs = new uint[ufc_sub_dof_map->max_local_dimension()];
-    for (CellIterator cell(*_dolfin_mesh); !cell.end(); ++cell)
+    for (CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
     {
       // Update to current cell
       ufc_cell.update(*cell);
@@ -193,7 +194,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component) const
     delete [] ufc_dofs;
   }
   else
-    sub_dofmap = new DofMap(ufc_sub_dof_map, _dolfin_mesh);
+    sub_dofmap = new DofMap(ufc_sub_dof_map, dolfin_mesh);
 
   // Set offset
   sub_dofmap->_ufc_offset = ufc_offset;
@@ -201,7 +202,8 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component) const
   return sub_dofmap;
 }
 //-----------------------------------------------------------------------------
-DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map) const
+DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
+                         const Mesh& dolfin_mesh) const
 {
   DofMap* collapsed_dof_map = 0;
   if (_map.get())
@@ -211,7 +213,7 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map) const
   else
   {
     // Create a new DofMap
-    collapsed_dof_map = new DofMap(_ufc_dofmap, _dolfin_mesh);
+    collapsed_dof_map = new DofMap(_ufc_dofmap, dolfin_mesh);
   }
 
   assert(collapsed_dof_map->global_dimension() == this->global_dimension());
@@ -220,10 +222,10 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map) const
   collapsed_map.clear();
 
   // Build map from collapsed to original dofs
-  UFCCell ufc_cell(*_dolfin_mesh);
+  UFCCell ufc_cell(dolfin_mesh);
   uint* dofs = new uint[this->max_local_dimension()];
   uint* collapsed_dofs = new uint[collapsed_dof_map->max_local_dimension()];
-  for (CellIterator cell(*_dolfin_mesh); !cell.end(); ++cell)
+  for (CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
   {
     // Update to current cell
     ufc_cell.update(*cell);
@@ -355,6 +357,9 @@ std::string DofMap::str(bool verbose) const
     s << "    Number of sub dofmaps:   " << _ufc_dofmap->num_sub_dof_maps() << std::endl;
     s << "    Number of facet dofs:    " << _ufc_dofmap->num_facet_dofs() << std::endl;
 
+    // FIXME: Mostly commented out after removal of Mesh member variable
+
+    /*
     for (uint d = 0; d <= _dolfin_mesh->topology().dim(); d++)
       s << "    Number of entity dofs (dim " << d << "): "
         << _ufc_dofmap->num_entity_dofs(d) << std::endl;
@@ -496,6 +501,8 @@ std::string DofMap::str(bool verbose) const
       delete [] coordinates;
       s << std::endl;
     }
+
+    */
 
   }
   else

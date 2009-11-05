@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-10-29
+// Last changed: 2009-11-05
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -176,7 +176,7 @@ const Function& Function::operator= (const Function& v)
   {
     // Create collapsed dof map
     std::map<uint, uint> collapsed_map;
-    boost::shared_ptr<DofMap> collapsed_dof_map(v._function_space->dofmap().collapse(collapsed_map));
+    boost::shared_ptr<DofMap> collapsed_dof_map(v._function_space->dofmap().collapse(collapsed_map, v._function_space->mesh()));
 
     // Create new FunctionsSpapce
     _function_space = v._function_space->collapse_sub_space(collapsed_dof_map);

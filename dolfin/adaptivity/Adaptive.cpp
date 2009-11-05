@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-02
-// Last changed: 2009-11-04
+// Last changed: 2009-11-05
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
@@ -114,6 +114,7 @@ void Adaptive::refine_mesh(Mesh& mesh,
 void Adaptive::refine_function_space(FunctionSpace& function_space,
                                      const Mesh& new_mesh)
 {
+  /*
   // Extract UFC element and dofmap
   boost::shared_ptr<const ufc::finite_element> ufc_element = function_space._element->_ufc_element;
   boost::shared_ptr<ufc::dof_map> ufc_dofmap = function_space._dofmap->_ufc_dofmap;
@@ -128,6 +129,8 @@ void Adaptive::refine_function_space(FunctionSpace& function_space,
   // Refine all depending functions and boundary conditions
   refine_functions(new_function_space);
   refine_boundary_conditions(new_function_space);
+
+  */
 
   // FIXME: Might need to touch some function space member variables
   // FIXME: here, in particular sub spaces.
