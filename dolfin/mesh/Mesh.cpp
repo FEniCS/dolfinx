@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2009-11-03
+// Last changed: 2009-11-05
 
 #include <sstream>
 
@@ -191,35 +191,14 @@ bool Mesh::ordered() const
 //-----------------------------------------------------------------------------
 void Mesh::refine()
 {
-  not_working_in_parallel("Mesh refinement");
-
-  info("No cells marked for refinement, assuming uniform mesh refinement.");
-  UniformMeshRefinement::refine(*this);
-
-  // Mesh may not be ordered
-  _ordered = false;
+  // Refinement handled by Adaptive base class
+  refine_mesh(*this, 0);
 }
-//-----------------------------------------------------------------------------
-//void Mesh::refine(MeshFunction<bool>& cell_markers, bool refine_boundary)
-//{
-//  LocalMeshRefinement::refineMeshByEdgeBisection(*this, cell_markers,
-//                                                refine_boundary);
-//
-//  // Mesh may not be ordered
-//  _ordered = false;
-//}
 //-----------------------------------------------------------------------------
 void Mesh::refine(MeshFunction<bool>& cell_markers)
 {
-  cout << "check in Mesh" << endl;
-  not_working_in_parallel("Mesh refinement");
-  cout << "check after" << endl;
-
-  //LocalMeshRefinement::refineIterativelyByEdgeBisection(*this, cell_markers);
-  LocalMeshRefinement::refineRecursivelyByEdgeBisection(*this, cell_markers);
-
-  // Mesh may not be ordered
-  _ordered = false;
+  // Refinement handled by Adaptive base class
+  refine_mesh(*this, &cell_markers);
 }
 //-----------------------------------------------------------------------------
 void Mesh::coarsen()

@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-11-04
+// Last changed: 2009-11-06
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -19,6 +19,7 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/fem/FiniteElement.h>
+#include <dolfin/adaptivity/Adaptive.h>
 
 namespace dolfin
 {
@@ -36,7 +37,7 @@ namespace dolfin
   /// a mesh, a finite element, and a local-to-global mapping of the
   /// degrees of freedom (dofmap).
 
-  class FunctionSpace : public Variable
+  class FunctionSpace : public Variable, public Adaptive
   {
   public:
 
@@ -105,12 +106,6 @@ namespace dolfin
     // Evaluate restriction
     bool is_inside_restriction(uint c) const;
 
-    /// Refine function space uniformly
-    void refine();
-
-    /// Refine function space according to cells marked for refinement
-    void refine(MeshFunction<bool>& cell_markers);
-
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
@@ -119,15 +114,6 @@ namespace dolfin
     // Friends
     friend class Function;
     friend class Adaptive;
-
-    /// Common refinement function
-    void refine(MeshFunction<bool>* cell_markers);
-
-    // Register member of function space
-    void register_member(Function* v) const;
-
-    // Deregister member of function space
-    void deregister_member(Function* v) const;
 
     // The mesh
     boost::shared_ptr<const Mesh> _mesh;
@@ -140,9 +126,6 @@ namespace dolfin
 
     // The restriction meshfunction
     boost::shared_ptr<const MeshFunction<bool> > _restriction;
-
-    // Members of function space
-    mutable std::set<Function*> _members;
 
     // Cache of sub spaces
     mutable std::map<std::string, boost::shared_ptr<FunctionSpace> > subspaces;

@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2009.
 //
 // First added:  2008-06-18
-// Last changed: 2009-10-22
+// Last changed: 2009-11-05
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericMatrix.h>
@@ -20,37 +20,41 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 BoundaryCondition::BoundaryCondition(const FunctionSpace& V)
-  : V(reference_to_no_delete_pointer(V))
+  : _function_space(reference_to_no_delete_pointer(V))
 {
-  // Do nothing
+  // Register adaptive object
+  _function_space->register_object(this);
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::BoundaryCondition(boost::shared_ptr<const FunctionSpace> V)
-  : V(V)
+  : _function_space(V)
 {
-  // Do nothing
+  // Register adaptive object
+  _function_space->register_object(this);
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::~BoundaryCondition()
 {
-  // Do nothing
+  // Deregister adaptive object
+  _function_space->deregister_object(this);
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& BoundaryCondition::function_space() const
 {
-  return *V;
+  assert(_function_space);
+  return *_function_space;
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<const FunctionSpace> BoundaryCondition::function_space_ptr() const
 {
-  return V;
+  return _function_space;
 }
 //-----------------------------------------------------------------------------
 void BoundaryCondition::check_arguments(GenericMatrix* A,
                                         GenericVector* b,
                                         const GenericVector* x) const
 {
-  assert(V);
+  assert(_function_space);
 
   // Check matrix and vector dimensions
   if (A && x && A->size(0) != x->size())
@@ -64,17 +68,17 @@ void BoundaryCondition::check_arguments(GenericMatrix* A,
           x->size(), b->size());
 
   // Check dimension of function space
-  if (A && A->size(0) < V->dim())
+  if (A && A->size(0) < _function_space->dim())
     error("Dimension of function space (%d) too large for application of boundary conditions to linear system (%d rows).",
-          V->dim(), A->size(0));
-  if (x && x->size() < V->dim())
+          _function_space->dim(), A->size(0));
+  if (x && x->size() < _function_space->dim())
     error("Dimension of function space (%d) too large for application to boundary conditions linear system (%d rows).",
-          V->dim(), x->size());
-  if (b && b->size() < V->dim())
+          _function_space->dim(), x->size());
+  if (b && b->size() < _function_space->dim())
     error("Dimension of function space (%d) too large for application to boundary conditions linear system (%d rows).",
-          V->dim(), b->size());
+          _function_space->dim(), b->size());
 
-  // FIXME: Check case A.size() > V->dim() for subspaces
+  // FIXME: Check case A.size() > _function_space->dim() for subspaces
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)

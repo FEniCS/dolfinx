@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-02
-// Last changed: 2009-11-05
+// Last changed: 2009-11-06
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
@@ -22,32 +22,32 @@ typedef std::set<Function*>::iterator function_iterator;
 typedef std::set<BoundaryCondition*>::iterator boundary_condition_iterator;
 
 //-----------------------------------------------------------------------------
-void Adaptive::register_function_space(FunctionSpace* function_space)
+void Adaptive::register_object(FunctionSpace* function_space) const
 {
   _function_spaces.insert(function_space);
 }
 //-----------------------------------------------------------------------------
-void Adaptive::register_function(Function* function)
+void Adaptive::register_object(Function* function) const
 {
   _functions.insert(function);
 }
 //-----------------------------------------------------------------------------
-void Adaptive::register_boundary_condition(BoundaryCondition* boundary_condition)
+void Adaptive::register_object(BoundaryCondition* boundary_condition) const
 {
   _boundary_conditions.insert(boundary_condition);
 }
 //-----------------------------------------------------------------------------
-void Adaptive::deregister_function_space(FunctionSpace* function_space)
+void Adaptive::deregister_object(FunctionSpace* function_space) const
 {
   _function_spaces.erase(function_space);
 }
 //-----------------------------------------------------------------------------
-void Adaptive::deregister_function(Function* function)
+void Adaptive::deregister_object(Function* function) const
 {
   _functions.erase(function);
 }
 //-----------------------------------------------------------------------------
-void Adaptive::deregister_boundary_condition(BoundaryCondition* boundary_condition)
+void Adaptive::deregister_object(BoundaryCondition* boundary_condition) const
 {
   _boundary_conditions.erase(boundary_condition);
 }

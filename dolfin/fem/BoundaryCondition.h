@@ -5,13 +5,14 @@
 // Modified by Johan Hake 2009.
 //
 // First added:  2008-06-18
-// Last changed: 2009-10-27
+// Last changed: 2009-11-06
 
 #ifndef __BOUNDARY_CONDITION_H
 #define __BOUNDARY_CONDITION_H
 
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
+#include <dolfin/adaptivity/Adaptive.h>
 
 namespace dolfin
 {
@@ -22,7 +23,7 @@ namespace dolfin
 
   /// Common base class for boundary conditions
 
-  class BoundaryCondition
+  class BoundaryCondition : public Adaptive
   {
   public:
 
@@ -92,7 +93,7 @@ namespace dolfin
     };
 
     // The function space (possibly a sub function space)
-    boost::shared_ptr<const FunctionSpace> V;
+    boost::shared_ptr<const FunctionSpace> _function_space;
 
   };
 

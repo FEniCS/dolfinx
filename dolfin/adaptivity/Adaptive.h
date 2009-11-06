@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-02
-// Last changed: 2009-11-04
+// Last changed: 2009-11-06
 
 #ifndef __ADAPTIVE_H
 #define __ADAPTIVE_H
@@ -13,9 +13,11 @@ namespace dolfin
 {
 
   // Forward declarations
+  class Mesh;
   class FunctionSpace;
   class Function;
   class BoundaryCondition;
+  template <class T> class MeshFunction;
 
   /// This is the base class for objects that should be updated
   /// automatically during mesh refinement. The purpose of this class
@@ -27,29 +29,29 @@ namespace dolfin
 
   class Adaptive
   {
-  protected:
+  public:
 
     //--- Registration of depending objects ---
 
     /// Register depending function space
-    void register_function_space(FunctionSpace* function_space);
+    void register_object(FunctionSpace* function_space) const;
 
     /// Register depending function
-    void register_function(Function* function);
+    void register_object(Function* function) const;
 
     /// Register depending boundary condition
-    void register_boundary_condition(BoundaryCondition* boundary_condition);
+    void register_object(BoundaryCondition* boundary_condition) const;
 
     //--- Deregistration of depending objects ---
 
     /// Deregister depending function space
-    void deregister_function_space(FunctionSpace* function_space);
+    void deregister_object(FunctionSpace* function_space) const;
 
     /// Deregister depending function
-    void deregister_function(Function* function);
+    void deregister_object(Function* function) const;
 
     /// Deregister depending boundary condition
-    void deregister_boundary_condition(BoundaryCondition* boundary_condition);
+    void deregister_object(BoundaryCondition* boundary_condition) const;
 
   private:
 
@@ -86,13 +88,13 @@ namespace dolfin
                                    const FunctionSpace& new_function_space);
 
     // List of depending function spaces
-    std::set<FunctionSpace*> _function_spaces;
+    mutable std::set<FunctionSpace*> _function_spaces;
 
     // List of depending functions
-    std::set<Function*> _functions;
+    mutable std::set<Function*> _functions;
 
     // List of depending boundary conditions
-    std::set<BoundaryCondition*> _boundary_conditions;
+    mutable std::set<BoundaryCondition*> _boundary_conditions;
 
   };
 

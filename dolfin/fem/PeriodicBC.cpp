@@ -5,7 +5,7 @@
 // Modified by Johan Hake 2009
 //
 // First added:  2007-07-08
-// Last changed: 2009-10-21
+// Last changed: 2009-11-06
 
 #include <boost/scoped_array.hpp>
 #include <vector>
@@ -123,13 +123,13 @@ void PeriodicBC::apply(GenericMatrix& A,
 //-----------------------------------------------------------------------------
 void PeriodicBC::rebuild()
 {
-  assert(V);
+  assert(_function_space);
 
   cout << "Building mapping between periodic degrees of freedom." << endl;
 
   // Build list of dof pairs
   std::vector<std::pair<uint, uint> > dof_pairs;
-  extract_dof_pairs(*V, dof_pairs);
+  extract_dof_pairs(*_function_space, dof_pairs);
 
   // Delete old arrays if necessary
   delete [] master_dofs;
@@ -268,7 +268,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
   mesh.init(tdim - 1, tdim);
 
   // Create local data for application of boundary conditions
-  BoundaryCondition::LocalData data(*V);
+  BoundaryCondition::LocalData data(*_function_space);
 
   // Arrays used for mapping coordinates
   std::vector<double> xx(gdim);

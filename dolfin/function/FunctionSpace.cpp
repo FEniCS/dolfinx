@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-11-05
+// Last changed: 2009-11-06
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
@@ -39,7 +39,8 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0))
 {
-  // Do nothing
+  // Register adaptive object
+  _mesh->register_object(this);
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
@@ -48,7 +49,8 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0))
 {
-  // Do nothing
+  // Register adaptive object
+  _mesh->register_object(this);
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(const FunctionSpace& V)
@@ -58,11 +60,15 @@ FunctionSpace::FunctionSpace(const FunctionSpace& V)
   _element = V._element;
   _dofmap  = V._dofmap;
   _restriction = V._restriction;
+
+  // Register adaptive object
+  _mesh->register_object(this);
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::~FunctionSpace()
 {
-  // Do nothing
+  // Deregister adaptive object
+  _mesh->deregister_object(this);
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
@@ -72,7 +78,6 @@ const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
   _element = V._element;
   _dofmap  = V._dofmap;
   _restriction = V._restriction;
-  _members = V._members;
 
   return *this;
 }
@@ -214,16 +219,6 @@ bool FunctionSpace::is_inside_restriction(uint c) const
     return true;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::refine()
-{
-  refine(0);
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::refine(MeshFunction<bool>& cell_markers)
-{
-  refine(&cell_markers);
-}
-//-----------------------------------------------------------------------------
 std::string FunctionSpace::str(bool verbose) const
 {
   std::stringstream s;
@@ -236,74 +231,9 @@ std::string FunctionSpace::str(bool verbose) const
   }
   else
   {
-    s << "<FunctionSpace of dimension "
-      << dim()
-      << " with "
-      << _members.size()
-      << " member(s)>";
+    s << "<FunctionSpace of dimension " << dim() << ">";
   }
 
   return s.str();
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::refine(MeshFunction<bool>* cell_markers)
-{
-  /*
-  assert(_mesh);
-  assert(_element);
-  assert(_dofmap);
-
-  cout << "Refining function space." << endl;
-
-  // Create new mesh (copy) and refine
-  boost::shared_ptr<Mesh> refined_mesh(new Mesh(*_mesh));
-  if (cell_markers)
-    refined_mesh->refine(*cell_markers);
-  else
-    refined_mesh->refine();
-
-  // Create new element (shared)
-  boost::shared_ptr<const FiniteElement> refined_element = _element;
-
-  // Create new dofmap (mesh copy but shared UFC dofmap)
-  boost::shared_ptr<const DofMap> refined_dofmap(new DofMap(_dofmap->_ufc_dofmap, refined_mesh));
-
-  // Create new refined function space
-  boost::shared_ptr<FunctionSpace> W(new FunctionSpace(refined_mesh,
-                                                       refined_element,
-                                                       refined_dofmap));
-
-  // Overwrite members with their interpolations to the refined function space
-  for (std::set<Function*>::iterator it = _members.begin(); it != _members.end(); ++it)
-  {
-    cout << "Interpolating function to refined function space." << endl;
-    boost::shared_ptr<Function> w(new Function(*W));
-    w->interpolate(**it);
-    *((*it)->_vector) = *w->_vector;
-  }
-
-  // Overwrite data of this function space
-  std::set<Function*> old_members = _members;
-  *this = *W;
-  _members = old_members;
-  */
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::register_member(Function* v) const
-{
-  _members.insert(v);
-
-  cout << "Registering function, function space has "
-       << _members.size() << " members." << endl;
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::deregister_member(Function* v) const
-{
-  for (std::set<Function*>::iterator it = _members.begin(); it != _members.end(); ++it)
-    if (*it == v)
-      _members.erase(*it);
-
-  cout << "Deregistering function, function space has "
-       << _members.size() << " members." << endl;
 }
 //-----------------------------------------------------------------------------

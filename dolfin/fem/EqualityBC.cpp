@@ -4,7 +4,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2009-04-03
-// Last changed: 2009-09-14
+// Last changed: 2009-11-06
 
 #include <vector>
 
@@ -161,11 +161,11 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
   assert(equal_dofs.size() == 0);
 
   // Get mesh and dofmap
-  const Mesh& mesh = V->mesh();
-  const DofMap& dofmap = V->dofmap();
+  const Mesh& mesh = _function_space->mesh();
+  const DofMap& dofmap = _function_space->dofmap();
 
   // Create local data for application of boundary conditions
-  BoundaryCondition::LocalData data(*V);
+  BoundaryCondition::LocalData data(*_function_space);
 
   // Make sure we have the facet - cell connectivity
   const uint D = mesh.topology().dim();
@@ -216,24 +216,24 @@ void EqualityBC::init_from_mesh(uint sub_domain)
   assert(equal_dofs.size() == 0);
 
   // Get data from MeshData
-  std::vector<uint>* facet_cells   = const_cast<Mesh&>(V->mesh()).data().array("boundary facet cells");
-  std::vector<uint>* facet_numbers = const_cast<Mesh&>(V->mesh()).data().array("boundary facet numbers");
-  std::vector<uint>* indicators    = const_cast<Mesh&>(V->mesh()).data().array("boundary indicators");
+  std::vector<uint>* facet_cells   = const_cast<Mesh&>(_function_space->mesh()).data().array("boundary facet cells");
+  std::vector<uint>* facet_numbers = const_cast<Mesh&>(_function_space->mesh()).data().array("boundary facet numbers");
+  std::vector<uint>* indicators    = const_cast<Mesh&>(_function_space->mesh()).data().array("boundary indicators");
 
   // Check data
   if (!facet_cells)
   {
-    info(V->mesh().data());
+    info(_function_space->mesh().data());
     error("Mesh data \"boundary facet cells\" not available.");
   }
   if (!facet_numbers)
   {
-    info(V->mesh().data());
+    info(_function_space->mesh().data());
     error("Mesh data \"boundary facet numbers\" not available.");
   }
   if (!indicators)
   {
-    info(V->mesh().data());
+    info(_function_space->mesh().data());
     error("Mesh data \"boundary indicators\" not available.");
   }
 
@@ -243,11 +243,11 @@ void EqualityBC::init_from_mesh(uint sub_domain)
   assert(size == indicators->size());
 
   // Get mesh and dofmap
-  const Mesh& mesh = V->mesh();
-  const DofMap& dofmap = V->dofmap();
+  const Mesh& mesh = _function_space->mesh();
+  const DofMap& dofmap = _function_space->dofmap();
 
   // Create local data for application of boundary conditions
-  BoundaryCondition::LocalData data(*V);
+  BoundaryCondition::LocalData data(*_function_space);
 
   // Build set of boundary facets
   for (uint i = 0; i < size; i++)

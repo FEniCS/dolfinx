@@ -35,8 +35,8 @@ Function::Function(const FunctionSpace& V)
   // Initialize vector
   init_vector();
 
-  // Register function as member of function space
-  V.register_member(this);
+  // Register adaptive object
+  _function_space->register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
@@ -46,8 +46,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
   // Initialize vector
   init_vector();
 
-  // Register function as member of function space
-  V->register_member(this);
+  // Register adaptive object
+  _function_space->register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, GenericVector& x)
@@ -58,8 +58,8 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
   // Assertion uses '<=' to deal with sub-functions
   assert(V.dofmap().global_dimension() <= x.size());
 
-  // Register function as member of function space
-  V.register_member(this);
+  // Register adaptive object
+  _function_space->register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -71,8 +71,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x->size());
 
-  // Register function as member of function space
-  V->register_member(this);
+  // Register adaptive object
+  _function_space->register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -84,8 +84,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x.size());
 
-  // Register function as member of function space
-  V->register_member(this);
+  // Register adaptive object
+  _function_space->register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
@@ -103,8 +103,8 @@ Function::Function(const FunctionSpace& V, std::string filename)
   if (_vector->size() != _function_space->dim())
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
 
-  // Register function as member of function space
-  V.register_member(this);
+  // Register adaptive object
+  _function_space->register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -127,8 +127,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   if (_vector->size() != _function_space->dim())
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
 
-  // Register function as member of function space
-  V->register_member(this);
+  // Register adaptive object
+  _function_space->register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
@@ -136,8 +136,8 @@ Function::Function(const Function& v)
   // Assign data
   *this = v;
 
-  // Register function as member of function space
-  this->_function_space->register_member(this);
+  // Register adaptive object
+  _function_space->register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v, uint i)
@@ -150,14 +150,14 @@ Function::Function(const Function& v, uint i)
   // Copy vector pointer
   this->_vector = v[i]._vector;
 
-  // Register function as member of function space
-  this->_function_space->register_member(this);
+  // Register adaptive object
+  _function_space->register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
 {
-  // Deregister function from functon space
-  _function_space->deregister_member(this);
+  // Deregister adaptive object
+  _function_space->deregister_object(this);
 }
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Function& v)
