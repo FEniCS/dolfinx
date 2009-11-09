@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-11-06
+// Last changed: 2009-11-09
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
@@ -39,6 +39,9 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0))
 {
+  dolfin_debug("creating function space");
+  std::cout << "this = " << this << std::endl;
+
   // Register adaptive object
   _mesh->register_object(this);
 }
@@ -49,12 +52,18 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0))
 {
+  dolfin_debug("creating function space");
+  std::cout << "this = " << this << std::endl;
+
   // Register adaptive object
   _mesh->register_object(this);
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(const FunctionSpace& V)
 {
+  dolfin_debug("creating function space");
+  std::cout << "this = " << this << std::endl;
+
   // Assign data (will be shared)
   _mesh    = V._mesh;
   _element = V._element;

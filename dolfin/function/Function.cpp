@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-11-05
+// Last changed: 2009-11-09
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -32,6 +32,9 @@ Function::Function(const FunctionSpace& V)
   : _function_space(reference_to_no_delete_pointer(V)),
     local_scratch(V.element())
 {
+  dolfin_debug("creating function");
+  std::cout << "V = " << &V << std::endl;
+
   // Initialize vector
   init_vector();
 
@@ -43,6 +46,9 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : _function_space(V),
     local_scratch(V->element())
 {
+  dolfin_debug("creating function");
+  std::cout << "V = " << V.get() << std::endl;
+
   // Initialize vector
   init_vector();
 
@@ -55,6 +61,9 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
     _vector(reference_to_no_delete_pointer(x)),
     local_scratch(V.element())
 {
+  dolfin_debug("creating function");
+  std::cout << "V = " << &V << std::endl;
+
   // Assertion uses '<=' to deal with sub-functions
   assert(V.dofmap().global_dimension() <= x.size());
 
@@ -68,6 +77,9 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(x),
     local_scratch(V->element())
 {
+  dolfin_debug("creating function");
+  std::cout << "V = " << V.get() << std::endl;
+
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x->size());
 
@@ -81,6 +93,9 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(reference_to_no_delete_pointer(x)),
     local_scratch(V->element())
 {
+  dolfin_debug("creating function");
+  std::cout << "V = " << V.get() << std::endl;
+
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x.size());
 
@@ -92,6 +107,9 @@ Function::Function(const FunctionSpace& V, std::string filename)
   : _function_space(reference_to_no_delete_pointer(V)),
     local_scratch(V.element())
 {
+  dolfin_debug("creating function");
+  std::cout << "V = " << &V << std::endl;
+
   // Initialize vector
   init_vector();
 
@@ -112,6 +130,9 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   : _function_space(V),
     local_scratch(V->element())
 {
+  dolfin_debug("creating function");
+  std::cout << "V = " << V.get() << std::endl;
+
   // Create vector
   DefaultFactory factory;
   _vector.reset(factory.create_vector());
@@ -133,6 +154,8 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
 {
+  dolfin_debug("creating function, copy constructor");
+
   // Assign data
   *this = v;
 
@@ -144,6 +167,8 @@ Function::Function(const Function& v, uint i)
   : local_scratch(v[i]._function_space->element())
 
 {
+  dolfin_debug("creating function, sub function");
+
   // Copy function space pointer
   this->_function_space = v[i]._function_space;
 
@@ -247,6 +272,10 @@ boost::shared_ptr<const FunctionSpace> Function::function_space_ptr() const
 //-----------------------------------------------------------------------------
 GenericVector& Function::vector()
 {
+  cout << "x.size() = " << _vector->size() << endl;
+  cout << "dofmap.size() = " << _function_space->dofmap().global_dimension() << endl;
+  cout << "V.dim() = " << _function_space->dim() << endl;
+
   // Check that this is not a sub function.
   if (_vector->size() != _function_space->dofmap().global_dimension())
     error("You are attempting to access a non-const vector from a sub-Function.");
