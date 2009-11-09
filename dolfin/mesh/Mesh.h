@@ -8,7 +8,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2009-11-06
+// Last changed: 2009-11-09
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -17,7 +17,6 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/ale/ALEType.h>
-#include <dolfin/adaptivity/Adaptive.h>
 #include "MeshTopology.h"
 #include "MeshGeometry.h"
 #include "MeshData.h"
@@ -59,7 +58,7 @@ namespace dolfin
   /// all edges connected to a given vertex must also be explicitly
   /// created (in this case by a call to mesh.init(0, 1)).
 
-  class Mesh : public Variable, public Adaptive
+  class Mesh : public Variable
   {
   public:
 
@@ -207,7 +206,7 @@ namespace dolfin
     friend class MeshEditor;
     friend class TopologyComputation;
     friend class MeshOrdering;
-    friend class Adaptive;
+    friend class AdaptiveObjects;
 
     // Mesh topology
     MeshTopology _topology;

@@ -6,12 +6,13 @@
 // Modified by Johan Hake, 2009.
 //
 // First added:  2008-06-18
-// Last changed: 2009-11-05
+// Last changed: 2009-11-09
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/adaptivity/AdaptiveObjects.h>
 #include "DofMap.h"
 #include "Form.h"
 #include "BoundaryCondition.h"
@@ -23,20 +24,20 @@ BoundaryCondition::BoundaryCondition(const FunctionSpace& V)
   : _function_space(reference_to_no_delete_pointer(V))
 {
   // Register adaptive object
-  _function_space->register_object(this);
+  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::BoundaryCondition(boost::shared_ptr<const FunctionSpace> V)
   : _function_space(V)
 {
   // Register adaptive object
-  _function_space->register_object(this);
+  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::~BoundaryCondition()
 {
   // Deregister adaptive object
-  _function_space->deregister_object(this);
+  AdaptiveObjects::deregister_object(this);
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& BoundaryCondition::function_space() const

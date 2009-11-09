@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed: 2009-11-04
+// Last changed: 2009-11-09
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -81,7 +81,7 @@ namespace dolfin
   private:
 
     // Friends
-    friend class Adaptive;
+    friend class AdaptiveObjects;
 
     // Recursively extract sub finite element
     static boost::shared_ptr<const FiniteElement> extract_sub_element(const FiniteElement& finite_element,

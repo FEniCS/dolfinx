@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-11-05
+// Last changed: 2009-11-09
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -128,7 +128,7 @@ namespace dolfin
     /// Friends
     friend class DofMapBuilder;
     friend class FunctionSpace;
-    friend class Adaptive;
+    friend class AdaptiveObjects;
 
     /// Initialise the UFCMesh
     static void init_ufc_mesh(UFCMesh& ufc_mesh,

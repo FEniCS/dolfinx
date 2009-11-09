@@ -11,7 +11,7 @@ def __contains__(self,u):
 }
 
 //-----------------------------------------------------------------------------
-// Extend Function so f.function_space() return a dolfin.FunctionSpace
+// Extend Function so f.function_space() returns a dolfin.FunctionSpace
 //-----------------------------------------------------------------------------
 %extend dolfin::Function {
 %pythoncode %{

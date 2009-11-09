@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-11-06
+// Last changed: 2009-11-09
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -17,7 +17,6 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include "GenericFunction.h"
-#include <dolfin/adaptivity/Adaptive.h>
 
 namespace ufc
 {
@@ -43,7 +42,7 @@ namespace dolfin
   /// where {phi_i}_i is a basis for V_h, and U is a vector of
   /// expansion coefficients for u_h.
 
-  class Function : public GenericFunction, public Adaptive
+  class Function : public GenericFunction
 
   {
   public:
@@ -156,7 +155,7 @@ namespace dolfin
 
     // Friends
     friend class FunctionSpace;
-    friend class Adaptive;
+    friend class AdaptiveObjects;
 
     // Collection of sub-functions which share data with the function
     mutable boost::ptr_map<uint, Function> sub_functions;

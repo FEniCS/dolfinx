@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim 2008.
 //
 // First added:  2006-05-09
-// Last changed: 2009-11-05
+// Last changed: 2009-11-09
 
 #include <sstream>
 
@@ -18,6 +18,7 @@
 #include <dolfin/io/File.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/adaptivity/AdaptiveObjects.h>
 #include "UniformMeshRefinement.h"
 #include "LocalMeshRefinement.h"
 #include "LocalMeshCoarsening.h"
@@ -191,14 +192,12 @@ bool Mesh::ordered() const
 //-----------------------------------------------------------------------------
 void Mesh::refine()
 {
-  // Refinement handled by Adaptive base class
-  refine_mesh(*this, 0);
+  AdaptiveObjects::refine(this, 0);
 }
 //-----------------------------------------------------------------------------
 void Mesh::refine(MeshFunction<bool>& cell_markers)
 {
-  // Refinement handled by Adaptive base class
-  refine_mesh(*this, &cell_markers);
+  AdaptiveObjects::refine(this, &cell_markers);
 }
 //-----------------------------------------------------------------------------
 void Mesh::coarsen()

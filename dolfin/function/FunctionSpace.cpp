@@ -25,6 +25,7 @@
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/adaptivity/AdaptiveObjects.h>
 #include <dolfin/la/GenericVector.h>
 #include "GenericFunction.h"
 #include "Function.h"
@@ -39,11 +40,10 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0))
 {
-  dolfin_debug("creating function space");
-  std::cout << "this = " << this << std::endl;
+  dolfin_debug1("Creating function space: %x", this);
 
   // Register adaptive object
-  _mesh->register_object(this);
+  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
@@ -52,17 +52,15 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0))
 {
-  dolfin_debug("creating function space");
-  std::cout << "this = " << this << std::endl;
+  dolfin_debug1("Creating function space: %x", this);
 
   // Register adaptive object
-  _mesh->register_object(this);
+  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(const FunctionSpace& V)
 {
-  dolfin_debug("creating function space");
-  std::cout << "this = " << this << std::endl;
+  dolfin_debug1("Creating function space: %x", this);
 
   // Assign data (will be shared)
   _mesh    = V._mesh;
@@ -71,13 +69,13 @@ FunctionSpace::FunctionSpace(const FunctionSpace& V)
   _restriction = V._restriction;
 
   // Register adaptive object
-  _mesh->register_object(this);
+  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::~FunctionSpace()
 {
   // Deregister adaptive object
-  _mesh->deregister_object(this);
+  AdaptiveObjects::deregister_object(this);
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)

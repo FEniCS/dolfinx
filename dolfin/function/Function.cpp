@@ -20,6 +20,7 @@
 #include <dolfin/fem/UFC.h>
 #include <dolfin/mesh/IntersectionDetector.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/adaptivity/AdaptiveObjects.h>
 #include "Data.h"
 #include "Expression.h"
 #include "FunctionSpace.h"
@@ -32,28 +33,26 @@ Function::Function(const FunctionSpace& V)
   : _function_space(reference_to_no_delete_pointer(V)),
     local_scratch(V.element())
 {
-  dolfin_debug("creating function");
-  std::cout << "V = " << &V << std::endl;
+  dolfin_debug1("Creating function: %x", this);
 
   // Initialize vector
   init_vector();
 
   // Register adaptive object
-  _function_space->register_object(this);
+  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : _function_space(V),
     local_scratch(V->element())
 {
-  dolfin_debug("creating function");
-  std::cout << "V = " << V.get() << std::endl;
+  dolfin_debug1("Creating function: %x", this);
 
   // Initialize vector
   init_vector();
 
   // Register adaptive object
-  _function_space->register_object(this);
+  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, GenericVector& x)
@@ -61,14 +60,13 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
     _vector(reference_to_no_delete_pointer(x)),
     local_scratch(V.element())
 {
-  dolfin_debug("creating function");
-  std::cout << "V = " << &V << std::endl;
+  dolfin_debug1("Creating function: %x", this);
 
   // Assertion uses '<=' to deal with sub-functions
   assert(V.dofmap().global_dimension() <= x.size());
 
   // Register adaptive object
-  _function_space->register_object(this);
+  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -77,14 +75,13 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(x),
     local_scratch(V->element())
 {
-  dolfin_debug("creating function");
-  std::cout << "V = " << V.get() << std::endl;
+  dolfin_debug1("Creating function: %x", this);
 
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x->size());
 
   // Register adaptive object
-  _function_space->register_object(this);
+  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -93,22 +90,20 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(reference_to_no_delete_pointer(x)),
     local_scratch(V->element())
 {
-  dolfin_debug("creating function");
-  std::cout << "V = " << V.get() << std::endl;
+  dolfin_debug1("Creating function: %x", this);
 
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x.size());
 
   // Register adaptive object
-  _function_space->register_object(this);
+  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
   : _function_space(reference_to_no_delete_pointer(V)),
     local_scratch(V.element())
 {
-  dolfin_debug("creating function");
-  std::cout << "V = " << &V << std::endl;
+  dolfin_debug1("Creating function: %x", this);
 
   // Initialize vector
   init_vector();
@@ -122,7 +117,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
 
   // Register adaptive object
-  _function_space->register_object(this);
+  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -130,8 +125,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   : _function_space(V),
     local_scratch(V->element())
 {
-  dolfin_debug("creating function");
-  std::cout << "V = " << V.get() << std::endl;
+  dolfin_debug1("Creating function: %x", this);
 
   // Create vector
   DefaultFactory factory;
@@ -149,25 +143,25 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
 
   // Register adaptive object
-  _function_space->register_object(this);
+  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
 {
-  dolfin_debug("creating function, copy constructor");
+  dolfin_debug1("Creating function: %x", this);
 
   // Assign data
   *this = v;
 
   // Register adaptive object
-  _function_space->register_object(this);
+  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v, uint i)
   : local_scratch(v[i]._function_space->element())
 
 {
-  dolfin_debug("creating function, sub function");
+  dolfin_debug1("Creating function: %x", this);
 
   // Copy function space pointer
   this->_function_space = v[i]._function_space;
@@ -176,13 +170,13 @@ Function::Function(const Function& v, uint i)
   this->_vector = v[i]._vector;
 
   // Register adaptive object
-  _function_space->register_object(this);
+  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
 {
   // Deregister adaptive object
-  _function_space->deregister_object(this);
+  AdaptiveObjects::deregister_object(this);
 }
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Function& v)
@@ -272,10 +266,6 @@ boost::shared_ptr<const FunctionSpace> Function::function_space_ptr() const
 //-----------------------------------------------------------------------------
 GenericVector& Function::vector()
 {
-  cout << "x.size() = " << _vector->size() << endl;
-  cout << "dofmap.size() = " << _function_space->dofmap().global_dimension() << endl;
-  cout << "V.dim() = " << _function_space->dim() << endl;
-
   // Check that this is not a sub function.
   if (_vector->size() != _function_space->dofmap().global_dimension())
     error("You are attempting to access a non-const vector from a sub-Function.");
