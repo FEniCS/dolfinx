@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-09
-// Last changed: 2009-11-09
+// Last changed: 2009-11-10
 
 #ifndef __ADAPTIVE_OBJECTS
 #define __ADAPTIVE_OBJECTS
@@ -60,15 +60,15 @@ namespace dolfin
 
     /// Refine function space to new mesh
     static void refine(FunctionSpace* function_space,
-                       const Mesh& new_mesh);
+                       Mesh& new_mesh);
 
     /// Refine function to new function space
     static void refine(Function* function,
-                       const FunctionSpace& new_function_space);
+                       FunctionSpace& new_function_space);
 
     /// Refine boundary condition to new function space
     static void refine(BoundaryCondition* boundary_condition,
-                       const FunctionSpace& new_function_space);
+                       FunctionSpace& new_function_space);
 
   private:
 

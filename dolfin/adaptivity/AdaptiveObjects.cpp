@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-09
-// Last changed: 2009-11-09
+// Last changed: 2009-11-10
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
@@ -59,7 +59,7 @@ void remove_node(std::map<const A*, std::set<B*> >& branch, B* b)
 
 // Templated function for refining outgoing nodes
 template <typename A, typename B>
-void refine_outgoing(std::map<const A*, std::set<B*> >& branch, const A* a, const A& new_a)
+void refine_outgoing(std::map<const A*, std::set<B*> >& branch, const A* a, A& new_a)
 {
   typename std::map<const A*, std::set<B*> >::iterator it = branch.find(a);
   dolfin_debug1("Refining %d object(s)", it->second.size());
@@ -156,7 +156,7 @@ void AdaptiveObjects::refine(Mesh* mesh, MeshFunction<bool>* cell_markers)
 }
 //-----------------------------------------------------------------------------
 void AdaptiveObjects::refine(FunctionSpace* function_space,
-                             const Mesh& new_mesh)
+                             Mesh& new_mesh)
 {
   assert(function_space);
   dolfin_debug("Refining function space");
@@ -183,7 +183,7 @@ void AdaptiveObjects::refine(FunctionSpace* function_space,
 }
 //-----------------------------------------------------------------------------
 void AdaptiveObjects::refine(Function* function,
-                             const FunctionSpace& new_function_space)
+                             FunctionSpace& new_function_space)
 {
   assert(function);
   dolfin_debug("Refining function");
@@ -199,7 +199,7 @@ void AdaptiveObjects::refine(Function* function,
 }
 //-----------------------------------------------------------------------------
 void AdaptiveObjects::refine(BoundaryCondition* boundary_condition,
-                             const FunctionSpace& new_function_space)
+                             FunctionSpace& new_function_space)
 {
   assert(boundary_condition);
   dolfin_debug("Refining boundary condition");
