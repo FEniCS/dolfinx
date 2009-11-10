@@ -5,12 +5,12 @@
 // Modified by Anders Logg, 2007-2009.
 // Modified by Garth Wells, 2008-2009
 // Modified by Ola Skavhaug, 2008-2009
-// Modified by Kent-Andre Mardal, 2008. 
-// Modified by Martin Sandve Alnaes, 2008. 
+// Modified by Kent-Andre Mardal, 2008.
+// Modified by Martin Sandve Alnaes, 2008.
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-01-21
-// Last changed: 2009-10-09
+// Last changed: 2009-11-10
 
 //=============================================================================
 // SWIG directives for the DOLFIN la kernel module (pre)
@@ -115,7 +115,7 @@
 
 //-----------------------------------------------------------------------------
 // Ignore the get and set functions used for blocks
-// NOTE: The %ignore have to be set using the actuall type used in the declaration
+// NOTE: The %ignore has to be set using the actual type used in the declaration
 // so we cannot use dolfin::uint or unsigned int for uint. Strange...
 //-----------------------------------------------------------------------------
 %ignore dolfin::GenericVector::get(double*, uint, const uint*) const;

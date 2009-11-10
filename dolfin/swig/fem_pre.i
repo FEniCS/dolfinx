@@ -7,7 +7,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-08-16
-// Last changed: 2009-10-22
+// Last changed: 2009-11-10
 
 // ===========================================================================
 // SWIG directives for the DOLFIN fem kernel module (pre)
@@ -48,6 +48,11 @@
 // Ignore operator= for DirichletBC to avoid warning
 //-----------------------------------------------------------------------------
 %ignore dolfin::DirichletBC::operator=;
+
+//-----------------------------------------------------------------------------
+// Ignore one of the constructors for DofMap to avoid warning
+//-----------------------------------------------------------------------------
+%ignore dolfin::DofMap::DofMap(boost::shared_ptr<ufc::dof_map>, const Mesh&);
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of BoundaryCondition
