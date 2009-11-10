@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-11-09
+// Last changed: 2009-11-10
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -130,11 +130,14 @@ namespace dolfin
     friend class FunctionSpace;
     friend class AdaptiveObjects;
 
-    /// Initialise the UFCMesh
+    // Initialize
+    void init(const Mesh& dolfin_mesh);
+
+    /// Initialize the UFC mesh
     static void init_ufc_mesh(UFCMesh& ufc_mesh,
                               const Mesh& dolfin_mesh);
 
-    /// Initialise a UFC dof map
+    /// Initialize the UFC dofmap
     static void init_ufc_dofmap(ufc::dof_map& dofmap,
                                 const ufc::mesh ufc_mesh,
                                 const Mesh& dolfin_mesh);

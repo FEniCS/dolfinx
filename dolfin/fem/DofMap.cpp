@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-11-05
+// Last changed: 2009-11-10
 
 #include <boost/scoped_array.hpp>
 
@@ -43,15 +43,8 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
     }
   }
 
-  // Initialize the UFC mesh
-  init_ufc_mesh(_ufc_mesh, dolfin_mesh);
-
-  // Initialize UFC dof map
-  init_ufc_dofmap(*_ufc_dofmap, _ufc_mesh, dolfin_mesh);
-
-  // Renumber dof map for running in parallel
-  if (_parallel)
-    DofMapBuilder::parallel_build(*this, dolfin_mesh);
+  // Initialize
+  init(dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
@@ -59,15 +52,8 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
   : _ufc_dofmap(ufc_dofmap), _ufc_offset(0),
     _parallel(MPI::num_processes() > 1)
 {
-  // Initialize the UFC mesh
-  init_ufc_mesh(_ufc_mesh, dolfin_mesh);
-
-  // Initialize UFC dof map
-  init_ufc_dofmap(*_ufc_dofmap, _ufc_mesh, dolfin_mesh);
-
-  // Renumber dof map for running in parallel
-  if (_parallel)
-    DofMapBuilder::parallel_build(*this, dolfin_mesh);
+  // Initialize
+  init(dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::auto_ptr<std::vector<dolfin::uint> > map,
@@ -77,18 +63,8 @@ DofMap::DofMap(std::auto_ptr<std::vector<dolfin::uint> > map,
     _parallel(MPI::num_processes() > 1)
 
 {
-  // Check that we have all mesh entities (const so we can't generate them)
-  for (uint d = 0; d <= dolfin_mesh.topology().dim(); ++d)
-  {
-    if (_ufc_dofmap->needs_mesh_entities(d) && dolfin_mesh.num_entities(d) == 0)
-      error("Unable to create function space, missing entities of dimension %d. Try calling mesh.init(%d).", d, d);
-  }
-
-  // Initialize the UFC mesh
-  init_ufc_mesh(_ufc_mesh, dolfin_mesh);
-
-  // Initialize UFC dof map
-  init_ufc_dofmap(*_ufc_dofmap, _ufc_mesh, dolfin_mesh);
+  // Initialize
+  init(dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
@@ -292,6 +268,19 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dofmap,
   delete sub_dof_map;
 
   return sub_sub_dof_map;
+}
+//-----------------------------------------------------------------------------
+void DofMap::init(const Mesh& dolfin_mesh)
+{
+  // Initialize the UFC mesh
+  init_ufc_mesh(_ufc_mesh, dolfin_mesh);
+
+  // Initialize the UFC dofmap
+  init_ufc_dofmap(*_ufc_dofmap, _ufc_mesh, dolfin_mesh);
+
+  // Build (renumber) dofmap when running in parallel
+  if (_parallel)
+    DofMapBuilder::parallel_build(*this, dolfin_mesh);
 }
 //-----------------------------------------------------------------------------
 void DofMap::init_ufc_mesh(UFCMesh& ufc_mesh, const Mesh& dolfin_mesh)
