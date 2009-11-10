@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-08-09
-// Last changed: 2009-10-06
+// Last changed: 2009-11-10
 
 #include <boost/functional/hash.hpp>
 #include <cstdlib>
@@ -23,6 +23,22 @@ std::string dolfin::indent(std::string block)
     if (block[i] == '\n' && i < block.size() - 1)
       s << indentation;
   }
+
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+std::string dolfin::to_string(const double* x, uint n)
+{
+  std::stringstream s;
+
+  s << "[";
+  for (uint i = 0; i < n; i++)
+  {
+    s << x[i];
+    if (i < n - 1)
+      s << ", ";
+  }
+  s << "]";
 
   return s.str();
 }

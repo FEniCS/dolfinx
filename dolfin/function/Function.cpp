@@ -5,12 +5,13 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-11-09
+// Last changed: 2009-11-10
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
 #include <boost/scoped_array.hpp>
 #include <dolfin/log/log.h>
+#include <dolfin/common/utils.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/io/File.h>
 #include <dolfin/la/GenericVector.h>
@@ -294,6 +295,7 @@ void Function::eval(double* values, const double* x) const
 {
   assert(values);
   assert(x);
+  assert(_function_space);
 
   not_working_in_parallel("Function::eval at arbitray points.");
 
@@ -306,7 +308,10 @@ void Function::eval(double* values, const double* x) const
   std::vector<uint> cells;
   intersection_detector->intersection(point, cells);
   if (cells.size() < 1)
-    error("Unable to evaluate function at given point (not inside domain).");
+  {
+    error("Unable to evaluate function at x = %s, not inside domain.",
+          to_string(x, geometric_dimension()).c_str());
+  }
 
   // Create cell
   Cell cell(_function_space->mesh(), cells[0]);
