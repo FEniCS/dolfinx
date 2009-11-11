@@ -7,7 +7,7 @@
 // Modified by Ola Skavhaug 2009
 //
 // First added:  2002-11-12
-// Last changed: 2009-06-19
+// Last changed: 2009-11-11
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -23,7 +23,7 @@ namespace dolfin
   /// Unless specified explicitly, the format is determined by the
   /// file name suffix.
 
-  /// A list of objects that can be read/written to file can be found in 
+  /// A list of objects that can be read/written to file can be found in
   /// GenericFile.h
 
   class File
@@ -31,7 +31,7 @@ namespace dolfin
   public:
 
     /// File formats
-    enum Type {xml, matlab, octave, vtk, python, raw, xyz};
+    enum Type {xml, matlab, octave, vtk, python, raw, xyz, binary};
 
     /// Create a file with given name
     File(const std::string filename, std::string encoding = "ascii");

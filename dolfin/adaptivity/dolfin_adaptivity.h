@@ -4,5 +4,6 @@
 // DOLFIN adaptivity interface
 
 #include <dolfin/adaptivity/AdaptiveObjects.h>
+#include <dolfin/adaptivity/TimeSeries.h>
 
 #endif

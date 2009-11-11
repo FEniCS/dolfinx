@@ -9,7 +9,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2009-08-03
+// Last changed: 2009-11-11
 
 #include <boost/filesystem.hpp>
 #include <dolfin/main/MPI.h>
@@ -23,6 +23,7 @@
 #include "VTKFile.h"
 #include "RAWFile.h"
 #include "XYZFile.h"
+#include "BinaryFile.h"
 
 using namespace dolfin;
 
@@ -48,18 +49,20 @@ File::File(const std::string filename, std::string encoding)
   else if (extension == ".py")
     file = new PythonFile(filename);
   else if (extension == ".pvd")
-      file = new VTKFile(filename, encoding);
+    file = new VTKFile(filename, encoding);
   else if (extension == ".raw")
     file = new RAWFile(filename);
   else if (extension == ".xyz")
     file = new XYZFile(filename);
+  else if (extension == ".bin")
+    file = new BinaryFile(filename);
   else
     error("Unknown file type for \"%s\".", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 File::File(const std::string filename, Type type, std::string encoding)
 {
-  switch (type) 
+  switch (type)
   {
   case xml:
     file = new XMLFile(filename, false);
@@ -70,11 +73,20 @@ File::File(const std::string filename, Type type, std::string encoding)
   case octave:
     file = new OctaveFile(filename);
     break;
+  case python:
+    file = new PythonFile(filename);
+    break;
   case vtk:
     file = new VTKFile(filename, encoding);
     break;
-  case python:
-    file = new PythonFile(filename);
+  case raw:
+    file = new RAWFile(filename);
+    break;
+  case xyz:
+    file = new XYZFile(filename);
+    break;
+  case binary:
+    file = new BinaryFile(filename);
     break;
   default:
     file = 0;

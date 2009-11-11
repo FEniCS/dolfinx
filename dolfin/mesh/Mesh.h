@@ -8,7 +8,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2009-11-09
+// Last changed: 2009-11-11
 
 #ifndef __MESH_H
 #define __MESH_H
