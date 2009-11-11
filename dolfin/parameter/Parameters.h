@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-09-10
+// Last changed: 2009-11-11
 
 #ifndef __PARAMETERS_H
 #define __PARAMETERS_H
@@ -153,6 +153,9 @@ namespace dolfin
 
     /// Assignment operator
     const Parameters& operator= (const Parameters& parameters);
+
+    /// Check if parameter set has given key
+    bool has_key(std::string key) const;
 
     /// Return a vector of parameter keys
     void get_parameter_keys(std::vector<std::string>& keys) const;

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-16
-// Last changed: 2009-10-09
+// Last changed: 2009-11-11
 
 #include <stdlib.h>
 #include <dolfin/log/dolfin_log.h>
@@ -17,8 +17,8 @@ using namespace dolfin;
 XMLParameters::XMLParameters(Parameters& parameters, XMLFile& parser)
   : XMLHandler(parser), parameters(parameters), state(OUTSIDE)
 {
-  // Clear all parameters
-  parameters.clear();
+  // Note that we don't clear the parameters here, only add new parameters
+  // or overwrite existing parameters
 }
 //-----------------------------------------------------------------------------
 void XMLParameters::start_element(const xmlChar *name, const xmlChar **attrs)
@@ -131,27 +131,42 @@ void XMLParameters::read_parameter(const xmlChar *name, const xmlChar **attrs)
     std::istringstream ss(string_value);
     double value;
     ss >> value;
-    parameters.add(key, value);
+    if (parameters.has_key(key))
+      parameters[key] = value;
+    else
+      parameters.add(key, value);
   }
   else if (type == "int")
   {
     std::istringstream ss(string_value);
     int value;
     ss >> value;
-    parameters.add(key, value);
+    if (parameters.has_key(key))
+      parameters[key] = value;
+    else
+      parameters.add(key, value);
   }
   else if (type == "bool")
   {
+    bool value = true;
     if (string_value == "true")
-      parameters.add(key, true);
+      value = true;
     else if (string_value == "false" )
-      parameters.add(key, false);
+      value = false;
     else
       warning("Illegal value for boolean parameter: %s.", key.c_str());
+    if (parameters.has_key(key))
+      parameters[key] = value;
+    else
+      parameters.add(key, value);
   }
   else if (type == "string")
   {
-    parameters.add(key, string_value);
+    std::string value = string_value;
+    if (parameters.has_key(key))
+      parameters[key] = value;
+    else
+      parameters.add(key, value);
   }
   else
     warning("Illegal parameter type: %s", type.c_str());

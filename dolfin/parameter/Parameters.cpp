@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-10-09
+// Last changed: 2009-11-11
 
 #include <sstream>
 #include <stdio.h>
@@ -334,6 +334,11 @@ const Parameters& Parameters::operator= (const Parameters& parameters)
   }
 
   return *this;
+}
+//-----------------------------------------------------------------------------
+bool Parameters::has_key(std::string key) const
+{
+  return find_parameter(key) != 0;
 }
 //-----------------------------------------------------------------------------
 void Parameters::get_parameter_keys(std::vector<std::string>& keys) const
