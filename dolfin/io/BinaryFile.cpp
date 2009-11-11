@@ -5,6 +5,7 @@
 // Last changed: 2009-11-11
 
 #include <dolfin/log/log.h>
+#include <istream>
 #include <fstream>
 #include <ios>
 #include <boost/scoped_array.hpp>
@@ -29,7 +30,24 @@ BinaryFile::~BinaryFile()
 //-----------------------------------------------------------------------------
 void BinaryFile::operator>> (GenericVector& vector)
 {
-  warning("Reading vector in binary format not implemented.");
+  // Read size
+  std::ifstream file(filename.c_str(), std::ios::out | std::ios::binary);
+  if (!file.is_open())
+    error("Unable to open file \"%s\".", filename.c_str());
+  uint n;
+  file.read((char*) &n, sizeof(uint));
+
+  dolfin_debug2("Reading %d vector values in binary from %s", n, filename.c_str());
+
+  // Read vector values
+  boost::scoped_array<double> values(new double[n]);
+  for (uint i = 0; i < n; ++i)
+    file.read((char*) &values[i], sizeof(double));
+  file.close();
+
+  // Set vector values
+  vector.resize(n);
+  vector.set_local(values.get());
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::operator>> (Mesh& mesh)
@@ -48,6 +66,8 @@ void BinaryFile::operator<< (const GenericVector& vector)
 
   // Write size and values
   std::ofstream file(filename.c_str(), std::ios::out | std::ios::binary);
+  if (!file.is_open())
+    error("Unable to open file \"%s\".", filename.c_str());
   file.write((char*) &n, sizeof(uint));
   for (uint i = 0; i < n; ++i)
     file.write((char*) &values[i], sizeof(double));

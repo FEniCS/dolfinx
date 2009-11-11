@@ -60,7 +60,7 @@ template <class T> void retrieve_object(T& object, double t,
   dolfin_debug2("Using closest value %g (index = %d)", times[index], index);
 
   // Read object
-  File file(TimeSeries::filename(series_name, type_name, times.size()));
+  File file(TimeSeries::filename(series_name, type_name, index));
   file >> object;
 }
 
