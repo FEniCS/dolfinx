@@ -7,7 +7,7 @@
 // Modified by Martin Sandve Alnes, 2009.
 //
 // First added:  2006-04-25
-// Last changed: 2009-09-07
+// Last changed: 2009-11-11
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -53,17 +53,17 @@ namespace dolfin
     { assert(dim == 0); return size(); }
 
     /// Get block of values
-    virtual void get(double* block, const uint* num_rows, 
+    virtual void get(double* block, const uint* num_rows,
                      const uint * const * rows) const
     { get(block, num_rows[0], rows[0]); }
 
     /// Set block of values
-    virtual void set(const double* block, const uint* num_rows, 
+    virtual void set(const double* block, const uint* num_rows,
                      const uint * const * rows)
     { set(block, num_rows[0], rows[0]); }
 
     /// Add block of values
-    virtual void add(const double* block, const uint* num_rows, 
+    virtual void add(const double* block, const uint* num_rows,
                      const uint * const * rows)
     { add(block, num_rows[0], rows[0]); }
 
@@ -92,7 +92,7 @@ namespace dolfin
 
     /// Get block of values (values must all live on the local process)
     virtual void get_local(double* block, uint m, const uint* rows) const
-      { error("GenericVector::get_local not yet implemented for this backend."); }
+    { error("GenericVector::get_local not yet implemented for this backend."); }
 
     /// Set block of values
     virtual void set(const double* block, uint m, const uint* rows) = 0;
@@ -154,7 +154,7 @@ namespace dolfin
     /// Apply lambda function
     template<typename T> void lambda(const T function)
     {
-      // FIXME: This could be more efficient by acting on the underling vector 
+      // FIXME: This could be more efficient by acting on the underling vector
       //        data
       std::vector<double> values(size());
       get_local(&values[0]);
@@ -165,7 +165,7 @@ namespace dolfin
     /// Apply lambda function
     template<typename T> void lambda(const GenericVector& x, const T function)
     {
-      // FIXME: This could be more efficient by acting on the underling vector 
+      // FIXME: This could be more efficient by acting on the underling vector
       //        data
       assert(x.size() == this->size());
       std::vector<double> values(size());
