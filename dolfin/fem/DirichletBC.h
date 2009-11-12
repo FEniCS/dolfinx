@@ -5,7 +5,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2009-10-22
+// Last changed: 2009-11-12
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -177,6 +177,9 @@ namespace dolfin
     void set_value(boost::shared_ptr<const GenericFunction> g);
 
   private:
+
+    // Friends
+    friend class AdaptiveObjects;
 
     // FIXME: Make this function pure virtual in BoundaryCondition and reuse code
     // for different apply methods

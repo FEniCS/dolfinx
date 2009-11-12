@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-09
-// Last changed: 2009-11-10
+// Last changed: 2009-11-12
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
@@ -12,6 +12,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/fem/BoundaryCondition.h>
+#include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DofMap.h>
 #include "AdaptiveObjects.h"
 
@@ -211,6 +212,24 @@ void AdaptiveObjects::refine(BoundaryCondition* boundary_condition,
 {
   assert(boundary_condition);
   dolfin_debug("Refining boundary condition");
-  warning("Refinement of boundary conditions not implemented.");
+
+  // Can currently only handle DirichletBC
+  DirichletBC* bc = dynamic_cast<DirichletBC*>(boundary_condition);
+  if (!bc)
+    error("Unable to refine, automatic refinement only implemented for Dirichlet boundary conditions.");
+
+  // Can currently only handle DirichletBC defined by SubDomain
+  if (!bc->user_sub_domain)
+    error("Unable to refine, automatic refinement only implemented for Dirichlet boundary conditions defined by a SubDomain.");
+
+  // Create new boundary condition
+  assert(bc->g);
+  assert(bc->user_sub_domain);
+  DirichletBC new_bc(new_function_space, *bc->g, *bc->user_sub_domain);
+
+  // Copy facets from new to old bc
+  bc->facets = new_bc.facets;
+
+  // FIXME: Not reusing choice of search method for bc
 }
 //-----------------------------------------------------------------------------
