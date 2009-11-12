@@ -23,11 +23,7 @@ def generate_dirs(base_dirs, *names):
 
   all_include_dirs = \
       [os.path.join(a,b) for a in base_dirs for b in include_exts]
-  # move the most likely ones to the end
-  all_include_dirs.reverse()
   all_lib_dirs = [os.path.join(a,b) for a in base_dirs for b in lib_exts]
-  # move the most likely ones to the end
-  all_lib_dirs.reverse()
 
   return (all_include_dirs, all_lib_dirs)
   
@@ -49,10 +45,10 @@ def getBaseDirs(sconsEnv):
   if get_architecture() == 'darwin':
     # use fink as default
     base_dirs.append(os.path.join(os.path.sep,"sw"))
-  amd_dir = getPackageDir("amd", sconsEnv=sconsEnv, default=None)
-  ufconfig_dir = getPackageDir("ufconfig", sconsEnv=sconsEnv, default=None)
   umfpack_dir = getPackageDir("umfpack", sconsEnv=sconsEnv, default=None)
-  for d in amd_dir, ufconfig_dir, umfpack_dir:
+  amd_dir = getPackageDir("amd", sconsEnv=sconsEnv, default=umfpack_dir)
+  ufconfig_dir = getPackageDir("ufconfig", sconsEnv=sconsEnv, default=umfpack_dir)
+  for d in set([amd_dir, ufconfig_dir, umfpack_dir]):
     if d:
       base_dirs.insert(0, d)
   return base_dirs
@@ -332,7 +328,9 @@ int main (void)
 
   return version, libs, cflags
 
-def generatePkgConf(directory=suitablePkgConfDir(), sconsEnv=None, **kwargs):
+def generatePkgConf(directory=None, sconsEnv=None, **kwargs):
+  if directory is None:
+    directory = suitablePkgConfDir()
 
   version, libs, cflags = pkgTests(sconsEnv=sconsEnv)
 
