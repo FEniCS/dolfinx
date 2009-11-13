@@ -26,7 +26,7 @@ int main()
   {
   public:
 
-    MyFunction() : Expression(2) {}
+    MyFunction() : Expression() {}
 
     void eval(double* values, const double* x) const
     {

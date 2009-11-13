@@ -110,8 +110,8 @@ int main(int argc, char* argv[])
   Constant eta(0.25);                          // damping coefficient
   double E  = 1.0;                                   // Youngs modulus
   double nu = 0.0;                                   // Poisson ratio
-  Constant lambda(mesh, (nu*E)/((1.0+nu)*(1.0-nu))); // Lame coefficient
-  Constant mu(mesh, E/(2.0*(1.0+nu)));               // Lame coefficient
+  Constant lambda((nu*E)/((1.0+nu)*(1.0-nu))); // Lame coefficient
+  Constant mu(E/(2.0*(1.0+nu)));               // Lame coefficient
 
   // Time stepping parameters
   Constant alpha_m(0.2);

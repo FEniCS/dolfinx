@@ -50,7 +50,7 @@ class Flux : public Expression
 {
 public:
 
-  Flux() : Expression(1) {}
+  Flux() : Expression() {}
 
   void eval(double* values, const double* x) const
   {

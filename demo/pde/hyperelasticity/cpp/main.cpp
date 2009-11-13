@@ -34,7 +34,7 @@ class Clamp : public Expression
 {
 public:
 
-  Clamp() : Expression(3, 3) {}
+  Clamp() : Expression(3) {}
 
   void eval(double* values, const double* x) const
   {
@@ -50,7 +50,7 @@ class Rotation : public Expression
 {
 public:
 
-  Rotation() : Expression(3, 3) {}
+  Rotation() : Expression(3) {}
 
   void eval(double* values, const double* x) const
   {
@@ -94,15 +94,15 @@ int main()
   bcs.push_back(&bcr);
 
   // Define source and solution functions
-  Constant B(3, 0.0, 0.0, 0.0);
-  Constant T(3, 0.0, 0.0, 0.0);
+  Constant B(0.0, 0.0, 0.0);
+  Constant T(0.0, 0.0, 0.0);
   Function u(V);
 
   // Set material parameters
   double E  = 10.0;
   double nu = 0.3;
-  Constant mu(mesh, E / (2*(1 + nu)));
-  Constant lambda(mesh, E*nu / ((1 + nu)*(1 - 2*nu)));
+  Constant mu(E / (2*(1 + nu)));
+  Constant lambda(E*nu / ((1 + nu)*(1 - 2*nu)));
 
   // Create forms
   HyperElasticity::BilinearForm a(V, V);

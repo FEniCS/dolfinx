@@ -17,7 +17,7 @@ class F : public Expression
 {
 public:
 
-  F() : Expression(3) {}
+  F() {}
 
   void eval(double* values, const double* x) const
   {

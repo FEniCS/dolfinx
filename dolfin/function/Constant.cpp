@@ -21,6 +21,7 @@ Constant::Constant(double value)
 }
 //-----------------------------------------------------------------------------
 Constant::Constant(double value0, double value1)
+  : Expression(2)
 {
   _values.resize(2);
   _values[0] = value0;
@@ -28,6 +29,7 @@ Constant::Constant(double value0, double value1)
 }
 //-----------------------------------------------------------------------------
 Constant::Constant(double value0, double value1, double value2)
+  : Expression(3)
 {
   _values.resize(3);
   _values[0] = value0;

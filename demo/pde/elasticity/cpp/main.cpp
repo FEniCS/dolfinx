@@ -104,14 +104,14 @@ int main()
   // Set elasticity parameters
   double E  = 10.0;
   double nu = 0.3;
-  Constant mu(mesh, E / (2*(1 + nu)));
-  Constant lambda(mesh, E*nu / ((1 + nu)*(1 - 2*nu)));
+  Constant mu(E / (2*(1 + nu)));
+  Constant lambda(E*nu / ((1 + nu)*(1 - 2*nu)));
 
   // Set up PDE (symmetric)
   Elasticity::BilinearForm a(V, V);
   a.mu = mu; a.lmbda = lambda;
   Elasticity::LinearForm L(V);
-  L.f = f;
+  //L.f = f;
   VariationalProblem problem(a, L, bcs);
   problem.parameters["symmetric"] = true;
 
