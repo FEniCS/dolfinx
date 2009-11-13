@@ -24,32 +24,19 @@ namespace dolfin
   public:
 
     /// Create scalar constant
-    Constant(uint geometric_dimension, double value);
+    Constant(double value);
 
     /// Create vector constant (dim = 2)
-    Constant(uint geometric_dimension, double value0, double value1);
+    Constant(double value0, double value1);
 
     /// Create vector constant (dim = 3)
-    Constant(uint geometric_dimension, double value0, double value1, double value2);
-
-    /// Create scalar constant with geometric dimension derived from mesh
-    Constant(const Mesh& mesh, double value);
+    Constant(double value0, double value1, double value2);
 
     /// Create vector-valued constant
-    Constant(uint geometric_dimension, std::vector<double> values);
-
-    /// Create vector-valued constant with geometric dimension derived from mesh
-    Constant(const Mesh& mesh, std::vector<double> values);
+    Constant(std::vector<double> values);
 
     /// Create tensor-valued constant for flattened array of values
-    Constant(uint geometric_dimension,
-             std::vector<uint> value_shape,
-             std::vector<double> values);
-
-    /// Create tensor-valued constant for flattened array of values,
-    /// with geometric dimension derived from mesh
-    Constant(const Mesh& mesh,
-             std::vector<uint> value_shape,
+    Constant(std::vector<uint> value_shape,
              std::vector<double> values);
 
     /// Copy constructor

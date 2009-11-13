@@ -22,7 +22,7 @@ int main()
   {
   public:
 
-    Noslip() : Expression(2, 2) {}
+    Noslip() : Expression(2) {}
 
     void eval(double* values, const double* x) const
     {
@@ -37,7 +37,7 @@ int main()
   {
   public:
 
-    Inflow() : Expression(2, 2) {}
+    Inflow() : Expression(2) {}
 
     void eval(double* values, const double* x) const
     {
@@ -77,7 +77,7 @@ int main()
   bcs.push_back(&bc0); bcs.push_back(&bc1); bcs.push_back(&bc2);
 
   // Set up PDE
-  Constant f(2, 0.0, 0.0);
+  Constant f(0.0, 0.0);
   Stokes::BilinearForm a(W, W);
   Stokes::LinearForm L(W);
   L.f = f;

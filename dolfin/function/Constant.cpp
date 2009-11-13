@@ -14,24 +14,20 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Constant::Constant(uint geometric_dimension, double value)
-  : Expression(geometric_dimension)
+Constant::Constant(double value)
 {
   _values.resize(1);
   _values[0] = value;
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(uint geometric_dimension, double value0, double value1)
-  : Expression(geometric_dimension, 2)
+Constant::Constant(double value0, double value1)
 {
   _values.resize(2);
   _values[0] = value0;
   _values[1] = value1;
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(uint geometric_dimension, double value0, double value1, 
-                                             double value2)
-  : Expression(geometric_dimension, 3)
+Constant::Constant(double value0, double value1, double value2)
 {
   _values.resize(3);
   _values[0] = value0;
@@ -39,37 +35,15 @@ Constant::Constant(uint geometric_dimension, double value0, double value1,
   _values[2] = value2;
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(const Mesh& mesh, double value)
-  : Expression(mesh.geometry().dim())
-{
-  _values.resize(1);
-  _values[0] = value;
-}
-//-----------------------------------------------------------------------------
-Constant::Constant(uint geometric_dimension, std::vector<double> values)
-  : Expression(geometric_dimension, values.size()), _values(values)
+Constant::Constant(std::vector<double> values)
+  : Expression(values.size()), _values(values)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(const Mesh& mesh, std::vector<double> values)
-  : Expression(mesh.geometry().dim(), values.size()), _values(values)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Constant::Constant(uint geometric_dimension,
-                   std::vector<uint> value_shape,
+Constant::Constant(std::vector<uint> value_shape,
                    std::vector<double> values)
-  : Expression(geometric_dimension, value_shape), _values(values)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Constant::Constant(const Mesh& mesh,
-                   std::vector<uint> value_shape,
-                   std::vector<double> values)
-  : Expression(mesh.geometry().dim(), value_shape), _values(values)
+  : Expression(value_shape), _values(values)
 {
   // Do nothing
 }

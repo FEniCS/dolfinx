@@ -179,11 +179,11 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Director typemap for coordinates in Expression
 //-----------------------------------------------------------------------------
-%typemap(directorin) const double* x {
-  {
-    // Compute size of x
-    npy_intp dims[1] = {this->geometric_dimension()};
-    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(const_cast<double*>($1_name)));
-  }
-}
+//%typemap(directorin) const double* x {
+//  {
+//    // Compute size of x
+//    npy_intp dims[1] = {this->geometric_dimension()};
+//    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(const_cast<double*>($1_name)));
+//  }
+//}
 

@@ -146,10 +146,10 @@ int main(int argc, char* argv[])
   UnitSquare mesh(96, 96);
 
   // Time stepping and model parameters
-  Constant dt(mesh, 5.0e-6);
-  Constant theta(mesh, 0.5);
-  Constant lambda(mesh, 1.0e-2);
-  Constant mu_factor(mesh, 100.0);
+  Constant dt(5.0e-6);
+  Constant theta(0.5);
+  Constant lambda(1.0e-2);
+  Constant mu_factor(100.0);
 
   double t = 0.0;
   double T = 50*dt;

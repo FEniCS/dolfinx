@@ -22,7 +22,7 @@ int main()
   {
   public:
 
-    Clamp() : Expression(3, 3) {}
+    Clamp() : Expression(3) {}
 
     void eval(double* values, const double* x) const
     {
@@ -47,7 +47,7 @@ int main()
   {
   public:
 
-    Rotation() : Expression(3, 3) {}
+    Rotation() : Expression(3) {}
 
     void eval(double* values, const double* x) const
     {
@@ -84,7 +84,7 @@ int main()
   Elasticity::FunctionSpace V(mesh);
 
   // Create right-hand side
-  Constant f(3, 0.0, 0.0, 0.0);
+  Constant f(0.0, 0.0, 0.0);
 
   // Set up boundary condition at left end
   Clamp c;

@@ -16,24 +16,27 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MeshCoordinates::MeshCoordinates(const Mesh& mesh) 
-  : Expression(mesh.geometry().dim(), mesh.geometry().dim()), mesh(mesh)
+  : Expression(mesh.geometry().dim()), mesh(mesh)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void MeshCoordinates::eval(double* values, const Data& data) const
 {
+  error("MeshCoordinates::eval broken");
+  /*
   assert(values);
   assert(data.geometric_dimension() == geometric_dimension());
   assert(data.x);
 
   for (uint i = 0; i < data.geometric_dimension(); ++i)
     values[i] = data.x[i];
+  */
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 CellSize::CellSize(const Mesh& mesh)
-  : Expression(mesh.geometry().dim()), mesh(mesh)
+  : mesh(mesh)
 {
   // Do nothing
 }
@@ -41,7 +44,7 @@ CellSize::CellSize(const Mesh& mesh)
 void CellSize::eval(double* values, const Data& data) const
 {
   assert(values);
-  assert(data.geometric_dimension() == geometric_dimension());
+  //assert(data.geometric_dimension() == geometric_dimension());
   assert(&data.cell().mesh() == &mesh);
 
   //const uint cell_index = data.ufc_cell().entity_indices[data.ufc_cell().topological_dimension][0];
@@ -53,7 +56,7 @@ void CellSize::eval(double* values, const Data& data) const
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 FacetArea::FacetArea(const Mesh& mesh)
-  : Expression(mesh.geometry().dim()), mesh(mesh)
+  : mesh(mesh)
 {
   // Do nothing
 }
@@ -61,7 +64,7 @@ FacetArea::FacetArea(const Mesh& mesh)
 void FacetArea::eval(double* values, const Data& data) const
 {
   assert(values);
-  assert(data.geometric_dimension() == geometric_dimension());
+  //assert(data.geometric_dimension() == geometric_dimension());
   assert(&data.cell().mesh() == &mesh);
 
   if (data.on_facet())

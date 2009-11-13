@@ -18,29 +18,25 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Expression::Expression(uint geometric_dimension)
-  : _geometric_dimension(geometric_dimension)
+Expression::Expression()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Expression::Expression(uint geometric_dimension, uint dim)
-  : _geometric_dimension(geometric_dimension)
+Expression::Expression(uint dim)
 {
   value_shape.resize(1);
   value_shape[0] = dim;
 }
 //-----------------------------------------------------------------------------
-Expression::Expression(uint geometric_dimension,
-                       std::vector<uint> value_shape)
-  : value_shape(value_shape), _geometric_dimension(geometric_dimension)
+Expression::Expression(std::vector<uint> value_shape)
+  : value_shape(value_shape)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Expression::Expression(const Expression& expression)
-  : value_shape(expression.value_shape),
-    _geometric_dimension(expression._geometric_dimension)
+  : value_shape(expression.value_shape)
 {
   // Do nothing
 }
@@ -48,11 +44,6 @@ Expression::Expression(const Expression& expression)
 Expression::~Expression()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-dolfin::uint Expression::geometric_dimension() const
-{
-  return _geometric_dimension;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Expression::value_rank() const

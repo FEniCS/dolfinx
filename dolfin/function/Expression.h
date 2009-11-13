@@ -35,13 +35,13 @@ namespace dolfin
   public:
 
     /// Create scalar expression
-    explicit Expression(uint geometric_dimension);
+    Expression();
 
     /// Create vector-valued expression with given dimension
-    Expression(uint geometric_dimension, uint dim);
+    Expression(uint dim);
 
     /// Create tensor-valued expression with given shape
-    Expression(uint geometric_dimension, std::vector<uint> value_shape);
+    Expression(std::vector<uint> value_shape);
 
     /// Copy constructor
     Expression(const Expression& expression);
@@ -50,7 +50,7 @@ namespace dolfin
     virtual ~Expression();
 
     /// Return geometric dimension
-    uint geometric_dimension() const;
+    //uint geometric_dimension() const;
 
     //--- Implementation of GenericFunction interface ---
 
@@ -87,7 +87,7 @@ namespace dolfin
   private:
 
     // Geometric dimension
-    uint _geometric_dimension;
+    //uint _geometric_dimension;
 
   };
 
