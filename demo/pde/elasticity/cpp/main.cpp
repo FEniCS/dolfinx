@@ -111,7 +111,7 @@ int main()
   Elasticity::BilinearForm a(V, V);
   a.mu = mu; a.lmbda = lambda;
   Elasticity::LinearForm L(V);
-  //L.f = f;
+  L.f = f;
   VariationalProblem problem(a, L, bcs);
   problem.parameters["symmetric"] = true;
 
