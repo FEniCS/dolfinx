@@ -60,6 +60,7 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 //%ignore dolfin::Data::x;
 //%rename (x) dolfin::Data::x_();
+%ignore dolfin::eval(double* values, const double* x) const;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Constant
