@@ -58,8 +58,8 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Ignore the Data.x, pointer to the coordinates in the Data object
 //-----------------------------------------------------------------------------
-%ignore dolfin::Data::x;
-%rename (x) dolfin::Data::x_();
+//%ignore dolfin::Data::x;
+//%rename (x) dolfin::Data::x_();
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Constant

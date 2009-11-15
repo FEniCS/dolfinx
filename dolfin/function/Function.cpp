@@ -291,10 +291,10 @@ dolfin::uint Function::geometric_dimension() const
   return _function_space->mesh().geometry().dim();
 }
 //-----------------------------------------------------------------------------
-void Function::eval(double* values, const double* x) const
+void Function::eval(double* values, const std::vector<double>& x) const
 {
   assert(values);
-  assert(x);
+  //assert(x);
   assert(_function_space);
 
   not_working_in_parallel("Function::eval at arbitray points.");
@@ -307,13 +307,14 @@ void Function::eval(double* values, const double* x) const
   }
 
   // Find the cell that contains x
-  Point point(_function_space->mesh().geometry().dim(), x);
+  const double* _x = &x[0];
+  Point point(_function_space->mesh().geometry().dim(), _x);
   std::vector<uint> cells;
   intersection_detector->intersection(point, cells);
   if (cells.size() < 1)
   {
     error("Unable to evaluate function at x = %s, not inside domain.",
-          to_string(x, geometric_dimension()).c_str());
+          to_string(_x, geometric_dimension()).c_str());
   }
 
   // Create cell
@@ -325,12 +326,12 @@ void Function::eval(double* values, const double* x) const
 }
 //-----------------------------------------------------------------------------
 void Function::eval(double* values,
-                    const double* x,
+                    const std::vector<double>& x,
                     const Cell& dolfin_cell,
                     const ufc::cell& ufc_cell) const
 {
   assert(values);
-  assert(x);
+  //assert(x);
 
   // Restrict function to cell
   restrict(local_scratch.coefficients, _function_space->element(), dolfin_cell, ufc_cell, -1);
@@ -340,7 +341,7 @@ void Function::eval(double* values,
     values[j] = 0.0;
   for (uint i = 0; i < _function_space->element().space_dimension(); i++)
   {
-    _function_space->element().evaluate_basis(i, local_scratch.values, x, ufc_cell);
+    _function_space->element().evaluate_basis(i, local_scratch.values, &x[0], ufc_cell);
     for (uint j = 0; j < local_scratch.size; j++)
       values[j] += (local_scratch.coefficients[i])*(local_scratch.values[j]);
   }

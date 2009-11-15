@@ -85,7 +85,8 @@ void Expression::compute_vertex_values(double* vertex_values,
   // Local data for vertex values
   const uint size = value_size();
   boost::scoped_array<double> local_vertex_values(new double[size]);
-  Data data;
+  const uint geometric_dim = mesh.geometry().dim();
+  Data data(geometric_dim);
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
   UFCCell ufc_cell(mesh);
@@ -99,7 +100,9 @@ void Expression::compute_vertex_values(double* vertex_values,
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
       // Update coordinate data
-      data.x = vertex->x();
+      //data.x = vertex->x();
+      const double* _x = vertex->x(); 
+      data.x.assign(_x, _x + geometric_dim); 
 
       // Evaluate at vertex
       eval(local_vertex_values.get(), data);
@@ -114,11 +117,13 @@ void Expression::compute_vertex_values(double* vertex_values,
   }
 }
 //-----------------------------------------------------------------------------
+void Expression::eval(double* values, const std::vector<double>& x) const
+{
+  eval(values, &x[0]);
+}
+//-----------------------------------------------------------------------------
 void Expression::eval(double* values, const double* x) const
 {
-  assert(values);
-  assert(x);
-
   // Missing eval method if we reach this point
   error("Missing eval() for expression (must be overloaded).");
 }

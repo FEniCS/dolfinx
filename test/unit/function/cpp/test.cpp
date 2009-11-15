@@ -9,6 +9,7 @@
 //
 // Unit tests for the function library
 
+#include <boost/assign/list_of.hpp>
 #include <dolfin.h>
 #include <dolfin/common/unittest.h>
 #include "Projection.h"
@@ -33,7 +34,7 @@ public:
 
       void eval(double* values, const Data& data) const
       { 
-        const double* x = data.x;
+        const std::vector<double>& x = data.x;
         values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
       }
     };
@@ -46,13 +47,13 @@ public:
 
       void eval(double* values, const Data& data) const
       { 
-        const double* x = data.x;
+        const std::vector<double>& x = data.x;
         values[0] = 1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]; 
       } 
     };
 
     UnitCube mesh(8, 8, 8);
-    double x[3] = {0.31, 0.32, 0.33};
+    std::vector<double> x = boost::assign::list_of(0.31)(0.32)(0.33);
     double u[2] = {0.0, 0.0};
   
     Data data;

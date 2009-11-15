@@ -6,6 +6,7 @@
 //
 // Demonstrating function evaluation at arbitrary points.
 
+#include <boost/assign/list_of.hpp>
 #include <dolfin.h>
 #include "Projection.h"
 
@@ -19,7 +20,7 @@ public:
 
   F() {}
 
-  void eval(double* values, const double* x) const
+  void eval(double* values, const std::vector<double>& x) const
   {
     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
   }
@@ -32,7 +33,7 @@ int main()
 
   // Create mesh and a point in the mesh
   UnitCube mesh(8, 8, 8);
-  double x[3] = {0.31, 0.32, 0.33};
+  std::vector<double> x = boost::assign::list_of(0.31)(0.32)(0.33);  
 
   // A user-defined function
   F f;

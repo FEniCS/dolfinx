@@ -77,6 +77,9 @@ namespace dolfin
     //--- User-supplied callback for expression evaluation ---
 
     /// Evaluate expression, must be overloaded by user (simple version)
+    virtual void eval(double* values, const std::vector<double>& x) const;
+
+    /// Evaluate expression, must be overloaded by user (simple version)
     virtual void eval(double* values, const double* x) const;
 
   protected:

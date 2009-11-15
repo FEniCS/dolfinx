@@ -25,10 +25,10 @@ void MeshCoordinates::eval(double* values, const Data& data) const
 {
   assert(values);
   assert(data.geometric_dimension() == mesh.geometry().dim());
-  assert(data.x);
+  assert(data.x.size() == mesh.geometry().dim());
 
   for (uint i = 0; i < data.geometric_dimension(); ++i)
-    values[i] = data.x[i];
+    values[i] = (data.x)[i];
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
