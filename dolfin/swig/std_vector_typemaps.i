@@ -12,7 +12,7 @@
 // We want to avoid using SWIGs own typemaps in std_vector.i,
 // as we really just want to be able to pass argument, in and a out, using 
 // std::vector. We do not wnat to work with a proxy type of std::vector<Foo>, 
-// as the interface reflex the C++ type and is hence not 'pythonic'. 
+// as the interface reflects the C++ type and is hence not 'pythonic'. 
 //=============================================================================
 
 //-----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
       py_item = PyList_GetItem($input,i);
       res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(dolfin::TYPE *), 0, &newmem);
       if (SWIG_IsOK(res)) {
-	tmp_vec.push_back(reinterpret_cast<dolfin::TYPE *>(itemp));
+        tmp_vec.push_back(reinterpret_cast<dolfin::TYPE *>(itemp));
       }
       else
       {

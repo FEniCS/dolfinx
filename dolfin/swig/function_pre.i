@@ -58,8 +58,8 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Ignore the Data.x, pointer to the coordinates in the Data object
 //-----------------------------------------------------------------------------
-//%ignore dolfin::Data::x;
-//%rename (x) dolfin::Data::x_();
+%ignore dolfin::Data::x;
+%rename (x) dolfin::Data::x_();
 %ignore dolfin::eval(double* values, const double* x) const;
 
 //-----------------------------------------------------------------------------
@@ -187,4 +187,14 @@ namespace dolfin
 //    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(const_cast<double*>($1_name)));
 //  }
 //}
+
+// FIXME: Is there a better way to map a std::vector to a numpy array?
+%typemap(directorin) const std::vector<double>& x {
+  {
+    // Compute size of x
+    npy_intp dims[1] = {$1_name.size()};
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, 
+            reinterpret_cast<char *>( &(const_cast<std::vector<double>& >($1_name))[0] ));
+  }
+}
 

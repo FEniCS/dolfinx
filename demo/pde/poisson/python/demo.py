@@ -35,7 +35,8 @@ bc = DirichletBC(V, u0, boundary)
 v = TestFunction(V)
 u = TrialFunction(V)
 f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", V = V)
-g = Expression("sin(5*x[0])", V = V)
+#g = Expression("sin(5*x[0])", V = V)
+g = Test(V = V)
 a = inner(grad(v), grad(u))*dx
 L = v*f*dx - v*g*ds
 
