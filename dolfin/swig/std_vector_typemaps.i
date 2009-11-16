@@ -91,20 +91,20 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
       }
       else
       {
-	// If failed with normal pointer conversion then 
-	// try with shared_ptr conversion
-	newmem = 0;
-	res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
-	if (SWIG_IsOK(res)) 
-	{
-	  tmp_vec.push_back(reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> *>(itemp)->get() );
-	}
-	else
-	{
-	  SWIG_exception(SWIG_TypeError, "list of TYPE expected (Bad conversion)");
-	}
+      // If failed with normal pointer conversion then 
+      // try with shared_ptr conversion
+      newmem = 0;
+      res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
+      if (SWIG_IsOK(res)) 
+      {
+        tmp_vec.push_back(reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> *>(itemp)->get() );
+      }
+      else
+      {
+        SWIG_exception(SWIG_TypeError, "list of TYPE expected (Bad conversion)");
       }
     }
+  }
     $1 = &tmp_vec;
   }
   else
