@@ -196,11 +196,10 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
   {
     if (PyArray_Check($input)) 
     {
-      std::cout << "array" << std::endl;
       PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
       if ( PyArray_TYPE(xa) == NPY_DOUBLE )
       {
-        const unsigned int size = PyArray_DIM(xa, 0);       
+        const unsigned int size = PyArray_DIM(xa, 0);
         temp.resize(size);
         double* array = static_cast<double*>(PyArray_DATA(xa));
         std::copy(array, array + size, temp.begin());
