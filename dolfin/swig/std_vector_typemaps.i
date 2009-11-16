@@ -11,8 +11,8 @@
 // 
 // We want to avoid using SWIGs own typemaps in std_vector.i,
 // as we really just want to be able to pass argument, in and a out, using 
-// std::vector. We do not wnat to work with a proxy type of std::vector<Foo>, 
-// as the interface reflex the C++ type and is hence not 'pythonic'. 
+// std::vector. We do not want to work with a proxy type of std::vector<Foo>, 
+// as the interface reflects the C++ type and is hence not 'pythonic'. 
 //=============================================================================
 
 //-----------------------------------------------------------------------------
@@ -87,24 +87,24 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
       py_item = PyList_GetItem($input,i);
       res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(dolfin::TYPE *), 0, &newmem);
       if (SWIG_IsOK(res)) {
-	tmp_vec.push_back(reinterpret_cast<dolfin::TYPE *>(itemp));
+        tmp_vec.push_back(reinterpret_cast<dolfin::TYPE *>(itemp));
       }
       else
       {
-	// If failed with normal pointer conversion then 
-	// try with shared_ptr conversion
-	newmem = 0;
-	res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
-	if (SWIG_IsOK(res)) 
-	{
-	  tmp_vec.push_back(reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> *>(itemp)->get() );
-	}
-	else
-	{
-	  SWIG_exception(SWIG_TypeError, "list of TYPE expected (Bad conversion)");
-	}
+      // If failed with normal pointer conversion then 
+      // try with shared_ptr conversion
+      newmem = 0;
+      res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
+      if (SWIG_IsOK(res)) 
+      {
+        tmp_vec.push_back(reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> *>(itemp)->get() );
+      }
+      else
+      {
+        SWIG_exception(SWIG_TypeError, "list of TYPE expected (Bad conversion)");
       }
     }
+  }
     $1 = &tmp_vec;
   }
   else
@@ -186,3 +186,31 @@ IN_TYPEMAPS_STD_VECTOR_OF_POINTERS(FunctionSpace)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, cells, NPY_INT)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_INT)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
+
+//-----------------------------------------------------------------------------
+// NumPy to std::vector<double> typemap.
+//-----------------------------------------------------------------------------
+#include <iostream> 
+%typemap(in) const std::vector<double>& x (std::vector<double> temp)
+{
+  {
+    if (PyArray_Check($input)) 
+    {
+      std::cout << "array" << std::endl;
+      PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
+      if ( PyArray_TYPE(xa) == NPY_DOUBLE )
+      {
+        const unsigned int size = PyArray_DIM(xa, 0);       
+        temp.resize(size);
+        double* array = static_cast<double*>(PyArray_DATA(xa));
+        std::copy(array, array + size, temp.begin());
+        $1 = &temp;
+      }
+     else
+       SWIG_exception(SWIG_TypeError, "NumPy array expected");
+    }
+    else
+      SWIG_exception(SWIG_TypeError, "NumPy array expected");
+  }
+}
+

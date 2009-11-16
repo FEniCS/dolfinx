@@ -22,7 +22,7 @@ int main()
   {
   public:
 
-    Noslip() : Expression(2, 2) {}
+    Noslip() : Expression(2) {}
 
     void eval(double* values, const double* x) const
     {
@@ -37,7 +37,7 @@ int main()
   {
   public:
 
-    Inflow() : Expression(2, 2) {}
+    Inflow() : Expression(2) {}
 
     void eval(double* values, const double* x) const
     {
@@ -59,7 +59,7 @@ int main()
   // Create functions for boundary conditions
   Noslip noslip;
   Inflow inflow;
-  Constant zero(2, 0.0);
+  Constant zero(0.0, 0.0);
 
   // No-slip boundary condition for velocity
   DirichletBC bc0(W0, noslip, sub_domains, 0);
@@ -76,7 +76,7 @@ int main()
 
   // Set up PDE
   CellSize h(mesh);
-  Constant f(2, 0.0, 0.0);
+  Constant f(0.0, 0.0);
   Stokes::BilinearForm a(W, W);
   a.h = h;
   Stokes::LinearForm L(W);

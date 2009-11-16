@@ -1,7 +1,7 @@
 """Run all unit tests."""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2006-08-09 -- 2009-09-16"
+__date__ = "2006-08-09 -- 2009-11-16"
 __copyright__ = "Copyright (C) 2006-2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -12,15 +12,16 @@ import platform
 from dolfin_utils.commands import getoutput
 
 # Tests to run
-tests = ["fem", "function", "mesh", "meshconvert", "la", "io"]
+tests = ["fem", "function", "mesh", "meshconvert", "la", "io", "python-extras"]
+
+# Tests only available in Python
+only_python = ["python-extras"]
 
 # FIXME: Graph tests disabled for now since SCOTCH is now required
 
 # Check if we should run only Python tests, use for quick testing
 if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
-    only_python = True
-else:
-    only_python = False
+    only_python = tests
 
 # Run tests
 failed = []
@@ -32,7 +33,7 @@ for test in tests:
     if platform.system() == 'Windows':
         cpptest_ext = '.exe'
     print "C++:   ",
-    if not only_python:
+    if not test in only_python:
         output = getoutput("cd %s%scpp && .%stest%s" % \
                            (test, os.path.sep, os.path.sep, cpptest_ext))
         if "OK" in output:

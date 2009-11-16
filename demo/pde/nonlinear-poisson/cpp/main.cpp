@@ -34,7 +34,7 @@ class Source : public Expression
 {
 public:
 
-  Source() : Expression(2) {}
+  Source() : Expression() {}
 
   void eval(double* values, const double* x) const
   {
@@ -60,7 +60,7 @@ int main()
 
   // Define boundary condition
   DirichletBoundary dirichlet_boundary;
-  Constant g(mesh, 1.0);
+  Constant g(1.0);
   DirichletBC bc(V, g, dirichlet_boundary);
 
   // Define source and solution functions

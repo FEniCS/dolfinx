@@ -48,7 +48,7 @@ void MatrixFactory::compute_stiffness_matrix(GenericMatrix& A,
                                              double c)
 {
   // Create constant
-  Constant f(mesh.geometry().dim(), c);
+  Constant f(c);
 
   warning("Using default dof map in MatrixFactory");
   if (mesh.type().cell_type() == CellType::triangle)
@@ -76,9 +76,9 @@ void MatrixFactory::compute_convection_matrix(GenericMatrix& A,
 {
   error("MatrixFactory need to be updated for new Function interface.");
 
-  Constant fx(mesh.geometry().dim(), cx);
-  Constant fy(mesh.geometry().dim(), cy);
-  Constant fz(mesh.geometry().dim(), cz);
+  Constant fx(cx);
+  Constant fy(cy);
+  Constant fz(cz);
 
   warning("Using default dof map in MatrixFactory");
   if (mesh.type().cell_type() == CellType::triangle)
@@ -108,7 +108,7 @@ void MatrixFactory::compute_load_vector(GenericVector& x, Mesh& mesh, double c)
 {
   error("MatrixFactory need to be updated for new Function interface.");
 
-  Constant f(mesh.geometry().dim(), c);
+  Constant f(c);
 
   error("MF forms need to be updated to new mesh format.");
   warning("Using default dof map in MatrixFactory");

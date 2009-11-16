@@ -20,7 +20,7 @@ class BC : public Expression
 {
 public:
 
-  BC() : Expression(2) {}
+  BC() {}
 
   void eval(double* values, const double* x) const
   {
@@ -46,8 +46,6 @@ int main(int argc, char *argv[])
   // Read mesh
   Mesh mesh("../mesh.xml.gz");
 
-  const unsigned int dim = mesh.topology().dim();
-
   // Create velocity FunctionSpace
   Velocity::FunctionSpace V_u(mesh);
 
@@ -55,16 +53,17 @@ int main(int argc, char *argv[])
   Function u(V_u, "../velocity.xml.gz");
 
   // Diffusivity
-  Constant c(dim, 0.0);
+  Constant c(0.0);
 
   //Source term
-  Constant f(dim, 0.0);
+  Constant f(0.0);
 
   // Mesh-related functions
-  CellSize h(mesh);
+  //CellSize h(mesh);
+  Constant h(10.0);
 
   // Penalty parameter
-  Constant alpha(dim, 5.0);
+  Constant alpha(5.0);
 
   // Create function space
   AdvectionDiffusion::FunctionSpace V(mesh);

@@ -64,7 +64,7 @@ template <typename A, typename B>
 void refine_outgoing(std::map<const A*, std::set<B*> >& branch, const A* a, A& new_a)
 {
   typename std::map<const A*, std::set<B*> >::iterator it = branch.find(a);
-  dolfin_debug1("Refining %d object(s)", it->second.size());
+  //dolfin_debug1("Refining %d object(s)", it->second.size());
   if (it == branch.end()) return;
   for (typename std::set<B*>::iterator jt = it->second.begin(); jt != it->second.end(); ++jt)
     AdaptiveObjects::refine(*jt, new_a);
@@ -73,7 +73,7 @@ void refine_outgoing(std::map<const A*, std::set<B*> >& branch, const A* a, A& n
 //-----------------------------------------------------------------------------
 void AdaptiveObjects::register_object(FunctionSpace* function_space)
 {
-  dolfin_debug1("Registering function space: %x", function_space);
+  //dolfin_debug1("Registering function space: %x", function_space);
   assert(function_space);
   add_edge(objects._function_spaces,
            &function_space->mesh(),
@@ -82,7 +82,7 @@ void AdaptiveObjects::register_object(FunctionSpace* function_space)
 //-----------------------------------------------------------------------------
 void AdaptiveObjects::register_object(Function* function)
 {
-  dolfin_debug1("Registering function: %x", function);
+  //dolfin_debug1("Registering function: %x", function);
   assert(function);
   add_edge(objects._functions,
            &function->function_space(),
@@ -91,7 +91,7 @@ void AdaptiveObjects::register_object(Function* function)
 //-----------------------------------------------------------------------------
 void AdaptiveObjects::register_object(BoundaryCondition* boundary_condition)
 {
-  dolfin_debug1("Registering boundary condition: %x", boundary_condition);
+  //dolfin_debug1("Registering boundary condition: %x", boundary_condition);
   assert(boundary_condition);
   add_edge(objects._boundary_conditions,
            &boundary_condition->function_space(),
@@ -100,7 +100,7 @@ void AdaptiveObjects::register_object(BoundaryCondition* boundary_condition)
 //-----------------------------------------------------------------------------
 void AdaptiveObjects::deregister_object(FunctionSpace* function_space)
 {
-  dolfin_debug1("Deregistering function space: %x", function_space);
+  //dolfin_debug1("Deregistering function space: %x", function_space);
   remove_node(objects._function_spaces, function_space);
   remove_node(objects._functions, function_space);
   remove_node(objects._boundary_conditions, function_space);
@@ -108,13 +108,13 @@ void AdaptiveObjects::deregister_object(FunctionSpace* function_space)
 //-----------------------------------------------------------------------------
 void AdaptiveObjects::deregister_object(Function* function)
 {
-  dolfin_debug1("Deregistering function: %x", function);
+  //dolfin_debug1("Deregistering function: %x", function);
   remove_node(objects._functions, function);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveObjects::deregister_object(BoundaryCondition* boundary_condition)
 {
-  dolfin_debug1("Deregistering function space: %x", boundary_condition);
+  //dolfin_debug1("Deregistering function space: %x", boundary_condition);
   remove_node(objects._boundary_conditions, boundary_condition);
 }
 //-----------------------------------------------------------------------------

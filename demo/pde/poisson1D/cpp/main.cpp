@@ -36,7 +36,7 @@ class Source : public Expression
 {
 public:
 
-  Source() : Expression(1) {}
+  Source() : Expression() {}
 
   void eval(double* values, const double* x) const
   {
@@ -50,7 +50,7 @@ class Flux : public Expression
 {
 public:
 
-  Flux() : Expression(1) {}
+  Flux() : Expression() {}
 
   void eval(double* values, const double* x) const
   {
@@ -67,7 +67,7 @@ int main()
   Poisson::FunctionSpace V(mesh);
 
   // Set up BCs
-  Constant zero(mesh, 0.0);
+  Constant zero(0.0);
   DirichletBoundary boundary;
   DirichletBC bc(V, zero, boundary);
 

@@ -9,6 +9,7 @@
 //
 // Unit tests for the function library
 
+#include <boost/assign/list_of.hpp>
 #include <dolfin.h>
 #include <dolfin/common/unittest.h>
 #include "Projection.h"
@@ -29,11 +30,11 @@ public:
     {
     public:
 
-      F0(const Mesh& mesh) : Expression(mesh.topology().dim()) {}
+      F0() {}
 
       void eval(double* values, const Data& data) const
       { 
-        const double* x = data.x;
+        const std::vector<double>& x = data.x;
         values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
       }
     };
@@ -42,31 +43,31 @@ public:
     {
     public:
 
-      F1(const Mesh& mesh) : Expression(mesh.topology().dim()) {}
+      F1() {}
 
       void eval(double* values, const Data& data) const
       { 
-        const double* x = data.x;
+        const std::vector<double>& x = data.x;
         values[0] = 1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]; 
       } 
     };
 
     UnitCube mesh(8, 8, 8);
-    double x[3] = {0.31, 0.32, 0.33};
+    std::vector<double> x = boost::assign::list_of(0.31)(0.32)(0.33);
     double u[2] = {0.0, 0.0};
   
     Data data;
     data.x = x;
 
     // User-defined functions (one from finite element space, one not)
-    F0 f0(mesh);
-    F1 f1(mesh);
+    F0 f0;
+    F1 f1;
 
     // Test evaluation of a user-defined function
     f0.eval(&u[0], data);
     CPPUNIT_ASSERT_DOUBLES_EQUAL(u[0], 
-				 sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
-				 DOLFIN_EPS);
+				                         sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
+				                         DOLFIN_EPS);
 
 #ifdef HAS_GTS
     // Test evaluation of a discrete function

@@ -60,6 +60,7 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 %ignore dolfin::Data::x;
 %rename (x) dolfin::Data::x_();
+%ignore dolfin::eval(double* values, const double* x) const;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Constant
@@ -97,10 +98,10 @@ namespace dolfin
     {
       py_item = PyList_GetItem($input,i);
       if (!PyInteger_Check(py_item))
-	SWIG_exception(SWIG_TypeError, "expected list of positive int");
+        SWIG_exception(SWIG_TypeError, "expected list of positive int");
       item = static_cast<int>(PyInt_AsLong(py_item));
       if (item < 0)
-	SWIG_exception(SWIG_TypeError, "expected list of positive int");
+        SWIG_exception(SWIG_TypeError, "expected list of positive int");
       $1.push_back(item);
     }
   }
@@ -140,7 +141,7 @@ namespace dolfin
     {
       py_item = PyList_GetItem($input,i);
       if (!PyFloat_Check(py_item))
-	SWIG_exception(SWIG_TypeError, "expected list of floats");
+        SWIG_exception(SWIG_TypeError, "expected list of floats");
       item = static_cast<double>(PyFloat_AsDouble(py_item));
       $1.push_back(item);
     }
@@ -179,11 +180,21 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Director typemap for coordinates in Expression
 //-----------------------------------------------------------------------------
-%typemap(directorin) const double* x {
+//%typemap(directorin) const double* x {
+//  {
+//    // Compute size of x
+//    npy_intp dims[1] = {this->geometric_dimension()};
+//    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(const_cast<double*>($1_name)));
+//  }
+//}
+
+// FIXME: Is there a better way to map a std::vector to a numpy array?
+%typemap(directorin) const std::vector<double>& x {
   {
     // Compute size of x
-    npy_intp dims[1] = {this->geometric_dimension()};
-    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(const_cast<double*>($1_name)));
+    npy_intp dims[1] = {$1_name.size()};
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, 
+            reinterpret_cast<char *>( &(const_cast<std::vector<double>& >($1_name))[0] ));
   }
 }
 

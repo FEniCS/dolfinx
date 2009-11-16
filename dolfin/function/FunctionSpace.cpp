@@ -40,7 +40,7 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0))
 {
-  dolfin_debug1("Creating function space: %x", this);
+  //dolfin_debug1("Creating function space: %x", this);
 
   // Register adaptive object
   AdaptiveObjects::register_object(this);
@@ -52,7 +52,7 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0))
 {
-  dolfin_debug1("Creating function space: %x", this);
+  //dolfin_debug1("Creating function space: %x", this);
 
   // Register adaptive object
   AdaptiveObjects::register_object(this);
@@ -60,7 +60,7 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(const FunctionSpace& V)
 {
-  dolfin_debug1("Creating function space: %x", this);
+  //dolfin_debug1("Creating function space: %x", this);
 
   // Assign data (will be shared)
   _mesh    = V._mesh;

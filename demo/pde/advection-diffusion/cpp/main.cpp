@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
   AdvectionDiffusion::FunctionSpace V(mesh);
 
   // Source term and initial condition
-  Constant f(mesh, 0.0);
+  Constant f(0.0);
   Function u(V);
   u.vector().zero();
 
@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
   L.u0 = u; L.b = velocity; L.f = f;
 
   // Set up boundary condition
-  Constant g(mesh, 1.0);
+  Constant g(1.0);
   DirichletBC bc(V, g, sub_domains, 1);
 
   // Solution

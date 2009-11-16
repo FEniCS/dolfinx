@@ -17,7 +17,7 @@ class Pressure : public Expression
 public:
 
   Pressure(const double& t, const double& dt, bool old)
-    : Expression(2, 2), t(t), dt(dt), old(old) {}
+    : Expression(2), t(t), dt(dt), old(old) {}
 
   void eval(double* values, const Data& data) const
   {
@@ -106,24 +106,24 @@ int main(int argc, char* argv[])
   ElastoDynamics::FunctionSpace V(mesh);
 
   // Material parameters
-  Constant rho(mesh, 1.0);                           // mass density
-  Constant eta(mesh, 0.25);                          // damping coefficient
+  Constant rho(1.0);                           // mass density
+  Constant eta(0.25);                          // damping coefficient
   double E  = 1.0;                                   // Youngs modulus
   double nu = 0.0;                                   // Poisson ratio
-  Constant lambda(mesh, (nu*E)/((1.0+nu)*(1.0-nu))); // Lame coefficient
-  Constant mu(mesh, E/(2.0*(1.0+nu)));               // Lame coefficient
+  Constant lambda((nu*E)/((1.0+nu)*(1.0-nu))); // Lame coefficient
+  Constant mu(E/(2.0*(1.0+nu)));               // Lame coefficient
 
   // Time stepping parameters
-  Constant alpha_m(mesh, 0.2);
-  Constant alpha_f(mesh, 0.4);
-  Constant beta(mesh, 0.36);
-  Constant gamma(mesh, 0.7);
-  Constant dt(mesh, 1.0/32.0);    // time step
+  Constant alpha_m(0.2);
+  Constant alpha_f(0.4);
+  Constant beta(0.36);
+  Constant gamma(0.7);
+  Constant dt(1.0/32.0);    // time step
   double t = 0.0;                 // initial time
   double T = 200*dt;              // final time
 
   // Body force
-  Constant f(2, 0.0);
+  Constant f(0.0, 0.0);
 
   // External load
   RightBoundary right_boundary;
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
 
   // Dirichlet boundary conditions
   LeftBoundary left_boundary;
-  Constant zero(2, 0.0);
+  Constant zero(0.0, 0.0);
   DirichletBC bc0(V, zero, left_boundary);
   std::vector<const BoundaryCondition*> bc;
   bc.push_back(&bc0);

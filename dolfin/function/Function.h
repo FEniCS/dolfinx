@@ -110,11 +110,11 @@ namespace dolfin
     uint geometric_dimension() const;
 
     /// Evaluate function for given coordinate
-    void eval(double* values, const double* x) const;
+    void eval(double* values, const std::vector<double>& x) const;
 
     /// Evaluate function for given coordinate in given cell
     void eval(double* values,
-              const double* x,
+              const std::vector<double>& x,
               const Cell& dolfin_cell,
               const ufc::cell& ufc_cell) const;
 
