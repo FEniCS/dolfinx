@@ -33,7 +33,7 @@ for test in tests:
     if platform.system() == 'Windows':
         cpptest_ext = '.exe'
     print "C++:   ",
-    if test in only_python:
+    if not test in only_python:
         output = getoutput("cd %s%scpp && .%stest%s" % \
                            (test, os.path.sep, os.path.sep, cpptest_ext))
         if "OK" in output:
