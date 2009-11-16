@@ -31,7 +31,7 @@ get_petsc_include:
 	-@echo -I${PETSC_DIR}/%s${PETSC_ARCH}%s -I${PETSC_DIR}/include ${MPI_INCLUDE} ${X11_INCLUDE}
 
 get_petsc_libs:
-	-@echo   ${C_SH_LIB_PATH} -L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC} ${X11_LIBS}
+	-@echo   ${C_SH_LIB_PATH} -L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC} ${X11_LIB}
 
 get_petsc_cc:
 	-@echo ${PCC}
