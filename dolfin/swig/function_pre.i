@@ -98,10 +98,10 @@ namespace dolfin
     {
       py_item = PyList_GetItem($input,i);
       if (!PyInteger_Check(py_item))
-	SWIG_exception(SWIG_TypeError, "expected list of positive int");
+        SWIG_exception(SWIG_TypeError, "expected list of positive int");
       item = static_cast<int>(PyInt_AsLong(py_item));
       if (item < 0)
-	SWIG_exception(SWIG_TypeError, "expected list of positive int");
+        SWIG_exception(SWIG_TypeError, "expected list of positive int");
       $1.push_back(item);
     }
   }
@@ -141,7 +141,7 @@ namespace dolfin
     {
       py_item = PyList_GetItem($input,i);
       if (!PyFloat_Check(py_item))
-	SWIG_exception(SWIG_TypeError, "expected list of floats");
+        SWIG_exception(SWIG_TypeError, "expected list of floats");
       item = static_cast<double>(PyFloat_AsDouble(py_item));
       $1.push_back(item);
     }

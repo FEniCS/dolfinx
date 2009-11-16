@@ -41,3 +41,4 @@ def function_space(self):
 //-----------------------------------------------------------------------------
 %clear const double* x;
 %clear double* y;
+%clear const std::vector<double>& x;

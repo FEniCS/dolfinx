@@ -30,10 +30,14 @@ fv = Expression(("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
 # Project to a discrete function
 g = project(fs, Vs)
 
-print """
-Evaluate user-defined scalar function fs
-fs(x) = %f
-Evaluate discrete function g (projection of fs)
-g(x) = %f
-Evaluate user-defined vector valued function fv
-fs(x) = %s"""%(fs(x),g(x),str(fv(x)))
+print "g : ", g(x)
+print "fs: ", fs(x)
+print "fv: ", str(fv(x))
+
+#print """
+#Evaluate user-defined scalar function fs
+#fs(x) = %f
+#Evaluate discrete function g (projection of fs)
+#g(x) = %f
+#Evaluate user-defined vector valued function fv
+#fs(x) = %s"""%(fs(x),g(x),str(fv(x)))
