@@ -49,9 +49,6 @@ namespace dolfin
     /// Destructor
     virtual ~Expression();
 
-    /// Return geometric dimension
-    //uint geometric_dimension() const;
-
     //--- Implementation of GenericFunction interface ---
 
     /// Return value rank
@@ -78,9 +75,6 @@ namespace dolfin
 
     /// Evaluate expression, must be overloaded by user (simple version)
     virtual void eval(double* values, const std::vector<double>& x) const;
-
-    /// Evaluate expression, must be overloaded by user (simple version)
-    virtual void eval(double* values, const double* x) const;
 
   protected:
 
