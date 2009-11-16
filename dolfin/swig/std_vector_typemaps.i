@@ -11,7 +11,7 @@
 // 
 // We want to avoid using SWIGs own typemaps in std_vector.i,
 // as we really just want to be able to pass argument, in and a out, using 
-// std::vector. We do not wnat to work with a proxy type of std::vector<Foo>, 
+// std::vector. We do not want to work with a proxy type of std::vector<Foo>, 
 // as the interface reflects the C++ type and is hence not 'pythonic'. 
 //=============================================================================
 
@@ -190,13 +190,27 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
 //-----------------------------------------------------------------------------
 // NumPy to std::vector<double> typemap.
 //-----------------------------------------------------------------------------
-%typemap(in) const std::vector<double>& x {
+#include <iostream> 
+%typemap(in) const std::vector<double>& x (std::vector<double> temp)
+{
   {
-     SWIG_exception(SWIG_TypeError, "NumPy array to std::vector<double> not implemented. Please fix me.");
-    // Compute size of x
-    //npy_intp dims[1] = {$1_name.size()};
-    //$input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, 
-    //        reinterpret_cast<char *>( &(const_cast<std::vector<double>& >($1_name))[0] ));
+    if (PyArray_Check($input)) 
+    {
+      std::cout << "array" << std::endl;
+      PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
+      if ( PyArray_TYPE(xa) == NPY_DOUBLE )
+      {
+        const unsigned int size = PyArray_DIM(xa, 0);       
+        temp.resize(size);
+        double* array = static_cast<double*>(PyArray_DATA(xa));
+        std::copy(array, array + size, temp.begin());
+        $1 = &temp;
+      }
+     else
+       SWIG_exception(SWIG_TypeError, "NumPy array expected");
+    }
+    else
+      SWIG_exception(SWIG_TypeError, "NumPy array expected");
   }
 }
 
