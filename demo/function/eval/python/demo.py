@@ -30,9 +30,9 @@ fv = Expression(("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
 # Project to a discrete function
 g = project(fs, Vs)
 
-print "g : ", g(x)
 print "fs: ", fs(x)
 print "fv: ", str(fv(x))
+print "g : ", g(x)
 
 #print """
 #Evaluate user-defined scalar function fs
