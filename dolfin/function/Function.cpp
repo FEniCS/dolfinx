@@ -182,20 +182,20 @@ Function::~Function()
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Function& v)
 {
+  assert(v._vector);
+
   // Make a copy of all the data, or if v is a sub-function, then we collapse
   // the dof map and copy only the relevant entries from the vector of v.
   if (v._vector->size() == v._function_space->dim())
   {
-    cout << "hello 1 " << endl;
     // Copy function space
     _function_space = v._function_space;
 
     // Copy vector
-    *_vector = *v._vector;
+    _vector.reset(v._vector->copy());
   }
   else
   {
-    cout << "hello 2 " << endl;
     // Create collapsed dof map
     std::map<uint, uint> collapsed_map;
     boost::shared_ptr<DofMap> collapsed_dof_map(v._function_space->dofmap().collapse(collapsed_map, v._function_space->mesh()));
