@@ -81,11 +81,6 @@ namespace dolfin
     // Value shape
     std::vector<uint> value_shape;
 
-  private:
-
-    // Geometric dimension
-    //uint _geometric_dimension;
-
   };
 
 }

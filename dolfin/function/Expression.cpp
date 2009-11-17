@@ -119,7 +119,7 @@ void Expression::compute_vertex_values(double* vertex_values,
 //-----------------------------------------------------------------------------
 void Expression::eval(double* values, const std::vector<double>& x) const
 {
-  error("Missing eval() for expression (must be overloaded).");
+  error("Missing eval() for Expression (must be overloaded).");
 }
 //-----------------------------------------------------------------------------
 
