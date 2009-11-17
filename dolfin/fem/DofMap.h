@@ -47,7 +47,7 @@ namespace dolfin
   private:
 
     /// Create dof map on mesh with a std::vector dof map
-    DofMap(std::auto_ptr<std::vector<dolfin::uint> > map,
+    DofMap(boost::shared_ptr<std::vector<dolfin::uint> > map,
            boost::shared_ptr<ufc::dof_map> ufc_dofmap,
            const Mesh& dolfin_mesh);
 
@@ -153,7 +153,8 @@ namespace dolfin
     //        e.g. a std::vector for each cell?
     // FIXME: Document layout of map
     // Precomputed dof map
-    std::auto_ptr<std::vector<dolfin::uint> > _map;
+    //std::auto_ptr<std::vector<dolfin::uint> > _map;
+    boost::shared_ptr<std::vector<dolfin::uint> > _map;
 
     // Map from UFC dofs to renumbered dof
     std::map<dolfin::uint, uint> _ufc_to_map;

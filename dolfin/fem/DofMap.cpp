@@ -56,7 +56,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
   init(dolfin_mesh, true);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::auto_ptr<std::vector<dolfin::uint> > map,
+DofMap::DofMap(boost::shared_ptr<std::vector<dolfin::uint> > map,
                boost::shared_ptr<ufc::dof_map> ufc_dofmap,
                const Mesh& dolfin_mesh)
   : _map(map), _ufc_dofmap(ufc_dofmap), _ufc_offset(0),
@@ -144,7 +144,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
     const uint num_cells = dolfin_mesh.num_cells();
 
      // Create vector for new map
-    std::auto_ptr<std::vector<uint> > sub_map(new std::vector<uint>);
+    boost::shared_ptr<std::vector<uint> > sub_map(new std::vector<uint>);
     sub_map->resize(max_local_dim*num_cells);
 
     // Create new dof map (this will initialise the UFC dof map)
