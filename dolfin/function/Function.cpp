@@ -245,11 +245,9 @@ Function& Function::operator[] (uint i) const
     return *(sub_function->second);
   else
   {
-    cout << "extract subspace " << endl;
     // Extract function subspace
     std::vector<uint> component = boost::assign::list_of(i);
     boost::shared_ptr<const FunctionSpace> sub_space(this->function_space().extract_sub_space(component));
-    cout << "end extract subspace " << endl;
 
     // Insert sub-Function into map and return reference
     sub_functions.insert(i, new Function(sub_space, this->_vector));
