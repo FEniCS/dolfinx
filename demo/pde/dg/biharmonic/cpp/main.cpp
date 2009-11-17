@@ -31,7 +31,7 @@ public:
 
   Source() : Expression() {}
 
-  void eval(double* values, const double* x) const
+  void eval(double* values, const std::vector<double>& x) const
   {
     values[0] = 4.0 * DOLFIN_PI * DOLFIN_PI * DOLFIN_PI * DOLFIN_PI * sin(DOLFIN_PI*x[0]) * sin(DOLFIN_PI*x[1]);
   }
