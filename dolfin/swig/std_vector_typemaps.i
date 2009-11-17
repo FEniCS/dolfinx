@@ -190,7 +190,12 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
 //-----------------------------------------------------------------------------
 // NumPy to std::vector<double> typemap.
 //-----------------------------------------------------------------------------
-#include <iostream> 
+// Typemap check
+//%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) double* {
+//    // General typemap
+//    $1 = PyArray_Check($input) ? 1 : 0;
+//}
+
 %typemap(in) const std::vector<double>& x (std::vector<double> temp)
 {
   {
