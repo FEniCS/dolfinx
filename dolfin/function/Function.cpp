@@ -34,8 +34,6 @@ Function::Function(const FunctionSpace& V)
   : _function_space(reference_to_no_delete_pointer(V)),
     local_scratch(V.element())
 {
-  dolfin_debug1("Creating function: %x", this);
-
   // Initialize vector
   init_vector();
 
@@ -47,8 +45,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : _function_space(V),
     local_scratch(V->element())
 {
-  dolfin_debug1("Creating function: %x", this);
-
   // Initialize vector
   init_vector();
 
@@ -61,8 +57,6 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
     _vector(reference_to_no_delete_pointer(x)),
     local_scratch(V.element())
 {
-  dolfin_debug1("Creating function: %x", this);
-
   // Assertion uses '<=' to deal with sub-functions
   assert(V.dofmap().global_dimension() <= x.size());
 
@@ -76,8 +70,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(x),
     local_scratch(V->element())
 {
-  dolfin_debug1("Creating function: %x", this);
-
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x->size());
 
@@ -91,8 +83,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
     _vector(reference_to_no_delete_pointer(x)),
     local_scratch(V->element())
 {
-  dolfin_debug1("Creating function: %x", this);
-
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x.size());
 
@@ -104,8 +94,6 @@ Function::Function(const FunctionSpace& V, std::string filename)
   : _function_space(reference_to_no_delete_pointer(V)),
     local_scratch(V.element())
 {
-  dolfin_debug1("Creating function: %x", this);
-
   // Initialize vector
   init_vector();
 
@@ -126,8 +114,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   : _function_space(V),
     local_scratch(V->element())
 {
-  dolfin_debug1("Creating function: %x", this);
-
   // Create vector
   DefaultFactory factory;
   _vector.reset(factory.create_vector());
@@ -149,8 +135,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
 {
-  dolfin_debug1("Creating function: %x", this);
-
   // Assign data
   *this = v;
 
@@ -162,8 +146,6 @@ Function::Function(const Function& v, uint i)
   : local_scratch(v[i]._function_space->element())
 
 {
-  dolfin_debug1("Creating function: %x", this);
-
   // Copy function space pointer
   this->_function_space = v[i]._function_space;
 
