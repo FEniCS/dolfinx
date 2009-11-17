@@ -188,13 +188,11 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_INT)
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
 
 //-----------------------------------------------------------------------------
-// NumPy to std::vector<double> typemap.
+// NumPy to const std::vector<double>& typemap.
 //-----------------------------------------------------------------------------
-// Typemap check
-//%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) double* {
-//    // General typemap
-//    $1 = PyArray_Check($input) ? 1 : 0;
-//}
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) const std::vector<double>& x {
+    $1 = PyArray_Check($input) ? 1 : 0;
+}
 
 %typemap(in) const std::vector<double>& x (std::vector<double> temp)
 {
@@ -217,4 +215,19 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
       SWIG_exception(SWIG_TypeError, "NumPy array expected");
   }
 }
+//-----------------------------------------------------------------------------
+// const std::vector<double>& to NumPy typemap.
+//-----------------------------------------------------------------------------
+%typemap(argout) const std::vector<double>& x
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+// std::vector<double>& to NumPy typemap.
+//-----------------------------------------------------------------------------
+%typemap(argout) std::vector<double>& x
+{
+  SWIG_exception(SWIG_TypeError, "std::vector<double> to NumPy (argout) not implemented");
+}
+//-----------------------------------------------------------------------------
 

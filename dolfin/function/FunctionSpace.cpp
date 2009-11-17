@@ -201,14 +201,6 @@ FunctionSpace::collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const
 void FunctionSpace::attach(MeshFunction<bool>& restriction)
 {
   error("FunctionSpace::attach is not working. Please fix the dof map builder.");
-  /*
-  if (restriction.dim() == (*_mesh).topology().dim())
-  {
-    _restriction.reset(&restriction);
-    //FIXME: hack to cast away the const
-    const_cast<DofMap&>(*_dofmap).build(restriction);
-  }
-  */
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace> FunctionSpace::restriction(MeshFunction<bool>& restriction)

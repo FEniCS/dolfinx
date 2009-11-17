@@ -131,7 +131,7 @@ namespace dolfin
     friend class AdaptiveObjects;
 
     // Initialize
-    void init(const Mesh& dolfin_mesh);
+    void init(const Mesh& dolfin_mesh, bool build_map);
 
     /// Initialize the UFC mesh
     static void init_ufc_mesh(UFCMesh& ufc_mesh,

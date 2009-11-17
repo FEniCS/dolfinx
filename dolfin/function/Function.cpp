@@ -186,6 +186,7 @@ const Function& Function::operator= (const Function& v)
   // the dof map and copy only the relevant entries from the vector of v.
   if (v._vector->size() == v._function_space->dim())
   {
+    cout << "hello 1 " << endl;
     // Copy function space
     _function_space = v._function_space;
 
@@ -194,6 +195,7 @@ const Function& Function::operator= (const Function& v)
   }
   else
   {
+    cout << "hello 2 " << endl;
     // Create collapsed dof map
     std::map<uint, uint> collapsed_map;
     boost::shared_ptr<DofMap> collapsed_dof_map(v._function_space->dofmap().collapse(collapsed_map, v._function_space->mesh()));
@@ -243,9 +245,11 @@ Function& Function::operator[] (uint i) const
     return *(sub_function->second);
   else
   {
+    cout << "extract subspace " << endl;
     // Extract function subspace
     std::vector<uint> component = boost::assign::list_of(i);
     boost::shared_ptr<const FunctionSpace> sub_space(this->function_space().extract_sub_space(component));
+    cout << "end extract subspace " << endl;
 
     // Insert sub-Function into map and return reference
     sub_functions.insert(i, new Function(sub_space, this->_vector));

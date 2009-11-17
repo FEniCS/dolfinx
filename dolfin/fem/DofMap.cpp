@@ -44,7 +44,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
   }
 
   // Initialize
-  init(dolfin_mesh);
+  init(dolfin_mesh, true);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
@@ -53,7 +53,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
     _parallel(MPI::num_processes() > 1)
 {
   // Initialize
-  init(dolfin_mesh);
+  init(dolfin_mesh, true);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::auto_ptr<std::vector<dolfin::uint> > map,
@@ -64,7 +64,7 @@ DofMap::DofMap(std::auto_ptr<std::vector<dolfin::uint> > map,
 
 {
   // Initialize
-  init(dolfin_mesh);
+  init(dolfin_mesh, false);
 }
 //-----------------------------------------------------------------------------
 DofMap::~DofMap()
@@ -270,7 +270,7 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dofmap,
   return sub_sub_dof_map;
 }
 //-----------------------------------------------------------------------------
-void DofMap::init(const Mesh& dolfin_mesh)
+void DofMap::init(const Mesh& dolfin_mesh, bool build_map)
 {
   // Initialize the UFC mesh
   init_ufc_mesh(_ufc_mesh, dolfin_mesh);
@@ -279,7 +279,7 @@ void DofMap::init(const Mesh& dolfin_mesh)
   init_ufc_dofmap(*_ufc_dofmap, _ufc_mesh, dolfin_mesh);
 
   // Build (renumber) dofmap when running in parallel
-  if (_parallel)
+  if (build_map && _parallel)
     DofMapBuilder::parallel_build(*this, dolfin_mesh);
 }
 //-----------------------------------------------------------------------------

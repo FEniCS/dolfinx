@@ -59,7 +59,6 @@ int main()
   // Solve PDE
   Function w(V);
   pde.solve(w);
-  cout << "Finished solve" << endl;
 
   // Extract sub functions (function views)
   Function& sigma = w[0];
