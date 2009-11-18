@@ -1,3 +1,4 @@
+ - Add simple script dolfin-tetgen for generating DOLFIN XML meshes from STL
  - Make XML parser append/overwrite parameter set when reading parameters from file
  - Refinement of function spaces and automatic interpolation of member functions
  - Allow setting global parameters for Krylov solver

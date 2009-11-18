@@ -439,6 +439,9 @@ if not env.GetOption('help'):
   env.Install(os.path.join(manDir, "man1"),
               os.path.join("doc", "man", "man1", "dolfin-order.1.gz"))
 
+  # install dolfin-tetgen into binDir
+  env.Install(binDir, os.path.join("misc","utils","tetgen","dolfin-tetgen"))
+
   # shared libraries goes into our libDir:
   for l in buildDataHash["shlibs"]:
     env.InstallVersionedSharedLibrary(libDir, l)
