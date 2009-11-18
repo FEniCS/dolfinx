@@ -1,4 +1,4 @@
-function xmlmesh(filename,p,t)
+function xmlmesh(filename, p, t)
 
 % XMLMESH - SAVE MATLAB 2D (AND FEMLAB 3D) MESH TO DOLFIN XML FORMAT
 %
@@ -14,20 +14,22 @@ function xmlmesh(filename,p,t)
 % Modified by Marie Rognes 2009.
 %
 % First added:  2004-02-10
-% Last changed: 2009-08-11
+% Last changed: 2009-11-18
 
 % Open file
-fp = fopen(filename,'w');
+fp = fopen(filename, 'w');
+disp('Exporting mesh to DOLFIN XML format')
 
-np = size(p,2);
-nt = size(t,2);
+% Get number of points and triangles
+np = size(p, 2);
+nt = size(t, 2);
 
 % Write header
 fprintf(fp,'<?xml version="1.0" encoding="UTF-8"?>\n\n');
 fprintf(fp,'<dolfin xmlns:dolfin="http://www.fenics.org/dolfin">\n');
 
 % 2D mesh
-if (size(p,1) == 2)
+if (size(p, 1) == 2)
 
   % Write nodes
   fprintf(fp,'  <mesh celltype="triangle" dim="2">\n');
@@ -35,7 +37,7 @@ if (size(p,1) == 2)
   fprintf(fp,'    <vertices size="%d">\n',np);
   for n=1:np
     fprintf(fp,'      <vertex index="%d" x="%f" y="%f" z="0.0"/>\n', ...
-	    n-1, p(1,n), p(2,n));
+	    n - 1, p(1, n), p(2, n));
   end
   fprintf(fp,'    </vertices>\n');
 
@@ -44,14 +46,14 @@ if (size(p,1) == 2)
   fprintf(fp,'    <cells size="%d">\n',nt);
   for n=1:nt
     fprintf(fp,'      <triangle index="%d" v0="%d" v1="%d" v2="%d"/>\n', ...
-	    n-1,t(1,n)-1,t(2,n)-1,t(3,n)-1);
+	    n - 1, t(1, n) - 1, t(2, n) - 1, t(3, n) - 1);
   end
   fprintf(fp,'    </cells>\n');
   fprintf(fp,'  </mesh>\n');
   fprintf(fp,'</dolfin>\n');
 
 % 3D mesh
-elseif (size(p,1) == 3)
+elseif (size(p, 1) == 3)
 
   % Write nodes
   disp('Writing nodes...')
@@ -59,7 +61,7 @@ elseif (size(p,1) == 3)
   fprintf(fp,'    <vertices size="%d">\n',np);
   for n=1:np
     fprintf(fp,'      <vertex name="%d" x="%f" y="%f" z="%f"/>\n', ...
-            n-1,p(1,n),p(2,n),p(3,n));
+            n - 1, p(1, n), p(2, n), p(3, n));
   end
   fprintf(fp,'    </vertices>\n');
 
@@ -68,7 +70,7 @@ elseif (size(p,1) == 3)
   fprintf(fp,'    <cells size="%d">\n',nt);
   for n=1:nt
     fprintf(fp,'      <tetrahedron name="%d" n0="%d" n1="%d" n2="%d" n3="%d"/>\n', ...
-            n-1,t(1,n)-1,t(2,n)-1,t(3,n)-1,t(4,n)-1);
+            n-1, t (1, n) - 1, t(2, n) - 1, t(3, n) - 1, t(4, n) - 1);
   end
   fprintf(fp,'    </cells>\n');
   fprintf(fp,'  </mesh>\n');
