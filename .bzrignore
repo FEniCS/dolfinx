@@ -1,0 +1,29 @@
+syntax: glob
+*.o
+*.Plo
+*.Po
+*.lo
+*.la
+*.a
+*.os
+*~
+*.pyc
+*.so{,.0}
+*.pc
+*.pyd
+*.def
+*.dll
+*.exe
+*.dylib
+
+syntax: regexp
+^\.hg/
+^local/
+^dolfin\.conf$
+^dolfin/swig/.*\.(py|cc|h)$
+
+^scons/\.sconsign\.dblite$
+^scons/options\.cache$
+^scons/.*\.log$
+
+^demo/.*/(cpp|python)/.*\.(pvd|vtu|xml)$
