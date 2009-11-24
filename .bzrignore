@@ -1,4 +1,10 @@
-syntax: glob
+# Local Bazaar files
+RE:\.bzr
+
+# Temporaries
+*~
+
+# Binaries
 *.o
 *.Plo
 *.Po
@@ -6,24 +12,29 @@ syntax: glob
 *.la
 *.a
 *.os
-*~
 *.pyc
-*.so{,.0}
+*.so
 *.pc
 *.pyd
 *.def
 *.dll
 *.exe
 *.dylib
+dolfin/libdolfin.so*
 
-syntax: regexp
-^\.hg/
-^local/
-^dolfin\.conf$
-^dolfin/swig/.*\.(py|cc|h)$
+# SWIG generated files
+RE:dolfin/swig/.*\.(py|cc|h)
 
-^scons/\.sconsign\.dblite$
-^scons/options\.cache$
-^scons/.*\.log$
+# Configuration files
+dolfin.conf
+.sconf_temp
+scons/.sconsign.dblite
+scons/*.cache
+scons/*.log
+RE:local.*
+RE:scons/pkgconfig.*
 
-^demo/.*/(cpp|python)/.*\.(pvd|vtu|xml)$
+# Demos and tests
+RE:demo/.*/(cpp|python)/.*\.(pvd|vtu|pvtu|xml)
+RE:demo/.*/cpp/demo
+RE:test/.*/cpp/test
