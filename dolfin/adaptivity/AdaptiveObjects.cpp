@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-09
-// Last changed: 2009-11-12
+// Last changed: 2009-11-25
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
@@ -122,7 +122,6 @@ void AdaptiveObjects::refine(Mesh* mesh, MeshFunction<bool>* cell_markers)
 {
   not_working_in_parallel("Mesh refinement");
   assert(mesh);
-  dolfin_debug("Refining mesh");
 
   // FIXME: This can be optimized by direct refinement (without copy)
   // FIXME: when there are no depending function spaces.
@@ -161,7 +160,6 @@ void AdaptiveObjects::refine(FunctionSpace* function_space,
                              Mesh& new_mesh)
 {
   assert(function_space);
-  dolfin_debug("Refining function space");
 
   // Create new dofmap (will be reused)
   boost::shared_ptr<ufc::dof_map> ufc_dofmap = function_space->_dofmap->_ufc_dofmap;
@@ -190,7 +188,6 @@ void AdaptiveObjects::refine(Function* function,
                              FunctionSpace& new_function_space)
 {
   assert(function);
-  dolfin_debug("Refining function");
 
   // Create new function
   Function new_function(new_function_space);
@@ -211,7 +208,6 @@ void AdaptiveObjects::refine(BoundaryCondition* boundary_condition,
                              FunctionSpace& new_function_space)
 {
   assert(boundary_condition);
-  dolfin_debug("Refining boundary condition");
 
   // Can currently only handle DirichletBC
   DirichletBC* bc = dynamic_cast<DirichletBC*>(boundary_condition);
