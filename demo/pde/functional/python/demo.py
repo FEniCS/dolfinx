@@ -22,7 +22,7 @@ mesh = UnitSquare(16, 16)
 V = FunctionSpace(mesh, "CG", 2)
 
 # Define the function v
-v = Expression("sin(x[0]) + cos(x[1])", V=V)
+v = Expression("sin(x[0]) + cos(x[1])", element=FiniteElement("CG", triangle, 2))
 
 # Define functional
 M = (v*v + dot(grad(v), grad(v)))*dx
