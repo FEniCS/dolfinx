@@ -21,6 +21,7 @@ def left(x, on_boundary):
 
 # Dirichlet boundary condition for rotation at right end
 class Rotation(Expression):
+
     def eval(self, values, x):
 
         # Center of rotation
@@ -38,6 +39,9 @@ class Rotation(Expression):
         values[0] = 0.0
         values[1] = y - x[1]
         values[2] = z - x[2]
+
+    def dim(self):
+        return 2
 
 # Sub domain for rotation at right end
 def right(x, on_boundary):
