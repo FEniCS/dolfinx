@@ -16,15 +16,15 @@ V = FunctionSpace(mesh, "CG", 1)
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Constant(mesh, 0.0)
+f = Constant(0.0)
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx
 
 # Define boundary condition values
-u0 = Constant(mesh, 0.0)
-u1 = Constant(mesh, 1.0)
-u2 = Constant(mesh, 2.0)
-u3 = Constant(mesh, 3.0)
+u0 = Constant(0.0)
+u1 = Constant(1.0)
+u2 = Constant(2.0)
+u3 = Constant(3.0)
 
 # Define boundary conditions
 bc0 = DirichletBC(V, u0, 0)
