@@ -28,7 +28,7 @@ def boundary(x):
     return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
 
 # Define boundary condition
-u0 = Constant(mesh, 0.0)
+u0 = Constant(0.0)
 bc = DirichletBC(V, u0, boundary)
 
 # Define variational problem
@@ -48,5 +48,4 @@ file = File("poisson.pvd")
 file << u
 
 # Plot solution
-plot(u)
-interactive()
+plot(u, interactive=True)
