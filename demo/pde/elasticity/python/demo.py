@@ -41,7 +41,7 @@ class Rotation(Expression):
         values[2] = z - x[2]
 
     def dim(self):
-        return 2
+        return 3
 
 # Sub domain for rotation at right end
 def right(x, on_boundary):
@@ -88,11 +88,4 @@ vtk_file = File("elasticity.pvd")
 vtk_file << u
 
 # Plot solution
-plot(u, mode="displacement")
-
-# Displace mesh and plot displaced mesh
-mesh.move(u)
-plot(mesh)
-
-# Hold plots
-interactive()
+plot(u, mode="displacement", interactive=True)
