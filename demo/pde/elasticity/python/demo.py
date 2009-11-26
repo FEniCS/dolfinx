@@ -16,9 +16,8 @@ mesh = Mesh("../../../../data/meshes/gear.xml.gz")
 V = VectorFunctionSpace(mesh, "CG", 1)
 
 # Sub domain for clamp at left end
-class Left(SubDomain):
-    def inside(self, x, on_boundary):
-        return x[0] < 0.5 and on_boundary
+def left(x, on_boundary):
+    return x[0] < 0.5 and on_boundary
 
 # Dirichlet boundary condition for rotation at right end
 class Rotation(Expression):
@@ -41,14 +40,13 @@ class Rotation(Expression):
         values[2] = z - x[2]
 
 # Sub domain for rotation at right end
-class Right(SubDomain):
-    def inside(self, x, on_boundary):
-      return x[0] > 0.9 and on_boundary
+def right(x, on_boundary):
+    return x[0] > 0.9 and on_boundary
 
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Constant(mesh, (0, 0, 0))
+f = Constant((0, 0, 0))
 
 E  = 10.0
 nu = 0.3
@@ -66,12 +64,12 @@ a = inner(epsilon(v), sigma(u))*dx
 L = inner(v, f)*dx
 
 # Set up boundary condition at left end
-c = Constant(mesh, [0, 0, 0])
-bcl = DirichletBC(V, c, Left())
+c = Constant((0, 0, 0))
+bcl = DirichletBC(V, c, left)
 
 # Set up boundary condition at right end
-r = Rotation(V = V)
-bcr = DirichletBC(V, r, Right())
+r = Rotation()
+bcr = DirichletBC(V, r, right)
 
 # Set up boundary conditions
 bcs = [bcl, bcr]
