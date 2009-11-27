@@ -13,8 +13,7 @@ mesh0 = UnitSquare(16, 16)
 mesh1 = UnitSquare(64, 64)
 
 # Create expression on P3
-P3 = FunctionSpace(mesh0, "CG", 3)
-u0 = Expression("sin(10.0*x[0])*sin(10.0*x[1])", V = P3)
+u0 = Expression("sin(10.0*x[0])*sin(10.0*x[1])", degree=3)
 
 # Define projection space
 P1 = FunctionSpace(mesh1, "CG", 1)

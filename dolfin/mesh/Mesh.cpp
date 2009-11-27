@@ -8,10 +8,9 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-09
-// Last changed: 2009-11-16
+// Last changed: 2009-11-27
 
 #include <sstream>
-#include <set>
 
 #include <dolfin/log/log.h>
 #include <dolfin/io/File.h>

@@ -9,13 +9,12 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-08
-// Last changed: 2009-11-16
+// Last changed: 2009-11-27
 
 #ifndef __MESH_H
 #define __MESH_H
 
 #include <string>
-#include <set>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>

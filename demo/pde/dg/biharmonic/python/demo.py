@@ -35,7 +35,7 @@ class Source(Expression):
         values[0] = 4.0*DOLFIN_PI*DOLFIN_PI*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*x[0])*sin(DOLFIN_PI*x[1])
 
 # Define boundary condition
-u0 = Constant(mesh, 0.0)
+u0 = Constant(0.0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
 # Define test and trial functions
@@ -46,7 +46,7 @@ u = TrialFunction(V)
 h = CellSize(mesh)
 h_avg = (h('+') + h('-'))/2.0
 n = FacetNormal(mesh)
-f = Source(V = V)
+f = Source(V)
 
 # Define parameters
 alpha = 8.0

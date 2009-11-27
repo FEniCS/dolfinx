@@ -20,9 +20,9 @@ w0 = TestFunction(P0)
 # Define functions
 u  = Function(P1)
 z  = Function(P1)
-f  = Constant(mesh, 1.0)
+f  = Constant(1.0)
 p  = Function(P0)
-u0 = Expression("x[0]*(1.0 - x[0])*x[1]*(1.0 - x[1])", V = P1)
+u0 = Expression("x[0]*(1.0 - x[0])*x[1]*(1.0 - x[1])")
 
 # Dirichlet boundary
 class DirichletBoundary(SubDomain):

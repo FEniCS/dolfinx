@@ -16,7 +16,7 @@ P1 = FunctionSpace(mesh1, "CG", 1)
 P3 = FunctionSpace(mesh0, "CG", 3)
 
 # Define function
-v0 = Expression("sin(10.0*x[0])*sin(10.0*x[1])", V = P3)
+v0 = Expression("sin(10.0*x[0])*sin(10.0*x[1])", element=FiniteElement('CG', triangle, 3))
 v1 = Function(P1)
 
 # Interpolate

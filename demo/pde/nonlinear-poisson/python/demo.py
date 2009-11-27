@@ -39,11 +39,11 @@ mesh = UnitSquare(16, 16)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Define boundary condition
-g = Constant(mesh, 1)
+g = Constant(1.0)
 bc = DirichletBC(V, g, DirichletBoundary())
 
 # Define source and solution functions
-f = Expression("x[0]*sin(x[1])", V = V)
+f = Expression("x[0]*sin(x[1])")
 u = Function(V)
 
 # Define variational problem

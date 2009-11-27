@@ -99,13 +99,13 @@ class DirichletBoundary(SubDomain):
 # Define variational problem
 v = TestFunction(V2)
 u = TrialFunction(V2)
-f = Constant(mesh, 0)
-b = Coefficient(V = V0)
+f = Constant(0.0)
+b = Coefficient(V0)
 a = b*dot(grad(v), grad(u))*dx
 L = v*f*dx
 
 # Define boundary condition
-u0 = DirichletFunction(V = V2)
+u0 = DirichletFunction(V2)
 bc = DirichletBC(V2, u0, DirichletBoundary())
 
 # Solve PDE and plot solution
@@ -119,7 +119,7 @@ plot(u)
 # because it is an interpolation of the exact solution
 # in the finite element space!
 Pk = FunctionSpace(mesh, "CG", 5)
-exact = Exact(V = Pk)
+exact = Exact(Pk)
 
 e = u - exact
 L2_norm = e*e*dx

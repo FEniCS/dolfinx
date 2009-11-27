@@ -2,14 +2,13 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-01
-// Last changed: 2009-11-15
+// Last changed: 2009-11-27
 
 #ifndef __INTERSECTIONOPERATOR_H
 #define __INTERSECTIONOPERATOR_H
 
 #include <vector>
 #include <string>
-#include <set>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>

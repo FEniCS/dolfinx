@@ -25,9 +25,9 @@ from math import pow
 
 not_working_in_parallel("This demo")
 
-TOL = 5e-4          # Error tolerance
-REFINE_RATIO = 0.50 # Refine 50 % of the cells in each iteration
-MAX_ITER = 20       # Maximal number of iterations
+TOL = 5e-4           # Error tolerance
+REFINE_RATIO = 0.50  # Refine 50 % of the cells in each iteration
+MAX_ITER = 20        # Maximal number of iterations
 
 # Create initial mesh
 mesh = UnitSquare(4, 4)
@@ -40,12 +40,12 @@ for level in xrange(MAX_ITER):
     V = FunctionSpace(mesh, "CG", 1)
     v = TestFunction(V)
     u = TrialFunction(V)
-    f = Expression(source_str, V = V)
+    f = Expression(source_str)
     a = dot(grad(v), grad(u))*dx
     L = v*f*dx
 
     # Define boundary condition
-    u0 = Constant(mesh, 0.0)
+    u0 = Constant(0.0)
     bc = DirichletBC(V, u0, DomainBoundary())
 
     # Compute solution

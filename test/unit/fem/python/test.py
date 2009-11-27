@@ -23,7 +23,7 @@ class Assembly(unittest.TestCase):
         n = V.cell().n
         h = CellSize(mesh)
         h_avg = (h('+') + h('-'))/2
-        f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", V = V)
+        f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=1)
 
         # Define bilinear form
         a = dot(grad(v), grad(u))*dx \
@@ -57,7 +57,7 @@ class Assembly(unittest.TestCase):
 
         v = TestFunction(V)
         u = TrialFunction(V)
-        f = Constant(mesh, (10, 20, 30))
+        f = Constant((10, 20, 30))
 
         def epsilon(v):
             return 0.5*(grad(v) + grad(v).T)

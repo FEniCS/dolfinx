@@ -41,7 +41,7 @@ class PeriodicBoundary(SubDomain):
         y[1] = x[1]
 
 # Create Dirichlet boundary condition
-u0 = Constant(mesh, 0.0)
+u0 = Constant(0.0)
 dbc = DirichletBoundary()
 bc0 = DirichletBC(V, u0, dbc)
 
@@ -55,7 +55,7 @@ bcs = [bc0, bc1]
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Source(V = V)
+f = Source(V)
 
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx

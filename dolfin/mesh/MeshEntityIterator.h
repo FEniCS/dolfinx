@@ -4,7 +4,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-09
-// Last changed: 2009-11-22
+// Last changed: 2009-11-27
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -13,8 +13,6 @@
 #include <dolfin/log/dolfin_log.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
-
-#include <iostream>
 
 namespace dolfin
 {
@@ -42,10 +40,6 @@ namespace dolfin
   /// In addition to the general iterator, a set of specific named iterators
   /// are provided for entities of type Vertex, Edge, Face, Facet and Cell.
   /// These iterators are defined along with their respective classes.
-  ///
-  ///@internal
-  ///@todo Change maybe into a bidirectional or even random access iterator,
-  ///since both will make perfect sense. 
 
   class MeshEntityIterator
   {
@@ -97,6 +91,12 @@ namespace dolfin
     ///Step to next mesh entity (prefix increment)
     MeshEntityIterator& operator++() { ++_pos; return *this; }
 
+    /// Step to the previous mesh entity (prefix decrease)
+    MeshEntityIterator& operator--() { --_pos; return *this; }
+
+    /// Return current position
+    inline uint pos() const { return _pos; }
+
     ///Comparison operator.
     ///@internal
     ///Uncommenting following  results into the warning message:
@@ -116,8 +116,6 @@ namespace dolfin
     /// Member access operator
     inline MeshEntity* operator->() { entity._index = (index ? index[_pos] : _pos); return &entity; }
 
-    /// Return current position
-    inline uint pos() const { return _pos; }
 
     /// Check if iterator has reached the end
     inline bool end() const { return _pos >= pos_end; }

@@ -32,8 +32,8 @@ v1 = TestFunction(P1)
 u1 = TrialFunction(P1)
 
 # Define functions
-dbdt = Expression(("0.0", "0.0", "1.0"), V = P1)
-zero = Expression(("0.0", "0.0", "0.0"), V = P1)
+dbdt = Expression(("0.0", "0.0", "1.0"), degree=1)
+zero = Expression(("0.0", "0.0", "0.0"), degree=1)
 T = Function(PN)
 J = Function(P1)
 

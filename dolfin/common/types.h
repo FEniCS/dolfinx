@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-04-22
-// Last changed: 2009-11-15
+// Last changed: 2009-11-27
 //
 // This file provides DOLFIN typedefs for basic types.
 
@@ -11,7 +11,6 @@
 
 #include <complex>
 #include <set>
-//#include <boost/unordered_set.hpp>  
 
 namespace dolfin
 {
@@ -23,10 +22,7 @@ namespace dolfin
   typedef std::complex<double> complex;
 
   // (Ordered) set of uints
-  // @todo: Substitute with boost::set variant, const insert time (on average)
   typedef std::set<uint> uint_set; 
-
-  // (Ordered) set of uints
 
 }
 

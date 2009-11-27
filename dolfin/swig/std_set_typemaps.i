@@ -1,6 +1,3 @@
-//%include <boost/unordered_set.hpp>  
-/*%include <set>  */
-
 namespace std
 {
   template <class T> class set 
@@ -13,7 +10,6 @@ namespace std
 //-----------------------------------------------------------------------------
 // In typemap removing the argument from the expected in list
 //-----------------------------------------------------------------------------
-//%typemap (in,numinputs=0) boost::unordered_set<TYPE>& ARG_NAME (boost::unordered_set<TYPE> set_temp)
 %typemap (in,numinputs=0) std::set<TYPE>& ARG_NAME (std::set<TYPE> set_temp)
 {
   $1 = &set_temp;
@@ -22,7 +18,6 @@ namespace std
 //-----------------------------------------------------------------------------
 // Argout typemap, returning a NumPy array for the boost::unordered_set<TYPE>
 //-----------------------------------------------------------------------------
-//%typemap(argout) boost::unordered_set<TYPE> & ARG_NAME
 %typemap(argout) std::set<TYPE> & ARG_NAME
 {
   PyObject* o0 = 0;
@@ -33,7 +28,6 @@ namespace std
   TYPE* data = static_cast<TYPE*>(PyArray_DATA(ret));
 
   int i = 0;
-/*  for (boost::unordered_set<TYPE>::const_iterator it = (*$1).begin(); it != (*$1).end(); ++it) */
   for (std::set<TYPE>::const_iterator it = (*$1).begin(); it != (*$1).end(); ++it) 
   {
     data[i] = *it;

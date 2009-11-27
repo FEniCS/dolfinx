@@ -27,7 +27,7 @@ V = VectorFunctionSpace(mesh, "CG", 2)
 velocity = Function(V, "../velocity.xml.gz");
 
 # Initialise source function and previous solution function
-f  = Constant(mesh, 0.0)
+f  = Constant(0.0)
 u0 = Function(Q)
 
 # Parameters
@@ -48,7 +48,7 @@ a = v*u*dx + 0.5*k*(v*dot(velocity, grad(u))*dx + c*dot(grad(v), grad(u))*dx)
 L = v*u0*dx - 0.5*k*(v*dot(velocity, grad(u0))*dx + c*dot(grad(v), grad(u0))*dx) + k*v*f*dx
 
 # Set up boundary condition
-g  = Constant(mesh, 1.0)
+g  = Constant(1.0)
 bc = DirichletBC(Q, g, sub_domains, 1)
 
 # Assemble matrix

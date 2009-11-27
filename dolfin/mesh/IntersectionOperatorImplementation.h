@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-11
-// Last changed: 2009-11-26
+// Last changed: 2009-11-27
 
 #ifndef __INTERSECTIONOPERATORIMPLEMENTATION_H
 #define __INTERSECTIONOPERATORIMPLEMENTATION_H
@@ -77,7 +77,6 @@ namespace dolfin
     ///Constructor. 
     IntersectionOperatorImplementation_d(boost::shared_ptr<const Mesh> _mesh) : _mesh(_mesh) 
     {
-      ///@todo delay tree build until the tree is really needed.
       build_tree();
     }
 
