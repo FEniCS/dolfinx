@@ -55,7 +55,7 @@ if 0 in demos:
 # Plot scalar function
 if 1 in demos:
     V = FunctionSpace(mesh, "CG", 1)
-    f = Expression("t * 100 * exp(-10.0 * (pow(x[0] - t, 2) + pow(x[1] - t, 2)))", V = V)
+    f = Expression("t * 100 * exp(-10.0 * (pow(x[0] - t, 2) + pow(x[1] - t, 2)))", element=V.ufl_element())
     f.t = 0.0
     for i in range(100):
         f.t += 0.01
@@ -66,7 +66,7 @@ if 2 in demos:
     mesh = UnitSquare(16, 16)
     V = VectorFunctionSpace(mesh, "CG", 1)
     f = Expression(("-(x[1] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))",
-                  " (x[0] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))"), V = V)
+                  " (x[0] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))"), element=V.ufl_element())
     f.t = 0.0
     for i in range(200):
         f.t += 0.005
@@ -77,7 +77,7 @@ if 3 in demos:
     mesh = UnitSquare(10, 10)
     V = VectorFunctionSpace(mesh, "CG", 1)
     f = Expression(("-(x[1] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))",
-                    " (x[0] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))"), V = V)
+                    " (x[0] - t)*exp(-10.0*(pow(x[0] - t, 2) + pow(x[1] - t, 2)))"), element=V.ufl_element())
 
     pts = numpy.array([
         [.24, .24],
