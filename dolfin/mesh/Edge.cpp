@@ -19,8 +19,8 @@ double Edge::length()
   const uint* vertices = entities(0);
   assert(vertices);
 
-  const Vertex v0(_mesh, vertices[0]);
-  const Vertex v1(_mesh, vertices[1]);
+  const Vertex v0(*_mesh, vertices[0]);
+  const Vertex v1(*_mesh, vertices[1]);
 
   const Point p0 = v0.point();
   const Point p1 = v1.point();
@@ -37,8 +37,8 @@ Point Edge::midpoint()
   const uint* vertices = entities(0);
   assert(vertices);
 
-  const Vertex v0(_mesh, vertices[0]);
-  const Vertex v1(_mesh, vertices[1]);
+  const Vertex v0(*_mesh, vertices[0]);
+  const Vertex v1(*_mesh, vertices[1]);
 
   const Point p0 = v0.point();
   const Point p1 = v1.point();

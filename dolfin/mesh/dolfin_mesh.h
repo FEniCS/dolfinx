@@ -22,6 +22,8 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/MeshPrimitive.h>
+#include <dolfin/mesh/Primitive_Traits.h>
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/SubMesh.h>
@@ -36,5 +38,7 @@
 #include <dolfin/mesh/Rectangle.h>
 #include <dolfin/mesh/UnitSphere.h>
 #include <dolfin/mesh/IntersectionDetector.h>
+#include <dolfin/mesh/IntersectionOperator.h>
+#include <dolfin/mesh/added_intersection_3.h>
 
 #endif

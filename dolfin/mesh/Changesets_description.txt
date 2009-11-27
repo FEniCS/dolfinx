@@ -1,0 +1,31 @@
+Added:
+
+Mesh_d class: Template class to wrap the dimension independent mesh class into a
+dimension dependent type.
+
+CellBoostIterator class: More STL compliant iterator over of cells of mesh. 
+
+IntersectionOperator class: Provides the interface for the new intersection functionality based
+on the CGAL library (computational geometry). Implementation via the pImpl
+idiom.
+
+IntersectionOperatorImplementation class: Abstract base class for the pImpl
+implementation. Only inherited classes contain the search tree, which type depends
+is based on the geometric primitive it includes.
+
+IntersectionOperatorImplementation_d class: Contains search tree for the mesh
+and executes search operations.
+
+Changed:
+
+MeshEntity class:
+- Introduced default constructor (requires to change private member const
+Mesh & _mesh to const Mesh * _mesh)
+- added comparison operator
+
+MeshEntityInterator class:
+- Introduced default constructor 
+- added comparison operator
+- added set_end function to create iterators which points past the end.
+- synchronize immediately internal setting of position with entity index
+  (otherwise ugly bugs could occur by using the comparison operator)

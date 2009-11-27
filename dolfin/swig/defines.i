@@ -46,6 +46,15 @@ bool has_gts()
 #endif
 }
 
+bool has_cgal()
+{
+#ifdef HAS_CGAL
+  return true;
+#else
+  return false;
+#endif
+}
+
 bool has_umfpack()
 {
 #ifdef HAS_UMFPACK

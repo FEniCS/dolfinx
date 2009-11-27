@@ -6,27 +6,31 @@
 // Modified by Garth N. Wells, 2007.
 // Modified by Niclas Jansson, 2008.
 // Modified by Kristoffer Selim, 2008.
+// Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-08
-// Last changed: 2009-11-11
+// Last changed: 2009-11-16
 
 #ifndef __MESH_H
 #define __MESH_H
 
 #include <string>
+#include <set>
+
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/ale/ALEType.h>
 #include "MeshTopology.h"
 #include "MeshGeometry.h"
 #include "MeshData.h"
+#include "IntersectionOperator.h"
 #include "CellType.h"
 
 namespace dolfin
 {
-
+   
   template <class T> class MeshFunction;
-  class IntersectionDetector;
+  class IntersectionOperator;
   class Function;
   class BoundaryMesh;
   class XMLMesh;
@@ -119,6 +123,12 @@ namespace dolfin
     /// Return mesh geometry (const version)
     inline const MeshGeometry& geometry() const { return _geometry; }
 
+    ///Return intersectionoperator (const version);
+    const IntersectionOperator& intersection_operator() const;
+
+    ///Return intersectionoperator (non-const version);
+    IntersectionOperator& intersection_operator();
+
     /// Return mesh data (non-const version)
     MeshData& data() { return _data; }
 
@@ -173,20 +183,24 @@ namespace dolfin
     /// Smooth mesh using Lagrangian mesh smoothing
     void smooth(uint num_smoothings=1);
 
-    /// Compute cells intersecting point
-    void intersection(const Point& p, std::vector<uint>& cells, bool fixed_mesh=true);
+    ///Compute all id of all cells which are intersects by a \em point.
+    ///\param[out] ids_result The ids of the intersected entities are saved in a set for efficienty
+    ///reasons, to avoid to sort out duplicates later on.
+    void all_intersected_entities(const Point & point, uint_set & ids_result) const;
 
-    /// Compute cells overlapping line defined by points
-    void intersection(const Point& p1, const Point& p2, std::vector<uint>& cells, bool fixed_mesh=true);
+    ///Compute all id of all cells which are intersects any point in \em points.
+    ///\param[out] ids_result The ids of the intersected entities are saved in a set for efficienty
+    ///reasons, to avoid to sort out duplicates later on.
+    void all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const;
 
-    /// Compute cells overlapping cell
-    void intersection(Cell& cell, std::vector<uint>& cells, bool fixed_mesh=true);
+    ///Compute all id of all cells which are intersects by the given mesh \em another_mesh;
+    ///\param[out] ids_result The ids of the intersected entities are saved in a set for efficienty
+    ///reasons, to avoid to sort out duplicates later on.
+    void all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const;
 
-    /// Compute intersection with curve defined by points
-    void intersection(std::vector<Point>& points, std::vector<uint>& intersection, bool fixed_mesh=true);
-
-    /// Compute intersection with mesh
-    void intersection(Mesh& mesh, std::vector<uint>& cells, bool fixed_mesh=true);
+    ///Computes only the first id  of the entity, which contains the point. Returns -1 if no cell is intersected. 
+    ///@internal @remark This makes the function evaluation significantly faster.
+    int any_intersected_entity(const Point & point) const;
 
     /// Compute minimum cell diameter
     double hmin() const;
@@ -221,13 +235,12 @@ namespace dolfin
     CellType* _cell_type;
 
     // Intersection detector
-    IntersectionDetector* detector;
+    IntersectionOperator _intersection_operator;
 
     // True if mesh has been ordered
     mutable bool _ordered;
 
   };
-
 }
 
 #endif

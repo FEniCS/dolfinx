@@ -1,8 +1,10 @@
 // Copyright (C) 2006-2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Andre Massing, 2009.
+//
 // First added:  2006-05-09
-// Last changed: 2009-09-08
+// Last changed: 2009-11-22
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -11,6 +13,8 @@
 #include <dolfin/log/dolfin_log.h>
 #include "Mesh.h"
 #include "MeshEntity.h"
+
+#include <iostream>
 
 namespace dolfin
 {
@@ -38,10 +42,18 @@ namespace dolfin
   /// In addition to the general iterator, a set of specific named iterators
   /// are provided for entities of type Vertex, Edge, Face, Facet and Cell.
   /// These iterators are defined along with their respective classes.
+  ///
+  ///@internal
+  ///@todo Change maybe into a bidirectional or even random access iterator,
+  ///since both will make perfect sense. 
 
   class MeshEntityIterator
   {
   public:
+    ///Default constructor
+    MeshEntityIterator() 
+      : _pos(0), pos_end(0), index(0)
+    {}
 
     /// Create iterator for mesh entities over given topological dimension
     MeshEntityIterator(const Mesh& mesh, uint dim)
@@ -79,8 +91,30 @@ namespace dolfin
     /// Destructor
     virtual ~MeshEntityIterator() {}
 
-    /// Step to next mesh entity (prefix increment)
+    /// Copy Constructor
+    MeshEntityIterator(const MeshEntityIterator& it) :  entity(it.entity), _pos(it._pos), pos_end(it.pos_end), index(it.index) {}; 
+
+    ///Step to next mesh entity (prefix increment)
     MeshEntityIterator& operator++() { ++_pos; return *this; }
+
+    ///Comparison operator.
+    ///@internal
+    ///Uncommenting following  results into the warning message:
+    //dolfin/mesh/MeshEntityIterator.h:94: Warning|508| Declaration of 'operator ==' shadows declaration accessible via operator->(),
+    //Use const_cast to use operator* inside comparison, which automatically
+    //updates the entity index corresponding to pos *before* comparison (since
+    //update of entity delays until request for entity)
+    bool operator==(const MeshEntityIterator & it) const {return (
+	(const_cast<MeshEntityIterator *>(this))->operator*()  == (const_cast<MeshEntityIterator *>(&it))->operator*()
+	&& _pos == it._pos && index == it.index);}
+
+    bool operator!=(const MeshEntityIterator & it) const { return !operator==(it); }
+
+    /// Dereference operator
+    inline MeshEntity& operator*() { return *operator->(); }
+
+    /// Member access operator
+    inline MeshEntity* operator->() { entity._index = (index ? index[_pos] : _pos); return &entity; }
 
     /// Return current position
     inline uint pos() const { return _pos; }
@@ -88,11 +122,12 @@ namespace dolfin
     /// Check if iterator has reached the end
     inline bool end() const { return _pos >= pos_end; }
 
-    /// Dereference operator
-    inline MeshEntity& operator*() { return *operator->(); }
+    ///Provide a safeguard iterator pointing beyond the end of an iteration
+    ///process, either iterating over the mesh /or incident entities. Added to
+    ///be bit more like STL iteratoren, since many algorithms rely on a kind of
+    ///beyond iterator.
+    MeshEntityIterator end_iterator() {MeshEntityIterator sg(*this); sg.set_end(); return sg;}
 
-    /// Member access operator
-    inline MeshEntity* operator->() { entity._index = (index ? index[_pos] : _pos); return &entity; }
 
     // Note: Not a subclass of Variable for efficiency!
     // Commented out to avoid warning about shadowing str() for MeshEntity
@@ -111,8 +146,11 @@ namespace dolfin
     /// c1 looks to be an iterator over the entities around c0 when it is in
     /// fact a copy of c0.
 
-    MeshEntityIterator(const MeshEntityIterator& entity) :  entity(entity.entity.mesh(), 0, 0), _pos(0)
-    { error("Illegal use of mesh entity iterator."); }
+//    MeshEntityIterator(const MeshEntityIterator& entity) :  entity(entity.entity.mesh(), 0, 0), _pos(0)
+//    { error("Illegal use of mesh entity iterator."); }
+    
+    ///Set pos to end position. To create a kind of mesh.end() iterator.
+     void set_end() { _pos = pos_end; }
 
     // Mesh entity
     MeshEntity entity;

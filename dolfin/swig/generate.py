@@ -16,7 +16,8 @@ import re
 
 # List of headers to exclude (add more here)
 excludes = ["plot.h", "ParameterSystem.h", "ParameterList.h", \
-            "ConvectionMatrix.h", "MassMatrix.h", "StiffnessMatrix.h", "LoadVector.h"]
+            "ConvectionMatrix.h", "MassMatrix.h", "StiffnessMatrix.h", "LoadVector.h", \
+            "IntersectionOperatorImplementation.h" ]
 
 # Name of SWIG interface file to be generated
 interface_file = "kernel_modules.i"

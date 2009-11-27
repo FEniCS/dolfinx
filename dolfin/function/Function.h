@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-11-09
+// Last changed: 2009-11-12
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -32,7 +32,6 @@ namespace dolfin
   class FunctionSpace;
   class GenericVector;
   class Data;
-  class IntersectionDetector;
 
   /// This class represents a function u_h in a finite element
   /// function space V_h, given by
@@ -176,9 +175,6 @@ namespace dolfin
     mutable boost::shared_ptr<GenericVector> _off_process_vector;
     mutable std::map<uint, uint> global_to_local;
     mutable std::vector<uint> _off_process_dofs;
-
-    // Intersection detector, used for evaluation at arbitrary points
-    mutable boost::scoped_ptr<IntersectionDetector> intersection_detector;
 
     // Scratch space, used for storing temporary local data
     class LocalScratch

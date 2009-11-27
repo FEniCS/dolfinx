@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes, 2008.
 //
 // First added:  2003-11-28
-// Last changed: 2009-11-10
+// Last changed: 2009-11-16
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -19,7 +19,7 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/UFC.h>
-#include <dolfin/mesh/IntersectionDetector.h>
+#include <dolfin/mesh/IntersectionOperator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/adaptivity/AdaptiveObjects.h>
 #include "Data.h"
@@ -283,26 +283,14 @@ void Function::eval(double* values, const std::vector<double>& x) const
 
   not_working_in_parallel("Function::eval at arbitray points.");
 
-  // Initialize intersection detector if not done before
-  if (!intersection_detector)
-  {
-    dolfin_debug("Initializing intersection detector");
-    intersection_detector.reset(new IntersectionDetector(_function_space->mesh()));
-  }
-
   // Find the cell that contains x
   const double* _x = &x[0];
   Point point(_function_space->mesh().geometry().dim(), _x);
-  std::vector<uint> cells;
-  intersection_detector->intersection(point, cells);
-  if (cells.size() < 1)
-  {
-    error("Unable to evaluate function at x = %s, not inside domain.",
-          to_string(_x, geometric_dimension()).c_str());
-  }
+  int id = _function_space->mesh().any_intersected_entity(point);
+  if (id == -1)
+    error("Unable to evaluate function at given point (not inside domain).");
 
-  // Create cell
-  Cell cell(_function_space->mesh(), cells[0]);
+  Cell cell(_function_space->mesh(), id);
   UFCCell ufc_cell(cell);
 
   // Evaluate function

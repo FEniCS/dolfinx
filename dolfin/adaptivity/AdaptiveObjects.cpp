@@ -6,7 +6,7 @@
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/mesh/IntersectionDetector.h>
+#include <dolfin/mesh/IntersectionOperator.h>
 #include <dolfin/mesh/UniformMeshRefinement.h>
 #include <dolfin/mesh/LocalMeshRefinement.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -155,6 +155,7 @@ void AdaptiveObjects::refine(Mesh* mesh, MeshFunction<bool>* cell_markers)
 
   // Copy data from new mesh to old
   *mesh = new_mesh;
+  
 }
 //-----------------------------------------------------------------------------
 void AdaptiveObjects::refine(FunctionSpace* function_space,
@@ -200,9 +201,6 @@ void AdaptiveObjects::refine(Function* function,
 
   // Copy vector from new function to old
   *function->_vector = *new_function._vector;
-
-  // FIXME: This won't be needed later with new CGAL interface
-  function->intersection_detector.reset();
 
   // FIXME: Might need to touch/update other data for function space here!
 }

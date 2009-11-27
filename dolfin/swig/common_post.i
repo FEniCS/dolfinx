@@ -7,6 +7,8 @@
 //%template(STLVectorString) std::vector<std::string>;
 //%template(STLPairUInt) std::pair<dolfin::uint,dolfin::uint>;
 
+/*%template(BOOSTUnorderSetUInt) boost::unordered_set<dolfin::uint>;*/
+
 %extend dolfin::Variable
 {
   std::string __str__() const

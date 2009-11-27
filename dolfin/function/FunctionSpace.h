@@ -28,7 +28,6 @@ namespace dolfin
   class DofMap;
   class Function;
   class GenericFunction;
-  class IntersectionDetector;
   class GenericVector;
   template <class T> class MeshFunction;
 

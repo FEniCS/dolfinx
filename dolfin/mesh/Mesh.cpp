@@ -5,11 +5,13 @@
 // Modified by Garth N. Wells 2007.
 // Modified by Niclas Jansson 2008.
 // Modified by Kristoffer Selim 2008.
+// Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-09
-// Last changed: 2009-11-11
+// Last changed: 2009-11-16
 
 #include <sstream>
+#include <set>
 
 #include <dolfin/log/log.h>
 #include <dolfin/io/File.h>
@@ -22,7 +24,7 @@
 #include "UniformMeshRefinement.h"
 #include "LocalMeshRefinement.h"
 #include "LocalMeshCoarsening.h"
-#include "IntersectionDetector.h"
+#include "IntersectionOperator.h"
 #include "TopologyComputation.h"
 #include "MeshSmoothing.h"
 #include "MeshOrdering.h"
@@ -39,21 +41,21 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Mesh::Mesh()
   : Variable("mesh", "DOLFIN mesh"),
-    _data(*this), _cell_type(0), detector(0), _ordered(false)
+    _data(*this), _cell_type(0), _intersection_operator(*this), _ordered(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
   : Variable("mesh", "DOLFIN mesh"),
-    _data(*this), _cell_type(0), detector(0), _ordered(false)
+    _data(*this), _cell_type(0), _intersection_operator(*this), _ordered(false)
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(std::string filename)
   : Variable("mesh", "DOLFIN mesh"),
-    _data(*this), _cell_type(0), detector(0), _ordered(false)
+    _data(*this), _cell_type(0), _intersection_operator(*this), _ordered(false)
 {
   if (MPI::num_processes() > 1)
   {
@@ -94,7 +96,7 @@ const Mesh& Mesh::operator=(const Mesh& mesh)
 
   _ordered = mesh._ordered;
 
-  return *this;
+   return *this;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Mesh::init(uint dim) const
@@ -166,8 +168,7 @@ void Mesh::clear()
   _data.clear();
   delete _cell_type;
   _cell_type = 0;
-  delete detector;
-  detector = 0;
+  _intersection_operator.clear();
   _ordered = false;
 }
 //-----------------------------------------------------------------------------
@@ -247,84 +248,34 @@ void Mesh::smooth(uint num_smoothings)
     MeshSmoothing::smooth(*this);
 }
 //-----------------------------------------------------------------------------
-void Mesh::intersection(const Point& p, std::vector<uint>& cells, bool fixed_mesh)
+void Mesh::all_intersected_entities(const Point & point, uint_set & ids_result) const
 {
-  // Don't reuse detector if mesh has moved
-  if (!fixed_mesh)
-  {
-    delete detector;
-    detector = 0;
-  }
-
-  // Create detector if necessary
-  if (!detector)
-    detector = new IntersectionDetector(*this);
-
-  detector->intersection(p, cells);
+  _intersection_operator.all_intersected_entities(point, ids_result); 
+} 
+//-----------------------------------------------------------------------------
+void Mesh::all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const
+{
+  _intersection_operator.all_intersected_entities(points, ids_result);
+} 
+//-----------------------------------------------------------------------------
+void Mesh::all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const
+{
+  _intersection_operator.all_intersected_entities(another_mesh, ids_result);
+} 
+//-----------------------------------------------------------------------------
+int Mesh::any_intersected_entity(const Point & point) const
+{
+  return _intersection_operator.any_intersected_entity(point);
 }
 //-----------------------------------------------------------------------------
-void Mesh::intersection(const Point& p1, const Point& p2, std::vector<uint>& cells, bool fixed_mesh)
+IntersectionOperator& Mesh::intersection_operator()
 {
-  // Don't reuse detector if the mesh has moved
-  if (!fixed_mesh)
-  {
-    delete detector;
-    detector = 0;
-  }
-
-  // Create detector if necessary
-  if (!detector)
-    detector = new IntersectionDetector(*this);
-
-  detector->intersection(p1, p2, cells);
+  return _intersection_operator;
 }
 //-----------------------------------------------------------------------------
-void Mesh::intersection(Cell& cell, std::vector<uint>& cells, bool fixed_mesh)
+const IntersectionOperator& Mesh::intersection_operator() const
 {
-  // Don't reuse detector if the has has moved
-  if (!fixed_mesh)
-  {
-    delete detector;
-    detector = 0;
-  }
-
-  // Create detector if necessary
-  if (!detector)
-    detector = new IntersectionDetector(*this);
-
-  detector->intersection(cell, cells);
-}
-//-----------------------------------------------------------------------------
-void Mesh::intersection(std::vector<Point>& points, std::vector<uint>& intersection, bool fixed_mesh)
-{
-  // Don't reuse detector if the mesh has moved
-  if (!fixed_mesh)
-  {
-    delete detector;
-    detector = 0;
-  }
-
-  // Create detector if necessary
-  if (!detector)
-    detector = new IntersectionDetector(*this);
-
-  detector->intersection(points, intersection);
-}
-//-----------------------------------------------------------------------------
-void Mesh::intersection(Mesh& mesh, std::vector<uint>& intersection, bool fixed_mesh)
-{
-  // Don't reuse detector if the mesh has moved
-  if (!fixed_mesh)
-  {
-    delete detector;
-    detector = 0;
-  }
-
-  // Create detector if necessary
-  if (!detector)
-    detector = new IntersectionDetector(*this);
-
-  detector->intersection(mesh, intersection);
+  return _intersection_operator;
 }
 //-----------------------------------------------------------------------------
 double Mesh::hmin() const

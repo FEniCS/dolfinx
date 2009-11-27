@@ -2,21 +2,27 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2006.
+// Modified by Andre Massing, 2009.
 //
 // First added:  2006-06-12
-// Last changed: 2009-09-08
+// Last changed: 2009-11-11
 
 #ifndef __POINT_H
 #define __POINT_H
 
 #include <iostream>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
+
+#ifdef HAS_CGAL
+//  #include "CGAL_includes.h"
+  #include <CGAL/Bbox_3.h>
+  #include <CGAL/Point_3.h>
+//  #include <CGAL/Simple_cartesian.h> 
+#endif
 
 namespace dolfin
 {
-
   /// A Point represents a point in R^3 with coordinates x, y, z, or,
   /// alternatively, a vector in R^3, supporting standard operations
   /// like the norm, distances, scalar and vector products etc.
@@ -41,12 +47,10 @@ namespace dolfin
     ~Point() {};
 
     /// Return address of coordinate in direction i
-    inline double& operator[] (uint i) 
-    { assert(i < 3); return _x[i]; }
+    inline double& operator[] (uint i) { assert(i < 3); return _x[i]; }
 
     /// Return coordinate in direction i
-    inline double operator[] (uint i) const 
-    { assert(i < 3); return _x[i]; }
+    inline double operator[] (uint i) const { assert(i < 3); return _x[i]; }
 
     /// Return x-coordinate
     inline double x() const { return _x[0]; }
@@ -58,44 +62,44 @@ namespace dolfin
     inline double z() const { return _x[2]; }
 
     /// Return coordinate array
-    inline const double* coordinates() const 
-    { return _x; }
+    inline const double* coordinates() const { return _x; }
 
     /// Compute sum of two points
-    Point operator+ (const Point& p) const 
-    { Point q(_x[0] + p._x[0], _x[1] + p._x[1], _x[2] + p._x[2]); return q; }
+    Point operator+ (const Point& p) const { Point q(_x[0] + p._x[0], _x[1] + p._x[1], _x[2] + p._x[2]); return q; }
 
     /// Compute difference of two points
-    Point operator- (const Point& p) const 
-    { Point q(_x[0] - p._x[0], _x[1] - p._x[1], _x[2] - p._x[2]); return q; }
+    Point operator- (const Point& p) const { Point q(_x[0] - p._x[0], _x[1] - p._x[1], _x[2] - p._x[2]); return q; }
 
     /// Add given point
-    const Point& operator+= (const Point& p) 
-    { _x[0] += p._x[0]; _x[1] += p._x[1]; _x[2] += p._x[2]; return *this; }
+    const Point& operator+= (const Point& p) { _x[0] += p._x[0]; _x[1] += p._x[1]; _x[2] += p._x[2]; return *this; }
 
     /// Subtract given point
-    const Point& operator-= (const Point& p) 
-    { _x[0] -= p._x[0]; _x[1] -= p._x[1]; _x[2] -= p._x[2]; return *this; }
+    const Point& operator-= (const Point& p) { _x[0] -= p._x[0]; _x[1] -= p._x[1]; _x[2] -= p._x[2]; return *this; }
 
     /// Multiplication with scalar
-    Point operator* (double a) const 
-    { Point p(a*_x[0], a*_x[1], a*_x[2]); return p; }
+    Point operator* (double a) const { Point p(a*_x[0], a*_x[1], a*_x[2]); return p; }
 
     /// Incremental multiplication with scalar
-    const Point& operator*= (double a) 
-    { _x[0] *= a; _x[1] *= a; _x[2] *= a; return *this; }
+    const Point& operator*= (double a) { _x[0] *= a; _x[1] *= a; _x[2] *= a; return *this; }
 
     /// Division by scalar
-    Point operator/ (double a) const 
-    { Point p(_x[0]/a, _x[1]/a, _x[2]/a); return p; }
+    Point operator/ (double a) const { Point p(_x[0]/a, _x[1]/a, _x[2]/a); return p; }
 
     /// Incremental division by scalar
-    const Point& operator/= (double a) 
-    { _x[0] /= a; _x[1] /= a; _x[2] /= a; return *this; }
+    const Point& operator/= (double a) { _x[0] /= a; _x[1] /= a; _x[2] /= a; return *this; }
 
     /// Assignment operator
-    const Point& operator= (const Point& p) 
-    { _x[0] = p._x[0]; _x[1] = p._x[1]; _x[2] = p._x[2]; return *this; }
+    const Point& operator= (const Point& p) { _x[0] = p._x[0]; _x[1] = p._x[1]; _x[2] = p._x[2]; return *this; }
+    
+#ifdef HAS_CGAL
+    ///Conversion operator to appropriate CGAL Point_3 class.
+    template <typename Kernel>
+    operator CGAL::Point_3<Kernel>() const { return CGAL::Point_3<Kernel>(_x[0],_x[1],_x[2]); }
+
+    ///Provides a CGAL bounding box, using conversion operator.
+    template <typename Kernel>
+    CGAL::Bbox_3  bbox() {return CGAL::Point_3<Kernel>(*this).bbox();}
+#endif
 
     /// Compute distance to given point
     double distance(const Point& p) const;

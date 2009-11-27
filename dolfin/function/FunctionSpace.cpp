@@ -18,8 +18,6 @@
 #include <dolfin/fem/UFC.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/IntersectionDetector.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshPartitioning.h>
