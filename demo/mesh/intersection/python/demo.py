@@ -34,7 +34,7 @@ while theta < 2*DOLFIN_PI:
 
     # Compute intersection with boundary of square
     boundary = BoundaryMesh(omega1)
-    cells = omega0.intersection(boundary, False)
+    cells = omega0.all_intersected_entities(boundary)
 
     # Mark intersected values
     intersection.values()[:] = 0
@@ -49,13 +49,15 @@ while theta < 2*DOLFIN_PI:
     else:
         plot(intersection)
 
+#    interactive()
     # Rotate circle around (0.5, 0.5)
     xr = x[:, 0] - 0.5
     yr = x[:, 1] - 0.5
     x[:,0] = 0.5 + (cos(dtheta)*xr - sin(dtheta)*yr)
     x[:,1] = 0.5 + (sin(dtheta)*xr + cos(dtheta)*yr)
+    omega0.intersection_operator().clear()
 
     theta += dtheta
 
 # Hold plot
-interactive()
+#interactive()
