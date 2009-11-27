@@ -1,0 +1,40 @@
+# Local Bazaar files
+RE:\.bzr
+
+# Temporaries
+*~
+
+# Binaries
+*.o
+*.Plo
+*.Po
+*.lo
+*.la
+*.a
+*.os
+*.pyc
+*.so
+*.pc
+*.pyd
+*.def
+*.dll
+*.exe
+*.dylib
+dolfin/libdolfin.so*
+
+# SWIG generated files
+RE:dolfin/swig/.*\.(py|cc|h)
+
+# Configuration files
+dolfin.conf
+.sconf_temp
+scons/.sconsign.dblite
+scons/*.cache
+scons/*.log
+RE:local.*
+RE:scons/pkgconfig.*
+
+# Demos and tests
+RE:demo/.*/(cpp|python)/.*\.(pvd|vtu|pvtu|xml)
+RE:demo/.*/cpp/demo
+RE:test/.*/cpp/test

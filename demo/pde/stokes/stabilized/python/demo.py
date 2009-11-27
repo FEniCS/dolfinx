@@ -5,12 +5,13 @@
 # src/demo/mesh/subdomains.
 #
 # Original implementation: ../cpp/main.cpp by Anders Logg
-#
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-15 -- 2009-10-07"
+__date__ = "2007-11-15 -- 2009-11-26"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
+
+# Modified by Anders Logg, 2009.
 
 from dolfin import *
 
@@ -24,9 +25,9 @@ vector = VectorFunctionSpace(mesh, "CG", 1)
 system = vector + scalar
 
 # Create functions for boundary conditions
-noslip = Constant(mesh, (0, 0))
-inflow = Expression(("-sin(x[1]*pi)", "0"), V = vector)
-zero   = Constant(mesh, 0.0)
+noslip = Constant((0, 0))
+inflow = Expression(("-sin(x[1]*pi)", "0"))
+zero   = Constant(0)
 
 # No-slip boundary condition for velocity
 bc0 = DirichletBC(system.sub(0), noslip, sub_domains, 0)
@@ -44,7 +45,7 @@ bcs = [bc0, bc1, bc2]
 (v, q) = TestFunctions(system)
 (u, p) = TrialFunctions(system)
 
-f = Constant(mesh, (0, 0))
+f = Constant((0, 0))
 h = CellSize(mesh)
 
 beta  = 0.2
