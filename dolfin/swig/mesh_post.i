@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 // 
 // First added:  2006-09-20
-// Last changed: 2009-10-09
+// Last changed: 2009-11-25
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (post)
@@ -24,17 +24,18 @@
 %pythoncode
 %{
 def __iter__(self):
-  self.first = True
-  return self
+    self.first = True
+    return self
 
 def next(self):
-  self.first = self.first if hasattr(self,"first") else True
-  if not self.first:
-    self._increment()
-  if self.end():
-    raise StopIteration
-  self.first = False
-  return self._dereference()
+    self.first = self.first if hasattr(self,"first") else True
+    if not self.first:
+        self._increment()
+    if self.end():
+        self._decrease()
+        raise StopIteration
+    self.first = False
+    return self._dereference()
 %}
 }
 

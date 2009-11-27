@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-09
-// Last changed: 2009-09-08
+// Last changed: 2009-11-25
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -81,6 +81,9 @@ namespace dolfin
 
     /// Step to next mesh entity (prefix increment)
     MeshEntityIterator& operator++() { ++_pos; return *this; }
+
+    /// Step to the previous mesh entity (prefix decrease)
+    MeshEntityIterator& operator--() { --_pos; return *this; }
 
     /// Return current position
     inline uint pos() const { return _pos; }
