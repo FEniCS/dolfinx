@@ -23,7 +23,7 @@ x = (0.31, 0.32, 0.33)
 # A user-defined function
 Vs = FunctionSpace(mesh, "CG", 2)
 Vv = VectorFunctionSpace(mesh, "CG", 2)
-fs = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", V = Vs)
+fs = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
 fv = Expression(("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
                "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]","2"), element = Vv.ufl_element())
 
