@@ -20,7 +20,7 @@ class ErrorNorm(unittest.TestCase):
         u_h.vector().zero()
 
         # Exact solution
-        u = Expression("x[0]*x[0]", V=V)
+        u = Expression("x[0]*x[0]", element=V.ufl_element())
 
         # Norm of error
         e = errornorm(u_h, u)
