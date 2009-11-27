@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 // 
 // First added:  2006-09-20
-// Last changed: 2009-10-09
+// Last changed: 2009-11-25
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (pre)
@@ -109,9 +109,10 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
 %ignore dolfin::MeshConnectivity::operator=;
 
 //-----------------------------------------------------------------------------
-// Map increment operator and dereference operators for iterators
+// Map increment, decrease and dereference operators for iterators
 //-----------------------------------------------------------------------------
 %rename(_increment) dolfin::MeshEntityIterator::operator++;
+%rename(_decrease) dolfin::MeshEntityIterator::operator--;
 %rename(_dereference) dolfin::MeshEntityIterator::operator*;
 
 //-----------------------------------------------------------------------------
