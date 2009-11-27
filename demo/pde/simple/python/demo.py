@@ -21,7 +21,7 @@ mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Expression("sin(x[0])*sin(x[1])", V = V)
+f = Expression("sin(x[0])*sin(x[1])")
 a = (grad(v), grad(u)) + (v, u)
 L = (v, f)
 

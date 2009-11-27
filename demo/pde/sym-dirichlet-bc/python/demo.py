@@ -37,14 +37,14 @@ class DirichletBoundary(SubDomain):
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Source(V = V)
-g = Flux(V = V)
+f = Source(V)
+g = Flux(V)
 
 a = inner(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds
 
 # Define boundary condition
-u0 = Constant(mesh, 0.0)
+u0 = Constant(0.0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
 # Solve PDE and plot solution

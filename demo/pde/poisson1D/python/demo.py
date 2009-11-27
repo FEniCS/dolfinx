@@ -31,14 +31,14 @@ class DirichletBoundary(SubDomain):
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Expression("9.0*pi*pi*sin(3.0*pi*x[0])", V = V)
-g = Expression("3.0*pi*cos(3.0*pi*x[0])", V = V)
+f = Expression("9.0*pi*pi*sin(3.0*pi*x[0])")
+g = Expression("3.0*pi*cos(3.0*pi*x[0])")
 
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds
 
 # Define boundary condition
-u0 = Constant(mesh, 0.0)
+u0 = Constant(0.0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
 # Solve PDE and plot solution

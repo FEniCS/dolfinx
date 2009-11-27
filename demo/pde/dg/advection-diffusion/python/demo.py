@@ -31,13 +31,13 @@ v   = TestFunction(V_dg)
 phi = TrialFunction(V_dg)
 
 # Diffusivity
-kappa = Constant(mesh, 0.0)
+kappa = Constant(0.0)
 
 # Source term
-f = Constant(mesh, 0.0)
+f = Constant(0.0)
 
 # Penalty term
-alpha = Constant(mesh, 5.0)
+alpha = Constant(5.0)
 
 # Mesh-related functions
 n = FacetNormal(mesh)
@@ -62,7 +62,7 @@ a = a_int + a_fac + a_vel
 L = v*f*dx
 
 # Set up boundary condition (apply strong BCs)
-g = Expression("sin(pi*5.0*x[1])", V = V_dg)
+g = Expression("sin(pi*5.0*x[1])")
 bc = DirichletBC(V_dg, g, DirichletBoundary(), "geometric")
 
 # Solution function
