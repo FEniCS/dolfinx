@@ -9,12 +9,11 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 
 # Create mesh and define function spaces
-mesh = UnitSquare(5, 5)
+mesh = UnitSquare(64, 64)
 P1 = FunctionSpace(mesh, "CG", 1)
-P2 = FunctionSpace(mesh, "CG", 2)
 
 # Define function
-v = Expression("sin(10.0*x[0])*sin(10.0*x[1])", V = P2)
+v = Expression("sin(10.0*x[0])*sin(10.0*x[1])", degree=2)
 
 # Compute projection (L2-projection)
 Pv = project(v, P1)

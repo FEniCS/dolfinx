@@ -20,10 +20,10 @@ class Eval(unittest.TestCase):
                def eval(self,values,x):
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
           
-          f0 = F0(V = V)
-          f1 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",V = V)
+          f0 = F0(V)
+          f1 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
           f2,f3 = Expressions("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
-                              "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]",V=V)
+                              "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
           
           x = array([0.31, 0.32, 0.33])
           u00 = zeros(1); u01 = zeros(1)
@@ -75,10 +75,10 @@ class Eval(unittest.TestCase):
                def eval(self, values, x):
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
           
-          f0 = F0(V = V)
-          f1 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", V = V)
+          f0 = F0(V)
+          f1 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
           f2, f3 = Expressions("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
-                               "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", V = V)
+                               "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
           
           
           for f in [f0,f1,f2,f3]:
@@ -96,12 +96,12 @@ class Eval(unittest.TestCase):
           
 class Instantiation(unittest.TestCase):
      def testSameBases(self):
-          f0 = Expression("2", V = V)
+          f0 = Expression("2", degree=2)
 
           class MyConstant(Expression):
                cpparg = "2"
           
-          f1 = MyConstant(V = V)
+          f1 = MyConstant(V)
 
           #self.assertNotEqual(type(f0).__bases__,type(f1).__bases__)
 
