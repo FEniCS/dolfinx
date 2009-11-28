@@ -80,12 +80,11 @@ class Eval(unittest.TestCase):
           f2, f3 = Expressions("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
                                "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
 
-
           for f in [f0,f1,f2,f3]:
                self.assertRaises(TypeError, f, "s")
                self.assertRaises(TypeError, f, [])
                #self.assertRaises(TypeError, f, zeros(2))
-               self.assertRaises(TypeError, f, 0.5, 0.5, 0.5,values = zeros(3,'i'))
+               self.assertRaises(TypeError, f, 0.5, 0.5, 0.5, values = zeros(3,'i'))
                #self.assertRaises(TypeError, f, zeros(4))
                self.assertRaises(ValueError,f, [0.3, 0.2, []])
                self.assertRaises(TypeError, f, 0.3, 0.2, {})
@@ -109,7 +108,7 @@ class Instantiation(unittest.TestCase):
 
           f1 = MyConstant(V)
 
-          #self.assertNotEqual(type(f0).__bases__,type(f1).__bases__)
+          self.assertNotEqual(type(f0).__bases__,type(f1).__bases__)
 
           #f2, f3 = Expressions("2", V, "3", V)
           f4, f5 = Expressions("2", "3", V = V)
