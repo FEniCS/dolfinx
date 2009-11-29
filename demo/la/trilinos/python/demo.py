@@ -37,14 +37,14 @@ class DirichletBoundary(SubDomain):
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Expression("500.0 * exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", V= V)
+f = Expression("500.0 * exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx
 
 
 # Define boundary condition
-u0 = Constant(mesh, 0.0)
+u0 = Constant(0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
 # Create linear system
