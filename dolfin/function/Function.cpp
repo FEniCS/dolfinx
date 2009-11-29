@@ -3,9 +3,10 @@
 //
 // Modified by Garth N. Wells, 2005-2009.
 // Modified by Martin Sandve Alnes, 2008.
+// Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2009-11-16
+// Last changed: 2009-11-29
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -275,10 +276,8 @@ dolfin::uint Function::geometric_dimension() const
   return _function_space->mesh().geometry().dim();
 }
 //-----------------------------------------------------------------------------
-void Function::eval(double* values, const std::vector<double>& x) const
+void Function::eval(std::vector<double>& values, const std::vector<double>& x) const
 {
-  assert(values);
-  //assert(x);
   assert(_function_space);
 
   not_working_in_parallel("Function::eval at arbitray points.");
@@ -294,7 +293,7 @@ void Function::eval(double* values, const std::vector<double>& x) const
   UFCCell ufc_cell(cell);
 
   // Evaluate function
-  eval(values, x, cell, ufc_cell);
+  eval(&values[0], x, cell, ufc_cell);
 }
 //-----------------------------------------------------------------------------
 void Function::eval(double* values,
@@ -338,9 +337,8 @@ dolfin::uint Function::value_dimension(uint i) const
   return _function_space->element().value_dimension(i);
 }
 //-----------------------------------------------------------------------------
-void Function::eval(double* values, const Data& data) const
+void Function::eval(std::vector<double>& values, const Data& data) const
 {
-  assert(values);
   assert(_function_space);
 
   // Check if UFC cell if available and cell matches
@@ -348,7 +346,7 @@ void Function::eval(double* values, const Data& data) const
   {
     // Efficient evaluation on given cell
     assert(data._ufc_cell);
-    eval(values, data.x, *data._dolfin_cell, *data._ufc_cell);
+    eval(&values[0], data.x, *data._dolfin_cell, *data._ufc_cell);
   }
   else
   {
@@ -385,10 +383,9 @@ void Function::restrict(double* w,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::compute_vertex_values(double* vertex_values,
+void Function::compute_vertex_values(std::vector<double>& vertex_values,
                                      const Mesh& mesh) const
 {
-  assert(vertex_values);
   assert(&mesh == &_function_space->mesh());
 
   // Gather off-process dofs

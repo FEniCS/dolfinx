@@ -58,7 +58,7 @@ namespace dolfin
     virtual uint value_dimension(uint i) const;
 
     /// Evaluate function for given data
-    virtual void eval(double* values, const Data& data) const;
+    virtual void eval(std::vector<double>& values, const Data& data) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
@@ -68,13 +68,13 @@ namespace dolfin
                           int local_facet) const;
 
     /// Compute values at all mesh vertices
-    virtual void compute_vertex_values(double* vertex_values,
+    virtual void compute_vertex_values(std::vector<double>& vertex_values,
                                        const Mesh& mesh) const;
 
     //--- User-supplied callback for expression evaluation ---
 
     /// Evaluate expression, must be overloaded by user (simple version)
-    virtual void eval(double* values, const std::vector<double>& x) const;
+    virtual void eval(std::vector<double>& values, const std::vector<double>& x) const;
 
   protected:
 

@@ -19,7 +19,7 @@ public:
   Pressure(const double& t, const double& dt, bool old)
     : Expression(2), t(t), dt(dt), old(old) {}
 
-  void eval(double* values, const Data& data) const
+  void eval(std::vector<double>& values, const Data& data) const
   {
     double time = t;
     if(old && time > 0.0)

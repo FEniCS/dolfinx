@@ -26,9 +26,7 @@ int main()
   {
   public:
 
-    MyFunction() : Expression() {}
-
-    void eval(double* values, const std::vector<double>& x) const
+    void eval(std::vector<double>& values, const std::vector<double>& x) const
     {
       values[0] = sin(x[0]) + cos(x[1]);
     }

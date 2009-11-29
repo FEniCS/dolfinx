@@ -4,9 +4,10 @@
 // Modified by Garth N. Wells, 2005-2009.
 // Modified by Kristian B. Oelgaard, 2007.
 // Modified by Martin Sandve Alnes, 2008.
+// Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2009-11-12
+// Last changed: 2009-11-29
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -109,7 +110,7 @@ namespace dolfin
     uint geometric_dimension() const;
 
     /// Evaluate function for given coordinate
-    void eval(double* values, const std::vector<double>& x) const;
+    void eval(std::vector<double>& values, const std::vector<double>& x) const;
 
     /// Evaluate function for given coordinate in given cell
     void eval(double* values,
@@ -129,7 +130,7 @@ namespace dolfin
     virtual uint value_dimension(uint i) const;
 
     /// Evaluate function for given data
-    virtual void eval(double* values, const Data& data) const;
+    virtual void eval(std::vector<double>& values, const Data& data) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
@@ -139,7 +140,7 @@ namespace dolfin
                           int local_facet) const;
 
     /// Compute values at all mesh vertices
-    virtual void compute_vertex_values(double* vertex_values,
+    virtual void compute_vertex_values(std::vector<double>& vertex_values,
                                        const Mesh& mesh) const;
 
     /// Collect off-process coefficients to prepare for interpolation

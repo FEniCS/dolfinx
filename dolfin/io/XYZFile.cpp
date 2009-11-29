@@ -64,7 +64,7 @@ void XYZFile::ResultsWrite(const Function& u) const
 
   // Allocate memory for function values at vertices
   const uint size = mesh.num_vertices()*dim;
-  double* values = new double[size];
+  std::vector<double> values(size);
 
   // Get function values at vertices
   u.compute_vertex_values(values, mesh);
@@ -81,8 +81,6 @@ void XYZFile::ResultsWrite(const Function& u) const
         ss<<std::endl;
         fp<<ss.str( );
   }
-
-  delete [] values;
 }
 //----------------------------------------------------------------------------
 void XYZFile::xyzNameUpdate(const int counter)
