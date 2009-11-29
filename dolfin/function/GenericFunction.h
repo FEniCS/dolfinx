@@ -52,15 +52,6 @@ namespace dolfin
     /// Evaluate function for given data
     virtual void eval(std::vector<double>& values, const Data& data) const = 0;
 
-    // Temporary fix while figuring out SWIG
-    virtual void eval(double* values, const Data& data) const
-    {
-      std::vector<double> _values(value_size());
-      eval(_values, data);
-      for (uint i = 0; i < value_size(); ++i)
-        values[i] = _values[i];
-    }
-
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
                           const FiniteElement& element,

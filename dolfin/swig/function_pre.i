@@ -53,9 +53,7 @@ namespace dolfin
 // We need to rename the method in the base class as the Python callback ends
 // up here.
 //-----------------------------------------------------------------------------
-%rename(eval_data) dolfin::GenericFunction::eval(double* values, const Data& data) const;
-%ignore dolfin::GenericFunction::eval(std::vector<double>& values, const Data& data) const;
-%ignore dolfin::Expression::eval(std::vector<double>& values, const Data& data) const;
+%rename(eval_data) dolfin::GenericFunction::eval(std::vector<double>& values, const Data& data) const;
 
 //-----------------------------------------------------------------------------
 // Ignore the Data.x, pointer to the coordinates in the Data object
@@ -167,7 +165,8 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Director typemap for values in Expression
 //-----------------------------------------------------------------------------
-%typemap(directorin) double* values {
+%typemap(directorin) double* values 
+{
   {
     // Compute size of value (number of entries in tensor value)
     dolfin::uint size = 1;
@@ -175,7 +174,18 @@ namespace dolfin
       size *= this->value_dimension(i);
 
     npy_intp dims[1] = {size};
-    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, 
+                                       reinterpret_cast<char*>($1_name));
+  }
+}
+
+%typemap(directorin) std::vector<double>& values 
+{
+  {
+    // Compute size of x
+    npy_intp dims[1] = {$1_name.size()};
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, 
+                                       reinterpret_cast<char*>(&($1_name)[0]));
   }
 }
 
