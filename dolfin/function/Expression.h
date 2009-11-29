@@ -60,12 +60,6 @@ namespace dolfin
     /// Evaluate function for given data
     virtual void eval(std::vector<double>& values, const Data& data) const;
 
-    // Tempory fix while figuring out SWIG
-    virtual void eval(double* values, const Data& data) const
-    {
-      eval(values, data.x);
-    }
-
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,

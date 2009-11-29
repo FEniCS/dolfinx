@@ -52,10 +52,13 @@ namespace dolfin
     /// Evaluate function for given data
     virtual void eval(std::vector<double>& values, const Data& data) const = 0;
 
-    // Tempory fix while figuring out SWIG
+    // Temporary fix while figuring out SWIG
     virtual void eval(double* values, const Data& data) const
     {
-      error("Oops. This version of GenericFunctio::eval is temporary.");
+      std::vector<double> _values(value_size());
+      eval(_values, data);
+      for (uint i = 0; i < value_size(); ++i)
+        values[i] = _values[i];
     }
 
     /// Restrict function to local cell (compute expansion coefficients w)
