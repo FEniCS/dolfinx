@@ -32,9 +32,7 @@ int main()
   {
   public:
 
-    Source() : Expression() {}
-
-    void eval(double* values, const std::vector<double>& x) const
+    void eval(std::vector<double>& values, const std::vector<double>& x) const
     {
       double dx = x[0] - 0.5;
       double dy = x[1] - 0.5;
@@ -48,9 +46,7 @@ int main()
   {
   public:
 
-    Flux() : Expression() {}
-
-    void eval(double* values, const std::vector<double>& x) const
+    void eval(std::vector<double>& values, const std::vector<double>& x) const
     {
       if (x[0] > (1.0 - DOLFIN_EPS))
         values[0] = 25.0*cos(5.0*DOLFIN_PI*x[1]);

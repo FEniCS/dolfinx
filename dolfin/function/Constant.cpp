@@ -97,10 +97,8 @@ Constant::operator double() const
   return _values[0];
 }
 //-----------------------------------------------------------------------------
-void Constant::eval(double* values, const Data& data) const
+void Constant::eval(std::vector<double>& values, const Data& data) const
 {
-  assert(values);
-
   // Copy values
   for (uint i = 0; i < _values.size(); i++)
     values[i] = _values[i];

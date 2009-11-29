@@ -20,9 +20,7 @@ class BC : public Expression
 {
 public:
 
-  BC() {}
-
-  void eval(double* values, const std::vector<double>& x) const
+  void eval(std::vector<double>& values, const std::vector<double>& x) const
   {
     values[0] = sin(DOLFIN_PI*5.0*x[1]);
   }

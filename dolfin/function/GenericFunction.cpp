@@ -38,8 +38,12 @@ void GenericFunction::evaluate(double* values,
   // Add ufc::cell and coordinates to data
   data.set(cell, coordinates);
 
+  // FIXME: Can this resize copy be avoided?
   // Redirect to eval
-  eval(values, data);
+  data.values.resize(value_size());
+  eval(data.values, data);
+  for (uint i = 0; i < data.values.size(); ++i)
+    values[i] = data.values[i];
 }
 //-----------------------------------------------------------------------------
 void GenericFunction::restrict_as_ufc_function(double* w,

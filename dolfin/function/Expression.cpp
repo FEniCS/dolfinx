@@ -59,10 +59,8 @@ dolfin::uint Expression::value_dimension(uint i) const
   return value_shape[i];
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(double* values, const Data& data) const
+void Expression::eval(std::vector<double>& values, const Data& data) const
 {
-  assert(values);
-
   // Redirect to simple eval
   eval(values, data.x);
 }
@@ -77,16 +75,14 @@ void Expression::restrict(double* w,
   restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet);
 }
 //-----------------------------------------------------------------------------
-void Expression::compute_vertex_values(double* vertex_values,
+void Expression::compute_vertex_values(std::vector<double>& vertex_values,
                                        const Mesh& mesh) const
 {
-  assert(vertex_values);
-
   // Local data for vertex values
   const uint size = value_size();
-  boost::scoped_array<double> local_vertex_values(new double[size]);
+  std::vector<double> local_vertex_values(size);
   const uint geometric_dim = mesh.geometry().dim();
-  Data data(geometric_dim);
+  Data data(geometric_dim, value_size());
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
   UFCCell ufc_cell(mesh);
@@ -100,12 +96,11 @@ void Expression::compute_vertex_values(double* vertex_values,
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
       // Update coordinate data
-      //data.x = vertex->x();
       const double* _x = vertex->x(); 
       data.x.assign(_x, _x + geometric_dim); 
 
       // Evaluate at vertex
-      eval(local_vertex_values.get(), data);
+      eval(local_vertex_values, data);
 
       // Copy to array
       for (uint i = 0; i < size; i++)
@@ -117,7 +112,7 @@ void Expression::compute_vertex_values(double* vertex_values,
   }
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(double* values, const std::vector<double>& x) const
+void Expression::eval(std::vector<double>& values, const std::vector<double>& x) const
 {
   error("Missing eval() for Expression (must be overloaded).");
 }
