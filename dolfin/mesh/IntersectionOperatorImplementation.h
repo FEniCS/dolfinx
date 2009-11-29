@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-11
-// Last changed: 2009-11-28
+// Last changed: 2009-11-29
 
 #ifndef __INTERSECTIONOPERATORIMPLEMENTATION_H
 #define __INTERSECTIONOPERATORIMPLEMENTATION_H
@@ -10,12 +10,13 @@
 #ifdef HAS_CGAL
 
 #include <vector>
-#include <set>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/bimap.hpp>
 #include <boost/optional.hpp>
+
+#include <dolfin/common/types.h>
 
 #include "added_intersection_3.h" //additional intersection functionality, *Must* include before the AABB_tree!
 
@@ -23,17 +24,17 @@
 #include <CGAL/AABB_traits.h>
 
 #include <CGAL/Simple_cartesian.h> 
+#include "Triangle_3_Tetrahedron_3_do_intersect_SCK.h" //template specialization for Simple_cartesian kernel
+
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 #include <CGAL/Bbox_3.h>
 #include <CGAL/Point_3.h>
 
-#include "Triangle_3_Tetrahedron_3_do_intersect_SCK.h" //template specialization
 
 #include "Primitive_Traits.h"
 #include "MeshPrimitive.h"
 
-#include <dolfin/common/types.h>
 
 typedef CGAL::Simple_cartesian<double> SCK;
 typedef CGAL::Exact_predicates_inexact_constructions_kernel EPICK;
@@ -128,21 +129,21 @@ namespace dolfin
     switch( another_mesh.type().cell_type())
     {
       case CellType::point        : 
-	for (CellIterator cell(another_mesh);  !cell.end(); ++cell)
-	  tree->all_intersected_primitives(PT::datum(*cell),output_it); break;
+	for (CellIterator cell(another_mesh); !cell.end(); ++cell)
+	  tree->all_intersected_primitives(Primitive_Traits<PointCell,K>::datum(*cell),output_it); break;
       case CellType::interval     :
 	if (dim == 1 || dim == 3)
 	  dolfin_not_implemented();
 	else
-	  for (CellIterator cell(another_mesh);  !cell.end(); ++cell)
-	    tree->all_intersected_primitives(PT::datum(*cell),output_it); break;
+	  for (CellIterator cell(another_mesh); !cell.end(); ++cell)
+	    tree->all_intersected_primitives(Primitive_Traits<IntervalCell,K>::datum(*cell),output_it); break;
       case CellType::triangle     :
-	for (CellIterator cell(another_mesh);  !cell.end(); ++cell)
-	  tree->all_intersected_primitives(PT::datum(*cell),output_it); break;
+	for (CellIterator cell(another_mesh); !cell.end(); ++cell)
+	  tree->all_intersected_primitives(Primitive_Traits<TriangleCell,K>::datum(*cell),output_it); break;
       case CellType::tetrahedron  :
-	  for (CellIterator cell(another_mesh);  !cell.end(); ++cell)
+	  for (CellIterator cell(another_mesh); !cell.end(); ++cell)
 	  {
-	    tree->all_intersected_primitives(PT::datum(*cell),output_it);
+	    tree->all_intersected_primitives(Primitive_Traits<TetrahedronCell,K>::datum(*cell),output_it);
 	  }
 	  break;
       default:  error("DOLFIN IntersectionOperatorImplementation::all_intersected_entities: \n Mesh CellType is not known."); 

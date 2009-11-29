@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-11
-// Last changed: 2009-11-14
+// Last changed: 2009-11-29
 
 #ifndef CGAL_TRIANGLE_3_TETRAHEDRON_3_DO_INTERSECT_SCK_H
 #define CGAL_TRIANGLE_3_TETRAHEDRON_3_DO_INTERSECT_SCK_H
