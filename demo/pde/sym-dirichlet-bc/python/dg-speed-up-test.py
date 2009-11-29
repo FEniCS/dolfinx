@@ -20,7 +20,7 @@ class DirichletBoundary(SubDomain):
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Constant(mesh, 1.0)
+f = Constant(1)
 
 # Normal component, mesh size and right-hand side
 n = FacetNormal(mesh)
@@ -31,7 +31,7 @@ alpha = 4.0
 gamma = 8.0
 
 # Define boundary condition
-u0 = Constant(mesh, 0.0)
+u0 = Constant(0)
 boundary = DirichletBoundary()
 bc = DirichletBC(V, u0, boundary)
 

@@ -38,7 +38,7 @@ a = dot(grad(v), grad(u))*dx
 L = v*f*dx
 
 # Define boundary condition
-u0 = Constant(mesh, 0.0)
+u0 = Constant(0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
 # Create linear system

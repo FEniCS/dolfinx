@@ -39,7 +39,7 @@ alpha = 4.0
 gamma = 8.0
 
 # Define boundary condition
-u0 = Constant(mesh, 0.0)
+u0 = Constant(0)
 boundary = DirichletBoundary()
 bc = DirichletBC(V, u0, boundary)
 
