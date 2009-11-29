@@ -9,33 +9,86 @@
 
 #include <CGAL/Triangle_3_Triangle_3_do_intersect.h>
 #include <CGAL/enum.h>
+#include <CGAL/Simple_cartesian.h> 
 
 CGAL_BEGIN_NAMESPACE
 
+namespace CGALi {
+
 template <>
-inline bool do_intersect<CGAL::Simple_cartesian<double> > (const Tetrahedron_3<CGAL::Simple_cartesian<double> > &tet,
-			 const Triangle_3<CGAL::Simple_cartesian<double> > &tr)
+Simple_cartesian<double>::Boolean
+do_intersect<Simple_cartesian<double> >(const Simple_cartesian<double>::Triangle_3 &tr,
+             const Simple_cartesian<double>::Tetrahedron_3 &tet,
+             const Simple_cartesian<double> & k)
 {
-  typedef  CGAL::Simple_cartesian<double>::Triangle_3 Triangle;
+    typedef Simple_cartesian<double>::Triangle_3 Triangle;
+    typedef Simple_cartesian<double>::Point_3    Point;
 
-  if (!tet.has_on_unbounded_side(tr[0])) return true;
-  if (!tet.has_on_unbounded_side(tr[1])) return true;
-  if (!tet.has_on_unbounded_side(tr[2])) return true;
+    CGAL_kernel_precondition( ! k.is_degenerate_3_object() (tr) );
+    CGAL_kernel_precondition( ! k.is_degenerate_3_object() (tet) );
 
-  if (do_intersect(tr, Triangle(tet[0], tet[1], tet[2]))) return true;
-  if (do_intersect(tr, Triangle(tet[0], tet[1], tet[3]))) return true;
-  if (do_intersect(tr, Triangle(tet[0], tet[2], tet[3]))) return true;
-  if (do_intersect(tr, Triangle(tet[1], tet[2], tet[3]))) return true;
-  
-  return false;
+    if (!tet.has_on_unbounded_side(tr[0])) return true;
+    if (!tet.has_on_unbounded_side(tr[1])) return true;
+    if (!tet.has_on_unbounded_side(tr[2])) return true;
+    
+    if (do_intersect(tr, Triangle(tet[0], tet[1], tet[2]), k)) return true;
+    if (do_intersect(tr, Triangle(tet[0], tet[1], tet[3]), k)) return true;
+    if (do_intersect(tr, Triangle(tet[0], tet[2], tet[3]), k)) return true;
+    if (do_intersect(tr, Triangle(tet[1], tet[2], tet[3]), k)) return true;
+
+    return false;
 }
 
 template <>
-inline bool do_intersect<CGAL::Simple_cartesian<double> > (const Triangle_3<CGAL::Simple_cartesian<double> > &tr,
-			 const Tetrahedron_3<CGAL::Simple_cartesian<double> > &tet)
+Simple_cartesian<double>::Boolean
+do_intersect<Simple_cartesian<double> >(const Simple_cartesian<double>::Tetrahedron_3 &tet,
+					const Simple_cartesian<double>::Triangle_3 &tr,
+					const Simple_cartesian<double> & k)
 {
-  return do_intersect<CGAL::Simple_cartesian<double> > (tet,tr);
+  return do_intersect(tr, tet, k);
 }
+
+}  //namespace CGALi
+
+
+template <>
+inline bool do_intersect<Simple_cartesian<double> >(const Tetrahedron_3<Simple_cartesian<double> > &tet,
+			 const Triangle_3<Simple_cartesian<double> > &tr)
+{
+  return Simple_cartesian<double> ::Do_intersect_3()(tr,tet);
+}
+
+template <>
+inline bool do_intersect<Simple_cartesian<double> >(const Triangle_3<Simple_cartesian<double> > &tr,
+			 const Tetrahedron_3<Simple_cartesian<double> > &tet)
+{
+  return Simple_cartesian<double> ::Do_intersect_3()(tr,tet);
+}
+
+//template <>
+//inline bool do_intersect<CGAL::Simple_cartesian<double> > (const Tetrahedron_3<CGAL::Simple_cartesian<double> > &tet,
+//                         const Triangle_3<CGAL::Simple_cartesian<double> > &tr)
+//{
+//  typedef  CGAL::Simple_cartesian<double>::Triangle_3 Triangle;
+
+//  if (!tet.has_on_unbounded_side(tr[0])) return true;
+//  if (!tet.has_on_unbounded_side(tr[1])) return true;
+//  if (!tet.has_on_unbounded_side(tr[2])) return true;
+
+//  if (do_intersect(tr, Triangle(tet[0], tet[1], tet[2]))) return true;
+//  if (do_intersect(tr, Triangle(tet[0], tet[1], tet[3]))) return true;
+//  if (do_intersect(tr, Triangle(tet[0], tet[2], tet[3]))) return true;
+//  if (do_intersect(tr, Triangle(tet[1], tet[2], tet[3]))) return true;
+//  
+//  return false;
+//}
+
+//template <>
+//inline bool do_intersect<CGAL::Simple_cartesian<double> > (const Triangle_3<CGAL::Simple_cartesian<double> > &tr,
+//                         const Tetrahedron_3<CGAL::Simple_cartesian<double> > &tet)
+//{
+//  return do_intersect<CGAL::Simple_cartesian<double> > (tet,tr);
+//}
 
 CGAL_END_NAMESPACE
 
