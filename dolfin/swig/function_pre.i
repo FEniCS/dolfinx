@@ -54,13 +54,14 @@ namespace dolfin
 // up here.
 //-----------------------------------------------------------------------------
 %rename(eval_data) dolfin::GenericFunction::eval(double* values, const Data& data) const;
+%ignore dolfin::GenericFunction::eval(std::vector<double>& values, const Data& data) const;
 
 //-----------------------------------------------------------------------------
 // Ignore the Data.x, pointer to the coordinates in the Data object
 //-----------------------------------------------------------------------------
 %ignore dolfin::Data::x;
 %rename (x) dolfin::Data::x_();
-%ignore dolfin::eval(double* values, const double* x) const;
+%ignore dolfin::Expression::eval(std::vector<double>& values, const std::vector<double>& x) const;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Constant

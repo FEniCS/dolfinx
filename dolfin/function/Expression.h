@@ -60,7 +60,12 @@ namespace dolfin
     /// Evaluate function for given data
     virtual void eval(std::vector<double>& values, const Data& data) const;
 
-    /// Restrict function to local cell (compute expansion coefficients w)
+    // Tempory fix while figuring out SWIG
+    virtual void eval(double* values, const Data& data) const
+    {
+      eval(values, data.x);
+    }
+
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
@@ -75,6 +80,12 @@ namespace dolfin
 
     /// Evaluate expression, must be overloaded by user (simple version)
     virtual void eval(std::vector<double>& values, const std::vector<double>& x) const;
+
+    // Tempory fix while figuring out SWIG
+    virtual void eval(double* values, const std::vector<double>& x) const
+    {
+      error("Missing eval() for Expression (must be overloaded).");
+    }
 
   protected:
 
