@@ -23,6 +23,10 @@ from dolfin import *
 mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "CG", 1)
 
+class Source(Expression):
+    def eval(self, values, x):
+        values[0] = 4.0*DOLFIN_PI*DOLFIN_PI*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*x[0])*sin(DOLFIN_PI*x[1])
+
 # Define Dirichlet boundary (x = 0 or x = 1)
 def boundary(x):
     return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
@@ -34,7 +38,8 @@ bc = DirichletBC(V, u0, boundary)
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+#f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+f = Source(V)
 g = Expression("sin(5*x[0])")
 a = inner(grad(v), grad(u))*dx
 L = v*f*dx - v*g*ds
@@ -48,4 +53,4 @@ file = File("poisson.pvd")
 file << u
 
 # Plot solution
-plot(u, interactive=True)
+#plot(u, interactive=True)

@@ -194,6 +194,28 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
     $1 = PyArray_Check($input) ? 1 : 0;
 }
 
+%typemap(in) std::vector<double>& x (std::vector<double> temp)
+{
+  {
+    if (PyArray_Check($input)) 
+    {
+      PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
+      if ( PyArray_TYPE(xa) == NPY_DOUBLE )
+      {
+        const unsigned int size = PyArray_DIM(xa, 0);
+        temp.resize(size);
+        double* array = static_cast<double*>(PyArray_DATA(xa));
+        std::copy(array, array + size, temp.begin());
+        $1 = &temp;
+      }
+     else
+       SWIG_exception(SWIG_TypeError, "NumPy array expected");
+    }
+    else
+      SWIG_exception(SWIG_TypeError, "NumPy array expected");
+  }
+}
+
 %typemap(in) const std::vector<double>& x (std::vector<double> temp)
 {
   {

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-22
-// Last changed: 2009-10-08
+// Last changed: 2009-11-29
 
 #include <dolfin.h>
 
@@ -53,7 +53,7 @@ double bench_form(std::string form_name, double (*bench_form)(Form&))
   {
     UnitSquare mesh(N_2D, N_2D);
     StabStokes2D::FunctionSpace V(mesh);
-    Constant h(mesh, 1.0);
+    Constant h(1.0);
     StabStokes2D::BilinearForm form(V, V, h);
     return bench_form(form);
   }
@@ -68,11 +68,11 @@ double bench_form(std::string form_name, double (*bench_form)(Form&))
   {
     UnitCube mesh(N_3D, N_3D, N_3D);
     NSEMomentum3D::FunctionSpace V(mesh);
-    Constant  w(mesh, 1.0);
-    Constant d1(mesh, 1.0);
-    Constant d2(mesh, 1.0);
-    Constant k(mesh, 1.0);
-    Constant nu(mesh, 1.0);
+    Constant  w(1.0);
+    Constant d1(1.0);
+    Constant d2(1.0);
+    Constant k(1.0);
+    Constant nu(1.0);
     NSEMomentum3D::BilinearForm form(V, V, w, d1, d2, k, nu);
     return bench_form(form);
   }
@@ -80,6 +80,6 @@ double bench_form(std::string form_name, double (*bench_form)(Form&))
   {
     error("Unknown form: %s.", form_name.c_str());
   }
-  
+
   return 0.0;
 }

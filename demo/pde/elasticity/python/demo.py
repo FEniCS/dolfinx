@@ -88,4 +88,4 @@ vtk_file = File("elasticity.pvd")
 vtk_file << u
 
 # Plot solution
-plot(u, mode="displacement", interactive=True)
+#plot(u, mode="displacement", interactive=True)

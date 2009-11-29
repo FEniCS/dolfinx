@@ -53,14 +53,15 @@ namespace dolfin
 // We need to rename the method in the base class as the Python callback ends
 // up here.
 //-----------------------------------------------------------------------------
-%rename(eval_data) dolfin::GenericFunction::eval(double* values, const Data& data) const;
+%rename(eval_data) dolfin::GenericFunction::eval(std::vector<double>& values, const Data& data) const;
 
 //-----------------------------------------------------------------------------
 // Ignore the Data.x, pointer to the coordinates in the Data object
 //-----------------------------------------------------------------------------
 %ignore dolfin::Data::x;
 %rename (x) dolfin::Data::x_();
-%ignore dolfin::eval(double* values, const double* x) const;
+%ignore dolfin::Expression::eval(std::vector<double>& values, const std::vector<double>& x) const;
+//%ignore dolfin::Expression::eval(double* values, const std::vector<double>& x) const;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Constant
@@ -124,11 +125,12 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Typemap for std::vector<dolfin::uint> values
 //-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::vector<double> values
-{
-  $1 = PyList_Check($input) ? 1 : 0;
-}
+//%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::vector<double> values
+//{
+//  $1 = PyList_Check($input) ? 1 : 0;
+//}
 
+/*
 %typemap (in) std::vector<double> values
 {
   if (PyList_Check($input))
@@ -151,7 +153,7 @@ namespace dolfin
     SWIG_exception(SWIG_TypeError, "expected list of floats");
   }
 }
-
+*/
 //-----------------------------------------------------------------------------
 // Add director classes
 //-----------------------------------------------------------------------------
@@ -165,7 +167,8 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Director typemap for values in Expression
 //-----------------------------------------------------------------------------
-%typemap(directorin) double* values {
+%typemap(directorin) double* values 
+{
   {
     // Compute size of value (number of entries in tensor value)
     dolfin::uint size = 1;
@@ -173,7 +176,19 @@ namespace dolfin
       size *= this->value_dimension(i);
 
     npy_intp dims[1] = {size};
-    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, 
+                                       reinterpret_cast<char*>($1_name));
+  }
+}
+
+%typemap(directorin) std::vector<double>& values 
+{
+  {
+    std::cout << "In typemap " << std::endl;
+    // Compute size of x
+    npy_intp dims[1] = {$1_name.size()};
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, 
+                                       reinterpret_cast<char*>(&($1_name)[0]));
   }
 }
 
@@ -189,7 +204,8 @@ namespace dolfin
 //}
 
 // FIXME: Is there a better way to map a std::vector to a numpy array?
-%typemap(directorin) const std::vector<double>& x {
+%typemap(directorin) const std::vector<double>& x 
+{
   {
     // Compute size of x
     npy_intp dims[1] = {$1_name.size()};
