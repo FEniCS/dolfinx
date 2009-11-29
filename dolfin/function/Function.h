@@ -113,13 +113,13 @@ namespace dolfin
     void eval(std::vector<double>& values, const std::vector<double>& x) const;
 
     /// Temporary for SWIG
-    void eval(double* values, const std::vector<double>& x) const
-    {
-      std::vector<double> _values(value_size());
-      eval(_values, x);
-      for (uint i = 0; i < value_size(); ++i)
-        values[i] = _values[i];
-    }
+    //void eval(double* values, const std::vector<double>& x) const
+    //{
+    //  std::vector<double> _values(value_size());
+    //  eval(_values, x);
+    //  for (uint i = 0; i < value_size(); ++i)
+    //    values[i] = _values[i];
+    //}
 
 
     /// Evaluate function for given coordinate in given cell

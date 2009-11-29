@@ -78,6 +78,7 @@ namespace dolfin
     // Tempory fix while figuring out SWIG
     virtual void eval(double* values, const std::vector<double>& x) const
     {
+      cout << "In eval " << endl;
       error("Missing eval() for Expression (must be overloaded).");
     }
 

@@ -61,6 +61,7 @@ namespace dolfin
 %ignore dolfin::Data::x;
 %rename (x) dolfin::Data::x_();
 %ignore dolfin::Expression::eval(std::vector<double>& values, const std::vector<double>& x) const;
+//%ignore dolfin::Expression::eval(double* values, const std::vector<double>& x) const;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Constant
@@ -124,11 +125,12 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Typemap for std::vector<dolfin::uint> values
 //-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::vector<double> values
-{
-  $1 = PyList_Check($input) ? 1 : 0;
-}
+//%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::vector<double> values
+//{
+//  $1 = PyList_Check($input) ? 1 : 0;
+//}
 
+/*
 %typemap (in) std::vector<double> values
 {
   if (PyList_Check($input))
@@ -151,7 +153,7 @@ namespace dolfin
     SWIG_exception(SWIG_TypeError, "expected list of floats");
   }
 }
-
+*/
 //-----------------------------------------------------------------------------
 // Add director classes
 //-----------------------------------------------------------------------------
@@ -182,6 +184,7 @@ namespace dolfin
 %typemap(directorin) std::vector<double>& values 
 {
   {
+    std::cout << "In typemap " << std::endl;
     // Compute size of x
     npy_intp dims[1] = {$1_name.size()};
     $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, 
@@ -201,7 +204,8 @@ namespace dolfin
 //}
 
 // FIXME: Is there a better way to map a std::vector to a numpy array?
-%typemap(directorin) const std::vector<double>& x {
+%typemap(directorin) const std::vector<double>& x 
+{
   {
     // Compute size of x
     npy_intp dims[1] = {$1_name.size()};
