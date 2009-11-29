@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-01
-// Last changed: 2009-11-22
+// Last changed: 2009-11-28
 
 #include <algorithm>
 #include <map>
@@ -70,10 +70,10 @@ IntersectionOperatorImplementation * IntersectionOperator::create_intersection_o
   {
     switch( mesh->type().cell_type())
     {
-      case CellType::point        : return new IntersectionOperatorImplementation_d< Primitive_Traits<PointCellPrimitive, EPICK> >(mesh);
-      case CellType::interval     : return new IntersectionOperatorImplementation_d< Primitive_Traits<IntervalCellPrimitive, EPICK> >(mesh);
-      case CellType::triangle     : return new IntersectionOperatorImplementation_d< Primitive_Traits<TriangleCellPrimitive, EPICK> >(mesh); 
-      case CellType::tetrahedron  : return new IntersectionOperatorImplementation_d< Primitive_Traits<TetrahedronCellPrimitive, EPICK> >(mesh);
+      case CellType::point        : return new IntersectionOperatorImplementation_d< Primitive_Traits<PointCell, EPICK> >(mesh);
+      case CellType::interval     : return new IntersectionOperatorImplementation_d< Primitive_Traits<IntervalCell, EPICK> >(mesh);
+      case CellType::triangle     : return new IntersectionOperatorImplementation_d< Primitive_Traits<TriangleCell, EPICK> >(mesh); 
+      case CellType::tetrahedron  : return new IntersectionOperatorImplementation_d< Primitive_Traits<TetrahedronCell, EPICK> >(mesh);
       default: error("DOLFIN IntersectionOperator::create_intersection_operator: \n Mesh  CellType is not known."); return 0;
     }
   }
@@ -84,10 +84,10 @@ IntersectionOperatorImplementation * IntersectionOperator::create_intersection_o
 //      warning("Type %s of geometry kernel is not  known. Falling back to SimpleCartesian.",kernel_type);
     switch( mesh->type().cell_type())
     {
-      case CellType::point        : return new IntersectionOperatorImplementation_d< Primitive_Traits<PointCellPrimitive, SCK > >(mesh);
-      case CellType::interval     : return new IntersectionOperatorImplementation_d< Primitive_Traits<IntervalCellPrimitive, SCK > >(mesh);
-      case CellType::triangle     : return new IntersectionOperatorImplementation_d< Primitive_Traits<TriangleCellPrimitive, SCK> >(mesh); 
-      case CellType::tetrahedron  : return new IntersectionOperatorImplementation_d< Primitive_Traits<TetrahedronCellPrimitive, SCK > >(mesh);
+      case CellType::point        : return new IntersectionOperatorImplementation_d< Primitive_Traits<PointCell, SCK > >(mesh);
+      case CellType::interval     : return new IntersectionOperatorImplementation_d< Primitive_Traits<IntervalCell, SCK > >(mesh);
+      case CellType::triangle     : return new IntersectionOperatorImplementation_d< Primitive_Traits<TriangleCell, SCK> >(mesh); 
+      case CellType::tetrahedron  : return new IntersectionOperatorImplementation_d< Primitive_Traits<TetrahedronCell, SCK > >(mesh);
       default: error("DOLFIN IntersectionOperator::create_intersection_operator: \n Mesh  CellType is not known."); return 0;
     }
   }

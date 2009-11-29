@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-16
-// Last changed: 2009-11-11
+// Last changed: 2009-11-28
 
 #ifndef  primitives_traits_INC
 #define  primitives_traits_INC
@@ -11,18 +11,22 @@
 
 #include "Vertex.h"
 #include "MeshEntityIterator.h"
+#include "PointCell.h"
+#include "IntervalCell.h"
+#include "TriangleCell.h"
+#include "TetrahedronCell.h"
 
 namespace dolfin {
 
 struct PointPrimitive {};
 
-struct PointCellPrimitive {};
+//struct PointCellPrimitive {};
 
-struct IntervalCellPrimitive {};
+//struct IntervalCellPrimitive {};
 
-struct TriangleCellPrimitive {};
+//struct TriangleCellPrimitive {};
 
-struct TetrahedronCellPrimitive {};
+//struct TetrahedronCellPrimitive {};
 
 ///Forward declaration for a general Traits class. This traits class is
 ///supposed to provide a datum function, which returns a geometric primitive
@@ -40,9 +44,9 @@ template <typename Kernel> struct Primitive_Traits<PointPrimitive,Kernel> {
   }
 };
 
-template <typename Kernel> struct Primitive_Traits<PointCellPrimitive,Kernel> {
+template <typename Kernel> struct Primitive_Traits<PointCell,Kernel> {
   typedef Kernel K;
-  typedef PointCellPrimitive Primitive;
+  typedef PointCell Primitive;
   typedef typename K::Point_3 Datum;
   static const int dim = 0;
   static Datum datum(const Cell & cell) {
@@ -51,9 +55,9 @@ template <typename Kernel> struct Primitive_Traits<PointCellPrimitive,Kernel> {
   }
 };
 
-template <typename Kernel> struct Primitive_Traits<IntervalCellPrimitive,Kernel> {
+template <typename Kernel> struct Primitive_Traits<IntervalCell,Kernel> {
   typedef Kernel K;
-  typedef IntervalCellPrimitive Primitive;
+  typedef IntervalCell Primitive;
   typedef typename K::Point_3 Point_3;
   typedef typename K::Segment_3 Datum;
   static const int dim = 1;
@@ -66,9 +70,9 @@ template <typename Kernel> struct Primitive_Traits<IntervalCellPrimitive,Kernel>
   }
 };
 
-template <typename Kernel> struct Primitive_Traits<TriangleCellPrimitive,Kernel> {
+template <typename Kernel> struct Primitive_Traits<TriangleCell,Kernel> {
   typedef Kernel K;
-  typedef TriangleCellPrimitive Primitive;
+  typedef TriangleCell Primitive;
   typedef typename K::Point_3 Point_3;
   typedef typename K::Triangle_3 Datum;
   static const int dim = 2;
@@ -83,9 +87,9 @@ template <typename Kernel> struct Primitive_Traits<TriangleCellPrimitive,Kernel>
   }
 };
 
-template <typename Kernel> struct Primitive_Traits<TetrahedronCellPrimitive,Kernel> {
+template <typename Kernel> struct Primitive_Traits<TetrahedronCell,Kernel> {
   typedef Kernel K;
-  typedef TetrahedronCellPrimitive Primitive;
+  typedef TetrahedronCell Primitive;
   typedef typename K::Point_3 Point_3;
   typedef typename K::Tetrahedron_3 Datum;
   static const int dim = 3;

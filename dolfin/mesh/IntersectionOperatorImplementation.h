@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-11
-// Last changed: 2009-11-27
+// Last changed: 2009-11-28
 
 #ifndef __INTERSECTIONOPERATORIMPLEMENTATION_H
 #define __INTERSECTIONOPERATORIMPLEMENTATION_H
@@ -116,6 +116,9 @@ namespace dolfin
     }
   }
 
+//  template< template <class PT>
+//  void IntersectionOperatorImplementation_d<PT>::all_intersected_entities(const Point & point, uint_set & ids_result) const
+
   template <class PT>
   void IntersectionOperatorImplementation_d<PT>::all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const
   {
@@ -126,20 +129,20 @@ namespace dolfin
     {
       case CellType::point        : 
 	for (CellIterator cell(another_mesh);  !cell.end(); ++cell)
-	  tree->all_intersected_primitives(Primitive_Traits<PointCellPrimitive,K>::datum(*cell),output_it); break;
+	  tree->all_intersected_primitives(PT::datum(*cell),output_it); break;
       case CellType::interval     :
 	if (dim == 1 || dim == 3)
 	  dolfin_not_implemented();
 	else
 	  for (CellIterator cell(another_mesh);  !cell.end(); ++cell)
-	    tree->all_intersected_primitives(Primitive_Traits<IntervalCellPrimitive,K>::datum(*cell),output_it); break;
+	    tree->all_intersected_primitives(PT::datum(*cell),output_it); break;
       case CellType::triangle     :
 	for (CellIterator cell(another_mesh);  !cell.end(); ++cell)
-	  tree->all_intersected_primitives(Primitive_Traits<TriangleCellPrimitive,K>::datum(*cell),output_it); break;
+	  tree->all_intersected_primitives(PT::datum(*cell),output_it); break;
       case CellType::tetrahedron  :
 	  for (CellIterator cell(another_mesh);  !cell.end(); ++cell)
 	  {
-	    tree->all_intersected_primitives(Primitive_Traits<TetrahedronCellPrimitive,K>::datum(*cell),output_it);
+	    tree->all_intersected_primitives(PT::datum(*cell),output_it);
 	  }
 	  break;
       default:  error("DOLFIN IntersectionOperatorImplementation::all_intersected_entities: \n Mesh CellType is not known."); 

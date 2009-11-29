@@ -200,5 +200,19 @@ class PyCCInterface(unittest.TestCase):
         mesh = UnitSquare(5, 5)
         self.assertEqual(len(mesh.cells()), 50)
 
+class IntersectionOperator(unittest.TestCase):
+    def testIntersectPoints(self):
+        pass
+
+    def testIntersectPoints(self):
+        pass
+
+    def testIntersectMesh2D(self):
+        pass
+
+    def testIntersectMesh3D(self):
+        pass
+
+
 if __name__ == "__main__":
     unittest.main()
