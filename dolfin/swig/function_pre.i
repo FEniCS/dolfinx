@@ -9,7 +9,7 @@
 // Modified by Kent-Andre Mardal, 2009
 // 
 // First added:  2007-08-16
-// Last changed: 2009-10-07
+// Last changed: 2009-11-29
 
 // ===========================================================================
 // SWIG directives for the DOLFIN function kernel module (pre)
@@ -60,8 +60,7 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 %ignore dolfin::Data::x;
 %rename (x) dolfin::Data::x_();
-%ignore dolfin::Expression::eval(std::vector<double>& values, const std::vector<double>& x) const;
-//%ignore dolfin::Expression::eval(double* values, const std::vector<double>& x) const;
+//%ignore dolfin::Expression::eval(std::vector<double>& values, const std::vector<double>& x) const;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Constant
@@ -118,19 +117,18 @@ namespace dolfin
 %feature("novaluewrapper") std::vector<double>; 
 
 //-----------------------------------------------------------------------------
-// Instantiate a dummy std::vector<dolfin::uint> so value wrapper is not used
+// Instantiate a dummy std::vector<dolfin::double> so value wrapper is not used
 //-----------------------------------------------------------------------------
 %template () std::vector<double>; 
 
 //-----------------------------------------------------------------------------
-// Typemap for std::vector<dolfin::uint> values
+// Typemap for std::vector<dolfin::double> values (used in Constant constructor)
 //-----------------------------------------------------------------------------
-//%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::vector<double> values
-//{
-//  $1 = PyList_Check($input) ? 1 : 0;
-//}
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::vector<double> values
+{
+  $1 = PyList_Check($input) ? 1 : 0;
+}
 
-/*
 %typemap (in) std::vector<double> values
 {
   if (PyList_Check($input))
@@ -153,7 +151,7 @@ namespace dolfin
     SWIG_exception(SWIG_TypeError, "expected list of floats");
   }
 }
-*/
+
 //-----------------------------------------------------------------------------
 // Add director classes
 //-----------------------------------------------------------------------------
@@ -163,28 +161,14 @@ namespace dolfin
 %feature("nodirector") dolfin::Expression::gather;
 %feature("nodirector") dolfin::Expression::value_dimension;
 %feature("nodirector") dolfin::Expression::value_rank;
+%feature("nodirector") dolfin::Expression::eval(std::vector<double>& values, const  std::vector<double>& x) const;
 
 //-----------------------------------------------------------------------------
 // Director typemap for values in Expression
 //-----------------------------------------------------------------------------
-%typemap(directorin) double* values 
-{
-  {
-    // Compute size of value (number of entries in tensor value)
-    dolfin::uint size = 1;
-    for (dolfin::uint i = 0; i < this->value_rank(); i++)
-      size *= this->value_dimension(i);
-
-    npy_intp dims[1] = {size};
-    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, 
-                                       reinterpret_cast<char*>($1_name));
-  }
-}
-
 %typemap(directorin) std::vector<double>& values 
 {
   {
-    std::cout << "In typemap " << std::endl;
     // Compute size of x
     npy_intp dims[1] = {$1_name.size()};
     $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, 
@@ -195,18 +179,11 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Director typemap for coordinates in Expression
 //-----------------------------------------------------------------------------
-//%typemap(directorin) const double* x {
-//  {
-//    // Compute size of x
-//    npy_intp dims[1] = {this->geometric_dimension()};
-//    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(const_cast<double*>($1_name)));
-//  }
-//}
-
 // FIXME: Is there a better way to map a std::vector to a numpy array?
 %typemap(directorin) const std::vector<double>& x 
 {
   {
+    std::cout << "In typemap & x" << std::endl;
     // Compute size of x
     npy_intp dims[1] = {$1_name.size()};
     $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, 
@@ -214,3 +191,43 @@ namespace dolfin
   }
 }
 
+////-----------------------------------------------------------------------------
+//// In typemaps for std::vector<double> _array
+////-----------------------------------------------------------------------------
+//%typemap(in) std::vector<double> & _array (std::vector<double> vec_tmp)
+//{
+//  // Check arguments
+//  if (!PyArray_Check($input)){
+//    PyErr_SetString(PyExc_TypeError, "numpy array of 'double' expected. Make sure that the numpy array use dtype='d'.");
+//    return NULL;
+//  }
+//  
+//  PyArrayObject *xa = reinterpret_cast<PyArrayObject*>(input);
+//  if (!PyArray_TYPE(xa) == NPY_DOUBLE ){
+//    PyErr_SetString(PyExc_TypeError, "numpy array of 'double' expected. Make sure that the numpy array use dtype='d'.");
+//    return NULL;
+//  }
+//  
+//  // Get size and reserve the tmp vector
+//  npy_int size = PyArray_Size(xa);
+//  vec_tmp.reserve(size);
+//  
+//  // Get the data
+//  double * data = static_cast<double*>(PyArray_DATA(xa));
+//  for (int i=0, i<size; i++)
+//    vec_tmp[i] = data[i];
+//
+//  // Provide the out argument
+//  $1 = &vec_tmp;
+//}
+//
+//%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::vector<double> & values
+//{
+//    $1 = PyArray_Check($input) ? 1 : 0;
+//}
+//
+//%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) const std::vector<double> & x
+//{
+//    $1 = PyArray_Check($input) ? 1 : 0;
+//}
+//
