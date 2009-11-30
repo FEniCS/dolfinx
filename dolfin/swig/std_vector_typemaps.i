@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-08-31
-// Last changed: 2009-09-29
+// Last changed: 2009-11-29
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -132,6 +132,7 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 //-----------------------------------------------------------------------------
 %typemap (in,numinputs=0) std::vector<TYPE>& ARG_NAME (std::vector<TYPE> vec_temp)
 {
+  // ARGOUT ARG_NAME
   $1 = &vec_temp;
 }
 
@@ -184,36 +185,17 @@ IN_TYPEMAPS_STD_VECTOR_OF_POINTERS(GenericFunction)
 IN_TYPEMAPS_STD_VECTOR_OF_POINTERS(FunctionSpace)
 
 ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, cells, NPY_INT)
-ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_INT)
-ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
+// FIXME: We cannot have argout typemaps for columns and values
+// FIXME: They work for get_row, but they interfere with eval interface.
+// FIXME: They should also _not_ kick in for const std::vector<TYPE>, but they do
+//ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_INT)
+//ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
 
 //-----------------------------------------------------------------------------
 // NumPy to const std::vector<double>& typemap.
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) const std::vector<double>& x {
     $1 = PyArray_Check($input) ? 1 : 0;
-}
-
-%typemap(in) std::vector<double>& x (std::vector<double> temp)
-{
-  {
-    if (PyArray_Check($input)) 
-    {
-      PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
-      if ( PyArray_TYPE(xa) == NPY_DOUBLE )
-      {
-        const unsigned int size = PyArray_DIM(xa, 0);
-        temp.resize(size);
-        double* array = static_cast<double*>(PyArray_DATA(xa));
-        std::copy(array, array + size, temp.begin());
-        $1 = &temp;
-      }
-     else
-       SWIG_exception(SWIG_TypeError, "NumPy array expected");
-    }
-    else
-      SWIG_exception(SWIG_TypeError, "NumPy array expected");
-  }
 }
 
 %typemap(in) const std::vector<double>& x (std::vector<double> temp)
@@ -237,19 +219,64 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
       SWIG_exception(SWIG_TypeError, "NumPy array expected");
   }
 }
-//-----------------------------------------------------------------------------
-// const std::vector<double>& to NumPy typemap.
-//-----------------------------------------------------------------------------
-%typemap(argout) const std::vector<double>& x
-{
-  // Do nothing
-}
+
 //-----------------------------------------------------------------------------
 // std::vector<double>& to NumPy typemap.
 //-----------------------------------------------------------------------------
-%typemap(argout) std::vector<double>& x
+%typemap(in) std::vector<double>& values (std::vector<double> temp, PyArrayObject *out_array = 0)
 {
-  SWIG_exception(SWIG_TypeError, "std::vector<double> to NumPy (argout) not implemented");
+  if (!PyArray_Check($input))
+    SWIG_exception(SWIG_TypeError, "numpy array of 'double' expected. Make sure that the numpy array use dtype='d'.");
+  out_array = reinterpret_cast<PyArrayObject*>($input);
+  if ( !PyArray_TYPE(out_array) == NPY_DOUBLE )
+    SWIG_exception(SWIG_TypeError, "numpy array of 'double' expected. Make sure that the numpy array use dtype='d'.");
+  
+  // Use the size of the incomming array to pass a correct sized vector to the function
+  const unsigned int size = PyArray_DIM(out_array, 0);
+  temp.resize(size);
+  $1 = &temp;
 }
-//-----------------------------------------------------------------------------
 
+%typemap(argout) std::vector<double>& values
+{
+  // Get the pointer to the data in the passed NumPy array
+  double* array = static_cast<double*>(PyArray_DATA(out_array$argnum));
+  
+  // Copy the content from the temp array to the NumPy array
+  std::copy(temp$argnum.begin(), temp$argnum.end(), array);
+  
+  // Tell the function to return 'None', which means not return value
+  $result = Py_None;
+  
+}
+
+//-----------------------------------------------------------------------------
+// std::vector<double>& to NumPy typemap.
+//-----------------------------------------------------------------------------
+%typemap(in) std::vector<double>& vertex_values (std::vector<double> temp, PyArrayObject *out_array = 0, dolfin::uint init_size = 0)
+{
+  if (!PyArray_Check($input))
+    SWIG_exception(SWIG_TypeError, "numpy array of 'double' expected. Make sure that the numpy array use dtype='d'.");
+  out_array = reinterpret_cast<PyArrayObject*>($input);
+  if ( !PyArray_TYPE(out_array) == NPY_DOUBLE )
+    SWIG_exception(SWIG_TypeError, "numpy array of 'double' expected. Make sure that the numpy array use dtype='d'.");
+  
+  // Use the size of the incomming array to pass a correct sized vector to the function
+  const unsigned int size = PyArray_DIM(out_array, 0);
+  init_size = size;
+  temp.resize(size);
+  $1 = &temp;
+}
+
+%typemap(argout) std::vector<double>& vertex_values
+{
+  // Get the pointer to the data in the passed NumPy array
+  double* array = static_cast<double*>(PyArray_DATA(out_array$argnum));
+  
+  // Copy the content from the temp array to the NumPy array
+  std::copy(temp$argnum.begin(), temp$argnum.end(), array);
+
+  // Tell the function to return 'None', which means not return value
+  $result = Py_None;
+  
+}

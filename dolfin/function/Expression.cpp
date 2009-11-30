@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-11
+// Last changed: 2009-11-29
 //
 // Modified by Johan Hake, 2009.
 
@@ -114,8 +114,8 @@ void Expression::compute_vertex_values(std::vector<double>& vertex_values,
 //-----------------------------------------------------------------------------
 void Expression::eval(std::vector<double>& values, const std::vector<double>& x) const
 {
-  eval(&values[0], x);
-  //error("Missing eval() for Expression (must be overloaded).");
+  //eval(&values[0], x);
+  error("Missing eval() for Expression (must be overloaded).");
 }
 //-----------------------------------------------------------------------------
 
