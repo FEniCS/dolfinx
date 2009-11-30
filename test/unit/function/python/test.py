@@ -110,7 +110,6 @@ class Instantiation(unittest.TestCase):
 
           self.assertNotEqual(type(f0).__bases__,type(f1).__bases__)
 
-          #f2, f3 = Expressions("2", V, "3", V)
           f4, f5 = Expressions("2", "3", V = V)
           self.assertEqual(type(f2).__bases__, type(f4).__bases__)
           self.assertEqual(type(f3).__bases__, type(f5).__bases__)
@@ -135,15 +134,15 @@ class Instantiation(unittest.TestCase):
                     def evaluate(self, values, data):
                          pass
 
-          def bothCompileAndPythonSubClassing0():
-               class bothCompileAndPythonSubClassing(Expression):
-                    def eval(self, values, x):pass
-                    cpparg = "2"
+          #def bothCompileAndPythonSubClassing0():
+          #     class bothCompileAndPythonSubClassing(Expression):
+          #          def eval(self, values, x):pass
+          #          cpparg = "2"
 
-          def bothCompileAndPythonSubClassing1():
-               class bothCompileAndPythonSubClassing(Expression):
-                    def eval_data(self, values, data):pass
-                    cpparg = "2"
+          #def bothCompileAndPythonSubClassing1():
+          #     class bothCompileAndPythonSubClassing(Expression):
+          #          def eval_data(self, values, data):pass
+          #          cpparg = "2"
 
           def wrongCppargType():
                class WrongCppargType(Expression):
@@ -153,8 +152,8 @@ class Instantiation(unittest.TestCase):
           self.assertRaises(TypeError,noEvalAttribute)
           self.assertRaises(TypeError,wrongEvalAttribute)
           self.assertRaises(TypeError,wrongEvalDataAttribute)
-          self.assertRaises(TypeError,bothCompileAndPythonSubClassing0)
-          self.assertRaises(TypeError,bothCompileAndPythonSubClassing1)
+          #self.assertRaises(TypeError,bothCompileAndPythonSubClassing0)
+          #self.assertRaises(TypeError,bothCompileAndPythonSubClassing1)
           self.assertRaises(TypeError,wrongCppargType)
 
 if __name__ == "__main__":
