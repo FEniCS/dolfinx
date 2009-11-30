@@ -96,10 +96,10 @@ class AbstractBaseTest(object):
         self.assertAlmostEqual(A[5,5],116)
         
         # Test to NumPy array 
-        #A2 = A.array()
-        #self.assertTrue(isinstance(A2,ndarray))
-        #self.assertEqual(A2.shape,(16,16))
-        #self.assertAlmostEqual(A2[5,5],A[5,5])
+        A2 = A.array()
+        self.assertTrue(isinstance(A2,ndarray))
+        self.assertEqual(A2.shape,(16,16))
+        self.assertAlmostEqual(A2[5,5],A[5,5])
 
         # setitem segfaults for MTL4 backend
         if not self.backend == "MTL4":
@@ -301,34 +301,37 @@ class AbstractBaseTest(object):
         self.assertAlmostEqual(u3[4],u[4])
         
         v_numpy = v.array()
-        #A_numpy = A.array()
+        A_numpy = A.array()
         
-        #u_numpy = dot(A_numpy, v_numpy)
+        u_numpy = dot(A_numpy,v_numpy)
         u_numpy2 = A*v_numpy
         
-        #self.assertTrue(absolute(u.array()-u_numpy).sum() < DOLFIN_EPS*len(v))
-        #self.assertTrue(absolute(u_numpy2-u_numpy).sum() < DOLFIN_EPS*len(v))
+        self.assertTrue(absolute(u.array()-u_numpy).sum() < DOLFIN_EPS*len(v))
+        self.assertTrue(absolute(u_numpy2-u_numpy).sum() < DOLFIN_EPS*len(v))
         
+        
+        
+
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS and MTL4 backends
 class DataTester(object):
     def test_matrix_data(self):
         # Test for ordinary Matrix
         A = self.assemble_matrix()
-        #array = A.array()
-        #rows, cols, values = A.data()
-        #i = 0
-        #for row in xrange(A.size(0)):
-        #    for col in xrange(rows[row],rows[row+1]):
-        #        self.assertEqual(array[row,cols[col]],values[i])
-        #        i += 1
+        array = A.array()
+        rows, cols, values = A.data()
+        i = 0
+        for row in xrange(A.size(0)):
+            for col in xrange(rows[row],rows[row+1]):
+                self.assertEqual(array[row,cols[col]],values[i])
+                i += 1
 
         # Test for down_casted Matrix
-        #A = down_cast(A)
-        #rows, cols, values = A.data()
-        #for row in xrange(A.size(0)):
-        #    for k in xrange(rows[row],rows[row+1]):
-        #        self.assertEqual(array[row,cols[k]],values[k])
+        A = down_cast(A)
+        rows, cols, values = A.data()
+        for row in xrange(A.size(0)):
+            for k in xrange(rows[row],rows[row+1]):
+                self.assertEqual(array[row,cols[k]],values[k])
 
     def test_vector_data(self):
         # Test for ordinary Vector
