@@ -24,7 +24,7 @@ x = sphere.coordinates()
 
 # Start center and propagtion speed for the sphere.
 dt = 0.1
-t = -0.71
+t = -0.61
 
 # Scale and move the circle.
 x *= 0.7
@@ -34,7 +34,7 @@ intersection = MeshFunction("uint", cube, cube.topology().dim())
 _first = True
 
 counter = 0
-while t < 1.7 :
+while t < 1.4 :
 
     boundary = BoundaryMesh(sphere)
     # Compute intersection with boundary of square
@@ -48,17 +48,17 @@ while t < 1.7 :
 
     # Plot intersection
     if _first:
-        p = plot(intersection, rescale=False)
-        p.ren.SetViewPoint(-1,-1,-1)
-        p.ren.ResetCamera()
+        p = plot(intersection, rescale=True, wireframe=False, axes=True,scalar_bar=False)
+        p.elevate(-50)
+        p.azimuth(40)
+        p.update(intersection)
         _first = False
-    if counter == 2:
-      interactive()
-#      p.movie("movie")
+        interactive()
 
     else:
         plot(intersection)
 
+#    p.movie("movie")
     #Propagate sphere along the line t(1,1,1).  
     x[:,0] += dt 
     x[:,1] += dt

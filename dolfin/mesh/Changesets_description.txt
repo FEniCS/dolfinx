@@ -1,5 +1,11 @@
 Description of most-relevant changes in the cgal_branch.
 
+Summary of changes:
+- Intersection detection for mesh-point (1d-3d) and mesh-mesh intersection (2d-1d, 2d-2d, 3d-2d,3d-3d)
+  (computing all cell ids for one mesh, now *uniquely* collected in a std:set)
+- Computing first intersected cell for mesh-point intersection, accelerates significantly function 
+  eval 
+
 ADDED:
 - IntersectionOperator class: Provides the interface for the new intersection
   functionality based on the CGAL library (computational geometry).
@@ -22,6 +28,8 @@ ADDED:
 
 - demo/mesh/intersection/python/demo_3d.py demonstrates intersection of 3D cube
   with 3D sphere running through the cube.
+
+- bench/mesh/intersection/main.cpp Benchmark against old GTS interface.
 
 - added intersection functionality to complement CGAL interface
   (Point_3_*_intersection.h) and add new intersection detection (Tetrahedron -
