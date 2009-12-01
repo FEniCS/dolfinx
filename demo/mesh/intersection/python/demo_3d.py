@@ -17,6 +17,8 @@ if not has_cgal():
     exit(0)
 
 sphere = UnitSphere(20)
+#sphere = UnitSphere(10)
+#cube = UnitCube(20, 20, 20)
 cube = UnitCube(20, 20, 20)
 
 # Access mesh geometry
@@ -27,7 +29,8 @@ dt = 0.1
 t = -0.61
 
 # Scale and move the circle.
-x *= 0.7
+#x *= 0.7
+x *= 0.3
 x[:] += t
 
 intersection = MeshFunction("uint", cube, cube.topology().dim())
@@ -38,6 +41,7 @@ while t < 1.4 :
 
     boundary = BoundaryMesh(sphere)
     # Compute intersection with boundary of square
+#    cells = cube.all_intersected_entities(sphere)
     cells = cube.all_intersected_entities(boundary)
 
     # Mark intersected values
