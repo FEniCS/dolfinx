@@ -405,6 +405,11 @@ void Function::compute_vertex_values(std::vector<double>& vertex_values,
   // Get finite element
   const FiniteElement& element = _function_space->element();
 
+  // Resize vertex_values if necessary
+  const uint vertex_values_dim = mesh.num_vertices()*value_size();
+  if (vertex_values.size() < vertex_values_dim)
+    vertex_values.resize(vertex_values_dim);
+
   // Local data for interpolation on each cell
   const uint num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
   boost::scoped_array<double> local_vertex_values(new double[local_scratch.size*num_cell_vertices]);
