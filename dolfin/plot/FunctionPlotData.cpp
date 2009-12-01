@@ -32,9 +32,10 @@ FunctionPlotData::FunctionPlotData(const GenericFunction& v, const Mesh& mesh)
   _vertex_values->resize(N);
 
   // Compute vertex values
-  std::vector<double> values(N);
+  double* values = new double[N];
   v.compute_vertex_values(values, mesh);
-  _vertex_values->set_local(&values[0]);
+  _vertex_values->set_local(values);
+  delete [] values;
 }
 //-----------------------------------------------------------------------------
 FunctionPlotData::FunctionPlotData() : rank(0)

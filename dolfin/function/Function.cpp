@@ -276,8 +276,10 @@ dolfin::uint Function::geometric_dimension() const
   return _function_space->mesh().geometry().dim();
 }
 //-----------------------------------------------------------------------------
-void Function::eval(std::vector<double>& values, const std::vector<double>& x) const
+void Function::eval(double* values, const std::vector<double>& x) const
 {
+  assert(values);
+  //assert(x);
   assert(_function_space);
 
   not_working_in_parallel("Function::eval at arbitray points.");
@@ -293,7 +295,7 @@ void Function::eval(std::vector<double>& values, const std::vector<double>& x) c
   UFCCell ufc_cell(cell);
 
   // Evaluate function
-  eval(&values[0], x, cell, ufc_cell);
+  eval(values, x, cell, ufc_cell);
 }
 //-----------------------------------------------------------------------------
 void Function::eval(double* values,
@@ -337,8 +339,9 @@ dolfin::uint Function::value_dimension(uint i) const
   return _function_space->element().value_dimension(i);
 }
 //-----------------------------------------------------------------------------
-void Function::eval(std::vector<double>& values, const Data& data) const
+void Function::eval(double* values, const Data& data) const
 {
+  assert(values);
   assert(_function_space);
 
   // Check if UFC cell if available and cell matches
@@ -346,7 +349,7 @@ void Function::eval(std::vector<double>& values, const Data& data) const
   {
     // Efficient evaluation on given cell
     assert(data._ufc_cell);
-    eval(&values[0], data.x, *data._dolfin_cell, *data._ufc_cell);
+    eval(values, data.x, *data._dolfin_cell, *data._ufc_cell);
   }
   else
   {
@@ -383,9 +386,10 @@ void Function::restrict(double* w,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::compute_vertex_values(std::vector<double>& vertex_values,
+void Function::compute_vertex_values(double* vertex_values,
                                      const Mesh& mesh) const
 {
+  assert(vertex_values);
   assert(&mesh == &_function_space->mesh());
 
   // Gather off-process dofs

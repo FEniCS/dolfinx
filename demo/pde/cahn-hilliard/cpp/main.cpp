@@ -27,7 +27,7 @@ public:
     dolfin::seed(2);
   }
 
-  void eval(std::vector<double>& values, const Data& data) const
+  void eval(double* values, const Data& data) const
   {
     values[0]= 0.0;
     values[1]= 0.63 + 0.02*(0.5 - dolfin::rand());

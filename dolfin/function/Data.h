@@ -28,7 +28,7 @@ namespace dolfin
     Data();
 
     /// Constructor
-    Data(uint geometric_dim, uint value_size);
+    Data(uint geometric_dim);
 
     /// Destructor
     ~Data();
@@ -54,15 +54,8 @@ namespace dolfin
     /// The coordinates
     std::vector<double> x;
 
-    /// Vector to hold values. This is just to avoid repeated 
-    /// construction/deletion
-    std::vector<double> values;
-
-    /// Set geometric dimension
+    /// Set geometric dimensions
     void set_geometric_dim(uint dim);
-
-    /// Set function value size
-    void set_value_size(uint dim);
 
     /// Set cell and facet data
     void set(const Cell& dolfin_cell, const ufc::cell& ufc_cell, int local_facet);

@@ -363,7 +363,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
   std::vector<double> values(size);
 
   // Get function values at vertices
-  u.compute_vertex_values(values, mesh);
+  u.compute_vertex_values(&values[0], mesh);
 
   if (rank == 0)
   {

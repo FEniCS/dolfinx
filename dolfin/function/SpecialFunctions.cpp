@@ -21,9 +21,9 @@ MeshCoordinates::MeshCoordinates(const Mesh& mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshCoordinates::eval(std::vector<double>& values, const Data& data) const
+void MeshCoordinates::eval(double* values, const Data& data) const
 {
-  assert(values.size() == mesh.geometry().dim());
+  assert(values);
   assert(data.geometric_dimension() == mesh.geometry().dim());
   assert(data.x.size() == mesh.geometry().dim());
 
@@ -38,9 +38,9 @@ CellSize::CellSize(const Mesh& mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void CellSize::eval(std::vector<double>& values, const Data& data) const
+void CellSize::eval(double* values, const Data& data) const
 {
-  assert(values.size() > 0);
+  assert(values);
   assert(&data.cell().mesh() == &mesh);
   values[0] = data.cell().diameter();
 }
@@ -52,9 +52,9 @@ FacetArea::FacetArea(const Mesh& mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void FacetArea::eval(std::vector<double>& values, const Data& data) const
+void FacetArea::eval(double* values, const Data& data) const
 {
-  assert(values.size() > 0);
+  assert(values);
   assert(&data.cell().mesh() == &mesh);
 
   if (data.on_facet())

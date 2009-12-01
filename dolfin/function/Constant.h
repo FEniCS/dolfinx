@@ -57,7 +57,7 @@ namespace dolfin
     //--- Implementation of Expression interface ---
 
     /// Evaluate function
-    virtual void eval(std::vector<double>& values, const Data& data) const;
+    virtual void eval(double* values, const Data& data) const;
 
   private:
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-11-29
+// Last changed: 2009-10-11
 
 #ifndef __EXPRESSION_H
 #define __EXPRESSION_H
@@ -58,8 +58,9 @@ namespace dolfin
     virtual uint value_dimension(uint i) const;
 
     /// Evaluate function for given data
-    virtual void eval(std::vector<double>& values, const Data& data) const;
+    virtual void eval(double* values, const Data& data) const;
 
+    /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
@@ -67,13 +68,13 @@ namespace dolfin
                           int local_facet) const;
 
     /// Compute values at all mesh vertices
-    virtual void compute_vertex_values(std::vector<double>& vertex_values,
+    virtual void compute_vertex_values(double* vertex_values,
                                        const Mesh& mesh) const;
 
     //--- User-supplied callback for expression evaluation ---
 
     /// Evaluate expression, must be overloaded by user (simple version)
-    virtual void eval(std::vector<double>& values, const std::vector<double>& x) const;
+    virtual void eval(double* values, const std::vector<double>& x) const;
 
   protected:
 

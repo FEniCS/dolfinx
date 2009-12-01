@@ -36,7 +36,9 @@ class Source : public Expression
 {
 public:
 
-  void eval(std::vector<double>& values, const std::vector<double>& x) const
+  Source() : Expression() {}
+
+  void eval(double* values, const std::vector<double>& x) const
   {
     values[0] = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0]);
   }
@@ -48,7 +50,9 @@ class Flux : public Expression
 {
 public:
 
-  void eval(std::vector<double>& values, const std::vector<double>& x) const
+  Flux() : Expression() {}
+
+  void eval(double* values, const std::vector<double>& x) const
   {
     values[0] = 3.0*DOLFIN_PI*cos(3.0*DOLFIN_PI*x[0]);
   }

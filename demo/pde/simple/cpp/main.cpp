@@ -21,7 +21,9 @@ class Source : public Expression
 {
 public:
 
-  void eval(std::vector<double>& values, const std::vector<double>& x) const
+  Source() {}
+
+  void eval(double* values, const std::vector<double>& x) const
   {
     values[0] = sin(x[0])*sin(x[1]);
   }

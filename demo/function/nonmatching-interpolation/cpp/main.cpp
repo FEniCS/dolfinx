@@ -21,7 +21,9 @@ class MyExpression : public Expression
 {
 public:
 
-  void eval(std::vector<double>& values, const std::vector<double>& x) const
+  MyExpression() : Expression() {}
+
+  void eval(double* values, const std::vector<double>& x) const
   {
     values[0] = sin(10.0*x[0])*sin(10.0*x[1]);
   }

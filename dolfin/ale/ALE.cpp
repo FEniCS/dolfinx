@@ -106,7 +106,7 @@ void ALE::move(Mesh& mesh, const Function& displacement)
 
   // Interpolate at vertices
   const uint N = mesh.num_vertices();
-  std::vector<double> vertex_values(N*gdim);
+  double* vertex_values = new double[N*gdim];
   displacement.compute_vertex_values(vertex_values, mesh);
 
   // Move vertex coordinates
@@ -116,5 +116,8 @@ void ALE::move(Mesh& mesh, const Function& displacement)
     for (uint i = 0; i < N; i++)
       x[i*gdim + d] += vertex_values[d*N + i];
   }
+
+  // Clean up
+  delete [] vertex_values;
 }
 //-----------------------------------------------------------------------------
