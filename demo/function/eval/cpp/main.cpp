@@ -18,7 +18,9 @@ class F : public Expression
 {
 public:
 
-  void eval(std::vector<double>& values, const std::vector<double>& x) const
+  F() {}
+
+  void eval(double* values, const std::vector<double>& x) const
   {
     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
   }
@@ -46,13 +48,13 @@ int main()
   pde.solve(g);
 
   // Evaluate user-defined function f
-  std::vector<double> value(1);
-  f.eval(value, x);
-  info("f(x) = %g", value[0]);
+  double value = 0.0;
+  f.eval(&value, x);
+  info("f(x) = %g", value);
 
   // Evaluate discrete function g (projection of f)
-  g.eval(value, x);
-  info("g(x) = %g", value[0]);
+  g.eval(&value, x);
+  info("g(x) = %g", value);
 }
 
 #else

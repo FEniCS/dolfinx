@@ -31,7 +31,7 @@ int main()
 
     Source() : Expression(3) {}
 
-    void eval(std::vector<double>& values, const std::vector<double>& x) const
+    void eval(double* values, const std::vector<double>& x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -47,7 +47,7 @@ int main()
 
     Zero() : Expression(3) {}
 
-    void eval(std::vector<double>& values, const std::vector<double>& x) const
+    void eval(double* values, const std::vector<double>& x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
