@@ -25,6 +25,7 @@ namespace dolfin
 {
   class FiniteElement;
 }
+
 //-----------------------------------------------------------------------------
 // Ignore reference (to FunctionSpaces) constructors of Function
 //-----------------------------------------------------------------------------
@@ -59,12 +60,97 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 %ignore dolfin::Data::x;
 %rename (x) dolfin::Data::x_();
+//%ignore dolfin::Expression::eval(std::vector<double>& values, const std::vector<double>& x) const;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Constant
 //-----------------------------------------------------------------------------
 %rename (__float__) dolfin::Constant::operator double() const;
 %ignore dolfin::Constant::operator=;
+
+//-----------------------------------------------------------------------------
+// Turn off value wrapper for std::vector<dolfin::uint>
+//-----------------------------------------------------------------------------
+%feature("novaluewrapper") std::vector<dolfin::uint>; 
+
+//-----------------------------------------------------------------------------
+// Instantiate a dummy std::vector<dolfin::uint> so value wrapper is not used
+//-----------------------------------------------------------------------------
+%template () std::vector<dolfin::uint>; 
+
+//-----------------------------------------------------------------------------
+// Typemap for std::vector<dolfin::uint> value_shape
+//-----------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_INT32_ARRAY) std::vector<dolfin::uint> value_shape
+{
+  $1 = PyList_Check($input) ? 1 : 0;
+}
+
+%typemap (in) std::vector<dolfin::uint> value_shape
+{
+  if (PyList_Check($input))
+  {  
+    PyObject * py_item = 0;
+    int size = PyList_Size($input);
+    int item = 0;
+    $1.reserve(size);
+    for (int i = 0; i < size; i++)
+    {
+      py_item = PyList_GetItem($input,i);
+      if (!PyInteger_Check(py_item))
+        SWIG_exception(SWIG_TypeError, "expected list of positive int");
+      item = static_cast<int>(PyInt_AsLong(py_item));
+      if (item < 0)
+        SWIG_exception(SWIG_TypeError, "expected list of positive int");
+      $1.push_back(item);
+    }
+  }
+  else
+  {
+    SWIG_exception(SWIG_TypeError, "expected list of positive int");
+  }
+}
+
+//-----------------------------------------------------------------------------
+// Turn off value wrapper for std::vector<double>
+//-----------------------------------------------------------------------------
+%feature("novaluewrapper") std::vector<double>; 
+
+//-----------------------------------------------------------------------------
+// Instantiate a dummy std::vector<dolfin::double> so value wrapper is not used
+//-----------------------------------------------------------------------------
+%template () std::vector<double>; 
+
+//-----------------------------------------------------------------------------
+// Typemap for std::vector<dolfin::double> values (used in Constant constructor)
+//-----------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::vector<double> values
+{
+  $1 = PyList_Check($input) ? 1 : 0;
+}
+
+%typemap (in) std::vector<double> values
+{
+  if (PyList_Check($input))
+  {  
+    PyObject * py_item = 0;
+    int size = PyList_Size($input);
+    double item = 0;
+    $1.reserve(size);
+    for (int i = 0; i < size; i++)
+    {
+      py_item = PyList_GetItem($input,i);
+      if (!PyFloat_Check(py_item))
+        SWIG_exception(SWIG_TypeError, "expected list of floats");
+      item = static_cast<double>(PyFloat_AsDouble(py_item));
+      $1.push_back(item);
+    }
+  }
+  else
+  {
+    SWIG_exception(SWIG_TypeError, "expected list of floats");
+  }
+}
 
 //-----------------------------------------------------------------------------
 // Add director classes
@@ -75,3 +161,73 @@ namespace dolfin
 %feature("nodirector") dolfin::Expression::gather;
 %feature("nodirector") dolfin::Expression::value_dimension;
 %feature("nodirector") dolfin::Expression::value_rank;
+%feature("nodirector") dolfin::Expression::eval(std::vector<double>& values, const  std::vector<double>& x) const;
+
+//-----------------------------------------------------------------------------
+// Director typemap for values in Expression
+//-----------------------------------------------------------------------------
+%typemap(directorin) std::vector<double>& values 
+{
+  {
+    // Compute size of x
+    npy_intp dims[1] = {$1_name.size()};
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, 
+                                       reinterpret_cast<char*>(&($1_name)[0]));
+  }
+}
+
+//-----------------------------------------------------------------------------
+// Director typemap for coordinates in Expression
+//-----------------------------------------------------------------------------
+// FIXME: Is there a better way to map a std::vector to a numpy array?
+%typemap(directorin) const std::vector<double>& x 
+{
+  {
+    std::cout << "In typemap & x" << std::endl;
+    // Compute size of x
+    npy_intp dims[1] = {$1_name.size()};
+    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, 
+            reinterpret_cast<char *>( &(const_cast<std::vector<double>& >($1_name))[0] ));
+  }
+}
+
+////-----------------------------------------------------------------------------
+//// In typemaps for std::vector<double> _array
+////-----------------------------------------------------------------------------
+//%typemap(in) std::vector<double> & _array (std::vector<double> vec_tmp)
+//{
+//  // Check arguments
+//  if (!PyArray_Check($input)){
+//    PyErr_SetString(PyExc_TypeError, "numpy array of 'double' expected. Make sure that the numpy array use dtype='d'.");
+//    return NULL;
+//  }
+//  
+//  PyArrayObject *xa = reinterpret_cast<PyArrayObject*>(input);
+//  if (!PyArray_TYPE(xa) == NPY_DOUBLE ){
+//    PyErr_SetString(PyExc_TypeError, "numpy array of 'double' expected. Make sure that the numpy array use dtype='d'.");
+//    return NULL;
+//  }
+//  
+//  // Get size and reserve the tmp vector
+//  npy_int size = PyArray_Size(xa);
+//  vec_tmp.reserve(size);
+//  
+//  // Get the data
+//  double * data = static_cast<double*>(PyArray_DATA(xa));
+//  for (int i=0, i<size; i++)
+//    vec_tmp[i] = data[i];
+//
+//  // Provide the out argument
+//  $1 = &vec_tmp;
+//}
+//
+//%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::vector<double> & values
+//{
+//    $1 = PyArray_Check($input) ? 1 : 0;
+//}
+//
+//%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) const std::vector<double> & x
+//{
+//    $1 = PyArray_Check($input) ? 1 : 0;
+//}
+//
