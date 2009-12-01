@@ -175,7 +175,6 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 }
 
 %enddef
-
 //-----------------------------------------------------------------------------
 // Run the different macros and instantiate the typemaps
 //-----------------------------------------------------------------------------
@@ -183,100 +182,3 @@ IN_TYPEMAPS_STD_VECTOR_OF_POINTERS(DirichletBC)
 IN_TYPEMAPS_STD_VECTOR_OF_POINTERS(BoundaryCondition)
 IN_TYPEMAPS_STD_VECTOR_OF_POINTERS(GenericFunction)
 IN_TYPEMAPS_STD_VECTOR_OF_POINTERS(FunctionSpace)
-
-ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, cells, NPY_INT)
-// FIXME: We cannot have argout typemaps for columns and values
-// FIXME: They work for get_row, but they interfere with eval interface.
-// FIXME: They should also _not_ kick in for const std::vector<TYPE>, but they do
-//ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(dolfin::uint, INT32, columns, NPY_INT)
-//ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
-
-//-----------------------------------------------------------------------------
-// NumPy to const std::vector<double>& typemap.
-//-----------------------------------------------------------------------------
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) const std::vector<double>& x {
-    $1 = PyArray_Check($input) ? 1 : 0;
-}
-
-%typemap(in) const std::vector<double>& x (std::vector<double> temp)
-{
-  {
-    if (PyArray_Check($input)) 
-    {
-      PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
-      if ( PyArray_TYPE(xa) == NPY_DOUBLE )
-      {
-        const unsigned int size = PyArray_DIM(xa, 0);
-        temp.resize(size);
-        double* array = static_cast<double*>(PyArray_DATA(xa));
-        std::copy(array, array + size, temp.begin());
-        $1 = &temp;
-      }
-     else
-       SWIG_exception(SWIG_TypeError, "NumPy array expected");
-    }
-    else
-      SWIG_exception(SWIG_TypeError, "NumPy array expected");
-  }
-}
-
-//-----------------------------------------------------------------------------
-// std::vector<double>& to NumPy typemap.
-//-----------------------------------------------------------------------------
-%typemap(in) std::vector<double>& values (std::vector<double> temp, PyArrayObject *out_array = 0)
-{
-  if (!PyArray_Check($input))
-    SWIG_exception(SWIG_TypeError, "numpy array of 'double' expected. Make sure that the numpy array use dtype='d'.");
-  out_array = reinterpret_cast<PyArrayObject*>($input);
-  if ( !PyArray_TYPE(out_array) == NPY_DOUBLE )
-    SWIG_exception(SWIG_TypeError, "numpy array of 'double' expected. Make sure that the numpy array use dtype='d'.");
-  
-  // Use the size of the incomming array to pass a correct sized vector to the function
-  const unsigned int size = PyArray_DIM(out_array, 0);
-  temp.resize(size);
-  $1 = &temp;
-}
-
-%typemap(argout) std::vector<double>& values
-{
-  // Get the pointer to the data in the passed NumPy array
-  double* array = static_cast<double*>(PyArray_DATA(out_array$argnum));
-  
-  // Copy the content from the temp array to the NumPy array
-  std::copy(temp$argnum.begin(), temp$argnum.end(), array);
-  
-  // Tell the function to return 'None', which means not return value
-  $result = Py_None;
-  
-}
-
-//-----------------------------------------------------------------------------
-// std::vector<double>& to NumPy typemap.
-//-----------------------------------------------------------------------------
-%typemap(in) std::vector<double>& vertex_values (std::vector<double> temp, PyArrayObject *out_array = 0, dolfin::uint init_size = 0)
-{
-  if (!PyArray_Check($input))
-    SWIG_exception(SWIG_TypeError, "numpy array of 'double' expected. Make sure that the numpy array use dtype='d'.");
-  out_array = reinterpret_cast<PyArrayObject*>($input);
-  if ( !PyArray_TYPE(out_array) == NPY_DOUBLE )
-    SWIG_exception(SWIG_TypeError, "numpy array of 'double' expected. Make sure that the numpy array use dtype='d'.");
-  
-  // Use the size of the incomming array to pass a correct sized vector to the function
-  const unsigned int size = PyArray_DIM(out_array, 0);
-  init_size = size;
-  temp.resize(size);
-  $1 = &temp;
-}
-
-%typemap(argout) std::vector<double>& vertex_values
-{
-  // Get the pointer to the data in the passed NumPy array
-  double* array = static_cast<double*>(PyArray_DATA(out_array$argnum));
-  
-  // Copy the content from the temp array to the NumPy array
-  std::copy(temp$argnum.begin(), temp$argnum.end(), array);
-
-  // Tell the function to return 'None', which means not return value
-  $result = Py_None;
-  
-}

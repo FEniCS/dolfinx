@@ -35,11 +35,10 @@ def function_space(self):
     return reinterpret_cast<PyObject*>(array);
   }
 }
-
 //-----------------------------------------------------------------------------
 // Clear director typemaps
 //-----------------------------------------------------------------------------
 %clear const double* x;
 %clear double* y;
-%clear const std::vector<double>& x;
-%clear std::vector<double>& values;
+//%clear const std::vector<double>& x;
+//%clear std::vector<double>& values;

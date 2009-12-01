@@ -24,6 +24,8 @@
 import_array();
 %}
 
+%include "std_vector.i"
+
 // Global shared ptr declarations
 %include "dolfin/swig/shared_ptr_classes.i"
 
