@@ -38,3 +38,4 @@ RE:scons/pkgconfig.*
 RE:demo/.*/(cpp|python)/.*\.(pvd|vtu|pvtu|xml)
 RE:demo/.*/cpp/demo
 RE:test/.*/cpp/test
+RE:test/unit/mesh/(cpp|python)/.*.(xml|m)
