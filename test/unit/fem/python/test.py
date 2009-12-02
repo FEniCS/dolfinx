@@ -67,12 +67,12 @@ class Assembly(unittest.TestCase):
 
         A_frobenius_norm =  4.3969686527582512;
         b_l2_norm = 0.95470326978246278;
-        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 12)
-        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 12)
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
         A, b = assemble_system(a, L)
-        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 12)
-        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 12)
+        self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
+        self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
 
 if __name__ == "__main__":
