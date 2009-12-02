@@ -374,11 +374,7 @@ namespace dolfin
   template <class Mat>
   void uBLASMatrix<Mat>::zero()
   {
-    // Set all non-zero values to zero without detroying non-zero pattern
-    // It might be faster to iterate through entries?
-    //A  *= 0.0;
-    //A.clear();
-
+    // Iterate through no-zero pattern and zero entries
     typename Mat::iterator1 row;    // Iterator over rows
     typename Mat::iterator2 entry;  // Iterator over entries
     for (row = A.begin1(); row != A.end1(); ++row)
@@ -396,9 +392,30 @@ namespace dolfin
   template <class Mat>
   void uBLASMatrix<Mat>::ident(uint m, const uint* rows)
   {
-    const uint n = this->size(1);
-    for(uint i = 0; i < m; ++i)
-      ublas::row(A, rows[i]) = ublas::unit_vector<double> (n, rows[i]);
+    // Copy row indices to a vector
+    std::vector<uint> _rows(rows, rows+m);
+
+    uint counter = 0;
+    typename Mat::iterator1 row;    // Iterator over rows
+    typename Mat::iterator2 entry;  // Iterator over entries
+    for (row = A.begin1(); row != A.end1(); ++row)
+    {
+      entry = row.begin();
+      if (std::find(_rows.begin(), _rows.end(), entry.index1()) != _rows.end())
+      {
+        // Iterate over entries to zero and place one on the diagonal
+        for (entry = row.begin(); entry != row.end(); ++entry)
+        {
+          if (entry.index1() == entry.index2())
+            *entry = 1.0;
+          else
+            *entry = 0.0;
+        } 
+        ++ counter;
+      }
+      if (counter == _rows.size())
+        continue;
+    }
   }
   //---------------------------------------------------------------------------
   template <class Mat>
@@ -466,7 +483,6 @@ namespace dolfin
     if (verbose)
     {
       s << str(false) << std::endl << std::endl;
-
       for (it1 = A.begin1(); it1 != A.end1(); ++it1)
       {
         s << "|";
