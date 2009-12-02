@@ -6,7 +6,7 @@
 // Modified by Marie Rognes, 2009.
 //
 // First added:  2005-08-31
-// Last changed: 2009-10-12
+// Last changed: 2009-12-02
 
 #ifndef __SLEPC_EIGEN_SOLVER_H
 #define __SLEPC_EIGEN_SOLVER_H
@@ -112,6 +112,7 @@ namespace dolfin
     {
       Parameters p("slepc_eigenvalue_solver");
 
+      p.add("problem_type",       "default");
       p.add("spectrum",           "largest magnitude");
       p.add("solver",             "krylov-schur");
       p.add("tolerance",          1e-15);
@@ -129,6 +130,9 @@ namespace dolfin
 
     /// Callback for changes in parameter values
     void read_parameters();
+
+    // Set problem type (used for SLEPc internals)
+    void set_problem_type(std::string type);
 
     // Set spectral transform
     void set_spectral_transform(std::string transform, double shift);

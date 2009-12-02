@@ -6,7 +6,7 @@
 // Modified by Marie Rognes, 2009.
 //
 // First added:  2005-08-31
-// Last changed: 2009-10-12
+// Last changed: 2009-12-02
 
 #ifdef HAS_SLEPC
 
@@ -142,9 +142,6 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   const uint nn = static_cast<int>(n);
   EPSSetDimensions(eps, nn, PETSC_DECIDE, PETSC_DECIDE);
 
-  // Set algorithm type (Hermitian matrix)
-  //EPSSetProblemType(eps, EPS_NHEP);
-
   // Set parameters from PETSc parameter database
   EPSSetFromOptions(eps);
 
@@ -175,6 +172,7 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::read_parameters()
 {
+  set_problem_type(parameters["problem_type"]);
   set_spectrum(parameters["spectrum"]);
   set_solver(parameters["solver"]);
   set_tolerance(parameters["tolerance"], parameters["maximum_iterations"]);
@@ -184,6 +182,23 @@ void SLEPcEigenSolver::read_parameters()
 }
 //-----------------------------------------------------------------------------
 
+void SLEPcEigenSolver::set_problem_type(std::string type)
+{
+  // Do nothing if default type is specified
+  if (type == "default")
+    return;
+
+  if (type == "hermitian")
+    EPSSetProblemType(eps, EPS_HEP);
+  else if (type == "non_hermitian")
+    EPSSetProblemType(eps, EPS_NHEP);
+  else if (type == "gen_hermitian")
+    EPSSetProblemType(eps, EPS_GHEP);
+  else if (type == "gen_non_hermitian")
+    EPSSetProblemType(eps, EPS_GNHEP);
+  else
+    error("Unknown problem type: \"%s\".", type.c_str());
+}
 
 void SLEPcEigenSolver::set_spectral_transform(std::string transform,
                                               double shift)
@@ -201,7 +216,6 @@ void SLEPcEigenSolver::set_spectral_transform(std::string transform,
   else
     error("Unknown transform: \"%s\".", transform.c_str());
 }
-
 
 void SLEPcEigenSolver::set_spectrum(std::string spectrum)
 {
@@ -235,7 +249,10 @@ void SLEPcEigenSolver::set_solver(std::string solver)
   if (solver == "default")
     return;
 
-  // Choose solver
+  // Choose solver.
+
+  // (Note that lanczos will give PETSc error unless problem_type is
+  // set to 'hermitian' or 'gen_hermitian')
   if (solver == "power")
     EPSSetType(eps, EPSPOWER);
   else if (solver == "subspace")
