@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-09-11
-// Last changed: 2009-11-09
+// Last changed: 2009-12-02
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -61,7 +61,10 @@ namespace dolfin
 
     double evaluate_dof(uint i, const ufc::function& function,
                         const ufc::cell& cell) const
-    { return _ufc_element->evaluate_dof(i, function, cell); }
+    {
+      assert(_ufc_element);
+      return _ufc_element->evaluate_dof(i, function, cell);
+    }
 
     /// Create sub element
     boost::shared_ptr<const FiniteElement> create_sub_element(uint i) const
