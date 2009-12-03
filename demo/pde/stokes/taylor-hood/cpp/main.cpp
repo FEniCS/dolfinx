@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2009-10-08
+// Last changed: 2009-12-03
 //
 // This demo solves the Stokes equations, using quadratic elements for
 // the velocity and first degree elements for the pressure
@@ -61,7 +61,7 @@ int main()
   // Create functions for boundary conditions
   Noslip noslip;
   Inflow inflow;
-  Constant zero(0.0);
+  Constant zero(0.0, 0.0);
 
   // No-slip boundary condition for velocity
   DirichletBC bc0(W0, noslip, sub_domains, 0);
