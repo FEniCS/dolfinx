@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-11
-// Last changed: 2009-10-11
+// Last changed: 2009-12-02
 
 #include <dolfin/mesh/Cell.h>
 #include "Data.h"
@@ -85,13 +85,13 @@ void Data::set(const ufc::cell& ufc_cell, const double* x)
 {
   _ufc_cell = &ufc_cell;
   this->x.resize(ufc_cell.geometric_dimension);
-  this->x.assign(x, x + this->x.size()); 
+  this->x.assign(x, x + this->x.size());
   //this->x = x;
 }
 //-----------------------------------------------------------------------------
 void Data::clear()
 {
-  x.resize(0);
+  x.clear();
   _dolfin_cell = 0;
   _ufc_cell = 0;
   _facet = -1;
