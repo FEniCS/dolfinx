@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-09-14
+// Last changed: 2009-12-03
 
 #include <boost/scoped_array.hpp>
 #include <cstdarg>
@@ -176,6 +176,24 @@ void dolfin::not_working_in_parallel(std::string what)
     }
     exit(10);
   }
+}
+//-----------------------------------------------------------------------------
+void dolfin::check_equal(uint value,
+                         uint valid_value,
+                         std::string task,
+                         std::string value_name)
+{
+  if (value == valid_value)
+    return;
+
+  std::stringstream s;
+  s << "Unable to " << task
+    << ". Reason: Illegal value " << value
+    << " for " << value_name
+    << ", should be " << valid_value
+    << ".";
+
+  error(s.str());
 }
 //-----------------------------------------------------------------------------
 void dolfin::__debug(std::string file, unsigned long line,

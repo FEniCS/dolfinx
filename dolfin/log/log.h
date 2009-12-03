@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-09-10
+// Last changed: 2009-12-03
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -77,6 +77,9 @@ namespace dolfin
 
   /// Report that functionality has not (yet) been implemented to work in parallel
   void not_working_in_parallel(std::string what);
+
+  /// Check value and print an informative error message if invalid
+  void check_equal(uint value, uint valid_value, std::string task, std::string value_name);
 
   // Helper function for dolfin_debug macro
   void __debug(std::string file, unsigned long line, std::string function, std::string format, ...);

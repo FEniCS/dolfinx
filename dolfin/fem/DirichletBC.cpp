@@ -366,17 +366,12 @@ void DirichletBC::check() const
   //if (!g->in(*_function_space))
   //  error("Unable to create boundary condition, boundary value function is not in trial space.");
 
-  cout << "g: " << g->value_rank() << endl;
-  cout << "V: " << _function_space->element().value_rank() << endl;
-
   // Check that value shape of boundary value
-  if (g->value_rank() != _function_space->element().value_rank())
-    error("Unable to create boundary condition, illegal rank %d for boundary value (should be %d).",
-          g->value_rank(), _function_space->element().value_rank());
+  check_equal(g->value_rank(), _function_space->element().value_rank(),
+              "create boundary condition", "value rank");
   for (uint i = 0; i < g->value_rank(); i++)
-    if (g->value_dimension(i) != _function_space->element().value_dimension(i))
-      error("Unable to create boundary condition, illegal dimension %d for axis %d of boundary value (should be %d).",
-            g->value_dimension(i), i, _function_space->element().value_dimension(i));
+    check_equal(g->value_dimension(i), _function_space->element().value_dimension(i),
+                "create boundary condition", "value dimension");
 
   // Check that boundary condition method is known
   if (methods.count(method) == 0)
