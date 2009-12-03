@@ -285,10 +285,7 @@ void Function::eval(double* values, const std::vector<double>& x) const
 
   // Initialize intersection detector if not done before
   if (!intersection_detector)
-  {
-    dolfin_debug("Initializing intersection detector");
     intersection_detector.reset(new IntersectionDetector(_function_space->mesh()));
-  }
 
   // Find the cell that contains x
   const double* _x = &x[0];
