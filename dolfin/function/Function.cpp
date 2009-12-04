@@ -6,7 +6,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2009-11-29
+// Last changed: 2009-12-04
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -20,7 +20,6 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/UFC.h>
-#include <dolfin/mesh/IntersectionOperator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/adaptivity/AdaptiveObjects.h>
 #include "Data.h"
