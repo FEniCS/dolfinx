@@ -1,3 +1,4 @@
+0.9.5 [2009-12-03]
  - Set appropriate parameters for symmetric eigenvalue problems with SLEPc
  - Fix for performance regression in recent uBLAS releases
  - Simplify Expression interface: f = Expression("sin(x[0])")

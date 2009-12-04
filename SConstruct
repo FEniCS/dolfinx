@@ -27,7 +27,7 @@ env.ARGUMENTS = ARGUMENTS
 env["projectname"] = "dolfin"
 
 # Set version
-env["PACKAGE_VERSION"] = "0.9.4"
+env["PACKAGE_VERSION"] = "0.9.5"
 
 scons.setDefaultEnv(env)
 
