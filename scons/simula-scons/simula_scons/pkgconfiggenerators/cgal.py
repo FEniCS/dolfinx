@@ -31,7 +31,7 @@ int main() {
 """
     cppfile = "cgal_config_test_version.cpp"
     write_cppfile(cpp_test_version_str, cppfile);
-
+    
     if not compiler:
         compiler = get_compiler(sconsEnv=sconsEnv)
     if not cflags:

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-01
-// Last changed: 2009-11-28
+// Last changed: 2009-12-04
 
 #include <algorithm>
 #include <map>
@@ -58,12 +58,6 @@ const Mesh& IntersectionOperator::mesh() const
   return *_mesh;
 }
 
-boost::shared_ptr<const Mesh> IntersectionOperator::mesh_ptr() 
-{ 
-  assert(_mesh);
-  return _mesh;
-}
-
 IntersectionOperatorImplementation * IntersectionOperator::create_intersection_operator(boost::shared_ptr<const Mesh> mesh, const std::string & kernel_type = "SimpleCartesian")
 {
   if (kernel_type == "ExactPredicates")
@@ -102,41 +96,33 @@ const IntersectionOperatorImplementation& IntersectionOperator::rImpl() const
 
 #else
 
-IntersectionOperator::IntersectionOperator(const Mesh & _mesh)
+IntersectionOperator::IntersectionOperator(const Mesh & mesh, const std::string & kernel_type)
 {
   error("DOLFIN has been compiled without CGAL, IntersectionOperator is not available.");
 }
 
-IntersectionOperator::IntersectionOperator(boost::shared_ptr<const Mesh> _mesh, std::string &)
+IntersectionOperator::IntersectionOperator(boost::shared_ptr<const Mesh> mesh, const std::string & kernel_type)
 {
   error("DOLFIN has been compiled without CGAL, IntersectionOperator is not available.");
 }
 
 IntersectionOperator::~IntersectionOperator() {}
 
-void IntersectionOperator::all_intersected_entities(const Point & point, uint_set & ids_result) {}
+void IntersectionOperator::all_intersected_entities(const Point & point, uint_set & ids_result) const {}
 
-void IntersectionOperator::all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) {}
+void IntersectionOperator::all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const {}
 
-void IntersectionOperator::all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) {}
+void IntersectionOperator::all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const {}
 
-int IntersectionOperator::any_intersected_entity(const Point & point) {return -1;}
+int IntersectionOperator::any_intersected_entity(const Point & point) const {return -1;}
 
 void IntersectionOperator::clear() {}
 
 const Mesh& IntersectionOperator::mesh() const
 {
+  //Should never come here, disabled constructor throws exception.
   assert(_mesh);
   return *_mesh;
 }
-
-boost::shared_ptr<Mesh> IntersectionOperator::mesh_ptr() 
-{ 
-  assert(_mesh);
-  return _mesh;
-}
-
-void IntersectionOperator::reset_kernel(const std::string & kernel_type) {}
-void IntersectionOperator::reset() {}
 
 #endif
