@@ -7,7 +7,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2009-11-29
+// Last changed: 2009-12-04
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -146,11 +146,6 @@ namespace dolfin
     /// Collect off-process coefficients to prepare for interpolation
     virtual void gather() const;
 
-  protected:
-
-    // The function space
-    boost::shared_ptr<const FunctionSpace> _function_space;
-
   private:
 
     // Friends
@@ -168,6 +163,9 @@ namespace dolfin
 
     // Get coefficients from the vector(s)
     void get(double* block, uint m, const uint* rows) const;
+
+    // The function space
+    boost::shared_ptr<const FunctionSpace> _function_space;
 
     // The vector of expansion coefficients (local)
     boost::shared_ptr<GenericVector> _vector;
