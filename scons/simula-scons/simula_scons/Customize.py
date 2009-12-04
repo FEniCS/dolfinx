@@ -102,7 +102,14 @@ class Dependency:
         self.cppPath, self.compileOpts, self.libPath, self.libs, self.linkOpts, self.version, self.compiler  = cppPath, compileOpts, libPath, libs, linkOpts, version, compiler
 
     def __str__(self):
-        return "\ncppPath: %s\nlibPath: %s\nlibs: %s\nlibs: %s\ncompiler: %s\n" % \
-               (self.cppPath,self.libPath,self.libs,self.linkOpts,self.compiler)
+        return """
+cppPath: %s
+compileOpts: %s
+libPath: %s
+libs: %s
+linkOpts: %s
+version: %s
+compiler: %s
+""" % (self.cppPath, self.compileOpts, self.libPath, self.libs, self.linkOpts, self.version, self.compiler)
 
 
