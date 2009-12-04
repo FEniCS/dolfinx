@@ -2,16 +2,17 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-08
-// Last changed: 2009-10-08
+// Last changed: 2009-12-04
 //
 // Modified by Anders Logg, 2008.
+// Modified by Andre Massing, 2009.
 
 #include <dolfin.h>
 #include <math.h>
 
 using namespace dolfin;
 
-#ifdef HAS_GTS
+#ifdef HAS_CGAL
 
 int main()
 {
@@ -64,7 +65,7 @@ int main()
 
 int main()
 {
-  info("DOLFIN must be compiled with GTS to run this demo.");
+  info("DOLFIN must be compiled with CGAL to run this demo.");
   return 0;
 }
 

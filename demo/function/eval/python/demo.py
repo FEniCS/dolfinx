@@ -12,8 +12,8 @@ from numpy import array
 
 not_working_in_parallel("This demo")
 
-if not has_gts():
-    print "DOLFIN must be compiled with GTS to run this demo."
+if not has_cgal():
+    print "DOLFIN must be compiled with CGAL to run this demo."
     exit(0)
 
 # Create mesh and a point in the mesh

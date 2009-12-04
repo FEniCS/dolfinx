@@ -26,9 +26,9 @@ from math import pow
 # This demo does not run in parallel
 not_working_in_parallel("This demo")
 
-# This demo does not work without GTS
-if not has_gts():
-    print "DOLFIN must be compiled with GTS to run this demo."
+# This demo does not work without CGAL
+if not has_cgal():
+    print "DOLFIN must be compiled with CGAL to run this demo."
     exit(0)
 
 TOL = 5e-4           # Error tolerance

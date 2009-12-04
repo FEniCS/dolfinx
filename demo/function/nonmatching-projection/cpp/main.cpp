@@ -15,7 +15,7 @@
 
 using namespace dolfin;
 
-#ifdef HAS_GTS
+#ifdef HAS_CGAL
 
 class MyExpression : public Expression
 {
@@ -67,7 +67,7 @@ int main()
 
 int main()
 {
-  info("DOLFIN must be compiled with GTS to run this demo.");
+  info("DOLFIN must be compiled with CGAL to run this demo.");
   return 0;
 }
 

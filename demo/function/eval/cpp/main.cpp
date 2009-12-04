@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-03-11
-// Last changed: 2009-10-05
+// Last changed: 2009-12-04
 //
 // Demonstrating function evaluation at arbitrary points.
 
@@ -12,7 +12,7 @@
 
 using namespace dolfin;
 
-#ifdef HAS_GTS
+#ifdef HAS_CGAL
 
 class F : public Expression
 {
@@ -61,7 +61,7 @@ int main()
 
 int main()
 {
-  info("DOLFIN must be compiled with GTS to run this demo.");
+  info("DOLFIN must be compiled with CGAL to run this demo.");
   return 0;
 }
 
