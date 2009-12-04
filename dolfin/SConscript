@@ -173,7 +173,7 @@ rpathdirs=[Dir("#%s/%s" % (env["projectname"],m.path)).abspath  for m in modules
 #### End TODO
 
 for modName, mod in modules.items():
-    libs, libPath, linkOpts, cppPath, frameworks = [], [], [], [], []
+    libs, libPath, compileOpts, linkOpts, cppPath, frameworks = [], [], [], [], [], []
     swiglibs, swigframeworks, swiglinkOpts, swiglibPath, swigcppPath = [], [], [], [], []
 
     for d in mod.dependencies:
@@ -187,6 +187,7 @@ for modName, mod in modules.items():
             libs += dep.libs[0]          # The libs
             frameworks += list(dep.libs[1])    # The frameworks (Darwin)
             libPath  += dep.libPath
+            compileOpts += dep.compileOpts
             linkOpts += dep.linkOpts
             cppPath  += dep.cppPath
 
@@ -222,6 +223,7 @@ for modName, mod in modules.items():
 
         modEnv.Prepend(CPPPATH=[Dir("#").abspath] + cppPath, LIBPATH=libPath)
         modEnv.Append(LIBS=libs)
+        modEnv.Append(CXXFLAGS=compileOpts)
         modEnv.Append(LINKFLAGS=linkOpts)
         if env["PLATFORM"] == "darwin":
             modEnv.Append(FRAMEWORKS=frameworks)
@@ -235,7 +237,8 @@ for modName, mod in modules.items():
         # Register swig wrapper targets in the module
         mod.cxxFlags += ["-fno-strict-aliasing"]
 
-        modEnv = swigEnv.Clone(CXXFLAGS=mod.cxxFlags, LINKFLAGS=mod.linkFlags + linkOpts)
+        modEnv = swigEnv.Clone(CXXFLAGS=mod.cxxFlags + compileOpts,
+                               LINKFLAGS=mod.linkFlags + linkOpts)
         modEnv.Append(SWIGFLAGS=mod.swigFlags + ["-I%s" % i for i in swigcppPath])
         
         # Add python dependency (always required in python wrappers)

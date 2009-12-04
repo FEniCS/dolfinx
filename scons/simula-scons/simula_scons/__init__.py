@@ -714,7 +714,7 @@ def getModulesAndDependencies(directory=".",
         try:
           packcfg = pkgconfig.PkgConfig(d, env=_defaultEnv)
           configuredPackages[d] = Customize.Dependency(cppPath=packcfg.includeDirs(), \
-                                    compileOpts=packcfg.compileOpts(),
+                                    compileOpts=packcfg.compileOpts(filter=None), # FIXME: Is this OK?
                                     libPath=packcfg.libDirs(),\
                                     libs=packcfg.libs(),\
                                     linkOpts=packcfg.linkOpts(),\
