@@ -2,12 +2,11 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-11
-// Last changed: 2009-11-29
+// Last changed: 2009-12-05
 
 #ifndef __INTERSECTIONOPERATORIMPLEMENTATION_H
 #define __INTERSECTIONOPERATORIMPLEMENTATION_H
 
-#ifdef HAS_CGAL
 
 #include <vector>
 
@@ -17,6 +16,12 @@
 #include <boost/optional.hpp>
 
 #include <dolfin/common/types.h>
+
+#include "Point.h"
+#include "Mesh.h"
+
+
+#ifdef HAS_CGAL
 
 #include "added_intersection_3.h" //additional intersection functionality, *Must* include before the AABB_tree!
 
@@ -170,6 +175,28 @@ namespace dolfin
     }
   }
 
+}
+
+#else
+
+  //Fake interface to allow creation of an IntersectionOperator instance
+  //*without* functionality.  IntersectionOperator uses lazy initialization.
+  //Throw an exception  if a IntersectionOperatorImplementation instance should
+  //be created without CGAL support.
+namespace dolfin  {
+
+  class IntersectionOperatorImplementation
+  {
+  public:
+    IntersectionOperatorImplementation() {
+      error("DOLFIN has been compiled without CGAL, IntersectionOperatorImplementation is not available.");
+    }
+    virtual void all_intersected_entities(const Point & point, uint_set & ids_result) const {}  
+    virtual void all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const {}
+    virtual void all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const {}
+    virtual int any_intersected_entity(const Point & point) const {return -1; } 
+
+  };
 }
 
 #endif 

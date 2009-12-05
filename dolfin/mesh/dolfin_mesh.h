@@ -39,6 +39,5 @@
 #include <dolfin/mesh/UnitSphere.h>
 #include <dolfin/mesh/IntersectionDetector.h>
 #include <dolfin/mesh/IntersectionOperator.h>
-#include <dolfin/mesh/added_intersection_3.h>
 
 #endif

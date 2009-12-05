@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-01
-// Last changed: 2009-12-04
+// Last changed: 2009-12-05
 
 #ifndef __INTERSECTIONOPERATOR_H
 #define __INTERSECTIONOPERATOR_H
@@ -81,11 +81,8 @@ namespace dolfin
     ///implementation.
     IntersectionOperatorImplementation * create_intersection_operator(boost::shared_ptr<const Mesh> mesh,const std::string & kernel_type);
       
-    //Use macro to avoid empty redefinition of the IntersectionOperatorImplementation interface in the case of an absent CGAL.  
-#ifdef HAS_CGAL
     ///Pointer to implementation. Mutable to enable lazy initialization.
     mutable boost::scoped_ptr<IntersectionOperatorImplementation> _pImpl;
-#endif
     
     ///Pointer to mesh.
     boost::shared_ptr<const Mesh> _mesh;

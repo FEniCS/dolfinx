@@ -1,5 +1,9 @@
+0.9.5 [2009-12-03]
+ - Set appropriate parameters for symmetric eigenvalue problems with SLEPc
+ - Fix for performance regression in recent uBLAS releases
  - Simplify Expression interface: f = Expression("sin(x[0])")
  - Simplify Constant interface: c = Constant(1.0)
+ - Fix bug in periodic boundary conditions
  - Add simple script dolfin-tetgen for generating DOLFIN XML meshes from STL
  - Make XML parser append/overwrite parameter set when reading parameters from file
  - Refinement of function spaces and automatic interpolation of member functions

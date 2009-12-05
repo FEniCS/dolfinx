@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-01
-// Last changed: 2009-12-04
+// Last changed: 2009-12-05
 
 #include <algorithm>
 #include <map>
@@ -23,8 +23,6 @@
 #include "Primitive_Traits.h"
 
 using namespace dolfin;
-
-#ifdef HAS_CGAL
 
 IntersectionOperator::IntersectionOperator(const Mesh & mesh, const std::string & kernel_type)
     : _mesh(reference_to_no_delete_pointer(mesh)),_kernel_type(kernel_type) {}
@@ -58,6 +56,16 @@ const Mesh& IntersectionOperator::mesh() const
   return *_mesh;
 }
 
+const IntersectionOperatorImplementation& IntersectionOperator::rImpl() const
+{
+  if (!_pImpl)
+    _pImpl.reset(const_cast<IntersectionOperator *>(this)->create_intersection_operator(_mesh,_kernel_type));
+  return *_pImpl;
+}
+
+
+#ifdef HAS_CGAL
+
 IntersectionOperatorImplementation * IntersectionOperator::create_intersection_operator(boost::shared_ptr<const Mesh> mesh, const std::string & kernel_type = "SimpleCartesian")
 {
   if (kernel_type == "ExactPredicates")
@@ -87,42 +95,13 @@ IntersectionOperatorImplementation * IntersectionOperator::create_intersection_o
   }
 }
 
-const IntersectionOperatorImplementation& IntersectionOperator::rImpl() const
-{
-  if (!_pImpl)
-    _pImpl.reset(const_cast<IntersectionOperator *>(this)->create_intersection_operator(_mesh,_kernel_type));
-  return *_pImpl;
-}
-
 #else
 
-IntersectionOperator::IntersectionOperator(const Mesh & mesh, const std::string & kernel_type)
+//If CGAL support is not available, throw an exception.
+IntersectionOperatorImplementation * IntersectionOperator::create_intersection_operator(boost::shared_ptr<const Mesh> mesh, const std::string & kernel_type = "SimpleCartesian")
 {
-  error("DOLFIN has been compiled without CGAL, IntersectionOperator is not available.");
-}
-
-IntersectionOperator::IntersectionOperator(boost::shared_ptr<const Mesh> mesh, const std::string & kernel_type)
-{
-  error("DOLFIN has been compiled without CGAL, IntersectionOperator is not available.");
-}
-
-IntersectionOperator::~IntersectionOperator() {}
-
-void IntersectionOperator::all_intersected_entities(const Point & point, uint_set & ids_result) const {}
-
-void IntersectionOperator::all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const {}
-
-void IntersectionOperator::all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const {}
-
-int IntersectionOperator::any_intersected_entity(const Point & point) const {return -1;}
-
-void IntersectionOperator::clear() {}
-
-const Mesh& IntersectionOperator::mesh() const
-{
-  //Should never come here, disabled constructor throws exception.
-  assert(_mesh);
-  return *_mesh;
+  error("DOLFIN has been compiled without CGAL, IntersectionOperatorImplementation is not available.");
+  return 0;
 }
 
 #endif
