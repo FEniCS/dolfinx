@@ -29,8 +29,7 @@ dt = 0.1
 t = -0.61
 
 # Scale and move the circle.
-#x *= 0.7
-x *= 0.3
+x *= 0.7
 x[:] += t
 
 intersection = MeshFunction("uint", cube, cube.topology().dim())
