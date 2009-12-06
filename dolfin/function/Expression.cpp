@@ -7,7 +7,6 @@
 // Modified by Johan Hake, 2009.
 
 #include <boost/scoped_array.hpp>
-#include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
@@ -120,13 +119,15 @@ void Expression::compute_vertex_values(double* vertex_values,
 //-----------------------------------------------------------------------------
 void Expression::eval(double* values, const std::vector<double>& x) const
 {
-  //error("Missing eval() for Expression (must be overloaded).");
-  Array _values(value_size(), values);
-  const Array _x(x.size(), const_cast<double*>(&x[0]));
+  // Wrap pointers
+  Array<double> _values(value_size(), values);
+  Array<const double> _x(x.size(), &x[0]);
+
+  // Call eval function
   eval(_values, _x);
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Array& values, const Array& x) const
+void Expression::eval(Array<double>& values, Array<const double>& x) const
 {
   error("Missing eval() for Expression (must be overloaded).");
 }

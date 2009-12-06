@@ -8,12 +8,12 @@
 #define __EXPRESSION_H
 
 #include <vector>
+#include <dolfin/common/Array.h>
 #include "GenericFunction.h"
 
 namespace dolfin
 {
 
-  class Array;
   class Data;
   class Mesh;
 
@@ -78,7 +78,7 @@ namespace dolfin
     virtual void eval(double* values, const std::vector<double>& x) const;
 
     /// Evaluate expression, must be overloaded by user (simple version)
-    virtual void eval(Array& values, const Array& x) const;
+    virtual void eval(Array<double>& values, Array<const double>& x) const;
 
   protected:
 

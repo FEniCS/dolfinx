@@ -11,68 +11,80 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
+#include "NoDeleter.h"
 
 namespace dolfin
 {
 
-  /// This class provides a simple vector-type class for doubles. A purpose of 
-  /// this class is to enable the simple and safe exchange of data between C++
-  /// and Python.
+  /// This class provides a simple wrapper for a pointer to an array. A purpose 
+  /// of this class is to enable the simple and safe exchange of data between 
+  /// C++ and Python.
 
-  class Array
+  template <class T> class Array
   {
   public:
 
     /// Create array of size N
-    explicit Array(uint N);
+    explicit Array(uint N) : _size(N), x(new T(N)) {}
 
     /// Copy constructor
-    explicit Array(const Array& x);
+    //explicit Array(const Array& x) 
+    //{ error("Not implemented"); }
 
     /// Construct array from a shared pointer
-    Array(uint N, boost::shared_array<double> x);
+    Array(uint N, boost::shared_array<T> x) : _size(N), x(x) {}
 
     /// Construct array from a pointer. Array will not take ownership.
-    Array(uint N, double* x);
+    Array(uint N, T* x) : _size(N), x(boost::shared_array<T>(x, NoDeleter<T>())) {}
 
     /// Destructor
-    ~Array();
+    ~Array() {}
 
     /// Assignment operator
-    const Array& operator= (const Array& x);
+    const Array& operator= (const Array& x)
+    { error("Not implemented"); }
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool verbose) const;
+    std::string str(bool verbose) const
+    { 
+      error("No implemented");
+      return "";
+    }
 
     /// Resize array to size N. If size changes, contents will be destroyed.
-    void resize(uint N);
+    void resize(uint N)
+    { error("Not implemented"); }
 
     /// Return size of array
-    uint size() const;
+    uint size() const
+    { return _size; }
 
     /// Zero array
-    void zero();
+    void zero()
+    { error("Not implemented"); }
 
     /// Return minimum value of array
-    double min() const;
+    T min() const
+    { error("Not implemented"); }
 
     /// Return maximum value of array
-    double max() const;
+    T max() const
+    { error("Not implemented"); }
 
     /// Access value of given entry (const version)
-    double operator[] (uint i) const
+    T operator[] (uint i) const
     { assert(i < _size); return x[i]; };
 
     /// Access value of given entry (non-const version)
-    double& operator[] (uint i)
+    T& operator[] (uint i)
     { assert(i < _size); return x[i]; };
 
     /// Return pointer to data (const version)
-    const boost::shared_array<double> data() const
+    const boost::shared_array<T> data() const
     { return x; }
 
     /// Return pointer to data (non-const version)
-    boost::shared_array<double> data()
+    boost::shared_array<T> data()
     { return x; }
 
   private:
@@ -81,7 +93,7 @@ namespace dolfin
     dolfin::uint _size;
 
     // Array data
-    boost::shared_array<double> x;
+    boost::shared_array<T> x;
 
   };
 

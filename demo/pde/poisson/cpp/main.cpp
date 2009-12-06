@@ -25,7 +25,7 @@ using namespace dolfin;
 // Source term (right-hand side)
 class Source : public Expression
 {
-  void eval(Array& values, const Array& x) const
+  void eval(Array<double>& values, Array<const double>& x) const
   {
     double dx = x[0] - 0.5;
     double dy = x[1] - 0.5;
@@ -36,7 +36,7 @@ class Source : public Expression
 // Boundary flux (Neumann boundary condition)
 class Flux : public Expression
 {
-  void eval(Array& values, const Array& x) const
+  void eval(Array<double>& values, Array<const double>& x) const
   {
     values[0] = sin(5*x[0]);
   }
