@@ -32,6 +32,9 @@ namespace dolfin
     /// Construct array from a shared pointer
     Array(uint N, boost::shared_array<double> x);
 
+    /// Construct array from a pointer. Array will not take ownership.
+    Array(uint N, double* x);
+
     /// Destructor
     ~Array();
 

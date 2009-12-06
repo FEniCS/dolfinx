@@ -5,6 +5,7 @@
 // Last changed:
 
 #include "Array.h"
+#include "NoDeleter.h"
 
 using namespace dolfin;
 
@@ -20,6 +21,12 @@ Array::Array(const Array& x)
 }
 //-----------------------------------------------------------------------------
 Array::Array(uint N, boost::shared_array<double> x) : _size(N), x(x)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+Array::Array(uint N, double* x) 
+   : _size(N), x(boost::shared_array<double>(x, NoDeleter<double>()))
 {
   // Do nothing
 }

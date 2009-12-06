@@ -13,6 +13,7 @@
 namespace dolfin
 {
 
+  class Array;
   class Data;
   class Mesh;
 
@@ -75,6 +76,9 @@ namespace dolfin
 
     /// Evaluate expression, must be overloaded by user (simple version)
     virtual void eval(double* values, const std::vector<double>& x) const;
+
+    /// Evaluate expression, must be overloaded by user (simple version)
+    virtual void eval(Array& values, const Array& x) const;
 
   protected:
 
