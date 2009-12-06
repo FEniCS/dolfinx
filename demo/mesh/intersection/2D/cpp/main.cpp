@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-10-08
-// Last changed: 2009-12-04
+// Last changed: 2009-12-06
 //
 // Modified by Anders Logg, 2008.
 // Modified by Andre Massing, 2009.
@@ -37,14 +37,15 @@ int main()
   {
     // Compute intersection with boundary of square
     BoundaryMesh boundary(omega1);
-    std::vector<unsigned int> cells;
-    omega0.intersection(boundary, cells, false);
+    //typedef for std::set<unsigned int>
+    uint_set cells;
+    omega0.all_intersected_entities(boundary, cells);
 
     // Copy values to mesh function for plotting
     MeshFunction<unsigned int> intersection(omega0, omega0.topology().dim());
     intersection = 0;
-    for (unsigned int i = 0; i < cells.size(); i++)
-      intersection[cells[i]] = 1;
+    for (uint_set::const_iterator i = cells.begin(); i != cells.end(); i++)
+      intersection[*i] = 1;
 
     // Plot intersection
     //plot(intersection);
