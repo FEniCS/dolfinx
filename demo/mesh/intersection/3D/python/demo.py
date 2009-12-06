@@ -38,9 +38,8 @@ _first = True
 counter = 0
 while t < 1.4 :
 
-    boundary = BoundaryMesh(sphere)
     # Compute intersection with boundary of square
-#    cells = cube.all_intersected_entities(sphere)
+    boundary = BoundaryMesh(sphere)
     cells = cube.all_intersected_entities(boundary)
 
     # Mark intersected values
