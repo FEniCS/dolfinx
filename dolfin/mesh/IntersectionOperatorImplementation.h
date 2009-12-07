@@ -1,8 +1,10 @@
 // Copyright (C) 2009 Andre Massing 
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Johannes Ring, 2009.
+//
 // First added:  2009-09-11
-// Last changed: 2009-12-05
+// Last changed: 2009-12-07
 
 #ifndef __INTERSECTIONOPERATORIMPLEMENTATION_H
 #define __INTERSECTIONOPERATORIMPLEMENTATION_H
@@ -12,7 +14,6 @@
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/bimap.hpp>
 #include <boost/optional.hpp>
 
 #include <dolfin/common/types.h>
