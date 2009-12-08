@@ -40,6 +40,7 @@ int main(int argc, char* argv[])
   // Create application parameters
   application_parameters.add("foo", 1.0);
   application_parameters.add("bar", 100);
+  application_parameters.add("baz", false);
   application_parameters.add("pc", "amg");
 
   // Create a solver parameter set
