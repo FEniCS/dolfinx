@@ -6,7 +6,7 @@ Try running this demo with
 """
 
 __author__ = "Johan Hake (hake@simula.no) and Anders Logg (logg@simula.no)"
-__date__ = "2009-09-06 -- 2009-10-12"
+__date__ = "2009-09-06 -- 2009-12-08"
 __copyright__ = "Copyright (C) 2009 Johan Hake and Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -37,6 +37,7 @@ application_parameters = Parameters("application_parameters")
 # Create application parameters
 application_parameters.add("foo", 1.0)
 application_parameters.add("bar", 100)
+application_parameters.add("baz", False)
 application_parameters.add("pc", "amg")
 
 # Create a solver parameter set

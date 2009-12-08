@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-11-11
+// Last changed: 2009-12-08
 
 #include <sstream>
 #include <stdio.h>
@@ -452,7 +452,9 @@ void Parameters::add_parameter_set_to_po(po::options_description& desc,
     std::string param_name(base_name + p.key());
     if (p.type_str() == "int")
       desc.add_options()(param_name.c_str(), po::value<int>(), p.description().c_str());
-    else if (p.type_str() == "double")
+    else if (p.type_str() == "bool")
+      desc.add_options()(param_name.c_str(), po::value<bool>(), p.description().c_str());
+    else if (p.type_str() == "real")
       desc.add_options()(param_name.c_str(), po::value<double>(), p.description().c_str());
     else if (p.type_str() == "string")
       desc.add_options()(param_name.c_str(), po::value<std::string>(), p.description().c_str());
@@ -478,7 +480,13 @@ void Parameters::read_vm(po::variables_map& vm, Parameters &parameters, std::str
       if (!v.empty())
         p = v.as<int>();
     }
-    else if (p.type_str() == "double")
+    else if (p.type_str() == "bool")
+    {
+      const po::variable_value& v = vm[param_name];
+      if (!v.empty())
+        p = v.as<bool>();
+    }
+    else if (p.type_str() == "real")
     {
       const po::variable_value& v = vm[param_name];
       if (!v.empty())
