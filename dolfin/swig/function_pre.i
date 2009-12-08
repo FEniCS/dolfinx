@@ -61,6 +61,7 @@ namespace dolfin
 %ignore dolfin::Data::x;
 %rename (x) dolfin::Data::x_();
 %ignore dolfin::eval(double* values, const double* x) const;
+%ignore dolfin::Expression::eval(double* values, const std::vector<double>& x) const;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Constant
@@ -124,6 +125,7 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Typemap for std::vector<dolfin::uint> values
 //-----------------------------------------------------------------------------
+
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::vector<double> values
 {
   $1 = PyList_Check($input) ? 1 : 0;
@@ -177,6 +179,7 @@ namespace dolfin
   }
 }
 
+/*
 //-----------------------------------------------------------------------------
 // Director typemap for coordinates in Expression
 //-----------------------------------------------------------------------------
@@ -197,4 +200,5 @@ namespace dolfin
             reinterpret_cast<char *>( &(const_cast<std::vector<double>& >($1_name))[0] ));
   }
 }
+*/
 

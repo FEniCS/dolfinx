@@ -50,7 +50,7 @@ def right(x, on_boundary):
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Constant((0, 0, 0))
+f = Constant((0.0, 0.0, 0.0))
 
 E  = 10.0
 nu = 0.3
@@ -68,7 +68,7 @@ a = inner(epsilon(v), sigma(u))*dx
 L = inner(v, f)*dx
 
 # Set up boundary condition at left end
-c = Constant((0, 0, 0))
+c = Constant((0.0, 0.0, 0.0))
 bcl = DirichletBC(V, c, left)
 
 # Set up boundary condition at right end

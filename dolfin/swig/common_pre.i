@@ -36,3 +36,10 @@ namespace dolfin
 %ignore real_max_abs(uint n, const real* x);
 %ignore real_norm(uint n, const real* x);
 %ignore real_identity(uint n, real* A, real value=1.0);
+
+%ignore dolfin::Array<const double>::Array(uint N);
+%ignore dolfin::Array<const double>::resize(uint N);
+%ignore dolfin::Array<const double>::zero();
+%ignore dolfin::Array::operator=;
+%ignore dolfin::Array::operator[];
+

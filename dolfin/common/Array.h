@@ -7,6 +7,7 @@
 #ifndef __ARRAY_H
 #define __ARRAY_H
 
+#include <utility>
 #include <boost/shared_array.hpp>
 
 #include <dolfin/common/types.h>
@@ -25,11 +26,11 @@ namespace dolfin
   public:
 
     /// Create array of size N
-    explicit Array(uint N) : _size(N), x(new T(N)) {}
+    explicit Array(uint N) : _size(N), x(new T[N]) {}
 
     /// Copy constructor
-    //explicit Array(const Array& x) 
-    //{ error("Not implemented"); }
+    explicit Array(const Array& x) 
+    { error("Not implemented"); }
 
     /// Construct array from a shared pointer
     Array(uint N, boost::shared_array<T> x) : _size(N), x(x) {}
@@ -42,7 +43,7 @@ namespace dolfin
 
     /// Assignment operator
     const Array& operator= (const Array& x)
-    { error("Not implemented"); }
+    { error("Not implemented"); return *this; }
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const
@@ -53,7 +54,18 @@ namespace dolfin
 
     /// Resize array to size N. If size changes, contents will be destroyed.
     void resize(uint N)
-    { error("Not implemented"); }
+    { 
+      if (N == _size)
+        return;
+      else
+      {
+        // FIXME: Do we want to allow reszing of shared data?
+        if (x.unique())
+          x.reset(new T[N]);
+        else 
+          error("Cannot rezize Array. Data is shared"); 
+      }
+    }
 
     /// Return size of array
     uint size() const
@@ -61,23 +73,26 @@ namespace dolfin
 
     /// Zero array
     void zero()
-    { error("Not implemented"); }
+    { std::fill(x.get(), x.get() + _size, 0.0); }
 
     /// Return minimum value of array
-    T min() const
-    { error("Not implemented"); }
+    //T min() const
+    //{ error("Not implemented"); }
 
     /// Return maximum value of array
-    T max() const
-    { error("Not implemented"); }
+    //T max() const
+    //{ error("Not implemented");  }
 
     /// Access value of given entry (const version)
-    T operator[] (uint i) const
-    { assert(i < _size); return x[i]; };
+    const T& operator[] (uint i) const
+    { assert(i < _size); return x[i]; }
 
     /// Access value of given entry (non-const version)
     T& operator[] (uint i)
-    { assert(i < _size); return x[i]; };
+    { 
+      assert(i < _size); 
+      return x[i]; 
+    }
 
     /// Return pointer to data (const version)
     const boost::shared_array<T> data() const

@@ -123,6 +123,8 @@ void Expression::eval(double* values, const std::vector<double>& x) const
   Array<double> _values(value_size(), values);
   Array<const double> _x(x.size(), &x[0]);
 
+  //std::cout << "Calling new eval" << std::endl;  
+
   // Call eval function
   eval(_values, _x);
 }
