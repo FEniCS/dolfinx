@@ -9,7 +9,7 @@
 // Modified by Kent-Andre Mardal, 2009
 // 
 // First added:  2007-08-16
-// Last changed: 2009-10-07
+// Last changed: 2009-12-08
 
 // ===========================================================================
 // SWIG directives for the DOLFIN function kernel module (pre)
@@ -177,6 +177,30 @@ namespace dolfin
     npy_intp dims[1] = {size};
     $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
   }
+}
+
+// Typemaps for passing a NumPy array as an Array
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::Array &{
+    $1 = PyArray_Check($input) ? 1 : 0;
+}
+
+%typemap(in) dolfin::Array<double> &{
+  // Check input object
+  if (!PyArray_Check($input))
+    SWIG_exception(SWIG_TypeError, "NumPy array expected");
+    
+  PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
+  if (PyArray_TYPE(xa) != NPY_DOUBLE )
+    SWIG_exception(SWIG_TypeError, "NumPy array expected");
+  
+  dolfin::uint size = PyArray_DIM(xa, 0);
+  double * data = static_cast<double*>(PyArray_DATA(xa));
+  
+  $1 = new dolfin::Array<double>(size, data);
+}
+
+%typemap(freearg) dolfin::Array &{
+  delete $1;
 }
 
 /*

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-11
+// Last changed: 2009-12-08
 
 #ifndef __EXPRESSION_H
 #define __EXPRESSION_H
@@ -78,7 +78,7 @@ namespace dolfin
     virtual void eval(double* values, const std::vector<double>& x) const;
 
     /// Evaluate expression, must be overloaded by user (simple version)
-    virtual void eval(Array<double>& values, Array<const double>& x) const;
+    virtual void eval(Array<double>& values, const Array<double>& x) const;
 
   protected:
 

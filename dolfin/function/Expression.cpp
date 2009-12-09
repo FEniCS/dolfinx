@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-11
+// Last changed: 2009-12-08
 //
 // Modified by Johan Hake, 2009.
 
@@ -121,7 +121,7 @@ void Expression::eval(double* values, const std::vector<double>& x) const
 {
   // Wrap pointers
   Array<double> _values(value_size(), values);
-  Array<const double> _x(x.size(), &x[0]);
+  const Array<double> _x(x.size(), const_cast<double*>(&x[0]));
 
   //std::cout << "Calling new eval" << std::endl;  
 
@@ -129,7 +129,7 @@ void Expression::eval(double* values, const std::vector<double>& x) const
   eval(_values, _x);
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Array<double>& values, Array<const double>& x) const
+void Expression::eval(Array<double>& values, const Array<double>& x) const
 {
   error("Missing eval() for Expression (must be overloaded).");
 }

@@ -9,21 +9,22 @@
 
 /*%template(BOOSTUnorderSetUInt) boost::unordered_set<dolfin::uint>;*/
 
-//%template(ConstDoubleArray) dolfin::Array<const double>;
-
-
 %extend dolfin::Array {
-  T sub(unsigned int i) const { return (*self)[i]; }
-
   T __getitem__(unsigned int i) const { return (*self)[i]; }
   void __setitem__(unsigned int i, const T& val) { (*self)[i] = val; }
 }
 
-%ignore dolfin::Array<const double>::__setitem__;
+%extend dolfin::Array<double> {
+  PyObject * array(){
+    npy_intp dims[1];
+    dims[0] = self->size();
+    return PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, (char *)(self->data().get()));
+  }
+}
+//%ignore dolfin::Array<const double>::__setitem__;
 
 %template(DoubleArray) dolfin::Array<double>;
-%template(ConstDoubleArray) dolfin::Array<const double>;
-
+//%template(ConstDoubleArray) dolfin::Array<const double>;
 
 %extend dolfin::Variable
 {
