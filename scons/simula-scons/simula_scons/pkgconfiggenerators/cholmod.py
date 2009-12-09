@@ -162,46 +162,6 @@ int main() {
   
   return cholmod_version
 
-def needMETIS(sconsEnv, compiler=None, cflags=None):
-  """Return True if CHOLMOD depends on METIS."""
-  cpp_test_metis_str = r"""
-#include <stdio.h>
-#include <cholmod.h>
-
-int main() {
-  #ifndef NPARTITION
-    printf("yes");
-  #else
-    printf("no");
-  #endif
-  return 0;
-}
-"""
-  cpp_file = "cholmod_config_test_metis.cpp"
-  write_cppfile(cpp_test_metis_str, cpp_file);
-
-  if not compiler:
-    compiler = get_compiler(sconsEnv)
-  if not cflags:
-    cflags = pkgCflags(sconsEnv=sconsEnv)
-  cmdstr = "%s -o a.out %s %s" % (compiler, cflags, cpp_file)
-  compileFailed, cmdoutput = getstatusoutput(cmdstr)
-  if compileFailed:
-    remove_cppfile(cpp_file)
-    raise UnableToCompileException("CHOLMOD", cmd=cmdstr,
-                                   program=cpp_test_metis_str,
-                                   errormsg=cmdoutput)
-
-  cmdstr = os.path.join(os.getcwd(), "a.out")
-  runFailed, cmdoutput = getstatusoutput(cmdstr)
-  if runFailed:
-    remove_cppfile(cpp_file, execfile=True)
-    raise UnableToRunException("CHOLMOD", errormsg=cmdoutput)
-
-  # FIXME: The test for NPARTITION above does not work
-  #return "yes" in cmdoutput
-  return False
-
 def getMETISDirs(sconsEnv):
   # There are several ways METIS can be installed:
   # 1. As part of suitesparse/ufsparse (e.g. the ubuntu package). 
@@ -252,12 +212,66 @@ def pkgCflags(sconsEnv=None):
                       getUFconfigIncDir(sconsEnv),
                       getPackageDirs(sconsEnv, "CHOLMOD")[0]]):
     cflags += " -I%s" % inc_dir
-  if needMETIS(sconsEnv, cflags=cflags):
-    cflags += " -I%s" % getMETISDirs(sconsEnv)[0]
 
   return cflags.strip()
 
-def pkgLibs(sconsEnv=None):
+def pkgLibs(compiler=None, linker=None, cflags=None, sconsEnv=None):
+  if not compiler:
+    compiler = get_compiler(sconsEnv)
+  if not linker:
+    linker = get_linker(sconsEnv)
+  if not cflags:
+    cflags = pkgCflags(sconsEnv=sconsEnv)
+
+  # create a simple test program that uses CHOLMOD
+  cpp_test_libs_str = r"""
+#include <stdio.h>
+#include <cholmod.h>
+
+int main()
+{
+  cholmod_dense *D;
+  cholmod_sparse *S;
+  cholmod_dense *x, *b, *r;
+  cholmod_factor *L;
+  double one[2] = {1,0}, m1[2] = {-1,0};
+  double *dx;
+  cholmod_common c;
+  int n = 5;
+  double K[5][5] = {{1.0, 0.0, 0.0, 0.0, 0.0},
+		    {0.0, 2.0,-1.0, 0.0, 0.0},
+		    {0.0,-1.0, 2.0,-1.0, 0.0},
+		    {0.0, 0.0,-1.0, 2.0, 0.0},
+		    {0.0, 0.0, 0.0, 0.0, 1.0}};
+  cholmod_start (&c);
+  D = cholmod_allocate_dense(n, n, n, CHOLMOD_REAL, &c);
+  dx = (double*)D->x;
+  for (int i=0; i < n; i++)
+    for (int j=0; j < n; j++)
+      dx[i+j*n] = K[i][j];
+  S = cholmod_dense_to_sparse(D, 1, &c);
+  S->stype = 1;
+  cholmod_reallocate_sparse(cholmod_nnz(S, &c), S, &c);
+  b = cholmod_ones(S->nrow, 1, S->xtype, &c);
+  L = cholmod_analyze(S, &c);
+  cholmod_factorize(S, L, &c);
+  x = cholmod_solve(CHOLMOD_A, L, b, &c);
+  r = cholmod_copy_dense(b, &c);
+  cholmod_sdmult(S, 0, m1, one, x, r, &c);
+  printf("norm(b-Ax)=%g\n", cholmod_norm_dense(r, 0, &c));
+  cholmod_free_factor(&L, &c);
+  cholmod_free_dense(&D, &c);
+  cholmod_free_sparse(&S, &c);
+  cholmod_free_dense(&r, &c);
+  cholmod_free_dense(&x, &c);
+  cholmod_free_dense(&b, &c);
+  cholmod_finish(&c);
+  return 0;
+}
+"""
+  cpp_file = "cholmod_test_libs.cpp"
+  write_cppfile(cpp_test_libs_str, cpp_file);
+
   libs = ""
   if get_architecture() == "darwin":
     libs += "-framework vecLib"
@@ -270,9 +284,70 @@ def pkgLibs(sconsEnv=None):
                       getPackageDirs(sconsEnv, "CCOLAMD")[1],
                       getPackageDirs(sconsEnv, "CHOLMOD")[1]]):
     libs += " -L%s" % lib_dir
-  libs += " -lamd -lcamd -lcolamd -lccolamd -lcholmod"
-  if needMETIS(sconsEnv):
-    libs += " -L%s -lmetis" % getMETISDirs(sconsEnv)[1]
+  libs += " -lcholmod -lamd -lcamd -lcolamd -lccolamd"
+
+  # test that we can compile
+  cmdstr = "%s %s -c %s" % (compiler, cflags, cpp_file)
+  compileFailed, cmdoutput = getstatusoutput(cmdstr)
+  if compileFailed:
+    remove_cppfile(cpp_file)
+    raise UnableToCompileException("CHOLMOD", cmd=cmdstr,
+                                   program=cpp_test_libs_str,
+                                   errormsg=cmdoutput)
+
+  # test that we can link
+  cmdstr = "%s -o a.out %s %s %s" % (linker, cflags, cpp_file, libs)
+  linkFailed, cmdoutput = getstatusoutput(cmdstr)
+  if linkFailed:
+    # try adding -lgfortran to get around Ubuntu Hardy libatlas-base-dev issue
+    cmdstr = "%s -o a.out %s %s -lgfortran" % \
+             (linker, cpp_file.replace('.cpp', '.o'), libs)
+    linkFailed, cmdoutput = getstatusoutput(cmdstr)
+    if linkFailed:
+      # CHOLMOD may be built with METIS, try adding -lmetis
+      metis_dir = getMETISDirs(sconsEnv)[0]
+      cmdstr = "%s -o a.out %s %s -L%s -lmetis" % \
+               (linker, cpp_file.replace('.cpp', '.o'), libs, metis_dir)
+      linkFailed, cmdoutput = getstatusoutput(cmdstr)
+      if linkFailed:
+        # try adding both -lgfortran and -lmetis
+        cmdstr = "%s -o a.out %s %s -L%s -lmetis -lgfortran" % \
+                 (linker, cpp_file.replace('.cpp', '.o'), libs, metis_dir)
+        linkFailed, cmdoutput = getstatusoutput(cmdstr)
+        if linkFailed:    
+          remove_cppfile(cpp_file, ofile=True)
+          errormsg = """Using '%s' for LAPACK and '%s' BLAS.
+Consider setting the environment variables LAPACK_DIR and
+BLAS_DIR if this is wrong.
+Using '%s' for METIS.
+Consider setting the environment variable METIS_DIR if this is
+wrong. This is not necessary if CHOLMOD is built without METIS.
+
+%s
+""" % (getLapackDir(sconsEnv), getBlasDir(sconsEnv), metis_dir, cmdoutput)
+          raise UnableToCompileException("CHOLMOD", cmd=cmdstr,
+                                         program=cpp_test_libs_str,
+                                         errormsg=errormsg)
+        else:
+          libs += " -L%s -lmetis -lgfortran" % metis_dir
+      else:
+        libs += " -L%s -lmetis" % metis_dir
+    else:
+      libs += " -lgfortran"
+
+  cmdstr = os.path.join(os.getcwd(), "a.out")
+  runFailed, cmdoutput = getstatusoutput(cmdstr)
+  if runFailed:
+    remove_cppfile(cpp_file, execfile=True)
+    raise UnableToRunException("CHOLMOD", errormsg=cmdoutput)
+  value = int(cmdoutput.split('=')[1])
+  if value != 0:
+    errormsg = "CHOLMOD test does not produce correct result, " \
+               "check your CHOLMOD installation."
+    errormsg += "\n%s" % cmdoutput
+    raise UnableToRunException("CHOLMOD", errormsg=errormsg)
+
+  remove_cppfile(cpp_file, ofile=True, execfile=True)
 
   return libs
 
@@ -298,58 +373,13 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
     cflags = pkgCflags(sconsEnv=sconsEnv)
   if not libs:
     libs = pkgLibs(sconsEnv=sconsEnv)
+  else:
+    # run pkgLibs as this is the current CHOLMOD test
+    pkgLibs(compiler=compiler, linker=linker,
+            cflags=cflags, sconsEnv=sconsEnv) 
   if not version:
     version = pkgVersion(compiler=compiler, cflags=cflags,
                          libs=libs, sconsEnv=sconsEnv)
-
-  # FIXME: add a program that do a real CHOLMOD test.
-  cpp_test_lib_str = r"""
-#include "cholmod.h"
-int main (void)
-{
-    cholmod_sparse *A ;
-    return (0) ;
-}
-"""
-  write_cppfile(cpp_test_lib_str,"cholmod_config_test_lib.cpp");
-
-  # try to compile the simple CHOLMOD test
-  cmdstr = "%s %s -c cholmod_config_test_lib.cpp" % (compiler, cflags)
-  compileFailed, cmdoutput = getstatusoutput(cmdstr)
-  if compileFailed:
-    remove_cppfile("cholmod_config_test_lib.cpp")
-    raise UnableToCompileException("CHOLMOD", cmd=cmdstr,
-                                   program=cpp_test_lib_str, errormsg=cmdoutput)
-
-  cmdstr = "%s -o a.out %s cholmod_config_test_lib.o" % (linker, libs)
-  linkFailed, cmdoutput = getstatusoutput(cmdstr)
-  if linkFailed:
-    # Try adding -lgfortran so get around Ubuntu Hardy libatlas-base-dev issue
-    libs += " -lgfortran"
-    cmdstr = "%s -o a.out %s cholmod_config_test_lib.o" % (linker, libs)
-    linkFailed, cmdoutput = getstatusoutput(cmdstr)
-    if linkFailed:
-      # FIXME: Try adding -lmetis to libs
-      libs += " -lmetis"
-      cmdstr = "%s -o a.out %s cholmod_config_test_lib.o" % (linker, libs)
-      linkFailed, cmdoutput = getstatusoutput(cmdstr)
-      if linkFailed:
-        remove_cppfile("cholmod_config_test_lib.cpp", ofile=True)
-        errormsg = ("Using '%s' for LAPACK and '%s' BLAS. Consider setting " \
-                    "the environment variables LAPACK_DIR and BLAS_DIR if " \
-                    "this is wrong.\n") % \
-                    (getLapackDir(sconsEnv), getBlasDir(sconsEnv))
-        errormsg += cmdoutput
-        raise UnableToLinkException("CHOLMOD", cmd=cmdstr,
-                                    program=cpp_test_lib_str, errormsg=errormsg)
-
-  cmdstr = os.path.join(os.getcwd(), "a.out")
-  runFailed, cmdoutput = getstatusoutput(cmdstr)
-  if runFailed:
-    remove_cppfile("cholmod_config_test_lib.cpp", ofile=True, execfile=True)
-    raise UnableToRunException("CHOLMOD", errormsg=cmdoutput)
-
-  remove_cppfile("cholmod_config_test_lib.cpp", ofile=True, execfile=True)
 
   return version, libs, cflags
 
