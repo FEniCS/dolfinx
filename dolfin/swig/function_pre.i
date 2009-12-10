@@ -53,7 +53,7 @@ namespace dolfin
 // We need to rename the method in the base class as the Python callback ends
 // up here.
 //-----------------------------------------------------------------------------
-%rename(eval_data) dolfin::GenericFunction::eval(double* values, const Data& data) const;
+%rename(eval_data) dolfin::GenericFunction::eval(Array<double>& values, const Data& data) const;
 
 //-----------------------------------------------------------------------------
 // Ignore the Data.x, pointer to the coordinates in the Data object
@@ -180,10 +180,13 @@ namespace dolfin
 }
 
 // Typemaps for passing a NumPy array as an Array
+/*
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::Array &{
     $1 = PyArray_Check($input) ? 1 : 0;
 }
+*/
 
+/*
 %typemap(in) dolfin::Array<double> &{
   // Check input object
   if (!PyArray_Check($input))
@@ -202,6 +205,8 @@ namespace dolfin
 %typemap(freearg) dolfin::Array &{
   delete $1;
 }
+
+*/
 
 /*
 //-----------------------------------------------------------------------------

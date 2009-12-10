@@ -275,16 +275,14 @@ dolfin::uint Function::geometric_dimension() const
   return _function_space->mesh().geometry().dim();
 }
 //-----------------------------------------------------------------------------
-void Function::eval(double* values, const std::vector<double>& x) const
+void Function::eval(Array<double>& values, const Array<const double>& x) const
 {
-  assert(values);
-  //assert(x);
   assert(_function_space);
 
   not_working_in_parallel("Function::eval at arbitray points.");
 
   // Find the cell that contains x
-  const double* _x = &x[0];
+  const double* _x = x.data().get();
   Point point(_function_space->mesh().geometry().dim(), _x);
   int id = _function_space->mesh().any_intersected_entity(point);
   if (id == -1)
@@ -297,14 +295,11 @@ void Function::eval(double* values, const std::vector<double>& x) const
   eval(values, x, cell, ufc_cell);
 }
 //-----------------------------------------------------------------------------
-void Function::eval(double* values,
-                    const std::vector<double>& x,
+void Function::eval(Array<double>& values,
+                    const Array<const double>& x,
                     const Cell& dolfin_cell,
                     const ufc::cell& ufc_cell) const
 {
-  assert(values);
-  //assert(x);
-
   // Restrict function to cell
   restrict(local_scratch.coefficients, _function_space->element(), dolfin_cell, ufc_cell, -1);
 
@@ -338,9 +333,9 @@ dolfin::uint Function::value_dimension(uint i) const
   return _function_space->element().value_dimension(i);
 }
 //-----------------------------------------------------------------------------
-void Function::eval(double* values, const Data& data) const
+void Function::eval(Array<double>& values, const Data& data) const
 {
-  assert(values);
+  //assert(values);
   assert(_function_space);
 
   // Check if UFC cell if available and cell matches

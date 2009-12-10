@@ -59,10 +59,8 @@ dolfin::uint Expression::value_dimension(uint i) const
   return value_shape[i];
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(double* values, const Data& data) const
+void Expression::eval(Array<double>& values, const Data& data) const
 {
-  assert(values);
-
   // Redirect to simple eval
   eval(values, data.x);
 }
@@ -84,9 +82,8 @@ void Expression::compute_vertex_values(double* vertex_values,
 
   // Local data for vertex values
   const uint size = value_size();
-  boost::scoped_array<double> local_vertex_values(new double[size]);
-  const uint geometric_dim = mesh.geometry().dim();
-  Data data(geometric_dim);
+  Array<double> local_vertex_values(size);
+  Data data;
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
   UFCCell ufc_cell(mesh);
@@ -100,12 +97,10 @@ void Expression::compute_vertex_values(double* vertex_values,
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
       // Update coordinate data
-      //data.x = vertex->x();
-      const double* _x = vertex->x(); 
-      data.x.assign(_x, _x + geometric_dim); 
+      data.x.update(vertex->dim(), vertex->x());
 
       // Evaluate at vertex
-      eval(local_vertex_values.get(), data);
+      eval(local_vertex_values, data);
 
       // Copy to array
       for (uint i = 0; i < size; i++)
@@ -117,19 +112,7 @@ void Expression::compute_vertex_values(double* vertex_values,
   }
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(double* values, const std::vector<double>& x) const
-{
-  // Wrap pointers
-  Array<double> _values(value_size(), values);
-  const Array<double> _x(x.size(), const_cast<double*>(&x[0]));
-
-  //std::cout << "Calling new eval" << std::endl;  
-
-  // Call eval function
-  eval(_values, _x);
-}
-//-----------------------------------------------------------------------------
-void Expression::eval(Array<double>& values, const Array<double>& x) const
+void Expression::eval(Array<double>& values, const Array<const double>& x) const
 {
   error("Missing eval() for Expression (must be overloaded).");
 }

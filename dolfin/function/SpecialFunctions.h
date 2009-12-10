@@ -11,6 +11,7 @@
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
 
+#include "dolfin/common/Array.h"
 #include "Expression.h"
 
 namespace dolfin

@@ -38,8 +38,10 @@ void GenericFunction::evaluate(double* values,
   // Add ufc::cell and coordinates to data
   data.set(cell, coordinates);
 
+  Array<double> _values(value_size(), values);
+
   // Redirect to eval
-  eval(values, data);
+  eval(_values, data);
 }
 //-----------------------------------------------------------------------------
 void GenericFunction::restrict_as_ufc_function(double* w,

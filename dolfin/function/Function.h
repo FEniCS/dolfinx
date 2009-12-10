@@ -110,11 +110,11 @@ namespace dolfin
     uint geometric_dimension() const;
 
     /// Evaluate function for given coordinate
-    void eval(double* values, const std::vector<double>& x) const;
+    void eval(Array<double>& values, const Array<const double>& x) const;
 
     /// Evaluate function for given coordinate in given cell
-    void eval(double* values,
-              const std::vector<double>& x,
+    void eval(Array<double>& values,
+              const Array<const double>& x,
               const Cell& dolfin_cell,
               const ufc::cell& ufc_cell) const;
 
@@ -130,7 +130,7 @@ namespace dolfin
     virtual uint value_dimension(uint i) const;
 
     /// Evaluate function for given data
-    virtual void eval(double* values, const Data& data) const;
+    virtual void eval(Array<double>& values, const Data& data) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,

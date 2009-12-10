@@ -20,7 +20,7 @@ public:
 
   F() {}
 
-  void eval(double* values, const std::vector<double>& x) const
+  void eval(Array<double>& values, const Array<const double>& x) const
   {
     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
   }
@@ -33,7 +33,9 @@ int main()
 
   // Create mesh and a point in the mesh
   UnitCube mesh(8, 8, 8);
-  std::vector<double> x = boost::assign::list_of(0.31)(0.32)(0.33);  
+  //std::vector<double> x = boost::assign::list_of(0.31)(0.32)(0.33);  
+  double _x[3] = {0.31, 0.32, 0.33};
+  Array<const double> x(3, _x); 
 
   // A user-defined function
   F f;
@@ -48,13 +50,15 @@ int main()
   pde.solve(g);
 
   // Evaluate user-defined function f
-  double value = 0.0;
-  f.eval(&value, x);
-  info("f(x) = %g", value);
+  //double value = 0.0;
+  Array<double> value(1);
+  value[0] = 0.0;
+  f.eval(value, x);
+  info("f(x) = %g", value[0]);
 
   // Evaluate discrete function g (projection of f)
-  g.eval(&value, x);
-  info("g(x) = %g", value);
+  g.eval(value, x);
+  info("g(x) = %g", value[0]);
 }
 
 #else

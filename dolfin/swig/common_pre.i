@@ -37,13 +37,15 @@ namespace dolfin
 %ignore real_norm(uint n, const real* x);
 %ignore real_identity(uint n, real* A, real value=1.0);
 
-//%ignore dolfin::Array<const double>::Array(uint N);
-//%ignore dolfin::Array<const double>::resize(uint N);
-//%ignore dolfin::Array<const double>::zero();
+%ignore dolfin::Array<const double>::Array(uint N);
+%ignore dolfin::Array<const double>::resize(uint N);
+%ignore dolfin::Array<const double>::zero();
+
 %ignore dolfin::Array::operator=;
 %ignore dolfin::Array::operator[];
 %ignore dolfin::Array::Array(uint N, boost::shared_array<double> x);
 
+/*
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (dolfin::uint N, double* x){
     $1 = PyArray_Check($input) ? 1 : 0;
 }
@@ -62,4 +64,4 @@ namespace dolfin
   $1 = PyArray_DIM(xa, 0);
   $2 = static_cast<double*>(PyArray_DATA(xa));
 }
-
+*/

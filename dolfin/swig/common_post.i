@@ -14,6 +14,7 @@
   void __setitem__(unsigned int i, const T& val) { (*self)[i] = val; }
 }
 
+/*
 %extend dolfin::Array<double> {
   PyObject * array(){
     npy_intp dims[1];
@@ -21,10 +22,11 @@
     return PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, (char *)(self->data().get()));
   }
 }
-//%ignore dolfin::Array<const double>::__setitem__;
+*/
+%ignore dolfin::Array<const double>::__setitem__;
 
 %template(DoubleArray) dolfin::Array<double>;
-//%template(ConstDoubleArray) dolfin::Array<const double>;
+%template(ConstDoubleArray) dolfin::Array<const double>;
 
 %extend dolfin::Variable
 {

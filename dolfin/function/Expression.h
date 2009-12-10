@@ -59,7 +59,7 @@ namespace dolfin
     virtual uint value_dimension(uint i) const;
 
     /// Evaluate function for given data
-    virtual void eval(double* values, const Data& data) const;
+    virtual void eval(Array<double>& values, const Data& data) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
@@ -75,10 +75,7 @@ namespace dolfin
     //--- User-supplied callback for expression evaluation ---
 
     /// Evaluate expression, must be overloaded by user (simple version)
-    virtual void eval(double* values, const std::vector<double>& x) const;
-
-    /// Evaluate expression, must be overloaded by user (simple version)
-    virtual void eval(Array<double>& values, const Array<double>& x) const;
+    virtual void eval(Array<double>& values, const Array<const double>& x) const;
 
   protected:
 

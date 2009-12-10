@@ -45,6 +45,13 @@ namespace dolfin
     const Array& operator= (const Array& x)
     { error("Not implemented"); return *this; }
 
+    /// Construct array from a pointer. Array will not take ownership.
+    void update(uint N, T* _x)
+    {
+      _size = N;
+      x.reset(_x, NoDeleter<T>());
+    }
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const
     { 

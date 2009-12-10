@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <ufc.h>
+#include <dolfin/common/Array.h>
 #include <dolfin/mesh/Point.h>
 
 namespace dolfin
@@ -26,9 +27,6 @@ namespace dolfin
 
     /// Constructor
     Data();
-
-    /// Constructor
-    Data(uint geometric_dim);
 
     /// Destructor
     ~Data();
@@ -52,10 +50,7 @@ namespace dolfin
     bool on_facet() const;
 
     /// The coordinates
-    std::vector<double> x;
-
-    /// Set geometric dimensions
-    void set_geometric_dim(uint dim);
+    Array<const double> x;
 
     /// Set cell and facet data
     void set(const Cell& dolfin_cell, const ufc::cell& ufc_cell, int local_facet);
