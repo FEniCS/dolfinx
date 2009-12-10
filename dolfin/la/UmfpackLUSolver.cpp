@@ -84,7 +84,7 @@ dolfin::uint UmfpackLUSolver::factorized_solve(GenericVector& x, const GenericVe
   const uint N = b.size();
 
   if(!umfpack.factorized)
-    error("Factorized solve must be preceeded by call to factorize.");
+    error("Factorized solve must be preceded by call to factorize.");
 
   if(N != umfpack.N)
     error("Vector does not match size of factored matrix");
