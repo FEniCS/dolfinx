@@ -78,7 +78,7 @@ dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x, const Gen
   const uint N = b.size();
 
   if(!cholmod.factorized)
-    error("Factorized solve must be preceeded by call to factorize.");
+    error("Factorized solve must be preceded by call to factorize.");
 
   if(N != cholmod.N)
     error("Vector does not match size of factored matrix");
