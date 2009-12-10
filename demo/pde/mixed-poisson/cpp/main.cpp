@@ -34,9 +34,7 @@ int main()
   {
   public:
 
-    Source() {}
-
-    void eval(double* values, const std::vector<double>& x) const
+    void eval(Array<double>& values, const Array<const double>& x) const
     {
       double dx = x[0] - 0.5;
       double dy = x[1] - 0.5;

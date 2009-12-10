@@ -24,7 +24,7 @@ int main()
 
     Noslip() : Expression(2) {}
 
-    void eval(double* values, const std::vector<double>& x) const
+    void eval(Array<double>& values, const Array<const double>& x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -39,7 +39,7 @@ int main()
 
     Inflow() : Expression(2) {}
 
-    void eval(double* values, const std::vector<double>& x) const
+    void eval(Array<double>& values, const Array<const double>& x) const
     {
       values[0] = -sin(x[1]*DOLFIN_PI);
       values[1] = 0.0;
