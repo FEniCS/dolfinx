@@ -36,8 +36,6 @@ class Source : public Expression
 {
 public:
 
-  Source() : Expression() {}
-
   void eval(Array<double>& values, const Array<const double>& x) const
   {
     values[0] = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0]);
@@ -49,8 +47,6 @@ public:
 class Flux : public Expression
 {
 public:
-
-  Flux() : Expression() {}
 
   void eval(Array<double>& values, const Array<const double>& x) const
   {
