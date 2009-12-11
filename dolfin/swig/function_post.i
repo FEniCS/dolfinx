@@ -17,7 +17,7 @@ def __contains__(self,u):
 %pythoncode %{
 def function_space(self):
     " Return the FunctionSpace"
-    from functionspace import FunctionSpaceFromCpp
+    from dolfin.function.functionspace import FunctionSpaceFromCpp
     return FunctionSpaceFromCpp(self._function_space())
 %}
 }
