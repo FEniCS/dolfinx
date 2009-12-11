@@ -39,7 +39,7 @@ namespace dolfin
     /// Evaluation of second derivative at given point
     real d2dx(real x);
 
-    /// Evaluation of arbitrary order, nn <= n (usefull ie in RadauQuadrature)
+    /// Evaluation of arbitrary order, nn <= n (useful ie in RadauQuadrature)
     real eval(uint nn, real x);
 
     real ddx(uint n, real x);
