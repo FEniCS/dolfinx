@@ -9,7 +9,7 @@
 // Modified by Kent-Andre Mardal, 2009
 // 
 // First added:  2007-08-16
-// Last changed: 2009-12-08
+// Last changed: 2009-12-10
 
 // ===========================================================================
 // SWIG directives for the DOLFIN function kernel module (pre)
@@ -118,14 +118,13 @@ namespace dolfin
 %feature("novaluewrapper") std::vector<double>; 
 
 //-----------------------------------------------------------------------------
-// Instantiate a dummy std::vector<dolfin::uint> so value wrapper is not used
+// Instantiate a dummy std::vector<double> so value wrapper is not used
 //-----------------------------------------------------------------------------
 %template () std::vector<double>; 
 
 //-----------------------------------------------------------------------------
-// Typemap for std::vector<dolfin::uint> values
+// Typemap for std::vector<double> values
 //-----------------------------------------------------------------------------
-
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::vector<double> values
 {
   $1 = PyList_Check($input) ? 1 : 0;
@@ -163,71 +162,4 @@ namespace dolfin
 %feature("nodirector") dolfin::Expression::gather;
 %feature("nodirector") dolfin::Expression::value_dimension;
 %feature("nodirector") dolfin::Expression::value_rank;
-
-//-----------------------------------------------------------------------------
-// Director typemap for values in Expression
-//-----------------------------------------------------------------------------
-%typemap(directorin) double* values {
-  {
-    // Compute size of value (number of entries in tensor value)
-    dolfin::uint size = 1;
-    for (dolfin::uint i = 0; i < this->value_rank(); i++)
-      size *= this->value_dimension(i);
-
-    npy_intp dims[1] = {size};
-    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
-  }
-}
-
-// Typemaps for passing a NumPy array as an Array
-/*
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) dolfin::Array &{
-    $1 = PyArray_Check($input) ? 1 : 0;
-}
-*/
-
-/*
-%typemap(in) dolfin::Array<double> &{
-  // Check input object
-  if (!PyArray_Check($input))
-    SWIG_exception(SWIG_TypeError, "NumPy array expected");
-    
-  PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
-  if (PyArray_TYPE(xa) != NPY_DOUBLE )
-    SWIG_exception(SWIG_TypeError, "NumPy array expected");
-  
-  dolfin::uint size = PyArray_DIM(xa, 0);
-  double * data = static_cast<double*>(PyArray_DATA(xa));
-  
-  $1 = new dolfin::Array<double>(size, data);
-}
-
-%typemap(freearg) dolfin::Array &{
-  delete $1;
-}
-
-*/
-
-/*
-//-----------------------------------------------------------------------------
-// Director typemap for coordinates in Expression
-//-----------------------------------------------------------------------------
-//%typemap(directorin) const double* x {
-//  {
-//    // Compute size of x
-//    npy_intp dims[1] = {this->geometric_dimension()};
-//    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(const_cast<double*>($1_name)));
-//  }
-//}
-
-// FIXME: Is there a better way to map a std::vector to a numpy array?
-%typemap(directorin) const std::vector<double>& x {
-  {
-    // Compute size of x
-    npy_intp dims[1] = {$1_name.size()};
-    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, 
-            reinterpret_cast<char *>( &(const_cast<std::vector<double>& >($1_name))[0] ));
-  }
-}
-*/
 
