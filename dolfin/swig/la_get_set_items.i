@@ -544,3 +544,8 @@ void _set_matrix_single_item( dolfin::GenericMatrix* self, int m, int n, double 
   self->apply();
  }
 
+void _set_matrix_items_array_of_float( dolfin::GenericMatrix* self,  PyObject* op, PyObject* other ){}
+
+void _set_matrix_items_matrix(dolfin::GenericMatrix* self, dolfin::GenericMatrix*) {}
+
+void _set_matrix_items_vector(dolfin::GenericMatrix* self, PyObject* op, dolfin::GenericVector& other){}

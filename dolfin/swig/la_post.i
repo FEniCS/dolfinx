@@ -62,7 +62,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
   %pythoncode %{
 
     def __getitem__(self, i):
-        return self.get(i, j)
+        return self.get(i)
     
     def __setitem__(self, i, m): 
         self.set(i, m)
@@ -211,10 +211,10 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         ret *= -1
         return ret
 
-    def __delitem__(self):
+    def __delitem__(self,i):
         raise ValueError, "cannot delete Vector elements"
     
-    def __delslice__(self):
+    def __delslice__(self,i,j):
         raise ValueError, "cannot delete Vector elements"
     
     def __setslice__(self,i,j,values):
