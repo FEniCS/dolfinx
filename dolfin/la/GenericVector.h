@@ -7,7 +7,7 @@
 // Modified by Martin Sandve Alnes, 2009.
 //
 // First added:  2006-04-25
-// Last changed: 2009-11-11
+// Last changed: 2009-12-14
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
