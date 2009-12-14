@@ -9,7 +9,6 @@
 
 #include <ufc.h>
 #include <dolfin/common/types.h>
-#include <dolfin/fem/UFCCell.h>
 #include <dolfin/fem/FiniteElement.h>
 
 namespace dolfin
@@ -31,7 +30,7 @@ namespace dolfin
   public:
 
     /// Create basis function with given index on element on given cell
-    BasisFunction(uint index, const FiniteElement& element, const UFCCell& cell)
+    BasisFunction(uint index, const FiniteElement& element, const ufc::cell& cell)
       : index(index), element(element), cell(cell) {}
 
     /// Destructor
@@ -62,7 +61,7 @@ namespace dolfin
     const FiniteElement& element;
 
     /// The (UFC) cell
-    const UFCCell& cell;
+    const ufc::cell& cell;
 
   };
 

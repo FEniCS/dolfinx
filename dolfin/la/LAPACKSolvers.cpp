@@ -31,23 +31,23 @@ void LAPACKSolvers::solve_least_squares(const LAPACKMatrix& A,
   // Prepare arguments fro DGELSS
   int m = A.size(0);
   int n = A.size(1);
-  //int nrhs = 1;
-  //int lda = m;
-  //int ldb = m;
+  int nrhs = 1;
+  int lda = m;
+  int ldb = m;
   int lwork = 5;
-  //int rcond = -1;
-  //int rank = 0;
+  int rank = 0;
   int status = 0;
+  double rcond = -1;
   double* s = new double[n];
   double* work = new double[m*lwork];
 
   // Call DGELSS
   info("Solving least squares system of size %d x %d using DGELSS.", m, n);
-  //dgelss(&m, &n, &nrhs,
-  //       A.values, &lda, b.values, &ldb,
-  //       s, &rcond, &rank,
-  //       work, &lwork,
-  //       &status);
+  CGAL::LAPACK::dgelss(&m, &n, &nrhs,
+                       A.values, &lda, b.values, &ldb,
+                       s, &rcond, &rank,
+                       work, &lwork,
+                       &status);
 
   // Check output status
   if (status < 0)
