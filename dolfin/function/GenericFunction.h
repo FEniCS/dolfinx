@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-11
+// Last changed: 2009-12-11
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H

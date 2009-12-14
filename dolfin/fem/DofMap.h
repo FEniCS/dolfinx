@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-11-10
+// Last changed: 2009-12-11
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
