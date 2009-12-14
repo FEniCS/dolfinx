@@ -31,7 +31,7 @@ namespace dolfin
 
     /// Return size of given dimension
     uint size(uint dim) const
-    { assert(dim < 0); return (dim == 0 ? M : N); }
+    { assert(dim < 2); return (dim == 0 ? M : N); }
 
     /// Access entry (i, j)
     double& operator() (uint i, uint j)
