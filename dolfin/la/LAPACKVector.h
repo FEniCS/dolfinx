@@ -43,6 +43,9 @@ namespace dolfin
 
   private:
 
+    // Friends
+    friend class LAPACKSolvers;
+
     // Number of rows and columns
     uint M, N;
 

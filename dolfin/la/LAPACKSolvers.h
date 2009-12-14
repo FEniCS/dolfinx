@@ -10,6 +10,9 @@
 namespace dolfin
 {
 
+  class LAPACKMatrix;
+  class LAPACKVector;
+
   /// This class provides a simple interface to selected LAPACK
   /// solvers.
 
@@ -18,7 +21,7 @@ namespace dolfin
   public:
 
     // Solve least squares system in-place (by calling LAPACK DGELSS)
-    void solve_least_squares(const LAPACKMatrix& A, LAPACKVector& b);
+    static void solve_least_squares(const LAPACKMatrix& A, LAPACKVector& b);
 
   };
 
