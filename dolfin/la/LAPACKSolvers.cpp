@@ -28,6 +28,8 @@ void LAPACKSolvers::solve_least_squares(const LAPACKMatrix& A,
   // Check dimensions
   assert(A.size(0) == b.size());
 
+  /*
+
   // Prepare arguments fro DGELSS
   int m = A.size(0);
   int n = A.size(1);
@@ -61,6 +63,8 @@ void LAPACKSolvers::solve_least_squares(const LAPACKMatrix& A,
   // Clean up
   delete [] s;
   delete [] work;
+
+  */
 
 #else
 

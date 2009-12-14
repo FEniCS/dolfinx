@@ -7,7 +7,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2009-09-08
+// Last changed: 2009-12-14
 
 #ifndef __PETSC_MATRIX_H
 #define __PETSC_MATRIX_H
