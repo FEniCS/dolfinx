@@ -2,12 +2,14 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-14
-// Last changed: 2009-12-14
+// Last changed: 2009-12-15
 
 #ifndef __LAPACK_VECTOR_H
 #define __LAPACK_VECTOR_H
 
+#include <string>
 #include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -18,16 +20,15 @@ namespace dolfin
   /// This class does currently not implement the GenericVector
   /// interface but may possibly be extended to do so in the future.
 
-  class LAPACKVector
+  class LAPACKVector : public Variable
   {
   public:
 
     /// Create M x N matrix
-    LAPACKVector(uint M) : M(M), values(new double[M]) {}
+    LAPACKVector(uint M);
 
     /// Destructor
-    ~LAPACKVector()
-    { delete [] values; }
+    ~LAPACKVector();
 
     /// Return size of vector
     uint size() const
@@ -40,6 +41,9 @@ namespace dolfin
     /// Access entry i, const version
     double operator[] (uint i) const
     { return values[i]; }
+
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose) const;
 
   private:
 

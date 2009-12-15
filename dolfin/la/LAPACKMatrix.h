@@ -2,12 +2,14 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-14
-// Last changed: 2009-12-14
+// Last changed: 2009-12-15
 
 #ifndef __LAPACK_MATRIX_H
 #define __LAPACK_MATRIX_H
 
+#include <string>
 #include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -18,16 +20,15 @@ namespace dolfin
   /// This class does currently not implement the GenericMatrix
   /// interface but may possibly be extended to do so in the future.
 
-  class LAPACKMatrix
+  class LAPACKMatrix : public Variable
   {
   public:
 
     /// Create M x N matrix
-    LAPACKMatrix(uint M, uint N) : M(M), N(N), values(new double[N*M]) {}
+    LAPACKMatrix(uint M, uint N);
 
     /// Destructor
-    ~LAPACKMatrix()
-    { delete [] values; }
+    ~LAPACKMatrix();
 
     /// Return size of given dimension
     uint size(uint dim) const
@@ -35,11 +36,14 @@ namespace dolfin
 
     /// Access entry (i, j)
     double& operator() (uint i, uint j)
-    { return values[j*N +i]; }
+    { return values[j*M + i]; }
 
     /// Access entry (i, j), const version
     double operator() (uint i, uint j) const
-    { return values[j*N +i]; }
+    { return values[j*M + i]; }
+
+    /// Return informal string representation (pretty-print)
+    std::string str(bool verbose) const;
 
   private:
 

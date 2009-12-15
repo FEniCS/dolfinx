@@ -1,3 +1,10 @@
+ - Add least squares solver for dense systems (wrapper for DGELS)
+ - New linear algebra wrappers for LAPACK matrices and vectors
+ - Experimental support for reconstruction of higher order functions
+ - Modified interface for eval() and inside() in C++ using Array
+ - Introduce new Array class for simplified wrapping of arrays in SWIG
+ - Improved functionality for intersection decection
+ - Reimplementation of intersection detection using CGAL
 0.9.5 [2009-12-03]
  - Set appropriate parameters for symmetric eigenvalue problems with SLEPc
  - Fix for performance regression in recent uBLAS releases

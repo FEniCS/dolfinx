@@ -9,7 +9,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-08
-// Last changed: 2009-11-27
+// Last changed: 2009-12-15
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -27,7 +27,7 @@
 
 namespace dolfin
 {
-   
+
   template <class T> class MeshFunction;
   class IntersectionOperator;
   class Function;
@@ -197,7 +197,7 @@ namespace dolfin
     ///reasons, to avoid to sort out duplicates later on.
     void all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const;
 
-    ///Computes only the first id  of the entity, which contains the point. Returns -1 if no cell is intersected. 
+    ///Computes only the first id  of the entity, which contains the point. Returns -1 if no cell is intersected.
     ///@internal @remark This makes the function evaluation significantly faster.
     int any_intersected_entity(const Point & point) const;
 

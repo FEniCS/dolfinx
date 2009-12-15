@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-09
-// Last changed: 2009-11-27
+// Last changed: 2009-12-15
 
 #include <sstream>
 
@@ -249,18 +249,18 @@ void Mesh::smooth(uint num_smoothings)
 //-----------------------------------------------------------------------------
 void Mesh::all_intersected_entities(const Point & point, uint_set & ids_result) const
 {
-  _intersection_operator.all_intersected_entities(point, ids_result); 
-} 
+  _intersection_operator.all_intersected_entities(point, ids_result);
+}
 //-----------------------------------------------------------------------------
 void Mesh::all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const
 {
   _intersection_operator.all_intersected_entities(points, ids_result);
-} 
+}
 //-----------------------------------------------------------------------------
 void Mesh::all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const
 {
   _intersection_operator.all_intersected_entities(another_mesh, ids_result);
-} 
+}
 //-----------------------------------------------------------------------------
 int Mesh::any_intersected_entity(const Point & point) const
 {
