@@ -2,17 +2,19 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2009-12-14
+// Last changed: 2009-12-15
 
 #include <vector>
 #include <boost/scoped_array.hpp>
 
 #include <dolfin/log/log.h>
+#include <dolfin/la/GenericVector.h>
 #include <dolfin/la/LAPACKMatrix.h>
 #include <dolfin/la/LAPACKVector.h>
 #include <dolfin/la/LAPACKSolvers.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/fem/BasisFunction.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include "Reconstruction.h"
@@ -22,6 +24,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void Reconstruction::reconstruct(Function& w, const Function& v)
 {
+  // Using set_local for simplicity here
+  not_working_in_parallel("Reconstruction");
   warning("Reconstruction not fully implemented yet.");
 
   // Check that the meshes are the same
@@ -40,6 +44,13 @@ void Reconstruction::reconstruct(Function& w, const Function& v)
   // UFC cell views of center and patch cells
   UFCCell c0(mesh);
   UFCCell c1(mesh);
+
+  // List of values for each dof of w (multivalued until we average)
+  std::vector<std::vector<double> > dof_values_multi;
+  dof_values_multi.resize(W.dim());
+
+  // Local array for dof indices
+  boost::scoped_array<uint> dofs(new uint[V.dofmap().max_local_dimension()]);
 
   // Iterate over cells in mesh of reconstruction space
   for (CellIterator cell0(w.function_space().mesh()); !cell0.end(); ++cell0)
@@ -65,11 +76,25 @@ void Reconstruction::reconstruct(Function& w, const Function& v)
     // Solve least squares system
     LAPACKSolvers::solve_least_squares(A, b);
 
-    // FIXME: Need to store the values in b here in a std::vector<std::vector> >
+    // Tabulate dofs for w on cell and store values
+    W.dofmap().tabulate_dofs(dofs.get(), c0, cell0->index());
+    for (uint i = 0; i < W.dofmap().local_dimension(c0); ++i)
+      dof_values_multi[dofs[i]].push_back(b[i]);
   }
 
-  // FIXME: Need to average the values for each dof here and insert in vector for w
+  // Compute average of dof values
+  boost::scoped_array<double> dof_values_single(new double[W.dim()]);
+  for (uint i = 0; i < W.dim(); i++)
+  {
+    double s = 0.0;
+    for (uint j = 0; j < dof_values_multi[i].size(); ++j)
+      s += dof_values_multi[i][j];
+    s /= static_cast<double>(dof_values_multi[i].size());
+    dof_values_single[i] = s;
+  }
 
+  // Update dofs for w
+  w.vector().set_local(dof_values_single.get());
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Reconstruction::add_equations(LAPACKMatrix& A,
