@@ -2,17 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-14
-// Last changed: 2009-12-14
-
-// FIXME: We are currently getting dgelss from CGAL.
-// FIXME: Are there better options?
-
-#ifdef HAS_CGAL
-#include <CGAL/assertions.h>
-#include <CGAL/Lapack/Linear_algebra_lapack.h>
-#endif
+// Last changed: 2009-12-15
 
 #include <dolfin/log/log.h>
+#include "lapack.h"
 #include "LAPACKMatrix.h"
 #include "LAPACKVector.h"
 #include "LAPACKSolvers.h"
@@ -23,53 +16,31 @@ using namespace dolfin;
 void LAPACKSolvers::solve_least_squares(const LAPACKMatrix& A,
                                         LAPACKVector& b)
 {
-#ifdef HAS_CGAL
-
   // Check dimensions
   assert(A.size(0) == b.size());
 
-  /*
-
-  // Prepare arguments fro DGELSS
+  // Prepare arguments for DGELS
+  char trans = 'N';
   int m = A.size(0);
   int n = A.size(1);
   int nrhs = 1;
   int lda = m;
   int ldb = m;
-  int lwork = 5;
-  int rank = 0;
+  int lwork = std::max(1, std::min(m, n) + std::max(std::min(m, n), nrhs));
   int status = 0;
-  double rcond = -1;
-  double* s = new double[n];
   double* work = new double[m*lwork];
 
   // Call DGELSS
-  info("Solving least squares system of size %d x %d using DGELSS.", m, n);
-  CGAL::LAPACK::dgelss(&m, &n, &nrhs,
-                       A.values, &lda, b.values, &ldb,
-                       s, &rcond, &rank,
-                       work, &lwork,
-                       &status);
+  info("Solving least squares system of size %d x %d using DGELS.", m, n);
+  dgels(&trans, &m, &n, &nrhs, A.values, &lda, b.values, &ldb, work, &lwork, &status);
 
   // Check output status
   if (status < 0)
-    error("Illegal value for parameter number %d in call to DGELSS.", status);
+    error("Illegal value for parameter number %d in call to DGELS.", status);
   else if (status > 0)
-    error("Least squares solvers (SVD in DGELSS) did not converge.");
-
-  // Report condition number
-  info("Condition number is %g.", s[0] / s[n - 1]);
+    error("Unable to solve least squares problem, matrix does not have full rank.");
 
   // Clean up
-  delete [] s;
   delete [] work;
-
-  */
-
-#else
-
-  error("Strangely enough, least squares solver is only available when DOLFIN is compiled with CGAL.");
-
-#endif
 }
 //-----------------------------------------------------------------------------
