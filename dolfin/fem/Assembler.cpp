@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-10-08
+// Last changed: 2009-12-15
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -325,4 +325,3 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-

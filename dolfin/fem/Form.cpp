@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2009-10-06
+// Last changed: 2009-12-15
 
 #include <string>
 #include <dolfin/common/NoDeleter.h>

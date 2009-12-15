@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-04-02
-// Last changed: 2009-10-06
+// Last changed: 2009-12-15
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -37,7 +37,7 @@ namespace dolfin
     /// Create form of given rank with given number of coefficients
     Form(dolfin::uint rank, dolfin::uint num_coefficients);
 
-    /// Create form from given Constructor used in the python interface
+    /// Create form (constructor used from Python interface)
     Form(const ufc::form& ufc_form,
          const std::vector<const FunctionSpace*>& function_spaces,
          const std::vector<const GenericFunction*>& coefficients);

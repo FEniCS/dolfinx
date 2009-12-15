@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-10-08
+// Last changed: 2009-12-15
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -95,8 +95,10 @@ void AssemblerTools::init_global_tensor(GenericTensor& A,
 {
   if (reset_sparsity)
   {
+    // Check that we should not add values
     if (add_values)
       error("Can not add values when the sparsity pattern is reset");
+
     // Build sparsity pattern
     Timer t0("Build sparsity");
     GenericSparsityPattern* sparsity_pattern = A.factory().create_pattern();
