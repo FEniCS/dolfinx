@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-15
-// Last changed: 2009-12-15
+// Last changed: 2009-12-16
 //
 // This file defines C++ versions of some LAPACK routines used in
 // DOLFIN.
