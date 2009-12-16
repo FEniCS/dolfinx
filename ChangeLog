@@ -1,3 +1,4 @@
+ - Change name of Expression argument cpparg --> cppcode
  - Add simple constructor (dim0, dim1) for C++ matrix Expressions
  - Add example demonstrating the use of cpparg (C++ code in Python)
  - Add least squares solver for dense systems (wrapper for DGELS)
