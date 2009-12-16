@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-12-08
+// Last changed: 2009-12-16
 //
 // Modified by Johan Hake, 2009.
 
@@ -27,6 +27,13 @@ Expression::Expression(uint dim)
 {
   value_shape.resize(1);
   value_shape[0] = dim;
+}
+//-----------------------------------------------------------------------------
+Expression::Expression(uint dim0, uint dim1)
+{
+  value_shape.resize(2);
+  value_shape[0] = dim0;
+  value_shape[1] = dim1;
 }
 //-----------------------------------------------------------------------------
 Expression::Expression(std::vector<uint> value_shape)

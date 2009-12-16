@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-12-08
+// Last changed: 2009-12-16
 
 #ifndef __EXPRESSION_H
 #define __EXPRESSION_H
@@ -40,6 +40,9 @@ namespace dolfin
 
     /// Create vector-valued expression with given dimension
     Expression(uint dim);
+
+    /// Create matrix-valued expression with given dimensions
+    Expression(uint dim0, uint dim1);
 
     /// Create tensor-valued expression with given shape
     Expression(std::vector<uint> value_shape);
