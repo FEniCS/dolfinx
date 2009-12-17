@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-05-12
-// Last changed: 2009-10-12
+// Last changed: 2009-12-11
 //
 // ===========================================================================
 // SWIG directives for the DOLFIN parameter kernel module (post)
@@ -32,7 +32,7 @@ def value(self):
             print "Warning: Converting real-valued parameter to double, might loose precision."
         return float(self)
     else:
-        raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type,key)
+        raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type, self.key())
 
 def get_range(self):
     val_type = self.type_str()
@@ -57,7 +57,7 @@ def get_range(self):
             return
         return local_range
     else:
-        raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type,key)
+        raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type, self.key())
 
 def data(self):
     return self.value(), self.get_range(), self.access_count(), self.change_count()
