@@ -473,8 +473,12 @@ if not env.GetOption('help'):
       for e in buildDataHash["extModules"]:
           env.Install(os.path.join(pythonExtDir, env["projectname"]), e)
       # install SWIG interface files in includeDir/swig
+      # and SWIG import files in includeDir/swig/import
       for s in buildDataHash["swigfiles"]:
-          env.Install(os.path.join(includeDir, env["projectname"], "swig"), s)
+          if "swig" + os.sep + "import" + os.sep in str(s):
+              env.Install(os.path.join(includeDir, env["projectname"], "swig", "import"), s)
+          else:
+              env.Install(os.path.join(includeDir, env["projectname"], "swig"), s)
 
   # install generated pkg-config files in $prefix/lib/pkgconfig or other
   # specified place

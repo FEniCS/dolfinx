@@ -315,6 +315,7 @@ buildDataHash["pythonPackageDirs"] += [Dir("#site-packages")]
 if env["enablePython"]:
     # set SWIG interface files we want to install
     buildDataHash["swigfiles"] += scons.globFiles(Dir("#/%s/swig" % env["projectname"]).srcnode().abspath, "*.i")
+    buildDataHash["swigfiles"] += scons.globFiles(Dir("#/%s/swig/import" % env["projectname"]).srcnode().abspath, "*.i")
 
 # read SConscript in data.
 data = env.SConscript(os.path.join("#data", "SConscript"), exports=["env"])

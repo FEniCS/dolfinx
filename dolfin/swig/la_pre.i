@@ -10,7 +10,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-01-21
-// Last changed: 2009-11-10
+// Last changed: 2009-12-16
 
 //=============================================================================
 // SWIG directives for the DOLFIN la kernel module (pre)
@@ -41,12 +41,19 @@
 %ignore dolfin::BlockVector::operator=;
 %ignore dolfin::SubVector::operator=;
 %ignore dolfin::SubMatrix::operator=;
+%ignore dolfin::SubMatrix::operator=;
 
 //-----------------------------------------------------------------------------
 // Modify the Scalar interface
 //-----------------------------------------------------------------------------
 %rename(__float__) dolfin::Scalar::operator double;
 %rename(assign) dolfin::Scalar::operator=;
+
+//-----------------------------------------------------------------------------
+// Modify the LAPACK interface
+//-----------------------------------------------------------------------------
+%ignore dolfin::LAPACKVector::operator[];
+%ignore dolfin::LAPACKMatrix::operator() (uint i, uint j) const;
 
 //-----------------------------------------------------------------------------
 // Typemaps for GenericMatrix get and set functions
