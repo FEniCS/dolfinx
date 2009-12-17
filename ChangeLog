@@ -1,3 +1,4 @@
+ - Added swig/import/foo.i for easy type importing from dolfin modules
  - Allow optional argument cell when creating Expression
  - Change name of Expression argument cpparg --> cppcode
  - Add simple constructor (dim0, dim1) for C++ matrix Expressions
