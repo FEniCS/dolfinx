@@ -59,7 +59,7 @@ public:
   Conductivity() : Expression(3) {}
 
   // Function for evaluating expression on each cell
-  void eval(dolfin::Array<double>& values, const Data& data) const
+  void eval(Array<double>& values, const Data& data) const
   {
     values[0] = (*c00)[data.cell().index()];
     values[1] = (*c01)[data.cell().index()];
@@ -67,9 +67,9 @@ public:
   }
 
   // The data stored in mesh functions
-  dolfin::MeshFunction<double>* c00;
-  dolfin::MeshFunction<double>* c01;
-  dolfin::MeshFunction<double>* c11;
+  MeshFunction<double>* c00;
+  MeshFunction<double>* c01;
+  MeshFunction<double>* c11;
 
 };
 """
