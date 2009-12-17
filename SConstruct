@@ -104,6 +104,7 @@ options = [
     BoolVariable("enableGmp", "Compile with support for GMP", "no"),
     BoolVariable("enableZlib", "Compile with support for zlib", "yes"),
     BoolVariable("enableCgal", "Compile with support for CGAL", "yes"),
+    BoolVariable("enableLapack", "Compile with support for LAPACK", "yes"),
     BoolVariable("enablePython", "Compile the Python wrappers", "yes"),
     BoolVariable("enablePydolfin", "Compile the Python wrappers of DOLFIN *deprecated*", "yes"),
     # some of the above may need extra options (like petscDir), should we
@@ -125,6 +126,8 @@ options = [
     PathVariable("withGtsDir", "Specify path to GTS", None, path_validator),
     PathVariable("withZlibDir", "Specify path to zlib", None, path_validator),
     PathVariable("withCgalDir", "Specify path to CGAL", None, path_validator),
+    PathVariable("withLapackDir", "Specify path to LAPACK", None, path_validator),
+    PathVariable("withBlasDir", "Specify path to BLAS", None, path_validator),
     #
     # a few more options originally from PyCC:
     #BoolVariable("autoFetch", "Automatically fetch datafiles from (password protected) SSH repository", 0),

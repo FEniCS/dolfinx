@@ -62,6 +62,8 @@ if "configure" in COMMAND_LINE_TARGETS:
         disabled_packages.append("zlib")
     if not env["enableCgal"]:
         disabled_packages.append("cgal")
+    if not env["enableLapack"]:
+        disabled_packages.append("lapack")
 
     # Find modules in the project and dependencies:
     # only modules and configuredPackages will be used in this code:
