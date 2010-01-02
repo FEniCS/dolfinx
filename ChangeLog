@@ -1,3 +1,4 @@
+ - Fix bug in MTL4Vector assignment 
  - Remove sandbox (moved to separate repository) 
  - Remove matrix factory (dolfin/mf)
  - Update .ufl files for changes in UFL
