@@ -129,7 +129,7 @@ namespace dolfin
     virtual const MTL4Vector& operator-= (const GenericVector& x);
 
     /// Assignment operator
-    virtual const MTL4Vector& operator= (const GenericVector& x);
+    virtual const GenericVector& operator= (const GenericVector& x);
 
     /// Return pointer to underlying data (const version)
     virtual const double* data() const
@@ -151,9 +151,7 @@ namespace dolfin
     mtl4_vector& vec();
 
     /// Assignment operator
-    const MTL4Vector& operator= (const MTL4Vector& x);
-
-    //friend class MTL4Matrix;
+    virtual const MTL4Vector& operator= (const MTL4Vector& x);
 
   private:
 

@@ -21,7 +21,6 @@ namespace dolfin
 
   class Mesh;
   class Function;
-  class Vector;
 
   class MeshGeometry
   {
