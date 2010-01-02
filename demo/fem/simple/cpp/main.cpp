@@ -1,7 +1,7 @@
 // Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2007.
+// Modified by Garth N. Wells, 2007, 2010.
 //
 // Thanks to David Heintz for the reference matrices.
 //
@@ -11,6 +11,8 @@
 // compiled with FFC.
 
 #include <dolfin.h>
+#include "MassMatrix3D.h"
+#include "StiffnessMatrix3D.h"
 
 using namespace dolfin;
 
@@ -22,8 +24,13 @@ int main()
   Mesh mesh("../tetrahedron.xml.gz");
 
   // Create stiffness and mass matrices
-  StiffnessMatrix A(mesh);
-  MassMatrix M(mesh);
+  Matrix A, M;
+  StiffnessMatrix3D::FunctionSpace V0(mesh);
+  StiffnessMatrix3D::BilinearForm a0(V0, V0);
+  assemble(A, a0); 
+  MassMatrix3D::FunctionSpace V1(mesh);
+  MassMatrix3D::BilinearForm a1(V1, V1);
+  assemble(M, a1); 
 
   // Create reference matrices
   double A0_array[4][4];

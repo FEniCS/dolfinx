@@ -189,9 +189,6 @@
 %include "dolfin/adaptivity/AdaptiveObjects.h"
 %include "dolfin/adaptivity/TimeSeries.h"
 
-// DOLFIN headers included from mf
-%include "dolfin/mf/MatrixFactory.h"
-
 // DOLFIN headers included from ode
 %include "dolfin/swig/ode_pre.i"
 %include "dolfin/ode/Sample.h"

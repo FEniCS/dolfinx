@@ -1,3 +1,6 @@
+ - Remove sandbox (moved to separate repository) 
+ - Remove matrix factory (dolfin/mf)
+ - Update .ufl files for changes in UFL
  - Added swig/import/foo.i for easy type importing from dolfin modules
  - Allow optional argument cell when creating Expression
  - Change name of Expression argument cpparg --> cppcode
@@ -8,7 +11,7 @@
  - Experimental support for reconstruction of higher order functions
  - Modified interface for eval() and inside() in C++ using Array
  - Introduce new Array class for simplified wrapping of arrays in SWIG
- - Improved functionality for intersection decection
+ - Improved functionality for intersection detection
  - Reimplementation of intersection detection using CGAL
 0.9.5 [2009-12-03]
  - Set appropriate parameters for symmetric eigenvalue problems with SLEPc
