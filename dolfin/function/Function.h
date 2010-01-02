@@ -57,11 +57,13 @@ namespace dolfin
     Function(const FunctionSpace& V,
              GenericVector& x);
 
-    /// Create function on given function space with a given vector (shared data)
+    /// Create function on given function space with a given vector 
+    /// (shared data)
     Function(boost::shared_ptr<const FunctionSpace> V,
              boost::shared_ptr<GenericVector> x);
 
-    /// Create function on given function space with a given vector (used by Python interface)
+    /// Create function on given function space with a given vector (used by 
+    /// Python interface)
     Function(boost::shared_ptr<const FunctionSpace> V,
              GenericVector& x);
 
@@ -76,7 +78,8 @@ namespace dolfin
     /// Copy constructor
     Function(const Function& v);
 
-    /// Sub-function constructor with shallow copy of vector (used in Python interface)
+    /// Sub-function constructor with shallow copy of vector (used in Python
+    /// interface)
     Function(const Function& v, uint i);
 
     /// Destructor

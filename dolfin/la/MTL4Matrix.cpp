@@ -1,10 +1,10 @@
 // Copyright (C) 2008 Dag Lindbo
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2008. 2009.
+// Modified by Garth N. Wells, 2008-2010.
 //
 // First added:  2008-07-06
-// Last changed: 2009-09-08
+// Last changed: 2010-01-02
 
 #ifdef HAS_MTL4
 
@@ -92,27 +92,28 @@ void MTL4Matrix::set(const double* block, uint m, const uint* rows, uint n,
                      const uint* cols)
 {
   if(!ins)
-    init_inserter();
+    init_inserter(nnz_row);
 
   for (uint i = 0; i < m; i++)
     for (uint j = 0; j < n; j++)
       (*ins)[rows[i]][cols[j]] = block[i*n +j];
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::add(const double* block, uint m, const uint* rows, uint n, const uint* cols)
+void MTL4Matrix::add(const double* block, uint m, const uint* rows, uint n, 
+                     const uint* cols)
 {
   if(!ins)
-    init_inserter();
+    init_inserter(nnz_row);
 
   // Block insertion
-  *ins << element_array(mtl::dense2D<double>(m, n, const_cast<double*>(block)),
-                        mtl::dense_vector<uint>(m, const_cast<uint*>(rows)),
-                        mtl::dense_vector<uint>(n, const_cast<uint*>(cols)));
-  /*
+  //*ins << element_array(mtl::dense2D<double>(m, n, const_cast<double*>(block)),
+  //                      mtl::dense_vector<uint>(m, const_cast<uint*>(rows)),
+  //                      mtl::dense_vector<uint>(n, const_cast<uint*>(cols)));
+  
   for (uint i = 0; i < m; i++)
     for (uint j = 0; j < n; j++)
       (*ins)[rows[i]][cols[j]] << block[i*n +j];
-  */
+  
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::axpy(double a, const GenericMatrix& A,
@@ -205,14 +206,18 @@ void MTL4Matrix::zero(uint m, const uint* rows)
     if(i == 0)
       cursor += rows[i];
     else
-      cursor += rows[i] -rows[i-1];
+      cursor += rows[i] - rows[i-1];
 
     // Check that we haven't gone beyond last row
     assert(*cursor <= *cend);
 
-    // Zero row and place one on the diagonal
-    for (ic_type icursor(mtl::begin<mtl::tag::nz>(cursor)), icend(mtl::end<mtl::tag::nz>(cursor)); icursor != icend; ++icursor)
+    // Zero row
+    for (ic_type icursor(mtl::begin<mtl::tag::nz>(cursor)), 
+                         icend(mtl::end<mtl::tag::nz>(cursor)); 
+                         icursor != icend; ++icursor)
+    {
       value(*icursor, 0.0);
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -264,7 +269,7 @@ void MTL4Matrix::setrow(uint row, const std::vector<uint>& columns, const std::v
   assert(row < this->size(0));
 
   if(!ins)
-    init_inserter();
+    init_inserter(nnz_row);
 
   for(uint i=0; i<columns.size(); i++)
     (*ins)[row][columns[i] ] = values[i];
@@ -327,18 +332,19 @@ std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> MTL4
   return tuple(A.address_major(), A.address_minor(), A.address_data(), A.nnz());
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::init_inserter(void)
+void MTL4Matrix::init_inserter(uint nnz)
 {
-  if(nnz_row > 0)
-    ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<double> >(A, nnz_row);
+  assert_no_inserter();
+  if (nnz > 0)
+    ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<double> >(A, nnz);
   else
-    ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<double> >(A, 100);
+    ins = new mtl::matrix::inserter<mtl4_sparse_matrix, mtl::update_plus<double> >(A, 25);
 }
 //-----------------------------------------------------------------------------
-inline void MTL4Matrix::assert_no_inserter(void) const
+inline void MTL4Matrix::assert_no_inserter() const
 {
   if(ins)
-    error("MTL4: Matrix read operation attempted while inserter active. Did you forget to apply()?");
+    error("MTL4: Disallowed matrix operation attempted while inserter active. Did you forget to apply()?");
 }
 //-----------------------------------------------------------------------------
 
