@@ -16,13 +16,14 @@ element = VectorElement("Lagrange", "tetrahedron", 1)
 def Grad(v):
     return grad(v).T
 
-# Functions
+# Test and trial functions
 v  = TestFunction(element)      # Test function
 du = TrialFunction(element)     # Incremental displacement
-u  = Function(element)          # Displacement from previous iteration
 
-B  = Function(element)          # Body force per unit mass
-T  = Function(element)          # Traction force on the boundary
+# Functions
+u  = Coefficient(element)          # Displacement from previous iteration
+B  = Coefficient(element)          # Body force per unit mass
+T  = Coefficient(element)          # Traction force on the boundary
 
 # Kinematics
 I = Identity(v.cell().d)        # Identity tensor

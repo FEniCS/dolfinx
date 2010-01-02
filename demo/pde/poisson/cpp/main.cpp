@@ -66,9 +66,9 @@ int main()
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
   Source f;
-  Flux g;
+  Flux h;
   L.f = f;
-  L.g = g;
+  L.h = h;
 
   // Compute solution
   VariationalProblem problem(a, L, bc);

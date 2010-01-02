@@ -14,9 +14,9 @@ vector = VectorElement("Lagrange", "triangle", 2)
 
 v  = TestFunction(scalar)
 u1 = TrialFunction(scalar)
-u0 = Function(scalar)
-b  = Function(vector)
-f  = Function(scalar)
+u0 = Coefficient(scalar)
+b  = Coefficient(vector)
+f  = Coefficient(scalar)
 
 c = 0.005
 k = 0.05
