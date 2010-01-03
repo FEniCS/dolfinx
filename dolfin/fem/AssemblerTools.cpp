@@ -93,20 +93,23 @@ void AssemblerTools::init_global_tensor(GenericTensor& A,
                                         bool reset_sparsity,
                                         bool add_values)
 {
+  // Check that we should not add values
+  if (reset_sparsity && add_values)
+    error("Can not add values when the sparsity pattern is reset");
+
   if (reset_sparsity)
   {
-    // Check that we should not add values
-    if (add_values)
-      error("Can not add values when the sparsity pattern is reset");
-
     // Build sparsity pattern
     Timer t0("Build sparsity");
     GenericSparsityPattern* sparsity_pattern = A.factory().create_pattern();
     if (sparsity_pattern)
     {
+      // Get dof maps
       std::vector<const DofMap*> dof_maps(0);
       for (uint i = 0; i < ufc.form.rank(); ++i)
         dof_maps.push_back(&(a.function_space(i)->dofmap()));
+
+      // Build sparsity pattern
       SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dof_maps,
                                     a.ufc_form().num_cell_integrals(),
                                     a.ufc_form().num_interior_facet_integrals());
@@ -129,9 +132,9 @@ void AssemblerTools::init_global_tensor(GenericTensor& A,
     delete sparsity_pattern;
     t2.stop();
   }
-  else
-    if (!add_values)
-      A.zero();
+
+  if (!add_values)
+    A.zero();
 }
 //-----------------------------------------------------------------------------
 std::string AssemblerTools::progress_message(uint rank,

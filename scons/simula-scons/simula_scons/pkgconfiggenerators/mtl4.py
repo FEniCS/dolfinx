@@ -34,7 +34,7 @@ def pkgCflags(sconsEnv=None):
       break
   if include_dir is None:
     raise UnableToFindPackageException("MTL4")
-  return "-I%s" % os.path.join(mtl4_dir, include_dir)
+  return "-DMTL_HAS_BLAS -I%s" % os.path.join(mtl4_dir, include_dir)
 
 def pkgTests(forceCompiler=None, sconsEnv=None,
              cflags=None, libs=None, version=None, **kwargs):

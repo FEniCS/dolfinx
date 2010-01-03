@@ -57,12 +57,10 @@ void MTL4Matrix::resize(uint M, uint N)
 void MTL4Matrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
   resize(sparsity_pattern.size(0), sparsity_pattern.size(1));
-  zero();
 }
 //-----------------------------------------------------------------------------
 MTL4Matrix* MTL4Matrix::copy() const
 {
-  // Why is this needed???
   assert_no_inserter();
   return new MTL4Matrix(*this);
 }
@@ -112,8 +110,7 @@ void MTL4Matrix::add(const double* block, uint m, const uint* rows, uint n,
   
   for (uint i = 0; i < m; i++)
     for (uint j = 0; j < n; j++)
-      (*ins)[rows[i]][cols[j]] << block[i*n +j];
-  
+      (*ins)[rows[i]][cols[j]] << block[i*n +j];  
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::axpy(double a, const GenericMatrix& A,
