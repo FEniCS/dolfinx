@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added: 2009-03-03
-// Last changed: 2009-06-16
+// Last changed: 2010-01-04
 
 #include <libxml/relaxng.h>
 
@@ -28,7 +28,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XMLFile::XMLFile(const std::string filename, bool gzip)
-  : GenericFile(filename), sax(0), outstream(0)
+  : GenericFile(filename), sax(0), outstream(0), gzip(gzip)
 {
   // Set up the output stream (to file)
   outstream = new std::ofstream();
@@ -103,6 +103,12 @@ void XMLFile::validate(const std::string filename)
     error("%s fails to validate", filename.c_str());
   }
   xmlRelaxNGFreeValidCtxt(validator);
+}
+//-----------------------------------------------------------------------------
+void XMLFile::write()
+{
+  if (gzip)
+    error("Unable to write XML data, gzipped XML (.xml.gz) not supported for output.");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::parse()
