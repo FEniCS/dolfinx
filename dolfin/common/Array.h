@@ -60,6 +60,7 @@ namespace dolfin
     }
 
     /// Resize array to size N. If size changes, contents will be destroyed.
+    
     void resize(uint N)
     { 
       if (N == _size)
@@ -91,7 +92,7 @@ namespace dolfin
     //{ error("Not implemented");  }
 
     /// Access value of given entry (const version)
-    const T& operator[] (uint i) const
+    T& operator[] (uint i) const
     { assert(i < _size); return x[i]; }
 
     /// Access value of given entry (non-const version)
