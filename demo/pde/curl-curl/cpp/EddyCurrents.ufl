@@ -9,12 +9,12 @@
 #
 # Compile this form with FFC: ffc -l dolfin EddyCurrents.form
 
-eN = FiniteElement("Nedelec 1st kind H(curl)", "tetrahedron", 1)
-eL = VectorElement("Lagrange", "tetrahedron", 1)
+EN = FiniteElement("Nedelec 1st kind H(curl)", "tetrahedron", 1)
+EL = VectorElement("Lagrange", "tetrahedron", 1)
 
-v = TestFunction(eN)
-u = TrialFunction(eN)
-dbdt = Function(eL)
+v = TestFunction(EN)
+u = TrialFunction(EN)
+dbdt = Coefficient(EL)
 
 a =  inner(curl(v), curl(u))*dx
 L = -inner(v, dbdt)*dx

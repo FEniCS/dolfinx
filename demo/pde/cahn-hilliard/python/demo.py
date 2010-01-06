@@ -15,6 +15,9 @@ class InitialConditions(Expression):
     def eval(self, values, x):
         values[0] = 0.0
         values[1] = 0.63 + 0.02*(0.5 - random.random())
+    def dim(self):
+        return 2
+
 
 class CahnHilliardEquation(NonlinearProblem):
     def __init__(self, a, L):
@@ -34,6 +37,8 @@ lmbda  = 1.0e-02  # surface parameter
 factor = 100      # chemical free energy multiplier
 dt     = 5.0e-06  # time step
 theta  = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson   
+
+parameters.optimize = True
 
 # Define function spaces
 mesh = UnitSquare(96, 96)
@@ -67,7 +72,7 @@ a = derivative(L, u, du)
 #------------------------------------------------------------------------------
 
 # Create intial conditions and interpolate
-u_init = InitialConditions(V = ME)
+u_init = InitialConditions()
 u.interpolate(u_init)
 u0.interpolate(u_init)
 

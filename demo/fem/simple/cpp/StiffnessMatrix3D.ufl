@@ -4,11 +4,11 @@
 # First added:  2005-06-05
 # Last changed: 2006-03-28
 #
-# The bilinear form for a mass matrix.
+# The bilinear form for a stiffness matrix (Poisson).
 
-element = FiniteElement("Lagrange", "triangle", 1)
+element = FiniteElement("Lagrange", "tetrahedron", 1)
 
 v = TestFunction(element)
-U = TrialFunction(element)
+u = TrialFunction(element)
 
-a = v*U*dx
+a = dot(grad(v), grad(u))*dx

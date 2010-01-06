@@ -1,14 +1,15 @@
-// Copyright (C) 2007 Kristian B. Oelgaard and Garth N. Wells
+// Copyright (C) 2007-2010 Kristian B. Oelgaard and Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-03-08
-// Last changed: 2009-09-08
+// Last changed: 2010-01-02
 //
 // This simple program illustrates the use of the SLEPc eigenvalue solver.
 
 #include <dolfin.h>
+#include "StiffnessMatrix.h"
 
 using namespace dolfin;
 
@@ -19,9 +20,14 @@ int main()
   // Make sure we use the PETSc backend
   parameters["linear_algebra_backend"] = "PETSc";
 
-  // Build stiftness matrix
+  // Create mesh
   UnitSquare mesh(64, 64);
-  StiffnessMatrix A(mesh);
+
+  // Build stiftness matrix
+  Matrix A;
+  StiffnessMatrix::FunctionSpace V(mesh);
+  StiffnessMatrix::BilinearForm a(V, V);
+  assemble(A, a); 
 
   // Get PETSc matrix
   PETScMatrix& AA(A.down_cast<PETScMatrix>());

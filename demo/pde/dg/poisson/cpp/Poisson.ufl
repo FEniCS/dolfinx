@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright (C) 2006-2007 Kristiand B. Oelgaard and Anders Logg.
 # Licensed under the GNU LGPL Version 2.1.
 #
@@ -16,7 +17,7 @@ element = FiniteElement("Discontinuous Lagrange", "triangle", 1)
 # Test and trial functions
 v = TestFunction(element)
 u = TrialFunction(element)
-f = Function(element)
+f = Coefficient(element)
 
 # Normal component, cell size and right-hand side
 h = Constant(triangle)

@@ -24,7 +24,7 @@ template<> std::string MeshFunction<double>::str(bool verbose) const
       s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;
   }
   else
-    s << "<MeshFuncton of topological dimension " << _dim << " containing " << _size << " values>";
+    s << "<MeshFunction of topological dimension " << _dim << " containing " << _size << " values>";
   return s.str();
 }
 //-----------------------------------------------------------------------------

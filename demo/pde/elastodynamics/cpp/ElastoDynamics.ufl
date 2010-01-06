@@ -18,27 +18,27 @@ r = TestFunction (element)
 u = TrialFunction(element)
 
 # Fields from previous time step
-u0      = Function(element)   # displacement
-v0      = Function(element)   # velocity
-a0      = Function(element)   # acceleration
-p0      = Function(element)   # external load
+u0      = Coefficient(element)   # displacement
+v0      = Coefficient(element)   # velocity
+a0      = Coefficient(element)   # acceleration
+p0      = Coefficient(element)   # external load
 
 # External forces
-f       = Function(vconstant) # body forces
-p       = Function(element)   # externally applied loads
+f       = Coefficient(vconstant) # body forces
+p       = Coefficient(element)   # externally applied loads
 
 # Material parameters
-rho     = Function(constant)  # mass density
-eta     = Function(constant)  # damping coefficient
-lmbda   = Function(constant)  # Lame coefficient
-mu      = Function(constant)  # Lame coefficient
+rho     = Coefficient(constant)  # mass density
+eta     = Coefficient(constant)  # damping coefficient
+lmbda   = Coefficient(constant)  # Lame coefficient
+mu      = Coefficient(constant)  # Lame coefficient
 
 # Time stepping parameters
-alpha_m = Function(constant)
-alpha_f = Function(constant)
-beta    = Function(constant)
-gamma   = Function(constant)
-dt      = Function(constant)
+alpha_m = Coefficient(constant)
+alpha_f = Coefficient(constant)
+beta    = Coefficient(constant)
+gamma   = Coefficient(constant)
+dt      = Coefficient(constant)
 
 
 

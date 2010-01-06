@@ -16,7 +16,6 @@ namespace dolfin
 
   class Mesh;
   class Point;
-  class Vector;
 
   /// A simple mesh editor for creating simplicial meshes in 1D, 2D and 3D.
 

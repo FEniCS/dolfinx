@@ -178,5 +178,31 @@ class Instantiation(unittest.TestCase):
           #self.assertRaises(TypeError,bothCompileAndPythonSubClassing1)
           self.assertRaises(TypeError,wrongCppargType)
 
+class Interpolate(unittest.TestCase):
+
+    def testInterpolation(self):
+        class F0(Expression):
+            def eval(self, values, x):
+                values[0] = 1.0
+        class F1(Expression):
+            def eval(self, values, x):
+                values[0] = 1.0
+                values[1] = 1.0
+            def dim(self):
+                return 2
+
+        # Scalar interpolation
+        f0 = F0()
+        f = Function(V)
+        f.interpolate(f0)
+        self.assertAlmostEqual(f.vector().norm("l1"), mesh.num_vertices())
+
+        # Vector interpolation
+        f1 = F1()
+        W = V + V
+        f = Function(W)
+        f.interpolate(f1)
+        self.assertAlmostEqual(f.vector().norm("l1"), 2*mesh.num_vertices())
+
 if __name__ == "__main__":
     unittest.main()

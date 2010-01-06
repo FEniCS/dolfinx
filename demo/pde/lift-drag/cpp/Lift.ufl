@@ -12,5 +12,5 @@
 element = FiniteElement("Lagrange", "triangle", 1)
 
 n = element.cell().n
-p = Function(element)
+p = Coefficient(element)
 M = p*n[1]*ds

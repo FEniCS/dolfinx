@@ -12,8 +12,10 @@ element = FiniteElement("Lagrange", "triangle", 1)
 
 v  = TestFunction(element)
 du = TrialFunction(element)
-f  = Function(element)
-u  = Function(element)
+
+f  = Coefficient(element)
+u  = Coefficient(element)
+
 L  = inner(grad(v), (1 + u**2)*grad(u))*dx - v*f*dx
 a  = derivative(L, u, du)
 
