@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman, 2007.
+// Modified by Garth N. Wells, 2010.
 //
 // First added:  2006-05-22
-// Last changed: 2009-10-08
+// Last changed: 2010-01-06
 
 #ifndef __MESH_FUNCTION_H
 #define __MESH_FUNCTION_H
@@ -50,6 +51,16 @@ namespace dolfin
       _values(0), _mesh(&mesh), _dim(0), _size(0)
     {
       init(dim);
+    }
+
+    /// Create mesh function on given mesh of given dimension and initialise 
+    /// to a value
+    MeshFunction(const Mesh& mesh, uint dim, const T& value) :
+      Variable("f", "unnamed MeshFunction"),
+      _values(0), _mesh(&mesh), _dim(0), _size(0)
+    {
+      init(dim);
+      set_all(value);
     }
 
     /// Create function from data file
