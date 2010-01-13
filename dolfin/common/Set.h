@@ -34,6 +34,9 @@ namespace dolfin
     iterator find(const T& x)
     { return std::find(_x.begin(), _x.end(), x); }
 
+    const_iterator find(const T& x) const
+    { return std::find(_x.begin(), _x.end(), x); }
+
     void insert(const T& x)
     {
       if( find(x) == this->end() )
@@ -51,8 +54,9 @@ namespace dolfin
 
     void erase(const T& x)
     { 
-      if (find(x) != _x.end())
-        _x.erase(find(x)); 
+      iterator p = find(x); 
+      if (p != _x.end())
+        _x.erase(p); 
     }
 
     void sort()
