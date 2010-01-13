@@ -39,24 +39,31 @@ namespace dolfin
     virtual ~MeshEntity();
 
     ///Comparision Operator
-    bool operator==(const MeshEntity& another) const { return (_mesh == another._mesh && _dim == another._dim && _index == another._index); }
+    bool operator==(const MeshEntity& another) const 
+    { return (_mesh == another._mesh && _dim == another._dim && _index == another._index); }
 
-    bool operator!=(const MeshEntity& another) const { return !operator==(another); }
+    bool operator!=(const MeshEntity& another) const 
+    { return !operator==(another); }
 
     /// Return mesh associated with mesh entity
-    inline const Mesh& mesh() const { return *_mesh; }
+    const Mesh& mesh() const 
+    { return *_mesh; }
 
     /// Return topological dimension
-    inline uint dim() const { return _dim; }
+    uint dim() const 
+    { return _dim; }
 
     /// Return index of mesh entity
-    inline uint index() const { return _index; }
+    uint index() const 
+    { return _index; }
 
     /// Return number of incident mesh entities of given topological dimension
-    inline uint num_entities(uint dim) const { return _mesh->topology()(_dim, dim).size(_index); }
+    uint num_entities(uint dim) const 
+    { return _mesh->topology()(_dim, dim).size(_index); }
 
     /// Return array of indices for incident mesh entitites of given topological dimension
-    inline const uint* entities(uint dim) const { return _mesh->topology()(_dim, dim)(_index); }
+    const uint* entities(uint dim) const 
+    { return _mesh->topology()(_dim, dim)(_index); }
 
     /// Check if given entity is indicent
     bool incident(const MeshEntity& entity) const;
