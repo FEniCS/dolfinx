@@ -18,7 +18,7 @@ namespace dolfin
   /// a std::vector. It can be faster than a std::set for some cases.
 
   template<class T>
-  class Set //: public std::vector<T>
+  class Set
   {
   public:
 
@@ -50,7 +50,10 @@ namespace dolfin
     { return _x.size(); }
 
     void erase(const T& x)
-    { _x.erase(find(x)); }
+    { 
+      if (find(x) != _x.end())
+        _x.erase(find(x)); 
+    }
 
     void sort()
     { std::sort(_x.begin(), _x.end()); }
