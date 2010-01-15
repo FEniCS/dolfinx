@@ -37,10 +37,15 @@ namespace dolfin
     const_iterator find(const T& x) const
     { return std::find(_x.begin(), _x.end(), x); }
 
-    void insert(const T& x)
+    bool insert(const T& x)
     {
       if( find(x) == this->end() )
+      {
         _x.push_back(x);      
+        return true;
+      }
+      else
+        return false;
     }
 
     const_iterator begin() const
