@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2009-08-10
+// Last changed: 2010-01-15
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -511,83 +511,6 @@ void TetrahedronCell::order(Cell& cell,
     }
   }
 }
-//-----------------------------------------------------------------------------
-bool TetrahedronCell::intersects(const MeshEntity& tetrahedron,
-                                 const Point& p) const
-{
-  // Adapted from gts_point_is_in_triangle from GTS
-
-  // Get mesh geometry
-  const MeshGeometry& geometry = tetrahedron.mesh().geometry();
-
-  // Get global index of vertices of the tetrahedron
-  uint v0 = tetrahedron.entities(0)[0];
-  uint v1 = tetrahedron.entities(0)[1];
-  uint v2 = tetrahedron.entities(0)[2];
-  uint v3 = tetrahedron.entities(0)[3];
-
-  // Check orientation
-  if (orientation((Cell&)tetrahedron) == 1)
-  {
-    const uint vtmp = v3;
-    v3 = v2;
-    v2 = vtmp;
-  }
-
-  // Get the coordinates of the four vertices
-  const double* x0 = geometry.x(v0);
-  const double* x1 = geometry.x(v1);
-  const double* x2 = geometry.x(v2);
-  const double* x3 = geometry.x(v3);
-
-  double xcoordinates[3];
-  double* x = xcoordinates;
-
-  x[0] = p[0];
-  x[1] = p[1];
-  x[2] = p[2];
-
-  double d1, d2, d3, d4;
-
-  // Test orientation of p w.r.t. each face
-  d1 = orient3d((double *)x2, (double *)x1, (double *)x0, x);
-  d2 = orient3d((double *)x0, (double *)x3, (double *)x2, x);
-  d3 = orient3d((double *)x0, (double *)x1, (double *)x3, x);
-  d4 = orient3d((double *)x1, (double *)x2, (double *)x3, x);
-
-  // FIXME: Need to check the predicates for correctness
-  //   if(fabs(d1) == DOLFIN_EPS ||
-  //      fabs(d2) == DOLFIN_EPS ||
-  //      fabs(d3) == DOLFIN_EPS ||
-  //      fabs(d4) == DOLFIN_EPS)
-  //   {
-  //     return true;
-  //   }
-  if (d1 < 0.0)
-    return false;
-  if (d2 < 0.0)
-    return false;
-  if (d3 < 0.0)
-    return false;
-  if (d4 < 0.0)
-    return false;
-
-  return true;
-}
-//-----------------------------------------------------------------------------
-bool TetrahedronCell::intersects(const MeshEntity& interval, const Point& p0, const Point& p1) const
-{
-  dolfin_not_implemented();
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool TetrahedronCell::intersects(const MeshEntity& entity, const Cell& cell) const
-{
-  dolfin_not_implemented();
-  return false;
-}
-//-----------------------------------------------------------------------------
-
 //-----------------------------------------------------------------------------
 std::string TetrahedronCell::description(bool plural) const
 {

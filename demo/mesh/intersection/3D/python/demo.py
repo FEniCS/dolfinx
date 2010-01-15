@@ -40,6 +40,7 @@ while t < 1.4 :
 
     # Compute intersection with boundary of square
     boundary = BoundaryMesh(sphere)
+#    cells = cube.all_intersected_entities(sphere)
     cells = cube.all_intersected_entities(boundary)
 
     # Mark intersected values
@@ -59,6 +60,7 @@ while t < 1.4 :
 
     else:
         plot(intersection)
+        interactive()
 
 #    p.movie("movie")
     #Propagate sphere along the line t(1,1,1).  

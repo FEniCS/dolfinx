@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-03
-// Last changed: 2009-09-03
+// Last changed: 2010-01-15
 
 // ===========================================================================
 // SWIG directives for mapping defines to Python
@@ -31,15 +31,6 @@ bool has_slepc()
 bool has_scotch()
 {
 #ifdef HAS_SCOTCH
-  return true;
-#else
-  return false;
-#endif
-}
-
-bool has_gts()
-{
-#ifdef HAS_GTS
   return true;
 #else
   return false;

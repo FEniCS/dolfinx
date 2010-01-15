@@ -6,7 +6,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2009-09-08
+// Last changed: 2010-01-15
 
 #ifndef __TETRAHEDRON_CELL_H
 #define __TETRAHEDRON_CELL_H
@@ -66,15 +66,6 @@ namespace dolfin
 
     /// Order entities locally
     void order(Cell& cell, const MeshFunction<uint>* global_vertex_indices) const;
-
-    /// Check for intersection with point
-    bool intersects(const MeshEntity& entity, const Point& p) const;
-
-    /// Check for intersection with line defined by points
-    bool intersects(const MeshEntity& entity, const Point& p0, const Point& p1) const;
-
-    /// Check for intersection with cell
-    bool intersects(const MeshEntity& entity, const Cell& cell) const;
 
     /// Return description of cell type
     std::string description(bool plural) const;

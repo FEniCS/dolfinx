@@ -5,7 +5,7 @@
 // Modified by Kristoffer Sleim, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2009-08-10
+// Last changed: 2010-01-15
 
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"
@@ -102,27 +102,6 @@ void PointCell::order(Cell& cell,
 {
   //  error("PointCell::order() not defined.");
 }
-//-----------------------------------------------------------------------------
-bool PointCell::intersects(const MeshEntity& entity, const Point& p) const
-{
-  dolfin_not_implemented();
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool PointCell::intersects(const MeshEntity& entity,
-                           const Point& p0, const Point& p1) const
-{
-  dolfin_not_implemented();
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool PointCell::intersects(const MeshEntity& entity,
-                           const Cell& cell) const
-{
-  dolfin_not_implemented();
-  return false;
-}
-
 //-----------------------------------------------------------------------------
 std::string PointCell::description(bool plural) const
 {

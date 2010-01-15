@@ -37,7 +37,6 @@
 #include <dolfin/mesh/Box.h>
 #include <dolfin/mesh/Rectangle.h>
 #include <dolfin/mesh/UnitSphere.h>
-#include <dolfin/mesh/IntersectionDetector.h>
 #include <dolfin/mesh/IntersectionOperator.h>
 
 #endif

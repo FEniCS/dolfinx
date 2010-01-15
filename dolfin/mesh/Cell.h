@@ -5,7 +5,7 @@
 // Modified by Andre Massing 2009.
 //
 // First added:  2006-06-01
-// Last changed: 2009-11-22
+// Last changed: 2010-01-15
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -68,18 +68,6 @@ namespace dolfin
     /// Check if entities are ordered
     inline bool ordered(MeshFunction<uint>* global_vertex_indices)
     { return _mesh->type().ordered(*this, global_vertex_indices); }
-
-    /// Check for intersection with point
-    inline bool intersects(const Point& p) const
-    { return _mesh->type().intersects(*this, p); }
-
-    /// Check for intersection with line defined by points
-    inline bool intersects(const Point& p0, const Point& p1) const
-    { return _mesh->type().intersects(*this, p0, p1); }
-
-    /// Check for intersection with cell
-    inline bool intersects(const Cell& cell)
-    { return _mesh->type().intersects(*this, cell); }
 
   };
 
