@@ -2,11 +2,12 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-01
-// Last changed: 2009-12-05
+// Last changed: 2010-01-26
 
 #include <algorithm>
 #include <map>
 #include <string>
+#include <vector>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
@@ -34,6 +35,15 @@ IntersectionOperator::~IntersectionOperator() {}
 
 void IntersectionOperator::all_intersected_entities(const Point & point, uint_set & ids_result) const
 { rImpl().all_intersected_entities(point,ids_result);}
+
+void IntersectionOperator::all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const
+{ rImpl().all_intersected_entities(cell,ids_result); }
+  
+void IntersectionOperator::all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const
+{ rImpl().all_intersected_entities(cells,ids_result); }
+
+template<class Primitive> IntersectionOperator::void all_intersected_entities(const Primitive & primitive, std::vector<uint> & ids_result) const
+{ return rImpl().all_intersected_entities(primitive,ids_result);}
 
 void IntersectionOperator::all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const
 { rImpl().all_intersected_entities(points,ids_result);}

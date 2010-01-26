@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim, 2008
 //
 // First added:  2006-06-05
-// Last changed: 2010-01-15
+// Last changed: 2010-01-19
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -16,7 +16,6 @@
 #include "Facet.h"
 #include "TriangleCell.h"
 #include "Vertex.h"
-#include "GeometricPredicates.h"
 
 using namespace dolfin;
 

@@ -4,7 +4,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-09
-// Last changed: 2009-11-27
+// Last changed: 2010-01-25
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -116,6 +116,8 @@ namespace dolfin
     /// Member access operator
     inline MeshEntity* operator->() { entity._index = (index ? index[_pos] : _pos); return &entity; }
 
+    ///Random access operator. 
+    inline MeshEntity& operator[] (uint pos) { _pos = pos; return *operator->();}
 
     /// Check if iterator has reached the end
     inline bool end() const { return _pos >= pos_end; }

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-16
-// Last changed: 2009-11-28
+// Last changed: 2010-01-25
 
 #ifndef  primitives_traits_INC
 #define  primitives_traits_INC
@@ -19,14 +19,6 @@
 namespace dolfin {
 
 struct PointPrimitive {};
-
-//struct PointCellPrimitive {};
-
-//struct IntervalCellPrimitive {};
-
-//struct TriangleCellPrimitive {};
-
-//struct TetrahedronCellPrimitive {};
 
 ///Forward declaration for a general Traits class. This traits class is
 ///supposed to provide a datum function, which returns a geometric primitive
