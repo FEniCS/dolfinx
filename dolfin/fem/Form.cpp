@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2009-12-15
+// Last changed: 2010-01-26
 
 #include <string>
 #include <dolfin/common/NoDeleter.h>
@@ -210,8 +210,11 @@ void Form::check() const
     std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
     assert(element.get());
     if (element->signature() != _function_spaces[i]->element().signature())
-      error("Wrong type of function space for argument %d, form expects\n%s\nbut we got\n%s\n...",
-        i, element->signature(), _function_spaces[i]->element().signature().c_str());
+    {
+      info("Expected element: %s", element->signature());
+      info("Input element:    %s", _function_spaces[i]->element().signature().c_str());
+      error("Wrong type of function space for argument %d.", i);
+    }
   }
 
   // Unable to check function spaces for coefficients (only works for Functions)
