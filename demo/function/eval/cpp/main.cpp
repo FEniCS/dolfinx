@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-03-11
-// Last changed: 2009-12-04
+// Last changed: 2010-01-27
 //
 // Demonstrating function evaluation at arbitrary points.
 
@@ -20,7 +20,7 @@ public:
 
   F() {}
 
-  void eval(Array<double>& values, const Array<const double>& x) const
+  void eval(Array<double>& values, const Array<double>& x) const
   {
     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
   }
@@ -33,9 +33,9 @@ int main()
 
   // Create mesh and a point in the mesh
   UnitCube mesh(8, 8, 8);
-  //std::vector<double> x = boost::assign::list_of(0.31)(0.32)(0.33);  
+  //std::vector<double> x = boost::assign::list_of(0.31)(0.32)(0.33);
   double _x[3] = {0.31, 0.32, 0.33};
-  Array<const double> x(3, _x); 
+  Array<double> x(3, _x);
 
   // A user-defined function
   F f;
