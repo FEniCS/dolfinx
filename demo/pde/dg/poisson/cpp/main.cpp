@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-12-05
-// Last changed: 2009-10-05
+// Last changed: 2010-01-27
 //
 // This demo program solves Poisson's equation,
 //
@@ -33,7 +33,7 @@ int main()
 
     Source() : Expression() {}
 
-    void eval(Array<double>& values, const Array<const double>& x) const
+    void eval(Array<double>& values, const Array<double>& x) const
     {
       double dx = x[0] - 0.5;
       double dy = x[1] - 0.5;

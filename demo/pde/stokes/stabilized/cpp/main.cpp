@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2009-10-08
+// Last changed: 2010-01-27
 //
 // This demo solves the Stokes equations, using stabilized
 // first order elements for the velocity and pressure. The
@@ -24,7 +24,7 @@ int main()
 
     Noslip() : Expression(2) {}
 
-    void eval(Array<double>& values, const Array<const double>& x) const
+    void eval(Array<double>& values, const Array<double>& x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -39,7 +39,7 @@ int main()
 
     Inflow() : Expression(2) {}
 
-    void eval(Array<double>& values, const Array<const double>& x) const
+    void eval(Array<double>& values, const Array<double>& x) const
     {
       values[0] = -sin(x[1]*DOLFIN_PI);
       values[1] = 0.0;

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-09-19
-// Last changed: 2009-10-06
+// Last changed: 2010-01-27
 //
 // This demo program computes the value of the functional
 //
@@ -26,7 +26,7 @@ int main()
   {
   public:
 
-    void eval(Array<double>& values, const Array<const double>& x) const
+    void eval(Array<double>& values, const Array<double>& x) const
     {
       values[0] = sin(x[0]) + cos(x[1]);
     }

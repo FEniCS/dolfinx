@@ -4,7 +4,7 @@
 // Adapted for EqualityBC demo by Bartosz Sawicki.
 //
 // First added:  2009-04-15
-// Last changed: 2009-10-05
+// Last changed: 2010-01-27
 //
 // This demo program solves Poisson's equation,
 //
@@ -26,7 +26,7 @@ int main()
   {
   public:
 
-    void eval(Array<double>& values, const Array<const double>& x) const
+    void eval(Array<double>& values, const Array<double>& x) const
     {
       double dx = x[0] - 0.75;
       double dy = x[1] - 0.5;

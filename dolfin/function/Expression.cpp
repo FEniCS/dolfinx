@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-12-16
+// Last changed: 2010-01-26
 //
 // Modified by Johan Hake, 2009.
 
@@ -104,7 +104,7 @@ void Expression::compute_vertex_values(double* vertex_values,
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
       // Update coordinate data
-      data.x.update(vertex->dim(), vertex->x());
+      data.set(mesh.geometry().dim(), vertex->x());
 
       // Evaluate at vertex
       eval(local_vertex_values, data);
@@ -119,7 +119,7 @@ void Expression::compute_vertex_values(double* vertex_values,
   }
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Array<double>& values, const Array<const double>& x) const
+void Expression::eval(Array<double>& values, const Array<double>& x) const
 {
   error("Missing eval() for Expression (must be overloaded).");
 }
