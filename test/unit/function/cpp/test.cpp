@@ -5,7 +5,7 @@
 // Modified by Johannes Ring, 2009.
 //
 // First added:  2007-05-24
-// Last changed: 2009-09-07
+// Last changed: 2010-01-27
 //
 // Unit tests for the function library
 
@@ -22,7 +22,7 @@ class Eval : public CppUnit::TestFixture
   CPPUNIT_TEST(testArbitraryEval);
   CPPUNIT_TEST_SUITE_END();
 
-public: 
+public:
 
   void testArbitraryEval()
   {
@@ -33,12 +33,12 @@ public:
       F0() {}
 
       void eval(Array<double>& values, const Data& data) const
-      { 
-        const Array<const double>& x = data.x;
+      {
+        const Array<double>& x = data.x;
         values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
       }
     };
- 
+
     class F1 : public Expression
     {
     public:
@@ -46,15 +46,15 @@ public:
       F1() {}
 
       void eval(Array<double>& values, const Data& data) const
-      { 
-        const Array<const double>& x = data.x;
-        values[0] = 1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]; 
-      } 
+      {
+        const Array<double>& x = data.x;
+        values[0] = 1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2];
+      }
     };
 
     UnitCube mesh(8, 8, 8);
     double x[3] = {0.31, 0.32, 0.33};
-  
+
     Data data;
     data.x.update(3, x);
     Array<double> u0(2);
@@ -66,7 +66,7 @@ public:
 
     // Test evaluation of a user-defined function
     f0.eval(u0, data);
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(u0[0], 
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(u0[0],
 				                         sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
 				                         DOLFIN_EPS);
 
