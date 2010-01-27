@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-11
-// Last changed: 2009-12-02
+// Last changed: 2010-01-26
 
 #include <dolfin/mesh/Cell.h>
 #include "Data.h"
@@ -73,7 +73,9 @@ void Data::set(const Cell& dolfin_cell,
 void Data::set(const ufc::cell& ufc_cell, const double* x)
 {
   _ufc_cell = &ufc_cell;
-  this->x.update(ufc_cell.geometric_dimension, x);
+
+  // Write comment about const-cast here
+  const_cast<Array<double>*>(&(this->x))->update(ufc_cell.geometric_dimension, const_cast<double*>(x));
 }
 //-----------------------------------------------------------------------------
 void Data::clear()

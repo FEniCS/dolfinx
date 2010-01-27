@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-06-29
-// Last changed: 2009-10-05
+// Last changed: 2010-01-27
 //
 // Steady state advection-diffusion equation, discontinuous
 // formulation using full upwinding.
@@ -20,7 +20,7 @@ class BC : public Expression
 {
 public:
 
-  void eval(Array<double>& values, const Array<const double>& x) const
+  void eval(Array<double>& values, const Array<double>& x) const
   {
     values[0] = sin(DOLFIN_PI*5.0*x[1]);
   }

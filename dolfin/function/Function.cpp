@@ -6,7 +6,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2009-12-14
+// Last changed: 2010-01-26
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -276,7 +276,7 @@ dolfin::uint Function::geometric_dimension() const
   return _function_space->mesh().geometry().dim();
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Array<double>& values, const Array<const double>& x) const
+void Function::eval(Array<double>& values, const Array<double>& x) const
 {
   assert(_function_space);
 
@@ -297,7 +297,7 @@ void Function::eval(Array<double>& values, const Array<const double>& x) const
 }
 //-----------------------------------------------------------------------------
 void Function::eval(Array<double>& values,
-                    const Array<const double>& x,
+                    const Array<double>& x,
                     const Cell& dolfin_cell,
                     const ufc::cell& ufc_cell) const
 {

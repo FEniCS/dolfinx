@@ -7,7 +7,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2009-12-14
+// Last changed: 2010-01-26
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -57,12 +57,12 @@ namespace dolfin
     Function(const FunctionSpace& V,
              GenericVector& x);
 
-    /// Create function on given function space with a given vector 
+    /// Create function on given function space with a given vector
     /// (shared data)
     Function(boost::shared_ptr<const FunctionSpace> V,
              boost::shared_ptr<GenericVector> x);
 
-    /// Create function on given function space with a given vector (used by 
+    /// Create function on given function space with a given vector (used by
     /// Python interface)
     Function(boost::shared_ptr<const FunctionSpace> V,
              GenericVector& x);
@@ -113,11 +113,11 @@ namespace dolfin
     uint geometric_dimension() const;
 
     /// Evaluate function for given coordinate
-    void eval(Array<double>& values, const Array<const double>& x) const;
+    void eval(Array<double>& values, const Array<double>& x) const;
 
     /// Evaluate function for given coordinate in given cell
     void eval(Array<double>& values,
-              const Array<const double>& x,
+              const Array<double>& x,
               const Cell& dolfin_cell,
               const ufc::cell& ufc_cell) const;
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2009-11-16
+// Last changed: 2010-01-27
 //
 // This demo program solves Poisson's equation
 //
@@ -25,7 +25,7 @@ using namespace dolfin;
 // Source term (right-hand side)
 class Source : public Expression
 {
-  void eval(Array<double>& values, const Array<const double>& x) const
+  void eval(Array<double>& values, const Array<double>& x) const
   {
     double dx = x[0] - 0.5;
     double dy = x[1] - 0.5;
@@ -36,7 +36,7 @@ class Source : public Expression
 // Boundary flux (Neumann boundary condition)
 class Flux : public Expression
 {
-  void eval(Array<double>& values, const Array<const double>& x) const
+  void eval(Array<double>& values, const Array<double>& x) const
   {
     values[0] = sin(5*x[0]);
   }

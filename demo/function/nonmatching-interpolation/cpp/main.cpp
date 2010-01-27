@@ -21,7 +21,7 @@ class MyExpression : public Expression
 {
 public:
 
-  void eval(Array<double>& values, const Array<const double>& x) const
+  void eval(Array<double>& values, const Array<double>& x) const
   {
     values[0] = sin(10.0*x[0])*sin(10.0*x[1]);
   }

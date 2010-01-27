@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2007-04-20
-// Last changed: 2009-10-05
+// Last changed: 2010-01-27
 //
 // This demo program solves the mixed formulation of
 // Poisson's equation,
@@ -34,7 +34,7 @@ int main()
   {
   public:
 
-    void eval(Array<double>& values, const Array<const double>& x) const
+    void eval(Array<double>& values, const Array<double>& x) const
     {
       double dx = x[0] - 0.5;
       double dy = x[1] - 0.5;

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-30
-// Last changed: 2009-10-05
+// Last changed: 2010-01-27
 //
 // Eddy currents phenomena in low conducting body can be
 // described using electric vector potential and curl-curl operator:
@@ -31,7 +31,7 @@ int main()
 
     Source() : Expression(3) {}
 
-    void eval(Array<double>& values, const Array<const double>& x) const
+    void eval(Array<double>& values, const Array<double>& x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -47,7 +47,7 @@ int main()
 
     Zero() : Expression(3) {}
 
-    void eval(Array<double>& values, const Array<const double>& x) const
+    void eval(Array<double>& values, const Array<double>& x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-11
-// Last changed: 2009-10-11
+// Last changed: 2010-01-26
 
 #ifndef __DATA_H
 #define __DATA_H
@@ -50,7 +50,7 @@ namespace dolfin
     bool on_facet() const;
 
     /// The coordinates
-    Array<const double> x;
+    const Array<double> x;
 
     /// Set cell and facet data
     void set(const Cell& dolfin_cell, const ufc::cell& ufc_cell, int local_facet);
@@ -65,9 +65,16 @@ namespace dolfin
 
     // Friends
     friend class GenericFunction;
+    friend class Expression;
 
     // FIXME: Remove this
     friend class Function;
+
+    // Set coordinate
+    void set(uint gdim, const double* x)
+    {
+      const_cast<Array<double>*>(&(this->x))->update(gdim, const_cast<double*>(x));
+    }
 
     // The current cell (if any, otherwise 0)
     const Cell* _dolfin_cell;
