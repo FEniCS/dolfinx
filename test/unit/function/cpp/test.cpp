@@ -56,7 +56,7 @@ public:
     double x[3] = {0.31, 0.32, 0.33};
 
     Data data;
-    data.x.update(3, x);
+    data.set(3, x);
     Array<double> u0(2);
     Array<double> u1(2);
 
@@ -67,8 +67,8 @@ public:
     // Test evaluation of a user-defined function
     f0.eval(u0, data);
     CPPUNIT_ASSERT_DOUBLES_EQUAL(u0[0],
-				                         sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
-				                         DOLFIN_EPS);
+                                 sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
+                                 DOLFIN_EPS);
 
 #ifdef HAS_GTS
     // Test evaluation of a discrete function
