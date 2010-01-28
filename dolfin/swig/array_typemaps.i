@@ -71,6 +71,6 @@
 // Run the typemap macros
 //-----------------------------------------------------------------------------
 NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, d, values, )
-NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(const double, DOUBLE, NPY_DOUBLE, double, d, x, const)
+NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, d, x, const)
 NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, INT32, NPY_UINT, uint, I, indices,)
 
