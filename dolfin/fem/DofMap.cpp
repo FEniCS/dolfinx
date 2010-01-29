@@ -319,7 +319,7 @@ void DofMap::init_ufc_dofmap(ufc::dof_map& dofmap,
   }
 }
 //-----------------------------------------------------------------------------
-dolfin::Set<dolfin::uint> DofMap::list(const Mesh& mesh, bool sort) const
+dolfin::Set<dolfin::uint> DofMap::dofs(const Mesh& mesh, bool sort) const
 { 
   dolfin::Set<uint> dof_list;
 
