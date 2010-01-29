@@ -70,14 +70,17 @@ namespace dolfin
     /// Return dimension of function space
     uint dim() const;
 
-    /// Interpolate function v into function space, returning the vector of expansion coefficients
-    void interpolate(GenericVector& expansion_coefficients, const GenericFunction& v) const;
+    /// Interpolate function v into function space, returning the vector of 
+    /// expansion coefficients
+    void interpolate(GenericVector& expansion_coefficients, 
+                     const GenericFunction& v) const;
 
     /// Extract sub space for component
     boost::shared_ptr<FunctionSpace> operator[] (uint i) const;
 
     /// Extract sub space for component
-    boost::shared_ptr<FunctionSpace> extract_sub_space(const std::vector<uint>& component) const;
+    boost::shared_ptr<FunctionSpace> 
+                  extract_sub_space(const std::vector<uint>& component) const;
 
     /// Return function space with a new dof map
     boost::shared_ptr<FunctionSpace>

@@ -28,15 +28,25 @@ namespace dolfin
     /// Create empty set
     Set() {}
 
+    /// Wrap std::vectpr as a set. Contents will be erased.
+    Set(std::vector<T>& x) : _x(x) 
+    { _x.clear(); }
+
     /// Copy constructor
     Set(const dolfin::Set<T>& x) : _x(x._x) {}
 
+    /// Destructor
+    ~Set() {}
+
+    /// Find entry in set and return an iterator to the entry
     iterator find(const T& x)
     { return std::find(_x.begin(), _x.end(), x); }
 
+    /// Find entry in set and return an iterator to the entry (const)
     const_iterator find(const T& x) const
     { return std::find(_x.begin(), _x.end(), x); }
 
+    /// Insert entry
     bool insert(const T& x)
     {
       if( find(x) == this->end() )
@@ -54,9 +64,11 @@ namespace dolfin
     const_iterator end() const
     { return _x.end(); }
 
-    const dolfin::uint size() const
+    /// Set size
+    dolfin::uint size() const
     { return _x.size(); }
 
+    /// Erase an entry
     void erase(const T& x)
     { 
       iterator p = find(x); 
@@ -64,18 +76,23 @@ namespace dolfin
         _x.erase(p); 
     }
 
+    /// Sort set
     void sort()
     { std::sort(_x.begin(), _x.end()); }
 
+    /// Clear set
     void clear()
     { _x.clear(); }
 
+    /// Resize set
     void resize(uint n)
     { _x.resize(n); }
 
+    /// Index the nth entry in the set
     T operator[](uint n) const
     { return _x[n]; }
 
+    /// Return the vector that stores the data in the Set 
     const std::vector<T> set() const
     { return _x; }
 

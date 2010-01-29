@@ -42,9 +42,7 @@ problem = VariationalProblem(a, L)
 (sigma, u) = problem.solve().split()
 
 # Project sigma for post-processing
-P1 = VectorFunctionSpace(mesh, "CG", 1)
-sigma_proj = project(sigma, P1)
-# FIXME: Strange result here when interpolating!
+sigma_proj = project(sigma)
 
 # Plot solution
 plot(sigma_proj)
@@ -53,7 +51,5 @@ plot(u)
 interactive()
 
 # Save solution to pvd format
-f3 = File("sigma.pvd")
-f4 = File("u.pvd")
-f3 << sigma_proj
-f4 << u
+File("sigma.pvd") << sigma_proj
+File("u.pvd") << u

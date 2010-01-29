@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Anders Logg and Garth N. Wells.
+// Copyright (C) 2007-2010 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Martin Alnes, 2008
@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-12-15
+// Last changed: 2010-01-29
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -27,6 +27,7 @@ namespace dolfin
 {
 
   class UFC;
+  template<class T> class Set;
 
   /// This class handles the mapping of degrees of freedom.
   /// It wraps a ufc::dof_map on a specific mesh and provides
@@ -112,13 +113,17 @@ namespace dolfin
     void tabulate_coordinates(double** coordinates, const Cell& cell) const;
 
     /// Test whether dof map has been renumbered
-    bool renumbered() const { return _map.get(); }
+    bool renumbered() const 
+    { return _map.get(); }
 
     /// Extract sub dofmap component
     DofMap* extract_sub_dofmap(const std::vector<uint>& component, const Mesh& dolfin_mesh) const;
 
     /// "Collapse" a sub dofmap
     DofMap* collapse(std::map<uint, uint>& collapsed_map, const Mesh& dolfin_mesh) const;
+
+    /// Return the set of dof indices
+    Set<dolfin::uint> list(const Mesh& mesh, bool sort = false) const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -153,7 +158,6 @@ namespace dolfin
     //        e.g. a std::vector for each cell?
     // FIXME: Document layout of map
     // Precomputed dof map
-    //std::auto_ptr<std::vector<dolfin::uint> > _map;
     boost::shared_ptr<std::vector<dolfin::uint> > _map;
 
     // Map from UFC dofs to renumbered dof
