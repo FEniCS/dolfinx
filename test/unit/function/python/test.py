@@ -59,8 +59,8 @@ class Eval(unittest.TestCase):
           b = a((2.0, 1.0), { f0: N })
           self.assertEqual(b, 25)
 
-          # Projection requires gts
-          if not has_gts():
+          # Projection requires CGAL
+          if not has_cgal():
                return
 
           V2 = FunctionSpace(mesh, 'CG', 2)
