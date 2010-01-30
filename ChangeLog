@@ -1,3 +1,4 @@
+ - Add DofMap member function to return set of dofs
  - Fix memory leak in the LA interface
  - Do not import cos, sin, exp from NumPy to avoid clash with UFL functions
  - Fix bug in MTL4Vector assignment
