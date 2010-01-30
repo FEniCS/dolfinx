@@ -123,7 +123,7 @@ namespace dolfin
     DofMap* collapse(std::map<uint, uint>& collapsed_map, const Mesh& dolfin_mesh) const;
 
     /// Return the set of dof indices
-    Set<dolfin::uint> list(const Mesh& mesh, bool sort = false) const;
+    Set<dolfin::uint> dofs(const Mesh& mesh, bool sort = false) const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;

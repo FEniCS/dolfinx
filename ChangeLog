@@ -1,6 +1,8 @@
- - Do not import cos, sin, exp from NumPy to avoid clash with UFL functions 
- - Fix bug in MTL4Vector assignment 
- - Remove sandbox (moved to separate repository) 
+ - Add DofMap member function to return set of dofs
+ - Fix memory leak in the LA interface
+ - Do not import cos, sin, exp from NumPy to avoid clash with UFL functions
+ - Fix bug in MTL4Vector assignment
+ - Remove sandbox (moved to separate repository)
  - Remove matrix factory (dolfin/mf)
  - Update .ufl files for changes in UFL
  - Added swig/import/foo.i for easy type importing from dolfin modules
