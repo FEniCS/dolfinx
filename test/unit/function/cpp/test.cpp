@@ -5,7 +5,7 @@
 // Modified by Johannes Ring, 2009.
 //
 // First added:  2007-05-24
-// Last changed: 2010-01-27
+// Last changed: 2010-01-30
 //
 // Unit tests for the function library
 
@@ -70,6 +70,7 @@ public:
                                  sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
                                  DOLFIN_EPS);
 
+#ifdef HAS_CGAL
 #ifdef HAS_GTS
     // Test evaluation of a discrete function
     Projection::FunctionSpace V(mesh);
@@ -84,6 +85,7 @@ public:
     f1.eval(u0, data);
     g.eval(u1, data);
     CPPUNIT_ASSERT( std::abs(u0[0]-u1[0]) < tol );
+#endif
 #endif
   }
 };
