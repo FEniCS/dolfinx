@@ -4,7 +4,7 @@
 // Modified by Johannes Ring, 2009.
 //
 // First added:  2009-09-11
-// Last changed: 2010-01-26
+// Last changed: 2010-01-27
 
 #ifndef __INTERSECTIONOPERATORIMPLEMENTATION_H
 #define __INTERSECTIONOPERATORIMPLEMENTATION_H
@@ -94,8 +94,8 @@ namespace dolfin
     virtual void all_intersected_entities(const Point & point, uint_set & ids_result) const; 
     virtual void all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const;
 
-    virtual void all_intersected_entities(const Cell & cell, std::vector<uint> & ids_result) const;
-    virtual void all_intersected_entities(const std::vector<Cell> & cells, uint_set & ids_result) const;
+    virtual void all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const;
+    virtual void all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const;
 
     virtual void all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const;
 
@@ -131,7 +131,8 @@ namespace dolfin
     }
   }
 
-  template <class P> void all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const
+  template <class PT> 
+  void IntersectionOperatorImplementation_d<PT>::all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const
   {
     std::insert_iterator< std::vector<uint> > output_it(ids_result,ids_result.end());
     //Convert entity to corresponding cgal geomtric object according to the mesh
@@ -139,32 +140,30 @@ namespace dolfin
     switch(entity.dim())
     {
       case 0 : tree->all_intersected_primitives(Primitive_Traits<PointCell,K>::datum(entity), output_it); break;
-      case 1 : tree->all_intersected_primitives(Primitive_Traits<IntervallCell,K>::datum(entity), output_it); break;
+      case 1 : tree->all_intersected_primitives(Primitive_Traits<IntervalCell,K>::datum(entity), output_it); break;
       case 2 : tree->all_intersected_primitives(Primitive_Traits<TriangleCell,K>::datum(entity), output_it); break;
       case 3 : tree->all_intersected_primitives(Primitive_Traits<TetrahedronCell,K>::datum(entity), output_it); break;
       default:  error("DOLFIN IntersectionOperatorImplementation::all_intersected_entities: \n Mesh CellType is not known."); 
     }
   }
 
-  template <class P> void all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const;
+  template <class PT> 
+  void IntersectionOperatorImplementation_d<PT>::all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const
   {
     std::insert_iterator< uint_set > output_it(ids_result,ids_result.end());
-    switch(entity.dim())
-    {
-      case 0 :  
-        for (std::vector<uint>::const_iterator entitiy = entities.begin(); entitiy != entities.end(); ++entities)
+    for (std::vector<MeshEntity>::const_iterator entity = entities.begin(); entity != entities.end(); ++entity)
+      switch(entity->dim())
+      {
+        case 0 :  
           tree->all_intersected_primitives(Primitive_Traits<PointCell,K>::datum(*entity), output_it); break;
-      case 1 : 
-        for (std::vector<uint>::const_iterator entitiy = entities.begin(); entitiy != entities.end(); ++entities)
-          tree->all_intersected_primitives(Primitive_Traits<IntervallCell,K>::datum(*entity), output_it); break;
-      case 2 :
-        for (std::vector<uint>::const_iterator entitiy = entities.begin(); entitiy != entities.end(); ++entities)
+        case 1 : 
+          tree->all_intersected_primitives(Primitive_Traits<IntervalCell,K>::datum(*entity), output_it); break;
+        case 2 :
           tree->all_intersected_primitives(Primitive_Traits<TriangleCell,K>::datum(*entity), output_it); break;
-      case 3 :
-        for (std::vector<uint>::const_iterator entitiy = entities.begin(); entitiy != entities.end(); ++entities)
+        case 3 :
           tree->all_intersected_primitives(Primitive_Traits<TetrahedronCell,K>::datum(*entity), output_it); break;
-      default:  error("DOLFIN IntersectionOperatorImplementation::all_intersected_entities: \n Mesh EntityType is not known."); 
-    }
+        default:  error("DOLFIN IntersectionOperatorImplementation::all_intersected_entities: \n Mesh EntityType is not known."); 
+      }
   }
 
   template <class PT>
@@ -176,23 +175,23 @@ namespace dolfin
     switch( another_mesh.type().cell_type())
     {
       case CellType::point        : 
-	for (CellIterator cell(another_mesh); !cell.end(); ++cell)
-	  tree->all_intersected_primitives(Primitive_Traits<PointCell,K>::datum(*cell),output_it); break;
+        for (CellIterator cell(another_mesh); !cell.end(); ++cell)
+          tree->all_intersected_primitives(Primitive_Traits<PointCell,K>::datum(*cell),output_it); break;
       case CellType::interval     :
-	if (dim == 1 || dim == 3)
-	  dolfin_not_implemented();
-	else
-	  for (CellIterator cell(another_mesh); !cell.end(); ++cell)
-	    tree->all_intersected_primitives(Primitive_Traits<IntervalCell,K>::datum(*cell),output_it); break;
+        if (dim == 1 || dim == 3)
+          dolfin_not_implemented();
+        else
+          for (CellIterator cell(another_mesh); !cell.end(); ++cell)
+            tree->all_intersected_primitives(Primitive_Traits<IntervalCell,K>::datum(*cell),output_it); break;
       case CellType::triangle     :
-	for (CellIterator cell(another_mesh); !cell.end(); ++cell)
-	  tree->all_intersected_primitives(Primitive_Traits<TriangleCell,K>::datum(*cell),output_it); break;
+        for (CellIterator cell(another_mesh); !cell.end(); ++cell)
+          tree->all_intersected_primitives(Primitive_Traits<TriangleCell,K>::datum(*cell),output_it); break;
       case CellType::tetrahedron  :
-	  for (CellIterator cell(another_mesh); !cell.end(); ++cell)
-	  {
-	    tree->all_intersected_primitives(Primitive_Traits<TetrahedronCell,K>::datum(*cell),output_it);
-	  }
-	  break;
+          for (CellIterator cell(another_mesh); !cell.end(); ++cell)
+          {
+            tree->all_intersected_primitives(Primitive_Traits<TetrahedronCell,K>::datum(*cell),output_it);
+          }
+          break;
       default:  error("DOLFIN IntersectionOperatorImplementation::all_intersected_entities: \n Mesh CellType is not known."); 
     }
   }

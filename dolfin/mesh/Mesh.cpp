@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-09
-// Last changed: 2009-11-27
+// Last changed: 2010-01-27
 
 #include <sstream>
 
@@ -256,6 +256,16 @@ void Mesh::all_intersected_entities(const std::vector<Point> & points, uint_set 
 {
   _intersection_operator.all_intersected_entities(points, ids_result);
 } 
+//-----------------------------------------------------------------------------
+void Mesh::all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const
+{
+  _intersection_operator.all_intersected_entities(entity, ids_result);
+}
+//-----------------------------------------------------------------------------
+void Mesh::all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const
+{
+  _intersection_operator.all_intersected_entities(entities, ids_result);
+}
 //-----------------------------------------------------------------------------
 void Mesh::all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const
 {

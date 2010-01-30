@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-01
-// Last changed: 2010-01-26
+// Last changed: 2010-01-27
 
 #ifndef __INTERSECTIONOPERATOR_H
 #define __INTERSECTIONOPERATOR_H
@@ -67,7 +67,7 @@ namespace dolfin
     //class. 
     void all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const;
 
-    ///Compute all id of all cells which are intersects by by any of the cell in \em cells. This
+    ///Compute all id of all cells which are intersects by any of the entities in \em entities. This
     ///\param[out] ids_result The ids of the intersected set are saved in a set for efficienty
     ///reasons, to avoid to sort out duplicates later on.
     void all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const;

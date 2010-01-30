@@ -38,5 +38,6 @@
 #include <dolfin/mesh/Rectangle.h>
 #include <dolfin/mesh/UnitSphere.h>
 #include <dolfin/mesh/IntersectionOperator.h>
+//#include <dolfin/mesh/OverlappingMeshes.h>
 
 #endif

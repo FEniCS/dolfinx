@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-16
-// Last changed: 2010-01-25
+// Last changed: 2010-01-27
 
 #ifndef  primitives_traits_INC
 #define  primitives_traits_INC
@@ -11,6 +11,7 @@
 
 #include "Vertex.h"
 #include "MeshEntityIterator.h"
+#include "MeshEntity.h"
 #include "PointCell.h"
 #include "IntervalCell.h"
 #include "TriangleCell.h"
@@ -41,7 +42,7 @@ template <typename Kernel> struct Primitive_Traits<PointCell,Kernel> {
   typedef PointCell Primitive;
   typedef typename K::Point_3 Datum;
   static const int dim = 0;
-  static Datum datum(const Cell & cell) {
+  static Datum datum(const MeshEntity & cell) {
     VertexIterator v(cell);
     return Datum(v->point());
   }
@@ -53,7 +54,7 @@ template <typename Kernel> struct Primitive_Traits<IntervalCell,Kernel> {
   typedef typename K::Point_3 Point_3;
   typedef typename K::Segment_3 Datum;
   static const int dim = 1;
-  static Datum datum(const Cell & cell) {
+  static Datum datum(const MeshEntity & cell) {
     VertexIterator v(cell);
     Point_3 p1(v->point());
     ++v;
@@ -68,7 +69,7 @@ template <typename Kernel> struct Primitive_Traits<TriangleCell,Kernel> {
   typedef typename K::Point_3 Point_3;
   typedef typename K::Triangle_3 Datum;
   static const int dim = 2;
-  static Datum datum(const Cell & cell) {
+  static Datum datum(const MeshEntity & cell) {
     VertexIterator v(cell);
     Point_3 p1(v->point());
     ++v;
@@ -85,7 +86,7 @@ template <typename Kernel> struct Primitive_Traits<TetrahedronCell,Kernel> {
   typedef typename K::Point_3 Point_3;
   typedef typename K::Tetrahedron_3 Datum;
   static const int dim = 3;
-  static Datum datum(const Cell & cell) {
+  static Datum datum(const MeshEntity & cell) {
     VertexIterator v(cell);
     Point_3 p1(v->point());
     ++v;
