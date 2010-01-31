@@ -29,7 +29,7 @@ for root, dirs, files in os.walk(cwd):
             options = special[f]
         else:
             options = ""
-        command = "ffc -d -l dolfin -O %s %s >> compile.log" % (options, f)
+        command = "ffc -d -l dolfin %s %s >> compile.log" % (options, f)
         print "  " + command
         ret = os.system(command)
         if not ret == 0:

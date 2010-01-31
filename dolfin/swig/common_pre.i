@@ -46,7 +46,7 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Global modifications to the dolfin::Set interface
 //-----------------------------------------------------------------------------
-%ignore dolfin::Array::operator[];
+%ignore dolfin::Set::operator[];
 
 //-----------------------------------------------------------------------------
 // Macro for defining an in-typemap for NumPy array -> dolfin::Array for the 

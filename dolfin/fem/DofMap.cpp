@@ -182,16 +182,12 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
 DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
                          const Mesh& dolfin_mesh) const
 {
+  // Create a new DofMap
   DofMap* collapsed_dof_map = 0;
   if (_map.get())
-  {
     error("Cannot yet collapse renumbered dof maps.");
-  }
   else
-  {
-    // Create a new DofMap
     collapsed_dof_map = new DofMap(_ufc_dofmap, dolfin_mesh);
-  }
 
   assert(collapsed_dof_map->global_dimension() == this->global_dimension());
 
@@ -265,7 +261,8 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dofmap,
   for (uint i = 1; i < component.size(); i++)
     sub_component.push_back(component[i]);
   ufc::dof_map* sub_sub_dof_map = extract_sub_dofmap(*sub_dof_map, offset,
-                                                     sub_component, ufc_mesh, dolfin_mesh);
+                                                     sub_component, ufc_mesh, 
+                                                     dolfin_mesh);
   delete sub_dof_map;
 
   return sub_sub_dof_map;
