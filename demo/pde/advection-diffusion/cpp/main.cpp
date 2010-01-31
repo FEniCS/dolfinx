@@ -20,6 +20,11 @@ int main(int argc, char *argv[])
 {
   // Read mesh
   Mesh mesh("../mesh.xml.gz");
+  mesh.init();
+  cout << "Vertices " << mesh.num_vertices() << endl;
+  cout << "facets   " << mesh.num_facets() << endl;
+  cout << "Vertices " << mesh.num_vertices() << endl;
+  cout << "u_dimfacets   " << (mesh.num_vertices()+mesh.num_facets())*2 << endl;
 
   // Create velocity FunctionSpace
   Velocity::FunctionSpace V_u(mesh);
