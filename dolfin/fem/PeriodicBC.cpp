@@ -240,7 +240,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
 {
   // Call recursively for subspaces, should work for arbitrary nesting
   const uint num_sub_spaces = function_space.element().num_sub_elements();
-  if (num_sub_spaces > 1)
+  if (num_sub_spaces > 0)
   {
     for (uint i = 0; i < num_sub_spaces; ++i)
     {
@@ -251,7 +251,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
   }
 
   // Assuming we have a non-mixed element
-  assert(function_space.element().num_sub_elements() == 1);
+  assert(function_space.element().num_sub_elements() == 0);
 
   // Get mesh and dofmap
   const Mesh& mesh = function_space.mesh();
