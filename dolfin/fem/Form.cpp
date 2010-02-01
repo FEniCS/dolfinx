@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2010-01-26
+// Last changed: 2010-02-01
 
 #include <string>
 #include <dolfin/common/NoDeleter.h>
@@ -196,12 +196,12 @@ void Form::check() const
 {
   // Check that the number of argument function spaces is correct
   if (_ufc_form->rank() != _function_spaces.size())
-    error("Form expects %d FunctionSpaces, only %d provided.",
+    error("Form expects %d FunctionSpace(s), %d provided.",
           _ufc_form->rank(), _function_spaces.size());
 
   // Check that the number of coefficient function spaces is correct
   if (_ufc_form->num_coefficients() != _coefficients.size())
-    error("Form expects %d coefficient functions, only %d provided.",
+    error("Form expects %d coefficient function(s), %d provided.",
           _ufc_form->num_coefficients(), _coefficients.size());
 
   // Check argument function spaces
