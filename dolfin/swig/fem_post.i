@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-10-22
-// Last changed: 2009-10-22
+// Last changed: 2010-02-02
 
 // ===========================================================================
 // SWIG directives for the DOLFIN fem kernel module (post)
@@ -19,7 +19,7 @@
 %pythoncode %{
 def function_space(self):
     " Return the FunctionSpace"
-    from functionspace import FunctionSpaceFromCpp
+    from dolfin.function.functionspace import FunctionSpaceFromCpp
     return FunctionSpaceFromCpp(self._function_space())
 %}
 }
