@@ -23,6 +23,8 @@ __license__   = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
+parameters["form_compiler"]["representation"] = "tensor"
+
 # Create mesh and define function space
 mesh = UnitSquare(24, 24)
 V = FunctionSpace(mesh, "DG", 1)
