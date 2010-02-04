@@ -45,7 +45,7 @@ void DofMapBuilder::parallel_build(DofMap& dofmap, const Mesh& mesh)
 void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
                                       set& forbidden_dofs, 
                                       std::map<uint, std::vector<uint> >& dof2index,
-                                      DofMap& dofmap, const Mesh& mesh)
+                                      const DofMap& dofmap, const Mesh& mesh)
 {
   info("Determining dof ownership for parallel dof map");
 
@@ -55,7 +55,6 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
   //srand(MPI::process_number());
 
   const uint max_local_dimension = dofmap.max_local_dimension();
-  dofmap._ufc_to_map.clear();
 
   // Extract the interior boundary
   BoundaryMesh interior_boundary;
@@ -151,6 +150,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs, const set& shared_d
   info("Renumber dofs for parallel dof map");
 
   const uint max_local_dimension = dofmap.max_local_dimension();
+  dofmap._ufc_to_map.clear();
 
   // Initialise and get dof map vector
   if (dofmap._map.get())
