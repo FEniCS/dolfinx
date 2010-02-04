@@ -11,8 +11,13 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
+# Form compiler options
+parameters["form_compiler"]["cpp_optimize"] = True
+parameters["form_compiler"]["optimize"] = True
+
 # Load mesh and define function space
 mesh = Mesh("../../../../data/meshes/gear.xml.gz")
+mesh.order()
 V = VectorFunctionSpace(mesh, "CG", 1)
 
 # Sub domain for clamp at left end
@@ -55,16 +60,13 @@ f = Constant((0.0, 0.0, 0.0))
 E  = 10.0
 nu = 0.3
 
-mu    = E / (2*(1 + nu))
-lmbda = E*nu / ((1 + nu)*(1 - 2*nu))
-
-def epsilon(v):
-    return 0.5*(grad(v) + grad(v).T)
+mu    = E / (2.0*(1.0 + nu))
+lmbda = E*nu / ((1.0 + nu)*(1.0 - 2.0*nu))
 
 def sigma(v):
-    return 2.0*mu*epsilon(v) + lmbda*tr(epsilon(v))*Identity(v.cell().d)
+    return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(v.cell().d)
 
-a = inner(epsilon(v), sigma(u))*dx
+a = inner(grad(v), sigma(u))*dx
 L = inner(v, f)*dx
 
 # Set up boundary condition at left end

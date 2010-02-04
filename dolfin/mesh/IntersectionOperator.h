@@ -34,6 +34,7 @@ namespace dolfin
     ///"SimpleCartesian").
     IntersectionOperator(const Mesh& _mesh, 
                          const std::string& kernel_type = "SimpleCartesian");
+
     IntersectionOperator(boost::shared_ptr<const Mesh> _mesh, 
                          const std::string& kernel_type = "SimpleCartesian");
 
