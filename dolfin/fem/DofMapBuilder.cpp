@@ -103,11 +103,11 @@ void DofMapBuilder::parallel_build(DofMap& dofmap, const Mesh& mesh)
     for (uint i = 0; i < dofmap.num_facet_dofs(); i++)
     {
       if (shared_dofs.find(old_dofs[facet_dofs[i]]) == shared_dofs.end())
-	{
-	shared_dofs.insert(old_dofs[facet_dofs[i]]);
-	dof_vote[old_dofs[facet_dofs[i]]] = (uint) rand();
-	send_buffer.push_back(old_dofs[facet_dofs[i]]);
-	send_buffer.push_back(dof_vote[old_dofs[facet_dofs[i]]]);
+      {
+        shared_dofs.insert(old_dofs[facet_dofs[i]]);
+        dof_vote[old_dofs[facet_dofs[i]]] = (uint) rand();
+        send_buffer.push_back(old_dofs[facet_dofs[i]]);
+        send_buffer.push_back(dof_vote[old_dofs[facet_dofs[i]]]);
       }
     }
   }
@@ -170,9 +170,7 @@ void DofMapBuilder::parallel_build(DofMap& dofmap, const Mesh& mesh)
   {
     dofmap._ufc_to_map[*it] = offset;
     for (vector_it di = dof2index[*it].begin(); di != dof2index[*it].end(); ++di)
-    {
       _dofmap[*di] = offset;
-    }
 
     if (shared_dofs.find(*it) != shared_dofs.end())
     {
