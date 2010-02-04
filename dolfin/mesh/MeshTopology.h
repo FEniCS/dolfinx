@@ -64,13 +64,15 @@ namespace dolfin
     /// Return connectivity for given pair of topological dimensions
     dolfin::MeshConnectivity& operator() (uint d0, uint d1)
     { 
+      assert(connectivity);
       assert(d0 <= _dim && d1 <= _dim); 
       return *connectivity[d0][d1]; 
     }
 
     /// Return connectivity for given pair of topological dimensions
-    inline const dolfin::MeshConnectivity& operator() (uint d0, uint d1) const
+    const dolfin::MeshConnectivity& operator() (uint d0, uint d1) const
     { 
+      assert(connectivity);
       assert(d0 <= _dim && d1 <= _dim); 
       return *connectivity[d0][d1];
     }

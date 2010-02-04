@@ -24,6 +24,8 @@
 #include "DofMapBuilder.h"
 #include "DofMap.h"
 
+#include <dolfin/mesh/BoundaryMesh.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
