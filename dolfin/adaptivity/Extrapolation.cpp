@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2009-12-15
+// Last changed: 2010-02-04
 
 #include <vector>
 #include <boost/scoped_array.hpp>
@@ -17,20 +17,20 @@
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include "Reconstruction.h"
+#include "Extrapolation.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void Reconstruction::reconstruct(Function& w, const Function& v)
+void Extrapolation::extrapolate(Function& w, const Function& v)
 {
   // Using set_local for simplicity here
-  not_working_in_parallel("Reconstruction");
-  warning("Reconstruction not fully implemented yet.");
+  not_working_in_parallel("Extrapolation");
+  warning("Extrapolation not fully implemented yet.");
 
   // Check that the meshes are the same
   if (&w.function_space().mesh() != &v.function_space().mesh())
-    error("Reconstruction must be computed on the same mesh.");
+    error("Extrapolation must be computed on the same mesh.");
 
   // Extract mesh and function spaces
   const FunctionSpace& V(v.function_space());
@@ -52,7 +52,7 @@ void Reconstruction::reconstruct(Function& w, const Function& v)
   // Local array for dof indices
   boost::scoped_array<uint> dofs(new uint[V.dofmap().max_local_dimension()]);
 
-  // Iterate over cells in mesh of reconstruction space
+  // Iterate over cells in mesh of extrapolation space
   for (CellIterator cell0(w.function_space().mesh()); !cell0.end(); ++cell0)
   {
     // Update UFC view
@@ -97,16 +97,16 @@ void Reconstruction::reconstruct(Function& w, const Function& v)
   w.vector().set_local(dof_values_single.get());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Reconstruction::add_equations(LAPACKMatrix& A,
-                                           LAPACKVector& b,
-                                           const Cell& cell0,
-                                           const Cell& cell1,
-                                           const ufc::cell& c0,
-                                           const ufc::cell& c1,
-                                           const FunctionSpace& V,
-                                           const FunctionSpace& W,
-                                           const Function& v,
-                                           uint offset)
+dolfin::uint Extrapolation::add_equations(LAPACKMatrix& A,
+                                          LAPACKVector& b,
+                                          const Cell& cell0,
+                                          const Cell& cell1,
+                                          const ufc::cell& c0,
+                                          const ufc::cell& c1,
+                                          const FunctionSpace& V,
+                                          const FunctionSpace& W,
+                                          const Function& v,
+                                          uint offset)
 {
   // Iterate over dofs for V on patch cell
   for (uint i = 0; i < V.element().space_dimension(); ++i)
