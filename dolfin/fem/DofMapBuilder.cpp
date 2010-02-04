@@ -67,32 +67,37 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
   std::map<uint, uint> dof_vote;
   std::vector<uint> old_dofs(max_local_dimension); 
   std::vector<uint> facet_dofs(dofmap.num_facet_dofs()); 
-  for (CellIterator bc(interior_boundary); !bc.end(); ++bc)
+
+  // FIXME: This test should not be required
+  if (interior_boundary.num_cells() > 0)
   {
-    // Get boundary facet
-    Facet f(mesh, (*cell_map)[*bc]);
-
-    // Get cell to which facet belongs (pick first)
-    Cell c(mesh, f.entities(mesh.topology().dim())[0]);
-
-    // Get local index of facet with respect to the cell
-    const uint local_facet = c.index(f);
-
-    // Tabulate dofs on cell
-    ufc_cell.update(c);
-    dofmap.tabulate_dofs(&old_dofs[0], ufc_cell, c.index());
-
-    // Tabulate which dofs are on the facet
-    dofmap.tabulate_facet_dofs(&facet_dofs[0], local_facet);
-
-    for (uint i = 0; i < dofmap.num_facet_dofs(); i++)
+    for (CellIterator bc(interior_boundary); !bc.end(); ++bc)
     {
-      if (shared_dofs.find(old_dofs[facet_dofs[i]]) == shared_dofs.end())
+      // Get boundary facet
+      Facet f(mesh, (*cell_map)[*bc]);
+
+      // Get cell to which facet belongs (pick first)
+      Cell c(mesh, f.entities(mesh.topology().dim())[0]);
+
+      // Get local index of facet with respect to the cell
+      const uint local_facet = c.index(f);
+
+      // Tabulate dofs on cell
+      ufc_cell.update(c);
+      dofmap.tabulate_dofs(&old_dofs[0], ufc_cell, c.index());
+
+      // Tabulate which dofs are on the facet
+      dofmap.tabulate_facet_dofs(&facet_dofs[0], local_facet);
+
+      for (uint i = 0; i < dofmap.num_facet_dofs(); i++)
       {
-        shared_dofs.insert(old_dofs[facet_dofs[i]]);
-        dof_vote[old_dofs[facet_dofs[i]]] = (uint) rand();
-        send_buffer.push_back(old_dofs[facet_dofs[i]]);
-        send_buffer.push_back(dof_vote[old_dofs[facet_dofs[i]]]);
+        if (shared_dofs.find(old_dofs[facet_dofs[i]]) == shared_dofs.end())
+        {
+          shared_dofs.insert(old_dofs[facet_dofs[i]]);
+          dof_vote[old_dofs[facet_dofs[i]]] = (uint) rand();
+          send_buffer.push_back(old_dofs[facet_dofs[i]]);
+          send_buffer.push_back(dof_vote[old_dofs[facet_dofs[i]]]);
+        }
       }
     }
   }
@@ -140,6 +145,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
       dof2index[old_dofs[i]].push_back(c->index()*local_dimension + i);
     }
   }
+  info("Finished determining dof ownership for parallel dof map");
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::parallel_renumber(const set& owned_dofs, const set& shared_dofs,
@@ -206,5 +212,6 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs, const set& shared_d
       }
     }
   }
+  info("Finished renumbering dofs for parallel dof map");
 }
 //-----------------------------------------------------------------------------
