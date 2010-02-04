@@ -1,3 +1,4 @@
+ - Rename reconstruct --> extrapolate
  - Remove GTS dependency
 0.9.6 [2010-02-03]
  - Simplify access to form compiler parameters, now integrated with global parameters

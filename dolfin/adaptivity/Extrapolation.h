@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2009-12-14
+// Last changed: 2010-02-04
 
-#ifndef __RECONSTRUCTION_H
-#define __RECONSTRUCTION_H
+#ifndef __EXTRAPOLATION_H
+#define __EXTRAPOLATION_H
 
 #include <vector>
 
@@ -17,7 +17,7 @@ namespace dolfin
   class LAPACKMatrix;
   class LAPACKVector;
 
-  /// This class implements an algorithm for reconstructing a function
+  /// This class implements an algorithm for extrapolating a function
   /// on a given function space from an approximation of that function
   /// on a possibly lower-order function space.
   ///
@@ -26,15 +26,15 @@ namespace dolfin
   /// dual approximation is in the test space of the primal problem,
   /// thereby being orthogonal to the residual.
   ///
-  /// It is assumed that the reconstruction is computed on the same
+  /// It is assumed that the extrapolation is computed on the same
   /// mesh as the original function.
 
-  class Reconstruction
+  class Extrapolation
   {
   public:
 
-    /// Compute reconstruction w from v
-    static void reconstruct(Function& w, const Function& v);
+    /// Compute extrapolation w from v
+    static void extrapolate(Function& w, const Function& v);
 
   private:
 

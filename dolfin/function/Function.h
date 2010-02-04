@@ -7,7 +7,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-01-26
+// Last changed: 2010-02-04
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -124,8 +124,8 @@ namespace dolfin
     /// Interpolate function (possibly non-matching meshes)
     void interpolate(const GenericFunction& v);
 
-    /// Reconstruct function (from a possibly lower-degree function space)
-    void reconstruct(const Function& v);
+    /// Extrapolate function (from a possibly lower-degree function space)
+    void extrapolate(const Function& v);
 
     //--- Implementation of GenericFunction interface ---
 

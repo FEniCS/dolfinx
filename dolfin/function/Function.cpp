@@ -6,7 +6,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-01-26
+// Last changed: 2010-02-04
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -22,7 +22,7 @@
 #include <dolfin/fem/UFC.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/adaptivity/AdaptiveObjects.h>
-#include <dolfin/adaptivity/Reconstruction.h>
+#include <dolfin/adaptivity/Extrapolation.h>
 #include "Data.h"
 #include "Expression.h"
 #include "FunctionSpace.h"
@@ -324,9 +324,9 @@ void Function::interpolate(const GenericFunction& v)
   function_space().interpolate(*_vector, v);
 }
 //-----------------------------------------------------------------------------
-void Function::reconstruct(const Function& v)
+void Function::extrapolate(const Function& v)
 {
-  Reconstruction::reconstruct(*this, v);
+  Extrapolation::extrapolate(*this, v);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Function::value_rank() const
