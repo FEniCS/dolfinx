@@ -62,7 +62,6 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
   interior_boundary.init_interior(mesh);
   MeshFunction<uint>* cell_map = interior_boundary.data().mesh_function("cell map");
 
-
   // Decide ownership of shared dofs
   UFCCell ufc_cell(mesh);
   std::vector<uint> send_buffer;
@@ -153,8 +152,12 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs, const set& shared_d
 
   const uint max_local_dimension = dofmap.max_local_dimension();
 
-  // Allocate scratch _dofmap
-  std::vector<uint> _dofmap(max_local_dimension*mesh.num_cells());
+  // Initialise and get dof map vector
+  if (dofmap._map.get())
+    dofmap._map->resize(max_local_dimension*mesh.num_cells());
+  else
+    dofmap._map.reset(new std::vector<uint>(max_local_dimension*mesh.num_cells()));
+  std::vector<uint>& _dofmap = *dofmap._map;
 
   // Compute offset for owned and non-shared dofs
   uint offset = MPI::global_offset(owned_dofs.size(), true);
@@ -203,14 +206,5 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs, const set& shared_d
       }
     }
   }
-
-  // Copy dof map
-  if (dofmap._map.get())
-    dofmap._map->resize(max_local_dimension*mesh.num_cells());
-  else
-    dofmap._map.reset(new std::vector<uint>(max_local_dimension*mesh.num_cells()));
-
-  // FIXME: Can this step be avoided?
-  std::copy(&_dofmap[0], &_dofmap[0] + max_local_dimension*mesh.num_cells(), dofmap._map->begin());
 }
 //-----------------------------------------------------------------------------
