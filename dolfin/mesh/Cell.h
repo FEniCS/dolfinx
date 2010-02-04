@@ -69,18 +69,6 @@ namespace dolfin
     inline bool ordered(MeshFunction<uint>* global_vertex_indices)
     { return _mesh->type().ordered(*this, global_vertex_indices); }
 
-    /// Check for intersection with point
-    inline bool intersects(const Point& p) const
-    { return _mesh->type().intersects(*this, p); }
-
-    /// Check for intersection with line defined by points
-    inline bool intersects(const Point& p0, const Point& p1) const
-    { return _mesh->type().intersects(*this, p0, p1); }
-
-    /// Check for intersection with cell
-    inline bool intersects(const Cell& cell)
-    { return _mesh->type().intersects(*this, cell); }
-
   };
 
   /// A CellIterator is a MeshEntityIterator of topological codimension 0.
@@ -92,13 +80,8 @@ namespace dolfin
     CellIterator(const Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim()) {}
     CellIterator(const MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim()) {}
 
-//    CellIterator(const MeshEntityIterator& it):
-
     inline Cell& operator*() { return *operator->(); }
     inline Cell* operator->() { return static_cast<Cell*>(MeshEntityIterator::operator->()); }
-
-    //Can I do this. That looks quite dirty :)
-//    CellIterator end_iterator() {return *static_cast<CellIterator*>(&MeshEntityIterator::end_iterator());}
 
   };
 

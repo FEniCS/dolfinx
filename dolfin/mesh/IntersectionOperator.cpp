@@ -7,11 +7,9 @@
 #include <algorithm>
 #include <map>
 #include <string>
-
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/NoDeleter.h>
-
 #include "Mesh.h"
 #include "Edge.h"
 #include "Facet.h"
@@ -24,49 +22,76 @@
 
 using namespace dolfin;
 
-IntersectionOperator::IntersectionOperator(const Mesh & mesh, const std::string & kernel_type)
-    : _mesh(reference_to_no_delete_pointer(mesh)),_kernel_type(kernel_type) {}
-
-IntersectionOperator::IntersectionOperator(boost::shared_ptr<const Mesh> mesh, const std::string & kernel_type)
-    : _mesh(mesh), _kernel_type(kernel_type) {}
-
-IntersectionOperator::~IntersectionOperator() {}
-
-void IntersectionOperator::all_intersected_entities(const Point & point, uint_set & ids_result) const
-{ rImpl().all_intersected_entities(point,ids_result);}
-
-void IntersectionOperator::all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const
-{ rImpl().all_intersected_entities(points,ids_result);}
-
-void IntersectionOperator::all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const
-{ rImpl().all_intersected_entities(another_mesh, ids_result);}
-
-int IntersectionOperator::any_intersected_entity(const Point & point) const
-{ return rImpl().any_intersected_entity(point);}
-
-void IntersectionOperator::reset_kernel(const std::string & kernel_type) 
-{ _pImpl.reset(create_intersection_operator(_mesh,kernel_type)); }
-
+//-----------------------------------------------------------------------------
+IntersectionOperator::IntersectionOperator(const Mesh& mesh, 
+                                           const std::string& kernel_type)
+    : _mesh(reference_to_no_delete_pointer(mesh)),_kernel_type(kernel_type) 
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+IntersectionOperator::IntersectionOperator(boost::shared_ptr<const Mesh> mesh, 
+                                           const std::string & kernel_type)
+    : _mesh(mesh), _kernel_type(kernel_type) 
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+IntersectionOperator::~IntersectionOperator() 
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void IntersectionOperator::all_intersected_entities(const Point& point, 
+                                                    uint_set& ids_result) const
+{ 
+  rImpl().all_intersected_entities(point,ids_result);
+}
+//-----------------------------------------------------------------------------
+void IntersectionOperator::all_intersected_entities(const std::vector<Point>& points, 
+                                                   uint_set& ids_result) const
+{ 
+  rImpl().all_intersected_entities(points,ids_result);
+}
+//-----------------------------------------------------------------------------
+void IntersectionOperator::all_intersected_entities(const Mesh& another_mesh, 
+                                                    uint_set& ids_result) const
+{ 
+  rImpl().all_intersected_entities(another_mesh, ids_result);
+}
+//-----------------------------------------------------------------------------
+int IntersectionOperator::any_intersected_entity(const Point& point) const
+{ 
+  return rImpl().any_intersected_entity(point);
+}
+//-----------------------------------------------------------------------------
+void IntersectionOperator::reset_kernel(const std::string& kernel_type) 
+{ 
+  _pImpl.reset(create_intersection_operator(_mesh,kernel_type)); 
+}
+//-----------------------------------------------------------------------------
 void IntersectionOperator::clear() 
-{ _pImpl.reset(); }
-
+{ 
+  _pImpl.reset(); 
+}
+//-----------------------------------------------------------------------------
 const Mesh& IntersectionOperator::mesh() const
 {
   assert(_mesh);
   return *_mesh;
 }
-
+//-----------------------------------------------------------------------------
 const IntersectionOperatorImplementation& IntersectionOperator::rImpl() const
 {
   if (!_pImpl)
     _pImpl.reset(const_cast<IntersectionOperator *>(this)->create_intersection_operator(_mesh,_kernel_type));
   return *_pImpl;
 }
-
-
+//-----------------------------------------------------------------------------
 #ifdef HAS_CGAL
-
-IntersectionOperatorImplementation * IntersectionOperator::create_intersection_operator(boost::shared_ptr<const Mesh> mesh, const std::string & kernel_type = "SimpleCartesian")
+IntersectionOperatorImplementation* 
+    IntersectionOperator::create_intersection_operator(boost::shared_ptr<const Mesh> mesh, 
+        const std::string& kernel_type = "SimpleCartesian")
 {
   if (kernel_type == "ExactPredicates")
   {
@@ -79,11 +104,8 @@ IntersectionOperatorImplementation * IntersectionOperator::create_intersection_o
       default: error("DOLFIN IntersectionOperator::create_intersection_operator: \n Mesh  CellType is not known."); return 0;
     }
   }
-  //default is SimpleCartesion
-  else 
+  else  // Default is SimpleCartesion 
   {
-//    if (kernel_type != "SimpleCartesian")
-//      warning("Type %s of geometry kernel is not  known. Falling back to SimpleCartesian.",kernel_type);
     switch( mesh->type().cell_type())
     {
       case CellType::point        : return new IntersectionOperatorImplementation_d< Primitive_Traits<PointCell, SCK > >(mesh);
@@ -94,14 +116,15 @@ IntersectionOperatorImplementation * IntersectionOperator::create_intersection_o
     }
   }
 }
-
 #else
-
 //If CGAL support is not available, throw an exception.
-IntersectionOperatorImplementation * IntersectionOperator::create_intersection_operator(boost::shared_ptr<const Mesh> mesh, const std::string & kernel_type = "SimpleCartesian")
+IntersectionOperatorImplementation* 
+    IntersectionOperator::create_intersection_operator(boost::shared_ptr<const Mesh> mesh, 
+                                               const std::string & kernel_type = "SimpleCartesian")
 {
   error("DOLFIN has been compiled without CGAL, IntersectionOperatorImplementation is not available.");
   return 0;
 }
-
 #endif
+//-----------------------------------------------------------------------------
+

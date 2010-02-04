@@ -13,7 +13,6 @@
 #include "Facet.h"
 #include "PointCell.h"
 #include "Vertex.h"
-#include "GeometricPredicates.h"
 
 using namespace dolfin;
 
@@ -102,27 +101,6 @@ void PointCell::order(Cell& cell,
 {
   //  error("PointCell::order() not defined.");
 }
-//-----------------------------------------------------------------------------
-bool PointCell::intersects(const MeshEntity& entity, const Point& p) const
-{
-  dolfin_not_implemented();
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool PointCell::intersects(const MeshEntity& entity,
-                           const Point& p0, const Point& p1) const
-{
-  dolfin_not_implemented();
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool PointCell::intersects(const MeshEntity& entity,
-                           const Cell& cell) const
-{
-  dolfin_not_implemented();
-  return false;
-}
-
 //-----------------------------------------------------------------------------
 std::string PointCell::description(bool plural) const
 {

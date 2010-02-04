@@ -16,7 +16,6 @@
 #include "Facet.h"
 #include "TriangleCell.h"
 #include "Vertex.h"
-#include "GeometricPredicates.h"
 
 using namespace dolfin;
 
@@ -131,23 +130,23 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   const double* x2 = geometry.x(vertices[2]);
 
   if ( geometry.dim() == 2 )
-    {
-      // Compute area of triangle embedded in R^2
-      double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
+  {
+    // Compute area of triangle embedded in R^2
+    double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
 
-      // Formula for volume from http://mathworld.wolfram.com
-      return v2 = 0.5 * std::abs(v2);
-    }
+    // Formula for volume from http://mathworld.wolfram.com
+    return v2 = 0.5 * std::abs(v2);
+  }
   else if ( geometry.dim() == 3 )
-    {
-      // Compute area of triangle embedded in R^3
-      double v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
-      double v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
-      double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
+  {
+    // Compute area of triangle embedded in R^3
+    double v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
+    double v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
+    double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
 
-      // Formula for volume from http://mathworld.wolfram.com
-      return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
-    }
+    // Formula for volume from http://mathworld.wolfram.com
+    return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
+  }
   else
     error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
 
@@ -322,167 +321,6 @@ void TriangleCell::order(Cell& cell,
       }
     }
   }
-}
-//-----------------------------------------------------------------------------
-bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p) const
-{
-  // Adapted from gts_point_is_in_triangle from GTS
-
-  // Get mesh geometry
-  const MeshGeometry& geometry = triangle.mesh().geometry();
-
-  // Get global index of vertices of the triangle
-  uint v0 = triangle.entities(0)[0];
-  uint v1 = triangle.entities(0)[1];
-  uint v2 = triangle.entities(0)[2];
-
-  // Check orientation
-  dolfin::uint vtmp;
-  if (orientation((Cell&)triangle) == 1)
-  {
-    vtmp = v2;
-    v2 = v1;
-    v1 = vtmp;
-  }
-
-  // Get the coordinates of the three vertices
-  const double* x0 = geometry.x(v0);
-  const double* x1 = geometry.x(v1);
-  const double* x2 = geometry.x(v2);
-
-  double xcoordinates[3];
-  double* x = xcoordinates;
-
-  x[0] = p[0];
-  x[1] = p[1];
-  x[2] = p[2];
-
-  double d1, d2, d3;
-
-  // Test orientation of p w.r.t. each edge
-  d1 = orient2d((double *)x0, (double *)x1, x);
-  d2 = orient2d((double *)x1, (double *)x2, x);
-  d3 = orient2d((double *)x2, (double *)x0, x);
-
-  // FIXME: Need to check the predicates for correctness
-  //   if(fabs(d1) == DOLFIN_EPS ||
-  //      fabs(d2) == DOLFIN_EPS ||
-  //      fabs(d3) == DOLFIN_EPS)
-  //   {
-  //     return true;
-  //   }
-  if(d1 < 0.0)
-    return false;
-  if(d2 < 0.0)
-    return false;
-  if(d3 < 0.0)
-    return false;
-
-  return true;
-}
-//-----------------------------------------------------------------------------
-bool TriangleCell::intersects(const MeshEntity& triangle, const Point& p0, const Point& p1) const
-{
-  // Adapted from gts_point_is_in_triangle from GTS
-
-  // Get mesh geometry
-  const MeshGeometry& geometry = triangle.mesh().geometry();
-
-  // Get global index of vertices of the triangle
-  uint v0 = triangle.entities(0)[0];
-  uint v1 = triangle.entities(0)[1];
-  uint v2 = triangle.entities(0)[2];
-
-  // Check orientation
-  if(orientation((Cell&)triangle) == 1)
-  {
-    const uint vtmp = v2;
-    v2 = v1;
-    v1 = vtmp;
-  }
-
-  // Get the coordinates of the three vertices
-  const double* x0 = geometry.x(v0);
-  const double* x1 = geometry.x(v1);
-  const double* x2 = geometry.x(v2);
-
-  // point a
-  double p0coordinates[3];
-  double* pa = p0coordinates;
-
-  pa[0] = p0[0];
-  pa[1] = p0[1];
-  pa[2] = p0[2];
-
-  // point b
-  double p1coordinates[3];
-  double* pb = p1coordinates;
-
-  pb[0] = p1[0];
-  pb[1] = p1[1];
-  pb[2] = p1[2];
-
-  double d1, d2, d3;
-
-  // Test orientation of each vertex w.r.t. pa-pb
-  d1 = orient2d((double *)pa, (double *)pb, (double*) x0);
-  d2 = orient2d((double *)pa, (double *)pb, (double*) x1);
-  d3 = orient2d((double *)pa, (double *)pb, (double*) x2);
-
-  if (d1 < 0 && d2 < 0 && d3 < 0)
-    return false;
-  if (d1 > 0 && d2 > 0 && d3 > 0)
-    return false;
-
-  // Line pa-pb intersects triangle but both pa and pb are
-  // on the negative side of x0-x1:
-  d1 = orient2d((double*)x0, (double*)x1, (double*) pa);
-  d2 = orient2d((double*)x0, (double*)x1, (double*) pb);
-
-  if (d1 < 0 && d2 < 0)
-    return false;
-
-  // Line pa-pb intersects triangle but both pa and pb are
-  // on the negative side of x1-x2:
-  d1 = orient2d((double*)x1, (double*)x2, (double*) pa);
-  d2 = orient2d((double*)x1, (double*)x2, (double*) pb);
-
-  if (d1 < 0 && d2 < 0)
-    return false;
-
-  // Line pa-pb intersects triangle but both pa and pb are
-  // on the negative side of x2-x0:
-  d1 = orient2d((double*)x2, (double*)x0, (double*) pa);
-  d2 = orient2d((double*)x2, (double*)x0, (double*) pb);
-
-  if (d1 < 0 && d2 < 0)
-    return false;
-
-  return true;
-}
-//-----------------------------------------------------------------------------
-bool TriangleCell::intersects(const MeshEntity& triangle, const Cell& cell) const
-{
-  assert(triangle.dim() == 2);
-
-  if (cell.dim() == 1)
-  {
-    // Get vertices
-    const uint *vertices = cell.entities(0);
-    const uint v0 = vertices[0];
-    const uint v1 = vertices[1];
-
-    // Get points
-    const MeshGeometry& geometry = cell.mesh().geometry();
-    const Point p0 = geometry.point(v0);
-    const Point p1 = geometry.point(v1);
-
-    return intersects(triangle, p0, p1);
-  }
-  else
-    dolfin_not_implemented();
-
-  return false;
 }
 //-----------------------------------------------------------------------------
 std::string TriangleCell::description(bool plural) const

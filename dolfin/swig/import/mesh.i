@@ -34,5 +34,4 @@
 %import(module="dolfin.cpp") "dolfin/mesh/Box.h"
 %import(module="dolfin.cpp") "dolfin/mesh/Rectangle.h"
 %import(module="dolfin.cpp") "dolfin/mesh/UnitSphere.h"
-%import(module="dolfin.cpp") "dolfin/mesh/IntersectionDetector.h"
 %import(module="dolfin.cpp") "dolfin/mesh/IntersectionOperator.h"

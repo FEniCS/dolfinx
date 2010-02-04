@@ -100,15 +100,6 @@ namespace dolfin
     /// Check if entities are ordered
     bool ordered(const Cell& cell, MeshFunction<uint>* global_vertex_indices) const;
 
-    /// Check for intersection with point
-    virtual bool intersects(const MeshEntity& entity, const Point& p) const = 0;
-
-    /// Check for intersection with line defined by points
-    virtual bool intersects(const MeshEntity& entity, const Point& p0, const Point& p1) const = 0;
-
-    /// Check for intersection with cell
-    virtual bool intersects(const MeshEntity& entity, const Cell& cell) const = 0;
-
     /// Return description of cell type
     virtual std::string description(bool plural) const = 0;
 
