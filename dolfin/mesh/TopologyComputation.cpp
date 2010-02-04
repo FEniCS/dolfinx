@@ -131,10 +131,6 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
   // Each of these functions assume a set of preconditions that we
   // need to satisfy.
 
-  // Check is mesh has entities
-  if (mesh.num_entities(d0) == 0 && mesh.num_entities(d1) == 0)
-    return;
-
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
   MeshConnectivity& connectivity = topology(d0, d1);
@@ -150,6 +146,10 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
     compute_entities(mesh, d0);
   if ( topology.size(d1) == 0 )
     compute_entities(mesh, d1);
+
+  // Check is mesh has entities
+  if (topology.size(d0) == 0 && topology.size(d1) == 0)
+    return;
 
   // Check if connectivity still needs to be computed
   if ( connectivity.size() > 0 )
