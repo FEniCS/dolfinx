@@ -37,15 +37,6 @@ bool has_scotch()
 #endif
 }
 
-bool has_gts()
-{
-#ifdef HAS_GTS
-  return true;
-#else
-  return false;
-#endif
-}
-
 bool has_cgal()
 {
 #ifdef HAS_CGAL

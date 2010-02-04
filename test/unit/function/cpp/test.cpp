@@ -71,7 +71,6 @@ public:
                                  DOLFIN_EPS);
 
 #ifdef HAS_CGAL
-#ifdef HAS_GTS
     // Test evaluation of a discrete function
     Projection::FunctionSpace V(mesh);
     Projection::BilinearForm a(V, V);
@@ -85,7 +84,6 @@ public:
     f1.eval(u0, data);
     g.eval(u1, data);
     CPPUNIT_ASSERT( std::abs(u0[0]-u1[0]) < tol );
-#endif
 #endif
   }
 };
