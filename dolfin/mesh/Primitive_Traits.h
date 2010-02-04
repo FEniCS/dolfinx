@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-16
-// Last changed: 2010-01-27
+// Last changed: 2010-02-01
 
 #ifndef  primitives_traits_INC
 #define  primitives_traits_INC
@@ -37,7 +37,7 @@ template <typename Kernel> struct Primitive_Traits<PointPrimitive,Kernel> {
   }
 };
 
-template <typename Kernel> struct Primitive_Traits<PointCell,Kernel> {
+//template <typename Kernel> struct Primitive_Traits<PointCell,Kernel> {
   typedef Kernel K;
   typedef PointCell Primitive;
   typedef typename K::Point_3 Datum;
@@ -98,6 +98,9 @@ template <typename Kernel> struct Primitive_Traits<TetrahedronCell,Kernel> {
     return Datum(p1,p2,p3,p4);
   }
 };
+
+type
+
 
 } //end namespace dolfin
 
