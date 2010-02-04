@@ -44,8 +44,6 @@ if "configure" in COMMAND_LINE_TARGETS:
         disabled_packages.append("slepc")
     if not env["enableScotch"]:
         disabled_packages.append("scotch")
-    if not env["enableGts"]:
-        disabled_packages.append("gts")
     if not env["enableUmfpack"]:
         disabled_packages.append("umfpack")
     if not env["enableTrilinos"]:
