@@ -67,6 +67,30 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
+    
+    if (f->num_entities(D) == 1)
+    {
+      //bool exterior_facet = (*exterior)[*f];
+      //if ( !exterior_facet || ( (exterior_facet && !interior_boundary) || (!exterior_facet && interior_boundary)   ) )
+      //if ( (exterior_facet && !interior_boundary) || (!exterior_facet && interior_boundary)  )
+      if ( !exterior || (((*exterior)[*f] && !interior_boundary) || 
+		       (!(*exterior)[*f] && interior_boundary)))
+      {
+        // Count boundary vertices and assign indices
+        for (VertexIterator v(*f); !v.end(); ++v)
+        {
+          const uint vertex_index = v->index();
+          if (boundary_vertices[vertex_index] == num_vertices)
+            boundary_vertices[vertex_index] = num_boundary_vertices++;
+        }
+
+        // Count boundary cells (facets of the mesh)
+        num_boundary_cells++;
+      }
+    }
+
+    /*
+    // Boundary facets are connected to exactly one cell
     if (f->num_entities(D) == 1 && 
       (!exterior || (((*exterior)[*f] && !interior_boundary) || 
 		       (!(*exterior)[*f] && interior_boundary))))
@@ -82,6 +106,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
       // Count boundary cells (facets of the mesh)
       num_boundary_cells++;
     }
+    */
   }
 
   // Specify number of vertices and cells

@@ -53,9 +53,9 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
   info("Determining dof ownership for parallel dof map");
 
   // Initialize random number generator differently on each process
-  //srand((uint)time(0) + MPI::process_number());
+  srand((uint)time(0) + MPI::process_number());
   // FIXME: Temporary while debugging (to get same results in each run)
-  srand(MPI::process_number());
+  //srand(MPI::process_number());
 
   // Extract the interior boundary
   BoundaryMesh interior_boundary;
@@ -70,6 +70,9 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
   std::vector<uint> facet_dofs(dofmap.num_facet_dofs()); 
 
   // FIXME: This test (interior_boundary.num_cells() > 0) should not be required
+  //info("int cells %d", interior_boundary.num_cells());
+  //info("int facets %d", interior_boundary.num_facets());
+  //info("int vertices %d", interior_boundary.num_vertices());
   if (interior_boundary.num_cells() > 0)
   {
     for (CellIterator bc(interior_boundary); !bc.end(); ++bc)
