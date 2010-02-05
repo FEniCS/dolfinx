@@ -149,7 +149,6 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   std::map<std::vector<uint>, uint> ignored_entity_indices;
   std::map<std::vector<uint>, std::vector<uint> > ignored_entity_processes;
 
-
   // Iterate over all entities
   for (std::map<std::vector<uint>, uint>::const_iterator it = entities.begin(); it != entities.end(); ++it)
   {
@@ -389,11 +388,15 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     
     // Remove all facets in the overlap
     for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); 
-	 it != shared_entity_indices.end(); ++it)
+        it != shared_entity_indices.end(); ++it)
+    {
       (*exterior)[entities[it->first]] = 0;
+    }
     for (std::map<std::vector<uint>, uint>::const_iterator it = ignored_entity_indices.begin();
-	 it != ignored_entity_indices.end(); ++it)
+        it != ignored_entity_indices.end(); ++it)
+    {
       (*exterior)[entities[it->first]] = 0;
+    }
   }
 
   // Communicate number of entities to number
@@ -422,17 +425,24 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   std::fill(entity_indices.begin(), entity_indices.end(), -1);
 
   // Number owned entities
-  for (std::map<std::vector<uint>, uint>::const_iterator it = owned_entity_indices.begin(); it != owned_entity_indices.end(); ++it)
+  for (std::map<std::vector<uint>, uint>::const_iterator it = owned_entity_indices.begin(); 
+      it != owned_entity_indices.end(); ++it)
+  {
     entity_indices[(*it).second] = offset++;
+  }
 
   // Number shared entities
-  for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
+  for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); 
+        it != shared_entity_indices.end(); ++it)
+  {
     entity_indices[(*it).second] = offset++;
+  }
 
   // Communicate indices for shared entities and get indices for ignored
   std::vector<uint> values;
   std::vector<uint> partition;
-  for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
+  for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); 
+        it != shared_entity_indices.end(); ++it)
   {
     // Get entity index
     const uint local_entity_index = (*it).second;
@@ -724,8 +734,9 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
     for (uint j = 0; j < vertex_size; ++j)
       vertex[j] = vertex_coordinates[i*vertex_size+j];
     mesh_data.vertex_coordinates.push_back(vertex);
-    uint sender_process = vertex_coordinates_partition[i*vertex_size];
-    uint global_vertex_index = vertex_location[sender_process][index_counters[sender_process]++];
+    const uint sender_process = vertex_coordinates_partition[i*vertex_size];
+    const uint global_vertex_index 
+        = vertex_location[sender_process][index_counters[sender_process]++];
     glob2loc[global_vertex_index] = i;
   }
 }
@@ -838,8 +849,11 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
          global_vertex_recv, global_vertex_recv + boundary_sizes[q], intersection.begin()); 
 
     // Fill overlap information
-    for (std::vector<uint>::const_iterator index = intersection.begin(); index != intersection_end; ++index)
+    for (std::vector<uint>::const_iterator index = intersection.begin(); 
+        index != intersection_end; ++index)
+    {
       (*overlap)[*index].push_back(q);
+    }
   }
 }
 //-----------------------------------------------------------------------------
