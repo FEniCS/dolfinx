@@ -28,6 +28,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void DofMapBuilder::parallel_build(DofMap& dofmap, const Mesh& mesh)
 {
+
   // Check that dof map has not been built
   if (dofmap._map.get())
     error("Local-to-global mapping has already been computed.");
@@ -60,7 +61,6 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
   // Extract the interior boundary
   BoundaryMesh interior_boundary;
   interior_boundary.init_interior(mesh);
-  MeshFunction<uint>* cell_map = interior_boundary.data().mesh_function("cell map");
 
   // Decide ownership of shared dofs
   UFCCell ufc_cell(mesh);
@@ -69,11 +69,8 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
   std::vector<uint> old_dofs(dofmap.max_local_dimension()); 
   std::vector<uint> facet_dofs(dofmap.num_facet_dofs()); 
 
-  // FIXME: This test (interior_boundary.num_cells() > 0) should not be required
-  //info("int cells %d", interior_boundary.num_cells());
-  //info("int facets %d", interior_boundary.num_facets());
-  //info("int vertices %d", interior_boundary.num_vertices());
-  if (interior_boundary.num_cells() > 0)
+  MeshFunction<uint>* cell_map = interior_boundary.data().mesh_function("cell map");
+  if (cell_map)
   {
     for (CellIterator bc(interior_boundary); !bc.end(); ++bc)
     {
