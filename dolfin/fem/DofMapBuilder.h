@@ -10,8 +10,8 @@
 #define __DOF_MAP_BUILDER_H
 
 #include <set>
-//#include <tr1/unordered_set>
-#include <boost/unordered_set.hpp>
+#include <tr1/unordered_set>
+//#include <boost/unordered_set.hpp>
 
 #include <dolfin/common/Set.h>
 
