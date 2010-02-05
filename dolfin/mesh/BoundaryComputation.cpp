@@ -70,11 +70,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
     
     if (f->num_entities(D) == 1)
     {
-      //bool exterior_facet = (*exterior)[*f];
-      //if ( !exterior_facet || ( (exterior_facet && !interior_boundary) || (!exterior_facet && interior_boundary)   ) )
-      //if ( (exterior_facet && !interior_boundary) || (!exterior_facet && interior_boundary)  )
-      if ( !exterior || (((*exterior)[*f] && !interior_boundary) || 
-		       (!(*exterior)[*f] && interior_boundary)))
+      if ( !exterior || (((*exterior)[*f] && !interior_boundary) || (!(*exterior)[*f] && interior_boundary)) )
       {
         // Count boundary vertices and assign indices
         for (VertexIterator v(*f); !v.end(); ++v)
@@ -88,25 +84,6 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
         num_boundary_cells++;
       }
     }
-
-    /*
-    // Boundary facets are connected to exactly one cell
-    if (f->num_entities(D) == 1 && 
-      (!exterior || (((*exterior)[*f] && !interior_boundary) || 
-		       (!(*exterior)[*f] && interior_boundary))))
-    {
-      // Count boundary vertices and assign indices
-      for (VertexIterator v(*f); !v.end(); ++v)
-      {
-        const uint vertex_index = v->index();
-        if (boundary_vertices[vertex_index] == num_vertices)
-          boundary_vertices[vertex_index] = num_boundary_vertices++;
-      }
-
-      // Count boundary cells (facets of the mesh)
-      num_boundary_cells++;
-    }
-    */
   }
 
   // Specify number of vertices and cells
@@ -152,24 +129,25 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell    
-    if (f->num_entities(D) == 1 && 
-        (!exterior || (((*exterior)[*f] && !interior_boundary) || 
-		       (!(*exterior)[*f] && interior_boundary))))
+    if (f->num_entities(D) == 1)
     {
-      // Compute new vertex numbers for cell
-      const uint* vertices = f->entities(0);
-      for (uint i = 0; i < cell.size(); i++)
-        cell[i] = boundary_vertices[vertices[i]];
+      if (!exterior || (((*exterior)[*f] && !interior_boundary) || (!(*exterior)[*f] && interior_boundary)))
+      {
+        // Compute new vertex numbers for cell
+        const uint* vertices = f->entities(0);
+        for (uint i = 0; i < cell.size(); i++)
+          cell[i] = boundary_vertices[vertices[i]];
 
-      // Reorder vertices so facet is right-oriented w.r.t. facet normal
-      reorder(cell, *f);
+        // Reorder vertices so facet is right-oriented w.r.t. facet normal
+        reorder(cell, *f);
 
-      // Create mapping from boundary cell to mesh facet if requested
-      if (cell_map)
-        (*cell_map)[current_cell] = f->index();
+        // Create mapping from boundary cell to mesh facet if requested
+        if (cell_map)
+          (*cell_map)[current_cell] = f->index();
 
-      // Add cell
-      editor.add_cell(current_cell++, cell);
+        // Add cell
+        editor.add_cell(current_cell++, cell);
+      }
     }
   }
 
