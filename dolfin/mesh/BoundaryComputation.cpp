@@ -48,8 +48,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   // Open boundary mesh for editing
   const uint D = mesh.topology().dim();
   MeshEditor editor;
-  editor.open(boundary, mesh.type().facet_type(),
-	      D - 1, mesh.geometry().dim());
+  editor.open(boundary, mesh.type().facet_type(), D-1, mesh.geometry().dim());
 
   // Generate facet - cell connectivity if not generated
   mesh.init(D - 1, D);
@@ -69,7 +68,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   {
     // Boundary facets are connected to exactly one cell
     if (f->num_entities(D) == 1 && 
-	(!exterior || (((*exterior)[*f] && !interior_boundary) || 
+      (!exterior || (((*exterior)[*f] && !interior_boundary) || 
 		       (!(*exterior)[*f] && interior_boundary))))
     {
       // Count boundary vertices and assign indices
@@ -129,7 +128,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   {
     // Boundary facets are connected to exactly one cell    
     if (f->num_entities(D) == 1 && 
-	(!exterior || (((*exterior)[*f] && !interior_boundary) || 
+        (!exterior || (((*exterior)[*f] && !interior_boundary) || 
 		       (!(*exterior)[*f] && interior_boundary))))
     {
       // Compute new vertex numbers for cell

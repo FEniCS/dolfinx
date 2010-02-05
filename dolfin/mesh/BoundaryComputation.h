@@ -30,7 +30,8 @@ namespace dolfin
     static void compute_boundary(const Mesh& mesh, BoundaryMesh& boundary);
 
     /// Compute the interior boundary of a given mesh 
-    static void compute_interior_boundary(const Mesh& mesh, BoundaryMesh& boundary);
+    static void compute_interior_boundary(const Mesh& mesh, 
+                                          BoundaryMesh& boundary);
 
   private:
 

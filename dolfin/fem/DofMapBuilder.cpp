@@ -32,14 +32,17 @@ void DofMapBuilder::parallel_build(DofMap& dofmap, const Mesh& mesh)
   if (dofmap._map.get())
     error("Local-to-global mapping has already been computed.");
 
-  // Determine ownership
+  // Create data structures
   set owned_dofs, shared_dofs, forbidden_dofs;
   std::map<uint, std::vector<uint> > dof2index;
+
+  // Determine ownership
   compute_ownership(owned_dofs, shared_dofs, forbidden_dofs, dof2index,
                     dofmap, mesh);
 
-  // Renumber
-  parallel_renumber(owned_dofs, shared_dofs, forbidden_dofs, dof2index, dofmap, mesh);
+  // Renumber dofs
+  parallel_renumber(owned_dofs, shared_dofs, forbidden_dofs, dof2index, 
+                    dofmap, mesh);
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
@@ -50,11 +53,9 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
   info("Determining dof ownership for parallel dof map");
 
   // Initialize random number generator differently on each process
-  srand((uint)time(0) + MPI::process_number());
+  //srand((uint)time(0) + MPI::process_number());
   // FIXME: Temporary while debugging (to get same results in each run)
-  //srand(MPI::process_number());
-
-  const uint max_local_dimension = dofmap.max_local_dimension();
+  srand(MPI::process_number());
 
   // Extract the interior boundary
   BoundaryMesh interior_boundary;
@@ -65,10 +66,10 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
   UFCCell ufc_cell(mesh);
   std::vector<uint> send_buffer;
   std::map<uint, uint> dof_vote;
-  std::vector<uint> old_dofs(max_local_dimension); 
+  std::vector<uint> old_dofs(dofmap.max_local_dimension()); 
   std::vector<uint> facet_dofs(dofmap.num_facet_dofs()); 
 
-  // FIXME: This test should not be required
+  // FIXME: This test (interior_boundary.num_cells() > 0) should not be required
   if (interior_boundary.num_cells() > 0)
   {
     for (CellIterator bc(interior_boundary); !bc.end(); ++bc)
@@ -79,15 +80,12 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
       // Get cell to which facet belongs (pick first)
       Cell c(mesh, f.entities(mesh.topology().dim())[0]);
 
-      // Get local index of facet with respect to the cell
-      const uint local_facet = c.index(f);
-
       // Tabulate dofs on cell
       ufc_cell.update(c);
       dofmap.tabulate_dofs(&old_dofs[0], ufc_cell, c.index());
 
       // Tabulate which dofs are on the facet
-      dofmap.tabulate_facet_dofs(&facet_dofs[0], local_facet);
+      dofmap.tabulate_facet_dofs(&facet_dofs[0], c.index(f));
 
       for (uint i = 0; i < dofmap.num_facet_dofs(); i++)
       {
@@ -155,14 +153,13 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs, const set& shared_d
 {
   info("Renumber dofs for parallel dof map");
 
-  const uint max_local_dimension = dofmap.max_local_dimension();
   dofmap._ufc_to_map.clear();
 
   // Initialise and get dof map vector
   if (dofmap._map.get())
-    dofmap._map->resize(max_local_dimension*mesh.num_cells());
+    dofmap._map->resize(dofmap.max_local_dimension()*mesh.num_cells());
   else
-    dofmap._map.reset(new std::vector<uint>(max_local_dimension*mesh.num_cells()));
+    dofmap._map.reset(new std::vector<uint>(dofmap.max_local_dimension()*mesh.num_cells()));
   std::vector<uint>& _dofmap = *dofmap._map;
 
   // Compute offset for owned and non-shared dofs
