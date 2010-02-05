@@ -51,7 +51,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   editor.open(boundary, mesh.type().facet_type(), D-1, mesh.geometry().dim());
 
   // Generate facet - cell connectivity if not generated
-  mesh.init(D - 1, D);
+  mesh.init(D-1, D);
 
   // Temporary array for assignment of indices to vertices on the boundary
   const uint num_vertices = mesh.num_vertices();
@@ -61,16 +61,29 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   // Extract exterior (non shared) facets markers
   MeshFunction<uint>* exterior = mesh.data().mesh_function("exterior facets");
 
-  // Count boundary vertices and facets, and assign vertex indices
+  // Determine boundary facet, count boundary vertices and facets, 
+  // and assign vertex indices
   uint num_boundary_vertices = 0;
   uint num_boundary_cells = 0;
+  MeshFunction<bool> boundary_facet(mesh, D-1, false); 
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
-    
     if (f->num_entities(D) == 1)
     {
-      if ( !exterior || (((*exterior)[*f] && !interior_boundary) || (!(*exterior)[*f] && interior_boundary)) )
+      // Determine if we have a boundary facet
+      if (!exterior)
+        boundary_facet[*f] = true;
+      else
+      {
+        bool exterior_facet = (*exterior)[*f]; 
+        if ( exterior_facet && !interior_boundary )
+          boundary_facet[*f] = true;
+        else if ( !exterior_facet && interior_boundary )
+          boundary_facet[*f] = true;
+      }
+
+      if (boundary_facet[*f])
       {
         // Count boundary vertices and assign indices
         for (VertexIterator v(*f); !v.end(); ++v)
@@ -128,26 +141,22 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   uint current_cell = 0;
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
-    // Boundary facets are connected to exactly one cell    
-    if (f->num_entities(D) == 1)
+    if (boundary_facet[*f])
     {
-      if (!exterior || (((*exterior)[*f] && !interior_boundary) || (!(*exterior)[*f] && interior_boundary)))
-      {
-        // Compute new vertex numbers for cell
-        const uint* vertices = f->entities(0);
-        for (uint i = 0; i < cell.size(); i++)
-          cell[i] = boundary_vertices[vertices[i]];
+      // Compute new vertex numbers for cell
+      const uint* vertices = f->entities(0);
+      for (uint i = 0; i < cell.size(); i++)
+        cell[i] = boundary_vertices[vertices[i]];
 
-        // Reorder vertices so facet is right-oriented w.r.t. facet normal
-        reorder(cell, *f);
+      // Reorder vertices so facet is right-oriented w.r.t. facet normal
+      reorder(cell, *f);
 
-        // Create mapping from boundary cell to mesh facet if requested
-        if (cell_map)
-          (*cell_map)[current_cell] = f->index();
+      // Create mapping from boundary cell to mesh facet if requested
+      if (cell_map)
+        (*cell_map)[current_cell] = f->index();
 
-        // Add cell
-        editor.add_cell(current_cell++, cell);
-      }
+      // Add cell
+      editor.add_cell(current_cell++, cell);
     }
   }
 
@@ -191,10 +200,10 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices,
     {
       assert(facet.num_entities(0) == 2);
 
-      Point p0 = mesh.geometry().point(facet.entities(0)[0]);
-      Point p1 = mesh.geometry().point(facet.entities(0)[1]);
-      Point v = p1 - p0;
-      Point n(v.y(), -v.x());
+      const Point p0 = mesh.geometry().point(facet.entities(0)[0]);
+      const Point p1 = mesh.geometry().point(facet.entities(0)[1]);
+      const Point v = p1 - p0;
+      const Point n(v.y(), -v.x());
 
       if (n.dot(p0 - p) < 0.0)
       {
@@ -208,12 +217,12 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices,
     {
       assert(facet.num_entities(0) == 3);
 
-      Point p0 = mesh.geometry().point(facet.entities(0)[0]);
-      Point p1 = mesh.geometry().point(facet.entities(0)[1]);
-      Point p2 = mesh.geometry().point(facet.entities(0)[2]);
-      Point v1 = p1 - p0;
-      Point v2 = p2 - p0;
-      Point n = v1.cross(v2);
+      const Point p0 = mesh.geometry().point(facet.entities(0)[0]);
+      const Point p1 = mesh.geometry().point(facet.entities(0)[1]);
+      const Point p2 = mesh.geometry().point(facet.entities(0)[2]);
+      const Point v1 = p1 - p0;
+      const Point v2 = p2 - p0;
+      const Point n = v1.cross(v2);
 
       if (n.dot(p0 - p) < 0.0)
       {
