@@ -88,6 +88,8 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 //-----------------------------------------------------------------------------
 void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
 {
+  // FIXME: Break up this function
+
   Timer timer("PARALLEL x: Number mesh entities");
   Mesh& mesh = const_cast<Mesh&>(_mesh);
 
@@ -375,7 +377,6 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
     shared_entity_processes.erase(unshare_entities[i]);
   }
   unshare_entities.clear();
-
 
   // Create mesh markers for exterior facets
   MeshFunction<uint>* exterior = 0;
