@@ -379,25 +379,10 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   unshare_entities.clear();
 
   // Create mesh markers for exterior facets
-  MeshFunction<uint>* exterior = 0;
   if (d == (mesh.topology().dim() - 1))
   {
-    exterior = mesh.data().create_mesh_function("exterior facets", d);
-    
-    // Mark all facets as exterior
-    exterior->set_all(1);
-    
-    // Remove all facets in the overlap
-    for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); 
-        it != shared_entity_indices.end(); ++it)
-    {
-      (*exterior)[entities[it->first]] = 0;
-    }
-    for (std::map<std::vector<uint>, uint>::const_iterator it = ignored_entity_indices.begin();
-        it != ignored_entity_indices.end(); ++it)
-    {
-      (*exterior)[entities[it->first]] = 0;
-    }
+    mark_nonshared(entities, shared_entity_indices, ignored_entity_indices, 
+                   mesh, d, "exterior facets");
   }
 
   // Communicate number of entities to number
@@ -917,3 +902,22 @@ bool MeshPartitioning::in_overlap(const std::vector<uint>& entity,
   return true;
 }
 //-----------------------------------------------------------------------------
+void MeshPartitioning::mark_nonshared(const std::map<std::vector<uint>, uint>& entities,
+               const std::map<std::vector<uint>, uint>& shared_entity_indices, 
+               const std::map<std::vector<uint>, uint>& ignored_entity_indices,
+               Mesh& mesh, uint d, std::string name)
+{
+  // Create mesh markers and mark all
+  MeshFunction<uint>* exterior = 0;
+  exterior = mesh.data().create_mesh_function(name, d);
+  exterior->set_all(1);
+  
+  // Remove all entities in the overlap
+  std::map<std::vector<uint>, uint>::const_iterator it;
+  for (it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
+    (*exterior)[entities.find(it->first)->second] = 0;
+  for (it = ignored_entity_indices.begin(); it != ignored_entity_indices.end(); ++it)
+    (*exterior)[entities.find(it->first)->second] = 0;
+}
+//-----------------------------------------------------------------------------
+

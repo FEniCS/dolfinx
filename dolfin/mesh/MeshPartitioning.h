@@ -1,8 +1,10 @@
 // Copyright (C) 2008-2009 Niclas Jansson, Ola Skavhaug and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Welsl 2010
+//
 // First added:  2008-12-01
-// Last changed: 2009-09-09
+// Last changed: 2010-02-05
 
 #ifndef __MESH_PARTITIONING_H
 #define __MESH_PARTITIONING_H
@@ -93,6 +95,11 @@ namespace dolfin
     static bool in_overlap(const std::vector<uint>& entity_vertices,
                            std::map<uint, std::vector<uint> >& overlap);
 
+    // Mark non-shared mesh entities
+    static void mark_nonshared(const std::map<std::vector<uint>, uint>& entities,
+               const std::map<std::vector<uint>, uint>& shared_entity_indices, 
+               const std::map<std::vector<uint>, uint>& ignored_entity_indices,
+               Mesh& mesh, uint d, std::string name);
   };
 
 }
