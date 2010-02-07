@@ -18,7 +18,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Mesh RivaraRefinement::refine(const Mesh& mesh,
-			                        MeshFunction<bool>& cell_marker,
+			                        const MeshFunction<bool>& cell_marker,
 			                        MeshFunction<uint>& cell_map,
 			                        std::vector<int>& facet_map)
 {
@@ -67,7 +67,7 @@ Mesh RivaraRefinement::refine(const Mesh& mesh,
   // Generate cell mesh function map
   cell_map.init(mesh, dim);
   for (CellIterator c(mesh); !c.end(); ++c)
-    cell_map[c->index()] = new2old_cell_arr[c->index()];
+    cell_map[*c] = new2old_cell_arr[c->index()];
 
   //Generate facet map array
   std::vector<int> new_facet_map(new2old_facet_arr.size());
