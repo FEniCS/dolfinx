@@ -11,6 +11,7 @@
 namespace dolfin
 {
 
+  // Forward declarations
   class Cell;
   class Edge;
   class Mesh;
@@ -23,19 +24,19 @@ namespace dolfin
   public:
 
     /// Refine simplicial mesh locally by edge bisection
-    static void refineMeshByEdgeBisection(Mesh& mesh,
+    static Mesh refineMeshByEdgeBisection(const Mesh& mesh,
                                           MeshFunction<bool>& cell_marker,
                                           bool refine_boundary = true);
 
     /// Iteratively refine mesh locally by the longest edge bisection
-    static void refineIterativelyByEdgeBisection(Mesh& mesh,
-                                                 MeshFunction<bool>& cell_marker);
+    static Mesh refineIterativelyByEdgeBisection(const Mesh& mesh,
+                                              MeshFunction<bool>& cell_marker);
 
     /// Recursively refine mesh locally by the longest edge bisection
     /// Fast Rivara algorithm implementation with propagation MeshFunctions and
-    ///   arrays for boundary indicators
-    static void refineRecursivelyByEdgeBisection(Mesh& mesh,
-                                                 MeshFunction<bool>& cell_marker);
+    /// arrays for boundary indicators
+    static Mesh refineRecursivelyByEdgeBisection(const Mesh& mesh,
+                                              MeshFunction<bool>& cell_marker);
 
   private:
 
@@ -43,7 +44,7 @@ namespace dolfin
     static void bisectEdgeOfSimplexCell(const Cell& cell, Edge& edge,
                                         uint new_vertex,
                                         MeshEditor& editor,
-                                        uint& current_cell);
+                                        uint current_cell);
 
     /// Iteration of iterative algorithm
     static bool iterationOfRefinement(Mesh& mesh,
@@ -51,9 +52,9 @@ namespace dolfin
                                       MeshFunction<uint>& bisected_edges);
 
     /// Transform MeshData
-    static void transformMeshData(Mesh& newmesh, Mesh& oldmesh,
+    static void transformMeshData(Mesh& newmesh, const Mesh& oldmesh,
                                   MeshFunction<uint>& cell_map,
-		                  std::vector<int>& facet_map);
+		                              std::vector<int>& facet_map);
 
   };
 

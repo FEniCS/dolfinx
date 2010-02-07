@@ -129,21 +129,21 @@ void AdaptiveObjects::refine(Mesh* mesh, MeshFunction<bool>* cell_markers)
   // Type of refinement (should perhaps be a parameter)
   const bool recursive_refinement = true;
 
-  // Create new mesh (copy of old mesh)
-  Mesh new_mesh(*mesh);
+  // Create new mesh
+  Mesh new_mesh;
 
   // Refine new mesh
   if (cell_markers)
   {
     if (recursive_refinement)
-      LocalMeshRefinement::refineRecursivelyByEdgeBisection(new_mesh, *cell_markers);
+      new_mesh = LocalMeshRefinement::refineRecursivelyByEdgeBisection(*mesh, *cell_markers);
     else
-      LocalMeshRefinement::refineIterativelyByEdgeBisection(new_mesh, *cell_markers);
+      new_mesh = LocalMeshRefinement::refineIterativelyByEdgeBisection(*mesh, *cell_markers);
   }
   else
   {
     info("No cells marked for refinement, assuming uniform mesh refinement.");
-    UniformMeshRefinement::refine(new_mesh);
+    new_mesh = UniformMeshRefinement::refine(*mesh);
   }
 
   // Refined mesh may not be ordered
@@ -154,7 +154,6 @@ void AdaptiveObjects::refine(Mesh* mesh, MeshFunction<bool>* cell_markers)
 
   // Copy data from new mesh to old
   *mesh = new_mesh;
-  
 }
 //-----------------------------------------------------------------------------
 void AdaptiveObjects::refine(FunctionSpace* function_space,

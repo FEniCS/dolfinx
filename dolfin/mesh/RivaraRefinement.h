@@ -2,6 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Bartosz Sawicki, 2009.
+// Modified by Garth N. Wells, 2010.
+//
+// First added:  2008
+// Last changed: 2010-02-07
 
 #ifndef __RIVARAREFINEMENT_H
 #define __RIVARAREFINEMENT_H
@@ -15,6 +19,9 @@
 
 namespace dolfin
 {
+  // Forward declarations
+  //class CellType;
+  //class Mesh
 
   class RivaraRefinement
   {
@@ -22,10 +29,9 @@ namespace dolfin
   public:
 
     /// Refine simplicial mesh locally by recursive edge bisection
-    static void refine(Mesh& mesh,
-		       MeshFunction<bool>& cell_marker,
-		       MeshFunction<uint>& cell_map,
-		       std::vector<int>& facet_map);
+    static Mesh refine(const Mesh& mesh, MeshFunction<bool>& cell_marker,
+		                   MeshFunction<uint>& cell_map, 
+                       std::vector<int>& facet_map);
 
   private:
 
@@ -62,25 +68,21 @@ namespace dolfin
       void add_vertex(DVertex* v);
       void add_cell(DCell* c, std::vector<DVertex*> vs, int parent_id);
       void remove_cell(DCell* c);
-      void import_mesh(Mesh& mesh);
+      void import_mesh(const Mesh& mesh);
       void export_mesh(Mesh& mesh, std::vector<int>& new2old_cell, std::vector<int>& new2old_facet);
       void number();
       void bisect(DCell* dcell, DVertex* hangv, DVertex* hv0, DVertex* hv1);
       void bisect_marked(std::vector<bool> marked_ids);
-                        DCell* opposite(DCell* dcell, DVertex* v1, DVertex* v2);
+      DCell* opposite(DCell* dcell, DVertex* v1, DVertex* v2);
       void propagate_facets(DCell* dcell, DCell* c0, DCell* c1, uint ii, uint jj, DVertex* mv);
 
       std::list<DVertex *> vertices;
       std::list<DCell *> cells;
-      CellType* cell_type;
+      const CellType* cell_type;
       uint dim;
     };
 
-
   };
-
-
-
 
 }
 

@@ -1,8 +1,10 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2010
+//
 // First added:  2006-06-07
-// Last changed: 2006-06-16
+// Last changed: 2010-02-07
 
 #ifndef __UNIFORM_MESH_REFINEMENT_H
 #define __UNIFORM_MESH_REFINEMENT_H
@@ -21,10 +23,12 @@ namespace dolfin
   public:
 
     /// Refine mesh uniformly according to mesh type
-    static void refine(Mesh& mesh);
+    static Mesh refine(const Mesh& mesh);
+
+  private:
 
     /// Refine simplicial mesh uniformly
-    static void refine_simplex(Mesh& mesh);
+    static Mesh refine_simplex(const Mesh& mesh);
 
   };
 
