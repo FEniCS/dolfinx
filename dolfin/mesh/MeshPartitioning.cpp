@@ -18,6 +18,9 @@
 #include "MeshFunction.h"
 #include "MeshPartitioning.h"
 
+#include <dolfin/graph/Graph.h>
+#include <dolfin/graph/GraphBuilder.h>
+
 #if defined HAS_PARMETIS
 
 #include <parmetis.h>
@@ -69,6 +72,12 @@ void MeshPartitioning::partition(Mesh& mesh)
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 {
+  // FIXME: Remove when finished testing new dual graph builder,
+  //cout << "Testing Graph" << endl;
+  //Graph my_graph;
+  //GraphBuilder::build(my_graph, mesh_data);
+  //cout << "End graph test" << endl;
+
   // Compute cell partition
   std::vector<uint> cell_partition;
   compute_partition(cell_partition, mesh_data);
