@@ -8,7 +8,7 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 
 # Create mesh and function spaces
-mesh = UnitSquare(16, 16)
+mesh = UnitSquare(8, 8)
 P1 = FunctionSpace(mesh, "CG", 1)
 P2 = FunctionSpace(mesh, "CG", 2)
 
