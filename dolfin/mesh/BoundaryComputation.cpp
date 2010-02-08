@@ -6,7 +6,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2009-10-08
+// Last changed: 2010-02-08
 
 #include <dolfin/log/dolfin_log.h>
 #include "Mesh.h"
@@ -23,21 +23,21 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void BoundaryComputation::compute_boundary(const Mesh& mesh,
-					                                 BoundaryMesh& boundary)
+void BoundaryComputation::compute_exterior_boundary(const Mesh& mesh,
+                                                    BoundaryMesh& boundary)
 {
   compute_boundary_common(mesh, boundary, false);
 }
 //-----------------------------------------------------------------------------
-void BoundaryComputation::compute_interior_boundary(const Mesh& mesh, 
-						                                        BoundaryMesh& boundary)
+void BoundaryComputation::compute_interior_boundary(const Mesh& mesh,
+                                                    BoundaryMesh& boundary)
 {
   compute_boundary_common(mesh, boundary, true);
 }
 //-----------------------------------------------------------------------------
-void BoundaryComputation::compute_boundary_common(const Mesh& mesh, 
-						                                      BoundaryMesh& boundary,
-						                                      bool interior_boundary)
+void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
+                                                  BoundaryMesh& boundary,
+                                                  bool interior_boundary)
 {
   // We iterate over all facets in the mesh and check if they are on
   // the boundary. A facet is on the boundary if it is connected to
@@ -61,11 +61,11 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   // Extract exterior (non shared) facets markers
   MeshFunction<uint>* exterior = mesh.data().mesh_function("exterior facets");
 
-  // Determine boundary facet, count boundary vertices and facets, 
+  // Determine boundary facet, count boundary vertices and facets,
   // and assign vertex indices
   uint num_boundary_vertices = 0;
   uint num_boundary_cells = 0;
-  MeshFunction<bool> boundary_facet(mesh, D-1, false); 
+  MeshFunction<bool> boundary_facet(mesh, D-1, false);
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
@@ -76,7 +76,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
         boundary_facet[*f] = true;
       else
       {
-        bool exterior_facet = (*exterior)[*f]; 
+        bool exterior_facet = (*exterior)[*f];
         if ( exterior_facet && !interior_boundary )
           boundary_facet[*f] = true;
         else if ( !exterior_facet && interior_boundary )
@@ -164,7 +164,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   editor.close();
 }
 //-----------------------------------------------------------------------------
-void BoundaryComputation::reorder(std::vector<uint>& vertices, 
+void BoundaryComputation::reorder(std::vector<uint>& vertices,
                                   const Facet& facet)
 {
   // Get mesh
