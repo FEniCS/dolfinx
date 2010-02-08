@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2010-02-04
+// Last changed: 2010-02-08
 
 #include <vector>
 #include <boost/scoped_array.hpp>
@@ -13,6 +13,8 @@
 #include <dolfin/la/LAPACKVector.h>
 #include <dolfin/la/LAPACKSolvers.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/BoundaryMesh.h>
+#include <dolfin/mesh/FacetCell.h>
 #include <dolfin/fem/BasisFunction.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
@@ -32,6 +34,15 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   if (&w.function_space().mesh() != &v.function_space().mesh())
     error("Extrapolation must be computed on the same mesh.");
 
+  // Extrapolate over interior (including boundary dofs)
+  extrapolate_interior(w, v);
+
+  // Extrapolate over boundary (overwriting earlier boundary dofs)
+  extrapolate_boundary(w, v);
+}
+//-----------------------------------------------------------------------------
+void Extrapolation::extrapolate_interior(Function& w, const Function& v)
+{
   // Extract mesh and function spaces
   const FunctionSpace& V(v.function_space());
   const FunctionSpace& W(w.function_space());
@@ -52,17 +63,21 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   // Local array for dof indices
   boost::scoped_array<uint> dofs(new uint[V.dofmap().max_local_dimension()]);
 
-  // Iterate over cells in mesh of extrapolation space
-  for (CellIterator cell0(w.function_space().mesh()); !cell0.end(); ++cell0)
+  // Iterate over cells in mesh
+  for (CellIterator cell0(mesh); !cell0.end(); ++cell0)
   {
     // Update UFC view
     c0.update(*cell0);
 
-    // Create linear system
+    // Create linear system (note that size varies over the mesh)
     const uint M = V.element().space_dimension() * (1 + cell0->num_entities(D));
     const uint N = W.element().space_dimension();
     LAPACKMatrix A(M, N);
     LAPACKVector b(M);
+
+    // Check dimension of system
+    if (M < N)
+      error("Extrapolation failed, not enough equations.");
 
     // Add equations for cell and its neighbors
     uint offset = 0;
@@ -95,6 +110,46 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
 
   // Update dofs for w
   w.vector().set_local(dof_values_single.get());
+}
+//-----------------------------------------------------------------------------
+void Extrapolation::extrapolate_boundary(Function& w, const Function& v)
+{
+  // Extract mesh and function spaces
+  const FunctionSpace& V(v.function_space());
+  //const FunctionSpace& W(w.function_space());
+  const Mesh& mesh(V.mesh());
+
+  // Create boundary mesh
+  BoundaryMesh boundary(mesh);
+
+  // Initialize cell-cell connectivity for boundary mesh
+  const uint D = mesh.topology().dim();
+  boundary.init(D - 1, D - 1);
+
+  // UFC cell views of center and patch cells
+  UFCCell c0(mesh);
+  UFCCell c1(mesh);
+
+  // Iterate over facets (cells) in boundary
+  for (CellIterator facet0(boundary); !facet0.end(); ++facet0)
+  {
+    // Get corresponding cell and update UFC view
+    FacetCell cell0(mesh, *facet0);
+    c0.update(cell0);
+
+    cout << cell0 << endl;
+
+    // Iterate over neighboring facets
+    for (CellIterator facet1(*facet0); !facet1.end(); ++facet1)
+    {
+      // Get corresponding cell and udate UFC view
+      FacetCell cell1(mesh, *facet1);
+      c1.update(cell1);
+
+      cout << "  " << cell1 << endl;
+    }
+
+  }
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Extrapolation::add_equations(LAPACKMatrix& A,

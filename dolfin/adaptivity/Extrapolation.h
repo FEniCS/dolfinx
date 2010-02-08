@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2010-02-04
+// Last changed: 2010-02-08
 
 #ifndef __EXTRAPOLATION_H
 #define __EXTRAPOLATION_H
@@ -37,6 +37,12 @@ namespace dolfin
     static void extrapolate(Function& w, const Function& v);
 
   private:
+
+    // Extrapolate over interior (including boundary dofs)
+    static void extrapolate_interior(Function& w, const Function& v);
+
+    // Extrapolate over boundary (overwriting earlier boundary dofs)
+    static void extrapolate_boundary(Function& w, const Function& v);
 
     // Add equations for current cell
     static uint add_equations(LAPACKMatrix& A,

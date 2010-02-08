@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2010.
 //
 // First added:  2008-08-12
-// Last changed: 2010-02-04
+// Last changed: 2010-02-08
 
 #include <iostream>
 #include <algorithm>
@@ -42,12 +42,12 @@ void DofMapBuilder::parallel_build(DofMap& dofmap, const Mesh& mesh)
                     dofmap, mesh);
 
   // Renumber dofs
-  parallel_renumber(owned_dofs, shared_dofs, forbidden_dofs, dof2index, 
+  parallel_renumber(owned_dofs, shared_dofs, forbidden_dofs, dof2index,
                     dofmap, mesh);
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
-                                      set& forbidden_dofs, 
+                                      set& forbidden_dofs,
                                       std::map<uint, std::vector<uint> >& dof2index,
                                       const DofMap& dofmap, const Mesh& mesh)
 {
@@ -60,14 +60,14 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
 
   // Extract the interior boundary
   BoundaryMesh interior_boundary;
-  interior_boundary.init_interior(mesh);
+  interior_boundary.init_interior_boundary(mesh);
 
   // Decide ownership of shared dofs
   UFCCell ufc_cell(mesh);
   std::vector<uint> send_buffer;
   std::map<uint, uint> dof_vote;
-  std::vector<uint> old_dofs(dofmap.max_local_dimension()); 
-  std::vector<uint> facet_dofs(dofmap.num_facet_dofs()); 
+  std::vector<uint> old_dofs(dofmap.max_local_dimension());
+  std::vector<uint> facet_dofs(dofmap.num_facet_dofs());
 
   MeshFunction<uint>* cell_map = interior_boundary.data().mesh_function("cell map");
   if (cell_map)
@@ -104,7 +104,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
   const uint num_proc = MPI::num_processes();
   const uint proc_num = MPI::process_number();
   const uint max_recv = MPI::global_maximum(send_buffer.size());
-  std::vector<uint> recv_buffer(max_recv); 
+  std::vector<uint> recv_buffer(max_recv);
   for (uint k = 1; k < MPI::num_processes(); ++k)
   {
     uint src = (proc_num - k + num_proc) % num_proc;
@@ -170,7 +170,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs, const set& shared_d
   for (set_iterator it = owned_dofs.begin(); it != owned_dofs.end(); ++it, offset++)
   {
     dofmap._ufc_to_map[*it] = offset;
-    const std::vector<uint>& _dof2index = dof2index.find(*it)->second; 
+    const std::vector<uint>& _dof2index = dof2index.find(*it)->second;
     for (vector_it di = _dof2index.begin(); di != _dof2index.end(); ++di)
       _dofmap[*di] = offset;
 
@@ -192,7 +192,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs, const set& shared_d
   {
     const uint src  = (proc_num - k + num_proc) % num_proc;
     const uint dest = (proc_num +k) % num_proc;
-    const uint recv_count = MPI::send_recv(&send_buffer[0], send_buffer.size(), 
+    const uint recv_count = MPI::send_recv(&send_buffer[0], send_buffer.size(),
                                            dest,
                                            &recv_buffer[0], max_recv, src);
 
@@ -203,7 +203,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs, const set& shared_d
       // Assign new dof number for shared dofs
       if (forbidden_dofs.find(recv_buffer[i]) != forbidden_dofs.end())
       {
-        const std::vector<uint>& _dof2index = dof2index.find(recv_buffer[i])->second; 
+        const std::vector<uint>& _dof2index = dof2index.find(recv_buffer[i])->second;
         for (vector_it di = _dof2index.begin(); di != _dof2index.end(); ++di)
           _dofmap[*di] = recv_buffer[i+1];
       }
