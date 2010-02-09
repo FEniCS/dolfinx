@@ -164,10 +164,18 @@ void Extrapolation::extrapolate_boundary(Function& w, const Function& v)
     W.dofmap().tabulate_facet_dofs(facet_dofs0.get(), cell0.facet_index());
     V.dofmap().tabulate_facet_dofs(facet_dofs1.get(), cell0.facet_index());
 
+    // Compute non-facet dofs
+    std::set<uint> non_facet_dofs0;
+    for (uint i = 0; i < W.dofmap().local_dimension(c0); i++)
+      non_facet_dofs0.insert(i);
+    for (uint i = 0; i < W.dofmap().num_facet_dofs(); i++)
+      non_facet_dofs0.erase(facet_dofs0[i]);
+
     // Add equations on facet
     uint offset = 0;
-    offset += add_facet_equations(A, b, cell0, cell0, c0, c0, V, W, v,
-                                  facet_dofs0.get(), facet_dofs1.get(), offset);
+    offset += add_facet_equations(A, b, cell0, cell0, c0, c0, V, W, v, w,
+                                  facet_dofs0.get(), facet_dofs1.get(),
+                                  non_facet_dofs0, offset);
 
     // Add equations on neighboring facets
     for (CellIterator facet1(*facet0); !facet1.end(); ++facet1)
@@ -175,8 +183,9 @@ void Extrapolation::extrapolate_boundary(Function& w, const Function& v)
       FacetCell cell1(mesh, *facet1);
       c1.update(cell1);
       V.dofmap().tabulate_facet_dofs(facet_dofs1.get(), cell1.facet_index());
-      offset += add_facet_equations(A, b, cell0, cell1, c0, c1, V, W, v,
-                                    facet_dofs0.get(), facet_dofs1.get(), offset);
+      offset += add_facet_equations(A, b, cell0, cell1, c0, c1, V, W, v, w,
+                                    facet_dofs0.get(), facet_dofs1.get(),
+                                    non_facet_dofs0, offset);
     }
 
     // Solve least squares system
@@ -224,7 +233,7 @@ dolfin::uint Extrapolation::add_cell_equations(LAPACKMatrix& A,
     for (uint j = 0; j < W.element().space_dimension(); ++j)
     {
       // Create basis function
-      BasisFunction phi(j, W.element(), c0);
+      const BasisFunction phi(j, W.element(), c0);
 
       // Evaluate dof on basis function
       const double dof_value = V.element().evaluate_dof(i, phi, c1);
@@ -254,8 +263,10 @@ dolfin::uint Extrapolation::add_facet_equations(LAPACKMatrix& A,
                                                 const FunctionSpace& V,
                                                 const FunctionSpace& W,
                                                 const Function& v,
+                                                const Function& w,
                                                 const uint* facet_dofs0,
                                                 const uint* facet_dofs1,
+                                                std::set<uint>& non_facet_dofs0,
                                                 uint offset)
 {
   // Iterate over facet dofs for V on patch cell
@@ -265,7 +276,7 @@ dolfin::uint Extrapolation::add_facet_equations(LAPACKMatrix& A,
     for (uint j = 0; j < W.dofmap().num_facet_dofs(); ++j)
     {
       // Create basis function
-      BasisFunction phi(facet_dofs0[j], W.element(), c0);
+      const BasisFunction phi(facet_dofs0[j], W.element(), c0);
 
       // Evaluate dof on basis function
       const double dof_value = V.element().evaluate_dof(facet_dofs1[i], phi, c1);
@@ -276,12 +287,26 @@ dolfin::uint Extrapolation::add_facet_equations(LAPACKMatrix& A,
   }
 
   // Extract dof values for v on patch cell
-  boost::scoped_array<double> dof_values(new double(V.element().space_dimension()));
-  v.restrict(dof_values.get(), V.element(), cell1, c1, cell1.facet_index());
+  boost::scoped_array<double> vdofs(new double(V.element().space_dimension()));
+  v.restrict(vdofs.get(), V.element(), cell1, c1, cell1.facet_index());
 
-  // Insert into vector
+  // Extract dof values for w on center cell
+  boost::scoped_array<double> wdofs(new double(W.element().space_dimension()));
+  w.restrict(wdofs.get(), W.element(), cell0, c0, cell0.facet_index());
+
+  // Compute right-hand side
   for (uint i = 0; i < V.dofmap().num_facet_dofs(); ++i)
-    b[offset + i] = dof_values[facet_dofs1[i]];
+  {
+    // Insert dof value for v
+    b[offset + i] = vdofs[facet_dofs1[i]];
+
+    // Subtract dof value of non-facet part of w
+    for (std::set<uint>::iterator j = non_facet_dofs0.begin(); j != non_facet_dofs0.end(); ++j)
+    {
+      const BasisFunction phi(*j, W.element(), c0);
+      b[offset + i] -= wdofs[*j] * V.element().evaluate_dof(facet_dofs1[i], phi, c1);
+    }
+  }
 
   return V.dofmap().num_facet_dofs();
 }
