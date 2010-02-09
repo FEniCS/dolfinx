@@ -46,7 +46,8 @@ namespace dolfin
       send_data[p].push_back(values[i]);
     }
 
-    // Store local data (don't send) and clear partition vector and reuse for storing sender of data
+    // Store local data (don't send) and clear partition vector and reuse for 
+    // storing sender of data
     values.clear();
     partition.clear();
     const std::vector<T>& local_values = send_data[process_number];
