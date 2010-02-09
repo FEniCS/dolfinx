@@ -3,7 +3,7 @@ __date__ = "2010-02-08"
 __copyright__ = "Copyright (C) 2010 " + __author__
 __license__  = "GNU LGPL Version 2.1"
 
-# Last changed: 2010-02-08
+# Last changed: 2010-02-09
 
 from dolfin import *
 
