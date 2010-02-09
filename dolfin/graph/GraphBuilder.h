@@ -14,6 +14,7 @@ namespace dolfin
 
   // Forward declarations
   class Graph;
+  class LocalMeshData;
   class Mesh;
 
   /// This class builds a Graph corresponding for various objects (Mesh, matrix
@@ -25,13 +26,18 @@ namespace dolfin
   public:
 
     /// Build Graph of a mesh
-    static void build(Graph& graph, const Mesh& mesh, Graph::Representation rep = Graph::dual);
+    static void build(Graph& graph, LocalMeshData& mesh_data, 
+                      Graph::Representation rep = Graph::dual);
+
+    /// Build Graph of a mesh
+    static void build(Graph& graph, const Mesh& mesh, 
+                      Graph::Representation rep = Graph::dual);
 
   private:
 
-    static void createMeshNodal(Graph& graph, const Mesh& mesh);
+    static void create_nodal(Graph& graph, const Mesh& mesh);
 
-    static void createMeshDual(Graph& graph, const Mesh& mesh);
+    static void create_dual(Graph& graph, const Mesh& mesh);
   };
 
 }

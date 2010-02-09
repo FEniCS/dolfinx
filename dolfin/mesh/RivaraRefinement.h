@@ -29,7 +29,8 @@ namespace dolfin
   public:
 
     /// Refine simplicial mesh locally by recursive edge bisection
-    static Mesh refine(const Mesh& mesh, MeshFunction<bool>& cell_marker,
+    static Mesh refine(const Mesh& mesh, 
+                       const MeshFunction<bool>& cell_marker,
 		                   MeshFunction<uint>& cell_map, 
                        std::vector<int>& facet_map);
 

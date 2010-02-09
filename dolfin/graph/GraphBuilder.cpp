@@ -4,7 +4,12 @@
 // First added:  2008-08-17
 // Last changed:
 
+#include <algorithm>
+#include <vector>
+
+#include <dolfin/log/log.h>
 #include <dolfin/common/types.h>
+#include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include "Graph.h"
@@ -12,6 +17,61 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+void GraphBuilder::build(Graph& graph, LocalMeshData& mesh_data, 
+                         Graph::Representation rep)
+{
+  // FIXME: This is a work in progress
+
+  cout << "Number of global cells    " << mesh_data.num_global_cells << endl;
+  cout << "Number of global vertices " << mesh_data.num_global_vertices << endl;
+
+  std::vector<std::vector<uint> >& cell_vertices = mesh_data.cell_vertices;
+  //const std::vector<uint>& vertex_indices      = mesh_data.cell_vertices;
+  const std::vector<uint>& global_cell_indices = mesh_data.global_cell_indices;
+
+  // If cells shares > (mesh().dim - 1) vertices, then they are connected.
+  const uint topological_dim = mesh_data.tdim;
+
+  std::vector<uint>::const_iterator cell;
+  for (cell = global_cell_indices.begin(); cell != global_cell_indices.end(); ++cell)
+  {  
+    cout << "Cell indices " << cell - global_cell_indices.begin() << "  " <<  *cell << endl;
+  }
+  // Build local graph
+
+  // Sort cell vertex indices
+  std::vector<std::vector<uint> >::iterator vertices;
+  for (vertices = cell_vertices.begin(); vertices != cell_vertices.end(); ++vertices)
+    std::sort(vertices->begin(), vertices->end());
+
+  // Find number of neighboring cells
+  std::vector<uint> intersection(topological_dim+1);
+  std::vector<uint>::iterator it;
+  std::vector<std::vector<uint> >::const_iterator cell0;
+  std::vector<std::vector<uint> >::const_iterator cell1;
+  for (cell0 = cell_vertices.begin(); cell0 != cell_vertices.end(); ++cell0)
+  {
+    for (cell1 = cell0 + 1; cell1 != cell_vertices.end(); ++cell1)
+    {
+      it = std::set_intersection(cell0->begin(), cell0->end(), 
+                                 cell1->begin(), cell1->end(), 
+                                 intersection.begin());
+      const uint num_shared_vertices = it - intersection.begin();  
+      if ( num_shared_vertices == topological_dim - 1)
+      {
+        cout << "Found a neighbor: " << cell0 - cell_vertices.begin() << "  " 
+              << cell1 - cell_vertices.begin() << it - intersection.begin() << endl;
+      }
+      else if ( num_shared_vertices > topological_dim - 1)
+        error("Too many shared vertices. Cannot construct dual graph.");
+    }
+  }  
+
+  // Determine possible boundary 'edges'
+  
+  // Exchange boundary process with neighboring process to check for connections
+}
 //-----------------------------------------------------------------------------
 void GraphBuilder::build(Graph& graph, const Mesh& mesh, Graph::Representation rep)
 {
@@ -23,14 +83,14 @@ void GraphBuilder::build(Graph& graph, const Mesh& mesh, Graph::Representation r
 
   // Build
   if(rep == Graph::dual)
-    createMeshDual(graph, mesh);
+    create_dual(graph, mesh);
   else if(rep == Graph::nodal)
-    createMeshNodal(graph, mesh);
+    create_nodal(graph, mesh);
   else
     error("Graph type unknown");
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::createMeshNodal(Graph& graph, const Mesh& mesh)
+void GraphBuilder::create_nodal(Graph& graph, const Mesh& mesh)
 {
   error("Partitioning of nodal mesh graphs probably doesn't work. Please test and fix.");
 
@@ -65,7 +125,7 @@ void GraphBuilder::createMeshNodal(Graph& graph, const Mesh& mesh)
   }
 }
 //-----------------------------------------------------------------------------
-void GraphBuilder::createMeshDual(Graph& graph, const Mesh& mesh)
+void GraphBuilder::create_dual(Graph& graph, const Mesh& mesh)
 {
   // Initialise mesh
   uint D = mesh.topology().dim();

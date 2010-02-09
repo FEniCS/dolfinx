@@ -106,6 +106,7 @@ namespace dolfin
     // Friends
     friend class XMLLocalMeshData;
     friend class MeshPartitioning;
+    friend class GraphBuilder;
 
   };
 

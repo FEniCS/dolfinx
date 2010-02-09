@@ -277,7 +277,6 @@ void LocalMeshData::unpack_vertex_coordinates(const std::vector<double>& values)
   }
   
   info("Received %d vertex coordinates", vertex_coordinates.size());
-
 }
 //-----------------------------------------------------------------------------
 void LocalMeshData::unpack_vertex_indices(const std::vector<uint>& values)
