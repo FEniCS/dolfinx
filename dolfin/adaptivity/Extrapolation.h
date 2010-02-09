@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2010-02-08
+// Last changed: 2010-02-09
 
 #ifndef __EXTRAPOLATION_H
 #define __EXTRAPOLATION_H
@@ -68,8 +68,10 @@ namespace dolfin
                                     const FunctionSpace& V,
                                     const FunctionSpace& W,
                                     const Function& v,
+                                    const Function& w,
                                     const uint* facet_dofs0,
                                     const uint* facet_dofs1,
+                                    std::set<uint>& non_facet_dofs0,
                                     uint offset);
 
   };
