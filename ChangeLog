@@ -1,3 +1,4 @@
+ - Add FacetCell class useful in algorithms iterating over boundary facets
  - Rename reconstruct --> extrapolate
  - Remove GTS dependency
 0.9.6 [2010-02-03]
