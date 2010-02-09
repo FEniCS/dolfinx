@@ -5,7 +5,7 @@
 // Last changed:
 
 #include <algorithm>
-#include <iterator>
+#include <numeric>
 #include <set>
 #include <vector>
 
@@ -25,6 +25,7 @@ void GraphBuilder::build(Graph& graph, LocalMeshData& mesh_data,
                          Graph::Representation rep)
 {
   // FIXME: This is a work in progress
+  warning("GraphBuilder is highly experimental.");
 
   cout << "Number of global cells    " << mesh_data.num_global_cells << endl;
   cout << "Number of global vertices " << mesh_data.num_global_vertices << endl;
@@ -32,6 +33,7 @@ void GraphBuilder::build(Graph& graph, LocalMeshData& mesh_data,
   std::vector<std::vector<uint> >& cell_vertices = mesh_data.cell_vertices;
   const std::vector<uint>& global_cell_indices   = mesh_data.global_cell_indices;
 
+  const uint num_gobal_cells    = mesh_data.num_global_cells;
 
   const uint num_local_cells    = global_cell_indices.size();
   const uint topological_dim    = mesh_data.tdim;
@@ -142,16 +144,16 @@ void GraphBuilder::build(Graph& graph, LocalMeshData& mesh_data,
   // FIXME: There may be duplicate ghost cells???
 
   // Add off-process (ghost) edges (cell-cell) connections to graph
+  std::set<uint> ghost_cells;
   for (uint i = 0; i < off_process_cell_vertices.size(); ++i)
   {
     const std::vector<std::vector<uint> >& ghost_cell_vertices = off_process_cell_vertices[i]; 
     const std::vector<uint>& ghost_global_cell_indices = off_process_global_cell_indices[i]; 
     compute_connectivity(cell_vertices, ghost_cell_vertices, ghost_global_cell_indices,
-                         num_cell_facets, num_facet_vertices, graph_edges);
+                         num_cell_facets, num_facet_vertices, graph_edges, ghost_cells);
   }
 
-
-  warning("GraphBuilder is highly experimental.");
+  compute_scotch_data(graph_edges, ghost_cells, num_gobal_cells);
 }
 //-----------------------------------------------------------------------------
 void GraphBuilder::build(Graph& graph, const Mesh& mesh, Graph::Representation rep)
@@ -290,7 +292,8 @@ void GraphBuilder::compute_connectivity(const std::vector<std::vector<uint> >& c
                                         const std::vector<uint>& ghost_global_cell_indices,
                                         uint num_cell_facets,
                                         uint num_facet_vertices,
-                                        std::vector<std::set<uint> >& graph_edges)
+                                        std::vector<std::set<uint> >& graph_edges,
+                                        std::set<uint>& ghost_cells)
 {
   std::vector<uint>::iterator it;
   for (uint i = 0; i < cell_vertices.size(); ++i)
@@ -309,10 +312,65 @@ void GraphBuilder::compute_connectivity(const std::vector<std::vector<uint> >& c
       {
         cout << "Adding off-process edges" << endl;
         graph_edges[i].insert(ghost_global_cell_indices[j]);
+        ghost_cells.insert(ghost_global_cell_indices[j]);
       }
       else if ( num_shared_vertices > num_facet_vertices)
         error("Too many shared vertices. Cannot construct dual graph.");
     }
   }
+}
+//-----------------------------------------------------------------------------
+void GraphBuilder::compute_scotch_data(const std::vector<std::set<uint> >& graph_edges,
+                                       const std::set<uint>& ghost_cells,
+                                       uint num_global_vertices)
+{
+  // Number of local edges + edges connecting to ghost vertices
+  uint edgelocnbr = 0;  
+  std::vector<std::set<uint> >::const_iterator vertex;
+  for(vertex =graph_edges.begin(); vertex != graph_edges.end(); ++vertex);
+    edgelocnbr += vertex->size();
+
+
+  // C-style array indexing
+  //const uint baseval = 0;
+
+  // Global data ---------------------------------
+
+  // Total  (global) number of vertices (cells) in the graph
+  //const uint vertglbnbr = num_global_vertices;
+
+  // Total (global) number of edges (cell-cell connections) in the graph
+  // Compute number of global edges
+  std::vector<uint> num_global_edges(MPI::num_processes());
+  num_global_edges[MPI::process_number()] = edgelocnbr;
+  MPI::gather(num_global_edges);
+  const uint edgeglbnbr = std::accumulate(num_global_edges.begin(), num_global_edges.end(), 0);
+  cout << "Number of global edges" << edgeglbnbr << endl;
+
+  // Number of processes
+  //const uint procglbnbr = MPI::num_processes();
+
+  // Array containing the number of local vertices on each process
+  std::vector<uint> proccnttab(MPI::num_processes()); 
+  proccnttab[MPI::process_number()] = graph_edges.size();
+  MPI::gather(proccnttab);
+
+  // Array containing . . . . 
+  //std::vector<uint> proccnttab(MPI::num_processes()+1);
+
+  // Local data ---------------------------------
+
+  // Number of local graph vertices (cells)
+  //const uint vertlocnbr = graph_edges.size();
+
+  // Number of local + ghots graph vertices (cells)
+  //const uint vertgstnbr = graph_edges.size() + ghost_cells.size();
+
+
+
+  // Still need to figure these out
+  //std::vector<uint> vertloctab;
+  //std::vector<uint> edgeloctab
+  //std::vector<uint> edgegsttab
 }
 //-----------------------------------------------------------------------------

@@ -51,7 +51,13 @@ namespace dolfin
                                      const std::vector<std::vector<uint> >& ghost_cell_vertices,
                                      const std::vector<uint>& ghost_global_cell_indices,
                                      uint num_cell_facets, uint num_facet_vertices,
-                                     std::vector<std::set<uint> >& graph_edges);
+                                     std::vector<std::set<uint> >& ghost_graph_edges,
+                                     std::set<uint>& ghost_cells);
+
+    static void compute_scotch_data(const std::vector<std::set<uint> >& graph_edges,
+                                    const std::set<uint>& ghost_cells,
+                                    uint num_global_vertices);
+
   };
 
 }
