@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2010-02-08
+// Last changed: 2010-02-09
 
 #include <vector>
 #include <boost/scoped_array.hpp>
@@ -155,7 +155,6 @@ void Extrapolation::extrapolate_boundary(Function& w, const Function& v)
     const uint N = W.dofmap().num_facet_dofs();
     LAPACKMatrix A(M, N);
     LAPACKVector b(M);
-    cout << "System on facet: " << M << " x " << N << endl;
 
     // Check dimension of system
     if (M < N)
