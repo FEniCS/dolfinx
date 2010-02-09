@@ -244,7 +244,7 @@ dolfin::uint Extrapolation::add_cell_equations(LAPACKMatrix& A,
   }
 
   // Extract dof values for v on patch cell
-  boost::scoped_array<double> dof_values(new double(V.element().space_dimension()));
+  boost::scoped_array<double> dof_values(new double[V.element().space_dimension()]);
   v.restrict(dof_values.get(), V.element(), cell1, c1, -1);
 
   // Insert into vector
@@ -287,11 +287,11 @@ dolfin::uint Extrapolation::add_facet_equations(LAPACKMatrix& A,
   }
 
   // Extract dof values for v on patch cell
-  boost::scoped_array<double> vdofs(new double(V.element().space_dimension()));
+  boost::scoped_array<double> vdofs(new double[V.element().space_dimension()]);
   v.restrict(vdofs.get(), V.element(), cell1, c1, cell1.facet_index());
 
   // Extract dof values for w on center cell
-  boost::scoped_array<double> wdofs(new double(W.element().space_dimension()));
+  boost::scoped_array<double> wdofs(new double[W.element().space_dimension()]);
   w.restrict(wdofs.get(), W.element(), cell0, c0, cell0.facet_index());
 
   // Compute right-hand side
