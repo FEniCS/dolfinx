@@ -55,7 +55,7 @@ CHANGED:
 
 - swig: Added wrapper for std::set<uint> and a has_cgal function.
 
-Merge Proposal 1:
+Merge Proposal 2:
 
 ADDED:
 - PrimitiveIntersector class: Provides statics function to detect intersection

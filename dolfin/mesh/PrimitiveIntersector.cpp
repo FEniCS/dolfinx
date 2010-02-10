@@ -1,10 +1,10 @@
 #include "MeshEntity.h"
 #include "PrimitiveIntersector.h"
 
+using namespace dolfin;
+
 #ifdef HAS_CGAL
 #include "cgal_includes.h"
-
-using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 bool PrimitiveIntersector::do_intersect(const MeshEntity & entity_1, const MeshEntity & entity_2)
