@@ -18,14 +18,12 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/LocalMeshData.h>
-#include <dolfin/graph/Graph.h>
 #include <dolfin/plot/FunctionPlotData.h>
 #include <dolfin/parameter/Parameters.h>
 #include "GenericFile.h"
 #include "XMLMap.h"
 #include "XMLMesh.h"
 #include "XMLMeshFunction.h"
-#include "XMLGraph.h"
 #include "XMLMatrix.h"
 #include "XMLLocalMeshData.h"
 #include "XMLParameters.h"
@@ -73,7 +71,6 @@ namespace dolfin
 
     void operator>> (Mesh& input)                  { read_xml(input); }
     void operator>> (LocalMeshData& input)         { read_xml(input); }
-    void operator>> (Graph&  input)                { read_xml(input); }
     void operator>> (GenericMatrix&  input)        { read_xml(input); }
     void operator>> (GenericVector&  input)        { read_xml(input); }
     void operator>> (Parameters&  input)        { read_xml(input); }
@@ -95,7 +92,6 @@ namespace dolfin
     // Output
 
     void operator<< (const Mesh& output)                  { write_xml(output); }
-    void operator<< (const Graph& output)                 { write_xml(output); }
     void operator<< (const GenericMatrix& output)         { write_xml(output); }
     void operator<< (const GenericVector& output)         { write_xml(output); }
     void operator<< (const Parameters& output)         { write_xml(output); }

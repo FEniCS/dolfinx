@@ -15,7 +15,6 @@
 #include <dolfin/mesh/LocalMeshData.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
-#include "Graph.h"
 #include "GraphBuilder.h"
 
 

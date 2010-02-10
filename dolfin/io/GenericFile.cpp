@@ -83,11 +83,6 @@ void GenericFile::operator>> (Parameters& parameters)
   read_not_impl("Parameters");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator>> (Graph& graph)
-{
-  read_not_impl("Graph");
-}
-//-----------------------------------------------------------------------------
 void GenericFile::operator>> (FunctionPlotData& data)
 {
   read_not_impl("FunctionPlotData");
@@ -191,11 +186,6 @@ void GenericFile::operator<< (const Sample& sample)
 void GenericFile::operator<< (const Parameters& parameters)
 {
   write_not_impl("Parameters");
-}
-//-----------------------------------------------------------------------------
-void GenericFile::operator<< (const Graph& graph)
-{
-  write_not_impl("Graph");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::operator<< (const FunctionPlotData& data)
