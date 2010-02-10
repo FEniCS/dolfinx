@@ -13,12 +13,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::Mesh refine(const Mesh& mesh)
+dolfin::Mesh dolfin::refine(const Mesh& mesh)
 {
   return UniformMeshRefinement::refine(mesh);
 }
 //-----------------------------------------------------------------------------
-dolfin::Mesh refine(const Mesh& mesh, const MeshFunction<bool>& cell_markers)
+dolfin::Mesh dolfin::refine(const Mesh& mesh, const MeshFunction<bool>& cell_markers)
 {
   return LocalMeshRefinement::refineRecursivelyByEdgeBisection(mesh, cell_markers);
 }
