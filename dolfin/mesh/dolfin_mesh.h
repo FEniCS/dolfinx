@@ -39,7 +39,6 @@
 #include <dolfin/mesh/Rectangle.h>
 #include <dolfin/mesh/UnitSphere.h>
 #include <dolfin/mesh/IntersectionOperator.h>
-#include <dolfin/mesh/LocalMeshRefinement.h>
-#include <dolfin/mesh/UniformMeshRefinement.h>
+#include <dolfin/mesh/refine.h>
 
 #endif

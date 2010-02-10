@@ -17,12 +17,12 @@ int main()
   // Create mesh of unit square
   UnitSquare mesh(5, 5);
   file << mesh;
-  plot(mesh);
+  //plot(mesh);
 
   // Uniform refinement
   mesh.refine();
   file << mesh;
-  plot(mesh);
+  //plot(mesh);
 
 
   // Refine mesh close to x = (0.5, 0.5)
@@ -42,7 +42,7 @@ int main()
     mesh.refine(cell_markers);
 
     file << mesh;
-    plot(mesh);
+    //plot(mesh);
   }
 
   return 0;
