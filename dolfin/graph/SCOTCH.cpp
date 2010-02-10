@@ -27,7 +27,7 @@ void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
 }
 //-----------------------------------------------------------------------------
 #else
-void SCOTCH::partition(std::vector<uint>& cell_partition, 
+void SCOTCH::compute_partition(std::vector<uint>& cell_partition, 
                        const LocalMeshData& data)
 {
   error("SCOTCH::compute_partition requires SCOTCH.");

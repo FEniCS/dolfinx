@@ -7,8 +7,8 @@
 // This file defines free functions for mesh refinement.
 //
 
-#ifndef __REFINE_H
-#define __REFINE_H
+#ifndef __MESHREFINE_H
+#define __MESHREFINE_H
 
 namespace dolfin
 {
