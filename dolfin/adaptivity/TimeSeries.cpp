@@ -79,7 +79,7 @@ TimeSeries::TimeSeries(std::string name) : _name(name), _cleared(false)
   {
     File file(filename);
     file >> _vector_times;
-    info("Found %d vector samples in time series.", _vector_times.size());
+    info("Found %d vector sample(s) in time series.", _vector_times.size());
   }
   else
     info("No vector samples found in time series.");
@@ -90,7 +90,7 @@ TimeSeries::TimeSeries(std::string name) : _name(name), _cleared(false)
   {
     File file(filename);
     file >> _mesh_times;
-    info("Found %d mesh samples in time series.", _vector_times.size());
+    info("Found %d mesh sample(s) in time series.", _vector_times.size());
   }
   else
     info("No mesh samples found in time series.");
