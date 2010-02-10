@@ -50,7 +50,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
   init_vector();
 
   // Register adaptive object
-  AdaptiveObjects::register_object(this);
+  //AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, GenericVector& x)
@@ -114,7 +114,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    std::string filename)
   : _function_space(V),
     local_scratch(V->element())
-{
+{  
   // Create vector
   DefaultFactory factory;
   _vector.reset(factory.create_vector());

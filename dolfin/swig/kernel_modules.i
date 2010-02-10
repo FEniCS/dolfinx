@@ -99,6 +99,7 @@
 %include "dolfin/mesh/Facet.h"
 %include "dolfin/mesh/Point.h"
 %include "dolfin/mesh/Cell.h"
+%include "dolfin/mesh/FacetCell.h"
 %include "dolfin/mesh/MeshTopology.h"
 %include "dolfin/mesh/MeshGeometry.h"
 %include "dolfin/mesh/MeshData.h"
@@ -124,6 +125,8 @@
 %include "dolfin/mesh/Rectangle.h"
 %include "dolfin/mesh/UnitSphere.h"
 %include "dolfin/mesh/IntersectionOperator.h"
+%include "dolfin/mesh/LocalMeshRefinement.h"
+%include "dolfin/mesh/UniformMeshRefinement.h"
 %include "dolfin/swig/mesh_post.i"
 
 // DOLFIN headers included from function
