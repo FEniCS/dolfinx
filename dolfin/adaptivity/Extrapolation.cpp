@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2010-02-09
+// Last changed: 2010-02-10
 
 #include <vector>
 #include <boost/scoped_array.hpp>
@@ -17,6 +17,7 @@
 #include <dolfin/mesh/FacetCell.h>
 #include <dolfin/fem/BasisFunction.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/DirichletBC.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include "Extrapolation.h"
@@ -41,6 +42,17 @@ void Extrapolation::extrapolate(Function& w, const Function& v,
   // Extrapolate over boundary (overwriting earlier boundary dofs)
   if (facet_extrapolation)
     extrapolate_boundary(w, v);
+}
+//-----------------------------------------------------------------------------
+void Extrapolation::extrapolate(Function& w, const Function& v,
+                                const SubDomain& sub_domain)
+{
+  // Extrapolate over interior
+  extrapolate_interior(w, v);
+
+  // Create and apply Dirichlet boundary condition
+  DirichletBC bc(w.function_space(), v, sub_domain);
+  bc.apply(w.vector());
 }
 //-----------------------------------------------------------------------------
 void Extrapolation::extrapolate_interior(Function& w, const Function& v)
