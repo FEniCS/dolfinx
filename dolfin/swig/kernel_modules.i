@@ -125,7 +125,6 @@
 %include "dolfin/mesh/IntersectionOperator.h"
 %include "dolfin/mesh/PrimitiveIntersector.h"
 %include "dolfin/mesh/refine.h"
-%include "dolfin/mesh/UniformMeshRefinement.h"
 %include "dolfin/swig/mesh_post.i"
 
 // DOLFIN headers included from function
