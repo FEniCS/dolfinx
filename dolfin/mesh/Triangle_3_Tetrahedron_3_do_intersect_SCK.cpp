@@ -42,7 +42,7 @@ do_intersect<Simple_cartesian<double> >(const Simple_cartesian<double>::Triangle
 
     return false;
 }
-
+//-----------------------------------------------------------------------------
 template <>
 Simple_cartesian<double>::Boolean
 do_intersect<Simple_cartesian<double> >(const Simple_cartesian<double>::Tetrahedron_3 &tet,
@@ -51,7 +51,6 @@ do_intersect<Simple_cartesian<double> >(const Simple_cartesian<double>::Tetrahed
 {
   return do_intersect(tr, tet, k);
 }
-
 
 } // end CGALi
 
