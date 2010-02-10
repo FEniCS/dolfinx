@@ -7,7 +7,7 @@
 // Modified by Ola Skavhaug 2009
 //
 // First added:  2002-11-12
-// Last changed: 2009-11-11
+// Last changed: 2010-02-10
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -61,6 +61,9 @@ namespace dolfin
       file->write();
       *file << t;
     }
+
+    /// Check if file exists
+    static bool exists(std::string filename);
 
   private:
 
