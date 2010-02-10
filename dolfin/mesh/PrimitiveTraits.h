@@ -29,21 +29,7 @@ struct PointPrimitive {};
 ///supposed to provide a datum function, which returns a geometric primitive
 ///object, which type corresponds to the primitive type (Point, PointCell,
 ///Tetrahedron(Cell) etc.) and the passed geometric CGAL kernel.
-
 template <typename Primitive_, typename Kernel> struct PrimitiveTraits;
-
-//General PrimitiveTrait to deal with types, which need not to be converted.
-//template <typename Primitive_, typename Kernel> struct PrimitiveTraits
-//{
-//  typedef Kernel K;
-//  typedef Primitive_ Primitive;
-//  typedef Primitive Datum;
-  //  Need a proper fix/resonable default value for that:
-//  static const int dim = 0;
-//  static Datum & datum(Datum & d) {
-//    return d;
-//  }
-//};
 
 template <typename Kernel> struct PrimitiveTraits<PointPrimitive,Kernel> {
   typedef Kernel K;
@@ -87,17 +73,6 @@ template <typename Kernel> struct PrimitiveTraits<TriangleCell,Kernel> {
   typedef typename K::Point_3 Point_3;
   typedef typename K::Triangle_3 Datum;
   static const int dim = 2;
-  
-  static Datum datum(const TriangleCell & cell) {
-    VertexIterator v(cell);
-    Point_3 p1(v->point());
-    ++v;
-    Point_3 p2(v->point());
-    ++v;
-    Point_3 p3(v->point());
-    return Datum(p1,p2,p3);
-  }
-
   static Datum datum(const MeshEntity & cell) {
     VertexIterator v(cell);
     Point_3 p1(v->point());
