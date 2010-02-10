@@ -22,6 +22,11 @@ namespace dolfin
   ///
   /// When objects are retrieved, the object stored at the time
   /// closest to the given time will be used.
+  ///
+  /// A new time series will check if values have been stored to
+  /// file before (for a series with the same name) and in that
+  /// case reuse those values. If new values are stored, old
+  /// values will be cleared.
 
   class TimeSeries : public Variable
   {
