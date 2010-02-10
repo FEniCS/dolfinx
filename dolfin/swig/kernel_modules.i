@@ -141,12 +141,6 @@
 %include "dolfin/swig/function_post.i"
 
 // DOLFIN headers included from graph
-%include "dolfin/graph/Graph.h"
-%include "dolfin/graph/GraphBuilder.h"
-%include "dolfin/graph/GraphEditor.h"
-%include "dolfin/graph/GraphPartition.h"
-%include "dolfin/graph/UndirectedClique.h"
-%include "dolfin/graph/DirectedClique.h"
 
 // DOLFIN headers included from plot
 %include "dolfin/plot/FunctionPlotData.h"
