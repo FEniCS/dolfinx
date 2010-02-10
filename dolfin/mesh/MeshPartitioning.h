@@ -1,7 +1,7 @@
 // Copyright (C) 2008-2009 Niclas Jansson, Ola Skavhaug and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Welsl 2010
+// Modified by Garth N. Wells, 2010
 //
 // First added:  2008-12-01
 // Last changed: 2010-02-05
@@ -74,10 +74,6 @@ namespace dolfin
     static void number_entities(const Mesh& mesh, uint d);
 
   private:
-
-    // Compute cell partition
-    static void compute_partition(std::vector<uint>& cell_partition,
-                                  const LocalMeshData& data);
 
     // Distribute cells
     static void distribute_cells(LocalMeshData& data,

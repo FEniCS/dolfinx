@@ -19,7 +19,6 @@ namespace dolfin
 
   class Mesh;
   class LocalMeshData;
-  class Graph;
   template <class T> class MeshFunction;
   class Function;
   class Sample;
@@ -46,7 +45,6 @@ namespace dolfin
     virtual void operator>> (MeshFunction<bool>& meshfunction);
     virtual void operator>> (Sample& sample);
     virtual void operator>> (Parameters& parameters);
-    virtual void operator>> (Graph& graph);
     virtual void operator>> (FunctionPlotData& data);
     virtual void operator>> (std::vector<int>& x);
     virtual void operator>> (std::vector<uint>& x);
@@ -70,7 +68,6 @@ namespace dolfin
     virtual void operator<< (const Function& u);
     virtual void operator<< (const Sample& sample);
     virtual void operator<< (const Parameters& parameters);
-    virtual void operator<< (const Graph& graph);
     virtual void operator<< (const FunctionPlotData& data);
     virtual void operator<< (const std::vector<int>& x);
     virtual void operator<< (const std::vector<uint>& x);

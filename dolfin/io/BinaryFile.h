@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2009-11-11
+// Last changed: 2010-02-10
 
 #ifndef __BINARY_FILE_H
 #define __BINARY_FILE_H
@@ -36,6 +36,9 @@ namespace dolfin
 
     //--- Input ---
 
+    /// Read array
+    void operator>> (std::vector<double>& values);
+
     /// Read vector
     void operator>> (GenericVector& vector);
 
@@ -43,6 +46,9 @@ namespace dolfin
     void operator>> (Mesh& mesh);
 
     //--- Output ---
+
+    /// Write array
+    void operator<< (const std::vector<double>& values);
 
     /// Write vector
     void operator<< (const GenericVector& vector);

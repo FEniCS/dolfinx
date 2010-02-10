@@ -82,6 +82,9 @@ namespace dolfin
     static void scatter(std::vector<std::vector<double> >& values, uint sending_process=0);
 
     /// Gather values, one from each process (wrapper for MPI_Allgather)
+    static std::vector<uint> gather(uint value);
+
+    /// Gather values, one from each process (wrapper for MPI_Allgather)
     static void gather(std::vector<uint>& values);
 
     /// Gather values, one from each process (wrapper for MPI_Allgather)

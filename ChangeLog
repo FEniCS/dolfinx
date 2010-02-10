@@ -1,3 +1,4 @@
+ - Improvements in time series class, recognizing old stored values
  - Add FacetCell class useful in algorithms iterating over boundary facets
  - Rename reconstruct --> extrapolate
  - Remove GTS dependency
