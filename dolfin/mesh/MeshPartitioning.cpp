@@ -74,8 +74,7 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 {
   // FIXME: Remove when finished testing new dual graph builder,
   cout << "Testing Graph" << endl;
-  Graph my_graph;
-  GraphBuilder::build(my_graph, mesh_data);
+  GraphBuilder::build(mesh_data);
   cout << "End graph test" << endl;
 
   // Compute cell partition

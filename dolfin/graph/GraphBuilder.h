@@ -29,18 +29,18 @@ namespace dolfin
   public:
 
     /// Build Graph of a mesh
-    static void build(Graph& graph, LocalMeshData& mesh_data);
+    static void build(LocalMeshData& mesh_data);
 
   private:
 
     static void compute_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
                                      uint num_cell_facets, uint num_facet_vertices,
-                                     std::vector<std::set<uint> >& graph_edges);
+                                     uint offset,
+                                     std::vector<std::set<uint> >& graph);
 
     static uint compute_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
                                      const std::vector<std::vector<uint> >& candidate_ghost_vertices,
-                                     const std::vector<uint>& candidate_ghost_local_indices,
-                                     const uint ghost_offset,
+                                     const std::vector<uint>& candidate_ghost_global_indices,
                                      uint num_cell_facets, uint num_facet_vertices,
                                      std::vector<std::set<uint> >& ghost_graph_edges,
                                      std::set<uint>& ghost_cells);

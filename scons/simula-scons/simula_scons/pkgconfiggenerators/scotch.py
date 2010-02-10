@@ -139,8 +139,8 @@ int main() {
     lib_dirs = ['', 'bin', 'lib']
     for lib_dir in lib_dirs:
         scotch_lib_dir = os.path.join(scotch_dir, lib_dir)
-        libscotch_static = os.path.join(scotch_lib_dir, 'libscotch.a')
-        libscotcherr_static = os.path.join(scotch_lib_dir, 'libscotcherr.a')
+        libscotch_static = os.path.join(scotch_lib_dir, 'libptscotch.a')
+        libscotcherr_static = os.path.join(scotch_lib_dir, 'libptscotcherr.a')
 
         # test that we can link a binary using scotch static libs:
         cmdstr = "%s -o %s %s %s %s" % \
@@ -162,7 +162,7 @@ int main() {
     if runFailed or not cmdoutput == "success":
         raise UnableToRunException("SCOTCH", errormsg=cmdoutput)
 
-    return "-L%s -lscotch -lscotcherr" % scotch_lib_dir
+    return "-L%s -lptscotch -lptscotcherr" % scotch_lib_dir
 
 def pkgTests(forceCompiler=None, sconsEnv=None,
              cflags=None, libs=None, version=None, **kwargs):
