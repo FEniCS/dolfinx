@@ -18,6 +18,14 @@
 #include "Graph.h"
 #include "GraphBuilder.h"
 
+
+#ifdef HAS_SCOTCH
+extern "C"
+{
+#include <ptscotch.h>
+}
+#endif
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -255,70 +263,137 @@ void GraphBuilder::compute_scotch_data(const std::vector<std::set<uint> >& graph
                                const std::set<uint>& ghost_cells,
                                uint num_global_vertices)
 {
+#ifdef HAS_SCOTCH
+
   // C-style array indexing
-  //const uint baseval = 0;
+  const SCOTCH_Num baseval = 0;
 
   // Local data ---------------------------------
 
   // Number of local graph vertices (cells)
-  const uint vertlocnbr = graph.size();
-  cout << "Number of local verticies: " << vertlocnbr << endl;
+  const SCOTCH_Num vertlocnbr = graph.size();
 
   // Number of local + ghost graph vertices (cells)
   const uint vertgstnbr = graph.size() + ghost_cells.size();
-  cout << "Number of edges: " << vertgstnbr << endl;
 
   // Number of local edges + edges connecting to ghost vertices
-  uint edgelocnbr = 0;  
+  SCOTCH_Num edgelocnbr = 0;  
   std::vector<std::set<uint> >::const_iterator vertex;
   for(vertex = graph.begin(); vertex != graph.end(); ++vertex)
     edgelocnbr += vertex->size();
-  cout << "Number of local edges: " << edgelocnbr << endl;
 
   // Local graph layout
 
-  std::vector<uint> vertloctab;
-  std::vector<uint> edgeloctab;
+  std::vector<SCOTCH_Num> vertloctab;
+  std::vector<SCOTCH_Num> edgeloctab;
   vertloctab.push_back(0);
   for (uint i = 0; i < graph.size(); ++i)
   {
     const std::set<uint>& vertices = graph[i];
     vertloctab.push_back(vertloctab[i] + vertices.size());
     edgeloctab.insert( edgeloctab.end(), vertices.begin(), vertices.end() );
+    cout << "Num e " << vertices.size() << "  " << edgeloctab.size() <<  endl;
   }
 
   // Global data ---------------------------------
 
   // Total  (global) number of vertices (cells) in the graph
-  const uint vertglbnbr = num_global_vertices;
-  cout << "Number of global cells: " << vertglbnbr << endl;
+  const SCOTCH_Num vertglbnbr = num_global_vertices;
 
   // Total (global) number of edges (cell-cell connections) in the graph
   std::vector<uint> num_global_edges = MPI::gather(edgelocnbr);
-  const uint edgeglbnbr = std::accumulate(num_global_edges.begin(), num_global_edges.end(), 0);
-  cout << "**Number of global edges: " << edgeglbnbr << endl;
+  const SCOTCH_Num edgeglbnbr = std::accumulate(num_global_edges.begin(), num_global_edges.end(), 0);
 
   // Number of processes
-  const uint procglbnbr = MPI::num_processes();
-  cout << "Number of processes: " << procglbnbr << endl;
+  const SCOTCH_Num procglbnbr = MPI::num_processes();
 
   // Array containing the number of local vertices (cells) on each process
-  std::vector<uint> proccnttab = MPI::gather(graph.size());
-  for (uint i = 0; i < MPI::process_number(); ++i)
-    cout << "Testing proccnttab " << proccnttab[i] << endl;
-
-  // Array containing . . . . 
-  std::vector<uint> procvrttab(MPI::num_processes() + 1);
+  std::vector<uint> tmp = MPI::gather(graph.size());
+  std::vector<SCOTCH_Num> proccnttab(MPI::num_processes());
+  for (uint i = 0; i < MPI::num_processes(); ++i)
+    proccnttab[i] = tmp[i];
+ 
+ // Array containing . . . . 
+  std::vector<SCOTCH_Num> procvrttab(MPI::num_processes() + 1);
   for (uint i = 0; i < MPI::num_processes(); ++i)
     procvrttab[i] = std::accumulate(proccnttab.begin(), proccnttab.begin() + i, 0);
   procvrttab[MPI::num_processes()] = procvrttab[MPI::num_processes()-1] + proccnttab[MPI::num_processes()-1];
 
   // Perform sanity check
   for (uint i = 1; i <= MPI::process_number(); ++i)
-  {
-    cout << "Testing procvrttab: " << proccnttab[i-1] << "  " << procvrttab[i-1] << "  " << procvrttab[i] << endl;
     assert( procvrttab[i] >= (procvrttab[i-1] + proccnttab[i-1]) );
-  }
 
+  //------ Print global data
+  cout << "Num vertices      : " << vertglbnbr << endl;
+  cout << "Num edges         : " << edgeglbnbr << endl;
+  cout << "Num of processes  : " << procglbnbr << endl;
+  cout << "Vert per processes: " << endl;
+  for (uint i = 0; i < proccnttab.size(); ++i)
+    cout << proccnttab[i] << " ";
+  cout << endl;
+  cout << "Offests           : " << endl;
+  for (uint i = 0; i < procvrttab.size(); ++i)
+    cout << procvrttab[i] << "  ";
+  cout << endl;
+
+  //------ Print local data
+  cout << "(*) Num vertices        : " << vertlocnbr << endl;
+  cout << "(*) Num vert (inc ghost): " << vertgstnbr << endl;
+  cout << "(*) Num edges           : " << edgelocnbr << endl;
+  cout << "(*) Vertloctab          : " << endl;
+  for (uint i = 0; i < vertloctab.size(); ++i)
+    cout << vertloctab[i] << " " ;
+  cout << endl;
+  cout << "edgeloctab           : " << endl;
+  for (uint i = 0; i < edgeloctab.size(); ++i)
+    cout << edgeloctab[i] << " ";
+  cout << endl;
+
+  // Create SCOTCH graph
+  SCOTCH_Dgraph dgrafdat;
+
+  // Construct communicator (copy of MPI_COMM_WORLD)
+  MPICommunicator comm;
+
+  if (SCOTCH_dgraphInit(&dgrafdat, *comm) != 0)
+    error("Error initialising SCOTCH graph.");
+
+  // Build SCOTCH Dgraph
+  int err= SCOTCH_dgraphBuild(&dgrafdat, baseval, vertlocnbr, vertlocnbr,
+                              &vertloctab[0], NULL, NULL, NULL,
+                              edgelocnbr, edgelocnbr,
+                              &edgeloctab[0], NULL, NULL);
+  if (err != 0)
+    error("Error buidling SCOTCH graph.");
+
+  //err = SCOTCH_dgraphGhst(&dgrafdat);
+  //if (err != 0)
+  //  error("Error buidling SCOTCH ghost points.");
+
+  // Check graph 
+  if (SCOTCH_dgraphCheck(&dgrafdat))
+    warning("Consistency error in SCOTCH graph.");
+
+  // Number of partitions
+  SCOTCH_Num npart = MPI::num_processes();
+
+  // Partitioning strategy
+  SCOTCH_Strat strat;
+  SCOTCH_stratInit(&strat);
+
+  // Hold partition data
+  std::vector<SCOTCH_Num> partloctab(vertlocnbr);
+
+  cout << "Start partitioning " << endl;
+  err = SCOTCH_dgraphPart(&dgrafdat, npart, &strat, &partloctab[0]);
+  if (err)
+    warning("Error during partitioning.");
+
+  cout << "Partitions: " << endl;
+  for (uint i = 0; i < partloctab.size(); ++i)
+    cout << partloctab[i] << endl;
+#else
+  error("SCOTCH (parallel version) required.");
+#endif
 }
 //-----------------------------------------------------------------------------
