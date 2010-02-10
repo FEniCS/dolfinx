@@ -37,7 +37,7 @@ void BinaryFile::operator>> (std::vector<double>& values)
   uint n;
   file.read((char*) &n, sizeof(uint));
 
-  dolfin_debug2("Reading %d vector values in binary from %s", n, filename.c_str());
+  dolfin_debug2("Reading %d array value(s) in binary from %s", n, filename.c_str());
 
   // Read vector values
   values.resize(n);
@@ -55,7 +55,7 @@ void BinaryFile::operator>> (GenericVector& vector)
   uint n;
   file.read((char*) &n, sizeof(uint));
 
-  dolfin_debug2("Reading %d vector values in binary from %s", n, filename.c_str());
+  dolfin_debug2("Reading %d vector value(s) in binary from %s", n, filename.c_str());
 
   // Read vector values
   boost::scoped_array<double> values(new double[n]);
