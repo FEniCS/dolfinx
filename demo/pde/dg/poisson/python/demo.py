@@ -58,8 +58,7 @@ problem = VariationalProblem(a, L)
 u = problem.solve()
 
 # Project solution to piecewise linears
-P1 = FunctionSpace(mesh, "CG", 1)
-u_proj = project(u, P1)
+u_proj = project(u)
 
 # Save solution to file
 file = File("poisson.pvd")

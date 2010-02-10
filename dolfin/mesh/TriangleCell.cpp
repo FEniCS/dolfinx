@@ -130,23 +130,23 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   const double* x2 = geometry.x(vertices[2]);
 
   if ( geometry.dim() == 2 )
-    {
-      // Compute area of triangle embedded in R^2
-      double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
+  {
+    // Compute area of triangle embedded in R^2
+    double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
 
-      // Formula for volume from http://mathworld.wolfram.com
-      return v2 = 0.5 * std::abs(v2);
-    }
+    // Formula for volume from http://mathworld.wolfram.com
+    return v2 = 0.5 * std::abs(v2);
+  }
   else if ( geometry.dim() == 3 )
-    {
-      // Compute area of triangle embedded in R^3
-      double v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
-      double v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
-      double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
+  {
+    // Compute area of triangle embedded in R^3
+    double v0 = (x0[1]*x1[2] + x0[2]*x2[1] + x1[1]*x2[2]) - (x2[1]*x1[2] + x2[2]*x0[1] + x1[1]*x0[2]);
+    double v1 = (x0[2]*x1[0] + x0[0]*x2[2] + x1[2]*x2[0]) - (x2[2]*x1[0] + x2[0]*x0[2] + x1[2]*x0[0]);
+    double v2 = (x0[0]*x1[1] + x0[1]*x2[0] + x1[0]*x2[1]) - (x2[0]*x1[1] + x2[1]*x0[0] + x1[0]*x0[1]);
 
-      // Formula for volume from http://mathworld.wolfram.com
-      return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
-    }
+    // Formula for volume from http://mathworld.wolfram.com
+    return  0.5 * sqrt(v0*v0 + v1*v1 + v2*v2);
+  }
   else
     error("Only know how to volume (area) of a triangle when embedded in R^2 or R^3.");
 

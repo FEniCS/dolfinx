@@ -9,7 +9,7 @@
 // Modified by Kent-Andre Mardal, 2009
 // 
 // First added:  2007-08-16
-// Last changed: 2009-10-07
+// Last changed: 2009-12-10
 
 // ===========================================================================
 // SWIG directives for the DOLFIN function kernel module (pre)
@@ -53,7 +53,7 @@ namespace dolfin
 // We need to rename the method in the base class as the Python callback ends
 // up here.
 //-----------------------------------------------------------------------------
-%rename(eval_data) dolfin::GenericFunction::eval(double* values, const Data& data) const;
+%rename(eval_data) dolfin::GenericFunction::eval(Array<double>& values, const Data& data) const;
 
 //-----------------------------------------------------------------------------
 // Ignore the Data.x, pointer to the coordinates in the Data object
@@ -61,6 +61,7 @@ namespace dolfin
 %ignore dolfin::Data::x;
 %rename (x) dolfin::Data::x_();
 %ignore dolfin::eval(double* values, const double* x) const;
+%ignore dolfin::Expression::eval(double* values, const std::vector<double>& x) const;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Constant
@@ -117,12 +118,12 @@ namespace dolfin
 %feature("novaluewrapper") std::vector<double>; 
 
 //-----------------------------------------------------------------------------
-// Instantiate a dummy std::vector<dolfin::uint> so value wrapper is not used
+// Instantiate a dummy std::vector<double> so value wrapper is not used
 //-----------------------------------------------------------------------------
 %template () std::vector<double>; 
 
 //-----------------------------------------------------------------------------
-// Typemap for std::vector<dolfin::uint> values
+// Typemap for std::vector<double> values
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) std::vector<double> values
 {
@@ -161,40 +162,4 @@ namespace dolfin
 %feature("nodirector") dolfin::Expression::gather;
 %feature("nodirector") dolfin::Expression::value_dimension;
 %feature("nodirector") dolfin::Expression::value_rank;
-
-//-----------------------------------------------------------------------------
-// Director typemap for values in Expression
-//-----------------------------------------------------------------------------
-%typemap(directorin) double* values {
-  {
-    // Compute size of value (number of entries in tensor value)
-    dolfin::uint size = 1;
-    for (dolfin::uint i = 0; i < this->value_rank(); i++)
-      size *= this->value_dimension(i);
-
-    npy_intp dims[1] = {size};
-    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>($1_name));
-  }
-}
-
-//-----------------------------------------------------------------------------
-// Director typemap for coordinates in Expression
-//-----------------------------------------------------------------------------
-//%typemap(directorin) const double* x {
-//  {
-//    // Compute size of x
-//    npy_intp dims[1] = {this->geometric_dimension()};
-//    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(const_cast<double*>($1_name)));
-//  }
-//}
-
-// FIXME: Is there a better way to map a std::vector to a numpy array?
-%typemap(directorin) const std::vector<double>& x {
-  {
-    // Compute size of x
-    npy_intp dims[1] = {$1_name.size()};
-    $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, 
-            reinterpret_cast<char *>( &(const_cast<std::vector<double>& >($1_name))[0] ));
-  }
-}
 

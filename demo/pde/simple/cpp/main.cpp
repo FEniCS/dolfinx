@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-06-15
-// Last changed: 2009-10-05
+// Last changed: 2010-01-27
 //
 // This demo program solves the reaction-diffusion equation
 //
@@ -23,7 +23,7 @@ public:
 
   Source() {}
 
-  void eval(double* values, const std::vector<double>& x) const
+  void eval(Array<double>& values, const Array<double>& x) const
   {
     values[0] = sin(x[0])*sin(x[1]);
   }

@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2005-2008.
 //
 // First added:  2005
-// Last changed: 2009-10-05
+// Last changed: 2010-01-27
 //
 // This demo illustrates how to use of DOLFIN for solving a nonlinear
 // PDE, in this case a nonlinear variant of Poisson's equation,
@@ -36,7 +36,7 @@ public:
 
   Source() : Expression() {}
 
-  void eval(double* values, const std::vector<double>& x) const
+  void eval(Array<double>& values, const Array<double>& x) const
   {
     values[0] = x[0]*sin(x[1]);
   }

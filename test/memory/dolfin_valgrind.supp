@@ -1455,8 +1455,6 @@
    Memcheck:Leak
    fun:calloc
    fun:g_malloc0
-   fun:gts_object_new
-   fun:gts_bbox_new
 }
 {
    <insert a suppression name here>
@@ -2227,13 +2225,6 @@
 #   Memcheck:Leak
 #   fun:calloc
 #   fun:g_malloc0
-#   fun:gts_object_class_new
-#   fun:gts_object_class
-#   fun:gts_bbox_class
-#   fun:_ZN6dolfin12GTSInterface10create_boxERKNS_4CellE
-#   fun:_ZN6dolfin12GTSInterface13buildCellTreeEv
-#   fun:_ZN6dolfin12GTSInterfaceC1ERKNS_4MeshE
-#   fun:_ZN6dolfin20IntersectionDetectorC1ERKNS_4MeshE
 #   fun:_ZNK6dolfin13FunctionSpace4evalEPdPKdRKNS_8FunctionE
 #   fun:_ZNK6dolfin8Function4evalEPdPKd
 #   fun:main
@@ -2244,14 +2235,6 @@
 #   Memcheck:Leak
 #   fun:calloc
 #   fun:g_malloc0
-#   fun:gts_object_class_new
-#   fun:gts_object_class
-#   fun:gts_bbox_class
-#   fun:_ZN6dolfin12GTSInterface10create_boxERKNS_4CellE
-#   fun:_ZN6dolfin12GTSInterface13buildCellTreeEv
-#   fun:_ZN6dolfin12GTSInterfaceC1ERKNS_4MeshE
-#   fun:_ZN6dolfin20IntersectionDetectorC1ERKNS_4MeshE
-#   fun:_ZN6dolfin4Mesh12intersectionERS0_RSt6vectorIjSaIjEEb
 #   fun:main
 #}
 

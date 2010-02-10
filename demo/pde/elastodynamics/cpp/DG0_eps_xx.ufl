@@ -14,7 +14,7 @@ constant = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 # displacement, velocity 
 v   = TestFunction(constant)
 eps = TrialFunction(constant)
-u   = Function(vector)
+u   = Coefficient(vector)
 
 a = v*eps*dx
 L = v*u[0].dx(0)*dx

@@ -5,8 +5,8 @@ import unittest
 import os
 import tempfile
 
-from dolfin import meshconvert
-from dolfin.meshconvert import DataHandler
+from dolfin.mesh import meshconvert
+from dolfin.mesh.meshconvert import DataHandler
 
 class TestCase(_TestCase):
     def _get_tempfname(self, suffix=None):

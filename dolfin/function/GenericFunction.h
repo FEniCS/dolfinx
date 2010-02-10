@@ -4,12 +4,13 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-11
+// Last changed: 2009-12-11
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
 
 #include <ufc.h>
+#include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
 #include "Data.h"
 
@@ -50,7 +51,7 @@ namespace dolfin
     virtual uint value_dimension(uint i) const = 0;
 
     /// Evaluate function for given data
-    virtual void eval(double* values, const Data& data) const = 0;
+    virtual void eval(Array<double>& values, const Data& data) const = 0;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,

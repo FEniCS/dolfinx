@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-03
-// Last changed: 2009-04-01
+// Last changed: 2010-01-04
 
 #ifndef __XMLFILE_H
 #define __XMLFILE_H
@@ -120,7 +120,7 @@ namespace dolfin
 
     void validate(std::string filename);
 
-    void write() {}
+    void write();
 
     void parse();
 
@@ -166,11 +166,12 @@ namespace dolfin
       open_file();
       XMLArray::write(x, *outstream, 1);
       close_file();
-    } 
+    }
 
     std::stack<XMLHandler*> handlers;
     xmlSAXHandler* sax;
     std::ostream* outstream;
+    bool gzip;
 
     void start_element(const xmlChar *name, const xmlChar **attrs);
     void end_element  (const xmlChar *name);

@@ -30,6 +30,7 @@ import_array();
 // Global typemaps
 %include "dolfin/swig/typemaps.i"
 %include "dolfin/swig/numpy_typemaps.i"
+%include "dolfin/swig/array_typemaps.i"
 %include "dolfin/swig/std_vector_typemaps.i"
 %include "dolfin/swig/std_set_typemaps.i"
 

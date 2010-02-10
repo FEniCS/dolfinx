@@ -15,8 +15,8 @@ constant = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 v   = TestFunction(scalar)
 phi = TrialFunction(scalar)
 
-u = Function(vector)
-f = Function(scalar)
+u = Coefficient(vector)
+f = Coefficient(scalar)
 h = Constant(triangle)
 h_avg = (h('+') + h('-'))/2
 n = scalar.cell().n

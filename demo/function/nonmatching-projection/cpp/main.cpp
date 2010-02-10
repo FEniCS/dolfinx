@@ -5,7 +5,7 @@
 // Last changed:
 
 //
-// This program demonstrates the L2 projection of a function onto a 
+// This program demonstrates the L2 projection of a function onto a
 // non-matching mesh.
 //
 
@@ -21,9 +21,7 @@ class MyExpression : public Expression
 {
 public:
 
-  MyExpression() : Expression() {}
-
-  void eval(double* values, const std::vector<double>& x) const
+  void eval(Array<double>& values, const Array<double>& x) const
   {
     values[0] = sin(10.0*x[0])*sin(10.0*x[1]);
   }
@@ -52,7 +50,7 @@ int main()
   // Create projection problem
   VariationalProblem projection(a, L);
 
-  // Project f0 into V1 
+  // Project f0 into V1
   Function f1(V1);
   projection.solve(f1);
 

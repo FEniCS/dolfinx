@@ -6,10 +6,10 @@
 // Modified by Garth N. Wells, 2007.
 // Modified by Niclas Jansson, 2008.
 // Modified by Kristoffer Selim, 2008.
-// Modified by Andre Massing, 2009.
+// Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2010-01-27
+// Last changed: 2010-02-09
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -27,12 +27,13 @@
 
 namespace dolfin
 {
-   
+
   template <class T> class MeshFunction;
-  class IntersectionOperator;
   class Function;
   class BoundaryMesh;
   class XMLMesh;
+  class IntersectionOperator;
+
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
   ///
@@ -211,7 +212,7 @@ namespace dolfin
     ///reasons, to avoid to sort out duplicates later on.
     void all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const;
 
-    ///Computes only the first id  of the entity, which contains the point. Returns -1 if no cell is intersected. 
+    ///Computes only the first id  of the entity, which contains the point. Returns -1 if no cell is intersected.
     ///@internal @remark This makes the function evaluation significantly faster.
     int any_intersected_entity(const Point & point) const;
 

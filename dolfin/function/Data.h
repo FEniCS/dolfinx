@@ -2,13 +2,14 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-11
-// Last changed: 2009-10-11
+// Last changed: 2010-01-27
 
 #ifndef __DATA_H
 #define __DATA_H
 
 #include <vector>
 #include <ufc.h>
+#include <dolfin/common/Array.h>
 #include <dolfin/mesh/Point.h>
 
 namespace dolfin
@@ -26,9 +27,6 @@ namespace dolfin
 
     /// Constructor
     Data();
-
-    /// Constructor
-    Data(uint geometric_dim);
 
     /// Destructor
     ~Data();
@@ -52,16 +50,19 @@ namespace dolfin
     bool on_facet() const;
 
     /// The coordinates
-    std::vector<double> x;
-
-    /// Set geometric dimensions
-    void set_geometric_dim(uint dim);
+    const Array<double> x;
 
     /// Set cell and facet data
     void set(const Cell& dolfin_cell, const ufc::cell& ufc_cell, int local_facet);
 
     /// Set UFC cell and coordinate
     void set(const ufc::cell& ufc_cell, const double* x);
+
+    // Set coordinate
+    void set(uint gdim, const double* x)
+    {
+      const_cast<Array<double>*>(&(this->x))->update(gdim, const_cast<double*>(x));
+    }
 
     /// Clear all cell data
     void clear();
@@ -70,6 +71,7 @@ namespace dolfin
 
     // Friends
     friend class GenericFunction;
+    friend class Expression;
 
     // FIXME: Remove this
     friend class Function;

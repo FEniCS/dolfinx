@@ -1,3 +1,26 @@
+ - Rename reconstruct --> extrapolate
+ - Remove GTS dependency
+0.9.6 [2010-02-03]
+ - Simplify access to form compiler parameters, now integrated with global parameters
+ - Add DofMap member function to return set of dofs
+ - Fix memory leak in the LA interface
+ - Do not import cos, sin, exp from NumPy to avoid clash with UFL functions
+ - Fix bug in MTL4Vector assignment
+ - Remove sandbox (moved to separate repository)
+ - Remove matrix factory (dolfin/mf)
+ - Update .ufl files for changes in UFL
+ - Added swig/import/foo.i for easy type importing from dolfin modules
+ - Allow optional argument cell when creating Expression
+ - Change name of Expression argument cpparg --> cppcode
+ - Add simple constructor (dim0, dim1) for C++ matrix Expressions
+ - Add example demonstrating the use of cpparg (C++ code in Python)
+ - Add least squares solver for dense systems (wrapper for DGELS)
+ - New linear algebra wrappers for LAPACK matrices and vectors
+ - Experimental support for reconstruction of higher order functions
+ - Modified interface for eval() and inside() in C++ using Array
+ - Introduce new Array class for simplified wrapping of arrays in SWIG
+ - Improved functionality for intersection detection
+ - Reimplementation of intersection detection using CGAL
 0.9.5 [2009-12-03]
  - Set appropriate parameters for symmetric eigenvalue problems with SLEPc
  - Fix for performance regression in recent uBLAS releases

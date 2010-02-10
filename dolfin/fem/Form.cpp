@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2007-12-10
-// Last changed: 2009-10-06
+// Last changed: 2010-02-01
 
 #include <string>
 #include <dolfin/common/NoDeleter.h>
@@ -196,12 +196,12 @@ void Form::check() const
 {
   // Check that the number of argument function spaces is correct
   if (_ufc_form->rank() != _function_spaces.size())
-    error("Form expects %d FunctionSpaces, only %d provided.",
+    error("Form expects %d FunctionSpace(s), %d provided.",
           _ufc_form->rank(), _function_spaces.size());
 
   // Check that the number of coefficient function spaces is correct
   if (_ufc_form->num_coefficients() != _coefficients.size())
-    error("Form expects %d coefficient functions, only %d provided.",
+    error("Form expects %d coefficient function(s), %d provided.",
           _ufc_form->num_coefficients(), _coefficients.size());
 
   // Check argument function spaces
@@ -210,8 +210,11 @@ void Form::check() const
     std::auto_ptr<ufc::finite_element> element(_ufc_form->create_finite_element(i));
     assert(element.get());
     if (element->signature() != _function_spaces[i]->element().signature())
-      error("Wrong type of function space for argument %d, form expects\n%s\nbut we got\n%s\n...",
-        i, element->signature(), _function_spaces[i]->element().signature().c_str());
+    {
+      info("Expected element: %s", element->signature());
+      info("Input element:    %s", _function_spaces[i]->element().signature().c_str());
+      error("Wrong type of function space for argument %d.", i);
+    }
   }
 
   // Unable to check function spaces for coefficients (only works for Functions)

@@ -15,8 +15,8 @@ ME = P1 + P1
 q, v  = TestFunctions(ME)
 du    = TrialFunction(ME)
 
-u   = Function(ME)  # current solution 
-u0  = Function(ME)  # solution from previous converged step 
+u   = Coefficient(ME)  # current solution 
+u0  = Coefficient(ME)  # solution from previous converged step 
 
 # Split mixed functions
 dk, dc = split(du) 

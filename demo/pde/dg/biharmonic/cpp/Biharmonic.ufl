@@ -17,7 +17,7 @@ element = FiniteElement("Lagrange", triangle, 2)
 # Test and trial functions
 v = TestFunction(element)
 u = TrialFunction(element)
-f = Function(element)
+f = Coefficient(element)
 
 # Normal component, mesh size and right-hand side
 n  = VectorConstant(triangle)

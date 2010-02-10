@@ -145,7 +145,7 @@ double MTL4Vector::inner(const GenericVector& v) const
 {
   // Developers note: The literal template arguments refers to the number
   // of levels of loop unrolling that is done at compile time.
-  return mtl::dot<6>(x, v.down_cast<MTL4Vector>().vec() );
+  return mtl::dot<6>(x, v.down_cast<MTL4Vector>().vec());
 }
 //-----------------------------------------------------------------------------
 void MTL4Vector::axpy(double a, const GenericVector& v)
@@ -162,9 +162,9 @@ LinearAlgebraFactory& MTL4Vector::factory() const
   return MTL4Factory::instance();
 }
 //-----------------------------------------------------------------------------
-const MTL4Vector& MTL4Vector::operator= (const GenericVector& v)
+const GenericVector& MTL4Vector::operator= (const GenericVector& v)
 {
-  x = v.down_cast<MTL4Vector>().vec();
+  *this = v.down_cast<MTL4Vector>();
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -199,6 +199,7 @@ const MTL4Vector& MTL4Vector::operator*= (const GenericVector& y)
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator= (const MTL4Vector& v)
 {
+  resize(v.size());
   x = v.vec();
   return *this;
 }

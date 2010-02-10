@@ -147,6 +147,10 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
   if ( topology.size(d1) == 0 )
     compute_entities(mesh, d1);
 
+  // Check is mesh has entities
+  if (topology.size(d0) == 0 && topology.size(d1) == 0)
+    return;
+
   // Check if connectivity still needs to be computed
   if ( connectivity.size() > 0 )
     return;

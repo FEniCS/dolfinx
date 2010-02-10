@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-11
-// Last changed: 2009-12-02
+// Last changed: 2010-01-26
 
 #include <dolfin/mesh/Cell.h>
 #include "Data.h"
@@ -11,13 +11,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Data::Data()
-  : x(0), _dolfin_cell(0), _ufc_cell(0), _facet(-1)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Data::Data(uint geometric_dim)
-  : x(geometric_dim), _dolfin_cell(0), _ufc_cell(0), _facet(-1)
+  : x(0, 0), _dolfin_cell(0), _ufc_cell(0), _facet(-1)
 {
   // Do nothing
 }
@@ -67,14 +61,9 @@ bool Data::on_facet() const
   return _facet >= 0;
 }
 //-----------------------------------------------------------------------------
-void Data::set_geometric_dim(uint dim)
-{
-  x.resize(dim);
-}
-//-----------------------------------------------------------------------------
 void Data::set(const Cell& dolfin_cell,
-                  const ufc::cell& ufc_cell,
-                  int local_facet)
+               const ufc::cell& ufc_cell,
+               int local_facet)
 {
   _dolfin_cell = &dolfin_cell;
   _ufc_cell = &ufc_cell;
@@ -84,14 +73,14 @@ void Data::set(const Cell& dolfin_cell,
 void Data::set(const ufc::cell& ufc_cell, const double* x)
 {
   _ufc_cell = &ufc_cell;
-  this->x.resize(ufc_cell.geometric_dimension);
-  this->x.assign(x, x + this->x.size());
-  //this->x = x;
+
+  // Write comment about const-cast here
+  const_cast<Array<double>*>(&(this->x))->update(ufc_cell.geometric_dimension, const_cast<double*>(x));
 }
 //-----------------------------------------------------------------------------
 void Data::clear()
 {
-  x.clear();
+  //x.clear();
   _dolfin_cell = 0;
   _ufc_cell = 0;
   _facet = -1;

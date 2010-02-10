@@ -8,5 +8,5 @@
 
 element = FiniteElement("Lagrange", "triangle", 2)
 
-v = Function(element)
+v = Coefficient(element)
 M = (v*v + dot(grad(v), grad(v)))*dx

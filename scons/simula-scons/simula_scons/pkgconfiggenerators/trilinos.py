@@ -66,22 +66,23 @@ LD_LIBRARY_PATH/DYLD_LIBRARY_PATH as well.
 
     trilinos_version = 6
     try:
-        import PyTrilinos.Epetra
-        import PyTrilinos.ML
-        import PyTrilinos.AztecOO
-
-        epetra_version = float(PyTrilinos.Epetra.__version__)
-        if hasattr(PyTrilinos.ML, 'VERSION'):
-            ml_version = float(PyTrilinos.ML.VERSION)
-        elif hasattr(PyTrilinos.ML, 'PACKAGE_VERSION'):
-            ml_version = float(PyTrilinos.ML.PACKAGE_VERSION)
-        else:
-            raise UnableToXXXException("Unable to figure out the version of ML")
-        aztecoo_version = float(PyTrilinos.AztecOO.AztecOO_Version().split()[2])
-
+        import PyTrilinos
+        trilinos_version = PyTrilinos.version().split()[2]
+    except:
         try:
-            trilinos_version = PyTrilinos.version().split()[2]
-        except:
+            import PyTrilinos.Epetra
+            import PyTrilinos.ML
+            import PyTrilinos.AztecOO
+
+            epetra_version = float(PyTrilinos.Epetra.__version__)
+            if hasattr(PyTrilinos.ML, 'VERSION'):
+                ml_version = float(PyTrilinos.ML.VERSION)
+            elif hasattr(PyTrilinos.ML, 'PACKAGE_VERSION'):
+                ml_version = float(PyTrilinos.ML.PACKAGE_VERSION)
+            else:
+                raise UnableToXXXException("Unable to figure out the version of ML")
+            aztecoo_version = float(PyTrilinos.AztecOO.AztecOO_Version().split()[2])
+
             if epetra_version >= 3.6 and ml_version >= 6.1 and \
                    aztecoo_version >= 3.6:
                 trilinos_version = 8
@@ -90,9 +91,9 @@ LD_LIBRARY_PATH/DYLD_LIBRARY_PATH as well.
                 trilinos_version = 7
             else:
                 trilinos_version = 6
-    except:
-        # Unable to load PyTrilinos, assume v.6 of trilinos
-        pass
+        except:
+            # Unable to load PyTrilinos, assume v.6 of trilinos
+            pass
     
     return trilinos_version
 
@@ -189,7 +190,7 @@ printf("-lml\n");
             os.path.exists(os.path.join(libs_dir, "libml.so"))) and \
            (os.path.exists(os.path.join(libs_dir, "libtrilinos_ml.a")) or \
             os.path.exists(os.path.join(libs_dir, "libtrilinos_ml.so"))):
-        libs_str = libs_str.replace('-l', '-llibtrilinos_')
+        libs_str = libs_str.replace('-l', '-ltrilinos_')
     
     remove_cppfile("trilinos_config_test.cpp", execfile=True)
 

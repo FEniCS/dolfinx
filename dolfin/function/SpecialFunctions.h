@@ -11,6 +11,7 @@
 #ifndef __SPECIAL_FUNCTIONS_H
 #define __SPECIAL_FUNCTIONS_H
 
+#include "dolfin/common/Array.h"
 #include "Expression.h"
 
 namespace dolfin
@@ -27,7 +28,7 @@ namespace dolfin
     MeshCoordinates(const Mesh& mesh);
 
     /// Evaluate function
-    void eval(double* values, const Data& data) const;
+    void eval(Array<double>& values, const Data& data) const;
 
   private:
 
@@ -45,7 +46,7 @@ namespace dolfin
     CellSize(const Mesh& mesh);
 
     /// Evaluate function
-    void eval(double* values, const Data& data) const;
+    void eval(Array<double>& values, const Data& data) const;
 
   private:
 
@@ -63,7 +64,7 @@ namespace dolfin
     FacetArea(const Mesh& mesh);
 
     /// Evaluate function
-    void eval(double* values, const Data& data) const;
+    void eval(Array<double>& values, const Data& data) const;
 
   private:
 

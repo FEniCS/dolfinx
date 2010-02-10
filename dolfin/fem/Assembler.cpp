@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-10-08
+// Last changed: 2010-01-25
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -148,6 +148,9 @@ void Assembler::assemble_cells(GenericTensor& A,
         continue;
     }
 
+    // Skip integral is zero
+    if (!integral) continue;
+
     // Update to current cell
     ufc.update(*cell);
 
@@ -216,6 +219,9 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
       else
         continue;
     }
+
+    // Skip integral is zero
+    if (!integral) continue;
 
     // Get mesh cell to which mesh facet belongs (pick first, there is only one)
     assert(mesh_facet.num_entities(mesh.topology().dim()) == 1);
@@ -289,6 +295,9 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
         continue;
     }
 
+    // Skip integral is zero
+    if (!integral) continue;
+
     // Get cells incident with facet
     std::pair<const Cell, const Cell> cells = facet->adjacent_cells();
     const Cell& cell0 = cells.first;
@@ -325,4 +334,3 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-

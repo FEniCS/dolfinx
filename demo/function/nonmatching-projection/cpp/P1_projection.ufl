@@ -14,7 +14,7 @@ P1 = FiniteElement("Lagrange", "triangle", 1)
 
 v = TestFunction(P1)
 u = TrialFunction(P1)
-f = Function(P3)
+f = Coefficient(P3)
 
 a = v*u*dx
 L = v*f*dx

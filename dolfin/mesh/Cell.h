@@ -80,13 +80,8 @@ namespace dolfin
     CellIterator(const Mesh& mesh) : MeshEntityIterator(mesh, mesh.topology().dim()) {}
     CellIterator(const MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().topology().dim()) {}
 
-//    CellIterator(const MeshEntityIterator& it):
-
     inline Cell& operator*() { return *operator->(); }
     inline Cell* operator->() { return static_cast<Cell*>(MeshEntityIterator::operator->()); }
-
-    //Can I do this. That looks quite dirty :)
-//    CellIterator end_iterator() {return *static_cast<CellIterator*>(&MeshEntityIterator::end_iterator());}
 
   };
 

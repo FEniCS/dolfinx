@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-11-23
-// Last changed: 2009-10-05
+// Last changed: 2010-01-27
 //
 // This demo program solves Poisson's equation,
 //
@@ -36,9 +36,7 @@ class Source : public Expression
 {
 public:
 
-  Source() : Expression() {}
-
-  void eval(double* values, const std::vector<double>& x) const
+  void eval(Array<double>& values, const Array<double>& x) const
   {
     values[0] = 9.0*DOLFIN_PI*DOLFIN_PI*sin(3.0*DOLFIN_PI*x[0]);
   }
@@ -50,9 +48,7 @@ class Flux : public Expression
 {
 public:
 
-  Flux() : Expression() {}
-
-  void eval(double* values, const std::vector<double>& x) const
+  void eval(Array<double>& values, const Array<double>& x) const
   {
     values[0] = 3.0*DOLFIN_PI*cos(3.0*DOLFIN_PI*x[0]);
   }

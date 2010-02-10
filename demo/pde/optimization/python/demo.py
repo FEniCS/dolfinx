@@ -77,7 +77,7 @@ for i in range(100):
 plot(u,  title="Solution",  rescale=True)
 plot(z,  title="Adjoint",   rescale=True)
 plot(p,  title="Parameter", rescale=True)
-#plot(u0, title="Reference", rescale=True)
+plot(u0, mesh=mesh, title="Target", rescale=True)
 
 # Hold plot
 interactive()

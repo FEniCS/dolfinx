@@ -7,7 +7,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2009-12-04
+// Last changed: 2010-02-04
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -57,11 +57,13 @@ namespace dolfin
     Function(const FunctionSpace& V,
              GenericVector& x);
 
-    /// Create function on given function space with a given vector (shared data)
+    /// Create function on given function space with a given vector
+    /// (shared data)
     Function(boost::shared_ptr<const FunctionSpace> V,
              boost::shared_ptr<GenericVector> x);
 
-    /// Create function on given function space with a given vector (used by Python interface)
+    /// Create function on given function space with a given vector (used by
+    /// Python interface)
     Function(boost::shared_ptr<const FunctionSpace> V,
              GenericVector& x);
 
@@ -76,7 +78,8 @@ namespace dolfin
     /// Copy constructor
     Function(const Function& v);
 
-    /// Sub-function constructor with shallow copy of vector (used in Python interface)
+    /// Sub-function constructor with shallow copy of vector (used in Python
+    /// interface)
     Function(const Function& v, uint i);
 
     /// Destructor
@@ -110,16 +113,19 @@ namespace dolfin
     uint geometric_dimension() const;
 
     /// Evaluate function for given coordinate
-    void eval(double* values, const std::vector<double>& x) const;
+    void eval(Array<double>& values, const Array<double>& x) const;
 
     /// Evaluate function for given coordinate in given cell
-    void eval(double* values,
-              const std::vector<double>& x,
+    void eval(Array<double>& values,
+              const Array<double>& x,
               const Cell& dolfin_cell,
               const ufc::cell& ufc_cell) const;
 
     /// Interpolate function (possibly non-matching meshes)
     void interpolate(const GenericFunction& v);
+
+    /// Extrapolate function (from a possibly lower-degree function space)
+    void extrapolate(const Function& v);
 
     //--- Implementation of GenericFunction interface ---
 
@@ -130,7 +136,7 @@ namespace dolfin
     virtual uint value_dimension(uint i) const;
 
     /// Evaluate function for given data
-    virtual void eval(double* values, const Data& data) const;
+    virtual void eval(Array<double>& values, const Data& data) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,

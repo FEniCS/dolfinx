@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-11
+// Last changed: 2010-01-26
 
 #ifndef __EXPRESSION_H
 #define __EXPRESSION_H
@@ -41,6 +41,9 @@ namespace dolfin
     /// Create vector-valued expression with given dimension
     Expression(uint dim);
 
+    /// Create matrix-valued expression with given dimensions
+    Expression(uint dim0, uint dim1);
+
     /// Create tensor-valued expression with given shape
     Expression(std::vector<uint> value_shape);
 
@@ -59,7 +62,7 @@ namespace dolfin
     virtual uint value_dimension(uint i) const;
 
     /// Evaluate function for given data
-    virtual void eval(double* values, const Data& data) const;
+    virtual void eval(Array<double>& values, const Data& data) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
@@ -75,10 +78,7 @@ namespace dolfin
     //--- User-supplied callback for expression evaluation ---
 
     /// Evaluate expression, must be overloaded by user (simple version)
-    virtual void eval(double* values, const std::vector<double>& x) const;
-
-    /// Evaluate expression, must be overloaded by user (simple version)
-    virtual void eval(Array<double>& values, Array<const double>& x) const;
+    virtual void eval(Array<double>& values, const Array<double>& x) const;
 
   protected:
 

@@ -18,10 +18,12 @@
 #include <dolfin/la/EpetraMatrix.h>
 #include <dolfin/la/MTL4Matrix.h>
 #include <dolfin/la/STLMatrix.h>
+#include <dolfin/la/LAPACKMatrix.h>
 #include <dolfin/la/uBLASVector.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/EpetraVector.h>
 #include <dolfin/la/MTL4Vector.h>
+#include <dolfin/la/LAPACKVector.h>
 #include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/EpetraSparsityPattern.h>
@@ -42,6 +44,7 @@
 #include <dolfin/la/CholmodCholeskySolver.h>
 #include <dolfin/la/UmfpackLUSolver.h>
 #include <dolfin/la/uBLASILUPreconditioner.h>
+#include <dolfin/la/LAPACKSolvers.h>
 #include <dolfin/la/Vector.h>
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Scalar.h>

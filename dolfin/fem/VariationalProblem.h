@@ -111,6 +111,7 @@ namespace dolfin
       
       p.add("linear_solver", "direct");
       p.add("symmetric", false);
+      p.add("reset_jacobian", true);
       
       p.add(NewtonSolver::default_parameters());
       p.add(LUSolver::default_parameters());
@@ -144,9 +145,11 @@ namespace dolfin
     // True if problem is nonlinear
     bool nonlinear;
 
+    // Indicates whether the Jacobian matrix has been initialised
+    bool jacobian_initialised;
+
     // Newton solver
     NewtonSolver* _newton_solver;
-
   };
 
 }

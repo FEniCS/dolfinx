@@ -10,7 +10,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-01-21
-// Last changed: 2009-11-10
+// Last changed: 2010-01-29
 
 //=============================================================================
 // SWIG directives for the DOLFIN la kernel module (pre)
@@ -41,12 +41,19 @@
 %ignore dolfin::BlockVector::operator=;
 %ignore dolfin::SubVector::operator=;
 %ignore dolfin::SubMatrix::operator=;
+%ignore dolfin::SubMatrix::operator=;
 
 //-----------------------------------------------------------------------------
 // Modify the Scalar interface
 //-----------------------------------------------------------------------------
 %rename(__float__) dolfin::Scalar::operator double;
 %rename(assign) dolfin::Scalar::operator=;
+
+//-----------------------------------------------------------------------------
+// Modify the LAPACK interface
+//-----------------------------------------------------------------------------
+%ignore dolfin::LAPACKVector::operator[];
+%ignore dolfin::LAPACKMatrix::operator() (uint i, uint j) const;
 
 //-----------------------------------------------------------------------------
 // Typemaps for GenericMatrix get and set functions
@@ -121,6 +128,7 @@
 %ignore dolfin::GenericVector::get(double*, uint, const uint*) const;
 %ignore dolfin::GenericVector::set(const double* , uint m, const uint*);
 
+%newobject dolfin::Vector::copy;
 %newobject dolfin::GenericVector::copy;
 
 %ignore dolfin::GenericVector::data() const;
@@ -136,6 +144,7 @@
 %ignore dolfin::GenericMatrix::operator+=;
 %ignore dolfin::GenericMatrix::operator-=;
 
+%newobject dolfin::Matrix::copy;
 %newobject dolfin::GenericMatrix::copy;
 
 %ignore dolfin::GenericMatrix::data;
@@ -148,6 +157,8 @@
 //-----------------------------------------------------------------------------
 %rename(assign) dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>::operator=;
 %rename(assign) dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>::operator=;
+%newobject dolfin::uBLASMatrix<dolfin::ublas_sparse_matrix>::copy;
+%newobject dolfin::uBLASMatrix<dolfin::ublas_dense_matrix>::copy;
 
 LA_PRE_FACTORY(DefaultFactory)
 LA_PRE_FACTORY(uBLASFactory<dolfin::ublas_sparse_matrix>)
@@ -158,6 +169,8 @@ LA_PRE_FACTORY(uBLASFactory<dolfin::ublas_dense_matrix>)
 //-----------------------------------------------------------------------------
 #ifdef HAS_PETSC
 LA_PRE_FACTORY(PETScFactory)
+%newobject dolfin::PETScMatrix::copy;
+%newobject dolfin::PETScVector::copy;
 #endif
 
 //-----------------------------------------------------------------------------
@@ -165,6 +178,8 @@ LA_PRE_FACTORY(PETScFactory)
 //-----------------------------------------------------------------------------
 #ifdef HAS_TRILINOS
 LA_PRE_FACTORY(EpetraFactory)
+%newobject dolfin::EpetraMatrix::copy;
+%newobject dolfin::EpetraVector::copy;
 
 //-----------------------------------------------------------------------------
 // Create in and out typemaps for boost::shared_ptr<Foo>
@@ -178,6 +193,8 @@ FOREIGN_SHARED_PTR_TYPEMAPS(Epetra_FEVector)
 //-----------------------------------------------------------------------------
 #ifdef HAS_MTL4
 LA_PRE_FACTORY(MTL4Factory)
+%newobject dolfin::MTL4Vector::copy;
+%newobject dolfin::MTL4Matrix::copy;
 %ignore dolfin::MTL4Vector::vec;
 %ignore dolfin::MTL4Matrix::mat;
 #endif

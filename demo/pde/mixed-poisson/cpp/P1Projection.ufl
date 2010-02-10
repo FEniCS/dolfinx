@@ -13,7 +13,7 @@ P1  = VectorElement("Lagrange", "triangle", 1)
 
 w = TestFunction(P1)
 u = TrialFunction(P1)
-f = Function(BDM)
+f = Coefficient(BDM)
 
 a = dot(w, u)*dx
 L = dot(w, f)*dx

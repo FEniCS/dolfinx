@@ -13,7 +13,7 @@ element = FiniteElement("Lagrange", "tetrahedron", 1)
 
 v = TestFunction(element)
 u = TrialFunction(element)
-f = Function(element)
+f = Coefficient(element)
 
 a = dot(grad(v), grad(u))*dx + v*u*dx
 L = v*f*dx

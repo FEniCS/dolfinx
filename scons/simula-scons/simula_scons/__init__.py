@@ -1136,9 +1136,9 @@ def resolveModuleDependencies(modules, configuredPackages, packcfgObjs,
                 else:
                     found = False
                 if not found:
-                    not_found_packages.append("%s (version %s)" % (package,request_version))
+                    not_found_packages.append("%s (version >= %s)" % (package,request_version))
                 else:
-                    found_packages.append("%s (version %s)" % (package,request_version))
+                    found_packages.append("%s (version >= %s)" % (package,request_version))
         else:
             for package in mod.optDependencies:
                 found = False

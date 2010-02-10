@@ -36,7 +36,7 @@ public:
 
   Clamp() : Expression(3) {}
 
-  void eval(double* values, const std::vector<double>& x) const
+  void eval(Array<double>& values, const Array<double>& x) const
   {
     values[0] = 0.0;
     values[1] = 0.0;
@@ -52,7 +52,7 @@ public:
 
   Rotation() : Expression(3) {}
 
-  void eval(double* values, const std::vector<double>& x) const
+  void eval(Array<double>& values, const Array<double>& x) const
   {
     // Center of rotation
     double y0 = 0.5;

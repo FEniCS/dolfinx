@@ -27,7 +27,7 @@ env.ARGUMENTS = ARGUMENTS
 env["projectname"] = "dolfin"
 
 # Set version
-env["PACKAGE_VERSION"] = "0.9.5"
+env["PACKAGE_VERSION"] = "0.9.6"
 
 scons.setDefaultEnv(env)
 
@@ -95,7 +95,6 @@ options = [
     BoolVariable("enablePetsc", "Compile with support for PETSc linear algebra", "yes"),
     BoolVariable("enableSlepc", "Compile with support for SLEPc", "yes"),
     BoolVariable("enableScotch", "Compile with support for SCOTCH graph partitioning", "yes"),
-    BoolVariable("enableGts", "Compile with support for GTS", "yes"),
     BoolVariable("enableUmfpack", "Compile with support for UMFPACK", "yes"),
     BoolVariable("enableTrilinos", "Compile with support for Trilinos", "yes"),
     BoolVariable("enableCholmod", "Compile with support for CHOLMOD", "yes"),
@@ -104,6 +103,7 @@ options = [
     BoolVariable("enableGmp", "Compile with support for GMP", "no"),
     BoolVariable("enableZlib", "Compile with support for zlib", "yes"),
     BoolVariable("enableCgal", "Compile with support for CGAL", "yes"),
+    BoolVariable("enableLapack", "Compile with support for LAPACK", "yes"),
     BoolVariable("enablePython", "Compile the Python wrappers", "yes"),
     BoolVariable("enablePydolfin", "Compile the Python wrappers of DOLFIN *deprecated*", "yes"),
     # some of the above may need extra options (like petscDir), should we
@@ -122,9 +122,10 @@ options = [
     PathVariable("withGmpDir", "Specify path to GMP", None, path_validator),
     PathVariable("withBoostDir", "Specify path to Boost", None, path_validator),
     PathVariable("withLibxml2Dir", "Specify path to libXML2", None, path_validator),
-    PathVariable("withGtsDir", "Specify path to GTS", None, path_validator),
     PathVariable("withZlibDir", "Specify path to zlib", None, path_validator),
     PathVariable("withCgalDir", "Specify path to CGAL", None, path_validator),
+    PathVariable("withLapackDir", "Specify path to LAPACK", None, path_validator),
+    PathVariable("withBlasDir", "Specify path to BLAS", None, path_validator),
     #
     # a few more options originally from PyCC:
     #BoolVariable("autoFetch", "Automatically fetch datafiles from (password protected) SSH repository", 0),
@@ -473,8 +474,12 @@ if not env.GetOption('help'):
       for e in buildDataHash["extModules"]:
           env.Install(os.path.join(pythonExtDir, env["projectname"]), e)
       # install SWIG interface files in includeDir/swig
+      # and SWIG import files in includeDir/swig/import
       for s in buildDataHash["swigfiles"]:
-          env.Install(os.path.join(includeDir, env["projectname"], "swig"), s)
+          if "swig" + os.sep + "import" + os.sep in str(s):
+              env.Install(os.path.join(includeDir, env["projectname"], "swig", "import"), s)
+          else:
+              env.Install(os.path.join(includeDir, env["projectname"], "swig"), s)
 
   # install generated pkg-config files in $prefix/lib/pkgconfig or other
   # specified place

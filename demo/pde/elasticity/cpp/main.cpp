@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2008
 //
 // First added:  2006-02-07
-// Last changed: 2009-10-05
+// Last changed: 2010-01-27
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -24,7 +24,7 @@ int main()
 
     Clamp() : Expression(3) {}
 
-    void eval(double* values, const std::vector<double>& x) const
+    void eval(Array<double>& values, const Array<double>& x) const
     {
       values[0] = 0.0;
       values[1] = 0.0;
@@ -49,7 +49,7 @@ int main()
 
     Rotation() : Expression(3) {}
 
-    void eval(double* values, const std::vector<double>& x) const
+    void eval(Array<double>& values, const Array<double>& x) const
     {
       // Center of rotation
       double y0 = 0.5;

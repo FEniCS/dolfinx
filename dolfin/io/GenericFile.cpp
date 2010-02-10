@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2009-08-20
+// Last changed: 2010-01-04
 
 #include <fstream>
 #include <dolfin/main/MPI.h>
@@ -233,19 +233,19 @@ void GenericFile::operator<< (const std::map<uint, double>& map)
   read_not_impl("std::map<uint, double>");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const std::map<uint, 
+void GenericFile::operator<< (const std::map<uint,
                               std::vector<int> >& array_map)
 {
   read_not_impl("std::map<uint, std::vector<int> >");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const std::map<uint, 
+void GenericFile::operator<< (const std::map<uint,
                               std::vector<uint> >& array_map)
 {
   read_not_impl("std::map<uint, std::vector<uint> >");
 }
 //-----------------------------------------------------------------------------
-void GenericFile::operator<< (const std::map<uint, 
+void GenericFile::operator<< (const std::map<uint,
                               std::vector<double> >& array_map)
 {
   read_not_impl("std::map<uint, std::vector<double> >");
@@ -262,7 +262,8 @@ void GenericFile::write()
   if (type == "VTK" && MPI::process_number() > 0)
     opened_write = true;
 
-  if (!opened_write) 
+  // Open file
+  if (!opened_write)
   {
     // Clear file
     std::ofstream file(filename.c_str(), std::ios::trunc);

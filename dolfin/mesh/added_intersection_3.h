@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-11
-// Last changed: 2009-12-05
+// Last changed: 2010-02-08
 
 #ifndef  ADDED_INTERSECTION_3_INC
 #define  ADDED_INTERSECTION_3_INC

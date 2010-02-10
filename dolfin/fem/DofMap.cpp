@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Anders Logg and Garth N. Wells.
+// Copyright (C) 2007-2010 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Martin Alnes, 2008
@@ -7,10 +7,11 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-11-10
+// Last changed: 2010-01-29
 
 #include <boost/scoped_array.hpp>
 
+#include <dolfin/common/Set.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/common/NoDeleter.h>
@@ -22,6 +23,8 @@
 #include "UFCCell.h"
 #include "DofMapBuilder.h"
 #include "DofMap.h"
+
+#include <dolfin/mesh/BoundaryMesh.h>
 
 using namespace dolfin;
 
@@ -181,16 +184,12 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
 DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
                          const Mesh& dolfin_mesh) const
 {
+  // Create a new DofMap
   DofMap* collapsed_dof_map = 0;
   if (_map.get())
-  {
     error("Cannot yet collapse renumbered dof maps.");
-  }
   else
-  {
-    // Create a new DofMap
     collapsed_dof_map = new DofMap(_ufc_dofmap, dolfin_mesh);
-  }
 
   assert(collapsed_dof_map->global_dimension() == this->global_dimension());
 
@@ -264,7 +263,8 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dofmap,
   for (uint i = 1; i < component.size(); i++)
     sub_component.push_back(component[i]);
   ufc::dof_map* sub_sub_dof_map = extract_sub_dofmap(*sub_dof_map, offset,
-                                                     sub_component, ufc_mesh, dolfin_mesh);
+                                                     sub_component, ufc_mesh, 
+                                                     dolfin_mesh);
   delete sub_dof_map;
 
   return sub_sub_dof_map;
@@ -316,6 +316,30 @@ void DofMap::init_ufc_dofmap(ufc::dof_map& dofmap,
     }
     dofmap.init_cell_finalize();
   }
+}
+//-----------------------------------------------------------------------------
+dolfin::Set<dolfin::uint> DofMap::dofs(const Mesh& mesh, bool sort) const
+{ 
+  dolfin::Set<uint> dof_list;
+
+  UFCCell ufc_cell(mesh);
+  std::vector<uint> dofs(max_local_dimension());
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update to current cell
+    ufc_cell.update(*cell);
+
+    // Tabulate dofs and insert int Set 
+    tabulate_dofs(&dofs[0], ufc_cell, cell->index());
+
+    for (uint i = 0; i < local_dimension(ufc_cell); ++i)
+      dof_list.insert(dofs[i]);
+  }
+
+  if(sort)
+    dof_list.sort();
+
+  return dof_list;
 }
 //-----------------------------------------------------------------------------
 std::string DofMap::str(bool verbose) const

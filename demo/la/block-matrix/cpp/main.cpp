@@ -2,21 +2,28 @@
 // Licensed under the GNU LGPL Version 2.1
 //
 // Modified by Anders Logg, 2008.
+// Modified by Garth N. Wells, 2010.
 //
 // First added:  2008-12-12
-// Last changed: 2009-09-07
+// Last changed: 2010-01-02
 //
 // This demo illustrates basic usage of block matrices and vectors.
 
 #include <dolfin.h>
+#include "StiffnessMatrix.h"
 
 using namespace dolfin;
 
 int main()
 {
-  // Create a simple stiffness matrix
+  // Create mesh
   UnitSquare mesh(4, 4);
-  StiffnessMatrix A(mesh);
+
+  // Create a simple stiffness matrix
+  Matrix A;
+  StiffnessMatrix::FunctionSpace V(mesh);
+  StiffnessMatrix::BilinearForm a(V, V);
+  assemble(A, a); 
 
   // Create a block matrix
   BlockMatrix AA(2, 2);

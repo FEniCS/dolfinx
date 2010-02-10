@@ -16,7 +16,7 @@ TH = P2 + P1
 (v, q) = TestFunctions(TH)
 (u, p) = TrialFunctions(TH)
 
-f = Function(P2)
+f = Coefficient(P2)
 
 a = (inner(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
 L = dot(v, f)*dx

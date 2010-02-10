@@ -17,7 +17,7 @@ def __contains__(self,u):
 %pythoncode %{
 def function_space(self):
     " Return the FunctionSpace"
-    from functionspace import FunctionSpaceFromCpp
+    from dolfin.function.functionspace import FunctionSpaceFromCpp
     return FunctionSpaceFromCpp(self._function_space())
 %}
 }
@@ -25,16 +25,16 @@ def function_space(self):
 //-----------------------------------------------------------------------------
 // Extend the Data class with an accessor function for the x coordinates
 //-----------------------------------------------------------------------------
-//%extend dolfin::Data {
-//  PyObject* x_() {
-//    npy_intp adims[1];
-//    adims[0] = self->cell().dim();
-//    PyArrayObject* array = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, adims, NPY_DOUBLE, (char *)(self->x)));
-//    if ( array == NULL ) return NULL;
-//    PyArray_INCREF(array);
-//    return reinterpret_cast<PyObject*>(array);
-//  }
-//}
+%extend dolfin::Data {
+  PyObject* x_() {
+    npy_intp adims[1];
+    adims[0] = self->x.size();
+    PyArrayObject* array = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, adims, NPY_DOUBLE, (char *)(self->x.data().get())));
+    if ( array == NULL ) return NULL;
+    PyArray_INCREF(array);
+    return reinterpret_cast<PyObject*>(array);
+  }
+}
 
 //-----------------------------------------------------------------------------
 // Clear director typemaps

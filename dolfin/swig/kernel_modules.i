@@ -7,6 +7,7 @@
 %include "dolfin/common/constants.h"
 %include "dolfin/common/timing.h"
 %include "dolfin/common/Array.h"
+%include "dolfin/common/Set.h"
 %include "dolfin/common/Timer.h"
 %include "dolfin/common/Variable.h"
 %include "dolfin/swig/common_post.i"
@@ -42,10 +43,12 @@
 %include "dolfin/la/EpetraMatrix.h"
 %include "dolfin/la/MTL4Matrix.h"
 %include "dolfin/la/STLMatrix.h"
+%include "dolfin/la/LAPACKMatrix.h"
 %include "dolfin/la/uBLASVector.h"
 %include "dolfin/la/PETScVector.h"
 %include "dolfin/la/EpetraVector.h"
 %include "dolfin/la/MTL4Vector.h"
+%include "dolfin/la/LAPACKVector.h"
 %include "dolfin/la/GenericSparsityPattern.h"
 %include "dolfin/la/SparsityPattern.h"
 %include "dolfin/la/EpetraSparsityPattern.h"
@@ -66,6 +69,7 @@
 %include "dolfin/la/CholmodCholeskySolver.h"
 %include "dolfin/la/UmfpackLUSolver.h"
 %include "dolfin/la/uBLASILUPreconditioner.h"
+%include "dolfin/la/LAPACKSolvers.h"
 %include "dolfin/la/Vector.h"
 %include "dolfin/la/Matrix.h"
 %include "dolfin/la/Scalar.h"
@@ -104,8 +108,6 @@
 %include "dolfin/mesh/MeshFunction.h"
 %include "dolfin/mesh/Mesh.h"
 %include "dolfin/mesh/MeshPartitioning.h"
-%include "dolfin/mesh/MeshPrimitive.h"
-%include "dolfin/mesh/Primitive_Traits.h"
 %include "dolfin/mesh/LocalMeshData.h"
 %include "dolfin/mesh/SubDomain.h"
 %include "dolfin/mesh/SubMesh.h"
@@ -120,7 +122,7 @@
 %include "dolfin/mesh/Rectangle.h"
 %include "dolfin/mesh/UnitSphere.h"
 %include "dolfin/mesh/IntersectionOperator.h"
-//%include "dolfin/mesh/OverlappingMeshes.h"
+%include "dolfin/mesh/PrimitiveIntersector.h"
 %include "dolfin/swig/mesh_post.i"
 
 // DOLFIN headers included from function
@@ -170,6 +172,7 @@
 %include "dolfin/swig/fem_pre.i"
 %include "dolfin/fem/DofMap.h"
 %include "dolfin/fem/FiniteElement.h"
+%include "dolfin/fem/BasisFunction.h"
 %include "dolfin/fem/BoundaryCondition.h"
 %include "dolfin/fem/DirichletBC.h"
 %include "dolfin/fem/PeriodicBC.h"
@@ -184,9 +187,6 @@
 // DOLFIN headers included from adaptivity
 %include "dolfin/adaptivity/AdaptiveObjects.h"
 %include "dolfin/adaptivity/TimeSeries.h"
-
-// DOLFIN headers included from mf
-%include "dolfin/mf/MatrixFactory.h"
 
 // DOLFIN headers included from ode
 %include "dolfin/swig/ode_pre.i"

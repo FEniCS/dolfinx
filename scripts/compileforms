@@ -29,9 +29,8 @@ for root, dirs, files in os.walk(cwd):
             options = special[f]
         else:
             options = ""
-        command = "ffc -l dolfin -O %s %s > /dev/null" % (options, f)
+        command = "ffc -d -l dolfin %s %s >> compile.log" % (options, f)
         print "  " + command
         ret = os.system(command)
         if not ret == 0:
             raise RuntimeError, "Unable to compile form: %s/%s" % (root, f)
-

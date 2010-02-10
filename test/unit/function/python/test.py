@@ -1,7 +1,7 @@
 """Unit tests for the function library"""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-05-24 -- 2009-10-31"
+__date__ = "2007-05-24 -- 2009-12-16"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -17,7 +17,7 @@ class Eval(unittest.TestCase):
 
      def testArbitraryEval(self):
           class F0(Expression):
-               def eval(self,values,x):
+               def eval(self, values, x):
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
           f0 = F0(V)
@@ -59,8 +59,8 @@ class Eval(unittest.TestCase):
           b = a((2.0, 1.0), { f0: N })
           self.assertEqual(b, 25)
 
-          # Projection requires gts
-          if not has_gts():
+          # Projection requires CGAL
+          if not has_cgal():
                return
 
           V2 = FunctionSpace(mesh, 'CG', 2)
@@ -69,6 +69,27 @@ class Eval(unittest.TestCase):
           u4 = g(x)
           self.assertAlmostEqual(u3,u4, places=5)
 
+     def testOverLoadAndCallBack(self):
+          class F0(Expression):
+               def eval(self, values, x):
+                    values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
+
+          class F1(Expression):
+               def eval_data(self, values, data):
+                    x = data.x()
+                    values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
+
+          e0 = F0(V, degree=2)
+          e1 = F1(V, degree=2)
+          e2 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
+
+          s0 = norm(interpolate(e0, V))
+          s1 = norm(interpolate(e1, V))
+          s2 = norm(interpolate(e2, V))
+
+          self.assertAlmostEqual(s0, s1)
+          self.assertAlmostEqual(s0, s2)
+          
      def testWrongEval(self):
           # Test wrong evaluation
           class F0(Expression):
@@ -156,6 +177,32 @@ class Instantiation(unittest.TestCase):
           #self.assertRaises(TypeError,bothCompileAndPythonSubClassing0)
           #self.assertRaises(TypeError,bothCompileAndPythonSubClassing1)
           self.assertRaises(TypeError,wrongCppargType)
+
+class Interpolate(unittest.TestCase):
+
+    def testInterpolation(self):
+        class F0(Expression):
+            def eval(self, values, x):
+                values[0] = 1.0
+        class F1(Expression):
+            def eval(self, values, x):
+                values[0] = 1.0
+                values[1] = 1.0
+            def dim(self):
+                return 2
+
+        # Scalar interpolation
+        f0 = F0()
+        f = Function(V)
+        f.interpolate(f0)
+        self.assertAlmostEqual(f.vector().norm("l1"), mesh.num_vertices())
+
+        # Vector interpolation
+        f1 = F1()
+        W = V + V
+        f = Function(W)
+        f.interpolate(f1)
+        self.assertAlmostEqual(f.vector().norm("l1"), 2*mesh.num_vertices())
 
 if __name__ == "__main__":
     unittest.main()

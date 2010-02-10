@@ -12,7 +12,7 @@ CG = FiniteElement("Lagrange", "triangle", 1)
 v   = TestFunction(CG)
 phi = TrialFunction(CG)
 
-phi0 = Function(DG)
+phi0 = Coefficient(DG)
 
 a = dot(v, phi)*dx
 L = dot(v, phi0)*dx
