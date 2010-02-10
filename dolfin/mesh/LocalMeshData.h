@@ -37,6 +37,9 @@ namespace dolfin
   /// data, at that point corresponding to topologically connected
   /// meshes instead of local mesh data.
 
+
+  // FIXME: Provide a better public interface rather than using 'friend class'
+
   class LocalMeshData : public Variable
   {
   public:
@@ -107,6 +110,7 @@ namespace dolfin
     friend class XMLLocalMeshData;
     friend class MeshPartitioning;
     friend class GraphBuilder;
+    friend class ParMETIS;
 
   };
 
