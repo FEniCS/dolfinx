@@ -9,9 +9,10 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2009-11-11
+// Last changed: 2010-02-10
 
 #include <boost/filesystem.hpp>
+#include <fstream>
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/function/Function.h>
@@ -110,5 +111,14 @@ void File::operator<<(const Function& u)
   u.gather();
   file->write();
   *file << u;
+}
+//-----------------------------------------------------------------------------
+bool File::exists(std::string filename)
+{
+  std::ifstream file(filename.c_str());
+  if (!file.is_open())
+    return false;
+  file.close();
+  return true;
 }
 //-----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2009-11-11
+// Last changed: 2010-02-10
 
 #ifndef __TIME_SERIES_H
 #define __TIME_SERIES_H
@@ -45,8 +45,14 @@ namespace dolfin
     /// Retrieve mesh at given time
     void retrieve(Mesh& mesh, double t) const;
 
-    /// Return filename
-    static std::string filename(std::string series_name, std::string type_name, uint index);
+    /// Clear time series
+    void clear();
+
+    /// Return filename for data
+    static std::string filename_data(std::string series_name, std::string type_name, uint index);
+
+    /// Return filename for times
+    static std::string filename_times(std::string series_name, std::string type_name);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -54,11 +60,14 @@ namespace dolfin
   private:
 
     // Name of series
-    std::string _series_name;
+    std::string _name;
 
     // List of times
     std::vector<double> _vector_times;
     std::vector<double> _mesh_times;
+
+    // True if series has been cleared
+    bool _cleared;
 
   };
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2009-11-11
+// Last changed: 2010-02-10
 
 #include <algorithm>
 #include <sstream>
@@ -17,11 +17,15 @@ template <class T> void store_object(const T& object, double t,
                                      std::string series_name, std::string type_name)
 {
   // Write object
-  File file(TimeSeries::filename(series_name, type_name, times.size()));
-  file << object;
+  File file_data(TimeSeries::filename_data(series_name, type_name, times.size()));
+  file_data << object;
 
-  // Store time
+  // Add time
   times.push_back(t);
+
+  // Store times
+  File file_times(TimeSeries::filename_times(series_name, type_name));
+  file_times << times;
 }
 
 // Template function for retrieving objects
@@ -60,14 +64,36 @@ template <class T> void retrieve_object(T& object, double t,
   dolfin_debug2("Using closest value %g (index = %d)", times[index], index);
 
   // Read object
-  File file(TimeSeries::filename(series_name, type_name, index));
+  File file(TimeSeries::filename_data(series_name, type_name, index));
   file >> object;
 }
 
 //-----------------------------------------------------------------------------
-TimeSeries::TimeSeries(std::string name) : _series_name(name)
+TimeSeries::TimeSeries(std::string name) : _name(name), _cleared(false)
 {
-  // Do nothing
+  std::string filename;
+
+  // Read vector times
+  filename = TimeSeries::filename_times(_name, "vector");
+  if (File::exists(filename))
+  {
+    File file(filename);
+    file >> _vector_times;
+    info("Found %d vector samples in time series.", _vector_times.size());
+  }
+  else
+    info("No vector samples found in time series.");
+
+  // Read mesh times
+  filename = TimeSeries::filename_times(_name, "mesh");
+  if (File::exists(filename))
+  {
+    File file(filename);
+    file >> _mesh_times;
+    info("Found %d mesh samples in time series.", _vector_times.size());
+  }
+  else
+    info("No mesh samples found in time series.");
 }
 //-----------------------------------------------------------------------------
 TimeSeries::~TimeSeries()
@@ -77,30 +103,57 @@ TimeSeries::~TimeSeries()
 //-----------------------------------------------------------------------------
 void TimeSeries::store(const GenericVector& vector, double t)
 {
-  store_object(vector, t, _vector_times, _series_name, "vector");
+  // Clear earlier history first time we store a value
+  if (!_cleared)
+    clear();
+
+  // Store object
+  store_object(vector, t, _vector_times, _name, "vector");
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::store(const Mesh& mesh, double t)
 {
-  store_object(mesh, t, _mesh_times, _series_name, "mesh");
+  // Clear earlier history first time we store a value
+  if (!_cleared)
+    clear();
+
+  // Store object
+  store_object(mesh, t, _mesh_times, _name, "mesh");
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::retrieve(GenericVector& vector, double t) const
 {
-  retrieve_object(vector, t, _vector_times, _series_name, "vector");
+  retrieve_object(vector, t, _vector_times, _name, "vector");
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::retrieve(Mesh& mesh, double t) const
 {
-  retrieve_object(mesh, t, _vector_times, _series_name, "mesh");
+  retrieve_object(mesh, t, _vector_times, _name, "mesh");
 }
 //-----------------------------------------------------------------------------
-std::string TimeSeries::filename(std::string series_name,
-                                std::string type_name,
-                                uint index)
+void TimeSeries::clear()
+{
+  info("Clearing time series.");
+
+  _vector_times.clear();
+  _mesh_times.clear();
+  _cleared = true;
+}
+//-----------------------------------------------------------------------------
+std::string TimeSeries::filename_data(std::string series_name,
+                                      std::string type_name,
+                                      uint index)
 {
   std::stringstream s;
   s << series_name << "_" << type_name << "_" << index << ".bin";
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+std::string TimeSeries::filename_times(std::string series_name,
+                                       std::string type_name)
+{
+  std::stringstream s;
+  s << series_name << "_" << type_name << "_times" << ".bin";
   return s.str();
 }
 //-----------------------------------------------------------------------------
