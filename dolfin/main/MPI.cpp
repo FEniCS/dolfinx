@@ -314,6 +314,14 @@ void dolfin::MPI::scatter(std::vector<std::vector<double> >& values,
   delete [] recv_buffer;
 }
 //-----------------------------------------------------------------------------
+std::vector<dolfin::uint> dolfin::MPI::gather(uint value)
+{
+  std::vector<uint> values(num_processes());
+  values[process_number()] = value;
+  gather(values);
+  return values;
+}
+//-----------------------------------------------------------------------------
 void dolfin::MPI::gather(std::vector<uint>& values)
 {
   assert(values.size() == num_processes());
@@ -535,6 +543,12 @@ void dolfin::MPI::scatter(std::vector<std::vector<double> >& values,
                           uint sending_process)
 {
   error("MPI::scatter() requires MPI.");
+}
+//-----------------------------------------------------------------------------
+std::vector<uint> dolfin::MPI::gather(uint value)
+{
+  error("MPI::gather() requires MPI.");
+  return std::vector<uint>(1);
 }
 //-----------------------------------------------------------------------------
 void dolfin::MPI::gather(std::vector<uint>& values)
