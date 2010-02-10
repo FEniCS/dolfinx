@@ -6,7 +6,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-02-08
+// Last changed: 2010-02-10
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -114,7 +114,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    std::string filename)
   : _function_space(V),
     local_scratch(V->element())
-{  
+{
   // Create vector
   DefaultFactory factory;
   _vector.reset(factory.create_vector());
@@ -327,6 +327,11 @@ void Function::interpolate(const GenericFunction& v)
 void Function::extrapolate(const Function& v, bool facet_extrapolation)
 {
   Extrapolation::extrapolate(*this, v, facet_extrapolation);
+}
+//-----------------------------------------------------------------------------
+void Function::extrapolate(const Function& v, const SubDomain& sub_domain)
+{
+  Extrapolation::extrapolate(*this, v, sub_domain);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Function::value_rank() const

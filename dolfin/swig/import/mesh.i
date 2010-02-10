@@ -36,5 +36,4 @@
 %import(module="dolfin.cpp") "dolfin/mesh/Rectangle.h"
 %import(module="dolfin.cpp") "dolfin/mesh/UnitSphere.h"
 %import(module="dolfin.cpp") "dolfin/mesh/IntersectionOperator.h"
-%import(module="dolfin.cpp") "dolfin/mesh/LocalMeshRefinement.h"
-%import(module="dolfin.cpp") "dolfin/mesh/UniformMeshRefinement.h"
+%import(module="dolfin.cpp") "dolfin/mesh/refine.h"
