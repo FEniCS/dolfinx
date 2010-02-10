@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2009.
+// Modified by Garth N. Wells, 2010.
 //
 // First added:  2006-11-01
-// Last changed: 2009-10-08
+// Last changed: 2010-02-07
 
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
@@ -34,89 +35,75 @@ struct cmp2
 };
 
 //-----------------------------------------------------------------------------
-void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
-                                                    MeshFunction<bool>& cell_marker,
-                                                    bool refine_boundary)
+dolfin::Mesh LocalMeshRefinement::refineMeshByEdgeBisection(const Mesh& mesh,
+                                         const MeshFunction<bool>& cell_marker,
+                                         bool refine_boundary)
 {
   info("Refining simplicial mesh by edge bisection.");
 
+  // Copy old mesh
+  Mesh old_mesh(mesh);
+  MeshFunction<bool> old_cell_marker = cell_marker;
+
   // Get size of old mesh
-  const uint num_vertices = mesh.size(0);
-  const uint num_cells = mesh.size(mesh.topology().dim());
+  const uint num_vertices = old_mesh.size(0);
+  const uint num_cells = old_mesh.size(mesh.topology().dim());
 
   // Check cell marker
-  if (cell_marker.size() != num_cells)
+  if (old_cell_marker.size() != num_cells)
     error("Wrong dimension of cell_marker");
 
   // Generate cell - edge connectivity if not generated
-  mesh.init(mesh.topology().dim(), 1);
+  old_mesh.init(mesh.topology().dim(), 1);
 
   // Generate edge - vertex connectivity if not generated
-  mesh.init(1, 0);
+  old_mesh.init(1, 0);
 
   // Get cell type
-  const CellType& cell_type = mesh.type();
+  const CellType& cell_type = old_mesh.type();
 
   // Init new vertices and cells
   uint num_new_vertices = 0;
   uint num_new_cells = 0;
 
-  // Compute number of vertices and cells
-  /*
-  for (CellIterator c(mesh); !c.end(); ++c)
-  {
-    if((cell_marker.get(*c) == true))
-    {
-      //cout << "marked cell: " << endl;
-      //cout << c->midpoint() << endl;
-      //cout << c->index() << endl;
-    }
-  }
-  */
-
   // Create new mesh and open for editing
   Mesh refined_mesh;
   MeshEditor editor;
   editor.open(refined_mesh, cell_type.cell_type(),
-              mesh.topology().dim(), mesh.geometry().dim());
+              old_mesh.topology().dim(), old_mesh.geometry().dim());
 
   // Initialize mappings
-  std::vector<int> old2new_cell(mesh.num_cells());
-  std::vector<int> old2new_vertex(mesh.num_vertices());
+  std::vector<int> old2new_cell(old_mesh.num_cells());
+  std::vector<int> old2new_vertex(old_mesh.num_vertices());
 
   // Initialise forbidden edges
-  MeshFunction<bool> edge_forbidden(mesh);
-  edge_forbidden.init(1);
-  for (EdgeIterator e(mesh); !e.end(); ++e)
-    edge_forbidden[e->index()] = false;
+  MeshFunction<bool> edge_forbidden(old_mesh, true);
+  for (EdgeIterator e(old_mesh); !e.end(); ++e)
+    edge_forbidden[*e] = false;
 
   // If refinement of boundary is forbidden
   if ( !refine_boundary )
   {
-    BoundaryMesh boundary(mesh);
+    BoundaryMesh boundary(old_mesh);
     for (EdgeIterator e(boundary); !e.end(); ++e)
-      edge_forbidden[e->index()] = true;
+      edge_forbidden[*e] = true;
   }
 
   // Initialise forbidden cells
-  MeshFunction<bool> cell_forbidden(mesh);
-  cell_forbidden.init(mesh.topology().dim());
-  for (CellIterator c(mesh); !c.end(); ++c)
-    cell_forbidden[c->index()] = false;
+  MeshFunction<bool> cell_forbidden(old_mesh);
+  cell_forbidden.init(old_mesh.topology().dim());
+  for (CellIterator c(old_mesh); !c.end(); ++c)
+    cell_forbidden[*c] = false;
 
   // Initialise data for finding longest edge
   uint longest_edge_index = 0;
   double lmax, l;
 
   // Compute number of vertices and cells
-  for (CellIterator c(mesh); !c.end(); ++c)
+  for (CellIterator c(old_mesh); !c.end(); ++c)
   {
-    if ( cell_marker[*c] && !cell_forbidden[*c] )
+    if ( old_cell_marker[*c] && !cell_forbidden[*c] )
     {
-//       cout << "marked cell: " << endl;
-//       cout << c->midpoint() << endl;
-//       cout << c->index() << endl;
-
       // Find longest edge of cell c
       lmax = 0.0;
       for (EdgeIterator e(*c); !e.end(); ++e)
@@ -132,7 +119,7 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
         }
       }
 
-      Edge longest_edge(mesh,longest_edge_index);
+      Edge longest_edge(old_mesh,longest_edge_index);
 
       // If at least one edge should be bisected
       if ( lmax > 0.0 )
@@ -147,11 +134,10 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
             // Count new cells
             num_new_cells++;
             // set markers of all cell neighbors of longest edge to false
-            //if ( cn->index() != c->index() )
-            cell_forbidden[cn->index()] = true;
+            cell_forbidden[*cn] = true;
             // set all the edges of cell neighbors to forbidden
             for (EdgeIterator en(*cn); !en.end(); ++en)
-              edge_forbidden[en->index()] = true;
+              edge_forbidden[*en] = true;
           }
         }
       }
@@ -162,20 +148,16 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
   editor.init_vertices(num_vertices + num_new_vertices);
   editor.init_cells(num_cells + num_new_cells);
 
-  //cout << "Number of cells in old mesh: " << num_cells << "; to add: " << num_new_cells << endl;
-  //cout << "Number of vertices in old mesh: " << num_vertices << "; to add: " << num_new_vertices << endl;
-
   // Add old vertices
   uint current_vertex = 0;
-  for (VertexIterator v(mesh); !v.end(); ++v)
+  for (VertexIterator v(old_mesh); !v.end(); ++v)
     editor.add_vertex(current_vertex++, v->point());
 
   // Add old unrefined cells
   uint current_cell = 0;
   std::vector<uint> cell_vertices(cell_type.num_entities(0));
-  for (CellIterator c(mesh); !c.end(); ++c)
+  for (CellIterator c(old_mesh); !c.end(); ++c)
   {
-    //if ( (cell_marker.get(*c) == false) && (cell_forbidden.get(*c) == false) )
     if ( !cell_forbidden[*c] )
     {
       uint cv = 0;
@@ -186,23 +168,23 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
   }
 
   // Reset forbidden edges
-  for (EdgeIterator e(mesh); !e.end(); ++e)
-    edge_forbidden[e->index()] = false;
+  for (EdgeIterator e(old_mesh); !e.end(); ++e)
+    edge_forbidden[*e] = false;
 
   // If refinement of boundary is forbidden
   if ( !refine_boundary )
   {
-    BoundaryMesh boundary(mesh);
+    BoundaryMesh boundary(old_mesh);
     for (EdgeIterator e(boundary); !e.end(); ++e)
-      edge_forbidden[e->index()] = true;
+      edge_forbidden[*e] = true;
   }
 
   // Reset forbidden cells
-  for (CellIterator c(mesh); !c.end(); ++c)
-    cell_forbidden[c->index()] = false;
+  for (CellIterator c(old_mesh); !c.end(); ++c)
+    cell_forbidden[*c] = false;
 
   // Add new vertices and cells.
-  for (CellIterator c(mesh); !c.end(); ++c)
+  for (CellIterator c(old_mesh); !c.end(); ++c)
   {
     if ( cell_marker[*c] && !cell_forbidden[*c] )
     {
@@ -221,7 +203,7 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
         }
       }
 
-      Edge longest_edge(mesh,longest_edge_index);
+      Edge longest_edge(old_mesh,longest_edge_index);
 
       // If at least one edge should be bisected
       if ( lmax > 0.0 )
@@ -232,69 +214,59 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& mesh,
        for (CellIterator cn(longest_edge); !cn.end(); ++cn)
        {
          // Add new cell
-         bisectEdgeOfSimplexCell(*cn, longest_edge, current_vertex, editor, current_cell);
+         bisect_simplex_edge(*cn, longest_edge, current_vertex, editor, current_cell);
 
          // set markers of all cell neighbors of longest edge to false
-         //if ( cn->index() != c->index() )
-         cell_marker[cn->index()] = false;
+         old_cell_marker[*cn] = false;
          // set all edges of cell neighbors to forbidden
          for (EdgeIterator en(*cn); !en.end(); ++en)
-           edge_forbidden[en->index()] = true;
+           edge_forbidden[*en] = true;
         }
       }
     }
   }
 
-  // Overwrite old mesh with refined mesh
+  // Close editor
   editor.close();
-  mesh = refined_mesh;
+
+  return refined_mesh;
 }
 //-----------------------------------------------------------------------------
-void LocalMeshRefinement::refineIterativelyByEdgeBisection(Mesh& mesh,
-                                                 MeshFunction<bool>& cell_marker)
+dolfin::Mesh LocalMeshRefinement::refineIterativelyByEdgeBisection(const Mesh& mesh,
+                                         const MeshFunction<bool>& cell_marker)
 {
+  Mesh refined_mesh(mesh);
+  MeshFunction<uint> edges(mesh, 1, 0);
 
   begin("Iterative mesh refinement algorithm");
-
-  MeshFunction<uint> edges(mesh, 1);
-  edges = 0;
-
-  int i = 0;
   bool more_iterations = true;
+  MeshFunction<bool> new_cell_marker;
   while( more_iterations )
   {
-    cout << "=== Iteration : " << i++ << " ===" << endl;
-    more_iterations = iterationOfRefinement(mesh, cell_marker, edges);
+    more_iterations = iteration_of_refinement(refined_mesh, cell_marker, 
+                                              new_cell_marker, edges);
   }
-
   end();
-
+  return refined_mesh;
 }
 //-----------------------------------------------------------------------------
-void LocalMeshRefinement::refineRecursivelyByEdgeBisection(Mesh& mesh,
-                                                 MeshFunction<bool>& cell_marker)
+dolfin::Mesh LocalMeshRefinement::refineRecursivelyByEdgeBisection(const Mesh& mesh,
+                                          const MeshFunction<bool>& cell_marker)
 {
   // Transformation maps
   MeshFunction<dolfin::uint> cell_map;
   std::vector<int> facet_map;
 
   // Create new mesh
-  Mesh newmesh;
-  newmesh = mesh;
-
-  RivaraRefinement::refine(newmesh, cell_marker, cell_map, facet_map);
-
-  transformMeshData(newmesh, mesh, cell_map, facet_map);
-
-  // Overwrite old mesh with refined mesh
-  mesh = newmesh;
+  Mesh refined_mesh = RivaraRefinement::refine(mesh, cell_marker, cell_map, facet_map);
+  transform_data(refined_mesh, mesh, cell_map, facet_map);
+  return refined_mesh;
 }
 //-----------------------------------------------------------------------------
-void LocalMeshRefinement::bisectEdgeOfSimplexCell(const Cell& cell,
-                                                  Edge& edge,
-                                                  uint new_vertex,
-                                                  MeshEditor& editor,
-                                                  uint& current_cell)
+void LocalMeshRefinement::bisect_simplex_edge(const Cell& cell, const Edge& edge,
+                                              uint new_vertex,
+                                              MeshEditor& editor,
+                                              uint& current_cell)
 {
   // Init cell vertices
   std::vector<uint> cell1_vertices(cell.num_entities(0));
@@ -323,13 +295,12 @@ void LocalMeshRefinement::bisectEdgeOfSimplexCell(const Cell& cell,
 
   editor.add_cell(current_cell++, cell1_vertices);
   editor.add_cell(current_cell++, cell2_vertices);
-
 }
 //-----------------------------------------------------------------------------
-bool LocalMeshRefinement::iterationOfRefinement(Mesh& mesh,
-                                      MeshFunction<bool>& cell_marker,
-                                      MeshFunction<uint>& bisected_edges
-                                      )
+bool LocalMeshRefinement::iteration_of_refinement(Mesh& mesh,
+                                         const MeshFunction<bool>& cell_marker,
+                                         MeshFunction<bool>& new_cell_marker,
+                                         MeshFunction<uint>& bisected_edges)
 {
   // Map used for edge function transformation
   std::map<std::vector<uint>, uint, cmp2> edge_map;
@@ -355,13 +326,12 @@ bool LocalMeshRefinement::iterationOfRefinement(Mesh& mesh,
   double lmax, l;
 
   // Temporary edge marker function
-  MeshFunction<bool> found_edge(mesh, 1);
-  found_edge = false;
+  MeshFunction<bool> found_edge(mesh, 1, false);
 
   // Calculate number of new vertices
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    if( cell_marker[c->index()] )
+    if( cell_marker[*c] )
     {
       // Find longest edge of cell c
       lmax = 0.0;
@@ -391,17 +361,17 @@ bool LocalMeshRefinement::iterationOfRefinement(Mesh& mesh,
   editor.init_vertices(num_vertices + num_new_vertices);
   editor.init_cells(num_cells + num_new_cells);
 
-  //Rewrite old vertices
+  // Rewrite old vertices
   uint current_vertex = 0;
   for (VertexIterator v(mesh); !v.end(); ++v)
     editor.add_vertex(current_vertex++, v->point());
 
-  //Rewrite old cells
+  // Rewrite old cells
   uint current_cell = 0;
   std::vector<uint> cell_vertices(cell_type.num_entities(0));
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    if( ! cell_marker[c->index()] )
+    if( !cell_marker[*c] )
     {
       uint cv = 0;
       for (VertexIterator v(*c); !v.end(); ++v)
@@ -410,10 +380,10 @@ bool LocalMeshRefinement::iterationOfRefinement(Mesh& mesh,
     }
   }
 
-  //Main loop
+  // Main loop
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    if( cell_marker[c->index()] )
+    if( cell_marker[*c] )
     {
 
       // Find longest edge of cell c
@@ -448,17 +418,16 @@ bool LocalMeshRefinement::iterationOfRefinement(Mesh& mesh,
       }
 
       // Add two new cells
-      bisectEdgeOfSimplexCell(*c, longest_edge, middle_vertex+1, editor, current_cell);
+      bisect_simplex_edge(*c, longest_edge, middle_vertex+1, editor, current_cell);
 
     }
   }
-
   editor.close();
 
   // Rewrite old bisected edges
   for (EdgeIterator e(mesh); !e.end(); ++e)
   {
-    uint eix = bisected_edges[e->index()];
+    const uint eix = bisected_edges[*e];
     if( eix )
     {
       std::vector<uint> ev(2);
@@ -469,8 +438,8 @@ bool LocalMeshRefinement::iterationOfRefinement(Mesh& mesh,
   }
 
   // Initialize new cell markers
-  cell_marker.init(refined_mesh, refined_mesh.topology().dim());
-  cell_marker = false;
+  new_cell_marker.init(refined_mesh, refined_mesh.topology().dim());
+  new_cell_marker = false;
 
   // Initialize new bisected edges
   bisected_edges.init(refined_mesh, 1);
@@ -484,14 +453,13 @@ bool LocalMeshRefinement::iterationOfRefinement(Mesh& mesh,
     ev[0]= e->entities(0)[0];
     ev[1]= e->entities(0)[1];
     if ( (edge_map_it = edge_map.find(ev)) == edge_map.end())
-    {
-      bisected_edges[e->index()] = 0;
-    }
+      bisected_edges[*e] = 0;
     else
     {
-      bisected_edges[e->index()] = edge_map_it->second;
-      for(CellIterator c(*e); !c.end(); ++c) {
-        cell_marker[c->index()] = true;
+      bisected_edges[*e] = edge_map_it->second;
+      for(CellIterator c(*e); !c.end(); ++c) 
+      {
+        new_cell_marker[*c] = true;
         next_iteration = true;
       }
     }
@@ -504,11 +472,10 @@ bool LocalMeshRefinement::iterationOfRefinement(Mesh& mesh,
   return next_iteration;
 }
 //-----------------------------------------------------------------------------
-void LocalMeshRefinement::transformMeshData(Mesh& newmesh, Mesh& oldmesh,
-                                            MeshFunction<uint>& cell_map,
-                                            std::vector<int>& facet_map)
+void LocalMeshRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
+                                         const MeshFunction<uint>& cell_map,
+                                         const std::vector<int>& facet_map)
 {
-
   newmesh.data().clear();
 
   // Rewrite materials
@@ -521,7 +488,7 @@ void LocalMeshRefinement::transformMeshData(Mesh& newmesh, Mesh& oldmesh,
     info("MeshData MeshFunction \"material indicators\" transformed.");
   }
 
-  //Rewrite boundary indicators
+  // Rewrite boundary indicators
   if( oldmesh.data().array("boundary facet cells")
       && oldmesh.data().array("boundary facet numbers")
       && oldmesh.data().array("boundary indicators") )
@@ -533,20 +500,16 @@ void LocalMeshRefinement::transformMeshData(Mesh& newmesh, Mesh& oldmesh,
     std::vector<dolfin::uint>* bi ;
     bfc = oldmesh.data().array("boundary facet cells");
     bfn = oldmesh.data().array("boundary facet numbers");
-    bi = oldmesh.data().array("boundary indicators");
+    bi  = oldmesh.data().array("boundary indicators");
     dolfin::uint bi_table_size = oldmesh.num_cells()*num_ent;
     std::vector<int> bi_table;
     bi_table.resize(bi_table_size);
     for(dolfin::uint i=0; i< bi_table_size; i++)
-    {
       bi_table[i] = -1;
-    }
     for(dolfin::uint i=0; i< bi->size(); i++)
-    {
       bi_table[ (*bfc)[i]*num_ent+(*bfn)[i] ] = (*bi)[i];
-    }
 
-    //Empty loop to count elements
+    // Empty loop to count elements
     dolfin::uint bi_size = 0;
     for(dolfin::uint c=0; c< newmesh.num_cells(); c++)
     {
@@ -556,9 +519,7 @@ void LocalMeshRefinement::transformMeshData(Mesh& newmesh, Mesh& oldmesh,
         {
           dolfin::uint table_map = cell_map[c]*num_ent + facet_map[c*num_ent+f];
           if( bi_table[ table_map ] != -1 )
-          {
             bi_size++;
-          }
         }
       }
     }
@@ -569,7 +530,7 @@ void LocalMeshRefinement::transformMeshData(Mesh& newmesh, Mesh& oldmesh,
     std::vector<dolfin::uint>* bi_new ;
     bfc_new = newmesh.data().create_array("boundary facet cells", bi_size);
     bfn_new = newmesh.data().create_array("boundary facet numbers", bi_size);
-    bi_new = newmesh.data().create_array("boundary indicators", bi_size);
+    bi_new  = newmesh.data().create_array("boundary indicators", bi_size);
 
     // Main transformation loop
     dolfin::uint number_bi = 0;
@@ -590,9 +551,7 @@ void LocalMeshRefinement::transformMeshData(Mesh& newmesh, Mesh& oldmesh,
         }
       }
     }
-
-  info("MeshData \"boundary indicators\" transformed.");
+    info("MeshData \"boundary indicators\" transformed.");
   }
-
 }
-
+//-----------------------------------------------------------------------------

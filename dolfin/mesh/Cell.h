@@ -5,7 +5,7 @@
 // Modified by Andre Massing 2009.
 //
 // First added:  2006-06-01
-// Last changed: 2010-01-15
+// Last changed: 2010-02-10
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -24,8 +24,10 @@ namespace dolfin
   {
   public:
 
-    /// Constructor
+    /// Create empty cell
     Cell() : MeshEntity() {}
+
+    /// Create cell on given mesh with given index
     Cell(const Mesh& mesh, uint index) : MeshEntity(mesh, mesh.topology().dim(), index) {}
 
     /// Destructor

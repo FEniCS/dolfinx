@@ -11,6 +11,7 @@
 
 #include <set>
 #include <tr1/unordered_set>
+//#include <boost/unordered_set.hpp>
 
 #include <dolfin/common/Set.h>
 
@@ -33,6 +34,8 @@ namespace dolfin
     //typedef Set<dolfin::uint>::const_iterator set_iterator;
     typedef std::tr1::unordered_set<dolfin::uint> set;
     typedef std::tr1::unordered_set<dolfin::uint>::const_iterator set_iterator;
+    //typedef boost::unordered_set<dolfin::uint> set;
+    //typedef boost::unordered_set<dolfin::uint>::const_iterator set_iterator;
 
     typedef std::vector<dolfin::uint>::const_iterator vector_it;
 

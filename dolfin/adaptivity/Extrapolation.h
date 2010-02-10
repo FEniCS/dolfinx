@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2010-02-04
+// Last changed: 2010-02-09
 
 #ifndef __EXTRAPOLATION_H
 #define __EXTRAPOLATION_H
@@ -14,6 +14,7 @@ namespace dolfin
 
   class Function;
   class Cell;
+  class FacetCell;
   class LAPACKMatrix;
   class LAPACKVector;
 
@@ -34,21 +35,44 @@ namespace dolfin
   public:
 
     /// Compute extrapolation w from v
-    static void extrapolate(Function& w, const Function& v);
+    static void extrapolate(Function& w, const Function& v,
+                            bool facet_extrapolation=true);
 
   private:
 
+    // Extrapolate over interior (including boundary dofs)
+    static void extrapolate_interior(Function& w, const Function& v);
+
+    // Extrapolate over boundary (overwriting earlier boundary dofs)
+    static void extrapolate_boundary(Function& w, const Function& v);
+
     // Add equations for current cell
-    static uint add_equations(LAPACKMatrix& A,
-                              LAPACKVector& b,
-                              const Cell& cell0,
-                              const Cell& cell1,
-                              const ufc::cell& c0,
-                              const ufc::cell& c1,
-                              const FunctionSpace& V,
-                              const FunctionSpace& W,
-                              const Function& v,
-                              uint offset);
+    static uint add_cell_equations(LAPACKMatrix& A,
+                                   LAPACKVector& b,
+                                   const Cell& cell0,
+                                   const Cell& cell1,
+                                   const ufc::cell& c0,
+                                   const ufc::cell& c1,
+                                   const FunctionSpace& V,
+                                   const FunctionSpace& W,
+                                   const Function& v,
+                                   uint offset);
+
+    // Add equations for current facet
+    static uint add_facet_equations(LAPACKMatrix& A,
+                                    LAPACKVector& b,
+                                    const FacetCell& cell0,
+                                    const FacetCell& cell1,
+                                    const ufc::cell& c0,
+                                    const ufc::cell& c1,
+                                    const FunctionSpace& V,
+                                    const FunctionSpace& W,
+                                    const Function& v,
+                                    const Function& w,
+                                    const uint* facet_dofs0,
+                                    const uint* facet_dofs1,
+                                    std::set<uint>& non_facet_dofs0,
+                                    uint offset);
 
   };
 

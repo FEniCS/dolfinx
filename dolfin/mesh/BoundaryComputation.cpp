@@ -6,7 +6,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2009-10-08
+// Last changed: 2010-02-08
 
 #include <dolfin/log/dolfin_log.h>
 #include "Mesh.h"
@@ -23,21 +23,21 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void BoundaryComputation::compute_boundary(const Mesh& mesh,
-					                                 BoundaryMesh& boundary)
+void BoundaryComputation::compute_exterior_boundary(const Mesh& mesh,
+                                                    BoundaryMesh& boundary)
 {
   compute_boundary_common(mesh, boundary, false);
 }
 //-----------------------------------------------------------------------------
-void BoundaryComputation::compute_interior_boundary(const Mesh& mesh, 
-						                                        BoundaryMesh& boundary)
+void BoundaryComputation::compute_interior_boundary(const Mesh& mesh,
+                                                    BoundaryMesh& boundary)
 {
   compute_boundary_common(mesh, boundary, true);
 }
 //-----------------------------------------------------------------------------
-void BoundaryComputation::compute_boundary_common(const Mesh& mesh, 
-						                                      BoundaryMesh& boundary,
-						                                      bool interior_boundary)
+void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
+                                                  BoundaryMesh& boundary,
+                                                  bool interior_boundary)
 {
   // We iterate over all facets in the mesh and check if they are on
   // the boundary. A facet is on the boundary if it is connected to
@@ -48,11 +48,10 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   // Open boundary mesh for editing
   const uint D = mesh.topology().dim();
   MeshEditor editor;
-  editor.open(boundary, mesh.type().facet_type(),
-	      D - 1, mesh.geometry().dim());
+  editor.open(boundary, mesh.type().facet_type(), D-1, mesh.geometry().dim());
 
   // Generate facet - cell connectivity if not generated
-  mesh.init(D - 1, D);
+  mesh.init(D-1, D);
 
   // Temporary array for assignment of indices to vertices on the boundary
   const uint num_vertices = mesh.num_vertices();
@@ -62,26 +61,41 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   // Extract exterior (non shared) facets markers
   MeshFunction<uint>* exterior = mesh.data().mesh_function("exterior facets");
 
-  // Count boundary vertices and facets, and assign vertex indices
+  // Determine boundary facet, count boundary vertices and facets,
+  // and assign vertex indices
   uint num_boundary_vertices = 0;
   uint num_boundary_cells = 0;
+  MeshFunction<bool> boundary_facet(mesh, D-1, false);
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
-    if (f->num_entities(D) == 1 && 
-	(!exterior || (((*exterior)[*f] && !interior_boundary) || 
-		       (!(*exterior)[*f] && interior_boundary))))
+    if (f->num_entities(D) == 1)
     {
-      // Count boundary vertices and assign indices
-      for (VertexIterator v(*f); !v.end(); ++v)
+      // Determine if we have a boundary facet
+      if (!exterior)
+        boundary_facet[*f] = true;
+      else
       {
-        const uint vertex_index = v->index();
-        if (boundary_vertices[vertex_index] == num_vertices)
-          boundary_vertices[vertex_index] = num_boundary_vertices++;
+        bool exterior_facet = (*exterior)[*f];
+        if ( exterior_facet && !interior_boundary )
+          boundary_facet[*f] = true;
+        else if ( !exterior_facet && interior_boundary )
+          boundary_facet[*f] = true;
       }
 
-      // Count boundary cells (facets of the mesh)
-      num_boundary_cells++;
+      if (boundary_facet[*f])
+      {
+        // Count boundary vertices and assign indices
+        for (VertexIterator v(*f); !v.end(); ++v)
+        {
+          const uint vertex_index = v->index();
+          if (boundary_vertices[vertex_index] == num_vertices)
+            boundary_vertices[vertex_index] = num_boundary_vertices++;
+        }
+
+        // Count boundary cells (facets of the mesh)
+        num_boundary_cells++;
+      }
     }
   }
 
@@ -127,10 +141,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   uint current_cell = 0;
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
-    // Boundary facets are connected to exactly one cell    
-    if (f->num_entities(D) == 1 && 
-	(!exterior || (((*exterior)[*f] && !interior_boundary) || 
-		       (!(*exterior)[*f] && interior_boundary))))
+    if (boundary_facet[*f])
     {
       // Compute new vertex numbers for cell
       const uint* vertices = f->entities(0);
@@ -153,7 +164,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   editor.close();
 }
 //-----------------------------------------------------------------------------
-void BoundaryComputation::reorder(std::vector<uint>& vertices, 
+void BoundaryComputation::reorder(std::vector<uint>& vertices,
                                   const Facet& facet)
 {
   // Get mesh
@@ -189,10 +200,10 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices,
     {
       assert(facet.num_entities(0) == 2);
 
-      Point p0 = mesh.geometry().point(facet.entities(0)[0]);
-      Point p1 = mesh.geometry().point(facet.entities(0)[1]);
-      Point v = p1 - p0;
-      Point n(v.y(), -v.x());
+      const Point p0 = mesh.geometry().point(facet.entities(0)[0]);
+      const Point p1 = mesh.geometry().point(facet.entities(0)[1]);
+      const Point v = p1 - p0;
+      const Point n(v.y(), -v.x());
 
       if (n.dot(p0 - p) < 0.0)
       {
@@ -206,12 +217,12 @@ void BoundaryComputation::reorder(std::vector<uint>& vertices,
     {
       assert(facet.num_entities(0) == 3);
 
-      Point p0 = mesh.geometry().point(facet.entities(0)[0]);
-      Point p1 = mesh.geometry().point(facet.entities(0)[1]);
-      Point p2 = mesh.geometry().point(facet.entities(0)[2]);
-      Point v1 = p1 - p0;
-      Point v2 = p2 - p0;
-      Point n = v1.cross(v2);
+      const Point p0 = mesh.geometry().point(facet.entities(0)[0]);
+      const Point p1 = mesh.geometry().point(facet.entities(0)[1]);
+      const Point p2 = mesh.geometry().point(facet.entities(0)[2]);
+      const Point v1 = p1 - p0;
+      const Point v2 = p2 - p0;
+      const Point n = v1.cross(v2);
 
       if (n.dot(p0 - p) < 0.0)
       {

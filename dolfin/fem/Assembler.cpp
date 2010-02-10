@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2010-01-25
+// Last changed: 2010-02-08
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>

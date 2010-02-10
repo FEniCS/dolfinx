@@ -10,6 +10,7 @@
 %import(module="dolfin.cpp") "dolfin/mesh/Facet.h"
 %import(module="dolfin.cpp") "dolfin/mesh/Point.h"
 %import(module="dolfin.cpp") "dolfin/mesh/Cell.h"
+%import(module="dolfin.cpp") "dolfin/mesh/FacetCell.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshTopology.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshGeometry.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshData.h"
@@ -35,3 +36,5 @@
 %import(module="dolfin.cpp") "dolfin/mesh/Rectangle.h"
 %import(module="dolfin.cpp") "dolfin/mesh/UnitSphere.h"
 %import(module="dolfin.cpp") "dolfin/mesh/IntersectionOperator.h"
+%import(module="dolfin.cpp") "dolfin/mesh/LocalMeshRefinement.h"
+%import(module="dolfin.cpp") "dolfin/mesh/UniformMeshRefinement.h"

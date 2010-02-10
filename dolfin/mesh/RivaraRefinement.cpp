@@ -2,27 +2,29 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Bartosz Sawicki, 2009.
+// Modified by Garth N. Wells, 2010.
+//
+// First added:  2008
+// Last changed: 2010-02-07
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEditor.h>
-#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
 #include "RivaraRefinement.h"
 
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void RivaraRefinement::refine(Mesh& mesh,
-			      MeshFunction<bool>& cell_marker,
-			      MeshFunction<uint>& cell_map,
-			      std::vector<int>& facet_map)
+Mesh RivaraRefinement::refine(const Mesh& mesh,
+			                        const MeshFunction<bool>& cell_marker,
+			                        MeshFunction<uint>& cell_map,
+			                        std::vector<int>& facet_map)
 {
   info("Refining simplicial mesh by recursive Rivara bisection.");
 
-  int dim = mesh.topology().dim();
+  const uint dim = mesh.topology().dim();
 
   // Create dynamic mesh and import data
   DMesh dmesh;
@@ -32,7 +34,7 @@ void RivaraRefinement::refine(Mesh& mesh,
   std::vector<bool> dmarked(mesh.num_cells());
   for (CellIterator ci(mesh); !ci.end(); ++ci)
   {
-    if(cell_marker[ci->index()] == true)
+    if(cell_marker[*ci] == true)
       dmarked[ci->index()] = true;
     else
       dmarked[ci->index()] = false;
@@ -58,22 +60,22 @@ void RivaraRefinement::refine(Mesh& mesh,
   std::vector<int> new2old_cell_arr;
   std::vector<int> new2old_facet_arr;
 
-  Mesh omesh;
-
-  dmesh.export_mesh(omesh, new2old_cell_arr, new2old_facet_arr);
-
-  mesh = omesh;
+  // Refine mesh
+  Mesh refined_mesh;
+  dmesh.export_mesh(refined_mesh, new2old_cell_arr, new2old_facet_arr);
 
   // Generate cell mesh function map
   cell_map.init(mesh, dim);
   for (CellIterator c(mesh); !c.end(); ++c)
-    cell_map[c->index()] = new2old_cell_arr[c->index()];
+    cell_map[*c] = new2old_cell_arr[c->index()];
 
   //Generate facet map array
   std::vector<int> new_facet_map(new2old_facet_arr.size());
   facet_map = new_facet_map;
   for (uint i=0; i<new2old_facet_arr.size(); i++ )
     facet_map[i] = new2old_facet_arr[i];
+
+  return refined_mesh;
 }
 //-----------------------------------------------------------------------------
 RivaraRefinement::DVertex::DVertex() : id(0), cells(0), p(0.0, 0.0, 0.0)
@@ -81,7 +83,8 @@ RivaraRefinement::DVertex::DVertex() : id(0), cells(0), p(0.0, 0.0, 0.0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-RivaraRefinement::DCell::DCell() : id(0), parent_id(0), vertices(0), deleted(false), facets(0)
+RivaraRefinement::DCell::DCell() : id(0), parent_id(0), vertices(0), 
+                                   deleted(false), facets(0)
 {
   // Do nothing
 }
@@ -96,15 +99,18 @@ RivaraRefinement::DMesh::~DMesh()
   // Delete allocated DVertices
   for(std::list<DVertex* >::iterator it = vertices.begin();
       it != vertices.end(); ++it)
+  {
     delete *it;
-
+  }
   // Delete allocated DCells
   for(std::list<DCell* >::iterator it = cells.begin();
       it != cells.end(); ++it)
+  {
     delete *it;
+  }
 }
 //-----------------------------------------------------------------------------
-void RivaraRefinement::DMesh::import_mesh(Mesh& mesh)
+void RivaraRefinement::DMesh::import_mesh(const Mesh& mesh)
 {
   cell_type = &(mesh.type());
   dim = mesh.topology().dim();
@@ -195,7 +201,6 @@ void RivaraRefinement::DMesh::export_mesh(Mesh& mesh,
     current_cell++;
   }
   editor.close();
-
 }
 //-----------------------------------------------------------------------------
 void RivaraRefinement::DMesh::number()
@@ -339,7 +344,7 @@ RivaraRefinement::DCell* RivaraRefinement::DMesh::opposite(DCell* dcell,
 
     if(c != dcell)
     {
-      int matches = 0;
+      uint matches = 0;
       for(uint i = 0; i < c->vertices.size(); i++)
       {
         if(c->vertices[i] == v1 || c->vertices[i] == v2)
@@ -469,6 +474,3 @@ void RivaraRefinement::DMesh::propagate_facets(DCell* dcell, DCell* c0,
   }
 }
 //-----------------------------------------------------------------------------
-
-
-

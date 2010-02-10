@@ -33,7 +33,7 @@ Graph::Graph(Mesh& mesh, Representation rep)
     _edge_weights(0), _vertex_weights(0)
 {
   // Build graph
-  GraphBuilder::build(*this, mesh, rep);
+  //GraphBuilder::build(*this, mesh, rep);
 }
 //-----------------------------------------------------------------------------
 Graph::Graph(const Graph& graph) : Variable("graph", "DOLFIN graph")

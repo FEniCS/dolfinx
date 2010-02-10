@@ -18,6 +18,9 @@
 #include "MeshFunction.h"
 #include "MeshPartitioning.h"
 
+#include <dolfin/graph/Graph.h>
+#include <dolfin/graph/GraphBuilder.h>
+
 #if defined HAS_PARMETIS
 
 #include <parmetis.h>
@@ -69,6 +72,12 @@ void MeshPartitioning::partition(Mesh& mesh)
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 {
+  // FIXME: Remove when finished testing new dual graph builder,
+  cout << "Testing Graph" << endl;
+  Graph my_graph;
+  GraphBuilder::build(my_graph, mesh_data);
+  cout << "End graph test" << endl;
+
   // Compute cell partition
   std::vector<uint> cell_partition;
   compute_partition(cell_partition, mesh_data);
@@ -88,6 +97,8 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 //-----------------------------------------------------------------------------
 void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
 {
+  // FIXME: Break up this function
+
   Timer timer("PARALLEL x: Number mesh entities");
   Mesh& mesh = const_cast<Mesh&>(_mesh);
 
@@ -148,7 +159,6 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   // we must number it ourself
   std::map<std::vector<uint>, uint> ignored_entity_indices;
   std::map<std::vector<uint>, std::vector<uint> > ignored_entity_processes;
-
 
   // Iterate over all entities
   for (std::map<std::vector<uint>, uint>::const_iterator it = entities.begin(); it != entities.end(); ++it)
@@ -377,23 +387,11 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   }
   unshare_entities.clear();
 
-
   // Create mesh markers for exterior facets
-  MeshFunction<uint>* exterior = 0;
   if (d == (mesh.topology().dim() - 1))
   {
-    exterior = mesh.data().create_mesh_function("exterior facets", d);
-    
-    // Mark all facets as exterior
-    exterior->set_all(1);
-    
-    // Remove all facets in the overlap
-    for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); 
-	 it != shared_entity_indices.end(); ++it)
-      (*exterior)[entities[it->first]] = 0;
-    for (std::map<std::vector<uint>, uint>::const_iterator it = ignored_entity_indices.begin();
-	 it != ignored_entity_indices.end(); ++it)
-      (*exterior)[entities[it->first]] = 0;
+    mark_nonshared(entities, shared_entity_indices, ignored_entity_indices, 
+                   mesh, d, "exterior facets");
   }
 
   // Communicate number of entities to number
@@ -422,17 +420,24 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   std::fill(entity_indices.begin(), entity_indices.end(), -1);
 
   // Number owned entities
-  for (std::map<std::vector<uint>, uint>::const_iterator it = owned_entity_indices.begin(); it != owned_entity_indices.end(); ++it)
+  for (std::map<std::vector<uint>, uint>::const_iterator it = owned_entity_indices.begin(); 
+      it != owned_entity_indices.end(); ++it)
+  {
     entity_indices[(*it).second] = offset++;
+  }
 
   // Number shared entities
-  for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
+  for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); 
+        it != shared_entity_indices.end(); ++it)
+  {
     entity_indices[(*it).second] = offset++;
+  }
 
   // Communicate indices for shared entities and get indices for ignored
   std::vector<uint> values;
   std::vector<uint> partition;
-  for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
+  for (std::map<std::vector<uint>, uint>::const_iterator it = shared_entity_indices.begin(); 
+        it != shared_entity_indices.end(); ++it)
   {
     // Get entity index
     const uint local_entity_index = (*it).second;
@@ -724,8 +729,9 @@ void MeshPartitioning::distribute_vertices(LocalMeshData& mesh_data,
     for (uint j = 0; j < vertex_size; ++j)
       vertex[j] = vertex_coordinates[i*vertex_size+j];
     mesh_data.vertex_coordinates.push_back(vertex);
-    uint sender_process = vertex_coordinates_partition[i*vertex_size];
-    uint global_vertex_index = vertex_location[sender_process][index_counters[sender_process]++];
+    const uint sender_process = vertex_coordinates_partition[i*vertex_size];
+    const uint global_vertex_index 
+        = vertex_location[sender_process][index_counters[sender_process]++];
     glob2loc[global_vertex_index] = i;
   }
 }
@@ -838,8 +844,11 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
          global_vertex_recv, global_vertex_recv + boundary_sizes[q], intersection.begin()); 
 
     // Fill overlap information
-    for (std::vector<uint>::const_iterator index = intersection.begin(); index != intersection_end; ++index)
+    for (std::vector<uint>::const_iterator index = intersection.begin(); 
+        index != intersection_end; ++index)
+    {
       (*overlap)[*index].push_back(q);
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -902,3 +911,22 @@ bool MeshPartitioning::in_overlap(const std::vector<uint>& entity,
   return true;
 }
 //-----------------------------------------------------------------------------
+void MeshPartitioning::mark_nonshared(const std::map<std::vector<uint>, uint>& entities,
+               const std::map<std::vector<uint>, uint>& shared_entity_indices, 
+               const std::map<std::vector<uint>, uint>& ignored_entity_indices,
+               Mesh& mesh, uint d, std::string name)
+{
+  // Create mesh markers and mark all
+  MeshFunction<uint>* exterior = 0;
+  exterior = mesh.data().create_mesh_function(name, d);
+  exterior->set_all(1);
+  
+  // Remove all entities in the overlap
+  std::map<std::vector<uint>, uint>::const_iterator it;
+  for (it = shared_entity_indices.begin(); it != shared_entity_indices.end(); ++it)
+    (*exterior)[entities.find(it->first)->second] = 0;
+  for (it = ignored_entity_indices.begin(); it != ignored_entity_indices.end(); ++it)
+    (*exterior)[entities.find(it->first)->second] = 0;
+}
+//-----------------------------------------------------------------------------
+
