@@ -19,10 +19,10 @@ ADDED:
   and executes search operations.
 
 - MeshPrimitive class: Implementation of the concept "AABBPrimitive" required by the
-  CGAL AABB tree. Relies on the Primitive_Traits class to perform data
+  CGAL AABB tree. Relies on the PrimitiveTraits class to perform data
   conversion,
 
-- Primitive_Traits template class: Traits class which provides conversion
+- PrimitiveTraits template class: Traits class which provides conversion
   functionality from MeshEntity (s.a.  IntervalCell, TetrahedronCell etc.) -->
   CGAL geometric primitive (Segment_3, Tetrahedron_3). 
 
