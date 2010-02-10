@@ -177,7 +177,7 @@ public:
     BoundaryMesh b0(mesh);
     BoundaryMesh b1;
     b0.order();
-    b1.init(b0);
+    b1.init_exterior_boundary(b0);
     CPPUNIT_ASSERT(b1.num_vertices() == 0);
     CPPUNIT_ASSERT(b1.num_cells() == 0);
   }
