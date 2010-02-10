@@ -545,7 +545,7 @@ void dolfin::MPI::scatter(std::vector<std::vector<double> >& values,
   error("MPI::scatter() requires MPI.");
 }
 //-----------------------------------------------------------------------------
-std::vector<uint> dolfin::MPI::gather(uint value)
+std::vector<dolfin::uint> dolfin::MPI::gather(uint value)
 {
   error("MPI::gather() requires MPI.");
   return std::vector<uint>(1);
