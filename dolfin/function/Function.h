@@ -7,7 +7,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-02-08
+// Last changed: 2010-02-10
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -33,6 +33,7 @@ namespace dolfin
   class FunctionSpace;
   class GenericVector;
   class Data;
+  class SubDomain;
 
   /// This class represents a function u_h in a finite element
   /// function space V_h, given by
@@ -126,6 +127,9 @@ namespace dolfin
 
     /// Extrapolate function (from a possibly lower-degree function space)
     void extrapolate(const Function& v, bool facet_extrapolation=true);
+
+    /// Extrapolate function and set equal to v in sub domain
+    void extrapolate(const Function& v, const SubDomain& sub_domain);
 
     //--- Implementation of GenericFunction interface ---
 
