@@ -1,3 +1,18 @@
+// =====================================================================================
+//
+// Copyright (C) 2010-02-09  André Massing
+// Licensed under the GNU LGPL Version 2.1.
+//
+// Modified by André Massing, 2010
+//
+// First added:  2010-02-09
+// Last changed: 2010-02-11
+// 
+//Author:  André Massing (am), massing@simula.no
+//Company:  Simula Research Laboratory, Fornebu, Norway
+//
+// =====================================================================================
+
 #include "MeshEntity.h"
 #include "PrimitiveIntersector.h"
 
