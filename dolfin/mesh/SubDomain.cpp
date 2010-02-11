@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2007-04-24
-// Last changed: 2009-10-08
+// Last changed: 2010-02-11
 
 #include <dolfin/log/log.h>
 #include "MeshData.h"
@@ -80,7 +80,7 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
         {
           all_vertices_inside = false;
           break;
-        }
+       }
       }
     }
     // Dimension of facet == 0, so just check the vertex itself

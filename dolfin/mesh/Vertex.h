@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-01
-// Last changed: 2008-10-23
+// Last changed: 2010-02-11
 
 #ifndef __VERTEX_H
 #define __VERTEX_H

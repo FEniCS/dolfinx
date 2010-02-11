@@ -5,7 +5,7 @@
 // Modified by Andre Massing 2009.
 //
 // First added:  2006-06-01
-// Last changed: 2010-02-08
+// Last changed: 2010-02-11
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -47,9 +47,6 @@ namespace dolfin
     /// Compute diameter of cell
     inline double diameter() const
     { return _mesh->type().diameter(*this); }
-
-    /// Compute midpoint of cell
-    Point midpoint() const;
 
     /// Compute component i of normal of given facet with respect to the cell
     inline double normal(uint facet, uint i) const

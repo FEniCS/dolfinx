@@ -4,7 +4,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-11
-// Last changed: 2009-11-16
+// Last changed: 2010-02-11
 
 #include <dolfin/log/dolfin_log.h>
 #include "MeshEntity.h"
@@ -77,10 +77,39 @@ dolfin::uint MeshEntity::index(const MeshEntity& entity) const
   return 0;
 }
 //-----------------------------------------------------------------------------
+Point MeshEntity::midpoint() const
+{
+  // Special case: a vertex is its own midpoint (don't check neighbors)
+  if (_dim == 0)
+    return _mesh->geometry().point(_index);
 
+  // Other wise iterate over incident vertices and compute average
+  uint num_vertices = 0;
+
+  double x = 0.0;
+  double y = 0.0;
+  double z = 0.0;
+
+  for (VertexIterator v(*this); !v.end(); ++v)
+  {
+    x += v->point().x();
+    y += v->point().y();
+    z += v->point().z();
+
+    num_vertices++;
+  }
+
+  x /= double(num_vertices);
+  y /= double(num_vertices);
+  z /= double(num_vertices);
+
+  Point p(x, y, z);
+  return p;
+}
+//-----------------------------------------------------------------------------
 #ifdef HAS_CGAL
 template <typename K>
-CGAL::Bbox_3 MeshEntity::bbox () const 
+CGAL::Bbox_3 MeshEntity::bbox () const
 {
   VertexIterator v(*this);
   CGAL::Bbox_3 box(v->point().bbox<K>());
@@ -89,7 +118,7 @@ CGAL::Bbox_3 MeshEntity::bbox () const
   return box;
 }
 #endif
-
+//-----------------------------------------------------------------------------
 std::string MeshEntity::str(bool verbose) const
 {
   if (verbose)

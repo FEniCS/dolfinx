@@ -5,7 +5,7 @@
 // Modified by Kristoffer Selim 2009.
 //
 // First added:  2006-06-02
-// Last changed: 2009-01-12
+// Last changed: 2010-02-11
 
 #ifndef __EDGE_H
 #define __EDGE_H
@@ -35,9 +35,6 @@ namespace dolfin
 
     /// Compute Euclidian length of edge
     double length();
-
-    /// Compute coordinates of edge midpoint as a 3D point value
-    Point midpoint();
 
   };
 
