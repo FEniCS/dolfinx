@@ -166,6 +166,7 @@ void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
   }
 
   // Add off-process (ghost) edges (cell-cell) connections to graph
+  cout << "Compute graph ghost edges" << endl;
   std::set<uint> ghost_cell_global_indices;
   for (uint i = 0; i < candidate_ghost_cell_vertices.size(); ++i)
   {
@@ -175,6 +176,7 @@ void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
                                num_cell_facets, num_facet_vertices, 
                                local_graph, ghost_cell_global_indices);
   }
+  cout << "Finish compute graph ghost edges" << endl;
 }
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
@@ -182,6 +184,8 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
                                   uint num_facet_vertices, uint offset,
                                   std::vector<std::set<uint> >& local_graph)
 {
+  // FIXME: This function needs to be made much more efficient
+
   std::vector<uint>::iterator it;
 
   // Forward step
@@ -237,10 +241,7 @@ dolfin::uint SCOTCH::compute_ghost_connectivity(const std::vector<std::vector<ui
                                           std::vector<std::set<uint> >& local_graph,
                                           std::set<uint>& ghost_cells)
 {
-  // FIXME: This function can be made more efficient. For example, loop over local
-  //        candidate cells (not all cells) and ghost candidates only. 
-
-  // FIXME: It can be made efficient when the SCOTCH numbering is figured out
+  // FIXME: This function needs to be made more efficient. 
 
   const uint num_ghost_vertices_0 = ghost_cells.size();
 
@@ -377,6 +378,7 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   if (err != 0)
     error("Error buidling SCOTCH graph.");
 
+  // FIXME: Is this required?
   //err = SCOTCH_dgraphGhst(&dgrafdat);
   //if (err != 0)
   //  error("Error buidling SCOTCH ghost points.");
