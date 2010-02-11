@@ -5,7 +5,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2009-09-08
+// Last changed: 2010-01-15
 
 #ifndef __POINT_CELL_H
 #define __POINT_CELL_H

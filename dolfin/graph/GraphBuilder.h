@@ -10,13 +10,11 @@
 #include <set>
 #include <vector>
 #include <dolfin/common/types.h>
-#include "Graph.h"
 
 namespace dolfin
 {
 
   // Forward declarations
-  class Graph;
   class LocalMeshData;
   class Mesh;
 

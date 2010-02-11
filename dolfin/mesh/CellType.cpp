@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristoffer Selim, 2008.
+// Modified by Andre Massing, 2010.
 //
 // First added:  2006-06-05
-// Last changed: 2009-10-08
+// Last changed: 2010-02-03
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>

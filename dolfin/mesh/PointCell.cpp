@@ -5,7 +5,7 @@
 // Modified by Kristoffer Sleim, 2008.
 //
 // First added:  2007-12-12
-// Last changed: 2009-08-10
+// Last changed: 2010-01-19
 
 #include <dolfin/log/dolfin_log.h>
 #include "Cell.h"

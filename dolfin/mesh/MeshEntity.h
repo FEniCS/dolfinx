@@ -89,7 +89,7 @@ namespace dolfin
     // Friends
     friend class MeshEntityIterator;
 
-    //The mesh
+    // The mesh
     Mesh const * _mesh;
 
     // Topological dimension

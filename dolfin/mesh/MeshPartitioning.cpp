@@ -18,12 +18,8 @@
 #include "MeshFunction.h"
 #include "MeshPartitioning.h"
 
-#include <dolfin/graph/Graph.h>
-#include <dolfin/graph/GraphBuilder.h>
-
-#if defined HAS_PARMETIS
-
-#include <parmetis.h>
+#include <dolfin/graph/ParMETIS.h>
+#include <dolfin/graph/SCOTCH.h>
 
 using namespace dolfin;
 
@@ -72,15 +68,11 @@ void MeshPartitioning::partition(Mesh& mesh)
 //-----------------------------------------------------------------------------
 void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 {
-  // FIXME: Remove when finished testing new dual graph builder,
-  cout << "Testing Graph" << endl;
-  GraphBuilder::build(mesh_data);
-  cout << "End graph test" << endl;
-
   // Compute cell partition
   std::vector<uint> cell_partition;
-  compute_partition(cell_partition, mesh_data);
-
+  //ParMETIS::compute_partition(cell_partition, mesh_data);
+  SCOTCH::compute_partition(cell_partition, mesh_data);
+    
   // Distribute cells
   Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
   distribute_cells(mesh_data, cell_partition);
@@ -511,102 +503,6 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   }
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
-                                         const LocalMeshData& mesh_data)
-{
-  // This function prepares data for ParMETIS (which is a pain
-  // since ParMETIS has the worst possible interface), calls
-  // ParMETIS, and then collects the results from ParMETIS.
-
-  Timer timer("PARALLEL 1: Compute partition (calling ParMETIS)");
-
-  // Get number of processes and process number
-  const uint num_processes = MPI::num_processes();
-  const uint process_number = MPI::process_number();
-
-  // Get dimensions of local mesh_data
-  const uint num_local_cells = mesh_data.cell_vertices.size();
-  const uint num_cell_vertices = mesh_data.cell_vertices[0].size();
-
-  // Communicate number of cells between all processors
-  std::vector<uint> num_cells(num_processes);
-  num_cells[process_number] = num_local_cells;
-  MPI::gather(num_cells);
-
-  // Build elmdist array with cell offsets for all processors
-  int* elmdist = new int[num_processes + 1];
-  elmdist[0] = 0;
-  for (uint i = 1; i < num_processes + 1; ++i)
-    elmdist[i] = elmdist[i - 1] + num_cells[i - 1];
-
-  // Build eptr and eind arrays storing cell-vertex connectivity
-  int* eptr = new int[num_local_cells + 1];
-  int* eind = new int[num_local_cells * num_cell_vertices];
-  for (uint i = 0; i < num_local_cells; i++)
-  {
-    assert(mesh_data.cell_vertices[i].size() == num_cell_vertices);
-    eptr[i] = i * num_cell_vertices;
-    for (uint j = 0; j < num_cell_vertices; j++)
-      eind[eptr[i] + j] = mesh_data.cell_vertices[i][j];
-  }
-  eptr[num_local_cells] = num_local_cells * num_cell_vertices;
-
-  // Number of nodes shared for dual graph (partition along facets)
-  int ncommonnodes = num_cell_vertices - 1;
-
-  // Number of partitions (one for each process)
-  int nparts = num_processes;
-
-  // Strange weight arrays needed by ParMETIS
-  int ncon = 1;
-  float* tpwgts = new float[ncon*nparts];
-  for (int i = 0; i < ncon*nparts; i++)
-    tpwgts[i] = 1.0 / static_cast<float>(nparts);
-  float* ubvec = new float[ncon];
-  for (int i = 0; i < ncon; i++)
-    ubvec[i] = 1.05;
-
-  // Options for ParMETIS, use default
-  int options[3];
-  options[0] = 1;
-  options[1] = 0;
-  options[2] = 15;
-  
-  // Partitioning array to be computed by ParMETIS (note bug in manual: vertices, not cells!)
-  int* part = new int[num_local_cells];
-
-  // Prepare remaining arguments for ParMETIS
-  int* elmwgt = 0;
-  int wgtflag = 0;
-  int numflag = 0;
-  int edgecut = 0;
-
-  // Construct communicator (copy of MPI_COMM_WORLD)
-  MPICommunicator comm;
-  
-  // Call ParMETIS to partition mesh
-  ParMETIS_V3_PartMeshKway(elmdist, eptr, eind,
-                           elmwgt, &wgtflag, &numflag, &ncon,
-                           &ncommonnodes, &nparts,
-                           tpwgts, ubvec, options,
-                           &edgecut, part, &(*comm)); 
-  info("Partitioned mesh, edge cut is %d.", edgecut);
-
-  // Copy mesh_data
-  cell_partition.clear();
-  cell_partition.reserve(num_local_cells);
-  for (uint i = 0; i < num_local_cells; i++)
-    cell_partition.push_back(static_cast<uint>(part[i]));
-  
-  // Cleanup
-  delete [] elmdist;
-  delete [] eptr;
-  delete [] eind;
-  delete [] tpwgts;
-  delete [] ubvec;
-  delete [] part;
-}
-//-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_cells(LocalMeshData& mesh_data,
                                         const std::vector<uint>& cell_partition)
 {
@@ -850,56 +746,6 @@ void MeshPartitioning::build_mesh(Mesh& mesh,
     }
   }
 }
-//-----------------------------------------------------------------------------
-
-#else
-
-using namespace dolfin;
-
-//-----------------------------------------------------------------------------
-void MeshPartitioning::partition(Mesh& mesh)
-{
-  error("Mesh partitioning requires MPI and ParMETIS.");
-}
-//-----------------------------------------------------------------------------
-void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& data)
-{
-  error("Mesh partitioning requires MPI and ParMETIS.");
-}
-//-----------------------------------------------------------------------------
-void MeshPartitioning::number_entities(const Mesh& mesh, uint d)
-{
-  error("Mesh partitioning requires MPI and ParMETIS.");
-}
-//-----------------------------------------------------------------------------
-void MeshPartitioning::compute_partition(std::vector<uint>& cell_partition,
-                                         const LocalMeshData& data)
-{
-  error("Mesh partitioning requires MPI and ParMETIS.");
-}
-
-//-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_cells(LocalMeshData& data,
-                                        const std::vector<uint>& cell_partition)
-{
-  error("Mesh partitioning requires MPI and ParMETIS.");
-}
-//-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_vertices(LocalMeshData& data,
-                                           std::map<uint, uint>& glob2loc)
-{
-  error("Mesh partitioning requires MPI and ParMETIS.");
-}
-//-----------------------------------------------------------------------------
-void MeshPartitioning::build_mesh(Mesh& mesh, const LocalMeshData& data,
-                                  std::map<uint, uint>& glob2loc)
-{
-  error("Mesh partitioning requires MPI and ParMETIS.");
-}
-//-----------------------------------------------------------------------------
-
-#endif
-
 //-----------------------------------------------------------------------------
 bool MeshPartitioning::in_overlap(const std::vector<uint>& entity,
                                   std::map<uint, std::vector<uint> >& overlap)

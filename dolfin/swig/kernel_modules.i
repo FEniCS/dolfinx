@@ -109,8 +109,6 @@
 %include "dolfin/mesh/MeshFunction.h"
 %include "dolfin/mesh/Mesh.h"
 %include "dolfin/mesh/MeshPartitioning.h"
-%include "dolfin/mesh/MeshPrimitive.h"
-%include "dolfin/mesh/Primitive_Traits.h"
 %include "dolfin/mesh/LocalMeshData.h"
 %include "dolfin/mesh/SubDomain.h"
 %include "dolfin/mesh/SubMesh.h"
@@ -125,6 +123,7 @@
 %include "dolfin/mesh/Rectangle.h"
 %include "dolfin/mesh/UnitSphere.h"
 %include "dolfin/mesh/IntersectionOperator.h"
+%include "dolfin/mesh/PrimitiveIntersector.h"
 %include "dolfin/mesh/refine.h"
 %include "dolfin/swig/mesh_post.i"
 
@@ -141,12 +140,6 @@
 %include "dolfin/swig/function_post.i"
 
 // DOLFIN headers included from graph
-%include "dolfin/graph/Graph.h"
-%include "dolfin/graph/GraphBuilder.h"
-%include "dolfin/graph/GraphEditor.h"
-%include "dolfin/graph/GraphPartition.h"
-%include "dolfin/graph/UndirectedClique.h"
-%include "dolfin/graph/DirectedClique.h"
 
 // DOLFIN headers included from plot
 %include "dolfin/plot/FunctionPlotData.h"
