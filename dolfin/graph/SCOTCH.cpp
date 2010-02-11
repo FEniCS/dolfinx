@@ -493,6 +493,50 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
     cell_partition[i] = partloctab[i];
 }
 //-----------------------------------------------------------------------------
-
-#endif
+#else
+//-----------------------------------------------------------------------------
+void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
+                               const LocalMeshData& mesh_data)
+{
+  error("This function requires SCOTCH.");
+}
+//-----------------------------------------------------------------------------
+void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
+                                std::vector<std::set<uint> >& local_graph,
+                                std::set<uint>& ghost_vertices)
+{
+  error("This function requires SCOTCH.");
+}
+//-----------------------------------------------------------------------------
+void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
+                                  uint num_cell_facets, uint num_facet_vertices,
+                                  uint offset,
+                                  std::vector<std::set<uint> >& graph)
+{
+  error("This function requires SCOTCH.");
+}
+//-----------------------------------------------------------------------------
+dolfin::uint SCOTCH::compute_ghost_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
+                                                const std::vector<uint>& local_boundary_cells,
+                                                const std::vector<std::vector<uint> >& candidate_ghost_vertices,
+                                                const std::vector<uint>& candidate_ghost_global_indices,
+                                                uint num_cell_facets, uint num_facet_vertices,
+                                                std::vector<std::set<uint> >& ghost_graph_edges,
+                                                std::set<uint>& ghost_cells)
+{
+  error("This function requires SCOTCH.");
+  return 0;
+}
+//-----------------------------------------------------------------------------
+void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
+                       const std::set<uint>& ghost_vertices,
+                       const std::vector<uint>& global_cell_indices,
+                       uint num_global_vertices,
+                       std::vector<uint>& cell_partition)
+{
+  error("This function requires SCOTCH.");
+}
+//-----------------------------------------------------------------------------
+ 
+ #endif
 
