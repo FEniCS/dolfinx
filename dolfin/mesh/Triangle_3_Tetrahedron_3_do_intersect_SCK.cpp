@@ -6,12 +6,14 @@
 // Modified by André Massing, 2010
 //
 // First added:  2010-02-10
-// Last changed: 2010-02-10
+// Last changed: 2010-02-11
 // 
 //Author:  André Massing (am), massing@simula.no
 //Company:  Simula Research Laboratory, Fornebu, Norway
 //
 // =====================================================================================
+
+#ifdef HAS_CGAL
 
 #include "Triangle_3_Tetrahedron_3_do_intersect_SCK.h" 
 
@@ -55,3 +57,6 @@ do_intersect<Simple_cartesian<double> >(const Simple_cartesian<double>::Tetrahed
 } // end CGALi
 
 }  //end CGAL
+
+#endif
+

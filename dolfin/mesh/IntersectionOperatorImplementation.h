@@ -4,7 +4,7 @@
 // Modified by Johannes Ring, 2009.
 //
 // First added:  2009-09-11
-// Last changed: 2010-02-10
+// Last changed: 2010-02-11
 
 #ifndef __INTERSECTIONOPERATORIMPLEMENTATION_H
 #define __INTERSECTIONOPERATORIMPLEMENTATION_H
@@ -218,6 +218,8 @@ namespace dolfin  {
     }
     virtual void all_intersected_entities(const Point & point, uint_set & ids_result) const {}  
     virtual void all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const {}
+    virtual void all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const {};
+    virtual void all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const {};
     virtual void all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const {}
     virtual int any_intersected_entity(const Point & point) const {return -1; } 
 
