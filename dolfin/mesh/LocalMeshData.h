@@ -111,6 +111,7 @@ namespace dolfin
     friend class MeshPartitioning;
     friend class GraphBuilder;
     friend class ParMETIS;
+    friend class SCOTCH;
 
   };
 
