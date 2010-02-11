@@ -70,28 +70,31 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
       on_boundary = (entity->num_entities(D) == 1 &&
 		     (!exterior || (((*exterior)[*entity]))));
 
-    bool all_vertices_inside = true;
-    // Dimension of facet > 0, check incident vertices
+    // Start by assuming all points are inside
+    bool all_points_inside = true;
+
+    // Check all incident vertices if dimension is > 0 (not a vertex)
     if (entity->dim() > 0)
     {
       for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
       {
         if (!inside(vertex->x(), on_boundary))
         {
-          all_vertices_inside = false;
+          all_points_inside = false;
           break;
        }
       }
     }
-    // Dimension of facet == 0, so just check the vertex itself
-    else
+
+    // Check midpoint (works also in the case when we have a single vertex)
+    if (all_points_inside)
     {
-      if (!inside(mesh.geometry().x(entity->index()), on_boundary))
-        all_vertices_inside = false;
+      if (!inside(entity->midpoint().coordinates(), on_boundary))
+        all_points_inside = false;
     }
 
     // Mark entity with all vertices inside
-    if (all_vertices_inside)
+    if (all_points_inside)
       sub_domains[*entity] = sub_domain;
 
     p++;
