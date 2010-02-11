@@ -5,7 +5,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2009-08-10
+// Last changed: 2010-01-15
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -172,26 +172,6 @@ void IntervalCell::order(Cell& cell,
     uint* cell_vertices = const_cast<uint*>(cell.entities(0));
     sort_entities(2, cell_vertices, global_vertex_indices);
   }
-}
-//-----------------------------------------------------------------------------
-bool IntervalCell::intersects(const MeshEntity& entity, const Point& p) const
-{
-  dolfin_not_implemented();
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool IntervalCell::intersects(const MeshEntity& entity,
-                              const Point& p0, const Point& p1) const
-{
-  dolfin_not_implemented();
-  return false;
-}
-//-----------------------------------------------------------------------------
-bool IntervalCell::intersects(const MeshEntity& entity, const Cell& cell) const
-
-{
-  dolfin_not_implemented();
-  return false;
 }
 //-----------------------------------------------------------------------------
 std::string IntervalCell::description(bool plural) const

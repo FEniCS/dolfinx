@@ -17,8 +17,6 @@ if not has_cgal():
     exit(0)
 
 sphere = UnitSphere(20)
-#sphere = UnitSphere(10)
-#cube = UnitCube(20, 20, 20)
 cube = UnitCube(20, 20, 20)
 
 # Access mesh geometry
@@ -60,7 +58,6 @@ while t < 1.4 :
     else:
         plot(intersection)
 
-#    p.movie("movie")
     #Propagate sphere along the line t(1,1,1).  
     x[:,0] += dt 
     x[:,1] += dt

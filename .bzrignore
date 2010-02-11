@@ -41,5 +41,15 @@ RE:demo/.*/cpp/.sconsign.dblite
 RE:test/.*/cpp/test
 RE:test/unit/mesh/(cpp|python)/.*.(xml|m)
 
+#Generated documentation
+doc/progr_reference/html/**.html
+doc/progr_reference/html/**.png
+doc/progr_reference/html/**.gif
+doc/progr_reference/html/**.css
+doc/progr_reference/html/**.dot
+doc/progr_reference/latex/
+doc/progr_reference/html/dir_*_dep.*
+RE:doc/progr_reference/html/d.
+
 #Scons os files.
 *.os

@@ -5,7 +5,7 @@
 // Modified by Andre Massing 2009.
 //
 // First added:  2006-06-01
-// Last changed: 2010-02-08
+// Last changed: 2010-02-10
 
 #ifndef __CELL_H
 #define __CELL_H

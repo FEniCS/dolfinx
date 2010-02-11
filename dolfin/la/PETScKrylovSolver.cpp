@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2005-2009.
 //
 // First added:  2005-12-02
-// Last changed: 2009-09-08
+// Last changed: 2009-12-25
 
 #ifdef HAS_PETSC
 
@@ -341,13 +341,17 @@ void PETScKrylovSolver::set_petsc_preconditioner()
   // Treat special case Hypre AMG preconditioner
   if (pc_petsc == "amg_hypre")
   {
+#ifndef PETSC_HAVE_HYPRE
+#define PETSC_HAVE_HYPRE 1
+#endif
+
 #if PETSC_HAVE_HYPRE
     PCSetType(pc, PCHYPRE);
     PCHYPRESetType(pc, "boomeramg");
     PCSetFromOptions(pc);
 #else
     warning("PETSc has not been compiled with the HYPRE library for   "
-                   "algerbraic multigrid. Default PETSc solver will be used. "
+                   "algebraic multigrid. Default PETSc solver will be used. "
                    "For performance, installation of HYPRE is recommended.   "
                    "See the DOLFIN user manual for more information.");
 #endif

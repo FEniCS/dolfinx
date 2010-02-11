@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-11
-// Last changed: 2009-11-11
+// Last changed: 2010-02-10
 
 #ifndef  meshprimitive_INC
 #define  meshprimitive_INC
@@ -16,7 +16,7 @@
 #include "MeshEntityIterator.h"
 #include "Vertex.h"
 
-#include "Primitive_Traits.h"
+#include "PrimitiveTraits.h"
 
 namespace dolfin {
 
@@ -71,7 +71,7 @@ public:
     }
 
     //First line compiles but not the second..?
-    Datum datum() const { return Primitive_Traits<Primitive,K>::datum(MeshPrimitive<PrimitiveTrait>::getEntity(*this));}
+    Datum datum() const { return PrimitiveTraits<Primitive,K>::datum(MeshPrimitive<PrimitiveTrait>::getEntity(*this));}
 //    Datum datum() const { return		PrimitiveTrait::datum(MeshPrimitive<PrimitiveTrait>::getEntity(*this));}
 };
 

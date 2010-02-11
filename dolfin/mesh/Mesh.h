@@ -6,10 +6,10 @@
 // Modified by Garth N. Wells, 2007.
 // Modified by Niclas Jansson, 2008.
 // Modified by Kristoffer Selim, 2008.
-// Modified by Andre Massing, 2009.
+// Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2009-12-15
+// Last changed: 2010-02-09
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -29,10 +29,11 @@ namespace dolfin
 {
 
   template <class T> class MeshFunction;
-  class IntersectionOperator;
   class Function;
   class BoundaryMesh;
   class XMLMesh;
+  class IntersectionOperator;
+
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
   ///
@@ -191,6 +192,20 @@ namespace dolfin
     ///\param[out] ids_result The ids of the intersected entities are saved in a set for efficienty
     ///reasons, to avoid to sort out duplicates later on.
     void all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const;
+
+    ///Compute all id of all cells which are intersects by a \em entity.
+    ///\param[out] ids_result The ids of the intersected entities are saved in a vector.
+    ///This allows is more efficent than using a set and allows a map between
+    //the (external) cell and the intersected cell of the mesh. If you
+    //are only interested in intersection with a list of cells without caring about which
+    //cell what intersected by which one, use 
+    // void IntersectionOperator::all_intersected_entities(const std::vector<Cell> &, uint_set &) const;
+    void all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const;
+
+    ///Compute all id of all cells which are intersects by any of the entities in \em entities. This
+    ///\param[out] ids_result The ids of the intersected set are saved in a set for efficienty
+    ///reasons, to avoid to sort out duplicates later on.
+    void all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const;
 
     ///Compute all id of all cells which are intersects by the given mesh \em another_mesh;
     ///\param[out] ids_result The ids of the intersected entities are saved in a set for efficienty

@@ -4,7 +4,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2009-09-08
+// Last changed: 2010-01-15
 
 #ifndef __TRIANGLE_CELL_H
 #define __TRIANGLE_CELL_H

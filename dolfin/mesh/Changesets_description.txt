@@ -1,5 +1,7 @@
 Description of most-relevant changes in the cgal_branch.
 
+Merge Proposal 1:
+
 Summary of changes:
 - Intersection detection for mesh-point (1d-3d) and mesh-mesh intersection (2d-1d, 2d-2d, 3d-2d,3d-3d)
   (computing all cell ids for one mesh, now *uniquely* collected in a std:set)
@@ -19,10 +21,10 @@ ADDED:
   and executes search operations.
 
 - MeshPrimitive class: Implementation of the concept "AABBPrimitive" required by the
-  CGAL AABB tree. Relies on the Primitive_Traits class to perform data
+  CGAL AABB tree. Relies on the PrimitiveTraits class to perform data
   conversion,
 
-- Primitive_Traits template class: Traits class which provides conversion
+- PrimitiveTraits template class: Traits class which provides conversion
   functionality from MeshEntity (s.a.  IntervalCell, TetrahedronCell etc.) -->
   CGAL geometric primitive (Segment_3, Tetrahedron_3). 
 
@@ -52,3 +54,23 @@ CHANGED:
 - Function class: Replace gts bases intersection detector.
 
 - swig: Added wrapper for std::set<uint> and a has_cgal function.
+
+Merge Proposal 2:
+
+ADDED:
+- PrimitiveIntersector class: Provides statics function to detect intersection
+  between rather arbitrary mesh entities.
+- cgal_includes to include relevant cgal headers and definition at one place,
+  needed for inclusion at different places.
+- Triangle_3_Tetrahedron_3_do_intersect_SCK.cpp: Moves full template function
+  specialization to cpp file.
+
+CHANGED:
+- MeshEntityIterator: Got an operator[] to facilitate random access to
+  meshentities if e.g. some indices are external saved.
+- Mesh class: Added intersection detection when intersection a mesh with (list
+  of) entitie(s).
+- IntersectionOperator class: Added intersection detection when intersection a mesh with (list
+  of) entitie(s).
+- Intersection tests to supplement CGAL test throw exception if not fully
+  implemented. 

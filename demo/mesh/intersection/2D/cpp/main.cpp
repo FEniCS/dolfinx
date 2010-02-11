@@ -1,11 +1,8 @@
 // Copyright (C) 2008 Kristoffer Selim.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2008-10-08
-// Last changed: 2009-12-06
-//
-// Modified by Anders Logg, 2008.
-// Modified by Andre Massing, 2009.
+// First added:  2010-01-14
+// Last changed: 2010-01-14
 
 #include <dolfin.h>
 #include <math.h>

@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-03
-// Last changed: 2009-09-03
+// Last changed: 2010-01-15
 
 // ===========================================================================
 // SWIG directives for mapping defines to Python

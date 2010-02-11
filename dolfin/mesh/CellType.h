@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristoffer Selim, 2008.
-// Modified by Andre Massing, 2009.
+// Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-06-05
-// Last changed: 2009-11-10
+// Last changed: 2010-02-03
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H

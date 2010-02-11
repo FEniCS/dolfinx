@@ -4,7 +4,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-11
-// Last changed: 2009-11-16
+// Last changed: 2010-02-03
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H

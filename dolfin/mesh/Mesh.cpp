@@ -5,10 +5,10 @@
 // Modified by Garth N. Wells 2007.
 // Modified by Niclas Jansson 2008.
 // Modified by Kristoffer Selim 2008.
-// Modified by Andre Massing, 2009.
+// Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2009-12-16
+// Last changed: 2010-02-05
 
 #include <sstream>
 
@@ -255,6 +255,16 @@ void Mesh::all_intersected_entities(const Point & point, uint_set & ids_result) 
 void Mesh::all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const
 {
   _intersection_operator.all_intersected_entities(points, ids_result);
+} 
+//-----------------------------------------------------------------------------
+void Mesh::all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const
+{
+  _intersection_operator.all_intersected_entities(entity, ids_result);
+}
+//-----------------------------------------------------------------------------
+void Mesh::all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const
+{
+  _intersection_operator.all_intersected_entities(entities, ids_result);
 }
 //-----------------------------------------------------------------------------
 void Mesh::all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const
