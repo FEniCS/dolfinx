@@ -213,7 +213,7 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
     }
   }
   double tt = toc();
-  info("Time to build vertex-cell connectivity map: %d", tt);
+  info("Time to build vertex-cell connectivity map: %g", tt);
 
   tic();  
   // Iterate over all cells
@@ -250,7 +250,7 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
     }   
   }
   tt = toc();
-  info("Time to build local dual graph: : %d", tt);
+  info("Time to build local dual graph: : %g", tt);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SCOTCH::compute_ghost_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
