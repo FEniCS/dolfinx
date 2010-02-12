@@ -8,8 +8,8 @@
 #include <map>
 #include <numeric>
 #include <set>
-#include <tr1/unordered_map>
-#include <tr1/unordered_set>
+#include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
 
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
@@ -198,8 +198,8 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
 
   //std::map<uint, std::vector<uint> > vertex_connectivity;
   //std::pair<std::map<uint, std::vector<uint> >::iterator, bool> ret;
-  std::tr1::unordered_map<uint, std::vector<uint> > vertex_connectivity;
-  std::pair<std::tr1::unordered_map<uint, std::vector<uint> >::iterator, bool> ret;
+  boost::unordered_map<uint, std::vector<uint> > vertex_connectivity;
+  std::pair<boost::unordered_map<uint, std::vector<uint> >::iterator, bool> ret;
 
   // Build (global vertex)-(local cell) connectivity
   tic();
@@ -269,8 +269,8 @@ dolfin::uint SCOTCH::compute_ghost_connectivity(const std::vector<std::vector<ui
   std::vector<uint>::const_iterator c_vertex;
   std::vector<uint>::const_iterator connected_cell;
 
-  std::tr1::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > > vertex_connectivity;
-  std::pair<std::tr1::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > >::iterator, bool> ret;
+  boost::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > > vertex_connectivity;
+  std::pair<boost::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > >::iterator, bool> ret;
 
   // Build boundary (global vertex)-(local cell) connectivity
   tic();

@@ -10,9 +10,7 @@
 #define __DOF_MAP_BUILDER_H
 
 #include <set>
-#include <tr1/unordered_set>
-//#include <boost/unordered_set.hpp>
-
+#include <boost/unordered_set.hpp>
 #include <dolfin/common/Set.h>
 
 namespace dolfin
@@ -32,10 +30,8 @@ namespace dolfin
     //typedef std::set<dolfin::uint>::const_iterator set_iterator;
     //typedef Set<dolfin::uint> set;
     //typedef Set<dolfin::uint>::const_iterator set_iterator;
-    typedef std::tr1::unordered_set<dolfin::uint> set;
-    typedef std::tr1::unordered_set<dolfin::uint>::const_iterator set_iterator;
-    //typedef boost::unordered_set<dolfin::uint> set;
-    //typedef boost::unordered_set<dolfin::uint>::const_iterator set_iterator;
+    typedef boost::unordered_set<dolfin::uint> set;
+    typedef boost::unordered_set<dolfin::uint>::const_iterator set_iterator;
 
     typedef std::vector<dolfin::uint>::const_iterator vector_it;
 
@@ -53,7 +49,8 @@ namespace dolfin
 
     static void parallel_renumber(const set& owned_dofs, const set& shared_dofs,
                                   const set& forbidden_dofs, 
-                         const std::map<uint, std::vector<uint> >& dof2index,
+                                  const std::map<uint, 
+                                  std::vector<uint> >& dof2index,
                                   DofMap& dofmap, const Mesh& mesh);
 
 
