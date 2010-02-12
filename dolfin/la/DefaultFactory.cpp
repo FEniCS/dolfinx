@@ -38,11 +38,11 @@ GenericSparsityPattern * DefaultFactory::create_pattern() const
 LinearAlgebraFactory& DefaultFactory::factory() const
 {
   // Fallback
-  std::string default_backend = "uBLAS";
+  const std::string default_backend = "uBLAS";
   typedef uBLASFactory<> DefaultFactory;
 
   // Get backend from parameter system
-  std::string backend = parameters["linear_algebra_backend"];
+  const std::string backend = parameters["linear_algebra_backend"];
 
   // Choose backend
   if (backend == "uBLAS")

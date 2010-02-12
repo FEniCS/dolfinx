@@ -474,7 +474,11 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // Copy partiton data
   cell_partition.resize(vertlocnbr);
   for (uint i = 0; i < cell_partition.size(); ++i)
+  {
+    if ( cell_partition[i] < 0 || cell_partition[i] >= (uint) npart )
+      error("Problem with SCOTCH partition.");
     cell_partition[i] = partloctab[i];
+  }
 }
 //-----------------------------------------------------------------------------
 #else

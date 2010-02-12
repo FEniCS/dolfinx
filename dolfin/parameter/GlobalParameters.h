@@ -43,18 +43,21 @@ namespace dolfin
       p.add("optimize", false);                              // All of the above
 
       // Linear algebra ---
-#ifdef HAS_PETSC
+      #ifdef HAS_PETSC
       p.add("linear_algebra_backend", "PETSc");              // Use PETSc if available
-#else
+      #else
       p.add("linear_algebra_backend", "uBLAS");              // Otherwise, use uBLAS
-#endif
+      #endif
 
       // Floating-point precision (only relevant when using GMP) ---
-#ifdef HAS_GMP
+      #ifdef HAS_GMP
       p.add("floating_point_precision", 30);                 // Use higher precision for GMP (can be changed)
-#else
+      #else
       p.add("floating_point_precision", 16);                 // Use double precision when GMP is not available
-#endif
+      #endif
+
+      // Graph partitioner ---
+      p.add("mesh_partitioner", "SCOTCH");              // Use PETSc if available
 
       return p;
     }

@@ -53,10 +53,12 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
+  //parameters["mesh_partitioner"] = "ParMETIS";
+  parameters["mesh_partitioner"] = "SCOTCH";
+
   // Create mesh and function space
-  UnitSquare mesh(32, 32);
-  //Mesh mesh("../../../../data/meshes/dolfin-2.xml.gz");  
-  //mesh.order();
+  //UnitSquare mesh(32, 32);
+  Mesh mesh("../../../../data/meshes/unstruct-trimesh-2.xml.gz");  
   Poisson::FunctionSpace V(mesh);
 
   // Define boundary condition

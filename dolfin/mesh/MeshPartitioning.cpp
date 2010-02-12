@@ -9,6 +9,9 @@
 #include <dolfin/log/log.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/graph/ParMETIS.h>
+#include <dolfin/graph/SCOTCH.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "LocalMeshData.h"
 #include "Point.h"
 #include "Vertex.h"
@@ -18,8 +21,6 @@
 #include "MeshFunction.h"
 #include "MeshPartitioning.h"
 
-#include <dolfin/graph/ParMETIS.h>
-#include <dolfin/graph/SCOTCH.h>
 
 using namespace dolfin;
 
@@ -70,8 +71,13 @@ void MeshPartitioning::partition(Mesh& mesh, LocalMeshData& mesh_data)
 {
   // Compute cell partition
   std::vector<uint> cell_partition;
-  //ParMETIS::compute_partition(cell_partition, mesh_data);
-  SCOTCH::compute_partition(cell_partition, mesh_data);
+  const std::string partitioner = parameters["mesh_partitioner"];
+  if (partitioner == "SCOTCH")
+    SCOTCH::compute_partition(cell_partition, mesh_data);
+  else if (partitioner == "ParMETIS")
+    ParMETIS::compute_partition(cell_partition, mesh_data);
+  else
+    error("Unknown mesh partition '%s'.", partitioner.c_str());
     
   // Distribute cells
   Timer timer("PARALLEL 2: Distribute mesh (cells and vertices)");
