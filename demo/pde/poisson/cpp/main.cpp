@@ -54,7 +54,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh and function space
-  UnitSquare mesh(5123, 512);
+  UnitSquare mesh(32, 32);
   //Mesh mesh("../../../../data/meshes/dolfin-2.xml.gz");  
   //mesh.order();
   Poisson::FunctionSpace V(mesh);

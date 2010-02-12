@@ -113,11 +113,12 @@ int main()
   Elasticity::LinearForm L(V);
   L.f = f;
   VariationalProblem problem(a, L, bcs);
-  problem.parameters["symmetric"] = true;
+  //problem.parameters["symmetric"] = true;
 
   // Solve PDE (using direct solver)
   Function u(V);
-  problem.parameters["linear_solver"] = "direct";
+  //problem.parameters["linear_solver"] = "direct";
+  problem.parameters["linear_solver"] = "iterative";
   problem.solve(u);
 
   cout << "Norm " << u.vector().norm("l2") << endl;

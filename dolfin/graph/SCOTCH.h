@@ -42,7 +42,7 @@ namespace dolfin
                                      const std::vector<uint>& local_boundary_cells,
                                      const std::vector<std::vector<uint> >& candidate_ghost_vertices,
                                      const std::vector<uint>& candidate_ghost_global_indices,
-                                     uint num_cell_facets, uint num_facet_vertices,
+                                     uint num_facet_vertices,
                                      std::vector<std::set<uint> >& ghost_graph_edges,
                                      std::set<uint>& ghost_cells);
 
