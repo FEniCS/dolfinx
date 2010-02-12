@@ -10,19 +10,9 @@
 #define __DOF_MAP_BUILDER_H
 
 #include <set>
-//#include <boost/unordered_set.hpp>
-//#include <tr1/unordered_set>
-#ifdef HAVE_TR1_UNORDERED_SET
 #include <tr1/unordered_set>
-#else 
-#ifdef HAVE_UNORDERED_SET
-#include <unordered_set>
-#else
-#ifdef HAVE_HASH_SET
-#include <ext/hash_set>
-#endif
-#endif
-#endif
+//#include <boost/unordered_set.hpp>
+
 #include <dolfin/common/Set.h>
 
 namespace dolfin
@@ -42,22 +32,8 @@ namespace dolfin
     //typedef std::set<dolfin::uint>::const_iterator set_iterator;
     //typedef Set<dolfin::uint> set;
     //typedef Set<dolfin::uint>::const_iterator set_iterator;
-    #ifdef HAVE_TR1_UNORDERED_SET
     typedef std::tr1::unordered_set<dolfin::uint> set;
     typedef std::tr1::unordered_set<dolfin::uint>::const_iterator set_iterator;
-    #else
-    #ifdef HAVE_UNORDERED_SET
-    typedef std::unordered_set<dolfin::uint> set;
-    typedef std::unordered_set<dolfin::uint>::const_iterator set_iterator;
-    #else
-    #ifdef HAVE_HASH_SET
-    typedef __gnu_cxx::hash_set<dolfin::uint> set;
-    typedef __gnu_cxx::hash_set<dolfin::uint>::const_iterator set_iterator;
-    #endif
-    #endif
-    #endif
-    //typedef std::tr1::unordered_set<dolfin::uint> set;
-    //typedef std::tr1::unordered_set<dolfin::uint>::const_iterator set_iterator;
     //typedef boost::unordered_set<dolfin::uint> set;
     //typedef boost::unordered_set<dolfin::uint>::const_iterator set_iterator;
 
