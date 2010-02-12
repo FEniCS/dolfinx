@@ -89,8 +89,8 @@ void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
   /// The rest only applies when running in parallel
   ///-----------------------------------------------
 
-  info("Preparing data to to send off-process.);
   // Determine candidate ghost cells (graph ghost vertices)
+  info("Preparing data to to send off-process.");
   std::vector<uint> local_boundary_cells;
   for (uint i = 0; i < num_local_cells; ++i)
   {
@@ -195,7 +195,6 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
   std::vector<uint>::const_iterator vertex;
   std::vector<uint>::const_iterator c_vertex;
   std::vector<uint>::const_iterator connected_cell;
-  std::map<uint, std::vector<uint> >::iterator map_it;
 
   //std::map<uint, std::vector<uint> > vertex_connectivity;
   //std::pair<std::map<uint, std::vector<uint> >::iterator, bool> ret;
@@ -238,9 +237,9 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
         uint num_common_vertices = 0;
         for (vertex = c_vertices->begin(); vertex != c_vertices->end(); ++vertex) 
         {
-          if( std::find(candidate_vertices.begin(), candidate_vertices.end(), *vertex) != candidate_vertices.end())
+          if (std::find(candidate_vertices.begin(), candidate_vertices.end(), *vertex) != candidate_vertices.end())
             ++num_common_vertices; 
-          if( num_common_vertices == num_facet_vertices)
+          if (num_common_vertices == num_facet_vertices)
           {
             local_graph[index0].insert(index1 + offset);
             local_graph[index1].insert(index0 + offset);
