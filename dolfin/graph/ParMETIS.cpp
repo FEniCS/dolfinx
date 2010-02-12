@@ -11,13 +11,13 @@
 #include <dolfin/mesh/LocalMeshData.h>
 #include "ParMETIS.h"
 
-#if defined HAS_PARMETIS
+#ifdef HAS_PARMETIS
 #include <parmetis.h>
 #endif
 
 using namespace dolfin;
 
-#if defined HAS_PARMETIS
+#ifdef HAS_PARMETIS
 //-----------------------------------------------------------------------------
 void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
                                             const LocalMeshData& mesh_data)
