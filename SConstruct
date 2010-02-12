@@ -106,6 +106,7 @@ options = [
     BoolVariable("enableLapack", "Compile with support for LAPACK", "yes"),
     BoolVariable("enablePython", "Compile the Python wrappers", "yes"),
     BoolVariable("enablePydolfin", "Compile the Python wrappers of DOLFIN *deprecated*", "yes"),
+    BoolVariable("enableHashset", "Force the use of gcc's deprecated hash_set extension", "no"),
     # some of the above may need extra options (like petscDir), should we
     # try to get that from pkg-config?
     # It may be neccessary to specify the installation path to the above packages.
@@ -298,6 +299,17 @@ if "configure" in COMMAND_LINE_TARGETS:
     print "Unable to find any valid C++ compiler."
     # try to use g++ as default:
     env["CXX"] = "g++"
+
+  if env['enableHashset']:
+    if configure.checkCxxHeader('ext/hash_set'):
+      env.Append(CPPDEFINES=["HAVE_HASH_SET"])  
+  else:
+    if configure.checkCxxHeader('unordered_set'):
+      env.Append(CPPDEFINES=["HAVE_UNORDERED_SET"])
+    elif configure.checkCxxHeader('tr1/unordered_set'):
+      env.Append(CPPDEFINES=["HAVE_TR1_UNORDERED_SET"])
+    elif configure.checkCxxHeader('ext/hash_set'):
+      env.Append(CPPDEFINES=["HAVE_HASH_SET"])
 
   # process list of packages to be included in allowed Dependencies.
   # Do we need this any more? I think we rather pick up (external) packages from

@@ -6,7 +6,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-02-10
+// Last changed: 2010-02-12
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -50,7 +50,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
   init_vector();
 
   // Register adaptive object
-  //AdaptiveObjects::register_object(this);
+  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, GenericVector& x)
@@ -254,7 +254,11 @@ GenericVector& Function::vector()
 {
   // Check that this is not a sub function.
   if (_vector->size() != _function_space->dofmap().global_dimension())
+  {
+    cout << "Size of vector: " << _vector->size() << endl;
+    cout << "Size of function space: " << _function_space->dofmap().global_dimension() << endl;
     error("You are attempting to access a non-const vector from a sub-Function.");
+  }
   return *_vector;
 }
 //-----------------------------------------------------------------------------
