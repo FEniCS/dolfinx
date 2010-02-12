@@ -48,30 +48,24 @@ void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
   cout << "End compute dual graph" << endl;
 
   // Compute partitions
-  cout << "Compute partitions" << endl;
+  info("Start to compute partitions using SCOTCH");
   partition(local_graph, ghost_vertices, global_cell_indices, 
             num_global_vertices, cell_partition);
-  cout << "End compute parttions" << endl;
+  info("Finihsed computing partitions using SCOTCH");
 }
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
                                 std::vector<std::set<uint> >& local_graph,
                                 std::set<uint>& ghost_vertices)
 {
-  // Copy list of cell vertices
-  std::vector<std::vector<uint> > cell_vertices = mesh_data.cell_vertices;
+  // List of cell vertices
+  const std::vector<std::vector<uint> >& cell_vertices = mesh_data.cell_vertices;
 
   const uint num_local_cells    = mesh_data.global_cell_indices.size();
   const uint topological_dim    = mesh_data.tdim;
   const uint num_cell_facets    = topological_dim + 1;
   const uint num_facet_vertices = topological_dim;
   const uint num_cell_vertices  = topological_dim + 1;
-
-
-  // Sort cell vertex indices
-  std::vector<std::vector<uint> >::iterator vertices;
-  for (vertices = cell_vertices.begin(); vertices != cell_vertices.end(); ++vertices)
-    std::sort(vertices->begin(), vertices->end());
 
   // Resize graph (cell are graph vertices, cell-cell connections are graph edges) 
   local_graph.resize(num_local_cells);
@@ -87,15 +81,15 @@ void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
 
   // Compute local edges (cell-cell connections) using global (internal) numbering
   cout << "Compute local cell-cell connections" << endl;
-  compute_connectivity(cell_vertices, num_cell_facets, 
-                       num_facet_vertices, process_offset, local_graph);
+  compute_connectivity(cell_vertices, num_facet_vertices, process_offset, 
+                       local_graph);
   cout << "Finished computing local cell-cell connections" << endl;
 
   ///-----------------------------------------------
   /// The rest only applies when running in parallel
   ///-----------------------------------------------
 
-  cout << "Start preparing to send off-process data" << endl;
+  info("Preparing data to to send off-process.);
   // Determine candidate ghost cells (graph ghost vertices)
   std::vector<uint> local_boundary_cells;
   for (uint i = 0; i < num_local_cells; ++i)
@@ -117,7 +111,7 @@ void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
     connected_cell_data.push_back(local_boundary_cells[i] + process_offset);
 
     // Candidate cell vertices
-    std::vector<uint>& vertices = cell_vertices[local_boundary_cells[i]];
+    const std::vector<uint>& vertices = cell_vertices[local_boundary_cells[i]];
     for (uint j = 0; j < num_cell_vertices; ++j)
       connected_cell_data.push_back(vertices[j]);  
   }    
@@ -191,7 +185,6 @@ void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
 }
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
-                                  uint num_cell_facets, 
                                   uint num_facet_vertices, uint offset,
                                   std::vector<std::set<uint> >& local_graph)
 {
@@ -221,42 +214,24 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
     }
   }
   double tt = toc();
-  cout << "Time to build vertex-cell connect: " << tt << endl;
-
-  /*
-  std::map<uint, std::vector<uint> >::const_iterator cell_list;
-  std::vector<uint>::const_iterator cell;
-  cout << "Vertex connect (1)" << endl;
-  for (cell_list = vertex_connectivity.begin(); cell_list != vertex_connectivity.end(); ++cell_list)
-  {
-    cout << "Cells connected to vertex " << cell_list->first << endl; 
-    for(cell = cell_list->second.begin(); cell != cell_list->second.end(); ++cell)
-      cout << *cell << endl; 
-  }
-  */
+  info("Time to build vertex-cell connectivity map: %d", tt);
 
   tic();  
   // Iterate over all cells
   for (c_vertices = cell_vertices.begin(); c_vertices != cell_vertices.end(); ++c_vertices)
   {
      const uint index0 = c_vertices - cell_vertices.begin();
-     //cout << "cell index: " << index0 << endl;
 
     // Iterate over cell vertices
     for (c_vertex = c_vertices->begin(); c_vertex != c_vertices->end(); ++c_vertex)
     {
-      //cout << " checking neigbours sharing vertex: " << *c_vertex << endl;
-
       // Iterate over cells connected to this vertex
       for (connected_cell = vertex_connectivity[*c_vertex].begin(); connected_cell != vertex_connectivity[*c_vertex].end(); ++connected_cell)
       {
-        //cout << "  neigbour sharing this vertex: " << *connected_cell << endl;
         const uint index1 = *connected_cell;
         if (index0 == index1)
           break;
  
-        //cout << "pot. neighbour cell index: " << index1 << endl;
-
         // Vertices of candidate neighbour
         const std::vector<uint>& candidate_vertices = cell_vertices[*connected_cell];
 
@@ -276,44 +251,7 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
     }   
   }
   tt = toc();
-  cout << "Time to build local graph: " << tt << endl;
-  
-/*
-
-  std::vector<std::vector<uint> >::const_iterator vertices0;
-  std::vector<std::vector<uint> >::const_iterator vertices1;
-  std::vector<uint>::const_iterator vertex;
-  tic();
-  for (vertices0 = cell_vertices.begin(); vertices0 != cell_vertices.end() - 1; ++vertices0)
-  {
-    const uint index0 = vertices0 - cell_vertices.begin();
-    if (local_graph[index0].size() == num_cell_facets)
-      break;
-
-    for (vertices1 = vertices0 + 1; vertices1 != cell_vertices.end(); ++vertices1)
-    {
-      const uint index1 = vertices1 - cell_vertices.begin();
-      if (local_graph[index1].size() == num_cell_facets)
-        break;
-
-      // Check number of shared vertices
-      uint num_common_vertices = 0;
-      for (vertex = vertices0->begin(); vertex != vertices0->end(); ++vertex) 
-      {
-        if( std::find(vertices1->begin(), vertices1->end(), *vertex) != vertices1->end())
-          ++num_common_vertices; 
-        if( num_common_vertices == num_facet_vertices)
-        {
-          local_graph[index0].insert(index1 + offset);
-          local_graph[index1].insert(index0 + offset);
-          break;
-        }  
-      }
-    }
-  }
-  double mytime = toc();
-  cout << "Connect timing " << mytime << endl;
-*/
+  info("Time to build local dual graph: : %d", tt);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SCOTCH::compute_ghost_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
@@ -389,7 +327,6 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   }
 
   // Global data ---------------------------------
-
 
   // Number of local vertices (cells) on each process
   std::vector<uint> tmp = MPI::gather(local_graph.size());
@@ -481,11 +418,14 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   // Hold partition data
   std::vector<SCOTCH_Num> partloctab(vertlocnbr);
 
-  cout << "Start partitioning " << endl;
+  cout << "Start SCOTCH partitioning " << endl;
   err = SCOTCH_dgraphPart(&dgrafdat, npart, &strat, &partloctab[0]);
   if (err)
     warning("Error during partitioning.");
-  cout << "Ebd partitioning " << endl;
+  cout << "End SCOTCH partitioning " << endl;
+
+  // Free SCOTCH graph
+  SCOTCH_dgraphExit(&dgrafdat);
 
   // Copy partiton data
   cell_partition.resize(vertlocnbr);
@@ -509,8 +449,7 @@ void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
 }
 //-----------------------------------------------------------------------------
 void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
-                                  uint num_cell_facets, uint num_facet_vertices,
-                                  uint offset,
+                                  uint num_facet_vertices, uint offset,
                                   std::vector<std::set<uint> >& graph)
 {
   error("This function requires SCOTCH.");

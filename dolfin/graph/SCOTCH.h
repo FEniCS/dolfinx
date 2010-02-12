@@ -35,8 +35,7 @@ namespace dolfin
 
 
     static void compute_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
-                                     uint num_cell_facets, uint num_facet_vertices,
-                                     uint offset,
+                                     uint num_facet_vertices, uint offset,
                                      std::vector<std::set<uint> >& graph);
 
     static uint compute_ghost_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
