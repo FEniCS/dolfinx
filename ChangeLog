@@ -1,3 +1,4 @@
+ - Fix memory leak in std::vector<Foo*> typemaps
  - Add interface for SCOTCH for parallel mesh partitioning
  - Bug fix in SubDomain::mark, fixes bug in DirichletBC based on SubDomain::inside
  - Improvements in time series class, recognizing old stored values
