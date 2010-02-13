@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-08-31
-// Last changed: 2009-09-29
+// Last changed: 2010-02-13
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
@@ -72,7 +72,7 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 //-----------------------------------------------------------------------------
 // The typemap
 //-----------------------------------------------------------------------------
-%typemap (in) CONST_VECTOR std::vector<CONST dolfin::TYPE *> &(std::vector<CONST dolfin::TYPE *> tmp_vec)
+%typemap (in) CONST_VECTOR std::vector<CONST dolfin::TYPE *> &(std::vector<CONST dolfin::TYPE *> tmp_vec, SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared, dolfin::TYPE * arg)
 {
   if (PyList_Check($input))
   {  
@@ -85,7 +85,7 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
     for (int i = 0; i < size; i++)
     {
       py_item = PyList_GetItem($input,i);
-      res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(dolfin::TYPE *), 0, &newmem);
+      res = SWIG_ConvertPtr(py_item, &itemp, $descriptor(dolfin::TYPE *), 0);
       if (SWIG_IsOK(res)) {
         tmp_vec.push_back(reinterpret_cast<dolfin::TYPE *>(itemp));
       }
@@ -97,7 +97,15 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
       res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
       if (SWIG_IsOK(res)) 
       {
-        tmp_vec.push_back(reinterpret_cast<SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> *>(itemp)->get() );
+	// If we need to release memory
+	if (newmem & SWIG_CAST_NEW_MEMORY) {
+	  tempshared = *reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp);
+	  delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
+	  arg = const_cast< dolfin::TYPE * >(tempshared.get());
+	} else {
+	  arg = const_cast< dolfin::TYPE * >(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp)->get());
+	}
+        tmp_vec.push_back(arg);
       }
       else
       {
