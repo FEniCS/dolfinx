@@ -476,7 +476,7 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
 
   // Clean up SCOTCH objects
   SCOTCH_dgraphExit(&dgrafdat);
-  SCOTCH_dstratExit(&strat);
+  SCOTCH_stratExit(&strat);
 
   // Copy partiton datap
   cell_partition.resize(vertlocnbr);
