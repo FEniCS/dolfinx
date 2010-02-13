@@ -453,9 +453,7 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   if (SCOTCH_dgraphCheck(&dgrafdat))
     error("Consistency error in SCOTCH graph.");
   
-
   SCOTCH_dgraphGhst(&dgrafdat);
-
 
   // Number of partitions (set equal to number of processes)
   SCOTCH_Num npart = MPI::num_processes();
@@ -476,10 +474,11 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
     error("Error during partitioning.");
   info("End SCOTCH partitioning.");
 
-  // Free SCOTCH graph
+  // Clean up SCOTCH objects
   SCOTCH_dgraphExit(&dgrafdat);
+  SCOTCH_dstratExit(&strat);
 
-  // Copy partiton data
+  // Copy partiton datap
   cell_partition.resize(vertlocnbr);
   for (uint i = 0; i < cell_partition.size(); ++i)
   {
