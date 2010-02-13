@@ -46,8 +46,8 @@ dolfin::Mesh LocalMeshRefinement::refineMeshByEdgeBisection(const Mesh& mesh,
   MeshFunction<bool> old_cell_marker = cell_marker;
 
   // Get size of old mesh
-  const uint num_vertices = old_mesh.size(0);
-  const uint num_cells = old_mesh.size(mesh.topology().dim());
+  const uint num_vertices = old_mesh.num_vertices();
+  const uint num_cells    = old_mesh.num_cells();
 
   // Check cell marker
   if (old_cell_marker.size() != num_cells)
@@ -77,9 +77,7 @@ dolfin::Mesh LocalMeshRefinement::refineMeshByEdgeBisection(const Mesh& mesh,
   std::vector<int> old2new_vertex(old_mesh.num_vertices());
 
   // Initialise forbidden edges
-  MeshFunction<bool> edge_forbidden(old_mesh, true);
-  for (EdgeIterator e(old_mesh); !e.end(); ++e)
-    edge_forbidden[*e] = false;
+  MeshFunction<bool> edge_forbidden(old_mesh, false);
 
   // If refinement of boundary is forbidden
   if ( !refine_boundary )
@@ -90,14 +88,11 @@ dolfin::Mesh LocalMeshRefinement::refineMeshByEdgeBisection(const Mesh& mesh,
   }
 
   // Initialise forbidden cells
-  MeshFunction<bool> cell_forbidden(old_mesh);
-  cell_forbidden.init(old_mesh.topology().dim());
-  for (CellIterator c(old_mesh); !c.end(); ++c)
-    cell_forbidden[*c] = false;
+  MeshFunction<bool> cell_forbidden(old_mesh, old_mesh.topology().dim(), false);
 
   // Initialise data for finding longest edge
   uint longest_edge_index = 0;
-  double lmax, l;
+  double lmax = 0.0;
 
   // Compute number of vertices and cells
   for (CellIterator c(old_mesh); !c.end(); ++c)
@@ -105,12 +100,11 @@ dolfin::Mesh LocalMeshRefinement::refineMeshByEdgeBisection(const Mesh& mesh,
     if ( old_cell_marker[*c] && !cell_forbidden[*c] )
     {
       // Find longest edge of cell c
-      lmax = 0.0;
       for (EdgeIterator e(*c); !e.end(); ++e)
       {
         if ( !edge_forbidden[*e] )
         {
-          l = e->length();
+          const double l = e->length();
           if ( lmax < l )
           {
             lmax = l;
@@ -168,8 +162,7 @@ dolfin::Mesh LocalMeshRefinement::refineMeshByEdgeBisection(const Mesh& mesh,
   }
 
   // Reset forbidden edges
-  for (EdgeIterator e(old_mesh); !e.end(); ++e)
-    edge_forbidden[*e] = false;
+  edge_forbidden = false;
 
   // If refinement of boundary is forbidden
   if ( !refine_boundary )
@@ -180,8 +173,7 @@ dolfin::Mesh LocalMeshRefinement::refineMeshByEdgeBisection(const Mesh& mesh,
   }
 
   // Reset forbidden cells
-  for (CellIterator c(old_mesh); !c.end(); ++c)
-    cell_forbidden[*c] = false;
+  cell_forbidden = false;
 
   // Add new vertices and cells.
   for (CellIterator c(old_mesh); !c.end(); ++c)
@@ -194,7 +186,7 @@ dolfin::Mesh LocalMeshRefinement::refineMeshByEdgeBisection(const Mesh& mesh,
       {
         if ( edge_forbidden[*e] == false )
         {
-          l = e->length();
+          const double l = e->length();
           if ( lmax < l )
           {
             lmax = l;
@@ -216,9 +208,10 @@ dolfin::Mesh LocalMeshRefinement::refineMeshByEdgeBisection(const Mesh& mesh,
          // Add new cell
          bisect_simplex_edge(*cn, longest_edge, current_vertex, editor, current_cell);
 
-         // set markers of all cell neighbors of longest edge to false
+         // Set markers of all cell neighbors of longest edge to false
          old_cell_marker[*cn] = false;
-         // set all edges of cell neighbors to forbidden
+
+         // Set all edges of cell neighbors to forbidden
          for (EdgeIterator en(*cn); !en.end(); ++en)
            edge_forbidden[*en] = true;
         }

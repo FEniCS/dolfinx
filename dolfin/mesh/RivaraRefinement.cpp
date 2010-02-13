@@ -30,15 +30,10 @@ Mesh RivaraRefinement::refine(const Mesh& mesh,
   DMesh dmesh;
   dmesh.import_mesh(mesh);
 
-  // Rewrite MeshFunction into vector
+  // Copy MeshFunction into a vector
   std::vector<bool> dmarked(mesh.num_cells());
-  for (CellIterator ci(mesh); !ci.end(); ++ci)
-  {
-    if(cell_marker[*ci] == true)
-      dmarked[ci->index()] = true;
-    else
-      dmarked[ci->index()] = false;
-  }
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+      dmarked[cell->index()] = true;
 
   // Main refinement algorithm
   dmesh.bisect_marked(dmarked);
@@ -118,12 +113,12 @@ void RivaraRefinement::DMesh::import_mesh(const Mesh& mesh)
   cells.clear();
 
   // Import vertices
-  std::vector<DVertex *> vertexvec;
-  for (VertexIterator vi(mesh); !vi.end(); ++vi)
+  std::vector<DVertex*> vertexvec;
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     DVertex* dv = new DVertex;
-    dv->p = vi->point();
-    dv->id = vi->index();
+    dv->p = vertex->point();
+    dv->id = vertex->index();
 
     add_vertex(dv);
     vertexvec.push_back(dv);
@@ -206,15 +201,6 @@ void RivaraRefinement::DMesh::export_mesh(Mesh& mesh,
 void RivaraRefinement::DMesh::number()
 {
   uint i = 0;
-/*  for(std::list<DVertex* >::iterator it = vertices.begin();
-      it != vertices.end(); ++it)
-  {
-    DVertex* dv = *it;
-    dv->id = i;
-    i++;
-  }
-*/
-  i = 0;
   for(std::list<DCell* >::iterator it = cells.begin();
       it != cells.end(); ++it)
   {
@@ -225,10 +211,8 @@ void RivaraRefinement::DMesh::number()
 }
 //-----------------------------------------------------------------------------
 void RivaraRefinement::DMesh::bisect(DCell* dcell, DVertex* hangv,
-		   DVertex* hv0, DVertex* hv1)
+		                                 DVertex* hv0, DVertex* hv1)
 {
-  //cout << "Refining cell: " << dcell->id << endl;
-
   bool closing = false;
 
   // Find longest edge
@@ -255,11 +239,10 @@ void RivaraRefinement::DMesh::bisect(DCell* dcell, DVertex* hangv,
   DVertex* v0 = dcell->vertices[ii];
   DVertex* v1 = dcell->vertices[jj];
 
-  DVertex* mv = 0;
-
   // Check if no hanging vertices remain, otherwise create hanging
   // vertex and continue refinement
-  if((v0 == hv0 || v0 == hv1) && (v1 == hv0 || v1 == hv1))
+  DVertex* mv = 0;
+  if ((v0 == hv0 || v0 == hv1) && (v1 == hv0 || v1 == hv1))
   {
     mv = hangv;
     closing = true;
@@ -273,7 +256,7 @@ void RivaraRefinement::DMesh::bisect(DCell* dcell, DVertex* hangv,
     closing = false;
   }
 
-  if(ii>jj)
+  if (ii > jj)
   {
     uint tmp = ii;
     ii = jj;
@@ -287,11 +270,11 @@ void RivaraRefinement::DMesh::bisect(DCell* dcell, DVertex* hangv,
   std::vector<DVertex*> vs1(0);
   bool pushed0 = false;
   bool pushed1 = false;
-  for(uint i = 0; i < dcell->vertices.size(); i++)
+  for (uint i = 0; i < dcell->vertices.size(); i++)
   {
-    if(i != ii)
+    if (i != ii)
     {
-      if( (mv->id < dcell->vertices[i]->id) && !pushed1 )
+      if ( (mv->id < dcell->vertices[i]->id) && !pushed1 )
       {
         vs1.push_back(mv);
         pushed1 =  true;
@@ -335,7 +318,8 @@ void RivaraRefinement::DMesh::bisect(DCell* dcell, DVertex* hangv,
 }
 //-----------------------------------------------------------------------------
 RivaraRefinement::DCell* RivaraRefinement::DMesh::opposite(DCell* dcell,
-                  DVertex* v1, DVertex* v2)
+                                                           DVertex* v1, 
+                                                           DVertex* v2)
 {
   for(std::list<DCell* >::iterator it = v1->cells.begin();
       it != v1->cells.end(); ++it)
@@ -364,7 +348,7 @@ void RivaraRefinement::DMesh::add_vertex(DVertex* v)
 }
 //-----------------------------------------------------------------------------
 void RivaraRefinement::DMesh::add_cell(DCell* c, std::vector<DVertex*> vs,
-                                      int parent_id)
+                                       int parent_id)
 {
   for(uint i = 0; i < vs.size(); i++)
   {

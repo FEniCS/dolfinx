@@ -38,19 +38,26 @@ namespace dolfin
 
     /// Create timer
     Timer(std::string task) : task(""), t(time()), stopped(false)
-    { const std::string prefix = parameters["timer_prefix"]; this->task = prefix + task; }
+    { 
+      const std::string prefix = parameters["timer_prefix"]; 
+      this->task = prefix + task; 
+    }
 
     /// Destructor
     ~Timer()
     { if (!stopped) stop(); }
 
     /// Start timer
-    inline void start()
+    void start()
     { t = time(); stopped = false; }
 
     /// Stop timer
     void stop()
-    { t = time() - t; LogManager::logger.register_timing(task, t); stopped = true; }
+    { 
+      t = time() - t; 
+      LogManager::logger.register_timing(task, t); 
+      stopped = true; 
+    }
 
     /// Return value of timer (or time at start if not stopped)
     double value() const

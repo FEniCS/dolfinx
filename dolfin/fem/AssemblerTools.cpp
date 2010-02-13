@@ -1,13 +1,14 @@
 // Copyright (C) 2007-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2007-2009
+// Modified by Garth N. Wells, 2007-2010
 // Modified by Ola Skavhaug, 2007-2009
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2009-12-15
+// Last changed: 2010-02-13
 
+#include <boost/scoped_ptr.hpp>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/la/GenericTensor.h>
@@ -39,8 +40,10 @@ void AssemblerTools::check(const Form& a)
 
   // Check that we get the correct number of coefficients
   if (coefficients.size() != a.ufc_form().num_coefficients())
+  {
     error("Incorrect number of coefficients for form: %d given but %d required.",
           coefficients.size(), a.ufc_form().num_coefficients());
+  }
 
   // Check that all coefficients have valid value dimensions
   for (uint i = 0; i < coefficients.size(); ++i)
@@ -49,29 +52,33 @@ void AssemblerTools::check(const Form& a)
       error("Got NULL Function as coefficient %d.", i);
 
     // auto_ptr deletes its object when it exits its scope
-    std::auto_ptr<ufc::finite_element> fe(a.ufc_form().create_finite_element(i + a.rank()));
+    boost::scoped_ptr<ufc::finite_element> fe(a.ufc_form().create_finite_element(i + a.rank()));
 
     // Checks outcommented since they only work for Functions, not Expressions
     const uint r = coefficients[i]->value_rank();
     const uint fe_r = fe->value_rank();
     if (fe_r != r)
+    {
       error("Invalid value rank for coefficient %d, got %d but expecting %d. \
 Did you forget to specify the value rank correctly in an Expression sub class?", i, r, fe_r);
+    }
 
     for (uint j = 0; j < r; ++j)
     {
-      uint dim = coefficients[i]->value_dimension(j);
-      uint fe_dim = fe->value_dimension(j);
+      const uint dim = coefficients[i]->value_dimension(j);
+      const uint fe_dim = fe->value_dimension(j);
       if (dim != fe_dim)
+      {
         error("Invalid value dimension %d for coefficient %d, got %d but expecting %d. \
 Did you forget to specify the value dimension correctly in an Expression sub class?", j, i, dim, fe_dim);
+      }
     }
   }
 
   // Check that the cell dimension matches the mesh dimension
   if (a.ufc_form().rank() + a.ufc_form().num_coefficients() > 0)
   {
-    ufc::finite_element* element = a.ufc_form().create_finite_element(0);
+    boost::scoped_ptr<ufc::finite_element> element(a.ufc_form().create_finite_element(0));
     assert(element);
     if (mesh.type().cell_type() == CellType::interval && element->cell_shape() != ufc::interval)
       error("Mesh cell type (intervals) does not match cell type of form.");
@@ -79,7 +86,6 @@ Did you forget to specify the value dimension correctly in an Expression sub cla
       error("Mesh cell type (triangles) does not match cell type of form.");
     if (mesh.type().cell_type() == CellType::tetrahedron && element->cell_shape() != ufc::tetrahedron)
       error("Mesh cell type (tetrahedra) does not match cell type of form.");
-    delete element;
   }
 
   // Check that the mesh is ordered
@@ -101,11 +107,11 @@ void AssemblerTools::init_global_tensor(GenericTensor& A,
   {
     // Build sparsity pattern
     Timer t0("Build sparsity");
-    GenericSparsityPattern* sparsity_pattern = A.factory().create_pattern();
+    boost::scoped_ptr<GenericSparsityPattern> sparsity_pattern(A.factory().create_pattern());
     if (sparsity_pattern)
     {
       // Get dof maps
-      std::vector<const DofMap*> dof_maps(0);
+      std::vector<const DofMap*> dof_maps;
       for (uint i = 0; i < ufc.form.rank(); ++i)
         dof_maps.push_back(&(a.function_space(i)->dofmap()));
 
@@ -129,7 +135,6 @@ void AssemblerTools::init_global_tensor(GenericTensor& A,
 
     // Delete sparsity pattern
     Timer t2("Delete sparsity");
-    delete sparsity_pattern;
     t2.stop();
   }
 

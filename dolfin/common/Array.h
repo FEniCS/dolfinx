@@ -29,7 +29,7 @@ namespace dolfin
     explicit Array(uint N) : _size(N), x(new T[N]) {}
 
     /// Copy constructor (arg name need to have a different name that 'x')
-    explicit Array(const Array& other) 
+    Array(const Array& other) 
     { error("Not implemented"); }
 
     /// Construct array from a shared pointer
