@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 // 
 // First added:  2006-09-20
-// Last changed: 2009-12-11
+// Last changed: 2010-02-14
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (post)
@@ -111,4 +111,4 @@ del _doc_string
 // Clear director typemaps
 //-----------------------------------------------------------------------------
 %clear const double* x;
-%clear double* values;
+%clear double* y;

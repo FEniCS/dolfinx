@@ -9,7 +9,7 @@
 // Modified by Kent-Andre Mardal, 2009
 // 
 // First added:  2007-08-16
-// Last changed: 2009-12-10
+// Last changed: 2010-02-14
 
 // ===========================================================================
 // SWIG directives for the DOLFIN function kernel module (pre)
@@ -60,8 +60,6 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 %ignore dolfin::Data::x;
 %rename (x) dolfin::Data::x_();
-%ignore dolfin::eval(double* values, const double* x) const;
-%ignore dolfin::Expression::eval(double* values, const std::vector<double>& x) const;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Constant
@@ -162,4 +160,6 @@ namespace dolfin
 %feature("nodirector") dolfin::Expression::gather;
 %feature("nodirector") dolfin::Expression::value_dimension;
 %feature("nodirector") dolfin::Expression::value_rank;
+%feature("nodirector") dolfin::Expression::str;
+%feature("nodirector") dolfin::Expression::compute_vertex_values;
 

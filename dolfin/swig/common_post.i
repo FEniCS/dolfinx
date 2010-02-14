@@ -38,7 +38,6 @@
     dims[0] = self->size();
     PyArrayObject* array = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, dims, NUMPYTYPE, (char *)(self->data().get())));
     if ( array == NULL ) return NULL;
-    PyArray_INCREF(array);
     return PyArray_Return(array);
   }
 

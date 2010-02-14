@@ -31,14 +31,7 @@ def function_space(self):
     adims[0] = self->x.size();
     PyArrayObject* array = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, adims, NPY_DOUBLE, (char *)(self->x.data().get())));
     if ( array == NULL ) return NULL;
-    PyArray_INCREF(array);
     return reinterpret_cast<PyObject*>(array);
   }
 }
 
-//-----------------------------------------------------------------------------
-// Clear director typemaps
-//-----------------------------------------------------------------------------
-%clear const double* x;
-%clear double* y;
-%clear const std::vector<double>& x;
