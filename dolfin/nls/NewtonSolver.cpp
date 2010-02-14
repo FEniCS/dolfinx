@@ -116,7 +116,7 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
 }
 //-----------------------------------------------------------------------------
 void NewtonSolver::test_solve(NonlinearProblem& nonlinear_problem, 
-                              GenericVector& x)
+                              int x)
 {
   uint aa(0), bb(0);
   nonlinear_problem.test_F(aa, bb);

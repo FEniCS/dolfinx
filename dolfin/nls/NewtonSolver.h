@@ -48,7 +48,7 @@ namespace dolfin
                                 GenericVector& x);
 
     // For testing
-    void test_solve(NonlinearProblem& nonlinear_function, GenericVector& x);
+    void test_solve(NonlinearProblem& nonlinear_function, int x);
 
     /// Return Newton iteration number
     uint iteration() const;
