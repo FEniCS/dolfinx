@@ -73,7 +73,7 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   // Compute F(u)
   nonlinear_problem.form(*A, *b, x);
   nonlinear_problem.F(*b, x);
-
+  
   // Start iterations
   while (!newton_converged && newton_iteration < maxiter)
   {
@@ -110,9 +110,16 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   else
     warning("Newton solver did not converge.");
 
-  end();
+  //end();
 
   return std::make_pair(newton_iteration, newton_converged);
+}
+//-----------------------------------------------------------------------------
+void NewtonSolver::test_solve(NonlinearProblem& nonlinear_problem, 
+                              GenericVector& x)
+{
+  uint aa(0), bb(0);
+  nonlinear_problem.test_F(aa, bb);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewtonSolver::iteration() const
