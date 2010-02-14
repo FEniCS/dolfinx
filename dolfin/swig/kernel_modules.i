@@ -84,8 +84,10 @@
 
 // DOLFIN headers included from nls
 %include "dolfin/swig/nls_pre.i"
-%include "dolfin/nls/NewtonSolver.h"
 %include "dolfin/nls/NonlinearProblem.h"
+%include "dolfin/nls/NonlinearProblemTest.h"
+%include "dolfin/nls/NewtonSolver.h"
+%include "dolfin/nls/NewtonSolverTest.h"
 
 // DOLFIN headers included from mesh
 %include "dolfin/swig/mesh_pre.i"

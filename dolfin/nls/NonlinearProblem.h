@@ -9,16 +9,12 @@
 #ifndef __NONLINEAR_PROBLEM_H
 #define __NONLINEAR_PROBLEM_H
 
-#include <dolfin/log/log.h>
-#include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericVector.h>
-
 namespace dolfin
 {
 
   // Forward declarations
-  //class GenericMatrix;
-  //class GenericVector;
+  class GenericMatrix;
+  class GenericVector;
 
   /// This is a base class for nonlinear problems which can return the
   /// nonlinear function F(u) and its Jacobian J = dF(u)/du.
@@ -39,16 +35,10 @@ namespace dolfin
       { /* Do nothing if not supplied by the user */ };
 
     /// Compute F at current point x
-    virtual void F(GenericVector& b, const GenericVector& x)
-    { error("F not provided"); }
+    virtual void F(GenericVector& b, const GenericVector& x) = 0;
 
     /// Compute J = F' at current point x
-    virtual void J(GenericMatrix& A, const GenericVector& x)
-    { error("J not provided"); }
-
-    // For testing
-    virtual void test_F(unsigned int a, unsigned int b) { error("test F not provided"); }
-    virtual void test_J(unsigned int a, unsigned int b) { error("test J not provided"); }
+    virtual void J(GenericMatrix& A, const GenericVector& x) = 0;
 
   };
 }

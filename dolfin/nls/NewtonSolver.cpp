@@ -7,15 +7,16 @@
 // First added:  2005-10-23
 // Last changed: 2009-09-08
 
-#include "NewtonSolver.h"
-#include "NonlinearProblem.h"
+#include <iostream>
+
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/la/Matrix.h>
-#include <dolfin/la/Vector.h>
 #include <dolfin/la/GenericLinearSolver.h>
 #include <dolfin/la/LinearSolver.h>
+#include <dolfin/la/Matrix.h>
+#include <dolfin/la/Vector.h>
 #include <dolfin/log/log.h>
-#include <iostream>
+#include "NonlinearProblem.h"
+#include "NewtonSolver.h"
 
 using namespace dolfin;
 
@@ -110,16 +111,9 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   else
     warning("Newton solver did not converge.");
 
-  //end();
+  end();
 
   return std::make_pair(newton_iteration, newton_converged);
-}
-//-----------------------------------------------------------------------------
-void NewtonSolver::test_solve(NonlinearProblem& nonlinear_problem, 
-                              int x)
-{
-  uint aa(0), bb(0);
-  nonlinear_problem.test_F(aa, bb);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewtonSolver::iteration() const

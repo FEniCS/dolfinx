@@ -47,9 +47,6 @@ namespace dolfin
     std::pair<uint, bool> solve(NonlinearProblem& nonlinear_function, 
                                 GenericVector& x);
 
-    // For testing
-    void test_solve(NonlinearProblem& nonlinear_function, int x);
-
     /// Return Newton iteration number
     uint iteration() const;
 
