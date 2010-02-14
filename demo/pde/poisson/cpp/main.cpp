@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2010-01-27
+// Last changed: 2010-02-14
 //
 // This demo program solves Poisson's equation
 //
@@ -53,12 +53,8 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
-  //parameters["mesh_partitioner"] = "ParMETIS";
-  parameters["mesh_partitioner"] = "SCOTCH";
-
   // Create mesh and function space
-  UnitSquare mesh(64, 64);
-  //Mesh mesh("../../../../data/meshes/unstruct-trimesh-2.xml.gz");  
+  UnitSquare mesh(32, 32);
   Poisson::FunctionSpace V(mesh);
 
   // Define boundary condition
@@ -83,10 +79,8 @@ int main()
   File file("poisson.pvd");
   file << u;
 
-  cout << "Soln norm: " << u.vector().norm("l2") << endl;;
-
   // Plot solution
-  //plot(u);
+  plot(u);
 
   return 0;
 }
