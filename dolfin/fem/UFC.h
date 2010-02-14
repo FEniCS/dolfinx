@@ -10,6 +10,7 @@
 #define __UFC_DATA_H
 
 #include <vector>
+#include <boost/scoped_array.hpp>
 #include <ufc.h>
 #include "UFCCell.h"
 #include "UFCMesh.h"
@@ -85,19 +86,19 @@ namespace dolfin
     UFCCell cell1;
 
     // Local tensor
-    double* A;
+    boost::scoped_array<double> A;
 
     // Local tensor for macro element
-    double* macro_A;
+    boost::scoped_array<double> macro_A;
 
     // std::vector for local dimensions for each argument
-    uint* local_dimensions;
+    boost::scoped_array<uint> local_dimensions;
 
     // std::vector for local dimensions of macro element for primary arguments
-    uint* macro_local_dimensions;
+    boost::scoped_array<uint> macro_local_dimensions;
 
     // std::vector of global dimensions for primary arguments
-    uint* global_dimensions;
+    boost::scoped_array<uint> global_dimensions;
 
     // std::vector of mapped dofs for primary arguments
     uint** dofs;

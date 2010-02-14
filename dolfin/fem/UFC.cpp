@@ -60,21 +60,6 @@ UFC::~UFC()
     delete interior_facet_integrals[i];
   delete [] interior_facet_integrals;
 
-  // Delete local tensor
-  delete [] A;
-
-  // Delete local tensor for macro element
-  delete [] macro_A;
-
-  // Delete local dimensions
-  delete [] local_dimensions;
-
-  // Delete global dimensions
-  delete [] global_dimensions;
-
-  // Delete local dimensions for macro element
-  delete [] macro_local_dimensions;
-
   // Delete dofs
   for (uint i = 0; i < this->form.rank(); i++)
     delete [] dofs[i];
@@ -137,7 +122,7 @@ void UFC::init(const Form& form)
   uint num_entries = 1;
   for (uint i = 0; i < this->form.rank(); i++)
     num_entries *= V[i]->dofmap().max_local_dimension();
-  A = new double[num_entries];
+  A.reset(new double[num_entries]);
   for (uint i = 0; i < num_entries; i++)
     A[i] = 0.0;
 
@@ -145,13 +130,13 @@ void UFC::init(const Form& form)
   num_entries = 1;
   for (uint i = 0; i < this->form.rank(); i++)
     num_entries *= 2*V[i]->dofmap().max_local_dimension();
-  macro_A = new double[num_entries];
+  macro_A.reset(new double[num_entries]);
   for (uint i = 0; i < num_entries; i++)
     macro_A[i] = 0.0;
 
   // Allocate memory for storing local dimensions
-  local_dimensions = new uint[this->form.rank()];
-  macro_local_dimensions = new uint[this->form.rank()];
+  local_dimensions.reset(new uint[this->form.rank()]);
+  macro_local_dimensions.reset(new uint[this->form.rank()]);
   for (uint i = 0; i < this->form.rank(); i++)
   {
     local_dimensions[i] = V[i]->dofmap().max_local_dimension();
@@ -159,7 +144,7 @@ void UFC::init(const Form& form)
   }
 
   // Initialize global dimensions
-  global_dimensions = new uint[this->form.rank()];
+  global_dimensions.reset(new uint[this->form.rank()]);
   for (uint i = 0; i < this->form.rank(); i++)
     global_dimensions[i] = V[i]->dofmap().global_dimension();
 
@@ -209,7 +194,8 @@ void UFC::update(const Cell& cell)
 
   // Restrict coefficients to cell
   for (uint i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->restrict(w[i], *coefficient_elements[i], cell, this->cell, -1);
+    coefficients[i]->restrict(w[i], *coefficient_elements[i], cell,
+                              this->cell, -1);
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell, uint local_facet)
@@ -219,7 +205,8 @@ void UFC::update(const Cell& cell, uint local_facet)
 
   // Restrict coefficients to facet
   for (uint i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->restrict(w[i], *coefficient_elements[i], cell, this->cell, local_facet);
+    coefficients[i]->restrict(w[i], *coefficient_elements[i], cell, this->cell,
+                              local_facet);
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell0, uint local_facet0,

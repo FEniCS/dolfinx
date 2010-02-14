@@ -159,7 +159,7 @@ void Assembler::assemble_cells(GenericTensor& A,
       a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
 
     // Tabulate cell tensor
-    integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell);
+    integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
 
     // Add entries to global tensor
     if (values && ufc.form.rank() == 0)
@@ -169,7 +169,7 @@ void Assembler::assemble_cells(GenericTensor& A,
       // Get local dimensions
       for (uint i = 0; i < ufc.form.rank(); i++)
         ufc.local_dimensions[i] = a.function_space(i)->dofmap().local_dimension(ufc.cell);
-      A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
+      A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
     }
     p++;
   }
@@ -238,14 +238,14 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
       a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, mesh_cell.index());
 
     // Tabulate exterior facet tensor
-    integral->tabulate_tensor(ufc.A, ufc.w, ufc.cell, local_facet);
+    integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell, local_facet);
 
     // Get local dimensions
     for (uint i = 0; i < ufc.form.rank(); i++)
       ufc.local_dimensions[i] = a.function_space(i)->dofmap().local_dimension(ufc.cell);
 
     // Add entries to global tensor
-    A.add(ufc.A, ufc.local_dimensions, ufc.dofs);
+    A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
 
     p++;
   }
@@ -319,7 +319,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     }
 
     // Tabulate exterior interior facet tensor on macro element
-    integral->tabulate_tensor(ufc.macro_A, ufc.macro_w, ufc.cell0, ufc.cell1,
+    integral->tabulate_tensor(ufc.macro_A.get(), ufc.macro_w, ufc.cell0, ufc.cell1,
                               local_facet0, local_facet1);
 
     // Get local dimensions
@@ -328,7 +328,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
                                     + a.function_space(i)->dofmap().local_dimension(ufc.cell1);
 
     // Add entries to global tensor
-    A.add(ufc.macro_A, ufc.macro_local_dimensions, ufc.macro_dofs);
+    A.add(ufc.macro_A.get(), ufc.macro_local_dimensions.get(), ufc.macro_dofs);
 
     p++;
   }

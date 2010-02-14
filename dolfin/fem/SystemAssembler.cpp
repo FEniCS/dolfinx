@@ -112,11 +112,10 @@ void SystemAssembler::assemble(GenericMatrix& A,
   {
     const uint N = a.function_space(1)->dofmap().global_dimension();
     assert(x0->size() == N);
-    double* x0_values = new double[N];
-    x0->get_local(x0_values);
+    boost::scoped_array<double> x0_values(double[N]);
+    x0->get_local(x0_values.get());
     for (uint i = 0; i < N; i++)
       data.g[i] = x0_values[i] - data.g[i];
-    delete [] x0_values;
   }
 
   if (A_ufc.form.num_interior_facet_integrals() == 0 && b_ufc.form.num_interior_facet_integrals() == 0)
@@ -166,12 +165,12 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     b_ufc.update(*cell);
 
     // Tabulate cell tensor (A)
-    A_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell);
+    A_integral->tabulate_tensor(A_ufc.A.get(), A_ufc.w, A_ufc.cell);
     for (uint i = 0; i < data.A_num_entries; i++)
       data.Ae[i] = A_ufc.A[i];
 
     // Tabulate cell tensor (b)
-    b_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
+    b_integral->tabulate_tensor(b_ufc.A.get(), b_ufc.w, b_ufc.cell);
     for (uint i = 0; i < data.b_num_entries; i++)
       data.be[i] = b_ufc.A[i];
 
@@ -190,7 +189,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
           {
             A_ufc.update(*cell, local_facet);
 
-            A_facet_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell, local_facet);
+            A_facet_integral->tabulate_tensor(A_ufc.A.get(), A_ufc.w, A_ufc.cell, local_facet);
             for (uint i = 0; i < data.A_num_entries; i++)
               data.Ae[i] += A_ufc.A[i];
           }
@@ -198,7 +197,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
           {
             b_ufc.update(*cell, local_facet);
 
-            b_facet_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell, local_facet);
+            b_facet_integral->tabulate_tensor(b_ufc.A.get(), b_ufc.w, b_ufc.cell, local_facet);
             for (uint i = 0; i < data.b_num_entries; i++)
               data.be[i] += b_ufc.A[i];
           }
@@ -213,11 +212,11 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
 
     // Modify local matrix/element for Dirichlet boundary conditions
     apply_bc(data.Ae, data.be, data.indicators, data.g, A_ufc.dofs,
-             A_ufc.local_dimensions);
+             A_ufc.local_dimensions.get());
 
     // Add entries to global tensor
-    A.add(data.Ae, A_ufc.local_dimensions, A_ufc.dofs);
-    b.add(data.be, b_ufc.local_dimensions, b_ufc.dofs);
+    A.add(data.Ae, A_ufc.local_dimensions.get(), A_ufc.dofs);
+    b.add(data.be, b_ufc.local_dimensions.get(), b_ufc.dofs);
 
     p++;
   }
@@ -308,7 +307,7 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
   // Update to current pair of cells
   ufc.update(cell0, local_facet0, cell1, local_facet1);
 
-  interior_facet_integral->tabulate_tensor(ufc.macro_A, ufc.macro_w,
+  interior_facet_integral->tabulate_tensor(ufc.macro_A.get(), ufc.macro_w,
                                            ufc.cell0, ufc.cell1,
                                            local_facet0, local_facet1);
 }
@@ -412,7 +411,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
     {
       A_ufc.update(cell0);
 
-      A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell);
+      A_cell_integral->tabulate_tensor(A_ufc.A.get(), A_ufc.w, A_ufc.cell);
       const uint nn = A_ufc.local_dimensions[0];
       const uint mm = A_ufc.local_dimensions[1];
       for (uint i = 0; i < mm; i++)
@@ -424,7 +423,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
     {
       b_ufc.update(cell0);
 
-      b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
+      b_cell_integral->tabulate_tensor(b_ufc.A.get(), b_ufc.w, b_ufc.cell);
       for (uint i = 0; i < b_ufc.local_dimensions[0]; i++)
         b_ufc.macro_A[i] += b_ufc.A[i];
     }
@@ -437,7 +436,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
     {
       A_ufc.update(cell1);
 
-      A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell);
+      A_cell_integral->tabulate_tensor(A_ufc.A.get(), A_ufc.w, A_ufc.cell);
       const uint nn = A_ufc.local_dimensions[0];
       const uint mm = A_ufc.local_dimensions[1];
       for (uint i=0; i < mm; i++)
@@ -449,7 +448,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
     {
       b_ufc.update(cell1);
 
-      b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
+      b_cell_integral->tabulate_tensor(b_ufc.A.get(), b_ufc.w, b_ufc.cell);
       for (uint i=0; i < b_ufc.local_dimensions[0]; i++)
         b_ufc.macro_A[i + b_ufc.local_dimensions[0]] += b_ufc.A[i];
     }
@@ -471,12 +470,12 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
                                              b_ufc.cell1, cell1.index());
 
   // Modify local matrix/element for Dirichlet boundary conditions
-  apply_bc(A_ufc.macro_A, b_ufc.macro_A, data.indicators, data.g,
-           A_ufc.macro_dofs, A_ufc.macro_local_dimensions);
+  apply_bc(A_ufc.macro_A.get(), b_ufc.macro_A.get(), data.indicators, data.g,
+           A_ufc.macro_dofs, A_ufc.macro_local_dimensions.get());
 
   // Add entries to global tensor
-  A.add(A_ufc.macro_A, A_ufc.macro_local_dimensions, A_ufc.macro_dofs);
-  b.add(b_ufc.macro_A, b_ufc.macro_local_dimensions, b_ufc.macro_dofs);
+  A.add(A_ufc.macro_A.get(), A_ufc.macro_local_dimensions.get(), A_ufc.macro_dofs);
+  b.add(b_ufc.macro_A.get(), b_ufc.macro_local_dimensions.get(), b_ufc.macro_dofs);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b,
@@ -500,7 +499,7 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
   {
     A_ufc.update(cell, local_facet);
 
-    A_facet_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell, local_facet);
+    A_facet_integral->tabulate_tensor(A_ufc.A.get(), A_ufc.w, A_ufc.cell, local_facet);
     for (uint i = 0; i < data.A_num_entries; i++)
       data.Ae[i] += A_ufc.A[i];
   }
@@ -508,7 +507,7 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
   {
     b_ufc.update(cell, local_facet);
 
-    b_facet_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell, local_facet);
+    b_facet_integral->tabulate_tensor(b_ufc.A.get(), b_ufc.w, b_ufc.cell, local_facet);
     for (uint i = 0; i < data.b_num_entries; i++)
       data.be[i] += b_ufc.A[i];
   }
@@ -519,7 +518,7 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
     if (A_ufc.form.num_cell_integrals() > 0 )
     {
       A_ufc.update(cell);
-      A_cell_integral->tabulate_tensor(A_ufc.A, A_ufc.w, A_ufc.cell);
+      A_cell_integral->tabulate_tensor(A_ufc.A.get(), A_ufc.w, A_ufc.cell);
       for (uint i = 0; i < data.A_num_entries; i++)
         data.Ae[i] += A_ufc.A[i];
     }
@@ -527,7 +526,7 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
     if (b_ufc.form.num_cell_integrals() > 0 )
     {
       b_ufc.update(cell);
-      b_cell_integral->tabulate_tensor(b_ufc.A, b_ufc.w, b_ufc.cell);
+      b_cell_integral->tabulate_tensor(b_ufc.A.get(), b_ufc.w, b_ufc.cell);
       for (uint i = 0; i < data.b_num_entries; i++)
         data.be[i] += b_ufc.A[i];
     }
@@ -542,11 +541,11 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
 
   // Modify local matrix/element for Dirichlet boundary conditions
   apply_bc(data.Ae, data.be, data.indicators, data.g, A_ufc.dofs,
-           A_ufc.local_dimensions);
+           A_ufc.local_dimensions.get());
 
   // Add entries to global tensor
-  A.add(data.Ae, A_ufc.local_dimensions, A_ufc.dofs);
-  b.add(data.be, b_ufc.local_dimensions, b_ufc.dofs);
+  A.add(data.Ae, A_ufc.local_dimensions.get(), A_ufc.dofs);
+  b.add(data.be, b_ufc.local_dimensions.get(), b_ufc.dofs);
 }
 //-----------------------------------------------------------------------------
 

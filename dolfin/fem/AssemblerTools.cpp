@@ -128,7 +128,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A,
       A.init(*sparsity_pattern);
     else
     {
-      A.resize(ufc.form.rank(), ufc.global_dimensions);
+      A.resize(ufc.form.rank(), ufc.global_dimensions.get());
       A.zero();
     }
     t1.stop();
