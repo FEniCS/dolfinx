@@ -10,6 +10,7 @@
 #define __NEWTON_SOLVER_H
 
 #include <utility>
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <dolfin/la/GenericLinearSolver.h>
@@ -68,13 +69,13 @@ namespace dolfin
     boost::shared_ptr<GenericLinearSolver> solver;
 
     /// Jacobian matrix
-    GenericMatrix* A;
+    boost::scoped_ptr<GenericMatrix> A;
 
     /// Solution vector
-    GenericVector* dx;
+    boost::scoped_ptr<GenericVector> dx;
 
     /// Resdiual vector
-    GenericVector* b;
+    boost::scoped_ptr<GenericVector> b;
   };
 
 }

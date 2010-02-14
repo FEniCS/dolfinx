@@ -52,9 +52,7 @@ NewtonSolver::NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& fa
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
 {
-  delete A;
-  delete dx;
-  delete b;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_problem, 
