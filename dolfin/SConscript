@@ -18,7 +18,7 @@ else:
 
 # Set the default env in our local scons utility module.
 scons.setDefaultEnv(env)
-  
+
 python_version = "python-%d" % (sys.version_info[0])
 
 # Add non-standard paths with pkg-config
@@ -27,7 +27,7 @@ python_version = "python-%d" % (sys.version_info[0])
 if "configure" in COMMAND_LINE_TARGETS:
     # Make sure pkg-config is installed:
     print "Checking for pkg-config...",
-    try: 
+    try:
         scons.runCommand("pkg-config", ["--version"])
         print "yes"
     except:
@@ -137,12 +137,15 @@ if "configure" in COMMAND_LINE_TARGETS:
     else:
         print "Disabling compilation of Python wrappers"
 
+# Using the SWIG option '-dirvtable' causes leaks with director call-backs
 if env["enablePython"]:
-    swigFlags = "-python -c++ -shadow -O -I%s" % os.path.join("include","swig")
+    #swigFlags = "-python -c++ -shadow -O -I%s" % os.path.join("include","swig")
+    #swigFlags = "-python -c++ -shadow -modern -modernargs -fastdispatch -fvirtual -dirvtable -nosafecstrings -noproxydel \
+    #             -fastproxy -fastinit -fastunpack -fastquery -nobuildnone -I%s" % os.path.join("include","swig")
+    swigFlags = "-python -c++ -shadow -modern -modernargs -fastdispatch \
+                 -fvirtual -nosafecstrings -noproxydel -fastproxy -fastinit \
+                 -fastunpack -fastquery -nobuildnone -I%s" % os.path.join("include","swig")
     swigFlags = swigFlags.split()
-
-    #if scons.checkVersion(swig_version, "1.3.28"):
-    #    swigFlags.append("-O")
 
     # This swig environment
     swigEnv = env.Clone()
@@ -167,7 +170,7 @@ if env["enablePython"]:
 #### Fix and move to a better location.
 ####
 # build rpath for paths for all modules, stored in the Module objects.
-# 
+#
 # Used for building test-binaries (aka AppSources)
 rpathdirs=[Dir("#%s/%s" % (env["projectname"],m.path)).abspath  for m in modules.values()]
 #### End TODO
@@ -191,8 +194,8 @@ for modName, mod in modules.items():
             linkOpts += dep.linkOpts
             cppPath  += dep.cppPath
 
-            # on Darwin, automatically add all regular external deps to 
-            # swig deps. Strictly speaking, it is only required if the 
+            # on Darwin, automatically add all regular external deps to
+            # swig deps. Strictly speaking, it is only required if the
             # external dep consist of shared libraries.
             scons.addToDependencies(mod.swigDependencies,d)
 
@@ -240,7 +243,7 @@ for modName, mod in modules.items():
         modEnv = swigEnv.Clone(CXXFLAGS=mod.cxxFlags + compileOpts,
                                LINKFLAGS=mod.linkFlags + linkOpts)
         modEnv.Append(SWIGFLAGS=mod.swigFlags + ["-I%s" % i for i in swigcppPath])
-        
+
         # Add python dependency (always required in python wrappers)
         pyPkg = configuredPackages[python_version]
         cppPath += pyPkg.cppPath + swigcppPath
@@ -282,7 +285,7 @@ for modName, mod in modules.items():
 
         # disable building of apps' on macosx as those only cause problems...
         #if env["PLATFORM"] == "darwin":
-        #    continue 
+        #    continue
 
         modEnv.Prepend(CPPPATH=[Dir("#").abspath] + cppPath)
         if mod.libSources and env["PLATFORM"] != "darwin":
@@ -292,7 +295,7 @@ for modName, mod in modules.items():
             # Do not use rpath on darwin, as it doesn't work
             modEnv.Append(LIBS=[modName] + libs, LIBPATH=[mod.path] + libPath)
             modEnv.Append(FRAMEWORKS=frameworks)
- 
+
         prog = modEnv.Program(target=os.path.join(mod.path, progName), source=\
                 [os.path.join(mod.path, s) for s in progSources])
         # The builder returns a node list
@@ -331,7 +334,7 @@ buildDataHash["data"].extend([File(os.path.join("#data", f)) for f in data])
 # read the SConscript for tests if enabled
 buildDataHash["tests"] = []
 if env["enableTests"]:
-    print "Checking for cppunit...", 
+    print "Checking for cppunit...",
     try:
         cppunitCfg = scons.pkgconfig.PkgConfig('cppunit', env=env)
     except Exception:
@@ -392,7 +395,7 @@ pkgconfig_deps = [configuredPackages.keys(), env["prefix"],
                   cxxflags, linkflags, env["CXX"]]
 env.Depends(buildDataHash["pkgconfig"][0], Value(pkgconfig_deps))
 
-# We also like to install all generated pkg-config files. 
+# We also like to install all generated pkg-config files.
 buildDataHash["pkgconfig"] += scons.globFiles(Dir("#/scons/pkgconfig/").srcnode().abspath, "*.pc")
 
 # Return the big data dictionary. Actual targets will be run in SConstruct
@@ -400,4 +403,4 @@ buildDataHash["pkgconfig"] += scons.globFiles(Dir("#/scons/pkgconfig/").srcnode(
 # pickled.
 Return("buildDataHash", "modules", "configuredPackages")
 
-# vim:ft=python sw=2 ts=2 
+# vim:ft=python sw=2 ts=2

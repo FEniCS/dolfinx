@@ -20,7 +20,6 @@ namespace dolfin
 
     NewtonSolverTest();
 
-    /// Destructor
     ~NewtonSolverTest();
 
     void solve(NonlinearProblemTest& nonlinear_function, double x);
