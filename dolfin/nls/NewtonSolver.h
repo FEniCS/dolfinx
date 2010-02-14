@@ -13,14 +13,20 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include <dolfin/la/GenericLinearSolver.h>
-#include <dolfin/la/GenericMatrix.h>
-#include <dolfin/la/GenericVector.h>
-#include <dolfin/la/LinearAlgebraFactory.h>
+//#include <dolfin/la/GenericLinearSolver.h>
+//#include <dolfin/la/GenericMatrix.h>
+//#include <dolfin/la/GenericVector.h>
+//#include <dolfin/la/LinearAlgebraFactory.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
+
+  // Forward declarations
+  class GenericLinearSolver;
+  class GenericLinearAlgebraFactory;
+  class GenericMatrix;
+  class GenericVector;
   class Mesh;
   class NonlinearProblem;
 
@@ -32,7 +38,7 @@ namespace dolfin
 
     /// Create nonlinear solver with default linear solver and default
     /// linear algebra backend
-    NewtonSolver(std::string solver_type = "lu", 
+    NewtonSolver(std::string solver_type = "lu",
                  std::string pc_type = "default");
 
     /// Create nonlinear solver using provided linear solver and linear algebra
@@ -44,7 +50,7 @@ namespace dolfin
 
     /// Solve abstract nonlinear problem F(x) = 0 for given vector F and
     /// Jacobian dF/dx
-    std::pair<uint, bool> solve(NonlinearProblem& nonlinear_function, 
+    std::pair<uint, bool> solve(NonlinearProblem& nonlinear_function,
                                 GenericVector& x);
 
     /// Return Newton iteration number

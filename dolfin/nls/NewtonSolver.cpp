@@ -8,7 +8,6 @@
 // Last changed: 2009-09-08
 
 #include <iostream>
-
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericLinearSolver.h>
 #include <dolfin/la/LinearSolver.h>
@@ -56,7 +55,7 @@ NewtonSolver::~NewtonSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_problem, 
+std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                                                   GenericVector& x)
 {
   assert(A);
@@ -74,7 +73,7 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   // Compute F(u)
   nonlinear_problem.form(*A, *b, x);
   nonlinear_problem.F(*b, x);
-  
+
   // Start iterations
   while (!newton_converged && newton_iteration < maxiter)
   {
