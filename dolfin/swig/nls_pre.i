@@ -16,4 +16,4 @@
 // Add director classes
 //-----------------------------------------------------------------------------
 %feature("director") dolfin::NonlinearProblem;
-%feature("director") dolfin::NonlinearProblemTest;
+
