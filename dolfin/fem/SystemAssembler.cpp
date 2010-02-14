@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2009-06-22
-// Last changed: 2009-10-08
+// Last changed: 2010-02-14
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -112,7 +112,7 @@ void SystemAssembler::assemble(GenericMatrix& A,
   {
     const uint N = a.function_space(1)->dofmap().global_dimension();
     assert(x0->size() == N);
-    boost::scoped_array<double> x0_values(double[N]);
+    boost::scoped_array<double> x0_values(new double[N]);
     x0->get_local(x0_values.get());
     for (uint i = 0; i < N; i++)
       data.g[i] = x0_values[i] - data.g[i];
