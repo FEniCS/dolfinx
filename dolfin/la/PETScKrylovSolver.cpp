@@ -130,9 +130,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
     read_parameters();
 
   if (!ksp)
-  {
     ksp.reset(new KSP, PETScKSPDeleter());
-  }
 
   // Solve linear system
   KSPSetOperators(*ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
@@ -259,9 +257,7 @@ void PETScKrylovSolver::init(uint M, uint N)
     KSPCreate(PETSC_COMM_WORLD, ksp.get());
   }
   else
-  {
     KSPCreate(PETSC_COMM_SELF, ksp.get());
-  }
 
   // Set some options
   KSPSetFromOptions(*ksp);

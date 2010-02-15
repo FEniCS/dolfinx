@@ -16,7 +16,7 @@ def pkgVersion(compiler=None, linker=None,
   # (VERSION / 1000 - 1000001) / 10000 => major version (3 in this case)
   # (VERSION / 1000 - 1000001) / 100 % 100 => minor version (5 in this case)
   # (VERSION / 1000 - 1000001) / 10 % 10 => sub-minor version (1 in this case).
-  # 
+  #
   # The version check also verify that we can include some CGAL headers.
     cpp_test_version_str = r"""
 #include <CGAL/version.h>
@@ -31,7 +31,7 @@ int main() {
 """
     cppfile = "cgal_config_test_version.cpp"
     write_cppfile(cpp_test_version_str, cppfile);
-    
+
     if not compiler:
         compiler = get_compiler(sconsEnv=sconsEnv)
     if not cflags:
@@ -61,7 +61,7 @@ int main() {
     return full_cgal_version
 
 def pkgCflags(sconsEnv=None):
-    return "-I%s -frounding-math" % \
+    return "-I%s -frounding-math -DCGAL_NDEBUG" % \
            os.path.join(getCgalDir(sconsEnv=sconsEnv), "include")
 
 def pkgLibs(sconsEnv=None):
@@ -71,7 +71,7 @@ def pkgLibs(sconsEnv=None):
 def pkgTests(forceCompiler=None, sconsEnv=None,
              cflags=None, libs=None, version=None, **kwargs):
     """Run the tests for this package
-     
+
     If Ok, return various variables, if not we will end with an exception.
     forceCompiler, if set, should be a tuple containing (compiler, linker)
     or just a string, which in that case will be used as both
@@ -100,7 +100,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
 def generatePkgConf(directory=None, sconsEnv=None, **kwargs):
     if directory is None:
         directory = suitablePkgConfDir()
-    
+
     version, libs, cflags = pkgTests(sconsEnv=sconsEnv)
 
     pkg_file_str = r"""Name: cgal

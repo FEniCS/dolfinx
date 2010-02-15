@@ -1,16 +1,17 @@
 // Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2009.
+// Modified by Garth N. Wells, 2009-2010.
 //
 // First added:  2005
-// Last changed: 2009-09-08
+// Last changed: 2010-02-15
 
 #ifndef __PETSC_LU_SOLVER_H
 #define __PETSC_LU_SOLVER_H
 
 #ifdef HAS_PETSC
 
+#include <boost/shared_ptr.hpp>
 #include <petscmat.h>
 #include <petscksp.h>
 #include "GenericLinearSolver.h"
@@ -58,13 +59,11 @@ namespace dolfin
     // Initialise solver
     void init();
 
-    // Clear data
-    void clear();
-
     // Create dense copy of virtual matrix
     double copy_to_dense(const PETScKrylovMatrix& A);
 
-    KSP ksp;
+    /// PETSc solver pointer
+    boost::shared_ptr<KSP> ksp;
 
     Mat B;
     int* idxm;

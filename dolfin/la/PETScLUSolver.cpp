@@ -1,11 +1,11 @@
 // Copyright (C) 2005-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2009.
+// Modified by Garth N. Wells, 2009-2010.
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2005
-// Last changed: 2009-09-28
+// Last changed: 2010-02-15
 
 #ifdef HAS_PETSC
 
@@ -21,6 +21,20 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+namespace dolfin
+{
+  class PETScKSPDeleter
+  {
+  public:
+    void operator() (KSP* ksp)
+    {
+      if (ksp)
+        KSPDestroy(*ksp);
+      delete ksp;
+    }
+  };
+}
+//-----------------------------------------------------------------------------
 Parameters PETScLUSolver::default_parameters()
 {
   Parameters p(LUSolver::default_parameters());
@@ -28,7 +42,8 @@ Parameters PETScLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver() : ksp(0), B(0), idxm(0), idxn(0)
+PETScLUSolver::PETScLUSolver() : ksp(static_cast<KSP*>(0), PETScKSPDeleter()),
+                                 B(0), idxm(0), idxn(0)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -39,7 +54,13 @@ PETScLUSolver::PETScLUSolver() : ksp(0), B(0), idxm(0), idxn(0)
 //-----------------------------------------------------------------------------
 PETScLUSolver::~PETScLUSolver()
 {
-  clear();
+  if (B)
+  {
+    MatDestroy(B);
+    B = 0;
+  }
+  delete [] idxm; idxm=0;
+  delete [] idxn; idxn=0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x,
@@ -57,7 +78,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
 
   const MatSolverPackage solver_type;
   PC pc;
-  KSPGetPC(ksp, &pc);
+  KSPGetPC(*ksp, &pc);
   PCFactorGetMatSolverPackage(pc, &solver_type);
 
   // Get parameters
@@ -72,11 +93,8 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
          A.size(0), A.size(1), solver_type);
 
   // Solve linear system
-  KSPSetOperators(ksp, *A.mat(), *A.mat(), DIFFERENT_NONZERO_PATTERN);
-  KSPSolve(ksp, *b.vec(), *x.vec());
-
-  // Clear data
-  clear();
+  KSPSetOperators(*ksp, *A.mat(), *A.mat(), DIFFERENT_NONZERO_PATTERN);
+  KSPSolve(*ksp, *b.vec(), *x.vec());
 
   return 1;
 }
@@ -102,8 +120,8 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A, PETScVector& x,
 		A.size(0), A.size(1));
 
   // Solve linear system
-  KSPSetOperators(ksp, B, B, DIFFERENT_NONZERO_PATTERN);
-  KSPSolve(ksp, *b.vec(), *x.vec());
+  KSPSetOperators(*ksp, B, B, DIFFERENT_NONZERO_PATTERN);
+  KSPSolve(*ksp, *b.vec(), *x.vec());
 
   // Estimate condition number for l1 norm
   const double xnorm = x.norm("l1");
@@ -117,9 +135,6 @@ dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A, PETScVector& x,
       warning("Matrix has large condition number (%.1e).", kappa);
   }
 
-  // Clear data
-  clear();
-
   return 1;
 }
 //-----------------------------------------------------------------------------
@@ -130,13 +145,10 @@ std::string PETScLUSolver::str(bool verbose) const
   if (verbose)
   {
     warning("Verbose output for PETScLUSolver not implemented, calling PETSc KSPView directly.");
-
-    KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
+    KSPView(*ksp, PETSC_VIEWER_STDOUT_WORLD);
   }
   else
-  {
     s << "<PETScLUSolver>";
-  }
 
   return s.str();
 }
@@ -144,36 +156,35 @@ std::string PETScLUSolver::str(bool verbose) const
 double PETScLUSolver::copy_to_dense(const PETScKrylovMatrix& A)
 {
   error("PETScLUSolver::copy_to_dense needs to be fixed");
-
-  return 0;
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::init()
 {
   // We create a PETSc Krylov solver and instruct it to use LU preconditioner
 
+  // Destroy old solver environment if necessary
+  if (!ksp.unique())
+    error("Cannot create new KSP Krylov solver. More than one object points to the underlying PETSc object.");
+
+  ksp.reset(new KSP, PETScKSPDeleter());
+
   // Set up solver environment
   if (MPI::num_processes() > 1)
   {
     info("Creating parallel PETSc Krylov solver (for LU factorization).");
-    KSPCreate(PETSC_COMM_WORLD, &ksp);
+    KSPCreate(PETSC_COMM_WORLD, ksp.get());
   }
   else
-    KSPCreate(PETSC_COMM_SELF, &ksp);
+    KSPCreate(PETSC_COMM_SELF, ksp.get());
 
   // Set preconditioner to LU factorization
   PC pc;
-  KSPGetPC(ksp, &pc);
+  KSPGetPC(*ksp, &pc);
   PCSetType(pc, PCLU);
 
   if (MPI::num_processes() == 1)
-  {
-#if PETSC_HAVE_MUMPS
-    PCFactorSetMatSolverPackage(pc, MAT_SOLVER_MUMPS);
-#else
     PCFactorSetMatSolverPackage(pc, MAT_SOLVER_UMFPACK);
-#endif
-  }
   else
   {
 #if PETSC_HAVE_MUMPS
@@ -190,24 +201,6 @@ void PETScLUSolver::init()
 
   // Do LU factorization in-place (saves memory)
   PCASMSetUseInPlace(pc);
-}
-//-----------------------------------------------------------------------------
-void PETScLUSolver::clear()
-{
-  if (ksp)
-  {
-    KSPDestroy(ksp);
-    ksp = 0;
-  }
-
-  if (B )
-  {
-    MatDestroy(B);
-    ksp = 0;
-  }
-
-  delete [] idxm; idxm=0;
-  delete [] idxn; idxn=0;
 }
 //-----------------------------------------------------------------------------
 
