@@ -1,3 +1,6 @@
+ - Add computation of intersection between arbitrary mesh entities
+ - Random access to MeshEntitiyIterators
+ - Modify SWIG flags to prevent leak when using SWIG director feature
  - Fix memory leak in std::vector<Foo*> typemaps
  - Add interface for SCOTCH for parallel mesh partitioning
  - Bug fix in SubDomain::mark, fixes bug in DirichletBC based on SubDomain::inside

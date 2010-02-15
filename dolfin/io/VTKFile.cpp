@@ -341,7 +341,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
   const DofMap& dofmap(u.function_space().dofmap());
   if (dofmap.max_local_dimension() == cell_based_dim)
     write_cell_data(u, vtu_filename);
-  else 
+  else
     write_point_data(u, mesh, vtu_filename);
 }
 //----------------------------------------------------------------------------
@@ -868,8 +868,8 @@ std::string VTKFile::vtu_name(const int process, const int num_processes,
   fileid.fill('0');
   fileid.width(6);
 
-  filestart.assign(filename, 0, filename.find("."));
-  extension.assign(filename, filename.find("."), filename.size());
+  filestart.assign(filename, 0, filename.find_last_of("."));
+  extension.assign(filename, filename.find_last_of("."), filename.size());
 
   fileid << counter;
 
