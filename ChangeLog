@@ -1,3 +1,4 @@
+ - Allow user to choose which LU package PETScLUSolver uses
  - Add computation of intersection between arbitrary mesh entities
  - Random access to MeshEntitiyIterators
  - Modify SWIG flags to prevent leak when using SWIG director feature

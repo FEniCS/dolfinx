@@ -11,6 +11,8 @@
 
 #ifdef HAS_PETSC
 
+#include <map>
+#include <petscksp.h>
 #include <boost/shared_ptr.hpp>
 #include <petscmat.h>
 #include <petscksp.h>
@@ -34,7 +36,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    PETScLUSolver();
+    PETScLUSolver(std::string lu_package="default");
 
     /// Destructor
     ~PETScLUSolver();
@@ -52,6 +54,12 @@ namespace dolfin
     static Parameters default_parameters();
 
   private:
+
+    /// LU method
+    std::string lu_package;
+
+    // Available LU solvers
+    static const std::map<std::string, const MatSolverPackage> lu_packages;
 
     // Initialise solver
     void init();

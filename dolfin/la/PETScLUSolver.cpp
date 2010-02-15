@@ -9,6 +9,7 @@
 
 #ifdef HAS_PETSC
 
+#include <boost/assign/list_of.hpp>
 #include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/constants.h>
@@ -34,6 +35,14 @@ namespace dolfin
   };
 }
 //-----------------------------------------------------------------------------
+// Available LU solver
+const std::map<std::string, const MatSolverPackage> PETScLUSolver::lu_packages
+  = boost::assign::map_list_of("default", "")
+                              ("umfpack", MAT_SOLVER_UMFPACK)
+                              ("mumps",   MAT_SOLVER_MUMPS)
+                              ("spooles", MAT_SOLVER_SPOOLES)
+                              ("superlu", MAT_SOLVER_SUPERLU);
+//-----------------------------------------------------------------------------
 Parameters PETScLUSolver::default_parameters()
 {
   Parameters p(LUSolver::default_parameters());
@@ -41,8 +50,28 @@ Parameters PETScLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver()
+PETScLUSolver::PETScLUSolver(std::string lu_package) : lu_package(lu_package)
 {
+  // Check package string
+  if (lu_packages.count(lu_package) == 0)
+    error("Requested PETSc LU solver '%s' is unknown,", lu_package.c_str());
+
+  // Choose appropriate 'default' solver
+  if (lu_package == "default")
+  {
+    if (MPI::num_processes() == 1)
+      this->lu_package = "umfpack";
+    else
+    {
+      #if PETSC_HAVE_MUMPS
+      this->lu_package = "mumps";
+      #elif PETSC_HAVE_SPOOLES
+      this->lu_package = "spooles";
+      #else
+      error("No suitable solver for parallel LU. Consider configuring PETSc with MUMPS or SPOOLES.");
+      #endif
+    }
+  }
   // Set parameter values
   parameters = default_parameters();
 
@@ -130,18 +159,8 @@ void PETScLUSolver::init()
   KSPGetPC(*ksp, &pc);
   PCSetType(pc, PCLU);
 
-  if (MPI::num_processes() == 1)
-    PCFactorSetMatSolverPackage(pc, MAT_SOLVER_UMFPACK);
-  else
-  {
-    #if PETSC_HAVE_MUMPS
-    PCFactorSetMatSolverPackage(pc, MAT_SOLVER_MUMPS);
-    #elif PETSC_HAVE_SPOOLES
-    PCFactorSetMatSolverPackage(pc, MAT_SOLVER_SPOOLES);
-    #else
-    error("No suitable solver for parallel LU. Consider configuring PETSc with MUMPS or SPOOLES.");
-    #endif
-  }
+  // Set solver package
+  PCFactorSetMatSolverPackage(pc, lu_packages.find(lu_package)->second);
 
   // Allow matrices with zero diagonals to be solved
   PCFactorSetShiftNonzero(pc, PETSC_DECIDE);

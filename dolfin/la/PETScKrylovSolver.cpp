@@ -10,7 +10,6 @@
 #ifdef HAS_PETSC
 
 #include <boost/assign/list_of.hpp>
-
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/main/MPI.h>
 #include "PETScKrylovSolver.h"
@@ -325,7 +324,7 @@ void PETScKrylovSolver::set_petsc_preconditioner()
 
   // Check that the requested method is known
   if (pc_methods.count(pc_petsc) == 0)
-    error("Requested PETSc procondition '%s' is unknown,", pc_petsc.c_str());
+    error("Requested PETSc proconditioner '%s' is unknown,", pc_petsc.c_str());
 
   // Get PETSc PC pointer
   PC pc;
