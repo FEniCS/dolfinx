@@ -5,7 +5,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2005-10-23
-// Last changed: 2009-09-08
+// Last changed: 2010-02-15
 
 #include <iostream>
 #include <dolfin/common/NoDeleter.h>
@@ -147,8 +147,9 @@ bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
 
   // Output iteration number and residual
   //FIXME: allow precision to be set for dolfin::cout<<
-  std::cout.precision(3);
-  if(report && newton_iteration > 0)
+  /*
+    std::cout.precision(3);
+    if (report && newton_iteration > 0)
     std::cout << "  Iteration " << newton_iteration
               << ":"
               << " r (abs) = " << std::scientific << residual
@@ -156,6 +157,10 @@ bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
               << " r (rel) = " << std::scientific << relative_residual
               << " (tol = " << std::scientific << rtol << ")"
               << std::endl;
+  */
+  if (report && newton_iteration > 0)
+    info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = %.3e (tol = %.3e)",
+         newton_iteration, residual, atol, relative_residual, rtol);
 
   // Return true of convergence criterion is met
   if (relative_residual < rtol || residual < atol)
