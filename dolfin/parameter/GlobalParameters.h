@@ -57,7 +57,7 @@ namespace dolfin
       #endif
 
       // Graph partitioner ---
-      p.add("mesh_partitioner", "SCOTCH");              // Use PETSc if available
+      p.add("mesh_partitioner", "ParMETIS");
 
       return p;
     }
