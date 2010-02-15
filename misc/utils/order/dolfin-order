@@ -16,10 +16,10 @@ def main(args):
     if not len(args) > 0:
         usage()
         sys.exit(2)
-        
+
     # Convert each mesh
     for filename in args:
-        print "Ordering %s..." % filename
+        print "Ordering %s" % filename
 
         # Read and order mesh
         mesh = Mesh(filename)

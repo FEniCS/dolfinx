@@ -34,7 +34,7 @@ def main(argv):
     except getopt.GetoptError:
         usage()
         sys.exit(2)
-        
+
     # Get options
     iformat = None
     oformat = None
@@ -51,14 +51,20 @@ def main(argv):
     if not len(args) == 2:
         usage()
         sys.exit(2)
-        
+
     # Get filenames
     ifilename = args[0]
     ofilename = args[1]
 
+    # Can only convert to XML
     if oformat and oformat != "xml":
         error("Unable to convert to format %s." % (oformat,))
+
+    # Convert to XML
     meshconvert.convert2xml(ifilename, ofilename, iformat=iformat)
+
+    # Order mesh
+    os.system("dolfin-order %s" % ofilename)
 
 def usage():
     "Display usage"
@@ -96,7 +102,7 @@ be deduced from the suffix:
   .xml  - xml
   .mesh - mesh
   .gmsh - gmsh
-  .msh  - gmsh  
+  .msh  - gmsh
   .gra  - metis
   .grf  - scotch
   .grid - diffpack
@@ -104,7 +110,7 @@ be deduced from the suffix:
   .e	- Exodus II
   .exo  - Exodus II
   .ncdf - ncdump'ed Exodus II
-  .vrt and .cell  - starcd 
+  .vrt and .cell  - starcd
 """
 if __name__ == "__main__":
     main(sys.argv[1:])
