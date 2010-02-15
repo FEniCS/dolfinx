@@ -9,14 +9,13 @@
 
 #ifdef HAS_PETSC
 
-#include <dolfin/common/constants.h>
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/main/MPI.h>
+#include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/constants.h>
+#include "LUSolver.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
-#include "PETScKrylovMatrix.h"
 #include "PETScLUSolver.h"
-#include "LUSolver.h"
 
 using namespace dolfin;
 
@@ -42,8 +41,7 @@ Parameters PETScLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver() : ksp(static_cast<KSP*>(0), PETScKSPDeleter()),
-                                 B(0), idxm(0), idxn(0)
+PETScLUSolver::PETScLUSolver()
 {
   // Set parameter values
   parameters = default_parameters();
@@ -54,13 +52,7 @@ PETScLUSolver::PETScLUSolver() : ksp(static_cast<KSP*>(0), PETScKSPDeleter()),
 //-----------------------------------------------------------------------------
 PETScLUSolver::~PETScLUSolver()
 {
-  if (B)
-  {
-    MatDestroy(B);
-    B = 0;
-  }
-  delete [] idxm; idxm=0;
-  delete [] idxn; idxn=0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x,
@@ -99,45 +91,6 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A, PETScVector& x,
-                                  const PETScVector& b)
-{
-  // Initialise solver
-  init();
-
-  // Get parameters
-  const bool report = parameters["report"];
-
-  // Copy data to dense matrix
-  const double Anorm = copy_to_dense(A);
-
-  // Initialize solution vector (remains untouched if dimensions match)
-  x.resize(A.size(1));
-
-  // Write a message
-  if ( report )
-    info("Solving linear system of size %d x %d (PETSc LU solver).",
-		A.size(0), A.size(1));
-
-  // Solve linear system
-  KSPSetOperators(*ksp, B, B, DIFFERENT_NONZERO_PATTERN);
-  KSPSolve(*ksp, *b.vec(), *x.vec());
-
-  // Estimate condition number for l1 norm
-  const double xnorm = x.norm("l1");
-  const double bnorm = b.norm("l1") + DOLFIN_EPS;
-  const double kappa = Anorm * xnorm / bnorm;
-  if ( kappa > 0.001 / DOLFIN_EPS )
-  {
-    if ( kappa > 1.0 / DOLFIN_EPS )
-      error("Matrix has very large condition number (%.1e). Is it singular?", kappa);
-    else
-      warning("Matrix has large condition number (%.1e).", kappa);
-  }
-
-  return 1;
-}
-//-----------------------------------------------------------------------------
 std::string PETScLUSolver::str(bool verbose) const
 {
   std::stringstream s;
@@ -153,19 +106,13 @@ std::string PETScLUSolver::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-double PETScLUSolver::copy_to_dense(const PETScKrylovMatrix& A)
-{
-  error("PETScLUSolver::copy_to_dense needs to be fixed");
-  return 0.0;
-}
-//-----------------------------------------------------------------------------
 void PETScLUSolver::init()
 {
   // We create a PETSc Krylov solver and instruct it to use LU preconditioner
 
   // Destroy old solver environment if necessary
-  if (!ksp.unique())
-    error("Cannot create new KSP Krylov solver. More than one object points to the underlying PETSc object.");
+  //if (!ksp.unique())
+  //  error("Cannot create new KSP Krylov solver. More than one object points to the underlying PETSc object.");
 
   ksp.reset(new KSP, PETScKSPDeleter());
 
@@ -187,13 +134,13 @@ void PETScLUSolver::init()
     PCFactorSetMatSolverPackage(pc, MAT_SOLVER_UMFPACK);
   else
   {
-#if PETSC_HAVE_MUMPS
+    #if PETSC_HAVE_MUMPS
     PCFactorSetMatSolverPackage(pc, MAT_SOLVER_MUMPS);
-#elif PETSC_HAVE_SPOOLES
+    #elif PETSC_HAVE_SPOOLES
     PCFactorSetMatSolverPackage(pc, MAT_SOLVER_SPOOLES);
-#else
+    #else
     error("No suitable solver for parallel LU. Consider configuring PETSc with MUMPS or SPOOLES.");
-#endif
+    #endif
   }
 
   // Allow matrices with zero diagonals to be solved

@@ -45,9 +45,6 @@ namespace dolfin
     /// Solve linear system Ax = b
     uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
 
-    /// Solve linear system Ax = b
-    uint solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);
-
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
@@ -59,18 +56,8 @@ namespace dolfin
     // Initialise solver
     void init();
 
-    // Create dense copy of virtual matrix
-    double copy_to_dense(const PETScKrylovMatrix& A);
-
     /// PETSc solver pointer
     boost::shared_ptr<KSP> ksp;
-
-    Mat B;
-    int* idxm;
-    int* idxn;
-
-    PETScVector e;
-    PETScVector y;
 
   };
 
