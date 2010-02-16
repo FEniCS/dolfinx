@@ -61,12 +61,9 @@ dolfin::uint TriangleCell::num_vertices(uint dim) const
 //-----------------------------------------------------------------------------
 dolfin::uint TriangleCell::orientation(const Cell& cell) const
 {
-  // This is a trick to be allowed to initialize mesh entities from cell
-  Cell& c = const_cast<Cell&>(cell);
-
-  Vertex v0(c.mesh(), c.entities(0)[0]);
-  Vertex v1(c.mesh(), c.entities(0)[1]);
-  Vertex v2(c.mesh(), c.entities(0)[2]);
+  Vertex v0(cell.mesh(), cell.entities(0)[0]);
+  Vertex v1(cell.mesh(), cell.entities(0)[1]);
+  Vertex v2(cell.mesh(), cell.entities(0)[2]);
 
   Point p01 = v1.point() - v0.point();
   Point p02 = v2.point() - v0.point();
@@ -191,14 +188,11 @@ double TriangleCell::normal(const Cell& cell, uint facet, uint i) const
 //-----------------------------------------------------------------------------
 Point TriangleCell::normal(const Cell& cell, uint facet) const
 {
-  // This is a trick to be allowed to initialize a facet from the cell
-  Cell& c = const_cast<Cell&>(cell);
-
   // Create facet from the mesh and local facet number
-  Facet f(c.mesh(), c.entities(1)[facet]);
+  Facet f(cell.mesh(), cell.entities(1)[facet]);
 
   // The normal vector is currently only defined for a triangle in R^2
-  if (c.mesh().geometry().dim() != 2)
+  if (cell.mesh().geometry().dim() != 2)
     error("The normal vector is only defined when the triangle is in R^2");
 
   // Get global index of opposite vertex
@@ -233,11 +227,8 @@ Point TriangleCell::normal(const Cell& cell, uint facet) const
 //-----------------------------------------------------------------------------
 double TriangleCell::facet_area(const Cell& cell, uint facet) const
 {
-  // This is a trick to be allowed to initialize a facet from the cell
-  Cell& c = const_cast<Cell&>(cell);
-
   // Create facet from the mesh and local facet number
-  Facet f(c.mesh(), c.entities(1)[facet]);
+  Facet f(cell.mesh(), cell.entities(1)[facet]);
 
   // Get global index of vertices on the facet
   const uint v0 = f.entities(0)[0];
