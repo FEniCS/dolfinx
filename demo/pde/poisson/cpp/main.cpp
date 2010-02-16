@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2010-02-14
+// Last changed: 2010-02-16
 //
 // This demo program solves Poisson's equation
 //
@@ -56,10 +56,6 @@ int main()
   // Create mesh and function space
   UnitSquare mesh(32, 32);
   Poisson::FunctionSpace V(mesh);
-
-  uBLASDenseMatrix A(2, 2);
-  cout << A.size(0) << endl;
-  //A.apply();
 
   // Define boundary condition
   Constant u0(0.0);
