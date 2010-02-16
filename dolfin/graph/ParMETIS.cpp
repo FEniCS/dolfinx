@@ -79,7 +79,7 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   options[0] = 1;
   options[1] = 0;
   options[2] = 15;
-  
+
   // Partitioning array to be computed by ParMETIS (note bug in manual: vertices, not cells!)
   int* part = new int[num_local_cells];
 
@@ -91,13 +91,13 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
 
   // Construct communicator (copy of MPI_COMM_WORLD)
   MPICommunicator comm;
-  
+
   // Call ParMETIS to partition mesh
   ParMETIS_V3_PartMeshKway(elmdist, eptr, eind,
                            elmwgt, &wgtflag, &numflag, &ncon,
                            &ncommonnodes, &nparts,
                            tpwgts, ubvec, options,
-                           &edgecut, part, &(*comm)); 
+                           &edgecut, part, &(*comm));
   info("Partitioned mesh, edge cut is %d.", edgecut);
 
   // Copy mesh_data
@@ -105,7 +105,7 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
   cell_partition.reserve(num_local_cells);
   for (uint i = 0; i < num_local_cells; i++)
     cell_partition.push_back(static_cast<uint>(part[i]));
-  
+
   // Cleanup
   delete [] elmdist;
   delete [] eptr;
@@ -123,4 +123,3 @@ void ParMETIS::compute_partition(std::vector<uint>& cell_partition,
 }
 //-----------------------------------------------------------------------------
 #endif
-
