@@ -61,7 +61,7 @@ int main() {
     return full_cgal_version
 
 def pkgCflags(sconsEnv=None):
-    return "-I%s -frounding-math -DCGAL_NDEBUG" % \
+    return "-I%s -frounding-math" % \
            os.path.join(getCgalDir(sconsEnv=sconsEnv), "include")
 
 def pkgLibs(sconsEnv=None):

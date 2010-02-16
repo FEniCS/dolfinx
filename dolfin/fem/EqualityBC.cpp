@@ -216,26 +216,17 @@ void EqualityBC::init_from_mesh(uint sub_domain)
   assert(equal_dofs.size() == 0);
 
   // Get data from MeshData
-  std::vector<uint>* facet_cells   = const_cast<Mesh&>(_function_space->mesh()).data().array("boundary facet cells");
-  std::vector<uint>* facet_numbers = const_cast<Mesh&>(_function_space->mesh()).data().array("boundary facet numbers");
-  std::vector<uint>* indicators    = const_cast<Mesh&>(_function_space->mesh()).data().array("boundary indicators");
+  const std::vector<uint>* facet_cells   = _function_space->mesh().data().array("boundary facet cells");
+  const std::vector<uint>* facet_numbers = _function_space->mesh().data().array("boundary facet numbers");
+  const std::vector<uint>* indicators    = _function_space->mesh().data().array("boundary indicators");
 
   // Check data
   if (!facet_cells)
-  {
-    info(_function_space->mesh().data());
     error("Mesh data \"boundary facet cells\" not available.");
-  }
   if (!facet_numbers)
-  {
-    info(_function_space->mesh().data());
     error("Mesh data \"boundary facet numbers\" not available.");
-  }
   if (!indicators)
-  {
-    info(_function_space->mesh().data());
     error("Mesh data \"boundary indicators\" not available.");
-  }
 
   // Get size
   const uint size = facet_cells->size();

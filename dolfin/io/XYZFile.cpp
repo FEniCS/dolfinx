@@ -4,8 +4,10 @@
 // Modified by Nuno Lopes 2008.
 //
 // First added:  2008-07-02
+
 #include <sstream>
 #include <fstream>
+#include <boost/scoped_array.hpp>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -60,14 +62,14 @@ void XYZFile::ResultsWrite(const Function& u) const
   for (uint i = 0; i < rank; i++)
     dim *= u.function_space().element().value_dimension(i);
 
-  Mesh& mesh = const_cast<Mesh&>(u.function_space().mesh());
+  const Mesh& mesh = u.function_space().mesh();
 
   // Allocate memory for function values at vertices
   const uint size = mesh.num_vertices()*dim;
-  double* values = new double[size];
+  boost::scoped_array<double> values(new double[size]);
 
   // Get function values at vertices
-  u.compute_vertex_values(values, mesh);
+  u.compute_vertex_values(values.get(), mesh);
 
   // Write function data at mesh vertices
   if ( dim > 1 )
@@ -77,12 +79,10 @@ void XYZFile::ResultsWrite(const Function& u) const
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
         ss.str("");
-        ss<<vertex->x(0)<<" "<< vertex->x(1)<<" "<< values[ vertex->index()];
+        ss<<vertex->x(0)<<" "<< vertex->x(1)<<" "<< values[ vertex->index() ];
         ss<<std::endl;
         fp<<ss.str( );
   }
-
-  delete [] values;
 }
 //----------------------------------------------------------------------------
 void XYZFile::xyzNameUpdate(const int counter)

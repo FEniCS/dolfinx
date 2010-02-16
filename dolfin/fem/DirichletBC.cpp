@@ -394,7 +394,7 @@ void DirichletBC::init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_do
   // Create mesh function for sub domain markers on facets
   const uint dim = _function_space->mesh().topology().dim();
   _function_space->mesh().init(dim - 1);
-  MeshFunction<uint> sub_domains(const_cast<Mesh&>(_function_space->mesh()), dim - 1);
+  MeshFunction<uint> sub_domains(_function_space->mesh(), dim - 1);
 
   // Set geometric dimension (needed for SWIG interface)
   sub_domain->_geometric_dimension = _function_space->mesh().geometry().dim();
@@ -449,9 +449,9 @@ void DirichletBC::init_from_mesh(uint sub_domain)
   cout << "Creating sub domain markers for boundary condition." << endl;
 
   // Get data
-  std::vector<uint>* facet_cells   = const_cast<Mesh&>(_function_space->mesh()).data().array("boundary facet cells");
-  std::vector<uint>* facet_numbers = const_cast<Mesh&>(_function_space->mesh()).data().array("boundary facet numbers");
-  std::vector<uint>* indicators    = const_cast<Mesh&>(_function_space->mesh()).data().array("boundary indicators");
+  const std::vector<uint>* facet_cells   = _function_space->mesh().data().array("boundary facet cells");
+  const std::vector<uint>* facet_numbers = _function_space->mesh().data().array("boundary facet numbers");
+  const std::vector<uint>* indicators    = _function_space->mesh().data().array("boundary indicators");
 
   // Check data
   if (!facet_cells)

@@ -252,17 +252,18 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  void uBLASMatrix<Mat>::getrow(uint row_idx, std::vector<uint>& columns, std::vector<double>& values) const
+  void uBLASMatrix<Mat>::getrow(uint row_idx, std::vector<uint>& columns,
+                                std::vector<double>& values) const
   {
     assert(row_idx < this->size(0));
 
-    // Reference to matrix row (throw away const-ness and trust uBLAS)
-    ublas::matrix_row<Mat> row( *(const_cast<Mat*>(&A)) , row_idx);
+    // Reference to matrix row
+    const ublas::matrix_row<const Mat> row(A, row_idx);
 
     // Insert values into std::vectors
     columns.clear();
     values.clear();
-    typename ublas::matrix_row<Mat>::const_iterator component;
+    typename ublas::matrix_row<const Mat>::const_iterator component;
     for (component=row.begin(); component != row.end(); ++component)
     {
       columns.push_back(component.index());
@@ -271,7 +272,8 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>
-  void uBLASMatrix<Mat>::setrow(uint row_idx, const std::vector<uint>& columns, const std::vector<double>& values)
+  void uBLASMatrix<Mat>::setrow(uint row_idx, const std::vector<uint>& columns,
+                                const std::vector<double>& values)
   {
     assert(columns.size() == values.size());
     assert(row_idx < this->size(0));
@@ -364,12 +366,6 @@ namespace dolfin
     solveInPlace(X);
     A.assign_temporary(X);
   }
-//-----------------------------------------------------------------------------
-  template <class Mat>
-  void uBLASMatrix<Mat>::apply()
-  {
-    // Do nothing
-  }
   //---------------------------------------------------------------------------
   template <class Mat>
   void uBLASMatrix<Mat>::zero()
@@ -410,7 +406,7 @@ namespace dolfin
             *entry = 1.0;
           else
             *entry = 0.0;
-        } 
+        }
         ++ counter;
       }
       if (counter == _rows.size())
@@ -537,6 +533,19 @@ namespace dolfin
     A.clear();
   }
   //---------------------------------------------------------------------------
+  template <>
+  inline void uBLASMatrix<ublas_sparse_matrix>::apply()
+  {
+    // Make sure matrix assembly is complete
+    A.complete_index1_data();
+  }
+  //---------------------------------------------------------------------------
+  template <class Mat>
+  inline void uBLASMatrix<Mat>::apply()
+  {
+    // Do nothing
+  }
+  //---------------------------------------------------------------------------
   template <class Mat>
   inline void uBLASMatrix<Mat>::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
   {
@@ -551,9 +560,6 @@ namespace dolfin
   inline std::tr1::tuple<const std::size_t*, const std::size_t*,
              const double*, int> uBLASMatrix<ublas_sparse_matrix>::data() const
   {
-    // Make sure matrix assembly is complete
-    const_cast< ublas_sparse_matrix& >(A).complete_index1_data();
-
     typedef std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> tuple;
     return tuple(&A.index1_data()[0], &A.index2_data()[0], &A.value_data()[0], A.nnz());
   }

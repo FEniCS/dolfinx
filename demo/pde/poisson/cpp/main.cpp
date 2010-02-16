@@ -57,6 +57,10 @@ int main()
   UnitSquare mesh(32, 32);
   Poisson::FunctionSpace V(mesh);
 
+  uBLASDenseMatrix A(2, 2);
+  cout << A.size(0) << endl;
+  //A.apply();
+
   // Define boundary condition
   Constant u0(0.0);
   DirichletBoundary boundary;

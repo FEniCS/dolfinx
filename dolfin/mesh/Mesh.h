@@ -82,46 +82,46 @@ namespace dolfin
     const Mesh& operator=(const Mesh& mesh);
 
     /// Return number of vertices
-    inline uint num_vertices() const { return _topology.size(0); }
+    uint num_vertices() const { return _topology.size(0); }
 
     /// Return number of edges
-    inline uint num_edges() const { return _topology.size(1); }
+    uint num_edges() const { return _topology.size(1); }
 
     /// Return number of faces
-    inline uint num_faces() const { return _topology.size(2); }
+    uint num_faces() const { return _topology.size(2); }
 
     /// Return number of facets
-    inline uint num_facets() const { return _topology.size(_topology.dim() - 1); }
+    uint num_facets() const { return _topology.size(_topology.dim() - 1); }
 
     /// Return number of cells
-    inline uint num_cells() const { return _topology.size(_topology.dim()); }
+    uint num_cells() const { return _topology.size(_topology.dim()); }
 
     /// Return number of entities of dimension d
-    inline uint num_entities(uint d) const { return _topology.size(d); }
+    uint num_entities(uint d) const { return _topology.size(d); }
 
     /// Return coordinates of all vertices
-    inline double* coordinates() { return _geometry.x(); }
+    double* coordinates() { return _geometry.x(); }
 
     /// Return coordinates of all vertices
-    inline const double* coordinates() const { return _geometry.x(); }
+    const double* coordinates() const { return _geometry.x(); }
 
     /// Return connectivity for all cells
-    inline const uint* cells() const { return _topology(_topology.dim(), 0)(); }
+    const uint* cells() const { return _topology(_topology.dim(), 0)(); }
 
     /// Return number of entities of given topological dimension
-    inline uint size(uint dim) const { return _topology.size(dim); }
+    uint size(uint dim) const { return _topology.size(dim); }
 
     /// Return mesh topology (non-const version)
-    inline MeshTopology& topology() { return _topology; }
+    MeshTopology& topology() { return _topology; }
 
     /// Return mesh topology (const version)
-    inline const MeshTopology& topology() const { return _topology; }
+    const MeshTopology& topology() const { return _topology; }
 
     /// Return mesh geometry (non-const version)
-    inline MeshGeometry& geometry() { return _geometry; }
+    MeshGeometry& geometry() { return _geometry; }
 
     /// Return mesh geometry (const version)
-    inline const MeshGeometry& geometry() const { return _geometry; }
+    const MeshGeometry& geometry() const { return _geometry; }
 
     ///Return intersectionoperator (const version);
     const IntersectionOperator& intersection_operator() const;
@@ -198,7 +198,7 @@ namespace dolfin
     ///This allows is more efficent than using a set and allows a map between
     //the (external) cell and the intersected cell of the mesh. If you
     //are only interested in intersection with a list of cells without caring about which
-    //cell what intersected by which one, use 
+    //cell what intersected by which one, use
     // void IntersectionOperator::all_intersected_entities(const std::vector<Cell> &, uint_set &) const;
     void all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const;
 

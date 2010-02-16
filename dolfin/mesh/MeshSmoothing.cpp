@@ -1,8 +1,10 @@
 // Copyright (C) 2008 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2010
+//
 // First added:  2008-07-16
-// Last changed: 2009-10-08
+// Last changed: 2010-02-16
 
 #include <dolfin/common/constants.h>
 #include "Mesh.h"
@@ -43,7 +45,7 @@ void MeshSmoothing::smooth(Mesh& mesh)
       continue;
 
     // Get coordinates of vertex
-    double* x = const_cast<double*>(v->x());
+    double* x = mesh.geometry().x(v->index());
     const Point p = v->point();
 
     // Compute center of mass of neighboring vertices

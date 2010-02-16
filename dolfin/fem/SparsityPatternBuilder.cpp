@@ -7,7 +7,7 @@
 // First added:  2007-05-24
 // Last changed: 2009-08-13
 
-#include <boost/scoped_array.hpp>  	
+#include <boost/scoped_array.hpp>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
@@ -22,14 +22,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
-                                   const Mesh& mesh, 
-                                   std::vector<const DofMap*>& dof_maps, 
+                                   const Mesh& mesh,
+                                   std::vector<const DofMap*>& dof_maps,
                                    bool cells, bool interior_facets)
 {
   const uint rank = dof_maps.size();
 
   // Get global dimensions
-  boost::scoped_array<uint> global_dimensions(new uint[rank]);  
+  boost::scoped_array<uint> global_dimensions(new uint[rank]);
   for (uint i = 0; i < rank; ++i)
     global_dimensions[i] = dof_maps[i]->global_dimension();
 
@@ -41,7 +41,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     return;
 
   // Allocate soem more space
-  boost::scoped_array<uint> local_dimensions(new uint[rank]);  
+  boost::scoped_array<uint> local_dimensions(new uint[rank]);
   boost::scoped_array<uint> macro_local_dimensions(new uint[rank]);
   uint** dofs = new uint*[rank];
   uint** macro_dofs = new uint*[rank];
@@ -76,7 +76,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     }
   }
 
-  // FIXME: The below note is not true when there are no cell integrals, 
+  // FIXME: The below note is not true when there are no cell integrals,
   //        e.g. finite volume method
   // Note: no need to iterate over exterior facets since those dofs
   // are included when tabulating dofs on all cells
@@ -90,7 +90,8 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     // Compute facets and facet - cell connectivity if not already computed
     mesh.init(mesh.topology().dim() - 1);
     mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
-    const_cast<Mesh&>(mesh).order();
+    if (!mesh.ordered())
+      error("Mesh has not been ordered. Cannot compute sparsity pattern. Consider calling Mesh::order().");
 
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
     {

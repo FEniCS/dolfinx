@@ -140,7 +140,7 @@ namespace dolfin
 
     // Update cell entities and coordinates
     // Note: We use MeshEntity& rather than Cell& to avoid a gcc 4.4.1 warning
-    inline void update(const MeshEntity& cell)
+    void update(const MeshEntity& cell)
     {
       assert(cell.dim() == topological_dimension);
 

@@ -39,63 +39,63 @@ namespace dolfin
     const MeshGeometry& operator= (const MeshGeometry& geometry);
 
     /// Return Euclidean dimension of coordinate system
-    inline uint dim() const { return _dim; }
+    uint dim() const { return _dim; }
 
     /// Return number of coordinates
-    inline uint size() const { return _size; }
+    uint size() const { return _size; }
 
     /// Return value of coordinate n in direction i
-    inline double& x(uint n, uint i) { assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
+    double& x(uint n, uint i) { assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
 
     /// Return value of coordinate n in direction i
-    inline double x(uint n, uint i) const { assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
+    double x(uint n, uint i) const { assert(n < _size && i < _dim); return coordinates[n*_dim + i]; }
 
     /// Return array of values for coordinate n
-    inline double* x(uint n) { return coordinates + n*_dim; }
+    double* x(uint n) { return coordinates + n*_dim; }
 
     /// Return array of values for coordinate n
-    inline const double* x(uint n) const { return coordinates + n*_dim; }
+    const double* x(uint n) const { return coordinates + n*_dim; }
 
     /// Return array of values for all coordinates
-    inline double* x() { return coordinates; }
+    double* x() { return coordinates; }
 
     /// Return array of values for all coordinates
-    inline const double* x() const { return coordinates; }
+    const double* x() const { return coordinates; }
 
     /// Return array of values for higher order coordinate n
-    inline double* higher_order_x(uint n) { return higher_order_coordinates + n*_dim; }
+    double* higher_order_x(uint n) { return higher_order_coordinates + n*_dim; }
 
     /// Return array of values for higher order coordinate n
-    inline const double* higher_order_x(uint n) const { return higher_order_coordinates + n*_dim; }
+    const double* higher_order_x(uint n) const { return higher_order_coordinates + n*_dim; }
 
     /// Return array of values for all higher order coordinates
-    inline double* higher_order_x() { return higher_order_coordinates; }
+    double* higher_order_x() { return higher_order_coordinates; }
 
     /// Return array of values for all higher order coordinates
-    inline const double* higher_order_x() const { return higher_order_coordinates; }
+    const double* higher_order_x() const { return higher_order_coordinates; }
 
     /// Return number of vertices used (per cell) to represent the higher order geometry
-    inline uint num_higher_order_vertices_per_cell() const { return _higher_order_num_dof; }
+    uint num_higher_order_vertices_per_cell() const { return _higher_order_num_dof; }
 
     /// Return array of higher order vertex indices for a specific higher order cell
-    inline uint* higher_order_cell(uint c)
+    uint* higher_order_cell(uint c)
     { return (higher_order_cell_data + (c*_higher_order_num_dof)); }
 
     /// Return array of higher order vertex indices for a specific higher order cell
-    inline const uint* higher_order_cell(uint c)
+    const uint* higher_order_cell(uint c)
                        const { return (higher_order_cell_data + (c*_higher_order_num_dof)); }
 
     /// Return array of values for all higher order cell data
-    inline uint* higher_order_cells() { return higher_order_cell_data; }
+    uint* higher_order_cells() { return higher_order_cell_data; }
 
     /// Return array of values for all higher order cell data
-    inline const uint* higher_order_cells() const { return higher_order_cell_data; }
+    const uint* higher_order_cells() const { return higher_order_cell_data; }
 
     /// Return coordinate n as a 3D point value
     Point point(uint n) const;
 
     /// Return pointer to boolean affine indicator array
-    inline bool* affine_cell_bool() { return affine_cell; }
+    bool* affine_cell_bool() { return affine_cell; }
 
     /// Clear all data
     void clear();
