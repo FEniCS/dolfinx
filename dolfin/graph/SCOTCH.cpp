@@ -8,8 +8,8 @@
 #include <map>
 #include <numeric>
 #include <set>
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
+#include <tr1/unordered_map>
+#include <tr1/unordered_set>
 
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
@@ -49,7 +49,7 @@ void SCOTCH::compute_partition(std::vector<uint>& cell_partition,
 
   // Compute partitions
   info("Start to compute partitions using SCOTCH");
-  partition(local_graph, ghost_vertices, global_cell_indices, 
+  partition(local_graph, ghost_vertices, global_cell_indices,
             num_global_vertices, cell_partition);
   info("Finihsed computing partitions using SCOTCH");
 }
@@ -67,7 +67,7 @@ void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
   const uint num_facet_vertices = topological_dim;
   const uint num_cell_vertices  = topological_dim + 1;
 
-  // Resize graph (cell are graph vertices, cell-cell connections are graph edges) 
+  // Resize graph (cell are graph vertices, cell-cell connections are graph edges)
   local_graph.resize(num_local_cells);
 
   // Get number of cells on each process
@@ -76,12 +76,12 @@ void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
   // Compute offset for going from local to (internal) global numbering
   std::vector<uint> process_offsets(MPI::num_processes());
   for (uint i = 0; i < MPI::num_processes(); ++i)
-    process_offsets[i] = std::accumulate(cells_per_process.begin(), cells_per_process.begin() + i, 0); 
+    process_offsets[i] = std::accumulate(cells_per_process.begin(), cells_per_process.begin() + i, 0);
   const uint process_offset = process_offsets[MPI::process_number()];
 
   // Compute local edges (cell-cell connections) using global (internal) numbering
   cout << "Compute local cell-cell connections" << endl;
-  compute_connectivity(cell_vertices, num_facet_vertices, process_offset, 
+  compute_connectivity(cell_vertices, num_facet_vertices, process_offset,
                        local_graph);
   cout << "Finished computing local cell-cell connections" << endl;
 
@@ -97,12 +97,12 @@ void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
     assert(i < local_graph.size());
     if (local_graph[i].size() != num_cell_facets)
       local_boundary_cells.push_back(i);
-  }  
-  cout << "Number of possible boundary cells " << local_boundary_cells.size() << endl; 
+  }
+  cout << "Number of possible boundary cells " << local_boundary_cells.size() << endl;
 
   // Get number of possible ghost cells coming from each process
   std::vector<uint> boundary_cells_per_process = MPI::gather(local_boundary_cells.size());
-  
+
   // Pack local data for candidate ghost cells (global cell index and vertices)
   std::vector<uint> connected_cell_data;
   for (uint i = 0; i < local_boundary_cells.size(); ++i)
@@ -113,8 +113,8 @@ void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
     // Candidate cell vertices
     const std::vector<uint>& vertices = cell_vertices[local_boundary_cells[i]];
     for (uint j = 0; j < num_cell_vertices; ++j)
-      connected_cell_data.push_back(vertices[j]);  
-  }    
+      connected_cell_data.push_back(vertices[j]);
+  }
 
   // Prepare package to send (do not send data belonging to this process)
   std::vector<uint> partition;
@@ -123,7 +123,7 @@ void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
   {
     if(i != MPI::process_number())
     {
-      transmit_data.insert(transmit_data.end(), connected_cell_data.begin(), 
+      transmit_data.insert(transmit_data.end(), connected_cell_data.begin(),
                            connected_cell_data.end());
       partition.insert(partition.end(), connected_cell_data.size(), i);
     }
@@ -145,7 +145,7 @@ void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
   uint _offset = 0;
   for (uint i = 0; i < MPI::num_processes()-1; ++i)
   {
-    const uint p = partition[_offset]; 
+    const uint p = partition[_offset];
     const uint data_length = (num_cell_vertices+1)*boundary_cells_per_process[p];
 
     std::vector<uint>& _global_cell_indices         = candidate_ghost_cell_global_indices[p];
@@ -163,9 +163,9 @@ void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
       std::vector<uint> vertices;
       for (uint k = 0; k < num_cell_vertices; ++k)
         vertices.push_back(transmit_data[(j+1)+k]);
-      _cell_vertices.push_back(vertices);       
+      _cell_vertices.push_back(vertices);
     }
-    
+
     // Update offset
     _offset += data_length;
   }
@@ -175,10 +175,10 @@ void SCOTCH::compute_dual_graph(const LocalMeshData& mesh_data,
   std::set<uint> ghost_cell_global_indices;
   for (uint i = 0; i < candidate_ghost_cell_vertices.size(); ++i)
   {
-    compute_ghost_connectivity(cell_vertices, local_boundary_cells, 
-                               candidate_ghost_cell_vertices[i], 
-                               candidate_ghost_cell_global_indices[i], 
-                               num_facet_vertices, 
+    compute_ghost_connectivity(cell_vertices, local_boundary_cells,
+                               candidate_ghost_cell_vertices[i],
+                               candidate_ghost_cell_global_indices[i],
+                               num_facet_vertices,
                                local_graph, ghost_cell_global_indices);
   }
   info("Finish compute graph ghost edges.");;
@@ -189,7 +189,7 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
                                   std::vector<std::set<uint> >& local_graph)
 {
   // FIXME: Continue to make this function more efficient
-   
+
   // Declare iterators
   std::vector<std::vector<uint> >::const_iterator c_vertices;
   std::vector<uint>::const_iterator vertex;
@@ -198,8 +198,8 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
 
   //std::map<uint, std::vector<uint> > vertex_connectivity;
   //std::pair<std::map<uint, std::vector<uint> >::iterator, bool> ret;
-  boost::unordered_map<uint, std::vector<uint> > vertex_connectivity;
-  std::pair<boost::unordered_map<uint, std::vector<uint> >::iterator, bool> ret;
+  std::tr1::unordered_map<uint, std::vector<uint> > vertex_connectivity;
+  std::pair<std::tr1::unordered_map<uint, std::vector<uint> >::iterator, bool> ret;
 
   // Build (global vertex)-(local cell) connectivity
   tic();
@@ -215,7 +215,7 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
   double tt = toc();
   info("Time to build vertex-cell connectivity map: %g", tt);
 
-  tic();  
+  tic();
   // Iterate over all cells
   for (c_vertices = cell_vertices.begin(); c_vertices != cell_vertices.end(); ++c_vertices)
   {
@@ -230,24 +230,24 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
         const uint index1 = *connected_cell;
         if (index0 == index1)
           break;
- 
+
         // Vertices of candidate neighbour
         const std::vector<uint>& candidate_vertices = cell_vertices[*connected_cell];
 
         uint num_common_vertices = 0;
-        for (vertex = c_vertices->begin(); vertex != c_vertices->end(); ++vertex) 
+        for (vertex = c_vertices->begin(); vertex != c_vertices->end(); ++vertex)
         {
           if (std::find(candidate_vertices.begin(), candidate_vertices.end(), *vertex) != candidate_vertices.end())
-            ++num_common_vertices; 
+            ++num_common_vertices;
           if (num_common_vertices == num_facet_vertices)
           {
             local_graph[index0].insert(index1 + offset);
             local_graph[index1].insert(index0 + offset);
             break;
-          }  
+          }
         }
       }
-    }   
+    }
   }
   tt = toc();
   info("Time to build local dual graph: : %g", tt);
@@ -269,8 +269,8 @@ dolfin::uint SCOTCH::compute_ghost_connectivity(const std::vector<std::vector<ui
   std::vector<uint>::const_iterator c_vertex;
   std::vector<uint>::const_iterator connected_cell;
 
-  boost::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > > vertex_connectivity;
-  std::pair<boost::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > >::iterator, bool> ret;
+  std::tr1::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > > vertex_connectivity;
+  std::pair<std::tr1::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > >::iterator, bool> ret;
 
   // Build boundary (global vertex)-(local cell) connectivity
   tic();
@@ -303,7 +303,7 @@ dolfin::uint SCOTCH::compute_ghost_connectivity(const std::vector<std::vector<ui
   tt = toc();
   info("Time to build ghost boundary vertex-cell connectivity map: %g", tt);
 
-  tic();  
+  tic();
   // Iterate over local boundary cells
   for (local_cell = local_boundary_cells.begin(); local_cell != local_boundary_cells.end(); ++local_cell)
   {
@@ -313,27 +313,27 @@ dolfin::uint SCOTCH::compute_ghost_connectivity(const std::vector<std::vector<ui
     for (c_vertex = c_vertices.begin(); c_vertex != c_vertices.end(); ++c_vertex)
     {
       // Iterate over ghost cells connected to this vertex
-      for (connected_cell = vertex_connectivity[*c_vertex].second.begin(); 
-                     connected_cell != vertex_connectivity[*c_vertex].second.end(); 
+      for (connected_cell = vertex_connectivity[*c_vertex].second.begin();
+                     connected_cell != vertex_connectivity[*c_vertex].second.end();
                      ++connected_cell)
       {
         // Vertices of candidate neighbour
         const std::vector<uint>& candidate_vertices = candidate_ghost_vertices[*connected_cell];
 
         uint num_common_vertices = 0;
-        for (vertex = c_vertices.begin(); vertex != c_vertices.end(); ++vertex) 
+        for (vertex = c_vertices.begin(); vertex != c_vertices.end(); ++vertex)
         {
           if (std::find(candidate_vertices.begin(), candidate_vertices.end(), *vertex) != candidate_vertices.end())
-            ++num_common_vertices; 
+            ++num_common_vertices;
           if (num_common_vertices == num_facet_vertices)
           {
             local_graph[*local_cell].insert(candidate_ghost_global_indices[*connected_cell]);
             ghost_cells.insert(candidate_ghost_global_indices[*connected_cell]);
             break;
-          }  
+          }
         }
       }
-    }   
+    }
   }
   tt = toc();
   info("Time to build ghost dual graph: : %g", tt);
@@ -356,7 +356,7 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
 
   // Number of local + ghost graph vertices (cells)
   // Number of local edges + edges connecting to ghost vertices
-  SCOTCH_Num edgelocnbr = 0;  
+  SCOTCH_Num edgelocnbr = 0;
   std::vector<std::set<uint> >::const_iterator vertex;
   for(vertex = local_graph.begin(); vertex != local_graph.end(); ++vertex)
     edgelocnbr += vertex->size();
@@ -379,8 +379,8 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
   std::vector<SCOTCH_Num> proccnttab(MPI::num_processes());
   for (uint i = 0; i < MPI::num_processes(); ++i)
     proccnttab[i] = tmp[i];
- 
- // Array containing . . . . 
+
+ // Array containing . . . .
   std::vector<SCOTCH_Num> procvrttab(MPI::num_processes() + 1);
   for (uint i = 0; i < MPI::num_processes(); ++i)
     procvrttab[i] = std::accumulate(proccnttab.begin(), proccnttab.begin() + i, 0);
@@ -449,10 +449,10 @@ void SCOTCH::partition(const std::vector<std::set<uint> >& local_graph,
     error("Error buidling SCOTCH graph.");
   }
 
-  // Check graph 
+  // Check graph
   if (SCOTCH_dgraphCheck(&dgrafdat))
     error("Consistency error in SCOTCH graph.");
-  
+
   SCOTCH_dgraphGhst(&dgrafdat);
 
   // Number of partitions (set equal to number of processes)
