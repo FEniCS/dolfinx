@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2010-02-08
+// Last changed: 2010-02-17
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -272,6 +272,12 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
   assert(mesh.ordered());
 
+  // Get interior facet directions (if any)
+  MeshFunction<uint>* facet_orientation = mesh.data().mesh_function("facet orientation");
+  if (facet_orientation && facet_orientation->dim() != mesh.topology().dim() - 1)
+    error("Expecting facet orientation to be defined on facets (not dimension %d).",
+          facet_orientation);
+
   // Assemble over interior facets (the facets of the mesh)
   Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"), mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
@@ -297,7 +303,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     if (!integral) continue;
 
     // Get cells incident with facet
-    std::pair<const Cell, const Cell> cells = facet->adjacent_cells();
+    std::pair<const Cell, const Cell> cells = facet->adjacent_cells(facet_orientation);
     const Cell& cell0 = cells.first;
     const Cell& cell1 = cells.second;
 

@@ -1,3 +1,4 @@
+ - Add support for specifying facet orientation in assembly over interior facets
  - Allow user to choose which LU package PETScLUSolver uses
  - Add computation of intersection between arbitrary mesh entities
  - Random access to MeshEntitiyIterators

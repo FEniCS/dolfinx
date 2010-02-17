@@ -31,6 +31,10 @@ namespace dolfin
   ///
   ///   "exterior facet domains" - MeshFunction<uint> of dimension D - 1
   ///
+  /// Facet orientation (used for assembly over interior facets)
+  ///
+  ///   "facet orientation" - MeshFunction<uint> of dimension D - 1
+  ///
   /// Boundary extraction
   ///
   ///   "vertex map" - MeshFunction<uint> of dimension 0
