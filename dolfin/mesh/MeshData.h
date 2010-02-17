@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2008-05-19
-// Last changed: 2009-09-08
+// Last changed: 2010-02-17
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
@@ -21,10 +21,38 @@ namespace dolfin
 
   /// The class MeshData is a container for auxiliary mesh data,
   /// represented either as MeshFunctions over topological mesh
-  /// entities or arrays. Each dataset is identified by a unique
-  /// user-specified string.
+  /// entities, arrays or maps. Each dataset is identified by a unique
+  /// user-specified string. Only uint-valued data are currently
+  /// supported.
   ///
-  /// Currently, only uint-valued data is supported.
+  /// The following named mesh data are recognized by DOLFIN:
+  ///
+  /// Boundary indicators
+  ///
+  ///   "exterior facet domains" - MeshFunction<uint> of dimension D - 1
+  ///
+  /// Boundary extraction
+  ///
+  ///   "vertex map" - MeshFunction<uint> of dimension 0
+  ///   "cell map"   - MeshFunction<uint> of dimension D
+  ///
+  /// Mesh partitioning
+  ///
+  ///   "global entity indices %d" - MeshFunction<uint> of dimension 0, 1, ..., D
+  ///   "exterior facets"          - MeshFunction<uint> of dimension D - 1
+  ///   "num global entities"      - Array<uint> of size D + 1
+  ///   "overlap"                  - vector mapping
+  ///
+  /// Sub meshes
+  ///
+  ///    "global vertex indices" - MeshFunction<uint> of dimension 0
+  ///
+  /// Mesh refinement
+  ///
+  ///   "boundary facet cells"   - MeshFunction<uint> of dimension 0, 1, ..., D
+  ///   "boundary facet numbers" - MeshFunction<uint> of dimension 0, 1, ..., D
+  ///   "boundary indicators"    - MeshFunction<uint> of dimension 0, 1, ..., D
+  ///   "material indicators"    - MeshFunction<uint> of dimension D
 
   class MeshData : public Variable
   {
