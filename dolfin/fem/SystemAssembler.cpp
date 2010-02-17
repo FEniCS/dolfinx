@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2009-06-22
-// Last changed: 2010-02-14
+// Last changed: 2010-02-17
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -81,6 +81,7 @@ void SystemAssembler::assemble(GenericMatrix& A,
   // FIXME: 1. Need consistency check between a and L
   // FIXME: 2. Some things can be simplified since we know it's a matrix and a vector
 
+  // Sub domains not supported
   if (cell_domains || exterior_facet_domains || interior_facet_domains)
     error("SystemAssembler does not yet support subdomains.");
 
@@ -229,10 +230,12 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
                                     const MeshFunction<uint>* exterior_facet_domains,
                                     const MeshFunction<uint>* interior_facet_domains)
 {
+  // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
   const std::vector<const GenericFunction*> A_coefficients = a.coefficients();
   const std::vector<const GenericFunction*> b_coefficients = L.coefficients();
 
+  // Iterate over facets
   Progress p("Assembling system (facet-wise)", mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
@@ -382,12 +385,16 @@ inline void SystemAssembler::Scratch::zero_cell()
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b,
-                               UFC& A_ufc, UFC& b_ufc,
-                               const Form& a,
-                               const Form& L,
-                               const Cell& cell0, const Cell& cell1, const Facet& facet,
-                               const Scratch& data)
+                                              UFC& A_ufc, UFC& b_ufc,
+                                              const Form& a,
+                                              const Form& L,
+                                              const Cell& cell0, const Cell& cell1, const Facet& facet,
+                                              const Scratch& data)
 {
+  // Facet orientation not supported
+  if (cell0.mesh().data().mesh_function("facet orientation"))
+    error("Facet orientation not supported by system assembler.");
+
   // Cell integrals
   ufc::cell_integral* A_cell_integral = A_ufc.cell_integrals[0];
   ufc::cell_integral* b_cell_integral = b_ufc.cell_integrals[0];
@@ -548,4 +555,3 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
   b.add(data.be, b_ufc.local_dimensions.get(), b_ufc.dofs);
 }
 //-----------------------------------------------------------------------------
-
