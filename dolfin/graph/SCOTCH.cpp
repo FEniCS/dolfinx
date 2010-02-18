@@ -196,8 +196,6 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
   std::vector<uint>::const_iterator c_vertex;
   std::vector<uint>::const_iterator connected_cell;
 
-  //std::map<uint, std::vector<uint> > vertex_connectivity;
-  //std::pair<std::map<uint, std::vector<uint> >::iterator, bool> ret;
   std::tr1::unordered_map<uint, std::vector<uint> > vertex_connectivity;
   std::pair<std::tr1::unordered_map<uint, std::vector<uint> >::iterator, bool> ret;
 
@@ -249,6 +247,45 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
       }
     }
   }
+  tt = toc();
+
+  /*
+  std::vector<uint>::const_iterator connected_cell0;
+  std::vector<uint>::const_reverse_iterator connected_cell1;
+  std::vector<uint>::const_iterator cell_vertex;
+
+  tic();
+  // Iterate over all vertices
+  std::tr1::unordered_map<uint, std::vector<uint> >::const_iterator _vertex;
+  for (_vertex = vertex_connectivity.begin(); _vertex != vertex_connectivity.end(); ++_vertex)
+  {
+    const std::vector<uint>& cell_list = _vertex->second;
+
+    // Iterate over connected cells
+    for (uint i =0; i < cell_list.size() -1; ++i)
+    {
+      for (uint j = i + 1; i < cell_list.size() -1; ++j)
+      {
+        const std::vector<uint>& cell0_vertices = cell_vertices[i];
+        const std::vector<uint>& cell1_vertices = cell_vertices[j];
+
+        uint num_common_vertices = 0;
+        for (cell_vertex = cell1_vertices.begin(); cell_vertex != cell1_vertices.end(); ++cell_vertex)
+        {
+          if (std::find(cell0_vertices.begin(), cell0_vertices.end(), *cell_vertex) != cell0_vertices.end())
+            ++num_common_vertices;
+          if (num_common_vertices == num_facet_vertices)
+          {
+            //local_graph[index0].insert(index1 + offset);
+            //local_graph[index1].insert(index0 + offset);
+          }
+        }
+
+      }
+
+    }
+  */
+
   tt = toc();
   info("Time to build local dual graph: : %g", tt);
 }
