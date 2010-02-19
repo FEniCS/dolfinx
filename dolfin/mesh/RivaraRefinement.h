@@ -29,9 +29,9 @@ namespace dolfin
   public:
 
     /// Refine simplicial mesh locally by recursive edge bisection
-    static Mesh refine(const Mesh& mesh, 
+    static Mesh refine(const Mesh& mesh,
                        const MeshFunction<bool>& cell_marker,
-		                   MeshFunction<uint>& cell_map, 
+		                   MeshFunction<uint>& cell_map,
                        std::vector<int>& facet_map);
 
   private:
@@ -77,8 +77,8 @@ namespace dolfin
       DCell* opposite(DCell* dcell, DVertex* v1, DVertex* v2);
       void propagate_facets(DCell* dcell, DCell* c0, DCell* c1, uint ii, uint jj, DVertex* mv);
 
-      std::list<DVertex *> vertices;
-      std::list<DCell *> cells;
+      std::list<DVertex*> vertices;
+      std::list<DCell*> cells;
       const CellType* cell_type;
       uint dim;
     };

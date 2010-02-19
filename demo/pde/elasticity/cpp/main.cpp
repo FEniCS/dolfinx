@@ -79,6 +79,9 @@ int main()
     }
   };
 
+  //parameters["mesh_partitioner"] = "ParMETIS";
+  parameters["mesh_partitioner"] = "SCOTCH";
+
   // Read mesh and create function space
   Mesh mesh("../../../../data/meshes/gear.xml.gz");
   Elasticity::FunctionSpace V(mesh);
@@ -113,7 +116,7 @@ int main()
   Elasticity::LinearForm L(V);
   L.f = f;
   VariationalProblem problem(a, L, bcs);
-  problem.parameters["symmetric"] = true;
+  //problem.parameters["symmetric"] = true;
 
   // Solve PDE (using direct solver)
   Function u(V);
