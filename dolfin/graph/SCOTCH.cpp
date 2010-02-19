@@ -252,7 +252,7 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
   */
 
   std::vector<uint>::const_iterator connected_cell0;
-  std::vector<uint>::const_reverse_iterator connected_cell1;
+  std::vector<uint>::const_iterator connected_cell1;
   std::vector<uint>::const_iterator cell_vertex;
 
 
@@ -264,12 +264,12 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
     const std::vector<uint>& cell_list = _vertex->second;
 
     // Iterate over connected cells
-    for (uint i = 0; i < cell_list.size() -1; ++i)
+    for (connected_cell0 = cell_list.begin() ; connected_cell0 != cell_list.end() -1; ++connected_cell0)
     {
-      for (uint j = i + 1; j < cell_list.size(); ++j)
+      for (connected_cell1 = connected_cell0 + 1; connected_cell1 != cell_list.end(); ++connected_cell1)
       {
-        const std::vector<uint>& cell0_vertices = cell_vertices[cell_list[i]];
-        const std::vector<uint>& cell1_vertices = cell_vertices[cell_list[j]];
+        const std::vector<uint>& cell0_vertices = cell_vertices[*connected_cell0];
+        const std::vector<uint>& cell1_vertices = cell_vertices[*connected_cell1];
 
         uint num_common_vertices = 0;
         for (cell_vertex = cell1_vertices.begin(); cell_vertex != cell1_vertices.end(); ++cell_vertex)
@@ -278,8 +278,8 @@ void SCOTCH::compute_connectivity(const std::vector<std::vector<uint> >& cell_ve
             ++num_common_vertices;
           if (num_common_vertices == num_facet_vertices)
           {
-            local_graph[cell_list[i]].insert(cell_list[j] + offset);
-            local_graph[cell_list[j]].insert(cell_list[i] + offset);
+            local_graph[*connected_cell0].insert(*connected_cell1 + offset);
+            local_graph[*connected_cell1].insert(*connected_cell0 + offset);
           }
         }
 
