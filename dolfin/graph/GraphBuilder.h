@@ -1,7 +1,7 @@
-// Copyright (C) 2008 Garth N. Wells.
+// Copyright (C) 2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2008-08-17
+// First added:  2010-02-19
 // Last changed:
 
 #ifndef __GRAPH_BUILDER_H
@@ -18,34 +18,31 @@ namespace dolfin
   class LocalMeshData;
   class Mesh;
 
-  /// This class builds a Graph corresponding for various objects (Mesh, matrix
-  /// sparsity pattern, etc)
+  /// This class builds a Graph corresponding for various objects
 
   class GraphBuilder
   {
 
   public:
 
-    /// Build Graph of a mesh
-    static void build(LocalMeshData& mesh_data);
+    /// Build distribted dual graph for mesh
+    static void compute_dual_graph(const LocalMeshData& mesh_data,
+                                   std::vector<std::set<uint> >& local_graph,
+                                   std::set<uint>& ghost_vertices);
 
   private:
 
     static void compute_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
-                                     uint num_cell_facets, uint num_facet_vertices,
-                                     uint offset,
+                                     uint num_facet_vertices, uint offset,
                                      std::vector<std::set<uint> >& graph);
 
-    static uint compute_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
+    static uint compute_ghost_connectivity(const std::vector<std::vector<uint> >& cell_vertices,
+                                     const std::vector<uint>& local_boundary_cells,
                                      const std::vector<std::vector<uint> >& candidate_ghost_vertices,
                                      const std::vector<uint>& candidate_ghost_global_indices,
-                                     uint num_cell_facets, uint num_facet_vertices,
+                                     uint num_facet_vertices,
                                      std::vector<std::set<uint> >& ghost_graph_edges,
                                      std::set<uint>& ghost_cells);
-
-    static void compute_scotch_data(const std::vector<std::set<uint> >& graph_edges,
-                                    const std::set<uint>& ghost_cells,
-                                    uint num_global_vertices);
 
   };
 
