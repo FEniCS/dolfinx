@@ -9,7 +9,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2010-02-09
+// Last changed: 2010-02-11
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -32,7 +32,6 @@ namespace dolfin
   class Function;
   class BoundaryMesh;
   class XMLMesh;
-  class IntersectionOperator;
 
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
