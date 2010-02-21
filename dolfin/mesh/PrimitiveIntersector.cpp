@@ -6,7 +6,7 @@
 // Modified by André Massing, 2010
 //
 // First added:  2010-02-09
-// Last changed: 2010-02-19
+// Last changed: 2010-02-21
 // 
 //Author:  André Massing (am), massing@simula.no
 //Company:  Simula Research Laboratory, Fornebu, Norway
@@ -14,6 +14,7 @@
 // =====================================================================================
 
 #include "MeshEntity.h"
+#include "Point.h"
 #include "PrimitiveIntersector.h"
 
 using namespace dolfin;
@@ -73,6 +74,20 @@ bool PrimitiveIntersector::do_intersect(const MeshEntity & entity_1, const MeshE
 }
 //-----------------------------------------------------------------------------
 bool PrimitiveIntersector::do_intersect_exact(const MeshEntity & entity_1, const MeshEntity & entity_2)
+{
+  warning("DOLFIN has been compiled without CGAL support");
+  dolfin_not_implemented();
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool PrimitiveIntersector::do_intersect_exact(const MeshEntity & entity_1, const Point & point)
+{
+  warning("DOLFIN has been compiled without CGAL support");
+  dolfin_not_implemented();
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool PrimitiveIntersector::do_intersect_exact(const MeshEntity & entity_1, const Point & point)
 {
   warning("DOLFIN has been compiled without CGAL support");
   dolfin_not_implemented();
