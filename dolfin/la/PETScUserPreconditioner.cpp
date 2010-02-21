@@ -11,43 +11,42 @@
 
 #include <boost/shared_ptr.hpp>
 #include <private/pcimpl.h>
-
 #include <dolfin/common/NoDeleter.h>
-#include "PETScPreconditioner.h"
 #include "PETScVector.h"
+#include "PETScUserPreconditioner.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PETScPreconditioner::PETScPreconditioner()
+PETScUserPreconditioner::PETScUserPreconditioner()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScPreconditioner::~PETScPreconditioner()
+PETScUserPreconditioner::~PETScUserPreconditioner()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PETScPreconditioner::setup(const KSP ksp, PETScPreconditioner &pc)
+void PETScUserPreconditioner::setup(const KSP ksp, PETScUserPreconditioner& pc)
 {
   PC petscpc;
   KSPGetPC(ksp, &petscpc);
 
-  PETScPreconditioner::PCCreate(petscpc);
+  PETScUserPreconditioner::PCCreate(petscpc);
 
   petscpc->data = &pc;
-  petscpc->ops->apply = PETScPreconditioner::PCApply;
-  petscpc->ops->applytranspose = PETScPreconditioner::PCApply;
-  petscpc->ops->applysymmetricleft = PETScPreconditioner::PCApply;
-  petscpc->ops->applysymmetricright = PETScPreconditioner::PCApply;
+  petscpc->ops->apply = PETScUserPreconditioner::PCApply;
+  petscpc->ops->applytranspose = PETScUserPreconditioner::PCApply;
+  petscpc->ops->applysymmetricleft = PETScUserPreconditioner::PCApply;
+  petscpc->ops->applysymmetricright = PETScUserPreconditioner::PCApply;
 }
 //-----------------------------------------------------------------------------
-int PETScPreconditioner::PCApply(PC pc, Vec x, Vec y)
+int PETScUserPreconditioner::PCApply(PC pc, Vec x, Vec y)
 {
   // Convert vectors to DOLFIN wrapper format and pass to DOLFIN preconditioner
 
-  PETScPreconditioner* newpc = (PETScPreconditioner*)pc->data;
+  PETScUserPreconditioner* newpc = (PETScUserPreconditioner*)pc->data;
 
   boost::shared_ptr<Vec> _x(&x, NoDeleter<Vec>());
   boost::shared_ptr<Vec> _y(&y, NoDeleter<Vec>());
@@ -58,7 +57,7 @@ int PETScPreconditioner::PCApply(PC pc, Vec x, Vec y)
   return 0;
 }
 //-----------------------------------------------------------------------------
-int PETScPreconditioner::PCCreate(PC pc)
+int PETScUserPreconditioner::PCCreate(PC pc)
 {
   // Initialize function pointers to 0
   pc->ops->setup               = 0;

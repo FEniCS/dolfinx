@@ -24,7 +24,7 @@
 %import(module="dolfin.cpp") "dolfin/la/EpetraSparsityPattern.h"
 %import(module="dolfin.cpp") "dolfin/la/LinearAlgebraFactory.h"
 %import(module="dolfin.cpp") "dolfin/la/DefaultFactory.h"
-%import(module="dolfin.cpp") "dolfin/la/PETScPreconditioner.h"
+%import(module="dolfin.cpp") "dolfin/la/PETScUserPreconditioner.h"
 %import(module="dolfin.cpp") "dolfin/la/PETScFactory.h"
 %import(module="dolfin.cpp") "dolfin/la/EpetraFactory.h"
 %import(module="dolfin.cpp") "dolfin/la/MTL4Factory.h"
