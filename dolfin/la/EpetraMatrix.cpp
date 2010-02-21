@@ -31,22 +31,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix():
-    A(static_cast<Epetra_FECrsMatrix*>(0))
-{
+EpetraMatrix::EpetraMatrix(){
   // TODO: call Epetra_Init or something?
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(uint M, uint N):
-    A(static_cast<Epetra_FECrsMatrix*>(0))
+EpetraMatrix::EpetraMatrix(uint M, uint N)
 {
   // TODO: call Epetra_Init or something?
   // Create Epetra matrix
   resize(M, N);
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(const EpetraMatrix& A):
-  A(static_cast<Epetra_FECrsMatrix*>(0))
+EpetraMatrix::EpetraMatrix(const EpetraMatrix& A)
 {
   if (A.mat())
   {
@@ -55,13 +51,12 @@ EpetraMatrix::EpetraMatrix(const EpetraMatrix& A):
   }
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A):
-    A(A)
+EpetraMatrix::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A) : A(A)
 {
   // TODO: call Epetra_Init or something?
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph):
+EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph) :
     A(new Epetra_FECrsMatrix(Copy, graph))
 {
   // TODO: call Epetra_Init or something?
@@ -108,7 +103,7 @@ void EpetraMatrix::get(double* block,
 {
   assert(A);
 
-  int num_entities    = 0;
+  int num_entities = 0;
   int * indices;
   double * values;
 
@@ -116,18 +111,18 @@ void EpetraMatrix::get(double* block,
   for(uint i = 0; i < m; ++i)
   {
     // Extract the values and indices from row: rows[i]
-    if (A->IndicesAreLocal()) {
+    if (A->IndicesAreLocal()) 
+    {
       int err = A->ExtractMyRowView(rows[i], num_entities, values, indices);
       if (err!= 0) {
         error("EpetraMatrix::get: Did not manage to perform Epetra_CrsMatrix::ExtractMyRowView.");
       }
     }
-    else {
+    else 
+    {
       int err = A->ExtractGlobalRowView(rows[i], num_entities, values, indices);
-      if (err!= 0) {
+      if (err!= 0) 
         error("EpetraMatrix::get: Did not manage to perform Epetra_CRSMatrix::ExtractGlobalRowView.");
-      }
-
     }
 
     int k = 0;
@@ -224,17 +219,13 @@ std::string EpetraMatrix::str(bool verbose) const
   assert(A);
 
   std::stringstream s;
-
   if (verbose)
   {
     warning("Verbose output for EpetraMatrix not implemented, calling Epetra Print directly.");
-
     A->Print(std::cout);
   }
   else
-  {
     s << "<EpetraMatrix of size " << size(0) << " x " << size(1) << ">";
-  }
 
   return s.str();
 }
@@ -254,7 +245,7 @@ void EpetraMatrix::ident(uint m, const uint* rows)
     if (err!= 0)
       error("EpetraMatrix::ident: Did not manage to perform Epetra_CrsMatrix::ExtractMyRowView.");
     memset(values, 0, (*row_size)*sizeof(double));
-    for (uint j=0; j<m; j++)
+    for (uint j = 0; j < m; j++)
     {
       if (r == indices[j])
       {
