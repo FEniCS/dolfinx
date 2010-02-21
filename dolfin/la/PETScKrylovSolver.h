@@ -19,7 +19,6 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
-#include "PETScPreconditioner.h"
 
 namespace dolfin
 {
@@ -30,6 +29,7 @@ namespace dolfin
   class PETScMatrix;
   class PETScVector;
   class PETScKrylovMatrix;
+  class PETScUserPreconditioner;
 
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
@@ -43,7 +43,7 @@ namespace dolfin
     PETScKrylovSolver(std::string method = "default", std::string pc_type = "default");
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
-    PETScKrylovSolver(std::string method, PETScPreconditioner& PETScPreconditioner);
+    PETScKrylovSolver(std::string method, PETScUserPreconditioner& PETScUserPreconditioner);
 
     /// Create solver from given PETSc KSP pointer
     explicit PETScKrylovSolver(boost::shared_ptr<KSP> ksp);
@@ -90,8 +90,8 @@ namespace dolfin
     static const std::map<std::string, const KSPType> methods;
     static const std::map<std::string, const PCType> pc_methods;
 
-    /// DOLFIN PETScPreconditioner
-    PETScPreconditioner* pc_dolfin;
+    /// DOLFIN-defined PETScUserPreconditioner
+    PETScUserPreconditioner* pc_dolfin;
 
     /// PETSc solver pointer
     boost::shared_ptr<KSP> ksp;

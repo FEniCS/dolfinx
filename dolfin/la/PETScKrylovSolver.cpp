@@ -12,11 +12,12 @@
 #include <boost/assign/list_of.hpp>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/main/MPI.h>
-#include "PETScKrylovSolver.h"
-#include "PETScMatrix.h"
-#include "PETScVector.h"
-#include "PETScKrylovMatrix.h"
 #include "KrylovSolver.h"
+#include "PETScKrylovMatrix.h"
+#include "PETScMatrix.h"
+#include "PETScUserPreconditioner.h"
+#include "PETScVector.h"
+#include "PETScKrylovSolver.h"
 
 using namespace dolfin;
 
@@ -62,7 +63,7 @@ Parameters PETScKrylovSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
-  : method(method), pc_petsc(pc_type), pc_dolfin(0),
+  : method(method), pc_petsc(pc_type), pc_dolfin(0), 
     ksp(static_cast<KSP*>(0), PETScKSPDeleter()), M(0), N(0),
     parameters_read(false), pc_set(false)
 {
@@ -71,7 +72,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
-				     PETScPreconditioner& preconditioner)
+				     PETScUserPreconditioner& preconditioner)
   : method(method), pc_petsc("default"), pc_dolfin(&preconditioner),
     ksp(static_cast<KSP*>(0), PETScKSPDeleter()), M(0), N(0),
     parameters_read(false), pc_set(false)
@@ -131,7 +132,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   if (!ksp)
     ksp.reset(new KSP, PETScKSPDeleter());
 
-  // Solve linear system
+  KSPGMRESSetRestart(*ksp, parameters["gmres_restart"]); 
   KSPSetOperators(*ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
 
   // FIXME: Preconditioner being set here and not in init() to avoid PETSc bug
@@ -142,6 +143,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
     pc_set = true;
   }
 
+  // Solve linear system
   KSPSolve(*ksp, *b.vec(), *x.vec());
 
   // Check if the solution converged
@@ -218,18 +220,14 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A,
 std::string PETScKrylovSolver::str(bool verbose) const
 {
   std::stringstream s;
-
   if (verbose)
   {
     warning("Verbose output for PETScKrylovSolver not implemented, calling PETSc KSPView directly.");
-
     KSPView(*ksp, PETSC_VIEWER_STDOUT_WORLD);
   }
   else
-  {
     s << "<PETScKrylovSolver>";
-  }
-
+ 
   return s.str();
 }
 //-----------------------------------------------------------------------------
@@ -314,7 +312,7 @@ void PETScKrylovSolver::set_petsc_preconditioner()
   // Treat special case DOLFIN user-defined preconditioner
   if (pc_dolfin)
   {
-    PETScPreconditioner::setup(*ksp, *pc_dolfin);
+    PETScUserPreconditioner::setup(*ksp, *pc_dolfin);
     return;
   }
 

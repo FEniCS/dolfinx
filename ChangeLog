@@ -1,3 +1,4 @@
+ - Add LU support for Trilinos interface
 0.9.7 [2010-02-17]
  - Add support for specifying facet orientation in assembly over interior facets
  - Allow user to choose which LU package PETScLUSolver uses

@@ -284,14 +284,12 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
 {
   assert(_function_space);
 
-  not_working_in_parallel("Function::eval at arbitray points.");
-
   // Find the cell that contains x
   const double* _x = x.data().get();
   Point point(_function_space->mesh().geometry().dim(), _x);
   int id = _function_space->mesh().any_intersected_entity(point);
   if (id == -1)
-    error("Unable to evaluate function at given point (not inside domain).");
+    error("Unable to evaluate function at given point (not inside domain, possibly off-process if running in parallel).");
 
   Cell cell(_function_space->mesh(), id);
   UFCCell ufc_cell(cell);
