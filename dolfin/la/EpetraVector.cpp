@@ -8,6 +8,8 @@
 
 #ifdef HAS_TRILINOS
 
+#include <mpi.h>
+
 #include <cmath>
 #include <cstring>
 #include <dolfin/main/MPI.h>
@@ -21,10 +23,10 @@
 #include <Epetra_FEVector.h>
 #include <Epetra_Map.h>
 #include <Epetra_MultiVector.h>
+#include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 
 // FIXME: A cleanup is needed with respect to correct use of parallel vectors.
-//        This depends on decisions w.r.t. dofmaps etc in dolfin.
 
 using namespace dolfin;
 
@@ -65,15 +67,27 @@ void EpetraVector::resize(uint N)
   if (x && this->size() == N)
     return;
 
-  if (!x.unique())
-    error("Cannot resize EpetraVector. More than one object points to the underlying Epetra object.");
+  if (x && !x.unique())
+      error("Cannot resize EpetraVector. More than one object points to the underlying Epetra object.");
 
-  EpetraFactory& f = dynamic_cast<EpetraFactory&>(factory());
-  Epetra_SerialComm Comm = f.getSerialComm();
-  Epetra_Map map(N, N, 0, Comm);
+  // Get local range
+  const std::pair<uint, uint> range = MPI::local_range(N);
+  const uint n = range.second - range.first;
 
-  boost::shared_ptr<Epetra_FEVector> _x(new Epetra_FEVector(map));
-  x = _x;
+  if (N == n)
+  {
+    EpetraFactory& f = EpetraFactory::instance();
+    Epetra_SerialComm serial_comm = f.get_serial_comm();
+    Epetra_Map map(N, N, 0, serial_comm);
+    x.reset(new Epetra_FEVector(map));
+  }
+  else
+  {
+    EpetraFactory& f = EpetraFactory::instance();
+    Epetra_MpiComm mpi_comm = f.get_mpi_comm();
+    Epetra_Map map(N, n, 0, mpi_comm);
+    x.reset(new Epetra_FEVector(map));
+  }
 }
 //-----------------------------------------------------------------------------
 EpetraVector* EpetraVector::copy() const
@@ -108,7 +122,7 @@ void EpetraVector::apply()
 {
   assert(x);
   int err = x->GlobalAssemble();
-  if (err!= 0)
+  if (err != 0)
     error("EpetraVector::apply: Did not manage to perform Epetra_Vector::GlobalAssemble.");
 
   // TODO: Use this? Relates to sparsity pattern, dofmap and reassembly!
@@ -144,6 +158,8 @@ void EpetraVector::get_local(double* values) const
 //-----------------------------------------------------------------------------
 void EpetraVector::set_local(const double* values)
 {
+  cout << "Inside EpetraVector::set_local" << endl;
+
   assert(x);
 
   int err = x->GlobalAssemble();
@@ -204,7 +220,7 @@ void EpetraVector::add(const double* block, uint m, const uint* rows)
   assert(x);
   int err = x->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows), block);
   if (err!= 0)
-    error("EpetraVector::add : Did not manage to perform Epetra_Vector::SumIntoGlobalValues.");
+    error("EpetraVector::add: Did not manage to perform Epetra_Vector::SumIntoGlobalValues.");
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Epetra_FEVector> EpetraVector::vec() const
@@ -270,12 +286,7 @@ const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
   // TODO: Check for self-assignment
 
   if (!x)
-  {
-    if (!x.unique())
-      error("More than one object points to the underlying Epetra object.");
-    boost::shared_ptr<Epetra_FEVector> _x(new Epetra_FEVector(*(v.vec())));
-    x =_x;
-  }
+    x.reset(new Epetra_FEVector(*(v.vec())));
   else
     *x = *(v.vec());
 
@@ -363,7 +374,7 @@ double EpetraVector::max() const
 
   double value = 0.0;
   int err = x->MaxValue(&value);
-  if (err!= 0)
+  if (err != 0)
     error("EpetraVector::min: Did not manage to perform Epetra_Vector::MinValue.");
   return value;
 }

@@ -6,24 +6,33 @@
 
 #ifdef HAS_TRILINOS
 
+#include <Epetra_MpiComm.h>
+#include <Epetra_SerialComm.h>
+
+#include "dolfin/main/MPI.h"
 #include "EpetraSparsityPattern.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
 #include "EpetraFactory.h"
 
-#include <Epetra_SerialComm.h>
-
 using namespace dolfin;
 
+// Singleton instance
+EpetraFactory EpetraFactory::factory;
+
 //-----------------------------------------------------------------------------
-EpetraFactory:: EpetraFactory()
-{
-  comm = new Epetra_SerialComm();
+EpetraFactory::EpetraFactory()
+{  
+  serial_comm = new Epetra_SerialComm();
+
+  // Why does this not work with dolfin::MPICommunicator?
+  mpi_comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 }
 //-----------------------------------------------------------------------------
-EpetraFactory:: ~EpetraFactory()
+EpetraFactory::~EpetraFactory()
 {
-  delete comm;
+  delete serial_comm;
+  delete mpi_comm;
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix* EpetraFactory::create_matrix() const
@@ -46,13 +55,15 @@ EpetraSparsityPattern* EpetraFactory::create_pattern() const
   return new EpetraSparsityPattern();
 }
 //-----------------------------------------------------------------------------
-Epetra_SerialComm& EpetraFactory::getSerialComm()
+Epetra_SerialComm& EpetraFactory::get_serial_comm()
 {
-  return *comm;
+  return *serial_comm;
 }
 //-----------------------------------------------------------------------------
-
-// Singleton instance
-EpetraFactory EpetraFactory::factory;
+Epetra_MpiComm& EpetraFactory::get_mpi_comm()
+{
+  return *mpi_comm;
+}
+//-----------------------------------------------------------------------------
 
 #endif

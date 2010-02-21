@@ -25,7 +25,9 @@ namespace dolfin
 #ifdef HAS_MPI
   class MPICommunicator
   {
+
   public:
+
     /// Create communicator (copy of MPI_COMM_WORLD)
     MPICommunicator();
 

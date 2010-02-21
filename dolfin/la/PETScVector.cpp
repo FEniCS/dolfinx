@@ -41,8 +41,7 @@ const std::map<std::string, NormType> PETScVector::norm_types
                               ("linf", NORM_INFINITY);
 
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(std::string type):
-  x(static_cast<Vec*>(0), PETScVectorDeleter())
+PETScVector::PETScVector(std::string type) 
 {
   if (type == "global" && dolfin::MPI::num_processes() > 1)
     init(0, 0, "mpi");
@@ -50,8 +49,7 @@ PETScVector::PETScVector(std::string type):
     init(0, 0, "sequential");
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(uint N, std::string type):
-  x(static_cast<Vec*>(0), PETScVectorDeleter())
+PETScVector::PETScVector(uint N, std::string type)
 {
   if (type == "global")
   {
@@ -76,8 +74,7 @@ PETScVector::PETScVector(boost::shared_ptr<Vec> x): x(x)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const PETScVector& v):
-  x(static_cast<Vec*>(0), PETScVectorDeleter())
+PETScVector::PETScVector(const PETScVector& v)
 {
   *this = v;
 }

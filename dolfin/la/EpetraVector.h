@@ -23,6 +23,8 @@ class Epetra_Map;
 namespace dolfin
 {
 
+  class GenericVector;
+
   /// This class provides a simple vector class based on Epetra.
   /// It is a simple wrapper for an Epetra vector object (Epetre_FEVector)
   /// implementing the GenericVector interface.

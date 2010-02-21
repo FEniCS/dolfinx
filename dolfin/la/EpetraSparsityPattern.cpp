@@ -14,6 +14,7 @@
 
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
+#include <dolfin/main/MPI.h>
 #include "EpetraFactory.h"
 #include "GenericSparsityPattern.h"
 #include "EpetraSparsityPattern.h"
@@ -46,7 +47,7 @@ void EpetraSparsityPattern::init(uint rank_, const uint* dims_)
     dims[1] = dims_[1];
 
     EpetraFactory& f = EpetraFactory::instance();
-    Epetra_SerialComm Comm = f.getSerialComm();
+    Epetra_SerialComm Comm = f.get_serial_comm();
 
     Epetra_Map row_map(dims[0], 0, Comm);
     epetra_graph = new Epetra_FECrsGraph(Copy, row_map, 0);
@@ -88,9 +89,8 @@ uint EpetraSparsityPattern::size(uint i) const
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> EpetraSparsityPattern::local_range(uint dim) const
 {
-  dolfin_not_implemented();
-  std::pair<uint, uint> r;
-  return r;
+  assert(dim < 2);
+  return MPI::local_range(size(dim));
 }
 //-----------------------------------------------------------------------------
 uint EpetraSparsityPattern::num_nonzeros() const
@@ -117,15 +117,15 @@ void EpetraSparsityPattern::apply()
   // the graph would then depend on the equations, not only the method.
 
   EpetraFactory& f = EpetraFactory::instance();
-  Epetra_SerialComm Comm = f.getSerialComm();
+  Epetra_SerialComm Comm = f.get_serial_comm();
 
   Epetra_Map row_map(dims[0], 0, Comm);
   Epetra_Map col_map(dims[1], 0, Comm);
 
-  epetra_graph->FillComplete (col_map, row_map);
+  epetra_graph->FillComplete(col_map, row_map);
 }
 //-----------------------------------------------------------------------------
-Epetra_FECrsGraph& EpetraSparsityPattern:: pattern() const
+Epetra_FECrsGraph& EpetraSparsityPattern::pattern() const
 {
   return *epetra_graph;
 }
