@@ -1,16 +1,27 @@
-// Copyright (C) 2008 Kent-Andre Mardal.
+// Copyright (C) 2008-2010 Kent-Andre Mardal and Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Last changed: 2009-08-10
+// Last changed: 2010-02-21
 
 #ifdef HAS_TRILINOS
 
-#include "EpetraLUSolver.h"
+#include <boost/scoped_ptr.hpp>
+
+#include <Amesos.h>
+#include <Amesos_BaseSolver.h>
+#include <Amesos_ConfigDefs.h>
+#include <Amesos_Klu.h>
+#include <Epetra_FECrsMatrix.h>
+#include <Epetra_FEVector.h>
+#include <Epetra_LinearProblem.h>
+#include <Epetra_MultiVector.h>
+
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
 #include "LUSolver.h"
+#include "EpetraLUSolver.h"
 
 using namespace dolfin;
 
@@ -35,15 +46,36 @@ EpetraLUSolver::~EpetraLUSolver()
 dolfin::uint EpetraLUSolver::solve(const GenericMatrix& A, GenericVector& x,
                                        const GenericVector& b)
 {
-  return  solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(),
-                b.down_cast<EpetraVector>());
+  return solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(),
+               b.down_cast<EpetraVector>());
 }
 //-----------------------------------------------------------------------------
-dolfin::uint EpetraLUSolver::solve(const EpetraMatrix&A, EpetraVector& x,
+dolfin::uint EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                    const EpetraVector& b)
 {
-  error("EpetraLUSolver::solve not implemented");
-  return 0;
+  // Create linear problem
+  Epetra_LinearProblem linear_problem(A.mat().get(), x.vec().get(), 
+                                      b.vec().get());
+
+  // Create linear solver
+  Amesos factory;
+  std::string solver_type;
+  if (factory.Query("Amesos_Umfpack"))
+    solver_type = "Amesos_Umfpack";
+  else if (factory.Query("Amesos_Klu"))
+    solver_type = "Amesos_Klu";
+  else
+    error("Requested LU solver not available");
+  boost::scoped_ptr<Amesos_BaseSolver> solver(factory.Create(solver_type, linear_problem));
+
+  // Factorise matrix
+  AMESOS_CHK_ERR(solver->SymbolicFactorization());
+  AMESOS_CHK_ERR(solver->NumericFactorization());
+
+  // Solve
+  AMESOS_CHK_ERR(solver->Solve());
+
+  return 1;
 }
 //-----------------------------------------------------------------------------
 std::string EpetraLUSolver::str(bool verbose) const
@@ -52,6 +84,4 @@ std::string EpetraLUSolver::str(bool verbose) const
   return std::string();
 }
 //-----------------------------------------------------------------------------
-
 #endif
-
