@@ -6,7 +6,7 @@
 // Modified by André Massing, 2010
 //
 // First added:  2010-02-09
-// Last changed: 2010-02-11
+// Last changed: 2010-02-19
 // 
 //Author:  André Massing (am), massing@simula.no
 //Company:  Simula Research Laboratory, Fornebu, Norway
@@ -26,11 +26,20 @@ bool PrimitiveIntersector::do_intersect(const MeshEntity & entity_1, const MeshE
 {
   return PrimitiveIntersector::do_intersect_with_kernel<SCK>(entity_1, entity_2);
 }
-
+//-----------------------------------------------------------------------------
+bool PrimitiveIntersector::do_intersect(const MeshEntity & entity, const Point & point)
+{
+  return PrimitiveIntersector::do_intersect_with_kernel<SCK>(PrimitiveTraits<PointPrimitive,SCK>::datum(point), entity);
+}
+//-----------------------------------------------------------------------------
 bool PrimitiveIntersector::do_intersect_exact(const MeshEntity & entity_1, const MeshEntity & entity_2)
 {
-
   return PrimitiveIntersector::do_intersect_with_kernel<EPICK>(entity_1, entity_2);
+}
+//-----------------------------------------------------------------------------
+bool PrimitiveIntersector::do_intersect_exact(const MeshEntity & entity, const Point & point)
+{
+  return PrimitiveIntersector::do_intersect_with_kernel<EPICK>(PrimitiveTraits<PointPrimitive,EPICK>::datum(point), entity);
 }
 //-----------------------------------------------------------------------------
 template <typename K, typename T, typename U >
