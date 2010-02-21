@@ -19,7 +19,7 @@
 #include <dolfin/log/dolfin_log.h>
 #include "Point.h"
 #include "Mesh.h"
-#include "PrimitveIntersector.h"
+#include "PrimitiveIntersector.h"
 
 namespace dolfin
 {
@@ -72,11 +72,11 @@ namespace dolfin
 
     /// Check if given point intersects.
     bool intersects(const Point & point) const
-    { return PrimitveIntersector::do_intersect_exact(this,point); }
+    { return PrimitiveIntersector::do_intersect_exact(*this,point); }
 
     /// Check if given entity intersects.
-    bool intersects(const MeshEntity & entity) const;
-    { return PrimitveIntersector::do_intersect_exact(this,entity); }
+    bool intersects(const MeshEntity & entity) const
+    { return PrimitiveIntersector::do_intersect_exact(*this,entity); }
 
     /// Compute local index of given incident entity (error if not found)
     uint index(const MeshEntity& entity) const;
