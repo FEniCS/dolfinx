@@ -7,14 +7,13 @@
 // First added:  2005
 // Last changed: 2008-01-07
 
-#ifndef __PETSC_PRECONDITIONER_H
-#define __PETSC_PRECONDITIONER_H
+#ifndef __PETSC_USER_PRECONDITIONER_H
+#define __PETSC_USER_PRECONDITIONER_H
 
 #ifdef HAS_PETSC
 
 #include <petscksp.h>
 #include <petscpc.h>
-
 #include "PETScObject.h"
 
 namespace dolfin
@@ -27,17 +26,17 @@ namespace dolfin
   /// PETScPreconditioner needs only supply a function that approximately
   /// solves the linear system given a right-hand side.
 
-  class PETScPreconditioner : public PETScObject
+  class PETScUserPreconditioner : public PETScObject
   {
   public:
 
     /// Constructor
-    PETScPreconditioner();
+    PETScUserPreconditioner();
 
     /// Destructor
-    virtual ~PETScPreconditioner();
+    virtual ~PETScUserPreconditioner();
 
-    static void setup(const KSP ksp, PETScPreconditioner &pc);
+    static void setup(const KSP ksp, PETScUserPreconditioner& pc);
 
     /// Solve linear system approximately for given right-hand side b
     virtual void solve(PETScVector& x, const PETScVector& b) = 0;
