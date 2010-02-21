@@ -24,8 +24,6 @@
 #include "PETScVector.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
-
-
 #include "KrylovSolver.h"
 
 using namespace dolfin;
