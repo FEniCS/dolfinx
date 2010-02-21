@@ -22,7 +22,7 @@ EpetraFactory EpetraFactory::factory;
 
 //-----------------------------------------------------------------------------
 EpetraFactory::EpetraFactory()
-{  
+{
   serial_comm = new Epetra_SerialComm();
 
   // Why does this not work with dolfin::MPICommunicator?
@@ -55,12 +55,12 @@ EpetraSparsityPattern* EpetraFactory::create_pattern() const
   return new EpetraSparsityPattern();
 }
 //-----------------------------------------------------------------------------
-Epetra_SerialComm& EpetraFactory::get_serial_comm()
+Epetra_SerialComm& EpetraFactory::get_serial_comm() const
 {
   return *serial_comm;
 }
 //-----------------------------------------------------------------------------
-Epetra_MpiComm& EpetraFactory::get_mpi_comm()
+Epetra_MpiComm& EpetraFactory::get_mpi_comm() const
 {
   return *mpi_comm;
 }

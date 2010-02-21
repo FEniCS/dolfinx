@@ -41,10 +41,10 @@ namespace dolfin
     EpetraSparsityPattern* create_pattern() const;
 
     // Return Epetra Communicator
-    Epetra_SerialComm& get_serial_comm();
+    Epetra_SerialComm& get_serial_comm() const;
 
     // Return Epetra Communicator
-    Epetra_MpiComm& get_mpi_comm();
+    Epetra_MpiComm& get_mpi_comm() const;
 
     // Return singleton instance
     static EpetraFactory& instance()

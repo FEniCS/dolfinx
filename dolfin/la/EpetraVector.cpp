@@ -1,32 +1,30 @@
 // Copyright (C) 2008 Martin Sandve Alnes, Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2008-2009.
+// Modified by Garth N. Wells, 2008-2010.
 //
 // First added:  2008-04-21
 // Last changed: 2009-08-22
 
 #ifdef HAS_TRILINOS
 
-#include <mpi.h>
-
 #include <cmath>
 #include <cstring>
-#include <dolfin/main/MPI.h>
-#include <dolfin/math/dolfin_math.h>
-#include <dolfin/log/dolfin_log.h>
-#include "EpetraVector.h"
-#include "uBLASVector.h"
-#include "PETScVector.h"
-#include "EpetraFactory.h"
-
 #include <Epetra_FEVector.h>
 #include <Epetra_Map.h>
 #include <Epetra_MultiVector.h>
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
+#include <dolfin/main/MPI.h>
+#include <dolfin/math/dolfin_math.h>
+#include <dolfin/log/dolfin_log.h>
+#include "uBLASVector.h"
+#include "PETScVector.h"
+#include "EpetraFactory.h"
+#include "EpetraVector.h"
 
-// FIXME: A cleanup is needed with respect to correct use of parallel vectors.
+// FIXME: A review is needed with respect to correct use of parallel vectors.
+//        It would be useful to store the Epetra map.
 
 using namespace dolfin;
 
@@ -47,12 +45,12 @@ EpetraVector::EpetraVector(boost::shared_ptr<Epetra_FEVector> x) : x(x)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(const Epetra_Map& map) 
+EpetraVector::EpetraVector(const Epetra_Map& map)
 {
-  dolfin_not_implemented();
+  x.reset(new Epetra_FEVector(map));
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(const EpetraVector& v) 
+EpetraVector::EpetraVector(const EpetraVector& v)
 {
   *this = v;
 }
@@ -104,10 +102,16 @@ dolfin::uint EpetraVector::size() const
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> EpetraVector::local_range() const
 {
-  if (MPI::num_processes() > 1)
-    error("EpetraVector::local_range() is not implemented in parallel");
-  
-  return std::make_pair<uint, uint>(0, size());
+  // FIXME: Epetra does not provide a function for this since it does not
+  //        require contiguous ranges. Can this function be removed
+  //        from the generic interface and just use 'local_size'?
+
+  const std::pair<uint, uint> range = MPI::local_range(size());
+  const int n = range.second - range.first;
+  if (x->MyLength() != n)
+    error("Discrepency in local vector length for EpetraVector.");
+
+  return std::make_pair<uint, uint>(range.first, range.second);
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::zero()
@@ -149,8 +153,6 @@ std::string EpetraVector::str(bool verbose) const
 void EpetraVector::get_local(double* values) const
 {
   assert(x);
-
-  // TODO: Are these global or local values?
   int err = x->ExtractCopy(values, 0);
   if (err!= 0)
     error("EpetraVector::get: Did not manage to perform Epetra_Vector::ExtractCopy.");
@@ -158,52 +160,51 @@ void EpetraVector::get_local(double* values) const
 //-----------------------------------------------------------------------------
 void EpetraVector::set_local(const double* values)
 {
-  cout << "Inside EpetraVector::set_local" << endl;
-
   assert(x);
+  const std::pair<uint, uint> range = local_range();
+  const uint n0 = range.first;
+  const uint n1 = range.second;
+  const uint N = n1 - n0;
 
+  // FIXME: The user should call apply()
   int err = x->GlobalAssemble();
-  if (err!= 0)
+
+  if (err != 0)
     error("EpetraVector::set: Did not manage to perform Epetra_Vector::GlobalAssemble.");
 
-  int* rows = new int[size()];
-  for (uint i=0; i<size(); i++)
-    rows[i] = i;
+  std::vector<int> rows(N);
+  for (uint i = 0; i < N; i++)
+    rows[i] = i + n0;
+  err = x->ReplaceGlobalValues(N, &rows[0], values);
 
-  err = x->ReplaceGlobalValues(size(), reinterpret_cast<const int*>(rows), values);
   if (err!= 0)
     error("EpetraVector::set: Did not manage to perform Epetra_Vector::ReplaceGlobalValues.");
-
-  delete [] rows;
-
-  /* OLD CODE, should be faster but is not bullet proof ...
-  assert(x);
-  double *data = 0;
-  x->ExtractView(&data, 0);
-  memcpy(data, values, size()*sizeof(double));
-  */
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::add_local(const double* values)
 {
   assert(x);
 
-  // TODO: Use an Epetra function for this
-  double *data = 0;
-  int err = x->ExtractView(&data, 0);
-  if (err!= 0)
-    error("EpetraVector::add: Did not manage to perform Epetra_Vector::ExtractView.");
+  const std::pair<uint, uint> range = local_range();
+  const uint n0 = range.first;
+  const uint n1 = range.second;
+  const uint N = n1 - n0;
 
-  for(uint i=0; i<size(); i++)
-    data[i] += values[i];
+  std::vector<int> rows(N);
+  for (uint i = 0; i < N; i++)
+    rows[i] = i + n0;
+  int err = x->SumIntoGlobalValues(N, &rows[0], values);
+  if (err!= 0)
+    error("EpetraVector::add_local: Did not manage to perform Epetra_Vector::SumIntoGlobalValues.");
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::get(double* block, uint m, const uint* rows) const
 {
   assert(x);
 
-  // TODO: use Epetra_Vector function for efficiency and parallel handling
-  for (uint i=0; i<m; i++)
+  // Trilinos doesn't appear to provide any special functions for getting values.
+
+  for (uint i = 0; i < m; i++)
     block[i] = (*x)[0][rows[i]];
 }
 //-----------------------------------------------------------------------------
@@ -284,7 +285,6 @@ const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
   assert(v.x);
 
   // TODO: Check for self-assignment
-
   if (!x)
     x.reset(new Epetra_FEVector(*(v.vec())));
   else
@@ -333,7 +333,7 @@ const EpetraVector& EpetraVector::operator*= (const GenericVector& y)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const EpetraVector& EpetraVector::operator/= (double a)
+const EpetraVector& EpetraVector::operator/=(double a)
 {
   *this *= 1.0/a;
   return *this;
@@ -383,17 +383,25 @@ double EpetraVector::sum() const
 {
   assert(x);
 
-  double value=0.;
-  double global_sum=0;
+  const std::pair<uint, uint> range = local_range();
+  const uint n0 = range.first;
+  const uint n1 = range.second;
+  const uint N = n1 - n0;
 
-  double const * pointers( (*x)[0] );
+  // Get local values
+  std::vector<double> x_local(N);
+  get_local(&x_local[0]);
 
-  for (int i(0); i < x->MyLength(); ++i , ++pointers)
-    value += *pointers;
+  // Compute local sum
+  double local_sum = 0.0;
+  for (uint i = 0; i < N; ++i)
+    local_sum += x_local[0];
 
-  x->Comm().SumAll(&value, &global_sum, 1);
+  // Compute global sum
+  double global_sum = 0.0;
+  x->Comm().SumAll(&local_sum, &global_sum, 1);
 
-  return value;
+  return global_sum;
 }
 //-----------------------------------------------------------------------------
 #endif
