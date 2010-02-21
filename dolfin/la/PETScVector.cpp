@@ -41,7 +41,7 @@ const std::map<std::string, NormType> PETScVector::norm_types
                               ("linf", NORM_INFINITY);
 
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(std::string type) 
+PETScVector::PETScVector(std::string type)
 {
   if (type == "global" && dolfin::MPI::num_processes() > 1)
     init(0, 0, "mpi");
@@ -128,7 +128,7 @@ void PETScVector::get_local(double* values) const
   int* rows = new int[local_size];
   for (int i = 0; i < local_size; i++)
     rows[i] = i;
- 
+
   VecGetValues(*x, local_size, rows, values);
   delete [] rows;
 }
@@ -169,7 +169,7 @@ void PETScVector::get(double* block, uint m, const uint* rows) const
   const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
   int _m =  static_cast<int>(m);
 
-  // If vector is local, just get the values. For distributed vectors, perform 
+  // If vector is local, just get the values. For distributed vectors, perform
   // first a gather into a local vector
   if (local_range().first == 0 && local_range().second == size())
   {
@@ -193,8 +193,8 @@ void PETScVector::get(double* block, uint m, const uint* rows) const
       indices.push_back(rows[i]);
       local_indices.push_back(i);
     }
-    
-    const int* _local_indices = &local_indices[0];  
+
+    const int* _local_indices = &local_indices[0];
     if (m == 0)
     {
       _local_indices = &_m;
@@ -469,7 +469,7 @@ void PETScVector::gather(GenericVector& y,
   // PETSc will bail out if it received a NULL pointer even though m == 0.
   // Can't return from function as this will cause a lock up in parallel
   if (n == 0)
-    global_indices = &n;    
+    global_indices = &n;
 
   // Create index sets
   IS from, to;
@@ -494,7 +494,7 @@ void PETScVector::gather(GenericVector& y,
 void PETScVector::init(uint N, uint n, std::string type)
 {
   // Create vector
-  if (!x.unique())
+  if (x && !x.unique())
     error("Cannot init/resize PETScVector. More than one object points to the underlying PETSc object.");
   x.reset(new Vec, PETScVectorDeleter());
 
@@ -505,10 +505,7 @@ void PETScVector::init(uint N, uint n, std::string type)
     VecSetFromOptions(*x);
   }
   else if (type == "mpi")
-  {
-    //assert(n > 0);
     VecCreateMPI(PETSC_COMM_WORLD, n, N, x.get());
-  }
   else
     error("Unknown vector type in PETScVector::init.");
 }
