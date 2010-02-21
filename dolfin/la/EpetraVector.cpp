@@ -29,12 +29,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector() : x(static_cast<Epetra_FEVector*>(0))
+EpetraVector::EpetraVector()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(uint N) : x(static_cast<Epetra_FEVector*>(0))
+EpetraVector::EpetraVector(uint N)
 {
   // Create Epetra vector
   resize(N);
@@ -46,13 +46,11 @@ EpetraVector::EpetraVector(boost::shared_ptr<Epetra_FEVector> x) : x(x)
 }
 //-----------------------------------------------------------------------------
 EpetraVector::EpetraVector(const Epetra_Map& map) 
-                         : x(static_cast<Epetra_FEVector*>(0))
 {
   dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
 EpetraVector::EpetraVector(const EpetraVector& v) 
-                         : x(static_cast<Epetra_FEVector*>(0))
 {
   *this = v;
 }
@@ -102,7 +100,7 @@ void EpetraVector::zero()
 {
   assert(x);
   int err = x->PutScalar(0.0);
-  if (err!= 0)
+  if (err != 0)
     error("EpetraVector::zero: Did not manage to perform Epetra_Vector::PutScalar.");
 }
 //-----------------------------------------------------------------------------
@@ -122,7 +120,6 @@ std::string EpetraVector::str(bool verbose) const
   assert(x);
 
   std::stringstream s;
-
   if (verbose)
   {
     warning("Verbose output for EpetraVector not implemented, calling Epetra Print directly.");
@@ -130,9 +127,7 @@ std::string EpetraVector::str(bool verbose) const
     x->Print(std::cout);
   }
   else
-  {
     s << "<EpetraVector of size " << size() << ">";
-  }
 
   return s.str();
 }
@@ -156,9 +151,8 @@ void EpetraVector::set_local(const double* values)
     error("EpetraVector::set: Did not manage to perform Epetra_Vector::GlobalAssemble.");
 
   int* rows = new int[size()];
-  for (uint i=0; i<size(); i++){
+  for (uint i=0; i<size(); i++)
     rows[i] = i;
-  }
 
   err = x->ReplaceGlobalValues(size(), reinterpret_cast<const int*>(rows), values);
   if (err!= 0)
@@ -384,13 +378,11 @@ double EpetraVector::sum() const
   double const * pointers( (*x)[0] );
 
   for (int i(0); i < x->MyLength(); ++i , ++pointers)
-      value += *pointers;
+    value += *pointers;
 
   x->Comm().SumAll(&value, &global_sum, 1);
 
   return value;
 }
 //-----------------------------------------------------------------------------
-
-
 #endif

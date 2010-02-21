@@ -9,14 +9,15 @@
 
 #ifdef HAS_TRILINOS
 
+#include <Epetra_SerialComm.h>
+#include <Epetra_FECrsGraph.h>
+
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include "EpetraFactory.h"
 #include "GenericSparsityPattern.h"
 #include "EpetraSparsityPattern.h"
 
-#include <Epetra_SerialComm.h>
-#include <Epetra_FECrsGraph.h>
 
 using namespace dolfin;
 using dolfin::uint;
@@ -38,9 +39,7 @@ void EpetraSparsityPattern::init(uint rank_, const uint* dims_)
   _rank = rank_;
 
   if (_rank == 1)
-  {
     dims[0] = dims_[0];
-  }
   else if (_rank == 2)
   {
     dims[0] = dims_[0];
@@ -74,9 +73,7 @@ dolfin::uint EpetraSparsityPattern::rank() const
 uint EpetraSparsityPattern::size(uint i) const
 {
   if (_rank == 1)
-  {
     return dims[0];
-  }
   
   if (_rank == 2)
   {
