@@ -28,7 +28,6 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void DofMapBuilder::parallel_build(DofMap& dofmap, const Mesh& mesh)
 {
-
   // Check that dof map has not been built
   if (dofmap._map.get())
     error("Local-to-global mapping has already been computed.");
@@ -56,7 +55,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
   // Initialize random number generator differently on each process
   srand((uint)time(0) + MPI::process_number());
   // FIXME: Temporary while debugging (to get same results in each run)
-  //srand(MPI::process_number());
+  //srand(MPI::process_number() + 1);
 
   // Extract the interior boundary
   BoundaryMesh interior_boundary;

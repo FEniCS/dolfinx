@@ -257,6 +257,9 @@ void EpetraMatrix::ident(uint m, const uint* rows)
 void EpetraMatrix::zero(uint m, const uint* rows)
 {
   assert(A);
+  error("EpetraMatrix::zero not implemented.");
+
+  /*
   double* values;
   int* indices;
   int* row_size = new int;
@@ -271,6 +274,7 @@ void EpetraMatrix::zero(uint m, const uint* rows)
     memset(values, 0, (*row_size)*sizeof(double));
   }
   delete row_size;
+  */
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const

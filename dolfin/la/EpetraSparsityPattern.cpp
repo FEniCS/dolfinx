@@ -14,6 +14,7 @@
 #include <Epetra_FECrsGraph.h>
 
 #include <dolfin/common/types.h>
+#include <dolfin/log/dolfin_log.h>
 #include <dolfin/log/log.h>
 #include <dolfin/main/MPI.h>
 #include "EpetraFactory.h"
@@ -48,9 +49,16 @@ void EpetraSparsityPattern::init(uint rank_, const uint* dims_)
     dims[1] = dims_[1];
 
     EpetraFactory& f = EpetraFactory::instance();
-    Epetra_MpiComm Comm = f.get_mpi_comm();
+    Epetra_MpiComm comm = f.get_mpi_comm();
 
-    Epetra_Map row_map(dims[0], 0, Comm);
+    const std::pair<uint, uint> range = MPI::local_range(dims[0]);
+    const uint num_local_rows = range.second - range.first;
+
+    cout << "Num global rows " << dims[0] << endl;
+    cout << "Num local rows  " << num_local_rows << endl;
+
+    Epetra_Map row_map(dims[0], num_local_rows, 0, comm);
+    //Epetra_Map row_map(dims[0], 0, comm);
     epetra_graph = new Epetra_FECrsGraph(Copy, row_map, 0);
   }
   else
@@ -90,8 +98,10 @@ uint EpetraSparsityPattern::size(uint i) const
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> EpetraSparsityPattern::local_range(uint dim) const
 {
-  assert(dim < 2);
-  return MPI::local_range(size(dim));
+  error("EpetraSparsityPattern::local_range not implemented.");
+  return std::make_pair(0, 0);
+  //assert(dim < 2);
+  //return MPI::local_range(size(dim));
 }
 //-----------------------------------------------------------------------------
 uint EpetraSparsityPattern::num_nonzeros() const
@@ -120,10 +130,13 @@ void EpetraSparsityPattern::apply()
   EpetraFactory& f = EpetraFactory::instance();
   Epetra_MpiComm comm = f.get_mpi_comm();
 
-  Epetra_Map row_map(dims[0], 0, comm);
-  Epetra_Map col_map(dims[1], 0, comm);
+  //Epetra_Map row_map(dims[0], 0, comm);
+  //Epetra_Map col_map(dims[1], 0, comm);
+  //epetra_graph->FillComplete(col_map, row_map);
+  epetra_graph->FillComplete();
 
-  epetra_graph->FillComplete(col_map, row_map);
+  epetra_graph->Print(std::cout);
+
 }
 //-----------------------------------------------------------------------------
 Epetra_FECrsGraph& EpetraSparsityPattern::pattern() const

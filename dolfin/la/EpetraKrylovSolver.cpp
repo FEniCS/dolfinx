@@ -8,12 +8,12 @@
 #ifdef HAS_TRILINOS
 
 #include <Epetra_ConfigDefs.h>
-#include <Epetra_Vector.h>
-#include <Epetra_FEVector.h>
-#include <Epetra_RowMatrix.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_FECrsMatrix.h>
+#include <Epetra_FEVector.h>
 #include <Epetra_LinearProblem.h>
+#include <Epetra_RowMatrix.h>
+#include <Epetra_Vector.h>
 #include <Epetra_Map.h>
 #include <AztecOO.h>
 #include <ml_include.h>
@@ -80,14 +80,16 @@ EpetraKrylovSolver::~EpetraKrylovSolver()
 dolfin::uint EpetraKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                        const GenericVector& b)
 {
-  return  solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(),
-                b.down_cast<EpetraVector>());
+  return solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(),
+               b.down_cast<EpetraVector>());
 }
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                        const EpetraVector& b)
 {
   // FIXME: This function needs to be cleaned up
+
+  //cout << "!!!Inside solve " << endl;
 
   // Check that requsted solver is supported
   if (methods.count(method) == 0 )
@@ -97,8 +99,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   if (pc_methods.count(pc_type) == 0 )
     error("Requested EpetraKrylovSolver preconditioner '%s' in unknown", pc_type.c_str());
 
-  //FIXME: need the ifdef AztecOO
-  //FIXME: We should test for AztecOO during configuration
+  //FIXME: We need to test for AztecOO during configuration
 
   // Check dimensions
   uint M = A.size(0);
@@ -117,27 +118,35 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     x.zero();
   }
 
+  //cout << "Stage A " << endl;
+
   // FIXME: permit initial guess
 
-  // Cast matrix and vectors to proper type
-  Epetra_RowMatrix* row_matrix = dynamic_cast<Epetra_RowMatrix*>(A.mat().get());
-  Epetra_MultiVector* x_vec    = dynamic_cast<Epetra_MultiVector*>(x.vec().get());
-  Epetra_MultiVector* b_vec    = dynamic_cast<Epetra_MultiVector*>(b.vec().get());
+  //cout << "Stage A(i) " << endl;
 
-  // Create solver
-  AztecOO linear_solver;
-  linear_solver.SetUserMatrix(row_matrix);
-  linear_solver.SetLHS(x_vec);
-  linear_solver.SetRHS(b_vec);
+  // Create linear problem
+  Epetra_LinearProblem linear_problem(A.mat().get(), x.vec().get(),
+                                      b.vec().get());
+
+  //cout << "Stage A(ii) " << endl;
+
+  // Create linear solver
+  AztecOO linear_solver(linear_problem);
+
+  //cout << "Stage B " << endl;
 
   // Set solver type
   linear_solver.SetAztecOption(AZ_solver, methods.find(method)->second);
+
+  //cout << "Stage C " << endl;
 
   // Set output level
   if(parameters["monitor_convergence"])
    linear_solver.SetAztecOption(AZ_output, 1);
   else
     linear_solver.SetAztecOption(AZ_output, AZ_none);
+
+  //cout << "Stage D " << endl;
 
   // Set preconditioner
   if (pc_type == "default" || pc_type == "ilu")
@@ -149,6 +158,8 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     linear_solver.SetAztecOption(AZ_precond, pc_methods.find(pc_type)->second);
   else if (pc_type == "amg_ml")
   {
+    //cout << "Stage E " << endl;
+
     // FIXME: Move configuration of ML to another function
     //error("The EpetraKrylovSolver interface for the ML preconditioner needs to be fixed.");
 
@@ -197,7 +208,9 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   }
 
   // Start solve
+  cout << "Start solve " << endl;
   linear_solver.Iterate(parameters["maximum_iterations"], parameters["relative_tolerance"]);
+  cout << "End solve " << endl;
 
   info("AztecOO Krylov solver (%s, %s) converged in %d iterations.",
           method.c_str(), pc_type.c_str(), linear_solver.NumIters());
