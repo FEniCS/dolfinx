@@ -224,6 +224,12 @@ void EpetraVector::add(const double* block, uint m, const uint* rows)
     error("EpetraVector::add: Did not manage to perform Epetra_Vector::SumIntoGlobalValues.");
 }
 //-----------------------------------------------------------------------------
+void EpetraVector::gather(GenericVector& x,
+                          const std::vector<dolfin::uint>& indices) const
+{
+  not_working_in_parallel("EpetraVector::gather");
+}
+//-----------------------------------------------------------------------------
 boost::shared_ptr<Epetra_FEVector> EpetraVector::vec() const
 {
   assert(x);

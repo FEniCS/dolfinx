@@ -26,7 +26,7 @@ namespace dolfin
   class GenericVector;
 
   /// This class provides a simple vector class based on Epetra.
-  /// It is a simple wrapper for an Epetra vector object (Epetre_FEVector)
+  /// It is a simple wrapper for an Epetra vector object (Epetra_FEVector)
   /// implementing the GenericVector interface.
   ///
   /// The interface is intentionally simple. For advanced usage,
@@ -99,8 +99,7 @@ namespace dolfin
     virtual void add_local(const double* values);
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const
-    { not_working_in_parallel("EpetraVector::gather)"); }
+    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const;
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);

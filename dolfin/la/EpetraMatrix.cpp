@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
-// Modified by Garth N. Wells, 2008, 2008.
+// Modified by Garth N. Wells, 2008, 2009.
 //
 // First added:  2008-04-21
 // Last changed: 2009-09-08
@@ -13,13 +13,6 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
-#include <dolfin/log/dolfin_log.h>
-#include "EpetraVector.h"
-#include "EpetraMatrix.h"
-#include "GenericSparsityPattern.h"
-#include "EpetraSparsityPattern.h"
-#include "EpetraFactory.h"
-#include <dolfin/common/Timer.h>
 
 #include <Epetra_CrsGraph.h>
 #include <Epetra_FECrsGraph.h>
@@ -28,10 +21,19 @@
 #include <Epetra_FEVector.h>
 #include <EpetraExt_MatrixMatrix.h>
 
+#include <dolfin/common/Timer.h>
+#include <dolfin/log/dolfin_log.h>
+#include "EpetraVector.h"
+#include "GenericSparsityPattern.h"
+#include "EpetraSparsityPattern.h"
+#include "EpetraFactory.h"
+#include "EpetraMatrix.h"
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(){
+EpetraMatrix::EpetraMatrix()
+{
   // TODO: call Epetra_Init or something?
 }
 //-----------------------------------------------------------------------------
@@ -45,10 +47,7 @@ EpetraMatrix::EpetraMatrix(uint M, uint N)
 EpetraMatrix::EpetraMatrix(const EpetraMatrix& A)
 {
   if (A.mat())
-  {
-    boost::shared_ptr<Epetra_FECrsMatrix> _A(new Epetra_FECrsMatrix(*A.mat()));
-    this->A = _A;
-  }
+    this->A.reset(new Epetra_FECrsMatrix(*A.mat()));
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A) : A(A)
@@ -69,18 +68,16 @@ EpetraMatrix::~EpetraMatrix()
 //-----------------------------------------------------------------------------
 void EpetraMatrix::resize(uint M, uint N)
 {
-  // Not yet implemented
   error("EpetraMatrix::resize(uint, unit) not yet implemented.");
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 {
-  if (!A.unique())
+  if (A && !A.unique())
     error("Cannot initialise EpetraMatrix. More than one object points to the underlying Epetra object.");
 
   const EpetraSparsityPattern& epetra_pattern = dynamic_cast<const EpetraSparsityPattern&>(sparsity_pattern);
-  boost::shared_ptr<Epetra_FECrsMatrix> _A(new Epetra_FECrsMatrix(Copy, epetra_pattern.pattern()));
-  A = _A;
+  A.reset(new Epetra_FECrsMatrix(Copy, epetra_pattern.pattern()));
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix* EpetraMatrix::copy() const
@@ -97,9 +94,8 @@ dolfin::uint EpetraMatrix::size(uint dim) const
   return (dim == 0 ? M : N);
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::get(double* block,
-		       uint m, const uint* rows,
-		       uint n, const uint* cols) const
+void EpetraMatrix::get(double* block, uint m, const uint* rows,
+		                   uint n, const uint* cols) const
 {
   assert(A);
 
@@ -111,24 +107,25 @@ void EpetraMatrix::get(double* block,
   for(uint i = 0; i < m; ++i)
   {
     // Extract the values and indices from row: rows[i]
-    if (A->IndicesAreLocal()) 
+    if (A->IndicesAreLocal())
     {
       int err = A->ExtractMyRowView(rows[i], num_entities, values, indices);
       if (err!= 0) {
         error("EpetraMatrix::get: Did not manage to perform Epetra_CrsMatrix::ExtractMyRowView.");
       }
     }
-    else 
+    else
     {
       int err = A->ExtractGlobalRowView(rows[i], num_entities, values, indices);
-      if (err!= 0) 
+      if (err!= 0)
         error("EpetraMatrix::get: Did not manage to perform Epetra_CRSMatrix::ExtractGlobalRowView.");
     }
 
-    int k = 0;
     // Step the indices to the start of cols
+    int k = 0;
     while (indices[k] < static_cast<int>(cols[0]))
       k++;
+
     // Fill the collumns in the block
     for (uint j = 0; j < n; j++)
     {
@@ -158,9 +155,8 @@ void EpetraMatrix::add(const double* block,
                        uint m, const uint* rows,
                        uint n, const uint* cols)
 {
-  Timer t0("Matrix add");
   assert(A);
-
+  Timer t0("Matrix add");
   int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
                                    n, reinterpret_cast<const int*>(cols), block,
                                    Epetra_FECrsMatrix::ROW_MAJOR);
@@ -210,6 +206,7 @@ void EpetraMatrix::apply()
   int err = A->GlobalAssemble();
   if (err!= 0)
     error("EpetraMatrix::apply: Did not manage to perform Epetra_CrsMatrix::GlobalAssemble.");
+
   // TODO
   //A->OptimizeStorage();
 }
@@ -265,7 +262,7 @@ void EpetraMatrix::zero(uint m, const uint* rows)
   int* row_size = new int;
   int r;
 
-  for (uint i=0; i<m; i++)
+  for (uint i = 0; i < m; i++)
   {
     r = rows[i];
     int err = A->ExtractMyRowView(r, *row_size, values, indices);
@@ -319,7 +316,8 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
     error("EpetraMatrix::transpmult: Did not manage to perform Epetra_CRSMatrix::Multiply.");
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const
+void EpetraMatrix::getrow(uint row, std::vector<uint>& columns,
+                          std::vector<double>& values) const
 {
   assert(A);
 
@@ -345,7 +343,8 @@ void EpetraMatrix::getrow(uint row, std::vector<uint>& columns, std::vector<doub
   delete num_entries;
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values)
+void EpetraMatrix::setrow(uint row, const std::vector<uint>& columns,
+                          const std::vector<double>& values)
 {
   dolfin_not_implemented();
 }

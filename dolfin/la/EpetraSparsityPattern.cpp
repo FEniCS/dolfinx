@@ -9,6 +9,7 @@
 
 #ifdef HAS_TRILINOS
 
+#include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 #include <Epetra_FECrsGraph.h>
 
@@ -47,7 +48,7 @@ void EpetraSparsityPattern::init(uint rank_, const uint* dims_)
     dims[1] = dims_[1];
 
     EpetraFactory& f = EpetraFactory::instance();
-    Epetra_SerialComm Comm = f.get_serial_comm();
+    Epetra_MpiComm Comm = f.get_mpi_comm();
 
     Epetra_Map row_map(dims[0], 0, Comm);
     epetra_graph = new Epetra_FECrsGraph(Copy, row_map, 0);
@@ -75,7 +76,7 @@ uint EpetraSparsityPattern::size(uint i) const
 {
   if (_rank == 1)
     return dims[0];
-  
+
   if (_rank == 2)
   {
     assert(epetra_graph);
@@ -117,10 +118,10 @@ void EpetraSparsityPattern::apply()
   // the graph would then depend on the equations, not only the method.
 
   EpetraFactory& f = EpetraFactory::instance();
-  Epetra_SerialComm Comm = f.get_serial_comm();
+  Epetra_MpiComm comm = f.get_mpi_comm();
 
-  Epetra_Map row_map(dims[0], 0, Comm);
-  Epetra_Map col_map(dims[1], 0, Comm);
+  Epetra_Map row_map(dims[0], 0, comm);
+  Epetra_Map col_map(dims[1], 0, comm);
 
   epetra_graph->FillComplete(col_map, row_map);
 }
