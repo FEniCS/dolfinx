@@ -54,12 +54,8 @@ void EpetraSparsityPattern::init(uint rank_, const uint* dims_)
     const std::pair<uint, uint> range = MPI::local_range(dims[0]);
     const uint num_local_rows = range.second - range.first;
 
-    cout << "Num global rows " << dims[0] << endl;
-    cout << "Num local rows  " << num_local_rows << endl;
-
     Epetra_Map row_map(dims[0], num_local_rows, 0, comm);
-    //Epetra_Map row_map(dims[0], 0, comm);
-    epetra_graph = new Epetra_FECrsGraph(Copy, row_map, 0);
+    epetra_graph = new Epetra_FECrsGraph(Copy, row_map, 10);
   }
   else
     error("Illegal rank for Epetra sparsity pattern.");
@@ -133,10 +129,9 @@ void EpetraSparsityPattern::apply()
   //Epetra_Map row_map(dims[0], 0, comm);
   //Epetra_Map col_map(dims[1], 0, comm);
   //epetra_graph->FillComplete(col_map, row_map);
-  epetra_graph->FillComplete();
+  //epetra_graph->FillComplete();
 
-  epetra_graph->Print(std::cout);
-
+  epetra_graph->GlobalAssemble();
 }
 //-----------------------------------------------------------------------------
 Epetra_FECrsGraph& EpetraSparsityPattern::pattern() const
