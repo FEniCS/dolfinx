@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-11-09
+// Last changed: 2010-02-22
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
@@ -157,7 +157,7 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::operator[] (uint i) const
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace>
-     FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
+FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 {
   assert(_mesh);
   assert(_element);
@@ -168,7 +168,7 @@ boost::shared_ptr<FunctionSpace>
   for (uint i = 0; i < component.size(); ++i)
     identifier << component[i] << ".";
 
-  // Check if sub space is aleady in the cache
+  // Check if sub space is already in the cache
   std::map<std::string, boost::shared_ptr<FunctionSpace> >::iterator subspace;
   subspace = subspaces.find(identifier.str());
   if (subspace != subspaces.end())
