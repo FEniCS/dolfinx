@@ -84,8 +84,7 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 //-----------------------------------------------------------------------------
 EpetraMatrix* EpetraMatrix::copy() const
 {
-  EpetraMatrix* mcopy = new EpetraMatrix(*this);
-  return mcopy;
+  return new EpetraMatrix(*this);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraMatrix::size(uint dim) const
@@ -237,9 +236,10 @@ void EpetraMatrix::ident(uint m, const uint* rows)
 
   // FIXME: Is this the best way to do this?
 
-  // Get graph
-  const Epetra_CrsGraph& graph = A->Graph();
+  // FIXME: This can be made more efficient by eliminating creation of some
+  //        obejcts inside the loop
 
+  const Epetra_CrsGraph& graph = A->Graph();
   for (uint i = 0; i < m; ++i)
   {
     int row = rows[i];
@@ -253,6 +253,7 @@ void EpetraMatrix::ident(uint m, const uint* rows)
     //for (int j = 0; j < num_nz1; ++j)
     //  cout << "  "  << j << "  " << indices[j] << endl;
 
+    // Zero row
     std::vector<double> block(num_nz);
     int err = A->ReplaceGlobalValues(row, num_nz, &block[0], &indices[0]);
     if (err!= 0)
@@ -266,11 +267,12 @@ void EpetraMatrix::ident(uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void EpetraMatrix::zero(uint m, const uint* rows)
 {
+  // FIXME: This can be made more efficient by eliminating creation of some
+  //        obejcts inside the loop
+
   assert(A);
 
-  // Get graph
   const Epetra_CrsGraph& graph = A->Graph();
-
   for (uint i = 0; i < m; ++i)
   {
     int row = rows[i];
@@ -372,7 +374,6 @@ LinearAlgebraFactory& EpetraMatrix::factory() const
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Epetra_FECrsMatrix> EpetraMatrix::mat() const
 {
-  assert(A);
   return A;
 }
 //-----------------------------------------------------------------------------
@@ -402,7 +403,7 @@ const GenericMatrix& EpetraMatrix::operator= (const GenericMatrix& A)
 //-----------------------------------------------------------------------------
 const EpetraMatrix& EpetraMatrix::operator= (const EpetraMatrix& A)
 {
-  assert(A.mat());
+  assert(A);
   *(this->A) = *A.mat();
   return *this;
 }

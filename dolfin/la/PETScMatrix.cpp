@@ -250,6 +250,9 @@ void PETScMatrix::getrow(uint row,
                          std::vector<uint>& columns,
                          std::vector<double>& values) const
 {
+  if (MPI::num_processes() > 1)
+    error("PETScMatrix::getrow does not work in parallel.");
+
   assert(A);
 
   const int *cols = 0;
