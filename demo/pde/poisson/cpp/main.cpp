@@ -53,6 +53,8 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
+  parameters["linear_algebra_backend"] = "Epetra";
+
   // Create mesh and function space
   UnitSquare mesh(32, 32);
   Poisson::FunctionSpace V(mesh);

@@ -63,7 +63,7 @@ Parameters PETScKrylovSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
-  : method(method), pc_petsc(pc_type), pc_dolfin(0), 
+  : method(method), pc_petsc(pc_type), pc_dolfin(0),
     ksp(static_cast<KSP*>(0), PETScKSPDeleter()), M(0), N(0),
     parameters_read(false), pc_set(false)
 {
@@ -132,7 +132,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   if (!ksp)
     ksp.reset(new KSP, PETScKSPDeleter());
 
-  KSPGMRESSetRestart(*ksp, parameters["gmres_restart"]); 
+  KSPGMRESSetRestart(*ksp, parameters["gmres_restart"]);
   KSPSetOperators(*ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
 
   // FIXME: Preconditioner being set here and not in init() to avoid PETSc bug
@@ -150,7 +150,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   KSPConvergedReason reason;
   KSPGetConvergedReason(*ksp, &reason);
   if (reason < 0)
-    error("Krylov solver did not converge.");
+    warning("Krylov solver did not converge.");
 
   // Get the number of iterations
   int num_iterations = 0;
@@ -227,7 +227,7 @@ std::string PETScKrylovSolver::str(bool verbose) const
   }
   else
     s << "<PETScKrylovSolver>";
- 
+
   return s.str();
 }
 //-----------------------------------------------------------------------------

@@ -21,6 +21,8 @@
 #include <Epetra_FEVector.h>
 #include <EpetraExt_MatrixMatrix.h>
 
+#include <ml_epetra_utils.h>
+
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/dolfin_log.h>
 #include "EpetraVector.h"
@@ -97,6 +99,8 @@ dolfin::uint EpetraMatrix::size(uint dim) const
 void EpetraMatrix::get(double* block, uint m, const uint* rows,
 		                   uint n, const uint* cols) const
 {
+  error("EpetraMatrix::get needs to be fixed.");
+
   assert(A);
 
   int num_entities = 0;
@@ -230,51 +234,57 @@ std::string EpetraMatrix::str(bool verbose) const
 void EpetraMatrix::ident(uint m, const uint* rows)
 {
   assert(A);
-  double* values;
-  int* indices;
-  int* row_size = new int;
-  int r;
 
-  for (uint i=0; i<m; i++)
+  // FIXME: Is this the best way to do this?
+
+  // Get graph
+  const Epetra_CrsGraph& graph = A->Graph();
+
+  for (uint i = 0; i < m; ++i)
   {
-    r = rows[i];
-    int err = A->ExtractMyRowView(r, *row_size, values, indices);
+    int row = rows[i];
+    int num_nz = graph.NumGlobalIndices(row);
+    std::vector<int> indices(num_nz);
+
+    int out_num = 0;
+    graph.ExtractGlobalRowCopy(row, num_nz, out_num, &indices[0]);
+
+    //cout << "Testing graph " << row << "   " << out_num << endl;
+    //for (int j = 0; j < num_nz1; ++j)
+    //  cout << "  "  << j << "  " << indices[j] << endl;
+
+    std::vector<double> block(num_nz);
+    int err = A->ReplaceGlobalValues(row, num_nz, &block[0], &indices[0]);
     if (err!= 0)
-      error("EpetraMatrix::ident: Did not manage to perform Epetra_CrsMatrix::ExtractMyRowView.");
-    memset(values, 0, (*row_size)*sizeof(double));
-    for (uint j = 0; j < m; j++)
-    {
-      if (r == indices[j])
-      {
-        values[j] = 1.0;
-        break;
-      }
-    }
+      error("EpetraMatrix::ident: Did not manage to perform Epetra_CrsMatrix::ReplaceGlobalValues.");
+
+    // Place one on the diagonal
+    double one = 1.0;
+    A->ReplaceGlobalValues(row, 1, &one, &row);
   }
-  delete row_size;
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::zero(uint m, const uint* rows)
 {
   assert(A);
-  error("EpetraMatrix::zero not implemented.");
 
-  /*
-  double* values;
-  int* indices;
-  int* row_size = new int;
-  int r;
+  // Get graph
+  const Epetra_CrsGraph& graph = A->Graph();
 
-  for (uint i = 0; i < m; i++)
+  for (uint i = 0; i < m; ++i)
   {
-    r = rows[i];
-    int err = A->ExtractMyRowView(r, *row_size, values, indices);
+    int row = rows[i];
+    int num_nz = graph.NumGlobalIndices(row);
+    std::vector<int> indices(num_nz);
+
+    int out_num = 0;
+    graph.ExtractGlobalRowCopy(row, num_nz, out_num, &indices[0]);
+
+    std::vector<double> block(num_nz);
+    int err = A->ReplaceGlobalValues(row, num_nz, &block[0], &indices[0]);
     if (err!= 0)
-      error("EpetraMatrix::zero: Did not manage to perform Epetra_CRSMatrix::ExtractMyRowView.");
-    memset(values, 0, (*row_size)*sizeof(double));
+      error("EpetraMatrix::zero: Did not manage to perform Epetra_CrsMatrix::ReplaceGlobalValues.");
   }
-  delete row_size;
-  */
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
@@ -323,6 +333,8 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 void EpetraMatrix::getrow(uint row, std::vector<uint>& columns,
                           std::vector<double>& values) const
 {
+  error("EpetraMatrix::getrow needs to be fixed.");
+
   assert(A);
 
   // Temporary variables
