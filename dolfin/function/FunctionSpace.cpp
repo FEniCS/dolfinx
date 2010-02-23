@@ -186,9 +186,7 @@ FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 
   // Set super space and component
   new_sub_space->_super_space = reference_to_no_delete_pointer(*this);
-  info("size = %d", component.size());
   new_sub_space->_component.resize(component.size());
-  info("size = %d", new_sub_space->_component.size());
   for (uint i = 0; i < component.size(); i++)
     new_sub_space->_component[i] = component[i];
 
