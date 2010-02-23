@@ -12,6 +12,7 @@
 
 #ifdef HAS_TRILINOS
 
+#include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
@@ -38,10 +39,10 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    EpetraVector();
+    EpetraVector(std::string type="global");
 
     /// Create vector of size N
-    explicit EpetraVector(uint N);
+    explicit EpetraVector(uint N, std::string type="global");
 
     /// Copy constructor
     explicit EpetraVector(const EpetraVector& x);
@@ -88,6 +89,8 @@ namespace dolfin
 
     /// Add block of values
     virtual void add(const double* block, uint m, const uint* rows);
+
+    virtual void get_local(double* block, uint m, const uint* rows) const;
 
     /// Get all values on local process
     virtual void get_local(double* values) const;
@@ -157,6 +160,9 @@ namespace dolfin
 
     // Epetra_FEVector pointer
     boost::shared_ptr<Epetra_FEVector> x;
+
+    // Local/global vector
+    const std::string type;
 
   };
 

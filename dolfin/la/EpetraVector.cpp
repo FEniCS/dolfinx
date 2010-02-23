@@ -29,12 +29,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector()
+EpetraVector::EpetraVector(std::string type) : type(type)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraVector::EpetraVector(uint N)
+EpetraVector::EpetraVector(uint N, std::string type) : type(type)
 {
   // Create Epetra vector
   resize(N);
@@ -72,7 +72,7 @@ void EpetraVector::resize(uint N)
   const std::pair<uint, uint> range = MPI::local_range(N);
   const uint n = range.second - range.first;
 
-  if (N == n)
+  if (N == n || type == "local")
   {
     EpetraFactory& f = EpetraFactory::instance();
     Epetra_SerialComm serial_comm = f.get_serial_comm();
@@ -203,7 +203,6 @@ void EpetraVector::get(double* block, uint m, const uint* rows) const
   assert(x);
 
   // Trilinos doesn't appear to provide any special functions for getting values.
-
   for (uint i = 0; i < m; i++)
     block[i] = (*x)[0][rows[i]];
 }
@@ -224,10 +223,39 @@ void EpetraVector::add(const double* block, uint m, const uint* rows)
     error("EpetraVector::add: Did not manage to perform Epetra_Vector::SumIntoGlobalValues.");
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::gather(GenericVector& x,
+void EpetraVector::get_local(double* block, uint m, const uint* rows) const
+{
+  error("EpetraVector::get_local not working.");
+
+  // FIXME: Use ExtractCopy for this function?
+  //int err = x->ExtractCopy(values, 0);
+
+  for (uint i = 0; i < m; ++i)
+    //block[i] = (*x)[0][rows[i]];
+    block[i] = 0.0;
+}
+//-----------------------------------------------------------------------------
+void EpetraVector::gather(GenericVector& y,
                           const std::vector<dolfin::uint>& indices) const
 {
-  not_working_in_parallel("EpetraVector::gather");
+  error("EpetraVector::gatther not working.");
+
+  assert(x);
+
+  // Down cast to a EpetraVector and resize
+  EpetraVector& _y = y.down_cast<EpetraVector>();
+  _y.resize(indices.size());
+
+  // Check that y is a local vector (check communicator)
+
+
+  // Get data from x and insert into y
+  for (uint i = 0; i < indices.size(); ++i)
+  {
+    cout << "Testing in gather " << i << "  " << indices[i] << "  " << (*x)[0][indices[i]] << endl;
+    //(*_y.vec())[0][i] = 0.0;
+    (*_y.vec())[0][i] = (*x)[0][indices[i]];
+  }
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Epetra_FEVector> EpetraVector::vec() const

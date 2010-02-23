@@ -449,10 +449,12 @@ std::string PETScVector::str(bool verbose) const
 void PETScVector::gather(GenericVector& y,
                          const std::vector<uint>& indices) const
 {
+  assert(x);
+
   // Down cast to a PETScVector
   PETScVector& _y = y.down_cast<PETScVector>();
 
-  // Check that x is a local vector
+  // Check that y is a local vector
   const VecType petsc_type;
   VecGetType(*(_y.vec()), &petsc_type);
   if (strcmp(petsc_type, VECSEQ) != 0)
@@ -466,7 +468,7 @@ void PETScVector::gather(GenericVector& y,
   for (int i = 0; i < n; ++i)
     local_indices.push_back(i);
 
-  // PETSc will bail out if it received a NULL pointer even though m == 0.
+  // PETSc will bail out if it receives a NULL pointer even though m == 0.
   // Can't return from function as this will cause a lock up in parallel
   if (n == 0)
     global_indices = &n;

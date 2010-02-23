@@ -38,7 +38,7 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    explicit PETScVector(std::string="global");
+    explicit PETScVector(std::string type="global");
 
     /// Create vector of size N
     PETScVector(uint N, std::string type="global");

@@ -42,12 +42,12 @@ EpetraMatrix* EpetraFactory::create_matrix() const
 //-----------------------------------------------------------------------------
 EpetraVector* EpetraFactory::create_vector() const
 {
-  return new EpetraVector();
+  return new EpetraVector("global");
 }
 //-----------------------------------------------------------------------------
 EpetraVector* EpetraFactory::create_local_vector() const
 {
-  return new EpetraVector();
+  return new EpetraVector("local");
 }
 //-----------------------------------------------------------------------------
 EpetraSparsityPattern* EpetraFactory::create_pattern() const
