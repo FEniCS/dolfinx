@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2010-02-22
+// Last changed: 2010-02-23
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -16,6 +16,7 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
+#include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -98,6 +99,15 @@ namespace dolfin
       return element.hash() == _element->hash();
     }
 
+    /// Return super space (for sub spaces)
+    boost::shared_ptr<const FunctionSpace> super_space() const;
+
+    /// Return component (relative to super space)
+    const Array<uint>& component() const;
+
+    // FIXME: Restrictions are broken
+    /*
+
     /// Attach restriction meshfunction
     void attach(MeshFunction<bool>& restriction);
 
@@ -106,6 +116,7 @@ namespace dolfin
 
     // Evaluate restriction
     bool is_inside_restriction(uint c) const;
+    */
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -124,6 +135,12 @@ namespace dolfin
 
     // The dofmap
     boost::shared_ptr<const DofMap> _dofmap;
+
+    // The super space (for sub spaces)
+    boost::shared_ptr<const FunctionSpace> _super_space;
+
+    // The component (for sub spaces)
+    Array<uint> _component;
 
     // The restriction meshfunction
     boost::shared_ptr<const MeshFunction<bool> > _restriction;
