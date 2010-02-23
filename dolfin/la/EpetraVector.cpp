@@ -10,11 +10,16 @@
 
 #include <cmath>
 #include <cstring>
+
 #include <Epetra_FEVector.h>
+#include <Epetra_Export.h>
+#include <Epetra_Import.h>
 #include <Epetra_Map.h>
 #include <Epetra_MultiVector.h>
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
+#include <Epetra_Vector.h>
+
 #include <dolfin/main/MPI.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
@@ -225,7 +230,8 @@ void EpetraVector::add(const double* block, uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void EpetraVector::get_local(double* block, uint m, const uint* rows) const
 {
-  error("EpetraVector::get_local not working.");
+  not_working_in_parallel("EpetraVector::get_local");
+  //error("EpetraVector::get_local not working.");
 
   // FIXME: Use ExtractCopy for this function?
   //int err = x->ExtractCopy(values, 0);
@@ -238,29 +244,53 @@ void EpetraVector::get_local(double* block, uint m, const uint* rows) const
 void EpetraVector::gather(GenericVector& y,
                           const std::vector<dolfin::uint>& indices) const
 {
-  error("EpetraVector::gatther not working.");
+  warning("EpetraVector::gather is experimental.");
+
+  // FIXME: This can be done better. Problem is that the GenericVector interface
+  //        is PETSc-centric for the parallel case. It should be improved.
 
   assert(x);
 
+  cout << "Enter gather" << endl;
+  EpetraFactory& f = EpetraFactory::instance();
+  //Epetra_MpiComm Comm = f.get_mpi_comm();
+  Epetra_SerialComm serial_comm = f.get_serial_comm();
+
   // Down cast to a EpetraVector and resize
   EpetraVector& _y = y.down_cast<EpetraVector>();
-  _y.resize(indices.size());
 
   // Check that y is a local vector (check communicator)
 
-
-  // Get data from x and insert into y
+  // Create map
+  std::vector<int> _indices(indices.size());
   for (uint i = 0; i < indices.size(); ++i)
   {
-    cout << "Testing in gather " << i << "  " << indices[i] << "  " << (*x)[0][indices[i]] << endl;
-    //(*_y.vec())[0][i] = 0.0;
-    (*_y.vec())[0][i] = (*x)[0][indices[i]];
+    cout << "Indices " << i << "  " << indices[i] << endl; 
+    _indices[i] = indices[i];
   }
+
+  //Epetra_Map source_map(-1, indices.size(), &_indices[0], 0, Comm);
+  //Epetra_Map target_map(-1, indices.size(), &_indices[0], 0, Comm);
+  Epetra_Map target_map(indices.size(), indices.size(), &_indices[0], 0, serial_comm);
+
+  Epetra_FEVector* yy = new Epetra_FEVector(target_map);
+  Epetra_Import importer(yy->Map(), x->Map());
+  yy->Import(*x, importer, Insert);
+
+  x->Print(std::cout);
+
+  cout << "New vector" << endl;
+  yy->Print(std::cout);
+  cout << "End New vector" << endl;
+
+  // FIXME: Check that the data belonging to y is not shared
+
+  // Take ownership of yy
+  _y.vec().reset(yy);
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Epetra_FEVector> EpetraVector::vec() const
 {
-  assert(x);
   return x;
 }
 //-----------------------------------------------------------------------------

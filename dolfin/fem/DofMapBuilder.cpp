@@ -53,9 +53,11 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
   info("Determining dof ownership for parallel dof map");
 
   // Initialize random number generator differently on each process
-  srand((uint)time(0) + MPI::process_number());
+  //cout << "Testing (1) " << (uint)time(0) + MPI::process_number() << endl; 
+  //cout << "Testing (2) " << (uint) rand() << endl; 
+  //srand((uint)time(0) + MPI::process_number());
   // FIXME: Temporary while debugging (to get same results in each run)
-  //srand(MPI::process_number() + 1);
+  srand(253*MPI::process_number() + 378);
 
   // Extract the interior boundary
   BoundaryMesh interior_boundary;
