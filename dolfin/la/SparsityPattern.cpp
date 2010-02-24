@@ -22,7 +22,7 @@ typedef std::vector<dolfin::Set<dolfin::uint> >::iterator set_iterator;
 typedef std::vector<dolfin::Set<dolfin::uint> >::const_iterator set_const_iterator;
 
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern(Type type) 
+SparsityPattern::SparsityPattern(Type type)
   : type(type), _sorted(false),
     row_range_min(0), row_range_max(0), col_range_min(0), col_range_max(0)
 {
@@ -37,7 +37,7 @@ SparsityPattern::~SparsityPattern()
 void SparsityPattern::init(uint rank, const uint* dims)
 {
   // Only rank 1 and 2 sparsity patterns are supported
-  assert(rank < 3); 
+  assert(rank < 3);
 
   // Store dimensions
   shape.resize(rank);
@@ -94,7 +94,6 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
       const uint I = map_i[i];
       for (uint j = 0; j < n; ++j)
         diagonal[I].insert(map_j[j]);
-        //insert_column(map_j[j], diagonal[I]);
     }
   }
   else
@@ -116,13 +115,11 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
           {
             assert(I < diagonal.size());
             diagonal[I].insert(J);
-            //insert_column(J, diagonal[I]);
           }
           else
           {
             assert(I < off_diagonal.size());
             off_diagonal[I].insert(J);
-            //insert_column(J, off_diagonal[I]);
           }
         }
       }
@@ -281,17 +278,25 @@ std::string SparsityPattern::str() const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-const std::vector<dolfin::Set<dolfin::uint> >& SparsityPattern::pattern() const
+const std::vector<dolfin::Set<dolfin::uint> >& SparsityPattern::diagonal_pattern() const
 {
   if (type == sorted && _sorted == false)
     error("SparsityPattern has not been sorted. You need to call SparsityPattern::apply().");
-
   return diagonal;
+}
+//-----------------------------------------------------------------------------
+const std::vector<dolfin::Set<dolfin::uint> >& SparsityPattern::off_diagonal_pattern() const
+{
+  if (type == sorted && _sorted == false)
+    error("SparsityPattern has not been sorted. You need to call SparsityPattern::apply().");
+  return off_diagonal;
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::sort()
 {
   for (set_iterator it = diagonal.begin(); it != diagonal.end(); ++it)
+    it->sort();
+  for (set_iterator it = off_diagonal.begin(); it != off_diagonal.end(); ++it)
     it->sort();
 }
 //-----------------------------------------------------------------------------
@@ -311,7 +316,7 @@ void SparsityPattern::info_statistics() const
   const uint num_nonzeros_non_local = non_local.size() / 2;
 
   // Count total number of nonzeros
-  const uint num_nonzeros_total = 
+  const uint num_nonzeros_total =
     num_nonzeros_diagonal + num_nonzeros_off_diagonal + num_nonzeros_non_local;
 
   // Return number of entries

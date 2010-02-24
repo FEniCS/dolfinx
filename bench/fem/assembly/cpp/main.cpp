@@ -39,11 +39,11 @@ int main()
 
   // Backends
   std::vector<std::string> backends;
-  backends.push_back("uBLAS");
+  //backends.push_back("uBLAS");
   backends.push_back("PETSc");
   backends.push_back("Epetra");
-  backends.push_back("MTL4");
-  backends.push_back("STL");
+  //backends.push_back("MTL4");
+  //backends.push_back("STL");
 
   // Forms
   std::vector<std::string> forms;
@@ -106,15 +106,16 @@ int main()
 
   // Display results
   logging(true);
-  std::cout << std::endl; info(t0);
-  //std::cout << std::endl; info(t1);
-  std::cout << std::endl; info(t2);
-  std::cout << std::endl; info(t3);
-  std::cout << std::endl; info(t4);
-  std::cout << std::endl; info(t5);
-  std::cout << std::endl; info(t6);
-  std::cout << std::endl; info(t7);
+  std::cout << std::endl; info(t0, true);
+  //std::cout << std::endl; info(t1, true);
+  std::cout << std::endl; info(t2, true);
+  std::cout << std::endl; info(t3, true);
+  std::cout << std::endl; info(t4, true);
+  std::cout << std::endl; info(t5, true);
+  std::cout << std::endl; info(t6, true);
+  std::cout << std::endl; info(t7, true);
 
+/*
   // Display LaTeX tables
   const bool print_latex = true;
   if (print_latex)
@@ -128,6 +129,6 @@ int main()
     std::cout << std::endl << t6.str_latex();
     std::cout << std::endl << t7.str_latex();
   }
-
+*/
   return 0;
 }

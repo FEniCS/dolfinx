@@ -23,6 +23,7 @@ class Epetra_CrsGraph;
 namespace dolfin
 {
 
+  class EpetraSparsityPattern;
   class GenericSparsityPattern;
 
   /// This class provides a simple matrix class based on Epetra.
@@ -128,6 +129,9 @@ namespace dolfin
     virtual LinearAlgebraFactory& factory() const;
 
     //--- Special Epetra functions ---
+
+    /// Initialize zero tensor using sparsity pattern
+    virtual void init(const EpetraSparsityPattern& sparsity_pattern);
 
     /// Return Epetra_FECrsMatrix pointer
     boost::shared_ptr<Epetra_FECrsMatrix> mat() const;

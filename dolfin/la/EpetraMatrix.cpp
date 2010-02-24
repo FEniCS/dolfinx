@@ -11,22 +11,26 @@
 
 #include <cstring>
 #include <iostream>
-#include <sstream>
 #include <iomanip>
+#include <sstream>
+#include <utility>
 
 #include <Epetra_CrsGraph.h>
-#include <Epetra_FECrsGraph.h>
 #include <Epetra_CrsMatrix.h>
+#include <Epetra_FECrsGraph.h>
 #include <Epetra_FECrsMatrix.h>
 #include <Epetra_FEVector.h>
+#include <Epetra_MpiComm.h>
+#include <Epetra_SerialComm.h>
 #include <EpetraExt_MatrixMatrix.h>
 
 #include <ml_epetra_utils.h>
 
-#include <dolfin/common/Timer.h>
+#include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
 #include "EpetraVector.h"
 #include "GenericSparsityPattern.h"
+#include "SparsityPattern.h"
 #include "EpetraSparsityPattern.h"
 #include "EpetraFactory.h"
 #include "EpetraMatrix.h"
@@ -78,8 +82,69 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   if (A && !A.unique())
     error("Cannot initialise EpetraMatrix. More than one object points to the underlying Epetra object.");
 
-  const EpetraSparsityPattern& epetra_pattern = dynamic_cast<const EpetraSparsityPattern&>(sparsity_pattern);
-  A.reset(new Epetra_FECrsMatrix(Copy, epetra_pattern.pattern()));
+  // Get local range
+  const std::pair<uint, uint> range = sparsity_pattern.local_range(0);
+  const uint num_local_rows = range.second - range.first;
+  const uint n0 = range.first;
+
+  const SparsityPattern& _pattern = dynamic_cast<const SparsityPattern&>(sparsity_pattern);
+  const std::vector<dolfin::Set<dolfin::uint> >& d_pattern = _pattern.diagonal_pattern();
+  const std::vector<dolfin::Set<dolfin::uint> >& o_pattern = _pattern.off_diagonal_pattern();
+
+  // Get number of non-zeroes per row (on and off diagonal)
+  std::vector<uint> dnum_nonzeros(num_local_rows);
+  std::vector<uint> onum_nonzeros(num_local_rows);
+  sparsity_pattern.num_nonzeros_diagonal(&dnum_nonzeros[0]);
+  sparsity_pattern.num_nonzeros_off_diagonal(&onum_nonzeros[0]);
+
+  // Create row map
+  EpetraFactory& f = EpetraFactory::instance();
+  Epetra_MpiComm comm = f.get_mpi_comm();
+  Epetra_Map row_map(sparsity_pattern.size(0), num_local_rows, 0, comm);
+
+  // Create Epetra_FECrsGraph
+  Epetra_FECrsGraph matrix_map(Copy, row_map, reinterpret_cast<int*>(&dnum_nonzeros[0]));
+
+  // Add diagonal block indices
+  std::vector<dolfin::Set<dolfin::uint> >::const_iterator row_set;
+  for (row_set = d_pattern.begin(); row_set != d_pattern.end(); ++row_set)
+  {
+    const uint global_row = row_set - d_pattern.begin() + n0;
+    const std::vector<dolfin::uint>& nz_entries = row_set->set();
+    std::vector<dolfin::uint>& _nz_entries = const_cast<std::vector<dolfin::uint>& >(nz_entries);
+    matrix_map.InsertGlobalIndices(global_row, row_set->size(), reinterpret_cast<int*>(&_nz_entries[0]));
+  }
+
+  // Add off-diagonal block indices
+  for (row_set = o_pattern.begin(); row_set != o_pattern.end(); ++row_set)
+  {
+    const uint global_row = row_set - o_pattern.begin() + n0;
+    const std::vector<dolfin::uint>& nz_entries = row_set->set();
+    std::vector<dolfin::uint>& _nz_entries = const_cast<std::vector<dolfin::uint>& >(nz_entries);
+    matrix_map.InsertGlobalIndices(global_row, row_set->size(), reinterpret_cast<int*>(&_nz_entries[0]));
+  }
+  matrix_map.GlobalAssemble();
+
+  // Create matrix
+  A.reset( new Epetra_FECrsMatrix(Copy, matrix_map) );
+
+  /*
+  // Create matrix
+  A.reset( new Epetra_FECrsMatrix(Copy, row_map, reinterpret_cast<int*>(&num_nonzeros[0])) );
+
+  // Insert entries to make matrix usable
+  const uint max_nz = *std::max_element(num_nonzeros.begin(), num_nonzeros.end());
+  std::vector<double> zeroes(max_nz);
+  std::fill(zeroes.begin(), zeroes.end(), 0.0);
+  for (uint i = 0; i < num_local_rows; ++i)
+  {
+    const std::vector<dolfin::uint>& row_pattern = (*d_pattern)[i].set();
+    std::vector<dolfin::uint>& _row_pattern = const_cast<std::vector<dolfin::uint>& >(row_pattern);
+    A->InsertGlobalValues(i, row_pattern.size(), &zeroes[0], reinterpret_cast<int*>(&_row_pattern[0]));
+  }
+  apply();
+  */
+
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix* EpetraMatrix::copy() const
@@ -159,7 +224,6 @@ void EpetraMatrix::add(const double* block,
                        uint n, const uint* cols)
 {
   assert(A);
-  Timer t0("Matrix add");
   int err = A->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
                                    n, reinterpret_cast<const int*>(cols), block,
                                    Epetra_FECrsMatrix::ROW_MAJOR);
@@ -209,9 +273,6 @@ void EpetraMatrix::apply()
   int err = A->GlobalAssemble();
   if (err!= 0)
     error("EpetraMatrix::apply: Did not manage to perform Epetra_CrsMatrix::GlobalAssemble.");
-
-  // TODO
-  //A->OptimizeStorage();
 }
 //-----------------------------------------------------------------------------
 std::string EpetraMatrix::str(bool verbose) const
@@ -370,6 +431,13 @@ void EpetraMatrix::setrow(uint row, const std::vector<uint>& columns,
 LinearAlgebraFactory& EpetraMatrix::factory() const
 {
   return EpetraFactory::instance();
+}
+//-----------------------------------------------------------------------------
+void EpetraMatrix::init(const EpetraSparsityPattern& sparsity_pattern)
+{
+  if (A && !A.unique())
+    error("Cannot initialise EpetraMatrix. More than one object points to the underlying Epetra object.");
+  A.reset(new Epetra_FECrsMatrix(Copy, sparsity_pattern.pattern()));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Epetra_FECrsMatrix> EpetraMatrix::mat() const
