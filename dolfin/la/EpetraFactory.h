@@ -13,6 +13,7 @@
 #include "EpetraVector.h"
 #include "EpetraSparsityPattern.h"
 #include "LinearAlgebraFactory.h"
+#include "SparsityPattern.h"
 
 // Forwad declarations
 class Epetra_MpiComm;
@@ -38,7 +39,8 @@ namespace dolfin
     EpetraVector* create_local_vector() const;
 
     /// Create empty sparsity pattern
-    EpetraSparsityPattern* create_pattern() const;
+    //EpetraSparsityPattern* create_pattern() const;
+    SparsityPattern* create_pattern() const;
 
     // Return Epetra Communicator
     Epetra_SerialComm& get_serial_comm() const;

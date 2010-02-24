@@ -11,8 +11,11 @@
 
 #include "dolfin/main/MPI.h"
 #include "EpetraSparsityPattern.h"
+#include "SparsityPattern.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
+#include "EpetraVector.h"
+
 #include "EpetraFactory.h"
 
 using namespace dolfin;
@@ -50,9 +53,9 @@ EpetraVector* EpetraFactory::create_local_vector() const
   return new EpetraVector("local");
 }
 //-----------------------------------------------------------------------------
-EpetraSparsityPattern* EpetraFactory::create_pattern() const
+SparsityPattern* EpetraFactory::create_pattern() const
 {
-  return new EpetraSparsityPattern();
+  return new SparsityPattern(SparsityPattern::sorted);
 }
 //-----------------------------------------------------------------------------
 Epetra_SerialComm& EpetraFactory::get_serial_comm() const

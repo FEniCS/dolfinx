@@ -50,11 +50,11 @@ namespace dolfin
     /// Return total number of nonzeros in local_range for dimension 0
     uint num_nonzeros() const;
 
-    /// Fill array with number of nonzeros for diagonal block in local_range for dimension 0 
+    /// Fill array with number of nonzeros for diagonal block in local_range for dimension 0
     /// For matrices, fill array with number of nonzeros per local row for diagonal block
     void num_nonzeros_diagonal(uint* num_nonzeros) const;
 
-    /// Fill array with number of nonzeros for off-diagonal block in local_range for dimension 0 
+    /// Fill array with number of nonzeros for off-diagonal block in local_range for dimension 0
     /// For matrices, fill array with number of nonzeros per local row for off-diagonal block
     void num_nonzeros_off_diagonal(uint* num_nonzeros) const;
 
@@ -63,23 +63,26 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     std::string str() const;
-    
-    /// Return underlying sparsity pattern
-    const std::vector<Set<uint> >& pattern() const;
+
+    /// Return underlying sparsity pattern (diagonal)
+    const std::vector<Set<uint> >& diagonal_pattern() const;
+
+    /// Return underlying sparsity pattern (off-diagional)
+    const std::vector<Set<uint> >& off_diagonal_pattern() const;
 
   private:
 
-    // Sort entries for each row 
+    // Sort entries for each row
     void sort();
 
     // Print some useful information
     void info_statistics() const;
 
     // Sparsity pattern type (sorted/unsorted)
-    const Type type;    
+    const Type type;
 
     // Whether or not pattern has been sorted
-    bool _sorted;    
+    bool _sorted;
 
     // Shape of tensor
     std::vector<uint> shape;
@@ -91,8 +94,6 @@ namespace dolfin
     uint col_range_max;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
-    //std::vector<std::vector<uint> > diagonal;
-    //std::vector<std::vector<uint> > off_diagonal;
     std::vector<Set<uint> > diagonal;
     std::vector<Set<uint> > off_diagonal;
 
