@@ -57,7 +57,7 @@ int main()
 
   // Tables for results
   Table t0("Assemble total");
-  Table t1("Init dof map");
+  //Table t1("Init dof map");
   Table t2("Build sparsity");
   Table t3("Init tensor");
   Table t4("Delete sparsity");
@@ -75,18 +75,19 @@ int main()
     {
       std::cout << "BENCH  Form: " << forms[j] << std::endl;
       const double tt0 = bench_form(forms[j], assemble_form);
-      const double tt1 = timing(backends[i] + t1.title(), true);
+      //const double tt1 = timing(backends[i] + t1.title(), true);
       const double tt2 = timing(backends[i] + t2.title(), true);
       const double tt3 = timing(backends[i] + t3.title(), true);
       const double tt4 = timing(backends[i] + t4.title(), true);
       const double tt5 = timing(backends[i] + t5.title(), true);
       t0(backends[i], forms[j]) = tt0;
-      t1(backends[i], forms[j]) = tt1;
+      //t1(backends[i], forms[j]) = tt1;
       t2(backends[i], forms[j]) = tt2;
       t3(backends[i], forms[j]) = tt3;
       t4(backends[i], forms[j]) = tt4;
       t5(backends[i], forms[j]) = tt5;
-      t6(backends[i], forms[j]) = tt0 - tt1 - tt2 - tt3 - tt4 - tt5;
+      //t6(backends[i], forms[j]) = tt0 - tt1 - tt2 - tt3 - tt4 - tt5;
+      t6(backends[i], forms[j]) = tt0 - tt2 - tt3 - tt4 - tt5;
     }
   }
 
@@ -106,7 +107,7 @@ int main()
   // Display results
   logging(true);
   std::cout << std::endl; info(t0);
-  std::cout << std::endl; info(t1);
+  //std::cout << std::endl; info(t1);
   std::cout << std::endl; info(t2);
   std::cout << std::endl; info(t3);
   std::cout << std::endl; info(t4);
@@ -119,7 +120,7 @@ int main()
   if (print_latex)
   {
     std::cout << std::endl << t0.str_latex();
-    std::cout << std::endl << t1.str_latex();
+    //std::cout << std::endl << t1.str_latex();
     std::cout << std::endl << t2.str_latex();
     std::cout << std::endl << t3.str_latex();
     std::cout << std::endl << t4.str_latex();
@@ -127,6 +128,6 @@ int main()
     std::cout << std::endl << t6.str_latex();
     std::cout << std::endl << t7.str_latex();
   }
-  
+
   return 0;
 }

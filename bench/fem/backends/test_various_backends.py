@@ -8,34 +8,40 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 from time import time
 
-N = 1000 
-mesh = UnitSquare(N,N) 
-element = FiniteElement("CG", "triangle", 1)
-v = TestFunction(element)
-u = TrialFunction(element)
+N = 1000
+mesh = UnitSquare(N,N)
+V = FunctionSpace(mesh, "CG", 1)
+v = TestFunction(V)
+u = TrialFunction(V)
 
-a = dot(v, u)*dx 
+a = dot(v, u)*dx
 t0 = time()
 backend = PETScFactory.instance()
-A = assemble(a, mesh, backend=backend)
+A = assemble(a, backend=backend)
 t1 = time()
-print "time ", t1-t0
+print "time (PETSc)", t1-t0
 
 
-a = dot(v, u)*dx 
+a = dot(v, u)*dx
 t0 = time()
 backend = EpetraFactory.instance()
-A = assemble(a, mesh, backend=backend)
+A = assemble(a, backend=backend)
 t1 = time()
-print "time ", t1-t0
+print "time (Epetra) ", t1-t0
 
-a = dot(v, u)*dx 
+a = dot(v, u)*dx
 t0 = time()
-backend = uBLASFactory.instance()
-A = assemble(a, mesh, backend=backend)
+backend = uBLASSparseFactory.instance()
+A = assemble(a, backend=backend)
 t1 = time()
-print "time ", t1-t0
+print "time (uBLAS) ", t1-t0
 
+a = dot(v, u)*dx
+t0 = time()
+backend = MTL4Factory.instance()
+A = assemble(a, backend=backend)
+t1 = time()
+print "time (MTL4) ", t1-t0
 
 
 

@@ -48,14 +48,14 @@ void EpetraSparsityPattern::init(uint rank_, const uint* dims_)
     dims[0] = dims_[0];
     dims[1] = dims_[1];
 
-    EpetraFactory& f = EpetraFactory::instance();
-    Epetra_MpiComm comm = f.get_mpi_comm();
 
     const std::pair<uint, uint> range = MPI::local_range(dims[0]);
     const uint num_local_rows = range.second - range.first;
 
+    EpetraFactory& f = EpetraFactory::instance();
+    Epetra_MpiComm comm = f.get_mpi_comm();
     Epetra_Map row_map(dims[0], num_local_rows, 0, comm);
-    epetra_graph = new Epetra_FECrsGraph(Copy, row_map, 10);
+    epetra_graph = new Epetra_FECrsGraph(Copy, row_map, 20);
   }
   else
     error("Illegal rank for Epetra sparsity pattern.");
@@ -124,14 +124,22 @@ void EpetraSparsityPattern::apply()
   // the graph would then depend on the equations, not only the method.
 
   EpetraFactory& f = EpetraFactory::instance();
+  Epetra_SerialComm Comm = f.get_serial_comm();
+  Epetra_Map row_map(dims[0], 0, Comm);
+  Epetra_Map col_map(dims[1], 0, Comm);
+  epetra_graph->FillComplete(col_map, row_map);
+
+/*
+  EpetraFactory& f = EpetraFactory::instance();
   Epetra_MpiComm comm = f.get_mpi_comm();
 
-  //Epetra_Map row_map(dims[0], 0, comm);
-  //Epetra_Map col_map(dims[1], 0, comm);
-  //epetra_graph->FillComplete(col_map, row_map);
+  Epetra_Map row_map(dims[0], 0, comm);
+  Epetra_Map col_map(dims[1], 0, comm);
+  epetra_graph->FillComplete(col_map, row_map);
   //epetra_graph->FillComplete();
 
-  epetra_graph->GlobalAssemble();
+  //epetra_graph->GlobalAssemble();
+*/
 }
 //-----------------------------------------------------------------------------
 Epetra_FECrsGraph& EpetraSparsityPattern::pattern() const
