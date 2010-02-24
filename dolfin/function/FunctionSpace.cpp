@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2010-02-23
+// Last changed: 2010-02-24
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
@@ -149,7 +149,6 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace> FunctionSpace::operator[] (uint i) const
 {
-  dolfin_debug("check");
   std::vector<uint> component;
   component.push_back(i);
   return extract_sub_space(component);
@@ -158,8 +157,6 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::operator[] (uint i) const
 boost::shared_ptr<FunctionSpace>
 FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 {
-  dolfin_debug("check");
-
   assert(_mesh);
   assert(_element);
   assert(_dofmap);
