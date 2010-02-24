@@ -181,3 +181,27 @@ summary:     merge
 
 Total time: Command terminated by signal 6 0:01.17
 
+Date: Wed Feb 24 10:49:05 GMT 2010
+-------------------------------------------------------------------------------
+
+Linux gnw20pc 2.6.31-19-generic #56-Ubuntu SMP Thu Jan 28 02:39:34 UTC 2010 x86_64 GNU/Linux
+
+
+Total time: Command exited with non-zero status 127 0:00.00
+
+Date: Wed Feb 24 10:49:16 GMT 2010
+-------------------------------------------------------------------------------
+
+Linux gnw20pc 2.6.31-19-generic #56-Ubuntu SMP Thu Jan 28 02:39:34 UTC 2010 x86_64 GNU/Linux
+
+
+Total time: Command exited with non-zero status 127 0:00.00
+
+Date: Wed Feb 24 10:54:22 GMT 2010
+-------------------------------------------------------------------------------
+
+Linux gnw20pc 2.6.31-19-generic #56-Ubuntu SMP Thu Jan 28 02:39:34 UTC 2010 x86_64 GNU/Linux
+
+
+Total time: Command terminated by signal 6 0:00.40
+

@@ -68,7 +68,7 @@ double bench_form(std::string form_name, double (*bench_form)(Form&))
   {
     UnitCube mesh(N_3D, N_3D, N_3D);
     NSEMomentum3D::FunctionSpace V(mesh);
-    Constant  w(1.0);
+    Constant  w(1.0, 1.0, 1.0);
     Constant d1(1.0);
     Constant d2(1.0);
     Constant k(1.0);
