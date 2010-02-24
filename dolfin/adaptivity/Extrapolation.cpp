@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2010-02-10
+// Last changed: 2010-02-19
 
 #include <vector>
 #include <boost/scoped_array.hpp>
@@ -28,7 +28,7 @@ using namespace dolfin;
 void Extrapolation::extrapolate(Function& w, const Function& v,
                                 bool facet_extrapolation)
 {
-  dolfin_debug("check");
+
 
   // Using set_local for simplicity here
   not_working_in_parallel("Extrapolation");
@@ -38,12 +38,8 @@ void Extrapolation::extrapolate(Function& w, const Function& v,
   if (&w.function_space().mesh() != &v.function_space().mesh())
     error("Extrapolation must be computed on the same mesh.");
 
-  dolfin_debug("check");
-
   // Extrapolate over interior (including boundary dofs)
   extrapolate_interior(w, v);
-
-  dolfin_debug("check");
 
   // Extrapolate over boundary (overwriting earlier boundary dofs)
   if (facet_extrapolation)
@@ -51,22 +47,23 @@ void Extrapolation::extrapolate(Function& w, const Function& v,
 }
 //-----------------------------------------------------------------------------
 void Extrapolation::extrapolate(Function& w, const Function& v,
-                                const SubDomain& sub_domain)
+                                const std::vector<const DirichletBC*>& bcs)
 {
-  dolfin_debug("check");
 
   // Extrapolate over interior
   extrapolate_interior(w, v);
 
-  // Create and apply Dirichlet boundary condition
-  cout << "Applying dirichlet boundary condition to extrapolation" << endl;
-  DirichletBC bc(w.function_space(), v, sub_domain);
-  bc.apply(w.vector());
+  // Apply Dirichlet boundary condition (assumed to be defined on w
+  // function space)
+  for (uint i = 0; i < bcs.size(); i++) {
+    info("Applying boundary conditions");
+    bcs[i]->apply(w.vector());
+  }
+
 }
 //-----------------------------------------------------------------------------
 void Extrapolation::extrapolate_interior(Function& w, const Function& v)
 {
-  dolfin_debug("check");
 
   // Extract mesh and function spaces
   const FunctionSpace& V(v.function_space());
@@ -141,7 +138,7 @@ void Extrapolation::extrapolate_interior(Function& w, const Function& v)
 //-----------------------------------------------------------------------------
 void Extrapolation::extrapolate_boundary(Function& w, const Function& v)
 {
-  dolfin_debug("check");
+
 
   // Extract mesh and function spaces
   const FunctionSpace& V(v.function_space());

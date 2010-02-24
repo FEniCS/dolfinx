@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2010-02-10
+// Last changed: 2010-02-19
 
 #ifndef __EXTRAPOLATION_H
 #define __EXTRAPOLATION_H
@@ -15,7 +15,7 @@ namespace dolfin
   class Function;
   class Cell;
   class FacetCell;
-  class SubDomain;
+  class DirichletBC;
   class LAPACKMatrix;
   class LAPACKVector;
 
@@ -41,7 +41,7 @@ namespace dolfin
 
     /// Compute extrapolation w from v and set v = w in given sub domain
     static void extrapolate(Function& w, const Function& v,
-                            const SubDomain& sub_domain);
+                            const std::vector<const DirichletBC*>& bcs);
 
   private:
 
