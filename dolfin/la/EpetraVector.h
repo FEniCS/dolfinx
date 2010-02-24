@@ -150,6 +150,9 @@ namespace dolfin
 
     //--- Special Epetra functions ---
 
+    /// Reset Epetra_FEVector
+    void reset(const Epetra_Map& map);
+
     /// Return Epetra_FEVector pointer
     boost::shared_ptr<Epetra_FEVector> vec() const;
 

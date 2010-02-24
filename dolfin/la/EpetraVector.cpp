@@ -96,8 +96,7 @@ void EpetraVector::resize(uint N)
 EpetraVector* EpetraVector::copy() const
 {
   assert(x);
-  EpetraVector* v = new EpetraVector(*this);
-  return v;
+  return new EpetraVector(*this);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraVector::size() const
@@ -107,16 +106,18 @@ dolfin::uint EpetraVector::size() const
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> EpetraVector::local_range() const
 {
-  // FIXME: Epetra does not provide a function for this since it does not
-  //        require contiguous ranges. Can this function be removed
-  //        from the generic interface and just use 'local_size'?
+  assert(x);
 
-  const std::pair<uint, uint> range = MPI::local_range(size());
-  const int n = range.second - range.first;
-  if (x->MyLength() != n)
-    error("Discrepency in local vector length for EpetraVector.");
+  // FIXME: Deal with local/global numbering more elegantly
 
-  return std::make_pair<uint, uint>(range.first, range.second);
+  if ( x->Comm().NumProc() == 1 )
+    return std::make_pair<uint, uint>(0, size());
+  else
+  {
+    assert(x->Map().LinearMap());
+    const Epetra_BlockMap& map = x->Map();
+    return std::make_pair<uint, uint>(map.MinMyGID(), map.MaxMyGID() + 1);
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::zero()
@@ -171,16 +172,11 @@ void EpetraVector::set_local(const double* values)
   const uint n1 = range.second;
   const uint N = n1 - n0;
 
-  // FIXME: The user should call apply()
-  int err = x->GlobalAssemble();
-
-  if (err != 0)
-    error("EpetraVector::set: Did not manage to perform Epetra_Vector::GlobalAssemble.");
-
+  // FIXME: Use Epetra map
   std::vector<int> rows(N);
   for (uint i = 0; i < N; i++)
     rows[i] = i + n0;
-  err = x->ReplaceGlobalValues(N, &rows[0], values);
+  int err = x->ReplaceGlobalValues(N, &rows[0], values);
 
   if (err!= 0)
     error("EpetraVector::set: Did not manage to perform Epetra_Vector::ReplaceGlobalValues.");
@@ -195,6 +191,7 @@ void EpetraVector::add_local(const double* values)
   const uint n1 = range.second;
   const uint N = n1 - n0;
 
+  // FIXME: Use Epetra map
   std::vector<int> rows(N);
   for (uint i = 0; i < N; i++)
     rows[i] = i + n0;
@@ -205,6 +202,8 @@ void EpetraVector::add_local(const double* values)
 //-----------------------------------------------------------------------------
 void EpetraVector::get(double* block, uint m, const uint* rows) const
 {
+  // FIXME: This function works only for on-process data
+
   assert(x);
 
   // Trilinos doesn't appear to provide any special functions for getting values.
@@ -230,15 +229,14 @@ void EpetraVector::add(const double* block, uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void EpetraVector::get_local(double* block, uint m, const uint* rows) const
 {
-  not_working_in_parallel("EpetraVector::get_local");
-  //error("EpetraVector::get_local not working.");
+  warning("EpetraVector::get_local is experimental.");
+  assert(x);
 
-  // FIXME: Use ExtractCopy for this function?
-  //int err = x->ExtractCopy(values, 0);
+  // FIXME: Deal with local/global numbering more elegantly
 
+  const uint n0 = local_range().first;
   for (uint i = 0; i < m; ++i)
-    //block[i] = (*x)[0][rows[i]];
-    block[i] = 0.0;
+    block[i] = (*x)[0][rows[i] - n0];
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::gather(GenericVector& y,
@@ -258,6 +256,8 @@ void EpetraVector::gather(GenericVector& y,
 
   // Down cast to a EpetraVector and resize
   EpetraVector& _y = y.down_cast<EpetraVector>();
+  //_y.resize(indices.size());
+  //return;
 
   // Check that y is a local vector (check communicator)
 
@@ -265,7 +265,7 @@ void EpetraVector::gather(GenericVector& y,
   std::vector<int> _indices(indices.size());
   for (uint i = 0; i < indices.size(); ++i)
   {
-    cout << "Indices " << i << "  " << indices[i] << endl; 
+    cout << "Indices " << i << "  " << indices[i] << endl;
     _indices[i] = indices[i];
   }
 
@@ -273,20 +273,26 @@ void EpetraVector::gather(GenericVector& y,
   //Epetra_Map target_map(-1, indices.size(), &_indices[0], 0, Comm);
   Epetra_Map target_map(indices.size(), indices.size(), &_indices[0], 0, serial_comm);
 
-  Epetra_FEVector* yy = new Epetra_FEVector(target_map);
-  Epetra_Import importer(yy->Map(), x->Map());
-  yy->Import(*x, importer, Insert);
+  _y.reset(target_map);
+  //boost::shared_ptr<Epetra_FEVector> yy(new Epetra_FEVector(target_map));
+  Epetra_Import importer(_y.vec()->Map(), x->Map());
+  _y.vec()->Import(*x, importer, Insert);
 
   x->Print(std::cout);
 
   cout << "New vector" << endl;
-  yy->Print(std::cout);
+  _y.vec()->Print(std::cout);
   cout << "End New vector" << endl;
 
   // FIXME: Check that the data belonging to y is not shared
 
   // Take ownership of yy
-  _y.vec().reset(yy);
+  //_y.reset(yy);
+}
+//-----------------------------------------------------------------------------
+void EpetraVector::reset(const Epetra_Map& map)
+{
+  x.reset(new Epetra_FEVector(map));
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Epetra_FEVector> EpetraVector::vec() const
