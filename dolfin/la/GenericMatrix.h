@@ -8,7 +8,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2010-02-23
+// Last changed: 2010-02-24
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -168,7 +168,7 @@ namespace dolfin
     { set(&value, 1, &ij.first, 1, &ij.second); }
 
     /// Insert one on the diagonal for all zero rows
-    //virtual void ident_zeros();
+    virtual void ident_zeros();
 
     typedef XMLMatrix XMLHandler;
 
