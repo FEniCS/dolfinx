@@ -27,7 +27,7 @@ namespace dolfin
 
   /// This class is a wrapper for configuring Epetra preconditioners. It does
   /// not own a preconditioner. It can take a EpetraKrylovSolver and set the
-  /// preconditioner type and parameters. 
+  /// preconditioner type and parameters.
 
   class TrilinosPreconditioner : public Variable
   {
@@ -37,10 +37,10 @@ namespace dolfin
     explicit TrilinosPreconditioner(std::string type = "default");
 
     /// Destructor
-    ~TrilinosPreconditioner();
+    virtual ~TrilinosPreconditioner();
 
     /// Set the precondtioner
-    void set(EpetraKrylovSolver& solver) const;
+    virtual void set(EpetraKrylovSolver& solver) const;
 
     /// Return preconditioner name
     std::string name() const;

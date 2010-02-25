@@ -27,7 +27,7 @@ namespace dolfin
 
   /// This class is a wrapper for configuring PETSc preconditioners. It does
   /// not own a preconditioner. It can take a PETScKrylovSolver and set the
-  /// preconditioner type and parameters. 
+  /// preconditioner type and parameters.
 
   class PETScPreconditioner : public PETScObject, public Variable
   {
@@ -37,10 +37,10 @@ namespace dolfin
     explicit PETScPreconditioner(std::string type = "default");
 
     /// Destructor
-    ~PETScPreconditioner();
+    virtual ~PETScPreconditioner();
 
     /// Set the precondtioner type and parameters
-    void set(PETScKrylovSolver& solver) const;
+    virtual void set(PETScKrylovSolver& solver) const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;

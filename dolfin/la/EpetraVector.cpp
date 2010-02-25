@@ -147,7 +147,6 @@ std::string EpetraVector::str(bool verbose) const
   if (verbose)
   {
     warning("Verbose output for EpetraVector not implemented, calling Epetra Print directly.");
-
     x->Print(std::cout);
   }
   else
@@ -172,7 +171,8 @@ void EpetraVector::set_local(const double* values)
   const uint n1 = range.second;
   const uint N = n1 - n0;
 
-  // FIXME: Use Epetra map
+  // FIXME: Set data directly
+
   std::vector<int> rows(N);
   for (uint i = 0; i < N; i++)
     rows[i] = i + n0;
@@ -191,7 +191,8 @@ void EpetraVector::add_local(const double* values)
   const uint n1 = range.second;
   const uint N = n1 - n0;
 
-  // FIXME: Use Epetra map
+  // FIXME: Set data directly
+
   std::vector<int> rows(N);
   for (uint i = 0; i < N; i++)
     rows[i] = i + n0;
@@ -206,7 +207,7 @@ void EpetraVector::get(double* block, uint m, const uint* rows) const
 
   assert(x);
 
-  // Trilinos doesn't appear to provide any special functions for getting values.
+  // Trilinos doesn't provide any special functions for getting values.
   for (uint i = 0; i < m; i++)
     block[i] = (*x)[0][rows[i]];
 }
@@ -229,7 +230,7 @@ void EpetraVector::add(const double* block, uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void EpetraVector::get_local(double* block, uint m, const uint* rows) const
 {
-  warning("EpetraVector::get_local is experimental.");
+  //warning("EpetraVector::get_local is experimental.");
   assert(x);
 
   // FIXME: Deal with local/global numbering more elegantly
@@ -242,22 +243,19 @@ void EpetraVector::get_local(double* block, uint m, const uint* rows) const
 void EpetraVector::gather(GenericVector& y,
                           const std::vector<dolfin::uint>& indices) const
 {
-  warning("EpetraVector::gather is experimental.");
+  //warning("EpetraVector::gather is experimental.");
 
   // FIXME: This can be done better. Problem is that the GenericVector interface
   //        is PETSc-centric for the parallel case. It should be improved.
 
   assert(x);
 
-  cout << "Enter gather" << endl;
   EpetraFactory& f = EpetraFactory::instance();
   //Epetra_MpiComm Comm = f.get_mpi_comm();
   Epetra_SerialComm serial_comm = f.get_serial_comm();
 
   // Down cast to a EpetraVector and resize
   EpetraVector& _y = y.down_cast<EpetraVector>();
-  //_y.resize(indices.size());
-  //return;
 
   // Check that y is a local vector (check communicator)
 
@@ -265,7 +263,7 @@ void EpetraVector::gather(GenericVector& y,
   std::vector<int> _indices(indices.size());
   for (uint i = 0; i < indices.size(); ++i)
   {
-    cout << "Indices " << i << "  " << indices[i] << endl;
+    //cout << "Indices " << i << "  " << indices[i] << endl;
     _indices[i] = indices[i];
   }
 
@@ -273,21 +271,17 @@ void EpetraVector::gather(GenericVector& y,
   //Epetra_Map target_map(-1, indices.size(), &_indices[0], 0, Comm);
   Epetra_Map target_map(indices.size(), indices.size(), &_indices[0], 0, serial_comm);
 
+  // FIXME: Check that the data belonging to y is not shared
   _y.reset(target_map);
   //boost::shared_ptr<Epetra_FEVector> yy(new Epetra_FEVector(target_map));
   Epetra_Import importer(_y.vec()->Map(), x->Map());
   _y.vec()->Import(*x, importer, Insert);
 
-  x->Print(std::cout);
+  //x->Print(std::cout);
 
-  cout << "New vector" << endl;
-  _y.vec()->Print(std::cout);
-  cout << "End New vector" << endl;
-
-  // FIXME: Check that the data belonging to y is not shared
-
-  // Take ownership of yy
-  //_y.reset(yy);
+  //cout << "New vector" << endl;
+  //_y.vec()->Print(std::cout);
+  //cout << "End New vector" << endl;
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::reset(const Epetra_Map& map)

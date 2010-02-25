@@ -41,11 +41,14 @@ namespace dolfin
   {
   public:
 
-    /// Create Krylov solver for a particular method and preconditioner
+    /// Create Krylov solver for a particular method and names preconditioner
     PETScKrylovSolver(std::string method = "default", std::string pc_type = "default");
 
     /// Create Krylov solver for a particular method and PETScPreconditioner
-    PETScKrylovSolver(std::string method, PETScUserPreconditioner& PETScUserPreconditioner);
+    PETScKrylovSolver(std::string method, PETScPreconditioner& preconditioner);
+
+    /// Create Krylov solver for a particular method and PETScPreconditioner
+    PETScKrylovSolver(std::string method, PETScUserPreconditioner& preconditioner);
 
     /// Create solver from given PETSc KSP pointer
     explicit PETScKrylovSolver(boost::shared_ptr<KSP> ksp);
@@ -93,7 +96,7 @@ namespace dolfin
     boost::shared_ptr<KSP> _ksp;
 
     /// Preconditioner
-    boost::scoped_ptr<PETScPreconditioner> preconditioner;
+    boost::shared_ptr<PETScPreconditioner> preconditioner;
 
     /// True if we have read parameters
     bool parameters_read;

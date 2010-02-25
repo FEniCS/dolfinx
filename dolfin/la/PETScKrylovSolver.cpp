@@ -10,6 +10,7 @@
 #ifdef HAS_PETSC
 
 #include <boost/assign/list_of.hpp>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/main/MPI.h>
 #include "KrylovSolver.h"
@@ -59,6 +60,14 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
   if (methods.count(method) == 0)
     error("Requested PETSc Krylov solver '%s' is unknown,", method.c_str());
 
+  // Set parameter values
+  parameters = default_parameters();
+}
+//-----------------------------------------------------------------------------
+PETScKrylovSolver::PETScKrylovSolver(std::string method,
+				                             PETScPreconditioner& preconditioner)
+  : method(method), preconditioner(reference_to_no_delete_pointer(preconditioner))
+{
   // Set parameter values
   parameters = default_parameters();
 }

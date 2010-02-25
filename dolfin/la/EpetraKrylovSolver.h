@@ -14,7 +14,7 @@
 #include <map>
 #include <string>
 #include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
 
@@ -45,8 +45,8 @@ namespace dolfin
     EpetraKrylovSolver(std::string method = "default",
                        std::string pc_type = "default");
 
-    /// Create Krylov solver for a particular method and EpetraUserPreconditioner
-    EpetraKrylovSolver(std::string method, EpetraUserPreconditioner& preconditioner);
+    /// Create Krylov solver for a particular method and TrilinosPreconditioner
+    EpetraKrylovSolver(std::string method, TrilinosPreconditioner& preconditioner);
 
     /// Destructor
     ~EpetraKrylovSolver();
@@ -76,7 +76,7 @@ namespace dolfin
     static const std::map<std::string, int> pc_methods;
 
     // Preconditioner
-    boost::scoped_ptr<TrilinosPreconditioner> preconditioner;
+    boost::shared_ptr<TrilinosPreconditioner> preconditioner;
 
     // Underlying solver
     boost::shared_ptr<AztecOO> solver;

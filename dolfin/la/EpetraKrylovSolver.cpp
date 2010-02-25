@@ -56,7 +56,7 @@ Parameters EpetraKrylovSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
-                    : method(method), 
+                    : method(method),
                       preconditioner(new TrilinosPreconditioner(pc_type)),
                       solver(new AztecOO)
 {
@@ -68,10 +68,11 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
-                                       EpetraUserPreconditioner& prec)
-                                     : method(method), solver(new AztecOO)
+                  TrilinosPreconditioner& preconditioner)
+                : method(method),
+                  preconditioner(reference_to_no_delete_pointer(preconditioner))
 {
-  error("Initialisation of EpetraKrylovSolver with a EpetraUserPreconditioner needs to be implemented.");
+  // Set parameter values
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
