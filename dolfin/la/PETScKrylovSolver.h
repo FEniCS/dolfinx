@@ -66,6 +66,9 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters();
 
+    /// Return PETSc KSP pointer
+    boost::shared_ptr<KSP> ksp() const;
+
   private:
 
     /// Initialize KSP solver
@@ -94,7 +97,7 @@ namespace dolfin
     PETScUserPreconditioner* pc_dolfin;
 
     /// PETSc solver pointer
-    boost::shared_ptr<KSP> ksp;
+    boost::shared_ptr<KSP> _ksp;
 
     /// Size of old system (need to reinitialize when changing)
     uint M;
