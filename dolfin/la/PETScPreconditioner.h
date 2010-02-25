@@ -34,9 +34,6 @@ namespace dolfin
     /// Create Krylov solver for a particular method and preconditioner
     explicit PETScPreconditioner(std::string type = "default");
 
-    /// Create preconditioner from given PETSc PC pointer
-    explicit PETScPreconditioner(boost::shared_ptr<PC> pc);
-
     /// Destructor
     ~PETScPreconditioner();
 
@@ -51,14 +48,11 @@ namespace dolfin
 
   private:
 
-    /// Names preconditioner
+    /// Named preconditioner
     std::string type;
 
     // Available solvers and preconditioners
-    static const std::map<std::string, const PCType> pc_methods;
-
-    /// PETSc solver pointer
-    boost::shared_ptr<PC> pc;
+    static const std::map<std::string, const PCType> methods;
   };
 
 }

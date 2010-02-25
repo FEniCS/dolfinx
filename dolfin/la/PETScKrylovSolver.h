@@ -4,18 +4,19 @@
 // Modified by Anders Logg, 2005-2009.
 // Modified by Johan Hoffman, 2005.
 // Modified by Andy R. Terrel, 2005.
-// Modified by Garth N. Wells, 2005-2009.
+// Modified by Garth N. Wells, 2005-2010.
 //
 // First added:  2005-12-02
-// Last changed: 2009-09-08
+// Last changed: 2010-02-25
 
-#ifndef __PETSC_KRYLOV_SOLVER_H
-#define __PETSC_KRYLOV_SOLVER_H
+#ifndef __DOLFIN_PETSC_KRYLOV_SOLVER_H
+#define __DOLFIN_PETSC_KRYLOV_SOLVER_H
 
 #ifdef HAS_PETSC
 
 #include <map>
 #include <petscksp.h>
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
@@ -29,6 +30,7 @@ namespace dolfin
   class PETScMatrix;
   class PETScVector;
   class PETScKrylovMatrix;
+  class PETScPreconditioner;
   class PETScUserPreconditioner;
 
   /// This class implements Krylov methods for linear systems
@@ -74,20 +76,11 @@ namespace dolfin
     /// Initialize KSP solver
     void init(uint M, uint N);
 
-    /// Read parameters from database
-    void read_parameters();
-
-    /// Set PETScPreconditioner
-    void set_petsc_preconditioner();
-
     /// Report the number of iterations
     void write_report(int num_iterations);
 
     /// Krylov method
     std::string method;
-
-    /// PETSc preconditioner type
-    std::string pc_petsc;
 
     // Available solvers and preconditioners
     static const std::map<std::string, const KSPType> methods;
@@ -99,16 +92,12 @@ namespace dolfin
     /// PETSc solver pointer
     boost::shared_ptr<KSP> _ksp;
 
-    /// Size of old system (need to reinitialize when changing)
-    uint M;
-    uint N;
+    /// Preconditioner
+    boost::scoped_ptr<PETScPreconditioner> preconditioner;
 
     /// True if we have read parameters
     bool parameters_read;
 
-    // FIXME: Required to avoid PETSc bug with Hypre. See explanation inside
-    //        PETScKrylovSolver:init(). Can be removed when PETSc is patched.
-    bool pc_set;
   };
 
 }

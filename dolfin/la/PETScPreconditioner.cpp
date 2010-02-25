@@ -11,30 +11,13 @@
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/log/dolfin_log.h>
-#include <dolfin/main/MPI.h>
 #include "PETScPreconditioner.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-/*
-namespace dolfin
-{
-  class PETScKSPDeleter
-  {
-  public:
-    void operator() (KSP* ksp)
-    {
-      if (ksp)
-        KSPDestroy(*ksp);
-      delete ksp;
-    }
-  };
-}
-*/
-//-----------------------------------------------------------------------------
 // Available preconditioners
-const std::map<std::string, const PCType> PETScPreconditioner::pc_methods
+const std::map<std::string, const PCType> PETScPreconditioner:methods
   = boost::assign::map_list_of("default",   "")
                               ("none",      PCNONE)
                               ("ilu",       PCILU)
@@ -48,6 +31,7 @@ Parameters PETScPreconditioner::default_parameters()
 {
   Parameters p(KrylovSolver::default_parameters());
   p.rename("petsc_preconditioner");
+  p.add("ilu_fill_level", 0);
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -57,14 +41,8 @@ PETScPreconditioner::PETScPreconditioner(std::string type) : type(type)
   parameters = default_parameters();
 
   // Check that the requested method is known
-  if (pc_methods.count(type) == 0)
+  if (methods.count(type) == 0)
     error("Requested PETSc proconditioner '%s' is unknown,", type.c_str());
-}
-//-----------------------------------------------------------------------------
-PETScPreconditioner::PETScPreconditioner(boost::shared_ptr<PC> pc) : pc(pc)
-{
-  // Set parameter values
-  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 PETScPreconditioner::~PETScPreconditioner()
@@ -105,7 +83,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   if (type == "amg_ml")
   {
     #if PETSC_HAVE_ML
-    PCSetType(pc, pc_methods.find("amg_ml")->second);
+    PCSetType(pc, PCML);
     PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
     #else
     warning("PETSc has not been compiled with the ML library for   "
@@ -116,7 +94,10 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   }
 
   // Set preconditioner
-  PCSetType(pc, pc_methods.find(type)->second);
+  PCSetType(pc, methods.find(type)->second);
+
+  // Set preconditioner parameters
+  PCFactorSetShiftNonzero(pc, parameters["shift_nonzero"]);
 }
 //-----------------------------------------------------------------------------
 std::string PETScPreconditioner::str(bool verbose) const
@@ -124,8 +105,8 @@ std::string PETScPreconditioner::str(bool verbose) const
   std::stringstream s;
   if (verbose)
   {
-    warning("Verbose output for PETScPreconditioner not implemented, calling PETSc PCView directly.");
-    PCView(*pc, PETSC_VIEWER_STDOUT_WORLD);
+    warning("Verbose output for PETScPreconditioner not implemented.");
+    //PCView(*pc, PETSC_VIEWER_STDOUT_WORLD);
   }
   else
     s << "<PETScPreconditioner>";
