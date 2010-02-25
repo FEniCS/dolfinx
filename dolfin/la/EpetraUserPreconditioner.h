@@ -1,16 +1,14 @@
-// Copyright (C) 2008 Kent-Andre Mardal.
+// Copyright (C) 2008 Kent-Andre Mardal
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Last changed: 2008-05-16
 
 #ifdef HAS_TRILINOS
 
-#ifndef __EPETRA_PRECONDITIONER_SOLVER_H
-#define __EPETRA_PRECONDITIONER_SOLVER_H
+#ifndef __EPETRA_USER_PRECONDITIONER_SOLVER_H
+#define __EPETRA_USER_PRECONDITIONER_SOLVER_H
 
-#include <dolfin/common/types.h>
-
-#endif
+#include <string>
 
 namespace dolfin
 {
@@ -18,18 +16,18 @@ namespace dolfin
   class EpetraMatrix;
 
   /// This class specifies the interface for user-defined Krylov
-  /// method EpetraPreconditioners. A user wishing to implement her own
-  /// EpetraPreconditioner needs only supply a function that approximately
+  /// method EpetraUserPreconditioner. A user wishing to implement her own
+  /// EpetraUserPreconditioner needs only supply a function that approximately
   /// solves the linear system given a right-hand side.
 
-  class EpetraPreconditioner
+  class EpetraUserPreconditioner
   {
   public:
     /// Constructor
-    EpetraPreconditioner() {};
+    EpetraUserPreconditioner() {};
 
     /// Destructor
-    virtual ~EpetraPreconditioner() {};
+    virtual ~EpetraUserPreconditioner() {};
 
     /// Set the Preconditioner type (amg, ilu, etc.)
     void set_type(std::string type);
@@ -43,13 +41,13 @@ namespace dolfin
   private:
 
     // Preconditioner type
-    std::string pc_type;
+    std::string type;
 
   };
 
 }
 
-
+#endif
 #endif
 
 

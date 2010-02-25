@@ -25,7 +25,7 @@ namespace dolfin
   class EpetraMatrix;
   class EpetraVector;
   class EpetraKrylovMatrix;
-  class EpetraPreconditioner;
+  class EpetraUserPreconditioner;
 
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
@@ -39,8 +39,8 @@ namespace dolfin
     EpetraKrylovSolver(std::string method = "default",
                        std::string pc_type = "default");
 
-    /// Create Krylov solver for a particular method and EpetraPreconditioner
-    EpetraKrylovSolver(std::string method, EpetraPreconditioner& prec);
+    /// Create Krylov solver for a particular method and EpetraUserPreconditioner
+    EpetraKrylovSolver(std::string method, EpetraUserPreconditioner& prec);
 
     /// Destructor
     ~EpetraKrylovSolver();
@@ -69,7 +69,7 @@ namespace dolfin
     static const std::map<std::string, int> methods;
     static const std::map<std::string, int> pc_methods;
 
-    EpetraPreconditioner* prec;
+    EpetraUserPreconditioner* prec;
 
   };
 

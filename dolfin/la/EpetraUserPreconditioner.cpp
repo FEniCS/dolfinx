@@ -6,23 +6,23 @@
 #ifdef HAS_TRILINOS
 
 #include <dolfin/log/dolfin_log.h>
-#include "EpetraPreconditioner.h"
+#include "EpetraUserPreconditioner.h"
 
 using namespace dolfin;
 //-----------------------------------------------------------------------------
-void EpetraPreconditioner::set_type(std::string type) 
+void EpetraUserPreconditioner::set_type(std::string type)
 {
-  pc_type = type;
+  this->type = type;
 }
 //-----------------------------------------------------------------------------
-void EpetraPreconditioner::init(const EpetraMatrix& a) 
+void EpetraUserPreconditioner::init(const EpetraMatrix& a) 
 {
-  error("EpetraPreconditioner::init : not implemented ");
+  error("EpetraUserPreconditioner::init: not implemented ");
 }
 //-----------------------------------------------------------------------------
-void EpetraPreconditioner::solve(EpetraVector& x, const EpetraVector& b) 
+void EpetraUserPreconditioner::solve(EpetraVector& x, const EpetraVector& b) 
 {
-  error("EpetraPreconditioner::solve: not implemented ");
+  error("EpetraUserPreconditioner::solve: not implemented ");
 }
 //-----------------------------------------------------------------------------
 #endif

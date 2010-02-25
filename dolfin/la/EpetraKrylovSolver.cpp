@@ -28,7 +28,7 @@
 #include "EpetraKrylovSolver.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
-#include "EpetraPreconditioner.h"
+#include "EpetraUserPreconditioner.h"
 #include "KrylovSolver.h"
 
 using namespace dolfin;
@@ -64,11 +64,11 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
-                                       EpetraPreconditioner& prec)
+                                       EpetraUserPreconditioner& prec)
                                      : method(method), pc_type("default"),
                                        prec(&prec)
 {
-  error("Initialisation of EpetraKrylovSolver with a EpetraPreconditioner needs to be implemented.");
+  error("Initialisation of EpetraKrylovSolver with a EpetraUserPreconditioner needs to be implemented.");
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
