@@ -101,7 +101,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
 
   // Write a message
   if (parameters["report"])
-    info("Solving linear system of size %d x %d (Krylov solver).", M, N);
+    info("Solving linear system of size %d x %d (PETSc Krylov solver).", M, N);
 
   // Reinitialize KSP solver if necessary
   init(M, N);

@@ -13,19 +13,25 @@
 
 #include <map>
 #include <string>
+#include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
+
+// Forward declarations
+class AztecOO;
 
 namespace dolfin
 {
 
-  /// Forward declarations
+  // Forward declarations
   class GenericMatrix;
   class GenericVector;
   class EpetraMatrix;
   class EpetraVector;
   class EpetraKrylovMatrix;
   class EpetraUserPreconditioner;
+  class TrilinosPreconditioner;
 
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
@@ -40,7 +46,7 @@ namespace dolfin
                        std::string pc_type = "default");
 
     /// Create Krylov solver for a particular method and EpetraUserPreconditioner
-    EpetraKrylovSolver(std::string method, EpetraUserPreconditioner& prec);
+    EpetraKrylovSolver(std::string method, EpetraUserPreconditioner& preconditioner);
 
     /// Destructor
     ~EpetraKrylovSolver();
@@ -57,20 +63,23 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
+    /// Return pointer to Aztec00
+    boost::shared_ptr<AztecOO> aztecoo() const;
+
   private:
 
     // Solver type
     std::string method;
 
-    // Preconditioner type
-    std::string pc_type;
-
     // Available solvers and preconditioners
     static const std::map<std::string, int> methods;
     static const std::map<std::string, int> pc_methods;
 
-    EpetraUserPreconditioner* prec;
+    // Preconditioner
+    boost::scoped_ptr<TrilinosPreconditioner> preconditioner;
 
+    // Underlying solver
+    boost::shared_ptr<AztecOO> solver;
   };
 
 }

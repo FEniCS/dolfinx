@@ -25,19 +25,21 @@ namespace dolfin
   class PETScKrylovSolver;
 
 
-  /// This class is a wrapper for configuring PETSc preconditioners
+  /// This class is a wrapper for configuring PETSc preconditioners. It does
+  /// not own a preconditioner. It can take a PETScKrylovSolver and set the
+  /// preconditioner type and parameters. 
 
   class PETScPreconditioner : public PETScObject, public Variable
   {
   public:
 
-    /// Create Krylov solver for a particular method and preconditioner
+    /// Create a particular preconditioner object
     explicit PETScPreconditioner(std::string type = "default");
 
     /// Destructor
     ~PETScPreconditioner();
 
-    /// Set the precondtioner
+    /// Set the precondtioner type and parameters
     void set(PETScKrylovSolver& solver) const;
 
     /// Return informal string representation (pretty-print)
@@ -51,7 +53,7 @@ namespace dolfin
     /// Named preconditioner
     std::string type;
 
-    // Available solvers and preconditioners
+    // Available names preconditioners
     static const std::map<std::string, const PCType> methods;
   };
 
