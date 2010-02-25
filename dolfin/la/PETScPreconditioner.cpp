@@ -17,7 +17,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 // Available preconditioners
-const std::map<std::string, const PCType> PETScPreconditioner:methods
+const std::map<std::string, const PCType> PETScPreconditioner::methods
   = boost::assign::map_list_of("default",   "")
                               ("none",      PCNONE)
                               ("ilu",       PCILU)
@@ -52,10 +52,6 @@ PETScPreconditioner::~PETScPreconditioner()
 //-----------------------------------------------------------------------------
 void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 {
-  // Handle default preconditioner (do nothing)
-  if (type == "default")
-    return;
-
   assert(solver.ksp());
 
   // Get PETSc PC pointer
@@ -93,11 +89,12 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     return;
   }
 
-  // Set preconditioner
-  PCSetType(pc, methods.find(type)->second);
+  if (type != "default")
+    PCSetType(pc, methods.find(type)->second);
 
   // Set preconditioner parameters
   PCFactorSetShiftNonzero(pc, parameters["shift_nonzero"]);
+  PCFactorSetLevels(pc, parameters["ilu_fill_level"]);
 }
 //-----------------------------------------------------------------------------
 std::string PETScPreconditioner::str(bool verbose) const
