@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2010-02-24
+// Last changed: 2010-02-26
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
@@ -78,7 +78,6 @@ const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
   _mesh    = V._mesh;
   _element = V._element;
   _dofmap  = V._dofmap;
-  _super_space = V._super_space;
   _component = V._component;
   _restriction = V._restriction;
 
@@ -181,8 +180,7 @@ FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
   // Create new sub space
   boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
 
-  // Set super space and component
-  new_sub_space->_super_space = reference_to_no_delete_pointer(*this);
+  // Set component
   new_sub_space->_component.resize(component.size());
   for (uint i = 0; i < component.size(); i++)
     new_sub_space->_component[i] = component[i];
@@ -198,11 +196,6 @@ FunctionSpace::collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const
 {
   boost::shared_ptr<FunctionSpace> collapsed_sub_space(new FunctionSpace(_mesh, _element, dofmap));
   return collapsed_sub_space;
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<const FunctionSpace> FunctionSpace::super_space() const
-{
-  return _super_space;
 }
 //-----------------------------------------------------------------------------
 const dolfin::Array<dolfin::uint>& FunctionSpace::component() const

@@ -9,7 +9,7 @@
 // Modified by Kent-Andre Mardal, 2009
 //
 // First added:  2007-08-16
-// Last changed: 2010-02-23
+// Last changed: 2010-02-26
 
 // ===========================================================================
 // SWIG directives for the DOLFIN function kernel module (pre)
@@ -46,7 +46,6 @@ namespace dolfin
 // Modifying the interface of FunctionSpace
 //-----------------------------------------------------------------------------
 %rename(sub) dolfin::FunctionSpace::operator[];
-%rename(_super_space) dolfin::FunctionSpace::super_space;
 %rename(assign) dolfin::FunctionSpace::operator=;
 
 //-----------------------------------------------------------------------------
