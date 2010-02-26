@@ -1,3 +1,4 @@
+ - Mesh refinement improvements, remove unecessary copying in Python interface
  - Clean PETSc and Epetra Krylov solvers
  - Add separate preconditioner classes for PETSc and Epetra solvers
  - Add function ident_zeros for inserting one on diagonal for zero rows
