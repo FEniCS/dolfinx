@@ -42,7 +42,6 @@ Mesh::Mesh()
   : Variable("mesh", "DOLFIN mesh"),
     _data(*this), _cell_type(0), _intersection_operator(*this), _ordered(false)
 {
-  info("Mesh empty constructor: this = %x", this);
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -81,7 +80,6 @@ Mesh::Mesh(std::string filename)
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()
 {
-  info("Mesh destructor: this = %x", this);
   clear();
 }
 //-----------------------------------------------------------------------------
