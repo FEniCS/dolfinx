@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2010-02-05
+// Last changed: 2010-02-26
 
 #include <sstream>
 
@@ -42,6 +42,7 @@ Mesh::Mesh()
   : Variable("mesh", "DOLFIN mesh"),
     _data(*this), _cell_type(0), _intersection_operator(*this), _ordered(false)
 {
+  info("Mesh empty constructor: this = %x", this);
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -49,6 +50,7 @@ Mesh::Mesh(const Mesh& mesh)
   : Variable("mesh", "DOLFIN mesh"),
     _data(*this), _cell_type(0), _intersection_operator(*this), _ordered(false)
 {
+  info("Mesh copy constructor: this = %x", this);
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
@@ -56,6 +58,8 @@ Mesh::Mesh(std::string filename)
   : Variable("mesh", "DOLFIN mesh"),
     _data(*this), _cell_type(0), _intersection_operator(*this), _ordered(false)
 {
+  info("Mesh file constructor: this = %x", this);
+
   if (MPI::num_processes() > 1)
   {
     // Read local mesh data
@@ -77,11 +81,14 @@ Mesh::Mesh(std::string filename)
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()
 {
+  info("Mesh destructor: this = %x", this);
   clear();
 }
 //-----------------------------------------------------------------------------
 const Mesh& Mesh::operator=(const Mesh& mesh)
 {
+  info("Mesh assignment operator: this = %x", this);
+
   clear();
 
   _topology = mesh._topology;
@@ -255,7 +262,7 @@ void Mesh::all_intersected_entities(const Point & point, uint_set & ids_result) 
 void Mesh::all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const
 {
   _intersection_operator.all_intersected_entities(points, ids_result);
-} 
+}
 //-----------------------------------------------------------------------------
 void Mesh::all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const
 {

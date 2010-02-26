@@ -25,7 +25,6 @@
 #include "EpetraKrylovSolver.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
-#include "EpetraUserPreconditioner.h"
 #include "TrilinosPreconditioner.h"
 #include "KrylovSolver.h"
 

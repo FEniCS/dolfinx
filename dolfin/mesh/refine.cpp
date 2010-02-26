@@ -15,11 +15,13 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 dolfin::Mesh dolfin::refine(const Mesh& mesh)
 {
+  info("Calling uniform refinement free function: mesh = %x", &mesh);
   return UniformMeshRefinement::refine(mesh);
 }
 //-----------------------------------------------------------------------------
 dolfin::Mesh dolfin::refine(const Mesh& mesh, const MeshFunction<bool>& cell_markers)
 {
+  info("Calling uniform refinement free function: mesh = %x", &mesh);
   return LocalMeshRefinement::refineRecursivelyByEdgeBisection(mesh, cell_markers);
 }
 //-----------------------------------------------------------------------------
