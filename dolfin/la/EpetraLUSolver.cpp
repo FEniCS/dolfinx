@@ -44,7 +44,7 @@ EpetraLUSolver::~EpetraLUSolver()
 }
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraLUSolver::solve(const GenericMatrix& A, GenericVector& x,
-                                       const GenericVector& b)
+                                   const GenericVector& b)
 {
   return solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(),
                b.down_cast<EpetraVector>());
@@ -54,12 +54,19 @@ dolfin::uint EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                    const EpetraVector& b)
 {
   // Create linear problem
-  Epetra_LinearProblem linear_problem(A.mat().get(), x.vec().get(), 
+  Epetra_LinearProblem linear_problem(A.mat().get(), x.vec().get(),
                                       b.vec().get());
 
   // Create linear solver
   Amesos factory;
   std::string solver_type;
+  /*
+  if (factory.Query("Amesos_Mumps"))
+  {
+    cout <<  "Using MUMPS" << endl;
+    solver_type = "Amesos_Mumps";
+  }
+  */
   if (factory.Query("Amesos_Umfpack"))
     solver_type = "Amesos_Umfpack";
   else if (factory.Query("Amesos_Klu"))
