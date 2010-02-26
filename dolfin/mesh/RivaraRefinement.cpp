@@ -3,9 +3,10 @@
 //
 // Modified by Bartosz Sawicki, 2009.
 // Modified by Garth N. Wells, 2010.
+// Modified by Anders Logg, 2010.
 //
 // First added:  2008
-// Last changed: 2010-02-07
+// Last changed: 2010-02-26
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -17,10 +18,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Mesh RivaraRefinement::refine(const Mesh& mesh,
-			                        const MeshFunction<bool>& cell_marker,
-			                        MeshFunction<uint>& cell_map,
-			                        std::vector<int>& facet_map)
+void RivaraRefinement::refine(Mesh& refined_mesh,
+                              const Mesh& mesh,
+                              const MeshFunction<bool>& cell_marker,
+                              MeshFunction<uint>& cell_map,
+                              std::vector<int>& facet_map)
 {
   info("Refining simplicial mesh by recursive Rivara bisection.");
 
@@ -61,7 +63,6 @@ Mesh RivaraRefinement::refine(const Mesh& mesh,
   std::vector<int> new2old_facet_arr;
 
   // Refine mesh
-  Mesh refined_mesh;
   dmesh.export_mesh(refined_mesh, new2old_cell_arr, new2old_facet_arr);
 
   // Generate cell mesh function map
@@ -74,8 +75,6 @@ Mesh RivaraRefinement::refine(const Mesh& mesh,
   facet_map = new_facet_map;
   for (uint i=0; i<new2old_facet_arr.size(); i++ )
     facet_map[i] = new2old_facet_arr[i];
-
-  return refined_mesh;
 }
 //-----------------------------------------------------------------------------
 RivaraRefinement::DVertex::DVertex() : id(0), cells(0), p(0.0, 0.0, 0.0)
@@ -83,7 +82,7 @@ RivaraRefinement::DVertex::DVertex() : id(0), cells(0), p(0.0, 0.0, 0.0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-RivaraRefinement::DCell::DCell() : id(0), parent_id(0), vertices(0), 
+RivaraRefinement::DCell::DCell() : id(0), parent_id(0), vertices(0),
                                    deleted(false), facets(0)
 {
   // Do nothing

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-09
-// Last changed: 2009-11-25
+// Last changed: 2010-02-26
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericVector.h>
@@ -136,14 +136,14 @@ void AdaptiveObjects::refine(Mesh* mesh, MeshFunction<bool>* cell_markers)
   if (cell_markers)
   {
     if (recursive_refinement)
-      new_mesh = LocalMeshRefinement::refineRecursivelyByEdgeBisection(*mesh, *cell_markers);
+      LocalMeshRefinement::refineRecursivelyByEdgeBisection(new_mesh, *mesh, *cell_markers);
     else
-      new_mesh = LocalMeshRefinement::refineIterativelyByEdgeBisection(*mesh, *cell_markers);
+      LocalMeshRefinement::refineIterativelyByEdgeBisection(new_mesh, *mesh, *cell_markers);
   }
   else
   {
     info("No cells marked for refinement, assuming uniform mesh refinement.");
-    new_mesh = UniformMeshRefinement::refine(*mesh);
+    UniformMeshRefinement::refine(new_mesh, *mesh);
   }
 
   // Refined mesh may not be ordered

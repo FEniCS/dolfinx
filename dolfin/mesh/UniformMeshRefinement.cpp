@@ -21,7 +21,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::Mesh UniformMeshRefinement::refine(const Mesh& mesh)
+void UniformMeshRefinement::refine(Mesh& refined_mesh,
+                                   const Mesh& mesh)
 {
   info(1, "Refining simplicial mesh uniformly.");
 
@@ -35,10 +36,9 @@ dolfin::Mesh UniformMeshRefinement::refine(const Mesh& mesh)
   const CellType& cell_type = mesh.type();
 
   // Create new mesh and open for editing
-  Mesh refined_mesh;
   MeshEditor editor;
   editor.open(refined_mesh, cell_type.cell_type(),
-	            mesh.topology().dim(), mesh.geometry().dim());
+              mesh.topology().dim(), mesh.geometry().dim());
 
   // Get size of mesh
   const uint num_vertices = mesh.size(0);
@@ -65,7 +65,5 @@ dolfin::Mesh UniformMeshRefinement::refine(const Mesh& mesh)
 
   // Close editor
   editor.close();
-
-  return refined_mesh;
 }
 //-----------------------------------------------------------------------------
