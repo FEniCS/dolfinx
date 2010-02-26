@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2010-02-17
+// Last changed: 2010-02-26
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -15,7 +15,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/MeshData.h>
-#include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/function/GenericFunction.h>
@@ -136,6 +135,8 @@ void Assembler::assemble_cells(GenericTensor& A,
   Progress p(AssemblerTools::progress_message(A.rank(), "cells"), mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+
+
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
@@ -146,7 +147,7 @@ void Assembler::assemble_cells(GenericTensor& A,
         continue;
     }
 
-    // Skip integral is zero
+    // Skip integral if zero
     if (!integral) continue;
 
     // Update to current cell
@@ -190,43 +191,41 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   // Exterior facet integral
   ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
 
-  // Create boundary mesh
-  BoundaryMesh boundary(mesh);
-
-  // Skip assembly if boundary is empty (may happen when running in parallel)
-  if (boundary.num_cells() == 0)
-    return;
-
-  // Get mapping from facets (boundary cells) to mesh cells
-  MeshFunction<uint>* cell_map = boundary.data().mesh_function("cell map");
-  assert(cell_map);
+  // Compute facets and facet - cell connectivity if not already computed
+  mesh.init(mesh.topology().dim() - 1);
+  mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
+  assert(mesh.ordered());
 
   // Assemble over exterior facets (the cells of the boundary)
-  Progress p(AssemblerTools::progress_message(A.rank(), "exterior facets"), boundary.num_cells());
-  for (CellIterator boundary_cell(boundary); !boundary_cell.end(); ++boundary_cell)
+  Progress p(AssemblerTools::progress_message(A.rank(), "exterior facets"), mesh.num_facets());
+  for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
-    // Get mesh facet corresponding to boundary cell
-    Facet mesh_facet(mesh, (*cell_map)[*boundary_cell]);
+    // Only consider exterior facets
+    if (facet->interior())
+    {
+      p++;
+      continue;
+    }
 
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
-      const uint domain = (*domains)[mesh_facet];
+      const uint domain = (*domains)[*facet];
       if (domain < ufc.form.num_exterior_facet_integrals())
         integral = ufc.exterior_facet_integrals[domain];
       else
         continue;
     }
 
-    // Skip integral is zero
+    // Skip integral if zero
     if (!integral) continue;
 
     // Get mesh cell to which mesh facet belongs (pick first, there is only one)
-    assert(mesh_facet.num_entities(mesh.topology().dim()) == 1);
-    Cell mesh_cell(mesh, mesh_facet.entities(mesh.topology().dim())[0]);
+    assert(facet->num_entities(mesh.topology().dim()) == 1);
+    Cell mesh_cell(mesh, facet->entities(mesh.topology().dim())[0]);
 
     // Get local index of facet with respect to the cell
-    const uint local_facet = mesh_cell.index(mesh_facet);
+    const uint local_facet = mesh_cell.index(*facet);
 
     // Update to current cell
     ufc.update(mesh_cell, local_facet);
@@ -282,7 +281,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"), mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
-    // Check if we have an exterior facet or a facet belonging to another process
+    // Only consider interior facets
     if (!facet->interior())
     {
       p++;
@@ -299,7 +298,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
         continue;
     }
 
-    // Skip integral is zero
+    // Skip integral if zero
     if (!integral) continue;
 
     // Get cells incident with facet
