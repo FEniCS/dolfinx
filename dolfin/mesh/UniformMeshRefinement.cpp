@@ -21,7 +21,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::Mesh UniformMeshRefinement::refine(const Mesh& mesh) //, Mesh& refined_mesh)
+dolfin::Mesh UniformMeshRefinement::refine(const Mesh& mesh)
 {
   info(1, "Refining simplicial mesh uniformly.");
 

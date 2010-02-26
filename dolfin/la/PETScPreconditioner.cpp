@@ -21,6 +21,7 @@ const std::map<std::string, const PCType> PETScPreconditioner::methods
   = boost::assign::map_list_of("default",   "")
                               ("none",      PCNONE)
                               ("ilu",       PCILU)
+                              ("bjacobi",   PCBJACOBI)
                               ("jacobi",    PCJACOBI)
                               ("sor",       PCSOR)
                               ("icc",       PCICC)

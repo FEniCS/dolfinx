@@ -23,7 +23,7 @@ namespace dolfin
   public:
 
     /// Refine mesh uniformly
-    static Mesh refine(const Mesh& mesh); //, Mesh& refined_mesh);
+    static Mesh refine(const Mesh& mesh);
 
   };
 
