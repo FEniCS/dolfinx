@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2010-02-26
+// Last changed: 2010-02-27
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -135,7 +135,10 @@ void Assembler::assemble_cells(GenericTensor& A,
   Progress p(AssemblerTools::progress_message(A.rank(), "cells"), mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+<<<<<<< TREE
 
+=======
+>>>>>>> MERGE-SOURCE
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
@@ -192,16 +195,21 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
 
   // Compute facets and facet - cell connectivity if not already computed
-  mesh.init(mesh.topology().dim() - 1);
-  mesh.init(mesh.topology().dim() - 1, mesh.topology().dim());
+  const uint D = mesh.topology().dim();
+  mesh.init(D - 1);
+  mesh.init(D - 1, D);
   assert(mesh.ordered());
+
+  // Extract exterior (non shared) facets markers
+  MeshFunction<uint>* exterior_facets = mesh.data().mesh_function("exterior facets");
+  assert(exterior_facets);
 
   // Assemble over exterior facets (the cells of the boundary)
   Progress p(AssemblerTools::progress_message(A.rank(), "exterior facets"), mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Only consider exterior facets
-    if (facet->interior())
+    if (facet->num_entities(D) == 2 || !(*exterior_facets)[*facet])
     {
       p++;
       continue;

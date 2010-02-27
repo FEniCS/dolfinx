@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2010-02-23
+// Last changed: 2010-02-26
 
 #ifndef __FUNCTION_SPACE_H
 #define __FUNCTION_SPACE_H
@@ -99,9 +99,6 @@ namespace dolfin
       return element.hash() == _element->hash();
     }
 
-    /// Return super space (for sub spaces)
-    boost::shared_ptr<const FunctionSpace> super_space() const;
-
     /// Return component (relative to super space)
     const Array<uint>& component() const;
 
@@ -135,9 +132,6 @@ namespace dolfin
 
     // The dofmap
     boost::shared_ptr<const DofMap> _dofmap;
-
-    // The super space (for sub spaces)
-    boost::shared_ptr<const FunctionSpace> _super_space;
 
     // The component (for sub spaces)
     Array<uint> _component;
