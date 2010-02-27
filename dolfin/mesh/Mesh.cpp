@@ -42,7 +42,6 @@ Mesh::Mesh()
   : Variable("mesh", "DOLFIN mesh"),
     _data(*this), _cell_type(0), _intersection_operator(*this), _ordered(false)
 {
-  info("Mesh empty constructor: this = %x", this);
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -50,7 +49,6 @@ Mesh::Mesh(const Mesh& mesh)
   : Variable("mesh", "DOLFIN mesh"),
     _data(*this), _cell_type(0), _intersection_operator(*this), _ordered(false)
 {
-  info("Mesh copy constructor: this = %x", this);
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
@@ -58,8 +56,6 @@ Mesh::Mesh(std::string filename)
   : Variable("mesh", "DOLFIN mesh"),
     _data(*this), _cell_type(0), _intersection_operator(*this), _ordered(false)
 {
-  info("Mesh file constructor: this = %x", this);
-
   if (MPI::num_processes() > 1)
   {
     // Read local mesh data
@@ -81,14 +77,11 @@ Mesh::Mesh(std::string filename)
 //-----------------------------------------------------------------------------
 Mesh::~Mesh()
 {
-  info("Mesh destructor: this = %x", this);
   clear();
 }
 //-----------------------------------------------------------------------------
 const Mesh& Mesh::operator=(const Mesh& mesh)
 {
-  info("Mesh assignment operator: this = %x", this);
-
   clear();
 
   _topology = mesh._topology;
