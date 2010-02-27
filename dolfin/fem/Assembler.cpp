@@ -136,7 +136,6 @@ void Assembler::assemble_cells(GenericTensor& A,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
 
-
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
@@ -148,7 +147,8 @@ void Assembler::assemble_cells(GenericTensor& A,
     }
 
     // Skip integral if zero
-    if (!integral) continue;
+    if (!integral)
+      continue;
 
     // Update to current cell
     ufc.update(*cell);

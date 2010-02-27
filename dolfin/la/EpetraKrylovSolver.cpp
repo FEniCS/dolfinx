@@ -69,10 +69,15 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                   TrilinosPreconditioner& preconditioner)
                 : method(method),
-                  preconditioner(reference_to_no_delete_pointer(preconditioner))
+                  preconditioner(reference_to_no_delete_pointer(preconditioner)),
+                  solver(new AztecOO)
 {
   // Set parameter values
   parameters = default_parameters();
+
+  // Check that requsted solver is supported
+  if (methods.count(method) == 0 )
+    error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str());
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::~EpetraKrylovSolver()
