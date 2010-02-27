@@ -135,10 +135,6 @@ void Assembler::assemble_cells(GenericTensor& A,
   Progress p(AssemblerTools::progress_message(A.rank(), "cells"), mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-<<<<<<< TREE
-
-=======
->>>>>>> MERGE-SOURCE
     // Get integral for sub domain (if any)
     if (domains && domains->size() > 0)
     {
