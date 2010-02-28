@@ -34,6 +34,7 @@ Parameters PETScPreconditioner::default_parameters()
   Parameters p(KrylovSolver::default_parameters());
   p.rename("petsc_preconditioner");
   p.add("ilu_fill_level", 0);
+  p.add("schwarz_overlap", 1);
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -59,9 +60,6 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   // Get PETSc PC pointer
   PC pc;
   KSPGetPC(*(solver.ksp()), &pc);
-
-  // Make sure options are set
-  PCSetFromOptions(pc);
 
   // Treat special cases  first
   if (type == "amg_hypre")
@@ -93,7 +91,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   {
     // FIXME: Apply parameters to sub-preconditioner
     PCSetType(pc, methods.find("additive_schwarz")->second);
-    //PCASMSetOverlap(pc, parameters["schwarz_overlap"])
+    PCASMSetOverlap(pc, parameters["schwarz_overlap"]);
   }
   else if (type != "default")
     PCSetType(pc, methods.find(type)->second);
@@ -101,6 +99,11 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   // Set preconditioner parameters
   PCFactorSetShiftNonzero(pc, parameters["shift_nonzero"]);
   PCFactorSetLevels(pc, parameters["ilu_fill_level"]);
+
+  // Make sure options are set
+  PCSetFromOptions(pc);
+
+  PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
 std::string PETScPreconditioner::str(bool verbose) const

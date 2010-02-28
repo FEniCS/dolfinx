@@ -36,16 +36,6 @@ const std::map<std::string, int> EpetraKrylovSolver::methods
                               ("cg",       AZ_cg)
                               ("gmres",    AZ_gmres)
                               ("bicgstab", AZ_bicgstab);
-
-// Available preconditioners
-const std::map<std::string, int> EpetraKrylovSolver::pc_methods
-  = boost::assign::map_list_of("default", AZ_ilu)
-                              ("ilu",     AZ_ilu)
-                              ("jacobi",  AZ_Jacobi)
-                              ("sor",     AZ_sym_GS)
-                              ("icc",     AZ_icc)
-                              ("amg_ml",  -1);
-
 //-----------------------------------------------------------------------------
 Parameters EpetraKrylovSolver::default_parameters()
 {

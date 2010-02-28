@@ -282,15 +282,19 @@ void PETScKrylovSolver::write_report(int num_iterations,
   KSPGetPC(*_ksp, &pc);
   PCGetType(pc, &pc_type);
 
-  // If using additive Schwarz, get 'sub' method which is applied to each block
+  // If using additive Schwarz or block Jacobi, get 'sub' method which is
+  // applied to each block
   const std::string pc_type_str = pc_type;
   const KSPType sub_ksp_type;
   const PCType sub_pc_type;
-  if (pc_type_str == "asm")
+  PC sub_pc;
+  KSP* sub_ksp;
+  if (pc_type_str == PCASM || pc_type_str == PCBJACOBI)
   {
-    PC sub_pc;
-    KSP* sub_ksp;
-    PCASMGetSubKSP(pc, PETSC_NULL, PETSC_NULL, &sub_ksp);
+    if (pc_type_str == PCASM)
+      PCASMGetSubKSP(pc, PETSC_NULL, PETSC_NULL, &sub_ksp);
+    else if (pc_type_str == PCBJACOBI)
+      PCBJacobiGetSubKSP(pc, PETSC_NULL, PETSC_NULL, &sub_ksp);
     KSPGetType(*sub_ksp, &sub_ksp_type);
     KSPGetPC(*sub_ksp, &sub_pc);
     PCGetType(sub_pc, &sub_pc_type);
@@ -307,10 +311,11 @@ void PETScKrylovSolver::write_report(int num_iterations,
     info("PETSc Krylov solver (%s, %s) failed to converge in %d iterations.",
             ksp_type, pc_type, num_iterations);
   }
-  if (pc_type_str == "asm")
+
+  if (pc_type_str == PCASM || pc_type_str == PCBJACOBI)
   {
-    info("PETSc Krylov additive Schwarz (asm) sub-methods: (%s, %s)",
-            sub_ksp_type, sub_pc_type);
+    info("PETSc Krylov solver preconditioner (%s) sub-methods: (%s, %s)",
+            pc_type, sub_ksp_type, sub_pc_type);
   }
 }
 //-----------------------------------------------------------------------------

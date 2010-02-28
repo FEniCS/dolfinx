@@ -35,6 +35,7 @@ Parameters TrilinosPreconditioner::default_parameters()
   Parameters p(KrylovSolver::default_parameters());
   p.rename("trilinos_preconditioner");
   p.add("ilu_fill_level", 0);
+  p.add("schwarz_overlap", 1);
   return p;
 }
 //-----------------------------------------------------------------------------
