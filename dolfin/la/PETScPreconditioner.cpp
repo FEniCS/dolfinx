@@ -18,15 +18,16 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 // Available preconditioners
 const std::map<std::string, const PCType> PETScPreconditioner::methods
-  = boost::assign::map_list_of("default",   "")
-                              ("none",      PCNONE)
-                              ("ilu",       PCILU)
-                              ("bjacobi",   PCBJACOBI)
-                              ("jacobi",    PCJACOBI)
-                              ("sor",       PCSOR)
-                              ("icc",       PCICC)
-                              ("amg_hypre", PCHYPRE)
-                              ("amg_ml",    PCML);
+  = boost::assign::map_list_of("default",          "")
+                              ("none",             PCNONE)
+                              ("additive_schwarz", PCASM)
+                              ("ilu",              PCILU)
+                              ("bjacobi",          PCBJACOBI)
+                              ("jacobi",           PCJACOBI)
+                              ("sor",              PCSOR)
+                              ("icc",              PCICC)
+                              ("amg_hypre",        PCHYPRE)
+                              ("amg_ml",           PCML);
 //-----------------------------------------------------------------------------
 Parameters PETScPreconditioner::default_parameters()
 {
@@ -76,8 +77,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     #endif
     return;
   }
-
-  if (type == "amg_ml")
+  else if (type == "amg_ml")
   {
     #if PETSC_HAVE_ML
     PCSetType(pc, PCML);
@@ -89,8 +89,13 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     #endif
     return;
   }
-
-  if (type != "default")
+  else if (type == "additive_schwarz")
+  {
+    // FIXME: Apply parameters to sub-preconditioner
+    PCSetType(pc, methods.find("additive_schwarz")->second);
+    //PCASMSetOverlap(pc, parameters["schwarz_overlap"])
+  }
+  else if (type != "default")
     PCSetType(pc, methods.find(type)->second);
 
   // Set preconditioner parameters

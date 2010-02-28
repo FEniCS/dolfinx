@@ -80,7 +80,7 @@ namespace dolfin
     void init(uint M, uint N);
 
     /// Report the number of iterations
-    void write_report(int num_iterations);
+    void write_report(int num_iterations, KSPConvergedReason reason);
 
     /// Krylov method
     std::string method;

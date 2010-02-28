@@ -144,14 +144,14 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   KSPConvergedReason reason;
   KSPGetConvergedReason(*_ksp, &reason);
   if (reason < 0)
-    warning("Krylov solver did not converge.");
+    warning("Krylov solver did not converge (PETSc reason %i).", reason);
 
   // Get the number of iterations
   int num_iterations = 0;
   KSPGetIterationNumber(*_ksp, &num_iterations);
 
   // Report results
-  write_report(num_iterations);
+  write_report(num_iterations, reason);
 
   return num_iterations;
 }
@@ -197,14 +197,14 @@ dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A,
   KSPConvergedReason reason;
   KSPGetConvergedReason(*_ksp, &reason);
   if (reason < 0)
-    error("Krylov solver did not converge.");
+    warning("Krylov solver did not converge (PETSc reason %i).", reason);
 
   // Get the number of iterations
   int num_iterations = 0;
   KSPGetIterationNumber(*_ksp, &num_iterations);
 
   // Report results
-  write_report(num_iterations);
+  write_report(num_iterations, reason);
 
   return num_iterations;
 }
@@ -267,7 +267,8 @@ void PETScKrylovSolver::init(uint M, uint N)
     preconditioner->set(*this);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::write_report(int num_iterations)
+void PETScKrylovSolver::write_report(int num_iterations,
+                                     KSPConvergedReason reason)
 {
   // Check if we should write the report
   if (!parameters["report"])
@@ -275,15 +276,42 @@ void PETScKrylovSolver::write_report(int num_iterations)
 
   // Get name of solver and preconditioner
   PC pc;
-  const KSPType _ksp_type;
+  const KSPType ksp_type;
   const PCType pc_type;
-  KSPGetType(*_ksp, &_ksp_type);
+  KSPGetType(*_ksp, &ksp_type);
   KSPGetPC(*_ksp, &pc);
   PCGetType(pc, &pc_type);
 
+  // If using additive Schwarz, get 'sub' method which is applied to each block
+  const std::string pc_type_str = pc_type;
+  const KSPType sub_ksp_type;
+  const PCType sub_pc_type;
+  if (pc_type_str == "asm")
+  {
+    PC sub_pc;
+    KSP* sub_ksp;
+    PCASMGetSubKSP(pc, PETSC_NULL, PETSC_NULL, &sub_ksp);
+    KSPGetType(*sub_ksp, &sub_ksp_type);
+    KSPGetPC(*sub_ksp, &sub_pc);
+    PCGetType(sub_pc, &sub_pc_type);
+  }
+
   // Report number of iterations and solver type
-  info("PETSc Krylov solver (%s, %s) converged in %d iterations.",
-          _ksp_type, pc_type, num_iterations);
+  if (reason >= 0)
+  {
+    info("PETSc Krylov solver (%s, %s) converged in %d iterations.",
+            ksp_type, pc_type, num_iterations);
+  }
+  else
+  {
+    info("PETSc Krylov solver (%s, %s) failed to converge in %d iterations.",
+            ksp_type, pc_type, num_iterations);
+  }
+  if (pc_type_str == "asm")
+  {
+    info("PETSc Krylov additive Schwarz (asm) sub-methods: (%s, %s)",
+            sub_ksp_type, sub_pc_type);
+  }
 }
 //-----------------------------------------------------------------------------
 
