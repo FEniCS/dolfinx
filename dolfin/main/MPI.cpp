@@ -377,6 +377,14 @@ dolfin::uint dolfin::MPI::global_maximum(uint size)
   return recv_size;
 }
 //-----------------------------------------------------------------------------
+double dolfin::MPI::sum(double value)
+{
+  double recv_value = 0.0;
+  MPICommunicator comm;
+  MPI_Allreduce(&value, &recv_value, 1, MPI_DOUBLE, MPI_SUM, *comm);
+  return recv_value;
+}
+//-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::global_offset(uint range, bool exclusive)
 {
   uint offset = 0;
@@ -386,13 +394,10 @@ dolfin::uint dolfin::MPI::global_offset(uint range, bool exclusive)
 
   // Compute inclusive or exclusive partial reduction
   if (exclusive)
-  {
     MPI_Exscan(&range, &offset, 1, MPI_UNSIGNED, MPI_SUM, *comm);
-  }
   else
-  {
     MPI_Scan(&range, &offset, 1, MPI_UNSIGNED, MPI_SUM, *comm);
-  }
+
   return offset;
 }
 //-----------------------------------------------------------------------------
@@ -565,6 +570,12 @@ dolfin::uint dolfin::MPI::global_maximum(uint size)
 {
   error("MPI::global_maximum() requires MPI.");
   return 0;
+}
+//-----------------------------------------------------------------------------
+double dolfin::MPI::sum(double value)
+{
+  error("MPI::sum() requires MPI.");
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::global_offset(uint range, bool exclusive)
