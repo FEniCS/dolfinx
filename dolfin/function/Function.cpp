@@ -6,7 +6,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-02-19
+// Last changed: 2010-02-28
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -290,7 +290,10 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   Point point(_function_space->mesh().geometry().dim(), _x);
   int id = _function_space->mesh().any_intersected_entity(point);
   if (id == -1)
+  {
+    cout << "Evaluating at " << point << endl;
     error("Unable to evaluate function at given point (not inside domain, possibly off-process if running in parallel).");
+  }
 
   Cell cell(_function_space->mesh(), id);
   UFCCell ufc_cell(cell);
