@@ -10,6 +10,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <numeric>
 
 #include <Epetra_FEVector.h>
 #include <Epetra_Export.h>
@@ -391,7 +392,7 @@ const EpetraVector& EpetraVector::operator*= (const GenericVector& y)
   if (size() != v.size())
     error("The vectors must be of the same size.");
 
-  int err = x->Multiply(1.0,*x,*v.x,0.0);
+  int err = x->Multiply(1.0, *x, *v.x, 0.0);
   if (err!= 0)
     error("EpetraVector::operator*=: Did not manage to perform Epetra_Vector::Multiply.");
   return *this;
@@ -457,9 +458,7 @@ double EpetraVector::sum() const
   get_local(&x_local[0]);
 
   // Compute local sum
-  double local_sum = 0.0;
-  for (uint i = 0; i < N; ++i)
-    local_sum += x_local[0];
+  double local_sum = std::accumulate(x_local.begin(), x_local.end(), 0.0);
 
   // Compute global sum
   double global_sum = 0.0;
@@ -468,4 +467,5 @@ double EpetraVector::sum() const
   return global_sum;
 }
 //-----------------------------------------------------------------------------
+
 #endif
