@@ -62,9 +62,6 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
 
-    /// Solve linear system Ax = b and return number of iterations
-    uint solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);
-
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 

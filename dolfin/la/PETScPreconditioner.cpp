@@ -8,6 +8,7 @@
 
 #include <boost/assign/list_of.hpp>
 #include <petscksp.h>
+#include <petscmat.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/log/dolfin_log.h>
@@ -89,31 +90,52 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   }
   else if (type == "additive_schwarz")
   {
-    // FIXME: Apply parameters to sub-preconditioner
+    // Select method and and overlap
     PCSetType(pc, methods.find("additive_schwarz")->second);
     PCASMSetOverlap(pc, parameters["schwarz_overlap"]);
+
+    // Make sure the data structures have been constructed
+    KSPSetUp(*solver.ksp());
+
+    // Get sub-solvers and set su- solver parameters
+    KSP* sub_ksps;
+    int num_local(0), first(0);
+    PCASMGetSubKSP(pc, &num_local, &first, &sub_ksps);
+    for (int i = 0; i < num_local; ++i)
+    {
+      PC sub_pc;
+      KSPGetPC(sub_ksps[i], &sub_pc);
+      //PCSetType(sub_pc, PCLU);
+      //PCFactorSetMatSolverPackage(sub_pc, MAT_SOLVER_UMFPACK);
+      //PCSetType(sub_pc, PCILU);
+      //KSPSetType(sub_ksps[i], KSPGMRES);
+      PCFactorSetLevels(sub_pc, parameters["ilu_fill_level"]);
+      //PCFactorSetLevels(sub_pc, 4);
+      //PCView(sub_pc, PETSC_VIEWER_STDOUT_WORLD);
+    }
+    //KSPSetTolerances(sub_ksps[0], 1.0e-1,
+		//                      parameters["absolute_tolerance"],
+		//                      parameters["divergence_limit"],
+		//                      100);
+    //KSPMonitorSet(sub_ksps[0], KSPMonitorTrueResidualNorm, 0, 0);
   }
   else if (type != "default")
+  {
     PCSetType(pc, methods.find(type)->second);
-
-  // Set preconditioner parameters
-  PCFactorSetShiftNonzero(pc, parameters["shift_nonzero"]);
-  PCFactorSetLevels(pc, parameters["ilu_fill_level"]);
+    PCFactorSetShiftNonzero(pc, parameters["shift_nonzero"]);
+    PCFactorSetLevels(pc, ilu_fill_level);
+  }
 
   // Make sure options are set
   PCSetFromOptions(pc);
-
-  PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
+  //PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
 std::string PETScPreconditioner::str(bool verbose) const
 {
   std::stringstream s;
   if (verbose)
-  {
     warning("Verbose output for PETScPreconditioner not implemented.");
-    //PCView(*pc, PETSC_VIEWER_STDOUT_WORLD);
-  }
   else
     s << "<PETScPreconditioner>";
 

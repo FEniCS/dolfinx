@@ -137,60 +137,10 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   KSPGMRESSetRestart(*_ksp, parameters["gmres_restart"]);
   KSPSetOperators(*_ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
 
-  // Solve linear system
-  KSPSolve(*_ksp, *b.vec(), *x.vec());
-
-  // Check if the solution converged
-  KSPConvergedReason reason;
-  KSPGetConvergedReason(*_ksp, &reason);
-  if (reason < 0)
-    warning("Krylov solver did not converge (PETSc reason %i).", reason);
-
-  // Get the number of iterations
-  int num_iterations = 0;
-  KSPGetIterationNumber(*_ksp, &num_iterations);
-
-  // Report results
-  write_report(num_iterations, reason);
-
-  return num_iterations;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const PETScKrylovMatrix& A,
-                                      PETScVector& x, const PETScVector& b)
-{
-  error("PETScKrylovSolver::solve for Krylove matrices needs to be updated");
-
-  // Check dimensions
-  const uint M = A.size(0);
-  const uint N = A.size(1);
-  if (N != b.size())
-    error("Non-matching dimensions for linear system.");
-
-  // Write a message
-  if (parameters["report"])
-    info("Solving virtual linear system of size %d x %d (Krylov solver).", M, N);
-
-  // Reinitialize KSP solver if necessary
-  init(M, N);
-
-  // Reinitialize solution vector if necessary
-  if (x.size() != M)
-  {
-    x.resize(M);
-    x.zero();
-  }
-
-  // Don't use preconditioner that can't handle virtual (shell) matrix
-  if (!pc_dolfin)
-  {
-    PC pc;
-    KSPGetPC(*_ksp, &pc);
-    PCSetType(pc, PCNONE);
-  }
+  if (preconditioner)
+    preconditioner->set(*this);
 
   // Solve linear system
-  KSPSetOperators(*_ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
   KSPSolve(*_ksp, *b.vec(), *x.vec());
 
   // Check if the solution converged
@@ -261,10 +211,6 @@ void PETScKrylovSolver::init(uint M, uint N)
   // Set solver type
   if (method != "default")
     KSPSetType(*_ksp, methods.find(method)->second);
-
-  // Set preconditioner
-  if (preconditioner)
-    preconditioner->set(*this);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::write_report(int num_iterations,
