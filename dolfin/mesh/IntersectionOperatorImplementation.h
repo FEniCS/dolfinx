@@ -4,13 +4,14 @@
 // Modified by Johannes Ring, 2009.
 //
 // First added:  2009-09-11
-// Last changed: 2010-02-11
+// Last changed: 2010-03-02
 
 #ifndef __INTERSECTIONOPERATORIMPLEMENTATION_H
 #define __INTERSECTIONOPERATORIMPLEMENTATION_H
 
 
 #include <vector>
+#include <utility>
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
@@ -52,7 +53,8 @@ namespace dolfin
 
     virtual void all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const = 0;
     virtual int any_intersected_entity(const Point & point) const = 0; 
-
+    virtual Point closest_point(const Point & point) const = 0;
+    virtual std::pair<Point,uint> closest_point_and_entity_index(const Point & point) const = 0;
   };
 
   ///Class which provides the dimensional implementation of the search structure
@@ -67,10 +69,12 @@ namespace dolfin
 //    typedef Tree_Traits<K,CellPrimitive> AABB_PrimitiveTraits;
     typedef CGAL::AABB_traits<K,CellPrimitive> AABB_PrimitiveTraits;
     typedef CGAL::AABB_tree<AABB_PrimitiveTraits> Tree;
+//    typedef Tree::Point_and_primitive_id Point_and_primitive_id;
 
   public:
     ///Constructor. 
-    IntersectionOperatorImplementation_d(boost::shared_ptr<const Mesh> _mesh) : _mesh(_mesh) 
+    IntersectionOperatorImplementation_d(boost::shared_ptr<const Mesh> _mesh) 
+      : _mesh(_mesh), point_search_tree_constructed(false)
     {
       build_tree();
     }
@@ -85,6 +89,9 @@ namespace dolfin
 
     virtual  int any_intersected_entity(const Point & point) const;
 
+    virtual Point closest_point(const Point & point) const;
+    virtual std::pair<Point,dolfin::uint> closest_point_and_entity_index(const Point & point) const;
+
     ///Topological dimension of the mesh.
     static const uint dim = PrimitiveTrait::dim;
 
@@ -93,6 +100,7 @@ namespace dolfin
     void build_tree();
     boost::shared_ptr<const Mesh> _mesh;
     boost::scoped_ptr<Tree> tree;
+    bool point_search_tree_constructed;
 
   };
 
@@ -191,6 +199,31 @@ namespace dolfin
   }
 
   template <class PT>
+  Point IntersectionOperatorImplementation_d<PT>::closest_point(const Point & point) const
+  {
+    typedef typename PT::K K;
+    if (!point_search_tree_constructed)
+      tree->accelerate_distance_queries();
+    return Point();
+//    return  Point(tree->closest_point(PrimitiveTraits<PointPrimitive,K>::datum(point)));
+  }
+
+  template <class PT>
+  std::pair<Point,uint> IntersectionOperatorImplementation_d<PT>::closest_point_and_entity_index(const Point & point) const
+  {
+    typedef typename PT::K K;
+//    typedef typename IntersectionOperatorImplementation_d<PT>::Tree Tree;
+//    typedef Tree::Point_and_primitive_id Point_and_primitive_id;
+
+//    if (!point_search_tree_constructed)
+//      tree->accelerate_distance_queries();
+    
+//    Point_and_primitive_id pp = tree->closest_point_and_primitive(PrimitiveTraits<PointPrimitive,K>::datum(point));
+//    return std::pair<Point,uint>(Point(pp.first),pp.second);
+    return std::pair<Point,uint>(Point(),0);
+  }
+
+  template <class PT>
   void IntersectionOperatorImplementation_d<PT>::build_tree()
   {
     if (_mesh)
@@ -198,6 +231,7 @@ namespace dolfin
       MeshEntityIterator cell_iter(*_mesh,dim);
       tree.reset(new Tree(cell_iter,cell_iter.end_iterator()));
     }
+    point_search_tree_constructed = false;
   }
 
 }
@@ -222,6 +256,8 @@ namespace dolfin  {
     virtual void all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const {};
     virtual void all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const {}
     virtual int any_intersected_entity(const Point & point) const {return -1; } 
+    virtual Point closest_point(const Point & point) const {return Point(); } 
+    virtual std::pair<Point,uint> closest_point_and_entity_index(const Point & point) const {return std::pair<Point,uint>(); }
 
   };
 }

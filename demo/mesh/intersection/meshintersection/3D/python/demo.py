@@ -16,6 +16,10 @@ if not has_cgal():
     print "DOLFIN must be compiled with CGAL to run this demo."
     exit(0)
 
+#Set to False if you do not want to create movies 
+#(default is True since you probably want to :) 
+create_movies = True
+
 sphere = UnitSphere(20)
 cube = UnitCube(20, 20, 20)
 
@@ -23,7 +27,7 @@ cube = UnitCube(20, 20, 20)
 x = sphere.coordinates()
 
 # Start center and propagtion speed for the sphere.
-dt = 0.1
+dt = 0.02
 t = -0.61
 
 # Scale and move the circle.
@@ -58,12 +62,19 @@ while t < 1.4 :
     else:
         plot(intersection)
 
+    p.update(intersection)
+    if create_movies:
+      p.write_png()
+
     #Propagate sphere along the line t(1,1,1).  
     x[:,0] += dt 
     x[:,1] += dt
     x[:,2] += dt 
 
     t += dt
+
+if create_movies:
+  p.movie("sphere_cube_intersection.avi", cleanup=True)
 
 # Hold plot
 interactive()

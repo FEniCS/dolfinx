@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-01
-// Last changed: 2010-02-10
+// Last changed: 2010-03-02
 
 #include <algorithm>
 #include <map>
@@ -83,6 +83,15 @@ int IntersectionOperator::any_intersected_entity(const Point& point) const
   return rImpl().any_intersected_entity(point);
 }
 //-----------------------------------------------------------------------------
+Point IntersectionOperator::closest_point(const Point & point) const
+{
+  return rImpl().closest_point(point);
+}
+//-----------------------------------------------------------------------------
+std::pair<Point,dolfin::uint> IntersectionOperator::closest_point_and_entity_index(const Point & point) const
+{
+  return rImpl().closest_point_and_entity_index(point);
+}
 void IntersectionOperator::reset_kernel(const std::string& kernel_type) 
 { 
   _pImpl.reset(create_intersection_operator(_mesh,kernel_type)); 
