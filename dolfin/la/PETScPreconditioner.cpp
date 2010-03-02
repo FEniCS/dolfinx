@@ -123,7 +123,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   {
     PCSetType(pc, methods.find(type)->second);
     PCFactorSetShiftNonzero(pc, parameters["shift_nonzero"]);
-    PCFactorSetLevels(pc, ilu_fill_level);
+    PCFactorSetLevels(pc, parameters["ilu_fill_level"]);
   }
 
   // Make sure options are set
