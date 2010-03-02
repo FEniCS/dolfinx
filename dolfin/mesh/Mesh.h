@@ -180,8 +180,11 @@ namespace dolfin
     /// Move coordinates of mesh according to displacement function
     void move(const Function& displacement);
 
-    /// Smooth mesh using Lagrangian mesh smoothing
-    void smooth(uint num_smoothings=1);
+    /// Smooth internal vertices of mesh by local averaging
+    void smooth(uint num_iterations=1);
+
+    /// Smooth boundary vertices of mesh by local averaging
+    void smooth_boundary(uint num_iterations=1, bool harmonic_smoothing=true);
 
     ///Compute all id of all cells which are intersects by a \em point.
     ///\param[out] ids_result The ids of the intersected entities are saved in a set for efficienty

@@ -8,6 +8,9 @@
 
 #include <boost/assign/list_of.hpp>
 #include <AztecOO.h>
+#include <Ifpack.h>
+#include <Epetra_CombineMode.h>
+
 #include <ml_include.h>
 #include <ml_MultiLevelOperator.h>
 #include <ml_epetra_utils.h>
@@ -54,7 +57,7 @@ TrilinosPreconditioner::~TrilinosPreconditioner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void TrilinosPreconditioner::set(EpetraKrylovSolver& solver) const
+void TrilinosPreconditioner::set(EpetraKrylovSolver& solver)
 {
   assert(solver.aztecoo());
 
@@ -64,9 +67,31 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver) const
   // Set preconditioner
   if (type == "default" || type == "ilu")
   {
+    /*
+    const int ilu_fill_level = parameters["ilu_fill_level"];
+    const int overlap        = parameters["schwarz_overlap"];
+    Teuchos::ParameterList list;
+    list.set("fact: level-of-fill", ilu_fill_level);
+    list.set("schwarz: combine mode", "Zero");
+
+    Epetra_RowMatrix* A = _solver.GetUserMatrix();
+
+    Ifpack ifpack_factory;
+    string type = "ILU";
+    ifpack_preconditioner.reset( ifpack_factory.Create(type, A, overlap) );
+    assert(ifpack_preconditioner != 0);
+
+    ifpack_preconditioner->SetParameters(list);
+    ifpack_preconditioner->Initialize();
+    ifpack_preconditioner->Compute();
+    _solver.SetPrecOperator(ifpack_preconditioner.get());
+    std::cout << *ifpack_preconditioner;
+    */
+
     _solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
     _solver.SetAztecOption(AZ_subdomain_solve, methods.find(type)->second);
     _solver.SetAztecOption(AZ_graph_fill, parameters["ilu_fill_level"]);
+    //_solver.CheckInput();
   }
   else if (type == "amg_ml")
     set_ml(_solver);
