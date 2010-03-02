@@ -8,12 +8,13 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2009-11-09
+// Last changed: 2010-02-26
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
 
 #include <dolfin/common/utils.h>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/log/log.h>
@@ -58,13 +59,8 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(const FunctionSpace& V)
 {
-  //dolfin_debug1("Creating function space: %x", this);
-
   // Assign data (will be shared)
-  _mesh    = V._mesh;
-  _element = V._element;
-  _dofmap  = V._dofmap;
-  _restriction = V._restriction;
+  *this = V;
 
   // Register adaptive object
   AdaptiveObjects::register_object(this);
@@ -82,6 +78,7 @@ const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
   _mesh    = V._mesh;
   _element = V._element;
   _dofmap  = V._dofmap;
+  _component = V._component;
   _restriction = V._restriction;
 
   return *this;
@@ -157,7 +154,7 @@ boost::shared_ptr<FunctionSpace> FunctionSpace::operator[] (uint i) const
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace>
-     FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
+FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 {
   assert(_mesh);
   assert(_element);
@@ -168,7 +165,7 @@ boost::shared_ptr<FunctionSpace>
   for (uint i = 0; i < component.size(); ++i)
     identifier << component[i] << ".";
 
-  // Check if sub space is aleady in the cache
+  // Check if sub space is already in the cache
   std::map<std::string, boost::shared_ptr<FunctionSpace> >::iterator subspace;
   subspace = subspaces.find(identifier.str());
   if (subspace != subspaces.end())
@@ -183,6 +180,11 @@ boost::shared_ptr<FunctionSpace>
   // Create new sub space
   boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
 
+  // Set component
+  new_sub_space->_component.resize(component.size());
+  for (uint i = 0; i < component.size(); i++)
+    new_sub_space->_component[i] = component[i];
+
   // Insert new sub space into cache
   subspaces.insert(std::pair<std::string, boost::shared_ptr<FunctionSpace> >(identifier.str(), new_sub_space));
 
@@ -195,6 +197,14 @@ FunctionSpace::collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const
   boost::shared_ptr<FunctionSpace> collapsed_sub_space(new FunctionSpace(_mesh, _element, dofmap));
   return collapsed_sub_space;
 }
+//-----------------------------------------------------------------------------
+const dolfin::Array<dolfin::uint>& FunctionSpace::component() const
+{
+  return _component;
+}
+//-----------------------------------------------------------------------------
+// FIXME: Restrictions are broken
+/*
 //-----------------------------------------------------------------------------
 void FunctionSpace::attach(MeshFunction<bool>& restriction)
 {
@@ -215,6 +225,7 @@ bool FunctionSpace::is_inside_restriction(uint c) const
   else
     return true;
 }
+*/
 //-----------------------------------------------------------------------------
 std::string FunctionSpace::str(bool verbose) const
 {

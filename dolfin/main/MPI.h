@@ -25,7 +25,9 @@ namespace dolfin
 #ifdef HAS_MPI
   class MPICommunicator
   {
+
   public:
+
     /// Create communicator (copy of MPI_COMM_WORLD)
     MPICommunicator();
 
@@ -92,6 +94,9 @@ namespace dolfin
 
     /// Find global max value (wrapper for MPI_Allredue with MPI_MAX as reduction op)
     static uint global_maximum(uint size);
+
+    /// Sum values and return sum
+    static double sum(double value);
 
     /// Find global offset (index) (wrapper for MPI_(Ex)Scan with MPI_SUM as reduction op)
     static uint global_offset(uint range, bool exclusive);

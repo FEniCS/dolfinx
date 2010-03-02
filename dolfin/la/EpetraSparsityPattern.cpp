@@ -9,11 +9,14 @@
 
 #ifdef HAS_TRILINOS
 
+#include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 #include <Epetra_FECrsGraph.h>
 
 #include <dolfin/common/types.h>
+#include <dolfin/log/dolfin_log.h>
 #include <dolfin/log/log.h>
+#include <dolfin/main/MPI.h>
 #include "EpetraFactory.h"
 #include "GenericSparsityPattern.h"
 #include "EpetraSparsityPattern.h"
@@ -45,10 +48,12 @@ void EpetraSparsityPattern::init(uint rank_, const uint* dims_)
     dims[0] = dims_[0];
     dims[1] = dims_[1];
 
-    EpetraFactory& f = EpetraFactory::instance();
-    Epetra_SerialComm Comm = f.getSerialComm();
+    const std::pair<uint, uint> range = MPI::local_range(dims[0]);
+    const uint num_local_rows = range.second - range.first;
 
-    Epetra_Map row_map(dims[0], 0, Comm);
+    EpetraFactory& f = EpetraFactory::instance();
+    Epetra_MpiComm comm = f.get_mpi_comm();
+    Epetra_Map row_map(dims[0], num_local_rows, 0, comm);
     epetra_graph = new Epetra_FECrsGraph(Copy, row_map, 0);
   }
   else
@@ -74,7 +79,7 @@ uint EpetraSparsityPattern::size(uint i) const
 {
   if (_rank == 1)
     return dims[0];
-  
+
   if (_rank == 2)
   {
     assert(epetra_graph);
@@ -88,9 +93,10 @@ uint EpetraSparsityPattern::size(uint i) const
 //-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> EpetraSparsityPattern::local_range(uint dim) const
 {
-  dolfin_not_implemented();
-  std::pair<uint, uint> r;
-  return r;
+  error("EpetraSparsityPattern::local_range not implemented.");
+  return std::make_pair(0, 0);
+  //assert(dim < 2);
+  //return MPI::local_range(size(dim));
 }
 //-----------------------------------------------------------------------------
 uint EpetraSparsityPattern::num_nonzeros() const
@@ -112,20 +118,11 @@ void EpetraSparsityPattern::num_nonzeros_off_diagonal(uint* num_nonzeros) const
 void EpetraSparsityPattern::apply()
 {
   assert(epetra_graph);
-
-  // Could employ eg. OptimizeStorage. Not sure if this is wanted,
-  // the graph would then depend on the equations, not only the method.
-
-  EpetraFactory& f = EpetraFactory::instance();
-  Epetra_SerialComm Comm = f.getSerialComm();
-
-  Epetra_Map row_map(dims[0], 0, Comm);
-  Epetra_Map col_map(dims[1], 0, Comm);
-
-  epetra_graph->FillComplete (col_map, row_map);
+  epetra_graph->FillComplete();
+  //epetra_graph->GlobalAssemble();
 }
 //-----------------------------------------------------------------------------
-Epetra_FECrsGraph& EpetraSparsityPattern:: pattern() const
+Epetra_FECrsGraph& EpetraSparsityPattern::pattern() const
 {
   return *epetra_graph;
 }

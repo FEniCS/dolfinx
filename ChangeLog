@@ -1,3 +1,9 @@
+ - Add functionality for smoothing the boundary of a mesh
+ - Speedup assembly over exterior facets by not using BoundaryMesh
+ - Mesh refinement improvements, remove unecessary copying in Python interface
+ - Clean PETSc and Epetra Krylov solvers
+ - Add separate preconditioner classes for PETSc and Epetra solvers
+ - Add function ident_zeros for inserting one on diagonal for zero rows
  - Add LU support for Trilinos interface
 0.9.7 [2010-02-17]
  - Add support for specifying facet orientation in assembly over interior facets

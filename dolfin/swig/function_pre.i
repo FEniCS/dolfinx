@@ -7,9 +7,9 @@
 // Modified by Johan Hake, 2008-2009
 // Modified by Garth Wells, 2008-2009
 // Modified by Kent-Andre Mardal, 2009
-// 
+//
 // First added:  2007-08-16
-// Last changed: 2010-02-14
+// Last changed: 2010-02-26
 
 // ===========================================================================
 // SWIG directives for the DOLFIN function kernel module (pre)
@@ -37,7 +37,7 @@ namespace dolfin
 // Modifying the interface of Function
 //-----------------------------------------------------------------------------
 %ignore dolfin::Function::function_space;
-%rename (_function_space) dolfin::Function::function_space_ptr;
+%rename(_function_space) dolfin::Function::function_space_ptr;
 %rename(_sub) dolfin::Function::operator[];
 %rename(assign) dolfin::Function::operator=;
 %rename(_in) dolfin::Function::in;
@@ -70,12 +70,12 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Turn off value wrapper for std::vector<dolfin::uint>
 //-----------------------------------------------------------------------------
-%feature("novaluewrapper") std::vector<dolfin::uint>; 
+%feature("novaluewrapper") std::vector<dolfin::uint>;
 
 //-----------------------------------------------------------------------------
 // Instantiate a dummy std::vector<dolfin::uint> so value wrapper is not used
 //-----------------------------------------------------------------------------
-%template () std::vector<dolfin::uint>; 
+%template () std::vector<dolfin::uint>;
 
 //-----------------------------------------------------------------------------
 // Typemap for std::vector<dolfin::uint> value_shape
@@ -88,7 +88,7 @@ namespace dolfin
 %typemap (in) std::vector<dolfin::uint> value_shape
 {
   if (PyList_Check($input))
-  {  
+  {
     PyObject * py_item = 0;
     int size = PyList_Size($input);
     int item = 0;
@@ -113,12 +113,12 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 // Turn off value wrapper for std::vector<double>
 //-----------------------------------------------------------------------------
-%feature("novaluewrapper") std::vector<double>; 
+%feature("novaluewrapper") std::vector<double>;
 
 //-----------------------------------------------------------------------------
 // Instantiate a dummy std::vector<double> so value wrapper is not used
 //-----------------------------------------------------------------------------
-%template () std::vector<double>; 
+%template () std::vector<double>;
 
 //-----------------------------------------------------------------------------
 // Typemap for std::vector<double> values
@@ -131,7 +131,7 @@ namespace dolfin
 %typemap (in) std::vector<double> values
 {
   if (PyList_Check($input))
-  {  
+  {
     PyObject * py_item = 0;
     int size = PyList_Size($input);
     double item = 0;

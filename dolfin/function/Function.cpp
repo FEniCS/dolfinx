@@ -6,7 +6,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-02-12
+// Last changed: 2010-02-28
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -19,6 +19,7 @@
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/adaptivity/AdaptiveObjects.h>
@@ -289,7 +290,10 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   Point point(_function_space->mesh().geometry().dim(), _x);
   int id = _function_space->mesh().any_intersected_entity(point);
   if (id == -1)
+  {
+    cout << "Evaluating at " << point << endl;
     error("Unable to evaluate function at given point (not inside domain, possibly off-process if running in parallel).");
+  }
 
   Cell cell(_function_space->mesh(), id);
   UFCCell ufc_cell(cell);
@@ -331,9 +335,10 @@ void Function::extrapolate(const Function& v, bool facet_extrapolation)
   Extrapolation::extrapolate(*this, v, facet_extrapolation);
 }
 //-----------------------------------------------------------------------------
-void Function::extrapolate(const Function& v, const SubDomain& sub_domain)
+void Function::extrapolate(const Function& v,
+                           const std::vector<const DirichletBC*>& bcs)
 {
-  Extrapolation::extrapolate(*this, v, sub_domain);
+  Extrapolation::extrapolate(*this, v, bcs);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Function::value_rank() const

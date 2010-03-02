@@ -46,27 +46,23 @@ const std::map<std::string, NormType> PETScMatrix::norm_types
                               ("frobenius", NORM_FROBENIUS);
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix() :
-    A(static_cast<Mat*>(0), PETScMatrixDeleter())
+PETScMatrix::PETScMatrix()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A) :
-    A(A)
+PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A) : A(A)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(uint M, uint N) :
-    A(static_cast<Mat*>(0), PETScMatrixDeleter())
+PETScMatrix::PETScMatrix(uint M, uint N)
 {
   // Create PETSc matrix
   resize(M, N);
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const PETScMatrix& A):
-  A(static_cast<Mat*>(0), PETScMatrixDeleter())
+PETScMatrix::PETScMatrix(const PETScMatrix& A)
 {
   *this = A;
 }
@@ -85,7 +81,7 @@ void PETScMatrix::resize(uint M, uint N)
     return;
 
   // Create matrix (any old matrix is destroyed automatically)
-  if (!A.unique())
+  if (A && !A.unique())
     error("Cannot resize PETScMatrix. More than one object points to the underlying PETSc object.");
   A.reset(new Mat, PETScMatrixDeleter());
 
@@ -123,7 +119,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   assert(M > 0 && N > 0 && m > 0 && n > 0);
 
   // Create matrix (any old matrix is destroyed automatically)
-  if (!A.unique())
+  if (A && !A.unique())
     error("Cannot initialise PETScMatrix. More than one object points to the underlying PETSc object.");
   A.reset(new Mat, PETScMatrixDeleter());
 
@@ -142,7 +138,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     //        does not have to be set for different linear solvers
 
     // Initialize PETSc matrix
-    MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, PETSC_NULL, 
+    MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, PETSC_NULL,
                     reinterpret_cast<int*>(num_nonzeros), A.get());
 
     // Set some options
@@ -254,6 +250,9 @@ void PETScMatrix::getrow(uint row,
                          std::vector<uint>& columns,
                          std::vector<double>& values) const
 {
+  if (MPI::num_processes() > 1)
+    error("PETScMatrix::getrow does not work in parallel.");
+
   assert(A);
 
   const int *cols = 0;
@@ -401,7 +400,7 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
   // Check for self-assignment
   if (this != &A)
   {
-      if (!this->A.unique())
+      if (this->A && !this->A.unique())
         error("Cannot assign PETScMatrix with different non-zero pattern because more than one object points to the underlying PETSc object.");
       this->A.reset(new Mat, PETScMatrixDeleter());
 

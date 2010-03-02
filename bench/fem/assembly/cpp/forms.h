@@ -14,8 +14,8 @@
 #include "forms/Elasticity3D.h"
 #include "forms/NSEMomentum3D.h"
 
-#define N_2D 256
-#define N_3D 32
+#define N_2D 512
+#define N_3D 48
 
 using namespace dolfin;
 
@@ -68,7 +68,7 @@ double bench_form(std::string form_name, double (*bench_form)(Form&))
   {
     UnitCube mesh(N_3D, N_3D, N_3D);
     NSEMomentum3D::FunctionSpace V(mesh);
-    Constant  w(1.0);
+    Constant  w(1.0, 1.0, 1.0);
     Constant d1(1.0);
     Constant d2(1.0);
     Constant k(1.0);

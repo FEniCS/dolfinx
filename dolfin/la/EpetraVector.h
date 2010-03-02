@@ -12,6 +12,7 @@
 
 #ifdef HAS_TRILINOS
 
+#include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/Variable.h>
@@ -23,8 +24,10 @@ class Epetra_Map;
 namespace dolfin
 {
 
+  class GenericVector;
+
   /// This class provides a simple vector class based on Epetra.
-  /// It is a simple wrapper for an Epetra vector object (Epetre_FEVector)
+  /// It is a simple wrapper for an Epetra vector object (Epetra_FEVector)
   /// implementing the GenericVector interface.
   ///
   /// The interface is intentionally simple. For advanced usage,
@@ -36,10 +39,10 @@ namespace dolfin
   public:
 
     /// Create empty vector
-    EpetraVector();
+    EpetraVector(std::string type="global");
 
     /// Create vector of size N
-    explicit EpetraVector(uint N);
+    explicit EpetraVector(uint N, std::string type="global");
 
     /// Copy constructor
     explicit EpetraVector(const EpetraVector& x);
@@ -87,6 +90,8 @@ namespace dolfin
     /// Add block of values
     virtual void add(const double* block, uint m, const uint* rows);
 
+    virtual void get_local(double* block, uint m, const uint* rows) const;
+
     /// Get all values on local process
     virtual void get_local(double* values) const;
 
@@ -97,8 +102,7 @@ namespace dolfin
     virtual void add_local(const double* values);
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const
-    { not_working_in_parallel("EpetraVector::gather)"); }
+    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const;
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);
@@ -146,6 +150,9 @@ namespace dolfin
 
     //--- Special Epetra functions ---
 
+    /// Reset Epetra_FEVector
+    void reset(const Epetra_Map& map);
+
     /// Return Epetra_FEVector pointer
     boost::shared_ptr<Epetra_FEVector> vec() const;
 
@@ -156,6 +163,9 @@ namespace dolfin
 
     // Epetra_FEVector pointer
     boost::shared_ptr<Epetra_FEVector> x;
+
+    // Local/global vector
+    const std::string type;
 
   };
 

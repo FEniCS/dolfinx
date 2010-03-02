@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2006-06-12
-// Last changed: 2009-08-11
+// Last changed: 2010-02-28
 
 #include <cmath>
 #include "Point.h"
@@ -44,9 +44,6 @@ double Point::dot(const Point& p) const
 //-----------------------------------------------------------------------------
 std::string Point::str(bool verbose) const
 {
-  if (verbose)
-    warning("Verbose output for MeshEntityIterator not implemented.");
-
   std::stringstream s;
   s << "<Point x = " << x() << " y = " << y() << " z = " << z() << ">";
   return s.str();

@@ -6,9 +6,9 @@
 // Modified by Ola Skavhaug 2006-2007
 // Modified by Garth Wells 2007
 // Modified by Johan Hake 2008-2009
-// 
+//
 // First added:  2006-09-20
-// Last changed: 2010-02-13
+// Last changed: 2010-02-26
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (pre)
@@ -43,11 +43,11 @@
 
         return reinterpret_cast<PyObject*>(array);
     }
-    
+
     PyObject* cells() {
         int m = self->num_cells();
         int n = 0;
-	
+
         if(self->topology().dim() == 1)
           n = 2;
         else if(self->topology().dim() == 2)
@@ -93,7 +93,7 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
 %ignore dolfin::MeshFunction::values;
 
 //-----------------------------------------------------------------------------
-// Misc ignores 
+// Misc ignores
 //-----------------------------------------------------------------------------
 %ignore dolfin::Mesh::partition(dolfin::uint num_partitions, dolfin::MeshFunction<dolfin::uint>& partitions);
 %ignore dolfin::MeshEditor::open(Mesh&, CellType::Type, uint, uint);
@@ -128,6 +128,11 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
 %rename(entities) dolfin::MeshEntityIterator;
 
 //-----------------------------------------------------------------------------
+// Rename refine so we can wrap it manually (avoid copy in return-by-value)
+//-----------------------------------------------------------------------------
+%rename(_refine) dolfin::refine;
+
+//-----------------------------------------------------------------------------
 // Return NumPy arrays for MeshConnectivity() and MeshEntity.entities()
 //-----------------------------------------------------------------------------
 %ignore dolfin::MeshGeometry::x(uint n, uint i) const;
@@ -147,7 +152,7 @@ ALL_VALUES(dolfin::MeshFunction<dolfin::uint>, NPY_UINT)
   PyObject* __call__(dolfin::uint entity) {
     int m = self->size(entity);
     int n = 0;
-    
+
     MAKE_ARRAY(1, m, n, (*self)(entity), NPY_UINT)
 
       return reinterpret_cast<PyObject*>(array);

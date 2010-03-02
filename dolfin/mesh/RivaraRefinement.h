@@ -3,9 +3,10 @@
 //
 // Modified by Bartosz Sawicki, 2009.
 // Modified by Garth N. Wells, 2010.
+// Modified by Anders Logg, 2010.
 //
 // First added:  2008
-// Last changed: 2010-02-07
+// Last changed: 2010-02-26
 
 #ifndef __RIVARAREFINEMENT_H
 #define __RIVARAREFINEMENT_H
@@ -29,9 +30,10 @@ namespace dolfin
   public:
 
     /// Refine simplicial mesh locally by recursive edge bisection
-    static Mesh refine(const Mesh& mesh,
+    static void refine(Mesh& refined_mesh,
+                       const Mesh& mesh,
                        const MeshFunction<bool>& cell_marker,
-		                   MeshFunction<uint>& cell_map,
+                       MeshFunction<uint>& cell_map,
                        std::vector<int>& facet_map);
 
   private:

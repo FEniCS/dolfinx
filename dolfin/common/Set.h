@@ -14,7 +14,7 @@
 namespace dolfin
 {
 
-  /// This is a std::set like data structure. It is not ordered and it is based 
+  /// This is a std::set like data structure. It is not ordered and it is based
   /// a std::vector. It can be faster than a std::set for some cases.
 
   template<class T>
@@ -29,7 +29,7 @@ namespace dolfin
     Set() {}
 
     /// Wrap std::vectpr as a set. Contents will be erased.
-    Set(std::vector<T>& x) : _x(x) 
+    Set(std::vector<T>& x) : _x(x)
     { _x.clear(); }
 
     /// Copy constructor
@@ -51,7 +51,7 @@ namespace dolfin
     {
       if( find(x) == this->end() )
       {
-        _x.push_back(x);      
+        _x.push_back(x);
         return true;
       }
       else
@@ -70,10 +70,10 @@ namespace dolfin
 
     /// Erase an entry
     void erase(const T& x)
-    { 
-      iterator p = find(x); 
+    {
+      iterator p = find(x);
       if (p != _x.end())
-        _x.erase(p); 
+        _x.erase(p);
     }
 
     /// Sort set
@@ -92,7 +92,7 @@ namespace dolfin
     T operator[](uint n) const
     { return _x[n]; }
 
-    /// Return the vector that stores the data in the Set 
+    /// Return the vector that stores the data in the Set
     const std::vector<T> set() const
     { return _x; }
 

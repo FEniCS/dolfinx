@@ -7,7 +7,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-02-10
+// Last changed: 2010-02-19
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -34,6 +34,7 @@ namespace dolfin
   class GenericVector;
   class Data;
   class SubDomain;
+  class DirichletBC;
 
   /// This class represents a function u_h in a finite element
   /// function space V_h, given by
@@ -129,7 +130,8 @@ namespace dolfin
     void extrapolate(const Function& v, bool facet_extrapolation=true);
 
     /// Extrapolate function and set equal to v in sub domain
-    void extrapolate(const Function& v, const SubDomain& sub_domain);
+    void extrapolate(const Function& v,
+                     const std::vector<const DirichletBC*>& bcs);
 
     //--- Implementation of GenericFunction interface ---
 

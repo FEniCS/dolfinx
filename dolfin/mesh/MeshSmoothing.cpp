@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2010
 //
 // First added:  2008-07-16
-// Last changed: 2010-02-16
+// Last changed: 2010-03-02
 
 #include <dolfin/common/constants.h>
 #include "Mesh.h"
@@ -20,6 +20,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void MeshSmoothing::smooth(Mesh& mesh)
 {
+  cout << "Smoothing mesh: " << mesh << endl;
+
   // Make sure we have cell-facet connectivity
   mesh.init(mesh.topology().dim(), mesh.topology().dim() - 1);
 
@@ -101,6 +103,29 @@ void MeshSmoothing::smooth(Mesh& mesh)
     rmin = std::min(0.5*rmin, r);
     for (uint i = 0; i < d; i++)
       x[i] += rmin*(xx[i] - x[i])/r;
+  }
+}
+//-----------------------------------------------------------------------------
+void MeshSmoothing::smooth_boundary(Mesh& mesh)
+{
+  cout << "Smoothing boundary of mesh: " << mesh << endl;
+
+  // Extract boundary of mesh
+  BoundaryMesh boundary(mesh);
+
+  // Smooth boundary
+  smooth(boundary);
+
+  // Use vertex map to update coordinates of original mesh
+  MeshFunction<uint>* vertex_map = boundary.data().mesh_function("vertex map");
+  assert(vertex_map);
+  const uint d = mesh.geometry().dim();
+  for (VertexIterator v(boundary); !v.end(); ++v)
+  {
+    const double* xb = v->x();
+    double* xm = mesh.geometry().x((*vertex_map)[*v]);
+    for (uint i = 0; i < d; i++)
+      xm[i] = xb[i];
   }
 }
 //-----------------------------------------------------------------------------

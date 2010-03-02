@@ -1,10 +1,10 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2010
 //
 // First added:  2006-06-08
-// Last changed: 2010-02-07
+// Last changed: 2010-02-26
 
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
@@ -21,13 +21,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::Mesh UniformMeshRefinement::refine(const Mesh& mesh)
-{
-  // Only know how to refine simplicial meshes
-  return refine_simplex(mesh);
-}
-//-----------------------------------------------------------------------------
-dolfin::Mesh UniformMeshRefinement::refine_simplex(const Mesh& mesh)
+void UniformMeshRefinement::refine(Mesh& refined_mesh,
+                                   const Mesh& mesh)
 {
   info(1, "Refining simplicial mesh uniformly.");
 
@@ -41,10 +36,9 @@ dolfin::Mesh UniformMeshRefinement::refine_simplex(const Mesh& mesh)
   const CellType& cell_type = mesh.type();
 
   // Create new mesh and open for editing
-  Mesh refined_mesh;
   MeshEditor editor;
   editor.open(refined_mesh, cell_type.cell_type(),
-	            mesh.topology().dim(), mesh.geometry().dim());
+              mesh.topology().dim(), mesh.geometry().dim());
 
   // Get size of mesh
   const uint num_vertices = mesh.size(0);
@@ -71,7 +65,5 @@ dolfin::Mesh UniformMeshRefinement::refine_simplex(const Mesh& mesh)
 
   // Close editor
   editor.close();
-
-  return refined_mesh;
 }
 //-----------------------------------------------------------------------------

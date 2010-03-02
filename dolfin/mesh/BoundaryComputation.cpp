@@ -6,7 +6,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2010-02-08
+// Last changed: 2010-02-27
 
 #include <dolfin/log/dolfin_log.h>
 #include "Mesh.h"

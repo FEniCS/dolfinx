@@ -24,8 +24,6 @@
 #include "PETScVector.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
-
-
 #include "KrylovSolver.h"
 
 using namespace dolfin;
@@ -43,7 +41,6 @@ Parameters KrylovSolver::default_parameters()
   p.add("shift_nonzero",       0.0);
   p.add("report",              true);
   p.add("monitor_convergence", false);
-
   return p;
 }
 //-----------------------------------------------------------------------------

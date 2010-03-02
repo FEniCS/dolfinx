@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2006-06-02
-// Last changed: 2010-02-17
+// Last changed: 2010-02-27
 
 #ifndef __FACET_H
 #define __FACET_H

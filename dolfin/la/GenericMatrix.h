@@ -8,7 +8,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-04-24
-// Last changed: 2009-09-08
+// Last changed: 2010-02-24
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
@@ -166,6 +166,9 @@ namespace dolfin
     /// Set given entry to value
     virtual void setitem(std::pair<uint, uint> ij, double value)
     { set(&value, 1, &ij.first, 1, &ij.second); }
+
+    /// Insert one on the diagonal for all zero rows
+    virtual void ident_zeros();
 
     typedef XMLMatrix XMLHandler;
 

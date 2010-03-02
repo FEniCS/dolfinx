@@ -1,8 +1,10 @@
 // Copyright (C) 2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2010.
+//
 // First added:  2009-12-06
-// Last changed:
+// Last changed: 2010-02-23
 
 #ifndef __ARRAY_H
 #define __ARRAY_H
@@ -17,20 +19,23 @@
 namespace dolfin
 {
 
-  /// This class provides a simple wrapper for a pointer to an array. A purpose 
-  /// of this class is to enable the simple and safe exchange of data between 
+  /// This class provides a simple wrapper for a pointer to an array. A purpose
+  /// of this class is to enable the simple and safe exchange of data between
   /// C++ and Python.
 
   template <class T> class Array
   {
   public:
 
+    // Create empty array
+    Array() : _size(0), x(0) {}
+
     /// Create array of size N
     explicit Array(uint N) : _size(N), x(new T[N]) {}
 
     /// Copy constructor (arg name need to have a different name that 'x')
-    Array(const Array& other) 
-    { error("Not implemented"); }
+    Array(const Array& other) : _size(0), x(0)
+    { *this = other; }
 
     /// Construct array from a shared pointer
     Array(uint N, boost::shared_array<T> x) : _size(N), x(x) {}
@@ -43,7 +48,11 @@ namespace dolfin
 
     /// Assignment operator
     const Array& operator= (const Array& x)
-    { error("Not implemented"); return *this; }
+    {
+      _size = x._size;
+      this->x = x.x;
+      return *this;
+    }
 
     /// Construct array from a pointer. Array will not take ownership.
     void update(uint N, T* _x)
@@ -54,24 +63,27 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const
-    { 
+    {
       error("No implemented");
       return "";
     }
 
     /// Resize array to size N. If size changes, contents will be destroyed.
-    
+
     void resize(uint N)
-    { 
+    {
       if (N == _size)
         return;
       else
       {
-        // FIXME: Do we want to allow reszing of shared data?
+        // FIXME: Do we want to allow resizing of shared data?
         if (x.unique())
+        {
+          _size = N;
           x.reset(new T[N]);
-        else 
-          error("Cannot rezize Array. Data is shared"); 
+        }
+        else
+          error("Cannot resize Array. Data is shared");
       }
     }
 
@@ -92,14 +104,14 @@ namespace dolfin
     //{ error("Not implemented");  }
 
     /// Access value of given entry (const version)
-    T& operator[] (uint i) const
+    const T& operator[] (uint i) const
     { assert(i < _size); return x[i]; }
 
     /// Access value of given entry (non-const version)
     T& operator[] (uint i)
-    { 
-      assert(i < _size); 
-      return x[i]; 
+    {
+      assert(i < _size);
+      return x[i];
     }
 
     /// Return pointer to data (const version)

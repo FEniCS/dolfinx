@@ -1,14 +1,16 @@
 // Copyright (C) 2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2010.
+//
 // First added:  2010-02-10
-// Last changed:
+// Last changed: 2010-02-26
 //
 // This file defines free functions for mesh refinement.
 //
 
-#ifndef __MESHREFINE_H
-#define __MESHREFINE_H
+#ifndef __REFINE_H
+#define __REFINE_H
 
 namespace dolfin
 {
@@ -20,8 +22,18 @@ namespace dolfin
   /// Create uniformly refined mesh
   Mesh refine(const Mesh& mesh);
 
+  /// Create uniformly refined mesh
+  void refine(Mesh& refined_mesh,
+              const Mesh& mesh);
+
   /// Create locally refined mesh
-  Mesh refine(const Mesh& mesh, const MeshFunction<bool>& cell_markers);
+  Mesh refine(const Mesh& mesh,
+              const MeshFunction<bool>& cell_markers);
+
+  /// Create locally refined mesh
+  void refine(Mesh& refined_mesh,
+              const Mesh& mesh,
+              const MeshFunction<bool>& cell_markers);
 
 }
 

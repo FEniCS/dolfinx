@@ -41,8 +41,7 @@ const std::map<std::string, NormType> PETScVector::norm_types
                               ("linf", NORM_INFINITY);
 
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(std::string type):
-  x(static_cast<Vec*>(0), PETScVectorDeleter())
+PETScVector::PETScVector(std::string type)
 {
   if (type == "global" && dolfin::MPI::num_processes() > 1)
     init(0, 0, "mpi");
@@ -50,8 +49,7 @@ PETScVector::PETScVector(std::string type):
     init(0, 0, "sequential");
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(uint N, std::string type):
-  x(static_cast<Vec*>(0), PETScVectorDeleter())
+PETScVector::PETScVector(uint N, std::string type)
 {
   if (type == "global")
   {
@@ -76,8 +74,7 @@ PETScVector::PETScVector(boost::shared_ptr<Vec> x): x(x)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const PETScVector& v):
-  x(static_cast<Vec*>(0), PETScVectorDeleter())
+PETScVector::PETScVector(const PETScVector& v)
 {
   *this = v;
 }
@@ -131,7 +128,7 @@ void PETScVector::get_local(double* values) const
   int* rows = new int[local_size];
   for (int i = 0; i < local_size; i++)
     rows[i] = i;
- 
+
   VecGetValues(*x, local_size, rows, values);
   delete [] rows;
 }
@@ -172,7 +169,7 @@ void PETScVector::get(double* block, uint m, const uint* rows) const
   const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
   int _m =  static_cast<int>(m);
 
-  // If vector is local, just get the values. For distributed vectors, perform 
+  // If vector is local, just get the values. For distributed vectors, perform
   // first a gather into a local vector
   if (local_range().first == 0 && local_range().second == size())
   {
@@ -196,8 +193,8 @@ void PETScVector::get(double* block, uint m, const uint* rows) const
       indices.push_back(rows[i]);
       local_indices.push_back(i);
     }
-    
-    const int* _local_indices = &local_indices[0];  
+
+    const int* _local_indices = &local_indices[0];
     if (m == 0)
     {
       _local_indices = &_m;
@@ -452,10 +449,12 @@ std::string PETScVector::str(bool verbose) const
 void PETScVector::gather(GenericVector& y,
                          const std::vector<uint>& indices) const
 {
+  assert(x);
+
   // Down cast to a PETScVector
   PETScVector& _y = y.down_cast<PETScVector>();
 
-  // Check that x is a local vector
+  // Check that y is a local vector
   const VecType petsc_type;
   VecGetType(*(_y.vec()), &petsc_type);
   if (strcmp(petsc_type, VECSEQ) != 0)
@@ -469,10 +468,10 @@ void PETScVector::gather(GenericVector& y,
   for (int i = 0; i < n; ++i)
     local_indices.push_back(i);
 
-  // PETSc will bail out if it received a NULL pointer even though m == 0.
+  // PETSc will bail out if it receives a NULL pointer even though m == 0.
   // Can't return from function as this will cause a lock up in parallel
   if (n == 0)
-    global_indices = &n;    
+    global_indices = &n;
 
   // Create index sets
   IS from, to;
@@ -497,7 +496,7 @@ void PETScVector::gather(GenericVector& y,
 void PETScVector::init(uint N, uint n, std::string type)
 {
   // Create vector
-  if (!x.unique())
+  if (x && !x.unique())
     error("Cannot init/resize PETScVector. More than one object points to the underlying PETSc object.");
   x.reset(new Vec, PETScVectorDeleter());
 
@@ -508,10 +507,7 @@ void PETScVector::init(uint N, uint n, std::string type)
     VecSetFromOptions(*x);
   }
   else if (type == "mpi")
-  {
-    //assert(n > 0);
     VecCreateMPI(PETSC_COMM_WORLD, n, N, x.get());
-  }
   else
     error("Unknown vector type in PETScVector::init.");
 }

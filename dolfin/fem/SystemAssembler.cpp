@@ -32,11 +32,11 @@ void SystemAssembler::assemble(GenericMatrix& A,
                                       GenericVector& b,
                                       const Form& a,
                                       const Form& L,
-                                      bool reset_sparsitys,
+                                      bool reset_sparsity,
                                       bool add_values)
 {
   std::vector<const DirichletBC*> bcs;
-  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_sparsitys, add_values);
+  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_sparsity, add_values);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A,
@@ -44,12 +44,12 @@ void SystemAssembler::assemble(GenericMatrix& A,
                                           const Form& a,
                                           const Form& L,
                                           const DirichletBC& bc,
-                                          bool reset_sparsitys,
+                                          bool reset_sparsity,
                                           bool add_values)
 {
   std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
-  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_sparsitys, add_values);
+  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_sparsity, add_values);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A,
@@ -57,10 +57,10 @@ void SystemAssembler::assemble(GenericMatrix& A,
                                           const Form& a,
                                           const Form& L,
                                           const std::vector<const DirichletBC*>& bcs,
-                                          bool reset_sparsitys,
+                                          bool reset_sparsity,
                                           bool add_values)
 {
-  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_sparsitys, add_values);
+  assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_sparsity, add_values);
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble(GenericMatrix& A,
@@ -72,7 +72,7 @@ void SystemAssembler::assemble(GenericMatrix& A,
                                           const MeshFunction<uint>* exterior_facet_domains,
                                           const MeshFunction<uint>* interior_facet_domains,
                                           const GenericVector* x0,
-                                          bool reset_sparsitys,
+                                          bool reset_sparsity,
                                           bool add_values)
 {
   Timer timer("Assemble system");
@@ -98,8 +98,8 @@ void SystemAssembler::assemble(GenericMatrix& A,
   UFC b_ufc(L);
 
   // Initialize global tensor
-  AssemblerTools::init_global_tensor(A, a, A_ufc, reset_sparsitys, add_values);
-  AssemblerTools::init_global_tensor(b, L, b_ufc, reset_sparsitys, add_values);
+  AssemblerTools::init_global_tensor(A, a, A_ufc, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(b, L, b_ufc, reset_sparsity, add_values);
 
   // Allocate data
   Scratch data(a, L);
@@ -175,7 +175,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     for (uint i = 0; i < data.b_num_entries; i++)
       data.be[i] = b_ufc.A[i];
 
-    // FIXME: Can be the assembly over facets be more efficient?
+    // FIXME: Is assembly over facets more efficient?
     // Compute exterior facet integral if present
     if (A_ufc.form.num_exterior_facet_integrals() > 0 || b_ufc.form.num_exterior_facet_integrals() > 0)
     {
@@ -208,8 +208,8 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
 
     // Tabulate dofs for each dimension
     a.function_space(0)->dofmap().tabulate_dofs(A_ufc.dofs[0], A_ufc.cell, cell->index());
-    L.function_space(0)->dofmap().tabulate_dofs(b_ufc.dofs[0], b_ufc.cell, cell->index());
     a.function_space(1)->dofmap().tabulate_dofs(A_ufc.dofs[1], A_ufc.cell, cell->index());
+    L.function_space(0)->dofmap().tabulate_dofs(b_ufc.dofs[0], b_ufc.cell, cell->index());
 
     // Modify local matrix/element for Dirichlet boundary conditions
     apply_bc(data.Ae, data.be, data.indicators, data.g, A_ufc.dofs,
