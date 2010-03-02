@@ -19,10 +19,13 @@ namespace dolfin
   public:
 
     /// Smooth internal vertices of mesh by local averaging
-    static void smooth(Mesh& mesh);
+    static void smooth(Mesh& mesh, uint num_iterations=1);
 
-    /// Smooth boundary of mesh by local averaging
-    static void smooth_boundary(Mesh& mesh);
+    /// Smooth boundary vertices of mesh by local averaging and
+    /// (optionally) use harmonic smoothing on internal vertices
+    static void smooth_boundary(Mesh& mesh,
+                                uint num_iterations=1,
+                                bool harmonic_smoothing=true);
 
   };
 

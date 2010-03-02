@@ -6,7 +6,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2006-06-21
-// Last changed: 2010-02-27
+// Last changed: 2010-03-02
 
 #include <dolfin/log/dolfin_log.h>
 #include "Mesh.h"
@@ -48,10 +48,10 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   // Open boundary mesh for editing
   const uint D = mesh.topology().dim();
   MeshEditor editor;
-  editor.open(boundary, mesh.type().facet_type(), D-1, mesh.geometry().dim());
+  editor.open(boundary, mesh.type().facet_type(), D - 1, mesh.geometry().dim());
 
   // Generate facet - cell connectivity if not generated
-  mesh.init(D-1, D);
+  mesh.init(D - 1, D);
 
   // Temporary array for assignment of indices to vertices on the boundary
   const uint num_vertices = mesh.num_vertices();
@@ -65,7 +65,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   // and assign vertex indices
   uint num_boundary_vertices = 0;
   uint num_boundary_cells = 0;
-  MeshFunction<bool> boundary_facet(mesh, D-1, false);
+  MeshFunction<bool> boundary_facet(mesh, D - 1, false);
   for (FacetIterator f(mesh); !f.end(); ++f)
   {
     // Boundary facets are connected to exactly one cell
@@ -104,31 +104,25 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   editor.init_cells(num_boundary_cells);
 
   // Initialize mapping from vertices in boundary to vertices in mesh
-  MeshFunction<uint>* vertex_map = 0;
+  MeshFunction<uint>* vertex_map = boundary.data().create_mesh_function("vertex map");
+  assert(vertex_map);
   if (num_boundary_vertices > 0)
-  {
-    vertex_map = boundary.data().create_mesh_function("vertex map");
-    assert(vertex_map);
     vertex_map->init(boundary, 0, num_boundary_vertices);
-  }
 
   // Initialize mapping from cells in boundary to facets in mesh
-  MeshFunction<uint>* cell_map = 0;
+  MeshFunction<uint>* cell_map = boundary.data().create_mesh_function("cell map");
+  assert(cell_map);
   if (num_boundary_cells > 0)
-  {
-    cell_map = boundary.data().create_mesh_function("cell map");
-    assert(cell_map);
     cell_map->init(boundary, D - 1, num_boundary_cells);
-  }
 
   // Create vertices
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
     const uint vertex_index = boundary_vertices[v->index()];
-    if ( vertex_index != mesh.num_vertices() )
+    if (vertex_index != mesh.num_vertices())
     {
       // Create mapping from boundary vertex to mesh vertex if requested
-      if ( vertex_map )
+      if (vertex_map->size() > 0)
         (*vertex_map)[vertex_index] = v->index();
 
       // Add vertex
@@ -152,7 +146,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
       reorder(cell, *f);
 
       // Create mapping from boundary cell to mesh facet if requested
-      if (cell_map)
+      if (cell_map->size() > 0)
         (*cell_map)[current_cell] = f->index();
 
       // Add cell

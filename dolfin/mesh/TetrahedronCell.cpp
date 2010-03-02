@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2010-01-19
+// Last changed: 2010-03-02
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -272,6 +272,9 @@ double TetrahedronCell::normal(const Cell& cell, uint facet, uint i) const
 //-----------------------------------------------------------------------------
 Point TetrahedronCell::normal(const Cell& cell, uint facet) const
 {
+  // Make sure we have facets
+  cell.mesh().init(3, 2);
+
   // Create facet from the mesh and local facet number
   Facet f(cell.mesh(), cell.entities(2)[facet]);
 

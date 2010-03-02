@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2010-02-26
+// Last changed: 2010-03-02
 
 #include <sstream>
 
@@ -107,6 +107,10 @@ dolfin::uint Mesh::init(uint dim) const
 
   // Skip if already computed
   if (_topology.size(dim) > 0)
+    return _topology.size(dim);
+
+  // Skip vertices and cells (should always exist)
+  if (dim == 0 || dim == _topology.dim())
     return _topology.size(dim);
 
   // Check that mesh is ordered
@@ -241,10 +245,14 @@ void Mesh::move(const Function& displacement)
   ALE::move(*this, displacement);
 }
 //-----------------------------------------------------------------------------
-void Mesh::smooth(uint num_smoothings)
+void Mesh::smooth(uint num_iterations)
 {
-  for (uint i = 0; i < num_smoothings; i++)
-    MeshSmoothing::smooth(*this);
+  MeshSmoothing::smooth(*this, num_iterations);
+}
+//-----------------------------------------------------------------------------
+void Mesh::smooth_boundary(uint num_iterations, bool harmonic_smoothing)
+{
+  MeshSmoothing::smooth_boundary(*this, num_iterations, harmonic_smoothing);
 }
 //-----------------------------------------------------------------------------
 void Mesh::all_intersected_entities(const Point & point, uint_set & ids_result) const
