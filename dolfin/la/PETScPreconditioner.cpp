@@ -72,7 +72,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     PCHYPRESetType(pc, "boomeramg");
     PCSetFromOptions(pc);
     #else
-    warning("PETSc has not been compiled with the HYPRE library for   "
+    warning("PETSc has not been compiled with the HYPRE library for "
             "algebraic multigrid. Default PETSc solver will be used. "
             "For performance, installation of HYPRE is recommended.");
     #endif

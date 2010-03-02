@@ -11,12 +11,13 @@
 
 #include <string>
 
-#include <petscpc.h>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/la/PETScObject.h>
 #include <dolfin/parameter/Parameters.h>
+
+class Ifpack_Preconditioner;
 
 namespace dolfin
 {
@@ -40,7 +41,7 @@ namespace dolfin
     virtual ~TrilinosPreconditioner();
 
     /// Set the precondtioner
-    virtual void set(EpetraKrylovSolver& solver) const;
+    virtual void set(EpetraKrylovSolver& solver);
 
     /// Return preconditioner name
     std::string name() const;
@@ -61,6 +62,9 @@ namespace dolfin
 
     // Available named preconditioners
     static const std::map<std::string, int> methods;
+
+    boost::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
+
   };
 
 }
