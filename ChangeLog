@@ -1,3 +1,4 @@
+ - Add functionality for smoothing the boundary of a mesh
  - Speedup assembly over exterior facets by not using BoundaryMesh
  - Mesh refinement improvements, remove unecessary copying in Python interface
  - Clean PETSc and Epetra Krylov solvers
