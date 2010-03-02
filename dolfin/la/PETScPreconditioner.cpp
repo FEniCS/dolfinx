@@ -1,8 +1,10 @@
 // Copyright (C) 2010 Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2010.
+//
 // First added:  2010-02-25
-// Last changed:
+// Last changed: 2010-03-02
 
 #ifdef HAS_PETSC
 
@@ -123,7 +125,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   {
     PCSetType(pc, methods.find(type)->second);
     PCFactorSetShiftNonzero(pc, parameters["shift_nonzero"]);
-    PCFactorSetLevels(pc, ilu_fill_level);
+    PCFactorSetLevels(pc, parameters["ilu_fill_level"]);
   }
 
   // Make sure options are set
