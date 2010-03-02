@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2009
 //
 // First added:  2003-10-21
-// Last changed: 2009-09-10
+// Last changed: 2010-03-02
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -88,14 +88,14 @@ namespace dolfin
     /// Evaluate right-hand side f_i(u, t), multi-adaptive version (optional)
     virtual real f(const real* u, real t, uint i);
 
-    /// Compute product y = Mx for implicit system (optional)
-    virtual void M(const real* x, real* y, const real* u, real t);
+    /// Compute product dy = M dx for implicit system (optional)
+    virtual void M(const real* dx, real* dy, const real* u, real t);
 
-    /// Compute product y = Jx for Jacobian J (optional)
-    virtual void J(const real* x, real* y, const real* u, real t);
+    /// Compute product dy = J dx for Jacobian J (optional)
+    virtual void J(const real* dx, real* dy, const real* u, real t);
 
-    /// Compute product y = tranpose(J)x for Jacobian J (optional, for dual problem)
-    virtual void JT(const real* x, real* y, const real* u, real t);
+    /// Compute product dy = tranpose(J) dx for Jacobian J (optional, for dual problem)
+    virtual void JT(const real* dx, real* dy, const real* u, real t);
 
     /// Compute entry of Jacobian (optional)
     virtual real dfdu(const real* u, real t, uint i, uint j);

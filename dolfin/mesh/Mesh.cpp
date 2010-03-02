@@ -255,6 +255,11 @@ void Mesh::smooth_boundary(uint num_iterations, bool harmonic_smoothing)
   MeshSmoothing::smooth_boundary(*this, num_iterations, harmonic_smoothing);
 }
 //-----------------------------------------------------------------------------
+void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
+{
+  MeshSmoothing::snap_boundary(*this, sub_domain, harmonic_smoothing);
+}
+//-----------------------------------------------------------------------------
 void Mesh::all_intersected_entities(const Point & point, uint_set & ids_result) const
 {
   _intersection_operator.all_intersected_entities(point, ids_result);

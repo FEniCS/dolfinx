@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2009
 //
 // First added:  2003-10-21
-// Last changed: 2009-09-10
+// Last changed: 2010-03-02
 
 #include <dolfin/log/log.h>
 #include <dolfin/common/constants.h>
@@ -62,16 +62,16 @@ real ODE::f(const real* u, real t, uint i)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void ODE::M(const real* x, real* y, const real* u, real t)
+void ODE::M(const real* dx, real* dy, const real* u, real t)
 {
   // Display a warning, implicit system but M is not implemented
   not_impl_M();
 
   // Assume M is the identity if not supplied by user: y = x
-  real_set(N, y, x);
+  real_set(N, dy, dx);
 }
 //-----------------------------------------------------------------------------
-void ODE::J(const real* x, real* y, const real* u, real t)
+void ODE::J(const real* dx, real* dy, const real* u, real t)
 {
   // If a user does not supply J, then compute it by the approximation
   //
@@ -97,22 +97,22 @@ void ODE::J(const real* x, real* y, const real* u, real t)
   real_zero(N, tmp0);
 
   // Evaluate at u + hx
-  real_axpy(N, uu, h, x);
-  f(uu, t, y);
+  real_axpy(N, uu, h, dx);
+  f(uu, t, dy);
 
   // Evaluate at u - hx
-  real_axpy(N, uu, -2.0*h, x);
+  real_axpy(N, uu, -2.0*h, dx);
   f(uu, t, tmp0);
 
   // Reset u
-  real_axpy(N, uu, h, x);
+  real_axpy(N, uu, h, dx);
 
-  // Compute product y = Jx
-  real_sub(N, y, tmp0);
-  real_mult(N, y, 0.5/h);
+  // Compute product dy = J dx
+  real_sub(N, dy, tmp0);
+  real_mult(N, dy, 0.5/h);
 }
 //------------------------------------------------------------------------
-void ODE::JT(const real* x, real* y, const real* u, real t)
+void ODE::JT(const real* dx, real* dy, const real* u, real t)
 {
   // Display warning
   not_impl_JT();
@@ -147,7 +147,7 @@ void ODE::JT(const real* x, real* y, const real* u, real t)
     real_sub(N, tmp0, tmp1);
     real_mult(N, tmp0, 0.5/h);
 
-    y[i] = real_inner(N, tmp0, x);
+    dy[i] = real_inner(N, tmp0, dx);
   }
 }
 //------------------------------------------------------------------------

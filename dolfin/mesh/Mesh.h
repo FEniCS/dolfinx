@@ -33,6 +33,7 @@ namespace dolfin
   class BoundaryMesh;
   class XMLMesh;
   class IntersectionOperator;
+  class SubDomain;
 
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
@@ -185,6 +186,9 @@ namespace dolfin
 
     /// Smooth boundary vertices of mesh by local averaging
     void smooth_boundary(uint num_iterations=1, bool harmonic_smoothing=true);
+
+    /// Snap boundary vertices of mesh to match given sub domain
+    void snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing=true);
 
     ///Compute all id of all cells which are intersects by a \em point.
     ///\param[out] ids_result The ids of the intersected entities are saved in a set for efficienty
