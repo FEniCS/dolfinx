@@ -14,15 +14,16 @@ __license__  = "GNU LGPL Version 2.1"
 #Modified by Andre Massing
 
 from dolfin import *
-from numpy import *
+from numpy import max
+#cos, sin
 
 if not has_cgal():
     print "DOLFIN must be compiled with CGAL to run this demo."
     exit(0)
 
 #Set to False if you do not want to create movies 
-#(default is True since you probably want to :) 
-create_movies = True
+#(default should be True since you probably want to :) 
+create_movies = False
 
 # Create meshes (omega0 overlapped by omega1)
 omega0 = UnitCircle(20)
@@ -37,7 +38,7 @@ x += 1.0
 
 # Iterate over angle
 theta = 0.0
-dtheta = 0.01*DOLFIN_PI
+dtheta = 0.1*DOLFIN_PI
 intersection = MeshFunction("uint", omega0, omega0.topology().dim())
 _first = True
 
@@ -90,15 +91,15 @@ structure_mesh = Mesh("../../../../../../data/meshes/rotator.xml.gz")
 
 # Access mesh geometry
 x = structure_mesh.coordinates()
-
+print "Maximum value is max(x()): ", max(x)
 
 # Iterate over angle
 theta = 0.0
-#dtheta = 0.01*DOLFIN_PI
+dtheta = 0.1*DOLFIN_PI
 intersection = MeshFunction("uint", background_mesh, background_mesh.topology().dim())
 _first = True
 
-while theta < 2*DOLFIN_PI:
+while theta < 60*DOLFIN_PI:
 
   cells = background_mesh.all_intersected_entities(structure_mesh)
 
@@ -107,7 +108,7 @@ while theta < 2*DOLFIN_PI:
   intersection.values()[cells] = 1
 
   if _first : 
-#    q = plot(intersection, rescale=True, wireframe=True, warpscalar=False)
+    q = plot(intersection, rescale=True, wireframe=True, warpscalar=False)
     q = plot(intersection, rescale=False, wireframe=True)
     q.ren.ResetCamera()
     _first = False
@@ -120,8 +121,9 @@ while theta < 2*DOLFIN_PI:
     q.write_png()
 
   #Rotate rotator
-  xr = x[:, 0]
-  yr = x[:, 1]
+  xr = x[:, 0].copy()
+  yr = x[:, 1].copy()
+
   x[:,0] = (cos(dtheta)*xr - sin(dtheta)*yr)
   x[:,1] = (sin(dtheta)*xr + cos(dtheta)*yr)
 

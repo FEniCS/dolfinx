@@ -125,10 +125,10 @@ IntersectionOperatorImplementation*
   {
     switch( mesh->type().cell_type())
     {
-      case CellType::point        : return new IntersectionOperatorImplementation_d< PrimitiveTraits<PointCell, EPICK> >(mesh);
-      case CellType::interval     : return new IntersectionOperatorImplementation_d< PrimitiveTraits<IntervalCell, EPICK> >(mesh);
-      case CellType::triangle     : return new IntersectionOperatorImplementation_d< PrimitiveTraits<TriangleCell, EPICK> >(mesh); 
-      case CellType::tetrahedron  : return new IntersectionOperatorImplementation_d< PrimitiveTraits<TetrahedronCell, EPICK> >(mesh);
+      case CellType::point        : return new IntersectionOperatorImplementation_d< PointCell, EPICK >(mesh);
+      case CellType::interval     : return new IntersectionOperatorImplementation_d< IntervalCell, EPICK >(mesh);
+      case CellType::triangle     : return new IntersectionOperatorImplementation_d< TriangleCell, EPICK >(mesh); 
+      case CellType::tetrahedron  : return new IntersectionOperatorImplementation_d< TetrahedronCell, EPICK >(mesh);
       default: error("DOLFIN IntersectionOperator::create_intersection_operator: \n Mesh  CellType is not known."); return 0;
     }
   }
@@ -136,10 +136,10 @@ IntersectionOperatorImplementation*
   {
     switch( mesh->type().cell_type())
     {
-      case CellType::point        : return new IntersectionOperatorImplementation_d< PrimitiveTraits<PointCell, SCK > >(mesh);
-      case CellType::interval     : return new IntersectionOperatorImplementation_d< PrimitiveTraits<IntervalCell, SCK > >(mesh);
-      case CellType::triangle     : return new IntersectionOperatorImplementation_d< PrimitiveTraits<TriangleCell, SCK> >(mesh); 
-      case CellType::tetrahedron  : return new IntersectionOperatorImplementation_d< PrimitiveTraits<TetrahedronCell, SCK > >(mesh);
+      case CellType::point        : return new IntersectionOperatorImplementation_d< PointCell, SCK  >(mesh);
+      case CellType::interval     : return new IntersectionOperatorImplementation_d< IntervalCell, SCK  >(mesh);
+      case CellType::triangle     : return new IntersectionOperatorImplementation_d< TriangleCell, SCK >(mesh); 
+      case CellType::tetrahedron  : return new IntersectionOperatorImplementation_d< TetrahedronCell, SCK  >(mesh);
       default: error("DOLFIN IntersectionOperator::create_intersection_operator: \n Mesh  CellType is not known."); return 0;
     }
   }
