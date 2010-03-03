@@ -65,7 +65,7 @@ namespace dolfin
 // Modifying the interface of Constant
 //-----------------------------------------------------------------------------
 %rename (__float__) dolfin::Constant::operator double() const;
-%ignore dolfin::Constant::operator=;
+%rename(assign) dolfin::Constant::operator=;
 
 //-----------------------------------------------------------------------------
 // Turn off value wrapper for std::vector<dolfin::uint>
