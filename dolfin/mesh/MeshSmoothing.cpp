@@ -14,6 +14,7 @@
 #include "Cell.h"
 #include "Facet.h"
 #include "MeshData.h"
+#include "SubDomain.h"
 #include "MeshSmoothing.h"
 
 using namespace dolfin;
@@ -128,7 +129,33 @@ void MeshSmoothing::smooth_boundary(Mesh& mesh,
   // Smooth boundary
   smooth(boundary, num_iterations);
 
-  // Select smoothing of internal vertices
+  // Move interior vertices
+  move_interior_vertices(mesh, boundary, harmonic_smoothing);
+}
+//-----------------------------------------------------------------------------
+void MeshSmoothing::snap_boundary(Mesh& mesh,
+                                  const SubDomain& sub_domain,
+                                  bool harmonic_smoothing)
+{
+  cout << "Snapping boundary of mesh: " << mesh << endl;
+
+  // Extract boundary of mesh
+  BoundaryMesh boundary(mesh);
+
+  // Smooth boundary
+  MeshGeometry& geometry = boundary.geometry();
+  for (uint i = 0; i < boundary.num_vertices(); i++)
+    sub_domain.snap(geometry.x(i));
+
+  // Move interior vertices
+  move_interior_vertices(mesh, boundary, harmonic_smoothing);
+}
+//-----------------------------------------------------------------------------
+void MeshSmoothing::move_interior_vertices(Mesh& mesh,
+                                           BoundaryMesh& boundary,
+                                           bool harmonic_smoothing)
+{
+  // Select smoothing of interior vertices
   if (harmonic_smoothing)
   {
     ALE::move(mesh, boundary, harmonic);

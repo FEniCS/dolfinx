@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-10
-// Last changed: 2009-10-22
+// Last changed: 2010-03-02
 
 #ifndef __SUB_DOMAIN_H
 #define __SUB_DOMAIN_H
@@ -33,6 +33,9 @@ namespace dolfin
     /// Map coordinate x in domain H to coordinate y in domain G (used for
     /// periodic boundary conditions)
     virtual void map(const double* x, double* y) const;
+
+    /// Snap coordinate to boundary of sub domain
+    virtual void snap(double* x) const {}
 
     /// Set sub domain markers for given subdomain
     void mark(MeshFunction<uint>& sub_domains, uint sub_domain) const;
