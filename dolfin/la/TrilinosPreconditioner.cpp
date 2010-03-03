@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2010-02-25
-// Last changed:
+// Last changed: 2010-03-03
 
 #ifdef HAS_TRILINOS
 
@@ -10,7 +10,6 @@
 #include <AztecOO.h>
 #include <Ifpack.h>
 #include <Epetra_CombineMode.h>
-
 #include <ml_include.h>
 #include <ml_MultiLevelOperator.h>
 #include <ml_epetra_utils.h>
@@ -39,6 +38,7 @@ Parameters TrilinosPreconditioner::default_parameters()
   p.rename("trilinos_preconditioner");
   p.add("ilu_fill_level", 0);
   p.add("schwarz_overlap", 1);
+  p.add("reordering_type", "rcm"); // Options are rcm, metis, amd
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -67,42 +67,30 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver)
   // Set preconditioner
   if (type == "default" || type == "ilu")
   {
-    /*
-    const int ilu_fill_level = parameters["ilu_fill_level"];
-    const int overlap        = parameters["schwarz_overlap"];
+    // Get/set some parameters
+    const int ilu_fill_level     = parameters["ilu_fill_level"];
+    const int overlap            = parameters["schwarz_overlap"];
+    const std::string reordering = parameters["reordering_type"];
     Teuchos::ParameterList list;
     list.set("fact: level-of-fill", ilu_fill_level);
     list.set("schwarz: combine mode", "Zero");
-    list.set("schwarz: reordering type", "rcm");
-    list.set("relaxation: sweeps", 0);
-
-    list.set("relaxation: damping factor", 1.0);
-    list.set("relaxation: zero starting solution", true);
+    list.set("schwarz: reordering type", reordering);
 
     Epetra_RowMatrix* A = _solver.GetUserMatrix();
 
+    // Create preconditioner
     Ifpack ifpack_factory;
-    string type = "ILU";
+    std::string type = "ILU";
     ifpack_preconditioner.reset( ifpack_factory.Create(type, A, overlap) );
     assert(ifpack_preconditioner != 0);
 
+    // Set up preconditioner
     ifpack_preconditioner->SetParameters(list);
     ifpack_preconditioner->Initialize();
     ifpack_preconditioner->Compute();
     _solver.SetPrecOperator(ifpack_preconditioner.get());
-    std::cout << *ifpack_preconditioner;
-    */
 
-    _solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
-    _solver.SetAztecOption(AZ_subdomain_solve, methods.find(type)->second);
-    _solver.SetAztecOption(AZ_graph_fill, parameters["ilu_fill_level"]);
-    //_solver.SetAztecOption(AZ_graph_fill, 0);
-    //_solver.SetAztecOption(AZ_poly_ord, 0);
-    //_solver.SetAztecParam(AZ_drop, 0.0);
-    //_solver.SetAztecParam(AZ_athresh, 0.0);
-    //_solver.SetAztecParam(AZ_rthresh, 0.0);
-    //_solver.SetAztecOption(AZ_reorder,0);
-    //_solver.CheckInput();
+    //std::cout << *ifpack_preconditioner;
   }
   else if (type == "amg_ml")
     set_ml(_solver);
