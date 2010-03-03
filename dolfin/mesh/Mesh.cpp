@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2010-03-02
+// Last changed: 2010-03-03
 
 #include <sstream>
 
@@ -288,6 +288,10 @@ int Mesh::any_intersected_entity(const Point & point) const
 Point Mesh::closest_point(const Point & point) const
 {
   return _intersection_operator.closest_point(point);
+}
+dolfin::uint Mesh::closest_cell(const Point & point) const
+{
+  return _intersection_operator.closest_cell(point);
 }
 //-----------------------------------------------------------------------------
 std::pair<Point,dolfin::uint> Mesh::closest_point_and_entity_index(const Point & point) const

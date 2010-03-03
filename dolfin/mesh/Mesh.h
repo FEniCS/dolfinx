@@ -9,7 +9,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2010-03-02
+// Last changed: 2010-03-03
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -221,6 +221,10 @@ namespace dolfin
 
     ///Computes the point inside the mesh which are closest to the point query.
     Point closest_point(const Point & point) const;
+
+    ///Computes the index of the cell in the mesh
+    ///which are closest to the point query.
+    dolfin::uint closest_cell(const Point & point) const;
 
     ///Computes the point inside the mesh and the corresponding cell index
     ///which are closest to the point query.

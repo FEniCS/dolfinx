@@ -4,7 +4,7 @@
 // Modified by Johannes Ring, 2009.
 //
 // First added:  2009-09-11
-// Last changed: 2010-03-02
+// Last changed: 2010-03-03
 
 #ifndef __INTERSECTIONOPERATORIMPLEMENTATION_H
 #define __INTERSECTIONOPERATORIMPLEMENTATION_H
@@ -54,6 +54,7 @@ namespace dolfin
     virtual void all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const = 0;
     virtual int any_intersected_entity(const Point & point) const = 0; 
     virtual Point closest_point(const Point & point) const = 0;
+    virtual dolfin::uint closest_cell(const Point & point) const = 0;
     virtual std::pair<Point,uint> closest_point_and_entity_index(const Point & point) const = 0;
   };
 
@@ -90,6 +91,7 @@ namespace dolfin
     virtual  int any_intersected_entity(const Point & point) const;
 
     virtual Point closest_point(const Point & point) const;
+    virtual dolfin::uint closest_cell(const Point & point) const;
     virtual std::pair<Point,dolfin::uint> closest_point_and_entity_index(const Point & point) const;
 
     ///Topological dimension of the mesh.
@@ -285,6 +287,12 @@ namespace dolfin
     if (!point_search_tree_constructed)
       tree->accelerate_distance_queries();
     return  Point(ClosestPoint<P,K,Tree>::compute(*tree,PrimitiveTraits<PointPrimitive,K>::datum(point)));
+  }
+
+  template <class P, class K>
+  dolfin::uint IntersectionOperatorImplementation_d<P, K>::closest_cell(const Point & point) const
+  {
+    return closest_point_and_entity_index(point).second;
   }
 
   template <class P, class K>
