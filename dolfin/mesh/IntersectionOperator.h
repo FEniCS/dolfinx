@@ -2,13 +2,15 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-01
-// Last changed: 2010-02-10
+// Last changed: 2010-03-03
 
 #ifndef __INTERSECTIONOPERATOR_H
 #define __INTERSECTIONOPERATOR_H
 
 #include <vector>
 #include <string>
+#include <utility>
+
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
@@ -83,6 +85,16 @@ namespace dolfin
     ///Computes only the first id of the entity, which contains the point. Returns -1 if no cell is intersected. 
     ///@internal @remark This makes the function evaluation significantly faster.
     int any_intersected_entity(const Point& point) const;
+    
+    ///Computes the point inside the mesh which are closest to the point query.
+    Point closest_point(const Point & point) const;
+
+    ///Computes the index of the cell inside the mesh which are closest to the point query.
+    dolfin::uint closest_cell(const Point & point) const;
+
+    ///Computes the point inside the mesh and the corresponding cell index
+    ///which are closest to the point query.
+    std::pair<Point,uint> closest_point_and_cell(const Point & point) const;
 
     ///Rebuilds the underlying search structure from scratch and uses the kernel kernel_type
     ///underlying CGAL Geometry kernel.

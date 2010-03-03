@@ -9,12 +9,13 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2010-03-02
+// Last changed: 2010-03-03
 
 #ifndef __MESH_H
 #define __MESH_H
 
 #include <string>
+#include <utility>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -32,7 +33,6 @@ namespace dolfin
   class Function;
   class BoundaryMesh;
   class XMLMesh;
-  class IntersectionOperator;
   class SubDomain;
 
 
@@ -222,6 +222,17 @@ namespace dolfin
     ///Computes only the first id  of the entity, which contains the point. Returns -1 if no cell is intersected.
     ///@internal @remark This makes the function evaluation significantly faster.
     int any_intersected_entity(const Point & point) const;
+
+    ///Computes the point inside the mesh which are closest to the point query.
+    Point closest_point(const Point & point) const;
+
+    ///Computes the index of the cell in the mesh
+    ///which are closest to the point query.
+    dolfin::uint closest_cell(const Point & point) const;
+
+    ///Computes the point inside the mesh and the corresponding cell index
+    ///which are closest to the point query.
+    std::pair<Point,dolfin::uint> closest_point_and_cell(const Point & point) const;
 
     /// Compute minimum cell diameter
     double hmin() const;

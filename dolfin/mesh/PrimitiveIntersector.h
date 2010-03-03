@@ -6,7 +6,7 @@
 // Modified by André Massing, 2010
 //
 // First added:  2010-02-09
-// Last changed: 2010-02-10
+// Last changed: 2010-02-19
 // 
 //Author:  André Massing (am), massing@simula.no
 //Company:  Simula Research Laboratory, Fornebu, Norway
@@ -19,6 +19,7 @@
 namespace dolfin
 {
   class MeshEntity;
+  class Point;
 
   /// This class implements an intersection detection, detecting whether two given (arbitrary) meshentities intersect.
   class PrimitiveIntersector
@@ -28,10 +29,12 @@ namespace dolfin
       ///kernel which is faster but may suffer from floating point precision
       //issues.
       static bool do_intersect(const MeshEntity & entity_1, const MeshEntity & entity_2);
+      static bool do_intersect(const MeshEntity  & entity_1, const Point & point);
 
       ///Computes whether two mesh entities intersect. Uses an exact geometry
       ///kernel which is slower but detects intersection always correctly.
       static bool do_intersect_exact(const MeshEntity & entity_1, const MeshEntity & entity_2);
+      static bool do_intersect_exact(const MeshEntity & entity_1, const Point & point);
     private:
      
       //@{
