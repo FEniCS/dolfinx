@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-01
-// Last changed: 2010-02-10
+// Last changed: 2010-03-03
 
 #include <algorithm>
 #include <map>
@@ -83,6 +83,20 @@ int IntersectionOperator::any_intersected_entity(const Point& point) const
   return rImpl().any_intersected_entity(point);
 }
 //-----------------------------------------------------------------------------
+Point IntersectionOperator::closest_point(const Point & point) const
+{
+  return rImpl().closest_point(point);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint IntersectionOperator::closest_cell(const Point & point) const
+{
+  return rImpl().closest_cell(point);
+}
+//-----------------------------------------------------------------------------
+std::pair<Point,dolfin::uint> IntersectionOperator::closest_point_and_cell(const Point & point) const
+{
+  return rImpl().closest_point_and_cell(point);
+}
 void IntersectionOperator::reset_kernel(const std::string& kernel_type) 
 { 
   _pImpl.reset(create_intersection_operator(_mesh,kernel_type)); 
@@ -116,10 +130,10 @@ IntersectionOperatorImplementation*
   {
     switch( mesh->type().cell_type())
     {
-      case CellType::point        : return new IntersectionOperatorImplementation_d< PrimitiveTraits<PointCell, EPICK> >(mesh);
-      case CellType::interval     : return new IntersectionOperatorImplementation_d< PrimitiveTraits<IntervalCell, EPICK> >(mesh);
-      case CellType::triangle     : return new IntersectionOperatorImplementation_d< PrimitiveTraits<TriangleCell, EPICK> >(mesh); 
-      case CellType::tetrahedron  : return new IntersectionOperatorImplementation_d< PrimitiveTraits<TetrahedronCell, EPICK> >(mesh);
+      case CellType::point        : return new IntersectionOperatorImplementation_d< PointCell, EPICK >(mesh);
+      case CellType::interval     : return new IntersectionOperatorImplementation_d< IntervalCell, EPICK >(mesh);
+      case CellType::triangle     : return new IntersectionOperatorImplementation_d< TriangleCell, EPICK >(mesh); 
+      case CellType::tetrahedron  : return new IntersectionOperatorImplementation_d< TetrahedronCell, EPICK >(mesh);
       default: error("DOLFIN IntersectionOperator::create_intersection_operator: \n Mesh  CellType is not known."); return 0;
     }
   }
@@ -127,10 +141,10 @@ IntersectionOperatorImplementation*
   {
     switch( mesh->type().cell_type())
     {
-      case CellType::point        : return new IntersectionOperatorImplementation_d< PrimitiveTraits<PointCell, SCK > >(mesh);
-      case CellType::interval     : return new IntersectionOperatorImplementation_d< PrimitiveTraits<IntervalCell, SCK > >(mesh);
-      case CellType::triangle     : return new IntersectionOperatorImplementation_d< PrimitiveTraits<TriangleCell, SCK> >(mesh); 
-      case CellType::tetrahedron  : return new IntersectionOperatorImplementation_d< PrimitiveTraits<TetrahedronCell, SCK > >(mesh);
+      case CellType::point        : return new IntersectionOperatorImplementation_d< PointCell, SCK  >(mesh);
+      case CellType::interval     : return new IntersectionOperatorImplementation_d< IntervalCell, SCK  >(mesh);
+      case CellType::triangle     : return new IntersectionOperatorImplementation_d< TriangleCell, SCK >(mesh); 
+      case CellType::tetrahedron  : return new IntersectionOperatorImplementation_d< TetrahedronCell, SCK  >(mesh);
       default: error("DOLFIN IntersectionOperator::create_intersection_operator: \n Mesh  CellType is not known."); return 0;
     }
   }
