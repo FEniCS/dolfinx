@@ -232,7 +232,7 @@ namespace dolfin
 
     ///Computes the point inside the mesh and the corresponding cell index
     ///which are closest to the point query.
-    std::pair<Point,dolfin::uint> closest_point_and_cell_index(const Point & point) const;
+    std::pair<Point,dolfin::uint> closest_point_and_cell(const Point & point) const;
 
     /// Compute minimum cell diameter
     double hmin() const;

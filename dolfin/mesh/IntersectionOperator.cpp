@@ -93,9 +93,9 @@ dolfin::uint IntersectionOperator::closest_cell(const Point & point) const
   return rImpl().closest_cell(point);
 }
 //-----------------------------------------------------------------------------
-std::pair<Point,dolfin::uint> IntersectionOperator::closest_point_and_cell_index(const Point & point) const
+std::pair<Point,dolfin::uint> IntersectionOperator::closest_point_and_cell(const Point & point) const
 {
-  return rImpl().closest_point_and_cell_index(point);
+  return rImpl().closest_point_and_cell(point);
 }
 void IntersectionOperator::reset_kernel(const std::string& kernel_type) 
 { 

@@ -299,9 +299,9 @@ dolfin::uint Mesh::closest_cell(const Point & point) const
   return _intersection_operator.closest_cell(point);
 }
 //-----------------------------------------------------------------------------
-std::pair<Point,dolfin::uint> Mesh::closest_point_and_cell_index(const Point & point) const
+std::pair<Point,dolfin::uint> Mesh::closest_point_and_cell(const Point & point) const
 {
-  return _intersection_operator.closest_point_and_cell_index(point);
+  return _intersection_operator.closest_point_and_cell(point);
 }
 //-----------------------------------------------------------------------------
 IntersectionOperator& Mesh::intersection_operator()

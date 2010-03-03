@@ -94,7 +94,7 @@ namespace dolfin
 
     ///Computes the point inside the mesh and the corresponding cell index
     ///which are closest to the point query.
-    std::pair<Point,uint> closest_point_and_cell_index(const Point & point) const;
+    std::pair<Point,uint> closest_point_and_cell(const Point & point) const;
 
     ///Rebuilds the underlying search structure from scratch and uses the kernel kernel_type
     ///underlying CGAL Geometry kernel.

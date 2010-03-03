@@ -55,7 +55,7 @@ namespace dolfin
     virtual int any_intersected_entity(const Point & point) const = 0; 
     virtual Point closest_point(const Point & point) const = 0;
     virtual dolfin::uint closest_cell(const Point & point) const = 0;
-    virtual std::pair<Point,uint> closest_point_and_cell_index(const Point & point) const = 0;
+    virtual std::pair<Point,uint> closest_point_and_cell(const Point & point) const = 0;
   };
 
   ///Class which provides the dimensional implementation of the search structure
@@ -92,7 +92,7 @@ namespace dolfin
 
     virtual Point closest_point(const Point & point) const;
     virtual dolfin::uint closest_cell(const Point & point) const;
-    virtual std::pair<Point,dolfin::uint> closest_point_and_cell_index(const Point & point) const;
+    virtual std::pair<Point,dolfin::uint> closest_point_and_cell(const Point & point) const;
 
     ///Topological dimension of the mesh.
     static const uint dim = PT::dim;
@@ -292,11 +292,11 @@ namespace dolfin
   template <class P, class K>
   dolfin::uint IntersectionOperatorImplementation_d<P, K>::closest_cell(const Point & point) const
   {
-    return closest_point_and_cell_index(point).second;
+    return closest_point_and_cell(point).second;
   }
 
   template <class P, class K>
-  std::pair<Point,uint> IntersectionOperatorImplementation_d<P, K>::closest_point_and_cell_index(const Point & point) const
+  std::pair<Point,uint> IntersectionOperatorImplementation_d<P, K>::closest_point_and_cell(const Point & point) const
   {
     if (!point_search_tree_constructed)
       tree->accelerate_distance_queries();
@@ -339,7 +339,7 @@ namespace dolfin  {
     virtual int any_intersected_entity(const Point & point) const {return -1; } 
     virtual Point closest_point(const Point & point) const {return Point(); } 
     virtual dolfin::uint closest_cell(const Point & point) const {return 0; } 
-    virtual std::pair<Point,uint> closest_point_and_cell_index(const Point & point) const {return std::pair<Point,uint>(); }
+    virtual std::pair<Point,uint> closest_point_and_cell(const Point & point) const {return std::pair<Point,uint>(); }
 
   };
 }
