@@ -39,7 +39,7 @@ int main ()
     }
   }
 #else
-  info("DOLFIN has been compiled without CGAL support.\nIntersetion functionality is not available")  
+  info("DOLFIN has been compiled without CGAL support.\nIntersetion functionality is not available");
  
 #endif
 
