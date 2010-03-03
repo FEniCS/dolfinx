@@ -73,6 +73,11 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver)
     Teuchos::ParameterList list;
     list.set("fact: level-of-fill", ilu_fill_level);
     list.set("schwarz: combine mode", "Zero");
+    list.set("schwarz: reordering type", "rcm");
+    list.set("relaxation: sweeps", 0);
+
+    list.set("relaxation: damping factor", 1.0);
+    list.set("relaxation: zero starting solution", true);
 
     Epetra_RowMatrix* A = _solver.GetUserMatrix();
 
@@ -91,6 +96,12 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver)
     _solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
     _solver.SetAztecOption(AZ_subdomain_solve, methods.find(type)->second);
     _solver.SetAztecOption(AZ_graph_fill, parameters["ilu_fill_level"]);
+    //_solver.SetAztecOption(AZ_graph_fill, 0);
+    //_solver.SetAztecOption(AZ_poly_ord, 0);
+    //_solver.SetAztecParam(AZ_drop, 0.0);
+    //_solver.SetAztecParam(AZ_athresh, 0.0);
+    //_solver.SetAztecParam(AZ_rthresh, 0.0);
+    //_solver.SetAztecOption(AZ_reorder,0);
     //_solver.CheckInput();
   }
   else if (type == "amg_ml")
