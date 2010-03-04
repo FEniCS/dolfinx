@@ -38,6 +38,7 @@ Parameters TrilinosPreconditioner::default_parameters()
   p.rename("trilinos_preconditioner");
   p.add("ilu_fill_level", 0);
   p.add("schwarz_overlap", 1);
+  p.add("schwarz_mode", "Zero");   // Options are Zero, Insert, Add, Average, AbsMax
   p.add("reordering_type", "rcm"); // Options are rcm, metis, amd
   return p;
 }
@@ -68,12 +69,13 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver)
   if (type == "default" || type == "ilu")
   {
     // Get/set some parameters
-    const int ilu_fill_level     = parameters["ilu_fill_level"];
-    const int overlap            = parameters["schwarz_overlap"];
-    const std::string reordering = parameters["reordering_type"];
+    const int ilu_fill_level       = parameters["ilu_fill_level"];
+    const int overlap              = parameters["schwarz_overlap"];
+    const std::string reordering   = parameters["reordering_type"];
+    const std::string schwarz_mode = parameters["schwarz_mode"];
     Teuchos::ParameterList list;
     list.set("fact: level-of-fill", ilu_fill_level);
-    list.set("schwarz: combine mode", "Zero");
+    list.set("schwarz: combine mode", schwarz_mode);
     list.set("schwarz: reordering type", reordering);
 
     Epetra_RowMatrix* A = _solver.GetUserMatrix();
