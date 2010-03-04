@@ -66,7 +66,7 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver)
   AztecOO& _solver = *(solver.aztecoo());
 
   // Set preconditioner
-  if (type == "default" || type == "ilu")
+  if (type == "default" || type == "ilu" || type == "icc")
   {
     // Get/set some parameters
     const int ilu_fill_level       = parameters["ilu_fill_level"];
@@ -74,15 +74,19 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver)
     const std::string reordering   = parameters["reordering_type"];
     const std::string schwarz_mode = parameters["schwarz_mode"];
     Teuchos::ParameterList list;
-    list.set("fact: level-of-fill", ilu_fill_level);
-    list.set("schwarz: combine mode", schwarz_mode);
+    list.set("fact: level-of-fill",      ilu_fill_level);
+    list.set("schwarz: combine mode",    schwarz_mode);
     list.set("schwarz: reordering type", reordering);
 
     Epetra_RowMatrix* A = _solver.GetUserMatrix();
 
     // Create preconditioner
+    std::string type;
+    if (type == "icc")
+      type = "IC";
+    else
+      type = "ILU";
     Ifpack ifpack_factory;
-    std::string type = "ILU";
     ifpack_preconditioner.reset( ifpack_factory.Create(type, A, overlap) );
     assert(ifpack_preconditioner != 0);
 
