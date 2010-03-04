@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2010-02-10
+// Last changed: 2010-03-04
 
 #include <algorithm>
 #include <sstream>
@@ -129,6 +129,22 @@ void TimeSeries::retrieve(GenericVector& vector, double t) const
 void TimeSeries::retrieve(Mesh& mesh, double t) const
 {
   retrieve_object(mesh, t, _vector_times, _name, "mesh");
+}
+//-----------------------------------------------------------------------------
+Array<double> TimeSeries::vector_times() const
+{
+  Array<double> times(_vector_times.size());
+  for (uint i = 0; i < _vector_times.size(); i++)
+    times[i] = _vector_times[i];
+  return times;
+}
+//-----------------------------------------------------------------------------
+Array<double> TimeSeries::mesh_times() const
+{
+  Array<double> times(_mesh_times.size());
+  for (uint i = 0; i < _mesh_times.size(); i++)
+    times[i] = _mesh_times[i];
+  return times;
 }
 //-----------------------------------------------------------------------------
 void TimeSeries::clear()
