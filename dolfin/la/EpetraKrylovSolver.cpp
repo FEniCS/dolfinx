@@ -129,9 +129,14 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 
   // Start solve
   solver->Iterate(parameters["maximum_iterations"], parameters["relative_tolerance"]);
-
-  info("AztecOO Krylov solver (%s, %s) converged in %d iterations.",
+  const double* status = solver->GetAztecStatus(); 
+  if ( (int) status[AZ_why] != AZ_normal )
+    warning("Problem with Trilinos Krylov solver. Error code %i.", status[AZ_why]);
+  else
+  {
+    info("AztecOO Krylov solver (%s, %s) converged in %d iterations.",
           method.c_str(), preconditioner->name().c_str(), solver->NumIters());
+  }
 
   return solver->NumIters();
 }

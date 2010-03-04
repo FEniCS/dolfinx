@@ -3,9 +3,10 @@
 //
 // Modified by Anders Logg, 2005-2009.
 // Modified by Martin Alnes, 2008.
+// Modified by Johan Hake, 2010.
 //
 // First added:  2005-10-23
-// Last changed: 2010-02-15
+// Last changed: 2010-03-04
 
 #include <iostream>
 #include <dolfin/common/NoDeleter.h>
@@ -40,6 +41,7 @@ NewtonSolver::NewtonSolver(std::string solver_type, std::string pc_type)
 {
   // Set default parameters
   parameters = default_parameters();
+  parameters.add(solver->parameters);
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& factory)
@@ -61,6 +63,9 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   assert(A);
   assert(b);
   assert(dx);
+
+  // Update linear solver parameter
+  solver->parameters.update(parameters("linear_solver"));
 
   const uint maxiter = parameters["maximum_iterations"];
 
