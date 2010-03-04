@@ -2,12 +2,14 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2010-02-25
-// Last changed:
+// Last changed: 2010-03-03
 
 #ifdef HAS_TRILINOS
 
 #include <boost/assign/list_of.hpp>
 #include <AztecOO.h>
+#include <Ifpack.h>
+#include <Epetra_CombineMode.h>
 #include <ml_include.h>
 #include <ml_MultiLevelOperator.h>
 #include <ml_epetra_utils.h>
@@ -36,6 +38,7 @@ Parameters TrilinosPreconditioner::default_parameters()
   p.rename("trilinos_preconditioner");
   p.add("ilu_fill_level", 0);
   p.add("schwarz_overlap", 1);
+  p.add("reordering_type", "rcm"); // Options are rcm, metis, amd
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -54,7 +57,7 @@ TrilinosPreconditioner::~TrilinosPreconditioner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void TrilinosPreconditioner::set(EpetraKrylovSolver& solver) const
+void TrilinosPreconditioner::set(EpetraKrylovSolver& solver)
 {
   assert(solver.aztecoo());
 
@@ -64,9 +67,30 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver) const
   // Set preconditioner
   if (type == "default" || type == "ilu")
   {
-    _solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
-    _solver.SetAztecOption(AZ_subdomain_solve, methods.find(type)->second);
-    _solver.SetAztecOption(AZ_graph_fill, parameters["ilu_fill_level"]);
+    // Get/set some parameters
+    const int ilu_fill_level     = parameters["ilu_fill_level"];
+    const int overlap            = parameters["schwarz_overlap"];
+    const std::string reordering = parameters["reordering_type"];
+    Teuchos::ParameterList list;
+    list.set("fact: level-of-fill", ilu_fill_level);
+    list.set("schwarz: combine mode", "Zero");
+    list.set("schwarz: reordering type", reordering);
+
+    Epetra_RowMatrix* A = _solver.GetUserMatrix();
+
+    // Create preconditioner
+    Ifpack ifpack_factory;
+    std::string type = "ILU";
+    ifpack_preconditioner.reset( ifpack_factory.Create(type, A, overlap) );
+    assert(ifpack_preconditioner != 0);
+
+    // Set up preconditioner
+    ifpack_preconditioner->SetParameters(list);
+    ifpack_preconditioner->Initialize();
+    ifpack_preconditioner->Compute();
+    _solver.SetPrecOperator(ifpack_preconditioner.get());
+
+    //std::cout << *ifpack_preconditioner;
   }
   else if (type == "amg_ml")
     set_ml(_solver);

@@ -5,7 +5,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2010-01-15
+// Last changed: 2010-03-02
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -132,10 +132,6 @@ Point IntervalCell::normal(const Cell& cell, uint facet) const
 {
   // Get mesh geometry
   const MeshGeometry& geometry = cell.mesh().geometry();
-
-  // The normal vector is currently only defined for an interval in R^1
-  if ( geometry.dim() != 1 )
-    error("The normal vector is only defined when the interval is in R^1");
 
   // Get the two vertices as points
   const uint* vertices = cell.entities(0);

@@ -9,12 +9,13 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2010-02-09
+// Last changed: 2010-03-03
 
 #ifndef __MESH_H
 #define __MESH_H
 
 #include <string>
+#include <utility>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -32,7 +33,7 @@ namespace dolfin
   class Function;
   class BoundaryMesh;
   class XMLMesh;
-  class IntersectionOperator;
+  class SubDomain;
 
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
@@ -180,8 +181,14 @@ namespace dolfin
     /// Move coordinates of mesh according to displacement function
     void move(const Function& displacement);
 
-    /// Smooth mesh using Lagrangian mesh smoothing
-    void smooth(uint num_smoothings=1);
+    /// Smooth internal vertices of mesh by local averaging
+    void smooth(uint num_iterations=1);
+
+    /// Smooth boundary vertices of mesh by local averaging
+    void smooth_boundary(uint num_iterations=1, bool harmonic_smoothing=true);
+
+    /// Snap boundary vertices of mesh to match given sub domain
+    void snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing=true);
 
     ///Compute all id of all cells which are intersects by a \em point.
     ///\param[out] ids_result The ids of the intersected entities are saved in a set for efficienty
@@ -215,6 +222,17 @@ namespace dolfin
     ///Computes only the first id  of the entity, which contains the point. Returns -1 if no cell is intersected.
     ///@internal @remark This makes the function evaluation significantly faster.
     int any_intersected_entity(const Point & point) const;
+
+    ///Computes the point inside the mesh which are closest to the point query.
+    Point closest_point(const Point & point) const;
+
+    ///Computes the index of the cell in the mesh
+    ///which are closest to the point query.
+    dolfin::uint closest_cell(const Point & point) const;
+
+    ///Computes the point inside the mesh and the corresponding cell index
+    ///which are closest to the point query.
+    std::pair<Point,dolfin::uint> closest_point_and_cell(const Point & point) const;
 
     /// Compute minimum cell diameter
     double hmin() const;

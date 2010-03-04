@@ -4,7 +4,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-09
-// Last changed: 2010-02-05
+// Last changed: 2010-03-02
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -44,6 +44,7 @@ namespace dolfin
   class MeshEntityIterator
   {
   public:
+
     ///Default constructor
     MeshEntityIterator() : _pos(0), pos_end(0), index(0) {}
 
@@ -52,7 +53,7 @@ namespace dolfin
       : entity(mesh, dim, 0), _pos(0), pos_end(mesh.size(dim)), index(0)
     {
       // Compute entities if empty
-      if ( pos_end == 0 )
+      if (pos_end == 0)
         pos_end = mesh.init(dim);
     }
 
@@ -84,25 +85,25 @@ namespace dolfin
     virtual ~MeshEntityIterator() {}
 
     /// Copy Constructor
-    MeshEntityIterator(const MeshEntityIterator& it) :  entity(it.entity), 
-        _pos(it._pos), pos_end(it.pos_end), index(it.index) {}; 
+    MeshEntityIterator(const MeshEntityIterator& it) :  entity(it.entity),
+        _pos(it._pos), pos_end(it.pos_end), index(it.index) {};
 
     ///Step to next mesh entity (prefix increment)
-    MeshEntityIterator& operator++() 
-    { 
-      ++_pos; 
-      return *this; 
+    MeshEntityIterator& operator++()
+    {
+      ++_pos;
+      return *this;
     }
 
     /// Step to the previous mesh entity (prefix decrease)
-    MeshEntityIterator& operator--() 
-    { 
-      --_pos; 
-      return *this; 
+    MeshEntityIterator& operator--()
+    {
+      --_pos;
+      return *this;
     }
 
     /// Return current position
-    uint pos() const 
+    uint pos() const
     { return _pos; }
 
     ///Comparison operator.
@@ -112,26 +113,26 @@ namespace dolfin
     //Use const_cast to use operator* inside comparison, which automatically
     //updates the entity index corresponding to pos *before* comparison (since
     //update of entity delays until request for entity)
-    bool operator==(const MeshEntityIterator & it) const 
+    bool operator==(const MeshEntityIterator & it) const
     {
-      return ((const_cast<MeshEntityIterator *>(this))->operator*() 
-            == (const_cast<MeshEntityIterator *>(&it))->operator*() 
+      return ((const_cast<MeshEntityIterator *>(this))->operator*()
+            == (const_cast<MeshEntityIterator *>(&it))->operator*()
             && _pos == it._pos && index == it.index);
     }
 
-    bool operator!=(const MeshEntityIterator & it) const 
+    bool operator!=(const MeshEntityIterator & it) const
     { return !operator==(it); }
 
     /// Dereference operator
-    MeshEntity& operator*() 
+    MeshEntity& operator*()
     { return *operator->(); }
 
     /// Member access operator
-    MeshEntity* operator->() 
+    MeshEntity* operator->()
     { entity._index = (index ? index[_pos] : _pos); return &entity; }
 
-    ///Random access operator. 
-    MeshEntity& operator[] (uint pos) 
+    ///Random access operator.
+    MeshEntity& operator[] (uint pos)
     { _pos = pos; return *operator->();}
 
     /// Check if iterator has reached the end
@@ -141,12 +142,12 @@ namespace dolfin
     ///process, either iterating over the mesh /or incident entities. Added to
     ///be bit more like STL iteratoren, since many algorithms rely on a kind of
     ///beyond iterator.
-    MeshEntityIterator end_iterator() 
-    { 
-      MeshEntityIterator 
-      sg(*this); 
-      sg.set_end(); 
-      return sg; 
+    MeshEntityIterator end_iterator()
+    {
+      MeshEntityIterator
+      sg(*this);
+      sg.set_end();
+      return sg;
     }
 
     // Note: Not a subclass of Variable for efficiency!
@@ -168,9 +169,9 @@ namespace dolfin
 
 //    MeshEntityIterator(const MeshEntityIterator& entity) :  entity(entity.entity.mesh(), 0, 0), _pos(0)
 //    { error("Illegal use of mesh entity iterator."); }
-    
+
     ///Set pos to end position. To create a kind of mesh.end() iterator.
-    void set_end() 
+    void set_end()
     { _pos = pos_end; }
 
     // Mesh entity

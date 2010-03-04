@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-02
-// Last changed: 2009-08-10
+// Last changed: 2010-03-02
 
 #include <set>
 #include <dolfin/log/dolfin_log.h>
@@ -36,21 +36,20 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
 
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
-
   MeshConnectivity& ce = topology(topology.dim(), dim);
   MeshConnectivity& ev = topology(dim, 0);
 
   // Check if entities have already been computed
-  if ( topology.size(dim) > 0 )
+  if (topology.size(dim) > 0)
   {
     // Make sure we really have the connectivity
-    if ( (ce.size() == 0 && dim != topology.dim()) || (ev.size() == 0 && dim != 0) )
+    if ((ce.size() == 0 && dim != topology.dim()) || (ev.size() == 0 && dim != 0))
       error("Entities of topological dimension %d exist but connectivity is missing.", dim);
     return topology.size(dim);
   }
 
   // Make sure connectivity does not already exist
-  if ( ce.size() > 0 || ev.size() > 0 )
+  if (ce.size() > 0 || ev.size() > 0)
     error("Connectivity for topological dimension %d exists but entities are missing.", dim);
 
   //info("Computing mesh entities of topological dimension %d.", dim);
@@ -136,15 +135,15 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
   MeshConnectivity& connectivity = topology(d0, d1);
 
   // Check if connectivity has already been computed
-  if ( connectivity.size() > 0 )
+  if (connectivity.size() > 0)
     return;
 
   //info("Computing mesh connectivity %d - %d.", d0, d1);
 
   // Compute entities if they don't exist
-  if ( topology.size(d0) == 0 )
+  if (topology.size(d0) == 0)
     compute_entities(mesh, d0);
-  if ( topology.size(d1) == 0 )
+  if (topology.size(d1) == 0)
     compute_entities(mesh, d1);
 
   // Check is mesh has entities
@@ -152,11 +151,11 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
     return;
 
   // Check if connectivity still needs to be computed
-  if ( connectivity.size() > 0 )
+  if (connectivity.size() > 0)
     return;
 
   // Decide how to compute the connectivity
-  if ( d0 < d1 )
+  if (d0 < d1)
   {
     // Compute connectivity d1 - d0 and take transpose
     compute_connectivity(mesh, d1, d0);
@@ -169,7 +168,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
 
     // Choose how to take intersection
     uint d = 0;
-    if ( d0 == 0 && d1 == 0 )
+    if (d0 == 0 && d1 == 0)
       d = mesh.topology().dim();
 
     // Compute connectivity d0 - d - d1 and take intersection
@@ -274,16 +273,16 @@ void TopologyComputation::computeFromIntersection(Mesh& mesh,
       // Iterate over all connected entities of dimension d1
       for (MeshEntityIterator e1(*e, d1); !e1.end(); ++e1)
       {
-        if ( d0 == d1 )
+        if (d0 == d1)
         {
           // An entity is not a neighbor to itself
-          if ( e0->index() != e1->index() )
+          if (e0->index() != e1->index())
             entities.insert(e1->index());
         }
         else
         {
           // Entity e1 must be completely contained in e0
-          if ( contains(*e0, *e1) )
+          if (contains(*e0, *e1))
             entities.insert(e1->index());
         }
       }
@@ -308,16 +307,16 @@ void TopologyComputation::computeFromIntersection(Mesh& mesh,
       // Iterate over all connected entities of dimension d1
       for (MeshEntityIterator e1(*e, d1); !e1.end(); ++e1)
       {
-        if ( d0 == d1 )
+        if (d0 == d1)
         {
           // An entity is not a neighbor to itself
-          if ( e0->index() != e1->index() )
+          if (e0->index() != e1->index())
             entities.insert(e1->index());
         }
         else
         {
           // Entity e1 must be completely contained in e0
-          if ( contains(*e0, *e1) )
+          if (contains(*e0, *e1))
             entities.insert(e1->index());
         }
       }
@@ -348,11 +347,11 @@ dolfin::uint TopologyComputation::count_entities(Mesh& mesh, MeshEntity& cell,
     for (MeshEntityIterator c(cell, mesh.topology().dim()); !c.end(); ++c)
     {
       // Check only previously visited cells
-      if ( c->index() >= cell.index() )
+      if (c->index() >= cell.index())
         continue;
 
       // Check for vertices
-      if ( contains(c->entities(0), c->num_entities(0), entities[i], n) )
+      if (contains(c->entities(0), c->num_entities(0), entities[i], n))
         goto found;
     }
 
@@ -386,7 +385,7 @@ void TopologyComputation::add_entities(Mesh& mesh, MeshEntity& cell,
     for (MeshEntityIterator c(cell, mesh.topology().dim()); !c.end(); ++c)
     {
       // Check only previously visited cells
-      if ( c->index() >= cell.index() )
+      if (c->index() >= cell.index())
         continue;
 
       // Check all entities of dimension dim in connected cell
@@ -396,7 +395,7 @@ void TopologyComputation::add_entities(Mesh& mesh, MeshEntity& cell,
       {
         // Can't use iterators since connectivity has not been computed
         MeshEntity e(mesh, dim, other_entities[j]);
-        if ( contains(e.entities(0), e.num_entities(0), entities[i], n) )
+        if (contains(e.entities(0), e.num_entities(0), entities[i], n))
         {
           // Entity already exists, so pick the index
           ce.set(cell.index(), e.index(), i);
@@ -435,13 +434,13 @@ bool TopologyComputation::contains(const uint* v0, uint n0, const uint* v1, uint
     bool found = false;
     for (uint i0 = 0; i0 < n0; i0++)
     {
-      if ( v0[i0] == v1[i1] )
+      if (v0[i0] == v1[i1])
       {
         found = true;
         break;
       }
     }
-    if ( !found )
+    if (!found)
       return false;
   }
 

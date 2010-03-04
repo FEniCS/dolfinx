@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2006.
@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim, 2008
 //
 // First added:  2006-06-05
-// Last changed: 2010-01-19
+// Last changed: 2010-03-02
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -188,6 +188,9 @@ double TriangleCell::normal(const Cell& cell, uint facet, uint i) const
 //-----------------------------------------------------------------------------
 Point TriangleCell::normal(const Cell& cell, uint facet) const
 {
+  // Make sure we have facets
+  cell.mesh().init(2, 1);
+
   // Create facet from the mesh and local facet number
   Facet f(cell.mesh(), cell.entities(1)[facet]);
 
@@ -206,21 +209,18 @@ Point TriangleCell::normal(const Cell& cell, uint facet) const
   const MeshGeometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the three vertices
-  const double* p0 = geometry.x(v0);
-  const double* p1 = geometry.x(v1);
-  const double* p2 = geometry.x(v2);
+  const Point p0 = geometry.point(v0);
+  const Point p1 = geometry.point(v1);
+  const Point p2 = geometry.point(v2);
 
-  // Vector normal to facet
-  Point n;
-  n[0] = (p2[1] - p1[1]);
-  n[1] = -(p2[0] - p1[0]);
+  // Subtract projection of p2 - p0 onto p2 - p1
+  Point t = p2 - p1;
+  t /= t.norm();
+  Point n = p2 - p0;
+  n -= n.dot(t) * t;
 
   // Normalize
-  n /= std::sqrt(n[0]*n[0] + n[1]*n[1]);
-
-  // Flip direction of normal so it points outward
-  if ( (n[0]*(p0[0] - p1[0]) + n[1]*(p0[1] - p1[1])) > 0 )
-    n *= -1.0;
+  n /= n.norm();
 
   return n;
 }

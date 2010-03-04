@@ -1,8 +1,10 @@
 // Copyright (C) 2010 Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Anders Logg, 2010.
+//
 // First added:  2010-02-25
-// Last changed:
+// Last changed: 2010-03-02
 
 #ifdef HAS_PETSC
 
@@ -70,7 +72,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     PCHYPRESetType(pc, "boomeramg");
     PCSetFromOptions(pc);
     #else
-    warning("PETSc has not been compiled with the HYPRE library for   "
+    warning("PETSc has not been compiled with the HYPRE library for "
             "algebraic multigrid. Default PETSc solver will be used. "
             "For performance, installation of HYPRE is recommended.");
     #endif

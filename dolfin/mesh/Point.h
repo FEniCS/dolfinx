@@ -5,7 +5,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-06-12
-// Last changed: 2009-11-11
+// Last changed: 2010-03-01
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -111,6 +111,11 @@ namespace dolfin
     template <typename Kernel>
     operator CGAL::Point_3<Kernel>() const 
     { return CGAL::Point_3<Kernel>(_x[0],_x[1],_x[2]); }
+
+    ///Constructor taking a CGAL::Point_3. Allows conversion from CGAL Point_3 class to Point class.
+    template <typename Kernel>
+    Point (const CGAL::Point_3<Kernel> & point)
+    { _x[0] = point.x(); _x[1] = point.y(); _x[2] = point.z(); }
 
     ///Provides a CGAL bounding box, using conversion operator.
     template <typename Kernel>
