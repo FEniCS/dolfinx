@@ -4,7 +4,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-11
-// Last changed: 2010-02-21
+// Last changed: 2010-03-05
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
@@ -70,12 +70,20 @@ namespace dolfin
     /// Check if given entity is indicent
     bool incident(const MeshEntity& entity) const;
 
-    /// Check if given point intersects.
-    bool intersects(const Point & point) const
+    /// Check if given point intersects (using inexact but fast numerics)
+    bool intersects(const Point& point) const
+    { return PrimitiveIntersector::do_intersect(*this,point); }
+
+    /// Check if given entity intersects (using inexact but fast numerics)
+    bool intersects(const MeshEntity& entity) const
+    { return PrimitiveIntersector::do_intersect(*this,entity); }
+
+    /// Check if given point intersects (using exact numerics)
+    bool intersects_exactly(const Point& point) const
     { return PrimitiveIntersector::do_intersect_exact(*this,point); }
 
-    /// Check if given entity intersects.
-    bool intersects(const MeshEntity & entity) const
+    /// Check if given entity intersects (using exact numerics)
+    bool intersects_exactly(const MeshEntity& entity) const
     { return PrimitiveIntersector::do_intersect_exact(*this,entity); }
 
     /// Compute local index of given incident entity (error if not found)
