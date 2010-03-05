@@ -15,7 +15,7 @@
 // and boundary conditions given by
 //
 //     u(x, y) = 0        for x = 0 or x = 1
-// du/dn(x, y) = sin(5*x) for y = 0 or y = 1
+// du/dn(x, y) = -sin(5*x) for y = 0 or y = 1
 //
 // This demo is identical to the Poisson demo with the only difference that
 // the source and flux term is expressed using SpatialCoordinates in the

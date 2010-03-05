@@ -9,7 +9,7 @@ on the unit square with source f given by
 and boundary conditions given by
 
     u(x, y) = 0        for x = 0 or x = 1
-du/dn(x, y) = sin(5*x) for y = 0 or y = 1
+du/dn(x, y) = -sin(5*x) for y = 0 or y = 1
 
 This demo is identical to the Poisson demo with the only difference that
 the source and flux term is expressed using SpatialCoordinates in the
@@ -41,7 +41,7 @@ u = TrialFunction(V)
 d_x = triangle.x[0] - 0.5
 d_y = triangle.x[1] - 0.5
 f = 10.0*exp(-(d_x*d_x + d_y*d_y) / 0.02)
-g = sin(5.0*triangle.x[0])
+g = -sin(5.0*triangle.x[0])
 a = inner(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2010-02-27
+// Last changed: 2010-03-05
 //
 // This demo program solves Poisson's equation
 //
@@ -15,7 +15,7 @@
 // and boundary conditions given by
 //
 //     u(x, y) = 0        for x = 0 or x = 1
-// du/dn(x, y) = sin(5*x) for y = 0 or y = 1
+// du/dn(x, y) = -sin(5*x) for y = 0 or y = 1
 
 #include <dolfin.h>
 #include "Poisson.h"
@@ -38,7 +38,7 @@ class Flux : public Expression
 {
   void eval(Array<double>& values, const Array<double>& x) const
   {
-    values[0] = sin(5*x[0]);
+    values[0] = -sin(5*x[0]);
   }
 };
 
