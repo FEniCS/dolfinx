@@ -1,7 +1,7 @@
-// Copyright (C) 2006-2009 Anders Logg.
+// Copyright (C) 2010 Kristian B. Oelgaard.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2006-02-07
+// First added:  2010-03-05
 // Last changed: 2010-03-05
 //
 // This demo program solves Poisson's equation
@@ -16,31 +16,15 @@
 //
 //     u(x, y) = 0        for x = 0 or x = 1
 // du/dn(x, y) = -sin(5*x) for y = 0 or y = 1
+//
+// This demo is identical to the Poisson demo with the only difference that
+// the source and flux term is expressed using SpatialCoordinates in the
+// variational formulation.
 
 #include <dolfin.h>
-#include "Poisson.h"
+#include "SpatialCoordinates.h"
 
 using namespace dolfin;
-
-// Source term (right-hand side)
-class Source : public Expression
-{
-  void eval(Array<double>& values, const Array<double>& x) const
-  {
-    double dx = x[0] - 0.5;
-    double dy = x[1] - 0.5;
-    values[0] = 10*exp(-(dx*dx + dy*dy) / 0.02);
-  }
-};
-
-// Boundary flux (Neumann boundary condition)
-class Flux : public Expression
-{
-  void eval(Array<double>& values, const Array<double>& x) const
-  {
-    values[0] = -sin(5*x[0]);
-  }
-};
 
 // Sub domain for Dirichlet boundary condition
 class DirichletBoundary : public SubDomain
@@ -55,7 +39,7 @@ int main()
 {
   // Create mesh and function space
   UnitSquare mesh(32, 32);
-  Poisson::FunctionSpace V(mesh);
+  SpatialCoordinates::FunctionSpace V(mesh);
 
   // Define boundary condition
   Constant u0(0.0);
@@ -63,12 +47,8 @@ int main()
   DirichletBC bc(V, u0, boundary);
 
   // Define variational problem
-  Poisson::BilinearForm a(V, V);
-  Poisson::LinearForm L(V);
-  Source f;
-  Flux g;
-  L.f = f;
-  L.g = g;
+  SpatialCoordinates::BilinearForm a(V, V);
+  SpatialCoordinates::LinearForm L(V);
 
   // Compute solution
   VariationalProblem problem(a, L, bc);
@@ -77,7 +57,7 @@ int main()
   problem.solve(u);
 
   // Save solution in VTK format
-  File file("poisson.pvd");
+  File file("spatial-coordinates.pvd");
   file << u;
 
   // Plot solution
