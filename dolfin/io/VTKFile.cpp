@@ -9,23 +9,23 @@
 // First added:  2005-07-05
 // Last changed: 2009-10-08
 
-#include <vector>
-#include <sstream>
+//#include <fstream>
 #include <ostream>
-#include <fstream>
+#include <sstream>
+#include <vector>
 #include <boost/cstdint.hpp>
 #include <boost/detail/endian.hpp>
 
+#include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/FiniteElement.h>
+#include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/LinearAlgebraFactory.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/la/GenericVector.h>
-#include <dolfin/la/LinearAlgebraFactory.h>
-#include <dolfin/fem/FiniteElement.h>
-#include <dolfin/fem/DofMap.h>
-#include <dolfin/function/Function.h>
-#include <dolfin/function/FunctionSpace.h>
 #include "Encoder.h"
 #include "VTKFile.h"
 
@@ -171,27 +171,19 @@ void VTKFile::finalize(std::string vtu_filename)
 void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
 {
   // Open file
-  std::ofstream file;
-  file.open(vtu_filename.c_str(), std::ios::app);
+  std::ofstream file(vtu_filename.c_str(), std::ios::app);
   if ( !file.is_open() )
     error("Unable to open file %s", filename.c_str());
-
-  //FILE* fp = fopen(vtu_filename.c_str(), "a");
-  //if (!fp)
-  //  error("Unable to open file %s", filename.c_str());
 
   // Write vertex positions
   file << "<Points>" << std::endl;
   file << "<DataArray  type=\"Float32\"  NumberOfComponents=\"3\"  format=\"" << encode_string << "\">" << std::endl;
-  //fprintf(fp, "<Points>  \n");
-  //fprintf(fp, "<DataArray  type=\"Float32\"  NumberOfComponents=\"3\"  format=\"%s\">  \n", encode_string.c_str());
   if (encoding == "ascii")
   {
     for (VertexIterator v(mesh); !v.end(); ++v)
     {
       Point p = v->point();
       file << p.x() << " " << p.y() << " " <<  p.z() << std::endl;
-      //fprintf(fp," %f %f %f \n", p.x(), p.y(), p.z());
     }
   }
   else if (encoding == "base64" || encoding == "compressed")
@@ -209,28 +201,20 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
     // Create encoded stream
     std::stringstream base64_stream;
     encode_stream(base64_stream, data);
-    file <<  base64_stream << std::endl;
-    //fprintf(fp, "%s", base64_stream.str().c_str());
-    //fprintf(fp, "\n");
+    file <<  base64_stream.str() << std::endl;
   }
   file << "</DataArray>" << std::endl <<  "</Points>" << std::endl;
-  //fprintf(fp, "</DataArray>  \n");
-  //fprintf(fp, "</Points>  \n");
 
   // Write cell connectivity
   file << "<Cells>" << std::endl;
   file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\"" << encode_string << "\">" << std::endl;
-  //fprintf(fp, "<Cells>  \n");
-  //fprintf(fp, "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\"%s\">  \n", encode_string.c_str());
   if (encoding == "ascii")
   {
     for (CellIterator c(mesh); !c.end(); ++c)
     {
       for (VertexIterator v(*c); !v.end(); ++v)
         file << v->index() << " ";
-        //fprintf(fp," %8u ",v->index());
       file << std::endl;
-      //fprintf(fp," \n");
     }
   }
   else if (encoding == "base64" || encoding == "compressed")
@@ -248,22 +232,17 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
     // Create encoded stream
     std::stringstream base64_stream;
     encode_stream(base64_stream, data);
-    file << base64_stream << std::endl;
-    //fprintf(fp, "%s", base64_stream.str().c_str());
-    //fprintf(fp, "\n");
+    file << base64_stream.str() << std::endl;
   }
   file << "</DataArray>" << std::endl;
-  //fprintf(fp, "</DataArray> \n");
 
   // Write offset into connectivity array for the end of each cell
   file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\"" << encode_string << "\">" << std::endl;
-  //fprintf(fp, "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\"%s\">  \n", encode_string.c_str());
   const uint num_cell_vertices = mesh.type().num_entities(0);
   if (encoding == "ascii")
   {
     for (uint offsets = 1; offsets <= mesh.num_cells(); offsets++)
       file << " " << offsets*num_cell_vertices << "  "  << std::endl;
-      //fprintf(fp, " %8u \n",  offsets*num_cell_vertices);
   }
   else if (encoding == "base64" || encoding == "compressed")
   {
@@ -276,16 +255,12 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
     // Create encoded stream
     std::stringstream base64_stream;
     encode_stream(base64_stream, data);
-    file << base64_stream << std::endl;
-    //fprintf(fp, "%s", base64_stream.str().c_str());
-    //fprintf(fp, "\n");
+    file << base64_stream.str() << std::endl;
   }
   file << "</DataArray>" << std::endl;
-  //fprintf(fp, "</DataArray> \n");
 
   //Write cell type
   file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"" << encode_string << "\">" << std::endl;
-  //fprintf(fp, "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"%s\">  \n", encode_string.c_str());
   boost::uint8_t vtk_cell_type = 0;
   if (mesh.type().cell_type() == CellType::tetrahedron)
     vtk_cell_type = boost::uint8_t(10);
@@ -297,7 +272,6 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   {
     for (uint types = 0; types < mesh.num_cells(); types++)
       file << " " << static_cast<unsigned int>(vtk_cell_type) << std::endl;
-      //fprintf(fp, " %8u \n", vtk_cell_type);
   }
   else if (encoding == "base64" || encoding == "compressed")
   {
@@ -310,19 +284,13 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
     // Create encoded stream
     std::stringstream base64_stream;
     encode_stream(base64_stream, data);
-
-    file << base64_stream << std::endl;
-    //fprintf(fp, "%s", base64_stream.str().c_str());
-    //fprintf(fp, "\n");
+    file << base64_stream.str() << std::endl;
   }
   file  << "</DataArray>" << std::endl;
   file  << "</Cells>" << std::endl;
-  //fprintf(fp, "</DataArray> \n");
-  //fprintf(fp, "</Cells> \n");
 
   // Close file
   file.close();
-  //fclose(fp);
 }
 //----------------------------------------------------------------------------
 void VTKFile::results_write(const Function& u, std::string vtu_filename) const
@@ -805,8 +773,8 @@ void VTKFile::vtk_header_open(uint num_vertices, uint num_cells,
                               std::string vtu_filename) const
 {
   // Open file
-  FILE *fp = fopen(vtu_filename.c_str(), "a");
-  if (!fp)
+  std::ofstream file(vtu_filename.c_str(), std::ios::app);
+  if ( !file.is_open() )
     error("Unable to open file %s", filename.c_str());
 
   // Figure out endianness of machine
@@ -828,28 +796,27 @@ void VTKFile::vtk_header_open(uint num_vertices, uint num_cells,
     compressor = "compressor=\"vtkZLibDataCompressor\"";
 
   // Write headers
-  fprintf(fp, "<?xml version=\"1.0\"?> \n");
-  fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\" %s  %s>\n", endianness.c_str(), compressor.c_str());
-  fprintf(fp, "<UnstructuredGrid>  \n");
-  fprintf(fp, "<Piece  NumberOfPoints=\" %8u\"  NumberOfCells=\" %8u\">  \n",
-          num_vertices, num_cells);
+  file << "<?xml version=\"1.0\"?>" << std::endl;
+  file << "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\" " << endianness <<  " " << compressor << ">" << std::endl;
+  file << "<UnstructuredGrid>" << std::endl;
+  file << "<Piece  NumberOfPoints=\"" << num_vertices << "\" NumberOfCells=\"" << num_cells << "\">" << std::endl;
 
   // Close file
-  fclose(fp);
+  file.close();
 }
 //----------------------------------------------------------------------------
 void VTKFile::vtk_header_close(std::string vtu_filename) const
 {
   // Open file
-  FILE *fp = fopen(vtu_filename.c_str(), "a");
-  if (!fp)
+  std::ofstream file(vtu_filename.c_str(), std::ios::app);
+  if ( !file.is_open() )
     error("Unable to open file %s", filename.c_str());
 
   // Close headers
-  fprintf(fp, "</Piece> \n</UnstructuredGrid> \n</VTKFile>");
+  file << "</Piece>" << std::endl << "</UnstructuredGrid>" << std::endl << "</VTKFile>";
 
   // Close file
-  fclose(fp);
+  file.close();
 }
 //----------------------------------------------------------------------------
 void VTKFile::pvtu_header_open(std::string pvtu_filename) const
