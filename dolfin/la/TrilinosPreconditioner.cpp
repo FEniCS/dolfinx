@@ -135,7 +135,7 @@ void TrilinosPreconditioner::set_ml(AztecOO& solver)
   mlist.set("max levels", 6);
   mlist.set("increasing or decreasing", "decreasing");
   mlist.set("aggregation: type", "ParMETIS");
-  mlist.set("aggregation: nodes per aggregate", 16);
+  //mlist.set("aggregation: nodes per aggregate", 4);
   //mlist.set("smoother: type","Amesos-KLU");
   //mlist.set("smoother: type", "Amesos-UMFPACK");
 
