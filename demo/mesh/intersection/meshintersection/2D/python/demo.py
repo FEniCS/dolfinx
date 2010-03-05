@@ -23,7 +23,7 @@ if not has_cgal():
 
 #Set to False if you do not want to create movies 
 #(default should be True since you probably want to :) 
-create_movies = False
+create_movies = True
 
 # Create meshes (omega0 overlapped by omega1)
 omega0 = UnitCircle(20)
@@ -38,11 +38,11 @@ x += 1.0
 
 # Iterate over angle
 theta = 0.0
-dtheta = 0.1*DOLFIN_PI
+dtheta = 0.05*DOLFIN_PI
 intersection = MeshFunction("uint", omega0, omega0.topology().dim())
 _first = True
 
-while theta < 2*DOLFIN_PI:
+while theta < 2*DOLFIN_PI + dtheta:
 
     # Compute intersection with boundary of square
     boundary = BoundaryMesh(omega1)
@@ -70,8 +70,8 @@ while theta < 2*DOLFIN_PI:
       p.write_png()
 
     # Rotate circle around (0.5, 0.5)
-    xr = x[:, 0] - 0.5
-    yr = x[:, 1] - 0.5
+    xr = x[:, 0].copy() - 0.5
+    yr = x[:, 1].copy() - 0.5
     x[:,0] = 0.5 + (cos(dtheta)*xr - sin(dtheta)*yr)
     x[:,1] = 0.5 + (sin(dtheta)*xr + cos(dtheta)*yr)
     omega0.intersection_operator().clear()
@@ -99,7 +99,7 @@ dtheta = 0.1*DOLFIN_PI
 intersection = MeshFunction("uint", background_mesh, background_mesh.topology().dim())
 _first = True
 
-while theta < 60*DOLFIN_PI:
+while theta < 2*DOLFIN_PI + dtheta:
 
   cells = background_mesh.all_intersected_entities(structure_mesh)
 
