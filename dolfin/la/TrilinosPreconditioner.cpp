@@ -11,8 +11,9 @@
 #include <Ifpack.h>
 #include <Epetra_CombineMode.h>
 #include <ml_include.h>
-#include <ml_MultiLevelOperator.h>
 #include <ml_epetra_utils.h>
+#include "ml_MultiLevelPreconditioner.h"
+#include "Teuchos_ParameterList.hpp"
 
 #include <dolfin/log/dolfin_log.h>
 #include "EpetraKrylovSolver.h"
@@ -120,56 +121,32 @@ std::string TrilinosPreconditioner::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void TrilinosPreconditioner::set_ml(AztecOO& solver) const
+void TrilinosPreconditioner::set_ml(AztecOO& solver)
 {
-  warning("The TrilinosPreconditioner interface for the ML preconditioner needs to be fixed.");
+  warning("The TrilinosPreconditioner interface for the ML preconditioner is experimental.");
 
   // FIXME: Check that GetUserMatrix returns what we want
   Epetra_RowMatrix* A = solver.GetUserMatrix();
   assert(A);
 
-  #ifdef HAVE_ML_AZTECOO
-  // Code from trilinos-8.0.3/packages/didasko/examples/ml/ex1.cpp
+  Teuchos::ParameterList mlist;
 
-  // Create and set an ML multilevel preconditioner
-  ML *ml_handle;
+  ML_Epetra::SetDefaults("SA", mlist);
+  mlist.set("max levels", 6);
+  mlist.set("increasing or decreasing", "decreasing");
+  mlist.set("aggregation: type", "ParMETIS");
+  mlist.set("aggregation: nodes per aggregate", 16);
+  //mlist.set("smoother: type","Amesos-KLU");
+  //mlist.set("smoother: type", "Amesos-UMFPACK");
 
-  // Maximum number of levels
-  int N_levels = 10;
+  mlist.set("max levels", 6);
+  mlist.set("ML output", 5);
 
-  // output level
-  ML_Set_PrintLevel(0);
-
-  ML_Create(&ml_handle, N_levels);
-
-  // Wrap Epetra Matrix into ML matrix (data is NOT copied)
-  EpetraMatrix2MLMatrix(ml_handle, 0, A);
-
-  // Create a ML_Aggregate object to store the aggregates
-  ML_Aggregate* agg_object;
-  ML_Aggregate_Create(&agg_object);
-
-  // Specify max coarse size
-  ML_Aggregate_Set_MaxCoarseSize(agg_object, 1);
-
-  // Generate the hierady
-  N_levels = ML_Gen_MGHierarchy_UsingAggregation(ml_handle, 0, ML_INCREASING, agg_object);
-
-  // Set a symmetric Gauss-Seidel smoother for the MG method
-  ML_Gen_Smoother_SymGaussSeidel(ml_handle, ML_ALL_LEVELS, ML_BOTH, 1, ML_DEFAULT);
-
-  // Generate solver
-  ML_Gen_Solver(ml_handle, ML_MGV, 0, N_levels - 1);
-
-  // Wrap ML_Operator into Epetra_Operator
-  ML_Epetra::MultiLevelOperator mLop(ml_handle, A->Comm(), A->OperatorDomainMap(), A->OperatorRangeMap());
+  // Create preconditioner
+  ml_preconditioner.reset(new ML_Epetra::MultiLevelPreconditioner(*A, mlist, true));
 
   // Set this operator as preconditioner for AztecOO
-  solver.SetPrecOperator(&mLop);
-
-  #else
-  error("Epetra has not been compiled with ML support.");
-  #endif
+  solver.SetPrecOperator(ml_preconditioner.get());
 }
 //-----------------------------------------------------------------------------
 

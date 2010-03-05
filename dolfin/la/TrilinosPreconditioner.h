@@ -18,6 +18,10 @@
 #include <dolfin/parameter/Parameters.h>
 
 class Ifpack_Preconditioner;
+namespace ML_Epetra
+{
+  class MultiLevelPreconditioner;
+}
 
 namespace dolfin
 {
@@ -55,7 +59,7 @@ namespace dolfin
   private:
 
     /// Setup the ML precondtioner
-    void set_ml(AztecOO& solver) const;
+    void set_ml(AztecOO& solver);
 
     /// Named preconditioner
     std::string type;
@@ -64,7 +68,7 @@ namespace dolfin
     static const std::map<std::string, int> methods;
 
     boost::shared_ptr<Ifpack_Preconditioner> ifpack_preconditioner;
-
+    boost::shared_ptr<ML_Epetra::MultiLevelPreconditioner> ml_preconditioner;
   };
 
 }
