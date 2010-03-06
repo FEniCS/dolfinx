@@ -317,7 +317,7 @@ void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op
   // Get the contigous data from the numpy array
   values = (double*) PyArray_DATA(other);
   self->set(values, m, indices);
-  self.apply();
+  self->apply();
 
   // Clean casted array
   if (casted)
