@@ -78,10 +78,10 @@ void XYZFile::ResultsWrite(const Function& u) const
   ss << std::scientific;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
-        ss.str("");
-        ss<<vertex->x(0)<<" "<< vertex->x(1)<<" "<< values[ vertex->index() ];
-        ss<<std::endl;
-        fp<<ss.str( );
+    ss.str("");
+    ss << vertex->x(0) << " " << vertex->x(1) << " " << values[ vertex->index() ];
+    ss <<std::endl;
+    fp << ss.str( );
   }
 }
 //----------------------------------------------------------------------------

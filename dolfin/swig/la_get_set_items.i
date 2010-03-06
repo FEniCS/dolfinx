@@ -317,6 +317,7 @@ void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op
   // Get the contigous data from the numpy array
   values = (double*) PyArray_DATA(other);
   self->set(values, m, indices);
+  self.apply();
 
   // Clean casted array
   if (casted)
@@ -331,16 +332,15 @@ void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double 
 {
   // Get the correct Indices
   Indices* inds;
-  if ( (inds = indice_chooser(op, self->size())) == 0 ) {
+  if ( (inds = indice_chooser(op, self->size())) == 0 )
+  {
 
     // If the index is an integer
     if( op != Py_None and PyInteger_Check(op))
       self->setitem(Indices::check_index(static_cast<int>(PyInt_AsLong(op)), self->size()), value);
     else
       throw std::runtime_error("index must be either an integer, a slice, a list or a Numpy array of integer");
-
   }
-
   // The op is a Indices
   else
   {
@@ -364,11 +364,11 @@ void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double 
       values[i] = value;
 
     self->set(values, inds->size(), indices);
-    self->apply();
 
     delete inds;
     delete [] values;
   }
+  self->apply();
 }
 
 // Get single item from Matrix

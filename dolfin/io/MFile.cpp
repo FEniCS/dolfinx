@@ -12,7 +12,6 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/function/Function.h>
 #include <dolfin/ode/Sample.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
@@ -21,14 +20,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MFile::MFile(const std::string filename) :
-  GenericFile(filename)
+MFile::MFile(const std::string filename) : GenericFile(filename)
 {
   type = "Octave/MATLAB";
   #ifdef HAS_GMP
     warning("MFile: Precision lost. Values will be saved with double precision");
   #endif
-
 }
 //-----------------------------------------------------------------------------
 MFile::~MFile()
@@ -142,73 +139,11 @@ void MFile::operator<<(const Mesh& mesh)
   // Close file
   fclose(fp);
 
-//  // Increase the number of times we have saved the mesh
-//  // FIXME: Count number of meshes saved to this file, rather
-//  // than the number of times this specific mesh has been saved.
-//  ++mesh;
-
   // Increase the number of meshes saved to this file
   counter++;
 
   info(1, "Saved mesh %s (%s) to file %s in Octave/MATLAB format.",
           mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
-}
-//-----------------------------------------------------------------------------
-void MFile::operator<<(const Function& u)
-{
-  error("Function output in Matlab/Octave format not implemented for new Function.");
-/*
-  // Write mesh the first time
-  if ( counter1 == 0 )
-    *this << u.mesh();
-
-  // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
-  if (!fp)
-    error("Unable to open file %s", filename.c_str());
-
-  // Move old vector into list if we are saving a new value
-  if ( counter1 == 1 )
-  {
-    fprintf(fp, "tmp = %s;\n", u.name().c_str());
-    fprintf(fp, "clear %s\n", u.name().c_str());
-    fprintf(fp, "%s{1} = tmp;\n", u.name().c_str());
-    fprintf(fp, "clear tmp\n\n");
-  }
-
-  // Write vector
-  if ( counter1 == 0 )
-  {
-    fprintf(fp, "%s = [", u.name().c_str());
-    for (unsigned int i = 0; i < u.vectordim(); i++)
-    {
-      for (VertexIterator v(u.mesh()); !v.end(); ++v)
-        fprintf(fp, " %.15f", u(*v, i));
-        fprintf(fp, ";");
-    }
-    fprintf(fp, " ]';\n\n");
-  }
-  else
-  {
-    fprintf(fp, "%s{%u} = [", u.name().c_str(), counter1 + 1);
-    for (unsigned int i = 0; i < u.vectordim(); i++)
-    {
-      for (VertexIterator v(u.mesh()); !v.end(); ++v)
-        fprintf(fp, " %.15f", u(*v, i));
-        fprintf(fp, ";");
-    }
-    fprintf(fp, " ]';\n\n");
-  }
-
-  // Close file
-  fclose(fp);
-
-  // Increase the number of times we have saved the function
-  counter1++;
-
-  cout << "Saved function " << u.name() << " (" << u.label()
-       << ") to file " << filename << " in Octave/Matlab format." << endl;
-*/
 }
 //-----------------------------------------------------------------------------
 void MFile::operator<<(const Sample& sample)
@@ -237,8 +172,7 @@ void MFile::operator<<(const Sample& sample)
     fprintf(fp, "%.15e ", to_double(sample.u(i)));
   fprintf(fp, "];\n");
   fprintf(fp, "%s = [%s tmp'];\n",
-	  sample.name().c_str(), sample.name().c_str());
-  //fprintf(fp, "clear tmp;\n");
+  sample.name().c_str(), sample.name().c_str());
 
   // Save time steps
   fprintf(fp, "tmp = [ ");
@@ -247,7 +181,6 @@ void MFile::operator<<(const Sample& sample)
 
   fprintf(fp, "];\n");
   fprintf(fp, "k = [k tmp'];\n");
-  //fprintf(fp, "clear tmp;\n");
 
   // Save residuals
   fprintf(fp, "tmp = [ ");

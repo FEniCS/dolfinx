@@ -35,7 +35,6 @@ void MatlabFile::operator<<(const GenericMatrix& A)
     error("Unable to open file %s", filename.c_str());
 
   // Write matrix in sparse format
-//  fprintf(fp, "%s = [", A.name().c_str());
   fprintf(fp, "A = [");
 
   std::vector<uint> columns;
@@ -49,19 +48,15 @@ void MatlabFile::operator<<(const GenericMatrix& A)
       fprintf(fp, " %u %i %.15g", i + 1, columns[pos] + 1, values[pos]);
       if ( i == (A.size(0) - 1) && (pos + 1 == columns.size()) )
         fprintf(fp, "];\n");
-      else {
+      else
         fprintf(fp, "\n");
-      }
     }
   }
-//  fprintf(fp, "%s = spconvert(%s);\n", A.name().c_str(), A.name().c_str());
   fprintf(fp, "A = spconvert(A);\n");
 
   // Close file
   fclose(fp);
 
-//  info(1, "Saved matrix %s (%s) to file %s in sparse MATLAB format",
-//          A.name().c_str(), A.label().c_str(), filename.c_str());
   info(1, "Saved matrix to file %s in sparse MATLAB format", filename.c_str());
 }
 //-----------------------------------------------------------------------------

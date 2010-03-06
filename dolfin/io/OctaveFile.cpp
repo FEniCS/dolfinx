@@ -41,7 +41,6 @@ void OctaveFile::operator<<(const GenericMatrix& A)
   FILE *fp = fopen(filename.c_str(), "a");
   if (!fp)
     error("Unable to open file %s", filename.c_str());
-//  fprintf(fp, "%s = zeros(%u, %u);\n", A.name().c_str(), M, N);
   fprintf(fp, "A = zeros(%u, %u);\n", M, N);
 
   for (uint i = 0; i < M; i++)
@@ -53,15 +52,11 @@ void OctaveFile::operator<<(const GenericMatrix& A)
 
     // Write nonzero entries
     for (uint pos = 0; pos < columns.size(); pos++)
-//      fprintf(fp, "%s(%d, %d) = %.16e;\n",
       fprintf(fp, "A(%d, %d) = %.16e;\n", (int)i + 1, columns[pos] + 1, values[pos]);
   }
 
   fclose(fp);
   delete [] row;
-
-//  info(1, "Saved matrix %s (%s) to file %s in Octave format.",
-//          A.name().c_str(), A.label().c_str(), filename.c_str());
 
   info(1, "Saved matrix to file %s in Octave format.", filename.c_str());
 }
