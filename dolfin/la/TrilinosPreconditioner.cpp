@@ -6,6 +6,7 @@
 
 #ifdef HAS_TRILINOS
 
+#include <dolfin/main/MPI.h>
 #include <boost/assign/list_of.hpp>
 #include <AztecOO.h>
 #include <Ifpack.h>
