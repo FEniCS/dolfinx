@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-10
-// Last changed: 2010-01-27
+// Last changed: 2010-03-07
 
 //=============================================================================
 // In this file we declare some typemaps for the dolfin:Array type
@@ -70,7 +70,15 @@
 //-----------------------------------------------------------------------------
 // Run the typemap macros
 //-----------------------------------------------------------------------------
+
+// Instantiate argument name specific typemaps for non const arguments
 NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, d, values, )
-NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, d, x, const)
 NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, INT32, NPY_UINT, uint, I, indices,)
+
+// Instantiate argument name independent typemaps for all
+// const Array <{int, uint, double}>& arguments
+NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, d, , const)
+NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, INT32, NPY_UINT, uint, I, , const)
+NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(int, INT32, NPY_INT, int, i, , const)
+
 
