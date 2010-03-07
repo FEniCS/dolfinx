@@ -27,10 +27,10 @@ int main()
   Matrix A, M;
   StiffnessMatrix3D::FunctionSpace V0(mesh);
   StiffnessMatrix3D::BilinearForm a0(V0, V0);
-  assemble(A, a0); 
+  assemble(A, a0);
   MassMatrix3D::FunctionSpace V1(mesh);
   MassMatrix3D::BilinearForm a1(V1, V1);
-  assemble(M, a1); 
+  assemble(M, a1);
 
   // Create reference matrices
   double A0_array[4][4];
@@ -53,8 +53,8 @@ int main()
   A0.set(*A0_array, 4, position, 4, position);
   M0.set(*M0_array, 4, position, 4, position);
 
-  A0.apply();
-  M0.apply();
+  A0.apply("insert");
+  M0.apply("insert");
 
   // Display matrices
   cout << endl;

@@ -38,10 +38,11 @@ namespace dolfin
 // Available LU solver
 const std::map<std::string, const MatSolverPackage> PETScLUSolver::lu_packages
   = boost::assign::map_list_of("default", "")
-                              ("umfpack", MAT_SOLVER_UMFPACK)
-                              ("mumps",   MAT_SOLVER_MUMPS)
-                              ("spooles", MAT_SOLVER_SPOOLES)
-                              ("superlu", MAT_SOLVER_SUPERLU);
+                              ("umfpack",      MAT_SOLVER_UMFPACK)
+                              ("mumps",        MAT_SOLVER_MUMPS)
+                              ("spooles",      MAT_SOLVER_SPOOLES)
+                              ("superlu_dist", MAT_SOLVER_SUPERLU_DIST)
+                              ("superlu",      MAT_SOLVER_SUPERLU);
 //-----------------------------------------------------------------------------
 Parameters PETScLUSolver::default_parameters()
 {
@@ -63,6 +64,8 @@ PETScLUSolver::PETScLUSolver(std::string lu_package) : lu_package(lu_package)
       this->lu_package = "umfpack";
     else
     {
+      this->lu_package = "superlu_dist";
+      /*
       #if PETSC_HAVE_MUMPS
       this->lu_package = "mumps";
       #elif PETSC_HAVE_SPOOLES
@@ -70,6 +73,7 @@ PETScLUSolver::PETScLUSolver(std::string lu_package) : lu_package(lu_package)
       #else
       error("No suitable solver for parallel LU. Consider configuring PETSc with MUMPS or SPOOLES.");
       #endif
+      */
     }
   }
   // Set parameter values

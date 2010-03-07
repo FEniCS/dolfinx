@@ -145,7 +145,7 @@ void MTL4Matrix::zero()
   A *= 0;
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::apply()
+void MTL4Matrix::apply(std::string mode)
 {
   if(ins)
     delete ins;
@@ -234,7 +234,8 @@ void MTL4Matrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
   error("MTL4Matrix: Transposed view multiply is not implemented yet.");
 }
 //-----------------------------------------------------------------------------
-void MTL4Matrix::getrow(uint row_idx, std::vector<uint>& columns, std::vector<double>& values) const
+void MTL4Matrix::getrow(uint row_idx, std::vector<uint>& columns,
+                        std::vector<double>& values) const
 {
   assert_no_inserter();
   assert(row_idx < this->size(0));

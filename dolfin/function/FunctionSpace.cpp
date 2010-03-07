@@ -143,7 +143,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
   }
 
   // Finalise changes
-  expansion_coefficients.apply();
+  expansion_coefficients.apply("insert");
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace> FunctionSpace::operator[] (uint i) const

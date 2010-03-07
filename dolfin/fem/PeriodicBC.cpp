@@ -180,7 +180,7 @@ void PeriodicBC::apply(GenericMatrix* A,
       std::vector<double> values;
       A->getrow(slave_dofs[i], columns, values);
       A->add(&values[0], 1, &master_dofs[i], columns.size(), &columns[0]);
-      A->apply();
+      A->apply("add");
     }
 
     // Add slave row to master row in b
@@ -189,7 +189,7 @@ void PeriodicBC::apply(GenericMatrix* A,
       double value;
       b->get(&value, 1, &slave_dofs[i]);
       b->add(&value, 1, &master_dofs[i]);
-      b->apply();
+      b->apply("add");
     }
   }
 
@@ -198,7 +198,7 @@ void PeriodicBC::apply(GenericMatrix* A,
   {
     // Zero out slave rows
     A->zero(num_dof_pairs, slave_dofs);
-    A->apply();
+    A->apply("insert");
 
     // Insert 1 and -1
     uint cols[2];
@@ -210,7 +210,7 @@ void PeriodicBC::apply(GenericMatrix* A,
       cols[1] = slave_dofs[i];
       A->set(vals, 1, &row, 2, cols);
     }
-    A->apply();
+    A->apply("insert");
   }
 
   // Modify boundary values for nonlinear problems
@@ -231,7 +231,7 @@ void PeriodicBC::apply(GenericMatrix* A,
   if (b)
   {
     b->set(rhs_values_slave, num_dof_pairs, slave_dofs);
-    b->apply();
+    b->apply("insert");
   }
 }
 //-----------------------------------------------------------------------------

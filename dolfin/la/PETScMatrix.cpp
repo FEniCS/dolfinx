@@ -360,7 +360,7 @@ double PETScMatrix::norm(std::string norm_type) const
   return value;
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::apply()
+void PETScMatrix::apply(std::string mode)
 {
   assert(A);
   MatAssemblyBegin(*A, MAT_FINAL_ASSEMBLY);

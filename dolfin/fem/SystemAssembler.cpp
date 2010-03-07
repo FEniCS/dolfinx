@@ -135,8 +135,8 @@ void SystemAssembler::assemble(GenericMatrix& A,
   }
 
   // Finalise assembly
-  A.apply();
-  b.apply();
+  A.apply("add");
+  b.apply("add");
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,

@@ -81,7 +81,7 @@ namespace dolfin
     virtual void zero();
 
     /// Finalize assembly of tensor
-    virtual void apply();
+    virtual void apply(std::string mode);
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -534,14 +534,14 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <>
-  inline void uBLASMatrix<ublas_sparse_matrix>::apply()
+  inline void uBLASMatrix<ublas_sparse_matrix>::apply(std::string mode)
   {
     // Make sure matrix assembly is complete
     A.complete_index1_data();
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  inline void uBLASMatrix<Mat>::apply()
+  inline void uBLASMatrix<Mat>::apply(std::string mode)
   {
     // Do nothing
   }

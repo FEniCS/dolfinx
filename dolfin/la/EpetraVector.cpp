@@ -21,6 +21,7 @@
 #include <Epetra_SerialComm.h>
 #include <Epetra_Vector.h>
 
+#include <dolfin/common/Array.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
@@ -109,8 +110,6 @@ std::pair<dolfin::uint, dolfin::uint> EpetraVector::local_range() const
 {
   assert(x);
 
-  // FIXME: Deal with local/global numbering more elegantly
-
   if ( x->Comm().NumProc() == 1 )
     return std::make_pair<uint, uint>(0, size());
   else
@@ -129,10 +128,17 @@ void EpetraVector::zero()
     error("EpetraVector::zero: Did not manage to perform Epetra_Vector::PutScalar.");
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::apply()
+void EpetraVector::apply(std::string mode)
 {
   assert(x);
-  int err = x->GlobalAssemble();
+  int err = 0;
+  if (mode == "add")
+    err = x->GlobalAssemble(Add);
+  else if (mode == "insert")
+    err = x->GlobalAssemble(Insert);
+  else
+    error("Unknown apply mode in EpetraVector::apply");
+
   if (err != 0)
     error("EpetraVector::apply: Did not manage to perform Epetra_Vector::GlobalAssemble.");
 }
@@ -201,39 +207,19 @@ void EpetraVector::add_local(const double* values)
 //-----------------------------------------------------------------------------
 void EpetraVector::get(double* block, uint m, const uint* rows) const
 {
-  error("EpetraVector::get does not work in paralell.");
-  // FIXME: This function works only for on-process data
+  not_working_in_parallel("EpetraVector::get");
 
   assert(x);
-
-  // Trilinos doesn't provide any special functions for getting values.
   for (uint i = 0; i < m; i++)
     block[i] = (*x)[0][rows[i]];
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::set(const double* block, uint m, const uint* rows)
 {
-  cout << "C++: Inside set " << this->norm("l2") << "  " << m << "  " << MPI::process_number() << endl;
   assert(x);
-  apply();
-  /*
-  const uint n1 = local_range().second;
-  const uint n0 = local_range().first;
-  for (uint i = 0; i < m ; ++i)
-  {
-    if (rows[i] >= n0 && rows[i] < n1)
-      cout << "Testing " << rows[i] << "  " << (*x)[0][ rows[i]-n0 ] << endl;
-    else
-      cout << "Off-proc " << rows[i] << endl;
-  }
-  for (uint i = 0; i < m ; ++i)
-    x->ReplaceGlobalValue(rows[i], 0, block[i]);
-  */
   int err = x->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows), block, 0);
   if (err != 0)
     error("EpetraVector::set: Did not manage to perform Epetra_Vector::ReplaceGlobalValues.");
-  apply();
-  cout << "c++: After set " << this->norm("l2") << "  " << m << "  " << MPI::process_number() << endl;
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::add(const double* block, uint m, const uint* rows)
@@ -246,11 +232,7 @@ void EpetraVector::add(const double* block, uint m, const uint* rows)
 //-----------------------------------------------------------------------------
 void EpetraVector::get_local(double* block, uint m, const uint* rows) const
 {
-  //warning("EpetraVector::get_local is experimental.");
   assert(x);
-
-  // FIXME: Deal with local/global numbering more elegantly
-
   const uint n0 = local_range().first;
   for (uint i = 0; i < m; ++i)
     block[i] = (*x)[0][rows[i] - n0];
@@ -259,8 +241,6 @@ void EpetraVector::get_local(double* block, uint m, const uint* rows) const
 void EpetraVector::gather(GenericVector& y,
                           const std::vector<dolfin::uint>& indices) const
 {
-  //warning("EpetraVector::gather is experimental.");
-
   // FIXME: This can be done better. Problem is that the GenericVector interface
   //        is PETSc-centric for the parallel case. It should be improved.
 
@@ -336,10 +316,7 @@ void EpetraVector::axpy(double a, const GenericVector& y)
   if (size() != _y.size())
     error("The vectors must be of the same size.");
 
-  //std::cout << "Calling Update " << y.norm("l2") << "  " << this->norm("l2") << std::endl;
   int err = x->Update(a, *(_y.vec()), 1.0);
-  //std::cout << "After Calling Update " << y.norm("l2") << "  " << this->norm("l2") << std::endl;
-  apply();
 
   if (err != 0)
     error("EpetraVector::axpy: Did not manage to perform Epetra_Vector::Update.");
@@ -478,6 +455,7 @@ double EpetraVector::sum() const
 
   // Compute local sum
   double local_sum = std::accumulate(x_local.begin(), x_local.end(), 0.0);
+  cout << "EpetraVector::sum local sum " << local_sum << endl;
 
   // Compute global sum
   double global_sum = 0.0;
@@ -486,7 +464,7 @@ double EpetraVector::sum() const
   return global_sum;
 }
 //-----------------------------------------------------------------------------
-double EpetraVector::sum(const std::vector<uint>& rows) const
+double EpetraVector::sum(const Array<uint>& rows) const
 {
   assert(x);
 

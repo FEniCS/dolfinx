@@ -124,13 +124,13 @@ void PETScVector::get_local(double* values) const
   if (size() == 0)
     return;
 
-  const int local_size = local_range().second - local_range().first;
-  int* rows = new int[local_size];
-  for (int i = 0; i < local_size; i++)
-    rows[i] = i;
+  const uint n0 = local_range().first;
+  const uint local_size = local_range().second - local_range().first;
+  std::vector<int> rows(local_size);
+  for (uint i = 0; i < local_size; ++i)
+    rows[i] = i + n0;
 
-  VecGetValues(*x, local_size, rows, values);
-  delete [] rows;
+  VecGetValues(*x, local_size, &rows[0], values);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set_local(const double* values)
@@ -139,13 +139,13 @@ void PETScVector::set_local(const double* values)
   if (size() == 0)
     return;
 
-  const int local_size = local_range().second - local_range().first;
-  int* rows = new int[local_size];
-  for (int i = 0; i < local_size; i++)
-    rows[i] = i;
+  const uint n0 = local_range().first;
+  const uint local_size = local_range().second - local_range().first;
+  std::vector<int> rows(local_size);
+  for (uint i = 0; i < local_size; ++i)
+    rows[i] = i + n0;
 
-  VecSetValues(*x, local_size, rows, values, INSERT_VALUES);
-  delete [] rows;
+  VecSetValues(*x, local_size, &rows[0], values, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add_local(const double* values)
@@ -154,13 +154,13 @@ void PETScVector::add_local(const double* values)
   if (size() == 0)
     return;
 
-  const int local_size = local_range().second - local_range().first;
-  int* rows = new int[local_size];
-  for (int i = 0; i < local_size; i++)
-    rows[i] = i;
+  const uint n0 = local_range().first;
+  const uint local_size = local_range().second - local_range().first;
+  std::vector<int> rows(local_size);
+  for (uint i = 0; i < local_size; ++i)
+    rows[i] = i + n0;
 
-  VecSetValues(*x, local_size, rows, values, ADD_VALUES);
-  delete [] rows;
+  VecSetValues(*x, local_size, &rows[0], values, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get(double* block, uint m, const uint* rows) const
@@ -252,7 +252,7 @@ void PETScVector::add(const double* block, uint m, const uint* rows)
   VecSetValues(*x, _m, _rows, block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::apply()
+void PETScVector::apply(std::string mode)
 {
   assert(x);
   VecAssemblyBegin(*x);

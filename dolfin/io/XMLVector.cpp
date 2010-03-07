@@ -71,15 +71,10 @@ void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
   const std::pair<uint, uint> range = vector.local_range();
   const uint n0 = range.first;
   const uint size = range.second - range.first;
-  cout << "Size: " << size << " " << range.second << "  " << range.first << endl;
+
+  // Get data
   std::vector<double> vector_values(size);
   vector.get_local(&vector_values[0]);
-
-  for (uint i = 0; i < size; ++i)
-  {
-    if (abs(vector_values[i]) < 1.0e-6 )
-      vector_values[i] = 0.0;
-  }
 
   // Write array
   ++indent;

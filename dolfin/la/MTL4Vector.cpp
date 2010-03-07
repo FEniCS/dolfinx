@@ -63,7 +63,7 @@ void MTL4Vector::zero()
   x = 0.0;
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::apply()
+void MTL4Vector::apply(std::string mode)
 {
   // Do nothing
 }
@@ -190,10 +190,10 @@ const MTL4Vector& MTL4Vector::operator*= (const GenericVector& y)
 {
   if ( size() != y.size() )
     error("Vectors must be of same size.");
-  dolfin_not_implemented();
-  //mtl4_vector vv =  y.down_cast<MTL4Vector>().vec();
-  //
-  //x = mtl::operator*(x, vv);
+
+  const MTL4Vector& _y = y.down_cast<MTL4Vector>();
+  for (uint i = 0; i < size(); ++i)
+    x[i] *= _y.vec()[i];
   return *this;
 }
 //-----------------------------------------------------------------------------

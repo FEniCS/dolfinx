@@ -59,7 +59,7 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
 
   // Modify matrix (insert 1 on diagonal)
   A.ident(num_dofs, dofs);
-  A.apply();
+  A.apply("insert");
 
   // Solve system for each dimension
   double* values = new double[num_dofs];
@@ -73,7 +73,7 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
 
     // Modify right-hand side
     b.set(values, num_dofs, dofs);
-    b.apply();
+    b.apply("insert");
 
     // Solve system
     solve(A, x, b, "gmres", "amg_hypre");

@@ -12,8 +12,6 @@
 #ifndef __VECTOR_H
 #define __VECTOR_H
 
-//#include <iostream>
-//#include <typeinfo>
 #include "DefaultFactory.h"
 #include "GenericVector.h"
 
@@ -58,8 +56,8 @@ namespace dolfin
     { vector->zero(); }
 
     /// Finalize assembly of tensor
-    virtual void apply()
-    { vector->apply(); }
+    virtual void apply(std::string mode)
+    { vector->apply(mode); }
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const

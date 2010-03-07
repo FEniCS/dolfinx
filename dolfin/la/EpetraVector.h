@@ -24,6 +24,7 @@ class Epetra_Map;
 namespace dolfin
 {
 
+  template <class T> class Array;
   class GenericVector;
 
   /// This class provides a simple vector class based on Epetra.
@@ -65,7 +66,7 @@ namespace dolfin
     virtual void zero();
 
     /// Finalize assembly of tensor
-    virtual void apply();
+    virtual void apply(std::string mode);
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -123,7 +124,7 @@ namespace dolfin
     virtual double sum() const;
 
     /// Return sum of selected rows in vector
-    virtual double sum(const std::vector<uint>& rows) const;
+    virtual double sum(const Array<uint>& rows) const;
 
     /// Multiply vector by given number
     virtual const EpetraVector& operator*= (double a);

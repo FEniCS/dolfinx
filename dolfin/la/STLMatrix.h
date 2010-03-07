@@ -11,9 +11,9 @@
 #ifndef __STL_MATRIX_H
 #define __STL_MATRIX_H
 
-#include <vector>
 #include <map>
-
+#include <string>
+#include <vector>
 #include "GenericSparsityPattern.h"
 #include "GenericMatrix.h"
 
@@ -66,7 +66,7 @@ namespace dolfin
     }
 
     /// Finalize assembly of tensor
-    virtual void apply() {}
+    virtual void apply(std::string mode) {}
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;

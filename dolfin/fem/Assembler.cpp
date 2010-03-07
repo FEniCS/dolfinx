@@ -111,7 +111,7 @@ void Assembler::assemble(GenericTensor& A,
   assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
 
   // Finalise assembly of global tensor
-  A.apply();
+  A.apply("add");
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble_cells(GenericTensor& A,

@@ -112,7 +112,7 @@ void uBLASVector::add(const double* block, uint m, const uint* rows)
     (*x)(rows[i]) += block[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::apply()
+void uBLASVector::apply(std::string mode)
 {
   // Do nothing
 }

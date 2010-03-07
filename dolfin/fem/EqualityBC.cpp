@@ -106,10 +106,10 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
       continue;
 
     // Set x_0 - x_i = 0
-    rows[0] = dof0;
-    cols[0] = dof1;
+    rows[0] =  dof0;
+    cols[0] =  dof1;
     vals[0] = -1.0;
-    zero[0] = 0.0;
+    zero[0] =  0.0;
 
     std::vector<uint> columns;
     std::vector<double> values;
@@ -124,8 +124,8 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
     b.add(&values[0], 1, &cols[0]);
 
     // Apply changes before using set
-    A.apply();
-    b.apply();
+    A.apply("add");
+    b.apply("add");
 
     // Replace slave-dof equation by relation enforcing equality
     A.ident(1, rows);
@@ -133,8 +133,8 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
     b.set(zero, 1, rows);
 
     // Apply changes
-    A.apply();
-    b.apply();
+    A.apply("insert");
+    b.apply("insert");
   }
 
   // Cleanup

@@ -217,7 +217,7 @@ dolfin::GenericVector* _get_vector_sub_vector( const dolfin::GenericVector* self
 
   self->get(values, m, indices);
   return_vec->set(values, m, range);
-  return_vec->apply();
+  return_vec->apply("insert");
 
   delete inds;
   delete[] values;
@@ -264,7 +264,7 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
   // Get and set values
   other.get(values, m, range);
   self->set(values, m, indices);
-  self->apply();
+  self->apply("insert");
 
   delete inds;
   delete[] values;
@@ -317,7 +317,7 @@ void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op
   // Get the contigous data from the numpy array
   values = (double*) PyArray_DATA(other);
   self->set(values, m, indices);
-  self->apply();
+  self->apply("insert");
 
   // Clean casted array
   if (casted)
@@ -368,7 +368,7 @@ void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double 
     delete inds;
     delete [] values;
   }
-  self->apply();
+  self->apply("insert");
 }
 
 // Get single item from Matrix
@@ -415,7 +415,7 @@ dolfin::GenericVector* _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolf
   dolfin::GenericVector * return_vec = self->factory().create_vector();
   return_vec->resize(inds->size());
   return_vec->set_local(values);
-  return_vec->apply();
+  return_vec->apply("insert");
 
   // Clean up
   delete[] values;
@@ -531,7 +531,7 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self
   delete[] values;
   delete[] tmp_index_array;
 
-  return_mat->apply();
+  return_mat->apply("insert");
   return return_mat;
 }
 
@@ -541,7 +541,7 @@ void _set_matrix_single_item( dolfin::GenericMatrix* self, int m, int n, double 
   dolfin::uint _m(Indices::check_index(m, self->size(0)));
   dolfin::uint _n(Indices::check_index(n, self->size(1)));
   self->set(&value, 1, &_m, 1, &_n);
-  self->apply();
+  self->apply("insert");
  }
 
 void _set_matrix_items_array_of_float( dolfin::GenericMatrix* self,  PyObject* op, PyObject* other ){}

@@ -21,9 +21,10 @@
 
 namespace dolfin
 {
+  template<class T> class Array;
+  class XMLVector;
 
   /// This class defines a common interface for vectors.
-  class XMLVector;
 
   class GenericVector : public GenericTensor
   {
@@ -72,7 +73,7 @@ namespace dolfin
     virtual void zero() = 0;
 
     /// Finalize assembly of tensor
-    virtual void apply() = 0;
+    virtual void apply(std::string mode) = 0;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
@@ -133,8 +134,8 @@ namespace dolfin
 
     /// Return sum of selected rows in vector. Each process sums its local
     //// entries. Off process entries are ignored.
-    virtual double sum(const std::vector<uint>& rows) const
-    { error("GenericVector::sum(const std::vector<uint>& rows) not implemented by backend"); return 0.0; }
+    virtual double sum(const Array<uint>& rows) const
+    { error("GenericVector::sum(const Array<uint>& rows) not implemented by backend"); return 0.0; }
 
     /// Multiply vector by given number
     virtual const GenericVector& operator*= (double a) = 0;

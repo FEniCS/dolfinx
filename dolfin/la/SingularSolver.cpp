@@ -224,14 +224,13 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
     B->set(&values[i], 1, &i, 1, &N);
 
   // Copy values from b into c
-  double* vals = new double[N + 1];
-  b.get_local(vals);
+  std::vector<double> vals(N + 1);
+  b.get_local(&vals[0]);
   vals[N] = 0.0;
-  c->set_local(vals);
-  delete [] vals;
+  c->set_local(&vals[0]);
 
   // Apply changes
-  B->apply();
-  c->apply();
+  B->apply("insert");
+  c->apply("insert");
 }
 //-----------------------------------------------------------------------------

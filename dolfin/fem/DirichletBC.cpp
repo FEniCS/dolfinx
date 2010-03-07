@@ -207,7 +207,7 @@ void DirichletBC::zero(GenericMatrix& A) const
   A.zero(boundary_values.size(), dofs);
 
   // Finalise changes to A
-  A.apply();
+  A.apply("insert");
 
   // Clear temporary arrays
   delete [] dofs;
@@ -349,23 +349,19 @@ void DirichletBC::apply(GenericMatrix* A,
   if (b)
   {
     b->set(&values[0], size, &dofs[0]);
-    b->apply();
+    b->apply("insert");
   }
 
   // Modify linear system (A_ii = 1) and apply changes
   if (A)
   {
     A->ident(size, &dofs[0]);
-    A->apply();
+    A->apply("insert");
   }
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::check() const
 {
-  // Check that function is in function space
-  //if (!g->in(*_function_space))
-  //  error("Unable to create boundary condition, boundary value function is not in trial space.");
-
   // Check that value shape of boundary value
   check_equal(g->value_rank(), _function_space->element().value_rank(),
               "create boundary condition", "value rank");
