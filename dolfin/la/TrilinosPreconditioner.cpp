@@ -131,16 +131,19 @@ void TrilinosPreconditioner::set_ml(AztecOO& solver)
 
   Teuchos::ParameterList mlist;
 
-  ML_Epetra::SetDefaults("SA", mlist);
-  mlist.set("max levels", 6);
-  mlist.set("increasing or decreasing", "decreasing");
+  //ML_Epetra::SetDefaults("SA", mlist);
+  ML_Epetra::SetDefaults("DD", mlist);
+  //mlist.set("max levels", 10);
+  //mlist.set("increasing or decreasing", "decreasing");
   mlist.set("aggregation: type", "ParMETIS");
-  //mlist.set("aggregation: nodes per aggregate", 4);
-  //mlist.set("smoother: type","Amesos-KLU");
-  //mlist.set("smoother: type", "Amesos-UMFPACK");
+  //mlist.set("coarse: max size", 30);
 
-  mlist.set("max levels", 6);
-  mlist.set("ML output", 5);
+  //mlist.set("aggregation: nodes per aggregate", 4);
+  //mlist.set("coarse: type","Amesos-KLU");
+  mlist.set("coarse: type", "Amesos-UMFPACK");
+
+  //mlist.set("max levels", 6);
+  mlist.set("ML output", 10);
 
   // Create preconditioner
   ml_preconditioner.reset(new ML_Epetra::MultiLevelPreconditioner(*A, mlist, true));

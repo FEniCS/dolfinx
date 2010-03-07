@@ -127,24 +127,6 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 
   // Create matrix
   A.reset( new Epetra_FECrsMatrix(Copy, matrix_map) );
-
-  /*
-  // Create matrix
-  A.reset( new Epetra_FECrsMatrix(Copy, row_map, reinterpret_cast<int*>(&num_nonzeros[0])) );
-
-  // Insert entries to make matrix usable
-  const uint max_nz = *std::max_element(num_nonzeros.begin(), num_nonzeros.end());
-  std::vector<double> zeroes(max_nz);
-  std::fill(zeroes.begin(), zeroes.end(), 0.0);
-  for (uint i = 0; i < num_local_rows; ++i)
-  {
-    const std::vector<dolfin::uint>& row_pattern = (*d_pattern)[i].set();
-    std::vector<dolfin::uint>& _row_pattern = const_cast<std::vector<dolfin::uint>& >(row_pattern);
-    A->InsertGlobalValues(i, row_pattern.size(), &zeroes[0], reinterpret_cast<int*>(&_row_pattern[0]));
-  }
-  apply();
-  */
-
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix* EpetraMatrix::copy() const
@@ -364,6 +346,7 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 
   if (size(1) != x->size())
     error("EpetraMatrix::mult: Matrix and vector dimensions don't match for matrix-vector product.");
+
   Ax->resize(size(0));
 
   int err = A->Multiply(false, *(x->vec()), *(Ax->vec()));
@@ -386,6 +369,7 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 
   if (size(0) != x->size())
     error("EpetraMatrix::transpmult: Matrix and vector dimensions don't match for (transposed) matrix-vector product.");
+
   Ax->resize(size(1));
 
   int err = A->Multiply(true, *(x->vec()), *(Ax->vec()));

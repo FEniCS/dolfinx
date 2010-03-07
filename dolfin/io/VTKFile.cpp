@@ -9,7 +9,6 @@
 // First added:  2005-07-05
 // Last changed: 2009-10-08
 
-//#include <fstream>
 #include <ostream>
 #include <sstream>
 #include <vector>
@@ -639,7 +638,7 @@ void VTKFile::pvd_file_write(uint num, std::string _filename)
   else
   {
     // Open pvd file
-    pvd_file.open(filename.c_str(),  std::ios::out|std::ios::in);
+    pvd_file.open(filename.c_str(), std::ios::out|std::ios::in);
     pvd_file.seekp(mark);
   }
 
@@ -658,11 +657,12 @@ void VTKFile::pvd_file_write(uint num, std::string _filename)
   pvd_file.close();
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvtu_mesh_write(std::string pvtu_filename, std::string vtu_filename) const
+void VTKFile::pvtu_mesh_write(std::string pvtu_filename,
+                              std::string vtu_filename) const
 {
   // Open pvtu file
-  std::fstream pvtu_file;
-  pvtu_file.open(pvtu_filename.c_str(), std::ios::out|std::ios::app);
+  std::ofstream pvtu_file;
+  pvtu_file.open(pvtu_filename.c_str(), std::ios::app);
 
   pvtu_file << "<PCellData>" << std::endl;
   pvtu_file << "<PDataArray  type=\"UInt32\"  Name=\"connectivity\"/>" << std::endl;
@@ -712,13 +712,11 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
     data_type = "cell";
 
   // Open pvtu file
-  std::fstream pvtu_file;
-  pvtu_file.open(pvtu_filename.c_str(), std::ios::out|std::ios::app);
+  std::ofstream pvtu_file(pvtu_filename.c_str(), std::ios::app);
 
   // Write function data at mesh cells
   if (data_type == "cell")
   {
-
     // Write headers
     if (rank == 0)
     {
@@ -766,7 +764,7 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
     pvtu_file << "</PPointData> " << std::endl;
   }
 
-    pvtu_file.close();
+  pvtu_file.close();
 }
 //----------------------------------------------------------------------------
 void VTKFile::vtk_header_open(uint num_vertices, uint num_cells,
@@ -822,8 +820,7 @@ void VTKFile::vtk_header_close(std::string vtu_filename) const
 void VTKFile::pvtu_header_open(std::string pvtu_filename) const
 {
   // Open pvtu file
-  std::fstream pvtu_file;
-  pvtu_file.open(pvtu_filename.c_str(), std::ios::out|std::ios::trunc);
+  std::ofstream pvtu_file(pvtu_filename.c_str(), std::ios::trunc);
 
   // Write header
   pvtu_file << "<?xml version=\"1.0\"?>" << std::endl;
@@ -835,8 +832,7 @@ void VTKFile::pvtu_header_open(std::string pvtu_filename) const
 void VTKFile::pvtu_header_close(std::string pvtu_filename) const
 {
   // Open pvtu file
-  std::fstream pvtu_file;
-  pvtu_file.open(pvtu_filename.c_str(), std::ios::out|std::ios::app);
+  std::ofstream pvtu_file(pvtu_filename.c_str(), std::ios::app);
 
   pvtu_file << "</PUnstructuredGrid>" << std::endl;
   pvtu_file << "</VTKFile>" << std::endl;
@@ -907,10 +903,11 @@ void VTKFile::mesh_function_write(T& meshfunction)
 //----------------------------------------------------------------------------
 void VTKFile::clear_file(std::string file) const
 {
-  FILE* fp = fopen(file.c_str(), "w");
-  if (!fp)
+  // Open file and clear
+  std::ofstream _file(file.c_str(), std::ios::trunc);
+  if ( !_file.is_open() )
     error("Unable to open file %s", file.c_str());
-  fclose(fp);
+  _file.close();
 }
 //----------------------------------------------------------------------------
 std::string VTKFile::strip_path(std::string file) const

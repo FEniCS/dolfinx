@@ -93,64 +93,63 @@ void RAWFile::ResultsWrite(const Function& u) const
   // Open file
   std::ofstream fp(raw_filename.c_str(), std::ios_base::app);
 
-
   // Write function data at mesh cells
   if (data_type == "cell")
+  {
+    // Allocate memory for function values at cell centres
+    const uint size = mesh.num_cells()*dim;
+    double* values = new double[size];
+
+    // Get function values on cells
+    u.vector().get_local(values);
+
+    // Write function data at cells
+    uint num_cells = mesh.num_cells();
+    fp << num_cells << std::endl;
+
+    std::ostringstream ss;
+    ss << std::scientific;
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      // Allocate memory for function values at cell centres
-      const uint size = mesh.num_cells()*dim;
-      double* values = new double[size];
-
-      // Get function values on cells
-      u.vector().get_local(values);
-
-      // Write function data at cells
-      uint num_cells = mesh.num_cells();
-      fp << num_cells << std::endl;
-
-      std::ostringstream ss;
-      ss << std::scientific;
-      for (CellIterator cell(mesh); !cell.end(); ++cell)
-        {
-          // Write all components
-          ss.str("");
-          for (uint i = 0; i < dim; i++)
-            ss  <<" "<< values[cell->index() + i*mesh.num_cells()];
-          ss << std::endl;
-          fp << ss.str();
-        }
-
-      delete [] values;
+      // Write all components
+      ss.str("");
+      for (uint i = 0; i < dim; i++)
+        ss  <<" "<< values[cell->index() + i*mesh.num_cells()];
+      ss << std::endl;
+      fp << ss.str();
     }
-   else if (data_type == "point")
+
+    delete [] values;
+  }
+  else if (data_type == "point")
+  {
+    // Allocate memory for function values at vertices
+    const uint size = mesh.num_vertices()*dim;
+    double* values = new double[size];
+
+    // Get function values at vertices
+    u.compute_vertex_values(values, mesh);
+
+    // Write function data at mesh vertices
+    uint num_vertices = mesh.num_vertices();
+    fp << num_vertices << std::endl;
+
+    std::ostringstream ss;
+    ss << std::scientific;
+    for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
     {
-      // Allocate memory for function values at vertices
-      const uint size = mesh.num_vertices()*dim;
-      double* values = new double[size];
+      ss.str("");
+      for(uint i=0; i<dim; i++)
+        ss << " " << values[vertex->index() + i*mesh.num_cells()];
 
-      // Get function values at vertices
-      u.compute_vertex_values(values, mesh);
-
-      // Write function data at mesh vertices
-      uint num_vertices = mesh.num_vertices();
-      fp << num_vertices << std::endl;
-
-      std::ostringstream ss;
-      ss << std::scientific;
-      for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-        {
-          ss.str("");
-          for(uint i=0; i<dim; i++)
-            ss << " " << values[vertex->index() + i*mesh.num_cells()];
-
-          ss << std::endl;
-          fp << ss.str();
-        }
-
-      delete [] values;
+      ss << std::endl;
+      fp << ss.str();
     }
-   else
-     error("Unknown RAW data type.");
+
+    delete [] values;
+  }
+ else
+   error("Unknown RAW data type.");
 }
 //----------------------------------------------------------------------------
 void RAWFile::rawNameUpdate(const int counter)
@@ -170,11 +169,10 @@ void RAWFile::rawNameUpdate(const int counter)
   raw_filename = newfilename.str();
 
   // Make sure file is empty
-  FILE* fp = fopen(raw_filename.c_str(), "w");
-  if (!fp)
-    error("Unable to open file %s", filename.c_str());
-
-  fclose(fp);
+  std::ofstream file(raw_filename.c_str(), std::ios::trunc);
+  if ( !file.is_open() )
+    error("Unable to open file %s", raw_filename.c_str());
+  file.close();
 }
 //----------------------------------------------------------------------------
 template<class T>
@@ -206,4 +204,5 @@ void RAWFile::MeshFunctionWrite(T& meshfunction)
   cout << "Saved mesh function " << mesh.name() << " (" << mesh.label()
        << ") to file " << filename << " in RAW format." << endl;
 }
+//----------------------------------------------------------------------------
 
