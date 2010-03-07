@@ -5,9 +5,10 @@
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Ola Skavhaug, 2008.
 // Modified by Martin Sandve Alnes, 2009.
+// Modified by Johan Hake, 2009-2010.
 //
 // First added:  2006-04-25
-// Last changed: 2010-02-08
+// Last changed: 2010-03-07
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -16,6 +17,8 @@
 #include <utility>
 #include <vector>
 #include <boost/lambda/lambda.hpp>
+#include <dolfin/common/Array.h>
+
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
 
