@@ -7,12 +7,12 @@
 
 //=============================================================================
 // In this file we declare what types that should be able to be passed using a
-// std::vector typemap. 
-// 
+// std::vector typemap.
+//
 // We want to avoid using SWIGs own typemaps in std_vector.i,
-// as we really just want to be able to pass argument, in and a out, using 
-// std::vector. We do not want to work with a proxy type of std::vector<Foo>, 
-// as the interface reflects the C++ type and is hence not 'pythonic'. 
+// as we really just want to be able to pass argument, in and a out, using
+// std::vector. We do not want to work with a proxy type of std::vector<Foo>,
+// as the interface reflects the C++ type and is hence not 'pythonic'.
 //=============================================================================
 
 //-----------------------------------------------------------------------------
@@ -21,13 +21,13 @@
 //-----------------------------------------------------------------------------
 namespace std
 {
-  template <class T> class vector 
+  template <class T> class vector
   {
   };
 }
 
 //-----------------------------------------------------------------------------
-// User macro for defineing in typmaps for std::vector of pointers to some 
+// User macro for defineing in typmaps for std::vector of pointers to some
 // DOLFIN type
 //-----------------------------------------------------------------------------
 %define IN_TYPEMAPS_STD_VECTOR_OF_POINTERS(TYPE)
@@ -75,12 +75,12 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
 %typemap (in) CONST_VECTOR std::vector<CONST dolfin::TYPE *> &(std::vector<CONST dolfin::TYPE *> tmp_vec, SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared, dolfin::TYPE * arg)
 {
   if (PyList_Check($input))
-  {  
+  {
     int size = PyList_Size($input);
     int res = 0;
     PyObject * py_item = 0;
     void * itemp = 0;
-    int newmem = 0;    
+    int newmem = 0;
     tmp_vec.reserve(size);
     for (int i = 0; i < size; i++)
     {
@@ -91,28 +91,31 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
       }
       else
       {
-      // If failed with normal pointer conversion then 
+      // If failed with normal pointer conversion then
       // try with shared_ptr conversion
       newmem = 0;
       res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
-      if (SWIG_IsOK(res)) 
+      if (SWIG_IsOK(res))
       {
-	// If we need to release memory
-	if (newmem & SWIG_CAST_NEW_MEMORY) {
-	  tempshared = *reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp);
-	  delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
-	  arg = const_cast< dolfin::TYPE * >(tempshared.get());
-	} else {
-	  arg = const_cast< dolfin::TYPE * >(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp)->get());
-	}
+	      // If we need to release memory
+        if (newmem & SWIG_CAST_NEW_MEMORY)
+        {
+          tempshared = *reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp);
+          delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
+          arg = const_cast< dolfin::TYPE * >(tempshared.get());
+	      }
+        else
+        {
+          arg = const_cast< dolfin::TYPE * >(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp)->get());
+        }
         tmp_vec.push_back(arg);
-      }
-      else
-      {
-        SWIG_exception(SWIG_TypeError, "list of TYPE expected (Bad conversion)");
+        }
+        else
+        {
+          SWIG_exception(SWIG_TypeError, "list of TYPE expected (Bad conversion)");
+        }
       }
     }
-  }
     $1 = &tmp_vec;
   }
   else
@@ -158,7 +161,7 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
     data[i] = (*$1)[i];
   o0 = PyArray_Return(ret);
   // If the $result is not already set
-  if ((!$result) || ($result == Py_None)) 
+  if ((!$result) || ($result == Py_None))
   {
     $result = o0;
   }
@@ -166,7 +169,7 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
   else
   {
     // If the the argument is set but is not a tuple make one and put the result in it
-    if (!PyTuple_Check($result)) 
+    if (!PyTuple_Check($result))
     {
       o1 = $result;
       $result = PyTuple_New(1);
@@ -205,7 +208,7 @@ ARGOUT_TYPEMAP_STD_VECTOR_OF_PRIMITIVES(double, DOUBLE, values, NPY_DOUBLE)
 %typemap(in) const std::vector<double>& x (std::vector<double> temp)
 {
   {
-    if (PyArray_Check($input)) 
+    if (PyArray_Check($input))
     {
       PyArrayObject *xa = reinterpret_cast<PyArrayObject*>($input);
       if ( PyArray_TYPE(xa) == NPY_DOUBLE )

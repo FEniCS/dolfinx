@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <utility>
+#include <vector>
 #include <boost/lambda/lambda.hpp>
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
@@ -129,6 +130,11 @@ namespace dolfin
 
     /// Return sum of vector
     virtual double sum() const = 0;
+
+    /// Return sum of selected rows in vector. Each process sums its local
+    //// entries. Off process entries are ignored.
+    virtual double sum(const std::vector<uint>& rows) const
+    { error("GenericVector::sum(const std::vector<uint>& rows) not implemented by backend"); return 0.0; }
 
     /// Multiply vector by given number
     virtual const GenericVector& operator*= (double a) = 0;

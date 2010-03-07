@@ -63,7 +63,7 @@ EpetraVector::EpetraVector(const EpetraVector& v)
 //-----------------------------------------------------------------------------
 EpetraVector::~EpetraVector()
 {
-//  Do nothing
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::resize(uint N)
@@ -135,9 +135,6 @@ void EpetraVector::apply()
   int err = x->GlobalAssemble();
   if (err != 0)
     error("EpetraVector::apply: Did not manage to perform Epetra_Vector::GlobalAssemble.");
-
-  // TODO: Use this? Relates to sparsity pattern, dofmap and reassembly!
-  //x->OptimizeStorage();
 }
 //-----------------------------------------------------------------------------
 std::string EpetraVector::str(bool verbose) const
@@ -204,6 +201,7 @@ void EpetraVector::add_local(const double* values)
 //-----------------------------------------------------------------------------
 void EpetraVector::get(double* block, uint m, const uint* rows) const
 {
+  error("EpetraVector::get does not work in paralell.");
   // FIXME: This function works only for on-process data
 
   assert(x);
@@ -215,17 +213,34 @@ void EpetraVector::get(double* block, uint m, const uint* rows) const
 //-----------------------------------------------------------------------------
 void EpetraVector::set(const double* block, uint m, const uint* rows)
 {
+  cout << "C++: Inside set " << this->norm("l2") << "  " << m << "  " << MPI::process_number() << endl;
   assert(x);
-  int err = x->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows), block);
-  if (err!= 0)
+  apply();
+  /*
+  const uint n1 = local_range().second;
+  const uint n0 = local_range().first;
+  for (uint i = 0; i < m ; ++i)
+  {
+    if (rows[i] >= n0 && rows[i] < n1)
+      cout << "Testing " << rows[i] << "  " << (*x)[0][ rows[i]-n0 ] << endl;
+    else
+      cout << "Off-proc " << rows[i] << endl;
+  }
+  for (uint i = 0; i < m ; ++i)
+    x->ReplaceGlobalValue(rows[i], 0, block[i]);
+  */
+  int err = x->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows), block, 0);
+  if (err != 0)
     error("EpetraVector::set: Did not manage to perform Epetra_Vector::ReplaceGlobalValues.");
+  apply();
+  cout << "c++: After set " << this->norm("l2") << "  " << m << "  " << MPI::process_number() << endl;
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::add(const double* block, uint m, const uint* rows)
 {
   assert(x);
-  int err = x->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows), block);
-  if (err!= 0)
+  int err = x->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows), block, 0);
+  if (err != 0)
     error("EpetraVector::add: Did not manage to perform Epetra_Vector::SumIntoGlobalValues.");
 }
 //-----------------------------------------------------------------------------
@@ -314,15 +329,19 @@ void EpetraVector::axpy(double a, const GenericVector& y)
 {
   assert(x);
 
-  const EpetraVector& v = y.down_cast<EpetraVector>();
-  if (!v.x)
+  const EpetraVector& _y = y.down_cast<EpetraVector>();
+  if (!_y.x)
     error("Given vector is not initialized.");
 
-  if (size() != v.size())
+  if (size() != _y.size())
     error("The vectors must be of the same size.");
 
-  int err = x->Update(a, *(v.vec()), 1.0);
-  if (err!= 0)
+  //std::cout << "Calling Update " << y.norm("l2") << "  " << this->norm("l2") << std::endl;
+  int err = x->Update(a, *(_y.vec()), 1.0);
+  //std::cout << "After Calling Update " << y.norm("l2") << "  " << this->norm("l2") << std::endl;
+  apply();
+
+  if (err != 0)
     error("EpetraVector::axpy: Did not manage to perform Epetra_Vector::Update.");
 }
 //-----------------------------------------------------------------------------
@@ -459,6 +478,34 @@ double EpetraVector::sum() const
 
   // Compute local sum
   double local_sum = std::accumulate(x_local.begin(), x_local.end(), 0.0);
+
+  // Compute global sum
+  double global_sum = 0.0;
+  x->Comm().SumAll(&local_sum, &global_sum, 1);
+
+  return global_sum;
+}
+//-----------------------------------------------------------------------------
+double EpetraVector::sum(const std::vector<uint>& rows) const
+{
+  assert(x);
+
+  const std::pair<uint, uint> range = local_range();
+  const uint n0 = range.first;
+  const uint n1 = range.second;
+  const uint N = n1 - n0;
+
+  // Get local values
+  std::vector<double> x_local(N);
+  get_local(&x_local[0]);
+
+  // Sum on-process entries
+  double local_sum = 0.0;
+  for (uint i = 0; i < rows.size(); ++i)
+  {
+    if (rows[i] <= n0 && rows[i] < n1)
+      local_sum += x_local[ rows[i] - n0 ];
+  }
 
   // Compute global sum
   double global_sum = 0.0;
