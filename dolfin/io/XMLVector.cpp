@@ -60,26 +60,30 @@ void XMLVector::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLVector::write(const GenericVector& vector, std::ostream& outfile, uint indentation_level)
+void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
+                      uint indentation_level)
 {
   XMLIndent indent(indentation_level);
 
   // Write vector header
   outfile << indent() << "<vector>" << std::endl;
 
-  uint size = vector.size();
-  double vector_values[size];
-  vector.get_local(vector_values);
+  const std::pair<uint, uint> range = vector.local_range();
+  const uint n0 = range.first;
+  const uint size = range.second - range.first;
+  cout << "Size: " << size << " " << range.second << "  " << range.first << endl;
+  std::vector<double> vector_values(size);
+  vector.get_local(&vector_values[0]);
 
-  // Convert Vector values to std::vector<double>
-  std::vector<double> arr;
-  arr.resize(size);
   for (uint i = 0; i < size; ++i)
-    arr[i] = vector_values[i];
+  {
+    if (abs(vector_values[i]) < 1.0e-6 )
+      vector_values[i] = 0.0;
+  }
 
   // Write array
   ++indent;
-  XMLArray::write(arr, outfile, indent.level());
+  XMLArray::write(vector_values, n0, outfile, indent.level());
   --indent;
 
   // Write vector footer
@@ -93,7 +97,7 @@ void XMLVector::read_vector_tag(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLVector::read_array_tag(const xmlChar *name, const xmlChar **attrs)
 {
-  std::auto_ptr<XMLArray> _xml_array(new XMLArray(values, parser));   
+  std::auto_ptr<XMLArray> _xml_array(new XMLArray(values, parser));
   xml_array = _xml_array;
   xml_array->read_array_tag(name, attrs);
   xml_array->handle();

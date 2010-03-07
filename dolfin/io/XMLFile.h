@@ -160,7 +160,7 @@ namespace dolfin
     template<class T> void write_xml_array(const T& x)
     {
       open_file();
-      XMLArray::write(x, *outstream, 1);
+      XMLArray::write(x, 0, *outstream, 1);
       close_file();
     }
 

@@ -31,9 +31,12 @@ namespace dolfin
 
 
     /// Write to file
-    static void write(const std::vector<int>& x, std::ostream& outfile, uint indentation_level=0);
-    static void write(const std::vector<uint>& x, std::ostream& outfile, uint indentation_level=0);
-    static void write(const std::vector<double>& x, std::ostream& outfile, uint indentation_level=0);
+    static void write(const std::vector<int>& x, uint offset,
+                      std::ostream& outfile, uint indentation_level=0);
+    static void write(const std::vector<uint>& x, uint offset,
+                      std::ostream& outfile, uint indentation_level=0);
+    static void write(const std::vector<double>& x, uint ofsfet,
+                      std::ostream& outfile, uint indentation_level=0);
 
     void read_array_tag(const xmlChar *name, const xmlChar **attrs);
 

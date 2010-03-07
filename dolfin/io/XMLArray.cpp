@@ -13,28 +13,28 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XMLArray::XMLArray(std::vector<int>& ix, XMLFile& parser)
-  : XMLHandler(parser), ix(&ix), ux(0), dx(0), state(OUTSIDE_ARRAY), 
+  : XMLHandler(parser), ix(&ix), ux(0), dx(0), state(OUTSIDE_ARRAY),
     atype(INT), size(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLArray::XMLArray(std::vector<uint>& ux, XMLFile& parser)
-  : XMLHandler(parser), ix(0), ux(&ux), dx(0), state(OUTSIDE_ARRAY), 
+  : XMLHandler(parser), ix(0), ux(&ux), dx(0), state(OUTSIDE_ARRAY),
     atype(UINT), size(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLArray::XMLArray(std::vector<double>& dx, XMLFile& parser)
-  : XMLHandler(parser), ix(0), ux(0), dx(&dx), state(OUTSIDE_ARRAY), 
+  : XMLHandler(parser), ix(0), ux(0), dx(&dx), state(OUTSIDE_ARRAY),
     atype(DOUBLE), size(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLArray::XMLArray(std::vector<int>& ix, XMLFile& parser, uint size)
-  : XMLHandler(parser), ix(&ix), ux(0), dx(0), state(INSIDE_ARRAY), atype(INT), 
+  : XMLHandler(parser), ix(&ix), ux(0), dx(0), state(INSIDE_ARRAY), atype(INT),
     size(size)
 {
   this->ix->clear();
@@ -51,7 +51,7 @@ XMLArray::XMLArray(std::vector<uint>& ux, XMLFile& parser, uint size)
 }
 //-----------------------------------------------------------------------------
 XMLArray::XMLArray(std::vector<double>& dx, XMLFile& parser, uint size)
-  : XMLHandler(parser), ix(0), ux(0), dx(&dx), state(INSIDE_ARRAY), 
+  : XMLHandler(parser), ix(0), ux(0), dx(&dx), state(INSIDE_ARRAY),
     atype(DOUBLE), size(size)
 {
   this->dx->clear();
@@ -99,42 +99,41 @@ void XMLArray::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLArray::write(const std::vector<int>& x, std::ostream& outfile, 
-                     uint indentation_level)
+void XMLArray::write(const std::vector<int>& x, uint offset,
+                     std::ostream& outfile, uint indentation_level)
 {
   XMLIndent indent(indentation_level);
   outfile << indent() << "<array type=\"int\" size=\"" << x.size() << "\">" << std::endl;
   ++indent;
   for (uint i = 0; i < x.size(); ++i)
-    outfile << indent() << "<element index=\"" << i << "\" value=\"" << x[i] << "\"/>" << std::endl;
+    outfile << indent() << "<element index=\"" << i + offset << "\" value=\"" << x[i] << "\"/>" << std::endl;
   --indent;
   outfile << indent() << "</array>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void XMLArray::write(const std::vector<uint>& x, std::ostream& outfile, 
-                     uint indentation_level)
+void XMLArray::write(const std::vector<uint>& x, uint offset,
+                     std::ostream& outfile, uint indentation_level)
 {
   XMLIndent indent(indentation_level);
   outfile << indent() << "<array type=\"uint\" size=\"" << x.size() << "\">" << std::endl;
   ++indent;
   for (uint i = 0; i < x.size(); ++i)
-    outfile << indent() << "<element index=\"" << i << "\" value=\"" << x[i] << "\"/>" << std::endl;
+    outfile << indent() << "<element index=\"" << i + offset << "\" value=\"" << x[i] << "\"/>" << std::endl;
   --indent;
   outfile << indent() << "</array>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void XMLArray::write(const std::vector<double>& x, std::ostream& outfile, 
-                     uint indentation_level)
+void XMLArray::write(const std::vector<double>& x, uint offset,
+                     std::ostream& outfile, uint indentation_level)
 {
   XMLIndent indent(indentation_level);
   outfile << indent() << "<array type=\"double\" size=\"" << x.size() << "\">" << std::endl;
   ++indent;
   for (uint i = 0; i < x.size(); ++i)
-    outfile << indent() << "<element index=\"" << i << "\" value=\"" << std::setprecision(16) << x[i] << "\"/>" << std::endl;
+    outfile << indent() << "<element index=\"" << i + offset << "\" value=\"" << std::setprecision(16) << x[i] << "\"/>" << std::endl;
   --indent;
   outfile << indent() << "</array>" << std::endl;
 }
-
 //-----------------------------------------------------------------------------
 void XMLArray::read_array_tag(const xmlChar *name, const xmlChar **attrs)
 {
