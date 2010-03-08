@@ -455,7 +455,6 @@ double EpetraVector::sum() const
 
   // Compute local sum
   double local_sum = std::accumulate(x_local.begin(), x_local.end(), 0.0);
-  cout << "EpetraVector::sum local sum " << local_sum << endl;
 
   // Compute global sum
   double global_sum = 0.0;

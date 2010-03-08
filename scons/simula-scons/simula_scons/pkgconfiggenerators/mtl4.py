@@ -39,7 +39,7 @@ def pkgCflags(sconsEnv=None):
 def pkgTests(forceCompiler=None, sconsEnv=None,
              cflags=None, libs=None, version=None, **kwargs):
   """Run the tests for this package.
-     
+
      If Ok, return various variables, if not we will end with an exception.
      forceCompiler, if set, should be a tuple containing (compiler, linker)
      or just a string, which in that case will be used as both.
@@ -62,7 +62,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
   if not libs:
     libs = pkgLibs(sconsEnv=sconsEnv)
   libs += " " + boost_libs
-  
+
   # All we want to do is to compile in some MTL4 headers, so really know
   # enough already, as the API of the headers are defined by the version.
   cpp_test_str = r"""
@@ -70,7 +70,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
 #include <boost/numeric/mtl/mtl.hpp>
 int main() {
   mtl::dense_vector<double> x(10);
-  if (x.size() == 10) {
+  if (mtl::num_rows(x) == 10) {
     std::cout << "mtl4 ok";
   } else {
     std::cout << "mtl4 not ok";
@@ -109,7 +109,7 @@ Cflags: %s
 """ % (name, version, libs, repr(cflags)[1:-1])
   # FIXME:                  ^^^^^^^^^^^^^^^^^^
   # Is there a better way to handle this on Windows?
-  
+
   pkg_file = open(os.path.join(directory, "mtl4.pc"), 'w')
   pkg_file.write(pkg_file_str)
   pkg_file.close()

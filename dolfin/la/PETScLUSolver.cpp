@@ -64,16 +64,15 @@ PETScLUSolver::PETScLUSolver(std::string lu_package) : lu_package(lu_package)
       this->lu_package = "umfpack";
     else
     {
-      this->lu_package = "superlu_dist";
-      /*
       #if PETSC_HAVE_MUMPS
       this->lu_package = "mumps";
       #elif PETSC_HAVE_SPOOLES
       this->lu_package = "spooles";
+      #elif PETSC_HAVE_SUPERLU_DIST
+      this->lu_package = "superlu_dist";
       #else
       error("No suitable solver for parallel LU. Consider configuring PETSc with MUMPS or SPOOLES.");
       #endif
-      */
     }
   }
   // Set parameter values

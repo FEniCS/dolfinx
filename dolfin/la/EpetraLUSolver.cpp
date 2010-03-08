@@ -60,7 +60,7 @@ dolfin::uint EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   // Create linear solver
   Amesos factory;
   std::string solver_type;
-  solver_type = "Amesos_Superludist";
+  //solver_type = "Amesos_Superludist";
   /*
   if (factory.Query("Amesos_Mumps"))
   {
@@ -68,14 +68,12 @@ dolfin::uint EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     solver_type = "Amesos_Mumps";
   }
   */
-  /*
   if (factory.Query("Amesos_Umfpack"))
     solver_type = "Amesos_Umfpack";
   else if (factory.Query("Amesos_Klu"))
     solver_type = "Amesos_Klu";
   else
     error("Requested LU solver not available");
-  */
   boost::scoped_ptr<Amesos_BaseSolver> solver(factory.Create(solver_type, linear_problem));
 
   // Factorise matrix
