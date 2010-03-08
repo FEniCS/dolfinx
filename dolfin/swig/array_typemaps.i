@@ -27,7 +27,7 @@
 //-----------------------------------------------------------------------------
 // Macro for defining an in-typemap for NumPy array -> dolfin::Array
 //
-// TYPE       : The pointer type
+// TYPE       : The primitive type
 // TYPECHECK  : The SWIG specific name of the type used in the array type checks values
 //              SWIG use: INT32 for integer, DOUBLE for double aso.
 // NUMPYTYPE  : The NumPy type that is going to be checked for
@@ -70,7 +70,7 @@
 //-----------------------------------------------------------------------------
 // Macro for defining an out-typemap for dolfin::Array -> NumPy array
 //
-// TYPE       : The pointer type
+// TYPE       : The primitive type
 // NUMPYTYPE  : The NumPy type that is going to be checked for
 //-----------------------------------------------------------------------------
 %define OUT_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(TYPE, NUMPYTYPE)
