@@ -17,8 +17,6 @@
 #include <utility>
 #include <vector>
 #include <boost/lambda/lambda.hpp>
-#include <dolfin/common/Array.h>
-
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
 
@@ -106,13 +104,13 @@ namespace dolfin
     virtual void add(const double* block, uint m, const uint* rows) = 0;
 
     /// Get all values on local process
-    virtual void get_local(double* values) const = 0;
+    virtual void get_local(Array<double>& values) const = 0;
 
     /// Set all values on local process
-    virtual void set_local(const double* values) = 0;
+    virtual void set_local(const Array<double>& values) = 0;
 
     /// Add values to each entry on local process
-    virtual void add_local(const double* values) = 0;
+    virtual void add_local(const Array<double>& values) = 0;
 
     /// Gather entries into local vector x
     virtual void gather(GenericVector& x, const std::vector<uint>& indices) const = 0;
@@ -167,9 +165,10 @@ namespace dolfin
       // FIXME: This could be more efficient by acting on the underling vector
       //        data
       std::vector<double> values(size());
-      get_local(&values[0]);
+      Array<double> _values(size(), &values[0]);
+      get_local(_values);
       std::for_each(values.begin(), values.end(), function);
-      set_local(&values[0]);
+      set_local(_values);
     }
 
     /// Apply lambda function
@@ -179,11 +178,13 @@ namespace dolfin
       //        data
       assert(x.size() == this->size());
       std::vector<double> values(size());
+      Array<double> _values(size(), values);
       std::vector<double> x_values(size());
-      this->get_local(&values[0]);
-      x.get_local(&x_values[0]);
+      Array<double> _x_values(size(), x_values);
+      this->get_local(_values);
+      x.get_local(_x_values);
       std::transform(x_values.begin(), x_values.end(), values.begin(), function);
-      this->set_local(&values[0]);
+      this->set_local(_values);
     }
 
     /// Return pointer to underlying data (const version)

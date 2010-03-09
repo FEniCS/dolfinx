@@ -4,6 +4,7 @@
 // First added:  2008-08-11
 // Last changed: 2008-09-13
 
+#include <dolfin/common/Array.h>
 #include <dolfin/fem/Assembler.h>
 #include <dolfin/log/log.h>
 #include <dolfin/la/Matrix.h>
@@ -63,7 +64,7 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
 
   // Solve system for each dimension
   double* values = new double[num_dofs];
-  double* new_coordinates = new double[d*N];
+  Array<double> new_coordinates(d*N);
   Vector x;
   for (uint dim = 0; dim < d; dim++)
   {
@@ -79,7 +80,8 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
     solve(A, x, b, "gmres", "amg_hypre");
 
     // Get new coordinates
-    x.get_local(new_coordinates + dim*N);
+    Array<double> _new_coordinates(N, new_coordinates.data().get() + dim*N);
+    x.get_local(_new_coordinates);
   }
 
   // Modify mesh coordinates
@@ -92,6 +94,5 @@ void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
   delete V;
   delete form;
   delete [] values;
-  delete [] new_coordinates;
 }
 //-----------------------------------------------------------------------------

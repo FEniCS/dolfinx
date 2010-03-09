@@ -6,6 +6,7 @@
 // First added:  2009-03-16
 // Last changed: 2009-10-07
 
+#include <dolfin/common/Array.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/la/DefaultFactory.h>
 #include "FunctionPlotData.h"
@@ -32,10 +33,9 @@ FunctionPlotData::FunctionPlotData(const GenericFunction& v, const Mesh& mesh)
   _vertex_values->resize(N);
 
   // Compute vertex values
-  double* values = new double[N];
+  Array<double> values(N);
   v.compute_vertex_values(values, mesh);
   _vertex_values->set_local(values);
-  delete [] values;
 }
 //-----------------------------------------------------------------------------
 FunctionPlotData::FunctionPlotData() : rank(0)

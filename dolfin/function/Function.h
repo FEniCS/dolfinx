@@ -29,12 +29,14 @@ namespace dolfin
 {
 
   // Forward declarations
+  class Data;
+  class DirichletBC;
   class Expression;
   class FunctionSpace;
   class GenericVector;
-  class Data;
   class SubDomain;
-  class DirichletBC;
+  template<class T> class Array;
+
 
   /// This class represents a function u_h in a finite element
   /// function space V_h, given by
@@ -152,7 +154,7 @@ namespace dolfin
                           int local_facet) const;
 
     /// Compute values at all mesh vertices
-    virtual void compute_vertex_values(double* vertex_values,
+    virtual void compute_vertex_values(Array<double>& vertex_values,
                                        const Mesh& mesh) const;
 
     /// Collect off-process coefficients to prepare for interpolation

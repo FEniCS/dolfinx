@@ -113,8 +113,8 @@ void SystemAssembler::assemble(GenericMatrix& A,
   {
     const uint N = a.function_space(1)->dofmap().global_dimension();
     assert(x0->size() == N);
-    boost::scoped_array<double> x0_values(new double[N]);
-    x0->get_local(x0_values.get());
+    Array<double> x0_values(N);
+    x0->get_local(x0_values);
     for (uint i = 0; i < N; i++)
       data.g[i] = x0_values[i] - data.g[i];
   }

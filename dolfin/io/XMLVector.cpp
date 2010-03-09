@@ -7,6 +7,7 @@
 // Last changed: 2009-06-15
 
 
+#include <dolfin/common/Array.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericVector.h>
 #include "XMLIndent.h"
@@ -73,8 +74,8 @@ void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
   const uint size = range.second - range.first;
 
   // Get data
-  std::vector<double> vector_values(size);
-  vector.get_local(&vector_values[0]);
+  Array<double> vector_values(size);
+  vector.get_local(vector_values);
 
   // Write array
   ++indent;
@@ -102,7 +103,7 @@ void XMLVector::end_vector()
 {
   // Copy values to vector
   x.resize(values.size());
-  double v[values.size()];
+  Array<double> v(values.size());
   for (uint i = 0; i< values.size(); ++i)
     v[i] = values[i];
   x.set_local(v);

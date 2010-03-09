@@ -4,6 +4,7 @@
 // First added:  2008-05-15
 // Last changed: 2009-09-08
 
+#include <dolfin/common/Array.h>
 #include "LinearAlgebraFactory.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
@@ -47,10 +48,9 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
 
   // Extract solution
   x.resize(y->size() - 1);
-  double* vals = new double[y->size()];
+  Array<double> vals(y->size());
   y->get_local(vals);
   x.set_local(vals);
-  delete [] vals;
 
   return num_iterations;
 }
@@ -76,10 +76,9 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
 
   // Extract solution
   x.resize(y->size() - 1);
-  double* vals = new double[y->size()];
+  Array<double> vals(y->size());
   y->get_local(vals);
   x.set_local(vals);
-  delete [] vals;
 
   return num_iterations;
 }
@@ -224,10 +223,10 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
     B->set(&values[i], 1, &i, 1, &N);
 
   // Copy values from b into c
-  std::vector<double> vals(N + 1);
-  b.get_local(&vals[0]);
+  Array<double> vals(N + 1);
+  b.get_local(vals);
   vals[N] = 0.0;
-  c->set_local(&vals[0]);
+  c->set_local(vals);
 
   // Apply changes
   B->apply("insert");

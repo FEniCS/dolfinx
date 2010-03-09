@@ -8,6 +8,7 @@
 
 #include <sstream>
 #include <fstream>
+#include <dolfin/common/Array.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
@@ -98,7 +99,7 @@ void RAWFile::ResultsWrite(const Function& u) const
   {
     // Allocate memory for function values at cell centres
     const uint size = mesh.num_cells()*dim;
-    double* values = new double[size];
+    Array<double> values(size);
 
     // Get function values on cells
     u.vector().get_local(values);
@@ -118,14 +119,12 @@ void RAWFile::ResultsWrite(const Function& u) const
       ss << std::endl;
       fp << ss.str();
     }
-
-    delete [] values;
   }
   else if (data_type == "point")
   {
     // Allocate memory for function values at vertices
     const uint size = mesh.num_vertices()*dim;
-    double* values = new double[size];
+    Array<double> values(size);
 
     // Get function values at vertices
     u.compute_vertex_values(values, mesh);
@@ -145,8 +144,6 @@ void RAWFile::ResultsWrite(const Function& u) const
       ss << std::endl;
       fp << ss.str();
     }
-
-    delete [] values;
   }
  else
    error("Unknown RAW data type.");

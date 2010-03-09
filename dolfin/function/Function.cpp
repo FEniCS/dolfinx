@@ -13,6 +13,7 @@
 #include <boost/scoped_array.hpp>
 #include <dolfin/log/log.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/io/File.h>
 #include <dolfin/la/GenericVector.h>
@@ -398,11 +399,12 @@ void Function::restrict(double* w,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::compute_vertex_values(double* vertex_values,
+void Function::compute_vertex_values(Array<double>& vertex_values,
                                      const Mesh& mesh) const
 {
-  assert(vertex_values);
   assert(&mesh == &_function_space->mesh());
+
+  //vertex_values.resize(_function_space->dim());
 
   // Gather off-process dofs
   gather();

@@ -11,6 +11,7 @@
 
 #include <cmath>
 #include <boost/assign/list_of.hpp>
+#include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
@@ -118,9 +119,10 @@ PETScVector* PETScVector::copy() const
   return v;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::get_local(double* values) const
+void PETScVector::get_local(Array<double>& values) const
 {
   assert(x);
+  values.resize(size());
   if (size() == 0)
     return;
 
@@ -130,12 +132,13 @@ void PETScVector::get_local(double* values) const
   for (uint i = 0; i < local_size; ++i)
     rows[i] = i + n0;
 
-  VecGetValues(*x, local_size, &rows[0], values);
+  VecGetValues(*x, local_size, &rows[0], values.data().get());
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set_local(const double* values)
+void PETScVector::set_local(const Array<double>& values)
 {
   assert(x);
+  assert(values.size() == size());
   if (size() == 0)
     return;
 
@@ -145,12 +148,13 @@ void PETScVector::set_local(const double* values)
   for (uint i = 0; i < local_size; ++i)
     rows[i] = i + n0;
 
-  VecSetValues(*x, local_size, &rows[0], values, INSERT_VALUES);
+  VecSetValues(*x, local_size, &rows[0], values.data().get(), INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::add_local(const double* values)
+void PETScVector::add_local(const Array<double>& values)
 {
   assert(x);
+  assert(values.size() == size());
   if (size() == 0)
     return;
 
@@ -160,7 +164,7 @@ void PETScVector::add_local(const double* values)
   for (uint i = 0; i < local_size; ++i)
     rows[i] = i + n0;
 
-  VecSetValues(*x, local_size, &rows[0], values, ADD_VALUES);
+  VecSetValues(*x, local_size, &rows[0], values.data().get(), ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get(double* block, uint m, const uint* rows) const

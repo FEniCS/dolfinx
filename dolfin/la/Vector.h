@@ -18,6 +18,8 @@
 namespace dolfin
 {
 
+  template<class T> class Array;
+
   /// This class provides the default DOLFIN vector class,
   /// based on the default DOLFIN linear algebra backend.
 
@@ -94,15 +96,15 @@ namespace dolfin
     { vector->add(block, m, rows); }
 
     /// Get all values on local process
-    virtual void get_local(double* values) const
+    virtual void get_local(Array<double>& values) const
     { vector->get_local(values); }
 
     /// Set all values on local process
-    virtual void set_local(const double* values)
+    virtual void set_local(const Array<double>& values)
     { vector->set_local(values); }
 
     /// Add values to each entry on local process
-    virtual void add_local(const double* values)
+    virtual void add_local(const Array<double>& values)
     { vector->add_local(values); }
 
     /// Gather entries into local vector x

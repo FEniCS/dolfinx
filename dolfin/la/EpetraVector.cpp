@@ -159,17 +159,19 @@ std::string EpetraVector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::get_local(double* values) const
+void EpetraVector::get_local(Array<double>& values) const
 {
   assert(x);
-  int err = x->ExtractCopy(values, 0);
+  values.resize(x->MyLength());
+  int err = x->ExtractCopy(values.data().get(), 0);
   if (err!= 0)
     error("EpetraVector::get: Did not manage to perform Epetra_Vector::ExtractCopy.");
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::set_local(const double* values)
+void EpetraVector::set_local(const Array<double>& values)
 {
   assert(x);
+  assert((int) values.size() == x->MyLength());
   const std::pair<uint, uint> range = local_range();
   const uint n0 = range.first;
   const uint n1 = range.second;
@@ -180,15 +182,16 @@ void EpetraVector::set_local(const double* values)
   std::vector<int> rows(N);
   for (uint i = 0; i < N; i++)
     rows[i] = i + n0;
-  int err = x->ReplaceGlobalValues(N, &rows[0], values);
+  int err = x->ReplaceGlobalValues(N, &rows[0], values.data().get());
 
   if (err!= 0)
     error("EpetraVector::set: Did not manage to perform Epetra_Vector::ReplaceGlobalValues.");
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::add_local(const double* values)
+void EpetraVector::add_local(const Array<double>& values)
 {
   assert(x);
+  assert((int) values.size() == x->MyLength());
 
   const std::pair<uint, uint> range = local_range();
   const uint n0 = range.first;
@@ -200,7 +203,7 @@ void EpetraVector::add_local(const double* values)
   std::vector<int> rows(N);
   for (uint i = 0; i < N; i++)
     rows[i] = i + n0;
-  int err = x->SumIntoGlobalValues(N, &rows[0], values);
+  int err = x->SumIntoGlobalValues(N, &rows[0], values.data().get());
   if (err!= 0)
     error("EpetraVector::add_local: Did not manage to perform Epetra_Vector::SumIntoGlobalValues.");
 }
@@ -450,11 +453,14 @@ double EpetraVector::sum() const
   const uint N = n1 - n0;
 
   // Get local values
-  std::vector<double> x_local(N);
-  get_local(&x_local[0]);
+  Array<double> x_local(N);
+  get_local(x_local);
 
   // Compute local sum
-  double local_sum = std::accumulate(x_local.begin(), x_local.end(), 0.0);
+  //double local_sum = std::accumulate(x_local.begin(), x_local.end(), 0.0);
+  double local_sum = 0.0;
+  for (uint i = 0; i < N; ++i)
+    local_sum += x_local[i];
 
   // Compute global sum
   double global_sum = 0.0;
@@ -473,8 +479,8 @@ double EpetraVector::sum(const Array<uint>& rows) const
   const uint N = n1 - n0;
 
   // Get local values
-  std::vector<double> x_local(N);
-  get_local(&x_local[0]);
+  Array<double> x_local(N);
+  get_local(x_local);
 
   // Sum on-process entries
   double local_sum = 0.0;

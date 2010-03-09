@@ -94,13 +94,13 @@ namespace dolfin
     virtual void get_local(double* block, uint m, const uint* rows) const;
 
     /// Get all values on local process
-    virtual void get_local(double* values) const;
+    virtual void get_local(Array<double>& values) const;
 
     /// Set all values on local process
-    virtual void set_local(const double* values);
+    virtual void set_local(const Array<double>& values);
 
     /// Add all values to each entry on local process
-    virtual void add_local(const double* values);
+    virtual void add_local(const Array<double>& values);
 
     /// Gather entries into local vector x
     virtual void gather(GenericVector& x, const std::vector<uint>& indices) const;

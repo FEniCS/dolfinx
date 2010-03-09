@@ -21,6 +21,8 @@ namespace dolfin
 
   namespace ublas = boost::numeric::ublas;
 
+  template<class T> class Array;
+
   /// This class provides a simple vector class based on uBLAS.
   /// It is a simple wrapper for a uBLAS vector implementing the
   /// GenericVector interface.
@@ -88,13 +90,13 @@ namespace dolfin
     virtual void add(const double* block, uint m, const uint* rows);
 
     /// Get all values on local process
-    virtual void get_local(double* values) const;
+    virtual void get_local(Array<double>& values) const;
 
     /// Set all values on local process
-    virtual void set_local(const double* values);
+    virtual void set_local(const Array<double>& values);
 
     /// Add values to each entry on local process
-    virtual void add_local(const double* values);
+    virtual void add_local(const Array<double>& values);
 
     /// Gather entries into local vector x
     virtual void gather(GenericVector& x, const std::vector<uint>& indices) const

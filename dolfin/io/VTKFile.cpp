@@ -15,6 +15,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/detail/endian.hpp>
 
+#include <dolfin/common/Array.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
@@ -344,10 +345,10 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
 
   // Allocate memory for function values at vertices
   const uint size = mesh.num_vertices()*dim;
-  std::vector<double> values(size);
+  Array<double> values(size);
 
   // Get function values at vertices
-  u.compute_vertex_values(&values[0], mesh);
+  u.compute_vertex_values(values, mesh);
 
   if (rank == 0)
   {

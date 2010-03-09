@@ -10,8 +10,9 @@
 #include <ios>
 #include <boost/scoped_array.hpp>
 
-#include <dolfin/log/log.h>
+#include <dolfin/common/Array.h>
 #include <dolfin/la/GenericVector.h>
+#include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include "BinaryFile.h"
 
@@ -58,14 +59,14 @@ void BinaryFile::operator>> (GenericVector& vector)
   dolfin_debug2("Reading %d vector value(s) in binary from %s", n, filename.c_str());
 
   // Read vector values
-  boost::scoped_array<double> values(new double[n]);
+  Array<double> values(n);
   for (uint i = 0; i < n; ++i)
-    file.read((char*) &values[i], sizeof(double));
+    file.read((char*) &values.data().get()[i], sizeof(double));
   file.close();
 
   // Set vector values
   vector.resize(n);
-  vector.set_local(values.get());
+  vector.set_local(values);
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::operator>> (Mesh& mesh)
@@ -94,8 +95,8 @@ void BinaryFile::operator<< (const GenericVector& vector)
 {
   // Get size and vector values
   const uint n = vector.size();
-  boost::scoped_array<double> values(new double[n]);
-  vector.get_local(values.get());
+  Array<double> values(n);
+  vector.get_local(values);
 
   dolfin_debug2("Writing %d vector value(s) in binary to %s", n, filename.c_str());
 
@@ -105,7 +106,7 @@ void BinaryFile::operator<< (const GenericVector& vector)
     error("Unable to open file \"%s\".", filename.c_str());
   file.write((char*) &n, sizeof(uint));
   for (uint i = 0; i < n; ++i)
-    file.write((char*) &values[i], sizeof(double));
+    file.write((char*) &(values.data().get())[i], sizeof(double));
   file.close();
 }
 //-----------------------------------------------------------------------------

@@ -1,10 +1,10 @@
-// Copyright (C) 2009 Garth N. Wells.
+// Copyright (C) 2009-2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2010.
 //
 // First added:  2009-12-06
-// Last changed: 2010-02-23
+// Last changed: 2010-03-09
 
 #ifndef __ARRAY_H
 #define __ARRAY_H
@@ -69,7 +69,6 @@ namespace dolfin
     }
 
     /// Resize array to size N. If size changes, contents will be destroyed.
-
     void resize(uint N)
     {
       if (N == _size)
@@ -96,12 +95,12 @@ namespace dolfin
     { std::fill(x.get(), x.get() + _size, 0.0); }
 
     /// Return minimum value of array
-    //T min() const
-    //{ error("Not implemented"); }
+    T min() const
+    { return *std::min_element(x.get(), x.get() + _size); }
 
     /// Return maximum value of array
-    //T max() const
-    //{ error("Not implemented");  }
+    T max() const
+    { return *std::max_element(x.get(), x.get() + _size);  }
 
     /// Access value of given entry (const version)
     const T& operator[] (uint i) const
@@ -109,10 +108,7 @@ namespace dolfin
 
     /// Access value of given entry (non-const version)
     T& operator[] (uint i)
-    {
-      assert(i < _size);
-      return x[i];
-    }
+    { assert(i < _size); return x[i]; }
 
     /// Return pointer to data (const version)
     const boost::shared_array<T> data() const

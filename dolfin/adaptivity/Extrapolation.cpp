@@ -7,6 +7,7 @@
 #include <vector>
 #include <boost/scoped_array.hpp>
 
+#include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/LAPACKMatrix.h>
@@ -122,7 +123,7 @@ void Extrapolation::extrapolate_interior(Function& w, const Function& v)
   }
 
   // Compute average of dof values
-  boost::scoped_array<double> dof_values_single(new double[W.dim()]);
+  Array<double> dof_values_single(W.dim());
   for (uint i = 0; i < W.dim(); i++)
   {
     double s = 0.0;
@@ -133,13 +134,11 @@ void Extrapolation::extrapolate_interior(Function& w, const Function& v)
   }
 
   // Update dofs for w
-  w.vector().set_local(dof_values_single.get());
+  w.vector().set_local(dof_values_single);
 }
 //-----------------------------------------------------------------------------
 void Extrapolation::extrapolate_boundary(Function& w, const Function& v)
 {
-
-
   // Extract mesh and function spaces
   const FunctionSpace& V(v.function_space());
   const FunctionSpace& W(w.function_space());
@@ -220,8 +219,8 @@ void Extrapolation::extrapolate_boundary(Function& w, const Function& v)
   }
 
   // Compute average of dof values (only touching facet dofs)
-  boost::scoped_array<double> dof_values_single(new double[W.dim()]);
-  w.vector().get_local(dof_values_single.get());
+  Array<double> dof_values_single(W.dim());
+  w.vector().get_local(dof_values_single);
   for (uint i = 0; i < W.dim(); i++)
   {
     if (dof_values_multi[i].size() == 0)
@@ -234,7 +233,7 @@ void Extrapolation::extrapolate_boundary(Function& w, const Function& v)
   }
 
   // Update dofs for w
-  w.vector().set_local(dof_values_single.get());
+  w.vector().set_local(dof_values_single);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Extrapolation::add_cell_equations(LAPACKMatrix& A,

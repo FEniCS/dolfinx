@@ -8,6 +8,8 @@
 #include <sstream>
 #include <fstream>
 #include <boost/scoped_array.hpp>
+
+#include <dolfin/common/Array.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -66,10 +68,10 @@ void XYZFile::ResultsWrite(const Function& u) const
 
   // Allocate memory for function values at vertices
   const uint size = mesh.num_vertices()*dim;
-  boost::scoped_array<double> values(new double[size]);
+  Array<double> values(size);
 
   // Get function values at vertices
-  u.compute_vertex_values(values.get(), mesh);
+  u.compute_vertex_values(values, mesh);
 
   // Write function data at mesh vertices
   if ( dim > 1 )
