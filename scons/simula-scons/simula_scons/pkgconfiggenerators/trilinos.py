@@ -236,11 +236,38 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
         cflags = pkgCflags(sconsEnv=sconsEnv)
     if not libs:
         libs = pkgLibs(compiler=compiler, cflags=cflags, sconsEnv=sconsEnv)
-    else:
-        # Force a call to pkgLibs since this is the test for this package:
-        libs = pkgLibs(compiler=compiler, cflags=cflags, sconsEnv=sconsEnv)
     if not version:
         version = pkgVersion(sconsEnv=sconsEnv)
+
+    # Check that Trilinos has been built with MPI support
+    cpp_file_str = r""" 
+#include <ml_config.h>
+#include <stdio.h>
+
+int main() {
+#ifdef HAVE_MPI
+  printf("yes");
+#endif
+}
+"""
+    cpp_file = "trilinos_test_mpi.cpp"
+    write_cppfile(cpp_file_str, cpp_file)
+
+    cmdstr = "%s -o a.out %s %s" % (compiler, cflags, cpp_file)
+    compileFailed, cmdoutput = getstatusoutput(cmdstr)
+    if compileFailed:
+        remove_cppfile(cpp_file)
+        raise UnableToCompileException("Trilinos", cmd=cmdstr,
+                                       program=cpp_file_str, errormsg=cmdoutput)
+
+    cmdstr = os.path.join(os.getcwd(), "a.out")
+    runFailed, cmdoutput = getstatusoutput(cmdstr)
+    remove_cppfile(cpp_file, execfile=True)
+    if runFailed:
+        raise UnableToRunException("Trilinos", errormsg=cmdoutput)
+    if not "yes" in cmdoutput:
+        msg = "Trilinos must be built with MPI support."
+        raise UnableToRunException("Trilinos", errormsg=msg)
 
     return version, cflags, libs
 
