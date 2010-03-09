@@ -199,11 +199,10 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
       const int global_dof = data.cell_dofs[local_dof];
-      double* x = data.coordinates[local_dof];
 
       // Check if coordinate is inside the domain
       const bool on_boundary = facet->num_entities(D) == 1;
-      if (sub_domain.inside(x, on_boundary))
+      if (sub_domain.inside(data.array_coordinates[local_dof], on_boundary))
       {
         equal_dofs.push_back(global_dof);
       }

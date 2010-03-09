@@ -6,6 +6,7 @@
 // First added:  2007-04-24
 // Last changed: 2010-02-11
 
+#include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
 #include "MeshData.h"
 #include "MeshEntityIterator.h"
@@ -25,13 +26,13 @@ SubDomain::~SubDomain()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool SubDomain::inside(const double* x, bool on_boundary) const
+bool SubDomain::inside(const Array<double>& x, bool on_boundary) const
 {
   error("Unable to determine if point is inside subdomain, function inside() not implemented by user.");
   return false;
 }
 //-----------------------------------------------------------------------------
-void SubDomain::map(const double* x, double* y) const
+void SubDomain::map(const Array<double>& x, Array<double>&) const
 {
   error("Mapping between subdomains missing for periodic boundary conditions, function map() not implemented by user.");
 }
@@ -61,14 +62,18 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
   // Extract exterior (non shared) facets markers
   MeshFunction<uint>* exterior = mesh.data().mesh_function("exterior facets");
 
+  Array<double> x;  
+
   // Compute sub domain markers
   Progress p("Computing sub domain markers", mesh.num_entities(dim));
   for (MeshEntityIterator entity(mesh, dim); !entity.end(); ++entity)
   {
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)
+    {
       on_boundary = (entity->num_entities(D) == 1 &&
 		     (!exterior || (((*exterior)[*entity]))));
+    }
 
     // Start by assuming all points are inside
     bool all_points_inside = true;
@@ -78,7 +83,8 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
     {
       for (VertexIterator vertex(*entity); !vertex.end(); ++vertex)
       {
-        if (!inside(vertex->x(), on_boundary))
+        x.update(_geometric_dimension, const_cast<double*>(vertex->x()));
+        if (!inside(x, on_boundary))
         {
           all_points_inside = false;
           break;
@@ -89,7 +95,8 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
     // Check midpoint (works also in the case when we have a single vertex)
     if (all_points_inside)
     {
-      if (!inside(entity->midpoint().coordinates(), on_boundary))
+      x.update(_geometric_dimension, const_cast<double*>(entity->midpoint().coordinates()));
+      if (!inside(x, on_boundary))
         all_points_inside = false;
     }
 

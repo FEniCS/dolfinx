@@ -11,8 +11,9 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/assign/list_of.hpp>
 
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/Array.h>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/log/log.h>
@@ -653,7 +654,7 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
     for (uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
     {
       // Check if the coordinates are part of the sub domain
-      if ( !user_sub_domain->inside(data.coordinates[i], false) )
+      if ( !user_sub_domain->inside(data.array_coordinates[i], false) )
         continue;
 
       if (!interpolated)

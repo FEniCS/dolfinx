@@ -6,8 +6,9 @@
 // First added:  2008-07-16
 // Last changed: 2010-03-02
 
-#include <dolfin/common/constants.h>
 #include <dolfin/ale/ALE.h>
+#include <dolfin/common/Array.h>
+#include <dolfin/common/constants.h>
 #include "Mesh.h"
 #include "BoundaryMesh.h"
 #include "Vertex.h"
@@ -142,10 +143,16 @@ void MeshSmoothing::snap_boundary(Mesh& mesh,
   // Extract boundary of mesh
   BoundaryMesh boundary(mesh);
 
+  const uint dim = mesh.geometry().dim();
+  Array<double> x;
+
   // Smooth boundary
   MeshGeometry& geometry = boundary.geometry();
   for (uint i = 0; i < boundary.num_vertices(); i++)
-    sub_domain.snap(geometry.x(i));
+  {
+    x.update(dim, geometry.x(i));
+    sub_domain.snap(x);
+  }
 
   // Move interior vertices
   move_interior_vertices(mesh, boundary, harmonic_smoothing);
@@ -157,9 +164,7 @@ void MeshSmoothing::move_interior_vertices(Mesh& mesh,
 {
   // Select smoothing of interior vertices
   if (harmonic_smoothing)
-  {
     ALE::move(mesh, boundary, harmonic);
-  }
   else
   {
     // Use vertex map to update boundary coordinates of original mesh
