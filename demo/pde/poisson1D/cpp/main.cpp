@@ -25,7 +25,7 @@ using namespace dolfin;
 // Boundary condition
 class DirichletBoundary : public SubDomain
 {
-  bool inside(const double* x, bool on_boundary) const
+  bool inside(const Array<double>& x, bool on_boundary) const
   {
     return (std::abs(x[0]) < DOLFIN_EPS);
   }
