@@ -40,7 +40,7 @@ int main()
   // Sub domain for outflow (left)
   class Outflow : public SubDomain
   {
-    bool inside(const Array<double>&, bool on_boundary) const
+    bool inside(const Array<double>& x, bool on_boundary) const
     {
       return x[0] < DOLFIN_EPS && on_boundary;
     }
