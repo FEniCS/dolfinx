@@ -35,7 +35,7 @@ int main()
   // Sub domain for Dirichlet boundary condition
   class DirichletBoundary : public SubDomain
   {
-    bool inside(const double* x, bool on_boundary) const
+    bool inside(const Array<double>& x, bool on_boundary) const
     {
       return (x[1] < DOLFIN_EPS || x[1] > (1.0 - DOLFIN_EPS)) && on_boundary;
     }
@@ -44,12 +44,12 @@ int main()
   // Sub domain for Periodic boundary condition
   class PeriodicBoundary : public SubDomain
   {
-    bool inside(const double* x, bool on_boundary) const
+    bool inside(const Array<double>& x, bool on_boundary) const
     {
       return x[0] < DOLFIN_EPS && x[0] > -DOLFIN_EPS && on_boundary;
     }
 
-    void map(const double* x, double* y) const
+    void map(const Array<double>& x, Array<double>& y) const
     {
       y[0] = x[0] - 1.0;
       y[1] = x[1];
