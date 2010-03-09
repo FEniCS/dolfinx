@@ -7,6 +7,8 @@
 
 #ifdef HAS_TRILINOS
 
+#include <dolfin/main/MPI.h>
+
 #include <Epetra_ConfigDefs.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_FECrsMatrix.h>
