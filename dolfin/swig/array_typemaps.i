@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-10
-// Last changed: 2010-03-07
+// Last changed: 2010-03-09
 
 //=============================================================================
 // In this file we declare some typemaps for the dolfin:Array type
@@ -12,13 +12,13 @@
 //-----------------------------------------------------------------------------
 // Director typemaps for dolfin::Array
 //-----------------------------------------------------------------------------
-%typemap(directorin) const dolfin::Array<double>& x {
+%typemap(directorin) const dolfin::Array<double>& {
   npy_intp dims[1] = {$1_name.size()};
   double * data = const_cast<double*>($1_name.data().get());
   $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(data));
  }
 
-%typemap(directorin) dolfin::Array<double>& values {
+%typemap(directorin) dolfin::Array<double>& {
   npy_intp dims[1] = {$1_name.size()};
   $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE,
 				     reinterpret_cast<char *>($1_name.data().get()));
@@ -105,6 +105,7 @@
 // Instantiate argument name specific typemaps for non const arguments
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, d, values, )
 IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(dolfin::uint, INT32, NPY_UINT, uint, I, indices,)
+IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(double, DOUBLE, NPY_DOUBLE, double, d, vertex_values, )
 
 // Instantiate argument name independent typemaps for all
 // const Array <{int, uint, double}>& arguments
