@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2009-12-06
-// Last changed: 2010-03-09
+// Last changed: 2010-03-11
 
 #ifndef __DOLFIN_ARRAY_H
 #define __DOLFIN_ARRAY_H

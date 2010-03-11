@@ -179,18 +179,13 @@ void PETScVector::get(double* block, uint m, const uint* rows) const
   else
   {
     PETScVector y("local");
-    std::vector<uint> indices;
-    std::vector<uint> local_indices;
-    indices.reserve(m);
-    local_indices.reserve(m);
+    std::vector<uint> local_indices(m);
     for (uint i = 0; i < m; ++i)
-    {
-      indices.push_back(rows[i]);
-      local_indices.push_back(i);
-    }
+      local_indices[i] = i;
 
     // Gather values into y
-    gather(y, indices);
+    const Array<uint> _rows(m, const_cast<uint*>(rows));
+    gather(y, _rows);
 
     // Get entries of y
     y.get_local(block, m, &local_indices[0]);
@@ -426,15 +421,12 @@ std::string PETScVector::str(bool verbose) const
       VecView(*x, PETSC_VIEWER_STDOUT_WORLD);
   }
   else
-  {
     s << "<PETScVector of size " << size() << ">";
-  }
 
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(GenericVector& y,
-                         const std::vector<uint>& indices) const
+void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
 {
   assert(x);
 
@@ -448,12 +440,11 @@ void PETScVector::gather(GenericVector& y,
     error("PETScVector::gather can only gather into local vectors");
 
   // Prepare data for index sets
-  const int* global_indices = reinterpret_cast<int*>(const_cast<uint*>(&indices[0]));
+  const int* global_indices = reinterpret_cast<int*>(const_cast<uint*>(indices.data().get()));
   const int n = indices.size();
-  std::vector<int> local_indices;
-  local_indices.reserve(n);
+  Array<int> local_indices(n);
   for (int i = 0; i < n; ++i)
-    local_indices.push_back(i);
+    local_indices[i] = i;
 
   // PETSc will bail out if it receives a NULL pointer even though m == 0.
   // Can't return from function as this will cause a lock up in parallel
@@ -463,7 +454,7 @@ void PETScVector::gather(GenericVector& y,
   // Create index sets
   IS from, to;
   ISCreateGeneral(PETSC_COMM_SELF, n, global_indices,    &from);
-  ISCreateGeneral(PETSC_COMM_SELF, n, &local_indices[0], &to);
+  ISCreateGeneral(PETSC_COMM_SELF, n, local_indices.data().get(), &to);
 
   // Resize vector if required
   y.resize(n);

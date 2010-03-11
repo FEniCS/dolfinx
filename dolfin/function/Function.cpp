@@ -461,7 +461,9 @@ void Function::gather() const
       _off_process_vector.reset(_vector->factory().create_local_vector());
 
     // Gather off process coefficients
-    _vector->gather(*_off_process_vector, _off_process_dofs);
+    const Array<uint> wrapped_off_process_dofs(_off_process_dofs.size(), 
+                                               &_off_process_dofs[0]);
+    _vector->gather(*_off_process_vector, wrapped_off_process_dofs);
   }
 }
 //-----------------------------------------------------------------------------

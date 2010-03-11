@@ -156,7 +156,7 @@ namespace dolfin
     /// 0, then a local index array is created such that the order of
     /// the values in the return array is the same as the order in
     /// global_indices.
-    virtual void gather(GenericVector& y, const std::vector<uint>& indices) const;
+    virtual void gather(GenericVector& y, const Array<uint>& indices) const;
 
     friend class PETScMatrix;
 

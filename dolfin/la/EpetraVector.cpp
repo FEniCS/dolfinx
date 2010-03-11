@@ -227,7 +227,8 @@ void EpetraVector::get(double* block, uint m, const uint* rows) const
     }
 
     // Gather values into y
-    gather(y, indices);
+    const Array<uint> _indices(indices.size(), &indices[0]);
+    gather(y, _indices);
 
     // Get entries of y
     y.get_local(block, m, &local_indices[0]);
@@ -259,7 +260,7 @@ void EpetraVector::get_local(double* block, uint m, const uint* rows) const
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::gather(GenericVector& y,
-                          const std::vector<dolfin::uint>& indices) const
+                          const Array<dolfin::uint>& indices) const
 {
   // FIXME: This can be done better. Problem is that the GenericVector interface
   //        is PETSc-centric for the parallel case. It should be improved.
@@ -278,10 +279,7 @@ void EpetraVector::gather(GenericVector& y,
   // Create map
   std::vector<int> _indices(indices.size());
   for (uint i = 0; i < indices.size(); ++i)
-  {
-    //cout << "Indices " << i << "  " << indices[i] << endl;
     _indices[i] = indices[i];
-  }
 
   //Epetra_Map source_map(-1, indices.size(), &_indices[0], 0, Comm);
   //Epetra_Map target_map(-1, indices.size(), &_indices[0], 0, Comm);

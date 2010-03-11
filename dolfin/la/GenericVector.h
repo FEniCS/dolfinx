@@ -113,7 +113,7 @@ namespace dolfin
     virtual void add_local(const Array<double>& values) = 0;
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const = 0;
+    virtual void gather(GenericVector& x, const Array<uint>& indices) const = 0;
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x) = 0;

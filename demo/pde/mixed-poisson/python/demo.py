@@ -23,6 +23,8 @@ __license__   = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
+#parameters["linear_algebra_backend"] = "Epetra"
+
 # Create mesh and define function spaces
 mesh = UnitSquare(16, 16)
 BDM = FunctionSpace(mesh, "BDM", 1)
@@ -45,10 +47,10 @@ problem = VariationalProblem(a, L)
 sigma_proj = project(sigma)
 
 # Plot solution
-plot(sigma_proj)
-interactive()
-plot(u)
-interactive()
+#plot(sigma_proj)
+#interactive()
+#plot(u)
+#interactive()
 
 # Save solution to pvd format
 File("sigma.pvd") << sigma_proj
