@@ -54,7 +54,9 @@ Parameters PETScKrylovSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
-  : method(method), pc_dolfin(0), preconditioner(new PETScPreconditioner(pc_type))
+  : method(method), pc_dolfin(0), 
+    preconditioner(new PETScPreconditioner(pc_type)), 
+    preconditioner_set(false)
 {
   // Check that the requested method is known
   if (methods.count(method) == 0)
@@ -66,7 +68,10 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
 				                             PETScPreconditioner& preconditioner)
-  : method(method), preconditioner(reference_to_no_delete_pointer(preconditioner))
+  : method(method), 
+    preconditioner(reference_to_no_delete_pointer(preconditioner)),
+    preconditioner_set(false)
+
 {
   // Set parameter values
   parameters = default_parameters();
@@ -74,14 +79,15 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
 				                             PETScUserPreconditioner& preconditioner)
-  : method(method), pc_dolfin(&preconditioner)
+  : method(method), pc_dolfin(&preconditioner), preconditioner_set(false)
 {
   // Set parameter values
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(boost::shared_ptr<KSP> _ksp)
-  : method("default"), pc_dolfin(0), _ksp(_ksp)
+  : method("default"), pc_dolfin(0), _ksp(_ksp), 
+    preconditioner_set(true)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -137,8 +143,11 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   KSPGMRESSetRestart(*_ksp, parameters["gmres_restart"]);
   KSPSetOperators(*_ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
 
-  if (preconditioner)
+  if (preconditioner && !preconditioner_set)
+  {
     preconditioner->set(*this);
+    preconditioner_set = true;
+  }
 
   // Solve linear system
   KSPSolve(*_ksp, *b.vec(), *x.vec());

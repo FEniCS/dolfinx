@@ -96,8 +96,7 @@ namespace dolfin
     /// Preconditioner
     boost::shared_ptr<PETScPreconditioner> preconditioner;
 
-    /// True if we have read parameters
-    bool parameters_read;
+    bool preconditioner_set;
 
   };
 
