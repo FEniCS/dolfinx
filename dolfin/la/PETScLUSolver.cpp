@@ -75,6 +75,7 @@ PETScLUSolver::PETScLUSolver(std::string lu_package) : lu_package(lu_package)
       #endif
     }
   }
+
   // Set parameter values
   parameters = default_parameters();
 
@@ -140,7 +141,7 @@ std::string PETScLUSolver::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void PETScLUSolver::init()
 {
-  // We create a PETSc Krylov solver and instruct it to use LU preconditioner
+  // Create a PETSc Krylov solver and instruct it to use LU preconditioner
 
   // Destroy old solver environment if necessary
   //if (!ksp.unique())

@@ -71,10 +71,19 @@ int main()
   L.g = g;
 
   // Compute solution
-  VariationalProblem problem(a, L, bc);
-  problem.parameters["linear_solver"] = "iterative";
+  //VariationalProblem problem(a, L, bc);
+  //problem.parameters["linear_solver"] = "iterative";
   Function u(V);
-  problem.solve(u);
+  //problem.solve(u);
+
+  PETScLUSolver solver;
+  Matrix A;
+  Vector b;
+  assemble(A, a);
+  assemble(b, L);
+  bc.apply(A, b);
+
+  solver.solve(A, u.vector(), b);
 
   // Save solution in VTK format
   File file("poisson.pvd");

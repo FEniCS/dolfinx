@@ -20,6 +20,7 @@
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
+#include "PETScObject.h"
 
 namespace dolfin
 {
@@ -37,7 +38,7 @@ namespace dolfin
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of PETSc.
 
-  class PETScKrylovSolver : public GenericLinearSolver
+  class PETScKrylovSolver : public GenericLinearSolver, public PETScObject
   {
   public:
 
