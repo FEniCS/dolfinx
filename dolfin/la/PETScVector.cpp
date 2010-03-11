@@ -122,12 +122,13 @@ PETScVector* PETScVector::copy() const
 void PETScVector::get_local(Array<double>& values) const
 {
   assert(x);
-  values.resize(size());
   if (size() == 0)
     return;
 
   const uint n0 = local_range().first;
   const uint local_size = local_range().second - local_range().first;
+  assert(values.size() >= local_size);
+
   std::vector<int> rows(local_size);
   for (uint i = 0; i < local_size; ++i)
     rows[i] = i + n0;

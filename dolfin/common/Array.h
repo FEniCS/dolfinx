@@ -6,9 +6,11 @@
 // First added:  2009-12-06
 // Last changed: 2010-03-09
 
-#ifndef __ARRAY_H
-#define __ARRAY_H
+#ifndef __DOLFIN_ARRAY_H
+#define __DOLFIN_ARRAY_H
 
+#include <sstream>
+#include <string>
 #include <utility>
 #include <boost/shared_array.hpp>
 
@@ -64,8 +66,11 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const
     {
-      error("No implemented");
-      return "";
+      std::stringstream s;
+      if (verbose)
+        warning("Verbose output for Array<Y> not implemented.");
+      s << "<Array<T> of size " << size() << ">";
+      return s.str();
     }
 
     /// Resize array to size N. If size changes, contents will be destroyed.

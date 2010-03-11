@@ -162,7 +162,7 @@ std::string EpetraVector::str(bool verbose) const
 void EpetraVector::get_local(Array<double>& values) const
 {
   assert(x);
-  values.resize(x->MyLength());
+  assert( (int) values.size() >= x->MyLength());
   int err = x->ExtractCopy(values.data().get(), 0);
   if (err!= 0)
     error("EpetraVector::get: Did not manage to perform Epetra_Vector::ExtractCopy.");
@@ -171,10 +171,9 @@ void EpetraVector::get_local(Array<double>& values) const
 void EpetraVector::set_local(const Array<double>& values)
 {
   assert(x);
-  assert((int) values.size() == x->MyLength());
-  const std::pair<uint, uint> range = local_range();
-  const uint n0 = range.first;
-  const uint n1 = range.second;
+  assert((int) values.size() >= x->MyLength());
+  const uint n0 = local_range().first;
+  const uint n1 = local_range().second;
   const uint N = n1 - n0;
 
   // FIXME: Set data directly
@@ -193,9 +192,8 @@ void EpetraVector::add_local(const Array<double>& values)
   assert(x);
   assert((int) values.size() == x->MyLength());
 
-  const std::pair<uint, uint> range = local_range();
-  const uint n0 = range.first;
-  const uint n1 = range.second;
+  const uint n0 = local_range().first;
+  const uint n1 = local_range().second;
   const uint N = n1 - n0;
 
   // FIXME: Set data directly
@@ -210,11 +208,30 @@ void EpetraVector::add_local(const Array<double>& values)
 //-----------------------------------------------------------------------------
 void EpetraVector::get(double* block, uint m, const uint* rows) const
 {
-  not_working_in_parallel("EpetraVector::get");
+  // If vector is local this function will call get_local. For distributed 
+  // vectors, perform first a gather into a local vector
 
-  assert(x);
-  for (uint i = 0; i < m; i++)
-    block[i] = (*x)[0][rows[i]];
+  if (local_range().first == 0 && local_range().second == size())
+    get_local(block, m, rows);
+  else
+  {
+    EpetraVector y("local");
+    std::vector<uint> indices;
+    std::vector<uint> local_indices;
+    indices.reserve(m);
+    local_indices.reserve(m);
+    for (uint i = 0; i < m; ++i)
+    {
+      indices.push_back(rows[i]);
+      local_indices.push_back(i);
+    }
+
+    // Gather values into y
+    gather(y, indices);
+
+    // Get entries of y
+    y.get_local(block, m, &local_indices[0]);
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::set(const double* block, uint m, const uint* rows)
