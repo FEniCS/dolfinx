@@ -92,15 +92,13 @@ void XMLFile::validate(const std::string filename)
                                      (xmlStructuredErrorFunc)rng_valid_error,
                                      stderr);
   ret = xmlRelaxNGValidateDoc(validator, document);
-  if ( ret == 0 ) {
+  if ( ret == 0 )
     info(0, "%s validates", filename.c_str());
-  }
-  else if ( ret < 0 ) {
+  else if ( ret < 0 )
     error("%s failed to load", filename.c_str());
-  }
-  else {
+  else
     error("%s fails to validate", filename.c_str());
-  }
+
   xmlRelaxNGFreeValidCtxt(validator);
 }
 //-----------------------------------------------------------------------------

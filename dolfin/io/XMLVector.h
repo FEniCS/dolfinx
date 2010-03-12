@@ -10,12 +10,13 @@
 #define __XML_VECTOR_H
 
 #include <memory>
+#include <boost/scoped_ptr.hpp>
 #include "XMLArray.h"
 #include "XMLHandler.h"
 
 namespace dolfin
 {
-  
+
   class GenericVector;
 
 
@@ -45,7 +46,7 @@ namespace dolfin
     parser_state state;
 
     std::vector<double> values;
-    std::auto_ptr<XMLArray> xml_array;
+    boost::scoped_ptr<XMLArray> xml_array;
 
   };
 

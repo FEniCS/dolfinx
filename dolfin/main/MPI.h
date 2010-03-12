@@ -97,6 +97,7 @@ namespace dolfin
 
     /// Sum values and return sum
     static double sum(double value);
+    static uint sum(uint value);
 
     /// Find global offset (index) (wrapper for MPI_(Ex)Scan with MPI_SUM as reduction op)
     static uint global_offset(uint range, bool exclusive);

@@ -71,17 +71,17 @@ namespace dolfin
 
     void operator>> (Mesh& input)                  { read_xml(input); }
     void operator>> (LocalMeshData& input)         { read_xml(input); }
-    void operator>> (GenericMatrix&  input)        { read_xml(input); }
-    void operator>> (GenericVector&  input)        { read_xml(input); }
-    void operator>> (Parameters&  input)        { read_xml(input); }
+    void operator>> (GenericMatrix& input)         { read_xml(input); }
+    void operator>> (GenericVector& input)         { read_xml(input); }
+    void operator>> (Parameters& input)            { read_xml(input); }
     void operator>> (FunctionPlotData&  input)     { read_xml(input); }
     void operator>> (MeshFunction<int>&  input)    { read_xml(input); }
     void operator>> (MeshFunction<uint>&  input)   { read_xml(input); }
     void operator>> (MeshFunction<double>&  input) { read_xml(input); }
 
-    void operator>> (std::vector<int> & x)                            { read_xml_array(x); }
-    void operator>> (std::vector<uint> & x)                           { read_xml_array(x); }
-    void operator>> (std::vector<double> & x)                         { read_xml_array(x); }
+    void operator>> (std::vector<int>& x)                             { read_xml_array(x); }
+    void operator>> (std::vector<uint>& x)                            { read_xml_array(x); }
+    void operator>> (std::vector<double>& x)                          { read_xml_array(x); }
     void operator>> (std::map<uint, int>& map)                        { read_xml_map(map); }
     void operator>> (std::map<uint, uint>& map)                       { read_xml_map(map); }
     void operator>> (std::map<uint, double>& map)                     { read_xml_map(map); }
@@ -94,15 +94,15 @@ namespace dolfin
     void operator<< (const Mesh& output)                  { write_xml(output); }
     void operator<< (const GenericMatrix& output)         { write_xml(output); }
     void operator<< (const GenericVector& output)         { write_xml(output); }
-    void operator<< (const Parameters& output)         { write_xml(output); }
+    void operator<< (const Parameters& output)            { write_xml(output); }
     void operator<< (const FunctionPlotData& output)      { write_xml(output); }
     void operator<< (const MeshFunction<int>&  output)    { write_xml(output); }
     void operator<< (const MeshFunction<uint>&  output)   { write_xml(output); }
     void operator<< (const MeshFunction<double>&  output) { write_xml(output); }
 
-    void operator<< (const std::vector<int> & x)                            { write_xml_array(x); }
-    void operator<< (const std::vector<uint> & x)                           { write_xml_array(x); }
-    void operator<< (const std::vector<double> & x)                         { write_xml_array(x); }
+    void operator<< (const std::vector<int>& x)                             { write_xml_array(x); }
+    void operator<< (const std::vector<uint>& x)                            { write_xml_array(x); }
+    void operator<< (const std::vector<double>& x)                          { write_xml_array(x); }
     void operator<< (const std::map<uint, int>& map)                        { write_xml_map(map); }
     void operator<< (const std::map<uint, uint>& map)                       { write_xml_map(map); }
     void operator<< (const std::map<uint, double>& map)                     { write_xml_map(map); }
@@ -111,8 +111,8 @@ namespace dolfin
     void operator<< (const std::map<uint, std::vector<double> >& array_map) { write_xml_map(array_map); }
 
     // Friends
-    friend void sax_start_element (void *ctx, const xmlChar *name, const xmlChar **attrs);
-    friend void sax_end_element   (void *ctx, const xmlChar *name);
+    friend void sax_start_element(void *ctx, const xmlChar *name, const xmlChar **attrs);
+    friend void sax_end_element(void *ctx, const xmlChar *name);
 
     void validate(std::string filename);
 

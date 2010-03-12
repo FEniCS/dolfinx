@@ -14,53 +14,56 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XMLArray::XMLArray(std::vector<int>& ix, XMLFile& parser)
-  : XMLHandler(parser), ix(&ix), ux(0), dx(0), state(OUTSIDE_ARRAY),
-    atype(INT), size(0)
+  : XMLHandler(parser), ix(&ix), ux(0), dx(0),
+    state(OUTSIDE_ARRAY), atype(INT)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLArray::XMLArray(std::vector<uint>& ux, XMLFile& parser)
   : XMLHandler(parser), ix(0), ux(&ux), dx(0), state(OUTSIDE_ARRAY),
-    atype(UINT), size(0)
+    atype(UINT)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLArray::XMLArray(std::vector<double>& dx, XMLFile& parser)
   : XMLHandler(parser), ix(0), ux(0), dx(&dx), state(OUTSIDE_ARRAY),
-    atype(DOUBLE), size(0)
+    atype(DOUBLE)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLArray::XMLArray(std::vector<int>& ix, XMLFile& parser, uint size)
-  : XMLHandler(parser), ix(&ix), ux(0), dx(0), state(INSIDE_ARRAY), atype(INT),
-    size(size)
+  : XMLHandler(parser), ix(&ix), ux(0), dx(0), state(INSIDE_ARRAY), atype(INT)
 {
+  indices.reserve(size);
   this->ix->clear();
-  this->ix->resize(size);
+  this->ix->reserve(size);
   std::fill(this->ix->begin(), this->ix->end(), 0);
 }
 //-----------------------------------------------------------------------------
 XMLArray::XMLArray(std::vector<uint>& ux, XMLFile& parser, uint size)
-  : XMLHandler(parser), ix(0), ux(&ux), dx(0), state(INSIDE_ARRAY), atype(UINT), size(size)
+  : XMLHandler(parser), ix(0), ux(&ux), dx(0), state(INSIDE_ARRAY), atype(UINT)
 {
+  indices.reserve(size);
   this->ux->clear();
-  this->ux->resize(size);
+  this->ux->reserve(size);
   std::fill(this->ux->begin(), this->ux->end(), 0);
 }
 //-----------------------------------------------------------------------------
-XMLArray::XMLArray(std::vector<double>& dx, XMLFile& parser, uint size)
-  : XMLHandler(parser), ix(0), ux(0), dx(&dx), state(INSIDE_ARRAY),
-    atype(DOUBLE), size(size)
+XMLArray::XMLArray(std::vector<double>& dx,
+                   XMLFile& parser, uint size)
+  : XMLHandler(parser), indices(indices), ix(0), ux(0), dx(&dx), state(INSIDE_ARRAY),
+    atype(DOUBLE)
 {
+  indices.reserve(size);
   this->dx->clear();
-  this->dx->resize(size);
+  this->dx->reserve(size);
   std::fill(this->dx->begin(), this->dx->end(), 0.0);
 }
 //-----------------------------------------------------------------------------
-void XMLArray::start_element(const xmlChar *name, const xmlChar **attrs)
+void XMLArray::start_element(const xmlChar* name, const xmlChar** attrs)
 {
   switch ( state )
   {
@@ -147,12 +150,14 @@ void XMLArray::write(const Array<double>& x, uint offset,
   outfile << indent() << "</array>" << std::endl;
 }
 //-----------------------------------------------------------------------------
-void XMLArray::read_array_tag(const xmlChar *name, const xmlChar **attrs)
+void XMLArray::read_array_tag(const xmlChar* name, const xmlChar** attrs)
 {
   state = INSIDE_ARRAY;
 
   // Parse size of array
-  size = parse_uint(name, attrs, "size");
+  const uint size = parse_uint(name, attrs, "size");
+  indices.clear();
+  indices.reserve(size);
 
   std::string array_type = parse_string(name, attrs, "type");
 
@@ -164,8 +169,7 @@ void XMLArray::read_array_tag(const xmlChar *name, const xmlChar **attrs)
       if (!array_type.compare("int") == 0)
         error("Array file of type '%s', expected 'int'.", array_type.c_str());
       ix->clear();
-      ix->resize(size);
-      std::fill(ix->begin(), ix->end(), 0);
+      ix->reserve(size);
       break;
 
     case UINT:
@@ -173,8 +177,7 @@ void XMLArray::read_array_tag(const xmlChar *name, const xmlChar **attrs)
       if (! array_type.compare("uint") == 0 )
         error("Array file of type '%s', expected 'uint'.", array_type.c_str());
       ux->clear();
-      ux->resize(size);
-      std::fill(ux->begin(), ux->end(), 0);
+      ux->reserve(size);
       break;
 
     case DOUBLE:
@@ -182,8 +185,7 @@ void XMLArray::read_array_tag(const xmlChar *name, const xmlChar **attrs)
       if (! array_type.compare("double") == 0 )
         error("Array file of type '%s', expected 'double'.", array_type.c_str());
       dx->clear();
-      dx->resize(size);
-      std::fill(dx->begin(), dx->end(), 0.0);
+      dx->reserve(size);
       break;
 
     default:
@@ -191,15 +193,20 @@ void XMLArray::read_array_tag(const xmlChar *name, const xmlChar **attrs)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLArray::read_entry(const xmlChar *name, const xmlChar **attrs)
+void XMLArray::read_entry(const xmlChar* name, const xmlChar** attrs)
 {
   // Parse index
-  uint index = parse_uint(name, attrs, "index");
+  const uint index = parse_uint(name, attrs, "index");
+  indices.push_back(index);
 
+  /*
   // Check values
-  if (index >= size)
+  if (index >= global_size)
+  {
     error("Illegal XML data for Array: row index %d out of range (0 - %d)",
-          index, size - 1);
+          index, global_size - 1);
+  }
+  */
 
   int ivalue = 0;
   uint uvalue = 0;
@@ -211,19 +218,19 @@ void XMLArray::read_entry(const xmlChar *name, const xmlChar **attrs)
     case INT:
       assert(ix);
       ivalue = parse_int(name, attrs, "value");
-      (*ix)[index] = ivalue;
+      ix->push_back(ivalue);
       break;
 
      case UINT:
       assert(ux);
       uvalue = parse_uint(name, attrs, "value");
-      (*ux)[index] = uvalue;
+      ux->push_back(uvalue);
       break;
 
      case DOUBLE:
       assert(dx);
       dvalue = parse_float(name, attrs, "value");
-      (*dx)[index] = dvalue;
+      dx->push_back(dvalue);
       break;
 
      default:
