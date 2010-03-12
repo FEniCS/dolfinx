@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2009 Garth N. Wells.
+// Copyright (C) 2005-2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2005-2006.
@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2005-07-05
-// Last changed: 2009-10-08
+// Last changed: 2010-03-12
 
 #include <ostream>
 #include <sstream>
@@ -21,7 +21,6 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/LinearAlgebraFactory.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -188,8 +187,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   }
   else if (encoding == "base64" || encoding == "compressed")
   {
-    std::vector<float> data;
-    data.resize(3*mesh.num_vertices());
+    std::vector<float> data(3*mesh.num_vertices());
     std::vector<float>::iterator entry = data.begin();
     for (VertexIterator v(mesh); !v.end(); ++v)
     {
@@ -220,8 +218,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   else if (encoding == "base64" || encoding == "compressed")
   {
     const int size = mesh.num_cells()*mesh.type().num_entities(0);
-    std::vector<boost::uint32_t> data;
-    data.resize(size);
+    std::vector<boost::uint32_t> data(size);
     std::vector<boost::uint32_t>::iterator entry = data.begin();
     for (CellIterator c(mesh); !c.end(); ++c)
     {
@@ -246,8 +243,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   }
   else if (encoding == "base64" || encoding == "compressed")
   {
-    std::vector<boost::uint32_t> data;
-    data.resize(mesh.num_cells()*num_cell_vertices);
+    std::vector<boost::uint32_t> data(mesh.num_cells()*num_cell_vertices);
     std::vector<boost::uint32_t>::iterator entry = data.begin();
     for (uint offsets = 1; offsets <= mesh.num_cells(); offsets++)
       *entry++ = offsets*num_cell_vertices;
@@ -275,8 +271,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   }
   else if (encoding == "base64" || encoding == "compressed")
   {
-    std::vector<boost::uint8_t> data;
-    data.resize(mesh.num_cells());
+    std::vector<boost::uint8_t> data(mesh.num_cells());
     std::vector<boost::uint8_t>::iterator entry = data.begin();
     for (uint types = 0; types < mesh.num_cells(); types++)
       *entry++ = vtk_cell_type;
@@ -343,11 +338,9 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
 
-  // Allocate memory for function values at vertices
+  // Get function values at vertices
   const uint size = mesh.num_vertices()*dim;
   Array<double> values(size);
-
-  // Get function values at vertices
   u.compute_vertex_values(values, mesh);
 
   if (rank == 0)
@@ -516,9 +509,10 @@ void VTKFile::write_cell_data(const Function& u, std::string vtu_filename) const
     ++cell_offset;
   }
 
-  // Get  values
+  // Get values
+  u.gather();
   std::vector<double> values(dof_set.size());
-  u.vector().get(&values[0], dof_set.size(), &dof_set[0]);
+  u.get(&values[0], dof_set.size(), &dof_set[0]);
 
   if (encoding == "ascii")
   {
@@ -675,7 +669,7 @@ void VTKFile::pvtu_mesh_write(std::string pvtu_filename,
   pvtu_file << "<PDataArray  type=\"Float32\"  NumberOfComponents=\"3\"/>" << std::endl;
   pvtu_file << "</PPoints>" << std::endl;
 
-  for(uint i=0; i< MPI::num_processes(); i++)
+  for(uint i = 0; i < MPI::num_processes(); i++)
   {
     std::string tmp_string = strip_path(vtu_name(i, MPI::num_processes(), counter, ".vtu"));
     pvtu_file << "<Piece Source=\"" << tmp_string << "\"/>" << std::endl;
@@ -968,4 +962,3 @@ void VTKFile::encode_inline_compressed_base64(std::stringstream& stream,
 }
 #endif
 //----------------------------------------------------------------------------
-
