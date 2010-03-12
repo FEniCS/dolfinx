@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2010 Garth N. Wells.
+// Copyright (C) 2005-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2005-2006.
@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2005-07-05
-// Last changed: 2010-03-12
+// Last changed: 2009-10-08
 
 #include <ostream>
 #include <sstream>
@@ -21,6 +21,7 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericVector.h>
+#include <dolfin/la/LinearAlgebraFactory.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -338,9 +339,11 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
 
-  // Get function values at vertices
+  // Allocate memory for function values at vertices
   const uint size = mesh.num_vertices()*dim;
   Array<double> values(size);
+
+  // Get function values at vertices
   u.compute_vertex_values(values, mesh);
 
   if (rank == 0)
@@ -509,10 +512,9 @@ void VTKFile::write_cell_data(const Function& u, std::string vtu_filename) const
     ++cell_offset;
   }
 
-  // Get values
-  u.gather();
+  // Get  values
   std::vector<double> values(dof_set.size());
-  u.get(&values[0], dof_set.size(), &dof_set[0]);
+  u.vector().get(&values[0], dof_set.size(), &dof_set[0]);
 
   if (encoding == "ascii")
   {
@@ -669,7 +671,7 @@ void VTKFile::pvtu_mesh_write(std::string pvtu_filename,
   pvtu_file << "<PDataArray  type=\"Float32\"  NumberOfComponents=\"3\"/>" << std::endl;
   pvtu_file << "</PPoints>" << std::endl;
 
-  for(uint i = 0; i < MPI::num_processes(); i++)
+  for(uint i=0; i< MPI::num_processes(); i++)
   {
     std::string tmp_string = strip_path(vtu_name(i, MPI::num_processes(), counter, ".vtu"));
     pvtu_file << "<Piece Source=\"" << tmp_string << "\"/>" << std::endl;
@@ -962,3 +964,4 @@ void VTKFile::encode_inline_compressed_base64(std::stringstream& stream,
 }
 #endif
 //----------------------------------------------------------------------------
+
