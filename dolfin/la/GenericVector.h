@@ -133,8 +133,7 @@ namespace dolfin
     /// Return sum of vector
     virtual double sum() const = 0;
 
-    /// Return sum of selected rows in vector. Each process sums its local
-    //// entries. Off process entries are ignored.
+    /// Return sum of selected rows in vector. Repeated entries only summed once.
     virtual double sum(const Array<uint>& rows) const
     { error("GenericVector::sum(const Array<uint>& rows) not implemented by backend"); return 0.0; }
 

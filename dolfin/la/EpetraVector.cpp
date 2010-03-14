@@ -452,8 +452,6 @@ double EpetraVector::sum() const
 //-----------------------------------------------------------------------------
 double EpetraVector::sum(const Array<uint>& rows) const
 {
-  error("EpetraVector::sum(const Array<uint>& rows) not implemented.");
-
   assert(x);
   const uint n0 = local_range().first;
   const uint n1 = local_range().second;
@@ -463,23 +461,37 @@ double EpetraVector::sum(const Array<uint>& rows) const
   Set<uint> nonlocal_rows;
   for (uint i = 0; i < rows.size(); ++i)
   {
-    if (rows[i] <= n0 && rows[i] < n1)
+    if (rows[i] >= n0 && rows[i] < n1)
       local_rows.insert(rows[i]);
     else
       nonlocal_rows.insert(rows[i]);
   }
 
-  // Communicate nonlocal entries to other processes
-  std::vector<std::vector<uint> > off_process_rows;
-  MPI::gather_all(nonlocal_rows.set(), off_process_rows);
-
-  // Add entries residing om this process to list
-  for (uint i = 0; i < off_process_rows.size(); ++i)
+  // Send nonlocal rows indices to other processes
+  const uint num_processes  = MPI::num_processes();
+  const uint process_number = MPI::process_number();
+  for (uint i = 1; i < num_processes; ++i)
   {
-    for (uint j = 0; j < off_process_rows[i].size(); ++j)
+    // Receive data from process p - i (i steps to the left), send data to
+    // process p + i (i steps to the right)
+    const uint source = (process_number - i + num_processes) % num_processes;
+    const uint dest   = (process_number + i) % num_processes;
+
+    // Size of send and receive data
+    uint send_buffer_size = nonlocal_rows.size();
+    uint recv_buffer_size = 0;
+    MPI::send_recv(&send_buffer_size, 1, dest, &recv_buffer_size, 1, source);
+
+    // Send and receive data
+    std::vector<uint> received_nonlocal_rows(recv_buffer_size);
+    MPI::send_recv(&(nonlocal_rows.set())[0], send_buffer_size, dest,
+                   &received_nonlocal_rows[0], recv_buffer_size, source);
+
+    // Add rows which reside on this process
+    for (uint j = 0; j < received_nonlocal_rows.size(); ++j)
     {
-      if (off_process_rows[i][j] <= n0 && off_process_rows[i][j] < n1)
-        local_rows.insert(off_process_rows[i][j]);
+      if (received_nonlocal_rows[j] >= n0 && received_nonlocal_rows[j] < n1)
+        local_rows.insert(received_nonlocal_rows[j]);
     }
   }
 

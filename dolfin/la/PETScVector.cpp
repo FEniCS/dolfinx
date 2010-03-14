@@ -10,6 +10,7 @@
 #ifdef HAS_PETSC
 
 #include <cmath>
+#include <numeric>
 #include <boost/assign/list_of.hpp>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
@@ -401,6 +402,61 @@ double PETScVector::sum() const
   double value = 0.0;
   VecSum(*x, &value);
   return value;
+}
+//-----------------------------------------------------------------------------
+double PETScVector::sum(const Array<uint>& rows) const
+{
+  assert(x);
+  const uint n0 = local_range().first;
+  const uint n1 = local_range().second;
+
+  // Build sets of local and nonlocal entries
+  Set<uint> local_rows;
+  Set<uint> nonlocal_rows;
+  for (uint i = 0; i < rows.size(); ++i)
+  {
+    if (rows[i] >= n0 && rows[i] < n1)
+      local_rows.insert(rows[i]);
+    else
+      nonlocal_rows.insert(rows[i]);
+  }
+
+  // Send nonlocal rows indices to other processes
+  const uint num_processes  = MPI::num_processes();
+  const uint process_number = MPI::process_number();
+  for (uint i = 1; i < num_processes; ++i)
+  {
+    // Receive data from process p - i (i steps to the left), send data to
+    // process p + i (i steps to the right)
+    const uint source = (process_number - i + num_processes) % num_processes;
+    const uint dest   = (process_number + i) % num_processes;
+
+    // Size of send and receive data
+    uint send_buffer_size = nonlocal_rows.size();
+    uint recv_buffer_size = 0;
+    MPI::send_recv(&send_buffer_size, 1, dest, &recv_buffer_size, 1, source);
+
+    // Send and receive data
+    std::vector<uint> received_nonlocal_rows(recv_buffer_size);
+    MPI::send_recv(&(nonlocal_rows.set())[0], send_buffer_size, dest,
+                   &received_nonlocal_rows[0], recv_buffer_size, source);
+
+    // Add rows which reside on this process
+    for (uint j = 0; j < received_nonlocal_rows.size(); ++j)
+    {
+      if (received_nonlocal_rows[j] >= n0 && received_nonlocal_rows[j] < n1)
+        local_rows.insert(received_nonlocal_rows[j]);
+    }
+  }
+
+  // Get local values
+  std::vector<double> local_values(local_rows.size());
+  get_local(&local_values[0], local_rows.size(), &local_rows.set()[0]);
+
+  // Compute local sum
+  double local_sum = std::accumulate(local_values.begin(), local_values.end(), 0.0);
+
+  return MPI::sum(local_sum);
 }
 //-----------------------------------------------------------------------------
 std::string PETScVector::str(bool verbose) const
