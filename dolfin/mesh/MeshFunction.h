@@ -13,8 +13,8 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/io/File.h>
+#include <dolfin/mesh/Mesh.h>
 #include "MeshEntity.h"
-#include <dolfin/main/MPI.h>
 
 namespace dolfin
 {
@@ -53,7 +53,7 @@ namespace dolfin
       init(dim);
     }
 
-    /// Create mesh function on given mesh of given dimension and initialise 
+    /// Create mesh function on given mesh of given dimension and initialise
     /// to a value
     MeshFunction(const Mesh& mesh, uint dim, const T& value) :
       Variable("f", "unnamed MeshFunction"),
@@ -212,12 +212,12 @@ namespace dolfin
 
       if (verbose)
       {
-        s << str(false) << std::endl << std::endl;        
+        s << str(false) << std::endl << std::endl;
         warning("Verbose output of MeshFunctions must be implemented manually.");
 
         // This has been disabled as it severely restricts the ease with which
-        // templated MeshFunctions can be used, e.g. it is not possible to 
-        // template over std::vector. 
+        // templated MeshFunctions can be used, e.g. it is not possible to
+        // template over std::vector.
 
         //for (uint i = 0; i < _size; i++)
         //  s << "  (" << _dim << ", " << i << "): " << _values[i] << std::endl;

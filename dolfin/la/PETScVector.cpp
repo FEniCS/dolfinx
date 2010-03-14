@@ -412,13 +412,13 @@ double PETScVector::sum(const Array<uint>& rows) const
 
   // Build sets of local and nonlocal entries
   Set<uint> local_rows;
-  Set<uint> nonlocal_rows;
+  Set<uint> send_nonlocal_rows;
   for (uint i = 0; i < rows.size(); ++i)
   {
     if (rows[i] >= n0 && rows[i] < n1)
       local_rows.insert(rows[i]);
     else
-      nonlocal_rows.insert(rows[i]);
+      send_nonlocal_rows.insert(rows[i]);
   }
 
   // Send nonlocal rows indices to other processes
@@ -432,13 +432,13 @@ double PETScVector::sum(const Array<uint>& rows) const
     const uint dest   = (process_number + i) % num_processes;
 
     // Size of send and receive data
-    uint send_buffer_size = nonlocal_rows.size();
+    uint send_buffer_size = send_nonlocal_rows.size();
     uint recv_buffer_size = 0;
     MPI::send_recv(&send_buffer_size, 1, dest, &recv_buffer_size, 1, source);
 
     // Send and receive data
     std::vector<uint> received_nonlocal_rows(recv_buffer_size);
-    MPI::send_recv(&(nonlocal_rows.set())[0], send_buffer_size, dest,
+    MPI::send_recv(&(send_nonlocal_rows.set())[0], send_buffer_size, dest,
                    &received_nonlocal_rows[0], recv_buffer_size, source);
 
     // Add rows which reside on this process
