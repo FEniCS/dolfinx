@@ -457,7 +457,6 @@ double EpetraVector::sum(const Array<uint>& rows) const
   assert(x);
   const uint n0 = local_range().first;
   const uint n1 = local_range().second;
-  const uint N  = n1 - n0;
 
   // Build sets of local and nonlocal entries
   Set<uint> local_rows;
@@ -470,23 +469,24 @@ double EpetraVector::sum(const Array<uint>& rows) const
       nonlocal_rows.insert(rows[i]);
   }
 
-  // Communicate nonlocal entries
+  // Communicate nonlocal entries to other processes
+  std::vector<std::vector<uint> > off_process_rows;
+  MPI::gather_all(nonlocal_rows.set(), off_process_rows);
 
-  // Pick out entries residing on this process
-
-  // Get local values
-  Array<double> x_local(N);
-  get_local(x_local);
-
-  // Get nonlocal values
-
-  // Sum on-process entries
-  double local_sum = 0.0;
-  for (uint i = 0; i < rows.size(); ++i)
+  // Add entries residing om this process to list
+  for (uint i = 0; i < off_process_rows.size(); ++i)
   {
-    if (rows[i] <= n0 && rows[i] < n1)
-      local_sum += x_local[ rows[i] - n0 ];
+    for (uint j = 0; j < off_process_rows[i].size(); ++j)
+    {
+      if (off_process_rows[i][j] <= n0 && off_process_rows[i][j] < n1)
+        local_rows.insert(off_process_rows[i][j]);
+    }
   }
+
+  // Compute local sum
+  double local_sum = 0.0;
+  for (uint i = 0; i < local_rows.size(); ++i)
+    local_sum += (*x)[0][local_rows[i] - n0];
 
   // Compute global sum
   double global_sum = 0.0;

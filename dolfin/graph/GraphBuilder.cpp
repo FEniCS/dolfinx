@@ -97,7 +97,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   std::vector<uint> transmit_data;
   for (uint i = 0; i < MPI::num_processes(); ++i)
   {
-    if(i != MPI::process_number())
+    if (i != MPI::process_number())
     {
       transmit_data.insert(transmit_data.end(), connected_cell_data.begin(),
                            connected_cell_data.end());

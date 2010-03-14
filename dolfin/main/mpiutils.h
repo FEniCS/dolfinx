@@ -31,7 +31,7 @@ namespace dolfin
     assert(values.size() == partition.size());
 
     // Get number of processes and process number
-    const uint num_processes = MPI::num_processes();
+    const uint num_processes  = MPI::num_processes();
     const uint process_number = MPI::process_number();
 
     // Sort out data that should be sent to other processes
@@ -46,7 +46,7 @@ namespace dolfin
       send_data[p].push_back(values[i]);
     }
 
-    // Store local data (don't send) and clear partition vector and reuse for 
+    // Store local data (don't send) and clear partition vector and reuse for
     // storing sender of data
     values.clear();
     partition.clear();

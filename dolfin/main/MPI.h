@@ -16,6 +16,8 @@
 #include <dolfin/common/types.h>
 
 #ifdef HAS_MPI
+#include <boost/mpi.hpp>
+#include <boost/serialization/string.hpp>
 #include <mpi.h>
 #endif
 
@@ -91,6 +93,19 @@ namespace dolfin
 
     /// Gather values, one from each process (wrapper for MPI_Allgather)
     static void gather(std::vector<double>& values);
+
+    /// Gather values, one from each process (wrapper for boost::mpi::all_gather)
+    template<class T> static void gather_all(const T& in_value,
+                                             std::vector<T>& out_values)
+    {
+      #ifdef HAS_MPI
+      MPICommunicator mpi_comm;
+      boost::mpi::communicator comm(*mpi_comm, boost::mpi::comm_duplicate);
+      boost::mpi::all_gather(comm, in_value, out_values);
+      #else
+      out_values.clear();
+      #endif
+    }
 
     /// Find global max value (wrapper for MPI_Allredue with MPI_MAX as reduction op)
     static uint global_maximum(uint size);
