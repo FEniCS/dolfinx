@@ -40,13 +40,11 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix()
 {
-  // TODO: call Epetra_Init or something?
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(uint M, uint N)
 {
-  // TODO: call Epetra_Init or something?
-  // Create Epetra matrix
   resize(M, N);
 }
 //-----------------------------------------------------------------------------
@@ -58,13 +56,13 @@ EpetraMatrix::EpetraMatrix(const EpetraMatrix& A)
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A) : A(A)
 {
-  // TODO: call Epetra_Init or something?
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph) :
-    A(new Epetra_FECrsMatrix(Copy, graph))
+EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph)
+    : A(new Epetra_FECrsMatrix(Copy, graph))
 {
-  // TODO: call Epetra_Init or something?
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::~EpetraMatrix()
@@ -150,8 +148,8 @@ void EpetraMatrix::get(double* block, uint m, const uint* rows,
   assert(A);
 
   int num_entities = 0;
-  int * indices;
-  double * values;
+  int* indices;
+  double* values;
 
   // For each row in rows
   for(uint i = 0; i < m; ++i)
@@ -267,7 +265,6 @@ void EpetraMatrix::apply(std::string mode)
 std::string EpetraMatrix::str(bool verbose) const
 {
   assert(A);
-
   std::stringstream s;
   if (verbose)
   {
@@ -299,10 +296,6 @@ void EpetraMatrix::ident(uint m, const uint* rows)
     int out_num = 0;
     graph.ExtractGlobalRowCopy(row, num_nz, out_num, &indices[0]);
 
-    //cout << "Testing graph " << row << "   " << out_num << endl;
-    //for (int j = 0; j < num_nz1; ++j)
-    //  cout << "  "  << j << "  " << indices[j] << endl;
-
     // Zero row
     std::vector<double> block(num_nz);
     int err = A->ReplaceGlobalValues(row, num_nz, &block[0], &indices[0]);
@@ -321,7 +314,6 @@ void EpetraMatrix::zero(uint m, const uint* rows)
   //        obejcts inside the loop
 
   assert(A);
-
   const Epetra_CrsGraph& graph = A->Graph();
   for (uint i = 0; i < m; ++i)
   {
@@ -342,7 +334,6 @@ void EpetraMatrix::zero(uint m, const uint* rows)
 void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 {
   assert(A);
-
   const EpetraVector* x = dynamic_cast<const EpetraVector*>(x_.instance());
   if (!x)
     error("EpetraMatrix::mult: The vector x should be of type EpetraVector.");
@@ -359,13 +350,11 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
   int err = A->Multiply(false, *(x->vec()), *(Ax->vec()));
   if (err != 0)
     error("EpetraMatrix::mult: Did not manage to perform Epetra_CRSMatrix::Multiply.");
-
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 {
   assert(A);
-
   const EpetraVector* x = dynamic_cast<const EpetraVector*>(x_.instance());
   if (!x)
     error("EpetraMatrix::transpmult: The vector x should be of type EpetraVector.");
@@ -392,7 +381,7 @@ void EpetraMatrix::getrow(uint row, std::vector<uint>& columns,
   assert(A);
 
   // Temporary variables
-  int *indices;
+  int* indices;
   double* vals;
   int* num_entries = new int;
 
@@ -409,7 +398,6 @@ void EpetraMatrix::getrow(uint row, std::vector<uint>& columns,
     columns.push_back(indices[i]);
     values.push_back(vals[i]);
   }
-
   delete num_entries;
 }
 //-----------------------------------------------------------------------------
@@ -467,5 +455,4 @@ const EpetraMatrix& EpetraMatrix::operator= (const EpetraMatrix& A)
   return *this;
 }
 //-----------------------------------------------------------------------------
-
 #endif

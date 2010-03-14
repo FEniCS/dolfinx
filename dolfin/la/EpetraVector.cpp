@@ -22,6 +22,7 @@
 #include <Epetra_Vector.h>
 
 #include <dolfin/common/Array.h>
+#include <dolfin/common/Set.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
@@ -162,7 +163,7 @@ std::string EpetraVector::str(bool verbose) const
 void EpetraVector::get_local(Array<double>& values) const
 {
   assert(x);
-  assert( (int) values.size() >= x->MyLength());
+  assert( (int)values.size() >= x->MyLength() );
   int err = x->ExtractCopy(values.data().get(), 0);
   if (err!= 0)
     error("EpetraVector::get: Did not manage to perform Epetra_Vector::ExtractCopy.");
@@ -171,44 +172,26 @@ void EpetraVector::get_local(Array<double>& values) const
 void EpetraVector::set_local(const Array<double>& values)
 {
   assert(x);
-  assert((int) values.size() >= x->MyLength());
-  const uint n0 = local_range().first;
-  const uint n1 = local_range().second;
-  const uint N = n1 - n0;
+  const uint local_size = x->MyLength();
+  assert(values.size() >= local_size);
 
-  // FIXME: Set data directly
-
-  std::vector<int> rows(N);
-  for (uint i = 0; i < N; i++)
-    rows[i] = i + n0;
-  int err = x->ReplaceGlobalValues(N, &rows[0], values.data().get());
-
-  if (err!= 0)
-    error("EpetraVector::set: Did not manage to perform Epetra_Vector::ReplaceGlobalValues.");
+  for (uint i = 0; i < local_size; ++i)
+    (*x)[0][i] = values[i];
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::add_local(const Array<double>& values)
 {
   assert(x);
-  assert((int) values.size() == x->MyLength());
+  const uint local_size = x->MyLength();
+  assert(values.size() >= local_size);
 
-  const uint n0 = local_range().first;
-  const uint n1 = local_range().second;
-  const uint N = n1 - n0;
-
-  // FIXME: Set data directly
-
-  std::vector<int> rows(N);
-  for (uint i = 0; i < N; i++)
-    rows[i] = i + n0;
-  int err = x->SumIntoGlobalValues(N, &rows[0], values.data().get());
-  if (err!= 0)
-    error("EpetraVector::add_local: Did not manage to perform Epetra_Vector::SumIntoGlobalValues.");
+  for (uint i = 0; i < local_size; ++i)
+    (*x)[0][i] += values[i];
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::get(double* block, uint m, const uint* rows) const
 {
-  // If vector is local this function will call get_local. For distributed 
+  // If vector is local this function will call get_local. For distributed
   // vectors, perform first a gather into a local vector
 
   if (local_range().first == 0 && local_range().second == size())
@@ -268,7 +251,6 @@ void EpetraVector::gather(GenericVector& y,
   assert(x);
 
   EpetraFactory& f = EpetraFactory::instance();
-  //Epetra_MpiComm Comm = f.get_mpi_comm();
   Epetra_SerialComm serial_comm = f.get_serial_comm();
 
   // Down cast to a EpetraVector and resize
@@ -281,21 +263,12 @@ void EpetraVector::gather(GenericVector& y,
   for (uint i = 0; i < indices.size(); ++i)
     _indices[i] = indices[i];
 
-  //Epetra_Map source_map(-1, indices.size(), &_indices[0], 0, Comm);
-  //Epetra_Map target_map(-1, indices.size(), &_indices[0], 0, Comm);
   Epetra_Map target_map(indices.size(), indices.size(), &_indices[0], 0, serial_comm);
 
   // FIXME: Check that the data belonging to y is not shared
   _y.reset(target_map);
-  //boost::shared_ptr<Epetra_FEVector> yy(new Epetra_FEVector(target_map));
   Epetra_Import importer(_y.vec()->Map(), x->Map());
   _y.vec()->Import(*x, importer, Insert);
-
-  //x->Print(std::cout);
-
-  //cout << "New vector" << endl;
-  //_y.vec()->Print(std::cout);
-  //cout << "End New vector" << endl;
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::reset(const Epetra_Map& map)
@@ -354,7 +327,6 @@ const EpetraVector& EpetraVector::operator= (const GenericVector& v)
 const EpetraVector& EpetraVector::operator= (double a)
 {
   assert(x);
-
   x->PutScalar(a);
   return *this;
 }
@@ -398,8 +370,8 @@ const EpetraVector& EpetraVector::operator*= (double a)
 const EpetraVector& EpetraVector::operator*= (const GenericVector& y)
 {
   assert(x);
-
   const EpetraVector& v = y.down_cast<EpetraVector>();
+
   if (!v.x)
     error("Given vector is not initialized.");
 
@@ -439,7 +411,6 @@ double EpetraVector::norm(std::string norm_type) const
 double EpetraVector::min() const
 {
   assert(x);
-
   double value = 0.0;
   int err = x->MinValue(&value);
   if (err!= 0)
@@ -450,7 +421,6 @@ double EpetraVector::min() const
 double EpetraVector::max() const
 {
   assert(x);
-
   double value = 0.0;
   int err = x->MaxValue(&value);
   if (err != 0)
@@ -461,20 +431,16 @@ double EpetraVector::max() const
 double EpetraVector::sum() const
 {
   assert(x);
-
-  const std::pair<uint, uint> range = local_range();
-  const uint n0 = range.first;
-  const uint n1 = range.second;
-  const uint N = n1 - n0;
+  const uint local_size = x->MyLength();
 
   // Get local values
-  Array<double> x_local(N);
+  Array<double> x_local(local_size);
   get_local(x_local);
 
   // Compute local sum
-  //double local_sum = std::accumulate(x_local.begin(), x_local.end(), 0.0);
+  //double local_sum = std::accumulate(&x_local[0], &x_local[local_size], 0.0);
   double local_sum = 0.0;
-  for (uint i = 0; i < N; ++i)
+  for (uint i = 0; i < local_size; ++i)
     local_sum += x_local[i];
 
   // Compute global sum
@@ -486,16 +452,33 @@ double EpetraVector::sum() const
 //-----------------------------------------------------------------------------
 double EpetraVector::sum(const Array<uint>& rows) const
 {
-  assert(x);
+  error("EpetraVector::sum(const Array<uint>& rows) not implemented.");
 
-  const std::pair<uint, uint> range = local_range();
-  const uint n0 = range.first;
-  const uint n1 = range.second;
-  const uint N = n1 - n0;
+  assert(x);
+  const uint n0 = local_range().first;
+  const uint n1 = local_range().second;
+  const uint N  = n1 - n0;
+
+  // Build sets of local and nonlocal entries
+  Set<uint> local_rows;
+  Set<uint> nonlocal_rows;
+  for (uint i = 0; i < rows.size(); ++i)
+  {
+    if (rows[i] <= n0 && rows[i] < n1)
+      local_rows.insert(rows[i]);
+    else
+      nonlocal_rows.insert(rows[i]);
+  }
+
+  // Communicate nonlocal entries
+
+  // Pick out entries residing on this process
 
   // Get local values
   Array<double> x_local(N);
   get_local(x_local);
+
+  // Get nonlocal values
 
   // Sum on-process entries
   double local_sum = 0.0;

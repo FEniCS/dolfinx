@@ -35,13 +35,14 @@ namespace dolfin
   protected:
 
     std::string init(const Mesh& mesh) const;
+
     void finalize(std::string vtu_filename);
 
     void mesh_write(const Mesh& mesh, std::string file) const;
 
     void results_write(const Function& u, std::string file) const;
 
-    void write_point_data(const GenericFunction& u, const Mesh& mesh, 
+    void write_point_data(const GenericFunction& u, const Mesh& mesh,
                           std::string file) const;
 
     void write_cell_data(const Function& u, std::string file) const;
@@ -60,13 +61,13 @@ namespace dolfin
 
     std::string vtu_name(const int process, const int num_processes,
                          const int counter, std::string ext) const;
-    
+
     void clear_file(std::string file) const;
 
     template<class T>
     void mesh_function_write(T& meshfunction);
 
-    // Strip path from file 
+    // Strip path from file
     std::string strip_path(std::string file) const;
 
     // Compute base64 encoded stream for VTK

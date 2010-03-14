@@ -63,8 +63,6 @@ void VTKFile::operator<<(const Mesh& mesh)
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
-
-    // Write parallel Mesh
     pvtu_mesh_write(pvtu_filename, vtu_filename);
   }
 
@@ -722,8 +720,8 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
     }
     else if (rank == 1)
     {
-      if(!(dim == 2 || dim == 3))
-        error("don't know what to do with vector function with dim other than 2 or 3.");
+      if (!(dim == 2 || dim == 3))
+        error("Do not know what to do with vector function with dim other than 2 or 3.");
       pvtu_file << "<PCellData  Vectors=\"U\"> " << std::endl;
       pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\">" << std::endl;
     }
@@ -734,10 +732,8 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
       pvtu_file << "<PCellData  Tensors=\"U\"> " << std::endl;
       pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\">" << std::endl;
     }
-
     pvtu_file << "</PDataArray> " << std::endl;
     pvtu_file << "</PCellData> " << std::endl;
-
   }
   else if (data_type == "point")
   {
@@ -756,7 +752,6 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
       pvtu_file << "<PPointData  Tensors=\"U\"> " << std::endl;
       pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\">" << std::endl;
     }
-
     pvtu_file << "</PDataArray> " << std::endl;
     pvtu_file << "</PPointData> " << std::endl;
   }
