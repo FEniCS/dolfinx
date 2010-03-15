@@ -56,6 +56,10 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
   // Check that requsted solver is supported
   if (methods.count(method) == 0 )
     error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str());
+
+  // Set solver type
+  solver->SetAztecOption(AZ_solver, methods.find(method)->second);
+  solver->SetAztecOption(AZ_kspace, parameters["gmres_restart"]);
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
@@ -70,6 +74,10 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
   // Check that requsted solver is supported
   if (methods.count(method) == 0 )
     error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str());
+
+  // Set solver type
+  solver->SetAztecOption(AZ_solver, methods.find(method)->second);
+  solver->SetAztecOption(AZ_kspace, parameters["gmres_restart"]);
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::~EpetraKrylovSolver()
@@ -88,8 +96,6 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                        const EpetraVector& b)
 {
   assert(solver);
-
-  // FIXME: This function needs to be cleaned up
 
   // Check dimensions
   const uint M = A.size(0);
@@ -115,10 +121,6 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                       b.vec().get());
   // Set-up linear solver
   solver->SetProblem(linear_problem);
-
-  // Set solver type
-  solver->SetAztecOption(AZ_solver, methods.find(method)->second);
-  solver->SetAztecOption(AZ_kspace, parameters["gmres_restart"]);
 
   // Set output level
   if(parameters["monitor_convergence"])
