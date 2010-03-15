@@ -47,9 +47,9 @@ Parameters EpetraKrylovSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
-                    : method(method),
+                    : method(method), solver(new AztecOO),
                       preconditioner(new TrilinosPreconditioner(pc_type)),
-                      solver(new AztecOO)
+                      preconditioner_set(false)
 {
   parameters = default_parameters();
 
@@ -60,9 +60,9 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                   TrilinosPreconditioner& preconditioner)
-                : method(method),
+                : method(method), solver(new AztecOO),
                   preconditioner(reference_to_no_delete_pointer(preconditioner)),
-                  solver(new AztecOO)
+                  preconditioner_set(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -127,7 +127,11 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     solver->SetAztecOption(AZ_output, AZ_none);
 
   // Configure preconditioner
-  preconditioner->set(*this);
+  if (preconditioner && !preconditioner_set)
+  {
+    preconditioner->set(*this);
+    preconditioner_set = true;
+  }
 
   // Start solve
   solver->Iterate(parameters["maximum_iterations"], parameters["relative_tolerance"]);
