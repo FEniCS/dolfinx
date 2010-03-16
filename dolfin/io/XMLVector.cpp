@@ -6,11 +6,10 @@
 // First added:  2009-03-06
 // Last changed: 2009-06-15
 
-#include <algorithm>
+
 #include <dolfin/common/Array.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/main/MPI.h>
 #include "XMLIndent.h"
 #include "XMLVector.h"
 
@@ -72,10 +71,10 @@ void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
 
   const std::pair<uint, uint> range = vector.local_range();
   const uint n0 = range.first;
-  const uint local_size  = range.second - range.first;
+  const uint size = range.second - range.first;
 
-  // Get local data
-  Array<double> vector_values(local_size);
+  // Get data
+  Array<double> vector_values(size);
   vector.get_local(vector_values);
 
   // Write array
@@ -94,24 +93,19 @@ void XMLVector::read_vector_tag(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLVector::read_array_tag(const xmlChar *name, const xmlChar **attrs)
 {
-  xml_array.reset(new XMLArray(values, parser));
+  std::auto_ptr<XMLArray> _xml_array(new XMLArray(values, parser));
+  xml_array = _xml_array;
   xml_array->read_array_tag(name, attrs);
   xml_array->handle();
 }
 //-----------------------------------------------------------------------------
 void XMLVector::end_vector()
 {
-  // Get global size
-  const uint local_size = values.size();
-  const uint global_size = dolfin::MPI::sum(local_size);
-
-  // Resize vector
-  x.resize(global_size);
-
-  // Set values
-  const std::vector<uint>& indices = xml_array->indices;
-  assert(indices.size() == local_size);
-  assert(*std::max_element(indices.begin(), indices.end()) < global_size);
-  x.set(&values[0], local_size, &indices[0]);
+  // Copy values to vector
+  x.resize(values.size());
+  Array<double> v(values.size());
+  for (uint i = 0; i< values.size(); ++i)
+    v[i] = values[i];
+  x.set_local(v);
 }
 //-----------------------------------------------------------------------------

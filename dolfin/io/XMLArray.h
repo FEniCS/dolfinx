@@ -28,8 +28,8 @@ namespace dolfin
     XMLArray(std::vector<double>& dx, XMLFile& parser);
     XMLArray(std::vector<double>& dx, XMLFile& parser, uint size);
 
-    void start_element(const xmlChar *name, const xmlChar **attrs);
-    void end_element(const xmlChar *name);
+    void start_element (const xmlChar *name, const xmlChar **attrs);
+    void end_element   (const xmlChar *name);
 
 
     /// Write to file
@@ -44,20 +44,20 @@ namespace dolfin
 
     void read_array_tag(const xmlChar *name, const xmlChar **attrs);
 
-    std::vector<uint> indices;
-
   private:
 
     enum parser_state { OUTSIDE_ARRAY, INSIDE_ARRAY, ARRAY_DONE };
     enum array_type { INT, UINT, DOUBLE, UNSET };
 
-    void read_entry(const xmlChar *name, const xmlChar **attrs);
+    void read_entry  (const xmlChar *name, const xmlChar **attrs);
 
     std::vector<int>*  ix;
     std::vector<uint>* ux;
     std::vector<double>* dx;
     parser_state state;
     array_type atype;
+
+    uint size;
 
   };
 
