@@ -333,14 +333,12 @@ const EpetraVector& EpetraVector::operator= (double a)
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
 {
+  // FIXME: Epetra assignment operator leads to an errror. Must vectors have
+  //        the same size for assigenment to work?
+
   assert(v.x);
-
-  // TODO: Check for self-assignment
-  if (!x)
+  if (this != &v)
     x.reset(new Epetra_FEVector(*(v.vec())));
-  else
-    *x = *(v.vec());
-
   return *this;
 }
 //-----------------------------------------------------------------------------
