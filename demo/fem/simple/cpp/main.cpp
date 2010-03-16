@@ -24,7 +24,7 @@ int main()
   Mesh mesh("../tetrahedron.xml.gz");
 
   // Create stiffness and mass matrices
-  Matrix A, M;
+  uBLASDenseMatrix A, M;
   StiffnessMatrix3D::FunctionSpace V0(mesh);
   StiffnessMatrix3D::BilinearForm a0(V0, V0);
   assemble(A, a0);
@@ -48,8 +48,8 @@ int main()
 
   unsigned int position[4] = {0, 1, 2, 3};
 
-  Matrix A0(4,4);
-  Matrix M0(4,4);
+  uBLASDenseMatrix A0(4, 4);
+  uBLASDenseMatrix M0(4, 4);
   A0.set(*A0_array, 4, position, 4, position);
   M0.set(*M0_array, 4, position, 4, position);
 
