@@ -383,22 +383,21 @@ void EpetraMatrix::getrow(uint row, std::vector<uint>& columns,
   // Temporary variables
   int* indices;
   double* vals;
-  int* num_entries = new int;
+  int num_entries;
 
   // Extract data from Epetra matrix
-  int err = A->ExtractMyRowView(row, *num_entries, vals, indices);
+  int err = A->ExtractMyRowView(row, num_entries, vals, indices);
   if (err != 0)
     error("EpetraMatrix::getrow: Did not manage to perform Epetra_CrsMatrix::ExtractMyRowView.");
 
   // Put data in columns and values
-  columns.clear();
-  values.clear();
-  for (int i=0; i< *num_entries; i++)
+  columns.resize(num_entries);
+  values.resize(num_entries);
+  for (int i = 0; i < num_entries; i++)
   {
-    columns.push_back(indices[i]);
-    values.push_back(vals[i]);
+    columns[i] = indices[i];
+    values[i]  = vals[i];
   }
-  delete num_entries;
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::setrow(uint row, const std::vector<uint>& columns,

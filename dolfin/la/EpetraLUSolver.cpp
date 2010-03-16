@@ -53,6 +53,15 @@ dolfin::uint EpetraLUSolver::solve(const GenericMatrix& A, GenericVector& x,
 dolfin::uint EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                    const EpetraVector& b)
 {
+  // Check dimensions
+  const uint M = A.size(0);
+  const uint N = A.size(1);
+  if (N != b.size())
+    error("Non-matching dimensions for linear system.");
+
+  // Initialize solution vector (remains untouched if dimensions match)
+  x.resize(M);
+
   // Create linear problem
   Epetra_LinearProblem linear_problem(A.mat().get(), x.vec().get(),
                                       b.vec().get());

@@ -109,8 +109,14 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   // Get parameters
   const bool report = parameters["report"];
 
+  // Check dimensions
+  const uint M = A.size(0);
+  const uint N = A.size(1);
+  if (N != b.size())
+    error("Non-matching dimensions for linear system.");
+
   // Initialize solution vector (remains untouched if dimensions match)
-  x.resize(A.size(1));
+  x.resize(M);
 
   // Write a message
   if (report)
