@@ -9,15 +9,16 @@
 #
 # Compile this form with FFC: ffc -l dolfin Stokes.form
 
-vector = VectorElement("Lagrange", "triangle", 1)
-scalar = FiniteElement("Discontinuous Lagrange", "triangle", 0)
+vector   = VectorElement("Lagrange", "triangle", 1)
+scalar   = FiniteElement("Lagrange", "triangle", 1)
+constant = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 system = vector + scalar
 
 (v, q) = TestFunctions(system)
 (u, p) = TrialFunctions(system)
 
 f = Coefficient(vector)
-h = Coefficient(scalar)
+h = Coefficient(constant)
 
 beta  = 0.2
 delta = beta*h*h
