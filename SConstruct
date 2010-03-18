@@ -417,8 +417,6 @@ if not env.GetOption('help'):
   includeDir = env["includeDir"].replace("$prefix", install_prefix)
   libDir = env["libDir"].replace("$prefix", install_prefix)
   pkgConfDir = env["pkgConfDir"].replace("$prefix", install_prefix)
-  pythonModuleDir = env["pythonModuleDir"].replace("$prefix", install_prefix)
-  pythonExtDir = env["pythonExtDir"].replace("$prefix", install_prefix)
   manDir = env["manDir"].replace("$prefix", install_prefix)
 
   # If necessary, replace site-packages with dist-packages when prefix is
@@ -427,6 +425,9 @@ if not env.GetOption('help'):
          "dist-packages" in sysconfig.get_python_lib():
     for tgt_dir in ["pythonModuleDir", "pythonExtDir"]:
       env[tgt_dir] = env[tgt_dir].replace("site-packages", "dist-packages")
+
+  pythonModuleDir = env["pythonModuleDir"].replace("$prefix", install_prefix)
+  pythonExtDir = env["pythonExtDir"].replace("$prefix", install_prefix)
 
   # install dolfin-convert into binDir:
   env.Install(binDir, os.path.join("misc","utils","convert","dolfin-convert"))
