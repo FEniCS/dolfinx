@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-02
-// Last changed: 2009-10-28
+// Last changed: 2010-03-22
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -35,6 +35,7 @@ namespace dolfin
       // General
       p.add("timer_prefix", "");                             // Prefix for timer tasks
       p.add("plot_filename_prefix", "dolfin_plot_data");     // Prefix for temporary plot files
+      p.add("allow_extrapolation", false);                   // Allow extrapolation in function interpolation
 
       // JIT compiler
       p.add("optimize_form", false);                         // Use optimization -O2 when compiling generated code

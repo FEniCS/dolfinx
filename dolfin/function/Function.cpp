@@ -6,7 +6,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-02-28
+// Last changed: 2010-03-22
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -15,6 +15,7 @@
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/io/File.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/DefaultFactory.h>
@@ -35,6 +36,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V)
   : _function_space(reference_to_no_delete_pointer(V)),
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
     local_scratch(V.element())
 {
   // Initialize vector
@@ -46,6 +48,7 @@ Function::Function(const FunctionSpace& V)
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : _function_space(V),
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
     local_scratch(V->element())
 {
   // Initialize vector
@@ -58,6 +61,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
 Function::Function(const FunctionSpace& V, GenericVector& x)
   : _function_space(reference_to_no_delete_pointer(V)),
     _vector(reference_to_no_delete_pointer(x)),
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
     local_scratch(V.element())
 {
   // Assertion uses '<=' to deal with sub-functions
@@ -71,6 +75,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    boost::shared_ptr<GenericVector> x)
   : _function_space(V),
     _vector(x),
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
     local_scratch(V->element())
 {
   // Assertion uses '<=' to deal with sub-functions
@@ -84,6 +89,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    GenericVector& x)
   : _function_space(V),
     _vector(reference_to_no_delete_pointer(x)),
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
     local_scratch(V->element())
 {
   // Assertion uses '<=' to deal with sub-functions
@@ -95,6 +101,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
   : _function_space(reference_to_no_delete_pointer(V)),
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
     local_scratch(V.element())
 {
   // Initialize vector
@@ -115,6 +122,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    std::string filename)
   : _function_space(V),
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
     local_scratch(V->element())
 {
   // Create vector
@@ -137,6 +145,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
+  : allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Assign data
   *this = v;
@@ -146,8 +155,8 @@ Function::Function(const Function& v)
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v, uint i)
-  : local_scratch(v[i]._function_space->element())
-
+  : allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
+    local_scratch(v[i]._function_space->element())
 {
   // Copy function space pointer
   this->_function_space = v[i]._function_space;
@@ -290,11 +299,22 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
   const double* _x = x.data().get();
   Point point(_function_space->mesh().geometry().dim(), _x);
   int id = _function_space->mesh().any_intersected_entity(point);
+
+  // If not found, use the closest cell
   if (id == -1)
   {
-    cout << "Evaluating at " << point << endl;
-    error("Unable to evaluate function at given point (not inside domain, possibly off-process if running in parallel).");
+    if (allow_extrapolation)
+    {
+      id = _function_space->mesh().closest_cell(point);
+      cout << "Extrapolating function value at x = " << point << " (not inside domain)." << endl;
+    }
+    else
+    {
+      cout << "Evaluating at x = " << point << endl;
+      error("Unable to evaluate function at given point (not inside domain). Set option 'allow_extrapolation' to allow extrapolation'.");
+    }
   }
+
 
   Cell cell(_function_space->mesh(), id);
   UFCCell ufc_cell(cell);
@@ -461,7 +481,7 @@ void Function::gather() const
       _off_process_vector.reset(_vector->factory().create_local_vector());
 
     // Gather off process coefficients
-    const Array<uint> wrapped_off_process_dofs(_off_process_dofs.size(), 
+    const Array<uint> wrapped_off_process_dofs(_off_process_dofs.size(),
                                                &_off_process_dofs[0]);
     _vector->gather(*_off_process_vector, wrapped_off_process_dofs);
   }

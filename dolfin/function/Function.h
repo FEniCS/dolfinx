@@ -7,7 +7,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-02-19
+// Last changed: 2010-03-22
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -188,6 +188,9 @@ namespace dolfin
     mutable boost::shared_ptr<GenericVector> _off_process_vector;
     mutable std::map<uint, uint> global_to_local;
     mutable std::vector<uint> _off_process_dofs;
+
+    // True if extrapolation should be allowed
+    bool allow_extrapolation;
 
     // Scratch space, used for storing temporary local data
     class LocalScratch
