@@ -1,4 +1,4 @@
-"""This demo illustrates how to use of DOLFIN for solving the Cahn-Hilliard 
+"""This demo illustrates how to use of DOLFIN for solving the Cahn-Hilliard
 equation, which is a time-dependent nonlinear PDE """
 
 __author__ = "Garth N. Wells (gnw20@cam.ac.uk)"
@@ -36,25 +36,25 @@ class CahnHilliardEquation(NonlinearProblem):
 lmbda  = 1.0e-02  # surface parameter
 factor = 100      # chemical free energy multiplier
 dt     = 5.0e-06  # time step
-theta  = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson   
+theta  = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
 
 parameters.optimize = True
 
 # Define function spaces
 mesh = UnitSquare(96, 96)
 V = FunctionSpace(mesh, "CG", 1)
-ME = V + V
+ME = V * V
 
 # Define test and trial functions
 q, v  = TestFunctions(ME)
 du    = TrialFunction(ME)
 
 # Define functions
-u   = Function(ME)  # current solution 
-u0  = Function(ME)  # solution from previous converged step 
+u   = Function(ME)  # current solution
+u0  = Function(ME)  # solution from previous converged step
 
 # Split mixed functions
-dk, dc = split(du) 
+dk, dc = split(du)
 k,  c  = split(u)
 k0, c0 = split(u0)
 

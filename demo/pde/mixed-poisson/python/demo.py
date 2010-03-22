@@ -27,7 +27,7 @@ from dolfin import *
 mesh = UnitSquare(16, 16)
 BDM = FunctionSpace(mesh, "BDM", 1)
 DG = FunctionSpace(mesh, "DG", 0)
-V = BDM + DG
+V = BDM * DG
 
 # Define variational problem
 (tau, w) = TestFunctions(V)
