@@ -12,6 +12,7 @@
 #include <map>
 
 #include <dolfin/log/log.h>
+#include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -180,7 +181,7 @@ void PeriodicBC::apply(GenericMatrix* A,
       std::vector<double> values;
       A->getrow(slave_dofs[i], columns, values);
       A->add(&values[0], 1, &master_dofs[i], columns.size(), &columns[0]);
-      A->apply();
+      A->apply("add");
     }
 
     // Add slave row to master row in b
@@ -189,7 +190,7 @@ void PeriodicBC::apply(GenericMatrix* A,
       double value;
       b->get(&value, 1, &slave_dofs[i]);
       b->add(&value, 1, &master_dofs[i]);
-      b->apply();
+      b->apply("add");
     }
   }
 
@@ -198,7 +199,7 @@ void PeriodicBC::apply(GenericMatrix* A,
   {
     // Zero out slave rows
     A->zero(num_dof_pairs, slave_dofs);
-    A->apply();
+    A->apply("insert");
 
     // Insert 1 and -1
     uint cols[2];
@@ -210,7 +211,7 @@ void PeriodicBC::apply(GenericMatrix* A,
       cols[1] = slave_dofs[i];
       A->set(vals, 1, &row, 2, cols);
     }
-    A->apply();
+    A->apply("insert");
   }
 
   // Modify boundary values for nonlinear problems
@@ -231,7 +232,7 @@ void PeriodicBC::apply(GenericMatrix* A,
   if (b)
   {
     b->set(rhs_values_slave, num_dof_pairs, slave_dofs);
-    b->apply();
+    b->apply("insert");
   }
 }
 //-----------------------------------------------------------------------------
@@ -272,7 +273,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
 
   // Arrays used for mapping coordinates
   std::vector<double> xx(gdim);
-  boost::scoped_array<double> y(new double[gdim]);
+  Array<double> y(gdim);
 
   // Mapping from coordinates to dof pairs
   coordinate_map coordinate_dof_pairs;
@@ -298,14 +299,14 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
       const int global_dof = data.cell_dofs[local_dof];
-      const double* x = data.coordinates[local_dof];
+      const Array<double>& x = data.array_coordinates[local_dof];
 
       // Set y = x
       for (uint j = 0; j < gdim; ++j)
         y[j] = x[j];
 
       // Map coordinate from H to G
-      sub_domain->map(x, y.get());
+      sub_domain->map(x, y);
 
       // Check if coordinate is inside the domain G or in H
       const bool on_boundary = facet->num_entities(tdim) == 1;
@@ -329,7 +330,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
           coordinate_dof_pairs[xx] = dofs;
         }
       }
-      else if (sub_domain->inside(y.get(), on_boundary))
+      else if (sub_domain->inside(y, on_boundary))
       {
         // Copy coordinate to std::vector
         for (uint j = 0; j < gdim; ++j)

@@ -7,6 +7,8 @@
 
 #ifdef HAS_TRILINOS
 
+#include <dolfin/main/MPI.h>
+
 #include <Epetra_ConfigDefs.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_FECrsMatrix.h>
@@ -45,22 +47,26 @@ Parameters EpetraKrylovSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
-                    : method(method),
+                    : method(method), solver(new AztecOO),
                       preconditioner(new TrilinosPreconditioner(pc_type)),
-                      solver(new AztecOO)
+                      preconditioner_set(false)
 {
   parameters = default_parameters();
 
   // Check that requsted solver is supported
   if (methods.count(method) == 0 )
     error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str());
+
+  // Set solver type
+  solver->SetAztecOption(AZ_solver, methods.find(method)->second);
+  solver->SetAztecOption(AZ_kspace, parameters["gmres_restart"]);
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
                   TrilinosPreconditioner& preconditioner)
-                : method(method),
+                : method(method), solver(new AztecOO),
                   preconditioner(reference_to_no_delete_pointer(preconditioner)),
-                  solver(new AztecOO)
+                  preconditioner_set(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -68,6 +74,10 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
   // Check that requsted solver is supported
   if (methods.count(method) == 0 )
     error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str());
+
+  // Set solver type
+  solver->SetAztecOption(AZ_solver, methods.find(method)->second);
+  solver->SetAztecOption(AZ_kspace, parameters["gmres_restart"]);
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::~EpetraKrylovSolver()
@@ -86,8 +96,6 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                        const EpetraVector& b)
 {
   assert(solver);
-
-  // FIXME: This function needs to be cleaned up
 
   // Check dimensions
   const uint M = A.size(0);
@@ -114,10 +122,6 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   // Set-up linear solver
   solver->SetProblem(linear_problem);
 
-  // Set solver type
-  solver->SetAztecOption(AZ_solver, methods.find(method)->second);
-  solver->SetAztecOption(AZ_kspace, parameters["gmres_restart"]);
-
   // Set output level
   if(parameters["monitor_convergence"])
     solver->SetAztecOption(AZ_output, 1);
@@ -125,7 +129,11 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
     solver->SetAztecOption(AZ_output, AZ_none);
 
   // Configure preconditioner
-  preconditioner->set(*this);
+  if (preconditioner && !preconditioner_set)
+  {
+    preconditioner->set(*this);
+    preconditioner_set = true;
+  }
 
   // Start solve
   solver->Iterate(parameters["maximum_iterations"], parameters["relative_tolerance"]);

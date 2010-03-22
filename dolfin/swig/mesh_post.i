@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 // 
 // First added:  2006-09-20
-// Last changed: 2010-02-14
+// Last changed: 2010-03-09
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (post)
@@ -106,9 +106,3 @@ del _doc_string
   double __getitem__(int i) { return (*self)[i]; }
   void __setitem__(int i, double val) { (*self)[i] = val; }
 }
-
-//-----------------------------------------------------------------------------
-// Clear director typemaps
-//-----------------------------------------------------------------------------
-%clear const double* x;
-%clear double* y;

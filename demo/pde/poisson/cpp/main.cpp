@@ -45,7 +45,7 @@ class Flux : public Expression
 // Sub domain for Dirichlet boundary condition
 class DirichletBoundary : public SubDomain
 {
-  bool inside(const double* x, bool on_boundary) const
+  bool inside(const Array<double>& x, bool on_boundary) const
   {
     return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS;
   }

@@ -19,32 +19,35 @@ extern "C"
 #include <vector>
 #include <utility>
 #include <boost/shared_array.hpp>
-#include "base64.h"
-
 #include <dolfin/common/types.h>
+#include "base64.h"
 
 namespace dolfin
 {
 
-  /// Thes functions class provide tools for encoding and compressing streams 
+  /// Thes functions class provide tools for encoding and compressing streams
   /// for use in output files
 
-  /// We cheating in some functions by relying on std::vector data being 
+  /// We cheating in some functions by relying on std::vector data being
   /// contiguous in memory. This will be part of the upcoming C++ standard.
 
   namespace Encoder
   {
 
     template<typename T>
-    static void encode_base64(const T* data, uint length, std::stringstream& encoded_data)
+    static void encode_base64(const T* data, uint length,
+                              std::stringstream& encoded_data)
     {
-      encoded_data << base64_encode((const unsigned char*) &data[0], length*sizeof(T));
+      encoded_data << base64_encode((const unsigned char*) &data[0],
+                                    length*sizeof(T));
     }
 
     template<typename T>
-    static void encode_base64(const std::vector<T>& data, std::stringstream& encoded_data)
+    static void encode_base64(const std::vector<T>& data,
+                              std::stringstream& encoded_data)
     {
-      encoded_data << base64_encode((const unsigned char*) &data[0], data.size()*sizeof(T));
+      encoded_data << base64_encode((const unsigned char*) &data[0],
+                                    data.size()*sizeof(T));
     }
 
 #ifdef HAS_ZLIB
@@ -61,11 +64,11 @@ namespace dolfin
       boost::shared_array<unsigned char> compressed_data(new unsigned char[compressed_size]);
 
       // Compress data
-      if(compress((Bytef*) compressed_data.get(), &compressed_size, (const Bytef*) &data[0], uncompressed_size) != Z_OK)
+      if (compress((Bytef*) compressed_data.get(), &compressed_size, (const Bytef*) &data[0], uncompressed_size) != Z_OK)
         error("Zlib error while compressing data.");
 
       // Make pair and return
-      return std::make_pair(compressed_data, compressed_size); 
+      return std::make_pair(compressed_data, compressed_size);
     }
 #endif
 

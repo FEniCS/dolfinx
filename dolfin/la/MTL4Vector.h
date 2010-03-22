@@ -29,6 +29,8 @@
 namespace dolfin
 {
 
+  template<class T> class Array;
+
   class MTL4Vector: public GenericVector
   {
   public:
@@ -54,7 +56,7 @@ namespace dolfin
     virtual void zero();
 
     /// Finalize assembly of tensor
-    virtual void apply();
+    virtual void apply(std::string mode);
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -80,16 +82,16 @@ namespace dolfin
     virtual void add(const double* block, uint m, const uint* rows);
 
     /// Get all values on local process
-    virtual void get_local(double* values) const;
+    virtual void get_local(Array<double>& values) const;
 
     /// Set all values on local process
-    virtual void set_local(const double* values);
+    virtual void set_local(const Array<double>& values);
 
     /// Add all values to each entry on local process
-    virtual void add_local(const double* values);
+    virtual void add_local(const Array<double>& values);
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const
+    virtual void gather(GenericVector& x, const Array<uint>& indices) const
     { not_working_in_parallel("MTL4::gather()"); }
 
     /// Add multiple of given vector (AXPY operation)

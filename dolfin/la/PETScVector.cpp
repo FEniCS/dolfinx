@@ -10,7 +10,9 @@
 #ifdef HAS_PETSC
 
 #include <cmath>
+#include <numeric>
 #include <boost/assign/list_of.hpp>
+#include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
@@ -118,95 +120,76 @@ PETScVector* PETScVector::copy() const
   return v;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::get_local(double* values) const
+void PETScVector::get_local(Array<double>& values) const
 {
   assert(x);
   if (size() == 0)
     return;
 
-  const int local_size = local_range().second - local_range().first;
-  int* rows = new int[local_size];
-  for (int i = 0; i < local_size; i++)
-    rows[i] = i;
+  const uint n0 = local_range().first;
+  const uint local_size = local_range().second - local_range().first;
+  assert(values.size() >= local_size);
 
-  VecGetValues(*x, local_size, rows, values);
-  delete [] rows;
+  std::vector<int> rows(local_size);
+  for (uint i = 0; i < local_size; ++i)
+    rows[i] = i + n0;
+
+  VecGetValues(*x, local_size, &rows[0], values.data().get());
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set_local(const double* values)
+void PETScVector::set_local(const Array<double>& values)
 {
   assert(x);
+  assert(values.size() == size());
   if (size() == 0)
     return;
 
-  const int local_size = local_range().second - local_range().first;
-  int* rows = new int[local_size];
-  for (int i = 0; i < local_size; i++)
-    rows[i] = i;
+  const uint n0 = local_range().first;
+  const uint local_size = local_range().second - local_range().first;
+  std::vector<int> rows(local_size);
+  for (uint i = 0; i < local_size; ++i)
+    rows[i] = i + n0;
 
-  VecSetValues(*x, local_size, rows, values, INSERT_VALUES);
-  delete [] rows;
+  VecSetValues(*x, local_size, &rows[0], values.data().get(), INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::add_local(const double* values)
+void PETScVector::add_local(const Array<double>& values)
 {
   assert(x);
+  assert(values.size() == size());
   if (size() == 0)
     return;
 
-  const int local_size = local_range().second - local_range().first;
-  int* rows = new int[local_size];
-  for (int i = 0; i < local_size; i++)
-    rows[i] = i;
+  const uint n0 = local_range().first;
+  const uint local_size = local_range().second - local_range().first;
+  std::vector<int> rows(local_size);
+  for (uint i = 0; i < local_size; ++i)
+    rows[i] = i + n0;
 
-  VecSetValues(*x, local_size, rows, values, ADD_VALUES);
-  delete [] rows;
+  VecSetValues(*x, local_size, &rows[0], values.data().get(), ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get(double* block, uint m, const uint* rows) const
 {
   assert(x);
-  const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
-  int _m =  static_cast<int>(m);
 
   // If vector is local, just get the values. For distributed vectors, perform
   // first a gather into a local vector
   if (local_range().first == 0 && local_range().second == size())
-  {
-    if (m == 0)
-    {
-      _rows = &_m;
-      double tmp = 0.0;
-      block = &tmp;
-    }
-    VecGetValues(*x, _m, _rows, block);
-  }
+    get_local(block, m, rows);
   else
   {
     PETScVector y("local");
-    std::vector<uint> indices;
-    std::vector<int> local_indices;
-    indices.reserve(m);
-    local_indices.reserve(m);
+    std::vector<uint> local_indices(m);
     for (uint i = 0; i < m; ++i)
-    {
-      indices.push_back(rows[i]);
-      local_indices.push_back(i);
-    }
-
-    const int* _local_indices = &local_indices[0];
-    if (m == 0)
-    {
-      _local_indices = &_m;
-      double tmp = 0.0;
-      block = &tmp;
-    }
+      local_indices[i] = i;
 
     // Gather values into y
-    gather(y, indices);
+    const Array<uint> _rows(m, const_cast<uint*>(rows));
+    gather(y, _rows);
 
     // Get entries of y
-    VecGetValues(*(y.vec()), _m, _local_indices, block);
+    y.get_local(block, m, &local_indices[0]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -252,7 +235,7 @@ void PETScVector::add(const double* block, uint m, const uint* rows)
   VecSetValues(*x, _m, _rows, block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::apply()
+void PETScVector::apply(std::string mode)
 {
   assert(x);
   VecAssemblyBegin(*x);
@@ -421,6 +404,61 @@ double PETScVector::sum() const
   return value;
 }
 //-----------------------------------------------------------------------------
+double PETScVector::sum(const Array<uint>& rows) const
+{
+  assert(x);
+  const uint n0 = local_range().first;
+  const uint n1 = local_range().second;
+
+  // Build sets of local and nonlocal entries
+  Set<uint> local_rows;
+  Set<uint> send_nonlocal_rows;
+  for (uint i = 0; i < rows.size(); ++i)
+  {
+    if (rows[i] >= n0 && rows[i] < n1)
+      local_rows.insert(rows[i]);
+    else
+      send_nonlocal_rows.insert(rows[i]);
+  }
+
+  // Send nonlocal rows indices to other processes
+  const uint num_processes  = MPI::num_processes();
+  const uint process_number = MPI::process_number();
+  for (uint i = 1; i < num_processes; ++i)
+  {
+    // Receive data from process p - i (i steps to the left), send data to
+    // process p + i (i steps to the right)
+    const uint source = (process_number - i + num_processes) % num_processes;
+    const uint dest   = (process_number + i) % num_processes;
+
+    // Size of send and receive data
+    uint send_buffer_size = send_nonlocal_rows.size();
+    uint recv_buffer_size = 0;
+    MPI::send_recv(&send_buffer_size, 1, dest, &recv_buffer_size, 1, source);
+
+    // Send and receive data
+    std::vector<uint> received_nonlocal_rows(recv_buffer_size);
+    MPI::send_recv(&(send_nonlocal_rows.set())[0], send_buffer_size, dest,
+                   &received_nonlocal_rows[0], recv_buffer_size, source);
+
+    // Add rows which reside on this process
+    for (uint j = 0; j < received_nonlocal_rows.size(); ++j)
+    {
+      if (received_nonlocal_rows[j] >= n0 && received_nonlocal_rows[j] < n1)
+        local_rows.insert(received_nonlocal_rows[j]);
+    }
+  }
+
+  // Get local values
+  std::vector<double> local_values(local_rows.size());
+  get_local(&local_values[0], local_rows.size(), &local_rows.set()[0]);
+
+  // Compute local sum
+  double local_sum = std::accumulate(local_values.begin(), local_values.end(), 0.0);
+
+  return MPI::sum(local_sum);
+}
+//-----------------------------------------------------------------------------
 std::string PETScVector::str(bool verbose) const
 {
   std::stringstream s;
@@ -439,15 +477,12 @@ std::string PETScVector::str(bool verbose) const
       VecView(*x, PETSC_VIEWER_STDOUT_WORLD);
   }
   else
-  {
     s << "<PETScVector of size " << size() << ">";
-  }
 
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(GenericVector& y,
-                         const std::vector<uint>& indices) const
+void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
 {
   assert(x);
 
@@ -461,12 +496,11 @@ void PETScVector::gather(GenericVector& y,
     error("PETScVector::gather can only gather into local vectors");
 
   // Prepare data for index sets
-  const int* global_indices = reinterpret_cast<int*>(const_cast<uint*>(&indices[0]));
+  const int* global_indices = reinterpret_cast<int*>(const_cast<uint*>(indices.data().get()));
   const int n = indices.size();
-  std::vector<int> local_indices;
-  local_indices.reserve(n);
+  Array<int> local_indices(n);
   for (int i = 0; i < n; ++i)
-    local_indices.push_back(i);
+    local_indices[i] = i;
 
   // PETSc will bail out if it receives a NULL pointer even though m == 0.
   // Can't return from function as this will cause a lock up in parallel
@@ -476,7 +510,7 @@ void PETScVector::gather(GenericVector& y,
   // Create index sets
   IS from, to;
   ISCreateGeneral(PETSC_COMM_SELF, n, global_indices,    &from);
-  ISCreateGeneral(PETSC_COMM_SELF, n, &local_indices[0], &to);
+  ISCreateGeneral(PETSC_COMM_SELF, n, local_indices.data().get(), &to);
 
   // Resize vector if required
   y.resize(n);

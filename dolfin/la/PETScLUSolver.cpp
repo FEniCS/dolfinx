@@ -38,10 +38,11 @@ namespace dolfin
 // Available LU solver
 const std::map<std::string, const MatSolverPackage> PETScLUSolver::lu_packages
   = boost::assign::map_list_of("default", "")
-                              ("umfpack", MAT_SOLVER_UMFPACK)
-                              ("mumps",   MAT_SOLVER_MUMPS)
-                              ("spooles", MAT_SOLVER_SPOOLES)
-                              ("superlu", MAT_SOLVER_SUPERLU);
+                              ("umfpack",      MAT_SOLVER_UMFPACK)
+                              ("mumps",        MAT_SOLVER_MUMPS)
+                              ("spooles",      MAT_SOLVER_SPOOLES)
+                              ("superlu_dist", MAT_SOLVER_SUPERLU_DIST)
+                              ("superlu",      MAT_SOLVER_SUPERLU);
 //-----------------------------------------------------------------------------
 Parameters PETScLUSolver::default_parameters()
 {
@@ -67,11 +68,14 @@ PETScLUSolver::PETScLUSolver(std::string lu_package) : lu_package(lu_package)
       this->lu_package = "mumps";
       #elif PETSC_HAVE_SPOOLES
       this->lu_package = "spooles";
+      #elif PETSC_HAVE_SUPERLU_DIST
+      this->lu_package = "superlu_dist";
       #else
       error("No suitable solver for parallel LU. Consider configuring PETSc with MUMPS or SPOOLES.");
       #endif
     }
   }
+
   // Set parameter values
   parameters = default_parameters();
 
@@ -105,8 +109,14 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   // Get parameters
   const bool report = parameters["report"];
 
+  // Check dimensions
+  const uint M = A.size(0);
+  const uint N = A.size(1);
+  if (N != b.size())
+    error("Non-matching dimensions for linear system.");
+
   // Initialize solution vector (remains untouched if dimensions match)
-  x.resize(A.size(1));
+  x.resize(M);
 
   // Write a message
   if (report)
@@ -137,7 +147,7 @@ std::string PETScLUSolver::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void PETScLUSolver::init()
 {
-  // We create a PETSc Krylov solver and instruct it to use LU preconditioner
+  // Create a PETSc Krylov solver and instruct it to use LU preconditioner
 
   // Destroy old solver environment if necessary
   //if (!ksp.unique())

@@ -15,6 +15,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/detail/endian.hpp>
 
+#include <dolfin/common/Array.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
@@ -62,8 +63,6 @@ void VTKFile::operator<<(const Mesh& mesh)
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
-
-    // Write parallel Mesh
     pvtu_mesh_write(pvtu_filename, vtu_filename);
   }
 
@@ -187,8 +186,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   }
   else if (encoding == "base64" || encoding == "compressed")
   {
-    std::vector<float> data;
-    data.resize(3*mesh.num_vertices());
+    std::vector<float> data(3*mesh.num_vertices());
     std::vector<float>::iterator entry = data.begin();
     for (VertexIterator v(mesh); !v.end(); ++v)
     {
@@ -219,8 +217,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   else if (encoding == "base64" || encoding == "compressed")
   {
     const int size = mesh.num_cells()*mesh.type().num_entities(0);
-    std::vector<boost::uint32_t> data;
-    data.resize(size);
+    std::vector<boost::uint32_t> data(size);
     std::vector<boost::uint32_t>::iterator entry = data.begin();
     for (CellIterator c(mesh); !c.end(); ++c)
     {
@@ -245,8 +242,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   }
   else if (encoding == "base64" || encoding == "compressed")
   {
-    std::vector<boost::uint32_t> data;
-    data.resize(mesh.num_cells()*num_cell_vertices);
+    std::vector<boost::uint32_t> data(mesh.num_cells()*num_cell_vertices);
     std::vector<boost::uint32_t>::iterator entry = data.begin();
     for (uint offsets = 1; offsets <= mesh.num_cells(); offsets++)
       *entry++ = offsets*num_cell_vertices;
@@ -274,8 +270,7 @@ void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
   }
   else if (encoding == "base64" || encoding == "compressed")
   {
-    std::vector<boost::uint8_t> data;
-    data.resize(mesh.num_cells());
+    std::vector<boost::uint8_t> data(mesh.num_cells());
     std::vector<boost::uint8_t>::iterator entry = data.begin();
     for (uint types = 0; types < mesh.num_cells(); types++)
       *entry++ = vtk_cell_type;
@@ -344,10 +339,10 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
 
   // Allocate memory for function values at vertices
   const uint size = mesh.num_vertices()*dim;
-  std::vector<double> values(size);
+  Array<double> values(size);
 
   // Get function values at vertices
-  u.compute_vertex_values(&values[0], mesh);
+  u.compute_vertex_values(values, mesh);
 
   if (rank == 0)
   {
@@ -725,8 +720,8 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
     }
     else if (rank == 1)
     {
-      if(!(dim == 2 || dim == 3))
-        error("don't know what to do with vector function with dim other than 2 or 3.");
+      if (!(dim == 2 || dim == 3))
+        error("Do not know what to do with vector function with dim other than 2 or 3.");
       pvtu_file << "<PCellData  Vectors=\"U\"> " << std::endl;
       pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\">" << std::endl;
     }
@@ -737,10 +732,8 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
       pvtu_file << "<PCellData  Tensors=\"U\"> " << std::endl;
       pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\">" << std::endl;
     }
-
     pvtu_file << "</PDataArray> " << std::endl;
     pvtu_file << "</PCellData> " << std::endl;
-
   }
   else if (data_type == "point")
   {
@@ -759,7 +752,6 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
       pvtu_file << "<PPointData  Tensors=\"U\"> " << std::endl;
       pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\">" << std::endl;
     }
-
     pvtu_file << "</PDataArray> " << std::endl;
     pvtu_file << "</PPointData> " << std::endl;
   }

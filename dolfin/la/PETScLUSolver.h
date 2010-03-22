@@ -6,32 +6,31 @@
 // First added:  2005
 // Last changed: 2010-02-15
 
-#ifndef __PETSC_LU_SOLVER_H
-#define __PETSC_LU_SOLVER_H
+#ifndef __DOLFIN_PETSC_LU_SOLVER_H
+#define __DOLFIN_PETSC_LU_SOLVER_H
 
 #ifdef HAS_PETSC
 
 #include <map>
-#include <petscksp.h>
 #include <boost/shared_ptr.hpp>
-#include <petscmat.h>
 #include <petscksp.h>
 #include "GenericLinearSolver.h"
-#include "PETScVector.h"
+#include "PETScObject.h"
 
 namespace dolfin
 {
   /// Forward declarations
   class GenericMatrix;
   class GenericVector;
-  class PETScMatrix;
   class PETScKrylovMatrix;
+  class PETScMatrix;
+  class PETScVector;
 
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b. It is a wrapper for the LU
   /// solver of PETSc.
 
-  class PETScLUSolver : public GenericLinearSolver
+  class PETScLUSolver : public GenericLinearSolver, public PETScObject
   {
   public:
 
@@ -66,7 +65,6 @@ namespace dolfin
 
     /// PETSc solver pointer
     boost::shared_ptr<KSP> ksp;
-
   };
 
 }

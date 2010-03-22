@@ -8,6 +8,8 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
+not_working_in_parallel("non-matching interpolation demo")
+
 # Create mesh and define function spaces
 mesh0 = UnitSquare(16, 16)
 mesh1 = UnitSquare(64, 64)

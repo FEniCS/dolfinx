@@ -60,8 +60,8 @@ namespace dolfin
     { matrix->zero(); }
 
     /// Finalize assembly of tensor
-    virtual void apply()
-    { matrix->apply(); }
+    virtual void apply(std::string mode)
+    { matrix->apply(mode); }
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const

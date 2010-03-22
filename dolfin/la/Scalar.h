@@ -75,15 +75,15 @@ namespace dolfin
     { value = 0.0; }
 
     /// Finalize assembly of tensor
-    void apply()
+    void apply(std::string mode)
     {
       if (MPI::num_processes() > 1)
       {
-        // Get values from other processes 
+        // Get values from other processes
         std::vector<double> values(MPI::num_processes());
         values[MPI::process_number()] = value;
         MPI::gather(values);
-      
+
         // Sum contribution from each process
         value = std::accumulate(values.begin(), values.end(), 0.0);
       }

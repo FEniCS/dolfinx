@@ -16,7 +16,7 @@ int main()
   // Structure sub domain
   class Structure : public SubDomain
   {
-    bool inside(const double* x, bool on_boundary) const
+    bool inside(const Array<double>& x, bool on_boundary) const
     {
       return x[0] > 1.4 - DOLFIN_EPS and x[0] < 1.6 + DOLFIN_EPS and x[1] < 0.6 + DOLFIN_EPS;
     }

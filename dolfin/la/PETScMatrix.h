@@ -73,7 +73,7 @@ namespace dolfin
     virtual void zero();
 
     /// Finalize assembly of tensor
-    virtual void apply();
+    virtual void apply(std::string mode);
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;

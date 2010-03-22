@@ -13,6 +13,8 @@
 namespace dolfin
 {
 
+  template<class T> class Array;
+
   /// This class defines the interface for definition of sub domains.
   /// Alternatively, sub domains may be defined by a Mesh and a
   /// MeshFunction<uint> over the mesh.
@@ -28,14 +30,14 @@ namespace dolfin
     virtual ~SubDomain();
 
     /// Return true for points inside the subdomain
-    virtual bool inside(const double* x, bool on_boundary) const;
+    virtual bool inside(const Array<double>& x, bool on_boundary) const;
 
     /// Map coordinate x in domain H to coordinate y in domain G (used for
     /// periodic boundary conditions)
-    virtual void map(const double* x, double* y) const;
+    virtual void map(const Array<double>& x, Array<double>&) const;
 
     /// Snap coordinate to boundary of sub domain
-    virtual void snap(double* x) const {}
+    virtual void snap(Array<double>& x) const {}
 
     /// Set sub domain markers for given subdomain
     void mark(MeshFunction<uint>& sub_domains, uint sub_domain) const;

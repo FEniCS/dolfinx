@@ -183,7 +183,7 @@ void XMLMap::write(const std::map<uint, std::vector<int> >& map, std::ostream& o
   {
     outfile << indent() << "<map_entry key=\"" << (*pos).first << "\">" << std::endl;
     ++indent;
-    XMLArray::write((*pos).second, outfile, indent.level());
+    XMLArray::write((*pos).second, 0, outfile, indent.level());
     --indent;
     outfile << indent() << "</map_entry>" << std::endl;
   }
@@ -202,7 +202,7 @@ void XMLMap::write(const std::map<uint, std::vector<uint> >& map, std::ostream& 
   {
     outfile << indent() << "<map_entry key=\"" << (*pos).first << "\">" << std::endl;
     ++indent;
-    XMLArray::write((*pos).second, outfile, indent.level());
+    XMLArray::write((*pos).second, 0, outfile, indent.level());
     --indent;
     outfile << indent() << "</map_entry>" << std::endl;
   }
@@ -221,7 +221,7 @@ void XMLMap::write(const std::map<uint, std::vector<double> >& map, std::ostream
   {
     outfile << indent() << "<map_entry key=\"" << (*pos).first << "\">" << std::endl;
     ++indent;
-    XMLArray::write((*pos).second, outfile, indent.level());
+    XMLArray::write((*pos).second, 0, outfile, indent.level());
     --indent;
     outfile << indent() << "</map_entry>" << std::endl;
   }

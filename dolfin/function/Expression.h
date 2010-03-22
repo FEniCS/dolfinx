@@ -72,7 +72,7 @@ namespace dolfin
                           int local_facet) const;
 
     /// Compute values at all mesh vertices
-    virtual void compute_vertex_values(double* vertex_values,
+    virtual void compute_vertex_values(Array<double>& vertex_values,
                                        const Mesh& mesh) const;
 
     //--- User-supplied callback for expression evaluation ---

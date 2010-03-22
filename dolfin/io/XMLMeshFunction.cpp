@@ -5,6 +5,7 @@
 // Last changed: 2009-10-08
 
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/main/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include "XMLSkipper.h"
 #include "XMLIndent.h"

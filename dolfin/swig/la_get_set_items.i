@@ -3,38 +3,37 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-04-27
-// Last changed: 2009-09-13
+// Last changed: 2010-03-09
 
 // Enum for comparison functions
 enum DolfinCompareType {dolfin_gt, dolfin_ge, dolfin_lt, dolfin_le, dolfin_eq, dolfin_neq};
 
 // Returns the values from a Vector.
 // copied_values are true if the returned values are copied and need clean up.
-double* _get_vector_values( dolfin::GenericVector* self, bool &copied_values)
+dolfin::Array<double>& _get_vector_values( dolfin::GenericVector* self)
 {
-  double * values;
+  dolfin::Array<double>* values;
   try
   {
     // Try accessing the value pointer directly
-    values = self->data();
+    double* data_values = self->data();
+    values = new dolfin::Array<double>(self->size(), data_values);
   }
   catch (std::runtime_error e)
   {
     // We couldn't access the values directly
-    copied_values = true;
-    values = new double[self->size()];
-    self->get_local(values);
+    values = new dolfin::Array<double>(self->size());
+    self->get_local(*values);
   }
-  return values;
+  return *values;
 }
 
 // A contains function for Vectors
 bool _contains( dolfin::GenericVector* self, double value )
 {
   bool contains = false;
-  bool copied_values = false;;
   dolfin::uint i;
-  double* values = _get_vector_values(self, copied_values);
+  dolfin::Array<double>& values = _get_vector_values(self);
 
   // Check if value is in values
   for ( i = 0; i < self->size(); i++)
@@ -45,9 +44,9 @@ bool _contains( dolfin::GenericVector* self, double value )
       break;
     }
   }
-  // If we have created temporary values, delete them
-  if (copied_values)
-    delete [] values;
+  
+  // Clean up Array
+  delete &values;
   return contains;
 }
 
@@ -55,7 +54,6 @@ bool _contains( dolfin::GenericVector* self, double value )
 // The function returns a boolean numpy array
 PyObject* _compare_vector_with_value( dolfin::GenericVector* self, double value, DolfinCompareType cmp_type )
 {
-  bool copied_values = false;;
   dolfin::uint i;
   npy_intp size = self->size();
 
@@ -66,7 +64,7 @@ PyObject* _compare_vector_with_value( dolfin::GenericVector* self, double value,
   npy_bool* bool_data = (npy_bool *)PyArray_DATA(return_array);
 
   // Get the values
-  double* values = _get_vector_values(self, copied_values);
+  dolfin::Array<double>& values = _get_vector_values(self);
 
   switch (cmp_type)
   {
@@ -98,9 +96,8 @@ PyObject* _compare_vector_with_value( dolfin::GenericVector* self, double value,
     throw std::runtime_error("invalid compare type");
   }
 
-  // If we have created temporary values, delete them
-  if (copied_values)
-    delete [] values;
+  // Clean up Array
+  delete &values;
 
   return PyArray_Return(return_array);
 }
@@ -109,8 +106,6 @@ PyObject* _compare_vector_with_value( dolfin::GenericVector* self, double value,
 // The function returns a boolean numpy array
 PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::GenericVector* other, DolfinCompareType cmp_type )
 {
-  bool copied_values_self = false;
-  bool copied_values_other = false;
 
   if (self->size() != other->size())
     throw std::runtime_error("non matching dimensions");
@@ -125,8 +120,8 @@ PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::Gene
   npy_bool* bool_data = (npy_bool *)PyArray_DATA(return_array);
 
   // Get the values
-  double* self_values = _get_vector_values(self, copied_values_self);
-  double* other_values = _get_vector_values(other, copied_values_other);
+  dolfin::Array<double>& self_values = _get_vector_values(self);
+  dolfin::Array<double>& other_values = _get_vector_values(other);
 
   switch (cmp_type)
   {
@@ -159,11 +154,8 @@ PyObject* _compare_vector_with_vector( dolfin::GenericVector* self, dolfin::Gene
   }
 
   // If we have created temporary values, delete them
-  if (copied_values_self)
-    delete [] self_values;
-
-  if (copied_values_other)
-    delete [] other_values;
+  delete &self_values;
+  delete &other_values;
 
   return PyArray_Return(return_array);
 }
@@ -217,7 +209,7 @@ dolfin::GenericVector* _get_vector_sub_vector( const dolfin::GenericVector* self
 
   self->get(values, m, indices);
   return_vec->set(values, m, range);
-  return_vec->apply();
+  return_vec->apply("insert");
 
   delete inds;
   delete[] values;
@@ -264,7 +256,7 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
   // Get and set values
   other.get(values, m, range);
   self->set(values, m, indices);
-  self->apply();
+  self->apply("insert");
 
   delete inds;
   delete[] values;
@@ -317,7 +309,7 @@ void _set_vector_items_array_of_float( dolfin::GenericVector* self, PyObject* op
   // Get the contigous data from the numpy array
   values = (double*) PyArray_DATA(other);
   self->set(values, m, indices);
-  self->apply();
+  self->apply("insert");
 
   // Clean casted array
   if (casted)
@@ -366,9 +358,9 @@ void _set_vector_items_value( dolfin::GenericVector* self, PyObject* op, double 
     self->set(values, inds->size(), indices);
 
     delete inds;
-    delete [] values;
+    delete[] values;
   }
-  self->apply();
+  self->apply("insert");
 }
 
 // Get single item from Matrix
@@ -403,22 +395,22 @@ dolfin::GenericVector* _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolf
   }
 
   // Create the value array and get the values from the matrix
-  double* values = new double[inds->size()];
+  dolfin::Array<double>* values = new dolfin::Array<double>(inds->size());
   if (row)
     // If returning a single row
-    self->get(values, 1, &single, inds->size(), indices);
+    self->get(values->data().get(), 1, &single, inds->size(), indices);
   else
     // If returning a single column
-    self->get(values, inds->size(), indices, 1, &single);
+    self->get(values->data().get(), inds->size(), indices, 1, &single);
 
   // Create the return vector and set the values
-  dolfin::GenericVector * return_vec = self->factory().create_vector();
+  dolfin::GenericVector* return_vec = self->factory().create_vector();
   return_vec->resize(inds->size());
-  return_vec->set_local(values);
-  return_vec->apply();
+  return_vec->set_local(*values);
+  return_vec->apply("insert");
 
   // Clean up
-  delete[] values;
+  delete values;
   delete inds;
 
   return return_vec;
@@ -531,7 +523,7 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self
   delete[] values;
   delete[] tmp_index_array;
 
-  return_mat->apply();
+  return_mat->apply("insert");
   return return_mat;
 }
 
@@ -541,7 +533,7 @@ void _set_matrix_single_item( dolfin::GenericMatrix* self, int m, int n, double 
   dolfin::uint _m(Indices::check_index(m, self->size(0)));
   dolfin::uint _n(Indices::check_index(n, self->size(1)));
   self->set(&value, 1, &_m, 1, &_n);
-  self->apply();
+  self->apply("insert");
  }
 
 void _set_matrix_items_array_of_float( dolfin::GenericMatrix* self,  PyObject* op, PyObject* other ){}

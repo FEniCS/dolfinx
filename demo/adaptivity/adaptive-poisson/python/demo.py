@@ -80,7 +80,7 @@ for level in xrange(MAX_ITER):
         cell_markers[c] = gamma[c.index()] > gamma_0
 
     # Refine mesh
-    mesh.refine(cell_markers)
+    mesh = refine(mesh, cell_markers)
 
     # Plot mesh
     plot(mesh)

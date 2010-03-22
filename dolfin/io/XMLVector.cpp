@@ -7,6 +7,7 @@
 // Last changed: 2009-06-15
 
 
+#include <dolfin/common/Array.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericVector.h>
 #include "XMLIndent.h"
@@ -60,26 +61,25 @@ void XMLVector::end_element(const xmlChar *name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLVector::write(const GenericVector& vector, std::ostream& outfile, uint indentation_level)
+void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
+                      uint indentation_level)
 {
   XMLIndent indent(indentation_level);
 
   // Write vector header
   outfile << indent() << "<vector>" << std::endl;
 
-  uint size = vector.size();
-  double vector_values[size];
-  vector.get_local(vector_values);
+  const std::pair<uint, uint> range = vector.local_range();
+  const uint n0 = range.first;
+  const uint size = range.second - range.first;
 
-  // Convert Vector values to std::vector<double>
-  std::vector<double> arr;
-  arr.resize(size);
-  for (uint i = 0; i < size; ++i)
-    arr[i] = vector_values[i];
+  // Get data
+  Array<double> vector_values(size);
+  vector.get_local(vector_values);
 
   // Write array
   ++indent;
-  XMLArray::write(arr, outfile, indent.level());
+  XMLArray::write(vector_values, n0, outfile, indent.level());
   --indent;
 
   // Write vector footer
@@ -93,7 +93,7 @@ void XMLVector::read_vector_tag(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLVector::read_array_tag(const xmlChar *name, const xmlChar **attrs)
 {
-  std::auto_ptr<XMLArray> _xml_array(new XMLArray(values, parser));   
+  std::auto_ptr<XMLArray> _xml_array(new XMLArray(values, parser));
   xml_array = _xml_array;
   xml_array->read_array_tag(name, attrs);
   xml_array->handle();
@@ -103,7 +103,7 @@ void XMLVector::end_vector()
 {
   // Copy values to vector
   x.resize(values.size());
-  double v[values.size()];
+  Array<double> v(values.size());
   for (uint i = 0; i< values.size(); ++i)
     v[i] = values[i];
   x.set_local(v);

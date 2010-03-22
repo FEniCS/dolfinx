@@ -35,7 +35,7 @@ RE:local.*
 RE:scons/pkgconfig.*
 
 # Demos and tests
-RE:demo/.*/(cpp|python)/.*\.(pvd|vtu|pvtu|xml)
+RE:demo/.*/(cpp|python)/.*\.(pvd|vtu|pvtu|xml|bin)
 RE:demo/.*/cpp/demo
 RE:demo/.*/cpp/.sconsign.dblite
 RE:test/.*/cpp/test

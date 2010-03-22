@@ -106,10 +106,10 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
       continue;
 
     // Set x_0 - x_i = 0
-    rows[0] = dof0;
-    cols[0] = dof1;
+    rows[0] =  dof0;
+    cols[0] =  dof1;
     vals[0] = -1.0;
-    zero[0] = 0.0;
+    zero[0] =  0.0;
 
     std::vector<uint> columns;
     std::vector<double> values;
@@ -124,8 +124,8 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
     b.add(&values[0], 1, &cols[0]);
 
     // Apply changes before using set
-    A.apply();
-    b.apply();
+    A.apply("add");
+    b.apply("add");
 
     // Replace slave-dof equation by relation enforcing equality
     A.ident(1, rows);
@@ -133,8 +133,8 @@ void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
     b.set(zero, 1, rows);
 
     // Apply changes
-    A.apply();
-    b.apply();
+    A.apply("insert");
+    b.apply("insert");
   }
 
   // Cleanup
@@ -199,11 +199,10 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
       // Get dof and coordinate of dof
       const uint local_dof = data.facet_dofs[i];
       const int global_dof = data.cell_dofs[local_dof];
-      double* x = data.coordinates[local_dof];
 
       // Check if coordinate is inside the domain
       const bool on_boundary = facet->num_entities(D) == 1;
-      if (sub_domain.inside(x, on_boundary))
+      if (sub_domain.inside(data.array_coordinates[local_dof], on_boundary))
       {
         equal_dofs.push_back(global_dof);
       }

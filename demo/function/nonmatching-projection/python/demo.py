@@ -1,4 +1,4 @@
-"""This script demonstrates the L2 projection of a function onto a 
+"""This script demonstrates the L2 projection of a function onto a
 non-matching mesh."""
 
 __author__ = "Garth N. Wells (gnw20@cam.ac.uk)"
@@ -7,6 +7,8 @@ __copyright__ = "Copyright (C) 2009 Garth N. Wells"
 __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
+
+not_working_in_parallel("non-matching projection demo")
 
 # Create mesh and define function spaces
 mesh0 = UnitSquare(16, 16)

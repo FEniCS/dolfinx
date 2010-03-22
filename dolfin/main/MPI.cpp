@@ -385,6 +385,14 @@ double dolfin::MPI::sum(double value)
   return recv_value;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::sum(uint value)
+{
+  uint recv_value = 0.0;
+  MPICommunicator comm;
+  MPI_Allreduce(&value, &recv_value, 1, MPI_UNSIGNED, MPI_SUM, *comm);
+  return recv_value;
+}
+//-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::global_offset(uint range, bool exclusive)
 {
   uint offset = 0;
@@ -568,19 +576,21 @@ void dolfin::MPI::gather(std::vector<double>& values)
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::global_maximum(uint size)
 {
-  error("MPI::global_maximum() requires MPI.");
-  return 0;
+  return size;
 }
 //-----------------------------------------------------------------------------
 double dolfin::MPI::sum(double value)
 {
-  error("MPI::sum() requires MPI.");
-  return 0.0;
+  return value;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint dolfin::MPI::sum(uint value)
+{
+  return value;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint dolfin::MPI::global_offset(uint range, bool exclusive)
 {
-  error("MPI::global_offset() requires MPI.");
   return 0;
 }
 //-----------------------------------------------------------------------------

@@ -59,7 +59,7 @@ int main()
   // Everywhere on external surface
   class DirichletBoundary: public SubDomain
   {
-    bool inside(const double* x, bool on_boundary) const
+    bool inside(const Array<double>& x, bool on_boundary) const
     {
       return on_boundary;
     }

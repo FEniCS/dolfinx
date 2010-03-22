@@ -5,9 +5,10 @@
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Ola Skavhaug, 2008.
 // Modified by Martin Sandve Alnes, 2009.
+// Modified by Johan Hake, 2009-2010.
 //
 // First added:  2006-04-25
-// Last changed: 2010-02-08
+// Last changed: 2010-03-07
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -21,9 +22,10 @@
 
 namespace dolfin
 {
+  template<class T> class Array;
+  class XMLVector;
 
   /// This class defines a common interface for vectors.
-  class XMLVector;
 
   class GenericVector : public GenericTensor
   {
@@ -72,7 +74,7 @@ namespace dolfin
     virtual void zero() = 0;
 
     /// Finalize assembly of tensor
-    virtual void apply() = 0;
+    virtual void apply(std::string mode) = 0;
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const = 0;
@@ -102,16 +104,16 @@ namespace dolfin
     virtual void add(const double* block, uint m, const uint* rows) = 0;
 
     /// Get all values on local process
-    virtual void get_local(double* values) const = 0;
+    virtual void get_local(Array<double>& values) const = 0;
 
     /// Set all values on local process
-    virtual void set_local(const double* values) = 0;
+    virtual void set_local(const Array<double>& values) = 0;
 
     /// Add values to each entry on local process
-    virtual void add_local(const double* values) = 0;
+    virtual void add_local(const Array<double>& values) = 0;
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const = 0;
+    virtual void gather(GenericVector& x, const Array<uint>& indices) const = 0;
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x) = 0;
@@ -131,10 +133,9 @@ namespace dolfin
     /// Return sum of vector
     virtual double sum() const = 0;
 
-    /// Return sum of selected rows in vector. Each process sums its local
-    //// entries. Off process entries are ignored.
-    virtual double sum(const std::vector<uint>& rows) const
-    { error("GenericVector::sum(const std::vector<uint>& rows) not implemented by backend"); return 0.0; }
+    /// Return sum of selected rows in vector. Repeated entries only summed once.
+    virtual double sum(const Array<uint>& rows) const
+    { error("GenericVector::sum(const Array<uint>& rows) not implemented by backend"); return 0.0; }
 
     /// Multiply vector by given number
     virtual const GenericVector& operator*= (double a) = 0;
@@ -163,9 +164,10 @@ namespace dolfin
       // FIXME: This could be more efficient by acting on the underling vector
       //        data
       std::vector<double> values(size());
-      get_local(&values[0]);
+      Array<double> _values(size(), &values[0]);
+      get_local(_values);
       std::for_each(values.begin(), values.end(), function);
-      set_local(&values[0]);
+      set_local(_values);
     }
 
     /// Apply lambda function
@@ -175,11 +177,13 @@ namespace dolfin
       //        data
       assert(x.size() == this->size());
       std::vector<double> values(size());
+      Array<double> _values(size(), values);
       std::vector<double> x_values(size());
-      this->get_local(&values[0]);
-      x.get_local(&x_values[0]);
+      Array<double> _x_values(size(), x_values);
+      this->get_local(_values);
+      x.get_local(_x_values);
       std::transform(x_values.begin(), x_values.end(), values.begin(), function);
-      this->set_local(&values[0]);
+      this->set_local(_values);
     }
 
     /// Return pointer to underlying data (const version)

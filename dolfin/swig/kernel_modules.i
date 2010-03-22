@@ -112,8 +112,6 @@
 %include "dolfin/mesh/MeshData.h"
 %include "dolfin/mesh/MeshConnectivity.h"
 %include "dolfin/mesh/MeshEditor.h"
-%include "dolfin/mesh/IntersectionOperator.h"
-%include "dolfin/mesh/PrimitiveIntersector.h"
 %include "dolfin/mesh/DynamicMeshEditor.h"
 %include "dolfin/mesh/MeshFunction.h"
 %include "dolfin/mesh/Mesh.h"

@@ -25,7 +25,17 @@
 // Modifications of the Array interface
 //-----------------------------------------------------------------------------
 %define ARRAY_EXTENSIONS(TYPE, TYPENAME, NUMPYTYPE)
+
+// Construct value wrapper for dolfin::Array<TYPE>
+// Valuewrapper is used so a return by value Array does not make an extra copy
+// in any typemaps
+%feature("valuewrapper") dolfin::Array<TYPE>;
+
 %ignore dolfin::Array<TYPE>::Array(uint N, boost::shared_array<TYPE> x);
+
+// Cannot construct an Array from another Array. 
+// Use NumPy Array instead
+%ignore dolfin::Array<TYPE>::Array(const Array& other);
  
 %template(TYPENAME ## Array) dolfin::Array<TYPE>;
 
@@ -51,6 +61,7 @@ CONST_ARRAY_IGNORES(double)
 ARRAY_EXTENSIONS(double, Double, NPY_DOUBLE)
 ARRAY_EXTENSIONS(const double, ConstDouble, NPY_DOUBLE)
 ARRAY_EXTENSIONS(unsigned int, UInt, NPY_UINT)
+ARRAY_EXTENSIONS(int, Int, NPY_INT)
 
 //-----------------------------------------------------------------------------
 // Add pretty print for Variables

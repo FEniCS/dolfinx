@@ -40,13 +40,11 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix()
 {
-  // TODO: call Epetra_Init or something?
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(uint M, uint N)
 {
-  // TODO: call Epetra_Init or something?
-  // Create Epetra matrix
   resize(M, N);
 }
 //-----------------------------------------------------------------------------
@@ -58,13 +56,13 @@ EpetraMatrix::EpetraMatrix(const EpetraMatrix& A)
 //-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A) : A(A)
 {
-  // TODO: call Epetra_Init or something?
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph) :
-    A(new Epetra_FECrsMatrix(Copy, graph))
+EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph)
+    : A(new Epetra_FECrsMatrix(Copy, graph))
 {
-  // TODO: call Epetra_Init or something?
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 EpetraMatrix::~EpetraMatrix()
@@ -145,13 +143,13 @@ dolfin::uint EpetraMatrix::size(uint dim) const
 void EpetraMatrix::get(double* block, uint m, const uint* rows,
 		                   uint n, const uint* cols) const
 {
-  error("EpetraMatrix::get needs to be fixed.");
+  not_working_in_parallel("EpetraMatrix::get");
 
   assert(A);
 
   int num_entities = 0;
-  int * indices;
-  double * values;
+  int* indices;
+  double* values;
 
   // For each row in rows
   for(uint i = 0; i < m; ++i)
@@ -160,14 +158,14 @@ void EpetraMatrix::get(double* block, uint m, const uint* rows,
     if (A->IndicesAreLocal())
     {
       int err = A->ExtractMyRowView(rows[i], num_entities, values, indices);
-      if (err!= 0) {
+      if (err != 0) {
         error("EpetraMatrix::get: Did not manage to perform Epetra_CrsMatrix::ExtractMyRowView.");
       }
     }
     else
     {
       int err = A->ExtractGlobalRowView(rows[i], num_entities, values, indices);
-      if (err!= 0)
+      if (err != 0)
         error("EpetraMatrix::get: Did not manage to perform Epetra_CRSMatrix::ExtractGlobalRowView.");
     }
 
@@ -197,7 +195,7 @@ void EpetraMatrix::set(const double* block,
   assert(A);
   int err = A->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows),
                                    n, reinterpret_cast<const int*>(cols), block);
-  if (err!= 0)
+  if (err != 0)
     error("EpetraMatrix::set: Did not manage to perform Epetra_CrsMatrix::ReplaceGlobalValues.");
 }
 //-----------------------------------------------------------------------------
@@ -245,22 +243,28 @@ void EpetraMatrix::zero()
 {
   assert(A);
   int err = A->PutScalar(0.0);
-  if (err!= 0)
+  if (err != 0)
     error("EpetraMatrix::zero: Did not manage to perform Epetra_CrsMatrix::PutScalar.");
 }
 //-----------------------------------------------------------------------------
-void EpetraMatrix::apply()
+void EpetraMatrix::apply(std::string mode)
 {
   assert(A);
-  int err = A->GlobalAssemble();
-  if (err!= 0)
+  int err = 0;
+  if (mode == "add")
+    err = A->GlobalAssemble(Add);
+  else if (mode == "insert")
+    err = A->GlobalAssemble(Insert);
+  else
+    error("Unknown apply mode in EpetraMatrix::apply.");
+
+  if (err != 0)
     error("EpetraMatrix::apply: Did not manage to perform Epetra_CrsMatrix::GlobalAssemble.");
 }
 //-----------------------------------------------------------------------------
 std::string EpetraMatrix::str(bool verbose) const
 {
   assert(A);
-
   std::stringstream s;
   if (verbose)
   {
@@ -292,14 +296,10 @@ void EpetraMatrix::ident(uint m, const uint* rows)
     int out_num = 0;
     graph.ExtractGlobalRowCopy(row, num_nz, out_num, &indices[0]);
 
-    //cout << "Testing graph " << row << "   " << out_num << endl;
-    //for (int j = 0; j < num_nz1; ++j)
-    //  cout << "  "  << j << "  " << indices[j] << endl;
-
     // Zero row
     std::vector<double> block(num_nz);
     int err = A->ReplaceGlobalValues(row, num_nz, &block[0], &indices[0]);
-    if (err!= 0)
+    if (err != 0)
       error("EpetraMatrix::ident: Did not manage to perform Epetra_CrsMatrix::ReplaceGlobalValues.");
 
     // Place one on the diagonal
@@ -314,7 +314,6 @@ void EpetraMatrix::zero(uint m, const uint* rows)
   //        obejcts inside the loop
 
   assert(A);
-
   const Epetra_CrsGraph& graph = A->Graph();
   for (uint i = 0; i < m; ++i)
   {
@@ -327,7 +326,7 @@ void EpetraMatrix::zero(uint m, const uint* rows)
 
     std::vector<double> block(num_nz);
     int err = A->ReplaceGlobalValues(row, num_nz, &block[0], &indices[0]);
-    if (err!= 0)
+    if (err != 0)
       error("EpetraMatrix::zero: Did not manage to perform Epetra_CrsMatrix::ReplaceGlobalValues.");
   }
 }
@@ -335,7 +334,6 @@ void EpetraMatrix::zero(uint m, const uint* rows)
 void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 {
   assert(A);
-
   const EpetraVector* x = dynamic_cast<const EpetraVector*>(x_.instance());
   if (!x)
     error("EpetraMatrix::mult: The vector x should be of type EpetraVector.");
@@ -350,15 +348,13 @@ void EpetraMatrix::mult(const GenericVector& x_, GenericVector& Ax_) const
   Ax->resize(size(0));
 
   int err = A->Multiply(false, *(x->vec()), *(Ax->vec()));
-  if (err!= 0)
+  if (err != 0)
     error("EpetraMatrix::mult: Did not manage to perform Epetra_CRSMatrix::Multiply.");
-
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 {
   assert(A);
-
   const EpetraVector* x = dynamic_cast<const EpetraVector*>(x_.instance());
   if (!x)
     error("EpetraMatrix::transpmult: The vector x should be of type EpetraVector.");
@@ -373,37 +369,35 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
   Ax->resize(size(1));
 
   int err = A->Multiply(true, *(x->vec()), *(Ax->vec()));
-  if (err!= 0)
+  if (err != 0)
     error("EpetraMatrix::transpmult: Did not manage to perform Epetra_CRSMatrix::Multiply.");
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::getrow(uint row, std::vector<uint>& columns,
                           std::vector<double>& values) const
 {
-  error("EpetraMatrix::getrow needs to be fixed.");
+  not_working_in_parallel("EpetraMatrix::getrow");
 
   assert(A);
 
   // Temporary variables
-  int *indices;
+  int* indices;
   double* vals;
-  int* num_entries = new int;
+  int num_entries;
 
   // Extract data from Epetra matrix
-  int err = A->ExtractMyRowView(row, *num_entries, vals, indices);
-  if (err!= 0)
+  int err = A->ExtractMyRowView(row, num_entries, vals, indices);
+  if (err != 0)
     error("EpetraMatrix::getrow: Did not manage to perform Epetra_CrsMatrix::ExtractMyRowView.");
 
   // Put data in columns and values
-  columns.clear();
-  values.clear();
-  for (int i=0; i< *num_entries; i++)
+  columns.resize(num_entries);
+  values.resize(num_entries);
+  for (int i = 0; i < num_entries; i++)
   {
-    columns.push_back(indices[i]);
-    values.push_back(vals[i]);
+    columns[i] = indices[i];
+    values[i]  = vals[i];
   }
-
-  delete num_entries;
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::setrow(uint row, const std::vector<uint>& columns,
@@ -433,7 +427,7 @@ const EpetraMatrix& EpetraMatrix::operator*= (double a)
 {
   assert(A);
   int err = A->Scale(a);
-  if (err!=0)
+  if (err !=0)
     error("EpetraMatrix::operator*=: Did not manage to perform Epetra_CrsMatrix::Scale.");
   return *this;
 }
@@ -442,7 +436,7 @@ const EpetraMatrix& EpetraMatrix::operator/= (double a)
 {
   assert(A);
   int err = A->Scale(1.0/a);
-  if (err!=0)
+  if (err !=0)
     error("EpetraMatrix::operator/=: Did not manage to perform Epetra_CrsMatrix::Scale.");
   return *this;
 }
@@ -460,5 +454,4 @@ const EpetraMatrix& EpetraMatrix::operator= (const EpetraMatrix& A)
   return *this;
 }
 //-----------------------------------------------------------------------------
-
 #endif

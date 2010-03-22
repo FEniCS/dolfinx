@@ -8,6 +8,7 @@
 // First added:  2008-06-18
 // Last changed: 2009-11-09
 
+#include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
@@ -83,7 +84,8 @@ void BoundaryCondition::check_arguments(GenericMatrix* A,
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)
-  : n(0), w(0), cell_dofs(0), facet_dofs(0)
+  : n(0), w(0), cell_dofs(0), facet_dofs(0), 
+    array_coordinates(V.dofmap().max_local_dimension())
 {
   // Create array for coefficients
   n = V.dofmap().max_local_dimension();
@@ -109,7 +111,10 @@ BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)
     coordinates[i] = new double[V.mesh().geometry().dim()];
     for (uint j = 0; j < V.mesh().geometry().dim(); j++)
       coordinates[i][j] = 0.0;
+
+    array_coordinates[i].update(V.mesh().geometry().dim(), coordinates[i]);
   }
+
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::~LocalData()

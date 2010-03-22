@@ -10,12 +10,14 @@
 #ifndef __BOUNDARY_CONDITION_H
 #define __BOUNDARY_CONDITION_H
 
+#include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 
 namespace dolfin
 {
 
+  template<class T> class Array;
   class GenericMatrix;
   class GenericVector;
   class FunctionSpace;
@@ -91,6 +93,8 @@ namespace dolfin
 
       // Coordinates for dofs
       double** coordinates;
+
+      std::vector< Array<double> > array_coordinates;
 
     };
 

@@ -136,7 +136,7 @@ void XMLMeshData::write(const MeshData& data, std::ostream& outfile, uint indent
 
       // Write array
       ++indent;
-      XMLArray::write(*(it->second), outfile, indent.level());
+      XMLArray::write(*(it->second), 0, outfile, indent.level());
       --indent;
 
       // Write data entry footer

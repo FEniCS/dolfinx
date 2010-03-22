@@ -16,7 +16,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BlockMatrix::BlockMatrix(uint n_, uint m_, bool owner_): owner(owner_), n(n_), m(m_)
+BlockMatrix::BlockMatrix(uint n_, uint m_, bool owner_)
+    : owner(owner_), n(n_), m(m_)
 {
   matrices = new Matrix*[n*m];
   if (owner)
@@ -68,11 +69,11 @@ void BlockMatrix::zero()
       this->get(i,j).zero();
 }
 //-----------------------------------------------------------------------------
-void BlockMatrix::apply()
+void BlockMatrix::apply(std::string mode)
 {
   for(uint i = 0; i < n; i++)
     for(uint j = 0; j < n; j++)
-      this->get(i,j).apply();
+      this->get(i,j).apply(mode);
 }
 //-----------------------------------------------------------------------------
 std::string BlockMatrix::str(bool verbose) const
@@ -82,7 +83,6 @@ std::string BlockMatrix::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-
     for (uint i = 0; i < n; i++)
     {
       for (uint j = 0; i < m; j++)
@@ -93,20 +93,18 @@ std::string BlockMatrix::str(bool verbose) const
     }
   }
   else
-  {
     s << "<BlockMatrix containing " << n << " x " << m << " blocks>";
-  }
 
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void BlockMatrix::mult(const BlockVector& x, BlockVector& y, bool transposed) const
+void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
+                       bool transposed) const
 {
   if (transposed)
     error("BlockMatrix::mult: transposed not implemented");
   DefaultFactory factory;
-  GenericVector* vec;
-  vec = factory.create_vector();
+  GenericVector* vec = factory.create_vector();
   for(uint i = 0; i < n; i++)
   {
     y.get(i).resize(this->get(i, 0).size(0));
@@ -134,8 +132,8 @@ SubMatrix BlockMatrix::operator()(uint i, uint j)
 //-----------------------------------------------------------------------------
 // SubMatrix
 //-----------------------------------------------------------------------------
-SubMatrix::SubMatrix(uint col_, uint row_, BlockMatrix& bm_)
-  : row(row_), col(col_), bm(bm_)
+SubMatrix::SubMatrix(uint col, uint row, BlockMatrix& bm)
+  : row(row), col(col), bm(bm)
 {
   // Do nothing
 }

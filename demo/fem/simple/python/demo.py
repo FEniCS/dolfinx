@@ -25,8 +25,8 @@ A = assemble(dot(grad(v), grad(u))*dx)
 M = assemble(v*u*dx)
 
 # Create reference matrices and set entries
-A0 = Matrix(4, 4)
-M0 = Matrix(4, 4)
+A0 = uBLASDenseMatrix(4, 4)
+M0 = uBLASDenseMatrix(4, 4)
 pos = array([0, 1, 2, 3], dtype='I')
 A0.set(array([[1.0/2.0, -1.0/6.0, -1.0/6.0, -1.0/6.0],
               [-1.0/6.0, 1.0/6.0, 0.0, 0.0],
@@ -37,23 +37,23 @@ M0.set(array([[1.0/60.0, 1.0/120.0, 1.0/120.0, 1.0/120.0],
               [1.0/120.0, 1.0/60.0, 1.0/120.0, 1.0/120.0],
               [1.0/120.0, 1.0/120.0, 1.0/60.0, 1.0/120.0],
               [1.0/120.0, 1.0/120.0, 1.0/120.0, 1.0/60.0]]), pos, pos)
-A0.apply()
-M0.apply()
+A0.apply("insert")
+M0.apply("insert")
 
 # Display matrices
 print ""
 print "Assembled stiffness matrix:"
-A.disp()
+info(A, True)
 print ""
 
 print "Reference stiffness matrix:"
-A0.disp()
+info(A0, True)
 print ""
 
 print "Assembled mass matrix:"
-M.disp()
+info(M, True)
 print ""
 
 print "Reference mass matrix:"
-M0.disp()
+info(M0, True)
 print ""

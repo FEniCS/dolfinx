@@ -93,7 +93,11 @@ namespace dolfin
     { return _x[n]; }
 
     /// Return the vector that stores the data in the Set
-    const std::vector<T> set() const
+    const std::vector<T>& set() const
+    { return _x; }
+
+    /// Return the vector that stores the data in the Set
+    std::vector<T>& set()
     { return _x; }
 
   private:

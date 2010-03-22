@@ -9,6 +9,7 @@
 #ifdef HAS_MTL4
 
 #include <cmath>
+#include <dolfin/common/Array.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
 #include "MTL4Vector.h"
@@ -63,7 +64,7 @@ void MTL4Vector::zero()
   x = 0.0;
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::apply()
+void MTL4Vector::apply(std::string mode)
 {
   // Do nothing
 }
@@ -80,8 +81,6 @@ std::string MTL4Vector::str(bool verbose) const
     for (uint i = 0; i < size(); ++i)
     {
       std::stringstream entry;
-      //entry << std::setiosflags(std::ios::scientific);
-      //entry << std::setprecision(precision);
       entry << x[i] << " ";
       s << entry.str().c_str() << std::endl;
     }
@@ -95,20 +94,23 @@ std::string MTL4Vector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::get_local(double* values) const
+void MTL4Vector::get_local(Array<double>& values) const
 {
+  values.resize(size());
   for (uint i = 0; i < size(); i++)
     values[i] = x[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::set_local(const double* values)
+void MTL4Vector::set_local(const Array<double>& values)
 {
+  assert(values.size() == size());
   for (uint i = 0; i < size(); i++)
     x[i] = values[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::add_local(const double* values)
+void MTL4Vector::add_local(const Array<double>& values)
 {
+  assert(values.size() == size());
   for (uint i = 0; i < size(); i++)
     x(i) += values[i];
 }
@@ -190,10 +192,10 @@ const MTL4Vector& MTL4Vector::operator*= (const GenericVector& y)
 {
   if ( size() != y.size() )
     error("Vectors must be of same size.");
-  dolfin_not_implemented();
-  //mtl4_vector vv =  y.down_cast<MTL4Vector>().vec();
-  //
-  //x = mtl::operator*(x, vv);
+
+  const MTL4Vector& _y = y.down_cast<MTL4Vector>();
+  for (uint i = 0; i < size(); ++i)
+    x[i] *= _y.vec()[i];
   return *this;
 }
 //-----------------------------------------------------------------------------

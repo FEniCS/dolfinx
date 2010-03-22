@@ -6,6 +6,7 @@
 
 #ifdef HAS_TRILINOS
 
+#include <dolfin/main/MPI.h>
 #include <boost/assign/list_of.hpp>
 #include <AztecOO.h>
 #include <Ifpack.h>
@@ -25,13 +26,14 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 // Available preconditioners
 const std::map<std::string, int> TrilinosPreconditioner::methods
-  = boost::assign::map_list_of("default", AZ_ilu)
-                              ("ilu",     AZ_ilu)
-                              ("jacobi",  AZ_Jacobi)
-                              ("none",    AZ_none)
-                              ("sor",     AZ_sym_GS)
-                              ("icc",     AZ_icc)
-                              ("amg_ml",  -1);
+  = boost::assign::map_list_of("default",   AZ_ilu)
+                              ("ilu",       AZ_ilu)
+                              ("jacobi",    AZ_Jacobi)
+                              ("none",      AZ_none)
+                              ("sor",       AZ_sym_GS)
+                              ("icc",       AZ_icc)
+                              ("amg_hypre", -1)
+                              ("amg_ml",    -1);
 //-----------------------------------------------------------------------------
 Parameters TrilinosPreconditioner::default_parameters()
 {
@@ -98,6 +100,11 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver)
     _solver.SetPrecOperator(ifpack_preconditioner.get());
 
     //std::cout << *ifpack_preconditioner;
+  }
+  else if (type == "amg_ml")
+  {
+    info("Hypre AMG not available for Trilinos. Using ML instead.");
+    set_ml(_solver);
   }
   else if (type == "amg_ml")
     set_ml(_solver);

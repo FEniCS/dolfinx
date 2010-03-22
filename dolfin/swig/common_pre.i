@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-22
-// Last changed: 2009-12-10
+// Last changed: 2010-03-07
 
 //=============================================================================
 // SWIG directives for the DOLFIN real kernel module (pre)
@@ -88,3 +88,4 @@ namespace dolfin
 ARRAY_CONSTRUCTOR_TYPEMAP(double, DOUBLE, NPY_DOUBLE, double, d)
 // We nust use unsigned int here and not dolfin::uint, don't know why
 ARRAY_CONSTRUCTOR_TYPEMAP(unsigned int, INT32, NPY_UINT, uint, I)
+ARRAY_CONSTRUCTOR_TYPEMAP(int, INT32, NPY_INT, int, i)

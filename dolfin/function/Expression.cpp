@@ -82,11 +82,9 @@ void Expression::restrict(double* w,
   restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet);
 }
 //-----------------------------------------------------------------------------
-void Expression::compute_vertex_values(double* vertex_values,
+void Expression::compute_vertex_values(Array<double>& vertex_values,
                                        const Mesh& mesh) const
 {
-  assert(vertex_values);
-
   // Local data for vertex values
   const uint size = value_size();
   Array<double> local_vertex_values(size);

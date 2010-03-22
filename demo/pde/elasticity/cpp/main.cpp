@@ -36,7 +36,7 @@ int main()
   // Sub domain for clamp at left end
   class Left : public SubDomain
   {
-    bool inside(const double* x, bool on_boundary) const
+    bool inside(const Array<double>& x, bool on_boundary) const
     {
       return x[0] < 0.5 && on_boundary;
     }
@@ -73,7 +73,7 @@ int main()
   // Sub domain for rotation at right end
   class Right : public SubDomain
   {
-    bool inside(const double* x, bool on_boundary) const
+    bool inside(const Array<double>& x, bool on_boundary) const
     {
       return x[0] > 0.9 && on_boundary;
     }

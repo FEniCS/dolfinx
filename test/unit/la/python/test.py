@@ -17,13 +17,13 @@ class AbstractBaseTest(object):
         if type(self).count == 1:
             # Only print this message once per class instance
             print "\nRunning:",type(self).__name__
-        
+
     def assemble_matrix(self, use_backend=False):
         " Assemble a simple matrix"
         mesh = UnitSquare(3,3)
 
         V = FunctionSpace(mesh,"Lagrange", 1)
-        
+
         u = TrialFunction(V)
         v = TestFunction(V)
 
@@ -35,7 +35,7 @@ class AbstractBaseTest(object):
             return assemble(dot(grad(u),grad(v))*dx, backend=backend)
         else:
             return assemble(dot(grad(u),grad(v))*dx)
-    
+
     def get_Vector(self):
         from numpy import random, linspace
         vec = Vector(16)
@@ -65,37 +65,37 @@ class AbstractBaseTest(object):
         B *= 0.5
         A *= 2
         self.assertAlmostEqual(A[5,5],4*B[5,5])
-        
+
         # Test __idiv__ operator
         B /= 2
         A /= 0.5
         self.assertAlmostEqual(A[5,5],16*B[5,5])
-        
+
         # Test __iadd__ operator
         A += B
         self.assertAlmostEqual(A[5,5],17)
-        
+
         # Test __isub__ operator
         A -= B
         self.assertAlmostEqual(A[5,5],16)
-        
+
         # Test __mul__ operator
         C = 16*B
         self.assertAlmostEqual(A[5,5],C[5,5])
-        
+
         # Test __mul__ and __add__ operator
         D = (C+B)*5
         self.assertAlmostEqual(D[5,5],85)
-        
+
         # Test __div__ and __sub__ operator
         F = (A-B)/4
         self.assertAlmostEqual(F[5,5],3.75)
-        
+
         # Test axpy
         A.axpy(100,B,True)
         self.assertAlmostEqual(A[5,5],116)
-        
-        # Test to NumPy array 
+
+        # Test to NumPy array
         A2 = A.array()
         self.assertTrue(isinstance(A2,ndarray))
         self.assertEqual(A2.shape,(16,16))
@@ -110,14 +110,14 @@ class AbstractBaseTest(object):
         B = A[0,:]
         self.assertEqual(B.size(),A.size(1))
         self.assertEqual(B[1],A[0,1])
-        
+
         if self.backend == "Epetra":
             print "Testing of Matrix slicing is turned of for the Epetra backend:"
             print "because resize() is not implemented."
             return
-        
+
         inds1 = [0,4,5,10]
-        
+
         C = A[inds1,inds1]
         self.assertEqual(C.size(0),len(inds1))
         self.assertEqual(C.size(1),len(inds1))
@@ -126,7 +126,7 @@ class AbstractBaseTest(object):
         inds2 = array(inds1)
         one_vec = Vector(len(inds1))
         one_vec[:] = 1.
-        
+
         D = A[inds1,inds2]
         self.assertAlmostEqual(((C-D)*one_vec).sum(),0.0)
 
@@ -136,7 +136,7 @@ class AbstractBaseTest(object):
         for i in xrange(len(inds1)):
             for j in xrange(A.size(1)):
                 self.assertAlmostEqual(E[i,j],A[inds1[i],j])
-        
+
     def test_matrix_with_backend(self):
         self.run_matrix_test(True)
 
@@ -145,8 +145,8 @@ class AbstractBaseTest(object):
 
     def test_vector(self):
         from numpy import ndarray, linspace, array, fromiter
-        from numpy import int,int0,int16,int32,int64 
-        from numpy import uint,uint0,uint16,uint32,uint64 
+        from numpy import int,int0,int16,int32,int64
+        from numpy import uint,uint0,uint16,uint32,uint64
         org = self.get_Vector()
 
         # Test set and access with different integers
@@ -157,35 +157,35 @@ class AbstractBaseTest(object):
         A = org.copy()
         B = down_cast(org.copy())
         self.assertAlmostEqual(A[5],B[5])
-        
+
         B *= 0.5
         A *= 2
         self.assertAlmostEqual(A[5],4*B[5])
-        
+
         B /= 2
         A /= 0.5
         self.assertAlmostEqual(A[5],16*B[5])
-        
+
         val1 = A[5]
         val2 = B[5]
         A += B
         self.assertAlmostEqual(A[5],val1+val2)
-        
+
         A -= B
         self.assertAlmostEqual(A[5],val1)
-        
+
         C = 16*B
         self.assertAlmostEqual(A[5],C[5])
-        
+
         D = (C+B)*5
         self.assertAlmostEqual(D[5],(val1+val2)*5)
-        
+
         F = (A-B)/4
         self.assertAlmostEqual(F[5],(val1-val2)/4)
-        
+
         A.axpy(100,B)
         self.assertAlmostEqual(A[5],val1+val2*100)
-        
+
         A2 = A.array()
         self.assertTrue(isinstance(A2,ndarray))
         self.assertEqual(A2.shape,(16,))
@@ -196,7 +196,7 @@ class AbstractBaseTest(object):
         A[1:16:2] = B[1:16:2]
         A2[1:16:2] = B2[1:16:2]
         self.assertAlmostEqual(A2[1],A[1])
-        
+
         ind = [1,3,6,9,15]
         ind1 = array([1,3,6,9,15])
 
@@ -205,11 +205,11 @@ class AbstractBaseTest(object):
         ind3 = list(array([1,3,6,9,15],'I'))
         A[ind2] = ind2
         A2[ind3] = ind2
-        
+
         G  = A[ind]
         G1 = A[ind1]
         G2 = A2[ind]
-        
+
         G3 = A[A>1]
         G4 = A2[A2>1]
 
@@ -239,78 +239,78 @@ class AbstractBaseTest(object):
 
         A[:] = A2
         self.assertTrue((A==A2).all())
-        
+
         H  = A.copy()
         H._assign(0.0)
         H[ind] = G
-        
+
         C[:] = 2
         D._assign(2)
         self.assertAlmostEqual(C[0],2)
         self.assertAlmostEqual(C[-1],2)
         self.assertAlmostEqual(C.sum(),D.sum())
-        
+
         C[ind] = 3
         self.assertAlmostEqual(C[ind].sum(),3*len(ind))
-        
+
         def wrong_index(ind):
             A[ind]
-        
+
         self.assertRaises(RuntimeError,wrong_index,(-17))
         self.assertRaises(RuntimeError,wrong_index,(16))
         self.assertRaises(TypeError,wrong_index,("jada"))
         self.assertRaises(TypeError,wrong_index,(.5))
         self.assertRaises(RuntimeError,wrong_index,([-17,2]))
         self.assertRaises(RuntimeError,wrong_index,([16,2]))
-        
+
         def wrong_dim(ind0,ind1):
             A[ind0] = B[ind1]
-        
+
         self.assertRaises(RuntimeError,wrong_dim,[0,2],[0,2,4])
         self.assertRaises(RuntimeError,wrong_dim,[0,2],slice(0,4,1))
         self.assertRaises(TypeError,wrong_dim,0,slice(0,4,1))
 
 
-        if self.backend == "MTL4":
-            print "Testing of pointwise vector multiplication is turned of "
-            print "for the MTL4 backend, because operator*=(const GenericVector)"
-            print "is not implemented"
-            return
-        
+        #if self.backend == "MTL4":
+        #    print "Testing of pointwise vector multiplication is turned of "
+        #    print "for the MTL4 backend, because operator*=(const GenericVector)"
+        #    print "is not implemented"
+        #    return
+
         A*=B
         A2*=B2
         I = A*B
         I2 = A2*B2
         self.assertAlmostEqual(A.sum(),A2.sum())
         self.assertAlmostEqual(I.sum(),I2.sum())
-            
+
 
     def test_matrix_vector(self):
         from numpy import dot, absolute
         v = self.get_Vector()
         A = self.assemble_matrix()
-        
+
         u = A*v
         self.assertTrue(isinstance(u,type(v)))
         self.assertEqual(len(u),len(v))
-        
+
         u2 = 2*u - A*v
         self.assertAlmostEqual(u2[4],u[4])
-        
+
         u3 = 2*u + -1.0*(A*v)
         self.assertAlmostEqual(u3[4],u[4])
-        
+
         v_numpy = v.array()
         A_numpy = A.array()
-        
+
         u_numpy = dot(A_numpy,v_numpy)
         u_numpy2 = A*v_numpy
-        
+
         self.assertTrue(absolute(u.array()-u_numpy).sum() < DOLFIN_EPS*len(v))
         self.assertTrue(absolute(u_numpy2-u_numpy).sum() < DOLFIN_EPS*len(v))
-        
-        
-        
+
+
+
 
 # A DataTester class that test the acces of the raw data through pointers
 # This is only available for uBLAS and MTL4 backends
@@ -361,7 +361,7 @@ class DataNotWorkingTester(object):
         def no_attribute():
             v.data()
         self.assertRaises(AttributeError,no_attribute)
-        
+
 
 class uBLASSparseTester(AbstractBaseTest,DataTester,unittest.TestCase):
     backend     = "uBLAS"

@@ -25,6 +25,8 @@
 namespace dolfin
 {
 
+  template<class T> class Array;
+
   /// This class provides a simple vector class based on PETSc.
   /// It is a simple wrapper for a PETSc vector pointer (Vec)
   /// implementing the GenericVector interface.
@@ -61,7 +63,7 @@ namespace dolfin
     virtual void zero();
 
     /// Finalize assembly of tensor
-    virtual void apply();
+    virtual void apply(std::string mode);
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -90,13 +92,13 @@ namespace dolfin
     virtual void add(const double* block, uint m, const uint* rows);
 
     /// Get all values on local process
-    virtual void get_local(double* values) const;
+    virtual void get_local(Array<double>& values) const;
 
     /// Set all values on local process
-    virtual void set_local(const double* values);
+    virtual void set_local(const Array<double>& values);
 
     /// Add values to each entry on local process
-    virtual void add_local(const double* values);
+    virtual void add_local(const Array<double>& values);
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);
@@ -115,6 +117,9 @@ namespace dolfin
 
     /// Return sum of values of vector
     virtual double sum() const;
+
+    /// Return sum of selected rows in vector
+    virtual double sum(const Array<uint>& rows) const;
 
     /// Multiply vector by given number
     virtual const PETScVector& operator*= (double a);
@@ -154,7 +159,7 @@ namespace dolfin
     /// 0, then a local index array is created such that the order of
     /// the values in the return array is the same as the order in
     /// global_indices.
-    virtual void gather(GenericVector& y, const std::vector<uint>& indices) const;
+    virtual void gather(GenericVector& y, const Array<uint>& indices) const;
 
     friend class PETScMatrix;
 

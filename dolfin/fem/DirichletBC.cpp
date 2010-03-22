@@ -11,8 +11,9 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/assign/list_of.hpp>
 
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/Array.h>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/log/log.h>
@@ -207,7 +208,7 @@ void DirichletBC::zero(GenericMatrix& A) const
   A.zero(boundary_values.size(), dofs);
 
   // Finalise changes to A
-  A.apply();
+  A.apply("insert");
 
   // Clear temporary arrays
   delete [] dofs;
@@ -349,23 +350,19 @@ void DirichletBC::apply(GenericMatrix* A,
   if (b)
   {
     b->set(&values[0], size, &dofs[0]);
-    b->apply();
+    b->apply("insert");
   }
 
   // Modify linear system (A_ii = 1) and apply changes
   if (A)
   {
     A->ident(size, &dofs[0]);
-    A->apply();
+    A->apply("insert");
   }
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::check() const
 {
-  // Check that function is in function space
-  //if (!g->in(*_function_space))
-  //  error("Unable to create boundary condition, boundary value function is not in trial space.");
-
   // Check that value shape of boundary value
   check_equal(g->value_rank(), _function_space->element().value_rank(),
               "create boundary condition", "value rank");
@@ -657,7 +654,7 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
     for (uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
     {
       // Check if the coordinates are part of the sub domain
-      if ( !user_sub_domain->inside(data.coordinates[i], false) )
+      if ( !user_sub_domain->inside(data.array_coordinates[i], false) )
         continue;
 
       if (!interpolated)

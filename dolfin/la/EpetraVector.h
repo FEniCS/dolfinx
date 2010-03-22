@@ -24,6 +24,7 @@ class Epetra_Map;
 namespace dolfin
 {
 
+  template <class T> class Array;
   class GenericVector;
 
   /// This class provides a simple vector class based on Epetra.
@@ -65,7 +66,7 @@ namespace dolfin
     virtual void zero();
 
     /// Finalize assembly of tensor
-    virtual void apply();
+    virtual void apply(std::string mode);
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -93,16 +94,16 @@ namespace dolfin
     virtual void get_local(double* block, uint m, const uint* rows) const;
 
     /// Get all values on local process
-    virtual void get_local(double* values) const;
+    virtual void get_local(Array<double>& values) const;
 
     /// Set all values on local process
-    virtual void set_local(const double* values);
+    virtual void set_local(const Array<double>& values);
 
     /// Add all values to each entry on local process
-    virtual void add_local(const double* values);
+    virtual void add_local(const Array<double>& values);
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const std::vector<uint>& indices) const;
+    virtual void gather(GenericVector& x, const Array<uint>& indices) const;
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);
@@ -123,7 +124,7 @@ namespace dolfin
     virtual double sum() const;
 
     /// Return sum of selected rows in vector
-    virtual double sum(const std::vector<uint>& rows) const;
+    virtual double sum(const Array<uint>& rows) const;
 
     /// Multiply vector by given number
     virtual const EpetraVector& operator*= (double a);

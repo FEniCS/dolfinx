@@ -75,11 +75,14 @@ namespace dolfin
     static const std::map<std::string, int> methods;
     static const std::map<std::string, int> pc_methods;
 
+    // Underlying solver
+    boost::shared_ptr<AztecOO> solver;
+
     // Preconditioner
     boost::shared_ptr<TrilinosPreconditioner> preconditioner;
 
-    // Underlying solver
-    boost::shared_ptr<AztecOO> solver;
+    bool preconditioner_set;
+
   };
 
 }

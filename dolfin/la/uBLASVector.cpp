@@ -16,6 +16,7 @@
 #include <dolfin/log/dolfin_log.h>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_expression.hpp>
+#include <dolfin/common/Array.h>
 #include "uBLASVector.h"
 #include "uBLASFactory.h"
 #include "LinearAlgebraFactory.h"
@@ -76,20 +77,23 @@ uBLASVector* uBLASVector::copy() const
   return new uBLASVector(*this);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::get_local(double* values) const
+void uBLASVector::get_local(Array<double>& values) const
 {
+  values.resize(size());
   for (uint i = 0; i < size(); i++)
     values[i] = (*x)(i);
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::set_local(const double* values)
+void uBLASVector::set_local(const Array<double>& values)
 {
+  assert(values.size() == size());
   for (uint i = 0; i < size(); i++)
     (*x)(i) = values[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::add_local(const double* values)
+void uBLASVector::add_local(const Array<double>& values)
 {
+  assert(values.size() == size());
   for (uint i = 0; i < size(); i++)
     (*x)(i) += values[i];
 }
@@ -112,7 +116,7 @@ void uBLASVector::add(const double* block, uint m, const uint* rows)
     (*x)(rows[i]) += block[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::apply()
+void uBLASVector::apply(std::string mode)
 {
   // Do nothing
 }

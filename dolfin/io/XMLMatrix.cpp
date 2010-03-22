@@ -62,7 +62,7 @@ void XMLMatrix::end_element(const xmlChar *name)
 
     if ( xmlStrcasecmp(name,(xmlChar *) "matrix") == 0 )
     {
-      A.apply();
+      A.apply("add");
       state = DONE;
     }
 
