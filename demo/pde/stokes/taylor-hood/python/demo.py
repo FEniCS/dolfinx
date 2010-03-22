@@ -20,7 +20,7 @@ sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz")
 # Define function spaces
 V = VectorFunctionSpace(mesh, "CG", 2)
 Q = FunctionSpace(mesh, "CG", 1)
-W = V + Q
+W = V * Q
 
 # No-slip boundary condition for velocity
 noslip = Constant((0, 0))

@@ -1,3 +1,5 @@
+ - Interface change: operator+ now used to denote enriched function spaces
+ - Interface change: operator+ --> operator* for mixed elements
  - Add option 'allow_extrapolation' useful when interpolating to refined meshes
  - Add SpatialCoordinates demo
  - Add functionality for accessing time series sample times: vector_times(), mesh_times()
