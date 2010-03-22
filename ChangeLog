@@ -1,3 +1,4 @@
+ - Add option 'allow_extrapolation' useful when interpolating to refined meshes
  - Add SpatialCoordinates demo
  - Add functionality for accessing time series sample times: vector_times(), mesh_times()
  - Add functionality for snapping mesh to curved boundaries during refinement

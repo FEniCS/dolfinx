@@ -5,8 +5,7 @@ during mesh refinement as a result of round-off errors.
 
 When interpolating, DOLFIN tries to locate each point in the original
 mesh. If that fails, the closest cell is found and the values
-extrapolated from there. In such cases, a warning is issued and the
-maximum distance to the original mesh is reported.
+extrapolated from there.
 """
 
 __author__ = "Anders Logg (logg@simula.no)"
