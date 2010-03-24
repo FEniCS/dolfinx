@@ -64,9 +64,6 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   assert(b);
   assert(dx);
 
-  // Update linear solver parameter
-  solver->parameters.update(parameters("linear_solver"));
-
   const uint maxiter = parameters["maximum_iterations"];
 
   begin("Starting Newton solve.");
