@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005
-// Last changed: 2009-10-08
+// Last changed: 2010-03-25
 
 #include <dolfin.h>
 #include "Poisson2D_1.h"
@@ -120,7 +120,7 @@ double solve2D(int q, int n)
 
   // Compute maximum norm of error
   double emax = 0.0;
-  double* U = new double[x.size()];
+  Array<double> U(x.size());
   x.get_local(U);
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
@@ -129,7 +129,6 @@ double solve2D(int q, int n)
     const double e = std::abs(U[v->index()] - u);
     emax = std::max(emax, e);
   }
-  delete [] U;
 
   delete a;
   delete L;
@@ -203,7 +202,7 @@ double solve3D(int q, int n)
 
   // Compute maximum norm of error
   double emax = 0.0;
-  double* U = new double[x.size()];
+  Array<double> U(x.size());
   x.get_local(U);
   for (VertexIterator v(mesh); !v.end(); ++v)
   {
@@ -212,7 +211,6 @@ double solve3D(int q, int n)
     const double e = std::abs(U[v->index()] - u);
     emax = std::max(emax, e);
   }
-  delete [] U;
 
   delete a;
   delete L;
