@@ -8,7 +8,7 @@
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2006-07-05
-// Last changed: 2009-09-08
+// Last changed: 2010-03-25
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -534,14 +534,14 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <>
-  inline void uBLASMatrix<ublas_sparse_matrix>::apply(std::string mode)
+  inline void uBLASMatrix<ublas_sparse_matrix>::apply(std::string)
   {
     // Make sure matrix assembly is complete
     A.complete_index1_data();
   }
   //---------------------------------------------------------------------------
   template <class Mat>
-  inline void uBLASMatrix<Mat>::apply(std::string mode)
+  inline void uBLASMatrix<Mat>::apply(std::string)
   {
     // Do nothing
   }

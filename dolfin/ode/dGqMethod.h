@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2009
 //
 // First added:  2005-05-02
-// Last changed: 2009-09-08
+// Last changed: 2010-03-25
 
 #ifndef __DGQ_METHOD_H
 #define __DGQ_METHOD_H
@@ -30,7 +30,7 @@ namespace dolfin
     real ueval(real x0, real values[], real tau) const;
 
     /// Evaluate solution at given node (inline optimized)
-    real ueval(real x0, real values[], uint i) const
+    real ueval(real, real values[], uint i) const
     { return values[i]; }
 
     /// Compute residual at right end-point

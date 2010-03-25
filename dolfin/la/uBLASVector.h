@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2009-09-08
+// Last changed: 2010-03-25
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -99,7 +99,7 @@ namespace dolfin
     virtual void add_local(const Array<double>& values);
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const Array<uint>& indices) const
+    virtual void gather(GenericVector&, const Array<uint>&) const
     { not_working_in_parallel("uBLASVector::gather)"); }
 
     /// Add multiple of given vector (AXPY operation)

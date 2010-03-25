@@ -6,7 +6,7 @@
 // Modified by Ilmar Wilbers, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2009-09-08
+// Last changed: 2010-03-25
 
 #ifndef __STL_MATRIX_H
 #define __STL_MATRIX_H
@@ -37,7 +37,7 @@ namespace dolfin
     { resize(M, N); }
 
     /// Copy constructor
-    explicit STLMatrix(const STLMatrix& A)
+    explicit STLMatrix(const STLMatrix&)
     { error("Not implemented."); }
 
     /// Destructor
@@ -66,7 +66,7 @@ namespace dolfin
     }
 
     /// Finalize assembly of tensor
-    virtual void apply(std::string mode) {}
+    virtual void apply(std::string) {}
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -78,7 +78,7 @@ namespace dolfin
     { dims[0] = M; dims[1] = N; A.resize(M); }
 
     /// Get block of values
-    virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const
+    virtual void get(double*, uint, const uint*, uint, const uint*) const
     { error("Not implemented."); }
 
     /// Set block of values
@@ -105,11 +105,11 @@ namespace dolfin
     }
 
     /// Add multiple of given matrix (AXPY operation)
-    virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
+    virtual void axpy(double, const GenericMatrix&, bool)
     { error("Not implemented."); }
 
     /// Return norm of matrix
-    virtual double norm(std::string norm_type) const
+    virtual double norm(std::string) const
     { error("Not implemented."); return 0.0; }
 
     /// Get non-zero values of given row
@@ -126,35 +126,35 @@ namespace dolfin
     }
 
     /// Set values for given row
-    virtual void setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values)
+    virtual void setrow(uint, const std::vector<uint>&, const std::vector<double>&)
     { error("Not implemented."); }
 
     /// Set given rows to zero
-    virtual void zero(uint m, const uint* rows)
+    virtual void zero(uint, const uint*)
     { error("Not implemented."); }
 
     /// Set given rows to identity matrix
-    virtual void ident(uint m, const uint* rows)
+    virtual void ident(uint, const uint*)
     { error("Not implemented."); }
 
     // Matrix-vector product, y = Ax
-    virtual void mult(const GenericVector& x, GenericVector& y) const
+    virtual void mult(const GenericVector&, GenericVector&) const
     { error("Not implemented."); }
 
     // Matrix-vector product, y = A^T x
-    virtual void transpmult(const GenericVector& x, GenericVector& y) const
+    virtual void transpmult(const GenericVector&, GenericVector&) const
     { error("Not implemented."); }
 
     /// Multiply matrix by given number
-    virtual const STLMatrix& operator*= (double a)
+    virtual const STLMatrix& operator*= (double)
     { error("Not implemented."); return *this; }
 
     /// Divide matrix by given number
-    virtual const STLMatrix& operator/= (double a)
+    virtual const STLMatrix& operator/= (double)
     { error("Not implemented."); return *this; }
 
     /// Assignment operator
-    virtual const GenericMatrix& operator= (const GenericMatrix& A)
+    virtual const GenericMatrix& operator= (const GenericMatrix&)
     { error("Not implemented."); return *this; }
 
     ///--- Specialized matrix functions ---
@@ -163,7 +163,7 @@ namespace dolfin
     virtual LinearAlgebraFactory& factory() const;
 
     /// Resize tensor of given rank and dimensions
-    virtual void resize(uint rank, const uint* dims, bool reset)
+    virtual void resize(uint rank, const uint* dims, bool)
     {
       // Check that the rank is 2
       if (rank != 2)

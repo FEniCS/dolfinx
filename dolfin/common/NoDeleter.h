@@ -4,7 +4,7 @@
 // Modified by Martin Alnes, 2008.
 //
 // First added:  2008-09-11
-// Last changed: 2008-12-04
+// Last changed: 2010-03-25
 
 #ifndef __NO_DELETER_H
 #define __NO_DELETER_H
@@ -20,7 +20,7 @@ namespace dolfin
   class NoDeleter
   {
   public:
-      void operator() (T* p) {}
+    void operator() (T*) {}
   };
 
   /// Helper function to construct shared pointer with NoDeleter with cleaner syntax

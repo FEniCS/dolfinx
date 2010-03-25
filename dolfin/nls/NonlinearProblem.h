@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2005-10-24
-// Last changed: 2010-02-14
+// Last changed: 2010-03-25
 
 #ifndef __NONLINEAR_PROBLEM_H
 #define __NONLINEAR_PROBLEM_H
@@ -31,7 +31,7 @@ namespace dolfin
 
     /// Function called by Newton solver before requesting F or J.
     /// This can be used to compute F and J together
-    virtual void form(GenericMatrix& A, GenericVector& b, const GenericVector& x)
+    virtual void form(GenericMatrix&, GenericVector&, const GenericVector&)
     { /* Do nothing if not supplied by the user */ };
 
     /// Compute F at current point x
