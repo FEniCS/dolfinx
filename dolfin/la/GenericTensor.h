@@ -6,7 +6,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2010-03-25
+// Last changed: 2009-09-08
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
@@ -106,7 +106,7 @@ namespace dolfin
     { return this; }
 
     /// Assignment (must be overloaded by subclass)
-    virtual const GenericTensor& operator= (const GenericTensor&)
+    virtual const GenericTensor& operator= (const GenericTensor& x)
     { error("Assignment operator not implemented by subclass"); return *this; }
 
   };

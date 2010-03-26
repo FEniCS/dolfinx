@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-23
-// Last changed: 2010-03-25
+// Last changed: 2008-05-23
 
 #ifndef __DOMAIN_BOUNDARY_H
 #define __DOMAIN_BOUNDARY_H
@@ -27,7 +27,7 @@ namespace dolfin
     virtual ~DomainBoundary() {}
 
     /// Return true for points on the boundary
-    virtual bool inside(const Array<double>&, bool on_boundary) const { return on_boundary; }
+    virtual bool inside(const Array<double>& x, bool on_boundary) const { return on_boundary; }
 
   };
 

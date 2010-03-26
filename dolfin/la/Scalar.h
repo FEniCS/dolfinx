@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2007.
 //
 // First added:  2007-03-15
-// Last changed: 2010-03-25
+// Last changed: 2009-08-18
 
 #ifndef __SCALAR_H
 #define __SCALAR_H
@@ -39,11 +39,11 @@ namespace dolfin
     //--- Implementation of the GenericTensor interface ---
 
     /// Resize tensor to given dimensions
-    virtual void resize(uint rank, const uint*)
+    virtual void resize(uint rank, const uint* dims)
     { assert(rank == 0); value = 0.0; }
 
     /// Initialize zero tensor using sparsity pattern
-    void init(const GenericSparsityPattern&)
+    void init(const GenericSparsityPattern& sparsity_pattern)
     { value = 0.0; }
 
     /// Return copy of tensor
@@ -55,19 +55,19 @@ namespace dolfin
     { return 0; }
 
     /// Return size of given dimension
-    uint size(uint) const
+    uint size(uint dim) const
     { error("The size() function is not available for scalars."); return 0; }
 
     /// Get block of values
-    void get(double* block, const uint*, const uint * const *) const
+    void get(double* block, const uint* num_rows, const uint * const * rows) const
     { block[0] = value; }
 
     /// Set block of values
-    void set(const double* block, const uint*, const uint * const *)
+    void set(const double* block, const uint* num_rows, const uint * const * rows)
     { value = block[0]; }
 
     /// Add block of values
-    void add(const double* block, const uint*, const uint * const *)
+    void add(const double* block, const uint* num_rows, const uint * const * rows)
     { value += block[0]; }
 
     /// Set all entries to zero and keep any sparse structure
@@ -75,7 +75,7 @@ namespace dolfin
     { value = 0.0; }
 
     /// Finalize assembly of tensor
-    void apply(std::string)
+    void apply(std::string mode)
     {
       if (MPI::num_processes() > 1)
       {
@@ -90,7 +90,7 @@ namespace dolfin
     }
 
     /// Return informal string representation (pretty-print)
-    std::string str(bool) const
+    std::string str(bool verbose) const
     {
       std::stringstream s;
       s << "<Scalar value " << value << ">";

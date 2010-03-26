@@ -8,7 +8,7 @@
 // Modified by Johan Hake, 2009-2010.
 //
 // First added:  2006-04-25
-// Last changed: 2010-03-25
+// Last changed: 2010-03-07
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -94,7 +94,7 @@ namespace dolfin
     virtual void get(double* block, uint m, const uint* rows) const = 0;
 
     /// Get block of values (values must all live on the local process)
-    virtual void get_local(double*, uint, const uint*) const
+    virtual void get_local(double* block, uint m, const uint* rows) const
     { error("GenericVector::get_local not yet implemented for this backend."); }
 
     /// Set block of values
@@ -134,7 +134,7 @@ namespace dolfin
     virtual double sum() const = 0;
 
     /// Return sum of selected rows in vector. Repeated entries only summed once.
-    virtual double sum(const Array<uint>&) const
+    virtual double sum(const Array<uint>& rows) const
     { error("GenericVector::sum(const Array<uint>& rows) not implemented by backend"); return 0.0; }
 
     /// Multiply vector by given number

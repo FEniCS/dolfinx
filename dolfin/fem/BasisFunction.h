@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-01-01
-// Last changed: 2010-03-25
+// Last changed: 2009-12-14
 
 #ifndef __BASIS_FUNCTION_H
 #define __BASIS_FUNCTION_H
@@ -49,7 +49,7 @@ namespace dolfin
     /// Evaluate function at given point in cell
     void evaluate(double* values,
                   const double* coordinates,
-                  const ufc::cell&) const
+                  const ufc::cell& cell) const
     { eval(values, coordinates); }
 
   private:

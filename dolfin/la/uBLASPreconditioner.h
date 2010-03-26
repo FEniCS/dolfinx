@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2006-2008.
 //
 // First added:  2006-06-23
-// Last changed: 2010-03-25
+// Last changed: 2009-07-03
 
 #ifndef __UBLAS_PRECONDITIONER_H
 #define __UBLAS_PRECONDITIONER_H
@@ -32,15 +32,15 @@ namespace dolfin
     virtual ~uBLASPreconditioner() {};
 
     /// Initialise preconditioner (sparse matrix)
-    virtual void init(const uBLASMatrix<ublas_sparse_matrix>&)
+    virtual void init(const uBLASMatrix<ublas_sparse_matrix>& A)
       { error("No init(..) function for preconditioner uBLASMatrix<ublas_sparse_matrix>"); }
-
+ 
     /// Initialise preconditioner (dense matrix)
-    virtual void init(const uBLASMatrix<ublas_dense_matrix>&)
+    virtual void init(const uBLASMatrix<ublas_dense_matrix>& A)
       { error("No init(..) function for preconditioner uBLASMatrix<ublas_dense_matrix>"); }
 
     /// Initialise preconditioner (virtual matrix)
-    virtual void init(const uBLASKrylovMatrix&)
+    virtual void init(const uBLASKrylovMatrix& A)
       { error("No init(..) function for preconditioning uBLASKrylovMatrix"); }
 
     /// Solve linear system (M^-1)Ax = y
