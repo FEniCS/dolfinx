@@ -22,7 +22,7 @@ def run_bench(arg, directory, files):
 
     # Remove old logfile
     cwd = os.getcwd()
-    logfile = os.path.join(cwd, "log", name + ".log")
+    logfile = os.path.join(cwd, "logs", name + ".log")
     try:
         os.remove(logfile)
     except:
@@ -46,7 +46,7 @@ def run_bench(arg, directory, files):
     # Append to log file
     d = time.gmtime()
     date = str((d.tm_year, d.tm_mon, d.tm_mday, d.tm_hour, d.tm_min, d.tm_sec))
-    f = open(os.path.join("log", "bench.log"), "a")
+    f = open(os.path.join("logs", "bench.log"), "a")
     f.write("%s %s %g\n" % (date, name, elapsed_time))
     f.close()
 
