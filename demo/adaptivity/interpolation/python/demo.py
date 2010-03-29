@@ -17,6 +17,10 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
+if not has_cgal():
+    print "DOLFIN must be compiled with CGAL to run this demo."
+    exit(0)
+
 # Set option to allow extrapolation
 parameters["allow_extrapolation"] = True
 
