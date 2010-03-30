@@ -11,10 +11,12 @@ using namespace dolfin;
 #define NUM_REPS 1000
 #define MESH_SIZE 32
 
-int main()
+int main(int argc, char* argv[])
 {
   info("Iteration over mesh entities, %d repetitions on a unit cube of size %d x %d x %d",
        NUM_REPS, MESH_SIZE, MESH_SIZE, MESH_SIZE);
+
+  parameters.parse(argc, argv);
 
   UnitCube mesh(MESH_SIZE, MESH_SIZE, MESH_SIZE);
 

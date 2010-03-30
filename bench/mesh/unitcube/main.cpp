@@ -11,10 +11,12 @@ using namespace dolfin;
 #define NUM_REPS 100
 #define MESH_SIZE 32
 
-int main()
+int main(int argc, char* argv[])
 {
   info("Creating unit cube of size %d x %d x %d, %d repetitions",
        MESH_SIZE, MESH_SIZE, MESH_SIZE, NUM_REPS);
+
+  parameters.parse(argc, argv);
 
   for (int i = 0; i < NUM_REPS; i++)
   {
