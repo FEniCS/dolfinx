@@ -8,17 +8,17 @@
 
 using namespace dolfin;
 
-#define NUM_REPS 5
-#define MESH_SIZE 4
+#define NUM_REPS 3
+#define SIZE 4
 
 int main(int argc, char* argv[])
 {
-  info("Uniform mesh refinement, %d refinements of a unit cube of size %d x %d x %d",
-       NUM_REPS, MESH_SIZE, MESH_SIZE, MESH_SIZE);
+  info("Uniform refinement of unit cube of size %d x %d x %d (%d refinements)",
+       SIZE, SIZE, SIZE, NUM_REPS);
 
   parameters.parse(argc, argv);
 
-  UnitCube mesh(MESH_SIZE, MESH_SIZE, MESH_SIZE);
+  UnitCube mesh(SIZE, SIZE, SIZE);
 
   for (int i = 0; i < NUM_REPS; i++)
   {

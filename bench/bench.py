@@ -5,8 +5,7 @@ __date__ = "2010-03-26 -- 2010-03-26"
 __copyright__ = "Copyright (C) 2010 Anders Logg"
 __license__  = "GNU LGPL version 2.1"
 
-import os
-import time
+import os, sys, time
 
 failed = []
 
@@ -34,22 +33,41 @@ def run_bench(arg, directory, files):
     status = os.system("./bench" + " > %s" % logfile)
     elapsed_time = time.time() - t0
 
+    # Change to toplevel directory
+    os.chdir(cwd)
+
     # Report timing
     if status == 0:
         print "Completed in %g seconds\n" % elapsed_time
     else:
+        global failed
+        failed.append(name)
         print "*** Failed\n"
+        return
 
-    # Change to toplevel directory
-    os.chdir(cwd)
+    # Get description of benchmark
+    f = open(logfile)
+    description = f.read().split("\n")[0]
+    f.close()
 
     # Append to log file
     d = time.gmtime()
     date = str((d.tm_year, d.tm_mon, d.tm_mday, d.tm_hour, d.tm_min, d.tm_sec))
     f = open(os.path.join("logs", "bench.log"), "a")
-    f.write("%s %s %g\n" % (date, name, elapsed_time))
+    f.write('%s %s %g "%s"\n' % (date, name, elapsed_time, description))
     f.close()
 
     return status == 0
 
+# Iterate over benchmarks
 os.path.walk(".", run_bench, None)
+
+# Print summary
+if len(failed) == 0:
+    print "All benchmarks OK"
+else:
+    print "%d benchmark(s) failed:" % len(failed)
+    for name in failed:
+        print "  " + failed
+
+sys.exit(len(failed))
