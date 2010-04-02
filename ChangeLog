@@ -1,3 +1,7 @@
+ - Trilinos backend now works in parallel
+ - Remove Mesh refine members functions. Use free refine(...) functions instead
+ - Remove AdapativeObjects
+ - Add Stokes demo using the MINI element
  - Interface change: operator+ now used to denote enriched function spaces
  - Interface change: operator+ --> operator* for mixed elements
  - Add option 'allow_extrapolation' useful when interpolating to refined meshes
