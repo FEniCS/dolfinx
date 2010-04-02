@@ -5,7 +5,7 @@ used in this simulation are computed by the demo program in
 src/demo/mesh/subdomains."""
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-16 -- 2009-11-26"
+__date__ = "2007-11-16 -- 2010-04-01"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -18,9 +18,9 @@ mesh = Mesh("../../../../../data/meshes/dolfin-2.xml.gz")
 sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz")
 
 # Define function spaces
-P1 = VectorElement("Lagrange", triangle, 1)
-B  = VectorElement("Bubble", triangle, 3)
-Q  = FiniteElement("CG", triangle, 1)
+P1 = VectorFunctionSpace(mesh, "Lagrange", 1)
+B  = VectorFunctionSpace(mesh, "Bubble", 3)
+Q  = FunctionSpace(mesh, "CG",  1)
 Mini = (P1 + B)*Q
 
 # No-slip boundary condition for velocity
