@@ -13,6 +13,8 @@ using namespace dolfin;
 
 int main()
 {
+  error("Time series demo needs to be updated for removal of Mesh::refine.");
+  /*
   // Create empty time series
   TimeSeries series("primal");
 
@@ -43,4 +45,5 @@ int main()
   plot(mesh);
 
   return 0;
+  */
 }

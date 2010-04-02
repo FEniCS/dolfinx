@@ -160,18 +160,6 @@ namespace dolfin
     /// Return true iff topology is ordered according to the UFC numbering
     bool ordered() const;
 
-    /// Refine mesh uniformly
-    void refine();
-
-    /// Refine mesh according to cells marked for refinement
-    void refine(MeshFunction<bool>& cell_markers);
-
-    /// Coarsen mesh uniformly
-    void coarsen();
-
-    /// Coarsen mesh according to cells marked for coarsening
-    void coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary = false);
-
     /// Move coordinates of mesh according to new boundary coordinates
     void move(BoundaryMesh& boundary, dolfin::ALEType method=hermite);
 

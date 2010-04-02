@@ -24,7 +24,6 @@
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
-#include <dolfin/adaptivity/AdaptiveObjects.h>
 #include <dolfin/la/GenericVector.h>
 #include "GenericFunction.h"
 #include "Function.h"
@@ -39,10 +38,7 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0))
 {
-  //dolfin_debug1("Creating function space: %x", this);
-
-  // Register adaptive object
-  AdaptiveObjects::register_object(this);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
@@ -51,25 +47,18 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
   : _mesh(mesh), _element(element), _dofmap(dofmap),
     _restriction(static_cast<MeshFunction<bool>*>(0))
 {
-  //dolfin_debug1("Creating function space: %x", this);
-
-  // Register adaptive object
-  AdaptiveObjects::register_object(this);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(const FunctionSpace& V)
 {
   // Assign data (will be shared)
   *this = V;
-
-  // Register adaptive object
-  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::~FunctionSpace()
 {
-  // Deregister adaptive object
-  AdaptiveObjects::deregister_object(this);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)

@@ -13,7 +13,6 @@
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/adaptivity/AdaptiveObjects.h>
 #include "DofMap.h"
 #include "Form.h"
 #include "BoundaryCondition.h"
@@ -24,21 +23,18 @@ using namespace dolfin;
 BoundaryCondition::BoundaryCondition(const FunctionSpace& V)
   : _function_space(reference_to_no_delete_pointer(V))
 {
-  // Register adaptive object
-  AdaptiveObjects::register_object(this);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::BoundaryCondition(boost::shared_ptr<const FunctionSpace> V)
   : _function_space(V)
 {
-  // Register adaptive object
-  AdaptiveObjects::register_object(this);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::~BoundaryCondition()
 {
-  // Deregister adaptive object
-  AdaptiveObjects::deregister_object(this);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace& BoundaryCondition::function_space() const
@@ -84,7 +80,7 @@ void BoundaryCondition::check_arguments(GenericMatrix* A,
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)
-  : n(0), w(0), cell_dofs(0), facet_dofs(0), 
+  : n(0), w(0), cell_dofs(0), facet_dofs(0),
     array_coordinates(V.dofmap().max_local_dimension())
 {
   // Create array for coefficients

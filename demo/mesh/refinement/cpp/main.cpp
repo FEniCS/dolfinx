@@ -12,26 +12,24 @@ using namespace dolfin;
 
 int main()
 {
+  error("Mesh refinement demo needs updating for removal of Mesh::refine.");
+  /*
   File file("mesh.pvd");
 
   // Create mesh of unit square
   UnitSquare mesh(5, 5);
   file << mesh;
-  //plot(mesh);
 
   // Uniform refinement
-  mesh.refine();
+  mesh = refine(mesh);
   file << mesh;
-  //plot(mesh);
-
 
   // Refine mesh close to x = (0.5, 0.5)
   Point p(0.5, 0.5);
   for (unsigned int i = 0; i < 5; i++)
   {
     // Mark cells for refinement
-    MeshFunction<bool> cell_markers(mesh, mesh.topology().dim());
-    cell_markers = false;
+    MeshFunction<bool> cell_markers(mesh, mesh.topology().dim(), false);
     for (CellIterator c(mesh); !c.end(); ++c)
     {
       if (c->midpoint().distance(p) < 0.1)
@@ -39,11 +37,12 @@ int main()
     }
 
     // Refine mesh
-    mesh.refine(cell_markers);
+    mesh = refine(mesh);
 
     file << mesh;
-    //plot(mesh);
+    plot(mesh);
   }
 
   return 0;
+  */
 }

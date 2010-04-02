@@ -19,10 +19,6 @@
 #include <dolfin/io/File.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/adaptivity/AdaptiveObjects.h>
-#include "UniformMeshRefinement.h"
-#include "LocalMeshRefinement.h"
-#include "LocalMeshCoarsening.h"
 #include "IntersectionOperator.h"
 #include "TopologyComputation.h"
 #include "MeshSmoothing.h"
@@ -194,16 +190,7 @@ bool Mesh::ordered() const
   return _ordered;
 }
 //-----------------------------------------------------------------------------
-void Mesh::refine()
-{
-  AdaptiveObjects::refine(this, 0);
-}
-//-----------------------------------------------------------------------------
-void Mesh::refine(MeshFunction<bool>& cell_markers)
-{
-  AdaptiveObjects::refine(this, &cell_markers);
-}
-//-----------------------------------------------------------------------------
+/*
 void Mesh::coarsen()
 {
   // FIXME: Move implementation to separate class and just call function here
@@ -229,6 +216,7 @@ void Mesh::coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary)
   // Mesh may not be ordered
   _ordered = false;
 }
+*/
 //-----------------------------------------------------------------------------
 void Mesh::move(BoundaryMesh& boundary, ALEType method)
 {
