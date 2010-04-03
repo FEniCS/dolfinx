@@ -20,6 +20,9 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
+# This demo does not run in parallel
+not_working_in_parallel("This demo")
+
 l   = 1.0
 h   = 1.0 # unit square
 h_  = 0.5         # position of the dielectric interface
