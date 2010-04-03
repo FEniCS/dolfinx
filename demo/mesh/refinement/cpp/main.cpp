@@ -12,12 +12,11 @@ using namespace dolfin;
 
 int main()
 {
-  error("Mesh refinement demo needs updating for removal of Mesh::refine.");
-  /*
   File file("mesh.pvd");
 
   // Create mesh of unit square
-  UnitSquare mesh(5, 5);
+  UnitSquare unitsquare_mesh(5, 5);
+  Mesh mesh(unitsquare_mesh);
   file << mesh;
 
   // Uniform refinement
@@ -37,12 +36,11 @@ int main()
     }
 
     // Refine mesh
-    mesh = refine(mesh);
+    mesh = refine(mesh, cell_markers);
 
     file << mesh;
     plot(mesh);
   }
 
   return 0;
-  */
 }

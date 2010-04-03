@@ -12,7 +12,7 @@ mesh = UnitSquare(5, 5)
 plot(mesh, interactive=True)
 
 # Uniform refinement
-mesh.refine()
+mesh = refine(mesh)
 plot(mesh, interactive=True)
 
 # Refine mesh close to x = (0.5, 0.5)
@@ -28,7 +28,8 @@ for i in range(5):
             cell_markers[c] = False
 
     # Refine mesh
-    mesh.refine(cell_markers)
+    mesh = refine(mesh, cell_markers)
 
     # Plot mesh
-    plot(mesh, interactive=True)
+    plot(mesh)
+    interactive()

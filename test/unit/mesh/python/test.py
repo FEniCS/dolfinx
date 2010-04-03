@@ -27,14 +27,14 @@ class MeshRefinement(unittest.TestCase):
     def testRefineUnitSquare(self):
         """Refine mesh of unit square."""
         mesh = UnitSquare(5, 7)
-        mesh.refine()
+        mesh = refine(mesh)
         self.assertEqual(mesh.num_vertices(), 165)
         self.assertEqual(mesh.num_cells(), 280)
 
     def testRefineUnitCube(self):
         """Refine mesh of unit cube."""
         mesh = UnitCube(5, 7, 9)
-        mesh.refine()
+        mesh = refine(mesh)
         self.assertEqual(mesh.num_vertices(), 3135)
         self.assertEqual(mesh.num_cells(), 15120)
 
@@ -79,7 +79,7 @@ class MeshIterators(unittest.TestCase):
         for c in cells(mesh):
             n += 1
         self.assertEqual(n, mesh.num_cells())
-        
+
     def testMixedIterators(self):
         """Iterate over vertices of cells."""
         mesh = UnitCube(5, 5, 5)
@@ -140,7 +140,7 @@ class MeshFunctions(unittest.TestCase):
         file << self.f
         f = MeshFunction('int', self.mesh, "saved_mesh_function.xml")
         assert all(f.values() == self.f.values())
-      
+
 class InputOutput(unittest.TestCase):
 
     def testMeshXML2D(self):
