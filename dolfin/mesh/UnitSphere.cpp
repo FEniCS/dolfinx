@@ -20,7 +20,7 @@ UnitSphere::UnitSphere(uint nx) : Mesh()
   // Receive mesh according to parallel policy
   if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
 
-  info("UnitSphere is experimental. It may be of poor quality mesh");
+  info(WARNING, "UnitSphere is experimental. It may be of poor quality mesh");
 
   uint ny=nx;
   uint nz=nx;

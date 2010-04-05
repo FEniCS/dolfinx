@@ -28,8 +28,8 @@ Progress::Progress(std::string title, unsigned int n)
   // LogManager::logger.progress(title, 0.0);
   t = time();
 
-  // When log level is more than 0, progress is always visible
-  if (LogManager::logger.get_log_level() > 0 )
+  // When log level is TRACE or lower, always display at least the 100% message
+  if (LogManager::logger.get_log_level() <= TRACE )
     always = true;
 }
 //-----------------------------------------------------------------------------
@@ -40,8 +40,8 @@ Progress::Progress(std::string title)
   // LogManager::logger.progress(title, 0.0);
   t = time();
 
-  // When log level is more than 0, progress is always visible
-  if (LogManager::logger.get_log_level() > 0 )
+  // When log level is TRACE or lower, always display at least the 100% message
+  if (LogManager::logger.get_log_level() <= TRACE )
     always = true;
 }
 //-----------------------------------------------------------------------------
@@ -71,25 +71,45 @@ void Progress::operator++(int)
 //-----------------------------------------------------------------------------
 void Progress::update(double p)
 {
+  if (finished)
+    return;
+
   //p = std::max(std::min(p, 1.0), 0.0);
   //const bool p_check = p - this->p >= p_step - DOLFIN_EPS;
 
   const double t = time();
-  const bool t_check = t - this->t >= t_step - DOLFIN_EPS;
-
-  // Only update when the increase is significant
-  if (t_check || always || (p >= 1.0 && displayed && !finished))
-  {
-    LogManager::logger.progress(title, p);
+  const bool t_check = (t - this->t >= t_step - DOLFIN_EPS);
+  if (t_check) {
+    // reset time for next update
     this->p = p;
     this->t = t;
-    always = false;
+  }
+
+  bool do_log_update = t_check;
+
+  if (t_check && !always && !displayed && p >= 0.7) {
+    // skip the first update, since it will probably reach 100%
+    // before the next time t_check is true
+    do_log_update = false;
+
+    // ...but don't skip the next (pretend we displayed this one)
     displayed = true;
   }
 
-  // Update finished flag
-  if (p >= 1.0)
-    finished = true;
+  if (p >= 1.0) {
+    // always display 100% message if a message has already been shown
+    if (displayed || always)
+      do_log_update = true;
 
+    // ...but don't show more than one
+    finished = true;
+  }
+
+  // Only update when the increase is significant
+  if (do_log_update)
+  {
+    LogManager::logger.progress(title, p);
+    displayed = true;
+  }
 }
 //-----------------------------------------------------------------------------

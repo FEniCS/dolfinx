@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-01-29
-// Last changed: 2009-09-08
+// Last changed: 2010-04-05
 
 #include <cmath>
 #include "ODE.h"
@@ -75,7 +75,7 @@ void MonoAdaptivity::update(real k0, real r, const Method& method, real t,
     controller.reset(k);
     _accept = false;
 
-    //info("e = %.3e  tol = %.3e", error, tol);
+    //info(DBG, "e = %.3e  tol = %.3e", error, tol);
   }
 }
 //-----------------------------------------------------------------------------

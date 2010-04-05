@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2003-02-26
-// Last changed: 2006-05-31
+// Last changed: 2010-04-05
 
 // FIXME: Use streams rather than stdio
 #include <stdio.h>
@@ -58,6 +58,6 @@ void OctaveFile::operator<<(const GenericMatrix& A)
   fclose(fp);
   delete [] row;
 
-  info(1, "Saved matrix to file %s in Octave format.", filename.c_str());
+  info(TRACE, "Saved matrix to file %s in Octave format.", filename.c_str());
 }
 //-----------------------------------------------------------------------------

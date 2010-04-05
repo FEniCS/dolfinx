@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2010.
 //
 // First added:  2008-08-12
-// Last changed: 2010-02-08
+// Last changed: 2010-04-05
 
 #include <iostream>
 #include <algorithm>
@@ -50,11 +50,11 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
                                       std::map<uint, std::vector<uint> >& dof2index,
                                       const DofMap& dofmap, const Mesh& mesh)
 {
-  info("Determining dof ownership for parallel dof map");
+  info(TRACE, "Determining dof ownership for parallel dof map");
 
   // Initialize random number generator differently on each process
-  //cout << "Testing (1) " << (uint)time(0) + MPI::process_number() << endl; 
-  //cout << "Testing (2) " << (uint) rand() << endl; 
+  //cout << "Testing (1) " << (uint)time(0) + MPI::process_number() << endl;
+  //cout << "Testing (2) " << (uint) rand() << endl;
   //srand((uint)time(0) + MPI::process_number());
   // FIXME: Temporary while debugging (to get same results in each run)
   srand(253*MPI::process_number() + 378);
@@ -144,7 +144,8 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
       dof2index[old_dofs[i]].push_back(c->index()*local_dimension + i);
     }
   }
-  info("Finished determining dof ownership for parallel dof map");
+
+  info(TRACE, "Finished determining dof ownership for parallel dof map");
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::parallel_renumber(const set& owned_dofs, const set& shared_dofs,
@@ -152,7 +153,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs, const set& shared_d
                              const std::map<uint, std::vector<uint> >& dof2index,
                              DofMap& dofmap, const Mesh& mesh)
 {
-  info("Renumber dofs for parallel dof map");
+  info(TRACE, "Renumber dofs for parallel dof map");
 
   dofmap._ufc_to_map.clear();
 
@@ -210,6 +211,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs, const set& shared_d
       }
     }
   }
-  info("Finished renumbering dofs for parallel dof map");
+
+  info(TRACE, "Finished renumbering dofs for parallel dof map");
 }
 //-----------------------------------------------------------------------------

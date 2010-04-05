@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2010-01-29
+// Last changed: 2010-04-05
 
 #include <boost/scoped_array.hpp>
 
@@ -133,8 +133,8 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
   // Recursively extract UFC sub dofmap
   boost::shared_ptr<ufc::dof_map>
     ufc_sub_dof_map(extract_sub_dofmap(*_ufc_dofmap, ufc_offset, component, _ufc_mesh, dolfin_mesh));
-  info(2, "Extracted dof map for sub system: %s", ufc_sub_dof_map->signature());
-  info(2, "Offset for sub system: %d", ufc_offset);
+  info(DBG, "Extracted dof map for sub system: %s", ufc_sub_dof_map->signature());
+  info(DBG, "Offset for sub system: %d", ufc_offset);
 
   // Create dofmap
   DofMap* sub_dofmap = 0;
@@ -263,7 +263,7 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dofmap,
   for (uint i = 1; i < component.size(); i++)
     sub_component.push_back(component[i]);
   ufc::dof_map* sub_sub_dof_map = extract_sub_dofmap(*sub_dof_map, offset,
-                                                     sub_component, ufc_mesh, 
+                                                     sub_component, ufc_mesh,
                                                      dolfin_mesh);
   delete sub_dof_map;
 
@@ -319,7 +319,7 @@ void DofMap::init_ufc_dofmap(ufc::dof_map& dofmap,
 }
 //-----------------------------------------------------------------------------
 dolfin::Set<dolfin::uint> DofMap::dofs(const Mesh& mesh, bool sort) const
-{ 
+{
   dolfin::Set<uint> dof_list;
 
   UFCCell ufc_cell(mesh);
@@ -329,7 +329,7 @@ dolfin::Set<dolfin::uint> DofMap::dofs(const Mesh& mesh, bool sort) const
     // Update to current cell
     ufc_cell.update(*cell);
 
-    // Tabulate dofs and insert int Set 
+    // Tabulate dofs and insert int Set
     tabulate_dofs(&dofs[0], ufc_cell, cell->index());
 
     for (uint i = 0; i < local_dimension(ufc_cell); ++i)

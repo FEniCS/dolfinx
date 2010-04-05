@@ -79,7 +79,7 @@ LinearAlgebraFactory& DefaultFactory::factory() const
   }
 
   // Fallback
-  info("Linear algebra backend \"" + backend + "\" not available, using " + default_backend + ".");
+  info(WARNING, "Linear algebra backend \"" + backend + "\" not available, using " + default_backend + ".");
   return DefaultFactory::instance();
 }
 //-----------------------------------------------------------------------------

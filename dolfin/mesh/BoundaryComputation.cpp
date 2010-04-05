@@ -43,7 +43,7 @@ void BoundaryComputation::compute_boundary_common(const Mesh& mesh,
   // the boundary. A facet is on the boundary if it is connected to
   // exactly one cell.
 
-  info(1, "Computing boundary mesh.");
+  info(TRACE, "Computing boundary mesh.");
 
   // Open boundary mesh for editing
   const uint D = mesh.topology().dim();

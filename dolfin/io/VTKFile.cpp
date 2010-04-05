@@ -69,7 +69,7 @@ void VTKFile::operator<<(const Mesh& mesh)
   // Finalise and write pvd files
   finalize(vtu_filename);
 
-  info(1, "Saved mesh %s (%s) to file %s in VTK format.",
+  info(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
           mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------
@@ -117,7 +117,7 @@ void VTKFile::operator<<(const Function& u)
   // Finalise and write pvd files
   finalize(vtu_filename);
 
-  info(1, "Saved function %s (%s) to file %s in VTK format.",
+  info(TRACE, "Saved function %s (%s) to file %s in VTK format.",
           u.name().c_str(), u.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------

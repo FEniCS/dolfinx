@@ -3,7 +3,7 @@
 //
 // Modified by Garth N. Wells, 2009.
 //
-// Last changed: 2009-09-08
+// Last changed: 2010-04-05
 
 #ifdef HAS_TRILINOS
 
@@ -105,7 +105,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
 
   // Write a message
   if (parameters["report"])
-    info("Solving linear system of size %d x %d (Epetra Krylov solver).", M, N);
+    info(PROGRESS, "Solving linear system of size %d x %d (Epetra Krylov solver).", M, N);
 
   // Reinitialize solution vector if necessary
   if (x.size() != M)

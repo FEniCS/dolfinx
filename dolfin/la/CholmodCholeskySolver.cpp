@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-08-15
-// Last changed: 2008-08-17
+// Last changed: 2010-04-05
 
 #include <cstring>
 #include <dolfin/log/dolfin_log.h>
@@ -67,7 +67,7 @@ dolfin::uint CholmodCholeskySolver::factorize(const GenericMatrix& A)
 	             (double*) std::tr1::get<2>(data), M, nnz);
 
   // Factorize
-  info("Cholesky-factorizing linear system of size %d x %d (CHOLMOD).",M,M);
+  info(PROGRESS, "Cholesky-factorizing linear system of size %d x %d (CHOLMOD).",M,M);
   cholmod.factorize();
 
   return 1;
@@ -86,7 +86,7 @@ dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x, const Gen
   // Initialise solution vector and solve
   x.resize(N);
 
-  info("Solving factorized linear system of size %d x %d (CHOLMOD).", N, N);
+  info(PROGRESS, "Solving factorized linear system of size %d x %d (CHOLMOD).", N, N);
 
   cholmod.factorized_solve(x.data(), b.data());
 
@@ -156,7 +156,7 @@ void CholmodCholeskySolver::Cholmod::init(UF_long* Ap, UF_long* Ai, double* Ax,
 					  uint M, uint nz)
 {
   if(factorized)
-    info(1, "CholeskySolver already contains a factorized matrix! Clearing and starting over.");
+    info(DBG, "CholeskySolver already contains a factorized matrix! Clearing and starting over.");
 
   // Clear any data
   clear();

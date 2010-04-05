@@ -18,6 +18,14 @@
 %extend dolfin::Parameter
 {
 %pythoncode%{
+def warn_once(self, msg):
+    cls = self.__class__
+    if not hasattr(cls, '_warned'):
+        cls._warned = set()
+    if not msg in cls._warned:
+        cls._warned.add(msg)
+        print msg
+
 def value(self):
     val_type = self.type_str()
     if val_type == "string":
@@ -27,9 +35,10 @@ def value(self):
     elif val_type == "bool":
         return bool(self)
     elif val_type == "real":
-        if has_gmp():
+        from logging import DEBUG
+        if get_log_level() <= DEBUG and has_gmp():
             # FIXME: Is it possible to convert real to some high-precision Python type?
-            print "Warning: Converting real-valued parameter to double, might loose precision."
+            self.warn_once("Warning: Converting real-valued parameter '%s' to double, might lose precision."%self.key())
         return float(self)
     else:
         raise TypeError, "unknown value type '%s' of parameter '%s'"%(val_type, self.key())
@@ -49,9 +58,10 @@ def get_range(self):
     elif val_type == "bool":
         return 
     elif val_type == "real":
-        if has_gmp():
+        from logging import DEBUG
+        if get_log_level() <= DEBUG and has_gmp():
             # FIXME: Is it possible to convert real to some high-precision Python type?
-            print "Warning: Converting real-valued parameter to double, might loose precision."
+            self.warn_once("Warning: Converting real-valued parameter '%s' to double, might lose precision."%self.key())
         local_range = self._get_real_range()
         if local_range[0] == 0 and local_range[0] == local_range[0]:
             return

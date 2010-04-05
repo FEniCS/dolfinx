@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2005-2010.
 //
 // First added:  2005-12-02
-// Last changed: 2010-02-25
+// Last changed: 2010-04-05
 
 #ifdef HAS_PETSC
 
@@ -54,8 +54,8 @@ Parameters PETScKrylovSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
-  : method(method), pc_dolfin(0), 
-    preconditioner(new PETScPreconditioner(pc_type)), 
+  : method(method), pc_dolfin(0),
+    preconditioner(new PETScPreconditioner(pc_type)),
     preconditioner_set(false)
 {
   // Check that the requested method is known
@@ -68,7 +68,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method,
 				                             PETScPreconditioner& preconditioner)
-  : method(method), 
+  : method(method),
     preconditioner(reference_to_no_delete_pointer(preconditioner)),
     preconditioner_set(false)
 
@@ -86,7 +86,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(boost::shared_ptr<KSP> _ksp)
-  : method("default"), pc_dolfin(0), _ksp(_ksp), 
+  : method("default"), pc_dolfin(0), _ksp(_ksp),
     preconditioner_set(true)
 {
   // Set parameter values
@@ -116,7 +116,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
 
   // Write a message
   if (parameters["report"])
-    info("Solving linear system of size %d x %d (PETSc Krylov solver).", M, N);
+    info(PROGRESS, "Solving linear system of size %d x %d (PETSc Krylov solver).", M, N);
 
   // Reinitialize KSP solver if necessary
   init(M, N);
@@ -225,10 +225,6 @@ void PETScKrylovSolver::init(uint M, uint N)
 void PETScKrylovSolver::write_report(int num_iterations,
                                      KSPConvergedReason reason)
 {
-  // Check if we should write the report
-  if (!parameters["report"])
-    return;
-
   // Get name of solver and preconditioner
   PC pc;
   const KSPType ksp_type;
@@ -258,18 +254,18 @@ void PETScKrylovSolver::write_report(int num_iterations,
   // Report number of iterations and solver type
   if (reason >= 0)
   {
-    info("PETSc Krylov solver (%s, %s) converged in %d iterations.",
+    info(PROGRESS, "PETSc Krylov solver (%s, %s) converged in %d iterations.",
             ksp_type, pc_type, num_iterations);
   }
   else
   {
-    info("PETSc Krylov solver (%s, %s) failed to converge in %d iterations.",
+    info(PROGRESS, "PETSc Krylov solver (%s, %s) failed to converge in %d iterations.",
             ksp_type, pc_type, num_iterations);
   }
 
   if (pc_type_str == PCASM || pc_type_str == PCBJACOBI)
   {
-    info("PETSc Krylov solver preconditioner (%s) sub-methods: (%s, %s)",
+    info(PROGRESS, "PETSc Krylov solver preconditioner (%s) sub-methods: (%s, %s)",
             pc_type, sub_ksp_type, sub_pc_type);
   }
 }

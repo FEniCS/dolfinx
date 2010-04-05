@@ -39,7 +39,7 @@ Parameters KrylovSolver::default_parameters()
   p.add("maximum_iterations",  10000);
   p.add("gmres_restart",       30);
   p.add("shift_nonzero",       0.0);
-  p.add("report",              true);
+  p.add("report",              true); /* deprecate? */
   p.add("monitor_convergence", false);
   return p;
 }

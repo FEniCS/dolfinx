@@ -107,7 +107,7 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   }
 
   if (newton_converged)
-    info("Newton solver finished in %d iterations and %d linear solver iterations.",
+    info(PROGRESS, "Newton solver finished in %d iterations and %d linear solver iterations.",
             newton_iteration, krylov_iterations);
   else
     warning("Newton solver did not converge.");

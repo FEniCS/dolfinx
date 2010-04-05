@@ -39,7 +39,7 @@ void ODESolver::solve()
   time_stepper.solve();
 
   // Report elapsed time
-  info("ODE solution computed in %.3f seconds.", toc());
+  info(PROGRESS, "ODE solution computed in %.3f seconds.", toc());
 
   end();
 }
@@ -57,7 +57,7 @@ void ODESolver::solve(ODESolution& u)
   u.flush();
 
   // Report elapsed time
-  info("ODE solution computed in %.3f seconds.", toc());
+  info(PROGRESS, "ODE solution computed in %.3f seconds.", toc());
 
   end();
 }

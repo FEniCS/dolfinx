@@ -12,6 +12,7 @@
 #include <string>
 #include <cassert>
 #include <dolfin/common/types.h>
+#include "LogLevel.h"
 
 namespace dolfin
 {
@@ -64,10 +65,10 @@ namespace dolfin
   void logging(bool active=true);
 
   /// Set log level
-  void set_log_level(uint level);
+  void set_log_level(int level);
 
   /// Get log level
-  uint get_log_level();
+  int get_log_level();
 
   /// Print summary of timings and tasks, optionally clearing stored timings
   void summary(bool reset=false);

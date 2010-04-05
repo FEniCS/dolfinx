@@ -15,10 +15,10 @@
 #include <ostream>
 #include <map>
 #include <dolfin/common/types.h>
+#include "LogLevel.h"
 
 namespace dolfin
 {
-
   class Logger
   {
   public:
@@ -30,10 +30,10 @@ namespace dolfin
     ~Logger();
 
     /// Print message
-    void info(std::string msg, int log_level = 0) const;
+    void info(std::string msg, int log_level = INFO) const;
 
     /// Print underlined message
-    void info_underline(std::string msg, int log_level = 0) const;
+    void info_underline(std::string msg, int log_level = INFO) const;
 
     /// Print warning
     void warning(std::string msg) const;
@@ -42,7 +42,7 @@ namespace dolfin
     void error(std::string msg) const;
 
     /// Begin task (increase indentation level)
-    void begin(std::string msg, int log_level = 0);
+    void begin(std::string msg, int log_level = PROGRESS);
 
     /// End task (decrease indentation level)
     void end();

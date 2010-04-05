@@ -166,7 +166,7 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
 
   const EPSType eps_type = 0;
   EPSGetType(eps, &eps_type);
-  info("Eigenvalue solver (%s) converged in %d iterations.",
+  info(PROGRESS, "Eigenvalue solver (%s) converged in %d iterations.",
        eps_type, num_iterations);
 }
 //-----------------------------------------------------------------------------

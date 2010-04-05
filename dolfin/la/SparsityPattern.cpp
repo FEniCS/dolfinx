@@ -191,7 +191,8 @@ void SparsityPattern::apply()
     return;
 
   // Print some useful information
-  info_statistics();
+  if (get_log_level() <= DEBUG)
+    info_statistics();
 
   // Communicate non-local blocks if any
   if (row_range_min != 0 || row_range_max != shape[0])

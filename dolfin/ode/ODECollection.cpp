@@ -14,7 +14,7 @@ using namespace dolfin;
 ODECollection::ODECollection(ODE& ode, uint num_systems)
   : ode(ode), num_systems(num_systems), states(0)
 {
-  info("Creating ODE collection of size %d x %d.", num_systems, ode.size());
+  info(TRACE, "Creating ODE collection of size %d x %d.", num_systems, ode.size());
 
   // Allocate state vectors
   states = new real[num_systems*ode.size()];

@@ -211,8 +211,8 @@ void Form::check() const
     assert(element.get());
     if (element->signature() != _function_spaces[i]->element().signature())
     {
-      info("Expected element: %s", element->signature());
-      info("Input element:    %s", _function_spaces[i]->element().signature().c_str());
+      info(ERROR, "Expected element: %s", element->signature());
+      info(ERROR, "Input element:    %s", _function_spaces[i]->element().signature().c_str());
       error("Wrong type of function space for argument %d.", i);
     }
   }

@@ -24,7 +24,7 @@ using namespace dolfin;
 void UniformMeshRefinement::refine(Mesh& refined_mesh,
                                    const Mesh& mesh)
 {
-  info(1, "Refining simplicial mesh uniformly.");
+  info(TRACE, "Refining simplicial mesh uniformly.");
 
   // Check that refined_mesh and mesh are not the same
   if (&refined_mesh == &mesh)

@@ -76,7 +76,7 @@ void SystemAssembler::assemble(GenericMatrix& A,
                                           bool add_values)
 {
   Timer timer("Assemble system");
-  info("Assembling linear system and applying boundary conditions...");
+  info(PROGRESS, "Assembling linear system and applying boundary conditions...");
 
   // FIXME: 1. Need consistency check between a and L
   // FIXME: 2. Some things can be simplified since we know it's a matrix and a vector

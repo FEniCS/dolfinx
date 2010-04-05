@@ -5,7 +5,7 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2005
-// Last changed: 2010-02-15
+// Last changed: 2010-04-05
 
 #ifdef HAS_PETSC
 
@@ -120,7 +120,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
 
   // Write a message
   if (report)
-    info("Solving linear system of size %d x %d (PETSc LU solver, %s).",
+    info(PROGRESS, "Solving linear system of size %d x %d (PETSc LU solver, %s).",
          A.size(0), A.size(1), solver_type);
 
   // Solve linear system
@@ -158,7 +158,7 @@ void PETScLUSolver::init()
   // Set up solver environment
   if (MPI::num_processes() > 1)
   {
-    info("Creating parallel PETSc Krylov solver (for LU factorization).");
+    info(TRACE, "Creating parallel PETSc Krylov solver (for LU factorization).");
     KSPCreate(PETSC_COMM_WORLD, ksp.get());
   }
   else

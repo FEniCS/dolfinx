@@ -24,7 +24,7 @@ void RivaraRefinement::refine(Mesh& refined_mesh,
                               MeshFunction<uint>& cell_map,
                               std::vector<int>& facet_map)
 {
-  info("Refining simplicial mesh by recursive Rivara bisection.");
+  info(TRACE, "Refining simplicial mesh by recursive Rivara bisection.");
 
   const uint dim = mesh.topology().dim();
 

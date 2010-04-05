@@ -32,7 +32,7 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
                                    GenericVector& x,
                                    const GenericVector& b)
 {
-  info("Solving singular system...");
+  info(TRACE, "Solving singular system...");
 
   // Propagate parameters
   linear_solver.parameters.update(parameters("linear_solver"));
@@ -60,7 +60,7 @@ dolfin::uint SingularSolver::solve(const GenericMatrix& A,
                                    const GenericVector& b,
                                    const GenericMatrix& M)
 {
-  info("Solving singular system...");
+  info(TRACE, "Solving singular system...");
 
   // Propagate parameters
   linear_solver.parameters.update(parameters("linear_solver"));
@@ -170,7 +170,7 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
   assert(B);
   assert(c);
 
-  info("Creating extended hopefully non-singular system...");
+  info(TRACE, "Creating extended hopefully non-singular system...");
 
   // Reset matrix
   B->zero();

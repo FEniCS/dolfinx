@@ -25,7 +25,7 @@ typedef std::map<std::string, std::pair<dolfin::uint, double> >::const_iterator 
 
 //-----------------------------------------------------------------------------
 Logger::Logger()
-  : active(true), log_level(0), indentation_level(0), logstream(&std::cout),
+  : active(true), log_level(PROGRESS), indentation_level(0), logstream(&std::cout),
     process_number(-1)
 {
   if (MPI::num_processes() > 1)
@@ -61,7 +61,7 @@ void Logger::info_underline(std::string msg, int log_level) const
 void Logger::warning(std::string msg) const
 {
   std::string s = std::string("*** Warning: ") + msg;
-  write(0, s);
+  write(WARNING, s);
 }
 //-----------------------------------------------------------------------------
 void Logger::error(std::string msg) const
@@ -84,34 +84,24 @@ void Logger::end()
 //-----------------------------------------------------------------------------
 void Logger::progress(std::string title, double p) const
 {
-  int N = DOLFIN_TERM_WIDTH - 15;
-  int n = static_cast<int>(p*static_cast<double>(N));
-
-  // Print the title
-  std::string s = "| " + title;
-  for (uint i = 0; i < (N - title.size() - 1); i++)
-    s += " ";
-  s += "|";
-  write(0, s);
-
-  // Print the progress bar
-  s = "|";
-  for (int i = 0; i < n; i++)
-    s += "=";
-  if (n > 0 && n < N)
-  {
-    s += "|";
-    n++;
-  }
-  for (int i = n; i < N; i++)
-    s += "-";
-  s += "| ";
   std::stringstream line;
+  line << title << " [";
+
+  const int N = DOLFIN_TERM_WIDTH - title.size() - 12 - 2*indentation_level;
+  const int n = static_cast<int>(p*static_cast<double>(N));
+
+  for (int i = 0; i < n; i++)
+    line << '=';
+  if (n < N)
+    line << '>';
+  for (int i = n+1; i < N; i++)
+    line << ' ';
+
   line << std::setiosflags(std::ios::fixed);
   line << std::setprecision(1);
-  line << 100.0*p;
-  s += line.str() + "%";
-  write(0, s);
+  line << "] " << 100.0*p << '%';
+
+  write(PROGRESS, line.str());
 }
 //-----------------------------------------------------------------------------
 void Logger::set_output_stream(std::ostream& ostream)
@@ -138,7 +128,7 @@ void Logger::register_timing(std::string task, double elapsed_time)
   // Print a message
   std::stringstream line;
   line << "Elapsed time: " << elapsed_time << " (" << task << ")";
-  info(line.str(), 1);
+  info(line.str(), TRACE);
 
   // Store values for summary
   map_iterator it = timings.find(task);
@@ -207,13 +197,13 @@ double Logger::timing(std::string task, bool reset)
 void Logger::__debug(std::string msg) const
 {
   std::string s = std::string("Debug: ") + msg;
-  write(0, s);
+  write(DEBUG, s);
 }
 //-----------------------------------------------------------------------------
 void Logger::write(int log_level, std::string msg) const
 {
   // Check log level
-  if (!active || log_level > this->log_level)
+  if (!active || log_level < this->log_level)
     return;
 
   // Prefix with process number if running in parallel

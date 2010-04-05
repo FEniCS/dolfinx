@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2010-03-03
+// Last changed: 2010-04-05
 
 #include <sstream>
 
@@ -195,7 +195,7 @@ void Mesh::coarsen()
 {
   // FIXME: Move implementation to separate class and just call function here
 
-  info("No cells marked for coarsening, assuming uniform mesh coarsening.");
+  info(DBG, "No cells marked for coarsening, assuming uniform mesh coarsening.");
   MeshFunction<bool> cell_marker(*this);
   cell_marker.init(this->topology().dim());
   for (CellIterator c(*this); !c.end(); ++c)
