@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-11-01
-// Last changed: 2010-03-30
+// Last changed: 2010-04-05
 
 #include <dolfin.h>
 
@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
 
   for (int i = 0; i < NUM_REPS; i++)
   {
-    mesh.refine();
+    mesh = refine(mesh);
     dolfin::cout << "Refined mesh: " << mesh << dolfin::endl;
   }
 
