@@ -188,7 +188,6 @@
 %include "dolfin/swig/fem_post.i"
 
 // DOLFIN headers included from adaptivity
-%include "dolfin/adaptivity/AdaptiveObjects.h"
 %include "dolfin/adaptivity/TimeSeries.h"
 
 // DOLFIN headers included from ode

@@ -10,5 +10,5 @@ env = Environment(ENV=os.environ, CXX=compiler)
 env.ParseConfig('pkg-config --cflags --libs dolfin')
 
 # Program name
-env.Program('dolfin-bench-mesh', 'main.cpp')
+env.Program('bench', 'main.cpp')
 

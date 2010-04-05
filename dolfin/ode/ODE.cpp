@@ -27,7 +27,7 @@ ODE::ODE(uint N, real T)
 {
   not_working_in_parallel("ODE solver");
 
-  info("Creating ODE of size %d.", N);
+  info(TRACE, "Creating ODE of size %d.", N);
   parameters = default_parameters();
 
   #ifdef HAS_GMP

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-14
-// Last changed: 2010-02-08
+// Last changed: 2010-04-05
 
 #include <dolfin/log/log.h>
 #include "lapack.h"
@@ -31,7 +31,7 @@ void LAPACKSolvers::solve_least_squares(const LAPACKMatrix& A,
   double* work = new double[m*lwork];
 
   // Call DGELSS
-  info(1, "Solving least squares system of size %d x %d using DGELS.", m, n);
+  info(PROGRESS, "Solving least squares system of size %d x %d using DGELS.", m, n);
   dgels(&trans, &m, &n, &nrhs, A.values, &lda, b.values, &ldb, work, &lwork, &status);
 
   // Check output status

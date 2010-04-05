@@ -22,7 +22,7 @@ sub_domains = MeshFunction("uint", mesh, "../subdomains.xml.gz");
 # Define function spaces
 scalar = FunctionSpace(mesh, "CG", 1)
 vector = VectorFunctionSpace(mesh, "CG", 1)
-system = vector + scalar
+system = vector * scalar
 
 # Create functions for boundary conditions
 noslip = Constant((0, 0))

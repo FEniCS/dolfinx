@@ -503,7 +503,7 @@ void MeshPartitioning::number_entities(const Mesh& _mesh, uint d)
   for (uint i = 0; i < entity_indices.size(); ++i)
   {
     if (entity_indices[i] < 0)
-      info("Missing global number for local entity (%d, %d).", d, i);
+      info(WARNING, "Missing global number for local entity (%d, %d).", d, i);
     assert(entity_indices[i] >= 0);
     (*global_entity_indices)[i] = static_cast<uint>(entity_indices[i]);
   }

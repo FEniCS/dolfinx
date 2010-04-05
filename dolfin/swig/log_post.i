@@ -53,6 +53,11 @@ def debug(message):
     __debug(file, line, func, message)
 
 def info(*args):
+    if args and isinstance(args[0], int):
+        if args[0] < get_log_level():
+            return
+        args = args[1:]
+
     if len(args) > 0 and isinstance(args[0],(Variable,Parameters)):
         if len(args) > 1:
             _info(args[0].str(*args[1:]))

@@ -13,9 +13,13 @@ __date__ = "2010-03-22"
 __copyright__ = "Copyright (C) 2010 " + __author__
 __license__  = "GNU LGPL Version 2.1"
 
-# Last changed: 2010-03-22
+# Last changed: 2010-03-24
 
 from dolfin import *
+
+if not has_cgal():
+    print "DOLFIN must be compiled with CGAL to run this demo."
+    exit(0)
 
 # Set option to allow extrapolation
 parameters["allow_extrapolation"] = True
@@ -28,8 +32,11 @@ V = FunctionSpace(mesh, "CG", 1)
 f = Expression("sin(5.0*x[0])*sin(5.0*x[1])")
 v = interpolate(f, V)
 
+# FIXME: We would like to do refined_mesh = refine(mesh) here
+# FIXME: but that breaks in parallel
+
 # Refine mesh and create a new function space
-refined_mesh = refine(mesh)
+refined_mesh = UnitSquare(32, 32)
 W = FunctionSpace(refined_mesh, "CG", 1)
 
 # Displace mesh slightly

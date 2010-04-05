@@ -70,7 +70,7 @@ void SubSystemsManager::init_petsc()
   if ( sub_systems_manager.petsc_initialized )
     return;
 
-  info(1, "Initializing PETSc (ignoring command-line arguments).");
+  info(TRACE, "Initializing PETSc (ignoring command-line arguments).");
 
   // Dummy command-line arguments for PETSc. This is needed since
   // PetscInitializeNoArguments() does not seem to work.
@@ -95,7 +95,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 
   // Print message if PETSc is intialised with command line arguments
   if (argc > 1)
-    info(1, "Initializing PETSc with given command-line arguments.");
+    info(TRACE, "Initializing PETSc with given command-line arguments.");
 
   // Initialize PETSc
   PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);

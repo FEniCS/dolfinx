@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2003-02-17
-// Last changed: 2008-04-23
+// Last changed: 2010-04-05
 
 #include <stdio.h>
 
@@ -57,7 +57,7 @@ void MatlabFile::operator<<(const GenericMatrix& A)
   // Close file
   fclose(fp);
 
-  info(1, "Saved matrix to file %s in sparse MATLAB format", filename.c_str());
+  info(TRACE, "Saved matrix to file %s in sparse MATLAB format", filename.c_str());
 }
 //-----------------------------------------------------------------------------
 

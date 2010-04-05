@@ -1,6 +1,3 @@
-# This is an example of a simple SConstruct file for building
-# programs against DOLFIN. To build this demo, just type 'scons'.
-
 import os, commands
 
 # Get compiler from pkg-config
@@ -14,3 +11,4 @@ env.ParseConfig('pkg-config --cflags --libs dolfin')
 
 # Program name
 env.Program('bench', 'main.cpp')
+

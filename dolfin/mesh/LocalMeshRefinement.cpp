@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2010.
 //
 // First added:  2006-11-01
-// Last changed: 2010-02-26
+// Last changed: 2010-04-05
 
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
@@ -40,7 +40,7 @@ void LocalMeshRefinement::refineMeshByEdgeBisection(Mesh& refined_mesh,
                                                     const MeshFunction<bool>& cell_marker,
                                                     bool refine_boundary)
 {
-  info("Refining simplicial mesh by edge bisection.");
+  info(TRACE, "Refining simplicial mesh by edge bisection.");
 
   // Copy cell markers
   MeshFunction<bool> old_cell_marker = cell_marker;
@@ -474,7 +474,7 @@ void LocalMeshRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
     mat = newmesh.data().create_mesh_function("material indicators", newmesh.type().dim());
     for(dolfin::uint i=0; i< newmesh.num_cells(); i++)
       (*mat)[i] = (*oldmesh.data().mesh_function("material indicators"))[cell_map[i]];
-    info("MeshData MeshFunction \"material indicators\" transformed.");
+    info(TRACE, "MeshData MeshFunction \"material indicators\" transformed.");
   }
 
   // Rewrite boundary indicators
@@ -540,7 +540,7 @@ void LocalMeshRefinement::transform_data(Mesh& newmesh, const Mesh& oldmesh,
         }
       }
     }
-    info("MeshData \"boundary indicators\" transformed.");
+    info(TRACE, "MeshData \"boundary indicators\" transformed.");
   }
 }
 //-----------------------------------------------------------------------------

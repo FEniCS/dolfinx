@@ -58,7 +58,7 @@ print "size of matrix with test functions on the smaller domain and trial functi
 
 # FIXME: the following is currently not working
 #
-#mixed = V + W
+#mixed = V * W
 #
 #(vv,vw) = TestFunctions(mixed)
 #(uv,uw) = TrialFunctions(mixed)

@@ -18,7 +18,7 @@ class SimpleShapes : public CppUnit::TestFixture
   CPPUNIT_TEST(testUnitCube);
   CPPUNIT_TEST_SUITE_END();
 
-public: 
+public:
 
   void testUnitSquare()
   {
@@ -27,7 +27,7 @@ public:
     CPPUNIT_ASSERT(mesh.num_vertices() == 48);
     CPPUNIT_ASSERT(mesh.num_cells() == 70);
   }
-   
+
   void testUnitCube()
   {
     // Create mesh of unit cube
@@ -50,19 +50,19 @@ public:
   void testRefineUnitSquare()
   {
     // Refine mesh of unit square
-    UnitSquare mesh(5, 7);
-    mesh.refine();
-    CPPUNIT_ASSERT(mesh.num_vertices() == 165);
-    CPPUNIT_ASSERT(mesh.num_cells() == 280);
+    UnitSquare mesh0(5, 7);
+    Mesh mesh1 = refine(mesh0);
+    CPPUNIT_ASSERT(mesh1.num_vertices() == 165);
+    CPPUNIT_ASSERT(mesh1.num_cells() == 280);
   }
-  
+
   void testRefineUnitCube()
   {
     // Refine mesh of unit cube
-    UnitCube mesh(5, 7, 9);
-    mesh.refine();
-    CPPUNIT_ASSERT(mesh.num_vertices() == 3135);
-    CPPUNIT_ASSERT(mesh.num_cells() == 15120);
+    UnitCube mesh0(5, 7, 9);
+    Mesh mesh1 = refine(mesh0);
+    CPPUNIT_ASSERT(mesh1.num_vertices() == 3135);
+    CPPUNIT_ASSERT(mesh1.num_cells() == 15120);
   }
 
 };
@@ -129,7 +129,7 @@ public:
       n++;
     CPPUNIT_ASSERT(n == mesh.num_cells());
   }
-        
+
   void testMixedIterators()
   {
     // Iterate over vertices of cells
@@ -151,7 +151,7 @@ class BoundaryExtraction : public CppUnit::TestFixture
   CPPUNIT_TEST_SUITE_END();
 
 public:
-  
+
   void testBoundaryComputation()
   {
     // Compute boundary of mesh
@@ -191,7 +191,7 @@ class MeshFunctions : public CppUnit::TestFixture
   CPPUNIT_TEST_SUITE_END();
 
 public:
-  
+
   void testAssign()
   {
     /// Assign value of mesh function
@@ -201,9 +201,9 @@ public:
     Vertex v(mesh, 3);
     CPPUNIT_ASSERT(f[v] == 10);
   }
-  
+
 };
-      
+
 class InputOutput : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(InputOutput);
@@ -225,7 +225,7 @@ public:
     file >> mesh_in;
     CPPUNIT_ASSERT(mesh_in.num_vertices() == 16);
   }
-  
+
   void testMeshXML3D()
   {
     // Write and read 3D mesh to/from file
@@ -245,7 +245,7 @@ public:
     file << mesh;
     CPPUNIT_ASSERT(0 == 0);
   }
-  
+
   void testMeshFunction()
   {
     // Write and read mesh function to/from file

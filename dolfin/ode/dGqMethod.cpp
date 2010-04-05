@@ -20,7 +20,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 dGqMethod::dGqMethod(unsigned int q) : Method(q, q + 1, q + 1)
 {
-  info("Initializing discontinuous Galerkin method dG(%d).", q);
+  info(TRACE, "Initializing discontinuous Galerkin method dG(%d).", q);
 
   init();
 

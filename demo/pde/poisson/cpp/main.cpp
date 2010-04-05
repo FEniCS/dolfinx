@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-07
-// Last changed: 2010-03-05
+// Last changed: 2010-04-05
 //
 // This demo program solves Poisson's equation
 //
@@ -54,7 +54,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh and function space
-  UnitSquare mesh(32, 32);
+  UnitSquare mesh(1024, 1024);
   Poisson::FunctionSpace V(mesh);
 
   // Define boundary condition

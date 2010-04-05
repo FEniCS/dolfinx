@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2009-05-08
-// Last changed: 2009-12-08
+// Last changed: 2010-04-05
 
 #include <sstream>
 #include <stdio.h>
@@ -214,7 +214,7 @@ void Parameters::add(const Parameters& parameters)
 //-----------------------------------------------------------------------------
 void Parameters::parse(int argc, char* argv[])
 {
-  info("Parsing command-line arguments...");
+  info(TRACE, "Parsing command-line arguments.");
   parse_dolfin(argc, argv);
 }
 //-----------------------------------------------------------------------------

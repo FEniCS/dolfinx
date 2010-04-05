@@ -73,7 +73,7 @@ dolfin::uint UmfpackLUSolver::factorize(const GenericMatrix& A)
     (const long int*) std::tr1::get<1>(data), std::tr1::get<2>(data), M, nnz);
 
   // Factorize
-  info("LU-factorizing linear system of size %d x %d (UMFPACK).", M, M);
+  info(PROGRESS, "LU-factorizing linear system of size %d x %d (UMFPACK).", M, M);
   umfpack.factorize();
 
   return 1;
@@ -92,7 +92,7 @@ dolfin::uint UmfpackLUSolver::factorized_solve(GenericVector& x, const GenericVe
   // Initialise solution vector and solve
   x.resize(N);
 
-  info("Solving factorized linear system of size %d x %d (UMFPACK).", N, N);
+  info(PROGRESS, "Solving factorized linear system of size %d x %d (UMFPACK).", N, N);
   // Solve for tranpose since we use compressed rows and UMFPACK expected compressed columns
   umfpack.factorized_solve(x.data(), b.data(), true);
 

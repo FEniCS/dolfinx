@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2010-03-03
+// Last changed: 2010-04-05
 
 #include <sstream>
 
@@ -19,10 +19,6 @@
 #include <dolfin/io/File.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/adaptivity/AdaptiveObjects.h>
-#include "UniformMeshRefinement.h"
-#include "LocalMeshRefinement.h"
-#include "LocalMeshCoarsening.h"
 #include "IntersectionOperator.h"
 #include "TopologyComputation.h"
 #include "MeshSmoothing.h"
@@ -194,21 +190,12 @@ bool Mesh::ordered() const
   return _ordered;
 }
 //-----------------------------------------------------------------------------
-void Mesh::refine()
-{
-  AdaptiveObjects::refine(this, 0);
-}
-//-----------------------------------------------------------------------------
-void Mesh::refine(MeshFunction<bool>& cell_markers)
-{
-  AdaptiveObjects::refine(this, &cell_markers);
-}
-//-----------------------------------------------------------------------------
+/*
 void Mesh::coarsen()
 {
   // FIXME: Move implementation to separate class and just call function here
 
-  info("No cells marked for coarsening, assuming uniform mesh coarsening.");
+  info(DBG, "No cells marked for coarsening, assuming uniform mesh coarsening.");
   MeshFunction<bool> cell_marker(*this);
   cell_marker.init(this->topology().dim());
   for (CellIterator c(*this); !c.end(); ++c)
@@ -229,6 +216,7 @@ void Mesh::coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary)
   // Mesh may not be ordered
   _ordered = false;
 }
+*/
 //-----------------------------------------------------------------------------
 void Mesh::move(BoundaryMesh& boundary, ALEType method)
 {

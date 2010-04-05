@@ -2,16 +2,16 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2010-02-25
-// Last changed: 2010-03-03
+// Last changed: 2010-03-25
 
 #ifdef HAS_TRILINOS
 
 #include <dolfin/main/MPI.h>
 #include <boost/assign/list_of.hpp>
-#include <AztecOO.h>
 #include <Ifpack.h>
 #include <Epetra_CombineMode.h>
 #include <ml_include.h>
+#include <AztecOO.h>
 #include <ml_epetra_utils.h>
 #include "ml_MultiLevelPreconditioner.h"
 #include "Teuchos_ParameterList.hpp"

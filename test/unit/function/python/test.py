@@ -89,7 +89,7 @@ class Eval(unittest.TestCase):
 
           self.assertAlmostEqual(s0, s1)
           self.assertAlmostEqual(s0, s2)
-          
+
      def testWrongEval(self):
           # Test wrong evaluation
           class F0(Expression):
@@ -199,7 +199,7 @@ class Interpolate(unittest.TestCase):
 
         # Vector interpolation
         f1 = F1()
-        W = V + V
+        W = V * V
         f = Function(W)
         f.interpolate(f1)
         self.assertAlmostEqual(f.vector().norm("l1"), 2*mesh.num_vertices())

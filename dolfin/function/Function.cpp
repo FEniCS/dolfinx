@@ -24,7 +24,6 @@
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/adaptivity/AdaptiveObjects.h>
 #include <dolfin/adaptivity/Extrapolation.h>
 #include "Data.h"
 #include "Expression.h"
@@ -41,9 +40,6 @@ Function::Function(const FunctionSpace& V)
 {
   // Initialize vector
   init_vector();
-
-  // Register adaptive object
-  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
@@ -53,9 +49,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
 {
   // Initialize vector
   init_vector();
-
-  // Register adaptive object
-  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, GenericVector& x)
@@ -66,9 +59,6 @@ Function::Function(const FunctionSpace& V, GenericVector& x)
 {
   // Assertion uses '<=' to deal with sub-functions
   assert(V.dofmap().global_dimension() <= x.size());
-
-  // Register adaptive object
-  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -80,9 +70,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 {
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x->size());
-
-  // Register adaptive object
-  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -94,9 +81,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 {
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x.size());
-
-  // Register adaptive object
-  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
@@ -114,9 +98,6 @@ Function::Function(const FunctionSpace& V, std::string filename)
   // Check size of vector
   if (_vector->size() != _function_space->dim())
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
-
-  // Register adaptive object
-  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
@@ -139,9 +120,6 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
   // Check size of vector
   if (_vector->size() != _function_space->dim())
     error("Unable to read Function from file, number of degrees of freedom (%d) does not match dimension of function space (%d).", _vector->size(), _function_space->dim());
-
-  // Register adaptive object
-  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v)
@@ -149,9 +127,6 @@ Function::Function(const Function& v)
 {
   // Assign data
   *this = v;
-
-  // Register adaptive object
-  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v, uint i)
@@ -163,15 +138,11 @@ Function::Function(const Function& v, uint i)
 
   // Copy vector pointer
   this->_vector = v[i]._vector;
-
-  // Register adaptive object
-  AdaptiveObjects::register_object(this);
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
 {
-  // Deregister adaptive object
-  AdaptiveObjects::deregister_object(this);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Function& v)

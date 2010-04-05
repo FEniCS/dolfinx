@@ -26,6 +26,8 @@ double dolfin::toc()
   clock_t __toc_time = std::clock();
 
   double elapsed_time = ((double) (__toc_time - __tic_time)) / CLOCKS_PER_SEC;
+  if (elapsed_time < 1e-10)
+    elapsed_time = 0;
 
   return elapsed_time;
 }

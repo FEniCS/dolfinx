@@ -29,7 +29,7 @@ void plot_object(const T& t, std::string title, std::string mode)
   if (dolfin::MPI::num_processes() > 1)
   {
     if (dolfin::MPI::process_number() == 0)
-      info("On screen plotting from C++ not yet working in parallel.");
+      warning("On screen plotting from C++ not yet working in parallel.");
     return;
   }
 

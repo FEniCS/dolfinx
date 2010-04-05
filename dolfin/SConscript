@@ -113,7 +113,8 @@ if "configure" in COMMAND_LINE_TARGETS:
 
         # Check version of swig UFC was compiled with
         try:
-            assert ufc.__swigversion__ == swig_version
+            assert [int(s) for s in ufc.__swigversion__.split('.')] == \
+                [int (s) for s in swig_version.split('.')]
         except AttributeError:
             print """*** Old UFC installation detected. Install latest UFC."""
             Exit(1)

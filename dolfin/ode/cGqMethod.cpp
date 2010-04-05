@@ -21,7 +21,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 cGqMethod::cGqMethod(uint q) : Method(q, q + 1, q)
 {
-  info("Initializing continuous Galerkin method cG(%d).", q);
+  info(TRACE, "Initializing continuous Galerkin method cG(%d).", q);
 
   init();
 

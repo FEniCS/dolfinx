@@ -76,7 +76,7 @@ void EqualityBC::apply(GenericVector& b) const
 //-----------------------------------------------------------------------------
 void EqualityBC::apply(GenericMatrix& A, GenericVector& b) const
 {
-  info("Applying equality boundary conditions to linear system.");
+  info(TRACE, "Applying equality boundary conditions to linear system.");
 
   if (equal_dofs.size() < 2)
   {

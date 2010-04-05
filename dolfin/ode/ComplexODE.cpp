@@ -14,7 +14,7 @@ using namespace dolfin;
 ComplexODE::ComplexODE(uint n, real T) : ODE(2*n, T), n(n), j(0.0, 1.0),
                                            zvalues(0), fvalues(0), yvalues(0)
 {
-  info("Creating complex ODE of size %d (%d complex components).", N, n);
+  info(TRACE, "Creating complex ODE of size %d (%d complex components).", N, n);
 
   // Initialize complex solution vector and right-hand side
   zvalues = new complex[n];

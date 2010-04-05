@@ -17,7 +17,7 @@ t = 0.0
 while t < 1.0:
 
     # Refine mesh and resize vector
-    mesh.refine();
+    mesh = refine(mesh);
     x.resize(mesh.num_vertices())
 
     # Append to series

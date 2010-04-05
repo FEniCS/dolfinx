@@ -24,7 +24,11 @@ using namespace dolfin;
 void UniformMeshRefinement::refine(Mesh& refined_mesh,
                                    const Mesh& mesh)
 {
-  info(1, "Refining simplicial mesh uniformly.");
+  info(TRACE, "Refining simplicial mesh uniformly.");
+
+  // Check that refined_mesh and mesh are not the same
+  if (&refined_mesh == &mesh)
+    error("UniformMeshRefinement::refine: refined_mesh and mesh point to the same object");
 
   // Generate cell - edge connectivity if not generated
   mesh.init(mesh.topology().dim(), 1);

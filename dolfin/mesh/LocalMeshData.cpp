@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-11-28
-// Last changed: 2009-09-11
+// Last changed: 2010-04-05
 //
 // Modified by Anders Logg, 2008-2009.
 
@@ -47,12 +47,12 @@ LocalMeshData::~LocalMeshData()
 std::string LocalMeshData::str(bool verbose) const
 {
   std::stringstream s;
-  
+
   if (verbose)
   {
     s << str(false);
     s << std::endl;
-    
+
     s << "  Vertex coordinates" << std::endl;
     s << "  ------------------" << std::endl;
     for (uint i = 0; i < vertex_coordinates.size(); i++)
@@ -68,7 +68,7 @@ std::string LocalMeshData::str(bool verbose) const
     s << "  --------------" << std::endl;
     for (uint i = 0; i < vertex_coordinates.size(); i++)
       s << "    " << i << ": " << vertex_indices[i] << std::endl;
-    s << std::endl;    
+    s << std::endl;
 
     s << "  Cell vertces" << std::endl;
     s << "  ------------" << std::endl;
@@ -126,12 +126,12 @@ void LocalMeshData::extract_mesh_data(const Mesh& mesh)
       coordinates[i] = vertex->x()[i];
     vertex_coordinates.push_back(coordinates);
   }
-  
+
   /// Get global vertex indices for all vertices stored on local processor
   vertex_indices.reserve(mesh.num_vertices());
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
     vertex_indices.push_back(vertex->index());
-  
+
   /// Get global vertex indices for all cells stored on local processor
   cell_vertices.reserve(mesh.num_cells());
   global_cell_indices.reserve(mesh.num_cells());
@@ -176,7 +176,7 @@ void LocalMeshData::broadcast_mesh_data()
     for (uint p = 0; p < num_processes; p++)
     {
       std::pair<uint, uint> local_range = MPI::local_range(p, num_global_vertices);
-      info("Sending %d vertices to process %d, range is (%d, %d)",
+      info(TRACE, "Sending %d vertices to process %d, range is (%d, %d)",
            local_range.second - local_range.first, p, local_range.first, local_range.second);
       for (uint i = local_range.first; i < local_range.second; i++)
       {
@@ -209,7 +209,7 @@ void LocalMeshData::broadcast_mesh_data()
     for (uint p = 0; p < num_processes; p++)
     {
       std::pair<uint, uint> local_range = MPI::local_range(p, num_global_cells);
-      info("Sending %d cells to process %d, range is (%d, %d)",
+      info(TRACE, "Sending %d cells to process %d, range is (%d, %d)",
            local_range.second - local_range.first, p, local_range.first, local_range.second);
       for (uint i = local_range.first; i < local_range.second; i++)
       {
@@ -275,8 +275,8 @@ void LocalMeshData::unpack_vertex_coordinates(const std::vector<double>& values)
       coordinates[j] = values[k++];
     vertex_coordinates.push_back(coordinates);
   }
-  
-  info("Received %d vertex coordinates", vertex_coordinates.size());
+
+  info(TRACE, "Received %d vertex coordinates", vertex_coordinates.size());
 }
 //-----------------------------------------------------------------------------
 void LocalMeshData::unpack_vertex_indices(const std::vector<uint>& values)
@@ -286,7 +286,7 @@ void LocalMeshData::unpack_vertex_indices(const std::vector<uint>& values)
   for (uint i = 0; i < values.size(); i++)
     vertex_indices.push_back(values[i]);
 
-  info("Received %d vertex indices", vertex_coordinates.size());
+  info(TRACE, "Received %d vertex indices", vertex_coordinates.size());
 }
 //-----------------------------------------------------------------------------
 void LocalMeshData::unpack_cell_vertices(const std::vector<uint>& values)
@@ -305,6 +305,6 @@ void LocalMeshData::unpack_cell_vertices(const std::vector<uint>& values)
     cell_vertices.push_back(vertices);
   }
 
-  info("Received %d cell vertices", cell_vertices.size());
+  info(TRACE, "Received %d cell vertices", cell_vertices.size());
 }
 //-----------------------------------------------------------------------------

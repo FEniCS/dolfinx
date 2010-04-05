@@ -1,0 +1,5 @@
+(2010, 3, 30, 9, 13, 46) la-vector-assignment 3.2045 "Assigning to vector of size 1000000 (100 repetitions)"
+(2010, 3, 30, 9, 13, 53) la-vector-access 7.42585 "Accessing vector of size 1000000 (100 repetitions)"
+(2010, 3, 30, 9, 13, 56) mesh-refinement 2.15202 "Uniform refinement of unit cube of size 4 x 4 x 4 (3 refinements)"
+(2010, 3, 30, 9, 13, 58) mesh-unitcube 2.02012 "Creating unit cube of size 32 x 32 x 32 (20 repetitions)"
+(2010, 3, 30, 9, 14, 6) mesh-iteration 8.34911 "Iteration over entities of unit cube of size 32 x 32 x 32 (1000 repetitions)"

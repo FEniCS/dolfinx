@@ -20,10 +20,14 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-l = 1.0; h = 1.0 # unit square
-h_ = 0.5         # position of the dielectric interface
+# This demo does not run in parallel
+not_working_in_parallel("This demo")
+
+l   = 1.0
+h   = 1.0 # unit square
+h_  = 0.5         # position of the dielectric interface
 e_r = 10         # dielectric constant for y<h_ (e_r=1 for y>h_
-V = 1.0          # applied voltage at the y=0 boundary
+V   = 1.0          # applied voltage at the y=0 boundary
 
 # Create mesh and finite element
 mesh = Mesh()
@@ -40,8 +44,8 @@ editor.add_cell(1, 0, 2, 3)
 editor.close()
 
 # Refine mesh
-for refine in range(4):
-    mesh.refine()
+for i in range(4):
+    mesh = refine(mesh)
 
 # Function spaces
 V2 = FunctionSpace(mesh, "CG", 2) # last argument: order of the polynomial

@@ -136,12 +136,12 @@ void dolfin::logging(bool active)
   LogManager::logger.logging(active);
 }
 //-----------------------------------------------------------------------------
-void dolfin::set_log_level(uint level)
+void dolfin::set_log_level(int level)
 {
   LogManager::logger.set_log_level(level);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint dolfin::get_log_level()
+int dolfin::get_log_level()
 {
   return LogManager::logger.get_log_level();
 }

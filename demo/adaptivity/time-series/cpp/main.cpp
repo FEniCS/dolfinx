@@ -17,7 +17,9 @@ int main()
   TimeSeries series("primal");
 
   // Create a mesh and a vector
-  UnitSquare mesh(2, 2);
+  UnitSquare unitsquare_mesh(2, 2);
+  Mesh mesh(unitsquare_mesh);
+
   Vector x;
 
   // Add a bunch of meshes and vectors to the series
@@ -25,13 +27,14 @@ int main()
   while (t < 1.0)
   {
     // Refine mesh and resize vector
-    mesh.refine();
-    x.resize(mesh.num_vertices());
+    Mesh new_mesh = refine(mesh);
+    x.resize(new_mesh.num_vertices());
 
     // Append to series
-    series.store(mesh, t);
+    series.store(new_mesh, t);
     series.store(x, t);
 
+    mesh = new_mesh;
     t += 0.2;
   }
 
