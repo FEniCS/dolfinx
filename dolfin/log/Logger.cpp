@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-09-15
+// Last changed: 2010-04-06
 
 #include <string>
 #include <iostream>
@@ -197,7 +197,7 @@ double Logger::timing(std::string task, bool reset)
 void Logger::__debug(std::string msg) const
 {
   std::string s = std::string("Debug: ") + msg;
-  write(DEBUG, s);
+  write(DBG, s);
 }
 //-----------------------------------------------------------------------------
 void Logger::write(int log_level, std::string msg) const

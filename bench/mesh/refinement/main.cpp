@@ -18,7 +18,8 @@ int main(int argc, char* argv[])
 
   parameters.parse(argc, argv);
 
-  UnitCube mesh(SIZE, SIZE, SIZE);
+  UnitCube unitcube_mesh(SIZE, SIZE, SIZE);
+  Mesh mesh(unitcube_mesh);
 
   for (int i = 0; i < NUM_REPS; i++)
   {

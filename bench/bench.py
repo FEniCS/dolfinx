@@ -68,6 +68,6 @@ if len(failed) == 0:
 else:
     print "%d benchmark(s) failed:" % len(failed)
     for name in failed:
-        print "  " + failed
+        print "  " + name
 
 sys.exit(len(failed))
