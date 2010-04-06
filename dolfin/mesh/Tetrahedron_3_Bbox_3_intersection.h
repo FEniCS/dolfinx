@@ -2,18 +2,22 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-11
-// Last changed: 2009-11-11
+// Last changed: 2010-04-06
 
 #ifndef  TETRAHEDRON_3_BBOX_3_INTERSECTION_INC
 #define  TETRAHEDRON_3_BBOX_3_INTERSECTION_INC
 
 #include <CGAL/Bbox_3.h>
 #include <CGAL/Tetrahedron_3.h>
-#include <CGAL/AABB_intersections/Bbox_3_triangle_3_do_intersect.h>
+//#include <CGAL/AABB_intersections/Bbox_3_triangle_3_do_intersect.h>
 
 CGAL_BEGIN_NAMESPACE
 
+#if CGAL_VERSION_NR < 1030601000
 namespace CGALi {
+#else
+namespace internal {
+#endif
 
   //This code is not optimized!!
   template <class K>

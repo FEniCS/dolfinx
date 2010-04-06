@@ -6,7 +6,7 @@
 // Modified by André Massing, 2010
 //
 // First added:  2010-02-10
-// Last changed: 2010-02-11
+// Last changed: 2010-04-06
 // 
 //Author:  André Massing (am), massing@simula.no
 //Company:  Simula Research Laboratory, Fornebu, Norway
@@ -19,7 +19,11 @@
 
 namespace CGAL {
 
+#if CGAL_VERSION_NR < 1030601000
 namespace CGALi {
+#else
+namespace internal {
+#endif
 
 template <>
 Simple_cartesian<double>::Boolean
