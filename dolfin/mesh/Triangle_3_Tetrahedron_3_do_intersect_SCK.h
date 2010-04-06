@@ -6,7 +6,7 @@
 // Modified by André Massing, 2010
 //
 // First added:  2010-02-09
-// Last changed: 2010-02-10
+// Last changed: 2010-04-06
 // 
 //Author:  André Massing (am), massing@simula.no
 //Company:  Simula Research Laboratory, Fornebu, Norway
@@ -21,7 +21,11 @@
 
 CGAL_BEGIN_NAMESPACE
 
+#if CGAL_VERSION_NR < 1030601000
 namespace CGALi {
+#else
+namespace internal {
+#endif
 
 ///Declaration of function template specialization.
 template <>
