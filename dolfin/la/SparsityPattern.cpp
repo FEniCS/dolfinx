@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2007-03-13
-// Last changed: 2009-08-06
+// Last changed: 2010-04-06
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -191,7 +191,7 @@ void SparsityPattern::apply()
     return;
 
   // Print some useful information
-  if (get_log_level() <= DEBUG)
+  if (get_log_level() <= DBG)
     info_statistics();
 
   // Communicate non-local blocks if any
