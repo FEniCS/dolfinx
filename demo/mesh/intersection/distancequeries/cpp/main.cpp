@@ -6,7 +6,7 @@
 // Modified by André Massing, 2010
 //
 // First added:  2010-03-03
-// Last changed: 2010-03-03
+// Last changed: 2010-03-04
 // 
 //Author:  André Massing (am), massing@simula.no
 //Company:  Simula Research Laboratory, Fornebu, Norway
@@ -41,12 +41,12 @@ int main()
   point_list.push_back(Point(-1.5,-1.5,0.0));
   point_list.push_back(Point(0.0,-1.5,0.0));
   point_list.push_back(Point(1.5,-1.5,0.0));
-  ;
+
   //Second row along  y = 0;
   point_list.push_back(Point(-1.5,0.0,0.0));
   point_list.push_back(Point(0.0,0.0,0.0));
   point_list.push_back(Point(1.5,0.0,0.0));
-  ;
+
   //Third row along  y = 1.5;
   point_list.push_back(Point(-1.5,1.5,0.0));
   point_list.push_back(Point(0.0,1.5,0.0));
