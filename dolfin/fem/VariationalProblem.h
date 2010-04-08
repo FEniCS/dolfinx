@@ -8,6 +8,7 @@
 #define __VARIATIONAL_PROBLEM_H
 
 #include <vector>
+#include <boost/scoped_ptr.hpp>
 #include <dolfin/common/Variable.h>
 #include <dolfin/nls/NonlinearProblem.h>
 #include <dolfin/nls/NewtonSolver.h>
@@ -108,11 +109,14 @@ namespace dolfin
     static Parameters default_parameters()
     {
       Parameters p("variational_problem");
-      
+
       p.add("linear_solver", "direct");
       p.add("symmetric", false);
       p.add("reset_jacobian", true);
-      
+
+      p.add("print_rhs", false);
+      p.add("print_matrix", false);
+
       p.add(NewtonSolver::default_parameters());
       p.add(LUSolver::default_parameters());
       p.add(KrylovSolver::default_parameters());
@@ -149,7 +153,7 @@ namespace dolfin
     bool jacobian_initialised;
 
     // Newton solver
-    NewtonSolver* _newton_solver;
+    boost::scoped_ptr<NewtonSolver> _newton_solver;
   };
 
 }

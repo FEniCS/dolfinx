@@ -23,9 +23,7 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        const Form& L,
                                        bool nonlinear)
   : a(a), L(L), cell_domains(0), exterior_facet_domains(0),
-    interior_facet_domains(0), nonlinear(nonlinear), jacobian_initialised(false), 
-    _newton_solver(0)
-
+    interior_facet_domains(0), nonlinear(nonlinear), jacobian_initialised(false)
 {
   // Set default parameter values
   parameters = default_parameters();
@@ -36,8 +34,7 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        const BoundaryCondition& bc,
                                        bool nonlinear)
   : a(a), L(L), cell_domains(0), exterior_facet_domains(0),
-    interior_facet_domains(0), nonlinear(nonlinear), jacobian_initialised(false), 
-    _newton_solver(0)
+    interior_facet_domains(0), nonlinear(nonlinear), jacobian_initialised(false)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -51,8 +48,7 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        const std::vector<const BoundaryCondition*>& bcs,
                                        bool nonlinear)
   : a(a), L(L), cell_domains(0), exterior_facet_domains(0),
-    interior_facet_domains(0), nonlinear(nonlinear), jacobian_initialised(false),
-    _newton_solver(0)
+    interior_facet_domains(0), nonlinear(nonlinear), jacobian_initialised(false)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -71,8 +67,8 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        bool nonlinear)
   : a(a), L(L), cell_domains(cell_domains),
     exterior_facet_domains(exterior_facet_domains),
-    interior_facet_domains(interior_facet_domains), nonlinear(nonlinear), 
-    jacobian_initialised(false), _newton_solver(0)
+    interior_facet_domains(interior_facet_domains), nonlinear(nonlinear),
+    jacobian_initialised(false)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -84,7 +80,7 @@ VariationalProblem::VariationalProblem(const Form& a,
 //-----------------------------------------------------------------------------
 VariationalProblem::~VariationalProblem()
 {
-  delete _newton_solver;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve(Function& u)
@@ -98,9 +94,9 @@ void VariationalProblem::solve(Function& u)
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve(Function& u0, Function& u1)
 {
-  // Create function 
+  // Create function
   Function u(a.function_space(0));
-  
+
   // Solve variational problem
   solve(u);
 
@@ -111,7 +107,7 @@ void VariationalProblem::solve(Function& u0, Function& u1)
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve(Function& u0, Function& u1, Function& u2)
 {
-  // Create function 
+  // Create function
   Function u(a.function_space(0));
 
   // Solve variational problem
@@ -135,6 +131,11 @@ void VariationalProblem::F(GenericVector& b, const GenericVector& x)
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
     bcs[i]->apply(b, x);
+
+  // Print vector
+  const bool print_rhs = parameters["print_rhs"];
+  if (print_rhs == true)
+    info(b, true);
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::J(GenericMatrix& A, const GenericVector& x)
@@ -143,19 +144,24 @@ void VariationalProblem::J(GenericMatrix& A, const GenericVector& x)
   if (!nonlinear)
     error("Attempt to solve linear variational problem with Newton solver.");
 
-  // Check if Jacobian matrix sparsity pattern should be reset 
+  // Check if Jacobian matrix sparsity pattern should be reset
   bool reset_sparsity = true;
-  if (parameters["reset_jacobian"] && jacobian_initialised) 
+  if (parameters["reset_jacobian"] && jacobian_initialised)
     reset_sparsity = false;
 
   // Assemble
-  assemble(A, a, cell_domains, exterior_facet_domains, interior_facet_domains, 
+  assemble(A, a, cell_domains, exterior_facet_domains, interior_facet_domains,
            reset_sparsity);
   jacobian_initialised = true;
 
   // Apply boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
     bcs[i]->apply(A);
+
+  // Print matrix
+  const bool print_matrix = parameters["print_matrix"];
+  if (print_matrix == true)
+    info(A, true);
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::update(const GenericVector& x)
@@ -168,7 +174,7 @@ NewtonSolver& VariationalProblem::newton_solver()
   // Create Newton solver if missing
   if (!_newton_solver)
   {
-    _newton_solver = new NewtonSolver();
+    _newton_solver.reset(new NewtonSolver);
     _newton_solver->parameters.update(parameters("newton_solver"));
   }
 
@@ -213,6 +219,14 @@ void VariationalProblem::solve_linear(Function& u)
     for (uint i = 0; i < bcs.size(); i++)
       bcs[i]->apply(A, b);
   }
+
+  // Print vector/matrix
+  const bool print_rhs    = parameters["print_rhs"];
+  const bool print_matrix = parameters["print_matrix"];
+  if (print_rhs == true)
+    info(b, true);
+  if (print_matrix == true)
+    info(A, true);
 
   // Solve linear system
   const std::string solver_type = parameters["linear_solver"];
