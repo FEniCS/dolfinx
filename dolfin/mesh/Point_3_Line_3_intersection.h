@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-11
-// Last changed: 2009-11-10
+// Last changed: 2010-04-06
 
 #ifndef CGAL_POINT_3_LINE_3_INTERSECTION_H
 #define CGAL_POINT_3_LINE_3_INTERSECTION_H
@@ -13,7 +13,11 @@
 
 CGAL_BEGIN_NAMESPACE
 
+#if CGAL_VERSION_NR < 1030601000
 namespace CGALi {
+#else
+namespace internal {
+#endif
 
 template <class K>
 inline bool

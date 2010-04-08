@@ -5,7 +5,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-06-12
-// Last changed: 2010-03-01
+// Last changed: 2010-03-07
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -15,10 +15,8 @@
 #include <dolfin/common/types.h>
 
 #ifdef HAS_CGAL
-//  #include "CGAL_includes.h"
-  #include <CGAL/Bbox_3.h>
-  #include <CGAL/Point_3.h>
-//  #include <CGAL/Simple_cartesian.h> 
+#include <CGAL/Bbox_3.h>
+#include <CGAL/Point_3.h>
 #endif
 
 namespace dolfin

@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2008-05-19
-// Last changed: 2010-02-17
+// Last changed: 2010-04-07
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
@@ -29,6 +29,13 @@ namespace dolfin
   ///
   /// Boundary indicators
   ///
+  ///   "boundary facet cells"   - Array<uint> of size num_facets
+  ///   "boundary facet numbers" - Array<uint> of size num_facets
+  ///   "boundary indicators"    - Array<uint> of size num_facets
+  ///   "material indicators"    - MeshFunction<uint> of dimension D
+  ///
+  /// Boundary indicators (alternative)
+  ///
   ///   "exterior facet domains" - MeshFunction<uint> of dimension D - 1
   ///
   /// Facet orientation (used for assembly over interior facets)
@@ -50,13 +57,6 @@ namespace dolfin
   /// Sub meshes
   ///
   ///    "global vertex indices" - MeshFunction<uint> of dimension 0
-  ///
-  /// Mesh refinement
-  ///
-  ///   "boundary facet cells"   - MeshFunction<uint> of dimension 0, 1, ..., D
-  ///   "boundary facet numbers" - MeshFunction<uint> of dimension 0, 1, ..., D
-  ///   "boundary indicators"    - MeshFunction<uint> of dimension 0, 1, ..., D
-  ///   "material indicators"    - MeshFunction<uint> of dimension D
 
   class MeshData : public Variable
   {

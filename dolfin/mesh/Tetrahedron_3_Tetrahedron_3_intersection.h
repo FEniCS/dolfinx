@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-11
-// Last changed: 2009-11-10
+// Last changed: 2010-04-06
 
 #ifndef  TETRAHEDRON_3_TETRAHEDRON_3_INTERSECTION_INC
 #define  TETRAHEDRON_3_TETRAHEDRON_3_INTERSECTION_INC
@@ -12,7 +12,11 @@
 
 CGAL_BEGIN_NAMESPACE
 
+#if CGAL_VERSION_NR < 1030601000
 namespace CGALi {
+#else
+namespace internal {
+#endif
 
   //This code is not optimized!!
   template <class K >
