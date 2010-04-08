@@ -1,3 +1,4 @@
+ - Add option to print matrix/vector for a VariationalProblem
  - Trilinos backend now works in parallel
  - Remove Mesh refine members functions. Use free refine(...) functions instead
  - Remove AdapativeObjects
