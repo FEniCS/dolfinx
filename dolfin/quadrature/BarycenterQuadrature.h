@@ -4,12 +4,12 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-03-17
-// Last changed: 2010-04-09
+// Last changed: 2010-04-12
 
 #ifndef  __BARYCENTER_QUADRATURE_H
 #define  __BARYCENTER_QUADRATURE_H
 
-#ifdef HAS_CGAL#ifdef HAS_CGAL
+#ifdef HAS_CGAL
 
 #include "BarycenterQuadrature.h"
 
@@ -49,10 +49,10 @@ namespace dolfin
     { assert(_points.size() == _weights.size()); return _points.size(); }
 
   private:
-    
+
     ///Computes barycenter and weight.
     void compute_quadrature(const Nef_polyhedron_3 &);
-      
+
     std::vector<Point> _points;
     std::vector<double> _weights;
 
@@ -62,4 +62,4 @@ namespace dolfin
 
 #endif
 
-#endif   // ----- #ifndef __BARYCENTERQUADRATURE_H  -----
+#endif
