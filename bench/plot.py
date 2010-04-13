@@ -107,7 +107,8 @@ for last, locator, date_fmt, xmin in zip(lasts, locators, date_fmts, xmins):
         dates = values[0]
         timings = values[1]
         ax.plot(dates, timings/numpy.linalg.norm(timings),
-                marker=markers[num % len(markers)], label=benchmark)
+                marker=markers[num % len(markers)], markersize=3,
+                label=benchmark)
         ax.hold(True)
     ax.xaxis.set_major_locator(locator)
     ax.xaxis.set_major_formatter(mdates.DateFormatter(date_fmt))
@@ -160,7 +161,7 @@ for benchmark, values in benchmarks.items():
     for last, locator, date_fmt, xmin in zip(lasts, locators, date_fmts, xmins):
         fig = plt.figure()
         ax = fig.gca()
-        ax.plot(dates, timings)
+        ax.plot(dates, timings, marker='o', markersize=3)
         ax.set_ylabel("time (seconds)")
         ax.set_ylim(0, max(timings) + max(timings)/2.)
         ax.legend((description,), loc='best')        
