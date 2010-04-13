@@ -3,7 +3,7 @@
 """
 This script parses logs/bench.log and create plots for each case with
 the timings function of time (date plot). It also creates a web page
-bench.html for easy viewing of the generated plots.
+index.html for easy viewing of the generated plots.
 """
 
 __author__ = "Johannes Ring <johannr@simula.no>"
@@ -31,8 +31,8 @@ plt.rcParams.update({'figure.figsize': [6, 4],
                      'ytick.labelsize' : 8,
                      })
 
-# Write to web page bench.html
-outfile = open("bench.html", "w")
+# Write to web page index.html
+outfile = open("index.html", "w")
 outfile.write("<h1><big>DOLFIN Benchmarks</big></h1>\n")
 outfile.write("Last updated: %s.\n\n" % time.asctime())
 
