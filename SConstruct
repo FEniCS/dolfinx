@@ -144,8 +144,14 @@ options = [
     #('customDefaultPackages','Override the default set of packages (%r), separate package names with commas' % (DefaultPackages,)),
     ("SSLOG", "Set Simula scons log file", os.path.join(os.getcwd(),"scons","simula_scons.log")),
     ("withPetscArch", "The architecture PETSc is configured with", None),
+    ("withBlasLapackLib", "Indicate the library(s) containing BLAS and LAPACK", None),
     ]
 
+if ARGUMENTS.has_key("withBlasLapackLib") and \
+       not ARGUMENTS.has_key("withLapackDir"):
+  print "*** When using the withBlasLapackLib option you must also use " \
+        "withLapackDir."
+  Exit(1)
 
 # Option enablePydolfin is now deprecated
 if ARGUMENTS.has_key("enablePydolfin"):
