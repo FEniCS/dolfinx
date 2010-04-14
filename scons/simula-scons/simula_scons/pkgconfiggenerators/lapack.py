@@ -122,7 +122,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
     if not libs:
         libs = pkgLibs(sconsEnv=sconsEnv)
     else:
-        # run pkgLibs as this is the current CHOLMOD test
+        # run pkgLibs as this is the current LAPACK test
         libs = pkgLibs(compiler=compiler, linker=linker,
                        cflags=cflags, sconsEnv=sconsEnv)
     if not version:

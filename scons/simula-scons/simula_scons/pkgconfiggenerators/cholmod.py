@@ -3,6 +3,8 @@ import os,sys
 import string
 import os.path
 
+import lapack
+
 from commonPkgConfigUtils import *
 
 def generate_dirs(base_dirs, *names):
@@ -273,11 +275,6 @@ int main()
   write_cppfile(cpp_test_libs_str, cpp_file);
 
   libs = ""
-  if get_architecture() == "darwin":
-    libs += "-framework vecLib"
-  else:
-    libs += "-L%s -llapack -L%s -lblas" % \
-            (getLapackDir(sconsEnv=sconsEnv), getBlasDir(sconsEnv=sconsEnv))
   for lib_dir in set([getPackageDirs(sconsEnv, "AMD")[1],
                       getPackageDirs(sconsEnv, "CAMD")[1],
                       getPackageDirs(sconsEnv, "COLAMD")[1],
@@ -287,7 +284,8 @@ int main()
   libs += " -lcholmod -lamd -lcamd -lcolamd -lccolamd"
 
   # test that we can compile
-  cmdstr = "%s %s -c %s" % (compiler, cflags, cpp_file)
+  lapack_cflags = lapack.pkgCflags(sconsEnv=sconsEnv)
+  cmdstr = "%s %s %s -c %s" % (compiler, cflags, lapack_cflags, cpp_file)
   compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
     remove_cppfile(cpp_file)
@@ -296,44 +294,30 @@ int main()
                                    errormsg=cmdoutput)
 
   # test that we can link
-  cmdstr = "%s -o a.out %s %s %s" % (linker, cflags, cpp_file, libs)
+  lapack_libs = lapack.pkgLibs(compiler=compiler, linker=linker,
+                               cflags=cflags, sconsEnv=sconsEnv)
+  cmdstr = "%s -o a.out %s %s %s" % (linker, cpp_file, libs, lapack_libs)
   linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
-    # try adding -lgfortran to get around Ubuntu Hardy libatlas-base-dev issue
-    cmdstr = "%s -o a.out %s %s -lgfortran" % \
-             (linker, cpp_file.replace('.cpp', '.o'), libs)
+    # CHOLMOD may be built with METIS, try adding -lmetis
+    metis_dir = getMETISDirs(sconsEnv)[0]
+    cmdstr = "%s -o a.out %s %s %s -L%s -lmetis" % \
+             (linker, cpp_file.replace('.cpp', '.o'),
+              libs, lapack_libs, metis_dir)
     linkFailed, cmdoutput = getstatusoutput(cmdstr)
-    if linkFailed:
-      # CHOLMOD may be built with METIS, try adding -lmetis
-      metis_dir = getMETISDirs(sconsEnv)[0]
-      cmdstr = "%s -o a.out %s %s -L%s -lmetis" % \
-               (linker, cpp_file.replace('.cpp', '.o'), libs, metis_dir)
-      linkFailed, cmdoutput = getstatusoutput(cmdstr)
-      if linkFailed:
-        # try adding both -lgfortran and -lmetis
-        cmdstr = "%s -o a.out %s %s -L%s -lmetis -lgfortran" % \
-                 (linker, cpp_file.replace('.cpp', '.o'), libs, metis_dir)
-        linkFailed, cmdoutput = getstatusoutput(cmdstr)
-        if linkFailed:    
-          remove_cppfile(cpp_file, ofile=True)
-          errormsg = """Using '%s' for LAPACK and '%s' BLAS.
-Consider setting the environment variables LAPACK_DIR and
-BLAS_DIR if this is wrong.
-Using '%s' for METIS.
+    if linkFailed:    
+      remove_cppfile(cpp_file, ofile=True)
+      errormsg = """Using '%s' for METIS.
 Consider setting the environment variable METIS_DIR if this is
 wrong. This is not necessary if CHOLMOD is built without METIS.
 
 %s
-""" % (getLapackDir(sconsEnv), getBlasDir(sconsEnv), metis_dir, cmdoutput)
-          raise UnableToCompileException("CHOLMOD", cmd=cmdstr,
-                                         program=cpp_test_libs_str,
-                                         errormsg=errormsg)
-        else:
-          libs += " -L%s -lmetis -lgfortran" % metis_dir
-      else:
-        libs += " -L%s -lmetis" % metis_dir
+""" % (metis_dir, cmdoutput)
+      raise UnableToCompileException("CHOLMOD", cmd=cmdstr,
+                                     program=cpp_test_libs_str,
+                                     errormsg=errormsg)
     else:
-      libs += " -lgfortran"
+      libs += " -L%s -lmetis" % metis_dir
 
   cmdstr = os.path.join(os.getcwd(), "a.out")
   runFailed, cmdoutput = getstatusoutput(cmdstr)
@@ -387,11 +371,15 @@ def generatePkgConf(directory=None, sconsEnv=None, **kwargs):
   if directory is None:
     directory = suitablePkgConfDir()
 
+  # cholmod.pc requires lapack.pc so make sure it is available
+  dep_module_header_and_libs('LAPACK', 'lapack', sconsEnv=sconsEnv)
+
   version, libs, cflags = pkgTests(sconsEnv=sconsEnv)
 
   pkg_file_str = r"""Name: CHOLMOD
 Version: %s
 Description: CHOLMOD is a set of ANSI C routines for sparse Cholesky factorization and update/downdate.
+Requires: lapack
 Libs: %s
 Cflags: %s
 """ % (version, repr(libs)[1:-1], repr(cflags)[1:-1])
