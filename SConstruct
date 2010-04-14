@@ -144,6 +144,7 @@ options = [
     ("SSLOG", "Set Simula scons log file", os.path.join(os.getcwd(),"scons","simula_scons.log")),
     ("withPetscArch", "The architecture PETSc is configured with", None),
     ("withBlasLapackLib", "Indicate the library(s) containing BLAS and LAPACK", None),
+    ("withMpiCompiler", "Specify the MPI compiler", None),
     ]
 
 if ARGUMENTS.has_key("withBlasLapackLib") and \
@@ -257,6 +258,9 @@ if "configure" in COMMAND_LINE_TARGETS:
   if env["enableMpi"]:
     mpi_cxx_compilers = ["mpic++", "mpicxx", "mpiCC"]
     mpi_cxx = os.environ.get("CXX", env.Detect(mpi_cxx_compilers))
+    if env["withMpiCompiler"]:
+      mpi_cxx_compilers.append(env["withMpiCompiler"])
+      mpi_cxx = env["withMpiCompiler"]
     # Several cases for mpi_cxx depending on CXX from os.environ:
     # CXX=                           - not OK
     # CXX=cxx_compiler               - not OK
@@ -267,7 +271,8 @@ if "configure" in COMMAND_LINE_TARGETS:
     # FIXME: Any other cases?
     if not env.Detect(["mpirun", "mpiexec", "orterun"]) or not \
            (mpi_cxx and \
-            os.path.basename(mpi_cxx.split()[-1]) in mpi_cxx_compilers):
+            os.path.basename(mpi_cxx.split()[-1]) in mpi_cxx_compilers \
+            or env["withMpiCompiler"]):
       print "MPI not found (might not work if PETSc uses MPI)."
       # revert back to cxx compiler
       env["CXX"] = cxx
