@@ -296,7 +296,8 @@ int main()
   # test that we can link
   lapack_libs = lapack.pkgLibs(compiler=compiler, linker=linker,
                                cflags=cflags, sconsEnv=sconsEnv)
-  cmdstr = "%s -o a.out %s %s %s" % (linker, cpp_file, libs, lapack_libs)
+  cmdstr = "%s -o a.out %s %s %s" % \
+           (linker, cpp_file.replace('.cpp', '.o'), libs, lapack_libs)
   linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     # CHOLMOD may be built with METIS, try adding -lmetis
