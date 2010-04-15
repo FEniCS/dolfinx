@@ -144,7 +144,7 @@ options = [
     ("SSLOG", "Set Simula scons log file", os.path.join(os.getcwd(),"scons","simula_scons.log")),
     ("withPetscArch", "The architecture PETSc is configured with", None),
     ("withBlasLapackLib", "Indicate the library(s) containing BLAS and LAPACK", None),
-    ("withMpiCompiler", "Specify the MPI compiler", None),
+    ("withMpiCompiler", "Specify the MPI compiler", ""),
     ]
 
 if ARGUMENTS.has_key("withBlasLapackLib") and \
