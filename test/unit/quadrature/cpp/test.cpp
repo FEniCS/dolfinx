@@ -601,7 +601,7 @@ class BaryCenter : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE(BaryCenter);
   CPPUNIT_TEST_SUITE_END();
-}
+};
 
 #endif
 

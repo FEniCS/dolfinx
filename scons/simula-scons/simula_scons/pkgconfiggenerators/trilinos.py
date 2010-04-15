@@ -194,14 +194,6 @@ printf("-lml\n");
     
     remove_cppfile("trilinos_config_test.cpp", execfile=True)
 
-    # We also have to link with BLAS and LAPACK:
-    arch = get_architecture()
-    blasstring = ""
-    if arch == "darwin":
-    	libs_str += " -framework vecLib"
-    else:
-        libs_str += " -L%s -lblas -llapack" % getAtlasDir(sconsEnv=sconsEnv)
-
     return libs_str
 
 def pkgTests(forceCompiler=None, sconsEnv=None,
@@ -271,22 +263,29 @@ int main() {
 
     return version, cflags, libs
 
-def generatePkgConf(directory=suitablePkgConfDir(), sconsEnv=None, **kwargs):
-    
-    trilinos_version, trilinos_cflags, trilinos_libs = pkgTests(sconsEnv=sconsEnv)
+def generatePkgConf(directory=None, sconsEnv=None, **kwargs):
+    if directory is None:
+        directory = suitablePkgConfDir()
+
+    # trilinos.pc requires lapack.pc so make sure it is available
+    dep_module_header_and_libs('LAPACK', 'lapack', sconsEnv=sconsEnv)
+
+    trilinos_version, trilinos_cflags, trilinos_libs = \
+                      pkgTests(sconsEnv=sconsEnv)
 
     pkg_file_str = r"""Name: Trilinos
 Version: %s
 Description: The Trilinos project - http://software.sandia.gov/trilinos
+Requires: lapack
 Libs: %s
 Cflags: %s
-""" % (trilinos_version, trilinos_libs, trilinos_cflags)
-
-    pkg_file = open("%s/trilinos.pc" % directory, 'w')
+""" % (trilinos_version, repr(trilinos_libs)[1:-1], repr(trilinos_cflags)[1:-1])
+    pkg_file = open(os.path.join(directory, "trilinos.pc"), 'w')
     pkg_file.write(pkg_file_str)
     pkg_file.close()
 
-    print "done\n Found Trilinos and generated pkg-config file in \n '%s'" % directory
+    print "done\n Found Trilinos and generated pkg-config file in \n '%s'" \
+          % directory
 
 if __name__ == "__main__":
     generatePkgConf(directory=".")

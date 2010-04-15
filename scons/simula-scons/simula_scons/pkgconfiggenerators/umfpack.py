@@ -3,6 +3,8 @@ import os,sys
 import string
 import os.path
 
+import lapack
+
 from commonPkgConfigUtils import *
 
 def generate_dirs(base_dirs, *names):
@@ -182,20 +184,14 @@ int main() {
     libs = pkgLibs()
   if not cflags:
     cflags = pkgCflags()
-  cmdstr = "%s -o a.out %s umfpack_config_test_include.cpp %s" % \
-           (compiler, cflags, libs)
+  cmdstr = "%s -o a.out umfpack_config_test_include.cpp %s" % \
+           (compiler, cflags)
   compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
-    # Try adding -lgfortran so get around Ubuntu Hardy libatlas-base-dev issue
-    libs += " -lgfortran"
-    cmdstr = "%s %s umfpack_config_test_include.cpp %s" % \
-             (compiler, cflags, libs)
-    compileFailed, cmdoutput = getstatusoutput(cmdstr)
-    if compileFailed:
-      remove_cppfile("umfpack_config_test_include.cpp")
-      raise UnableToCompileException("UMFPACK", cmd=cmdstr,
-                                     program=cpp_test_include_str,
-                                     errormsg=cmdoutput)
+    remove_cppfile("umfpack_config_test_include.cpp")
+    raise UnableToCompileException("UMFPACK", cmd=cmdstr,
+                                   program=cpp_test_include_str,
+                                   errormsg=cmdoutput)
   cmdstr = os.path.join(os.getcwd(), "a.out")
   runFailed, cmdoutput = getstatusoutput(cmdstr)
   if runFailed:
@@ -216,12 +212,7 @@ def pkgCflags(sconsEnv=None):
   return cflags
 
 def pkgLibs(sconsEnv=None):
-  libs = ""
-  if get_architecture() == "darwin":
-    libs += "-framework vecLib"
-  else:
-    libs += "-L%s -lblas" % getBlasDir(sconsEnv=sconsEnv)
-  libs += " -L%s -lumfpack" % getUmfpackLibDir(sconsEnv)
+  libs = "-L%s -lumfpack" % getUmfpackLibDir(sconsEnv)
   if needAMD(sconsEnv):
     libs += " -L%s -lamd" % getAMDLibDir(sconsEnv)
   return libs
@@ -249,7 +240,8 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
   if not libs:
     libs = pkgLibs(sconsEnv=sconsEnv)
   if not version:
-    version = pkgVersion(compiler=compiler, cflags=cflags, libs=libs, sconsEnv=sconsEnv)
+    version = pkgVersion(compiler=compiler, cflags=cflags,
+                         libs=libs, sconsEnv=sconsEnv)
 
   # a program that do a real umfpack test.
   cpp_test_lib_str = r"""
@@ -288,27 +280,24 @@ int main (void)
   write_cppfile(cpp_test_lib_str,"umfpack_config_test_lib.cpp");
 
   # try to compile the simple umfpack test
-  cmdstr = "%s %s -c umfpack_config_test_lib.cpp" % (compiler, cflags)
+  lapack_cflags = lapack.pkgCflags(sconsEnv=sconsEnv)
+  cmdstr = "%s %s %s -c umfpack_config_test_lib.cpp" % \
+           (compiler, cflags, lapack_cflags)
   compileFailed, cmdoutput = getstatusoutput(cmdstr)
   if compileFailed:
     remove_cppfile("umfpack_config_test_lib.cpp")
     raise UnableToCompileException("UMFPACK", cmd=cmdstr,
                                    program=cpp_test_lib_str, errormsg=cmdoutput)
 
-  cmdstr = "%s -o a.out umfpack_config_test_lib.o %s" % (linker, libs)
+  lapack_libs = lapack.pkgLibs(compiler=compiler, linker=linker,
+                               cflags=cflags, sconsEnv=sconsEnv)
+  cmdstr = "%s -o a.out umfpack_config_test_lib.o %s %s" % \
+           (linker, libs, lapack_libs)
   linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
-    # Try adding -lgfortran so get around Ubuntu Hardy libatlas-base-dev issue
-    libs += " -lgfortran"
-    cmdstr = "%s umfpack_config_test_lib.o %s" % (linker, libs)
-    linkFailed, cmdoutput = getstatusoutput(cmdstr)
-    if linkFailed:
-      remove_cppfile("umfpack_config_test_lib.cpp", ofile=True)
-      errormsg = ("Using '%s' for BLAS, consider setting the environment " + \
-                  "variable BLAS_DIR if this is wrong.\n") % getBlasDir()
-      errormsg += cmdoutput
-      raise UnableToLinkException("UMFPACK", cmd=cmdstr,
-                                  program=cpp_test_lib_str, errormsg=errormsg)
+    remove_cppfile("umfpack_config_test_lib.cpp", ofile=True)
+    raise UnableToLinkException("UMFPACK", cmd=cmdstr,
+                                program=cpp_test_lib_str, errormsg=cmdoutput)
 
   cmdstr = os.path.join(os.getcwd(), "a.out")
   runFailed, cmdoutput = getstatusoutput(cmdstr)
@@ -332,18 +321,23 @@ def generatePkgConf(directory=None, sconsEnv=None, **kwargs):
   if directory is None:
     directory = suitablePkgConfDir()
 
+  # umfpack.pc requires lapack.pc so make sure it is available
+  dep_module_header_and_libs('LAPACK', 'lapack', sconsEnv=sconsEnv)
+
   version, libs, cflags = pkgTests(sconsEnv=sconsEnv)
 
   pkg_file_str = r"""Name: UMFPACK
 Version: %s
 Description: The UMFPACK project, a set of routines for solving sparse linear systems via LU factorization.
+Requires: lapack
 Libs: %s
 Cflags: %s
 """ % (version, repr(libs)[1:-1], repr(cflags)[1:-1])
-  pkg_file = open(os.path.join(directory,"umfpack.pc"), 'w')
+  pkg_file = open(os.path.join(directory, "umfpack.pc"), 'w')
   pkg_file.write(pkg_file_str)
   pkg_file.close()
-  print "done\n Found UMFPACK and generated pkg-config file in\n '%s'" % directory
+  print "done\n Found UMFPACK and generated pkg-config file in\n '%s'" \
+        % directory
 
 if __name__ == "__main__": 
   generatePkgConf(directory=".")
