@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2010.
 //
 // First added:  2005-10-23
-// Last changed: 2010-03-04
+// Last changed: 2010-04-15
 
 #include <iostream>
 #include <dolfin/common/NoDeleter.h>
@@ -110,7 +110,13 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
     info(PROGRESS, "Newton solver finished in %d iterations and %d linear solver iterations.",
             newton_iteration, krylov_iterations);
   else
-    warning("Newton solver did not converge.");
+  {
+    bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
+    if (error_on_nonconvergence)
+      error("Newton solver did not converge.");
+    else
+      warning("Newton solver did not converge.");
+  }
 
   end();
 

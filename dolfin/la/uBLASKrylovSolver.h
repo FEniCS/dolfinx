@@ -1,10 +1,10 @@
 // Copyright (C) 2006-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2006-2008.
+// Modified by Anders Logg, 2006-2010.
 //
 // First added:  2006-05-31
-// Last changed: 2009-09-08
+// Last changed: 2010-04-15
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
@@ -157,9 +157,15 @@ namespace dolfin
       error("Requested Krylov method unknown.");
 
     // Check for convergence
-    if( !converged )
-      warning("Krylov solver failed to converge.");
-    else if ( report )
+    if (!converged)
+    {
+      bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
+      if (error_on_nonconvergence)
+        error("Krylov solver failed to converge.");
+      else
+        warning("Krylov solver failed to converge.");
+    }
+    else if (report)
       info("Krylov solver converged in %d iterations.", iterations);
 
     return iterations;
