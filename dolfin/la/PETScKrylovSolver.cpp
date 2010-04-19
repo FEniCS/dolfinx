@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2005-2010.
 //
 // First added:  2005-12-02
-// Last changed: 2010-04-15
+// Last changed: 2010-04-19
 
 #ifdef HAS_PETSC
 
@@ -135,10 +135,11 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
     KSPMonitorSet(*_ksp, KSPMonitorTrueResidualNorm, 0, 0);
 
   // Set tolerances
-  KSPSetTolerances(*_ksp, parameters["relative_tolerance"],
-		                      parameters["absolute_tolerance"],
-		                      parameters["divergence_limit"],
-		                      parameters["maximum_iterations"]);
+  KSPSetTolerances(*_ksp,
+                   parameters["relative_tolerance"],
+                   parameters["absolute_tolerance"],
+                   parameters["divergence_limit"],
+                   parameters["maximum_iterations"]);
 
   KSPGMRESSetRestart(*_ksp, parameters["gmres_restart"]);
   KSPSetOperators(*_ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
@@ -159,7 +160,7 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   {
     bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
-      error("Krylov solver did not converge (PETSc reason %i).", reason);
+      error("PETSc Krylov solver did not converge (PETSc reason %i).", reason);
     else
       warning("Krylov solver did not converge (PETSc reason %i).", reason);
   }

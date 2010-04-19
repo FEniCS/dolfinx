@@ -4,7 +4,7 @@
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2008-05-16
-// Last changed: 2009-09-08
+// Last changed: 2010-04-19
 
 #ifdef HAS_MTL4
 
@@ -110,8 +110,19 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
     info(PROGRESS, "ITLSolver (%s, %s) converged in %d iterations. Resid=%8.2e",
 	    method.c_str(), pc_type.c_str(), iter.iterations(), iter.resid());
   else
-    warning("ITLKrylovSolver: (%s, %s) failed to converge!\n\t%d iterations,"
-	  " Resid=%8.2e", method.c_str(), pc_type.c_str(), iter.iterations(), iter.resid());
+  {
+    bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
+    if (error_on_nonconvergence)
+    {
+      error("ITL Krylov solver failed to converge (%s, %s)\n\t%d iterations,"
+            " Resid=%8.2e", method.c_str(), pc_type.c_str(), iter.iterations(), iter.resid());
+    }
+    else
+    {
+      warning("ITL Krylov solver failed to converge (%s, %s)\n\t%d iterations,"
+              " Resid=%8.2e", method.c_str(), pc_type.c_str(), iter.iterations(), iter.resid());
+    }
+  }
 
   return iter.iterations();
 }

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-02
-// Last changed: 2010-04-15
+// Last changed: 2010-04-19
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -49,9 +49,6 @@ namespace dolfin
       #else
       p.add("linear_algebra_backend", "uBLAS");              // Otherwise, use uBLAS
       #endif
-
-      // Solvers
-      p.add("error_on_nonconvergence", true);                // Issue an error if solver does not converge (otherwise warning)
 
       // Floating-point precision (only relevant when using GMP)
       #ifdef HAS_GMP

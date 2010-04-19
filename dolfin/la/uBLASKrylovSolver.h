@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2006-2010.
 //
 // First added:  2006-05-31
-// Last changed: 2010-04-15
+// Last changed: 2010-04-19
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
@@ -161,9 +161,9 @@ namespace dolfin
     {
       bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
       if (error_on_nonconvergence)
-        error("Krylov solver failed to converge.");
+        error("uBLAS Krylov solver failed to converge.");
       else
-        warning("Krylov solver failed to converge.");
+        warning("uBLAS Krylov solver failed to converge.");
     }
     else if (report)
       info("Krylov solver converged in %d iterations.", iterations);

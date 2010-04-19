@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2010.
 //
 // First added:  2005-10-23
-// Last changed: 2010-04-15
+// Last changed: 2010-04-19
 
 #include <iostream>
 #include <dolfin/common/NoDeleter.h>
@@ -25,12 +25,13 @@ Parameters NewtonSolver::default_parameters()
 {
   Parameters p("newton_solver");
 
-  p.add("maximum_iterations",    50);
-  p.add("relative_tolerance",    1e-9);
-  p.add("absolute_tolerance",    1e-10);
-  p.add("convergence_criterion", "residual");
-  p.add("method",                "full");
-  p.add("report",                true);
+  p.add("maximum_iterations",      50);
+  p.add("relative_tolerance",      1e-9);
+  p.add("absolute_tolerance",      1e-10);
+  p.add("convergence_criterion",   "residual");
+  p.add("method",                  "full");
+  p.add("report",                  true);
+  p.add("error_on_nonconvergence", true);
 
   return p;
 }

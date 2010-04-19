@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2009-10-28
+// Last changed: 2010-04-19
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/Parameters.h>
@@ -33,14 +33,16 @@ Parameters KrylovSolver::default_parameters()
 {
   Parameters p("krylov_solver");
 
-  p.add("relative_tolerance",  1e-6);
-  p.add("absolute_tolerance",  1e-15);
-  p.add("divergence_limit",    1e4);
-  p.add("maximum_iterations",  10000);
-  p.add("gmres_restart",       30);
-  p.add("shift_nonzero",       0.0);
-  p.add("report",              true); /* deprecate? */
-  p.add("monitor_convergence", false);
+  p.add("relative_tolerance",      1e-6);
+  p.add("absolute_tolerance",      1e-15);
+  p.add("divergence_limit",        1e4);
+  p.add("maximum_iterations",      10000);
+  p.add("gmres_restart",           30);
+  p.add("shift_nonzero",           0.0);
+  p.add("report",                  true); /* deprecate? */
+  p.add("monitor_convergence",     false);
+  p.add("error_on_nonconvergence", true);
+
   return p;
 }
 //-----------------------------------------------------------------------------
