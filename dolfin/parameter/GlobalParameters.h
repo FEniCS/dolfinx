@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-02
-// Last changed: 2010-03-22
+// Last changed: 2010-04-19
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -43,21 +43,21 @@ namespace dolfin
       p.add("optimize_use_tensor_cache", false);             // Store tensors in cache for reuse
       p.add("optimize", false);                              // All of the above
 
-      // Linear algebra ---
+      // Linear algebra
       #ifdef HAS_PETSC
       p.add("linear_algebra_backend", "PETSc");              // Use PETSc if available
       #else
       p.add("linear_algebra_backend", "uBLAS");              // Otherwise, use uBLAS
       #endif
 
-      // Floating-point precision (only relevant when using GMP) ---
+      // Floating-point precision (only relevant when using GMP)
       #ifdef HAS_GMP
       p.add("floating_point_precision", 30);                 // Use higher precision for GMP (can be changed)
       #else
       p.add("floating_point_precision", 16);                 // Use double precision when GMP is not available
       #endif
 
-      // Graph partitioner ---
+      // Graph partitioner
       p.add("mesh_partitioner", "ParMETIS");
 
       return p;

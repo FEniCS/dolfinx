@@ -333,7 +333,7 @@ def getLapackDir(sconsEnv=None):
 
 def getBlasDir(sconsEnv=None):
     return getPackageDir("blas", sconsEnv=sconsEnv,
-                         default=getAtlasDir(sconsEnv))
+                         default=getLapackDir(sconsEnv))
 
 class UnableToXXXException(Exception):
   def __init__(self, msg="", errormsg=""):

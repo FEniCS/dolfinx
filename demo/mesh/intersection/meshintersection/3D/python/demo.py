@@ -17,8 +17,8 @@ if not has_cgal():
     exit(0)
 
 #Set to False if you do not want to create movies 
-#(default is True since you probably want to :) 
-create_movies = True
+#(default should be True since you probably want to :) 
+create_movies = False
 
 sphere = UnitSphere(20)
 cube = UnitCube(20, 20, 20)
@@ -27,7 +27,7 @@ cube = UnitCube(20, 20, 20)
 x = sphere.coordinates()
 
 # Start center and propagtion speed for the sphere.
-dt = 0.02
+dt = 0.1
 t = -0.61
 
 # Scale and move the circle.

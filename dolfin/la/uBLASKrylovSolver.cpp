@@ -1,10 +1,10 @@
 // Copyright (C) 2006-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2006-2009.
+// Modified by Anders Logg, 2006-2010.
 //
 // First added:  2006-05-31
-// Last changed: 2009-09-08
+// Last changed: 2010-04-15
 
 #include <boost/assign/list_of.hpp>
 #include "uBLASILUPreconditioner.h"

@@ -53,3 +53,6 @@ RE:doc/progr_reference/html/d.
 
 #Scons os files.
 *.os
+
+#Tag files
+tags

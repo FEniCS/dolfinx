@@ -12,7 +12,7 @@ import platform
 from dolfin_utils.commands import getoutput
 
 # Tests to run
-tests = ["fem", "function", "mesh", "meshconvert", "la", "io", "python-extras"]
+tests = ["fem", "function", "mesh", "meshconvert", "la", "io", "python-extras", "quadrature"]
 
 # Tests only available in Python
 only_python = ["python-extras"]

@@ -65,7 +65,7 @@ def pkgCflags(sconsEnv=None):
            os.path.join(getCgalDir(sconsEnv=sconsEnv), "include")
 
 def pkgLibs(sconsEnv=None):
-    return "-L%s -lCGAL -lCGAL_Core" % \
+    return "-L%s -lCGAL" % \
            os.path.join(getCgalDir(sconsEnv), "lib")
 
 def pkgTests(forceCompiler=None, sconsEnv=None,

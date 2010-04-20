@@ -8,5 +8,5 @@
 #include <dolfin/quadrature/GaussQuadrature.h>
 #include <dolfin/quadrature/RadauQuadrature.h>
 #include <dolfin/quadrature/LobattoQuadrature.h>
-
+#include <dolfin/quadrature/BarycenterQuadrature.h>
 #endif

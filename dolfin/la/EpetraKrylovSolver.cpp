@@ -3,7 +3,7 @@
 //
 // Modified by Garth N. Wells, 2009.
 //
-// Last changed: 2010-04-05
+// Last changed: 2010-04-19
 
 #ifdef HAS_TRILINOS
 
@@ -138,11 +138,19 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   // Start solve
   solver->Iterate(parameters["maximum_iterations"], parameters["relative_tolerance"]);
   const double* status = solver->GetAztecStatus();
-  if ( (int) status[AZ_why] != AZ_normal )
-    warning("Problem with Trilinos Krylov solver. Error code %i.", status[AZ_why]);
+  if ((int) status[AZ_why] != AZ_normal)
+  {
+    bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
+    if (error_on_nonconvergence)
+      error("Epetra (Aztec00) Krylov solver failed to converge (error code %i).",
+            status[AZ_why]);
+    else
+      warning("Epetra (Aztec00) Krylov solver failed to converge (error code %i).",
+              status[AZ_why]);
+  }
   else
   {
-    info("AztecOO Krylov solver (%s, %s) converged in %d iterations.",
+    info("Epetra (AztecOO) Krylov solver (%s, %s) converged in %d iterations.",
           method.c_str(), preconditioner->name().c_str(), solver->NumIters());
   }
 

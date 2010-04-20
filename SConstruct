@@ -105,7 +105,6 @@ options = [
     BoolVariable("enableCgal", "Compile with support for CGAL", "yes"),
     BoolVariable("enableLapack", "Compile with support for LAPACK", "yes"),
     BoolVariable("enablePython", "Compile the Python wrappers", "yes"),
-    BoolVariable("enablePydolfin", "Compile the Python wrappers of DOLFIN *deprecated*", "yes"),
     # some of the above may need extra options (like petscDir), should we
     # try to get that from pkg-config?
     # It may be neccessary to specify the installation path to the above packages.
@@ -144,18 +143,15 @@ options = [
     #('customDefaultPackages','Override the default set of packages (%r), separate package names with commas' % (DefaultPackages,)),
     ("SSLOG", "Set Simula scons log file", os.path.join(os.getcwd(),"scons","simula_scons.log")),
     ("withPetscArch", "The architecture PETSc is configured with", None),
+    ("withBlasLapackLib", "Indicate the library(s) containing BLAS and LAPACK", None),
+    ("withMpiCompiler", "Specify the MPI compiler", ""),
     ]
 
-
-# Option enablePydolfin is now deprecated
-if ARGUMENTS.has_key("enablePydolfin"):
-  msg = "Option 'enablePydolfin' is deprecated and will be removed in " \
-        "the future. Please use the option 'enablePython' instead to " \
-        "enable/disable compiling of Python wrappers."
-  warnings.warn(msg, DeprecationWarning)
-  if not ARGUMENTS.has_key("enablePython"):
-    ARGUMENTS["enablePython"] = ARGUMENTS["enablePydolfin"]
-  del ARGUMENTS["enablePydolfin"]
+if ARGUMENTS.has_key("withBlasLapackLib") and \
+       not ARGUMENTS.has_key("withLapackDir"):
+  print "*** When using the withBlasLapackLib option you must also use " \
+        "withLapackDir."
+  Exit(1)
 
 config_cache = os.path.join('scons', 'config.cache')
 if not "configure" in COMMAND_LINE_TARGETS and not env.GetOption('help'):
@@ -214,17 +210,6 @@ if "configure" in COMMAND_LINE_TARGETS:
       lines = file(optsCache).readlines()
       if lines:
         print "Using options from %s" % optsCache
-      # FIXME: this can be removed when option enablePydolfin is removed
-      new_lines = []
-      for line in lines:
-        if line.startswith("enablePydolfin"):
-          if not "enablePython" in lines:
-            env["enablePython"] = eval(line.split('=')[1])
-            new_lines.append("enablePython = %s\n" % env["enablePython"])
-        else:
-          new_lines.append(line)
-      if new_lines != lines:
-        file(optsCache, 'w').writelines(new_lines)
     except IOError, msg:
       pass
 
@@ -273,6 +258,9 @@ if "configure" in COMMAND_LINE_TARGETS:
   if env["enableMpi"]:
     mpi_cxx_compilers = ["mpic++", "mpicxx", "mpiCC"]
     mpi_cxx = os.environ.get("CXX", env.Detect(mpi_cxx_compilers))
+    if env["withMpiCompiler"]:
+      mpi_cxx_compilers.append(env["withMpiCompiler"])
+      mpi_cxx = env["withMpiCompiler"]
     # Several cases for mpi_cxx depending on CXX from os.environ:
     # CXX=                           - not OK
     # CXX=cxx_compiler               - not OK
@@ -283,7 +271,8 @@ if "configure" in COMMAND_LINE_TARGETS:
     # FIXME: Any other cases?
     if not env.Detect(["mpirun", "mpiexec", "orterun"]) or not \
            (mpi_cxx and \
-            os.path.basename(mpi_cxx.split()[-1]) in mpi_cxx_compilers):
+            os.path.basename(mpi_cxx.split()[-1]) in mpi_cxx_compilers \
+            or env["withMpiCompiler"]):
       print "MPI not found (might not work if PETSc uses MPI)."
       # revert back to cxx compiler
       env["CXX"] = cxx
@@ -494,12 +483,12 @@ if not env.GetOption('help'):
   if not prefix[-1] == os.path.sep:
     prefix += os.path.sep
 
-  # not sure we need common.py for pydolfin.
-  #commonfile=os.path.join("site-packages", "pycc", "common.py")
+  # not sure we need common.py.
+  #commonfile=os.path.join("site-packages", env["projectname"], "common.py")
 
   #env = scons.installCommonFile(env, commonfile, prefix)
 
-  # Note we need to remove the PyDOLFIN python modules if enablePyDolfin is false.
+  # Note we need to remove the python modules if enablePython is false.
   installfiles = scons.buildFileList(buildDataHash["pythonPackageDirs"])
 
   for f in installfiles:

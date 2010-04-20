@@ -4,6 +4,21 @@ import os
 
 from commonPkgConfigUtils import *
 
+def getBlasLapackLib(sconsEnv=None):
+    blas_dir = getBlasDir(sconsEnv)
+    lapack_dir = getLapackDir(sconsEnv)
+    libs = "-L%s " % lapack_dir
+    if blas_dir != lapack_dir:
+        libs += "-L%s " % blas_dir
+    if sconsEnv is not None and sconsEnv.get("withBlasLapackLib", None):
+        libs += sconsEnv["withBlasLapackLib"]
+    else:
+        if get_architecture() == "darwin":
+            libs = "-framework vecLib"
+        else:
+            libs += "-llapack -lblas"
+    return libs
+
 def pkgVersion(compiler=None, linker=None,
                cflags=None, libs=None, sconsEnv=None):
     # FIXME: Not sure how to extract version information from LAPACK
@@ -64,13 +79,8 @@ int main()
         raise UnableToCompileException("LAPACK", cmd=cmdstr,
                                        program=cpp_test_lib_str,
                                        errormsg=cmdoutput)
-    
-    if get_architecture() == "darwin":
-        libs = "-framework vecLib"
-    else:
-        libs = "-L%s -llapack -L%s -lblas" % \
-               (getLapackDir(sconsEnv), getBlasDir(sconsEnv))
 
+    libs = getBlasLapackLib(sconsEnv)
     cmdstr = "%s -o a.out %s %s" % \
              (linker, libs, cpp_file.replace('.cpp', '.o'))
     linkFailed, cmdoutput = getstatusoutput(cmdstr)
@@ -82,7 +92,7 @@ int main()
         linkFailed, cmdoutput = getstatusoutput(cmdstr)
         if linkFailed:
             remove_cppfile(cpp_file, ofile=True)
-            errormsg = """Using '%s' for LAPACK and '%s' BLAS.
+            errormsg = """Using '%s' for LAPACK and '%s' for BLAS.
 Consider setting the environment variables LAPACK_DIR and
 BLAS_DIR if this is wrong.
 
@@ -122,7 +132,7 @@ def pkgTests(forceCompiler=None, sconsEnv=None,
     if not libs:
         libs = pkgLibs(sconsEnv=sconsEnv)
     else:
-        # run pkgLibs as this is the current CHOLMOD test
+        # run pkgLibs as this is the current LAPACK test
         libs = pkgLibs(compiler=compiler, linker=linker,
                        cflags=cflags, sconsEnv=sconsEnv)
     if not version:

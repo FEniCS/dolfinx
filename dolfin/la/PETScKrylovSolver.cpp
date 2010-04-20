@@ -1,11 +1,11 @@
 // Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2005-2009.
+// Modified by Anders Logg, 2005-2010.
 // Modified by Garth N. Wells, 2005-2010.
 //
 // First added:  2005-12-02
-// Last changed: 2010-04-05
+// Last changed: 2010-04-19
 
 #ifdef HAS_PETSC
 
@@ -135,10 +135,11 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
     KSPMonitorSet(*_ksp, KSPMonitorTrueResidualNorm, 0, 0);
 
   // Set tolerances
-  KSPSetTolerances(*_ksp, parameters["relative_tolerance"],
-		                      parameters["absolute_tolerance"],
-		                      parameters["divergence_limit"],
-		                      parameters["maximum_iterations"]);
+  KSPSetTolerances(*_ksp,
+                   parameters["relative_tolerance"],
+                   parameters["absolute_tolerance"],
+                   parameters["divergence_limit"],
+                   parameters["maximum_iterations"]);
 
   KSPGMRESSetRestart(*_ksp, parameters["gmres_restart"]);
   KSPSetOperators(*_ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
@@ -156,7 +157,13 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   KSPConvergedReason reason;
   KSPGetConvergedReason(*_ksp, &reason);
   if (reason < 0)
-    warning("Krylov solver did not converge (PETSc reason %i).", reason);
+  {
+    bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
+    if (error_on_nonconvergence)
+      error("PETSc Krylov solver did not converge (PETSc reason %i).", reason);
+    else
+      warning("Krylov solver did not converge (PETSc reason %i).", reason);
+  }
 
   // Get the number of iterations
   int num_iterations = 0;

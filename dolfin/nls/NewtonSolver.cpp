@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2010.
 //
 // First added:  2005-10-23
-// Last changed: 2010-03-04
+// Last changed: 2010-04-19
 
 #include <iostream>
 #include <dolfin/common/NoDeleter.h>
@@ -25,12 +25,13 @@ Parameters NewtonSolver::default_parameters()
 {
   Parameters p("newton_solver");
 
-  p.add("maximum_iterations",    50);
-  p.add("relative_tolerance",    1e-9);
-  p.add("absolute_tolerance",    1e-10);
-  p.add("convergence_criterion", "residual");
-  p.add("method",                "full");
-  p.add("report",                true);
+  p.add("maximum_iterations",      50);
+  p.add("relative_tolerance",      1e-9);
+  p.add("absolute_tolerance",      1e-10);
+  p.add("convergence_criterion",   "residual");
+  p.add("method",                  "full");
+  p.add("report",                  true);
+  p.add("error_on_nonconvergence", true);
 
   return p;
 }
@@ -110,7 +111,13 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
     info(PROGRESS, "Newton solver finished in %d iterations and %d linear solver iterations.",
             newton_iteration, krylov_iterations);
   else
-    warning("Newton solver did not converge.");
+  {
+    bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
+    if (error_on_nonconvergence)
+      error("Newton solver did not converge.");
+    else
+      warning("Newton solver did not converge.");
+  }
 
   end();
 
