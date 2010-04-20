@@ -6,7 +6,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-03-22
+// Last changed: 2010-04-20
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -322,9 +322,9 @@ void Function::interpolate(const GenericFunction& v)
   function_space().interpolate(*_vector, v);
 }
 //-----------------------------------------------------------------------------
-void Function::extrapolate(const Function& v, bool facet_extrapolation)
+void Function::extrapolate(const Function& v)
 {
-  Extrapolation::extrapolate(*this, v, facet_extrapolation);
+  Extrapolation::extrapolate(*this, v);
 }
 //-----------------------------------------------------------------------------
 void Function::extrapolate(const Function& v,

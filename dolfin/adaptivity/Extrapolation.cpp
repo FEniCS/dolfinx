@@ -29,11 +29,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void Extrapolation::extrapolate(Function& w, const Function& v,
-                                bool facet_extrapolation)
+void Extrapolation::extrapolate(Function& w, const Function& v)
 {
-
-
   // Using set_local for simplicity here
   not_working_in_parallel("Extrapolation");
   warning("Extrapolation not fully implemented yet.");
@@ -44,17 +41,11 @@ void Extrapolation::extrapolate(Function& w, const Function& v,
 
   // Extrapolate over interior (including boundary dofs)
   extrapolate_interior(w, v);
-
-  // Extrapolate over boundary (overwriting earlier boundary dofs)
-  //if (facet_extrapolation)
-  //  extrapolate_boundary(w, v);
 }
-
 //-----------------------------------------------------------------------------
 void Extrapolation::extrapolate(Function& w, const Function& v,
                                 const std::vector<const DirichletBC*>& bcs)
 {
-
   // Extrapolate over interior
   extrapolate_interior(w, v);
 
@@ -62,12 +53,10 @@ void Extrapolation::extrapolate(Function& w, const Function& v,
   // function space)
   for (uint i = 0; i < bcs.size(); i++)
     bcs[i]->apply(w.vector());
-
 }
 //-----------------------------------------------------------------------------
 void Extrapolation::extrapolate_interior(Function& w, const Function& v)
 {
-
   // Extract mesh and function spaces
   const FunctionSpace& V(v.function_space());
   const FunctionSpace& W(w.function_space());
@@ -158,7 +147,6 @@ void Extrapolation::extrapolate_interior(Function& w, const Function& v)
   w.vector().set_local(dof_values_single);
 
 }
-
 //-----------------------------------------------------------------------------
 void Extrapolation::add_cell_equations(LAPACKMatrix& A,
                                        LAPACKVector& b,
@@ -201,21 +189,20 @@ void Extrapolation::add_cell_equations(LAPACKMatrix& A,
   }
 }
 //-----------------------------------------------------------------------------
-
-
-std::map<dolfin::uint, dolfin::uint> Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
-                                                                        const FunctionSpace& V,
-                                                                        uint& row,
-                                                                        std::set<uint>& unique_dofs) {
-
+std::map<dolfin::uint, dolfin::uint>
+Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
+                                   const FunctionSpace& V,
+                                   uint& row,
+                                   std::set<uint>& unique_dofs)
+{
   boost::scoped_array<uint> dofs(new uint[V.dofmap().local_dimension(c)]);
   V.dofmap().tabulate_dofs(dofs.get(), c, cell.index());
 
   // Data structure for current cell
   std::map<uint, uint> dof2row;
 
-  for (uint i = 0; i < V.dofmap().local_dimension(c); ++i) {
-
+  for (uint i = 0; i < V.dofmap().local_dimension(c); ++i)
+  {
     // Ignore if this degree of freedom is already considered
     if (unique_dofs.find(dofs[i]) != unique_dofs.end())
       continue;
@@ -229,5 +216,7 @@ std::map<dolfin::uint, dolfin::uint> Extrapolation::compute_unique_dofs(const Ce
     // Increase row index
     row++;
   }
+
   return dof2row;
 }
+//-----------------------------------------------------------------------------

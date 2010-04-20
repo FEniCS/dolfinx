@@ -4,7 +4,7 @@
 // First added:  2009-12-08
 // Last changed: 2010-04-20
 //
-// Modified by Marie E. Rognes (meg@simula.no) 2010
+// Modified by Marie E. Rognes (meg@simula.no) 2010.
 
 #ifndef __EXTRAPOLATION_H
 #define __EXTRAPOLATION_H
@@ -16,7 +16,6 @@ namespace dolfin
 
   class Function;
   class Cell;
-  class FacetCell;
   class DirichletBC;
   class LAPACKMatrix;
   class LAPACKVector;
@@ -38,10 +37,9 @@ namespace dolfin
   public:
 
     /// Compute extrapolation w from v
-    static void extrapolate(Function& w, const Function& v,
-                            bool facet_extrapolation=true);
+    static void extrapolate(Function& w, const Function& v);
 
-    /// Compute extrapolation w from v and set v = w in given sub domain
+    /// Compute extrapolation w from v and apply boundary conditions to w
     static void extrapolate(Function& w, const Function& v,
                             const std::vector<const DirichletBC*>& bcs);
 
@@ -66,7 +64,6 @@ namespace dolfin
     static std::map<uint, uint> compute_unique_dofs(const Cell& cell, const ufc::cell& c,
                                                     const FunctionSpace& V,
                                                     uint& row, std::set<uint>& unique_dofs);
-
 
   };
 
