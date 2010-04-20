@@ -2,7 +2,9 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2010-02-19
+// Last changed: 2010-04-20
+//
+// Modified by Marie E. Rognes (meg@simula.no) 2010
 
 #ifndef __EXTRAPOLATION_H
 #define __EXTRAPOLATION_H
@@ -48,11 +50,8 @@ namespace dolfin
     // Extrapolate over interior (including boundary dofs)
     static void extrapolate_interior(Function& w, const Function& v);
 
-    // Extrapolate over boundary (overwriting earlier boundary dofs)
-    static void extrapolate_boundary(Function& w, const Function& v);
-
     // Add equations for current cell
-    static uint add_cell_equations(LAPACKMatrix& A,
+    static void add_cell_equations(LAPACKMatrix& A,
                                    LAPACKVector& b,
                                    const Cell& cell0,
                                    const Cell& cell1,
@@ -61,23 +60,13 @@ namespace dolfin
                                    const FunctionSpace& V,
                                    const FunctionSpace& W,
                                    const Function& v,
-                                   uint offset);
+                                   std::map<uint, uint>& dof2row);
 
-    // Add equations for current facet
-    static uint add_facet_equations(LAPACKMatrix& A,
-                                    LAPACKVector& b,
-                                    const FacetCell& cell0,
-                                    const FacetCell& cell1,
-                                    const ufc::cell& c0,
-                                    const ufc::cell& c1,
-                                    const FunctionSpace& V,
-                                    const FunctionSpace& W,
-                                    const Function& v,
-                                    const Function& w,
-                                    const uint* facet_dofs0,
-                                    const uint* facet_dofs1,
-                                    std::set<uint>& non_facet_dofs0,
-                                    uint offset);
+    // Compute unique dofs in given cell
+    static std::map<uint, uint> compute_unique_dofs(const Cell& cell, const ufc::cell& c,
+                                                    const FunctionSpace& V,
+                                                    uint& row, std::set<uint>& unique_dofs);
+
 
   };
 
