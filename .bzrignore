@@ -56,3 +56,7 @@ RE:doc/progr_reference/html/d.
 
 #Tag files
 tags
+
+# Dorsal related files
+build_log
+dorsal_build

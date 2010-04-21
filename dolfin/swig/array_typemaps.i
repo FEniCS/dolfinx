@@ -3,26 +3,11 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-10
-// Last changed: 2010-03-09
+// Last changed: 2010-04-16
 
 //=============================================================================
-// In this file we declare some typemaps for the dolfin:Array type
+// In this file we declare some typemaps for the dolfin::Array type
 //=============================================================================
-
-//-----------------------------------------------------------------------------
-// Director typemaps for dolfin::Array
-//-----------------------------------------------------------------------------
-%typemap(directorin) const dolfin::Array<double>& {
-  npy_intp dims[1] = {$1_name.size()};
-  double * data = const_cast<double*>($1_name.data().get());
-  $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(data));
- }
-
-%typemap(directorin) dolfin::Array<double>& {
-  npy_intp dims[1] = {$1_name.size()};
-  $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE,
-				     reinterpret_cast<char *>($1_name.data().get()));
- }
 
 //-----------------------------------------------------------------------------
 // Macro for defining an in-typemap for NumPy array -> dolfin::Array
@@ -40,10 +25,6 @@
 //              argument
 //-----------------------------------------------------------------------------
 %define IN_NUMPY_TYPEMAP_FOR_DOLFIN_ARRAY(TYPE, TYPECHECK, NUMPYTYPE, TYPENAME, DESCR, ARGNAME, CONSTARRAY)
-
-%typecheck(SWIG_TYPECHECK_ ## TYPECHECK ## _ARRAY) CONSTARRAY dolfin::Array<TYPE> & ARGNAME{
-    $1 = PyArray_Check($input) ? 1 : 0;
-}
 
 %typemap(in) CONSTARRAY dolfin::Array<TYPE> &ARGNAME{
   // Check input object
@@ -63,6 +44,10 @@
 // Clean up the constructed Array
 %typemap(freearg) CONSTARRAY dolfin::Array<TYPE> & ARGNAME{
   delete $1;
+}
+
+%typecheck(SWIG_TYPECHECK_ ## TYPECHECK ## _ARRAY) CONSTARRAY dolfin::Array<TYPE> & ARGNAME{
+    $1 = PyArray_Check($input) ? 1 : 0;
 }
 
 %enddef
@@ -97,6 +82,21 @@
   $result = reinterpret_cast<PyObject*>(numpy_array);
 }
 %enddef
+
+//-----------------------------------------------------------------------------
+// Director typemaps for dolfin::Array
+//-----------------------------------------------------------------------------
+%typemap(directorin) const dolfin::Array<double>& {
+  npy_intp dims[1] = {$1_name.size()};
+  double * data = const_cast<double*>($1_name.data().get());
+  $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, reinterpret_cast<char *>(data));
+ }
+
+%typemap(directorin) dolfin::Array<double>& {
+  npy_intp dims[1] = {$1_name.size()};
+  $input = PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE,
+				     reinterpret_cast<char *>($1_name.data().get()));
+ }
 
 //-----------------------------------------------------------------------------
 // Run the typemap macros

@@ -1,3 +1,14 @@
+/* -*- C -*- */
+// Copyright (C) 2009 Andre Massing
+// Licensed under the GNU LGPL Version 2.1.
+//
+// First added:  2009-11-27
+// Last changed: 2010-04-16
+
+//=============================================================================
+// In this file we declare some typemaps for the std::set type
+//=============================================================================
+
 namespace std
 {
   template <class T> class set 
@@ -6,6 +17,16 @@ namespace std
 }
 
 
+//-----------------------------------------------------------------------------
+// Macro for defining an argout typemap for a std::set of primitives
+// The typemaps makes a function returning a NumPy array of that primitive
+//
+// TYPE       : The primitive type
+// TYPE_UPPER : The SWIG specific name of the type used in the array type checks
+//              values SWIG use: INT32 for integer, DOUBLE for double aso.
+// ARG_NAME   : The name of the argument that will be maped as an 'argout' argument
+// NUMPY_TYPE : The type of the NumPy array that will be returned
+//-----------------------------------------------------------------------------
 %define ARGOUT_TYPEMAP_BOOST_UNORDERED_SET_OF_PRIMITIVES(TYPE, TYPE_UPPER, ARG_NAME, NUMPY_TYPE)
 //-----------------------------------------------------------------------------
 // In typemap removing the argument from the expected in list
