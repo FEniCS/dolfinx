@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2010-02-23
-// Last changed: 2010-02-23
+// Last changed: 2010-04-21
 
 #include <boost/scoped_array.hpp>
 #include <dolfin/common/constants.h>
@@ -34,12 +34,18 @@ void GenericMatrix::ident_zeros()
   }
 
   // Write a message
-  info("Found %d zero row(s), inserting one on the diagonal.", zero_rows.size());
+  info("Found %d zero row(s), inserting ones on the diagonal.", zero_rows.size());
 
-  // Zero rows
-  boost::scoped_array<uint> rows(new uint[zero_rows.size()]);
-  for (uint k = 0; k < zero_rows.size(); k++)
-    rows[k] = zero_rows[k];
-  ident(zero_rows.size(), rows.get());
+  // Insert one on the diagonal for rows with only zeros. Note that we
+  // are not calling ident() since that fails in PETSc if nothing
+  // has been assembled into those rows.
+  for (uint i = 0; i < zero_rows.size(); i++)
+  {
+    std::pair<uint, uint> ij(zero_rows[i], zero_rows[i]);
+    setitem(ij, 1.0);
+  }
+
+  // Apply changes
+  apply("insert");
 }
 //-----------------------------------------------------------------------------

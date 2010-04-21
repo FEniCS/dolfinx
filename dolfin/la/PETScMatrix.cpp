@@ -7,7 +7,7 @@
 // Modified by Magnus Vikstrøm 2007-2008.
 //
 // First added:  2004
-// Last changed: 2009-09-08
+// Last changed: 2010-04-21
 
 #ifdef HAS_PETSC
 
