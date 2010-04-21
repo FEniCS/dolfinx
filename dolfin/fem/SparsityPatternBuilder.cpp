@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2007-05-24
-// Last changed: 2009-08-13
+// Last changed: 2010-04-21
 
 #include <boost/scoped_array.hpp>
 #include <dolfin/mesh/Cell.h>
@@ -40,7 +40,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   if (rank < 2)
     return;
 
-  // Allocate soem more space
+  // Allocate some more space
   boost::scoped_array<uint> local_dimensions(new uint[rank]);
   boost::scoped_array<uint> macro_local_dimensions(new uint[rank]);
   uint** dofs = new uint*[rank];

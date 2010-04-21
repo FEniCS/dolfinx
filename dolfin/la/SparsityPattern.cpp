@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2007-03-13
-// Last changed: 2010-04-06
+// Last changed: 2010-04-21
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -272,7 +272,7 @@ std::string SparsityPattern::str() const
   {
     s << "Row " << i << ":";
     for (uint k = 0; k < diagonal[i].size(); ++k)
-      cout << " " << diagonal[i][k];
+      s << " " << diagonal[i][k];
     s << std::endl;
   }
 
