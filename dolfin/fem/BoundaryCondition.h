@@ -5,7 +5,7 @@
 // Modified by Johan Hake 2009.
 //
 // First added:  2008-06-18
-// Last changed: 2009-11-12
+// Last changed: 2010-04-22
 
 #ifndef __BOUNDARY_CONDITION_H
 #define __BOUNDARY_CONDITION_H
@@ -13,6 +13,7 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -24,7 +25,7 @@ namespace dolfin
 
   /// Common base class for boundary conditions
 
-  class BoundaryCondition
+  class BoundaryCondition : public Variable
   {
   public:
 

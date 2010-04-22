@@ -5,7 +5,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2009-11-12
+// Last changed: 2010-04-22
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -175,6 +175,14 @@ namespace dolfin
 
     /// Set value g for boundary condition, domain remains unchanged
     void set_value(boost::shared_ptr<const GenericFunction> g);
+
+    /// Default parameter values
+    static Parameters default_parameters()
+    {
+      Parameters p("dirichlet_bc");
+      p.add("use_ident", true);
+      return p;
+    }
 
   private:
 

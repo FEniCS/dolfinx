@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2010-02-23
-// Last changed: 2010-04-21
+// Last changed: 2010-04-22
 
 #include <boost/scoped_array.hpp>
 #include <dolfin/common/constants.h>

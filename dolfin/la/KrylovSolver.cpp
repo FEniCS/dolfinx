@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2010-04-19
+// Last changed: 2010-04-22
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/Parameters.h>

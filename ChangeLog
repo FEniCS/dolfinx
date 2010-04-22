@@ -1,3 +1,4 @@
+ - Add parameter "use_ident" in DirichletBC
  - Issue error by default when solvers don't converge (parameter "error_on_convergence")
  - Add option to print matrix/vector for a VariationalProblem
  - Trilinos backend now works in parallel

@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2009-12-03
+// Last changed: 2010-04-22
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/assign/list_of.hpp>
@@ -48,6 +48,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
     method(method), user_sub_domain(reference_to_no_delete_pointer(sub_domain))
 {
   check();
+  parameters = default_parameters();
   init_from_sub_domain(user_sub_domain);
 }
 //-----------------------------------------------------------------------------
@@ -60,6 +61,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
     method(method), user_sub_domain(sub_domain)
 {
   check();
+  parameters = default_parameters();
   init_from_sub_domain(user_sub_domain);
 }
 //-----------------------------------------------------------------------------
@@ -73,6 +75,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
     method(method), user_sub_domain(static_cast<SubDomain*>(0))
 {
   check();
+  parameters = default_parameters();
   init_from_mesh_function(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
@@ -86,6 +89,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
     method(method), user_sub_domain(static_cast<SubDomain*>(0))
 {
   check();
+  parameters = default_parameters();
   init_from_mesh_function(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
@@ -98,6 +102,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
     method(method), user_sub_domain(static_cast<SubDomain*>(0))
 {
   check();
+  parameters = default_parameters();
   init_from_mesh(sub_domain);
 }
 //-----------------------------------------------------------------------------
@@ -110,6 +115,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
     method(method), user_sub_domain(static_cast<SubDomain*>(0))
 {
   check();
+  parameters = default_parameters();
   init_from_mesh(sub_domain);
 }
 //-----------------------------------------------------------------------------
@@ -123,6 +129,7 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
     facets(markers)
 {
   check();
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
@@ -135,11 +142,15 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
     facets(markers)
 {
   check();
+  parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const DirichletBC& bc)
   : BoundaryCondition(bc._function_space)
 {
+  // Set default parameters
+  parameters = default_parameters();
+
   *this = bc;
 }
 //-----------------------------------------------------------------------------
@@ -356,7 +367,19 @@ void DirichletBC::apply(GenericMatrix* A,
   // Modify linear system (A_ii = 1) and apply changes
   if (A)
   {
-    A->ident(size, &dofs[0]);
+    const bool use_ident = parameters["use_ident"];
+    if (use_ident)
+    {
+      A->ident(size, &dofs[0]);
+    }
+    else
+    {
+      for (uint i = 0; i < size; i++)
+      {
+        std::pair<uint, uint> ij(dofs[i], dofs[i]);
+        A->setitem(ij, 1.0);
+      }
+    }
     A->apply("insert");
   }
 }

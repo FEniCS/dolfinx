@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2009-06-30
+// Last changed: 2010-04-22
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
@@ -31,7 +31,7 @@ namespace dolfin
   public:
 
     /// Create Krylov solver
-    KrylovSolver(std::string solver_type = "default", 
+    KrylovSolver(std::string solver_type = "default",
                  std::string pc_type = "default");
 
     /// Destructor
