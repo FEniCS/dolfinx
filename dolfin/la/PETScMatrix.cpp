@@ -7,7 +7,7 @@
 // Modified by Magnus Vikstrøm 2007-2008.
 //
 // First added:  2004
-// Last changed: 2010-04-21
+// Last changed: 2010-04-26
 
 #ifdef HAS_PETSC
 
@@ -42,7 +42,7 @@ using namespace dolfin;
 
 const std::map<std::string, NormType> PETScMatrix::norm_types
   = boost::assign::map_list_of("l1",        NORM_1)
-                              ("lif",       NORM_INFINITY)
+                              ("linf",      NORM_INFINITY)
                               ("frobenius", NORM_FROBENIUS);
 
 //-----------------------------------------------------------------------------
