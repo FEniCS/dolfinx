@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2010-02-10
+// Last changed: 2010-04-27
 
 #include <dolfin/log/log.h>
 #include <istream>
@@ -113,5 +113,46 @@ void BinaryFile::operator<< (const GenericVector& vector)
 void BinaryFile::operator<< (const Mesh& mesh)
 {
   warning("Writing mesh in binary format not implemented.");
+}
+//-----------------------------------------------------------------------------
+dolfin::uint BinaryFile::read_uint(std::ifstream& file) const
+{
+  uint value = 0;
+  file.read((char*) &value, sizeof(uint));
+  return value;
+}
+//-----------------------------------------------------------------------------
+void BinaryFile::read_array(uint n, uint* values,
+                            std::ifstream& file) const
+{
+  for (uint i = 0; i < n; ++i)
+    file.read((char*) (values + i), sizeof(uint));
+}
+//-----------------------------------------------------------------------------
+void BinaryFile::read_array(uint n, double* values,
+                            std::ifstream& file) const
+{
+  for (uint i = 0; i < n; ++i)
+    file.read((char*) (values + i), sizeof(double));
+}
+//-----------------------------------------------------------------------------
+void BinaryFile::write_uint(uint value,
+                            std::ofstream& file) const
+{
+  file.write((char*) &value, sizeof(uint));
+}
+//-----------------------------------------------------------------------------
+void BinaryFile::write_array(uint n, const uint* values,
+                             std::ofstream& file) const
+{
+  for (uint i = 0; i < n; ++i)
+    file.write((char*) &values[i], sizeof(uint));
+}
+//-----------------------------------------------------------------------------
+void BinaryFile::write_array(uint n, const double* values,
+                             std::ofstream& file) const
+{
+  for (uint i = 0; i < n; ++i)
+    file.write((char*) &values[i], sizeof(double));
 }
 //-----------------------------------------------------------------------------
