@@ -12,7 +12,7 @@ q = 1
 BDM = FiniteElement("Brezzi-Douglas-Marini", "triangle", q)
 DG  = FiniteElement("Discontinuous Lagrange", "triangle", q - 1)
 
-mixed_element = BDM + DG
+mixed_element = BDM * DG
 
 (tau, w)   = TestFunctions(mixed_element)
 (sigma, u) = TrialFunctions(mixed_element)

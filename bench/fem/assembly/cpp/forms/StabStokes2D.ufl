@@ -1,6 +1,6 @@
 vector  = VectorElement("Lagrange", "triangle", 1)
 scalar  = FiniteElement("Discontinuous Lagrange", "triangle", 0)
-element = vector + scalar
+element = vector * scalar
 
 (v, q) = TestFunctions(element)
 (u, p) = TrialFunctions(element)
