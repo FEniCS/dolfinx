@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2010-04-27
+// Last changed: 2010-04-29
 //
 // This program demonstrates the use of the TimeSeries
 // class for storing a series of meshes and vectors.
@@ -29,15 +29,12 @@ int main()
     Mesh new_mesh = refine(mesh);
     x.resize(new_mesh.num_vertices());
 
+    for (dolfin::uint i = 0; i < x.size(); i++)
+      x.setitem(i, (t + 1.0)*static_cast<double>(i));
+
     // Append to series
     series.store(new_mesh, t);
     series.store(x, t);
-
-    //for (dolfin::uint i = 0; i < x.size(); i++)
-    //  x.setitem(i, (t + 1.0)*static_cast<double>(i));
-    for (dolfin::uint i = 0; i < x.size(); i++)
-      x.setitem(i, 3.0);
-    info(x, true);
 
     mesh = new_mesh;
     t += 0.2;
