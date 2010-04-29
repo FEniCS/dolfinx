@@ -47,7 +47,7 @@ int main()
   info(x, true);
 
   // Plot mesh
-  plot(mesh);
+  //plot(mesh);
 
   return 0;
 }

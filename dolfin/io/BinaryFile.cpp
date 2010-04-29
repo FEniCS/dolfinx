@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2010-04-27
+// Last changed: 2010-04-29
 
 #include <dolfin/log/log.h>
 #include <istream>
@@ -31,42 +31,27 @@ BinaryFile::~BinaryFile()
 //-----------------------------------------------------------------------------
 void BinaryFile::operator>> (std::vector<double>& values)
 {
-  // Read size
-  std::ifstream file(filename.c_str(), std::ios::out | std::ios::binary);
-  if (!file.is_open())
-    error("Unable to open file \"%s\".", filename.c_str());
-  uint n;
-  file.read((char*) &n, sizeof(uint));
+  open_read();
 
-  dolfin_debug2("Reading %d array value(s) in binary from %s", n, filename.c_str());
-
-  // Read vector values
+  uint n = read_uint();
   values.resize(n);
-  for (uint i = 0; i < n; ++i)
-    file.read((char*) &values[i], sizeof(double));
-  file.close();
+  read_array(n, &values[0]);
+
+  close_read();
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::operator>> (GenericVector& vector)
 {
-  // Read size
-  std::ifstream file(filename.c_str(), std::ios::out | std::ios::binary);
-  if (!file.is_open())
-    error("Unable to open file \"%s\".", filename.c_str());
-  uint n;
-  file.read((char*) &n, sizeof(uint));
+  open_read();
 
-  dolfin_debug2("Reading %d vector value(s) in binary from %s", n, filename.c_str());
-
-  // Read vector values
+  uint n = read_uint();
   Array<double> values(n);
-  for (uint i = 0; i < n; ++i)
-    file.read((char*) &values.data().get()[i], sizeof(double));
-  file.close();
+  read_array(n, values);
 
-  // Set vector values
   vector.resize(n);
   vector.set_local(values);
+
+  close_read();
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::operator>> (Mesh& mesh)
@@ -76,38 +61,25 @@ void BinaryFile::operator>> (Mesh& mesh)
 //-----------------------------------------------------------------------------
 void BinaryFile::operator<< (const std::vector<double>& values)
 {
-  // Get size
-  const uint n = values.size();
+  open_write();
 
-  dolfin_debug2("Writing %d array value(s) in binary to %s", n, filename.c_str());
+  write_uint(values.size());
+  write_array(values.size(), &values[0]);
 
-  // Write size and values
-  std::ofstream file(filename.c_str(), std::ios::out | std::ios::binary);
-  if (!file.is_open())
-    error("Unable to open file \"%s\".", filename.c_str());
-  file.write((char*) &n, sizeof(uint));
-  for (uint i = 0; i < n; ++i)
-    file.write((char*) &values[i], sizeof(double));
-  file.close();
+  close_write();
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::operator<< (const GenericVector& vector)
 {
-  // Get size and vector values
-  const uint n = vector.size();
+  open_write();
+
+  uint n = vector.size();
   Array<double> values(n);
   vector.get_local(values);
+  write_uint(n);
+  write_array(n, values);
 
-  dolfin_debug2("Writing %d vector value(s) in binary to %s", n, filename.c_str());
-
-  // Write size and values
-  std::ofstream file(filename.c_str(), std::ios::out | std::ios::binary);
-  if (!file.is_open())
-    error("Unable to open file \"%s\".", filename.c_str());
-  file.write((char*) &n, sizeof(uint));
-  for (uint i = 0; i < n; ++i)
-    file.write((char*) &(values.data().get())[i], sizeof(double));
-  file.close();
+  close_write();
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::operator<< (const Mesh& mesh)
@@ -115,44 +87,63 @@ void BinaryFile::operator<< (const Mesh& mesh)
   warning("Writing mesh in binary format not implemented.");
 }
 //-----------------------------------------------------------------------------
-dolfin::uint BinaryFile::read_uint(std::ifstream& file) const
+void BinaryFile::open_read()
+{
+  ifile.open(filename.c_str(), std::ios::out | std::ios::binary);
+  if (!ifile.is_open())
+    error("Unable to open file for reading: \"%s\".", filename.c_str());
+}
+//-----------------------------------------------------------------------------
+void BinaryFile::open_write()
+{
+  ofile.open(filename.c_str(), std::ios::out | std::ios::binary);
+  if (!ofile.is_open())
+    error("Unable to open file for writing: \"%s\".", filename.c_str());
+}
+//-----------------------------------------------------------------------------
+void BinaryFile::close_read()
+{
+  ifile.close();
+}
+//-----------------------------------------------------------------------------
+void BinaryFile::close_write()
+{
+  ofile.close();
+}
+//-----------------------------------------------------------------------------
+dolfin::uint BinaryFile::read_uint()
 {
   uint value = 0;
-  file.read((char*) &value, sizeof(uint));
+  ifile.read((char*) &value, sizeof(uint));
   return value;
 }
 //-----------------------------------------------------------------------------
-void BinaryFile::read_array(uint n, uint* values,
-                            std::ifstream& file) const
+void BinaryFile::read_array(uint n, uint* values)
 {
   for (uint i = 0; i < n; ++i)
-    file.read((char*) (values + i), sizeof(uint));
+    ifile.read((char*) (values + i), sizeof(uint));
 }
 //-----------------------------------------------------------------------------
-void BinaryFile::read_array(uint n, double* values,
-                            std::ifstream& file) const
+void BinaryFile::read_array(uint n, double* values)
 {
   for (uint i = 0; i < n; ++i)
-    file.read((char*) (values + i), sizeof(double));
+    ifile.read((char*) (values + i), sizeof(double));
 }
 //-----------------------------------------------------------------------------
-void BinaryFile::write_uint(uint value,
-                            std::ofstream& file) const
+void BinaryFile::write_uint(uint value)
 {
-  file.write((char*) &value, sizeof(uint));
+  ofile.write((char*) &value, sizeof(uint));
 }
 //-----------------------------------------------------------------------------
-void BinaryFile::write_array(uint n, const uint* values,
-                             std::ofstream& file) const
+void BinaryFile::write_array(uint n, const uint* values)
 {
   for (uint i = 0; i < n; ++i)
-    file.write((char*) &values[i], sizeof(uint));
+    ofile.write((char*) &values[i], sizeof(uint));
 }
 //-----------------------------------------------------------------------------
-void BinaryFile::write_array(uint n, const double* values,
-                             std::ofstream& file) const
+void BinaryFile::write_array(uint n, const double* values)
 {
   for (uint i = 0; i < n; ++i)
-    file.write((char*) &values[i], sizeof(double));
+    ofile.write((char*) &values[i], sizeof(double));
 }
 //-----------------------------------------------------------------------------
