@@ -23,17 +23,17 @@ int main(int argc, char** argv)
   if (strcmp(argv[1], "gauss") == 0)
   {
     GaussQuadrature q(n);
-    q.disp();
+    info(q);
   }
   else if (strcmp(argv[1], "radau") == 0)
   {
     RadauQuadrature q(n);
-    q.disp();
+    info(q);
   }
   else if (strcmp(argv[1], "lobatto") == 0)
   {
     LobattoQuadrature q(n);
-    q.disp();
+    info(q);
   }
   else
   {

@@ -12,7 +12,7 @@
 vector   = VectorElement("Lagrange", "triangle", 1)
 scalar   = FiniteElement("Lagrange", "triangle", 1)
 constant = FiniteElement("Discontinuous Lagrange", "triangle", 0)
-system = vector + scalar
+system = vector * scalar
 
 (v, q) = TestFunctions(system)
 (u, p) = TrialFunctions(system)
