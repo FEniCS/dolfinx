@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2010-04-20
+// Last changed: 2010-04-29
 //
 // Modified by Marie E. Rognes (meg@simula.no) 2010.
 
@@ -39,14 +39,27 @@ namespace dolfin
     /// Compute extrapolation w from v
     static void extrapolate(Function& w, const Function& v);
 
-    /// Compute extrapolation w from v and apply boundary conditions to w
-    static void extrapolate(Function& w, const Function& v,
-                            const std::vector<const DirichletBC*>& bcs);
-
   private:
 
-    // Extrapolate over interior (including boundary dofs)
-    static void extrapolate_interior(Function& w, const Function& v);
+    // Build data structures for unique dofs on patch of given cell
+    static void build_unique_dofs(std::set<uint>& unique_dofs,
+                                  std::map<uint, std::map<uint, uint> >& cell2dof2row,
+                                  const Cell& cell0,
+                                  const ufc::cell& c0,
+                                  const FunctionSpace& V);
+
+    // Compute unique dofs in given cell
+    static std::map<uint, uint> compute_unique_dofs(const Cell& cell, const ufc::cell& c,
+                                                    const FunctionSpace& V,
+                                                    uint& row, std::set<uint>& unique_dofs);
+
+    // Compute coefficients on given cell
+    static void compute_coefficients(std::vector<std::vector<double> >& coefficients,
+                                     const Function&v, const FunctionSpace& V,
+                                     const FunctionSpace& W, const Cell& cell0,
+                                     const ufc::cell& c0,
+                                     const boost::scoped_array<uint>& dofs,
+                                     uint& offset);
 
     // Add equations for current cell
     static void add_cell_equations(LAPACKMatrix& A,
@@ -60,10 +73,9 @@ namespace dolfin
                                    const Function& v,
                                    std::map<uint, uint>& dof2row);
 
-    // Compute unique dofs in given cell
-    static std::map<uint, uint> compute_unique_dofs(const Cell& cell, const ufc::cell& c,
-                                                    const FunctionSpace& V,
-                                                    uint& row, std::set<uint>& unique_dofs);
+    // Average coefficients
+    static void average_coefficients(Function& w,
+                                     std::vector<std::vector<double> >& coefficients);
 
   };
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2010-04-20
+// Last changed: 2010-04-29
 //
 // Modified by Marie E. Rognes (meg@simula.no) 2010
 
@@ -39,24 +39,6 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   if (&w.function_space().mesh() != &v.function_space().mesh())
     error("Extrapolation must be computed on the same mesh.");
 
-  // Extrapolate over interior (including boundary dofs)
-  extrapolate_interior(w, v);
-}
-//-----------------------------------------------------------------------------
-void Extrapolation::extrapolate(Function& w, const Function& v,
-                                const std::vector<const DirichletBC*>& bcs)
-{
-  // Extrapolate over interior
-  extrapolate_interior(w, v);
-
-  // Apply Dirichlet boundary condition (assumed to be defined on w's
-  // function space)
-  for (uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(w.vector());
-}
-//-----------------------------------------------------------------------------
-void Extrapolation::extrapolate_interior(Function& w, const Function& v)
-{
   // Extract mesh and function spaces
   const FunctionSpace& V(v.function_space());
   const FunctionSpace& W(w.function_space());
@@ -66,13 +48,12 @@ void Extrapolation::extrapolate_interior(Function& w, const Function& v)
   const uint D = mesh.topology().dim();
   mesh.init(D, D);
 
-  // UFC cell views of center and patch cells
+  // UFC cell view of center cell
   UFCCell c0(mesh);
-  UFCCell c1(mesh);
 
   // List of values for each dof of w (multivalued until we average)
-  std::vector<std::vector<double> > dof_values_multi;
-  dof_values_multi.resize(W.dim());
+  std::vector<std::vector<double> > coefficients;
+  coefficients.resize(W.dim());
 
   // Local array for dof indices
   boost::scoped_array<uint> dofs(new uint[W.dofmap().max_local_dimension()]);
@@ -83,69 +64,89 @@ void Extrapolation::extrapolate_interior(Function& w, const Function& v)
     // Update UFC view
     c0.update(*cell0);
 
-    // Number of unknowns
-    const uint N = W.element().space_dimension();
-
-    // Map of [cell index (uint), local dof[uint]] to matrix entry
-    std::map<uint, std::map<uint, uint> > cell2dof2row;
-
-    // Set of unique global degrees of freedom
-    std::set<uint> unique_dofs;
-
-    // Matrix row index
-    uint row = 0;
-
-    // Build above data structures
-    cell2dof2row[cell0->index()] = compute_unique_dofs(*cell0, c0, V, row, unique_dofs);
-    for (CellIterator cell1(*cell0); !cell1.end(); ++cell1)
-    {
-      c1.update(*cell1);
-      cell2dof2row[cell1->index()] = compute_unique_dofs(*cell1, c1, V, row, unique_dofs);
-    }
-
-    // Set dimension for system equal to number of unique dofs
-    const uint M = unique_dofs.size();
-
-    // Create linear system
-    LAPACKMatrix A(M, N);
-    LAPACKVector b(M);
-
-    // Add equations on cell
-    add_cell_equations(A, b, *cell0, *cell0, c0, c0, V, W, v, cell2dof2row[cell0->index()]);
-
-    // Add equations on neighboring cells
-    for (CellIterator cell1(*cell0); !cell1.end(); ++cell1)
-    {
-      if (cell2dof2row[cell1->index()].size() == 0)
-        continue;
-
-      c1.update(*cell1);
-      add_cell_equations(A, b, *cell0, *cell1, c0, c1, V, W, v, cell2dof2row[cell1->index()]);
-    }
-
-    // Solve least squares system
-    LAPACKSolvers::solve_least_squares(A, b);
-
     // Tabulate dofs for w on cell and store values
     W.dofmap().tabulate_dofs(dofs.get(), c0, cell0->index());
-    for (uint i = 0; i < W.dofmap().local_dimension(c0); ++i)
-      dof_values_multi[dofs[i]].push_back(b[i]);
+
+    // Compute coefficients on this cell
+    uint offset = 0;
+    compute_coefficients(coefficients, v, V, W, *cell0, c0, dofs, offset);
   }
 
-  // Compute average of dof values
-  Array<double> dof_values_single(W.dim());
-  for (uint i = 0; i < W.dim(); i++)
+  // Average coefficients
+  average_coefficients(w, coefficients);
+}
+//-----------------------------------------------------------------------------
+void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficients,
+                                         const Function&v,
+                                         const FunctionSpace& V,
+                                         const FunctionSpace& W,
+                                         const Cell& cell0,
+                                         const ufc::cell& c0,
+                                         const boost::scoped_array<uint>& dofs,
+                                         uint& offset)
+{
+  // Call recursively for mixed elements
+  uint num_sub_spaces = V.element().num_sub_elements();
+  if (num_sub_spaces > 0)
   {
-    double s = 0.0;
-    for (uint j = 0; j < dof_values_multi[i].size(); ++j)
-      s += dof_values_multi[i][j];
-    s /= static_cast<double>(dof_values_multi[i].size());
-    dof_values_single[i] = s;
+    for (uint k = 0; k < num_sub_spaces; k++)
+      compute_coefficients(coefficients, v[k], *V[k], *W[k], cell0, c0, dofs, offset);
+    return;
   }
 
-  // Update dofs for w
-  w.vector().set_local(dof_values_single);
+  // Build data structures for keeping track of unique dofs
+  std::map<uint, std::map<uint, uint> > cell2dof2row;
+  std::set<uint> unique_dofs;
+  build_unique_dofs(unique_dofs, cell2dof2row, cell0, c0, V);
 
+  // Create linear system
+  const uint N = W.element().space_dimension();
+  const uint M = unique_dofs.size();
+  LAPACKMatrix A(M, N);
+  LAPACKVector b(M);
+
+  // Add equations on cell and neighboring cells
+  add_cell_equations(A, b, cell0, cell0, c0, c0, V, W, v, cell2dof2row[cell0.index()]);
+  UFCCell c1(V.mesh());
+  for (CellIterator cell1(cell0); !cell1.end(); ++cell1)
+  {
+    if (cell2dof2row[cell1->index()].size() == 0)
+      continue;
+
+    c1.update(*cell1);
+    add_cell_equations(A, b, cell0, *cell1, c0, c1, V, W, v, cell2dof2row[cell1->index()]);
+  }
+
+  // Solve least squares system
+  LAPACKSolvers::solve_least_squares(A, b);
+
+  // Insert resulting coefficients into global coefficient vector
+  for (uint i = 0; i < W.dofmap().local_dimension(c0); ++i)
+    coefficients[dofs[i + offset]].push_back(b[i]);
+
+  // Increase offset
+  offset += W.dofmap().local_dimension(c0);
+}
+//-----------------------------------------------------------------------------
+void Extrapolation::build_unique_dofs(std::set<uint>& unique_dofs,
+                                      std::map<uint, std::map<uint, uint> >& cell2dof2row,
+                                      const Cell& cell0,
+                                      const ufc::cell& c0,
+                                      const FunctionSpace& V)
+{
+  // Counter for matrix row index
+  uint row = 0;
+  UFCCell c1(V.mesh());
+
+  // Compute unique dofs on center cell
+  cell2dof2row[cell0.index()] = compute_unique_dofs(cell0, c0, V, row, unique_dofs);
+
+  // Compute unique dofs on neighbouring cells
+  for (CellIterator cell1(cell0); !cell1.end(); ++cell1)
+  {
+    c1.update(*cell1);
+    cell2dof2row[cell1->index()] = compute_unique_dofs(*cell1, c1, V, row, unique_dofs);
+  }
 }
 //-----------------------------------------------------------------------------
 void Extrapolation::add_cell_equations(LAPACKMatrix& A,
@@ -159,7 +160,6 @@ void Extrapolation::add_cell_equations(LAPACKMatrix& A,
                                        const Function& v,
                                        std::map<uint, uint>& dof2row)
 {
-
   // Extract coefficents for v on patch cell
   boost::scoped_array<double> dof_values(new double[V.element().space_dimension()]);
   v.restrict(dof_values.get(), V.element(), cell1, c1, -1);
@@ -218,5 +218,24 @@ Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
   }
 
   return dof2row;
+}
+//-----------------------------------------------------------------------------
+void Extrapolation::average_coefficients(Function& w,
+                                         std::vector<std::vector<double> >& coefficients)
+{
+  const FunctionSpace& W = w.function_space();
+  Array<double> dof_values(W.dim());
+
+  for (uint i = 0; i < W.dim(); i++)
+  {
+    double s = 0.0;
+    for (uint j = 0; j < coefficients[i].size(); ++j)
+      s += coefficients[i][j];
+    s /= static_cast<double>(coefficients[i].size());
+    dof_values[i] = s;
+  }
+
+  // Update dofs for w
+  w.vector().set_local(dof_values);
 }
 //-----------------------------------------------------------------------------

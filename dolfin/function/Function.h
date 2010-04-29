@@ -7,7 +7,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-04-20
+// Last changed: 2010-04-29
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -130,10 +130,6 @@ namespace dolfin
 
     /// Extrapolate function (from a possibly lower-degree function space)
     void extrapolate(const Function& v);
-
-    /// Extrapolate function and set equal to v in sub domain
-    void extrapolate(const Function& v,
-                     const std::vector<const DirichletBC*>& bcs);
 
     //--- Implementation of GenericFunction interface ---
 

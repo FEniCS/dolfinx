@@ -65,8 +65,10 @@ def pkgCflags(sconsEnv=None):
            os.path.join(getCgalDir(sconsEnv=sconsEnv), "include")
 
 def pkgLibs(sconsEnv=None):
-    return "-L%s -lCGAL" % \
-           os.path.join(getCgalDir(sconsEnv), "lib")
+    libs = "-L%s -lCGAL" % os.path.join(getCgalDir(sconsEnv), "lib")
+    if get_architecture() == 'darwin':
+        libs += " -lmpfr -lboost_thread"
+    return libs
 
 def pkgTests(forceCompiler=None, sconsEnv=None,
              cflags=None, libs=None, version=None, **kwargs):

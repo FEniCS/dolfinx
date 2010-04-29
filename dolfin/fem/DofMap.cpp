@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2010-04-05
+// Last changed: 2010-04-29
 
 #include <boost/scoped_array.hpp>
 
@@ -81,10 +81,9 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
   // Lookup pretabulated values or ask the ufc::dof_map to tabulate the values
   if (_map.get())
   {
-    // FIXME: Add assertion to test that this process has the dof
-
-    // FIXME: This will only work for problem where local_dimension is the
-    //        same for all cells since the offset will not be computed correctly.
+    // FIXME: Add assertion to test that this process has the dof.
+    // FIXME: This will only work for problems where local_dimension is the
+    // FIXME: same for all cells since the offset will not be computed correctly.
     const uint n = local_dimension(ufc_cell);
     const uint offset = n*cell_index;
     for (uint i = 0; i < n; i++)

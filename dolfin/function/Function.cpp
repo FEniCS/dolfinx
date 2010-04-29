@@ -6,7 +6,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-04-20
+// Last changed: 2010-04-29
 
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
@@ -325,12 +325,6 @@ void Function::interpolate(const GenericFunction& v)
 void Function::extrapolate(const Function& v)
 {
   Extrapolation::extrapolate(*this, v);
-}
-//-----------------------------------------------------------------------------
-void Function::extrapolate(const Function& v,
-                           const std::vector<const DirichletBC*>& bcs)
-{
-  Extrapolation::extrapolate(*this, v, bcs);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Function::value_rank() const
