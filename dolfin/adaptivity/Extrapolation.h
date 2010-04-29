@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2010-04-28
+// Last changed: 2010-04-29
 //
 // Modified by Marie E. Rognes (meg@simula.no) 2010.
 
@@ -39,15 +39,7 @@ namespace dolfin
     /// Compute extrapolation w from v
     static void extrapolate(Function& w, const Function& v);
 
-    /// Compute extrapolation w from v and apply boundary conditions to w
-    static void extrapolate(Function& w, const Function& v,
-                            const std::vector<const DirichletBC*>& bcs);
-
   private:
-
-    // Extrapolate over interior (including boundary dofs)
-    static void extrapolate_interior(Function& w, const Function& v);
-
 
     // Build data structures for unique dofs on patch of given cell
     static void build_unique_dofs(std::set<uint>& unique_dofs,

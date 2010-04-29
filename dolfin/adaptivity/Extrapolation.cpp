@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-08
-// Last changed: 2010-04-28
+// Last changed: 2010-04-29
 //
 // Modified by Marie E. Rognes (meg@simula.no) 2010
 
@@ -39,24 +39,6 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   if (&w.function_space().mesh() != &v.function_space().mesh())
     error("Extrapolation must be computed on the same mesh.");
 
-  // Extrapolate over interior (including boundary dofs)
-  extrapolate_interior(w, v);
-}
-//-----------------------------------------------------------------------------
-void Extrapolation::extrapolate(Function& w, const Function& v,
-                                const std::vector<const DirichletBC*>& bcs)
-{
-  // Extrapolate over interior
-  extrapolate_interior(w, v);
-
-  // Apply Dirichlet boundary condition (assumed to be defined on w's
-  // function space)
-  for (uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(w.vector());
-}
-//-----------------------------------------------------------------------------
-void Extrapolation::extrapolate_interior(Function& w, const Function& v)
-{
   // Extract mesh and function spaces
   const FunctionSpace& V(v.function_space());
   const FunctionSpace& W(w.function_space());
@@ -66,7 +48,7 @@ void Extrapolation::extrapolate_interior(Function& w, const Function& v)
   const uint D = mesh.topology().dim();
   mesh.init(D, D);
 
-  // UFC cell views of center cell
+  // UFC cell view of center cell
   UFCCell c0(mesh);
 
   // List of values for each dof of w (multivalued until we average)
@@ -92,18 +74,19 @@ void Extrapolation::extrapolate_interior(Function& w, const Function& v)
 
   // Average coefficients
   average_coefficients(w, coefficients);
-
 }
-
+//-----------------------------------------------------------------------------
 void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficients,
-                                         const Function&v, const FunctionSpace& V,
-                                         const FunctionSpace& W, const Cell& cell0,
+                                         const Function&v,
+                                         const FunctionSpace& V,
+                                         const FunctionSpace& W,
+                                         const Cell& cell0,
                                          const ufc::cell& c0,
                                          const boost::scoped_array<uint>& dofs,
                                          uint& offset)
 {
+  // Call recursively for mixed elements
   uint num_sub_spaces = V.element().num_sub_elements();
-
   if (num_sub_spaces > 0)
   {
     for (uint k = 0; k < num_sub_spaces; k++)
@@ -144,7 +127,6 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
   // Increase offset
   offset += W.dofmap().local_dimension(c0);
 }
-
 //-----------------------------------------------------------------------------
 void Extrapolation::build_unique_dofs(std::set<uint>& unique_dofs,
                                       std::map<uint, std::map<uint, uint> >& cell2dof2row,
@@ -152,21 +134,20 @@ void Extrapolation::build_unique_dofs(std::set<uint>& unique_dofs,
                                       const ufc::cell& c0,
                                       const FunctionSpace& V)
 {
-    // Counter for matrix row index
-    uint row = 0;
-    UFCCell c1(V.mesh());
+  // Counter for matrix row index
+  uint row = 0;
+  UFCCell c1(V.mesh());
 
-    // Compute unique dofs on center cell
-    cell2dof2row[cell0.index()] = compute_unique_dofs(cell0, c0, V, row, unique_dofs);
+  // Compute unique dofs on center cell
+  cell2dof2row[cell0.index()] = compute_unique_dofs(cell0, c0, V, row, unique_dofs);
 
-    // Compute unique dofs on neighbouring cells
-    for (CellIterator cell1(cell0); !cell1.end(); ++cell1)
-    {
-      c1.update(*cell1);
-      cell2dof2row[cell1->index()] = compute_unique_dofs(*cell1, c1, V, row, unique_dofs);
-    }
+  // Compute unique dofs on neighbouring cells
+  for (CellIterator cell1(cell0); !cell1.end(); ++cell1)
+  {
+    c1.update(*cell1);
+    cell2dof2row[cell1->index()] = compute_unique_dofs(*cell1, c1, V, row, unique_dofs);
+  }
 }
-
 //-----------------------------------------------------------------------------
 void Extrapolation::add_cell_equations(LAPACKMatrix& A,
                                        LAPACKVector& b,
@@ -179,7 +160,6 @@ void Extrapolation::add_cell_equations(LAPACKMatrix& A,
                                        const Function& v,
                                        std::map<uint, uint>& dof2row)
 {
-
   // Extract coefficents for v on patch cell
   boost::scoped_array<double> dof_values(new double[V.element().space_dimension()]);
   v.restrict(dof_values.get(), V.element(), cell1, c1, -1);
@@ -240,7 +220,6 @@ Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
   return dof2row;
 }
 //-----------------------------------------------------------------------------
-
 void Extrapolation::average_coefficients(Function& w,
                                          std::vector<std::vector<double> >& coefficients)
 {
