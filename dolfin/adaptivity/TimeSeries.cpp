@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2010-03-04
+// Last changed: 2010-04-29
 
 #include <algorithm>
 #include <sstream>
@@ -149,8 +149,6 @@ Array<double> TimeSeries::mesh_times() const
 //-----------------------------------------------------------------------------
 void TimeSeries::clear()
 {
-  info("Clearing time series.");
-
   _vector_times.clear();
   _mesh_times.clear();
   _cleared = true;

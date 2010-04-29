@@ -29,6 +29,7 @@ int main()
     Mesh new_mesh = refine(mesh);
     x.resize(new_mesh.num_vertices());
 
+    // Set some vector values
     for (dolfin::uint i = 0; i < x.size(); i++)
       x.setitem(i, (t + 1.0)*static_cast<double>(i));
 
@@ -44,10 +45,8 @@ int main()
   series.retrieve(mesh, 0.3);
   series.retrieve(x, 0.3);
 
-  info(x, true);
-
   // Plot mesh
-  //plot(mesh);
+  plot(mesh);
 
   return 0;
 }

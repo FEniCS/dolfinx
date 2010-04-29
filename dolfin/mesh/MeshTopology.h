@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-08
-// Last changed: 2009-09-08
+// Last changed: 2010-04-29
 
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
@@ -41,15 +41,15 @@ namespace dolfin
     const MeshTopology& operator= (const MeshTopology& topology);
 
     /// Return topological dimension
-    uint dim() const 
+    uint dim() const
     { return _dim; }
 
     /// Return number of entities for given dimension
     uint size(uint dim) const
-    { 
-      assert(num_entities); 
-      assert(dim <= _dim); 
-      return num_entities[dim]; 
+    {
+      assert(num_entities);
+      assert(dim <= _dim);
+      return num_entities[dim];
     }
 
     /// Clear all data
@@ -63,17 +63,17 @@ namespace dolfin
 
     /// Return connectivity for given pair of topological dimensions
     dolfin::MeshConnectivity& operator() (uint d0, uint d1)
-    { 
+    {
       assert(connectivity);
-      assert(d0 <= _dim && d1 <= _dim); 
-      return *connectivity[d0][d1]; 
+      assert(d0 <= _dim && d1 <= _dim);
+      return *connectivity[d0][d1];
     }
 
     /// Return connectivity for given pair of topological dimensions
     const dolfin::MeshConnectivity& operator() (uint d0, uint d1) const
-    { 
+    {
       assert(connectivity);
-      assert(d0 <= _dim && d1 <= _dim); 
+      assert(d0 <= _dim && d1 <= _dim);
       return *connectivity[d0][d1];
     }
 
@@ -81,6 +81,9 @@ namespace dolfin
     std::string str(bool verbose) const;
 
   private:
+
+    // Friends
+    friend class BinaryFile;
 
     // Topological dimension
     uint _dim;

@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2010-04-05
+// Last changed: 2010-04-29
 
 #include <sstream>
 

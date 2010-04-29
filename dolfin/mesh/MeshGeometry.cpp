@@ -5,7 +5,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-05-19
-// Last changed: 2009-08-10
+// Last changed: 2010-04-29
 
 #include <dolfin/log/dolfin_log.h>
 #include "MeshGeometry.h"

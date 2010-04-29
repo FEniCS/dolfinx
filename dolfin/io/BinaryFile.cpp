@@ -56,7 +56,53 @@ void BinaryFile::operator>> (GenericVector& vector)
 //-----------------------------------------------------------------------------
 void BinaryFile::operator>> (Mesh& mesh)
 {
-  warning("Reading mesh in binary format not implemented.");
+  // Open file
+  open_read();
+
+  // Clear mesh
+  mesh.clear();
+
+  // Read mesh topology
+  MeshTopology& t = mesh._topology;
+  uint D = read_uint();
+  t._dim = D;
+  t.num_entities = new uint[D + 1];
+  read_array(D + 1, t.num_entities);
+  t.connectivity = new MeshConnectivity**[D + 1];
+  for (uint i = 0; i <= D; i++)
+  {
+    t.connectivity[i] = new MeshConnectivity*[D + 1];
+    for (uint j = 0; j <= D; j++)
+    {
+      t.connectivity[i][j] = new MeshConnectivity(i, j);
+      MeshConnectivity& c = *t.connectivity[i][j];
+      c._size = read_uint();
+      if (c._size > 0)
+      {
+        c.num_entities = read_uint();
+        c.connections = new uint[c._size];
+        read_array(c._size, c.connections);
+        c.offsets = new uint[c.num_entities + 1];
+        read_array(c.num_entities + 1, c.offsets);
+      }
+    }
+  }
+
+  // Read mesh geometry (ignoring higher order stuff)
+  MeshGeometry& g = mesh._geometry;
+  g._dim = read_uint();
+  g._size = read_uint();
+  g.coordinates = new double[g._dim * g._size];
+  read_array(g._dim * g._size, g.coordinates);
+
+  // Read cell type
+  mesh._cell_type = CellType::create(static_cast<CellType::Type>(read_uint()));
+
+  // Read mesh data
+  // FIXME: Not implemented
+
+  // Close file
+  close_read();
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::operator<< (const std::vector<double>& values)
@@ -84,7 +130,43 @@ void BinaryFile::operator<< (const GenericVector& vector)
 //-----------------------------------------------------------------------------
 void BinaryFile::operator<< (const Mesh& mesh)
 {
-  warning("Writing mesh in binary format not implemented.");
+  // Open file
+  open_write();
+
+  // Write mesh topology
+  const MeshTopology& t = mesh._topology;
+  uint D = t._dim;
+  write_uint(D);
+  write_array(D + 1, t.num_entities);
+  for (uint i = 0; i <= D; i++)
+  {
+    for (uint j = 0; j <= D; j++)
+    {
+      MeshConnectivity& c = *t.connectivity[i][j];
+      write_uint(c._size);
+      if (c._size > 0)
+      {
+        write_uint(c.num_entities);
+        write_array(c._size, c.connections);
+        write_array(c.num_entities + 1, c.offsets);
+      }
+    }
+  }
+
+  // Write mesh geometry (ignoring higher order stuff)
+  const MeshGeometry& g = mesh._geometry;
+  write_uint(g._dim);
+  write_uint(g._size);
+  write_array(g._dim * g._size, g.coordinates);
+
+  // Write cell type
+  write_uint(static_cast<uint>(mesh._cell_type->cell_type()));
+
+  // Write mesh data
+  // FIXME: Not implemented
+
+  // Close file
+  close_write();
 }
 //-----------------------------------------------------------------------------
 void BinaryFile::open_read()

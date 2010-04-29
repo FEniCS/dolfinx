@@ -9,7 +9,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2010-03-03
+// Last changed: 2010-04-29
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -241,6 +241,7 @@ namespace dolfin
     friend class TopologyComputation;
     friend class MeshOrdering;
     friend class AdaptiveObjects;
+    friend class BinaryFile;
 
     // Mesh topology
     MeshTopology _topology;

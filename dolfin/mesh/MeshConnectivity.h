@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-09
-// Last changed: 2009-09-08
+// Last changed: 2010-04-29
 
 #ifndef __MESH_CONNECTIVITY_H
 #define __MESH_CONNECTIVITY_H
@@ -77,19 +77,22 @@ namespace dolfin
 
   private:
 
-    /// Dimensions (only used for pretty-printing)
+    // Friends
+    friend class BinaryFile;
+
+    // Dimensions (only used for pretty-printing)
     uint d0, d1;
 
-    /// Total number of connections
+    // Total number of connections
     uint _size;
 
-    /// Number of entities
+    // Number of entities
     uint num_entities;
 
-    /// Connections for all entities stored as a contiguous array
+    // Connections for all entities stored as a contiguous array
     uint* connections;
 
-    /// Offset for first connection for each entity
+    // Offset for first connection for each entity
     uint* offsets;
 
   };
