@@ -73,7 +73,7 @@ void update_a(Function& a, const Function& u, const Function& a0,
               const Function& v0,  const Function& u0,
               double beta, double dt)
 {
-  // a = 1/(2*beta)*((u-u0 - v0*dt)/(0.5*dt*dt) - (1-2*beta)*a0)
+  // a = 1/(2*beta)*((u - u0 - v0*dt)/(0.5*dt*dt) - (1-2*beta)*a0)
   a.vector()  = u.vector();
   a.vector() -= u0.vector();
   a.vector() *= 1.0/dt;

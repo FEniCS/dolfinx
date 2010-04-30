@@ -9,12 +9,11 @@
 #
 # Compile this form with FFC: ffc -l dolfin ElastoDynamics.ufl.
 
-element   = VectorElement("Lagrange", "triangle", 1)
-vconstant = VectorElement("Discontinuous Lagrange", "triangle", 0)
-constant  = FiniteElement("Discontinuous Lagrange", "triangle", 0)
+element = VectorElement("Lagrange", "triangle", 1)
+DG0     = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 
 # Test and trial functions
-r = TestFunction (element)
+r = TestFunction(element)
 u = TrialFunction(element)
 
 # Fields from previous time step
@@ -24,23 +23,21 @@ a0      = Coefficient(element)   # acceleration
 p0      = Coefficient(element)   # external load
 
 # External forces
-f       = Coefficient(vconstant) # body forces
+f       = Coefficient(element)  # body forces
 p       = Coefficient(element)   # externally applied loads
 
 # Material parameters
-rho     = Coefficient(constant)  # mass density
-eta     = Coefficient(constant)  # damping coefficient
-lmbda   = Coefficient(constant)  # Lame coefficient
-mu      = Coefficient(constant)  # Lame coefficient
+rho     = Coefficient(DG0)  # mass density
+eta     = Coefficient(DG0)  # damping coefficient
+lmbda   = Coefficient(DG0)  # Lame coefficient
+mu      = Coefficient(DG0)  # Lame coefficient
 
 # Time stepping parameters
-alpha_m = Coefficient(constant)
-alpha_f = Coefficient(constant)
-beta    = Coefficient(constant)
-gamma   = Coefficient(constant)
-dt      = Coefficient(constant)
-
-
+alpha_m = Coefficient(DG0)
+alpha_f = Coefficient(DG0)
+beta    = Coefficient(DG0)
+gamma   = Coefficient(DG0)
+dt      = Coefficient(DG0)
 
 factor_m1  = rho*(1.0-alpha_m)/(beta*dt*dt)
 factor_m2  = rho*(1.0-alpha_m)/(beta*dt)
@@ -50,13 +47,9 @@ factor_d1  = eta*(1.0-alpha_f)*gamma/(beta*dt)
 factor_d2  = eta*((1.0-alpha_f)*gamma-beta)/beta
 factor_d3  = eta*(gamma-2.0*beta)*(1.0-alpha_f)*dt/(2.0*beta)
 
-# Strain tensor
-def eps(r):
-    return 0.5*(grad(r) + grad(r).T)
-
 # Stress tensor
 def sigma(r):
-    return 2.0*mu*eps(r) + lmbda*tr(eps(r))*Identity(r.cell().d)
+    return 2.0*mu*sym(grad(r)) + lmbda*tr(sym(grad(r)))*Identity(r.cell().d)
 
 # Forms
 a = factor_m1*inner(r, u)*dx  \
