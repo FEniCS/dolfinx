@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2009-12-06
-// Last changed: 2010-04-29
+// Last changed: 2010-04-30
 
 #ifndef __DOLFIN_ARRAY_H
 #define __DOLFIN_ARRAY_H
@@ -122,14 +122,6 @@ namespace dolfin
     /// Return pointer to data (non-const version)
     boost::shared_array<T> data()
     { return x; }
-
-    /// Cast to array (const version)
-    operator const T*() const
-    { return x.get(); }
-
-    /// Cast to array (non-const version)
-    operator T*()
-    { return x.get(); }
 
   private:
 

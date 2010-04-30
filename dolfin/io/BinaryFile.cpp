@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2010-04-29
+// Last changed: 2010-04-30
 
 #include <dolfin/log/log.h>
 #include <istream>
@@ -46,7 +46,7 @@ void BinaryFile::operator>> (GenericVector& vector)
 
   uint n = read_uint();
   Array<double> values(n);
-  read_array(n, values);
+  read_array(n, values.data().get());
 
   vector.resize(n);
   vector.set_local(values);
@@ -123,7 +123,7 @@ void BinaryFile::operator<< (const GenericVector& vector)
   Array<double> values(n);
   vector.get_local(values);
   write_uint(n);
-  write_array(n, values);
+  write_array(n, values.data().get());
 
   close_write();
 }
