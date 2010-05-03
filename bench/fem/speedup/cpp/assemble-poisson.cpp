@@ -29,6 +29,7 @@ int main(int argc, char* argv[])
   // Assemble matrix
   Poisson::BilinearForm a(V, V);
   Matrix A;
+  MPI::barrier();
   double t = time();
   assemble(A, a);
   MPI::barrier();

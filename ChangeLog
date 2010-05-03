@@ -1,3 +1,4 @@
+ - Make preconditioner selectable in VariationalProblem (new parameter)
  - Read/write meshes in binary format
  - Add parameter "use_ident" in DirichletBC
  - Issue error by default when solvers don't converge (parameter "error_on_convergence")

@@ -10,7 +10,7 @@ import commands
 print "Assembly/solve speedup running on 4 processors"
 
 # Parameters for benchmark
-SIZE = 16
+SIZE = 64
 NUM_PROCS = 4
 
 # Function for extracting time from benchmark
@@ -39,7 +39,7 @@ print "Serial solve:", solve_t1
 # Parallel solve
 output = commands.getoutput("mpirun -n %d ./solve-poisson %d" % (NUM_PROCS, SIZE))
 solve_t2 = get_time(output)
-print "Parallel solve:", solve_t1
+print "Parallel solve:", solve_t2
 
 # Report results
 print "BENCH assembly", assembly_t1 / assembly_t2

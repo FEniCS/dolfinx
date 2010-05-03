@@ -36,10 +36,14 @@ int main(int argc, char* argv[])
   Poisson::LinearForm L(V);
   Constant f(1.0);
   L.f = f;
-
-  // Compute solution
   VariationalProblem problem(a, L, bc);
+  info(problem.parameters, true);
+  problem.parameters["linear_solver"] = "cg";
+  problem.parameters["preconditioner"] = "amg_hypre";
   Function u(V);
+
+  // Solve problem
+  MPI::barrier();
   double t = time();
   problem.solve(u);
   MPI::barrier();
