@@ -19,6 +19,9 @@ def run_bench(arg, directory, files):
     name = directory.replace("./", "").replace("/", "-")
     print "Running benchmark %s..." % name
 
+    if not name == "mesh-iteration":
+        return
+
     # Remove old logfile
     cwd = os.getcwd()
     logfile = os.path.join(cwd, "logs", name + ".log")
@@ -50,12 +53,32 @@ def run_bench(arg, directory, files):
     description = f.read().split("\n")[0]
     f.close()
 
+    # Get timings (if any)
+    f = open(logfile)
+    timings = [("", elapsed_time)]
+    for line in [line for line in f.read().split("\n") if "BENCH" in line]:
+        words = [word.strip() for word in line.split(" ")]
+        # Override total time
+        if len(words) == 2:
+            timings[0] = ("", float(words[1]))
+        # Add sub timing
+        elif len(words) == 3:
+            timings.append((words[1], float(words[2])))
+    f.close()
+
     # Append to log file
     d = time.gmtime()
     date = str((d.tm_year, d.tm_mon, d.tm_mday, d.tm_hour, d.tm_min, d.tm_sec))
     f = open(os.path.join("logs", "bench.log"), "a")
-    f.write('%s %s %g "%s"\n' % (date, name, elapsed_time, description))
-    f.close()
+    for (postfix, timing) in timings:
+        if postfix == "":
+            n = name
+            d = description
+        else:
+            n = "%s-%s" % (name, postfix)
+            d = "%s (%s)" % (description, postfix)
+        print n
+        f.write('%s %s %g "%s"\n'  % (date, n, timing, d))
 
     return status == 0
 
