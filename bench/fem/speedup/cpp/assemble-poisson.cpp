@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-15
-// Last changed: 2009-09-15
+// Last changed: 2010-05-03
 //
 // Simple Poisson assembler
 
@@ -31,10 +31,12 @@ int main(int argc, char* argv[])
   Matrix A;
   double t = time();
   assemble(A, a);
+  MPI::barrier();
   t = time() - t;
 
   // Report timing
-  info("TIME: %.5g", t);
+  if (MPI::process_number() == 0)
+    info("TIME: %.5g", t);
 
   return 0;
 }

@@ -42,10 +42,12 @@ int main(int argc, char* argv[])
   Function u(V);
   double t = time();
   problem.solve(u);
+  MPI::barrier();
   t = time() - t;
 
   // Report timing
-  info("TIME: %.5g", t);
+  if (MPI::process_number() == 0)
+    info("TIME: %.5g", t);
 
   return 0;
 }

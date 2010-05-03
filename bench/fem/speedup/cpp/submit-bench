@@ -13,8 +13,8 @@ from dolfin_utils.pjobs import submit
 from numpy import arange
 import sys
 
-# Size of mesh
-size = 128
+# Parameters for benchmark
+SIZE = 128
 
 # Number of processes to use
 num_processes = 2**arange(16 + 1)

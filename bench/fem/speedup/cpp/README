@@ -8,3 +8,9 @@ It is organized as follows:
   analyse-bench:    script for analysing output from submit-bench
 
   bench:            script used on benchbot for simple checking of speedup
+
+Possible future improvements:
+
+ 1. MUMPS vs UMFPACK gives skewed results (MUMPS faster?)
+ 2. Time assemble_cells and apply separately
+ 3. Use barriers between timings
