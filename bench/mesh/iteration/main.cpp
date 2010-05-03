@@ -8,8 +8,8 @@
 
 using namespace dolfin;
 
-#define NUM_REPS 10
-#define SIZE 32
+#define NUM_REPS 100
+#define SIZE 128
 
 int main(int argc, char* argv[])
 {
@@ -28,12 +28,10 @@ int main(int argc, char* argv[])
       for (VertexIterator v(*c); !v.end(); ++v)
         sum += v->index();
   }
-  //info("BENCH %g", toc());
-  info("Sum is %d", sum);
+  info("BENCH %g", toc());
 
-  info("BENCH 3.0");
-  info("BENCH assembly 2.0");
-  info("BENCH solve 1.0");
+  // To prevent optimizing the loop away
+  info("Sum is %d", sum);
 
   return 0;
 }
