@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-15
-// Last changed: 2009-09-15
+// Last changed: 2010-05-03
 //
 // Simple Poisson solver
 
@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 
   // Compute solution
   VariationalProblem problem(a, L, bc);
-  Function u;
+  Function u(V);
   double t = time();
   problem.solve(u);
   t = time() - t;

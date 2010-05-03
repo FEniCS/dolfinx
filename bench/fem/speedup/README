@@ -1,0 +1,10 @@
+This benchmark tests parallel speedup for assembly and solve.
+It is organized as follows:
+
+  assemble-poisson: simple program for assembling Poisson matrix
+  solve-poisson:    simple program for solving Poisson's equation
+
+  submit-bench:     script for submitting jobs using dolfin_utils.pjobs
+  analyse-bench:    script for analysing output from submit-bench
+
+  bench:            script used on benchbot for simple checking of speedup
