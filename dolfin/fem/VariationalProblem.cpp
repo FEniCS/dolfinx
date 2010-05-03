@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-26
-// Last changed: 2009-10-06
+// Last changed: 2010-05-03
 
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
@@ -186,8 +186,12 @@ void VariationalProblem::solve_linear(Function& u)
 {
   begin("Solving linear variational problem");
 
-  // Check if system is symmetric
+  // Get parameters
+  std::string solver_type = parameters["linear_solver"];
+  const std::string pc_type = parameters["preconditioner"];
   const bool symmetric = parameters["symmetric"];
+  const bool print_rhs    = parameters["print_rhs"];
+  const bool print_matrix = parameters["print_matrix"];
 
   // Create matrix and vector
   Matrix A;
@@ -221,38 +225,35 @@ void VariationalProblem::solve_linear(Function& u)
   }
 
   // Print vector/matrix
-  const bool print_rhs    = parameters["print_rhs"];
-  const bool print_matrix = parameters["print_matrix"];
   if (print_rhs == true)
     info(b, true);
   if (print_matrix == true)
     info(A, true);
 
-  // Solve linear system
-  const std::string solver_type = parameters["linear_solver"];
-  if (solver_type == "direct")
+  // Adjust solver type if necessary
+  if (solver_type == "iterative")
+  {
+    if (symmetric)
+      solver_type = "cg";
+    else
+      solver_type = "gmres";
+  }
+
+  //  Solve linear system
+  if (solver_type == "lu" || solver_type == "direct")
   {
     LUSolver solver;
     solver.parameters.update(parameters("lu_solver"));
     solver.solve(A, u.vector(), b);
-  }
-  else if (solver_type == "iterative")
-  {
-    if (symmetric)
-    {
-      KrylovSolver solver("cg");
-      solver.parameters.update(parameters("krylov_solver"));
-      solver.solve(A, u.vector(), b);
-    }
-    else
-    {
-      KrylovSolver solver("gmres");
-      solver.parameters.update(parameters("krylov_solver"));
-      solver.solve(A, u.vector(), b);
-    }
+    if (pc_type != "none")
+      warning("Using LU solver, ignoring preconditioner \"%s\".", pc_type.c_str());
   }
   else
-    error("Unknown solver type \"%s\".", solver_type.c_str());
+  {
+    KrylovSolver solver(solver_type, pc_type);
+    solver.parameters.update(parameters("krylov_solver"));
+    solver.solve(A, u.vector(), b);
+  }
 
   end();
 }

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-26
-// Last changed: 2009-10-06
+// Last changed: 2010-05-03
 
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
@@ -110,7 +110,8 @@ namespace dolfin
     {
       Parameters p("variational_problem");
 
-      p.add("linear_solver", "direct");
+      p.add("linear_solver", "lu");
+      p.add("preconditioner", "ilu");
       p.add("symmetric", false);
       p.add("reset_jacobian", true);
 
