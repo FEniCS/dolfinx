@@ -44,13 +44,13 @@ class Traction(Expression):
     def eval(self, values, x):
 
         # 'Shift' time for n-1 values
-        t = float(self.t)
+        t_tmp = float(self.t)
         if self.old and t > 0.0:
-            t -= self.dt
+            t_tmp -= self.dt
 
         cutoff_t = 10.0*1.0/32.0;
-        if t < cutoff_t:
-            values[0] = 1.0*t/cutoff_t
+        if t_tmp < cutoff_t:
+            values[0] = 1.0*t_tmp/cutoff_t
             values[1] = 0.0
         else:
             values[0] = 1.0;
@@ -93,10 +93,8 @@ alpha_f = 0.4
 beta    = 0.36
 gamma   = 0.7
 dt      = 1.0/32.0
-
-t = Time(0.0)
-T = 10*dt
-
+t       = Time(0.0)
+T       = 10*dt
 
 # Some useful factors
 factor_m1  = rho*(1.0-alpha_m)/(beta*dt*dt)
