@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2008 Anders Logg.
+// Copyright (C) 2005-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-12-21
-// Last changed: 2008-03-06
+// Last changed: 2010-05-03
 
 #ifndef __TIMING_H
 #define __TIMING_H
@@ -15,14 +15,11 @@ namespace dolfin
   /// Timing functions measure CPU time as determined by clock(),
   /// the precision of which seems to be 0.01 seconds.
 
-  /// Start timing
+  /// Start timing (should not be used internally in DOLFIN!)
   void tic();
 
-  /// Return elapsed CPU time
+  /// Return elapsed CPU time (should not be used internally in DOLFIN!)
   double toc();
-
-  /// Return and display elapsed CPU time
-  double tocd();
 
   /// Return current CPU time used by process
   double time();

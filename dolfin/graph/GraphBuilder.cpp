@@ -176,7 +176,7 @@ void GraphBuilder::compute_connectivity(const std::vector<std::vector<uint> >& c
   std::pair<std::tr1::unordered_map<uint, std::vector<uint> >::iterator, bool> ret;
 
   // Build (global vertex)-(local cell) connectivity
-  tic();
+  double tt = time();
   for (c_vertices = cell_vertices.begin(); c_vertices != cell_vertices.end(); ++c_vertices)
   {
     const uint cell_index = c_vertices - cell_vertices.begin();
@@ -186,11 +186,11 @@ void GraphBuilder::compute_connectivity(const std::vector<std::vector<uint> >& c
       ret.first->second.push_back(cell_index);
     }
   }
-  double tt = toc();
+  tt = time() - tt;
   info("Time to build vertex-cell connectivity map: %g", tt);
 
   /*
-  tic();
+  tt = time();
   // Iterate over all cells
   for (c_vertices = cell_vertices.begin(); c_vertices != cell_vertices.end(); ++c_vertices)
   {
@@ -224,15 +224,14 @@ void GraphBuilder::compute_connectivity(const std::vector<std::vector<uint> >& c
       }
     }
   }
-  tt = toc();
+  tt = time() - tt;
   */
 
   std::vector<uint>::const_iterator connected_cell0;
   std::vector<uint>::const_iterator connected_cell1;
   std::vector<uint>::const_iterator cell_vertex;
 
-
-  tic();
+  tt = time();
   // Iterate over all vertices
   std::tr1::unordered_map<uint, std::vector<uint> >::const_iterator _vertex;
   for (_vertex = vertex_connectivity.begin(); _vertex != vertex_connectivity.end(); ++_vertex)
@@ -262,7 +261,7 @@ void GraphBuilder::compute_connectivity(const std::vector<std::vector<uint> >& c
       }
     }
   }
-  tt = toc();
+  tt = time() - tt;
 
   info("Time to build local dual graph: : %g", tt);
 }
@@ -287,7 +286,7 @@ dolfin::uint GraphBuilder::compute_ghost_connectivity(const std::vector<std::vec
   std::pair<std::tr1::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > >::iterator, bool> ret;
 
   // Build boundary (global vertex)-(local cell) connectivity
-  tic();
+  double tt = time();
   std::vector<uint>::const_iterator local_cell;
   for (local_cell = local_boundary_cells.begin(); local_cell != local_boundary_cells.end(); ++local_cell)
   {
@@ -299,11 +298,11 @@ dolfin::uint GraphBuilder::compute_ghost_connectivity(const std::vector<std::vec
       ret.first->second.first.push_back(*local_cell);
     }
   }
-  double tt = toc();
+  tt = time() - tt;
   info("Time to build local boundary vertex-cell connectivity map: %g", tt);
 
   // Build off-process boundary (global vertex)-(local cell) connectivity
-  tic();
+  tt = time();
   for (c_vertices = candidate_ghost_vertices.begin(); c_vertices != candidate_ghost_vertices.end(); ++c_vertices)
   {
     const uint cell_index = c_vertices - candidate_ghost_vertices.begin();
@@ -314,11 +313,11 @@ dolfin::uint GraphBuilder::compute_ghost_connectivity(const std::vector<std::vec
       ret.first->second.second.push_back(cell_index);
     }
   }
-  tt = toc();
+  tt = time() - tt;
   info("Time to build ghost boundary vertex-cell connectivity map: %g", tt);
 
-  tic();
   // Iterate over local boundary cells
+  tt = time();
   for (local_cell = local_boundary_cells.begin(); local_cell != local_boundary_cells.end(); ++local_cell)
   {
     const std::vector<uint>& c_vertices = cell_vertices[*local_cell];
@@ -349,7 +348,7 @@ dolfin::uint GraphBuilder::compute_ghost_connectivity(const std::vector<std::vec
       }
     }
   }
-  tt = toc();
+  tt = time() - tt;
   info("Time to build ghost dual graph: : %g", tt);
   return ghost_cells.size() - num_ghost_vertices_0;
 }

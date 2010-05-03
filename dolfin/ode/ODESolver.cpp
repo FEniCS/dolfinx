@@ -4,7 +4,7 @@
 // Modified by Benjamin Kehlet 2008
 //
 // First added:  2003
-// Last changed: 2009-09-08
+// Last changed: 2010-05-03
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/timing.h>
@@ -32,14 +32,15 @@ void ODESolver::solve()
   begin("Solving ODE over the time interval [0.0, %g]", to_double(ode.endtime()));
 
   // Start timing
-  tic();
+  double tt = time();
 
   // Solve primal problem
   TimeStepper time_stepper(ode);
   time_stepper.solve();
 
   // Report elapsed time
-  info(PROGRESS, "ODE solution computed in %.3f seconds.", toc());
+  tt = time() - tt;
+  info(PROGRESS, "ODE solution computed in %.3f seconds.", tt);
 
   end();
 }
@@ -49,7 +50,7 @@ void ODESolver::solve(ODESolution& u)
   begin("Solving ODE over the time interval [0.0, %g]", to_double(ode.endtime()));
 
   // Start timing
-  tic();
+  double tt = time();
 
   // Solve primal problem
   TimeStepper time_stepper(ode, u);
@@ -57,9 +58,9 @@ void ODESolver::solve(ODESolution& u)
   u.flush();
 
   // Report elapsed time
-  info(PROGRESS, "ODE solution computed in %.3f seconds.", toc());
+  tt = time() - tt;
+  info(PROGRESS, "ODE solution computed in %.3f seconds.", tt);
 
   end();
 }
 //------------------------------------------------------------------------
-
