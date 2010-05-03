@@ -17,6 +17,7 @@ NUM_PROCS = 4
 def get_time(output):
     lines = [line for line in output.split("\n") if "TIME:" in line]
     if not len(lines) == 1:
+        print output
         raise RuntimeError, "Not exactly one timing in benchmark."
     return float(lines[0].split("TIME:")[1])
 
