@@ -17,7 +17,7 @@ from numpy import arange
 size = 64
 
 # Number of processes to use
-num_processes = 2**arange(6)
+num_processes = 2**arange(16 + 1)
 
 # Function for extracting log file
 def get_filename(pattern):

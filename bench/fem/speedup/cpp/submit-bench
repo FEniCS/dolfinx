@@ -14,10 +14,10 @@ from numpy import arange
 import sys
 
 # Size of mesh
-size = 64
+size = 128
 
 # Number of processes to use
-num_processes = 2**arange(6)
+num_processes = 2**arange(16 + 1)
 
 # Check command-line arguments
 dryrun = True if 'dryrun' in sys.argv else False
