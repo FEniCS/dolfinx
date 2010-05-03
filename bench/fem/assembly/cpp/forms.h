@@ -14,59 +14,59 @@
 #include "forms/Elasticity3D.h"
 #include "forms/NSEMomentum3D.h"
 
-#define N_2D 512
-#define N_3D 48
+#define SIZE_2D 256
+#define SIZE_3D 32
 
 using namespace dolfin;
 
 double bench_form(std::string form_name, double (*foo)(Form&))
 {
-  if (form_name == "LAP1")
+  if (form_name == "poisson1")
   {
-    UnitSquare mesh(N_2D, N_2D);
+    UnitSquare mesh(SIZE_2D, SIZE_2D);
     Poisson2DP1::FunctionSpace V(mesh);
     Poisson2DP1::BilinearForm form(V, V);
     return foo(form);
   }
-  else if (form_name == "LAP2")
+  else if (form_name == "poisson2")
   {
-    UnitSquare mesh(N_2D, N_2D);
+    UnitSquare mesh(SIZE_2D, SIZE_2D);
     Poisson2DP2::FunctionSpace V(mesh);
     Poisson2DP2::BilinearForm form(V, V);
     return foo(form);
   }
-  else if (form_name == "LAP3")
+  else if (form_name == "poisson3")
   {
-    UnitSquare mesh(N_2D, N_2D);
+    UnitSquare mesh(SIZE_2D, SIZE_2D);
     Poisson2DP3::FunctionSpace V(mesh);
     Poisson2DP3::BilinearForm form(V, V);
     return foo(form);
   }
-  else if (form_name == "TH")
+  else if (form_name == "stokes")
   {
-    UnitSquare mesh(N_2D, N_2D);
+    UnitSquare mesh(SIZE_2D, SIZE_2D);
     THStokes2D::FunctionSpace V(mesh);
     THStokes2D::BilinearForm form(V, V);
     return foo(form);
   }
-  else if (form_name == "STAB")
+  else if (form_name == "stabilization")
   {
-    UnitSquare mesh(N_2D, N_2D);
+    UnitSquare mesh(SIZE_2D, SIZE_2D);
     StabStokes2D::FunctionSpace V(mesh);
     Constant h(1.0);
     StabStokes2D::BilinearForm form(V, V, h);
     return foo(form);
   }
-  else if (form_name == "LE")
+  else if (form_name == "elasticity")
   {
-    UnitCube mesh(N_3D, N_3D, N_3D);
+    UnitCube mesh(SIZE_3D, SIZE_3D, SIZE_3D);
     Elasticity3D::FunctionSpace V(mesh);
     Elasticity3D::BilinearForm form(V, V);
     return foo(form);
   }
-  else if (form_name == "NSE")
+  else if (form_name == "navierstokes")
   {
-    UnitCube mesh(N_3D, N_3D, N_3D);
+    UnitCube mesh(SIZE_3D, SIZE_3D, SIZE_3D);
     NSEMomentum3D::FunctionSpace V(mesh);
     Constant  w(1.0, 1.0, 1.0);
     Constant d1(1.0);

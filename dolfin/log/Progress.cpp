@@ -7,7 +7,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2003-03-14
-// Last changed: 2009-04-30
+// Last changed: 2010-05-03
 
 #include <dolfin/common/constants.h>
 #include <dolfin/common/timing.h>
@@ -87,7 +87,8 @@ void Progress::update(double p)
 
   bool do_log_update = t_check;
 
-  if (t_check && !always && !displayed && p >= 0.7) {
+  if (t_check && !always && !displayed && p >= 0.7)
+  {
     // skip the first update, since it will probably reach 100%
     // before the next time t_check is true
     do_log_update = false;
@@ -96,7 +97,8 @@ void Progress::update(double p)
     displayed = true;
   }
 
-  if (p >= 1.0) {
+  if (p >= 1.0)
+  {
     // always display 100% message if a message has already been shown
     if (displayed || always)
       do_log_update = true;

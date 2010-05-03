@@ -63,7 +63,7 @@ def run_bench(arg, directory, files):
             timings[0] = ("", float(words[1]))
         # Add sub timing
         elif len(words) == 3:
-            timings.append((words[1], float(words[2])))
+            timings.append((words[1].lower(), float(words[2])))
     f.close()
 
     # Append to log file

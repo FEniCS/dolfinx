@@ -35,25 +35,26 @@ double reassemble_form(Form& form)
 
 int main()
 {
+  info("Assembly for various forms and backends");
   logging(false);
+
+  // Forms
+  std::vector<std::string> forms;
+  forms.push_back("poisson1");
+  forms.push_back("poisson2");
+  forms.push_back("poisson3");
+  forms.push_back("stokes");
+  forms.push_back("stabilization");
+  forms.push_back("elasticity");
+  forms.push_back("navierstokes");
 
   // Backends
   std::vector<std::string> backends;
   backends.push_back("uBLAS");
   backends.push_back("PETSc");
-  //backends.push_back("Epetra");
+  backends.push_back("Epetra");
   backends.push_back("MTL4");
   backends.push_back("STL");
-
-  // Forms
-  std::vector<std::string> forms;
-  forms.push_back("LAP1");
-  forms.push_back("LAP2");
-  forms.push_back("LAP2");
-  forms.push_back("TH");
-  forms.push_back("STAB");
-  forms.push_back("LE");
-  forms.push_back("NSE");
 
   // Tables for results
   Table t0("Assemble total");
@@ -66,40 +67,41 @@ int main()
   Table t7("Reassemble total");
 
   // Benchmark assembly
-  for (unsigned int i = 0; i < backends.size(); i++)
+  for (unsigned int i = 0; i < forms.size(); i++)
   {
-    parameters["linear_algebra_backend"] = backends[i];
-    parameters["timer_prefix"] = backends[i];
-    std::cout << "Backend: " << backends[i] << std::endl;
-    for (unsigned int j = 0; j < forms.size(); j++)
+    std::cout << "Form: " << forms[i] << std::endl;
+    for (unsigned int j = 0; j < backends.size(); j++)
     {
-      std::cout << "  Form: " << forms[j] << std::endl;
-      const double tt0 = bench_form(forms[j], assemble_form);
-      const double tt1 = timing(backends[i] + t1.title(), true);
-      const double tt2 = timing(backends[i] + t2.title(), true);
-      const double tt3 = timing(backends[i] + t3.title(), true);
-      const double tt4 = timing(backends[i] + t4.title(), true);
-      const double tt5 = timing(backends[i] + t5.title(), true);
-      t0(backends[i], forms[j]) = tt0;
-      t1(backends[i], forms[j]) = tt1;
-      t2(backends[i], forms[j]) = tt2;
-      t3(backends[i], forms[j]) = tt3;
-      t4(backends[i], forms[j]) = tt4;
-      t5(backends[i], forms[j]) = tt5;
-      t6(backends[i], forms[j]) = tt0 - tt1 - tt2 - tt3 - tt4 - tt5;
+      parameters["linear_algebra_backend"] = backends[j];
+      parameters["timer_prefix"] = backends[j];
+      std::cout << "  Backend: " << backends[j] << std::endl;
+      const double tt0 = bench_form(forms[i], assemble_form);
+      const double tt1 = timing(backends[j] + t1.title(), true);
+      const double tt2 = timing(backends[j] + t2.title(), true);
+      const double tt3 = timing(backends[j] + t3.title(), true);
+      const double tt4 = timing(backends[j] + t4.title(), true);
+      const double tt5 = timing(backends[j] + t5.title(), true);
+      t0(forms[i], backends[j]) = tt0;
+      t1(forms[i], backends[j]) = tt1;
+      t2(forms[i], backends[j]) = tt2;
+      t3(forms[i], backends[j]) = tt3;
+      t4(forms[i], backends[j]) = tt4;
+      t5(forms[i], backends[j]) = tt5;
+      t6(forms[i], backends[j]) = tt0 - tt1 - tt2 - tt3 - tt4 - tt5;
+      std::cout << "  BENCH " << forms[i] << "-" << backends[j] << " " << tt0 << std::endl;
     }
   }
 
   // Benchmark reassembly
-  for (unsigned int i = 0; i < backends.size(); i++)
+  for (unsigned int i = 0; i < forms.size(); i++)
   {
-    parameters["linear_algebra_backend"]= backends[i];
-    parameters["timer_prefix"] = backends[i];
-    std::cout << "Backend: " << backends[i] << std::endl;
-    for (unsigned int j = 0; j < forms.size(); j++)
+    std::cout << "Form: " << forms[i] << std::endl;
+    for (unsigned int j = 0; j < backends.size(); j++)
     {
-      std::cout << "  Form: " << forms[j] << std::endl;
-      t7(backends[i], forms[j]) = bench_form(forms[j], reassemble_form);
+      parameters["linear_algebra_backend"] = backends[j];
+      parameters["timer_prefix"] = backends[j];
+      std::cout << "  Backend: " << backends[j] << std::endl;
+      t7(forms[i], backends[j]) = bench_form(forms[i], reassemble_form);
     }
   }
 
