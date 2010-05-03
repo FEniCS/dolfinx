@@ -1,8 +1,8 @@
-// Copyright (C) 2008-2009 Dag Lindbo, Anders Logg, Ilmar Wilbers.
+// Copyright (C) 2008-2010 Dag Lindbo, Anders Logg, Ilmar Wilbers.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-22
-// Last changed: 2009-09-09
+// Last changed: 2010-05-03
 
 #include <string>
 #include <vector>
@@ -39,11 +39,11 @@ int main()
 
   // Backends
   std::vector<std::string> backends;
-  //backends.push_back("uBLAS");
+  backends.push_back("uBLAS");
   backends.push_back("PETSc");
-  backends.push_back("Epetra");
-  //backends.push_back("MTL4");
-  //backends.push_back("STL");
+  //backends.push_back("Epetra");
+  backends.push_back("MTL4");
+  backends.push_back("STL");
 
   // Forms
   std::vector<std::string> forms;
@@ -57,7 +57,7 @@ int main()
 
   // Tables for results
   Table t0("Assemble total");
-  //Table t1("Init dof map");
+  Table t1("Init dofmap");
   Table t2("Build sparsity");
   Table t3("Init tensor");
   Table t4("Delete sparsity");
@@ -68,26 +68,25 @@ int main()
   // Benchmark assembly
   for (unsigned int i = 0; i < backends.size(); i++)
   {
-    parameters["linear_algebra_backend"]= backends[i];
+    parameters["linear_algebra_backend"] = backends[i];
     parameters["timer_prefix"] = backends[i];
-    std::cout << "BENCH Backend: " << backends[i] << std::endl;
+    std::cout << "Backend: " << backends[i] << std::endl;
     for (unsigned int j = 0; j < forms.size(); j++)
     {
-      std::cout << "BENCH  Form: " << forms[j] << std::endl;
+      std::cout << "  Form: " << forms[j] << std::endl;
       const double tt0 = bench_form(forms[j], assemble_form);
-      //const double tt1 = timing(backends[i] + t1.title(), true);
+      const double tt1 = timing(backends[i] + t1.title(), true);
       const double tt2 = timing(backends[i] + t2.title(), true);
       const double tt3 = timing(backends[i] + t3.title(), true);
       const double tt4 = timing(backends[i] + t4.title(), true);
       const double tt5 = timing(backends[i] + t5.title(), true);
       t0(backends[i], forms[j]) = tt0;
-      //t1(backends[i], forms[j]) = tt1;
+      t1(backends[i], forms[j]) = tt1;
       t2(backends[i], forms[j]) = tt2;
       t3(backends[i], forms[j]) = tt3;
       t4(backends[i], forms[j]) = tt4;
       t5(backends[i], forms[j]) = tt5;
-      //t6(backends[i], forms[j]) = tt0 - tt1 - tt2 - tt3 - tt4 - tt5;
-      t6(backends[i], forms[j]) = tt0 - tt2 - tt3 - tt4 - tt5;
+      t6(backends[i], forms[j]) = tt0 - tt1 - tt2 - tt3 - tt4 - tt5;
     }
   }
 
@@ -96,10 +95,10 @@ int main()
   {
     parameters["linear_algebra_backend"]= backends[i];
     parameters["timer_prefix"] = backends[i];
-    std::cout << "BENCH Backend: " << backends[i] << std::endl;
+    std::cout << "Backend: " << backends[i] << std::endl;
     for (unsigned int j = 0; j < forms.size(); j++)
     {
-      std::cout << "BENCH  Form: " << forms[j] << std::endl;
+      std::cout << "  Form: " << forms[j] << std::endl;
       t7(backends[i], forms[j]) = bench_form(forms[j], reassemble_form);
     }
   }
@@ -107,7 +106,7 @@ int main()
   // Display results
   logging(true);
   std::cout << std::endl; info(t0, true);
-  //std::cout << std::endl; info(t1, true);
+  std::cout << std::endl; info(t1, true);
   std::cout << std::endl; info(t2, true);
   std::cout << std::endl; info(t3, true);
   std::cout << std::endl; info(t4, true);
@@ -115,7 +114,7 @@ int main()
   std::cout << std::endl; info(t6, true);
   std::cout << std::endl; info(t7, true);
 
-/*
+  /*
   // Display LaTeX tables
   const bool print_latex = true;
   if (print_latex)
@@ -129,6 +128,7 @@ int main()
     std::cout << std::endl << t6.str_latex();
     std::cout << std::endl << t7.str_latex();
   }
-*/
+  */
+
   return 0;
 }

@@ -7,11 +7,12 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2010-04-29
+// Last changed: 2010-05-03
 
 #include <boost/scoped_array.hpp>
 
 #include <dolfin/common/Set.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/common/NoDeleter.h>
@@ -271,6 +272,9 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dofmap,
 //-----------------------------------------------------------------------------
 void DofMap::init(const Mesh& dolfin_mesh, bool build_map)
 {
+  // Start timer for dofmap initialization
+  Timer t0("Init dofmap");
+
   // Initialize the UFC mesh
   init_ufc_mesh(_ufc_mesh, dolfin_mesh);
 
