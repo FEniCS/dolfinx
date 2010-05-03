@@ -1,27 +1,27 @@
-// Copyright (C) 2005-2009 Anders Logg.
+// Copyright (C) 2005-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005
-// Last changed: 2010-03-25
+// Last changed: 2010-05-03
 
 #include <dolfin.h>
-#include "Poisson2D_1.h"
-#include "Poisson2D_2.h"
-#include "Poisson2D_3.h"
-#include "Poisson2D_4.h"
-#include "Poisson2D_5.h"
-#include "Poisson3D_1.h"
-#include "Poisson3D_2.h"
-#include "Poisson3D_3.h"
-#include "Poisson3D_4.h"
-#include "Poisson3D_5.h"
+#include "forms/Poisson2D_1.h"
+#include "forms/Poisson2D_2.h"
+#include "forms/Poisson2D_3.h"
+#include "forms/Poisson2D_4.h"
+#include "forms/Poisson2D_5.h"
+#include "forms/Poisson3D_1.h"
+#include "forms/Poisson3D_2.h"
+#include "forms/Poisson3D_3.h"
+#include "forms/Poisson3D_4.h"
+#include "forms/Poisson3D_5.h"
 
 using namespace dolfin;
 
 // Boundary condition
 class DirichletBoundary : public SubDomain
 {
-  bool inside(const double* x, bool on_boundary) const
+  bool inside(const Array<double>& x, bool on_boundary) const
   {
     return on_boundary;
   }
@@ -30,42 +30,30 @@ class DirichletBoundary : public SubDomain
 // Right-hand side, 2D
 class Source2D : public Expression
 {
-public:
-
-  Source2D() : Expression(2) {}
-
-  void eval(double* values, const double* x) const
+  void eval(Array<double>& values, const Array<double>& x) const
   {
     values[0] = 2.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*x[0])*sin(DOLFIN_PI*x[1]);
   }
-
 };
 
 // Right-hand side, 3D
 class Source3D : public Expression
 {
-public:
-
-  Source3D() : Expression(3) {}
-
-  void eval(double* values, const double* x) const
+  void eval(Array<double>& values, const Array<double>& x) const
   {
     values[0] = 3.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*x[0])*sin(DOLFIN_PI*x[1])*sin(DOLFIN_PI*x[2]);
   }
-
 };
 
 // Solve equation and compute error, 2D
 double solve2D(int q, int n)
 {
-  printf("BENCH --------------------------------------------------\n");
-  printf("BENCH Solving Poisson's equation in 2D for q = %d, n = %d.\n", q, n);
-  printf("BENCH --------------------------------------------------\n");
+  printf("Solving Poisson's equation in 2D for q = %d, n = %d.\n", q, n);
 
   // Set up problem
   UnitSquare mesh(n, n);
   Source2D f;
-  Constant zero(2, 0.0);
+  Constant zero(0.0);
 
   // Choose forms
   Form* a = 0;
@@ -140,14 +128,12 @@ double solve2D(int q, int n)
 // Solve equation and compute error, 3D
 double solve3D(int q, int n)
 {
-  printf("BENCH --------------------------------------------------\n");
-  printf("BENCH Solving Poisson's equation in 3D for q = %d, n = %d.\n", q, n);
-  printf("BENCH --------------------------------------------------\n");
+  printf("Solving Poisson's equation in 3D for q = %d, n = %d.\n", q, n);
 
   // Set up problem
   UnitCube mesh(n, n, n);
   Source3D f;
-  Constant zero(3, 0.0);
+  Constant zero(0.0);
 
   // Choose forms
   Form* a = 0;
