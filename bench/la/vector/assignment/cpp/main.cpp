@@ -4,16 +4,15 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2006-08-18
-// Last changed: 2010-03-30
+// Last changed: 2010-05-03
 
 #include <dolfin.h>
 
 using namespace dolfin;
 
 #define NUM_REPS 100
-#define SIZE 1000000
+#define SIZE 10000000
 
-//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
   info("Assigning to vector of size %d (%d repetitions)",
@@ -29,4 +28,3 @@ int main(int argc, char* argv[])
 
   return 0;
 }
-//-----------------------------------------------------------------------------
