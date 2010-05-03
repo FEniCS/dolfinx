@@ -33,7 +33,7 @@ double reassemble_form(Form& form)
   return time() - t0;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
   info("Assembly for various forms and backends");
   logging(false);
@@ -55,6 +55,20 @@ int main()
   backends.push_back("Epetra");
   backends.push_back("MTL4");
   backends.push_back("STL");
+
+  // Override forms and backends with command-line arguments
+  if (argc == 3)
+  {
+    forms.clear();
+    forms.push_back(argv[1]);
+    backends.clear();
+    backends.push_back(argv[2]);
+  }
+  else if (argc != 1)
+  {
+    std::cout << "Usage: bench [form] [backend]" << std::endl;
+    exit(1);
+  }
 
   // Tables for results
   Table t0("Assemble total");
@@ -93,15 +107,18 @@ int main()
   }
 
   // Benchmark reassembly
-  for (unsigned int i = 0; i < forms.size(); i++)
+  if (argc == 1)
   {
-    std::cout << "Form: " << forms[i] << std::endl;
-    for (unsigned int j = 0; j < backends.size(); j++)
+    for (unsigned int i = 0; i < forms.size(); i++)
     {
-      parameters["linear_algebra_backend"] = backends[j];
-      parameters["timer_prefix"] = backends[j];
-      std::cout << "  Backend: " << backends[j] << std::endl;
-      t7(forms[i], backends[j]) = bench_form(forms[i], reassemble_form);
+      std::cout << "Form: " << forms[i] << std::endl;
+      for (unsigned int j = 0; j < backends.size(); j++)
+      {
+        parameters["linear_algebra_backend"] = backends[j];
+        parameters["timer_prefix"] = backends[j];
+        std::cout << "  Backend: " << backends[j] << std::endl;
+        t7(forms[i], backends[j]) = bench_form(forms[i], reassemble_form);
+      }
     }
   }
 
@@ -114,7 +131,8 @@ int main()
   std::cout << std::endl; info(t4, true);
   std::cout << std::endl; info(t5, true);
   std::cout << std::endl; info(t6, true);
-  std::cout << std::endl; info(t7, true);
+  if (argc == 1)
+    std::cout << std::endl; info(t7, true);
 
   /*
   // Display LaTeX tables
