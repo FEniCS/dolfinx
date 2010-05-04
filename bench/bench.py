@@ -19,9 +19,6 @@ def run_bench(arg, directory, files):
     name = directory.replace("./", "").replace("/", "-")
     print "Running benchmark %s..." % name
 
-    if not name == "mesh-iteration":
-        return
-
     # Remove old logfile
     cwd = os.getcwd()
     logfile = os.path.join(cwd, "logs", name + ".log")
@@ -77,7 +74,6 @@ def run_bench(arg, directory, files):
         else:
             n = "%s-%s" % (name, postfix)
             d = "%s (%s)" % (description, postfix)
-        print n
         f.write('%s %s %g "%s"\n'  % (date, n, timing, d))
 
     return status == 0
