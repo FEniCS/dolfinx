@@ -168,7 +168,7 @@ void ODESolution::eval(const real& t, real* y)
 							       file_table.end(),
 							       t,
 							       real_filetable_cmp);
-    uint index = lower-file_table.begin();
+    uint index = lower-file_table.begin()-1;
 
     read_file(index);
   }
@@ -412,7 +412,7 @@ bool ODESolution::real_filetable_cmp(const std::pair<real, uint>& a, const real&
 }
 //-----------------------------------------------------------------------------
 bool ODESolution::uint_filetable_cmp(const std::pair<real, uint>& a, const uint& i) {
-  return ( a.second <= i);
+  return ( a.second < i);
 }
 //-----------------------------------------------------------------------------
 std::string ODESolution::str(bool verbose) const
