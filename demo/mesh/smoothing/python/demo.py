@@ -5,7 +5,7 @@ __date__ = "2010-03-02"
 __copyright__ = "Copyright (C) 2010 " + __author__
 __license__  = "GNU LGPL Version 2.1"
 
-# Last changed: 2010-03-02
+# Last changed: 2010-05-11
 
 from dolfin import *
 
@@ -32,6 +32,7 @@ class Hole(SubDomain):
 # Mark hole and extract submesh
 hole = Hole()
 sub_domains = MeshFunction("uint", mesh, mesh.topology().dim())
+sub_domains.set_all(0)
 hole.mark(sub_domains, 1)
 mesh = SubMesh(mesh, sub_domains, 0)
 mesh.snap_boundary(hole)
