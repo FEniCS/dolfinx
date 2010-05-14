@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2010-04-22
+// Last changed: 2010-05-14
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/assign/list_of.hpp>
@@ -677,7 +677,7 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
     for (uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
     {
       // Check if the coordinates are part of the sub domain
-      if ( !user_sub_domain->inside(data.array_coordinates[i], false) )
+      if (!user_sub_domain->inside(data.array_coordinates[i], false))
         continue;
 
       if (!interpolated)
