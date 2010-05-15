@@ -1,3 +1,4 @@
+ - Handle MeshFunction/markers in homogenize bc
  - Make preconditioner selectable in VariationalProblem (new parameter)
  - Read/write meshes in binary format
  - Add parameter "use_ident" in DirichletBC
