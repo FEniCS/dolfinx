@@ -160,7 +160,6 @@ namespace dolfin
 
     // Friends
     friend class FunctionSpace;
-    friend class AdaptiveObjects;
 
     // Collection of sub-functions which share data with the function
     mutable boost::ptr_map<uint, Function> sub_functions;

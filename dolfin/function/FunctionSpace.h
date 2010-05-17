@@ -102,19 +102,6 @@ namespace dolfin
     /// Return component (relative to super space)
     const Array<uint>& component() const;
 
-    // FIXME: Restrictions are broken
-    /*
-
-    /// Attach restriction meshfunction
-    void attach(MeshFunction<bool>& restriction);
-
-    /// Create function space based on the restriction
-    boost::shared_ptr<FunctionSpace> restriction(MeshFunction<bool>& restriction);
-
-    // Evaluate restriction
-    bool is_inside_restriction(uint c) const;
-    */
-
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
@@ -122,7 +109,6 @@ namespace dolfin
 
     // Friends
     friend class Function;
-    friend class AdaptiveObjects;
 
     // The mesh
     boost::shared_ptr<const Mesh> _mesh;
@@ -135,9 +121,6 @@ namespace dolfin
 
     // The component (for sub spaces)
     Array<uint> _component;
-
-    // The restriction meshfunction
-    boost::shared_ptr<const MeshFunction<bool> > _restriction;
 
     // Cache of sub spaces
     mutable std::map<std::string, boost::shared_ptr<FunctionSpace> > subspaces;

@@ -35,8 +35,7 @@ using namespace dolfin;
 FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
                              boost::shared_ptr<const FiniteElement> element,
                              boost::shared_ptr<const DofMap> dofmap)
-  : _mesh(mesh), _element(element), _dofmap(dofmap),
-    _restriction(static_cast<MeshFunction<bool>*>(0))
+  : _mesh(mesh), _element(element), _dofmap(dofmap)
 {
   // Do nothing
 }
@@ -44,8 +43,7 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
 FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
                              boost::shared_ptr<const FiniteElement> element,
                              boost::shared_ptr<const DofMap> dofmap)
-  : _mesh(mesh), _element(element), _dofmap(dofmap),
-    _restriction(static_cast<MeshFunction<bool>*>(0))
+  : _mesh(mesh), _element(element), _dofmap(dofmap)
 {
   // Do nothing
 }
@@ -68,7 +66,6 @@ const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
   _element = V._element;
   _dofmap  = V._dofmap;
   _component = V._component;
-  _restriction = V._restriction;
 
   return *this;
 }
@@ -191,30 +188,6 @@ const dolfin::Array<dolfin::uint>& FunctionSpace::component() const
 {
   return _component;
 }
-//-----------------------------------------------------------------------------
-// FIXME: Restrictions are broken
-/*
-//-----------------------------------------------------------------------------
-void FunctionSpace::attach(MeshFunction<bool>& restriction)
-{
-  error("FunctionSpace::attach is not working. Please fix the dof map builder.");
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<FunctionSpace> FunctionSpace::restriction(MeshFunction<bool>& restriction)
-{
-  boost::shared_ptr<FunctionSpace> function_space(new FunctionSpace(_mesh, _element, _dofmap));
-  function_space->attach(restriction);
-  return function_space;
-}
-//-----------------------------------------------------------------------------
-bool FunctionSpace::is_inside_restriction(uint c) const
-{
-  if (_restriction)
-    return (*_restriction)[c];
-  else
-    return true;
-}
-*/
 //-----------------------------------------------------------------------------
 std::string FunctionSpace::str(bool verbose) const
 {
