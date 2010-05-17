@@ -50,11 +50,35 @@ namespace dolfin
                   boost::shared_ptr<const FiniteElement> element,
                   boost::shared_ptr<const DofMap> dofmap);
 
+  protected:
+
+    /// Create an empty function space for later intialisation.
+    /// This constructor is intended for use by any sub-classes which need to
+    /// construct objects before the initialisation of the base class. Data
+    /// can be attached to the base class using FunctionSpace::attach(...)
+    FunctionSpace();
+
+  public:
+
     /// Copy constructor
     FunctionSpace(const FunctionSpace& V);
 
     /// Destructor
     virtual ~FunctionSpace();
+
+  protected:
+
+    /// Attach data to an empty FunctionSpace
+    void attach(boost::shared_ptr<Mesh> mesh,
+                boost::shared_ptr<const FiniteElement> element,
+                boost::shared_ptr<const DofMap> dofmap);
+
+    /// Attach data to an empty FunctionSpace
+    void attach(boost::shared_ptr<const Mesh> mesh,
+                boost::shared_ptr<const FiniteElement> element,
+                boost::shared_ptr<const DofMap> dofmap);
+
+  public:
 
     /// Assignment operator
     const FunctionSpace& operator= (const FunctionSpace& V);

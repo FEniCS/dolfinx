@@ -48,6 +48,11 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+FunctionSpace::FunctionSpace()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(const FunctionSpace& V)
 {
   // Assign data (will be shared)
@@ -59,12 +64,30 @@ FunctionSpace::~FunctionSpace()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace& FunctionSpace::operator= (const FunctionSpace& V)
+void FunctionSpace::attach(boost::shared_ptr<Mesh> mesh,
+                           boost::shared_ptr<const FiniteElement> element,
+                           boost::shared_ptr<const DofMap> dofmap)
+{
+  _mesh    = mesh;
+  _element = element;
+  _dofmap  = dofmap;
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::attach(boost::shared_ptr<const Mesh> mesh,
+                           boost::shared_ptr<const FiniteElement> element,
+                           boost::shared_ptr<const DofMap> dofmap)
+{
+  _mesh    = mesh;
+  _element = element;
+  _dofmap  = dofmap;
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
 {
   // Assign data (will be shared)
-  _mesh    = V._mesh;
-  _element = V._element;
-  _dofmap  = V._dofmap;
+  _mesh      = V._mesh;
+  _element   = V._element;
+  _dofmap    = V._dofmap;
   _component = V._component;
 
   return *this;
