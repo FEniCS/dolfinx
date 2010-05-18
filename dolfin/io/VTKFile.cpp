@@ -341,8 +341,9 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
   const uint size = mesh.num_vertices()*dim;
   Array<double> values(size);
 
-  // Get function values at vertices
+  // Get function values at vertices and zero any small values
   u.compute_vertex_values(values, mesh);
+  values.zero_eps(DOLFIN_EPS);
 
   if (rank == 0)
   {

@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2009-12-06
-// Last changed: 2010-04-30
+// Last changed: 2010-05-18
 
 #ifndef __DOLFIN_ARRAY_H
 #define __DOLFIN_ARRAY_H
@@ -14,6 +14,7 @@
 #include <utility>
 #include <boost/shared_array.hpp>
 
+#include <dolfin/common/constants.h>
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
 #include "NoDeleter.h"
@@ -99,6 +100,9 @@ namespace dolfin
     void zero()
     { std::fill(x.get(), x.get() + _size, 0.0); }
 
+    /// Set entries which meet (abs(x[i]) < eps) to zero
+    void zero_eps(double eps=DOLFIN_EPS);
+
     /// Return minimum value of array
     T min() const
     { return *std::min_element(x.get(), x.get() + _size); }
@@ -132,6 +136,22 @@ namespace dolfin
     boost::shared_array<T> x;
 
   };
+
+  template <class T>
+  inline void Array<T>::zero_eps(double eps)
+  {
+    error("Array<T>::zero_eps can only be used for T=double.");
+  }
+
+  template <>
+  inline void Array<double>::zero_eps(double eps)
+  {
+    for (uint i = 0; i < _size; ++i)
+    {
+      if (std::abs(x[i]) < eps)
+        x[i] = 0.0;
+    }
+  }
 
 }
 

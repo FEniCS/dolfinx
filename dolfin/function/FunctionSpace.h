@@ -52,10 +52,10 @@ namespace dolfin
 
   protected:
 
-    /// Create an empty function space for later intialisation.
-    /// This constructor is intended for use by any sub-classes which need to
-    /// construct objects before the initialisation of the base class. Data
-    /// can be attached to the base class using FunctionSpace::attach(...)
+    /// Create an empty function space for later intialisation. This
+    /// constructor is intended for use by any sub-classes which need to
+    /// construct objects before the initialisation of the base class. Data can
+    /// be attached to the base class using FunctionSpace::attach(...)
     FunctionSpace();
 
   public:

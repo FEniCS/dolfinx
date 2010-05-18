@@ -1,3 +1,4 @@
+ - Zero small values in VTK output to avoid VTK crashes
  - Handle MeshFunction/markers in homogenize bc
  - Make preconditioner selectable in VariationalProblem (new parameter)
  - Read/write meshes in binary format
