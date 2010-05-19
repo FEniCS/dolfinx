@@ -60,14 +60,14 @@ int main(int argc, char* argv[]) {
   lib_dir = os.path.join(boost.getBoostDir(sconsEnv=sconsEnv), 'lib')
   po_lib = "boost_program_options"
   app = os.path.join(os.getcwd(), "a.out")
-  cmdstr = "%s -o %s -L%s -l%s %s" % \
-           (linker, app, lib_dir, po_lib, cpp_file.replace('.cpp', '.o'))
+  cmdstr = "%s  %s -o %s -L%s -l%s" % \
+           (linker, cpp_file.replace('.cpp', '.o'), app, lib_dir, po_lib)
   linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     # try to append -mt to lib
     po_lib += "-mt"
-    cmdstr = "%s -o %s -L%s -l%s %s" % \
-             (linker, app, lib_dir, po_lib, cpp_file.replace('.cpp', '.o'))
+    cmdstr = "%s %s -o %s -L%s -l%s" % \
+             (linker, cpp_file.replace('.cpp', '.o'), app, lib_dir, po_lib)
     linkFailed, cmdoutput = getstatusoutput(cmdstr)
     if linkFailed:
       remove_cppfile(cpp_file, ofile=True)

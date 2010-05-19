@@ -46,7 +46,7 @@ int main() {
                                        program=cpp_test_version_str,
                                        errormsg=cmdoutput)
 
-    cmdstr = "%s -o a.out %s %s" % (linker, libs, cppfile.replace('.cpp', '.o'))
+    cmdstr = "%s %s -o a.out %s" % (linker, cppfile.replace('.cpp', '.o'), libs)
     linkFailed, cmdoutput = getstatusoutput(cmdstr)
     if linkFailed:
         remove_cppfile(cppfile, ofile=True)
@@ -230,8 +230,8 @@ int main(void) {
                                        program=cpp_test_lib_str,
                                        errormsg=cmdoutput)
 
-    cmdstr = "%s -o a.out %s %s" % \
-             (linker, libs, cpp_file.replace('.cpp', '.o'))
+    cmdstr = "%s %s -o a.out %s" % \
+             (linker, cpp_file.replace('.cpp', '.o'), libs)
     linkFailed, cmdoutput = getstatusoutput(cmdstr)
     if linkFailed:
         remove_cppfile(cpp_file, ofile=True)
