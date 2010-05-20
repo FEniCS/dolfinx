@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2009-10-05
+// Last changed: 2010-05-20
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -130,6 +130,7 @@ SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
 IMPLEMENT_VARIABLE_INTERFACE(Function)
 IMPLEMENT_VARIABLE_INTERFACE(FunctionSpace)
 IMPLEMENT_VARIABLE_INTERFACE(Mesh)
+IMPLEMENT_VARIABLE_INTERFACE(DofMap)
 
 //-----------------------------------------------------------------------------
 // Macros for defining in and out typemaps for foreign types that DOLFIN 
