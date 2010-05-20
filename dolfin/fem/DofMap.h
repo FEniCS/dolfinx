@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2010-01-29
+// Last changed: 2010-05-20
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -113,7 +113,7 @@ namespace dolfin
     void tabulate_coordinates(double** coordinates, const Cell& cell) const;
 
     /// Test whether dof map has been renumbered
-    bool renumbered() const 
+    bool renumbered() const
     { return _map.get(); }
 
     /// Extract sub dofmap component

@@ -8,7 +8,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2008-09-11
-// Last changed: 2010-02-26
+// Last changed: 2010-05-20
 
 #include <iostream>
 #include <boost/scoped_array.hpp>
@@ -228,5 +228,22 @@ std::string FunctionSpace::str(bool verbose) const
   }
 
   return s.str();
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::print_dofmap() const
+{
+  UFCCell ufc_cell(*_mesh);
+  for (CellIterator cell(*_mesh); !cell.end(); ++cell)
+  {
+    ufc_cell.update(*cell);
+    const uint n = _dofmap->local_dimension(ufc_cell);
+    boost::scoped_array<uint> dofs(new uint[n]);
+    _dofmap->tabulate_dofs(dofs.get(), ufc_cell, cell->index());
+
+    cout << cell->index() << ":";
+    for (uint i = 0; i < n; i++)
+      cout << " " << dofs[i];
+    cout << endl;
+  }
 }
 //-----------------------------------------------------------------------------
