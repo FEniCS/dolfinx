@@ -47,31 +47,31 @@ int main(int argc, char* argv[]) {
   libs = [filesystem_lib]
   system_lib = "boost_system"
   app = os.path.join(os.getcwd(), "a.out")
-  cmdstr = "%s -o %s -L%s -l%s %s" % (linker, app, lib_dir, filesystem_lib,
-                                      cpp_file.replace('.cpp', '.o'))
+  cmdstr = "%s %s -o %s -L%s -l%s" % (linker, cpp_file.replace('.cpp', '.o'),
+                                      app, lib_dir, filesystem_lib)
   linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     # on newer versions of Boost, Boost.FileSystem requires to link
     # with Boost.System:
     libs.append(system_lib)
-    cmdstr = "%s -o %s -L%s -l%s -l%s %s" % \
-           (linker, app, lib_dir, filesystem_lib, system_lib,
-            cpp_file.replace('.cpp', '.o'))
+    cmdstr = "%s %s -o %s -L%s -l%s -l%s" % \
+             (linker, cpp_file.replace('.cpp', '.o'),
+              app, lib_dir, filesystem_lib, system_lib)
     linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     # try to append -mt to lib
     filesystem_lib += "-mt"
     libs = [filesystem_lib]
-    cmdstr = "%s -o %s -L%s -l%s %s" % (linker, app, lib_dir, filesystem_lib,
-                                        cpp_file.replace('.cpp', '.o'))
+    cmdstr = "%s %s -o %s -L%s -l%s" % (linker, cpp_file.replace('.cpp', '.o'),
+                                        app, lib_dir, filesystem_lib)
     linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     # again, try to link with Boost.System:
     system_lib += "-mt"
     libs.append(system_lib)
-    cmdstr = "%s -o %s -L%s -l%s -l%s %s" % \
-           (linker, app, lib_dir, filesystem_lib, system_lib,
-            cpp_file.replace('.cpp', '.o'))
+    cmdstr = "%s %s -o %s -L%s -l%s -l%s" % \
+             (linker, cpp_file.replace('.cpp', '.o'),
+              app, lib_dir, filesystem_lib, system_lib)
     linkFailed, cmdoutput = getstatusoutput(cmdstr)
   if linkFailed:
     remove_cppfile(cpp_file, ofile=True)
