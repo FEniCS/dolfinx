@@ -11,14 +11,18 @@
 
 #include <vector>
 
+namespace arma
+{
+  template <class T> class Mat;
+  template <class T> class Col;
+}
+
 namespace dolfin
 {
 
   class Function;
   class Cell;
   class DirichletBC;
-  class LAPACKMatrix;
-  class LAPACKVector;
 
   /// This class implements an algorithm for extrapolating a function
   /// on a given function space from an approximation of that function
@@ -62,8 +66,8 @@ namespace dolfin
                                      uint& offset);
 
     // Add equations for current cell
-    static void add_cell_equations(LAPACKMatrix& A,
-                                   LAPACKVector& b,
+    static void add_cell_equations(arma::Mat<double>& A,
+                                   arma::Col<double>& b,
                                    const Cell& cell0,
                                    const Cell& cell1,
                                    const ufc::cell& c0,

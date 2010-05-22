@@ -1,20 +1,20 @@
 // Copyright (C) 2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2009-12-08
-// Last changed: 2010-04-29
+// Modified by Marie E. Rognes (meg@simula.no), 2010
+// Modified by Garth N. Wells, 2010
 //
-// Modified by Marie E. Rognes (meg@simula.no) 2010
+// First added:  2009-12-08
+// Last changed: 2010-05-22
+//
 
 #include <vector>
 #include <boost/scoped_array.hpp>
+#include <armadillo>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
 #include <dolfin/la/GenericVector.h>
-#include <dolfin/la/LAPACKMatrix.h>
-#include <dolfin/la/LAPACKVector.h>
-#include <dolfin/la/LAPACKSolvers.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/FacetCell.h>
@@ -77,7 +77,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
 }
 //-----------------------------------------------------------------------------
 void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coefficients,
-                                         const Function&v,
+                                         const Function& v,
                                          const FunctionSpace& V,
                                          const FunctionSpace& W,
                                          const Cell& cell0,
@@ -102,8 +102,8 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
   // Create linear system
   const uint N = W.element().space_dimension();
   const uint M = unique_dofs.size();
-  LAPACKMatrix A(M, N);
-  LAPACKVector b(M);
+  arma::mat A(M, N);
+  arma::vec b(M);
 
   // Add equations on cell and neighboring cells
   add_cell_equations(A, b, cell0, cell0, c0, c0, V, W, v, cell2dof2row[cell0.index()]);
@@ -118,11 +118,11 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
   }
 
   // Solve least squares system
-  LAPACKSolvers::solve_least_squares(A, b);
+  arma::Col<double> x = arma::solve(A, b);
 
   // Insert resulting coefficients into global coefficient vector
   for (uint i = 0; i < W.dofmap().local_dimension(c0); ++i)
-    coefficients[dofs[i + offset]].push_back(b[i]);
+    coefficients[dofs[i + offset]].push_back(x[i]);
 
   // Increase offset
   offset += W.dofmap().local_dimension(c0);
@@ -149,8 +149,8 @@ void Extrapolation::build_unique_dofs(std::set<uint>& unique_dofs,
   }
 }
 //-----------------------------------------------------------------------------
-void Extrapolation::add_cell_equations(LAPACKMatrix& A,
-                                       LAPACKVector& b,
+void Extrapolation::add_cell_equations(arma::Mat<double>& A,
+                                       arma::Col<double>& b,
                                        const Cell& cell0,
                                        const Cell& cell1,
                                        const ufc::cell& c0,
@@ -165,14 +165,14 @@ void Extrapolation::add_cell_equations(LAPACKMatrix& A,
   v.restrict(dof_values.get(), V.element(), cell1, c1, -1);
 
   // Iterate over given local dofs for V on patch cell
-  uint row;
-  uint i;
-  for (std::map<uint, uint>::iterator it = dof2row.begin(); it!= dof2row.end(); it++) {
-    i = it->first;
-    row = it->second;
+  for (std::map<uint, uint>::iterator it = dof2row.begin(); it!= dof2row.end(); it++)
+  {
+    uint i = it->first;
+    uint row = it->second;
 
     // Iterate over basis functions for W on center cell
-    for (uint j = 0; j < W.element().space_dimension(); ++j) {
+    for (uint j = 0; j < W.element().space_dimension(); ++j)
+    {
 
       // Create basis function
       const BasisFunction phi(j, W.element(), c0);
