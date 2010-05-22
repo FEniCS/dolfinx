@@ -12,11 +12,6 @@
 #include <utility>
 #include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
-
-//#include <dolfin/la/GenericLinearSolver.h>
-//#include <dolfin/la/GenericMatrix.h>
-//#include <dolfin/la/GenericVector.h>
-//#include <dolfin/la/LinearAlgebraFactory.h>
 #include <dolfin/common/Variable.h>
 
 namespace dolfin

@@ -153,6 +153,10 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   // Solve linear system
   KSPSolve(*_ksp, *b.vec(), *x.vec());
 
+  // Get the number of iterations
+  int num_iterations = 0;
+  KSPGetIterationNumber(*_ksp, &num_iterations);
+
   // Check if the solution converged
   KSPConvergedReason reason;
   KSPGetConvergedReason(*_ksp, &reason);
@@ -160,14 +164,10 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   {
     bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
-      error("PETSc Krylov solver did not converge (PETSc reason %i).", reason);
+      error("PETSc Krylov solver did not converge in %i iterations (PETSc reason %i).", num_iterations, reason);
     else
-      warning("Krylov solver did not converge (PETSc reason %i).", reason);
+      warning("Krylov solver did not converge  in %i iterations (PETSc reason %i).", num_iterations, reason);
   }
-
-  // Get the number of iterations
-  int num_iterations = 0;
-  KSPGetIterationNumber(*_ksp, &num_iterations);
 
   // Report results
   write_report(num_iterations, reason);
