@@ -50,11 +50,9 @@
 %include "dolfin/la/EpetraVector.h"
 %include "dolfin/la/MTL4Matrix.h"
 %include "dolfin/la/STLMatrix.h"
-%include "dolfin/la/LAPACKMatrix.h"
 %include "dolfin/la/uBLASVector.h"
 %include "dolfin/la/PETScVector.h"
 %include "dolfin/la/MTL4Vector.h"
-%include "dolfin/la/LAPACKVector.h"
 %include "dolfin/la/SparsityPattern.h"
 %include "dolfin/la/EpetraSparsityPattern.h"
 %include "dolfin/la/LinearAlgebraFactory.h"
@@ -74,7 +72,6 @@
 %include "dolfin/la/CholmodCholeskySolver.h"
 %include "dolfin/la/UmfpackLUSolver.h"
 %include "dolfin/la/uBLASILUPreconditioner.h"
-%include "dolfin/la/LAPACKSolvers.h"
 %include "dolfin/la/Vector.h"
 %include "dolfin/la/Matrix.h"
 %include "dolfin/la/Scalar.h"
@@ -166,6 +163,7 @@
 %include "dolfin/quadrature/GaussQuadrature.h"
 %include "dolfin/quadrature/RadauQuadrature.h"
 %include "dolfin/quadrature/LobattoQuadrature.h"
+%include "dolfin/quadrature/BarycenterQuadrature.h"
 
 // DOLFIN headers included from ale
 %include "dolfin/ale/ALEType.h"
