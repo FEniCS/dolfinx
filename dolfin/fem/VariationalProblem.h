@@ -110,8 +110,8 @@ namespace dolfin
     {
       Parameters p("variational_problem");
 
-      p.add("linear_solver", "lu");
-      p.add("preconditioner", "ilu");
+      p.add("linear_solver",  "lu");
+      p.add("preconditioner", "default");
       p.add("symmetric", false);
       p.add("reset_jacobian", true);
 
