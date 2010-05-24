@@ -34,6 +34,8 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
   : _ufc_dofmap(ufc_dofmap), _ufc_offset(0),
     _parallel(MPI::num_processes() > 1)
 {
+  assert( _ufc_dofmap);
+
   // Generate and number all mesh entities
   for (uint d = 1; d <= dolfin_mesh.topology().dim(); ++d)
   {
@@ -55,6 +57,8 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
   : _ufc_dofmap(ufc_dofmap), _ufc_offset(0),
     _parallel(MPI::num_processes() > 1)
 {
+  assert( _ufc_dofmap);
+
   // Initialize
   init(dolfin_mesh, true);
 }
@@ -66,6 +70,8 @@ DofMap::DofMap(boost::shared_ptr<std::vector<dolfin::uint> > map,
     _parallel(MPI::num_processes() > 1)
 
 {
+  assert( _ufc_dofmap);
+
   // Initialize
   init(dolfin_mesh, false);
 }
@@ -93,6 +99,8 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
   }
   else
   {
+    assert( _ufc_dofmap);
+
     // Tabulate UFC dof map
     _ufc_dofmap->tabulate_dofs(dofs, _ufc_mesh, ufc_cell);
 
@@ -114,6 +122,7 @@ void DofMap::tabulate_dofs(uint* dofs, const Cell& cell) const
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const
 {
+  assert( _ufc_dofmap);
   _ufc_dofmap->tabulate_facet_dofs(dofs, local_facet);
 }
 //-----------------------------------------------------------------------------
@@ -130,6 +139,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
   uint ufc_offset = 0;
 
   // Recursively extract UFC sub dofmap
+  assert( _ufc_dofmap);
   boost::shared_ptr<ufc::dof_map>
     ufc_sub_dof_map(extract_sub_dofmap(*_ufc_dofmap, ufc_offset, component, _ufc_mesh, dolfin_mesh));
   info(DBG, "Extracted dof map for sub system: %s", ufc_sub_dof_map->signature());
@@ -188,8 +198,10 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
   if (_map.get())
     error("Cannot yet collapse renumbered dof maps.");
   else
+  {
+    assert( _ufc_dofmap);
     collapsed_dof_map = new DofMap(_ufc_dofmap, dolfin_mesh);
-
+  }
   assert(collapsed_dof_map->global_dimension() == this->global_dimension());
 
   // Clear map
@@ -247,6 +259,7 @@ ufc::dof_map* DofMap::extract_sub_dofmap(const ufc::dof_map& ufc_dofmap,
     init_ufc_dofmap(*_ufc_dofmap, ufc_mesh, dolfin_mesh);
 
     // Get offset
+    assert( _ufc_dofmap);
     offset += _ufc_dofmap->global_dimension();
   }
 
@@ -278,6 +291,7 @@ void DofMap::init(const Mesh& dolfin_mesh, bool build_map)
   init_ufc_mesh(_ufc_mesh, dolfin_mesh);
 
   // Initialize the UFC dofmap
+  assert( _ufc_dofmap);
   init_ufc_dofmap(*_ufc_dofmap, _ufc_mesh, dolfin_mesh);
 
   // Build (renumber) dofmap when running in parallel
@@ -348,6 +362,8 @@ std::string DofMap::str(bool verbose) const
 {
   // TODO: Display information on renumbering?
   // TODO: Display information on parallel stuff?
+
+  assert( _ufc_dofmap);
 
   std::stringstream s;
 

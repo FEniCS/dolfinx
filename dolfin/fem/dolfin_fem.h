@@ -3,6 +3,7 @@
 
 // DOLFIN fem interface
 
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/BasisFunction.h>

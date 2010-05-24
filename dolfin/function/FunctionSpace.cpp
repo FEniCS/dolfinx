@@ -16,6 +16,7 @@
 #include <dolfin/common/utils.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/main/MPI.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Vertex.h>
@@ -23,7 +24,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/la/GenericVector.h>
 #include "GenericFunction.h"
 #include "Function.h"
@@ -34,7 +35,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
                              boost::shared_ptr<const FiniteElement> element,
-                             boost::shared_ptr<const DofMap> dofmap)
+                             boost::shared_ptr<const GenericDofMap> dofmap)
   : _mesh(mesh), _element(element), _dofmap(dofmap)
 {
   // Do nothing
@@ -42,7 +43,7 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh,
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
                              boost::shared_ptr<const FiniteElement> element,
-                             boost::shared_ptr<const DofMap> dofmap)
+                             boost::shared_ptr<const GenericDofMap> dofmap)
   : _mesh(mesh), _element(element), _dofmap(dofmap)
 {
   // Do nothing
@@ -66,7 +67,7 @@ FunctionSpace::~FunctionSpace()
 //-----------------------------------------------------------------------------
 void FunctionSpace::attach(boost::shared_ptr<Mesh> mesh,
                            boost::shared_ptr<const FiniteElement> element,
-                           boost::shared_ptr<const DofMap> dofmap)
+                           boost::shared_ptr<const GenericDofMap> dofmap)
 {
   _mesh    = mesh;
   _element = element;
@@ -75,7 +76,7 @@ void FunctionSpace::attach(boost::shared_ptr<Mesh> mesh,
 //-----------------------------------------------------------------------------
 void FunctionSpace::attach(boost::shared_ptr<const Mesh> mesh,
                            boost::shared_ptr<const FiniteElement> element,
-                           boost::shared_ptr<const DofMap> dofmap)
+                           boost::shared_ptr<const GenericDofMap> dofmap)
 {
   _mesh    = mesh;
   _element = element;
@@ -105,7 +106,7 @@ const FiniteElement& FunctionSpace::element() const
   return *_element;
 }
 //-----------------------------------------------------------------------------
-const DofMap& FunctionSpace::dofmap() const
+const GenericDofMap& FunctionSpace::dofmap() const
 {
   assert(_dofmap);
   return *_dofmap;
@@ -184,7 +185,7 @@ FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
   boost::shared_ptr<const FiniteElement> element(_element->extract_sub_element(component));
 
   // Extract sub dofmap
-  boost::shared_ptr<DofMap> dofmap(_dofmap->extract_sub_dofmap(component, *_mesh));
+  boost::shared_ptr<GenericDofMap> dofmap(_dofmap->extract_sub_dofmap(component, *_mesh));
 
   // Create new sub space
   boost::shared_ptr<FunctionSpace> new_sub_space(new FunctionSpace(_mesh, element, dofmap));
@@ -201,7 +202,7 @@ FunctionSpace::extract_sub_space(const std::vector<uint>& component) const
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<FunctionSpace>
-FunctionSpace::collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const
+FunctionSpace::collapse_sub_space(boost::shared_ptr<GenericDofMap> dofmap) const
 {
   boost::shared_ptr<FunctionSpace> collapsed_sub_space(new FunctionSpace(_mesh, _element, dofmap));
   return collapsed_sub_space;

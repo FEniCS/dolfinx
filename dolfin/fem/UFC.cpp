@@ -10,7 +10,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
-#include "DofMap.h"
+#include "GenericDofMap.h"
 #include "FiniteElement.h"
 #include "Form.h"
 #include "UFC.h"

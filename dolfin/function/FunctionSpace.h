@@ -26,7 +26,7 @@ namespace dolfin
 
   class Mesh;
   class Cell;
-  class DofMap;
+  class GenericDofMap;
   class Function;
   class GenericFunction;
   class GenericVector;
@@ -43,12 +43,12 @@ namespace dolfin
     /// Create function space for given mesh, element and dofmap (shared data)
     FunctionSpace(boost::shared_ptr<Mesh> mesh,
                   boost::shared_ptr<const FiniteElement> element,
-                  boost::shared_ptr<const DofMap> dofmap);
+                  boost::shared_ptr<const GenericDofMap> dofmap);
 
     /// Create function space for given mesh, element and dofmap (shared data)
     FunctionSpace(boost::shared_ptr<const Mesh> mesh,
                   boost::shared_ptr<const FiniteElement> element,
-                  boost::shared_ptr<const DofMap> dofmap);
+                  boost::shared_ptr<const GenericDofMap> dofmap);
 
   protected:
 
@@ -71,12 +71,12 @@ namespace dolfin
     /// Attach data to an empty FunctionSpace
     void attach(boost::shared_ptr<Mesh> mesh,
                 boost::shared_ptr<const FiniteElement> element,
-                boost::shared_ptr<const DofMap> dofmap);
+                boost::shared_ptr<const GenericDofMap> dofmap);
 
     /// Attach data to an empty FunctionSpace
     void attach(boost::shared_ptr<const Mesh> mesh,
                 boost::shared_ptr<const FiniteElement> element,
-                boost::shared_ptr<const DofMap> dofmap);
+                boost::shared_ptr<const GenericDofMap> dofmap);
 
   public:
 
@@ -90,7 +90,7 @@ namespace dolfin
     const FiniteElement& element() const;
 
     /// Return dofmap
-    const DofMap& dofmap() const;
+    const GenericDofMap& dofmap() const;
 
     /// Return dimension of function space
     uint dim() const;
@@ -109,7 +109,7 @@ namespace dolfin
 
     /// Return function space with a new dof map
     boost::shared_ptr<FunctionSpace>
-    collapse_sub_space(boost::shared_ptr<DofMap> dofmap) const;
+    collapse_sub_space(boost::shared_ptr<GenericDofMap> dofmap) const;
 
     /// Check if function space has given cell
     bool has_cell(const Cell& cell) const
@@ -144,7 +144,7 @@ namespace dolfin
     boost::shared_ptr<const FiniteElement> _element;
 
     // The dofmap
-    boost::shared_ptr<const DofMap> _dofmap;
+    boost::shared_ptr<const GenericDofMap> _dofmap;
 
     // The component (for sub spaces)
     Array<uint> _component;

@@ -13,7 +13,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -72,7 +72,7 @@ void RAWFile::ResultsWrite(const Function& u) const
   // For brevity
   const FunctionSpace& V = u.function_space();
   const Mesh& mesh(V.mesh());
-  const DofMap& dofmap(V.dofmap());
+  const GenericDofMap& dofmap(V.dofmap());
 
   // Get rank of Function
   const uint rank = u.function_space().element().value_rank();

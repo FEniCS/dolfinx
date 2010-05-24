@@ -19,6 +19,7 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include "GenericDofMap.h"
 #include "UFC.h"
 #include "UFCCell.h"
 #include "UFCMesh.h"
@@ -33,7 +34,7 @@ namespace dolfin
   /// It wraps a ufc::dof_map on a specific mesh and provides
   /// optional precomputation and reordering of dofs.
 
-  class DofMap : public Variable
+  class DofMap : public GenericDofMap
   {
   public:
 
@@ -60,6 +61,7 @@ namespace dolfin
     /// Return a string identifying the dof map
     std::string signature() const
     {
+      assert( _ufc_dofmap);
       if (!_map.get())
         return _ufc_dofmap->signature();
       else
@@ -71,30 +73,46 @@ namespace dolfin
 
     /// Return true iff mesh entities of topological dimension d are needed
     bool needs_mesh_entities(unsigned int d) const
-    { return _ufc_dofmap->needs_mesh_entities(d); }
+    {
+      assert( _ufc_dofmap);
+      return _ufc_dofmap->needs_mesh_entities(d);
+    }
 
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const
     {
+      assert( _ufc_dofmap);
       assert(_ufc_dofmap->global_dimension() > 0);
       return _ufc_dofmap->global_dimension();
     }
 
     /// Return the dimension of the local finite element function space on a cell
     unsigned int local_dimension(const ufc::cell& cell) const
-    { return _ufc_dofmap->local_dimension(cell); }
+    {
+      assert( _ufc_dofmap);
+      return _ufc_dofmap->local_dimension(cell);
+    }
 
     /// Return the maximum dimension of the local finite element function space
     unsigned int max_local_dimension() const
-    { return _ufc_dofmap->max_local_dimension(); }
+    {
+      assert( _ufc_dofmap);
+      return _ufc_dofmap->max_local_dimension();
+    }
 
     // Return the geometric dimension of the coordinates this dof map provides
     unsigned int geometric_dimension() const
-    { return _ufc_dofmap->geometric_dimension(); }
+    {
+      assert( _ufc_dofmap);
+      return _ufc_dofmap->geometric_dimension();
+    }
 
     /// Return number of facet dofs
     unsigned int num_facet_dofs() const
-    { return _ufc_dofmap->num_facet_dofs(); }
+    {
+      assert( _ufc_dofmap);
+      return _ufc_dofmap->num_facet_dofs();
+    }
 
     /// Tabulate the local-to-global mapping of dofs on a cell (UFC cell version)
     void tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_index) const;

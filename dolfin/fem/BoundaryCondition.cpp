@@ -10,10 +10,10 @@
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/function/FunctionSpace.h>
-#include "DofMap.h"
 #include "Form.h"
 #include "BoundaryCondition.h"
 

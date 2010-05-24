@@ -171,6 +171,7 @@
 
 // DOLFIN headers included from fem
 %include "dolfin/swig/fem_pre.i"
+%include "dolfin/fem/GenericDofMap.h"
 %include "dolfin/fem/DofMap.h"
 %include "dolfin/fem/FiniteElement.h"
 %include "dolfin/fem/BasisFunction.h"

@@ -16,7 +16,7 @@
 #include <boost/detail/endian.hpp>
 
 #include <dolfin/common/Array.h>
-#include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -317,7 +317,7 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
   for (uint i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
 
-  const DofMap& dofmap(u.function_space().dofmap());
+  const GenericDofMap& dofmap(u.function_space().dofmap());
   if (dofmap.max_local_dimension() == cell_based_dim)
     write_cell_data(u, vtu_filename);
   else
@@ -456,8 +456,8 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
 void VTKFile::write_cell_data(const Function& u, std::string vtu_filename) const
 {
   // For brevity
-  const Mesh& mesh(u.function_space().mesh());
-  const DofMap& dofmap(u.function_space().dofmap());
+  const Mesh& mesh = u.function_space().mesh();
+  const GenericDofMap& dofmap = u.function_space().dofmap();
 
   // Get rank of Function
   const uint rank = u.value_rank();
@@ -686,9 +686,9 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
 
   // For brevity
   const FunctionSpace& V = u.function_space();
-  const Mesh& mesh(V.mesh());
-  const FiniteElement& element(V.element());
-  const DofMap& dofmap(V.dofmap());
+  const Mesh& mesh = V.mesh();
+  const FiniteElement& element = V.element();
+  const GenericDofMap& dofmap = V.dofmap();
 
   // Get rank of Function
   const uint rank = element.value_rank();

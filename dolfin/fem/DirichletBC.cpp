@@ -28,7 +28,7 @@
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
-#include "DofMap.h"
+#include "GenericDofMap.h"
 #include "FiniteElement.h"
 #include "UFCMesh.h"
 #include "UFCCell.h"
@@ -536,7 +536,7 @@ void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values
 
   // Get mesh and dofmap
   const Mesh& mesh = _function_space->mesh();
-  const DofMap& dofmap = _function_space->dofmap();
+  const GenericDofMap& dofmap = _function_space->dofmap();
 
   // Iterate over facets
   Progress p("Computing Dirichlet boundary values, topological search", facets.size());
@@ -593,7 +593,7 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
 
   // Get mesh and dofmap
   const Mesh& mesh = _function_space->mesh();
-  const DofMap& dofmap = _function_space->dofmap();
+  const GenericDofMap& dofmap = _function_space->dofmap();
 
   // Initialize facets, needed for geometric search
   info(TRACE, "Computing facets, needed for geometric application of boundary conditions.");
@@ -659,7 +659,7 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
 
   // Get mesh and dofmap
   const Mesh& mesh = _function_space->mesh();
-  const DofMap& dofmap = _function_space->dofmap();
+  const GenericDofMap& dofmap = _function_space->dofmap();
 
   // Iterate over cells
   Progress p("Computing Dirichlet boundary values, pointwise search", mesh.num_cells());

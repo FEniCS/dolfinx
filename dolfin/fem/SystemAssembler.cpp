@@ -17,7 +17,7 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
-#include "DofMap.h"
+#include "GenericDofMap.h"
 #include "FiniteElement.h"
 #include "Form.h"
 #include "UFC.h"

@@ -18,7 +18,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
-#include "DofMap.h"
+#include "GenericDofMap.h"
 #include "Form.h"
 #include "UFC.h"
 #include "AssemblerTools.h"
@@ -111,7 +111,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A,
     if (sparsity_pattern)
     {
       // Get dof maps
-      std::vector<const DofMap*> dof_maps;
+      std::vector<const GenericDofMap*> dof_maps;
       for (uint i = 0; i < ufc.form.rank(); ++i)
         dof_maps.push_back(&(a.function_space(i)->dofmap()));
 

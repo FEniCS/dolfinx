@@ -18,7 +18,7 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include "DofMap.h"
+#include "GenericDofMap.h"
 #include "UFCMesh.h"
 #include "UFCCell.h"
 #include "BoundaryCondition.h"
@@ -162,7 +162,7 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
 
   // Get mesh and dofmap
   const Mesh& mesh = _function_space->mesh();
-  const DofMap& dofmap = _function_space->dofmap();
+  const GenericDofMap& dofmap = _function_space->dofmap();
 
   // Create local data for application of boundary conditions
   BoundaryCondition::LocalData data(*_function_space);
@@ -234,7 +234,7 @@ void EqualityBC::init_from_mesh(uint sub_domain)
 
   // Get mesh and dofmap
   const Mesh& mesh = _function_space->mesh();
-  const DofMap& dofmap = _function_space->dofmap();
+  const GenericDofMap& dofmap = _function_space->dofmap();
 
   // Create local data for application of boundary conditions
   BoundaryCondition::LocalData data(*_function_space);

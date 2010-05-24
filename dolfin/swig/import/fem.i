@@ -1,5 +1,6 @@
 // Auto generated import statements for the SWIG kernel module: 'fem'
 
+%import(module="dolfin.cpp") "dolfin/fem/GenericDofMap.h"
 %import(module="dolfin.cpp") "dolfin/fem/DofMap.h"
 %import(module="dolfin.cpp") "dolfin/fem/FiniteElement.h"
 %import(module="dolfin.cpp") "dolfin/fem/BasisFunction.h"

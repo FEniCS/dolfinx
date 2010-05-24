@@ -16,7 +16,6 @@
 namespace dolfin
 {
 
-  class DofMap;
   class Mesh;
   class SubDomain;
   class Form;

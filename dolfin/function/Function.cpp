@@ -20,7 +20,7 @@
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/DefaultFactory.h>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/mesh/Vertex.h>
@@ -163,7 +163,7 @@ const Function& Function::operator= (const Function& v)
   {
     // Create collapsed dof map
     std::map<uint, uint> collapsed_map;
-    boost::shared_ptr<DofMap> collapsed_dof_map(v._function_space->dofmap().collapse(collapsed_map, v._function_space->mesh()));
+    boost::shared_ptr<GenericDofMap> collapsed_dof_map(v._function_space->dofmap().collapse(collapsed_map, v._function_space->mesh()));
 
     // Create new FunctionsSpapce
     _function_space = v._function_space->collapse_sub_space(collapsed_dof_map);
@@ -369,7 +369,7 @@ void Function::restrict(double* w,
   if (_function_space->has_element(element) && _function_space->has_cell(dolfin_cell))
   {
     // Get dofmap
-    const DofMap& dofmap = _function_space->dofmap();
+    const GenericDofMap& dofmap = _function_space->dofmap();
 
     // Tabulate dofs
     dofmap.tabulate_dofs(local_scratch.dofs, ufc_cell, dolfin_cell.index());
@@ -463,7 +463,7 @@ void Function::compute_off_process_dofs() const
   const Mesh& mesh = _function_space->mesh();
 
   // Storage for each cell dofs
-  const DofMap& dofmap = _function_space->dofmap();
+  const GenericDofMap& dofmap = _function_space->dofmap();
   const uint num_dofs_per_cell = _function_space->element().space_dimension();
   const uint num_dofs_global = vector().size();
   boost::scoped_array<uint> dofs(new uint[num_dofs_per_cell]);

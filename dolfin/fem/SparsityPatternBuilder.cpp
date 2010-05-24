@@ -14,7 +14,7 @@
 #include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/function/FunctionSpace.h>
 #include "SparsityPatternBuilder.h"
-#include "DofMap.h"
+#include "GenericDofMap.h"
 #include "UFC.h"
 #include "Form.h"
 
@@ -23,7 +23,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
                                    const Mesh& mesh,
-                                   std::vector<const DofMap*>& dof_maps,
+                                   std::vector<const GenericDofMap*>& dof_maps,
                                    bool cells, bool interior_facets)
 {
   const uint rank = dof_maps.size();

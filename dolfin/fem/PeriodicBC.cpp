@@ -23,7 +23,7 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include "DofMap.h"
+#include "GenericDofMap.h"
 #include "FiniteElement.h"
 #include "UFCMesh.h"
 #include "BoundaryCondition.h"
@@ -256,7 +256,7 @@ void PeriodicBC::extract_dof_pairs(const FunctionSpace& function_space,
 
   // Get mesh and dofmap
   const Mesh& mesh = function_space.mesh();
-  const DofMap& dofmap = function_space.dofmap();
+  const GenericDofMap& dofmap = function_space.dofmap();
 
   // Get dimensions
   const uint tdim = mesh.topology().dim();
