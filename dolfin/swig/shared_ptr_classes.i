@@ -39,7 +39,8 @@
 //-----------------------------------------------------------------------------
 // Decalare shared_ptr stored types in PyDOLFIN
 //-----------------------------------------------------------------------------
-SWIG_SHARED_PTR(DofMap,dolfin::DofMap)
+SWIG_SHARED_PTR(GenericDofMap,dolfin::GenericDofMap)
+SWIG_SHARED_PTR_DERIVED(DofMap,dolfin::GenericDofMap,dolfin::DofMap)
 SWIG_SHARED_PTR(FiniteElement,dolfin::FiniteElement)
 
 SWIG_SHARED_PTR(FunctionSpace,dolfin::FunctionSpace)
@@ -73,7 +74,7 @@ SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
 // This is a hack to get around the problem that Variable is not declared
 // as a shared_ptr class.
  //
-// Ideally we would like to make Variable a shared_ptr type, but we do not want 
+// Ideally we would like to make Variable a shared_ptr type, but we do not want
 // to make all derived classes shared_ptr types. This means we need to implement
 // the Variable interface for derived types of Variable.
 //-----------------------------------------------------------------------------
@@ -133,7 +134,7 @@ IMPLEMENT_VARIABLE_INTERFACE(Mesh)
 IMPLEMENT_VARIABLE_INTERFACE(DofMap)
 
 //-----------------------------------------------------------------------------
-// Macros for defining in and out typemaps for foreign types that DOLFIN 
+// Macros for defining in and out typemaps for foreign types that DOLFIN
 // use as in and ouput from functions. More specific Epetra_FEFoo
 // FIXME: Make these const aware...
 //-----------------------------------------------------------------------------
