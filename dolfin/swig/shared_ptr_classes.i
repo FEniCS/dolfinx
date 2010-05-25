@@ -73,7 +73,7 @@ SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
 // Macro that exposes the Variable interface for the derived classes
 // This is a hack to get around the problem that Variable is not declared
 // as a shared_ptr class.
- //
+//
 // Ideally we would like to make Variable a shared_ptr type, but we do not want
 // to make all derived classes shared_ptr types. This means we need to implement
 // the Variable interface for derived types of Variable.
@@ -131,7 +131,7 @@ SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
 IMPLEMENT_VARIABLE_INTERFACE(Function)
 IMPLEMENT_VARIABLE_INTERFACE(FunctionSpace)
 IMPLEMENT_VARIABLE_INTERFACE(Mesh)
-IMPLEMENT_VARIABLE_INTERFACE(DofMap)
+IMPLEMENT_VARIABLE_INTERFACE(GenericDofMap)
 
 //-----------------------------------------------------------------------------
 // Macros for defining in and out typemaps for foreign types that DOLFIN
