@@ -125,6 +125,7 @@ options = [
     PathVariable("withCgalDir", "Specify path to CGAL", None, path_validator),
     PathVariable("withLapackDir", "Specify path to LAPACK", None, path_validator),
     PathVariable("withBlasDir", "Specify path to BLAS", None, path_validator),
+    PathVariable("withArmadilloDir", "Specify path to Armadillo", None, path_validator),
     #
     # a few more options originally from PyCC:
     #BoolVariable("autoFetch", "Automatically fetch datafiles from (password protected) SSH repository", 0),
