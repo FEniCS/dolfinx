@@ -11,6 +11,7 @@
 #include "MonoAdaptiveTimeSlab.h"
 #include <algorithm>
 #include <iostream>
+#include <ios>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -49,7 +50,6 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
   uint timeslabs_in_file = open_and_read_header(file, 0u);
   file.close();
 
-
   //collect number of timeslabs and first t value from all files
   for (uint i=0; i < number_of_files; i++)
   {
@@ -58,16 +58,62 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
     real t;
     file >> t;
     file_table.push_back( std::pair<real, uint>(t, no_timeslabs) );
-    file.close();
 
     no_timeslabs += timeslabs_in_file;
+
+    // if this is the last file, read the last line to extract the 
+    // endtime value
+    if (i == number_of_files-1) 
+    {
+      // read backwards from the end of the file to find the last
+      // newline
+      // FIXME: Is there a better way to do this? Some library function 
+      // doing the same as the command tail
+      char buf[1001];
+      file.seekg (0, std::ios::end);
+      int pos = file.tellg();
+      pos -= 1001;
+      file.seekg(pos, std::ios::beg);
+      while (true) 
+      {
+	file.read(buf, 1000);
+	buf[1000] = '\0';
+
+	std::string buf_string(buf);
+	size_t newline_pos =  buf_string.find_last_of("\n");
+	if (newline_pos != std::string::npos) 
+	{
+	  file.seekg(pos + newline_pos);
+	  real max_a;
+	  real k;
+	  file >> max_a;
+	  file >> k;
+	  T = max_a + k;
+	  break;
+	} else 
+	{
+	  pos -= 1000;
+	  file.seekg(pos, std::ios::beg);
+
+	}
+      }
+    }
+
+    file.close();    
   }
 
-  // load the last file into memory
-  read_file(file_table.size()-1);
+  // save an invalid fileno and dummy timeslabs to trigger reading 
+  // a file on first eval
+  fileno_in_memory = file_table.size() + 1;
+  data.push_back(ODESolutionData(-1, 0, 0, 0, NULL));
+  data.push_back(ODESolutionData(-2, 0, 0, 0, NULL));
 
-  ODESolutionData& last = data[data.size()-1];
-  T = last.a+last.k;
+  // load the last file into memory
+  //read_file(file_table.size()-1);
+  
+
+  //ODESolutionData& last = data[data.size()-1];
+  //T = last.a+last.k;
   read_mode = true;
 }
 //-----------------------------------------------------------------------------
@@ -354,7 +400,6 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
 //-----------------------------------------------------------------------------
 void ODESolution::read_file(uint file_number)
 {
-
   if (data.size() > 0)
     data.clear();
 
@@ -390,6 +435,8 @@ void ODESolution::read_file(uint file_number)
 	  file_number, timeslabs, count);
 
   fileno_in_memory = file_number;
+
+  //cout << "Done reading file" << file_number << endl;
 
 }
 //-----------------------------------------------------------------------------

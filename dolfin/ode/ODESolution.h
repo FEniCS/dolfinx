@@ -53,7 +53,7 @@ namespace dolfin
       real_set(size, nv, values); 
     }
 
-   //copy constructor
+    //copy constructor
     ODESolutionData(const ODESolutionData& cp)
     {
       a = cp.a;
