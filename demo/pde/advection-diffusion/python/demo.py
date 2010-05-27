@@ -51,19 +51,22 @@ c = 0.00005
 v = TestFunction(Q)
 u = TrialFunction(Q)
 
-# Resisual (split into LHS/RHS parts)
-r_a =  u + 0.5*dt*dot(velocity, grad(u))  - 0.5*dt*div(grad(u))
-r_L = u0 - 0.5*dt*dot(velocity, grad(u0)) + 0.5*dt*div(grad(u0)) + dt*f
+# Mid-point solution
+u_mid = 0.5*(u0 + u)
+
+# Residual
+r = u-u0 + dt*( dot(velocity, grad(u_mid)) -div(grad(u_mid)) - f)
 
 # Galerkin variational problem
-a_g = v*u*dx + 0.5*dt*(v*dot(velocity, grad(u))*dx + c*dot(grad(v), grad(u))*dx)
-L_g = v*u0*dx - 0.5*dt*(v*dot(velocity, grad(u0))*dx + c*dot(grad(v), grad(u0))*dx) + dt*v*f*dx
+F = v*(u-u0)*dx + dt*(v*dot(velocity, grad(u_mid))*dx + c*dot(grad(v), grad(u_mid))*dx)
 
-# Add SUPG stabilisation
+# Add SUPG stabilisation terms
 vnorm = sqrt(dot(velocity, velocity))
-supg = (h/2.0*vnorm)*dot(velocity, grad(v))
-a = a_g + supg*r_a*dx
-L = L_g + supg*r_L*dx
+F += (h/2.0*vnorm)*dot(velocity, grad(v))*r*dx
+
+# Create bilinear and linear forms
+a = lhs(F)
+L = rhs(F)
 
 # Set up boundary condition
 g = Constant( boundary_value(0) )
@@ -71,6 +74,7 @@ bc = DirichletBC(Q, g, sub_domains, 1)
 
 # Assemble matrix
 A = assemble(a)
+bc.apply(A)
 
 # Output file
 out_file = File("temperature.pvd")
@@ -83,7 +87,7 @@ while t < T:
 
     # Assemble vector and apply boundary conditions
     b = assemble(L)
-    bc.apply(A, b)
+    bc.apply(b)
 
     # Solve the linear system
     solve(A, u.vector(), b)
