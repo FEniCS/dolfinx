@@ -40,9 +40,6 @@ c = 0.005
 v = TestFunction(Q)
 u = TrialFunction(Q)
 
-# Functions
-u1 = Function(Q)
-
 # Variational problem
 a = v*u*dx + 0.5*k*(v*dot(velocity, grad(u))*dx + c*dot(grad(v), grad(u))*dx)
 L = v*u0*dx - 0.5*k*(v*dot(velocity, grad(u0))*dx + c*dot(grad(v), grad(u0))*dx) + k*v*f*dx
@@ -57,24 +54,27 @@ A = assemble(a)
 # Output file
 out_file = File("temperature.pvd")
 
+# Set intial condition
+u = u0
+
 # Time-stepping
 while t < T:
-
-    # Copy solution from previous interval
-    u0.assign(u1)
 
     # Assemble vector and apply boundary conditions
     b = assemble(L)
     bc.apply(A, b)
 
     # Solve the linear system
-    solve(A, u1.vector(), b)
+    solve(A, u.vector(), b)
+
+    # Copy solution from previous interval
+    u0.assign(u)
 
     # Plot solution
-    plot(u1)
+    plot(u)
 
     # Save the solution to file
-    out_file << u1
+    out_file << u
 
     # Move to next interval
     t += k
