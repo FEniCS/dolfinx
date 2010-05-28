@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import boost
 
 from commonPkgConfigUtils import *
 
@@ -33,8 +34,8 @@ int main() {
     cpp_file = "armadillo_config_test_version.cpp"
     write_cppfile(cpp_version_str, cpp_file)
 
-    cmdstr = "%s -o a.out %s %s %s" % \
-           (linker, cflags, libs, cpp_file)
+    cmdstr = "%s -o a.out %s %s %s %s" % \
+           (linker, cflags, boost.pkgCflags(sconsEnv=sconsEnv), libs, cpp_file)
     linkFailed, cmdoutput = getstatusoutput(cmdstr)
     if linkFailed:
         remove_cppfile(cpp_file)
@@ -78,7 +79,8 @@ int main(int argc, char** argv) {
     write_cppfile(cpp_test_libs_str, cpp_file)
 
     # test that we can compile
-    cmdstr = "%s -c %s %s" % (compiler, cflags, cpp_file)
+    cmdstr = "%s -c %s %s %s" % \
+             (compiler, cflags, boost.pkgCflags(sconsEnv=sconsEnv), cpp_file)
     compileFailed, cmdoutput = getstatusoutput(cmdstr)
     if compileFailed:
         remove_cppfile(cpp_file)
@@ -89,6 +91,8 @@ int main(int argc, char** argv) {
     # test that we can link
     libs = "-L%s -larmadillo" % \
            os.path.join(getArmadilloDir(sconsEnv=sconsEnv), "lib")
+    if get_architecture() == "darwin":
+        libs += " -framework vecLib"
     cmdstr = "%s %s -o a.out %s" % \
            (linker, cpp_file.replace('.cpp', '.o'), libs)
     linkFailed, cmdoutput = getstatusoutput(cmdstr)
@@ -153,6 +157,7 @@ def generatePkgConf(directory=None, sconsEnv=None, **kwargs):
     pkg_file_str = r"""Name: Armadillo
 Version: %s
 Description: streamlined C++ linear algebra library
+Requires: boost
 Libs: %s
 Cflags: %s
 """ % (version, libs, repr(cflags)[1:-1])
