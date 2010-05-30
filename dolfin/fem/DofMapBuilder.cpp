@@ -28,6 +28,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void DofMapBuilder::parallel_build(DofMap& dofmap, const Mesh& mesh)
 {
+  error("DofMapBuilder::parallel_build is broken while the DofMap class is being cleaned up.");
+
+  /*
   // Check that dof map has not been built
   if (dofmap._map.get())
     error("Local-to-global mapping has already been computed.");
@@ -43,6 +46,7 @@ void DofMapBuilder::parallel_build(DofMap& dofmap, const Mesh& mesh)
   // Renumber dofs
   parallel_renumber(owned_dofs, shared_dofs, forbidden_dofs, dof2index,
                     dofmap, mesh);
+  */
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
@@ -51,6 +55,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
                                       const DofMap& dofmap, const Mesh& mesh)
 {
   info(TRACE, "Determining dof ownership for parallel dof map");
+/*
 
   // Initialize random number generator differently on each process
   //cout << "Testing (1) " << (uint)time(0) + MPI::process_number() << endl;
@@ -146,6 +151,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
   }
 
   info(TRACE, "Finished determining dof ownership for parallel dof map");
+*/
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::parallel_renumber(const set& owned_dofs, const set& shared_dofs,
@@ -153,6 +159,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs, const set& shared_d
                              const std::map<uint, std::vector<uint> >& dof2index,
                              DofMap& dofmap, const Mesh& mesh)
 {
+  /*
   info(TRACE, "Renumber dofs for parallel dof map");
 
   dofmap._ufc_to_map.clear();
@@ -213,5 +220,6 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs, const set& shared_d
   }
 
   info(TRACE, "Finished renumbering dofs for parallel dof map");
+  */
 }
 //-----------------------------------------------------------------------------
