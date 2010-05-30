@@ -167,29 +167,32 @@ const Function& Function::operator= (const Function& v)
 
     // Create new FunctionsSpapce
     _function_space = v._function_space->collapse_sub_space(collapsed_dof_map);
-    assert(collapsed_map.size() == _function_space->dofmap().global_dimension());
 
-    // Create new vector
-    const uint size = collapsed_dof_map->global_dimension();
+    // FIXME: This assertion doesn't work in parallel
+    //assert(collapsed_map.size() == _function_space->dofmap().global_dimension());
+
+    // Create new vector (global)
     _vector.reset(v.vector().factory().create_vector());
-    _vector->resize(size);
+    _vector->resize( collapsed_dof_map->global_dimension() );
 
     // Get row indices of original and new vectors
     std::map<uint, uint>::const_iterator entry;
-    std::vector<uint> new_rows(size);
-    std::vector<uint> old_rows(size);
+    std::vector<uint> new_rows(collapsed_map.size());
+    std::vector<uint> old_rows(collapsed_map.size());
     uint i = 0;
     for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
     {
-      new_rows[i] = entry->first;
+      new_rows[i]   = entry->first;
       old_rows[i++] = entry->second;
     }
 
     // Get old values and set new values
-    v.gather();
-    std::vector<double> values(size);
-    v.get(&values[0], size, &old_rows[0]);
-    this->_vector->set(&values[0], size, &new_rows[0]);
+    std::vector<double> values(collapsed_map.size());
+    //v.gather();
+    //v.get(&values[0], collapsed_map.size(), &old_rows[0]);
+    v.vector().get(&values[0], collapsed_map.size(), &old_rows[0]);
+    this->_vector->set(&values[0], collapsed_map.size(), &new_rows[0]);
+    this->_vector->apply("insert");
   }
   local_scratch.init(this->_function_space->element());
 

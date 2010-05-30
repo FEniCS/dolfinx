@@ -190,16 +190,15 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
 DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
                          const Mesh& dolfin_mesh) const
 {
-  // FIXME: Modify for renumbered dof maps
-
   assert(_ufc_dofmap);
 
-  // Create new dof map
+  // Create new dof map (this will renumber the map if runnning in parallel)
   DofMap* collapsed_dof_map = new DofMap(_ufc_dofmap, dolfin_mesh);
 
   assert(collapsed_dof_map->global_dimension() == this->global_dimension());
 
-  // FIXME: Could we use a std::vector instead of std::map if the collapsed dof map is contiguous (0, . . . ,n)?
+  // FIXME: Could we use a std::vector instead of std::map if the collapsed
+  //        dof map is contiguous (0, . . . ,n)?
   // Clear map
   collapsed_map.clear();
 
@@ -212,9 +211,12 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
     const std::vector<uint> dofs = this->dofmap[i];
     const std::vector<uint> collapsed_dofs = collapsed_dof_map->dofmap[i];
     assert(dofs.size() == collapsed_dofs.size());
+
     for (uint j = 0; j < dofs.size(); ++j)
       collapsed_map[collapsed_dofs[j]] = dofs[j];
   }
+
+  // FIXME: Attach appropriate offset and ufc_map_to_dofmap
 
   return collapsed_dof_map;
 }

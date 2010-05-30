@@ -83,7 +83,5 @@ int main()
   // Plot solution
   plot(u);
 
-  cout << "Solution norm: " << u.vector().norm("l2") << endl;
-
   return 0;
 }
