@@ -28,10 +28,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
-               Mesh& dolfin_mesh)
-             : _ufc_dofmap(ufc_dofmap),
-               _parallel(MPI::num_processes() > 1)
+DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap, Mesh& dolfin_mesh)
+             : _ufc_dofmap(ufc_dofmap), _parallel(MPI::num_processes() > 1)
 {
   assert(_ufc_dofmap);
 
@@ -63,8 +61,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
                const Mesh& dolfin_mesh)
-             : _ufc_dofmap(ufc_dofmap),
-               _parallel(MPI::num_processes() > 1)
+             : _ufc_dofmap(ufc_dofmap), _parallel(MPI::num_processes() > 1)
 {
   assert(_ufc_dofmap);
 
@@ -82,9 +79,9 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
   build(dolfin_mesh, ufc_mesh);
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap, const UFCMesh& ufc_mesh)
-             : _ufc_dofmap(ufc_dofmap),
-               _parallel(MPI::num_processes() > 1)
+DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
+               const UFCMesh& ufc_mesh)
+             : _ufc_dofmap(ufc_dofmap), _parallel(MPI::num_processes() > 1)
 
 {
   assert(_ufc_dofmap);
@@ -190,10 +187,6 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
   // FIXME: Could we use a std::vector instead of std::map if the collapsed dof map is contiguous (0, . . . ,n)?
   // Clear map
   collapsed_map.clear();
-
-  // Create data structures for tabulating dofs
-  std::vector<uint> dofs(this->max_local_dimension());
-  std::vector<uint> collapsed_dofs(collapsed_dof_map->max_local_dimension());
 
   assert(this->dofmap.size() == dolfin_mesh.num_cells());
   assert(collapsed_dof_map->dofmap.size() == dolfin_mesh.num_cells());

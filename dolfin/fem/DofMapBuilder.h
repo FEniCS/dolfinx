@@ -45,15 +45,12 @@ namespace dolfin
   private:
 
     static void compute_ownership(set& owned_dofs, set& shared_dofs,
-                                  set& forbidden_dofs,
-                                  std::map<uint, std::vector<uint> >& dof2index,
-                                  const DofMap& dofmap, const Mesh& mesh);
+                                  set& forbidden_dofs, const DofMap& dofmap,
+                                  const Mesh& mesh);
 
     static void parallel_renumber(const set& owned_dofs, const set& shared_dofs,
-                                  const set& forbidden_dofs,
-                                  const std::map<uint,
-                                  std::vector<uint> >& dof2index,
-                                  DofMap& dofmap, const Mesh& mesh);
+                                  const set& forbidden_dofs, DofMap& dofmap,
+                                  const Mesh& mesh);
 
 
   };

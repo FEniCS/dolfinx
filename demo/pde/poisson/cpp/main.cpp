@@ -72,7 +72,7 @@ int main()
 
   // Compute solution
   VariationalProblem problem(a, L, bc);
-  problem.parameters["linear_solver"] = "iterative";
+  //problem.parameters["linear_solver"] = "iterative";
   Function u(V);
   problem.solve(u);
 
@@ -82,6 +82,8 @@ int main()
 
   // Plot solution
   plot(u);
+
+  cout << "Solution norm: " << u.vector().norm("l2") << endl;
 
   return 0;
 }

@@ -81,9 +81,11 @@ namespace dolfin
     /// Return the dimension of the local finite element function space on a cell
     unsigned int local_dimension(const ufc::cell& cell) const
     {
+      // FIXME: Needs to be fixed for parallel. Perhaos have local_dimension(uint cell_index)?
+
       // Get cell index
-      const unsigned int cell_index = cell.entity_indices[cell.topological_dimension][0];
-      return dofmap[cell_index].size();
+      //return dofmap[cell_index].size();
+      return  _ufc_dofmap->local_dimension(cell);
     }
 
     /// Return the maximum dimension of the local finite element function space
@@ -158,8 +160,8 @@ namespace dolfin
     // dof map
     std::vector<std::vector<dolfin::uint> > dofmap;
 
-    // Map from UFC dof to renumbered dof
-    std::map<dolfin::uint, uint> _ufc_to_map;
+    // Map from UFC dof numbering to renumbered dof
+    std::map<dolfin::uint, uint> ufc_map_to_dofmap;
 
     // UFC dof map
     boost::shared_ptr<ufc::dof_map> _ufc_dofmap;
