@@ -72,8 +72,8 @@ int main()
   pde_project.solve(sigma_p);
 
   // Plot solution
-  //plot(sigma_p);
-  //plot(u);
+  plot(sigma_p);
+  plot(u);
 
   // Save solution in VTK format
   File f3("sigma.pvd");

@@ -141,7 +141,9 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
 {
   info(TRACE, "Renumber dofs for parallel dof map");
 
-  //dofmap._ufc_to_map.clear();
+  // FIXME: Handle double-renumbered dof map
+  if (dofmap.ufc_map_to_dofmap.size() > 0)
+    error("DofMaps cannot yet be renumbered twice.");
 
   const std::vector<std::vector<uint> >& old_dofmap = dofmap.dofmap;
   std::vector<std::vector<uint> > new_dofmap(old_dofmap.size());
@@ -160,6 +162,9 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   {
     // New dof number
     old_to_new_dof_index[*owned_dof] = process_offset + counter;
+
+    // UFC to renumbered map
+    dofmap.ufc_map_to_dofmap[*owned_dof] = process_offset + counter;
 
     // If this dof is shared buffer old and new index for sending
     if (shared_dofs.find(*owned_dof) != shared_dofs.end())
@@ -186,7 +191,12 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
 
     // Add dofs renumbered by another process to the old-to-new map
     for (uint i = 0; i < recv_count; i += 2)
+    {
       old_to_new_dof_index[recv_buffer[i]] = recv_buffer[i+1];
+
+      // UFC to renumbered map
+      dofmap.ufc_map_to_dofmap[recv_buffer[i]] = recv_buffer[i+1];
+    }
   }
 
   // Build new dof map

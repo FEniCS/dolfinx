@@ -81,7 +81,7 @@ namespace dolfin
     /// Return the dimension of the local finite element function space on a cell
     unsigned int local_dimension(const ufc::cell& cell) const
     {
-      // FIXME: Needs to be fixed for parallel. Perhaos have local_dimension(uint cell_index)?
+      // FIXME: Needs to be fixed for parallel. Perhaps have local_dimension(uint cell_index)?
 
       // Get cell index
       //return dofmap[cell_index].size();
@@ -142,7 +142,7 @@ namespace dolfin
     /// Friends
     friend class DofMapBuilder;
 
-    // Build dofmap
+    // Build dofmap from the UFC dofmap
     void build(const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh);
 
     /// Initialize the UFC dofmap

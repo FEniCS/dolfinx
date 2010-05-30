@@ -96,16 +96,14 @@ void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
                            uint cell_index) const
 {
   // FIXME: Add assertion to test that this process has the dof.
-  for (uint i = 0; i < dofmap[cell_index].size(); ++i)
-    dofs[i] = dofmap[cell_index][i];
+  std::copy(dofmap[cell_index].begin(), dofmap[cell_index].end(), dofs);
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_dofs(uint* dofs, const Cell& cell) const
 {
   // FIXME: Add assertion to test that this process has the dof.
   const uint cell_index = cell.index();
-  for (uint i = 0; i < dofmap[cell_index].size(); ++i)
-    dofs[i] = dofmap[cell_index][i];
+  std::copy(dofmap[cell_index].begin(), dofmap[cell_index].end(), dofs);
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const
@@ -124,10 +122,6 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
                                    const Mesh& dolfin_mesh) const
 {
   assert(_ufc_dofmap);
-
-  // Test for renumbered dof map
-  //if (_ufc_to_map.size() == 0)
-  //  error("Cannnot yet extract sub dofmaps of a sub DofMap after renumbering yet.");
 
   // FIXME: Should this be ufc_offset = _ufc_offset?
   // Reset offset
@@ -150,26 +144,45 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
   std::vector<std::vector<uint> >& sub_map = sub_dofmap->dofmap;
   sub_map.resize(dolfin_mesh.num_cells());
 
-  // Build sub-map
+  // Build sub-map (based on UFC map)
   UFCCell ufc_cell(dolfin_mesh);
   for (CellIterator cell(dolfin_mesh); !cell.end(); ++cell)
   {
+    const uint index = cell->index();
+
     // Update to current cell
     ufc_cell.update(*cell);
 
     // Resize for list for cell
-    sub_map[cell->index()].resize( ufc_sub_dof_map->local_dimension(ufc_cell) );
+    sub_map[index].resize( ufc_sub_dof_map->local_dimension(ufc_cell) );
 
     // Tabulate sub-dofs on cell (UFC map)
-    ufc_sub_dof_map->tabulate_dofs(&sub_map[cell->index()][0], ufc_mesh, ufc_cell);
+    ufc_sub_dof_map->tabulate_dofs(&sub_map[index][0], ufc_mesh, ufc_cell);
+
+    // Add UFC offset
+    for (uint i = 0; i < sub_map[index].size(); ++i)
+      sub_map[index][i] += ufc_offset;
   }
 
-  // Add offset
-  for (uint i = 0; i < sub_map.size(); ++i)
+  // Modify sub-map for non-UFC numbering
+  if (ufc_map_to_dofmap.size() > 0)
   {
-    for (uint j = 0; j < sub_map[i].size(); ++j)
-      sub_map[i][j] += ufc_offset;
+    cout << "Modify for ufc_map_to_dofmap" << endl;
+    for (uint i = 0; i < sub_map.size(); ++i)
+    {
+      for (uint j = 0; j < sub_map[i].size(); ++j)
+      {
+        std::map<uint, uint>::const_iterator new_dof_it = ufc_map_to_dofmap.find(sub_map[i][j]);
+        assert(new_dof_it != ufc_map_to_dofmap.end());
+        sub_map[i][j] = new_dof_it->second;
+      }
+    }
+
+    // Copy of ufc-map-to-dofmap for new sub-dofmap
+    sub_dofmap->ufc_map_to_dofmap = ufc_map_to_dofmap;
   }
+
+  // FIXME: Set/reset offset if required
 
   return sub_dofmap;
 }
@@ -177,6 +190,8 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
 DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
                          const Mesh& dolfin_mesh) const
 {
+  // FIXME: Modify for renumbered dof maps
+
   assert(_ufc_dofmap);
 
   // Create new dof map
