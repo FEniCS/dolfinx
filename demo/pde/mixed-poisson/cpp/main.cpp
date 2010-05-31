@@ -59,8 +59,8 @@ int main()
   pde.solve(w);
 
   // Extract sub functions (function views)
-  Function& sigma = w[0];
-  Function& u = w[1];
+  Function sigma = w[0];
+  Function u = w[1];
 
   // Project sigma onto P1 continuous Lagrange for post-processing
   P1Projection::FunctionSpace Vp(mesh);

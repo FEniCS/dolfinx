@@ -108,11 +108,13 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
       if (shared_dofs.find(recv_buffer[i]) != shared_dofs.end())
       {
         // Move dofs with higher ownership votes from shared to forbidden
-        if (recv_buffer[i+1] < dof_vote[recv_buffer[i]] )
+        if (recv_buffer[i+1] < dof_vote[recv_buffer[i]])
         {
           forbidden_dofs.insert(recv_buffer[i]);
           shared_dofs.erase(recv_buffer[i]);
         }
+        else if (recv_buffer[i+1] == dof_vote[recv_buffer[i]])
+          error("Cannot decide on dof ownership. Votes are equal.");
       }
     }
   }
