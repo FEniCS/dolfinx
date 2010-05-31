@@ -31,7 +31,7 @@ Parameters NewtonSolver::default_parameters()
   p.add("absolute_tolerance",      1e-10);
   p.add("convergence_criterion",   "residual");
   p.add("method",                  "full");
-  p.add("relaxation_parameter",    "1.0");
+  p.add("relaxation_parameter",    1.0);
   p.add("report",                  true);
   p.add("error_on_nonconvergence", true);
 
