@@ -82,7 +82,12 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   {
     #if PETSC_HAVE_ML
     PCSetType(pc, PCML);
-    PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
+      #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
+      PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
+      PCFactorSetShiftAmount(pc, PETSC_DECIDE);
+      #else
+      PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
+      #endif
     #else
     warning("PETSc has not been compiled with the ML library for   "
             "algerbraic multigrid. Default PETSc solver will be used. "
@@ -124,7 +129,12 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   else if (type != "default")
   {
     PCSetType(pc, methods.find(type)->second);
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
+    PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
+    PCFactorSetShiftAmount(pc, parameters["shift_nonzero"]);
+    #else
     PCFactorSetShiftNonzero(pc, parameters["shift_nonzero"]);
+    #endif
     PCFactorSetLevels(pc, parameters["ilu_fill_level"]);
   }
 
