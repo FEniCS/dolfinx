@@ -157,16 +157,19 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   int num_iterations = 0;
   KSPGetIterationNumber(*_ksp, &num_iterations);
 
-  // Check if the solution converged
+  // Check if the solution converged and print error/warning if not converged
   KSPConvergedReason reason;
   KSPGetConvergedReason(*_ksp, &reason);
   if (reason < 0)
   {
+    // Get solver residual norm
+    double rnorm = 0.0;
+    KSPGetResidualNorm(*_ksp, &rnorm);
     bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
-      error("PETSc Krylov solver did not converge in %i iterations (PETSc reason %i).", num_iterations, reason);
+      error("PETSc Krylov solver did not converge in %i iterations (PETSc reason %i, norm %e).", num_iterations, reason, rnorm);
     else
-      warning("Krylov solver did not converge  in %i iterations (PETSc reason %i).", num_iterations, reason);
+      warning("Krylov solver did not converge  in %i iterations (PETSc reason %i, norm %e).", num_iterations, reason, rnorm);
   }
 
   // Report results
