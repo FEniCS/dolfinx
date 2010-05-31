@@ -150,7 +150,7 @@ namespace dolfin
                                 const ufc::mesh ufc_mesh,
                                 const Mesh& dolfin_mesh);
 
-    // Recursively extract UFC sub-dofmap
+    // Recursively extract UFC sub-dofmap and compute offset
     static ufc::dof_map* extract_sub_dofmap(const ufc::dof_map& ufc_dof_map,
                                             uint& offset,
                                             const std::vector<uint>& component,
@@ -165,6 +165,10 @@ namespace dolfin
 
     // UFC dof map
     boost::shared_ptr<ufc::dof_map> _ufc_dofmap;
+
+    // UFC dof map offset (this is greater than zero when the dof map is a view,
+    // i.e. a sub-dofmap that has not been collapsed)
+    unsigned int ufc_offset;
 
     // True iff running in parallel
     bool _parallel;
