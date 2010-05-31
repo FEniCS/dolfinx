@@ -56,7 +56,15 @@ void StabilityAnalysis::analyze_integral(uint q)
     //allocate matrices to be pushed on s. Will be deleted at end of function
     real* C = new real[n*n];
 
-    u.eval(t, tmp);
+    if (t > ode.endtime())
+      break;
+
+    //u.eval(t, tmp);
+
+    for (uint i = 0; i < ode.size(); i++)
+    {
+      tmp[i] = timestep.nv[i*u.nsize()];
+    }
 
     get_JT(A, tmp, t);
 
@@ -144,7 +152,15 @@ void StabilityAnalysis::analyze_endpoint()
     ODESolutionData& timestep = *it;
     real& t = timestep.a;
 
-    u.eval(t, tmp);
+    if (t > ode.endtime())
+      break;
+
+    //u.eval(t, tmp);
+
+    for (uint i = 0; i < ode.size(); i++)
+    {
+      tmp[i] = timestep.nv[i*u.nsize()];
+    }
 
     get_JT(A, tmp, t);
 
