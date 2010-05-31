@@ -9,6 +9,7 @@
 
 #include "ODESolution.h"
 #include "MonoAdaptiveTimeSlab.h"
+#include <dolfin/log/Logger.h>
 #include <algorithm>
 #include <iostream>
 #include <ios>
@@ -188,6 +189,8 @@ void ODESolution::flush() {
 //-----------------------------------------------------------------------------
 void ODESolution::eval(const real& t, real* y)
 {
+  //cout << "ODESolution::eval(" << t << ")" << endl;
+
   if (!read_mode) error("Can not evaluate solution");
   if(t > T) error("Requested t > T. t=%f, T=%f", to_double(t), to_double(T));
 
@@ -237,13 +240,17 @@ void ODESolution::eval(const real& t, real* y)
     y[i] = 0.0;
 
     for (uint j = 0; j < nodal_size; j++)
+    {
       y[i] += a.nv[i*nodal_size + j] * trial->eval(j, tau);
+    }
   }
 
   //store in cache
   cache[ringbufcounter].first = t;
   real_set(N, cache[ringbufcounter].second, y);
   ringbufcounter = (ringbufcounter + 1) % cache_size;
+
+  //cout << "  Done ODESolution::eval()" << endl;
 }
 //-----------------------------------------------------------------------------
 ODESolutionData& ODESolution::get_timeslab(uint index)
@@ -400,6 +407,12 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
 //-----------------------------------------------------------------------------
 void ODESolution::read_file(uint file_number)
 {
+  std::stringstream ss;
+  ss << "ODESolution: Reading file ";
+  ss << file_number;
+
+  info(ss.str(), PROGRESS);
+
   if (data.size() > 0)
     data.clear();
 
