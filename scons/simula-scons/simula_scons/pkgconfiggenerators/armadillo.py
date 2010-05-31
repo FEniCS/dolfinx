@@ -152,6 +152,9 @@ def generatePkgConf(directory=None, sconsEnv=None, **kwargs):
     if directory is None:
         directory = suitablePkgConfDir()
 
+    # armadillo.pc requires boost.pc so make sure it is available
+    dep_module_header_and_libs('Boost', 'boost', sconsEnv=sconsEnv)
+
     version, libs, cflags = pkgTests(sconsEnv=sconsEnv)
 
     pkg_file_str = r"""Name: Armadillo
