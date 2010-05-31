@@ -101,6 +101,11 @@ void PETScMatrix::resize(uint M, uint N)
   {
     // Create PETSc sequential matrix with a guess for number of non-zeroes (50 in thise case)
     MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, A.get());
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
+    MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
+    #else
+    MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
+    #endif
     MatSetFromOptions(*A);
   }
 }
@@ -141,6 +146,11 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
                     reinterpret_cast<int*>(num_nonzeros), A.get());
 
     // Set some options
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
+    MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
+    #else
+    MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
+    #endif
     MatZeroEntries(*A);
 
     // Cleanup
@@ -169,6 +179,11 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
                     A.get());
 
     // Set some options
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
+    MatSetOption(*A, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
+    #else
+    MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
+    #endif
     MatZeroEntries(*A);
 
     // Cleanup
