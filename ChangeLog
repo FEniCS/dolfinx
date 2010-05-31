@@ -1,3 +1,11 @@
+ - Updates for PETSc 3.1
+ - Add relaxation parameter to NewtonSolver
+ - Implement collapse of renumbered dof maps (serial and parallel)
+ - Simplification of DofMapBuilder for parallel dof maps
+ - Improve and simplify DofMap
+ - Add Armadillo dependency for dense linear algebra
+ - Remove LAPACKFoo wrappers
+ - Add abstract base class GenericDofMap
  - Zero small values in VTK output to avoid VTK crashes
  - Handle MeshFunction/markers in homogenize bc
  - Make preconditioner selectable in VariationalProblem (new parameter)
