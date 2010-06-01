@@ -6,6 +6,7 @@ __copyright__ = "Copyright (C) 2009 Garth N. Wells"
 __license__  = "GNU LGPL Version 2.1"
 
 import unittest
+import numpy
 from dolfin import *
 
 class Assembly(unittest.TestCase):
@@ -74,6 +75,33 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
+
+class DofMap(unittest.TestCase):
+
+    def test_sub_dofmap(self):
+        """ Test extraction of sub- and sub-sub-dofmaps."""
+        mesh = UnitSquare(1, 1)
+        V = FunctionSpace(mesh, "CG", 1)
+        Q = VectorFunctionSpace(mesh, "CG", 1)
+        W = V * Q
+
+        for cell in cells(mesh):
+            dofs0 = numpy.array((0,)*3, dtype="I")
+            dofs1 = numpy.array((0,)*3, dtype="I")
+            dofs2 = numpy.array((0,)*3, dtype="I")
+            dofs3 = numpy.array((0,)*6, dtype="I")
+
+            W.sub(0).dofmap().tabulate_dofs(dofs0, cell)
+
+            L = W.sub(1)
+            L.sub(0).dofmap().tabulate_dofs(dofs1, cell)
+            L.sub(1).dofmap().tabulate_dofs(dofs2, cell)
+            L.dofmap().tabulate_dofs(dofs3, cell)
+
+            self.assertEqual(len(numpy.intersect1d(dofs0, dofs1)), 0)
+            self.assertEqual(len(numpy.intersect1d(dofs0, dofs2)), 0)
+            self.assertEqual(len(numpy.intersect1d(dofs1, dofs2)), 0)
+            self.assertTrue(numpy.array_equal(numpy.append(dofs1, dofs2), dofs3))
 
 if __name__ == "__main__":
     print ""
