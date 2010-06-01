@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2009 Garth N. Wells.
+// Copyright (C) 2005-2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2008.
@@ -6,10 +6,11 @@
 // Modified by Marie Rognes, 2009.
 //
 // First added:  2005-08-31
-// Last changed: 2009-12-02
+// Last changed: 2010-06-01
 
 #ifdef HAS_SLEPC
 
+#include <slepcversion.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/main/MPI.h>
 #include "PETScMatrix.h"
@@ -78,7 +79,13 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i)
   EPSGetConverged(eps, &num_computed_eigenvalues);
 
   if (ii < num_computed_eigenvalues)
+  {
+    #if SLEPC_VERSION_RELEASE == 0
+    EPSGetEigenvalue(eps, ii, &lr, &lc);
+    #else
     EPSGetValue(eps, ii, &lr, &lc);
+    #endif
+  }
   else
     error("Requested eigenvalue has not been computed");
 }
