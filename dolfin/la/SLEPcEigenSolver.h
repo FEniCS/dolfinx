@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2006 Garth N. Wells.
+// Copyright (C) 2005-2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2008.
@@ -6,7 +6,7 @@
 // Modified by Marie Rognes, 2009.
 //
 // First added:  2005-08-31
-// Last changed: 2009-12-02
+// Last changed: 2010-06-01
 
 #ifndef __SLEPC_EIGEN_SOLVER_H
 #define __SLEPC_EIGEN_SOLVER_H
@@ -150,7 +150,7 @@ namespace dolfin
     EPS eps;
 
     // System size
-    uint system_size;
+    unsigned int system_size;
 
   };
 
