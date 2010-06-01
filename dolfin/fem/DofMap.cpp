@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2010-05-20
+// Last changed: 2010-06-01
 
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>

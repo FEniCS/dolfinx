@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2010-05-20
+// Last changed: 2010-06-01
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -30,13 +30,13 @@ namespace dolfin
   class UFC;
   template<class T> class Set;
 
-  /// This class handles the mapping of degrees of freedom. Its build a dof map
-  /// based on a ufc::dof_map on a specific mesh. It will reorder the dofs when
-  /// running in parallel.
+  /// This class handles the mapping of degrees of freedom. It builds
+  /// a dof map based on a ufc::dof_map on a specific mesh. It will
+  /// reorder the dofs when running in parallel.
   ///
-  /// If ufc_offset != 0, then the dof map provides a view into a larger dof
-  /// map. A dofmap which is a view, can be 'collapsed' such that the dof indices
-  /// are contiguous.
+  /// If ufc_offset != 0, then the dof map provides a view into a
+  /// larger dof map. A dof map which is a view, can be 'collapsed'
+  /// such that the dof indices are contiguous.
 
   class DofMap : public GenericDofMap
   {
