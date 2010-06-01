@@ -50,7 +50,10 @@ Parameters PETScKrylovSolver::default_parameters()
 {
   Parameters p(KrylovSolver::default_parameters());
   p.rename("petsc_krylov_solver");
-  return p;
+
+  p.add("preconditioner_side", "left");
+
+ return p;
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
@@ -140,6 +143,14 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
                    parameters["absolute_tolerance"],
                    parameters["divergence_limit"],
                    parameters["maximum_iterations"]);
+
+  const std::string pc_side = parameters["preconditioner_side"];
+  if (pc_side == "left")
+    KSPSetPreconditionerSide(*_ksp, PC_LEFT);
+  else if (pc_side == "right")
+    KSPSetPreconditionerSide(*_ksp, PC_RIGHT);
+  else
+    error("Unknown preconditioning side for PETSc Krylov solver. Options are \"left\" or \"right\".");
 
   KSPGMRESSetRestart(*_ksp, parameters["gmres_restart"]);
   KSPSetOperators(*_ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
