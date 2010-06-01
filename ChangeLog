@@ -1,3 +1,4 @@
+ - Add support for direct plotting of Dirichlet boundary conditions: plot(bc)
  - Updates for PETSc 3.1
  - Add relaxation parameter to NewtonSolver
  - Implement collapse of renumbered dof maps (serial and parallel)
