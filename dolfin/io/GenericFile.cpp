@@ -178,6 +178,11 @@ void GenericFile::operator<< (const Function& u)
   write_not_impl("Function");
 }
 //-----------------------------------------------------------------------------
+void GenericFile::operator<< (const std::pair<const Function*, double> u)
+{
+  write_not_impl("std::pair<Function*, double> Function");
+}
+//-----------------------------------------------------------------------------
 void GenericFile::operator<< (const Sample& sample)
 {
   write_not_impl("Sample");

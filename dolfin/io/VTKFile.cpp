@@ -67,7 +67,7 @@ void VTKFile::operator<<(const Mesh& mesh)
   }
 
   // Finalise and write pvd files
-  finalize(vtu_filename);
+  finalize(vtu_filename, counter);
 
   info(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
           mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
@@ -95,6 +95,16 @@ void VTKFile::operator<<(const MeshFunction<double>& meshfunction)
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const Function& u)
 {
+  write(u, counter);
+}
+//----------------------------------------------------------------------------
+void VTKFile::operator<<(const std::pair<const Function*, double> u)
+{
+  write(*(u.first), u.second);
+}
+//----------------------------------------------------------------------------
+void VTKFile::write(const Function& u, double time)
+{
   const Mesh& mesh = u.function_space().mesh();
 
   // Get vtu file name and intialise
@@ -115,7 +125,7 @@ void VTKFile::operator<<(const Function& u)
   }
 
   // Finalise and write pvd files
-  finalize(vtu_filename);
+  finalize(vtu_filename, time);
 
   info(TRACE, "Saved function %s (%s) to file %s in VTK format.",
           u.name().c_str(), u.label().c_str(), filename.c_str());
@@ -141,7 +151,7 @@ std::string VTKFile::init(const Mesh& mesh) const
   return vtu_filename;
 }
 //----------------------------------------------------------------------------
-void VTKFile::finalize(std::string vtu_filename)
+void VTKFile::finalize(std::string vtu_filename, double time)
 {
   // Close headers
   vtk_header_close(vtu_filename);
@@ -156,11 +166,11 @@ void VTKFile::finalize(std::string vtu_filename)
       pvtu_header_close(pvtu_filename);
 
       // Write pvd file (parallel)
-      pvd_file_write(counter, pvtu_filename);
+      pvd_file_write(counter, counter, pvtu_filename);
     }
   }
   else
-    pvd_file_write(counter, vtu_filename);
+    pvd_file_write(counter, time, vtu_filename);
 
   // Increase the number of times we have saved the object
   counter++;
@@ -617,11 +627,11 @@ void VTKFile::write_cell_data(const Function& u, std::string vtu_filename) const
   fp << "</CellData> " << std::endl;
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvd_file_write(uint num, std::string _filename)
+void VTKFile::pvd_file_write(uint step, double time, std::string _filename)
 {
   std::fstream pvd_file;
 
-  if( num == 0)
+  if (step == 0)
   {
     // Open pvd file
     pvd_file.open(filename.c_str(), std::ios::out|std::ios::trunc);
@@ -642,7 +652,7 @@ void VTKFile::pvd_file_write(uint num, std::string _filename)
   std::string fname = strip_path(_filename);
 
   // Data file name
-  pvd_file << "<DataSet timestep=\"" << num << "\" part=\"0\"" << " file=\"" <<  fname <<  "\"/>" << std::endl;
+  pvd_file << "<DataSet timestep=\"" << time << "\" part=\"0\"" << " file=\"" <<  fname <<  "\"/>" << std::endl;
   mark = pvd_file.tellp();
 
   // Close headers
@@ -886,7 +896,7 @@ void VTKFile::mesh_function_write(T& meshfunction)
   fp.close();
 
   // Write pvd files
-  finalize(vtu_filename);
+  finalize(vtu_filename, counter);
 
   cout << "saved mesh function " << counter << " times." << endl;
 

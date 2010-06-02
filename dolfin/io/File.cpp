@@ -113,6 +113,13 @@ void File::operator<<(const Function& u)
   *file << u;
 }
 //-----------------------------------------------------------------------------
+void File::operator<<(const std::pair<const Function*, double> u)
+{
+  u.first->gather();
+  file->write();
+  *file << u;
+}
+//-----------------------------------------------------------------------------
 bool File::exists(std::string filename)
 {
   std::ifstream file(filename.c_str());

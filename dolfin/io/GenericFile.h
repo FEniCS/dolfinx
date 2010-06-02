@@ -11,6 +11,7 @@
 
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 #include "dolfin/common/types.h"
 
@@ -66,6 +67,10 @@ namespace dolfin
     virtual void operator<< (const MeshFunction<double>& meshfunction);
     virtual void operator<< (const MeshFunction<bool>& meshfunction);
     virtual void operator<< (const Function& u);
+
+    // Output function with time
+    virtual void operator<< (const std::pair<const Function*, double> u);
+
     virtual void operator<< (const Sample& sample);
     virtual void operator<< (const Parameters& parameters);
     virtual void operator<< (const FunctionPlotData& data);
