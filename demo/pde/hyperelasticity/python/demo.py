@@ -13,16 +13,12 @@ from dolfin import *
 # Optimize compilation of the form
 parameters.optimize = True
 
-# Re-define correct gradient
-def Grad(v):
-    return grad(v).T
-
 # Create mesh and define function space
 mesh = UnitCube(8, 8, 8)
 V = VectorFunctionSpace(mesh, "CG", 1)
 
 # Define Dirichlet boundary (x = 0 or x = 1)
-c = Expression(("0.0", "0.0", "0.0")) 
+c = Expression(("0.0", "0.0", "0.0"))
 r = Expression(("0.0",
                 "y0 + (x[1] - y0) * cos(theta) - (x[2] - z0) * sin(theta) - x[1]",
                 "z0 + (x[1] - y0) * sin(theta) + (x[2] - z0) * cos(theta) - x[2]"),
@@ -43,7 +39,7 @@ T  = Expression(("0.0", "0.0", "0.0"))          # Traction force on the boundary
 
 # Kinematics
 I = Identity(v.cell().d)        # Identity tensor
-F = I + Grad(u)                 # Deformation gradient
+F = I + grad(u)                 # Deformation gradient
 C = F.T*F                       # Right Cauchy-Green tensor
 E = (C - I)/2                   # Euler-Lagrange strain tensor
 E = variable(E)
@@ -62,7 +58,7 @@ S = diff(psi, E)                # Second Piola-Kirchhoff stress tensor
 P = F*S                         # First Piola-Kirchoff stress tensor
 
 # The variational problem corresponding to hyperelasticity
-L = inner(P, Grad(v))*dx - inner(B, v)*dx - inner(T, v)*ds
+L = inner(P, grad(v))*dx - inner(B, v)*dx - inner(T, v)*ds
 a = derivative(L, u, du)
 
 # Solve nonlinear variational problem
