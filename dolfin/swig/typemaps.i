@@ -148,20 +148,25 @@ SWIGINTERNINLINE bool PyInteger_Check(PyObject* in)
   PyObject* py_function = PyTuple_GetItem($input, 0);
   PyObject* py_time     = PyTuple_GetItem($input, 1);
 
+  // Check that we have a float
+  if (!PyFloat_Check(py_time))
+    SWIG_exception(SWIG_TypeError, "Float expected for time.");
+
+  // Get time
+  double time = PyFloat_AsDouble(py_time);
+
   //const dolfin::Function* test_function = reinterpret_cast<const dolfin::Function*>(py_function);
-  double test_d = *reinterpret_cast<double*>(py_time);
+  //double test_d = *reinterpret_cast<double*>(py_time);
 
   std::cout << "About to test function " << std::endl;
-  std::cout << "Testing function " << test_d << std::endl;
+  std::cout << "Testing function " << time << std::endl;
 
 
   tmp_pair.first  = reinterpret_cast<const dolfin::Function*>(py_function);
-  tmp_pair.second = *(reinterpret_cast<double*>(py_time));
+  tmp_pair.second = time;
 
 
   $1 = tmp_pair;
-  //std::cout << "Testing wrapper " << *reinterpret_cast<double*>(py_item) << std::endl;
-
   SWIG_exception(SWIG_TypeError, "const std::pair<const dolfin::Function*,double> typemap not implemented.");
 }
 

@@ -99,8 +99,7 @@ while t < T:
     plot(u)
 
     # Save the solution to file
-    out_file << (u, 0.1)
-    #out_file << (u, t)
+    out_file << (u, t)
 
     # Move to next interval and adjust boundary condition
     t += dt
