@@ -7,7 +7,7 @@
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2006-04-16
-// Last changed: 2009-10-07
+// Last changed: 2010-06-02
 
 //=============================================================================
 // General typemaps for PyDOLFIN
@@ -105,70 +105,103 @@ SWIGINTERNINLINE bool PyInteger_Check(PyObject* in)
     SWIG_exception(SWIG_TypeError, "expected 'int' for argument $argnum");
 }
 
+
 //-----------------------------------------------------------------------------
-// In typemap for std::pair<TYPE,TYPE>
+// User macro for defining in typmaps for std::pair of a pointer to some
+// DOLFIN type and a double
 //-----------------------------------------------------------------------------
-%typemap(typecheck,precedence=SWIG_TYPECHECK_DOUBLE_ARRAY) const std::pair<const dolfin::Function*,double>
+%define IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE)
+
+//-----------------------------------------------------------------------------
+// Make SWIG aware of the shared_ptr version of TYPE
+//-----------------------------------------------------------------------------
+%types(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TYPE>*);
+
+//-----------------------------------------------------------------------------
+// Run the macros for the combination of const and no const of
+// {const} std::vector<{const} dolfin::TYPE *>
+//-----------------------------------------------------------------------------
+//IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,,)
+IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,)
+IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,,const)
+IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE,const,const)
+
+%enddef
+
+//-----------------------------------------------------------------------------
+// Macro for defining in typemaps for
+// {const} std::vector<{const} dolfin::TYPE *>
+// using a Python List of TYPE
+//-----------------------------------------------------------------------------
+%define IN_TYPEMAP_STD_PAIR_OF_POINTER_AND_DOUBLE(TYPE, CONST, CONST_PAIR)
+
+//-----------------------------------------------------------------------------
+// The typecheck
+//-----------------------------------------------------------------------------
+%typecheck(SWIG_TYPECHECK_POINTER) CONST_PAIR std::pair<CONST dolfin::TYPE *, double>
 {
-  SWIG_exception(SWIG_TypeError, "pair typemap not impl (a).");
+  $1 = PyTuple_Check($input) ? 1 : 0;
 }
 
-%typemap(typecheck,precedence=SWIG_TYPECHECK_DOUBLE_ARRAY) const std::pair<dolfin::Function*,double>
+//-----------------------------------------------------------------------------
+// The typemap
+//-----------------------------------------------------------------------------
+%typemap(in) CONST_PAIR std::pair<CONST dolfin::TYPE*, double> (std::pair<CONST dolfin::TYPE*, double> tmp_pair, SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> tempshared, dolfin::TYPE * arg)
 {
-  SWIG_exception(SWIG_TypeError, "pair typemap not impl (a).");
-}
-
-%typemap(typecheck,precedence=SWIG_TYPECHECK_DOUBLE_ARRAY) std::pair<const dolfin::Function*,double>
-{
-  SWIG_exception(SWIG_TypeError, "pair typemap not impl (b).");
-}
-
-%typemap(typecheck,precedence=SWIG_TYPECHECK_DOUBLE_ARRAY) std::pair<dolfin::Function*,double>
-{
-  SWIG_exception(SWIG_TypeError, "pair typemap not impl (b).");
-}
-
-
-%typemap(in) const std::pair<const dolfin::Function*,double> (std::pair<const dolfin::Function*,double> tmp_pair)
-{
-  // Check that we don't have a list
-  if (PyList_Check($input))
-    SWIG_exception(SWIG_TypeError, "A tuple is expected (list received)..");
-
+  int res = 0;
+  void* itemp = 0;
+  int newmem = 0;
+  
   // Check that we have a tuple
-  if (!PyTuple_Check($input))
-   SWIG_exception(SWIG_TypeError, "Tuple expected.");
-
-  // Check tuple length
-  int size = PyTuple_Size($input);
-  if (size != 2)
-    SWIG_exception(SWIG_TypeError, "Tuple of length two expected.");
+  if (!PyTuple_Check($input) || PyTuple_Size($input) != 2)
+    SWIG_exception(SWIG_TypeError, "expected a tuple of length 2 with TYPE and Float.");
 
   // Get pointers to function and time
-  PyObject* py_function = PyTuple_GetItem($input, 0);
-  PyObject* py_time     = PyTuple_GetItem($input, 1);
+  PyObject* py_first  = PyTuple_GetItem($input, 0);
+  PyObject* py_second = PyTuple_GetItem($input, 1);
 
   // Check that we have a float
-  if (!PyFloat_Check(py_time))
-    SWIG_exception(SWIG_TypeError, "Float expected for time.");
+  if (!PyFloat_Check(py_second))
+    SWIG_exception(SWIG_TypeError, "expected a Float for the second tuple argument.");
 
-  // Get time
-  double time = PyFloat_AsDouble(py_time);
+  // Get second variable
+  tmp_pair.second = PyFloat_AsDouble(py_second);
 
-  //const dolfin::Function* test_function = reinterpret_cast<const dolfin::Function*>(py_function);
-  //double test_d = *reinterpret_cast<double*>(py_time);
-
-  std::cout << "About to test function " << std::endl;
-  std::cout << "Testing function " << time << std::endl;
-
-
-  tmp_pair.first  = reinterpret_cast<const dolfin::Function*>(py_function);
-  tmp_pair.second = time;
-
-
+  res = SWIG_ConvertPtr(py_first, &itemp, $descriptor(dolfin::TYPE *), 0);
+  if (SWIG_IsOK(res)) {
+    tmp_pair.first = reinterpret_cast<dolfin::TYPE *>(itemp);
+  }
+  else{
+    // If failed with normal pointer conversion then
+    // try with shared_ptr conversion
+    newmem = 0;
+    res = SWIG_ConvertPtrAndOwn(py_first, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
+    if (SWIG_IsOK(res)){
+      // If we need to release memory
+      if (newmem & SWIG_CAST_NEW_MEMORY){
+	tempshared = *reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp);
+	delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
+	arg = const_cast< dolfin::TYPE * >(tempshared.get());
+      }
+      else {
+	arg = const_cast< dolfin::TYPE * >(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp)->get());
+      }
+      tmp_pair.first = arg;
+    }
+    else {
+      SWIG_exception(SWIG_TypeError, "expected tuple of TYPE and Float (Bad conversion)");
+    }
+  }
+  
+  // Assign the input variable
   $1 = tmp_pair;
-  SWIG_exception(SWIG_TypeError, "const std::pair<const dolfin::Function*,double> typemap not implemented.");
 }
+%enddef
+
+//-----------------------------------------------------------------------------
+// Run the different macros and instantiate the typemaps
+//-----------------------------------------------------------------------------
+IN_TYPEMAPS_STD_PAIR_OF_POINTER_AND_DOUBLE(Function)
 
 //-----------------------------------------------------------------------------
 // Out typemap for std::pair<TYPE,TYPE>

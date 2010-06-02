@@ -89,37 +89,31 @@ IN_TYPEMAP_STD_VECTOR_OF_POINTERS(TYPE,const,const)
       if (SWIG_IsOK(res)) {
         tmp_vec.push_back(reinterpret_cast<dolfin::TYPE *>(itemp));
       }
-      else
-      {
-      // If failed with normal pointer conversion then
-      // try with shared_ptr conversion
-      newmem = 0;
-      res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
-      if (SWIG_IsOK(res))
-      {
-	      // If we need to release memory
-        if (newmem & SWIG_CAST_NEW_MEMORY)
-        {
-          tempshared = *reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp);
-          delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
-          arg = const_cast< dolfin::TYPE * >(tempshared.get());
-	      }
-        else
-        {
-          arg = const_cast< dolfin::TYPE * >(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp)->get());
-        }
-        tmp_vec.push_back(arg);
-        }
-        else
-        {
-          SWIG_exception(SWIG_TypeError, "list of TYPE expected (Bad conversion)");
-        }
+      else{
+	// If failed with normal pointer conversion then
+	// try with shared_ptr conversion
+	newmem = 0;
+	res = SWIG_ConvertPtrAndOwn(py_item, &itemp, $descriptor(SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > *), 0, &newmem);
+	if (SWIG_IsOK(res)){
+	  // If we need to release memory
+	  if (newmem & SWIG_CAST_NEW_MEMORY){
+	    tempshared = *reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<dolfin::TYPE> * >(itemp);
+	    delete reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp);
+	    arg = const_cast< dolfin::TYPE * >(tempshared.get());
+	  }
+	  else {
+	    arg = const_cast< dolfin::TYPE * >(reinterpret_cast< SWIG_SHARED_PTR_QNAMESPACE::shared_ptr< dolfin::TYPE > * >(itemp)->get());
+	  }
+	  tmp_vec.push_back(arg);
+	}
+	else {
+	  SWIG_exception(SWIG_TypeError, "list of TYPE expected (Bad conversion)");
+	}
       }
     }
     $1 = &tmp_vec;
   }
-  else
-  {
+  else {
     SWIG_exception(SWIG_TypeError, "list of TYPE expected");
   }
 }
