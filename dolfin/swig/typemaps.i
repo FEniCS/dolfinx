@@ -88,7 +88,7 @@ SWIGINTERNINLINE bool PyInteger_Check(PyObject* in)
 //-----------------------------------------------------------------------------
 %typecheck(SWIG_TYPECHECK_INTEGER) int
 {
-    $1 =  PyInteger_Check($input) ? 1 : 0;
+  $1 =  PyInteger_Check($input) ? 1 : 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -103,6 +103,66 @@ SWIGINTERNINLINE bool PyInteger_Check(PyObject* in)
   }
   else
     SWIG_exception(SWIG_TypeError, "expected 'int' for argument $argnum");
+}
+
+//-----------------------------------------------------------------------------
+// In typemap for std::pair<TYPE,TYPE>
+//-----------------------------------------------------------------------------
+%typemap(typecheck,precedence=SWIG_TYPECHECK_DOUBLE_ARRAY) const std::pair<const dolfin::Function*,double>
+{
+  SWIG_exception(SWIG_TypeError, "pair typemap not impl (a).");
+}
+
+%typemap(typecheck,precedence=SWIG_TYPECHECK_DOUBLE_ARRAY) const std::pair<dolfin::Function*,double>
+{
+  SWIG_exception(SWIG_TypeError, "pair typemap not impl (a).");
+}
+
+%typemap(typecheck,precedence=SWIG_TYPECHECK_DOUBLE_ARRAY) std::pair<const dolfin::Function*,double>
+{
+  SWIG_exception(SWIG_TypeError, "pair typemap not impl (b).");
+}
+
+%typemap(typecheck,precedence=SWIG_TYPECHECK_DOUBLE_ARRAY) std::pair<dolfin::Function*,double>
+{
+  SWIG_exception(SWIG_TypeError, "pair typemap not impl (b).");
+}
+
+
+%typemap(in) const std::pair<const dolfin::Function*,double> (std::pair<const dolfin::Function*,double> tmp_pair)
+{
+  // Check that we don't have a list
+  if (PyList_Check($input))
+    SWIG_exception(SWIG_TypeError, "A tuple is expected (list received)..");
+
+  // Check that we have a tuple
+  if (!PyTuple_Check($input))
+   SWIG_exception(SWIG_TypeError, "Tuple expected.");
+
+  // Check tuple length
+  int size = PyTuple_Size($input);
+  if (size != 2)
+    SWIG_exception(SWIG_TypeError, "Tuple of length two expected.");
+
+  // Get pointers to function and time
+  PyObject* py_function = PyTuple_GetItem($input, 0);
+  PyObject* py_time     = PyTuple_GetItem($input, 1);
+
+  //const dolfin::Function* test_function = reinterpret_cast<const dolfin::Function*>(py_function);
+  double test_d = *reinterpret_cast<double*>(py_time);
+
+  std::cout << "About to test function " << std::endl;
+  std::cout << "Testing function " << test_d << std::endl;
+
+
+  tmp_pair.first  = reinterpret_cast<const dolfin::Function*>(py_function);
+  tmp_pair.second = *(reinterpret_cast<double*>(py_time));
+
+
+  $1 = tmp_pair;
+  //std::cout << "Testing wrapper " << *reinterpret_cast<double*>(py_item) << std::endl;
+
+  SWIG_exception(SWIG_TypeError, "const std::pair<const dolfin::Function*,double> typemap not implemented.");
 }
 
 //-----------------------------------------------------------------------------
