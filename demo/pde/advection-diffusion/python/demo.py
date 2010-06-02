@@ -55,7 +55,7 @@ u = TrialFunction(Q)
 u_mid = 0.5*(u0 + u)
 
 # Residual
-r = u-u0 + dt*( dot(velocity, grad(u_mid)) -div(grad(u_mid)) - f)
+r = u-u0 + dt*( dot(velocity, grad(u_mid)) - c*div(grad(u_mid)) - f)
 
 # Galerkin variational problem
 F = v*(u-u0)*dx + dt*(v*dot(velocity, grad(u_mid))*dx + c*dot(grad(v), grad(u_mid))*dx)
