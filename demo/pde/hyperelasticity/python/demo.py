@@ -7,11 +7,13 @@ __copyright__ = "Copyright (C) 2008 Johan Hake"
 __license__  = "GNU LGPL Version 2.1"
 
 # Modified by Harish Narayanan, 2009.
+# Modified by Garth N. Wells, 2010.
 
 from dolfin import *
 
 # Optimize compilation of the form
-parameters.optimize = True
+parameters["form_compiler"]["cpp_optimize"] = True
+parameters["form_compiler"]["optimize"]     = True
 
 # Create mesh and define function space
 mesh = UnitCube(8, 8, 8)
@@ -31,34 +33,30 @@ bcl = DirichletBC(V, c, left)
 bcr = DirichletBC(V, r, right)
 
 # Define variational problem
-v  = TestFunction(V)      # Test function
-du = TrialFunction(V)     # Incremental displacement
-u  = Function(V)          # Displacement from previous iteration
-B  = Expression(("0.0", "0.0", "0.0"))          # Body force per unit mass
-T  = Expression(("0.0", "0.0", "0.0"))          # Traction force on the boundary
+v  = TestFunction(V)           # Test function
+du = TrialFunction(V)          # Incremental displacement
+u  = Function(V)               # Displacement from previous iteration
+B  = Constant((0.0, 0.0, 0.0))  # Body force per unit mass
+T  = Constant((0.0, 0.0, 0.0)) # Traction force on the boundary
 
 # Kinematics
-I = Identity(v.cell().d)        # Identity tensor
-F = I + grad(u)                 # Deformation gradient
-C = F.T*F                       # Right Cauchy-Green tensor
-E = (C - I)/2                   # Euler-Lagrange strain tensor
-E = variable(E)
+I = Identity(V.cell().d)    # Identity tensor
+F = I + grad(u)            # Deformation gradient
+E = (F.T*F - I)/2          # Green-Lagrange strain tensor
 
 # Material constants
 Em = 10.0
 nu = 0.3
-
 mu    = Constant(Em / (2*(1 + nu))) # Lame's constants
 lmbda = Constant(Em * nu / ((1 + nu) * (1 - 2 * nu)))
 
-# Strain energy function (material model)
-psi = lmbda/2*(tr(E)**2) + mu*tr(E*E)
+# Strain energy function
+psi = (lmbda/2*(tr(E)**2) + mu*tr(E*E))*dx - inner(B, u)*dx - inner(T, u)*ds
 
-S = diff(psi, E)                # Second Piola-Kirchhoff stress tensor
-P = F*S                         # First Piola-Kirchoff stress tensor
+# Take directional derivative about u in the direction of v
+L = derivative(psi, u, v)
 
-# The variational problem corresponding to hyperelasticity
-L = inner(P, grad(v))*dx - inner(B, v)*dx - inner(T, v)*ds
+# Compute Jacobian
 a = derivative(L, u, du)
 
 # Solve nonlinear variational problem
