@@ -14,13 +14,13 @@
 //=============================================================================
 
 //-----------------------------------------------------------------------------
-// A home brewed type check for checking integers 
+// A home brewed type check for checking integers
 // Needed due to problems with PyInt_Check from python 2.6 and NumPy
 //-----------------------------------------------------------------------------
 %{
 SWIGINTERNINLINE bool PyInteger_Check(PyObject* in)
 {
-  return  PyInt_Check(in) || (PyArray_CheckScalar(in) && 
+  return  PyInt_Check(in) || (PyArray_CheckScalar(in) &&
 			      PyArray_IsScalar(in,Integer));
 }
 %}
@@ -33,7 +33,7 @@ SWIGINTERNINLINE bool PyInteger_Check(PyObject* in)
 //-----------------------------------------------------------------------------
 // Typemaps for dolfin::real
 // We do not pass any high precision values here. This might change in future
-// FIXME: We need to find out what to do with Parameters of real. Now they are 
+// FIXME: We need to find out what to do with Parameters of real. Now they are
 // treated the same as double, and need to have a different typecheck value than
 // DOUBLE 90!= 95. However this will render real parameters unusefull if we do
 // not pick something else thatn PyFloat_Check in the typecheck.

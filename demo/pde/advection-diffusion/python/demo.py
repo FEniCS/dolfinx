@@ -93,7 +93,7 @@ while t < T:
     solve(A, u.vector(), b)
 
     # Copy solution from previous interval
-    u0.assign(u)
+    u0 = u
 
     # Plot solution
     plot(u)

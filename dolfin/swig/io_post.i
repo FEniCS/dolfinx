@@ -1,4 +1,4 @@
-// Instantiate io template functions 
+// Instantiate io template functions
 
 // Input
 %template(__rshift__) dolfin::File::operator>> <GenericVector>;
