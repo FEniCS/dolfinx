@@ -50,7 +50,7 @@ nu = 0.3
 mu    = Constant(Em / (2*(1 + nu))) # Lame's constants
 lmbda = Constant(Em * nu / ((1 + nu) * (1 - 2 * nu)))
 
-# Strain energy function
+# Potential energy function
 psi = (lmbda/2*(tr(E)**2) + mu*tr(E*E))*dx - inner(B, u)*dx - inner(T, u)*ds
 
 # Take directional derivative about u in the direction of v
