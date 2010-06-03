@@ -29,6 +29,8 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
+not_working_in_parallel("neumann-poisson demo (with space of reals)")
+
 # Create mesh and define function space
 mesh = UnitSquare(64, 64)
 V = FunctionSpace(mesh, "CG", 1)
