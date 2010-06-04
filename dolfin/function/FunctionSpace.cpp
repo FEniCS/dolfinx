@@ -49,7 +49,12 @@ FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace()
+FunctionSpace::FunctionSpace(boost::shared_ptr<const Mesh> mesh) : _mesh(mesh)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::FunctionSpace(boost::shared_ptr<Mesh> mesh) : _mesh(mesh)
 {
   // Do nothing
 }
@@ -65,20 +70,9 @@ FunctionSpace::~FunctionSpace()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::attach(boost::shared_ptr<Mesh> mesh,
-                           boost::shared_ptr<const FiniteElement> element,
+void FunctionSpace::attach(boost::shared_ptr<const FiniteElement> element,
                            boost::shared_ptr<const GenericDofMap> dofmap)
 {
-  _mesh    = mesh;
-  _element = element;
-  _dofmap  = dofmap;
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::attach(boost::shared_ptr<const Mesh> mesh,
-                           boost::shared_ptr<const FiniteElement> element,
-                           boost::shared_ptr<const GenericDofMap> dofmap)
-{
-  _mesh    = mesh;
   _element = element;
   _dofmap  = dofmap;
 }
