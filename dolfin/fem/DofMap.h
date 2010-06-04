@@ -141,6 +141,15 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
+  protected:
+
+    // Recursively extract UFC sub-dofmap and compute offset
+    static ufc::dof_map* extract_sub_dofmap(const ufc::dof_map& ufc_dof_map,
+                                            uint& offset,
+                                            const std::vector<uint>& component,
+                                            const ufc::mesh ufc_mesh,
+                                            const Mesh& dolfin_mesh);
+
   private:
 
     /// Friends
@@ -153,13 +162,6 @@ namespace dolfin
     static void init_ufc_dofmap(ufc::dof_map& dofmap,
                                 const ufc::mesh ufc_mesh,
                                 const Mesh& dolfin_mesh);
-
-    // Recursively extract UFC sub-dofmap and compute offset
-    static ufc::dof_map* extract_sub_dofmap(const ufc::dof_map& ufc_dof_map,
-                                            uint& offset,
-                                            const std::vector<uint>& component,
-                                            const ufc::mesh ufc_mesh,
-                                            const Mesh& dolfin_mesh);
 
     // dof map
     std::vector<std::vector<dolfin::uint> > dofmap;
