@@ -141,8 +141,6 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-  protected:
-
     // Recursively extract UFC sub-dofmap and compute offset
     static ufc::dof_map* extract_sub_dofmap(const ufc::dof_map& ufc_dof_map,
                                             uint& offset,
