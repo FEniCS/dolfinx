@@ -89,25 +89,43 @@ int main(int argc, char** argv) {
                                        errormsg=cmdoutput)
 
     # test that we can link
-    libs = "-L%s -larmadillo" % \
-           os.path.join(getArmadilloDir(sconsEnv=sconsEnv), "lib")
-    if get_architecture() == "darwin":
-        libs += " -framework vecLib"
-    cmdstr = "%s %s -o a.out %s" % \
-           (linker, cpp_file.replace('.cpp', '.o'), libs)
-    linkFailed, cmdoutput = getstatusoutput(cmdstr)
-    if linkFailed:
-        # try adding -lgfortran to get around Hardy libatlas-base-dev issue
-        libs += " -lgfortran" 
+    # the Armadillo library is usually either in $ARMADILLO_DIR/lib or
+    # $ARMADILLO_DIR/lib64 (on 64 bits platforms)
+    for lib_dir in ("lib", "lib64"):
+        libs = "-L%s -larmadillo" % \
+               os.path.join(getArmadilloDir(sconsEnv=sconsEnv), lib_dir)
+        if get_architecture() == "darwin":
+            libs += " -framework vecLib"
         cmdstr = "%s %s -o a.out %s" % \
-                 (linker, cpp_file.replace('.cpp', '.o'), libs)
+               (linker, cpp_file.replace('.cpp', '.o'), libs)
         linkFailed, cmdoutput = getstatusoutput(cmdstr)
         if linkFailed:
-            remove_cppfile(cpp_file, ofile=True)
-            raise UnableToLinkException("Armadillo", cmd=cmdstr,
-                                        program=cpp_test_libs_str,
-                                        errormsg=cmdoutput)
+            # try adding -lgfortran to get around Hardy libatlas-base-dev issue
+            libs += " -lgfortran" 
+            cmdstr = "%s %s -o a.out %s" % \
+                     (linker, cpp_file.replace('.cpp', '.o'), libs)
+            linkFailed, cmdoutput = getstatusoutput(cmdstr)
+            if linkFailed:
+                remove_cppfile(cpp_file, ofile=True)
+                raise UnableToLinkException("Armadillo", cmd=cmdstr,
+                                            program=cpp_test_libs_str,
+                                            errormsg=cmdoutput)
+            else:
+                break
+        else:
+            break
 
+    # test that we can run the binary
+    armadillo_lib_dir = \
+            os.path.join(getArmadilloDir(sconsEnv=sconsEnv), lib_dir)
+    if get_architecture() == 'darwin':
+        os.putenv('DYLD_LIBRARY_PATH',
+                  os.pathsep.join([armadillo_lib_dir,
+                                   os.getenv('DYLD_LIBRARY_PATH', '')]))
+    else:
+        os.putenv('LD_LIBRARY_PATH',
+                  os.pathsep.join([armadillo_lib_dir,
+                                   os.getenv('LD_LIBRARY_PATH', '')]))
     cmdstr = os.path.join(os.getcwd(), "a.out")
     runFailed, cmdoutput = getstatusoutput(cmdstr)
     remove_cppfile(cpp_file, ofile=True, execfile=True)
