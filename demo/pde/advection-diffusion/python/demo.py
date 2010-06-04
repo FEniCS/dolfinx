@@ -18,6 +18,8 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
+parameters["linear_algebra_backend"] = "uBLAS"
+
 def boundary_value(n):
     if n < 10:
         return float(n)/10.0
@@ -48,8 +50,7 @@ t = dt
 c = 0.00005
 
 # Test and trial functions
-v = TestFunction(Q)
-u = TrialFunction(Q)
+u, v = TrialFunction(Q), TestFunction(Q)
 
 # Mid-point solution
 u_mid = 0.5*(u0 + u)
@@ -76,6 +77,10 @@ bc = DirichletBC(Q, g, sub_domains, 1)
 A = assemble(a)
 bc.apply(A)
 
+# Create linear solver and factorize matrix
+solver = cpp.UmfpackLUSolver(A)
+solver.numeric_factorize()
+
 # Output file
 out_file = File("temperature.pvd")
 
@@ -91,12 +96,13 @@ while t < T:
 
     # Solve the linear system
     solve(A, u.vector(), b)
+    #solve_factorized(u.vector(), b)
 
     # Copy solution from previous interval
     u0 = u
 
     # Plot solution
-    plot(u)
+    #plot(u)
 
     # Save the solution to file
     out_file << (u, t)
@@ -106,4 +112,4 @@ while t < T:
     g.assign( boundary_value( int(t/dt) ) )
 
 # Hold plot
-interactive()
+#interactive()

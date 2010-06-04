@@ -12,6 +12,7 @@
 #ifndef __LU_SOLVER_H
 #define __LU_SOLVER_H
 
+#include <boost/scoped_ptr.hpp>
 #include <dolfin/common/Timer.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
@@ -33,25 +34,24 @@ namespace dolfin
   class LUSolver : public GenericLinearSolver
   {
 
-  /// LU solver for the built-in LA backends. The type can be "lu" or 
+  /// LU solver for the built-in LA backends. The type can be "lu" or
   /// "cholesky". Cholesky is suitable only for symmetric positive-definite
-  /// matrices. Cholesky is not yet suppprted for all backends (which will 
-  /// default to LU. 
+  /// matrices. Cholesky is not yet suppprted for all backends (which will
+  /// default to LU.
 
   public:
 
     LUSolver(std::string type = "lu") : cholmod_solver(0),
-             umfpack_solver(0), petsc_solver(0), epetra_solver(0),
-             type(type) 
+             petsc_solver(0), epetra_solver(0),
+             type(type)
     {
       // Set default parameters
       parameters = default_parameters();
     }
-    
+
     ~LUSolver()
     {
       delete cholmod_solver;
-      delete umfpack_solver;
       delete petsc_solver;
       delete epetra_solver;
     }
@@ -95,20 +95,18 @@ namespace dolfin
       }
       else if (type == "lu")
       {
-        if (!umfpack_solver)
-        {
-          umfpack_solver = new UmfpackLUSolver();
-          umfpack_solver->parameters.update(parameters);
-        }
-        return umfpack_solver->solve(A, x, b);
+        UmfpackLUSolver solver(A);
+        solver.parameters.update(parameters);
+        return solver.solve(x, b);
       }
       else
       {
-        error("Unknown LU solver type %s. Options are \"cholesky\" or \"lu\".", type.c_str()); 
+        error("Unknown LU solver type %s. Options are \"cholesky\" or \"lu\".", type.c_str());
         return 0;
       }
     }
 
+    /*
     uint factorize(const GenericMatrix& A)
     {
     if (!umfpack_solver)
@@ -128,12 +126,14 @@ namespace dolfin
       }
       return umfpack_solver->factorized_solve(x, b);
     }
+    */
 
     /// Default parameter values
     static Parameters default_parameters()
     {
       Parameters p("lu_solver");
       p.add("report", true);
+      p.add("same_nonzero_pattern", false);
       return p;
     }
 
@@ -143,7 +143,7 @@ namespace dolfin
     CholmodCholeskySolver* cholmod_solver;
 
     // UMFPACK solver
-    UmfpackLUSolver* umfpack_solver;
+    boost::scoped_ptr<UmfpackLUSolver> umfpack_solver;
 
     // PETSc Solver
 #ifdef HAS_PETSC

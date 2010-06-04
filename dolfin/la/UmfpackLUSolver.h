@@ -10,6 +10,7 @@
 #ifndef __UMFPACK_LU_SOLVER_H
 #define __UMFPACK_LU_SOLVER_H
 
+#include <boost/shared_ptr.hpp>
 #include "ublas.h"
 #include "GenericLinearSolver.h"
 
@@ -24,10 +25,8 @@ namespace dolfin
   template<class Mat> class uBLASMatrix;
 
   /// This class implements the direct solution (LU factorization) of
-  /// linear systems of the form Ax = b using uBLAS data types. Dense
-  /// matrices are solved using uBLAS LU factorisation, and sparse matrices
-  /// are solved using UMFPACK (http://www.cise.ufl.edu/research/sparse/umfpack/)
-  /// if installed. Matrices can also be inverted.
+  /// linear systems of the form Ax = b using UMFPACK
+  /// (http://www.cise.ufl.edu/research/sparse/umfpack/) if installed.
 
   class UmfpackLUSolver : public GenericLinearSolver
   {
@@ -37,17 +36,32 @@ namespace dolfin
     /// Constructor
     UmfpackLUSolver();
 
+    /// Constructor
+    UmfpackLUSolver(const GenericMatrix& A);
+
+    /// Constructor
+    UmfpackLUSolver(boost::shared_ptr<const GenericMatrix> A);
+
     /// Destructor
     ~UmfpackLUSolver();
 
-    /// Solve uBLAS linear system Ax = b for a sparse matrix using UMFPACK if installed
-    virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
+    /// Ste operator (matrix)
+    void set_operator(const GenericMatrix& A);
 
-    /// LU-factor sparse matrix A if UMFPACK is installed
-    virtual uint factorize(const GenericMatrix& A);
+    /// Solve linear system Ax = b for a sparse matrix using UMFPACK if installed
+    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
+
+    /// Solve linear system Ax = b for a sparse matrix using UMFPACK if installed
+    uint solve(GenericVector& x, const GenericVector& b);
+
+    // Perform symbolic factorisation if UMFPACK is installed
+    void symbolic_factorize();
+
+    /// LU-factor the sparse matrix A if UMFPACK is installed
+    void factorize();
 
     /// Solve factorized system (UMFPACK).
-    virtual uint factorized_solve(GenericVector& x, const GenericVector& b) const;
+    uint solve_factorized(GenericVector& x, const GenericVector& b) const;
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -55,54 +69,33 @@ namespace dolfin
   private:
 
 #ifdef HAS_UMFPACK
-    /// Data for LU factorization of sparse ublas matrix (umfpack only)
-    class Umfpack
-    {
-      public:
 
-        // Constructor
-        Umfpack() : dnull(0), inull(0), Symbolic(0), Numeric(0), local_matrix(false),
-                    Rp(0), Ri(0), Rx(0), N(0), factorized(false) {}
+    // Clear data
+    void clear();
 
-        // Destructor
-        ~Umfpack() { clear(); }
+    // Return pointer to symbolic factorisation
+    static void* umfpack_factorize_symbolic(uint M, uint N, const long int* Ap,
+                                            const long int* Ai, const double* Ax);
 
-        // Clear data
-        void clear();
+    // Return pointer to the numerical factorisation
+    static void* umfpack_factorize_numeric(const long int* Ap, const long int* Ai,
+                                           const double* Ax, void* symbolic);
 
-        // Initialise with matrix
-        void init(const long int* Ap, const long int* Ai, const double* Ax, uint M, uint nz);
+    static void umfpack_solve(const long int* Ap, const long int* Ai,
+                              const double* Ax, double* x, const double* b,
+                              void* numeric);
 
-        // Initialise with transpose of matrix
-        void init_transpose(const long int* Ap, const long int* Ai, const double* Ax, uint M, uint nz);
+    /// Check status flag returned by an UMFPACK function
+    static void umfpack_check_status(long int status, std::string function);
 
-        // Factorize
-        void factorize();
+    // UMFPACK data
+    void* symbolic;
+    void* numeric;
 
-        // Factorized solve
-        void factorized_solve(double*x, const double* b, bool transpose = false) const;
-
-        /// Check status flag returned by an UMFPACK function
-        void check_status(long int status, std::string function) const;
-
-        // UMFPACK data
-        double*   dnull;
-        long int* inull;
-        void *Symbolic;
-        void* Numeric;
-
-        // Matrix data
-        bool local_matrix;
-        const long int* Rp;
-        const long int* Ri;
-        const double*   Rx;
-
-        uint N;
-        bool factorized;
-    };
-
-    Umfpack umfpack;
 #endif
+
+    // Operator (the matrix)
+    boost::shared_ptr<const GenericMatrix> A;
 
   };
 
