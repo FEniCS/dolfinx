@@ -86,8 +86,8 @@ int main(int argc, char *argv[])
     assemble(b, L);
     bc.apply(b);
 
-    // Solve the linear system
-    //lu.solve_factorized(u.vector(), b);
+    // Solve the linear system (re-use the already factorized matrix A)
+    lu.solve_factorized(u.vector(), b);
 
     // Save solution in VTK format
     file << std::make_pair(&u, t);
@@ -98,5 +98,5 @@ int main(int argc, char *argv[])
   }
 
   // Plot solution
-  //plot(u);
+  plot(u);
 }

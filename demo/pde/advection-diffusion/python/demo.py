@@ -79,7 +79,7 @@ bc.apply(A)
 
 # Create linear solver and factorize matrix
 solver = cpp.UmfpackLUSolver(A)
-solver.numeric_factorize()
+solver.factorize()
 
 # Output file
 out_file = File("temperature.pvd")
@@ -94,15 +94,14 @@ while t < T:
     b = assemble(L)
     bc.apply(b)
 
-    # Solve the linear system
-    solve(A, u.vector(), b)
-    #solve_factorized(u.vector(), b)
+    # Solve the linear system (re-use the already factorized matrix A)
+    solver.solve_factorized(u.vector(), b)
 
     # Copy solution from previous interval
     u0 = u
 
     # Plot solution
-    #plot(u)
+    plot(u)
 
     # Save the solution to file
     out_file << (u, t)

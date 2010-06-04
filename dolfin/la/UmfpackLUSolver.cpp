@@ -65,13 +65,6 @@ void UmfpackLUSolver::set_operator(const GenericMatrix& A)
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_UMFPACK
-dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
-                                    const GenericVector& b)
-{
-  error("UmfpackLUSolver::solve(const GenericMatrix&, GenericVector&, const GenericVector&) will be removed.");
-  return 1;
-}
-//-----------------------------------------------------------------------------
 dolfin::uint UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   // Factorize matrix

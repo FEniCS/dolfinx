@@ -79,7 +79,8 @@ void MonoAdaptiveNewtonSolver::start()
     ode.M(ts.u0, Mu0, ts.u0, ts.starttime());
 }
 //-----------------------------------------------------------------------------
-real MonoAdaptiveNewtonSolver::iteration(const real& tol, uint iter, const real& d0, const real& d1)
+real MonoAdaptiveNewtonSolver::iteration(const real& tol, uint iter,
+                                         const real& d0, const real& d1)
 {
   // Evaluate b = -F(x) at current x
   Feval(btmp);

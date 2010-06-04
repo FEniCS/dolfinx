@@ -49,9 +49,6 @@ namespace dolfin
     void set_operator(const GenericMatrix& A);
 
     /// Solve linear system Ax = b for a sparse matrix using UMFPACK if installed
-    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
-
-    /// Solve linear system Ax = b for a sparse matrix using UMFPACK if installed
     uint solve(GenericVector& x, const GenericVector& b);
 
     // Perform symbolic factorisation if UMFPACK is installed
