@@ -101,8 +101,8 @@ dolfin::uint CholmodCholeskySolver::solve(const GenericMatrix& A,
 {
   warning("CHOLMOD must be installed to peform a Cholesky solve for the current backend. Attemping to use UMFPACK solver.");
 
-  UmfpackLUSolver solver;
-  return solver.solve(A, x, b);
+  UmfpackLUSolver solver(A);
+  return solver.solve(x, b);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint CholmodCholeskySolver::factorize(const GenericMatrix& A)
@@ -122,9 +122,8 @@ dolfin::uint CholmodCholeskySolver::factorized_solve(GenericVector& x, const Gen
 // CholmodCholeskySolver::Cholmod implementation
 #ifdef HAS_CHOLMOD
 //==============================================================================
-
-CholmodCholeskySolver::Cholmod::Cholmod() :
-  N(0), factorized(false), A_chol(0), L_chol(0)
+CholmodCholeskySolver::Cholmod::Cholmod() : N(0), factorized(false), A_chol(0),
+                                            L_chol(0)
 {
   // "Start" cholmod
   cholmod_l_start(&c);
