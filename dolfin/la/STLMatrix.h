@@ -6,7 +6,7 @@
 // Modified by Ilmar Wilbers, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2009-09-08
+// Last changed: 2010-06-07
 
 #ifndef __STL_MATRIX_H
 #define __STL_MATRIX_H
@@ -14,6 +14,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <dolfin/log/log.h>
 #include "GenericSparsityPattern.h"
 #include "GenericMatrix.h"
 
@@ -38,7 +39,7 @@ namespace dolfin
 
     /// Copy constructor
     explicit STLMatrix(const STLMatrix& A)
-    { error("Not implemented."); }
+    { dolfin_not_implemented(); }
 
     /// Destructor
     virtual ~STLMatrix() {}
@@ -51,7 +52,7 @@ namespace dolfin
 
     /// Return copy of tensor
     virtual STLMatrix* copy() const
-    { error("Not implemented."); return 0; }
+    { dolfin_not_implemented(); return 0; }
 
     /// Return size of given dimension
     virtual uint size(uint dim) const
@@ -79,11 +80,11 @@ namespace dolfin
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const
-    { error("Not implemented."); }
+    { dolfin_not_implemented(); }
 
     /// Set block of values
     virtual void set(const double* block, uint m, const uint* rows, uint n, const uint* cols)
-    { error("Not implemented."); }
+    { dolfin_not_implemented(); }
 
     /// Add block of values
     virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols)
@@ -106,11 +107,11 @@ namespace dolfin
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
-    { error("Not implemented."); }
+    { dolfin_not_implemented(); }
 
     /// Return norm of matrix
     virtual double norm(std::string norm_type) const
-    { error("Not implemented."); return 0.0; }
+    { dolfin_not_implemented(); return 0.0; }
 
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const
@@ -127,35 +128,35 @@ namespace dolfin
 
     /// Set values for given row
     virtual void setrow(uint row, const std::vector<uint>& columns, const std::vector<double>& values)
-    { error("Not implemented."); }
+    { dolfin_not_implemented(); }
 
     /// Set given rows to zero
     virtual void zero(uint m, const uint* rows)
-    { error("Not implemented."); }
+    { dolfin_not_implemented(); }
 
     /// Set given rows to identity matrix
     virtual void ident(uint m, const uint* rows)
-    { error("Not implemented."); }
+    { dolfin_not_implemented(); }
 
     // Matrix-vector product, y = Ax
     virtual void mult(const GenericVector& x, GenericVector& y) const
-    { error("Not implemented."); }
+    { dolfin_not_implemented(); }
 
     // Matrix-vector product, y = A^T x
     virtual void transpmult(const GenericVector& x, GenericVector& y) const
-    { error("Not implemented."); }
+    { dolfin_not_implemented(); }
 
     /// Multiply matrix by given number
     virtual const STLMatrix& operator*= (double a)
-    { error("Not implemented."); return *this; }
+    { dolfin_not_implemented(); return *this; }
 
     /// Divide matrix by given number
     virtual const STLMatrix& operator/= (double a)
-    { error("Not implemented."); return *this; }
+    { dolfin_not_implemented(); return *this; }
 
     /// Assignment operator
     virtual const GenericMatrix& operator= (const GenericMatrix& A)
-    { error("Not implemented."); return *this; }
+    { dolfin_not_implemented(); return *this; }
 
     ///--- Specialized matrix functions ---
 
