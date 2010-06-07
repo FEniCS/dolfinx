@@ -64,7 +64,6 @@ void UmfpackLUSolver::set_operator(const GenericMatrix& A)
   this->A = reference_to_no_delete_pointer(A);
 }
 //-----------------------------------------------------------------------------
-#ifdef HAS_UMFPACK
 dolfin::uint UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   // Factorize matrix
@@ -159,42 +158,6 @@ dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
 
   return 1;
 }
-//-----------------------------------------------------------------------------
-#else
-dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
-                                    const GenericVector& b)
-{
-  warning("UMFPACK must be installed to peform a LU solve for uBLAS matrices. A Krylov iterative solver will be used instead.");
-
-  KrylovSolver solver;
-  return solver.solve(A, x, b);
-}
-//-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
-{
-  warning("UMFPACK must be installed to peform a LU solve for uBLAS matrices. A Krylov iterative solver will be used instead.");
-
-  KrylovSolver solver;
-  return solver.solve(*A, x, b);
-}
-//-----------------------------------------------------------------------------
-void UmfpackLUSolver::factorize_symbolic()
-{
-  error("UMFPACK must be installed to perform sparse LU factorization.");
-}
-//-----------------------------------------------------------------------------
-void UmfpackLUSolver::factorize_numeric()
-{
-  error("UMFPACK must be installed to perform sparse LU factorization.");
-}
-//-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorized_solve(GenericVector& x,
-                                               const GenericVector& b) const
-{
-  error("UMFPACK must be installed to perform sparse backward and forward substitutions.");
-  return 0;
-}
-#endif
 //-----------------------------------------------------------------------------
 #ifdef HAS_UMFPACK
 //-----------------------------------------------------------------------------
@@ -298,6 +261,45 @@ void UmfpackLUSolver::umfpack_check_status(long int status,
   else if(status != UMFPACK_OK)
     warning("UMFPACK is reporting an unknown error.");
 }
+//-----------------------------------------------------------------------------
+#else
+//-----------------------------------------------------------------------------
+void UmfpackLUSolver::clear()
+{
+  error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
+}
+//-----------------------------------------------------------------------------
+void* UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint N,
+                                                   const long int* Ap,
+                                                   const long int* Ai,
+                                                   const double* Ax)
+{
+  error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
+  return 0;
+}
+//-----------------------------------------------------------------------------
+void* UmfpackLUSolver::umfpack_factorize_numeric(const long int* Ap,
+                                                  const long int* Ai,
+                                                  const double* Ax,
+                                                  void* symbolic)
+{
+  error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
+  return 0;
+}
+//-----------------------------------------------------------------------------
+void UmfpackLUSolver::umfpack_solve(const long int* Ap, const long int* Ai,
+                                    const double* Ax, double* x,
+                                    const double* b, void* numeric)
+{
+  error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
+}
+//-----------------------------------------------------------------------------
+void UmfpackLUSolver::umfpack_check_status(long int status,
+                                            std::string function)
+{
+  error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
+}
+//-----------------------------------------------------------------------------
 #endif
 //-----------------------------------------------------------------------------
 

@@ -1,11 +1,11 @@
-// Copyright (C) 2006-2009 Garth N. Wells.
+// Copyright (C) 2006-2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg 2006.
 // Modified by Dag Lindbo 2008.
 //
 // First added:  2006-05-31
-// Last changed: 2009-07-08
+// Last changed: 2010-06-07
 
 #ifndef __UMFPACK_LU_SOLVER_H
 #define __UMFPACK_LU_SOLVER_H
@@ -65,8 +65,6 @@ namespace dolfin
 
   private:
 
-#ifdef HAS_UMFPACK
-
     // Clear data
     void clear();
 
@@ -88,8 +86,6 @@ namespace dolfin
     // UMFPACK data
     void* symbolic;
     void* numeric;
-
-#endif
 
     // Operator (the matrix)
     boost::shared_ptr<const GenericMatrix> A;
