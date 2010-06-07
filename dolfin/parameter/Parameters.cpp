@@ -240,7 +240,9 @@ void Parameters::update(const Parameters& parameters)
     if (other.type_str() == "int")
       *self = static_cast<int>(other);
     else if (other.type_str() == "real")
-      *self = static_cast<double>(other);
+      // Need to use get_real() here to avoid rounding to double precision.
+      // *self = static_cast<int>(other);
+      *self = other.get_real();
     else if (other.type_str() == "bool")
       *self = static_cast<bool>(other);
     else if (other.type_str() == "string")
