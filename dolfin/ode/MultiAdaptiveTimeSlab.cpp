@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells
 //
 // First added:  2005-01-27
-// Last changed: 2010-04-05
+// Last changed: 2010-06-07
 
 #include <string>
 #include <algorithm>
@@ -294,7 +294,7 @@ real MultiAdaptiveTimeSlab::rsample(uint i, real t)
 //-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::save_solution(ODESolution& u)
 {
-  //Not implemented
+  // FIXME: Not implemented
 }
 //-----------------------------------------------------------------------------
 std::string MultiAdaptiveTimeSlab::str(bool verbose) const
