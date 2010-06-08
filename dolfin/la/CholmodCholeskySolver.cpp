@@ -5,12 +5,13 @@
 // Last changed: 2010-04-05
 
 #include <cstring>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include "CholmodCholeskySolver.h"
 #include "UmfpackLUSolver.h"
 #include "LUSolver.h"
+#include "CholmodCholeskySolver.h"
 
 using namespace dolfin;
 
@@ -23,6 +24,20 @@ Parameters CholmodCholeskySolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 CholmodCholeskySolver::CholmodCholeskySolver()
+{
+  // Set parameter values
+  parameters = default_parameters();
+}
+//-----------------------------------------------------------------------------
+CholmodCholeskySolver::CholmodCholeskySolver(const GenericMatrix& A)
+                               : _A(reference_to_no_delete_pointer(A))
+{
+  // Set parameter values
+  parameters = default_parameters();
+}
+//-----------------------------------------------------------------------------
+CholmodCholeskySolver::CholmodCholeskySolver(boost::shared_ptr<const GenericMatrix> A)
+                               : _A(A)
 {
   // Set parameter values
   parameters = default_parameters();
