@@ -105,15 +105,15 @@ int main(int argc, char** argv) {
             cmdstr = "%s %s -o a.out %s" % \
                      (linker, cpp_file.replace('.cpp', '.o'), libs)
             linkFailed, cmdoutput = getstatusoutput(cmdstr)
-            if linkFailed:
-                remove_cppfile(cpp_file, ofile=True)
-                raise UnableToLinkException("Armadillo", cmd=cmdstr,
-                                            program=cpp_test_libs_str,
-                                            errormsg=cmdoutput)
-            else:
+            if not linkFailed:
                 break
         else:
             break
+    if linkFailed:
+        remove_cppfile(cpp_file, ofile=True)
+        raise UnableToLinkException("Armadillo", cmd=cmdstr,
+                                     program=cpp_test_libs_str,
+                                     errormsg=cmdoutput)
 
     # test that we can run the binary
     armadillo_lib_dir = \
