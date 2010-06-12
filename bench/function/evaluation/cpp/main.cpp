@@ -6,12 +6,13 @@
 // Modified by André Massing, 2010
 //
 // First added:  2010-06-10
-// Last changed: 2010-06-11
+// Last changed: 2010-06-12
 // 
 //Author:  André Massing (am), massing@simula.no
 //Company:  Simula Research Laboratory, Fornebu, Norway
 //
-//Description: Benchmark for the arbitrary evaluations of functions. =====================================================================================
+//Description: Benchmark for the evaluations of functions at arbitrary points.
+//=====================================================================================
 
 #include <dolfin.h>
 #include "P1.h"
@@ -30,6 +31,7 @@ public:
 
 };
 
+#ifdef HAS_CGAL
 
 int main(int argc, char* argv[])
 {
@@ -52,7 +54,7 @@ int main(int argc, char* argv[])
     Array<double> X(3);
     Array<double> value(1);
 
-    //Initialize random generator
+    //Initialize random generator generator (produces same sequence each test).
     srand(1);
 
     for (uint i = 1; i <= num_points; ++i)
@@ -72,3 +74,13 @@ int main(int argc, char* argv[])
 return 0;
 
 }
+
+#elif
+
+int main()
+{
+  info("DOLFIN must be compiled with CGAL to run function eval benchmark.");
+  return 0;
+}
+
+#endif
