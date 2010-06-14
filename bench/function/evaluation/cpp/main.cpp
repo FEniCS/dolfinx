@@ -1,18 +1,10 @@
-// =====================================================================================
-//
-// Copyright (C) 2010-06-10  André Massing
+// Copyright (C) 2010-06-10 André Massing.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by André Massing, 2010
-//
 // First added:  2010-06-10
-// Last changed: 2010-06-12
-// 
-//Author:  André Massing (am), massing@simula.no
-//Company:  Simula Research Laboratory, Fornebu, Norway
+// Last changed: 2010-06-14
 //
-//Description: Benchmark for the evaluations of functions at arbitrary points.
-//=====================================================================================
+// Description: Benchmark for the evaluations of functions at arbitrary points.
 
 #include <dolfin.h>
 #include "P1.h"
@@ -36,12 +28,12 @@ public:
 int main(int argc, char* argv[])
 {
   not_working_in_parallel("Function evalutation benchmark");
-  
+
   const uint mesh_max_size = 32;
   const uint num_points  = 10000000;
-  
-  //starting timing
-  tic();  
+
+  // Start timing
+  tic();
   for (uint N = 10; N < mesh_max_size; N += 2)
   {
     UnitCube mesh(N, N, N);
@@ -54,7 +46,7 @@ int main(int argc, char* argv[])
     Array<double> X(3);
     Array<double> value(1);
 
-    //Initialize random generator generator (produces same sequence each test).
+    // Initialize random generator generator (produces same sequence each test).
     srand(1);
 
     for (uint i = 1; i <= num_points; ++i)
@@ -66,16 +58,15 @@ int main(int argc, char* argv[])
       f.eval(value, X);
     }
 
-    //use X variable.
-    info("x = %.12e\ty = %.12e\tz = %.12e\tf(x) = %.12e",X[0],X[1],X[2],value[0]);
+    // Use X variable.
+    info("x = %.12e\ty = %.12e\tz = %.12e\tf(x) = %.12e", X[0], X[1], X[2], value[0]);
   }
-  info("BENCH  %g",toc()); 
+  info("BENCH  %g",toc());
 
-return 0;
-
+  return 0;
 }
 
-#elif
+#else
 
 int main()
 {
