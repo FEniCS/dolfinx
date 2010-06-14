@@ -161,7 +161,14 @@ int main() {
     if runFailed or not cmdoutput == "success":
         raise UnableToRunException("SCOTCH", errormsg=cmdoutput)
 
-    return "-L%s -lscotch -lscotcherr -lptscotch -lptscotcherr" % scotch_lib_dir
+    libs = "-L%s" % scotch_lib_dir
+    if get_architecture() == "darwin":
+        # do not link with both -lscotch and -lptscotch on Mac
+        # (avoids duplicated symbols)
+        libs += " -lptscotch -lptscotcherr"
+    else:
+        libs += " -lscotch -lscotcherr -lptscotch -lptscotcherr"
+    return libs
 
 def pkgTests(forceCompiler=None, sconsEnv=None,
              cflags=None, libs=None, version=None, **kwargs):
