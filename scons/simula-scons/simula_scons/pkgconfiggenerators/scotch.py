@@ -59,10 +59,8 @@ def pkgCflags(compiler=None, sconsEnv=None):
     
     # Simple test-program that try to include the main scotch header
     cpp_test_include_str = r"""
-extern "C" {
 #include <stdio.h>
 #include <scotch.h>
-}
 int main() {
   return 0;
 }
@@ -107,10 +105,8 @@ def pkgLibs(compiler=None, linker=None, cflags=None, sconsEnv=None):
     
     # Test that we can call a SCOTCH function
     cpp_test_lib_str = r"""
-extern "C" {
 #include <stdio.h>
 #include <scotch.h>
-}
 #include <iostream>
 int main() {
   SCOTCH_Mesh mesh;
@@ -139,13 +135,16 @@ int main() {
     lib_dirs = ['', 'bin', 'lib']
     for lib_dir in lib_dirs:
         scotch_lib_dir = os.path.join(scotch_dir, lib_dir)
-        libscotch_static = os.path.join(scotch_lib_dir, 'libptscotch.a')
-        libscotcherr_static = os.path.join(scotch_lib_dir, 'libptscotcherr.a')
+        libscotch_static = os.path.join(scotch_lib_dir, 'libscotch.a')
+        libscotcherr_static = os.path.join(scotch_lib_dir, 'libscotcherr.a')
+        libptscotch_static = os.path.join(scotch_lib_dir, 'libptscotch.a')
+        libptscotcherr_static = os.path.join(scotch_lib_dir, 'libptscotcherr.a')
 
         # test that we can link a binary using scotch static libs:
-        cmdstr = "%s -o %s %s %s %s" % \
+        cmdstr = "%s -o %s %s %s %s %s %s" % \
                  (linker, app, cpp_file.replace('.cpp', '.o'),
-                  libscotch_static, libscotcherr_static)
+		  libscotch_static, libscotcherr_static,
+                  libptscotch_static, libptscotcherr_static)
         linkFailed, cmdoutput = getstatusoutput(cmdstr)
         if not linkFailed:
             break
@@ -162,7 +161,7 @@ int main() {
     if runFailed or not cmdoutput == "success":
         raise UnableToRunException("SCOTCH", errormsg=cmdoutput)
 
-    return "-L%s -lptscotch -lptscotcherr" % scotch_lib_dir
+    return "-L%s -lscotch -lscotcherr -lptscotch -lptscotcherr" % scotch_lib_dir
 
 def pkgTests(forceCompiler=None, sconsEnv=None,
              cflags=None, libs=None, version=None, **kwargs):
