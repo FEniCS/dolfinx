@@ -150,10 +150,15 @@ namespace dolfin
     uint max_timeslabs;                              // number of timeslabs pr file and in memory
     bool dirty;                                      // all data written to disk
     std::string filename;
+
+    uint get_file_index(const real& t); //find which file stores timeslab containing given t
     void read_file(uint file_number);
     dolfin::uint open_and_read_header(std::ifstream& file, uint filenumber); 
 
     void add_data(const real& a, const real& b, const real* data);
+
+    uint get_buffer_index(const real& t);
+    int buffer_index_cache;
 
     //some functions for convenience
     inline real a_in_memory() {return data[0].a;}
@@ -161,10 +166,6 @@ namespace dolfin
     inline uint a_index_in_memory() {return data_on_disk ? file_table[fileno_in_memory].second : 0;}
     inline uint b_index_in_memory() {return a_index_in_memory() + data.size()-1;}
 
-    //callback functions used by std::lower_bound() when searching
-    static bool real_data_cmp(const ODESolutionData& a,  const real& t);
-    static bool real_filetable_cmp( const std::pair<real, uint>& a,  const real& t);
-    static bool uint_filetable_cmp(const std::pair<real, uint>& a,  const uint& i);
   };
 
 //----------------------------------------------------------------------------- 

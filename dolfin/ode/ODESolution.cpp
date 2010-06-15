@@ -32,7 +32,8 @@ ODESolution::ODESolution() :
   read_mode(false),
   data_on_disk(false),
   dirty(false),
-  filename("odesolution")
+  filename("odesolution"),
+  buffer_index_cache(0)
 {
 }
 //-----------------------------------------------------------------------------
@@ -45,7 +46,8 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
   initialized(false),
   data_on_disk(true),
   dirty(false),
-  filename(filename)
+  filename(filename),
+  buffer_index_cache(0)
 {
   std::ifstream file;
   uint timeslabs_in_file = open_and_read_header(file, 0u);
@@ -168,7 +170,6 @@ void ODESolution::add_timeslab(const real& a, const real& b, const real* nodal_v
     data.clear();
   }
 
-  //cout << "Adding timeslab, a=" << a << ", b=" << b << endl;
   add_data(a, b, nodal_values);
 
   dirty = true;
@@ -189,8 +190,6 @@ void ODESolution::flush() {
 //-----------------------------------------------------------------------------
 void ODESolution::eval(const real& t, real* y)
 {
-  //cout << "ODESolution::eval(" << t << ")" << endl;
-
   if (!read_mode) error("Can not evaluate solution");
   if(t > T) error("Requested t > T. t=%f, T=%f", to_double(t), to_double(T));
 
@@ -212,24 +211,11 @@ void ODESolution::eval(const real& t, real* y)
   // Read data from disk if necesary.
   if (data_on_disk && (t < a_in_memory() || t > b_in_memory()))
   {
-    //get file number
-    std::vector< std::pair<real, uint> >::iterator lower = std::lower_bound(file_table.begin(),
-							       file_table.end(),
-							       t,
-							       real_filetable_cmp);
-    uint index = lower-file_table.begin()-1;
+    read_file(get_file_index(t));
+ }
 
-    read_file(index);
-  }
-
-  // Find position in buffer
-  std::vector<ODESolutionData>::iterator lower = std::lower_bound(data.begin(),
-								  data.end(),
-								  t,
-								  real_data_cmp);
-  uint index = lower-data.begin()-1;
-
-  ODESolutionData& a = data[index];
+  // Find the right timeslab in buffer
+  ODESolutionData& a = data[get_buffer_index(t)];
   real tau = (t-a.a)/a.k;
 
   assert(tau <= 1.0+real_epsilon());
@@ -249,8 +235,6 @@ void ODESolution::eval(const real& t, real* y)
   cache[ringbufcounter].first = t;
   real_set(N, cache[ringbufcounter].second, y);
   ringbufcounter = (ringbufcounter + 1) % cache_size;
-
-  //cout << "  Done ODESolution::eval()" << endl;
 }
 //-----------------------------------------------------------------------------
 ODESolutionData& ODESolution::get_timeslab(uint index)
@@ -261,13 +245,11 @@ ODESolutionData& ODESolution::get_timeslab(uint index)
 
   if ( data_on_disk && (index > b_index_in_memory() || index < a_index_in_memory()))
   {
-    std::vector< std::pair<real, uint> >::iterator lower = std::lower_bound(file_table.begin(),
-									    file_table.end(),
-									    index,
-									    uint_filetable_cmp);
-    uint fileno = lower-file_table.begin();
+    //Scan the cache
+    uint file_no = file_table.size()-1;
+    while (file_table[file_no].second > index) file_no--;
 
-    read_file(fileno);
+    read_file(file_no);
   }
 
   assert(index-a_index_in_memory() < data.size());
@@ -405,13 +387,65 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
   return timeslabs;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint ODESolution::get_file_index(const real& t) 
+{
+  //Scan the file table
+  int index = file_table.size()-1;
+  while (file_table[index].first > t) index--;
+
+  assert(index >= 0);
+
+  return static_cast<dolfin::uint>(index);
+
+}
+//-----------------------------------------------------------------------------
+dolfin::uint ODESolution::get_buffer_index(const real& t) 
+{
+  // Use the cached index as initial guess, since we very often evaluate 
+  // at points close to the previous one
+
+  uint count = 0;
+
+  // Expand interval until it includes our target value
+  int width = 1;
+  while (! (data[std::max(buffer_index_cache-width, 0)].a <= t+real_epsilon() && 
+	    data[std::min(buffer_index_cache+width, (int)data.size()-1)].b() > t-real_epsilon()))
+  {
+    width = width * 2;
+    count++;
+  }
+
+  // Do binary search in interval
+  int range_start = std::max(buffer_index_cache-width, 0);
+  int range_end   = std::min(buffer_index_cache+width, (int) data.size()-1);
+  buffer_index_cache = (range_start+range_end)/2;
+
+  while( range_end != range_start)
+  {
+    if (t < data[buffer_index_cache].a) 
+    {
+      range_end = std::min(buffer_index_cache, range_end-1);
+    } else
+    {
+      range_start = std::max(buffer_index_cache, range_start+1);
+    }
+
+    buffer_index_cache = (range_end + range_start)/2;
+
+    count++;
+
+    // FIXME: How should the maximum number of iterations
+    // be determined?
+    assert(count < 100);
+  }
+  
+  return buffer_index_cache;
+
+}
+//-----------------------------------------------------------------------------
 void ODESolution::read_file(uint file_number)
 {
-  std::stringstream ss;
-  ss << "ODESolution: Reading file ";
-  ss << file_number;
-
-  info(ss.str(), PROGRESS);
+  info(PROGRESS,  "ODESolution: Reading file %d", file_number);
 
   if (data.size() > 0)
     data.clear();
@@ -449,7 +483,10 @@ void ODESolution::read_file(uint file_number)
 
   fileno_in_memory = file_number;
 
-  //cout << "Done reading file" << file_number << endl;
+  //Try to set the initial guess
+  buffer_index_cache = buffer_index_cache > (int) data.size()/2 ? data.size()-1 : 0;
+
+  info(PROGRESS, "  Done reading file %d", file_number);
 
 }
 //-----------------------------------------------------------------------------
@@ -461,18 +498,6 @@ void ODESolution::add_data(const real& a, const real& b, const real* nodal_value
 				 nodal_size,
 				 N,
 				 nodal_values));
-}
-//-----------------------------------------------------------------------------
-bool ODESolution::real_data_cmp( const ODESolutionData& a, const real& t ) {
-  return (a.a <= t);
-}
-//-----------------------------------------------------------------------------
-bool ODESolution::real_filetable_cmp(const std::pair<real, uint>& a, const real& t) {
-  return (a.first <= t);
-}
-//-----------------------------------------------------------------------------
-bool ODESolution::uint_filetable_cmp(const std::pair<real, uint>& a, const uint& i) {
-  return ( a.second < i);
 }
 //-----------------------------------------------------------------------------
 std::string ODESolution::str(bool verbose) const
