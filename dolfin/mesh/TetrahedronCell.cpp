@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2010-03-02
+// Last changed: 2010-06-15
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -328,10 +328,10 @@ double TetrahedronCell::facet_area(const Cell& cell, uint facet) const
   Facet f(cell.mesh(), cell.entities(2)[facet]);
 
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const MeshGeometry& geometry = f.mesh().geometry();
 
   // Get the coordinates of the three vertices
-  const uint* vertices = cell.entities(0);
+  const uint* vertices = f.entities(0);
   const double* x0 = geometry.x(vertices[0]);
   const double* x1 = geometry.x(vertices[1]);
   const double* x2 = geometry.x(vertices[2]);

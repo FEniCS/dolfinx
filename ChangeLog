@@ -1,3 +1,4 @@
+ - Bug fix in computation of FacetArea for tetrahedrons
  - Add support for direct plotting of Dirichlet boundary conditions: plot(bc)
  - Updates for PETSc 3.1
  - Add relaxation parameter to NewtonSolver
