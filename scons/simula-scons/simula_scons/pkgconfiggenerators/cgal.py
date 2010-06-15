@@ -192,11 +192,11 @@ int main()
            (linker, cpp_file.replace('.cpp', '.o'), libs)
     linkFailed, cmdoutput = getstatusoutput(cmdstr)
     if linkFailed:
+        if get_architecture() == "darwin":
+            # try adding -L/opt/local/lib on Mac (assume MacPorts)
+            libs += " -L/opt/local/lib"
         # try adding -lmpfr -lgmp -lboost_thread
         libs += " -lmpfr -lgmp -lboost_thread"
-        if get_architecture() == "darwin":
-            # also add -L/opt/local/lib on mac (assume MacPorts)
-            libs += " -L/opt/local/lib"
         cmdstr = "%s -o a.out %s %s" % \
                  (linker, cpp_file.replace('.cpp', '.o'), libs)
         linkFailed, cmdoutput = getstatusoutput(cmdstr)
