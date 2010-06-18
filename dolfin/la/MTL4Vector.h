@@ -42,7 +42,7 @@ namespace dolfin
     explicit MTL4Vector(uint N);
 
     /// Copy constructor
-    explicit MTL4Vector(const MTL4Vector& x);
+    MTL4Vector(const MTL4Vector& x);
 
     /// Destructor
     virtual ~MTL4Vector();

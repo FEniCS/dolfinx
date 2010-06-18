@@ -50,7 +50,7 @@ namespace dolfin
     PETScMatrix(uint M, uint N);
 
     /// Copy constructor
-    explicit PETScMatrix(const PETScMatrix& A);
+    PETScMatrix(const PETScMatrix& A);
 
     /// Create matrix from given PETSc Mat pointer
     explicit PETScMatrix(boost::shared_ptr<Mat> A);

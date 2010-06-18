@@ -38,7 +38,7 @@ namespace dolfin
     { resize(M, N); }
 
     /// Copy constructor
-    explicit STLMatrix(const STLMatrix& A)
+    STLMatrix(const STLMatrix& A)
     { dolfin_not_implemented(); }
 
     /// Destructor

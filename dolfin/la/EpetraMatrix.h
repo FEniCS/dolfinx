@@ -45,7 +45,7 @@ namespace dolfin
     EpetraMatrix(uint M, uint N);
 
     /// Copy constuctor
-    explicit EpetraMatrix(const EpetraMatrix& A);
+    EpetraMatrix(const EpetraMatrix& A);
 
     /// Create matrix from given Epetra_FECrsMatrix pointer
     explicit EpetraMatrix(boost::shared_ptr<Epetra_FECrsMatrix> A);
