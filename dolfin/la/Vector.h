@@ -36,11 +36,10 @@ namespace dolfin
     { DefaultFactory factory; vector = factory.create_vector(); vector->resize(N); }
 
     /// Copy constructor
-    explicit Vector(const Vector& x) : vector(x.vector->copy())
-    {}
+    Vector(const Vector& x) : vector(x.vector->copy()) {}
 
     /// Create a Vector from a GenericVetor
-    explicit Vector(const GenericVector& x) : vector(x.factory().create_vector())
+    Vector(const GenericVector& x) : vector(x.factory().create_vector())
     { vector = x.copy(); }
 
     /// Destructor

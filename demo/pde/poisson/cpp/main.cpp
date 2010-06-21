@@ -72,7 +72,7 @@ int main()
 
   // Compute solution
   VariationalProblem problem(a, L, bc);
-  problem.parameters["linear_solver"] = "iterative";
+  //problem.parameters["linear_solver"] = "iterative";
   Function u(V);
   problem.solve(u);
 

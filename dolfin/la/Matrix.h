@@ -34,8 +34,7 @@ namespace dolfin
     { DefaultFactory factory; matrix = factory.create_matrix(); matrix->resize(M, N); }
 
     /// Copy constructor
-    explicit Matrix(const Matrix& A) : matrix(A.matrix->copy())
-    {}
+    Matrix(const Matrix& A) : matrix(A.matrix->copy()) {}
 
     /// Destructor
     virtual ~Matrix()

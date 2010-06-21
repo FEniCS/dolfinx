@@ -40,7 +40,7 @@ namespace dolfin
     MTL4Matrix(uint M, uint N);
 
     /// Copy constuctor
-    explicit MTL4Matrix(const MTL4Matrix& A);
+    MTL4Matrix(const MTL4Matrix& A);
 
     /// Destructor
     virtual ~MTL4Matrix();

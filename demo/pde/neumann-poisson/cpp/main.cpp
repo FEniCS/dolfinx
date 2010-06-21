@@ -1,7 +1,7 @@
 // Copyright (C) 2010 Marie E. Rognes
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Last changed: 2010-05-10
+// Last changed: 2010-06-03
 //
 // This demo program illustrates how to solve Poisson's equation
 //
@@ -52,6 +52,9 @@ class Flux : public Expression
 
 int main()
 {
+
+  not_working_in_parallel("neumann-poisson demo (with space of reals)");
+
   // Create mesh and function space
   UnitSquare mesh(64, 64);
   Poisson::FunctionSpace V(mesh);

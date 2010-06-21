@@ -12,6 +12,7 @@
 
 #include <fstream>
 #include <string>
+#include <utility>
 #include <vector>
 #include "GenericFile.h"
 
@@ -31,12 +32,15 @@ namespace dolfin
     void operator<< (const MeshFunction<int>& meshfunction);
     void operator<< (const MeshFunction<double>& meshfunction);
     void operator<< (const Function& u);
+    void operator<< (const std::pair<const Function*, double> u);
 
   protected:
 
+    void write(const Function& u, double time);
+
     std::string init(const Mesh& mesh) const;
 
-    void finalize(std::string vtu_filename);
+    void finalize(std::string vtu_filename, double time);
 
     void mesh_write(const Mesh& mesh, std::string file) const;
 
@@ -47,7 +51,7 @@ namespace dolfin
 
     void write_cell_data(const Function& u, std::string file) const;
 
-    void pvd_file_write(uint u, std::string file);
+    void pvd_file_write(uint step, double time, std::string file);
 
     void pvtu_mesh_write(std::string pvtu_filename, std::string vtu_filename) const;
 

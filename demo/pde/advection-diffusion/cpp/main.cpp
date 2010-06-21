@@ -18,6 +18,8 @@ using namespace dolfin;
 
 int main(int argc, char *argv[])
 {
+  parameters["linear_algebra_backend"] = "uBLAS";
+
   // Read mesh
   Mesh mesh("../mesh.xml.gz");
   mesh.init();
@@ -60,16 +62,17 @@ int main(int argc, char *argv[])
   Matrix A;
   Vector b;
 
-  // LU
-  LUSolver lu;
-
   // Assemble matrix
   assemble(A, a);
   bc.apply(A);
 
+  // LU
+  UmfpackLUSolver lu(A);
+  lu.factorize();
+
   // Parameters for time-stepping
   double T = 2.0;
-  double k = 0.05;
+  const double k = 0.05;
   double t = k;
 
   // Output file
@@ -83,11 +86,11 @@ int main(int argc, char *argv[])
     assemble(b, L);
     bc.apply(b);
 
-    // Solve the linear system
-    lu.solve(A, u.vector(), b);
+    // Solve the linear system (re-use the already factorized matrix A)
+    lu.solve_factorized(u.vector(), b);
 
     // Save solution in VTK format
-    file << u;
+    file << std::make_pair(&u, t);
 
     // Move to next interval
     p = t / T;

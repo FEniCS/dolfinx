@@ -49,8 +49,6 @@ int main()
 
   // Read mesh and sub domain markers
   Mesh mesh("../../../../../data/meshes/dolfin-2.xml.gz");
-  mesh.init(1);
-  mesh.order();
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
 
   // Create function space and subspaces

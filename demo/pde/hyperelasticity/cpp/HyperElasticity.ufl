@@ -2,7 +2,7 @@
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2009-09-29
-# Last changed: 
+# Last changed:
 #
 # The bilinear form a(v, u) and linear form L(v) for
 # a hyperelastic model.
@@ -11,10 +11,6 @@
 
 # Function spaces
 element = VectorElement("Lagrange", "tetrahedron", 1)
-
-# Re-define correct gradient
-def Grad(v):
-    return grad(v).T
 
 # Test and trial functions
 v  = TestFunction(element)      # Test function
@@ -27,22 +23,18 @@ T  = Coefficient(element)          # Traction force on the boundary
 
 # Kinematics
 I = Identity(v.cell().d)        # Identity tensor
-F = I + Grad(u)                 # Deformation gradient
-C = F.T*F                       # Right Cauchy-Green tensor
-E = (C - I)/2                   # Euler-Lagrange strain tensor
-E = variable(E)
+F = I + grad(u)                 # Deformation gradient
+E = (F.T*F - I)/2               # Euler-Lagrange strain tensor
 
 # Material constants
-mu    = Constant("tetrahedron") # Lame's constants
+mu    = Constant("tetrahedron")
 lmbda = Constant("tetrahedron")
 
-# Strain energy function (material model)
-psi = lmbda/2*(tr(E)**2) + mu*tr(E*E)
+# Potential energy function
+psi = (lmbda/2*(tr(E)**2) + mu*tr(E*E))*dx - dot(B, u)*dx - dot(T, u)*ds
 
-S = diff(psi, E)                # Second Piola-Kirchhoff stress tensor
-P = F*S                         # First Piola-Kirchoff stress tensor
+# Take directional derivative about u in the direction of v
+L = derivative(psi, u, v)
 
-# The variational problem corresponding to hyperelasticity
-L = inner(P, Grad(v))*dx - inner(B, v)*dx - inner(T, v)*ds
-a  = derivative(L, u, du)
-
+# Compute Jacobian
+a = derivative(L, u, du)

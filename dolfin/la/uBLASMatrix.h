@@ -57,7 +57,7 @@ namespace dolfin
     uBLASMatrix(uint M, uint N);
 
     /// Copy constructor
-    explicit uBLASMatrix(const uBLASMatrix& A);
+    uBLASMatrix(const uBLASMatrix& A);
 
     /// Create matrix from given uBLAS matrix expression
     template <class E>

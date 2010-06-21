@@ -9,6 +9,7 @@
 // Last changed: 2010-04-22
 
 #include <iostream>
+#include <dolfin/common/constants.h>
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/la/GenericLinearSolver.h>
 #include <dolfin/la/LinearSolver.h>
@@ -30,6 +31,7 @@ Parameters NewtonSolver::default_parameters()
   p.add("absolute_tolerance",      1e-10);
   p.add("convergence_criterion",   "residual");
   p.add("method",                  "full");
+  p.add("relaxation_parameter",    1.0);
   p.add("report",                  true);
   p.add("error_on_nonconvergence", true);
 
@@ -93,7 +95,11 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
       newton_converged = converged(*b, *dx, nonlinear_problem);
 
     // Update solution
-    x -= (*dx);
+    const double relaxation = parameters["relaxation_parameter"];
+    if (std::abs(1.0 - relaxation) < DOLFIN_EPS)
+      x -= (*dx);
+    else
+      x.axpy(-relaxation, *dx);
 
     // Update number of iterations
     ++newton_iteration;

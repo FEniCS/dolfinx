@@ -46,7 +46,7 @@ namespace dolfin
     explicit EpetraVector(uint N, std::string type="global");
 
     /// Copy constructor
-    explicit EpetraVector(const EpetraVector& x);
+    EpetraVector(const EpetraVector& x);
 
     /// Create vector view from given Epetra_FEVector pointer
     explicit EpetraVector(boost::shared_ptr<Epetra_FEVector> vector);

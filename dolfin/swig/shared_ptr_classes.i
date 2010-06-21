@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2010-05-20
+// Last changed: 2010-06-03
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -37,8 +37,41 @@
 %import "swig/ufc.i"
 
 //-----------------------------------------------------------------------------
-// Decalare shared_ptr stored types in PyDOLFIN
+// Declare shared_ptr stored types in PyDOLFIN
 //-----------------------------------------------------------------------------
+#if SWIG_VERSION >= 0x020000
+%shared_ptr(dolfin::GenericDofMap)
+%shared_ptr(dolfin::DofMap)
+
+%shared_ptr(dolfin::FiniteElement)
+
+%shared_ptr(dolfin::FunctionSpace)
+%shared_ptr(dolfin::SubSpace)
+
+%shared_ptr(dolfin::GenericFunction)
+%shared_ptr(dolfin::Function)
+%shared_ptr(dolfin::Expression)
+%shared_ptr(dolfin::FacetArea)
+%shared_ptr(dolfin::CellSize)
+%shared_ptr(dolfin::Constant)
+%shared_ptr(dolfin::MeshCoordinates)
+
+%shared_ptr(dolfin::Mesh)
+%shared_ptr(dolfin::BoundaryMesh)
+%shared_ptr(dolfin::SubMesh)
+%shared_ptr(dolfin::UnitCube)
+%shared_ptr(dolfin::UnitInterval)
+%shared_ptr(dolfin::Interval)
+%shared_ptr(dolfin::UnitSquare)
+%shared_ptr(dolfin::UnitCircle)
+%shared_ptr(dolfin::Box)
+%shared_ptr(dolfin::Rectangle)
+%shared_ptr(dolfin::UnitSphere)
+
+%shared_ptr(dolfin::SubDomain)
+%shared_ptr(dolfin::DomainBoundary)
+#else
+
 SWIG_SHARED_PTR(GenericDofMap,dolfin::GenericDofMap)
 SWIG_SHARED_PTR_DERIVED(DofMap,dolfin::GenericDofMap,dolfin::DofMap)
 SWIG_SHARED_PTR(FiniteElement,dolfin::FiniteElement)
@@ -68,6 +101,7 @@ SWIG_SHARED_PTR_DERIVED(UnitSphere,dolfin::Mesh,dolfin::UnitSphere)
 
 SWIG_SHARED_PTR(SubDomain,dolfin::SubDomain)
 SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
+#endif
 
 //-----------------------------------------------------------------------------
 // Macro that exposes the Variable interface for the derived classes
@@ -128,7 +162,7 @@ SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
 //-----------------------------------------------------------------------------
 // Run the macros on derived classes of Variable that is defined shared_ptr
 //-----------------------------------------------------------------------------
-IMPLEMENT_VARIABLE_INTERFACE(Function)
+IMPLEMENT_VARIABLE_INTERFACE(GenericFunction)
 IMPLEMENT_VARIABLE_INTERFACE(FunctionSpace)
 IMPLEMENT_VARIABLE_INTERFACE(Mesh)
 IMPLEMENT_VARIABLE_INTERFACE(GenericDofMap)

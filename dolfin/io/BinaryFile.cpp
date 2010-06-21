@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2010-04-30
+// Last changed: 2010-06-07
 
 #include <dolfin/log/log.h>
 #include <istream>

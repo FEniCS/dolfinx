@@ -7,6 +7,7 @@
 // First added:  2006-06-01
 // Last changed: 2008-07-08
 
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
 #include "UmfpackLUSolver.h"
 #include "GenericMatrix.h"
@@ -31,7 +32,22 @@ Parameters UmfpackLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-UmfpackLUSolver::UmfpackLUSolver()
+UmfpackLUSolver::UmfpackLUSolver() : symbolic(0), numeric(0)
+{
+  // Set parameter values
+  parameters = default_parameters();
+}
+//-----------------------------------------------------------------------------
+UmfpackLUSolver::UmfpackLUSolver(const GenericMatrix& A)
+                               : symbolic(0), numeric(0),
+                                 A(reference_to_no_delete_pointer(A))
+{
+  // Set parameter values
+  parameters = default_parameters();
+}
+//-----------------------------------------------------------------------------
+UmfpackLUSolver::UmfpackLUSolver(boost::shared_ptr<const GenericMatrix> A)
+                               : symbolic(0), numeric(0), A(A)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -39,200 +55,192 @@ UmfpackLUSolver::UmfpackLUSolver()
 //-----------------------------------------------------------------------------
 UmfpackLUSolver::~UmfpackLUSolver()
 {
-  // Do nothing
+  clear();
 }
 //-----------------------------------------------------------------------------
-#ifdef HAS_UMFPACK
-dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
-                                    const GenericVector& b)
+void UmfpackLUSolver::set_operator(const GenericMatrix& A)
+{
+  clear();
+  this->A = reference_to_no_delete_pointer(A);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   // Factorize matrix
-  factorize(A);
+  factorize();
 
-  // Solve system
-  factorized_solve(x, b);
-
-  // Clear data
-  umfpack.clear();
-
-  return 1;
+  // Solve
+  return solve_factorized(x, b);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorize(const GenericMatrix& A)
+void UmfpackLUSolver::symbolic_factorize()
 {
-  // Check dimensions and get number of non-zeroes
-  std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A.data();
-  const uint M   = A.size(0);
-  const uint nnz = std::tr1::get<3>(data);
-  assert(A.size(0) == A.size(1));
+  if (!A)
+    error("A matrix must be assocoated with UmfpackLUSolver to peform a symbolic factorisation.");
 
+  // Get matrix data
+  std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
+  const std::size_t* Ap  = std::tr1::get<0>(data);
+  const std::size_t* Ai  = std::tr1::get<1>(data);
+  const double*      Ax  = std::tr1::get<2>(data);
+  const uint         nnz = std::tr1::get<3>(data);
+
+  // Check dimensions and get number of non-zeroes
+  const uint M   = A->size(0);
+  const uint N   = A->size(1);
   assert(nnz >= M);
 
-  // Initialise umfpack data
-  umfpack.init((const long int*) std::tr1::get<0>(data),
-    (const long int*) std::tr1::get<1>(data), std::tr1::get<2>(data), M, nnz);
+  // Clear any old factorizations
+  clear();
 
-  // Factorize
-  info(PROGRESS, "LU-factorizing linear system of size %d x %d (UMFPACK).", M, M);
-  umfpack.factorize();
+  // Factorize and solve
+  info(PROGRESS, "Symbolic factorization of a matrix of size %d x %d (UMFPACK).", M, N);
 
-  return 1;
+  // Perform symbolic factorisation
+  symbolic = umfpack_factorize_symbolic(M, N, (const long int*)Ap, (const long int*)Ai, Ax);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorized_solve(GenericVector& x, const GenericVector& b) const
+void UmfpackLUSolver::factorize()
 {
-  const uint N = b.size();
+  if (!A)
+    error("A matrix must be assocoated with UmfpackLUSolver to peform a factorisation.");
 
-  if(!umfpack.factorized)
-    error("Factorized solve must be preceded by call to factorize.");
+  // Get matrix data
+  std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
+  const std::size_t* Ap  = std::tr1::get<0>(data);
+  const std::size_t* Ai  = std::tr1::get<1>(data);
+  const double*      Ax  = std::tr1::get<2>(data);
+  const uint         nnz = std::tr1::get<3>(data);
 
-  if(N != umfpack.N)
-    error("Vector does not match size of factored matrix");
+  // Check dimensions and get number of non-zeroes
+  const uint M   = A->size(0);
+  const uint N   = A->size(1);
+  assert(nnz >= M);
 
-  // Initialise solution vector and solve
-  x.resize(N);
+  // Factorize and solve
+  info(PROGRESS, "LU factorization of a matrix of size %d x %d (UMFPACK).", M, N);
 
-  info(PROGRESS, "Solving factorized linear system of size %d x %d (UMFPACK).", N, N);
+  // Create symbolic factoriation if required
+  if (!symbolic || !parameters["same_nonzero_pattern"])
+    symbolic_factorize();
+
+  // Perform LU factorisation
+  numeric = umfpack_factorize_numeric((const long int*)Ap, (const long int*)Ai, Ax, symbolic);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
+                                               const GenericVector& b) const
+{
+  if (!A)
+    error("No matrix associated with UmfpackLUSolver. Cannot perform factorized_solve.");
+
+  assert(A->size(0) == A->size(0));
+  assert(A->size(0) == b.size());
+
+  // Resize x if required
+  if (A->size(1) != x.size())
+    x.resize(A->size(1));
+
+  if (!symbolic)
+    error("No symbolic factorisation. Please call UmfpackLUSolver::factorize_symbolic().");
+
+  if (!numeric)
+    error("No LU factorisation. Please call UmfpackLUSolver::factorize_numeric().");
+
+  // Get matrix data
+  std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
+  const std::size_t* Ap  = std::tr1::get<0>(data);
+  const std::size_t* Ai  = std::tr1::get<1>(data);
+  const double*      Ax  = std::tr1::get<2>(data);
+
   // Solve for tranpose since we use compressed rows and UMFPACK expected compressed columns
-  umfpack.factorized_solve(x.data(), b.data(), true);
+  umfpack_solve((const long int*)Ap, (const long int*)Ai, Ax, x.data(), b.data(), numeric);
 
   return 1;
 }
-//-----------------------------------------------------------------------------
-#else
-dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
-                                    const GenericVector& b)
-{
-  warning("UMFPACK must be installed to peform a LU solve for uBLAS matrices. A Krylov iterative solver will be used instead.");
-
-  KrylovSolver solver;
-  return solver.solve(A, x, b);
-}
-//-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorize(const GenericMatrix& A)
-{
-  error("UMFPACK must be installed to perform sparse LU factorization.");
-  return 0;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::factorized_solve(GenericVector& x,
-                                              const GenericVector& b) const
-{
-  error("UMFPACK must be installed to perform sparse backward and forward substitutions.");
-  return 0;
-}
-#endif
 //-----------------------------------------------------------------------------
 #ifdef HAS_UMFPACK
-// UmfpackLUSolver::Umfpack implementation
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::Umfpack::clear()
+void UmfpackLUSolver::clear()
 {
-  delete dnull; dnull = 0;
-  delete inull; inull = 0;
-  if(Symbolic)
+  if (numeric)
   {
-    umfpack_dl_free_symbolic(&Symbolic);
-    Symbolic = 0;
+    umfpack_dl_free_numeric(&numeric);
+    numeric = 0;
   }
-  if(Numeric)
+
+  if(symbolic)
   {
-    umfpack_dl_free_numeric(&Numeric);
-    Numeric = 0;
+    umfpack_dl_free_symbolic(&symbolic);
+    symbolic = 0;
   }
-  if(local_matrix)
-  {
-    delete [] Rp; Rp = 0;
-    delete [] Ri; Ri = 0;
-    delete [] Rx; Rx = 0;
-    local_matrix = false;
-  }
-  factorized =  false;
-  N = 0;
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::Umfpack::init(const long int* Ap, const long int* Ai,
-                                         const double* Ax, uint M, uint nz)
+void* UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint N,
+                                                   const long int* Ap,
+                                                   const long int* Ai,
+                                                   const double* Ax)
 {
-  if(factorized)
-    warning("LUSolver already contains a factorized matrix! Clearing and starting over.");
+  assert(Ap);
+  assert(Ai);
+  assert(Ax);
 
-  // Clear any data
-  clear();
+  void* symbolic = 0;
+  double* dnull = 0;
 
-  // Set umfpack data
-  N  = M;
-  Rp = Ap;
-  Ri = Ai;
-  Rx = Ax;
-  N  = M;
-  local_matrix = false;
+  // Symbolic factorisation step (reordering, etc)
+  long int status = umfpack_dl_symbolic(M, N, Ap, Ai, Ax, &symbolic, dnull, dnull);
+  delete dnull;
+
+  umfpack_check_status(status, "symbolic");
+
+  return symbolic;
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::Umfpack::init_transpose(const long int* Ap, const long int* Ai,
-                                         const double* Ax, uint M, uint nz)
+void* UmfpackLUSolver::umfpack_factorize_numeric(const long int* Ap,
+                                                  const long int* Ai,
+                                                  const double* Ax,
+                                                  void* symbolic)
 {
-  if(Rp || Ri || Rx)
-    error("UmfpackLUSolver data already points to a matrix");
+  assert(Ap);
+  assert(Ai);
+  assert(Ax);
+  assert(symbolic);
 
-  // Allocate memory and take ownership
-  clear();
-  Rp = new long int[M+1];
-  Ri = new long int[nz];
-  Rx = new double[nz];
-  local_matrix = true;
-  N  = M;
-
-  // Compute transpse
-  long int status = umfpack_dl_transpose(M, M, Ap, Ai, Ax, inull, inull,
-                    const_cast<long int*>(Rp), const_cast<long int*>(Ri), const_cast<double*>(Rx));
-  Umfpack::check_status(status, "transpose");
-}
-//-----------------------------------------------------------------------------
-void UmfpackLUSolver::Umfpack::factorize()
-{
-  assert(Rp);
-  assert(Ri);
-  assert(Rx);
-  assert(!Symbolic);
-  assert(!Numeric);
-
-  long int status;
-
-  // Symbolic step (reordering etc)
-  status= umfpack_dl_symbolic(N, N, (const long int*) Rp,(const long int*) Ri,
-                              Rx, &Symbolic, dnull, dnull);
-  check_status(status, "symbolic");
+  void* numeric = 0;
+  double* dnull = 0;
 
   // Factorization step
-  status = umfpack_dl_numeric((const long int*) Rp,(const long int*) Ri, Rx,
-                               Symbolic, &Numeric, dnull, dnull);
-  Umfpack::check_status(status, "numeric");
+  long int status = umfpack_dl_numeric(Ap, Ai, Ax, symbolic, &numeric, dnull, dnull);
+  delete dnull;
 
-  // Discard the symbolic part (since the factorization is complete.)
-  umfpack_dl_free_symbolic(&Symbolic);
-  Symbolic = 0;
+  umfpack_check_status(status, "numeric");
 
-  factorized = true;
+  return numeric;
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::Umfpack::factorized_solve(double*x, const double* b, bool transpose) const
+void UmfpackLUSolver::umfpack_solve(const long int* Ap, const long int* Ai,
+                                    const double* Ax, double* x,
+                                    const double* b, void* numeric)
 {
-  assert(Rp);
-  assert(Ri);
-  assert(Rx);
-  assert(Numeric);
+  assert(Ap);
+  assert(Ai);
+  assert(Ax);
+  assert(x);
+  assert(b);
+  assert(numeric);
+  double* dnull = 0;
 
-  long int status;
-  if(transpose)
-    status = umfpack_dl_solve(UMFPACK_At, Rp, Ri, Rx, x, b, Numeric, dnull, dnull);
-  else
-    status = umfpack_dl_solve(UMFPACK_A, Rp, Ri, Rx, x, b, Numeric, dnull, dnull);
+  // Solve system. We assume CSR storage, but UMFPACK expects CSC, so solve
+  // for the transpose
+  long int status = umfpack_dl_solve(UMFPACK_At, Ap, Ai, Ax, x, b, numeric, dnull, dnull);
+  delete dnull;
 
-  Umfpack::check_status(status, "solve");
+  umfpack_check_status(status, "solve");
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::Umfpack::check_status(long int status, std::string function) const
+void UmfpackLUSolver::umfpack_check_status(long int status,
+                                            std::string function)
 {
   if(status == UMFPACK_OK)
     return;
@@ -253,6 +261,45 @@ void UmfpackLUSolver::Umfpack::check_status(long int status, std::string functio
   else if(status != UMFPACK_OK)
     warning("UMFPACK is reporting an unknown error.");
 }
+//-----------------------------------------------------------------------------
+#else
+//-----------------------------------------------------------------------------
+void UmfpackLUSolver::clear()
+{
+  error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
+}
+//-----------------------------------------------------------------------------
+void* UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint N,
+                                                   const long int* Ap,
+                                                   const long int* Ai,
+                                                   const double* Ax)
+{
+  error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
+  return 0;
+}
+//-----------------------------------------------------------------------------
+void* UmfpackLUSolver::umfpack_factorize_numeric(const long int* Ap,
+                                                  const long int* Ai,
+                                                  const double* Ax,
+                                                  void* symbolic)
+{
+  error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
+  return 0;
+}
+//-----------------------------------------------------------------------------
+void UmfpackLUSolver::umfpack_solve(const long int* Ap, const long int* Ai,
+                                    const double* Ax, double* x,
+                                    const double* b, void* numeric)
+{
+  error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
+}
+//-----------------------------------------------------------------------------
+void UmfpackLUSolver::umfpack_check_status(long int status,
+                                            std::string function)
+{
+  error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
+}
+//-----------------------------------------------------------------------------
 #endif
 //-----------------------------------------------------------------------------
 

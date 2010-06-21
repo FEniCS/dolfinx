@@ -41,6 +41,15 @@ f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
 alpha = 4.0
 gamma = 8.0
 
+w = Function(V)
+F = dot(grad(v), grad(w))*dx \
+   - dot(avg(grad(v)), jump(w, n))*dS \
+   - dot(jump(v, n), avg(grad(w)))*dS \
+   + alpha/h_avg*dot(jump(v, n), jump(w, n))*dS \
+   - dot(grad(v), w*n)*ds \
+   - dot(v*n, grad(w))*ds \
+   + gamma/h*v*w*ds
+
 # Define bilinear form
 a = dot(grad(v), grad(u))*dx \
    - dot(avg(grad(v)), jump(u, n))*dS \
@@ -50,12 +59,15 @@ a = dot(grad(v), grad(u))*dx \
    - dot(v*n, grad(u))*ds \
    + gamma/h*v*u*ds
 
+a = derivative(F, w, u)
+
 # Define linear form
 L = v*f*dx
 
 # Compute solution
 problem = VariationalProblem(a, L)
 u = problem.solve()
+print "norm:", u.vector().norm("l2")
 
 # Project solution to piecewise linears
 u_proj = project(u)
@@ -65,5 +77,5 @@ file = File("poisson.pvd")
 file << u_proj
 
 # Plot solution
-plot(u_proj, interactive=True)
+#plot(u_proj, interactive=True)
 

@@ -38,7 +38,8 @@ factor = 100      # chemical free energy multiplier
 dt     = 5.0e-06  # time step
 theta  = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
 
-parameters.optimize = True
+parameters["form_compiler"]["cpp_optimize"] = True
+parameters["form_compiler"]["optimize"]     = True
 
 # Define function spaces
 mesh = UnitSquare(96, 96)
@@ -91,7 +92,7 @@ while (t < T):
     t += dt
     u0.vector()[:] = u.vector()[:]
     solver.solve(problem, u.vector())
-    file << u.split()[1]
+    file << (u.split()[1], t)
 
 plot(u.split()[1])
 interactive()

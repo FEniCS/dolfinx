@@ -50,7 +50,10 @@ Parameters PETScKrylovSolver::default_parameters()
 {
   Parameters p(KrylovSolver::default_parameters());
   p.rename("petsc_krylov_solver");
-  return p;
+
+  p.add("preconditioner_side", "left");
+
+ return p;
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(std::string method, std::string pc_type)
@@ -141,6 +144,14 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
                    parameters["divergence_limit"],
                    parameters["maximum_iterations"]);
 
+  const std::string pc_side = parameters["preconditioner_side"];
+  if (pc_side == "left")
+    KSPSetPreconditionerSide(*_ksp, PC_LEFT);
+  else if (pc_side == "right")
+    KSPSetPreconditionerSide(*_ksp, PC_RIGHT);
+  else
+    error("Unknown preconditioning side for PETSc Krylov solver. Options are \"left\" or \"right\".");
+
   KSPGMRESSetRestart(*_ksp, parameters["gmres_restart"]);
   KSPSetOperators(*_ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
 
@@ -157,16 +168,19 @@ dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
   int num_iterations = 0;
   KSPGetIterationNumber(*_ksp, &num_iterations);
 
-  // Check if the solution converged
+  // Check if the solution converged and print error/warning if not converged
   KSPConvergedReason reason;
   KSPGetConvergedReason(*_ksp, &reason);
   if (reason < 0)
   {
+    // Get solver residual norm
+    double rnorm = 0.0;
+    KSPGetResidualNorm(*_ksp, &rnorm);
     bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
-      error("PETSc Krylov solver did not converge in %i iterations (PETSc reason %i).", num_iterations, reason);
+      error("PETSc Krylov solver did not converge in %i iterations (PETSc reason %i, norm %e).", num_iterations, reason, rnorm);
     else
-      warning("Krylov solver did not converge  in %i iterations (PETSc reason %i).", num_iterations, reason);
+      warning("Krylov solver did not converge  in %i iterations (PETSc reason %i, norm %e).", num_iterations, reason, rnorm);
   }
 
   // Report results

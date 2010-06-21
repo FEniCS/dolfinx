@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import boost
 
 from commonPkgConfigUtils import *
 
@@ -33,8 +34,8 @@ int main() {
     cpp_file = "armadillo_config_test_version.cpp"
     write_cppfile(cpp_version_str, cpp_file)
 
-    cmdstr = "%s -o a.out %s %s %s" % \
-           (linker, cflags, libs, cpp_file)
+    cmdstr = "%s -o a.out %s %s %s %s" % \
+           (linker, cflags, boost.pkgCflags(sconsEnv=sconsEnv), libs, cpp_file)
     linkFailed, cmdoutput = getstatusoutput(cmdstr)
     if linkFailed:
         remove_cppfile(cpp_file)
@@ -78,7 +79,8 @@ int main(int argc, char** argv) {
     write_cppfile(cpp_test_libs_str, cpp_file)
 
     # test that we can compile
-    cmdstr = "%s -c %s %s" % (compiler, cflags, cpp_file)
+    cmdstr = "%s -c %s %s %s" % \
+             (compiler, cflags, boost.pkgCflags(sconsEnv=sconsEnv), cpp_file)
     compileFailed, cmdoutput = getstatusoutput(cmdstr)
     if compileFailed:
         remove_cppfile(cpp_file)
@@ -87,23 +89,43 @@ int main(int argc, char** argv) {
                                        errormsg=cmdoutput)
 
     # test that we can link
-    libs = "-L%s -larmadillo" % \
-           os.path.join(getArmadilloDir(sconsEnv=sconsEnv), "lib")
-    cmdstr = "%s %s -o a.out %s" % \
-           (linker, cpp_file.replace('.cpp', '.o'), libs)
-    linkFailed, cmdoutput = getstatusoutput(cmdstr)
-    if linkFailed:
-        # try adding -lgfortran to get around Hardy libatlas-base-dev issue
-        libs += " -lgfortran" 
+    # the Armadillo library is usually either in $ARMADILLO_DIR/lib or
+    # $ARMADILLO_DIR/lib64 (on 64 bits platforms)
+    for lib_dir in ("lib", "lib64"):
+        libs = "-L%s -larmadillo" % \
+               os.path.join(getArmadilloDir(sconsEnv=sconsEnv), lib_dir)
+        if get_architecture() == "darwin":
+            libs += " -framework vecLib"
         cmdstr = "%s %s -o a.out %s" % \
-                 (linker, cpp_file.replace('.cpp', '.o'), libs)
+               (linker, cpp_file.replace('.cpp', '.o'), libs)
         linkFailed, cmdoutput = getstatusoutput(cmdstr)
         if linkFailed:
-            remove_cppfile(cpp_file, ofile=True)
-            raise UnableToLinkException("Armadillo", cmd=cmdstr,
-                                        program=cpp_test_libs_str,
-                                        errormsg=cmdoutput)
+            # try adding -lgfortran to get around Hardy libatlas-base-dev issue
+            libs += " -lgfortran" 
+            cmdstr = "%s %s -o a.out %s" % \
+                     (linker, cpp_file.replace('.cpp', '.o'), libs)
+            linkFailed, cmdoutput = getstatusoutput(cmdstr)
+            if not linkFailed:
+                break
+        else:
+            break
+    if linkFailed:
+        remove_cppfile(cpp_file, ofile=True)
+        raise UnableToLinkException("Armadillo", cmd=cmdstr,
+                                     program=cpp_test_libs_str,
+                                     errormsg=cmdoutput)
 
+    # test that we can run the binary
+    armadillo_lib_dir = \
+            os.path.join(getArmadilloDir(sconsEnv=sconsEnv), lib_dir)
+    if get_architecture() == 'darwin':
+        os.putenv('DYLD_LIBRARY_PATH',
+                  os.pathsep.join([armadillo_lib_dir,
+                                   os.getenv('DYLD_LIBRARY_PATH', '')]))
+    else:
+        os.putenv('LD_LIBRARY_PATH',
+                  os.pathsep.join([armadillo_lib_dir,
+                                   os.getenv('LD_LIBRARY_PATH', '')]))
     cmdstr = os.path.join(os.getcwd(), "a.out")
     runFailed, cmdoutput = getstatusoutput(cmdstr)
     remove_cppfile(cpp_file, ofile=True, execfile=True)
@@ -148,11 +170,15 @@ def generatePkgConf(directory=None, sconsEnv=None, **kwargs):
     if directory is None:
         directory = suitablePkgConfDir()
 
+    # armadillo.pc requires boost.pc so make sure it is available
+    dep_module_header_and_libs('Boost', 'boost', sconsEnv=sconsEnv)
+
     version, libs, cflags = pkgTests(sconsEnv=sconsEnv)
 
     pkg_file_str = r"""Name: Armadillo
 Version: %s
 Description: streamlined C++ linear algebra library
+Requires: boost
 Libs: %s
 Cflags: %s
 """ % (version, libs, repr(cflags)[1:-1])

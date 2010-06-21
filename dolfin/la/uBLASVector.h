@@ -43,7 +43,7 @@ namespace dolfin
     explicit uBLASVector(uint N);
 
     /// Copy constructor
-    explicit uBLASVector(const uBLASVector& x);
+    uBLASVector(const uBLASVector& x);
 
     /// Construct vector from a ublas_vector
     explicit uBLASVector(boost::shared_ptr<ublas_vector> x);

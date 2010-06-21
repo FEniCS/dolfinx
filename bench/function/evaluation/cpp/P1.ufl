@@ -1,0 +1,13 @@
+# Copyright (C) 2009 Garth N. Wells.
+# Licensed under the GNU LGPL Version 2.1.
+#
+# First added:  2009-06-18
+# Last changed: 
+#
+# The bilinear form a(v, u) and linear form L(v) for
+# projection onto piecewise quadratics.
+#
+# Compile this form with FFC: ffc -l dolfin P1.ufl
+
+element = FiniteElement("Lagrange", "triangle", 1)
+

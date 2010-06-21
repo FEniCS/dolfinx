@@ -19,6 +19,8 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
+parameters["linear_algebra_backend"] = "uBLAS"
+
 # Create mesh and define function space
 mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "CG", 1)

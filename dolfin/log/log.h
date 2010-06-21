@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-12-03
+// Last changed: 2010-06-07
 
 #ifndef __LOG_H
 #define __LOG_H
@@ -95,10 +95,9 @@ namespace dolfin
 
 // Not implemented error, reporting function name and line number
 #define dolfin_not_implemented() \
-  do \
-  { \
-    dolfin::__debug(__FILE__, __LINE__, __FUNCTION__, "Sorry, this function has not been implemented."); \
-    error("Not implemented."); \
+  do { \
+    error("The function '%s' has not been implemented (in %s line %d).", \
+          __FUNCTION__, __FILE__, __LINE__); \
   } while (false)
 
 #endif

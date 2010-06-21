@@ -123,7 +123,13 @@ int main()
   problem.parameters["linear_solver"] = "direct";
   problem.solve(u);
 
-  cout << "Norm " << u.vector().norm("l2") << endl;
+  Function ux = u[0];
+  Function uy = u[1];
+  Function uz = u[2];
+  cout << "Norm (u): " << u.vector().norm("l2") << endl;
+  cout << "Norm (ux, uy, uz): " << ux.vector().norm("l2") << "  "
+                                   << uy.vector().norm("l2") << "  "
+                                   << uz.vector().norm("l2") << endl;
 
   // Save solution in VTK format
   File vtk_file("elasticity.pvd", "compressed");

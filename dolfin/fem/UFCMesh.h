@@ -23,6 +23,20 @@ namespace dolfin
     /// Create empty UFC mesh
     UFCMesh() : ufc::mesh() {}
 
+    /// Copy constructor
+    UFCMesh(const UFCMesh& mesh) : ufc::mesh()
+    {
+      // Set topological dimension
+      topological_dimension = mesh.topological_dimension;
+
+      // Set geometric dimension
+      geometric_dimension = mesh.geometric_dimension;
+
+      num_entities = new uint[topological_dimension + 1];
+      for (uint d = 0; d <= topological_dimension; d++)
+        num_entities[d] = mesh.num_entities[d];
+    }
+
     /// Create UFC mesh from DOLFIN mesh
     UFCMesh(const Mesh& mesh) : ufc::mesh()
     {

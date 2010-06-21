@@ -110,7 +110,6 @@ BoundaryCondition::LocalData::LocalData(const FunctionSpace& V)
 
     array_coordinates[i].update(V.mesh().geometry().dim(), coordinates[i]);
   }
-
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::LocalData::~LocalData()

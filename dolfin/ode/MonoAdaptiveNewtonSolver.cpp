@@ -79,7 +79,8 @@ void MonoAdaptiveNewtonSolver::start()
     ode.M(ts.u0, Mu0, ts.u0, ts.starttime());
 }
 //-----------------------------------------------------------------------------
-real MonoAdaptiveNewtonSolver::iteration(const real& tol, uint iter, const real& d0, const real& d1)
+real MonoAdaptiveNewtonSolver::iteration(const real& tol, uint iter,
+                                         const real& d0, const real& d1)
 {
   // Evaluate b = -F(x) at current x
   Feval(btmp);
@@ -100,7 +101,8 @@ real MonoAdaptiveNewtonSolver::iteration(const real& tol, uint iter, const real&
     // FIXME: Implement a better check
     if (d1 >= 0.5*d0)
       A.update();
-    lu->solve(A.matrix(), dx, b);
+    lu->set_operator(A.matrix());
+    lu->solve(dx, b);
   }
 
   // Save norm of old solution
