@@ -41,7 +41,7 @@ benchlog = "logs/bench.log"
 lines = open(benchlog, 'r').readlines()
 
 benchmarks = {}
-pattern = "\((.*)\)\s+(.*)\s+(\d+\.\d+|\d+)\s+\"(.*)\""
+pattern = "\((.*)\)\s+(.*)\s+(.*)\s+\"(.*)\""
 
 # Extract data from logfile
 print "Parsing %s..." % benchlog

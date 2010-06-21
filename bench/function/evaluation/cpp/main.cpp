@@ -29,6 +29,8 @@ int main(int argc, char* argv[])
 {
   not_working_in_parallel("Function evalutation benchmark");
 
+  info("Evaluations of functions at arbitrary points.");
+
   const uint mesh_max_size = 32;
   const uint num_points  = 10000000;
 
