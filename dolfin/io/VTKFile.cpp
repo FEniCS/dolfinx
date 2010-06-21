@@ -357,21 +357,20 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
   // Get function values at vertices and zero any small values
   u.compute_vertex_values(values, mesh);
   values.zero_eps(DOLFIN_EPS);
-
   if (rank == 0)
   {
-    fp << "<PointData  Scalars=\"U\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"U\"  format=\""<< encode_string <<"\">" << std::endl;
+    fp << "<PointData  Scalars=\"" << u.name() << "\"> " << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">" << std::endl;
   }
   else if (rank == 1)
   {
-    fp << "<PointData  Vectors=\"U\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
+    fp << "<PointData  Vectors=\"" << u.name() << "\"> " << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
   }
   else if (rank == 2)
   {
-    fp << "<PointData  Tensors=\"U\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
+    fp << "<PointData  Tensors=\"" << u.name() << "\"> " << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
   }
 
   if (encoding == "ascii")
@@ -488,18 +487,18 @@ void VTKFile::write_cell_data(const Function& u, std::string vtu_filename) const
   // Write headers
   if (rank == 0)
   {
-    fp << "<CellData  Scalars=\"U\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"U\"  format=\""<< encode_string <<"\">" << std::endl;
+    fp << "<CellData  Scalars=\"" << u.name() << "\"> " << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">" << std::endl;
   }
   else if (rank == 1)
   {
-    fp << "<CellData  Vectors=\"U\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
+    fp << "<CellData  Vectors=\"" << u.name() << "\"> " << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
   }
   else if (rank == 2)
   {
-    fp << "<CellData  Tensors=\"U\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
+    fp << "<CellData  Tensors=\"" << u.name() << "\"> " << std::endl;
+    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
   }
 
   // Allocate memory for function values at cell centres
@@ -729,22 +728,22 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
     // Write headers
     if (rank == 0)
     {
-      pvtu_file << "<PCellData  Scalars=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\">" << std::endl;
+      pvtu_file << "<PCellData  Scalars=\"" << u.name() << "\"> " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << u.name() << "\">" << std::endl;
     }
     else if (rank == 1)
     {
       if (!(dim == 2 || dim == 3))
         error("Do not know what to do with vector function with dim other than 2 or 3.");
-      pvtu_file << "<PCellData  Vectors=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\">" << std::endl;
+      pvtu_file << "<PCellData  Vectors=\"" << u.name() << "\"> " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\">" << std::endl;
     }
     else if (rank == 2)
     {
       if(!(dim == 4 || dim == 9))
         error("Don't know what to do with tensor function with dim other than 4 or 9.");
-      pvtu_file << "<PCellData  Tensors=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\">" << std::endl;
+      pvtu_file << "<PCellData  Tensors=\"" << u.name() << "\"> " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\">" << std::endl;
     }
     pvtu_file << "</PDataArray> " << std::endl;
     pvtu_file << "</PCellData> " << std::endl;
@@ -753,18 +752,18 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
   {
     if (rank == 0)
     {
-      pvtu_file << "<PPointData  Scalars=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\">" << std::endl;
+      pvtu_file << "<PPointData  Scalars=\"" << u.name() << "\"> " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << u.name() << "\">" << std::endl;
     }
     else if (rank == 1)
     {
-      pvtu_file << "<PPointData  Vectors=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\">" << std::endl;
+      pvtu_file << "<PPointData  Vectors=\"" << u.name() << "\"> " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\">" << std::endl;
     }
     else if (rank == 2)
     {
-      pvtu_file << "<PPointData  Tensors=\"U\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"9\">" << std::endl;
+      pvtu_file << "<PPointData  Tensors=\"" << u.name() << "\"> " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\">" << std::endl;
     }
     pvtu_file << "</PDataArray> " << std::endl;
     pvtu_file << "</PPointData> " << std::endl;
@@ -888,8 +887,8 @@ void VTKFile::mesh_function_write(T& meshfunction)
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
 
-  fp << "<CellData  Scalars=\"U\">" << std::endl;
-  fp << "<DataArray  type=\"Float32\"  Name=\"U\"  format=\"ascii\">" << std::endl;
+  fp << "<CellData  Scalars=\"" << meshfunction.name() << "\">" << std::endl;
+  fp << "<DataArray  type=\"Float32\"  Name=\"" << meshfunction.name() << "\"  format=\"ascii\">" << std::endl;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     fp << meshfunction[cell->index()] << std::endl;
   fp << "</DataArray>" << std::endl;
