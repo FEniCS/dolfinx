@@ -59,7 +59,7 @@ void StabilityAnalysis::analyze_integral(uint q)
       break;
 
     // Allocate matrices to be pushed on s, will be deleted at end of function
-    real* C = new real[n*n];
+    boost::scoped_array<real> _C(new real[n*n]);  real* C = _C.get();
 
     // Get solution values at first nodal point on interval
     for (uint i = 0; i < n; i++)
@@ -153,12 +153,12 @@ void StabilityAnalysis::analyze_endpoint()
   PythonFile file("stability_factors.py");
 
   uint n = ode.size();
-  real s[n*n];
+  boost::scoped_array<real> _s(new real[n*n]); real* s =_s.get();
   real_identity(n,s);
 
-  real A[n*n];
-  real B[n*n];
-  real tmp[n];
+  boost::scoped_array<real> _A(new real[n*n]);  real* A = _A.get();
+  boost::scoped_array<real> _B(new real[n*n]);  real* B = _B.get();
+  boost::scoped_array<real> _tmp(new real[n]);  real* tmp = _tmp.get();
 
 
   // How should the length of the timestep be decided?
@@ -203,7 +203,7 @@ void StabilityAnalysis::get_JT(real* JT, const real* u, real& t)
 {
   // Note that matrices are stored column-oriented in the real functions
 
-  real e[n];
+  boost::scoped_array<real> _e(new real[n]);  real* e = _e.get();
   for (uint i = 0; i < n; ++i)
   {
     // Fill out each column of A
