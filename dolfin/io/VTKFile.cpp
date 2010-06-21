@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson 2009.
 //
 // First added:  2005-07-05
-// Last changed: 2009-10-08
+// Last changed: 2010-06-21
 
 #include <ostream>
 #include <sstream>
@@ -70,7 +70,7 @@ void VTKFile::operator<<(const Mesh& mesh)
   finalize(vtu_filename, counter);
 
   info(TRACE, "Saved mesh %s (%s) to file %s in VTK format.",
-          mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
+       mesh.name().c_str(), mesh.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(const MeshFunction<bool>& meshfunction)
@@ -128,13 +128,16 @@ void VTKFile::write(const Function& u, double time)
   finalize(vtu_filename, time);
 
   info(TRACE, "Saved function %s (%s) to file %s in VTK format.",
-          u.name().c_str(), u.label().c_str(), filename.c_str());
+       u.name().c_str(), u.label().c_str(), filename.c_str());
 }
 //----------------------------------------------------------------------------
 std::string VTKFile::init(const Mesh& mesh) const
 {
   // Get vtu file name and clear file
-  std::string vtu_filename = vtu_name(MPI::process_number(), MPI::num_processes(), counter, ".vtu");
+  std::string vtu_filename = vtu_name(MPI::process_number(),
+                                      MPI::num_processes(),
+                                      counter,
+                                      ".vtu");
   clear_file(vtu_filename);
 
   // Write headers
@@ -970,4 +973,3 @@ void VTKFile::encode_inline_compressed_base64(std::stringstream& stream,
 }
 #endif
 //----------------------------------------------------------------------------
-
