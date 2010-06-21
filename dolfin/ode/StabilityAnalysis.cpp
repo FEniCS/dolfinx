@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-20
-// Last changed: 2009-09-08
+// Last changed: 2010-06-21
 
 #include "StabilityAnalysis.h"
 #include "ODESolution.h"
@@ -62,10 +62,7 @@ void StabilityAnalysis::analyze_integral(uint q)
     boost::scoped_array<real> _C(new real[n*n]);  real* C = _C.get();
 
     // Get solution values at first nodal point on interval
-    for (uint i = 0; i < n; i++)
-    {
-      tmp[i] = timestep.nv[i*u.nsize()];
-    }
+    timestep.eval_a(tmp);
 
     // Get transpose of Jacobian
     get_JT(A, tmp, t);
@@ -171,11 +168,7 @@ void StabilityAnalysis::analyze_endpoint()
       break;
 
     //u.eval(t, tmp);
-
-    for (uint i = 0; i < ode.size(); i++)
-    {
-      tmp[i] = timestep.nv[i*u.nsize()];
-    }
+    timestep.eval_a(tmp);
 
     get_JT(A, tmp, t);
 

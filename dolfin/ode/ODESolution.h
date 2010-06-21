@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 // 
 // First added:  2008-06-11
-// Last changed: 2009-09-10
+// Last changed: 2010-06-21
 
 #ifndef __ODESOLUTION_H
 #define __ODESOLUTION_H
@@ -46,11 +46,10 @@ namespace dolfin
 
   public:
   ODESolutionData(const real& a, const real& k, uint nodal_size, uint N, const real* values) :
-    a(a), k(k) 
+    a(a), k(k), N(N), nodal_size(nodal_size) 
     { 
-      size = nodal_size*N;
-      nv = new real[nodal_size*N];
-      real_set(size, nv, values); 
+      nv = new real[nodal_size * N];
+      real_set(N * nodal_size, nv, values); 
     }
 
     //copy constructor
@@ -58,9 +57,10 @@ namespace dolfin
     {
       a = cp.a;
       k = cp.k;
-      size = cp.size;
-      nv = new real[size];
-      real_set(size, nv, cp.nv);
+      N = cp.N;
+      nodal_size = cp.nodal_size;
+      nv = new real[N * nodal_size];
+      real_set(N * nodal_size, nv, cp.nv);
     }
     
     ~ODESolutionData() {
@@ -69,10 +69,18 @@ namespace dolfin
 
     inline real b() {return a+k;}
 
+    // Evaluate the solution at t = a (first nodal point)
+    void eval_a(real* u) 
+    { 
+      for (uint i = 0; i < N; i++)  
+	u[i] = nv[i * nodal_size];
+    }
+    
     real a;
     real k;
     real* nv;
-    uint size;
+    uint N;
+    uint nodal_size;
 
   };
 
