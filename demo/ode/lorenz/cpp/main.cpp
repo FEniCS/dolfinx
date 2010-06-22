@@ -76,8 +76,7 @@ int main()
   ODESolution u;
 
   lorenz.solve(u);
-
-  lorenz.solve_dual(u);
+  lorenz.analyze_stability_computation(u);
   
 
   return 0;
