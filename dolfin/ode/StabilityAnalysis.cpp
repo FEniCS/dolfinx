@@ -59,7 +59,7 @@ void StabilityAnalysis::analyze_integral(uint q)
       break;
 
     // Allocate matrices to be pushed on s, will be deleted at end of function
-    boost::scoped_array<real> _C(new real[n*n]);  real* C = _C.get();
+    real* C = new real[n*n];
 
     // Get solution values at first nodal point on interval
     timestep.eval_a(tmp);
