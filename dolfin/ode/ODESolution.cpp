@@ -68,7 +68,7 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
     // endtime value
     if (i == number_of_files-1) 
     {
-      // read backwards from the end of the file to find the last
+      // seek backwards from the end of the file to find the last
       // newline
       // FIXME: Is there a better way to do this? Some library function 
       // doing the same as the command tail
@@ -77,6 +77,7 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
       int pos = file.tellg();
       pos -= 1001;
       file.seekg(pos, std::ios::beg);
+
       while (true) 
       {
 	file.read(buf, 1000);
@@ -84,8 +85,11 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
 
 	std::string buf_string(buf);
 	size_t newline_pos =  buf_string.find_last_of("\n");
+
+	// Check if we found a newline
 	if (newline_pos != std::string::npos) 
 	{
+	  // Read a and k from the timeslab
 	  file.seekg(pos + newline_pos);
 	  real max_a;
 	  real k;
@@ -111,12 +115,6 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
   data.push_back(ODESolutionData(-1, 0, 0, 0, NULL));
   data.push_back(ODESolutionData(-2, 0, 0, 0, NULL));
 
-  // load the last file into memory
-  //read_file(file_table.size()-1);
-  
-
-  //ODESolutionData& last = data[data.size()-1];
-  //T = last.a+last.k;
   read_mode = true;
 }
 //-----------------------------------------------------------------------------
