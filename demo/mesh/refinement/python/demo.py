@@ -8,7 +8,7 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 
 # Create mesh of unit square
-mesh = UnitSquare(5, 5)
+mesh = UnitSquare(32, 32)
 plot(mesh)
 
 # Uniform refinement
@@ -28,7 +28,7 @@ for i in range(5):
             cell_markers[c] = False
 
     # Refine mesh
-    mesh = refine(mesh, cell_markers)
+    mesh = coarsen(mesh, cell_markers)
 
     # Plot mesh
     plot(mesh)
