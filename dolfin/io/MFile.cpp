@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-05-06
-// Last changed: 2008-03-29
+// Last changed: 2010-06-28
 
 #include <stdio.h>
 
@@ -94,20 +94,21 @@ void MFile::operator<<(const Mesh& mesh)
   for (VertexIterator v(mesh); !v.end();)
   {
     p = v->point();
-
     ++v;
-    if ( mesh.type().cell_type() == CellType::triangle )
+
+    for (uint i = 0; i < mesh.geometry().dim(); i++)
     {
-      if ( v.end() )
-        fprintf(fp,"%.15f %.15f]';\n", p.x(), p.y());
+      fprintf(fp, "%.15g", p[i]);
+
+      if (i < mesh.geometry().dim() - 1)
+        fprintf(fp, " ");
       else
-        fprintf(fp,"%.15f %.15f\n", p.x(), p.y() );
-    }
-    else {
-      if ( v.end() )
-        fprintf(fp,"%.15f %.15f %.15f]';\n", p.x(), p.y(), p.z());
-      else
-        fprintf(fp,"%.15f %.15f %.15f\n", p.x(), p.y(), p.z());
+      {
+        if (v.end())
+          fprintf(fp, "]';\n");
+        else
+          fprintf(fp, "\n");
+      }
     }
   }
   fprintf(fp,"\n");
