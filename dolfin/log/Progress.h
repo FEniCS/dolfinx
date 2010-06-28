@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-03-14
-// Last changed: 2008-03-06
+// Last changed: 2010-06-28
 
 #ifndef __PROGRESS_H
 #define __PROGRESS_H
@@ -74,11 +74,17 @@ namespace dolfin
     // Minimum time increment
     double t_step;
 
+    // Minimum counter increment
+    uint c_step;
+
     // Current progress
     double p;
 
-    // Current time
+    // Time for latest update
     double t;
+
+    // Time for last checking the time
+    double tc;
 
     // Always visible
     bool always;
@@ -88,6 +94,9 @@ namespace dolfin
 
     // Displayed flag
     bool displayed;
+
+    // Counter for updates
+    uint counter;
 
   };
 
