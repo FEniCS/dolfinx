@@ -8,7 +8,7 @@
 // Modified by Dag Lindbo, 2008
 //
 // First added:  2006-07-05
-// Last changed: 2009-09-08
+// Last changed: 2010-06-28
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
@@ -231,7 +231,7 @@ namespace dolfin
   template <class Mat>
   uint uBLASMatrix<Mat>::size(uint dim) const
   {
-    assert( dim < 2 );
+    assert(dim < 2);
     return (dim == 0 ? A.Mat::size1() : A.Mat::size2());
   }
   //---------------------------------------------------------------------------
@@ -576,7 +576,7 @@ namespace dolfin
   void uBLASMatrix<Mat>::solveInPlace(B& X)
   {
     const uint M = A.size1();
-    assert( M == A.size2() );
+    assert(M == A.size2());
 
     // Create permutation matrix
     ublas::permutation_matrix<std::size_t> pmatrix(M);

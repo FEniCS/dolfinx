@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2006-2010.
 //
 // First added:  2006-05-31
-// Last changed: 2010-04-19
+// Last changed: 2010-06-28
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
@@ -125,7 +125,7 @@ namespace dolfin
       error("Non-matching dimensions for linear system.");
 
     // Reinitialise x if necessary
-    if(x.size() != b.size())
+    if (x.size() != b.size())
     {
       x.resize(b.size());
       x.zero();
@@ -172,8 +172,9 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template<class Mat>
-  dolfin::uint uBLASKrylovSolver::solveCG(const Mat& A, uBLASVector& x,
-					                                const uBLASVector& b,
+  dolfin::uint uBLASKrylovSolver::solveCG(const Mat& A,
+                                          uBLASVector& x,
+                                          const uBLASVector& b,
                                           bool& converged) const
   {
     warning("Conjugate-gradient method not yet programmed for uBLASKrylovSolver. Using GMRES.");
@@ -182,7 +183,7 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   template<class Mat>
   dolfin::uint uBLASKrylovSolver::solveGMRES(const Mat& A, uBLASVector& x,
-					                           const uBLASVector& b, bool& converged) const
+                                             const uBLASVector& b, bool& converged) const
   {
     // Get underlying uBLAS vectors
     ublas_vector& _x = x.vec();
@@ -327,7 +328,7 @@ namespace dolfin
       ublas_vector_range _g(_gamma, ublas::range(0,subiteration));
 
       // Solve triangular system H*g and return result in g
-      ublas::inplace_solve(Htrunc, _g, ublas::upper_tag () );
+      ublas::inplace_solve(Htrunc, _g, ublas::upper_tag ());
 
       // x_m = x_0 + V*y
       ublas_matrix_cmajor_range _v( V, ublas::range(0,V.size1()), ublas::range(0,subiteration) );
@@ -338,8 +339,8 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   template<class Mat>
   dolfin::uint uBLASKrylovSolver::solveBiCGStab(const Mat& A, uBLASVector& x,
-					                                      const uBLASVector& b,
-					                                      bool& converged) const
+                                                const uBLASVector& b,
+                                                bool& converged) const
   {
     // Get uderlying uBLAS vectors
     ublas_vector& _x = x.vec();

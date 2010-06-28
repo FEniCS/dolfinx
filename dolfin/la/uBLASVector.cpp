@@ -6,7 +6,7 @@
 // Modified by Martin Sandve Alnes 2008.
 //
 // First added:  2006-04-04
-// Last changed: 2009-08-11
+// Last changed: 2010-06-28
 
 #include <iostream>
 #include <sstream>
@@ -35,31 +35,34 @@ uBLASVector::uBLASVector(): x(new ublas_vector(0))
 //-----------------------------------------------------------------------------
 uBLASVector::uBLASVector(uint N): x(new ublas_vector(N))
 {
-  // Clear vector
+  // Set all entries to zero
   x->clear();
 }
 //-----------------------------------------------------------------------------
 uBLASVector::uBLASVector(const uBLASVector& x): x(new ublas_vector(*(x.x)))
 {
-  //Do nothing
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 uBLASVector::uBLASVector(boost::shared_ptr<ublas_vector> x) : x(x)
 {
-  //Do nothing
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 uBLASVector::~uBLASVector()
 {
-  //Do nothing
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::resize(uint N)
 {
-  if(x->size() == N)
+  if (x->size() == N)
     return;
-
   x->resize(N, false);
+
+  // Set vector to zero to prevent random numbers entering the vector.
+  // Fixes this bug: https://bugs.launchpad.net/dolfin/+bug/594954
+  x->clear();
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBLASVector::size() const
