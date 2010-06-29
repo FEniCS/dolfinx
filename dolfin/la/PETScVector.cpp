@@ -215,7 +215,7 @@ void PETScVector::set(const double* block, uint m, const uint* rows)
   if (m == 0)
   {
     _rows = &_m;
-    double tmp = 0;
+    double tmp = 0.0;
     block = &tmp;
   }
   VecSetValues(*x, _m, _rows, block, INSERT_VALUES);
