@@ -9,7 +9,7 @@ __license__  = "GNU GPL version 3 or any later version"
 
 from dolfin import *
 
-# Define Dirichlet boundary (x = 0, 1 or y = 1)
+# Define Dirichlet boundary
 def dirichlet_boundary(x):
     return (x[0] < DOLFIN_EPS or x[1] < DOLFIN_EPS
             or x[2] < DOLFIN_EPS or abs(x[2] - 1.0) < DOLFIN_EPS)

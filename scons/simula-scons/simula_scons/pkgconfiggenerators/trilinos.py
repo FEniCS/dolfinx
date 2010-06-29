@@ -14,8 +14,41 @@ def getTrilinosDir(sconsEnv=None):
     trilinos_dir = getPackageDir("trilinos", sconsEnv=sconsEnv, default=default)
     return trilinos_dir
 
-def pkgVersion(sconsEnv=None):
-    # Try to figure out what version of Trilinos we have.
+def pkgVersion(sconsEnv=None, compiler=None, cflags=None):
+    """Return Trilinos version"""
+    # In later versions we do not need to use PyTrilinos to get the version.
+    # This is useful in build environments when Trilinos is built with mpi
+    # and one cannot run mpi programs.
+    if not compiler:
+        compiler = get_compiler(sconsEnv)
+    if not cflags:
+        cflags = pkgCflags(sconsEnv=sconsEnv)
+
+    cpp_version_str = r"""
+#include "Trilinos_version.h"
+#include <iostream>
+int main() {
+  std::cout << TRILINOS_VERSION_STRING;
+  return 0;
+}
+"""
+    cpp_file = "trilinos_config_test_version.cpp"
+    write_cppfile(cpp_version_str, cpp_file)
+
+    cmdstr = "%s -o a.out %s %s" % \
+           (compiler, cflags, cpp_file)
+    linkFailed, cmdoutput = getstatusoutput(cmdstr)
+    if linkFailed:
+        remove_cppfile(cpp_file)
+    else:
+        cmdstr = os.path.join(os.getcwd(), "a.out")
+        runFailed, cmdoutput = getstatusoutput(cmdstr)
+        remove_cppfile(cpp_file, execfile=True)
+        if not runFailed:
+            return cmdoutput
+
+    # Try to use PyTrilinos to get version if the above didn't work.
+
     # Some of these imports try to load NumPy, which is also present 
     # in the current directory. Hence we need to remove the current 
     # directory from sys.path:

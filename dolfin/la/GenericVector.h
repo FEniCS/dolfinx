@@ -210,7 +210,8 @@ namespace dolfin
     virtual double getitem(uint i) const
     { double value(0); get(&value, 1, &i); return value; }
 
-    /// Set given entry to value
+    /// Set given entry to value. apply("insert") should be called before using
+    /// using the object.
     virtual void setitem(uint i, double value)
     { set(&value, 1, &i); }
 

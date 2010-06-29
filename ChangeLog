@@ -1,3 +1,6 @@
+ - Dramatic speedup of progress bar (and algorithms using it)
+ - Fix bug in writing meshes embedded higher dimensions to M-files
+ - Zero vector in uBLASVector::resize() to fix spurious bug in Krylov solver
  - Handle named fields (u.rename()) in VTK output
  - Bug fix in computation of FacetArea for tetrahedrons
  - Add support for direct plotting of Dirichlet boundary conditions: plot(bc)

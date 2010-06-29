@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-09-28
-// Last changed: 2009-10-11
+// Last changed: 2010-06-21
 
 #include <dolfin/fem/FiniteElement.h>
 #include "GenericFunction.h"
@@ -10,7 +10,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GenericFunction::GenericFunction()
+GenericFunction::GenericFunction() : Variable("u", "a function")
 {
   // Do nothing
 }
