@@ -9,7 +9,7 @@
 using namespace dolfin;
 
 #define NUM_REPS 5
-#define SIZE 1000000000
+#define SIZE 500000000
 
 int main(int argc, char* argv[])
 {
