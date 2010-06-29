@@ -1,3 +1,6 @@
+ - Optimize and improve StabilityAnalysis.
+ - Use own implementation of binary search in ODESolution (takes advantage of previous values as initial guess)
+ - Improve reading ODESolution spanning multiple files
  - Dramatic speedup of progress bar (and algorithms using it)
  - Fix bug in writing meshes embedded higher dimensions to M-files
  - Zero vector in uBLASVector::resize() to fix spurious bug in Krylov solver
