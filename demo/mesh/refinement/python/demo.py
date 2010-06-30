@@ -28,7 +28,7 @@ for i in range(5):
             cell_markers[c] = False
 
     # Refine mesh
-    mesh = coarsen(mesh, cell_markers)
+    mesh = refine(mesh, cell_markers)
 
     # Plot mesh
     plot(mesh)
