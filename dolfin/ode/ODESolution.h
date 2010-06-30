@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2008.
 // 
 // First added:  2008-06-11
-// Last changed: 2009-09-10
+// Last changed: 2010-06-21
 
 #ifndef __ODESOLUTION_H
 #define __ODESOLUTION_H
@@ -46,21 +46,21 @@ namespace dolfin
 
   public:
   ODESolutionData(const real& a, const real& k, uint nodal_size, uint N, const real* values) :
-    a(a), k(k) 
+    a(a), k(k), N(N), nodal_size(nodal_size) 
     { 
-      size = nodal_size*N;
-      nv = new real[nodal_size*N];
-      real_set(size, nv, values); 
+      nv = new real[nodal_size * N];
+      real_set(N * nodal_size, nv, values); 
     }
 
-   //copy constructor
+    //copy constructor
     ODESolutionData(const ODESolutionData& cp)
     {
       a = cp.a;
       k = cp.k;
-      size = cp.size;
-      nv = new real[size];
-      real_set(size, nv, cp.nv);
+      N = cp.N;
+      nodal_size = cp.nodal_size;
+      nv = new real[N * nodal_size];
+      real_set(N * nodal_size, nv, cp.nv);
     }
     
     ~ODESolutionData() {
@@ -69,10 +69,18 @@ namespace dolfin
 
     inline real b() {return a+k;}
 
+    // Evaluate the solution at t = a (first nodal point)
+    void eval_a(real* u) 
+    { 
+      for (uint i = 0; i < N; i++)  
+	u[i] = nv[i * nodal_size];
+    }
+    
     real a;
     real k;
     real* nv;
-    uint size;
+    uint N;
+    uint nodal_size;
 
   };
 
@@ -150,10 +158,15 @@ namespace dolfin
     uint max_timeslabs;                              // number of timeslabs pr file and in memory
     bool dirty;                                      // all data written to disk
     std::string filename;
+
+    uint get_file_index(const real& t); //find which file stores timeslab containing given t
     void read_file(uint file_number);
     dolfin::uint open_and_read_header(std::ifstream& file, uint filenumber); 
 
     void add_data(const real& a, const real& b, const real* data);
+
+    uint get_buffer_index(const real& t);
+    int buffer_index_cache;
 
     //some functions for convenience
     inline real a_in_memory() {return data[0].a;}
@@ -161,10 +174,6 @@ namespace dolfin
     inline uint a_index_in_memory() {return data_on_disk ? file_table[fileno_in_memory].second : 0;}
     inline uint b_index_in_memory() {return a_index_in_memory() + data.size()-1;}
 
-    //callback functions used by std::lower_bound() when searching
-    static bool real_data_cmp(const ODESolutionData& a,  const real& t);
-    static bool real_filetable_cmp( const std::pair<real, uint>& a,  const real& t);
-    static bool uint_filetable_cmp(const std::pair<real, uint>& a,  const uint& i);
   };
 
 //----------------------------------------------------------------------------- 

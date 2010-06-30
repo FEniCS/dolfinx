@@ -5,12 +5,14 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2008-06-11
-// Last changed: 2009-11-11
+// Last changed: 2010-06-23
 
 #include "ODESolution.h"
 #include "MonoAdaptiveTimeSlab.h"
+#include <dolfin/log/Logger.h>
 #include <algorithm>
 #include <iostream>
+#include <ios>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -30,7 +32,8 @@ ODESolution::ODESolution() :
   read_mode(false),
   data_on_disk(false),
   dirty(false),
-  filename("odesolution")
+  filename("odesolution"),
+  buffer_index_cache(0)
 {
 }
 //-----------------------------------------------------------------------------
@@ -43,12 +46,12 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
   initialized(false),
   data_on_disk(true),
   dirty(false),
-  filename(filename)
+  filename(filename),
+  buffer_index_cache(0)
 {
   std::ifstream file;
   uint timeslabs_in_file = open_and_read_header(file, 0u);
   file.close();
-
 
   //collect number of timeslabs and first t value from all files
   for (uint i=0; i < number_of_files; i++)
@@ -58,16 +61,60 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
     real t;
     file >> t;
     file_table.push_back( std::pair<real, uint>(t, no_timeslabs) );
-    file.close();
 
     no_timeslabs += timeslabs_in_file;
+
+    // if this is the last file, read the last line to extract the 
+    // endtime value
+    if (i == number_of_files-1) 
+    {
+      // seek backwards from the end of the file to find the last
+      // newline
+      // FIXME: Is there a better way to do this? Some library function 
+      // doing the same as the command tail
+      char buf[1001];
+      file.seekg (0, std::ios::end);
+      int pos = file.tellg();
+      pos -= 1001;
+      file.seekg(pos, std::ios::beg);
+
+      while (true) 
+      {
+	file.read(buf, 1000);
+	buf[1000] = '\0';
+
+	std::string buf_string(buf);
+	size_t newline_pos =  buf_string.find_last_of("\n");
+
+	// Check if we found a newline
+	if (newline_pos != std::string::npos) 
+	{
+	  // Read a and k from the timeslab
+	  file.seekg(pos + newline_pos);
+	  real max_a;
+	  real k;
+	  file >> max_a;
+	  file >> k;
+	  T = max_a + k;
+	  break;
+	} else 
+	{
+	  pos -= 1000;
+	  file.seekg(pos, std::ios::beg);
+
+	}
+      }
+    }
+
+    file.close();    
   }
 
-  // load the last file into memory
-  read_file(file_table.size()-1);
+  // save an invalid fileno and dummy timeslabs to trigger reading 
+  // a file on first eval
+  fileno_in_memory = file_table.size() + 1;
+  data.push_back(ODESolutionData(-1, 0, 0, 0, NULL));
+  data.push_back(ODESolutionData(-2, 0, 0, 0, NULL));
 
-  ODESolutionData& last = data[data.size()-1];
-  T = last.a+last.k;
   read_mode = true;
 }
 //-----------------------------------------------------------------------------
@@ -121,7 +168,6 @@ void ODESolution::add_timeslab(const real& a, const real& b, const real* nodal_v
     data.clear();
   }
 
-  //cout << "Adding timeslab, a=" << a << ", b=" << b << endl;
   add_data(a, b, nodal_values);
 
   dirty = true;
@@ -163,24 +209,11 @@ void ODESolution::eval(const real& t, real* y)
   // Read data from disk if necesary.
   if (data_on_disk && (t < a_in_memory() || t > b_in_memory()))
   {
-    //get file number
-    std::vector< std::pair<real, uint> >::iterator lower = std::lower_bound(file_table.begin(),
-							       file_table.end(),
-							       t,
-							       real_filetable_cmp);
-    uint index = lower-file_table.begin();
+    read_file(get_file_index(t));
+ }
 
-    read_file(index);
-  }
-
-  // Find position in buffer
-  std::vector<ODESolutionData>::iterator lower = std::lower_bound(data.begin(),
-								  data.end(),
-								  t,
-								  real_data_cmp);
-  uint index = lower-data.begin()-1;
-
-  ODESolutionData& a = data[index];
+  // Find the right timeslab in buffer
+  ODESolutionData& a = data[get_buffer_index(t)];
   real tau = (t-a.a)/a.k;
 
   assert(tau <= 1.0+real_epsilon());
@@ -191,7 +224,9 @@ void ODESolution::eval(const real& t, real* y)
     y[i] = 0.0;
 
     for (uint j = 0; j < nodal_size; j++)
+    {
       y[i] += a.nv[i*nodal_size + j] * trial->eval(j, tau);
+    }
   }
 
   //store in cache
@@ -208,13 +243,11 @@ ODESolutionData& ODESolution::get_timeslab(uint index)
 
   if ( data_on_disk && (index > b_index_in_memory() || index < a_index_in_memory()))
   {
-    std::vector< std::pair<real, uint> >::iterator lower = std::lower_bound(file_table.begin(),
-									    file_table.end(),
-									    index,
-									    uint_filetable_cmp);
-    uint fileno = lower-file_table.begin();
+    //Scan the cache
+    uint file_no = file_table.size()-1;
+    while (file_table[file_no].second > index) file_no--;
 
-    read_file(fileno);
+    read_file(file_no);
   }
 
   assert(index-a_index_in_memory() < data.size());
@@ -352,8 +385,65 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
   return timeslabs;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint ODESolution::get_file_index(const real& t) 
+{
+  //Scan the file table
+  int index = file_table.size()-1;
+  while (file_table[index].first > t) index--;
+
+  assert(index >= 0);
+
+  return static_cast<dolfin::uint>(index);
+
+}
+//-----------------------------------------------------------------------------
+dolfin::uint ODESolution::get_buffer_index(const real& t) 
+{
+  // Use the cached index as initial guess, since we very often evaluate 
+  // at points close to the previous one
+
+  uint count = 0;
+
+  // Expand interval until it includes our target value
+  int width = 1;
+  while (! (data[std::max(buffer_index_cache-width, 0)].a <= t+real_epsilon() && 
+	    data[std::min(buffer_index_cache+width, (int)data.size()-1)].b() > t-real_epsilon()))
+  {
+    width = width * 2;
+    count++;
+  }
+
+  // Do binary search in interval
+  int range_start = std::max(buffer_index_cache-width, 0);
+  int range_end   = std::min(buffer_index_cache+width, (int) data.size()-1);
+  buffer_index_cache = (range_start+range_end)/2;
+
+  while( range_end != range_start)
+  {
+    if (t < data[buffer_index_cache].a) 
+    {
+      range_end = std::min(buffer_index_cache, range_end-1);
+    } else
+    {
+      range_start = std::max(buffer_index_cache, range_start+1);
+    }
+
+    buffer_index_cache = (range_end + range_start)/2;
+
+    count++;
+
+    // FIXME: How should the maximum number of iterations
+    // be determined?
+    assert(count < 100);
+  }
+  
+  return buffer_index_cache;
+
+}
+//-----------------------------------------------------------------------------
 void ODESolution::read_file(uint file_number)
 {
+  info(PROGRESS,  "ODESolution: Reading file %d", file_number);
 
   if (data.size() > 0)
     data.clear();
@@ -391,6 +481,11 @@ void ODESolution::read_file(uint file_number)
 
   fileno_in_memory = file_number;
 
+  //Try to set the initial guess
+  buffer_index_cache = buffer_index_cache > (int) data.size()/2 ? data.size()-1 : 0;
+
+  info(PROGRESS, "  Done reading file %d", file_number);
+
 }
 //-----------------------------------------------------------------------------
 void ODESolution::add_data(const real& a, const real& b, const real* nodal_values)
@@ -401,18 +496,6 @@ void ODESolution::add_data(const real& a, const real& b, const real* nodal_value
 				 nodal_size,
 				 N,
 				 nodal_values));
-}
-//-----------------------------------------------------------------------------
-bool ODESolution::real_data_cmp( const ODESolutionData& a, const real& t ) {
-  return (a.a <= t);
-}
-//-----------------------------------------------------------------------------
-bool ODESolution::real_filetable_cmp(const std::pair<real, uint>& a, const real& t) {
-  return (a.first <= t);
-}
-//-----------------------------------------------------------------------------
-bool ODESolution::uint_filetable_cmp(const std::pair<real, uint>& a, const uint& i) {
-  return ( a.second <= i);
 }
 //-----------------------------------------------------------------------------
 std::string ODESolution::str(bool verbose) const

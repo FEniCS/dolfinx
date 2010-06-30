@@ -1,6 +1,6 @@
 # Import solution
 from solution import *
-import solution_dual as dual
+import stability_factors
 
 # Import matplotlib
 from pylab import *
@@ -12,11 +12,13 @@ xlabel('t')
 ylabel('U(t)')
 title('Lorenz')
 
-# Plot dual solution
+# Plot stability factors
 figure(2)
-semilogy(dual.t, abs(dual.u[:, 0]), dual.t, abs(dual.u[:, 1]), dual.t, abs(dual.u[:, 2]))
-xlabel('t')
-ylabel('phi(t)')
-title('Lorenz (dual)')
+semilogy(stability_factors.t, stability_factors.u[:, 0], 
+         stability_factors.t, stability_factors.u[:, 1], 
+         stability_factors.t, stability_factors.u[:, 2])
+xlabel('$T$')
+ylabel('$S_C$')
+title('Computational stability factors of the Lorenz system')
 
 show()
