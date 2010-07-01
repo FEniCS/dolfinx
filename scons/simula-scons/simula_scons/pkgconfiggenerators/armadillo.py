@@ -60,19 +60,15 @@ def pkgLibs(compiler=None, linker=None, cflags=None, sconsEnv=None):
         cflags = pkgCflags(sconsEnv=sconsEnv)
 
     cpp_test_libs_str = r"""
-#include "armadillo"
-#include <iostream>
-using namespace arma;
-int main(int argc, char** argv) {
-  mat A = \
-   "\
-   0.555950  0.274690  0.540605  0.798938;\
-   0.108929  0.830123  0.891726  0.895283;\
-   0.948014  0.973234  0.216504  0.883152;\
-   0.023787  0.675382  0.231751  0.450332;\
-   ";
-  std::cout << "det(A) = " << det(A) << std::endl;
-  return 0;
+#include <armadillo>
+
+int main()
+{
+ arma::mat A = arma::rand(4,4);
+ arma::vec b = arma::rand(4);
+ arma::vec x = arma::solve(A, b);
+
+ return 0;
 }
 """
     cpp_file = "armadillo_config_test_libs.cpp"
