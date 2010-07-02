@@ -66,8 +66,8 @@ void RivaraRefinement::refine(Mesh& refined_mesh,
   dmesh.export_mesh(refined_mesh, new2old_cell_arr, new2old_facet_arr);
 
   // Generate cell mesh function map
-  cell_map.init(mesh, dim);
-  for (CellIterator c(mesh); !c.end(); ++c)
+  cell_map.init(refined_mesh, dim);
+  for (CellIterator c(refined_mesh); !c.end(); ++c)
     cell_map[*c] = new2old_cell_arr[c->index()];
 
   //Generate facet map array
