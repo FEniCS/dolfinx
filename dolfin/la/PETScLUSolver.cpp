@@ -88,6 +88,17 @@ PETScLUSolver::~PETScLUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+void PETScLUSolver::set_operator(const PETScMatrix& A)
+{
+  error("not_implemented");
+}
+//-----------------------------------------------------------------------------
+dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
+{
+  error("not_implemented");
+  return 0;
+}
+//-----------------------------------------------------------------------------
 dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x,
                                   const GenericVector& b)
 {
@@ -173,12 +184,12 @@ void PETScLUSolver::init()
   PCFactorSetMatSolverPackage(pc, lu_packages.find(lu_package)->second);
 
   // Allow matrices with zero diagonals to be solved
-    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
-    PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
-    PCFactorSetShiftAmount(pc, PETSC_DECIDE);
-    #else
-    PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
-    #endif
+  #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
+  PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
+  PCFactorSetShiftAmount(pc, PETSC_DECIDE);
+  #else
+  PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
+  #endif
 }
 //-----------------------------------------------------------------------------
 

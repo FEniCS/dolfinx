@@ -45,7 +45,7 @@ namespace dolfin
     /// Destructor
     ~UmfpackLUSolver();
 
-    /// Ste operator (matrix)
+    /// Set operator (matrix)
     void set_operator(const GenericMatrix& A);
 
     /// Solve linear system Ax = b for a sparse matrix using UMFPACK if installed

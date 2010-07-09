@@ -14,6 +14,7 @@
 #include <map>
 #include <boost/shared_ptr.hpp>
 #include <petscksp.h>
+#include <petscpc.h>
 #include "GenericLinearSolver.h"
 #include "PETScObject.h"
 
@@ -40,6 +41,12 @@ namespace dolfin
     /// Destructor
     ~PETScLUSolver();
 
+    /// Set operator (matrix)
+    void set_operator(const PETScMatrix& A);
+
+    /// Solve linear system Ax = b
+    uint solve(GenericVector& x, const GenericVector& b);
+
     /// Solve linear system Ax = b
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
@@ -65,6 +72,7 @@ namespace dolfin
 
     /// PETSc solver pointer
     boost::shared_ptr<KSP> ksp;
+
   };
 
 }
