@@ -18,7 +18,8 @@ using namespace dolfin;
 
 int main(int argc, char *argv[])
 {
-  parameters["linear_algebra_backend"] = "uBLAS";
+  //parameters["linear_algebra_backend"] = "uBLAS";
+  parameters["linear_algebra_backend"] = "PETSc";
 
   // Read mesh
   Mesh mesh("../mesh.xml.gz");
@@ -67,7 +68,8 @@ int main(int argc, char *argv[])
   bc.apply(A);
 
   // LU
-  UmfpackLUSolver lu(A);
+  //UmfpackLUSolver lu(A);
+  PETScLUSolver lu(A);
   lu.factorize();
 
   // Parameters for time-stepping
@@ -98,5 +100,5 @@ int main(int argc, char *argv[])
   }
 
   // Plot solution
-  plot(u);
+  //plot(u);
 }

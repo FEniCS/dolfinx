@@ -18,7 +18,7 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-parameters["linear_algebra_backend"] = "uBLAS"
+parameters["linear_algebra_backend"] = "PETSc"
 
 def boundary_value(n):
     if n < 10:
@@ -78,7 +78,7 @@ A = assemble(a)
 bc.apply(A)
 
 # Create linear solver and factorize matrix
-solver = cpp.UmfpackLUSolver(A)
+solver = cpp.PETScLUSolver(A)
 solver.factorize()
 
 # Output file

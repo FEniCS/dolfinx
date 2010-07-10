@@ -10,9 +10,10 @@
 #ifdef HAS_PETSC
 
 #include <boost/assign/list_of.hpp>
-#include <dolfin/main/MPI.h>
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/NoDeleter.h>
+#include <dolfin/log/dolfin_log.h>
+#include <dolfin/main/MPI.h>
 #include "LUSolver.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
@@ -53,6 +54,185 @@ Parameters PETScLUSolver::default_parameters()
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(std::string lu_package) : lu_package(lu_package)
 {
+  select_solver();
+
+  // Set parameter values
+  parameters = default_parameters();
+
+  // Initialize PETSc LU solver
+  init_solver();
+}
+//-----------------------------------------------------------------------------
+PETScLUSolver::PETScLUSolver(const GenericMatrix& A, std::string lu_package)
+                           : lu_package(lu_package),
+                             A(reference_to_no_delete_pointer(A.down_cast<PETScMatrix>()))
+{
+  // Check dimensions
+  if (A.size(0) != A.size(1))
+    error("Cannot LU factorize non-square PETSc matrix.");
+
+  // Set parameter values
+  parameters = default_parameters();
+
+  // Select LU solver
+  select_solver();
+
+  // Initialize PETSc LU solver
+  init_solver();
+}
+//-----------------------------------------------------------------------------
+PETScLUSolver::PETScLUSolver(boost::shared_ptr<const GenericMatrix> A,
+                             std::string lu_package) : lu_package(lu_package),
+                             A(A)
+{
+  // Check dimensions
+  if (A->size(0) != A->size(1))
+    error("Cannot LU factorize non-square PETSc matrix.");
+
+  // Set parameter values
+  parameters = default_parameters();
+
+  // Select LU solver
+  select_solver();
+
+  // Initialize PETSc LU solver
+  init_solver();
+}
+
+//-----------------------------------------------------------------------------
+PETScLUSolver::~PETScLUSolver()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void PETScLUSolver::set_operator(const GenericMatrix& A)
+{
+  this->A = reference_to_no_delete_pointer(A.down_cast<PETScMatrix>());
+
+  // Check dimensions
+  if (A.size(0) != A.size(1))
+    error("Cannot LU factorize non-square PETSc matrix.");
+}
+//-----------------------------------------------------------------------------
+dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
+{
+  assert(A);
+
+  // Check dimensions
+  if (A->size(0) != b.size())
+    error("Cannot LU factorize non-square PETSc matrix.");
+
+  // Initialize solution vector (remains untouched if dimensions match)
+  x.resize(A->size(1));
+
+  // Initialise solver
+  init_solver();
+
+  // Factorize matrix
+  factorize();
+
+  // Downcast vectors
+  const PETScVector& _b = b.down_cast<PETScVector>();
+  PETScVector& _x = x.down_cast<PETScVector>();
+
+  // Write a pre-solve message
+  pre_report(A->down_cast<PETScMatrix>());
+
+  // Solve linear system
+  KSPSolve(*ksp, *_b.vec(), *_x.vec());
+
+  return 1;
+}
+//-----------------------------------------------------------------------------
+void PETScLUSolver::factorize()
+{
+  assert(A);
+
+  // Downcast matrix
+  const PETScMatrix& _A = A->down_cast<PETScMatrix>();
+  KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), SAME_PRECONDITIONER);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x,
+                                  const GenericVector& b)
+{
+  return solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(),
+               b.down_cast<PETScVector>());
+}
+//-----------------------------------------------------------------------------
+dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
+                                  const PETScVector& b)
+{
+  // Initialise solver
+  init_solver();
+
+  // Set operator
+  set_operator(A);
+
+  // Factorize matrix
+  factorize();
+
+  // Initialize solution vector (remains untouched if dimensions match)
+  x.resize(A.size(1));
+
+  // Write a pre-solve message
+  pre_report(A);
+
+  // Solve linear system
+  KSPSolve(*ksp, *b.vec(), *x.vec());
+
+  return 1;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint PETScLUSolver::solve_factorized(GenericVector& x,
+                                             const GenericVector& b) const
+{
+  assert(A);
+  assert(ksp);
+
+  // Check that operator has been associated with solver
+  PetscTruth amat, pmat;
+  KSPGetOperatorsSet(*ksp, &amat, &pmat);
+  if (amat == PETSC_FALSE || pmat == PETSC_FALSE)
+    error("Matrix operator has not been set for PETScLUSolver.");
+
+  // Check dimensions
+  if (A->size(0) != b.size())
+    error("Non-matching dimensions for linear system and right-hand side.");
+
+  // Initialize solution vector (remains untouched if dimensions match)
+  x.resize(A->size(1));
+
+  // Downcast vectors
+  const PETScVector& _b = b.down_cast<PETScVector>();
+  const PETScVector& _x = x.down_cast<PETScVector>();
+
+  // Write a pre-solve message
+  pre_report(A->down_cast<PETScMatrix>());
+
+  // Solve
+  KSPSolve(*ksp, *_b.vec(), *_x.vec());
+
+  return 1;
+}
+//-----------------------------------------------------------------------------
+std::string PETScLUSolver::str(bool verbose) const
+{
+  std::stringstream s;
+
+  if (verbose)
+  {
+    warning("Verbose output for PETScLUSolver not implemented, calling PETSc KSPView directly.");
+    KSPView(*ksp, PETSC_VIEWER_STDOUT_WORLD);
+  }
+  else
+    s << "<PETScLUSolver>";
+
+  return s.str();
+}
+//-----------------------------------------------------------------------------
+void PETScLUSolver::select_solver()
+{
   // Check package string
   if (lu_packages.count(lu_package) == 0)
     error("Requested PETSc LU solver '%s' is unknown,", lu_package.c_str());
@@ -75,105 +255,27 @@ PETScLUSolver::PETScLUSolver(std::string lu_package) : lu_package(lu_package)
       #endif
     }
   }
-
-  // Set parameter values
-  parameters = default_parameters();
-
-  // Initialize PETSc LU solver
-  init();
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver::~PETScLUSolver()
+void PETScLUSolver::init_solver()
 {
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void PETScLUSolver::set_operator(const PETScMatrix& A)
-{
-  error("not_implemented");
-}
-//-----------------------------------------------------------------------------
-dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
-{
-  error("not_implemented");
-  return 0;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x,
-                                  const GenericVector& b)
-{
-  return solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(),
-               b.down_cast<PETScVector>());
-}
-//-----------------------------------------------------------------------------
-dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
-                                  const PETScVector& b)
-{
-  // Initialise solver
-  init();
-
-  const MatSolverPackage solver_type;
-  PC pc;
-  KSPGetPC(*ksp, &pc);
-  PCFactorGetMatSolverPackage(pc, &solver_type);
-
-  // Get parameters
-  const bool report = parameters["report"];
-
-  // Check dimensions
-  const uint M = A.size(0);
-  const uint N = A.size(1);
-  if (N != b.size())
-    error("Non-matching dimensions for linear system.");
-
-  // Initialize solution vector (remains untouched if dimensions match)
-  x.resize(M);
-
-  // Write a message
-  if (report)
-    info(PROGRESS, "Solving linear system of size %d x %d (PETSc LU solver, %s).",
-         A.size(0), A.size(1), solver_type);
-
-  // Solve linear system
-  KSPSetOperators(*ksp, *A.mat(), *A.mat(), DIFFERENT_NONZERO_PATTERN);
-  KSPSolve(*ksp, *b.vec(), *x.vec());
-
-  return 1;
-}
-//-----------------------------------------------------------------------------
-std::string PETScLUSolver::str(bool verbose) const
-{
-  std::stringstream s;
-
-  if (verbose)
-  {
-    warning("Verbose output for PETScLUSolver not implemented, calling PETSc KSPView directly.");
-    KSPView(*ksp, PETSC_VIEWER_STDOUT_WORLD);
-  }
-  else
-    s << "<PETScLUSolver>";
-
-  return s.str();
-}
-//-----------------------------------------------------------------------------
-void PETScLUSolver::init()
-{
-  // Create a PETSc Krylov solver and instruct it to use LU preconditioner
 
   // Destroy old solver environment if necessary
-  //if (!ksp.unique())
-  //  error("Cannot create new KSP Krylov solver. More than one object points to the underlying PETSc object.");
-
+  if (ksp)
+  {
+    if (!ksp.unique())
+      error("Cannot create new KSP Krylov solver. More than one object points to the underlying PETSc object.");
+  }
   ksp.reset(new KSP, PETScKSPDeleter());
 
-  // Set up solver environment
+  // Create solver
   if (MPI::num_processes() > 1)
-  {
-    info(TRACE, "Creating parallel PETSc Krylov solver (for LU factorization).");
     KSPCreate(PETSC_COMM_WORLD, ksp.get());
-  }
   else
     KSPCreate(PETSC_COMM_SELF, ksp.get());
+
+  // Make solver preconditioner only
+  KSPSetType(*ksp, KSPPREONLY);
 
   // Set preconditioner to LU factorization
   PC pc;
@@ -190,6 +292,23 @@ void PETScLUSolver::init()
   #else
   PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
   #endif
+}
+//-----------------------------------------------------------------------------
+void PETScLUSolver::pre_report(const PETScMatrix& A) const
+{
+  const MatSolverPackage solver_type;
+  PC pc;
+  KSPGetPC(*ksp, &pc);
+  PCFactorGetMatSolverPackage(pc, &solver_type);
+
+  // Get parameter
+  const bool report = parameters["report"];
+
+  if (report)
+  {
+    info(PROGRESS, "Solving linear system of size %d x %d (PETSc LU solver, %s).",
+         A.size(0), A.size(1), solver_type);
+  }
 }
 //-----------------------------------------------------------------------------
 

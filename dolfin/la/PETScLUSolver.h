@@ -38,20 +38,33 @@ namespace dolfin
     /// Constructor
     PETScLUSolver(std::string lu_package="default");
 
+    /// Constructor
+    PETScLUSolver(const GenericMatrix& A, std::string lu_package="default");
+
+    /// Constructor
+    PETScLUSolver(boost::shared_ptr<const GenericMatrix> A,
+                  std::string lu_package="default");
+
     /// Destructor
     ~PETScLUSolver();
 
     /// Set operator (matrix)
-    void set_operator(const PETScMatrix& A);
+    void set_operator(const GenericMatrix& A);
 
     /// Solve linear system Ax = b
     uint solve(GenericVector& x, const GenericVector& b);
+
+    /// LU-factor the sparse matrix A if UMFPACK is installed
+    void factorize();
 
     /// Solve linear system Ax = b
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
     uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
+
+    /// Solve factorized system
+    uint solve_factorized(GenericVector& x, const GenericVector& b) const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -67,11 +80,20 @@ namespace dolfin
     // Available LU solvers
     static const std::map<std::string, const MatSolverPackage> lu_packages;
 
+    // Select LU solver type
+    void select_solver();
+
     // Initialise solver
-    void init();
+    void init_solver();
+
+    // Pritn pre-solve report
+    void pre_report(const PETScMatrix& A) const;
 
     /// PETSc solver pointer
     boost::shared_ptr<KSP> ksp;
+
+    // Operator (the matrix)
+    boost::shared_ptr<const GenericMatrix> A;
 
   };
 
