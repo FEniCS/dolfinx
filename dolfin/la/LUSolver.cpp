@@ -5,8 +5,6 @@
 // Last changed:
 
 #include <dolfin/parameter/GlobalParameters.h>
-//#include <dolfin/parameter/Parameters.h>
-
 #include <dolfin/common/Timer.h>
 #include "CholmodCholeskySolver.h"
 #include "UmfpackLUSolver.h"
@@ -23,8 +21,7 @@ LUSolver::LUSolver(std::string type)
   parameters = default_parameters();
 
   // Get linear algebra backend
-  Parameters global_parameters(GlobalParameters::default_parameters());
-  const std::string backend = global_parameters["linear_algebra_backend"];
+  const std::string backend = dolfin::parameters["linear_algebra_backend"];
 
   // Create suitable LU solver
   if (backend == "uBLAS" || backend == "MTL4")

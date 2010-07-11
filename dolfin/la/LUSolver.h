@@ -48,8 +48,10 @@ namespace dolfin
     /// Factor the sparse matrix A
     void factorize();
 
+    /// Solve system using the factorized matrix
     uint solve_factorized(GenericVector& x, const GenericVector& b) const;
 
+    /// Solve linear system
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
     /// Default parameter values

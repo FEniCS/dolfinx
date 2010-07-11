@@ -159,6 +159,13 @@ dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
   return 1;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
+                                    const GenericVector& b)
+{
+  set_operator(A);
+  return solve(x, b);
+}
+//-----------------------------------------------------------------------------
 #ifdef HAS_UMFPACK
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::clear()
