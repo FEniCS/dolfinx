@@ -14,6 +14,8 @@
 
 #include <boost/scoped_ptr.hpp>
 #include <dolfin/common/Timer.h>
+#include <dolfin/parameter/GlobalParameters.h>
+#include "GenericLinearSolver.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "CholmodCholeskySolver.h"
@@ -45,9 +47,13 @@ namespace dolfin
       if (backend == "uBLAS" || backend == "MTL4")
         solver.reset(new UmfpackLUSolver());
       else if (backend == "PETSc")
+        #ifdef HAS_PETSC
         solver.reset(new PETScLUSolver());
+        #else
+        error("PETSc not installed.");
+        #endif
       else if (backend == "Epetra")
-        error("EpetraLUSolver needs to be updated..");
+        error("EpetraLUSolver needs to be updated.");
         //solver.reset(new EpetraLUSolver());
       else
         error("No suitable LU solver for linear algebra backend.");
@@ -99,6 +105,7 @@ namespace dolfin
       Parameters p("lu_solver");
       p.add("report", true);
       p.add("same_nonzero_pattern", false);
+      //p.add("reuse_factorization", false);
       return p;
     }
 
