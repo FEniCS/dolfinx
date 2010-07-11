@@ -48,7 +48,7 @@ private:
 // Right boundary
 class RightBoundary : public SubDomain
 {
-  bool inside(const double* x, bool on_boundary) const
+  bool inside(const Array<double>& x, bool on_boundary) const
   {
     if (1.0 - x[0] < DOLFIN_EPS && on_boundary)
       return true;
@@ -59,7 +59,7 @@ class RightBoundary : public SubDomain
 
 class LeftBoundary : public SubDomain
 {
-  bool inside(const double* x, bool on_boundary) const
+  bool inside(const Array<double>& x, bool on_boundary) const
   {
     if (x[0] < DOLFIN_EPS)
       return true;
@@ -108,8 +108,8 @@ int main(int argc, char* argv[])
   // Material parameters
   Constant rho(1.0);                           // mass density
   Constant eta(0.25);                          // damping coefficient
-  double E  = 1.0;                                   // Youngs modulus
-  double nu = 0.0;                                   // Poisson ratio
+  double E  = 1.0;                             // Youngs modulus
+  double nu = 0.0;                             // Poisson ratio
   Constant lambda((nu*E)/((1.0+nu)*(1.0-nu))); // Lame coefficient
   Constant mu(E/(2.0*(1.0+nu)));               // Lame coefficient
 
@@ -119,8 +119,8 @@ int main(int argc, char* argv[])
   Constant beta(0.36);
   Constant gamma(0.7);
   Constant dt(1.0/32.0);    // time step
-  double t = 0.0;                 // initial time
-  double T = 200*dt;              // final time
+  double t = 0.0;           // initial time
+  double T = 200*dt;        // final time
 
   // Body force
   Constant f(0.0, 0.0);
