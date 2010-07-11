@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Garth N. Wells.
+// Copyright (C) 2007-2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2008.
@@ -7,25 +7,21 @@
 // Modified by Kent-Andre Mardal, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2009-07-07
+// Last changed: 2010-07-11
 
 #ifndef __LU_SOLVER_H
 #define __LU_SOLVER_H
 
+#include <string>
 #include <boost/scoped_ptr.hpp>
-#include <dolfin/common/Timer.h>
-#include <dolfin/parameter/GlobalParameters.h>
-#include "GenericLinearSolver.h"
-#include "GenericMatrix.h"
-#include "GenericVector.h"
-#include "CholmodCholeskySolver.h"
-#include "UmfpackLUSolver.h"
-#include "PETScLUSolver.h"
-#include "EpetraLUSolver.h"
-#include "GenericLinearSolver.h"
+#include "GenericLUSolver.h"
 
 namespace dolfin
 {
+
+  // Forward declarations
+  class GenericMatrix;
+  class GenericVector;
 
   class LUSolver : public GenericLUSolver
   {
@@ -37,67 +33,24 @@ namespace dolfin
 
   public:
 
-    LUSolver(std::string type = "lu")
-    {
-      // Set default parameters
-      parameters = default_parameters();
+    /// Constructor
+    LUSolver(std::string type = "lu");
 
-      // Create suitable solver
-      const std::string backend = parameters["linear_algebra_backend"];
-      if (backend == "uBLAS" || backend == "MTL4")
-        solver.reset(new UmfpackLUSolver());
-      else if (backend == "PETSc")
-        #ifdef HAS_PETSC
-        solver.reset(new PETScLUSolver());
-        #else
-        error("PETSc not installed.");
-        #endif
-      else if (backend == "Epetra")
-        error("EpetraLUSolver needs to be updated.");
-        //solver.reset(new EpetraLUSolver());
-      else
-        error("No suitable LU solver for linear algebra backend.");
-
-      solver->parameters.update(parameters);
-    }
-
-    ~LUSolver()
-    {
-      // Do nothing
-    }
+    /// Destructor
+    ~LUSolver();
 
     /// Set operator (matrix)
-    void set_operator(const GenericMatrix& A)
-    {
-      assert(solver);
-      solver->set_operator(A);
-    }
+    void set_operator(const GenericMatrix& A);
 
     /// Solve linear system Ax = b
-    uint solve(GenericVector& x, const GenericVector& b)
-    {
-      assert(solver);
-      return solver->solve(x, b);
-    }
+    uint solve(GenericVector& x, const GenericVector& b);
 
     /// Factor the sparse matrix A
-    void factorize()
-    {
-      assert(solver);
-      solver->factorize();
-    }
+    void factorize();
 
-    uint solve_factorized(GenericVector& x, const GenericVector& b) const
-    {
-      assert(solver);
-      return solver->solve_factorized(x, b);
-    }
+    uint solve_factorized(GenericVector& x, const GenericVector& b) const;
 
-    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
-    {
-      Timer timer("LU solver");
-      return solver->solve(A, x, b);
-    }
+    uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
     /// Default parameter values
     static Parameters default_parameters()

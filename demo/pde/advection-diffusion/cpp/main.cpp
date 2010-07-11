@@ -68,8 +68,7 @@ int main(int argc, char *argv[])
   bc.apply(A);
 
   // LU
-  //UmfpackLUSolver lu(A);
-  PETScLUSolver lu(A);
+  LUSolver lu(A);
   lu.factorize();
 
   // Parameters for time-stepping
