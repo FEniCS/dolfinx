@@ -30,7 +30,7 @@ GenericVector* DefaultFactory::create_local_vector() const
   return factory().create_local_vector();
 }
 //-----------------------------------------------------------------------------
-GenericSparsityPattern * DefaultFactory::create_pattern() const
+GenericSparsityPattern* DefaultFactory::create_pattern() const
 {
   return factory().create_pattern();
 }

@@ -2,6 +2,7 @@
 
 %import(module="dolfin.cpp") "dolfin/la/ublas.h"
 %import(module="dolfin.cpp") "dolfin/la/GenericLinearSolver.h"
+%import(module="dolfin.cpp") "dolfin/la/GenericLUSolver.h"
 %import(module="dolfin.cpp") "dolfin/la/GenericTensor.h"
 %import(module="dolfin.cpp") "dolfin/la/GenericMatrix.h"
 %import(module="dolfin.cpp") "dolfin/la/GenericSparsityPattern.h"

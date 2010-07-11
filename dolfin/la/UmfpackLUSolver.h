@@ -12,7 +12,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include "ublas.h"
-#include "GenericLinearSolver.h"
+#include "GenericLUSolver.h"
 
 namespace dolfin
 {
@@ -28,7 +28,7 @@ namespace dolfin
   /// linear systems of the form Ax = b using UMFPACK
   /// (http://www.cise.ufl.edu/research/sparse/umfpack/) if installed.
 
-  class UmfpackLUSolver : public GenericLinearSolver
+  class UmfpackLUSolver : public GenericLUSolver
   {
 
   public:

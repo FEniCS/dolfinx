@@ -15,7 +15,7 @@
 #include <boost/shared_ptr.hpp>
 #include <petscksp.h>
 #include <petscpc.h>
-#include "GenericLinearSolver.h"
+#include "GenericLUSolver.h"
 #include "PETScObject.h"
 
 namespace dolfin
@@ -31,7 +31,7 @@ namespace dolfin
   /// linear systems of the form Ax = b. It is a wrapper for the LU
   /// solver of PETSc.
 
-  class PETScLUSolver : public GenericLinearSolver, public PETScObject
+  class PETScLUSolver : public GenericLUSolver, public PETScObject
   {
   public:
 

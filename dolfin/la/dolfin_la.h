@@ -8,6 +8,7 @@
 #include <dolfin/la/ublas.h>
 
 #include <dolfin/la/GenericLinearSolver.h>
+#include <dolfin/la/GenericLUSolver.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericSparsityPattern.h>
@@ -43,6 +44,7 @@
 #include <dolfin/la/PETScLUSolver.h>
 #include <dolfin/la/SLEPcEigenSolver.h>
 #include <dolfin/la/TrilinosPreconditioner.h>
+#include <dolfin/la/uBLASSparseMatrix.h>
 #include <dolfin/la/uBLASDenseMatrix.h>
 #include <dolfin/la/uBLASPreconditioner.h>
 #include <dolfin/la/uBLASKrylovSolver.h>

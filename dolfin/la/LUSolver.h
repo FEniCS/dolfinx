@@ -18,20 +18,14 @@
 #include "GenericVector.h"
 #include "CholmodCholeskySolver.h"
 #include "UmfpackLUSolver.h"
-#include "uBLASSparseMatrix.h"
-#include "uBLASDenseMatrix.h"
 #include "PETScLUSolver.h"
-#include "PETScMatrix.h"
 #include "EpetraLUSolver.h"
-#include "EpetraMatrix.h"
-#include "MTL4Matrix.h"
-#include "MTL4Vector.h"
 #include "GenericLinearSolver.h"
 
 namespace dolfin
 {
 
-  class LUSolver : public GenericLinearSolver
+  class LUSolver : public GenericLUSolver
   {
 
   /// LU solver for the built-in LA backends. The type can be "lu" or
@@ -41,92 +35,63 @@ namespace dolfin
 
   public:
 
-    LUSolver(std::string type = "lu") : cholmod_solver(0),
-             petsc_solver(0), epetra_solver(0),
-             type(type)
+    LUSolver(std::string type = "lu")
     {
       // Set default parameters
       parameters = default_parameters();
+
+      // Create suitable solver
+      const std::string backend = parameters["linear_algebra_backend"];
+      if (backend == "uBLAS" || backend == "MTL4")
+        solver.reset(new UmfpackLUSolver());
+      else if (backend == "PETSc")
+        solver.reset(new PETScLUSolver());
+      else if (backend == "Epetra")
+        error("EpetraLUSolver needs to be updated..");
+        //solver.reset(new EpetraLUSolver());
+      else
+        error("No suitable LU solver for linear algebra backend.");
+
+      solver->parameters.update(parameters);
     }
 
     ~LUSolver()
     {
-      delete cholmod_solver;
-      delete petsc_solver;
-      delete epetra_solver;
+      // Do nothing
+    }
+
+    /// Set operator (matrix)
+    void set_operator(const GenericMatrix& A)
+    {
+      assert(solver);
+      solver->set_operator(A);
+    }
+
+    /// Solve linear system Ax = b
+    uint solve(GenericVector& x, const GenericVector& b)
+    {
+      assert(solver);
+      return solver->solve(x, b);
+    }
+
+    /// Factor the sparse matrix A
+    void factorize()
+    {
+      assert(solver);
+      solver->factorize();
+    }
+
+    uint solve_factorized(GenericVector& x, const GenericVector& b) const
+    {
+      assert(solver);
+      return solver->solve_factorized(x, b);
     }
 
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
     {
       Timer timer("LU solver");
-
-#ifdef HAS_PETSC
-      if (A.has_type<PETScMatrix>())
-      {
-        if (!petsc_solver)
-        {
-          petsc_solver = new PETScLUSolver();
-          petsc_solver->parameters.update(parameters);
-        }
-        return petsc_solver->solve(A, x, b);
-      }
-#endif
-#ifdef HAS_TRILINOS
-      if (A.has_type<EpetraMatrix>())
-      {
-        if (!epetra_solver)
-        {
-          epetra_solver = new EpetraLUSolver();
-          epetra_solver->parameters.update(parameters);
-        }
-        return epetra_solver->solve(A, x, b);
-      }
-#endif
-
-      // Default LU solvers
-      if (type == "cholesky")
-      {
-        if (!cholmod_solver)
-        {
-          cholmod_solver = new CholmodCholeskySolver();
-          cholmod_solver->parameters.update(parameters);
-        }
-        return cholmod_solver->solve(A, x, b);
-      }
-      else if (type == "lu")
-      {
-        UmfpackLUSolver solver(A);
-        solver.parameters.update(parameters);
-        return solver.solve(x, b);
-      }
-      else
-      {
-        error("Unknown LU solver type %s. Options are \"cholesky\" or \"lu\".", type.c_str());
-        return 0;
-      }
+      return solver->solve(A, x, b);
     }
-
-    /*
-    uint factorize(const GenericMatrix& A)
-    {
-    if (!umfpack_solver)
-        {
-          umfpack_solver = new UmfpackLUSolver();
-          umfpack_solver->parameters.update(parameters);
-        }
-        return umfpack_solver->factorize(A);
-    }
-
-    uint factorized_solve(GenericVector& x, const GenericVector& b)
-    {
-      if (!umfpack_solver)
-      {
-        umfpack_solver = new UmfpackLUSolver();
-        umfpack_solver->parameters.update(parameters);
-      }
-      return umfpack_solver->factorized_solve(x, b);
-    }
-    */
 
     /// Default parameter values
     static Parameters default_parameters()
@@ -139,25 +104,8 @@ namespace dolfin
 
   private:
 
-    // CHOLMOD solver
-    CholmodCholeskySolver* cholmod_solver;
-
-    // UMFPACK solver
-    boost::scoped_ptr<UmfpackLUSolver> umfpack_solver;
-
-    // PETSc Solver
-#ifdef HAS_PETSC
-    PETScLUSolver* petsc_solver;
-#else
-    int* petsc_solver;
-#endif
-#ifdef HAS_TRILINOS
-    EpetraLUSolver* epetra_solver;
-#else
-    int* epetra_solver;
-#endif
-
-    std::string type;
+    // Solver
+    boost::scoped_ptr<GenericLUSolver> solver;
 
   };
 }
