@@ -41,6 +41,32 @@ LUSolver::LUSolver(std::string type)
   solver->parameters.update(parameters);
 }
 //-----------------------------------------------------------------------------
+LUSolver::LUSolver(const GenericMatrix& A, std::string type)
+{
+  // Set default parameters
+  parameters = default_parameters();
+
+  // Get linear algebra backend
+  const std::string backend = dolfin::parameters["linear_algebra_backend"];
+
+  // Create suitable LU solver
+  if (backend == "uBLAS" || backend == "MTL4")
+    solver.reset(new UmfpackLUSolver(A));
+  else if (backend == "PETSc")
+    #ifdef HAS_PETSC
+    solver.reset(new PETScLUSolver(A));
+    #else
+    error("PETSc not installed.");
+    #endif
+  else if (backend == "Epetra")
+    error("EpetraLUSolver needs to be updated.");
+    //solver.reset(new EpetraLUSolver());
+  else
+    error("No suitable LU solver for linear algebra backend.");
+
+  solver->parameters.update(parameters);
+}
+//-----------------------------------------------------------------------------
 LUSolver::~LUSolver()
 {
   // Do nothing

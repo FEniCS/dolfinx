@@ -36,6 +36,9 @@ namespace dolfin
     /// Constructor
     LUSolver(std::string type = "lu");
 
+    /// Constructor
+    LUSolver(const GenericMatrix& A, std::string type = "lu");
+
     /// Destructor
     ~LUSolver();
 
