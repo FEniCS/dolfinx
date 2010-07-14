@@ -48,12 +48,6 @@ namespace dolfin
     /// Solve linear system Ax = b
     uint solve(GenericVector& x, const GenericVector& b);
 
-    /// Factor the sparse matrix A
-    void factorize();
-
-    /// Solve system using the factorized matrix
-    uint solve_factorized(GenericVector& x, const GenericVector& b) const;
-
     /// Solve linear system
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
@@ -63,7 +57,7 @@ namespace dolfin
       Parameters p("lu_solver");
       p.add("report", true);
       p.add("same_nonzero_pattern", false);
-      //p.add("reuse_factorization", false);
+      p.add("reuse_factorization", false);
       return p;
     }
 

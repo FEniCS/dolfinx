@@ -75,26 +75,15 @@ LUSolver::~LUSolver()
 void LUSolver::set_operator(const GenericMatrix& A)
 {
   assert(solver);
+  solver->parameters.update(parameters);
   solver->set_operator(A);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint LUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(solver);
+  solver->parameters.update(parameters);
   return solver->solve(x, b);
-}
-//-----------------------------------------------------------------------------
-void LUSolver::factorize()
-{
-  assert(solver);
-  solver->factorize();
-}
-//-----------------------------------------------------------------------------
-dolfin::uint LUSolver::solve_factorized(GenericVector& x,
-                                        const GenericVector& b) const
-{
-  assert(solver);
-  return solver->solve_factorized(x, b);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint LUSolver::solve(const GenericMatrix& A, GenericVector& x,
@@ -103,6 +92,7 @@ dolfin::uint LUSolver::solve(const GenericMatrix& A, GenericVector& x,
   assert(solver);
 
   Timer timer("LU solver");
+  solver->parameters.update(parameters);
   return solver->solve(A, x, b);
 }
 //-----------------------------------------------------------------------------

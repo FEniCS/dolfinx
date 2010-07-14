@@ -54,17 +54,11 @@ namespace dolfin
     /// Solve linear system Ax = b
     uint solve(GenericVector& x, const GenericVector& b);
 
-    /// LU-factor the sparse matrix A if UMFPACK is installed
-    void factorize();
-
     /// Solve linear system Ax = b
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b
     uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
-
-    /// Solve factorized system
-    uint solve_factorized(GenericVector& x, const GenericVector& b) const;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -85,6 +79,9 @@ namespace dolfin
 
     // Initialise solver
     void init_solver();
+
+    // Set PETSc operators
+    void set_petsc_operators();
 
     // Pritn pre-solve report
     void pre_report(const PETScMatrix& A) const;

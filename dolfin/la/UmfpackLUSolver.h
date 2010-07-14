@@ -51,15 +51,6 @@ namespace dolfin
     /// Solve linear system Ax = b for a sparse matrix using UMFPACK if installed
     uint solve(GenericVector& x, const GenericVector& b);
 
-    // Perform symbolic factorisation if UMFPACK is installed
-    void symbolic_factorize();
-
-    /// LU-factor the sparse matrix A if UMFPACK is installed
-    void factorize();
-
-    /// Solve factorized system (UMFPACK).
-    uint solve_factorized(GenericVector& x, const GenericVector& b) const;
-
     /// Solve linear system
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
@@ -67,6 +58,15 @@ namespace dolfin
     static Parameters default_parameters();
 
   private:
+
+    // Perform symbolic factorisation
+    void symbolic_factorize();
+
+    /// LU factorisation
+    void numeric_factorize();
+
+    /// Solve factorized system (UMFPACK).
+    uint solve_factorized(GenericVector& x, const GenericVector& b) const;
 
     // Clear data
     void clear();

@@ -64,8 +64,8 @@ PETScLUSolver::PETScLUSolver(std::string lu_package) : lu_package(lu_package)
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(const GenericMatrix& A, std::string lu_package)
-                           : lu_package(lu_package),
-                             A(reference_to_no_delete_pointer(A.down_cast<PETScMatrix>()))
+               : lu_package(lu_package),
+                 A(reference_to_no_delete_pointer(A.down_cast<PETScMatrix>()))
 {
   // Check dimensions
   if (A.size(0) != A.size(1))
@@ -98,7 +98,6 @@ PETScLUSolver::PETScLUSolver(boost::shared_ptr<const GenericMatrix> A,
   // Initialize PETSc LU solver
   init_solver();
 }
-
 //-----------------------------------------------------------------------------
 PETScLUSolver::~PETScLUSolver()
 {
@@ -107,7 +106,23 @@ PETScLUSolver::~PETScLUSolver()
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_operator(const GenericMatrix& A)
 {
-  this->A = reference_to_no_delete_pointer(A.down_cast<PETScMatrix>());
+  this->A = reference_to_no_delete_pointer(A);
+  assert(this->A);
+
+  // Downcast matrix
+  const PETScMatrix& _A = A.down_cast<PETScMatrix>();
+
+  // Get some parameters
+  const bool reuse_fact   = parameters["reuse_factorization"];
+  const bool same_pattern = parameters["same_nonzero_pattern"];
+
+  // Set operators with appropriate option
+  if (reuse_fact)
+    KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), SAME_PRECONDITIONER);
+  else if (same_pattern)
+    KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), SAME_NONZERO_PATTERN);
+  else
+    KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), DIFFERENT_NONZERO_PATTERN);
 
   // Check dimensions
   if (A.size(0) != A.size(1))
@@ -118,6 +133,10 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(A);
 
+  // Downcast matrix and vectors
+  const PETScVector& _b = b.down_cast<PETScVector>();
+  PETScVector& _x = x.down_cast<PETScVector>();
+
   // Check dimensions
   if (A->size(0) != b.size())
     error("Cannot LU factorize non-square PETSc matrix.");
@@ -125,15 +144,8 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Initialize solution vector (remains untouched if dimensions match)
   x.resize(A->size(1));
 
-  // Initialise solver
-  init_solver();
-
-  // Factorize matrix
-  factorize();
-
-  // Downcast vectors
-  const PETScVector& _b = b.down_cast<PETScVector>();
-  PETScVector& _x = x.down_cast<PETScVector>();
+  // Set PETSc operators (depends on factorization re-use options);
+  set_petsc_operators();
 
   // Write a pre-solve message
   pre_report(A->down_cast<PETScMatrix>());
@@ -142,15 +154,6 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   KSPSolve(*ksp, *_b.vec(), *_x.vec());
 
   return 1;
-}
-//-----------------------------------------------------------------------------
-void PETScLUSolver::factorize()
-{
-  assert(A);
-
-  // Downcast matrix
-  const PETScMatrix& _A = A->down_cast<PETScMatrix>();
-  KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), SAME_PRECONDITIONER);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x,
@@ -163,14 +166,8 @@ dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x,
 dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
                                   const PETScVector& b)
 {
-  // Initialise solver
-  init_solver();
-
   // Set operator
   set_operator(A);
-
-  // Factorize matrix
-  factorize();
 
   // Initialize solution vector (remains untouched if dimensions match)
   x.resize(A.size(1));
@@ -180,38 +177,6 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
 
   // Solve linear system
   KSPSolve(*ksp, *b.vec(), *x.vec());
-
-  return 1;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint PETScLUSolver::solve_factorized(GenericVector& x,
-                                             const GenericVector& b) const
-{
-  assert(A);
-  assert(ksp);
-
-  // Check that operator has been associated with solver
-  PetscTruth amat, pmat;
-  KSPGetOperatorsSet(*ksp, &amat, &pmat);
-  if (amat == PETSC_FALSE || pmat == PETSC_FALSE)
-    error("Matrix operator has not been set for PETScLUSolver.");
-
-  // Check dimensions
-  if (A->size(0) != b.size())
-    error("Non-matching dimensions for linear system and right-hand side.");
-
-  // Initialize solution vector (remains untouched if dimensions match)
-  x.resize(A->size(1));
-
-  // Downcast vectors
-  const PETScVector& _b = b.down_cast<PETScVector>();
-  const PETScVector& _x = x.down_cast<PETScVector>();
-
-  // Write a pre-solve message
-  pre_report(A->down_cast<PETScMatrix>());
-
-  // Solve
-  KSPSolve(*ksp, *_b.vec(), *_x.vec());
 
   return 1;
 }
@@ -292,6 +257,47 @@ void PETScLUSolver::init_solver()
   #else
   PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
   #endif
+}
+//-----------------------------------------------------------------------------
+void PETScLUSolver::set_petsc_operators()
+{
+  // Downcast matrix
+  const PETScMatrix& _A = this->A->down_cast<PETScMatrix>();
+
+  // Get some parameters
+  const bool reuse_fact   = parameters["reuse_factorization"];
+  const bool same_pattern = parameters["same_nonzero_pattern"];
+
+  // Check if operators have been set
+  PetscTruth matset, pmatset;
+  KSPGetOperatorsSet(*ksp, &matset, &pmatset);
+  if (matset == PETSC_TRUE && pmatset == PETSC_TRUE)
+  {
+    // Get preconditioner re-use flag
+    MatStructure mat_struct;
+    Mat Amat, Pmat;
+    KSPGetOperators(*ksp, &Amat, &Pmat, &mat_struct);
+
+    // Set operators if necessary
+    if (reuse_fact && mat_struct != SAME_PRECONDITIONER)
+      KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), SAME_PRECONDITIONER);
+    else if (same_pattern && mat_struct != SAME_NONZERO_PATTERN)
+      KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), SAME_NONZERO_PATTERN);
+    else if (!reuse_fact && !same_pattern &&  mat_struct != DIFFERENT_NONZERO_PATTERN)
+      KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), DIFFERENT_NONZERO_PATTERN);
+  }
+  else if (matset != PETSC_TRUE && pmatset != PETSC_TRUE)
+  {
+    // Set operators with appropriate option
+    if (reuse_fact)
+      KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), SAME_PRECONDITIONER);
+    else if (same_pattern)
+      KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), SAME_NONZERO_PATTERN);
+    else
+      KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), DIFFERENT_NONZERO_PATTERN);
+  }
+  else
+    error("Operators incorrectly set for PETSc.");
 }
 //-----------------------------------------------------------------------------
 void PETScLUSolver::pre_report(const PETScMatrix& A) const

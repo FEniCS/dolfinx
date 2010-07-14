@@ -18,8 +18,6 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-parameters["linear_algebra_backend"] = "PETSc"
-
 def boundary_value(n):
     if n < 10:
         return float(n)/10.0
@@ -78,8 +76,8 @@ A = assemble(a)
 bc.apply(A)
 
 # Create linear solver and factorize matrix
-solver = cpp.PETScLUSolver(A)
-solver.factorize()
+solver = LUSolver(A)
+solver.parameters["reuse_factorization"] = True
 
 # Output file
 out_file = File("temperature.pvd")
@@ -95,7 +93,7 @@ while t < T:
     bc.apply(b)
 
     # Solve the linear system (re-use the already factorized matrix A)
-    solver.solve_factorized(u.vector(), b)
+    solver.solve(u.vector(), b)
 
     # Copy solution from previous interval
     u0 = u

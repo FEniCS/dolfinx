@@ -18,16 +18,12 @@ using namespace dolfin;
 
 int main(int argc, char *argv[])
 {
-  //parameters["linear_algebra_backend"] = "uBLAS";
-  parameters["linear_algebra_backend"] = "PETSc";
+  parameters["linear_algebra_backend"] = "uBLAS";
+  //parameters["linear_algebra_backend"] = "PETSc";
 
   // Read mesh
   Mesh mesh("../mesh.xml.gz");
   mesh.init();
-  cout << "Vertices " << mesh.num_vertices() << endl;
-  cout << "facets   " << mesh.num_facets() << endl;
-  cout << "Vertices " << mesh.num_vertices() << endl;
-  cout << "u_dimfacets   " << (mesh.num_vertices()+mesh.num_facets())*2 << endl;
 
   // Create velocity FunctionSpace
   Velocity::FunctionSpace V_u(mesh);
@@ -69,7 +65,7 @@ int main(int argc, char *argv[])
 
   // LU
   LUSolver lu(A);
-  lu.factorize();
+  lu.parameters["reuse_factorization"] = true;
 
   // Parameters for time-stepping
   double T = 2.0;
@@ -88,10 +84,10 @@ int main(int argc, char *argv[])
     bc.apply(b);
 
     // Solve the linear system (re-use the already factorized matrix A)
-    lu.solve_factorized(u.vector(), b);
+    lu.solve(u.vector(), b);
 
     // Save solution in VTK format
-    file << std::make_pair(&u, t);
+    //file << std::make_pair(&u, t);
 
     // Move to next interval
     p = t / T;

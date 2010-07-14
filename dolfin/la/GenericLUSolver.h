@@ -31,12 +31,6 @@ namespace dolfin
     /// Solve linear system Ax = b
     virtual uint solve(GenericVector& x, const GenericVector& b) = 0;
 
-    /// Factor the sparse matrix A
-    virtual void factorize() = 0;
-
-    /// Solve factorized system
-    virtual uint solve_factorized(GenericVector& x, const GenericVector& b) const = 0;
-
     /// Solve linear system Ax = b
     virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
     { error("solve(A, x, b) is not implemented. Consider trying solve(x, b)."); return 0; }

@@ -66,17 +66,42 @@ void UmfpackLUSolver::set_operator(const GenericMatrix& A)
 //-----------------------------------------------------------------------------
 dolfin::uint UmfpackLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
-  // Factorize matrix
-  factorize();
+  assert(A);
+
+  // Get some parameters
+  const bool reuse_fact   = parameters["reuse_factorization"];
+  const bool same_pattern = parameters["same_nonzero_pattern"];
+
+  // Perform symbolic factorization if required
+  if (!symbolic)
+    symbolic_factorize();
+  else if (!reuse_fact && !same_pattern)
+    symbolic_factorize();
+
+  // Perform numerical factorization if required
+  if (!numeric)
+    numeric_factorize();
+  else if (!reuse_fact)
+    numeric_factorize();
 
   // Solve
   return solve_factorized(x, b);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
+                                    const GenericVector& b)
+{
+  set_operator(A);
+  return solve(x, b);
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::symbolic_factorize()
 {
   if (!A)
     error("A matrix must be assocoated with UmfpackLUSolver to peform a symbolic factorisation.");
+
+  // Clear any old factorizations
+  clear();
 
   // Get matrix data
   std::tr1::tuple<const std::size_t*, const std::size_t*, const double*, int> data = A->data();
@@ -90,9 +115,6 @@ void UmfpackLUSolver::symbolic_factorize()
   const uint N   = A->size(1);
   assert(nnz >= M);
 
-  // Clear any old factorizations
-  clear();
-
   // Factorize and solve
   info(PROGRESS, "Symbolic factorization of a matrix of size %d x %d (UMFPACK).", M, N);
 
@@ -100,7 +122,7 @@ void UmfpackLUSolver::symbolic_factorize()
   symbolic = umfpack_factorize_symbolic(M, N, (const long int*)Ap, (const long int*)Ai, Ax);
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::factorize()
+void UmfpackLUSolver::numeric_factorize()
 {
   if (!A)
     error("A matrix must be assocoated with UmfpackLUSolver to peform a factorisation.");
@@ -120,9 +142,12 @@ void UmfpackLUSolver::factorize()
   // Factorize and solve
   info(PROGRESS, "LU factorization of a matrix of size %d x %d (UMFPACK).", M, N);
 
-  // Create symbolic factoriation if required
-  if (!symbolic || !parameters["same_nonzero_pattern"])
-    symbolic_factorize();
+  assert(symbolic);
+  if (numeric)
+  {
+    umfpack_dl_free_numeric(&numeric);
+    numeric = 0;
+  }
 
   // Perform LU factorisation
   numeric = umfpack_factorize_numeric((const long int*)Ap, (const long int*)Ai, Ax, symbolic);
@@ -153,17 +178,13 @@ dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
   const std::size_t* Ai  = std::tr1::get<1>(data);
   const double*      Ax  = std::tr1::get<2>(data);
 
+  info(PROGRESS, "Solving linear system of size %d x %d (UMFPACK LU solver).",
+       A->size(0), A->size(1));
+
   // Solve for tranpose since we use compressed rows and UMFPACK expected compressed columns
   umfpack_solve((const long int*)Ap, (const long int*)Ai, Ax, x.data(), b.data(), numeric);
 
   return 1;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint UmfpackLUSolver::solve(const GenericMatrix& A, GenericVector& x,
-                                    const GenericVector& b)
-{
-  set_operator(A);
-  return solve(x, b);
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_UMFPACK
