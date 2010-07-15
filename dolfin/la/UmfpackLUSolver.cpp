@@ -143,11 +143,7 @@ void UmfpackLUSolver::numeric_factorize()
   info(PROGRESS, "LU factorization of a matrix of size %d x %d (UMFPACK).", M, N);
 
   assert(symbolic);
-  if (numeric)
-  {
-    umfpack_dl_free_numeric(&numeric);
-    numeric = 0;
-  }
+  clear_numeric();
 
   // Perform LU factorisation
   numeric = umfpack_factorize_numeric((const long int*)Ap, (const long int*)Ai, Ax, symbolic);
@@ -201,6 +197,15 @@ void UmfpackLUSolver::clear()
   {
     umfpack_dl_free_symbolic(&symbolic);
     symbolic = 0;
+  }
+}
+//-----------------------------------------------------------------------------
+void UmfpackLUSolver::clear_numeric()
+{
+  if (numeric)
+  {
+    umfpack_dl_free_numeric(&numeric);
+    numeric = 0;
   }
 }
 //-----------------------------------------------------------------------------
@@ -293,6 +298,11 @@ void UmfpackLUSolver::umfpack_check_status(long int status,
 #else
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::clear()
+{
+  error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
+}
+//-----------------------------------------------------------------------------
+void UmfpackLUSolver::clear_numeric()
 {
   error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
 }

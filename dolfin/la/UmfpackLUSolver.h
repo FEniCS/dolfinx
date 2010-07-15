@@ -71,6 +71,9 @@ namespace dolfin
     // Clear data
     void clear();
 
+    // Clear numeric data
+    void clear_numeric();
+
     // Return pointer to symbolic factorisation
     static void* umfpack_factorize_symbolic(uint M, uint N, const long int* Ap,
                                             const long int* Ai, const double* Ax);
