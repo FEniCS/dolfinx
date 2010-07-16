@@ -10,6 +10,8 @@
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
 
+#include <string>
+#include <boost/scoped_ptr.hpp>
 #include "GenericLinearSolver.h"
 
 namespace dolfin
@@ -17,11 +19,6 @@ namespace dolfin
 
   class GenericMatrix;
   class GenericVector;
-  class Parameters;
-  class uBLASKrylovSolver;
-  class PETScKrylovSolver;
-  class EpetraKrylovSolver;
-  class ITLKrylovSolver;
 
   /// This class defines an interface for a Krylov solver. The approproiate solver
   /// is chosen on the basis of the matrix/vector type.
@@ -37,6 +34,12 @@ namespace dolfin
     /// Destructor
     ~KrylovSolver();
 
+    /// Set operator (matrix)
+    void set_operator(const GenericMatrix& A);
+
+    /// Solve linear system Ax = b
+    uint solve(GenericVector& x, const GenericVector& b);
+
     /// Solve linear system Ax = b
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
@@ -45,29 +48,8 @@ namespace dolfin
 
   private:
 
-    // Krylov method
-    std::string solver_type;
-
-    // Preconditioner type
-    std::string pc_type;
-
-    // Solvers
-    uBLASKrylovSolver* ublas_solver;
-#ifdef HAS_PETSC
-    PETScKrylovSolver* petsc_solver;
-#else
-    int* petsc_solver;
-#endif
-#ifdef HAS_TRILINOS
-    EpetraKrylovSolver* epetra_solver;
-#else
-    int* epetra_solver;
-#endif
-#ifdef HAS_MTL4
-    ITLKrylovSolver* itl_solver;
-#else
-    int* itl_solver;
-#endif
+    // Solver
+    boost::scoped_ptr<GenericLinearSolver> solver;
 
   };
 }

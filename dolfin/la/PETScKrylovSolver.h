@@ -57,6 +57,15 @@ namespace dolfin
     /// Destructor
     ~PETScKrylovSolver();
 
+    /// Set operator (matrix)
+    void set_operator(const GenericMatrix& A);
+
+    /// Solve linear system Ax = b and return number of iterations
+    uint solve(GenericVector& x, const GenericVector& b);
+
+    /// Solve linear system Ax = b and return number of iterations
+    uint solve(PETScVector& x, const PETScVector& b);
+
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
@@ -75,13 +84,16 @@ namespace dolfin
   private:
 
     /// Initialize KSP solver
-    void init(uint M, uint N);
+    void init(const std::string& method);
+
+    // Set PETSc operators
+    void set_petsc_operators(const PETScMatrix& A);
+
+    // Set options
+    void set_petsc_options();
 
     /// Report the number of iterations
     void write_report(int num_iterations, KSPConvergedReason reason);
-
-    /// Krylov method
-    std::string method;
 
     // Available solvers and preconditioners
     static const std::map<std::string, const KSPType> methods;
@@ -92,6 +104,9 @@ namespace dolfin
 
     /// PETSc solver pointer
     boost::shared_ptr<KSP> _ksp;
+
+    // Operator (the matrix)
+    boost::shared_ptr<const GenericMatrix> A;
 
     /// Preconditioner
     boost::shared_ptr<PETScPreconditioner> preconditioner;

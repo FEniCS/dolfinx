@@ -5,7 +5,7 @@
 //
 // First added:  2008-08-26
 // Last changed: 2009-06-29
-// Last changed: 2010-06-04
+// Last changed: 2010-07-16
 
 #ifndef __GENERIC_LINEAR_SOLVER_H
 #define __GENERIC_LINEAR_SOLVER_H
@@ -25,6 +25,10 @@ namespace dolfin
   class GenericLinearSolver : public Variable
   {
   public:
+
+    /// Solve the operator (matrix)
+    virtual void set_operator(const GenericMatrix& A)
+    { error("set_operator(A) is not implemented."); }
 
     /// Solve linear system Ax = b
     virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)

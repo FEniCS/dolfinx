@@ -52,20 +52,17 @@ Parameters PETScLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-PETScLUSolver::PETScLUSolver(std::string lu_package) : lu_package(lu_package)
+PETScLUSolver::PETScLUSolver(std::string lu_package)
 {
-  select_solver();
-
   // Set parameter values
   parameters = default_parameters();
 
   // Initialize PETSc LU solver
-  init_solver();
+  init_solver(lu_package);
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(const GenericMatrix& A, std::string lu_package)
-               : lu_package(lu_package),
-                 A(reference_to_no_delete_pointer(A.down_cast<PETScMatrix>()))
+               : A(reference_to_no_delete_pointer(A.down_cast<PETScMatrix>()))
 {
   // Check dimensions
   if (A.size(0) != A.size(1))
@@ -74,16 +71,12 @@ PETScLUSolver::PETScLUSolver(const GenericMatrix& A, std::string lu_package)
   // Set parameter values
   parameters = default_parameters();
 
-  // Select LU solver
-  select_solver();
-
   // Initialize PETSc LU solver
-  init_solver();
+  init_solver(lu_package);
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::PETScLUSolver(boost::shared_ptr<const GenericMatrix> A,
-                             std::string lu_package) : lu_package(lu_package),
-                             A(A)
+                             std::string lu_package) : A(A)
 {
   // Check dimensions
   if (A->size(0) != A->size(1))
@@ -92,11 +85,8 @@ PETScLUSolver::PETScLUSolver(boost::shared_ptr<const GenericMatrix> A,
   // Set parameter values
   parameters = default_parameters();
 
-  // Select LU solver
-  select_solver();
-
   // Initialize PETSc LU solver
-  init_solver();
+  init_solver(lu_package);
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver::~PETScLUSolver()
@@ -106,6 +96,10 @@ PETScLUSolver::~PETScLUSolver()
 //-----------------------------------------------------------------------------
 void PETScLUSolver::set_operator(const GenericMatrix& A)
 {
+  // Check dimensions
+  if (A.size(0) != A.size(1))
+    error("Cannot LU factorize non-square PETSc matrix.");
+
   this->A = reference_to_no_delete_pointer(A);
   assert(this->A);
 
@@ -123,10 +117,6 @@ void PETScLUSolver::set_operator(const GenericMatrix& A)
     KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), SAME_NONZERO_PATTERN);
   else
     KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), DIFFERENT_NONZERO_PATTERN);
-
-  // Check dimensions
-  if (A.size(0) != A.size(1))
-    error("Cannot LU factorize non-square PETSc matrix.");
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
@@ -145,7 +135,8 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   x.resize(A->size(1));
 
   // Set PETSc operators (depends on factorization re-use options);
-  set_petsc_operators();
+  const PETScMatrix& _A = this->A->down_cast<PETScMatrix>();
+  set_petsc_operators(_A);
 
   // Write a pre-solve message
   pre_report(A->down_cast<PETScMatrix>());
@@ -196,7 +187,7 @@ std::string PETScLUSolver::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::select_solver()
+const MatSolverPackage PETScLUSolver::select_solver(std::string& lu_package) const
 {
   // Check package string
   if (lu_packages.count(lu_package) == 0)
@@ -206,24 +197,28 @@ void PETScLUSolver::select_solver()
   if (lu_package == "default")
   {
     if (MPI::num_processes() == 1)
-      this->lu_package = "umfpack";
+      lu_package = "umfpack";
     else
     {
       #if PETSC_HAVE_MUMPS
-      this->lu_package = "mumps";
+      lu_package = "mumps";
       #elif PETSC_HAVE_SPOOLES
-      this->lu_package = "spooles";
+      lu_package = "spooles";
       #elif PETSC_HAVE_SUPERLU_DIST
-      this->lu_package = "superlu_dist";
+      lu_package = "superlu_dist";
       #else
       error("No suitable solver for parallel LU. Consider configuring PETSc with MUMPS or SPOOLES.");
       #endif
     }
   }
+
+  return lu_packages.find(lu_package)->second;
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::init_solver()
+void PETScLUSolver::init_solver(std::string& lu_package)
 {
+  // Select solver
+  const MatSolverPackage solver_package = select_solver(lu_package);
 
   // Destroy old solver environment if necessary
   if (ksp)
@@ -248,7 +243,7 @@ void PETScLUSolver::init_solver()
   PCSetType(pc, PCLU);
 
   // Set solver package
-  PCFactorSetMatSolverPackage(pc, lu_packages.find(lu_package)->second);
+  PCFactorSetMatSolverPackage(pc, solver_package);
 
   // Allow matrices with zero diagonals to be solved
   #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
@@ -259,11 +254,8 @@ void PETScLUSolver::init_solver()
   #endif
 }
 //-----------------------------------------------------------------------------
-void PETScLUSolver::set_petsc_operators()
+void PETScLUSolver::set_petsc_operators(const PETScMatrix& A)
 {
-  // Downcast matrix
-  const PETScMatrix& _A = this->A->down_cast<PETScMatrix>();
-
   // Get some parameters
   const bool reuse_fact   = parameters["reuse_factorization"];
   const bool same_pattern = parameters["same_nonzero_pattern"];
@@ -280,21 +272,21 @@ void PETScLUSolver::set_petsc_operators()
 
     // Set operators if necessary
     if (reuse_fact && mat_struct != SAME_PRECONDITIONER)
-      KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), SAME_PRECONDITIONER);
+      KSPSetOperators(*ksp, *A.mat(), *A.mat(), SAME_PRECONDITIONER);
     else if (same_pattern && mat_struct != SAME_NONZERO_PATTERN)
-      KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), SAME_NONZERO_PATTERN);
+      KSPSetOperators(*ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
     else if (!reuse_fact && !same_pattern &&  mat_struct != DIFFERENT_NONZERO_PATTERN)
-      KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), DIFFERENT_NONZERO_PATTERN);
+      KSPSetOperators(*ksp, *A.mat(), *A.mat(), DIFFERENT_NONZERO_PATTERN);
   }
   else if (matset != PETSC_TRUE && pmatset != PETSC_TRUE)
   {
     // Set operators with appropriate option
     if (reuse_fact)
-      KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), SAME_PRECONDITIONER);
+      KSPSetOperators(*ksp, *A.mat(), *A.mat(), SAME_PRECONDITIONER);
     else if (same_pattern)
-      KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), SAME_NONZERO_PATTERN);
+      KSPSetOperators(*ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
     else
-      KSPSetOperators(*ksp, *_A.mat(), *_A.mat(), DIFFERENT_NONZERO_PATTERN);
+      KSPSetOperators(*ksp, *A.mat(), *A.mat(), DIFFERENT_NONZERO_PATTERN);
   }
   else
     error("Operators incorrectly set for PETSc.");

@@ -82,6 +82,8 @@ void LUSolver::set_operator(const GenericMatrix& A)
 dolfin::uint LUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(solver);
+
+  Timer timer("LU solver");
   solver->parameters.update(parameters);
   return solver->solve(x, b);
 }

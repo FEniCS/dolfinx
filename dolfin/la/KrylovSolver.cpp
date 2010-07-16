@@ -9,21 +9,12 @@
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/Parameters.h>
-#include <dolfin/parameter/GlobalParameters.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "uBLASKrylovSolver.h"
-#include "uBLASSparseMatrix.h"
-#include "uBLASDenseMatrix.h"
 #include "EpetraKrylovSolver.h"
 #include "ITLKrylovSolver.h"
-#include "MTL4Matrix.h"
-#include "MTL4Vector.h"
 #include "PETScKrylovSolver.h"
-#include "PETScMatrix.h"
-#include "PETScVector.h"
-#include "EpetraMatrix.h"
-#include "EpetraVector.h"
 #include "KrylovSolver.h"
 
 using namespace dolfin;
@@ -43,87 +34,70 @@ Parameters KrylovSolver::default_parameters()
   p.add("monitor_convergence",     false);
   p.add("error_on_nonconvergence", true);
 
+  p.add("reuse_preconditioner", false);
+  p.add("same_nonzero_pattern", false);
+  p.add("nonzero_initial_guess", false);
+
   return p;
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(std::string solver_type, std::string pc_type)
-       : solver_type(solver_type), pc_type(pc_type), ublas_solver(0),
-         petsc_solver(0), epetra_solver(0), itl_solver(0)
 {
   // Set default parameters
   parameters = dolfin::parameters("krylov_solver");
+
+  // Get linear algebra backend
+  const std::string backend = dolfin::parameters["linear_algebra_backend"];
+
+  // Create suitable LU solver
+  if (backend == "uBLAS")
+    solver.reset(new uBLASKrylovSolver());
+  else if (backend == "PETSc")
+    #ifdef HAS_PETSC
+    solver.reset(new PETScKrylovSolver());
+    #else
+    error("PETSc not installed.");
+    #endif
+  else if (backend == "Epetra")
+    #ifdef HAS_TRILINOS
+    solver.reset(new EpetraKrylovSolver());
+    #else
+    error("Trilinos not installed.");
+    #endif
+  else if (backend == "MTL4")
+    solver.reset(new ITLKrylovSolver());
+  else
+    error("No suitable Krylov solver for linear algebra backend.");
+
+  solver->parameters.update(parameters);
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::~KrylovSolver()
 {
-  delete ublas_solver;
-  delete petsc_solver;
-  delete epetra_solver;
-  delete itl_solver;
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void KrylovSolver::set_operator(const GenericMatrix& A)
+{
+  assert(solver);
+  solver->parameters.update(parameters);
+  solver->set_operator(A);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint KrylovSolver::solve(GenericVector& x, const GenericVector& b)
+{
+  assert(solver);
+  Timer timer("Krylov solver");
+  solver->parameters.update(parameters);
+  return solver->solve(x, b);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint KrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                  const GenericVector& b)
 {
+  assert(solver);
   Timer timer("Krylov solver");
-
-  if (A.has_type<uBLASSparseMatrix>())
-  {
-    if (!ublas_solver)
-    {
-      ublas_solver = new uBLASKrylovSolver(solver_type, pc_type);
-      ublas_solver->parameters.update(parameters);
-    }
-    return ublas_solver->solve(A, x, b);
-  }
-
-  if (A.has_type<uBLASDenseMatrix>())
-  {
-    if (!ublas_solver)
-    {
-      ublas_solver = new uBLASKrylovSolver(solver_type, pc_type);
-      ublas_solver->parameters.update(parameters);
-    }
-    return ublas_solver->solve(A.down_cast<uBLASDenseMatrix>(),
-                               x.down_cast<uBLASVector>(),
-                               b.down_cast<uBLASVector>());
-  }
-
-#ifdef HAS_PETSC
-  if (A.has_type<PETScMatrix>())
-  {
-    if (!petsc_solver)
-    {
-      petsc_solver = new PETScKrylovSolver(solver_type, pc_type);
-      petsc_solver->parameters.update(parameters);
-    }
-    return petsc_solver->solve(A, x, b);
-  }
-#endif
-#ifdef HAS_TRILINOS
-  if (A.has_type<EpetraMatrix>())
-  {
-    if (!epetra_solver)
-    {
-      epetra_solver = new EpetraKrylovSolver(solver_type, pc_type);
-      epetra_solver->parameters.update(parameters);
-    }
-    return epetra_solver->solve(A, x, b);
-  }
-#endif
-#ifdef HAS_MTL4
-  if (A.has_type<MTL4Matrix>())
-  {
-    if (!itl_solver)
-    {
-      itl_solver = new ITLKrylovSolver(solver_type, pc_type);
-      itl_solver->parameters.update(parameters);
-    }
-    return itl_solver->solve(A, x, b);
-  }
-#endif
-
-  error("No default Krylov solver for given backend");
-  return 0;
+  solver->parameters.update(parameters);
+  return solver->solve(A, x, b);
 }
 //-----------------------------------------------------------------------------

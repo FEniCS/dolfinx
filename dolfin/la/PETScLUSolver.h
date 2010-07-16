@@ -68,20 +68,17 @@ namespace dolfin
 
   private:
 
-    /// LU method
-    std::string lu_package;
-
     // Available LU solvers
     static const std::map<std::string, const MatSolverPackage> lu_packages;
 
     // Select LU solver type
-    void select_solver();
+    const MatSolverPackage select_solver(std::string& lu_package) const;
 
     // Initialise solver
-    void init_solver();
+    void init_solver(std::string& lu_package);
 
     // Set PETSc operators
-    void set_petsc_operators();
+    void set_petsc_operators(const PETScMatrix& A);
 
     // Pritn pre-solve report
     void pre_report(const PETScMatrix& A) const;
