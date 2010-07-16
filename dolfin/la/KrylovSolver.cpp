@@ -65,7 +65,11 @@ KrylovSolver::KrylovSolver(std::string solver_type, std::string pc_type)
     error("Trilinos not installed.");
     #endif
   else if (backend == "MTL4")
+    #ifdef HAS_MTL4
     solver.reset(new ITLKrylovSolver());
+    #else
+    error("MTL4 not installed.");
+    #endif
   else
     error("No suitable Krylov solver for linear algebra backend.");
 

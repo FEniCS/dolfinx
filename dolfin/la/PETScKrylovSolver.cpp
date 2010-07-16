@@ -149,6 +149,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
 
   // Check dimensions
   const uint N = A->size(1);
+  const uint M = A->size(0);
   if (N != b.size())
     error("Non-matching dimensions for linear system.");
 
@@ -157,7 +158,6 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     info(PROGRESS, "Solving linear system of size %d x %d (PETSc Krylov solver).", M, N);
 
   // Reinitialize solution vector if necessary
-  const uint M = A->size(0);
   if (x.size() != M)
   {
     x.resize(M);
