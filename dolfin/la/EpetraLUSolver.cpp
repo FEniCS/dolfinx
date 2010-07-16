@@ -5,8 +5,6 @@
 
 #ifdef HAS_TRILINOS
 
-#include <boost/scoped_ptr.hpp>
-
 #include <Amesos.h>
 #include <Amesos_BaseSolver.h>
 #include <Amesos_ConfigDefs.h>
@@ -33,14 +31,77 @@ Parameters EpetraLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-EpetraLUSolver::EpetraLUSolver()
+EpetraLUSolver::EpetraLUSolver() : linear_problem(new Epetra_LinearProblem)
 {
   parameters = default_parameters();
+}
+//-----------------------------------------------------------------------------
+EpetraLUSolver::EpetraLUSolver(const GenericMatrix& A)
+                            : linear_problem(new Epetra_LinearProblem)
+{
+  parameters = default_parameters();
+
+  set_operator(A);
 }
 //-----------------------------------------------------------------------------
 EpetraLUSolver::~EpetraLUSolver()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+void EpetraLUSolver::set_operator(const GenericMatrix& A)
+{
+  assert(linear_problem);
+  const EpetraMatrix& _A = A.down_cast<EpetraMatrix>();
+  linear_problem->SetOperator(_A.mat().get());
+}
+//-----------------------------------------------------------------------------
+dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
+{
+  assert(linear_problem);
+
+  // Downcast vector
+  EpetraVector& _x = x.down_cast<EpetraVector>();
+  const EpetraVector& _b = b.down_cast<EpetraVector>();
+
+  // Get operator matrix
+  const Epetra_RowMatrix* A =	linear_problem->GetMatrix();
+  if (!A)
+    error("Operator has not been set for EpetraLUSolver.");
+
+  const uint M = A->NumGlobalRows();
+  const uint N = A->NumGlobalCols();
+  if (N != b.size())
+    error("Non-matching dimensions for linear system.");
+
+  // Initialize solution vector (remains untouched if dimensions match)
+  x.resize(M);
+
+  // Set LHS and RHS vectors
+  linear_problem->SetRHS(_b.vec().get());
+  linear_problem->SetLHS(_x.vec().get());
+
+  // Create linear solver
+  Amesos factory;
+  std::string solver_type;
+  if (factory.Query("Amesos_Mumps"))
+    solver_type = "Amesos_Mumps";
+  else if (factory.Query("Amesos_Umfpack"))
+    solver_type = "Amesos_Umfpack";
+  else if (factory.Query("Amesos_Klu"))
+    solver_type = "Amesos_Klu";
+  else
+    error("Requested LU solver not available");
+  boost::scoped_ptr<Amesos_BaseSolver> solver(factory.Create(solver_type, *linear_problem));
+
+  // Factorise matrix
+  AMESOS_CHK_ERR(solver->SymbolicFactorization());
+  AMESOS_CHK_ERR(solver->NumericFactorization());
+
+  // Solve
+  AMESOS_CHK_ERR(solver->Solve());
+
+  return 1;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraLUSolver::solve(const GenericMatrix& A, GenericVector& x,
@@ -53,46 +114,8 @@ dolfin::uint EpetraLUSolver::solve(const GenericMatrix& A, GenericVector& x,
 dolfin::uint EpetraLUSolver::solve(const EpetraMatrix& A, EpetraVector& x,
                                    const EpetraVector& b)
 {
-  // Check dimensions
-  const uint M = A.size(0);
-  const uint N = A.size(1);
-  if (N != b.size())
-    error("Non-matching dimensions for linear system.");
-
-  // Initialize solution vector (remains untouched if dimensions match)
-  x.resize(M);
-
-  // Create linear problem
-  Epetra_LinearProblem linear_problem(A.mat().get(), x.vec().get(),
-                                      b.vec().get());
-
-  // Create linear solver
-  Amesos factory;
-  std::string solver_type;
-  //solver_type = "Amesos_Superludist";
-  /*
-  if (factory.Query("Amesos_Mumps"))
-  {
-    cout <<  "Using MUMPS" << endl;
-    solver_type = "Amesos_Mumps";
-  }
-  */
-  if (factory.Query("Amesos_Umfpack"))
-    solver_type = "Amesos_Umfpack";
-  else if (factory.Query("Amesos_Klu"))
-    solver_type = "Amesos_Klu";
-  else
-    error("Requested LU solver not available");
-  boost::scoped_ptr<Amesos_BaseSolver> solver(factory.Create(solver_type, linear_problem));
-
-  // Factorise matrix
-  AMESOS_CHK_ERR(solver->SymbolicFactorization());
-  AMESOS_CHK_ERR(solver->NumericFactorization());
-
-  // Solve
-  AMESOS_CHK_ERR(solver->Solve());
-
-  return 1;
+  set_operator(A);
+  return solve(x, b);
 }
 //-----------------------------------------------------------------------------
 std::string EpetraLUSolver::str(bool verbose) const

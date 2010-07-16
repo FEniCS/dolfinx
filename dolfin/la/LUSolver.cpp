@@ -59,8 +59,7 @@ LUSolver::LUSolver(const GenericMatrix& A, std::string type)
     error("PETSc not installed.");
     #endif
   else if (backend == "Epetra")
-    error("EpetraLUSolver needs to be updated.");
-    //solver.reset(new EpetraLUSolver());
+    solver.reset(new EpetraLUSolver(A));
   else
     error("No suitable LU solver for linear algebra backend.");
 
