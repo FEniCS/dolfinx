@@ -64,7 +64,7 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const
-    { return matrix->str(verbose); }
+    { return "<Matrix wrapper of " + matrix->str(verbose) + ">"; }
 
     //--- Implementation of the GenericMatrix interface ---
 

@@ -62,7 +62,7 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const
-    { return vector->str(verbose); }
+    { return "<Vector wrapper of " + vector->str(verbose) + ">"; }
 
     //--- Implementation of the GenericVector interface ---
 
