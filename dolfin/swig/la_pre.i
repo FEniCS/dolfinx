@@ -50,12 +50,6 @@
 %rename(assign) dolfin::Scalar::operator=;
 
 //-----------------------------------------------------------------------------
-// Modify the LAPACK interface
-//-----------------------------------------------------------------------------
-%ignore dolfin::LAPACKVector::operator[];
-%ignore dolfin::LAPACKMatrix::operator() (uint i, uint j) const;
-
-//-----------------------------------------------------------------------------
 // Typemaps for GenericMatrix get and set functions
 //-----------------------------------------------------------------------------
 %typemap(in) const double* block = double* _array;
