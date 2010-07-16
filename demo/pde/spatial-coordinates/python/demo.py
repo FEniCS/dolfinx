@@ -36,7 +36,7 @@ u0 = Constant(0.0)
 bc = DirichletBC(V, u0, boundary)
 
 # Define variational problem
-#x = tetrahedron.x
+x = V.cell().x
 v = TestFunction(V)
 u = TrialFunction(V)
 d_x = x[0] - 0.5
