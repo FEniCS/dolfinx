@@ -93,8 +93,7 @@ PETScKrylovSolver::PETScKrylovSolver(std::string method,
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::PETScKrylovSolver(boost::shared_ptr<KSP> _ksp)
-  : pc_dolfin(0), _ksp(_ksp),
-    preconditioner_set(true)
+  : pc_dolfin(0), _ksp(_ksp), preconditioner_set(true)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -171,6 +170,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   const PETScMatrix& _A = A->down_cast<PETScMatrix>();
   set_petsc_operators(_A);
 
+  // FIXME: Improve check for re-setting preconditoner, e.g. if parameters change
   // Set preconditioner if necessary
   if (preconditioner && !preconditioner_set)
   {
@@ -301,9 +301,15 @@ void PETScKrylovSolver::set_petsc_operators(const PETScMatrix& A)
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_petsc_options()
 {
-  // Set some options
+  // GMRES restart parameter
   KSPGMRESSetRestart(*_ksp, parameters["gmres_restart"]);
-  KSPSetInitialGuessNonzero(*_ksp, PETSC_TRUE);
+
+  // Non-zero initial guess
+  const bool nonzero_guess = parameters["nonzero_initial_guess"];
+  if (nonzero_guess)
+    KSPSetInitialGuessNonzero(*_ksp, PETSC_TRUE);
+  else
+    KSPSetInitialGuessNonzero(*_ksp, PETSC_FALSE);
 
   if (parameters["monitor_convergence"])
     KSPMonitorSet(*_ksp, KSPMonitorTrueResidualNorm, 0, 0);

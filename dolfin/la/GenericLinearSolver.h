@@ -27,8 +27,7 @@ namespace dolfin
   public:
 
     /// Solve the operator (matrix)
-    virtual void set_operator(const GenericMatrix& A)
-    { error("set_operator(A) is not implemented."); }
+    virtual void set_operator(const GenericMatrix& A) = 0;
 
     /// Solve linear system Ax = b
     virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)

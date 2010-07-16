@@ -51,6 +51,10 @@ namespace dolfin
     /// Destructor
     ~EpetraKrylovSolver();
 
+    /// Solve the operator (matrix)
+    void set_operator(const GenericMatrix& A)
+    { error("set_operator(A) is not implemented."); }
+
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 

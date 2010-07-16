@@ -45,6 +45,10 @@ namespace dolfin
     /// Destructor
     ~CholmodCholeskySolver();
 
+    /// Solve the operator (matrix)
+    void set_operator(const GenericMatrix& A)
+    { error("set_operator(A) is not implemented."); }
+
     /// Solve linear system Ax = b for a sparse matrix using CHOLMOD
     virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 

@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
   assemble(A, a);
   bc.apply(A);
 
-  // LU
+  // LU solver
   LUSolver lu(A);
   lu.parameters["reuse_factorization"] = true;
 
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
     lu.solve(u.vector(), b);
 
     // Save solution in VTK format
-    //file << std::make_pair(&u, t);
+    file << std::make_pair(&u, t);
 
     // Move to next interval
     p = t / T;
@@ -95,5 +95,5 @@ int main(int argc, char *argv[])
   }
 
   // Plot solution
-  //plot(u);
+  plot(u);
 }

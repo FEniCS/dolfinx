@@ -44,7 +44,8 @@ Parameters KrylovSolver::default_parameters()
 KrylovSolver::KrylovSolver(std::string solver_type, std::string pc_type)
 {
   // Set default parameters
-  parameters = dolfin::parameters("krylov_solver");
+  //parameters = dolfin::parameters("krylov_solver");
+  parameters = default_parameters();
 
   // Get linear algebra backend
   const std::string backend = dolfin::parameters["linear_algebra_backend"];
