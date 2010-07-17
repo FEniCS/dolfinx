@@ -56,10 +56,14 @@ LUSolver::LUSolver(const GenericMatrix& A, std::string type)
     #ifdef HAS_PETSC
     solver.reset(new PETScLUSolver(A));
     #else
-    error("PETSc not installed.");
+    error("PETSc not installed. Cannot create a PETScLUSolver.");
     #endif
   else if (backend == "Epetra")
+    #ifdef HAS_TRILINOS
     solver.reset(new EpetraLUSolver(A));
+    #else
+    error("Trilinos not installed. Cannot create an EpetraLUSolver.");
+    #endif
   else
     error("No suitable LU solver for linear algebra backend.");
 
