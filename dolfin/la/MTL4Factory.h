@@ -14,6 +14,7 @@
 #include "MTL4Matrix.h"
 #include "MTL4Vector.h"
 #include "GenericSparsityPattern.h"
+#include "UmfpackLUSolver.h"
 #include "LinearAlgebraFactory.h"
 
 namespace dolfin
@@ -41,6 +42,10 @@ namespace dolfin
     /// Dummy sparsity pattern
     GenericSparsityPattern* create_pattern() const
     { return 0; }
+
+    /// Create LU solver
+    GenericLinearSolver* create_lu_solver() const
+    { return new UmfpackLUSolver(); }
 
     // Return singleton instance
     static MTL4Factory& instance()

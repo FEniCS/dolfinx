@@ -40,6 +40,10 @@ namespace dolfin
     GenericSparsityPattern* create_pattern() const
     { return 0; }
 
+    /// Create LU solver
+    GenericLinearSolver* create_lu_solver() const
+    { error("Cannot create LU solver for STLMatrix"); return 0; }
+
     /// Return singleton instance
     static STLFactory& instance()
     { return factory; }

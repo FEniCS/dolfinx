@@ -78,7 +78,6 @@ namespace dolfin
 
     /// Assign Matrix to SubMatrix
     const SubMatrix& operator= (Matrix& m);
-    //          Matrix& operator() const;
 
   private:
 

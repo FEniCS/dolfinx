@@ -22,6 +22,8 @@ class Epetra_SerialComm;
 namespace dolfin
 {
 
+  class GenericLinearSolver;
+
   class EpetraFactory : public LinearAlgebraFactory
   {
   public:
@@ -39,8 +41,10 @@ namespace dolfin
     EpetraVector* create_local_vector() const;
 
     /// Create empty sparsity pattern
-    //EpetraSparsityPattern* create_pattern() const;
     SparsityPattern* create_pattern() const;
+
+    /// Create LU solver
+    GenericLinearSolver* create_lu_solver() const;
 
     // Return Epetra Communicator
     Epetra_SerialComm& get_serial_comm() const;

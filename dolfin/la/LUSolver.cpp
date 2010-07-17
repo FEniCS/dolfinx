@@ -6,10 +6,7 @@
 
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/common/Timer.h>
-#include "CholmodCholeskySolver.h"
-#include "UmfpackLUSolver.h"
-#include "PETScLUSolver.h"
-#include "EpetraLUSolver.h"
+#include "DefaultFactory.h"
 #include "LUSolver.h"
 
 using namespace dolfin;
@@ -20,23 +17,8 @@ LUSolver::LUSolver(std::string type)
   // Set default parameters
   parameters = default_parameters();
 
-  // Get linear algebra backend
-  const std::string backend = dolfin::parameters["linear_algebra_backend"];
-
-  // Create suitable LU solver
-  if (backend == "uBLAS" || backend == "MTL4")
-    solver.reset(new UmfpackLUSolver());
-  else if (backend == "PETSc")
-    #ifdef HAS_PETSC
-    solver.reset(new PETScLUSolver());
-    #else
-    error("PETSc not installed.");
-    #endif
-  else if (backend == "Epetra")
-    error("EpetraLUSolver needs to be updated.");
-    //solver.reset(new EpetraLUSolver());
-  else
-    error("No suitable LU solver for linear algebra backend.");
+  DefaultFactory factory;
+  solver.reset(factory.create_lu_solver());
 
   solver->parameters.update(parameters);
 }
@@ -46,26 +28,9 @@ LUSolver::LUSolver(const GenericMatrix& A, std::string type)
   // Set default parameters
   parameters = default_parameters();
 
-  // Get linear algebra backend
-  const std::string backend = dolfin::parameters["linear_algebra_backend"];
-
-  // Create suitable LU solver
-  if (backend == "uBLAS" || backend == "MTL4")
-    solver.reset(new UmfpackLUSolver(A));
-  else if (backend == "PETSc")
-    #ifdef HAS_PETSC
-    solver.reset(new PETScLUSolver(A));
-    #else
-    error("PETSc not installed. Cannot create a PETScLUSolver.");
-    #endif
-  else if (backend == "Epetra")
-    #ifdef HAS_TRILINOS
-    solver.reset(new EpetraLUSolver(A));
-    #else
-    error("Trilinos not installed. Cannot create an EpetraLUSolver.");
-    #endif
-  else
-    error("No suitable LU solver for linear algebra backend.");
+  DefaultFactory factory;
+  solver.reset(factory.create_lu_solver());
+  solver->set_operator(A);
 
   solver->parameters.update(parameters);
 }

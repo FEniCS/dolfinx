@@ -12,12 +12,15 @@
 #include "uBLASMatrix.h"
 #include "uBLASVector.h"
 #include "SparsityPattern.h"
+#include "GenericLinearSolver.h"
+#include "UmfpackLUSolver.h"
 #include "LinearAlgebraFactory.h"
 
 namespace dolfin
 {
   // Forward declaration
   template<class T> class uBLASMatrix;
+  class GenericLinearSolver;
 
   template<class Mat = ublas_sparse_matrix>
   class uBLASFactory: public LinearAlgebraFactory
@@ -31,10 +34,6 @@ namespace dolfin
     uBLASMatrix<Mat>* create_matrix() const
     { return new uBLASMatrix<Mat>(); }
 
-    /// Create empty sparsity pattern
-    SparsityPattern* create_pattern() const
-    { return new SparsityPattern(SparsityPattern::sorted); }
-
     /// Create empty vector
     uBLASVector* create_vector() const
     { return new uBLASVector(); }
@@ -42,6 +41,14 @@ namespace dolfin
     /// Create empty vector (local)
     uBLASVector* create_local_vector() const
     { return new uBLASVector(); }
+
+    /// Create empty sparsity pattern
+    SparsityPattern* create_pattern() const
+    { return new SparsityPattern(SparsityPattern::sorted); }
+
+    /// Create LU solver
+    GenericLinearSolver* create_lu_solver() const
+    { return new UmfpackLUSolver(); }
 
     static uBLASFactory<Mat>& instance()
     { return factory; }

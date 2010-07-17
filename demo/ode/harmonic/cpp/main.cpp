@@ -70,7 +70,7 @@ int main()
     info("cG(%d): e = %.3e", q, to_double(ode.error()));
   }
 
-  cout << endl;
+  dolfin::cout << dolfin::endl;
 
   for (int q = 0; q <= 8; q++)
   {

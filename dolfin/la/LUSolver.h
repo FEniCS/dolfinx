@@ -64,7 +64,7 @@ namespace dolfin
   private:
 
     // Solver
-    boost::scoped_ptr<GenericLUSolver> solver;
+    boost::scoped_ptr<GenericLinearSolver> solver;
 
   };
 }

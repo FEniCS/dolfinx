@@ -57,22 +57,22 @@ int main()
   M0.apply("insert");
 
   // Display matrices
-  cout << endl;
-  cout << "Assembled stiffness matrix:" << endl;
+  dolfin::cout << dolfin::endl;
+  dolfin::cout << "Assembled stiffness matrix:" << dolfin::endl;
   info(A, true);
-  cout << endl;
+  dolfin::cout << dolfin::endl;
 
-  cout << "Reference stiffness matrix:" << endl;
+  dolfin::cout << "Reference stiffness matrix:" << dolfin::endl;
   info(A0, true);
-  cout << endl;
+  dolfin::cout << dolfin::endl;
 
-  cout << "Assembled mass matrix:" << endl;
+  dolfin::cout << "Assembled mass matrix:" << dolfin::endl;
   info(M, true);
-  cout << endl;
+  dolfin::cout << dolfin::endl;
 
-  cout << "Reference mass matrix:" << endl;
+  dolfin::cout << "Reference mass matrix:" << dolfin::endl;
   info(M0, true);
-  cout << endl;
+  dolfin::cout << dolfin::endl;
 
   return 0;
 }

@@ -7,12 +7,17 @@
 #ifndef __LINEAR_ALGEBRA_FACTORY_H
 #define __LINEAR_ALGEBRA_FACTORY_H
 
-#include "GenericMatrix.h"
-#include "GenericSparsityPattern.h"
-#include "GenericVector.h"
+//#include "GenericMatrix.h"
+//#include "GenericSparsityPattern.h"
+//#include "GenericVector.h"
 
 namespace dolfin
 {
+
+  class GenericLinearSolver;
+  class GenericMatrix;
+  class GenericSparsityPattern;
+  class GenericVector;
 
   class LinearAlgebraFactory
   {
@@ -34,7 +39,10 @@ namespace dolfin
     virtual dolfin::GenericVector* create_local_vector() const = 0;
 
     /// Create empty sparsity pattern (returning zero if not used/needed)
-    virtual dolfin::GenericSparsityPattern * create_pattern() const = 0;
+    virtual dolfin::GenericSparsityPattern* create_pattern() const = 0;
+
+    /// Create LU solver
+    virtual dolfin::GenericLinearSolver* create_lu_solver() const = 0;
 
   };
 

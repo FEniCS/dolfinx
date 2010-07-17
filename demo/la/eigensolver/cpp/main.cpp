@@ -27,11 +27,11 @@ int main()
   Matrix A;
   StiffnessMatrix::FunctionSpace V(mesh);
   StiffnessMatrix::BilinearForm a(V, V);
-  assemble(A, a); 
+  assemble(A, a);
 
   // Get PETSc matrix
   PETScMatrix& AA(A.down_cast<PETScMatrix>());
-  cout << AA << endl;
+  dolfin::cout << AA << dolfin::endl;
 
   // Compute the first n eigenvalues
   unsigned int n = 10;
@@ -39,19 +39,19 @@ int main()
   esolver.parameters["spectrum"] = "largest magnitude";
   esolver.solve(AA, n);
 
-  cout << "Solver converted in " << esolver.get_iteration_number() << " iterations" << endl;
+  dolfin::cout << "Solver converted in " << esolver.get_iteration_number() << " iterations" << dolfin::endl;
 
   // Display eigenvalues
   for (unsigned int i = 0; i < n; i++)
   {
     double lr, lc;
     esolver.get_eigenvalue(lr, lc, i);
-    cout << "Eigenvalue " << i << ": " << lr << endl;
+    dolfin::cout << "Eigenvalue " << i << ": " << lr << dolfin::endl;
   }
 
   #else
 
-    cout << "SLEPc must be installed to run this demo." << endl;
+    dolfin::cout << "SLEPc must be installed to run this demo." << dolfin::endl;
 
   #endif
 

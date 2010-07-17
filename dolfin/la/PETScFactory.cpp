@@ -9,6 +9,7 @@
 #ifdef HAS_PETSC
 
 #include "SparsityPattern.h"
+#include "PETScLUSolver.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "PETScFactory.h"
@@ -37,6 +38,11 @@ PETScVector* PETScFactory:: create_local_vector() const
 SparsityPattern* PETScFactory::create_pattern() const
 {
   return new SparsityPattern(SparsityPattern::unsorted);
+}
+//-----------------------------------------------------------------------------
+GenericLinearSolver* PETScFactory::create_lu_solver() const
+{
+  return new PETScLUSolver();
 }
 //-----------------------------------------------------------------------------
 

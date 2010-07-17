@@ -10,7 +10,7 @@
 
 #include <boost/scoped_ptr.hpp>
 #include <Epetra_LinearProblem.h>
-#include "GenericLinearSolver.h"
+#include "GenericLUSolver.h"
 
 namespace dolfin
 {
@@ -19,8 +19,6 @@ namespace dolfin
   class GenericVector;
   class EpetraMatrix;
   class EpetraVector;
-
-  //class Epetra_LinearProblem;
 
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b. It is a wrapper for the LU

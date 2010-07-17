@@ -12,10 +12,9 @@
 #include "dolfin/main/MPI.h"
 #include "EpetraSparsityPattern.h"
 #include "SparsityPattern.h"
+#include "EpetraLUSolver.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
-#include "EpetraVector.h"
-
 #include "EpetraFactory.h"
 
 using namespace dolfin;
@@ -58,6 +57,11 @@ SparsityPattern* EpetraFactory::create_pattern() const
   return new SparsityPattern(SparsityPattern::sorted);
 }
 //-----------------------------------------------------------------------------
+GenericLinearSolver* EpetraFactory::create_lu_solver() const
+{
+  return new EpetraLUSolver();
+}
+//-----------------------------------------------------------------------------
 Epetra_SerialComm& EpetraFactory::get_serial_comm() const
 {
   return *serial_comm;
@@ -68,5 +72,4 @@ Epetra_MpiComm& EpetraFactory::get_mpi_comm() const
   return *mpi_comm;
 }
 //-----------------------------------------------------------------------------
-
 #endif

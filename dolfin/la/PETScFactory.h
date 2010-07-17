@@ -36,6 +36,9 @@ namespace dolfin
     /// Create empty sparsity pattern
     SparsityPattern* create_pattern() const;
 
+    /// Create LU solver
+    GenericLinearSolver* create_lu_solver() const;
+
     /// Return singleton instance
     static PETScFactory& instance()
     { return factory; }

@@ -14,6 +14,9 @@ namespace dolfin
 
   class DefaultFactory : public LinearAlgebraFactory
   {
+
+    class GenericLinearSolver;
+
     public:
 
     /// Constructor
@@ -32,7 +35,10 @@ namespace dolfin
     virtual dolfin::GenericVector* create_local_vector() const;
 
     /// Create empty sparsity pattern
-    virtual dolfin::GenericSparsityPattern * create_pattern() const;
+    virtual dolfin::GenericSparsityPattern* create_pattern() const;
+
+    /// Create LU solver
+    virtual dolfin::GenericLinearSolver* create_lu_solver() const;
 
   private:
 

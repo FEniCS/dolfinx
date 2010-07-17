@@ -35,6 +35,11 @@ GenericSparsityPattern* DefaultFactory::create_pattern() const
   return factory().create_pattern();
 }
 //-----------------------------------------------------------------------------
+GenericLinearSolver* DefaultFactory::create_lu_solver() const
+{
+  return factory().create_lu_solver();
+}
+//-----------------------------------------------------------------------------
 LinearAlgebraFactory& DefaultFactory::factory() const
 {
   // Fallback
