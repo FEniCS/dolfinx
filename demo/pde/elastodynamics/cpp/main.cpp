@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
   {
     // Update for next time step
     t += dt;
-    dolfin::cout << "Time: " << t << dolfin::endl;
+    cout << "Time: " << t << endl;
 
     // Solve
     pde.solve(u);

@@ -20,7 +20,7 @@ public:
 
   void u0(real* u)
   {
-    dolfin::cout << "Calling u0() to get initial data" << dolfin::endl;
+    cout << "Calling u0() to get initial data" << endl;
 
     u[0] = 0.0;
     u[1] = 1.0;

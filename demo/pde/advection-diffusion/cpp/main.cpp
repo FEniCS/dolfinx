@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 {
   //parameters["linear_algebra_backend"] = "uBLAS";
   //parameters["linear_algebra_backend"] = "PETSc";
-  //parameters["linear_algebra_backend"] = "Epetra";
+  parameters["linear_algebra_backend"] = "Epetra";
 
   // Read mesh
   Mesh mesh("../mesh.xml.gz");

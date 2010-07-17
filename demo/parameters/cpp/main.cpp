@@ -24,13 +24,13 @@ int main(int argc, char* argv[])
 
   // Print global DOLFIN parameters
   info(parameters, true);
-  dolfin::cout << dolfin::endl;
+  cout << endl;
 
   // Read parameters from file
   File file("parameters.xml");
   file >> parameters;
   info(parameters, true);
-  dolfin::cout << dolfin::endl;
+  cout << endl;
 
   //--- Demo of nested parameter sets ---
 
@@ -70,14 +70,14 @@ int main(int argc, char* argv[])
   double tol = application_parameters("solver_parameters")["tolerance"];
 
   // Print parameter values
-  dolfin::cout << "foo = " << foo << dolfin::endl;
-  dolfin::cout << "bar = " << bar << dolfin::endl;
-  dolfin::cout << "tol = " << tol << dolfin::endl;
-  dolfin::cout << dolfin::endl;
+  cout << "foo = " << foo << endl;
+  cout << "bar = " << bar << endl;
+  cout << "tol = " << tol << endl;
+  cout << endl;
 
   // Print application parameters
   info(application_parameters, true);
-  dolfin::cout << dolfin::endl;
+  cout << endl;
 
   //--- Demo of Krylov solver parameters ---
 
@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
 
   // Print Krylov solver parameters
   info(solver.parameters, true);
-  dolfin::cout << dolfin::endl;
+  cout << endl;
 
   //--- Demo of updating a parameter set ---
 

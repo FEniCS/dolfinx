@@ -31,16 +31,46 @@ Parameters EpetraLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-EpetraLUSolver::EpetraLUSolver() : linear_problem(new Epetra_LinearProblem)
+EpetraLUSolver::EpetraLUSolver() : symbolic_factorized(false),
+                                   numeric_factorized(false),
+                                   linear_problem(new Epetra_LinearProblem)
 {
   parameters = default_parameters();
+
+  // Create linear solver
+  Amesos factory;
+  std::string solver_type;
+  if (factory.Query("Amesos_Mumps"))
+    solver_type = "Amesos_Mumps";
+  else if (factory.Query("Amesos_Umfpack"))
+    solver_type = "Amesos_Umfpack";
+  else if (factory.Query("Amesos_Klu"))
+    solver_type = "Amesos_Klu";
+  else
+    error("Requested LU solver not available");
+  solver.reset(factory.Create(solver_type, *linear_problem));
 }
 //-----------------------------------------------------------------------------
 EpetraLUSolver::EpetraLUSolver(const GenericMatrix& A)
-                             : linear_problem(new Epetra_LinearProblem)
+                             : symbolic_factorized(false),
+                               numeric_factorized(false),
+                               linear_problem(new Epetra_LinearProblem)
 {
   parameters = default_parameters();
   set_operator(A);
+
+  // Create linear solver
+  Amesos factory;
+  std::string solver_type;
+  if (factory.Query("Amesos_Mumps"))
+    solver_type = "Amesos_Mumps";
+  else if (factory.Query("Amesos_Umfpack"))
+    solver_type = "Amesos_Umfpack";
+  else if (factory.Query("Amesos_Klu"))
+    solver_type = "Amesos_Klu";
+  else
+    error("Requested LU solver not available");
+  solver.reset(factory.Create(solver_type, *linear_problem));
 }
 //-----------------------------------------------------------------------------
 EpetraLUSolver::~EpetraLUSolver()
@@ -53,11 +83,14 @@ void EpetraLUSolver::set_operator(const GenericMatrix& A)
   assert(linear_problem);
   const EpetraMatrix& _A = A.down_cast<EpetraMatrix>();
   linear_problem->SetOperator(_A.mat().get());
+  symbolic_factorized = false;
+  numeric_factorized = false;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
 {
   assert(linear_problem);
+  assert(solver);
 
   // Downcast vector
   EpetraVector& _x = x.down_cast<EpetraVector>();
@@ -80,22 +113,33 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
   linear_problem->SetRHS(_b.vec().get());
   linear_problem->SetLHS(_x.vec().get());
 
-  // Create linear solver
-  Amesos factory;
-  std::string solver_type;
-  if (factory.Query("Amesos_Mumps"))
-    solver_type = "Amesos_Mumps";
-  else if (factory.Query("Amesos_Umfpack"))
-    solver_type = "Amesos_Umfpack";
-  else if (factory.Query("Amesos_Klu"))
-    solver_type = "Amesos_Klu";
-  else
-    error("Requested LU solver not available");
-  boost::scoped_ptr<Amesos_BaseSolver> solver(factory.Create(solver_type, *linear_problem));
+  // Get some parameters
+  const bool reuse_fact   = parameters["reuse_factorization"];
+  const bool same_pattern = parameters["same_nonzero_pattern"];
 
-  // Factorise matrix
-  AMESOS_CHK_ERR(solver->SymbolicFactorization());
-  AMESOS_CHK_ERR(solver->NumericFactorization());
+  // Perform symbolic factorization
+  if ( (reuse_fact || same_pattern) && !symbolic_factorized )
+  {
+    AMESOS_CHK_ERR(solver->SymbolicFactorization());
+    symbolic_factorized = true;
+  }
+  else if (!reuse_fact && !same_pattern)
+  {
+    AMESOS_CHK_ERR(solver->SymbolicFactorization());
+    symbolic_factorized = true;
+  }
+
+  // Perform numeric factorization
+  if (reuse_fact && !numeric_factorized)
+  {
+    AMESOS_CHK_ERR(solver->NumericFactorization());
+    numeric_factorized = true;
+  }
+  else if (!reuse_fact)
+  {
+    AMESOS_CHK_ERR(solver->NumericFactorization());
+    numeric_factorized = true;
+  }
 
   // Solve
   AMESOS_CHK_ERR(solver->Solve());

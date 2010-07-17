@@ -12,6 +12,7 @@
 #include "GenericLUSolver.h"
 
 /// Forward declaration
+class Amesos_BaseSolver;
 class Epetra_LinearProblem;
 
 namespace dolfin
@@ -59,7 +60,13 @@ namespace dolfin
 
   private:
 
+    bool symbolic_factorized, numeric_factorized;
+
+    // Epetra linear problem
     boost::scoped_ptr<Epetra_LinearProblem> linear_problem;
+
+    // Linear solver
+    boost::scoped_ptr<Amesos_BaseSolver> solver;
 
   };
 
