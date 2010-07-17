@@ -47,7 +47,7 @@ LinearAlgebraFactory& DefaultFactory::factory() const
   typedef uBLASFactory<> DefaultFactory;
 
   // Get backend from parameter system
-  const std::string backend = parameters["linear_algebra_backend"];
+  const std::string backend = dolfin::parameters["linear_algebra_backend"];
 
   // Choose backend
   if (backend == "uBLAS")

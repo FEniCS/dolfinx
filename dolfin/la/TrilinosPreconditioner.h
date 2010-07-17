@@ -10,13 +10,12 @@
 #ifdef HAS_TRILINOS
 
 #include <string>
-
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/la/PETScObject.h>
 #include <dolfin/parameter/Parameters.h>
 
+// Trilinos forward declarations
 class Ifpack_Preconditioner;
 namespace ML_Epetra
 {
@@ -28,7 +27,6 @@ namespace dolfin
 
   // Forward declarations
   class EpetraKrylovSolver;
-
 
   /// This class is a wrapper for configuring Epetra preconditioners. It does
   /// not own a preconditioner. It can take a EpetraKrylovSolver and set the

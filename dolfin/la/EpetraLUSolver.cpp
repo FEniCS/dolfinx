@@ -37,10 +37,9 @@ EpetraLUSolver::EpetraLUSolver() : linear_problem(new Epetra_LinearProblem)
 }
 //-----------------------------------------------------------------------------
 EpetraLUSolver::EpetraLUSolver(const GenericMatrix& A)
-                            : linear_problem(new Epetra_LinearProblem)
+                             : linear_problem(new Epetra_LinearProblem)
 {
   parameters = default_parameters();
-
   set_operator(A);
 }
 //-----------------------------------------------------------------------------

@@ -9,6 +9,7 @@
 #ifndef __PETSC_FACTORY_H
 #define __PETSC_FACTORY_H
 
+#include "PETScLUSolver.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include "SparsityPattern.h"
@@ -37,7 +38,7 @@ namespace dolfin
     SparsityPattern* create_pattern() const;
 
     /// Create LU solver
-    GenericLinearSolver* create_lu_solver() const;
+    PETScLUSolver* create_lu_solver() const;
 
     /// Return singleton instance
     static PETScFactory& instance()

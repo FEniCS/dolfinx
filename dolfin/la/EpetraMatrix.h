@@ -13,8 +13,6 @@
 #ifdef HAS_TRILINOS
 
 #include <boost/shared_ptr.hpp>
-
-#include <dolfin/common/Variable.h>
 #include "GenericMatrix.h"
 
 class Epetra_FECrsMatrix;
@@ -23,6 +21,7 @@ class Epetra_CrsGraph;
 namespace dolfin
 {
 
+  /// Forward declarations
   class EpetraSparsityPattern;
   class GenericSparsityPattern;
 
@@ -34,7 +33,7 @@ namespace dolfin
   /// access the Epetra_FECrsMatrix object using the function mat() and
   /// use the standard Epetra interface.
 
-  class EpetraMatrix: public GenericMatrix
+  class EpetraMatrix : public GenericMatrix
   {
   public:
 
@@ -148,5 +147,5 @@ namespace dolfin
 
 }
 
-#endif //HAS_TRILINOS
-#endif //__EPETRA_MATRIX_H
+#endif // HAS_TRILINOS
+#endif // __EPETRA_MATRIX_H

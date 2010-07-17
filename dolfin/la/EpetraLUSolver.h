@@ -9,8 +9,10 @@
 #define __EPETRA_LU_SOLVER_H
 
 #include <boost/scoped_ptr.hpp>
-#include <Epetra_LinearProblem.h>
 #include "GenericLUSolver.h"
+
+/// Forward declaration
+class Epetra_LinearProblem;
 
 namespace dolfin
 {

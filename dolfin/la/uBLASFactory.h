@@ -12,7 +12,6 @@
 #include "uBLASMatrix.h"
 #include "uBLASVector.h"
 #include "SparsityPattern.h"
-#include "GenericLinearSolver.h"
 #include "UmfpackLUSolver.h"
 #include "LinearAlgebraFactory.h"
 
@@ -47,7 +46,7 @@ namespace dolfin
     { return new SparsityPattern(SparsityPattern::sorted); }
 
     /// Create LU solver
-    GenericLinearSolver* create_lu_solver() const
+    UmfpackLUSolver* create_lu_solver() const
     { return new UmfpackLUSolver(); }
 
     static uBLASFactory<Mat>& instance()

@@ -44,7 +44,7 @@ namespace dolfin
     { return 0; }
 
     /// Create LU solver
-    GenericLinearSolver* create_lu_solver() const
+    UmfpackLUSolver* create_lu_solver() const
     { return new UmfpackLUSolver(); }
 
     // Return singleton instance

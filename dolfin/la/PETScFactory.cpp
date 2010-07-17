@@ -40,7 +40,7 @@ SparsityPattern* PETScFactory::create_pattern() const
   return new SparsityPattern(SparsityPattern::unsorted);
 }
 //-----------------------------------------------------------------------------
-GenericLinearSolver* PETScFactory::create_lu_solver() const
+PETScLUSolver* PETScFactory::create_lu_solver() const
 {
   return new PETScLUSolver();
 }

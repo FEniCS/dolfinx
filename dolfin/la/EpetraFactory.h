@@ -9,11 +9,11 @@
 #ifndef __EPETRA_FACTORY_H
 #define __EPETRA_FACTORY_H
 
+#include "EpetraLUSolver.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
-#include "EpetraSparsityPattern.h"
-#include "LinearAlgebraFactory.h"
 #include "SparsityPattern.h"
+#include "LinearAlgebraFactory.h"
 
 // Forwad declarations
 class Epetra_MpiComm;
@@ -31,6 +31,9 @@ namespace dolfin
     /// Destructor
     virtual ~EpetraFactory();
 
+
+    /// --- LinearAlgebraFactory interface
+
     /// Create empty matrix
     EpetraMatrix* create_matrix() const;
 
@@ -44,7 +47,9 @@ namespace dolfin
     SparsityPattern* create_pattern() const;
 
     /// Create LU solver
-    GenericLinearSolver* create_lu_solver() const;
+    EpetraLUSolver* create_lu_solver() const;
+
+    /// --- EpetraFactory interface
 
     // Return Epetra Communicator
     Epetra_SerialComm& get_serial_comm() const;

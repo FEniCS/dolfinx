@@ -7,10 +7,6 @@
 #ifndef __LINEAR_ALGEBRA_FACTORY_H
 #define __LINEAR_ALGEBRA_FACTORY_H
 
-//#include "GenericMatrix.h"
-//#include "GenericSparsityPattern.h"
-//#include "GenericVector.h"
-
 namespace dolfin
 {
 
