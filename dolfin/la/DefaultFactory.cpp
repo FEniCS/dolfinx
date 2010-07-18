@@ -40,6 +40,12 @@ GenericLinearSolver* DefaultFactory::create_lu_solver() const
   return factory().create_lu_solver();
 }
 //-----------------------------------------------------------------------------
+GenericLinearSolver* DefaultFactory::create_krylov_solver(std::string method,
+                                                          std::string pc) const
+{
+  return factory().create_krylov_solver(method, pc);
+}
+//-----------------------------------------------------------------------------
 LinearAlgebraFactory& DefaultFactory::factory() const
 {
   // Fallback

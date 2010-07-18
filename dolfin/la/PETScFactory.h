@@ -9,6 +9,7 @@
 #ifndef __PETSC_FACTORY_H
 #define __PETSC_FACTORY_H
 
+#include "PETScKrylovSolver.h"
 #include "PETScLUSolver.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
@@ -39,6 +40,10 @@ namespace dolfin
 
     /// Create LU solver
     PETScLUSolver* create_lu_solver() const;
+
+    /// Create Krylov solver
+    PETScKrylovSolver* create_krylov_solver(std::string method,
+                                            std::string pc) const;
 
     /// Return singleton instance
     static PETScFactory& instance()

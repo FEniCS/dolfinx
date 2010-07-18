@@ -9,6 +9,8 @@
 #ifndef __UBLAS_FACTORY_H
 #define __UBLAS_FACTORY_H
 
+#include <string>
+#include "uBLASKrylovSolver.h"
 #include "uBLASMatrix.h"
 #include "uBLASVector.h"
 #include "SparsityPattern.h"
@@ -18,11 +20,11 @@
 namespace dolfin
 {
   // Forward declaration
-  template<class T> class uBLASMatrix;
+  //template<class T> class uBLASMatrix;
   class GenericLinearSolver;
 
   template<class Mat = ublas_sparse_matrix>
-  class uBLASFactory: public LinearAlgebraFactory
+  class uBLASFactory : public LinearAlgebraFactory
   {
   public:
 
@@ -48,6 +50,11 @@ namespace dolfin
     /// Create LU solver
     UmfpackLUSolver* create_lu_solver() const
     { return new UmfpackLUSolver(); }
+
+    /// Create Krylov solver
+    GenericLinearSolver* create_krylov_solver(std::string method, std::string pc) const
+    //{ return 0; }
+    { return new uBLASKrylovSolver(method, pc); }
 
     static uBLASFactory<Mat>& instance()
     { return factory; }

@@ -7,6 +7,7 @@
 #ifndef __DEFAULT_FACTORY_H
 #define __DEFAULT_FACTORY_H
 
+#include <string>
 #include "LinearAlgebraFactory.h"
 
 namespace dolfin
@@ -39,6 +40,10 @@ namespace dolfin
 
     /// Create LU solver
     virtual dolfin::GenericLinearSolver* create_lu_solver() const;
+
+    /// Create Krylov solver
+    virtual dolfin::GenericLinearSolver*
+        create_krylov_solver(std::string method, std::string pc) const;
 
   private:
 

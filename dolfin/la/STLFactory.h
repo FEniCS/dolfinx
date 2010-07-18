@@ -44,6 +44,11 @@ namespace dolfin
     GenericLinearSolver* create_lu_solver() const
     { error("Cannot create LU solver for STLMatrix"); return 0; }
 
+    /// Create Krylov solver
+    GenericLinearSolver* create_krylov_solver(std::string method,
+                                              std::string pc) const
+    { error("Cannot create Krylov solver for STLMatrix"); return 0; }
+
     /// Return singleton instance
     static STLFactory& instance()
     { return factory; }

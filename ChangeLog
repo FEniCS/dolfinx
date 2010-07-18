@@ -1,3 +1,4 @@
+ - Improve and implement re-use of LU factorizations for all backends
  - Fix bug in refinement of MeshFunctions
 0.9.8 [2010-07-01]
  - Optimize and improve StabilityAnalysis.

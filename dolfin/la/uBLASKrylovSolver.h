@@ -22,6 +22,9 @@
 namespace dolfin
 {
 
+  class GenericMatrix;
+  class GenericVector;
+
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b using uBLAS data types.
 
@@ -37,7 +40,8 @@ namespace dolfin
     uBLASKrylovSolver(uBLASPreconditioner& pc);
 
     /// Create Krylov solver for a particular method and uBLASPreconditioner
-    uBLASKrylovSolver(std::string solver_type, uBLASPreconditioner& preconditioner);
+    uBLASKrylovSolver(std::string solver_type,
+                      uBLASPreconditioner& preconditioner);
 
     /// Destructor
     ~uBLASKrylovSolver();

@@ -45,5 +45,11 @@ PETScLUSolver* PETScFactory::create_lu_solver() const
   return new PETScLUSolver();
 }
 //-----------------------------------------------------------------------------
+PETScKrylovSolver* PETScFactory::create_krylov_solver(std::string method,
+                                                      std::string pc) const
+{
+  return new PETScKrylovSolver(method, pc);
+}
+//-----------------------------------------------------------------------------
 
 #endif

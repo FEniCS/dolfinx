@@ -1,20 +1,17 @@
-// Copyright (C) 2007-2009 Garth N. Wells.
+// Copyright (C) 2007-2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2008.
 // Modified by Anders Logg, 2008.
 //
 // First added:  2007-07-03
-// Last changed: 2010-04-22
+// Last changed: 2010-07-18
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/parameter/Parameters.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
-#include "uBLASKrylovSolver.h"
-#include "EpetraKrylovSolver.h"
-#include "ITLKrylovSolver.h"
-#include "PETScKrylovSolver.h"
+#include "DefaultFactory.h"
 #include "KrylovSolver.h"
 
 using namespace dolfin;
@@ -44,36 +41,10 @@ Parameters KrylovSolver::default_parameters()
 KrylovSolver::KrylovSolver(std::string solver_type, std::string pc_type)
 {
   // Set default parameters
-  //parameters = dolfin::parameters("krylov_solver");
   parameters = default_parameters();
 
-  // Get linear algebra backend
-  const std::string backend = dolfin::parameters["linear_algebra_backend"];
-
-  // Create suitable LU solver
-  if (backend == "uBLAS")
-    solver.reset(new uBLASKrylovSolver());
-  else if (backend == "PETSc")
-    #ifdef HAS_PETSC
-    solver.reset(new PETScKrylovSolver());
-    #else
-    error("PETSc not installed.");
-    #endif
-  else if (backend == "Epetra")
-    #ifdef HAS_TRILINOS
-    solver.reset(new EpetraKrylovSolver());
-    #else
-    error("Trilinos not installed.");
-    #endif
-  else if (backend == "MTL4")
-    #ifdef HAS_MTL4
-    solver.reset(new ITLKrylovSolver());
-    #else
-    error("MTL4 not installed.");
-    #endif
-  else
-    error("No suitable Krylov solver for linear algebra backend.");
-
+  DefaultFactory factory;
+  solver.reset( factory.create_krylov_solver(solver_type, pc_type) );
   solver->parameters.update(parameters);
 }
 //-----------------------------------------------------------------------------

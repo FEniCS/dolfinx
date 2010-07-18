@@ -152,11 +152,7 @@ double MTL4Vector::inner(const GenericVector& v) const
 //-----------------------------------------------------------------------------
 void MTL4Vector::axpy(double a, const GenericVector& v)
 {
-  // Developers note: This is a hack. One would like:
-  // x += a*v.down_cast<MTL4Vector>().vec();
-  mtl4_vector vv =  v.down_cast<MTL4Vector>().vec();
-  vv *= a;
-  x  += vv;
+  x += a*v.down_cast<MTL4Vector>().vec();
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& MTL4Vector::factory() const

@@ -9,6 +9,8 @@
 #ifndef __EPETRA_FACTORY_H
 #define __EPETRA_FACTORY_H
 
+#include <string>
+#include "EpetraKrylovSolver.h"
 #include "EpetraLUSolver.h"
 #include "EpetraMatrix.h"
 #include "EpetraVector.h"
@@ -48,6 +50,10 @@ namespace dolfin
 
     /// Create LU solver
     EpetraLUSolver* create_lu_solver() const;
+
+    /// Create Krylov solver
+    EpetraKrylovSolver* create_krylov_solver(std::string method,
+                                             std::string pc) const;
 
     /// --- EpetraFactory interface
 

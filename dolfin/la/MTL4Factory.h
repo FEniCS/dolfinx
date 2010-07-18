@@ -11,6 +11,8 @@
 #ifndef __MTL4_FACTORY_H
 #define __MTL4_FACTORY_H
 
+#include <string>
+#include "ITLKrylovSolver.h"
 #include "MTL4Matrix.h"
 #include "MTL4Vector.h"
 #include "GenericSparsityPattern.h"
@@ -46,6 +48,11 @@ namespace dolfin
     /// Create LU solver
     UmfpackLUSolver* create_lu_solver() const
     { return new UmfpackLUSolver(); }
+
+    /// Create Krylov solver
+    ITLKrylovSolver* create_krylov_solver(std::string method,
+                                          std::string pc) const
+    { return new ITLKrylovSolver(method, pc); }
 
     // Return singleton instance
     static MTL4Factory& instance()

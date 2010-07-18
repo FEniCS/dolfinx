@@ -44,8 +44,7 @@ MTL4Matrix::MTL4Matrix(const MTL4Matrix& mat) : ins(0), nnz_row(0)
 //-----------------------------------------------------------------------------
 MTL4Matrix::~MTL4Matrix()
 {
-  if(ins)
-    delete ins;
+  delete ins;
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::resize(uint M, uint N)
@@ -114,7 +113,7 @@ void MTL4Matrix::add(const double* block, uint m, const uint* rows, uint n,
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::axpy(double a, const GenericMatrix& A,
-                                  bool same_nonzero_pattern)
+                      bool same_nonzero_pattern)
   {
     // Check for same size
     if ( size(0) != A.size(0) or size(1) != A.size(1) )
@@ -165,9 +164,7 @@ std::string MTL4Matrix::str(bool verbose) const
     s << A;
   }
   else
-  {
-    s << "MTL4Matrix of size " << size(0) << " x " << size(1) << ">";
-  }
+    s << "<MTL4Matrix of size " << size(0) << " x " << size(1) << ">";
 
   return s.str();
 }
@@ -227,11 +224,8 @@ void MTL4Matrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 void MTL4Matrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 {
   assert_no_inserter();
-
-  // FIXME: Transposed view multiply, e.g. y = trans(A)*x
-  // does not work in const-declared member function.
-
-  error("MTL4Matrix: Transposed view multiply is not implemented yet.");
+  const mtl::matrix::transposed_view<const mtl::compressed2D<double> > At = trans(A);
+  Ax_.down_cast<MTL4Vector>().vec() = At*x_.down_cast<MTL4Vector>().vec();
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::getrow(uint row_idx, std::vector<uint>& columns,
@@ -247,7 +241,7 @@ void MTL4Matrix::getrow(uint row_idx, std::vector<uint>& columns,
   typedef mtl::traits::range_generator<mtl::tag::row, mtl4_sparse_matrix >::type c_type;
   typedef mtl::traits::range_generator<mtl::tag::nz, c_type>::type  ic_type;
 
-  mtl::traits::col<mtl4_sparse_matrix >::type   col(A);
+  mtl::traits::col<mtl4_sparse_matrix >::type col(A);
   mtl::traits::const_value<mtl4_sparse_matrix >::type value(A);
 
   // Row cursors
@@ -314,11 +308,8 @@ const MTL4Matrix& MTL4Matrix::operator= (const MTL4Matrix& A)
 {
   // Check for self-assignment
   if (this != &A)
-  {
-    // Assume MTL4 take care of deleting an existing Matrix
-    // using its assignment operator
     this->A = A.mat();
-  }
+
   nnz_row = A.nnz_row;
   return *this;
 }

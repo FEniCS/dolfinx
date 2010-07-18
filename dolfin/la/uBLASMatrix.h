@@ -17,12 +17,11 @@
 #include <iomanip>
 #include <tr1/tuple>
 
-#include "LinearAlgebraFactory.h"
+#include "GenericMatrix.h"
 #include "SparsityPattern.h"
 #include "ublas.h"
-#include "uBLASFactory.h"
 #include "uBLASVector.h"
-#include "GenericMatrix.h"
+#include "uBLASFactory.h"
 
 namespace dolfin
 {

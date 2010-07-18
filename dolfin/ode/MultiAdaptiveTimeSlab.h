@@ -10,7 +10,6 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
-#include <dolfin/la/uBLASVector.h>
 #include "Alloc.h"
 #include "Partition.h"
 #include "MultiAdaptivity.h"

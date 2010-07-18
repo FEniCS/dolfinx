@@ -66,7 +66,7 @@ dolfin::uint uBLASKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                       const GenericVector& b)
 {
   return solve(A.down_cast<uBLASMatrix<ublas_sparse_matrix> >(),
-               x.down_cast<uBLASVector>(),  b.down_cast<uBLASVector>());
+               x.down_cast<uBLASVector>(), b.down_cast<uBLASVector>());
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBLASKrylovSolver::solve(const uBLASMatrix<ublas_dense_matrix>& A,

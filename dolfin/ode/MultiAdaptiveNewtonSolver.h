@@ -7,9 +7,10 @@
 #ifndef __MULTI_ADAPTIVE_NEWTON_SOLVER_H
 #define __MULTI_ADAPTIVE_NEWTON_SOLVER_H
 
+#include <boost/scoped_ptr.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
-#include <dolfin/la/uBLASKrylovSolver.h>
+//#include <dolfin/la/uBLASKrylovSolver.h>
 #include <dolfin/la/uBLASVector.h>
 #include "MultiAdaptivePreconditioner.h"
 #include "TimeSlabJacobian.h"
@@ -21,6 +22,7 @@ namespace dolfin
   class ODE;
   class MultiAdaptiveTimeSlab;
   class Method;
+  class uBLASKrylovSolver;
 
   /// This class implements Newton's method on multi-adaptive time
   /// slabs. In each iteration, the system F(x) is evaluated at the
@@ -66,7 +68,7 @@ namespace dolfin
     MultiAdaptiveTimeSlab& ts;       // The time slab;
     TimeSlabJacobian* A;             // Jacobian of time slab system
     MultiAdaptivePreconditioner mpc; // Preconditioner
-    uBLASKrylovSolver solver;        // Linear solver
+    boost::scoped_ptr<uBLASKrylovSolver> solver;        // Linear solver
     real* f;                         // Values of right-hand side at quadrature points
     real* u;                         // Degrees of freedom on local element
     uBLASVector dx;                  // Increment for Newton's method

@@ -23,6 +23,7 @@
 %import(module="dolfin.cpp") "dolfin/la/PETScLUSolver.h"
 %import(module="dolfin.cpp") "dolfin/la/CholmodCholeskySolver.h"
 %import(module="dolfin.cpp") "dolfin/la/UmfpackLUSolver.h"
+%import(module="dolfin.cpp") "dolfin/la/ITLKrylovSolver.h"
 %import(module="dolfin.cpp") "dolfin/la/MTL4Matrix.h"
 %import(module="dolfin.cpp") "dolfin/la/STLMatrix.h"
 %import(module="dolfin.cpp") "dolfin/la/uBLASVector.h"

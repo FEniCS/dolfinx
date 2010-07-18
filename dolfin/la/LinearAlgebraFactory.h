@@ -40,6 +40,10 @@ namespace dolfin
     /// Create LU solver
     virtual dolfin::GenericLinearSolver* create_lu_solver() const = 0;
 
+    /// Create Krylov solver
+    virtual dolfin::GenericLinearSolver*
+        create_krylov_solver(std::string method, std::string pc) const = 0;
+
   };
 
 }

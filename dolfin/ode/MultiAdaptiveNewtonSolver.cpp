@@ -8,6 +8,7 @@
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/la/uBLASSparseMatrix.h>
+#include <dolfin/la/uBLASKrylovSolver.h>
 #include "Alloc.h"
 #include "ODE.h"
 #include "Method.h"
@@ -22,7 +23,8 @@ using namespace dolfin;
 MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
 (MultiAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), A(0),
-    mpc(timeslab, method), solver(mpc), f(0), u(0), num_elements(0), num_elements_mono(0),
+    mpc(timeslab, method), solver(new uBLASKrylovSolver(mpc)),
+    f(0), u(0), num_elements(0), num_elements_mono(0),
     updated_jacobian(ode.parameters["updated_jacobian"])
 {
   // Initialize local arrays
@@ -30,9 +32,10 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
   u = new real[method.nsize()];
 
   // Set parameters for Krylov solver
-  solver.parameters["report"] = monitor;
-  solver.parameters["absolute_tolerance"] = 0.01;
-  solver.parameters["relative_tolerance"] = 0.01 * to_double(tol);
+  assert(solver);
+  solver->parameters["report"] = monitor;
+  solver->parameters["absolute_tolerance"] = 0.01;
+  solver->parameters["relative_tolerance"] = 0.01 * to_double(tol);
 
   // Initialize Jacobian
   if ( updated_jacobian )
@@ -51,8 +54,10 @@ MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
   }
 
   // Delete local arrays
-  if ( f ) delete [] f;
-  if ( u ) delete [] u;
+  if (f)
+    delete [] f;
+  if (u)
+    delete [] u;
 
   // Delete Jacobian
   delete A;
@@ -86,6 +91,8 @@ void MultiAdaptiveNewtonSolver::start()
 //-----------------------------------------------------------------------------
 real MultiAdaptiveNewtonSolver::iteration(const real& tol, uint iter, const real& d0, const real& d1)
 {
+  assert(solver);
+
   // Evaluate b = -F(x) at current x
   Feval(b);
 
@@ -99,7 +106,7 @@ real MultiAdaptiveNewtonSolver::iteration(const real& tol, uint iter, const real
   // Solve linear system
   const double r = b.norm("linf") + to_double( real_epsilon() );
   b /= r;
-  num_local_iterations += solver.solve(*A, dx, b);
+  num_local_iterations += solver->solve(*A, dx, b);
   dx *= r;
 
   // Update solution x -> x + dx (note: b = -F)

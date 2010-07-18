@@ -62,6 +62,12 @@ EpetraLUSolver* EpetraFactory::create_lu_solver() const
   return new EpetraLUSolver();
 }
 //-----------------------------------------------------------------------------
+EpetraKrylovSolver* EpetraFactory::create_krylov_solver(std::string method,
+                                                          std::string pc) const
+{
+  return new EpetraKrylovSolver(method, pc);
+}
+//-----------------------------------------------------------------------------
 Epetra_SerialComm& EpetraFactory::get_serial_comm() const
 {
   return *serial_comm;
