@@ -27,21 +27,31 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include "Encoder.h"
+#include "VTKWriter.h"
 #include "VTKFile.h"
 
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
 VTKFile::VTKFile(const std::string filename, std::string encoding)
-               : GenericFile(filename), encoding(encoding)
+               : GenericFile(filename), encoding(encoding), binary(false),
+                 compress(false)
 {
   if (encoding != "ascii" && encoding != "base64" && encoding != "compressed")
     error("Requested VTK file encoding '%s' is unknown. Options are 'ascii', \n 'base64' or 'compressed'.");
 
   if (encoding == "ascii")
+  {
     encode_string = "ascii";
+    binary = false;
+  }
   else if (encoding == "base64" || encoding == "compressed")
+  {
     encode_string = "binary";
+    binary = true;
+    if (encoding == "compressed")
+      compress = true;
+  }
   else
     error("Unknown encoding type.");
 }
@@ -57,7 +67,8 @@ void VTKFile::operator<<(const Mesh& mesh)
   std::string vtu_filename = init(mesh);
 
   // Write mesh to vtu file
-  mesh_write(mesh, vtu_filename);
+  //mesh_write(mesh, vtu_filename);
+  VTKWriter::write_mesh(mesh, vtu_filename, binary, compress);
 
   // Parallel-specfic files
   if (MPI::num_processes() > 1 && MPI::process_number() == 0)
@@ -111,7 +122,7 @@ void VTKFile::write(const Function& u, double time)
   std::string vtu_filename = init(mesh);
 
   // Write mesh
-  mesh_write(mesh, vtu_filename);
+  VTKWriter::write_mesh(mesh, vtu_filename, binary, compress);
 
   // Write results
   results_write(u, vtu_filename);
@@ -179,127 +190,6 @@ void VTKFile::finalize(std::string vtu_filename, double time)
   counter++;
 }
 //----------------------------------------------------------------------------
-void VTKFile::mesh_write(const Mesh& mesh, std::string vtu_filename) const
-{
-  // Open file
-  std::ofstream file(vtu_filename.c_str(), std::ios::app);
-  if ( !file.is_open() )
-    error("Unable to open file %s", filename.c_str());
-
-  // Write vertex positions
-  file << "<Points>" << std::endl;
-  file << "<DataArray  type=\"Float32\"  NumberOfComponents=\"3\"  format=\"" << encode_string << "\">" << std::endl;
-  if (encoding == "ascii")
-  {
-    for (VertexIterator v(mesh); !v.end(); ++v)
-    {
-      Point p = v->point();
-      file << p.x() << " " << p.y() << " " <<  p.z() << std::endl;
-    }
-  }
-  else if (encoding == "base64" || encoding == "compressed")
-  {
-    std::vector<float> data(3*mesh.num_vertices());
-    std::vector<float>::iterator entry = data.begin();
-    for (VertexIterator v(mesh); !v.end(); ++v)
-    {
-      Point p = v->point();
-      *entry++ = p.x();
-      *entry++ = p.y();
-      *entry++ = p.z();
-    }
-    // Create encoded stream
-    std::stringstream base64_stream;
-    encode_stream(base64_stream, data);
-    file <<  base64_stream.str() << std::endl;
-  }
-  file << "</DataArray>" << std::endl <<  "</Points>" << std::endl;
-
-  // Write cell connectivity
-  file << "<Cells>" << std::endl;
-  file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\"" << encode_string << "\">" << std::endl;
-  if (encoding == "ascii")
-  {
-    for (CellIterator c(mesh); !c.end(); ++c)
-    {
-      for (VertexIterator v(*c); !v.end(); ++v)
-        file << v->index() << " ";
-      file << std::endl;
-    }
-  }
-  else if (encoding == "base64" || encoding == "compressed")
-  {
-    const int size = mesh.num_cells()*mesh.type().num_entities(0);
-    std::vector<boost::uint32_t> data(size);
-    std::vector<boost::uint32_t>::iterator entry = data.begin();
-    for (CellIterator c(mesh); !c.end(); ++c)
-    {
-      for (VertexIterator v(*c); !v.end(); ++v)
-        *entry++ = v->index();
-    }
-
-    // Create encoded stream
-    std::stringstream base64_stream;
-    encode_stream(base64_stream, data);
-    file << base64_stream.str() << std::endl;
-  }
-  file << "</DataArray>" << std::endl;
-
-  // Write offset into connectivity array for the end of each cell
-  file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\"" << encode_string << "\">" << std::endl;
-  const uint num_cell_vertices = mesh.type().num_entities(0);
-  if (encoding == "ascii")
-  {
-    for (uint offsets = 1; offsets <= mesh.num_cells(); offsets++)
-      file << " " << offsets*num_cell_vertices << "  "  << std::endl;
-  }
-  else if (encoding == "base64" || encoding == "compressed")
-  {
-    std::vector<boost::uint32_t> data(mesh.num_cells()*num_cell_vertices);
-    std::vector<boost::uint32_t>::iterator entry = data.begin();
-    for (uint offsets = 1; offsets <= mesh.num_cells(); offsets++)
-      *entry++ = offsets*num_cell_vertices;
-
-    // Create encoded stream
-    std::stringstream base64_stream;
-    encode_stream(base64_stream, data);
-    file << base64_stream.str() << std::endl;
-  }
-  file << "</DataArray>" << std::endl;
-
-  //Write cell type
-  file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"" << encode_string << "\">" << std::endl;
-  boost::uint8_t vtk_cell_type = 0;
-  if (mesh.type().cell_type() == CellType::tetrahedron)
-    vtk_cell_type = boost::uint8_t(10);
-  if (mesh.type().cell_type() == CellType::triangle)
-    vtk_cell_type = boost::uint8_t(5);
-  if (mesh.type().cell_type() == CellType::interval)
-    vtk_cell_type = boost::uint8_t(3);
-  if (encoding == "ascii")
-  {
-    for (uint types = 0; types < mesh.num_cells(); types++)
-      file << " " << static_cast<unsigned int>(vtk_cell_type) << std::endl;
-  }
-  else if (encoding == "base64" || encoding == "compressed")
-  {
-    std::vector<boost::uint8_t> data(mesh.num_cells());
-    std::vector<boost::uint8_t>::iterator entry = data.begin();
-    for (uint types = 0; types < mesh.num_cells(); types++)
-      *entry++ = vtk_cell_type;
-
-    // Create encoded stream
-    std::stringstream base64_stream;
-    encode_stream(base64_stream, data);
-    file << base64_stream.str() << std::endl;
-  }
-  file  << "</DataArray>" << std::endl;
-  file  << "</Cells>" << std::endl;
-
-  // Close file
-  file.close();
-}
-//----------------------------------------------------------------------------
 void VTKFile::results_write(const Function& u, std::string vtu_filename) const
 {
   // Get rank of Function
@@ -332,7 +222,8 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
 
   const GenericDofMap& dofmap(u.function_space().dofmap());
   if (dofmap.max_local_dimension() == cell_based_dim)
-    write_cell_data(u, vtu_filename);
+    //write_cell_data(u, vtu_filename);
+    VTKWriter::write_cell_data(u, vtu_filename, binary, compress);
   else
     write_point_data(u, mesh, vtu_filename);
 }
@@ -388,7 +279,7 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
       }
       else if (rank == 2 && dim == 4)
       {
-        // Pad with 0.0 to 2D tensors to make them 3D
+        // Pad 2D tensors with 0.0 to make them 3D
         for(uint i = 0; i < 2; i++)
         {
           ss << " " << values[vertex->index() + (2*i+0)*mesh.num_vertices()];
@@ -463,170 +354,6 @@ void VTKFile::write_point_data(const GenericFunction& u, const Mesh& mesh,
 
   fp << "</DataArray> " << std::endl;
   fp << "</PointData> " << std::endl;
-}
-//----------------------------------------------------------------------------
-void VTKFile::write_cell_data(const Function& u, std::string vtu_filename) const
-{
-  // For brevity
-  const Mesh& mesh = u.function_space().mesh();
-  const GenericDofMap& dofmap = u.function_space().dofmap();
-
-  // Get rank of Function
-  const uint rank = u.value_rank();
-  if(rank > 2)
-    error("Only scalar, vector and tensor functions can be saved in VTK format.");
-
-  // Get number of components
-  uint dim = 1;
-  for (uint i = 0; i < rank; i++)
-    dim *= u.value_dimension(i);
-
-  // Open file
-  std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
-
-  // Write headers
-  if (rank == 0)
-  {
-    fp << "<CellData  Scalars=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  format=\""<< encode_string <<"\">" << std::endl;
-  }
-  else if (rank == 1)
-  {
-    fp << "<CellData  Vectors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\" format=\""<< encode_string <<"\">" << std::endl;
-  }
-  else if (rank == 2)
-  {
-    fp << "<CellData  Tensors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\" format=\""<< encode_string <<"\">" << std::endl;
-  }
-
-  // Allocate memory for function values at cell centres
-  const uint size = mesh.num_cells()*dim;
-  std::vector<uint> dofs(dofmap.max_local_dimension());
-
-  // Build lists of dofs and create map
-  UFCCell ufc_cell(mesh);
-  std::vector<uint> dof_set;
-  std::vector<uint> offset(size+1);
-  std::vector<uint>::iterator cell_offset = offset.begin();
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Tabulate dofs
-    ufc_cell.update(*cell);
-    dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());
-    for(uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
-      dof_set.push_back(dofs[i]);
-
-    // Add local dimension to cell offset and increment
-    *(cell_offset + 1) = *(cell_offset) + dofmap.local_dimension(ufc_cell);
-    ++cell_offset;
-  }
-
-  // Get  values
-  std::vector<double> values(dof_set.size());
-  u.vector().get(&values[0], dof_set.size(), &dof_set[0]);
-
-  if (encoding == "ascii")
-  {
-    std::ostringstream ss;
-    ss << std::scientific;
-    cell_offset = offset.begin();
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      // Tabulate dofs and get values
-      ufc_cell.update(*cell);
-      dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());
-
-      if (rank == 1 && dim == 2)
-      {
-        // Append 0.0 to 2D vectors to make them 3D
-        ss << " " << values[*cell_offset];
-        ss << " " << values[*cell_offset+1];
-        ss << " " << 0.0;
-      }
-      else if (rank == 2 && dim == 4)
-      {
-        // Pad with 0.0 to 2D tensors to make them 3D
-        for(uint i = 0; i < 2; i++)
-        {
-          ss << " " << values[*cell_offset + 2*i];
-          ss << " " << values[*cell_offset + 2*i+1];
-          ss << " " << 0.0;
-        }
-        ss << " " << 0.0;
-        ss << " " << 0.0;
-        ss << " " << 0.0;
-      }
-      else
-      {
-        // Write all components
-        for (uint i = 0; i < dim; i++)
-          ss << " " << values[*cell_offset + i];
-      }
-      ss << std::endl;
-      ++cell_offset;
-    }
-    // Send to file
-    fp << ss.str();
-  }
-  else if (encoding == "base64" || encoding == "compressed")
-  {
-    std::vector<float> data;
-    if (rank == 1 && dim == 2)
-      data.resize(size + size/2);
-    else if (rank == 2 && dim == 4)
-      data.resize(size + 4*size/5);
-    else
-      data.resize(size);
-
-    cell_offset = offset.begin();
-    std::vector<float>::iterator entry = data.begin();
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      // Tabulate dofs and get values
-      ufc_cell.update(*cell);
-      dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());
-
-      if (rank == 1 && dim == 2)
-      {
-        // Append 0.0 to 2D vectors to make them 3D
-        *entry++ = values[*cell_offset];
-        *entry++ = values[*cell_offset + 1];
-        *entry++ = 0.0;
-      }
-      else if (rank == 2 && dim == 4)
-      {
-        // Pad with 0.0 to 2D tensors to make them 3D
-        for(uint i = 0; i < 2; i++)
-        {
-          *entry++ = values[*cell_offset + 2*i];
-          *entry++ = values[*cell_offset + 2*i+1];
-          *entry++ = 0.0;
-        }
-        *entry++ = 0.0;
-        *entry++ = 0.0;
-        *entry++ = 0.0;
-      }
-      else
-      {
-        // Write all components
-        for (uint i = 0; i < dim; i++)
-          *entry++ = values[*cell_offset + i];
-      }
-      ++cell_offset;
-    }
-
-    // Create encoded stream
-    std::stringstream base64_stream;
-    encode_stream(base64_stream, data);
-
-    // Send stream to file
-    fp << base64_stream.str();
-    fp << std::endl;
-  }
-  fp << "</DataArray> " << std::endl;
-  fp << "</CellData> " << std::endl;
 }
 //----------------------------------------------------------------------------
 void VTKFile::pvd_file_write(uint step, double time, std::string _filename)
@@ -882,7 +609,8 @@ void VTKFile::mesh_function_write(T& meshfunction)
   std::string vtu_filename = init(mesh);
 
   // Write mesh
-  mesh_write(mesh, vtu_filename);
+  //mesh_write(mesh, vtu_filename);
+  VTKWriter::write_mesh(mesh, vtu_filename, binary, compress);
 
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);

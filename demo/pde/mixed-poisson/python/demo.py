@@ -51,5 +51,5 @@ plot(u)
 interactive()
 
 # Save solution to pvd format
-File("sigma.pvd") << sigma_proj
-File("u.pvd") << u
+File("sigma.pvd", "compressed") << sigma_proj
+File("u.pvd", "compressed") << u

@@ -39,7 +39,8 @@ Parameters NewtonSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(std::string solver_type, std::string pc_type)
-             : solver(new LinearSolver(solver_type, pc_type)),
+             : Variable("Newton solver", "unamed"),
+               solver(new LinearSolver(solver_type, pc_type)),
                A(new Matrix), dx(new Vector), b(new Vector)
 {
   // Set default parameters
@@ -47,9 +48,13 @@ NewtonSolver::NewtonSolver(std::string solver_type, std::string pc_type)
   parameters.add(solver->parameters);
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(GenericLinearSolver& solver, LinearAlgebraFactory& factory)
-            : solver(reference_to_no_delete_pointer(solver)), A(factory.create_matrix()),
-              dx(factory.create_vector()), b(factory.create_vector())
+NewtonSolver::NewtonSolver(GenericLinearSolver& solver,
+                           LinearAlgebraFactory& factory)
+                         : Variable("Newton solver", "unamed"),
+                           solver(reference_to_no_delete_pointer(solver)),
+                           A(factory.create_matrix()),
+                           dx(factory.create_vector()),
+                           b(factory.create_vector())
 {
   // Set default parameters
   parameters = default_parameters();

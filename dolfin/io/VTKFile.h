@@ -42,14 +42,10 @@ namespace dolfin
 
     void finalize(std::string vtu_filename, double time);
 
-    void mesh_write(const Mesh& mesh, std::string file) const;
-
     void results_write(const Function& u, std::string file) const;
 
     void write_point_data(const GenericFunction& u, const Mesh& mesh,
                           std::string file) const;
-
-    void write_cell_data(const Function& u, std::string file) const;
 
     void pvd_file_write(uint step, double time, std::string file);
 
@@ -93,8 +89,11 @@ namespace dolfin
 
     // File encoding
     const std::string encoding;
-
     std::string encode_string;
+
+    bool binary;
+    bool compress;
+
   };
 
 }
