@@ -224,8 +224,7 @@ void MTL4Matrix::mult(const GenericVector& x_, GenericVector& Ax_) const
 void MTL4Matrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 {
   assert_no_inserter();
-  const mtl::matrix::transposed_view<const mtl::compressed2D<double> > At = trans(A);
-  Ax_.down_cast<MTL4Vector>().vec() = At*x_.down_cast<MTL4Vector>().vec();
+  Ax_.down_cast<MTL4Vector>().vec() = trans(this->A)*x_.down_cast<MTL4Vector>().vec();
 }
 //-----------------------------------------------------------------------------
 void MTL4Matrix::getrow(uint row_idx, std::vector<uint>& columns,
