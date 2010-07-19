@@ -17,12 +17,13 @@
 #include <utility>
 #include <vector>
 #include <boost/lambda/lambda.hpp>
+#include "dolfin/common/Array.h"
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
 
 namespace dolfin
 {
-  template<class T> class Array;
+
   class XMLVector;
 
   /// This class defines a common interface for vectors.
