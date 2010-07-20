@@ -330,8 +330,8 @@ std::string Mesh::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
 
-    s << indent(_topology.str(true));
     s << indent(_geometry.str(true));
+    s << indent(_topology.str(true));
     s << indent(_data.str(true));
   }
   else
