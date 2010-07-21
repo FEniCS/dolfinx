@@ -19,11 +19,10 @@
 using namespace dolfin;
 
 // Mult function
-// FIXME: Add an explanation why this function is needed
 
+// FIXME: Add an explanation of how this this function works
 namespace dolfin
 {
-
   int usermult(Mat A, Vec x, Vec y)
   {
     boost::shared_ptr<Vec> _x(&x, NoDeleter<Vec>());
@@ -35,9 +34,7 @@ namespace dolfin
     ((PETScKrylovMatrix*) ctx)->mult(xx, yy);
     return 0;
   }
-
 }
-
 //-----------------------------------------------------------------------------
 PETScKrylovMatrix::PETScKrylovMatrix(): A(0)
 {
