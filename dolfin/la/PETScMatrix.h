@@ -18,9 +18,8 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <petscmat.h>
-
-#include "PETScObject.h"
 #include "GenericMatrix.h"
+#include "PETScBaseMatrix.h"
 
 namespace dolfin
 {
@@ -34,12 +33,8 @@ namespace dolfin
   /// The interface is intentionally simple. For advanced usage,
   /// access the PETSc Mat pointer using the function mat() and
   /// use the standard PETSc interface.
-  ///
-  /// std::string type is the type of PETSc matrix. Options are "default",
-  /// "spooles", "superlu" and "umfpack". Note: Setting the matrix type may
-  /// not be necessary in the future with PETSc version 3.
 
-  class PETScMatrix : public GenericMatrix, public PETScObject
+  class PETScMatrix : public PETScBaseMatrix, public GenericMatrix
   {
   public:
 
@@ -67,7 +62,7 @@ namespace dolfin
     virtual PETScMatrix* copy() const;
 
     /// Return size of given dimension
-    virtual uint size(uint dim) const;
+    uint size(uint dim) const { return PETScBaseMatrix::size(dim); }
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
@@ -129,9 +124,6 @@ namespace dolfin
 
     //--- Special PETScFunctions ---
 
-    /// Return PETSc Mat pointer
-    boost::shared_ptr<Mat> mat() const;
-
     /// Return norm of matrix
     double norm(std::string norm_type) const;
 
@@ -142,9 +134,6 @@ namespace dolfin
 
     // PETSc norm types
     static const std::map<std::string, NormType> norm_types;
-
-    // PETSc Mat pointer
-    boost::shared_ptr<Mat> A;
 
   };
 

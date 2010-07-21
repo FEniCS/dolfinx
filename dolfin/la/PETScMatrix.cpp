@@ -24,20 +24,6 @@
 #include "SparsityPattern.h"
 #include "PETScFactory.h"
 
-namespace dolfin
-{
-  class PETScMatrixDeleter
-  {
-  public:
-    void operator() (Mat* A)
-    {
-      if (A)
-        MatDestroy(*A);
-      delete A;
-    }
-  };
-}
-
 using namespace dolfin;
 
 const std::map<std::string, NormType> PETScMatrix::norm_types
@@ -51,7 +37,7 @@ PETScMatrix::PETScMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A) : A(A)
+PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A) : PETScBaseMatrix(A)
 {
   // Do nothing
 }
@@ -203,15 +189,6 @@ PETScMatrix* PETScMatrix::copy() const
   // Create PETScMatrix
   PETScMatrix* Acopy = new PETScMatrix(_Acopy);
   return Acopy;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint PETScMatrix::size(uint dim) const
-{
-  assert(A);
-  int M = 0;
-  int N = 0;
-  MatGetSize(*A, &M, &N);
-  return (dim == 0 ? M : N);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(double* block,
@@ -449,11 +426,6 @@ std::string PETScMatrix::str(bool verbose) const
 LinearAlgebraFactory& PETScMatrix::factory() const
 {
   return PETScFactory::instance();
-}
-//-----------------------------------------------------------------------------
-boost::shared_ptr<Mat> PETScMatrix::mat() const
-{
-  return A;
 }
 //-----------------------------------------------------------------------------
 

@@ -28,9 +28,8 @@ namespace dolfin
   /// Forward declarations
   class GenericMatrix;
   class GenericVector;
-  class PETScMatrix;
+  class PETScBaseMatrix;
   class PETScVector;
-  class PETScKrylovMatrix;
   class PETScPreconditioner;
   class PETScUserPreconditioner;
 
@@ -60,6 +59,9 @@ namespace dolfin
     /// Set operator (matrix)
     void set_operator(const GenericMatrix& A);
 
+    /// Set operator (matrix)
+    void set_operator(const PETScBaseMatrix& A);
+
     /// Solve linear system Ax = b and return number of iterations
     uint solve(GenericVector& x, const GenericVector& b);
 
@@ -70,7 +72,7 @@ namespace dolfin
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
+    uint solve(const PETScBaseMatrix& A, PETScVector& x, const PETScVector& b);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -87,7 +89,7 @@ namespace dolfin
     void init(const std::string& method);
 
     // Set PETSc operators
-    void set_petsc_operators(const PETScMatrix& A);
+    void set_petsc_operators(const PETScBaseMatrix& A);
 
     // Set options
     void set_petsc_options();
@@ -106,7 +108,7 @@ namespace dolfin
     boost::shared_ptr<KSP> _ksp;
 
     // Operator (the matrix)
-    boost::shared_ptr<const GenericMatrix> A;
+    boost::shared_ptr<const PETScBaseMatrix> A;
 
     /// Preconditioner
     boost::shared_ptr<PETScPreconditioner> preconditioner;

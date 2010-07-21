@@ -27,11 +27,12 @@ int main()
   Matrix A;
   StiffnessMatrix::FunctionSpace V(mesh);
   StiffnessMatrix::BilinearForm a(V, V);
-  assemble(A, a); 
+  assemble(A, a);
+
+  cout << A << endl;
 
   // Get PETSc matrix
   PETScMatrix& AA(A.down_cast<PETScMatrix>());
-  cout << AA << endl;
 
   // Compute the first n eigenvalues
   unsigned int n = 10;

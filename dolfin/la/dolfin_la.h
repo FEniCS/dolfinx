@@ -16,6 +16,7 @@
 #include <dolfin/la/GenericSparsityPattern.h>
 
 #include <dolfin/la/PETScObject.h>
+#include <dolfin/la/PETScBaseMatrix.h>
 #include <dolfin/la/uBLASFactory.h>
 
 #include <dolfin/la/uBLASMatrix.h>

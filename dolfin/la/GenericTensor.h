@@ -23,7 +23,7 @@ namespace dolfin
 
   /// This class defines a common interface for arbitrary rank tensors.
 
-  class GenericTensor : public Variable
+  class GenericTensor : public virtual Variable
   {
   public:
 

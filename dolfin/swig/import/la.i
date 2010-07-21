@@ -9,6 +9,7 @@
 %import(module="dolfin.cpp") "dolfin/la/GenericVector.h"
 %import(module="dolfin.cpp") "dolfin/la/GenericSparsityPattern.h"
 %import(module="dolfin.cpp") "dolfin/la/PETScObject.h"
+%import(module="dolfin.cpp") "dolfin/la/PETScBaseMatrix.h"
 %import(module="dolfin.cpp") "dolfin/la/uBLASFactory.h"
 %import(module="dolfin.cpp") "dolfin/la/uBLASMatrix.h"
 %import(module="dolfin.cpp") "dolfin/la/uBLASKrylovMatrix.h"

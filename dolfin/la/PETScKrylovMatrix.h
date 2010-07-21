@@ -11,11 +11,9 @@
 
 #ifdef HAS_PETSC
 
-#include <petscmat.h>
-
 #include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
-#include "PETScObject.h"
+#include "PETScBaseMatrix.h"
 
 namespace dolfin
 {
@@ -35,7 +33,7 @@ namespace dolfin
   /// the multiplication operator needs to be defined in terms of
   /// PETSc data structures (Vec), since it will be called from PETSc.
 
-  class PETScKrylovMatrix : public PETScObject
+  class PETScKrylovMatrix : public PETScBaseMatrix
   {
   public:
 
@@ -54,22 +52,11 @@ namespace dolfin
     /// Resize virtual matrix, all on one processor
     void resize(int M, int N);
 
-    /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
-    uint size(uint dim) const;
-
-    /// Return PETSc Mat pointer
-    Mat mat() const;
-
     /// Compute product y = Ax
     virtual void mult(const PETScVector& x, PETScVector& y) const = 0;
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
-
-  private:
-
-    // PETSc Mat pointer
-    Mat A;
 
   };
 

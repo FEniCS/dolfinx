@@ -13,9 +13,10 @@
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/main/MPI.h>
+#include "GenericMatrix.h"
+#include "GenericVector.h"
 #include "KrylovSolver.h"
-#include "PETScKrylovMatrix.h"
-#include "PETScMatrix.h"
+#include "PETScBaseMatrix.h"
 #include "PETScPreconditioner.h"
 #include "PETScUserPreconditioner.h"
 #include "PETScVector.h"
@@ -106,6 +107,11 @@ PETScKrylovSolver::~PETScKrylovSolver()
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operator(const GenericMatrix& A)
 {
+  set_operator(A.down_cast<PETScBaseMatrix>());
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_operator(const PETScBaseMatrix& A)
+{
   // Check dimensions
   if (A.size(0) != A.size(1))
     error("Cannot solve non-square PETSc matrix.");
@@ -113,20 +119,17 @@ void PETScKrylovSolver::set_operator(const GenericMatrix& A)
   this->A = reference_to_no_delete_pointer(A);
   assert(this->A);
 
-  // Downcast matrix
-  const PETScMatrix& _A = A.down_cast<PETScMatrix>();
-
   // Get some parameters
   const bool reuse_precon = parameters["reuse_preconditioner"];
   const bool same_pattern = parameters["same_nonzero_pattern"];
 
   // Set operators with appropriate option
   if (reuse_precon)
-    KSPSetOperators(*_ksp, *_A.mat(), *_A.mat(), SAME_PRECONDITIONER);
+    KSPSetOperators(*_ksp, *A.mat(), *A.mat(), SAME_PRECONDITIONER);
   else if (same_pattern)
-    KSPSetOperators(*_ksp, *_A.mat(), *_A.mat(), SAME_NONZERO_PATTERN);
+    KSPSetOperators(*_ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
   else
-    KSPSetOperators(*_ksp, *_A.mat(), *_A.mat(), DIFFERENT_NONZERO_PATTERN);
+    KSPSetOperators(*_ksp, *A.mat(), *A.mat(), DIFFERENT_NONZERO_PATTERN);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
@@ -137,7 +140,7 @@ dolfin::uint PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
 dolfin::uint PETScKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                        const GenericVector& b)
 {
-  return solve(A.down_cast<PETScMatrix>(), x.down_cast<PETScVector>(),
+  return solve(A.down_cast<PETScBaseMatrix>(), x.down_cast<PETScVector>(),
                b.down_cast<PETScVector>());
 }
 //-----------------------------------------------------------------------------
@@ -167,8 +170,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   set_petsc_options();
 
   // Set operators
-  const PETScMatrix& _A = A->down_cast<PETScMatrix>();
-  set_petsc_operators(_A);
+  set_petsc_operators(*A);
 
   // FIXME: Improve check for re-setting preconditoner, e.g. if parameters change
   // Set preconditioner if necessary
@@ -206,7 +208,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const PETScMatrix& A, PETScVector& x,
+dolfin::uint PETScKrylovSolver::solve(const PETScBaseMatrix& A, PETScVector& x,
                                       const PETScVector& b)
 {
   // Check dimensions
@@ -262,7 +264,7 @@ void PETScKrylovSolver::init(const std::string& method)
     KSPSetType(*_ksp, methods.find(method)->second);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_petsc_operators(const PETScMatrix& A)
+void PETScKrylovSolver::set_petsc_operators(const PETScBaseMatrix& A)
 {
   const bool reuse_precon = parameters["reuse_preconditioner"];
   const bool same_pattern = parameters["same_nonzero_pattern"];
