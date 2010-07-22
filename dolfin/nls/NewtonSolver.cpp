@@ -140,6 +140,12 @@ dolfin::uint NewtonSolver::iteration() const
   return newton_iteration;
 }
 //-----------------------------------------------------------------------------
+GenericLinearSolver& NewtonSolver::linear_solver() const
+{
+  assert(solver);
+  return *solver;
+}
+//-----------------------------------------------------------------------------
 bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
                              const NonlinearProblem& nonlinear_problem)
 {

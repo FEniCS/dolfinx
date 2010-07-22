@@ -51,6 +51,9 @@ namespace dolfin
     /// Return Newton iteration number
     uint iteration() const;
 
+    /// Return the linear solver
+    GenericLinearSolver& linear_solver() const;
+
     /// Default parameter values
     static Parameters default_parameters();
 
