@@ -71,6 +71,7 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   assert(A);
   assert(b);
   assert(dx);
+  assert(solver);
 
   const uint maxiter = parameters["maximum_iterations"];
 
@@ -79,6 +80,10 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   uint krylov_iterations = 0;
   newton_iteration = 0;
   bool newton_converged = false;
+
+  // FIXME: Should the operator be set in the constructor?
+  // Set linear solver operator
+  solver->set_operator(*A);
 
   // Compute F(u)
   nonlinear_problem.form(*A, *b, x);
@@ -93,7 +98,7 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
     // Perform linear solve and update total number of Krylov iterations
     if (dx->size() > 0)
       dx->zero();
-    krylov_iterations += solver->solve(*A, *dx, *b);
+    krylov_iterations += solver->solve(*dx, *b);
 
     // Compute initial residual
     if (newton_iteration == 0)
