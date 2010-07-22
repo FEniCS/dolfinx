@@ -26,7 +26,7 @@ Parameters NewtonSolver::default_parameters()
 {
   Parameters p("newton_solver");
 
-  p.add("maximum_iterations",      50);
+  p.add("maximum_iterations",      10);
   p.add("relative_tolerance",      1e-9);
   p.add("absolute_tolerance",      1e-10);
   p.add("convergence_criterion",   "residual");
@@ -34,6 +34,8 @@ Parameters NewtonSolver::default_parameters()
   p.add("relaxation_parameter",    1.0);
   p.add("report",                  true);
   p.add("error_on_nonconvergence", true);
+
+  //p.add("reuse_preconditioner", false);
 
   return p;
 }
@@ -81,13 +83,11 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   newton_iteration = 0;
   bool newton_converged = false;
 
-  // FIXME: Should the operator be set in the constructor?
-  // Set linear solver operator
-  solver->set_operator(*A);
-
   // Compute F(u)
   nonlinear_problem.form(*A, *b, x);
   nonlinear_problem.F(*b, x);
+
+  solver->set_operator(*A);
 
   // Start iterations
   while (!newton_converged && newton_iteration < maxiter)

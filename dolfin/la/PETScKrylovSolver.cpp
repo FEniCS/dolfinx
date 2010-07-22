@@ -112,10 +112,6 @@ void PETScKrylovSolver::set_operator(const GenericMatrix& A)
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operator(const PETScBaseMatrix& A)
 {
-  // Check dimensions
-  if (A.size(0) != A.size(1))
-    error("Cannot solve non-square PETSc matrix.");
-
   this->A = reference_to_no_delete_pointer(A);
   assert(this->A);
 

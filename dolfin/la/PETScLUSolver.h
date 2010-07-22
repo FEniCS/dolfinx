@@ -42,7 +42,7 @@ namespace dolfin
     PETScLUSolver(const GenericMatrix& A, std::string lu_package="default");
 
     /// Constructor
-    PETScLUSolver(boost::shared_ptr<const GenericMatrix> A,
+    PETScLUSolver(boost::shared_ptr<const PETScMatrix> A,
                   std::string lu_package="default");
 
     /// Destructor
@@ -50,6 +50,9 @@ namespace dolfin
 
     /// Set operator (matrix)
     void set_operator(const GenericMatrix& A);
+
+    /// Set operator (matrix)
+    void set_operator(const PETScMatrix& A);
 
     /// Solve linear system Ax = b
     uint solve(GenericVector& x, const GenericVector& b);
@@ -62,6 +65,9 @@ namespace dolfin
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
+
+    /// Return PETSc KSP pointer
+    boost::shared_ptr<KSP> ksp() const;
 
     /// Default parameter values
     static Parameters default_parameters();
@@ -78,16 +84,16 @@ namespace dolfin
     void init_solver(std::string& lu_package);
 
     // Set PETSc operators
-    void set_petsc_operators(const PETScMatrix& A);
+    void set_petsc_operators();
 
-    // Pritn pre-solve report
+    // Print pre-solve report
     void pre_report(const PETScMatrix& A) const;
 
     /// PETSc solver pointer
-    boost::shared_ptr<KSP> ksp;
+    boost::shared_ptr<KSP> _ksp;
 
     // Operator (the matrix)
-    boost::shared_ptr<const GenericMatrix> A;
+    boost::shared_ptr<const PETScMatrix> A;
 
   };
 

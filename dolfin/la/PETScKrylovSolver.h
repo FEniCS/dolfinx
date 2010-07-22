@@ -77,11 +77,11 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
-    /// Default parameter values
-    static Parameters default_parameters();
-
     /// Return PETSc KSP pointer
     boost::shared_ptr<KSP> ksp() const;
+
+    /// Default parameter values
+    static Parameters default_parameters();
 
   private:
 

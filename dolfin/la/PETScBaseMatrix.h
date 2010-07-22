@@ -50,11 +50,14 @@ namespace dolfin
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(uint dim) const
     {
-      assert(A);
-      int M = 0;
-      int N = 0;
-      MatGetSize(*A, &M, &N);
-      return (dim == 0 ? M : N);
+      if (A)
+      {
+        int M(0), N(0);
+        MatGetSize(*A, &M, &N);
+        return (dim == 0 ? M : N);
+      }
+      else
+        return 0;
     }
 
     /// Return PETSc Mat pointer

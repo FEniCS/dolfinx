@@ -70,6 +70,8 @@ void PETScMatrix::resize(uint M, uint N)
   if (A && !A.unique())
     error("Cannot resize PETScMatrix. More than one object points to the underlying PETSc object.");
   A.reset(new Mat, PETScMatrixDeleter());
+  std::cout << "Reset matrix (A)" << std::endl;
+
 
   // FIXME: maybe 50 should be a parameter?
   // FIXME: it should definitely be a parameter
@@ -112,6 +114,7 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   if (A && !A.unique())
     error("Cannot initialise PETScMatrix. More than one object points to the underlying PETSc object.");
   A.reset(new Mat, PETScMatrixDeleter());
+  std::cout << "Reset matrix (B)" << std::endl;
 
   // Initialize matrix
   if (row_range.first == 0 && row_range.second == M)
@@ -389,13 +392,13 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
   // Check for self-assignment
   if (this != &A)
   {
-      if (this->A && !this->A.unique())
-        error("Cannot assign PETScMatrix with different non-zero pattern because more than one object points to the underlying PETSc object.");
-      this->A.reset(new Mat, PETScMatrixDeleter());
+    if (this->A && !this->A.unique())
+      error("Cannot assign PETScMatrix because more than one object points to the underlying PETSc object.");
+    this->A.reset(new Mat, PETScMatrixDeleter());
+    std::cout << "Reset matrix (C)" << std::endl;
 
-      // Duplicate with the same pattern as A.A
-      MatDuplicate(*A.mat(), MAT_COPY_VALUES, this->A.get());
-    //}
+    // Duplicate with the same pattern as A.A
+    MatDuplicate(*A.mat(), MAT_COPY_VALUES, this->A.get());
   }
   return *this;
 }

@@ -19,8 +19,8 @@ using namespace dolfin;
 int main(int argc, char *argv[])
 {
   //parameters["linear_algebra_backend"] = "uBLAS";
-  //parameters["linear_algebra_backend"] = "PETSc";
-  parameters["linear_algebra_backend"] = "Epetra";
+  parameters["linear_algebra_backend"] = "PETSc";
+  //parameters["linear_algebra_backend"] = "Epetra";
 
   // Read mesh
   Mesh mesh("../mesh.xml.gz");
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
   lu.parameters["reuse_factorization"] = true;
 
   // Parameters for time-stepping
-  double T = 2.0;
+  double T = 20.0;
   const double k = 0.05;
   double t = k;
 
@@ -94,6 +94,7 @@ int main(int argc, char *argv[])
     p = t / T;
     t += k;
   }
+  std::cout << "Test " << u.vector().norm("l2") << std::endl;
 
   // Plot solution
   plot(u);
