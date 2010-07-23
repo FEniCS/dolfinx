@@ -88,6 +88,9 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
             "algebraic multigrid. Default PETSc solver will be used. "
             "For performance, installation of HYPRE is recommended.");
     #endif
+
+    PCFactorSetLevels(pc, parameters["ilu_fill_level"]);
+
     return;
   }
   else if (type == "amg_ml")
