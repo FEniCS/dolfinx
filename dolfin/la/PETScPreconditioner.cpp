@@ -9,6 +9,7 @@
 #ifdef HAS_PETSC
 
 #include <boost/assign/list_of.hpp>
+#include <boost/lexical_cast.hpp>
 #include <petscksp.h>
 #include <petscmat.h>
 #include <dolfin/la/KrylovSolver.h>
@@ -40,8 +41,24 @@ Parameters PETScPreconditioner::default_parameters()
 {
   Parameters p(KrylovSolver::default_parameters());
   p.rename("petsc_preconditioner");
-  p.add("ilu_fill_level", 0);
   p.add("schwarz_overlap", 1);
+
+  // ILU parameters
+  Parameters p_ilu("ilu");
+  p_ilu.add("fill_level", 0);
+
+  // Hypre/parasails parameters
+  Parameters p_parasails("parasails");
+  p_parasails.add("threshold", 0.15);
+  p_parasails.add("levels", 0);
+
+  // Hypre package parameters
+  Parameters p_hypre("hypre");
+  p_hypre.add(p_parasails);
+
+  p.add(p_ilu);
+  p.add(p_hypre);
+
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -76,7 +93,17 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     if (type == "amg_hypre" || type == "hypre_amg")
       PCHYPRESetType(pc, "boomeramg");
     else if (type == "hypre_parasails")
+    {
       PCHYPRESetType(pc, "parasails");
+      const double thresh = parameters("hypre")("parasails")["threshold"];
+      const int levels = parameters("hypre")("parasails")["levels"];
+
+      PetscOptionsSetValue("-pc_hypre_parasails_thresh", boost::lexical_cast<std::string>(thresh).c_str());
+      PetscOptionsSetValue("-pc_hypre_parasails_nlevels", boost::lexical_cast<std::string>(levels).c_str());
+      //PetscOptionsSetValue("-pc_hypre_parasails_thresh", "0.15");
+      //PetscOptionsSetValue("-pc_hypre_parasails_nlevels", "0");
+
+    }
     else if (type == "hypre_euclid")
       PCHYPRESetType(pc, "euclid");
     else
@@ -87,9 +114,6 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
             "algebraic multigrid. Default PETSc solver will be used. "
             "For performance, installation of HYPRE is recommended.");
     #endif
-
-    PCFactorSetLevels(pc, parameters["ilu_fill_level"]);
-    //PetscOptionsSetValue(const char iname[],const char value[])
   }
   else if (type == "amg_ml")
   {
@@ -128,7 +152,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
       //PCFactorSetMatSolverPackage(sub_pc, MAT_SOLVER_UMFPACK);
       //PCSetType(sub_pc, PCILU);
       //KSPSetType(sub_ksps[i], KSPGMRES);
-      PCFactorSetLevels(sub_pc, parameters["ilu_fill_level"]);
+      PCFactorSetLevels(sub_pc, parameters("ilu")["fill_level"]);
       //PCFactorSetLevels(sub_pc, 4);
       //PCView(sub_pc, PETSC_VIEWER_STDOUT_WORLD);
     }
@@ -147,8 +171,9 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     #else
     PCFactorSetShiftNonzero(pc, parameters["shift_nonzero"]);
     #endif
-    PCFactorSetLevels(pc, parameters["ilu_fill_level"]);
   }
+
+  PCFactorSetLevels(pc, parameters("ilu")["fill_level"]);
 
   // Make sure options are set
   PCSetFromOptions(pc);
