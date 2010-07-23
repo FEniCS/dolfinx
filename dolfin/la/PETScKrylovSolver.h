@@ -89,7 +89,7 @@ namespace dolfin
     void init(const std::string& method);
 
     // Set PETSc operators
-    void set_petsc_operators(const PETScBaseMatrix& A);
+    void set_petsc_operators();
 
     // Set options
     void set_petsc_options();

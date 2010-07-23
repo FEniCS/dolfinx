@@ -114,18 +114,6 @@ void PETScKrylovSolver::set_operator(const PETScBaseMatrix& A)
 {
   this->A = reference_to_no_delete_pointer(A);
   assert(this->A);
-
-  // Get some parameters
-  const bool reuse_precon = parameters["reuse_preconditioner"];
-  const bool same_pattern = parameters["same_nonzero_pattern"];
-
-  // Set operators with appropriate option
-  if (reuse_precon)
-    KSPSetOperators(*_ksp, *A.mat(), *A.mat(), SAME_PRECONDITIONER);
-  else if (same_pattern)
-    KSPSetOperators(*_ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
-  else
-    KSPSetOperators(*_ksp, *A.mat(), *A.mat(), DIFFERENT_NONZERO_PATTERN);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
@@ -166,7 +154,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   set_petsc_options();
 
   // Set operators
-  set_petsc_operators(*A);
+  set_petsc_operators();
 
   // FIXME: Improve check for re-setting preconditoner, e.g. if parameters change
   // Set preconditioner if necessary
@@ -260,41 +248,21 @@ void PETScKrylovSolver::init(const std::string& method)
     KSPSetType(*_ksp, methods.find(method)->second);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_petsc_operators(const PETScBaseMatrix& A)
+void PETScKrylovSolver::set_petsc_operators()
 {
+  assert(A);
+
+  // Get some parameters
   const bool reuse_precon = parameters["reuse_preconditioner"];
   const bool same_pattern = parameters["same_nonzero_pattern"];
 
-  // Check if operators have been set
-  PetscTruth matset, pmatset;
-  KSPGetOperatorsSet(*_ksp, &matset, &pmatset);
-  if (matset == PETSC_TRUE && pmatset == PETSC_TRUE)
-  {
-    // Get preconditioner re-use flag
-    MatStructure mat_struct;
-    Mat Amat, Pmat;
-    KSPGetOperators(*_ksp, &Amat, &Pmat, &mat_struct);
-
-    // Set operators if necessary
-    if (reuse_precon && mat_struct != SAME_PRECONDITIONER)
-      KSPSetOperators(*_ksp, *A.mat(), *A.mat(), SAME_PRECONDITIONER);
-    else if (same_pattern && mat_struct != SAME_NONZERO_PATTERN)
-      KSPSetOperators(*_ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
-    else if (!reuse_precon && !same_pattern &&  mat_struct != DIFFERENT_NONZERO_PATTERN)
-      KSPSetOperators(*_ksp, *A.mat(), *A.mat(), DIFFERENT_NONZERO_PATTERN);
-  }
-  else if (matset != PETSC_TRUE && pmatset != PETSC_TRUE)
-  {
-    // Set operators with appropriate option
-    if (reuse_precon)
-      KSPSetOperators(*_ksp, *A.mat(), *A.mat(), SAME_PRECONDITIONER);
-    else if (same_pattern)
-      KSPSetOperators(*_ksp, *A.mat(), *A.mat(), SAME_NONZERO_PATTERN);
-    else
-      KSPSetOperators(*_ksp, *A.mat(), *A.mat(), DIFFERENT_NONZERO_PATTERN);
-  }
+  // Set operators with appropriate option
+  if (reuse_precon)
+    KSPSetOperators(*_ksp, *A->mat(), *A->mat(), SAME_PRECONDITIONER);
+  else if (same_pattern)
+    KSPSetOperators(*_ksp, *A->mat(), *A->mat(), SAME_NONZERO_PATTERN);
   else
-    error("Operators incorrectly set for PETSc.");
+    KSPSetOperators(*_ksp, *A->mat(), *A->mat(), DIFFERENT_NONZERO_PATTERN);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_petsc_options()
