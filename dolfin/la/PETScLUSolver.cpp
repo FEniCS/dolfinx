@@ -143,9 +143,7 @@ dolfin::uint PETScLUSolver::solve(const GenericMatrix& A, GenericVector& x,
 dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
                                   const PETScVector& b)
 {
-  // Set operator
   set_operator(A);
-
   return solve(x, b);
 }
 //-----------------------------------------------------------------------------

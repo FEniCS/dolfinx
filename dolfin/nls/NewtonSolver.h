@@ -51,6 +51,12 @@ namespace dolfin
     /// Return Newton iteration number
     uint iteration() const;
 
+    /// Return current residual
+    double residual() const;
+
+    /// Return current relative residual
+    double relative_residual() const;
+
     /// Return the linear solver
     GenericLinearSolver& linear_solver() const;
 
@@ -66,8 +72,8 @@ namespace dolfin
     /// Current number of Newton iterations
     uint newton_iteration;
 
-    /// Residual
-    double residual0;
+    /// Most recent residual and intitial residual
+    double _residual, residual0;
 
     /// Solver
     boost::shared_ptr<GenericLinearSolver> solver;

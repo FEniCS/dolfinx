@@ -128,7 +128,7 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
             newton_iteration, krylov_iterations);
   else
   {
-    bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
+    const bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
       error("Newton solver did not converge.");
     else
@@ -145,6 +145,16 @@ dolfin::uint NewtonSolver::iteration() const
   return newton_iteration;
 }
 //-----------------------------------------------------------------------------
+double NewtonSolver::residual() const
+{
+  return _residual;
+}
+//-----------------------------------------------------------------------------
+double NewtonSolver::relative_residual() const
+{
+  return _residual/residual0;
+}
+//-----------------------------------------------------------------------------
 GenericLinearSolver& NewtonSolver::linear_solver() const
 {
   assert(solver);
@@ -159,22 +169,20 @@ bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
   const double atol = parameters["absolute_tolerance"];
   const bool report = parameters["report"];
 
-  double residual = 1.0;
-
   // Compute resdiual
   if (convergence_criterion == "residual")
-    residual = b.norm("l2");
+    _residual = b.norm("l2");
   else if (convergence_criterion == "incremental")
-    residual = dx.norm("l2");
+    _residual = dx.norm("l2");
   else
     error("Unknown Newton convergence criterion");
 
   // If this is the first iteration step, set initial residual
   if (newton_iteration == 0)
-    residual0 = residual;
+    residual0 = _residual;
 
   // Relative residual
-  double relative_residual = residual / residual0;
+  const double relative_residual = _residual / residual0;
 
   // Output iteration number and residual
   //FIXME: allow precision to be set for dolfin::cout<<
@@ -183,7 +191,7 @@ bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
     if (report && newton_iteration > 0)
     std::cout << "  Iteration " << newton_iteration
               << ":"
-              << " r (abs) = " << std::scientific << residual
+              << " r (abs) = " << std::scientific << _residual
               << " (tol = " << std::scientific << atol << ")"
               << " r (rel) = " << std::scientific << relative_residual
               << " (tol = " << std::scientific << rtol << ")"
@@ -191,10 +199,10 @@ bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
   */
   if (report && newton_iteration > 0)
     info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = %.3e (tol = %.3e)",
-         newton_iteration, residual, atol, relative_residual, rtol);
+         newton_iteration, _residual, atol, relative_residual, rtol);
 
   // Return true of convergence criterion is met
-  if (relative_residual < rtol || residual < atol)
+  if (relative_residual < rtol || _residual < atol)
     return true;
 
   // Otherwise return false
