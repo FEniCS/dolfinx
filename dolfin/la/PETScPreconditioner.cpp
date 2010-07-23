@@ -29,6 +29,9 @@ const std::map<std::string, const PCType> PETScPreconditioner::methods
                               ("jacobi",           PCJACOBI)
                               ("sor",              PCSOR)
                               ("icc",              PCICC)
+                              ("hypre_euclid",     PCHYPRE)
+                              ("hypre_parasails",  PCHYPRE)
+                              ("hypre_pilut",      PCHYPRE)
                               ("amg_hypre",        PCHYPRE)
                               ("amg_ml",           PCML);
 //-----------------------------------------------------------------------------
@@ -65,11 +68,20 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   KSPGetPC(*(solver.ksp()), &pc);
 
   // Treat special cases  first
-  if (type == "amg_hypre")
+  if (type.find("hypre") != std::string::npos)
   {
     #if PETSC_HAVE_HYPRE
     PCSetType(pc, PCHYPRE);
-    PCHYPRESetType(pc, "boomeramg");
+    if (type == "amg_hypre")
+      PCHYPRESetType(pc, "boomeramg");
+    else if (type == "hypre_parasails")
+      PCHYPRESetType(pc, "parasails");
+    else if (type == "hypre_euclid")
+      PCHYPRESetType(pc, "euclid");
+    else if (type == "hypre_pilut")
+      PCHYPRESetType(pc, "pilut");
+    else
+      error("Requested Hypre preconditioner unknown.");
     PCSetFromOptions(pc);
     #else
     warning("PETSc has not been compiled with the HYPRE library for "
