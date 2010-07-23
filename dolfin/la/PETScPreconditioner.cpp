@@ -106,7 +106,6 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
             "algerbraic multigrid. Default PETSc solver will be used. "
             "For performance, installation of ML is recommended.");
     #endif
-    return;
   }
   else if (type == "additive_schwarz")
   {
@@ -153,7 +152,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 
   // Make sure options are set
   PCSetFromOptions(pc);
-  //PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
+  PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
 std::string PETScPreconditioner::str(bool verbose) const
