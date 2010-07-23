@@ -10,7 +10,9 @@
 //
 // on the unit square with source f given by
 //
-//     f(x, y) = 1.0 if (x - 0.33)^2 + (y - 0.67)^2 < 0.025, 0.0 otherwise
+//    f(x, y) =    -1.0 if (x - 0.33)^2 + (y - 0.67)^2 < 0.015
+//                  5.0 if 0.015 < (x - 0.33)^2 + (y - 0.67)^2 < 0.025
+//                  0.0 otherwise
 //
 // and homogeneous Dirichlet boundary conditions.
 
@@ -31,7 +33,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   // Create mesh and function space
-  UnitSquare mesh(32, 32);
+  UnitSquare mesh(64, 64);
   Conditional::FunctionSpace V(mesh);
 
   // Define boundary condition

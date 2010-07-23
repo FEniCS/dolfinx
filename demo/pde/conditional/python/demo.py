@@ -4,7 +4,9 @@
 
 on the unit square with source f given by
 
-    f(x, y) = 1.0 if (x - 0.33)^2 + (y - 0.67)^2 < 0.025, 0.0 otherwise
+    f(x, y) =    -1.0 if (x - 0.33)^2 + (y - 0.67)^2 < 0.015
+                  5.0 if 0.015 < (x - 0.33)^2 + (y - 0.67)^2 < 0.025
+                  0.0 otherwise
 
 and homogeneous Dirichlet boundary conditions.
 """
@@ -17,7 +19,7 @@ __license__  = "GNU GPL Version 3.0 or later"
 from dolfin import *
 
 # Create mesh and define function space
-mesh = UnitSquare(32, 32)
+mesh = UnitSquare(64, 64)
 V = FunctionSpace(mesh, "CG", 2)
 
 # Define Dirichlet boundary (x = 0 or x = 1)
@@ -32,7 +34,8 @@ bc = DirichletBC(V, u0, boundary)
 v = TestFunction(V)
 u = TrialFunction(V)
 x = V.cell().x
-f = conditional( lt( (x[0]-0.33)**2 + (x[1]-0.67)**2,  0.025), 1.0, 0.0 )
+c0 = conditional(le( (x[0]-0.33)**2 + (x[1]-0.67)**2,  0.015), -1.0, 5.0)
+f = conditional( le( (x[0]-0.33)**2 + (x[1]-0.67)**2,  0.025), c0, 0.0 )
 a = inner(grad(v), grad(u))*dx
 L = v*f*dx
 
