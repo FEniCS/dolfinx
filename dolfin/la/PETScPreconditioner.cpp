@@ -78,10 +78,8 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
       PCHYPRESetType(pc, "parasails");
     else if (type == "hypre_euclid")
       PCHYPRESetType(pc, "euclid");
-    else if (type == "hypre_pilut")
-      PCHYPRESetType(pc, "pilut");
     else
-      error("Requested Hypre preconditioner unknown.");
+      error("Requested Hypre preconditioner unknown (Note: pilut is not supported).");
     PCSetFromOptions(pc);
     #else
     warning("PETSc has not been compiled with the HYPRE library for "
