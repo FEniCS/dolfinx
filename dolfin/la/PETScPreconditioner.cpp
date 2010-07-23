@@ -29,6 +29,7 @@ const std::map<std::string, const PCType> PETScPreconditioner::methods
                               ("jacobi",           PCJACOBI)
                               ("sor",              PCSOR)
                               ("icc",              PCICC)
+                              ("hypre_amg",     PCHYPRE)
                               ("hypre_euclid",     PCHYPRE)
                               ("hypre_parasails",  PCHYPRE)
                               ("hypre_pilut",      PCHYPRE)
@@ -72,7 +73,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   {
     #if PETSC_HAVE_HYPRE
     PCSetType(pc, PCHYPRE);
-    if (type == "amg_hypre")
+    if (type == "amg_hypre" || type == "hypre_amg")
       PCHYPRESetType(pc, "boomeramg");
     else if (type == "hypre_parasails")
       PCHYPRESetType(pc, "parasails");
