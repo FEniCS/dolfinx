@@ -319,12 +319,6 @@ void PETScKrylovSolver::write_report(int num_iterations,
 
   // FIXME: Get preconditioner description from PETScPreconditioner
 
-  const char* hypre_sub_type;
-  if (pc_type_str == PCHYPRE)
-  {
-    PCHYPREGetType(pc, &hypre_sub_type);
-  }
-
   // Report number of iterations and solver type
   if (reason >= 0)
   {
@@ -343,11 +337,17 @@ void PETScKrylovSolver::write_report(int num_iterations,
             pc_type, sub_ksp_type, sub_pc_type);
   }
 
+  #if PETSC_HAVE_HYPRE
   if (pc_type_str == PCHYPRE)
   {
+    const char* hypre_sub_type;
+    PCHYPREGetType(pc, &hypre_sub_type);
+
     info(PROGRESS, "PETSc Krylov solver Hypre preconditioner method: %s",
           hypre_sub_type);
   }
+  #endif
+
 }
 //-----------------------------------------------------------------------------
 
