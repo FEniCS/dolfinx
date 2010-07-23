@@ -146,16 +146,7 @@ dolfin::uint PETScLUSolver::solve(const PETScMatrix& A, PETScVector& x,
   // Set operator
   set_operator(A);
 
-  // Initialize solution vector (remains untouched if dimensions match)
-  x.resize(A.size(1));
-
-  // Write a pre-solve message
-  pre_report(A);
-
-  // Solve linear system
-  KSPSolve(*_ksp, *b.vec(), *x.vec());
-
-  return 1;
+  return solve(x, b);
 }
 //-----------------------------------------------------------------------------
 std::string PETScLUSolver::str(bool verbose) const

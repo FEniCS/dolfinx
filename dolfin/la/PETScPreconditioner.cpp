@@ -81,15 +81,14 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
     else
       error("Requested Hypre preconditioner unknown (Note: pilut is not supported).");
 
-    PCFactorSetLevels(pc, parameters["ilu_fill_level"]);
-    PCSetFromOptions(pc);
     #else
     warning("PETSc has not been compiled with the HYPRE library for "
             "algebraic multigrid. Default PETSc solver will be used. "
             "For performance, installation of HYPRE is recommended.");
     #endif
 
-    return;
+    PCFactorSetLevels(pc, parameters["ilu_fill_level"]);
+    //PetscOptionsSetValue(const char iname[],const char value[])
   }
   else if (type == "amg_ml")
   {
