@@ -22,6 +22,60 @@ extern "C"
 #endif
 }
 
+/*
+namespace dolfin
+{
+  class UmfpackIntSymbolicDeleter
+  {
+  public:
+    void operator() (void* symbolic)
+    {
+      if (symbolic)
+      {
+        umfpack_di_free_symbolic(&symbolic)
+        symbolic = 0;
+    }
+  };
+
+  class UmfpackLongIntSymbolicDeleter
+  {
+  public:
+    void operator() (void* symbolic)
+    {
+      if (symbolic)
+      {
+        umfpack_dl_free_symbolic(&symbolic)
+        symbolic = 0;
+    }
+  };
+
+  class UmfpackIntNumericDeleter
+  {
+  public:
+    void operator() (void* numeric)
+    {
+      if (numeric)
+      {
+        umfpack_di_free_numeric(&numeric)
+        numeric = 0;
+    }
+  };
+
+  class UmfpackLongIntNumericDeleter
+  {
+  public:
+    void operator() (void* numeric)
+    {
+      if (numeric)
+      {
+        umfpack_dl_free_numeric(&numeric)
+        numeric = 0;
+    }
+  };
+
+}
+*/
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -32,7 +86,8 @@ Parameters UmfpackLUSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-UmfpackLUSolver::UmfpackLUSolver() : symbolic(0), numeric(0)
+UmfpackLUSolver::UmfpackLUSolver() : symbolic(0), numeric(0),
+                                     umfpack_long_int(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -40,6 +95,7 @@ UmfpackLUSolver::UmfpackLUSolver() : symbolic(0), numeric(0)
 //-----------------------------------------------------------------------------
 UmfpackLUSolver::UmfpackLUSolver(const GenericMatrix& A)
                                : symbolic(0), numeric(0),
+                                 umfpack_long_int(false),
                                  A(reference_to_no_delete_pointer(A))
 {
   // Set parameter values
@@ -47,7 +103,8 @@ UmfpackLUSolver::UmfpackLUSolver(const GenericMatrix& A)
 }
 //-----------------------------------------------------------------------------
 UmfpackLUSolver::UmfpackLUSolver(boost::shared_ptr<const GenericMatrix> A)
-                               : symbolic(0), numeric(0), A(A)
+                               : symbolic(0), numeric(0),
+                                 umfpack_long_int(false), A(A)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -189,13 +246,19 @@ void UmfpackLUSolver::clear()
 {
   if (numeric)
   {
-    umfpack_dl_free_numeric(&numeric);
+    if (umfpack_long_int)
+      umfpack_dl_free_numeric(&numeric);
+    else
+      umfpack_di_free_numeric(&numeric);
     numeric = 0;
   }
 
   if(symbolic)
   {
-    umfpack_dl_free_symbolic(&symbolic);
+    if (umfpack_long_int)
+      umfpack_dl_free_symbolic(&symbolic);
+    else
+      umfpack_di_free_symbolic(&symbolic);
     symbolic = 0;
   }
 }
@@ -204,7 +267,10 @@ void UmfpackLUSolver::clear_numeric()
 {
   if (numeric)
   {
-    umfpack_dl_free_numeric(&numeric);
+    if (umfpack_long_int)
+      umfpack_dl_free_numeric(&numeric);
+    else
+      umfpack_di_free_numeric(&numeric);
     numeric = 0;
   }
 }
@@ -225,12 +291,14 @@ void* UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint N,
   long int status = 0;
   if (sizeof(std::size_t) == sizeof(int))
   {
+    umfpack_long_int = false;
     const int* _Ap = reinterpret_cast<const int*>(Ap);
     const int* _Ai = reinterpret_cast<const int*>(Ai);
     status = umfpack_di_symbolic(M, N, _Ap, _Ai, Ax, &symbolic, dnull, dnull);
   }
   else if (sizeof(std::size_t) == sizeof(UF_long))
   {
+    umfpack_long_int = true;
     const UF_long* _Ap = reinterpret_cast<const UF_long*>(Ap);
     const UF_long* _Ai = reinterpret_cast<const UF_long*>(Ai);
     status = umfpack_dl_symbolic(M, N, _Ap, _Ai, Ax, &symbolic, dnull, dnull);
@@ -248,7 +316,7 @@ void* UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint N,
 void* UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
                                                  const std::size_t* Ai,
                                                  const double* Ax,
-                                                 void* symbolic)
+                                                 void* symbolic) const
 {
   assert(Ap);
   assert(Ai);
@@ -262,12 +330,16 @@ void* UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
   long int status = 0;
   if (sizeof(std::size_t) == sizeof(int))
   {
+    if (umfpack_long_int)
+      error("Inconsistency in integer types for UMFPACK.");
     const int* _Ap = reinterpret_cast<const int*>(Ap);
     const int* _Ai = reinterpret_cast<const int*>(Ai);
     status = umfpack_di_numeric(_Ap, _Ai, Ax, symbolic, &numeric, dnull, dnull);
   }
   else if (sizeof(std::size_t) == sizeof(UF_long))
   {
+    if (!umfpack_long_int)
+      error("Inconsistency in integer types for UMFPACK.");
     const UF_long* _Ap = reinterpret_cast<const UF_long*>(Ap);
     const UF_long* _Ai = reinterpret_cast<const UF_long*>(Ai);
     status = umfpack_dl_numeric(_Ap, _Ai, Ax, symbolic, &numeric, dnull, dnull);
@@ -285,7 +357,7 @@ void* UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
 void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
                                     const std::size_t* Ai,
                                     const double* Ax, double* x,
-                                    const double* b, void* numeric)
+                                    const double* b, void* numeric) const
 {
   assert(Ap);
   assert(Ai);
@@ -300,12 +372,16 @@ void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
   long int status = 0;
   if (sizeof(std::size_t) == sizeof(int))
   {
+    if (umfpack_long_int)
+      error("Inconsistency in integer types for UMFPACK.");
     const int* _Ap = reinterpret_cast<const int*>(Ap);
     const int* _Ai = reinterpret_cast<const int*>(Ai);
     status = umfpack_di_solve(UMFPACK_At, _Ap, _Ai, Ax, x, b, numeric, dnull, dnull);
   }
   else if (sizeof(std::size_t) == sizeof(UF_long))
   {
+    if (!umfpack_long_int)
+      error("Inconsistency in integer types for UMFPACK.");
     const UF_long* _Ap = reinterpret_cast<const UF_long*>(Ap);
     const UF_long* _Ai = reinterpret_cast<const UF_long*>(Ai);
     status = umfpack_dl_solve(UMFPACK_At, _Ap, _Ai, Ax, x, b, numeric, dnull, dnull);
@@ -356,7 +432,7 @@ void UmfpackLUSolver::clear_numeric()
 void* UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint N,
                                                   const std::size_t* Ap,
                                                   const std::size_t* Ai,
-                                                  const double* Ax)
+                                                  const double* Ax) const
 {
   error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
   return 0;
@@ -365,7 +441,7 @@ void* UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint N,
 void* UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
                                                  const std::size_t* Ai,
                                                  const double* Ax,
-                                                 void* symbolic)
+                                                 void* symbolic) const
 {
   error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
   return 0;
@@ -374,7 +450,7 @@ void* UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
 void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
                                     const std::size_t* Ai,
                                     const double* Ax, double* x,
-                                    const double* b, void* numeric)
+                                    const double* b, void* numeric) const
 {
   error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
 }

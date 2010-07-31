@@ -75,19 +75,19 @@ namespace dolfin
     void clear_numeric();
 
     // Return pointer to symbolic factorisation
-    static void* umfpack_factorize_symbolic(uint M, uint N,
+    void* umfpack_factorize_symbolic(uint M, uint N,
                                             const std::size_t* Ap,
                                             const std::size_t* Ai,
                                             const double* Ax);
 
     // Return pointer to the numerical factorisation
-    static void* umfpack_factorize_numeric(const std::size_t* Ap,
+    void* umfpack_factorize_numeric(const std::size_t* Ap,
                                            const std::size_t* Ai,
-                                           const double* Ax, void* symbolic);
+                                           const double* Ax, void* symbolic) const;
 
-    static void umfpack_solve(const std::size_t* Ap, const std::size_t* Ai,
+    void umfpack_solve(const std::size_t* Ap, const std::size_t* Ai,
                               const double* Ax, double* x, const double* b,
-                              void* numeric);
+                              void* numeric) const;
 
     /// Check status flag returned by an UMFPACK function
     static void umfpack_check_status(long int status, std::string function);
@@ -95,6 +95,9 @@ namespace dolfin
     // UMFPACK data
     void* symbolic;
     void* numeric;
+
+    // UMFPACK integer type
+    bool umfpack_long_int;
 
     // Operator (the matrix)
     boost::shared_ptr<const GenericMatrix> A;
