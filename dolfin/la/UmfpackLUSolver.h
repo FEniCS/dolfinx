@@ -10,6 +10,7 @@
 #ifndef __UMFPACK_LU_SOLVER_H
 #define __UMFPACK_LU_SOLVER_H
 
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include "ublas.h"
 #include "GenericLUSolver.h"
@@ -68,36 +69,27 @@ namespace dolfin
     /// Solve factorized system (UMFPACK).
     uint solve_factorized(GenericVector& x, const GenericVector& b) const;
 
-    // Clear data
-    void clear();
-
-    // Clear numeric data
-    void clear_numeric();
-
     // Return pointer to symbolic factorisation
-    void* umfpack_factorize_symbolic(uint M, uint N,
-                                            const std::size_t* Ap,
-                                            const std::size_t* Ai,
-                                            const double* Ax);
+    static boost::shared_ptr<void> umfpack_factorize_symbolic(uint M, uint N,
+                                                         const std::size_t* Ap,
+                                                         const std::size_t* Ai,
+                                                         const double* Ax);
 
     // Return pointer to the numerical factorisation
-    void* umfpack_factorize_numeric(const std::size_t* Ap,
+    static boost::shared_ptr<void> umfpack_factorize_numeric(const std::size_t* Ap,
                                            const std::size_t* Ai,
-                                           const double* Ax, void* symbolic) const;
+                                           const double* Ax, void* symbolic);
 
-    void umfpack_solve(const std::size_t* Ap, const std::size_t* Ai,
+    static void umfpack_solve(const std::size_t* Ap, const std::size_t* Ai,
                               const double* Ax, double* x, const double* b,
-                              void* numeric) const;
+                              void* numeric);
 
     /// Check status flag returned by an UMFPACK function
     static void umfpack_check_status(long int status, std::string function);
 
-    // UMFPACK data
-    void* symbolic;
-    void* numeric;
-
-    // UMFPACK integer type
-    bool umfpack_long_int;
+    // UMFPACK data (note that boost::scoped_ptr cannot hold a void pointer)
+    boost::shared_ptr<void> symbolic;
+    boost::shared_ptr<void> numeric;
 
     // Operator (the matrix)
     boost::shared_ptr<const GenericMatrix> A;
