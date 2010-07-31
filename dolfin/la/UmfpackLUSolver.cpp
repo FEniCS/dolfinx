@@ -119,7 +119,7 @@ void UmfpackLUSolver::symbolic_factorize()
   info(PROGRESS, "Symbolic factorization of a matrix of size %d x %d (UMFPACK).", M, N);
 
   // Perform symbolic factorisation
-  symbolic = umfpack_factorize_symbolic(M, N, (const long int*)Ap, (const long int*)Ai, Ax);
+  symbolic = umfpack_factorize_symbolic(M, N, Ap, Ai, Ax);
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::numeric_factorize()
@@ -146,7 +146,7 @@ void UmfpackLUSolver::numeric_factorize()
   clear_numeric();
 
   // Perform LU factorisation
-  numeric = umfpack_factorize_numeric((const long int*)Ap, (const long int*)Ai, Ax, symbolic);
+  numeric = umfpack_factorize_numeric(Ap, Ai, Ax, symbolic);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
@@ -178,7 +178,7 @@ dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
        A->size(0), A->size(1));
 
   // Solve for tranpose since we use compressed rows and UMFPACK expected compressed columns
-  umfpack_solve((const long int*)Ap, (const long int*)Ai, Ax, x.data(), b.data(), numeric);
+  umfpack_solve(Ap, Ai, Ax, x.data(), b.data(), numeric);
 
   return 1;
 }
@@ -210,9 +210,9 @@ void UmfpackLUSolver::clear_numeric()
 }
 //-----------------------------------------------------------------------------
 void* UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint N,
-                                                   const long int* Ap,
-                                                   const long int* Ai,
-                                                   const double* Ax)
+                                                  const std::size_t* Ap,
+                                                  const std::size_t* Ai,
+                                                  const double* Ax)
 {
   assert(Ap);
   assert(Ai);
@@ -222,7 +222,22 @@ void* UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint N,
   double* dnull = 0;
 
   // Symbolic factorisation step (reordering, etc)
-  long int status = umfpack_dl_symbolic(M, N, Ap, Ai, Ax, &symbolic, dnull, dnull);
+  long int status = 0;
+  if (sizeof(std::size_t) == sizeof(int))
+  {
+    const int* _Ap = reinterpret_cast<const int*>(Ap);
+    const int* _Ai = reinterpret_cast<const int*>(Ai);
+    status = umfpack_di_symbolic(M, N, _Ap, _Ai, Ax, &symbolic, dnull, dnull);
+  }
+  else if (sizeof(std::size_t) == sizeof(UF_long))
+  {
+    const UF_long* _Ap = reinterpret_cast<const UF_long*>(Ap);
+    const UF_long* _Ai = reinterpret_cast<const UF_long*>(Ai);
+    status = umfpack_dl_symbolic(M, N, _Ap, _Ai, Ax, &symbolic, dnull, dnull);
+  }
+  else
+    error("Could not determine correct types for casting integers to pass to UMFPACK.");
+
   delete dnull;
 
   umfpack_check_status(status, "symbolic");
@@ -230,10 +245,10 @@ void* UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint N,
   return symbolic;
 }
 //-----------------------------------------------------------------------------
-void* UmfpackLUSolver::umfpack_factorize_numeric(const long int* Ap,
-                                                  const long int* Ai,
-                                                  const double* Ax,
-                                                  void* symbolic)
+void* UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
+                                                 const std::size_t* Ai,
+                                                 const double* Ax,
+                                                 void* symbolic)
 {
   assert(Ap);
   assert(Ai);
@@ -244,7 +259,22 @@ void* UmfpackLUSolver::umfpack_factorize_numeric(const long int* Ap,
   double* dnull = 0;
 
   // Factorization step
-  long int status = umfpack_dl_numeric(Ap, Ai, Ax, symbolic, &numeric, dnull, dnull);
+  long int status = 0;
+  if (sizeof(std::size_t) == sizeof(int))
+  {
+    const int* _Ap = reinterpret_cast<const int*>(Ap);
+    const int* _Ai = reinterpret_cast<const int*>(Ai);
+    status = umfpack_di_numeric(_Ap, _Ai, Ax, symbolic, &numeric, dnull, dnull);
+  }
+  else if (sizeof(std::size_t) == sizeof(UF_long))
+  {
+    const UF_long* _Ap = reinterpret_cast<const UF_long*>(Ap);
+    const UF_long* _Ai = reinterpret_cast<const UF_long*>(Ai);
+    status = umfpack_dl_numeric(_Ap, _Ai, Ax, symbolic, &numeric, dnull, dnull);
+  }
+  else
+    error("Could not determine correct types for casting integers to pass to UMFPACK.");
+
   delete dnull;
 
   umfpack_check_status(status, "numeric");
@@ -252,7 +282,8 @@ void* UmfpackLUSolver::umfpack_factorize_numeric(const long int* Ap,
   return numeric;
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::umfpack_solve(const long int* Ap, const long int* Ai,
+void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
+                                    const std::size_t* Ai,
                                     const double* Ax, double* x,
                                     const double* b, void* numeric)
 {
@@ -266,7 +297,22 @@ void UmfpackLUSolver::umfpack_solve(const long int* Ap, const long int* Ai,
 
   // Solve system. We assume CSR storage, but UMFPACK expects CSC, so solve
   // for the transpose
-  long int status = umfpack_dl_solve(UMFPACK_At, Ap, Ai, Ax, x, b, numeric, dnull, dnull);
+  long int status = 0;
+  if (sizeof(std::size_t) == sizeof(int))
+  {
+    const int* _Ap = reinterpret_cast<const int*>(Ap);
+    const int* _Ai = reinterpret_cast<const int*>(Ai);
+    status = umfpack_di_solve(UMFPACK_At, _Ap, _Ai, Ax, x, b, numeric, dnull, dnull);
+  }
+  else if (sizeof(std::size_t) == sizeof(UF_long))
+  {
+    const UF_long* _Ap = reinterpret_cast<const UF_long*>(Ap);
+    const UF_long* _Ai = reinterpret_cast<const UF_long*>(Ai);
+    status = umfpack_dl_solve(UMFPACK_At, _Ap, _Ai, Ax, x, b, numeric, dnull, dnull);
+  }
+  else
+    error("Could not determine correct types for casting integers to pass to UMFPACK.");
+
   delete dnull;
 
   umfpack_check_status(status, "solve");
@@ -308,24 +354,25 @@ void UmfpackLUSolver::clear_numeric()
 }
 //-----------------------------------------------------------------------------
 void* UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint N,
-                                                   const long int* Ap,
-                                                   const long int* Ai,
-                                                   const double* Ax)
+                                                  const std::size_t* Ap,
+                                                  const std::size_t* Ai,
+                                                  const double* Ax)
 {
   error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
   return 0;
 }
 //-----------------------------------------------------------------------------
-void* UmfpackLUSolver::umfpack_factorize_numeric(const long int* Ap,
-                                                  const long int* Ai,
-                                                  const double* Ax,
-                                                  void* symbolic)
+void* UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
+                                                 const std::size_t* Ai,
+                                                 const double* Ax,
+                                                 void* symbolic)
 {
   error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
   return 0;
 }
 //-----------------------------------------------------------------------------
-void UmfpackLUSolver::umfpack_solve(const long int* Ap, const long int* Ai,
+void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
+                                    const std::size_t* Ai,
                                     const double* Ax, double* x,
                                     const double* b, void* numeric)
 {

@@ -75,14 +75,17 @@ namespace dolfin
     void clear_numeric();
 
     // Return pointer to symbolic factorisation
-    static void* umfpack_factorize_symbolic(uint M, uint N, const long int* Ap,
-                                            const long int* Ai, const double* Ax);
+    static void* umfpack_factorize_symbolic(uint M, uint N,
+                                            const std::size_t* Ap,
+                                            const std::size_t* Ai,
+                                            const double* Ax);
 
     // Return pointer to the numerical factorisation
-    static void* umfpack_factorize_numeric(const long int* Ap, const long int* Ai,
+    static void* umfpack_factorize_numeric(const std::size_t* Ap,
+                                           const std::size_t* Ai,
                                            const double* Ax, void* symbolic);
 
-    static void umfpack_solve(const long int* Ap, const long int* Ai,
+    static void umfpack_solve(const std::size_t* Ap, const std::size_t* Ai,
                               const double* Ax, double* x, const double* b,
                               void* numeric);
 
