@@ -275,7 +275,7 @@ boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint
   else
     error("Could not determine correct types for casting integers to pass to UMFPACK.");
 
-  return boost::shared_ptr<void>(symbolic);
+  return boost::shared_ptr<void>();
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
@@ -312,7 +312,7 @@ boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_numeric(const std::si
   else
     error("Could not determine correct types for casting integers to pass to UMFPACK.");
 
-  return boost::shared_ptr<void>(numeric);
+  return boost::shared_ptr<void>();
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
