@@ -22,6 +22,7 @@ extern "C"
 #endif
 }
 
+#ifdef HAS_UMFPACK
 namespace dolfin
 {
   class UmfpackIntSymbolicDeleter
@@ -76,7 +77,7 @@ namespace dolfin
     }
   };
 }
-
+#endif
 
 using namespace dolfin;
 
