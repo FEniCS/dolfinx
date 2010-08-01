@@ -381,7 +381,7 @@ boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint
                                                   const double* Ax)
 {
   error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
-  return 0;
+  return boost::shared_ptr<void>();
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_numeric(const std::size_t* Ap,
@@ -390,7 +390,7 @@ boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_numeric(const std::si
                                                  void* symbolic)
 {
   error("Umfpack not installed. Cannot perform LU solver using Umfpack.");
-  return 0;
+  return boost::shared_ptr<void>();
 }
 //-----------------------------------------------------------------------------
 void UmfpackLUSolver::umfpack_solve(const std::size_t* Ap,
