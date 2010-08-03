@@ -59,7 +59,7 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
 
   // Set solver type
   solver->SetAztecOption(AZ_solver, methods.find(method)->second);
-  solver->SetAztecOption(AZ_kspace, parameters["gmres_restart"]);
+  solver->SetAztecOption(AZ_kspace, parameters("gmres")["restart"]);
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
@@ -77,7 +77,7 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
 
   // Set solver type
   solver->SetAztecOption(AZ_solver, methods.find(method)->second);
-  solver->SetAztecOption(AZ_kspace, parameters["gmres_restart"]);
+  solver->SetAztecOption(AZ_kspace, parameters("gmres")["restart"]);
 }
 //-----------------------------------------------------------------------------
 EpetraKrylovSolver::~EpetraKrylovSolver()

@@ -39,8 +39,9 @@ const std::map<std::string, const PCType> PETScPreconditioner::methods
 //-----------------------------------------------------------------------------
 Parameters PETScPreconditioner::default_parameters()
 {
-  Parameters p(KrylovSolver::default_parameters());
+  Parameters p(KrylovSolver::default_parameters()("preconditioner"));
   p.rename("petsc_preconditioner");
+
   p.add("schwarz_overlap", 1);
 
   // ILU parameters
@@ -100,9 +101,6 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 
       PetscOptionsSetValue("-pc_hypre_parasails_thresh", boost::lexical_cast<std::string>(thresh).c_str());
       PetscOptionsSetValue("-pc_hypre_parasails_nlevels", boost::lexical_cast<std::string>(levels).c_str());
-      //PetscOptionsSetValue("-pc_hypre_parasails_thresh", "0.15");
-      //PetscOptionsSetValue("-pc_hypre_parasails_nlevels", "0");
-
     }
     else if (type == "hypre_euclid")
       PCHYPRESetType(pc, "euclid");
@@ -177,7 +175,9 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
 
   // Make sure options are set
   PCSetFromOptions(pc);
-  PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
+
+  if (parameters["report"])
+    PCView(pc, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
 std::string PETScPreconditioner::str(bool verbose) const

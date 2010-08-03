@@ -25,15 +25,25 @@ Parameters KrylovSolver::default_parameters()
   p.add("absolute_tolerance",      1e-15);
   p.add("divergence_limit",        1e4);
   p.add("maximum_iterations",      10000);
-  p.add("gmres_restart",           30);
   p.add("shift_nonzero",           0.0);
   p.add("report",                  true); /* deprecate? */
   p.add("monitor_convergence",     false);
   p.add("error_on_nonconvergence", true);
-
-  p.add("reuse_preconditioner", false);
-  p.add("same_nonzero_pattern", false);
   p.add("nonzero_initial_guess", false);
+
+  // GMRES options
+  Parameters p_gmres("gmres");
+  p_gmres.add("restart", 30);
+
+  // Preconditioner options
+  Parameters p_pc("preconditioner");
+  p_pc.add("reuse_preconditioner", false);
+  p_pc.add("same_nonzero_pattern", false);
+  p_pc.add("report", false);
+
+  // Add nested parameters
+  p.add(p_gmres);
+  p.add(p_pc);
 
   return p;
 }

@@ -253,8 +253,8 @@ void PETScKrylovSolver::set_petsc_operators()
   assert(A);
 
   // Get some parameters
-  const bool reuse_precon = parameters["reuse_preconditioner"];
-  const bool same_pattern = parameters["same_nonzero_pattern"];
+  const bool reuse_precon = parameters("preconditioner")["reuse_preconditioner"];
+  const bool same_pattern = parameters("preconditioner")["same_nonzero_pattern"];
 
   // Set operators with appropriate option
   if (reuse_precon)
@@ -268,7 +268,7 @@ void PETScKrylovSolver::set_petsc_operators()
 void PETScKrylovSolver::set_petsc_options()
 {
   // GMRES restart parameter
-  KSPGMRESSetRestart(*_ksp, parameters["gmres_restart"]);
+  KSPGMRESSetRestart(*_ksp, parameters("gmres")["restart"]);
 
   // Non-zero initial guess
   const bool nonzero_guess = parameters["nonzero_initial_guess"];

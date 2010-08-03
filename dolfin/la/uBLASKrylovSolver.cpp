@@ -109,7 +109,7 @@ void uBLASKrylovSolver::read_parameters()
   atol    = parameters["absolute_tolerance"];
   div_tol = parameters["divergence_limit"];
   max_it  = parameters["maximum_iterations"];
-  restart = parameters["gmres_restart"];
+  restart = parameters("gmres")["restart"];
   report  = parameters["report"];
 
   // Remember that we have read parameters
