@@ -11,6 +11,8 @@
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
 
+#include <exception>
+#include <typeinfo>
 #include <dolfin/log/log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -76,19 +78,33 @@ namespace dolfin
     /// Cast a GenericTensor to its derived class (const version)
     template<class T> const T& down_cast() const
     {
-      const T* t = dynamic_cast<const T*>(instance());
-      if (!t)
-        error("GenericTensor cannot be cast to the requested type.");
-      return *t;
+      try
+      {
+        return dynamic_cast<const T&>(*instance());
+      }
+      catch (std::exception& e)
+      {
+        error("GenericTensor cannot be cast to the requested type: %s", e.what());
+      }
+
+      // Return something to keep the compiler happy. Code will never be reached.
+      return dynamic_cast<const T&>(*instance());
     }
 
     /// Cast a GenericTensor to its derived class (non-const version)
     template<class T> T& down_cast()
     {
-      T* t = dynamic_cast<T*>(instance());
-      if (!t)
-        error("GenericTensor cannot be cast to the requested type.");
-      return *t;
+      try
+      {
+        return dynamic_cast<T&>(*instance());
+      }
+      catch (std::exception& e)
+      {
+        error("GenericTensor cannot be cast to the requested type: %s", e.what());
+      }
+
+      // Return something to keep the compiler happy. Code will never be reached.
+      return dynamic_cast<T&>(*instance());
     }
 
     /// Check whether the GenericTensor instance matches a specific type
