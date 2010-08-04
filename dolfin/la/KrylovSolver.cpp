@@ -37,7 +37,7 @@ Parameters KrylovSolver::default_parameters()
 
   // Preconditioner options
   Parameters p_pc("preconditioner");
-  p_pc.add("reuse_preconditioner", false);
+  p_pc.add("reuse", false);
   p_pc.add("same_nonzero_pattern", false);
   p_pc.add("report", false);
 

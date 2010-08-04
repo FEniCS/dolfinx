@@ -253,7 +253,7 @@ void PETScKrylovSolver::set_petsc_operators()
   assert(A);
 
   // Get some parameters
-  const bool reuse_precon = parameters("preconditioner")["reuse_preconditioner"];
+  const bool reuse_precon = parameters("preconditioner")["reuse"];
   const bool same_pattern = parameters("preconditioner")["same_nonzero_pattern"];
 
   // Set operators with appropriate option
