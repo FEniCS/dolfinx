@@ -123,12 +123,12 @@ PETScVector* PETScVector::copy() const
 void PETScVector::get_local(Array<double>& values) const
 {
   assert(x);
-  if (size() == 0)
-    return;
-
   const uint n0 = local_range().first;
   const uint local_size = local_range().second - local_range().first;
-  assert(values.size() >= local_size);
+  assert(values.size() == local_size);
+
+  if (local_size == 0)
+    return;
 
   std::vector<int> rows(local_size);
   for (uint i = 0; i < local_size; ++i)
@@ -140,12 +140,14 @@ void PETScVector::get_local(Array<double>& values) const
 void PETScVector::set_local(const Array<double>& values)
 {
   assert(x);
-  assert(values.size() == size());
-  if (size() == 0)
-    return;
 
   const uint n0 = local_range().first;
   const uint local_size = local_range().second - local_range().first;
+  assert(values.size() == local_size);
+
+  if (local_size == 0)
+    return;
+
   std::vector<int> rows(local_size);
   for (uint i = 0; i < local_size; ++i)
     rows[i] = i + n0;
@@ -156,12 +158,13 @@ void PETScVector::set_local(const Array<double>& values)
 void PETScVector::add_local(const Array<double>& values)
 {
   assert(x);
-  assert(values.size() == size());
-  if (size() == 0)
-    return;
-
   const uint n0 = local_range().first;
   const uint local_size = local_range().second - local_range().first;
+  assert(values.size() == local_size);
+
+  if (local_size == 0)
+    return;
+
   std::vector<int> rows(local_size);
   for (uint i = 0; i < local_size; ++i)
     rows[i] = i + n0;
