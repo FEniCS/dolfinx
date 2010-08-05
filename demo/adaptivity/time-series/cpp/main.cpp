@@ -30,8 +30,12 @@ int main()
     x.resize(new_mesh.num_vertices());
 
     // Set some vector values
-    for (dolfin::uint i = 0; i < x.size(); i++)
-      x.setitem(i, (t + 1.0)*static_cast<double>(i));
+    Array<double> values(x.local_size());
+    const dolfin::uint offset = x.local_range().first;
+    for (dolfin::uint i = 0; i < x.local_size(); i++)
+      values[i] = (t + 1.0)*static_cast<double>(offset + i);
+    x.set_local(values);
+    x.apply("insert");
 
     // Append to series
     series.store(new_mesh, t);

@@ -83,8 +83,12 @@ namespace dolfin
     /// Resize vector to size N
     virtual void resize(uint N) = 0;
 
-    /// Return size of vector
+    /// Return global size of vector
     virtual uint size() const = 0;
+
+    /// Return local size of vector
+    virtual uint local_size() const
+    { return local_range().second - local_range().first; }
 
     /// Return local ownership range of a vector
     virtual std::pair<uint, uint> local_range() const = 0;

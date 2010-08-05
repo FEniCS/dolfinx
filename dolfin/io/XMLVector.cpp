@@ -101,11 +101,19 @@ void XMLVector::read_array_tag(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLVector::end_vector()
 {
-  // Copy values to vector
+  // Resize vector
   x.resize(values.size());
-  Array<double> v(values.size());
-  for (uint i = 0; i< values.size(); ++i)
-    v[i] = values[i];
+
+  // Copy values to a dolfin::Array
+  Array<double> v(x.local_size());
+  const uint n0 = x.local_range().first;
+  for (uint i = 0; i< x.local_size(); ++i)
+  {
+    v[i] = values[n0 + i];
+  }
+
+  // Ste values
   x.set_local(v);
+  x.apply("insert");
 }
 //-----------------------------------------------------------------------------

@@ -50,8 +50,8 @@ Parameters PETScPreconditioner::default_parameters()
 
   // Hypre/parasails parameters
   Parameters p_parasails("parasails");
-  p_parasails.add("threshold", 0.15);
-  p_parasails.add("levels", 0);
+  p_parasails.add("threshold", 0.1);
+  p_parasails.add("levels", 1);
 
   // Hypre package parameters
   Parameters p_hypre("hypre");
