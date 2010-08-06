@@ -368,6 +368,20 @@ std::string DofMap::str(bool verbose) const
 
   std::stringstream s;
   s << "<DofMap of global dimension " << global_dimension() << ">";
+  if (verbose)
+  {
+    // Cell loop
+    for (uint i = 0; i < dofmap.size(); ++i)
+    {
+      s << "Local cell index, cell dofmap dimension: " << i << ", " << dofmap[i].size() << std::endl;
+      // Local dof loop
+      for (uint j = 0; j < dofmap[i].size(); ++j)
+      {
+        s << "  " << "Local, global dof indices: " << j << ", " << dofmap[i][j] << std::endl;
+      }
+    }
+  }
+
   return s.str();
 }
 //-----------------------------------------------------------------------------

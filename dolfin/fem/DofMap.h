@@ -161,7 +161,7 @@ namespace dolfin
                                 const ufc::mesh ufc_mesh,
                                 const Mesh& dolfin_mesh);
 
-    // dof map
+    // Dof map
     std::vector<std::vector<dolfin::uint> > dofmap;
 
     // Map from UFC dof numbering to renumbered dof

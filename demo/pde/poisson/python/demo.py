@@ -39,6 +39,9 @@ g = Expression("-sin(5*x[0])")
 a = inner(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds
 
+info(V.dofmap(), True)
+
+
 # Compute solution
 problem = VariationalProblem(a, L, bc)
 u = problem.solve()
