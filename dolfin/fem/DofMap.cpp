@@ -363,22 +363,25 @@ dolfin::Set<dolfin::uint> DofMap::dofs(const Mesh& mesh, bool sort) const
 //-----------------------------------------------------------------------------
 std::string DofMap::str(bool verbose) const
 {
-  // TODO: Display information on renumbering
   // TODO: Display information on parallel stuff
 
+  // Prefix with process number if running in parallel
+  std::stringstream prefix;
+  if (MPI::num_processes() > 1)
+    prefix << "Process " << MPI::process_number() << ": ";
+
   std::stringstream s;
-  s << "<DofMap of global dimension " << global_dimension() << ">";
+  s << prefix.str() << "<DofMap of global dimension " << global_dimension() << ">" << std::endl;
   if (verbose)
   {
     // Cell loop
     for (uint i = 0; i < dofmap.size(); ++i)
     {
-      s << "Local cell index, cell dofmap dimension: " << i << ", " << dofmap[i].size() << std::endl;
+      s << prefix.str() << "Local cell index, cell dofmap dimension: " << i << ", " << dofmap[i].size() << std::endl;
+
       // Local dof loop
       for (uint j = 0; j < dofmap[i].size(); ++j)
-      {
-        s << "  " << "Local, global dof indices: " << j << ", " << dofmap[i][j] << std::endl;
-      }
+        s << prefix.str() <<  "  " << "Local, global dof indices: " << j << ", " << dofmap[i][j] << std::endl;
     }
   }
 

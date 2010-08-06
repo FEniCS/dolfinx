@@ -1,8 +1,6 @@
 """This demo solves the Stokes equations, using quadratic elements for
 the velocity and first degree elements for the pressure (Taylor-Hood
-elements). The sub domains for the different boundary conditions
-used in this simulation are computed by the demo program in
-src/demo/mesh/subdomains."""
+elements)."""
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
 __date__ = "2007-11-16 -- 2009-11-26"
