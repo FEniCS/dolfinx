@@ -114,15 +114,13 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
   else
     error("Requested eigenvalue/vector has not been computed");
 }
-
-
+//-----------------------------------------------------------------------------
 int SLEPcEigenSolver::get_number_converged()
 {
   int num_conv;
   EPSGetConverged(eps, &num_conv);
   return num_conv;
 }
-
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(const PETScMatrix* A,
                              const PETScMatrix* B,
@@ -137,9 +135,7 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
     EPSSetOperators(eps, *A->mat(), *B->mat());
   }
   else
-  {
     EPSSetOperators(eps, *A->mat(), PETSC_NULL);
-  }
 
   // Store the size of the eigenvalue system
   system_size = A->size(0);
@@ -188,7 +184,6 @@ void SLEPcEigenSolver::read_parameters()
 
 }
 //-----------------------------------------------------------------------------
-
 void SLEPcEigenSolver::set_problem_type(std::string type)
 {
   // Do nothing if default type is specified
@@ -206,7 +201,7 @@ void SLEPcEigenSolver::set_problem_type(std::string type)
   else
     error("Unknown problem type: \"%s\".", type.c_str());
 }
-
+//-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_spectral_transform(std::string transform,
                                               double shift)
 {
@@ -216,18 +211,18 @@ void SLEPcEigenSolver::set_spectral_transform(std::string transform,
   ST st;
   EPSGetST(eps, &st);
   if (transform == "shift-and-invert")
-    {
-      #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR == 1
-      STSetType(st, STSINVERT);
-      #else
-      STSetType(st, STSINV);
-      #endif
-      STSetShift(st, shift);
-    }
+  {
+    #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR == 1
+    STSetType(st, STSINVERT);
+    #else
+    STSetType(st, STSINV);
+    #endif
+    STSetShift(st, shift);
+  }
   else
     error("Unknown transform: \"%s\".", transform.c_str());
 }
-
+//-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_spectrum(std::string spectrum)
 {
   // Do nothing if default type is specified

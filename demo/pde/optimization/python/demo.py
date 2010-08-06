@@ -71,7 +71,7 @@ for i in range(100):
     # Print value of functional
     jval = assemble(J, mesh = mesh)
     print "J = ", jval
-    print max(u.vector().array())
+    print u.vector().max()
 
 # Plot solution and parameter
 plot(u,  title="Solution",  rescale=True)
