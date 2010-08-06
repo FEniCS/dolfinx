@@ -46,13 +46,18 @@ namespace dolfin
 
   private:
 
+    friend class XMLVector;
+
     enum parser_state { OUTSIDE_ARRAY, INSIDE_ARRAY, ARRAY_DONE };
     enum array_type { INT, UINT, DOUBLE, UNSET };
 
-    void read_entry  (const xmlChar *name, const xmlChar **attrs);
+    void read_entry(const xmlChar *name, const xmlChar **attrs);
+
+    // Element index
+    std::vector<uint> element_index;
 
     // Integer data
-    std::vector<int>*  ix;
+    std::vector<int>* ix;
 
     // Unsigned integer data
     std::vector<uint>* ux;
@@ -63,7 +68,8 @@ namespace dolfin
     parser_state state;
     array_type atype;
 
-    uint size;
+    uint local_size;
+    uint global_size;
 
   };
 

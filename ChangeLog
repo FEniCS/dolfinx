@@ -1,8 +1,13 @@
+ - Allow re-use of preconditioners (only PETSc for now)
+ - Fixes for UMFPACK solver on some 32 machines
+ - Provide access to more Hypre preconditioners via PETSc
+ - Updates for SLEPc 3.1
  - Improve and implement re-use of LU factorizations for all backends
  - Fix bug in refinement of MeshFunctions
 0.9.8 [2010-07-01]
  - Optimize and improve StabilityAnalysis.
- - Use own implementation of binary search in ODESolution (takes advantage of previous values as initial guess)
+ - Use own implementation of binary search in ODESolution (takes advantage of
+   previous values as initial guess)
  - Improve reading ODESolution spanning multiple files
  - Dramatic speedup of progress bar (and algorithms using it)
  - Fix bug in writing meshes embedded higher dimensions to M-files

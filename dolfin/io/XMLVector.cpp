@@ -100,19 +100,13 @@ void XMLVector::read_array_tag(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLVector::end_vector()
 {
+  assert(xml_array);
+
   // Resize vector
-  x.resize(values.size());
+  x.resize(xml_array->global_size);
 
-  // Copy values to a dolfin::Array
-  Array<double> v(x.local_size());
-  const uint n0 = x.local_range().first;
-  for (uint i = 0; i< x.local_size(); ++i)
-  {
-    v[i] = values[n0 + i];
-  }
-
-  // Ste values
-  x.set_local(v);
+  // Set values
+  x.set(&values[0], xml_array->element_index.size(), &(xml_array->element_index)[0]);
   x.apply("insert");
 }
 //-----------------------------------------------------------------------------

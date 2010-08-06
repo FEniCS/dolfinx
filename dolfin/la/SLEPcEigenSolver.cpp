@@ -80,7 +80,7 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i)
 
   if (ii < num_computed_eigenvalues)
   {
-    #if SLEPC_VERSION_RELEASE == 0
+    #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR == 1
     EPSGetEigenvalue(eps, ii, &lr, &lc);
     #else
     EPSGetValue(eps, ii, &lr, &lc);
@@ -217,7 +217,11 @@ void SLEPcEigenSolver::set_spectral_transform(std::string transform,
   EPSGetST(eps, &st);
   if (transform == "shift-and-invert")
     {
+      #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR == 1
+      STSetType(st, STSINVERT);
+      #else
       STSetType(st, STSINV);
+      #endif
       STSetShift(st, shift);
     }
   else
