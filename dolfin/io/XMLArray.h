@@ -51,9 +51,15 @@ namespace dolfin
 
     void read_entry  (const xmlChar *name, const xmlChar **attrs);
 
+    // Integer data
     std::vector<int>*  ix;
+
+    // Unsigned integer data
     std::vector<uint>* ux;
+
+    // Double data
     std::vector<double>* dx;
+
     parser_state state;
     array_type atype;
 

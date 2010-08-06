@@ -93,8 +93,7 @@ void XMLVector::read_vector_tag(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLVector::read_array_tag(const xmlChar *name, const xmlChar **attrs)
 {
-  std::auto_ptr<XMLArray> _xml_array(new XMLArray(values, parser));
-  xml_array = _xml_array;
+  xml_array.reset(new XMLArray(values, parser));
   xml_array->read_array_tag(name, attrs);
   xml_array->handle();
 }

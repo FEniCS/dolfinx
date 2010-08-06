@@ -9,13 +9,13 @@
 #ifndef __XML_VECTOR_H
 #define __XML_VECTOR_H
 
-#include <memory>
+#include <boost/scoped_ptr.hpp>
 #include "XMLArray.h"
 #include "XMLHandler.h"
 
 namespace dolfin
 {
-  
+
   class GenericVector;
 
 
@@ -29,7 +29,8 @@ namespace dolfin
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
 
-    static void write(const GenericVector& vector, std::ostream& outfile, uint indentation_level=0);
+    static void write(const GenericVector& vector, std::ostream& outfile,
+                      uint indentation_level=0);
 
     // Read the vector begin tag
     void read_vector_tag(const xmlChar *name, const xmlChar **attrs);
@@ -45,7 +46,7 @@ namespace dolfin
     parser_state state;
 
     std::vector<double> values;
-    std::auto_ptr<XMLArray> xml_array;
+    boost::scoped_ptr<XMLArray> xml_array;
 
   };
 
