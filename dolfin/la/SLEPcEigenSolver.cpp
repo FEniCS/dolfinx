@@ -145,11 +145,11 @@ void SLEPcEigenSolver::solve(const PETScMatrix* A,
   const uint nn = static_cast<int>(n);
   EPSSetDimensions(eps, nn, PETSC_DECIDE, PETSC_DECIDE);
 
-  // Set parameters from PETSc parameter database
-  EPSSetFromOptions(eps);
-
   // Set parameters from local parameters
   read_parameters();
+
+  // Set parameters from PETSc parameter database
+  EPSSetFromOptions(eps);
 
   // Solve
   EPSSolve(eps);

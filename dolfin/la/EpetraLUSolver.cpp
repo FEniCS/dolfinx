@@ -39,7 +39,6 @@ EpetraLUSolver::EpetraLUSolver() : symbolic_factorized(false),
 
   // Create linear solver
   Amesos factory;
-  std::string solver_type;
   if (factory.Query("Amesos_Mumps"))
     solver_type = "Amesos_Mumps";
   else if (factory.Query("Amesos_Umfpack"))
@@ -61,7 +60,6 @@ EpetraLUSolver::EpetraLUSolver(const GenericMatrix& A)
 
   // Create linear solver
   Amesos factory;
-  std::string solver_type;
   if (factory.Query("Amesos_Mumps"))
     solver_type = "Amesos_Mumps";
   else if (factory.Query("Amesos_Umfpack"))
@@ -140,6 +138,9 @@ dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)
     AMESOS_CHK_ERR(solver->NumericFactorization());
     numeric_factorized = true;
   }
+
+  info(PROGRESS, "Solving linear system of size %d x %d (Trilinos LU solver (%s)).",
+       A->NumGlobalRows(), A->NumGlobalCols(), solver_type.c_str());
 
   // Solve
   AMESOS_CHK_ERR(solver->Solve());

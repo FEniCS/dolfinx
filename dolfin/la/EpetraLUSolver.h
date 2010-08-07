@@ -68,6 +68,8 @@ namespace dolfin
     // Linear solver
     boost::scoped_ptr<Amesos_BaseSolver> solver;
 
+    std::string solver_type;
+
   };
 
 }
