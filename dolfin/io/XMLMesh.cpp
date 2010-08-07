@@ -21,15 +21,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XMLMesh::XMLMesh(Mesh& mesh, XMLFile& parser)
-  : XMLHandler(parser), _mesh(mesh), state(OUTSIDE), f(0), a(0),
-    xml_mesh_data(0)
+  : XMLHandler(parser), _mesh(mesh), state(OUTSIDE), f(0), a(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 XMLMesh::~XMLMesh()
 {
-  delete xml_mesh_data;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::start_element(const xmlChar *name, const xmlChar **attrs)
@@ -390,7 +389,7 @@ void XMLMesh::read_mesh_entity(const xmlChar* name, const xmlChar** attrs)
 //-----------------------------------------------------------------------------
 void XMLMesh::read_mesh_data(const xmlChar* name, const xmlChar** attrs)
 {
-  xml_mesh_data = new XMLMeshData(_mesh.data(), parser, true);
+  xml_mesh_data.reset(new XMLMeshData(_mesh.data(), parser, true));
   xml_mesh_data->handle();
 }
 //-----------------------------------------------------------------------------

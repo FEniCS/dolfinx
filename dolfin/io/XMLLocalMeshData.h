@@ -10,11 +10,12 @@
 #include <dolfin/mesh/LocalMeshData.h>
 #include "XMLHandler.h"
 
-/// Documentation of class XMLLocalMeshData
 
 namespace dolfin
 {
   class LocalMeshData;
+
+  /// Documentation of class XMLLocalMeshData
 
   class XMLLocalMeshData: public XMLHandler
   {
@@ -26,8 +27,8 @@ namespace dolfin
     /// Destructor
     ~XMLLocalMeshData();
 
-    void start_element (const xmlChar* name, const xmlChar** attrs);
-    void end_element   (const xmlChar* name);
+    void start_element(const xmlChar* name, const xmlChar** attrs);
+    void end_element(const xmlChar* name);
 
   private:
 

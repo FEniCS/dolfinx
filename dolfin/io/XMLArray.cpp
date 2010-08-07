@@ -6,6 +6,7 @@
 
 #include <dolfin/common/Array.h>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/main/MPI.h>
 #include "XMLFile.h"
 #include "XMLIndent.h"
 #include "XMLArray.h"
@@ -13,55 +14,67 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLArray::XMLArray(std::vector<int>& ix, XMLFile& parser)
+XMLArray::XMLArray(std::vector<int>& ix, XMLFile& parser, bool distributed)
   : XMLHandler(parser), ix(&ix), ux(0), dx(0), state(OUTSIDE_ARRAY),
-    atype(INT), local_size(0), global_size(0)
+    atype(INT), size(0), distributed(distributed)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-XMLArray::XMLArray(std::vector<uint>& ux, XMLFile& parser)
+XMLArray::XMLArray(std::vector<uint>& ux, XMLFile& parser, bool distributed)
   : XMLHandler(parser), ix(0), ux(&ux), dx(0), state(OUTSIDE_ARRAY),
-    atype(UINT), local_size(0), global_size(0)
+    atype(UINT), size(0), distributed(distributed)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-XMLArray::XMLArray(std::vector<double>& dx, XMLFile& parser)
+XMLArray::XMLArray(std::vector<double>& dx, XMLFile& parser, bool distributed)
   : XMLHandler(parser), ix(0), ux(0), dx(&dx), state(OUTSIDE_ARRAY),
-    atype(DOUBLE), local_size(0), global_size(0)
+    atype(DOUBLE), size(0), distributed(distributed)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-XMLArray::XMLArray(std::vector<int>& ix, XMLFile& parser, uint size)
+XMLArray::XMLArray(std::vector<int>& ix, XMLFile& parser, uint size, bool distributed)
   : XMLHandler(parser), ix(&ix), ux(0), dx(0), state(INSIDE_ARRAY), atype(INT),
-    local_size(size), global_size(size)
+    size(size), distributed(distributed)
 {
+  if (distributed)
+    range = MPI::local_range(size);
+  else
+    range = std::make_pair(0, size);
+  const uint local_size = range.second - range.first;
+
   element_index.reserve(local_size);
   this->ix->clear();
   this->ix->reserve(local_size);
-  std::fill(this->ix->begin(), this->ix->end(), 0);
 }
 //-----------------------------------------------------------------------------
-XMLArray::XMLArray(std::vector<uint>& ux, XMLFile& parser, uint size)
+XMLArray::XMLArray(std::vector<uint>& ux, XMLFile& parser, uint size, bool distributed)
   : XMLHandler(parser), ix(0), ux(&ux), dx(0), state(INSIDE_ARRAY), atype(UINT),
-    local_size(size), global_size(size)
+    size(size), distributed(distributed)
 {
+  if (distributed)
+    range = MPI::local_range(size);
+  else
+    range = std::make_pair(0, size);
+  const uint local_size = range.second - range.first;
+
   element_index.reserve(local_size);
   this->ux->clear();
   this->ux->reserve(local_size);
-  std::fill(this->ux->begin(), this->ux->end(), 0);
 }
 //-----------------------------------------------------------------------------
-XMLArray::XMLArray(std::vector<double>& dx, XMLFile& parser, uint size)
+XMLArray::XMLArray(std::vector<double>& dx, XMLFile& parser, uint size, bool distributed)
   : XMLHandler(parser), ix(0), ux(0), dx(&dx), state(INSIDE_ARRAY),
-    atype(DOUBLE), local_size(size), global_size(size)
+    atype(DOUBLE), size(size), distributed(distributed)
 {
+  range = MPI::local_range(size);
+  const uint local_size = range.second - range.first;
+
   element_index.reserve(local_size);
   this->dx->clear();
   this->dx->reserve(local_size);
-  std::fill(this->dx->begin(), this->dx->end(), 0.0);
 }
 //-----------------------------------------------------------------------------
 void XMLArray::start_element(const xmlChar *name, const xmlChar **attrs)
@@ -156,8 +169,13 @@ void XMLArray::read_array_tag(const xmlChar *name, const xmlChar **attrs)
   state = INSIDE_ARRAY;
 
   // Parse size of array
-  local_size = parse_uint(name, attrs, "size");
-  global_size = local_size;
+  size = parse_uint(name, attrs, "size");
+
+  if (distributed)
+    range = MPI::local_range(size);
+  else
+    range = std::make_pair(0, size);
+  const uint local_size = range.second - range.first;
 
   const std::string array_type = parse_string(name, attrs, "type");
 
@@ -203,32 +221,37 @@ void XMLArray::read_entry(const xmlChar *name, const xmlChar **attrs)
   const uint index = parse_uint(name, attrs, "index");
 
   // Check values
-  if (index >= global_size)
-    error("Illegal XML data for Array: row index %d out of range (0 - %d)",
-          index, global_size - 1);
-
-  element_index.push_back(index);
-
-  // Parse value and insert in data array
-  switch ( atype )
+  if (index >= size)
   {
-    case INT:
-      assert(ix);
-      ix->push_back(parse_int(name, attrs, "value"));
-      break;
+    error("Illegal XML data for Array: row index %d out of range (0 - %d)",
+          index, size - 1);
+  }
 
-    case UINT:
-      assert(ux);
-      ux->push_back(parse_uint(name, attrs, "value"));
-      break;
+  if (index >= range.first && index < range.second)
+  {
+    element_index.push_back(index);
 
-    case DOUBLE:
-      assert(dx);
-      dx->push_back(parse_float(name, attrs, "value"));
-      break;
+    // Parse value and insert in data array
+    switch ( atype )
+    {
+      case INT:
+        assert(ix);
+        ix->push_back(parse_int(name, attrs, "value"));
+        break;
 
-    default:
-      break;
+      case UINT:
+        assert(ux);
+        ux->push_back(parse_uint(name, attrs, "value"));
+        break;
+
+      case DOUBLE:
+        assert(dx);
+        dx->push_back(parse_float(name, attrs, "value"));
+        break;
+
+      default:
+        break;
+    }
   }
 }
 //-----------------------------------------------------------------------------

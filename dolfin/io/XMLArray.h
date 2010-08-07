@@ -7,6 +7,7 @@
 #ifndef __XMLARRAY_H
 #define __XMLARRAY_H
 
+#include <utility>
 #include <vector>
 #include "XMLHandler.h"
 
@@ -19,14 +20,14 @@ namespace dolfin
   {
   public:
 
-    XMLArray(std::vector<int>& ix, XMLFile& parser);
-    XMLArray(std::vector<int>& ix, XMLFile& parser, uint size);
+    XMLArray(std::vector<int>& ix, XMLFile& parser, bool distributed = false);
+    XMLArray(std::vector<int>& ix, XMLFile& parser, uint size, bool distributed = false);
 
-    XMLArray(std::vector<uint>& ux, XMLFile& parser);
-    XMLArray(std::vector<uint>& ux, XMLFile& parser, uint size);
+    XMLArray(std::vector<uint>& ux, XMLFile& parser, bool distributed = false);
+    XMLArray(std::vector<uint>& ux, XMLFile& parser, uint size, bool distributed = false);
 
-    XMLArray(std::vector<double>& dx, XMLFile& parser);
-    XMLArray(std::vector<double>& dx, XMLFile& parser, uint size);
+    XMLArray(std::vector<double>& dx, XMLFile& parser, bool distributed = false);
+    XMLArray(std::vector<double>& dx, XMLFile& parser, uint size, bool distributed = false);
 
     void start_element (const xmlChar *name, const xmlChar **attrs);
     void end_element   (const xmlChar *name);
@@ -53,7 +54,7 @@ namespace dolfin
 
     void read_entry(const xmlChar *name, const xmlChar **attrs);
 
-    // Element index
+    // Element indices
     std::vector<uint> element_index;
 
     // Integer data
@@ -68,8 +69,12 @@ namespace dolfin
     parser_state state;
     array_type atype;
 
-    uint local_size;
-    uint global_size;
+    // Range for indices
+    std::pair<uint, uint> range;
+
+    uint size;
+
+    bool distributed;
 
   };
 

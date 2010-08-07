@@ -7,6 +7,7 @@
 #ifndef __XML_MESH_H
 #define __XML_MESH_H
 
+#include <boost/scoped_ptr.hpp>
 #include <dolfin/la/Vector.h>
 #include <dolfin/mesh/MeshEditor.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -61,7 +62,7 @@ namespace dolfin
     MeshFunction<uint>* f;
     std::vector<uint>* a;
 
-    XMLMeshData* xml_mesh_data;
+    boost::scoped_ptr<XMLMeshData> xml_mesh_data;
   };
 
 }

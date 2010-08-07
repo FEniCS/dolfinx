@@ -93,7 +93,7 @@ void XMLVector::read_vector_tag(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLVector::read_array_tag(const xmlChar *name, const xmlChar **attrs)
 {
-  xml_array.reset(new XMLArray(values, parser));
+  xml_array.reset(new XMLArray(values, parser, true));
   xml_array->read_array_tag(name, attrs);
   xml_array->handle();
 }
@@ -103,10 +103,11 @@ void XMLVector::end_vector()
   assert(xml_array);
 
   // Resize vector
-  x.resize(xml_array->global_size);
+  x.resize(xml_array->size);
 
-  // Set values
-  x.set(&values[0], xml_array->element_index.size(), &(xml_array->element_index)[0]);
+  // Set values in the vector
+  x.set(&values[0], xml_array->element_index.size(),
+        &(xml_array->element_index)[0]);
   x.apply("insert");
 }
 //-----------------------------------------------------------------------------

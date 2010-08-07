@@ -456,7 +456,8 @@ std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint N)
   return local_range(process_number(), N);
 }
 //-----------------------------------------------------------------------------
-std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint process, uint N)
+std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint process,
+                                                               uint N)
 {
   // Get number of processes and process number
   const uint _num_processes = num_processes();

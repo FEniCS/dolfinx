@@ -6,6 +6,8 @@
 //
 // Modified by Anders Logg, 2008.
 
+#include <boost/assign/list_of.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/log/log.h>
 #include <dolfin/main/MPI.h>
@@ -174,7 +176,7 @@ void XMLLocalMeshData::read_mesh(const xmlChar* name, const xmlChar** attrs)
   gdim = parse_uint(name, attrs, "dim");
 
   // Create cell type to get topological dimension
-  std::auto_ptr<CellType> cell_type(CellType::create(type));
+  boost::scoped_ptr<CellType> cell_type(CellType::create(type));
   tdim = cell_type->dim();
 
   // Get number of entities for topological dimension 0
@@ -205,31 +207,27 @@ void XMLLocalMeshData::read_vertex(const xmlChar* name, const xmlChar** attrs)
   if (v < vertex_range.first || v >= vertex_range.second)
     return;
 
-  std::vector<double> coordinate;
-
   // Parse vertex coordinates
   switch (gdim)
   {
   case 1:
     {
-      coordinate.push_back(parse_float(name, attrs, "x"));
+      const std::vector<double> coordinate = boost::assign::list_of(parse_float(name, attrs, "x"));
       mesh_data.vertex_coordinates.push_back(coordinate);
     }
   break;
   case 2:
     {
-      coordinate.reserve(2);
-      coordinate.push_back(parse_float(name, attrs, "x"));
-      coordinate.push_back(parse_float(name, attrs, "y"));
+      const std::vector<double> coordinate = boost::assign::list_of(parse_float(name, attrs, "x"))
+                                                                   (parse_float(name, attrs, "y"));
       mesh_data.vertex_coordinates.push_back(coordinate);
     }
     break;
   case 3:
     {
-      coordinate.reserve(3);
-      coordinate.push_back(parse_float(name, attrs, "x"));
-      coordinate.push_back(parse_float(name, attrs, "y"));
-      coordinate.push_back(parse_float(name, attrs, "z"));
+      const std::vector<double> coordinate = boost::assign::list_of(parse_float(name, attrs, "x"))
+                                                                   (parse_float(name, attrs, "y"))
+                                                                   (parse_float(name, attrs, "z"));
       mesh_data.vertex_coordinates.push_back(coordinate);
     }
     break;
