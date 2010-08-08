@@ -8,13 +8,14 @@
 
 #include <dolfin/main/MPI.h>
 #include <boost/assign/list_of.hpp>
+
 #include <Ifpack.h>
 #include <Epetra_CombineMode.h>
 #include <ml_include.h>
 #include <AztecOO.h>
 #include <ml_epetra_utils.h>
-#include "ml_MultiLevelPreconditioner.h"
-#include "Teuchos_ParameterList.hpp"
+#include <ml_MultiLevelPreconditioner.h>
+#include <Teuchos_ParameterList.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include "EpetraKrylovSolver.h"
@@ -101,7 +102,7 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver)
 
     //std::cout << *ifpack_preconditioner;
   }
-  else if (type == "amg_hypre")
+  else if (type == "hypre_amg")
   {
     info("Hypre AMG not available for Trilinos. Using ML instead.");
     set_ml(_solver);

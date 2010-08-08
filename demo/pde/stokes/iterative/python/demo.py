@@ -1,16 +1,20 @@
-"""This demo solves the Stokes equations, using quadratic elements for
-the velocity and first degree elements for the pressure (Taylor-Hood
-elements)."""
+"""This demo solves the Stokes equations using an iterative linear solver.
+Note that the sign for the pressure has been flipped for symmetry."""
 
 __author__ = "Garth N. Wells (gnw20@cam.ac.uk)"
-__date__ = "2010-08-07"
+__date__ = "2010-08-08"
 __copyright__ = "Copyright (C) 2010 Garth N. Wells"
 __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
+# Test for PETSc and SLEPc
+if not has_la_backend("PETSc"):
+    print "DOLFIN has not been configured with PETSc. Exiting."
+    exit()
+
 # Load mesh and subdomains
-mesh = UnitSquare(32, 32)
+mesh = UnitSquare(64, 64)
 
 # Define function spaces
 V = VectorFunctionSpace(mesh, "CG", 2)
@@ -41,23 +45,32 @@ bcs = [bc0, bc1, bc2]
 # Define variational problem
 (v, q) = TestFunctions(W)
 (u, p) = TrialFunctions(W)
-f = Constant((0, 0))
-a = (inner(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
+f = Constant((0.0, 0.0))
+a = inner(grad(v), grad(u))*dx + div(v)*p*dx + q*div(u)*dx
 L = inner(v, f)*dx
 
-# Compute solution
-problem = VariationalProblem(a, L, bcs)
-U = problem.solve()
+# Form for use in constructing preconditioner matrix
+b = inner(grad(v), grad(u))*dx + q*p*dx
 
-# Split the mixed solution using deepcopy
-# (needed for further computation on coefficient vector)
-(u, p) = U.split(True)
+# Assemble system
+A, bb = assemble_system(a, L, bcs)
 
-print "Norm of velocity coefficient vector: %.15g" % u.vector().norm("l2")
-print "Norm of pressure coefficient vector: %.15g" % p.vector().norm("l2")
+# Assemble preconditioner system
+P, btmp = assemble_system(b, L, bcs)
 
-# Split the mixed solution using a shallow copy
-(u, p) = U.split()
+# Create Krylov solver and AMG preconditioner
+solver = PETScKrylovSolver("minres", "hypre_amg")
+print "This demo is unlikely to converge if PETSc is not configured with Hypre."
+
+# Associate opeartor (A) and preconditioner matrix (P)
+solver.set_operators(A, P)
+
+# Solve
+U = Function(W)
+solver.solve(U.vector(), bb)
+
+# Get sub-functions
+u, p = U.split()
 
 # Save solution in VTK format
 ufile_pvd = File("velocity.pvd")
