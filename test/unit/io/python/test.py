@@ -8,11 +8,21 @@ __license__  = "GNU LGPL Version 2.1"
 import unittest
 from dolfin import *
 
-class Foo(unittest.TestCase):
+class VectorXML_IO(unittest.TestCase):
 
-     def testFoo(self):
-         """No tests implemented"""
-         self.assertEqual(0, 0)
+    def testSaveReadVector(self):
+        size = 512
+        x = Vector(size)
+        x[:] = 1.0
+
+        out_file = File("test_vector_xml.xml")
+        out_file << x
+
+        y = Vector()
+        out_file >> y
+        self.assertEqual(x.size(), y.size())
+        self.assertAlmostEqual((x - y).norm("l2"), 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()
