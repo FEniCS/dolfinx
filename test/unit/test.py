@@ -10,6 +10,7 @@ __license__  = "GNU LGPL Version 2.1"
 import sys, os, re
 import platform
 from dolfin_utils.commands import getoutput
+from dolfin import has_mpi, has_parmetis
 
 # Tests to run
 tests = ["fem", "function", "mesh", "meshconvert", "la", "io", "python-extras", "quadrature"]
@@ -23,44 +24,54 @@ only_python = ["python-extras"]
 if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
     only_python = tests
 
-# Run tests
-failed = []
-for test in tests:
-    print "Running unit tests for %s" % test
-    print "----------------------------------------------------------------------"
+# Build prefix list
+prefixes = [""]
+if has_mpi() and has_parmetis():
+    prefixes.append("mpirun -np 2 ")
+else:
+    print "DOLFIN has not been compiled with mpi and Parmetis. Unit tests will not be run in parallel."
 
-    cpptest_ext = ''
-    if platform.system() == 'Windows':
-        cpptest_ext = '.exe'
-    print "C++:   ",
-    if not test in only_python:
-        output = getoutput("cd %s%scpp && .%stest%s" % \
-                           (test, os.path.sep, os.path.sep, cpptest_ext))
+# Run in serial, then in parallel
+for prefix in prefixes:
+
+    # Run tests
+    failed = []
+    for test in tests:
+        print "Running unit tests for %s with prefix '%s'" % (test,  prefix)
+        print "----------------------------------------------------------------------"
+
+        cpptest_ext = ''
+        if platform.system() == 'Windows':
+            cpptest_ext = '.exe'
+        print "C++:   ",
+        if not test in only_python:
+            output = getoutput("cd %s%scpp && %s .%stest%s" % \
+                               (test, os.path.sep, prefix, os.path.sep, cpptest_ext))
+            if "OK" in output:
+                num_tests = int(re.search("OK \((\d+)\)", output).groups()[0])
+                print "OK (%d tests)" % num_tests
+            else:
+                print "*** Failed"
+                failed += [(test, "C++", output)]
+        else:
+            print "Skipping"
+
+        print "Python:",
+        output = getoutput("cd %s%spython && %s python .%stest.py" % \
+                           (test, os.path.sep, prefix, os.path.sep))
         if "OK" in output:
-            num_tests = int(re.search("OK \((\d+)\)", output).groups()[0])
+            num_tests = int(re.search("Ran (\d+) test", output).groups()[0])
             print "OK (%d tests)" % num_tests
         else:
             print "*** Failed"
-            failed += [(test, "C++", output)]
-    else:
-        print "Skipping"
+            failed += [(test, "Python", output)]
 
-    print "Python:",
-    output = getoutput("cd %s%spython && python .%stest.py" % \
-                       (test, os.path.sep, os.path.sep))
-    if "OK" in output:
-        num_tests = int(re.search("Ran (\d+) test", output).groups()[0])
-        print "OK (%d tests)" % num_tests
-    else:
-        print "*** Failed"
-        failed += [(test, "Python", output)]
+        print ""
 
-    print ""
-
-# Print output for failed tests
-for (test, interface, output) in failed:
-    print "One or more unit tests failed for %s (%s):" % (test, interface)
-    print output
+    # Print output for failed tests
+    for (test, interface, output) in failed:
+        print "One or more unit tests failed for %s (%s):" % (test, interface)
+        print output
 
 # Return error code if tests failed
 sys.exit(len(failed) != 0)

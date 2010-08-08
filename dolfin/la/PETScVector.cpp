@@ -498,8 +498,10 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
   if (strcmp(petsc_type, VECSEQ) != 0)
     error("PETScVector::gather can only gather into local vectors");
 
-  // Prepare data for index sets
+  // Prepare data for index sets (global indices)
   const int* global_indices = reinterpret_cast<int*>(const_cast<uint*>(indices.data().get()));
+
+  // Prepare data for index sets (local indices)
   const int n = indices.size();
   Array<int> local_indices(n);
   for (int i = 0; i < n; ++i)
