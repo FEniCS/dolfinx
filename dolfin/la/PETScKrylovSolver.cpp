@@ -17,6 +17,7 @@
 #include "GenericVector.h"
 #include "KrylovSolver.h"
 #include "PETScBaseMatrix.h"
+#include "PETScMatrix.h"
 #include "PETScPreconditioner.h"
 #include "PETScUserPreconditioner.h"
 #include "PETScVector.h"
@@ -44,6 +45,7 @@ const std::map<std::string, const KSPType> PETScKrylovSolver::methods
   = boost::assign::map_list_of("default",  "")
                               ("cg",         KSPCG)
                               ("gmres",      KSPGMRES)
+                              ("minres",     KSPMINRES)
                               ("richardson", KSPRICHARDSON)
                               ("bicgstab",   KSPBCGS);
 //-----------------------------------------------------------------------------
@@ -107,13 +109,22 @@ PETScKrylovSolver::~PETScKrylovSolver()
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operator(const GenericMatrix& A)
 {
-  set_operator(A.down_cast<PETScBaseMatrix>());
+  set_operator(A, A);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operator(const PETScBaseMatrix& A)
 {
   this->A = reference_to_no_delete_pointer(A);
   assert(this->A);
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_operator(const GenericMatrix& A,
+                                     const GenericMatrix& P)
+{
+  this->A = reference_to_no_delete_pointer(A.down_cast<PETScBaseMatrix>());
+  this->P = reference_to_no_delete_pointer(P.down_cast<PETScBaseMatrix>());
+  assert(this->A);
+  assert(this->P);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint PETScKrylovSolver::solve(GenericVector& x, const GenericVector& b)
@@ -258,11 +269,11 @@ void PETScKrylovSolver::set_petsc_operators()
 
   // Set operators with appropriate option
   if (reuse_precon)
-    KSPSetOperators(*_ksp, *A->mat(), *A->mat(), SAME_PRECONDITIONER);
+    KSPSetOperators(*_ksp, *A->mat(), *P->mat(), SAME_PRECONDITIONER);
   else if (same_pattern)
-    KSPSetOperators(*_ksp, *A->mat(), *A->mat(), SAME_NONZERO_PATTERN);
+    KSPSetOperators(*_ksp, *A->mat(), *P->mat(), SAME_NONZERO_PATTERN);
   else
-    KSPSetOperators(*_ksp, *A->mat(), *A->mat(), DIFFERENT_NONZERO_PATTERN);
+    KSPSetOperators(*_ksp, *A->mat(), *P->mat(), DIFFERENT_NONZERO_PATTERN);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_petsc_options()
