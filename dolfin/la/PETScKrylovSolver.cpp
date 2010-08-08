@@ -109,7 +109,7 @@ PETScKrylovSolver::~PETScKrylovSolver()
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operator(const GenericMatrix& A)
 {
-  set_operator(A, A);
+  set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operator(const PETScBaseMatrix& A)
@@ -118,8 +118,8 @@ void PETScKrylovSolver::set_operator(const PETScBaseMatrix& A)
   assert(this->A);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operator(const GenericMatrix& A,
-                                     const GenericMatrix& P)
+void PETScKrylovSolver::set_operators(const GenericMatrix& A,
+                                      const GenericMatrix& P)
 {
   this->A = reference_to_no_delete_pointer(A.down_cast<PETScBaseMatrix>());
   this->P = reference_to_no_delete_pointer(P.down_cast<PETScBaseMatrix>());

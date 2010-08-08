@@ -64,7 +64,7 @@ namespace dolfin
     void set_operator(const PETScBaseMatrix& A);
 
     /// Set operator (matrix) and preconditioner matrix
-    void set_operator(const GenericMatrix& A, const GenericMatrix& P);
+    void set_operators(const GenericMatrix& A, const GenericMatrix& P);
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(GenericVector& x, const GenericVector& b);

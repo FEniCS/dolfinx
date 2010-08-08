@@ -101,7 +101,7 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver)
 
     //std::cout << *ifpack_preconditioner;
   }
-  else if (type == "amg_ml")
+  else if (type == "amg_hypre")
   {
     info("Hypre AMG not available for Trilinos. Using ML instead.");
     set_ml(_solver);

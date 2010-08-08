@@ -91,6 +91,14 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   {
     #if PETSC_HAVE_HYPRE
     PCSetType(pc, PCHYPRE);
+
+    #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
+    PCFactorSetShiftType(pc, MAT_SHIFT_NONZERO);
+    PCFactorSetShiftAmount(pc, PETSC_DECIDE);
+    #else
+    PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
+    #endif
+
     if (type == "amg_hypre" || type == "hypre_amg")
       PCHYPRESetType(pc, "boomeramg");
     else if (type == "hypre_parasails")

@@ -25,7 +25,6 @@ Parameters KrylovSolver::default_parameters()
   p.add("absolute_tolerance",      1e-15);
   p.add("divergence_limit",        1e4);
   p.add("maximum_iterations",      10000);
-  p.add("shift_nonzero",           0.0);
   p.add("report",                  true); /* deprecate? */
   p.add("monitor_convergence",     false);
   p.add("error_on_nonconvergence", true);
@@ -37,9 +36,10 @@ Parameters KrylovSolver::default_parameters()
 
   // Preconditioner options
   Parameters p_pc("preconditioner");
-  p_pc.add("reuse", false);
+  p_pc.add("shift_nonzero",        0.0);
+  p_pc.add("reuse",                false);
   p_pc.add("same_nonzero_pattern", false);
-  p_pc.add("report", false);
+  p_pc.add("report",               false);
 
   // Add nested parameters
   p.add(p_gmres);
