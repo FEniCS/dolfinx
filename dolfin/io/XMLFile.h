@@ -8,13 +8,16 @@
 #define __XMLFILE_H
 
 #include <fstream>
-#include <stack>
-#include <string>
 #include <map>
+#include <string>
+#include <stack>
 #include <vector>
+
 #include <libxml/parser.h>
+
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
+#include <dolfin/main/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/LocalMeshData.h>
@@ -41,34 +44,13 @@ namespace dolfin
     /// Constructor
     XMLFile(const std::string filename, bool gzip);
 
+    /// Constructor from a stream
     XMLFile(std::ostream& s);
 
     /// Destructor
     ~XMLFile();
 
-    /// Template function for reading XML
-    template<class T> void read_xml(T& t)
-    {
-      typedef typename T::XMLHandler Handler;
-      Handler xml_handler(t, *this);
-      XMLDolfin xml_dolfin(xml_handler, *this);
-      xml_dolfin.handle();
-      parse();
-      if (!handlers.empty())
-        error("Handler stack not empty. Something is wrong!");
-    }
-
-    /// Template function for writing XML
-    template<class T> void write_xml(const T& t)
-    {
-      open_file();
-      typedef typename T::XMLHandler Handler;
-      Handler::write(t, *outstream, 1);
-      close_file();
-    }
-
-    // Input
-
+    /// Call appropriate handler for input
     void operator>> (Mesh& input)                  { read_xml(input); }
     void operator>> (LocalMeshData& input)         { read_xml(input); }
     void operator>> (GenericMatrix& input)         { read_xml(input); }
@@ -78,7 +60,6 @@ namespace dolfin
     void operator>> (MeshFunction<int>&  input)    { read_xml(input); }
     void operator>> (MeshFunction<uint>&  input)   { read_xml(input); }
     void operator>> (MeshFunction<double>&  input) { read_xml(input); }
-
     void operator>> (std::vector<int>& x)                             { read_xml_array(x); }
     void operator>> (std::vector<uint>& x)                            { read_xml_array(x); }
     void operator>> (std::vector<double>& x)                          { read_xml_array(x); }
@@ -89,8 +70,7 @@ namespace dolfin
     void operator>> (std::map<uint, std::vector<uint> >& array_map)   { read_xml_map(array_map); }
     void operator>> (std::map<uint, std::vector<double> >& array_map) { read_xml_map(array_map); }
 
-    // Output
-
+    /// Call appropriate handler for output
     void operator<< (const Mesh& output)                  { write_xml(output); }
     void operator<< (const GenericMatrix& output)         { write_xml(output); }
     void operator<< (const GenericVector& output)         { write_xml(output); }
@@ -99,7 +79,6 @@ namespace dolfin
     void operator<< (const MeshFunction<int>&  output)    { write_xml(output); }
     void operator<< (const MeshFunction<uint>&  output)   { write_xml(output); }
     void operator<< (const MeshFunction<double>&  output) { write_xml(output); }
-
     void operator<< (const std::vector<int>& x)                             { write_xml_array(x); }
     void operator<< (const std::vector<uint>& x)                            { write_xml_array(x); }
     void operator<< (const std::vector<double>& x)                          { write_xml_array(x); }
@@ -118,6 +97,7 @@ namespace dolfin
 
     void write();
 
+    /// Parse file
     void parse();
 
     void push(XMLHandler* handler);
@@ -128,6 +108,22 @@ namespace dolfin
 
   private:
 
+    /// Read XML data
+    template<class T> void read_xml(T& t)
+    {
+      typedef typename T::XMLHandler Handler;
+      Handler xml_handler(t, *this);
+      XMLDolfin xml_dolfin(xml_handler, *this);
+      xml_dolfin.handle();
+
+      parse();
+
+      if (!handlers.empty())
+        error("Handler stack not empty. Something is wrong!");
+    }
+
+    /// Read std::map from XML file (speciliased templated required
+    /// for STL objects)
     template<class T> void read_xml_map(T& map)
     {
       info(TRACE, "Reading map from file %s.", filename.c_str());
@@ -139,6 +135,8 @@ namespace dolfin
         error("Hander stack not empty. Something is wrong!");
     }
 
+    /// Read std::vector from XML file (speciliased templated required
+    /// for STL objects)
     template<class T> void read_xml_array(T& x)
     {
       info(TRACE, "Reading array from file %s.", filename.c_str());
@@ -150,8 +148,33 @@ namespace dolfin
         error("Hander stack not empty. Something is wrong!");
     }
 
+    /// Template function for writing XML
+    template<class T> void write_xml(const T& t)
+    {
+      // FIXME: Need to pass a flag to XMLFile whether or not output object is
+      //        local or distributed
+      bool distributed = true;
+
+      // Open file on process 0 for distributed objects and on all processes
+      // for local objects
+      if ( (distributed && MPI::process_number() == 0) || !distributed)
+        open_file();
+
+      // FIXME: 'write' is being called on all processes since collective MPI
+      //        calls might be used. Should use approach to gather data on process 0.
+
+      // Determine appropriate handler and write
+      typedef typename T::XMLHandler Handler;
+      Handler::write(t, *outstream, 1);
+
+      // Close file
+      if ( (distributed && MPI::process_number() == 0) || !distributed)
+        close_file();
+    }
+
     template<class T> void write_xml_map(const T& map)
     {
+      // FIXME: Should we support distributed std::map?
       open_file();
       XMLMap::write(map, *outstream, 1);
       close_file();
@@ -159,6 +182,7 @@ namespace dolfin
 
     template<class T> void write_xml_array(const T& x)
     {
+      // FIXME: Should we support distributed std::vector?
       open_file();
       XMLArray::write(x, 0, *outstream, 1);
       close_file();

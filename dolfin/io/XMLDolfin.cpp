@@ -17,7 +17,6 @@ XMLDolfin::XMLDolfin(XMLHandler& dispatch, XMLFile& parser)
 {
   // Do nothing
 }
-
 //-----------------------------------------------------------------------------
 void XMLDolfin::start_element(const xmlChar *name, const xmlChar **attrs)
 {

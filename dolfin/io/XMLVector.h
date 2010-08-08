@@ -16,23 +16,27 @@
 namespace dolfin
 {
 
+  /// Forward declarations
   class GenericVector;
-
 
   class XMLVector : public XMLHandler
   {
   public:
 
+    /// Constructor
     XMLVector(GenericVector& vector, XMLFile& parser);
+
+    /// Destructor
     ~XMLVector();
 
-    void start_element (const xmlChar *name, const xmlChar **attrs);
-    void end_element   (const xmlChar *name);
+    void start_element(const xmlChar *name, const xmlChar **attrs);
+    void end_element(const xmlChar *name);
 
+    /// Write the XML file
     static void write(const GenericVector& vector, std::ostream& outfile,
                       uint indentation_level=0);
 
-    // Read the vector begin tag
+    /// Read the vector begin tag
     void read_vector_tag(const xmlChar *name, const xmlChar **attrs);
 
   private:

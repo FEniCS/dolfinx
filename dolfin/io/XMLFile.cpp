@@ -27,7 +27,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XMLFile::XMLFile(const std::string filename, bool gzip)
-  : GenericFile(filename), sax(0), outstream(0), gzip(gzip)
+               : GenericFile(filename), sax(0), outstream(0), gzip(gzip)
 {
   // Set up the output stream (to file)
   outstream = new std::ofstream();
@@ -45,8 +45,7 @@ XMLFile::XMLFile(const std::string filename, bool gzip)
   sax->fatalError    = sax_fatal_error;
 }
 //-----------------------------------------------------------------------------
-XMLFile::XMLFile(std::ostream& s)
-  : GenericFile(""), sax(0), outstream(&s)
+XMLFile::XMLFile(std::ostream& s) : GenericFile(""), sax(0), outstream(&s)
 {
   // Set up the sax handler.
   sax = new xmlSAXHandler();
@@ -65,9 +64,9 @@ XMLFile::~XMLFile()
 {
   delete sax;
 
-  // Only delete outstream if it is a ofstream
+  // Only delete outstream if it is an 'ofstream'
   std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream);
-  if ( outfile != 0)
+  if (outfile)
   {
     outfile = 0;
     delete outstream;
@@ -143,10 +142,9 @@ void XMLFile::end_element(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void XMLFile::open_file()
 {
-
   // Convert to ofstream
   std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream);
-  if ( outfile != 0 )
+  if (outfile)
   {
     // Open file
     outfile->open(filename.c_str());
@@ -160,9 +158,10 @@ void XMLFile::open_file()
 void XMLFile::close_file()
 {
   XMLDolfin::write_end(*outstream);
+
   // Convert to ofstream
   std::ofstream* outfile = dynamic_cast<std::ofstream*>(outstream);
-  if ( outfile != 0 )
+  if (outfile)
     outfile->close();
 }
 //-----------------------------------------------------------------------------
@@ -178,9 +177,8 @@ void dolfin::sax_end_document(void *ctx)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void dolfin::sax_start_element(void *ctx,
-                                   const xmlChar *name,
-                                   const xmlChar **attrs)
+void dolfin::sax_start_element(void *ctx, const xmlChar *name,
+                               const xmlChar **attrs)
 {
   ( (XMLFile*) ctx )->start_element(name, attrs);
 }
@@ -232,8 +230,10 @@ void dolfin::rng_parser_error(void *user_data, xmlErrorPtr error)
   int length = buffer.length();
   buffer.erase(length-1);
   if (node != NULL)
+  {
     warning("%s:%d: element %s: Relax-NG parser error: %s",
             file, line, node->name, buffer.c_str());
+  }
 }
 //-----------------------------------------------------------------------------
 void dolfin::rng_valid_error(void *user_data, xmlErrorPtr error)

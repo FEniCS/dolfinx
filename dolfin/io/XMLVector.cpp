@@ -10,6 +10,7 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericVector.h>
+#include <dolfin/main/MPI.h>
 #include "XMLIndent.h"
 #include "XMLVector.h"
 
@@ -17,7 +18,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XMLVector::XMLVector(GenericVector& vector, XMLFile& parser)
-  : XMLHandler(parser), x(vector), state(OUTSIDE), values(0)
+  : XMLHandler(parser), x(vector), state(OUTSIDE)
 {
   // Do nothing
 }
@@ -64,26 +65,78 @@ void XMLVector::end_element(const xmlChar *name)
 void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
                       uint indentation_level)
 {
+  bool write_to_stream = false;
+  if (MPI::process_number() == 0)
+    write_to_stream = true;
+
   XMLIndent indent(indentation_level);
 
   // Write vector header
-  outfile << indent() << "<vector>" << std::endl;
+  if (write_to_stream)
+  {
+    outfile << indent() << "<vector>" << std::endl;
+    ++indent;
 
-  const std::pair<uint, uint> range = vector.local_range();
-  const uint n0 = range.first;
-  const uint size = range.second - range.first;
+    // Write array header
+    outfile << indent() << "<array type=\"double\" size=\"" << vector.size()
+      << "\">" << std::endl;
+    ++indent;
+  }
 
-  // Get data
-  Array<double> vector_values(size);
-  vector.get_local(vector_values);
+  // Gather entries from process i on process 0 and write to file
+  for (uint process  = 0; process < MPI::num_processes(); ++process)
+  {
+
+    // FIXME: Use more elgant approach. The gather functions are collective,
+    //        i.e. must be called on all processes even though we only want to
+    //        gather on process 0.
+    uint n0 = 0;
+    uint local_size = 0;
+    if (MPI::process_number() == 0)
+    {
+      // Get (approximate) range for portion of vector on process
+      const std::pair<uint, uint> range = MPI::local_range(process, vector.size());
+
+      // Get offset anf compute local size
+      n0 = range.first;
+      local_size = range.second - range.first;
+    }
+
+    Array<uint> indices(local_size);
+    for (uint i = 0; i < local_size; ++i)
+      indices[i] = n0 + i;
+
+    // Get data from vector
+    Array<double> vector_values(local_size);
+    vector.get(vector_values.data().get(), local_size, indices.data().get());
+
+    // Write vector entries
+    if (write_to_stream)
+    {
+      for (uint i = 0; i < local_size; ++i)
+      {
+        outfile << indent()
+          << "<element index=\"" << indices[i]
+          << "\" value=\"" << std::setprecision(16) << vector_values[i]
+          << "\"/>" << std::endl;
+      }
+    }
+  }
+  if (write_to_stream)
+  {
+    --indent;
+    outfile << indent() << "</array>" << std::endl;
+    --indent;
+  }
 
   // Write array
-  ++indent;
-  XMLArray::write(vector_values, n0, outfile, indent.level());
-  --indent;
+  //++indent;
+  //XMLArray::write(vector_values, n0, outfile, indent.level());
+  //--indent;
 
   // Write vector footer
-  outfile << indent() << "</vector>" << std::endl;
+  if (write_to_stream)
+    outfile << indent() << "</vector>" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLVector::read_vector_tag(const xmlChar *name, const xmlChar **attrs)
