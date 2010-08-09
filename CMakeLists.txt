@@ -84,15 +84,9 @@ endif(DOLFIN_ENABLE_MPI)
 #if(DOLFIN_ENABLE_CHOLMOD)
 #  include(FindCHOLMOD.dolfin)
 #endif(DOLFIN_ENABLE_CHOLMOD)
-<<<<<<< TREE
 if(MTL4_ENABLE_MTL4)
-  find_package(MTL4)
+  find_package(MTL4.dolfin)
 endif(MTL4_ENABLE_MTL4)
-=======
-#if(DOLFIN_ENABLE_MTL4)
-#  include(FindMTL4.dolfin)
-#endif(DOLFIN_ENABLE_MTL4)
->>>>>>> MERGE-SOURCE
 #if(DOLFIN_ENABLE_PARMETIS)
 #  include(FindParMETIS.dolfin)
 #endif(DOLFIN_ENABLE_PARMETIS)
