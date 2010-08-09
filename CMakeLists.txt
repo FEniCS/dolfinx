@@ -100,11 +100,13 @@ endif(DOLFIN_ENABLE_CGAL)
 #  include(FindLAPACK.dolfin)
 #endif(DOLFIN_ENABLE_LAPACK)
 
+# FIXME: More cleanups needed below this point
+
 # Find Boost
 set(DOLFIN_BOOST_COMPONENTS filesystem program_options)
 include(FindBoost.dolfin)
 
-# Append the library version information to the library target properties.
+# Append the library version information to the library target properties
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 if(DOLFIN_WITH_LIBRARY_VERSION)
   set(DOLFIN_LIBRARY_PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES}
