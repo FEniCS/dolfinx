@@ -1,21 +1,7 @@
 project(DOLFIN)
 
+# Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
-
-# --------------------------------------------------------------
-# Indicate CMake 2.7 and above that we don't want to mix relative
-#  and absolute paths in linker lib lists.
-# Run "cmake --help-policy CMP0003" for more information.
-# --------------------------------------------------------------
-if(COMMAND cmake_policy)
-  cmake_policy(SET CMP0003 NEW)
-endif()
-
-set(DOLFIN_CMAKE_DIR "${DOLFIN_SOURCE_DIR}/cmake" CACHE INTERNAL "")
-set(CMAKE_MODULE_PATH
-  "${DOLFIN_CMAKE_DIR}"
-  ${CMAKE_MODULE_PATH}
-  )
 
 # Set DOLFIN version number
 set(DOLFIN_VERSION_MAJOR "0")
@@ -24,13 +10,22 @@ set(DOLFIN_VERSION_MICRO "8")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 add_definitions(-DPACKAGE_VERSION="${DOLFIN_VERSION}")
 
+# Set special link option, see `cmake --help-policy CMP0003`
+if(COMMAND cmake_policy)
+  cmake_policy(SET CMP0003 NEW)
+endif()
+
+# FIXME: What do these lines do?
+set(DOLFIN_CMAKE_DIR "${DOLFIN_SOURCE_DIR}/cmake" CACHE INTERNAL "")
+set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
+
 # Configurable options for how we want to build
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
 option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
-option(CMAKE_USE_RELATIVE_PATHS "use relative paths in makefiles and projects." OFF)
+option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
 option(DOLFIN_ENABLE_DEBUG "Build with debug information." ON)
 option(DOLFIN_ENABLE_EXTRADEBUG "Build with extra debug information (no -O2)." OFF)
-option(DOLFIN_ENABLE_DEBUGUBLAS "Add some extra Ublas debug information." OFF)
+option(DOLFIN_ENABLE_DEBUGUBLAS "Add some extra uBLAS debug information." OFF)
 option(DOLFIN_ENABLE_OPTIMIZE "Compile with optimization." OFF)
 option(DOLFIN_ENABLE_DOCS "Build documentation." OFF)
 option(DOLFIN_ENABLE_DEMOS "Build demos." OFF)
@@ -54,15 +49,17 @@ option(DOLFIN_ENABLE_CGAL "Compile with support for CGAL" ON)
 option(DOLFIN_ENABLE_LAPACK "Compile with support for LAPACK." ON)
 option(DOLFIN_ENABLE_PYTHON "Compile the Python wrappers." ON)
 
-# Run tests to find external packages ...
+# Run tests to find required external packages
+include(FindUFC.dolfin)
+include(FindArmadillo.dolfin)
+include(FindLibXml2.dolfin)
+
+# Run tests to find optional external packages
 if(DOLFIN_ENABLE_PYTHON)
   include(FindPython.dolfin)
   find_package(SWIG REQUIRED)
   include(${SWIG_USE_FILE})
 endif(DOLFIN_ENABLE_PYTHON)
-include(FindUFC.dolfin)
-include(FindArmadillo.dolfin)
-include(FindLibXml2.dolfin)
 if(DOLFIN_ENABLE_MPI)
   find_package(MPI)
 endif(DOLFIN_ENABLE_MPI)
