@@ -42,12 +42,6 @@ Parameters PETScPreconditioner::default_parameters()
   Parameters p(KrylovSolver::default_parameters()("preconditioner"));
   p.rename("petsc_preconditioner");
 
-  p.add("schwarz_overlap", 1);
-
-  // ILU parameters
-  Parameters p_ilu("ilu");
-  p_ilu.add("fill_level", 0);
-
   // Hypre/parasails parameters
   Parameters p_parasails("parasails");
   p_parasails.add("threshold", 0.1);
@@ -57,7 +51,6 @@ Parameters PETScPreconditioner::default_parameters()
   Parameters p_hypre("hypre");
   p_hypre.add(p_parasails);
 
-  p.add(p_ilu);
   p.add(p_hypre);
 
   return p;
@@ -141,7 +134,7 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
   {
     // Select method and and overlap
     PCSetType(pc, methods.find("additive_schwarz")->second);
-    PCASMSetOverlap(pc, parameters["schwarz_overlap"]);
+    PCASMSetOverlap(pc, parameters("schwarz")["overlap"]);
 
     // Make sure the data structures have been constructed
     KSPSetUp(*solver.ksp());

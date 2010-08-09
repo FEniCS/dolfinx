@@ -29,6 +29,10 @@ namespace dolfin
     /// Solve the operator (matrix)
     virtual void set_operator(const GenericMatrix& A) = 0;
 
+    /// Solve the operator (matrix) and preconditioner matrix
+    virtual void set_operators(const GenericMatrix& A, const GenericMatrix& P)
+    { error("Linear algebra backend solver does not support 'set_operators'."); }
+
     /// Solve linear system Ax = b
     virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
     { error("solve(A, x, b) is not implemented. Consider trying solve(x, b)."); return 0; }

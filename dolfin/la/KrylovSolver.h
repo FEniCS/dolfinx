@@ -37,6 +37,9 @@ namespace dolfin
     /// Set operator (matrix)
     void set_operator(const GenericMatrix& A);
 
+    /// Set operator (matrix) and preconditioner matrix
+    void set_operators(const GenericMatrix& A, const GenericMatrix& P);
+
     /// Solve linear system Ax = b
     uint solve(GenericVector& x, const GenericVector& b);
 

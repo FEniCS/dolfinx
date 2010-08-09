@@ -16,6 +16,7 @@
 #include <dolfin/parameter/Parameters.h>
 
 // Trilinos forward declarations
+class Epetra_RowMatrix;
 class Ifpack_Preconditioner;
 namespace ML_Epetra
 {
@@ -27,6 +28,7 @@ namespace dolfin
 
   // Forward declarations
   class EpetraKrylovSolver;
+  class EpetraMatrix;
 
   /// This class is a wrapper for configuring Epetra preconditioners. It does
   /// not own a preconditioner. It can take a EpetraKrylovSolver and set the
@@ -42,8 +44,8 @@ namespace dolfin
     /// Destructor
     virtual ~TrilinosPreconditioner();
 
-    /// Set the precondtioner
-    virtual void set(EpetraKrylovSolver& solver);
+    /// Set the precondtioner and matrix used in preconditioner
+    virtual void set(EpetraKrylovSolver& solver, const EpetraMatrix& P);
 
     /// Return preconditioner name
     std::string name() const;
@@ -57,7 +59,7 @@ namespace dolfin
   private:
 
     /// Setup the ML precondtioner
-    void set_ml(AztecOO& solver);
+    void set_ml(AztecOO& solver, const Epetra_RowMatrix& P);
 
     /// Named preconditioner
     std::string type;

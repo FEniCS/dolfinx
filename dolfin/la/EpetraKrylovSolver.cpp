@@ -37,6 +37,7 @@ const std::map<std::string, int> EpetraKrylovSolver::methods
   = boost::assign::map_list_of("default",  AZ_gmres)
                               ("cg",       AZ_cg)
                               ("gmres",    AZ_gmres)
+                              ("tfqmr",    AZ_tfqmr)
                               ("bicgstab", AZ_bicgstab);
 //-----------------------------------------------------------------------------
 Parameters EpetraKrylovSolver::default_parameters()
@@ -85,21 +86,35 @@ EpetraKrylovSolver::~EpetraKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint EpetraKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
-                                       const GenericVector& b)
+void EpetraKrylovSolver::set_operator(const GenericMatrix& A)
 {
-  return solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(),
-               b.down_cast<EpetraVector>());
+  set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
-                                       const EpetraVector& b)
+void EpetraKrylovSolver::set_operators(const GenericMatrix& A,
+                                       const GenericMatrix& P)
+{
+  this->A = reference_to_no_delete_pointer(A.down_cast<EpetraMatrix>());
+  this->P = reference_to_no_delete_pointer(P.down_cast<EpetraMatrix>());
+  assert(this->A);
+  assert(this->P);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint EpetraKrylovSolver::solve(GenericVector& x,
+                                       const GenericVector& b)
+{
+  return solve(x.down_cast<EpetraVector>(), b.down_cast<EpetraVector>());
+}
+//-----------------------------------------------------------------------------
+dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 {
   assert(solver);
+  assert(A);
+  assert(P);
 
   // Check dimensions
-  const uint M = A.size(0);
-  const uint N = A.size(1);
+  const uint M = A->size(0);
+  const uint N = A->size(1);
   if (N != b.size())
     error("Non-matching dimensions for linear system.");
 
@@ -117,7 +132,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   // FIXME: permit initial guess
 
   // Create linear problem
-  Epetra_LinearProblem linear_problem(A.mat().get(), x.vec().get(),
+  Epetra_LinearProblem linear_problem(A->mat().get(), x.vec().get(),
                                       b.vec().get());
   // Set-up linear solver
   solver->SetProblem(linear_problem);
@@ -131,7 +146,7 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
   // Configure preconditioner
   if (preconditioner && !preconditioner_set)
   {
-    preconditioner->set(*this);
+    preconditioner->set(*this, *P);
     preconditioner_set = true;
   }
 
@@ -154,7 +169,20 @@ dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
           method.c_str(), preconditioner->name().c_str(), solver->NumIters());
   }
 
-  return solver->NumIters();
+  return solver->NumIters();}
+//-----------------------------------------------------------------------------
+dolfin::uint EpetraKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
+                                       const GenericVector& b)
+{
+  return solve(A.down_cast<EpetraMatrix>(), x.down_cast<EpetraVector>(),
+               b.down_cast<EpetraVector>());
+}
+//-----------------------------------------------------------------------------
+dolfin::uint EpetraKrylovSolver::solve(const EpetraMatrix& A, EpetraVector& x,
+                                       const EpetraVector& b)
+{
+  set_operator(A);
+  return solve(x, b);
 }
 //-----------------------------------------------------------------------------
 std::string EpetraKrylovSolver::str(bool verbose) const

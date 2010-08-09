@@ -46,6 +46,7 @@ const std::map<std::string, const KSPType> PETScKrylovSolver::methods
                               ("cg",         KSPCG)
                               ("gmres",      KSPGMRES)
                               ("minres",     KSPMINRES)
+                              ("tfqmr",      KSPTFQMR)
                               ("richardson", KSPRICHARDSON)
                               ("bicgstab",   KSPBCGS);
 //-----------------------------------------------------------------------------
@@ -114,15 +115,20 @@ void PETScKrylovSolver::set_operator(const GenericMatrix& A)
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operator(const PETScBaseMatrix& A)
 {
-  this->A = reference_to_no_delete_pointer(A);
-  assert(this->A);
+  set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_operators(const GenericMatrix& A,
                                       const GenericMatrix& P)
 {
-  this->A = reference_to_no_delete_pointer(A.down_cast<PETScBaseMatrix>());
-  this->P = reference_to_no_delete_pointer(P.down_cast<PETScBaseMatrix>());
+  set_operators(A.down_cast<PETScBaseMatrix>(), P.down_cast<PETScBaseMatrix>());
+}
+//-----------------------------------------------------------------------------
+void PETScKrylovSolver::set_operators(const PETScBaseMatrix& A,
+                                      const PETScBaseMatrix& P)
+{
+  this->A = reference_to_no_delete_pointer(A);
+  this->P = reference_to_no_delete_pointer(P);
   assert(this->A);
   assert(this->P);
 }
@@ -194,7 +200,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     if (error_on_nonconvergence)
       error("PETSc Krylov solver did not converge in %i iterations (PETSc reason %i, norm %e).", num_iterations, reason, rnorm);
     else
-      warning("Krylov solver did not converge  in %i iterations (PETSc reason %i, norm %e).", num_iterations, reason, rnorm);
+      warning("Krylov solver did not converge in %i iterations (PETSc reason %i, norm %e).", num_iterations, reason, rnorm);
   }
 
   // Report results
@@ -262,6 +268,7 @@ void PETScKrylovSolver::init(const std::string& method)
 void PETScKrylovSolver::set_petsc_operators()
 {
   assert(A);
+  assert(P);
 
   // Get some parameters
   const bool reuse_precon = parameters("preconditioner")["reuse"];

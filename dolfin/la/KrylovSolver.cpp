@@ -34,12 +34,22 @@ Parameters KrylovSolver::default_parameters()
   Parameters p_gmres("gmres");
   p_gmres.add("restart", 30);
 
+  // ILU preconditioner options
+  Parameters p_pc_ilu("ilu");
+  p_pc_ilu.add("fill_level", 0);
+
+  // Schwartz preconditioner options
+  Parameters p_pc_schartz("schwartz");
+  p_pc_schartz.add("overlap", 1);
+
   // Preconditioner options
   Parameters p_pc("preconditioner");
   p_pc.add("shift_nonzero",        0.0);
   p_pc.add("reuse",                false);
   p_pc.add("same_nonzero_pattern", false);
   p_pc.add("report",               false);
+  p_pc.add(p_pc_ilu);
+
 
   // Add nested parameters
   p.add(p_gmres);
@@ -67,7 +77,14 @@ void KrylovSolver::set_operator(const GenericMatrix& A)
 {
   assert(solver);
   solver->parameters.update(parameters);
-  solver->set_operator(A);
+  solver->set_operators(A, A);
+}
+//-----------------------------------------------------------------------------
+void KrylovSolver::set_operators(const GenericMatrix& A, const GenericMatrix& P)
+{
+  assert(solver);
+  solver->parameters.update(parameters);
+  solver->set_operators(A, P);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint KrylovSolver::solve(GenericVector& x, const GenericVector& b)

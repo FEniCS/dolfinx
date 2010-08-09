@@ -36,9 +36,14 @@ LinearSolver::~LinearSolver()
 //-----------------------------------------------------------------------------
 void LinearSolver::set_operator(const GenericMatrix& A)
 {
+  set_operators(A, A);
+}
+//-----------------------------------------------------------------------------
+void LinearSolver::set_operators(const GenericMatrix& A, const GenericMatrix& P)
+{
   assert(solver);
   solver->parameters.update(parameters);
-  solver->set_operator(A);
+  solver->set_operators(A, P);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint LinearSolver::solve(const GenericMatrix& A, GenericVector& x,

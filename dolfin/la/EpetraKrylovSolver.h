@@ -52,8 +52,16 @@ namespace dolfin
     ~EpetraKrylovSolver();
 
     /// Solve the operator (matrix)
-    void set_operator(const GenericMatrix& A)
-    { error("set_operator(A) is not implemented."); }
+    void set_operator(const GenericMatrix& A);
+
+    /// Solve the operator (matrix)
+    void set_operators(const GenericMatrix& A, const GenericMatrix& P);
+
+    /// Solve linear system Ax = b and return number of iterations
+    uint solve(GenericVector& x, const GenericVector& b);
+
+    /// Solve linear system Ax = b and return number of iterations
+    uint solve(EpetraVector& x, const EpetraVector& b);
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
@@ -84,6 +92,12 @@ namespace dolfin
 
     // Preconditioner
     boost::shared_ptr<TrilinosPreconditioner> preconditioner;
+
+    // Operator (the matrix)
+    boost::shared_ptr<const EpetraMatrix> A;
+
+    // Matrix used to construct the preconditoner
+    boost::shared_ptr<const EpetraMatrix> P;
 
     bool preconditioner_set;
 

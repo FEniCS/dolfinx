@@ -9,8 +9,8 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 
 # Test for PETSc and SLEPc
-if not has_la_backend("PETSc"):
-    print "DOLFIN has not been configured with PETSc. Exiting."
+if not has_la_backend("PETSc") or not has_la_backend("Epetra"):
+    print "DOLFIN has not been configured with Trilinos or PETSc. Exiting."
     exit()
 
 # Load mesh and subdomains
@@ -59,7 +59,7 @@ A, bb = assemble_system(a, L, bcs)
 P, btmp = assemble_system(b, L, bcs)
 
 # Create Krylov solver and AMG preconditioner
-solver = PETScKrylovSolver("minres", "hypre_amg")
+solver = KrylovSolver("tfqmr", "hypre_amg")
 print "This demo is unlikely to converge if PETSc is not configured with Hypre."
 
 # Associate opeartor (A) and preconditioner matrix (P)
