@@ -50,9 +50,9 @@ option(DOLFIN_ENABLE_LAPACK "Compile with support for LAPACK." ON)
 option(DOLFIN_ENABLE_PYTHON "Compile the Python wrappers." ON)
 
 # Run tests to find required external packages
-include(FindUFC.dolfin)
+find_package(UFC.dolfin)
 #include(FindArmadillo.dolfin)
-include(FindLibXml2.dolfin)
+find_package(LibXml2.dolfin)
 
 # Run tests to find optional external packages
 if(DOLFIN_ENABLE_PYTHON)
@@ -85,13 +85,13 @@ if(MTL4_ENABLE_MTL4)
   find_package(MTL4.dolfin)
 endif(MTL4_ENABLE_MTL4)
 
+#    add_definitions(-DHAS_PETSC)
+#    include_directories(${PETSC_INCLUDES})
+#    #list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${PETSC_INCLUDES})
+#    list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${PETSC_LIBRARIES})
+
 if(ENABLE_PETSC)
   find_package(PETSc.dolfin)
-  if (PETSC_FOUND)
-    add_definitions(-DHAS_PETSC)
-    include_directories(${PETSC_INCLUDES})
-    set(DOLFIN_LIBRARIES ${PETSC_LIBRARIES} ${DOLFIN_LIBRARIES})
-  endif (PETSC_FOUND)
 endif(ENABLE_PETSC)
 
 #if(DOLFIN_ENABLE_PARMETIS)
