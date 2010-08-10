@@ -15,21 +15,29 @@ if(UMFPACK_INCLUDE_DIR)
   include(CheckCXXSourceRuns)
   set(CMAKE_REQUIRED_INCLUDES ${UMFPACK_INCLUDE_DIR})
   check_cxx_source_runs("
-#include <stdio.h>
+/* Test program umfpack-ex1.c */
+
 #include <umfpack.h>
 
-int main() {
-  #ifdef UMFPACK_MAIN_VERSION
-    #ifdef UMFPACK_SUB_VERSION
-      #ifdef UMFPACK_SUBSUB_VERSION
-        printf(\"%d.%d.%d\", UMFPACK_MAIN_VERSION,UMFPACK_SUB_VERSION,UMFPACK_SUBSUB_VERSION);
-      #else
-        printf(\"%d.%d\", UMFPACK_MAIN_VERSION,UMFPACK_SUB_VERSION);
-      #endif
-    #else
-      printf(\"%d\", UMFPACK_MAIN_VERSION);
-    #endif
-  #endif
+int main()
+{
+  int n = 5;
+  double x[5];
+  void *Symbolic, *Numeric;
+  int i;
+
+  int Ap[] = { 0, 2, 5, 9, 10, 12 };
+  int Ai[] = { 0, 1, 0,  2, 4, 1,  2, 3, 4, 2, 1, 4 };
+  double Ax[] = { 2, 3, 3, -1, 4, 4, -3, 1, 2, 2, 6, 1 };
+  double b[] = { 8, 45, -3, 3, 19 };
+
+  umfpack_di_symbolic(n, n, Ap, Ai, Ax, &Symbolic, NULL, NULL);
+  umfpack_di_numeric(Ap, Ai, Ax, Symbolic, &Numeric, NULL, NULL);
+  umfpack_di_free_symbolic(&Symbolic);
+
+  umfpack_di_solve(UMFPACK_A, Ap, Ai, Ax, x, b, Numeric, NULL, NULL);
+  umfpack_di_free_numeric(&Numeric);
+
   return 0;
 }
 " UMFPACK_TEST_RUNS)
