@@ -39,7 +39,7 @@ macro (FIND_PACKAGE_MULTIPASS _name _current)
       # The name of the stored value for the given state
       set (_stored_var PACKAGE_MULTIPASS_${_NAME}_${_state})
       if (NOT "${${_stored_var}}" STREQUAL "${${_NAME}_${_state}}")
-        set (_states_current "NO")
+	set (_states_current "NO")
       endif (NOT "${${_stored_var}}" STREQUAL "${${_NAME}_${_state}}")
       set (${_stored_var} "${${_NAME}_${_state}}" CACHE INTERNAL "Stored state for ${_name}." FORCE)
       list (REMOVE_AT _args 0)
@@ -71,7 +71,7 @@ endmacro (FIND_PACKAGE_MULTIPASS)
 
 
 macro (MULTIPASS_C_SOURCE_RUNS includes libraries source runs)
-  include (CheckCSourceRuns)
+  include (CheckCXXSourceRuns)
   # This is a ridiculous hack.  CHECK_C_SOURCE_* thinks that if the
   # *name* of the return variable doesn't change, then the test does
   # not need to be re-run.  We keep an internal count which we
@@ -86,6 +86,6 @@ macro (MULTIPASS_C_SOURCE_RUNS includes libraries source runs)
   set (testname MULTIPASS_TEST_${MULTIPASS_TEST_COUNT}_${runs})
   set (CMAKE_REQUIRED_INCLUDES ${includes})
   set (CMAKE_REQUIRED_LIBRARIES ${libraries})
-  check_c_source_runs ("${source}" ${testname})
+  check_cxx_source_runs ("${source}" ${testname})
   set (${runs} "${${testname}}")
 endmacro (MULTIPASS_C_SOURCE_RUNS)
