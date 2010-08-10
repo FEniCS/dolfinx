@@ -80,7 +80,7 @@ int main()
       ARMADILLO_TEST_RUNS)
 
     if(NOT ARMADILLO_TEST_RUNS)
-      message("   Unable to compile and run Armadillo test program.")
+      message(FATAL_ERROR "Unable to compile and run Armadillo test program.")
     endif(NOT ARMADILLO_TEST_RUNS)
 
     set(ARMADILLO_FOUND 1 CACHE TYPE BOOL)
