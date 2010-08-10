@@ -77,7 +77,7 @@ void KrylovSolver::set_operator(const GenericMatrix& A)
 {
   assert(solver);
   solver->parameters.update(parameters);
-  solver->set_operators(A, A);
+  solver->set_operator(A);
 }
 //-----------------------------------------------------------------------------
 void KrylovSolver::set_operators(const GenericMatrix& A, const GenericMatrix& P)

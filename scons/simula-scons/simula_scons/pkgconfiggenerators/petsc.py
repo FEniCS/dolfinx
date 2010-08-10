@@ -14,7 +14,7 @@ def getPetscVariables(variables=('includes','libs','compiler','linker'), sconsEn
   petsc_path_variables = []
   if os.path.exists(getPetscDir(sconsEnv=sconsEnv)+"/bmake"):
       petsc_path_variables = ["bmake/common/", "bmake/", ""]
-  elif os.path.exists(getPetscDir(sconsEnv=sconsEnv)+"/conf/"): 
+  elif os.path.exists(getPetscDir(sconsEnv=sconsEnv)+"/conf/"):
       petsc_path_variables = ["conf/", "", "/include"]
   else:
       raise UnableToFindPackageException("PETSc")
@@ -29,13 +29,10 @@ include ${PETSC_DIR}/%svariables
 
 get_petsc_include:
 	-@echo -I${PETSC_DIR}/%s${PETSC_ARCH}%s -I${PETSC_DIR}/include ${MPI_INCLUDE} ${X11_INCLUDE}
-
 get_petsc_libs:
 	-@echo   ${C_SH_LIB_PATH} -L${PETSC_LIB_DIR} ${PETSC_LIB_BASIC} ${X11_LIB}
-
 get_petsc_cc:
 	-@echo ${PCC}
-
 get_petsc_ld:
 	-@echo ${PCC_LINKER}
 """ % (getPetscDir(sconsEnv=sconsEnv), getPetscArch(sconsEnv=sconsEnv), \
@@ -45,7 +42,7 @@ get_petsc_ld:
   petsc_make_file.close()
 
   petsc_includes = None
-  if 'includes' in variables: 
+  if 'includes' in variables:
     cmdstr = "make -s -f %s get_petsc_include" % filename
     runFailed, cmdoutput = getstatusoutput(cmdstr)
     if runFailed:
@@ -72,7 +69,7 @@ get_petsc_ld:
       os.unlink(filename)
       msg = "Unable to figure out correct PETSc compiler."
       raise UnableToXXXException(msg, errormsg=cmdoutput)
-    # We probably get a c-compiler from the petsc config, switch to a 
+    # We probably get a c-compiler from the petsc config, switch to a
     # compatible c++
     petsc_cc = cmdoutput
     if not is_cxx_compiler(petsc_cc):
@@ -86,7 +83,7 @@ get_petsc_ld:
       os.unlink(filename)
       msg = "Unable to figure out correct PETSc linker"
       raise UnableToXXXException(msg, errormsg=cmdoutput)
-    # We probably get a c-compiler from the petsc config, switch to a 
+    # We probably get a c-compiler from the petsc config, switch to a
     # compatible c++
     petsc_ld = cmdoutput
     if not is_cxx_compiler(petsc_ld):
@@ -198,7 +195,7 @@ def pkgLinker(sconsEnv=None):
 def pkgTests(forceCompiler=None, sconsEnv=None,
              cflags=None, libs=None, version=None, **kwargs):
   """Run the tests for this package.
-     
+
      If Ok, return various variables, if not we will end with an exception.
      forceCompiler, if set, should be a tuple containing (compiler, linker)
      or just a string, which in that case will be used as both.
@@ -239,8 +236,8 @@ Cflags: %s
   pkg_file = open(os.path.join(directory,"petsc.pc"), "w")
   pkg_file.write(pkg_file_str)
   pkg_file.close()
-  
+
   print "done\n Found PETSc and generated pkg-config file in\n '%s'" % directory
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
   generatePkgConf(directory=".")
