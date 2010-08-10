@@ -6,9 +6,10 @@ DEST    = demo
 OBJECTS = main.o
 
 all: 	$(OBJECTS)
-	$(CXX) -o $@ $(OBJECTS) $(CFLAGS) $(LIBS)
+	$(CXX) -o $(DEST) $(OBJECTS) $(CFLAGS) $(LIBS)
 
 clean:
 	-rm -f $(OBJECTS) $(DEST)
 
-.cpp.o:	$(CXX) $(CFLAGS) -c $<
+.cpp.o:
+	$(CXX) $(CFLAGS) -c $<
