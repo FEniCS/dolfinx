@@ -109,7 +109,7 @@ endif(DOLFIN_ENABLE_LAPACK)
 
 # Find Boost
 set(DOLFIN_BOOST_COMPONENTS filesystem program_options)
-include(FindBoost.dolfin)
+find_package(Boost.dolfin)
 
 # Append the library version information to the library target properties
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)

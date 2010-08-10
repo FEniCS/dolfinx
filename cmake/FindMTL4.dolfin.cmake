@@ -1,3 +1,9 @@
+# - Try to find MTL4
+# Once done this will define
+#
+#  MTL4_FOUND        - system has found MTL4
+#  MTL4_INCLUDE_DIR  - the MTL4 include directory
+
 set(MTL4_FOUND 0)
 
 message(STATUS "Checking for package 'MTL4'")
@@ -39,8 +45,9 @@ endif(MTL4_INCLUDE_DIR)
 if(MTL4_TEST_RUNS)
   message("   Found package 'MTL4'")
   set(MTL4_FOUND 1)
-  include_directories(${MTL4_INCLUDE_DIR})
-  add_definitions(-DHAS_MTL4)
+  set(MTL4_INCLUDES ${MTL4_INCLUDE_DIR})
+  #include_directories(${MTL4_INCLUDE_DIR})
+  #add_definitions(-DHAS_MTL4)
 else(MTL4_TEST_RUNS)
   message("   Unable to configure package 'MTL4'")
 endif(MTL4_TEST_RUNS)
