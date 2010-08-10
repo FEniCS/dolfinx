@@ -1,6 +1,6 @@
 set(DOLFIN_CGAL_FOUND 0)
 
-message(STATUS "checking for package 'CGAL'")
+message(STATUS "Checking for package 'CGAL'")
 
 find_path(DOLFIN_CGAL_INCLUDE_DIR CGAL
   /usr/include
@@ -19,6 +19,7 @@ find_library(DOLFIN_MPFR_LIBRARY mpfr
   )
 mark_as_advanced(DOLFIN_MPFR_LIBRARY)
 
+# FIXME: Why is GMP in this file???
 find_library(DOLFIN_GMP_LIBRARY gmp
   DOC "The GMP library"
   )
@@ -29,7 +30,7 @@ if(DOLFIN_CGAL_INCLUDE_DIR AND DOLFIN_CGAL_LIBRARY AND DOLFIN_MPFR_LIBRARY AND D
 endif(DOLFIN_CGAL_INCLUDE_DIR AND DOLFIN_CGAL_LIBRARY AND DOLFIN_MPFR_LIBRARY AND DOLFIN_GMP_LIBRARY)
 
 if(DOLFIN_CGAL_FOUND)
-  message("   found package 'CGAL', version ${CGAL_VERSION}")
+  message("   Found package 'CGAL', version ${CGAL_VERSION}")
 else(DOLFIN_CGAL_FOUND)
-  message("   unable to configure package 'CGAL'")
+  message("   Unable to configure package 'CGAL'")
 endif(DOLFIN_CGAL_FOUND)

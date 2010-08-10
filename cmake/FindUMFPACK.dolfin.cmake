@@ -1,6 +1,6 @@
 set(UMFPACK_FOUND 0)
 
-message(STATUS "checking for package 'UMFPACK'")
+message(STATUS "Checking for package 'UMFPACK'")
 
 # Check for header file
 find_path(UMFPACK_INCLUDE_DIR umfpack.h
@@ -59,17 +59,17 @@ int main()
 " UMFPACK_TEST_RUNS)
 
   if(NOT UMFPACK_TEST_RUNS)
-    message("   unable to run test program for package 'UMFPACK'")
+    message("   Unable to run test program for package 'UMFPACK'")
   endif(NOT UMFPACK_TEST_RUNS)
 
 endif(UMFPACK_INCLUDE_DIR AND UMFPACK_LIBRARY)
 
 # Report results of tests
 if(UMFPACK_TEST_RUNS)
-  message("   found package 'UMFPACK'")
+  message("   Found package 'UMFPACK'")
   set(UMFPACK_FOUND 1)
   include_directories(${UMFPACK_INCLUDE_DIR})
   add_definitions(-DHAS_UMFPACK)
 else(UMFPACK_TEST_RUNS)
-  message("   unable to configure package 'UMFPACK'")
+  message("   Unable to configure package 'UMFPACK'")
 endif(UMFPACK_TEST_RUNS)
