@@ -3,18 +3,33 @@ set(UMFPACK_FOUND 0)
 message(STATUS "checking for package 'UMFPACK'")
 
 # Check for header file
-find_path(UMFPACK_INCLUDE_DIR suitesparse/umfpack.h
+find_path(UMFPACK_INCLUDE_DIR umfpack.h
   $ENV{UMFPACK_DIR}
-  /usr/local/include
-  /usr/include
+  /usr/local/include/suitesparse
+  /usr/include/suitesparse
   DOC "Directory where the UMFPACK header is located"
   )
+mark_as_advanced(UMFPACK_INCLUDE_DIR)
+
+# Check for library
+find_library(UMFPACK_LIBRARY
+  NAMES umfpack
+  HINTS $ENV{UMFPACK_DIR}
+  PATHS /usr/local /opt/local /sw
+  PATH_SUFFIXES lib lib64
+  DOC "The UMFPACK library"
+  )
+mark_as_advanced(UMFPACK_LIBRARY)
 
 # Try compiling and running test program
-if(UMFPACK_INCLUDE_DIR)
+if(UMFPACK_INCLUDE_DIR AND UMFPACK_LIBRARY)
   message("   found package 'UMFPACK'")
   include(CheckCXXSourceRuns)
   set(CMAKE_REQUIRED_INCLUDES ${UMFPACK_INCLUDE_DIR})
+  set(CMAKE_REQUIRE_LIBRARIES ${UMFPACK_LIBRARY})
+
+  message("includes = ${CMAKE_REQUIRED_INCLUDES}")
+  message("libs     = ${CMAKE_REQUIRED_LIBRARIES}")
   check_cxx_source_runs("
 /* Test program umfpack-ex1.c */
 
@@ -47,7 +62,7 @@ int main()
     message("   unable to run test program for package 'UMFPACK'")
   endif(NOT UMFPACK_TEST_RUNS)
 
-endif(UMFPACK_INCLUDE_DIR)
+endif(UMFPACK_INCLUDE_DIR AND UMFPACK_LIBRARY)
 
 # Report results of tests
 if(UMFPACK_TEST_RUNS)
