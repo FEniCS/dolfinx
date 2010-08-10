@@ -24,12 +24,13 @@ mark_as_advanced(UMFPACK_LIBRARY)
 # Try compiling and running test program
 if(UMFPACK_INCLUDE_DIR AND UMFPACK_LIBRARY)
   message("   found package 'UMFPACK'")
-  include(CheckCXXSourceRuns)
-  set(CMAKE_REQUIRED_INCLUDES ${UMFPACK_INCLUDE_DIR})
-  set(CMAKE_REQUIRE_LIBRARIES ${UMFPACK_LIBRARY})
 
-  message("includes = ${CMAKE_REQUIRED_INCLUDES}")
-  message("libs     = ${CMAKE_REQUIRED_LIBRARIES}")
+  # Set flags for building test program
+  set(CMAKE_REQUIRED_INCLUDES ${UMFPACK_INCLUDE_DIR})
+  set(CMAKE_REQUIRED_LIBRARIES ${UMFPACK_LIBRARY})
+
+  # Build and run test program
+  include(CheckCXXSourceRuns)
   check_cxx_source_runs("
 /* Test program umfpack-ex1.c */
 
