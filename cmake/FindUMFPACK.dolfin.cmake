@@ -23,7 +23,6 @@ mark_as_advanced(UMFPACK_LIBRARY)
 
 # Try compiling and running test program
 if(UMFPACK_INCLUDE_DIR AND UMFPACK_LIBRARY)
-  message("   found package 'UMFPACK'")
 
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${UMFPACK_INCLUDE_DIR})
