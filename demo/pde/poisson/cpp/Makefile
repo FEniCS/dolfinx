@@ -8,6 +8,7 @@ OBJECTS = main.o
 all: 	$(OBJECTS)
 	$(CXX) -o $@ $(OBJECTS) $(CFLAGS) $(LIBS)
 
-clean:	-rm -f $(OBJECTS) $(DEST)
+clean:
+	-rm -f $(OBJECTS) $(DEST)
 
 .cpp.o:	$(CXX) $(CFLAGS) -c $<
