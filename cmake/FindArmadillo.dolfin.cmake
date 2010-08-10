@@ -1,29 +1,63 @@
-if(NOT DOLFIN_ARMADILLO_FOUND)
+# Try to find Armadillo - the streamlined C++ linear algebra library
+#
+# This module defines
+# ARMADILLO_FOUND - system has Armadillo
+# ARMADILLO_INCLUDE_DIR - the Armadillo include directory
+# ARMADILLO_LIBRARY - the library needed to use Armadillo
+# ARMADILLO_VERSION - the Armadillo version string (MAJOR.MINOR.PATCH)
+#
+# Setting these changes the behavior of the search
+# ARMADILLO_DIR - directory in which Armadillo resides
+
+if(NOT ARMADILLO_FOUND)
   message(STATUS "checking for package 'Armadillo'")
 
-  find_path(DOLFIN_ARMADILLO_INCLUDE_DIR armadillo
-    /usr/include
-    /usr/local/include
+  find_path(ARMADILLO_INCLUDE_DIR
+    NAMES armadillo
+    HINTS $ENV{ARMADILLO_DIR}
+    PATHS /usr/local /opt/local /sw
+    PATH_SUFFIXES include
     DOC "Directory where the Armadillo header file is located"
     )
-  mark_as_advanced(DOLFIN_ARMADILLO_INCLUDE_DIR)
+  mark_as_advanced(ARMADILLO_INCLUDE_DIR)
   
-  find_library(DOLFIN_ARMADILLO_LIBRARY armadillo
+  find_library(ARMADILLO_LIBRARY
+    NAMES armadillo
+    HINTS $ENV{ARMADILLO_DIR}
+    PATHS /usr/local /opt/local /sw
+    PATH_SUFFIXES lib lib64
     DOC "The Armadillo library"
     )
-  mark_as_advanced(DOLFIN_ARMADILLO_LIBRARY)
+  mark_as_advanced(ARMADILLO_LIBRARY)
 
-  if(DOLFIN_ARMADILLO_INCLUDE_DIR AND DOLFIN_ARMADILLO_LIBRARY)
+  if(ARMADILLO_INCLUDE_DIR AND ARMADILLO_LIBRARY)
     include(CheckCXXSourceRuns)
   
-    set(CMAKE_REQUIRED_INCLUDES ${DOLFIN_ARMADILLO_INCLUDE_DIR})
-    set(CMAKE_REQUIRED_LIBRARIES ${DOLFIN_ARMADILLO_LIBRARY})
+    # These are needed for the try_run and check_cxx_source_runs commands below
+    set(CMAKE_REQUIRED_INCLUDES ${ARMADILLO_INCLUDE_DIR})
+    set(CMAKE_REQUIRED_LIBRARIES ${ARMADILLO_LIBRARY})
+
+    set(ARMADILLO_CONFIG_TEST_VERSION_CPP ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/check_armadillo/armadillo_config_test_version.cpp)
+    file(WRITE ${ARMADILLO_CONFIG_TEST_VERSION_CPP} "
+#include <armadillo>
+#include <iostream>
+
+using namespace arma;
+
+int main() {
+  std::cout << arma_version::major << \".\"
+	    << arma_version::minor << \".\"
+	    << arma_version::patch;
+  return 0;
+}
+"
+      )
   
     try_run(
       ARMADILLO_CONFIG_TEST_VERSION_EXITCODE
       ARMADILLO_CONFIG_TEST_VERSION_COMPILED
       ${CMAKE_CURRENT_BINARY_DIR}
-      ${DOLFIN_CMAKE_DIR}/config_tests/armadillo_config_test_version.cpp
+      ${ARMADILLO_CONFIG_TEST_VERSION_CPP}
       RUN_OUTPUT_VARIABLE OUTPUT
       )
     
@@ -49,12 +83,12 @@ int main()
       message(FATAL_ERROR "Unable to compile and run Armadillo test program.")
     endif(NOT ARMADILLO_TEST_RUNS)
   
-    set(DOLFIN_ARMADILLO_FOUND 1 CACHE TYPE BOOL)
-  endif(DOLFIN_ARMADILLO_INCLUDE_DIR AND DOLFIN_ARMADILLO_LIBRARY)
+    set(ARMADILLO_FOUND 1 CACHE TYPE BOOL)
+  endif(ARMADILLO_INCLUDE_DIR AND ARMADILLO_LIBRARY)
   
-  if(DOLFIN_ARMADILLO_FOUND)
+  if(ARMADILLO_FOUND)
     message(STATUS "  found Armadillo, version ${ARMADILLO_VERSION}")
-  else(DOLFIN_ARMADILLO_FOUND)
+  else(ARMADILLO_FOUND)
     message(STATUS "  package 'Armadillo' not found")
-  endif(DOLFIN_ARMADILLO_FOUND)
-endif(NOT DOLFIN_ARMADILLO_FOUND)
+  endif(ARMADILLO_FOUND)
+endif(NOT ARMADILLO_FOUND)
