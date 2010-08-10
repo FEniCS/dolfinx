@@ -37,8 +37,6 @@ ELSE()
   set( DEBIAN_FLAVORS "linux-gnu-c-opt linux-gnu-c-debug")
 ENDIF()
 
-message (STATUS "Get PETSc arch")
-
 if (PETSC_DIR AND NOT PETSC_ARCH)
   set (_petsc_arches
     $ENV{PETSC_ARCH}                   # If set, use environment variable first
@@ -48,9 +46,9 @@ if (PETSC_DIR AND NOT PETSC_ARCH)
   foreach (arch ${_petsc_arches})
     if (NOT PETSC_ARCH)
       find_path (petscconf petscconf.h
-	HINTS ${PETSC_DIR}
-	PATH_SUFFIXES ${arch}/include bmake/${arch}
-	NO_DEFAULT_PATH)
+      HINTS ${PETSC_DIR}
+      PATH_SUFFIXES ${arch}/include bmake/${arch}
+      NO_DEFAULT_PATH)
       if (petscconf)
         set (PETSC_ARCH "${arch}" CACHE STRING "PETSc build architecture")
       endif (petscconf)
@@ -59,14 +57,12 @@ if (PETSC_DIR AND NOT PETSC_ARCH)
   set (petscconf "NOTFOUND" CACHE INTERNAL "Scratch variable" FORCE)
 endif (PETSC_DIR AND NOT PETSC_ARCH)
 
-message (STATUS "petsc_arch ${PETSC_ARCH}")
-
-set (petsc_slaves LIBRARIES_SYS LIBRARIES_VEC LIBRARIES_MAT LIBRARIES_DM LIBRARIES_KSP LIBRARIES_SNES LIBRARIES_TS
-  INCLUDE_DIR INCLUDE_CONF)
-include (FindPackageMultipass)
-find_package_multipass (PETSc petsc_config_current
-  STATES DIR ARCH
-  DEPENDENTS INCLUDES LIBRARIES COMPILER MPIEXEC ${petsc_slaves})
+#set (petsc_slaves LIBRARIES_SYS LIBRARIES_VEC LIBRARIES_MAT LIBRARIES_DM LIBRARIES_KSP LIBRARIES_SNES LIBRARIES_TS
+#  INCLUDE_DIR INCLUDE_CONF)
+#include (FindPackageMultipass)
+#find_package_multipass (PETSc petsc_config_current
+#  STATES DIR ARCH
+#  DEPENDENTS INCLUDES LIBRARIES COMPILER MPIEXEC ${petsc_slaves})
 
 # Determine whether the PETSc layout is old-style (through 2.3.3) or
 # new-style (3.0.0)
@@ -80,8 +76,6 @@ elseif (EXISTS ${PETSC_DIR}/bmake/${PETSC_ARCH}/petscconf.h) # <= 2.3.3
 else (EXISTS ${PETSC_DIR}/bmake/${PETSC_ARCH}/petscconf.h)
   set (petsc_conf_base "NOTFOUND")
 endif (EXISTS ${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h)
-
-message (STATUS "petsc version ${PETSC_VERSION}")
 
 if (petsc_conf_base AND NOT petsc_config_current)
   # Put variables into environment since they are needed to get
@@ -115,11 +109,8 @@ get_petsc_cpp_flags:
 
   macro (PETSC_GET_VARIABLE name var)
     set (${var} "NOTFOUND" CACHE INTERNAL "Cleared" FORCE)
-    message (STATUS "Inputs: ${petsc_config_makefile}, ${name}")
     execute_process (COMMAND ${CMAKE_BUILD_TOOL} -f ${petsc_config_makefile} ${name}
       OUTPUT_VARIABLE ${var} RESULT_VARIABLE petsc_return OUTPUT_STRIP_TRAILING_WHITESPACE)
-    message (STATUS "Test 0: ${OUTPUT_VARIABLE}")
-    message (STATUS "Test 1: ${RESULT_VARIABLE}")
   endmacro (PETSC_GET_VARIABLE)
   petsc_get_variable (get_petsc_lib_dir         petsc_lib_dir)
   petsc_get_variable (get_petsc_libs            petsc_libs)
@@ -129,8 +120,6 @@ get_petsc_cpp_flags:
 
   # We are done with the temporary Makefile, calling PETSC_GET_VARIABLE after this point is invalid
   file (REMOVE ${petsc_config_makefile})
-
-  message (STATUS "petsc_inc (A) ${petsc_cpp_flags}")
 
   # Extract include paths and libraries from compile command line
   include (ResolveCompilerPaths)
@@ -154,8 +143,6 @@ get_petsc_cpp_flags:
   include(CheckCXXSourceRuns)
   set(CMAKE_REQUIRED_INCLUDES  ${petsc_includes_all})
   set(CMAKE_REQUIRED_LIBRARIES ${petsc_libs})
-  message (STATUS "Testing libs:${petsc_libs}")
-  message (STATUS "Testing includes:${petsc_include_dir}")
   check_cxx_source_runs("
 #include \"petscts.h\"
 int main(int argc,char *argv[])
@@ -180,7 +167,6 @@ else(NOT PETSC_TEST_RUNS)
   message("PETSc was found and test program succeeded.")
   set(PETSC_FOUND 1)
   include_directories(${petsc_includes_all})
-  include_directories(${petsc_includes_all})
   add_definitions(-DHAS_PETSC)
 endif(NOT PETSC_TEST_RUNS)
 
@@ -195,12 +181,6 @@ endif(NOT PETSC_TEST_RUNS)
   petsc_join (TS   SNES)
   petsc_join (ALL  TS)
 
-  find_path (PETSC_INCLUDE_DIR petscts.h HINTS "${PETSC_DIR}" PATH_SUFFIXES include NO_DEFAULT_PATH)
-  find_path (PETSC_INCLUDE_CONF petscconf.h HINTS "${PETSC_DIR}" PATH_SUFFIXES "${PETSC_ARCH}/include" "bmake/${PETSC_ARCH}" NO_DEFAULT_PATH)
-  mark_as_advanced (PETSC_INCLUDE_DIR PETSC_INCLUDE_CONF)
-  set (petsc_includes_minimal ${PETSC_INCLUDE_CONF} ${PETSC_INCLUDE_DIR})
-
-
   set (PETSC_DEFINITIONS "-D__SDIR__=\"\"" CACHE STRING "PETSc definitions" FORCE)
   set (PETSC_MPIEXEC ${petsc_mpiexec} CACHE FILEPATH "Executable for running PETSc MPI programs" FORCE)
   set (PETSC_INCLUDES ${petsc_includes_all} CACHE STRING "PETSc include path" FORCE)
@@ -212,7 +192,3 @@ endif(NOT PETSC_TEST_RUNS)
   mark_as_advanced (PETSC_INCLUDES PETSC_LIBRARIES PETSC_COMPILER PETSC_DEFINITIONS PETSC_MPIEXEC PETSC_EXECUTABLE_RUNS)
 endif (petsc_conf_base AND NOT petsc_config_current)
 
-#include (FindPackageHandleStandardArgs)
-#find_package_handle_standard_args (PETSc
-#  "PETSc could not be found.  Be sure to set PETSC_DIR and PETSC_ARCH."
-#  PETSC_INCLUDES PETSC_LIBRARIES PETSC_EXECUTABLE_RUNS)
