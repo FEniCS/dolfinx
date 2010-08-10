@@ -12,6 +12,7 @@ find_path(UMFPACK_INCLUDE_DIR suitesparse/umfpack.h
 
 # Try compiling and running test program
 if(UMFPACK_INCLUDE_DIR)
+  message("   found package 'UMFPACK'")
   include(CheckCXXSourceRuns)
   set(CMAKE_REQUIRED_INCLUDES ${UMFPACK_INCLUDE_DIR})
   check_cxx_source_runs("
@@ -43,17 +44,17 @@ int main()
 " UMFPACK_TEST_RUNS)
 
   if(NOT UMFPACK_TEST_RUNS)
-    message("UMFPACK was found but a test program could not be run.")
+    message("   unable to run test program for package 'UMFPACK'")
   endif(NOT UMFPACK_TEST_RUNS)
 
 endif(UMFPACK_INCLUDE_DIR)
 
 # Report results of tests
 if(UMFPACK_TEST_RUNS)
-  message(STATUS "  found package 'UMFPACK'")
+  message("   found package 'UMFPACK'")
   set(UMFPACK_FOUND 1)
   include_directories(${UMFPACK_INCLUDE_DIR})
   add_definitions(-DHAS_UMFPACK)
 else(UMFPACK_TEST_RUNS)
-  message(STATUS "  package 'UMFPACK' could not be configured.")
+  message("   unable to configure package 'UMFPACK'")
 endif(UMFPACK_TEST_RUNS)
