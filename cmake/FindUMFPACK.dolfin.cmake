@@ -3,7 +3,7 @@ set(UMFPACK_FOUND 0)
 message(STATUS "checking for package 'UMFPACK'")
 
 # Check for header file
-find_path(UMFPACK_INCLUDE_DIR umfpack.h
+find_path(UMFPACK_INCLUDE_DIR suitesparse/umfpack.h
   $ENV{UMFPACK_DIR}
   /usr/local/include
   /usr/include
@@ -22,12 +22,12 @@ int main() {
   #ifdef UMFPACK_MAIN_VERSION
     #ifdef UMFPACK_SUB_VERSION
       #ifdef UMFPACK_SUBSUB_VERSION
-        printf("%d.%d.%d", UMFPACK_MAIN_VERSION,UMFPACK_SUB_VERSION,UMFPACK_SUBSUB_VERSION);
+        printf(\"%d.%d.%d\", UMFPACK_MAIN_VERSION,UMFPACK_SUB_VERSION,UMFPACK_SUBSUB_VERSION);
       #else
-        printf("%d.%d", UMFPACK_MAIN_VERSION,UMFPACK_SUB_VERSION);
+        printf(\"%d.%d\", UMFPACK_MAIN_VERSION,UMFPACK_SUB_VERSION);
       #endif
     #else
-      printf("%d", UMFPACK_MAIN_VERSION);
+      printf(\"%d\", UMFPACK_MAIN_VERSION);
     #endif
   #endif
   return 0;
