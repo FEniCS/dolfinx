@@ -9,8 +9,9 @@
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
 
-#include <string>
 #include <set>
+#include <string>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "ublas.h"
 #include "GenericLinearSolver.h"
@@ -98,13 +99,10 @@ namespace dolfin
     std::string solver_type;
 
     /// Preconditioner
-    uBLASPreconditioner* pc;
+    boost::shared_ptr<uBLASPreconditioner> pc;
 
     // Available solver types
     static const std::set<std::string> solver_types;
-
-    /// True if a user has provided a preconditioner
-    bool pc_user;
 
     /// Solver parameters
     double rtol, atol, div_tol;

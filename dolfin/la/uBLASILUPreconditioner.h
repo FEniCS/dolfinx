@@ -33,14 +33,14 @@ namespace dolfin
     ~uBLASILUPreconditioner();
 
     // Initialize preconditioner
-    void init(const uBLASMatrix<ublas_sparse_matrix>& A);
+    void init(const uBLASMatrix<ublas_sparse_matrix>& P);
 
     /// Solve linear system Ax = b approximately
     void solve(uBLASVector& x, const uBLASVector& b) const;
 
   private:
 
-    // Preconditioner matrix
+    // Preconditioner matrix (factorised)
     uBLASMatrix<ublas_sparse_matrix> M;
 
     // Diagonal
