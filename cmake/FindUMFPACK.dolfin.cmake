@@ -3,12 +3,13 @@ set(UMFPACK_FOUND 0)
 message(STATUS "Checking for package 'UMFPACK'")
 
 # Check for header file
-find_path(UMFPACK_INCLUDE_DIR umfpack.h
-  $ENV{UMFPACK_DIR}
-  /usr/local/include/suitesparse
-  /usr/include/suitesparse
-  DOC "Directory where the UMFPACK header is located"
-  )
+find_path(UMFPACK_INCLUDE_DIR
+ NAMES umfpack.h
+ HINTS $ENV{UMFPACK_DIR}
+ PATHS /usr/local /usr /opt/local /sw
+ PATH_SUFFIXES include/suitesparse include
+ DOC "Directory where the UMFPACK header is located"
+ )
 mark_as_advanced(UMFPACK_INCLUDE_DIR)
 
 # Check for library
@@ -68,9 +69,6 @@ endif(UMFPACK_INCLUDE_DIR AND UMFPACK_LIBRARY)
 if(UMFPACK_TEST_RUNS)
   message("   Found package 'UMFPACK'")
   set(UMFPACK_FOUND 1)
-  include_directories(${UMFPACK_INCLUDE_DIR})
-  link_directories(${UMFPACK_LIBRARY})
-  add_definitions(-DHAS_UMFPACK)
 else(UMFPACK_TEST_RUNS)
   message("   Unable to configure package 'UMFPACK'")
 endif(UMFPACK_TEST_RUNS)
