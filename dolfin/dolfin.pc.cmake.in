@@ -4,7 +4,7 @@ exec_prefix=@CMAKE_INSTALL_PREFIX@
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
 compiler=@CMAKE_CXX_COMPILER@
-definitions=@DOLFIN_DEFINITIONS@
+definitions=@PKG_DEFINITIONS@
 swigcflags=@PYTHON_CPPFLAGS@ 
 extlibs=@DOLFIN_EXT_LIBS@ 
 
