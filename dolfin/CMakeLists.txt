@@ -36,7 +36,8 @@ foreach(DIR ${DOLFIN_DIRS})
   list(APPEND SOURCES ${_SOURCES})
 endforeach()
 
-set(DOLFIN_INCLUDE_DIRECTORIES
+# Add include directories of required packages
+include_directories(
   ${UFC_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${ARMADILLO_INCLUDE_DIR}
@@ -52,7 +53,7 @@ set(DOLFIN_TARGET_LINK_LIBRARIES
 
 if(DOLFIN_ENABLE_MPI AND MPI_FOUND)
   add_definitions(-DHAS_MPI)
-  list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${MPI_INCLUDE_PATH})
+  include_directories(${MPI_INCLUDE_PATH})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${MPI_LIBRARIES})
   # FIXME: Need to consider these MPI variables as well:
   # MPI_COMPILE_FLAGS          Compilation flags for MPI programs
@@ -66,7 +67,7 @@ if(DOLFIN_ENABLE_CGAL AND DOLFIN_CGAL_FOUND)
   # This shouldn't be here. Need to figure out how to set COMPILE_OPTIONS
   # (and test for GCC)
   list(APPEND CMAKE_CXX_FLAGS "-frounding-math")
-  list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${DOLFIN_CGAL_INCLUDE_DIR})
+  include_directories(${DOLFIN_CGAL_INCLUDE_DIR})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES
     ${DOLFIN_CGAL_LIBRARY}
     ${DOLFIN_MPFR_LIBRARY}
@@ -76,29 +77,32 @@ endif(DOLFIN_ENABLE_CGAL AND DOLFIN_CGAL_FOUND)
 
 if(DOLFIN_ENABLE_ZLIB AND DOLFIN_ZLIB_FOUND)
   add_definitions(-DHAS_ZLIB)
-  list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${DOLFIN_ZLIB_INCLUDE_DIRS})
+  include_directories(${DOLFIN_ZLIB_INCLUDE_DIRS})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${DOLFIN_ZLIB_LIBS})
 endif(DOLFIN_ENABLE_ZLIB AND DOLFIN_ZLIB_FOUND)
 
 if(MTL4_ENABLE_MTL4 AND MTL4_FOUND)
   add_definitions(-DHAS_MTL4)
-  list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${MTL4_INCLUDE_DIR})
+  include_directories(${MTL4_INCLUDE_DIR})
 endif(MTL4_ENABLE_MTL4 AND MTL4_FOUND)
 
 if(ENABLE_PETSC AND PETSC_FOUND)
   add_definitions(-DHAS_PETSC)
-  list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${PETSC_INCLUDES})
+  include_directories(${PETSC_INCLUDES})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${PETSC_LIBRARIES})
 endif(ENABLE_PETSC AND PETSC_FOUND)
 
 if(DOLFIN_ENABLE_UMFPACK AND UMFPACK_FOUND)
   add_definitions(-DHAS_UMFPACK)
-  list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${UMFPACK_INCLUDE_DIR})
+  include_directories(${UMFPACK_INCLUDE_DIR})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${UMFPACK_LIBRARY})
 endif(DOLFIN_ENABLE_UMFPACK AND UMFPACK_FOUND)
 
 # Add compiler include directories
-include_directories(${DOLFIN_SOURCE_DIR} ${DOLFIN_INCLUDE_DIRECTORIES})
+include_directories(${DOLFIN_SOURCE_DIR})
+
+get_directory_property(cmake_inc INCLUDE_DIRECTORIES)
+message(STATUS "Print inc dirs: ${cmake_inc}")
 
 add_library(dolfin SHARED ${DOLFIN_H} ${HEADERS} ${SOURCES})
 set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
@@ -119,12 +123,19 @@ add_subdirectory(swig)
 # Define packages that should be required by pkg-config file
 set(PKG_REQUIRES "ufc-1 libxml-2.0")
 
-# Convert include dirs to -I<incdir> form for use in pkg-config file
-foreach(_inc_dir ${DOLFIN_INCLUDE_DIRECTORIES})
+get_directory_property(cmake_inc INCLUDE_DIRECTORIES)
+message(STATUS "Print inc dirs: ${cmake_inc}")
+foreach(_inc_dir ${cmake_inc})
   set(PKG_CXXFLAGS "-I${_inc_dir} ${PKG_CXXFLAGS}")
 endforeach()
+string(REGEX REPLACE ";" " " PKG_DEFINITIONS "${PKG_CXXFLAGS}")
+message(STATUS "New inc dirs: ${PKG_CXXFLAGS}")
 
-message(STATUS "Testing flahgs ${CMAKE_CXX_FLAGS}")
+
+# Convert include dirs to -I<incdir> form for use in pkg-config file
+#foreach(_inc_dir ${DOLFIN_INCLUDE_DIRECTORIES})
+#  set(PKG_CXXFLAGS "-I${_inc_dir} ${PKG_CXXFLAGS}")
+#endforeach()
 
 # Add CXX flags
 set(PKG_CXXFLAGS "${CMAKE_CXX_FLAGS} ${PKG_CXXFLAGS}")
