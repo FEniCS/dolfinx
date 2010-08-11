@@ -25,13 +25,13 @@ uBLASILUPreconditioner::~uBLASILUPreconditioner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& A)
+void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& P)
 {
-  ublas_sparse_matrix & _M = M.mat();
+  ublas_sparse_matrix& _M = M.mat();
 
-  const uint size = A.size(0);
+  const uint size = P.size(0);
   _M.resize(size, size, false);
-  _M.assign(A.mat());
+  _M.assign(P.mat());
 
   // Add term to diagonal to avoid negative pivots
   const double zero_shift = krylov_parameters["shift_nonzero"];

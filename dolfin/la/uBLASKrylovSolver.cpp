@@ -7,6 +7,7 @@
 // Last changed: 2010-04-15
 
 #include <boost/assign/list_of.hpp>
+#include <dolfin/common/NoDeleter.h>
 #include "uBLASILUPreconditioner.h"
 #include "uBLASDummyPreconditioner.h"
 #include "uBLASKrylovSolver.h"
@@ -15,10 +16,10 @@
 using namespace dolfin;
 
 const std::set<std::string> uBLASKrylovSolver::solver_types
-= boost::assign::list_of("default")
-  ("cg")
-  ("gmres")
-  ("bicgstab");
+  = boost::assign::list_of("default")
+                          ("cg")
+                          ("gmres")
+                          ("bicgstab");
 
 //-----------------------------------------------------------------------------
 Parameters uBLASKrylovSolver::default_parameters()
@@ -28,9 +29,9 @@ Parameters uBLASKrylovSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type, std::string pc_type)
-  : solver_type(solver_type), pc_user(false), report(false),
-    parameters_read(false)
+uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type,
+                                     std::string pc_type)
+  : solver_type(solver_type), report(false), parameters_read(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -40,16 +41,17 @@ uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type, std::string pc_typ
 }
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::uBLASKrylovSolver(uBLASPreconditioner& pc)
-  : solver_type("default"), pc(&pc), pc_user(true), report(false),
-    parameters_read(false)
+  : solver_type("default"), pc(reference_to_no_delete_pointer(pc)),
+    report(false), parameters_read(false)
 {
   // Set parameter values
   parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
-uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type, uBLASPreconditioner& pc)
-  : solver_type(solver_type), pc(&pc), pc_user(true), report(false),
-    parameters_read(false)
+uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type,
+                                     uBLASPreconditioner& pc)
+  : solver_type(solver_type), pc(reference_to_no_delete_pointer(pc)),
+    report(false), parameters_read(false)
 {
   // Set parameter values
   parameters = default_parameters();
@@ -57,9 +59,7 @@ uBLASKrylovSolver::uBLASKrylovSolver(std::string solver_type, uBLASPreconditione
 //-----------------------------------------------------------------------------
 uBLASKrylovSolver::~uBLASKrylovSolver()
 {
-  // Delete preconditioner if it was not created by user
-  if (!pc_user)
-    delete pc;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBLASKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
@@ -90,15 +90,15 @@ dolfin::uint uBLASKrylovSolver::solve(const uBLASKrylovMatrix& A, uBLASVector& x
 void uBLASKrylovSolver::select_preconditioner(std::string pc_type)
 {
   if(pc_type == "none")
-    pc = new uBLASDummyPreconditioner();
+    pc.reset(new uBLASDummyPreconditioner());
   else if (pc_type == "ilu")
-    pc = new uBLASILUPreconditioner(parameters);
+    pc.reset(new uBLASILUPreconditioner(parameters));
   else if (pc_type == "default")
-    pc = new uBLASILUPreconditioner(parameters);
+    pc.reset(new uBLASILUPreconditioner(parameters));
   else
   {
     warning("Requested preconditioner is not available for uBLAS Krylov solver. Using ILU.");
-    pc = new uBLASILUPreconditioner(parameters);
+    pc.reset(new uBLASILUPreconditioner(parameters));
   }
 }
 //-----------------------------------------------------------------------------

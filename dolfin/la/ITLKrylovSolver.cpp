@@ -9,6 +9,7 @@
 #ifdef HAS_MTL4
 
 // Order of header files is important
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
 #include "ITLKrylovSolver.h"
 #include "MTL4Matrix.h"
@@ -17,8 +18,6 @@
 #include "KrylovSolver.h"
 
 using namespace dolfin;
-using namespace itl;
-using namespace mtl;
 
 //-----------------------------------------------------------------------------
 Parameters ITLKrylovSolver::default_parameters()
@@ -40,16 +39,30 @@ ITLKrylovSolver::~ITLKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint ITLKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
-                                    const GenericVector& b)
+void ITLKrylovSolver::set_operator(const GenericMatrix& A)
 {
-  return solve(A.down_cast<MTL4Matrix>(), x.down_cast<MTL4Vector>(),
-               b.down_cast<MTL4Vector>());
+  set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
-                                    const MTL4Vector& b)
+void ITLKrylovSolver::set_operators(const GenericMatrix& A,
+                                    const GenericMatrix& P)
 {
+  this->A = reference_to_no_delete_pointer(A.down_cast<MTL4Matrix>());
+  this->P = reference_to_no_delete_pointer(P.down_cast<MTL4Matrix>());
+  assert(this->A);
+  assert(this->P);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint ITLKrylovSolver::solve(GenericVector& x, const GenericVector& b)
+{
+  return solve(x.down_cast<MTL4Vector>(), b.down_cast<MTL4Vector>());
+}
+//-----------------------------------------------------------------------------
+dolfin::uint ITLKrylovSolver::solve(MTL4Vector& x, const MTL4Vector& b)
+{
+  assert(A);
+  assert(P);
+
   // Fall back in default method if unknown
   if(method != "cg" && method != "bicgstab" && method != "default")
   {
@@ -82,27 +95,27 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
   // solvers at runtime. All solvers and preconditioners are instantiated.
   if(pc_type == "ilu" || pc_type == "default")
   {
-    itl::pc::ilu_0<mtl4_sparse_matrix> P(A.mat());
+    itl::pc::ilu_0<mtl4_sparse_matrix> pc(P->mat());
     if(method == "cg")
-      errno_ = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
+      errno_ = itl::cg(A->mat(), x.vec(), b.vec(), pc, iter);
     else if(method == "bicgstab" || method == "default")
-      errno_ = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
+      errno_ = itl::bicgstab(A->mat(), x.vec(), b.vec(), pc, iter);
   }
   else if(pc_type == "icc")
   {
-    itl::pc::ic_0<mtl4_sparse_matrix> P(A.mat());
+    itl::pc::ic_0<mtl4_sparse_matrix> pc(P->mat());
     if(method == "cg")
-      errno_ = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
+      errno_ = itl::cg(A->mat(), x.vec(), b.vec(), pc, iter);
     else if(method == "bicgstab" || method == "default")
-      errno_ = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
+      errno_ = itl::bicgstab(A->mat(), x.vec(), b.vec(), pc, iter);
   }
   else if(pc_type == "none")
   {
-    itl::pc::identity<mtl4_sparse_matrix> P(A.mat());
+    itl::pc::identity<mtl4_sparse_matrix> pc(P->mat());
     if(method == "cg")
-      errno_ = itl::cg(A.mat(), x.vec(), b.vec(), P, iter);
+      errno_ = itl::cg(A->mat(), x.vec(), b.vec(), pc, iter);
     else if(method == "bicgstab" || method == "default")
-      errno_ = itl::bicgstab(A.mat(), x.vec(), b.vec(), P, iter);
+      errno_ = itl::bicgstab(A->mat(), x.vec(), b.vec(), pc, iter);
   }
 
   // Check exit condition
@@ -127,13 +140,17 @@ dolfin::uint ITLKrylovSolver::solve(const MTL4Matrix& A, MTL4Vector& x,
   return iter.iterations();
 }
 //-----------------------------------------------------------------------------
+dolfin::uint ITLKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
+                                const GenericVector& b)
+{
+  set_operator(A);
+  return solve(x.down_cast<MTL4Vector>(), b.down_cast<MTL4Vector>());
+}
+//-----------------------------------------------------------------------------
 std::string ITLKrylovSolver::str(bool verbose) const
 {
   dolfin_not_implemented();
   return std::string();
 }
 //-----------------------------------------------------------------------------
-
 #endif
-
-

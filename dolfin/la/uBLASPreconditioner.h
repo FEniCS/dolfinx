@@ -32,15 +32,15 @@ namespace dolfin
     virtual ~uBLASPreconditioner() {};
 
     /// Initialise preconditioner (sparse matrix)
-    virtual void init(const uBLASMatrix<ublas_sparse_matrix>& A)
+    virtual void init(const uBLASMatrix<ublas_sparse_matrix>& P)
       { error("No init(..) function for preconditioner uBLASMatrix<ublas_sparse_matrix>"); }
- 
+
     /// Initialise preconditioner (dense matrix)
-    virtual void init(const uBLASMatrix<ublas_dense_matrix>& A)
+    virtual void init(const uBLASMatrix<ublas_dense_matrix>& P)
       { error("No init(..) function for preconditioner uBLASMatrix<ublas_dense_matrix>"); }
 
     /// Initialise preconditioner (virtual matrix)
-    virtual void init(const uBLASKrylovMatrix& A)
+    virtual void init(const uBLASKrylovMatrix& P)
       { error("No init(..) function for preconditioning uBLASKrylovMatrix"); }
 
     /// Solve linear system (M^-1)Ax = y

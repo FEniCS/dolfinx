@@ -117,10 +117,10 @@ namespace dolfin
     /// Preconditioner
     boost::shared_ptr<PETScPreconditioner> preconditioner;
 
-    // Operator (the matrix)
+    /// Operator (the matrix)
     boost::shared_ptr<const PETScBaseMatrix> A;
 
-    // Matrix used to construct the preconditoner
+    /// Matrix used to construct the preconditoner
     boost::shared_ptr<const PETScBaseMatrix> P;
 
     bool preconditioner_set;

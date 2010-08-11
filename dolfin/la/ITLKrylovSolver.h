@@ -12,6 +12,7 @@
 #ifndef __ITL_KRYLOV_SOLVER_H
 #define __ITL_KRYLOV_SOLVER_H
 
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
 #include "GenericLinearSolver.h"
 
@@ -38,15 +39,20 @@ namespace dolfin
     /// Destructor
     ~ITLKrylovSolver();
 
-    /// Solve the operator (matrix)
-    void set_operator(const GenericMatrix& A)
-    { error("set_operator(A) is not implemented."); }
+    /// Set operator (matrix)
+    void set_operator(const GenericMatrix& A);
+
+    /// Set operator (matrix) and preconditioner matrix
+    void set_operators(const GenericMatrix& A, const GenericMatrix& P);
+
+    /// Solve linear system Ax = b and return number of iterations
+    uint solve(GenericVector& x, const GenericVector& b);
+
+    /// Solve linear system Ax = b and return number of iterations
+    uint solve(MTL4Vector& x, const MTL4Vector& b);
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b);
-
-    /// Solve linear system Ax = b and return number of iterations
-    uint solve(const MTL4Matrix& A, MTL4Vector& x, const MTL4Vector& b);
 
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
@@ -55,6 +61,12 @@ namespace dolfin
     static Parameters default_parameters();
 
   private:
+
+    /// Operator (the matrix)
+    boost::shared_ptr<const MTL4Matrix> A;
+
+    /// Matrix used to construct the preconditoner
+    boost::shared_ptr<const MTL4Matrix> P;
 
     // Solver type
     std::string method;
