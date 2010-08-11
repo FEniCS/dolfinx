@@ -50,6 +50,16 @@ set(DOLFIN_TARGET_LINK_LIBRARIES
   ${DOLFIN_LIBXML2_LIBRARIES}
   )
 
+if(DOLFIN_ENABLE_MPI AND MPI_FOUND)
+  list(APPEND DOLFIN_DEFINITIONS "-DHAS_MPI")
+  list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${MPI_INCLUDE_PATH})
+  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${MPI_LIBRARIES})
+  # FIXME: Need to consider these MPI variables as well:
+  # MPI_COMPILE_FLAGS          Compilation flags for MPI programs                
+  # MPI_INCLUDE_PATH           Include path(s) for MPI header                    
+  # MPI_LINK_FLAGS             Linking flags for MPI programs                    
+endif(DOLFIN_ENABLE_MPI AND MPI_FOUND)
+
 if(DOLFIN_ENABLE_CGAL AND DOLFIN_CGAL_FOUND)
   list(APPEND DOLFIN_DEFINITIONS "-DHAS_CGAL")
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${DOLFIN_CGAL_INCLUDE_DIR})
