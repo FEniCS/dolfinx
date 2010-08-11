@@ -1,6 +1,6 @@
-CFLAGS  = `pkg-config --cflags dolfin`
-LIBS    = `pkg-config --libs dolfin`
-CXX     = `pkg-config --variable=compiler dolfin`
+CFLAGS  = $(shell pkg-config --cflags dolfin)
+LIBS    = $(shell pkg-config --libs dolfin)
+CXX     = $(shell pkg-config --variable=compiler dolfin)
 
 DEST    = demo
 OBJECTS = main.o
