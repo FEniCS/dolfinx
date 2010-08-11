@@ -1,5 +1,8 @@
 project(cpp)
 
+SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 # Make sure UFC is compiled with present version of SWIG
 execute_process(
   COMMAND ${PYTHON_EXECUTABLE} -c "import sys, ufc; sys.stdout.write(ufc.__swigversion__)"
@@ -37,7 +40,7 @@ swig_add_module(${SWIG_MODULE_NAME} python ${SWIG_SOURCES})
 swig_link_libraries(cpp dolfin ${PYTHON_LIBRARIES})
 
 get_target_property(SWIG_MODULE_LOCATION ${SWIG_MODULE_cpp_REAL_NAME} LOCATION)
-install(FILES 
+install(FILES
   ${SWIG_MODULE_LOCATION} ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_MODULE_NAME}.py
   DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin
   COMPONENT RuntimeLibraries

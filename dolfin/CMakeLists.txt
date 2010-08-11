@@ -24,8 +24,8 @@ set(DOLFIN_DIRS
   quadrature
   )
 
-SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+set(CMAKE_SKIP_BUILD_RPATH  FALSE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 foreach(DIR ${DOLFIN_DIRS})
   file(GLOB _HEADERS ${DIR}/*.h)
@@ -47,17 +47,25 @@ include_directories(
   ${DOLFIN_LIBXML2_INCLUDE_DIR}
   )
 
-set(DOLFIN_TARGET_LINK_LIBRARIES
+target_link_libraries(dolfin
   ${ARMADILLO_LIBRARY}
   ${Boost_FILESYSTEM_LIBRARY}
   ${Boost_PROGRAM_OPTIONS_LIBRARY}
   ${DOLFIN_LIBXML2_LIBRARIES}
   )
 
+#set(DOLFIN_TARGET_LINK_LIBRARIES
+#  ${ARMADILLO_LIBRARY}
+#  ${Boost_FILESYSTEM_LIBRARY}
+#  ${Boost_PROGRAM_OPTIONS_LIBRARY}
+#  ${DOLFIN_LIBXML2_LIBRARIES}
+#  )
+
 if(DOLFIN_ENABLE_MPI AND MPI_FOUND)
   add_definitions(-DHAS_MPI)
   include_directories(${MPI_INCLUDE_PATH})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${MPI_LIBRARIES})
+  target_link_libraries(dolfin ${MPI_LIBRARIES})
+  #list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${MPI_LIBRARIES})
   # FIXME: Need to consider these MPI variables as well:
   # MPI_COMPILE_FLAGS          Compilation flags for MPI programs
   # MPI_INCLUDE_PATH           Include path(s) for MPI header
@@ -65,23 +73,29 @@ if(DOLFIN_ENABLE_MPI AND MPI_FOUND)
 endif(DOLFIN_ENABLE_MPI AND MPI_FOUND)
 
 if(DOLFIN_ENABLE_CGAL AND DOLFIN_CGAL_FOUND)
-  add_definitions(-DHAS_CGAL)
-
   # This shouldn't be here. Need to figure out how to set COMPILE_OPTIONS
   # (and test for GCC)
   list(APPEND CMAKE_CXX_FLAGS "-frounding-math")
+
+  add_definitions(-DHAS_CGAL)
   include_directories(${DOLFIN_CGAL_INCLUDE_DIR})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES
+  target_link_libraries(dolfin
     ${DOLFIN_CGAL_LIBRARY}
     ${DOLFIN_MPFR_LIBRARY}
     ${DOLFIN_GMP_LIBRARY}
     )
+  #list(APPEND DOLFIN_TARGET_LINK_LIBRARIES
+  #  ${DOLFIN_CGAL_LIBRARY}
+  #  ${DOLFIN_MPFR_LIBRARY}
+  #  ${DOLFIN_GMP_LIBRARY}
+  #  )
 endif(DOLFIN_ENABLE_CGAL AND DOLFIN_CGAL_FOUND)
 
 if(DOLFIN_ENABLE_ZLIB AND DOLFIN_ZLIB_FOUND)
   add_definitions(-DHAS_ZLIB)
   include_directories(${DOLFIN_ZLIB_INCLUDE_DIRS})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${DOLFIN_ZLIB_LIBS})
+  target_link_libraries(dolfin ${DOLFIN_ZLIB_LIBS})
+  #list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${DOLFIN_ZLIB_LIBS})
 endif(DOLFIN_ENABLE_ZLIB AND DOLFIN_ZLIB_FOUND)
 
 if(MTL4_ENABLE_MTL4 AND MTL4_FOUND)
@@ -94,19 +108,19 @@ if(DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   include_directories(${PETSC_INCLUDES})
   target_link_libraries(dolfin ${PETSC_LIBRARIES})
   #list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${PETSC_LIBRARIES})
-  #message(STATUS "PETSs libs ${PETSC_LIBRARIES}")
 endif(DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
 
 if(DOLFIN_ENABLE_UMFPACK AND UMFPACK_FOUND)
   add_definitions(-DHAS_UMFPACK)
   include_directories(${UMFPACK_INCLUDE_DIR})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${UMFPACK_LIBRARY})
+  target_link_libraries(dolfin ${UMFPACK_LIBRARY})
+  #list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${UMFPACK_LIBRARY})
 endif(DOLFIN_ENABLE_UMFPACK AND UMFPACK_FOUND)
 
 # Add compiler include directories
 include_directories(${DOLFIN_SOURCE_DIR})
 
-target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES})
+#target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES})
 
 install(TARGETS dolfin
   RUNTIME DESTINATION ${DOLFIN_BIN_DIR} COMPONENT RuntimeExecutables
