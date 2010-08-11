@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-12-10
-// Last changed: 2010-04-16
+// Last changed: 2010-08-11
 
 //=============================================================================
 // In this file we declare some typemaps for the dolfin::Array type
@@ -64,7 +64,7 @@
 
   // Create a swig wrapped Array which are going to be attached to the NumPy array
   PyObject *SWIG_array = 0;
-  SWIG_array = SWIG_NewPointerObj(SWIG_as_voidptr(&$1), $descriptor(dolfin::Array< TYPE >), SWIG_POINTER_OWN |  0 );
+  SWIG_array = SWIG_NewPointerObj(SWIG_as_voidptr(new dolfin::Array< TYPE >(*(&$1))), $descriptor(dolfin::Array< TYPE >*), SWIG_POINTER_OWN |  0 );
 
   // Create NumPy array
   npy_intp dims[1];
@@ -73,7 +73,6 @@
 
   // Attach SWIG wrapped array to the numpy_array
   numpy_array->base = SWIG_array;
-  Py_INCREF(SWIG_array);
   
   if ( numpy_array == NULL ) 
     SWIG_exception(SWIG_TypeError, "Error in conversion of dolfin::Array< TYPE > to NumPy array.");
