@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2010-04-29
+// Last changed: 2010-08-11
 
 #include <algorithm>
 #include <sstream>
@@ -136,6 +136,10 @@ Array<double> TimeSeries::vector_times() const
   Array<double> times(_vector_times.size());
   for (uint i = 0; i < _vector_times.size(); i++)
     times[i] = _vector_times[i];
+
+  cout << "Checking array" << endl;
+  cout << times.str(true) << endl;
+
   return times;
 }
 //-----------------------------------------------------------------------------

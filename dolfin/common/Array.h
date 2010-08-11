@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2009-12-06
-// Last changed: 2010-05-18
+// Last changed: 2010-08-11
 
 #ifndef __DOLFIN_ARRAY_H
 #define __DOLFIN_ARRAY_H
@@ -64,13 +64,26 @@ namespace dolfin
       x.reset(_x, NoDeleter<T>());
     }
 
-    /// Return informal string representation (pretty-print)
+    /// Return informal string representation (pretty-print).
+    /// Note that the Array class is not a subclass of Variable (for
+    /// efficiency) which means that one needs to call str() directly
+    /// instead of using the info() function on Array objects.
     std::string str(bool verbose) const
     {
       std::stringstream s;
+
       if (verbose)
-        warning("Verbose output for Array<Y> not implemented.");
-      s << "<Array<T> of size " << size() << ">";
+      {
+        s << str(false) << std::endl << std::endl;
+
+        for (uint i = 0; i < size(); i++)
+          s << i << ": " << (*this)[i] << std::endl;
+      }
+      else
+      {
+        s << "<Array<T> of size " << size() << ">";
+      }
+
       return s.str();
     }
 
