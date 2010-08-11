@@ -36,6 +36,9 @@ foreach(DIR ${DOLFIN_DIRS})
   list(APPEND SOURCES ${_SOURCES})
 endforeach()
 
+add_library(dolfin SHARED ${DOLFIN_H} ${HEADERS} ${SOURCES})
+set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
+
 # Add include directories of required packages
 include_directories(
   ${UFC_INCLUDE_DIRS}
@@ -86,11 +89,13 @@ if(MTL4_ENABLE_MTL4 AND MTL4_FOUND)
   include_directories(${MTL4_INCLUDE_DIR})
 endif(MTL4_ENABLE_MTL4 AND MTL4_FOUND)
 
-if(ENABLE_PETSC AND PETSC_FOUND)
+if(DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
   add_definitions(-DHAS_PETSC)
   include_directories(${PETSC_INCLUDES})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${PETSC_LIBRARIES})
-endif(ENABLE_PETSC AND PETSC_FOUND)
+  target_link_libraries(dolfin ${PETSC_LIBRARIES})
+  #list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${PETSC_LIBRARIES})
+  #message(STATUS "PETSs libs ${PETSC_LIBRARIES}")
+endif(DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
 
 if(DOLFIN_ENABLE_UMFPACK AND UMFPACK_FOUND)
   add_definitions(-DHAS_UMFPACK)
@@ -100,12 +105,6 @@ endif(DOLFIN_ENABLE_UMFPACK AND UMFPACK_FOUND)
 
 # Add compiler include directories
 include_directories(${DOLFIN_SOURCE_DIR})
-
-get_directory_property(cmake_inc INCLUDE_DIRECTORIES)
-message(STATUS "Print inc dirs: ${cmake_inc}")
-
-add_library(dolfin SHARED ${DOLFIN_H} ${HEADERS} ${SOURCES})
-set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 
 target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES})
 
@@ -130,12 +129,6 @@ foreach(_inc_dir ${cmake_inc})
 endforeach()
 string(REGEX REPLACE ";" " " PKG_DEFINITIONS "${PKG_CXXFLAGS}")
 message(STATUS "New inc dirs: ${PKG_CXXFLAGS}")
-
-
-# Convert include dirs to -I<incdir> form for use in pkg-config file
-#foreach(_inc_dir ${DOLFIN_INCLUDE_DIRECTORIES})
-#  set(PKG_CXXFLAGS "-I${_inc_dir} ${PKG_CXXFLAGS}")
-#endforeach()
 
 # Add CXX flags
 set(PKG_CXXFLAGS "${CMAKE_CXX_FLAGS} ${PKG_CXXFLAGS}")
