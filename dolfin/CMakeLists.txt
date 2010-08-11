@@ -101,11 +101,28 @@ install(TARGETS dolfin
 
 add_subdirectory(swig)
 
-# Generate and install pkg-config file
-set(PACKAGE_REQUIRES "ufc-1 libxml-2.0")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/dolfin.pc.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/dolfin.pc" @ONLY)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/dolfin.pc"
-  DESTINATION ${DOLFIN_LIB_DIR}/pkgconfig
+# Define packages that should be required by pkg-config file
+set(PKG_REQUIRES "ufc-1 libxml-2.0")
+
+# Convert include dirs to -I<incdir> form for use in pkg-config file
+foreach(_inc_dir ${DOLFIN_INCLUDE_DIRECTORIES})
+  set(PKG_CXXFLAGS "-I${_inc_dir} ${PKG_CXXFLAGS}")
+endforeach()
+
+# Convert libraries to -L<libdir> -l<lib> form for use in pkg-config file 
+# FIXME: this is not cross-platform ready
+foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
+  string(REGEX REPLACE "(/[^ ]*)/lib([^ ]*)\\.so" "-L\\1 -l\\2"
+    _linkflags
+    "${_lib}"
+    )
+  set(PKG_LINKFLAGS "${_linkflags} ${PKG_LINKFLAGS}")
+endforeach()
+
+# Configure and install pkg-config file
+configure_file(dolfin.pc.cmake.in dolfin.pc @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin.pc
+  DESTINATION ${DOLFIN_PKGCONFIG_DIR}
   COMPONENT Development
   )
 
