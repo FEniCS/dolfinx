@@ -136,10 +136,6 @@ Array<double> TimeSeries::vector_times() const
   Array<double> times(_vector_times.size());
   for (uint i = 0; i < _vector_times.size(); i++)
     times[i] = _vector_times[i];
-
-  cout << "Checking array" << endl;
-  cout << times.str(true) << endl;
-
   return times;
 }
 //-----------------------------------------------------------------------------
