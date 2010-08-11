@@ -65,8 +65,7 @@ if(DOLFIN_ENABLE_CGAL AND DOLFIN_CGAL_FOUND)
 
   # This shouldn't be here. Need to figure out how to set COMPILE_OPTIONS
   # (and test for GCC)
-  list(APPEND DOLFIN_CXXFLAGS "-frounding-math")
-
+  list(APPEND CMAKE_CXX_FLAGS "-frounding-math")
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${DOLFIN_CGAL_INCLUDE_DIR})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES
     ${DOLFIN_CGAL_LIBRARY}
@@ -98,9 +97,6 @@ if(DOLFIN_ENABLE_UMFPACK AND UMFPACK_FOUND)
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${UMFPACK_LIBRARY})
 endif(DOLFIN_ENABLE_UMFPACK AND UMFPACK_FOUND)
 
-get_directory_property(defs COMPILE_DEFINITIONS)
-message(STATUS "Compile definitions: ${defs}")
-
 # Add compiler include directories
 include_directories(${DOLFIN_SOURCE_DIR} ${DOLFIN_INCLUDE_DIRECTORIES})
 
@@ -128,8 +124,10 @@ foreach(_inc_dir ${DOLFIN_INCLUDE_DIRECTORIES})
   set(PKG_CXXFLAGS "-I${_inc_dir} ${PKG_CXXFLAGS}")
 endforeach()
 
+message(STATUS "Testing flahgs ${CMAKE_CXX_FLAGS}")
+
 # Add CXX flags
-set(PKG_CXXFLAGS "${DOLFIN_CXXFLAGS} ${PKG_CXXFLAGS}")
+set(PKG_CXXFLAGS "${CMAKE_CXX_FLAGS} ${PKG_CXXFLAGS}")
 
 # Convert compiler defintions into a list for pkg-config
 get_directory_property(cmake_defs COMPILE_DEFINITIONS)
