@@ -55,13 +55,18 @@ if(DOLFIN_ENABLE_MPI AND MPI_FOUND)
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${MPI_INCLUDE_PATH})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${MPI_LIBRARIES})
   # FIXME: Need to consider these MPI variables as well:
-  # MPI_COMPILE_FLAGS          Compilation flags for MPI programs                
-  # MPI_INCLUDE_PATH           Include path(s) for MPI header                    
-  # MPI_LINK_FLAGS             Linking flags for MPI programs                    
+  # MPI_COMPILE_FLAGS          Compilation flags for MPI programs
+  # MPI_INCLUDE_PATH           Include path(s) for MPI header
+  # MPI_LINK_FLAGS             Linking flags for MPI programs
 endif(DOLFIN_ENABLE_MPI AND MPI_FOUND)
 
 if(DOLFIN_ENABLE_CGAL AND DOLFIN_CGAL_FOUND)
   list(APPEND DOLFIN_DEFINITIONS "-DHAS_CGAL")
+
+  # This shouldn't be here. Need to figure out how to set COMPILE_OPTIONS
+  # (and test for GCC)
+  list(APPEND DOLFIN_DEFINITIONS "-frounding-math")
+
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${DOLFIN_CGAL_INCLUDE_DIR})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES
     ${DOLFIN_CGAL_LIBRARY}
@@ -93,7 +98,16 @@ if(DOLFIN_ENABLE_UMFPACK AND UMFPACK_FOUND)
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${UMFPACK_LIBRARY})
 endif(DOLFIN_ENABLE_UMFPACK AND UMFPACK_FOUND)
 
+get_directory_property(defs COMPILE_DEFINITIONS)
+  message(STATUS "Compile definitions: ${defs}")
+
+# Add compiler defintions
 add_definitions(${DOLFIN_DEFINITIONS})
+
+#get_directory_property(defs COMPILE_DEFINITIONS)
+#message(STATUS "Compile definitions: ${defs}")
+
+# Add compiler include directories
 include_directories(${DOLFIN_SOURCE_DIR} ${DOLFIN_INCLUDE_DIRECTORIES})
 
 add_library(dolfin SHARED ${DOLFIN_H} ${HEADERS} ${SOURCES})
@@ -121,7 +135,7 @@ endforeach()
 string(REGEX REPLACE ";" " " PKG_DEFINITIONS "${DOLFIN_DEFINITIONS}")
 set(PKG_CXXFLAGS "${PKG_DEFINITIONS} ${PKG_CXXFLAGS}")
 
-# Convert libraries to -L<libdir> -l<lib> form for use in pkg-config file 
+# Convert libraries to -L<libdir> -l<lib> form for use in pkg-config file
 # FIXME: this is not cross-platform ready
 foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
   string(REGEX REPLACE "(/[^ ]*)/lib([^ ]*)\\.so" "-L\\1 -l\\2"
