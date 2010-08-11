@@ -9,7 +9,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2010-02-10
+// Last changed: 2010-08-11
 
 #include <boost/filesystem.hpp>
 #include <fstream>
@@ -31,9 +31,19 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 File::File(const std::string filename, std::string encoding)
 {
-  // Choose file type base on suffix.
+  // Get directory and extension
   const boost::filesystem::path path(filename);
-  const std::string extension = boost::filesystem::extension(path);
+  const boost::filesystem::path directory = path.parent_path();
+  const std::string extension = path.extension();
+
+  // Create directory if necessary
+  if (!is_directory(directory))
+  {
+    cout << "Creating directory \"" << directory.string() << "\"." << endl;
+    boost::filesystem::create_directories(directory);
+  }
+
+  // Choose format based on extension
   if (extension == ".gz")
   {
     // Get suffix after discarding .gz
