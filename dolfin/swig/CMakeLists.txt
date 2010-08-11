@@ -1,5 +1,14 @@
 project(cpp)
 
+# Make sure UFC is compiled with present version of SWIG
+execute_process(
+  COMMAND ${PYTHON_EXECUTABLE} -c "import sys, ufc; sys.stdout.write(ufc.__swigversion__)"
+  OUTPUT_VARIABLE UFC_SWIGVERSION
+  )
+if(NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}")
+  message(FATAL_ERROR "UFC compiled with different version of SWIG. Please install SWIG version ${UFC_SWIGVERSION} or recompile UFC with present SWIG.")
+endif(NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}")
+
 set(SWIG_MODULE_NAME cpp)
 set(CMAKE_SWIG_FLAGS
   -module ${SWIG_MODULE_NAME}
