@@ -1,6 +1,6 @@
 project(cpp)
 
-SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+#SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Make sure UFC is compiled with present version of SWIG
@@ -12,6 +12,8 @@ if(NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}")
   message(FATAL_ERROR "UFC compiled with different version of SWIG. Please install SWIG version ${UFC_SWIGVERSION} or recompile UFC with present SWIG.")
 endif(NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}")
 
+
+get_directory_property(cmake_defs COMPILE_DEFINITIONS)
 set(SWIG_MODULE_NAME cpp)
 set(CMAKE_SWIG_FLAGS
   -module ${SWIG_MODULE_NAME}
@@ -28,6 +30,7 @@ set(CMAKE_SWIG_FLAGS
   -fastquery
   -nobuildnone
   -Iinclude/swig
+  ${DOLFIN_CXX_DEFINITIONS}
   )
 set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
 

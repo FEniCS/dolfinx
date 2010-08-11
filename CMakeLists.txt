@@ -3,6 +3,16 @@ project(DOLFIN)
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
+# Set verbose output while testing CMake
+set(CMAKE_VERBOSE_MAKEFILE 1)
+
+# Testing flags
+#set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-O2 ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-ansi -pipe ${CMAKE_CXX_FLAGS}")
+
 # Set DOLFIN version number
 set(DOLFIN_VERSION_MAJOR "0")
 set(DOLFIN_VERSION_MINOR "9")
