@@ -33,7 +33,7 @@ set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
 # Configurable options for how we want to build
 
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
-option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
+#option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
 option(DOLFIN_ENABLE_DEBUG "Build with debug information." ON)
 option(DOLFIN_ENABLE_EXTRADEBUG "Build with extra debug information (no -O2)." OFF)
@@ -79,60 +79,65 @@ find_package(Boost 1.36 COMPONENTS filesystem program_options REQUIRED)
 #------------------------------------------------------------------------------
 # Run tests to find optional external packages
 
-if(DOLFIN_ENABLE_PYTHON)
+if (DOLFIN_ENABLE_PYTHON)
   find_package(PythonInterp)
   find_package(PythonLibs)
+
+  # If Python is found, check for SWIG
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
     find_package(SWIG REQUIRED)
     include(UseSWIG)
   endif (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
+
 endif(DOLFIN_ENABLE_PYTHON)
 
-if(DOLFIN_ENABLE_MPI)
+if (DOLFIN_ENABLE_MPI)
   find_package(MPI)
-endif(DOLFIN_ENABLE_MPI)
 
-if(DOLFIN_ENABLE_SCOTCH)
+  if (DOLFIN_ENABLE_PARMETIS)
+    find_package(ParMETIS.dolfin)
+  endif (DOLFIN_ENABLE_PARMETIS)
+
+endif (DOLFIN_ENABLE_MPI)
+
+if (DOLFIN_ENABLE_SCOTCH)
   find_package(ScotchPT)
-endif(DOLFIN_ENABLE_SCOTCH)
+endif (DOLFIN_ENABLE_SCOTCH)
 
-if(DOLFIN_ENABLE_UMFPACK)
+if (DOLFIN_ENABLE_UMFPACK)
   find_package(UMFPACK.dolfin)
-endif(DOLFIN_ENABLE_UMFPACK)
+endif (DOLFIN_ENABLE_UMFPACK)
 
-if(DOLFIN_ENABLE_CHOLMOD)
+if (DOLFIN_ENABLE_CHOLMOD)
   find_package(Cholmod)
-endif(DOLFIN_ENABLE_CHOLMOD)
+endif (DOLFIN_ENABLE_CHOLMOD)
 
-if(DOLFIN_ENABLE_TRILINOS)
+if (DOLFIN_ENABLE_TRILINOS)
   find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include /usr/local/include /usr/include)
-endif(DOLFIN_ENABLE_TRILINOS)
+endif (DOLFIN_ENABLE_TRILINOS)
 
-if(DOLFIN_ENABLE_MTL4)
+if (DOLFIN_ENABLE_MTL4)
   find_package(MTL4.dolfin)
-endif(DOLFIN_ENABLE_MTL4)
+endif (DOLFIN_ENABLE_MTL4)
 
-if(DOLFIN_ENABLE_PETSC)
+if (DOLFIN_ENABLE_PETSC)
   find_package(PETSc.dolfin)
-endif(DOLFIN_ENABLE_PETSC)
 
-if(DOLFIN_ENABLE_SLEPC)
-  find_package(SLEPc)
-endif(DOLFIN_ENABLE_SLEPC)
+  if(DOLFIN_ENABLE_SLEPC)
+    find_package(SLEPc)
+  endif(DOLFIN_ENABLE_SLEPC)
 
-if(DOLFIN_ENABLE_PARMETIS)
-  find_package(ParMETIS.dolfin)
-endif(DOLFIN_ENABLE_PARMETIS)
+endif (DOLFIN_ENABLE_PETSC)
 
-if(DOLFIN_ENABLE_GMP)
+if (DOLFIN_ENABLE_GMP)
   find_package(GMP)
-endif(DOLFIN_ENABLE_GMP)
+endif (DOLFIN_ENABLE_GMP)
 
-if(DOLFIN_ENABLE_ZLIB)
+if (DOLFIN_ENABLE_ZLIB)
   find_package(ZLIB)
-endif(DOLFIN_ENABLE_ZLIB)
+endif (DOLFIN_ENABLE_ZLIB)
 
-if(DOLFIN_ENABLE_CGAL)
+if (DOLFIN_ENABLE_CGAL)
   find_package(CGAL PATHS
                 $ENV{CGAL_DIR}/lib
                 /usr/local/lib
@@ -140,7 +145,7 @@ if(DOLFIN_ENABLE_CGAL)
                 /usr/lib
                 /usr/lib/CGAL
                 )
-endif(DOLFIN_ENABLE_CGAL)
+endif (DOLFIN_ENABLE_CGAL)
 
 #------------------------------------------------------------------------------
 # FIXME: More cleanups needed below this point

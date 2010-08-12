@@ -1,5 +1,3 @@
-set(UMFPACK_FOUND 0)
-
 message(STATUS "Checking for package 'UMFPACK'")
 
 # Check for header file
@@ -67,10 +65,15 @@ int main()
 
 endif(UMFPACK_INCLUDE_DIR AND UMFPACK_LIBRARY)
 
+if (UMFPACK_TEST_RUNS)
+  include(FindPackageHandleStandardArgs)
+  FIND_PACKAGE_HANDLE_STANDARD_ARGS(UMFPACK DEFAULT_MSG UMFPACK_INCLUDE_DIR UMFPACK_LIBRARY)
+endif (UMFPACK_TEST_RUNS)
+
 # Report results of tests
-if(UMFPACK_TEST_RUNS)
-  message("   Found package 'UMFPACK'")
-  set(UMFPACK_FOUND 1)
-else(UMFPACK_TEST_RUNS)
-  message("   Unable to configure package 'UMFPACK'")
-endif(UMFPACK_TEST_RUNS)
+#if(UMFPACK_TEST_RUNS)
+#  message("   Found package 'UMFPACK'")
+#  set(UMFPACK_FOUND 1)
+#else(UMFPACK_TEST_RUNS)
+#  message("   Unable to configure package 'UMFPACK'")
+#endif(UMFPACK_TEST_RUNS)
