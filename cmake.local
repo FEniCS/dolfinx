@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Configure for a local install in $toplevel/local.
+#
+# This is useful to be able to run demos from within the
+# source tree without needing to specify an installation
+# directory.
+
+# TODO: Add -DCMAKE_BUILD_TYPE=xxxx flag
+
+INSTALLDIR=`pwd`"/local"
+cmake . -DCMAKE_INSTALL_PREFIX=$INSTALLDIR
+make
+make install
+
+
