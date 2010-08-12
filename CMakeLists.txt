@@ -93,7 +93,6 @@ endif(DOLFIN_ENABLE_PYTHON)
 
 if (DOLFIN_ENABLE_MPI)
   find_package(MPI)
-
   if (DOLFIN_ENABLE_PARMETIS)
     find_package(ParMETIS.dolfin)
   endif (DOLFIN_ENABLE_PARMETIS)
