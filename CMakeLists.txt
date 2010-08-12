@@ -53,16 +53,35 @@ option(DOLFIN_ENABLE_TRILINOS "Compile with support for Trilinos." ON)
 option(DOLFIN_ENABLE_CHOLMOD "Compile with support for CHOLMOD." ON)
 option(DOLFIN_ENABLE_MTL4 "Compile with support for MTL4." ON)
 option(DOLFIN_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
-option(DOLFIN_ENABLE_GMP "Compile with support for GMP." OFF)
+option(DOLFIN_ENABLE_GMP "Compile with support for GMP." ON)
 option(DOLFIN_ENABLE_ZLIB "Compile with support for zlib." ON)
 option(DOLFIN_ENABLE_CGAL "Compile with support for CGAL" ON)
-option(DOLFIN_ENABLE_LAPACK "Compile with support for LAPACK." ON)
 option(DOLFIN_ENABLE_PYTHON "Compile the Python wrappers." ON)
 
 # Run tests to find required external packages
 find_package(UFC.dolfin)
 find_package(Armadillo.dolfin)
 find_package(LibXml2 REQUIRED)
+
+# Find Boost
+#set(DOLFIN_BOOST_COMPONENTS filesystem program_options)
+#find_package(Boost.dolfin)
+
+#set(DOLFIN_BOOST_INCLUDE_DIR "" CACHE PATH "Override the default location for Boost header files.")
+#set(DOLFIN_BOOST_LIBRARY_DIR "" CACHE PATH "Override the default location for Boost libraries.")
+#set(DOLFIN_BOOST_USE_MULTITHREADED OFF CACHE BOOL "Use multithreaded Boost libraries.")
+
+#set(BOOST_INCLUDEDIR ${DOLFIN_BOOST_INCLUDE_DIR})
+#set(BOOST_LIBRARYDIR ${DOLFIN_BOOST_LIBRARY_DIR})
+
+# Find Boost
+set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
+set(Boost_USE_STATIC_LIBS OFF)
+set(DOLFIN_BOOST_USE_MULTITHREADED OFF CACHE BOOL "Use multithreaded Boost libraries.")
+set(BOOST_ROOT $ENV{BOOST_DIR})
+find_package(Boost 1.36 COMPONENTS filesystem program_options REQUIRED)
+message(STATUS "Found boost ${Boost_FOUND}")
+
 
 # Run tests to find optional external packages
 if(DOLFIN_ENABLE_PYTHON)
@@ -75,29 +94,25 @@ if(DOLFIN_ENABLE_MPI)
   find_package(MPI)
 endif(DOLFIN_ENABLE_MPI)
 
-#if(DOLFIN_ENABLE_LAPACK)
-#  find_package(BLAS)
-#endif(DOLFIN_ENABLE_LAPACK)
-
 #if(DOLFIN_ENABLE_SLEPC)
 #  find_package(SLEPc.dolfin)
 #endif(DOLFIN_ENABLE_SLEPC)
 
 #if(DOLFIN_ENABLE_SCOTCH)
-#  include(FindSCOTCH.dolfin)
+#  find_package(SCOTCH.dolfin)
 #endif(DOLFIN_ENABLE_SCOTCH)
 
 if(DOLFIN_ENABLE_UMFPACK)
   find_package(UMFPACK.dolfin)
 endif(DOLFIN_ENABLE_UMFPACK)
 
-if(DOLFIN_ENABLE_TRILINOS)
-  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include /usr/local/include /usr/include)
-endif(DOLFIN_ENABLE_TRILINOS)
-
 #if(DOLFIN_ENABLE_CHOLMOD)
 #  include(FindCHOLMOD.dolfin)
 #endif(DOLFIN_ENABLE_CHOLMOD)
+
+if(DOLFIN_ENABLE_TRILINOS)
+  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include /usr/local/include /usr/include)
+endif(DOLFIN_ENABLE_TRILINOS)
 
 if(DOLFIN_ENABLE_MTL4)
   find_package(MTL4.dolfin)
@@ -111,12 +126,12 @@ if(DOLFIN_ENABLE_PARMETIS)
   find_package(ParMETIS.dolfin)
 endif(DOLFIN_ENABLE_PARMETIS)
 
-#if(DOLFIN_ENABLE_GMP)
-#  include(FindGMP.dolfin)
-#endif(DOLFIN_ENABLE_GMP)
+if(DOLFIN_ENABLE_GMP)
+  find_package(GMP)
+endif(DOLFIN_ENABLE_GMP)
 
 if(DOLFIN_ENABLE_ZLIB)
-  include(FindZLIB.dolfin)
+  find_package(ZLIB.dolfin)
 endif(DOLFIN_ENABLE_ZLIB)
 
 if(DOLFIN_ENABLE_CGAL)
@@ -129,15 +144,7 @@ if(DOLFIN_ENABLE_CGAL)
                 )
 endif(DOLFIN_ENABLE_CGAL)
 
-if(DOLFIN_ENABLE_LAPACK)
-  find_package(LAPACK)
-endif(DOLFIN_ENABLE_LAPACK)
-
 # FIXME: More cleanups needed below this point
-
-# Find Boost
-set(DOLFIN_BOOST_COMPONENTS filesystem program_options)
-find_package(Boost.dolfin)
 
 # Append the library version information to the library target properties
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
