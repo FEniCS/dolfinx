@@ -5,7 +5,7 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Make sure UFC is compiled with present version of SWIG
 execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} -c "import sys, ufc; sys.stdout.write(ufc.__swigversion__)"
+  COMMAND ${PYTHON_EXECUTABLE} -c "import ufc, sys; sys.stdout.write('.'.join([str(int(s)) for s in ufc.__swigversion__.split('.')]))"
   OUTPUT_VARIABLE UFC_SWIGVERSION
   )
 if(NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}")
