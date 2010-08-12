@@ -62,7 +62,7 @@ option(DOLFIN_ENABLE_PYTHON "Compile the Python wrappers." ON)
 # Run tests to find required external packages
 find_package(UFC.dolfin)
 find_package(Armadillo.dolfin)
-find_package(LibXml2.dolfin)
+find_package(LibXml2 REQUIRED)
 
 # Run tests to find optional external packages
 if(DOLFIN_ENABLE_PYTHON)
@@ -82,6 +82,7 @@ endif(DOLFIN_ENABLE_MPI)
 #if(DOLFIN_ENABLE_SLEPC)
 #  find_package(SLEPc.dolfin)
 #endif(DOLFIN_ENABLE_SLEPC)
+
 #if(DOLFIN_ENABLE_SCOTCH)
 #  include(FindSCOTCH.dolfin)
 #endif(DOLFIN_ENABLE_SCOTCH)
@@ -94,9 +95,6 @@ if(DOLFIN_ENABLE_TRILINOS)
   find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include /usr/local/include /usr/include)
 endif(DOLFIN_ENABLE_TRILINOS)
 
-#if(DOLFIN_ENABLE_TRILINOS)
-#  include(FindTrilinos.dolfin)
-#endif(DOLFIN_ENABLE_TRILINOS)
 #if(DOLFIN_ENABLE_CHOLMOD)
 #  include(FindCHOLMOD.dolfin)
 #endif(DOLFIN_ENABLE_CHOLMOD)
@@ -116,12 +114,19 @@ endif(DOLFIN_ENABLE_PARMETIS)
 #if(DOLFIN_ENABLE_GMP)
 #  include(FindGMP.dolfin)
 #endif(DOLFIN_ENABLE_GMP)
+
 if(DOLFIN_ENABLE_ZLIB)
   include(FindZLIB.dolfin)
 endif(DOLFIN_ENABLE_ZLIB)
 
 if(DOLFIN_ENABLE_CGAL)
-  find_package(CGAL.dolfin)
+  find_package(CGAL PATHS
+                #$ENV{CGAL_DIR}/lib
+                /usr/local/lib
+                /usr/local/lib/CGAL
+                /usr/lib
+                /usr/lib/CGAL
+                )
 endif(DOLFIN_ENABLE_CGAL)
 
 if(DOLFIN_ENABLE_LAPACK)
