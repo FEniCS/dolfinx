@@ -64,24 +64,12 @@ find_package(Armadillo.dolfin)
 find_package(LibXml2 REQUIRED)
 
 # Find Boost
-#set(DOLFIN_BOOST_COMPONENTS filesystem program_options)
-#find_package(Boost.dolfin)
-
-#set(DOLFIN_BOOST_INCLUDE_DIR "" CACHE PATH "Override the default location for Boost header files.")
-#set(DOLFIN_BOOST_LIBRARY_DIR "" CACHE PATH "Override the default location for Boost libraries.")
-#set(DOLFIN_BOOST_USE_MULTITHREADED OFF CACHE BOOL "Use multithreaded Boost libraries.")
-
-#set(BOOST_INCLUDEDIR ${DOLFIN_BOOST_INCLUDE_DIR})
-#set(BOOST_LIBRARYDIR ${DOLFIN_BOOST_LIBRARY_DIR})
-
-# Find Boost
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
 set(Boost_USE_STATIC_LIBS OFF)
 set(DOLFIN_BOOST_USE_MULTITHREADED OFF CACHE BOOL "Use multithreaded Boost libraries.")
 set(BOOST_ROOT $ENV{BOOST_DIR})
 find_package(Boost 1.36 COMPONENTS filesystem program_options REQUIRED)
 message(STATUS "Found boost ${Boost_FOUND}")
-
 
 # Run tests to find optional external packages
 if(DOLFIN_ENABLE_PYTHON)
@@ -98,17 +86,17 @@ endif(DOLFIN_ENABLE_MPI)
 #  find_package(SLEPc.dolfin)
 #endif(DOLFIN_ENABLE_SLEPC)
 
-#if(DOLFIN_ENABLE_SCOTCH)
-#  find_package(SCOTCH.dolfin)
-#endif(DOLFIN_ENABLE_SCOTCH)
+if(DOLFIN_ENABLE_SCOTCH)
+  find_package(ScotchPT)
+endif(DOLFIN_ENABLE_SCOTCH)
 
 if(DOLFIN_ENABLE_UMFPACK)
   find_package(UMFPACK.dolfin)
 endif(DOLFIN_ENABLE_UMFPACK)
 
-#if(DOLFIN_ENABLE_CHOLMOD)
-#  include(FindCHOLMOD.dolfin)
-#endif(DOLFIN_ENABLE_CHOLMOD)
+if(DOLFIN_ENABLE_CHOLMOD)
+  find_package(Cholmod)
+endif(DOLFIN_ENABLE_CHOLMOD)
 
 if(DOLFIN_ENABLE_TRILINOS)
   find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include /usr/local/include /usr/include)
@@ -136,7 +124,7 @@ endif(DOLFIN_ENABLE_ZLIB)
 
 if(DOLFIN_ENABLE_CGAL)
   find_package(CGAL PATHS
-                #$ENV{CGAL_DIR}/lib
+                $ENV{CGAL_DIR}/lib
                 /usr/local/lib
                 /usr/local/lib/CGAL
                 /usr/lib
