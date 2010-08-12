@@ -90,6 +90,10 @@ if(DOLFIN_ENABLE_UMFPACK)
   find_package(UMFPACK.dolfin)
 endif(DOLFIN_ENABLE_UMFPACK)
 
+if(DOLFIN_ENABLE_TRILINOS)
+  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include /usr/local/include /usr/include)
+endif(DOLFIN_ENABLE_TRILINOS)
+
 #if(DOLFIN_ENABLE_TRILINOS)
 #  include(FindTrilinos.dolfin)
 #endif(DOLFIN_ENABLE_TRILINOS)
