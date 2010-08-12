@@ -29,7 +29,9 @@ endif()
 set(DOLFIN_CMAKE_DIR "${DOLFIN_SOURCE_DIR}/cmake" CACHE INTERNAL "")
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
 
+#------------------------------------------------------------------------------
 # Configurable options for how we want to build
+
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
 option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
@@ -43,7 +45,9 @@ option(DOLFIN_ENABLE_TESTS "Build tests." OFF)
 option(DOLFIN_ENABLE_BENCHMARKS "Build benchmark programs." OFF)
 option(DOLFIN_ENABLE_CODECOVERAGE "Enable code coverage.")
 
+#------------------------------------------------------------------------------
 # Enable or disable external packages
+
 option(DOLFIN_ENABLE_MPI "Compile with support for MPI." ON)
 option(DOLFIN_ENABLE_PETSC "Compile with support for PETSc linear algebra." ON)
 option(DOLFIN_ENABLE_SLEPC "Compile with support for SLEPc." ON)
@@ -58,7 +62,9 @@ option(DOLFIN_ENABLE_ZLIB "Compile with support for zlib." ON)
 option(DOLFIN_ENABLE_CGAL "Compile with support for CGAL" ON)
 option(DOLFIN_ENABLE_PYTHON "Compile the Python wrappers." ON)
 
-# Run tests to find required external packages
+#------------------------------------------------------------------------------
+# Run tests to find required packages
+
 find_package(UFC.dolfin)
 find_package(Armadillo.dolfin)
 find_package(LibXml2 REQUIRED)
@@ -69,13 +75,17 @@ set(Boost_USE_STATIC_LIBS OFF)
 set(DOLFIN_BOOST_USE_MULTITHREADED OFF CACHE BOOL "Use multithreaded Boost libraries.")
 set(BOOST_ROOT $ENV{BOOST_DIR})
 find_package(Boost 1.36 COMPONENTS filesystem program_options REQUIRED)
-message(STATUS "Found boost ${Boost_FOUND}")
 
+#------------------------------------------------------------------------------
 # Run tests to find optional external packages
+
 if(DOLFIN_ENABLE_PYTHON)
-  find_package(Python.dolfin)
-  find_package(SWIG REQUIRED)
-  include(${SWIG_USE_FILE})
+  find_package(PythonInterp)
+  find_package(PythonLibs)
+  if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
+    find_package(SWIG REQUIRED)
+    include(UseSWIG)
+  endif (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
 endif(DOLFIN_ENABLE_PYTHON)
 
 if(DOLFIN_ENABLE_MPI)
@@ -119,7 +129,7 @@ if(DOLFIN_ENABLE_GMP)
 endif(DOLFIN_ENABLE_GMP)
 
 if(DOLFIN_ENABLE_ZLIB)
-  find_package(ZLIB.dolfin)
+  find_package(ZLIB)
 endif(DOLFIN_ENABLE_ZLIB)
 
 if(DOLFIN_ENABLE_CGAL)
@@ -132,6 +142,7 @@ if(DOLFIN_ENABLE_CGAL)
                 )
 endif(DOLFIN_ENABLE_CGAL)
 
+#------------------------------------------------------------------------------
 # FIXME: More cleanups needed below this point
 
 # Append the library version information to the library target properties
@@ -149,6 +160,7 @@ set(DOLFIN_INCLUDE_DIR "include")
 set(DOLFIN_PKGCONFIG_DIR "lib/pkgconfig")
 set(DOLFIN_SHARE_DIR "share")
 set(DOLFIN_MAN_DIR "share/man")
+
 # FIXME: the following two should be more general
 set(DOLFIN_INSTALL_PYTHON_MODULE_DIR "lib/python2.6/site-packages")
 set(DOLFIN_INSTALL_PYTHON_EXT_DIR "lib/python2.6/site-packages")

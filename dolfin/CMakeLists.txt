@@ -152,6 +152,7 @@ if(DOLFIN_ENABLE_GMP AND GMP_FOUND)
 endif(DOLFIN_ENABLE_GMP AND GMP_FOUND)
 
 #------------------------------------------------------------------------------
+# Set compiler flags, include directories and library dependencies
 
 # Add link directories
 link_directories(${DOLFIN_TARGET_LINK_LIBRARIES_DIRS})
@@ -172,7 +173,15 @@ set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 # Add DOFLIN target libraries
 target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES})
 
-add_subdirectory(swig)
+#------------------------------------------------------------------------------
+# SWIG
+
+if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
+  add_subdirectory(swig)
+endif (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
+
+#------------------------------------------------------------------------------
+# Install
 
 install(TARGETS dolfin
   RUNTIME DESTINATION ${DOLFIN_BIN_DIR} COMPONENT RuntimeExecutables
