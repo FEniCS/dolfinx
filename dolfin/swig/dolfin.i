@@ -41,7 +41,7 @@ import_array();
 // STL SWIG string class
 %include <std_string.i>
 
-// Turn on SWIG generated signature documentation and include doxygen 
+// Turn on SWIG generated signature documentation and include doxygen
 // generated docstrings (Need to run generate.py to update the latter)
 %feature("autodoc", "1");
 %include "dolfin/swig/docstrings.i"

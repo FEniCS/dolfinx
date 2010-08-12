@@ -37,6 +37,9 @@ set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
 set(SWIG_SOURCES dolfin.i)
 set_source_files_properties(${SWIG_SOURCES} PROPERTIES CPLUSPLUS ON)
 
+# The prevents swig being run unnecessarily
+set_source_files_properties(dolfin.i PROPERTIES SWIG_MODULE_NAME cpp)
+
 include_directories(${PYTHON_INCLUDE_PATH})
 
 swig_add_module(${SWIG_MODULE_NAME} python ${SWIG_SOURCES})

@@ -116,13 +116,13 @@ set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 # Add DOFLIN target libraries
 target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES})
 
+add_subdirectory(swig)
+
 install(TARGETS dolfin
   RUNTIME DESTINATION ${DOLFIN_BIN_DIR} COMPONENT RuntimeExecutables
   LIBRARY DESTINATION ${DOLFIN_LIB_DIR} COMPONENT RuntimeLibraries
   ARCHIVE DESTINATION ${DOLFIN_LIB_DIR} COMPONENT Development
   )
-
-add_subdirectory(swig)
 
 #------------------------------------------------------------------------------
 # Write pkg-config file and install
