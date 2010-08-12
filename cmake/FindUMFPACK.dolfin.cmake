@@ -12,6 +12,8 @@ find_path(UMFPACK_INCLUDE_DIR
  )
 mark_as_advanced(UMFPACK_INCLUDE_DIR)
 
+message(STATUS "UMF  ${UMFPACK_INCLUDE_DIR}")
+
 # Check for library
 find_library(UMFPACK_LIBRARY
   NAMES umfpack

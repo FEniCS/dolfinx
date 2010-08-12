@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 2.8)
 # Set verbose output while testing CMake
 set(CMAKE_VERBOSE_MAKEFILE 1)
 
-# Testing flags
+# Testing compiler flags
 #set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS}")
@@ -82,10 +82,6 @@ if(DOLFIN_ENABLE_MPI)
   find_package(MPI)
 endif(DOLFIN_ENABLE_MPI)
 
-#if(DOLFIN_ENABLE_SLEPC)
-#  find_package(SLEPc.dolfin)
-#endif(DOLFIN_ENABLE_SLEPC)
-
 if(DOLFIN_ENABLE_SCOTCH)
   find_package(ScotchPT)
 endif(DOLFIN_ENABLE_SCOTCH)
@@ -109,6 +105,10 @@ endif(DOLFIN_ENABLE_MTL4)
 if(DOLFIN_ENABLE_PETSC)
   find_package(PETSc.dolfin)
 endif(DOLFIN_ENABLE_PETSC)
+
+if(DOLFIN_ENABLE_SLEPC)
+  find_package(SLEPc)
+endif(DOLFIN_ENABLE_SLEPC)
 
 if(DOLFIN_ENABLE_PARMETIS)
   find_package(ParMETIS.dolfin)
