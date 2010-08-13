@@ -115,7 +115,7 @@ if (DOLFIN_ENABLE_CHOLMOD)
 endif (DOLFIN_ENABLE_CHOLMOD)
 
 if (DOLFIN_ENABLE_TRILINOS)
-  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include /usr/local/include /usr/include)
+  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include $ENV{Trilinos_DIR}/include /usr/local/include /usr/include)
 endif (DOLFIN_ENABLE_TRILINOS)
 
 if (DOLFIN_ENABLE_MTL4)
