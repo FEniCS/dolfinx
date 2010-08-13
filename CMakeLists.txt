@@ -45,6 +45,8 @@ option(DOLFIN_ENABLE_TESTS "Build tests." OFF)
 option(DOLFIN_ENABLE_BENCHMARKS "Build benchmark programs." OFF)
 option(DOLFIN_ENABLE_CODECOVERAGE "Enable code coverage.")
 
+option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
+
 #------------------------------------------------------------------------------
 # Enable or disable external packages
 
@@ -152,20 +154,18 @@ endif (DOLFIN_ENABLE_CGAL)
 # Get Python module path from distutils
 if (PYTHONINTERP_FOUND)
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(prefix='${CMAKE_INSTALL_PREFIX}'))"
+    COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))"
     OUTPUT_VARIABLE PYTHON_INSTALL_PATH
     )
 
-# Set Python installation path
-set(DOLFIN_INSTALL_PYTHON_MODULE_DIR ${PYTHON_INSTALL_PATH})
-set(DOLFIN_INSTALL_PYTHON_EXT_DIR ${PYTHON_INSTALL_PATH})
+  # Set Python installation path
+  set(DOLFIN_INSTALL_PYTHON_MODULE_DIR ${PYTHON_INSTALL_PATH})
+  set(DOLFIN_INSTALL_PYTHON_EXT_DIR ${PYTHON_INSTALL_PATH})
 endif (PYTHONINTERP_FOUND)
 
 #------------------------------------------------------------------------------
-# FIXME: More cleanups needed below this point
 
 # Append the library version information to the library target properties
-option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 if(DOLFIN_WITH_LIBRARY_VERSION)
   set(DOLFIN_LIBRARY_PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES}
     VERSION ${DOLFIN_VERSION}
@@ -173,6 +173,7 @@ if(DOLFIN_WITH_LIBRARY_VERSION)
   )
 endif(DOLFIN_WITH_LIBRARY_VERSION)
 
+# Set DOLFIN install sub-directories
 set(DOLFIN_BIN_DIR "bin")
 set(DOLFIN_LIB_DIR "lib")
 set(DOLFIN_INCLUDE_DIR "include")
