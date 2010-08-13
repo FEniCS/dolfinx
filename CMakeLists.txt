@@ -147,6 +147,21 @@ if (DOLFIN_ENABLE_CGAL)
 endif (DOLFIN_ENABLE_CGAL)
 
 #------------------------------------------------------------------------------
+# Get installation path for Python modules (if Python is enabled and installed)
+
+# Get Python module path from distutils
+if (PYTHONINTERP_FOUND)
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(prefix='${CMAKE_INSTALL_PREFIX}'))"
+    OUTPUT_VARIABLE PYTHON_INSTALL_PATH
+    )
+
+# Set Python installation path
+set(DOLFIN_INSTALL_PYTHON_MODULE_DIR ${PYTHON_INSTALL_PATH})
+set(DOLFIN_INSTALL_PYTHON_EXT_DIR ${PYTHON_INSTALL_PATH})
+endif (PYTHONINTERP_FOUND)
+
+#------------------------------------------------------------------------------
 # FIXME: More cleanups needed below this point
 
 # Append the library version information to the library target properties
@@ -165,12 +180,13 @@ set(DOLFIN_PKGCONFIG_DIR "lib/pkgconfig")
 set(DOLFIN_SHARE_DIR "share")
 set(DOLFIN_MAN_DIR "share/man")
 
-# FIXME: the following two should be more general
-set(DOLFIN_INSTALL_PYTHON_MODULE_DIR "lib/python2.6/site-packages")
-set(DOLFIN_INSTALL_PYTHON_EXT_DIR "lib/python2.6/site-packages")
-
 add_subdirectory(dolfin)
 
+#------------------------------------------------------------------------------
 # Generate helper file dolfin.conf
+
 # FIXME: not cross-platform compatible
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in ${CMAKE_CURRENT_BINARY_DIR}/dolfin.conf @ONLY)
+
+#------------------------------------------------------------------------------
+
