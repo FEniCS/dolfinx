@@ -37,7 +37,6 @@ foreach(DIR ${DOLFIN_DIRS})
 endforeach()
 
 #------------------------------------------------------------------------------
-
 # Add include directories and libs of required packages
 
 # libXml2
@@ -64,7 +63,7 @@ if(DOLFIN_ENABLE_MPI AND MPI_FOUND)
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${MPI_INCLUDE_PATH})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${MPI_LIBRARIES})
 
-  # Note: It's awkward
+  # Note: It's awkward to pick up the
   list(APPEND DOLFIN_CXX_FLAGS ${MPI_COMPILE_FLAGS})
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${MPI_INCLUDE_PATH})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${MPI_LINK_FLAGS})

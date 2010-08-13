@@ -8,7 +8,8 @@ set(CMAKE_VERBOSE_MAKEFILE 1)
 
 # Testing compiler flags
 #set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Devel)
 set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "-O2 ${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "-ansi -pipe ${CMAKE_CXX_FLAGS}")
