@@ -41,7 +41,7 @@ option(DOLFIN_ENABLE_EXTRADEBUG "Build with extra debug information (no -O2)." O
 option(DOLFIN_ENABLE_DEBUGUBLAS "Add some extra uBLAS debug information." OFF)
 option(DOLFIN_ENABLE_OPTIMIZE "Compile with optimization." OFF)
 option(DOLFIN_ENABLE_DOCS "Build documentation." OFF)
-option(DOLFIN_ENABLE_DEMOS "Build demos." OFF)
+option(DOLFIN_ENABLE_DEMOS "Build demos." ON)
 option(DOLFIN_ENABLE_TESTS "Build tests." OFF)
 option(DOLFIN_ENABLE_BENCHMARKS "Build benchmark programs." OFF)
 option(DOLFIN_ENABLE_CODECOVERAGE "Enable code coverage.")
@@ -85,6 +85,8 @@ find_package(Boost 1.36 COMPONENTS filesystem program_options system REQUIRED)
 if (DOLFIN_ENABLE_PYTHON)
   find_package(PythonInterp)
   find_package(PythonLibs)
+
+  # FIXME: Test for NumPy
 
   # If Python is found, check for SWIG
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
@@ -182,7 +184,17 @@ set(DOLFIN_PKGCONFIG_DIR "lib/pkgconfig")
 set(DOLFIN_SHARE_DIR "share")
 set(DOLFIN_MAN_DIR "share/man")
 
+# Add source directory
 add_subdirectory(dolfin)
+
+#------------------------------------------------------------------------------
+# Compile demos
+
+#message(STATUS "Testing: ${HEADERS}")
+#if (DOLFIN_ENABLE_DEMOS)
+#  message(STATUS "Enabing demos")
+#  add_subdirectory(demo)
+#endif (DOLFIN_ENABLE_DEMOS)
 
 #------------------------------------------------------------------------------
 # Generate helper file dolfin.conf

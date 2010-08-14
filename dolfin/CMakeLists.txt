@@ -63,11 +63,12 @@ if(DOLFIN_ENABLE_MPI AND MPI_FOUND)
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${MPI_INCLUDE_PATH})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${MPI_LIBRARIES})
 
-  # Note: It's awkward to pick up the
+  # FIXME: Check if we're using the MPI wrapper (e.g. mpicxx)
+  # Note: It's awkward to pick up the MPI compiler wrappers, so just add
+  #       all the flags
   list(APPEND DOLFIN_CXX_FLAGS ${MPI_COMPILE_FLAGS})
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${MPI_INCLUDE_PATH})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${MPI_LINK_FLAGS})
-
 
   # FIXME: Need to consider these MPI variables as well:
   # FIXME: Don't the MPI wrapper mpicxx take care of this?
@@ -196,13 +197,12 @@ install(TARGETS dolfin
   )
 
 #------------------------------------------------------------------------------
-# Write pkg-config file and install
+# Write pkg-config file and install it
 
 # Define packages that should be required by pkg-config file
 set(PKG_REQUIRES "ufc-1 libxml-2.0")
 
 get_directory_property(cmake_inc INCLUDE_DIRECTORIES)
-message(STATUS "Print inc dirs: ${cmake_inc}")
 foreach(_inc_dir ${cmake_inc})
   set(PKG_CXXFLAGS "-I${_inc_dir} ${PKG_CXXFLAGS}")
 endforeach()
@@ -236,3 +236,15 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin.pc
   DESTINATION ${DOLFIN_PKGCONFIG_DIR}
   COMPONENT Development
   )
+
+#------------------------------------------------------------------------------
+# Generate CMake config file (dolfin-config.cmake)
+
+configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config.cmake.in dolfin-config.cmake @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin-config.cmake
+  DESTINATION ${DOLFIN_INCLUDE_DIR}
+  COMPONENT Development
+  )
+
+#------------------------------------------------------------------------------
+

@@ -5,13 +5,13 @@ libdir=${exec_prefix}/lib
 includedir=${prefix}/include
 compiler=@CXX@
 definitions=@DOLFIN_DEFINITIONS@
-swigcflags=@PYTHON_CPPFLAGS@ 
-extlibs=@DOLFIN_EXT_LIBS@ 
+swigcflags=@PYTHON_CPPFLAGS@
+extlibs=@DOLFIN_EXT_LIBS@
 
 Name: DOLFIN
 Description: Dynamic Object-oriented Library for FINite element computation
 Version: @PACKAGE_VERSION@
 Requires: @PACKAGE_REQUIRES@
 Conflicts:
-Libs: @PACKAGE_LINKFLAGS@ -L${libdir} -ldolfin 
-Cflags: @PACKAGE_CXXFLAGS@ -I${includedir} 
+Libs: @PACKAGE_LINKFLAGS@ -L${libdir} -ldolfin
+Cflags: @PACKAGE_CXXFLAGS@ -I${includedir}
