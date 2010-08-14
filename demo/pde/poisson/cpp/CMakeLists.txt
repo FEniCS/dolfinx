@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 2.8)
 set(CMAKE_VERBOSE_MAKEFILE 1)
 
 # Get DOLFIN configuration data (dolfin-config.cmake must be in CMAKE_MODULE_PATH)
-find_package(dolfin)
+find_package(dolfin PATHS $ENV{CMAKE_MODULE_PATH})
 
 # DOLFIN include directories
 include_directories (${DOLFIN_INCLUDE_DIRS})

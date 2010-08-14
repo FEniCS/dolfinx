@@ -1,0 +1,18 @@
+# pkg-config configuration for DOLFIN
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@CMAKE_INSTALL_PREFIX@
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+compiler=@CMAKE_CXX_COMPILER@
+definitions=@PKG_DEFINITIONS@
+swigcflags=@PYTHON_CPPFLAGS@
+extlibs=@DOLFIN_EXT_LIBS@
+
+Name: DOLFIN
+Description: Dynamic Object-oriented Library for FINite element computation
+Version: @DOLFIN_VERSION@
+Requires: @PKG_REQUIRES@
+Conflicts:
+Libs: @PKG_LINKFLAGS@ -L${libdir} -ldolfin
+Cflags: @PKG_CXXFLAGS@ -I${includedir}
+
