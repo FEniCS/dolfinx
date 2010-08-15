@@ -22,7 +22,7 @@ include_directories (${DOLFIN_INCLUDE_DIRS})
 link_directories(${DOLFIN_LIBRARY_DIR})
 
 # Executable
-add_executable(demo main.cpp)
+add_executable(poisson-demo main.cpp)
 
 # DOLFIN library
-target_link_libraries(demo ${DOLFIN_LIBRARIES})
+target_link_libraries(poisson-demo ${DOLFIN_LIBRARIES})

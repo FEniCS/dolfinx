@@ -33,25 +33,38 @@ include_directories (${DOLFIN_INCLUDE_DIRS})
 link_directories(${DOLFIN_LIBRARY_DIR})
 
 # Executable
-add_executable(demo %s)
+add_executable(%s %s)
 
 # DOLFIN library
-target_link_libraries(demo ${DOLFIN_LIBRARIES})
+target_link_libraries(%s ${DOLFIN_LIBRARIES})
 """
 
 # Write CMakeLists.txt file
 cwd = os.getcwd()
 for root, dirs, files in os.walk(cwd +"/demo"):
 
+    executable_names = set()
+
     # For 'cpp' directories, get list of .cpp files
     if "cpp" in dirs:
         cpp_files = []
         demo_dir = root + "/cpp"
+        tmp, demo_name = os.path.split(root)
         for f in os.listdir(demo_dir):
-          filename, extension = os.path.splitext(f)
-          if extension == ".cpp":
-              cpp_files.append(f)
+            filename, extension = os.path.splitext(f)
+            if extension == ".cpp":
+                cpp_files.append(f)
+
+        # Name of demo and cpp source files
+        demo_name += "-demo"
+        cpp_files = ' '.join(cpp_files)
+
+        # Check for duplicate executable names
+        if demo_name not in executable_names:
+            executable_names.add(demo_name)
+        else:
+            print "Warning: duplicate executable names found when generating CMakeLists.txt files."
 
         # Write file
         with open(demo_dir + "/CMakeLists.txt", 'w') as f:
-            f.write(cmakelists_str % ' '.join(cpp_files))
+            f.write( cmakelists_str % (demo_name, cpp_files, demo_name) )
