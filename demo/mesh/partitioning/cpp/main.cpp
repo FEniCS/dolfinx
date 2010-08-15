@@ -13,6 +13,7 @@
 //
 //     ./plotpartitions <n>
 
+#include <sstream>
 #include <dolfin.h>
 
 using namespace dolfin;
@@ -23,9 +24,9 @@ int main()
   Mesh mesh("unitsquare.xml.gz");
 
   // Store partition to file
-  char filename[100];
-  sprintf(filename, "unitsquare-%d.xml", dolfin::MPI::process_number());
-  File file(filename);
+  std::ostringstream filename;
+  filename << "unitsquare-" << dolfin::MPI::process_number() << ".xml";
+  File file(filename.str());
   file << mesh;
 
   return 0;
