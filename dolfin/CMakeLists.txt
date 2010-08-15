@@ -242,7 +242,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin.pc
 
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config.cmake.in dolfin-config.cmake @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin-config.cmake
-  DESTINATION ${DOLFIN_INCLUDE_DIR}
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin/cmake
   COMPONENT Development
   )
 

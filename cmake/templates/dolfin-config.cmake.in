@@ -1,6 +1,12 @@
+# - DOLFIN
 # CMake configuration for DOLFIN
 #
 # This file has been automatically generated.
+
+# FIXME: Check that naming conforms to CMake standards
+
+# Package found
+set(DOLFIN_FOUND TRUE)
 
 # Compilers
 set(DOLFIN_CXX_COMPILER "@CMAKE_CXX_COMPILER@")
@@ -14,9 +20,10 @@ set(DOLFIN_CXX_FLAGS "@CMAKE_CXX_FLAGS@")
 # Include directories
 set(DOLFIN_INCLUDE_DIRS "@DOLFIN_INCLUDE_DIRECTORIES@;@CMAKE_INSTALL_PREFIX@/@DOLFIN_INCLUDE_DIR@;")
 
-# Libararies
+# Library directories
 set(DOLFIN_LIBRARY_DIR "@CMAKE_INSTALL_PREFIX@/@DOLFIN_LIB_DIR@")
 
+# Libraries
 set(DOLFIN_LIBRARIES "dolfin")
 
 # Version

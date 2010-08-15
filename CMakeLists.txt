@@ -125,7 +125,7 @@ if (DOLFIN_ENABLE_MTL4)
 endif (DOLFIN_ENABLE_MTL4)
 
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc.dolfin)
+  #find_package(PETSc.dolfin)
 
   if(DOLFIN_ENABLE_SLEPC)
     find_package(SLEPc)
@@ -191,7 +191,7 @@ add_subdirectory(dolfin)
 # Compile demos
 
 #message(STATUS "Testing: ${HEADERS}")
-#if (DOLFIN_ENABLE_DEMOS)
+##if (DOLFIN_ENABLE_DEMOS)
 #  message(STATUS "Enabing demos")
 #  add_subdirectory(demo)
 #endif (DOLFIN_ENABLE_DEMOS)
