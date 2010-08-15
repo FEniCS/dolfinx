@@ -26,4 +26,3 @@ add_executable(demo main.cpp)
 
 # DOLFIN library
 target_link_libraries(demo ${DOLFIN_LIBRARIES})
-

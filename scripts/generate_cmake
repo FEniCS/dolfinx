@@ -43,9 +43,15 @@ target_link_libraries(demo ${DOLFIN_LIBRARIES})
 cwd = os.getcwd()
 for root, dirs, files in os.walk(cwd +"/demo"):
 
+    # For 'cpp' directories, get list of .cpp files
     if "cpp" in dirs:
+        cpp_files = []
         demo_dir = root + "/cpp"
-        cmake_filename = demo_dir + "/CMakeLists.text"
-        with open(cmake_filename, 'w') as f:
-            f.write(cmakelists_str % "main.cpp")
+        for f in os.listdir(demo_dir):
+          filename, extension = os.path.splitext(f)
+          if extension == ".cpp":
+              cpp_files.append(f)
 
+        # Write file
+        with open(demo_dir + "/CMakeLists.txt", 'w') as f:
+            f.write(cmakelists_str % ' '.join(cpp_files))
