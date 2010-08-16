@@ -178,7 +178,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
 add_library(dolfin SHARED ${DOLFIN_H} ${HEADERS} ${SOURCES})
 set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 
-set_target_properties(dolfin PROPERTIES LINK_FLAGS ${DOLFIN_LINK_FLAGS})
+# FIXME: Commented out because it caused an error
+# FIXME: Johanned, what does it do?
+#set_target_properties(dolfin PROPERTIES LINK_FLAGS ${DOLFIN_LINK_FLAGS})
 
 # Add DOFLIN target libraries
 target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES})
