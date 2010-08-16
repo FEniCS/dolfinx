@@ -1,25 +1,28 @@
-project(DOLFIN)
+# Top level CMakeLists.txt file for DOLFIN
 
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
+#------------------------------------------------------------------------------
+# Set build type only if it has not been defined by the user on the command line
+# NOTE: This must called called before 'project'
+
+#if(DEFINED CMAKE_BUILD_TYPE)
+#   SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Choose the type of
+#build, options are: None Debug
+#Release RelWithDebInfo Maintainer MinSizeRel.")
+#else()
+#   SET(CMAKE_BUILD_TYPE Maintainer CACHE STRING "Choose the type of build,
+#options are: None CMAKE_C_FLAGS used) Debug Release
+#RelWithDebInfo Maintainer MinSizeRel.")
+#endif()
+
+#------------------------------------------------------------------------------
+
+project(DOLFIN)
+
 # Set verbose output while testing CMake
 set(CMAKE_VERBOSE_MAKEFILE 1)
-
-# Testing compiler flags
-#set(CMAKE_BUILD_TYPE Release)
-#set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_BUILD_TYPE Devel)
-set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS}")
-set(CMAKE_CXX_FLAGS "-O2 ${CMAKE_CXX_FLAGS}")
-set(CMAKE_CXX_FLAGS "-ansi -pipe ${CMAKE_CXX_FLAGS}")
-
-# Set DOLFIN version number
-set(DOLFIN_VERSION_MAJOR "0")
-set(DOLFIN_VERSION_MINOR "9")
-set(DOLFIN_VERSION_MICRO "8")
-set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
-add_definitions(-DPACKAGE_VERSION="${DOLFIN_VERSION}")
 
 # Set special link option, see `cmake --help-policy CMP0003`
 if(COMMAND cmake_policy)
@@ -31,20 +34,24 @@ set(DOLFIN_CMAKE_DIR "${DOLFIN_SOURCE_DIR}/cmake" CACHE INTERNAL "")
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
 
 #------------------------------------------------------------------------------
+# Set DOLFIN version number
+
+set(DOLFIN_VERSION_MAJOR "0")
+set(DOLFIN_VERSION_MINOR "9")
+set(DOLFIN_VERSION_MICRO "8")
+set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
+add_definitions(-DPACKAGE_VERSION="${DOLFIN_VERSION}")
+
+#------------------------------------------------------------------------------
 # Configurable options for how we want to build
 
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
 #option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
-option(DOLFIN_ENABLE_DEBUG "Build with debug information." ON)
-option(DOLFIN_ENABLE_EXTRADEBUG "Build with extra debug information (no -O2)." OFF)
-option(DOLFIN_ENABLE_DEBUGUBLAS "Add some extra uBLAS debug information." OFF)
-option(DOLFIN_ENABLE_OPTIMIZE "Compile with optimization." OFF)
-option(DOLFIN_ENABLE_DOCS "Build documentation." OFF)
+option(DOLFIN_DEBUG_UBLAS "Add some extra uBLAS debug information." OFF)
+#option(DOLFIN_ENABLE_DOCS "Build documentation." OFF)
 option(DOLFIN_ENABLE_UNIT_TESTS "Link to unit testing library." ON)
-option(DOLFIN_ENABLE_BENCHMARKS "Build benchmark programs." OFF)
-option(DOLFIN_ENABLE_CODECOVERAGE "Enable code coverage." OFF)
-
+option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 
 #------------------------------------------------------------------------------
@@ -69,6 +76,27 @@ option(DOLFIN_ENABLE_GMP "Compile with support for GMP." ON)
 option(DOLFIN_ENABLE_ZLIB "Compile with support for zlib." ON)
 option(DOLFIN_ENABLE_CGAL "Compile with support for CGAL" ON)
 option(DOLFIN_ENABLE_PYTHON "Compile the Python wrappers." ON)
+
+#------------------------------------------------------------------------------
+# Compiler flags
+
+# Default build type
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
+      "Choose the type of build, options are: Debug Release RelWithDebInfo Maintainer MinSizeRel."
+      FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
+
+# Maintainer flags
+set(CMAKE_CXX_FLAGS_MAINTAINER "-O2 -g -ansi -pipe -Wall -Werror -DDEBUG" CACHE STRING
+  "Flags used by the compiler during development." FORCE)
+
+# FIXME: Do we want to add -DDEBUG to RelWithDebInfo?
+
+# Do not debug uBLAS unless requested
+if (NOT DOLFIN_DEBUG_UBLAS)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_UBLAS_NDEBUG")
+endif ()
 
 #------------------------------------------------------------------------------
 # Run tests to find required packages
@@ -141,12 +169,10 @@ if (DOLFIN_ENABLE_MTL4)
 endif (DOLFIN_ENABLE_MTL4)
 
 if (DOLFIN_ENABLE_PETSC)
-  #find_package(PETSc.dolfin)
-
+  find_package(PETSc.dolfin)
   if(PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
     find_package(SLEPc)
   endif(PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-
 endif (DOLFIN_ENABLE_PETSC)
 
 if (DOLFIN_ENABLE_GMP)
