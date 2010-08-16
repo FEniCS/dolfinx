@@ -52,6 +52,9 @@ option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 
 # FIXME: Discuss which should be enabled by default
 # FIXME: AL: I suggest only the Python wrappers
+# FIXME: GNW: That would lead to most demos failing (no LU solver)
+# FIXME: GNW: I suggest enabling everything, but using QUIET to eliminate
+#             excessive output
 
 option(DOLFIN_ENABLE_MPI "Compile with support for MPI." ON)
 option(DOLFIN_ENABLE_PETSC "Compile with support for PETSc linear algebra." ON)
@@ -70,8 +73,8 @@ option(DOLFIN_ENABLE_PYTHON "Compile the Python wrappers." ON)
 #------------------------------------------------------------------------------
 # Run tests to find required packages
 
-find_package(UFC.dolfin)
-find_package(Armadillo.dolfin)
+find_package(UFC.dolfin  REQUIRED)
+find_package(Armadillo.dolfin REQUIRED)
 find_package(LibXml2 REQUIRED)
 
 # FIXME: Is there a more elegant way to do this?
@@ -93,8 +96,8 @@ find_package(Boost 1.36 COMPONENTS filesystem program_options system REQUIRED)
 # Run tests to find optional packages
 
 if (DOLFIN_ENABLE_PYTHON)
-  find_package(PythonInterp)
-  find_package(PythonLibs)
+  find_package(PythonInterp QUIET)
+  find_package(PythonLibs QUIET)
 
   # If Python is found, check for NumPy and SWIG
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
@@ -106,31 +109,30 @@ if (DOLFIN_ENABLE_PYTHON)
 endif(DOLFIN_ENABLE_PYTHON)
 
 if (DOLFIN_ENABLE_MPI)
-  find_package(MPI)
+  find_package(MPI QUIET)
   if (DOLFIN_ENABLE_PARMETIS)
-    find_package(ParMETIS.dolfin)
+    find_package(ParMETIS.dolfin QUIET)
   endif (DOLFIN_ENABLE_PARMETIS)
-
 endif (DOLFIN_ENABLE_MPI)
 
 if (DOLFIN_ENABLE_SCOTCH)
-  find_package(ScotchPT)
+  find_package(ScotchPT QUIET)
 endif (DOLFIN_ENABLE_SCOTCH)
 
 if (DOLFIN_ENABLE_UMFPACK)
-  find_package(UMFPACK.dolfin)
+  find_package(UMFPACK.dolfin QUIET)
 endif (DOLFIN_ENABLE_UMFPACK)
 
 if (DOLFIN_ENABLE_CHOLMOD)
-  find_package(Cholmod)
+  find_package(Cholmod QUIET)
 endif (DOLFIN_ENABLE_CHOLMOD)
 
 if (DOLFIN_ENABLE_TRILINOS)
-  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include $ENV{Trilinos_DIR}/include QUIET)
+  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include QUIET)
 endif (DOLFIN_ENABLE_TRILINOS)
 
 if (DOLFIN_ENABLE_MTL4)
-  find_package(MTL4.dolfin)
+  find_package(MTL4.dolfin QUIET)
 endif (DOLFIN_ENABLE_MTL4)
 
 if (DOLFIN_ENABLE_PETSC)

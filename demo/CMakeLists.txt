@@ -4,34 +4,29 @@ cmake_minimum_required(VERSION 2.8)
 # Set verbose output while testing CMake
 set(CMAKE_VERBOSE_MAKEFILE 1)
 
-# Build list of all cpp demo directories
-file( GLOB_RECURSE list "main.cpp")
-list( SORT list )
-string(REGEX REPLACE "/main.cpp" "" list "${list}")
+# Find DOLFIN config file (not used here, but check that the demo will be able
+# to find it
+find_package(dolfin REQUIRED)
 
-#foreach( entry ${list} )
-#  if ( IS_DIRECTORY ${entry} )
-#    message(STATUS "CPP dir: ${entry}")
-#  endif()
-#endforeach()
+# If config file is found, add all demo sub-directories, else print helper
+# message
+if (dolfin_FOUND)
 
-# Add each C++ demo directory
-foreach( demo_dir ${list} )
-  message(STATUS "CPP dir: ${demo_dir}")
-  add_subdirectory( ${demo_dir} )
-endforeach()
+  # Build list of all cpp demo directories
+  file( GLOB_RECURSE list "main.cpp")
+  list( SORT list )
+  string(REGEX REPLACE "/main.cpp" "" list "${list}")
 
-# Manual list of C++ demo directories
-#set(DOLFIN_DEMOS_DIRS
-#  /home/garth/code/fenics/dolfin/dolfin-cmake/demo/pde/poisson/cpp
-  #/home/garth/code/fenics/dolfin/dolfin-cmake/demo/pde/elasticity/cpp
-  #/home/garth/code/fenics/dolfin/dolfin-cmake/demo/pde/simple/cpp
-#  )
+  # Add each C++ demo directory
+  foreach( demo_dir ${list} )
+    message(STATUS "Add C++ demo: ${demo_dir}")
+    add_subdirectory( ${demo_dir} )
+  endforeach()
 
-#foreach( demo_dir ${DOLFIN_DEMOS_DIRS} )
-#  message(STATUS "Man CPP dir: ${demo_dir}")
-#  add_subdirectory( ${demo_dir} )
-#endforeach()
+else()
 
+  message(STATUS "Could not locate dolfin-config.cmake file. Did you do 'make install' for the DOLFIN library and set the appropriate paths (source <build_dir>/dolfin.conf)?")
+
+endif()
 
 
