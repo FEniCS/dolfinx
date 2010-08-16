@@ -15,22 +15,22 @@ string(REGEX REPLACE "/main.cpp" "" list "${list}")
 #endforeach()
 
 # Add each C++ demo directory
-#foreach( demo_dir ${list} )
-#  message(STATUS "CPP dir: ${demo_dir}")
-#  add_subdirectory( ${demo_dir} )
-#endforeach()
-
-# Manual list of C++ demo directories
-set(DOLFIN_DEMOS_DIRS
-  /home/garth/code/fenics/dolfin/dolfin-cmake/demo/pde/poisson/cpp
-  #/home/garth/code/fenics/dolfin/dolfin-cmake/demo/pde/elasticity/cpp
-  #/home/garth/code/fenics/dolfin/dolfin-cmake/demo/pde/simple/cpp
-  )
-
-foreach( demo_dir ${DOLFIN_DEMOS_DIRS} )
-  message(STATUS "Man CPP dir: ${demo_dir}")
+foreach( demo_dir ${list} )
+  message(STATUS "CPP dir: ${demo_dir}")
   add_subdirectory( ${demo_dir} )
 endforeach()
+
+# Manual list of C++ demo directories
+#set(DOLFIN_DEMOS_DIRS
+#  /home/garth/code/fenics/dolfin/dolfin-cmake/demo/pde/poisson/cpp
+  #/home/garth/code/fenics/dolfin/dolfin-cmake/demo/pde/elasticity/cpp
+  #/home/garth/code/fenics/dolfin/dolfin-cmake/demo/pde/simple/cpp
+#  )
+
+#foreach( demo_dir ${DOLFIN_DEMOS_DIRS} )
+#  message(STATUS "Man CPP dir: ${demo_dir}")
+#  add_subdirectory( ${demo_dir} )
+#endforeach()
 
 
 
