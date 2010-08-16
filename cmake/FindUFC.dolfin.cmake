@@ -10,6 +10,6 @@ include(FindPkgConfig)
 pkg_check_modules(UFC REQUIRED ufc-1>=1.4.1)
 
 # UFC is a required package
-if(NOT $UFC_FOUND)
+if(NOT UFC_FOUND)
   message(FATAL_ERROR "*** Unable to configure package 'UFC'.")
-endif(NOT $UFC_FOUND)
+endif(NOT UFC_FOUND)
