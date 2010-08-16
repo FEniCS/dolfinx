@@ -85,6 +85,11 @@ endif(NOT UFC_FOUND OR NOT ARMADILLO_FOUND OR NOT LIBXML2_FOUND)
 # FIXME: Why is this not a separate file?
 # FIXME: Because we want to use the system FindBoost and avoid as many
 #        home-baked files as possible
+# FIXME: I don't see the difference. UFC.dolfin also uses builtin pkg-config
+#        functionality and that is done in a separate file. Why not just move
+#        the following 5 lines into FindBoost.dolfin? It would make this file
+#        cleaner.
+
 # Find Boost
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
 set(Boost_USE_STATIC_LIBS OFF)
