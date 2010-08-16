@@ -49,7 +49,10 @@ option(DOLFIN_ENABLE_CODECOVERAGE "Enable code coverage.")
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 
 #------------------------------------------------------------------------------
-# Enable or disable external packages
+# Enable or disable optional packages
+
+# FIXME: Discuss which should be enabled by default
+# FIXME: AL: I suggest only the Python wrappers
 
 option(DOLFIN_ENABLE_MPI "Compile with support for MPI." ON)
 option(DOLFIN_ENABLE_PETSC "Compile with support for PETSc linear algebra." ON)
@@ -86,7 +89,7 @@ set(BOOST_ROOT $ENV{BOOST_DIR})
 find_package(Boost 1.36 COMPONENTS filesystem program_options system REQUIRED)
 
 #------------------------------------------------------------------------------
-# Run tests to find optional external packages
+# Run tests to find optional packages
 
 if (DOLFIN_ENABLE_PYTHON)
   find_package(PythonInterp)
