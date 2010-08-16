@@ -1,11 +1,11 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman 2006.
 // Modified by Kristoffer Selim 2009.
 //
 // First added:  2006-06-02
-// Last changed: 2010-02-11
+// Last changed: 2010-08-16
 
 #ifndef __EDGE_H
 #define __EDGE_H
@@ -14,6 +14,7 @@
 #include "Point.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
+#include "MeshFunction.h"
 
 namespace dolfin
 {
@@ -33,7 +34,7 @@ namespace dolfin
     /// Destructor
     ~Edge() {}
 
-    /// Compute Euclidian length of edge
+    /// Compute Euclidean length of edge
     double length();
 
   };
@@ -49,6 +50,17 @@ namespace dolfin
 
     inline Edge& operator*() { return *operator->(); }
     inline Edge* operator->() { return static_cast<Edge*>(MeshEntityIterator::operator->()); }
+
+  };
+
+  /// An EdgeFunction is a MeshFunction of topological dimension 1.
+
+  template <class T> class EdgeFunction : public MeshFunction<T>
+  {
+  public:
+
+    EdgeFunction(const Mesh& mesh) : MeshFunction<T>(mesh, 1) {}
+    EdgeFunction(const Mesh& mesh, const T& value) : MeshFunction<T>(mesh, 1, value) {}
 
   };
 

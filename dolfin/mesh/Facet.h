@@ -1,10 +1,10 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2006-06-02
-// Last changed: 2010-02-27
+// Last changed: 2010-08-16
 
 #ifndef __FACET_H
 #define __FACET_H
@@ -86,6 +86,17 @@ namespace dolfin
 
     inline const Facet& operator*() { return *operator->(); }
     inline const Facet* operator->() { return static_cast<Facet*>(MeshEntityIterator::operator->()); }
+
+  };
+
+  /// A FacetFunction is a MeshFunction of topological codimension 1.
+
+  template <class T> class FacetFunction : public MeshFunction<T>
+  {
+  public:
+
+    FacetFunction(const Mesh& mesh) : MeshFunction<T>(mesh, mesh.topology().dim() - 1) {}
+    FacetFunction(const Mesh& mesh, const T& value) : MeshFunction<T>(mesh, mesh.topology().dim() - 1, value) {}
 
   };
 

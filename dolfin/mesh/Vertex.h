@@ -1,8 +1,8 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-01
-// Last changed: 2010-02-11
+// Last changed: 2010-08-16
 
 #ifndef __VERTEX_H
 #define __VERTEX_H
@@ -10,6 +10,7 @@
 #include "Point.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
+#include "MeshFunction.h"
 
 namespace dolfin
 {
@@ -51,6 +52,17 @@ namespace dolfin
 
     inline const Vertex& operator*() { return *operator->(); }
     inline const Vertex* operator->() { return static_cast<Vertex*>(MeshEntityIterator::operator->()); }
+
+  };
+
+  /// A VertexFunction is a MeshFunction of topological dimension 0.
+
+  template <class T> class VertexFunction : public MeshFunction<T>
+  {
+  public:
+
+    VertexFunction(const Mesh& mesh) : MeshFunction<T>(mesh, 0) {}
+    VertexFunction(const Mesh& mesh, const T& value) : MeshFunction<T>(mesh, 0, value) {}
 
   };
 
