@@ -49,7 +49,10 @@ option(DOLFIN_ENABLE_CODECOVERAGE "Enable code coverage.")
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 
 #------------------------------------------------------------------------------
-# Enable or disable external packages
+# Enable or disable optional packages
+
+# FIXME: Discuss which should be enabled by default
+# FIXME: AL: I suggest only the Python wrappers
 
 option(DOLFIN_ENABLE_MPI "Compile with support for MPI." ON)
 option(DOLFIN_ENABLE_PETSC "Compile with support for PETSc linear algebra." ON)
@@ -72,6 +75,14 @@ find_package(UFC.dolfin)
 find_package(Armadillo.dolfin)
 find_package(LibXml2 REQUIRED)
 
+# FIXME: Is there a more elegant way to do this?
+if(NOT UFC_FOUND OR NOT ARMADILLO_FOUND OR NOT LIBXML2_FOUND)
+  message(FATAL_ERROR "*** Unable to configure, one or more required packages missing.")
+endif(NOT UFC_FOUND OR NOT ARMADILLO_FOUND OR NOT LIBXML2_FOUND)
+
+# FIXME: Why is this not a separate file?
+# FIXME: Because we want to use the system FindBoost and avoid as many
+#        home-baked files as possible
 # Find Boost
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
 set(Boost_USE_STATIC_LIBS OFF)
@@ -80,16 +91,15 @@ set(BOOST_ROOT $ENV{BOOST_DIR})
 find_package(Boost 1.36 COMPONENTS filesystem program_options system REQUIRED)
 
 #------------------------------------------------------------------------------
-# Run tests to find optional external packages
+# Run tests to find optional packages
 
 if (DOLFIN_ENABLE_PYTHON)
   find_package(PythonInterp)
   find_package(PythonLibs)
 
-  # FIXME: Test for NumPy
-
-  # If Python is found, check for SWIG
+  # If Python is found, check for NumPy and SWIG
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
+    find_package(NumPy.dolfin REQUIRED)
     find_package(SWIG REQUIRED)
     include(UseSWIG)
   endif (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
@@ -117,7 +127,7 @@ if (DOLFIN_ENABLE_CHOLMOD)
 endif (DOLFIN_ENABLE_CHOLMOD)
 
 if (DOLFIN_ENABLE_TRILINOS)
-  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include $ENV{Trilinos_DIR}/include /usr/local/include /usr/include)
+  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include $ENV{Trilinos_DIR}/include QUIET)
 endif (DOLFIN_ENABLE_TRILINOS)
 
 if (DOLFIN_ENABLE_MTL4)
@@ -142,13 +152,7 @@ if (DOLFIN_ENABLE_ZLIB)
 endif (DOLFIN_ENABLE_ZLIB)
 
 if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL PATHS
-                $ENV{CGAL_DIR}/lib
-                /usr/local/lib
-                /usr/local/lib/CGAL
-                /usr/lib
-                /usr/lib/CGAL
-                )
+  find_package(CGAL PATHS $ENV{CGAL_DIR}/lib)
 endif (DOLFIN_ENABLE_CGAL)
 
 #------------------------------------------------------------------------------
@@ -167,6 +171,7 @@ if (PYTHONINTERP_FOUND)
 endif (PYTHONINTERP_FOUND)
 
 #------------------------------------------------------------------------------
+# Target names and installation directories
 
 # Append the library version information to the library target properties
 if(DOLFIN_WITH_LIBRARY_VERSION)
@@ -175,6 +180,9 @@ if(DOLFIN_WITH_LIBRARY_VERSION)
     SOVERSION ${DOLFIN_VERSION_MAJOR}
   )
 endif(DOLFIN_WITH_LIBRARY_VERSION)
+
+# FIXME: Can CMake figure out the 'proper' conventions? It will depend on the
+#        platform, so best if CMake does it
 
 # Set DOLFIN install sub-directories
 set(DOLFIN_BIN_DIR "bin")
@@ -188,7 +196,7 @@ set(DOLFIN_MAN_DIR "share/man")
 add_subdirectory(dolfin)
 
 #------------------------------------------------------------------------------
-# Compile demos
+# Configure demos
 
 #message(STATUS "Testing: ${HEADERS}")
 ##if (DOLFIN_ENABLE_DEMOS)
@@ -203,4 +211,3 @@ add_subdirectory(dolfin)
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in ${CMAKE_CURRENT_BINARY_DIR}/dolfin.conf @ONLY)
 
 #------------------------------------------------------------------------------
-

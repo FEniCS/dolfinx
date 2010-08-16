@@ -28,8 +28,7 @@ def boundary(x):
     return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
 
 # Define boundary condition
-u0 = Constant(0.0)
-bc = DirichletBC(V, u0, boundary)
+bc = DirichletBC(V, 0.0, boundary)
 
 # Define variational problem
 v = TestFunction(V)

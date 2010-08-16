@@ -50,6 +50,7 @@ list(APPEND DOLFIN_INCLUDE_DIRECTORIES  ${UFC_INCLUDE_DIRS})
 # Armadillo
 list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${ARMADILLO_INCLUDE_DIR})
 list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${ARMADILLO_LIBRARY})
+list(APPEND DOLFIN_LINK_FLAGS ${ARMADILLO_LINK_FLAGS})
 
 # Boost
 list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
@@ -176,6 +177,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
 # Define libraries
 add_library(dolfin SHARED ${DOLFIN_H} ${HEADERS} ${SOURCES})
 set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
+
+# FIXME: What link flags are we adding? Is this platform-independent?
+# Add link flags (if any)
+if(DOLFIN_LINK_FLAGS)
+  set_target_properties(dolfin PROPERTIES LINK_FLAGS ${DOLFIN_LINK_FLAGS})
+endif(DOLFIN_LINK_FLAGS)
 
 # Add DOFLIN target libraries
 target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES})

@@ -4,6 +4,7 @@
 # ARMADILLO_FOUND - system has Armadillo
 # ARMADILLO_INCLUDE_DIR - the Armadillo include directory
 # ARMADILLO_LIBRARY - the library needed to use Armadillo
+# ARMADILLO_LINK_FLAGS - linking flags for Armadillo
 # ARMADILLO_VERSION - the Armadillo version string (MAJOR.MINOR.PATCH)
 #
 # Setting these changes the behavior of the search
@@ -30,12 +31,27 @@ if(NOT ARMADILLO_FOUND)
     )
   mark_as_advanced(ARMADILLO_LIBRARY)
 
+  # On mac systems, we likely have to link against the vecLib framework
+  if(APPLE)
+    include(CMakeFindFrameworks)
+    CMAKE_FIND_FRAMEWORKS(vecLib)
+    if(vecLib_FRAMEWORKS)
+      set(ARMADILLO_LINK_FLAGS "-framework vecLib")
+      mark_as_advanced(ARMADILLO_LINK_FLAGS)
+    else(vecLib_FRAMEWORKS)
+      message(STATUS "vecLib framework not found.")
+    endif(vecLib_FRAMEWORKS)
+  endif(APPLE)
+
   if(ARMADILLO_INCLUDE_DIR AND ARMADILLO_LIBRARY)
     include(CheckCXXSourceRuns)
 
     # These are needed for the try_run and check_cxx_source_runs commands below
     set(CMAKE_REQUIRED_INCLUDES ${ARMADILLO_INCLUDE_DIR})
     set(CMAKE_REQUIRED_LIBRARIES ${ARMADILLO_LIBRARY})
+    if(ARMADILLO_LINK_FLAGS)
+      set(CMAKE_REQUIRED_LIBRARIES "${ARMADILLO_LINK_FLAGS} ${CMAKE_REQUIRED_LIBRARIES}")
+    endif(ARMADILLO_LINK_FLAGS)
 
     set(ARMADILLO_CONFIG_TEST_VERSION_CPP ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/check_armadillo/armadillo_config_test_version.cpp)
     file(WRITE ${ARMADILLO_CONFIG_TEST_VERSION_CPP} "
