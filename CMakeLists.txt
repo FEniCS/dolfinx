@@ -41,10 +41,9 @@ option(DOLFIN_ENABLE_EXTRADEBUG "Build with extra debug information (no -O2)." O
 option(DOLFIN_ENABLE_DEBUGUBLAS "Add some extra uBLAS debug information." OFF)
 option(DOLFIN_ENABLE_OPTIMIZE "Compile with optimization." OFF)
 option(DOLFIN_ENABLE_DOCS "Build documentation." OFF)
-option(DOLFIN_ENABLE_DEMOS "Build demos." ON)
 option(DOLFIN_ENABLE_TESTS "Build tests." OFF)
 option(DOLFIN_ENABLE_BENCHMARKS "Build benchmark programs." OFF)
-option(DOLFIN_ENABLE_CODECOVERAGE "Enable code coverage.")
+option(DOLFIN_ENABLE_CODECOVERAGE "Enable code coverage." OFF)
 
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 
@@ -194,15 +193,6 @@ set(DOLFIN_MAN_DIR "share/man")
 
 # Add source directory
 add_subdirectory(dolfin)
-
-#------------------------------------------------------------------------------
-# Configure demos
-
-#message(STATUS "Testing: ${HEADERS}")
-##if (DOLFIN_ENABLE_DEMOS)
-#  message(STATUS "Enabing demos")
-#  add_subdirectory(demo)
-#endif (DOLFIN_ENABLE_DEMOS)
 
 #------------------------------------------------------------------------------
 # Generate helper file dolfin.conf
