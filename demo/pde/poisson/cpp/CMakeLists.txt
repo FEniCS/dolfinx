@@ -15,9 +15,6 @@ set(CMAKE_VERBOSE_MAKEFILE 1)
 # Get DOLFIN configuration data (dolfin-config.cmake must be in DOLFIN_CMAKE_CONFIG_PATH)
 find_package(dolfin)
 
-message(STATUS "DOLFIN (A) found ${dolfin_FOUND}")
-message(STATUS "DOLFIN (B) found ${DOLFIN_FOUND}")
-
 # Compiler definitions
 add_definitions(${DOLFIN_CXX_DEFINITIONS})
 
