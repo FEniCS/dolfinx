@@ -225,7 +225,7 @@ if "configure" in COMMAND_LINE_TARGETS:
   # If Debug is enabled, add -g:
 
   if not env["enableDebugUblas"]:
-    env.Append(CXXFLAGS=" -BOOST_UBLAS_NDEBUG")
+    env.Append(CXXFLAGS=" -DBOOST_UBLAS_NDEBUG")
 
   # if Optimization is requested, use -O3
   if env["enableOptimize"]:
