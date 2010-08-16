@@ -128,7 +128,7 @@ if (DOLFIN_ENABLE_CHOLMOD)
 endif (DOLFIN_ENABLE_CHOLMOD)
 
 if (DOLFIN_ENABLE_TRILINOS)
-  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include $ENV{Trilinos_DIR}/include /usr/local/include /usr/include)
+  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include $ENV{Trilinos_DIR}/include QUIET)
 endif (DOLFIN_ENABLE_TRILINOS)
 
 if (DOLFIN_ENABLE_MTL4)
@@ -153,13 +153,7 @@ if (DOLFIN_ENABLE_ZLIB)
 endif (DOLFIN_ENABLE_ZLIB)
 
 if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL PATHS
-                $ENV{CGAL_DIR}/lib
-                /usr/local/lib
-                /usr/local/lib/CGAL
-                /usr/lib
-                /usr/lib/CGAL
-                )
+  find_package(CGAL PATHS $ENV{CGAL_DIR}/lib)
 endif (DOLFIN_ENABLE_CGAL)
 
 #------------------------------------------------------------------------------
