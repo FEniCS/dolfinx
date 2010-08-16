@@ -26,7 +26,7 @@ if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 endif()
 
-# FIXME: What do these lines do?
+# Set location of our FindFoo.cmake modules
 set(DOLFIN_CMAKE_DIR "${DOLFIN_SOURCE_DIR}/cmake" CACHE INTERNAL "")
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
 
@@ -41,7 +41,7 @@ option(DOLFIN_ENABLE_EXTRADEBUG "Build with extra debug information (no -O2)." O
 option(DOLFIN_ENABLE_DEBUGUBLAS "Add some extra uBLAS debug information." OFF)
 option(DOLFIN_ENABLE_OPTIMIZE "Compile with optimization." OFF)
 option(DOLFIN_ENABLE_DOCS "Build documentation." OFF)
-option(DOLFIN_ENABLE_TESTS "Build tests." OFF)
+option(DOLFIN_ENABLE_UNIT_TESTS "Link to unit testing library." ON)
 option(DOLFIN_ENABLE_BENCHMARKS "Build benchmark programs." OFF)
 option(DOLFIN_ENABLE_CODECOVERAGE "Enable code coverage." OFF)
 
@@ -155,6 +155,10 @@ endif (DOLFIN_ENABLE_ZLIB)
 if (DOLFIN_ENABLE_CGAL)
   find_package(CGAL PATHS $ENV{CGAL_DIR}/lib)
 endif (DOLFIN_ENABLE_CGAL)
+
+if (DOLFIN_ENABLE_UNIT_TESTS)
+  find_package(CppUnit.dolfin)
+endif (DOLFIN_ENABLE_UNIT_TESTS)
 
 #------------------------------------------------------------------------------
 # Get installation path for Python modules (if Python is enabled and installed)
