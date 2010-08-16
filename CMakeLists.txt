@@ -193,7 +193,7 @@ add_subdirectory(dolfin)
 #message(STATUS "Testing: ${HEADERS}")
 ##if (DOLFIN_ENABLE_DEMOS)
 #  message(STATUS "Enabing demos")
-#  add_subdirectory(demo)
+  add_subdirectory(demo)
 #endif (DOLFIN_ENABLE_DEMOS)
 
 #------------------------------------------------------------------------------
