@@ -40,7 +40,8 @@ set_source_files_properties(${SWIG_SOURCES} PROPERTIES CPLUSPLUS ON)
 # The prevents swig being run unnecessarily
 set_source_files_properties(dolfin.i PROPERTIES SWIG_MODULE_NAME cpp)
 
-include_directories(${PYTHON_INCLUDE_PATH})
+message(STATUS "NUMPY_INCLUDE_DIR = ${NUMPY_INCLUDE_DIR}")
+include_directories(${PYTHON_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
 
 swig_add_module(${SWIG_MODULE_NAME} python ${SWIG_SOURCES})
 swig_link_libraries(cpp dolfin ${PYTHON_LIBRARIES})

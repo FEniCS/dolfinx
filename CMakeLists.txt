@@ -92,10 +92,9 @@ if (DOLFIN_ENABLE_PYTHON)
   find_package(PythonInterp)
   find_package(PythonLibs)
 
-  # FIXME: Test for NumPy
-
-  # If Python is found, check for SWIG
+  # If Python is found, check for NumPy and SWIG
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
+    find_package(NumPy.dolfin REQUIRED)
     find_package(SWIG REQUIRED)
     include(UseSWIG)
   endif (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
