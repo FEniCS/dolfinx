@@ -62,7 +62,6 @@ namespace dolfin
   public:
 
     VertexFunction(const Mesh& mesh) : MeshFunction<T>(mesh, 0) {}
-    VertexFunction(const Mesh& mesh, const T& value) : MeshFunction<T>(mesh, 0, value) {}
 
   };
 

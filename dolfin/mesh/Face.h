@@ -49,7 +49,6 @@ namespace dolfin
   public:
 
     FaceFunction(const Mesh& mesh) : MeshFunction<T>(mesh, 2) {}
-    FaceFunction(const Mesh& mesh, const T& value) : MeshFunction<T>(mesh, 2, value) {}
 
   };
 
