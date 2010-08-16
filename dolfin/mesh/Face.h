@@ -1,14 +1,15 @@
-// Copyright (C) 2006-2007 Anders Logg.
+// Copyright (C) 2006-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-02
-// Last changed: 2007-10-23
+// Last changed: 2010-08-16
 
 #ifndef __FACE_H
 #define __FACE_H
 
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
+#include "MeshFunction.h"
 
 namespace dolfin
 {
@@ -38,6 +39,17 @@ namespace dolfin
 
     inline Face& operator*() { return *operator->(); }
     inline Face* operator->() { return static_cast<Face*>(MeshEntityIterator::operator->()); }
+
+  };
+
+  /// A FaceFunction is a MeshFunction of topological dimension 2.
+
+  template <class T> class FaceFunction : public MeshFunction<T>
+  {
+  public:
+
+    FaceFunction(const Mesh& mesh) : MeshFunction<T>(mesh, 2) {}
+    FaceFunction(const Mesh& mesh, const T& value) : MeshFunction<T>(mesh, 2, value) {}
 
   };
 

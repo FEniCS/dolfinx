@@ -1,11 +1,11 @@
-// Copyright (C) 2006-2009 Anders Logg.
+// Copyright (C) 2006-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman 2006.
 // Modified by Andre Massing 2009.
 //
 // First added:  2006-06-01
-// Last changed: 2010-02-11
+// Last changed: 2010-08-16
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -14,6 +14,7 @@
 #include "CellType.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
+#include "MeshFunction.h"
 
 namespace dolfin
 {
@@ -81,6 +82,17 @@ namespace dolfin
 
     inline Cell& operator*() { return *operator->(); }
     inline Cell* operator->() { return static_cast<Cell*>(MeshEntityIterator::operator->()); }
+
+  };
+
+  /// A CellFunction is a MeshFunction of topological codimension 0.
+
+  template <class T> class CellFunction : public MeshFunction<T>
+  {
+  public:
+
+    CellFunction(const Mesh& mesh) : MeshFunction<T>(mesh, mesh.topology().dim()) {}
+    CellFunction(const Mesh& mesh, const T& value) : MeshFunction<T>(mesh, mesh.topology().dim(), value) {}
 
   };
 
