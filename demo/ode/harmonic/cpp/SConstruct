@@ -14,4 +14,3 @@ env.ParseConfig('pkg-config --cflags --libs dolfin')
 
 # Program name
 env.Program('demo', 'main.cpp')
-env.Program('demo_solvedual', 'main_solvedual.cpp')
