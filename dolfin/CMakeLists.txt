@@ -178,6 +178,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
 add_library(dolfin SHARED ${DOLFIN_H} ${HEADERS} ${SOURCES})
 set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 
+# FIXME: What link flags are we adding? Is this platform-independent?
 # Add link flags (if any)
 if(DOLFIN_LINK_FLAGS)
   set_target_properties(dolfin PROPERTIES LINK_FLAGS ${DOLFIN_LINK_FLAGS})
