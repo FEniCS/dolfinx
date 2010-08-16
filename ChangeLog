@@ -1,3 +1,4 @@
+ - Allow setting constant boundary conditions directly without using Constant
  - Create missing directories if specified as part of file names
  - Allow re-use of preconditioners (only PETSc for now)
  - Fixes for UMFPACK solver on some 32 machines
