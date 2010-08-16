@@ -72,6 +72,12 @@ find_package(UFC.dolfin)
 find_package(Armadillo.dolfin)
 find_package(LibXml2 REQUIRED)
 
+# FIXME: Is there a more elegant way to do this?
+if(NOT UFC_FOUND OR NOT ARMADILLO_FOUND OR NOT LIBXML2_FOUND)
+  message(FATAL_ERROR "*** Unable to configure, one or more required packages missing.")
+endif(NOT UFC_FOUND OR NOT ARMADILLO_FOUND OR NOT LIBXML2_FOUND)
+
+# FIXME: Why is this not a separate file?
 # Find Boost
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
 set(Boost_USE_STATIC_LIBS OFF)
@@ -203,4 +209,3 @@ add_subdirectory(dolfin)
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in ${CMAKE_CURRENT_BINARY_DIR}/dolfin.conf @ONLY)
 
 #------------------------------------------------------------------------------
-
