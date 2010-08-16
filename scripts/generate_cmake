@@ -75,6 +75,8 @@ def generate_cmake_files(subdirectory, executable_suffix):
                 f.write( cmakelists_str % (program_name, cpp_files, program_name) )
 
 # Generate CMakeLists.text files
-sub_directories = [('demo', '-demo'), ('test', '-test')]
+sub_directories = [('demo', '-demo'), ('test', '-test'), ('bench', '-bench')]
 for sub_dir in sub_directories:
     generate_cmake_files(sub_dir[0], sub_dir[1])
+
+
