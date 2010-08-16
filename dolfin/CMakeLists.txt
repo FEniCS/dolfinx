@@ -166,6 +166,9 @@ if(DOLFIN_ENABLE_UNIT_TESTS AND CPPUNIT_FOUND)
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${CPPUNIT_LIBRARIES})
 endif(DOLFIN_ENABLE_UNIT_TESTS AND CPPUNIT_FOUND)
 
+message(STATUS "DEDS  = ${DOLFIN_CXX_DEFINITIONS}")
+message(STATUS "FLAGS = ${CMAKE_CXX_FLAGS}")
+
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 
