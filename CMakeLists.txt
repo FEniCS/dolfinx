@@ -78,6 +78,8 @@ if(NOT UFC_FOUND OR NOT ARMADILLO_FOUND OR NOT LIBXML2_FOUND)
 endif(NOT UFC_FOUND OR NOT ARMADILLO_FOUND OR NOT LIBXML2_FOUND)
 
 # FIXME: Why is this not a separate file?
+# FIXME: Because we want to use the system FindBoost and avoid as many
+#        home-baked files as possible
 # Find Boost
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
 set(Boost_USE_STATIC_LIBS OFF)
@@ -172,6 +174,7 @@ if (PYTHONINTERP_FOUND)
 endif (PYTHONINTERP_FOUND)
 
 #------------------------------------------------------------------------------
+# Target names and installation directories
 
 # Append the library version information to the library target properties
 if(DOLFIN_WITH_LIBRARY_VERSION)
@@ -180,6 +183,9 @@ if(DOLFIN_WITH_LIBRARY_VERSION)
     SOVERSION ${DOLFIN_VERSION_MAJOR}
   )
 endif(DOLFIN_WITH_LIBRARY_VERSION)
+
+# FIXME: Can CMake figure out the 'proper' conventions? It will depend on the
+#        platform, so best if CMake does it
 
 # Set DOLFIN install sub-directories
 set(DOLFIN_BIN_DIR "bin")
@@ -193,7 +199,7 @@ set(DOLFIN_MAN_DIR "share/man")
 add_subdirectory(dolfin)
 
 #------------------------------------------------------------------------------
-# Compile demos
+# Configure demos
 
 #message(STATUS "Testing: ${HEADERS}")
 ##if (DOLFIN_ENABLE_DEMOS)
