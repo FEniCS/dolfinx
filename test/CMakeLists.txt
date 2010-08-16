@@ -1,6 +1,11 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
+# Set special link option, see `cmake --help-policy CMP0003`
+if(COMMAND cmake_policy)
+  cmake_policy(SET CMP0003 NEW)
+endif()
+
 # Set verbose output while testing CMake
 set(CMAKE_VERBOSE_MAKEFILE 1)
 
@@ -12,15 +17,15 @@ find_package(dolfin REQUIRED)
 # message
 if (dolfin_FOUND)
 
-  # Build list of all cpp demo directories
-  file( GLOB_RECURSE list "main.cpp")
+  # Build list of all cpp directories
+  file( GLOB_RECURSE list "test.cpp")
   list( SORT list )
-  string(REGEX REPLACE "/main.cpp" "" list "${list}")
+  string(REGEX REPLACE "/test.cpp" "" list "${list}")
 
   # Add each C++ demo directory
-  foreach( demo_dir ${list} )
-    message(STATUS "Add C++ demo: ${demo_dir}")
-    add_subdirectory( ${demo_dir} )
+  foreach( cpp_dir ${list} )
+    message(STATUS "Add C++ test: ${cpp_dir}")
+    add_subdirectory( ${cpp_dir} )
   endforeach()
 
 else()

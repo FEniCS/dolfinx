@@ -12,15 +12,15 @@ find_package(dolfin REQUIRED)
 # message
 if (dolfin_FOUND)
 
-  # Build list of all cpp demo directories
+  # Build list of all cpp directories
   file( GLOB_RECURSE list "main.cpp")
   list( SORT list )
   string(REGEX REPLACE "/main.cpp" "" list "${list}")
 
-  # Add each C++ demo directory
-  foreach( demo_dir ${list} )
-    message(STATUS "Add C++ demo: ${demo_dir}")
-    add_subdirectory( ${demo_dir} )
+  # Add each C++ code directory
+  foreach( cpp_dir ${list} )
+    message(STATUS "Add C++ benchmark: ${cpp_dir}")
+    add_subdirectory( ${cpp_dir} )
   endforeach()
 
 else()
