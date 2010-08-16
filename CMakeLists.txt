@@ -80,14 +80,14 @@ option(DOLFIN_ENABLE_PYTHON "Compile the Python wrappers." ON)
 #------------------------------------------------------------------------------
 # Compiler flags
 
-# Default build type
+# Default build type (can be overridden by user)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
       "Choose the type of build, options are: Debug Release RelWithDebInfo Maintainer MinSizeRel."
       FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
-# Maintainer flags
+# 'Maintainer' build type flags
 set(CMAKE_CXX_FLAGS_MAINTAINER "-O2 -g -ansi -pipe -Wall -Werror -DDEBUG" CACHE STRING
   "Flags used by the compiler during development." FORCE)
 
@@ -138,7 +138,6 @@ if (DOLFIN_ENABLE_PYTHON)
     find_package(SWIG REQUIRED)
     include(UseSWIG)
   endif (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
-
 endif(DOLFIN_ENABLE_PYTHON)
 
 if (DOLFIN_ENABLE_MPI)
@@ -169,26 +168,26 @@ if (DOLFIN_ENABLE_MTL4)
 endif (DOLFIN_ENABLE_MTL4)
 
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc.dolfin)
+  find_package(PETSc.dolfin QUIET)
   if(PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc)
+    find_package(SLEPc QUIET)
   endif(PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
 endif (DOLFIN_ENABLE_PETSC)
 
 if (DOLFIN_ENABLE_GMP)
-  find_package(GMP)
+  find_package(GMP QUIET)
 endif (DOLFIN_ENABLE_GMP)
 
 if (DOLFIN_ENABLE_ZLIB)
-  find_package(ZLIB)
+  find_package(ZLIB QUIET)
 endif (DOLFIN_ENABLE_ZLIB)
 
 if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL PATHS $ENV{CGAL_DIR}/lib)
+  find_package(CGAL PATHS $ENV{CGAL_DIR}/lib QUIET)
 endif (DOLFIN_ENABLE_CGAL)
 
 if (DOLFIN_ENABLE_UNIT_TESTS)
-  find_package(CppUnit.dolfin)
+  find_package(CppUnit.dolfin QUIET)
 endif (DOLFIN_ENABLE_UNIT_TESTS)
 
 #------------------------------------------------------------------------------
@@ -217,9 +216,6 @@ if(DOLFIN_WITH_LIBRARY_VERSION)
   )
 endif(DOLFIN_WITH_LIBRARY_VERSION)
 
-# FIXME: Can CMake figure out the 'proper' conventions? It will depend on the
-#        platform, so best if CMake does it
-
 # Set DOLFIN install sub-directories
 set(DOLFIN_BIN_DIR "bin")
 set(DOLFIN_LIB_DIR "lib")
@@ -228,7 +224,9 @@ set(DOLFIN_PKGCONFIG_DIR "lib/pkgconfig")
 set(DOLFIN_SHARE_DIR "share")
 set(DOLFIN_MAN_DIR "share/man")
 
+#------------------------------------------------------------------------------
 # Add source directory
+
 add_subdirectory(dolfin)
 
 #------------------------------------------------------------------------------
