@@ -3,25 +3,6 @@ project(cpp)
 #SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-# Make sure we can import the UFC module and that it is
-# compiled with present version of SWIG
-execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} -c "import ufc, sys; sys.stdout.write('.'.join([str(int(s)) for s in ufc.__swigversion__.split('.')]))"
-  OUTPUT_VARIABLE UFC_SWIGVERSION
-  RESULT_VARIABLE UFC_MODULE_NOT_FOUND
-  )
-
-# Check that UFC can be imported
-if(UFC_MODULE_NOT_FOUND)
-  message(FATAL_ERROR "Unable to import UFC. Install latest UFC or check that PYTHON_PATH is set appropriately.")
-endif(UFC_MODULE_NOT_FOUND)
-
-# Check that UFC was built with the version of SWIG that is being used
-if(NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}")
-  message(FATAL_ERROR "UFC compiled with different version of SWIG. Please install SWIG version #{UFC_SWIGVERSION} or recompile UFC with present SWIG.")
-endif(NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}")
-
-
 get_directory_property(cmake_defs COMPILE_DEFINITIONS)
 set(SWIG_MODULE_NAME cpp)
 set(CMAKE_SWIG_FLAGS

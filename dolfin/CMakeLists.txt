@@ -68,7 +68,7 @@ if(DOLFIN_ENABLE_MPI AND MPI_FOUND)
   # Note: It's awkward to pick up the MPI compiler wrappers, so just add
   #       all the flags
   # FIXME: The FindMPI.cmake module defines the variable MPI_COMPILER which
-  # FIXME: should point to the MPI compiler wrappers. We could set 
+  # FIXME: should point to the MPI compiler wrappers. We could set
   # FIXME: CMAKE_CXX_COMPILER to be MPI_COMPILER but we should be careful
   # FIXME: to not owervriting any user-specified CMAKE_CXX_COMPILER.
   list(APPEND DOLFIN_CXX_FLAGS ${MPI_COMPILE_FLAGS})
@@ -202,7 +202,7 @@ add_library(dolfin SHARED ${DOLFIN_H} ${HEADERS} ${SOURCES})
 set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 
 # FIXME: GNW: What link flags are we adding? Is this platform-independent?
-# FIXME: JR: Yes, it is. Currently it is only '-framework vecLib' defined in 
+# FIXME: JR: Yes, it is. Currently it is only '-framework vecLib' defined in
 #            ARMADILLO_LINK_FLAGS but this variable will be empty on non-apple.
 # FIXME: JR: Maybe we should add DOLFIN_LINK_FLAGS to CMAKE_SHARED_LINKER_FLAGS
 #            instead of setting it as a property on the dolfin library? We
@@ -220,7 +220,30 @@ target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES})
 # SWIG
 
 if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
-  add_subdirectory(swig)
+
+  # Make sure we can import the UFC module and that it is compiled with present
+  # version of SWIG
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -c "import ufc, sys; sys.stdout.write('.'.join([str(int(s)) for s in ufc.__swigversion__.split('.')]))"
+    OUTPUT_VARIABLE UFC_SWIGVERSION
+    RESULT_VARIABLE UFC_MODULE_NOT_FOUND
+    )
+
+  # Check that UFC can be imported
+  if(UFC_MODULE_NOT_FOUND)
+    message(WARNING "Unable to import UFC. Install latest UFC or check that PYTHONPATH is set appropriately. Python will be disabled.")
+  endif(UFC_MODULE_NOT_FOUND)
+
+  # Check that UFC was built with the version of SWIG that is being used
+  if(NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}")
+    message(WARNING "UFC compiled with different version of SWIG. Please install SWIG version #{UFC_SWIGVERSION} or recompile UFC with present SWIG.")
+  endif(NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}")
+
+  # If suitble UFC SWIG extension is found, add SWIG subdirectory
+  if (NOT UFC_MODULE_NOT_FOUND AND ("${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}"))
+    add_subdirectory(swig)
+  endif ()
+
 endif (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
 
 #------------------------------------------------------------------------------
