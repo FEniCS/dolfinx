@@ -230,14 +230,14 @@ if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
     )
 
   # Check that UFC can be imported
-  if(UFC_MODULE_NOT_FOUND)
+  if (UFC_MODULE_NOT_FOUND)
     message(WARNING "Unable to import UFC. Install latest UFC or check that PYTHONPATH is set appropriately. Python will be disabled.")
-  endif(UFC_MODULE_NOT_FOUND)
+  endif ()
 
   # Check that UFC was built with the version of SWIG that is being used
-  if(NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}")
+  if (NOT UFC_MODULE_NOT_FOUND AND (NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}"))
     message(WARNING "UFC compiled with different version of SWIG. Please install SWIG version #{UFC_SWIGVERSION} or recompile UFC with present SWIG.")
-  endif(NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}")
+  endif()
 
   # If suitble UFC SWIG extension is found, add SWIG subdirectory
   if (NOT UFC_MODULE_NOT_FOUND AND ("${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}"))
