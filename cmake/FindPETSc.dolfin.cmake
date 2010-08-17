@@ -84,11 +84,10 @@ endif ()
 # FIXME: What does this do and should it be placed somewhere else?
 OPTION(PETSC_LIB_BASIC "enable PETSc single library" ON)
 
-# Get PETSc variables and test build against PETSc
+# Get variables from PETSc configuration
 if (FOUND_PETSC_CONF)
 
-  # Put variables into environment since they are needed to get the
-  # PETSc variables by probing the PETSc configuration below
+  # Put variables needed by Makefile into environment
   set (ENV{PETSC_DIR} ${PETSC_DIR})
   set (ENV{PETSC_ARCH} ${PETSC_ARCH})
 
@@ -104,8 +103,8 @@ show :
 
   # Define macro for getting PETSc variables from Makefile
   macro (PETSC_GET_VARIABLE name var)
-    set(${var} "NOTFOUND" CACHE INTERNAL "Cleared" FORCE)
-    execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} -f ${petsc_config_makefile} show VARIABLE=${name}
+    set (${var} "NOTFOUND" CACHE INTERNAL "Cleared" FORCE)
+    execute_process (COMMAND ${CMAKE_MAKE_PROGRAM} -f ${petsc_config_makefile} show VARIABLE=${name}
       OUTPUT_VARIABLE ${var}
       RESULT_VARIABLE petsc_return)
   endmacro ()
@@ -120,6 +119,11 @@ show :
 
   # Remove temporary Makefile
   file (REMOVE ${petsc_config_makefile})
+
+endif ()
+
+# Build PETSc test program
+if (FOUND_PETSC_CONF)
 
   # -------------- FIXME: Things are clear up to this point... ---------------
 
