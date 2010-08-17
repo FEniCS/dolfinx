@@ -122,10 +122,10 @@ show :
 
 endif ()
 
-# Build PETSc test program
+# Find PETSc libraries
 if (FOUND_PETSC_CONF)
 
-  # -------------- FIXME: Things are clear up to this point... ---------------
+  # FIXME: I don't understand this part
 
   # Extract include paths and libraries from compile command line
   include(ResolveCompilerPaths)
@@ -159,6 +159,27 @@ if (FOUND_PETSC_CONF)
     petsc_find_library(TS   petscts)
   endif()
 
+  macro (PETSC_JOIN libs deps)
+    list (APPEND PETSC_LIBRARIES_${libs} ${PETSC_LIBRARIES_${deps}})
+  endmacro ()
+  petsc_join(VEC  SYS)
+  petsc_join(MAT  VEC)
+  petsc_join(DM   MAT)
+  petsc_join(KSP  DM)
+  petsc_join(SNES KSP)
+  petsc_join(TS   SNES)
+  petsc_join(ALL  TS)
+
+  find_path (PETSC_INCLUDE_DIR petscts.h HINTS "${PETSC_DIR}" PATH_SUFFIXES include NO_DEFAULT_PATH)
+  find_path (PETSC_INCLUDE_CONF petscconf.h HINTS "${PETSC_DIR}" PATH_SUFFIXES "${PETSC_ARCH}/include" "bmake/${PETSC_ARCH}" NO_DEFAULT_PATH)
+  mark_as_advanced (PETSC_INCLUDE_DIR PETSC_INCLUDE_CONF)
+  set (petsc_includes_minimal ${PETSC_INCLUDE_CONF} ${PETSC_INCLUDE_DIR})
+
+endif()
+
+# Build PETSc test program
+if (FOUND_PETSC_CONF)
+
   # Define macro for running PETSc test program
   include(CheckCXXSourceRuns)
   include(FindPackageMultipass)
@@ -184,22 +205,6 @@ int main(int argc,char *argv[]) {
 	"Can the system successfully run a PETSc executable?  This variable can be manually set to \"YES\" to force CMake to accept a given PETSc configuration, but this will almost always result in a broken build.  If you change PETSC_DIR, PETSC_ARCH, or PETSC_CURRENT you would have to reset this variable." FORCE)
     endif ()
   endmacro ()
-
-  macro (PETSC_JOIN libs deps)
-    list (APPEND PETSC_LIBRARIES_${libs} ${PETSC_LIBRARIES_${deps}})
-  endmacro ()
-  petsc_join(VEC  SYS)
-  petsc_join(MAT  VEC)
-  petsc_join(DM   MAT)
-  petsc_join(KSP  DM)
-  petsc_join(SNES KSP)
-  petsc_join(TS   SNES)
-  petsc_join(ALL  TS)
-
-  find_path (PETSC_INCLUDE_DIR petscts.h HINTS "${PETSC_DIR}" PATH_SUFFIXES include NO_DEFAULT_PATH)
-  find_path (PETSC_INCLUDE_CONF petscconf.h HINTS "${PETSC_DIR}" PATH_SUFFIXES "${PETSC_ARCH}/include" "bmake/${PETSC_ARCH}" NO_DEFAULT_PATH)
-  mark_as_advanced (PETSC_INCLUDE_DIR PETSC_INCLUDE_CONF)
-  set (petsc_includes_minimal ${PETSC_INCLUDE_CONF} ${PETSC_INCLUDE_DIR})
 
   # Call macro to run PETSc test program with various flags
   petsc_test_runs("${petsc_includes_minimal}" "${PETSC_LIBRARIES_TS}" petsc_works_minimal)
