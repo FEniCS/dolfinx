@@ -81,19 +81,11 @@ else ()
   message (STATUS "Unable to find petscconf.h")
 endif ()
 
-# FIXME: What does this do?
-set(petsc_slaves LIBRARIES_SYS LIBRARIES_VEC LIBRARIES_MAT LIBRARIES_DM LIBRARIES_KSP LIBRARIES_SNES LIBRARIES_TS
-  INCLUDE_DIR INCLUDE_CONF)
-include(FindPackageMultipass)
-find_package_multipass (PETSc petsc_config_current
-  STATES DIR ARCH
-  DEPENDENTS INCLUDES LIBRARIES COMPILER MPIEXEC ${petsc_slaves})
-
 # FIXME: What does this do and should it be placed somewhere else?
 OPTION(PETSC_LIB_BASIC "enable PETSc single library" ON)
 
 # Get PETSc variables and test build against PETSc
-if (FOUND_PETSC_CONF AND NOT petsc_config_current)
+if (FOUND_PETSC_CONF)
 
   # Put variables into environment since they are needed to get the
   # PETSc variables by probing the PETSc configuration below
@@ -165,6 +157,7 @@ show :
 
   # Define macro for running PETSc test program
   include(CheckCXXSourceRuns)
+  include(FindPackageMultipass)
   macro(PETSC_TEST_RUNS includes libraries runs)
     multipass_c_source_runs("${includes}" "${libraries}" "
 static const char help[] = \"PETSc test program.\";
