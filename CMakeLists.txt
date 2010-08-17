@@ -48,6 +48,10 @@ option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 # FIXME: GNW: That would lead to most demos failing (no LU solver)
 # FIXME: GNW: I suggest enabling everything, but using QUIET to eliminate
 #             excessive output
+# FIXME: JR: What about adopting the way they do this in Trilinos? Then we
+#            could have options like DOLFIN_ENABLE_ALL_PACKAGES for enabling
+#            everything and DOLFIN_ENABLE_DEFAULT_PACKAGES for enabling only
+#            some default packages.
 
 option(DOLFIN_ENABLE_MPI "Compile with support for MPI." ON)
 option(DOLFIN_ENABLE_PETSC "Compile with support for PETSc linear algebra." ON)
@@ -108,6 +112,9 @@ endif(NOT UFC_FOUND OR NOT ARMADILLO_FOUND OR NOT LIBXML2_FOUND)
 #        functionality and that is done in a separate file. Why not just move
 #        the following 5 lines into FindBoost.dolfin? It would make this file
 #        cleaner.
+# FIXME: JR: I agree that it would be good to only have the "find_package" call
+#            in this file to keep it clean. We had FindBoost.dolfin earlier but
+#            it was removed.
 
 # Find Boost
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
