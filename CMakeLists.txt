@@ -101,9 +101,9 @@ find_package(Armadillo.dolfin REQUIRED)
 find_package(LibXml2 REQUIRED)
 
 # FIXME: Is there a more elegant way to do this?
-if(NOT UFC_FOUND OR NOT ARMADILLO_FOUND OR NOT LIBXML2_FOUND)
-  message(FATAL_ERROR "*** Unable to configure, one or more required packages missing.")
-endif(NOT UFC_FOUND OR NOT ARMADILLO_FOUND OR NOT LIBXML2_FOUND)
+#if(NOT UFC_FOUND OR NOT ARMADILLO_FOUND OR NOT LIBXML2_FOUND)
+#  message(FATAL_ERROR "*** Unable to configure, one or more required packages missing.")
+#endif(NOT UFC_FOUND OR NOT ARMADILLO_FOUND OR NOT LIBXML2_FOUND)
 
 # FIXME: Why is this not a separate file?
 # FIXME: Because we want to use the system FindBoost and avoid as many
@@ -136,6 +136,7 @@ if (DOLFIN_ENABLE_PYTHON)
     find_package(SWIG REQUIRED)
     include(UseSWIG)
   endif (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
+  message(STATUS "Python lib dir ${PYTHON_LIBRARIES}")
 endif(DOLFIN_ENABLE_PYTHON)
 
 if (DOLFIN_ENABLE_MPI)

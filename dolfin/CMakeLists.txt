@@ -276,6 +276,8 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin.pc
 #------------------------------------------------------------------------------
 # Generate CMake config file (dolfin-config.cmake)
 
+message(STATUS "Flag test ${DOLFIN_TARGET_LINK_LIBRARIES}")
+
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config.cmake.in dolfin-config.cmake @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin-config.cmake
   DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin/cmake
