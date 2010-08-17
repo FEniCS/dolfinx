@@ -67,9 +67,16 @@ if(DOLFIN_ENABLE_MPI AND MPI_FOUND)
   # FIXME: Check if we're using the MPI wrapper (e.g. mpicxx)
   # Note: It's awkward to pick up the MPI compiler wrappers, so just add
   #       all the flags
+  # FIXME: The FindMPI.cmake module defines the variable MPI_COMPILER which
+  # FIXME: should point to the MPI compiler wrappers. We could set 
+  # FIXME: CMAKE_CXX_COMPILER to be MPI_COMPILER but we should be careful
+  # FIXME: to not owervriting any user-specified CMAKE_CXX_COMPILER.
   list(APPEND DOLFIN_CXX_FLAGS ${MPI_COMPILE_FLAGS})
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${MPI_INCLUDE_PATH})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${MPI_LINK_FLAGS})
+
+  # Necessary flags for MPICH2
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DMPICH_IGNORE_CXX_SEEK")
 
   # FIXME: Need to consider these MPI variables as well:
   # FIXME: Don't the MPI wrapper mpicxx take care of this?
@@ -80,13 +87,19 @@ endif(DOLFIN_ENABLE_MPI AND MPI_FOUND)
 
 # CGAL
 if(DOLFIN_ENABLE_CGAL AND CGAL_FOUND)
-  # FIXME: Should to test for GCC
-  set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} -frounding-math")
 
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_CGAL")
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${CGAL_INCLUDE_DIRS})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES_DIRS ${CGAL_LIBRARIES_DIR})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${CGAL_LIBRARY})
+
+  if(CGAL_DISABLE_ROUNDING_MATH_CHECK)
+    list(APPEND DOLFIN_CXX_DEFINITIONS "-DCGAL_DISABLE_ROUNDING_MATH_CHECK")
+  else ()
+    if(CMAKE_COMPILER_IS_GNUCXX)
+      set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} -frounding-math")
+    endif(CMAKE_COMPILER_IS_GNUCXX)
+  endif ()
 endif(DOLFIN_ENABLE_CGAL AND CGAL_FOUND)
 
 # ZLIB
@@ -166,6 +179,9 @@ if(DOLFIN_ENABLE_UNIT_TESTS AND CPPUNIT_FOUND)
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${CPPUNIT_LIBRARIES})
 endif(DOLFIN_ENABLE_UNIT_TESTS AND CPPUNIT_FOUND)
 
+message(STATUS "DEDS  = ${DOLFIN_CXX_DEFINITIONS}")
+message(STATUS "FLAGS = ${CMAKE_CXX_FLAGS}")
+
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 
@@ -185,7 +201,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
 add_library(dolfin SHARED ${DOLFIN_H} ${HEADERS} ${SOURCES})
 set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 
-# FIXME: What link flags are we adding? Is this platform-independent?
+# FIXME: GNW: What link flags are we adding? Is this platform-independent?
+# FIXME: JR: Yes, it is. Currently it is only '-framework vecLib' defined in 
+#            ARMADILLO_LINK_FLAGS but this variable will be empty on non-apple.
+# FIXME: JR: Maybe we should add DOLFIN_LINK_FLAGS to CMAKE_SHARED_LINKER_FLAGS
+#            instead of setting it as a property on the dolfin library? We
+#            should at least add either CMAKE_SHARED_LINKER_FLAGS or
+#            DOLFIN_LINK_FLAGS to dolfin-config.cmake.
 # Add link flags (if any)
 if(DOLFIN_LINK_FLAGS)
   set_target_properties(dolfin PROPERTIES LINK_FLAGS ${DOLFIN_LINK_FLAGS})

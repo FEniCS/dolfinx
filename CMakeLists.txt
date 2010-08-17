@@ -1,25 +1,14 @@
-project(DOLFIN)
+# Top level CMakeLists.txt file for DOLFIN
 
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
+#------------------------------------------------------------------------------
+
+project(DOLFIN)
+
 # Set verbose output while testing CMake
 set(CMAKE_VERBOSE_MAKEFILE 1)
-
-# Testing compiler flags
-#set(CMAKE_BUILD_TYPE Release)
-#set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_BUILD_TYPE Devel)
-set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS}")
-set(CMAKE_CXX_FLAGS "-O2 ${CMAKE_CXX_FLAGS}")
-set(CMAKE_CXX_FLAGS "-ansi -pipe ${CMAKE_CXX_FLAGS}")
-
-# Set DOLFIN version number
-set(DOLFIN_VERSION_MAJOR "0")
-set(DOLFIN_VERSION_MINOR "9")
-set(DOLFIN_VERSION_MICRO "8")
-set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
-add_definitions(-DPACKAGE_VERSION="${DOLFIN_VERSION}")
 
 # Set special link option, see `cmake --help-policy CMP0003`
 if(COMMAND cmake_policy)
@@ -31,20 +20,24 @@ set(DOLFIN_CMAKE_DIR "${DOLFIN_SOURCE_DIR}/cmake" CACHE INTERNAL "")
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
 
 #------------------------------------------------------------------------------
+# Set DOLFIN version number
+
+set(DOLFIN_VERSION_MAJOR "0")
+set(DOLFIN_VERSION_MINOR "9")
+set(DOLFIN_VERSION_MICRO "8")
+set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
+add_definitions(-DPACKAGE_VERSION="${DOLFIN_VERSION}")
+
+#------------------------------------------------------------------------------
 # Configurable options for how we want to build
 
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
 #option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
-option(DOLFIN_ENABLE_DEBUG "Build with debug information." ON)
-option(DOLFIN_ENABLE_EXTRADEBUG "Build with extra debug information (no -O2)." OFF)
-option(DOLFIN_ENABLE_DEBUGUBLAS "Add some extra uBLAS debug information." OFF)
-option(DOLFIN_ENABLE_OPTIMIZE "Compile with optimization." OFF)
-option(DOLFIN_ENABLE_DOCS "Build documentation." OFF)
+option(DOLFIN_DEBUG_UBLAS "Add some extra uBLAS debug information." OFF)
+#option(DOLFIN_ENABLE_DOCS "Build documentation." OFF)
 option(DOLFIN_ENABLE_UNIT_TESTS "Link to unit testing library." ON)
-option(DOLFIN_ENABLE_BENCHMARKS "Build benchmark programs." OFF)
-option(DOLFIN_ENABLE_CODECOVERAGE "Enable code coverage." OFF)
-
+option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 
 #------------------------------------------------------------------------------
@@ -55,6 +48,10 @@ option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 # FIXME: GNW: That would lead to most demos failing (no LU solver)
 # FIXME: GNW: I suggest enabling everything, but using QUIET to eliminate
 #             excessive output
+# FIXME: JR: What about adopting the way they do this in Trilinos? Then we
+#            could have options like DOLFIN_ENABLE_ALL_PACKAGES for enabling
+#            everything and DOLFIN_ENABLE_DEFAULT_PACKAGES for enabling only
+#            some default packages.
 
 option(DOLFIN_ENABLE_MPI "Compile with support for MPI." ON)
 option(DOLFIN_ENABLE_PETSC "Compile with support for PETSc linear algebra." ON)
@@ -69,6 +66,32 @@ option(DOLFIN_ENABLE_GMP "Compile with support for GMP." ON)
 option(DOLFIN_ENABLE_ZLIB "Compile with support for zlib." ON)
 option(DOLFIN_ENABLE_CGAL "Compile with support for CGAL" ON)
 option(DOLFIN_ENABLE_PYTHON "Compile the Python wrappers." ON)
+
+#------------------------------------------------------------------------------
+# Package-specific options
+
+option(CGAL_DISABLE_ROUNDING_MATH_CHECK "Disable rounding math check in CGAL. This permits Valgrind to run." OFF)
+
+#------------------------------------------------------------------------------
+# Compiler flags
+
+# Default build type (can be overridden by user)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
+      "Choose the type of build, options are: Debug Release RelWithDebInfo Maintainer MinSizeRel."
+      FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
+
+# 'Maintainer' build type flags
+set(CMAKE_CXX_FLAGS_MAINTAINER "-O2 -g -ansi -pipe -Wall -Werror -DDEBUG" CACHE STRING
+  "Flags used by the compiler during development." FORCE)
+
+# FIXME: Do we want to add -DDEBUG to RelWithDebInfo?
+
+# Do not debug uBLAS unless requested
+if (NOT DOLFIN_DEBUG_UBLAS)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_UBLAS_NDEBUG")
+endif ()
 
 #------------------------------------------------------------------------------
 # Run tests to find required packages
@@ -89,6 +112,9 @@ endif(NOT UFC_FOUND OR NOT ARMADILLO_FOUND OR NOT LIBXML2_FOUND)
 #        functionality and that is done in a separate file. Why not just move
 #        the following 5 lines into FindBoost.dolfin? It would make this file
 #        cleaner.
+# FIXME: JR: I agree that it would be good to only have the "find_package" call
+#            in this file to keep it clean. We had FindBoost.dolfin earlier but
+#            it was removed.
 
 # Find Boost
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
@@ -110,7 +136,6 @@ if (DOLFIN_ENABLE_PYTHON)
     find_package(SWIG REQUIRED)
     include(UseSWIG)
   endif (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
-
 endif(DOLFIN_ENABLE_PYTHON)
 
 if (DOLFIN_ENABLE_MPI)
@@ -141,28 +166,26 @@ if (DOLFIN_ENABLE_MTL4)
 endif (DOLFIN_ENABLE_MTL4)
 
 if (DOLFIN_ENABLE_PETSC)
-  #find_package(PETSc.dolfin)
-
+  find_package(PETSc.dolfin QUIET)
   if(PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc)
+    find_package(SLEPc QUIET)
   endif(PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-
 endif (DOLFIN_ENABLE_PETSC)
 
 if (DOLFIN_ENABLE_GMP)
-  find_package(GMP)
+  find_package(GMP QUIET)
 endif (DOLFIN_ENABLE_GMP)
 
 if (DOLFIN_ENABLE_ZLIB)
-  find_package(ZLIB)
+  find_package(ZLIB QUIET)
 endif (DOLFIN_ENABLE_ZLIB)
 
 if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL PATHS $ENV{CGAL_DIR}/lib)
+  find_package(CGAL PATHS $ENV{CGAL_DIR}/lib QUIET)
 endif (DOLFIN_ENABLE_CGAL)
 
 if (DOLFIN_ENABLE_UNIT_TESTS)
-  find_package(CppUnit.dolfin)
+  find_package(CppUnit.dolfin QUIET)
 endif (DOLFIN_ENABLE_UNIT_TESTS)
 
 #------------------------------------------------------------------------------
@@ -191,9 +214,6 @@ if(DOLFIN_WITH_LIBRARY_VERSION)
   )
 endif(DOLFIN_WITH_LIBRARY_VERSION)
 
-# FIXME: Can CMake figure out the 'proper' conventions? It will depend on the
-#        platform, so best if CMake does it
-
 # Set DOLFIN install sub-directories
 set(DOLFIN_BIN_DIR "bin")
 set(DOLFIN_LIB_DIR "lib")
@@ -202,7 +222,9 @@ set(DOLFIN_PKGCONFIG_DIR "lib/pkgconfig")
 set(DOLFIN_SHARE_DIR "share")
 set(DOLFIN_MAN_DIR "share/man")
 
+#------------------------------------------------------------------------------
 # Add source directory
+
 add_subdirectory(dolfin)
 
 #------------------------------------------------------------------------------

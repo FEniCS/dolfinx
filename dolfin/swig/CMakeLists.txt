@@ -3,11 +3,16 @@ project(cpp)
 #SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-# Make sure UFC is compiled with present version of SWIG
+# Make sure we can import the UFC module and that it is
+# compiled with present version of SWIG
 execute_process(
   COMMAND ${PYTHON_EXECUTABLE} -c "import ufc, sys; sys.stdout.write('.'.join([str(int(s)) for s in ufc.__swigversion__.split('.')]))"
   OUTPUT_VARIABLE UFC_SWIGVERSION
+  RESULT_VARIABLE UFC_MODULE_NOT_FOUND
   )
+if(UFC_MODULE_NOT_FOUND)
+  message(FATAL_ERROR "Unable to import UFC. Install latest UFC.")
+endif(UFC_MODULE_NOT_FOUND)
 if(NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}")
   message(FATAL_ERROR "UFC compiled with different version of SWIG. Please install SWIG version ${UFC_SWIGVERSION} or recompile UFC with present SWIG.")
 endif(NOT "${SWIG_VERSION}" STREQUAL "${UFC_SWIGVERSION}")
@@ -37,10 +42,15 @@ set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
 set(SWIG_SOURCES dolfin.i)
 set_source_files_properties(${SWIG_SOURCES} PROPERTIES CPLUSPLUS ON)
 
+# Remove '-Werror' and '-Wall' flags (if present) when compiling SWIG-generated files
+string(REGEX REPLACE "-Wall" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+string(REGEX REPLACE "-Wall" " " CMAKE_CXX_FLAGS_MAINTAINER "${CMAKE_CXX_FLAGS_MAINTAINER}")
+string(REGEX REPLACE "-Werror" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+string(REGEX REPLACE "-Werror" " " CMAKE_CXX_FLAGS_MAINTAINER "${CMAKE_CXX_FLAGS_MAINTAINER}")
+
 # The prevents swig being run unnecessarily
 set_source_files_properties(dolfin.i PROPERTIES SWIG_MODULE_NAME cpp)
 
-message(STATUS "NUMPY_INCLUDE_DIR = ${NUMPY_INCLUDE_DIR}")
 include_directories(${PYTHON_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
 
 swig_add_module(${SWIG_MODULE_NAME} python ${SWIG_SOURCES})

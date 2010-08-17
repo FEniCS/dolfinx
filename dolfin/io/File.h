@@ -15,6 +15,7 @@
 #include <ostream>
 #include <string>
 #include <utility>
+#include <boost/scoped_ptr.hpp>
 #include "GenericFile.h"
 
 namespace dolfin
@@ -72,7 +73,7 @@ namespace dolfin
   private:
 
     // Pointer to implementation (envelop-letter design)
-    GenericFile* file;
+    boost::scoped_ptr<GenericFile> file;
 
   };
 

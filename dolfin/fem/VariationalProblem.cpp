@@ -187,11 +187,11 @@ void VariationalProblem::solve_linear(Function& u)
   begin("Solving linear variational problem");
 
   // Get parameters
-  std::string solver_type = parameters["linear_solver"];
+  std::string solver_type   = parameters["linear_solver"];
   const std::string pc_type = parameters["preconditioner"];
-  const bool symmetric = parameters["symmetric"];
-  const bool print_rhs    = parameters["print_rhs"];
-  const bool print_matrix = parameters["print_matrix"];
+  const bool symmetric      = parameters["symmetric"];
+  const bool print_rhs      = parameters["print_rhs"];
+  const bool print_matrix   = parameters["print_matrix"];
 
   // Create matrix and vector
   Matrix A;
@@ -245,7 +245,7 @@ void VariationalProblem::solve_linear(Function& u)
     LUSolver solver;
     solver.parameters.update(parameters("lu_solver"));
     solver.solve(A, u.vector(), b);
-    if (pc_type != "none")
+    if (pc_type != "none" || pc_type != "default")
       warning("Using LU solver, ignoring preconditioner \"%s\".", pc_type.c_str());
   }
   else
