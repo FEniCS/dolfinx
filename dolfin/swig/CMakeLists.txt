@@ -39,7 +39,9 @@ set_source_files_properties(${SWIG_SOURCES} PROPERTIES CPLUSPLUS ON)
 
 # Remove '-Werror' and '-Wall' flags (if present) when compiling SWIG-generated files
 string(REGEX REPLACE "-Wall" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+string(REGEX REPLACE "-Wall" " " CMAKE_CXX_FLAGS_MAINTAINER "${CMAKE_CXX_FLAGS_MAINTAINER}")
 string(REGEX REPLACE "-Werror" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+string(REGEX REPLACE "-Werror" " " CMAKE_CXX_FLAGS_MAINTAINER "${CMAKE_CXX_FLAGS_MAINTAINER}")
 
 # The prevents swig being run unnecessarily
 set_source_files_properties(dolfin.i PROPERTIES SWIG_MODULE_NAME cpp)

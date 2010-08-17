@@ -4,20 +4,6 @@
 cmake_minimum_required(VERSION 2.8)
 
 #------------------------------------------------------------------------------
-# Set build type only if it has not been defined by the user on the command line
-# NOTE: This must called called before 'project'
-
-#if(DEFINED CMAKE_BUILD_TYPE)
-#   SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Choose the type of
-#build, options are: None Debug
-#Release RelWithDebInfo Maintainer MinSizeRel.")
-#else()
-#   SET(CMAKE_BUILD_TYPE Maintainer CACHE STRING "Choose the type of build,
-#options are: None CMAKE_C_FLAGS used) Debug Release
-#RelWithDebInfo Maintainer MinSizeRel.")
-#endif()
-
-#------------------------------------------------------------------------------
 
 project(DOLFIN)
 
@@ -76,6 +62,8 @@ option(DOLFIN_ENABLE_GMP "Compile with support for GMP." ON)
 option(DOLFIN_ENABLE_ZLIB "Compile with support for zlib." ON)
 option(DOLFIN_ENABLE_CGAL "Compile with support for CGAL" ON)
 option(DOLFIN_ENABLE_PYTHON "Compile the Python wrappers." ON)
+
+option(CGAL_DISABLE_ROUNDING_MATH_CHECK "Disable round math check in CGAL. This permits Valgrind to run." OFF)
 
 #------------------------------------------------------------------------------
 # Compiler flags
