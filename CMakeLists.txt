@@ -63,7 +63,10 @@ option(DOLFIN_ENABLE_ZLIB "Compile with support for zlib." ON)
 option(DOLFIN_ENABLE_CGAL "Compile with support for CGAL" ON)
 option(DOLFIN_ENABLE_PYTHON "Compile the Python wrappers." ON)
 
-option(CGAL_DISABLE_ROUNDING_MATH_CHECK "Disable round math check in CGAL. This permits Valgrind to run." OFF)
+#------------------------------------------------------------------------------
+# Package-specific options
+
+option(CGAL_DISABLE_ROUNDING_MATH_CHECK "Disable rounding math check in CGAL. This permits Valgrind to run." OFF)
 
 #------------------------------------------------------------------------------
 # Compiler flags
