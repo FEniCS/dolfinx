@@ -40,7 +40,7 @@ find_path (PETSC_DIR include/petsc.h
 
 # Report result of search for PETSC_DIR
 if (DEFINED PETSC_DIR)
-  message (STATUS "PETSC_DIR = ${PETSC_DIR}")
+  message (STATUS "PETSC_DIR is ${PETSC_DIR}")
 else()
   message (STATUS "PETSC_DIR is empty")
 endif ()
@@ -68,7 +68,7 @@ endif ()
 
 # Report result of search for PETSC_ARCH
 if (DEFINED PETSC_ARCH)
-  message (STATUS "PETSC_ARCH = ${PETSC_ARCH}")
+  message (STATUS "PETSC_ARCH is ${PETSC_ARCH}")
 else ()
   message (STATUS "PETSC_ARCH is empty")
 endif ()
@@ -94,9 +94,14 @@ if (EXISTS ${PETSC_DIR}/${PETSC_ARCH}/include/petscconf.h)   # > 2.3.3
 elseif (EXISTS ${PETSC_DIR}/bmake/${PETSC_ARCH}/petscconf.h) # <= 2.3.3
   set (petsc_conf_base ${PETSC_DIR}/bmake/common/base)
   set (PETSC_VERSION "2.3.3")
-else ()
-  set (petsc_conf_base "NOTFOUND")
 endif ()
+
+# Report result of search for PETSc layout
+if (DEFINED PETSC_VERSION)
+  message(STATUS "PETSc layout looks like ${PETSC_VERSION}-style")
+else ()
+  message(STATUS "Unable to figure out PETSc layout")
+endif()
 
 OPTION(PETSC_LIB_BASIC "enable PETSc single library" ON)
 
