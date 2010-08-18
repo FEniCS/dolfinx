@@ -1,8 +1,8 @@
 # - Try to find MTL4
 # Once done this will define
 #
-#  MTL4_FOUND        - system has found MTL4
-#  MTL4_INCLUDE_DIR  - the MTL4 include directory
+#  MTL4_FOUND       - system has found MTL4
+#  MTL4_INCLUDE_DIR - include directories for MTL4
 
 message(STATUS "Checking for package 'MTL4'")
 
