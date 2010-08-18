@@ -99,11 +99,11 @@ namespace dolfin
     /// Return norm of matrix
     virtual double norm(std::string norm_type) const = 0;
 
-    /// Get non-zero values of given row
+    /// Get non-zero values of given row on local process
     virtual void getrow(uint row, std::vector<uint>& columns,
                         std::vector<double>& values) const = 0;
 
-    /// Set values for given row
+    /// Set values for given row on local process
     virtual void setrow(uint row, const std::vector<uint>& columns,
                         const std::vector<double>& values) = 0;
 

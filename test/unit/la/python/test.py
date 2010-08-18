@@ -54,7 +54,7 @@ class AbstractBaseTest(object):
             elif type == 1:
                 A[0]
             elif type == 2:
-                A[0,0,0]
+                A[0, 0, 0]
 
         # Test wrong getitem
         self.assertRaises(TypeError,wrong_getitem,0)

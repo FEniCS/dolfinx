@@ -42,6 +42,8 @@ swig_add_module(${SWIG_MODULE_NAME} python ${SWIG_SOURCES})
 swig_link_libraries(cpp dolfin ${PYTHON_LIBRARIES})
 
 get_target_property(SWIG_MODULE_LOCATION ${SWIG_MODULE_cpp_REAL_NAME} LOCATION)
+
+# Install Python .py files
 install(FILES
   ${SWIG_MODULE_LOCATION} ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_MODULE_NAME}.py
   DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin

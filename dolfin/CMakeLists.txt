@@ -279,16 +279,6 @@ set(PKG_CXXFLAGS "${PKG_DEFINITIONS} ${PKG_CXXFLAGS}")
 # Add definitions to PKG_CXXFLAGS
 set(PKG_CXXFLAGS "${PKG_DEFINITIONS} ${PKG_CXXFLAGS}")
 
-# Convert libraries to -L<libdir> -l<lib> form for use in pkg-config file
-# FIXME: this is not cross-platform ready
-#foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
-#  string(REGEX REPLACE "(/[^ ]*)/lib([^ ]*)\\.so" "-L\\1 -l\\2"
-#    _linkflags
-#    "${_lib}"
-#    )
-#  set(PKG_LINKFLAGS "${_linkflags} ${PKG_LINKFLAGS}")
-#endforeach()
-
 # Configure and install pkg-config file
 configure_file(dolfin.pc.cmake.in dolfin.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin.pc

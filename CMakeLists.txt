@@ -229,6 +229,16 @@ set(DOLFIN_MAN_DIR "share/man")
 add_subdirectory(dolfin)
 
 #------------------------------------------------------------------------------
+# Install Python utils (dolfin_utils)
+
+install(DIRECTORY
+  ${CMAKE_SOURCE_DIR}/site-packages/dolfin_utils
+  DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
+  USE_SOURCE_PERMISSIONS
+  COMPONENT Runtime
+  )
+
+#------------------------------------------------------------------------------
 # Generate helper file dolfin.conf
 
 # FIXME: not cross-platform compatible

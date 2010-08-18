@@ -195,6 +195,8 @@ void PETScMatrix::get(double* block,
                       uint m, const uint* rows,
                       uint n, const uint* cols) const
 {
+  not_working_in_parallel("PETScMatrix::get");
+
   assert(A);
   MatGetValues(*A,
                static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)),
@@ -239,9 +241,6 @@ void PETScMatrix::getrow(uint row,
                          std::vector<uint>& columns,
                          std::vector<double>& values) const
 {
-  if (MPI::num_processes() > 1)
-    error("PETScMatrix::getrow does not work in parallel.");
-
   assert(A);
 
   const int *cols = 0;
@@ -250,8 +249,8 @@ void PETScMatrix::getrow(uint row,
   MatGetRow(*A, row, &ncols, &cols, &vals);
 
   // Assign values to std::vectors
-  columns.assign(cols, cols+ncols);
-  values.assign(vals, vals+ncols);
+  columns.assign(cols, cols + ncols);
+  values.assign(vals, vals + ncols);
 
   MatRestoreRow(*A, row, &ncols, &cols, &vals);
 }
