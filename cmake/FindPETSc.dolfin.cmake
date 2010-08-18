@@ -31,12 +31,24 @@ foreach (debian_arches linux kfreebsd)
   endif ()
 endforeach ()
 
+# List of possible locations for PETSC_DIR
+set(petsc_dir_locations "")
+list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.1")
+list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.0.0")
+list(APPEND petsc_dir_locations "$ENV{HOME}/petsc")
+
+# Add prefixes in LD_LIBRARY_PATH to possible locations
+string(REGEX REPLACE ":" ";" libdirs $ENV{LD_LIBRARY_PATH})
+foreach (libdir ${libdirs})
+  get_filename_component(petsc_dir_location "${libdir}/" PATH)
+  list(APPEND petsc_dir_locations ${petsc_dir_location})
+endforeach()
+
 # Try to figure out PETSC_DIR
 find_path (PETSC_DIR include/petsc.h
   HINTS ENV PETSC_DIR
   PATHS
-  /usr/lib/petscdir/3.1 /usr/lib/petscdir/3.0.0 /usr/lib/petscdir/2.3.3 /usr/lib/petscdir/2.3.2 # Debian
-  $ENV{HOME}/petsc
+  ${petsc_dir_locations}
   DOC "PETSc Directory")
 
 # Report result of search for PETSC_DIR
