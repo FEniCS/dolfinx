@@ -71,19 +71,22 @@ public:
                                  DOLFIN_EPS);
 
 #ifdef HAS_CGAL
-    // Test evaluation of a discrete function
-    Projection::FunctionSpace V(mesh);
-    Projection::BilinearForm a(V, V);
-    Projection::LinearForm L(V);
-    L.f = f1;
-    VariationalProblem problem(a, L);
-    Function g(V);
-    problem.solve(g);
+    if (MPI::num_processes() == 0)
+    {
+      // Test evaluation of a discrete function
+      Projection::FunctionSpace V(mesh);
+      Projection::BilinearForm a(V, V);
+      Projection::LinearForm L(V);
+      L.f = f1;
+      VariationalProblem problem(a, L);
+      Function g(V);
+      problem.solve(g);
 
-    const double tol = 1.0e-6;
-    f1.eval(u0, data);
-    g.eval(u1, data);
-    CPPUNIT_ASSERT( std::abs(u0[0]-u1[0]) < tol );
+      const double tol = 1.0e-6;
+      f1.eval(u0, data);
+      g.eval(u1, data);
+      CPPUNIT_ASSERT( std::abs(u0[0]-u1[0]) < tol );
+    }
 #endif
   }
 };
