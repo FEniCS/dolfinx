@@ -155,4 +155,4 @@ endif()
 # Standard package handling
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(PETSc "PETSc could not be found. Be sure to set PETSC_DIR and PETSC_ARCH."
-                                  PETSC_ROOT_DIR PETSC_INCLUDE_DIRS PETSC_LIBRARIES )
+                                  PETSC_ROOT_DIR PETSC_INCLUDE_DIRS PETSC_LIBRARIES)

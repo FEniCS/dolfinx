@@ -194,12 +194,9 @@ endif()
 #------------------------------------------------------------------------------
 # Installation of dolfin_utils
 
-install(DIRECTORY
-  ${CMAKE_SOURCE_DIR}/site-packages/dolfin_utils
-  DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
-  USE_SOURCE_PERMISSIONS
-  COMPONENT Runtime
-  )
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/site-packages/dolfin_utils
+        DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
+        USE_SOURCE_PERMISSIONS)
 
 #------------------------------------------------------------------------------
 # Installation of DOLFIN library
