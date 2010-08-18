@@ -376,27 +376,37 @@ void EpetraMatrix::transpmult(const GenericVector& x_, GenericVector& Ax_) const
 void EpetraMatrix::getrow(uint row, std::vector<uint>& columns,
                           std::vector<double>& values) const
 {
-  not_working_in_parallel("EpetraMatrix::getrow");
-
   assert(A);
 
-  // Temporary variables
-  int* indices;
-  double* vals;
-  int num_entries;
+  // Get local row index
+  const int local_row_index = A->LRID(row);
 
-  // Extract data from Epetra matrix
-  int err = A->ExtractMyRowView(row, num_entries, vals, indices);
-  if (err != 0)
-    error("EpetraMatrix::getrow: Did not manage to perform Epetra_CrsMatrix::ExtractMyRowView.");
-
-  // Put data in columns and values
-  columns.resize(num_entries);
-  values.resize(num_entries);
-  for (int i = 0; i < num_entries; i++)
+  // If this process has part of the row, get values
+  if (local_row_index >= 0)
   {
-    columns[i] = indices[i];
-    values[i]  = vals[i];
+    // Temporary variables
+    int* indices;
+    double* vals;
+    int num_entries;
+
+    // Extract data from Epetra matrix
+    int err = A->ExtractMyRowView(local_row_index, num_entries, vals, indices);
+    if (err != 0)
+      error("EpetraMatrix::getrow: Did not manage to perform Epetra_CrsMatrix::ExtractMyRowView.");
+
+    // Put data in columns and values
+    columns.resize(num_entries);
+    values.resize(num_entries);
+    for (int i = 0; i < num_entries; i++)
+    {
+      columns[i] = indices[i];
+      values[i]  = vals[i];
+    }
+  }
+  else
+  {
+    columns.resize(0);
+    values.resize(0);
   }
 }
 //-----------------------------------------------------------------------------
