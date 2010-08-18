@@ -75,24 +75,12 @@ show :
   file(REMOVE ${slepc_config_makefile})
 
   # Turn SLEPC_INCLUDE_DIRS into a semi-colon separated list
-  string(REPLACE "-I" " " SLEPC_INCLUDE_DIRS "${SLEPC_INCLUDE_DIRS}")
+  string(REPLACE "-I" "" SLEPC_INCLUDE_DIRS "${SLEPC_INCLUDE_DIRS}")
   separate_arguments(SLEPC_INCLUDE_DIRS)
 
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${SLEPC_INCLUDE_DIRS})
   set(CMAKE_REQUIRED_LIBRARIES ${SLEPC_LIBRARIES})
-
-  message("SLEPC Include")
-  message(STATUS ${SLEPC_INCLUDE_DIRS})
-  message("------")
-  message("SLEPC Libs")
-  message(STATUS ${SLEPC_LIBRARIES})
-  message("cmake")
-  message(STATUS ${CMAKE_REQUIRED_INCLUDES})
-
-  #set(MY_SET "A B C D E")
-  #separate_arguments(MY_SET)
-  #message(${MY_SET})
 
   # Run SLEPc test program
   include(CheckCXXSourceRuns)
@@ -102,12 +90,14 @@ show :
 int main()
 {
   PetscErrorCode ierr;
-  //EPS eps;
-  ierr = PetscInitializeNoArguments();CHKERRQ(ierr);
-  //ierr = EPSCreate(PETSC_COMM_SELF, &eps); CHKERRQ(ierr);
-  //EPSSetType(eps, EPSLAPACK)
-  //ierr = EPSDestroy(eps);CHKERRQ(ierr);
-  ierr = PetscFinalize();CHKERRQ(ierr);
+  int argc = 0;
+  char** argv = NULL;
+  ierr = SlepcInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
+  EPS eps;
+  ierr = EPSCreate(PETSC_COMM_SELF, &eps); CHKERRQ(ierr);
+  ierr = EPSSetFromOptions(eps); CHKERRQ(ierr);
+  ierr = EPSDestroy(eps); CHKERRQ(ierr);
+  ierr = SlepcFinalize(); CHKERRQ(ierr);
   return 0;
 }
 " SLEPC_TEST_RUNS)
@@ -124,4 +114,3 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SLEPc "SLEPc could not be found. Be sure to set SLEPC_DIR and PETSC_ARCH."
                                   SLEPC_ROOT_DIR SLEPC_INCLUDE_DIRS SLEPC_LIBRARIES)
-
