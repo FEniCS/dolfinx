@@ -120,8 +120,9 @@ show :
   file (REMOVE ${petsc_config_makefile})
 
   # Turn PETSC_INCLUDE_DIRS into a semi-colon separated list
-  string(REPLACE "-I" "" petsc_inc_dirs "${PETSC_INCLUDE_DIRS}")
-  separate_arguments(petsc_inc_dirs)
+  string(REPLACE "-I" "" PETSC_INCLUDE_DIRS "${PETSC_INCLUDE_DIRS}")
+  separate_arguments(PETSC_INCLUDE_DIRS)
+  message(STATUS "YYYYYY: ${PETSC_INCLUDE_DIRS}")
 
 endif ()
 
