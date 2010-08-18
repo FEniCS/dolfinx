@@ -200,8 +200,6 @@ if (DOLFIN_ENABLE_UNIT_TESTS)
   find_package(CppUnit.dolfin QUIET)
 endif()
 
-message("check 1")
-
 #------------------------------------------------------------------------------
 # Installation of Python module (if enabled)
 
@@ -214,8 +212,6 @@ if (PYTHONINTERP_FOUND)
   set(DOLFIN_INSTALL_PYTHON_MODULE_DIR ${PYTHON_INSTALL_PATH})
   set(DOLFIN_INSTALL_PYTHON_EXT_DIR ${PYTHON_INSTALL_PATH})
 endif()
-
-message("check 5")
 
 #------------------------------------------------------------------------------
 # Installation of dolfin_utils
