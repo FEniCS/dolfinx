@@ -4,8 +4,10 @@
 #  PETSC_FOUND        - system has PETSc
 #  PETSC_INCLUDE_DIRS - include directories for PETSc
 #  PETSC_LIBRARIES    - libraries for PETSc
+#  PETSC_ROOT_DIR     - PETSc directory
+#  PETSC_ARCH         - architecture for which PETSc is built
 #
-# This config script is based on a PETSc CMake script by Jed Brown.
+# This config script is (very loosley) based on a PETSc CMake script by Jed Brown.
 
 message(STATUS "Checking for package 'PETSc'")
 
@@ -20,10 +22,12 @@ endforeach()
 
 # List of possible locations for PETSC_DIR
 set(petsc_dir_locations "")
-list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.1")
-list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.0.0")
-list(APPEND petsc_dir_locations "$ENV{HOME}/petsc")
+list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.1")    # Debian location
+list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.0.0")  # Debian location
+list(APPEND petsc_dir_locations "$ENV{HOME}/petsc")         # User location
 
+# FIXME: Use CMake list of library paths (and not LD_LIBRARY_PATH),
+#        maybe ${CMAKE_SYSTEM_LIBRARY_PATH}?
 # Add prefixes in LD_LIBRARY_PATH to possible locations
 string(REGEX REPLACE ":" ";" libdirs $ENV{LD_LIBRARY_PATH})
 foreach (libdir ${libdirs})
@@ -31,12 +35,10 @@ foreach (libdir ${libdirs})
   list(APPEND petsc_dir_locations ${petsc_dir_location})
 endforeach()
 
-# Try to figure out PETSC_DIR
+# Try to figure out PETSC_DIR by finding petsc.h
 find_path(PETSC_DIR include/petsc.h
-  HINTS ENV PETSC_DIR
-  PATHS
-  ${petsc_dir_locations}
-  DOC "PETSc Directory")
+  PATHS ENV PETSC_DIR ${petsc_dir_locations}
+  DOC "PETSc directory")
 
 # Report result of search for PETSC_DIR
 if (DEFINED PETSC_DIR)
@@ -46,7 +48,7 @@ else()
   message(STATUS "PETSC_DIR is empty")
 endif()
 
-# Try to figure out PETSC_ARCH
+# Try to figure out PETSC_ARCH if not set
 if (PETSC_DIR AND NOT PETSC_ARCH)
   set(_petsc_arches
     $ENV{PETSC_ARCH}   # If set, use environment variable first
@@ -56,7 +58,7 @@ if (PETSC_DIR AND NOT PETSC_ARCH)
   foreach (arch ${_petsc_arches})
     if (NOT PETSC_ARCH)
       find_path(petscconf petscconf.h
-      HINTS ${PETSC_DIR}
+      PATHS ${PETSC_DIR}
       PATH_SUFFIXES ${arch}/include bmake/${arch}
       NO_DEFAULT_PATH)
       if (petscconf)
@@ -115,7 +117,6 @@ show :
   # Turn PETSC_INCLUDE_DIRS into a semi-colon separated list
   string(REPLACE "-I" "" PETSC_INCLUDE_DIRS "${PETSC_INCLUDE_DIRS}")
   separate_arguments(PETSC_INCLUDE_DIRS)
-  message(STATUS "YYYYYY: ${PETSC_INCLUDE_DIRS}")
 
 endif()
 
