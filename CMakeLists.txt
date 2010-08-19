@@ -174,6 +174,7 @@ if (DOLFIN_ENABLE_ZLIB)
   find_package(ZLIB QUIET)
 endif()
 
+# FIXME: Check for CGAL dependencies, e.g. mpfr
 # Check for CGAL
 if (DOLFIN_ENABLE_CGAL)
   find_package(CGAL PATHS $ENV{CGAL_DIR}/lib QUIET)
