@@ -1,6 +1,12 @@
 set(DOLFIN_H dolfin.h)
 install(FILES ${DOLFIN_H} DESTINATION ${DOLFIN_INCLUDE_DIR} COMPONENT Development)
 
+#set(CMAKE_SKIP_BUILD_RPATH  FALSE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+#------------------------------------------------------------------------------
+# DOLFIN sorce directories
+
 set(DOLFIN_DIRS
   ale
   common
@@ -24,8 +30,8 @@ set(DOLFIN_DIRS
   quadrature
   )
 
-#set(CMAKE_SKIP_BUILD_RPATH  FALSE)
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+#------------------------------------------------------------------------------
+# Install header files
 
 foreach(DIR ${DOLFIN_DIRS})
   file(GLOB _HEADERS ${DIR}/*.h)
