@@ -10,51 +10,50 @@
 # Setting these changes the behavior of the search
 # ARMADILLO_DIR - directory in which Armadillo resides
 
-if(NOT ARMADILLO_FOUND)
-  message(STATUS "Checking for package 'Armadillo'")
+message(STATUS "Checking for package 'Armadillo'")
 
-  find_path(ARMADILLO_INCLUDE_DIR
-    NAMES armadillo
-    HINTS $ENV{ARMADILLO_DIR}
-    PATHS /usr/local /opt/local /sw
-    PATH_SUFFIXES include
-    DOC "Directory where the Armadillo header file is located"
-    )
-  mark_as_advanced(ARMADILLO_INCLUDE_DIR)
+find_path(ARMADILLO_INCLUDE_DIR
+  NAMES armadillo
+  HINTS $ENV{ARMADILLO_DIR}
+  PATHS /usr/local /opt/local /sw
+  PATH_SUFFIXES include
+  DOC "Directory where the Armadillo header file is located"
+  )
+mark_as_advanced(ARMADILLO_INCLUDE_DIR)
 
-  find_library(ARMADILLO_LIBRARY
-    NAMES armadillo
-    HINTS $ENV{ARMADILLO_DIR}
-    PATHS /usr/local /opt/local /sw
-    PATH_SUFFIXES lib lib64
-    DOC "The Armadillo library"
-    )
-  mark_as_advanced(ARMADILLO_LIBRARY)
+find_library(ARMADILLO_LIBRARY
+  NAMES armadillo
+  HINTS $ENV{ARMADILLO_DIR}
+  PATHS /usr/local /opt/local /sw
+  PATH_SUFFIXES lib lib64
+  DOC "The Armadillo library"
+  )
+mark_as_advanced(ARMADILLO_LIBRARY)
 
-  # On mac systems, we likely have to link against the vecLib framework
-  if(APPLE)
-    include(CMakeFindFrameworks)
-    CMAKE_FIND_FRAMEWORKS(vecLib)
-    if(vecLib_FRAMEWORKS)
-      set(ARMADILLO_LINK_FLAGS "-framework vecLib")
-      mark_as_advanced(ARMADILLO_LINK_FLAGS)
-    else(vecLib_FRAMEWORKS)
-      message(STATUS "vecLib framework not found.")
-    endif(vecLib_FRAMEWORKS)
-  endif(APPLE)
+# On mac systems, we likely have to link against the vecLib framework
+if (APPLE)
+  include(CMakeFindFrameworks)
+  CMAKE_FIND_FRAMEWORKS(vecLib)
+  if (vecLib_FRAMEWORKS)
+    set(ARMADILLO_LINK_FLAGS "-framework vecLib")
+    mark_as_advanced(ARMADILLO_LINK_FLAGS)
+  else()
+    message(STATUS "vecLib framework not found.")
+  endif()
+endif()
 
-  if(ARMADILLO_INCLUDE_DIR AND ARMADILLO_LIBRARY)
-    include(CheckCXXSourceRuns)
+if (ARMADILLO_INCLUDE_DIR AND ARMADILLO_LIBRARY)
+  include(CheckCXXSourceRuns)
 
-    # These are needed for the try_run and check_cxx_source_runs commands below
-    set(CMAKE_REQUIRED_INCLUDES ${ARMADILLO_INCLUDE_DIR})
-    set(CMAKE_REQUIRED_LIBRARIES ${ARMADILLO_LIBRARY})
-    if(ARMADILLO_LINK_FLAGS)
-      set(CMAKE_REQUIRED_LIBRARIES "${ARMADILLO_LINK_FLAGS} ${CMAKE_REQUIRED_LIBRARIES}")
-    endif(ARMADILLO_LINK_FLAGS)
+  # These are needed for the try_run and check_cxx_source_runs commands below
+  set(CMAKE_REQUIRED_INCLUDES ${ARMADILLO_INCLUDE_DIR})
+  set(CMAKE_REQUIRED_LIBRARIES ${ARMADILLO_LIBRARY})
+  if (ARMADILLO_LINK_FLAGS)
+    set(CMAKE_REQUIRED_LIBRARIES "${ARMADILLO_LINK_FLAGS} ${CMAKE_REQUIRED_LIBRARIES}")
+  endif()
 
-    set(ARMADILLO_CONFIG_TEST_VERSION_CPP ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/check_armadillo/armadillo_config_test_version.cpp)
-    file(WRITE ${ARMADILLO_CONFIG_TEST_VERSION_CPP} "
+  set(ARMADILLO_CONFIG_TEST_VERSION_CPP ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/check_armadillo/armadillo_config_test_version.cpp)
+  file(WRITE ${ARMADILLO_CONFIG_TEST_VERSION_CPP} "
 #include <armadillo>
 #include <iostream>
 
@@ -66,22 +65,21 @@ int main() {
 	    << arma_version::patch;
   return 0;
 }
-"
-      )
+")
 
-    try_run(
-      ARMADILLO_CONFIG_TEST_VERSION_EXITCODE
-      ARMADILLO_CONFIG_TEST_VERSION_COMPILED
-      ${CMAKE_CURRENT_BINARY_DIR}
-      ${ARMADILLO_CONFIG_TEST_VERSION_CPP}
-      RUN_OUTPUT_VARIABLE OUTPUT
-      )
+  try_run(
+    ARMADILLO_CONFIG_TEST_VERSION_EXITCODE
+    ARMADILLO_CONFIG_TEST_VERSION_COMPILED
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${ARMADILLO_CONFIG_TEST_VERSION_CPP}
+    RUN_OUTPUT_VARIABLE OUTPUT
+    )
 
-    if(ARMADILLO_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
-      set(ARMADILLO_VERSION ${OUTPUT} CACHE TYPE STRING)
-    endif(ARMADILLO_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
+  if (ARMADILLO_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
+    set(ARMADILLO_VERSION ${OUTPUT} CACHE TYPE STRING)
+  endif()
 
-    check_cxx_source_runs("
+  check_cxx_source_runs("
 #include <armadillo>
 
 int main()
@@ -93,18 +91,11 @@ int main()
  return 0;
 }
 "
-      ARMADILLO_TEST_RUNS)
+    ARMADILLO_TEST_RUNS)
 
-    if(NOT ARMADILLO_TEST_RUNS)
-      message(FATAL_ERROR "Unable to compile and run Armadillo test program.")
-    endif(NOT ARMADILLO_TEST_RUNS)
+endif()
 
-    set(ARMADILLO_FOUND 1 CACHE TYPE BOOL)
-  endif(ARMADILLO_INCLUDE_DIR AND ARMADILLO_LIBRARY)
-
-  if(ARMADILLO_FOUND)
-    message(STATUS "   Found package Armadillo, version ${ARMADILLO_VERSION}")
-  else(ARMADILLO_FOUND)
-    message("   Unable to configure package 'Armadillo'")
-  endif(ARMADILLO_FOUND)
-endif(NOT ARMADILLO_FOUND)
+# Standard package handling
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(Armadillo "Armadillo could not be found. Be sure to set ARMADILLO_DIR."
+                                  ARMADILLO_TEST_RUNS)
