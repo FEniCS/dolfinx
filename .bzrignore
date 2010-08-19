@@ -41,7 +41,7 @@ RE:demo/.*/cpp/.sconsign.dblite
 RE:test/.*/cpp/test
 RE:test/unit/mesh/(cpp|python)/.*.(xml|m)
 
-#Generated documentation
+# Generated documentation
 doc/progr_reference/html/**.html
 doc/progr_reference/html/**.png
 doc/progr_reference/html/**.gif
@@ -51,12 +51,19 @@ doc/progr_reference/latex/
 doc/progr_reference/html/dir_*_dep.*
 RE:doc/progr_reference/html/d.
 
-#Scons os files.
+# Scons os files.
 *.os
 
-#Tag files
+# Tag files
 tags
 
 # Dorsal related files
 build_log
 dorsal_build
+
+# CMake and Make files
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+Makefile
+
