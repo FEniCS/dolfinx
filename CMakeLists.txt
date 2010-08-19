@@ -72,8 +72,6 @@ option(DOLFIN_ENABLE_PYTHON "Compile the Python wrappers." ON)
 
 option(CGAL_DISABLE_ROUNDING_MATH_CHECK "Disable rounding math check in CGAL. This permits Valgrind to run." OFF)
 
-set(DOLFIN_BOOST_USE_MULTITHREADED OFF CACHE BOOL "Use multithreaded Boost libraries.")
-
 #------------------------------------------------------------------------------
 # Compiler flags
 
@@ -100,7 +98,13 @@ endif()
 find_package(UFC.dolfin  REQUIRED)
 find_package(Armadillo.dolfin REQUIRED)
 find_package(LibXml2 REQUIRED)
-find_package(Boost.dolfin REQUIRED)
+
+# FIXME: Should Boost_USE_STATIC_LIBS and Boost_USE_MULTITHREADED by options?
+set(Boost_USE_STATIC_LIBS   OFF)
+set(Boost_USE_MULTITHREADED OFF)
+set(BOOST_ROOT $ENV{BOOST_DIR})
+set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
+find_package(Boost 1.36 COMPONENTS filesystem program_options system REQUIRED)
 
 #------------------------------------------------------------------------------
 # Run tests to find optional packages
