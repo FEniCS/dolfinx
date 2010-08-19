@@ -100,7 +100,7 @@ endif()
 # Run tests to find required packages
 
 #find_package(UFC.dolfin REQUIRED)
-find_package(UFC REQUIRED)
+find_package(UFC PATHS $ENV{CMAKE_CONFIG_PATH}/share/ufc/cmake REQUIRED)
 find_package(Armadillo.dolfin REQUIRED)
 find_package(LibXml2 REQUIRED)
 
