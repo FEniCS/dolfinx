@@ -164,6 +164,7 @@ if (DOLFIN_ENABLE_PETSC)
   endif()
 endif()
 
+# FIXME: Check for GMPXX (C++ bindings) too? CGAL seems to need it
 # Check for GMP
 if (DOLFIN_ENABLE_GMP)
   find_package(GMP QUIET)
