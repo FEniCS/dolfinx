@@ -71,7 +71,7 @@ public:
                                  DOLFIN_EPS);
 
 #ifdef HAS_CGAL
-    if (MPI::num_processes() == 0)
+    if (dolfin::MPI::num_processes() == 0)
     {
       // Test evaluation of a discrete function
       Projection::FunctionSpace V(mesh);
