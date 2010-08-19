@@ -26,16 +26,14 @@ list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.1")    # Debian location
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.0.0")  # Debian location
 list(APPEND petsc_dir_locations "$ENV{HOME}/petsc")         # User location
 
-# FIXME: Use CMake list of library paths (and not LD_LIBRARY_PATH),
-#        maybe ${CMAKE_SYSTEM_LIBRARY_PATH}?
-# Add prefixes in LD_LIBRARY_PATH to possible locations
-if (DEFINED LD_LIBRARY_PATH)
-  string(REGEX REPLACE ":" ";" libdirs $ENV{LD_LIBRARY_PATH})
-  foreach (libdir ${libdirs})
-    get_filename_component(petsc_dir_location "${libdir}/" PATH)
-    list(APPEND petsc_dir_locations ${petsc_dir_location})
-  endforeach()
-endif()
+# FIXME: Check that /usr/local/lib is in search path
+set(_SYSTEM_LIB_PATHS "${CMAKE_SYSTEM_LIBRARY_PATH};${CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES}")
+string(REGEX REPLACE ":" ";" libdirs ${_SYSTEM_LIB_PATHS})
+foreach (libdir ${libdirs})
+  get_filename_component(petsc_dir_location "${libdir}/" PATH)
+  list(APPEND petsc_dir_locations ${petsc_dir_location})
+endforeach()
+
 
 # Try to figure out PETSC_DIR by finding petsc.h
 find_path(PETSC_DIR include/petsc.h

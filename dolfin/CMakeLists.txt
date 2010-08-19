@@ -230,7 +230,7 @@ if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND AND SWIG_FOUND)
   # Make sure we can import the UFC module and that it is compiled with present
   # version of SWIG
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import ufc, sys; sys.stdout.write('.'.join([str(int(s)) for s in ufc.__swigversion__.split('.')]))"
+    COMMAND ${PYTHON_EXECUTABLE} -c "from ufc import *; import sys; sys.stdout.write('.'.join([str(int(s)) for s in ufc.__swigversion__.split('.')]))"
     OUTPUT_VARIABLE UFC_SWIGVERSION
     RESULT_VARIABLE UFC_MODULE_NOT_FOUND
     )

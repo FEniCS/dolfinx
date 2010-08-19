@@ -1,5 +1,4 @@
-# - DOLFIN
-# CMake configuration for DOLFIN
+# - Build details for DOLFIN:  Dynamic Object-oriented Library for FINite element computation
 #
 # This file has been automatically generated.
 
@@ -27,5 +26,5 @@ set(DOLFIN_LIBRARY_DIR "@CMAKE_INSTALL_PREFIX@/@DOLFIN_LIB_DIR@;@DOLFIN_TARGET_L
 set(DOLFIN_LIBRARIES "dolfin @DOLFIN_TARGET_LINK_LIBRARIES@")
 
 # Version
-set(DOLFIN_VERSION "@DOLFIN_VERSION@")
+set(DOLFIN_VERSION_STR "@DOLFIN_VERSION@")
 

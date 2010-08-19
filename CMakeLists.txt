@@ -24,6 +24,10 @@ if (COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 endif()
 
+#message("Module path ${CMAKE_SYSTEM_LIBRARY_PATH}")
+#message("Module path ${CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES}")
+
+
 # Set location of our FindFoo.cmake modules
 set(DOLFIN_CMAKE_DIR "${DOLFIN_SOURCE_DIR}/cmake" CACHE INTERNAL "")
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
@@ -95,7 +99,8 @@ endif()
 #------------------------------------------------------------------------------
 # Run tests to find required packages
 
-find_package(UFC.dolfin REQUIRED)
+#find_package(UFC.dolfin REQUIRED)
+find_package(UFC REQUIRED)
 find_package(Armadillo.dolfin REQUIRED)
 find_package(LibXml2 REQUIRED)
 
