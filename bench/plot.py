@@ -95,6 +95,19 @@ outfile.write("<h2>All benchmarks</h2><p>\n")
 outfile.write("<center>\n")
 outfile.write("<table border=\"0\">\n")
 
+def get_maxtime(dates, min_date, max_date, timings):
+    """Return the maximum time between min_date and max_date"""
+    max_time = 0
+    for i, date in enumerate(dates):
+        if date < min_date:
+            continue
+        elif date > max_date:
+            break
+        else:
+            if max_time < timings[i]:
+                max_time = timings[i]
+    return max_time
+
 # Create normalized plots with all benchmarks in same plot for
 # last week, last month, last year, and last five years
 print "Generating plots for all benchmarks..."
@@ -102,18 +115,22 @@ for last, locator, date_fmt, xmin in zip(lasts, locators, date_fmts, xmins):
     fig = plt.figure()
     ax = fig.gca()
     num = 0
+    ymax = 0
     for benchmark, values in benchmarks.items():
         num += 1
         dates = values[0]
-        timings = values[1]
-        ax.plot(dates, timings/numpy.linalg.norm(timings),
+        timings = values[1]/numpy.linalg.norm(values[1])
+        ax.plot(dates, timings,
                 marker=markers[num % len(markers)], markersize=3,
                 label=benchmark)
         ax.hold(True)
+        maxtime = get_maxtime(dates, xmin, today, timings)
+        if maxtime > ymax:
+            ymax = maxtime
     ax.xaxis.set_major_locator(locator)
     ax.xaxis.set_major_formatter(mdates.DateFormatter(date_fmt))
     ax.set_xlim(xmin, today)
-    ax.set_ylim(0, 1)
+    ax.set_ylim(0, ymax)
 
     # Add milestones to plot
     for milestone in milestones:
@@ -163,7 +180,8 @@ for benchmark, values in benchmarks.items():
         ax = fig.gca()
         ax.plot(dates, timings, marker='o', markersize=3)
         ax.set_ylabel("time (seconds)")
-        ax.set_ylim(0, max(timings) + max(timings)/2.)
+        maxtime = get_maxtime(dates, xmin, today, timings)
+        ax.set_ylim(0, maxtime + maxtime/2)
         ax.legend((description,), loc='best')        
         ax.xaxis.set_major_locator(locator)
         ax.xaxis.set_major_formatter(mdates.DateFormatter(date_fmt))
