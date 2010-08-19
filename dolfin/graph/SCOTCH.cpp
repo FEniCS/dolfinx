@@ -8,8 +8,8 @@
 #include <map>
 #include <numeric>
 #include <set>
-#include <tr1/unordered_map>
-#include <tr1/unordered_set>
+//#include <boost/unordered_map.hpp>
+//#include <boost/unordered_set.hpp>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/main/MPI.h>

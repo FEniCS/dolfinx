@@ -8,8 +8,8 @@
 #include <numeric>
 #include <set>
 #include <vector>
-#include <tr1/unordered_set>
-#include <tr1/unordered_map>
+#include <boost/unordered_set.hpp>
+#include <boost/unordered_map.hpp>
 #include <dolfin/log/log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/main/MPI.h>
@@ -172,8 +172,8 @@ void GraphBuilder::compute_connectivity(const std::vector<std::vector<uint> >& c
   std::vector<uint>::const_iterator c_vertex;
   std::vector<uint>::const_iterator connected_cell;
 
-  std::tr1::unordered_map<uint, std::vector<uint> > vertex_connectivity;
-  std::pair<std::tr1::unordered_map<uint, std::vector<uint> >::iterator, bool> ret;
+  boost::unordered_map<uint, std::vector<uint> > vertex_connectivity;
+  std::pair<boost::unordered_map<uint, std::vector<uint> >::iterator, bool> ret;
 
   // Build (global vertex)-(local cell) connectivity
   double tt = time();
@@ -233,7 +233,7 @@ void GraphBuilder::compute_connectivity(const std::vector<std::vector<uint> >& c
 
   tt = time();
   // Iterate over all vertices
-  std::tr1::unordered_map<uint, std::vector<uint> >::const_iterator _vertex;
+  boost::unordered_map<uint, std::vector<uint> >::const_iterator _vertex;
   for (_vertex = vertex_connectivity.begin(); _vertex != vertex_connectivity.end(); ++_vertex)
   {
     const std::vector<uint>& cell_list = _vertex->second;
@@ -282,8 +282,8 @@ dolfin::uint GraphBuilder::compute_ghost_connectivity(const std::vector<std::vec
   std::vector<uint>::const_iterator c_vertex;
   std::vector<uint>::const_iterator connected_cell;
 
-  std::tr1::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > > vertex_connectivity;
-  std::pair<std::tr1::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > >::iterator, bool> ret;
+  boost::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > > vertex_connectivity;
+  std::pair<boost::unordered_map<uint, std::pair<std::vector<uint>, std::vector<uint> > >::iterator, bool> ret;
 
   // Build boundary (global vertex)-(local cell) connectivity
   double tt = time();
