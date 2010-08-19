@@ -72,6 +72,8 @@ option(DOLFIN_ENABLE_PYTHON "Compile the Python wrappers." ON)
 
 option(CGAL_DISABLE_ROUNDING_MATH_CHECK "Disable rounding math check in CGAL. This permits Valgrind to run." OFF)
 
+set(DOLFIN_BOOST_USE_MULTITHREADED OFF CACHE BOOL "Use multithreaded Boost libraries.")
+
 #------------------------------------------------------------------------------
 # Compiler flags
 
