@@ -24,10 +24,6 @@ if (COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 endif()
 
-#message("Module path ${CMAKE_SYSTEM_LIBRARY_PATH}")
-#message("Module path ${CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES}")
-
-
 # Set location of our FindFoo.cmake modules
 set(DOLFIN_CMAKE_DIR "${DOLFIN_SOURCE_DIR}/cmake" CACHE INTERNAL "")
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
@@ -85,8 +81,35 @@ if (NOT CMAKE_BUILD_TYPE)
     "Choose the type of build, options are: Debug Release RelWithDebInfo Maintainer MinSizeRel." FORCE)
 endif()
 
-# 'Maintainer' build type flags
-set(CMAKE_CXX_FLAGS_MAINTAINER "-O2 -g -ansi -pipe -Wall -Werror -DDEBUG" CACHE STRING
+# Check for some compiler flags
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG(-pipe HAVE_PIPE)
+if (HAVE_PIPE)
+  set(DOLFIN_CXX_RELEASE_FLAGS "-pipe ${DOLFIN_CXX_RELEASE_FLAGS}")
+endif()
+
+CHECK_CXX_COMPILER_FLAG("-Wall -Werror" HAVE_PEDANTIC)
+if (HAVE_PEDANTIC)
+  set(DOLFIN_CXX_RELEASE_FLAGS "-Wall -Werror ${DOLFIN_CXX_RELEASE_FLAGS}")
+endif()
+
+CHECK_CXX_COMPILER_FLAG(-std=c++98 HAVE_STD)
+if (HAVE_STD)
+  set(DOLFIN_CXX_RELEASE_FLAGS "-std=c++98 ${DOLFIN_CXX_RELEASE_FLAGS}")
+endif()
+
+CHECK_CXX_COMPILER_FLAG(-g HAVE_DEBUG)
+if (HAVE_DEBUG)
+  set(DOLFIN_CXX_RELEASE_FLAGS "-g ${DOLFIN_CXX_RELEASE_FLAGS}")
+endif()
+
+CHECK_CXX_COMPILER_FLAG(-O2 HAVE_O2_OPTIMISATION)
+if (HAVE_O2_OPTIMISATION)
+  set(DOLFIN_CXX_RELEASE_FLAGS "-O2 ${DOLFIN_CXX_RELEASE_FLAGS}")
+endif()
+
+# Set 'Maintainer' build type flags
+set(CMAKE_CXX_FLAGS_MAINTAINER "${DOLFIN_CXX_RELEASE_FLAGS} -DDEBUG" CACHE STRING
   "Flags used by the compiler during development." FORCE)
 
 # FIXME: Do we want to add -DDEBUG to RelWithDebInfo?
@@ -99,14 +122,13 @@ endif()
 #------------------------------------------------------------------------------
 # Run tests to find required packages
 
-# FIXME: Should Boost_USE_STATIC_LIBS and Boost_USE_MULTITHREADED by options?
+# FIXME: Should Boost_USE_STATIC_LIBS and Boost_USE_MULTITHREADED be options?
 set(Boost_USE_STATIC_LIBS   OFF)
 set(Boost_USE_MULTITHREADED OFF)
 set(BOOST_ROOT $ENV{BOOST_DIR})
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
 find_package(Boost 1.36 COMPONENTS filesystem program_options system REQUIRED)
 
-#find_package(UFC.dolfin REQUIRED)
 find_package(UFC PATHS $ENV{CMAKE_CONFIG_PATH}/share/ufc/cmake REQUIRED)
 find_package(Armadillo.dolfin REQUIRED)
 find_package(LibXml2 REQUIRED)
@@ -126,19 +148,26 @@ if (DOLFIN_ENABLE_PYTHON)
     include(UseSWIG)
   endif()
   message(STATUS "Python lib dir ${PYTHON_LIBRARIES}")
+
 endif()
 
-# Check for MPI
+# FIXME: Should we move the MPI check to the compiler section?
+# Check for MPI, ParMETIS and SCOTCH
 if (DOLFIN_ENABLE_MPI)
   find_package(MPI QUIET)
+
+  # FIXME: Should be set CMake to use the MPI compiler wrappers?
+
+  # Check for ParMETIS
   if (DOLFIN_ENABLE_PARMETIS)
     find_package(ParMETIS.dolfin QUIET)
   endif()
-endif()
 
-# Check for SCOTCH
-if (DOLFIN_ENABLE_SCOTCH)
-  find_package(ScotchPT QUIET)
+  # Check for SCOTCH
+  if (DOLFIN_ENABLE_SCOTCH)
+    find_package(ScotchPT QUIET)
+  endif()
+
 endif()
 
 # Check for UMFPACK
@@ -161,7 +190,7 @@ if (DOLFIN_ENABLE_MTL4)
   find_package(MTL4.dolfin QUIET)
 endif()
 
-# Check for PETSc
+# Check for PETSc and SLEPc
 if (DOLFIN_ENABLE_PETSC)
   find_package(PETSc.dolfin QUIET)
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
@@ -175,15 +204,15 @@ if (DOLFIN_ENABLE_GMP)
   find_package(GMP QUIET)
 endif()
 
-# Check for zlib
-if (DOLFIN_ENABLE_ZLIB)
-  find_package(ZLIB QUIET)
-endif()
-
 # FIXME: Check for CGAL dependencies, e.g. mpfr
 # Check for CGAL
 if (DOLFIN_ENABLE_CGAL)
   find_package(CGAL PATHS $ENV{CGAL_DIR}/lib QUIET)
+endif()
+
+# Check for zlib
+if (DOLFIN_ENABLE_ZLIB)
+  find_package(ZLIB QUIET)
 endif()
 
 # Check for cppunit
