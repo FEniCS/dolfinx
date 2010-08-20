@@ -47,11 +47,15 @@ endif()
 if (ARMADILLO_INCLUDE_DIR AND ARMADILLO_LIBRARY)
   include(CheckCXXSourceRuns)
 
-  # These are needed for the try_run and check_cxx_source_runs commands below
-  set(CMAKE_REQUIRED_INCLUDES ${ARMADILLO_INCLUDE_DIR})
-  if(Boost_INCLUDE_DIR)
-    set(CMAKE_REQUIRED_INCLUDES "${Boost_INCLUDE_DIR} ${CMAKE_REQUIRED_INCLUDES}")
+  # Armadillo needs the location of the Boost header files
+  if (NOT Boost_INCLUDE_DIR)
+    set(BOOST_ROOT $ENV{BOOST_DIR})
+    set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
+    find_package(Boost REQUIRED)
   endif()
+
+  # These are needed for the try_run and check_cxx_source_runs commands below
+  set(CMAKE_REQUIRED_INCLUDES "${ARMADILLO_INCLUDE_DIR} ${Boost_INCLUDE_DIR}")
   set(CMAKE_REQUIRED_LIBRARIES ${ARMADILLO_LIBRARY})
   if (ARMADILLO_LINK_FLAGS)
     set(CMAKE_REQUIRED_LIBRARIES "${ARMADILLO_LINK_FLAGS} ${CMAKE_REQUIRED_LIBRARIES}")
