@@ -304,4 +304,3 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin-config.cmake
   )
 
 #------------------------------------------------------------------------------
-

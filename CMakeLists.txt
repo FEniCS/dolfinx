@@ -266,4 +266,8 @@ add_subdirectory(dolfin)
 # Generate helper file dolfin.conf
 
 # FIXME: not cross-platform compatible
-configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in ${CMAKE_CURRENT_BINARY_DIR}/dolfin.conf @ONLY)
+configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in
+               ${CMAKE_CURRENT_BINARY_DIR}/dolfin.conf @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin.conf
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin
+        COMPONENT Development)
