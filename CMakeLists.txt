@@ -99,17 +99,17 @@ endif()
 #------------------------------------------------------------------------------
 # Run tests to find required packages
 
-#find_package(UFC.dolfin REQUIRED)
-find_package(UFC PATHS $ENV{CMAKE_CONFIG_PATH}/share/ufc/cmake REQUIRED)
-find_package(Armadillo.dolfin REQUIRED)
-find_package(LibXml2 REQUIRED)
-
 # FIXME: Should Boost_USE_STATIC_LIBS and Boost_USE_MULTITHREADED by options?
 set(Boost_USE_STATIC_LIBS   OFF)
 set(Boost_USE_MULTITHREADED OFF)
 set(BOOST_ROOT $ENV{BOOST_DIR})
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
 find_package(Boost 1.36 COMPONENTS filesystem program_options system REQUIRED)
+
+#find_package(UFC.dolfin REQUIRED)
+find_package(UFC PATHS $ENV{CMAKE_CONFIG_PATH}/share/ufc/cmake REQUIRED)
+find_package(Armadillo.dolfin REQUIRED)
+find_package(LibXml2 REQUIRED)
 
 #------------------------------------------------------------------------------
 # Run tests to find optional packages

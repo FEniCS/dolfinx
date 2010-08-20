@@ -42,19 +42,16 @@ if (APPLE)
   else()
     message(STATUS "vecLib framework not found.")
   endif()
-
-  # Add includes for Boost
-  set(ARMADILLO_EXTRA_INCLUDES "/opt/local/include")
-
 endif()
-
-message("CHECK: ${ARMADILLO_EXTRA_INCLUDES}")
 
 if (ARMADILLO_INCLUDE_DIR AND ARMADILLO_LIBRARY)
   include(CheckCXXSourceRuns)
 
   # These are needed for the try_run and check_cxx_source_runs commands below
-  set(CMAKE_REQUIRED_INCLUDES ${ARMADILLO_INCLUDE_DIR} ${ARMADILLO_EXTRA_INCLUDES})
+  set(CMAKE_REQUIRED_INCLUDES ${ARMADILLO_INCLUDE_DIR})
+  if(Boost_INCLUDE_DIR)
+    set(CMAKE_REQUIRED_INCLUDES "${Boost_INCLUDE_DIR} ${CMAKE_REQUIRED_INCLUDES}")
+  endif()
   set(CMAKE_REQUIRED_LIBRARIES ${ARMADILLO_LIBRARY})
   if (ARMADILLO_LINK_FLAGS)
     set(CMAKE_REQUIRED_LIBRARIES "${ARMADILLO_LINK_FLAGS} ${CMAKE_REQUIRED_LIBRARIES}")
