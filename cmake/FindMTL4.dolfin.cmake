@@ -40,6 +40,6 @@ int main()
 
 endif (MTL4_INCLUDE_DIR)
 
+# Standard package handling
 include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(MTL4 DEFAULT_MSG MTL4_INCLUDE_DIR)
-

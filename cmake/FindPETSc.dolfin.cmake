@@ -34,7 +34,6 @@ foreach (libdir ${libdirs})
   list(APPEND petsc_dir_locations ${petsc_dir_location})
 endforeach()
 
-
 # Try to figure out PETSC_DIR by finding petsc.h
 find_path(PETSC_DIR include/petsc.h
   PATHS ENV PETSC_DIR ${petsc_dir_locations}

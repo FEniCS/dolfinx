@@ -204,10 +204,9 @@ if (DOLFIN_ENABLE_GMP)
   find_package(GMP QUIET)
 endif()
 
-# FIXME: Check for CGAL dependencies, e.g. mpfr
 # Check for CGAL
 if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL PATHS $ENV{CGAL_DIR}/lib QUIET)
+  find_package(CGAL.dolfin QUIET)
 endif()
 
 # Check for zlib
