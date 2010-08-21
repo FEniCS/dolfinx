@@ -10,20 +10,18 @@ find_path(UMFPACK_INCLUDE_DIR
  )
 mark_as_advanced(UMFPACK_INCLUDE_DIR)
 
-message(STATUS "UMF  ${UMFPACK_INCLUDE_DIR}")
-
 # Check for library
 find_library(UMFPACK_LIBRARY
   NAMES umfpack
   HINTS $ENV{UMFPACK_DIR}
-  PATHS /usr/local /opt/local /sw
+  PATHS /usr/local /usr /opt/local /sw
   PATH_SUFFIXES lib lib64
   DOC "The UMFPACK library"
   )
 mark_as_advanced(UMFPACK_LIBRARY)
 
 # Try compiling and running test program
-if(UMFPACK_INCLUDE_DIR AND UMFPACK_LIBRARY)
+if (UMFPACK_INCLUDE_DIR AND UMFPACK_LIBRARY)
 
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${UMFPACK_INCLUDE_DIR})
@@ -59,21 +57,9 @@ int main()
 }
 " UMFPACK_TEST_RUNS)
 
-  if(NOT UMFPACK_TEST_RUNS)
-    message("   Unable to run test program for package 'UMFPACK'")
-  endif(NOT UMFPACK_TEST_RUNS)
+endif()
 
-endif(UMFPACK_INCLUDE_DIR AND UMFPACK_LIBRARY)
-
-if (UMFPACK_TEST_RUNS)
-  include(FindPackageHandleStandardArgs)
-  FIND_PACKAGE_HANDLE_STANDARD_ARGS(UMFPACK DEFAULT_MSG UMFPACK_INCLUDE_DIR UMFPACK_LIBRARY)
-endif (UMFPACK_TEST_RUNS)
-
-# Report results of tests
-#if(UMFPACK_TEST_RUNS)
-#  message("   Found package 'UMFPACK'")
-#  set(UMFPACK_FOUND 1)
-#else(UMFPACK_TEST_RUNS)
-#  message("   Unable to configure package 'UMFPACK'")
-#endif(UMFPACK_TEST_RUNS)
+# Standard package handling
+include(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(UMFPACK DEFAULT_MSG
+  UMFPACK_INCLUDE_DIR UMFPACK_LIBRARY UMFPACK_TEST_RUNS)

@@ -13,11 +13,6 @@ set(DOLFIN_VERSION_MICRO "8")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 add_definitions(-DPACKAGE_VERSION="${DOLFIN_VERSION}")
 
-# Debugging
-#message("Calling CGAL test")
-#find_package(CGAL.dolfin)
-#message(FATAL_ERROR "test")
-
 #------------------------------------------------------------------------------
 # General configuration
 
@@ -152,7 +147,6 @@ if (DOLFIN_ENABLE_PYTHON)
     find_package(SWIG REQUIRED)
     include(UseSWIG)
   endif()
-  message(STATUS "Python lib dir ${PYTHON_LIBRARIES}")
 
 endif()
 
@@ -187,7 +181,7 @@ endif()
 
 # Check for Trilinos
 if (DOLFIN_ENABLE_TRILINOS)
-  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include)
+  find_package(Trilinos PATHS "$ENV{TRILINOS_DIR}/include")
 endif()
 
 # Check for MTL4
