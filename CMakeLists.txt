@@ -13,6 +13,11 @@ set(DOLFIN_VERSION_MICRO "8")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 add_definitions(-DPACKAGE_VERSION="${DOLFIN_VERSION}")
 
+# Debugging
+#message("Calling CGAL test")
+#find_package(CGAL.dolfin)
+#message(FATAL_ERROR "test")
+
 #------------------------------------------------------------------------------
 # General configuration
 
@@ -138,8 +143,8 @@ find_package(LibXml2 REQUIRED)
 
 # Check for Python
 if (DOLFIN_ENABLE_PYTHON)
-  find_package(PythonInterp QUIET)
-  find_package(PythonLibs QUIET)
+  find_package(PythonInterp)
+  find_package(PythonLibs)
 
   # If Python is found, check for NumPy and SWIG
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
@@ -154,69 +159,69 @@ endif()
 # FIXME: Should we move the MPI check to the compiler section?
 # Check for MPI, ParMETIS and SCOTCH
 if (DOLFIN_ENABLE_MPI)
-  find_package(MPI QUIET)
+  find_package(MPI)
 
   # FIXME: Should be set CMake to use the MPI compiler wrappers?
 
   # Check for ParMETIS
   if (DOLFIN_ENABLE_PARMETIS)
-    find_package(ParMETIS.dolfin QUIET)
+    find_package(ParMETIS.dolfin)
   endif()
 
   # Check for SCOTCH
   if (DOLFIN_ENABLE_SCOTCH)
-    find_package(ScotchPT QUIET)
+    find_package(ScotchPT)
   endif()
 
 endif()
 
 # Check for UMFPACK
 if (DOLFIN_ENABLE_UMFPACK)
-  find_package(UMFPACK.dolfin QUIET)
+  find_package(UMFPACK.dolfin)
 endif()
 
 # Check for CHOLMOD
 if (DOLFIN_ENABLE_CHOLMOD)
-  find_package(Cholmod QUIET)
+  find_package(Cholmod)
 endif()
 
 # Check for Trilinos
 if (DOLFIN_ENABLE_TRILINOS)
-  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include QUIET)
+  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include)
 endif()
 
 # Check for MTL4
 if (DOLFIN_ENABLE_MTL4)
-  find_package(MTL4.dolfin QUIET)
+  find_package(MTL4.dolfin)
 endif()
 
 # Check for PETSc and SLEPc
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc.dolfin QUIET)
+  find_package(PETSc.dolfin)
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc QUIET)
+    find_package(SLEPc)
   endif()
 endif()
 
 # FIXME: Check for GMPXX (C++ bindings) too? CGAL seems to need it
 # Check for GMP
 if (DOLFIN_ENABLE_GMP)
-  find_package(GMP QUIET)
+  find_package(GMP)
 endif()
 
 # Check for CGAL
 if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL.dolfin QUIET)
+  find_package(CGAL.dolfin)
 endif()
 
 # Check for zlib
 if (DOLFIN_ENABLE_ZLIB)
-  find_package(ZLIB QUIET)
+  find_package(ZLIB)
 endif()
 
 # Check for cppunit
 if (DOLFIN_ENABLE_UNIT_TESTS)
-  find_package(CppUnit.dolfin QUIET)
+  find_package(CppUnit.dolfin)
 endif()
 
 #------------------------------------------------------------------------------
