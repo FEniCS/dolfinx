@@ -8,42 +8,16 @@
 
 message(STATUS "Checking for package 'CGAL'")
 
-# Check for header file
-find_path(CGAL_INCLUDE_DIRS
-  NAMES CGAL/Point_3.h
-  HINTS $ENV{CGAL_DIR}
-  PATHS /usr/local /usr /opt/local /sw
-  PATH_SUFFIXES include/CGAL include
-  DOC "Directory where the CGAL headers are located"
-  )
-mark_as_advanced(CGAL_INCLUDE_DIRS)
+# Call CGAL supplied CMake script
+find_package(CGAL PATHS $ENV{CGAL_DIR}/lib)
 
-# Check for library CGAL
-find_library(CGAL_LIB_CGAL
-  NAMES CGAL
-  HINTS $ENV{CGAL_DIR}
-  PATHS /usr/local /usr /opt/local /sw
-  PATH_SUFFIXES lib lib64
-  DOC "The CGAL libraries"
-  )
-mark_as_advanced(CGAL_LIBRARIES)
-
-# Check for library CGAL_Core
-find_library(CGAL_LIB_CGAL_CORE
-  NAMES CGAL_Core
-  HINTS $ENV{CGAL_DIR}
-  PATHS /usr/local /usr /opt/local /sw
-  PATH_SUFFIXES lib lib64
-  DOC "The CGAL libraries"
-  )
-
-# Collect libraries
-set(CGAL_LIBRARIES "${CGAL_LIB_CGAL};${CGAL_LIB_CGAL_CORE}")
-mark_as_advanced(CGAL_LIBRARIES)
+# Set variables
+set(CGAL_INCLUDE_DIRS ${CGAL_INCLUDE_DIRS})
+set(CGAL_LIBRARIES    "${CGAL_LIBRARY};${CGAL_3RD_PARTY_LIBRARIES}")
 
 # Check if we need to add special compiler option for GNU compilers
 if (CMAKE_COMPILER_IS_GNUCXX)
-  set(CMAKE_DEFINITIONS "-frounding-math")
+  set(CGAL_DEFINITIONS "-frounding-math")
 endif()
 
 # Try compiling and running test program
@@ -52,7 +26,7 @@ if (CGAL_INCLUDE_DIRS AND CGAL_LIBRARIES)
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${CGAL_INCLUDE_DIRS})
   set(CMAKE_REQUIRED_LIBRARIES ${CGAL_LIBRARIES})
-  set(CMAKE_REQUIRED_FLAGS ${CMAKE_DEFINITIONS})
+  set(CMAKE_REQUIRED_FLAGS ${CGAL_DEFINITIONS})
 
   # Build and run test program
   include(CheckCXXSourceRuns)

@@ -205,8 +205,7 @@ endif()
 
 # Check for CGAL
 if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL PATHS $ENV{CGAL_DIR}/lib)
-  #find_package(CGAL.dolfin)
+  find_package(CGAL.dolfin)
 endif()
 
 # Check for zlib
