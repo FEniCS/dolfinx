@@ -11,20 +11,15 @@ message(STATUS "Checking for package 'SCOTCH-PT'")
 
 # Check for header file
 find_path(SCOTCH_INCLUDE_DIR ptscotch.h
-  $ENV{SCOTCH_DIR}/include
-  /usr/local/include
-  /usr/local/include/scotch
-  /usr/include
-  /usr/include/scotch
+  PATHS $ENV{SCOTCH_DIR}
+  PATH_SUFFIXES include scotch
   DOC "Directory where the SCOTCH-PT header is located"
   )
 
 # Check for library
 find_library(SCOTCH_LIBRARIES
   NAMES scotch
-  HINTS $ENV{SCOTCH_DIR}/lib
-  PATHS /usr/local /opt/local /sw
-  PATH_SUFFIXES lib lib64
+  PATHS $ENV{SCOTCH_DIR}
   DOC "The SCOTCH library"
   )
 
@@ -32,9 +27,7 @@ find_library(SCOTCH_LIBRARIES
 if(SCOTCH_LIBRARIES)
   find_library(SCOTCERR_LIBRARY
     NAMES scotcherr
-    HINTS $ENV{SCOTCH_DIR}/lib
-    PATHS /usr/local /opt/local /sw
-    PATH_SUFFIXES lib lib64
+    PATHS $ENV{SCOTCH_DIR}
     DOC "The SCOTCH-ERROR library"
     )
 
@@ -50,9 +43,7 @@ endif(SCOTCH_LIBRARIES)
 if(SCOTCH_LIBRARIES)
   find_library(PTSCOTCH_LIBRARY
     NAMES ptscotch
-    HINTS $ENV{SCOTCH_DIR}/lib
-    PATHS /usr/local /opt/local /sw
-    PATH_SUFFIXES lib lib64
+    PATHS $ENV{SCOTCH_DIR}
     DOC "The PTSCOTCH library"
     )
 
@@ -68,9 +59,7 @@ endif(SCOTCH_LIBRARIES)
 if(SCOTCH_LIBRARIES)
   find_library(PTSCOTCERR_LIBRARY
     NAMES ptscotcherr
-    HINTS $ENV{SCOTCH_DIR}/lib
-    PATHS /usr/local /opt/local /sw
-    PATH_SUFFIXES lib lib64
+    PATHS $ENV{SCOTCH_DIR}/lib
     DOC "The PTSCOTCH-ERROR library"
     )
 
@@ -81,7 +70,6 @@ if(SCOTCH_LIBRARIES)
   endif (PTSCOTCERR_LIBRARY)
 
 endif(SCOTCH_LIBRARIES)
-
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SCOTCH DEFAULT_MSG

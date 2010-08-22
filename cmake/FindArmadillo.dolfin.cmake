@@ -14,8 +14,7 @@ message(STATUS "Checking for package 'Armadillo'")
 
 find_path(ARMADILLO_INCLUDE_DIR
   NAMES armadillo
-  HINTS $ENV{ARMADILLO_DIR}
-  PATHS /usr/local /opt/local /sw
+  PATHS $ENV{ARMADILLO_DIR}
   PATH_SUFFIXES include
   DOC "Directory where the Armadillo header file is located"
   )
@@ -23,9 +22,7 @@ mark_as_advanced(ARMADILLO_INCLUDE_DIR)
 
 find_library(ARMADILLO_LIBRARY
   NAMES armadillo
-  HINTS $ENV{ARMADILLO_DIR}
-  PATHS /usr/local /opt/local /sw
-  PATH_SUFFIXES lib lib64
+  PATHS $ENV{ARMADILLO_DIR}
   DOC "The Armadillo library"
   )
 mark_as_advanced(ARMADILLO_LIBRARY)
