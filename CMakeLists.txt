@@ -261,7 +261,14 @@ set(DOLFIN_MAN_DIR "share/man")
 add_subdirectory(dolfin)
 
 #------------------------------------------------------------------------------
-# Generate helper file dolfin.conf
+# Installation of DOLFIN demos
+
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/demo
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin
+        USE_SOURCE_PERMISSIONS)
+
+#------------------------------------------------------------------------------
+# Generate and install helper file dolfin.conf
 
 # FIXME: not cross-platform compatible
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in
