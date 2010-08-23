@@ -23,6 +23,7 @@ mark_as_advanced(BLAS_INCLUDE_DIRS)
 # Check for library
 find_library(BLAS_LIBRARIES atlas
   PATHS $ENV{BLAS_DIR}/lib
+  PATH_SUFFIXES atlas
   DOC "The BLAS library"
   )
 mark_as_advanced(BLAS_LIBRARIES)
