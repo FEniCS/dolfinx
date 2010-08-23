@@ -193,9 +193,15 @@ endif()
 
 # Check for Trilinos
 if (DOLFIN_ENABLE_TRILINOS)
-  message("Looking for trilinois")
+  message("Looking for Trilinos")
   find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include)
-  message("end Looking for trilinois")
+
+  # Make sure we have uppercase TRILINOS_FOUND
+  if (Trilinos_FOUND)
+    set(TRILINOS_FOUND TRUE)
+  endif()
+
+  message("end Looking for Trilinos")
 endif()
 
 # Check for MTL4
