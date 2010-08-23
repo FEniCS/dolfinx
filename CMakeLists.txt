@@ -190,7 +190,7 @@ endif()
 
 # Check for CHOLMOD
 if (DOLFIN_ENABLE_CHOLMOD)
-  find_package(Cholmod)
+  find_package(CHOLMOD)
 endif()
 
 # Check for Trilinos
