@@ -287,8 +287,8 @@ set(PKG_CXXFLAGS "${PKG_DEFINITIONS} ${PKG_CXXFLAGS}")
 set(PKG_CXXFLAGS "${PKG_DEFINITIONS} ${PKG_CXXFLAGS}")
 
 # Configure and install pkg-config file
-configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.pc.in dolfin.pc @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin.pc
+configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.pc.in ${CMAKE_BINARY_DIR}/dolfin.pc @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
   DESTINATION ${DOLFIN_PKGCONFIG_DIR}
   COMPONENT Development
   )
@@ -296,8 +296,8 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin.pc
 #------------------------------------------------------------------------------
 # Generate CMake config file (dolfin-config.cmake)
 
-configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config.cmake.in dolfin-config.cmake @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin-config.cmake
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin/cmake
+configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config.cmake.in ${CMAKE_BINARY_DIR}/dolfin-config.cmake @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/dolfin-config.cmake
+  DESTINATION ${CMAKE_PREFIX}/share/dolfin/cmake
   COMPONENT Development
   )

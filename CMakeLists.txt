@@ -270,9 +270,20 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/demo
 #------------------------------------------------------------------------------
 # Generate and install helper file dolfin.conf
 
+# FIXME: Can CMake provide the library path name variable?
+if (APPLE)
+  set(OS_LIBRARY_PATH_NAME "DYLD_LIBRARY_PATH")
+  message("(A) LIbs ${OS_LIBRARY_PATH_NAME}")
+else()  
+  set(OS_LIBRARY_PATH_NAME "LD_LIBRARY_PATH")
+  message("(B) LIbs ${OS_LIBRARY_PATH_NAME}")
+endif()
+
+message("LIbs ${OS_LIBRARY_PATH_NAME}")
+
 # FIXME: not cross-platform compatible
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in
-               ${CMAKE_CURRENT_BINARY_DIR}/dolfin.conf @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin.conf
+               ${CMAKE_BINARY_DIR}/dolfin.conf @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin
         COMPONENT Development)
