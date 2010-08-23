@@ -19,7 +19,7 @@ find_path(SCOTCH_INCLUDE_DIR ptscotch.h
 # Check for library
 find_library(SCOTCH_LIBRARIES
   NAMES scotch
-  PATHS $ENV{SCOTCH_DIR}
+  PATHS $ENV{SCOTCH_DIR}/lib
   DOC "The SCOTCH library"
   )
 
@@ -27,7 +27,7 @@ find_library(SCOTCH_LIBRARIES
 if(SCOTCH_LIBRARIES)
   find_library(SCOTCERR_LIBRARY
     NAMES scotcherr
-    PATHS $ENV{SCOTCH_DIR}
+    PATHS $ENV{SCOTCH_DIR}/lib
     DOC "The SCOTCH-ERROR library"
     )
 
@@ -43,7 +43,7 @@ endif(SCOTCH_LIBRARIES)
 if(SCOTCH_LIBRARIES)
   find_library(PTSCOTCH_LIBRARY
     NAMES ptscotch
-    PATHS $ENV{SCOTCH_DIR}
+    PATHS $ENV{SCOTCH_DIR}/lib
     DOC "The PTSCOTCH library"
     )
 

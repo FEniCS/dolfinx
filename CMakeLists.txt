@@ -230,6 +230,7 @@ if (DOLFIN_ENABLE_UNIT_TESTS)
 endif()
 
 # Report which optional packages were configured and found
+message("")
 message(STATUS "The following optional packages were found")
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
