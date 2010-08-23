@@ -1,15 +1,22 @@
+# - Try to find UMFPACK (and AMD)
+# Once done this will define
+#
+#  UMFPACK_FOUND        - system has UMFPACK
+#  UMFPACK_INCLUDE_DIRS - include directories for UMFPACK
+#  UMFPACK_LIBRARIES    - libraries for UMFPACK
+
 message(STATUS "Checking for package 'UMFPACK'")
 
 # Check for header file
-find_path(UMFPACK_INCLUDE_DIR
+find_path(UMFPACK_INCLUDE_DIRS
  NAMES umfpack.h
  PATHS $ENV{UMFPACK_DIR}
- PATH_SUFFIXES suitesparse
+ PATH_SUFFIXES suitesparse ufsparse
  DOC "Directory where the UMFPACK header is located"
  )
-mark_as_advanced(UMFPACK_INCLUDE_DIR)
+mark_as_advanced(UMFPACK_INCLUDE_DIRS)
 
-# Check for library
+# Check for UMFPACK library
 find_library(UMFPACK_LIBRARY
   NAMES umfpack
   PATHS $ENV{UMFPACK_DIR}/lib
@@ -17,12 +24,23 @@ find_library(UMFPACK_LIBRARY
   )
 mark_as_advanced(UMFPACK_LIBRARY)
 
+# Check for AMD library
+find_library(AMD_LIBRARY
+  NAMES amd
+  PATHS $ENV{UMFPACK_DIR}/lib
+  DOC "The AMD library (required for UMFPACK)"
+  )
+mark_as_advanced(AMD_LIBRARY)
+
+# Collect libraries
+set(UMFPACK_LIBRARIES "${UMFPACK_LIBRARY};${AMD_LIBRARY}")
+
 # Try compiling and running test program
-if (UMFPACK_INCLUDE_DIR AND UMFPACK_LIBRARY)
+if (UMFPACK_INCLUDE_DIRS AND UMFPACK_LIBRARIES)
 
   # Set flags for building test program
-  set(CMAKE_REQUIRED_INCLUDES ${UMFPACK_INCLUDE_DIR})
-  set(CMAKE_REQUIRED_LIBRARIES ${UMFPACK_LIBRARY})
+  set(CMAKE_REQUIRED_INCLUDES ${UMFPACK_INCLUDE_DIRS})
+  set(CMAKE_REQUIRED_LIBRARIES ${UMFPACK_LIBRARIES})
 
   # Build and run test program
   include(CheckCXXSourceRuns)
@@ -60,4 +78,4 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(UMFPACK
   "UMFPACK could not be found. Be sure to set UMFPACK_DIR."
-  UMFPACK_INCLUDE_DIR UMFPACK_LIBRARY UMFPACK_TEST_RUNS)
+  UMFPACK_INCLUDE_DIRS UMFPACK_LIBRARIES UMFPACK_TEST_RUNS)
