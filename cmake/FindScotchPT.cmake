@@ -11,10 +11,12 @@ message(STATUS "Checking for package 'SCOTCH-PT'")
 
 # Check for header file
 find_path(SCOTCH_INCLUDE_DIR ptscotch.h
-  PATHS $ENV{SCOTCH_DIR}
-  PATH_SUFFIXES include scotch
+  PATHS $ENV{SCOTCH_DIR}/include
+  PATH_SUFFIXES scotch
   DOC "Directory where the SCOTCH-PT header is located"
   )
+
+message("SOCtch ${SCOTCH_INCLUDE_DIR}")
 
 # Check for library
 find_library(SCOTCH_LIBRARIES

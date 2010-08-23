@@ -8,9 +8,7 @@ message(STATUS "Checking for package 'MTL4'")
 
 # Check for header file
 find_path(MTL4_INCLUDE_DIR boost/numeric/mtl/mtl.hpp
-  $ENV{MTL4_DIR}
-  /usr/local/include
-  /usr/include
+  PATHS $ENV{MTL4_DIR}
   DOC "Directory where the MTL4 header is located"
   )
 

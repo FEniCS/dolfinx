@@ -1,17 +1,15 @@
 message(STATUS "Checking for package 'UMFPACK'")
 
 # Check for header file
-find_path(UMFPACK_INCLUDE_DIR
- NAMES umfpack.h
- PATHS $ENV{UMFPACK_DIR}
+find_path(UMFPACK_INCLUDE_DIR umfpack.h
+ PATHS $ENV{UMFPACK_DIR}/include
  PATH_SUFFIXES suitesparse
  DOC "Directory where the UMFPACK header is located"
  )
 mark_as_advanced(UMFPACK_INCLUDE_DIR)
 
 # Check for library
-find_library(UMFPACK_LIBRARY
-  NAMES umfpack
+find_library(UMFPACK_LIBRARY umfpack
   PATHS $ENV{UMFPACK_DIR}/lib
   DOC "The UMFPACK library"
   )
