@@ -186,9 +186,6 @@ if(DOLFIN_ENABLE_UNIT_TESTS AND CPPUNIT_FOUND)
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${CPPUNIT_LIBRARIES})
 endif(DOLFIN_ENABLE_UNIT_TESTS AND CPPUNIT_FOUND)
 
-message(STATUS "DEDS  = ${DOLFIN_CXX_DEFINITIONS}")
-message(STATUS "FLAGS = ${CMAKE_CXX_FLAGS}")
-
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 
@@ -203,6 +200,11 @@ add_definitions(${DOLFIN_CXX_DEFINITIONS})
 
 # Add flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
+
+# Report which flags that will be used to build
+message(STATUS "DOLFIN configured with the following flags:")
+message("   ${DOLFIN_CXX_DEFINITIONS}")
+message("   ${CMAKE_CXX_FLAGS}")
 
 # Define libraries
 add_library(dolfin SHARED ${DOLFIN_H} ${HEADERS} ${SOURCES})
@@ -274,7 +276,7 @@ foreach(_inc_dir ${cmake_inc})
 endforeach()
 string(REGEX REPLACE ";" " " PKG_DEFINITIONS "${PKG_CXXFLAGS}")
 
-# Add CXX COMPILERflags
+# Add CXX COMPILER flags
 set(PKG_CXXFLAGS "${CMAKE_CXX_FLAGS} ${PKG_CXXFLAGS}")
 string(REGEX REPLACE ";" " " PKG_CXXFLAGS "${PKG_CXXFLAGS}")
 

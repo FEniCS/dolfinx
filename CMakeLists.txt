@@ -230,8 +230,7 @@ if (DOLFIN_ENABLE_UNIT_TESTS)
 endif()
 
 # Report which optional packages were configured and found
-message("")
-message(STATUS "The following optional packages were found")
+message(STATUS "The following optional packages were found:")
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
   if (${PKG}_FOUND)
@@ -240,7 +239,7 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
 endforeach()
 
 # Report which optional packages were selected but not found
-message(STATUS "The following optional packages could not be found")
+message(STATUS "The following optional packages could not be found:")
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
   if (DOLFIN_ENABLE_${PKG} AND NOT ${PKG}_FOUND)
@@ -303,13 +302,9 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/demo
 # FIXME: Can CMake provide the library path name variable?
 if (APPLE)
   set(OS_LIBRARY_PATH_NAME "DYLD_LIBRARY_PATH")
-  message("(A) LIbs ${OS_LIBRARY_PATH_NAME}")
 else()
   set(OS_LIBRARY_PATH_NAME "LD_LIBRARY_PATH")
-  message("(B) LIbs ${OS_LIBRARY_PATH_NAME}")
 endif()
-
-message("LIbs ${OS_LIBRARY_PATH_NAME}")
 
 # FIXME: not cross-platform compatible
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in
