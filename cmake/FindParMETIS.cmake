@@ -5,29 +5,22 @@
 #  PARMETIS_INCLUDE_DIR - include directories for ParMETIS
 #  PARMETIS_LIBRARIES   - libraries for ParMETIS
 
-FIND_PATH(PARMETIS_INCLUDE_DIR parmetis.h
-  /usr/local/include
-  /usr/include
+find_path(PARMETIS_INCLUDE_DIR parmetis.h
+  PATHS  $ENV{PARMETIS_DIR}/include
+  DOC "Directory where the ParMETIS header files are located"
 )
 
-FIND_LIBRARY(PARMETIS_LIBRARY parmetis
-  /usr/local/lib
-  /usr/lib
+find_library(PARMETIS_LIBRARY parmetis
+  PATHS $ENV{PARMETIS_DIR}/lib
 )
 
-FIND_LIBRARY(METIS_LIBRARY metis
-  /usr/local/lib
-  /usr/lib
+find_library(METIS_LIBRARY metis
+  PATHS $ENV{PARMETIS_DIR}/lib
 )
 
-IF(PARMETIS_INCLUDE_DIR)
-  IF(PARMETIS_LIBRARY)
-    SET(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY} ${METIS_LIBRARY})
-    SET(PARMETIS_FOUND "YES" )
-  ENDIF(PARMETIS_LIBRARY)
-ENDIF(PARMETIS_INCLUDE_DIR)
+set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY} ${METIS_LIBRARY})
 
 # Standard package handling
 find_package_handle_standard_args(ParMETIS
-  "ParMETIS could not be found."
-  PARMETIS_FOUND)
+                                  "ParMETIS could not be found."
+                                  PARMETIS_INCLUDE_DIR PARMETIS_LIBRARIES)

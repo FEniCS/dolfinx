@@ -21,7 +21,8 @@ find_path(BLAS_INCLUDE_DIRS cblas.h
 mark_as_advanced(BLAS_INCLUDE_DIRS)
 
 # Check for library
-find_library(BLAS_LIBRARIES atlas
+find_library(BLAS_LIBRARIES
+  NAMES atlas cblas blas
   PATHS $ENV{BLAS_DIR}/lib
   PATH_SUFFIXES atlas
   DOC "The BLAS library"
