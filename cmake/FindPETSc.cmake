@@ -4,7 +4,7 @@
 #  PETSC_FOUND        - system has PETSc
 #  PETSC_INCLUDE_DIRS - include directories for PETSc
 #  PETSC_LIBRARIES    - libraries for PETSc
-#  PETSC_ROOT_DIR     - PETSc directory
+#  PETSC_DIR          - directory where PETSc is built
 #  PETSC_ARCH         - architecture for which PETSc is built
 #
 # This config script is (very loosley) based on a PETSc CMake script by Jed Brown.
@@ -24,9 +24,10 @@ endforeach()
 set(petsc_dir_locations "")
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.1")    # Debian location
 list(APPEND petsc_dir_locations "/usr/lib/petscdir/3.0.0")  # Debian location
+list(APPEND petsc_dir_locations "/usr/local/lib/petsc")     # User location
 list(APPEND petsc_dir_locations "$ENV{HOME}/petsc")         # User location
 
-# FIXME: Check that /usr/local/lib is in search path
+# Add other possible locations for PETSC_DIR
 set(_SYSTEM_LIB_PATHS "${CMAKE_SYSTEM_LIBRARY_PATH};${CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES}")
 string(REGEX REPLACE ":" ";" libdirs ${_SYSTEM_LIB_PATHS})
 foreach (libdir ${libdirs})
@@ -41,7 +42,6 @@ find_path(PETSC_DIR include/petsc.h
 
 # Report result of search for PETSC_DIR
 if (DEFINED PETSC_DIR)
-  set(PETSC_ROOT_DIR ${PETSC_DIR})
   message(STATUS "PETSC_DIR is ${PETSC_DIR}")
 else()
   message(STATUS "PETSC_DIR is empty")
@@ -156,4 +156,4 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(PETSc
   "PETSc could not be found. Be sure to set PETSC_DIR and PETSC_ARCH."
-  PETSC_ROOT_DIR PETSC_INCLUDE_DIRS PETSC_LIBRARIES)
+  PETSC_INCLUDE_DIRS PETSC_LIBRARIES)

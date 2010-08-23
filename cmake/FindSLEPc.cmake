@@ -4,7 +4,7 @@
 #  SLEPC_FOUND        - system has SLEPc
 #  SLEPC_INCLUDE_DIR  - include directories for SLEPc
 #  SLEPC_LIBARIES     - libraries for SLEPc
-#  SLEPC_ROOT_DIR     - the SLEPc root directory
+#  SLEPC_DIR          - directory where SLEPc is built
 #
 # Assumes that PETSC_ARCH has been set by alredy calling find_package(PETSc)
 
@@ -21,15 +21,15 @@ endforeach()
 set(slepc_dir_locations "")
 list(APPEND slepc_dir_locations "/usr/lib/slepcdir/3.1")
 list(APPEND slepc_dir_locations "/usr/lib/slepcdir/3.0.0")
-list(APPEND slepc_dir_locations "$ENV{HOME}/petsc")
+list(APPEND slepc_dir_locations "/usr/local/lib/slepc")
+list(APPEND slepc_dir_locations "$ENV{HOME}/slepc")
 
-# FIXME: Use CMake list of library paths (and not LD_LIBRARY_PATH),
-#        maybe ${CMAKE_SYSTEM_LIBRARY_PATH}?
-# Add prefixes in LD_LIBRARY_PATH to possible locations
-string(REGEX REPLACE ":" ";" libdirs $ENV{LD_LIBRARY_PATH})
+# Add other possible locations for SLEPC_DIR
+set(_SYSTEM_LIB_PATHS "${CMAKE_SYSTEM_LIBRARY_PATH};${CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES}")
+string(REGEX REPLACE ":" ";" libdirs ${_SYSTEM_LIB_PATHS})
 foreach (libdir ${libdirs})
   get_filename_component(slepc_dir_location "${libdir}/" PATH)
-  list(APPEND slepc_dir_locations ${slepc_dir_location})
+  list(APPEND slepc_dir_locations ${spelc_dir_location})
 endforeach()
 
 # Try to figure out SLEPC_DIR by finding slepc.h
@@ -39,12 +39,12 @@ find_path(SLEPC_DIR include/slepc.h
 
 # Report result of search for SLEPC_DIR
 if (DEFINED SLEPC_DIR)
-  set(SLEPC_ROOT_DIR ${SLEPC_DIR})
   message(STATUS "SLEPC_DIR is ${SLEPC_DIR}")
 else()
   message(STATUS "SLEPC_DIR is empty")
 endif()
 
+# Get variables from SLEPc configuration
 if (SLEPC_DIR AND PETSC_ARCH)
 
   # Create a temporary Makefile to probe the SLEPcc configuration
@@ -67,8 +67,8 @@ show :
   endmacro()
 
   # Call macro to get the SLEPc variables
-  slepc_get_variable(SLEPC_INCLUDE_DIRS   CC_INCLUDES)
-  slepc_get_variable(SLEPC_LIBRARIES      SLEPC_LIB)
+  slepc_get_variable(SLEPC_INCLUDE_DIRS CC_INCLUDES)
+  slepc_get_variable(SLEPC_LIBRARIES    SLEPC_LIB)
 
   # Remove temporary Makefile
   file(REMOVE ${slepc_config_makefile})
@@ -113,4 +113,4 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SLEPc
   "SLEPc could not be found. Be sure to set SLEPC_DIR and PETSC_ARCH."
-  SLEPC_ROOT_DIR SLEPC_INCLUDE_DIRS SLEPC_LIBRARIES)
+  SLEPC_INCLUDE_DIRS SLEPC_LIBRARIES)
