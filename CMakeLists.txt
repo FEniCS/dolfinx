@@ -157,6 +157,7 @@ if (DOLFIN_ENABLE_PYTHON)
     find_package(NumPy REQUIRED)
     find_package(SWIG REQUIRED)
     include(UseSWIG)
+    set(PYTHON_FOUND TRUE)
   endif()
 
 endif()
