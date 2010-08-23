@@ -203,8 +203,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
 
 # Report which flags that will be used to build
 message(STATUS "DOLFIN configured with the following flags:")
-message("   ${DOLFIN_CXX_DEFINITIONS}")
-message("   ${CMAKE_CXX_FLAGS}")
+message(STATUS "${DOLFIN_CXX_DEFINITIONS}")
+message(STATUS "${CMAKE_CXX_FLAGS}")
 
 # Define libraries
 add_library(dolfin SHARED ${DOLFIN_H} ${HEADERS} ${SOURCES})

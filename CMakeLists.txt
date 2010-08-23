@@ -193,7 +193,7 @@ endif()
 
 # Check for Trilinos
 if (DOLFIN_ENABLE_TRILINOS)
-  find_package(Trilinos PATHS "$ENV{TRILINOS_DIR}/include")
+  find_package(Trilinos PATHS "$ENV{TRILINOS_DIR}/include" QUIET)
 endif()
 
 # Check for MTL4
@@ -235,7 +235,7 @@ message(STATUS "The following optional packages were found:")
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
   if (${PKG}_FOUND)
-    message("   (OK) ${OPTIONAL_PACKAGE}")
+    message(STATUS "(OK) ${OPTIONAL_PACKAGE}")
   endif()
 endforeach()
 
@@ -244,7 +244,7 @@ message(STATUS "The following optional packages could not be found:")
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
   if (DOLFIN_ENABLE_${PKG} AND NOT ${PKG}_FOUND)
-    message("   (**) ${OPTIONAL_PACKAGE}")
+    message(STATUS "(**) ${OPTIONAL_PACKAGE}")
   endif()
 endforeach()
 
