@@ -1,14 +1,9 @@
+# - Try to find ParMETIS
+# Once done this wil define
 #
-# Find the PARMETIS includes and libraries
-#
-# ParMETIS is an MPI-based parallel library that implements a variety of algorithms for
-# partitioning unstructured graphs, meshes, and for computing fill-reducing orderings of
-# sparse matrices. It can be found at:
-# 	http://www-users.cs.umn.edu/~karypis/metis/parmetis/index.html
-#
-# PARMETIS_INCLUDE_DIR - where to find autopack.h
-# PARMETIS_LIBRARIES   - List of fully qualified libraries to link against.
-# PARMETIS_FOUND       - Do not attempt to use if "no" or undefined.
+#  PARMETIS_FOUND       - system has ParMETIS
+#  PARMETIS_INCLUDE_DIR - include directories for ParMETIS
+#  PARMETIS_LIBRARIES   - libraries for ParMETIS
 
 FIND_PATH(PARMETIS_INCLUDE_DIR parmetis.h
   /usr/local/include
@@ -27,8 +22,12 @@ FIND_LIBRARY(METIS_LIBRARY metis
 
 IF(PARMETIS_INCLUDE_DIR)
   IF(PARMETIS_LIBRARY)
-    SET( PARMETIS_LIBRARIES ${PARMETIS_LIBRARY} ${METIS_LIBRARY})
-    SET( PARMETIS_FOUND "YES" )
+    SET(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY} ${METIS_LIBRARY})
+    SET(PARMETIS_FOUND "YES" )
   ENDIF(PARMETIS_LIBRARY)
 ENDIF(PARMETIS_INCLUDE_DIR)
 
+# Standard package handling
+find_package_handle_standard_args(ParMETIS.dolfin,
+  "ParMETIS could not be found."
+  PARMETIS_FOUND)

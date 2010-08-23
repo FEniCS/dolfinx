@@ -61,5 +61,6 @@ endif()
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(UMFPACK DEFAULT_MSG
+find_package_handle_standard_args(UMFPACK.dolfin
+  "UMFPACK could not be found. Be sure to set UMFPACK_DIR."
   UMFPACK_INCLUDE_DIR UMFPACK_LIBRARY UMFPACK_TEST_RUNS)

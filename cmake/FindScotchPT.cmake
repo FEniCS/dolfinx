@@ -1,9 +1,9 @@
 # - Try to find SCOTCH
 # Once done this will define
 #
-#  SCOTCH_FOUND        - system has found MTL4
-#  SCOTCH_INCLUDE_DIR  - the SCOTCH include directory
-#  SCOTCH_LIBARIES     - the SCOTCH libararies
+#  SCOTCH_FOUND        - system has found SCOTCH
+#  SCOTCH_INCLUDE_DIR  - include directories for SCOTCH
+#  SCOTCH_LIBARIES     - libraries for SCOTCH
 
 set(ScotchPT_FOUND 0)
 
@@ -71,7 +71,7 @@ if(SCOTCH_LIBRARIES)
 
 endif(SCOTCH_LIBRARIES)
 
+# Standard package handling
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SCOTCH DEFAULT_MSG
                                   SCOTCH_INCLUDE_DIR SCOTCH_LIBRARIES)
-

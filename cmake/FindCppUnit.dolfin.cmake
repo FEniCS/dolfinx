@@ -1,14 +1,13 @@
 # - Find cppunit
-# based on a version found at:
-# https://id.eesti.ee/trac/browser/cmake/modules/FindCppUnit.cmake
-#
-# Find the native cppunit includes and library
 #
 #  CPPUNIT_INCLUDE_DIR - where to find cppunit/Test.h, etc.
 #  CPPUNIT_LIBRARIES   - List of libraries when using cppunit.
 #  CPPUNIT_FOUND       - True if cppunit found.
 #  CPPUNIT_DEFINITIONS - You should add_definitons(${LIBSMI_DEFINITIONS}) before
-#                       compiling code that includes cppunit library files.
+#                        compiling code that includes cppunit library files.
+#
+# Based on a version found at:
+# https://id.eesti.ee/trac/browser/cmake/modules/FindCppUnit.cmake
 
 IF (CPPUNIT_INCLUDE_DIR)
   # Already in cache, be silent
@@ -44,11 +43,11 @@ message(STATUS "Test ${CPPUNIT_LIBRARY}, ${CPPUNIT_NAMES}")
 SET(CPPUNIT_LIBRARIES ${CPPUNIT_NAMES})
 GET_FILENAME_COMPONENT(CPPUNIT_LIBRARY_DIRS ${CPPUNIT_LIBRARY} PATH)
 
-# handle the QUIETLY and REQUIRED arguments and set CPPUNIT_FOUND to TRUE if
-# all listed variables are TRUE
-INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(CppUnit DEFAULT_MSG CPPUNIT_LIBRARY
-    CPPUNIT_INCLUDE_DIR CPPUNIT_LIBRARIES CPPUNIT_LIBRARY_DIRS)
+# Standard package handling
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(CppUnit.dolfin
+  "CppUnit could not be found."
+  CPPUNIT_INCLUDE_DIR CPPUNIT_LIBRARIES CPPUNIT_LIBRARY_DIRS)
 
-MARK_AS_ADVANCED( CPPUNIT_LIBRARY CPPUNIT_INCLUDE_DIR CPPUNIT_LIBRARIES
+MARK_AS_ADVANCED(CPPUNIT_LIBRARY CPPUNIT_INCLUDE_DIR CPPUNIT_LIBRARIES
     CPPUNIT_LIBRARY_DIRS CPPUNIT_DEFINITIONS )

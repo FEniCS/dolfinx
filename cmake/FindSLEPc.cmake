@@ -1,13 +1,12 @@
 # - Try to find SLEPC
 # Once done this will define
 #
-#  SLEPC_FOUND        - system has found SLEPc
-#  SLEPC_INCLUDE_DIR  - the SLEPc include directory
-#  SLEPC_LIBARIES     - the SLEPc libararies
+#  SLEPC_FOUND        - system has SLEPc
+#  SLEPC_INCLUDE_DIR  - include directories for SLEPc
+#  SLEPC_LIBARIES     - libraries for SLEPc
 #  SLEPC_ROOT_DIR     - the SLEPc root directory
 #
 # Assumes that PETSC_ARCH has been set by alredy calling find_package(PETSc.dolfin)
-#
 
 # Set debian_arches (PETSC_ARCH for Debian-style installations)
 foreach (debian_arches linux kfreebsd)
@@ -112,5 +111,6 @@ endif()
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(SLEPc "SLEPc could not be found. Be sure to set SLEPC_DIR and PETSC_ARCH."
-                                  SLEPC_ROOT_DIR SLEPC_INCLUDE_DIRS SLEPC_LIBRARIES)
+find_package_handle_standard_args(SLEPc
+  "SLEPc could not be found. Be sure to set SLEPC_DIR and PETSC_ARCH."
+  SLEPC_ROOT_DIR SLEPC_INCLUDE_DIRS SLEPC_LIBRARIES)

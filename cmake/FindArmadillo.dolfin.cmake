@@ -1,14 +1,15 @@
-# Try to find Armadillo - the streamlined C++ linear algebra library
-#
-# This module defines
-# ARMADILLO_FOUND - system has Armadillo
-# ARMADILLO_INCLUDE_DIR - the Armadillo include directory
-# ARMADILLO_LIBRARY - the library needed to use Armadillo
-# ARMADILLO_LINK_FLAGS - linking flags for Armadillo
-# ARMADILLO_VERSION - the Armadillo version string (MAJOR.MINOR.PATCH)
+# - Try to find PETSc
+# Once done this will define
+
+#  ARMADILLO_FOUND       - system has Armadillo
+#  ARMADILLO_INCLUDE_DIR - include directories for Armadillo
+#  ARMADILLO_LIBRARY     - libraries for Armadillo
+#  ARMADILLO_LINK_FLAGS  - link flags for Armadillo
+#  ARMADILLO_VERSION     - the Armadillo version string (MAJOR.MINOR.PATCH)
 #
 # Setting these changes the behavior of the search
-# ARMADILLO_DIR - directory in which Armadillo resides
+#
+#  ARMADILLO_DIR - directory in which Armadillo resides
 
 message(STATUS "Checking for package 'Armadillo'")
 
@@ -103,5 +104,6 @@ endif()
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Armadillo "Armadillo could not be found. Be sure to set ARMADILLO_DIR."
-                                  ARMADILLO_TEST_RUNS)
+find_package_handle_standard_args(Armadillo.dolfin
+  "Armadillo could not be found. Be sure to set ARMADILLO_DIR."
+  ARMADILLO_TEST_RUNS)

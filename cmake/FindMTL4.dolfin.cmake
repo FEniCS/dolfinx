@@ -42,4 +42,6 @@ endif (MTL4_INCLUDE_DIR)
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(MTL4 DEFAULT_MSG MTL4_INCLUDE_DIR)
+find_package_handle_standard_args(MTL4.dolfin
+  "MTL4 could not be found. Be sure to set MTL4_DIR"
+  MTL4_INCLUDE_DIR)

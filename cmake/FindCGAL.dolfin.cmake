@@ -76,5 +76,6 @@ endif()
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(CGAL DEFAULT_MSG
+find_package_handle_standard_args(CGAL.dolfin
+  "CGAL could not be found. Be sure to set CGAL_DIR"
   CGAL_INCLUDE_DIRS CGAL_LIBRARIES CGAL_TEST_RUNS)
