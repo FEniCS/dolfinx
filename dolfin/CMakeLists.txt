@@ -263,7 +263,7 @@ install(TARGETS dolfin
   )
 
 #------------------------------------------------------------------------------
-# Write pkg-config file and install it
+# Generate pkg-config file and install it
 
 # Define packages that should be required by pkg-config file
 set(PKG_REQUIRES "ufc-1 libxml-2.0")
@@ -287,7 +287,7 @@ set(PKG_CXXFLAGS "${PKG_DEFINITIONS} ${PKG_CXXFLAGS}")
 set(PKG_CXXFLAGS "${PKG_DEFINITIONS} ${PKG_CXXFLAGS}")
 
 # Configure and install pkg-config file
-configure_file(dolfin.pc.cmake.in dolfin.pc @ONLY)
+configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.pc.in dolfin.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin.pc
   DESTINATION ${DOLFIN_PKGCONFIG_DIR}
   COMPONENT Development
