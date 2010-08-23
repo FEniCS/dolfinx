@@ -195,7 +195,7 @@ endif()
 
 # Check for Trilinos
 if (DOLFIN_ENABLE_TRILINOS)
-  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include)
+  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include QUIET)
 endif()
 
 # Check for MTL4

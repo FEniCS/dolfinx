@@ -70,5 +70,3 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(UMFPACK
   "UMFPACK could not be found. Be sure to set UMFPACK_DIR."
   UMFPACK_INCLUDE_DIRS UMFPACK_LIBRARIES UMFPACK_TEST_RUNS)
-
-message(FATAL_ERROR test)
