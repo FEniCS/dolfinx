@@ -131,12 +131,15 @@ endif()
 # Run tests to find required packages
 
 # FIXME: Should Boost_USE_STATIC_LIBS and Boost_USE_MULTITHREADED be options?
+
+# Check for Boost
 set(Boost_USE_STATIC_LIBS   OFF)
 set(Boost_USE_MULTITHREADED OFF)
 set(BOOST_ROOT $ENV{BOOST_DIR})
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
 find_package(Boost 1.36 COMPONENTS filesystem program_options system REQUIRED)
 
+# Check for required packages
 find_package(UFC PATHS $ENV{CMAKE_CONFIG_PATH}/share/ufc/cmake REQUIRED)
 find_package(Armadillo.dolfin REQUIRED)
 find_package(LibXml2 REQUIRED)
@@ -225,6 +228,24 @@ endif()
 if (DOLFIN_ENABLE_UNIT_TESTS)
   find_package(CppUnit.dolfin)
 endif()
+
+# Report which optional packages were configured and found
+message(STATUS "The following optional packages were found")
+foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
+  string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
+  if (${PKG}_FOUND)
+    message("   (OK) ${OPTIONAL_PACKAGE}")
+  endif()
+endforeach()
+
+# Report which optional packages were selected but not found
+message(STATUS "The following optional packages could not be found")
+foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
+  string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
+  if (DOLFIN_ENABLE_${PKG} AND NOT ${PKG}_FOUND)
+    message("   (**) ${OPTIONAL_PACKAGE}")
+  endif()
+endforeach()
 
 #------------------------------------------------------------------------------
 # Installation of Python module (if enabled)
