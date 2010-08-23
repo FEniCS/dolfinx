@@ -45,7 +45,7 @@ else()
 endif()
 
 # Get variables from SLEPc configuration
-if (SLEPC_DIR AND PETSC_ARCH)
+if (SLEPC_DIR)
 
   # Create a temporary Makefile to probe the SLEPcc configuration
   set(slepc_config_makefile ${PROJECT_BINARY_DIR}/Makefile.slepc)
