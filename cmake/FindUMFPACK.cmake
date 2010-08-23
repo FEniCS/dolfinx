@@ -24,7 +24,6 @@ mark_as_advanced(UMFPACK_LIBRARY)
 
 # Collect libraries
 set(UMFPACK_LIBRARIES "${UMFPACK_LIBRARY};${AMD_LIBRARIES};${BLAS_LIBRARIES}")
-message("UMFPACK_LIBRARIES = ${UMFPACK_LIBRARIES}")
 
 # Try compiling and running test program
 if (UMFPACK_INCLUDE_DIRS AND UMFPACK_LIBRARIES)

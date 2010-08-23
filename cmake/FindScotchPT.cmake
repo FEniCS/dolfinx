@@ -16,8 +16,6 @@ find_path(SCOTCH_INCLUDE_DIR ptscotch.h
   DOC "Directory where the SCOTCH-PT header is located"
   )
 
-message("SOCtch ${SCOTCH_INCLUDE_DIR}")
-
 # Check for library
 find_library(SCOTCH_LIBRARIES
   NAMES scotch
