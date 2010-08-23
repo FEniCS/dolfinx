@@ -53,19 +53,27 @@ option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 #            everything and DOLFIN_ENABLE_DEFAULT_PACKAGES for enabling only
 #            some default packages.
 
-option(DOLFIN_ENABLE_MPI "Compile with support for MPI." ON)
-option(DOLFIN_ENABLE_PETSC "Compile with support for PETSc linear algebra." ON)
-option(DOLFIN_ENABLE_SLEPC "Compile with support for SLEPc." ON)
-option(DOLFIN_ENABLE_SCOTCH "Compile with support for SCOTCH graph partitioning." ON)
-option(DOLFIN_ENABLE_UMFPACK "Compile with support for UMFPACK." ON)
-option(DOLFIN_ENABLE_TRILINOS "Compile with support for Trilinos." ON)
-option(DOLFIN_ENABLE_CHOLMOD "Compile with support for CHOLMOD." ON)
-option(DOLFIN_ENABLE_MTL4 "Compile with support for MTL4." ON)
-option(DOLFIN_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
-option(DOLFIN_ENABLE_GMP "Compile with support for GMP." ON)
-option(DOLFIN_ENABLE_ZLIB "Compile with support for zlib." ON)
-option(DOLFIN_ENABLE_CGAL "Compile with support for CGAL" ON)
-option(DOLFIN_ENABLE_PYTHON "Compile the Python wrappers." ON)
+# List optional packages
+set(OPTIONAL_PACKAGES "")
+list(APPEND OPTIONAL_PACKAGES "MPI")
+list(APPEND OPTIONAL_PACKAGES "PETSc")
+list(APPEND OPTIONAL_PACKAGES "SLEPc")
+list(APPEND OPTIONAL_PACKAGES "Trilinos")
+list(APPEND OPTIONAL_PACKAGES "MTL4")
+list(APPEND OPTIONAL_PACKAGES "UMFPACK")
+list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
+list(APPEND OPTIONAL_PACKAGES "SCOTCH")
+list(APPEND OPTIONAL_PACKAGES "ParMETIS")
+list(APPEND OPTIONAL_PACKAGES "GMP")
+list(APPEND OPTIONAL_PACKAGES "CGAL")
+list(APPEND OPTIONAL_PACKAGES "zlib")
+list(APPEND OPTIONAL_PACKAGES "Python")
+
+# Add options
+foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
+  string(TOUPPER "DOLFIN_ENABLE_${OPTIONAL_PACKAGE}" OPTION_NAME)
+  option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
+endforeach()
 
 #------------------------------------------------------------------------------
 # Package-specific options
@@ -274,7 +282,7 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/demo
 if (APPLE)
   set(OS_LIBRARY_PATH_NAME "DYLD_LIBRARY_PATH")
   message("(A) LIbs ${OS_LIBRARY_PATH_NAME}")
-else()  
+else()
   set(OS_LIBRARY_PATH_NAME "LD_LIBRARY_PATH")
   message("(B) LIbs ${OS_LIBRARY_PATH_NAME}")
 endif()
