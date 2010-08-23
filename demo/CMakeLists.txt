@@ -13,14 +13,14 @@ find_package(dolfin REQUIRED)
 if (dolfin_FOUND)
 
   # Build list of all cpp demo directories
-  file( GLOB_RECURSE list "main.cpp")
-  list( SORT list )
+  file(GLOB_RECURSE list "main.cpp")
+  list(SORT list)
   string(REGEX REPLACE "/main.cpp" "" list "${list}")
 
   # Add each C++ demo directory
-  foreach( demo_dir ${list} )
+  foreach (demo_dir ${list})
     message(STATUS "Add C++ demo: ${demo_dir}")
-    add_subdirectory( ${demo_dir} )
+    add_subdirectory(${demo_dir})
   endforeach()
 
 else()
@@ -28,5 +28,3 @@ else()
   message(STATUS "Could not locate dolfin-config.cmake file. Did you do 'make install' for the DOLFIN library and set the appropriate paths (source <build_dir>/dolfin.conf)?")
 
 endif()
-
-

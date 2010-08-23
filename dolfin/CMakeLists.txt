@@ -301,5 +301,3 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin-config.cmake
   DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin/cmake
   COMPONENT Development
   )
-
-#------------------------------------------------------------------------------
