@@ -253,8 +253,9 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
 endforeach()
 
 #------------------------------------------------------------------------------
-# Installation of Python module (if enabled)
+# Installation path for Python module (if enabled)
 
+# Get path for platform-dependent Python modules (since we install a binary libary)
 if (PYTHONINTERP_FOUND)
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))"
@@ -262,7 +263,6 @@ if (PYTHONINTERP_FOUND)
     )
 
   set(DOLFIN_INSTALL_PYTHON_MODULE_DIR ${PYTHON_INSTALL_PATH})
-  set(DOLFIN_INSTALL_PYTHON_EXT_DIR ${PYTHON_INSTALL_PATH})
 endif()
 
 #------------------------------------------------------------------------------
@@ -309,6 +309,16 @@ if (APPLE)
   set(OS_LIBRARY_PATH_NAME "DYLD_LIBRARY_PATH")
 else()
   set(OS_LIBRARY_PATH_NAME "LD_LIBRARY_PATH")
+endif()
+
+# Get path for pure Python modules (used to make helper file dolfin.conf)
+# DOLFIN_INSTALL_PYTHON_MODULE_DIR  and DOLFIN_PYTHON_PURE_PACKAGE_PATH differ
+# on some systems
+if (PYTHONINTERP_FOUND)
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))"
+    OUTPUT_VARIABLE DOLFIN_PYTHON_PURE_PACKAGE_PATH
+    )
 endif()
 
 # FIXME: not cross-platform compatible
