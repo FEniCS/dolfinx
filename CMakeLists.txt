@@ -183,6 +183,8 @@ endif()
 
 # Check for UMFPACK
 if (DOLFIN_ENABLE_UMFPACK)
+  find_package(AMD)
+  find_package(BLAS)
   find_package(UMFPACK)
 endif()
 

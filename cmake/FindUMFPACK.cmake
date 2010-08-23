@@ -1,4 +1,4 @@
-# - Try to find UMFPACK (and AMD)
+# - Try to find UMFPACK
 # Once done this will define
 #
 #  UMFPACK_FOUND        - system has UMFPACK
@@ -22,15 +22,9 @@ find_library(UMFPACK_LIBRARY umfpack
   )
 mark_as_advanced(UMFPACK_LIBRARY)
 
-# Check for AMD library
-find_library(AMD_LIBRARY amd
-  PATHS $ENV{UMFPACK_DIR}/lib
-  DOC "The AMD library (required for UMFPACK)"
-  )
-mark_as_advanced(AMD_LIBRARY)
-
 # Collect libraries
-set(UMFPACK_LIBRARIES "${UMFPACK_LIBRARY};${AMD_LIBRARY}")
+set(UMFPACK_LIBRARIES "${UMFPACK_LIBRARY};${AMD_LIBRARIES};${BLAS_LIBRARIES}")
+message("UMFPACK_LIBRARIES = ${UMFPACK_LIBRARIES}")
 
 # Try compiling and running test program
 if (UMFPACK_INCLUDE_DIRS AND UMFPACK_LIBRARIES)
@@ -76,3 +70,5 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(UMFPACK
   "UMFPACK could not be found. Be sure to set UMFPACK_DIR."
   UMFPACK_INCLUDE_DIRS UMFPACK_LIBRARIES UMFPACK_TEST_RUNS)
+
+message(FATAL_ERROR test)
