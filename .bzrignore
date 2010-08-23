@@ -28,16 +28,13 @@ RE:dolfin/swig/.*\.(py|cc|h)
 # Configuration files
 dolfin.conf
 .sconf_temp
-scons/.sconsign.dblite
-scons/*.cache
-scons/*.log
 RE:local.*
-RE:scons/pkgconfig.*
 
 # Demos and tests
-RE:demo/.*/(cpp|python)/.*\.(pvd|vtu|pvtu|xml|bin)
+RE:demo/.*\.(pvd|vtu|pvtu|xml|bin)
+RE:demo/adaptivity/.*/(cpp|python)/.*\.(pvd|vtu|pvtu|xml|bin)
+RE:demo/adaptivity/.*/indicators.py
 RE:demo/.*/cpp/demo
-RE:demo/.*/cpp/.sconsign.dblite
 RE:test/.*/cpp/test
 RE:test/unit/mesh/(cpp|python)/.*.(xml|m)
 
@@ -51,9 +48,6 @@ doc/progr_reference/latex/
 doc/progr_reference/html/dir_*_dep.*
 RE:doc/progr_reference/html/d.
 
-# Scons os files.
-*.os
-
 # Tag files
 tags
 
@@ -66,4 +60,7 @@ CMakeCache.txt
 CMakeFiles
 cmake_install.cmake
 Makefile
+install_manifest.txt
 
+# Local build
+build

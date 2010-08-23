@@ -232,25 +232,35 @@ if (DOLFIN_ENABLE_UNIT_TESTS)
   find_package(CppUnit)
 endif()
 
-# Report which optional packages were configured and found
-message(STATUS "The following optional packages were found:")
+# Gather information about which optional packages were found and not found
+set(OPTIONAL_PACKAGES_NOT_FOUND "")
+set(OPTIONAL_PACKAGES_FOUND "")
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
   if (${PKG}_FOUND OR ${OPTIONAL_PACKAGE}_FOUND)
-    message(STATUS "(OK) ${OPTIONAL_PACKAGE}")
+    list(APPEND OPTIONAL_PACKAGES_FOUND ${PKG})
+  else()
+    list(APPEND OPTIONAL_PACKAGES_NOT_FOUND ${PKG})
   endif()
 endforeach()
 
-# Report which optional packages were selected but not found
-message(STATUS "The following optional packages could not be found:")
-foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
-  string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
-  if ( DOLFIN_ENABLE_${PKG} )
-    if (NOT ${PKG}_FOUND AND NOT ${OPTIONAL_PACKAGE}_FOUND )
-      message(STATUS "(**) ${OPTIONAL_PACKAGE}")
-    endif()
-  endif()
-endforeach()
+# Print information about any found optional packages
+if (OPTIONAL_PACKAGES_FOUND)
+  message(STATUS "The following optional packages were found:")
+  foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES_FOUND})
+    string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
+    message(STATUS "(OK) ${OPTIONAL_PACKAGE}")
+  endforeach()
+endif()
+
+# Print information about any optional packages that were not found
+if (OPTIONAL_PACKAGES_NOT_FOUND)
+  message(STATUS "The following optional packages could not be found:")
+  foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES_NOT_FOUND})
+    string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
+    message(STATUS "(**) ${OPTIONAL_PACKAGE}")
+  endforeach()
+endif()
 
 #------------------------------------------------------------------------------
 # Installation path for Python module (if enabled)
