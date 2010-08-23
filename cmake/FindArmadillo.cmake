@@ -1,11 +1,11 @@
 # - Try to find PETSc
 # Once done this will define
 
-#  ARMADILLO_FOUND       - system has Armadillo
-#  ARMADILLO_INCLUDE_DIR - include directories for Armadillo
-#  ARMADILLO_LIBRARY     - libraries for Armadillo
-#  ARMADILLO_LINK_FLAGS  - link flags for Armadillo
-#  ARMADILLO_VERSION     - the Armadillo version string (MAJOR.MINOR.PATCH)
+#  ARMADILLO_FOUND        - system has Armadillo
+#  ARMADILLO_INCLUDE_DIRS - include directories for Armadillo
+#  ARMADILLO_LIBRARIES    - libraries for Armadillo
+#  ARMADILLO_LINK_FLAGS   - link flags for Armadillo
+#  ARMADILLO_VERSION      - the Armadillo version string (MAJOR.MINOR.PATCH)
 #
 # Setting these changes the behavior of the search
 #
@@ -13,20 +13,20 @@
 
 message(STATUS "Checking for package 'Armadillo'")
 
-find_path(ARMADILLO_INCLUDE_DIR
+find_path(ARMADILLO_INCLUDE_DIRS
   NAMES armadillo
   PATHS $ENV{ARMADILLO_DIR}
   PATH_SUFFIXES include
   DOC "Directory where the Armadillo header file is located"
   )
-mark_as_advanced(ARMADILLO_INCLUDE_DIR)
+mark_as_advanced(ARMADILLO_INCLUDE_DIRS)
 
-find_library(ARMADILLO_LIBRARY
+find_library(ARMADILLO_LIBRARIES
   NAMES armadillo
   PATHS $ENV{ARMADILLO_DIR}
   DOC "The Armadillo library"
   )
-mark_as_advanced(ARMADILLO_LIBRARY)
+mark_as_advanced(ARMADILLO_LIBRARIES)
 
 # Special fixes for Mac
 if (APPLE)
@@ -42,7 +42,7 @@ if (APPLE)
   endif()
 endif()
 
-if (ARMADILLO_INCLUDE_DIR AND ARMADILLO_LIBRARY)
+if (ARMADILLO_INCLUDE_DIRS AND ARMADILLO_LIBRARIES)
   include(CheckCXXSourceRuns)
 
   # Armadillo needs the location of the Boost header files
@@ -53,8 +53,8 @@ if (ARMADILLO_INCLUDE_DIR AND ARMADILLO_LIBRARY)
   endif()
 
   # These are needed for the try_run and check_cxx_source_runs commands below
-  set(CMAKE_REQUIRED_INCLUDES "${ARMADILLO_INCLUDE_DIR};${Boost_INCLUDE_DIR}")
-  set(CMAKE_REQUIRED_LIBRARIES ${ARMADILLO_LIBRARY})
+  set(CMAKE_REQUIRED_INCLUDES "${ARMADILLO_INCLUDE_DIRS};${Boost_INCLUDE_DIR}")
+  set(CMAKE_REQUIRED_LIBRARIES ${ARMADILLO_LIBRARIES})
   if (ARMADILLO_LINK_FLAGS)
     set(CMAKE_REQUIRED_LIBRARIES "${ARMADILLO_LINK_FLAGS};${CMAKE_REQUIRED_LIBRARIES}")
   endif()

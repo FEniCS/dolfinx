@@ -2,7 +2,7 @@
 # Once done this will define
 #
 #  SCOTCH_FOUND        - system has found SCOTCH
-#  SCOTCH_INCLUDE_DIR  - include directories for SCOTCH
+#  SCOTCH_INCLUDE_DIRS - include directories for SCOTCH
 #  SCOTCH_LIBARIES     - libraries for SCOTCH
 
 set(ScotchPT_FOUND 0)
@@ -10,7 +10,7 @@ set(ScotchPT_FOUND 0)
 message(STATUS "Checking for package 'SCOTCH-PT'")
 
 # Check for header file
-find_path(SCOTCH_INCLUDE_DIR ptscotch.h
+find_path(SCOTCH_INCLUDE_DIRS ptscotch.h
   PATHS $ENV{SCOTCH_DIR}/include
   PATH_SUFFIXES scotch
   DOC "Directory where the SCOTCH-PT header is located"
@@ -74,4 +74,4 @@ endif(SCOTCH_LIBRARIES)
 # Standard package handling
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SCOTCH DEFAULT_MSG
-                                  SCOTCH_INCLUDE_DIR SCOTCH_LIBRARIES)
+                                  SCOTCH_INCLUDE_DIRS SCOTCH_LIBRARIES)

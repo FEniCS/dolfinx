@@ -1,5 +1,5 @@
 # - Try to find ParMETIS
-# Once done this wil define
+# Once done this will define
 #
 #  PARMETIS_FOUND        - system has ParMETIS
 #  PARMETIS_INCLUDE_DIRS - include directories for ParMETIS
