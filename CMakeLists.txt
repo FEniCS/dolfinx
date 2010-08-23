@@ -193,21 +193,7 @@ endif()
 
 # Check for Trilinos
 if (DOLFIN_ENABLE_TRILINOS)
-<<<<<<< TREE
-  message("Looking for Trilinos")
-=======
->>>>>>> MERGE-SOURCE
   find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include)
-<<<<<<< TREE
-
-  # Make sure we have uppercase TRILINOS_FOUND
-  if (Trilinos_FOUND)
-    set(TRILINOS_FOUND TRUE)
-  endif()
-
-  message("end Looking for Trilinos")
-=======
->>>>>>> MERGE-SOURCE
 endif()
 
 # Check for MTL4
