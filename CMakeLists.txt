@@ -193,8 +193,12 @@ endif()
 
 # Check for Trilinos
 if (DOLFIN_ENABLE_TRILINOS)
+<<<<<<< TREE
   message("Looking for Trilinos")
+=======
+>>>>>>> MERGE-SOURCE
   find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include)
+<<<<<<< TREE
 
   # Make sure we have uppercase TRILINOS_FOUND
   if (Trilinos_FOUND)
@@ -202,6 +206,8 @@ if (DOLFIN_ENABLE_TRILINOS)
   endif()
 
   message("end Looking for Trilinos")
+=======
+>>>>>>> MERGE-SOURCE
 endif()
 
 # Check for MTL4
@@ -242,7 +248,7 @@ endif()
 message(STATUS "The following optional packages were found:")
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
-  if (${PKG}_FOUND)
+  if (${PKG}_FOUND OR ${OPTIONAL_PACKAGE}_FOUND)
     message(STATUS "(OK) ${OPTIONAL_PACKAGE}")
   endif()
 endforeach()
@@ -251,8 +257,10 @@ endforeach()
 message(STATUS "The following optional packages could not be found:")
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
-  if (DOLFIN_ENABLE_${PKG} AND NOT ${PKG}_FOUND)
-    message(STATUS "(**) ${OPTIONAL_PACKAGE}")
+  if ( DOLFIN_ENABLE_${PKG} )
+    if (NOT ${PKG}_FOUND AND NOT ${OPTIONAL_PACKAGE}_FOUND )
+      message(STATUS "(**) ${OPTIONAL_PACKAGE}")
+    endif()
   endif()
 endforeach()
 
