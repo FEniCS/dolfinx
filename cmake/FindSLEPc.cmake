@@ -113,4 +113,4 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SLEPc
   "SLEPc could not be found. Be sure to set SLEPC_DIR and PETSC_ARCH."
-  SLEPC_INCLUDE_DIRS SLEPC_LIBRARIES)
+  SLEPC_DIR SLEPC_INCLUDE_DIRS SLEPC_LIBRARIES)
