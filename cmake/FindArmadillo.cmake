@@ -104,6 +104,6 @@ endif()
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Armadillo.dolfin
+find_package_handle_standard_args(Armadillo
   "Armadillo could not be found. Be sure to set ARMADILLO_DIR."
   ARMADILLO_TEST_RUNS)

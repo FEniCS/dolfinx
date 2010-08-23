@@ -141,7 +141,7 @@ find_package(Boost 1.36 COMPONENTS filesystem program_options system REQUIRED)
 
 # Check for required packages
 find_package(UFC PATHS $ENV{CMAKE_CONFIG_PATH}/share/ufc/cmake REQUIRED)
-find_package(Armadillo.dolfin REQUIRED)
+find_package(Armadillo REQUIRED)
 find_package(LibXml2 REQUIRED)
 
 #------------------------------------------------------------------------------
@@ -154,7 +154,7 @@ if (DOLFIN_ENABLE_PYTHON)
 
   # If Python is found, check for NumPy and SWIG
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
-    find_package(NumPy.dolfin REQUIRED)
+    find_package(NumPy REQUIRED)
     find_package(SWIG REQUIRED)
     include(UseSWIG)
   endif()
@@ -170,7 +170,7 @@ if (DOLFIN_ENABLE_MPI)
 
   # Check for ParMETIS
   if (DOLFIN_ENABLE_PARMETIS)
-    find_package(ParMETIS.dolfin)
+    find_package(ParMETIS)
   endif()
 
   # Check for SCOTCH
@@ -182,7 +182,7 @@ endif()
 
 # Check for UMFPACK
 if (DOLFIN_ENABLE_UMFPACK)
-  find_package(UMFPACK.dolfin)
+  find_package(UMFPACK)
 endif()
 
 # Check for CHOLMOD
@@ -197,12 +197,12 @@ endif()
 
 # Check for MTL4
 if (DOLFIN_ENABLE_MTL4)
-  find_package(MTL4.dolfin)
+  find_package(MTL4)
 endif()
 
 # Check for PETSc and SLEPc
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc.dolfin)
+  find_package(PETSc)
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
     find_package(SLEPc)
   endif()
@@ -216,7 +216,7 @@ endif()
 
 # Check for CGAL
 if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL.dolfin)
+  find_package(CGAL)
 endif()
 
 # Check for zlib
@@ -226,7 +226,7 @@ endif()
 
 # Check for cppunit
 if (DOLFIN_ENABLE_UNIT_TESTS)
-  find_package(CppUnit.dolfin)
+  find_package(CppUnit)
 endif()
 
 # Report which optional packages were configured and found

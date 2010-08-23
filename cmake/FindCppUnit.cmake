@@ -45,7 +45,7 @@ GET_FILENAME_COMPONENT(CPPUNIT_LIBRARY_DIRS ${CPPUNIT_LIBRARY} PATH)
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(CppUnit.dolfin
+find_package_handle_standard_args(CppUnit
   "CppUnit could not be found."
   CPPUNIT_INCLUDE_DIR CPPUNIT_LIBRARIES CPPUNIT_LIBRARY_DIRS)
 

@@ -28,6 +28,6 @@ IF(PARMETIS_INCLUDE_DIR)
 ENDIF(PARMETIS_INCLUDE_DIR)
 
 # Standard package handling
-find_package_handle_standard_args(ParMETIS.dolfin,
+find_package_handle_standard_args(ParMETIS
   "ParMETIS could not be found."
   PARMETIS_FOUND)
