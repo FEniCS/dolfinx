@@ -26,7 +26,7 @@ endif()
 
 # Set location of our FindFoo.cmake modules
 set(DOLFIN_CMAKE_DIR "${DOLFIN_SOURCE_DIR}/cmake" CACHE INTERNAL "")
-set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
 
 #------------------------------------------------------------------------------
 # Configurable options for how we want to build
