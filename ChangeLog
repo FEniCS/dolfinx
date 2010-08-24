@@ -1,3 +1,4 @@
+ - Change build system to CMake
  - Add named MeshFunctions: VertexFunction, EdgeFunction, FaceFunction, FacetFunction, CellFunction
  - Allow setting constant boundary conditions directly without using Constant
  - Allow setting boundary conditions based on string ("x[0] == 0.0")
