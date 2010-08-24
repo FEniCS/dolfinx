@@ -10,6 +10,7 @@ message(STATUS "Checking for package 'CHOLMOD'")
 # Find packages that CHOLMOD depends on
 find_package(AMD)
 find_package(BLAS)
+find_package(ParMETIS)
 
 # FIXME: Should we have separate FindXX modules for CAMD, COLAMD, and CCOLAMD?
 # FIXME: find_package(CAMD)
@@ -52,7 +53,7 @@ find_library(CCOLAMD_LIBRARY ccolamd
   )
 
 # Collect libraries
-set(CHOLMOD_LIBRARIES "${CHOLMOD_LIBRARY};${AMD_LIBRARIES};${CAMD_LIBRARY};${COLAMD_LIBRARY};${CCOLAMD_LIBRARY};${BLAS_LIBRARIES}")
+set(CHOLMOD_LIBRARIES "${CHOLMOD_LIBRARY};${AMD_LIBRARIES};${CAMD_LIBRARY};${COLAMD_LIBRARY};${CCOLAMD_LIBRARY};${BLAS_LIBRARIES};${PARMETIS_LIBRARIES}")
 
 mark_as_advanced(
   CHOLMOD_INCLUDE_DIRS
