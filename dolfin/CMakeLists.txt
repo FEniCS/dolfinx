@@ -124,6 +124,8 @@ endif()
 
 # Trilinos
 if (DOLFIN_ENABLE_TRILINOS AND Trilinos_FOUND)
+  # FIXME: Prepend all libs in Trilinos_LIBRARIES with the path in
+  #        Trilinos_LIBRARY_DIRS. We can then avoid 'link_directories'.
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_TRILINOS")
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${Trilinos_INCLUDE_DIRS})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES_DIRS ${Trilinos_LIBRARY_DIRS})
