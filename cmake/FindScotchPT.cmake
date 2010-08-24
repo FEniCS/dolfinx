@@ -1,25 +1,25 @@
 # - Try to find SCOTCH
 # Once done this will define
 #
-#  SCOTCH_FOUND        - system has found MTL4
-#  SCOTCH_INCLUDE_DIR  - the SCOTCH include directory
-#  SCOTCH_LIBARIES     - the SCOTCH libararies
+#  SCOTCH_FOUND        - system has found SCOTCH
+#  SCOTCH_INCLUDE_DIRS - include directories for SCOTCH
+#  SCOTCH_LIBARIES     - libraries for SCOTCH
 
 set(ScotchPT_FOUND 0)
 
 message(STATUS "Checking for package 'SCOTCH-PT'")
 
 # Check for header file
-find_path(SCOTCH_INCLUDE_DIR ptscotch.h
-  PATHS $ENV{SCOTCH_DIR}
-  PATH_SUFFIXES include scotch
+find_path(SCOTCH_INCLUDE_DIRS ptscotch.h
+  PATHS ${SCOTCH_DIR}/include $ENV{SCOTCH_DIR}/include
+  PATH_SUFFIXES scotch
   DOC "Directory where the SCOTCH-PT header is located"
   )
 
 # Check for library
 find_library(SCOTCH_LIBRARIES
   NAMES scotch
-  PATHS $ENV{SCOTCH_DIR}
+  PATHS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
   DOC "The SCOTCH library"
   )
 
@@ -27,7 +27,7 @@ find_library(SCOTCH_LIBRARIES
 if(SCOTCH_LIBRARIES)
   find_library(SCOTCERR_LIBRARY
     NAMES scotcherr
-    PATHS $ENV{SCOTCH_DIR}
+    PATHS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
     DOC "The SCOTCH-ERROR library"
     )
 
@@ -43,7 +43,7 @@ endif(SCOTCH_LIBRARIES)
 if(SCOTCH_LIBRARIES)
   find_library(PTSCOTCH_LIBRARY
     NAMES ptscotch
-    PATHS $ENV{SCOTCH_DIR}
+    PATHS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
     DOC "The PTSCOTCH library"
     )
 
@@ -59,7 +59,7 @@ endif(SCOTCH_LIBRARIES)
 if(SCOTCH_LIBRARIES)
   find_library(PTSCOTCERR_LIBRARY
     NAMES ptscotcherr
-    PATHS $ENV{SCOTCH_DIR}/lib
+    PATHS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
     DOC "The PTSCOTCH-ERROR library"
     )
 
@@ -71,7 +71,7 @@ if(SCOTCH_LIBRARIES)
 
 endif(SCOTCH_LIBRARIES)
 
+# Standard package handling
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SCOTCH DEFAULT_MSG
-                                  SCOTCH_INCLUDE_DIR SCOTCH_LIBRARIES)
-
+                                  SCOTCH_INCLUDE_DIRS SCOTCH_LIBRARIES)

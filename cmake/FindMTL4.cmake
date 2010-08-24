@@ -1,24 +1,27 @@
 # - Try to find MTL4
 # Once done this will define
 #
-#  MTL4_FOUND       - system has found MTL4
-#  MTL4_INCLUDE_DIR - include directories for MTL4
+#  MTL4_FOUND       - system has MTL4
+#  MTL4_INCLUDE_DIRS - include directories for MTL4
 
 message(STATUS "Checking for package 'MTL4'")
 
 # Check for header file
-find_path(MTL4_INCLUDE_DIR boost/numeric/mtl/mtl.hpp
-  $ENV{MTL4_DIR}
-  /usr/local/include
-  /usr/include
+find_path(MTL4_INCLUDE_DIRS boost/numeric/mtl/mtl.hpp
+  PATHS ${MTL4_DIR} $ENV{MTL4_DIR}
   DOC "Directory where the MTL4 header is located"
   )
 
 # Try compiling and running test program
-if (MTL4_INCLUDE_DIR)
+if (MTL4_INCLUDE_DIRS)
+
+  # Find Boost, needed by MTL4
+  set(BOOST_ROOT $ENV{BOOST_DIR})
+  set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
+  find_package(Boost REQUIRED)
 
   # Set flags for building test program
-  set(CMAKE_REQUIRED_INCLUDES ${MTL4_INCLUDE_DIR})
+  set(CMAKE_REQUIRED_INCLUDES "${MTL4_INCLUDE_DIRS};${Boost_INCLUDE_DIR}")
 
   # Build and run test program
   include(CheckCXXSourceRuns)
@@ -33,13 +36,10 @@ int main()
 }
 " MTL4_TEST_RUNS)
 
-  if(NOT MTL4_TEST_RUNS)
-    message("   Unable to run test program for package 'MTL4'")
-    set(MTL4_INCLUDE_DIR FALSE)
-  endif(NOT MTL4_TEST_RUNS)
-
-endif (MTL4_INCLUDE_DIR)
+endif()
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(MTL4 DEFAULT_MSG MTL4_INCLUDE_DIR)
+find_package_handle_standard_args(MTL4
+  "MTL4 could not be found. Be sure to set MTL4_DIR"
+  MTL4_INCLUDE_DIRS MTL4_TEST_RUNS)

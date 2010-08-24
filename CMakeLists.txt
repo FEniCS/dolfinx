@@ -34,11 +34,12 @@ set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
 #option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
-option(DOLFIN_DEBUG_UBLAS "Add some extra uBLAS debug information." OFF)
-#option(DOLFIN_ENABLE_DOCS "Build documentation." OFF)
-option(DOLFIN_ENABLE_UNIT_TESTS "Enable unit tests." ON)
+option(DOLFIN_DEBUG_UBLAS "Use extra uBLAS debugging." OFF)
 option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
+
+#option(DOLFIN_ENABLE_DOCS "Build documentation." OFF)
+#option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
 
 #------------------------------------------------------------------------------
 # Enable or disable optional packages
@@ -53,19 +54,27 @@ option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 #            everything and DOLFIN_ENABLE_DEFAULT_PACKAGES for enabling only
 #            some default packages.
 
-option(DOLFIN_ENABLE_MPI "Compile with support for MPI." ON)
-option(DOLFIN_ENABLE_PETSC "Compile with support for PETSc linear algebra." ON)
-option(DOLFIN_ENABLE_SLEPC "Compile with support for SLEPc." ON)
-option(DOLFIN_ENABLE_SCOTCH "Compile with support for SCOTCH graph partitioning." ON)
-option(DOLFIN_ENABLE_UMFPACK "Compile with support for UMFPACK." ON)
-option(DOLFIN_ENABLE_TRILINOS "Compile with support for Trilinos." ON)
-option(DOLFIN_ENABLE_CHOLMOD "Compile with support for CHOLMOD." ON)
-option(DOLFIN_ENABLE_MTL4 "Compile with support for MTL4." ON)
-option(DOLFIN_ENABLE_PARMETIS "Compile with support for ParMETIS." ON)
-option(DOLFIN_ENABLE_GMP "Compile with support for GMP." ON)
-option(DOLFIN_ENABLE_ZLIB "Compile with support for zlib." ON)
-option(DOLFIN_ENABLE_CGAL "Compile with support for CGAL" ON)
-option(DOLFIN_ENABLE_PYTHON "Compile the Python wrappers." ON)
+# List optional packages
+set(OPTIONAL_PACKAGES "")
+list(APPEND OPTIONAL_PACKAGES "MPI")
+list(APPEND OPTIONAL_PACKAGES "PETSc")
+list(APPEND OPTIONAL_PACKAGES "SLEPc")
+list(APPEND OPTIONAL_PACKAGES "Trilinos")
+list(APPEND OPTIONAL_PACKAGES "MTL4")
+list(APPEND OPTIONAL_PACKAGES "UMFPACK")
+list(APPEND OPTIONAL_PACKAGES "CHOLMOD")
+list(APPEND OPTIONAL_PACKAGES "SCOTCH")
+list(APPEND OPTIONAL_PACKAGES "ParMETIS")
+list(APPEND OPTIONAL_PACKAGES "GMP")
+list(APPEND OPTIONAL_PACKAGES "CGAL")
+list(APPEND OPTIONAL_PACKAGES "zlib")
+list(APPEND OPTIONAL_PACKAGES "Python")
+
+# Add options
+foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
+  string(TOUPPER "DOLFIN_ENABLE_${OPTIONAL_PACKAGE}" OPTION_NAME)
+  option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
+endforeach()
 
 #------------------------------------------------------------------------------
 # Package-specific options
@@ -123,14 +132,17 @@ endif()
 # Run tests to find required packages
 
 # FIXME: Should Boost_USE_STATIC_LIBS and Boost_USE_MULTITHREADED be options?
+
+# Check for Boost
 set(Boost_USE_STATIC_LIBS   OFF)
 set(Boost_USE_MULTITHREADED OFF)
 set(BOOST_ROOT $ENV{BOOST_DIR})
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
 find_package(Boost 1.36 COMPONENTS filesystem program_options system REQUIRED)
 
+# Check for required packages
 find_package(UFC PATHS $ENV{CMAKE_CONFIG_PATH}/share/ufc/cmake REQUIRED)
-find_package(Armadillo.dolfin REQUIRED)
+find_package(Armadillo REQUIRED)
 find_package(LibXml2 REQUIRED)
 
 #------------------------------------------------------------------------------
@@ -143,9 +155,10 @@ if (DOLFIN_ENABLE_PYTHON)
 
   # If Python is found, check for NumPy and SWIG
   if (PYTHONINTERP_FOUND AND PYTHONLIBS_FOUND)
-    find_package(NumPy.dolfin REQUIRED)
+    find_package(NumPy REQUIRED)
     find_package(SWIG REQUIRED)
     include(UseSWIG)
+    set(PYTHON_FOUND TRUE)
   endif()
 
 endif()
@@ -159,7 +172,7 @@ if (DOLFIN_ENABLE_MPI)
 
   # Check for ParMETIS
   if (DOLFIN_ENABLE_PARMETIS)
-    find_package(ParMETIS.dolfin)
+    find_package(ParMETIS)
   endif()
 
   # Check for SCOTCH
@@ -171,27 +184,29 @@ endif()
 
 # Check for UMFPACK
 if (DOLFIN_ENABLE_UMFPACK)
-  find_package(UMFPACK.dolfin)
+  find_package(AMD)
+  find_package(BLAS)
+  find_package(UMFPACK)
 endif()
 
 # Check for CHOLMOD
 if (DOLFIN_ENABLE_CHOLMOD)
-  find_package(Cholmod)
+  find_package(CHOLMOD)
 endif()
 
 # Check for Trilinos
 if (DOLFIN_ENABLE_TRILINOS)
-  find_package(Trilinos PATHS "$ENV{TRILINOS_DIR}/include")
+  find_package(Trilinos PATHS $ENV{TRILINOS_DIR}/include QUIET)
 endif()
 
 # Check for MTL4
 if (DOLFIN_ENABLE_MTL4)
-  find_package(MTL4.dolfin)
+  find_package(MTL4)
 endif()
 
 # Check for PETSc and SLEPc
 if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc.dolfin)
+  find_package(PETSc)
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
     find_package(SLEPc)
   endif()
@@ -205,7 +220,7 @@ endif()
 
 # Check for CGAL
 if (DOLFIN_ENABLE_CGAL)
-  find_package(CGAL.dolfin)
+  find_package(CGAL)
 endif()
 
 # Check for zlib
@@ -215,12 +230,43 @@ endif()
 
 # Check for cppunit
 if (DOLFIN_ENABLE_UNIT_TESTS)
-  find_package(CppUnit.dolfin)
+  find_package(CppUnit)
+endif()
+
+# Gather information about which optional packages were found and not found
+set(OPTIONAL_PACKAGES_NOT_FOUND "")
+set(OPTIONAL_PACKAGES_FOUND "")
+foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
+  string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
+  if (${PKG}_FOUND OR ${OPTIONAL_PACKAGE}_FOUND)
+    list(APPEND OPTIONAL_PACKAGES_FOUND ${PKG})
+  else()
+    list(APPEND OPTIONAL_PACKAGES_NOT_FOUND ${PKG})
+  endif()
+endforeach()
+
+# Print information about any found optional packages
+if (OPTIONAL_PACKAGES_FOUND)
+  message(STATUS "The following optional packages were found:")
+  foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES_FOUND})
+    string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
+    message(STATUS "(OK) ${OPTIONAL_PACKAGE}")
+  endforeach()
+endif()
+
+# Print information about any optional packages that were not found
+if (OPTIONAL_PACKAGES_NOT_FOUND)
+  message(STATUS "The following optional packages could not be found:")
+  foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES_NOT_FOUND})
+    string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
+    message(STATUS "(**) ${OPTIONAL_PACKAGE}")
+  endforeach()
 endif()
 
 #------------------------------------------------------------------------------
-# Installation of Python module (if enabled)
+# Installation path for Python module (if enabled)
 
+# Get path for platform-dependent Python modules (since we install a binary libary)
 if (PYTHONINTERP_FOUND)
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))"
@@ -228,7 +274,6 @@ if (PYTHONINTERP_FOUND)
     )
 
   set(DOLFIN_INSTALL_PYTHON_MODULE_DIR ${PYTHON_INSTALL_PATH})
-  set(DOLFIN_INSTALL_PYTHON_EXT_DIR ${PYTHON_INSTALL_PATH})
 endif()
 
 #------------------------------------------------------------------------------
@@ -254,25 +299,63 @@ set(DOLFIN_BIN_DIR "bin")
 set(DOLFIN_LIB_DIR "lib")
 set(DOLFIN_INCLUDE_DIR "include")
 set(DOLFIN_PKGCONFIG_DIR "lib/pkgconfig")
-set(DOLFIN_SHARE_DIR "share")
+set(DOLFIN_SHARE_DIR "share/dolfin")
 set(DOLFIN_MAN_DIR "share/man")
 
 # Add source directory
 add_subdirectory(dolfin)
 
 #------------------------------------------------------------------------------
-# Installation of DOLFIN demos
-
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/demo
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin
-        USE_SOURCE_PERMISSIONS)
-
-#------------------------------------------------------------------------------
 # Generate and install helper file dolfin.conf
 
+# FIXME: Can CMake provide the library path name variable?
+if (APPLE)
+  set(OS_LIBRARY_PATH_NAME "DYLD_LIBRARY_PATH")
+else()
+  set(OS_LIBRARY_PATH_NAME "LD_LIBRARY_PATH")
+endif()
+
+# Get path for pure Python modules (used to make helper file dolfin.conf)
+# DOLFIN_INSTALL_PYTHON_MODULE_DIR  and DOLFIN_PYTHON_PURE_PACKAGE_PATH differ
+# on some systems
+if (PYTHONINTERP_FOUND)
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))"
+    OUTPUT_VARIABLE DOLFIN_PYTHON_PURE_PACKAGE_PATH
+    )
+endif()
+
 # FIXME: not cross-platform compatible
+# Create and install dolfin.conf file
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in
-               ${CMAKE_CURRENT_BINARY_DIR}/dolfin.conf @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dolfin.conf
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin
+               ${CMAKE_BINARY_DIR}/dolfin.conf @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
+        DESTINATION ${DOLFIN_SHARE_DIR}
         COMPONENT Development)
+
+#------------------------------------------------------------------------------
+# Build and install DOLFIN demos
+
+# Add demos but do not add to default target
+add_subdirectory(demo EXCLUDE_FROM_ALL)
+
+# Install the demo source files
+install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
+        FILES_MATCHING
+        PATTERN "*.cpp"
+        PATTERN "*.ufl"
+        PATTERN "*.h"
+        PATTERN "*.py"
+        PATTERN "*.xml*"
+        PATTERN "CMakeFiles" EXCLUDE)
+
+#------------------------------------------------------------------------------
+# Build and install DOLFIN tests
+
+# Add tests but do not add to default target
+add_subdirectory(test EXCLUDE_FROM_ALL)
+#install(DIRECTORY ${CMAKE_SOURCE_DIR}/demo
+#        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin
+#        USE_SOURCE_PERMISSIONS)
+
+#------------------------------------------------------------------------------

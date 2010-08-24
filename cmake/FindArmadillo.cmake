@@ -1,38 +1,39 @@
-# Try to find Armadillo - the streamlined C++ linear algebra library
-#
-# This module defines
-# ARMADILLO_FOUND - system has Armadillo
-# ARMADILLO_INCLUDE_DIR - the Armadillo include directory
-# ARMADILLO_LIBRARY - the library needed to use Armadillo
-# ARMADILLO_LINK_FLAGS - linking flags for Armadillo
-# ARMADILLO_VERSION - the Armadillo version string (MAJOR.MINOR.PATCH)
+# - Try to find PETSc
+# Once done this will define
+
+#  ARMADILLO_FOUND        - system has Armadillo
+#  ARMADILLO_INCLUDE_DIRS - include directories for Armadillo
+#  ARMADILLO_LIBRARIES    - libraries for Armadillo
+#  ARMADILLO_LINK_FLAGS   - link flags for Armadillo
+#  ARMADILLO_VERSION      - the Armadillo version string (MAJOR.MINOR.PATCH)
 #
 # Setting these changes the behavior of the search
-# ARMADILLO_DIR - directory in which Armadillo resides
+#
+#  ARMADILLO_DIR - directory in which Armadillo resides
 
 message(STATUS "Checking for package 'Armadillo'")
 
-find_path(ARMADILLO_INCLUDE_DIR
+find_path(ARMADILLO_INCLUDE_DIRS
   NAMES armadillo
-  PATHS $ENV{ARMADILLO_DIR}
+  PATHS ${ARMADILLO_DIR} $ENV{ARMADILLO_DIR}
   PATH_SUFFIXES include
   DOC "Directory where the Armadillo header file is located"
   )
-mark_as_advanced(ARMADILLO_INCLUDE_DIR)
+mark_as_advanced(ARMADILLO_INCLUDE_DIRS)
 
-find_library(ARMADILLO_LIBRARY
+find_library(ARMADILLO_LIBRARIES
   NAMES armadillo
-  PATHS $ENV{ARMADILLO_DIR}
+  PATHS ${ARMADILLO_DIR}/lib $ENV{ARMADILLO_DIR}/lib
   DOC "The Armadillo library"
   )
-mark_as_advanced(ARMADILLO_LIBRARY)
+mark_as_advanced(ARMADILLO_LIBRARIES)
 
 # Special fixes for Mac
 if (APPLE)
 
   # Link against the vecLib framework
   include(CMakeFindFrameworks)
-  CMAKE_FIND_FRAMEWORKS(vecLib)
+  cmake_find_frameworks(vecLib)
   if (vecLib_FRAMEWORKS)
     set(ARMADILLO_LINK_FLAGS "-framework vecLib")
     mark_as_advanced(ARMADILLO_LINK_FLAGS)
@@ -41,7 +42,7 @@ if (APPLE)
   endif()
 endif()
 
-if (ARMADILLO_INCLUDE_DIR AND ARMADILLO_LIBRARY)
+if (ARMADILLO_INCLUDE_DIRS AND ARMADILLO_LIBRARIES)
   include(CheckCXXSourceRuns)
 
   # Armadillo needs the location of the Boost header files
@@ -52,10 +53,10 @@ if (ARMADILLO_INCLUDE_DIR AND ARMADILLO_LIBRARY)
   endif()
 
   # These are needed for the try_run and check_cxx_source_runs commands below
-  set(CMAKE_REQUIRED_INCLUDES "${ARMADILLO_INCLUDE_DIR} ${Boost_INCLUDE_DIR}")
-  set(CMAKE_REQUIRED_LIBRARIES ${ARMADILLO_LIBRARY})
+  set(CMAKE_REQUIRED_INCLUDES "${ARMADILLO_INCLUDE_DIRS};${Boost_INCLUDE_DIR}")
+  set(CMAKE_REQUIRED_LIBRARIES ${ARMADILLO_LIBRARIES})
   if (ARMADILLO_LINK_FLAGS)
-    set(CMAKE_REQUIRED_LIBRARIES "${ARMADILLO_LINK_FLAGS} ${CMAKE_REQUIRED_LIBRARIES}")
+    set(CMAKE_REQUIRED_LIBRARIES "${ARMADILLO_LINK_FLAGS};${CMAKE_REQUIRED_LIBRARIES}")
   endif()
 
   set(ARMADILLO_CONFIG_TEST_VERSION_CPP ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/check_armadillo/armadillo_config_test_version.cpp)
@@ -103,5 +104,6 @@ endif()
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Armadillo "Armadillo could not be found. Be sure to set ARMADILLO_DIR."
-                                  ARMADILLO_TEST_RUNS)
+find_package_handle_standard_args(Armadillo
+  "Armadillo could not be found. Be sure to set ARMADILLO_DIR."
+  ARMADILLO_TEST_RUNS)

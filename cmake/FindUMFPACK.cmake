@@ -1,31 +1,36 @@
+# - Try to find UMFPACK
+# Once done this will define
+#
+#  UMFPACK_FOUND        - system has UMFPACK
+#  UMFPACK_INCLUDE_DIRS - include directories for UMFPACK
+#  UMFPACK_LIBRARIES    - libraries for UMFPACK
+
 message(STATUS "Checking for package 'UMFPACK'")
 
 # Check for header file
-find_path(UMFPACK_INCLUDE_DIR
- NAMES umfpack.h
- HINTS $ENV{UMFPACK_DIR}
- PATHS /usr/local /usr /opt/local /sw
- PATH_SUFFIXES include/suitesparse include
+find_path(UMFPACK_INCLUDE_DIRS umfpack.h
+ PATHS ${UMFPACK_DIR}/include $ENV{UMFPACK_DIR}/include
+ PATH_SUFFIXES suitesparse ufsparse
  DOC "Directory where the UMFPACK header is located"
  )
-mark_as_advanced(UMFPACK_INCLUDE_DIR)
+mark_as_advanced(UMFPACK_INCLUDE_DIRS)
 
-# Check for library
-find_library(UMFPACK_LIBRARY
-  NAMES umfpack
-  HINTS $ENV{UMFPACK_DIR}
-  PATHS /usr/local /usr /opt/local /sw
-  PATH_SUFFIXES lib lib64
+# Check for UMFPACK library
+find_library(UMFPACK_LIBRARY umfpack
+  PATHS ${UMFPACK_DIR}/lib $ENV{UMFPACK_DIR}/lib
   DOC "The UMFPACK library"
   )
 mark_as_advanced(UMFPACK_LIBRARY)
 
+# Collect libraries
+set(UMFPACK_LIBRARIES "${UMFPACK_LIBRARY};${AMD_LIBRARIES};${BLAS_LIBRARIES}")
+
 # Try compiling and running test program
-if (UMFPACK_INCLUDE_DIR AND UMFPACK_LIBRARY)
+if (UMFPACK_INCLUDE_DIRS AND UMFPACK_LIBRARIES AND AMD_LIBRARIES AND BLAS_LIBRARIES)
 
   # Set flags for building test program
-  set(CMAKE_REQUIRED_INCLUDES ${UMFPACK_INCLUDE_DIR})
-  set(CMAKE_REQUIRED_LIBRARIES ${UMFPACK_LIBRARY})
+  set(CMAKE_REQUIRED_INCLUDES ${UMFPACK_INCLUDE_DIRS})
+  set(CMAKE_REQUIRED_LIBRARIES ${UMFPACK_LIBRARIES})
 
   # Build and run test program
   include(CheckCXXSourceRuns)
@@ -61,5 +66,6 @@ endif()
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(UMFPACK DEFAULT_MSG
-  UMFPACK_INCLUDE_DIR UMFPACK_LIBRARY UMFPACK_TEST_RUNS)
+find_package_handle_standard_args(UMFPACK
+  "UMFPACK could not be found. Be sure to set UMFPACK_DIR."
+  UMFPACK_INCLUDE_DIRS UMFPACK_LIBRARIES AMD_LIBRARIES BLAS_LIBRARIES UMFPACK_TEST_RUNS)
