@@ -307,9 +307,14 @@ add_subdirectory(dolfin)
 #------------------------------------------------------------------------------
 # Installation of DOLFIN demos
 
-#install(DIRECTORY ${CMAKE_SOURCE_DIR}/demo
-#        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin
-#        USE_SOURCE_PERMISSIONS)
+install(DIRECTORY demo DESTINATION share/dolfin
+        FILES_MATCHING
+        PATTERN "*.cpp"
+        PATTERN "*.ufl"
+        PATTERN "*.h"
+        PATTERN "*.py"
+        PATTERN "*.xml*"
+        PATTERN "CMakeFiles" EXCLUDE)
 
 #------------------------------------------------------------------------------
 # Generate and install helper file dolfin.conf
