@@ -74,7 +74,9 @@ if (CHOLMOD_INCLUDE_DIRS AND CHOLMOD_LIBRARIES)
   set(CMAKE_REQUIRED_INCLUDES "${CHOLMOD_INCLUDE_DIRS};${AMD_INCLUDE_DIRS}")
   set(CMAKE_REQUIRED_LIBRARIES ${CHOLMOD_LIBRARIES})
 
-  set(cholmod_test_libs_str "
+  # Build and run test program
+  include(CheckCXXSourceRuns)
+  check_cxx_source_runs("
 #include <stdio.h>
 #include <cholmod.h>
 
@@ -118,9 +120,7 @@ int main()
   cholmod_finish(&c);
   return 0;
 }
-")
-
-  check_cxx_source_runs(cholmod_test_libs_str CHOLMOD_TEST_RUNS)
+" CHOLMOD_TEST_RUNS)
 
 endif()
 
