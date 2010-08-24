@@ -341,10 +341,18 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
 if (DOLFIN_ENABLE_DEMOS)
 
   add_subdirectory(demo EXCLUDE_FROM_ALL)
-  #install(DIRECTORY ${CMAKE_SOURCE_DIR}/demo
-  #        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin
-  #        USE_SOURCE_PERMISSIONS)
+
 endif()
+
+# Install
+install(DIRECTORY demo DESTINATION share/dolfin
+        FILES_MATCHING
+        PATTERN "*.cpp"
+        PATTERN "*.ufl"
+        PATTERN "*.h"
+        PATTERN "*.py"
+        PATTERN "*.xml*"
+        PATTERN "CMakeFiles" EXCLUDE)
 
 #------------------------------------------------------------------------------
 # Build and install DOLFIN tests

@@ -7,8 +7,6 @@
 # This is useful to be able to run demos from within the source tree
 # without needing to specify an installation directory.
 
-# TODO: Add -DCMAKE_BUILD_TYPE=xxxx flag
-
 INSTALLDIR=`pwd`"/local"
 
 mkdir -p build
