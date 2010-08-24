@@ -66,7 +66,9 @@ if (CHOLMOD_INCLUDE_DIRS AND CHOLMOD_LIBRARIES)
   set(CMAKE_REQUIRED_INCLUDES "${CHOLMOD_INCLUDE_DIRS};${AMD_INCLUDE_DIRS}")
   set(CMAKE_REQUIRED_LIBRARIES ${CHOLMOD_LIBRARIES})
 
-  set(cholmod_test_libs_str "
+  # Build and run test program
+  include(CheckCXXSourceRuns)
+  check_cxx_source_runs("
 #include <stdio.h>
 #include <cholmod.h>
 
@@ -100,7 +102,6 @@ int main()
   x = cholmod_solve(CHOLMOD_A, L, b, &c);
   r = cholmod_copy_dense(b, &c);
   cholmod_sdmult(S, 0, m1, one, x, r, &c);
-  printf(\"norm(b-Ax)=%g\n\", cholmod_norm_dense(r, 0, &c));
   cholmod_free_factor(&L, &c);
   cholmod_free_dense(&D, &c);
   cholmod_free_sparse(&S, &c);
@@ -110,9 +111,7 @@ int main()
   cholmod_finish(&c);
   return 0;
 }
-")
-
-  check_cxx_source_runs(cholmod_test_libs_str CHOLMOD_TEST_RUNS)
+" CHOLMOD_TEST_RUNS)
 
 endif()
 
@@ -122,5 +121,6 @@ find_package_handle_standard_args(CHOLMOD
   "CHOLMOD could not be found. Be sure to set CHOLMOD_DIR."
   CHOLMOD_INCLUDE_DIRS CHOLMOD_LIBRARIES CHOLMOD_TEST_RUNS)
 
+# FIXME: Use in all tests?
 find_package_message(CHOLMOD "Found CHOLMOD: ${CHOLMOD_LIBRARIES}"
   "[${CHOLMOD_LIBRARIES}][${CHOLMOD_INCLUDE_DIRS}]")
