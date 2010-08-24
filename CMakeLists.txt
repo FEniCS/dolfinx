@@ -338,13 +338,12 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
 #------------------------------------------------------------------------------
 # Build and install DOLFIN demos
 
+# Only build demos when enabled
 if (DOLFIN_ENABLE_DEMOS)
-
   add_subdirectory(demo EXCLUDE_FROM_ALL)
-
 endif()
 
-# Install demo source files
+# Always always install the demo source files
 install(DIRECTORY demo DESTINATION share/dolfin
         FILES_MATCHING
         PATTERN "*.cpp"
