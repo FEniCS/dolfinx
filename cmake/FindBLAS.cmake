@@ -15,7 +15,7 @@ message(STATUS "Checking for package 'BLAS'")
 
 # Check for header file
 find_path(BLAS_INCLUDE_DIRS cblas.h
- PATHS $ENV{BLAS_DIR}/include
+ PATHS ${BLAS_DIR}/include $ENV{BLAS_DIR}/include
  DOC "Directory where the BLAS header is located"
  )
 mark_as_advanced(BLAS_INCLUDE_DIRS)
@@ -23,7 +23,7 @@ mark_as_advanced(BLAS_INCLUDE_DIRS)
 # Check for library
 find_library(BLAS_LIBRARIES
   NAMES atlas cblas blas
-  PATHS $ENV{BLAS_DIR}/lib
+  PATHS ${BLAS_DIR} $ENV{BLAS_DIR}/lib
   PATH_SUFFIXES atlas
   DOC "The BLAS library"
   )

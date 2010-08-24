@@ -15,8 +15,19 @@ if (GMP_INCLUDE_DIRS AND GMP_LIBRARIES)
   set(GMP_FIND_QUIETLY TRUE)
 endif (GMP_INCLUDE_DIRS AND GMP_LIBRARIES)
 
-find_path(GMP_INCLUDE_DIRS NAMES gmp.h )
-find_library(GMP_LIBRARIES NAMES gmp libgmp)
+find_path(GMP_INCLUDE_DIRS
+  NAMES gmp.h
+  PATHS ${GMP_DIR} $ENV{GMP_DIR}
+  PATH_SUFFIXES include
+  DOC "Directory where the GMP header file is located"
+  )
+
+find_library(GMP_LIBRARIES
+  NAMES gmp libgmp
+  PATHS ${GMP_DIR} $ENV{GMP_DIR}
+  PATH_SUFFIXES lib
+  DOC "The GMP libraries"
+  )
 
 include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(GMP DEFAULT_MSG GMP_INCLUDE_DIRS GMP_LIBRARIES)

@@ -15,7 +15,7 @@ message(STATUS "Checking for package 'Armadillo'")
 
 find_path(ARMADILLO_INCLUDE_DIRS
   NAMES armadillo
-  PATHS $ENV{ARMADILLO_DIR}
+  PATHS ${ARMADILLO_DIR} $ENV{ARMADILLO_DIR}
   PATH_SUFFIXES include
   DOC "Directory where the Armadillo header file is located"
   )
@@ -23,7 +23,7 @@ mark_as_advanced(ARMADILLO_INCLUDE_DIRS)
 
 find_library(ARMADILLO_LIBRARIES
   NAMES armadillo
-  PATHS $ENV{ARMADILLO_DIR}
+  PATHS ${ARMADILLO_DIR} $ENV{ARMADILLO_DIR}
   DOC "The Armadillo library"
   )
 mark_as_advanced(ARMADILLO_LIBRARIES)
@@ -33,7 +33,7 @@ if (APPLE)
 
   # Link against the vecLib framework
   include(CMakeFindFrameworks)
-  CMAKE_FIND_FRAMEWORKS(vecLib)
+  cmake_find_frameworks(vecLib)
   if (vecLib_FRAMEWORKS)
     set(ARMADILLO_LINK_FLAGS "-framework vecLib")
     mark_as_advanced(ARMADILLO_LINK_FLAGS)

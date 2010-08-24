@@ -22,33 +22,36 @@ find_package(ParMETIS)
 
 # Check for header file
 find_path(CHOLMOD_INCLUDE_DIRS cholmod.h
-  PATHS $ENV{CHOLMOD_DIR}/include
+  PATHS ${CHOLMOD_DIR}/include $ENV{CHOLMOD_DIR}/include
   PATH_SUFFIXES suitesparse ufsparse
   DOC "Directory where the CHOLMOD header is located"
  )
 
 # Check for CHOLMOD library
 find_library(CHOLMOD_LIBRARY cholmod
-  PATHS $ENV{CHOLMOD_DIR}/lib
+  PATHS ${CHOLMOD_DIR} $ENV{CHOLMOD_DIR}
+  PATH_SUFFIXES lib
   DOC "The CHOLMOD library"
   )
 
 # Check for CAMD library
 find_library(CAMD_LIBRARY camd
-  PATHS $ENV{CHOLMOD_DIR}/lib $ENV{CAMD_DIR}/lib
+  PATHS ${CHOLMOD_DIR} ${CAMD_DIR} $ENV{CHOLMOD_DIR} $ENV{CAMD_DIR}
   PATH_SUFFIXES lib
   DOC "The CAMD library"
   )
 
 # Check for COLAMD library
 find_library(COLAMD_LIBRARY colamd
-  PATHS $ENV{CHOLMOD_DIR}/lib $ENV{COLAMD_DIR}/lib
+  PATHS ${CHOLMOD_DIR} ${COLAMD_DIR} $ENV{CHOLMOD_DIR} $ENV{COLAMD_DIR}
+  PATH_SUFFIXES lib
   DOC "The COLAMD library"
   )
 
 # Check for CCOLAMD library
 find_library(CCOLAMD_LIBRARY ccolamd
-  PATHS $ENV{CHOLMOD_DIR}/lib $ENV{CCOLAMD_DIR}/lib
+  PATHS ${CHOLMOD_DIR} ${CCOLAMD_DIR} $ENV{CHOLMOD_DIR} $ENV{CCOLAMD_DIR}
+  PATH_SUFFIXES lib
   DOC "The CCOLAMD library"
   )
 

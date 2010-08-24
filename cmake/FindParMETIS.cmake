@@ -6,16 +6,18 @@
 #  PARMETIS_LIBRARIES    - libraries for ParMETIS
 
 find_path(PARMETIS_INCLUDE_DIRS parmetis.h
-  PATHS $ENV{PARMETIS_DIR}/include
+  PATHS ${PARMETIS_DIR}/include $ENV{PARMETIS_DIR}/include
   DOC "Directory where the ParMETIS header files are located"
 )
 
 find_library(PARMETIS_LIBRARY parmetis
-  PATHS $ENV{PARMETIS_DIR}/lib
+  PATHS ${PARMETIS_DIR}/lib $ENV{PARMETIS_DIR}/lib
+  DOC "Directory where the ParMETIS library is located"
 )
 
 find_library(METIS_LIBRARY metis
-  PATHS $ENV{PARMETIS_DIR}/lib
+  PATHS ${PARMETIS_DIR}/lib $ENV{PARMETIS_DIR}/lib
+  DOC "Directory where the METIS library is located"
 )
 
 set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY} ${METIS_LIBRARY})
