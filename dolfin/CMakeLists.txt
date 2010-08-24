@@ -300,6 +300,6 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
 
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config.cmake.in ${CMAKE_BINARY_DIR}/dolfin-config.cmake @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin-config.cmake
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin/cmake
+  DESTINATION ${DOLFIN_SHARE_DIR}/cmake
   COMPONENT Development
   )

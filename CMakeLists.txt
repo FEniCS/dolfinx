@@ -301,7 +301,7 @@ set(DOLFIN_BIN_DIR "bin")
 set(DOLFIN_LIB_DIR "lib")
 set(DOLFIN_INCLUDE_DIR "include")
 set(DOLFIN_PKGCONFIG_DIR "lib/pkgconfig")
-set(DOLFIN_SHARE_DIR "share")
+set(DOLFIN_SHARE_DIR "share/dolfin")
 set(DOLFIN_MAN_DIR "share/man")
 
 # Add source directory
@@ -332,19 +332,19 @@ endif()
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in
                ${CMAKE_BINARY_DIR}/dolfin.conf @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin
+        DESTINATION ${DOLFIN_SHARE_DIR}
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
 # Build and install DOLFIN demos
 
 # Only build demos when enabled
-if (DOLFIN_ENABLE_DEMOS)
-  add_subdirectory(demo EXCLUDE_FROM_ALL)
-endif()
+#if (DOLFIN_ENABLE_DEMOS)
+#  add_subdirectory(demo EXCLUDE_FROM_ALL)
+#endif()
 
-# Always always install the demo source files
-install(DIRECTORY demo DESTINATION share/dolfin
+# Always install the demo source files
+install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
         FILES_MATCHING
         PATTERN "*.cpp"
         PATTERN "*.ufl"
