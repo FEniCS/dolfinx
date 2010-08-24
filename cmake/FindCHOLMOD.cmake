@@ -21,41 +21,33 @@ find_package(BLAS)
 
 # Check for header file
 find_path(CHOLMOD_INCLUDE_DIRS cholmod.h
-  HINTS ${CHOLMOD_DIR}
-  PATHS $ENV{CHOLMOD_DIR}
-  PATH_SUFFIXES include include/suitesparse include/ufsparse
+  PATHS $ENV{CHOLMOD_DIR}/include
+  PATH_SUFFIXES suitesparse ufsparse
   DOC "Directory where the CHOLMOD header is located"
  )
 
 # Check for CHOLMOD library
 find_library(CHOLMOD_LIBRARY cholmod
-  HINTS ${CHOLMOD_DIR}
-  PATHS $ENV{CHOLMOD_DIR}
-  PATH_SUFFIXES lib
+  PATHS $ENV{CHOLMOD_DIR}/lib
   DOC "The CHOLMOD library"
   )
 
 # Check for CAMD library
 find_library(CAMD_LIBRARY camd
-  HINTS ${CHOLMOD_DIR} ${CAMD_DIR}
-  PATHS $ENV{CHOLMOD_DIR} $ENV{CAMD_DIR}
+  PATHS $ENV{CHOLMOD_DIR}/lib $ENV{CAMD_DIR}/lib
   PATH_SUFFIXES lib
   DOC "The CAMD library"
   )
 
 # Check for COLAMD library
 find_library(COLAMD_LIBRARY colamd
-  HINTS ${CHOLMOD_DIR} ${COLAMD_DIR}
-  PATHS $ENV{CHOLMOD_DIR} $ENV{COLAMD_DIR}
-  PATH_SUFFIXES lib
+  PATHS $ENV{CHOLMOD_DIR}/lib $ENV{COLAMD_DIR}/lib
   DOC "The COLAMD library"
   )
 
 # Check for CCOLAMD library
 find_library(CCOLAMD_LIBRARY ccolamd
-  HINTS ${CHOLMOD_DIR} ${CCOLAMD_DIR}
-  PATHS $ENV{CHOLMOD_DIR} $ENV{CCOLAMD_DIR}
-  PATH_SUFFIXES lib
+  PATHS $ENV{CHOLMOD_DIR}/lib $ENV{CCOLAMD_DIR}/lib
   DOC "The CCOLAMD library"
   )
 
