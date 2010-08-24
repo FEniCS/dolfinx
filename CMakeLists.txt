@@ -344,7 +344,7 @@ if (DOLFIN_ENABLE_DEMOS)
 
 endif()
 
-# Install
+# Install demo source files
 install(DIRECTORY demo DESTINATION share/dolfin
         FILES_MATCHING
         PATTERN "*.cpp"
