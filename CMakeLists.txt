@@ -342,6 +342,7 @@ add_subdirectory(demo EXCLUDE_FROM_ALL)
 # Install the demo source files
 install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
         FILES_MATCHING
+        PATTERN "CMakeLists.txt"
         PATTERN "*.cpp"
         PATTERN "*.ufl"
         PATTERN "*.h"
