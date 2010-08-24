@@ -130,5 +130,6 @@ find_package_handle_standard_args(CHOLMOD
   "CHOLMOD could not be found. Be sure to set CHOLMOD_DIR."
   CHOLMOD_INCLUDE_DIRS CHOLMOD_LIBRARIES CHOLMOD_TEST_RUNS)
 
+# FIXME: Use in all tests?
 find_package_message(CHOLMOD "Found CHOLMOD: ${CHOLMOD_LIBRARIES}"
   "[${CHOLMOD_LIBRARIES}][${CHOLMOD_INCLUDE_DIRS}]")
