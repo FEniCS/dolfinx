@@ -1,6 +1,8 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
+project(distancequeries-demo)
+
 # Permit user to set location of the config file
 #set(CMAKE_MODULE_PATH CACHE STRING "User-specified location of the DOLFIN CMake configure file" )
 

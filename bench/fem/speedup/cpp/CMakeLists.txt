@@ -1,6 +1,8 @@
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
+project(speedup-bench)
+
 # Permit user to set location of the config file
 #set(CMAKE_MODULE_PATH CACHE STRING "User-specified location of the DOLFIN CMake configure file" )
 
@@ -25,7 +27,7 @@ include_directories (${DOLFIN_INCLUDE_DIRS})
 link_directories(${DOLFIN_LIBRARY_DIR})
 
 # Executable
-add_executable(speedup-bench solve-poisson.cpp assemble-poisson.cpp)
+add_executable(speedup-bench assemble-poisson.cpp solve-poisson.cpp)
 
 # DOLFIN library
 target_link_libraries(speedup-bench ${DOLFIN_LIBRARIES})

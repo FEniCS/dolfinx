@@ -34,11 +34,14 @@ set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}" ${CMAKE_MODULE_PATH})
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
 #option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
-option(DOLFIN_DEBUG_UBLAS "Add some extra uBLAS debug information." OFF)
-#option(DOLFIN_ENABLE_DOCS "Build documentation." OFF)
-option(DOLFIN_ENABLE_UNIT_TESTS "Enable unit tests." ON)
+option(DOLFIN_DEBUG_UBLAS "Use extra uBLAS debugging." OFF)
+option(DOLFIN_ENABLE_UNIT_TESTS "Build C++ unit tests." ON)
+option(DOLFIN_ENABLE_DEMOS "Enable C++ demo programs. Build using 'make demo' after installing the library." ON)
 option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
+
+#option(DOLFIN_ENABLE_DOCS "Build documentation." OFF)
+#option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
 
 #------------------------------------------------------------------------------
 # Enable or disable optional packages
@@ -305,13 +308,6 @@ set(DOLFIN_MAN_DIR "share/man")
 add_subdirectory(dolfin)
 
 #------------------------------------------------------------------------------
-# Installation of DOLFIN demos
-
-#install(DIRECTORY ${CMAKE_SOURCE_DIR}/demo
-#        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin
-#        USE_SOURCE_PERMISSIONS)
-
-#------------------------------------------------------------------------------
 # Generate and install helper file dolfin.conf
 
 # FIXME: Can CMake provide the library path name variable?
@@ -332,8 +328,33 @@ if (PYTHONINTERP_FOUND)
 endif()
 
 # FIXME: not cross-platform compatible
+# Create and install dolfin.conf file
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in
                ${CMAKE_BINARY_DIR}/dolfin.conf @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin
         COMPONENT Development)
+
+#------------------------------------------------------------------------------
+# Build and install DOLFIN demos
+
+if (DOLFIN_ENABLE_DEMOS)
+
+  add_subdirectory(demo EXCLUDE_FROM_ALL)
+  #install(DIRECTORY ${CMAKE_SOURCE_DIR}/demo
+  #        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin
+  #        USE_SOURCE_PERMISSIONS)
+endif()
+
+#------------------------------------------------------------------------------
+# Build and install DOLFIN tests
+
+if (DOLFIN_ENABLE_TEST)
+
+  #add_subdirectory(test EXCLUDE_FROM_ALL)
+  #install(DIRECTORY ${CMAKE_SOURCE_DIR}/demo
+  #        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin
+  #        USE_SOURCE_PERMISSIONS)
+endif()
+
+#------------------------------------------------------------------------------
