@@ -7,19 +7,21 @@
 message(STATUS "Checking for package 'MTL4'")
 
 # Check for header file
-find_path(MTL4_INCLUDE_DIR boost/numeric/mtl/mtl.hpp
-  PATHS $ENV{MTL4_DIR}
+find_path(MTL4_INCLUDE_DIRS boost/numeric/mtl/mtl.hpp
+  PATHS $ENV{MTL4_DIR} ${MTL4_DIR}
   DOC "Directory where the MTL4 header is located"
   )
-
-# Add Boost, needed by MTL4
-set(MTL4_INCLUDE_DIRS "${MTL4_INCLUDE_DIR};${Boost_INCLUDE_DIR}")
 
 # Try compiling and running test program
 if (MTL4_INCLUDE_DIRS)
 
+  # Find Boost, needed by MTL4
+  set(BOOST_ROOT $ENV{BOOST_DIR})
+  set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
+  find_package(Boost REQUIRED)
+
   # Set flags for building test program
-  set(CMAKE_REQUIRED_INCLUDES ${MTL4_INCLUDE_DIRS})
+  set(CMAKE_REQUIRED_INCLUDES "${MTL4_INCLUDE_DIRS};${Boost_INCLUDE_DIR}")
 
   # Build and run test program
   include(CheckCXXSourceRuns)
