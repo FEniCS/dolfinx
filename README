@@ -1,42 +1,44 @@
 Contents
 
-    1. Installation
-    2. License
-    3. Feedback
-    4. About
+  1. Installation
+  2. License
+  3. Contact
+  4. About
 
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 1. Installation
 
 To build DOLFIN, run
 
-    scons configure [options]
-    scons
+  cmake .
+  make install
 
-Run scons configure --help to see which options are available.
+For detailed instructions, see the file INSTALL.
 
-After a successful build, you may install DOLFIN by running
-
-    scons install
-
-------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 2. License
 
 DOLFIN is licensed under the GNU LGPL Version 2.1, see http://www.gnu.org.
 
--------------------------------------------------------------------------------
-3. Feed back
+--------------------------------------------------------------------------------
+3. Contact
 
-Feed back, patches, and comments should be sent to
+For comments and requests, send an email to the DOLFIN mailing list:
 
-    dolfin@lists.launchpad.net
+  dolfin@lists.launchpad.net
 
-------------------------------------------------------------------------------
+For questions and bug reports, visit the DOLFIN Launchpad page:
+
+  http://www.launchpad.net/dolfin
+
+--------------------------------------------------------------------------------
 4. About
 
-A hopefully complete list of authors is given in the file AUTHORS.
+DOLFIN is developed by a group of mathematicians and computational
+scientist distributed around the world. A list of authors can be found
+in the file AUTHORS.
 
 For more information about DOLFIN, visit
 
-    http://www.fenics.org/dolfin/
-------------------------------------------------------------------------------
+  http://www.fenics.org/dolfin/
+--------------------------------------------------------------------------------
