@@ -8,7 +8,7 @@ export PYTHONPATH=@DOLFIN_INSTALL_PYTHON_MODULE_DIR@:@DOLFIN_PYTHON_PURE_PACKAGE
 export MANPATH=@CMAKE_INSTALL_PREFIX@/@DOLFIN_MAN_DIR@:$MANPATH
 
 # Variable to help find dolfin-config.cmake
-export DOLFIN_CMAKE_CONFIG_PATH=@CMAKE_INSTALL_PREFIX@/share/cmake
+#export DOLFIN_CMAKE_CONFIG_PATH=@CMAKE_INSTALL_PREFIX@/share/cmake
 
 # Special Mac variables
 export DYLD_FRAMEWORK_PATH=/opt/local/Library/Frameworks:$DYLD_FRAMEWORK_PATH
