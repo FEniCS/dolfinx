@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+#
+# Copyright (C) 2008 Anders Logg
+# Licensed under the GNU LGPL Version 2.1
+#
+# Script for ordering a DOLFIN mesh according to the UFC ordering scheme
+
+import sys, os, shutil
+
+from dolfin import Mesh, File
+
+def main(args):
+    "Main function"
+
+    # Check that we got at least
+    if not len(args) > 0:
+        usage()
+        sys.exit(2)
+
+    # Convert each mesh
+    for filename in args:
+        print "Ordering %s" % filename
+
+        # Read and order mesh
+        mesh = Mesh(filename)
+        mesh.order()
+
+        # Make backup copy
+        shutil.move(filename, filename + ".bak")
+
+        # Write file and gzip if necessary
+        gzip = False
+        if len(filename) >= 3 and filename[-3:] == ".gz":
+            filename = filename[:-3]
+            gzip = True
+        file = File(filename)
+        file << mesh
+        if gzip:
+            os.system("gzip " + filename)
+
+def usage():
+    "Print usage instructions"
+    print "Usage: dolfin-order mesh0.xml[.gz] [mesh1.xml[.gz] mesh2.xml[.gz] ...]"
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
