@@ -23,7 +23,7 @@ mark_as_advanced(ARMADILLO_INCLUDE_DIRS)
 
 find_library(ARMADILLO_LIBRARIES
   NAMES armadillo
-  PATHS ${ARMADILLO_DIR} $ENV{ARMADILLO_DIR}
+  PATHS ${ARMADILLO_DIR}/lib $ENV{ARMADILLO_DIR}/lib
   DOC "The Armadillo library"
   )
 mark_as_advanced(ARMADILLO_LIBRARIES)
