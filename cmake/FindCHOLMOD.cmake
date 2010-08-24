@@ -110,7 +110,6 @@ int main()
   x = cholmod_solve(CHOLMOD_A, L, b, &c);
   r = cholmod_copy_dense(b, &c);
   cholmod_sdmult(S, 0, m1, one, x, r, &c);
-  printf(\"norm(b-Ax)=%g\n\", cholmod_norm_dense(r, 0, &c));
   cholmod_free_factor(&L, &c);
   cholmod_free_dense(&D, &c);
   cholmod_free_sparse(&S, &c);
