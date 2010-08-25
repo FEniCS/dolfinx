@@ -3,9 +3,6 @@ project(dolfin-demos)
 # Require CMake 2.8
 cmake_minimum_required(VERSION 2.8)
 
-# Set verbose output while testing CMake
-set(CMAKE_VERBOSE_MAKEFILE 1)
-
 # Find DOLFIN config file (not used here, but check that the demo will be able
 # to find it
 find_package(dolfin PATHS ${CMAKE_BINARY_DIR} REQUIRED)
@@ -21,7 +18,7 @@ if (dolfin_FOUND)
 
   # Add each C++ demo directory
   foreach (demo_dir ${list})
-    message(STATUS "Adding C++ demo: ${demo_dir}")
+    #message(STATUS "Adding C++ demo: ${demo_dir}")
     add_subdirectory(${demo_dir})
   endforeach()
 

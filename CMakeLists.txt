@@ -331,7 +331,7 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
-# Build and install DOLFIN demos
+# Add DOLFIN demos and install demo source files and mesh files
 
 # Add demos but do not add to default target
 add_subdirectory(demo EXCLUDE_FROM_ALL)
