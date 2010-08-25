@@ -21,38 +21,41 @@ Parameters KrylovSolver::default_parameters()
 {
   Parameters p("krylov_solver");
 
-  p.add("relative_tolerance",      1e-6);
-  p.add("absolute_tolerance",      1e-15);
-  p.add("divergence_limit",        1e4);
+  p.add("relative_tolerance",      1.0e-6);
+  p.add("absolute_tolerance",      1.0e-15);
+  p.add("divergence_limit",        1.0e4);
   p.add("maximum_iterations",      10000);
   p.add("report",                  true); /* deprecate? */
   p.add("monitor_convergence",     false);
   p.add("error_on_nonconvergence", true);
-  p.add("nonzero_initial_guess", false);
+  p.add("nonzero_initial_guess",   false);
 
   // GMRES options
   Parameters p_gmres("gmres");
   p_gmres.add("restart", 30);
+  p.add(p_gmres);
+
+  // General preconditioner options
+  Parameters p_pc("preconditioner");
+  p_pc.add("shift_nonzero",        0.0);
+  p_pc.add("reuse",                false);
+  p_pc.add("same_nonzero_pattern", false);
+  p_pc.add("report",               false);
 
   // ILU preconditioner options
   Parameters p_pc_ilu("ilu");
   p_pc_ilu.add("fill_level", 0);
 
   // Schwartz preconditioner options
-  Parameters p_pc_schartz("schwarz");
-  p_pc_schartz.add("overlap", 1);
+  Parameters p_pc_schwarz("schwarz");
+  p_pc_schwarz.add("overlap", 1);
+  p_pc.add(p_pc_schwarz);
 
-  // Preconditioner options
-  Parameters p_pc("preconditioner");
-  p_pc.add("shift_nonzero",        0.0);
-  p_pc.add("reuse",                false);
-  p_pc.add("same_nonzero_pattern", false);
-  p_pc.add("report",               false);
+  // Add sub-preconditioner options
   p_pc.add(p_pc_ilu);
+  p_pc.add(p_pc_schwarz);
 
-
-  // Add nested parameters
-  p.add(p_gmres);
+  // Add preconditioner options
   p.add(p_pc);
 
   return p;

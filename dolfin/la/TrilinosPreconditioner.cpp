@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2010-02-25
-// Last changed: 2010-03-25
+// Last changed: 2010-08-25
 
 #ifdef HAS_TRILINOS
 
@@ -43,8 +43,12 @@ Parameters TrilinosPreconditioner::default_parameters()
 {
   Parameters p(KrylovSolver::default_parameters()("preconditioner"));
   p.rename("trilinos_preconditioner");
-  p.add("schwarz_mode", "Zero");   // Options are Zero, Insert, Add, Average, AbsMax
-  p.add("reordering_type", "rcm"); // Options are rcm, metis, amd
+
+  // Add some extra Trilinos-specific Schwarz options
+  //    Options are Zero, Insert, Add, Average, AbsMax
+  p("schwarz").add("mode", "Zero");
+  //    Options are rcm, metis, amd
+  p("schwarz").add("reordering_type", "rcm");
 
   // ML options
   Parameters p_ml("ml");
@@ -89,8 +93,8 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
     // Get/set some parameters
     const int ilu_fill_level       = parameters("ilu")["fill_level"];
     const int overlap              = parameters("schwarz")["overlap"];
-    const std::string reordering   = parameters["reordering_type"];
-    const std::string schwarz_mode = parameters["schwarz_mode"];
+    const std::string reordering   = parameters("schwarz")["reordering_type"];
+    const std::string schwarz_mode = parameters("schwarz")["mode"];
     Teuchos::ParameterList list;
     list.set("fact: level-of-fill",      ilu_fill_level);
     list.set("schwarz: combine mode",    schwarz_mode);
