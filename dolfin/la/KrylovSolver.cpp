@@ -39,7 +39,7 @@ Parameters KrylovSolver::default_parameters()
   p_pc_ilu.add("fill_level", 0);
 
   // Schwartz preconditioner options
-  Parameters p_pc_schartz("schwartz");
+  Parameters p_pc_schartz("schwarz");
   p_pc_schartz.add("overlap", 1);
 
   // Preconditioner options
