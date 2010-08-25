@@ -148,10 +148,10 @@ find_package(LibXml2 REQUIRED)
 #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
-# FIXME: Should we check for Python also when DOLFIN_ENABLE_PYTHON is OFF?
-# Check for Python
+# Note: Check for Python interpreter even when Python is disable because it is 
+#       used to get the installation path for dolfin_utils 
+find_package(PythonInterp)
 if (DOLFIN_ENABLE_PYTHON)
-  find_package(PythonInterp)
   find_package(PythonLibs)
 
   # If Python is found, check for NumPy and SWIG
@@ -265,16 +265,24 @@ if (OPTIONAL_PACKAGES_NOT_FOUND)
 endif()
 
 #------------------------------------------------------------------------------
-# Installation path for Python module (if enabled)
+# Get installation paths for Python modules (pure and platform-dependent)
 
-# Get path for platform-dependent Python modules (since we install a binary libary)
 if (PYTHONINTERP_FOUND)
+
+  # Get path for platform-dependent Python modules (since we install a binary libary)
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))"
-    OUTPUT_VARIABLE PYTHON_INSTALL_PATH
+    OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_MODULE_DIR
     )
 
-  set(DOLFIN_INSTALL_PYTHON_MODULE_DIR ${PYTHON_INSTALL_PATH})
+  # Get path for platform-independent Python modules
+  if (PYTHONINTERP_FOUND)
+    execute_process(
+      COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))"
+      OUTPUT_VARIABLE DOLFIN_PYTHON_PURE_PACKAGE_PATH
+      )
+  endif()
+  
 endif()
 
 #------------------------------------------------------------------------------
@@ -316,16 +324,6 @@ if (APPLE)
   set(OS_LIBRARY_PATH_NAME "DYLD_LIBRARY_PATH")
 else()
   set(OS_LIBRARY_PATH_NAME "LD_LIBRARY_PATH")
-endif()
-
-# Get path for pure Python modules (used to make helper file dolfin.conf)
-# DOLFIN_INSTALL_PYTHON_MODULE_DIR  and DOLFIN_PYTHON_PURE_PACKAGE_PATH differ
-# on some systems
-if (PYTHONINTERP_FOUND)
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))"
-    OUTPUT_VARIABLE DOLFIN_PYTHON_PURE_PACKAGE_PATH
-    )
 endif()
 
 # FIXME: not cross-platform compatible
