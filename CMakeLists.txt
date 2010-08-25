@@ -279,7 +279,7 @@ if (PYTHONINTERP_FOUND)
   if (PYTHONINTERP_FOUND)
     execute_process(
       COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))"
-      OUTPUT_VARIABLE DOLFIN_PYTHON_PURE_PACKAGE_PATH
+      OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR
       )
   endif()
   
@@ -290,7 +290,7 @@ endif()
 
 if (DOLFIN_INSTALL_PYTHON_MODULE_DIR)
   install(DIRECTORY ${CMAKE_SOURCE_DIR}/site-packages/dolfin_utils
-    DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
+    DESTINATION ${DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR}
     USE_SOURCE_PERMISSIONS)
 endif()
 
