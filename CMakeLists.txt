@@ -276,12 +276,10 @@ if (PYTHONINTERP_FOUND)
     )
 
   # Get path for platform-independent Python modules
-  if (PYTHONINTERP_FOUND)
-    execute_process(
-      COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))"
-      OUTPUT_VARIABLE DOLFIN_PYTHON_PURE_PACKAGE_PATH
-      )
-  endif()
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))"
+    OUTPUT_VARIABLE DOLFIN_PYTHON_PURE_PACKAGE_PATH
+    )
   
 endif()
 
