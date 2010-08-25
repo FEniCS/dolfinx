@@ -148,6 +148,7 @@ find_package(LibXml2 REQUIRED)
 #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
+# FIXME: Should we check for Python also when DOLFIN_ENABLE_PYTHON is OFF?
 # Check for Python
 if (DOLFIN_ENABLE_PYTHON)
   find_package(PythonInterp)
@@ -279,9 +280,11 @@ endif()
 #------------------------------------------------------------------------------
 # Installation of dolfin_utils
 
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/site-packages/dolfin_utils
-        DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
-        USE_SOURCE_PERMISSIONS)
+if (DOLFIN_INSTALL_PYTHON_MODULE_DIR)
+  install(DIRECTORY ${CMAKE_SOURCE_DIR}/site-packages/dolfin_utils
+    DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
+    USE_SOURCE_PERMISSIONS)
+endif()
 
 #------------------------------------------------------------------------------
 # Installation of DOLFIN library
