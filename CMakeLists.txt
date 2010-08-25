@@ -146,8 +146,8 @@ find_package(LibXml2 REQUIRED)
 #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
-# Note: Check for Python interpreter even when Python is disable because it is 
-#       used to get the installation path for dolfin_utils 
+# Note: Check for Python interpreter even when Python is disable because it is
+#       used to get the installation path for dolfin_utils
 find_package(PythonInterp)
 if (DOLFIN_ENABLE_PYTHON)
   find_package(PythonLibs)
@@ -278,7 +278,7 @@ if (PYTHONINTERP_FOUND)
     COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))"
     OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR
     )
-  
+
 endif()
 
 #------------------------------------------------------------------------------
@@ -346,6 +346,9 @@ install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
         PATTERN "*.py"
         PATTERN "*.xml*"
         PATTERN "CMakeFiles" EXCLUDE)
+
+# Install meshes (data directory)
+install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 
 #------------------------------------------------------------------------------
 # Build and install DOLFIN tests
