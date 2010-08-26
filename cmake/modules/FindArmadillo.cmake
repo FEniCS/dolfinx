@@ -13,6 +13,9 @@
 
 message(STATUS "Checking for package 'Armadillo'")
 
+# FIXME: Look for LAPACK libraries. Required on some platforms. BLAS too?
+#find_package(LAPACK REQUIRED)
+
 find_path(ARMADILLO_INCLUDE_DIRS
   NAMES armadillo
   PATHS ${ARMADILLO_DIR} $ENV{ARMADILLO_DIR}
@@ -27,6 +30,10 @@ find_library(ARMADILLO_LIBRARIES
   DOC "The Armadillo library"
   )
 mark_as_advanced(ARMADILLO_LIBRARIES)
+
+# FIXME: Add LAPACK libraries
+#set(${ARMADILLO_LIBRARIES} "${ARMADILLO_LIBRARIES};${LAPACK_LIBRARIES}")
+set(${ARMADILLO_LIBRARIES} "${ARMADILLO_LIBRARIES}")
 
 # Special fixes for Mac
 if (APPLE)
