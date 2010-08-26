@@ -87,45 +87,50 @@ option(CGAL_DISABLE_ROUNDING_MATH_CHECK "Disable rounding math check in CGAL. Th
 # Default build type (can be overridden by user)
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
-    "Choose the type of build, options are: Debug Release RelWithDebInfo Maintainer MinSizeRel." FORCE)
+    "Choose the type of build, options are: Debug Developer MinSizeRel Release RelWithDebInfo." FORCE)
 endif()
 
 # Check for some compiler flags
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG(-pipe HAVE_PIPE)
 if (HAVE_PIPE)
-  set(DOLFIN_CXX_RELEASE_FLAGS "-pipe ${DOLFIN_CXX_RELEASE_FLAGS}")
+  set(DOLFIN_CXX_DEVELOPER_FLAGS "-pipe ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
 CHECK_CXX_COMPILER_FLAG("-Wall -Werror" HAVE_PEDANTIC)
 if (HAVE_PEDANTIC)
-  set(DOLFIN_CXX_RELEASE_FLAGS "-Wall -Werror ${DOLFIN_CXX_RELEASE_FLAGS}")
+  set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
 CHECK_CXX_COMPILER_FLAG(-std=c++98 HAVE_STD)
 if (HAVE_STD)
-  set(DOLFIN_CXX_RELEASE_FLAGS "-std=c++98 ${DOLFIN_CXX_RELEASE_FLAGS}")
+  set(DOLFIN_CXX_DEVELOPER_FLAGS "-std=c++98 ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
 CHECK_CXX_COMPILER_FLAG(-g HAVE_DEBUG)
 if (HAVE_DEBUG)
-  set(DOLFIN_CXX_RELEASE_FLAGS "-g ${DOLFIN_CXX_RELEASE_FLAGS}")
+  set(DOLFIN_CXX_DEVELOPER_FLAGS "-g ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
 CHECK_CXX_COMPILER_FLAG(-O2 HAVE_O2_OPTIMISATION)
 if (HAVE_O2_OPTIMISATION)
-  set(DOLFIN_CXX_RELEASE_FLAGS "-O2 ${DOLFIN_CXX_RELEASE_FLAGS}")
+  set(DOLFIN_CXX_DEVELOPER_FLAGS "-O2 ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
-# Set 'Maintainer' build type flags
-set(CMAKE_CXX_FLAGS_MAINTAINER "${DOLFIN_CXX_RELEASE_FLAGS} -DDEBUG" CACHE STRING
+# Set 'Developer' build type flags
+set(CMAKE_CXX_FLAGS_DEVELOPER "${DOLFIN_CXX_DEVELOPER_FLAGS}" CACHE STRING
   "Flags used by the compiler during development." FORCE)
-
-# FIXME: Do we want to add -DDEBUG to RelWithDebInfo?
 
 # Do not debug uBLAS unless requested
 if (NOT DOLFIN_DEBUG_UBLAS)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_UBLAS_NDEBUG")
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DBOOST_UBLAS_NDEBUG")
+endif()
+
+# FIXME: Do we want to add -DDEBUG to RelWithDebInfo?
+
+# Add debug definitions
+if (CMAKE_BUILD_TYPE STREQUAL "Developer" OR CMAKE_BUILD_TYPE STREQUAL "Debug")
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DDEBUG")
 endif()
 
 #------------------------------------------------------------------------------
