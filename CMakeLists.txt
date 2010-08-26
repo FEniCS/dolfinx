@@ -360,3 +360,14 @@ add_subdirectory(test EXCLUDE_FROM_ALL)
 #        USE_SOURCE_PERMISSIONS)
 
 #------------------------------------------------------------------------------
+# Add "make uninstall" target
+
+CONFIGURE_FILE(
+  "${DOLFIN_CMAKE_DIR}/templates/cmake_uninstall.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+  IMMEDIATE @ONLY)
+
+ADD_CUSTOM_TARGET(uninstall
+  "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
+
+#------------------------------------------------------------------------------
