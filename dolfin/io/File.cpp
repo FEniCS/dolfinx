@@ -18,7 +18,6 @@
 #include <dolfin/function/Function.h>
 #include "File.h"
 #include "XMLFile.h"
-#include "MatlabFile.h"
 #include "PythonFile.h"
 #include "VTKFile.h"
 #include "RAWFile.h"
@@ -74,9 +73,6 @@ File::File(const std::string filename, Type type, std::string encoding)
   {
   case xml:
     file.reset(new XMLFile(filename, false));
-    break;
-  case matlab:
-    file.reset(new MatlabFile(filename));
     break;
   case python:
     file.reset(new PythonFile(filename));
