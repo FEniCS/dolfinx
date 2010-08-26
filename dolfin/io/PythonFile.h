@@ -7,15 +7,16 @@
 #ifndef __PYTHON_FILE_H
 #define __PYTHON_FILE_H
 
+#include <string>
+#include <tr1/tuple>
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
 #include "GenericFile.h"
-#include <tr1/tuple>
 
 namespace dolfin
 {
-  class Sample;
 
+  class Sample;
 
   // Represents input/output of data in a format readable by Python
   // (Numeric). The data is written to several files (the variable

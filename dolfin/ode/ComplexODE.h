@@ -122,7 +122,7 @@ namespace dolfin
   {
   public:
 
-    ComplexODE(uint n, real T) : ODE(1, 0.0), j(0)
+    DummyComplexODE(uint n, real T) : ODE(1, 0.0), j(0)
     {
       warning("ComplexODE not available when DOLFIN is compiled with GMP support.");
     }
