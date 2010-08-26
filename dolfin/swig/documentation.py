@@ -63,7 +63,7 @@ def copy_docstrings_module(docstrings):
     # Get absolute path to docstrings module.
     src = os.path.abspath(docstrings.__path__[0])
     # Create destination name and delete iff it exists.
-    dst = os.path.join(os.pardir, os.pardir, "site-packages", "docstrings")
+    dst = os.path.join(os.pardir, os.pardir, "site-packages", "dolfin", "docstrings")
     if os.path.isdir(dst):
         shutil.rmtree(dst)
     # Dump module in the site-packages (dolfin Python layer).
