@@ -5,7 +5,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2010-04-22
+// Last changed: 2010-08-26
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -162,6 +162,7 @@ namespace dolfin
     const GenericFunction& value();
 
     /// Return shared pointer to boundary value g
+    /// Testing multiline comment
     boost::shared_ptr<const GenericFunction> value_ptr();
 
     /// Get Dirichlet values and indicators
