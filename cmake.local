@@ -12,6 +12,6 @@ INSTALLDIR=`pwd`"/local"
 mkdir -p build
 cd build
 
-cmake -DCMAKE_INSTALL_PREFIX=$INSTALLDIR -DCMAKE_BUILD_TYPE=Maintainer ../
+cmake -DCMAKE_INSTALL_PREFIX=$INSTALLDIR -DCMAKE_BUILD_TYPE=Developer ../
 make
 make install

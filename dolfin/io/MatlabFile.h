@@ -7,12 +7,13 @@
 #ifndef __MATLAB_FILE_H
 #define __MATLAB_FILE_H
 
-#include <dolfin/common/types.h>
-#include <dolfin/la/GenericMatrix.h>
+#include <string>
 #include "MFile.h"
 
 namespace dolfin
 {
+
+  class GenericMatrix;
 
   class MatlabFile : public MFile
   {

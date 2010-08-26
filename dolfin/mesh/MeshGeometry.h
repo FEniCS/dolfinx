@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2010-04-29
+// Last changed: 2010-08-26
 
 #ifndef __MESH_GEOMETRY_H
 #define __MESH_GEOMETRY_H
@@ -82,8 +82,8 @@ namespace dolfin
     { return (higher_order_cell_data + (c*_higher_order_num_dof)); }
 
     /// Return array of higher order vertex indices for a specific higher order cell
-    const uint* higher_order_cell(uint c)
-                       const { return (higher_order_cell_data + (c*_higher_order_num_dof)); }
+    const uint* higher_order_cell(uint c) const
+    { return (higher_order_cell_data + (c*_higher_order_num_dof)); }
 
     /// Return array of values for all higher order cell data
     uint* higher_order_cells() { return higher_order_cell_data; }

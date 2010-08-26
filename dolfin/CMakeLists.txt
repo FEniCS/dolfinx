@@ -119,7 +119,9 @@ endif()
 # MTL4
 if (DOLFIN_ENABLE_MTL4 AND MTL4_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_MTL4")
+  list(APPEND DOLFIN_CXX_DEFINITIONS ${MTL4_DEFINITIONS})
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${MTL4_INCLUDE_DIRS})
+  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${MTL4_LIBRARIES})
 endif()
 
 # Trilinos
@@ -202,11 +204,6 @@ add_definitions(${DOLFIN_CXX_DEFINITIONS})
 
 # Add flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
-
-# Report which flags that will be used to build
-message(STATUS "DOLFIN configured with the following flags:")
-message(STATUS "${DOLFIN_CXX_DEFINITIONS}")
-message(STATUS "${CMAKE_CXX_FLAGS}")
 
 # Define libraries
 add_library(dolfin SHARED ${DOLFIN_H} ${HEADERS} ${SOURCES})
