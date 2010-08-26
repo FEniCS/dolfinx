@@ -7,8 +7,7 @@
 #ifndef __M_FILE_H
 #define __M_FILE_H
 
-#include <dolfin/common/types.h>
-#include <dolfin/common/real.h>
+#include <string>
 #include "GenericFile.h"
 
 /// Note: This M file  generator will save the values only with double
@@ -17,6 +16,11 @@
 
 namespace dolfin
 {
+
+  class GenericMatrix;
+  class GenericVector;
+  class Mesh;
+  class Sample;
 
   class MFile : public GenericFile
   {
