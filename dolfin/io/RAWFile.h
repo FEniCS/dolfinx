@@ -24,8 +24,8 @@ namespace dolfin
       /// A Xd3d format for instance
 
       RAWFile(const std::string filename);
-      ~RAWFile();
 
+      ~RAWFile();
 
       void operator<< (const MeshFunction<int>& meshfunction);
       void operator<< (const MeshFunction<unsigned int>& meshfunction);
@@ -33,6 +33,7 @@ namespace dolfin
       void operator<< (const Function& u);
 
     private:
+
       void ResultsWrite(const Function& u) const;
       void rawNameUpdate(const int counter);
 
