@@ -10,6 +10,9 @@ __license__  = "GNU LGPL Version 2.1"
 
 # Modified by <aasmund@simula.no>
 # Modified by Johan Hake, 2009
+# Modified by Kristian B. Oelgaard, 2010
+
+# Last changed: 2010-08-20
 
 import os
 import re
@@ -68,9 +71,22 @@ for (module, module_headers) in headers:
 f.close()
 
 # Added for docstring extraction
-from generate_docstrings import DocstringGenerator
+#from generate_docstrings import DocstringGenerator
 
-g = DocstringGenerator(header_files = docstring_headers, swig_directory = ".", docstring_file_base = "")
-g.generate_doxygen_documentation()
-g.generate_interface_file_from_index()
-g.clean()
+#g = DocstringGenerator(header_files = docstring_headers, swig_directory = ".", docstring_file_base = "")
+#g.generate_doxygen_documentation()
+#g.generate_interface_file_from_index()
+#g.clean()
+
+# Create docstrings.i file from documentation module (only for dolfin.cpp)
+# and dump docstrings module in dolfin/site-packages.
+# Import the docstrings module.
+try:
+    import docstrings
+    from documentation import generate_docstrings, copy_docstrings_module
+    generate_docstrings(docstrings)
+    copy_docstrings_module(docstrings)
+except Exception as what:
+    raise ImportError("Could not import the docstrings module \n  (error: %s),\n\
+  update your PYTHONPATH variable?" % what)
+

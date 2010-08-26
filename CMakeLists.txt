@@ -291,6 +291,13 @@ if (DOLFIN_INSTALL_PYTHON_MODULE_DIR)
 endif()
 
 #------------------------------------------------------------------------------
+# Installation of docstrings
+
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/site-packages/docstrings
+        DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
+        USE_SOURCE_PERMISSIONS)
+
+#------------------------------------------------------------------------------
 # Installation of DOLFIN library
 
 # Append the library version information to the library target properties
