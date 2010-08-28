@@ -45,8 +45,9 @@ for prefix in prefixes:
             cpptest_ext = '.exe'
         print "C++:   ",
         if not test in only_python:
-            output = getoutput("cd %s%scpp && %s .%stest%s" % \
-                               (test, os.path.sep, prefix, os.path.sep, cpptest_ext))
+            output = getoutput("cd %s%scpp && %s .%s%s-test%s" % \
+                               (test, os.path.sep, prefix,
+                                os.path.sep, test, cpptest_ext))
             if "OK" in output:
                 num_tests = int(re.search("OK \((\d+)\)", output).groups()[0])
                 print "OK (%d tests)" % num_tests
