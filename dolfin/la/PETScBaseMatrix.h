@@ -44,18 +44,22 @@ namespace dolfin
     /// Constructor
     PETScBaseMatrix(boost::shared_ptr<Mat> A) : A(A) {}
 
-    /// Resize virtual matrix, all on one processor
-    virtual void resize(uint M, uint N) = 0;
+    /// Resize virtual matrin
+    virtual void resize(uint m, uint n) = 0;
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(uint dim) const
     {
+      assert(dim <= 1);
       if (A)
       {
-        int M(0), N(0);
-        MatGetSize(*A, &M, &N);
-        return (dim == 0 ? M : N);
-      }
+        int m(0), n(0);
+        MatGetSize(*A, &m, &n);
+        if (dim == 0)
+          return m;
+        else
+          return n;
+     }
       else
         return 0;
     }

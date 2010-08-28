@@ -12,7 +12,9 @@
 #include <petscmat.h>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/NoDeleter.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/main/MPI.h>
 #include "PETScVector.h"
 #include "PETScKrylovMatrix.h"
 
@@ -42,10 +44,9 @@ PETScKrylovMatrix::PETScKrylovMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScKrylovMatrix::PETScKrylovMatrix(const PETScVector& x, const PETScVector& y)
+PETScKrylovMatrix::PETScKrylovMatrix(dolfin::uint m, dolfin::uint n)
 {
-  // Create PETSc matrix
-  init(x, y);
+  resize(m, n);
 }
 //-----------------------------------------------------------------------------
 PETScKrylovMatrix::~PETScKrylovMatrix()
@@ -53,46 +54,22 @@ PETScKrylovMatrix::~PETScKrylovMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovMatrix::init(const PETScVector& x, const PETScVector& y)
+void PETScKrylovMatrix::resize(dolfin::uint m, dolfin::uint n)
 {
-  // Get size and local size of given vector
-  int m(0), n(0), M(0), N(0);
-  VecGetLocalSize(*(y.vec()), &m);
-  VecGetLocalSize(*(x.vec()), &n);
-  VecGetSize(*(y.vec()), &M);
-  VecGetSize(*(x.vec()), &N);
+  // Compute local range
+  const std::pair<uint, uint> row_range    = MPI::local_range(m);
+  const std::pair<uint, uint> column_range = MPI::local_range(n);
+  const int m_local = row_range.second - row_range.first;
+  const int n_local = column_range.second - column_range.first;
 
   if (A)
   {
     // Get size and local size of existing matrix
-    int mm(0), nn(0), MM(0), NN(0);
-    MatGetLocalSize(*A, &mm, &nn);
-    MatGetSize(*A, &MM, &NN);
+    int _m(0), _n(0), _m_local(0), _n_local(0);
+    MatGetSize(*A, &_m, &_m);
+    MatGetLocalSize(*A, &_m_local, &_n_local);
 
-    if ( mm == m && nn == n && MM == M && NN == N )
-      return;
-    else
-     A.reset(new Mat, PETScMatrixDeleter());
-  }
-  else
-    A.reset(new Mat, PETScMatrixDeleter());
-
-  MatCreateShell(PETSC_COMM_WORLD, m, n, M, N, (void*) this, A.get());
-  MatShellSetOperation(*A, MATOP_MULT, (void (*)()) usermult);
-}
-//-----------------------------------------------------------------------------
-void PETScKrylovMatrix::resize(int M, int N)
-{
-  // Put here to set up arbitrary Shell of global size M x N
-  // Analagous to the matrix being on one processor.
-
-  if (A)
-  {
-    // Get size and local size of existing matrix
-    int MM(0), NN(0);
-    MatGetSize(*A, &MM, &NN);
-
-    if ( MM == M && NN == N )
+    if (static_cast<int>(m) == _m && static_cast<int>(n) == _n && m_local == _m_local && n_local == _n_local )
       return;
     else
       A.reset(new Mat, PETScMatrixDeleter());
@@ -100,7 +77,7 @@ void PETScKrylovMatrix::resize(int M, int N)
   else
     A.reset(new Mat, PETScMatrixDeleter());
 
-  MatCreateShell(PETSC_COMM_WORLD, M, N, M, N, (void*) this, A.get());
+  MatCreateShell(PETSC_COMM_WORLD, m_local, n_local, m, n, (void*) this, A.get());
   MatShellSetOperation(*A, MATOP_MULT, (void (*)()) usermult);
 }
 //-----------------------------------------------------------------------------
