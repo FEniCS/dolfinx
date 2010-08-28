@@ -186,7 +186,7 @@ void ODESolution::flush() {
 }
 
 //-----------------------------------------------------------------------------
-void ODESolution::eval(const real& t, real* y)
+void ODESolution::eval(const real& t, RealArray& y)
 {
   if (!read_mode) error("Can not evaluate solution");
   if(t > T) error("Requested t > T. t=%f, T=%f", to_double(t), to_double(T));
@@ -201,7 +201,7 @@ void ODESolution::eval(const real& t, real* y)
     // Copy values
     if (cache[i].first == t)
     {
-      real_set(N, y, cache[i].second);
+      real_set(N, y.data().get(), cache[i].second);
       return;
     }
   }
@@ -231,7 +231,7 @@ void ODESolution::eval(const real& t, real* y)
 
   //store in cache
   cache[ringbufcounter].first = t;
-  real_set(N, cache[ringbufcounter].second, y);
+  real_set(N, cache[ringbufcounter].second, y.data().get());
   ringbufcounter = (ringbufcounter + 1) % cache_size;
 }
 //-----------------------------------------------------------------------------

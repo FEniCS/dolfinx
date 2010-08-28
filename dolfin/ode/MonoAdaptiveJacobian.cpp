@@ -18,20 +18,22 @@ using namespace dolfin;
 MonoAdaptiveJacobian::MonoAdaptiveJacobian(MonoAdaptiveTimeSlab& timeslab,
 					   bool implicit, bool piecewise)
   : TimeSlabJacobian(timeslab), ts(timeslab),
-    implicit(implicit), piecewise(piecewise), xx(0), yy(0)
+    implicit(implicit), piecewise(piecewise), xx(ts.N), yy(ts.N)
 {
   //Do nothing
-  xx = new real[ts.N];
-  yy = new real[ts.N];
+  //xx = new real[ts.N];
+  //yy = new real[ts.N];
 
-  real_zero(ts.N, xx);
-  real_zero(ts.N, yy);
+  //real_zero(ts.N, xx);
+  //real_zero(ts.N, yy);
+  xx.zero();
+  yy.zero();
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveJacobian::~MonoAdaptiveJacobian()
 {
-  delete [] xx;
-  delete [] yy;
+  //delete [] xx;
+  //delete [] yy;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MonoAdaptiveJacobian::size(uint dim) const
@@ -58,7 +60,7 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
       const uint noffset = n * ts.N;
 
       // Copy values to xx
-      ts.copy(x, noffset, xx, 0, ts.N);
+      ts.copy(x, noffset, xx);
 
       // Do multiplication
       if (piecewise)
@@ -68,12 +70,12 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
       else
       {
         const real t = a + method.npoint(n) * k;
-        ts.copy(ts.x, noffset, ts.u, 0, ts.N);
+        ts.copy(ts.x, noffset, ts.u);
         ode.M(xx, yy, ts.u, t);
       }
 
       // Copy values from yy
-      ts.copy(yy, 0, y, noffset, ts.N);
+      ts.copy(yy, y, noffset);
     }
   }
 
@@ -100,8 +102,8 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
     */
 
     // Copy values to xx and u
-    ts.copy(x, noffset, xx, 0, ts.N);
-    ts.copy(ts.x, noffset, ts.u, 0, ts.N);
+    ts.copy(x, noffset, xx);
+    ts.copy(ts.x, noffset, ts.u);
 
     // Compute z = df/du * x for current stage
     ode.J(xx, yy, ts.u, t);

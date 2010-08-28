@@ -15,6 +15,7 @@
 #include <utility>
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
+#include <dolfin/common/Array.h>
 #include "Method.h"
 
 namespace dolfin
@@ -109,7 +110,7 @@ namespace dolfin
     void flush();
 
     /// Evaluate (interpolate) value of solution at given time    
-    void eval(const real& t, real* y);
+    void eval(const real& t, RealArray& y);
 
     /// Get timeslab (used when iterating)
     ODESolutionData& get_timeslab(uint index);

@@ -124,11 +124,10 @@ void PythonFile::operator<<(const Sample& sample)
   fp_r.close();
 }
 //-----------------------------------------------------------------------------
-void PythonFile::operator<<(const std::tr1::tuple<uint, real, real*>& sample)
+void PythonFile::operator<<(const std::pair<real, RealArrayRef> sample)
 {  
-  const uint& n = std::tr1::get<0>(sample);
-  const real& t = std::tr1::get<1>(sample);
-  const real* u = std::tr1::get<2>(sample);
+  const real& t      = sample.first;
+  const RealArray& u = sample.second;
 
   // First time
   if ( counter2 == 0 )
@@ -141,7 +140,7 @@ void PythonFile::operator<<(const std::tr1::tuple<uint, real, real*>& sample)
     fp << "t = fromfile('" << filename_t << "', sep=' ')" << std::endl;
     fp << "u = fromfile('" << filename_u << "', sep=' ')" << std::endl;
     fp << std::endl;
-    fp << "u.shape = len(u) //" << n << ", " << n << std::endl;
+    fp << "u.shape = len(u) //" << u.size() << ", " << u.size() << std::endl;
     fp << std::endl;
     fp.close();
   }
@@ -167,7 +166,7 @@ void PythonFile::operator<<(const std::tr1::tuple<uint, real, real*>& sample)
   fp_t << std::setprecision(prec) << t << std::endl;
   
   // Save solution
-  for (uint i=0; i<n; ++i)
+  for (uint i=0; i < u.size(); ++i)
     fp_u << std::setprecision(prec) << u[i] << " ";
   fp_u << std::endl;
 

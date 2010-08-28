@@ -19,7 +19,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   : TimeSlab(ode), solver(0), adaptivity(ode, *method), nj(0), dofs(0),
-    fq(0), rmax(0), x(0), u(0), f(0)
+    fq(0), rmax(0), x(0), u(N), f(N)
 {
   // Choose solver
   solver = choose_solver();
@@ -41,14 +41,15 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   real_zero(nj, x);
 
   // Initialize arrays for u and f
-  u = new real[N];
-  f = new real[N];
+  //u = new real[N];
+  //f = new real[N];
 
   // Evaluate f at initial data for cG(q)
   if (method->type() == Method::cG)
   {
     ode.f(u0, 0.0, f);
-    copy(f, 0, fq, 0, N);
+    copy(f, fq, 0);
+    //copy(f, 0, fq, 0, N);
   }
 }
 //-----------------------------------------------------------------------------
@@ -58,8 +59,8 @@ MonoAdaptiveTimeSlab::~MonoAdaptiveTimeSlab()
   delete [] dofs;
   delete [] fq;
   delete [] x;
-  delete [] u;
-  delete [] f;
+  //delete [] u;
+  //delete [] f;
 }
 //-----------------------------------------------------------------------------
 real MonoAdaptiveTimeSlab::build(real a, real b)
@@ -140,12 +141,12 @@ bool MonoAdaptiveTimeSlab::shift(bool end)
   // Write solution at final time if we should
   if (save_final && end)
   {
-    copy(x, xoffset, u, 0, N);
-    write(N, u);
+    copy(x, xoffset, u);
+    write(u);
   }
 
   // Let user update ODE
-  copy(x, xoffset, u, 0, N);
+  copy(x, xoffset, u);
   if (!ode.update(u, _b, end))
     return false;
 
@@ -266,15 +267,18 @@ void MonoAdaptiveTimeSlab::feval(uint m)
       }
 
       const real t = _a + method->qpoint(m) * (_b - _a);
-      copy(x, (m - 1)*N, u, 0, N);
+      copy(x, (m - 1)*N, u);
       ode.f(u, t, f);
-      copy(f, 0, fq, m*N, N);
+      copy(f, fq, m*N);
     }
     else
     {
       const real t = _a + method->qpoint(m) * (_b - _a);
       //copy(x, m*N, u, 0, N);
-      ode.f(&x[m*N], t, &fq[m*N]);
+      //ode.f(&x[m*N], t, &fq[m*N]);
+      RealArray u(N, &x[m*N]);
+      RealArray y(N, &fq[m*N]);
+      ode.f(u, t, y);
       //copy(f, 0, fq, m*N, N);
     }
 
