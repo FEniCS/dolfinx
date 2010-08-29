@@ -3,9 +3,6 @@ cmake_minimum_required(VERSION 2.8)
 
 project(extrapolation-demo)
 
-# Permit user to set location of the config file
-#set(CMAKE_MODULE_PATH CACHE STRING "User-specified location of the DOLFIN CMake configure file" )
-
 # Set verbose output while testing CMake
 set(CMAKE_VERBOSE_MAKEFILE 1)
 
@@ -20,6 +17,9 @@ endif()
 
 # Compiler definitions
 add_definitions(${DOLFIN_CXX_DEFINITIONS})
+
+# Add special DOLFIN compiler flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
 
 # DOLFIN include directories
 include_directories (${DOLFIN_INCLUDE_DIRS})
