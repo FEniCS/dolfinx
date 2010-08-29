@@ -19,7 +19,7 @@ set(DOLFIN_CXX_FLAGS "@CMAKE_CXX_FLAGS@")
 # Include directories
 set(DOLFIN_INCLUDE_DIRS "@DOLFIN_INCLUDE_DIRECTORIES@;@CMAKE_INSTALL_PREFIX@/@DOLFIN_INCLUDE_DIR@;")
 
-# Library directories
+# Third-party library directories
 set(DOLFIN_LIBRARY_DIR "@DOLFIN_TARGET_LINK_LIBRARIES_DIRS@")
 
 # Libraries

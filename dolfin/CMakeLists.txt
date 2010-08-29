@@ -5,7 +5,7 @@ install(FILES ${DOLFIN_H} DESTINATION ${DOLFIN_INCLUDE_DIR} COMPONENT Developmen
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 #------------------------------------------------------------------------------
-# DOLFIN sorce directories
+# DOLFIN source directories
 
 set(DOLFIN_DIRS
   ale
