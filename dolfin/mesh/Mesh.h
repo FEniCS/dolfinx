@@ -97,7 +97,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     mesh
-    ///         A :cpp:class:`Mesh` object.
+    ///         A Mesh object.
     const Mesh& operator=(const Mesh& mesh);
 
     /// Get number of vertices in mesh.
@@ -281,7 +281,7 @@ namespace dolfin
     /// Get topology associated with mesh.
     ///
     /// *Returns*
-    ///     :cpp:class:`MeshTopology`
+    ///     MeshTopology
     ///         The topology object associated with the mesh.
     MeshTopology& topology() { return _topology; }
 
@@ -291,7 +291,7 @@ namespace dolfin
     /// Get mesh geometry.
     ///
     /// *Returns*
-    ///     :cpp:class:`MeshGeometry`
+    ///     MeshGeometry
     ///         The geometry object associated with the mesh.
     MeshGeometry& geometry() { return _geometry; }
 
@@ -301,7 +301,7 @@ namespace dolfin
     /// Get intersection operator.
     ///
     /// *Returns*
-    ///     :cpp:class:`IntersectionOperator`
+    ///     IntersectionOperator
     ///         The intersection operator object associated with the mesh.
     IntersectionOperator& intersection_operator();
 
@@ -311,7 +311,7 @@ namespace dolfin
     /// Get mesh data.
     ///
     /// *Returns*
-    ///     :cpp:class:`MeshData`
+    ///     MeshData
     ///         The mesh data object associated with the mesh.
     MeshData& data() { return _data; }
 
@@ -321,7 +321,7 @@ namespace dolfin
     /// Get mesh cell type.
     ///
     /// *Returns*
-    ///     :cpp:class:`CellType`
+    ///     CellType
     ///         The cell type object associated with the mesh.
     inline CellType& type() { assert(_cell_type); return *_cell_type; }
 
@@ -374,10 +374,10 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     boundary
-    ///         A :cpp:class:`BoundaryMesh` object.
+    ///         A BoundaryMesh object.
     ///
     ///     method
-    ///         A :cpp:class:`ALEType` (enum).
+    ///         A ALEType (enum).
     ///         Method which defines how the coordinates should be
     ///         moved, default is *hermite*.
     void move(BoundaryMesh& boundary, dolfin::ALEType method=hermite);
@@ -387,10 +387,10 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     mesh
-    ///         A :cpp:class:`Mesh` object.
+    ///         A Mesh object.
     ///
     ///     method
-    ///         A :cpp:class:`ALEType` (enum).
+    ///         A ALEType (enum).
     ///         Method which defines how the coordinates should be
     ///         moved, default is *hermite*.
     void move(Mesh& mesh, dolfin::ALEType method=hermite);
@@ -399,7 +399,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     function
-    ///         A :cpp:class:`Function` object.
+    ///         A Function object.
     void move(const Function& displacement);
 
     /// Smooth internal vertices of mesh by local averaging.
@@ -426,7 +426,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     sub_domain
-    ///         A :cpp:class:`SubDomain` object.
+    ///         A SubDomain object.
     ///
     ///     harmonic_smoothing
     ///         A bool, flag to turn on harmonics smoothing, default
@@ -438,7 +438,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     point
-    ///         A :cpp:class:`Point` object.
+    ///         A Point object.
     ///
     ///     ids_result
     ///         A set of integers.
@@ -451,7 +451,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     points
-    ///         A vector of :cpp:class:`Point` objects.
+    ///         A vector of Point objects.
     ///
     ///     ids_result
     ///         A set of integers.
@@ -465,7 +465,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     entity
-    ///         A :cpp:class:`MeshEntity` object.
+    ///         A MeshEntity object.
     ///
     ///     ids_result
     ///         A list of integers.
@@ -480,7 +480,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     entities
-    ///         A vector of :cpp:class:`MeshEntity` objects.
+    ///         A vector of MeshEntity objects.
     ///
     ///     ids_result
     ///         A set of integers.
@@ -493,7 +493,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     another_mesh
-    ///         A :cpp:class:`Mesh` object.
+    ///         A Mesh object.
     ///
     ///     ids_result
     ///         A set of integers.
@@ -506,7 +506,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     point
-    ///         A :cpp:class:`Point` object.
+    ///         A Point object.
     ///
     /// *Returns*
     ///     integer
@@ -519,10 +519,10 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     point
-    ///         A :cpp:class:`Point` object.
+    ///         A Point object.
     ///
     /// *Returns*
-    ///     :cpp:class:`Point`
+    ///     Point
     ///         The point inside the mesh which is closest to the
     ///         point.
     Point closest_point(const Point& point) const;
@@ -532,7 +532,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     point
-    ///         A :cpp:class:`Point` object.
+    ///         A Point object.
     ///
     /// *Returns*
     ///     integer
@@ -555,10 +555,10 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     point
-    ///         A :cpp:class:`Point` object.
+    ///         A Point object.
     ///
     /// *Returns*
-    ///     pair <:cpp:class:`Point`, integer>
+    ///     pair <Point, integer>
     ///         The point inside the mesh and the corresponding cell
     ///         index which is closest to the point query.
     std::pair<Point,dolfin::uint> closest_point_and_cell(const Point& point) const;
