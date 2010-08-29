@@ -23,7 +23,7 @@ cppdemos = []
 pydemos = []
 for dpath, dnames, fnames in os.walk(demodir):
     if os.path.basename(dpath) == 'cpp':
-        if os.path.isfile(os.path.join(dpath, 'SConstruct')):
+        if os.path.isfile(os.path.join(dpath, 'Makefile')):
             cppdemos.append(dpath)
     elif os.path.basename(dpath) == 'python':
         if os.path.isfile(os.path.join(dpath, 'demo.py')):
@@ -96,10 +96,11 @@ for prefix in prefixes:
         cppdemo_ext = ''
         if platform.system() == 'Windows':
             cppdemo_ext = '.exe'
-        if os.path.isfile(os.path.join(demo, 'demo' + cppdemo_ext)):
+        cppdemo_prefix = demo.split(os.path.sep)[-2]
+        if os.path.isfile(os.path.join(demo, cppdemo_prefix + '-demo' + cppdemo_ext)):
             t1 = time()
-            output = getstatusoutput("cd %s && %s .%sdemo%s" % \
-                                         (demo, prefix, os.path.sep, cppdemo_ext))
+            output = getstatusoutput("cd %s && %s .%s%s-demo%s" % \
+                                         (demo, prefix, os.path.sep, cppdemo_prefix, cppdemo_ext))
             t2 = time()
             timing += [(t2 - t1, demo)]
             if output[0] == 0:
