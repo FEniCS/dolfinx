@@ -28,7 +28,7 @@ include_directories (${DOLFIN_INCLUDE_DIRS})
 link_directories(${DOLFIN_LIBRARY_DIR})
 
 # Executable
-add_executable(cahn-hilliard-demo main.cpp CahnHilliard3D.cpp CahnHilliard2D.cpp)
+add_executable(cahn-hilliard-demo CahnHilliard2D.cpp main.cpp CahnHilliard3D.cpp)
 
 # DOLFIN library
 target_link_libraries(cahn-hilliard-demo ${DOLFIN_LIBRARIES})

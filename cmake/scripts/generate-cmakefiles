@@ -87,5 +87,3 @@ def generate_cmake_files(subdirectory, executable_suffix):
 sub_directories = [('demo', '-demo'), ('test', '-test'), ('bench', '-bench')]
 for sub_dir in sub_directories:
     generate_cmake_files(sub_dir[0], sub_dir[1])
-
-
