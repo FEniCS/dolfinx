@@ -87,7 +87,7 @@ show :
   include(CheckCXXSourceRuns)
   check_cxx_source_runs("
 #include \"petsc.h\"
-#include \"slepc.h\"
+#include \"slepceps.h\"
 int main()
 {
   PetscErrorCode ierr;
