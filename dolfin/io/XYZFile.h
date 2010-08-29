@@ -8,11 +8,13 @@
 #ifndef __XYZ_FILE_H
 #define __XYZ_FILE_H
 
-#include <fstream>
+#include <string>
 #include "GenericFile.h"
 
 namespace dolfin
 {
+
+  class Function;
 
   class XYZFile : public GenericFile
   {
@@ -29,11 +31,11 @@ namespace dolfin
 
   private:
 
-    void ResultsWrite(const Function& u) const;
-    void xyzNameUpdate(const int counter);
+    void results_write(const Function& u) const;
+    void xyz_name_update(int counter);
 
     template<class T>
-    void MeshFunctionWrite(T& meshfunction);
+    void mesh_function_write(T& meshfunction);
 
     // raw filename
     std::string xyz_filename;

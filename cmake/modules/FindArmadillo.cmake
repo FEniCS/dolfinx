@@ -13,6 +13,9 @@
 
 message(STATUS "Checking for package 'Armadillo'")
 
+# FIXME: Look for LAPACK libraries. Required on some platforms. BLAS too?
+#find_package(LAPACK REQUIRED)
+
 find_path(ARMADILLO_INCLUDE_DIRS
   NAMES armadillo
   PATHS ${ARMADILLO_DIR} $ENV{ARMADILLO_DIR}
@@ -27,6 +30,8 @@ find_library(ARMADILLO_LIBRARIES
   DOC "The Armadillo library"
   )
 mark_as_advanced(ARMADILLO_LIBRARIES)
+
+set(${ARMADILLO_LIBRARIES} "${ARMADILLO_LIBRARIES}")
 
 # Special fixes for Mac
 if (APPLE)
@@ -86,20 +91,48 @@ int main() {
     set(ARMADILLO_VERSION ${OUTPUT} CACHE TYPE STRING)
   endif()
 
-  check_cxx_source_runs("
+  # Check that C++ program runs
+  check_cxx_source_compiles("
 #include <armadillo>
-
 int main()
 {
  arma::mat A = arma::rand(4, 4);
  arma::vec b = arma::rand(4);
  arma::vec x = arma::solve(A, b);
-
  return 0;
 }
 "
     ARMADILLO_TEST_RUNS)
 
+  # If program runs, trying adding LAPACK library and test again
+  if(NOT ARMADILLO_TEST_RUNS)
+    find_package(LAPACK)
+    if (LAPACK_LIBRARIES)
+      set(CMAKE_REQUIRED_LIBRARIES "${ARMADILLO_LIBRARIES};${LAPACK_LIBRARIES}")
+      check_cxx_source_runs("
+#include <armadillo>
+int main()
+{
+ arma::mat A = arma::rand(4, 4);
+ arma::vec b = arma::rand(4);
+ arma::vec x = arma::solve(A, b);
+ return 0;
+}
+"
+      ARMADILLO_LAPACK_TEST_RUNS)
+
+      # Add LAPACK libary if required
+      if (ARMADILLO_LAPACK_TEST_RUNS)
+        set(ARMADILLO_LIBRARIES "${ARMADILLO_LIBRARIES};${LAPACK_LIBRARIES}")
+      endif()
+
+    endif()
+  endif()
+endif()
+
+# Set test run to 'true' if test runs with or without LAPACK lib
+if(ARMADILLO_TEST_RUNS OR ARMADILLO_LAPACK_TEST_RUNS)
+  set(ARMADILLO_TEST_RUNS TRUE)
 endif()
 
 # Standard package handling

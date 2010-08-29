@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2005-02-02
-// Last changed: 2008-10-06
+// Last changed: 2010-08-26
 
 #ifndef __COMPLEX_ODE_H
 #define __COMPLEX_ODE_H
@@ -118,11 +118,11 @@ namespace dolfin
   /// Dummy implementation of ComplexODE used when DOLFIN is compiled
   /// with GMP support in which case ComplexODE is not available
 
-  class ComplexODE : public ODE
+  class DummyComplexODE : public ODE
   {
   public:
 
-    ComplexODE(uint n, real T) : ODE(1, 0.0), j(0)
+    DummyComplexODE(uint n, real T) : ODE(1, 0.0), j(0)
     {
       warning("ComplexODE not available when DOLFIN is compiled with GMP support.");
     }
@@ -136,6 +136,10 @@ namespace dolfin
     double j;
 
   };
+
+  // Use typedef to not confuse documentation extraction scripts
+  typedef DummyComplexODE ComplexODE;
+
 }
 
 #endif

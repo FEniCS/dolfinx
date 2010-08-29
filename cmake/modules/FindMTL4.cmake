@@ -1,8 +1,10 @@
 # - Try to find MTL4
 # Once done this will define
 #
-#  MTL4_FOUND       - system has MTL4
+#  MTL4_FOUND        - system has MTL4
 #  MTL4_INCLUDE_DIRS - include directories for MTL4
+#  MTL4_LIBRARIES    - libaries defintions for MTL4
+#  MTL4_DEFINITIONS  - compiler defintions for MTL4
 
 message(STATUS "Checking for package 'MTL4'")
 
@@ -11,6 +13,13 @@ find_path(MTL4_INCLUDE_DIRS boost/numeric/mtl/mtl.hpp
   PATHS ${MTL4_DIR} $ENV{MTL4_DIR}
   DOC "Directory where the MTL4 header is located"
   )
+
+# Check for BLAS and enable if found
+find_package(BLAS QUIET)
+if (BLAS_FOUND)
+  set(MTL4_LIBRARIES ${BLAS_LIBRARIES})
+  set(MTL4_DEFINITIONS "-DMTL_HAS_BLAS")
+endif()
 
 # Try compiling and running test program
 if (MTL4_INCLUDE_DIRS)
@@ -22,6 +31,8 @@ if (MTL4_INCLUDE_DIRS)
 
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES "${MTL4_INCLUDE_DIRS};${Boost_INCLUDE_DIR}")
+  set(CMAKE_REQUIRED_LIBRARIES ${MTL4_LIBRARIES})
+  set(CMAKE_REQUIRED_FLAGS ${MTL4_DEFINITIONS})
 
   # Build and run test program
   include(CheckCXXSourceRuns)

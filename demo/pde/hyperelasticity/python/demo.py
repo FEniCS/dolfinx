@@ -11,56 +11,65 @@ __license__  = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
-# Optimize compilation of the form
+# Optimization options for the form
 parameters["form_compiler"]["cpp_optimize"] = True
-parameters["form_compiler"]["optimize"]     = True
+ffc_options = {"optimize": True, \
+               "eliminate_zeros": True, \
+               "precompute_basis_const": True, \
+               "precompute_ip_const": True}
+
 
 # Create mesh and define function space
-mesh = UnitCube(8, 8, 8)
+mesh = UnitCube(16, 16, 16)
 V = VectorFunctionSpace(mesh, "CG", 1)
 
 # Define Dirichlet boundary (x = 0 or x = 1)
 c = Expression(("0.0", "0.0", "0.0"))
-r = Expression(("0.0",
-                "y0 + (x[1] - y0) * cos(theta) - (x[2] - z0) * sin(theta) - x[1]",
-                "z0 + (x[1] - y0) * sin(theta) + (x[2] - z0) * cos(theta) - x[2]"),
-                defaults = dict(y0 = 0.5, z0 = 0.5, theta = pi / 3))
+r = Expression(("scale*0.0",
+                "scale*(y0 + (x[1] - y0)*cos(theta) - (x[2] - z0)*sin(theta) - x[1])",
+                "scale*(z0 + (x[1] - y0)*sin(theta) + (x[2] - z0)*cos(theta) - x[2])"),
+                defaults = dict(scale = 0.5, y0 = 0.5, z0 = 0.5, theta = pi/3))
 
-left, right = compile_subdomains(["(fabs(x[0]) < DOLFIN_EPS) && on_boundary",
-                                  "(fabs(x[0] - 1.0) < DOLFIN_EPS) && on_boundary"])
+left, right = compile_subdomains(["(std::abs(x[0])       < DOLFIN_EPS) && on_boundary",
+                                  "(std::abs(x[0] - 1.0) < DOLFIN_EPS) && on_boundary"])
 
 bcl = DirichletBC(V, c, left)
 bcr = DirichletBC(V, r, right)
 
 # Define variational problem
-v  = TestFunction(V)           # Test function
-du = TrialFunction(V)          # Incremental displacement
-u  = Function(V)               # Displacement from previous iteration
+v  = TestFunction(V)            # Test function
+du = TrialFunction(V)           # Incremental displacement
+u  = Function(V)                # Displacement from previous iteration
 B  = Constant((0.0, 0.0, 0.0))  # Body force per unit mass
-T  = Constant((0.0, 0.0, 0.0)) # Traction force on the boundary
+T  = Constant((0.0, 0.0, 0.0))  # Traction force on the boundary
 
 # Kinematics
 I = Identity(V.cell().d)    # Identity tensor
-F = I + grad(u)            # Deformation gradient
-E = (F.T*F - I)/2          # Green-Lagrange strain tensor
+F = I + grad(u)             # Deformation gradient
+C = F.T*F                   # Right Cauchy-Green tensor
 
-# Material constants
-Em = 10.0
-nu = 0.3
-mu    = Constant(Em / (2*(1 + nu))) # Lame's constants
-lmbda = Constant(Em * nu / ((1 + nu) * (1 - 2 * nu)))
+# Invariants of deformation tenros
+Ic = tr(C)
+J  = det(F)
 
-# Potential energy function
-psi = (lmbda/2*(tr(E)**2) + mu*tr(E*E))*dx - inner(B, u)*dx - inner(T, u)*ds
+# Elasticity parameters
+Em, nu = 10.0, 0.3
+mu, lmbda = Constant(Em/(2*(1 + nu))), Constant(Em*nu/((1 + nu)*(1 - 2*nu)))
 
-# Take directional derivative about u in the direction of v
-L = derivative(psi, u, v)
+# Stored strain energy density (compressible neo-Hookean model)
+psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2
 
-# Compute Jacobian
+# Total potential energy
+Pi = psi*dx - inner(B, u)*dx - inner(T, u)*ds
+
+# First variation of psi (directional derivative about u in the direction of v)
+L = derivative(Pi, u, v)
+
+# Compute Jacobian of L
 a = derivative(L, u, du)
 
 # Solve nonlinear variational problem
-problem = VariationalProblem(a, L, [bcl, bcr], nonlinear = True)
+problem = VariationalProblem(a, L, [bcl, bcr], nonlinear = True, form_compiler_parameters = ffc_options)
 problem.solve(u)
 
 # Save solution in VTK format

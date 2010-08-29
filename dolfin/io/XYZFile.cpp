@@ -36,10 +36,10 @@ XYZFile::~XYZFile()
 void XYZFile::operator<<(const Function& u)
 {
   // Update xyz file name and clear file
-  xyzNameUpdate(counter);
+  xyz_name_update(counter);
 
   // Write results
-  ResultsWrite(u);
+  results_write(u);
 
   // Increase the number of times we have saved the function
   counter++;
@@ -48,7 +48,7 @@ void XYZFile::operator<<(const Function& u)
        << ") to file " << filename << " in xd3d xyz format." << endl;
 }
 //----------------------------------------------------------------------------
-void XYZFile::ResultsWrite(const Function& u) const
+void XYZFile::results_write(const Function& u) const
 {
   // Open file
   std::ofstream fp(xyz_filename.c_str(), std::ios_base::app);
@@ -87,7 +87,7 @@ void XYZFile::ResultsWrite(const Function& u) const
   }
 }
 //----------------------------------------------------------------------------
-void XYZFile::xyzNameUpdate(const int counter)
+void XYZFile::xyz_name_update(int counter)
 {
   std::string filestart, extension;
   std::ostringstream fileid, newfilename;
@@ -111,10 +111,10 @@ void XYZFile::xyzNameUpdate(const int counter)
 }
 //----------------------------------------------------------------------------
 template<class T>
-void XYZFile::MeshFunctionWrite(T& meshfunction)
+void XYZFile::mesh_function_write(T& meshfunction)
 {
   // Update xyz file name and clear file
-  xyzNameUpdate(counter);
+  xyz_name_update(counter);
 
   Mesh& mesh = meshfunction.mesh();
 

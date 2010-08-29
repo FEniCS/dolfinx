@@ -9,6 +9,10 @@
 #
 # This config script is (very loosley) based on a PETSc CMake script by Jed Brown.
 
+# NOTE: The PETSc Makefile returns a bunch of libraries with '-L' and '-l',
+# wheres we would prefer complete paths. For a discussion, see
+# http://www.cmake.org/Wiki/CMake:Improving_Find*_Modules#Current_workarounds
+
 message(STATUS "Checking for package 'PETSc'")
 
 # Set debian_arches (PETSC_ARCH for Debian-style installations)
@@ -156,4 +160,4 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(PETSc
   "PETSc could not be found. Be sure to set PETSC_DIR and PETSC_ARCH."
-  PETSC_DIR PETSC_INCLUDE_DIRS PETSC_LIBRARIES)
+  PETSC_DIR PETSC_INCLUDE_DIRS PETSC_LIBRARIES PETSC_TEST_RUNS)

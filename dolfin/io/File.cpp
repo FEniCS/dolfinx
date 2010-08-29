@@ -18,8 +18,6 @@
 #include <dolfin/function/Function.h>
 #include "File.h"
 #include "XMLFile.h"
-#include "MatlabFile.h"
-#include "OctaveFile.h"
 #include "PythonFile.h"
 #include "VTKFile.h"
 #include "RAWFile.h"
@@ -55,8 +53,6 @@ File::File(const std::string filename, std::string encoding)
   }
   else if (extension == ".xml")
     file.reset(new XMLFile(filename, false));
-  else if (extension == ".m")
-    file.reset(new OctaveFile(filename));
   else if (extension == ".py")
     file.reset(new PythonFile(filename));
   else if (extension == ".pvd")
@@ -77,12 +73,6 @@ File::File(const std::string filename, Type type, std::string encoding)
   {
   case xml:
     file.reset(new XMLFile(filename, false));
-    break;
-  case matlab:
-    file.reset(new MatlabFile(filename));
-    break;
-  case octave:
-    file.reset(new OctaveFile(filename));
     break;
   case python:
     file.reset(new PythonFile(filename));

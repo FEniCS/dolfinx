@@ -23,8 +23,8 @@ mark_as_advanced(BLAS_INCLUDE_DIRS)
 # Check for library
 find_library(BLAS_LIBRARIES
   NAMES atlas cblas blas
-  PATHS ${BLAS_DIR} $ENV{BLAS_DIR}/lib
-  PATH_SUFFIXES atlas
+  PATHS ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib
+  PATH_SUFFIXES atlas-amd64sse3 atlas
   DOC "The BLAS library"
   )
 mark_as_advanced(BLAS_LIBRARIES)

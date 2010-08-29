@@ -1,13 +1,15 @@
 # Copyright (C) 2009 Harish Narayanan.
 # Licensed under the GNU LGPL Version 2.1.
 #
+# Modified by Garth N. Wells, 2010.
+#
 # First added:  2009-09-29
 # Last changed:
 #
 # The bilinear form a(v, u) and linear form L(v) for
 # a hyperelastic model.
 #
-# Compile this form with FFC: ffc -l dolfin HyperElasticity.ufl.
+# Compile this form with FFC: ffc -l dolfin -feliminate_zeros -fprecompute_basis_const -fprecompute_ip_const HyperElasticity.ufl
 
 # Function spaces
 element = VectorElement("Lagrange", "tetrahedron", 1)
@@ -17,24 +19,31 @@ v  = TestFunction(element)      # Test function
 du = TrialFunction(element)     # Incremental displacement
 
 # Functions
-u  = Coefficient(element)          # Displacement from previous iteration
-B  = Coefficient(element)          # Body force per unit mass
-T  = Coefficient(element)          # Traction force on the boundary
+u  = Coefficient(element)       # Displacement from previous iteration
+B  = Coefficient(element)       # Body force per unit mass
+T  = Coefficient(element)       # Traction force on the boundary
 
 # Kinematics
-I = Identity(v.cell().d)        # Identity tensor
+I = Identity(element.cell().d)  # Identity tensor
 F = I + grad(u)                 # Deformation gradient
-E = (F.T*F - I)/2               # Euler-Lagrange strain tensor
+C = F.T*F                       # Right Cauchy-Green tensor
 
-# Material constants
+# Invariants of deformation tenros
+Ic = tr(C)
+J  = det(F)
+
+# Elasticity parameters
 mu    = Constant("tetrahedron")
 lmbda = Constant("tetrahedron")
 
-# Potential energy function
-psi = (lmbda/2*(tr(E)**2) + mu*tr(E*E))*dx - dot(B, u)*dx - dot(T, u)*ds
+# Stored strain energy density (compressible neo-Hookean model)
+psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2
 
-# Take directional derivative about u in the direction of v
-L = derivative(psi, u, v)
+# Total potential energy
+Pi = psi*dx - inner(B, u)*dx - inner(T, u)*ds
 
-# Compute Jacobian
+# First variation of psi (directional derivative about u in the direction of v)
+L = derivative(Pi, u, v)
+
+# Compute Jacobian of L
 a = derivative(L, u, du)

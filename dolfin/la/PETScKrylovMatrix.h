@@ -11,8 +11,8 @@
 
 #ifdef HAS_PETSC
 
+#include <string>
 #include <dolfin/common/types.h>
-#include <dolfin/log/dolfin_log.h>
 #include "PETScBaseMatrix.h"
 
 namespace dolfin
@@ -41,16 +41,13 @@ namespace dolfin
     PETScKrylovMatrix();
 
     /// Create a virtual matrix matching the given vectors
-    PETScKrylovMatrix(const PETScVector& x, const PETScVector& y);
+    PETScKrylovMatrix(uint m, uint n);
 
     /// Destructor
     virtual ~PETScKrylovMatrix();
 
-    /// Initialize virtual matrix matching the given vectors
-    void init(const PETScVector& x, const PETScVector& y);
-
-    /// Resize virtual matrix, all on one processor
-    void resize(int M, int N);
+    /// Resize virtual matrix
+    void resize(uint m, uint n);
 
     /// Compute product y = Ax
     virtual void mult(const PETScVector& x, PETScVector& y) const = 0;

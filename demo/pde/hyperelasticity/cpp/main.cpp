@@ -54,6 +54,8 @@ public:
 
   void eval(Array<double>& values, const Array<double>& x) const
   {
+    const double scale = 0.5;
+
     // Center of rotation
     double y0 = 0.5;
     double z0 = 0.5;
@@ -67,8 +69,8 @@ public:
 
     // Rotate at right end
     values[0] = 0.0;
-    values[1] = y - x[1];
-    values[2] = z - x[2];
+    values[1] = scale*(y - x[1]);
+    values[2] = scale*(z - x[2]);
   }
 
 };
@@ -76,7 +78,7 @@ public:
 int main()
 {
   // Create mesh and define function space
-  UnitCube mesh (8, 8, 8);
+  UnitCube mesh (16, 16, 16);
   HyperElasticity::FunctionSpace V(mesh);
 
   // Define Dirichlet boundary condition
@@ -101,8 +103,8 @@ int main()
   // Set material parameters
   double E  = 10.0;
   double nu = 0.3;
-  Constant mu(E / (2*(1 + nu)));
-  Constant lambda(E*nu / ((1 + nu)*(1 - 2*nu)));
+  Constant mu(E/(2*(1 + nu)));
+  Constant lambda(E*nu/((1 + nu)*(1 - 2*nu)));
 
   // Create forms
   HyperElasticity::BilinearForm a(V, V);
