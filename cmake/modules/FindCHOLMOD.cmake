@@ -9,9 +9,13 @@ message(STATUS "Checking for package 'CHOLMOD'")
 
 # Find packages that CHOLMOD depends on
 find_package(AMD)
+message("Found AMD? ${AMD_FOUND}")
 find_package(BLAS)
+message("Found BLAS? ${BLAS_FOUND}")
 find_package(ParMETIS)
+message("Found ParMETIS? ${PARMETIS_FOUND}")
 find_package(LAPACK)
+message("Found LAPACK? ${LAPACK_FOUND}")
 
 # FIXME: Should we have separate FindXX modules for CAMD, COLAMD, and CCOLAMD?
 # FIXME: find_package(CAMD)
@@ -22,7 +26,7 @@ find_package(LAPACK)
 # FIXME: framework on Darwin).
 
 # Check for CHOLMOS if all the dependencies are found
-if (AMD_FOUND AND BLAS_FOUND AND ParMETIS_FOUND AND LAPACK_FOUND)
+if (AMD_FOUND AND BLAS_FOUND AND PARMETIS_FOUND AND LAPACK_FOUND)
 
   # Check for header file
   find_path(CHOLMOD_INCLUDE_DIRS cholmod.h

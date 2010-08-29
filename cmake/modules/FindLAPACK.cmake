@@ -29,11 +29,7 @@ find_library(LAPACK_LIBRARIES
 mark_as_advanced(LAPACK_LIBRARIES)
 
 # Standard package handling
-#include(FindPackageHandleStandardArgs)
-#find_package_handle_standard_args(LAPACK
-#  "LAPACK could not be found. Be sure to set LAPACK_DIR."
-#  LAPACK_INCLUDE_DIRS LAPACK_LIBRARIES)
-#include(FindPackageHandleStandardArgs)
-#find_package_handle_standard_args(LAPACK
-#  "LAPACK could not be found. Be sure to set LAPACK_DIR."
-#  LAPACK_LIBRARIES)
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(LAPACK
+  "LAPACK could not be found. Be sure to set LAPACK_DIR."
+  LAPACK_LIBRARIES)
