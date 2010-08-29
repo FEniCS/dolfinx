@@ -21,14 +21,11 @@ add_definitions(${DOLFIN_CXX_DEFINITIONS})
 # Add special DOLFIN compiler flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
 
-# DOLFIN include directories
-include_directories (${DOLFIN_INCLUDE_DIRS})
-
-# DOLFIN library directories
-link_directories(${DOLFIN_LIBRARY_DIR})
+# Include directories
+include_directories (${DOLFIN_INCLUDE_DIRS} ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 
 # Executable
 add_executable(fem-test test.cpp)
 
-# DOLFIN library
-target_link_libraries(fem-test ${DOLFIN_LIBRARIES})
+# Target libraries
+target_link_libraries(fem-test ${DOLFIN_LIBRARIES} ${DOLFIN_3RD_PARTY_LIBRARIES})
