@@ -18,19 +18,19 @@ public:
 
   Harmonic() : ODE(2, 4.0 * real_pi()), e(0.0) {}
 
-  void u0(real* u)
+  void u0(RealArray& u)
   {
     u[0] = 0.0;
     u[1] = 1.0;
   }
 
-  void f(const real* u, real t, real* y)
+  void f(const RealArray& u, real t, RealArray& y)
   {
     y[0] = u[1];
     y[1] = - u[0];
   }
 
-  bool update(const real* u, real t, bool end)
+  bool update(const RealArray& u, real t, bool end)
   {
     if ( !end )
       return true;

@@ -78,7 +78,7 @@ public:
     info("Potential at end time: %.6f", to_double(VT));
   }
 
-  void u0(real* u)
+  void u0(RealArray& u)
   {
     // Set initial data
     u[0]  = -85.0;
@@ -107,7 +107,7 @@ public:
     u[0] = -25.0;
   }
 
-  void f(const real* u, real t, real* y)
+  void f(const RealArray& u, real t, RealArray& y)
   {
     compute_currents(u);
     computeGateCoefficients(u);
@@ -137,7 +137,7 @@ public:
     num_fevals++;
   }
 
-  void compute_currents(const real* u)
+  void compute_currents(const RealArray& u)
   {
     V      = u[0];
     m      = u[1];
@@ -189,7 +189,7 @@ public:
     B2       = 1.0 + Trpn_max*K_mTrpn/((Ca_i + K_mTrpn)*(Ca_i + K_mTrpn)) + Cmdn_max*K_mCmdn/((Ca_i + K_mCmdn)*(Ca_i + K_mCmdn));
   }
 
-  void computeGateCoefficients(const real* u)
+  void computeGateCoefficients(const RealArray& u)
   {
     V = u[0];
 
@@ -272,7 +272,7 @@ public:
     w_inf    = 1.0 - 1.0/(1.0 + real_exp((V - 40.0)/-17.0));
   }
 
-  bool update(const real* u, real t, bool end)
+  bool update(const RealArray& u, real t, bool end)
   {
     if ( end )
       VT = u[0];

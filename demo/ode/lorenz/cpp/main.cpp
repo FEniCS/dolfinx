@@ -24,28 +24,28 @@ public:
     r = 28.0;
   }
 
-  void u0(real* u)
+  void u0(RealArray& u)
   {
     u[0] = 1.0;
     u[1] = 0.0;
     u[2] = 0.0;
   }
 
-  void f(const real* u, real t, real* y)
+  void f(const RealArray& u, real t, RealArray& y)
   {
     y[0] = s*(u[1] - u[0]);
     y[1] = r*u[0] - u[1] - u[0]*u[2];
     y[2] = u[0]*u[1] - b*u[2];
   }
 
-  void J(const real* x, real* y, const real* u, real t)
+  void J(const RealArray& x, RealArray& y, const RealArray& u, real t)
   {
     y[0] = s*(x[1] - x[0]);
     y[1] = (r - u[2])*x[0] - x[1] - u[0]*x[2];
     y[2] = u[1]*x[0] + u[0]*x[1] - b*x[2];
   }
 
-  void JT(const real* x, real* y, const real* u, real t)
+  void JT(const RealArray& x, RealArray& y, const RealArray& u, real t)
   {
     y[0] = -x[0]*s + (r-u[2])*x[1] + u[1]*x[2];
     y[1] = s*x[0] - x[1] + u[0]*x[2];

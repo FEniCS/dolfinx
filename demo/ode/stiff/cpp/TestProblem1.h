@@ -17,12 +17,12 @@ public:
     info("The simple test equation: u' = -1000 u, u(0) = 1.");
   }
 
-  void u0(real* u)
+  void u0(RealArray& u)
   {
     u[0] = 1.0;
   }
 
-  void f(const real* u, real t, real* y)
+  void f(const RealArray& u, real t, RealArray& y)
   {
     y[0] = -1000.0 * u[0];
   }
