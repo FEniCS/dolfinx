@@ -238,6 +238,11 @@ if (DOLFIN_ENABLE_UNIT_TESTS)
   find_package(CppUnit)
 endif()
 
+#------------------------------------------------------------------------------
+# Print summary of found and not found optional packages
+
+# FIXME: Use FeatureSummary.cmake to do this
+
 # Gather information about which optional packages were found and not found
 set(OPTIONAL_PACKAGES_NOT_FOUND "")
 set(OPTIONAL_PACKAGES_FOUND "")
