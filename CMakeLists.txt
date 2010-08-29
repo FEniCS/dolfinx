@@ -211,7 +211,6 @@ endif()
 # Check for PETSc and SLEPc
 if (DOLFIN_ENABLE_PETSC)
   find_package(PETSc)
-  message("Found PETSc ${PETSC_FOUND}")
   if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
     find_package(SLEPc)
   endif()
