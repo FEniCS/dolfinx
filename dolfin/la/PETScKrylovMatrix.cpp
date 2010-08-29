@@ -1,10 +1,10 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg and Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Andy R. Terrel, 2005.
 //
 // First added:  2005-01-17
-// Last changed: 2009-08-10
+// Last changed: 2010-08-28
 
 #ifdef HAS_PETSC
 
