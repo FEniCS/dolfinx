@@ -161,13 +161,6 @@ class InputOutput(unittest.TestCase):
         file >> mesh_in
         self.assertEqual(mesh_in.num_vertices(), 64)
 
-    def testMeshMatlab2D(self):
-        """Write matlab format (no double test)"""
-        mesh = UnitSquare(5, 5)
-        file = File("unitsquare.m")
-        file << mesh
-        self.assertEqual(0, 0)
-
     def testMeshFunction(self):
         """Write and read mesh function to/from file"""
         mesh = UnitSquare(1, 1)

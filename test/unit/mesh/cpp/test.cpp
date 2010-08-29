@@ -209,7 +209,6 @@ class InputOutput : public CppUnit::TestFixture
   CPPUNIT_TEST_SUITE(InputOutput);
   CPPUNIT_TEST(testMeshXML2D);
   CPPUNIT_TEST(testMeshXML3D);
-  CPPUNIT_TEST(testMeshMatlab2D);
   CPPUNIT_TEST(testMeshFunction);
   CPPUNIT_TEST_SUITE_END();
 
@@ -235,15 +234,6 @@ public:
     file << mesh_out;
     file >> mesh_in;
     CPPUNIT_ASSERT(mesh_in.num_vertices() == 64);
-  }
-
-  void testMeshMatlab2D()
-  {
-    // Write matlab format (no double test)
-    UnitSquare mesh(5, 5);
-    File file("unitsquare.m");
-    file << mesh;
-    CPPUNIT_ASSERT(0 == 0);
   }
 
   void testMeshFunction()
