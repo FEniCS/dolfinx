@@ -1,0 +1,28 @@
+# Copyright (C) 2010 Anders Logg.
+# Licensed under the GNU LGPL Version 2.1.
+#
+# First added:  2010-08-30
+# Last changed: 2010-08-30
+#
+# The bilinear form a(v, u) and linear form L(v) for the velocity
+# update step in Chorin's method for the incompressible Navier-Stokes
+# equations.
+#
+# Compile this form with FFC: ffc -l dolfin TentativeVelocity.ufl.
+
+# Define function spaces (P2-P1)
+V = VectorElement("CG", triangle, 2)
+Q = FiniteElement("CG", triangle, 1)
+
+# Define trial and test functions
+v = TestFunction(V)
+u = TrialFunction(V)
+
+# Define coefficients
+k  = Constant(triangle)
+u1 = Coefficient(V)
+p1 = Coefficient(Q)
+
+# Define bilinear and linear forms
+a = inner(v, u)*dx
+L = inner(v, u1)*dx - k*inner(v, grad(p1))*dx

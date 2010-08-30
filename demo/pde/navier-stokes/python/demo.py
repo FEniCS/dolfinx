@@ -1,3 +1,6 @@
+"""This demo program solves the incompressible Navier-Stokes equations
+on an L-shaped domain using Chorin's splitting method."""
+
 __author__ = "Anders Logg <logg@simula.no>"
 __date__ = "2010-08-30"
 __copyright__ = "Copyright (C) 2010 " + __author__
@@ -29,7 +32,7 @@ T = 3
 nu = 0.01
 
 # Define time-dependent pressure boundary condition
-p_in  = Expression("sin(3.0*t)")
+p_in = Expression("sin(3.0*t)")
 
 # Define boundary conditions
 noslip  = DirichletBC(V, (0, 0), "on_boundary && x[1] < 1.0 - DOLFIN_EPS && x[0] < 1.0 - DOLFIN_EPS")
@@ -53,7 +56,7 @@ F1 = (1/k)*inner(v, u - u0)*dx + inner(v, grad(u0)*u0)*dx \
 a1 = lhs(F1)
 L1 = rhs(F1)
 
-# Poisson problem for the pressure
+# Pressure update
 a2 = inner(grad(q), grad(p))*dx
 L2 = -(1/k)*q*div(u1)*dx
 
@@ -89,7 +92,7 @@ while t < T + DOLFIN_EPS:
     begin("Computing pressure correction")
     b2 = assemble(L2)
     [bc.apply(A2, b2) for bc in bcp]
-    solve(A2, p1.vector(), b2, 'gmres', 'amg_hypre')
+    solve(A2, p1.vector(), b2, "gmres", "amg_hypre")
     end()
 
     # Velocity correction

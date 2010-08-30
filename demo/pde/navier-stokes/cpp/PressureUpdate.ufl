@@ -1,0 +1,27 @@
+# Copyright (C) 2010 Anders Logg.
+# Licensed under the GNU LGPL Version 2.1.
+#
+# First added:  2010-08-30
+# Last changed: 2010-08-30
+#
+# The bilinear form a(v, u) and linear form L(v) for the pressure
+# update step in Chorin's method for the incompressible Navier-Stokes
+# equations.
+#
+# Compile this form with FFC: ffc -l dolfin PressureUpdate.ufl.
+
+# Define function spaces (P2-P1)
+V = VectorElement("CG", triangle, 2)
+Q = FiniteElement("CG", triangle, 1)
+
+# Define trial and test functions
+q = TestFunction(Q)
+p = TrialFunction(Q)
+
+# Define coefficients
+k  = Constant(triangle)
+u1 = Coefficient(V)
+
+# Define bilinear and linear forms
+a = inner(grad(q), grad(p))*dx
+L = -(1/k)*q*div(u1)*dx
