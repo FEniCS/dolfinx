@@ -35,7 +35,7 @@ namespace dolfin
   class XMLMesh;
   class SubDomain;
 
-  /// A Mesh consists of a set of connected and numbered mesh entities.
+  /// A _Mesh_ consists of a set of connected and numbered mesh entities.
   ///
   /// Both the representation and the interface are
   /// dimension-independent, but a concrete interface is also provided
@@ -63,7 +63,7 @@ namespace dolfin
   ///
   /// Note that for efficiency, only entities of dimension zero
   /// (vertices) and entities of the maximal dimension (cells) exist
-  /// when creating a Mesh. Other entities must be explicitly created
+  /// when creating a _Mesh_. Other entities must be explicitly created
   /// by calling init(). For example, all edges in a mesh may be
   /// created by a call to mesh.init(1). Similarly, connectivities
   /// such as all edges connected to a given vertex must also be
@@ -80,7 +80,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     mesh
-    ///         A Mesh object.
+    ///         A _Mesh_ object.
     Mesh(const Mesh& mesh);
 
     /// Create mesh from data file.
@@ -97,7 +97,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     mesh
-    ///         A Mesh object.
+    ///         A _Mesh_ object.
     const Mesh& operator=(const Mesh& mesh);
 
     /// Get number of vertices in mesh.
@@ -279,7 +279,7 @@ namespace dolfin
     /// Get topology associated with mesh.
     ///
     /// *Returns*
-    ///     MeshTopology
+    ///     _MeshTopology_
     ///         The topology object associated with the mesh.
     MeshTopology& topology() { return _topology; }
 
@@ -289,7 +289,7 @@ namespace dolfin
     /// Get mesh geometry.
     ///
     /// *Returns*
-    ///     MeshGeometry
+    ///     _MeshGeometry_
     ///         The geometry object associated with the mesh.
     MeshGeometry& geometry() { return _geometry; }
 
@@ -299,7 +299,7 @@ namespace dolfin
     /// Get intersection operator.
     ///
     /// *Returns*
-    ///     IntersectionOperator
+    ///     _IntersectionOperator_
     ///         The intersection operator object associated with the mesh.
     IntersectionOperator& intersection_operator();
 
@@ -309,7 +309,7 @@ namespace dolfin
     /// Get mesh data.
     ///
     /// *Returns*
-    ///     MeshData
+    ///     _MeshData_
     ///         The mesh data object associated with the mesh.
     MeshData& data() { return _data; }
 
@@ -319,7 +319,7 @@ namespace dolfin
     /// Get mesh cell type.
     ///
     /// *Returns*
-    ///     CellType
+    ///     _CellType_
     ///         The cell type object associated with the mesh.
     inline CellType& type() { assert(_cell_type); return *_cell_type; }
 
@@ -372,7 +372,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     boundary
-    ///         A BoundaryMesh object.
+    ///         A _BoundaryMesh_ object.
     ///
     ///     method
     ///         A ALEType (enum).
@@ -385,7 +385,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     mesh
-    ///         A Mesh object.
+    ///         A _Mesh_ object.
     ///
     ///     method
     ///         A ALEType (enum).
@@ -397,7 +397,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     function
-    ///         A Function object.
+    ///         A _Function_ object.
     void move(const Function& displacement);
 
     /// Smooth internal vertices of mesh by local averaging.
@@ -424,7 +424,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     sub_domain
-    ///         A SubDomain object.
+    ///         A _SubDomain_ object.
     ///
     ///     harmonic_smoothing
     ///         A bool, flag to turn on harmonics smoothing, default
@@ -436,7 +436,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     point
-    ///         A Point object.
+    ///         A _Point_ object.
     ///
     ///     ids_result
     ///         A set of integers.
@@ -449,7 +449,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     points
-    ///         A vector of Point objects.
+    ///         A vector of _Point_ objects.
     ///
     ///     ids_result
     ///         A set of integers.
@@ -463,7 +463,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     entity
-    ///         A MeshEntity object.
+    ///         A _MeshEntity_ object.
     ///
     ///     ids_result
     ///         A list of integers.
@@ -478,7 +478,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     entities
-    ///         A vector of MeshEntity objects.
+    ///         A vector of _MeshEntity_ objects.
     ///
     ///     ids_result
     ///         A set of integers.
@@ -491,7 +491,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     another_mesh
-    ///         A Mesh object.
+    ///         A _Mesh_ object.
     ///
     ///     ids_result
     ///         A set of integers.
@@ -504,7 +504,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     point
-    ///         A Point object.
+    ///         A _Point_ object.
     ///
     /// *Returns*
     ///     integer
@@ -517,7 +517,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     point
-    ///         A Point object.
+    ///         A _Point_ object.
     ///
     /// *Returns*
     ///     Point
@@ -530,7 +530,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     point
-    ///         A Point object.
+    ///         A _Point_ object.
     ///
     /// *Returns*
     ///     integer
@@ -553,10 +553,10 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     point
-    ///         A Point object.
+    ///         A _Point_ object.
     ///
     /// *Returns*
-    ///     pair <Point, integer>
+    ///     pair <_Point_, integer>
     ///         The point inside the mesh and the corresponding cell
     ///         index which is closest to the point query.
     std::pair<Point,dolfin::uint> closest_point_and_cell(const Point& point) const;
