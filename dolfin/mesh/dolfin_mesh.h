@@ -11,7 +11,6 @@
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Face.h>
 #include <dolfin/mesh/Facet.h>
-#include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/FacetCell.h>
 #include <dolfin/mesh/MeshTopology.h>
