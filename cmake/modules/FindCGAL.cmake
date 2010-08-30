@@ -9,16 +9,11 @@
 message(STATUS "Checking for package 'CGAL'")
 
 # Call CGAL supplied CMake script
-find_package(CGAL PATHS $ENV{CGAL_DIR}/lib)
+find_package(CGAL PATHS ${CGAL_DIR}/lib $ENV{CGAL_DIR}/lib)
 
 # Set variables
 set(CGAL_INCLUDE_DIRS ${CGAL_INCLUDE_DIRS})
 set(CGAL_LIBRARIES    "${CGAL_LIBRARY};${CGAL_3RD_PARTY_LIBRARIES}")
-
-# Check if we need to add special compiler option for GNU compilers
-if (CMAKE_COMPILER_IS_GNUCXX)
-  set(CGAL_DEFINITIONS "-frounding-math")
-endif()
 
 # Try compiling and running test program
 if (CGAL_INCLUDE_DIRS AND CGAL_LIBRARIES)
@@ -26,7 +21,7 @@ if (CGAL_INCLUDE_DIRS AND CGAL_LIBRARIES)
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${CGAL_INCLUDE_DIRS})
   set(CMAKE_REQUIRED_LIBRARIES ${CGAL_LIBRARIES})
-  set(CMAKE_REQUIRED_FLAGS ${CGAL_DEFINITIONS})
+  set(CMAKE_REQUIRED_FLAGS "-frounding-math")
 
   # Build and run test program
   include(CheckCXXSourceRuns)
@@ -37,7 +32,7 @@ if (CGAL_INCLUDE_DIRS AND CGAL_LIBRARIES)
 #include <CGAL/AABB_traits.h>
 #include <CGAL/AABB_triangle_primitive.h>
 
-#include <CGAL/Simple_cartesian.h> 
+#include <CGAL/Simple_cartesian.h>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
@@ -77,12 +72,12 @@ int main()
   Point_3 p2(1,0,0);
   Point_3 p3(0,1,0);
   Point_3 p4(0,0,1);
-  
+
   Polyhedron_3 P;
   P.make_tetrahedron(p1,p2,p3,p4);
   Nef_polyhedron_3 NP(P);
   NP.transform(Aff_transformation_3(CGAL::TRANSLATION, Vector_3(-1, 1, 1)));
-    
+
   //Inexact points
   Point a(1.0, 0.0, 0.0);
   Point b(0.0, 1.0, 0.0);

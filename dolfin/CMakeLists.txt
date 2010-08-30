@@ -79,16 +79,12 @@ if (DOLFIN_ENABLE_MPI AND MPI_FOUND)
   # FIXME: to not owervriting any user-specified CMAKE_CXX_COMPILER.
   list(APPEND DOLFIN_CXX_FLAGS ${MPI_COMPILE_FLAGS})
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${MPI_INCLUDE_PATH})
-  list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${MPI_LINK_FLAGS})
+  # FIXME: Is this linker flag required?
+  #list(APPEND DOLFIN_TARGET_LINK_FLAGS ${MPI_LINK_FLAGS})
 
   # Necessary flags for MPICH2
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DMPICH_IGNORE_CXX_SEEK")
 
-  # FIXME: Need to consider these MPI variables as well:
-  # FIXME: Don't the MPI wrapper mpicxx take care of this?
-  # MPI_COMPILE_FLAGS          Compilation flags for MPI programs
-  # MPI_INCLUDE_PATH           Include path(s) for MPI header
-  # MPI_LINK_FLAGS             Linking flags for MPI programs
 endif()
 
 # CGAL
@@ -189,6 +185,10 @@ endif()
 
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
+
+# Remove duplicates in lists
+list(REMOVE_DUPLICATES DOLFIN_INCLUDE_DIRECTORIES)
+list(REMOVE_DUPLICATES DOLFIN_TARGET_LINK_LIBRARIES)
 
 # Add link directories
 #link_directories(${DOLFIN_TARGET_LINK_LIBRARIES_DIRS})

@@ -9,7 +9,7 @@ message(STATUS "Checking for package 'AMD'")
 
 # Check for header file
 find_path(AMD_INCLUDE_DIRS amd.h
- PATHS "$ENV{AMD_DIR}/include;${CMAKE_SYSTEM_INCLUDE_PATH}"
+ PATHS ${AMD_DIR}/include $ENV{AMD_DIR}/include
  PATH_SUFFIXES suitesparse ufsparse
  DOC "Directory where the AMD header is located"
  )
@@ -17,7 +17,7 @@ mark_as_advanced(AMD_INCLUDE_DIRS)
 
 # Check for AMD library
 find_library(AMD_LIBRARIES amd
-  PATHS "$ENV{AMD_DIR}/lib;${CMAKE_SYSTEM_LIBRARY_PATH}"
+  PATHS ${AMD_DIR}/lib $ENV{AMD_DIR}/lib
   DOC "The AMD library"
   )
 mark_as_advanced(AMD_LIBRARY)

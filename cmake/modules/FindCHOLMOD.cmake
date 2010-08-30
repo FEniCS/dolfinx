@@ -30,29 +30,25 @@ find_path(CHOLMOD_INCLUDE_DIRS cholmod.h
 
 # Check for CHOLMOD library
 find_library(CHOLMOD_LIBRARY cholmod
-  PATHS ${CHOLMOD_DIR} $ENV{CHOLMOD_DIR}
-  PATH_SUFFIXES lib
+  PATHS ${CHOLMOD_DIR}/lib $ENV{CHOLMOD_DIR}/lib
   DOC "The CHOLMOD library"
   )
 
 # Check for CAMD library
 find_library(CAMD_LIBRARY camd
-  PATHS ${CHOLMOD_DIR} ${CAMD_DIR} $ENV{CHOLMOD_DIR} $ENV{CAMD_DIR}
-  PATH_SUFFIXES lib
+  PATHS ${CHOLMOD_DIR}/lib ${CAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{CAMD_DIR}/lib
   DOC "The CAMD library"
   )
 
 # Check for COLAMD library
 find_library(COLAMD_LIBRARY colamd
-  PATHS ${CHOLMOD_DIR} ${COLAMD_DIR} $ENV{CHOLMOD_DIR} $ENV{COLAMD_DIR}
-  PATH_SUFFIXES lib
+  PATHS ${CHOLMOD_DIR}/lib ${COLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{COLAMD_DIR}/lib
   DOC "The COLAMD library"
   )
 
 # Check for CCOLAMD library
 find_library(CCOLAMD_LIBRARY ccolamd
-  PATHS ${CHOLMOD_DIR} ${CCOLAMD_DIR} $ENV{CHOLMOD_DIR} $ENV{CCOLAMD_DIR}
-  PATH_SUFFIXES lib
+  PATHS ${CHOLMOD_DIR}/lib ${CCOLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{CCOLAMD_DIR}/lib
   DOC "The CCOLAMD library"
   )
 

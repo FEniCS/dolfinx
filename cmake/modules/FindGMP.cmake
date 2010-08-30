@@ -17,15 +17,13 @@ endif (GMP_INCLUDE_DIRS AND GMP_LIBRARIES)
 
 find_path(GMP_INCLUDE_DIRS
   NAMES gmp.h
-  PATHS ${GMP_DIR} $ENV{GMP_DIR}
-  PATH_SUFFIXES include
+  PATHS ${GMP_DIR}/include $ENV{GMP_DIR}/include
   DOC "Directory where the GMP header file is located"
   )
 
 find_library(GMP_LIBRARIES
   NAMES gmp libgmp
-  PATHS ${GMP_DIR} $ENV{GMP_DIR}
-  PATH_SUFFIXES lib
+  PATHS ${GMP_DIR}/lib $ENV{GMP_DIR}/lib
   DOC "The GMP libraries"
   )
 

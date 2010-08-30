@@ -18,8 +18,7 @@ message(STATUS "Checking for package 'Armadillo'")
 
 find_path(ARMADILLO_INCLUDE_DIRS
   NAMES armadillo
-  PATHS ${ARMADILLO_DIR} $ENV{ARMADILLO_DIR}
-  PATH_SUFFIXES include
+  PATHS ${ARMADILLO_DIR}/include $ENV{ARMADILLO_DIR}/include
   DOC "Directory where the Armadillo header file is located"
   )
 mark_as_advanced(ARMADILLO_INCLUDE_DIRS)
