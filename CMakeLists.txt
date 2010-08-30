@@ -37,6 +37,7 @@ option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." 
 option(DOLFIN_DEBUG_UBLAS "Use extra uBLAS debugging." OFF)
 option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
+option(DOLFIN_ENABLE_UNIT_TESTS "Enable unit tests." ON)
 
 #option(DOLFIN_ENABLE_DOCS "Build documentation." OFF)
 #option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
@@ -174,16 +175,14 @@ if (DOLFIN_ENABLE_MPI)
 
   # FIXME: Should be set CMake to use the MPI compiler wrappers?
 
-  if(MPI_FOUND)
-    # Check for ParMETIS
-    if (DOLFIN_ENABLE_PARMETIS)
-      find_package(ParMETIS)
-    endif()
+  # Check for ParMETIS
+  if (MPI_FOUND AND DOLFIN_ENABLE_PARMETIS)
+    find_package(ParMETIS)
+  endif()
 
-    # Check for SCOTCH
-    if (DOLFIN_ENABLE_SCOTCH)
-      find_package(ScotchPT)
-    endif()
+  # Check for SCOTCH
+  if (MPI_FOUND  AND DOLFIN_ENABLE_SCOTCH)
+    find_package(ScotchPT)
   endif()
 
 endif()
@@ -350,9 +349,9 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
-# Add DOLFIN demos and install demo source files and mesh files
+# Add demos and install demo source files and mesh files
 
-# Add demos but do not add to default target
+# Add demo but do not add to default target
 add_subdirectory(demo EXCLUDE_FROM_ALL)
 
 # Install the demo source files
@@ -370,23 +369,25 @@ install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
 install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 
 #------------------------------------------------------------------------------
-# Build and install DOLFIN tests
+# Add tests and benchmarks
 
-# Add tests but do not add to default target
-add_subdirectory(test EXCLUDE_FROM_ALL)
-#install(DIRECTORY ${CMAKE_SOURCE_DIR}/demo
-#        DESTINATION ${CMAKE_INSTALL_PREFIX}/share/dolfin
-#        USE_SOURCE_PERMISSIONS)
+# Add bench but do not add to default target
+add_subdirectory(bench EXCLUDE_FROM_ALL)
+
+if (CPPUNIT_FOUND)
+  # Add test but do not add to default target
+  add_subdirectory(test EXCLUDE_FROM_ALL)
+endif()
 
 #------------------------------------------------------------------------------
 # Add "make uninstall" target
 
-CONFIGURE_FILE(
+configure_file(
   "${DOLFIN_CMAKE_DIR}/templates/cmake_uninstall.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
   IMMEDIATE @ONLY)
 
-ADD_CUSTOM_TARGET(uninstall
+add_custom_target(uninstall
   "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
 
 #------------------------------------------------------------------------------

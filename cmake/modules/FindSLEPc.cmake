@@ -69,19 +69,30 @@ show :
   endmacro()
 
   # Call macro to get the SLEPc variables
-  slepc_get_variable(SLEPC_INCLUDE_DIRS CC_INCLUDES)
-  slepc_get_variable(SLEPC_LIBRARIES    SLEPC_LIB)
+  slepc_get_variable(SLEPC_INCLUDE_DIRS     SLEPC_INCLUDE)
+  slepc_get_variable(SLEPC_OTHER_LIBRARIES  OTHERSHAREDLIBS)
+  slepc_get_variable(SLEPC_LIB_DIR          SLEPC_LIB_DIR)
 
   # Remove temporary Makefile
   file(REMOVE ${slepc_config_makefile})
+
+  # Find the SLEPc library
+  find_library(SLEPC_LIBRARY
+    NAMES slepc
+    HINTS ${SLEPC_LIB_DIR}
+    )
+
+  # FIXME: Get full paths for 'other' libraries
+  # Set SLEPc libraries
+  set(SLEPC_LIBRARIES ${SLEPC_LIBRARY} ${SLEPC_OTHER_LIBRARIES})
 
   # Turn SLEPC_INCLUDE_DIRS into a semi-colon separated list
   string(REPLACE "-I" "" SLEPC_INCLUDE_DIRS "${SLEPC_INCLUDE_DIRS}")
   separate_arguments(SLEPC_INCLUDE_DIRS)
 
   # Set flags for building test program
-  set(CMAKE_REQUIRED_INCLUDES ${SLEPC_INCLUDE_DIRS})
-  set(CMAKE_REQUIRED_LIBRARIES ${SLEPC_LIBRARIES})
+  set(CMAKE_REQUIRED_INCLUDES ${SLEPC_INCLUDE_DIRS} ${PETSC_INCLUDE_DIRS})
+  set(CMAKE_REQUIRED_LIBRARIES ${SLEPC_LIBRARIES} ${PETSC_LIBRARIES})
 
   # Run SLEPc test program
   include(CheckCXXSourceRuns)
