@@ -1,10 +1,10 @@
 // Copyright (C) 2006-2009 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2006-2008.
+// Modified by Anders Logg, 2006-2010.
 //
 // First added:  2006-06-23
-// Last changed: 2009-09-08
+// Last changed: 2010-08-31
 
 #include <dolfin/common/constants.h>
 #include "uBLASVector.h"
@@ -15,7 +15,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 uBLASILUPreconditioner::uBLASILUPreconditioner(const Parameters& krylov_parameters)
-                                     : krylov_parameters(krylov_parameters)
+  : krylov_parameters(krylov_parameters)
 {
   // Do nothing
 }
@@ -34,7 +34,7 @@ void uBLASILUPreconditioner::init(const uBLASMatrix<ublas_sparse_matrix>& P)
   _M.assign(P.mat());
 
   // Add term to diagonal to avoid negative pivots
-  const double zero_shift = krylov_parameters["shift_nonzero"];
+  const double zero_shift = krylov_parameters("preconditioner")["shift_nonzero"];
   if(zero_shift > 0.0)
     _M.plus_assign( zero_shift*ublas::identity_matrix<double>(size) );
 
