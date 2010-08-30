@@ -17,59 +17,33 @@ find_path(SCOTCH_INCLUDE_DIRS ptscotch.h
   )
 
 # Check for library
-find_library(SCOTCH_LIBRARIES
-  NAMES scotch
-  PATHS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
-  DOC "The SCOTCH library"
-  )
+#find_library(SCOTCH_LIBRARY
+#  NAMES scotch
+#  PATHS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
+#  DOC "The SCOTCH library"
+#  )
 
-# Check for scotcherr
-if(SCOTCH_LIBRARIES)
-  find_library(SCOTCERR_LIBRARY
-    NAMES scotcherr
-    PATHS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
-    DOC "The SCOTCH-ERROR library"
-    )
-
-  if (SCOTCERR_LIBRARY)
-    set(SCOTCH_LIBRARIES "${SCOTCH_LIBRARIES};${SCOTCERR_LIBRARY}")
-  else (SCOTCERR_LIBRARY)
-    set(SCOTCH_LIBRARIES FALSE)
-  endif (SCOTCERR_LIBRARY)
-
-endif(SCOTCH_LIBRARIES)
+#find_library(SCOTCHERR_LIBRARY
+#  NAMES scotcherr
+#  PATHS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
+#  DOC "The SCOTCH-ERROR library"
+#  )
 
 # Check for ptscotch
-if(SCOTCH_LIBRARIES)
-  find_library(PTSCOTCH_LIBRARY
-    NAMES ptscotch
-    PATHS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
-    DOC "The PTSCOTCH library"
-    )
-
-  if (PTSCOTCH_LIBRARY)
-    set(SCOTCH_LIBRARIES "${SCOTCH_LIBRARIES};${PTSCOTCH_LIBRARY}")
-  else (PTSCOTCH_LIBRARY)
-    set(SCOTCH_LIBRARIES FALSE)
-  endif (PTSCOTCH_LIBRARY)
-
-endif(SCOTCH_LIBRARIES)
+find_library(PTSCOTCH_LIBRARY
+  NAMES ptscotch
+  PATHS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
+  DOC "The PTSCOTCH library"
+  )
 
 # Check for ptscotcherr
-if(SCOTCH_LIBRARIES)
-  find_library(PTSCOTCERR_LIBRARY
-    NAMES ptscotcherr
-    PATHS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
-    DOC "The PTSCOTCH-ERROR library"
-    )
+find_library(PTSCOTCHERR_LIBRARY
+  NAMES ptscotcherr
+  PATHS ${SCOTCH_DIR}/lib $ENV{SCOTCH_DIR}/lib
+  DOC "The PTSCOTCH-ERROR library"
+  )
 
-  if (PTSCOTCERR_LIBRARY)
-    set(SCOTCH_LIBRARIES "${SCOTCH_LIBRARIES};${PTSCOTCERR_LIBRARY}")
-  else (PTSCOTCERR_LIBRARY)
-    set(SCOTCH_LIBRARIES FALSE)
-  endif (PTSCOTCERR_LIBRARY)
-
-endif(SCOTCH_LIBRARIES)
+set(SCOTCH_LIBRARIES ${PTSCOTCH_LIBRARY} ${PTSCOTCHERR_LIBRARY})
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)
