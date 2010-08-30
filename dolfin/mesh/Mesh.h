@@ -9,7 +9,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2010-08-29
+// Last changed: 2010-08-30
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -43,19 +43,19 @@ namespace dolfin
   ///
   /// .. tabularcolumns:: |c|c|c|
   ///
-  ///     +--------+-----------+-------------+
-  ///     | Entity | Dimension | Codimension |
-  ///     +========+===========+=============+
-  ///     | Vertex |  0        |             |
-  ///     +--------+-----------+-------------+
-  ///     | Edge   |  1        |             |
-  ///     +--------+-----------+-------------+
-  ///     | Face   |  2        |             |
-  ///     +--------+-----------+-------------+
-  ///     | Facet  |           |      1      |
-  ///     +--------+-----------+-------------+
-  ///     | Cell   |           |        0    |
-  ///     +--------+-----------+-------------+
+  /// +--------+-----------+-------------+
+  /// | Entity | Dimension | Codimension |
+  /// +========+===========+=============+
+  /// | Vertex |  0        |             |
+  /// +--------+-----------+-------------+
+  /// | Edge   |  1        |             |
+  /// +--------+-----------+-------------+
+  /// | Face   |  2        |             |
+  /// +--------+-----------+-------------+
+  /// | Facet  |           |      1      |
+  /// +--------+-----------+-------------+
+  /// | Cell   |           |        0    |
+  /// +--------+-----------+-------------+
   ///
   /// When working with mesh iterators, all entities and connectivity
   /// are precomputed automatically the first time an iterator is
@@ -276,8 +276,6 @@ namespace dolfin
     ///     8
     uint size(uint dim) const { return _topology.size(dim); }
 
-    ///  MeshTopology& topology()
-    ///
     /// Get topology associated with mesh.
     ///
     /// *Returns*
