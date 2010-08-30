@@ -186,6 +186,10 @@ endif()
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 
+# Remove duplicates in lists
+list(REMOVE_DUPLICATES DOLFIN_INCLUDE_DIRECTORIES)
+list(REMOVE_DUPLICATES DOLFIN_TARGET_LINK_LIBRARIES)
+
 # Add link directories
 #link_directories(${DOLFIN_TARGET_LINK_LIBRARIES_DIRS})
 
