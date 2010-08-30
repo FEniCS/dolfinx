@@ -174,14 +174,16 @@ if (DOLFIN_ENABLE_MPI)
 
   # FIXME: Should be set CMake to use the MPI compiler wrappers?
 
-  # Check for ParMETIS
-  if (DOLFIN_ENABLE_PARMETIS)
-    find_package(ParMETIS)
-  endif()
+  if(MPI_FOUND)
+    # Check for ParMETIS
+    if (DOLFIN_ENABLE_PARMETIS)
+      find_package(ParMETIS)
+    endif()
 
-  # Check for SCOTCH
-  if (DOLFIN_ENABLE_SCOTCH)
-    find_package(ScotchPT)
+    # Check for SCOTCH
+    if (DOLFIN_ENABLE_SCOTCH)
+      find_package(ScotchPT)
+    endif()
   endif()
 
 endif()
