@@ -31,7 +31,7 @@ public:
 
   void eval(Array<double>& values, const Array<double>& x) const
   {
-    values[0] = 4.0 * DOLFIN_PI * DOLFIN_PI * DOLFIN_PI * DOLFIN_PI * sin(DOLFIN_PI*x[0]) * sin(DOLFIN_PI*x[1]);
+    values[0] = 4.0*pow(DOLFIN_PI, 4)*sin(DOLFIN_PI*x[0])*sin(DOLFIN_PI*x[1]);
   }
 
 };
@@ -49,9 +49,6 @@ int main()
 {
   // Create mesh
   UnitSquare mesh(32, 32);
-
-  // Use uBLAS
-  parameters["linear_algebra_backend"] = "uBLAS";
 
   // Create functions
   Source f;
@@ -72,12 +69,11 @@ int main()
   a.h = h; a.alpha = alpha; L.f = f;
 
   // Create PDE
-  VariationalProblem pde(a, L, bc);
-  pde.parameters["symmetric"] = true;
+  VariationalProblem problem(a, L, bc);
 
   // Solve PDE
   Function u(V);
-  pde.solve(u);
+  problem.solve(u);
 
   // Plot solution
   plot(u);

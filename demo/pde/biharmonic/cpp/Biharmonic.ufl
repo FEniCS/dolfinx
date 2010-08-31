@@ -20,10 +20,9 @@ u = TrialFunction(element)
 f = Coefficient(element)
 
 # Normal component, mesh size and right-hand side
-n  = VectorConstant(triangle)
+n  = element.cell().n
 h  = Constant(triangle)
 h_avg = (h('+') + h('-'))/2
-n  = element.cell().n
 
 # Parameters
 alpha = Constant(triangle)
@@ -36,4 +35,3 @@ a = inner(div(grad(v)), div(grad(u)))*dx \
 
 # Linear form
 L = v*f*dx
-

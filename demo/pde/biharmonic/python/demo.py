@@ -21,6 +21,10 @@ __license__   = "GNU LGPL Version 2.1"
 
 from dolfin import *
 
+# Optimization options for the form compiler
+parameters["form_compiler"]["cpp_optimize"] = True
+parameters["form_compiler"]["optimize"] = True
+
 # Create mesh and define function space
 mesh = UnitSquare(32, 32)
 V = FunctionSpace(mesh, "CG", 2)
@@ -32,7 +36,7 @@ class DirichletBoundary(SubDomain):
 
 class Source(Expression):
     def eval(self, values, x):
-        values[0] = 4.0*DOLFIN_PI*DOLFIN_PI*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*x[0])*sin(DOLFIN_PI*x[1])
+        values[0] = 4.0*pi**4*sin(pi*x[0])*sin(pi*x[1])
 
 # Define boundary condition
 u0 = Constant(0.0)
@@ -48,19 +52,19 @@ h_avg = (h('+') + h('-'))/2.0
 n = FacetNormal(mesh)
 f = Source(V)
 
-# Define parameters
-alpha = 8.0
+# Penalty parameter
+alpha = Constant(8.0)
 
 # Define bilinear form
 a = inner(div(grad(v)), div(grad(u)))*dx \
   - inner(avg(div(grad(v))), jump(grad(u), n))*dS \
   - inner(jump(grad(v), n), avg(div(grad(u))))*dS \
-  + alpha/h_avg*inner(jump(grad(v),n), jump(grad(u),n))*dS
+  + alpha('+')/h_avg*inner(jump(grad(v),n), jump(grad(u),n))*dS
 
 # Define linear form
 L = v*f*dx
 
-# Compute solution
+# Create variational problem and solve
 problem = VariationalProblem(a, L, bc)
 u = problem.solve()
 
