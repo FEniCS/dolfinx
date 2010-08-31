@@ -32,12 +32,15 @@ set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
 # Configurable options for how we want to build
 
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
-#option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
+option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." OFF)
+option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
 option(DOLFIN_DEBUG_UBLAS "Use extra uBLAS debugging." OFF)
 option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 option(DOLFIN_ENABLE_UNIT_TESTS "Enable unit tests." ON)
+option(DOLFIN_ENABLE_TESTING "Enable testing." OFF)
+option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 
 #option(DOLFIN_ENABLE_DOCS "Build documentation." OFF)
 #option(CMAKE_SKIP_RPATH "Do not add runtime paths when using shared libraries." ON)
@@ -349,10 +352,22 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
+# Get command for building (make, nmake, ...)
+build_command(MAKE_COMMAND)
+
+# Strip off any options in MAKE_COMMAND
+string(REGEX REPLACE "([^ ]) .*" "\\1" MAKE_COMMAND "${MAKE_COMMAND}")
+
+#------------------------------------------------------------------------------
 # Add demos and install demo source files and mesh files
 
 # Add demo but do not add to default target
 add_subdirectory(demo EXCLUDE_FROM_ALL)
+
+# Add target "demo" for building the demos
+add_custom_target(demo
+  COMMAND ${MAKE_COMMAND}
+  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
 install(DIRECTORY demo DESTINATION ${DOLFIN_SHARE_DIR}
@@ -371,12 +386,79 @@ install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 #------------------------------------------------------------------------------
 # Add tests and benchmarks
 
-# Add bench but do not add to default target
-add_subdirectory(bench EXCLUDE_FROM_ALL)
+if (DOLFIN_ENABLE_BENCHMARKS)
+  # Add bench but do not add to default target
+  add_subdirectory(bench EXCLUDE_FROM_ALL)
+  
+  # Add target "bench" for building benchmarks
+  add_custom_target(bench
+    COMMAND ${MAKE_COMMAND}
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
+  
+  # Copy files needed to run benchmarks in build directory
+  file(COPY bench DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+    FILES_MATCHING
+    PATTERN "*.py"
+    PATTERN "*.xml*"
+    PATTERN "*.log"
+    PATTERN "CMakeFiles" EXCLUDE)
+  
+  # Add target "run_bench" for running benchmarks
+  add_custom_target(run_bench
+    COMMAND ${PYTHON_EXECUTABLE} "bench.py"
+    DEPENDS bench
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
+
+endif()
 
 if (CPPUNIT_FOUND)
   # Add test but do not add to default target
   add_subdirectory(test EXCLUDE_FROM_ALL)
+
+  # Add target "test" for building tests
+  add_custom_target(test
+    COMMAND ${MAKE_COMMAND}
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
+endif()
+
+if (DOLFIN_ENABLE_TESTING)
+  # Copy files needed to run tests in build directory
+  file(COPY data demo test DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+    FILES_MATCHING
+    PATTERN "*.py"
+    PATTERN "*.xml*"
+    PATTERN "*.inp"
+    PATTERN "*.supp"
+    PATTERN "CMakeFiles" EXCLUDE)
+  
+  # Add target "run_memorytests" for running memory tests
+  add_custom_target(run_memorytests
+    COMMAND ${PYTHON_EXECUTABLE} "test.py"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/memory")
+  
+  # Add target "run_regressiontests" for running regression tests
+  add_custom_target(run_regressiontests
+    COMMAND ${PYTHON_EXECUTABLE} "test.py"
+    DEPENDS demo
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
+  
+  # Add target "run_systemtests" for running system tests
+  add_custom_target(run_systemtests
+    COMMAND ${PYTHON_EXECUTABLE} "test.py"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/system")
+  
+  # Add target "run_unittests" for running unit tests
+  add_custom_target(run_unittests
+    COMMAND ${PYTHON_EXECUTABLE} "test.py"
+    DEPENDS test
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
+  
+  # Add target "runtests" for running all tests
+  add_custom_target(runtests
+    ${PYTHON_EXECUTABLE} "test.py"
+    DEPENDS demo test
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
+
 endif()
 
 #------------------------------------------------------------------------------
