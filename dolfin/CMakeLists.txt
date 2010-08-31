@@ -174,7 +174,7 @@ if (DOLFIN_ENABLE_MPI AND MPI_FOUND)
   # FIXME: should point to the MPI compiler wrappers. We could set
   # FIXME: CMAKE_CXX_COMPILER to be MPI_COMPILER but we should be careful
   # FIXME: to not owervriting any user-specified CMAKE_CXX_COMPILER.
-  set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${MPI_COMPILE_FLAGS}")
+  set(DOLFIN_CXX_FLAGS ${DOLFIN_CXX_FLAGS} ${MPI_COMPILE_FLAGS})
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${MPI_INCLUDE_PATH})
 
   # FIXME: Is this linker flag required?
@@ -202,7 +202,7 @@ include_directories(${DOLFIN_SOURCE_DIR} ${DOLFIN_INCLUDE_DIRECTORIES})
 add_definitions(${DOLFIN_CXX_DEFINITIONS})
 
 # Add flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS})
 
 # Define libraries
 add_library(dolfin SHARED ${DOLFIN_H} ${HEADERS} ${SOURCES})
@@ -272,19 +272,19 @@ get_directory_property(cmake_inc INCLUDE_DIRECTORIES)
 foreach(_inc_dir ${cmake_inc})
   set(PKG_CXXFLAGS "-I${_inc_dir} ${PKG_CXXFLAGS}")
 endforeach()
-string(REGEX REPLACE ";" " " PKG_DEFINITIONS "${PKG_CXXFLAGS}")
+string(REGEX REPLACE ";" " " PKG_DEFINITIONS ${PKG_CXXFLAGS})
 
 # Add CXX COMPILER flags
-set(PKG_CXXFLAGS "${CMAKE_CXX_FLAGS} ${PKG_CXXFLAGS}")
-string(REGEX REPLACE ";" " " PKG_CXXFLAGS "${PKG_CXXFLAGS}")
+set(PKG_CXXFLAGS ${CMAKE_CXX_FLAGS} ${PKG_CXXFLAGS})
+string(REGEX REPLACE ";" " " PKG_CXXFLAGS ${PKG_CXXFLAGS})
 
 # Convert compiler defintions into a list for pkg-config
 # Append definitions to PKG_CXXFLAGS
-string(REGEX REPLACE ";" " " PKG_DEFINITIONS "${DOLFIN_CXX_DEFINITIONS}")
-set(PKG_CXXFLAGS "${PKG_DEFINITIONS} ${PKG_CXXFLAGS}")
+string(REGEX REPLACE ";" " " PKG_DEFINITIONS ${DOLFIN_CXX_DEFINITIONS})
+set(PKG_CXXFLAGS ${PKG_DEFINITIONS} ${PKG_CXXFLAGS})
 
 # Add definitions to PKG_CXXFLAGS
-set(PKG_CXXFLAGS "${PKG_DEFINITIONS} ${PKG_CXXFLAGS}")
+set(PKG_CXXFLAGS ${PKG_DEFINITIONS} ${PKG_CXXFLAGS})
 
 # Configure and install pkg-config file
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.pc.in ${CMAKE_BINARY_DIR}/dolfin.pc @ONLY)

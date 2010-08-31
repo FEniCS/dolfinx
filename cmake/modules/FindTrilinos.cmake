@@ -26,7 +26,7 @@ if (Trilinos_FOUND)
   foreach (lib ${Trilinos_LIBRARIES})
     find_library(TRILINOS_LIB_${lib} ${lib} PATHS ${Trilinos_LIBRARY_DIRS})
     if (TRILINOS_LIB_${lib})
-      list(APPEND TRILINOS_LIBRARIES ${TRILINOS_LIB_${lib}})
+      set(TRILINOS_LIBRARIES ${TRILINOS_LIBRARIES} ${TRILINOS_LIB_${lib}})
     endif()
   endforeach()
 

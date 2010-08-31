@@ -87,7 +87,7 @@ show :
   set(SLEPC_LIBRARIES ${SLEPC_LIBRARY} ${SLEPC_OTHER_LIBRARIES})
 
   # Turn SLEPC_INCLUDE_DIRS into a semi-colon separated list
-  string(REPLACE "-I" "" SLEPC_INCLUDE_DIRS "${SLEPC_INCLUDE_DIRS}")
+  string(REPLACE "-I" "" SLEPC_INCLUDE_DIRS ${SLEPC_INCLUDE_DIRS})
   separate_arguments(SLEPC_INCLUDE_DIRS)
 
   # Set flags for building test program

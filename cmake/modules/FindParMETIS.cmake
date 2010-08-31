@@ -20,7 +20,7 @@ find_library(METIS_LIBRARY metis
   DOC "Directory where the METIS library is located"
 )
 
-set(PARMETIS_LIBRARIES "${PARMETIS_LIBRARY};${METIS_LIBRARY}")
+set(PARMETIS_LIBRARIES ${PARMETIS_LIBRARY} ${METIS_LIBRARY})
 
 # Standard package handling
 find_package_handle_standard_args(ParMETIS

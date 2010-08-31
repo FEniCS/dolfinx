@@ -353,10 +353,10 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
 
 #------------------------------------------------------------------------------
 # Get command for building (make, nmake, ...)
-build_command(MAKE_COMMAND)
+#build_command(MAKE_COMMAND)
 
 # Strip off any options in MAKE_COMMAND
-string(REGEX REPLACE "([^ ]) .*" "\\1" MAKE_COMMAND "${MAKE_COMMAND}")
+#string(REGEX REPLACE "([^ ]) .*" "\\1" MAKE_COMMAND "${MAKE_COMMAND}")
 
 #------------------------------------------------------------------------------
 # Add demos and install demo source files and mesh files
@@ -366,7 +366,6 @@ add_subdirectory(demo EXCLUDE_FROM_ALL)
 
 # Add target "demo" for building the demos
 add_custom_target(demo
-  COMMAND ${MAKE_COMMAND}
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
@@ -389,12 +388,11 @@ install(DIRECTORY data DESTINATION ${DOLFIN_SHARE_DIR})
 if (DOLFIN_ENABLE_BENCHMARKS)
   # Add bench but do not add to default target
   add_subdirectory(bench EXCLUDE_FROM_ALL)
-  
+
   # Add target "bench" for building benchmarks
   add_custom_target(bench
-    COMMAND ${MAKE_COMMAND}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
-  
+
   # Copy files needed to run benchmarks in build directory
   file(COPY bench DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
     FILES_MATCHING
@@ -402,7 +400,7 @@ if (DOLFIN_ENABLE_BENCHMARKS)
     PATTERN "*.xml*"
     PATTERN "*.log"
     PATTERN "CMakeFiles" EXCLUDE)
-  
+
   # Add target "run_bench" for running benchmarks
   add_custom_target(run_bench
     COMMAND ${PYTHON_EXECUTABLE} "bench.py"
@@ -417,7 +415,6 @@ if (CPPUNIT_FOUND)
 
   # Add target "test" for building tests
   add_custom_target(test
-    COMMAND ${MAKE_COMMAND}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
 endif()
 
@@ -430,35 +427,34 @@ if (DOLFIN_ENABLE_TESTING)
     PATTERN "*.inp"
     PATTERN "*.supp"
     PATTERN "CMakeFiles" EXCLUDE)
-  
+
   # Add target "run_memorytests" for running memory tests
   add_custom_target(run_memorytests
     COMMAND ${PYTHON_EXECUTABLE} "test.py"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/memory")
-  
+
   # Add target "run_regressiontests" for running regression tests
   add_custom_target(run_regressiontests
     COMMAND ${PYTHON_EXECUTABLE} "test.py"
     DEPENDS demo
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/regression")
-  
+
   # Add target "run_systemtests" for running system tests
   add_custom_target(run_systemtests
     COMMAND ${PYTHON_EXECUTABLE} "test.py"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/system")
-  
+
   # Add target "run_unittests" for running unit tests
   add_custom_target(run_unittests
     COMMAND ${PYTHON_EXECUTABLE} "test.py"
     DEPENDS test
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test/unit")
-  
+
   # Add target "runtests" for running all tests
   add_custom_target(runtests
     ${PYTHON_EXECUTABLE} "test.py"
     DEPENDS demo test
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
-
 endif()
 
 #------------------------------------------------------------------------------

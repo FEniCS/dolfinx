@@ -118,7 +118,7 @@ show :
   file(REMOVE ${petsc_config_makefile})
 
   # Turn PETSC_INCLUDE_DIRS into a semi-colon separated list
-  string(REPLACE "-I" "" PETSC_INCLUDE_DIRS "${PETSC_INCLUDE_DIRS}")
+  string(REPLACE "-I" "" PETSC_INCLUDE_DIRS ${PETSC_INCLUDE_DIRS})
   separate_arguments(PETSC_INCLUDE_DIRS)
 
 endif()
