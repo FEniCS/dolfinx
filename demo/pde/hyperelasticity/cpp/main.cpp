@@ -57,8 +57,8 @@ public:
     const double scale = 0.5;
 
     // Center of rotation
-    double y0 = 0.5;
-    double z0 = 0.5;
+    const double y0 = 0.5;
+    const double z0 = 0.5;
 
     // Large angle of rotation (60 degrees)
     double theta = 1.04719755;
@@ -81,38 +81,38 @@ int main()
   UnitCube mesh (16, 16, 16);
   HyperElasticity::FunctionSpace V(mesh);
 
-  // Define Dirichlet boundary condition
+  // Define Dirichlet boundaries
   Left left;
   Right right;
 
+  // Define Dirichlet boundary functions
   Clamp c;
   Rotation r;
 
+  // Create Dirichlet boundary conditions
   DirichletBC bcl(V, c, left);
   DirichletBC bcr(V, r, right);
-
   std::vector<const BoundaryCondition*> bcs;
-  bcs.push_back(&bcl);
-  bcs.push_back(&bcr);
+  bcs.push_back(&bcl); bcs.push_back(&bcr);
 
-  // Define source and solution functions
-  Constant B(0.0, 0.0, 0.0);
-  Constant T(0.0, 0.0, 0.0);
+  // Define source and boundary traction functions
+  Constant B(0.0, -0.5, 0.0);
+  Constant T(0.1,  0.0, 0.0);
+
+  // Define solution function
   Function u(V);
 
   // Set material parameters
-  double E  = 10.0;
-  double nu = 0.3;
+  const double E  = 10.0;
+  const double nu = 0.3;
   Constant mu(E/(2*(1 + nu)));
   Constant lambda(E*nu/((1 + nu)*(1 - 2*nu)));
 
   // Create forms
   HyperElasticity::BilinearForm a(V, V);
-  a.mu = mu; a.lmbda = lambda;
-  a.u = u;
+  a.mu = mu; a.lmbda = lambda; a.u = u;
   HyperElasticity::LinearForm L(V);
-  L.mu = mu; L.lmbda = lambda; L.B = B; L.T = T;
-  L.u = u;
+  L.mu = mu; L.lmbda = lambda; L.B = B; L.T = T; L.u = u;
 
   // Solve nonlinear variational problem
   VariationalProblem problem(a, L, bcs, true);

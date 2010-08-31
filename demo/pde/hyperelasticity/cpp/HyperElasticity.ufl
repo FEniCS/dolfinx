@@ -1,10 +1,8 @@
-# Copyright (C) 2009 Harish Narayanan.
+# Copyright (C) 2009-2010 Harish Narayanan and Garth N. Wells
 # Licensed under the GNU LGPL Version 2.1.
 #
-# Modified by Garth N. Wells, 2010.
-#
 # First added:  2009-09-29
-# Last changed:
+# Last changed: 2010-08-21
 #
 # The bilinear form a(v, u) and linear form L(v) for
 # a hyperelastic model.
@@ -28,7 +26,7 @@ I = Identity(element.cell().d)  # Identity tensor
 F = I + grad(u)                 # Deformation gradient
 C = F.T*F                       # Right Cauchy-Green tensor
 
-# Invariants of deformation tenros
+# Invariants of deformation tensors
 Ic = tr(C)
 J  = det(F)
 
@@ -42,7 +40,7 @@ psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2
 # Total potential energy
 Pi = psi*dx - inner(B, u)*dx - inner(T, u)*ds
 
-# First variation of psi (directional derivative about u in the direction of v)
+# First variation of Pi (directional derivative about u in the direction of v)
 L = derivative(Pi, u, v)
 
 # Compute Jacobian of L
