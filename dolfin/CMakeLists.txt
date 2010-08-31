@@ -174,7 +174,7 @@ if (DOLFIN_ENABLE_MPI AND MPI_FOUND)
   # FIXME: should point to the MPI compiler wrappers. We could set
   # FIXME: CMAKE_CXX_COMPILER to be MPI_COMPILER but we should be careful
   # FIXME: to not owervriting any user-specified CMAKE_CXX_COMPILER.
-  list(APPEND DOLFIN_CXX_FLAGS ${MPI_COMPILE_FLAGS})
+  set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${MPI_COMPILE_FLAGS}")
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${MPI_INCLUDE_PATH})
 
   # FIXME: Is this linker flag required?
