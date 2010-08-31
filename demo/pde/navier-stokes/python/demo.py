@@ -6,7 +6,9 @@ __date__ = "2010-08-30"
 __copyright__ = "Copyright (C) 2010 " + __author__
 __license__  = "GNU LGPL Version 2.1"
 
-# Last changed: 2010-08-30
+# Last changed: 2010-08-31
+
+# Begin demo
 
 from dolfin import *
 
@@ -21,10 +23,10 @@ V = VectorFunctionSpace(mesh, "CG", 2)
 Q = FunctionSpace(mesh, "CG", 1)
 
 # Define trial and test functions
-v = TestFunction(V)
-q = TestFunction(Q)
 u = TrialFunction(V)
 p = TrialFunction(Q)
+v = TestFunction(V)
+q = TestFunction(Q)
 
 # Set parameter values
 dt = 0.01
@@ -51,18 +53,18 @@ k = Constant(dt)
 f = Constant((0, 0))
 
 # Tentative velocity step
-F1 = (1/k)*inner(v, u - u0)*dx + inner(v, grad(u0)*u0)*dx \
-    + nu*inner(grad(v), grad(u))*dx - inner(v, f)*dx
+F1 = (1/k)*inner(u - u0, v)*dx + inner(grad(u0)*u0, v)*dx + \
+     nu*inner(grad(u), grad(v))*dx - inner(f, v)*dx
 a1 = lhs(F1)
 L1 = rhs(F1)
 
 # Pressure update
-a2 = inner(grad(q), grad(p))*dx
-L2 = -(1/k)*q*div(u1)*dx
+a2 = inner(grad(p), grad(q))*dx
+L2 = -(1/k)*div(u1)*q*dx
 
 # Velocity update
-a3 = inner(v, u)*dx
-L3 = inner(v, u1)*dx - k*inner(v, grad(p1))*dx
+a3 = inner(u, v)*dx
+L3 = inner(u1, v)*dx - k*inner(grad(p1), v)*dx
 
 # Assemble matrices
 A1 = assemble(a1)

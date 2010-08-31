@@ -7,6 +7,8 @@
 // This demo program solves the incompressible Navier-Stokes equations
 // on an L-shaped domain using Chorin's splitting method.
 
+// Begin demo
+
 #include <dolfin.h>
 #include "TentativeVelocity.h"
 #include "PressureUpdate.h"
@@ -68,13 +70,13 @@ int main()
   // Refine mesh
   mesh = refine(mesh);
 
-  // Set parameter values
-  double dt = 0.01;
-  double T = 3;
-
   // Create function spaces
   VelocityUpdate::FunctionSpace V(mesh);
   PressureUpdate::FunctionSpace Q(mesh);
+
+  // Set parameter values
+  double dt = 0.01;
+  double T = 3;
 
   // Define values for boundary conditions
   InflowPressure p_in;

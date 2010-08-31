@@ -15,8 +15,8 @@ V = VectorElement("CG", triangle, 2)
 Q = FiniteElement("CG", triangle, 1)
 
 # Define trial and test functions
-v = TestFunction(V)
 u = TrialFunction(V)
+v = TestFunction(V)
 
 # Define coefficients
 k  = Constant(triangle)
@@ -25,7 +25,7 @@ f  = Coefficient(V)
 nu = 0.01
 
 # Define bilinear and linear forms
-F = (1/k)*inner(v, u - u0)*dx + inner(v, grad(u0)*u0)*dx \
-    + nu*inner(grad(v), grad(u))*dx - inner(v, f)*dx
+F = (1/k)*inner(u - u0, v)*dx + inner(grad(u0)*u0, v)*dx + \
+    nu*inner(grad(u), grad(v))*dx - inner(f, v)*dx
 a = lhs(F)
 L = rhs(F)
