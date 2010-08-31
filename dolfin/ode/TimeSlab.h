@@ -93,36 +93,6 @@ namespace dolfin
     // Write given solution vector to file
     static void write(RealArray& u);
 
-    //TODO: Clean needed here? These functions should probably not be here.
-
-    // Copy data of given size between vectors with given offsets
-    static void copy(const real* x, uint xoffset, real* y, uint yoffset, uint n);
-
-    // Copy data of given size between vectors with given offsets
-    static void copy(const uBLASVector& x, uint xoffset, real* y, uint yoffset, uint n);
-
-    // Copy data of given size between vectors with given offsets
-    static void copy(const real* x, uint xoffset, uBLASVector& y, uint yoffset, uint n);
-
-    // Copy data of given size between vectors with given offsets
-    static void copy(const uBLASVector& x, uint xoffset, uBLASVector& y, uint yoffset, uint n);
-
-    // Copy data of given size between vectors with given offsets
-    static void copy(const uBLASVector& x, uint xoffset, RealArray& y);
-
-    // Copy data of given size between vectors with given offsets
-    static void copy(const RealArray& x, uBLASVector& y, uint xoffset);
-
-    // Copy data of given size between vectors with given offsets
-    static void copy(const RealArray& x, RealArray& y);
-
-    // Copy data of given size between vectors with given offsets
-    static void copy(const real* x, uint xoffset, RealArray& y);
-
-    // Copy data of given size between vectors with given offsets
-    static void copy(const RealArray& x, real* y, uint yoffset);
-
-
     uint N;  // Size of system
     real _a; // Start time of time slab
     real _b; // End time of time slab

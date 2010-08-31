@@ -191,5 +191,34 @@ namespace dolfin
   // Matrix power A = B^q
   void real_mat_pow(uint n, real* A, const real* B, uint q);
 
+
+  template<typename T, typename U>
+    void real_copy(const T& x, uint xoffset, U& y) 
+    {
+      for (uint i = 0; i < y.size(); i++)
+        y[i] = x[xoffset + i];
+    }
+
+
+  template<typename T, typename U>
+    void real_copy(const T& x, U& y, uint yoffset)
+    {
+      for (uint i = 0; i < x.size(); i++)
+        y[yoffset + i] = x[i];
+    }
+
+  template<typename T>
+    void real_copy(const real* x, uint xoffset, T& y)
+    {
+      for (uint i = 0; i < y.size(); i++)
+        y[i] = x[xoffset+i];
+    }
+
+  template<typename T>
+    void real_copy(const T& x, real* y, uint yoffset)
+    {
+      for (uint i = 0; i < x.size(); i++)
+        y[yoffset + i] = x[i];
+    }
 }
 #endif

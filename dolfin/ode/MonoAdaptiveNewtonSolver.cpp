@@ -201,7 +201,8 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real* F)
     const uint noffset = n * ts.N;
 
     // Copy values to xx
-    ts.copy(ts.x, noffset, xx.data().get(), 0, ts.N);
+    //ts.copy(ts.x, noffset, xx.data().get(), 0, ts.N);
+    real_copy(ts.x, noffset, xx);
 
     // Do multiplication
     if ( piecewise )
@@ -211,7 +212,8 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real* F)
     else
     {
       const real t = a + method.npoint(n) * k;
-      ts.copy(ts.x, noffset, ts.u);
+      //ts.copy(ts.x, noffset, ts.u);
+      real_copy(ts.x, noffset, ts.u);
       ode.M(xx, yy, ts.u, t);
     }
 

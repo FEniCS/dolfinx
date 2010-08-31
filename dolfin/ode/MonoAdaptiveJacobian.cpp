@@ -60,7 +60,8 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
       const uint noffset = n * ts.N;
 
       // Copy values to xx
-      ts.copy(x, noffset, xx);
+      real_copy(x, noffset, xx);
+      //ts.copy(x, noffset, xx);
 
       // Do multiplication
       if (piecewise)
@@ -70,12 +71,13 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
       else
       {
         const real t = a + method.npoint(n) * k;
-        ts.copy(ts.x, noffset, ts.u);
+        //ts.copy(ts.x, noffset, ts.u);
+        real_copy(ts.x, noffset, ts.u);
         ode.M(xx, yy, ts.u, t);
       }
 
       // Copy values from yy
-      ts.copy(yy, y, noffset);
+      real_copy(yy, y, noffset);
     }
   }
 
@@ -102,8 +104,10 @@ void MonoAdaptiveJacobian::mult(const uBLASVector& x, uBLASVector& y) const
     */
 
     // Copy values to xx and u
-    ts.copy(x, noffset, xx);
-    ts.copy(ts.x, noffset, ts.u);
+    real_copy(x, noffset, xx);
+    //ts.copy(x, noffset, xx);
+    real_copy(ts.x, noffset, ts.u);
+    //ts.copy(ts.x, noffset, ts.u);
 
     // Compute z = df/du * x for current stage
     ode.J(xx, yy, ts.u, t);
