@@ -353,6 +353,7 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
 
 #------------------------------------------------------------------------------
 # Get command for building (make, nmake, ...)
+
 build_command(MAKE_COMMAND make)
 
 # Strip off any options in MAKE_COMMAND
@@ -392,7 +393,7 @@ if (DOLFIN_ENABLE_BENCHMARKS)
 
   # Add target "bench" for building benchmarks
   add_custom_target(bench
-    COMMAND ${MAKE_COMMAND}
+    #COMMAND ${MAKE_COMMAND}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
 
   # Copy files needed to run benchmarks in build directory
@@ -408,7 +409,6 @@ if (DOLFIN_ENABLE_BENCHMARKS)
     COMMAND ${PYTHON_EXECUTABLE} "bench.py"
     DEPENDS bench
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
-
 endif()
 
 if (CPPUNIT_FOUND)
@@ -417,7 +417,7 @@ if (CPPUNIT_FOUND)
 
   # Add target "test" for building tests
   add_custom_target(test
-    COMMAND ${MAKE_COMMAND}
+    #COMMAND ${MAKE_COMMAND}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
 endif()
 

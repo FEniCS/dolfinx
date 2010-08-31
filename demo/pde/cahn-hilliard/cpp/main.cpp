@@ -24,13 +24,13 @@ public:
 
   InitialConditions(const Mesh& mesh) : Expression(mesh.topology().dim())
   {
-    dolfin::seed(2);
+    dolfin::seed(2 + MPI::process_number());
   }
 
   void eval(Array<double>& values, const Data& data) const
   {
-    values[0]= 0.0;
-    values[1]= 0.63 + 0.02*(0.5 - dolfin::rand());
+    values[0]= 0.63 + 0.02*(0.5 - dolfin::rand());
+    values[1]= 0.0;
   }
 
 };
@@ -41,29 +41,27 @@ class CahnHilliardEquation : public NonlinearProblem
   public:
 
     // Constructor
-    CahnHilliardEquation(const Mesh& mesh, Constant& dt,
-                         Constant& theta, Constant& lambda, Constant& mu_factor)
-                       : a(0), L(0), _u(0), _u0(0), reset_Jacobian(true)
+    CahnHilliardEquation(const Mesh& mesh, const Constant& dt,
+                         const Constant& theta, const Constant& lambda)
+                       : reset_Jacobian(true)
     {
       if (mesh.topology().dim() == 2)
       {
-        // Create forms
+        // Create function space and functions
         boost::shared_ptr<CahnHilliard2D::FunctionSpace> V(new CahnHilliard2D::FunctionSpace(mesh));
-        a = new CahnHilliard2D::BilinearForm(V, V);
-        L = new CahnHilliard2D::LinearForm(V);
+        _u.reset(new Function(V));
+        _u0.reset(new Function(V));
 
-        _u  = new Function(V);
-        _u0 = new Function(V);
-
-        // Attach coefficients
-        CahnHilliard2D::BilinearForm* _a = dynamic_cast<CahnHilliard2D::BilinearForm*>(a);
-        CahnHilliard2D::LinearForm*   _L = dynamic_cast<CahnHilliard2D::LinearForm*>(L);
-        _a->u = *_u;
-        _a->lmbda = lambda; _a->muFactor = mu_factor;
-        _a->dt = dt; _a->theta = theta;
+        // Create forms and attach functions
+        CahnHilliard2D::BilinearForm* _a = new CahnHilliard2D::BilinearForm(V, V);
+        CahnHilliard2D::LinearForm*_L = new CahnHilliard2D::LinearForm(V);
+        _a->u = *_u; _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
         _L->u = *_u; _L->u0 = *_u0;
-        _L->lmbda = lambda; _L->muFactor = mu_factor;
-        _L->dt = dt; _L->theta = theta;
+        _L->lmbda = lambda; _L->dt = dt; _L->theta = theta;
+
+        // Wrap pointers in a smart pointer
+        a.reset(_a);
+        L.reset(_L);
 
         // Set solution to intitial condition
         InitialConditions u_initial(mesh);
@@ -71,22 +69,21 @@ class CahnHilliardEquation : public NonlinearProblem
       }
       else if (mesh.topology().dim() == 3)
       {
+        // Create function space and functions
         boost::shared_ptr<CahnHilliard3D::FunctionSpace> V(new CahnHilliard3D::FunctionSpace(mesh));
-        a = new CahnHilliard3D::BilinearForm(V, V);
-        L = new CahnHilliard3D::LinearForm(V);
+        _u.reset(new Function(V));
+        _u0.reset(new Function(V));
 
-        _u  = new Function(V);
-        _u0 = new Function(V);
-
-        // Attach coefficients
-        CahnHilliard3D::BilinearForm* _a = dynamic_cast<CahnHilliard3D::BilinearForm*>(a);
-        CahnHilliard3D::LinearForm*   _L = dynamic_cast<CahnHilliard3D::LinearForm*>(L);
-        _a->u = *_u;
-        _a->lmbda = lambda; _a->muFactor = mu_factor;
-        _a->dt = dt; _a->theta = theta;
+        // Create forms and attach functions
+        CahnHilliard3D::BilinearForm* _a = new CahnHilliard3D::BilinearForm(V, V);
+        CahnHilliard3D::LinearForm*_L = new CahnHilliard3D::LinearForm(V);
+        _a->u = *_u; _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
         _L->u = *_u; _L->u0 = *_u0;
-        _L->lmbda = lambda; _L->muFactor = mu_factor;
-        _L->dt = dt; _L->theta = theta;
+        _L->lmbda = lambda; _L->dt = dt; _L->theta = theta;
+
+        // Wrap pointers in a smart pointer
+        a.reset(_a);
+        L.reset(_L);
 
         // Set solution to intitial condition
         InitialConditions u_initial(mesh);
@@ -94,15 +91,6 @@ class CahnHilliardEquation : public NonlinearProblem
       }
       else
         error("Cahn-Hilliard model is programmed for 2D and 3D only");
-    }
-
-    // Destructor
-    ~CahnHilliardEquation()
-    {
-      delete a;
-      delete L;
-      delete _u;
-      delete _u0;
     }
 
     // User defined residual vector
@@ -131,10 +119,10 @@ class CahnHilliardEquation : public NonlinearProblem
   private:
 
     // Pointers to FunctionSpace and forms
-    Form* a;
-    Form* L;
-    Function* _u;
-    Function* _u0;
+    boost::scoped_ptr<Form> a;
+    boost::scoped_ptr<Form> L;
+    boost::scoped_ptr<Function> _u;
+    boost::scoped_ptr<Function> _u0;
     bool reset_Jacobian;
 };
 
@@ -149,13 +137,12 @@ int main(int argc, char* argv[])
   Constant dt(5.0e-6);
   Constant theta(0.5);
   Constant lambda(1.0e-2);
-  Constant mu_factor(100.0);
 
   double t = 0.0;
   double T = 50*dt;
 
   // Create user-defined nonlinear problem
-  CahnHilliardEquation cahn_hilliard(mesh, dt, theta, lambda, mu_factor);
+  CahnHilliardEquation cahn_hilliard(mesh, dt, theta, lambda);
 
   // Solution functions
   Function& u = cahn_hilliard.u();
@@ -170,7 +157,7 @@ int main(int argc, char* argv[])
 
   // Save initial condition to file
   File file("cahn_hilliard.pvd", "compressed");
-  file << u[1];
+  file << u[0];
 
   // Solve
   while (t < T)
@@ -183,11 +170,11 @@ int main(int argc, char* argv[])
     newton_solver.solve(cahn_hilliard, u.vector());
 
     // Save function to file
-    file << std::make_pair(&(u[1]), t);
+    file << std::make_pair(&(u[0]), t);
   }
 
   // Plot solution
-  plot(u[1]);
+  plot(u[0]);
 
   return 0;
 }

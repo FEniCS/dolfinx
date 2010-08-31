@@ -1,16 +1,16 @@
-# Copyright (C) 2006-2009 Garth N Wells.
+# Copyright (C) 2006-2010 Garth N Wells.
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2006
-# Last changed: 2009-06-06
+# Last changed: 2010-08-31
 #
 # The linearised bilinear form a(v, U) and linear form L(v) for
 # the Cahn-Hilliard equation.
 #
-# Compile this form with FFC: ffc -l dolfin CahnHilliard.form
+# Compile this form with FFC: ffc -l dolfin -O -f split CahnHilliard.form
 
 P1 = FiniteElement("Lagrange", "tetrahedron", 1)
-ME = P1 * P1
+ME = P1*P1
 
 q, v  = TestFunctions(ME)
 du    = TrialFunction(ME)
@@ -19,24 +19,24 @@ u   = Coefficient(ME)  # current solution
 u0  = Coefficient(ME)  # solution from previous converged step
 
 # Split mixed functions
-dk, dc = split(du)
-k,  c  = split(u)
-k0, c0 = split(u0)
+dc, dmu = split(du)
+c,  mu  = split(u)
+c0, mu0 = split(u0)
 
-lmbda    = Constant(tetrahedron) # surface parameter
-muFactor = Constant(tetrahedron) # chemical free energy multiplier
-
+lmbda    = Constant(tetrahedron) # surface energy parameter
 dt       = Constant(tetrahedron) # time step
 theta    = Constant(tetrahedron) # time stepping parameter
 
-# Potential mu = \phi,c (chemical free-energy \phi = c^2*(1-c)^2)
-mu = muFactor*(2*c*(1-c)*(1-c) - 2*c*c*(1-c))
+# Compute the chemical potential df/dc
+c = variable(c)
+f    = 100*c**2*(1-c)**2
+dfdc = diff(f, c)
 
-# k^(n+theta)
-k_mid = (1-theta)*k0 + theta*k
+# mu^(n+theta)
+mu_mid = (1-theta)*mu0 + theta*mu
 
-L1 = q*c*dx - q*c0*dx + dt*dot(grad(q), grad(k_mid))*dx
-L2 = v*k*dx - v*mu*dx - lmbda*dot(grad(v), grad(c))*dx
-L = L1 + L2
+L0 = q*c*dx  - q*c0*dx   + dt*dot(grad(q), grad(mu_mid))*dx
+L1 = v*mu*dx - v*dfdc*dx - lmbda*dot(grad(v), grad(c))*dx
+L = L0 + L1
 
 a = derivative(L, u, du)

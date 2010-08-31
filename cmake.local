@@ -12,6 +12,9 @@ INSTALLDIR=`pwd`"/local"
 mkdir -p build
 cd build
 
-cmake -DCMAKE_INSTALL_PREFIX=$INSTALLDIR -DCMAKE_BUILD_TYPE=Developer ../
+cmake -DCMAKE_INSTALL_PREFIX=$INSTALLDIR \
+      -DDOLFIN_ENABLE_TESTING=true \
+      -DDOLFIN_ENABLE_BENCHMARKS=true \
+      -DCMAKE_BUILD_TYPE=Developer ../
 make
 make install
