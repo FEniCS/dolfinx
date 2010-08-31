@@ -1,17 +1,17 @@
 """This demo program solves the mixed formulation of Poisson's
 equation:
 
-    sigma + grad(u) = 0
+    sigma - grad(u) = 0
          div(sigma) = f
 
 The corresponding weak (variational problem)
 
-    <tau, sigma> - <div(tau), u> = 0       for all tau
-                 <w, div(sigma)> = <w, f>  for all w
+    <sigma, tau> + <div(tau), u>   = 0       for all tau
+                   <div(sigma), v> = <f, v>  for all v
 
-is solved using BDM (Brezzi-Douglas-Marini) elements of degree q (tau,
-sigma) and DG (discontinuous Galerkin) elements of degree q - 1 for
-(w, u).
+is solved using BDM (Brezzi-Douglas-Marini) elements of degree k for
+(sigma, tau) and DG (discontinuous Galerkin) elements of degree k - 1
+for (u, v).
 
 Original implementation: ../cpp/main.cpp by Anders Logg and Marie Rognes
 """
@@ -21,35 +21,55 @@ __date__      = "2007-11-14 -- 2008-12-19"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__   = "GNU LGPL Version 2.1"
 
+# Modified by Marie E. Rognes 2010
+# Last changed: 31-08-2010
+
+# Begin demo
+
 from dolfin import *
 
-# Create mesh and define function spaces
-mesh = UnitSquare(16, 16)
+# Create mesh
+mesh = UnitSquare(32, 32)
+
+# Define function spaces and mixed (product) space
 BDM = FunctionSpace(mesh, "BDM", 1)
 DG = FunctionSpace(mesh, "DG", 0)
-V = BDM * DG
+W = BDM * DG
 
-# Define variational problem
-(tau, w) = TestFunctions(V)
-(sigma, u) = TrialFunctions(V)
-f = Expression("500.0*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+# Define trial and test functions
+(sigma, u) = TrialFunctions(W)
+(tau, v) = TestFunctions(W)
 
-a = (dot(tau, sigma) - div(tau)*u + w*div(sigma))*dx
-L = w*f*dx
+# Define source function
+f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+
+# Define variational form
+a = (dot(sigma, tau) + div(tau)*u + div(sigma)*v)*dx
+L = - f*v*dx
+
+# Define function G such that G \cdot n = g
+class BoundarySource(Expression):
+    def eval_data(self, values, data):
+        g = sin(5*data.x()[0])
+        values[0] = g*data.normal()[0]
+        values[1] = g*data.normal()[1]
+    def rank(self):
+        return 1
+    def dim(self):
+        return 2
+G = BoundarySource()
+
+# Define essential boundary
+def boundary(x):
+    return x[1] < DOLFIN_EPS or x[1] > 1.0 - DOLFIN_EPS
+
+bc = DirichletBC(W.sub(0), G, boundary)
 
 # Compute solution
-problem = VariationalProblem(a, L)
+problem = VariationalProblem(a, L, bc)
 (sigma, u) = problem.solve().split()
 
-# Project sigma for post-processing
-sigma_proj = project(sigma)
-
-# Plot solution
-plot(sigma_proj)
-interactive()
+# Plot sigma and u
+plot(sigma)
 plot(u)
 interactive()
-
-# Save solution to pvd format
-File("sigma.pvd", "compressed") << sigma_proj
-File("u.pvd", "compressed") << u

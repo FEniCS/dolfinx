@@ -1,6 +1,7 @@
 """
-This program illustrates the use of the SLEPc eigenvalue solver for
-both standard and generalized eigenvalue problems."""
+This program illustrates basic use of the SLEPc eigenvalue solver for
+a standard eigenvalue problem.
+"""
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
 __date__ = "2007-11-28 -- 2009-10-09"
@@ -10,8 +11,9 @@ __license__  = "GNU LGPL Version 2.1"
 # Modified by Anders Logg, 2008.
 # Modified by Marie Rognes, 2009.
 
+# Begin demo
+
 from dolfin import *
-import numpy
 
 # Test for PETSc and SLEPc
 if not has_la_backend("PETSc"):
@@ -22,53 +24,34 @@ if not has_slepc():
     print "DOLFIN has not been configured with SLEPc. Exiting."
     exit()
 
-# Make sure we use the PETSc backend
-parameters["linear_algebra_backend"] = "PETSc"
-
-# Build stiftness matrix
-mesh = UnitSquare(4, 4)
+# Define mesh, function space
+mesh = Mesh("box_with_dent.xml.gz")
 V = FunctionSpace(mesh, "CG", 1)
-v = TestFunction(V)
+
+# Define basis and bilinear form
 u = TrialFunction(V)
+v = TestFunction(V)
+a = dot(grad(v), grad(u))*dx
+
+# Assemble stiffness form
 A = PETScMatrix()
-assemble(dot(grad(v), grad(u))*dx, tensor=A)
+assemble(a, tensor=A)
 
-# Build mass matrix
-M = PETScMatrix()
-assemble(v*u*dx, tensor=M)
+# Create eigensolver
+eigensolver = SLEPcEigenSolver()
 
-# Compute the n largest eigenvalues of A x = \lambda x
-n = 3
-esolver = SLEPcEigenSolver()
-esolver.solve(A, n)
+# Compute all eigenvalues of A x = \lambda x
+print "Computing eigenvalues. This can take a minute."
+eigensolver.solve(A)
 
-# Display eigenvalues
-for i in range(n):
-    lr, lc, r_vec, c_vec = esolver.get_eigenpair(i)
-    print "Eigenvalue " + str(i) + ": " + str(lr)
-    print "Eigenvector " + str(i) + ": " + str(r_vec.array())
+# Extract largest (first) eigenpair
+r, c, rx, cx = eigensolver.get_eigenpair(0)
 
-# Compute the eigenvalues close to 10 of A x = \lambda M x
-print
-print "Computing eigenvalues of generalized problem"
-esolver = SLEPcEigenSolver()
-esolver.parameters["solver"] = "krylov-schur"
-esolver.parameters["spectral_transform"] = "shift-and-invert"
-esolver.parameters["spectral_shift"] = 10.0
-esolver.solve(A, M, n)
+print "Largest eigenvalue: ", r
 
-m = esolver.get_number_converged()
-print "Number of converged eigenvalues: %d" % m
-for i in range(m):
-    r, c = esolver.get_eigenvalue(i)
-    print "Real(Eigenvalue) " + str(i) + ": " + str(r)
+# Initialize function with eigenvector
+u = Function(V, rx)
 
-
-# Test a different eigensolver type
-print
-print "Testing lanczos eigenvalue solver (not converging)"
-esolver = SLEPcEigenSolver()
-esolver.parameters["problem_type"] = "hermitian"
-esolver.parameters["solver"] = "lanczos"
-esolver.solve(M)
-
+# Plot eigenfunction
+plot(u)
+interactive()
