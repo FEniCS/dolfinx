@@ -7,7 +7,7 @@ __date__ = "2010-08-19"
 __copyright__ = "Copyright (C) 2010 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
-# Last changed: 2010-08-20
+# Last changed: 2010-08-31
 
 import os
 import shutil
@@ -56,16 +56,4 @@ def generate_docstrings(docstrings):
     # Write docstrings for all functions defined in the cpp module.
     handle_functions(docstrings.dolfin.cpp, "")
     output_file.close()
-
-# Copy docstrings module from FEniCS Documentation to local dolfin/site-packages.
-def copy_docstrings_module(docstrings):
-    print "Copy docstrings module to dolfin/site-packages..."
-    # Get absolute path to docstrings module.
-    src = os.path.abspath(docstrings.__path__[0])
-    # Create destination name and delete iff it exists.
-    dst = os.path.join(os.pardir, os.pardir, "site-packages", "dolfin", "docstrings")
-    if os.path.isdir(dst):
-        shutil.rmtree(dst)
-    # Dump module in the site-packages (dolfin Python layer).
-    shutil.copytree(src, dst)
 
