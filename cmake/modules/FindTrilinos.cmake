@@ -9,7 +9,7 @@
 message(STATUS "Checking for package 'Trilinos'")
 
 # Find Trilinos CMake config
-find_package(Trilinos PATHS ${UMFPACK_DIR}/include $ENV{TRILINOS_DIR}/include)
+find_package(Trilinos PATHS ${UMFPACK_DIR}/include $ENV{TRILINOS_DIR}/include QUIET)
 
 if (Trilinos_FOUND)
 
