@@ -15,7 +15,7 @@
 // and boundary conditions given by
 //
 //     u(x, y) = 0        for x = 0 or x = 1
-// du/dn(x, y) = -sin(5*x) for y = 0 or y = 1
+// du/dn(x, y) = sin(5*x) for y = 0 or y = 1
 
 #include <dolfin.h>
 #include "Poisson.h"
@@ -33,12 +33,12 @@ class Source : public Expression
   }
 };
 
-// Boundary flux (Neumann boundary condition)
-class Flux : public Expression
+// Normal derivative (Neumann boundary condition)
+class dUdN : public Expression
 {
   void eval(Array<double>& values, const Array<double>& x) const
   {
-    values[0] = -sin(5*x[0]);
+    values[0] = sin(5*x[0]);
   }
 };
 
@@ -66,13 +66,13 @@ int main()
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
   Source f;
-  Flux g;
+  dUdN g;
   L.f = f;
   L.g = g;
 
   // Compute solution
   VariationalProblem problem(a, L, bc);
-  //problem.parameters["linear_solver"] = "iterative";
+  problem.parameters["linear_solver"] = "iterative";
   Function u(V);
   problem.solve(u);
 

@@ -6,6 +6,8 @@
 //
 // This demo program solves a hyperelastic problem
 
+// Begin demo
+
 #include <dolfin.h>
 #include "HyperElasticity.h"
 

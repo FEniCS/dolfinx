@@ -6,19 +6,22 @@ __date__ = "2009-06-20"
 __copyright__ = "Copyright (C) 2009 Garth N. Wells"
 __license__  = "GNU LGPL Version 2.1"
 
+# Begin demo
+
 import random
 from dolfin import *
 
+# Class representing the intial conditions
 class InitialConditions(Expression):
     def __init__(self):
         random.seed(2 + MPI.process_number())
     def eval(self, values, x):
-        values[0] = 0.0
-        values[1] = 0.63 + 0.02*(0.5 - random.random())
+        values[0] = 0.63 + 0.02*(0.5 - random.random())
+        values[1] = 0.0
     def dim(self):
         return 2
 
-
+# Class for interfacing with the Newton solver
 class CahnHilliardEquation(NonlinearProblem):
     def __init__(self, a, L):
         NonlinearProblem.__init__(self)
@@ -31,20 +34,19 @@ class CahnHilliardEquation(NonlinearProblem):
         assemble(self.a, tensor=A, reset_sparsity=self.reset_sparsity)
         self.reset_sparsity = False
 
-#------------------------------------------------------------------------------
-# Create mesh and define function space
+# Model parameters
 lmbda  = 1.0e-02  # surface parameter
-factor = 100      # chemical free energy multiplier
 dt     = 5.0e-06  # time step
 theta  = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
 
-parameters["form_compiler"]["cpp_optimize"] = True
+# Form compiler options
 parameters["form_compiler"]["optimize"]     = True
+parameters["form_compiler"]["cpp_optimize"] = True
 
-# Define function spaces
+# Create mesh and define function spaces
 mesh = UnitSquare(96, 96)
-V = FunctionSpace(mesh, "CG", 1)
-ME = V * V
+V = FunctionSpace(mesh, "Lagrange", 1)
+ME = V*V
 
 # Define test and trial functions
 q, v  = TestFunctions(ME)
@@ -55,27 +57,30 @@ u   = Function(ME)  # current solution
 u0  = Function(ME)  # solution from previous converged step
 
 # Split mixed functions
-dk, dc = split(du)
-k,  c  = split(u)
-k0, c0 = split(u0)
-
-# Potential mu = \phi,c (chemical free-energy \phi = c^2*(1-c)^2)
-mu = factor*(2.0*c*(1.0-c)*(1.0-c) - 2.0*c*c*(1.0-c))
-
-# k^(n+theta)
-k_mid = (1.0-theta)*k0 + theta*k
-
-L1 = q*c*dx - q*c0*dx + dt*dot(grad(q), grad(k_mid))*dx
-L2 = v*k*dx - v*mu*dx - lmbda*dot(grad(v), grad(c))*dx
-
-L = L1 + L2
-a = derivative(L, u, du)
-#------------------------------------------------------------------------------
+dc, dmu = split(du)
+c,  mu  = split(u)
+c0, mu0 = split(u0)
 
 # Create intial conditions and interpolate
 u_init = InitialConditions()
 u.interpolate(u_init)
 u0.interpolate(u_init)
+
+# Compute the chemical potential df/dc
+c = variable(c)
+f    = 100*c**2*(1-c)**2
+dfdc = diff(f, c)
+
+# mu_(n+theta)
+mu_mid = (1.0-theta)*mu0 + theta*mu
+
+# Weak statement of the equations
+L0 = c*q*dx - c0*q*dx + dt*dot(grad(mu_mid), grad(q))*dx
+L1 = mu*v*dx - dfdc*v*dx - lmbda*dot(grad(c), grad(v))*dx
+L = L0 + L1
+
+# Compute directional derivative about u in the direction of du (Jacobian)
+a = derivative(L, u, du)
 
 # Create nonlinear problem and Newton solver
 problem = CahnHilliardEquation(a, L)
@@ -86,13 +91,14 @@ solver.parameters["relative_tolerance"] = 1e-6
 # Output file
 file = File("output.pvd", "compressed")
 
+# Step in time
 t = 0.0
 T = 80*dt
 while (t < T):
     t += dt
     u0.vector()[:] = u.vector()[:]
     solver.solve(problem, u.vector())
-    file << (u.split()[1], t)
+    file << (u.split()[0], t)
 
-plot(u.split()[1])
+plot(u.split()[0])
 interactive()
