@@ -12,7 +12,7 @@ __license__  = "GNU LGPL Version 2.1"
 # Modified by Johan Hake, 2009
 # Modified by Kristian B. Oelgaard, 2010
 
-# Last changed: 2010-08-20
+# Last changed: 2010-08-31
 
 import os
 import re
@@ -78,15 +78,13 @@ f.close()
 #g.generate_interface_file_from_index()
 #g.clean()
 
-# Create docstrings.i file from documentation module (only for dolfin.cpp)
-# and dump docstrings module in dolfin/site-packages.
-# Import the docstrings module.
-from os import pardir, path
-from sys import path as sys_path
+# Create docstrings.i file from docstrings module (only for dolfin.cpp)
+import os
+from sys import path
 # Add path to the local docstrings module.
-doc_dir = path.abspath(path.join(pardir, pardir, "site-packages", "dolfin"))
-sys_path.append(doc_dir)
+doc_dir = os.path.abspath(os.path.join(os.pardir, os.pardir, "site-packages", "dolfin"))
+path.append(doc_dir)
 import docstrings
-from documentation import generate_docstrings, copy_docstrings_module
+from documentation import generate_docstrings
 generate_docstrings(docstrings)
 
