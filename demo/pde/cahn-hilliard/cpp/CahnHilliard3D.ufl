@@ -10,16 +10,16 @@
 # Compile this form with FFC: ffc -l dolfin CahnHilliard.form
 
 P1 = FiniteElement("Lagrange", "tetrahedron", 1)
-ME = P1 + P1
+ME = P1 * P1
 
 q, v  = TestFunctions(ME)
 du    = TrialFunction(ME)
 
-u   = Coefficient(ME)  # current solution 
-u0  = Coefficient(ME)  # solution from previous converged step 
+u   = Coefficient(ME)  # current solution
+u0  = Coefficient(ME)  # solution from previous converged step
 
 # Split mixed functions
-dk, dc = split(du) 
+dk, dc = split(du)
 k,  c  = split(u)
 k0, c0 = split(u0)
 
@@ -27,7 +27,7 @@ lmbda    = Constant(tetrahedron) # surface parameter
 muFactor = Constant(tetrahedron) # chemical free energy multiplier
 
 dt       = Constant(tetrahedron) # time step
-theta    = Constant(tetrahedron) # time stepping parameter 
+theta    = Constant(tetrahedron) # time stepping parameter
 
 # Potential mu = \phi,c (chemical free-energy \phi = c^2*(1-c)^2)
 mu = muFactor*(2*c*(1-c)*(1-c) - 2*c*c*(1-c))
