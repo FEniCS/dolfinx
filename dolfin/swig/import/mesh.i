@@ -8,7 +8,6 @@
 %import(module="dolfin.cpp") "dolfin/mesh/Edge.h"
 %import(module="dolfin.cpp") "dolfin/mesh/Face.h"
 %import(module="dolfin.cpp") "dolfin/mesh/Facet.h"
-%import(module="dolfin.cpp") "dolfin/mesh/Point.h"
 %import(module="dolfin.cpp") "dolfin/mesh/Cell.h"
 %import(module="dolfin.cpp") "dolfin/mesh/FacetCell.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshTopology.h"

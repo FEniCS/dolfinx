@@ -81,12 +81,12 @@ f.close()
 # Create docstrings.i file from documentation module (only for dolfin.cpp)
 # and dump docstrings module in dolfin/site-packages.
 # Import the docstrings module.
-try:
-    import docstrings
-    from documentation import generate_docstrings, copy_docstrings_module
-    generate_docstrings(docstrings)
-    copy_docstrings_module(docstrings)
-except Exception as what:
-    raise ImportError("Could not import the docstrings module \n  (error: %s),\n\
-  update your PYTHONPATH variable?" % what)
+from os import pardir, path
+from sys import path as sys_path
+# Add path to the local docstrings module.
+doc_dir = path.abspath(path.join(pardir, pardir, "site-packages", "dolfin"))
+sys_path.append(doc_dir)
+import docstrings
+from documentation import generate_docstrings, copy_docstrings_module
+generate_docstrings(docstrings)
 
