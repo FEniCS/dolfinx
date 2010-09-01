@@ -261,7 +261,7 @@ void PETScLUSolver::pre_report(const PETScMatrix& A) const
   // Get parameter
   const bool report = parameters["report"];
 
-  if (report)
+  if (report && dolfin::MPI::process_number() == 0)
   {
     info(PROGRESS, "Solving linear system of size %d x %d (PETSc LU solver, %s).",
          A.size(0), A.size(1), solver_type);

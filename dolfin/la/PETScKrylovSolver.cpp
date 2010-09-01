@@ -157,7 +157,7 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
     error("Non-matching dimensions for linear system.");
 
   // Write a message
-  if (parameters["report"])
+  if (parameters["report"] && dolfin::MPI::process_number() == 0)
     info(PROGRESS, "Solving linear system of size %d x %d (PETSc Krylov solver).", M, N);
 
   // Reinitialize solution vector if necessary

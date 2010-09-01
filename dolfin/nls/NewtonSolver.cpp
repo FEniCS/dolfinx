@@ -16,6 +16,7 @@
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
 #include <dolfin/log/log.h>
+#include <dolfin/main/MPI.h>
 #include "NonlinearProblem.h"
 #include "NewtonSolver.h"
 
@@ -126,8 +127,11 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   }
 
   if (newton_converged)
-    info(PROGRESS, "Newton solver finished in %d iterations and %d linear solver iterations.",
+  {
+    if (dolfin::MPI::process_number() == 0)
+     info(PROGRESS, "Newton solver finished in %d iterations and %d linear solver iterations.",
             newton_iteration, krylov_iterations);
+  }
   else
   {
     const bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
@@ -187,21 +191,11 @@ bool NewtonSolver::converged(const GenericVector& b, const GenericVector& dx,
   const double relative_residual = _residual / residual0;
 
   // Output iteration number and residual
-  //FIXME: allow precision to be set for dolfin::cout<<
-  /*
-    std::cout.precision(3);
-    if (report && newton_iteration > 0)
-    std::cout << "  Iteration " << newton_iteration
-              << ":"
-              << " r (abs) = " << std::scientific << _residual
-              << " (tol = " << std::scientific << atol << ")"
-              << " r (rel) = " << std::scientific << relative_residual
-              << " (tol = " << std::scientific << rtol << ")"
-              << std::endl;
-  */
-  if (report && newton_iteration > 0)
+  if (report && newton_iteration > 0 && dolfin::MPI::process_number() == 0)
+  {
     info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = %.3e (tol = %.3e)",
          newton_iteration, _residual, atol, relative_residual, rtol);
+  }
 
   // Return true of convergence criterion is met
   if (relative_residual < rtol || _residual < atol)
