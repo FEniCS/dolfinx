@@ -417,7 +417,7 @@ if (DOLFIN_ENABLE_BENCHMARKS)
 
   # Add target "bench" for building benchmarks
   add_custom_target(bench
-    #COMMAND ${MAKE_COMMAND}
+    COMMAND ${MAKE_COMMAND}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
 
   # Copy files needed to run benchmarks in build directory
@@ -441,7 +441,7 @@ if (CPPUNIT_FOUND)
 
   # Add target "test" for building tests
   add_custom_target(test
-    #COMMAND ${MAKE_COMMAND}
+    COMMAND ${MAKE_COMMAND}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
 endif()
 
