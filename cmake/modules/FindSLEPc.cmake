@@ -9,6 +9,8 @@
 # Assumes that PETSC_DIR and PETSC_ARCH has been set by
 # alredy calling find_package(PETSc)
 
+message(STATUS "Checking for package 'SLEPc'")
+
 # Set debian_arches (PETSC_ARCH for Debian-style installations)
 foreach (debian_arches linux kfreebsd)
   if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
