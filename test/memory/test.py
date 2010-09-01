@@ -26,12 +26,12 @@ if platform.system() in ['Darwin', 'Windows']:
 cppdemos = []
 for dpath, dnames, fnames in os.walk(os.path.join(os.curdir, "..", "..", "demo")):
     if os.path.basename(dpath) == 'cpp':
-        if os.path.isfile(os.path.join(dpath, 'SConstruct')):
+        if os.path.isfile(os.path.join(dpath, 'Makefile')):
             cppdemos.append(dpath)
 
 unit_test_excludes = ['graph']
 
-# python unit test to run
+# Python unit test to run
 pythontests = []
 for dpath, dnames, fnames in os.walk(os.path.join(os.curdir, "..", "unit")):
     if os.path.basename(dpath) == 'python':
@@ -59,16 +59,18 @@ os.putenv('G_SLICE','always-malloc')
 os.putenv('GLIBCXX_FORCE_NEW','1')
 os.putenv('G_DEBUG','gc-friendly')
 
+print pythontests
+
 # Demos that need command line arguments are treated seperately
-cppdemos.remove('./../../demo/quadrature/cpp')
-cppdemos.remove('./../../demo/ode/method-weights/cpp')
-cppdemos.remove('./../../demo/ode/stiff/cpp')
+cppdemos.remove('./../../demo/undocumented/quadrature/cpp')
+cppdemos.remove('./../../demo/undocumented/method-weights/cpp')
+cppdemos.remove('./../../demo/undocumented/stiff/cpp')
 
 # Demos that are too time consuming to Valgrind
-cppdemos.remove('./../../demo/pde/elastodynamics/cpp')
 cppdemos.remove('./../../demo/pde/cahn-hilliard/cpp')
-cppdemos.remove('./../../demo/ode/reaction/cpp')
-cppdemos.remove('./../../demo/ode/courtemanche/cpp')
+cppdemos.remove('./../../demo/undocumented/elastodynamics/cpp')
+cppdemos.remove('./../../demo/undocumented/reaction/cpp')
+cppdemos.remove('./../../demo/undocumented/courtemanche/cpp')
 
 re_def_lost = re.compile("definitely lost: 0 bytes in 0 blocks.")
 re_pos_lost = re.compile("possibly lost: 0 bytes in 0 blocks.")
@@ -95,7 +97,7 @@ def run_and_analyse(path, run_str, prog_type, no_reachable_check = False):
            (no_reachable_check or re_reachable.search(output[1])):
             print "OK"
             return []
-        
+
     print "*** FAILED: Memory error"
     return [(path, prog_type, output[1])]
 
@@ -146,11 +148,12 @@ for demo_path in cppdemos:
     print "----------------------------------------------------------------------"
     print "Running Valgrind on C++ demo %s" % demo_path
     print ""
-    if os.path.isfile(os.path.join(demo_path, 'demo')):
-        failed += run_and_analyse(demo_path,"./demo","C++")
+    demo_name = "./" + demo_path.split("/")[-2] + "-demo"
+    print demo_name
+    if os.path.isfile(os.path.join(demo_path, demo_name)):
+        failed += run_and_analyse(demo_path, demo_name, "C++")
     else:
         print "*** Warning: missing demo"
-
 
 # Print output for failed tests
 print ""
