@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-06-26
-// Last changed: 2010-01-27
+// Last changed: 2010-09-01
 //
 // This demo program solves the Biharmonic equation,
 //
@@ -31,7 +31,7 @@ public:
 
   void eval(Array<double>& values, const Array<double>& x) const
   {
-    values[0] = 4.0*pow(DOLFIN_PI, 4)*sin(DOLFIN_PI*x[0])*sin(DOLFIN_PI*x[1]);
+    values[0] = 4.0*std::pow(DOLFIN_PI, 4)*std::sin(DOLFIN_PI*x[0])*std::sin(DOLFIN_PI*x[1]);
   }
 
 };
