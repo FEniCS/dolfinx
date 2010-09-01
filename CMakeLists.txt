@@ -19,9 +19,10 @@ add_definitions(-DPACKAGE_VERSION="${DOLFIN_VERSION}")
 # Set verbose output while testing CMake
 set(CMAKE_VERBOSE_MAKEFILE 1)
 
-# Set special link option, see `cmake --help-policy CMP0003`
+# Set CMake options, see `cmake --help-policy CMP000x`
 if (COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
+  cmake_policy(SET CMP0004 OLD)
 endif()
 
 # Set location of our FindFoo.cmake modules
