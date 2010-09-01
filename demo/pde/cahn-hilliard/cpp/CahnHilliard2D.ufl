@@ -2,9 +2,9 @@
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2006
-# Last changed: 2010-08-31
+# Last changed: 2010-09-01
 #
-# The linearised bilinear form a(v, u) and linear form L(v) for
+# The linearised bilinear form a(du, v) and linear form L(v) for
 # the Cahn-Hilliard equation.
 #
 # Compile this form with FFC: ffc -l dolfin -O -f split CahnHilliard2D.ufl
@@ -12,8 +12,8 @@
 P1 = FiniteElement("Lagrange", "triangle", 1)
 ME = P1*P1
 
-q, v = TestFunctions(ME)
 du   = TrialFunction(ME)
+q, v = TestFunctions(ME)
 
 u   = Coefficient(ME)  # current solution
 u0  = Coefficient(ME)  # solution from previous converged step
@@ -35,8 +35,8 @@ c    = variable(c)
 f    = 100*c**2*(1-c)**2
 dfdc = diff(f, c)
 
-L0 = q*c*dx  - q*c0*dx   + dt*dot(grad(q), grad(mu_mid))*dx
-L1 = v*mu*dx - v*dfdc*dx - lmbda*dot(grad(v), grad(c))*dx
+L0 = c*q*dx  - c0*q*dx   + dt*dot(grad(mu_mid), grad(q))*dx
+L1 = mu*v*dx - dfdc*v*dx - lmbda*dot(grad(c), grad(v))*dx
 L = L0 + L1
 
 a = derivative(L, u, du)

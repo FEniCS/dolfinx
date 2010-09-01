@@ -2,9 +2,9 @@
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2010-08-30
-# Last changed: 2010-08-31
+# Last changed: 2010-09-01
 #
-# The bilinear form a(v, u) and linear form L(v) for the pressure
+# The bilinear form a(u, v) and linear form L(v) for the pressure
 # update step in Chorin's method for the incompressible Navier-Stokes
 # equations.
 #

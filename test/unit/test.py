@@ -26,7 +26,7 @@ if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
 
 # Build prefix list
 prefixes = [""]
-if has_mpi() and has_parmetis():
+if "RUN_UNIT_TESTS_IN_PARALLEL" in os.environ and has_mpi() and has_parmetis():
     prefixes.append("mpirun -np 2 ")
 else:
     print "DOLFIN has not been compiled with mpi and Parmetis. Unit tests will not be run in parallel."

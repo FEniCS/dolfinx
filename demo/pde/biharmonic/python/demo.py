@@ -44,9 +44,9 @@ class Source(Expression):
 u0 = Constant(0.0)
 bc = DirichletBC(V, u0, DirichletBoundary())
 
-# Define test and trial functions
-v = TestFunction(V)
+# Define trial and test functions
 u = TrialFunction(V)
+v = TestFunction(V)
 
 # Define normal component, mesh size and right-hand side
 h = CellSize(mesh)
@@ -58,13 +58,13 @@ f = Source(V)
 alpha = Constant(8.0)
 
 # Define bilinear form
-a = inner(div(grad(v)), div(grad(u)))*dx \
-  - inner(avg(div(grad(v))), jump(grad(u), n))*dS \
-  - inner(jump(grad(v), n), avg(div(grad(u))))*dS \
-  + alpha('+')/h_avg*inner(jump(grad(v),n), jump(grad(u),n))*dS
+a = inner(div(grad(u)), div(grad(v)))*dx \
+  - inner(avg(div(grad(u))), jump(grad(v), n))*dS \
+  - inner(jump(grad(u), n), avg(div(grad(v))))*dS \
+  + alpha('+')/h_avg*inner(jump(grad(u),n), jump(grad(v),n))*dS
 
 # Define linear form
-L = v*f*dx
+L = f*v*dx
 
 # Create variational problem and solve
 problem = VariationalProblem(a, L, bc)
