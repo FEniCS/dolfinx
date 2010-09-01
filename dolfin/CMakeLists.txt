@@ -192,9 +192,6 @@ endif()
 list(REMOVE_DUPLICATES DOLFIN_INCLUDE_DIRECTORIES)
 list(REMOVE_DUPLICATES DOLFIN_TARGET_LINK_LIBRARIES)
 
-# Add link directories
-#link_directories(${DOLFIN_TARGET_LINK_LIBRARIES_DIRS})
-
 # Add compiler include directories
 include_directories(${DOLFIN_SOURCE_DIR} ${DOLFIN_INCLUDE_DIRECTORIES})
 
