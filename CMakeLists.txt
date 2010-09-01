@@ -251,14 +251,17 @@ endif()
 # FIXME: Use FeatureSummary.cmake to do this
 
 # Gather information about which optional packages were found and not found
-set(OPTIONAL_PACKAGES_NOT_FOUND "")
 set(OPTIONAL_PACKAGES_FOUND "")
+set(OPTIONAL_PACKAGES_NOT_FOUND "")
+set(OPTIONAL_PACKAGES_NOT_ENABLED "")
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   string(TOUPPER "${OPTIONAL_PACKAGE}" PKG)
   if (${PKG}_FOUND OR ${OPTIONAL_PACKAGE}_FOUND)
     list(APPEND OPTIONAL_PACKAGES_FOUND ${PKG})
-  else()
+  elseif (${PKG}_ENABLED OR ${OPTIONAL_PACKAGE}_ENABLED)
     list(APPEND OPTIONAL_PACKAGES_NOT_FOUND ${PKG})
+  else()
+    list(APPEND OPTIONAL_PACKAGES_NOT_ENABLED ${PKG})
   endif()
 endforeach()
 

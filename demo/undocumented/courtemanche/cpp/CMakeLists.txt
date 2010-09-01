@@ -6,6 +6,9 @@ project(courtemanche-demo)
 # Set verbose output while testing CMake
 set(CMAKE_VERBOSE_MAKEFILE 1)
 
+# Set CMake behavior
+cmake_policy(SET CMP0004 OLD)
+
 # Get DOLFIN configuration data (dolfin-config.cmake must be in DOLFIN_CMAKE_CONFIG_PATH)
 find_package(dolfin)
 
