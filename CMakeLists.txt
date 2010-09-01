@@ -81,6 +81,9 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
 endforeach()
 
+# Packages that we should not enable by default
+set(DOLFIN_ENABLE_GMP OFF)
+
 #------------------------------------------------------------------------------
 # Package-specific options
 
