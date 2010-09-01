@@ -166,21 +166,13 @@ if (DOLFIN_ENABLE_MPI AND MPI_FOUND)
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_MPI")
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${MPI_INCLUDE_PATH})
   list(APPEND DOLFIN_TARGET_LINK_LIBRARIES ${MPI_LIBRARIES})
-
-  # FIXME: Check if we're using the MPI wrapper (e.g. mpicxx)
-  # Note: It's awkward to pick up the MPI compiler wrappers, so just add
-  #       all the flags
-  # FIXME: The FindMPI.cmake module defines the variable MPI_COMPILER which
-  # FIXME: should point to the MPI compiler wrappers. We could set
-  # FIXME: CMAKE_CXX_COMPILER to be MPI_COMPILER but we should be careful
-  # FIXME: to not owervriting any user-specified CMAKE_CXX_COMPILER.
-  set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${MPI_COMPILE_FLAGS}")
   list(APPEND DOLFIN_INCLUDE_DIRECTORIES ${MPI_INCLUDE_PATH})
+  set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${MPI_COMPILE_FLAGS}")
 
   # FIXME: Is this linker flag required?
   #list(APPEND DOLFIN_LINK_FLAGS ${MPI_LINK_FLAGS})
 
-  # Necessary flags for MPICH2
+  # Necessary flag for MPICH2
   list(APPEND DOLFIN_CXX_DEFINITIONS "-DMPICH_IGNORE_CXX_SEEK")
 
 endif()
@@ -295,8 +287,6 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
 
 # Get library location
 get_target_property(DOLFIN_LIBRARY dolfin LOCATION)
-
-message("Test: ${DOLFIN_INCLUDE_DIRECTORIES}")
 
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config.cmake.in ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake
