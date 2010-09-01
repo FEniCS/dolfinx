@@ -11,6 +11,8 @@
 // time step. It also requires fines meshes, and is often not well-suited to
 // iterative linear solvers.
 
+// Begin demo
+
 #include <dolfin.h>
 #include "CahnHilliard2D.h"
 #include "CahnHilliard3D.h"
