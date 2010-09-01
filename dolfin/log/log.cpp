@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2009-12-03
+// Last changed: 2010-09-01
 
 #include <boost/scoped_array.hpp>
 #include <cstdarg>
