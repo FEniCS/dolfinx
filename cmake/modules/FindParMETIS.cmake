@@ -30,8 +30,6 @@ if (MPI_FOUND)
     set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIRS} ${MPI_INCLUDE_PATH})
     set(CMAKE_REQUIRED_LIBRARIES ${PARMETIS_LIBRARIES}  ${MPI_LIBRARIES})
 
-    message("Test: ${CMAKE_REQUIRED_INCLUDES}")
-
     # Build and run test program
     include(CheckCXXSourceRuns)
     check_cxx_source_runs("
