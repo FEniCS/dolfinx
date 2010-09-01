@@ -68,7 +68,7 @@ def right(x, on_boundary):
     return x[0] > 0.99 and on_boundary
 
 # Load mesh and define function space
-#mesh = Mesh("../../../../data/meshes/dolfin-2.xml.gz")
+#mesh = Mesh("dolfin-2.xml.gz")
 mesh = UnitSquare(32, 32)
 
 # Define function space

@@ -10,7 +10,7 @@ __license__  = "GNU LGPL Version 2.1"
 from dolfin import *
 
 # Create mesh and define function space
-mesh = Mesh("../../../../data/meshes/aneurysm.xml.gz")
+mesh = Mesh("aneurysm.xml.gz")
 V = FunctionSpace(mesh, "CG", 1)
 
 # Define variational problem

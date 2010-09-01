@@ -21,8 +21,8 @@ if not has_cgal():
     print "DOLFIN must be compiled with CGAL to run this demo."
     exit(0)
 
-#Set to False if you do not want to create movies 
-#(default should be True since you probably want to :) 
+#Set to False if you do not want to create movies
+#(default should be True since you probably want to :)
 create_movies = True
 
 # Create meshes (omega0 overlapped by omega1)
@@ -86,8 +86,8 @@ interactive()
 
 ####Repeat the same with the rotator in the cavity example.
 
-background_mesh = Rectangle(-2.0, -2.0, 2.0, 2.0, 30, 30) 
-structure_mesh = Mesh("../../../../../../data/meshes/rotator.xml.gz")
+background_mesh = Rectangle(-2.0, -2.0, 2.0, 2.0, 30, 30)
+structure_mesh = Mesh("rotator.xml.gz")
 
 # Access mesh geometry
 x = structure_mesh.coordinates()
@@ -107,7 +107,7 @@ while theta < 2*DOLFIN_PI + dtheta:
   intersection.values()[:] = 0
   intersection.values()[cells] = 1
 
-  if _first : 
+  if _first :
     q = plot(intersection, rescale=True, wireframe=True, warpscalar=False)
     q = plot(intersection, rescale=False, wireframe=True)
     q.ren.ResetCamera()
@@ -115,7 +115,7 @@ while theta < 2*DOLFIN_PI + dtheta:
 
   else :
     plot(intersection)
-    
+
   q.update(intersection)
   if create_movies:
     q.write_png()

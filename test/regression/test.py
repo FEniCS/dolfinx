@@ -80,10 +80,10 @@ if only_python:
 
 # Build prefix list
 prefixes = [""]
-if has_mpi() and has_parmetis():
+if "RUN_UNIT_TESTS_IN_PARALLEL" in os.environ and has_mpi() and has_parmetis():
     prefixes.append("mpirun -n 2 ")
 else:
-    print "DOLFIN has not been compiled with mpi and Parmetis. Regression test will not be run in parallel."
+    print "Not running regression tests in parallel."
 
 # Run in serial, then in parallel
 for prefix in prefixes:
@@ -109,6 +109,7 @@ for prefix in prefixes:
                 print "ok (graceful exit on fail)"
             else:
                 print "*** Failed"
+                print output[1]
                 failed += [(demo, "C++", prefix, output[1])]
         else:
             print "*** Warning: missing demo"
@@ -129,6 +130,7 @@ for prefix in prefixes:
                 print "ok (graceful exit on fail)"
             else:
                 print "*** Failed"
+                print output[1]
                 failed += [(demo, "Python", prefix, output[1])]
         else:
             print "*** Warning: missing demo"

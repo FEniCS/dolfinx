@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-05-23
-// Last changed: 2008-11-16
+// Last changed: 2010-09-02
 //
 // This demo illustrates how to set boundary conditions for meshes
 // that include boundary indicators. The mesh used in this demo was
@@ -17,7 +17,7 @@ using namespace dolfin;
 int main()
 {
   // Create mesh and finite element
-  Mesh mesh("../../../../data/meshes/aneurysm.xml.gz");
+  Mesh mesh("aneurysm.xml.gz");
 
   // Define variational problem
   Constant f(0.0);
