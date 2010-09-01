@@ -47,52 +47,14 @@ class CahnHilliardEquation : public NonlinearProblem
                          const Constant& theta, const Constant& lambda)
                        : reset_Jacobian(true)
     {
+      // Initialse class (depending on geometric dimension of the mesh).
+      // Unfortunately C++ does not allow namespaces as template arguments
       if (mesh.geometry().dim() == 2)
-      {
-        // Create function space and functions
-        boost::shared_ptr<CahnHilliard2D::FunctionSpace> V(new CahnHilliard2D::FunctionSpace(mesh));
-        _u.reset(new Function(V));
-        _u0.reset(new Function(V));
-
-        // Create forms and attach functions
-        CahnHilliard2D::BilinearForm* _a = new CahnHilliard2D::BilinearForm(V, V);
-        CahnHilliard2D::LinearForm*_L = new CahnHilliard2D::LinearForm(V);
-        _a->u = *_u; _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
-        _L->u = *_u; _L->u0 = *_u0;
-        _L->lmbda = lambda; _L->dt = dt; _L->theta = theta;
-
-        // Wrap pointers in a smart pointer
-        a.reset(_a);
-        L.reset(_L);
-
-        // Set solution to intitial condition
-        InitialConditions u_initial(mesh);
-        *_u = u_initial;
-      }
+        init<CahnHilliard2D::FunctionSpace, CahnHilliard2D::BilinearForm, CahnHilliard2D::LinearForm>(mesh, dt, theta, lambda);
       else if (mesh.geometry().dim() == 3)
-      {
-        // Create function space and functions
-        boost::shared_ptr<CahnHilliard3D::FunctionSpace> V(new CahnHilliard3D::FunctionSpace(mesh));
-        _u.reset(new Function(V));
-        _u0.reset(new Function(V));
-
-        // Create forms and attach functions
-        CahnHilliard3D::BilinearForm* _a = new CahnHilliard3D::BilinearForm(V, V);
-        CahnHilliard3D::LinearForm*_L = new CahnHilliard3D::LinearForm(V);
-        _a->u = *_u; _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
-        _L->u = *_u; _L->u0 = *_u0;
-        _L->lmbda = lambda; _L->dt = dt; _L->theta = theta;
-
-        // Wrap pointers in a smart pointer
-        a.reset(_a);
-        L.reset(_L);
-
-        // Set solution to intitial condition
-        InitialConditions u_initial(mesh);
-        *_u = u_initial;
-      }
+        init<CahnHilliard3D::FunctionSpace, CahnHilliard3D::BilinearForm, CahnHilliard3D::LinearForm>(mesh, dt, theta, lambda);
       else
-        error("Cahn-Hilliard model is programmed for 2D and 3D only");
+        error("Cahn-Hilliard model is programmed for 2D and 3D only.");
     }
 
     // User defined residual vector
@@ -107,7 +69,7 @@ class CahnHilliardEquation : public NonlinearProblem
     {
       // Assemble system and RHS (Neumann boundary conditions)
       assemble(A, *a, reset_Jacobian);
-      reset_Jacobian  = false;
+      reset_Jacobian = false;
     }
 
     // Return solution function
@@ -120,13 +82,39 @@ class CahnHilliardEquation : public NonlinearProblem
 
   private:
 
-    // Pointers to FunctionSpace and forms
+    template<class X, class Y, class Z>
+    void init(const Mesh& mesh, const Constant& dt, const Constant& theta,
+              const Constant& lambda)
+    {
+      // Create function space and functions
+      boost::shared_ptr<X> V(new X(mesh));
+      _u.reset(new Function(V));
+      _u0.reset(new Function(V));
+
+      // Create forms and attach functions
+      Y* _a = new Y(V, V);
+      Z* _L = new Z(V);
+      _a->u = *_u; _a->lmbda = lambda; _a->dt = dt; _a->theta = theta;
+      _L->u = *_u; _L->u0 = *_u0;
+      _L->lmbda = lambda; _L->dt = dt; _L->theta = theta;
+
+      // Wrap pointers in a smart pointer
+      a.reset(_a);
+      L.reset(_L);
+
+      // Set solution to intitial condition
+      InitialConditions u_initial(mesh);
+      *_u = u_initial;
+    }
+
+    // Function space, forms and functions
     boost::scoped_ptr<Form> a;
     boost::scoped_ptr<Form> L;
     boost::scoped_ptr<Function> _u;
     boost::scoped_ptr<Function> _u0;
     bool reset_Jacobian;
 };
+
 
 int main(int argc, char* argv[])
 {
