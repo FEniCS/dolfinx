@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2002
-// Last changed: 2010-08-16
+// Last changed: 2010-09-02
 //
 // This demo solves the harmonic oscillator on
 // the time interval (0, 4*pi) and computes the
@@ -66,9 +66,9 @@ int main()
     ode.parameters["order"] = q;
     ode.solve();
 
-    ODESolution u;
-    ode.solve(u);
-    ode.solve_dual(u);
+    //ODESolution u;
+    //ode.solve(u);
+    //ode.solve_dual(u);
 
     logging(true);
     info("cG(%d): e = %.3e", q, to_double(ode.error()));
@@ -86,9 +86,9 @@ int main()
     ode.parameters["method"] = "dg";
     ode.parameters["order"] = q;
 
-    ODESolution u;
-    ode.solve(u);
-    ode.solve_dual(u);
+    //ODESolution u;
+    //ode.solve(u);
+    //ode.solve_dual(u);
 
     logging(true);
     info("dG(%d): e = %.3e", q, to_double(ode.error()));
