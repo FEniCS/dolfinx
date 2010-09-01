@@ -19,6 +19,8 @@ __date__      = "2009-06-26 -- 2009-06-26"
 __copyright__ = "Copyright (C) 2009 Kristian B. Oelgaard"
 __license__   = "GNU LGPL Version 2.1"
 
+# Begin demo
+
 from dolfin import *
 
 # Optimization options for the form compiler
