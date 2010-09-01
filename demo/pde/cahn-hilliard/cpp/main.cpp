@@ -47,7 +47,7 @@ class CahnHilliardEquation : public NonlinearProblem
                          const Constant& theta, const Constant& lambda)
                        : reset_Jacobian(true)
     {
-      if (mesh.topology().dim() == 2)
+      if (mesh.geometry().dim() == 2)
       {
         // Create function space and functions
         boost::shared_ptr<CahnHilliard2D::FunctionSpace> V(new CahnHilliard2D::FunctionSpace(mesh));
@@ -69,7 +69,7 @@ class CahnHilliardEquation : public NonlinearProblem
         InitialConditions u_initial(mesh);
         *_u = u_initial;
       }
-      else if (mesh.topology().dim() == 3)
+      else if (mesh.geometry().dim() == 3)
       {
         // Create function space and functions
         boost::shared_ptr<CahnHilliard3D::FunctionSpace> V(new CahnHilliard3D::FunctionSpace(mesh));
