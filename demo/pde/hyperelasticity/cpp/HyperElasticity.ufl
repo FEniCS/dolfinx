@@ -2,9 +2,9 @@
 # Licensed under the GNU LGPL Version 2.1.
 #
 # First added:  2009-09-29
-# Last changed: 2010-08-21
+# Last changed: 2010-09-01
 #
-# The bilinear form a(v, u) and linear form L(v) for
+# The bilinear form a(du, v) and linear form L(v) for
 # a hyperelastic model.
 #
 # Compile this form with FFC: ffc -l dolfin -feliminate_zeros -fprecompute_basis_const -fprecompute_ip_const HyperElasticity.ufl
@@ -12,9 +12,9 @@
 # Function spaces
 element = VectorElement("Lagrange", "tetrahedron", 1)
 
-# Test and trial functions
-v  = TestFunction(element)      # Test function
+# Trial and test functions
 du = TrialFunction(element)     # Incremental displacement
+v  = TestFunction(element)      # Test function
 
 # Functions
 u  = Coefficient(element)       # Displacement from previous iteration
