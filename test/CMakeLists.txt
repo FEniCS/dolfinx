@@ -17,8 +17,8 @@ find_package(dolfin REQUIRED)
 if (dolfin_FOUND)
 
   # Build list of all cpp directories
-  file( GLOB_RECURSE list "test.cpp")
-  list( SORT list )
+  file(GLOB_RECURSE list "test.cpp")
+  list(SORT list)
   string(REGEX REPLACE "/test.cpp" "" list "${list}")
 
   # Add each C++ demo directory
