@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-03-02
-// Last changed: 2010-01-31
+// Last changed: 2010-09-01
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving
 // the Cahn-Hilliard equation.
@@ -24,7 +24,7 @@ public:
 
   InitialConditions(const Mesh& mesh) : Expression(mesh.topology().dim())
   {
-    dolfin::seed(2 + MPI::process_number());
+    dolfin::seed(2 + dolfin::MPI::process_number());
   }
 
   void eval(Array<double>& values, const Data& data) const
