@@ -397,10 +397,10 @@ dolfin::uint ODESolution::get_buffer_index(const real& t)
 
   // Expand interval until it includes our target value
   int width = 1;
-  while (! (data[std::max(buffer_index_cache-width, 0)].a <= t+real_epsilon() &&
-	    data[std::min(buffer_index_cache+width, (int)data.size()-1)].b() > t-real_epsilon()))
+  while (!(data[std::max(buffer_index_cache-width, 0)].a <= t + real_epsilon() &&
+              data[std::min(buffer_index_cache+width, (int)data.size()-1)].b() > t-real_epsilon()))
   {
-    width = width * 2;
+    width = 2*width;
     count++;
   }
 

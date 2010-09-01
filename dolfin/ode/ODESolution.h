@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
-// 
+//
 // First added:  2008-06-11
 // Last changed: 2010-06-21
 
@@ -21,35 +21,35 @@ namespace dolfin
 {
 
   /// ODESolution stores the solution from the ODE solver, primarily to
-  /// be able to solve the dual problem. A number of interpolated values 
-  /// is cached, since the ODE solver repeatedly requests evaluation of 
+  /// be able to solve the dual problem. A number of interpolated values
+  /// is cached, since the ODE solver repeatedly requests evaluation of
   /// the same t.
-  /// 
+  ///
   /// The samples are stored in memory if possible, otherwise stored
   /// in a temporary file and fetched from disk in blocks when needed.
   ///
   /// Since GMP at the moment doesn't support saving binary operands
-  /// on disk this class uses ascii files for storage. 
-  /// Fortunately storing operands on disk in binary is planned in 
+  /// on disk this class uses ascii files for storage.
+  /// Fortunately storing operands on disk in binary is planned in
   /// the next major release of GMP.
 
 
   class Lagrange;
   class ODESolutionIterator;
 
-
-//----------------------------------------------------------------------------- 
+//-----------------------------------------------------------------------------
 //-------------------------------- timeslabdata -------------------------------
-//----------------------------------------------------------------------------- 
+//-----------------------------------------------------------------------------
   class ODESolutionData
   {
 
   public:
+
   ODESolutionData(const real& a, const real& k, uint nodal_size, uint N, const real* values) :
-    a(a), k(k), N(N), nodal_size(nodal_size) 
-    { 
+    a(a), k(k), N(N), nodal_size(nodal_size)
+    {
       nv = new real[nodal_size * N];
-      real_set(N * nodal_size, nv, values); 
+      real_set(N * nodal_size, nv, values);
     }
 
     //copy constructor
@@ -62,20 +62,19 @@ namespace dolfin
       nv = new real[N * nodal_size];
       real_set(N * nodal_size, nv, cp.nv);
     }
-    
-    ~ODESolutionData() {
-      delete [] nv; 
-    }
 
-    inline real b() {return a+k;}
+    ~ODESolutionData()
+     { delete [] nv; }
+
+    real b() {return a+k;}
 
     // Evaluate the solution at t = a (first nodal point)
-    void eval_a(real* u) 
-    { 
-      for (uint i = 0; i < N; i++)  
-	u[i] = nv[i * nodal_size];
+    void eval_a(real* u)
+    {
+      for (uint i = 0; i < N; i++)
+        u[i] = nv[i * nodal_size];
     }
-    
+
     real a;
     real k;
     real* nv;
@@ -84,9 +83,9 @@ namespace dolfin
 
   };
 
-//----------------------------------------------------------------------------- 
+//-----------------------------------------------------------------------------
 //-------------------------------- ODESolution---------------------------------
-//----------------------------------------------------------------------------- 
+//-----------------------------------------------------------------------------
 
   class ODESolution
   {
@@ -108,7 +107,7 @@ namespace dolfin
     /// Make object ready for evaluating, set to read mode
     void flush();
 
-    /// Evaluate (interpolate) value of solution at given time    
+    /// Evaluate (interpolate) value of solution at given time
     void eval(const real& t, real* y);
 
     /// Get timeslab (used when iterating)
@@ -122,11 +121,11 @@ namespace dolfin
 
     std::string str(bool verbose) const;
 
-    inline uint size() const {return no_timeslabs;}
-    inline uint nsize() const {return nodal_size;}
-    inline real endtime() const {return T;}
+    uint size() const {return no_timeslabs;}
+    uint nsize() const {return nodal_size;}
+    real endtime() const {return T;}
 
-    //iterator
+    // iterator
     typedef ODESolutionIterator iterator;
     iterator begin();
     iterator end();
@@ -135,7 +134,7 @@ namespace dolfin
     Lagrange* trial;
     uint N; //number of components
     uint nodal_size;
-    real T; //endtime. Updated when new timeslabs are added 
+    real T; //endtime. Updated when new timeslabs are added
 
     uint no_timeslabs;
     std::vector<ODESolutionData> data; //data in memory
@@ -143,7 +142,7 @@ namespace dolfin
     real* quadrature_weights;
 
     //cache
-    std::pair<real, real*>* cache;    
+    std::pair<real, real*>* cache;
     uint cache_size;
     uint ringbufcounter;
 
@@ -154,38 +153,39 @@ namespace dolfin
     static const uint max_filesize = 3000000000u;     // approx 3GB
     std::vector< std::pair<real, uint> > file_table; // table mapping t values and index to files
     uint fileno_in_memory;                           // which file is currently in memory
-    bool data_on_disk;                               // 
+    bool data_on_disk;                               //
     uint max_timeslabs;                              // number of timeslabs pr file and in memory
     bool dirty;                                      // all data written to disk
     std::string filename;
 
     uint get_file_index(const real& t); //find which file stores timeslab containing given t
     void read_file(uint file_number);
-    dolfin::uint open_and_read_header(std::ifstream& file, uint filenumber); 
+    dolfin::uint open_and_read_header(std::ifstream& file, uint filenumber);
 
     void add_data(const real& a, const real& b, const real* data);
 
     uint get_buffer_index(const real& t);
     int buffer_index_cache;
 
-    //some functions for convenience
-    inline real a_in_memory() {return data[0].a;}
-    inline real b_in_memory() {return data[data.size()-1].a + data[data.size()-1].k;}
-    inline uint a_index_in_memory() {return data_on_disk ? file_table[fileno_in_memory].second : 0;}
-    inline uint b_index_in_memory() {return a_index_in_memory() + data.size()-1;}
+    // some functions for convenience
+    real a_in_memory() {return data[0].a;}
+    real b_in_memory() {return data[data.size()-1].a + data[data.size()-1].k;}
+    uint a_index_in_memory() {return data_on_disk ? file_table[fileno_in_memory].second : 0;}
+    uint b_index_in_memory() {return a_index_in_memory() + data.size()-1;}
 
   };
 
-//----------------------------------------------------------------------------- 
+//-----------------------------------------------------------------------------
 //-------------------------------- iterator -----------------------------------
-//----------------------------------------------------------------------------- 
-  class ODESolutionIterator : 
+//-----------------------------------------------------------------------------
+  class ODESolutionIterator :
     public std::iterator<std::input_iterator_tag, ODESolutionData*>
   {
+
   public:
     ODESolutionIterator(ODESolution& u) : u(u), index(0) {}
     ODESolutionIterator(ODESolution& u, int index) : u(u), index(index) {}
-    ODESolutionIterator(const ODESolutionIterator& it) :   
+    ODESolutionIterator(const ODESolutionIterator& it) :
       u(it.get_ODESolution()), index(it.get_index()) {}
 
     ODESolutionIterator& operator++() {++index;return *this;}
@@ -205,7 +205,6 @@ namespace dolfin
     uint index;
 
   };
-
 
 }
 #endif
