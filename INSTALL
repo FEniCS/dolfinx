@@ -45,3 +45,27 @@ build for DOLFIN using a graphical interface to CMake, simply type
   cd build
   cmake-gui ..
   make install
+
+Building demos and tests
+------------------------
+
+To build demos, enter the build directory (if any) and type
+
+  make demo
+
+This will build all demos. To build a specific demo, just name the
+demo you want to build, for example the Poisson demo, and type
+
+  make poisson-demo
+
+Alternatively, you may navigate to the demo directory directly, for
+example demo/pde/poisson/cpp and then build the demo using CMake as
+above:
+
+  cmake .
+  make
+
+Python demos can be run directly by navigating to the directory of the
+demo and typing
+
+  python demo.py
