@@ -40,8 +40,8 @@ print ""
 import pprint
 
 # Remove demos that are known not to work (FIXME's)
-pydemos.remove(os.path.join(demodir, 'ode', 'aliev-panfilov', 'python'))
-pydemos.remove(os.path.join(demodir, 'ode', 'lorenz', 'python'))
+pydemos.remove(os.path.join(demodir, 'undocumented', 'aliev-panfilov', 'python'))
+pydemos.remove(os.path.join(demodir, 'undocumented', 'lorenz', 'python'))
 
 # Push slow demos to the end
 pyslow = []
@@ -54,15 +54,15 @@ for s in cppslow:
     cppdemos.append(s)
 
 # Remove overly slow demos
-pydemos.remove(os.path.join(demodir, 'pde', 'cahn-hilliard', 'python'))
+pydemos.remove(os.path.join(demodir,  'pde', 'cahn-hilliard', 'python'))
 cppdemos.remove(os.path.join(demodir, 'pde', 'cahn-hilliard', 'cpp'))
-cppdemos.remove(os.path.join(demodir, 'pde', 'elastodynamics', 'cpp'))
+cppdemos.remove(os.path.join(demodir, 'undocumented', 'elastodynamics', 'cpp'))
 
-# Demos that need command-line arguments are treated separately
-pydemos.remove(os.path.join(demodir, 'quadrature', 'python'))
-cppdemos.remove(os.path.join(demodir, 'quadrature', 'cpp'))
-cppdemos.remove(os.path.join(demodir, 'ode', 'method-weights', 'cpp'))
-cppdemos.remove(os.path.join(demodir, 'ode', 'stiff', 'cpp'))
+# Remove demos that need command-line arguments
+pydemos.remove(os.path.join(demodir,  'undocumented', 'quadrature', 'python'))
+cppdemos.remove(os.path.join(demodir, 'undocumented', 'quadrature', 'cpp'))
+cppdemos.remove(os.path.join(demodir, 'undocumented', 'method-weights', 'cpp'))
+cppdemos.remove(os.path.join(demodir, 'undocumented', 'stiff', 'cpp'))
 
 failed = []
 timing = []
