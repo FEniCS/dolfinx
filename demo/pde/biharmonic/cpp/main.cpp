@@ -55,7 +55,7 @@ int main()
   CellSize h(mesh);
   Constant alpha(8.0);
 
-  // Create funtion space
+  // Create function space
   Biharmonic::FunctionSpace V(mesh);
 
   // Define boundary condition
