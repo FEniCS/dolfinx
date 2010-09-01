@@ -64,13 +64,13 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
 
     no_timeslabs += timeslabs_in_file;
 
-    // if this is the last file, read the last line to extract the 
+    // if this is the last file, read the last line to extract the
     // endtime value
-    if (i == number_of_files-1) 
+    if (i == number_of_files-1)
     {
       // seek backwards from the end of the file to find the last
       // newline
-      // FIXME: Is there a better way to do this? Some library function 
+      // FIXME: Is there a better way to do this? Some library function
       // doing the same as the command tail
       char buf[1001];
       file.seekg (0, std::ios::end);
@@ -78,38 +78,37 @@ ODESolution::ODESolution(std::string filename, uint number_of_files) :
       pos -= 1001;
       file.seekg(pos, std::ios::beg);
 
-      while (true) 
+      while (true)
       {
-	file.read(buf, 1000);
-	buf[1000] = '\0';
+        file.read(buf, 1000);
+        buf[1000] = '\0';
 
-	std::string buf_string(buf);
-	size_t newline_pos =  buf_string.find_last_of("\n");
+        std::string buf_string(buf);
+        size_t newline_pos =  buf_string.find_last_of("\n");
 
-	// Check if we found a newline
-	if (newline_pos != std::string::npos) 
-	{
-	  // Read a and k from the timeslab
-	  file.seekg(pos + newline_pos);
-	  real max_a;
-	  real k;
-	  file >> max_a;
-	  file >> k;
-	  T = max_a + k;
-	  break;
-	} else 
-	{
-	  pos -= 1000;
-	  file.seekg(pos, std::ios::beg);
-
-	}
+        // Check if we found a newline
+        if (newline_pos != std::string::npos)
+        {
+          // Read a and k from the timeslab
+          file.seekg(pos + newline_pos);
+          real max_a;
+          real k;
+          file >> max_a;
+          file >> k;
+          T = max_a + k;
+          break;
+        }
+        else
+        {
+          pos -= 1000;
+          file.seekg(pos, std::ios::beg);
+        }
       }
     }
-
-    file.close();    
+    file.close();
   }
 
-  // save an invalid fileno and dummy timeslabs to trigger reading 
+  // save an invalid fileno and dummy timeslabs to trigger reading
   // a file on first eval
   fileno_in_memory = file_table.size() + 1;
   data.push_back(ODESolutionData(-1, 0, 0, 0, NULL));
@@ -130,7 +129,8 @@ ODESolution::~ODESolution()
 //-----------------------------------------------------------------------------
 void ODESolution::init(uint N, const Lagrange& trial_space, const real* quad_weights)
 {
-  if (initialized) error("ODESolution initialized twice");
+  if (initialized)
+    error("ODESolution initialized twice");
 
   this->N = N;
 
@@ -158,12 +158,15 @@ void ODESolution::init(uint N, const Lagrange& trial_space, const real* quad_wei
 void ODESolution::add_timeslab(const real& a, const real& b, const real* nodal_values)
 {
    //Public method. Does some checks and calls add_data
-  if (!initialized) error("ODE Solution not initialized");
-  if (read_mode) error("ODE Solution in read mode");
+  if (!initialized)
+    error("ODE Solution not initialized");
+  if (read_mode)
+    error("ODE Solution in read mode");
   assert(b-a > 0);
   assert(real_abs(T-a) < real_epsilon());
 
-  if (data.size() > max_timeslabs) {
+  if (data.size() > max_timeslabs)
+  {
     save_to_file();
     data.clear();
   }
@@ -175,21 +178,22 @@ void ODESolution::add_timeslab(const real& a, const real& b, const real* nodal_v
   T = b;
 }
 //-----------------------------------------------------------------------------
-void ODESolution::flush() {
-  if (read_mode) error("Cannot flush. ODESolution already in read mode");
+void ODESolution::flush()
+{
+  if (read_mode)
+    error("Cannot flush. ODESolution already in read mode");
   if (data_on_disk)
-  {
     save_to_file();
-  }
 
   read_mode = true;
 }
-
 //-----------------------------------------------------------------------------
 void ODESolution::eval(const real& t, real* y)
 {
-  if (!read_mode) error("Can not evaluate solution");
-  if(t > T) error("Requested t > T. t=%f, T=%f", to_double(t), to_double(T));
+  if (!read_mode)
+    error("Can not evaluate solution");
+  if(t > T)
+    error("Requested t > T. t=%f, T=%f", to_double(t), to_double(T));
 
   // Scan the cache
   for (uint i = 0; i < cache_size; ++i)
@@ -210,7 +214,7 @@ void ODESolution::eval(const real& t, real* y)
   if (data_on_disk && (t < a_in_memory() || t > b_in_memory()))
   {
     read_file(get_file_index(t));
- }
+  }
 
   // Find the right timeslab in buffer
   ODESolutionData& a = data[get_buffer_index(t)];
@@ -218,15 +222,11 @@ void ODESolution::eval(const real& t, real* y)
 
   assert(tau <= 1.0+real_epsilon());
 
-
   for (uint i = 0; i < N; ++i)
   {
     y[i] = 0.0;
-
     for (uint j = 0; j < nodal_size; j++)
-    {
       y[i] += a.nv[i*nodal_size + j] * trial->eval(j, tau);
-    }
   }
 
   //store in cache
@@ -237,7 +237,6 @@ void ODESolution::eval(const real& t, real* y)
 //-----------------------------------------------------------------------------
 ODESolutionData& ODESolution::get_timeslab(uint index)
 {
-
   if (index >= no_timeslabs)
     error("Requested timeslabs %u out of range %u", index, no_timeslabs);
 
@@ -252,11 +251,11 @@ ODESolutionData& ODESolution::get_timeslab(uint index)
 
   assert(index-a_index_in_memory() < data.size());
 
-
   return data[index - a_index_in_memory()];
 }
 //-----------------------------------------------------------------------------
-const real* ODESolution::get_weights() const {
+const real* ODESolution::get_weights() const
+{
   return quadrature_weights;
 }
 //-----------------------------------------------------------------------------
@@ -270,15 +269,12 @@ void ODESolution::set_filename(std::string filename)
 //-----------------------------------------------------------------------------
 void ODESolution::save_to_file()
 {
-  if (!dirty) {
+  if (!dirty)
     return;
-  }
 
   std::stringstream f(filename, std::ios_base::app | std::ios_base::out);
   if (file_table.size() > 0)
-  {
     f << "_" << ( file_table.size());
-  }
 
   file_table.push_back( std::pair<real, uint> (a_in_memory(), no_timeslabs - data.size()) );
 
@@ -293,16 +289,12 @@ void ODESolution::save_to_file()
 
   // write the nodal points
   for (uint i = 0; i < nodal_size; ++i)
-  {
     file << trial->point(i) << " ";
-  }
   file << std::endl;
 
   // write the nodal weights
   for (uint i = 0; i < nodal_size; ++i)
-  {
     file << quadrature_weights[i] << " ";
-  }
   file << std::endl;
 
   file << "end_of_header" << std::endl;
@@ -312,9 +304,7 @@ void ODESolution::save_to_file()
   {
     file << std::setprecision(real_decimal_prec()) << it->a << " " << it->k << " ";
     for (uint i = 0; i < N*nodal_size; ++i)
-    {
-	file << it->nv[i] << " ";
-    }
+      file << it->nv[i] << " ";
     file << std::endl;
   }
   file.close();
@@ -324,7 +314,6 @@ void ODESolution::save_to_file()
   dirty = false;
 
   // Note: Don't clear data from memory. Caller should take care of this
-
 }
 //-----------------------------------------------------------------------------
 dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenumber)
@@ -344,7 +333,8 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
   uint tmp;
   real tmp_real;
 
-  if (initialized) {
+  if (initialized)
+  {
     file >> tmp;
     if (tmp != N)
       error("Wrong N size of system in file: %s", f.str().c_str());
@@ -356,7 +346,9 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
     //skip nodal points and quadrature weights
     for (uint i=0; i < nodal_size*2; ++i)
       file >> tmp_real;
-  } else {
+  }
+  else
+  {
     uint _N;
     file >> _N;
     file >> nodal_size;
@@ -364,15 +356,15 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
 
     //read nodal points
     Lagrange l(nodal_size-1);
-    for (uint i=0; i < nodal_size; ++i) {
+    for (uint i=0; i < nodal_size; ++i)
+    {
       file >> tmp_real;
       l.set(i, tmp_real);
     }
 
     real q_weights[nodal_size];
-    for (uint i=0; i < nodal_size; ++i) {
+    for (uint i=0; i < nodal_size; ++i)
       file >> q_weights[i];
-    }
 
     init(_N, l, q_weights);
   }
@@ -385,7 +377,7 @@ dolfin::uint ODESolution::open_and_read_header(std::ifstream& file, uint filenum
   return timeslabs;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint ODESolution::get_file_index(const real& t) 
+dolfin::uint ODESolution::get_file_index(const real& t)
 {
   //Scan the file table
   int index = file_table.size()-1;
@@ -394,19 +386,18 @@ dolfin::uint ODESolution::get_file_index(const real& t)
   assert(index >= 0);
 
   return static_cast<dolfin::uint>(index);
-
 }
 //-----------------------------------------------------------------------------
-dolfin::uint ODESolution::get_buffer_index(const real& t) 
+dolfin::uint ODESolution::get_buffer_index(const real& t)
 {
-  // Use the cached index as initial guess, since we very often evaluate 
+  // Use the cached index as initial guess, since we very often evaluate
   // at points close to the previous one
 
   uint count = 0;
 
   // Expand interval until it includes our target value
   int width = 1;
-  while (! (data[std::max(buffer_index_cache-width, 0)].a <= t+real_epsilon() && 
+  while (! (data[std::max(buffer_index_cache-width, 0)].a <= t+real_epsilon() &&
 	    data[std::min(buffer_index_cache+width, (int)data.size()-1)].b() > t-real_epsilon()))
   {
     width = width * 2;
@@ -420,13 +411,10 @@ dolfin::uint ODESolution::get_buffer_index(const real& t)
 
   while( range_end != range_start)
   {
-    if (t < data[buffer_index_cache].a) 
-    {
+    if (t < data[buffer_index_cache].a)
       range_end = std::min(buffer_index_cache, range_end-1);
-    } else
-    {
+    else
       range_start = std::max(buffer_index_cache, range_start+1);
-    }
 
     buffer_index_cache = (range_end + range_start)/2;
 
@@ -436,9 +424,8 @@ dolfin::uint ODESolution::get_buffer_index(const real& t)
     // be determined?
     assert(count < 100);
   }
-  
-  return buffer_index_cache;
 
+  return buffer_index_cache;
 }
 //-----------------------------------------------------------------------------
 void ODESolution::read_file(uint file_number)
@@ -448,8 +435,7 @@ void ODESolution::read_file(uint file_number)
   if (data.size() > 0)
     data.clear();
 
-
-  //open file and read the header
+  // Open file and read the header
   std::ifstream file;
   uint timeslabs = open_and_read_header(file, file_number);
 
@@ -462,12 +448,11 @@ void ODESolution::read_file(uint file_number)
     file >> a;
     file >> k;
 
-    if (file.eof()) break;
+    if (file.eof())
+      break;
 
     for (uint i = 0; i < N*nodal_size; ++i)
-    {
       file >> values[i];
-    }
 
     add_data(a, a+k, values);
     count++;
@@ -476,16 +461,16 @@ void ODESolution::read_file(uint file_number)
   file.close();
 
   if (count != timeslabs)
+  {
     error("File data in file %u inconsistent with header. Header said: %d, read %d",
-	  file_number, timeslabs, count);
-
+	          file_number, timeslabs, count);
+  }
   fileno_in_memory = file_number;
 
   //Try to set the initial guess
   buffer_index_cache = buffer_index_cache > (int) data.size()/2 ? data.size()-1 : 0;
 
   info(PROGRESS, "  Done reading file %d", file_number);
-
 }
 //-----------------------------------------------------------------------------
 void ODESolution::add_data(const real& a, const real& b, const real* nodal_values)
@@ -503,25 +488,22 @@ std::string ODESolution::str(bool verbose) const
   std::stringstream s;
 
   if (!initialized)
-  {
     s << "ODESolution: Not initialized";
-  } else
+  else
   {
     if (verbose)
     {
-
       s << "Size = " << N << std::endl;
       s << "T = " << T << std::endl;
       s << "Number of nodal points = " << nodal_size << std::endl;
       s << "Nodal points: ";
       for (uint i = 0; i < nodal_size; i++)
-	s << " " << trial->point(i);
+        s << " " << trial->point(i);
       s << std::endl;
       s << "Number of timeslabs = " << (uint) data.size() << std::endl;
-    } else
-    {
-      s << "<ODESolution of size" << N << " on interval [0,"<< endtime() << "]>";
     }
+    else
+      s << "<ODESolution of size" << N << " on interval [0,"<< endtime() << "]>";
   }
 
   return s.str();
@@ -537,4 +519,3 @@ ODESolution::iterator ODESolution::end()
   return ODESolution::iterator(*this, no_timeslabs);
 }
 //-----------------------------------------------------------------------------
-
