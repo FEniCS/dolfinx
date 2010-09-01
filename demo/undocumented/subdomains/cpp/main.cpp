@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-04-24
-// Last changed: 2008-02-13
+// Last changed: 2010-09-02
 //
 // This demo program demonstrates how to mark sub domains
 // of a mesh and store the sub domain markers as a mesh
@@ -47,7 +47,7 @@ int main()
   };
 
   // Read mesh
-  Mesh mesh("../../../../data/meshes/dolfin-2.xml.gz");
+  Mesh mesh("dolfin-2.xml.gz");
 
   // Create mesh function over the cell facets
   MeshFunction<unsigned int> sub_domains(mesh, mesh.topology().dim() - 1);

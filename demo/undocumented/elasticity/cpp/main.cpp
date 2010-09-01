@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2008
 //
 // First added:  2006-02-07
-// Last changed: 2010-01-27
+// Last changed: 2010-09-02
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -83,7 +83,7 @@ int main()
   parameters["mesh_partitioner"] = "SCOTCH";
 
   // Read mesh and create function space
-  Mesh mesh("../../../../data/meshes/gear.xml.gz");
+  Mesh mesh("gear.xml.gz");
   Elasticity::FunctionSpace V(mesh);
 
   // Create right-hand side

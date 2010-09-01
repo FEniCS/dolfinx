@@ -33,7 +33,7 @@ class Outflow(SubDomain):
         return x[0] < DOLFIN_EPS and on_boundary
 
 # Read mesh
-mesh = Mesh("../../../../data/meshes/dolfin-2.xml.gz")
+mesh = Mesh("dolfin-2.xml.gz")
 
 # Create mesh function over the cell facets
 sub_domains = MeshFunction("uint", mesh, mesh.topology().dim() - 1)

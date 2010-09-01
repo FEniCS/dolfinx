@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-09
-// Last changed: 2010-01-27
+// Last changed: 2010-09-02
 //
 // This demo solves the Stokes equations, using stabilized
 // first order elements for the velocity and pressure. The
@@ -48,7 +48,7 @@ int main()
   };
 
   // Read mesh and sub domain markers
-  Mesh mesh("../../../../../data/meshes/dolfin-2.xml.gz");
+  Mesh mesh("dolfin-2.xml.gz");
   MeshFunction<unsigned int> sub_domains(mesh, "../subdomains.xml.gz");
 
   // Create function space and subspaces

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-01-22
-// Last changed: 2009-10-07
+// Last changed: 2010-09-02
 //
 
 #include <dolfin.h>
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
   dolfin_init(argc, argv);
 
   // Create Mesh
-  Mesh mesh("../../../../data/meshes/dolfin-2.xml.gz");
+  Mesh mesh("dolfin-2.xml.gz");
 
   // Create function space
   ElastoDynamics::FunctionSpace V(mesh);

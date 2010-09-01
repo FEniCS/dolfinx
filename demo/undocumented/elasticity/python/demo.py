@@ -16,7 +16,7 @@ parameters["form_compiler"]["cpp_optimize"] = True
 parameters["form_compiler"]["optimize"] = True
 
 # Load mesh and define function space
-mesh = Mesh("../../../../data/meshes/gear.xml.gz")
+mesh = Mesh("gear.xml.gz")
 mesh.order()
 V = VectorFunctionSpace(mesh, "CG", 1)
 
