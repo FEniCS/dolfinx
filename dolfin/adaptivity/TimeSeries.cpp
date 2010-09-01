@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2010-08-11
+// Last changed: 2010-09-01
 
 #include <algorithm>
 #include <sstream>
@@ -71,6 +71,8 @@ template <class T> void retrieve_object(T& object, double t,
 //-----------------------------------------------------------------------------
 TimeSeries::TimeSeries(std::string name) : _name(name), _cleared(false)
 {
+  not_working_in_parallel("Storing of data to time series");
+
   std::string filename;
 
   // Read vector times

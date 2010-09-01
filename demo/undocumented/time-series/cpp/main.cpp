@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-11-11
-// Last changed: 2010-04-29
+// Last changed: 2010-09-01
 //
 // This program demonstrates the use of the TimeSeries
 // class for storing a series of meshes and vectors.
@@ -13,6 +13,8 @@ using namespace dolfin;
 
 int main()
 {
+  not_working_in_parallel("This demo");
+
   // Create empty time series
   TimeSeries series("primal");
 

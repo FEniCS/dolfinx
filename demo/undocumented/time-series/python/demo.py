@@ -1,9 +1,13 @@
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2009-11-11 -- 2009-11-11"
+__date__ = "2009-11-11"
 __copyright__ = "Copyright (C) 2009 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
+# Last changed: 2010-09-01
+
 from dolfin import *
+
+not_working_in_parallel("This demo")
 
 # Create empty time series
 series = TimeSeries("primal")
