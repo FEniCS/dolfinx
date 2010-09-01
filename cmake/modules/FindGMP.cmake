@@ -27,7 +27,9 @@ find_library(GMP_LIBRARIES
   DOC "The GMP libraries"
   )
 
-include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(GMP DEFAULT_MSG GMP_INCLUDE_DIRS GMP_LIBRARIES)
-
 mark_as_advanced(GMP_INCLUDE_DIRS GMP_LIBRARIES)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(GMP DEFAULT_MSG GMP_INCLUDE_DIRS GMP_LIBRARIES)
+
+

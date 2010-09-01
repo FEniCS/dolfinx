@@ -12,8 +12,8 @@
 P1 = FiniteElement("Lagrange", "tetrahedron", 1)
 ME = P1*P1
 
-q, v  = TestFunctions(ME)
-du    = TrialFunction(ME)
+q, v = TestFunctions(ME)
+du   = TrialFunction(ME)
 
 u   = Coefficient(ME)  # current solution
 u0  = Coefficient(ME)  # solution from previous converged step
@@ -27,13 +27,13 @@ lmbda    = Constant(tetrahedron) # surface energy parameter
 dt       = Constant(tetrahedron) # time step
 theta    = Constant(tetrahedron) # time stepping parameter
 
+# mu_(n+theta)
+mu_mid = (1-theta)*mu0 + theta*mu
+
 # Compute the chemical potential df/dc
 c = variable(c)
 f    = 100*c**2*(1-c)**2
 dfdc = diff(f, c)
-
-# mu^(n+theta)
-mu_mid = (1-theta)*mu0 + theta*mu
 
 L0 = q*c*dx  - q*c0*dx   + dt*dot(grad(q), grad(mu_mid))*dx
 L1 = v*mu*dx - v*dfdc*dx - lmbda*dot(grad(v), grad(c))*dx
