@@ -209,7 +209,10 @@ if (DOLFIN_LINK_FLAGS)
   set_target_properties(dolfin PROPERTIES LINK_FLAGS ${DOLFIN_LINK_FLAGS})
 endif()
 
-# Add DOFLIN target libraries
+# Strip leading and trailing whitespaces
+string(STRIP DOLFIN_TARGET_LINK_LIBRARIES "${DOLFIN_TARGET_LINK_LIBRARIES}")
+
+# Add DOLFIN target libraries
 target_link_libraries(dolfin ${DOLFIN_TARGET_LINK_LIBRARIES})
 
 #------------------------------------------------------------------------------
