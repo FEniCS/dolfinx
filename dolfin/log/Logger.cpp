@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2010-04-06
+// Last changed: 2010-09-01
 
 #include <string>
 #include <iostream>
