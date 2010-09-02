@@ -17,7 +17,7 @@ add_definitions(-DPACKAGE_VERSION="${DOLFIN_VERSION}")
 # General configuration
 
 # Set verbose output while testing CMake
-set(CMAKE_VERBOSE_MAKEFILE 1)
+#set(CMAKE_VERBOSE_MAKEFILE 1)
 
 # Set CMake options, see `cmake --help-policy CMP000x`
 if (COMMAND cmake_policy)
