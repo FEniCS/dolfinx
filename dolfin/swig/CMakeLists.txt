@@ -24,6 +24,10 @@ set(CMAKE_SWIG_FLAGS
   )
 set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
 
+# Get all SWIG interface files
+file(GLOB DOLFIN_SWIG_INTERFACE_FILES "*.i")
+
+# Set SWIG source file
 set(SWIG_SOURCES dolfin.i)
 set_source_files_properties(${SWIG_SOURCES} PROPERTIES CPLUSPLUS ON)
 
@@ -36,8 +40,10 @@ string(REGEX REPLACE "-Werror" " " CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_
 # The prevents swig being run unnecessarily
 set_source_files_properties(dolfin.i PROPERTIES SWIG_MODULE_NAME cpp)
 
-include_directories(${PYTHON_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
+# Tell CMake which SWIG interface files should be checked for changes when recompile
+set(SWIG_MODULE_cpp_EXTRA_DEPS ${DOLFIN_SWIG_INTERFACE_FILES})
 
+include_directories(${PYTHON_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
 swig_add_module(${SWIG_MODULE_NAME} python ${SWIG_SOURCES})
 swig_link_libraries(cpp dolfin ${PYTHON_LIBRARIES})
 
@@ -57,7 +63,6 @@ install(DIRECTORY
   COMPONENT RuntimeLibraries
   )
 
-file(GLOB DOLFIN_SWIG_INTERFACE_FILES "*.i")
 install(FILES ${DOLFIN_SWIG_INTERFACE_FILES}
   DESTINATION ${DOLFIN_INCLUDE_DIR}/dolfin/swig
   COMPONENT Development
