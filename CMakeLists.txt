@@ -146,7 +146,11 @@ endif()
 
 # Check for Boost
 option(Boost_USE_STATIC_LIBS "Use the static Boost libraries." OFF)
-option(Boost_USE_MULTITHREADED "Use the multithreaded Boost libraries." OFF)
+if (DEFINED ENV{Boost_USE_MULTITHREADED})
+  option(Boost_USE_MULTITHREADED "Use the multithreaded Boost libraries." $ENV{Boost_USE_MULTITHREADED})
+else()
+  option(Boost_USE_MULTITHREADED "Use the multithreaded Boost libraries." OFF)
+endif()
 set(BOOST_ROOT $ENV{BOOST_DIR})
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
 find_package(Boost 1.36 COMPONENTS filesystem program_options system REQUIRED)
