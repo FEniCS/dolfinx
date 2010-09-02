@@ -7,7 +7,9 @@ __date__ = "2010-08-19"
 __copyright__ = "Copyright (C) 2010 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
-# Last changed: 2010-08-31
+# Last changed: 2010-09-02
+
+# Modified by Johan Hake, 2010.
 
 import os
 import shutil
@@ -23,6 +25,8 @@ name_map = {"__init__" : lambda n: n}
 def write_docstring(name, function, doc):
     """Write docstring for function. Assuming namespace 'dolfin' for all
     functions."""
+    # Escape '"' otherwise will SWIG complain
+    doc = doc.replace("\"",r"\"")
     if name != "":
         output_file.write(docstring % ("::".join(["dolfin", name, function]), doc))
     else:
