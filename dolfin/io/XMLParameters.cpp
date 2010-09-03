@@ -4,7 +4,7 @@
 // First added:  2009-03-16
 // Last changed: 2009-11-11
 
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/Parameters.h>
 #include "XMLIndent.h"
@@ -121,9 +121,9 @@ void XMLParameters::write(const Parameters& parameters,
 void XMLParameters::read_parameter(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
-  std::string key  = parse_string(name, attrs, "key");
-  std::string type = parse_string(name, attrs, "type");
-  std::string string_value = parse_string(name, attrs, "value");
+  const std::string key  = parse_string(name, attrs, "key");
+  const std::string type = parse_string(name, attrs, "type");
+  const std::string string_value = parse_string(name, attrs, "value");
 
   // Set parameter
   if (type == "double" || type == "real")
@@ -155,6 +155,7 @@ void XMLParameters::read_parameter(const xmlChar *name, const xmlChar **attrs)
       value = false;
     else
       warning("Illegal value for boolean parameter: %s.", key.c_str());
+
     if (parameters.has_key(key))
       parameters[key] = value;
     else

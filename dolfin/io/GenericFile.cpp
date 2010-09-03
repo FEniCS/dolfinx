@@ -9,8 +9,8 @@
 // Last changed: 2010-01-04
 
 #include <fstream>
-#include <dolfin/main/MPI.h>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/main/MPI.h>
 #include "GenericFile.h"
 
 using namespace dolfin;

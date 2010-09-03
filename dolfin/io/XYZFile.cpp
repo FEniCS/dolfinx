@@ -5,19 +5,19 @@
 //
 // First added:  2008-07-02
 
-#include <sstream>
 #include <fstream>
+#include <sstream>
 #include <boost/scoped_array.hpp>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/fem/FiniteElement.h>
+#include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/la/Vector.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/function/Function.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/la/Vector.h>
 #include "XYZFile.h"
 
 using namespace dolfin;
@@ -104,10 +104,9 @@ void XYZFile::xyz_name_update(int counter)
   xyz_filename = newfilename.str();
 
   // Make sure file is empty
-  FILE* fp = fopen(xyz_filename.c_str(), "w");
+  std::ofstream fp(xyz_filename.c_str(), std::ios_base::trunc);
   if (!fp)
     error("Unable to open file %s", filename.c_str());
-  fclose(fp);
 }
 //----------------------------------------------------------------------------
 template<class T>
@@ -123,19 +122,17 @@ void XYZFile::mesh_function_write(T& meshfunction)
 
   // Open file
   std::ofstream fp(xyz_filename.c_str(), std::ios_base::app);
+  if (!fp)
+    error("Unable to open file %s", filename.c_str());
 
-  fp<<mesh.num_cells( ) <<std::endl;
+  fp << mesh.num_cells() <<std::endl;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     fp << meshfunction.get( cell->index() )  << std::endl;
-
-  // Close file
-  fp.close();
 
   // Increase the number of times we have saved the mesh function
   counter++;
 
   cout << "saved mesh function " << counter << " times." << endl;
-
   cout << "Saved mesh function " << mesh.name() << " (" << mesh.label()
        << ") to file " << filename << " in XYZ format." << endl;
 }

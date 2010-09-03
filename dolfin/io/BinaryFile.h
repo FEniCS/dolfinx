@@ -10,7 +10,6 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
 #include "GenericFile.h"
-#include <tr1/tuple>
 
 namespace dolfin
 {

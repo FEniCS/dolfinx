@@ -6,18 +6,18 @@
 //
 // First added:  2008-05-29
 
-#include <sstream>
 #include <fstream>
+#include <sstream>
 #include <dolfin/common/Array.h>
+#include <dolfin/fem/FiniteElement.h>
+#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/la/Vector.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/function/Function.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/fem/FiniteElement.h>
-#include <dolfin/la/Vector.h>
 #include "RAWFile.h"
 
 using namespace dolfin;
@@ -202,4 +202,3 @@ void RAWFile::MeshFunctionWrite(T& meshfunction)
        << ") to file " << filename << " in RAW format." << endl;
 }
 //----------------------------------------------------------------------------
-

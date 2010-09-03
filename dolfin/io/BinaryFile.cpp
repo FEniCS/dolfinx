@@ -4,9 +4,8 @@
 // First added:  2009-11-11
 // Last changed: 2010-06-07
 
-#include <dolfin/log/log.h>
-#include <istream>
 #include <fstream>
+#include <istream>
 #include <ios>
 #include <boost/scoped_array.hpp>
 
@@ -33,7 +32,7 @@ void BinaryFile::operator>> (std::vector<double>& values)
 {
   open_read();
 
-  uint n = read_uint();
+  const uint n = read_uint();
   values.resize(n);
   read_array(n, &values[0]);
 
@@ -44,7 +43,7 @@ void BinaryFile::operator>> (GenericVector& vector)
 {
   open_read();
 
-  uint n = read_uint();
+  const uint n = read_uint();
   Array<double> values(n);
   read_array(n, values.data().get());
 
@@ -119,7 +118,7 @@ void BinaryFile::operator<< (const GenericVector& vector)
 {
   open_write();
 
-  uint n = vector.size();
+  const uint n = vector.size();
   Array<double> values(n);
   vector.get_local(values);
   write_uint(n);
@@ -135,14 +134,14 @@ void BinaryFile::operator<< (const Mesh& mesh)
 
   // Write mesh topology
   const MeshTopology& t = mesh._topology;
-  uint D = t._dim;
+  const uint D = t._dim;
   write_uint(D);
   write_array(D + 1, t.num_entities);
   for (uint i = 0; i <= D; i++)
   {
     for (uint j = 0; j <= D; j++)
     {
-      MeshConnectivity& c = *t.connectivity[i][j];
+      const MeshConnectivity& c = *t.connectivity[i][j];
       write_uint(c._size);
       if (c._size > 0)
       {

@@ -1,15 +1,17 @@
 // Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2005.
+// Modified by Garth N. Wells 2005, 2010.
 // Modified by Rolv E. Bredesen 2008.
 // Modified by Benjamin Kehlet 2009.
 
 // First added:  2003-05-06
-// Last changed: 2009-03-17
-// 
+// Last changed: 2010-09-03
 
-#include <stdio.h>
+#include <fstream>
+#include <iostream>
+#include <iomanip>
+
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/la/GenericMatrix.h>
@@ -17,9 +19,6 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/ode/Sample.h>
 #include "PythonFile.h"
-#include <iostream>
-#include <fstream>
-#include <iomanip>
 
 using namespace dolfin;
 
@@ -33,7 +32,6 @@ PythonFile::PythonFile(const std::string filename) : GenericFile(filename)
   filename_u = prefix + "_u.data";
   filename_k = prefix + "_k.data";
   filename_r = prefix + "_r.data";
-
 }
 //-----------------------------------------------------------------------------
 PythonFile::~PythonFile()
@@ -43,7 +41,6 @@ PythonFile::~PythonFile()
 //-----------------------------------------------------------------------------
 void PythonFile::operator<<(const Sample& sample)
 {
-  
   // First time
   if ( counter2 == 0 )
   {
@@ -65,8 +62,8 @@ void PythonFile::operator<<(const Sample& sample)
   }
 
   //sub files filemode:  append unless this is the first sample
-  std::ios_base::openmode filemode = (counter2 == 0 ? 
-				        std::ios_base::out : 
+  std::ios_base::openmode filemode = (counter2 == 0 ?
+				        std::ios_base::out :
 				        std::ios_base::out| std::ios_base::app);
 
   //get precision
@@ -76,7 +73,7 @@ void PythonFile::operator<<(const Sample& sample)
   std::ofstream fp_t(filename_t.c_str(), filemode);
   if (!fp_t.is_open())
     error("Unable to open file %s", filename_t.c_str());
-  
+
   std::ofstream fp_u(filename_u.c_str(), filemode);
   if (!fp_u.is_open())
     error("Unable to open file %s", filename_u.c_str());
@@ -94,38 +91,25 @@ void PythonFile::operator<<(const Sample& sample)
 
   // Save solution
   for (uint i = 0; i < sample.size(); i++)
-  {
     fp_u << std::setprecision(prec) << sample.u(i) << " ";
-  }
   fp_u << std::endl;
 
   // Save time steps
   for (uint i = 0; i < sample.size(); i++)
-  {
-    fp_k << std::setprecision(prec) << sample.k(i) << " ";  
-  }
+    fp_k << std::setprecision(prec) << sample.k(i) << " ";
   fp_k << std::endl;
 
   // Save residuals
   for (uint i = 0; i < sample.size(); i++)
-  {
-    fp_r << std::setprecision(prec) << sample.r(i) << " ";  
-  }
+    fp_r << std::setprecision(prec) << sample.r(i) << " ";
   fp_r << std::endl;
-
 
   // Increase frame counter
   counter2++;
-
-  // Close files
-  fp_t.close();
-  fp_u.close();
-  fp_k.close();
-  fp_r.close();
 }
 //-----------------------------------------------------------------------------
 void PythonFile::operator<<(const std::tr1::tuple<uint, real, real*>& sample)
-{  
+{
   const uint& n = std::tr1::get<0>(sample);
   const real& t = std::tr1::get<1>(sample);
   const real* u = std::tr1::get<2>(sample);
@@ -145,27 +129,27 @@ void PythonFile::operator<<(const std::tr1::tuple<uint, real, real*>& sample)
     fp << std::endl;
     fp.close();
   }
-   
-  //sub files filemode:  append unless this is the first sample
-  std::ios_base::openmode filemode = (counter2 == 0 ? 
-				      std::ios_base::out : 
+
+  // Sub files filemode:  append unless this is the first sample
+  std::ios_base::openmode filemode = (counter2 == 0 ?
+				      std::ios_base::out :
 				      std::ios_base::out| std::ios_base::app);
-    
-  //get precision
-  int prec = real_decimal_prec();
-    
+
+  // Get precision
+  const int prec = real_decimal_prec();
+
   // Open sub files
   std::ofstream fp_t(filename_t.c_str(), filemode);
   if (!fp_t.is_open())
     error("Unable to open file %s", filename_t.c_str());
-    
+
   std::ofstream fp_u(filename_u.c_str(), filemode);
   if (!fp_u.is_open())
     error("Unable to open file %s", filename_u.c_str());
 
   // Save time
   fp_t << std::setprecision(prec) << t << std::endl;
-  
+
   // Save solution
   for (uint i=0; i<n; ++i)
     fp_u << std::setprecision(prec) << u[i] << " ";
@@ -173,3 +157,4 @@ void PythonFile::operator<<(const std::tr1::tuple<uint, real, real*>& sample)
 
   counter2++;
 }
+//-----------------------------------------------------------------------------

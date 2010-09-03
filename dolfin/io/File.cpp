@@ -11,11 +11,11 @@
 // First added:  2002-11-12
 // Last changed: 2010-08-17
 
-#include <boost/filesystem.hpp>
 #include <fstream>
-#include <dolfin/main/MPI.h>
-#include <dolfin/log/dolfin_log.h>
+#include <boost/filesystem.hpp>
 #include <dolfin/function/Function.h>
+#include <dolfin/log/dolfin_log.h>
+#include <dolfin/main/MPI.h>
 #include "File.h"
 #include "XMLFile.h"
 #include "PythonFile.h"

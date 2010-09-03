@@ -7,9 +7,8 @@
 #ifndef __XML_OBJECT_H
 #define __XML_OBJECT_H
 
-#include <libxml/parser.h>
 #include <string>
-
+#include <libxml/parser.h>
 #include <dolfin/common/types.h>
 
 namespace dolfin
