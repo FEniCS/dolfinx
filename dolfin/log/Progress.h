@@ -8,8 +8,6 @@
 #define __PROGRESS_H
 
 #include <string>
-#include <stdarg.h>
-
 #include <dolfin/common/types.h>
 
 namespace dolfin

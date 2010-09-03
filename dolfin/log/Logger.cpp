@@ -6,15 +6,15 @@
 // First added:  2003-03-13
 // Last changed: 2010-09-01
 
-#include <string>
-#include <iostream>
-#include <sstream>
 #include <iomanip>
+#include <iostream>
+#include <string>
+#include <sstream>
 #include <stdexcept>
 
-#include <dolfin/main/MPI.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/types.h>
+#include <dolfin/main/MPI.h>
 #include "Table.h"
 #include "Logger.h"
 

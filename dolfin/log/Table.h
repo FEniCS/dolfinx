@@ -7,12 +7,11 @@
 #ifndef __TABLE_H
 #define __TABLE_H
 
-#include <vector>
-#include <set>
 #include <map>
-
-#include <dolfin/common/Variable.h>
+#include <set>
+#include <vector>
 #include <dolfin/common/types.h>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {

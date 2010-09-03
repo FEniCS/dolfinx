@@ -4,10 +4,9 @@
 // First added:  2008-07-19
 // Last changed: 2009-09-15
 
-#include <iostream>
-
-#include <sstream>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
 
 #include <dolfin/common/constants.h>
 #include <dolfin/log/LogStream.h>
