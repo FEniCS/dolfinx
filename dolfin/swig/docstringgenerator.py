@@ -195,8 +195,10 @@ class Doxy2SWIG:
                 self.parse(n)
 
     def do_includes(self, node):
-        self.add_text('C++ includes: ')
-        self.generic_parse(node, pad=1)
+        #self.add_text('C++ includes: ')
+        #self.generic_parse(node, pad=1)
+        # DO nothing avoiding anoiying file information
+        pass
 
     def do_parameterlist(self, node):
         self.add_text(['\n', '\n', 'Parameters:', '\n'])
@@ -350,7 +352,7 @@ class Doxy2SWIG:
         return ret
 
 class DocstringGenerator:
-    def __init__(self, directory = os.curdir, header_files = "Use files in working directory", swig_directory = "swig",
+    def __init__(self, directory = os.curdir, header_files = "Use files in working directory", swig_directory = os.curdir,
                  docstring_file_base = "Use working directory", doxygen_file = "doxyfile", xml_directory  = "xml"):
         """
         A class to generate docstrings from c/c++ header files, using doxygen.
@@ -447,10 +449,11 @@ XML_OUTPUT             = %s""" % (header_files,self._xml_directory))
             os.removedirs(html_dir)
 
 if __name__ == '__main__':
+    # Call DocstringGenerator with default arguments
     import sys
     if len(sys.argv) == 2:
         directory = sys.argv[1]
-        g =  DocstringGenerator(directory)
+        g = DocstringGenerator(directory)
     else:
         g = DocstringGenerator()
     g.generate_doxygen_documentation()

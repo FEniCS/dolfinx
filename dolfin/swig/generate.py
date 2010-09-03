@@ -4,7 +4,7 @@
 #
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-04-12 -- 2009-12-16"
+__date__ = "2007-04-12 -- 2010-09-03"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -12,7 +12,7 @@ __license__  = "GNU LGPL Version 2.1"
 # Modified by Johan Hake, 2009
 # Modified by Kristian B. Oelgaard, 2010
 
-# Last changed: 2010-08-31
+# Last changed: 2010-09-03
 
 import os
 import re
@@ -70,10 +70,10 @@ for (module, module_headers) in headers:
     f_import.close()
 f.close()
 
-# Added for docstring extraction
-#from generate_docstrings import DocstringGenerator
-
-#g = DocstringGenerator(header_files = docstring_headers, swig_directory = ".", docstring_file_base = "")
+# Docstring generation using DOXYGEN -> XML -> SWIG interface file
+#from docstringgenerator import DocstringGenerator
+#
+#g = DocstringGenerator(header_files=docstring_headers, swig_directory = ".", docstring_file_base = "")
 #g.generate_doxygen_documentation()
 #g.generate_interface_file_from_index()
 #g.clean()
@@ -81,6 +81,7 @@ f.close()
 # Create docstrings.i file from docstrings module (only for dolfin.cpp)
 import os
 from sys import path
+
 # Add path to the local docstrings module.
 doc_dir = os.path.abspath(os.path.join(os.pardir, os.pardir, "site-packages", "dolfin"))
 path.append(doc_dir)
