@@ -14,7 +14,7 @@ using namespace dolfin;
 // class Parameter
 //-----------------------------------------------------------------------------
 Parameter::Parameter(std::string key)
-  : _access_count(0), _change_count(0),
+  : _access_count(0), _change_count(0), _is_set(false),
     _key(key), _description("missing description")
 {
   // Check that key name is allowed
@@ -34,6 +34,11 @@ std::string Parameter::key() const
 std::string Parameter::description() const
 {
   return _description;
+}
+//-----------------------------------------------------------------------------
+bool Parameter::is_set() const
+{
+  return _is_set;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Parameter::access_count() const
@@ -64,7 +69,7 @@ void Parameter::set_range(std::set<std::string> range)
         _key.c_str(), type_str().c_str());
 }
 //-----------------------------------------------------------------------------
-void Parameter::get_range(int& min_value, int& max_value) const 
+void Parameter::get_range(int& min_value, int& max_value) const
 {
   error("Cannot get int-valued range for parameter \"%s\" of type %s.",
         _key.c_str(), type_str().c_str());
@@ -181,10 +186,16 @@ void Parameter::check_key(std::string key)
 //-----------------------------------------------------------------------------
 // class IntParameter
 //-----------------------------------------------------------------------------
+IntParameter::IntParameter(std::string key)
+  : Parameter(key), _min(0), _max(0)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 IntParameter::IntParameter(std::string key, int value)
   : Parameter(key), _value(value), _min(0), _max(0)
 {
-  // Do nothing
+  _is_set = true;
 }
 //-----------------------------------------------------------------------------
 IntParameter::~IntParameter()
@@ -221,18 +232,24 @@ const IntParameter& IntParameter::operator= (int value)
   // Set value
   _value = value;
   _change_count++;
+  _is_set = true;
 
   return *this;
 }
 //-----------------------------------------------------------------------------
 IntParameter::operator int() const
 {
+  if (!_is_set)
+    error("Parameter has not been set.");
   _access_count++;
   return _value;
 }
 //-----------------------------------------------------------------------------
 IntParameter::operator dolfin::uint() const
 {
+  if (!_is_set)
+    error("Parameter has not been set.");
+
   if (_value < 0)
     error("Unable to convert value %d for parameter \"%s\" to uint (unsigned integer), value is negative.",
           _value, key().c_str());
@@ -248,6 +265,8 @@ std::string IntParameter::type_str() const
 //-----------------------------------------------------------------------------
 std::string IntParameter::value_str() const
 {
+  if (!_is_set)
+    error("Parameter has not been set.");
   std::stringstream s;
   s << _value;
   return s.str();
@@ -265,6 +284,8 @@ std::string IntParameter::range_str() const
 //-----------------------------------------------------------------------------
 std::string IntParameter::str() const
 {
+  if (!_is_set)
+    error("Parameter has not been set.");
   std::stringstream s;
   s << "<int-valued parameter named \""
     << key()
@@ -276,10 +297,16 @@ std::string IntParameter::str() const
 //-----------------------------------------------------------------------------
 // class RealParameter
 //-----------------------------------------------------------------------------
+RealParameter::RealParameter(std::string key)
+  : Parameter(key), _min(0.0), _max(0.0)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 RealParameter::RealParameter(std::string key, real value)
   : Parameter(key), _value(value), _min(0.0), _max(0.0)
 {
-  // Do nothing
+  _is_set = true;
 }
 //-----------------------------------------------------------------------------
 RealParameter::~RealParameter()
@@ -307,7 +334,7 @@ void RealParameter::get_range(real& min_value, real& max_value) const
 }
 //-----------------------------------------------------------------------------
 #ifdef HAS_GMP
-const RealParameter& RealParameter::operator= (real value) 
+const RealParameter& RealParameter::operator= (real value)
 {
   // Check value
   if (_min != _max && (value < _min || value > _max))
@@ -317,12 +344,13 @@ const RealParameter& RealParameter::operator= (real value)
   // Set value
   _value = value;
   _change_count++;
+  _is_set = true;
 
   return *this;
 }
 #endif
 //-----------------------------------------------------------------------------
-const RealParameter& RealParameter::operator= (double value) 
+const RealParameter& RealParameter::operator= (double value)
 {
   // Check value
   if (_min != _max && (value < _min || value > _max))
@@ -332,18 +360,23 @@ const RealParameter& RealParameter::operator= (double value)
   // Set value
   _value = value;
   _change_count++;
+  _is_set = true;
 
   return *this;
 }
 //-----------------------------------------------------------------------------
 RealParameter::operator double() const
 {
+  if (!_is_set)
+    error("Parameter has not been set.");
   _access_count++;
   return to_double(_value);
 }
 //-----------------------------------------------------------------------------
 real RealParameter::get_real() const
 {
+  if (!_is_set)
+    error("Parameter has not been set.");
   _access_count++;
   return _value;
 }
@@ -355,6 +388,8 @@ std::string RealParameter::type_str() const
 //-----------------------------------------------------------------------------
 std::string RealParameter::value_str() const
 {
+  if (!_is_set)
+    error("Parameter has not been set.");
   std::stringstream s;
   s << _value;
   return s.str();
@@ -372,6 +407,9 @@ std::string RealParameter::range_str() const
 //-----------------------------------------------------------------------------
 std::string RealParameter::str() const
 {
+  if (!_is_set)
+    error("Parameter has not been set.");
+
   std::stringstream s;
   s << "<double-valued parameter named \""
     << key()
@@ -383,10 +421,15 @@ std::string RealParameter::str() const
 //-----------------------------------------------------------------------------
 // class StringParameter
 //-----------------------------------------------------------------------------
+StringParameter::StringParameter(std::string key) : Parameter(key)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 StringParameter::StringParameter(std::string key, std::string value)
   : Parameter(key), _value(value)
 {
-  // Do nothing
+  _is_set = true;
 }
 //-----------------------------------------------------------------------------
 StringParameter::~StringParameter()
@@ -418,6 +461,7 @@ const StringParameter& StringParameter::operator= (std::string value)
   // Set value
   _value = value;
   _change_count++;
+  _is_set = true;
 
   return *this;
 }
@@ -437,12 +481,15 @@ const StringParameter& StringParameter::operator= (const char* value)
   // Set value
   _value = s;
   _change_count++;
+  _is_set = true;
 
   return *this;
 }
 //-----------------------------------------------------------------------------
 StringParameter::operator std::string() const
 {
+  if (!_is_set)
+    error("Parameter has not been set.");
   _access_count++;
   return _value;
 }
@@ -454,6 +501,8 @@ std::string StringParameter::type_str() const
 //-----------------------------------------------------------------------------
 std::string StringParameter::value_str() const
 {
+  if (!_is_set)
+    error("Parameter has not been set.");
   return _value;
 }
 //-----------------------------------------------------------------------------
@@ -476,6 +525,8 @@ std::string StringParameter::range_str() const
 //-----------------------------------------------------------------------------
 std::string StringParameter::str() const
 {
+  if (!_is_set)
+    error("Parameter has not been set.");
   std::stringstream s;
   s << "<string-valued parameter named \""
     << key()
@@ -487,10 +538,15 @@ std::string StringParameter::str() const
 //-----------------------------------------------------------------------------
 // class BoolParameter
 //-----------------------------------------------------------------------------
+BoolParameter::BoolParameter(std::string key) : Parameter(key)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 BoolParameter::BoolParameter(std::string key, bool value)
   : Parameter(key), _value(value)
 {
-  // Do nothing
+  _is_set = true;
 }
 //-----------------------------------------------------------------------------
 BoolParameter::~BoolParameter()
@@ -503,12 +559,15 @@ const BoolParameter& BoolParameter::operator= (bool value)
   // Set value
   _value = value;
   _change_count++;
+  _is_set = true;
 
   return *this;
 }
 //-----------------------------------------------------------------------------
 BoolParameter::operator bool() const
 {
+  if (!_is_set)
+    error("Parameter has not been set.");
   _access_count++;
   return _value;
 }
@@ -520,6 +579,9 @@ std::string BoolParameter::type_str() const
 //-----------------------------------------------------------------------------
 std::string BoolParameter::value_str() const
 {
+  if (!_is_set)
+    error("Parameter has not been set.");
+
   if (_value)
     return "true";
   else
@@ -533,6 +595,9 @@ std::string BoolParameter::range_str() const
 //-----------------------------------------------------------------------------
 std::string BoolParameter::str() const
 {
+  if (!_is_set)
+    error("Parameter has not been set.");
+
   std::stringstream s;
   s << "<bool-valued parameter named \""
     << key()

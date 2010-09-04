@@ -8,6 +8,7 @@
 #define __PARAMETER_H
 
 #include <set>
+#include <sstream>
 #include <string>
 #include <dolfin/common/types.h>
 #include <dolfin/common/real.h>
@@ -32,6 +33,9 @@ namespace dolfin
 
     /// Return parameter description
     std::string description() const;
+
+    /// Return true if parameter is set, return false otherwise
+    bool is_set() const;
 
     /// Return access count (number of times parameter has been accessed)
     uint access_count() const;
@@ -106,7 +110,7 @@ namespace dolfin
 
     /// Return short string description
     virtual std::string str() const = 0;
-    
+
     // Check that key name is allowed
     static void check_key(std::string key);
 
@@ -117,6 +121,9 @@ namespace dolfin
 
     // Change count
     uint _change_count;
+
+    // Whether or not parameter has been set
+    bool _is_set;
 
   private:
 
@@ -132,6 +139,9 @@ namespace dolfin
   class IntParameter : public Parameter
   {
   public:
+
+    /// Create unset int-valued
+    IntParameter(std::string key);
 
     /// Create int-valued parameter
     IntParameter(std::string key, int value);
@@ -180,6 +190,9 @@ namespace dolfin
   class RealParameter : public Parameter
   {
   public:
+
+    /// Create unset double-valued parameter
+    RealParameter(std::string key);
 
     /// Create double-valued parameter
     RealParameter(std::string key, real value);
@@ -232,6 +245,9 @@ namespace dolfin
   {
   public:
 
+    /// Create unset string-valued parameter
+    StringParameter(std::string key);
+
     /// Create string-valued parameter
     StringParameter(std::string key, std::string value);
 
@@ -279,6 +295,9 @@ namespace dolfin
   class BoolParameter : public Parameter
   {
   public:
+
+    /// Create usnet bool-valued parameter
+    BoolParameter(std::string key);
 
     /// Create bool-valued parameter
     BoolParameter(std::string key, bool value);

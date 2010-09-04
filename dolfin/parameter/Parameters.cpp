@@ -254,17 +254,17 @@ void Parameters::update(const Parameters& parameters)
 
   // Update nested parameter sets
   for (const_parameter_set_iterator it = parameters._parameter_sets.begin(); it != parameters._parameter_sets.end(); ++it)
-  {
     (*this)(it->first).update(*it->second);
-  }
 }
 //-----------------------------------------------------------------------------
 Parameter& Parameters::operator[] (std::string key)
 {
   Parameter* p = find_parameter(key);
   if (!p)
+  {
     error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter not defined.",
           key.c_str(), this->name().c_str());
+  }
   return *p;
 }
 //-----------------------------------------------------------------------------
@@ -272,8 +272,10 @@ const Parameter& Parameters::operator[] (std::string key) const
 {
   Parameter* p = find_parameter(key);
   if (!p)
+  {
     error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter not defined.",
           key.c_str(), this->name().c_str());
+  }
   return *p;
 }
 //-----------------------------------------------------------------------------
@@ -281,8 +283,10 @@ Parameters& Parameters::operator() (std::string key)
 {
   Parameters* p = find_parameter_set(key);
   if (!p)
+  {
     error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter set not defined.",
           key.c_str(), this->name().c_str());
+  }
   return *p;
 }
 //-----------------------------------------------------------------------------
@@ -290,8 +294,10 @@ const Parameters& Parameters::operator() (std::string key) const
 {
   Parameters* p = find_parameter_set(key);
   if (!p)
+  {
     error("Unable to access parameter \"%s\" in parameter set \"%s\", parameter set not defined.",
           key.c_str(), this->name().c_str());
+  }
   return *p;
 }
 //-----------------------------------------------------------------------------
@@ -386,7 +392,9 @@ std::string Parameters::str(bool verbose) const
 
     for (const_parameter_set_iterator it = _parameter_sets.begin();
          it != _parameter_sets.end(); ++it)
+    {
       s << "\n\n" << indent(it->second->str(verbose));
+    }
   }
   else
   {

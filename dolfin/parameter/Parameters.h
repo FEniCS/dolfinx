@@ -75,7 +75,7 @@ namespace dolfin
   public:
 
     /// Create empty parameter set
-    explicit Parameters(std::string key="parameters");
+    explicit Parameters(std::string key = "parameters");
 
     /// Destructor
     virtual ~Parameters();
@@ -91,6 +91,12 @@ namespace dolfin
 
     /// Clear parameter set
     void clear();
+
+    /// Add an unset parameter of type T. For example, to create a unset
+    /// parameter of type bool, do parameters.add<bool>("my_setting")
+    template<typename T>
+    void add(std::string key)
+    { error("Cannot create Parameter of requested type."); }
 
     /// Add int-valued parameter
     void add(std::string key, int value);
@@ -205,6 +211,27 @@ namespace dolfin
     std::map<std::string, Parameters*> _parameter_sets;
 
   };
+
+  // Specialised templated for unset parameters
+  template<> inline void Parameters::add<uint>(std::string key)
+  { _parameters[key] = new IntParameter(key); }
+
+  template<> inline void Parameters::add<int>(std::string key)
+  { _parameters[key] = new IntParameter(key); }
+
+  #ifdef HAS_GMP
+  template<> inline void Parameters::add<real>(std::string key)
+  { _parameters[key] = new RealParameter(key); }
+  #endif
+
+  template<> inline void Parameters::add<double>(std::string key)
+  { _parameters[key] = new RealParameter(key); }
+
+  template<> inline void Parameters::add<std::string>(std::string key)
+  { _parameters[key] = new StringParameter(key); }
+
+  template<> inline void Parameters::add<bool>(std::string key)
+  { _parameters[key] = new BoolParameter(key); }
 
 }
 
