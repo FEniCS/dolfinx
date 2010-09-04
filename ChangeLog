@@ -1,3 +1,5 @@
+ - Permit unset parameters
+ - Search only for BLAS library (not cblas.h)
 0.9.9 [2010-09-01]
  - Change build system to CMake
  - Add named MeshFunctions: VertexFunction, EdgeFunction, FaceFunction, FacetFunction, CellFunction
