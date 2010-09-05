@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
+// Modified by Marie E. Rognes, 2010.
 //
 // First added:  2007-03-08
-// Last changed: 2010-01-02
+// Last changed: 2010-09-05
 //
 // This simple program illustrates the use of the SLEPc eigenvalue solver.
 
@@ -21,34 +22,36 @@ int main()
   parameters["linear_algebra_backend"] = "PETSc";
 
   // Create mesh
-  UnitSquare mesh(64, 64);
+  Mesh mesh("box_with_dent.xml.gz");
 
-  // Build stiftness matrix
+  // Build stiffness matrix
   Matrix A;
   StiffnessMatrix::FunctionSpace V(mesh);
   StiffnessMatrix::BilinearForm a(V, V);
   assemble(A, a);
 
-  cout << A << endl;
-
   // Get PETSc matrix
   PETScMatrix& AA(A.down_cast<PETScMatrix>());
 
-  // Compute the first n eigenvalues
-  unsigned int n = 10;
+  // Create eigensolver
   SLEPcEigenSolver esolver;
-  esolver.parameters["spectrum"] = "largest magnitude";
-  esolver.solve(AA, n);
 
-  cout << "Solver converted in " << esolver.get_iteration_number() << " iterations" << endl;
+  // Compute all eigenvalues of A x = \lambda x
+  esolver.solve(AA);
 
-  // Display eigenvalues
-  for (unsigned int i = 0; i < n; i++)
-  {
-    double lr, lc;
-    esolver.get_eigenvalue(lr, lc, i);
-    cout << "Eigenvalue " << i << ": " << lr << endl;
-  }
+  // Extract largest (first) eigenpair
+  double r, c;
+  PETScVector rx(A.size(1));
+  PETScVector cx(A.size(1));
+  esolver.get_eigenpair(r, c, rx, cx, 0);
+
+  std::cout << "Largest eigenvalue: " << r << std::endl;
+
+  // Initialize function with eigenvector
+  Function u(V, rx);
+
+  // Plot eigenfunction
+  plot(u);
 
   #else
 
