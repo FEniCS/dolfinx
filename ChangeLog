@@ -1,3 +1,4 @@
+ - Only create output directories when they don't exist
  - Make it impossible to set the linear algebra backend to something illegal
  - Overload value_shape instead of dim for userdefined Python Expressions
  - Permit unset parameters

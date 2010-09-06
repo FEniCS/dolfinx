@@ -9,7 +9,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2010-08-17
+// Last changed: 2010-09-06
 
 #include <fstream>
 #include <boost/filesystem.hpp>
@@ -34,11 +34,14 @@ File::File(const std::string filename, std::string encoding)
   const std::string extension = boost::filesystem::extension(path);
 
   // Create directory if we have a parent path
-  if ( path.has_parent_path() )
+  if (path.has_parent_path())
   {
     const boost::filesystem::path directory = path.parent_path();
-    cout << "Creating directory \"" << directory.string() << "\"." << endl;
-    boost::filesystem::create_directories(directory);
+    if (!boost::filesystem::is_directory(directory))
+    {
+      cout << "Creating directory \"" << directory.string() << "\"." << endl;
+      boost::filesystem::create_directories(directory);
+    }
   }
 
   // Choose format based on extension
