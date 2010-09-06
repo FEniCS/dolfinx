@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-02
-// Last changed: 2010-04-19
+// Last changed: 2010-09-05
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -44,11 +44,24 @@ namespace dolfin
       p.add("optimize", false);                              // All of the above
 
       // Linear algebra
-      #ifdef HAS_PETSC
-      p.add("linear_algebra_backend", "PETSc");              // Use PETSc if available
-      #else
-      p.add("linear_algebra_backend", "uBLAS");              // Otherwise, use uBLAS
-      #endif
+      std::set<std::string> allowed_backends;
+      std::string default_backend("uBLAS");
+      allowed_backends.insert("uBLAS");
+      allowed_backends.insert("STL");
+#ifdef HAS_PETSC
+      allowed_backends.insert("PETSc");
+      default_backend = "PETSc";
+#endif
+#ifdef HAS_TRILINOS
+      allowed_backends.insert("Epetra");
+#endif
+#ifdef HAS_MTL4
+      allowed_backends.insert("MTL4");
+#endif
+#ifdef HAS_TRILINOS
+      allowed_backends.insert("Epetra");
+#endif
+      p.add("linear_algebra_backend", default_backend, allowed_backends);
 
       // Floating-point precision (only relevant when using GMP)
       #ifdef HAS_GMP
