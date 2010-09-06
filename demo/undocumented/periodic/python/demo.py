@@ -8,7 +8,7 @@
 # Original implementation: ../cpp/main.cpp by Anders Logg
 #
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-15 -- 2009-10-07"
+__date__ = "2007-11-15 -- 2010-09-05"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -55,7 +55,7 @@ bcs = [bc0, bc1]
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Source(V)
+f = Source()
 
 a = dot(grad(v), grad(u))*dx
 L = v*f*dx

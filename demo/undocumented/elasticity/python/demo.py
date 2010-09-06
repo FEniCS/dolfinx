@@ -3,7 +3,7 @@
 for a gear clamped at two of its ends and twisted 30 degrees."""
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__ = "2007-11-14 -- 2009-10-07"
+__date__ = "2007-11-14 -- 2010-09-05"
 __copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -45,8 +45,8 @@ class Rotation(Expression):
         values[1] = y - x[1]
         values[2] = z - x[2]
 
-    def dim(self):
-        return 3
+    def value_shape(self):
+        return (3,)
 
 # Sub domain for rotation at right end
 def right(x, on_boundary):

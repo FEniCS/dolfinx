@@ -41,23 +41,22 @@ class Traction(Expression):
         self.t   = t
         self.dt  = dt
         self.old = old
+
     def eval(self, values, x):
 
         # 'Shift' time for n-1 values
-        t_tmp = float(self.t)
+        t_tmp = self.t
         if self.old and t > 0.0:
             t_tmp -= self.dt
 
         cutoff_t = 10.0*1.0/32.0;
-        if t_tmp < cutoff_t:
-            values[0] = 1.0*t_tmp/cutoff_t
-            values[1] = 0.0
-        else:
-            values[0] = 1.0;
-            values[1] = 0.0;
+        weight = t_tmp/cutoff_t if t_tmp < cutoff_t else 1.0
 
-    def dim(self):
-        return 2
+        values[0] = 1.0*weight
+        values[1] = 0.0
+
+    def value_shape(self):
+        return (2,)
 
 # Sub domain for clamp at left end
 def left(x, on_boundary):
@@ -93,7 +92,7 @@ alpha_f = 0.4
 beta    = 0.36
 gamma   = 0.7
 dt      = 1.0/32.0
-t       = Time(0.0)
+t       = 0.0
 T       = 10*dt
 
 # Some useful factors
@@ -144,11 +143,13 @@ bc = DirichletBC(V, zero, left)
 problem = VariationalProblem(a, L, bcs=bc, exterior_facet_domains=boundary_subdomains)
 
 vtk_file = File("elasticity.pvd")
-while t < T:
+while t <= T:
 
     t += dt
     print "Time: ", t
 
+    p.t = t
+    p0.t = t
     # Solve and update functions
     u = problem.solve()
     update(u, u0, v0, a0, beta, gamma, dt)

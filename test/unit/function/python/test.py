@@ -1,7 +1,7 @@
 """Unit tests for the function library"""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2007-05-24 -- 2009-12-16"
+__date__ = "2007-05-24 -- 2010-09-05"
 __copyright__ = "Copyright (C) 2007 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -20,7 +20,7 @@ class Eval(unittest.TestCase):
                def eval(self, values, x):
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
-          f0 = F0(V)
+          f0 = F0()
           f1 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
           f2, f3 = Expressions("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
                               "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
@@ -81,8 +81,8 @@ class Eval(unittest.TestCase):
                     x = data.x()
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
-          e0 = F0(V, degree=2)
-          e1 = F1(V, degree=2)
+          e0 = F0(degree=2)
+          e1 = F1(degree=2)
           e2 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
 
           s0 = norm(interpolate(e0, V))
@@ -98,7 +98,7 @@ class Eval(unittest.TestCase):
                def eval(self, values, x):
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
-          f0 = F0(V)
+          f0 = F0()
           f1 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
           f2, f3 = Expressions("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])",
                                "1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2]", degree=2)
@@ -117,26 +117,6 @@ class Eval(unittest.TestCase):
                self.assertRaises(TypeError, f, zeros(4), values = zeros(3))
 
 class Instantiation(unittest.TestCase):
-
-     def testSameBases(self):
-
-          # FIXME: Hake: What should this unit test do?
-
-          return
-
-          f0 = Expression("2", degree=2)
-
-          class MyConstant(Expression):
-               cpparg = "2"
-
-          f1 = MyConstant(V)
-
-          self.assertNotEqual(type(f0).__bases__,type(f1).__bases__)
-
-          #f2, f3 = Expressions("2", V, "3", V)
-          f4, f5 = Expressions("2", "3", V = V)
-          self.assertEqual(type(f2).__bases__, type(f4).__bases__)
-          self.assertEqual(type(f3).__bases__, type(f5).__bases__)
 
      def testWrongSubClassing(self):
 
@@ -158,27 +138,36 @@ class Instantiation(unittest.TestCase):
                     def evaluate(self, values, data):
                          pass
 
-          def bothCompileAndPythonSubClassing0():
-               class bothCompileAndPythonSubClassing(Expression):
-                    def eval(self, values, x):pass
-                    cpparg = "2"
+          def wrongArgs():
+               class WrongArgs(Expression):
+                    def eval(self, values, x):
+                         pass
+               e = WrongArgs(V)
 
-          def bothCompileAndPythonSubClassing1():
-               class bothCompileAndPythonSubClassing(Expression):
-                    def eval_data(self, values, data):pass
-                    cpparg = "2"
-
-          def wrongCppargType():
-               class WrongCppargType(Expression):
-                    cpparg = 2
-
-          self.assertRaises(TypeError,noAttributes)
-          self.assertRaises(TypeError,noEvalAttribute)
-          self.assertRaises(TypeError,wrongEvalAttribute)
-          self.assertRaises(TypeError,wrongEvalDataAttribute)
-          #self.assertRaises(TypeError,bothCompileAndPythonSubClassing0)
-          #self.assertRaises(TypeError,bothCompileAndPythonSubClassing1)
-          self.assertRaises(TypeError,wrongCppargType)
+          def wrongElement():
+               class WrongElement(Expression):
+                    def eval(self, values, x):
+                         pass
+                    def value_shape(self):
+                         return (2,)
+               e = WrongElement(element=V.ufl_element())
+          
+          def deprecationWarning():
+               class Deprecated(Expression):
+                    def eval(self, values, x):
+                         pass
+                    def dim(self):
+                         return 2
+               e = Deprecated()
+          
+          self.assertRaises(TypeError, noAttributes)
+          self.assertRaises(TypeError, noEvalAttribute)
+          self.assertRaises(TypeError, wrongEvalAttribute)
+          self.assertRaises(TypeError, wrongEvalDataAttribute)
+          self.assertRaises(TypeError, wrongArgs)
+          self.assertRaises(ValueError, wrongElement)
+          self.assertRaises(DeprecationWarning, deprecationWarning)
+ 
 
 class Interpolate(unittest.TestCase):
 
@@ -190,8 +179,8 @@ class Interpolate(unittest.TestCase):
             def eval(self, values, x):
                 values[0] = 1.0
                 values[1] = 1.0
-            def dim(self):
-                return 2
+            def value_shape(self):
+                return (2,)
 
         # Interpolation not working in parallel yet
         if MPI.num_processes() == 0:

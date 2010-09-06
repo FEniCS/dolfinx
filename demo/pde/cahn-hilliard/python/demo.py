@@ -18,8 +18,8 @@ class InitialConditions(Expression):
     def eval(self, values, x):
         values[0] = 0.63 + 0.02*(0.5 - random.random())
         values[1] = 0.0
-    def dim(self):
-        return 2
+    def value_shape(self):
+        return (2,)
 
 # Class for interfacing with the Newton solver
 class CahnHilliardEquation(NonlinearProblem):

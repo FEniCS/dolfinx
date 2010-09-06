@@ -4,7 +4,7 @@ boundary conditions."""
 # Modified by Kristian Oelgaard, 2008
 
 __author__ = "Kent-Andre Mardal (kent-and@simula.no)"
-__date__ = "2008-08-13 -- 2009-10-07"
+__date__ = "2008-08-13 -- 2010-09-05"
 __copyright__ = "Copyright (C) 2008 Kent-Andre Mardal"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -37,8 +37,8 @@ class DirichletBoundary(SubDomain):
 # Define variational problem
 v = TestFunction(V)
 u = TrialFunction(V)
-f = Source(V)
-g = Flux(V)
+f = Source()
+g = Flux()
 
 a = inner(grad(v), grad(u))*dx
 L = v*f*dx + v*g*ds

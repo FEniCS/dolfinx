@@ -12,7 +12,7 @@
 #     u(x,y)      = V  for y = 0
 
 __author__ = "Kristen Kaasbjerg (cosby@fys.ku.dk)"
-__date__ = "2008-02-14 -- 2009-10-07"
+__date__ = "2008-02-14 -- 2010-09-05"
 __copyright__ = ""
 __license__  = "GNU LGPL Version 2.1"
 
@@ -104,12 +104,12 @@ class DirichletBoundary(SubDomain):
 v = TestFunction(V2)
 u = TrialFunction(V2)
 f = Constant(0.0)
-b = Coefficient(V0)
+b = Coefficient()
 a = b*dot(grad(v), grad(u))*dx
 L = v*f*dx
 
 # Define boundary condition
-u0 = DirichletFunction(V2)
+u0 = DirichletFunction()
 bc = DirichletBC(V2, u0, DirichletBoundary())
 
 # Solve PDE and plot solution
@@ -123,7 +123,7 @@ plot(u)
 # because it is an interpolation of the exact solution
 # in the finite element space!
 Pk = FunctionSpace(mesh, "CG", 5)
-exact = Exact(Pk)
+exact = Exact()
 
 e = u - exact
 L2_norm = e*e*dx

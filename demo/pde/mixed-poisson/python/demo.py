@@ -53,10 +53,9 @@ class BoundarySource(Expression):
         g = sin(5*data.x()[0])
         values[0] = g*data.normal()[0]
         values[1] = g*data.normal()[1]
-    def rank(self):
-        return 1
-    def dim(self):
-        return 2
+    def value_shape(self):
+        return (2,)
+
 G = BoundarySource()
 
 # Define essential boundary

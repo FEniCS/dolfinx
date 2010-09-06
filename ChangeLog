@@ -1,3 +1,5 @@
+ - Make it impossible to set the linear algebra backend to something illegal
+ - Overload value_shape instead of dim for userdefined Python Expressions
  - Permit unset parameters
  - Search only for BLAS library (not cblas.h)
 0.9.9 [2010-09-01]
