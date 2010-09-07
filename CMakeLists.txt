@@ -380,14 +380,6 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
-# Get command for building (make, nmake, ...)
-
-build_command(MAKE_COMMAND make)
-
-# Strip off any options in MAKE_COMMAND
-string(REGEX REPLACE "([^ ]) .*" "\\1" MAKE_COMMAND "${MAKE_COMMAND}")
-
-#------------------------------------------------------------------------------
 # Add demos and install demo source files and mesh files
 
 # Add demo but do not add to default target
@@ -395,7 +387,7 @@ add_subdirectory(demo EXCLUDE_FROM_ALL)
 
 # Add target "demo" for building the demos
 add_custom_target(demo
-  COMMAND ${MAKE_COMMAND}
+  COMMAND ${CMAKE_MAKE_PROGRAM}
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
 
 # Install the demo source files
@@ -421,7 +413,7 @@ if (DOLFIN_ENABLE_BENCHMARKS)
 
   # Add target "bench" for building benchmarks
   add_custom_target(bench
-    COMMAND ${MAKE_COMMAND}
+    COMMAND ${CMAKE_MAKE_PROGRAM}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bench")
 
   # Copy files needed to run benchmarks in build directory
@@ -445,7 +437,7 @@ if (CPPUNIT_FOUND)
 
   # Add target "test" for building tests
   add_custom_target(test
-    COMMAND ${MAKE_COMMAND}
+    COMMAND ${CMAKE_MAKE_PROGRAM}
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test")
 endif()
 
