@@ -71,26 +71,21 @@ show :
   endmacro()
 
   # Call macro to get the SLEPc variables
-  slepc_get_variable(SLEPC_INCLUDE_DIRS     SLEPC_INCLUDE)
-  slepc_get_variable(SLEPC_OTHER_LIBRARIES  OTHERSHAREDLIBS)
-  slepc_get_variable(SLEPC_LIB_DIR          SLEPC_LIB_DIR)
+  slepc_get_variable(SLEPC_INCLUDE SLEPC_INCLUDE)
+  slepc_get_variable(SLEPC_LIB SLEPC_LIB)
 
   # Remove temporary Makefile
   file(REMOVE ${slepc_config_makefile})
 
-  # Find the SLEPc library
-  find_library(SLEPC_LIBRARY
-    NAMES slepc
-    HINTS ${SLEPC_LIB_DIR}
-    )
+  # Extract include paths and libraries from compile command line
+  include(ResolveCompilerPaths)
+  resolve_includes(SLEPC_INCLUDE_DIRS "${SLEPC_INCLUDE}")
+  resolve_libraries(SLEPC_LIBRARIES "${SLEPC_LIB}")
 
-  # FIXME: Get full paths for 'other' libraries
-  # Set SLEPc libraries
-  set(SLEPC_LIBRARIES ${SLEPC_LIBRARY} ${SLEPC_OTHER_LIBRARIES})
-
-  # Turn SLEPC_INCLUDE_DIRS into a semi-colon separated list
-  string(REPLACE "-I" "" SLEPC_INCLUDE_DIRS ${SLEPC_INCLUDE_DIRS})
-  separate_arguments(SLEPC_INCLUDE_DIRS)
+  # Add variables to CMake cache and mark as advanced
+  set(SLEPC_INCLUDE_DIRS ${SLEPC_INCLUDE_DIRS} CACHE STRING "SLEPc include paths." FORCE)
+  set(SLEPC_LIBRARIES ${SLEPC_LIBRARIES} CACHE STRING "SLEPc libraries." FORCE)
+  mark_as_advanced(SLEPC_INCLUDE_DIRS SLEPC_LIBRARIES)
 
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${SLEPC_INCLUDE_DIRS} ${PETSC_INCLUDE_DIRS})

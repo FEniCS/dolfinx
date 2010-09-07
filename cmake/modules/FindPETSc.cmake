@@ -110,15 +110,21 @@ show :
   endmacro()
 
   # Call macro to get the PETSc variables
-  petsc_get_variable(PETSC_INCLUDE_DIRS PETSC_INCLUDE)
-  petsc_get_variable(PETSC_LIBRARIES    PETSC_LIB)
+  petsc_get_variable(PETSC_INCLUDE PETSC_INCLUDE)
+  petsc_get_variable(PETSC_LIB PETSC_LIB)
 
   # Remove temporary Makefile
   file(REMOVE ${petsc_config_makefile})
 
-  # Turn PETSC_INCLUDE_DIRS into a semi-colon separated list
-  string(REPLACE "-I" "" PETSC_INCLUDE_DIRS ${PETSC_INCLUDE_DIRS})
-  separate_arguments(PETSC_INCLUDE_DIRS)
+  # Extract include paths and libraries from compile command line
+  include(ResolveCompilerPaths)
+  resolve_includes(PETSC_INCLUDE_DIRS "${PETSC_INCLUDE}")
+  resolve_libraries(PETSC_LIBRARIES "${PETSC_LIB}")
+
+  # Add variables to CMake cache and mark as advanced
+  set(PETSC_INCLUDE_DIRS ${PETSC_INCLUDE_DIRS} CACHE STRING "PETSc include paths." FORCE)
+  set(PETSC_LIBRARIES ${PETSC_LIBRARIES} CACHE STRING "PETSc libraries." FORCE)
+  mark_as_advanced(PETSC_INCLUDE_DIRS PETSC_LIBRARIES)
 
 endif()
 
@@ -147,7 +153,7 @@ int main()
   TS ts;
   int argc = 0;
   char** argv = NULL;
-  ierr = PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);CHKERRQ(ierr);CHKERRQ(ierr);
+  ierr = PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);CHKERRQ(ierr);
   ierr = TSCreate(PETSC_COMM_WORLD,&ts);CHKERRQ(ierr);
   ierr = TSSetFromOptions(ts);CHKERRQ(ierr);
   ierr = TSDestroy(ts);CHKERRQ(ierr);
