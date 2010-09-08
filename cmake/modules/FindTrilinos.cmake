@@ -1,15 +1,15 @@
 # - Try to find Trilinos
 # Once done this will define
 #
-#  TRILINOS_FOUND        - system has CGAL
-#  TRILINOS_INCLUDE_DIRS - include directories for CGAL
-#  TRILINOS_LIBRARIES    - libraries for CGAL
-#  TRILINOS_DEFINITIONS  - compiler flags for CGAL
+#  TRILINOS_FOUND        - system has Trilinos
+#  TRILINOS_INCLUDE_DIRS - include directories for Trilinos
+#  TRILINOS_LIBRARIES    - libraries for Trilinos
+#  TRILINOS_DEFINITIONS  - compiler flags for Trilinos
 
 message(STATUS "Checking for package 'Trilinos'")
 
 # Find Trilinos CMake config
-find_package(Trilinos PATHS ${UMFPACK_DIR}/include $ENV{TRILINOS_DIR}/include QUIET)
+find_package(Trilinos PATHS ${TRILINOS_DIR}/include $ENV{TRILINOS_DIR}/include QUIET)
 
 if (Trilinos_FOUND)
 
@@ -25,7 +25,7 @@ if (Trilinos_FOUND)
   # Loop over Trilinos libs and get full path
   foreach (lib ${Trilinos_LIBRARIES})
     find_library(TRILINOS_LIB_${lib} ${lib} PATHS ${Trilinos_LIBRARY_DIRS})
-    if (TRILINOS_LIB_${lib})
+    if (TRILINOS_LIB_${lib} AND NOT ${lib} MATCHES ".*pytrilinos")
       set(TRILINOS_LIBRARIES ${TRILINOS_LIBRARIES} ${TRILINOS_LIB_${lib}})
     endif()
   endforeach()
