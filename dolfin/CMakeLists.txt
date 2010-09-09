@@ -260,23 +260,31 @@ install(TARGETS dolfin
 # Define packages that should be required by pkg-config file
 set(PKG_REQUIRES "ufc-1 libxml-2.0")
 
-get_directory_property(cmake_inc INCLUDE_DIRECTORIES)
-foreach(_inc_dir ${cmake_inc})
-  set(PKG_CXXFLAGS "-I${_inc_dir} ${PKG_CXXFLAGS}")
+# Convert include dirs to -I<incdir> form
+foreach(_inc_dir ${DOLFIN_INCLUDE_DIRECTORIES})
+  set(PKG_INCLUDES "-I${_inc_dir} ${PKG_INCLUDES}")
 endforeach()
-string(REGEX REPLACE ";" " " PKG_DEFINITIONS ${PKG_CXXFLAGS})
 
-# Add CXX COMPILER flags
-set(PKG_CXXFLAGS ${CMAKE_CXX_FLAGS} ${PKG_CXXFLAGS})
-string(REGEX REPLACE ";" " " PKG_CXXFLAGS ${PKG_CXXFLAGS})
+# Convert compiler flags and definitions into space separated strings
+string(REPLACE ";" " " PKG_CXXFLAGS "${CMAKE_CXX_FLAGS}")
+string(REPLACE ";" " " PKG_DEFINITIONS "${DOLFIN_CXX_DEFINITIONS}")
 
-# Convert compiler defintions into a list for pkg-config
-# Append definitions to PKG_CXXFLAGS
-string(REGEX REPLACE ";" " " PKG_DEFINITIONS ${DOLFIN_CXX_DEFINITIONS})
-set(PKG_CXXFLAGS ${PKG_DEFINITIONS} ${PKG_CXXFLAGS})
+# Convert libraries to -L<libdir> -l<lib> form
+foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
+  string(REGEX REPLACE "(/[^ ]*)/lib([^ ]*)\\.(a|so|dylib|dll)" "-L\\1 -l\\2"
+    _linkflags
+    "${_lib}"
+    )
+  set(PKG_LINKFLAGS "${_linkflags} ${PKG_LINKFLAGS}")
+endforeach()
 
-# Add definitions to PKG_CXXFLAGS
-set(PKG_CXXFLAGS ${PKG_DEFINITIONS} ${PKG_CXXFLAGS})
+# Remove duplicated link flags
+separate_arguments(PKG_LINKFLAGS)
+list(REMOVE_DUPLICATES PKG_LINKFLAGS)
+string(REPLACE ";" " " PKG_LINKFLAGS "${PKG_LINKFLAGS}")
+
+# Add additional link flags
+set(PKG_LINK_FLAGS "${PKG_LINKFLAGS} ${DOLFIN_LINK_FLAGS}")
 
 # Configure and install pkg-config file
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.pc.in ${CMAKE_BINARY_DIR}/dolfin.pc @ONLY)
