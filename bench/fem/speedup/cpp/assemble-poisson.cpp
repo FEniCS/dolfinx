@@ -29,14 +29,14 @@ int main(int argc, char* argv[])
   // Assemble matrix
   Poisson::BilinearForm a(V, V);
   Matrix A;
-  MPI::barrier();
+  dolfin::MPI::barrier();
   double t = time();
   assemble(A, a);
-  MPI::barrier();
+  dolfin::MPI::barrier();
   t = time() - t;
 
   // Report timing
-  if (MPI::process_number() == 0)
+  if (dolfin::MPI::process_number() == 0)
     info("TIME: %.5g", t);
 
   return 0;
