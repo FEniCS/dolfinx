@@ -12,7 +12,12 @@ failed = []
 def run_bench(arg, directory, files):
 
     # Skip directories not containing a benchmark
-    if not "bench" in files:
+    bench_exec = "bench"
+    if directory.endswith("cpp") and \
+           directory.split(os.path.sep)[-2] + "-bench" in files:
+        bench_exec = directory.split(os.path.sep)[-2] + "-bench"
+
+    if not bench_exec in files:
         return
 
     # Get name of benchmark
@@ -30,7 +35,7 @@ def run_bench(arg, directory, files):
     # Run benchmark
     os.chdir(directory)
     t0 = time.time()
-    status = os.system("./bench" + " > %s" % logfile)
+    status = os.system(os.path.join(os.curdir, bench_exec) + " > %s" % logfile)
     elapsed_time = time.time() - t0
 
     # Change to toplevel directory
