@@ -362,6 +362,26 @@ set(DOLFIN_MAN_DIR "share/man")
 add_subdirectory(dolfin)
 
 #------------------------------------------------------------------------------
+# Installation of DOLFIN utilities
+
+set(DOLFIN_UTILITIES
+  ${DOLFIN_SOURCE_DIR}/utils/convert/dolfin-convert
+  ${DOLFIN_SOURCE_DIR}/utils/order/dolfin-order)
+
+install(FILES ${DOLFIN_UTILITIES}
+  DESTINATION ${DOLFIN_BIN_DIR}
+  PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+  COMPONENT RuntimeExecutables)
+
+#------------------------------------------------------------------------------
+# Installation of DOLFIN manual pages
+
+install(DIRECTORY ${DOLFIN_SOURCE_DIR}/doc/man/
+  DESTINATION ${DOLFIN_MAN_DIR}
+  USE_SOURCE_PERMISSIONS
+  COMPONENT RuntimeExecutables)
+
+#------------------------------------------------------------------------------
 # Generate and install helper file dolfin.conf
 
 # FIXME: Can CMake provide the library path name variable?
@@ -418,7 +438,7 @@ if (DOLFIN_ENABLE_BENCHMARKS)
 
   # Copy files needed to run benchmarks in build directory
   file(COPY bench DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-    FILES_MATCHING 
+    FILES_MATCHING
     PATTERN "*"
     PATTERN "CMakeFiles" EXCLUDE)
 
