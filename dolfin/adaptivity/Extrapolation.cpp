@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2010
 //
 // First added:  2009-12-08
-// Last changed: 2010-05-22
+// Last changed: 2010-09-10
 //
 
 #include <vector>
@@ -33,7 +33,11 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
 {
   // Using set_local for simplicity here
   not_working_in_parallel("Extrapolation");
-  warning("Extrapolation not fully implemented yet.");
+
+  // Too verbose
+  //info("Extrapolating function: %s --> %s",
+  //     v.function_space().element().signature().c_str(),
+  //     w.function_space().element().signature().c_str());
 
   // Check that the meshes are the same
   if (&w.function_space().mesh() != &v.function_space().mesh())
