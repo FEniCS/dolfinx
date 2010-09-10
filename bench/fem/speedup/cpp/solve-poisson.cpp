@@ -43,14 +43,14 @@ int main(int argc, char* argv[])
   Function u(V);
 
   // Solve problem
-  MPI::barrier();
+  dolfin::MPI::barrier();
   double t = time();
   problem.solve(u);
-  MPI::barrier();
+  dolfin::MPI::barrier();
   t = time() - t;
 
   // Report timing
-  if (MPI::process_number() == 0)
+  if (dolfin::MPI::process_number() == 0)
     info("TIME: %.5g", t);
 
   return 0;

@@ -155,7 +155,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def array(self):
         " Return a numpy array representation of Vector"
         from numpy import zeros, arange, uint0
-        v = zeros(self.size())
+        v = zeros(self.local_size())
         self.get_local(v)
         return v
 
@@ -402,9 +402,10 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def array(self):
         " Return a numpy array representation of Matrix"
         from numpy import zeros
-        A = zeros((self.size(0), self.size(1)))
-        for i in xrange(self.size(0)):
-            column, values = self.getrow(i)
+        m_range = MPI.local_range(self.size(0))
+        A = zeros((m_range[1]-m_range[0], self.size(1)))
+        for i, row in enumerate(xrange(*m_range)):
+            column, values = self.getrow(row)
             A[i,column] = values
         return A
 

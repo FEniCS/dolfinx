@@ -418,10 +418,8 @@ if (DOLFIN_ENABLE_BENCHMARKS)
 
   # Copy files needed to run benchmarks in build directory
   file(COPY bench DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-    FILES_MATCHING
-    PATTERN "*.py"
-    PATTERN "*.xml*"
-    PATTERN "*.log"
+    FILES_MATCHING 
+    PATTERN "*"
     PATTERN "CMakeFiles" EXCLUDE)
 
   # Add target "run_bench" for running benchmarks

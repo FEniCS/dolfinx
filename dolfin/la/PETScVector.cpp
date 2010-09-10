@@ -66,7 +66,7 @@ PETScVector::PETScVector(uint N, std::string type)
     }
   }
   else if (type == "local")
-    init(0, 0, "sequential");
+    init(N, 0, "sequential");
   else
     error("PETScVector type not known.");
 }
