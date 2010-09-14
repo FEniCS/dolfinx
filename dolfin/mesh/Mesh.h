@@ -246,7 +246,7 @@ namespace dolfin
     ///         Not C++ syntax.
     ///
     ///     >>> mesh = dolfin.UnitSquare(1,1)
-    ///     >>> mesh.coordinates()
+    ///     >>> mesh.cells()
     ///     array([[0, 1, 3],
     ///            [0, 2, 3]])
     const uint* cells() const { return _topology(_topology.dim(), 0)(); }
