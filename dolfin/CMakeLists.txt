@@ -296,8 +296,10 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
 #------------------------------------------------------------------------------
 # Generate CMake config file (dolfin-config.cmake)
 
-# Get library location
-get_target_property(DOLFIN_LIBRARY dolfin LOCATION)
+# Set library location
+get_target_property(DOLFIN_LIBRARY_LOCATION dolfin LOCATION)
+get_filename_component(DOLFIN_LIBRARY_FILENAME ${DOLFIN_LIBRARY_LOCATION} NAME)
+set(DOLFIN_LIBRARY "${CMAKE_INSTALL_PREFIX}/${DOLFIN_LIB_DIR}/${DOLFIN_LIBRARY_FILENAME}")
 
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-config.cmake.in ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin/dolfin-config.cmake
