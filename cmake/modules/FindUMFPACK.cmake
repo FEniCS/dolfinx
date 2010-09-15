@@ -7,6 +7,11 @@
 
 message(STATUS "Checking for package 'UMFPACK'")
 
+# Find packages that UMFPACK depends on
+find_package(AMD)
+find_package(BLAS)
+find_package(CHOLMOD)
+
 # Check for header file
 find_path(UMFPACK_INCLUDE_DIRS umfpack.h
  PATHS ${UMFPACK_DIR}/include $ENV{UMFPACK_DIR}/include
@@ -23,9 +28,14 @@ find_library(UMFPACK_LIBRARY umfpack
 mark_as_advanced(UMFPACK_LIBRARY)
 
 # Collect libraries
-set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARY} ${AMD_LIBRARIES})
+if (AMD_FOUND)
+  set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARY} ${AMD_LIBRARIES})
+endif()
 if (BLAS_FOUND)
   set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARIES} ${BLAS_LIBRARIES})
+endif()
+if (CHOLMOD_FOUND)
+  set(UMFPACK_LIBRARIES ${UMFPACK_LIBRARIES} ${CHOLMOD_LIBRARIES})
 endif()
 
 # Try compiling and running test program
