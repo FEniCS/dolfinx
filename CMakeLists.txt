@@ -309,17 +309,25 @@ endif()
 
 if (PYTHONINTERP_FOUND)
 
-  # Get path for platform-dependent Python modules (since we install a binary libary)
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))"
-    OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_MODULE_DIR
-    )
+  if (NOT DEFINED DOLFIN_INSTALL_PYTHON_MODULE_DIR)
+    # Get path for platform-dependent Python modules (since we install a binary libary)
+    execute_process(
+      COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))"
+      OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_MODULE_DIR
+      )
+    set(DOLFIN_INSTALL_PYTHON_MODULE_DIR ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}
+      CACHE PATH "Python extension module installation directory.")
+  endif()
 
-  # Get path for pure Python modules
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))"
-    OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR
-    )
+  if (NOT DEFINED DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR)
+    # Get path for pure Python modules
+    execute_process(
+      COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=False, prefix='${CMAKE_INSTALL_PREFIX}'))"
+      OUTPUT_VARIABLE DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR
+      )
+    set(DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR ${DOLFIN_INSTALL_PYTHON_PURE_MODULE_DIR}
+      CACHE PATH "Python module installation directory.")
+  endif()
 
 endif()
 
@@ -351,12 +359,12 @@ if (DOLFIN_WITH_LIBRARY_VERSION)
 endif()
 
 # Set DOLFIN install sub-directories
-set(DOLFIN_BIN_DIR "bin")
-set(DOLFIN_LIB_DIR "lib")
-set(DOLFIN_INCLUDE_DIR "include")
-set(DOLFIN_PKGCONFIG_DIR "lib/pkgconfig")
-set(DOLFIN_SHARE_DIR "share/dolfin")
-set(DOLFIN_MAN_DIR "share/man")
+set(DOLFIN_BIN_DIR "bin" CACHE PATH "Binary installation directory.")
+set(DOLFIN_LIB_DIR "lib" CACHE PATH "Library installation directory.")
+set(DOLFIN_INCLUDE_DIR "include" CACHE PATH "C/C++ header installation directory.")
+set(DOLFIN_PKGCONFIG_DIR "lib/pkgconfig" CACHE PATH "pkg-config file installation directory.")
+set(DOLFIN_SHARE_DIR "share/dolfin" CACHE PATH "Shared data installation directory.")
+set(DOLFIN_MAN_DIR "share/man" CACHE PATH "Manual page installation directory.")
 
 # Add source directory
 add_subdirectory(dolfin)

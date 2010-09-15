@@ -289,7 +289,7 @@ set(PKG_LINK_FLAGS "${PKG_LINKFLAGS} ${DOLFIN_LINK_FLAGS}")
 # Configure and install pkg-config file
 configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.pc.in ${CMAKE_BINARY_DIR}/dolfin.pc @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/dolfin.pc
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/${DOLFIN_PKGCONFIG_DIR}
+  DESTINATION ${DOLFIN_PKGCONFIG_DIR}
   COMPONENT Development
   )
 
