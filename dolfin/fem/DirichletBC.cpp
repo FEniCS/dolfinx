@@ -388,9 +388,9 @@ void DirichletBC::check() const
 {
   // Check for common errors, message below might be cryptic
   if (g->value_rank() == 0 && _function_space->element().value_rank() == 1)
-    error("Unable to create to create boundary condition. Reason: Expecting a vector-valued boundary value but given function is scalar.");
+    error("Unable to create boundary condition. Reason: Expecting a vector-valued boundary value but given function is scalar.");
   if (g->value_rank() == 1 && _function_space->element().value_rank() == 0)
-    error("Unable to create to create boundary condition. Reason: Expecting a scalar boundary value but given function is vector-valued.");
+    error("Unable to create boundary condition. Reason: Expecting a scalar boundary value but given function is vector-valued.");
 
   // Check that value shape of boundary value
   check_equal(g->value_rank(), _function_space->element().value_rank(),
