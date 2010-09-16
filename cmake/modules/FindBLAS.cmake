@@ -16,7 +16,6 @@ message(STATUS "Checking for package 'BLAS'")
 find_library(BLAS_LIBRARIES
   NAMES atlas cblas blas
   PATHS ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib
-  PATH_SUFFIXES atlas-amd64sse3 atlas
   DOC "The BLAS library"
   )
 mark_as_advanced(BLAS_LIBRARIES)
