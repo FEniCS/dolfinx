@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2010-05-14
+// Last changed: 2010-09-16
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/assign/list_of.hpp>
@@ -386,6 +386,12 @@ void DirichletBC::apply(GenericMatrix* A,
 //-----------------------------------------------------------------------------
 void DirichletBC::check() const
 {
+  // Check for common errors, message below might be cryptic
+  if (g->value_rank() == 0 && _function_space->element().value_rank() == 1)
+    error("Unable to create to create boundary condition. Reason: Expecting a vector-valued boundary value but given function is scalar.");
+  if (g->value_rank() == 1 && _function_space->element().value_rank() == 0)
+    error("Unable to create to create boundary condition. Reason: Expecting a scalar boundary value but given function is vector-valued.");
+
   // Check that value shape of boundary value
   check_equal(g->value_rank(), _function_space->element().value_rank(),
               "create boundary condition", "value rank");
