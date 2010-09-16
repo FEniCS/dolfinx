@@ -27,6 +27,12 @@ set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR})
 # Get all SWIG interface files
 file(GLOB DOLFIN_SWIG_INTERFACE_FILES "*.i")
 
+# and the DOLFIN header files
+execute_process(
+  COMMAND ${PYTHON_EXECUTABLE} -c "import sys, re; sys.stdout.write(';'.join([r'${DOLFIN_SOURCE_DIR}/'+re.findall('dolfin.*\\.h', l)[0] for l in open(r'${DOLFIN_SOURCE_DIR}/'+'dolfin/swig/kernel_modules.i').readlines() if '%include' in l and not 'swig' in l]))"
+  OUTPUT_VARIABLE SWIG_KERNEL_MODULES
+)
+
 # Set SWIG source file
 set(SWIG_SOURCES dolfin.i)
 set_source_files_properties(${SWIG_SOURCES} PROPERTIES CPLUSPLUS ON)
@@ -42,6 +48,7 @@ set_source_files_properties(dolfin.i PROPERTIES SWIG_MODULE_NAME cpp)
 
 # Tell CMake which SWIG interface files should be checked for changes when recompile
 set(SWIG_MODULE_cpp_EXTRA_DEPS ${DOLFIN_SWIG_INTERFACE_FILES})
+list(APPEND SWIG_MODULE_cpp_EXTRA_DEPS ${SWIG_KERNEL_MODULES})
 
 include_directories(${PYTHON_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIR})
 swig_add_module(${SWIG_MODULE_NAME} python ${SWIG_SOURCES})
