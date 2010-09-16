@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-02
-// Last changed: 2010-08-16
+// Last changed: 2010-09-15
 
 #ifndef __FACE_H
 #define __FACE_H
@@ -25,6 +25,9 @@ namespace dolfin
 
     /// Destructor
     ~Face() {}
+
+    /// Calculate the area of the face (triangle)
+    double area() const;
 
   };
 
