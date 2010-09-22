@@ -33,9 +33,9 @@ File::File(const std::string filename, std::string encoding)
   const boost::filesystem::path path(filename);
   const std::string extension = boost::filesystem::extension(path);
 
-  // Create directory if we have a parent path (does nothing if directort exists)
+  // Create directory if we have a parent path (does nothing if directory exists)
   if (path.has_parent_path())
-    boost::filesystem::create_directory(path.parent_path());
+    boost::filesystem::create_directories(path.parent_path());
 
   // Choose format based on extension
   if (extension == ".gz")
