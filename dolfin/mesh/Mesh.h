@@ -520,7 +520,7 @@ namespace dolfin
     ///         A _Point_ object.
     ///
     /// *Returns*
-    ///     Point
+    ///     _Point_
     ///         The point inside the mesh which is closest to the
     ///         point.
     Point closest_point(const Point& point) const;

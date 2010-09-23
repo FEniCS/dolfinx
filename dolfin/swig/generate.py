@@ -72,20 +72,13 @@ f.close()
 
 # Docstring generation using DOXYGEN -> XML -> SWIG interface file
 #from docstringgenerator import DocstringGenerator
-#
+
 #g = DocstringGenerator(header_files=docstring_headers, swig_directory = ".", docstring_file_base = "")
 #g.generate_doxygen_documentation()
 #g.generate_interface_file_from_index()
 #g.clean()
 
 # Create docstrings.i file from docstrings module (only for dolfin.cpp)
-import os
-from sys import path
-
-# Add path to the local docstrings module.
-doc_dir = os.path.abspath(os.path.join(os.pardir, os.pardir, "site-packages", "dolfin"))
-path.append(doc_dir)
-import docstrings
 from documentation import generate_docstrings
-generate_docstrings(docstrings)
+generate_docstrings()
 

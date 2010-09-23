@@ -1,63 +1,149 @@
 #!/usr/bin/env python
-"""Simple functions to update the docstrings for the Python interface from the
-FEniCS Documentation."""
+"""Simple functions to update the docstrings.i file for the Python interface
+from the intermediate representation of the documentation which is extracted
+from the C++ source code of DOLFIN.
+
+This script assumes that all functions and classes lives in the dolfin namespace.
+"""
 
 __author__ = "Kristian B. Oelgaard (k.b.oelgaard@gmail.com)"
 __date__ = "2010-08-19"
 __copyright__ = "Copyright (C) 2010 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
-# Last changed: 2010-09-02
+# Last changed: 2010-09-16
 
 # Modified by Johan Hake, 2010.
 
-import os
-import shutil
-import types
+import os, shutil, types, sys
+
+# Add path to dolfin_utils and import the documentation extractor.
+doc_dir = os.path.abspath(os.path.join(os.pardir, os.pardir, "site-packages"))
+sys.path.append(doc_dir)
+from dolfin_utils.documentation import extract_doc_representation, indent, add_links
 
 if os.path.isfile("docstrings.i"):
     os.remove("docstrings.i")
 output_file = open("docstrings.i", "a")
 docstring = '%%feature("docstring")  %s "\n%s\n";\n\n'
-# Might need more names here (operators??).
-name_map = {"__init__" : lambda n: n}
 
-def write_docstring(name, function, doc):
-    """Write docstring for function. Assuming namespace 'dolfin' for all
-    functions."""
+def get_function_name(signature):
+    "Extract function name from signature."
+    words = signature.split("(")[0].split()
+    # Special handling of operator since Swig needs 'operator double', not just
+    # 'double', which is different from _normal_ operators like 'operator='
+    if len(words) > 1 and words[-2] == "operator":
+        return " ".join(words[-2:])
+    return words[-1]
+
+def group_overloaded_functions(docs):
+    """Group functions with same name, but different signature.
+    Assuming that overloaded functions in the dolfin namespace are defined
+    in the same header file."""
+
+    new_docs = []
+    for (classname, parent, comment, function_documentation) in docs:
+        func_doc = {}
+        order = []
+#        print "cls: ", classname
+        # Iterate over class functions
+        for (signature, comm) in function_documentation:
+            # No need to put empty docstrings in the docstrings.i file!
+            if comm is None:
+                continue
+#            print "sig: ", signature
+            name = get_function_name(signature)
+            if not name in order:
+                order.append(name)
+#            print "name: '%s'" % name
+            if not name in func_doc:
+                func_doc[name] = [(signature, comm)]
+            else:
+                func_doc[name].append((signature, comm))
+        new_docs.append((classname, parent, comment, func_doc, order))
+
+    return new_docs
+
+def modify_doc(text, classnames):
+    "Add links, translate C++ to Python and change return types."
+
+    # Add links
+    text = add_links(text, classnames, ":py:class:")
+
     # Escape '"' otherwise will SWIG complain
-    doc = doc.replace("\"",r"\"")
-    if name != "":
-        output_file.write(docstring % ("::".join(["dolfin", name, function]), doc))
-    else:
-        output_file.write(docstring % ("::".join(["dolfin", function]), doc))
+    text = text.replace("\"",r"\"")
 
-def handle_functions(mod, name):
-    "Extract functions/methods from module or class."
-    # Get all function types.
-    functions = [v for k, v in mod.__dict__.items()\
-                 if isinstance(v, (types.FunctionType, types.MethodType))]
+    # TODO: KBO: Still need to translate example code and return types.
+    return text
 
-    for func in functions:
-        n = func.__name__
-        if n in name_map:
-            n = name_map[n](name)
-        # Skip methods for now.
-        if n[:2] == "__":
-            continue
-        write_docstring(name, n, func.__doc__)
+def get_args(signature):
+    "Get argument names (for Python) from signature."
+#    print "sig: ", signature
+    arg_string = signature.split("(")[-1].split(")")[0]
+#    print "arg_string: '%s'" % arg_string
+    args = []
+    if arg_string:
+        args = [a.split()[-1] for a in arg_string.split(",")]
+#    print "args: '%s'" % args
+    return args
 
-# Simply dump docstrings from all classes and functions in the cpp module
-# assuming that they are defined in the dolfin name space.
-def generate_docstrings(docstrings):
-    print "Generating docstrings.i from documentation module..."
-    for key, val in docstrings.dolfin.cpp.__dict__.items():
-        if isinstance(val, types.TypeType):
-            # Write class docstring and handle member functions.
-            write_docstring("", key, val.__doc__)
-            handle_functions(val, key)
 
-    # Write docstrings for all functions defined in the cpp module.
-    handle_functions(docstrings.dolfin.cpp, "")
+def write_docstrings(module, header, docs, classnames):
+    """Write docstrings from a header file."""
+
+    output_file.write("// Documentation extracted from: (module=%s, header=%s)\n" % (module, header))
+
+    documentation = group_overloaded_functions(docs)
+    for (classname, parent, comment, func_docs, order) in documentation:
+        # Create class documentation (if any) and write.
+        if classname is not None and comment is not None:
+            cls_doc = modify_doc(comment, classnames)
+            output_file.write(docstring % ("dolfin::%s" % classname, cls_doc))
+        # Handle functions in the correct order (according to definition in the
+        # header file).
+        for name in order:
+            func_name = "dolfin::%s::%s" % (classname, name)
+            if classname is None:
+                func_name = "dolfin::%s" % name
+
+            functions = func_docs[name]
+            if not functions:
+                continue
+            # Get first function in case of just a single function.
+            signature, func_doc = functions[0]
+
+            # We've got overloaded functions.
+            if len(functions) > 1:
+                func_doc = "**Overloaded versions**"
+                for signature, doc in functions:
+                    args = get_args(signature)
+                    func_doc += "\n\n* %s\ **(%s)**\n\n" % (name, ", ".join(args))
+                    func_doc += indent(doc, 2)
+
+            func_doc = modify_doc(func_doc, classnames)
+            output_file.write(docstring % (func_name, func_doc))
+
+def generate_docstrings():
+
+    output_file.write("// Autogenerated docstrings file, extracted from the DOLFIN source C++ files.\n\n")
+
+    documentation, classnames = extract_doc_representation()
+    print "Generating docstrings.i from intermediate representation module..."
+    for module in documentation:
+##        if module != "common":
+#        if module != "mesh":
+#        if module != "function":
+#            continue
+        print " "*2 + module
+        for header, docs in documentation[module]:
+##            if header != "timing.h":
+#            if header != "Mesh.h":
+#            if header != "Vertex.h":
+#                continue
+            print " "*4 + header
+            write_docstrings(module, header, docs, classnames)
+
     output_file.close()
+
+generate_docstrings()
 
