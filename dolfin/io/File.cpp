@@ -9,7 +9,7 @@
 // Modified by Ola Skavhaug 2009.
 //
 // First added:  2002-11-12
-// Last changed: 2010-09-06
+// Last changed: 2010-09-23
 
 #include <fstream>
 #include <boost/filesystem.hpp>
@@ -35,7 +35,11 @@ File::File(const std::string filename, std::string encoding)
 
   // Create directory if we have a parent path (does nothing if directory exists)
   if (path.has_parent_path())
+  {
     boost::filesystem::create_directories(path.parent_path());
+    if (!boost::filesystem::is_directory(path.parent_path()))
+      error("Could not create directory %s.", path.parent_path().string().c_str());
+  }
 
   // Choose format based on extension
   if (extension == ".gz")
