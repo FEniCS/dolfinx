@@ -17,8 +17,11 @@ __license__  = "GNU LGPL Version 2.1"
 
 import os, shutil, types, sys
 
+# Set top DOLFIN directory.
+dolfin_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),\
+                                              os.pardir, os.pardir))
 # Add path to dolfin_utils and import the documentation extractor.
-doc_dir = os.path.abspath(os.path.join(os.pardir, os.pardir, "site-packages"))
+doc_dir = os.path.abspath(os.path.join(dolfin_dir, "site-packages"))
 sys.path.append(doc_dir)
 from dolfin_utils.documentation import extract_doc_representation, indent, add_links
 
