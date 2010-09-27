@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2010-06-03
+// Last changed: 2010-09-27
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -142,10 +142,20 @@ SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
     return self->str(verbose);
   }
 
+  dolfin::Parameters& _get_parameters()
+  {
+    return self->parameters;
+  }
+
 %pythoncode %{
     def str(self,verbose):
         "Return a string representation of it self"
         return self._str(verbose)
+
+    def _get_parameters(self):
+        return _cpp. ## DERIVED_TYPE ## __get_parameters(self)
+    
+    parameters = property(_get_parameters)
 %}
 
 }
