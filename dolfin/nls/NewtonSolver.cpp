@@ -6,7 +6,7 @@
 // Modified by Johan Hake, 2010.
 //
 // First added:  2005-10-23
-// Last changed: 2010-04-22
+// Last changed: 2010-09-20
 
 #include <iostream>
 #include <dolfin/common/constants.h>
@@ -63,6 +63,7 @@ NewtonSolver::NewtonSolver(GenericLinearSolver& solver,
 {
   // Set default parameters
   parameters = default_parameters();
+  parameters.add(this->solver->parameters);
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
@@ -77,6 +78,9 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   assert(b);
   assert(dx);
   assert(solver);
+
+  // Update the parameters in the solver
+  solver->parameters.update(parameters("linear_solver"));
 
   const uint maxiter = parameters["maximum_iterations"];
 
