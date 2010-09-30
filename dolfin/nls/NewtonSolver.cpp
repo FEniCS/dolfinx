@@ -16,6 +16,7 @@
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
 #include <dolfin/log/log.h>
+#include <dolfin/log/dolfin_log.h>
 #include <dolfin/main/MPI.h>
 #include "NonlinearProblem.h"
 #include "NewtonSolver.h"
@@ -49,7 +50,6 @@ NewtonSolver::NewtonSolver(std::string solver_type, std::string pc_type)
 {
   // Set default parameters
   parameters = default_parameters();
-  parameters.add(solver->parameters);
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(GenericLinearSolver& solver,
@@ -63,7 +63,6 @@ NewtonSolver::NewtonSolver(GenericLinearSolver& solver,
 {
   // Set default parameters
   parameters = default_parameters();
-  parameters.add(this->solver->parameters);
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
@@ -78,9 +77,6 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
   assert(b);
   assert(dx);
   assert(solver);
-
-  // Update the parameters in the solver
-  solver->parameters.update(parameters("linear_solver"));
 
   const uint maxiter = parameters["maximum_iterations"];
 
