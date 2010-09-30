@@ -6,7 +6,7 @@
 // Modified by Marie Rognes, 2009.
 //
 // First added:  2005-08-31
-// Last changed: 2010-06-01
+// Last changed: 2010-09-30
 
 #ifdef HAS_SLEPC
 
@@ -242,6 +242,25 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
     EPSSetWhichEigenpairs(eps, EPS_LARGEST_IMAGINARY);
   else if (spectrum == "smallest imaginary")
     EPSSetWhichEigenpairs(eps, EPS_SMALLEST_IMAGINARY);
+
+  #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR == 1
+  else if (spectrum == "target magnitude")
+  {
+    EPSSetWhichEigenpairs(eps, EPS_TARGET_MAGNITUDE);
+    EPSSetTarget(eps, parameters["spectral_shift"]);
+  }
+  else if (spectrum == "target real")
+  {
+    EPSSetWhichEigenpairs(eps, EPS_TARGET_REAL);
+    EPSSetTarget(eps, parameters["spectral_shift"]);
+  }
+  else if (spectrum == "target imaginary")
+  {
+    EPSSetWhichEigenpairs(eps, EPS_TARGET_IMAGINARY);
+    EPSSetTarget(eps, parameters["spectral_shift"]);
+  }
+  #endif
+
   else
     error("Unknown spectrum: \"%s\".", spectrum.c_str());
 
