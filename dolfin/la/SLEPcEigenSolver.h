@@ -109,9 +109,6 @@ namespace dolfin
   /// possible values are real numbers.
   ///
 
-
-
-
   class SLEPcEigenSolver : public Variable, public PETScObject
   {
   public:
