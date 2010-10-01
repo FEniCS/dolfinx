@@ -5,7 +5,7 @@
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2007-05-24
-// Last changed: 2010-04-21
+// Last changed: 2010-09-30
 
 #include <boost/scoped_array.hpp>
 #include <dolfin/mesh/Cell.h>
@@ -57,6 +57,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Build sparsity pattern for cell integrals
   if (cells)
   {
+    Progress p("Building sparsity pattern over cells", mesh.num_cells());
     UFCCell ufc_cell(mesh);
 
     for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -73,6 +74,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
       // Fill sparsity pattern.
       sparsity_pattern.insert(local_dimensions.get(), dofs);
+      p++;
     }
   }
 
@@ -93,11 +95,16 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
     if (!mesh.ordered())
       error("Mesh has not been ordered. Cannot compute sparsity pattern. Consider calling Mesh::order().");
 
+    Progress p("Building sparsity pattern over interior facets", mesh.num_facets());
+
     for (FacetIterator facet(mesh); !facet.end(); ++facet)
     {
       // Check if we have an interior facet
       if (facet->num_entities(mesh.topology().dim()) != 2)
+      {
+	p++;
         continue;
+      }
 
       // Get cells incident with facet
       Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
@@ -118,6 +125,8 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
       // Fill sparsity pattern.
       sparsity_pattern.insert(macro_local_dimensions.get(), macro_dofs);
+
+      p++;
     }
   }
 
