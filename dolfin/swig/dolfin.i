@@ -43,7 +43,7 @@ import_array();
 
 // Turn on SWIG generated signature documentation and include doxygen
 // generated docstrings (Need to run generate.py to update the latter)
-%feature("autodoc", "1");
+//%feature("autodoc", "1");
 %include "dolfin/swig/docstrings.i"
 
 // DOLFIN interface (Need to run generate.py to update this file)
