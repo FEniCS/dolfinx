@@ -14,24 +14,31 @@ namespace dolfin
 {
 
   /// This class provides a simple way to create and update progress
-  /// bars during a computation. A progress bar may be used either
-  /// in an iteration with a known number of steps:
+  /// bars during a computation.
   ///
-  ///     Progress p("Iterating...", n);
-  ///     for (int i = 0; i < n; i++)
-  ///     {
-  ///       ...
-  ///       p++;
-  ///     }
+  /// *Example*
+  ///     A progress bar may be used either in an iteration with a known number
+  ///     of steps:
   ///
-  /// or in an iteration with an unknown number of steps:
+  ///     .. code-block:: c++
   ///
-  ///     Progress p("Iterating...");
-  ///     while (t < T)
-  ///     {
-  ///       ...
-  ///       p = t / T;
-  ///     }
+  ///         Progress p("Iterating...", n);
+  ///         for (int i = 0; i < n; i++)
+  ///         {
+  ///           ...
+  ///           p++;
+  ///         }
+  ///
+  ///     or in an iteration with an unknown number of steps:
+  ///
+  ///     .. code-block:: c++
+  ///
+  ///         Progress p("Iterating...");
+  ///         while (t < T)
+  ///         {
+  ///           ...
+  ///           p = t / T;
+  ///         }
 
   class Progress
   {

@@ -15,16 +15,14 @@
 #include "mtl4.h"
 #include "GenericVector.h"
 
-/*
-  Developers note:
-
-  This class implements a minimal backend for MTL4.
-
-  There are certain inline decisions that have been deferred.
-  Due to the extensive calling of this backend through the generic LA
-  interface, it is not clear where inlining will be possible and
-  improve performance.
-*/
+//  Developers note:
+//
+//  This class implements a minimal backend for MTL4.
+//
+//  There are certain inline decisions that have been deferred.
+//  Due to the extensive calling of this backend through the generic LA
+//  interface, it is not clear where inlining will be possible and
+//  improve performance.
 
 namespace dolfin
 {

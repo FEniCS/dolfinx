@@ -21,25 +21,32 @@ namespace dolfin
   /// over meshes, boundaries and incidence relations. The basic use
   /// is illustrated below.
   ///
-  /// The following example shows how to iterate over all mesh entities
-  /// of a mesh of topological dimension dim:
+  /// *Example*
   ///
-  ///     for (MeshEntityIterator e(mesh, dim); !e.end(); ++e)
-  ///     {
-  ///       e->foo();
-  ///     }
+  ///     The following example shows how to iterate over all mesh entities
+  ///     of a mesh of topological dimension dim:
   ///
-  /// The following example shows how to iterate over mesh entities of
-  /// topological dimension dim connected (incident) to some mesh entity f:
+  ///     .. code-block:: c++
   ///
-  ///     for (MeshEntityIterator e(f, dim); !e.end(); ++e)
-  ///     {
-  ///       e->foo();
-  ///     }
+  ///         for (MeshEntityIterator e(mesh, dim); !e.end(); ++e)
+  ///         {
+  ///           e->foo();
+  ///         }
+  ///
+  ///     The following example shows how to iterate over mesh entities of
+  ///     topological dimension dim connected (incident) to some mesh entity f:
+  ///
+  ///     .. code-block:: c++
+  ///
+  ///         for (MeshEntityIterator e(f, dim); !e.end(); ++e)
+  ///         {
+  ///           e->foo();
+  ///         }
   ///
   /// In addition to the general iterator, a set of specific named iterators
-  /// are provided for entities of type Vertex, Edge, Face, Facet and Cell.
-  /// These iterators are defined along with their respective classes.
+  /// are provided for entities of type _Vertex_, _Edge_, _Face_, _Facet_
+  /// and _Cell_. These iterators are defined along with their respective
+  /// classes.
 
   class MeshEntityIterator
   {
@@ -152,8 +159,8 @@ namespace dolfin
 
     // Note: Not a subclass of Variable for efficiency!
     // Commented out to avoid warning about shadowing str() for MeshEntity
-    /// Return informal string representation (pretty-print)
-    //std::string str(bool verbose) const;
+    // Return informal string representation (pretty-print)
+    // std::string str(bool verbose) const;
 
   private:
 
@@ -170,7 +177,7 @@ namespace dolfin
 //    MeshEntityIterator(const MeshEntityIterator& entity) :  entity(entity.entity.mesh(), 0, 0), _pos(0)
 //    { error("Illegal use of mesh entity iterator."); }
 
-    ///Set pos to end position. To create a kind of mesh.end() iterator.
+    /// Set pos to end position. To create a kind of mesh.end() iterator.
     void set_end()
     { _pos = pos_end; }
 

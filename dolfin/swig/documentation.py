@@ -148,5 +148,6 @@ def generate_docstrings():
 
     output_file.close()
 
-generate_docstrings()
+if __name__ == "__main__":
+    generate_docstrings()
 
