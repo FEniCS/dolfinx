@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-05-10
-// Last changed: 2009-09-11
+// Last changed: 2010-10-07
 
 //=============================================================================
 // SWIG directives for the DOLFIN log kernel module (post)
@@ -15,16 +15,16 @@
 //-----------------------------------------------------------------------------
 // Make progress available from Python through the __iadd__ interface
 //-----------------------------------------------------------------------------
-%feature("docstring") dolfin::Progress::__add "Missing docstring";
-%feature("docstring") dolfin::Progress::__set "Missing docstring";
+%feature("docstring") dolfin::Progress::_add "Missing docstring";
+%feature("docstring") dolfin::Progress::_set "Missing docstring";
 %extend dolfin::Progress {
 
-void __add(int incr) {
+void _add(int incr) {
     for (int j=0;j<incr; ++j)
         (*self)++;
 }
 
-void __set(double value) {
+void _set(double value) {
     *self = value;
 }
 
@@ -32,14 +32,15 @@ void __set(double value) {
 %{
 def __iadd__(self, other):
     if isinstance(other, int):
-        self.__add(other)
+        self._add(other)
     elif isinstance(other, float):
-        self.__set(other)
+        self._set(other)
     return self
 
 def update(self, other):
+    "Update the progress with given number"
     if isinstance(other, float):
-        self.__set(other)
+        self._set(other)
 %}
 
 }
