@@ -25,6 +25,8 @@
 // SLEPc specific extension code
 // ---------------------------------------------------------------------------
 #ifdef HAS_SLEPC
+%feature("docstring") dolfin::SLEPcEigenSolver::_get_eigenvalue "Missing docstring";
+%feature("docstring") dolfin::SLEPcEigenSolver::_get_eigenpair "Missing docstring";
 %extend dolfin::SLEPcEigenSolver {
 
 PyObject* _get_eigenvalue(const int i) {
@@ -126,6 +128,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 // ---------------------------------------------------------------------------
 // Modify the GenericVector interface
 // ---------------------------------------------------------------------------
+%feature("docstring") dolfin::GenericVector::_scale "Missing docstring";
+%feature("docstring") dolfin::GenericVector::_vec_mul "Missing docstring";
 %extend dolfin::GenericVector
 {
   void _scale(double a)
@@ -153,7 +157,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return self_type == get_tensor_type(other)
 
     def array(self):
-        " Return a numpy array representation of Vector"
+        "Return a numpy array representation of Vector"
         from numpy import zeros, arange, uint0
         v = zeros(self.local_size())
         self.get_local(v)
@@ -361,6 +365,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 // ---------------------------------------------------------------------------
 // Modify the GenericMatrix interface
 // ---------------------------------------------------------------------------
+%feature("docstring") dolfin::GenericMatrix::_scale "Missing docstring";
+%feature("docstring") dolfin::GenericMatrix::_data "Missing docstring";
 %extend dolfin::GenericMatrix
 {
   void _scale(double a)
@@ -400,7 +406,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return self_type == get_tensor_type(other)
 
     def array(self):
-        " Return a numpy array representation of Matrix"
+        "Return a numpy array representation of Matrix"
         from numpy import zeros
         m_range = MPI.local_range(self.size(0))
         A = zeros((m_range[1]-m_range[0], self.size(1)))
@@ -410,7 +416,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return A
 
     def data(self):
-        """ Return arrays to underlying compresssed row/column storage data """
+        """Return arrays to underlying compresssed row/column storage data """
 
         return self._data()
 
@@ -612,6 +618,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 // only used for the uBLAS and MTL4 backends
 // ---------------------------------------------------------------------------
 %define LA_VEC_DATA_ACCESS(VEC_TYPE)
+%feature("docstring") dolfin::VEC_TYPE::_data "Missing docstring";
 %extend dolfin::VEC_TYPE
 {
   PyObject* _data()

@@ -18,7 +18,7 @@
 %extend dolfin::BoundaryCondition {
 %pythoncode %{
 def function_space(self):
-    " Return the FunctionSpace"
+    "Return the FunctionSpace"
     from dolfin.function.functionspace import FunctionSpaceFromCpp
     return FunctionSpaceFromCpp(self._function_space())
 %}

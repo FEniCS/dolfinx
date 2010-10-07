@@ -15,6 +15,8 @@
 //-----------------------------------------------------------------------------
 // Make progress available from Python through the __iadd__ interface
 //-----------------------------------------------------------------------------
+%feature("docstring") dolfin::Progress::__add "Missing docstring";
+%feature("docstring") dolfin::Progress::__set "Missing docstring";
 %extend dolfin::Progress {
 
 void __add(int incr) {

@@ -39,6 +39,9 @@
  
 %template(TYPENAME ## Array) dolfin::Array<TYPE>;
 
+%feature("docstring") dolfin::Array::__getitem__ "Missing docstring";
+%feature("docstring") dolfin::Array::__setitem__ "Missing docstring";
+%feature("docstring") dolfin::Array::array "Missing docstring";
 %extend dolfin::Array<TYPE> {
   TYPE __getitem__(unsigned int i) const { return (*self)[i]; }
   void __setitem__(unsigned int i, const TYPE& val) { (*self)[i] = val; }
@@ -66,6 +69,7 @@ ARRAY_EXTENSIONS(int, Int, NPY_INT)
 //-----------------------------------------------------------------------------
 // Add pretty print for Variables
 //-----------------------------------------------------------------------------
+%feature("docstring") dolfin::Variable::__str__ "Missing docstring";
 %extend dolfin::Variable
 {
   std::string __str__() const

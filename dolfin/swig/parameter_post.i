@@ -78,6 +78,7 @@ def data(self):
 // ---------------------------------------------------------------------------
 // Modifications of Parameters interface
 // ---------------------------------------------------------------------------
+%feature("docstring") dolfin::Parameters::_parse "Missing docstring";
 %extend dolfin::Parameters
 {
   void _parse(PyObject *op)
@@ -109,7 +110,7 @@ def data(self):
 %pythoncode%{
 
 def add(self,*args):
-    """ Add a parameter to the parameter set"""
+    """Add a parameter to the parameter set"""
     if len(args) == 2 and isinstance(args[1],bool):
         self._add_bool(*args)
     else:
@@ -248,7 +249,7 @@ def get(self, key):
 %pythoncode%{
 old_init = Parameters.__init__
 def __new_Parameter_init__(self,*args,**kwargs):
-    """ Initialize Parameters
+    """Initialize Parameters
 
     Usage:
     Parameters("parameters")

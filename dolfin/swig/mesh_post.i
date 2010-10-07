@@ -45,6 +45,11 @@ def next(self):
 %define MESH_FUNCTION(TYPE,TYPENAME)
 %template(MeshFunction ## TYPENAME) dolfin::MeshFunction<TYPE>;
 //%typedef dolfin::MeshFunction<TYPE> MeshFunction ## TYPENAME;
+//%feature("autodoc", "Missing docstring") dolfin::MeshFunction::__getitem__;
+//%feature("autodoc", "Missing docstring") dolfin::MeshFunction::__setitem__;
+
+%feature("docstring") dolfin::MeshFunction::__getitem__ "Missing docstring";
+%feature("docstring") dolfin::MeshFunction::__setitem__ "Missing docstring";
 %extend dolfin::MeshFunction<TYPE> 
 {
   TYPE __getitem__(unsigned int i) { return (*self)[i]; }
@@ -102,6 +107,8 @@ del _doc_string
 //-----------------------------------------------------------------------------
 // Extend Point interface with Python selectors
 //-----------------------------------------------------------------------------
+%feature("docstring") dolfin::Point::__getitem__ "Missing docstring";
+%feature("docstring") dolfin::Point::__setitem__ "Missing docstring";
 %extend dolfin::Point {
   double __getitem__(int i) { return (*self)[i]; }
   void __setitem__(int i, double val) { (*self)[i] = val; }

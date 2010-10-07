@@ -4,7 +4,7 @@
 %extend dolfin::FunctionSpace {
 %pythoncode %{
 def __contains__(self,u):
-    " Check whether a function is in the FunctionSpace"
+    "Check whether a function is in the FunctionSpace"
     assert(isinstance(u,Function))
     return u._in(self)
 %}
@@ -16,7 +16,7 @@ def __contains__(self,u):
 %extend dolfin::Function {
 %pythoncode %{
 def function_space(self):
-    " Return the FunctionSpace"
+    "Return the FunctionSpace"
     from dolfin.function.functionspace import FunctionSpaceFromCpp
     return FunctionSpaceFromCpp(self._function_space())
 %}
@@ -25,6 +25,7 @@ def function_space(self):
 //-----------------------------------------------------------------------------
 // Extend the Data class with an accessor function for the x coordinates
 //-----------------------------------------------------------------------------
+%feature("docstring") dolfin::Data::x_ "Missing docstring";
 %extend dolfin::Data {
   PyObject* x_() {
     npy_intp adims[1];
