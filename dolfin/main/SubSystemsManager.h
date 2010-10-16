@@ -28,6 +28,10 @@ namespace dolfin
     /// by parameters.parse(argc, argv).
     static void init_petsc(int argc, char* argv[]);
 
+    /// Finalize subsytems. This will be called by the destructor, but in
+    /// special cases it may be necessary to call finalize() explicitly.
+    static void finalize();
+
   private:
 
     // Constructor (private)
@@ -39,14 +43,14 @@ namespace dolfin
     // Destructor
     ~SubSystemsManager();
 
-    /// Finalize MPI
+    // Finalize MPI
     static void finalize_mpi();
 
-    /// Finalize PETSc
+    // Finalize PETSc
     static void finalize_petsc();
 
     // Check if MPI has been initialised (returns true if MPI has been
-    //   initialised, even if it is later finalised)
+    // initialised, even if it is later finalised)
     static bool mpi_initialized();
 
     // Singleton instance

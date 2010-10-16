@@ -5,5 +5,6 @@
 
 #include <dolfin/main/init.h>
 #include <dolfin/main/MPI.h>
+#include <dolfin/main/SubSystemsManager.h>
 
 #endif

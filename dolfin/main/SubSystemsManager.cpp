@@ -42,12 +42,7 @@ SubSystemsManager::SubSystemsManager(const SubSystemsManager& sub_sys_manager)
 //-----------------------------------------------------------------------------
 SubSystemsManager::~SubSystemsManager()
 {
-  // Finalize subsystems in the correct order
-  finalize_petsc();
-  finalize_mpi();
-
-  // Clean up libxml2 parser
-  xmlCleanupParser();
+  finalize();
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_mpi()
@@ -115,12 +110,27 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 #endif
 }
 //-----------------------------------------------------------------------------
+void SubSystemsManager::finalize()
+{
+  std::cout << "Shutting down SubSystemsManager" << std::endl;
+
+  // Finalize subsystems in the correct order
+  finalize_petsc();
+  finalize_mpi();
+
+  // Clean up libxml2 parser
+  xmlCleanupParser();
+}
+//-----------------------------------------------------------------------------
 void SubSystemsManager::finalize_mpi()
 {
 #ifdef HAS_MPI
   //Finalise MPI if required
   if (MPI::Is_initialized() and sub_systems_manager.control_mpi)
+  {
     MPI::Finalize();
+    sub_systems_manager.control_mpi = false;
+  }
 #else
   // Do nothing
 #endif
@@ -132,6 +142,7 @@ void SubSystemsManager::finalize_petsc()
   if (sub_systems_manager.petsc_initialized)
   {
     PetscFinalize();
+    sub_systems_manager.petsc_initialized = false;
 
 #ifdef HAS_SLEPC
     SlepcFinalize();
