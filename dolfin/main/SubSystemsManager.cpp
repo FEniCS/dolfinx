@@ -112,8 +112,6 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize()
 {
-  std::cout << "Shutting down SubSystemsManager" << std::endl;
-
   // Finalize subsystems in the correct order
   finalize_petsc();
   finalize_mpi();
