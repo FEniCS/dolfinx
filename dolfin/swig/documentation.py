@@ -11,7 +11,7 @@ __date__ = "2010-08-19"
 __copyright__ = "Copyright (C) 2010 Kristian B. Oelgaard"
 __license__  = "GNU LGPL Version 2.1"
 
-# Last changed: 2010-10-14
+# Last changed: 2010-10-19
 
 # Modified by Johan Hake, 2010.
 
@@ -75,9 +75,45 @@ def replace_example(text, classname, signature):
     # Check if we need to manipulate comment.
     if not "*Example*" in text:
         return text
+    # Check if we have example code in the dictionary
+    examplecode = ".. note::\n\n    No example code available for this function."
+    if not classname in codesnippets:
+        print " "*6 + "No example code for class: '%s'" % classname
+    elif not signature in codesnippets[classname]:
+        print " "*6 + "No example code for (class, function): ('%s', '%s')" % (classname, signature)
+    else:
+        examplecode = codesnippets[classname][signature]
 
-#    print "'%s'" % signature
-    return text
+    # Remove leading and trailing new lines in example code.
+    lines = examplecode.split("\n")
+    while lines and not lines[0].strip():
+        del lines[0]
+    while lines and not lines[-1].strip():
+        del lines[-1]
+    examplecode = "\n".join(lines)
+
+    # NOTE: KBO: We currently only handle 1 example block
+    new_text = []
+    example = False
+    indentation = 0
+    # Loop comment lines
+    for l in text.split("\n"):
+        # When we get to the lines containing the example, add the header and
+        # codeblock.
+        if not example and "*Example*" in l:
+            example = True
+            indentation = len(l) - len(l.lstrip())
+            new_text.append(l)
+            new_text += indent(examplecode, indentation + 4).split("\n")
+        elif example and l.strip() and len(l.lstrip()) <= indentation:
+            example = False
+            new_text.append(l)
+        # Skip lines as long as we're inside the example block.
+        elif example:
+            continue
+        else:
+            new_text.append(l)
+    return "\n".join(new_text)
 
 def modify_doc(text, classnames, classname, signature):
     "Add links, translate C++ to Python and change return types."
@@ -85,11 +121,12 @@ def modify_doc(text, classnames, classname, signature):
     # Add links
     text = add_links(text, classnames, ":py:class:")
 
+    text = replace_example(text, classname, signature)
+    # TODO: KBO: Still need to translate return types.
+
     # Escape '"' otherwise will SWIG complain
     text = text.replace('\"',r'\"')
 
-    text = replace_example(text, classname, signature)
-    # TODO: KBO: Still need to translate return types.
     return text
 
 def get_args(signature):

@@ -65,7 +65,7 @@ show :
   # Define macro for getting SLEPc variables from Makefile
   macro(SLEPC_GET_VARIABLE var name)
     set(${var} "NOTFOUND" CACHE INTERNAL "Cleared" FORCE)
-    execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} -f ${slepc_config_makefile} show VARIABLE=${name}
+    execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} --no-print-directory -f ${slepc_config_makefile} show VARIABLE=${name}
       OUTPUT_VARIABLE ${var}
       RESULT_VARIABLE slepc_return)
   endmacro()

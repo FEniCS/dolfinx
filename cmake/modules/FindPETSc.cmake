@@ -104,7 +104,7 @@ show :
   # Define macro for getting PETSc variables from Makefile
   macro(PETSC_GET_VARIABLE var name)
     set(${var} "NOTFOUND" CACHE INTERNAL "Cleared" FORCE)
-    execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} -f ${petsc_config_makefile} show VARIABLE=${name}
+    execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} --no-print-directory -f ${petsc_config_makefile} show VARIABLE=${name}
       OUTPUT_VARIABLE ${var}
       RESULT_VARIABLE petsc_return)
   endmacro()
