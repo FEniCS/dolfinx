@@ -78,11 +78,12 @@ list(APPEND OPTIONAL_PACKAGES "Python")
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   string(TOUPPER "DOLFIN_ENABLE_${OPTIONAL_PACKAGE}" OPTION_NAME)
-  option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
+  if (${OPTION_NAME} MATCHES "GMP")
+    option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." OFF)
+  else()
+    option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
+  endif()
 endforeach()
-
-# Packages that we should not enable by default
-option(DOLFIN_ENABLE_GMP ON)
 
 #------------------------------------------------------------------------------
 # Package-specific options
