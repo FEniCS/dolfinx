@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2007.
 //
 // First added:  2005-12-02
-// Last changed: 2008-11-13
+// Last changed: 2010-10-19
 
 #include <dolfin/main/MPI.h>
 #include "MeshPartitioning.h"
@@ -19,9 +19,11 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz) : Mesh()
   // Receive mesh according to parallel policy
   if (MPI::is_receiver()) { MeshPartitioning::partition(*this); return; }
 
+  // Check input
   if ( nx < 1 || ny < 1 || nz < 1 )
     error("Size of unit cube must be at least 1 in each dimension.");
 
+  // Set name
   rename("mesh", "Mesh of the unit cube (0,1) x (0,1) x (0,1)");
 
   // Open mesh for editing

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-30
-// Last changed: 2009-06-06
+// Last changed: 2010-10-19
 
 #include <dolfin/log/log.h>
 #include "Mesh.h"
@@ -14,10 +14,12 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void MeshOrdering::order(Mesh& mesh)
 {
+  info(TRACE, "Ordering mesh.");
+
   // Special case
   if (mesh.num_cells() == 0)
     return;
-  
+
   // Get global vertex numbering (important when running in parallel)
   MeshFunction<uint>* global_vertex_indices = mesh.data().mesh_function("global entity indices 0");
 

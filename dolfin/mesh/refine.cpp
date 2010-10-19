@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-02-10
-// Last changed: 2010-03-22
+// Last changed: 2010-10-19
 
 #include "LocalMeshRefinement.h"
 #include "Mesh.h"

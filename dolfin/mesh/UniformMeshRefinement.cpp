@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2010
 //
 // First added:  2006-06-08
-// Last changed: 2010-02-26
+// Last changed: 2010-10-19
 
 #include <dolfin/math/dolfin_math.h>
 #include <dolfin/log/dolfin_log.h>
@@ -36,10 +36,14 @@ void UniformMeshRefinement::refine(Mesh& refined_mesh,
   // Generate edge - vertex connectivity if not generated
   mesh.init(1, 0);
 
+  // Mesh needs to be ordered (so we can pick right combination of vertices/edges)
+  if (!mesh.ordered())
+    error("Unable to refine mesh. Mesh is not ordered according to the UFC numbering convention, consider calling mesh.order().");
+
   // Get cell type
   const CellType& cell_type = mesh.type();
 
-  // Create new mesh and open for editing
+  // Open new mesh for editing
   MeshEditor editor;
   editor.open(refined_mesh, cell_type.cell_type(),
               mesh.topology().dim(), mesh.geometry().dim());
@@ -69,5 +73,8 @@ void UniformMeshRefinement::refine(Mesh& refined_mesh,
 
   // Close editor
   editor.close();
+
+  // Make sure that mesh is ordered after refinement
+  //refined_mesh.order();
 }
 //-----------------------------------------------------------------------------

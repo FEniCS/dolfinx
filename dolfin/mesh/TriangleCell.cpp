@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim, 2008
 //
 // First added:  2006-06-05
-// Last changed: 2010-03-02
+// Last changed: 2010-10-19
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -85,7 +85,7 @@ void TriangleCell::create_entities(uint** e, uint dim, const uint* v) const
 }
 //-----------------------------------------------------------------------------
 void TriangleCell::refine_cell(Cell& cell, MeshEditor& editor,
-			      uint& current_cell) const
+                               uint& current_cell) const
 {
   // Get vertices and edges
   const uint* v = cell.entities(0);

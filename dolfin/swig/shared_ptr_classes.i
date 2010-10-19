@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2009.
 //
 // First added:  2007-11-25
-// Last changed: 2010-09-27
+// Last changed: 2010-10-19
 
 //=============================================================================
 // SWIG directives for the shared_ptr stored classes in PyDOLFIN
@@ -59,9 +59,11 @@
 %shared_ptr(dolfin::Mesh)
 %shared_ptr(dolfin::BoundaryMesh)
 %shared_ptr(dolfin::SubMesh)
+%shared_ptr(dolfin::UnitTetrahedron)
 %shared_ptr(dolfin::UnitCube)
 %shared_ptr(dolfin::UnitInterval)
 %shared_ptr(dolfin::Interval)
+%shared_ptr(dolfin::UnitTriangle)
 %shared_ptr(dolfin::UnitSquare)
 %shared_ptr(dolfin::UnitCircle)
 %shared_ptr(dolfin::Box)
@@ -90,9 +92,11 @@ SWIG_SHARED_PTR_DERIVED(MeshCoordinates,dolfin::Expression,dolfin::MeshCoordinat
 SWIG_SHARED_PTR(Mesh,dolfin::Mesh)
 SWIG_SHARED_PTR_DERIVED(BoundaryMesh,dolfin::Mesh,dolfin::BoundaryMesh)
 SWIG_SHARED_PTR_DERIVED(SubMesh,dolfin::Mesh,dolfin::SubMesh)
+SWIG_SHARED_PTR_DERIVED(UnitTetrahedron,dolfin::Mesh,dolfin::UnitTetrahedron)
 SWIG_SHARED_PTR_DERIVED(UnitCube,dolfin::Mesh,dolfin::UnitCube)
 SWIG_SHARED_PTR_DERIVED(UnitInterval,dolfin::Mesh,dolfin::UnitInterval)
 SWIG_SHARED_PTR_DERIVED(Interval,dolfin::Mesh,dolfin::Interval)
+SWIG_SHARED_PTR_DERIVED(UnitTriangle,dolfin::Mesh,dolfin::UnitTriangle)
 SWIG_SHARED_PTR_DERIVED(UnitSquare,dolfin::Mesh,dolfin::UnitSquare)
 SWIG_SHARED_PTR_DERIVED(UnitCircle,dolfin::Mesh,dolfin::UnitCircle)
 SWIG_SHARED_PTR_DERIVED(Box,dolfin::Mesh,dolfin::Box)
@@ -154,7 +158,7 @@ SWIG_SHARED_PTR_DERIVED(DomainBoundary,dolfin::SubDomain,dolfin::DomainBoundary)
 
     def _get_parameters(self):
         return _cpp. ## DERIVED_TYPE ## __get_parameters(self)
-    
+
     parameters = property(_get_parameters)
 %}
 
