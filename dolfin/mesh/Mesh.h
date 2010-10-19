@@ -107,13 +107,9 @@ namespace dolfin
     ///         Number of vertices.
     ///
     /// *Example*
-    ///     .. warning::
+    ///     .. note::
     ///
-    ///         Not C++ syntax.
-    ///
-    ///     >>> mesh = dolfin.UnitSquare(2,2)
-    ///     >>> mesh.num_vertices()
-    ///     9
+    ///         No example code available for this function.
     uint num_vertices() const { return _topology.size(0); }
 
     /// Get number of edges in mesh.
@@ -123,17 +119,9 @@ namespace dolfin
     ///         Number of edges.
     ///
     /// *Example*
-    ///     .. warning::
+    ///     .. note::
     ///
-    ///         Not C++ syntax.
-    ///
-    ///     >>> mesh = dolfin.UnitSquare(2,2)
-    ///     >>> mesh.num_edges()
-    ///     0
-    ///     >>> mesh.init(1)
-    ///     16
-    ///     >>> mesh.num_edges()
-    ///     16
+    ///         No example code available for this function.
     uint num_edges() const { return _topology.size(1); }
 
     /// Get number of faces in mesh.
@@ -143,13 +131,9 @@ namespace dolfin
     ///         Number of faces.
     ///
     /// *Example*
-    ///     .. warning::
+    ///     .. note::
     ///
-    ///         Not C++ syntax.
-    ///
-    ///     >>> mesh = dolfin.UnitSquare(2,2)
-    ///     >>> mesh.num_faces()
-    ///     8
+    ///         No example code available for this function.
     uint num_faces() const { return _topology.size(2); }
 
     /// Get number of facets in mesh.
@@ -159,16 +143,9 @@ namespace dolfin
     ///         Number of facets.
     ///
     /// *Example*
-    ///     .. warning::
+    ///     .. note::
     ///
-    ///         Not C++ syntax.
-    ///
-    ///     >>> mesh = dolfin.UnitSquare(2,2)
-    ///     >>> mesh.num_facets()
-    ///     0
-    ///     >>> mesh.init(0,1)
-    ///     >>> mesh.num_facets()
-    ///     16
+    ///         No example code available for this function.
     uint num_facets() const { return _topology.size(_topology.dim() - 1); }
 
     /// Get number of cells in mesh.
@@ -178,13 +155,9 @@ namespace dolfin
     ///         Number of cells.
     ///
     /// *Example*
-    ///     .. warning::
+    ///     .. note::
     ///
-    ///         Not C++ syntax.
-    ///
-    ///     >>> mesh = dolfin.UnitSquare(2,2)
-    ///     >>> mesh.num_cells()
-    ///     8
+    ///         No example code available for this function.
     uint num_cells() const { return _topology.size(_topology.dim()); }
 
     /// Get number of entities of given topological dimension.
@@ -198,18 +171,9 @@ namespace dolfin
     ///         Number of entities of topological dimension d.
     ///
     /// *Example*
-    ///     .. warning::
+    ///     .. note::
     ///
-    ///         Not C++ syntax.
-    ///
-    ///     >>> mesh = dolfin.UnitSquare(2,2)
-    ///     >>> mesh.init(0,1)
-    ///     >>> mesh.num_entities(0)
-    ///     9
-    ///     >>> mesh.num_entities(1)
-    ///     16
-    ///     >>> mesh.num_entities(2)
-    ///     8
+    ///         No example code available for this function.
     uint num_entities(uint d) const { return _topology.size(d); }
 
     /// Get vertex coordinates.
@@ -219,16 +183,9 @@ namespace dolfin
     ///         Coordinates of all vertices.
     ///
     /// *Example*
-    ///     .. warning::
+    ///     .. note::
     ///
-    ///         Not C++ syntax.
-    ///
-    ///     >>> mesh = dolfin.UnitSquare(1,1)
-    ///     >>> mesh.coordinates()
-    ///     array([[ 0.,  0.],
-    ///            [ 1.,  0.],
-    ///            [ 0.,  1.],
-    ///            [ 1.,  1.]])
+    ///         No example code available for this function.
     double* coordinates() { return _geometry.x(); }
 
     /// Return coordinates of all vertices (const version).
@@ -241,14 +198,9 @@ namespace dolfin
     ///         Connectivity for all cells.
     ///
     /// *Example*
-    ///     .. warning::
+    ///     .. note::
     ///
-    ///         Not C++ syntax.
-    ///
-    ///     >>> mesh = dolfin.UnitSquare(1,1)
-    ///     >>> mesh.cells()
-    ///     array([[0, 1, 3],
-    ///            [0, 2, 3]])
+    ///         No example code available for this function.
     const uint* cells() const { return _topology(_topology.dim(), 0)(); }
 
     /// Get number of entities of given topological dimension.
@@ -262,18 +214,9 @@ namespace dolfin
     ///         Number of entities of topological dimension d.
     ///
     /// *Example*
-    ///     .. warning::
+    ///     .. note::
     ///
-    ///         Not C++ syntax.
-    ///
-    ///     >>> mesh = dolfin.UnitSquare(2,2)
-    ///     >>> mesh.init(0,1)
-    ///     >>> mesh.num_entities(0)
-    ///     9
-    ///     >>> mesh.num_entities(1)
-    ///     16
-    ///     >>> mesh.num_entities(2)
-    ///     8
+    ///         No example code available for this function.
     uint size(uint dim) const { return _topology.size(dim); }
 
     /// Get topology associated with mesh.
@@ -570,13 +513,9 @@ namespace dolfin
     ///         (http://mathworld.wolfram.com).
     ///
     /// *Example*
-    ///     .. warning::
+    ///     .. note::
     ///
-    ///         Not C++ syntax.
-    ///
-    ///     >>> mesh = dolfin.UnitSquare(2,2)
-    ///     >>> mesh.hmin()
-    ///     0.70710678118654757
+    ///         No example code available for this function.
     double hmin() const;
 
     /// Compute maximum cell diameter.
@@ -588,13 +527,9 @@ namespace dolfin
     ///         (http://mathworld.wolfram.com).
     ///
     /// *Example*
-    ///     .. warning::
+    ///     .. note::
     ///
-    ///         Not C++ syntax.
-    ///
-    ///     >>> mesh = dolfin.UnitSquare(2,2)
-    ///     >>> mesh.hmax()
-    ///     0.70710678118654757
+    ///         No example code available for this function.
     double hmax() const;
 
     /// Informal string representation.
@@ -608,13 +543,9 @@ namespace dolfin
     ///         An informal representation of the mesh.
     ///
     /// *Example*
-    ///     .. warning::
+    ///     .. note::
     ///
-    ///         Not C++ syntax.
-    ///
-    ///     >>> mesh = dolfin.UnitSquare(2,2)
-    ///     >>> mesh.str(False)
-    ///     '<Mesh of topological dimension 2 (triangles) with 9 vertices and 8 cells, ordered>'
+    ///         No example code available for this function.
     std::string str(bool verbose) const;
 
     /// Define XMLHandler for use in new XML reader/writer
