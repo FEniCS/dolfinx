@@ -82,7 +82,7 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
 endforeach()
 
 # Packages that we should not enable by default
-set(DOLFIN_ENABLE_GMP OFF)
+option(DOLFIN_ENABLE_GMP ON)
 
 #------------------------------------------------------------------------------
 # Package-specific options
