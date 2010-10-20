@@ -9,7 +9,10 @@
 message(STATUS "Checking for package 'Trilinos'")
 
 # Find Trilinos CMake config
-find_package(Trilinos PATHS ${TRILINOS_DIR}/include $ENV{TRILINOS_DIR}/include /usr/include/trilinos QUIET)
+find_package(Trilinos
+  HINTS ${TRILINOS_DIR}/include $ENV{TRILINOS_DIR}/include
+  PATHS /usr/include/trilinos
+  QUIET)
 
 if (Trilinos_FOUND)
 
@@ -24,7 +27,7 @@ if (Trilinos_FOUND)
 
   # Loop over Trilinos libs and get full path
   foreach (lib ${Trilinos_LIBRARIES})
-    find_library(TRILINOS_LIB_${lib} ${lib} PATHS ${Trilinos_LIBRARY_DIRS})
+    find_library(TRILINOS_LIB_${lib} ${lib} HINTS ${Trilinos_LIBRARY_DIRS})
     if (TRILINOS_LIB_${lib} AND NOT ${lib} MATCHES ".*pytrilinos")
       set(TRILINOS_LIBRARIES ${TRILINOS_LIBRARIES} ${TRILINOS_LIB_${lib}})
     endif()

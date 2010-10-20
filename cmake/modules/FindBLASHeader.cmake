@@ -9,7 +9,7 @@ message(STATUS "Checking for package 'BLAS'")
 
 # Check for header file
 find_path(BLASHEADER_INCLUDE_DIRS cblas.h
- PATHS ${BLASHEADER_DIR}/include $ENV{BLASHEADER_DIR}/include
+ HINTS ${BLASHEADER_DIR}/include $ENV{BLASHEADER_DIR}/include
  DOC "Directory where the BLAS header is located"
  )
 mark_as_advanced(BLASBLASHEADER_INCLUDE_DIRS)

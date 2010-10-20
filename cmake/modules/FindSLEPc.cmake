@@ -37,7 +37,8 @@ endforeach()
 
 # Try to figure out SLEPC_DIR by finding slepc.h
 find_path(SLEPC_DIR include/slepc.h
-  PATHS ENV SLEPC_DIR ${slepc_dir_locations}
+  HINTS ${SLEPC_DIR} $ENV{SLEPC_DIR}
+  PATHS ${slepc_dir_locations}
   DOC "SLEPc directory")
 
 # Report result of search for SLEPC_DIR
@@ -130,4 +131,4 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SLEPc
   "SLEPc could not be found. Be sure to set SLEPC_DIR, PETSC_DIR, and PETSC_ARCH."
-  SLEPC_DIR SLEPC_INCLUDE_DIRS SLEPC_LIBRARIES SLEPC_TEST_RUNS)
+  SLEPC_LIBRARIES SLEPC_DIR SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS)

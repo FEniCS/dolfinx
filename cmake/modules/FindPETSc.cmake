@@ -41,7 +41,8 @@ endforeach()
 
 # Try to figure out PETSC_DIR by finding petsc.h
 find_path(PETSC_DIR include/petsc.h
-  PATHS ENV PETSC_DIR ${petsc_dir_locations}
+  HINTS ${PETSC_DIR} $ENV{PETSC_DIR}
+  PATHS ${petsc_dir_locations}
   DOC "PETSc directory")
 
 # Report result of search for PETSC_DIR
@@ -61,7 +62,7 @@ if (PETSC_DIR AND NOT PETSC_ARCH)
   foreach (arch ${_petsc_arches})
     if (NOT PETSC_ARCH)
       find_path(petscconf petscconf.h
-      PATHS ${PETSC_DIR}
+      HINTS ${PETSC_DIR}
       PATH_SUFFIXES ${arch}/include bmake/${arch}
       NO_DEFAULT_PATH)
       if (petscconf)
@@ -174,4 +175,4 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(PETSc
   "PETSc could not be found. Be sure to set PETSC_DIR and PETSC_ARCH."
-  PETSC_DIR PETSC_INCLUDE_DIRS PETSC_LIBRARIES PETSC_TEST_RUNS)
+  PETSC_LIBRARIES PETSC_DIR PETSC_INCLUDE_DIRS PETSC_TEST_RUNS)

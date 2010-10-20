@@ -17,19 +17,19 @@ endif (GMP_INCLUDE_DIRS AND GMP_LIBRARIES)
 
 find_path(GMP_INCLUDE_DIRS
   NAMES gmp.h
-  PATHS ${GMP_DIR}/include $ENV{GMP_DIR}/include
+  HINTS ${GMP_DIR}/include $ENV{GMP_DIR}/include
   DOC "Directory where the GMP header file is located"
   )
 
 find_library(GMP_LIBRARIES
   NAMES gmp libgmp
-  PATHS ${GMP_DIR}/lib $ENV{GMP_DIR}/lib
+  HINTS ${GMP_DIR}/lib $ENV{GMP_DIR}/lib
   DOC "The GMP libraries"
   )
 
 mark_as_advanced(GMP_INCLUDE_DIRS GMP_LIBRARIES)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(GMP DEFAULT_MSG GMP_INCLUDE_DIRS GMP_LIBRARIES)
+find_package_handle_standard_args(GMP DEFAULT_MSG GMP_LIBRARIES GMP_INCLUDE_DIRS)
 
 

@@ -22,7 +22,7 @@ message(STATUS "Checking for package 'LAPACK'")
 # Check for library
 find_library(LAPACK_LIBRARIES
   NAMES lapack
-  PATHS ${LAPACK_DIR}/lib $ENV{LAPACK_DIR}/lib
+  HINTS ${LAPACK_DIR}/lib $ENV{LAPACK_DIR}/lib
   DOC "The LAPACK library"
   )
 mark_as_advanced(LAPACK_LIBRARIES)
