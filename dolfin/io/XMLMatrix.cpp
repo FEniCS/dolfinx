@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-03-11
-// Last changed: 2009-03-17
+// Last changed: 2010-10-12
 
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/log/dolfin_log.h>
@@ -64,6 +64,7 @@ void XMLMatrix::end_element(const xmlChar *name)
     {
       A.apply("add");
       state = DONE;
+      release();
     }
 
     break;
