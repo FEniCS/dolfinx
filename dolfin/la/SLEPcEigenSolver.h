@@ -149,6 +149,9 @@ namespace dolfin
     // Get the number of converged eigenvalues
     int get_number_converged();
 
+    // Set deflation space
+    void set_deflation_space(const PETScVector& deflation_space);
+
     /// Default parameter values
     static Parameters default_parameters()
     {

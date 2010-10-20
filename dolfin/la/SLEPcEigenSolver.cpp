@@ -122,6 +122,11 @@ int SLEPcEigenSolver::get_number_converged()
   return num_conv;
 }
 //-----------------------------------------------------------------------------
+void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
+{
+  EPSSetDeflationSpace(eps, 1, const_cast<Vec*>(deflation_space.vec().get()));
+}
+//-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(const PETScMatrix* A,
                              const PETScMatrix* B,
                              uint n)

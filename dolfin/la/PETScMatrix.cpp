@@ -398,6 +398,14 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
   return *this;
 }
 //-----------------------------------------------------------------------------
+void PETScMatrix::binary_dump(std::string file_name) const
+{
+  PetscViewer view_out;
+  PetscViewerBinaryOpen(PETSC_COMM_WORLD, file_name.c_str(), FILE_MODE_WRITE, &view_out);
+  MatView(*(A.get()), view_out);
+  PetscViewerDestroy(view_out);
+}
+//-----------------------------------------------------------------------------
 std::string PETScMatrix::str(bool verbose) const
 {
   std::stringstream s;

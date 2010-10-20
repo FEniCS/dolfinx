@@ -130,6 +130,9 @@ namespace dolfin
     /// Assignment operator
     const PETScMatrix& operator= (const PETScMatrix& A);
 
+    /// Dump matrix to PETSc binary format
+    void binary_dump(std::string file_name) const;
+
   private:
 
     // PETSc norm types
