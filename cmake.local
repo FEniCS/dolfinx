@@ -14,6 +14,7 @@ cd build
 
 cmake -DCMAKE_INSTALL_PREFIX=$INSTALLDIR \
       -DDOLFIN_ENABLE_TESTING=true \
-      -DDOLFIN_ENABLE_BENCHMARKS=true ..
-make
-make install
+      -DDOLFIN_ENABLE_BENCHMARKS=true \
+      -DCMAKE_BUILD_TYPE=Developer ..
+make -j3
+make install -j3

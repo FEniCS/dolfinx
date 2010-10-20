@@ -18,14 +18,14 @@ message(STATUS "Checking for package 'Armadillo'")
 
 find_path(ARMADILLO_INCLUDE_DIRS
   NAMES armadillo
-  PATHS ${ARMADILLO_DIR}/include $ENV{ARMADILLO_DIR}/include
+  HINTS ${ARMADILLO_DIR}/include $ENV{ARMADILLO_DIR}/include
   DOC "Directory where the Armadillo header file is located"
   )
 mark_as_advanced(ARMADILLO_INCLUDE_DIRS)
 
 find_library(ARMADILLO_LIBRARIES
   NAMES armadillo
-  PATHS ${ARMADILLO_DIR}/lib $ENV{ARMADILLO_DIR}/lib
+  HINTS ${ARMADILLO_DIR}/lib $ENV{ARMADILLO_DIR}/lib
   DOC "The Armadillo library"
   )
 mark_as_advanced(ARMADILLO_LIBRARIES)
@@ -138,4 +138,4 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Armadillo
   "Armadillo could not be found. Be sure to set ARMADILLO_DIR."
-  ARMADILLO_TEST_RUNS)
+  ARMADILLO_LIBRARIES ARMADILLO_INCLUDE_DIRS ARMADILLO_TEST_RUNS)

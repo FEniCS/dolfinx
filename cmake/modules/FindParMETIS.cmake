@@ -7,17 +7,17 @@
 
 if (MPI_FOUND)
   find_path(PARMETIS_INCLUDE_DIRS parmetis.h
-    PATHS ${PARMETIS_DIR}/include $ENV{PARMETIS_DIR}/include
+    HINTS ${PARMETIS_DIR}/include $ENV{PARMETIS_DIR}/include
     DOC "Directory where the ParMETIS header files are located"
   )
 
   find_library(PARMETIS_LIBRARY parmetis
-    PATHS ${PARMETIS_DIR}/lib $ENV{PARMETIS_DIR}/lib
+    HINTS ${PARMETIS_DIR}/lib $ENV{PARMETIS_DIR}/lib
     DOC "Directory where the ParMETIS library is located"
   )
 
   find_library(METIS_LIBRARY metis
-    PATHS ${PARMETIS_DIR}/lib $ENV{PARMETIS_DIR}/lib
+    HINTS ${PARMETIS_DIR}/lib $ENV{PARMETIS_DIR}/lib
     DOC "Directory where the METIS library is located"
   )
 
@@ -56,6 +56,6 @@ endif()
 # Standard package handling
 find_package_handle_standard_args(ParMETIS
                                   "ParMETIS could not be found/configured."
+                                  PARMETIS_LIBRARIES
                                   PARMETIS_TEST_RUNS
-                                  PARMETIS_INCLUDE_DIRS
-                                  PARMETIS_LIBRARIES)
+                                  PARMETIS_INCLUDE_DIRS)

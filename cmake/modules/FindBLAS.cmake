@@ -15,7 +15,7 @@ message(STATUS "Checking for package 'BLAS'")
 # Check for library
 find_library(BLAS_LIBRARIES
   NAMES atlas cblas blas
-  PATHS ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib
+  HINTS ${BLAS_DIR}/lib $ENV{BLAS_DIR}/lib
   DOC "The BLAS library"
   )
 mark_as_advanced(BLAS_LIBRARIES)

@@ -9,7 +9,7 @@
 message(STATUS "Checking for package 'CGAL'")
 
 # Call CGAL supplied CMake script
-find_package(CGAL PATHS ${CGAL_DIR}/lib $ENV{CGAL_DIR}/lib)
+find_package(CGAL HINTS ${CGAL_DIR}/lib $ENV{CGAL_DIR}/lib)
 
 # Set variables
 set(CGAL_INCLUDE_DIRS ${CGAL_INCLUDE_DIRS} ${CGAL_3RD_PARTY_INCLUDE_DIRS})

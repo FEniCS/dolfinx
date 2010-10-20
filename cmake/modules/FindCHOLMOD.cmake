@@ -23,32 +23,32 @@ find_package(LAPACK)
 
 # Check for header file
 find_path(CHOLMOD_INCLUDE_DIRS cholmod.h
-  PATHS ${CHOLMOD_DIR}/include $ENV{CHOLMOD_DIR}/include
+  HINTS ${CHOLMOD_DIR}/include $ENV{CHOLMOD_DIR}/include
   PATH_SUFFIXES suitesparse ufsparse
   DOC "Directory where the CHOLMOD header is located"
  )
 
 # Check for CHOLMOD library
 find_library(CHOLMOD_LIBRARY cholmod
-  PATHS ${CHOLMOD_DIR}/lib $ENV{CHOLMOD_DIR}/lib
+  HINTS ${CHOLMOD_DIR}/lib $ENV{CHOLMOD_DIR}/lib
   DOC "The CHOLMOD library"
   )
 
 # Check for CAMD library
 find_library(CAMD_LIBRARY camd
-  PATHS ${CHOLMOD_DIR}/lib ${CAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{CAMD_DIR}/lib
+  HINTS ${CHOLMOD_DIR}/lib ${CAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{CAMD_DIR}/lib
   DOC "The CAMD library"
   )
 
 # Check for COLAMD library
 find_library(COLAMD_LIBRARY colamd
-  PATHS ${CHOLMOD_DIR}/lib ${COLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{COLAMD_DIR}/lib
+  HINTS ${CHOLMOD_DIR}/lib ${COLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{COLAMD_DIR}/lib
   DOC "The COLAMD library"
   )
 
 # Check for CCOLAMD library
 find_library(CCOLAMD_LIBRARY ccolamd
-  PATHS ${CHOLMOD_DIR}/lib ${CCOLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{CCOLAMD_DIR}/lib
+  HINTS ${CHOLMOD_DIR}/lib ${CCOLAMD_DIR}/lib $ENV{CHOLMOD_DIR}/lib $ENV{CCOLAMD_DIR}/lib
   DOC "The CCOLAMD library"
   )
 
@@ -135,8 +135,4 @@ endif()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(CHOLMOD
   "CHOLMOD could not be found. Be sure to set CHOLMOD_DIR."
-  CHOLMOD_INCLUDE_DIRS CHOLMOD_LIBRARIES CHOLMOD_TEST_RUNS)
-
-# FIXME: Use in all tests?
-find_package_message(CHOLMOD "Found CHOLMOD: ${CHOLMOD_LIBRARIES}"
-  "[${CHOLMOD_LIBRARIES}][${CHOLMOD_INCLUDE_DIRS}]")
+  CHOLMOD_LIBRARIES CHOLMOD_INCLUDE_DIRS CHOLMOD_TEST_RUNS)
