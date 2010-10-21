@@ -6,7 +6,7 @@
 // Modified by Marie Rognes, 2009.
 //
 // First added:  2005-08-31
-// Last changed: 2010-09-30
+// Last changed: 2010-10-20
 
 #ifdef HAS_SLEPC
 
@@ -124,7 +124,11 @@ int SLEPcEigenSolver::get_number_converged()
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
 {
+  #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR == 1
   EPSSetDeflationSpace(eps, 1, const_cast<Vec*>(deflation_space.vec().get()));
+  #else
+  error("Setting a deflation space requires SLEPc 3.1 or newer version");
+  #endif
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(const PETScMatrix* A,
