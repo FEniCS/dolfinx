@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman, 2006.
@@ -7,7 +7,7 @@
 // Modified by Kristoffer Selim, 2008.
 //
 // First added:  2006-06-05
-// Last changed: 2010-10-19
+// Last changed: 2010-10-21
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -28,7 +28,7 @@ dolfin::uint TetrahedronCell::dim() const
 //-----------------------------------------------------------------------------
 dolfin::uint TetrahedronCell::num_entities(uint dim) const
 {
-  switch ( dim )
+  switch (dim)
   {
   case 0:
     return 4; // vertices
@@ -47,7 +47,7 @@ dolfin::uint TetrahedronCell::num_entities(uint dim) const
 //-----------------------------------------------------------------------------
 dolfin::uint TetrahedronCell::num_vertices(uint dim) const
 {
-  switch ( dim )
+  switch (dim)
   {
   case 0:
     return 1; // vertices
@@ -77,13 +77,13 @@ dolfin::uint TetrahedronCell::orientation(const Cell& cell) const
 
   Point n = p01.cross(p02);
 
-  return ( n.dot(p03) < 0.0 ? 1 : 0 );
+  return (n.dot(p03) < 0.0 ? 1 : 0);
 }
 //-----------------------------------------------------------------------------
 void TetrahedronCell::create_entities(uint** e, uint dim, const uint* v) const
 {
   // We only need to know how to create edges and faces
-  switch ( dim )
+  switch (dim)
   {
   case 1:
     // Create the six edges
@@ -130,15 +130,52 @@ void TetrahedronCell::refine_cell(Cell& cell, MeshEditor& editor,
   const uint e4 = offset + e[find_edge(4, cell)];
   const uint e5 = offset + e[find_edge(5, cell)];
 
-  // Regular refinement: 8 new cells
+  // Regular refinement creates 8 new cells but we need to be careful
+  // to make the partition in a way that does not make the aspect
+  // ratio worse in each refinement. We do this by cutting the middle
+  // octahedron along the shortest of three possible paths.
+  assert(editor.mesh);
+  const Point p0 = editor.mesh->geometry().point(e0);
+  const Point p1 = editor.mesh->geometry().point(e1);
+  const Point p2 = editor.mesh->geometry().point(e2);
+  const Point p3 = editor.mesh->geometry().point(e3);
+  const Point p4 = editor.mesh->geometry().point(e4);
+  const Point p5 = editor.mesh->geometry().point(e5);
+  double d05 = p0.distance(p5);
+  double d14 = p1.distance(p4);
+  double d23 = p2.distance(p3);
+
+  // First create the 4 congruent tetrahedra at the corners
   editor.add_cell(current_cell++, v0, e3, e4, e5);
   editor.add_cell(current_cell++, v1, e1, e2, e5);
   editor.add_cell(current_cell++, v2, e0, e2, e4);
   editor.add_cell(current_cell++, v3, e0, e1, e3);
-  editor.add_cell(current_cell++, e0, e1, e2, e5);
-  editor.add_cell(current_cell++, e0, e1, e3, e5);
-  editor.add_cell(current_cell++, e0, e2, e4, e5);
-  editor.add_cell(current_cell++, e0, e3, e4, e5);
+
+  // Then divide the remaining octahedron into 4 tetrahedra
+  if (d05 <= d14 && d14 <= d23)
+  {
+    //cout << "Cutting along e0 - e5" << endl;
+    editor.add_cell(current_cell++, e0, e1, e2, e5);
+    editor.add_cell(current_cell++, e0, e1, e3, e5);
+    editor.add_cell(current_cell++, e0, e2, e4, e5);
+    editor.add_cell(current_cell++, e0, e3, e4, e5);
+  }
+  else if (d14 <= d23)
+  {
+    //cout << "Cutting along e1 - e4" << endl;
+    editor.add_cell(current_cell++, e0, e1, e2, e4);
+    editor.add_cell(current_cell++, e0, e1, e3, e4);
+    editor.add_cell(current_cell++, e1, e2, e4, e5);
+    editor.add_cell(current_cell++, e1, e3, e4, e5);
+  }
+  else
+  {
+    //cout << "Cutting along e2 - e3" << endl;
+    editor.add_cell(current_cell++, e0, e1, e2, e3);
+    editor.add_cell(current_cell++, e0, e2, e3, e4);
+    editor.add_cell(current_cell++, e1, e2, e3, e5);
+    editor.add_cell(current_cell++, e2, e3, e4, e5);
+  }
 }
 //-----------------------------------------------------------------------------
 void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor,
@@ -172,7 +209,7 @@ void TetrahedronCell::refine_cellIrregular(Cell& cell, MeshEditor& editor,
   // Refine according to refinement rule
   // The rules are numbered according to the paper:
   // J. Bey, "Tetrahedral Grid Refinement", 1995.
-  switch ( refinement_rule )
+  switch (refinement_rule)
   {
   case 1:
     // Rule 1: 4 new cells
@@ -211,7 +248,7 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   const MeshGeometry& geometry = tetrahedron.mesh().geometry();
 
   // Only know how to compute the volume when embedded in R^3
-  if ( geometry.dim() != 3 )
+  if (geometry.dim() != 3)
     error("Only know how to compute the volume of a tetrahedron when embedded in R^3.");
 
   // Get the coordinates of the four vertices
@@ -222,10 +259,10 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   const double* x3 = geometry.x(vertices[3]);
 
   // Formula for volume from http://mathworld.wolfram.com
-  double v = ( x0[0] * ( x1[1]*x2[2] + x3[1]*x1[2] + x2[1]*x3[2] - x2[1]*x1[2] - x1[1]*x3[2] - x3[1]*x2[2] ) -
-             x1[0] * ( x0[1]*x2[2] + x3[1]*x0[2] + x2[1]*x3[2] - x2[1]*x0[2] - x0[1]*x3[2] - x3[1]*x2[2] ) +
-             x2[0] * ( x0[1]*x1[2] + x3[1]*x0[2] + x1[1]*x3[2] - x1[1]*x0[2] - x0[1]*x3[2] - x3[1]*x1[2] ) -
-             x3[0] * ( x0[1]*x1[2] + x1[1]*x2[2] + x2[1]*x0[2] - x1[1]*x0[2] - x2[1]*x1[2] - x0[1]*x2[2] ) );
+  double v = (x0[0] * (x1[1]*x2[2] + x3[1]*x1[2] + x2[1]*x3[2] - x2[1]*x1[2] - x1[1]*x3[2] - x3[1]*x2[2]) -
+             x1[0] * (x0[1]*x2[2] + x3[1]*x0[2] + x2[1]*x3[2] - x2[1]*x0[2] - x0[1]*x3[2] - x3[1]*x2[2]) +
+             x2[0] * (x0[1]*x1[2] + x3[1]*x0[2] + x1[1]*x3[2] - x1[1]*x0[2] - x0[1]*x3[2] - x3[1]*x1[2]) -
+             x3[0] * (x0[1]*x1[2] + x1[1]*x2[2] + x2[1]*x0[2] - x1[1]*x0[2] - x2[1]*x1[2] - x0[1]*x2[2]));
 
   return std::abs(v) / 6.0;
 }
@@ -236,7 +273,7 @@ double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
   const MeshGeometry& geometry = tetrahedron.mesh().geometry();
 
   // Only know how to compute the volume when embedded in R^3
-  if ( geometry.dim() != 3 )
+  if (geometry.dim() != 3)
     error("Only know how to compute the diameter of a tetrahedron when embedded in R^3.");
 
   // Get the coordinates of the four vertices
@@ -262,7 +299,7 @@ double TetrahedronCell::diameter(const MeshEntity& tetrahedron) const
   double area = sqrt(s*(s-la)*(s-lb)*(s-lc));
 
   // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
-  return area / ( 3.0*volume(tetrahedron) );
+  return area / (3.0*volume(tetrahedron));
 }
 //-----------------------------------------------------------------------------
 double TetrahedronCell::normal(const Cell& cell, uint facet, uint i) const
@@ -354,7 +391,7 @@ void TetrahedronCell::order(Cell& cell,
   const MeshTopology& topology = cell.mesh().topology();
 
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
-  if ( topology(1, 0).size() > 0 )
+  if (topology(1, 0).size() > 0)
   {
     assert(topology(3, 1).size() > 0);
 
@@ -370,7 +407,7 @@ void TetrahedronCell::order(Cell& cell,
   }
 
   // Sort local vertices on facets in ascending order, connectivity 2 - 0
-  if ( topology(2, 0).size() > 0 )
+  if (topology(2, 0).size() > 0)
   {
     assert(topology(3, 2).size() > 0);
 
@@ -386,7 +423,7 @@ void TetrahedronCell::order(Cell& cell,
   }
 
   // Sort local edges on local facets after non-incident vertex, connectivity 2 - 1
-  if ( topology(2, 1).size() > 0 )
+  if (topology(2, 1).size() > 0)
   {
     assert(topology(3, 2).size() > 0);
     assert(topology(2, 0).size() > 0);
@@ -430,14 +467,14 @@ void TetrahedronCell::order(Cell& cell,
   }
 
   // Sort local vertices on cell in ascending order, connectivity 3 - 0
-  if ( topology(3, 0).size() > 0 )
+  if (topology(3, 0).size() > 0)
   {
     uint* cell_vertices = const_cast<uint*>(cell.entities(0));
     sort_entities(4, cell_vertices, global_vertex_indices);
   }
 
   // Sort local edges on cell after non-incident vertex tuble, connectivity 3-1
-  if ( topology(3, 1).size() > 0 )
+  if (topology(3, 1).size() > 0)
   {
     assert(topology(1, 0).size() > 0);
 
@@ -475,7 +512,7 @@ void TetrahedronCell::order(Cell& cell,
   }
 
   // Sort local facets on cell after non-incident vertex, connectivity 3 - 2
-  if ( topology(3, 2).size() > 0 )
+  if (topology(3, 2).size() > 0)
   {
     assert(topology(2, 0).size() > 0);
 

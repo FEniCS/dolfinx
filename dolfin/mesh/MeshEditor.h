@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-16
-// Last changed: 2009-08-06
+// Last changed: 2010-10-21
 
 #ifndef __MESH_EDITOR_H
 #define __MESH_EDITOR_H
@@ -96,6 +96,9 @@ namespace dolfin
     void close(bool order=true);
 
   private:
+
+    // Friends
+    friend class TetrahedronCell;
 
     // Add vertex, common part
     void add_vertex_common(uint v, uint dim);
