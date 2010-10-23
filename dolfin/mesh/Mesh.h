@@ -79,15 +79,15 @@ namespace dolfin
     /// Copy constructor.
     ///
     /// *Arguments*
-    ///     mesh
-    ///         A _Mesh_ object.
+    ///     mesh (_Mesh_)
+    ///         Object to be copied.
     Mesh(const Mesh& mesh);
 
     /// Create mesh from data file.
     ///
     /// *Arguments*
-    ///     filename
-    ///         A string, name of file to load.
+    ///     filename (std::string)
+    ///         Name of file to load.
     explicit Mesh(std::string filename);
 
     /// Destructor.
@@ -96,14 +96,14 @@ namespace dolfin
     /// Assignment operator
     ///
     /// *Arguments*
-    ///     mesh
-    ///         A _Mesh_ object.
+    ///     mesh (_Mesh_)
+    ///         Another _Mesh_ object.
     const Mesh& operator=(const Mesh& mesh);
 
     /// Get number of vertices in mesh.
     ///
     /// *Returns*
-    ///     integer
+    ///     uint
     ///         Number of vertices.
     ///
     /// *Example*
@@ -115,7 +115,7 @@ namespace dolfin
     /// Get number of edges in mesh.
     ///
     /// *Returns*
-    ///     integer
+    ///     uint
     ///         Number of edges.
     ///
     /// *Example*
@@ -127,7 +127,7 @@ namespace dolfin
     /// Get number of faces in mesh.
     ///
     /// *Returns*
-    ///     integer
+    ///     uint
     ///         Number of faces.
     ///
     /// *Example*
@@ -139,7 +139,7 @@ namespace dolfin
     /// Get number of facets in mesh.
     ///
     /// *Returns*
-    ///     integer
+    ///     uint
     ///         Number of facets.
     ///
     /// *Example*
@@ -151,7 +151,7 @@ namespace dolfin
     /// Get number of cells in mesh.
     ///
     /// *Returns*
-    ///     integer
+    ///     uint
     ///         Number of cells.
     ///
     /// *Example*
@@ -163,11 +163,11 @@ namespace dolfin
     /// Get number of entities of given topological dimension.
     ///
     /// *Arguments*
-    ///     d
-    ///         An integer, topological dimension.
+    ///     d (uint)
+    ///         Topological dimension.
     ///
     /// *Returns*
-    ///     integer
+    ///     uint
     ///         Number of entities of topological dimension d.
     ///
     /// *Example*
@@ -179,7 +179,7 @@ namespace dolfin
     /// Get vertex coordinates.
     ///
     /// *Returns*
-    ///     An array of doubles
+    ///     double*
     ///         Coordinates of all vertices.
     ///
     /// *Example*
@@ -194,7 +194,7 @@ namespace dolfin
     /// Get cell connectivity.
     ///
     /// *Returns*
-    ///     An array of integers
+    ///     uint*
     ///         Connectivity for all cells.
     ///
     /// *Example*
@@ -206,11 +206,11 @@ namespace dolfin
     /// Get number of entities of given topological dimension.
     ///
     /// *Arguments*
-    ///     dim
-    ///         An integer, topological dimension.
+    ///     dim (uint)
+    ///         Topological dimension.
     ///
     /// *Returns*
-    ///     integer
+    ///     uint
     ///         Number of entities of topological dimension d.
     ///
     /// *Example*
@@ -272,22 +272,22 @@ namespace dolfin
     /// Compute entities of given topological dimension.
     ///
     ///   *Arguments*
-    ///       dim
-    ///           An integer, topological dimension.
+    ///       dim (uint)
+    ///           Topological dimension.
     ///
     ///   *Returns*
-    ///       integer
+    ///       uint
     ///           Number of created entities.
     uint init(uint dim) const;
 
     /// Compute connectivity between given pair of dimensions.
     ///
     ///   *Arguments*
-    ///       d0
-    ///           An integer, topological dimension.
+    ///       d0 (uint)
+    ///           Topological dimension.
     ///
-    ///       d1
-    ///           An integer, topological dimension.
+    ///       d1 (uint)
+    ///           Topological dimension.
     void init(uint d0, uint d1) const;
 
     /// Compute all entities and connectivity.
@@ -314,11 +314,10 @@ namespace dolfin
     /// Move coordinates of mesh according to new boundary coordinates.
     ///
     /// *Arguments*
-    ///     boundary
-    ///         A _BoundaryMesh_ object.
+    ///     boundary (_BoundaryMesh_)
+    ///         A mesh containing just the boundary cells.
     ///
-    ///     method
-    ///         A ALEType (enum).
+    ///     method (enum)
     ///         Method which defines how the coordinates should be
     ///         moved, default is *hermite*.
     void move(BoundaryMesh& boundary, dolfin::ALEType method=hermite);
@@ -327,11 +326,10 @@ namespace dolfin
     /// vertices.
     ///
     /// *Arguments*
-    ///     mesh
+    ///     mesh (_Mesh_)
     ///         A _Mesh_ object.
     ///
-    ///     method
-    ///         A ALEType (enum).
+    ///     method (enum)
     ///         Method which defines how the coordinates should be
     ///         moved, default is *hermite*.
     void move(Mesh& mesh, dolfin::ALEType method=hermite);
@@ -339,38 +337,38 @@ namespace dolfin
     /// Move coordinates of mesh according to displacement function.
     ///
     /// *Arguments*
-    ///     function
+    ///     displacement (_Function_)
     ///         A _Function_ object.
     void move(const Function& displacement);
 
     /// Smooth internal vertices of mesh by local averaging.
     ///
     /// *Arguments*
-    ///     num_iterations
-    ///         An integer, number of iterations to perform smoothing,
+    ///     num_iterations (uint)
+    ///         Number of iterations to perform smoothing,
     ///         default value is 1.
     void smooth(uint num_iterations=1);
 
     /// Smooth boundary vertices of mesh by local averaging.
     ///
     /// *Arguments*
-    ///     num_iterations
-    ///         An integer, number of iterations to perform smoothing,
+    ///     num_iterations (uint)
+    ///         Number of iterations to perform smoothing,
     ///         default value is 1.
     ///
-    ///     harmonic_smoothing
-    ///         A bool, flag to turn on harmonics smoothing, default
+    ///     harmonic_smoothing (bool)
+    ///         Flag to turn on harmonics smoothing, default
     ///         value is true.
     void smooth_boundary(uint num_iterations=1, bool harmonic_smoothing=true);
 
     /// Snap boundary vertices of mesh to match given sub domain.
     ///
     /// *Arguments*
-    ///     sub_domain
+    ///     sub_domain (_SubDomain_)
     ///         A _SubDomain_ object.
     ///
-    ///     harmonic_smoothing
-    ///         A bool, flag to turn on harmonics smoothing, default
+    ///     harmonic_smoothing (bool)
+    ///         Flag to turn on harmonics smoothing, default
     ///         value is true.
     void snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing=true);
 
@@ -378,11 +376,10 @@ namespace dolfin
     /// given point.
     ///
     /// *Arguments*
-    ///     point
+    ///     point (_Point_)
     ///         A _Point_ object.
     ///
-    ///     ids_result
-    ///         A set of integers.
+    ///     ids_result (std::set<uint>)
     ///         The cell ids which are intersected are stored in a set for
     ///         efficiency reasons, to avoid to sort out duplicates later on.
     void all_intersected_entities(const Point& point, uint_set& ids_result) const;
@@ -391,11 +388,10 @@ namespace dolfin
     /// point in points.
     ///
     /// *Arguments*
-    ///     points
+    ///     points (std::vector<_Point_>)
     ///         A vector of _Point_ objects.
     ///
-    ///     ids_result
-    ///         A set of integers.
+    ///     ids_result (std::set<uint>)
     ///         The cell ids which are intersected are stored in a set
     ///         for efficiency reasons, to avoid to sort out
     ///         duplicates later on.
@@ -405,11 +401,10 @@ namespace dolfin
     /// entity.
     ///
     /// *Arguments*
-    ///     entity
+    ///     entity (_MeshEntity_)
     ///         A _MeshEntity_ object.
     ///
-    ///     ids_result
-    ///         A list of integers.
+    ///     ids_result (std::vector<uint>)
     ///         The ids of the intersected cells are saved in a list.
     ///         This is more efficent than using a set and allows a
     ///         map between the (external) cell and the intersected
@@ -420,11 +415,10 @@ namespace dolfin
     /// vector entities.
     ///
     /// *Arguments*
-    ///     entities
+    ///     entities (std::vector<_MeshEntity_>)
     ///         A vector of _MeshEntity_ objects.
     ///
-    ///     ids_result
-    ///         A set of integers.
+    ///     ids_result (std::set<uint>)
     ///         The cell ids which are intersected are stored in a set for
     ///         efficiency reasons, to avoid to sort out duplicates later on.
     void all_intersected_entities(const std::vector<MeshEntity>& entities, uint_set& ids_result) const;
@@ -433,11 +427,10 @@ namespace dolfin
     /// another_mesh.
     ///
     /// *Arguments*
-    ///     another_mesh
+    ///     another_mesh (_Mesh_)
     ///         A _Mesh_ object.
     ///
-    ///     ids_result
-    ///         A set of integers.
+    ///     ids_result (std::set<uint>)
     ///         The cell ids which are intersected are stored in a set for
     ///         efficiency reasons, to avoid to sort out duplicates later on.
     void all_intersected_entities(const Mesh& another_mesh, uint_set& ids_result) const;
@@ -446,11 +439,11 @@ namespace dolfin
     /// point.
     ///
     /// *Arguments*
-    ///     point
+    ///     point (_Point_)
     ///         A _Point_ object.
     ///
     /// *Returns*
-    ///     integer
+    ///     int
     ///         The first id of the cell, which contains the point,
     ///         returns -1 if no cell is intersected.
     int any_intersected_entity(const Point& point) const;
@@ -459,7 +452,7 @@ namespace dolfin
     /// index which are closest to the point query.
     ///
     /// *Arguments*
-    ///     point
+    ///     point (_Point_)
     ///         A _Point_ object.
     ///
     /// *Returns*
@@ -472,11 +465,11 @@ namespace dolfin
     /// point query.
     ///
     /// *Arguments*
-    ///     point
+    ///     point (_Point_)
     ///         A _Point_ object.
     ///
     /// *Returns*
-    ///     integer
+    ///     uint
     ///         The index of the cell in the mesh which is closest to point.
     ///
     /// *Example*
@@ -495,11 +488,11 @@ namespace dolfin
     /// index which are closest to the point query.
     ///
     /// *Arguments*
-    ///     point
+    ///     point (_Point_)
     ///         A _Point_ object.
     ///
     /// *Returns*
-    ///     pair <_Point_, integer>
+    ///     std::pair<_Point_, uint>
     ///         The point inside the mesh and the corresponding cell
     ///         index which is closest to the point query.
     std::pair<Point,dolfin::uint> closest_point_and_cell(const Point& point) const;
@@ -535,11 +528,11 @@ namespace dolfin
     /// Informal string representation.
     ///
     /// *Arguments*
-    ///     verbose
-    ///         A bool, flag to turn on additional output.
+    ///     verbose (bool)
+    ///         Flag to turn on additional output.
     ///
     /// *Returns*
-    ///     string
+    ///     std::string
     ///         An informal representation of the mesh.
     ///
     /// *Example*

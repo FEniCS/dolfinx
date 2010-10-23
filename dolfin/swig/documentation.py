@@ -31,6 +31,29 @@ if os.path.isfile("docstrings.i"):
 output_file = open("docstrings.i", "a")
 docstring = '%%feature("docstring")  %s "\n%s\n";\n\n'
 
+# Dictionary for mapping C++ types to Python types.
+# NOTE: KBO: The dictionary is not complete and is only tested for the Mesh.h class
+cpp_to_python = {
+"std::string": "str",
+"string": "str",
+
+"enum": "int",
+
+"int": "int",
+"unsigned int": "int",
+"uint": "int",
+"dolfin::uint": "int",
+"uint*": "numpy.array(int)",
+"dolfin::uint": "numpy.array(int)",
+
+"double": "float",
+"double*": "numpy.array(float)",
+"real": "float",
+"dolfin::real": "float",
+
+"bool": "bool",
+}
+
 def get_function_name(signature):
     "Extract function name from signature."
     words = signature.split("(")[0].split()
@@ -105,7 +128,7 @@ def replace_example(text, classname, signature):
             indentation = len(l) - len(l.lstrip())
             new_text.append(l)
             new_text += indent(examplecode, indentation + 4).split("\n")
-        elif example and l.strip() and len(l.lstrip()) <= indentation:
+        elif example and l.strip() and len(l) - len(l.lstrip()) <= indentation:
             example = False
             new_text.append(l)
         # Skip lines as long as we're inside the example block.
@@ -115,14 +138,138 @@ def replace_example(text, classname, signature):
             new_text.append(l)
     return "\n".join(new_text)
 
+# NOTE: KBO: This function is not complete and is only tested for the Mesh.h class
+def map_cpp_type(cpp_type, classnames):
+    "Map a C++ type to a Python type."
+
+    if cpp_type in cpp_to_python:
+        return cpp_to_python[cpp_type]
+    # Special handling of std::pair
+    elif "std::pair" in cpp_type:
+        arg1, arg2 = cpp_type.split(">")[0].split("<")[1].split(",")
+        arg1 = arg1.strip()
+        arg2 = arg2.strip()
+        if arg1 in cpp_to_python:
+            arg1 = cpp_to_python[arg1]
+            if not arg2 in cpp_to_python:
+                print "No type map for '%s'!" % cpp_type
+                return cpp_type
+            arg2 = cpp_to_python[arg2]
+            return "(%s, %s)" % (arg1, arg2)
+        elif arg1[0] == "_" and arg1[-1] == "_" and arg1[1:-1] in classnames:
+            if not arg2 in cpp_to_python:
+                print "No type map for '%s'!" % cpp_type
+                return cpp_type
+            arg2 = cpp_to_python[arg2]
+            return "Swig Object< std::pair<%s, %s> >" % (arg1, arg2)
+        else:
+            print "No type map for '%s'!" % cpp_type
+    # dolfin::Array --> numpy.array (primitives only)
+    elif "_Array_" in cpp_type:
+        arg = cpp_type.split("<")[1].split(">")[0].strip()
+        if not arg in cpp_to_python:
+            print "No type map for '%s'!" % arg
+            return "numpy.array(%s)" % arg
+        return "numpy.array(%s)" % cpp_to_python[arg]
+    # std::vector --> numpy.array or list
+    elif "std::vector" in cpp_type:
+        arg = cpp_type.split("<")[1].split(">")[0].strip()
+        if not arg in cpp_to_python:
+            if arg[0] == "_" and arg[-1] == "_" and arg[1:-1] in classnames:
+                return "list of %s" % arg
+            else:
+                print "No type map for '%s'!" % arg
+                return cpp_type
+        return "numpy.array(%s)" % cpp_to_python[arg]
+    # std::set --> set
+    elif "std::set" in cpp_type:
+        arg = cpp_type.split("<")[1].split(">")[0].strip()
+        if not arg in cpp_to_python:
+            print "No type map for '%s'!" % cpp_type
+            return cpp_type
+        return "set of %s" % cpp_to_python[arg]
+    # Handle links to classes defined in DOLFIN.
+    elif cpp_type[0] == "_" and cpp_type[-1] == "_" and cpp_type[1:-1] in classnames:
+        return cpp_type
+    else:
+        print "No type map for '%s'!" % cpp_type
+
+    return cpp_type
+
+def map_argument_and_return_types(text, classnames):
+    """Map C++ types in the *Arguments* and *Returns* sections to corresponding
+    Python types using a simple dictionary.
+
+    Current implementation assumes the following format:
+
+    *Returns*
+         type
+             description
+
+    *Arguments*
+         name0 (type)
+             description
+         name1 (type)
+             description
+
+    possibly separated with blank lines.
+    """
+
+    new_text = text
+
+    # Could perhaps be handled more elegantly if we rely on the formatting?
+    if "*Returns*" in new_text:
+        # Get lines and find line number with *Returns*
+        lines = new_text.split("\n")
+        r_index = ["*Returns*" in l for l in lines].index(True)
+        arg = False
+        for e, l in enumerate(lines):
+            if e > r_index and not arg:
+                # First none blank line contains our argument
+                if l.strip():
+                    arg = True
+                    indentation = len(l) - len(l.lstrip())
+                    lines[e] = indent(map_cpp_type(l.strip(), classnames), indentation)
+        new_text = "\n".join(lines)
+
+    if "*Arguments*" in new_text:
+        # Get lines and find line number with *Arguments*
+        lines = new_text.split("\n")
+        a_index = ["*Arguments*" in l for l in lines].index(True)
+        a_indent = len(lines[a_index]) - len(lines[a_index].lstrip())
+        n_indent = 0
+        for e, l in enumerate(lines):
+            if e > a_index and l.strip():
+                indentation = len(l) - len(l.lstrip())
+                # End of argument block
+                if indentation <= a_indent:
+                    break
+                # Determine indentation of lines with argument names
+                # first non blank line determines this
+                if n_indent == 0:
+                    n_indent = indentation
+                # Get type of arguments defined in lines with name and type
+                if indentation == n_indent:
+                    n, t = l.split("(")
+                    n = n.strip()
+                    t = t.split(")")[0]
+                    lines[e] = indent("%s (%s)" % (n, map_cpp_type(t.strip(), classnames)), n_indent)
+
+        new_text = "\n".join(lines)
+
+    return new_text
+
 def modify_doc(text, classnames, classname, signature):
-    "Add links, translate C++ to Python and change return types."
+    "Add links, translate C++ to Python and change C++ types."
+
+    # Replace C++ example code with Python example code
+    text = replace_example(text, classname, signature)
+
+    # Map C++ types to corresponding Python types
+    text = map_argument_and_return_types(text, classnames)
 
     # Add links
     text = add_links(text, classnames, ":py:class:")
-
-    text = replace_example(text, classname, signature)
-    # TODO: KBO: Still need to translate return types.
 
     # Escape '"' otherwise will SWIG complain
     text = text.replace('\"',r'\"')
