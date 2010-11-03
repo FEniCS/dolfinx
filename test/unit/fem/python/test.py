@@ -70,8 +70,8 @@ class Assembly(unittest.TestCase):
         a = inner(epsilon(v), epsilon(u))*dx
         L = inner(v, f)*dx
 
-        A_frobenius_norm =  4.3969686527582512;
-        b_l2_norm = 0.95470326978246278;
+        A_frobenius_norm =  4.3969686527582512
+        b_l2_norm = 0.95470326978246278
         self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(assemble(L).norm("l2"), b_l2_norm, 10)
 
@@ -79,14 +79,31 @@ class Assembly(unittest.TestCase):
         self.assertAlmostEqual(A.norm("frobenius"), A_frobenius_norm, 10)
         self.assertAlmostEqual(b.norm("l2"), b_l2_norm, 10)
 
-        if MPI.num_processes() > 1:
-            print "FIXME: This unit test does not work in parallel, skipping"
-            return
+    def test_nonsquare_assembly(self):
+        """Test assembly of a rectangular matrix"""
+
+        mesh = UnitSquare(16, 16)
+
+        V = VectorFunctionSpace(mesh, "CG", 2)
+        Q = FunctionSpace(mesh, "CG", 1)
+        W = V*Q
+
+        (v, q) = TestFunctions(W)
+        (u, p) = TrialFunctions(W)
+
+        a = div(v)*p*dx
+        A_frobenius_norm = 9.6420303878382718e-01
+        self.assertAlmostEqual(assemble(a).norm("frobenius"), A_frobenius_norm, 10)
+
 
 class DofMap(unittest.TestCase):
 
     def test_sub_dofmap(self):
-        """ Test extraction of sub- and sub-sub-dofmaps."""
+
+        if MPI.num_processes() > 1:
+            print "FIXME: This unit test does not work in parallel, skipping"
+            return
+
         mesh = UnitSquare(1, 1)
         V = FunctionSpace(mesh, "CG", 1)
         Q = VectorFunctionSpace(mesh, "CG", 1)
@@ -109,10 +126,6 @@ class DofMap(unittest.TestCase):
             self.assertEqual(len(numpy.intersect1d(dofs0, dofs2)), 0)
             self.assertEqual(len(numpy.intersect1d(dofs1, dofs2)), 0)
             self.assertTrue(numpy.array_equal(numpy.append(dofs1, dofs2), dofs3))
-
-        if MPI.num_processes() > 1:
-            print "FIXME: This unit test does not work in parallel, skipping"
-            return
 
 if __name__ == "__main__":
     print ""
