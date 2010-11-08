@@ -47,6 +47,7 @@ namespace dolfin
                                 const Form* a,
                                 UFC* ufc,
                                 uint thread_id,
+                                uint num_threads,
                                 const MeshFunction<uint>* cell_domains,
                                 const MeshFunction<uint>* exterior_facet_domains,
                                 const MeshFunction<uint>* interior_facet_domains);
@@ -55,6 +56,7 @@ namespace dolfin
     static void assemble_cells(GenericTensor& A,
                                const Form& a,
                                UFC& ufc,
+                               const std::pair<uint, uint>& range,
                                const MeshFunction<uint>* domains,
                                std::vector<double>* values);
 
@@ -62,6 +64,7 @@ namespace dolfin
     static void assemble_exterior_facets(GenericTensor& A,
                                          const Form& a,
                                          UFC& ufc,
+                                         const std::pair<uint, uint>& range,
                                          const MeshFunction<uint>* domains,
                                          std::vector<double>* values);
 
@@ -69,6 +72,7 @@ namespace dolfin
     static void assemble_interior_facets(GenericTensor& A,
                                          const Form& a,
                                          UFC& ufc,
+                                         const std::pair<uint, uint>& range,
                                          const MeshFunction<uint>* domains,
                                          std::vector<double>* values);
 

@@ -11,6 +11,7 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/main/MPI.h>
 #include <dolfin/parameter/GlobalParameters.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/mesh/Mesh.h>
@@ -85,7 +86,7 @@ void MulticoreAssembler::assemble_threads(GenericTensor* A,
     // Create thread
     boost::thread* thread =
       new boost::thread(boost::bind(assemble_thread,
-                                    A, a, ufc, p,
+                                    A, a, ufc, p, num_threads,
                                     cell_domains,
                                     exterior_facet_domains,
                                     interior_facet_domains));
@@ -106,6 +107,7 @@ void MulticoreAssembler::assemble_thread(GenericTensor* A,
                                          const Form* a,
                                          UFC* ufc,
                                          uint thread_id,
+                                         uint num_threads,
                                          const MeshFunction<uint>* cell_domains,
                                          const MeshFunction<uint>* exterior_facet_domains,
                                          const MeshFunction<uint>* interior_facet_domains)
@@ -113,21 +115,26 @@ void MulticoreAssembler::assemble_thread(GenericTensor* A,
   // FIXME: More stuff should be done here (in parallel) and not
   // FIXME: above in the serial assemble function.
 
-  info("Starting assembly in thread %d.", thread_id);
+  // Get local range
+  const std::pair<uint, uint> range = MPI::local_range(thread_id, num_threads);
+
+  info("Starting assembly in thread %d, range [%d, %d].",
+       thread_id, range.first, range.second);
 
   // Assemble over cells
-  assemble_cells(*A, *a, *ufc, cell_domains, 0);
+  assemble_cells(*A, *a, *ufc, range, cell_domains, 0);
 
   // Assemble over exterior facets
-  assemble_exterior_facets(*A, *a, *ufc, exterior_facet_domains, 0);
+  //assemble_exterior_facets(*A, *a, *ufc, range, exterior_facet_domains, 0);
 
   // Assemble over interior facets
-  assemble_interior_facets(*A, *a, *ufc, interior_facet_domains, 0);
+  //assemble_interior_facets(*A, *a, *ufc, range, interior_facet_domains, 0);
 }
 //-----------------------------------------------------------------------------
 void MulticoreAssembler::assemble_cells(GenericTensor& A,
                                         const Form& a,
                                         UFC& ufc,
+                                        const std::pair<uint, uint>& range,
                                         const MeshFunction<uint>* domains,
                                         std::vector<double>* values)
 {
@@ -166,6 +173,29 @@ void MulticoreAssembler::assemble_cells(GenericTensor& A,
     for (uint i = 0; i < ufc.form.rank(); i++)
       a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
 
+    // Check whether rows are in local range
+    bool all_in_range = true;
+    bool none_in_range = true;
+    for (uint i = 0; i < ufc.local_dimensions[0]; i++)
+    {
+      const uint row = ufc.dofs[0][i];
+      if (range.first <= row && row < range.second)
+        none_in_range = false;
+      else
+        all_in_range = false;
+    }
+
+    if (!all_in_range)
+      continue;
+
+    // FIXME: Temporary debuggin
+    if (all_in_range)
+      cout << "All in range" << endl;
+    else if (none_in_range)
+      cout << "None in range" << endl;
+    else
+      cout << "Some in range" << endl;
+
     // Tabulate cell tensor
     integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
 
@@ -184,11 +214,14 @@ void MulticoreAssembler::assemble_cells(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void MulticoreAssembler::assemble_exterior_facets(GenericTensor& A,
-                                         const Form& a,
-                                         UFC& ufc,
-                                         const MeshFunction<uint>* domains,
-                                         std::vector<double>* values)
+                                                  const Form& a,
+                                                  UFC& ufc,
+                                                  const std::pair<uint, uint>& range,
+                                                  const MeshFunction<uint>* domains,
+                                                  std::vector<double>* values)
 {
+  dolfin_not_implemented();
+
   // Skip assembly if there are no exterior facet integrals
   if (ufc.form.num_exterior_facet_integrals() == 0)
     return;
@@ -264,9 +297,12 @@ void MulticoreAssembler::assemble_exterior_facets(GenericTensor& A,
 void MulticoreAssembler::assemble_interior_facets(GenericTensor& A,
                                                   const Form& a,
                                                   UFC& ufc,
+                                                  const std::pair<uint, uint>& range,
                                                   const MeshFunction<uint>* domains,
                                                   std::vector<double>* values)
 {
+  dolfin_not_implemented();
+
   // Skip assembly if there are no interior facet integrals
   if (ufc.form.num_interior_facet_integrals() == 0)
     return;
