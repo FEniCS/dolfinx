@@ -6,7 +6,7 @@
 // Modified by Ilmar Wilbers, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2009-08-11
+// Last changed: 2010-11-08
 
 #include <sstream>
 #include <iomanip>
@@ -27,13 +27,16 @@ std::string STLMatrix::str(bool verbose) const
 
     for (uint i = 0; i < dims[0]; i++)
     {
+      const std::vector<uint>& rcols = this->cols[i];
+      const std::vector<double>& rvals = this->vals[i];
+
       std::stringstream line;
       line << std::setiosflags(std::ios::scientific);
       line << std::setprecision(16);
 
       line << "|";
-      for (std::map<uint, double>::const_iterator it = A[i].begin(); it != A[i].end(); it++)
-        line << " (" << i << ", " << it->first << ", " << it->second << ")";
+      for (uint k = 0; k < rcols.size(); k++)
+        line << " (" << i << ", " << rcols[k] << ", " << rvals[k] << ")";
       line << " |";
 
       s << line.str().c_str() << std::endl;

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Anders Logg.
+// Copyright (C) 2007-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2007.
@@ -6,12 +6,11 @@
 // Modified by Ilmar Wilbers, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2010-06-07
+// Last changed: 2010-11-08
 
 #ifndef __STL_MATRIX_H
 #define __STL_MATRIX_H
 
-#include <map>
 #include <string>
 #include <vector>
 #include <dolfin/log/log.h>
@@ -21,9 +20,14 @@
 namespace dolfin
 {
 
-  /// Simple implementation of a GenericMatrix for experimenting
-  /// with new assembly. Not sure this will be used later but it
-  /// might be useful.
+  /// Simple STL-based implementation of the GenericMatrix interface.
+  /// The sparse matrix is stored as a pair of std::vector of
+  /// std::vector, one for the columns and one for the values.
+  ///
+  /// Historically, this class has undergone a number of different
+  /// incarnations, based on various combinations of std::vector,
+  /// std::set and std::map. The current implementation has proven to
+  /// be the fastest.
 
   class STLMatrix : public GenericMatrix
   {
@@ -56,14 +60,13 @@ namespace dolfin
 
     /// Return size of given dimension
     virtual uint size(uint dim) const
-    { return dims[dim]; }
+    { assert(dim < 2); return dims[dim]; }
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero()
     {
-      for (uint i = 0; i < A.size(); i++)
-        for (std::map<uint, double>::iterator it = A[i].begin(); it != A[i].end(); it++)
-          it->second = 0.0;
+      for (std::vector<std::vector<double> >::iterator row = vals.begin(); row != vals.end(); ++row)
+        std::fill(row->begin(), row->end(), 0);
     }
 
     /// Finalize assembly of tensor
@@ -76,7 +79,13 @@ namespace dolfin
 
     /// Initialize M x N matrix
     virtual void resize(uint M, uint N)
-    { dims[0] = M; dims[1] = N; A.resize(M); }
+    {
+      cols.clear();
+      vals.clear();
+
+      cols.resize(M);
+      vals.resize(N);
+    }
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const
@@ -89,18 +98,40 @@ namespace dolfin
     /// Add block of values
     virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols)
     {
+      // Perform a simple linear search along each column. Otherwise,
+      // append the value (calling push_back).
+
+      // Iterate over rows
       uint pos = 0;
       for (uint i = 0; i < m; i++)
       {
-        std::map<uint, double>& row = A[rows[i]];
+        const uint I = rows[i];
+        std::vector<uint>& rcols = this->cols[I];
+        std::vector<double>& rvals = this->vals[I];
+
+        // Iterate over columns
         for (uint j = 0; j < n; j++)
         {
-          const uint col = cols[j];
-          const std::map<uint, double>::iterator it = row.find(col);
-          if ( it == row.end() )
-            row.insert(it, std::map<uint, double>::value_type(col, block[pos++]));
-          else
-            it->second += block[pos++];
+          const uint J = cols[j];
+
+          // Try to find column
+          bool found = false;
+          for (uint k = 0; k < rcols.size(); k++)
+          {
+            if (rcols[k] == J)
+            {
+              rvals[k] += block[pos++];
+              found = true;
+              break;
+            }
+          }
+
+          // Append if not found
+          if (!found)
+          {
+            rcols.push_back(J);
+            rvals.push_back(block[pos++]);
+          }
         }
       }
     }
@@ -116,14 +147,9 @@ namespace dolfin
     /// Get non-zero values of given row
     virtual void getrow(uint row, std::vector<uint>& columns, std::vector<double>& values) const
     {
-      columns.clear();
-      values.clear();
-      const std::map<uint, double>& rowid = A[row];
-      for (std::map<uint, double>::const_iterator it = rowid.begin(); it != rowid.end(); it++)
-      {
-        columns.push_back(it->first);
-        values.push_back(it->second);
-      }
+      assert(row < dims[0]);
+      columns = this->cols[row];
+      values = this->vals[row];
     }
 
     /// Set values for given row
@@ -180,8 +206,11 @@ namespace dolfin
 
   private:
 
-    // The matrix representation
-    std::vector<std::map<uint, double> > A;
+    // Storages of columns
+    std::vector<std::vector<uint> > cols;
+
+    // Storage of values
+    std::vector<std::vector<double> > vals;
 
     // The size of the matrix
     uint dims[2];
