@@ -29,12 +29,13 @@ RE:dolfin/swig/.*\.(py|cc|h)
 dolfin.conf
 .sconf_temp
 RE:local.*
+dolfin/dolfin-config.cmake
 
 # Demos and tests
 RE:demo/.*\.(pvd|vtu|pvtu|xml|bin)
 RE:demo/adaptivity/.*/(cpp|python)/.*\.(pvd|vtu|pvtu|xml|bin)
 RE:demo/adaptivity/.*/indicators.py
-RE:demo/.*/cpp/demo
+RE:demo/.*/cpp/.*demo
 RE:test/.*/cpp/test
 RE:test/unit/mesh/(cpp|python)/.*.(xml|m)
 
