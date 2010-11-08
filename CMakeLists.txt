@@ -154,7 +154,7 @@ else()
 endif()
 set(BOOST_ROOT $ENV{BOOST_DIR})
 set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0)
-find_package(Boost 1.36 COMPONENTS filesystem program_options system REQUIRED)
+find_package(Boost 1.36 COMPONENTS filesystem program_options system thread REQUIRED)
 
 # Check for required packages
 find_package(UFC PATHS $ENV{CMAKE_CONFIG_PATH}/share/ufc/cmake REQUIRED)
