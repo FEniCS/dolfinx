@@ -44,7 +44,8 @@ void MulticoreAssembler::assemble(GenericTensor& A,
                          uint num_threads)
 {
   // FIXME: Move more functionality to the assemble_thread below,
-  // FIXME: in particular building the dof map
+  // FIXME: in particular building the dof map. Note that we create
+  // FIXME: a UFC object here and recreate one in each thread below.
 
   // Check form
   AssemblerTools::check(a);
@@ -61,7 +62,7 @@ void MulticoreAssembler::assemble(GenericTensor& A,
   AssemblerTools::init_global_tensor(A, a, ufc, reset_sparsity, add_values);
 
   // Call multi-thread assembly
-  assemble_threads(&A, &a, &ufc, num_threads,
+  assemble_threads(&A, &a, num_threads,
                    cell_domains, exterior_facet_domains, interior_facet_domains);
 
   // Finalize assembly of global tensor
@@ -70,7 +71,6 @@ void MulticoreAssembler::assemble(GenericTensor& A,
 //-----------------------------------------------------------------------------
 void MulticoreAssembler::assemble_threads(GenericTensor* A,
                                           const Form* a,
-                                          UFC* ufc,
                                           uint num_threads,
                                           const MeshFunction<uint>* cell_domains,
                                           const MeshFunction<uint>* exterior_facet_domains,
@@ -87,7 +87,7 @@ void MulticoreAssembler::assemble_threads(GenericTensor* A,
     // Create thread
     boost::thread* thread =
       new boost::thread(boost::bind(assemble_thread,
-                                    A, a, ufc, p, num_threads,
+                                    A, a, p, num_threads,
                                     cell_domains,
                                     exterior_facet_domains,
                                     interior_facet_domains));
@@ -106,7 +106,6 @@ void MulticoreAssembler::assemble_threads(GenericTensor* A,
 //-----------------------------------------------------------------------------
 void MulticoreAssembler::assemble_thread(GenericTensor* A,
                                          const Form* a,
-                                         UFC* ufc,
                                          uint thread_id,
                                          uint num_threads,
                                          const MeshFunction<uint>* cell_domains,
@@ -116,6 +115,9 @@ void MulticoreAssembler::assemble_thread(GenericTensor* A,
   // FIXME: More stuff should be done here (in parallel) and not
   // FIXME: above in the serial assemble function.
 
+  // Create data structure for local assembly data
+  UFC ufc(*a);
+
   // Get local range
   const std::pair<uint, uint> range = MPI::local_range(thread_id, num_threads);
 
@@ -123,7 +125,7 @@ void MulticoreAssembler::assemble_thread(GenericTensor* A,
        thread_id, range.first, range.second);
 
   // Assemble over cells
-  assemble_cells(*A, *a, *ufc, range, cell_domains, 0);
+  assemble_cells(*A, *a, ufc, range, cell_domains, 0);
 
   // Assemble over exterior facets
   //assemble_exterior_facets(*A, *a, *ufc, range, exterior_facet_domains, 0);

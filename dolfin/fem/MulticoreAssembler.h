@@ -36,7 +36,6 @@ namespace dolfin
     // Multi-thread assembly (create and join threads)
     static void assemble_threads(GenericTensor* A,
                                  const Form* a,
-                                 UFC* ufc,
                                  uint num_threads,
                                  const MeshFunction<uint>* cell_domains,
                                  const MeshFunction<uint>* exterior_facet_domains,
@@ -45,7 +44,6 @@ namespace dolfin
     // Single-thread assembly (called by each thread)
     static void assemble_thread(GenericTensor* A,
                                 const Form* a,
-                                UFC* ufc,
                                 uint thread_id,
                                 uint num_threads,
                                 const MeshFunction<uint>* cell_domains,
