@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2009-06-22
+// Last changed: 2010-11-04
 
 #ifndef __ASSEMBLER_H
 #define __ASSEMBLER_H
@@ -38,20 +38,20 @@ namespace dolfin
 
   public:
 
-    /// Assemble tensor
+    /// Assemble tensor from given form
     static void assemble(GenericTensor& A,
                          const Form& a,
-                         bool reset_sparsity=true, 
+                         bool reset_sparsity=true,
                          bool add_values=false);
 
-    /// Assemble tensor on sub domain
+    /// Assemble tensor from given form on sub domain
     static void assemble(GenericTensor& A,
                          const Form& a,
                          const SubDomain& sub_domain,
                          bool reset_sparsity=true,
                          bool add_values=false);
 
-    /// Assemble tensor on sub domains
+    /// Assemble tensor from given form on sub domains
     static void assemble(GenericTensor& A,
                          const Form& a,
                          const MeshFunction<uint>* cell_domains,

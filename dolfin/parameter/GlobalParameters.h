@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-02
-// Last changed: 2010-09-05
+// Last changed: 2010-11-04
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -43,6 +43,12 @@ namespace dolfin
       p.add("optimize_use_tensor_cache", false);             // Store tensors in cache for reuse
       p.add("optimize", false);                              // All of the above
 
+      // Multi-core
+      p.add("num_threads", 1);                               // Number of threads to run
+
+      // Graph partitioner
+      p.add("mesh_partitioner", "ParMETIS");
+
       // Linear algebra
       std::set<std::string> allowed_backends;
       std::string default_backend("uBLAS");
@@ -69,9 +75,6 @@ namespace dolfin
       #else
       p.add("floating_point_precision", 16);                 // Use double precision when GMP is not available
       #endif
-
-      // Graph partitioner
-      p.add("mesh_partitioner", "ParMETIS");
 
       return p;
     }

@@ -1,12 +1,13 @@
-// Copyright (C) 2007-2010 Anders Logg.
+// Copyright (C) 2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2007-2009
-// Modified by Ola Skavhaug, 2007-2009
-// Modified by Kent-Andre Mardal, 2008
+// Based on a prototype implementation by Didem Unat.
 //
-// First added:  2007-01-17
+// First added:  2010-11-04
 // Last changed: 2010-11-08
+
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -26,83 +27,22 @@
 #include "FiniteElement.h"
 #include "MulticoreAssembler.h"
 #include "AssemblerTools.h"
-#include "Assembler.h"
+#include "MulticoreAssembler.h"
 
 using namespace dolfin;
 
-//----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A,
-                         const Form& a,
-                         bool reset_sparsity,
-                         bool add_values)
-{
-  // Extract boundary indicators (if any)
-  MeshFunction<uint>* exterior_facet_domains
-    = a.mesh().data().mesh_function("exterior facet domains");
-
-  // Assemble
-  assemble(A, a, 0, exterior_facet_domains, 0, reset_sparsity, add_values);
-}
 //-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A,
-                         const Form& a,
-                         const SubDomain& sub_domain,
-                         bool reset_sparsity,
-                         bool add_values)
-{
-  // Extract mesh
-  const Mesh& mesh = a.mesh();
-
-  // Extract cell domains
-  MeshFunction<uint>* cell_domains = 0;
-  if (a.ufc_form().num_cell_integrals() > 0)
-  {
-    cell_domains = new MeshFunction<uint>(mesh, mesh.topology().dim(), 1);
-    sub_domain.mark(*cell_domains, 0);
-  }
-
-  // Extract facet domains
-  MeshFunction<uint>* facet_domains = 0;
-  if (a.ufc_form().num_exterior_facet_integrals() > 0 ||
-      a.ufc_form().num_interior_facet_integrals() > 0)
-  {
-    facet_domains = new MeshFunction<uint>(mesh, mesh.topology().dim() - 1, 1);
-    sub_domain.mark(*facet_domains, 0);
-  }
-
-  // Assemble
-  assemble(A, a, cell_domains, facet_domains, facet_domains, reset_sparsity, add_values);
-
-  // Delete domains
-  delete cell_domains;
-  delete facet_domains;
-}
-//-----------------------------------------------------------------------------
-void Assembler::assemble(GenericTensor& A,
+void MulticoreAssembler::assemble(GenericTensor& A,
                          const Form& a,
                          const MeshFunction<uint>* cell_domains,
                          const MeshFunction<uint>* exterior_facet_domains,
                          const MeshFunction<uint>* interior_facet_domains,
                          bool reset_sparsity,
-                         bool add_values)
+                         bool add_values,
+                         uint num_threads)
 {
-  // All assembler functions above end up calling this function, which
-  // in turn calls the assembler functions below to assemble over
-  // cells, exterior and interior facets. Note the importance of
-  // treating empty mesh functions as null pointers for the PyDOLFIN
-  // interface.
-
-  // Check whether we should call the multi-core assembler
-  const uint num_threads = parameters["num_threads"];
-  if (num_threads > 1)
-  {
-    MulticoreAssembler::assemble(A, a,
-                                 cell_domains,
-                                 exterior_facet_domains,
-                                 interior_facet_domains,
-                                 reset_sparsity, add_values, num_threads);
-    return;
-  }
+  // FIXME: Move more functionality to the assemble_thread below,
+  // FIXME: in particular building the dof map
 
   // Check form
   AssemblerTools::check(a);
@@ -118,24 +58,78 @@ void Assembler::assemble(GenericTensor& A,
   // Initialize global tensor
   AssemblerTools::init_global_tensor(A, a, ufc, reset_sparsity, add_values);
 
-  // Assemble over cells
-  assemble_cells(A, a, ufc, cell_domains, 0);
-
-  // Assemble over exterior facets
-  assemble_exterior_facets(A, a, ufc, exterior_facet_domains, 0);
-
-  // Assemble over interior facets
-  assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
+  // Call multi-thread assembly
+  assemble_threads(&A, &a, &ufc, num_threads,
+                   cell_domains, exterior_facet_domains, interior_facet_domains);
 
   // Finalize assembly of global tensor
   A.apply("add");
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_cells(GenericTensor& A,
-                               const Form& a,
-                               UFC& ufc,
-                               const MeshFunction<uint>* domains,
-                               std::vector<double>* values)
+void MulticoreAssembler::assemble_threads(GenericTensor* A,
+                                          const Form* a,
+                                          UFC* ufc,
+                                          uint num_threads,
+                                          const MeshFunction<uint>* cell_domains,
+                                          const MeshFunction<uint>* exterior_facet_domains,
+                                          const MeshFunction<uint>* interior_facet_domains)
+{
+  info("Starting multi-core assembly with %d threads.", num_threads);
+
+  // List of threads
+  std::vector<boost::thread*> threads;
+
+  // Start threads
+  for (uint p = 0; p < num_threads; p++)
+  {
+    // Create thread
+    boost::thread* thread =
+      new boost::thread(boost::bind(assemble_thread,
+                                    A, a, ufc, p,
+                                    cell_domains,
+                                    exterior_facet_domains,
+                                    interior_facet_domains));
+
+    // Store thread
+    threads.push_back(thread);
+  }
+
+  // Join threads
+  for (uint p = 0; p < num_threads; p++)
+  {
+    threads[p]->join();
+    delete threads[p];
+  }
+}
+//-----------------------------------------------------------------------------
+void MulticoreAssembler::assemble_thread(GenericTensor* A,
+                                         const Form* a,
+                                         UFC* ufc,
+                                         uint thread_id,
+                                         const MeshFunction<uint>* cell_domains,
+                                         const MeshFunction<uint>* exterior_facet_domains,
+                                         const MeshFunction<uint>* interior_facet_domains)
+{
+  // FIXME: More stuff should be done here (in parallel) and not
+  // FIXME: above in the serial assemble function.
+
+  info("Starting assembly in thread %d.", thread_id);
+
+  // Assemble over cells
+  assemble_cells(*A, *a, *ufc, cell_domains, 0);
+
+  // Assemble over exterior facets
+  assemble_exterior_facets(*A, *a, *ufc, exterior_facet_domains, 0);
+
+  // Assemble over interior facets
+  assemble_interior_facets(*A, *a, *ufc, interior_facet_domains, 0);
+}
+//-----------------------------------------------------------------------------
+void MulticoreAssembler::assemble_cells(GenericTensor& A,
+                                        const Form& a,
+                                        UFC& ufc,
+                                        const MeshFunction<uint>* domains,
+                                        std::vector<double>* values)
 {
   // Skip assembly if there are no cell integrals
   if (ufc.form.num_cell_integrals() == 0)
@@ -189,7 +183,7 @@ void Assembler::assemble_cells(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_exterior_facets(GenericTensor& A,
+void MulticoreAssembler::assemble_exterior_facets(GenericTensor& A,
                                          const Form& a,
                                          UFC& ufc,
                                          const MeshFunction<uint>* domains,
@@ -267,11 +261,11 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_interior_facets(GenericTensor& A,
-                                         const Form& a,
-                                         UFC& ufc,
-                                         const MeshFunction<uint>* domains,
-                                         std::vector<double>* values)
+void MulticoreAssembler::assemble_interior_facets(GenericTensor& A,
+                                                  const Form& a,
+                                                  UFC& ufc,
+                                                  const MeshFunction<uint>* domains,
+                                                  std::vector<double>* values)
 {
   // Skip assembly if there are no interior facet integrals
   if (ufc.form.num_interior_facet_integrals() == 0)
