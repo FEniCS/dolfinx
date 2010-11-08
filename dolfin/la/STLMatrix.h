@@ -82,9 +82,10 @@ namespace dolfin
     {
       cols.clear();
       vals.clear();
-
       cols.resize(M);
       vals.resize(N);
+      dims[0] = M;
+      dims[1] = N;
     }
 
     /// Get block of values

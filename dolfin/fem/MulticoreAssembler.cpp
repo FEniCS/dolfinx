@@ -119,7 +119,7 @@ void MulticoreAssembler::assemble_thread(GenericTensor* A,
   UFC ufc(*a);
 
   // Get local range
-  const std::pair<uint, uint> range = MPI::local_range(thread_id, num_threads);
+  const std::pair<uint, uint> range = MPI::local_range(thread_id, A->size(0), num_threads);
 
   info("Starting assembly in thread %d, range [%d, %d].",
        thread_id, range.first, range.second);
