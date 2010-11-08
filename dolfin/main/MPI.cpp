@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2007-11-30
-// Last changed: 2009-08-19
+// Last changed: 2010-11-08
 
 #include <dolfin/log/dolfin_log.h>
 #include <numeric>
@@ -459,9 +459,13 @@ std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint N)
 std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint process,
                                                                uint N)
 {
-  // Get number of processes and process number
-  const uint _num_processes = num_processes();
-
+  return local_range(process, N, num_processes());
+}
+//-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> dolfin::MPI::local_range(uint process,
+                                                               uint N,
+                                                               uint _num_processes)
+{
   // Compute number of items per process and remainder
   const uint n = N / _num_processes;
   const uint r = N % _num_processes;
