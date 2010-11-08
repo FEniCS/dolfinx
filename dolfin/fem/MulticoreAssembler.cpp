@@ -8,6 +8,7 @@
 
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
+#include <algorithm>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -176,7 +177,8 @@ void MulticoreAssembler::assemble_cells(GenericTensor& A,
     // Check whether rows are in local range
     bool all_in_range = true;
     bool none_in_range = true;
-    for (uint i = 0; i < ufc.local_dimensions[0]; i++)
+    const uint num_rows = ufc.local_dimensions[0];
+    for (uint i = 0; i < num_rows; i++)
     {
       const uint row = ufc.dofs[0][i];
       if (range.first <= row && row < range.second)
@@ -185,17 +187,8 @@ void MulticoreAssembler::assemble_cells(GenericTensor& A,
         all_in_range = false;
     }
 
-    // FIXME: Temporary debuggin
-    if (all_in_range)
-      cout << "All in range" << endl;
-    else if (none_in_range)
-      cout << "None in range" << endl;
-    else
-      cout << "Some in range" << endl;
-
     // Skip if all rows are out-of-range
-    //if (none_in_range)
-    if (!all_in_range)
+    if (none_in_range)
       continue;
 
     // Tabulate cell tensor
@@ -204,12 +197,25 @@ void MulticoreAssembler::assemble_cells(GenericTensor& A,
     // Add entries to global tensor
     if (values && ufc.form.rank() == 0)
     {
-      // Either store values cell-by-cell (currently only available for functionals)
+      // Store values cell-by-cell (currently only available for functionals)
       (*values)[cell->index()] = ufc.A[0];
     }
     else
     {
-      // Or add to the global tensor
+      // Extract relevant rows if not all rows are in range
+      if (!all_in_range)
+      {
+        uint k = 0;
+        for (uint i = 0; i < num_rows; i++)
+        {
+          const uint row = ufc.dofs[0][i];
+          if (range.first <= row && row < range.second)
+            ufc.dofs[0][k++] = ufc.dofs[0][i];
+        }
+        ufc.local_dimensions[0] = k;
+      }
+
+      // Add to global tensor
       A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
     }
     p++;

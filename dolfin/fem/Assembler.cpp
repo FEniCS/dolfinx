@@ -183,7 +183,7 @@ void Assembler::assemble_cells(GenericTensor& A,
     }
     else
     {
-      // Or add to the global tensor
+      // Or add to global tensor
       A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
     }
     p++;
