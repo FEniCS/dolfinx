@@ -4,7 +4,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-09
-// Last changed: 2010-03-02
+// Last changed: 2010-11-08
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -145,10 +145,10 @@ namespace dolfin
     /// Check if iterator has reached the end
     bool end() const { return _pos >= pos_end; }
 
-    ///Provide a safeguard iterator pointing beyond the end of an iteration
-    ///process, either iterating over the mesh /or incident entities. Added to
-    ///be bit more like STL iteratoren, since many algorithms rely on a kind of
-    ///beyond iterator.
+    /// Provide a safeguard iterator pointing beyond the end of an iteration
+    /// process, either iterating over the mesh /or incident entities. Added to
+    /// be bit more like STL iterators, since many algorithms rely on a kind of
+    /// beyond iterator.
     MeshEntityIterator end_iterator()
     {
       MeshEntityIterator
@@ -174,8 +174,8 @@ namespace dolfin
     /// c1 looks to be an iterator over the entities around c0 when it is in
     /// fact a copy of c0.
 
-//    MeshEntityIterator(const MeshEntityIterator& entity) :  entity(entity.entity.mesh(), 0, 0), _pos(0)
-//    { error("Illegal use of mesh entity iterator."); }
+    //    MeshEntityIterator(const MeshEntityIterator& entity) :  entity(entity.entity.mesh(), 0, 0), _pos(0)
+    //    { error("Illegal use of mesh entity iterator."); }
 
     /// Set pos to end position. To create a kind of mesh.end() iterator.
     void set_end()
