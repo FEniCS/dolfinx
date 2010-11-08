@@ -77,5 +77,4 @@ file = File("poisson.pvd")
 file << u_proj
 
 # Plot solution
-#plot(u_proj, interactive=True)
-
+plot(u_proj, interactive=True)

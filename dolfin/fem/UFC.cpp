@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2009
 //
 // First added:  2007-01-17
-// Last changed: 2009-10-03
+// Last changed: 2010-11-08
 
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -192,6 +192,10 @@ void UFC::update(const Cell& cell)
   // Update UFC cell
   this->cell.update(cell);
 
+  // Update local dimensions
+  for (uint i = 0; i < form.rank(); i++)
+    local_dimensions[i] = dolfin_form.function_space(i)->dofmap().local_dimension(this->cell);
+
   // Restrict coefficients to cell
   for (uint i = 0; i < coefficients.size(); ++i)
     coefficients[i]->restrict(w[i], *coefficient_elements[i], cell,
@@ -202,6 +206,10 @@ void UFC::update(const Cell& cell, uint local_facet)
 {
   // Update UFC cell
   this->cell.update(cell);
+
+  // Update local dimensions
+  for (uint i = 0; i < form.rank(); i++)
+    local_dimensions[i] = dolfin_form.function_space(i)->dofmap().local_dimension(this->cell);
 
   // Restrict coefficients to facet
   for (uint i = 0; i < coefficients.size(); ++i)
@@ -215,6 +223,12 @@ void UFC::update(const Cell& cell0, uint local_facet0,
   // Update UFC cells
   this->cell0.update(cell0);
   this->cell1.update(cell1);
+
+  // Update local dimensions
+  for (uint i = 0; i < form.rank(); i++)
+    macro_local_dimensions[i] =
+      dolfin_form.function_space(i)->dofmap().local_dimension(this->cell0) +
+      dolfin_form.function_space(i)->dofmap().local_dimension(this->cell1);
 
   // Restrict coefficients to facet
   for (uint i = 0; i < coefficients.size(); ++i)
