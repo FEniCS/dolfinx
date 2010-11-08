@@ -7,7 +7,7 @@
 // Modified by Niclas Jansson, 2009.
 //
 // First added:  2007-11-30
-// Last changed: 2010-11-08
+// Last changed: 2010-11-09
 
 #ifndef __MPI_DOLFIN_WRAPPER_H
 #define __MPI_DOLFIN_WRAPPER_H
@@ -136,11 +136,13 @@ namespace dolfin
 
     /// Return local range for given process, splitting [0, N - 1] into
     /// num_processes() portions of almost equal size
-    static std::pair<uint, uint> local_range(uint process, uint N);
+    static std::pair<uint, uint> local_range(uint process,
+                                             uint N);
 
     /// Return local range for given process, splitting [0, N - 1] into
     /// num_processes portions of almost equal size
-    static std::pair<uint, uint> local_range(uint process, uint N,
+    static std::pair<uint, uint> local_range(uint process,
+                                             uint N,
                                              uint num_processes);
 
     /// Return which process owns index (inverse of local_range)
