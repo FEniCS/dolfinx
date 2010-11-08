@@ -177,10 +177,13 @@ void Assembler::assemble_cells(GenericTensor& A,
 
     // Add entries to global tensor
     if (values && ufc.form.rank() == 0)
+    {
+      // Either store values cell-by-cell (currently only available for functionals)
       (*values)[cell->index()] = ufc.A[0];
+    }
     else
     {
-      // Get local dimensions
+      // Or add to the global tensor
       for (uint i = 0; i < ufc.form.rank(); i++)
         ufc.local_dimensions[i] = a.function_space(i)->dofmap().local_dimension(ufc.cell);
       A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);

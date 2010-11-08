@@ -185,9 +185,6 @@ void MulticoreAssembler::assemble_cells(GenericTensor& A,
         all_in_range = false;
     }
 
-    if (!all_in_range)
-      continue;
-
     // FIXME: Temporary debuggin
     if (all_in_range)
       cout << "All in range" << endl;
@@ -195,6 +192,11 @@ void MulticoreAssembler::assemble_cells(GenericTensor& A,
       cout << "None in range" << endl;
     else
       cout << "Some in range" << endl;
+
+    // Skip if all rows are out-of-range
+    //if (none_in_range)
+    if (!all_in_range)
+      continue;
 
     // Tabulate cell tensor
     integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
