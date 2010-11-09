@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-07-02
-// Last changed: 2010-11-04
+// Last changed: 2010-11-09
 
 #ifndef __GLOBAL_PARAMETERS_H
 #define __GLOBAL_PARAMETERS_H
@@ -44,7 +44,7 @@ namespace dolfin
       p.add("optimize", false);                              // All of the above
 
       // Multi-core
-      p.add("num_threads", 1);                               // Number of threads to run
+      p.add("num_threads", 0);                               // Number of threads to run, 0 = run serial version
 
       // Graph partitioner
       p.add("mesh_partitioner", "ParMETIS");

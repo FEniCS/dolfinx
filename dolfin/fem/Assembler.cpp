@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2010-11-08
+// Last changed: 2010-11-09
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -94,7 +94,7 @@ void Assembler::assemble(GenericTensor& A,
 
   // Check whether we should call the multi-core assembler
   const uint num_threads = parameters["num_threads"];
-  if (num_threads > 1)
+  if (num_threads > 0)
   {
     MulticoreAssembler::assemble(A, a,
                                  cell_domains,

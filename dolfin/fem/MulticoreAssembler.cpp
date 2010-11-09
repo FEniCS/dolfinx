@@ -4,7 +4,7 @@
 // Based on a prototype implementation by Didem Unat.
 //
 // First added:  2010-11-04
-// Last changed: 2010-11-08
+// Last changed: 2010-11-09
 
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
@@ -151,6 +151,8 @@ void MulticoreAssembler::assemble_cells(GenericTensor& A,
 
   // Cell integral
   ufc::cell_integral* integral = ufc.cell_integrals[0];
+
+  //return;
 
   // Assemble over cells
   Progress p(AssemblerTools::progress_message(A.rank(), "cells"), mesh.num_cells());
