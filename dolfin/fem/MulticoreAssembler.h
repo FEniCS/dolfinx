@@ -4,7 +4,7 @@
 // Based on a prototype implementation by Didem Unat.
 //
 // First added:  2010-11-04
-// Last changed: 2010-11-08
+// Last changed: 2010-11-10
 
 #ifndef __MULTICORE_ASSEMBLER_H
 #define __MULTICORE_ASSEMBLER_H
@@ -55,6 +55,7 @@ namespace dolfin
                                const Form& a,
                                UFC& ufc,
                                const std::pair<uint, uint>& range,
+                               uint thread_id,
                                const MeshFunction<uint>* domains,
                                std::vector<double>* values);
 
@@ -63,6 +64,7 @@ namespace dolfin
                                          const Form& a,
                                          UFC& ufc,
                                          const std::pair<uint, uint>& range,
+                                         uint thread_id,
                                          const MeshFunction<uint>* domains,
                                          std::vector<double>* values);
 
@@ -71,8 +73,20 @@ namespace dolfin
                                          const Form& a,
                                          UFC& ufc,
                                          const std::pair<uint, uint>& range,
+                                         uint thread_id,
                                          const MeshFunction<uint>* domains,
                                          std::vector<double>* values);
+
+    // Check whether rows are in local range
+    enum RangeCheck {all_in_range, some_in_range, none_in_range};
+    static RangeCheck check_row_range(const UFC& ufc,
+                                      const std::pair<uint, uint>& range,
+                                      uint num_thread);
+
+    // Extract relevant rows if not all rows are in range
+    static void extract_row_range(UFC& ufc,
+                                  const std::pair<uint, uint>& range,
+                                  uint thread_id);
 
   };
 

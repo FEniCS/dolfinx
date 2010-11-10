@@ -4,11 +4,12 @@
 // Based on a prototype implementation by Didem Unat.
 //
 // First added:  2010-11-04
-// Last changed: 2010-11-09
+// Last changed: 2010-11-10
 
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <algorithm>
+#include <sstream>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -125,19 +126,20 @@ void MulticoreAssembler::assemble_thread(GenericTensor* A,
        thread_id, range.first, range.second);
 
   // Assemble over cells
-  assemble_cells(*A, *a, ufc, range, cell_domains, 0);
+  assemble_cells(*A, *a, ufc, range, thread_id, cell_domains, 0);
 
   // Assemble over exterior facets
-  //assemble_exterior_facets(*A, *a, *ufc, range, exterior_facet_domains, 0);
+  //assemble_exterior_facets(*A, *a, *ufc, range, thread_id, exterior_facet_domains, 0);
 
   // Assemble over interior facets
-  //assemble_interior_facets(*A, *a, *ufc, range, interior_facet_domains, 0);
+  //assemble_interior_facets(*A, *a, *ufc, range, thread_id, interior_facet_domains, 0);
 }
 //-----------------------------------------------------------------------------
 void MulticoreAssembler::assemble_cells(GenericTensor& A,
                                         const Form& a,
                                         UFC& ufc,
                                         const std::pair<uint, uint>& range,
+                                        uint thread_id,
                                         const MeshFunction<uint>* domains,
                                         std::vector<double>* values)
 {
@@ -152,10 +154,8 @@ void MulticoreAssembler::assemble_cells(GenericTensor& A,
   // Cell integral
   ufc::cell_integral* integral = ufc.cell_integrals[0];
 
-  //return;
-
   // Assemble over cells
-  Progress p(AssemblerTools::progress_message(A.rank(), "cells"), mesh.num_cells());
+  //Progress p(AssemblerTools::progress_message(A.rank(), "cells"), mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Get integral for sub domain (if any)
@@ -179,20 +179,10 @@ void MulticoreAssembler::assemble_cells(GenericTensor& A,
       a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
 
     // Check whether rows are in local range
-    bool all_in_range = true;
-    bool none_in_range = true;
-    const uint num_rows = ufc.local_dimensions[0];
-    for (uint i = 0; i < num_rows; i++)
-    {
-      const uint row = ufc.dofs[0][i];
-      if (range.first <= row && row < range.second)
-        none_in_range = false;
-      else
-        all_in_range = false;
-    }
+    MulticoreAssembler::RangeCheck range_check = check_row_range(ufc, range, thread_id);
 
     // Skip if all rows are out-of-range
-    if (none_in_range)
+    if (range_check == none_in_range)
       continue;
 
     // Tabulate cell tensor
@@ -207,22 +197,13 @@ void MulticoreAssembler::assemble_cells(GenericTensor& A,
     else
     {
       // Extract relevant rows if not all rows are in range
-      if (!all_in_range)
-      {
-        uint k = 0;
-        for (uint i = 0; i < num_rows; i++)
-        {
-          const uint row = ufc.dofs[0][i];
-          if (range.first <= row && row < range.second)
-            ufc.dofs[0][k++] = ufc.dofs[0][i];
-        }
-        ufc.local_dimensions[0] = k;
-      }
+      if (range_check == some_in_range)
+        extract_row_range(ufc, range, thread_id);
 
       // Add to global tensor
       A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
     }
-    p++;
+    //p++;
   }
 }
 //-----------------------------------------------------------------------------
@@ -230,6 +211,7 @@ void MulticoreAssembler::assemble_exterior_facets(GenericTensor& A,
                                                   const Form& a,
                                                   UFC& ufc,
                                                   const std::pair<uint, uint>& range,
+                                                  uint thread_id,
                                                   const MeshFunction<uint>* domains,
                                                   std::vector<double>* values)
 {
@@ -262,7 +244,7 @@ void MulticoreAssembler::assemble_exterior_facets(GenericTensor& A,
     // Only consider exterior facets
     if (facet->num_entities(D) == 2 || (exterior_facets && !(*exterior_facets)[*facet]))
     {
-      p++;
+      //p++;
       continue;
     }
 
@@ -299,7 +281,7 @@ void MulticoreAssembler::assemble_exterior_facets(GenericTensor& A,
     // Add entries to global tensor
     A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
 
-    p++;
+    //p++;
   }
 }
 //-----------------------------------------------------------------------------
@@ -307,6 +289,7 @@ void MulticoreAssembler::assemble_interior_facets(GenericTensor& A,
                                                   const Form& a,
                                                   UFC& ufc,
                                                   const std::pair<uint, uint>& range,
+                                                  uint thread_id,
                                                   const MeshFunction<uint>* domains,
                                                   std::vector<double>* values)
 {
@@ -336,13 +319,13 @@ void MulticoreAssembler::assemble_interior_facets(GenericTensor& A,
           facet_orientation);
 
   // Assemble over interior facets (the facets of the mesh)
-  Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"), mesh.num_facets());
+  //Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"), mesh.num_facets());
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Only consider interior facets
     if (!facet->interior())
     {
-      p++;
+      //p++;
       continue;
     }
 
@@ -386,7 +369,77 @@ void MulticoreAssembler::assemble_interior_facets(GenericTensor& A,
     // Add entries to global tensor
     A.add(ufc.macro_A.get(), ufc.macro_local_dimensions.get(), ufc.macro_dofs);
 
-    p++;
+    //p++;
   }
+}
+//-----------------------------------------------------------------------------
+MulticoreAssembler::RangeCheck
+MulticoreAssembler::check_row_range(const UFC& ufc,
+                                    const std::pair<uint, uint>& range,
+                                    uint thread_id)
+{
+  // Note: The thread_id argument is not really needed but is useful
+  // for debugging.
+
+  // Iterate over rows
+  bool _all_in_range = true;
+  bool _none_in_range = true;
+  for (uint i = 0; i < ufc.local_dimensions[0]; i++)
+  {
+    const uint row = ufc.dofs[0][i];
+    if (range.first <= row && row < range.second)
+      _none_in_range = false;
+    else
+      _all_in_range = false;
+  }
+
+  // Check range
+  RangeCheck range_check = some_in_range;
+  if (_all_in_range)
+    range_check = all_in_range;
+  if (_none_in_range)
+    range_check = none_in_range;
+
+  // Debugging
+  std::stringstream s;
+  s << "process " << thread_id << ": rows = ";
+  for (uint i = 0; i < ufc.local_dimensions[0]; i++)
+  {
+    const uint row = ufc.dofs[0][i];
+    s << " " << row;
+  }
+  s << " range = [" << range.first << ", " << range.second << " ]";
+  s << " range_check = " << range_check;
+  cout << s.str() << endl;
+
+  return range_check;
+}
+//-----------------------------------------------------------------------------
+void MulticoreAssembler::extract_row_range(UFC& ufc,
+                                           const std::pair<uint, uint>& range,
+                                           uint thread_id)
+{
+  // Note: The thread_id argument is not really needed but is useful
+  // for debugging.
+
+  // Shrink list of row indices
+  uint k = 0;
+  for (uint i = 0; i < ufc.local_dimensions[0]; i++)
+  {
+    const uint row = ufc.dofs[0][i];
+    if (range.first <= row && row < range.second)
+      ufc.dofs[0][k++] = ufc.dofs[0][i];
+  }
+  ufc.local_dimensions[0] = k;
+
+  // Debugging
+  std::stringstream s;
+  s << "process " << thread_id << ": rows in range = ";
+  for (uint i = 0; i < ufc.local_dimensions[0]; i++)
+  {
+    const uint row = ufc.dofs[0][i];
+    s << " " << row;
+  }
+  cout << s.str() << endl;
 }
 //-----------------------------------------------------------------------------

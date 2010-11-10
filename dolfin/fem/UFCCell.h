@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2009-10-08
+// Last changed: 2010-11-09
 
 #ifndef __UFC_CELL_H
 #define __UFC_CELL_H
