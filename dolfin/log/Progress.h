@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2003-03-14
-// Last changed: 2010-06-28
+// Last changed: 2010-11-10
 
 #ifndef __PROGRESS_H
 #define __PROGRESS_H
@@ -39,6 +39,9 @@ namespace dolfin
   ///           ...
   ///           p = t / T;
   ///         }
+
+  // FIXME: Replace implementation with wrapper for boost::progress_display
+  // FIXME: See http://www.boost.org/doc/libs/1_42_0/libs/timer/timer.htm
 
   class Progress
   {
