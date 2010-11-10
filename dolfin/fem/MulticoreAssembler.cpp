@@ -401,6 +401,7 @@ MulticoreAssembler::check_row_range(const UFC& ufc,
     range_check = none_in_range;
 
   // Debugging
+  /*
   std::stringstream s;
   s << "process " << thread_id << ": rows = ";
   for (uint i = 0; i < ufc.local_dimensions[0]; i++)
@@ -408,9 +409,10 @@ MulticoreAssembler::check_row_range(const UFC& ufc,
     const uint row = ufc.dofs[0][i];
     s << " " << row;
   }
-  s << " range = [" << range.first << ", " << range.second << " ]";
+  s << " range = [" << range.first << ", " << range.second << "]";
   s << " range_check = " << range_check;
   cout << s.str() << endl;
+  */
 
   return range_check;
 }
@@ -422,17 +424,28 @@ void MulticoreAssembler::extract_row_range(UFC& ufc,
   // Note: The thread_id argument is not really needed but is useful
   // for debugging.
 
+  // Compute stride
+  uint stride = 1;
+  for (uint i = 1; i < ufc.form.rank(); i++)
+    stride *= ufc.local_dimensions[i];
+
   // Shrink list of row indices
   uint k = 0;
-  for (uint i = 0; i < ufc.local_dimensions[0]; i++)
+  double* block = ufc.A.get();
+    for (uint i = 0; i < ufc.local_dimensions[0]; i++)
   {
     const uint row = ufc.dofs[0][i];
     if (range.first <= row && row < range.second)
-      ufc.dofs[0][k++] = ufc.dofs[0][i];
+    {
+      ufc.dofs[0][k] = ufc.dofs[0][i];
+      std::copy(block + i*stride, block + (i + 1)*stride, block + k*stride);
+      k++;
+    }
   }
   ufc.local_dimensions[0] = k;
 
   // Debugging
+  /*
   std::stringstream s;
   s << "process " << thread_id << ": rows in range = ";
   for (uint i = 0; i < ufc.local_dimensions[0]; i++)
@@ -441,5 +454,6 @@ void MulticoreAssembler::extract_row_range(UFC& ufc,
     s << " " << row;
   }
   cout << s.str() << endl;
+  */
 }
 //-----------------------------------------------------------------------------
