@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-19
-// Last changed: 2009-09-15
+// Last changed: 2010-11-11
 
 #include <iomanip>
 #include <iostream>
@@ -55,6 +55,7 @@ void Table::set(std::string row, std::string col, double value)
   std::stringstream s;
   s << std::setprecision(5) << value;
   set(row, col, s.str());
+  dvalues[std::make_pair(row, col)] = value;
 }
 //-----------------------------------------------------------------------------
 void Table::set(std::string row, std::string col, std::string value)
@@ -84,6 +85,15 @@ std::string Table::get(std::string row, std::string col) const
   std::map<std::pair<std::string, std::string>, std::string>::const_iterator it = values.find(key);
   if (it == values.end())
     error("Missing table value for entry (\"%s\", \"%s\").", row.c_str(), col.c_str());
+  return it->second;
+}
+//-----------------------------------------------------------------------------
+double Table::get_value(std::string row, std::string col) const
+{
+  std::pair<std::string, std::string> key(row, col);
+  std::map<std::pair<std::string, std::string>, double>::const_iterator it = dvalues.find(key);
+  if (it == dvalues.end())
+    error("Missing double value for entry (\"%s\", \"%s\").", row.c_str(), col.c_str());
   return it->second;
 }
 //-----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-07-19
-// Last changed: 2009-09-15
+// Last changed: 2010-11-11
 
 #ifndef __TABLE_H
 #define __TABLE_H
@@ -60,6 +60,9 @@ namespace dolfin
     /// Get value of table entry
     std::string get(std::string row, std::string col) const;
 
+    /// Get value of table entry
+    double get_value(std::string row, std::string col) const;
+
     /// Return table title
     std::string title() const;
 
@@ -85,8 +88,11 @@ namespace dolfin
     std::vector<std::string> cols;
     std::set<std::string> col_set;
 
-    // Table values
+    // Table values as strings
     std::map<std::pair<std::string, std::string>, std::string> values;
+
+    // Table values as doubles
+    std::map<std::pair<std::string, std::string>, double> dvalues;
 
   };
 
