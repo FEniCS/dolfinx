@@ -57,6 +57,7 @@ namespace dolfin
       t = time() - t;
       LogManager::logger.register_timing(task, t);
       stopped = true;
+      return t;
     }
 
     /// Return value of timer (or time at start if not stopped)
