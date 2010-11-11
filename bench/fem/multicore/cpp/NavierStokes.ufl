@@ -1,0 +1,9 @@
+# The bilinear form for the nonlinear term in Navier-Stokes
+
+element = VectorElement("Lagrange", tetrahedron, 1)
+
+u = TrialFunction(element)
+v = TestFunction(element)
+w = Coefficient(element)
+
+a = inner(v, grad(u)*w)*dx

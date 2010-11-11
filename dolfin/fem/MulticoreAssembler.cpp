@@ -4,7 +4,7 @@
 // Based on a prototype implementation by Didem Unat.
 //
 // First added:  2010-11-04
-// Last changed: 2010-11-10
+// Last changed: 2010-11-11
 
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
