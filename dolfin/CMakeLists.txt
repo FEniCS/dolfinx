@@ -180,10 +180,6 @@ endif()
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 
-# Remove duplicates in lists
-list(REMOVE_DUPLICATES DOLFIN_INCLUDE_DIRECTORIES)
-list(REMOVE_DUPLICATES DOLFIN_TARGET_LINK_LIBRARIES)
-
 # Add compiler include directories
 include_directories(${DOLFIN_SOURCE_DIR} ${DOLFIN_INCLUDE_DIRECTORIES})
 
