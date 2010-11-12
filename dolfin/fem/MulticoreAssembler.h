@@ -4,7 +4,7 @@
 // Based on a prototype implementation by Didem Unat.
 //
 // First added:  2010-11-04
-// Last changed: 2010-11-10
+// Last changed: 2010-11-12
 
 #ifndef __MULTICORE_ASSEMBLER_H
 #define __MULTICORE_ASSEMBLER_H
@@ -32,6 +32,20 @@ namespace dolfin
                          uint num_threads);
 
   private:
+
+    // Simle statistics for multi-core assembly
+    /*
+    class PStats
+    {
+    public:
+      PStats() num_all_in_range(0), num_some_in_range(0), num_none_in_range(0) {}
+      uint num_all_in_range;
+      uint num_some_in_range;
+      uint num_none_in_range;
+      std::string str() const
+      { return to_str(num_all_in_range); }
+    };
+    */
 
     // Multi-thread assembly (create and join threads)
     static void assemble_threads(GenericTensor* A,
