@@ -9,6 +9,8 @@
 #ifndef __MULTICORE_ASSEMBLER_H
 #define __MULTICORE_ASSEMBLER_H
 
+#include <dolfin/common/utils.h>
+
 namespace dolfin
 {
 
@@ -34,18 +36,15 @@ namespace dolfin
   private:
 
     // Simle statistics for multi-core assembly
-    /*
     class PStats
     {
     public:
-      PStats() num_all_in_range(0), num_some_in_range(0), num_none_in_range(0) {}
-      uint num_all_in_range;
-      uint num_some_in_range;
-      uint num_none_in_range;
-      std::string str() const
-      { return to_str(num_all_in_range); }
+      PStats() : num_all(0), num_some(0), num_none(0) {}
+      uint num_all, num_some, num_none;
+      const PStats& operator+= (const PStats& p)
+      { num_all += p.num_all; num_some += p.num_some; num_none += p.num_none; return *this; }
+      std::string str() const;
     };
-    */
 
     // Multi-thread assembly (create and join threads)
     static void assemble_threads(GenericTensor* A,
@@ -60,6 +59,7 @@ namespace dolfin
                                 const Form* a,
                                 uint thread_id,
                                 uint num_threads,
+                                PStats* pstats,
                                 const MeshFunction<uint>* cell_domains,
                                 const MeshFunction<uint>* exterior_facet_domains,
                                 const MeshFunction<uint>* interior_facet_domains);
@@ -70,6 +70,7 @@ namespace dolfin
                                UFC& ufc,
                                const std::pair<uint, uint>& range,
                                uint thread_id,
+                               PStats& pstats,
                                const MeshFunction<uint>* domains,
                                std::vector<double>* values);
 
@@ -95,7 +96,8 @@ namespace dolfin
     enum RangeCheck {all_in_range, some_in_range, none_in_range};
     static RangeCheck check_row_range(const UFC& ufc,
                                       const std::pair<uint, uint>& range,
-                                      uint num_thread);
+                                      uint num_thread,
+                                      PStats& pstats);
 
     // Extract relevant rows if not all rows are in range
     static void extract_row_range(UFC& ufc,

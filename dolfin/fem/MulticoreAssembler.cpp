@@ -81,6 +81,7 @@ void MulticoreAssembler::assemble_threads(GenericTensor* A,
 
   // List of threads
   std::vector<boost::thread*> threads;
+  std::vector<PStats> pstats(num_threads);
 
   // Start threads
   for (uint p = 0; p < num_threads; p++)
@@ -88,7 +89,7 @@ void MulticoreAssembler::assemble_threads(GenericTensor* A,
     // Create thread
     boost::thread* thread =
       new boost::thread(boost::bind(assemble_thread,
-                                    A, a, p, num_threads,
+                                    A, a, p, num_threads, &pstats[p],
                                     cell_domains,
                                     exterior_facet_domains,
                                     interior_facet_domains));
@@ -102,13 +103,18 @@ void MulticoreAssembler::assemble_threads(GenericTensor* A,
   {
     threads[p]->join();
     delete threads[p];
+    if (p > 0) pstats[0] += pstats[p];
   }
+
+  // Display statistics
+  cout << "Multi-core stats (total): " << pstats[0].str() << endl;
 }
 //-----------------------------------------------------------------------------
 void MulticoreAssembler::assemble_thread(GenericTensor* A,
                                          const Form* a,
                                          uint thread_id,
                                          uint num_threads,
+                                         PStats* pstats,
                                          const MeshFunction<uint>* cell_domains,
                                          const MeshFunction<uint>* exterior_facet_domains,
                                          const MeshFunction<uint>* interior_facet_domains)
@@ -126,13 +132,16 @@ void MulticoreAssembler::assemble_thread(GenericTensor* A,
        thread_id, range.first, range.second);
 
   // Assemble over cells
-  assemble_cells(*A, *a, ufc, range, thread_id, cell_domains, 0);
+  assemble_cells(*A, *a, ufc, range, thread_id, *pstats, cell_domains, 0);
 
   // Assemble over exterior facets
   //assemble_exterior_facets(*A, *a, *ufc, range, thread_id, exterior_facet_domains, 0);
 
   // Assemble over interior facets
   //assemble_interior_facets(*A, *a, *ufc, range, thread_id, interior_facet_domains, 0);
+
+  // Display statistics
+  cout << "Multi-core stats (thread " << thread_id << "): " << pstats->str() << endl;
 }
 //-----------------------------------------------------------------------------
 void MulticoreAssembler::assemble_cells(GenericTensor& A,
@@ -140,6 +149,7 @@ void MulticoreAssembler::assemble_cells(GenericTensor& A,
                                         UFC& ufc,
                                         const std::pair<uint, uint>& range,
                                         uint thread_id,
+                                        PStats& pstats,
                                         const MeshFunction<uint>* domains,
                                         std::vector<double>* values)
 {
@@ -179,7 +189,7 @@ void MulticoreAssembler::assemble_cells(GenericTensor& A,
       a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
 
     // Check whether rows are in local range
-    MulticoreAssembler::RangeCheck range_check = check_row_range(ufc, range, thread_id);
+    MulticoreAssembler::RangeCheck range_check = check_row_range(ufc, range, thread_id, pstats);
 
     // Skip if all rows are out-of-range
     if (range_check == none_in_range)
@@ -376,7 +386,8 @@ void MulticoreAssembler::assemble_interior_facets(GenericTensor& A,
 MulticoreAssembler::RangeCheck
 MulticoreAssembler::check_row_range(const UFC& ufc,
                                     const std::pair<uint, uint>& range,
-                                    uint thread_id)
+                                    uint thread_id,
+                                    PStats& pstats)
 {
   // Note: The thread_id argument is not really needed but is useful
   // for debugging.
@@ -396,9 +407,20 @@ MulticoreAssembler::check_row_range(const UFC& ufc,
   // Check range
   RangeCheck range_check = some_in_range;
   if (_all_in_range)
+  {
     range_check = all_in_range;
-  if (_none_in_range)
+    pstats.num_all++;
+  }
+  else if (_none_in_range)
+  {
     range_check = none_in_range;
+    pstats.num_none++;
+  }
+  else
+  {
+    range_check = some_in_range;
+    pstats.num_some++;
+  }
 
   // Debugging
   /*
@@ -455,5 +477,16 @@ void MulticoreAssembler::extract_row_range(UFC& ufc,
   }
   cout << s.str() << endl;
   */
+}
+//-----------------------------------------------------------------------------
+std::string MulticoreAssembler::PStats::str() const
+{
+  const uint total = num_all + num_some;
+  const double fraction = static_cast<double>(num_some) / static_cast<double>(total);
+  std::stringstream s;
+  s << num_all  << " in range, "
+    << num_some << " partially in range ("
+    << (100.0*fraction) << "%)";
+  return s.str();
 }
 //-----------------------------------------------------------------------------
