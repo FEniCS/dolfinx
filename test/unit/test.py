@@ -26,10 +26,13 @@ if len(sys.argv) == 2 and sys.argv[1] == "--only-python":
 
 # Build prefix list
 prefixes = [""]
-if "RUN_TESTS_IN_PARALLEL" in os.environ and has_mpi() and has_parmetis():
-    prefixes.append("mpirun -np 2 ")
+if "RUN_TESTS_IN_PARALLEL" in os.environ:
+    if "RUN_TESTS_IN_PARALLEL" in os.environ and has_mpi() and has_parmetis():
+        prefixes.append("mpirun -np 2 ")
+    else:
+        print "DOLFIN has not been compiled with MPI and/or ParMETIS. Unit tests will not be run in parallel."
 else:
-    print "DOLFIN has not been compiled with mpi and Parmetis. Unit tests will not be run in parallel."
+    print "RUN_TESTS_IN_PARALLEL environment variable not set. Unit tests will not be run in parallel."
 
 # Run in serial, then in parallel
 for prefix in prefixes:
