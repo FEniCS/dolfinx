@@ -146,7 +146,7 @@ void Assembler::assemble_cells(GenericTensor& A,
   const Mesh& mesh = a.mesh();
 
   // Cell integral
-  ufc::cell_integral* integral = ufc.cell_integrals[0];
+  ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
   // Assemble over cells
   Progress p(AssemblerTools::progress_message(A.rank(), "cells"), mesh.num_cells());
@@ -157,7 +157,7 @@ void Assembler::assemble_cells(GenericTensor& A,
     {
       const uint domain = (*domains)[*cell];
       if (domain < ufc.form.num_cell_integrals())
-        integral = ufc.cell_integrals[domain];
+        integral = ufc.cell_integrals[domain].get();
       else
         continue;
     }
@@ -205,7 +205,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   const Mesh& mesh = a.mesh();
 
   // Exterior facet integral
-  ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0];
+  ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0].get();
 
   // Compute facets and facet - cell connectivity if not already computed
   const uint D = mesh.topology().dim();
@@ -232,7 +232,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     {
       const uint domain = (*domains)[*facet];
       if (domain < ufc.form.num_exterior_facet_integrals())
-        integral = ufc.exterior_facet_integrals[domain];
+        integral = ufc.exterior_facet_integrals[domain].get();
       else
         continue;
     }
@@ -280,7 +280,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   const Mesh& mesh = a.mesh();
 
   // Interior facet integral
-  ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0];
+  ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0].get();
 
   // Compute facets and facet - cell connectivity if not already computed
   mesh.init(mesh.topology().dim() - 1);
@@ -309,13 +309,14 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     {
       const uint domain = (*domains)[*facet];
       if (domain < ufc.form.num_interior_facet_integrals())
-        integral = ufc.interior_facet_integrals[domain];
+        integral = ufc.interior_facet_integrals[domain].get();
       else
         continue;
     }
 
     // Skip integral if zero
-    if (!integral) continue;
+    if (!integral)
+      continue;
 
     // Get cells incident with facet
     std::pair<const Cell, const Cell> cells = facet->adjacent_cells(facet_orientation);

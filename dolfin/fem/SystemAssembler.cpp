@@ -151,12 +151,8 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   const Mesh& mesh = a.mesh();
 
   // Cell integrals
-  ufc::cell_integral* A_integral = A_ufc.cell_integrals[0];
-  ufc::cell_integral* b_integral = b_ufc.cell_integrals[0];
-
-  // Exterior facet integrals
-  ufc::exterior_facet_integral* A_facet_integral = A_ufc.exterior_facet_integrals[0];
-  ufc::exterior_facet_integral* b_facet_integral = b_ufc.exterior_facet_integrals[0];
+  ufc::cell_integral* A_integral = A_ufc.cell_integrals[0].get();
+  ufc::cell_integral* b_integral = b_ufc.cell_integrals[0].get();
 
   Progress p("Assembling system (cell-wise)", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -188,6 +184,8 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
           const uint local_facet = cell->index(*facet);
           if (A_ufc.form.num_exterior_facet_integrals() > 0)
           {
+            ufc::exterior_facet_integral* A_facet_integral = A_ufc.exterior_facet_integrals[0].get();
+
             A_ufc.update(*cell, local_facet);
 
             A_facet_integral->tabulate_tensor(A_ufc.A.get(), A_ufc.w, A_ufc.cell, local_facet);
@@ -196,6 +194,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
           }
           if (b_ufc.form.num_exterior_facet_integrals() > 0)
           {
+            ufc::exterior_facet_integral* b_facet_integral = b_ufc.exterior_facet_integrals[0].get();
             b_ufc.update(*cell, local_facet);
 
             b_facet_integral->tabulate_tensor(b_ufc.A.get(), b_ufc.w, b_ufc.cell, local_facet);
@@ -293,19 +292,19 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
   const std::vector<const GenericFunction*> coefficients = a.coefficients();
 
   // Facet integral
-  ufc::interior_facet_integral* interior_facet_integral = ufc.interior_facet_integrals[0];
+  ufc::interior_facet_integral* interior_facet_integral = ufc.interior_facet_integrals[0].get();
 
   // Get integral for sub domain (if any)
   if (interior_facet_domains && interior_facet_domains->size() > 0)
   {
     const uint domain = (*interior_facet_domains)[facet];
     if (domain < ufc.form.num_interior_facet_integrals())
-      interior_facet_integral = ufc.interior_facet_integrals[domain];
+      interior_facet_integral = ufc.interior_facet_integrals[domain].get();
   }
 
   // Get local index of facet with respect to each cell
-  uint local_facet0 = cell0.index(facet);
-  uint local_facet1 = cell1.index(facet);
+  const uint local_facet0 = cell0.index(facet);
+  const uint local_facet1 = cell1.index(facet);
 
   // Update to current pair of cells
   ufc.update(cell0, local_facet0, cell1, local_facet1);
@@ -396,8 +395,8 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
     error("Facet orientation not supported by system assembler.");
 
   // Cell integrals
-  ufc::cell_integral* A_cell_integral = A_ufc.cell_integrals[0];
-  ufc::cell_integral* b_cell_integral = b_ufc.cell_integrals[0];
+  ufc::cell_integral* A_cell_integral = A_ufc.cell_integrals[0].get();
+  ufc::cell_integral* b_cell_integral = b_ufc.cell_integrals[0].get();
 
   // Compute facet contribution to A
   if (A_ufc.form.num_interior_facet_integrals() > 0)
@@ -493,12 +492,12 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
                                const Scratch& data)
 {
   // Cell integrals
-  ufc::cell_integral* A_cell_integral = A_ufc.cell_integrals[0];
-  ufc::cell_integral* b_cell_integral = b_ufc.cell_integrals[0];
+  ufc::cell_integral* A_cell_integral = A_ufc.cell_integrals[0].get();
+  ufc::cell_integral* b_cell_integral = b_ufc.cell_integrals[0].get();
 
   // Facet integrals
-  ufc::exterior_facet_integral* A_facet_integral = A_ufc.exterior_facet_integrals[0];
-  ufc::exterior_facet_integral* b_facet_integral = b_ufc.exterior_facet_integrals[0];
+  ufc::exterior_facet_integral* A_facet_integral = A_ufc.exterior_facet_integrals[0].get();
+  ufc::exterior_facet_integral* b_facet_integral = b_ufc.exterior_facet_integrals[0].get();
 
   const uint local_facet = cell.index(facet);
 

@@ -57,20 +57,22 @@ namespace dolfin
     void update(const Cell& cell0, uint local_facet0,
                 const Cell& cell1, uint local_facet1);
 
-    // std::vector of finite elements for primary arguments
-    FiniteElement** finite_elements;
+    // Finite elements for primary arguments
+    private:
+    std::vector<FiniteElement> finite_elements;
 
-    // std::vector of finite elements for coefficients
-    FiniteElement** coefficient_elements;
+    // Finite elements for coefficients
+    std::vector<FiniteElement> coefficient_elements;
 
-    // std::vector of cell integrals
-    ufc::cell_integral** cell_integrals;
+    // Cell integrals
+    public:
+    std::vector<boost::shared_ptr<ufc::cell_integral> > cell_integrals;
 
-    // std::vector of exterior facet integrals
-    ufc::exterior_facet_integral** exterior_facet_integrals;
+    // Exterior facet integrals
+    std::vector<boost::shared_ptr<ufc::exterior_facet_integral> > exterior_facet_integrals;
 
-    // std::vector of interior facet integrals
-    ufc::interior_facet_integral** interior_facet_integrals;
+    // Interior facet integrals
+    std::vector<boost::shared_ptr<ufc::interior_facet_integral> > interior_facet_integrals;
 
     // Form
     const ufc::form& form;
@@ -94,22 +96,23 @@ namespace dolfin
     // std::vector for local dimensions for each argument
     boost::scoped_array<uint> local_dimensions;
 
-    // std::vector for local dimensions of macro element for primary arguments
+    // Local dimensions of macro element for primary arguments
     boost::scoped_array<uint> macro_local_dimensions;
 
-    // std::vector of global dimensions for primary arguments
+    // Global dimensions for primary arguments
     boost::scoped_array<uint> global_dimensions;
 
-    // std::vector of mapped dofs for primary arguments
+    // Mapped dofs for primary arguments
     uint** dofs;
+    //std::vector<std::vector<uint> > dofs;
 
-    // std::vector of mapped dofs of macro element for primary arguments
+    // Mapped dofs of macro element for primary arguments
     uint** macro_dofs;
 
-    // std::vector of coefficients
+    // Coefficients
     double** w;
 
-    // std::vector of coefficients on macro element
+    // Coefficients on macro element
     double** macro_w;
 
   private:

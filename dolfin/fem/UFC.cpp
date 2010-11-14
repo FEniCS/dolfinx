@@ -35,31 +35,6 @@ UFC::UFC(const UFC& ufc) : form(ufc.dolfin_form.ufc_form()),
 //-----------------------------------------------------------------------------
 UFC::~UFC()
 {
-  // Delete finite elements
-  for (uint i = 0; i < this->form.rank(); i++)
-    delete finite_elements[i];
-  delete [] finite_elements;
-
-  // Delete coefficient finite elements
-  for (uint i = 0; i < this->form.num_coefficients(); i++)
-    delete coefficient_elements[i];
-  delete [] coefficient_elements;
-
-  // Delete cell integrals
-  for (uint i = 0; i < this->form.num_cell_integrals(); i++)
-    delete cell_integrals[i];
-  delete [] cell_integrals;
-
-  // Delete exterior facet integrals
-  for (uint i = 0; i < this->form.num_exterior_facet_integrals(); i++)
-    delete exterior_facet_integrals[i];
-  delete [] exterior_facet_integrals;
-
-  // Delete interior facet integrals
-  for (uint i = 0; i < this->form.num_interior_facet_integrals(); i++)
-    delete interior_facet_integrals[i];
-  delete [] interior_facet_integrals;
-
   // Delete dofs
   for (uint i = 0; i < this->form.rank(); i++)
     delete [] dofs[i];
@@ -84,33 +59,30 @@ UFC::~UFC()
 void UFC::init(const Form& form)
 {
   // Create finite elements
-  finite_elements = new FiniteElement*[this->form.rank()];
   for (uint i = 0; i < this->form.rank(); i++)
   {
     boost::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(i));
-    finite_elements[i] = new FiniteElement(element);
+    finite_elements.push_back( FiniteElement(element) );
   }
+
   // Create finite elements for coefficients
-  coefficient_elements = new FiniteElement*[this->form.num_coefficients()];
   for (uint i = 0; i < this->form.num_coefficients(); i++)
   {
     boost::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(this->form.rank() + i));
-    coefficient_elements[i] = new FiniteElement(element);
+    coefficient_elements.push_back( FiniteElement(element) );
   }
+
   // Create cell integrals
-  cell_integrals = new ufc::cell_integral*[this->form.num_cell_integrals()];
   for (uint i = 0; i < this->form.num_cell_integrals(); i++)
-    cell_integrals[i] = this->form.create_cell_integral(i);
+    cell_integrals.push_back( boost::shared_ptr<ufc::cell_integral>(this->form.create_cell_integral(i)) );
 
   // Create exterior facet integrals
-  exterior_facet_integrals = new ufc::exterior_facet_integral*[this->form.num_exterior_facet_integrals()];
   for (uint i = 0; i < this->form.num_exterior_facet_integrals(); i++)
-    exterior_facet_integrals[i] = this->form.create_exterior_facet_integral(i);
+    exterior_facet_integrals.push_back( boost::shared_ptr<ufc::exterior_facet_integral>(this->form.create_exterior_facet_integral(i)) );
 
   // Create interior facet integrals
-  interior_facet_integrals = new ufc::interior_facet_integral*[this->form.num_interior_facet_integrals()];
   for (uint i = 0; i < this->form.num_interior_facet_integrals(); i++)
-    interior_facet_integrals[i] = this->form.create_interior_facet_integral(i);
+    interior_facet_integrals.push_back( boost::shared_ptr<ufc::interior_facet_integral>(this->form.create_interior_facet_integral(i)) );
 
   // Initialize mesh
   this->mesh.init(form.mesh());
@@ -137,11 +109,6 @@ void UFC::init(const Form& form)
   // Allocate memory for storing local dimensions
   local_dimensions.reset(new uint[this->form.rank()]);
   macro_local_dimensions.reset(new uint[this->form.rank()]);
-  for (uint i = 0; i < this->form.rank(); i++)
-  {
-    local_dimensions[i] = V[i]->dofmap().max_local_dimension();
-    macro_local_dimensions[i] = 2*V[i]->dofmap().max_local_dimension();
-  }
 
   // Initialize global dimensions
   global_dimensions.reset(new uint[this->form.rank()]);
@@ -152,17 +119,21 @@ void UFC::init(const Form& form)
   dofs = new uint*[this->form.rank()];
   for (uint i = 0; i < this->form.rank(); i++)
   {
-    dofs[i] = new uint[local_dimensions[i]];
-    for (uint j = 0; j < local_dimensions[i]; j++)
+    dofs[i] = new uint[V[i]->dofmap().max_local_dimension()];
+    for (uint j = 0; j < V[i]->dofmap().max_local_dimension(); j++)
       dofs[i][j] = 0;
   }
+  //dofs.ressize(this->form.rank());
+  //for (uint i = 0; i < this->form.rank(); i++)
+  //  dof[i].resize(local_dimensions[i]);
 
   // Initialize dofs on macro element
   macro_dofs = new uint*[this->form.rank()];
   for (uint i = 0; i < this->form.rank(); i++)
   {
-    macro_dofs[i] = new uint[macro_local_dimensions[i]];
-    for (uint j = 0; j < macro_local_dimensions[i]; j++)
+    const uint max_dimension = 2*V[i]->dofmap().max_local_dimension();
+    macro_dofs[i] = new uint[max_dimension];
+    for (uint j = 0; j < max_dimension; j++)
       macro_dofs[i][j] = 0;
   }
 
@@ -170,7 +141,7 @@ void UFC::init(const Form& form)
   w = new double*[this->form.num_coefficients()];
   for (uint i = 0; i < this->form.num_coefficients(); i++)
   {
-    const uint n = coefficient_elements[i]->space_dimension();
+    const uint n = coefficient_elements[i].space_dimension();
     w[i] = new double[n];
     for (uint j = 0; j < n; j++)
       w[i][j] = 0.0;
@@ -180,7 +151,7 @@ void UFC::init(const Form& form)
   macro_w = new double*[this->form.num_coefficients()];
   for (uint i = 0; i < this->form.num_coefficients(); i++)
   {
-    const uint n = 2*coefficient_elements[i]->space_dimension();
+    const uint n = 2*coefficient_elements[i].space_dimension();
     macro_w[i] = new double[n];
     for (uint j = 0; j < n; j++)
       macro_w[i][j] = 0.0;
@@ -198,8 +169,10 @@ void UFC::update(const Cell& cell)
 
   // Restrict coefficients to cell
   for (uint i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->restrict(w[i], *coefficient_elements[i], cell,
+  {
+    coefficients[i]->restrict(w[i], coefficient_elements[i], cell,
                               this->cell, -1);
+  }
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell, uint local_facet)
@@ -213,8 +186,10 @@ void UFC::update(const Cell& cell, uint local_facet)
 
   // Restrict coefficients to facet
   for (uint i = 0; i < coefficients.size(); ++i)
-    coefficients[i]->restrict(w[i], *coefficient_elements[i], cell, this->cell,
+  {
+    coefficients[i]->restrict(w[i], coefficient_elements[i], cell, this->cell,
                               local_facet);
+  }
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell0, uint local_facet0,
@@ -226,16 +201,18 @@ void UFC::update(const Cell& cell0, uint local_facet0,
 
   // Update local dimensions
   for (uint i = 0; i < form.rank(); i++)
-    macro_local_dimensions[i] =
-      dolfin_form.function_space(i)->dofmap().local_dimension(this->cell0) +
-      dolfin_form.function_space(i)->dofmap().local_dimension(this->cell1);
+  {
+    macro_local_dimensions[i]
+      = dolfin_form.function_space(i)->dofmap().local_dimension(this->cell0)
+      + dolfin_form.function_space(i)->dofmap().local_dimension(this->cell1);
+  }
 
   // Restrict coefficients to facet
   for (uint i = 0; i < coefficients.size(); ++i)
   {
-    const uint offset = coefficient_elements[i]->space_dimension();
-    coefficients[i]->restrict(macro_w[i],          *coefficient_elements[i], cell0, this->cell0, local_facet0);
-    coefficients[i]->restrict(macro_w[i] + offset, *coefficient_elements[i], cell1, this->cell1, local_facet1);
+    const uint offset = coefficient_elements[i].space_dimension();
+    coefficients[i]->restrict(macro_w[i],          coefficient_elements[i], cell0, this->cell0, local_facet0);
+    coefficients[i]->restrict(macro_w[i] + offset, coefficient_elements[i], cell1, this->cell1, local_facet1);
   }
 }
 //-----------------------------------------------------------------------------
