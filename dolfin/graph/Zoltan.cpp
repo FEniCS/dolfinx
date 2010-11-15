@@ -54,10 +54,11 @@ std::vector<dolfin::uint> ZoltanInterface::local_renumbering_map()
   Zoltan zoltan(MPI::COMM_WORLD);
 
   // Set parameters
-  zoltan.Set_Param( "ORDER_METHOD", "METIS");
-  zoltan.Set_Param( "NUM_GID_ENTRIES", "1");  /* global ID is 1 integer */
-  zoltan.Set_Param( "NUM_LID_ENTRIES", "1");  /* local ID is 1 integer */
-  zoltan.Set_Param( "OBJ_WEIGHT_DIM", "0");   /* omit object weights */
+  //zoltan.Set_Param( "ORDER_METHOD", "METIS");
+  zoltan.Set_Param( "ORDER_METHOD", "SCOTCH");
+  zoltan.Set_Param( "NUM_GID_ENTRIES", "1");  // global ID is 1 integer
+  zoltan.Set_Param( "NUM_LID_ENTRIES", "1");  // local ID is 1 integer
+  zoltan.Set_Param( "OBJ_WEIGHT_DIM", "0");   // omit object weights
 
   // Set call-back functions
   zoltan.Set_Num_Obj_Fn(ZoltanInterface::get_number_of_objects, this);
@@ -73,7 +74,7 @@ std::vector<dolfin::uint> ZoltanInterface::local_renumbering_map()
   // Create array for renumbered vertices
   ZOLTAN_ID_PTR new_id = new ZOLTAN_ID_TYPE[num_global_objects()];
 
-  // Perform re-ordering
+  // Compute re-ordering
   int rc = zoltan.Order(1, num_global_objects(), global_ids, new_id);
 
   // Check for errors
