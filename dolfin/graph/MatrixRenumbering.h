@@ -4,8 +4,8 @@
 // First added:  2010-11-15
 // Last changed:
 
-#ifndef __DOLFIN_ZOLTAN_H
-#define __DOLFIN_ZOLTAN_H
+#ifndef __DOLFIN_ZOLTAN_RENUMBERING_H
+#define __DOLFIN_ZOLTAN_RENUMBERING_H
 
 #ifdef HAS_TRILINOS
 
@@ -18,15 +18,20 @@
 namespace dolfin
 {
 
-  /// This class provides an interface for Zoltan
+  /// This class computes re-ordering based on a SparsityPattern graph
+  /// representation of a sparse matrix. It uses Zoltan, which is part of
+  /// Trilinos.
 
-  class ZoltanInterface
+  class MatrixRenumbering
   {
 
   public:
 
-    /// Build distribted dual graph for mesh
-    ZoltanInterface(const SparsityPattern& sparsity_pattern);
+    /// Constructor
+    MatrixRenumbering(const SparsityPattern& sparsity_pattern);
+
+    /// Compute renumbering for process (map[old] -> new)
+    std::vector<uint> compute_local_renumbering_map();
 
   private:
 
@@ -42,38 +47,32 @@ namespace dolfin
     /// Vertex edges
     const std::vector<Set<uint> >& edges() const;
 
-  public:
-
-    /// Runumbering map on on process (map[old] -> new)
-    std::vector<uint> local_renumbering_map();
-
-  private:
-
     // Zoltan call-back functions
 
-    static int get_number_of_objects(void *data, int *ierr);
+    static int get_number_of_objects(void* data, int* ierr);
 
-    static void get_object_list(void *data, int sizeGID, int sizeLID,
+    static void get_object_list(void* data, int sizeGID, int sizeLID,
                                 ZOLTAN_ID_PTR globalID,
                                 ZOLTAN_ID_PTR localID, int wgt_dim,
-                                float *obj_wgts, int *ierr);
+                                float* obj_wgts, int* ierr);
 
-    static void get_number_edges(void *data, int num_gid_entries,
+    static void get_number_edges(void* data, int num_gid_entries,
                                  int num_lid_entries,
                                  int num_obj, ZOLTAN_ID_PTR global_ids,
-                                 ZOLTAN_ID_PTR local_ids, int *num_edges,
-                                 int *ierr);
+                                 ZOLTAN_ID_PTR local_ids, int* num_edges,
+                                 int* ierr);
 
-    static void get_all_edges(void *data, int num_gid_entries,
+    static void get_all_edges(void* data, int num_gid_entries,
                               int num_lid_entries, int num_obj,
                               ZOLTAN_ID_PTR global_ids,
                               ZOLTAN_ID_PTR local_ids,
-                              int *num_edges,
+                              int* num_edges,
                               ZOLTAN_ID_PTR nbor_global_id,
-                              int *nbor_procs, int wgt_dim,
-                              float *ewgts, int *ierr);
+                              int* nbor_procs, int wgt_dim,
+                              float* ewgts, int* ierr);
 
 
+    // Sparsity pattern
     const SparsityPattern& sparsity_pattern;
 
   };

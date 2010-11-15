@@ -3,6 +3,6 @@
 
 // DOLFIN graph
 
-#include <dolfin/graph/Zoltan.h>
+#include <dolfin/graph/MatrixRenumbering.h>
 
 #endif
