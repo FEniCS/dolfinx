@@ -54,8 +54,8 @@ void SparsityPattern::init(uint rank, const uint* dims)
     return;
 
   // Get local range
-  std::pair<uint, uint> _row_range = local_range(0);
-  std::pair<uint, uint> _col_range = local_range(1);
+  const std::pair<uint, uint> _row_range = local_range(0);
+  const std::pair<uint, uint> _col_range = local_range(1);
   row_range_min = _row_range.first;
   row_range_max = _row_range.second;
   col_range_min = _col_range.first;
@@ -226,8 +226,10 @@ void SparsityPattern::apply()
 
       // Sanity check
       if (I < row_range_min || I >= row_range_max)
+      {
         error("Received illegal sparsity pattern entry for row %d, not in range [%d, %d].",
               I, row_range_min, row_range_max);
+      }
 
       // Subtract offset
       I -= row_range_min;
@@ -237,13 +239,11 @@ void SparsityPattern::apply()
       {
         assert(I < diagonal.size());
         diagonal[I].insert(J);
-        //insert_column(J, diagonal[I]);
       }
       else
       {
         assert(I < off_diagonal.size());
         off_diagonal[I].insert(J);
-        //insert_column(J, off_diagonal[I]);
       }
     }
 
@@ -317,8 +317,8 @@ void SparsityPattern::info_statistics() const
   const uint num_nonzeros_non_local = non_local.size() / 2;
 
   // Count total number of nonzeros
-  const uint num_nonzeros_total =
-    num_nonzeros_diagonal + num_nonzeros_off_diagonal + num_nonzeros_non_local;
+  const uint num_nonzeros_total
+    = num_nonzeros_diagonal + num_nonzeros_off_diagonal + num_nonzeros_non_local;
 
   // Return number of entries
   cout << "Matrix of size " << shape[0] << " x " << shape[1] << " has "

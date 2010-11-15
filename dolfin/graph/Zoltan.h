@@ -25,7 +25,7 @@ namespace dolfin
 
   public:
 
-    /// Build distribted dual graph for mesh
+    /// Create Zoltan object for a graph defined by a sparsity pattern
     ZoltanInterface(const SparsityPattern& sparsity_pattern);
 
   private:

@@ -102,7 +102,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       // Check if we have an interior facet
       if (facet->num_entities(mesh.topology().dim()) != 2)
       {
-	p++;
+        p++;
         continue;
       }
 
