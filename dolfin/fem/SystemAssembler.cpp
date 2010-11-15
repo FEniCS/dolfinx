@@ -241,12 +241,6 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
     // Interior facet
     if (facet->num_entities(mesh.topology().dim()) == 2)
     {
-      // Reset some temp data
-      for (uint i = 0; i < A_ufc.macro_local_dimensions[0]*A_ufc.macro_local_dimensions[1]; i++)
-        A_ufc.macro_A[i] = 0.0;
-      for (uint i = 0; i < b_ufc.macro_local_dimensions[0]; i++)
-        b_ufc.macro_A[i] = 0.0;
-
       // Get cells incident with facet and update UFC objects
       Cell cell0(mesh, facet->entities(mesh.topology().dim())[0]);
       Cell cell1(mesh, facet->entities(mesh.topology().dim())[1]);
@@ -258,21 +252,31 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
       A_ufc.update(cell0, local_facet0, cell1, local_facet1);
       b_ufc.update(cell0, local_facet0, cell1, local_facet1);
 
+      // Reset some temp data
+      for (uint i = 0; i < A_ufc.macro_local_dimensions[0]*A_ufc.macro_local_dimensions[1]; i++)
+        A_ufc.macro_A[i] = 0.0;
+      for (uint i = 0; i < b_ufc.macro_local_dimensions[0]; i++)
+        b_ufc.macro_A[i] = 0.0;
+
       // Assemble interior facet and neighbouring cells if needed
       assemble_interior_facet(A, b, A_ufc, b_ufc, a, L, cell0, cell1, *facet, data);
     }
-
-    // Exterior facet
-    if ( facet->num_entities(mesh.topology().dim()) != 2 )
+    else // Exterior facet
     {
+      // Get mesh cell to which mesh facet belongs (pick first, there is only one)
+      Cell cell(mesh, facet->entities(mesh.topology().dim())[0]);
+
+      // Get local index of facet with respect to the cell
+      const uint local_facet = cell.index(*facet);
+
+      A_ufc.update(cell, local_facet);
+      b_ufc.update(cell, local_facet);
+
       // Reset some temp data
       for (uint i = 0; i < A_ufc.local_dimensions[0]*A_ufc.local_dimensions[1]; i++)
         A_ufc.A[i] = 0.0;
       for (uint i = 0; i < b_ufc.local_dimensions[0]; i++)
         b_ufc.A[i] = 0.0;
-
-      // Get mesh cell to which mesh facet belongs (pick first, there is only one)
-      Cell cell(mesh, facet->entities(mesh.topology().dim())[0]);
 
       // Initialize macro element matrix/vector to zero
       data.zero_cell();
@@ -280,7 +284,6 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
       // Assemble exterior facet and attached cells if needed
       assemble_exterior_facet(A, b, A_ufc, b_ufc, a, L, cell, *facet, data);
     }
-
     p++;
   }
 }
