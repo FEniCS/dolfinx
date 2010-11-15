@@ -494,28 +494,22 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
                                const Cell& cell, const Facet& facet,
                                const Scratch& data)
 {
-  // Cell integrals
-  ufc::cell_integral* A_cell_integral = A_ufc.cell_integrals[0].get();
-  ufc::cell_integral* b_cell_integral = b_ufc.cell_integrals[0].get();
-
-  // Facet integrals
-  ufc::exterior_facet_integral* A_facet_integral = A_ufc.exterior_facet_integrals[0].get();
-  ufc::exterior_facet_integral* b_facet_integral = b_ufc.exterior_facet_integrals[0].get();
-
   const uint local_facet = cell.index(facet);
 
   if (A_ufc.form.num_exterior_facet_integrals() > 0 )
   {
-    A_ufc.update(cell, local_facet);
+    ufc::exterior_facet_integral* A_facet_integral = A_ufc.exterior_facet_integrals[0].get();
 
+    A_ufc.update(cell, local_facet);
     A_facet_integral->tabulate_tensor(A_ufc.A.get(), A_ufc.w, A_ufc.cell, local_facet);
     for (uint i = 0; i < data.A_num_entries; i++)
       data.Ae[i] += A_ufc.A[i];
   }
   if (b_ufc.form.num_exterior_facet_integrals() > 0 )
   {
-    b_ufc.update(cell, local_facet);
+    ufc::exterior_facet_integral* b_facet_integral = b_ufc.exterior_facet_integrals[0].get();
 
+    b_ufc.update(cell, local_facet);
     b_facet_integral->tabulate_tensor(b_ufc.A.get(), b_ufc.w, b_ufc.cell, local_facet);
     for (uint i = 0; i < data.b_num_entries; i++)
       data.be[i] += b_ufc.A[i];
@@ -526,6 +520,8 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
   {
     if (A_ufc.form.num_cell_integrals() > 0 )
     {
+      ufc::cell_integral* A_cell_integral = A_ufc.cell_integrals[0].get();
+
       A_ufc.update(cell);
       A_cell_integral->tabulate_tensor(A_ufc.A.get(), A_ufc.w, A_ufc.cell);
       for (uint i = 0; i < data.A_num_entries; i++)
@@ -534,6 +530,8 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
 
     if (b_ufc.form.num_cell_integrals() > 0 )
     {
+      ufc::cell_integral* b_cell_integral = b_ufc.cell_integrals[0].get();
+
       b_ufc.update(cell);
       b_cell_integral->tabulate_tensor(b_ufc.A.get(), b_ufc.w, b_ufc.cell);
       for (uint i = 0; i < data.b_num_entries; i++)
@@ -543,8 +541,10 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
 
   // Tabulate dofs
   for (uint i = 0; i < A_ufc.form.rank(); i++)
+  {
     a.function_space(i)->dofmap().tabulate_dofs(A_ufc.dofs[i],
                                              A_ufc.cell, cell.index());
+  }
   L.function_space(0)->dofmap().tabulate_dofs(b_ufc.dofs[0],
                                              b_ufc.cell, cell.index());
 
