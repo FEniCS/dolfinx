@@ -3,5 +3,6 @@
 
 // DOLFIN graph
 
+#include <dolfin/graph/Zoltan.h>
 
 #endif

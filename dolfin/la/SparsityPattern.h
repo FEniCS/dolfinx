@@ -11,6 +11,7 @@
 
 #include <vector>
 #include "dolfin/common/Set.h"
+#include "dolfin/common/types.h"
 #include "GenericSparsityPattern.h"
 
 namespace dolfin

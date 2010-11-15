@@ -104,7 +104,6 @@ namespace dolfin
 
     // Mapped dofs for primary arguments
     uint** dofs;
-    //std::vector<std::vector<uint> > dofs;
 
     // Mapped dofs of macro element for primary arguments
     uint** macro_dofs;
