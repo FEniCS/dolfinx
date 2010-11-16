@@ -7,42 +7,17 @@
 #ifdef HAS_TRILINOS
 
 #include "dolfin/log/log.h"
-#include "Zoltan.h"
+#include "CellColoring.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ZoltanInterface::ZoltanInterface(const SparsityPattern& sparsity_pattern)
-      : sparsity_pattern(sparsity_pattern)
+CellColoring::CellColoring(const Mesh& mesh) : mesh(mesh)
 {
-  if (sparsity_pattern.rank() != 2)
-    error("Can only create Zoltan object for SparsityPattern of rank 2.");
-
-  if (sparsity_pattern.size(0) != sparsity_pattern.size(1))
-    error("Can only create Zoltan object square SparsityPattern (for now).");
+  error("CellColoring still being implemented.");
 }
 //-----------------------------------------------------------------------------
-int ZoltanInterface::num_global_objects() const
-{
-  return sparsity_pattern.size(0);
-}
-//-----------------------------------------------------------------------------
-int ZoltanInterface::num_local_objects() const
-{
-  return sparsity_pattern.size(0);
-}
-//-----------------------------------------------------------------------------
-void ZoltanInterface::num_edges_per_vertex(uint* num_edges) const
-{
-  sparsity_pattern.num_nonzeros_diagonal(num_edges);
-}
-//-----------------------------------------------------------------------------
-const std::vector<Set<dolfin::uint> >& ZoltanInterface::edges() const
-{
-  return sparsity_pattern.diagonal_pattern();
-}
-//-----------------------------------------------------------------------------
-std::vector<dolfin::uint> ZoltanInterface::local_renumbering_map()
+MeshFunction<dolfin::uint> CellColoring::compute_local_cell_coloring()
 {
   // Initialise Zoltan
   float version;
@@ -51,37 +26,38 @@ std::vector<dolfin::uint> ZoltanInterface::local_renumbering_map()
   Zoltan_Initialize(argc, argv, &version);
 
   // Create Zoltan object
-  Zoltan zoltan(MPI::COMM_WORLD);
+  Zoltan zoltan;
 
   // Set parameters
-  zoltan.Set_Param( "ORDER_METHOD", "METIS");
-  zoltan.Set_Param( "NUM_GID_ENTRIES", "1");  /* global ID is 1 integer */
-  zoltan.Set_Param( "NUM_LID_ENTRIES", "1");  /* local ID is 1 integer */
-  zoltan.Set_Param( "OBJ_WEIGHT_DIM", "0");   /* omit object weights */
+  //zoltan.Set_Param( "ORDER_METHOD", "METIS");
+  zoltan.Set_Param( "ORDER_METHOD", "SCOTCH");
+  zoltan.Set_Param( "NUM_GID_ENTRIES", "1");  // global ID is 1 integer
+  zoltan.Set_Param( "NUM_LID_ENTRIES", "1");  // local ID is 1 integer
+  zoltan.Set_Param( "OBJ_WEIGHT_DIM", "0");   // omit object weights
 
   // Set call-back functions
-  zoltan.Set_Num_Obj_Fn(ZoltanInterface::get_number_of_objects, this);
-  zoltan.Set_Obj_List_Fn(ZoltanInterface::get_object_list, this);
-  zoltan.Set_Num_Edges_Multi_Fn(ZoltanInterface::get_number_edges, this);
-  zoltan.Set_Edge_List_Multi_Fn(ZoltanInterface::get_all_edges, this);
+  zoltan.Set_Num_Obj_Fn(CellColoring::get_number_of_objects, this);
+  zoltan.Set_Obj_List_Fn(CellColoring::get_object_list, this);
+  zoltan.Set_Num_Edges_Multi_Fn(CellColoring::get_number_edges, this);
+  zoltan.Set_Edge_List_Multi_Fn(CellColoring::get_all_edges, this);
 
   // Create array for global ids that should be renumbered
-  ZOLTAN_ID_PTR  global_ids = new ZOLTAN_ID_TYPE[num_global_objects()];
-  for (int i = 0; i < num_global_objects(); ++i)
+  ZOLTAN_ID_PTR  global_ids = new ZOLTAN_ID_TYPE[num_global_cells()];
+  for (int i = 0; i < num_global_cells(); ++i)
     global_ids[i] = i;
 
   // Create array for renumbered vertices
-  ZOLTAN_ID_PTR new_id = new ZOLTAN_ID_TYPE[num_global_objects()];
+  ZOLTAN_ID_PTR new_id = new ZOLTAN_ID_TYPE[num_global_cells()];
 
-  // Perform re-ordering
-  int rc = zoltan.Order(1, num_global_objects(), global_ids, new_id);
+  // Compute re-ordering
+  int rc = zoltan.Order(1, num_global_cells(), global_ids, new_id);
 
   // Check for errors
   if (rc != ZOLTAN_OK)
     error("Partitioning failed");
 
   // Copy renumber into a vector
-  std::vector<uint> map(num_global_objects());
+  std::vector<uint> map(num_global_cells());
   for (uint i = 0; i < map.size(); ++i)
     map[i] = new_id[i];
 
@@ -89,47 +65,62 @@ std::vector<dolfin::uint> ZoltanInterface::local_renumbering_map()
   delete global_ids;
   delete new_id;
 
-  return map;
+  return MeshFunction<uint>(mesh);
 }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-int ZoltanInterface::get_number_of_objects(void *data, int *ierr)
+int CellColoring::num_global_cells() const
 {
-  ZoltanInterface *objs = (ZoltanInterface *)data;
-  *ierr = ZOLTAN_OK;
-  return objs->num_local_objects();
+  return mesh.num_cells();
 }
 //-----------------------------------------------------------------------------
-void ZoltanInterface::get_object_list(void *data, int sizeGID, int sizeLID,
+int CellColoring::num_local_cells() const
+{
+  return mesh.num_cells();
+}
+//-----------------------------------------------------------------------------
+void CellColoring::num_neighbors(uint* num_neighbors) const
+{
+  error("CellColoring::num_neighbors not implemented.");
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+int CellColoring::get_number_of_objects(void* data, int* ierr)
+{
+  CellColoring *objs = (CellColoring *)data;
+  *ierr = ZOLTAN_OK;
+  return objs->num_local_cells();
+}
+//-----------------------------------------------------------------------------
+void CellColoring::get_object_list(void *data, int sizeGID, int sizeLID,
           ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
           int wgt_dim, float *obj_wgts, int *ierr)
 {
-  ZoltanInterface *objs = (ZoltanInterface *)data;
+  CellColoring *objs = (CellColoring *)data;
   *ierr = ZOLTAN_OK;
-  for (int i = 0; i< objs->num_local_objects(); i++)
+  for (int i = 0; i< objs->num_local_cells(); i++)
   {
     globalID[i] = i;
     localID[i] = i;
   }
 }
 //-----------------------------------------------------------------------------
-void ZoltanInterface::get_number_edges(void *data, int num_gid_entries,
+void CellColoring::get_number_edges(void *data, int num_gid_entries,
                                        int num_lid_entries,
                                        int num_obj, ZOLTAN_ID_PTR global_ids,
                                        ZOLTAN_ID_PTR local_ids, int *num_edges,
                                        int *ierr)
 {
-  ZoltanInterface *objs = (ZoltanInterface *)data;
+  CellColoring *objs = (CellColoring *)data;
 
   //std::cout << "Testing global id entires: " << num_gid_entries << "  " << objs->num_global_objects() << std::endl;
   //std::cout << "Testing local id entires: "  << num_lid_entries << "  " << objs->num_local_objects() << std::endl;
   //assert(num_gid_entries == objs->num_global_objects());
   //assert(num_lid_entries == objs->num_local_objects());
 
-  objs->num_edges_per_vertex(reinterpret_cast<uint*>(num_edges));
+  objs->num_neighbors(reinterpret_cast<uint*>(num_edges));
 }
 //-----------------------------------------------------------------------------
-void ZoltanInterface::get_all_edges(void *data, int num_gid_entries,
+void CellColoring::get_all_edges(void *data, int num_gid_entries,
                               int num_lid_entries, int num_obj,
                               ZOLTAN_ID_PTR global_ids,
                               ZOLTAN_ID_PTR local_ids,
@@ -140,7 +131,9 @@ void ZoltanInterface::get_all_edges(void *data, int num_gid_entries,
 {
   std::cout << "Testing:" << num_gid_entries << "  " << num_lid_entries << std::endl;
 
-  ZoltanInterface *objs = (ZoltanInterface *)data;
+  //CellColoring *objs = (CellColoring *)data;
+
+  /*
   const std::vector<Set<uint> >& edges = objs->edges();
 
   uint sum = 0;
@@ -151,6 +144,7 @@ void ZoltanInterface::get_all_edges(void *data, int num_gid_entries,
       nbor_global_id[sum*num_gid_entries + j] = edges[i][j];
     sum += edges[i].size();
   }
+  */
 }
 //-----------------------------------------------------------------------------
 #endif

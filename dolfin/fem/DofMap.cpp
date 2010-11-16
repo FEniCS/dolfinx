@@ -361,6 +361,31 @@ dolfin::Set<dolfin::uint> DofMap::dofs(const Mesh& mesh, bool sort) const
   return dof_list;
 }
 //-----------------------------------------------------------------------------
+void DofMap::renumber(const std::vector<uint>& renumbering_map)
+{
+  assert(global_dimension() == renumbering_map.size());
+
+  // Update or build ufc-to-dofmap
+  if (ufc_map_to_dofmap.size() == 0)
+  {
+    for (uint i = 0; i < dofmap.size(); ++i)
+      ufc_map_to_dofmap[i] = renumbering_map[ i ];
+  }
+  else
+  {
+    std::map<dolfin::uint, uint>::iterator index_pair;
+    for (index_pair = ufc_map_to_dofmap.begin(); index_pair != ufc_map_to_dofmap.end(); ++index_pair)
+      index_pair->second = renumbering_map[ index_pair->second ];
+  }
+
+  // Re-number dofs for cell
+  for (uint i = 0; i < dofmap.size(); ++i)
+  {
+    for (uint j = 0; j < dofmap[i].size(); ++j)
+      dofmap[i][j] = renumbering_map[ dofmap[i][j] ];
+  }
+}
+//-----------------------------------------------------------------------------
 std::string DofMap::str(bool verbose) const
 {
   // TODO: Display information on parallel stuff

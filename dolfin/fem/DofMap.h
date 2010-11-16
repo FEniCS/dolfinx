@@ -38,6 +38,8 @@ namespace dolfin
   /// larger dof map. A dof map which is a view, can be 'collapsed'
   /// such that the dof indices are contiguous.
 
+  // FIXME: Review function names for parallel dof maps
+
   class DofMap : public GenericDofMap
   {
   public:
@@ -138,6 +140,9 @@ namespace dolfin
     /// Return the set of dof indices
     Set<dolfin::uint> dofs(const Mesh& mesh, bool sort = false) const;
 
+    // Renumber dofs
+    void renumber(const std::vector<uint>& renumbering_map);
+
     /// Return informal string representation (pretty-print)
     std::string str(bool verbose) const;
 
@@ -161,10 +166,10 @@ namespace dolfin
                                 const ufc::mesh ufc_mesh,
                                 const Mesh& dolfin_mesh);
 
-    // Dof map
+    // Dof map (dofs for cell dofmap[i])
     std::vector<std::vector<dolfin::uint> > dofmap;
 
-    // Map from UFC dof numbering to renumbered dof
+    // Map from UFC dof numbering to renumbered dof (ufc_dof, actual_dof)
     std::map<dolfin::uint, uint> ufc_map_to_dofmap;
 
     // UFC dof map
