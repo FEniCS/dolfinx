@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-06-13
-// Last changed: 2010-11-11
+// Last changed: 2010-11-16
 
 #ifndef __TIMER_H
 #define __TIMER_H
