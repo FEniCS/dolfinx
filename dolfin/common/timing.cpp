@@ -5,7 +5,7 @@
 // Last changed: 2010-11-16
 
 // Uncomment this for testing std::clock
-#define _WIN32
+//#define _WIN32
 
 #ifdef _WIN32
 #include <boost/timer.hpp>
