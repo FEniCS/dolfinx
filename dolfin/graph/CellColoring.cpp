@@ -13,7 +13,7 @@
 #include "dolfin/mesh/Facet.h"
 #include "dolfin/mesh/Mesh.h"
 #include "dolfin/mesh/Vertex.h"
-#include "ZoltanGraphColoring.h"
+#include "ZoltanInterface.h"
 #include "CellColoring.h"
 
 using namespace dolfin;
@@ -59,10 +59,10 @@ CellFunction<dolfin::uint> CellColoring::compute_local_cell_coloring() const
   Array<uint> _colors(mesh.num_cells(), colors.values());
 
   // Create coloring object
-  ZoltanGraphColoring graph_color(graph);
+  //ZoltanInterface::graph_color(graph);
 
   // Color cells
-  graph_color.compute_local_vertex_coloring(_colors);
+  ZoltanInterface::compute_local_vertex_coloring(graph, _colors);
 
   return colors;
 }
