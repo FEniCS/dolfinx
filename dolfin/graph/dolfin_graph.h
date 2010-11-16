@@ -4,5 +4,6 @@
 // DOLFIN graph
 
 #include <dolfin/graph/MatrixRenumbering.h>
+#include <dolfin/graph/CellColoring.h>
 
 #endif

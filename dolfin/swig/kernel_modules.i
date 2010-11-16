@@ -149,6 +149,8 @@
 %include "dolfin/swig/function_post.i"
 
 // DOLFIN headers included from graph
+%include "dolfin/graph/MatrixRenumbering.h"
+%include "dolfin/graph/CellColoring.h"
 
 // DOLFIN headers included from plot
 %include "dolfin/plot/FunctionPlotData.h"
@@ -188,7 +190,9 @@
 %include "dolfin/fem/assemble.h"
 %include "dolfin/fem/Form.h"
 %include "dolfin/fem/Assembler.h"
+%include "dolfin/fem/SparsityPatternBuilder.h"
 %include "dolfin/fem/SystemAssembler.h"
+%include "dolfin/fem/MulticoreAssembler.h"
 %include "dolfin/fem/VariationalProblem.h"
 %include "dolfin/swig/fem_post.i"
 

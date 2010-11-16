@@ -28,6 +28,15 @@ bool has_slepc()
 #endif
 }
 
+bool has_trilinos()
+{
+#ifdef HAS_TRILINOS
+  return true;
+#else
+  return false;
+#endif
+}
+
 bool has_scotch()
 {
 #ifdef HAS_SCOTCH
@@ -104,7 +113,7 @@ bool has_la_backend(std::string backend)
   {
 #ifdef HAS_PETSC
     return true;
-#else 
+#else
     return false;
 #endif
   }
@@ -112,7 +121,7 @@ bool has_la_backend(std::string backend)
   {
 #ifdef HAS_TRILINOS
     return true;
-#else 
+#else
     return false;
 #endif
   }
@@ -120,7 +129,7 @@ bool has_la_backend(std::string backend)
   {
 #ifdef HAS_MTL4
     return true;
-#else 
+#else
     return false;
 #endif
   }

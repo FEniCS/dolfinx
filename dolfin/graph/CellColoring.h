@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2010-11-15
-// Last changed:
+// Last changed: 2010-11-16
 
 #ifndef __DOLFIN_ZOLTAN_CELL_COLORING_H
 #define __DOLFIN_ZOLTAN_CELL_COLORING_H
@@ -13,14 +13,16 @@
 #include <boost/unordered_set.hpp>
 #include <zoltan_cpp.h>
 #include "dolfin/common/types.h"
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/Cell.h>
 
 namespace dolfin
 {
 
-  /// This class computes cell colorings for a mesh. It uses Zoltan, which is
-  /// part of Trilinos.
+  class Mesh;
+
+  /// This class computes cell colorings for a local mesh. It supports vertex,
+  /// facet and edge-based colorings.  Zoltan (part of Trilinos) is used to
+  /// the colorings.
 
   class CellColoring
   {
@@ -28,12 +30,15 @@ namespace dolfin
   public:
 
     /// Constructor
-    CellColoring(const Mesh& mesh);
+    CellColoring(const Mesh& mesh, std::string type="vertex");
 
     /// Compute cell colors
-    MeshFunction<uint> compute_local_cell_coloring();
+    CellFunction<uint> compute_local_cell_coloring();
 
   private:
+
+    // Build graph that is to be colored
+    template<class T> void build_graph();
 
     /// Number of global cells (graph vertices)
     int num_global_cells() const;
@@ -44,9 +49,13 @@ namespace dolfin
     /// Number of neighboring cells
     void num_neighbors(uint* num_neighbors) const;
 
+    // Mesh
+    const Mesh& mesh;
 
-    // Zoltan call-back functborsions
+    // Graoh (cell neighbours)
+    std::vector<boost::unordered_set<uint> > neighbours;
 
+    // Zoltan call-back functions
     static int get_number_of_objects(void* data, int* ierr);
 
     static void get_object_list(void* data, int sizeGID, int sizeLID,
@@ -69,12 +78,6 @@ namespace dolfin
                               int* nbor_procs, int wgt_dim,
                               float* ewgts, int* ierr);
 
-
-    // Mesh
-    const Mesh& mesh;
-
-    // Cell neighbours
-    std::vector<boost::unordered_set<uint> > neighbours;
 
   };
 

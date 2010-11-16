@@ -11,5 +11,7 @@
 %import(module="dolfin.cpp") "dolfin/fem/assemble.h"
 %import(module="dolfin.cpp") "dolfin/fem/Form.h"
 %import(module="dolfin.cpp") "dolfin/fem/Assembler.h"
+%import(module="dolfin.cpp") "dolfin/fem/SparsityPatternBuilder.h"
 %import(module="dolfin.cpp") "dolfin/fem/SystemAssembler.h"
+%import(module="dolfin.cpp") "dolfin/fem/MulticoreAssembler.h"
 %import(module="dolfin.cpp") "dolfin/fem/VariationalProblem.h"

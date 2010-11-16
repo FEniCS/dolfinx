@@ -2,22 +2,56 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2010-11-15
-// Last changed:
+// Last changed: 2010-11-16
 
 #ifdef HAS_TRILINOS
 
+#include <boost/foreach.hpp>
+
 #include "dolfin/log/log.h"
+#include "dolfin/common/Timer.h"
+#include "dolfin/mesh/Cell.h"
+#include "dolfin/mesh/Edge.h"
+#include "dolfin/mesh/Facet.h"
+#include "dolfin/mesh/Mesh.h"
+#include "dolfin/mesh/Vertex.h"
 #include "CellColoring.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-CellColoring::CellColoring(const Mesh& mesh) : mesh(mesh)
+CellColoring::CellColoring(const Mesh& mesh, std::string type) : mesh(mesh)
 {
-  error("CellColoring still being implemented.");
+  if (type != "vertex" && type != "facet" && type != "edge")
+    error("Coloring type unkown. Options are \"vertex\", \"facet\" or \"edge\".");
+
+  // Resize graph data
+  neighbours.resize(mesh.num_cells());
+
+  // Build graph
+  if (type == "vertex")
+    build_graph<VertexIterator>();
+  else if (type == "facet")
+  {
+    // Compute facets and facet - cell connectivity if not already computed
+    const uint D = mesh.topology().dim();
+    mesh.init(D - 1);
+    mesh.init(D - 1, D);
+
+    build_graph<FacetIterator>();
+  }
+  else if (type == "edge")
+  {
+    // Compute edges and edges - cell connectivity if not already computed
+    const uint D = mesh.topology().dim();
+    mesh.init(1);
+    mesh.init(1, D);
+
+    build_graph<EdgeIterator>();
+  }
 }
 //-----------------------------------------------------------------------------
-MeshFunction<dolfin::uint> CellColoring::compute_local_cell_coloring()
+CellFunction<dolfin::uint> CellColoring::compute_local_cell_coloring()
 {
   // Initialise Zoltan
   float version;
@@ -29,11 +63,8 @@ MeshFunction<dolfin::uint> CellColoring::compute_local_cell_coloring()
   Zoltan zoltan;
 
   // Set parameters
-  //zoltan.Set_Param( "ORDER_METHOD", "METIS");
-  zoltan.Set_Param( "ORDER_METHOD", "SCOTCH");
-  zoltan.Set_Param( "NUM_GID_ENTRIES", "1");  // global ID is 1 integer
-  zoltan.Set_Param( "NUM_LID_ENTRIES", "1");  // local ID is 1 integer
-  zoltan.Set_Param( "OBJ_WEIGHT_DIM", "0");   // omit object weights
+  zoltan.Set_Param( "NUM_GID_ENTRIES", "1");  // global ID is single integer
+  zoltan.Set_Param( "NUM_LID_ENTRIES", "1");  // local ID is single integer
 
   // Set call-back functions
   zoltan.Set_Num_Obj_Fn(CellColoring::get_number_of_objects, this);
@@ -46,26 +77,32 @@ MeshFunction<dolfin::uint> CellColoring::compute_local_cell_coloring()
   for (int i = 0; i < num_global_cells(); ++i)
     global_ids[i] = i;
 
-  // Create array for renumbered vertices
-  ZOLTAN_ID_PTR new_id = new ZOLTAN_ID_TYPE[num_global_cells()];
+  // Create array to hold colours
+  CellFunction<uint> colors(mesh);
 
-  // Compute re-ordering
-  int rc = zoltan.Order(1, num_global_cells(), global_ids, new_id);
-
-  // Check for errors
+  // Call Zoltan function to compute coloring
+  int tmp = 1;
+  int rc = zoltan.Color(tmp, num_global_cells(), global_ids, reinterpret_cast<int*>(colors.values()));
   if (rc != ZOLTAN_OK)
     error("Partitioning failed");
 
-  // Copy renumber into a vector
-  std::vector<uint> map(num_global_cells());
-  for (uint i = 0; i < map.size(); ++i)
-    map[i] = new_id[i];
-
   // Clean up
   delete global_ids;
-  delete new_id;
 
-  return MeshFunction<uint>(mesh);
+  return colors;
+}
+//-----------------------------------------------------------------------------
+template<class T> void CellColoring::build_graph()
+{
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    const uint cell_index = cell->index();
+    for (T entity(*cell); !entity.end(); ++entity)
+    {
+      for (CellIterator ncell(*entity); !ncell.end(); ++ncell)
+        neighbours[cell_index].insert(ncell->index());
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 int CellColoring::num_global_cells() const
@@ -80,32 +117,6 @@ int CellColoring::num_local_cells() const
 //-----------------------------------------------------------------------------
 void CellColoring::num_neighbors(uint* num_neighbors) const
 {
-  // Compute facets and facet - cell connectivity if not already computed
-  const uint D = mesh.topology().dim();
-  mesh.init(D - 1);
-  mesh.init(D - 1, D);
-
-  // Clear graph data
-  neighbours.clear();
-  neighbours.resize(mesh.num_cells());
-
-  // Compute number of cells sharing a facet
-  for (FacetIterator facet(mesh); !facet.end(); ++facet)
-  {
-    // Number of connected cells
-    const uint num_cells = facet->num_entities(D);
-    if (num_cells == 2)
-    {
-      // Get cell indices
-      const uint cell0 = facet->entities(mesh.topology().dim())[0];
-      const uint cell1 = facet->entities(mesh.topology().dim())[1];
-
-      // Insert graph edges
-      neighbours[cell0].insert(cell1);
-      neighbours[cell1].insert(cell0);
-    }
-  }
-
   // Compute nunber of neighbors for each cell
   for (uint i = 0; i < neighbours.size(); ++i)
     num_neighbors[i] = neighbours[i].size();
@@ -120,50 +131,51 @@ int CellColoring::get_number_of_objects(void* data, int* ierr)
 }
 //-----------------------------------------------------------------------------
 void CellColoring::get_object_list(void *data, int sizeGID, int sizeLID,
-          ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
-          int wgt_dim, float *obj_wgts, int *ierr)
+                                   ZOLTAN_ID_PTR global_id,
+                                   ZOLTAN_ID_PTR local_id, int wgt_dim,
+                                   float* obj_wgts, int* ierr)
 {
   CellColoring *objs = (CellColoring *)data;
   *ierr = ZOLTAN_OK;
   for (int i = 0; i< objs->num_local_cells(); i++)
   {
-    globalID[i] = i;
-    localID[i] = i;
+    global_id[i] = i;
+    local_id[i] = i;
   }
 }
 //-----------------------------------------------------------------------------
 void CellColoring::get_number_edges(void *data, int num_gid_entries,
-                                       int num_lid_entries,
-                                       int num_obj, ZOLTAN_ID_PTR global_ids,
-                                       ZOLTAN_ID_PTR local_ids, int *num_edges,
-                                       int *ierr)
+                                    int num_lid_entries,
+                                    int num_obj, ZOLTAN_ID_PTR global_ids,
+                                    ZOLTAN_ID_PTR local_ids, int *num_edges,
+                                    int *ierr)
 {
   CellColoring *objs = (CellColoring *)data;
   objs->num_neighbors(reinterpret_cast<uint*>(num_edges));
 }
 //-----------------------------------------------------------------------------
-void CellColoring::get_all_edges(void *data, int num_gid_entries,
-                              int num_lid_entries, int num_obj,
-                              ZOLTAN_ID_PTR global_ids,
-                              ZOLTAN_ID_PTR local_ids,
-                              int *num_edges,
-                              ZOLTAN_ID_PTR nbor_global_id,
-                              int *nbor_procs, int wgt_dim,
-                              float *ewgts, int *ierr)
+void CellColoring::get_all_edges(void* data, int num_gid_entries,
+                                 int num_lid_entries, int num_obj,
+                                 ZOLTAN_ID_PTR global_ids,
+                                 ZOLTAN_ID_PTR local_ids,
+                                 int* num_edges,
+                                 ZOLTAN_ID_PTR nbor_global_id,
+                                 int* nbor_procs, int wgt_dim,
+                                 float* ewgts, int* ierr)
 {
-  std::cout << "Testing:" << num_gid_entries << "  " << num_lid_entries << std::endl;
-
   CellColoring *objs = (CellColoring *)data;
 
-  const std::vector<boost::unordered_set<uint> >& neighbours = objs->neighbours();
+  // Get graph
+  const std::vector<boost::unordered_set<uint> >& neighbours = objs->neighbours;
 
-  uint sum = 0;
-  for (uint i = 0; i < edges.size(); ++i)
+  uint entry = 0;
+  for (uint i = 0; i < neighbours.size(); ++i)
   {
-    assert(edges[i].size() == (uint) num_edges[i]);
-    for (uint j = 0; j < edges[i].size(); ++j)
-      nbor_global_id[sum*num_gid_entries + j] = edges[i][j];
-    sum += edges[i].size();
+    assert(neighbours[i].size() == (uint) num_edges[i]);
+    BOOST_FOREACH(boost::unordered_set<uint>::value_type neighbour, neighbours[i])
+    {
+      nbor_global_id[entry++] = neighbour;
+    }
   }
 }
 //-----------------------------------------------------------------------------
