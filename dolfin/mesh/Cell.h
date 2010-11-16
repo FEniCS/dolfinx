@@ -86,7 +86,6 @@ namespace dolfin
   };
 
   /// A CellFunction is a MeshFunction of topological codimension 0.
-
   template <class T> class CellFunction : public MeshFunction<T>
   {
   public:

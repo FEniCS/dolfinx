@@ -52,7 +52,7 @@ namespace dolfin
     // Mesh
     const Mesh& mesh;
 
-    // Graoh (cell neighbours)
+    // Graph (cell neighbours)
     std::vector<boost::unordered_set<uint> > neighbours;
 
     // Zoltan call-back functions
@@ -77,7 +77,6 @@ namespace dolfin
                               ZOLTAN_ID_PTR nbor_global_id,
                               int* nbor_procs, int wgt_dim,
                               float* ewgts, int* ierr);
-
 
   };
 

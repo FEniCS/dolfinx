@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug 2006-2007
 // Modified by Garth Wells 2007-2009
 // Modified by Johan Hake 2008-2009
-// 
+//
 // First added:  2006-09-20
 // Last changed: 2010-03-09
 
@@ -50,11 +50,11 @@ def next(self):
 
 %feature("docstring") dolfin::MeshFunction::__getitem__ "Missing docstring";
 %feature("docstring") dolfin::MeshFunction::__setitem__ "Missing docstring";
-%extend dolfin::MeshFunction<TYPE> 
+%extend dolfin::MeshFunction<TYPE>
 {
   TYPE __getitem__(unsigned int i) { return (*self)[i]; }
   void __setitem__(unsigned int i, TYPE val) { (*self)[i] = val; }
-  
+
   TYPE __getitem__(dolfin::MeshEntity& e) { return (*self)[e]; }
   void __setitem__(dolfin::MeshEntity& e, TYPE val) { (*self)[e] = val; }
 }
@@ -71,7 +71,7 @@ MESH_FUNCTION(bool,Bool)
 %pythoncode
 %{
 _doc_string = MeshFunctionInt.__doc__
-_doc_string += """     
+_doc_string += """
     Arguments
 //-----------------------------------------------------------------------------\n      String defining the type of the MeshFunction
       Allowed: 'int', 'uint', 'double', and 'bool'
