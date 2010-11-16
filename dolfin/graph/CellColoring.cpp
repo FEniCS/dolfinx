@@ -80,7 +80,35 @@ int CellColoring::num_local_cells() const
 //-----------------------------------------------------------------------------
 void CellColoring::num_neighbors(uint* num_neighbors) const
 {
-  error("CellColoring::num_neighbors not implemented.");
+  // Compute facets and facet - cell connectivity if not already computed
+  const uint D = mesh.topology().dim();
+  mesh.init(D - 1);
+  mesh.init(D - 1, D);
+
+  // Clear graph data
+  neighbours.clear();
+  neighbours.resize(mesh.num_cells());
+
+  // Compute number of cells sharing a facet
+  for (FacetIterator facet(mesh); !facet.end(); ++facet)
+  {
+    // Number of connected cells
+    const uint num_cells = facet->num_entities(D);
+    if (num_cells == 2)
+    {
+      // Get cell indices
+      const uint cell0 = facet->entities(mesh.topology().dim())[0];
+      const uint cell1 = facet->entities(mesh.topology().dim())[1];
+
+      // Insert graph edges
+      neighbours[cell0].insert(cell1);
+      neighbours[cell1].insert(cell0);
+    }
+  }
+
+  // Compute nunber of neighbors for each cell
+  for (uint i = 0; i < neighbours.size(); ++i)
+    num_neighbors[i] = neighbours[i].size();
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -111,12 +139,6 @@ void CellColoring::get_number_edges(void *data, int num_gid_entries,
                                        int *ierr)
 {
   CellColoring *objs = (CellColoring *)data;
-
-  //std::cout << "Testing global id entires: " << num_gid_entries << "  " << objs->num_global_objects() << std::endl;
-  //std::cout << "Testing local id entires: "  << num_lid_entries << "  " << objs->num_local_objects() << std::endl;
-  //assert(num_gid_entries == objs->num_global_objects());
-  //assert(num_lid_entries == objs->num_local_objects());
-
   objs->num_neighbors(reinterpret_cast<uint*>(num_edges));
 }
 //-----------------------------------------------------------------------------
@@ -131,10 +153,9 @@ void CellColoring::get_all_edges(void *data, int num_gid_entries,
 {
   std::cout << "Testing:" << num_gid_entries << "  " << num_lid_entries << std::endl;
 
-  //CellColoring *objs = (CellColoring *)data;
+  CellColoring *objs = (CellColoring *)data;
 
-  /*
-  const std::vector<Set<uint> >& edges = objs->edges();
+  const std::vector<boost::unordered_set<uint> >& neighbours = objs->neighbours();
 
   uint sum = 0;
   for (uint i = 0; i < edges.size(); ++i)
@@ -144,7 +165,6 @@ void CellColoring::get_all_edges(void *data, int num_gid_entries,
       nbor_global_id[sum*num_gid_entries + j] = edges[i][j];
     sum += edges[i].size();
   }
-  */
 }
 //-----------------------------------------------------------------------------
 #endif

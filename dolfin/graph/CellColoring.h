@@ -10,6 +10,7 @@
 #ifdef HAS_TRILINOS
 
 #include <vector>
+#include <boost/unordered_set.hpp>
 #include <zoltan_cpp.h>
 #include "dolfin/common/types.h"
 #include <dolfin/mesh/Mesh.h>
@@ -71,6 +72,9 @@ namespace dolfin
 
     // Mesh
     const Mesh& mesh;
+
+    // Cell neighbours
+    std::vector<boost::unordered_set<uint> > neighbours;
 
   };
 
