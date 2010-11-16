@@ -9,8 +9,6 @@
 
 #ifdef HAS_TRILINOS
 
-#include <vector>
-#include <boost/unordered_set.hpp>
 #include <zoltan_cpp.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/types.h>

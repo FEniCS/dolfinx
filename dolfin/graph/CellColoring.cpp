@@ -50,7 +50,7 @@ CellColoring::CellColoring(const Mesh& mesh, std::string type) : mesh(mesh)
   }
 }
 //-----------------------------------------------------------------------------
-CellFunction<dolfin::uint> CellColoring::compute_local_cell_coloring()
+CellFunction<dolfin::uint> CellColoring::compute_local_cell_coloring() const
 {
   // Create array to hold colours
   CellFunction<uint> colors(mesh);

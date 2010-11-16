@@ -7,7 +7,6 @@
 #ifdef HAS_TRILINOS
 
 #include <boost/foreach.hpp>
-
 #include "dolfin/log/log.h"
 #include "dolfin/common/Timer.h"
 #include "ZoltanGraphColoring.h"

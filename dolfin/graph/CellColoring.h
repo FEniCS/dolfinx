@@ -10,8 +10,6 @@
 #ifdef HAS_TRILINOS
 
 #include <string>
-#include <vector>
-#include <boost/unordered_set.hpp>
 #include <zoltan_cpp.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Cell.h>
@@ -35,7 +33,7 @@ namespace dolfin
     CellColoring(const Mesh& mesh, std::string type="vertex");
 
     /// Compute cell colors
-    CellFunction<uint> compute_local_cell_coloring();
+    CellFunction<uint> compute_local_cell_coloring() const;
 
   private:
 
