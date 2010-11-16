@@ -193,7 +193,7 @@ def to_dict(self):
     """Convert the Parameters to a dict"""
     ret = {}
     for key, value in self.iteritems():
-        if isinstance(value, type(self)):
+        if isinstance(value, Parameters):
             ret[key] = value.to_dict()
         else:
             ret[key] = value
