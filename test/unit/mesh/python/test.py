@@ -1,11 +1,12 @@
 """Unit tests for the mesh library"""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2006-08-08 -- 2009-10-08"
+__date__ = "2006-08-08 -- 2010-11-16"
 __copyright__ = "Copyright (C) 2006 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
 import unittest
+import numpy.random
 from dolfin import *
 
 class SimpleShapes(unittest.TestCase):
@@ -140,6 +141,40 @@ class MeshFunctions(unittest.TestCase):
         file << self.f
         f = MeshFunction('int', self.mesh, "saved_mesh_function.xml")
         assert all(f.values() == self.f.values())
+
+class NamedMeshFunctions(unittest.TestCase):
+
+    def setUp(self):
+        self.names = ["Cell", "Vertex", "Edge", "Face", "Facet"]
+        self.tps = ['int', 'uint', 'bool', 'double']
+        self.mesh = UnitCube(3,3,3)
+        self.funcs = {}
+        for tp in self.tps:
+            for name in self.names:
+                self.funcs[(tp, name)] = eval("%sFunction('%s', self.mesh)"%(name, tp))
+            
+    def test_size(self):
+        for tp in self.tps:
+            for name in self.names:
+                if name is "Vertex":
+                    self.assertEqual(self.funcs[(tp, name)].size(), self.mesh.num_vertices())
+                else:
+                    self.assertEqual(self.funcs[(tp, name)].size(),
+                                     getattr(self.mesh, "num_%ss"%name.lower())())
+
+    def test_access_type(self):
+        type_dict = dict(int=int, uint=int, double=float, bool=bool)
+        for tp in self.tps:
+            for name in self.names:
+                self.assertTrue(isinstance(self.funcs[(tp, name)][0], type_dict[tp]))
+
+    def test_numpy_access(self):
+        for tp in self.tps:
+            for name in self.names:
+                values = self.funcs[(tp, name)].values()
+                values[:] = numpy.random.rand(len(values))
+                self.assertTrue(all(values[i]==self.funcs[(tp, name)][i]
+                                    for i in xrange(len(values))))
 
 class InputOutput(unittest.TestCase):
 

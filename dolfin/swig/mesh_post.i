@@ -8,7 +8,7 @@
 // Modified by Johan Hake 2008-2009
 //
 // First added:  2006-09-20
-// Last changed: 2010-03-09
+// Last changed: 2010-11-16
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (post)
@@ -42,15 +42,13 @@ def next(self):
 //-----------------------------------------------------------------------------
 // MeshFunction macro
 //-----------------------------------------------------------------------------
-%define MESH_FUNCTION(TYPE,TYPENAME)
-%template(MeshFunction ## TYPENAME) dolfin::MeshFunction<TYPE>;
-//%typedef dolfin::MeshFunction<TYPE> MeshFunction ## TYPENAME;
-//%feature("autodoc", "Missing docstring") dolfin::MeshFunction::__getitem__;
-//%feature("autodoc", "Missing docstring") dolfin::MeshFunction::__setitem__;
+%define DECLARE_MESHFUNCTION(MESHFUNCTION,TYPE,TYPENAME)
+%template(MESHFUNCTION ## TYPENAME) dolfin::MESHFUNCTION<TYPE>;
+//%typedef dolfin::MESHFUNCTION<TYPE> MESHFUNCTION ## TYPENAME;
 
-%feature("docstring") dolfin::MeshFunction::__getitem__ "Missing docstring";
-%feature("docstring") dolfin::MeshFunction::__setitem__ "Missing docstring";
-%extend dolfin::MeshFunction<TYPE>
+%feature("docstring") dolfin::MESHFUNCTION::__getitem__ "Missing docstring";
+%feature("docstring") dolfin::MESHFUNCTION::__setitem__ "Missing docstring";
+%extend dolfin::MESHFUNCTION<TYPE>
 {
   TYPE __getitem__(unsigned int i) { return (*self)[i]; }
   void __setitem__(unsigned int i, TYPE val) { (*self)[i] = val; }
@@ -61,12 +59,24 @@ def next(self):
 %enddef
 
 //-----------------------------------------------------------------------------
-// Run MeshFunction macros
+// Macro for declaring MeshFunctions
 //-----------------------------------------------------------------------------
-MESH_FUNCTION(int,Int)
-MESH_FUNCTION(dolfin::uint,UInt)
-MESH_FUNCTION(double,Double)
-MESH_FUNCTION(bool,Bool)
+%define DECLARE_MESHFUNCTIONS(MESHFUNCTION)
+DECLARE_MESHFUNCTION(MESHFUNCTION,int,Int)
+DECLARE_MESHFUNCTION(MESHFUNCTION,dolfin::uint,UInt)
+DECLARE_MESHFUNCTION(MESHFUNCTION,double,Double)
+DECLARE_MESHFUNCTION(MESHFUNCTION,bool,Bool)
+%enddef
+
+//-----------------------------------------------------------------------------
+// Run Macros to declare the different MeshFunctions
+//-----------------------------------------------------------------------------
+DECLARE_MESHFUNCTIONS(MeshFunction)
+DECLARE_MESHFUNCTIONS(VertexFunction)
+DECLARE_MESHFUNCTIONS(EdgeFunction)
+DECLARE_MESHFUNCTIONS(FaceFunction)
+DECLARE_MESHFUNCTIONS(FacetFunction)
+DECLARE_MESHFUNCTIONS(CellFunction) 
 
 %pythoncode
 %{
@@ -89,6 +99,8 @@ _doc_string += """
 class MeshFunction(object):
     __doc__ = _doc_string
     def __new__(cls, tp, *args):
+        if not isinstance(tp, str):
+            raise TypeError, "expected a 'str' as first argument"
         if tp == "int":
             return MeshFunctionInt(*args)
         if tp == "uint":
@@ -102,7 +114,43 @@ class MeshFunction(object):
 
 del _doc_string
 
+def _new_closure(MeshType):
+    assert(isinstance(MeshType,str))
+    def new(cls, tp, mesh):
+        if not isinstance(tp, str):
+            raise TypeError, "expected a 'str' as first argument"
+        if tp == "int":
+            return eval("%sInt(mesh)"%MeshType)
+        if tp == "uint":
+            return eval("%sUInt(mesh)"%MeshType)
+        elif tp == "double":
+            return eval("%sDouble(mesh)"%MeshType)
+        elif tp == "bool":
+            return eval("%sBool(mesh)"%MeshType)
+        else:
+            raise RuntimeError, "Cannot create a %sFunction of type '%s'." % (MeshType, tp)
+    
+    return new
+
+# Create the named MeshFunction types
+VertexFunction = type("VertexFunction", (), {"__new__":_new_closure("VertexFunction"),
+                                             "__doc__":"Create MeshFunction of topological"\
+                                             " dimension 0 on given mesh."})
+EdgeFunction = type("EdgeFunction", (), {"__new__":_new_closure("EdgeFunction"),
+                                             "__doc__":"Create MeshFunction of topological"
+                                         " dimension 1 on given mesh."})
+FaceFunction = type("FaceFunction", (), {"__new__":_new_closure("FaceFunction"),
+                                             "__doc__":"Create MeshFunction of topological"
+                                         " dimension 2 on given mesh."})
+FacetFunction = type("FacetFunction", (), {"__new__":_new_closure("FacetFunction"),
+                                             "__doc__":"Create MeshFunction of topological"
+                                           " codimension 1 on given mesh."}) 
+CellFunction = type("CellFunction", (), {"__new__":_new_closure("CellFunction"),
+                                             "__doc__":"Create MeshFunction of topological"
+                                         " codimension 0 on given mesh."})
+
 %}
+
 
 //-----------------------------------------------------------------------------
 // Extend Point interface with Python selectors

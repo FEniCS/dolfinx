@@ -1,8 +1,8 @@
-// Copyright (C) 22010 Anders Logg.
+// Copyright (C) 2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2010-06-29
-// Last changed: 2010-06-29
+// Last changed: 2010-11-16
 
 #include <dolfin.h>
 
