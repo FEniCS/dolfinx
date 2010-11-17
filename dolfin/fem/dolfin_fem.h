@@ -19,4 +19,6 @@
 #include <dolfin/fem/MulticoreAssembler.h>
 #include <dolfin/fem/VariationalProblem.h>
 
+#include <dolfin/fem/OpenMpAssembler.h>
+
 #endif

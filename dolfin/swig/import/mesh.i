@@ -3,6 +3,7 @@
 %import(module="dolfin.cpp") "dolfin/mesh/CellType.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshEntity.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshEntityIterator.h"
+%import(module="dolfin.cpp") "dolfin/mesh/SubsetIterator.h"
 %import(module="dolfin.cpp") "dolfin/mesh/Point.h"
 %import(module="dolfin.cpp") "dolfin/mesh/Vertex.h"
 %import(module="dolfin.cpp") "dolfin/mesh/Edge.h"
