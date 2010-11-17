@@ -6,6 +6,7 @@
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshEntityIterator.h>
+#include <dolfin/mesh/SubsetIterator.h>
 #include <dolfin/mesh/Point.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Edge.h>

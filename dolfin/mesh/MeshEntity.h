@@ -4,7 +4,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-11
-// Last changed: 2010-03-05
+// Last changed: 2010-11-17
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
@@ -105,6 +105,7 @@ namespace dolfin
 
     // Friends
     friend class MeshEntityIterator;
+    friend class SubsetIterator;
 
     // The mesh
     Mesh const * _mesh;

@@ -4,7 +4,7 @@
 // Modified by Andre Massing, 2009.
 //
 // First added:  2006-05-09
-// Last changed: 2010-11-08
+// Last changed: 2010-11-17
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -52,7 +52,7 @@ namespace dolfin
   {
   public:
 
-    ///Default constructor
+    /// Default constructor
     MeshEntityIterator() : _pos(0), pos_end(0), index(0) {}
 
     /// Create iterator for mesh entities over given topological dimension
@@ -88,14 +88,14 @@ namespace dolfin
       }
     }
 
+    /// Copy constructor
+    MeshEntityIterator(const MeshEntityIterator& it)
+      : entity(it.entity), _pos(it._pos), pos_end(it.pos_end), index(it.index) {};
+
     /// Destructor
     virtual ~MeshEntityIterator() {}
 
-    /// Copy Constructor
-    MeshEntityIterator(const MeshEntityIterator& it) :  entity(it.entity),
-        _pos(it._pos), pos_end(it.pos_end), index(it.index) {};
-
-    ///Step to next mesh entity (prefix increment)
+    /// Step to next mesh entity (prefix increment)
     MeshEntityIterator& operator++()
     {
       ++_pos;
@@ -113,20 +113,19 @@ namespace dolfin
     uint pos() const
     { return _pos; }
 
-    ///Comparison operator.
-    ///@internal
-    ///Uncommenting following  results into the warning message:
-    //dolfin/mesh/MeshEntityIterator.h:94: Warning|508| Declaration of 'operator ==' shadows declaration accessible via operator->(),
-    //Use const_cast to use operator* inside comparison, which automatically
-    //updates the entity index corresponding to pos *before* comparison (since
-    //update of entity delays until request for entity)
+    /// Comparison operator.
     bool operator==(const MeshEntityIterator & it) const
     {
+      // Use const_cast to use operator* inside comparison, which automatically
+      // updates the entity index corresponding to pos *before* comparison (since
+      // update of entity delays until request for entity)
+
       return ((const_cast<MeshEntityIterator *>(this))->operator*()
             == (const_cast<MeshEntityIterator *>(&it))->operator*()
             && _pos == it._pos && index == it.index);
     }
 
+    /// Comparison operator
     bool operator!=(const MeshEntityIterator & it) const
     { return !operator==(it); }
 
@@ -138,12 +137,13 @@ namespace dolfin
     MeshEntity* operator->()
     { entity._index = (index ? index[_pos] : _pos); return &entity; }
 
-    ///Random access operator.
+    /// Random access operator.
     MeshEntity& operator[] (uint pos)
     { _pos = pos; return *operator->();}
 
     /// Check if iterator has reached the end
-    bool end() const { return _pos >= pos_end; }
+    bool end() const
+    { return _pos >= pos_end; }
 
     /// Provide a safeguard iterator pointing beyond the end of an iteration
     /// process, either iterating over the mesh /or incident entities. Added to
@@ -163,19 +163,6 @@ namespace dolfin
     // std::string str(bool verbose) const;
 
   private:
-
-    /// Copy constructor is private to disallow usage. If it were public (or not
-    /// declared and thus a default version available) it would allow code like
-    ///
-    /// for (CellIterator c0(mesh); !c0.end(); ++c0)
-    ///   for (CellIterator c1(c0); !c1.end(); ++c1)
-    ///      ...
-    ///
-    /// c1 looks to be an iterator over the entities around c0 when it is in
-    /// fact a copy of c0.
-
-    //    MeshEntityIterator(const MeshEntityIterator& entity) :  entity(entity.entity.mesh(), 0, 0), _pos(0)
-    //    { error("Illegal use of mesh entity iterator."); }
 
     /// Set pos to end position. To create a kind of mesh.end() iterator.
     void set_end()
