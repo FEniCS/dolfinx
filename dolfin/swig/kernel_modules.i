@@ -116,6 +116,7 @@
 %include "dolfin/mesh/MeshFunction.h"
 %include "dolfin/mesh/Mesh.h"
 %include "dolfin/mesh/MeshPartitioning.h"
+%include "dolfin/mesh/MeshColoring.h"
 %include "dolfin/mesh/MeshPrimitive.h"
 %include "dolfin/mesh/PrimitiveTraits.h"
 %include "dolfin/mesh/LocalMeshData.h"
@@ -150,7 +151,6 @@
 
 // DOLFIN headers included from graph
 %include "dolfin/graph/MatrixRenumbering.h"
-%include "dolfin/graph/CellColoring.h"
 
 // DOLFIN headers included from plot
 %include "dolfin/plot/FunctionPlotData.h"

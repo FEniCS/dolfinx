@@ -12,7 +12,7 @@
 #include <zoltan_cpp.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/types.h>
-#include "graph_types.h"
+#include "Graph.h"
 
 namespace dolfin
 {

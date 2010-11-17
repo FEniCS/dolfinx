@@ -8,6 +8,9 @@ __date__ = "2010-11-16"
 __copyright__ = "Copyright (C) 2010 Garth N. Wells"
 __license__  = "GNU LGPL Version 2.1"
 
+# Modified by Anders Logg, 2010.
+# Last changed: 2010-11-17
+
 from dolfin import *
 
 if not has_trilinos():
@@ -17,17 +20,14 @@ if not has_trilinos():
 # Create mesh
 mesh = UnitCube(24, 24, 24)
 
-# Create a vertex-based coloring object and color cells
-coloring = CellColoring(mesh, "vertex")
-colors = coloring.compute_local_cell_coloring()
-#plot(colors, title="Vertex-based cell coloring", interactive=True)
+# Compute vertex-based coloring
+colors_vertex = mesh.color("vertex")
+plot(colors_vertex, title="Vertex-based cell coloring", interactive=True)
 
-# Create a edge-based coloring object and color cells
-coloring = CellColoring(mesh, "edge")
-colors = coloring.compute_local_cell_coloring()
-#plot(colors, title="Edge-based cell coloring", interactive=True)
+# Compute edge-based coloring
+colors_edge = mesh.color("edge")
+plot(colors_vertex, title="Edge-based cell coloring", interactive=True)
 
-# Create a facet-based coloring object and color cells
-coloring = CellColoring(mesh, "facet")
-colors = coloring.compute_local_cell_coloring()
-#plot(colors, title="Facet-based cell coloring", interactive=True)
+# Compute facet-based coloring
+colors_facet = mesh.color("facet")
+plot(colors_vertex, title="Facet-based cell coloring", interactive=True)

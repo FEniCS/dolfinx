@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2010-10-19
+// Last changed: 2010-11-17
 
 #include <sstream>
 
@@ -26,6 +26,7 @@
 #include "MeshFunction.h"
 #include "LocalMeshData.h"
 #include "MeshPartitioning.h"
+#include "MeshColoring.h"
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "Vertex.h"
@@ -246,6 +247,36 @@ void Mesh::smooth_boundary(uint num_iterations, bool harmonic_smoothing)
 void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
 {
   MeshSmoothing::snap_boundary(*this, sub_domain, harmonic_smoothing);
+}
+//-----------------------------------------------------------------------------
+const dolfin::MeshFunction<dolfin::uint>&
+Mesh::color(std::string coloring_type)
+{
+  // Create mesh function
+  MeshFunction<uint>* colors = _data.mesh_function("cell colors");
+  if (!colors)
+    colors = _data.create_mesh_function("cell_colors", _topology.dim());
+  assert(colors);
+
+  // Compute coloring
+  MeshColoring::compute_cell_colors(*colors, coloring_type);
+
+  return *colors;
+}
+//-----------------------------------------------------------------------------
+const dolfin::MeshFunction<dolfin::uint>&
+Mesh::color(uint dim)
+{
+  // Create mesh function
+  MeshFunction<uint>* colors = _data.mesh_function("cell colors");
+  if (!colors)
+    colors = _data.create_mesh_function("cell_colors", _topology.dim());
+  assert(colors);
+
+  // Compute coloring
+  MeshColoring::compute_cell_colors(*colors, dim);
+
+  return *colors;
 }
 //-----------------------------------------------------------------------------
 void Mesh::all_intersected_entities(const Point & point, uint_set & ids_result) const

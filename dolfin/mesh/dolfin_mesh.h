@@ -24,6 +24,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/MeshColoring.h>
 #include <dolfin/mesh/MeshPrimitive.h>
 #include <dolfin/mesh/PrimitiveTraits.h>
 #include <dolfin/mesh/LocalMeshData.h>

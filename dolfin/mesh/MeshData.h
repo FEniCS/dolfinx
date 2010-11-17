@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2008-05-19
-// Last changed: 2010-04-07
+// Last changed: 2010-11-17
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
@@ -57,6 +57,10 @@ namespace dolfin
   /// Sub meshes
   ///
   ///    "global vertex indices" - MeshFunction<uint> of dimension 0
+  ///
+  /// Mesh coloring
+  ///
+  ///    "cell colors" - MeshFunction<uint> of dimension D
 
   class MeshData : public Variable
   {

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2010-11-16
-// Last changed:
+// Last changed: 2010-11-17
 
 #ifndef __GRAPH_TYPES_H
 #define __GRAPH_TYPES_H
@@ -12,6 +12,7 @@
 
 namespace dolfin
 {
+
   /// Typedefs for simple graph data structures
 
   /// Vector of unordered sets

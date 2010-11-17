@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Anders Logg.
+// Copyright (C) 2006-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman, 2007.
@@ -9,7 +9,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2010-08-30
+// Last changed: 2010-11-17
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -271,23 +271,23 @@ namespace dolfin
 
     /// Compute entities of given topological dimension.
     ///
-    ///   *Arguments*
-    ///       dim (uint)
-    ///           Topological dimension.
+    /// *Arguments*
+    ///     dim (uint)
+    ///         Topological dimension.
     ///
-    ///   *Returns*
-    ///       uint
-    ///           Number of created entities.
+    /// *Returns*
+    ///     uint
+    ///         Number of created entities.
     uint init(uint dim) const;
 
     /// Compute connectivity between given pair of dimensions.
     ///
-    ///   *Arguments*
-    ///       d0 (uint)
-    ///           Topological dimension.
+    /// *Arguments*
+    ///     d0 (uint)
+    ///         Topological dimension.
     ///
-    ///       d1 (uint)
-    ///           Topological dimension.
+    ///     d1 (uint)
+    ///         Topological dimension.
     void init(uint d0, uint d1) const;
 
     /// Compute all entities and connectivity.
@@ -371,6 +371,39 @@ namespace dolfin
     ///         Flag to turn on harmonics smoothing, default
     ///         value is true.
     void snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing=true);
+
+    /// Color the cells of the mesh such that no two neighboring cells
+    /// share the same color. A colored mesh keeps a
+    /// CellFunction<uint> named "cell colors" as mesh data which
+    /// holds the colors of the mesh.
+    ///
+    /// *Arguments*
+    ///     coloring_type (std::string)
+    ///         Coloring type, specifying what relation makes two
+    ///         cells neighbors, can be one of "vertex", "edge" or
+    ///         "facet".
+    ///
+    /// *Returns*
+    ///     MeshFunction<uint>
+    ///         The colors as a mesh function over the cells of the mesh.
+    const MeshFunction<uint>& color(std::string coloring_type);
+
+    /// Color the cells of the mesh such that no two neighboring cells
+    /// share the same color. A colored mesh keeps a
+    /// CellFunction<uint> named "cell colors" as mesh data which
+    /// holds the colors of the mesh.
+    ///
+    /// *Arguments*
+    ///     dim (uint)
+    ///         Coloring type given as topological dimension,
+    ///         specifying what relation makes two cells neighbors.
+    ///         Two cells are neighbors if they are both adjacent to a
+    ///         mesh entity of the given dimension.
+    ///
+    /// *Returns*
+    ///     MeshFunction<uint>
+    ///         The colors as a mesh function over the cells of the mesh.
+    const MeshFunction<uint>& color(uint dim);
 
     /// Compute all ids of all cells which are intersected by the
     /// given point.

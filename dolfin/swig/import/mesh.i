@@ -21,6 +21,7 @@
 %import(module="dolfin.cpp") "dolfin/mesh/MeshFunction.h"
 %import(module="dolfin.cpp") "dolfin/mesh/Mesh.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshPartitioning.h"
+%import(module="dolfin.cpp") "dolfin/mesh/MeshColoring.h"
 %import(module="dolfin.cpp") "dolfin/mesh/MeshPrimitive.h"
 %import(module="dolfin.cpp") "dolfin/mesh/PrimitiveTraits.h"
 %import(module="dolfin.cpp") "dolfin/mesh/LocalMeshData.h"
