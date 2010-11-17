@@ -177,6 +177,19 @@ if (DOLFIN_ENABLE_MPI AND MPI_FOUND)
 
 endif()
 
+# OpenMP
+if (DOLFIN_ENABLE_OPENMP AND OPENMP_FOUND)
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DHAS_OPENMP")
+  set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+
+  # FIXME: Is this linker flag required?
+  #list(APPEND DOLFIN_LINK_FLAGS ${MPI_LINK_FLAGS})
+
+  # Necessary flag for MPICH2
+  list(APPEND DOLFIN_CXX_DEFINITIONS "-DMPICH_IGNORE_CXX_SEEK")
+
+endif()
+
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 

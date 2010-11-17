@@ -61,6 +61,7 @@ option(DOLFIN_ENABLE_BENCHMARKS "Enable benchmark programs." OFF)
 
 # List optional packages
 set(OPTIONAL_PACKAGES "")
+list(APPEND OPTIONAL_PACKAGES "OpenMP")
 list(APPEND OPTIONAL_PACKAGES "MPI")
 list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
@@ -164,8 +165,8 @@ find_package(LibXml2 REQUIRED)
 #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
-# Note: Check for Python interpreter even when Python is disable because it is
-#       used to get the installation path for dolfin_utils
+# Note: Check for Python interpreter even when Python is disabled because it
+#       is used to get the installation path for dolfin_utils
 find_package(PythonInterp)
 if (DOLFIN_ENABLE_PYTHON)
   find_package(PythonLibs)
@@ -178,6 +179,11 @@ if (DOLFIN_ENABLE_PYTHON)
     set(PYTHON_FOUND TRUE)
   endif()
 
+endif()
+
+# FIXME: Should we move the OpenMP check to the compiler section?
+if (DOLFIN_ENABLE_OPENMP)
+  find_package(OpenMP)
 endif()
 
 # FIXME: Should we move the MPI check to the compiler section?
