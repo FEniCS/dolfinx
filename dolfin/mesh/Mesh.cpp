@@ -249,8 +249,7 @@ void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
   MeshSmoothing::snap_boundary(*this, sub_domain, harmonic_smoothing);
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>&
-Mesh::color(std::string coloring_type)
+const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::string coloring_type)
 {
   // Create mesh function
   MeshFunction<uint>* colors = _data.mesh_function("cell colors");
@@ -264,8 +263,7 @@ Mesh::color(std::string coloring_type)
   return *colors;
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>&
-Mesh::color(uint dim)
+const dolfin::MeshFunction<dolfin::uint>& Mesh::color(uint dim)
 {
   // Create mesh function
   MeshFunction<uint>* colors = _data.mesh_function("cell colors");

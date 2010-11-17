@@ -11,6 +11,7 @@
 #ifdef HAS_OPENMP
 
 #include <omp.h>
+#include <boost/unordered_set.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -22,6 +23,7 @@
 #include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/SubDomain.h>
+#include <dolfin/mesh/SubsetIterator.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
 #include "GenericDofMap.h"
@@ -107,12 +109,30 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   const Mesh& mesh = a.mesh();
 
 
-  // OpenMP test loop
-  #pragma omp parallel
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  // FIXME: figure out what to do with computing colors
+  // Color mesh
+  const MeshFunction<dolfin::uint>& colors = const_cast<Mesh&>(mesh).color("vertex");
+
+  // Compute number if colors
+  boost::unordered_set<uint> unique_colors;
+  for (uint i = 0; i < colors.size(); ++i)
+    unique_colors.insert(colors[i]);
+  const uint num_colors = unique_colors.size();
+
+  cout << "Number of colours: " << num_colors << endl;
+
+  // Loop over colours
+  for (uint color = 0; color < num_colors; ++color)
   {
-    std::cout << "Cell index, thread number: " << cell->index() << "  "  << omp_get_thread_num() << std::endl;
+    // OpenMP test loop over cells of the same color
+    #pragma omp parallel
+    for (SubsetIterator cell(colors, color); !cell.end(); ++cell)
+    {
+      std::cout << "Parallel loop (cell index, color, thread number): " << cell->index() << "  "  << color << "  " << omp_get_thread_num() << std::endl;
+    }
   }
+
+
 
 
   // Cell integral
