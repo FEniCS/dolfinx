@@ -21,13 +21,13 @@ if not has_trilinos():
 mesh = UnitCube(24, 24, 24)
 
 # Compute vertex-based coloring
-colors_vertex = mesh.color("vertex")
-plot(colors_vertex, title="Vertex-based cell coloring", interactive=True)
+colors = mesh.color("vertex")
+plot(colors, title="Vertex-based cell coloring", interactive=True)
 
 # Compute edge-based coloring
-colors_edge = mesh.color("edge")
-plot(colors_vertex, title="Edge-based cell coloring", interactive=True)
+colors = mesh.color("edge")
+plot(colors, title="Edge-based cell coloring", interactive=True)
 
 # Compute facet-based coloring
-colors_facet = mesh.color("facet")
-plot(colors_vertex, title="Facet-based cell coloring", interactive=True)
+colors = mesh.color("facet")
+plot(colors, title="Facet-based cell coloring", interactive=True)

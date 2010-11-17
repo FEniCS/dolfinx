@@ -35,7 +35,7 @@ int main()
 
   #else
 
-  cout << "Trilinos must be installed to run this demo." << endl;
+  cout << "Trilinos (with Zoltan enabled) must be installed to run this demo." << endl;
 
   #endif
 
