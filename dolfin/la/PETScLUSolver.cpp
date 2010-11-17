@@ -9,6 +9,8 @@
 
 #ifdef HAS_PETSC
 
+#include <dolfin/common/Timer.h>
+
 #include <boost/assign/list_of.hpp>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/NoDeleter.h>
@@ -41,6 +43,7 @@ const std::map<std::string, const MatSolverPackage> PETScLUSolver::lu_packages
   = boost::assign::map_list_of("default", "")
                               ("umfpack",      MAT_SOLVER_UMFPACK)
                               ("mumps",        MAT_SOLVER_MUMPS)
+                              ("pastix",       MAT_SOLVER_PASTIX)
                               ("spooles",      MAT_SOLVER_SPOOLES)
                               ("superlu_dist", MAT_SOLVER_SUPERLU_DIST)
                               ("superlu",      MAT_SOLVER_SUPERLU);
@@ -127,8 +130,16 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Write a pre-solve message
   pre_report(A->down_cast<PETScMatrix>());
 
+  // Set number of threads if using PaStiX
+  //if (solver_type == "pastix" )
+  //  PetscOptionsSetValue("-mat_pastix_threadnbr", "8");
+
+  //PetscOptionsSetValue("-mat_pastix_verbose", "2");
+
   // Solve linear system
+  tic();
   KSPSolve(*_ksp, *_b.vec(), *_x.vec());
+  std::cout << "Time to solve linear system: " <<  toc() << std::endl;;
 
   return 1;
 }
@@ -178,10 +189,14 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& lu_package) con
   {
     if (MPI::num_processes() == 1)
       lu_package = "umfpack";
+      //lu_package = "mumps";
+      //lu_package = "pastix";
     else
     {
       #if PETSC_HAVE_MUMPS
       lu_package = "mumps";
+      #elif PETSC_HAVE_PASTIX
+      lu_package = "pastix";
       #elif PETSC_HAVE_SPOOLES
       lu_package = "spooles";
       #elif PETSC_HAVE_SUPERLU_DIST
