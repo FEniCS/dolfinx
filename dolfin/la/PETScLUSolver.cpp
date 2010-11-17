@@ -45,6 +45,7 @@ const std::map<std::string, const MatSolverPackage> PETScLUSolver::lu_packages
                               ("umfpack",      MAT_SOLVER_UMFPACK)
                               ("mumps",        MAT_SOLVER_MUMPS)
                               ("pastix",       MAT_SOLVER_PASTIX)
+                              ("petsc",        MAT_SOLVER_PETSC)
                               ("spooles",      MAT_SOLVER_SPOOLES)
                               ("superlu_dist", MAT_SOLVER_SUPERLU_DIST)
                               ("superlu",      MAT_SOLVER_SUPERLU);
@@ -201,7 +202,22 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& lu_package) con
   if (lu_package == "default")
   {
     if (MPI::num_processes() == 1)
+    {
+      #if PETSC_HAVE_UMFPACK
       lu_package = "umfpack";
+      #elif PETSC_HAVE_MUMPS
+      lu_package = "mumps";
+      #elif PETSC_HAVE_PASTIX
+      lu_package = "pastix";
+      #elif PETSC_HAVE_SUPERLU
+      lu_package = "superlu";
+      #elif PETSC_HAVE_SPOOLES
+      lu_package = "spooles";
+      #else
+      lu_package = "petsc";
+      warning("Using PETSc native LU solver. Consider configuring PETSc with an efficient LU solver (e.g. UMFPACK, MUMPS).");
+      #endif
+    }
     else
     {
       #if PETSC_HAVE_MUMPS
