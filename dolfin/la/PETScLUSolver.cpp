@@ -201,9 +201,7 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& lu_package) con
   if (lu_package == "default")
   {
     if (MPI::num_processes() == 1)
-      //lu_package = "umfpack";
-      //lu_package = "mumps";
-      lu_package = "pastix";
+      lu_package = "umfpack";
     else
     {
       #if PETSC_HAVE_MUMPS
