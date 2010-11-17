@@ -6,7 +6,7 @@
 // is given, the benchmark is run with the specified number of threads.
 //
 // First added:  2010-11-11
-// Last changed: 2010-11-11
+// Last changed: 2010-11-17
 
 #include <cstdlib>
 
@@ -28,9 +28,9 @@ double bench(std::string form)
   UnitCube mesh(SIZE, SIZE, SIZE);
 
   // Create form
-  FunctionSpace* V(0);
+  FunctionSpace *V(0), *W0(0), *W1(0), *W2(0), *W3(0), *W4(0);
   Form* a(0);
-  Function* w(0);
+  Function *w0(0), *w1(0), *w2(0), *w3(0), *w4(0);
   if (form == "Poisson")
   {
     V = new Poisson::FunctionSpace(mesh);
@@ -38,10 +38,23 @@ double bench(std::string form)
   }
   else if (form == "NavierStokes")
   {
-    V = new NavierStokes::FunctionSpace(mesh);
+    V  = new NavierStokes::FunctionSpace(mesh);
+    W0 = new NavierStokes::Form_0_FunctionSpace_2(mesh);
+    W1 = new NavierStokes::Form_0_FunctionSpace_3(mesh);
+    W2 = new NavierStokes::Form_0_FunctionSpace_4(mesh);
+    W3 = new NavierStokes::Form_0_FunctionSpace_5(mesh);
+    W4 = new NavierStokes::Form_0_FunctionSpace_6(mesh);
     a = new NavierStokes::BilinearForm(*V, *V);
-    w = new Function(*V);
-    a->set_coefficient("w", *w);
+    w0 = new Function(*W0);
+    w1 = new Function(*W1);
+    w2 = new Function(*W2);
+    w3 = new Function(*W3);
+    w4 = new Function(*W4);
+    a->set_coefficient(0, *w0);
+    a->set_coefficient(1, *w1);
+    a->set_coefficient(2, *w2);
+    a->set_coefficient(3, *w3);
+    a->set_coefficient(4, *w4);
   }
 
   // Create matrix
@@ -57,8 +70,17 @@ double bench(std::string form)
 
   // Cleanup
   delete V;
+  delete W0;
+  delete W1;
+  delete W2;
+  delete W3;
+  delete W4;
+  delete w0;
+  delete w1;
+  delete w2;
+  delete w3;
+  delete w4;
   delete a;
-  delete w;
 
   info("");
 
