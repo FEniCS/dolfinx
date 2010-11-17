@@ -84,6 +84,7 @@ int main()
 
   // Read mesh and create function space
   Mesh mesh("gear.xml.gz");
+  //mesh = refine(mesh);
   Elasticity::FunctionSpace V(mesh);
 
   // Create right-hand side
@@ -136,11 +137,11 @@ int main()
   vtk_file << u;
 
   // Plot solution
-  plot(u, "Displacement", "displacement");
+  //plot(u, "Displacement", "displacement");
 
   // Displace mesh and plot displaced mesh
-  mesh.move(u);
-  plot(mesh, "Deformed mesh");
+  //mesh.move(u);
+  //plot(mesh, "Deformed mesh");
 
   return 0;
 }

@@ -16,6 +16,7 @@
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/main/MPI.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "LUSolver.h"
 #include "PETScMatrix.h"
 #include "PETScVector.h"
@@ -52,6 +53,10 @@ Parameters PETScLUSolver::default_parameters()
 {
   Parameters p(LUSolver::default_parameters());
   p.rename("petsc_lu_solver");
+
+  // Number of threads per process for multi-threaded solvers
+  p.add<uint>("num_threads");
+
   return p;
 }
 //-----------------------------------------------------------------------------
@@ -130,16 +135,24 @@ dolfin::uint PETScLUSolver::solve(GenericVector& x, const GenericVector& b)
   // Write a pre-solve message
   pre_report(A->down_cast<PETScMatrix>());
 
+  // FIXME: Check for solver type
   // Set number of threads if using PaStiX
-  //if (solver_type == "pastix" )
-  //  PetscOptionsSetValue("-mat_pastix_threadnbr", "8");
-
+  if (parameters["num_threads"].is_set())
+  {
+    // Use number of threads specified for LU solver
+    PetscOptionsSetValue("-mat_pastix_threadnbr", parameters["num_threads"].value_str().c_str());
+  }
+  else
+  {
+    // Use global number of threads
+    PetscOptionsSetValue("-mat_pastix_threadnbr", dolfin::parameters["num_threads"].value_str().c_str());
+  }
   //PetscOptionsSetValue("-mat_pastix_verbose", "2");
 
   // Solve linear system
-  tic();
+  //tic();
   KSPSolve(*_ksp, *_b.vec(), *_x.vec());
-  std::cout << "Time to solve linear system: " <<  toc() << std::endl;;
+  //std::cout << "Time to solve linear system: " <<  toc() << std::endl;;
 
   return 1;
 }
@@ -188,9 +201,9 @@ const MatSolverPackage PETScLUSolver::select_solver(std::string& lu_package) con
   if (lu_package == "default")
   {
     if (MPI::num_processes() == 1)
-      lu_package = "umfpack";
+      //lu_package = "umfpack";
       //lu_package = "mumps";
-      //lu_package = "pastix";
+      lu_package = "pastix";
     else
     {
       #if PETSC_HAVE_MUMPS

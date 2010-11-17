@@ -30,7 +30,7 @@ const std::map<std::string, const PCType> PETScPreconditioner::methods
                               ("jacobi",           PCJACOBI)
                               ("sor",              PCSOR)
                               ("icc",              PCICC)
-                              ("hypre_amg",     PCHYPRE)
+                              ("hypre_amg",        PCHYPRE)
                               ("hypre_euclid",     PCHYPRE)
                               ("hypre_parasails",  PCHYPRE)
                               ("hypre_pilut",      PCHYPRE)
