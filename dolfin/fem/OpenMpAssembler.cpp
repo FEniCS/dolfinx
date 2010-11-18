@@ -50,15 +50,16 @@ void OpenMpAssembler::assemble(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble(GenericTensor& A,
-                         const Form& a,
-                         const MeshFunction<uint>* cell_domains,
-                         const MeshFunction<uint>* exterior_facet_domains,
-                         const MeshFunction<uint>* interior_facet_domains,
-                         bool reset_sparsity,
-                         bool add_values)
+                               const Form& a,
+                               const MeshFunction<uint>* cell_domains,
+                               const MeshFunction<uint>* exterior_facet_domains,
+                               const MeshFunction<uint>* interior_facet_domains,
+                               bool reset_sparsity,
+                               bool add_values)
 {
   warning("OpenMpAssembler is experimental and probably won't work.");
-
+  cout << "  number of processors:      " << omp_get_num_procs() << endl;
+  cout << "  maximum number of threads: " << omp_get_max_threads() << endl;
 
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
@@ -140,9 +141,9 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
     // FIXME: A UFC object is created for each thread for each colour. Can this be just for each thread?
 
+    // OpenMP test loop over cells of the same color
     const uint num_cells = colored_cells->size();
     Progress p(AssemblerTools::progress_message(A.rank(), "cells"), num_colors);
-    // OpenMP test loop over cells of the same color
     //#pragma omp parallel for firstprivate(ufc)
     #pragma omp parallel for schedule(static) firstprivate(ufc) num_threads(4)
     for (uint cell_index = 0; cell_index < num_cells; ++cell_index)
@@ -152,6 +153,9 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
       //std::cout << "Parallel loop (thread number, color, cell index): "
       //        << omp_get_thread_num() << "  " << color << "  "  << cell.index() << std::endl;
+
+      //cout << "number of threads: " << omp_get_num_threads() << endl;
+      //cout << "thread number:     " << omp_get_thread_num() << endl;
 
       // Update to current cell
       ufc.update(cell);
@@ -169,7 +173,6 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
         (*values)[cell.index()] = ufc.A[0];
       else
         A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
-
     }
     p++;
   }

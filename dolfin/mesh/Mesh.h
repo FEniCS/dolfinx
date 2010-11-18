@@ -604,6 +604,9 @@ namespace dolfin
     // True if mesh has been ordered
     mutable bool _ordered;
 
+    // Non-negative and equal to coloring dimension if mesh has been colored
+    mutable int _colored;
+
   };
 
 }
