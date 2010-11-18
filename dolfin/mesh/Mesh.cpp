@@ -8,17 +8,18 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2010-11-17
+// Last changed: 2010-11-18
 
 #include <sstream>
+#include <vector>
 
 #include <dolfin/log/log.h>
 #include <dolfin/io/File.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/ale/ALE.h>
 #include <dolfin/io/File.h>
-#include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
+#include <dolfin/common/Timer.h>
 #include "IntersectionOperator.h"
 #include "TopologyComputation.h"
 #include "MeshSmoothing.h"
@@ -249,32 +250,78 @@ void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
   MeshSmoothing::snap_boundary(*this, sub_domain, harmonic_smoothing);
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>&
-Mesh::color(std::string coloring_type)
+const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::string coloring_type)
 {
-  // Create mesh function
-  MeshFunction<uint>* colors = _data.mesh_function("cell colors");
-  if (!colors)
-    colors = _data.create_mesh_function("cell_colors", _topology.dim());
-  assert(colors);
+   // Check that coloring type is valid
+  if (coloring_type != "vertex" && coloring_type != "edge" && coloring_type != "facet")
+    error("Coloring type unkown. Options are \"vertex\", \"edge\" or \"facet\".");
 
-  // Compute coloring
-  MeshColoring::compute_cell_colors(*colors, coloring_type);
-
-  return *colors;
+  // Select topological dimension
+  if (coloring_type == "vertex")
+    return color(0);
+  else if (coloring_type == "edge")
+    return color(1);
+  else
+    return color(_topology.dim() - 1);
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>&
-Mesh::color(uint dim)
+const dolfin::MeshFunction<dolfin::uint>& Mesh::color(uint dim)
 {
-  // Create mesh function
-  MeshFunction<uint>* colors = _data.mesh_function("cell colors");
-  if (!colors)
-    colors = _data.create_mesh_function("cell_colors", _topology.dim());
+  info("Coloring mesh.");
+
+  // Clear old coloring data if any
+  std::vector<uint>* num_colored_cells = _data.array("num colored cells");
+  if (num_colored_cells)
+  {
+    info("Erasing existing mesh coloring data.");
+    for (uint c = 0; c < num_colored_cells->size(); c++)
+      _data.erase_array("colored cells " + to_string(c));
+    _data.erase_mesh_function("cell colors");
+    _data.erase_array("num colored cells");
+    num_colored_cells = 0;
+  }
+
+  // Create mesh function for cell colors
+  assert(_data.mesh_function("cell colors") == 0);
+  MeshFunction<uint>* colors = _data.create_mesh_function("cell colors", _topology.dim());
   assert(colors);
 
   // Compute coloring
   MeshColoring::compute_cell_colors(*colors, dim);
+
+  // Extract cells for each color
+  std::vector<std::vector<uint>* > colored_cells;
+  for (uint i = 0; i < colors->size(); i++)
+  {
+    // Get current color
+    const uint color = (*colors)[i];
+
+    // Extend list of colors if necessary
+    if (color >= colored_cells.size())
+    {
+      // Append empty lists for all colors up to current color
+      for (uint c = colored_cells.size(); c <= color; c++)
+      {
+        assert(_data.array("colored cells", c) == 0);
+        colored_cells.push_back(_data.create_array("colored cells " + to_string(c)));
+      }
+    }
+
+    // Add color to list if color has been seen before
+    assert(color < colored_cells.size());
+    colored_cells[color]->push_back(i);
+  }
+
+  // Count the number of cells of each color
+  assert(_data.array("num colored cells") == 0);
+  num_colored_cells = _data.create_array("num colored cells");
+  assert(num_colored_cells);
+  for (uint c = 0; c < colored_cells.size(); c++)
+  {
+    info("Color %d: %d cells", c, colored_cells[c]->size());
+    num_colored_cells->push_back(colored_cells[c]->size());
+  }
+  info("Mesh has %d colors.", num_colored_cells->size());
 
   return *colors;
 }

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-08-09
-// Last changed: 2010-11-12
+// Last changed: 2010-11-18
 
 #include <boost/functional/hash.hpp>
 #include <cstdlib>
@@ -31,13 +31,6 @@ std::string dolfin::to_string(int n)
 {
   std::stringstream s;
   s << n;
-  return s.str();
-}
-//-----------------------------------------------------------------------------
-std::string dolfin::to_string(double x)
-{
-  std::stringstream s;
-  s << x;
   return s.str();
 }
 //-----------------------------------------------------------------------------

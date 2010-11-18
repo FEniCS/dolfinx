@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-11-15
-// Last changed: 2010-11-17
+// Last changed: 2010-11-18
 
 #ifdef HAS_TRILINOS
 
@@ -25,7 +25,7 @@ using namespace dolfin;
 void MeshColoring::compute_cell_colors(MeshFunction<uint>& colors,
                                        std::string coloring_type)
 {
-  // Check that graph type is valid
+  // Check that coloring type is valid
   if (coloring_type != "vertex" && coloring_type != "edge" && coloring_type != "facet")
     error("Coloring type unkown. Options are \"vertex\", \"edge\" or \"facet\".");
 

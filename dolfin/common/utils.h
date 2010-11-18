@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-08-09
-// Last changed: 2010-11-12
+// Last changed: 2010-11-18
 
 #ifndef __UTILS_H
 #define __UTILS_H
@@ -18,9 +18,6 @@ namespace dolfin
 
   /// Return string representation of int
   std::string to_string(int n);
-
-  /// Return string representation of double
-  std::string to_string(double x);
 
   /// Return string representation of given array
   std::string to_string(const double* x, uint n);
