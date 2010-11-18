@@ -36,23 +36,23 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh()
-  : Variable("mesh", "DOLFIN mesh"),
-    _data(*this), _cell_type(0), _intersection_operator(*this), _ordered(false)
+Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"), _data(*this), _cell_type(0),
+               _intersection_operator(*this), _ordered(false), _colored(-1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(const Mesh& mesh)
-  : Variable("mesh", "DOLFIN mesh"),
-    _data(*this), _cell_type(0), _intersection_operator(*this), _ordered(false)
+Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"), _data(*this),
+                               _cell_type(0), _intersection_operator(*this),
+                               _ordered(false), _colored(-1)
 {
   *this = mesh;
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(std::string filename)
-  : Variable("mesh", "DOLFIN mesh"),
-    _data(*this), _cell_type(0), _intersection_operator(*this), _ordered(false)
+Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
+                                   _data(*this), _cell_type(0),
+                                   _intersection_operator(*this),
+                                   _ordered(false), _colored(-1)
 {
   if (MPI::num_processes() > 1)
   {
