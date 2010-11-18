@@ -95,15 +95,19 @@ void OpenMpAssembler::assemble(GenericTensor& A,
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble_cells(GenericTensor& A,
                                const Form& a,
-                               UFC& ufc,
+                               UFC& _ufc,
                                const MeshFunction<uint>* domains,
                                std::vector<double>* values)
 {
   // Skip assembly if there are no cell integrals
-  if (ufc.form.num_cell_integrals() == 0)
+  if (_ufc.form.num_cell_integrals() == 0)
     return;
 
   Timer timer("Assemble cells");
+
+    // Get integral for sub domain (if any)
+    if (domains && domains->size() > 0)
+      error("Sub-domains not yet handled by OpenMpAssembler.");
 
   // Extract mesh
   const Mesh& mesh = a.mesh();
@@ -113,9 +117,14 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
   // FIXME: Check that UFC copy constructor is dealing with copying pointers correctly
   // Dummy UFC object since each thread needs to created it's own UFC object
-  UFC _ufc(ufc);
+  UFC ufc(_ufc);
 
+  // Cell integral
+  const ufc::cell_integral* integral = ufc.cell_integrals[0].get();
+
+  // Assemble over cells
   // Loop over colours
+  tic();
   const uint num_colors = mesh.data().array("num colored cells")->size();
   for (uint color = 0; color < num_colors; ++color)
   {
@@ -123,63 +132,39 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
     std::vector<uint>* colored_cells = mesh.data().array("colored cells", color);
     assert(colored_cells);
 
+    //Progress p(AssemblerTools::progress_message(A.rank(), "cells"), mesh.num_cells());
     // OpenMP test loop over cells of the same color
-    #pragma omp parallel for firstprivate(_ufc)
+    //#pragma omp parallel for firstprivate(ufc)
+    #pragma omp parallel for firstprivate(ufc) num_threads(8)
     for (uint i = 0; i < colored_cells->size(); ++i)
     {
       // Create cell
       Cell cell(mesh, (*colored_cells)[i]);
 
-      // !!!!!!!!!!! Do the assembly here
+      //std::cout << "Parallel loop (thread number, color, cell index): "
+      //        << omp_get_thread_num() << "  " << color << "  "  << cell.index() << std::endl;
 
-      std::cout << "Parallel loop (thread number, color, cell index): "
-              << omp_get_thread_num() << "  " << color << "  "  << cell.index() << std::endl;
-    }
-  }
 
-  // Cell integral
-  ufc::cell_integral* integral = ufc.cell_integrals[0].get();
+      // Update to current cell
+      ufc.update(cell);
 
-  // Assemble over cells
-  Progress p(AssemblerTools::progress_message(A.rank(), "cells"), mesh.num_cells());
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Get integral for sub domain (if any)
-    if (domains && domains->size() > 0)
-    {
-      const uint domain = (*domains)[*cell];
-      if (domain < ufc.form.num_cell_integrals())
-        integral = ufc.cell_integrals[domain].get();
+      // Tabulate dofs for each dimension
+      for (uint i = 0; i < ufc.form.rank(); i++)
+        a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell.index());
+
+      // Tabulate cell tensor
+      integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
+
+      // Add entries to global tensor
+      if (values && ufc.form.rank() == 0)
+        (*values)[cell.index()] = ufc.A[0];
       else
-        continue;
+        A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
+
+      //p++;
     }
-
-    // Skip integral if zero
-    if (!integral) continue;
-
-    // Update to current cell
-    ufc.update(*cell);
-
-    // Tabulate dofs for each dimension
-    for (uint i = 0; i < ufc.form.rank(); i++)
-      a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
-
-    // Tabulate cell tensor
-    integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
-
-    // Add entries to global tensor
-    if (values && ufc.form.rank() == 0)
-    {
-      // Either store values cell-by-cell (currently only available for functionals)
-      (*values)[cell->index()] = ufc.A[0];
-    }
-    else
-    {
-      // Or add to global tensor
-      A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
-    }
-    p++;
   }
+  cout << "Assembly time (OpenMP): " << toc() << endl;
 }
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble_exterior_facets(GenericTensor& A,

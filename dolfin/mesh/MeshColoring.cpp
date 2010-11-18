@@ -23,14 +23,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>&
-MeshColoring::color_cells(Mesh& mesh, std::string coloring_type)
+const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
+                                                     std::string coloring_type)
 {
   return color_cells(mesh, type_to_dim(coloring_type, mesh));
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>&
-MeshColoring::color_cells(Mesh& mesh, uint dim)
+const dolfin::MeshFunction<dolfin::uint>& MeshColoring::color_cells(Mesh& mesh,
+                                                                    uint dim)
 {
   info("Coloring mesh.");
 
