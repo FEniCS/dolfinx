@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-11-15
-// Last changed: 2010-11-17
+// Last changed: 2010-11-18
 
 #ifndef __MESH_COLORING_H
 #define __MESH_COLORING_H
@@ -30,6 +30,14 @@ namespace dolfin
   {
   public:
 
+    /// Color the cells of a mesh for given coloring type, which can
+    /// be one of "vertex", "edge" or "facet".
+    static const MeshFunction<uint>& color_cells(Mesh& mesh, std::string coloring_type);
+
+    /// Color the cells of a mesh for given coloring type specified by
+    /// topological dimension, which can be one of 0, 1 or D - 1.
+    static const MeshFunction<uint>& color_cells(Mesh& mesh, uint dim);
+
     /// Compute cell colors for given coloring type, which can be one
     /// of "vertex", "edge" or "facet".
     static void compute_cell_colors(MeshFunction<uint>& colors,
@@ -39,6 +47,9 @@ namespace dolfin
     /// topological dimension, which can be one of 0, 1 or D - 1.
     static void compute_cell_colors(MeshFunction<uint>& colors,
                                     uint dim);
+
+    /// Convert coloring type to topological dimension
+    static uint type_to_dim(std::string coloring_type, const Mesh& mesh);
 
   };
 

@@ -109,9 +109,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   const Mesh& mesh = a.mesh();
 
   // Color the mesh and extract coloring data
-  // FIXME: Handle constness
-  Mesh* _mesh = const_cast<Mesh*>(&mesh);
-  _mesh->color("vertex");
+  mesh.color("vertex");
 
   // FIXME: Check that UFC copy constructor is dealing with copying pointers correctly
   // Dummy UFC object since each thread needs to created it's own UFC object

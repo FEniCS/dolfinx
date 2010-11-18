@@ -9,7 +9,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2010-11-17
+// Last changed: 2010-11-18
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -386,7 +386,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshFunction<uint>
     ///         The colors as a mesh function over the cells of the mesh.
-    const MeshFunction<uint>& color(std::string coloring_type);
+    const MeshFunction<uint>& color(std::string coloring_type) const;
 
     /// Color the cells of the mesh such that no two neighboring cells
     /// share the same color. A colored mesh keeps a
@@ -403,7 +403,7 @@ namespace dolfin
     /// *Returns*
     ///     MeshFunction<uint>
     ///         The colors as a mesh function over the cells of the mesh.
-    const MeshFunction<uint>& color(uint dim);
+    const MeshFunction<uint>& color(uint dim) const;
 
     /// Compute all ids of all cells which are intersected by the
     /// given point.

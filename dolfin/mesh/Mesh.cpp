@@ -250,80 +250,22 @@ void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
   MeshSmoothing::snap_boundary(*this, sub_domain, harmonic_smoothing);
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::string coloring_type)
+const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::string coloring_type) const
 {
-   // Check that coloring type is valid
-  if (coloring_type != "vertex" && coloring_type != "edge" && coloring_type != "facet")
-    error("Coloring type unkown. Options are \"vertex\", \"edge\" or \"facet\".");
-
-  // Select topological dimension
-  if (coloring_type == "vertex")
-    return color(0);
-  else if (coloring_type == "edge")
-    return color(1);
-  else
-    return color(_topology.dim() - 1);
+  // We do the same const-cast trick here as in the init() functions
+  // since we are not really changing the mesh, just attaching some
+  // auxiliary data to it.
+  Mesh* _mesh = const_cast<Mesh*>(this);
+  return MeshColoring::color_cells(*_mesh, coloring_type);
 }
 //-----------------------------------------------------------------------------
-const dolfin::MeshFunction<dolfin::uint>& Mesh::color(uint dim)
+const dolfin::MeshFunction<dolfin::uint>& Mesh::color(uint dim) const
 {
-  info("Coloring mesh.");
-
-  // Clear old coloring data if any
-  std::vector<uint>* num_colored_cells = _data.array("num colored cells");
-  if (num_colored_cells)
-  {
-    info("Erasing existing mesh coloring data.");
-    for (uint c = 0; c < num_colored_cells->size(); c++)
-      _data.erase_array("colored cells " + to_string(c));
-    _data.erase_mesh_function("cell colors");
-    _data.erase_array("num colored cells");
-    num_colored_cells = 0;
-  }
-
-  // Create mesh function for cell colors
-  assert(_data.mesh_function("cell colors") == 0);
-  MeshFunction<uint>* colors = _data.create_mesh_function("cell colors", _topology.dim());
-  assert(colors);
-
-  // Compute coloring
-  MeshColoring::compute_cell_colors(*colors, dim);
-
-  // Extract cells for each color
-  std::vector<std::vector<uint>* > colored_cells;
-  for (uint i = 0; i < colors->size(); i++)
-  {
-    // Get current color
-    const uint color = (*colors)[i];
-
-    // Extend list of colors if necessary
-    if (color >= colored_cells.size())
-    {
-      // Append empty lists for all colors up to current color
-      for (uint c = colored_cells.size(); c <= color; c++)
-      {
-        assert(_data.array("colored cells", c) == 0);
-        colored_cells.push_back(_data.create_array("colored cells " + to_string(c)));
-      }
-    }
-
-    // Add color to list if color has been seen before
-    assert(color < colored_cells.size());
-    colored_cells[color]->push_back(i);
-  }
-
-  // Count the number of cells of each color
-  assert(_data.array("num colored cells") == 0);
-  num_colored_cells = _data.create_array("num colored cells");
-  assert(num_colored_cells);
-  for (uint c = 0; c < colored_cells.size(); c++)
-  {
-    info("Color %d: %d cells", c, colored_cells[c]->size());
-    num_colored_cells->push_back(colored_cells[c]->size());
-  }
-  info("Mesh has %d colors.", num_colored_cells->size());
-
-  return *colors;
+  // We do the same const-cast trick here as in the init() functions
+  // since we are not really changing the mesh, just attaching some
+  // auxiliary data to it.
+  Mesh* _mesh = const_cast<Mesh*>(this);
+  return MeshColoring::color_cells(*_mesh, dim);
 }
 //-----------------------------------------------------------------------------
 void Mesh::all_intersected_entities(const Point & point, uint_set & ids_result) const
