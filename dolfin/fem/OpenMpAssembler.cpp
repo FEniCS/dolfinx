@@ -57,9 +57,9 @@ void OpenMpAssembler::assemble(GenericTensor& A,
                                bool reset_sparsity,
                                bool add_values)
 {
-  warning("OpenMpAssembler is experimental and probably won't work.");
-  cout << "  number of processors:      " << omp_get_num_procs() << endl;
-  cout << "  maximum number of threads: " << omp_get_max_threads() << endl;
+  warning("OpenMpAssembler is experimental.");
+  //cout << "  number of processors:      " << omp_get_num_procs() << endl;
+  //cout << "  maximum number of threads: " << omp_get_max_threads() << endl;
 
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
@@ -126,9 +126,10 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   // Cell integral
   const ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
-  // Assemble over cells
-  // Loop over colours
-  tic();
+  // Assemble over cells (loop over colours, then cells of same color)
+  // Set number of threads (from parameter systems)
+  const uint num_threads = parameters["num_threads"];
+  omp_set_num_threads(num_threads);
 
   const uint num_colors = mesh.data().array("num colored cells")->size();
   for (uint color = 0; color < num_colors; ++color)
@@ -145,7 +146,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
     const uint num_cells = colored_cells->size();
     Progress p(AssemblerTools::progress_message(A.rank(), "cells"), num_colors);
     //#pragma omp parallel for firstprivate(ufc)
-    #pragma omp parallel for schedule(static) firstprivate(ufc) num_threads(4)
+    #pragma omp parallel for schedule(static) firstprivate(ufc)
     for (uint cell_index = 0; cell_index < num_cells; ++cell_index)
     {
       // Create cell

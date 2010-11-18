@@ -32,7 +32,8 @@ namespace dolfin
 
     /// Color the cells of a mesh for given coloring type, which can
     /// be one of "vertex", "edge" or "facet".
-    static const MeshFunction<uint>& color_cells(Mesh& mesh, std::string coloring_type);
+    static const MeshFunction<uint>& color_cells(Mesh& mesh,
+                                                 std::string coloring_type);
 
     /// Color the cells of a mesh for given coloring type specified by
     /// topological dimension, which can be one of 0, 1 or D - 1.

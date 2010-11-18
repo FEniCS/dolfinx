@@ -14,7 +14,7 @@
 #include "Poisson.h"
 #include "NavierStokes.h"
 
-#define MAX_NUM_THREADS 4
+#define MAX_NUM_THREADS 6
 #define SIZE 32
 
 using namespace dolfin;
@@ -26,6 +26,7 @@ double bench(std::string form)
 
   // Create mesh
   UnitCube mesh(SIZE, SIZE, SIZE);
+  mesh.color("vertex");
 
   // Create form
   FunctionSpace *V(0), *W0(0), *W1(0), *W2(0), *W3(0), *W4(0);
