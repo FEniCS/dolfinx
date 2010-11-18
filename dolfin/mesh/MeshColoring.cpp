@@ -41,17 +41,17 @@ MeshColoring::color_cells(Mesh& mesh, uint dim)
   std::vector<uint>* num_colored_cells = data.array("num colored cells");
   if (num_colored_cells)
   {
-    info("Erasing existing mesh coloring data.");
+    info("Clearing existing mesh coloring data.");
     for (uint c = 0; c < num_colored_cells->size(); c++)
       data.erase_array("colored cells " + to_string(c));
-    data.erase_mesh_function("cell colors");
     data.erase_array("num colored cells");
     num_colored_cells = 0;
   }
 
-  // Create mesh function for cell colors
-  assert(data.mesh_function("cell colors") == 0);
-  MeshFunction<uint>* colors = data.create_mesh_function("cell colors", mesh.topology().dim());
+  // Create mesh function for cell colors (reuse if possible)
+  MeshFunction<uint>* colors = data.mesh_function("cell colors");
+  if (!colors)
+    colors = data.create_mesh_function("cell colors", mesh.topology().dim());
   assert(colors);
 
   // Compute coloring
