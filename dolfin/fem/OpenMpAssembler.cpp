@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2010-11-09
+// Last changed: 2010-11-18
 
 #ifdef HAS_OPENMP
 
@@ -37,9 +37,9 @@ using namespace dolfin;
 
 //----------------------------------------------------------------------------
 void OpenMpAssembler::assemble(GenericTensor& A,
-                         const Form& a,
-                         bool reset_sparsity,
-                         bool add_values)
+                               const Form& a,
+                               bool reset_sparsity,
+                               bool add_values)
 {
   // Extract boundary indicators (if any)
   MeshFunction<uint>* exterior_facet_domains
@@ -108,50 +108,36 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
-
-  // FIXME: figure out what to do with computing colors
-  // Color mesh
-  const MeshFunction<dolfin::uint>& colors = const_cast<Mesh&>(mesh).color("vertex");
-
-  // Compute number if colors
-  boost::unordered_set<uint> unique_colors;
-  for (uint i = 0; i < colors.size(); ++i)
-    unique_colors.insert(colors[i]);
-  const uint num_colors = unique_colors.size();
-
-  cout << "Number of colours: " << num_colors << endl;
+  // Color the mesh and extract coloring data
+  // FIXME: Handle constness
+  Mesh* _mesh = const_cast<Mesh*>(&mesh);
+  _mesh->color("vertex");
 
   // FIXME: Check that UFC copy constructor is dealing with copying pointers correctly
   // Dummy UFC object since each thread needs to created it's own UFC object
   UFC _ufc(ufc);
 
   // Loop over colours
+  const uint num_colors = mesh.data().array("num colored cells")->size();
   for (uint color = 0; color < num_colors; ++color)
   {
-
-    // FIXME: This list will come from the mesh
-    // Build list of cells (OpenMP needs plain loops, not user iterators
-    std::vector<uint> cell_list;
-    for (SubsetIterator cell(colors, color); !cell.end(); ++cell)
-      cell_list.push_back(cell->index());
+    // Get the array of cell indices for current color
+    std::vector<uint>* colored_cells = mesh.data().array("colored cells", color);
+    assert(colored_cells);
 
     // OpenMP test loop over cells of the same color
     #pragma omp parallel for firstprivate(_ufc)
-    for (uint i = 0; i < cell_list.size(); ++i)
+    for (uint i = 0; i < colored_cells->size(); ++i)
     {
       // Create cell
-      Cell cell(mesh, cell_list[i]);
+      Cell cell(mesh, (*colored_cells)[i]);
 
       // !!!!!!!!!!! Do the assembly here
 
       std::cout << "Parallel loop (thread number, color, cell index): "
               << omp_get_thread_num() << "  " << color << "  "  << cell.index() << std::endl;
-
     }
   }
-
-
-
 
   // Cell integral
   ufc::cell_integral* integral = ufc.cell_integrals[0].get();
