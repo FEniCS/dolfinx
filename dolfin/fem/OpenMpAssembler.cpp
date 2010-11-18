@@ -177,7 +177,6 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
     }
     p++;
   }
-  cout << "Assembly time (OpenMP): " << toc() << endl;
 }
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble_exterior_facets(GenericTensor& A,

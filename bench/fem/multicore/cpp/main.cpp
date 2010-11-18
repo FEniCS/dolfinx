@@ -14,7 +14,7 @@
 #include "Poisson.h"
 #include "NavierStokes.h"
 
-#define MAX_NUM_THREADS 6
+#define MAX_NUM_THREADS 8
 #define SIZE 32
 
 using namespace dolfin;
