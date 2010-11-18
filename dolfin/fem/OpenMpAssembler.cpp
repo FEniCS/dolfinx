@@ -121,14 +121,32 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
   cout << "Number of colours: " << num_colors << endl;
 
+  // FIXME: Check that UFC copy constructor is dealing with copying pointers correctly
+  // Dummy UFC object since each thread needs to created it's own UFC object
+  UFC _ufc(ufc);
+
   // Loop over colours
   for (uint color = 0; color < num_colors; ++color)
   {
-    // OpenMP test loop over cells of the same color
-    #pragma omp parallel
+
+    // FIXME: This list will come from the mesh
+    // Build list of cells (OpenMP needs plain loops, not user iterators
+    std::vector<uint> cell_list;
     for (SubsetIterator cell(colors, color); !cell.end(); ++cell)
+      cell_list.push_back(cell->index());
+
+    // OpenMP test loop over cells of the same color
+    #pragma omp parallel for firstprivate(_ufc)
+    for (uint i = 0; i < cell_list.size(); ++i)
     {
-      std::cout << "Parallel loop (cell index, color, thread number): " << cell->index() << "  "  << color << "  " << omp_get_thread_num() << std::endl;
+      // Create cell
+      Cell cell(mesh, cell_list[i]);
+
+      // !!!!!!!!!!! Do the assembly here
+
+      std::cout << "Parallel loop (thread number, color, cell index): "
+              << omp_get_thread_num() << "  " << color << "  "  << cell.index() << std::endl;
+
     }
   }
 
