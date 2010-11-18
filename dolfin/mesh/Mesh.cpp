@@ -252,19 +252,40 @@ void Mesh::snap_boundary(const SubDomain& sub_domain, bool harmonic_smoothing)
 //-----------------------------------------------------------------------------
 const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::string coloring_type) const
 {
+  // Check if mesh has already been colored
+  const uint dim = MeshColoring::type_to_dim(coloring_type, *this);
+  if (static_cast<int>(dim) == _colored)
+  {
+    info("Mesh has already been colored, not coloring again.");
+    MeshFunction<uint>* colors = _data.mesh_function("cell colors");
+    assert(colors);
+    return *colors;
+  }
+
   // We do the same const-cast trick here as in the init() functions
   // since we are not really changing the mesh, just attaching some
   // auxiliary data to it.
   Mesh* _mesh = const_cast<Mesh*>(this);
+  _colored = dim;
   return MeshColoring::color_cells(*_mesh, coloring_type);
 }
 //-----------------------------------------------------------------------------
 const dolfin::MeshFunction<dolfin::uint>& Mesh::color(uint dim) const
 {
+  // Check if mesh has already been colored
+  if (static_cast<int>(dim) == _colored)
+  {
+    info("Mesh has already been colored, not coloring again.");
+    MeshFunction<uint>* colors = _data.mesh_function("cell colors");
+    assert(colors);
+    return *colors;
+  }
+
   // We do the same const-cast trick here as in the init() functions
   // since we are not really changing the mesh, just attaching some
   // auxiliary data to it.
   Mesh* _mesh = const_cast<Mesh*>(this);
+  _colored = dim;
   return MeshColoring::color_cells(*_mesh, dim);
 }
 //-----------------------------------------------------------------------------
