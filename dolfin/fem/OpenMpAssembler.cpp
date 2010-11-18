@@ -120,7 +120,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   UFC ufc(_ufc);
 
   // Cell integral
-  const ufc::cell_integral* integral = ufc.cell_integrals[0].get();
+  //const ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
   // Assemble over cells
   // Loop over colours
@@ -130,16 +130,16 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   {
     // Get the array of cell indices for current color
     std::vector<uint>* colored_cells = mesh.data().array("colored cells", color);
-    assert(colored_cells);
+    //assert(colored_cells);
 
     //Progress p(AssemblerTools::progress_message(A.rank(), "cells"), mesh.num_cells());
     // OpenMP test loop over cells of the same color
     //#pragma omp parallel for firstprivate(ufc)
-    #pragma omp parallel for firstprivate(ufc) num_threads(8)
-    for (uint i = 0; i < colored_cells->size(); ++i)
+    #pragma omp parallel for firstprivate(ufc) num_threads(4)
+    for (uint cell_index = 0; cell_index < colored_cells->size(); ++cell_index)
     {
       // Create cell
-      Cell cell(mesh, (*colored_cells)[i]);
+      Cell cell(mesh, (*colored_cells)[cell_index]);
 
       //std::cout << "Parallel loop (thread number, color, cell index): "
       //        << omp_get_thread_num() << "  " << color << "  "  << cell.index() << std::endl;
@@ -148,18 +148,19 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
       // Update to current cell
       ufc.update(cell);
 
+      // GNW: This seems to be *very* expensive in parallel (more costly than tabulate)
       // Tabulate dofs for each dimension
-      for (uint i = 0; i < ufc.form.rank(); i++)
+      for (uint i = 0; i < ufc.form.rank(); ++i)
         a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell.index());
 
       // Tabulate cell tensor
-      integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
+      //integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
 
       // Add entries to global tensor
-      if (values && ufc.form.rank() == 0)
-        (*values)[cell.index()] = ufc.A[0];
-      else
-        A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
+      //if (values && ufc.form.rank() == 0)
+      //  (*values)[cell.index()] = ufc.A[0];
+      //else
+      //  A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
 
       //p++;
     }
