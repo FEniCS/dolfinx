@@ -6,7 +6,7 @@
 // is given, the benchmark is run with the specified number of threads.
 //
 // First added:  2010-11-11
-// Last changed: 2010-11-17
+// Last changed: 2010-11-18
 
 #include <cstdlib>
 
@@ -15,7 +15,7 @@
 #include "NavierStokes.h"
 
 #define MAX_NUM_THREADS 4
-#define SIZE 64
+#define SIZE 32
 
 using namespace dolfin;
 
