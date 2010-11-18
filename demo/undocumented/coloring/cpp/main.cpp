@@ -27,11 +27,11 @@ int main()
 
   // Compute edge-based coloring
   const MeshFunction<dolfin::uint>& colors_edge = mesh.color("edge");
-  plot(colors_vertex, "Edge-based cell coloring");
+  plot(colors_edge, "Edge-based cell coloring");
 
   // Compute facet-based coloring
   const MeshFunction<dolfin::uint>& colors_facet = mesh.color("facet");
-  plot(colors_vertex, "Facet-based cell coloring");
+  plot(colors_facet, "Facet-based cell coloring");
 
   #else
 
