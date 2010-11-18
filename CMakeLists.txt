@@ -148,7 +148,7 @@ endif()
 
 # Check for Boost
 option(Boost_USE_STATIC_LIBS "Use the static Boost libraries." OFF)
-if (DEFINED ENV{Boost_USE_MULTITHREADED})
+if (DEFINED $ENV{Boost_USE_MULTITHREADED})
   option(Boost_USE_MULTITHREADED "Use the multithreaded Boost libraries." $ENV{Boost_USE_MULTITHREADED})
 else()
   option(Boost_USE_MULTITHREADED "Use the multithreaded Boost libraries." OFF)
