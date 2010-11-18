@@ -36,6 +36,7 @@ void ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
   zoltan.Set_Param( "NUM_GID_ENTRIES", "1");  // global ID is single integer
   zoltan.Set_Param( "NUM_LID_ENTRIES", "1");  // local ID is single integer
   zoltan.Set_Param( "SUPERSTEP_SIZE", "1000");
+  //zoltan.Set_Param( "COLORING_ORDER", "U");
 
   // Set call-back functions
   zoltan.Set_Num_Obj_Fn(ZoltanInterface::ZoltanGraphInterface::get_number_of_objects, &zoltan_graph);
