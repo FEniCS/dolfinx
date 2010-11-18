@@ -59,10 +59,12 @@ MeshColoring::color_cells(Mesh& mesh, uint dim)
 
   // Extract cells for each color
   std::vector<std::vector<uint>* > colored_cells;
+  uint max_color = 0;
   for (uint i = 0; i < colors->size(); i++)
   {
     // Get current color
     const uint color = (*colors)[i];
+    max_color = std::max(max_color, color);
 
     // Extend list of colors if necessary
     if (color >= colored_cells.size())
@@ -79,6 +81,10 @@ MeshColoring::color_cells(Mesh& mesh, uint dim)
     assert(color < colored_cells.size());
     colored_cells[color]->push_back(i);
   }
+
+  // Check for contiguous coloring
+  if (max_color != (colored_cells.size() - 1))
+    error("Colors are not numbered contiguously.");
 
   // Count the number of cells of each color
   assert(data.array("num colored cells") == 0);
@@ -133,6 +139,10 @@ void MeshColoring::compute_cell_colors(MeshFunction<uint>& colors, uint dim)
 
   // Color cells
   ZoltanInterface::compute_local_vertex_coloring(graph, _colors);
+
+  // Compensate for numbering starting at 1
+  for (uint i = 0; i < _colors.size(); i++)
+    _colors[i] -= 1;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MeshColoring::type_to_dim(std::string coloring_type,
