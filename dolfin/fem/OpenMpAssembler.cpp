@@ -119,24 +119,33 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   // Dummy UFC object since each thread needs to created it's own UFC object
   UFC ufc(_ufc);
 
+  // Form rank
+  const uint form_rank = ufc.form.rank();
+
   // Cell integral
-  //const ufc::cell_integral* integral = ufc.cell_integrals[0].get();
+  const ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
   // Assemble over cells
   // Loop over colours
   tic();
+
   const uint num_colors = mesh.data().array("num colored cells")->size();
   for (uint color = 0; color < num_colors; ++color)
   {
     // Get the array of cell indices for current color
-    std::vector<uint>* colored_cells = mesh.data().array("colored cells", color);
+    const std::vector<uint>* colored_cells = mesh.data().array("colored cells", color);
     //assert(colored_cells);
 
-    //Progress p(AssemblerTools::progress_message(A.rank(), "cells"), mesh.num_cells());
+    // GNW: The OpenMP option schedule(static) seems faster
+
+    // FIXME: A UFC object is created for each thread for each colour. Can this be just for each thread?
+
+    const uint num_cells = colored_cells->size();
+    Progress p(AssemblerTools::progress_message(A.rank(), "cells"), num_colors);
     // OpenMP test loop over cells of the same color
     //#pragma omp parallel for firstprivate(ufc)
-    #pragma omp parallel for firstprivate(ufc) num_threads(4)
-    for (uint cell_index = 0; cell_index < colored_cells->size(); ++cell_index)
+    #pragma omp parallel for schedule(static) firstprivate(ufc) num_threads(4)
+    for (uint cell_index = 0; cell_index < num_cells; ++cell_index)
     {
       // Create cell
       Cell cell(mesh, (*colored_cells)[cell_index]);
@@ -144,26 +153,25 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
       //std::cout << "Parallel loop (thread number, color, cell index): "
       //        << omp_get_thread_num() << "  " << color << "  "  << cell.index() << std::endl;
 
-
       // Update to current cell
       ufc.update(cell);
 
-      // GNW: This seems to be *very* expensive in parallel (more costly than tabulate)
+      // GNW: This seems to be expensive in parallel (more costly than tabulate_tensor)
       // Tabulate dofs for each dimension
-      for (uint i = 0; i < ufc.form.rank(); ++i)
-        a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell.index());
+      for (uint i = 0; i < form_rank; ++i)
+        a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], cell);
 
       // Tabulate cell tensor
-      //integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
+      integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
 
       // Add entries to global tensor
-      //if (values && ufc.form.rank() == 0)
-      //  (*values)[cell.index()] = ufc.A[0];
-      //else
-      //  A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
+      if (values && ufc.form.rank() == 0)
+        (*values)[cell.index()] = ufc.A[0];
+      else
+        A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
 
-      //p++;
     }
+    p++;
   }
   cout << "Assembly time (OpenMP): " << toc() << endl;
 }
