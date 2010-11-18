@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2010-11-09
+// Last changed: 2010-11-18
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -25,6 +25,7 @@
 #include "UFC.h"
 #include "FiniteElement.h"
 #include "MulticoreAssembler.h"
+#include "OpenMpAssembler.h"
 #include "AssemblerTools.h"
 #include "Assembler.h"
 
@@ -96,11 +97,17 @@ void Assembler::assemble(GenericTensor& A,
   const uint num_threads = parameters["num_threads"];
   if (num_threads > 0)
   {
-    MulticoreAssembler::assemble(A, a,
-                                 cell_domains,
-                                 exterior_facet_domains,
-                                 interior_facet_domains,
-                                 reset_sparsity, add_values, num_threads);
+    //MulticoreAssembler::assemble(A, a,
+    //                             cell_domains,
+    //                             exterior_facet_domains,
+    //                             interior_facet_domains,
+    //                             reset_sparsity, add_values, num_threads);
+
+    OpenMpAssembler::assemble(A, a,
+                              cell_domains,
+                              exterior_facet_domains,
+                              interior_facet_domains,
+                              reset_sparsity, add_values);
     return;
   }
 

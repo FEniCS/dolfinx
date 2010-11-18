@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2010-11-04
+// Last changed: 2010-11-18
 
 #ifndef __OPENMP_ASSEMBLER_H
 #define __OPENMP_ASSEMBLER_H
@@ -37,7 +37,6 @@ namespace dolfin
 
   class OpenMpAssembler
   {
-
   public:
 
     /// Assemble tensor from given form
@@ -47,6 +46,8 @@ namespace dolfin
                          bool add_values=false);
 
   private:
+
+    friend class Assembler;
 
     /// Assemble tensor from given form on sub domains
     static void assemble(GenericTensor& A,

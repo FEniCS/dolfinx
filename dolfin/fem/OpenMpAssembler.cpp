@@ -50,15 +50,16 @@ void OpenMpAssembler::assemble(GenericTensor& A,
 }
 //-----------------------------------------------------------------------------
 void OpenMpAssembler::assemble(GenericTensor& A,
-                         const Form& a,
-                         const MeshFunction<uint>* cell_domains,
-                         const MeshFunction<uint>* exterior_facet_domains,
-                         const MeshFunction<uint>* interior_facet_domains,
-                         bool reset_sparsity,
-                         bool add_values)
+                               const Form& a,
+                               const MeshFunction<uint>* cell_domains,
+                               const MeshFunction<uint>* exterior_facet_domains,
+                               const MeshFunction<uint>* interior_facet_domains,
+                               bool reset_sparsity,
+                               bool add_values)
 {
   warning("OpenMpAssembler is experimental and probably won't work.");
-
+  cout << "  number of processors:      " << omp_get_num_procs() << endl;
+  cout << "  maximum number of threads: " << omp_get_max_threads() << endl;
 
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
@@ -144,6 +145,8 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
       //std::cout << "Parallel loop (thread number, color, cell index): "
       //        << omp_get_thread_num() << "  " << color << "  "  << cell.index() << std::endl;
 
+      cout << "number of threads: " << omp_get_num_threads() << endl;
+      cout << "thread number:     " << omp_get_thread_num() << endl;
 
       // Update to current cell
       ufc.update(cell);
