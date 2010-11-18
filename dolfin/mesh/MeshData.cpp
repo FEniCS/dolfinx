@@ -4,10 +4,11 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2008-05-19
-// Last changed: 2009-08-10
+// Last changed: 2010-11-18
 
 #include <sstream>
 
+#include <dolfin/common/utils.h>
 #include "MeshFunction.h"
 #include "MeshData.h"
 
@@ -119,6 +120,11 @@ MeshFunction<dolfin::uint>* MeshData::create_mesh_function(std::string name, uin
   return f;
 }
 //-----------------------------------------------------------------------------
+std::vector<dolfin::uint>* MeshData::create_array(std::string name)
+{
+  return create_array(name, 0);
+}
+//-----------------------------------------------------------------------------
 std::vector<dolfin::uint>* MeshData::create_array(std::string name, uint size)
 {
   // Check if data already exists
@@ -195,6 +201,11 @@ std::vector<dolfin::uint>* MeshData::array(const std::string name) const
     return 0;
 
   return it->second;
+}
+//-----------------------------------------------------------------------------
+std::vector<dolfin::uint>* MeshData::array(const std::string name, uint i) const
+{
+  return array(name + " " + to_string(i));
 }
 //-----------------------------------------------------------------------------
 std::map<dolfin::uint, dolfin::uint>* MeshData::mapping(const std::string name) const

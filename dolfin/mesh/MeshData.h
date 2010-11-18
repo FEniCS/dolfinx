@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2008-05-19
-// Last changed: 2010-11-17
+// Last changed: 2010-11-18
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H
@@ -56,11 +56,13 @@ namespace dolfin
   ///
   /// Sub meshes
   ///
-  ///    "global vertex indices" - MeshFunction<uint> of dimension 0
+  ///   "global vertex indices" - MeshFunction<uint> of dimension 0
   ///
   /// Mesh coloring
   ///
-  ///    "cell colors" - MeshFunction<uint> of dimension D
+  ///   "cell colors"       - MeshFunction<uint> of dimension D with cell colors
+  ///   "num colored cells" - Array<uint> listing the number of cells of each color
+  ///   "colored cells %d"  - Array<uint> of cell indices with colors 0, 1, 2, ...
 
   class MeshData : public Variable
   {
@@ -86,6 +88,9 @@ namespace dolfin
     /// Create MeshFunction with given name and dimension
     MeshFunction<uint>* create_mesh_function(std::string name, uint dim);
 
+    /// Create empty array (vector) with given name
+    std::vector<uint>* create_array(std::string name);
+
     /// Create array (vector) with given name and size
     std::vector<uint>* create_array(std::string name, uint size);
 
@@ -102,6 +107,9 @@ namespace dolfin
 
     /// Return array with given name (returning zero if data is not available)
     std::vector<uint>* array(const std::string name) const;
+
+    /// Return array with given name postfixed by " %d" (returning zero if data is not available)
+    std::vector<uint>* array(const std::string name, uint number) const;
 
     /// Return mapping with given name (returning zero if data is not available)
     std::map<uint, uint>* mapping(const std::string name) const;
