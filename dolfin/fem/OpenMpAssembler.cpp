@@ -11,6 +11,7 @@
 #ifdef HAS_OPENMP
 
 #include <omp.h>
+#include <boost/unordered_set.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -22,6 +23,7 @@
 #include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/SubDomain.h>
+#include <dolfin/mesh/SubsetIterator.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/FunctionSpace.h>
 #include "GenericDofMap.h"
@@ -107,12 +109,48 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   const Mesh& mesh = a.mesh();
 
 
-  // OpenMP test loop
-  #pragma omp parallel
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  // FIXME: figure out what to do with computing colors
+  // Color mesh
+  const MeshFunction<dolfin::uint>& colors = const_cast<Mesh&>(mesh).color("vertex");
+
+  // Compute number if colors
+  boost::unordered_set<uint> unique_colors;
+  for (uint i = 0; i < colors.size(); ++i)
+    unique_colors.insert(colors[i]);
+  const uint num_colors = unique_colors.size();
+
+  cout << "Number of colours: " << num_colors << endl;
+
+  // FIXME: Check that UFC copy constructor is dealing with copying pointers correctly
+  // Dummy UFC object since each thread needs to created it's own UFC object
+  UFC _ufc(ufc);
+
+  // Loop over colours
+  for (uint color = 0; color < num_colors; ++color)
   {
-    std::cout << "Cell index, thread number: " << cell->index() << "  "  << omp_get_thread_num() << std::endl;
+
+    // FIXME: This list will come from the mesh
+    // Build list of cells (OpenMP needs plain loops, not user iterators
+    std::vector<uint> cell_list;
+    for (SubsetIterator cell(colors, color); !cell.end(); ++cell)
+      cell_list.push_back(cell->index());
+
+    // OpenMP test loop over cells of the same color
+    #pragma omp parallel for firstprivate(_ufc)
+    for (uint i = 0; i < cell_list.size(); ++i)
+    {
+      // Create cell
+      Cell cell(mesh, cell_list[i]);
+
+      // !!!!!!!!!!! Do the assembly here
+
+      std::cout << "Parallel loop (thread number, color, cell index): "
+              << omp_get_thread_num() << "  " << color << "  "  << cell.index() << std::endl;
+
+    }
   }
+
+
 
 
   // Cell integral
