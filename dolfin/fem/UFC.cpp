@@ -115,11 +115,6 @@ void UFC::init(const Form& form)
   local_dimensions.reset(new uint[this->form.rank()]);
   macro_local_dimensions.reset(new uint[this->form.rank()]);
 
-  // Initialize global dimensions
-  global_dimensions.reset(new uint[this->form.rank()]);
-  for (uint i = 0; i < this->form.rank(); i++)
-    global_dimensions[i] = V[i]->dofmap().global_dimension();
-
   // Initialize dofs
   dofs = new uint*[this->form.rank()];
   for (uint i = 0; i < this->form.rank(); i++)

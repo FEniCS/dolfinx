@@ -99,9 +99,6 @@ namespace dolfin
     // Local dimensions of macro element for primary arguments
     boost::scoped_array<uint> macro_local_dimensions;
 
-    // Global dimensions for primary arguments
-    boost::scoped_array<uint> global_dimensions;
-
     // Mapped dofs for primary arguments
     uint** dofs;
 
