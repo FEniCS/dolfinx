@@ -35,23 +35,26 @@ UFC::UFC(const UFC& ufc) : form(ufc.dolfin_form.ufc_form()),
 //-----------------------------------------------------------------------------
 UFC::~UFC()
 {
+  const uint rank = this->form.rank();
+  const uint num_coefficients = this->form.num_coefficients();
+
   // Delete dofs
-  for (uint i = 0; i < this->form.rank(); i++)
+  for (uint i = 0; i < rank; i++)
     delete [] dofs[i];
   delete [] dofs;
 
   // Delete macro dofs
-  for (uint i = 0; i < this->form.rank(); i++)
+  for (uint i = 0; i < rank; i++)
     delete [] macro_dofs[i];
   delete [] macro_dofs;
 
   // Delete coefficients
-  for (uint i = 0; i < this->form.num_coefficients(); i++)
+  for (uint i = 0; i < num_coefficients; i++)
     delete [] w[i];
   delete [] w;
 
   // Delete macro coefficients
-  for (uint i = 0; i < this->form.num_coefficients(); i++)
+  for (uint i = 0; i < num_coefficients; i++)
     delete [] macro_w[i];
   delete [] macro_w;
 }
@@ -63,13 +66,6 @@ void UFC::init(const Form& form)
 
   // Get function spaces for arguments
   std::vector<boost::shared_ptr<const FunctionSpace> > V = form.function_spaces();
-
-  // Create finite elements
-  for (uint i = 0; i < this->form.rank(); i++)
-  {
-    boost::shared_ptr<ufc::finite_element> element(this->form.create_finite_element(i));
-    finite_elements.push_back( FiniteElement(element) );
-  }
 
   // Create finite elements for coefficients
   for (uint i = 0; i < this->form.num_coefficients(); i++)
