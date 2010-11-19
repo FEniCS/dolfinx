@@ -70,7 +70,7 @@ double bench(std::string form)
   // Assemble
   Timer timer("Total time");
   assemble(A, *a, false);
-  double t = timer.stop();
+  const double t = timer.stop();
 
   // Write summary
   summary(true);

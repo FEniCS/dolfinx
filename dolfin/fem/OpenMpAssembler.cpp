@@ -155,12 +155,6 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
       // Create cell
       Cell cell(mesh, (*colored_cells)[cell_index]);
 
-      //std::cout << "Parallel loop (thread number, color, cell index): "
-      //        << omp_get_thread_num() << "  " << color << "  "  << cell.index() << std::endl;
-
-      //cout << "number of threads: " << omp_get_num_threads() << endl;
-      //cout << "thread number:     " << omp_get_thread_num() << endl;
-
       // Update to current cell
       ufc.update(cell);
 
