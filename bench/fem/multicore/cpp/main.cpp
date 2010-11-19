@@ -11,6 +11,8 @@
 #include <cstdlib>
 
 #include <dolfin.h>
+#include <dolfin/fem/AssemblerTools.h>
+
 #include "Poisson.h"
 #include "NavierStokes.h"
 
@@ -58,8 +60,12 @@ double bench(std::string form)
     a->set_coefficient(4, *w4);
   }
 
-  // Create matrix
-  STLMatrix A;
+  // Create STL matrix
+  //STLMatrix A;
+
+  // Create PETSc matrix and intialise sparsity
+  PETScMatrix A;
+  AssemblerTools::init_global_tensor(A, *a, true, false);
 
   // Assemble
   Timer timer("Total time");
