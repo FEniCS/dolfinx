@@ -106,14 +106,12 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
   Timer timer("Assemble cells");
 
-    // Get integral for sub domain (if any)
-    if (domains && domains->size() > 0)
-      error("Sub-domains not yet handled by OpenMpAssembler.");
+  // Get integral for sub domain (if any)
+  if (domains && domains->size() > 0)
+    error("Sub-domains not yet handled by OpenMpAssembler.");
 
-  // Extract mesh
+  // Extract mesh and color
   const Mesh& mesh = a.mesh();
-
-  // Color the mesh and extract coloring data
   mesh.color("vertex");
 
   // FIXME: Check that UFC copy constructor is dealing with copying pointers correctly
@@ -125,6 +123,11 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
   // Cell integral
   const ufc::cell_integral* integral = ufc.cell_integrals[0].get();
+
+  // Dof maps
+  std::vector<const GenericDofMap*> dof_maps;
+  for (uint i = 0; i < form_rank; ++i)
+    dof_maps.push_back(&a.function_space(i)->dofmap());
 
   // Assemble over cells (loop over colours, then cells of same color)
   // Set number of threads (from parameter systems)
@@ -164,7 +167,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
       // GNW: This seems to be expensive in parallel (more costly than tabulate_tensor)
       // Tabulate dofs for each dimension
       for (uint i = 0; i < form_rank; ++i)
-        a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], cell);
+        dof_maps[i]->tabulate_dofs(ufc.dofs[i], cell);
 
       // Tabulate cell tensor
       integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
