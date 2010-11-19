@@ -11,6 +11,8 @@
 #include <cstdlib>
 
 #include <dolfin.h>
+#include <dolfin/fem/AssemblerTools.h>
+
 #include "Poisson.h"
 #include "NavierStokes.h"
 
@@ -58,13 +60,17 @@ double bench(std::string form)
     a->set_coefficient(4, *w4);
   }
 
-  // Create matrix
-  STLMatrix A;
+  // Create STL matrix
+  //STLMatrix A;
+
+  // Create PETSc matrix and intialise sparsity
+  PETScMatrix A;
+  AssemblerTools::init_global_tensor(A, *a, true, false);
 
   // Assemble
   Timer timer("Total time");
-  assemble(A, *a);
-  double t = timer.stop();
+  assemble(A, *a, false);
+  const double t = timer.stop();
 
   // Write summary
   summary(true);
@@ -112,7 +118,7 @@ int main(int argc, char* argv[])
     Table speedups("Speedups");
 
     // Iterate over number of threads
-    for (int num_threads = 1; num_threads <= MAX_NUM_THREADS; num_threads++)
+    for (int num_threads = 0; num_threads <= MAX_NUM_THREADS; num_threads++)
     {
       // Set the number of threads
       parameters["num_threads"] = num_threads;
@@ -127,7 +133,8 @@ int main(int argc, char* argv[])
         std::stringstream s;
         s << num_threads << " threads";
         timings(s.str(), forms[i]) = t;
-        speedups(s.str(), forms[i]) = timings.get_value("1 threads", forms[i]) / t;
+        speedups(s.str(), forms[i]) = timings.get_value("0 threads", forms[i]) / t;
+        //speedups(s.str(), forms[i]) = timings.get_value("1 threads", forms[i]) / t;
       }
     }
 

@@ -13,10 +13,12 @@ cmake_policy(SET CMP0004 OLD)
 find_package(dolfin)
 
 # Default build type (can be overridden by user)
-if (NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
-    "Choose the type of build, options are: Debug MinSizeRel Release RelWithDebInfo." FORCE)
-endif()
+#if (NOT CMAKE_BUILD_TYPE)
+#  set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
+#    "Choose the type of build, options are: Debug MinSizeRel Release RelWithDebInfo." FORCE)
+#endif()
+
+set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug MinSizeRel Release RelWithDebInfo." FORCE)
 
 # Compiler definitions
 add_definitions(${DOLFIN_CXX_DEFINITIONS})

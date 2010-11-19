@@ -60,7 +60,7 @@ void MulticoreAssembler::assemble(GenericTensor& A,
     coefficients[i]->gather();
 
   // Initialize global tensor
-  AssemblerTools::init_global_tensor(A, a, ufc, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
 
   // Call multi-thread assembly
   assemble_threads(&A, &a, num_threads,

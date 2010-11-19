@@ -123,7 +123,7 @@ void Assembler::assemble(GenericTensor& A,
     coefficients[i]->gather();
 
   // Initialize global tensor
-  AssemblerTools::init_global_tensor(A, a, ufc, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
 
   // Assemble over cells
   assemble_cells(A, a, ufc, cell_domains, 0);

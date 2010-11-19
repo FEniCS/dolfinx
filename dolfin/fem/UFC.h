@@ -57,15 +57,14 @@ namespace dolfin
     void update(const Cell& cell0, uint local_facet0,
                 const Cell& cell1, uint local_facet1);
 
-    // Finite elements for primary arguments
     private:
-    std::vector<FiniteElement> finite_elements;
 
     // Finite elements for coefficients
     std::vector<FiniteElement> coefficient_elements;
 
-    // Cell integrals
     public:
+
+    // Cell integrals
     std::vector<boost::shared_ptr<ufc::cell_integral> > cell_integrals;
 
     // Exterior facet integrals
@@ -98,9 +97,6 @@ namespace dolfin
 
     // Local dimensions of macro element for primary arguments
     boost::scoped_array<uint> macro_local_dimensions;
-
-    // Global dimensions for primary arguments
-    boost::scoped_array<uint> global_dimensions;
 
     // Mapped dofs for primary arguments
     uint** dofs;

@@ -79,7 +79,7 @@ void OpenMpAssembler::assemble(GenericTensor& A,
     coefficients[i]->gather();
 
   // Initialize global tensor
-  AssemblerTools::init_global_tensor(A, a, ufc, reset_sparsity, add_values);
+  AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
 
   // Assemble over cells
   assemble_cells(A, a, ufc, cell_domains, 0);
@@ -106,14 +106,12 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
   Timer timer("Assemble cells");
 
-    // Get integral for sub domain (if any)
-    if (domains && domains->size() > 0)
-      error("Sub-domains not yet handled by OpenMpAssembler.");
+  // Get integral for sub domain (if any)
+  if (domains && domains->size() > 0)
+    error("Sub-domains not yet handled by OpenMpAssembler.");
 
-  // Extract mesh
+  // Extract mesh and color
   const Mesh& mesh = a.mesh();
-
-  // Color the mesh and extract coloring data
   mesh.color("vertex");
 
   // FIXME: Check that UFC copy constructor is dealing with copying pointers correctly
@@ -123,8 +121,15 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   // Form rank
   const uint form_rank = ufc.form.rank();
 
+  // FIXME: Get a cost std::vector<std::vector<unit> > of dofs here
+
   // Cell integral
   const ufc::cell_integral* integral = ufc.cell_integrals[0].get();
+
+  // Dof maps
+  std::vector<const GenericDofMap*> dof_maps;
+  for (uint i = 0; i < form_rank; ++i)
+    dof_maps.push_back(&a.function_space(i)->dofmap());
 
   // Assemble over cells (loop over colours, then cells of same color)
   // Set number of threads (from parameter systems)
@@ -152,19 +157,13 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
       // Create cell
       Cell cell(mesh, (*colored_cells)[cell_index]);
 
-      //std::cout << "Parallel loop (thread number, color, cell index): "
-      //        << omp_get_thread_num() << "  " << color << "  "  << cell.index() << std::endl;
-
-      //cout << "number of threads: " << omp_get_num_threads() << endl;
-      //cout << "thread number:     " << omp_get_thread_num() << endl;
-
       // Update to current cell
       ufc.update(cell);
 
       // GNW: This seems to be expensive in parallel (more costly than tabulate_tensor)
       // Tabulate dofs for each dimension
       for (uint i = 0; i < form_rank; ++i)
-        a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], cell);
+        dof_maps[i]->tabulate_dofs(ufc.dofs[i], cell);
 
       // Tabulate cell tensor
       integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);

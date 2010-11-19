@@ -95,7 +95,6 @@ Did you forget to specify the value dimension correctly in an Expression sub cla
 //-----------------------------------------------------------------------------
 void AssemblerTools::init_global_tensor(GenericTensor& A,
                                         const Form& a,
-                                        UFC& ufc,
                                         bool reset_sparsity,
                                         bool add_values)
 {
@@ -112,7 +111,7 @@ void AssemblerTools::init_global_tensor(GenericTensor& A,
     {
       // Get dof maps
       std::vector<const GenericDofMap*> dof_maps;
-      for (uint i = 0; i < ufc.form.rank(); ++i)
+      for (uint i = 0; i < a.rank(); ++i)
         dof_maps.push_back(&(a.function_space(i)->dofmap()));
 
       // Build sparsity pattern
@@ -128,7 +127,11 @@ void AssemblerTools::init_global_tensor(GenericTensor& A,
       A.init(*sparsity_pattern);
     else
     {
-      A.resize(ufc.form.rank(), ufc.global_dimensions.get());
+      std::vector<uint> global_dimensions(a.rank());
+      for (uint i = 0; i < a.rank(); i++)
+        global_dimensions[i] = a.function_space(i)->dofmap().global_dimension();
+
+      A.resize(a.rank(), &global_dimensions[0]);
       A.zero();
     }
     t1.stop();
