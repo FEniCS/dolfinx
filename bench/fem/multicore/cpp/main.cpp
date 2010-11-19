@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
     Table speedups("Speedups");
 
     // Iterate over number of threads
-    for (int num_threads = 1; num_threads <= MAX_NUM_THREADS; num_threads++)
+    for (int num_threads = 0; num_threads <= MAX_NUM_THREADS; num_threads++)
     {
       // Set the number of threads
       parameters["num_threads"] = num_threads;
@@ -133,7 +133,8 @@ int main(int argc, char* argv[])
         std::stringstream s;
         s << num_threads << " threads";
         timings(s.str(), forms[i]) = t;
-        speedups(s.str(), forms[i]) = timings.get_value("1 threads", forms[i]) / t;
+        speedups(s.str(), forms[i]) = timings.get_value("0 threads", forms[i]) / t;
+        //speedups(s.str(), forms[i]) = timings.get_value("1 threads", forms[i]) / t;
       }
     }
 

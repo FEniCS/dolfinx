@@ -18,6 +18,8 @@ if (NOT CMAKE_BUILD_TYPE)
     "Choose the type of build, options are: Debug MinSizeRel Release RelWithDebInfo." FORCE)
 endif()
 
+#set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug MinSizeRel Release RelWithDebInfo." FORCE)
+
 # Compiler definitions
 add_definitions(${DOLFIN_CXX_DEFINITIONS})
 
