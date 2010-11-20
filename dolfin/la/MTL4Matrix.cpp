@@ -66,9 +66,9 @@ MTL4Matrix* MTL4Matrix::copy() const
 //-----------------------------------------------------------------------------
 dolfin::uint MTL4Matrix::size(uint dim) const
 {
-  if(dim == 0)
+  if (dim == 0)
     return mtl::matrix::num_rows(A);
-  else if(dim == 1)
+  else if (dim == 1)
     return mtl::matrix::num_cols(A);
 
   error("dim not < 2 in MTL4Matrix::size.");
@@ -88,7 +88,7 @@ void MTL4Matrix::get(double* block, uint m, const uint* rows, uint n,
 void MTL4Matrix::set(const double* block, uint m, const uint* rows, uint n,
                      const uint* cols)
 {
-  if(!ins)
+  if (!ins)
     init_inserter(nnz_row);
 
   for (uint i = 0; i < m; i++)
@@ -99,7 +99,8 @@ void MTL4Matrix::set(const double* block, uint m, const uint* rows, uint n,
 void MTL4Matrix::add(const double* block, uint m, const uint* rows, uint n,
                      const uint* cols)
 {
-  if(!ins)
+  // This is not thread-safe
+  if (!ins)
     init_inserter(nnz_row);
 
   // Block insertion
@@ -114,14 +115,14 @@ void MTL4Matrix::add(const double* block, uint m, const uint* rows, uint n,
 //-----------------------------------------------------------------------------
 void MTL4Matrix::axpy(double a, const GenericMatrix& A,
                       bool same_nonzero_pattern)
-  {
-    // Check for same size
-    if ( size(0) != A.size(0) or size(1) != A.size(1) )
-      error("Matrices must be of same size.");
+{
+  // Check for same size
+  if ( size(0) != A.size(0) or size(1) != A.size(1) )
+    error("Matrices must be of same size.");
 
-    // Do we need to check for same sparsity pattern?
-    this->A += (a)*(A.down_cast<MTL4Matrix>().mat());
-  }
+  // Do we need to check for same sparsity pattern?
+  this->A += (a)*(A.down_cast<MTL4Matrix>().mat());
+}
 //-----------------------------------------------------------------------------
 double MTL4Matrix::norm(std::string norm_type) const
 {
@@ -146,7 +147,7 @@ void MTL4Matrix::zero()
 //-----------------------------------------------------------------------------
 void MTL4Matrix::apply(std::string mode)
 {
-  if(ins)
+  if (ins)
     delete ins;
   ins = 0;
 }
@@ -197,7 +198,7 @@ void MTL4Matrix::zero(uint m, const uint* rows)
   for(uint i = 0; i < m; ++i)
   {
     // Increment cursor
-    if(i == 0)
+    if (i == 0)
       cursor += rows[i];
     else
       cursor += rows[i] - rows[i-1];
@@ -259,10 +260,10 @@ void MTL4Matrix::setrow(uint row, const std::vector<uint>& columns, const std::v
   assert(columns.size() == values.size());
   assert(row < this->size(0));
 
-  if(!ins)
+  if (!ins)
     init_inserter(nnz_row);
 
-  for(uint i=0; i<columns.size(); i++)
+  for (uint i=0; i<columns.size(); i++)
     (*ins)[row][columns[i] ] = values[i];
 }
 //-----------------------------------------------------------------------------
@@ -331,7 +332,7 @@ void MTL4Matrix::init_inserter(uint nnz)
 //-----------------------------------------------------------------------------
 inline void MTL4Matrix::assert_no_inserter() const
 {
-  if(ins)
+  if (ins)
     error("MTL4: Disallowed matrix operation attempted while inserter active. Did you forget to apply()?");
 }
 //-----------------------------------------------------------------------------

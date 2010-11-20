@@ -3,14 +3,14 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2007-2009.
-// Modified by Garth Wells, 2008-2009
+// Modified by Garth Wells, 2008-2010
 // Modified by Ola Skavhaug, 2008-2009
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Martin Sandve Alnaes, 2008.
 // Modified by Johan Hake, 2008-2009.
 //
 // First added:  2007-01-21
-// Last changed: 2010-01-29
+// Last changed: 2010-11-20
 
 //=============================================================================
 // SWIG directives for the DOLFIN la kernel module (pre)
@@ -83,7 +83,8 @@
 //-----------------------------------------------------------------------------
 // Ignore wrapping of the Set variable (Might add typemap for this in future...)
 //-----------------------------------------------------------------------------
-%ignore dolfin::SparsityPattern::pattern;
+%ignore dolfin::SparsityPattern::diagonal_pattern;
+%ignore dolfin::SparsityPattern::off_diagonal_pattern;
 
 //-----------------------------------------------------------------------------
 // Declare newobject for vector and matrix get functions

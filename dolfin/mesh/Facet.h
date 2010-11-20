@@ -51,7 +51,7 @@ namespace dolfin
     /// the ordering of the two cells. If not specified, the ordering
     /// will depend on the (arbitrary) ordering of the mesh
     /// connectivity.
-    std::pair<const Cell, const Cell> adjacent_cells(MeshFunction<uint>* facet_orientation=0) const
+    std::pair<const Cell, const Cell> adjacent_cells(const MeshFunction<uint>* facet_orientation=0) const
     {
        assert(num_entities(dim() + 1) == 2);
 

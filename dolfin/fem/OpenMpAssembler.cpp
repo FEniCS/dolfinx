@@ -58,8 +58,6 @@ void OpenMpAssembler::assemble(GenericTensor& A,
                                bool add_values)
 {
   warning("OpenMpAssembler is experimental.");
-  //cout << "  number of processors:      " << omp_get_num_procs() << endl;
-  //cout << "  maximum number of threads: " << omp_get_max_threads() << endl;
 
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
@@ -121,46 +119,44 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   // Form rank
   const uint form_rank = ufc.form.rank();
 
-  // FIXME: Get a cost std::vector<std::vector<unit> > of dofs here
+  // FIXME: Get a const std::vector<std::vector<unit> >& of dofs here
 
   // Cell integral
   const ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
-  // Dof maps
+  // Collect pointers to dof maps
   std::vector<const GenericDofMap*> dof_maps;
   for (uint i = 0; i < form_rank; ++i)
     dof_maps.push_back(&a.function_space(i)->dofmap());
 
-  // Assemble over cells (loop over colours, then cells of same color)
-  // Set number of threads (from parameter systems)
-  const uint num_threads = parameters["num_threads"];
-  omp_set_num_threads(num_threads);
+  // Set number of OpenMP threads (from parameter systems)
+  omp_set_num_threads(parameters["num_threads"]);
 
+  // Assemble over cells (loop over colours, then cells of same color)
   const uint num_colors = mesh.data().array("num colored cells")->size();
   for (uint color = 0; color < num_colors; ++color)
   {
-    // Get the array of cell indices for current color
+    // Get the array of cell indices of current color
     const std::vector<uint>* colored_cells = mesh.data().array("colored cells", color);
-    //assert(colored_cells);
+    assert(colored_cells);
 
-    // GNW: The OpenMP option schedule(static) seems faster
+    // Number of cells of current color
+    const uint num_cells = colored_cells->size();
 
-    // FIXME: A UFC object is created for each thread for each colour. Can this be just for each thread?
+    // FIXME: A UFC object is created for each thread for each colour. Can this be for just each thread?
 
     // OpenMP test loop over cells of the same color
-    const uint num_cells = colored_cells->size();
     Progress p(AssemblerTools::progress_message(A.rank(), "cells"), num_colors);
-    //#pragma omp parallel for firstprivate(ufc)
-    #pragma omp parallel for schedule(static) firstprivate(ufc)
+    #pragma omp parallel for schedule(guided, 10) firstprivate(ufc)
     for (uint cell_index = 0; cell_index < num_cells; ++cell_index)
     {
       // Create cell
-      Cell cell(mesh, (*colored_cells)[cell_index]);
+      const Cell cell(mesh, (*colored_cells)[cell_index]);
 
       // Update to current cell
       ufc.update(cell);
 
-      // GNW: This seems to be expensive in parallel (more costly than tabulate_tensor)
+      // GNW: This seems to be expensive in parallel (more costly than tabulate_tensor in some cases)
       // Tabulate dofs for each dimension
       for (uint i = 0; i < form_rank; ++i)
         dof_maps[i]->tabulate_dofs(ufc.dofs[i], cell);
@@ -169,8 +165,8 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
       integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
 
       // Add entries to global tensor
-      if (values && ufc.form.rank() == 0)
-        (*values)[cell.index()] = ufc.A[0];
+      if (values && form_rank == 0)
+        (*values)[cell_index] = ufc.A[0];
       else
         A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
     }
@@ -187,6 +183,7 @@ void OpenMpAssembler::assemble_exterior_facets(GenericTensor& A,
   // Skip assembly if there are no exterior facet integrals
   if (ufc.form.num_exterior_facet_integrals() == 0)
     return;
+
   Timer timer("Assemble exterior facets");
 
   // Extract mesh
@@ -202,7 +199,7 @@ void OpenMpAssembler::assemble_exterior_facets(GenericTensor& A,
   assert(mesh.ordered());
 
   // Extract exterior (non shared) facets markers
-  MeshFunction<uint>* exterior_facets = mesh.data().mesh_function("exterior facets");
+  const MeshFunction<uint>* exterior_facets = mesh.data().mesh_function("exterior facets");
 
   // Assemble over exterior facets (the cells of the boundary)
   Progress p(AssemblerTools::progress_message(A.rank(), "exterior facets"), mesh.num_facets());
@@ -226,11 +223,12 @@ void OpenMpAssembler::assemble_exterior_facets(GenericTensor& A,
     }
 
     // Skip integral if zero
-    if (!integral) continue;
+    if (!integral)
+      continue;
 
     // Get mesh cell to which mesh facet belongs (pick first, there is only one)
     assert(facet->num_entities(mesh.topology().dim()) == 1);
-    Cell mesh_cell(mesh, facet->entities(mesh.topology().dim())[0]);
+    const Cell mesh_cell(mesh, facet->entities(mesh.topology().dim())[0]);
 
     // Get local index of facet with respect to the cell
     const uint local_facet = mesh_cell.index(*facet);
@@ -276,7 +274,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   assert(mesh.ordered());
 
   // Get interior facet directions (if any)
-  MeshFunction<uint>* facet_orientation = mesh.data().mesh_function("facet orientation");
+  const MeshFunction<uint>* facet_orientation = mesh.data().mesh_function("facet orientation");
   if (facet_orientation && facet_orientation->dim() != mesh.topology().dim() - 1)
     error("Expecting facet orientation to be defined on facets (not dimension %d).",
           facet_orientation);
@@ -307,13 +305,13 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
       continue;
 
     // Get cells incident with facet
-    std::pair<const Cell, const Cell> cells = facet->adjacent_cells(facet_orientation);
+    const std::pair<const Cell, const Cell> cells = facet->adjacent_cells(facet_orientation);
     const Cell& cell0 = cells.first;
     const Cell& cell1 = cells.second;
 
     // Get local index of facet with respect to each cell
-    uint local_facet0 = cell0.index(*facet);
-    uint local_facet1 = cell1.index(*facet);
+    const uint local_facet0 = cell0.index(*facet);
+    const uint local_facet1 = cell1.index(*facet);
 
     // Update to current pair of cells
     ufc.update(cell0, local_facet0, cell1, local_facet1);

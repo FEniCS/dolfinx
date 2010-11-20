@@ -48,7 +48,7 @@ void AssemblerTools::check(const Form& a)
   // Check that all coefficients have valid value dimensions
   for (uint i = 0; i < coefficients.size(); ++i)
   {
-    if(!coefficients[i])
+    if (!coefficients[i])
       error("Got NULL Function as coefficient %d.", i);
 
     // auto_ptr deletes its object when it exits its scope
@@ -93,10 +93,8 @@ Did you forget to specify the value dimension correctly in an Expression sub cla
     error("Unable to assemble, mesh is not correctly ordered (consider calling mesh.order()).");
 }
 //-----------------------------------------------------------------------------
-void AssemblerTools::init_global_tensor(GenericTensor& A,
-                                        const Form& a,
-                                        bool reset_sparsity,
-                                        bool add_values)
+void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
+                                        bool reset_sparsity, bool add_values)
 {
   // Check that we should not add values
   if (reset_sparsity && add_values)

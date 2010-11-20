@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <boost/unordered_set.hpp>
+#include <dolfin/common/Set.h>
 
 namespace dolfin
 {
@@ -16,7 +17,8 @@ namespace dolfin
   /// Typedefs for simple graph data structures
 
   /// Vector of unordered sets
-  typedef std::vector<boost::unordered_set<unsigned int> > Graph;
+  //typedef std::vector<boost::unordered_set<unsigned int> > Graph;
+  typedef std::vector<dolfin::Set<unsigned int> > Graph;
 
 }
 

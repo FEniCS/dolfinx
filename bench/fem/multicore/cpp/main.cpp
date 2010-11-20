@@ -60,11 +60,13 @@ double bench(std::string form, const Mesh& mesh)
     a->set_coefficient(4, *w4);
   }
 
+  parameters["linear_algebra_backend"] = "PETSc";
+
   // Create STL matrix
   //STLMatrix A;
+  Matrix A;
 
-  // Create PETSc matrix and intialise sparsity
-  PETScMatrix A;
+  // Intialise matrix
   AssemblerTools::init_global_tensor(A, *a, true, false);
 
   // Assemble
@@ -99,13 +101,18 @@ int main(int argc, char* argv[])
   // Parse command-line arguments
   parameters.parse(argc, argv);
 
+  //SubSystemsManager::init_petsc();
+  //PetscInfoAllow(PETSC_TRUE, PETSC_NULL);
+  //PetscOptionsSetValue("-mat_inode_limit", "5");
+
   // Create mesh
   UnitCube mesh(SIZE, SIZE, SIZE);
   mesh.color("vertex");
+  //mesh.init(1);
 
   // Test cases
   std::vector<std::string> forms;
-  forms.push_back("Poisson");
+  //forms.push_back("Poisson");
   forms.push_back("NavierStokes");
 
   // If parameter num_threads has been set, just run once
@@ -138,7 +145,10 @@ int main(int argc, char* argv[])
         s << num_threads << " threads";
         timings(s.str(), forms[i]) = t;
         speedups(s.str(), forms[i]) = timings.get_value("0 threads", forms[i]) / t;
-        //speedups(s.str(), forms[i]) = timings.get_value("1 threads", forms[i]) / t;
+        if (num_threads == 0)
+          speedups(s.str(), "(rel 1 thread)") = "-";
+        else
+          speedups(s.str(), "(rel 1 thread)") = timings.get_value("1 threads", forms[i]) / t;
       }
     }
 

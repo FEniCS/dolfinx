@@ -287,7 +287,7 @@ namespace dolfin
   //-----------------------------------------------------------------------------
   template <class Mat>
   void uBLASMatrix<Mat>::set(const double* block, uint m, const uint* rows,
-                                                uint n, const uint* cols)
+                             uint n, const uint* cols)
   {
     for (uint i = 0; i < m; i++)
       for (uint j = 0; j < n; j++)
@@ -296,7 +296,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <class Mat>
   void uBLASMatrix<Mat>::add(const double* block, uint m, const uint* rows,
-                                                uint n, const uint* cols)
+                             uint n, const uint* cols)
   {
     for (uint i = 0; i < m; i++)
       for (uint j = 0; j < n; j++)
@@ -305,7 +305,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template <class Mat>
   void uBLASMatrix<Mat>::get(double* block, uint m, const uint* rows,
-                                          uint n, const uint* cols) const
+                             uint n, const uint* cols) const
   {
     for(uint i = 0; i < m; ++i)
       for(uint j = 0; j < n; ++j)
