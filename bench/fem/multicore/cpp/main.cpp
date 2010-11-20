@@ -21,14 +21,14 @@
 
 using namespace dolfin;
 
-double bench(std::string form)
+double bench(std::string form, const Mesh& mesh)
 {
   dolfin::uint num_threads = parameters["num_threads"];
   info_underline("Benchmarking %s, num_threads = %d", form.c_str(), num_threads);
 
   // Create mesh
-  UnitCube mesh(SIZE, SIZE, SIZE);
-  mesh.color("vertex");
+  //UnitCube mesh(SIZE, SIZE, SIZE);
+  //mesh.color("vertex");
 
   // Create form
   FunctionSpace *V(0), *W0(0), *W1(0), *W2(0), *W3(0), *W4(0);
@@ -99,6 +99,10 @@ int main(int argc, char* argv[])
   // Parse command-line arguments
   parameters.parse(argc, argv);
 
+  // Create mesh
+  UnitCube mesh(SIZE, SIZE, SIZE);
+  mesh.color("vertex");
+
   // Test cases
   std::vector<std::string> forms;
   forms.push_back("Poisson");
@@ -108,7 +112,7 @@ int main(int argc, char* argv[])
   if (parameters["num_threads"].change_count() > 0)
   {
     for (int i = 0; i < forms.size(); i++)
-      bench(forms[i]);
+      bench(forms[i], mesh);
   }
 
   // Otherwise, iterate from 1 to MAX_NUM_THREADS
@@ -127,7 +131,7 @@ int main(int argc, char* argv[])
       for (int i = 0; i < forms.size(); i++)
       {
         // Run test case
-        double t = bench(forms[i]);
+        const double t = bench(forms[i], mesh);
 
         // Store results and scale to get speedups
         std::stringstream s;
