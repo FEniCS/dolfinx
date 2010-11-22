@@ -147,7 +147,8 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
     // OpenMP test loop over cells of the same color
     Progress p(AssemblerTools::progress_message(A.rank(), "cells"), num_colors);
-    #pragma omp parallel for schedule(guided, 10) firstprivate(ufc)
+    //#pragma omp parallel for schedule(static) firstprivate(ufc)
+    #pragma omp parallel for schedule(guided, 40) firstprivate(ufc)
     for (uint cell_index = 0; cell_index < num_cells; ++cell_index)
     {
       // Create cell
