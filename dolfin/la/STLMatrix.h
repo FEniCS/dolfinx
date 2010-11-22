@@ -11,6 +11,9 @@
 #ifndef __STL_MATRIX_H
 #define __STL_MATRIX_H
 
+#include <map>
+#include <boost/unordered_map.hpp>
+
 #include <string>
 #include <vector>
 #include <dolfin/log/log.h>
@@ -70,7 +73,7 @@ namespace dolfin
     }
 
     /// Finalize assembly of tensor
-    virtual void apply(std::string mode) {}
+    virtual void apply(std::string mode);
 
     /// Return informal string representation (pretty-print)
     virtual std::string str(bool verbose) const;
@@ -86,6 +89,8 @@ namespace dolfin
       vals.resize(M);
       dims[0] = M;
       dims[1] = N;
+
+      //matrix.resize(M);
     }
 
     /// Get block of values
@@ -174,6 +179,9 @@ namespace dolfin
 
     // Storage of values
     std::vector<std::vector<double> > vals;
+
+    //std::vector<std::map<uint, double> > matrix;
+    //std::vector<boost::unordered_map<uint, double> > matrix;
 
     // The size of the matrix
     uint dims[2];
