@@ -8,8 +8,9 @@
 #define __DOLFIN_ZOLTAN_GRAPH_COLORING_H
 
 #ifdef HAS_TRILINOS
-
 #include <zoltan_cpp.h>
+#endif
+
 #include <dolfin/common/Array.h>
 #include <dolfin/common/types.h>
 #include "Graph.h"
@@ -32,6 +33,7 @@ namespace dolfin
 
   private:
 
+    #ifdef HAS_TRILINOS
     class ZoltanGraphInterface
     {
 
@@ -70,9 +72,9 @@ namespace dolfin
                                 float* ewgts, int* ierr);
 
     };
+    #endif
 
   };
 }
 
-#endif
 #endif

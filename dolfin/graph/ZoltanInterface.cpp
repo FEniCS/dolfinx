@@ -4,7 +4,6 @@
 // First added:  2010-11-16
 // Last changed:
 
-#ifdef HAS_TRILINOS
 
 #include <boost/foreach.hpp>
 #include "dolfin/log/log.h"
@@ -13,6 +12,7 @@
 
 using namespace dolfin;
 
+#ifdef HAS_TRILINOS
 //-----------------------------------------------------------------------------
 void ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
                                                     Array<uint>& colors)
@@ -60,7 +60,16 @@ void ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
   delete global_ids;
 }
 //-----------------------------------------------------------------------------
+#else
+void ZoltanInterface::compute_local_vertex_coloring(const Graph& graph,
+                                                    Array<uint>& colors)
+{
+  error("Trilinos (with Zoltan) must be enabled to use ZoltanInterface::compute_local_vertex_coloring.");
+}
+#endif
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+#ifdef HAS_TRILINOS
 ZoltanInterface::ZoltanGraphInterface::ZoltanGraphInterface(const Graph& graph)
     : graph(graph)
 {
