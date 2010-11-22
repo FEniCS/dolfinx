@@ -71,7 +71,8 @@ double bench(std::string form, const Mesh& mesh)
 
   // Assemble
   Timer timer("Total time");
-  assemble(A, *a, false);
+  for (dolfin::uint i = 0; i < 20; ++i)
+    assemble(A, *a, false);
   const double t = timer.stop();
 
   // Write summary
