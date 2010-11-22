@@ -9,8 +9,6 @@
 #ifndef __MESH_COLORING_H
 #define __MESH_COLORING_H
 
-#ifdef HAS_TRILINOS
-
 #include <string>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Cell.h>
@@ -56,5 +54,4 @@ namespace dolfin
 
 }
 
-#endif
 #endif

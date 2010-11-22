@@ -6,13 +6,11 @@
 // First added:  2010-11-15
 // Last changed: 2010-11-18
 
-#ifdef HAS_TRILINOS
-
 #include <boost/foreach.hpp>
 
-#include <dolfin/log/log.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/graph/ZoltanInterface.h>
+#include <dolfin/log/log.h>
 #include "Cell.h"
 #include "Edge.h"
 #include "Facet.h"
@@ -134,9 +132,6 @@ void MeshColoring::compute_cell_colors(MeshFunction<uint>& colors, uint dim)
   // Wrap MeshFunction values
   Array<uint> _colors(colors.size(), colors.values());
 
-  // Create coloring object
-  //ZoltanInterface::graph_color(graph);
-
   // Color cells
   ZoltanInterface::compute_local_vertex_coloring(graph, _colors);
 
@@ -162,4 +157,3 @@ dolfin::uint MeshColoring::type_to_dim(std::string coloring_type,
 }
 //-----------------------------------------------------------------------------
 
-#endif
