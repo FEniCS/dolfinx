@@ -8,14 +8,46 @@
 // First added:  2007-01-17
 // Last changed: 2010-11-08
 
-#include <sstream>
+#include <algorithm>
 #include <iomanip>
+#include <sstream>
 
 #include "STLFactory.h"
 #include "STLMatrix.h"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+void STLMatrix::add(const double* block, uint m, const uint* rows, uint n, const uint* cols)
+{
+  // Perform a simple linear search along each column. Otherwise,
+  // append the value (calling push_back).
+
+  // Iterate over rows
+  uint pos = 0;
+  for (uint i = 0; i < m; i++)
+  {
+    const uint I = rows[i];
+    std::vector<uint>& rcols = this->cols[I];
+    std::vector<double>& rvals = this->vals[I];
+
+    // Iterate over columns
+    for (uint j = 0; j < n; j++)
+    {
+      const uint J = cols[j];
+
+      // Check if column entry exists and insert
+      const std::vector<uint>::const_iterator column = std::find(rcols.begin(), rcols.end(), J);
+      if (column != rcols.end())
+        rvals[column - rcols.begin()] += block[pos++];
+      else
+      {
+        rcols.push_back(J);
+        rvals.push_back(block[pos++]);
+      }
+    }
+  }
+}
 //-----------------------------------------------------------------------------
 std::string STLMatrix::str(bool verbose) const
 {

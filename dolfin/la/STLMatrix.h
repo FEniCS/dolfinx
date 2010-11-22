@@ -83,7 +83,7 @@ namespace dolfin
       cols.clear();
       vals.clear();
       cols.resize(M);
-      vals.resize(N);
+      vals.resize(M);
       dims[0] = M;
       dims[1] = N;
     }
@@ -97,45 +97,7 @@ namespace dolfin
     { dolfin_not_implemented(); }
 
     /// Add block of values
-    virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols)
-    {
-      // Perform a simple linear search along each column. Otherwise,
-      // append the value (calling push_back).
-
-      // Iterate over rows
-      uint pos = 0;
-      for (uint i = 0; i < m; i++)
-      {
-        const uint I = rows[i];
-        std::vector<uint>& rcols = this->cols[I];
-        std::vector<double>& rvals = this->vals[I];
-
-        // Iterate over columns
-        for (uint j = 0; j < n; j++)
-        {
-          const uint J = cols[j];
-
-          // Try to find column
-          bool found = false;
-          for (uint k = 0; k < rcols.size(); k++)
-          {
-            if (rcols[k] == J)
-            {
-              rvals[k] += block[pos++];
-              found = true;
-              break;
-            }
-          }
-
-          // Append if not found
-          if (!found)
-          {
-            rcols.push_back(J);
-            rvals.push_back(block[pos++]);
-          }
-        }
-      }
-    }
+    virtual void add(const double* block, uint m, const uint* rows, uint n, const uint* cols);
 
     /// Add multiple of given matrix (AXPY operation)
     virtual void axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
