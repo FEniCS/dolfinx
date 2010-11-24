@@ -9,7 +9,7 @@
 #include <boost/foreach.hpp>
 
 #include <dolfin/common/utils.h>
-#include <dolfin/graph/ZoltanInterface.h>
+#include <dolfin/graph/BoostGraphInterface.h>
 #include <dolfin/log/log.h>
 #include "Cell.h"
 #include "Edge.h"
@@ -133,11 +133,7 @@ void MeshColoring::compute_cell_colors(MeshFunction<uint>& colors, uint dim)
   Array<uint> _colors(colors.size(), colors.values());
 
   // Color cells
-  ZoltanInterface::compute_local_vertex_coloring(graph, _colors);
-
-  // Compensate for numbering starting at 1
-  for (uint i = 0; i < _colors.size(); i++)
-    _colors[i] -= 1;
+  BoostGraphInterface::compute_local_vertex_coloring(graph, _colors);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MeshColoring::type_to_dim(std::string coloring_type,

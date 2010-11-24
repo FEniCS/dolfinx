@@ -16,8 +16,6 @@ using namespace dolfin;
 
 int main()
 {
-   #ifdef HAS_TRILINOS
-
   // Create mesh
   UnitCube mesh(24, 24, 24);
 
@@ -32,13 +30,6 @@ int main()
   // Compute facet-based coloring
   const MeshFunction<dolfin::uint>& colors_facet = mesh.color("facet");
   plot(colors_facet, "Facet-based cell coloring");
-
-  #else
-
-  cout << "Trilinos (with Zoltan enabled) must be installed to run this demo." << endl;
-
-  #endif
-
 
   return 0;
 }

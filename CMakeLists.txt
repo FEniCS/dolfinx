@@ -154,7 +154,7 @@ else()
   option(Boost_USE_MULTITHREADED "Use the multithreaded Boost libraries." OFF)
 endif()
 set(BOOST_ROOT $ENV{BOOST_DIR})
-set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0)
+set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45.0)
 find_package(Boost 1.36 COMPONENTS filesystem program_options system thread REQUIRED)
 
 # Check for required packages
