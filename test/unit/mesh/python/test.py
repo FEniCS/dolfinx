@@ -1,7 +1,7 @@
 """Unit tests for the mesh library"""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2006-08-08 -- 2010-11-16"
+__date__ = "2006-08-08 -- 2010-11-24"
 __copyright__ = "Copyright (C) 2006 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -141,6 +141,24 @@ class MeshFunctions(unittest.TestCase):
         file << self.f
         f = MeshFunction('int', self.mesh, "saved_mesh_function.xml")
         assert all(f.values() == self.f.values())
+
+    def testSubsetIterators(self):
+        def inside1(x):
+            return x[0]<=0.5
+        def inside2(x):
+            return x[0]>=0.5
+        sd1 = AutoSubDomain(inside1)
+        sd2 = AutoSubDomain(inside2)
+        cf = CellFunction('uint', self.mesh)
+        cf.set_all(0)
+        sd1.mark(cf, 1)
+        sd2.mark(cf, 2)
+
+        for i in range(3):
+            num = 0
+            for e in SubsetIterator(cf, i):
+                num +=1
+            self.assertEqual(num,6)
 
 class NamedMeshFunctions(unittest.TestCase):
 
