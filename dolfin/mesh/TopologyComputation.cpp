@@ -60,6 +60,7 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
   compute_connectivity(mesh, mesh.topology().dim(), mesh.topology().dim());
 
   // Start timer
+  info("Creating mesh entities of dimension %d.", dim);
   Timer timer("compute entities dim = " + to_string(dim));
 
   // Get cell type
@@ -160,6 +161,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
     return;
 
   // Start timer
+  info("Computing mesh connectivity %d - %d.", d0, d1);
   Timer timer("compute connectivity " + to_string(d0) + " - " + to_string(d1));
 
   // Decide how to compute the connectivity

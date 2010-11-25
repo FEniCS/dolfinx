@@ -181,7 +181,7 @@ void Mesh::clean()
     for (uint d1 = 0; d1 <= D; d1++)
     {
       if (!(d0 == D && d1 == 0))
-        topology.clear(d0, d1);
+        _topology.clear(d0, d1);
     }
   }
 }

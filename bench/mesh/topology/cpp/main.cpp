@@ -8,7 +8,7 @@
 
 using namespace dolfin;
 
-#define NUM_REPS 10
+#define NUM_REPS 2
 #define SIZE 32
 
 int main(int argc, char* argv[])
