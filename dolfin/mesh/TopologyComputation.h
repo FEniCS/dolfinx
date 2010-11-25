@@ -37,6 +37,9 @@ namespace dolfin
     /// Compute connectivity from intersection
     static void compute_from_intersection(Mesh& mesh, uint d0, uint d1, uint d);
 
+    /// Compute connectivity from intersection
+    static void compute_from_intersection_old(Mesh& mesh, uint d0, uint d1, uint d);
+
     /// Count how many of the given entities that are new
     static uint count_entities(Mesh& mesh, MeshEntity& cell,
 			      uint** vertices, uint m, uint n, uint dim);

@@ -5,6 +5,8 @@
 // Last changed: 2010-11-25
 
 #include <set>
+#include <vector>
+
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Timer.h>
@@ -238,6 +240,63 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, uint d0, uint d1)
 //----------------------------------------------------------------------------
 void TopologyComputation::compute_from_intersection(Mesh& mesh,
                                                     uint d0, uint d1, uint d)
+{
+  info(TRACE, "Computing mesh connectivity %d - %d from intersection %d - %d - %d.",
+       d0, d1, d0, d, d1);
+
+  // Get mesh topology
+  MeshTopology& topology = mesh.topology();
+
+  // Check preconditions
+  assert(d0 >= d1);
+  assert(topology(d0, d).size() > 0);
+  assert(topology(d, d1).size() > 0);
+
+  // Temporary dynamic storage, later copied into static storage
+  std::vector<std::vector<uint> > connectivity(topology.size(d0));
+
+  // Iterate over all entities of dimension d0
+  uint max_size = 1;
+  for (MeshEntityIterator e0(mesh, d0); !e0.end(); ++e0)
+  {
+    // Get set of connected entities for current entity
+    std::vector<uint>& entities = connectivity[e0->index()];
+
+    // Reserve space
+    entities.reserve(max_size);
+
+    // Iterate over all connected entities of dimension d
+    for (MeshEntityIterator e(*e0, d); !e.end(); ++e)
+    {
+      // Iterate over all connected entities of dimension d1
+      for (MeshEntityIterator e1(*e, d1); !e1.end(); ++e1)
+      {
+        if (d0 == d1)
+        {
+          // An entity is not a neighbor to itself
+          if (e0->index() != e1->index() && std::find(entities.begin(), entities.end(), e1->index()) == entities.end())
+            entities.push_back(e1->index());
+        }
+        else
+        {
+          // Entity e1 must be completely contained in e0
+          if (contains(*e0, *e1) && std::find(entities.begin(), entities.end(), e1->index()) == entities.end())
+            entities.push_back(e1->index());
+        }
+      }
+    }
+
+    // Store maximum size
+    if (entities.size() > max_size)
+      max_size = entities.size();
+  }
+
+  // Copy to static storage
+  topology(d0, d1).set(connectivity);
+}
+//-----------------------------------------------------------------------------
+void TopologyComputation::compute_from_intersection_old(Mesh& mesh,
+                                                        uint d0, uint d1, uint d)
 {
   // The intersection is computed in three steps:
   //

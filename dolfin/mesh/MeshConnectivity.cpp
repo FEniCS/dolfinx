@@ -154,7 +154,7 @@ void MeshConnectivity::set(const std::vector<std::vector<uint> >& connections)
   // Initialize connections
   this->connections = new uint[_size];
   for (uint e = 0; e < num_entities; e++)
-    for (uint i = 0; i < connections[e].size(); e++)
+    for (uint i = 0; i < connections[e].size(); i++)
       this->connections[offsets[e] + i] = connections[e][i];
 }
 //-----------------------------------------------------------------------------
