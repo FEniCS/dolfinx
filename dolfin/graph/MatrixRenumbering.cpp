@@ -93,9 +93,9 @@ void MatrixRenumbering::num_edges_per_vertex(uint* num_edges) const
   sparsity_pattern.num_nonzeros_diagonal(num_edges);
 }
 //-----------------------------------------------------------------------------
-const std::vector<Set<dolfin::uint> >& MatrixRenumbering::edges() const
+const std::vector<std::vector<dolfin::uint> > MatrixRenumbering::edges() const
 {
-  return sparsity_pattern.diagonal_pattern();
+  return sparsity_pattern.diagonal_pattern(SparsityPattern::unsorted);
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -147,7 +147,7 @@ void MatrixRenumbering::get_all_edges(void *data, int num_gid_entries,
   std::cout << "Testing:" << num_gid_entries << "  " << num_lid_entries << std::endl;
 
   MatrixRenumbering *objs = (MatrixRenumbering *)data;
-  const std::vector<Set<uint> >& edges = objs->edges();
+  const std::vector<std::vector<uint> > edges = objs->edges();
 
   uint sum = 0;
   for (uint i = 0; i < edges.size(); ++i)

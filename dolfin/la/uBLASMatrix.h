@@ -263,7 +263,7 @@ namespace dolfin
     columns.clear();
     values.clear();
     typename ublas::matrix_row<const Mat>::const_iterator component;
-    for (component=row.begin(); component != row.end(); ++component)
+    for (component = row.begin(); component != row.end(); ++component)
     {
       columns.push_back(component.index());
       values.push_back(*component );
@@ -515,10 +515,10 @@ namespace dolfin
     const SparsityPattern* pattern_pointer = dynamic_cast<const SparsityPattern*>(&sparsity_pattern);
     if (!pattern_pointer)
       error("Cannot convert GenericSparsityPattern to concrete SparsityPattern type. Aborting.");
-    const std::vector<Set<uint> >& pattern = pattern_pointer->diagonal_pattern();
+    const std::vector<std::vector<uint> > pattern = pattern_pointer->diagonal_pattern(SparsityPattern::sorted);
 
     // Add entries
-    std::vector<Set<uint> >::const_iterator row;
+    std::vector<std::vector<uint> >::const_iterator row;
     Set<uint>::const_iterator element;
     for(row = pattern.begin(); row != pattern.end(); ++row)
       for(element = row->begin(); element != row->end(); ++element)

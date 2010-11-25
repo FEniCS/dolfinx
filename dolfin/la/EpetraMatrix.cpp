@@ -86,8 +86,8 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   const uint n0 = range.first;
 
   const SparsityPattern& _pattern = dynamic_cast<const SparsityPattern&>(sparsity_pattern);
-  const std::vector<dolfin::Set<dolfin::uint> >& d_pattern = _pattern.diagonal_pattern();
-  const std::vector<dolfin::Set<dolfin::uint> >& o_pattern = _pattern.off_diagonal_pattern();
+  const std::vector<std::vector<dolfin::uint> >& d_pattern = _pattern.diagonal_pattern(SparsityPattern::sorted);
+  const std::vector<std::vector<dolfin::uint> >& o_pattern = _pattern.off_diagonal_pattern(SparsityPattern::sorted);
 
   // Get number of non-zeroes per row (on and off diagonal)
   std::vector<uint> dnum_nonzeros(num_local_rows);
@@ -104,11 +104,11 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   Epetra_FECrsGraph matrix_map(Copy, row_map, reinterpret_cast<int*>(&dnum_nonzeros[0]));
 
   // Add diagonal block indices
-  std::vector<dolfin::Set<dolfin::uint> >::const_iterator row_set;
+  std::vector<std::vector<dolfin::uint> >::const_iterator row_set;
   for (row_set = d_pattern.begin(); row_set != d_pattern.end(); ++row_set)
   {
     const uint global_row = row_set - d_pattern.begin() + n0;
-    const std::vector<dolfin::uint>& nz_entries = row_set->set();
+    const std::vector<dolfin::uint>& nz_entries = *row_set;
     std::vector<dolfin::uint>& _nz_entries = const_cast<std::vector<dolfin::uint>& >(nz_entries);
     matrix_map.InsertGlobalIndices(global_row, row_set->size(), reinterpret_cast<int*>(&_nz_entries[0]));
   }
@@ -117,7 +117,7 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   for (row_set = o_pattern.begin(); row_set != o_pattern.end(); ++row_set)
   {
     const uint global_row = row_set - o_pattern.begin() + n0;
-    const std::vector<dolfin::uint>& nz_entries = row_set->set();
+    const std::vector<dolfin::uint>& nz_entries = *row_set;
     std::vector<dolfin::uint>& _nz_entries = const_cast<std::vector<dolfin::uint>& >(nz_entries);
     matrix_map.InsertGlobalIndices(global_row, row_set->size(), reinterpret_cast<int*>(&_nz_entries[0]));
   }

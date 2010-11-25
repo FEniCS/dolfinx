@@ -104,7 +104,7 @@ void SingularSolver::init(const GenericMatrix& A)
   delete c;
 
   // Create sparsity pattern for B
-  SparsityPattern s(SparsityPattern::unsorted);
+  SparsityPattern s;
   uint dims[2] = {N + 1, N + 1};
   s.init(2, dims);
 

@@ -45,7 +45,7 @@ namespace dolfin
     void num_edges_per_vertex(uint* num_edges) const;
 
     /// Vertex edges
-    const std::vector<Set<uint> >& edges() const;
+    const std::vector<std::vector<uint> > edges() const;
 
     // Zoltan call-back functions
 

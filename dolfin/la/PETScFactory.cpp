@@ -37,7 +37,7 @@ PETScVector* PETScFactory:: create_local_vector() const
 //-----------------------------------------------------------------------------
 SparsityPattern* PETScFactory::create_pattern() const
 {
-  return new SparsityPattern(SparsityPattern::unsorted);
+  return new SparsityPattern;
 }
 //-----------------------------------------------------------------------------
 PETScLUSolver* PETScFactory::create_lu_solver() const

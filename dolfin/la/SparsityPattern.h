@@ -9,29 +9,35 @@
 #ifndef __SPARSITY_PATTERN_H
 #define __SPARSITY_PATTERN_H
 
+#include <set>
 #include <vector>
+#include <boost/unordered_set.hpp>
 #include "dolfin/common/Set.h"
 #include "dolfin/common/types.h"
+#include <dolfin/log/LogStream.h>
+#include <dolfin/main/MPI.h>
 #include "GenericSparsityPattern.h"
 
 namespace dolfin
 {
 
   /// This class implements the GenericSparsityPattern interface.
-  /// It is used by most linear algebra backends, except for Epetra
-  /// which uses a special/native implementation.
+  /// It is used by most linear algebra backends.
 
-  class SparsityPattern: public GenericSparsityPattern
+  class SparsityPattern : public GenericSparsityPattern
   {
+
+    // Set type used for the rows of the sparsity pattern
+    typedef dolfin::Set<uint> set_type;
+    //typedef std::set<uint> set_type;
+    //typedef boost::unordered_set<dolfin::uint> set_type;
+
   public:
 
     enum Type {sorted, unsorted};
 
     /// Create empty sparsity pattern
-    SparsityPattern(Type type);
-
-    /// Destructor
-    ~SparsityPattern();
+    SparsityPattern();
 
     /// Initialize sparsity pattern for a generic tensor
     void init(uint rank, const uint* dims);
@@ -46,7 +52,7 @@ namespace dolfin
     uint size(uint i) const;
 
     /// Return local range for dimension dim
-    virtual std::pair<uint, uint> local_range(uint dim) const ;
+    std::pair<uint, uint> local_range(uint dim) const;
 
     /// Return total number of nonzeros in local_range for dimension 0
     uint num_nonzeros() const;
@@ -66,24 +72,15 @@ namespace dolfin
     std::string str() const;
 
     /// Return underlying sparsity pattern (diagonal)
-    const std::vector<Set<uint> >& diagonal_pattern() const;
+    std::vector<std::vector<uint> > diagonal_pattern(Type type) const;
 
     /// Return underlying sparsity pattern (off-diagional)
-    const std::vector<Set<uint> >& off_diagonal_pattern() const;
+    std::vector<std::vector<uint> > off_diagonal_pattern(Type type) const;
 
   private:
 
-    // Sort entries for each row
-    void sort();
-
     // Print some useful information
     void info_statistics() const;
-
-    // Sparsity pattern type (sorted/unsorted)
-    const Type type;
-
-    // Whether or not pattern has been sorted
-    bool _sorted;
 
     // Shape of tensor
     std::vector<uint> shape;
@@ -95,8 +92,8 @@ namespace dolfin
     uint col_range_max;
 
     // Sparsity patterns for diagonal and off-diagonal blocks
-    std::vector<Set<uint> > diagonal;
-    std::vector<Set<uint> > off_diagonal;
+    std::vector<set_type> diagonal;
+    std::vector<set_type> off_diagonal;
 
     // Sparsity pattern for non-local entries stored as [i, j, i, j, ...]
     std::vector<uint> non_local;

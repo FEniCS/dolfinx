@@ -15,21 +15,9 @@
 
 using namespace dolfin;
 
-// Typedef of iterators for convenience
-typedef std::vector<std::vector<dolfin::uint> >::iterator iterator;
-typedef std::vector<std::vector<dolfin::uint> >::const_iterator const_iterator;
-typedef std::vector<dolfin::Set<dolfin::uint> >::iterator set_iterator;
-typedef std::vector<dolfin::Set<dolfin::uint> >::const_iterator set_const_iterator;
-
 //-----------------------------------------------------------------------------
-SparsityPattern::SparsityPattern(Type type)
-  : type(type), _sorted(false),
-    row_range_min(0), row_range_max(0), col_range_min(0), col_range_max(0)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-SparsityPattern::~SparsityPattern()
+SparsityPattern::SparsityPattern() : row_range_min(0), row_range_max(0),
+                                     col_range_min(0), col_range_max(0)
 {
   // Do nothing
 }
@@ -75,9 +63,6 @@ void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
   // Check rank, ignore if not a matrix
   if (shape.size() != 2)
     return;
-
-  // Set sorted flag to false
-  _sorted = false;
 
   // Get local rows and columsn to insert
   const uint  m = num_rows[0];
@@ -157,8 +142,9 @@ std::pair<dolfin::uint, dolfin::uint> SparsityPattern::local_range(uint dim) con
 dolfin::uint SparsityPattern::num_nonzeros() const
 {
   uint nz = 0;
-  for (set_const_iterator it = diagonal.begin(); it != diagonal.end(); ++it)
-    nz += it->size();
+  typedef std::vector<set_type>::const_iterator row_it;
+  for (row_it row = diagonal.begin(); row != diagonal.end(); ++row)
+    nz += row->size();
   return nz;
 }
 //-----------------------------------------------------------------------------
@@ -169,7 +155,8 @@ void SparsityPattern::num_nonzeros_diagonal(uint* num_nonzeros) const
     error("Non-zero entries per row can be computed for matrices only.");
 
   // Compute number of nonzeros per row
-  for (set_const_iterator row = diagonal.begin(); row != diagonal.end(); ++row)
+  typedef std::vector<set_type>::const_iterator row_it;
+  for (row_it row = diagonal.begin(); row != diagonal.end(); ++row)
     num_nonzeros[row - diagonal.begin()] = row->size();
 }
 //-----------------------------------------------------------------------------
@@ -180,7 +167,8 @@ void SparsityPattern::num_nonzeros_off_diagonal(uint* num_nonzeros) const
     error("Non-zero entries per row can be computed for matrices only.");
 
   // Compute number of nonzeros per row
-  for (set_const_iterator row = off_diagonal.begin(); row != off_diagonal.end(); ++row)
+  typedef std::vector<set_type>::const_iterator row_it;
+  for (row_it row = off_diagonal.begin(); row != off_diagonal.end(); ++row)
     num_nonzeros[row - off_diagonal.begin()] = row->size();
 }
 //-----------------------------------------------------------------------------
@@ -250,14 +238,6 @@ void SparsityPattern::apply()
     // Clear non-local entries
     non_local.clear();
   }
-
-  // Sort sparsity pattern if required
-  if (type == sorted && _sorted == false)
-  {
-    cout << "Sorting sparsity pattern." << endl;
-    sort();
-    _sorted = true;
-  }
 }
 //-----------------------------------------------------------------------------
 std::string SparsityPattern::str() const
@@ -268,37 +248,44 @@ std::string SparsityPattern::str() const
 
   // Print each row
   std::stringstream s;
+  typedef set_type::const_iterator entry_it;
   for (uint i = 0; i < diagonal.size(); i++)
   {
     s << "Row " << i << ":";
-    for (uint k = 0; k < diagonal[i].size(); ++k)
-      s << " " << diagonal[i][k];
+    for (entry_it entry = diagonal[i].begin(); entry != diagonal[i].end(); ++entry)
+      s << " " << *entry;
     s << std::endl;
   }
 
   return s.str();
 }
 //-----------------------------------------------------------------------------
-const std::vector<dolfin::Set<dolfin::uint> >& SparsityPattern::diagonal_pattern() const
+std::vector<std::vector<dolfin::uint> > SparsityPattern::diagonal_pattern(Type type) const
 {
-  if (type == sorted && _sorted == false)
-    error("SparsityPattern has not been sorted. You need to call SparsityPattern::apply().");
-  return diagonal;
+  std::vector<std::vector<uint> > v(diagonal.size());
+  for (uint i = 0; i < diagonal.size(); ++i)
+    v[i] = std::vector<uint>(diagonal[i].begin(), diagonal[i].end());
+
+  if (type == sorted)
+  {
+    for (uint i = 0; i < v.size(); ++i)
+      std::sort(v[i].begin(), v[i].end());
+  }
+  return v;
 }
 //-----------------------------------------------------------------------------
-const std::vector<dolfin::Set<dolfin::uint> >& SparsityPattern::off_diagonal_pattern() const
+std::vector<std::vector<dolfin::uint> > SparsityPattern::off_diagonal_pattern(Type type) const
 {
-  if (type == sorted && _sorted == false)
-    error("SparsityPattern has not been sorted. You need to call SparsityPattern::apply().");
-  return off_diagonal;
-}
-//-----------------------------------------------------------------------------
-void SparsityPattern::sort()
-{
-  for (set_iterator it = diagonal.begin(); it != diagonal.end(); ++it)
-    it->sort();
-  for (set_iterator it = off_diagonal.begin(); it != off_diagonal.end(); ++it)
-    it->sort();
+  std::vector<std::vector<uint> > v(diagonal.size());
+  for (uint i = 0; i < off_diagonal.size(); ++i)
+    v[i] = std::vector<uint>(off_diagonal[i].begin(), off_diagonal[i].end());
+
+  if (type == sorted)
+  {
+    for (uint i = 0; i < v.size(); ++i)
+      std::sort(v[i].begin(), v[i].end());
+  }
+  return v;
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::info_statistics() const

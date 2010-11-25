@@ -20,7 +20,6 @@
 namespace dolfin
 {
   // Forward declaration
-  //template<class T> class uBLASMatrix;
   class GenericLinearSolver;
 
   template<class Mat = ublas_sparse_matrix>
@@ -45,7 +44,7 @@ namespace dolfin
 
     /// Create empty sparsity pattern
     SparsityPattern* create_pattern() const
-    { return new SparsityPattern(SparsityPattern::sorted); }
+    { return new SparsityPattern(); }
 
     /// Create LU solver
     UmfpackLUSolver* create_lu_solver() const

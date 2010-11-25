@@ -54,7 +54,7 @@ EpetraVector* EpetraFactory::create_local_vector() const
 //-----------------------------------------------------------------------------
 SparsityPattern* EpetraFactory::create_pattern() const
 {
-  return new SparsityPattern(SparsityPattern::sorted);
+  return new SparsityPattern;
 }
 //-----------------------------------------------------------------------------
 EpetraLUSolver* EpetraFactory::create_lu_solver() const

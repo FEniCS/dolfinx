@@ -18,10 +18,10 @@
 #include <gmpxx.h>
 #endif
 
-#include "types.h"
 #include <cmath>
 #include <iostream>
 #include <dolfin/log/log.h>
+#include "types.h"
 
 namespace dolfin
 {
