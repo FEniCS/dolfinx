@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-09
-// Last changed: 2010-04-29
+// Last changed: 2010-11-25
 
 #include <dolfin/log/dolfin_log.h>
 #include "MeshConnectivity.h"
@@ -43,7 +43,7 @@ const MeshConnectivity& MeshConnectivity::operator= (const MeshConnectivity& con
   d1 = connectivity.d1;
   for (uint i = 0; i < _size; i++)
     connections[i] = connectivity.connections[i];
-  if ( num_entities > 0 )
+  if (num_entities > 0)
   {
     for (uint e = 0; e <= num_entities; e++)
       offsets[e] = connectivity.offsets[e];
@@ -57,12 +57,10 @@ void MeshConnectivity::clear()
   _size = 0;
   num_entities = 0;
 
-  if ( connections )
-    delete [] connections;
+  delete [] connections;
   connections = 0;
 
-  if ( offsets )
-    delete [] offsets;
+  delete [] offsets;
   offsets = 0;
 }
 //-----------------------------------------------------------------------------

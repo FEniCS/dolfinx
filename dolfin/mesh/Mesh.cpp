@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2010-11-18
+// Last changed: 2010-11-25
 
 #include <sstream>
 #include <vector>
@@ -171,6 +171,19 @@ void Mesh::clear()
   _cell_type = 0;
   _intersection_operator.clear();
   _ordered = false;
+}
+//-----------------------------------------------------------------------------
+void Mesh::clean()
+{
+  const uint D = topology().dim();
+  for (uint d0 = 0; d0 <= D; d0++)
+  {
+    for (uint d1 = 0; d1 <= D; d1++)
+    {
+      if (!(d0 == D && d1 == 0))
+        _topology.clear(d0, d1);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void Mesh::order()

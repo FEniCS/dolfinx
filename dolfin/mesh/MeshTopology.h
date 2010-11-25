@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-08
-// Last changed: 2010-04-29
+// Last changed: 2010-11-25
 
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
@@ -54,6 +54,9 @@ namespace dolfin
 
     /// Clear all data
     void clear();
+
+    /// Clear data for given pair of topological dimensions
+    void clear(uint d0, uint d1);
 
     /// Initialize topology of given maximum dimension
     void init(uint dim);

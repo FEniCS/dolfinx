@@ -9,7 +9,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2010-11-18
+// Last changed: 2010-11-25
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -295,6 +295,11 @@ namespace dolfin
 
     /// Clear all mesh data.
     void clear();
+
+    /// Clean out all auxiliary topology data. This clears all
+    /// topological data, except the connectivity between cells and
+    /// vertices.
+    void clean();
 
     /// Order all mesh entities.
     ///
