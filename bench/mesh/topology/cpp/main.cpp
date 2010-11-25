@@ -5,6 +5,7 @@
 // Last changed: 2010-11-25
 
 #include <dolfin.h>
+#include <dolfin/log/LogLevel.h>
 
 using namespace dolfin;
 
@@ -19,6 +20,8 @@ int main(int argc, char* argv[])
 {
   info("Creating cell-cell connectivity for unit cube of size %d x %d x %d (%d repetitions)",
        SIZE, SIZE, SIZE, NUM_REPS);
+
+  set_log_level(DBG);
 
   parameters.parse(argc, argv);
 

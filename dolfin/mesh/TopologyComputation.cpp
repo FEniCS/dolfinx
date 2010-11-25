@@ -136,6 +136,8 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
   // Each of these functions assume a set of preconditions that we
   // need to satisfy.
 
+  info(TRACE, "Requesting connectivity %d - %d.", d0, d1);
+
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
   MeshConnectivity& connectivity = topology(d0, d1);
@@ -200,7 +202,7 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, uint d0, uint d1)
   //   3. Iterate again over entities of dimension d1 and add connections
   //      for each entity of dimension d0
 
-  //info("Computing mesh connectivity %d - %d from transpose.", d0, d1);
+  info(TRACE, "Computing mesh connectivity %d - %d from transpose.", d0, d1);
 
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
@@ -245,8 +247,8 @@ void TopologyComputation::compute_from_intersection(Mesh& mesh,
   //
   //   3. Nested iteration over mesh - d0 - d - d1 and add the connections
 
-  //info("Computing mesh connectivity %d - %d from intersection %d - %d - %d.",
-  //            d0, d1, d0, d, d1);
+  info(TRACE, "Computing mesh connectivity %d - %d from intersection %d - %d - %d.",
+       d0, d1, d0, d, d1);
 
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();

@@ -4,7 +4,7 @@
 // Modified by Ola Skavhaug, 2007, 2009.
 //
 // First added:  2003-03-13
-// Last changed: 2010-06-07
+// Last changed: 2010-11-25
 
 #ifndef __LOG_H
 #define __LOG_H
