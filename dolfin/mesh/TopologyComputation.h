@@ -1,8 +1,8 @@
-// Copyright (C) 2006 Anders Logg.
+// Copyright (C) 2006-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-02
-// Last changed: 2006-06-21
+// Last changed: 2010-11-25
 
 #ifndef __TOPOLOGY_COMPUTATION_H
 #define __TOPOLOGY_COMPUTATION_H
@@ -32,10 +32,10 @@ namespace dolfin
   private:
 
     /// Compute connectivity from transpose
-    static void computeFromTranspose(Mesh& mesh, uint d0, uint d1);
+    static void compute_from_transpose(Mesh& mesh, uint d0, uint d1);
 
     /// Compute connectivity from intersection
-    static void computeFromIntersection(Mesh& mesh, uint d0, uint d1, uint d);
+    static void compute_from_intersection(Mesh& mesh, uint d0, uint d1, uint d);
 
     /// Count how many of the given entities that are new
     static uint count_entities(Mesh& mesh, MeshEntity& cell,

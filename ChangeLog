@@ -1,3 +1,4 @@
+ - Add function Mesh::clean() for cleaning out auxilliary topology data
  - Improve speed and accuracy of timers
  - Fix bug in 3D uniform mesh refinement
  - Add built-in meshes UnitTriangle and UnitTetrahedron

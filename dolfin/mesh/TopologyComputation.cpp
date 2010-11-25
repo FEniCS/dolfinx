@@ -1,11 +1,13 @@
-// Copyright (C) 2006-2008 Anders Logg.
+// Copyright (C) 2006-2010 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-02
-// Last changed: 2010-03-02
+// Last changed: 2010-11-25
 
 #include <set>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/common/utils.h>
+#include <dolfin/common/Timer.h>
 #include "CellType.h"
 #include "Mesh.h"
 #include "MeshTopology.h"
@@ -56,6 +58,9 @@ dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
 
   // Compute connectivity dim - dim if not already computed
   compute_connectivity(mesh, mesh.topology().dim(), mesh.topology().dim());
+
+  // Start timer
+  Timer timer("compute entities dim = " + to_string(dim));
 
   // Get cell type
   const CellType& cell_type = mesh.type();
@@ -154,12 +159,15 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
   if (connectivity.size() > 0)
     return;
 
+  // Start timer
+  Timer timer("compute connectivity " + to_string(d0) + " - " + to_string(d1));
+
   // Decide how to compute the connectivity
   if (d0 < d1)
   {
     // Compute connectivity d1 - d0 and take transpose
     compute_connectivity(mesh, d1, d0);
-    computeFromTranspose(mesh, d0, d1);
+    compute_from_transpose(mesh, d0, d1);
   }
   else
   {
@@ -174,11 +182,11 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, uint d0, uint d1)
     // Compute connectivity d0 - d - d1 and take intersection
     compute_connectivity(mesh, d0, d);
     compute_connectivity(mesh, d, d1);
-    computeFromIntersection(mesh, d0, d1, d);
+    compute_from_intersection(mesh, d0, d1, d);
   }
 }
 //----------------------------------------------------------------------------
-void TopologyComputation::computeFromTranspose(Mesh& mesh, uint d0, uint d1)
+void TopologyComputation::compute_from_transpose(Mesh& mesh, uint d0, uint d1)
 {
   // The transpose is computed in three steps:
   //
@@ -224,8 +232,8 @@ void TopologyComputation::computeFromTranspose(Mesh& mesh, uint d0, uint d1)
       connectivity.set(e0->index(), e1->index(), tmp[e0->index()]++);
 }
 //----------------------------------------------------------------------------
-void TopologyComputation::computeFromIntersection(Mesh& mesh,
-					     uint d0, uint d1, uint d)
+void TopologyComputation::compute_from_intersection(Mesh& mesh,
+                                                    uint d0, uint d1, uint d)
 {
   // The intersection is computed in three steps:
   //
