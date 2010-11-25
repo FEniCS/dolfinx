@@ -96,7 +96,8 @@ void XMLMeshData::end_element (const xmlChar* name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLMeshData::write(const MeshData& data, std::ostream& outfile, uint indentation_level)
+void XMLMeshData::write(const MeshData& data, std::ostream& outfile,
+                        uint indentation_level)
 {
   if ( data.mesh_functions.size() > 0 || data.arrays.size() > 0)
   {

@@ -192,34 +192,6 @@ bool Mesh::ordered() const
   return _ordered;
 }
 //-----------------------------------------------------------------------------
-/*
-void Mesh::coarsen()
-{
-  // FIXME: Move implementation to separate class and just call function here
-
-  info(DBG, "No cells marked for coarsening, assuming uniform mesh coarsening.");
-  MeshFunction<bool> cell_marker(*this);
-  cell_marker.init(this->topology().dim());
-  for (CellIterator c(*this); !c.end(); ++c)
-    cell_marker[c->index()] = true;
-
-  LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(*this, cell_marker);
-
-  // Mesh may not be ordered
-  _ordered = false;
-}
-//-----------------------------------------------------------------------------
-void Mesh::coarsen(MeshFunction<bool>& cell_markers, bool coarsen_boundary)
-{
-  LocalMeshCoarsening::coarsen_mesh_by_edge_collapse(*this,
-                                                     cell_markers,
-                                                     coarsen_boundary);
-
-  // Mesh may not be ordered
-  _ordered = false;
-}
-*/
-//-----------------------------------------------------------------------------
 void Mesh::move(BoundaryMesh& boundary, ALEType method)
 {
   ALE::move(*this, boundary, method);
@@ -289,40 +261,46 @@ const dolfin::MeshFunction<dolfin::uint>& Mesh::color(uint dim) const
   return MeshColoring::color_cells(*_mesh, dim);
 }
 //-----------------------------------------------------------------------------
-void Mesh::all_intersected_entities(const Point & point, uint_set & ids_result) const
+void Mesh::all_intersected_entities(const Point& point,
+                                    uint_set& ids_result) const
 {
   _intersection_operator.all_intersected_entities(point, ids_result);
 }
 //-----------------------------------------------------------------------------
-void Mesh::all_intersected_entities(const std::vector<Point> & points, uint_set & ids_result) const
+void Mesh::all_intersected_entities(const std::vector<Point>& points,
+                                    uint_set& ids_result) const
 {
   _intersection_operator.all_intersected_entities(points, ids_result);
 }
 //-----------------------------------------------------------------------------
-void Mesh::all_intersected_entities(const MeshEntity & entity, std::vector<uint> & ids_result) const
+void Mesh::all_intersected_entities(const MeshEntity & entity,
+                                    std::vector<uint>& ids_result) const
 {
   _intersection_operator.all_intersected_entities(entity, ids_result);
 }
 //-----------------------------------------------------------------------------
-void Mesh::all_intersected_entities(const std::vector<MeshEntity> & entities, uint_set & ids_result) const
+void Mesh::all_intersected_entities(const std::vector<MeshEntity>& entities,
+                                    uint_set& ids_result) const
 {
   _intersection_operator.all_intersected_entities(entities, ids_result);
 }
 //-----------------------------------------------------------------------------
-void Mesh::all_intersected_entities(const Mesh & another_mesh, uint_set & ids_result) const
+void Mesh::all_intersected_entities(const Mesh& another_mesh,
+                                    uint_set& ids_result) const
 {
   _intersection_operator.all_intersected_entities(another_mesh, ids_result);
 }
 //-----------------------------------------------------------------------------
-int Mesh::any_intersected_entity(const Point & point) const
+int Mesh::any_intersected_entity(const Point& point) const
 {
   return _intersection_operator.any_intersected_entity(point);
 }
 //-----------------------------------------------------------------------------
-Point Mesh::closest_point(const Point & point) const
+Point Mesh::closest_point(const Point& point) const
 {
   return _intersection_operator.closest_point(point);
 }
+//-----------------------------------------------------------------------------
 dolfin::uint Mesh::closest_cell(const Point & point) const
 {
   return _intersection_operator.closest_cell(point);

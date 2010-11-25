@@ -8,6 +8,7 @@
 
 #include <boost/foreach.hpp>
 
+#include <dolfin/common/Array.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/graph/BoostGraphInterface.h>
 #include <dolfin/log/log.h>
@@ -115,8 +116,7 @@ void MeshColoring::compute_cell_colors(MeshFunction<uint>& colors, uint dim)
           colors.dim());
 
   // Create graph
-  Graph graph;
-  graph.resize(mesh.num_cells());
+  BoostBidirectionalGraph graph(mesh.num_cells());
 
   // Build graph
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -125,7 +125,7 @@ void MeshColoring::compute_cell_colors(MeshFunction<uint>& colors, uint dim)
     for (MeshEntityIterator entity(*cell, dim); !entity.end(); ++entity)
     {
       for (CellIterator neighbor(*entity); !neighbor.end(); ++neighbor)
-        graph[cell_index].insert(neighbor->index());
+        boost::add_edge(cell_index, neighbor->index(), graph);
     }
   }
 
@@ -152,4 +152,3 @@ dolfin::uint MeshColoring::type_to_dim(std::string coloring_type,
     return mesh.topology().dim() - 1;
 }
 //-----------------------------------------------------------------------------
-
