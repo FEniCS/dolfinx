@@ -166,10 +166,10 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
       integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
 
       // Add entries to global tensor
-      if (values && form_rank == 0)
-        (*values)[cell_index] = ufc.A[0];
-      else
-        A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
+      //if (values && form_rank == 0)
+      //  (*values)[cell_index] = ufc.A[0];
+      //else
+      //  A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
     }
     p++;
   }

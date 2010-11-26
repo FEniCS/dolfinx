@@ -28,8 +28,8 @@ namespace dolfin
   {
 
     // Set type used for the rows of the sparsity pattern
-    typedef dolfin::Set<uint> set_type;
-    //typedef std::set<uint> set_type;
+    //typedef dolfin::Set<uint> set_type;
+    typedef std::set<uint> set_type;
     //typedef boost::unordered_set<dolfin::uint> set_type;
 
   public:
@@ -71,10 +71,12 @@ namespace dolfin
     /// Return informal string representation (pretty-print)
     std::string str() const;
 
-    /// Return underlying sparsity pattern (diagonal)
+    /// Return underlying sparsity pattern (diagonal). Options are
+    /// 'sorted' and 'unsorted'.
     std::vector<std::vector<uint> > diagonal_pattern(Type type) const;
 
-    /// Return underlying sparsity pattern (off-diagional)
+    /// Return underlying sparsity pattern (off-diagional). Options are
+    /// 'sorted' and 'unsorted'.
     std::vector<std::vector<uint> > off_diagonal_pattern(Type type) const;
 
   private:

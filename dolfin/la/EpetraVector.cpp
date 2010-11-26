@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008-2010.
 //
 // First added:  2008-04-21
-// Last changed: 2009-08-22
+// Last changed: 2010-11-26
 
 #ifdef HAS_TRILINOS
 
@@ -124,7 +124,7 @@ std::pair<dolfin::uint, dolfin::uint> EpetraVector::local_range() const
 void EpetraVector::zero()
 {
   assert(x);
-  int err = x->PutScalar(0.0);
+  const int err = x->PutScalar(0.0);
   if (err != 0)
     error("EpetraVector::zero: Did not manage to perform Epetra_Vector::PutScalar.");
 }
@@ -164,7 +164,7 @@ void EpetraVector::get_local(Array<double>& values) const
 {
   assert(x);
   assert( (int)values.size() >= x->MyLength() );
-  int err = x->ExtractCopy(values.data().get(), 0);
+  const int err = x->ExtractCopy(values.data().get(), 0);
   if (err!= 0)
     error("EpetraVector::get: Did not manage to perform Epetra_Vector::ExtractCopy.");
 }
@@ -221,7 +221,7 @@ void EpetraVector::get(double* block, uint m, const uint* rows) const
 void EpetraVector::set(const double* block, uint m, const uint* rows)
 {
   assert(x);
-  int err = x->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows), block, 0);
+  const int err = x->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows), block, 0);
   if (err != 0)
     error("EpetraVector::set: Did not manage to perform Epetra_Vector::ReplaceGlobalValues.");
 }
@@ -290,7 +290,7 @@ double EpetraVector::inner(const GenericVector& y) const
     error("Given vector is not initialized.");
 
   double a;
-  int err = x->Dot(*(v.x), &a);
+  const int err = x->Dot(*(v.x), &a);
   if (err!= 0)
     error("EpetraVector::inner: Did not manage to perform Epetra_Vector::Dot.");
   return a;
@@ -307,8 +307,7 @@ void EpetraVector::axpy(double a, const GenericVector& y)
   if (size() != _y.size())
     error("The vectors must be of the same size.");
 
-  int err = x->Update(a, *(_y.vec()), 1.0);
-
+  const int err = x->Update(a, *(_y.vec()), 1.0);
   if (err != 0)
     error("EpetraVector::axpy: Did not manage to perform Epetra_Vector::Update.");
 }
@@ -359,7 +358,7 @@ const EpetraVector& EpetraVector::operator-= (const GenericVector& y)
 const EpetraVector& EpetraVector::operator*= (double a)
 {
   assert(x);
-  int err = x->Scale(a);
+  const int err = x->Scale(a);
   if (err!= 0)
     error("EpetraVector::operator*=: Did not manage to perform Epetra_Vector::Scale.");
   return *this;
@@ -376,7 +375,7 @@ const EpetraVector& EpetraVector::operator*= (const GenericVector& y)
   if (size() != v.size())
     error("The vectors must be of the same size.");
 
-  int err = x->Multiply(1.0, *x, *v.x, 0.0);
+  const int err = x->Multiply(1.0, *x, *v.x, 0.0);
   if (err!= 0)
     error("EpetraVector::operator*=: Did not manage to perform Epetra_Vector::Multiply.");
   return *this;
@@ -410,7 +409,7 @@ double EpetraVector::min() const
 {
   assert(x);
   double value = 0.0;
-  int err = x->MinValue(&value);
+  const int err = x->MinValue(&value);
   if (err!= 0)
     error("EpetraVector::min: Did not manage to perform Epetra_Vector::MinValue.");
   return value;
@@ -420,7 +419,7 @@ double EpetraVector::max() const
 {
   assert(x);
   double value = 0.0;
-  int err = x->MaxValue(&value);
+  const int err = x->MaxValue(&value);
   if (err != 0)
     error("EpetraVector::min: Did not manage to perform Epetra_Vector::MinValue.");
   return value;
