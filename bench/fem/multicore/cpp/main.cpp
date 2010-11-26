@@ -18,6 +18,7 @@
 
 #define MAX_NUM_THREADS 8
 #define SIZE 32
+#define ASSEMBLY_REPEATS 2
 
 using namespace dolfin;
 
@@ -60,8 +61,6 @@ double bench(std::string form, const Mesh& mesh)
     a->set_coefficient(4, *w4);
   }
 
-  parameters["linear_algebra_backend"] = "PETSc";
-
   // Create STL matrix
   //STLMatrix A;
   Matrix A;
@@ -71,7 +70,7 @@ double bench(std::string form, const Mesh& mesh)
 
   // Assemble
   Timer timer("Total time");
-  for (dolfin::uint i = 0; i < 20; ++i)
+  for (dolfin::uint i = 0; i < ASSEMBLY_REPEATS; ++i)
     assemble(A, *a, false);
   const double t = timer.stop();
 
@@ -106,10 +105,12 @@ int main(int argc, char* argv[])
   //PetscInfoAllow(PETSC_TRUE, PETSC_NULL);
   //PetscOptionsSetValue("-mat_inode_limit", "5");
 
+  //parameters["linear_algebra_backend"] = "Epetra";
+
   // Create mesh
   UnitCube mesh(SIZE, SIZE, SIZE);
   mesh.color("vertex");
-  //mesh.init(1);
+  mesh.init(1);
 
   // Test cases
   std::vector<std::string> forms;

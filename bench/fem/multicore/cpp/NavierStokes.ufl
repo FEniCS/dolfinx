@@ -2,7 +2,6 @@
 
 element = VectorElement("Lagrange", "tetrahedron", 1)
 constant_scalar = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
-constant_vector = VectorElement("Discontinuous Lagrange", "tetrahedron", 0)
 
 v = TestFunction(element)
 u = TrialFunction(element)
