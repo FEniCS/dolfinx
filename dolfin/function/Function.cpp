@@ -35,8 +35,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V)
   : _function_space(reference_to_no_delete_pointer(V)),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
-    local_scratch(V.element())
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Initialize vector
   init_vector();
@@ -44,8 +43,7 @@ Function::Function(const FunctionSpace& V)
 //-----------------------------------------------------------------------------
 Function::Function(boost::shared_ptr<const FunctionSpace> V)
   : _function_space(V),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
-    local_scratch(V->element())
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Initialize vector
   init_vector();
@@ -54,8 +52,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V)
 Function::Function(const FunctionSpace& V, GenericVector& x)
   : _function_space(reference_to_no_delete_pointer(V)),
     _vector(reference_to_no_delete_pointer(x)),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
-    local_scratch(V.element())
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Assertion uses '<=' to deal with sub-functions
   assert(V.dofmap().global_dimension() <= x.size());
@@ -65,8 +62,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    boost::shared_ptr<GenericVector> x)
   : _function_space(V),
     _vector(x),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
-    local_scratch(V->element())
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x->size());
@@ -76,8 +72,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    GenericVector& x)
   : _function_space(V),
     _vector(reference_to_no_delete_pointer(x)),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
-    local_scratch(V->element())
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap().global_dimension() <= x.size());
@@ -85,8 +80,7 @@ Function::Function(boost::shared_ptr<const FunctionSpace> V,
 //-----------------------------------------------------------------------------
 Function::Function(const FunctionSpace& V, std::string filename)
   : _function_space(reference_to_no_delete_pointer(V)),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
-    local_scratch(V.element())
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Initialize vector
   init_vector();
@@ -103,8 +97,7 @@ Function::Function(const FunctionSpace& V, std::string filename)
 Function::Function(boost::shared_ptr<const FunctionSpace> V,
                    std::string filename)
   : _function_space(V),
-    allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
-    local_scratch(V->element())
+    allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Create vector
   DefaultFactory factory;
@@ -130,8 +123,7 @@ Function::Function(const Function& v)
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& v, uint i)
-  : allow_extrapolation(dolfin::parameters["allow_extrapolation"]),
-    local_scratch(v[i]._function_space->element())
+  : allow_extrapolation(dolfin::parameters["allow_extrapolation"])
 {
   // Copy function space pointer
   this->_function_space = v[i]._function_space;
@@ -188,13 +180,10 @@ const Function& Function::operator= (const Function& v)
 
     // Get old values and set new values
     std::vector<double> values(collapsed_map.size());
-    //v.gather();
-    //v.get(&values[0], collapsed_map.size(), &old_rows[0]);
     v.vector().get(&values[0], collapsed_map.size(), &old_rows[0]);
     this->_vector->set(&values[0], collapsed_map.size(), &new_rows[0]);
     this->_vector->apply("insert");
   }
-  local_scratch.init(this->_function_space->element());
 
   return *this;
 }
@@ -302,17 +291,36 @@ void Function::eval(Array<double>& values,
                     const Cell& dolfin_cell,
                     const ufc::cell& ufc_cell) const
 {
+  const FiniteElement& element = _function_space->element();
+
+  // FIXME: Rather than computing num_tensor_entries, we could just use values.size()
+
+  // Compute in tensor (one for scalar function, . . .)
+  uint num_tensor_entries = 1;
+  for (uint i = 0; i < element.value_rank(); i++)
+    num_tensor_entries *= element.value_dimension(i);
+
+  assert(values.size() == num_tensor_entries);
+
+  // Create array for basis
+  boost::scoped_array<double> basis(new double[num_tensor_entries]);
+
+  // Create array for expansion coefficients
+  boost::scoped_array<double> coefficients(new double[element.space_dimension()]);
+
   // Restrict function to cell
-  restrict(local_scratch.coefficients, _function_space->element(), dolfin_cell, ufc_cell, -1);
+  restrict(coefficients.get(), element, dolfin_cell, ufc_cell, -1);
+
+  // Initialise values
+  for (uint j = 0; j < num_tensor_entries; ++j)
+    values[j] = 0.0;
 
   // Compute linear combination
-  for (uint j = 0; j < local_scratch.size; j++)
-    values[j] = 0.0;
-  for (uint i = 0; i < _function_space->element().space_dimension(); i++)
+  for (uint i = 0; i < element.space_dimension(); ++i)
   {
-    _function_space->element().evaluate_basis(i, local_scratch.values, &x[0], ufc_cell);
-    for (uint j = 0; j < local_scratch.size; j++)
-      values[j] += (local_scratch.coefficients[i])*(local_scratch.values[j]);
+    element.evaluate_basis(i, basis.get(), &x[0], ufc_cell);
+    for (uint j = 0; j < num_tensor_entries; ++j)
+      values[j] += coefficients[i]*basis[j];
   }
 }
 //-----------------------------------------------------------------------------
@@ -371,14 +379,12 @@ void Function::restrict(double* w,
   // Check if we are restricting to an element of this function space
   if (_function_space->has_element(element) && _function_space->has_cell(dolfin_cell))
   {
-    // Get dofmap
-    const GenericDofMap& dofmap = _function_space->dofmap();
+    // Get dofmap for cell
+    const std::vector<uint>& dofs = _function_space->dofmap().cell_dofs(dolfin_cell.index());
 
-    // Tabulate dofs
-    dofmap.tabulate_dofs(local_scratch.dofs, ufc_cell, dolfin_cell.index());
-
+    // FIXME: The parallel check in Function::get is a bit expensive
     // Pick values from vector(s)
-    get(w, dofmap.local_dimension(ufc_cell), local_scratch.dofs);
+    get(w, dofs.size(), &dofs[0]);
   }
   else
   {
@@ -392,8 +398,6 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
 {
   assert(&mesh == &_function_space->mesh());
 
-  //vertex_values.resize(_function_space->dim());
-
   // Gather off-process dofs
   gather();
 
@@ -402,7 +406,17 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
 
   // Local data for interpolation on each cell
   const uint num_cell_vertices = mesh.type().num_vertices(mesh.topology().dim());
-  boost::scoped_array<double> local_vertex_values(new double[local_scratch.size*num_cell_vertices]);
+
+  // Compute in tensor (one for scalar function, . . .)
+  uint num_tensor_entries = 1;
+  for (uint i = 0; i < element.value_rank(); i++)
+    num_tensor_entries *= element.value_dimension(i);
+
+  // Create array to hold cell vertex values
+  boost::scoped_array<double> cell_vertex_values(new double[num_tensor_entries*num_cell_vertices]);
+
+  // Create array for expansion coefficients
+  boost::scoped_array<double> coefficients(new double[element.space_dimension()]);
 
   // Interpolate vertex values on each cell (using last computed value if not
   // continuous, e.g. discontinuous Galerkin methods)
@@ -413,19 +427,19 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
     ufc_cell.update(*cell);
 
     // Pick values from global vector
-    restrict(local_scratch.coefficients, element, *cell, ufc_cell, -1);
+    restrict(coefficients.get(), element, *cell, ufc_cell, -1);
 
     // Interpolate values at the vertices
-    element.interpolate_vertex_values(local_vertex_values.get(), local_scratch.coefficients, ufc_cell);
+    element.interpolate_vertex_values(cell_vertex_values.get(), coefficients.get(), ufc_cell);
 
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
-      for (uint i = 0; i < local_scratch.size; ++i)
+      for (uint i = 0; i < num_tensor_entries; ++i)
       {
-        const uint local_index  = vertex.pos()*local_scratch.size + i;
+        const uint local_index  = vertex.pos()*num_tensor_entries + i;
         const uint global_index = i*mesh.num_vertices() + vertex->index();
-        vertex_values[global_index] = local_vertex_values[local_index];
+        vertex_values[global_index] = cell_vertex_values[local_index];
       }
     }
   }
@@ -465,11 +479,12 @@ void Function::compute_off_process_dofs() const
   assert(_function_space);
   const Mesh& mesh = _function_space->mesh();
 
-  // Storage for each cell dofs
+  // Get dof map
   const GenericDofMap& dofmap = _function_space->dofmap();
+
+  // Dofs per cell and total dofs
   const uint num_dofs_per_cell = _function_space->element().space_dimension();
   const uint num_dofs_global = vector().size();
-  boost::scoped_array<uint> dofs(new uint[num_dofs_per_cell]);
 
   // Iterate over mesh and check which dofs are needed
   UFCCell ufc_cell(mesh);
@@ -479,8 +494,8 @@ void Function::compute_off_process_dofs() const
     // Update to current cell
     ufc_cell.update(*cell);
 
-    // Tabulate dofs on cell
-    dofmap.tabulate_dofs(dofs.get(), ufc_cell, cell->index());
+    // Get dofs on cell
+    const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
 
     for (uint d = 0; d < num_dofs_per_cell; ++d)
     {
@@ -488,6 +503,7 @@ void Function::compute_off_process_dofs() const
       const uint index_owner = MPI::index_owner(dof, num_dofs_global);
       if (index_owner != MPI::process_number())
       {
+        // FIXME: Could we use dolfin::Set here?
         if (std::find(_off_process_dofs.begin(), _off_process_dofs.end(), dof) == _off_process_dofs.end())
         {
           _off_process_dofs.push_back(dof);
@@ -523,7 +539,7 @@ void Function::get(double* block, uint m, const uint* rows) const
 
   // Get local values when running in serial or collect values in parallel
   if (range.first == 0 && range.second == _vector->size())
-    _vector->get(block, m, rows);
+    _vector->get_local(block, m, rows);
   else
   {
     if (!_off_process_vector.get())
@@ -540,7 +556,7 @@ void Function::get(double* block, uint m, const uint* rows) const
       {
         gather_scratch.local_index[n_local]  = i;
         gather_scratch.local_rows[n_local++] = rows[i];
-     }
+      }
       else
       {
         gather_scratch.nonlocal_index[n_nonlocal]  = i;
@@ -560,51 +576,5 @@ void Function::get(double* block, uint m, const uint* rows) const
     for (uint i = 0; i < n_nonlocal; ++i)
       block[gather_scratch.nonlocal_index[i]] = gather_scratch.nonlocal_block[i];
   }
-}
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-Function::LocalScratch::LocalScratch(const FiniteElement& element)
-  : size(0), dofs(0), coefficients(0), values(0)
-{
-  init(element);
-}
-//-----------------------------------------------------------------------------
-Function::LocalScratch::LocalScratch()
-  : size(0), dofs(0), coefficients(0), values(0)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Function::LocalScratch::~LocalScratch()
-{
-  delete [] dofs;
-  delete [] coefficients;
-  delete [] values;
-}
-//-----------------------------------------------------------------------------
-void Function::LocalScratch::init(const FiniteElement& element)
-{
-  // Compute size of value (number of entries in tensor value)
-  size = 1;
-  for (uint i = 0; i < element.value_rank(); i++)
-    size *= element.value_dimension(i);
-
-  // Initialize local array for mapping of dofs
-  delete [] dofs;
-  dofs = new uint[element.space_dimension()];
-  for (uint i = 0; i < element.space_dimension(); i++)
-    dofs[i] = 0;
-
-  // Initialize local array for expansion coefficients
-  delete [] coefficients;
-  coefficients = new double[element.space_dimension()];
-  for (uint i = 0; i < element.space_dimension(); i++)
-    coefficients[i] = 0.0;
-
-  // Initialize local array for values
-  delete [] values;
-  values = new double[size];
-  for (uint i = 0; i < size; i++)
-    values[i] = 0.0;
 }
 //-----------------------------------------------------------------------------

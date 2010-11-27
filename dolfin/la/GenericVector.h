@@ -69,6 +69,10 @@ namespace dolfin
                      const uint * const * rows)
     { add(block, num_rows[0], rows[0]); }
 
+    /// Add block of values
+    virtual void add(const double* block, const std::vector<const std::vector<uint>* >& rows)
+    { add(block, (rows[0])->size(), &(*rows[0])[0]); }
+
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;
 
@@ -97,8 +101,7 @@ namespace dolfin
     virtual void get(double* block, uint m, const uint* rows) const = 0;
 
     /// Get block of values (values must all live on the local process)
-    virtual void get_local(double* block, uint m, const uint* rows) const
-    { error("GenericVector::get_local not yet implemented for this backend."); }
+    virtual void get_local(double* block, uint m, const uint* rows) const = 0;
 
     /// Set block of values
     virtual void set(const double* block, uint m, const uint* rows) = 0;

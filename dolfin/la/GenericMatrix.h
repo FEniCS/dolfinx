@@ -66,6 +66,10 @@ namespace dolfin
                      const uint * const * rows)
     { add(block, num_rows[0], rows[0], num_rows[1], rows[1]); }
 
+    /// Add block of values
+    virtual void add(const double* block, const std::vector<const std::vector<uint>* >& rows)
+    { add(block, (rows[0])->size(), &(*rows[0])[0], (rows[1])->size(), &(*rows[1])[0]); }
+
     /// Set all entries to zero and keep any sparse structure
     virtual void zero() = 0;
 

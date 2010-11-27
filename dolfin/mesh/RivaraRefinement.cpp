@@ -70,10 +70,10 @@ void RivaraRefinement::refine(Mesh& refined_mesh,
   for (CellIterator c(refined_mesh); !c.end(); ++c)
     cell_map[*c] = new2old_cell_arr[c->index()];
 
-  //Generate facet map array
+  // Generate facet map array
   std::vector<int> new_facet_map(new2old_facet_arr.size());
   facet_map = new_facet_map;
-  for (uint i=0; i<new2old_facet_arr.size(); i++ )
+  for (uint i = 0; i < new2old_facet_arr.size(); i++)
     facet_map[i] = new2old_facet_arr[i];
 }
 //-----------------------------------------------------------------------------
@@ -96,13 +96,13 @@ RivaraRefinement::DMesh::DMesh() : vertices(0), cells(0)
 RivaraRefinement::DMesh::~DMesh()
 {
   // Delete allocated DVertices
-  for(std::list<DVertex* >::iterator it = vertices.begin();
+  for (std::list<DVertex* >::iterator it = vertices.begin();
       it != vertices.end(); ++it)
   {
     delete *it;
   }
   // Delete allocated DCells
-  for(std::list<DCell* >::iterator it = cells.begin();
+  for (std::list<DCell* >::iterator it = cells.begin();
       it != cells.end(); ++it)
   {
     delete *it;
@@ -169,7 +169,7 @@ void RivaraRefinement::DMesh::export_mesh(Mesh& mesh,
 
   // Add vertices
   uint current_vertex = 0;
-  for(std::list<DVertex* >::iterator it = vertices.begin();
+  for (std::list<DVertex*>::iterator it = vertices.begin();
       it != vertices.end(); ++it)
   {
     DVertex* dv = *it;
@@ -178,20 +178,20 @@ void RivaraRefinement::DMesh::export_mesh(Mesh& mesh,
 
   std::vector<uint> cell_vertices(cell_type->num_entities(0));
   uint current_cell = 0;
-  for(std::list<DCell* >::iterator it = cells.begin();
+  for (std::list<DCell*>::iterator it = cells.begin();
       it != cells.end(); ++it)
   {
-    DCell* dc = *it;
+    const DCell* dc = *it;
 
-    for(uint j = 0; j < dc->vertices.size(); j++)
+    for (uint j = 0; j < dc->vertices.size(); j++)
     {
-      DVertex* dv = dc->vertices[j];
+      const DVertex* dv = dc->vertices[j];
       cell_vertices[j] = dv->id;
     }
     editor.add_cell(current_cell, cell_vertices);
     new2old_cell[current_cell] = dc->parent_id;
 
-    for(uint j = 0; j < dc->facets.size(); j++)
+    for (uint j = 0; j < dc->facets.size(); j++)
     {
       uint index = cell_type->num_entities(0)*current_cell + j;
       new2old_facet[ index ] = dc->facets[j];
@@ -205,16 +205,7 @@ void RivaraRefinement::DMesh::export_mesh(Mesh& mesh,
 void RivaraRefinement::DMesh::number()
 {
   uint i = 0;
-/*  for(std::list<DVertex* >::iterator it = vertices.begin();
-      it != vertices.end(); ++it)
-  {
-    DVertex* dv = *it;
-    dv->id = i;
-    i++;
-  }
-*/
-  i = 0;
-  for(std::list<DCell* >::iterator it = cells.begin();
+  for (std::list<DCell*>::iterator it = cells.begin();
       it != cells.end(); ++it)
   {
     DCell* dc = *it;
@@ -224,14 +215,12 @@ void RivaraRefinement::DMesh::number()
 }
 //-----------------------------------------------------------------------------
 void RivaraRefinement::DMesh::bisect(DCell* dcell, DVertex* hangv,
-		   DVertex* hv0, DVertex* hv1)
+		                                 DVertex* hv0, DVertex* hv1)
 {
-  //cout << "Refining cell: " << dcell->id << endl;
-
   bool closing = false;
 
   // Find longest edge
-  real lmax = 0.0;
+  double lmax = 0.0;
   uint ii = 0;
   uint jj = 0;
   for(uint i = 0; i < dcell->vertices.size(); i++)
@@ -240,7 +229,7 @@ void RivaraRefinement::DMesh::bisect(DCell* dcell, DVertex* hangv,
     {
       if(i != j)
       {
-        real l = dcell->vertices[i]->p.distance(dcell->vertices[j]->p);
+        const double l = dcell->vertices[i]->p.distance(dcell->vertices[j]->p);
         if(l >= lmax)
         {
           ii = i;
@@ -288,9 +277,9 @@ void RivaraRefinement::DMesh::bisect(DCell* dcell, DVertex* hangv,
   bool pushed1 = false;
   for(uint i = 0; i < dcell->vertices.size(); i++)
   {
-    if(i != ii)
+    if (i != ii)
     {
-      if( (mv->id < dcell->vertices[i]->id) && !pushed1 )
+      if (mv->id < dcell->vertices[i]->id && !pushed1)
       {
         vs1.push_back(mv);
         pushed1 =  true;
@@ -319,13 +308,13 @@ void RivaraRefinement::DMesh::bisect(DCell* dcell, DVertex* hangv,
   remove_cell(dcell);
 
   // Continue refinement
-  if(!closing)
+  if (!closing)
   {
     // Bisect opposite cell of edge with hanging node
-    for(;;)
+    for (;;)
     {
       DCell* copp = opposite(dcell, v0, v1);
-      if(copp != 0)
+      if (copp != 0)
         bisect(copp, mv, v0, v1);
       else
         break;
@@ -336,21 +325,19 @@ void RivaraRefinement::DMesh::bisect(DCell* dcell, DVertex* hangv,
 RivaraRefinement::DCell* RivaraRefinement::DMesh::opposite(DCell* dcell,
                   DVertex* v1, DVertex* v2)
 {
-  for(std::list<DCell* >::iterator it = v1->cells.begin();
+  for (std::list<DCell*>::iterator it = v1->cells.begin();
       it != v1->cells.end(); ++it)
   {
     DCell* c = *it;
-
-    if(c != dcell)
+    if (c != dcell)
     {
       uint matches = 0;
-      for(uint i = 0; i < c->vertices.size(); i++)
+      for (uint i = 0; i < c->vertices.size(); i++)
       {
-        if(c->vertices[i] == v1 || c->vertices[i] == v2)
+        if (c->vertices[i] == v1 || c->vertices[i] == v2)
           matches++;
       }
-
-      if(matches == 2)
+      if (matches == 2)
         return c;
     }
   }
@@ -363,9 +350,9 @@ void RivaraRefinement::DMesh::add_vertex(DVertex* v)
 }
 //-----------------------------------------------------------------------------
 void RivaraRefinement::DMesh::add_cell(DCell* c, std::vector<DVertex*> vs,
-                                      int parent_id)
+                                       int parent_id)
 {
-  for(uint i = 0; i < vs.size(); i++)
+  for (uint i = 0; i < vs.size(); i++)
   {
     DVertex* v = vs[i];
     c->vertices.push_back(v);
@@ -378,7 +365,7 @@ void RivaraRefinement::DMesh::add_cell(DCell* c, std::vector<DVertex*> vs,
 //-----------------------------------------------------------------------------
 void RivaraRefinement::DMesh::remove_cell(DCell* c)
 {
-  for(uint i = 0; i < c->vertices.size(); ++i)
+  for (uint i = 0; i < c->vertices.size(); ++i)
   {
     DVertex* v = c->vertices[i];
     v->cells.remove(c);
@@ -389,15 +376,14 @@ void RivaraRefinement::DMesh::remove_cell(DCell* c)
 void RivaraRefinement::DMesh::bisect_marked(std::vector<bool> marked_ids)
 {
   std::list<DCell*> marked_cells;
-  for(std::list<DCell* >::iterator it = cells.begin();
+  for (std::list<DCell*>::iterator it = cells.begin();
       it != cells.end(); ++it)
   {
     DCell* c = *it;
-
-    if(marked_ids[c->id])
+    if (marked_ids[c->id])
       marked_cells.push_back(c);
   }
-  for(std::list<DCell* >::iterator it = marked_cells.begin();
+  for (std::list<DCell*>::iterator it = marked_cells.begin();
       it != marked_cells.end(); ++it)
   {
     DCell* c = *it;
@@ -419,11 +405,11 @@ void RivaraRefinement::DMesh::propagate_facets(DCell* dcell, DCell* c0,
   }
 
   // New facets
-  if( mv->id < dcell->vertices[ii]->id )
+  if (mv->id < dcell->vertices[ii]->id)
     facets0[ii+1] = -1;
   else
     facets0[ii] = -1;
-  if( mv->id < dcell->vertices[jj]->id )
+  if (mv->id < dcell->vertices[jj]->id)
     facets1[jj] = -1;
   else
     facets1[jj-1] = -1;
@@ -431,11 +417,11 @@ void RivaraRefinement::DMesh::propagate_facets(DCell* dcell, DCell* c0,
   // Changed facets
   int c0i = 0;
   int c1i = 0;
-  for(uint i = 0; i < dim+1; i++)
+  for (uint i = 0; i < dim + 1; i++)
   {
-    if( mv->id > c0->vertices[i]->id )
+    if ( mv->id > c0->vertices[i]->id )
       c0i++;
-    if( mv->id > c1->vertices[i]->id )
+    if ( mv->id > c1->vertices[i]->id )
       c1i++;
   }
   facets0[c0i] = jj;
@@ -443,13 +429,13 @@ void RivaraRefinement::DMesh::propagate_facets(DCell* dcell, DCell* c0,
 
   // Untouched facets
   std::vector<int> rest;
-  for(uint i = 0; i < dim+1; i++)
+  for (uint i = 0; i < dim + 1; i++)
   {
     if(i != ii && i != jj)
       rest.push_back(i);
   }
-  int j=0, k=0;
-  for(uint i = 0; i < dim+1; i++)
+  int j = 0, k = 0;
+  for(uint i = 0; i < dim + 1; i++)
   {
     if(facets0[i] == -2)
       facets0[i] = rest[j++];
@@ -459,17 +445,17 @@ void RivaraRefinement::DMesh::propagate_facets(DCell* dcell, DCell* c0,
 
   // Rewrite facets whenever different that -1
   //   ( -1 for new, internal facets )
-  for(uint i = 0; i < dim+1; i++)
+  for(uint i = 0; i < dim + 1; i++)
   {
-    if(facets0[i] != -1)
-      c0->facets.push_back( dcell->facets[facets0[i]] );
+    if (facets0[i] != -1)
+      c0->facets.push_back(dcell->facets[facets0[i]]);
     else
-      c0->facets.push_back( -1 );
+      c0->facets.push_back(-1);
 
-    if(facets1[i] != -1)
-      c1->facets.push_back( dcell->facets[facets1[i]] );
+    if (facets1[i] != -1)
+      c1->facets.push_back(dcell->facets[facets1[i]]);
     else
-      c1->facets.push_back( -1 );
+      c1->facets.push_back(-1);
   }
 }
 //-----------------------------------------------------------------------------

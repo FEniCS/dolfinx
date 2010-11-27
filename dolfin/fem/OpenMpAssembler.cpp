@@ -11,7 +11,7 @@
 #ifdef HAS_OPENMP
 
 #include <omp.h>
-#include <boost/unordered_set.hpp>
+//#include <boost/unordered_set.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -57,7 +57,7 @@ void OpenMpAssembler::assemble(GenericTensor& A,
                                bool reset_sparsity,
                                bool add_values)
 {
-  warning("OpenMpAssembler is experimental.");
+  //warning("OpenMpAssembler is experimental.");
 
   // All assembler functions above end up calling this function, which
   // in turn calls the assembler functions below to assemble over
@@ -104,6 +104,9 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
   Timer timer("Assemble cells");
 
+  // Set number of OpenMP threads (from parameter systems)
+  omp_set_num_threads(parameters["num_threads"]);
+
   // Get integral for sub domain (if any)
   if (domains && domains->size() > 0)
     error("Sub-domains not yet handled by OpenMpAssembler.");
@@ -119,8 +122,6 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   // Form rank
   const uint form_rank = ufc.form.rank();
 
-  // FIXME: Get a const std::vector<std::vector<unit> >& of dofs here
-
   // Cell integral
   const ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
@@ -129,8 +130,8 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   for (uint i = 0; i < form_rank; ++i)
     dof_maps.push_back(&a.function_space(i)->dofmap());
 
-  // Set number of OpenMP threads (from parameter systems)
-  omp_set_num_threads(parameters["num_threads"]);
+  // Vector to hold dof maps for a cell
+  std::vector<const std::vector<uint>* > dofs(form_rank);
 
   // Assemble over cells (loop over colours, then cells of same color)
   const uint num_colors = mesh.data().array("num colored cells")->size();
@@ -143,33 +144,32 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
     // Number of cells of current color
     const uint num_cells = colored_cells->size();
 
-    // FIXME: A UFC object is created for each thread for each colour. Can this be for just each thread?
-
     // OpenMP test loop over cells of the same color
     Progress p(AssemblerTools::progress_message(A.rank(), "cells"), num_colors);
-    //#pragma omp parallel for schedule(static) firstprivate(ufc)
-    #pragma omp parallel for schedule(guided, 20) firstprivate(ufc)
+    #pragma omp parallel for schedule(guided, 20) firstprivate(ufc, dofs)
     for (uint cell_index = 0; cell_index < num_cells; ++cell_index)
     {
+      // Cell index
+      const uint index = (*colored_cells)[cell_index];
+
       // Create cell
-      const Cell cell(mesh, (*colored_cells)[cell_index]);
+      const Cell cell(mesh, index);
 
       // Update to current cell
-      ufc.update(cell);
+      ufc.update_new(cell);
 
-      // GNW: This seems to be expensive in parallel (more costly than tabulate_tensor in some cases)
-      // Tabulate dofs for each dimension
+      // Get local-to-global dof maps for cell
       for (uint i = 0; i < form_rank; ++i)
-        dof_maps[i]->tabulate_dofs(ufc.dofs[i], cell);
+        dofs[i] = &(dof_maps[i]->cell_dofs(index));
 
       // Tabulate cell tensor
       integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
 
       // Add entries to global tensor
-      //if (values && form_rank == 0)
-      //  (*values)[cell_index] = ufc.A[0];
-      //else
-      //  A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
+      if (values && form_rank == 0)
+        (*values)[cell_index] = ufc.A[0];
+      else
+        A.add(ufc.A.get(), dofs);
     }
     p++;
   }

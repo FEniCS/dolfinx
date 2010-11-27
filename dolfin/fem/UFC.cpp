@@ -135,6 +135,19 @@ void UFC::init(const Form& form)
   }
 }
 //-----------------------------------------------------------------------------
+void UFC::update_new(const Cell& cell)
+{
+  // Update UFC cell
+  this->cell.update(cell);
+
+  // Restrict coefficients to cell
+  for (uint i = 0; i < coefficients.size(); ++i)
+  {
+    coefficients[i]->restrict(w[i], coefficient_elements[i], cell,
+                              this->cell, -1);
+  }
+}
+//-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell)
 {
   // Update UFC cell

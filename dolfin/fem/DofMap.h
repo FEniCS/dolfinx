@@ -115,6 +115,13 @@ namespace dolfin
       return _ufc_dofmap->num_facet_dofs();
     }
 
+    /// Local-to-global mapping of dofs on a cell
+    const std::vector<uint>& cell_dofs(uint cell_index) const
+    {
+      assert(cell_index < dofmap.size());
+      return dofmap[cell_index];
+    }
+
     /// Tabulate the local-to-global mapping of dofs on a cell (UFC cell version)
     void tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_index) const;
 

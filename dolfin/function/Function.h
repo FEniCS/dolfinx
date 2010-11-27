@@ -37,7 +37,6 @@ namespace dolfin
   class SubDomain;
   template<class T> class Array;
 
-
   /// This class represents a function u_h in a finite element
   /// function space V_h, given by
   ///
@@ -186,39 +185,6 @@ namespace dolfin
 
     // True if extrapolation should be allowed
     bool allow_extrapolation;
-
-    // Scratch space, used for storing temporary local data
-    class LocalScratch
-    {
-    public:
-
-      // Constructor
-      LocalScratch(const FiniteElement& element);
-
-      // Constructor
-      LocalScratch();
-
-      // Destructor
-      ~LocalScratch();
-
-      // Initialize scratch space
-      void init(const FiniteElement& element);
-
-      // Value size (number of entries in tensor value)
-      uint size;
-
-      // Local array for mapping of dofs
-      uint* dofs;
-
-      // Local array for expansion coefficients
-      double* coefficients;
-
-      // Local array for values
-      double* values;
-
-    };
-
-    mutable LocalScratch local_scratch;
 
     // Scratch data used in extracting coefficients from parallel vectors
     class GatherScratch

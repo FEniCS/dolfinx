@@ -52,6 +52,9 @@ namespace dolfin
     /// Return number of facet dofs
     virtual unsigned int num_facet_dofs() const = 0;
 
+    /// Local-to-global mapping of dofs on a cell
+    virtual const std::vector<uint>& cell_dofs(uint cell_index) const = 0;
+
     /// Tabulate the local-to-global mapping of dofs on a cell
     /// (UFC cell version)
     virtual void tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,

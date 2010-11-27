@@ -241,7 +241,7 @@ const dolfin::MeshFunction<dolfin::uint>& Mesh::color(std::string coloring_type)
   const uint dim = MeshColoring::type_to_dim(coloring_type, *this);
   if (static_cast<int>(dim) == _colored)
   {
-    info("Mesh has already been colored, not coloring again.");
+    dolfin_debug("Mesh has already been colored, not coloring again.");
     MeshFunction<uint>* colors = _data.mesh_function("cell colors");
     assert(colors);
     return *colors;
@@ -260,7 +260,7 @@ const dolfin::MeshFunction<dolfin::uint>& Mesh::color(uint dim) const
   // Check if mesh has already been colored
   if (static_cast<int>(dim) == _colored)
   {
-    info("Mesh has already been colored, not coloring again.");
+    dolfin_debug("Mesh has already been colored, not coloring again.");
     MeshFunction<uint>* colors = _data.mesh_function("cell colors");
     assert(colors);
     return *colors;

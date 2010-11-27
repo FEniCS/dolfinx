@@ -12,13 +12,12 @@
 
 #include <dolfin.h>
 #include <dolfin/fem/AssemblerTools.h>
-
 #include "Poisson.h"
 #include "NavierStokes.h"
 
-#define MAX_NUM_THREADS 8
+#define MAX_NUM_THREADS 4
 #define SIZE 32
-#define ASSEMBLY_REPEATS 2
+#define ASSEMBLY_REPEATS 5
 
 using namespace dolfin;
 
@@ -26,10 +25,6 @@ double bench(std::string form, const Mesh& mesh)
 {
   dolfin::uint num_threads = parameters["num_threads"];
   info_underline("Benchmarking %s, num_threads = %d", form.c_str(), num_threads);
-
-  // Create mesh
-  //UnitCube mesh(SIZE, SIZE, SIZE);
-  //mesh.color("vertex");
 
   // Create form
   FunctionSpace *V(0), *W0(0), *W1(0), *W2(0), *W3(0), *W4(0);
@@ -105,16 +100,17 @@ int main(int argc, char* argv[])
   //PetscInfoAllow(PETSC_TRUE, PETSC_NULL);
   //PetscOptionsSetValue("-mat_inode_limit", "5");
 
+  // Set backend
   //parameters["linear_algebra_backend"] = "Epetra";
 
   // Create mesh
   UnitCube mesh(SIZE, SIZE, SIZE);
   mesh.color("vertex");
-  mesh.init(1);
+  //mesh.init(1);
 
   // Test cases
   std::vector<std::string> forms;
-  //forms.push_back("Poisson");
+  forms.push_back("Poisson");
   forms.push_back("NavierStokes");
 
   // If parameter num_threads has been set, just run once
@@ -148,9 +144,9 @@ int main(int argc, char* argv[])
         timings(s.str(), forms[i]) = t;
         speedups(s.str(), forms[i]) = timings.get_value("0 threads", forms[i]) / t;
         if (num_threads == 0)
-          speedups(s.str(), "(rel 1 thread)") = "-";
+          speedups(s.str(), "(rel 1 thread " + forms[i] + ")") = "-";
         else
-          speedups(s.str(), "(rel 1 thread)") = timings.get_value("1 threads", forms[i]) / t;
+          speedups(s.str(),  "(rel 1 thread " + forms[i] + ")") = timings.get_value("1 threads", forms[i]) / t;
       }
     }
 

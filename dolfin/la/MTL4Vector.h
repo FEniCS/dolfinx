@@ -73,6 +73,10 @@ namespace dolfin
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows) const;
 
+    /// Get block of values
+    virtual void get_local(double* block, uint m, const uint* rows) const
+    { get(block, m, rows); }
+
     /// Set block of values
     virtual void set(const double* block, uint m, const uint* rows);
 

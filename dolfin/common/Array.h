@@ -132,6 +132,14 @@ namespace dolfin
     T& operator[] (uint i)
     { assert(i < _size); return x[i]; }
 
+    /// Assign value to all entries
+    const Array<T>& operator= (T& x)
+    {
+      for (uint i = 0; i < _size; ++i)
+        this->x[i] = x;
+      return *this;
+    }
+
     /// Return pointer to data (const version)
     const boost::shared_array<T> data() const
     { return x; }

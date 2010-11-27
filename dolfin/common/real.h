@@ -84,22 +84,23 @@ namespace dolfin
   // Power function
   inline real pow(const real& x, const real& y)
   {
-#ifdef HAS_GMP
+    #ifdef HAS_GMP
     error("Multiprecision pow function not implemented.");
     return 0.0;
-#else
+    #else
     return std::pow(to_double(x), to_double(y));
-#endif
+    #endif
   }
 
-  inline int isnormal(const real& x) {
-#ifdef HAS_GMP
+  inline int isnormal(const real& x)
+  {
+    #ifdef HAS_GMP
     // NOTE: Not implemented.
     // GMP has no notion of infinity or NaN
     return 1;
-#else
+    #else
     return std::isnormal(to_double(x));
-#endif
+    #endif
   }
 
   // Power function (note: not full precision!)
@@ -107,7 +108,8 @@ namespace dolfin
   { return std::pow(to_double(x), to_double(y)); }
 
  /// Square root
-  inline real real_sqrt(const real& a) {return sqrt(a); }
+  inline real real_sqrt(const real& a)
+  { return sqrt(a); }
 
   /// Compute pi
   real real_pi();
@@ -115,7 +117,9 @@ namespace dolfin
   /// Compute matrix exponential using Pade approximation og degree p
   void real_mat_exp(uint n, real* res, const real* A, const uint p=6);
 
+  // FIXME: Add description
   double real_frexp(int* exp, const real& x);
+
   /// Exponential function (note: not full precision!)
   inline real real_exp(real x)
   { return to_real(exp(to_double(x))); }
@@ -133,51 +137,94 @@ namespace dolfin
 
   // Set array to given array (copy values)
   inline void real_set(uint n, real* x, const real* y)
-  { for (uint i = 0; i < n; i++) x[i] = y[i]; }
+  {
+    for (uint i = 0; i < n; i++)
+      x[i] = y[i];
+  }
 
   // Set array to given number
   inline void real_set(uint n, real* x, const real& value)
-  { for (uint i = 0; i < n; i++) x[i] = value; }
+  {
+    for (uint i = 0; i < n; i++)
+      x[i] = value;
+  }
 
   // Set array to zero
   inline void real_zero(uint n, real* x)
-  { for (uint i = 0; i < n; i++) x[i] = 0.0; }
+  {
+    for (uint i = 0; i < n; i++)
+      x[i] = 0.0;
+  }
 
   // Add array, x += y
   inline void real_add(uint n, real* x, const real* y)
-  { for (uint i = 0; i < n; i++) x[i] += y[i]; }
+  {
+    for (uint i = 0; i < n; i++)
+      x[i] += y[i];
+  }
 
   // Subtract array, x -= y
   inline void real_sub(uint n, real* x, const real* y)
-  { for (uint i = 0; i < n; i++) x[i] -= y[i]; }
+  {
+    for (uint i = 0; i < n; i++)
+      x[i] -= y[i];
+  }
 
   // Add multiple of array, x += a*y (AXPY operation)
   inline void real_axpy(uint n, real* x, const real& a, const real* y)
-  { for (uint i = 0; i < n; i++) x[i] += a*y[i]; }
+  {
+    for (uint i = 0; i < n; i++)
+      x[i] += a*y[i];
+  }
 
   // Multiply array with given number
   inline void real_mult(uint n, real* x, const real& a)
-  { for (uint i = 0; i < n; i++) x[i] *= a; }
+  {
+    for (uint i = 0; i < n; i++)
+      x[i] *= a;
+  }
 
   // Divide array with given number
   inline void real_div(uint n, real* x, const real& a)
-  { for (uint i = 0; i < n; i++) x[i] /= a; }
+  {
+    for (uint i = 0; i < n; i++)
+      x[i] /= a;
+  }
 
   // Compute inner products of array
   inline real real_inner(uint n, const real* x, const real* y)
-  { real sum = 0.0; for (uint i = 0; i < n; i++) sum += x[i]*y[i]; return sum; }
+  {
+    real sum = 0.0;
+    for (uint i = 0; i < n; i++)
+      sum += x[i]*y[i];
+    return sum;
+  }
 
   // Compute maximum absolute value of array
   inline real real_max_abs(uint n, const real* x)
-  { real _max = 0.0; for (uint i = 0; i < n; i++) _max = real_max(real_abs(x[i]), _max); return _max; }
+  {
+    real _max = 0.0;
+    for (uint i = 0; i < n; i++)
+      _max = real_max(real_abs(x[i]), _max);
+    return _max;
+  }
 
   // Compute Euclidean norm
   inline real real_norm(uint n, const real* x)
-  {real sum=0.0; for (uint i=0; i<n; ++i) sum += x[i]*x[i]; return real_sqrt(sum);}
+  {
+    real sum=0.0;
+    for (uint i=0; i<n; ++i)
+      sum += x[i]*x[i];
+    return real_sqrt(sum);
+  }
 
   // Set matrix A to (a multiple of) identity
   inline void real_identity(uint n, real* A, real value=1.0)
-  { real_zero(n*n, A); for (uint i=0; i < n; ++i) A[i*n+i] = value; }
+  {
+    real_zero(n*n, A);
+    for (uint i=0; i < n; ++i)
+      A[i*n+i] = value;
+  }
 
   // Matrix multiplication res = A*B
   void real_mat_prod(uint n, real* res, const real* A, const real* B);
