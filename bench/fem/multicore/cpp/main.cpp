@@ -6,7 +6,7 @@
 // is given, the benchmark is run with the specified number of threads.
 //
 // First added:  2010-11-11
-// Last changed: 2010-11-24
+// Last changed: 2010-11-27
 
 #include <cstdlib>
 
@@ -17,7 +17,7 @@
 
 #define MAX_NUM_THREADS 4
 #define SIZE 32
-#define ASSEMBLY_REPEATS 5
+#define NUM_REPS 2
 
 using namespace dolfin;
 
@@ -65,7 +65,7 @@ double bench(std::string form, const Mesh& mesh)
 
   // Assemble
   Timer timer("Total time");
-  for (dolfin::uint i = 0; i < ASSEMBLY_REPEATS; ++i)
+  for (dolfin::uint i = 0; i < NUM_REPS; ++i)
     assemble(A, *a, false);
   const double t = timer.stop();
 
