@@ -4,7 +4,7 @@
 // Modified by Niclas Jansson, 2008.
 //
 // First added:  2008-05-19
-// Last changed: 2010-11-18
+// Last changed: 2010-11-27
 
 #ifndef __MESH_DATA_H
 #define __MESH_DATA_H

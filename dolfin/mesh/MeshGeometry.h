@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2010-08-26
+// Last changed: 2010-11-28
 
 #ifndef __MESH_GEOMETRY_H
 #define __MESH_GEOMETRY_H
@@ -131,6 +131,7 @@ namespace dolfin
 
     // Friends
     friend class BinaryFile;
+    friend class MeshRenumbering;
 
     // Euclidean dimension
     uint _dim;

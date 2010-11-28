@@ -9,7 +9,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2010-11-25
+// Last changed: 2010-11-27
 
 #ifndef __MESH_H
 #define __MESH_H

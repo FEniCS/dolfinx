@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2010-11-18
+// Last changed: 2010-11-28
 
 #ifdef HAS_OPENMP
 

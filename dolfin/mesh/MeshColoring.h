@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-11-15
-// Last changed: 2010-11-18
+// Last changed: 2010-11-27
 
 #ifndef __MESH_COLORING_H
 #define __MESH_COLORING_H

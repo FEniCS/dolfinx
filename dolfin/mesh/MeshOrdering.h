@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2007-01-30
-// Last changed: 2008-11-13
+// Last changed: 2010-11-27
 
 #ifndef __MESH_ORDERING_H
 #define __MESH_ORDERING_H

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-09
-// Last changed: 2010-04-29
+// Last changed: 2010-11-28
 
 #ifndef __MESH_CONNECTIVITY_H
 #define __MESH_CONNECTIVITY_H
@@ -79,6 +79,7 @@ namespace dolfin
 
     // Friends
     friend class BinaryFile;
+    friend class MeshRenumbering;
 
     // Dimensions (only used for pretty-printing)
     uint d0, d1;
