@@ -15,7 +15,7 @@
 #include "Poisson.h"
 #include "NavierStokes.h"
 
-#define MAX_NUM_THREADS 2
+#define MAX_NUM_THREADS 4
 #define SIZE 32
 #define NUM_REPS 2
 
@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
   // Test cases
   std::vector<std::string> forms;
   forms.push_back("Poisson");
-  //forms.push_back("NavierStokes");
+  forms.push_back("NavierStokes");
 
   // If parameter num_threads has been set, just run once
   if (parameters["num_threads"].change_count() > 0)

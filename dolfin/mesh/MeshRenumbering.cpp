@@ -23,8 +23,11 @@ void MeshRenumbering::renumber_by_color(Mesh& mesh)
   //info(TRACE, "Renumbering mesh by cell colors.");
   info("Renumbering mesh by cell colors.");
 
+  info(mesh);
+
   // Check that mesh has been colored
-  if (!mesh.data().mesh_function("cell colors"))
+  MeshFunction<uint>* cell_colors = mesh.data().mesh_function("cell colors");
+  if (!cell_colors)
     error("Unable to renumber mesh by colors. Mesh has not been colored.");
 
   // Get mesh topology and geometry
@@ -60,7 +63,9 @@ void MeshRenumbering::renumber_by_color(Mesh& mesh)
   std::fill(new_vertex_indices.begin(), new_vertex_indices.end(), -1);
 
   // Iterate over colors
-  const uint num_colors = mesh.data().array("num colored cells")->size();
+  const std::vector<uint>* num_colored_cells = mesh.data().array("num colored cells");
+  assert(num_collored_cells);
+  const uint num_colors = num_colored_cells->size();
   assert(num_colors > 0);
   uint connections_offset = 0;
   uint current_vertex = 0;
@@ -111,5 +116,22 @@ void MeshRenumbering::renumber_by_color(Mesh& mesh)
   // Copy data
   std::copy(new_connections.get(), new_connections.get() + connections_size, connections);
   std::copy(new_coordinates.get(), new_coordinates.get() + coordinates_size, coordinates);
+
+  // Update renumbering data
+  uint current_cell = 0;
+  for (uint color = 0; color < num_colors; color++)
+  {
+    // Get the array of cell indices of current color
+    std::vector<uint>* colored_cells = mesh.data().array("colored cells", color);
+
+    // Update cell color data
+    assert(colored_cells->size() == num_colored_cells[color]);
+    for (uint i = 0; i < (*num_colored_cells)[color]; i++)
+    {
+      (*colored_cells)[i] = current_cell;
+      (*cell_colors)[current_cell] = color;
+      current_cell++;
+    }
+  }
 }
 //-----------------------------------------------------------------------------

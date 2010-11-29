@@ -5,7 +5,7 @@
 // Modified by Dag Lindbo 2008.
 //
 // First added:  2006-06-01
-// Last changed: 2008-07-08
+// Last changed: 2010-11-29
 
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/log/dolfin_log.h>
@@ -244,9 +244,9 @@ dolfin::uint UmfpackLUSolver::solve_factorized(GenericVector& x,
 #ifdef HAS_UMFPACK
 //-----------------------------------------------------------------------------
 boost::shared_ptr<void> UmfpackLUSolver::umfpack_factorize_symbolic(uint M, uint N,
-                                                  const std::size_t* Ap,
-                                                  const std::size_t* Ai,
-                                                  const double* Ax)
+                                                                    const std::size_t* Ap,
+                                                                    const std::size_t* Ai,
+                                                                    const double* Ax)
 {
   assert(Ap);
   assert(Ai);
