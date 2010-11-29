@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-11-15
-// Last changed: 2010-11-18
+// Last changed: 2010-11-29
 
 #include <boost/foreach.hpp>
 
@@ -141,7 +141,9 @@ dolfin::uint MeshColoring::type_to_dim(std::string coloring_type,
 {
   // Check that coloring type is valid
   if (coloring_type != "vertex" && coloring_type != "edge" && coloring_type != "facet")
-    error("Coloring type unkown. Options are \"vertex\", \"edge\" or \"facet\".");
+    error("Coloring type '%s' unkown. Options are \"vertex\", \"edge\" or \"facet\".",
+          coloring_type.c_str()
+);
 
   // Select topological dimension
   if (coloring_type == "vertex")

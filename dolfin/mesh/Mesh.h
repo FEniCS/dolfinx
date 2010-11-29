@@ -9,7 +9,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-08
-// Last changed: 2010-11-27
+// Last changed: 2010-11-29
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -307,6 +307,14 @@ namespace dolfin
     ///
     ///     UFC documentation (put link here!)
     void order();
+
+    /// Renumber mesh entities by coloring. This function is currently
+    /// restricted to renumbering by cell coloring. The cells
+    /// (cell-vertex connectivity) and the coordinates of the mesh are
+    /// renumbered to improve the locality within each color. It is
+    /// assumed that the mesh has already been colored and that only
+    /// cell-vertex connectivity exists as part of the mesh.
+    void renumber_by_color();
 
     /// Check if mesh is ordered.
     ///

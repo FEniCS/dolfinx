@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008.
 //
 // First added:  2006-05-08
-// Last changed: 2010-11-28
+// Last changed: 2010-11-29
 
 #ifndef __MESH_GEOMETRY_H
 #define __MESH_GEOMETRY_H

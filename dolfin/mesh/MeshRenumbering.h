@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2010-11-27
-// Last changed: 2010-11-28
+// Last changed: 2010-11-29
 
 #ifndef __MESH_RENUMBERING_H
 #define __MESH_RENUMBERING_H
@@ -19,9 +19,11 @@ namespace dolfin
   public:
 
     /// Renumber mesh entities by coloring. This function is currently
-    /// restricted to renumbering by cell coloring. It is assumed that
-    /// the mesh has already been colored and that only cell-vertex
-    /// connectivity exists as part of the mesh.
+    /// restricted to renumbering by cell coloring. The cells
+    /// (cell-vertex connectivity) and the coordinates of the mesh are
+    /// renumbered to improve the locality within each color. It is
+    /// assumed that the mesh has already been colored and that only
+    /// cell-vertex connectivity exists as part of the mesh.
     ///
     /// *Arguments*
     ///     mesh (_Mesh_)

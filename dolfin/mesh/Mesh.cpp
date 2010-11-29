@@ -8,7 +8,7 @@
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2010-11-25
+// Last changed: 2010-11-29
 
 #include <sstream>
 #include <vector>
@@ -28,6 +28,7 @@
 #include "LocalMeshData.h"
 #include "MeshPartitioning.h"
 #include "MeshColoring.h"
+#include "MeshRenumbering.h"
 #include "BoundaryMesh.h"
 #include "Cell.h"
 #include "Vertex.h"
@@ -203,6 +204,11 @@ bool Mesh::ordered() const
 
   _ordered = MeshOrdering::ordered(*this);
   return _ordered;
+}
+//-----------------------------------------------------------------------------
+void Mesh::renumber_by_color()
+{
+  MeshRenumbering::renumber_by_color(*this);
 }
 //-----------------------------------------------------------------------------
 void Mesh::move(BoundaryMesh& boundary, ALEType method)
