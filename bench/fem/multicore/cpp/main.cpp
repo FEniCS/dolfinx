@@ -17,7 +17,7 @@
 
 #define MAX_NUM_THREADS 4
 #define SIZE 32
-#define NUM_REPS 2
+#define NUM_REPS 20
 
 using namespace dolfin;
 
