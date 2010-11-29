@@ -6,7 +6,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2007-01-17
-// Last changed: 2009-09-08
+// Last changed: 2010-11-29
 
 #ifndef __GENERIC_TENSOR_H
 #define __GENERIC_TENSOR_H
@@ -58,7 +58,8 @@ namespace dolfin
                      const uint * const * rows) = 0;
 
     /// Add block of values
-    virtual void add(const double* block, const std::vector<const std::vector<uint>* >& rows) = 0;
+    virtual void add(const double* block,
+                     const std::vector<const std::vector<uint>* >& rows) = 0;
 
     /// Get block of values
     //virtual void get(double* block, const uint* num_rows,

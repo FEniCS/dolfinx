@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2010-11-28
+// Last changed: 2010-11-29
 
 #ifdef HAS_OPENMP
 
@@ -164,6 +164,22 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
       // Tabulate cell tensor
       integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
+
+      // FIXME: Debugging segfault in renumbered add
+      for (uint i = 0; i < form_rank; ++i)
+      {
+        bool ok = true;
+        for (uint j = 0; j < dofs[i]->size(); j++)
+          if ((*dofs[i])[j] > A.size(0))
+            ok = false;
+        if (ok) break;
+        cout << "Adding" << endl;
+        cout << i << ":";
+        for (uint j = 0; j < dofs[i]->size(); j++)
+          cout << " " << (*dofs[i])[j];
+        cout << endl;
+        error("oops");
+      }
 
       // Add entries to global tensor
       if (values && form_rank == 0)
