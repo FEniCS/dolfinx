@@ -64,7 +64,7 @@ void MeshRenumbering::renumber_by_color(Mesh& mesh)
 
   // Iterate over colors
   const std::vector<uint>* num_colored_cells = mesh.data().array("num colored cells");
-  assert(num_collored_cells);
+  assert(num_colored_cells);
   const uint num_colors = num_colored_cells->size();
   assert(num_colors > 0);
   uint connections_offset = 0;
@@ -125,7 +125,7 @@ void MeshRenumbering::renumber_by_color(Mesh& mesh)
     std::vector<uint>* colored_cells = mesh.data().array("colored cells", color);
 
     // Update cell color data
-    assert(colored_cells->size() == num_colored_cells[color]);
+    assert(colored_cells->size() == (*num_colored_cells)[color]);
     for (uint i = 0; i < (*num_colored_cells)[color]; i++)
     {
       (*colored_cells)[i] = current_cell;
