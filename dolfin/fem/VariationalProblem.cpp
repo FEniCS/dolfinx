@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2008-12-26
-// Last changed: 2010-05-03
+// Last changed: 2010-11-29
 
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
@@ -245,8 +245,6 @@ void VariationalProblem::solve_linear(Function& u)
     LUSolver solver;
     solver.parameters.update(parameters("lu_solver"));
     solver.solve(A, u.vector(), b);
-    if (pc_type != "none" || pc_type != "default")
-      warning("Using LU solver, ignoring preconditioner \"%s\".", pc_type.c_str());
   }
   else
   {
