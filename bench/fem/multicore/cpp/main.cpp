@@ -12,6 +12,7 @@
 
 #include <dolfin.h>
 #include <dolfin/fem/AssemblerTools.h>
+#include <dolfin/mesh/MeshRenumbering.h>
 #include "Poisson.h"
 #include "NavierStokes.h"
 
@@ -106,6 +107,7 @@ int main(int argc, char* argv[])
   // Create mesh
   UnitCube mesh(SIZE, SIZE, SIZE);
   mesh.color("vertex");
+  MeshRenumbering::renumber_by_color(mesh);
   //mesh.init(1);
 
   // Test cases
