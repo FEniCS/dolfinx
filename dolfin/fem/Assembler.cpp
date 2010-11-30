@@ -170,7 +170,8 @@ void Assembler::assemble_cells(GenericTensor& A,
     }
 
     // Skip integral if zero
-    if (!integral) continue;
+    if (!integral)
+      continue;
 
     // Update to current cell
     ufc.update(*cell);
@@ -212,7 +213,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   const Mesh& mesh = a.mesh();
 
   // Exterior facet integral
-  ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0].get();
+  const ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0].get();
 
   // Compute facets and facet - cell connectivity if not already computed
   const uint D = mesh.topology().dim();

@@ -146,7 +146,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
     // OpenMP test loop over cells of the same color
     Progress p(AssemblerTools::progress_message(A.rank(), "cells"), num_colors);
-    #pragma omp parallel for schedule(guided, 20) firstprivate(ufc, dofs)
+    #pragma omp parallel for schedule(guided, 20) firstprivate(ufc, dofs, integral)
     for (uint cell_index = 0; cell_index < num_cells; ++cell_index)
     {
       // Cell index
@@ -154,6 +154,20 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
 
       // Create cell
       const Cell cell(mesh, index);
+
+      // Get integral for sub domain (if any)
+      if (domains && domains->size() > 0)
+      {
+        const uint domain = (*domains)[cell];
+        if (domain < ufc.form.num_cell_integrals())
+          integral = ufc.cell_integrals[domain].get();
+        else
+          continue;
+      }
+
+      // Skip integral if zero
+      if (!integral)
+        continue;
 
       // Update to current cell
       ufc.update_new(cell);
@@ -191,7 +205,7 @@ void OpenMpAssembler::assemble_exterior_facets(GenericTensor& A,
   const Mesh& mesh = a.mesh();
 
   // Exterior facet integral
-  ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0].get();
+  const ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0].get();
 
   // Compute facets and facet - cell connectivity if not already computed
   const uint D = mesh.topology().dim();
@@ -267,7 +281,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
   const Mesh& mesh = a.mesh();
 
   // Interior facet integral
-  ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0].get();
+  const ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0].get();
 
   // Compute facets and facet - cell connectivity if not already computed
   mesh.init(mesh.topology().dim() - 1);
