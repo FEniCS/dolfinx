@@ -100,6 +100,7 @@ void UFC::init(const Form& form)
   for (uint i = 0; i < this->form.rank(); i++)
     num_entries *= max_local_dimension[i];
   A.reset(new double[num_entries]);
+  A_facet.reset(new double[num_entries]);
 
   // Initialize local tensor for macro element
   num_entries = 1;

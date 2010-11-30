@@ -92,6 +92,9 @@ namespace dolfin
     // Local tensor
     boost::scoped_array<double> A;
 
+    // Local tensor
+    boost::scoped_array<double> A_facet;
+
     // Local tensor for macro element
     boost::scoped_array<double> macro_A;
 

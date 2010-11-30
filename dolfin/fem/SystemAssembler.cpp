@@ -184,7 +184,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
           const uint local_facet = cell->index(*facet);
           if (A_ufc.form.num_exterior_facet_integrals() > 0)
           {
-            ufc::exterior_facet_integral* A_facet_integral = A_ufc.exterior_facet_integrals[0].get();
+            const ufc::exterior_facet_integral* A_facet_integral = A_ufc.exterior_facet_integrals[0].get();
 
             A_ufc.update(*cell, local_facet);
 
@@ -194,7 +194,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
           }
           if (b_ufc.form.num_exterior_facet_integrals() > 0)
           {
-            ufc::exterior_facet_integral* b_facet_integral = b_ufc.exterior_facet_integrals[0].get();
+            const ufc::exterior_facet_integral* b_facet_integral = b_ufc.exterior_facet_integrals[0].get();
             b_ufc.update(*cell, local_facet);
 
             b_facet_integral->tabulate_tensor(b_ufc.A.get(), b_ufc.w, b_ufc.cell, local_facet);

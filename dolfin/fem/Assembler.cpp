@@ -222,7 +222,7 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
   assert(mesh.ordered());
 
   // Extract exterior (non shared) facets markers
-  MeshFunction<uint>* exterior_facets = mesh.data().mesh_function("exterior facets");
+  const MeshFunction<uint>* exterior_facets = mesh.data().mesh_function("exterior facets");
 
   // Assemble over exterior facets (the cells of the boundary)
   Progress p(AssemblerTools::progress_message(A.rank(), "exterior facets"), mesh.num_facets());
@@ -246,7 +246,8 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     }
 
     // Skip integral if zero
-    if (!integral) continue;
+    if (!integral)
+      continue;
 
     // Get mesh cell to which mesh facet belongs (pick first, there is only one)
     assert(facet->num_entities(mesh.topology().dim()) == 1);
@@ -288,7 +289,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   const Mesh& mesh = a.mesh();
 
   // Interior facet integral
-  ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0].get();
+  const ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0].get();
 
   // Compute facets and facet - cell connectivity if not already computed
   mesh.init(mesh.topology().dim() - 1);
