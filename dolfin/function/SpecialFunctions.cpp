@@ -10,12 +10,13 @@
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
+#include "Data.h"
 #include "SpecialFunctions.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MeshCoordinates::MeshCoordinates(const Mesh& mesh) 
+MeshCoordinates::MeshCoordinates(const Mesh& mesh)
   : Expression(mesh.geometry().dim()), mesh(mesh)
 {
   // Do nothing

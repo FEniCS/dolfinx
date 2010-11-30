@@ -7,10 +7,9 @@
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
 
-#include <boost/shared_ptr.hpp>
 #include <vector>
+#include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
-#include "UFC.h"
 #include "UFCCell.h"
 
 namespace dolfin

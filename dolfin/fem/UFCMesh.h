@@ -7,7 +7,7 @@
 #ifndef __UFC_MESH_H
 #define __UFC_MESH_H
 
-#include "UFC.h"
+#include <ufc.h>
 #include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
@@ -63,7 +63,7 @@ namespace dolfin
 
       // Set number of entities for each topological dimension
       num_entities = new uint[mesh.topology().dim() + 1];
-      std::vector<uint>* num_global_entities = mesh.data().array("num global entities");
+      const std::vector<uint>* num_global_entities = mesh.data().array("num global entities");
       for (uint d = 0; d <= mesh.topology().dim(); d++)
       {
         // Use number of global entities if available (when running in parallel)
@@ -80,7 +80,7 @@ namespace dolfin
       topological_dimension = 0;
       geometric_dimension = 0;
 
-      if ( num_entities )
+      if (num_entities)
         delete [] num_entities;
       num_entities = 0;
     }

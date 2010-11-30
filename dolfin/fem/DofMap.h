@@ -16,18 +16,13 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <dolfin/common/types.h>
-#include <dolfin/common/Variable.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshFunction.h>
 #include "GenericDofMap.h"
-#include "UFC.h"
-#include "UFCCell.h"
-#include "UFCMesh.h"
 
 namespace dolfin
 {
 
   class UFC;
+  class UFCMesh;
   template<class T> class Set;
 
   /// This class handles the mapping of degrees of freedom. It builds

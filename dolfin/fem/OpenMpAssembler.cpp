@@ -1,17 +1,16 @@
-// Copyright (C) 2007-2010 Anders Logg.
+// Copyright (C) 2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2007-2009
 // Modified by Ola Skavhaug, 2007-2009
 // Modified by Kent-Andre Mardal, 2008
 //
-// First added:  2007-01-17
-// Last changed: 2010-11-29
+// First added:  2010-11-10
+// Last changed: 2010-11-30
 
 #ifdef HAS_OPENMP
 
 #include <omp.h>
-//#include <boost/unordered_set.hpp>
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -79,14 +78,15 @@ void OpenMpAssembler::assemble(GenericTensor& A,
   // Initialize global tensor
   AssemblerTools::init_global_tensor(A, a, reset_sparsity, add_values);
 
-  // Assemble over cells
-  assemble_cells(A, a, ufc, cell_domains, 0);
-
-  // Assemble over exterior facets
-  assemble_exterior_facets(A, a, ufc, exterior_facet_domains, 0);
-
-  // Assemble over interior facets
-  assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
+  if (a.ufc_form().num_interior_facet_integrals() != 0)
+  {
+    error("OpenMP assembly for DG not yet supported.");
+    //assemble_interior_facets(A, a, ufc, interior_facet_domains, 0);
+  }
+  else if (a.ufc_form().num_exterior_facet_integrals() != 0)
+    assemble_exterior_facets(A, a, ufc, exterior_facet_domains, 0);
+  else
+    assemble_cells(A, a, ufc, cell_domains, 0);
 
   // Finalize assembly of global tensor
   A.apply("add");
@@ -116,7 +116,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   mesh.color("vertex");
 
   // FIXME: Check that UFC copy constructor is dealing with copying pointers correctly
-  // Dummy UFC object since each thread needs to created it's own UFC object
+  // Dummy UFC object since each thread needs to created its own UFC object
   UFC ufc(_ufc);
 
   // Form rank
@@ -170,7 +170,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
         continue;
 
       // Update to current cell
-      ufc.update_new(cell);
+      ufc.update(cell);
 
       // Get local-to-global dof maps for cell
       for (uint i = 0; i < form_rank; ++i)
@@ -218,9 +218,7 @@ void OpenMpAssembler::assemble_exterior_facets(GenericTensor& A,
   mesh.init(D - 1, D);
   assert(mesh.ordered());
 
-
-  // FIXME: Check that UFC copy constructor is dealing with copying pointers correctly
-  // Dummy UFC object since each thread needs to created it's own UFC object
+  // Dummy UFC object since each thread needs to created its own UFC object
   UFC ufc(_ufc);
 
   // Form rank
@@ -290,6 +288,11 @@ void OpenMpAssembler::assemble_exterior_facets(GenericTensor& A,
       // Tabulate cell tensor
       cell_integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
 
+      // Get number of entries in cell tensor
+      uint dim = 1;
+      for (uint i = 0; i < form_rank; ++i)
+        dim *= dofs[i]->size();
+
       // Assemble over external facet
       for (FacetIterator facet(cell); !facet.end(); ++facet)
       {
@@ -300,16 +303,18 @@ void OpenMpAssembler::assemble_exterior_facets(GenericTensor& A,
           continue;
         }
 
+        // Get local facet index
         const uint local_facet = cell.index(*facet);
         //const ufc::exterior_facet_integral* facet_integral = ufc.exterior_facet_integrals[0].get();
 
+        // FIXME: Do we really need an update version with the local facet index?
+        // Update UFC object
         ufc.update(cell, local_facet);
+
+        // Tabulate tensor
         facet_integral->tabulate_tensor(ufc.A_facet.get(), ufc.w, ufc.cell, local_facet);
 
-        uint dim = 1;
-        for (uint i = 0; i < form_rank; ++i)
-          dim *= dofs[i]->size();
-
+        // Add Tabulate tensor
         for (uint i = 0; i < dim; ++i)
           ufc.A[i] += ufc.A_facet[i];
       }
