@@ -42,6 +42,7 @@
 #if SWIG_VERSION >= 0x020000
 %shared_ptr(dolfin::GenericDofMap)
 %shared_ptr(dolfin::DofMap)
+%shared_ptr(dolfin::Form)
 
 %shared_ptr(dolfin::FiniteElement)
 
@@ -76,6 +77,7 @@
 SWIG_SHARED_PTR(GenericDofMap,dolfin::GenericDofMap)
 SWIG_SHARED_PTR_DERIVED(DofMap,dolfin::GenericDofMap,dolfin::DofMap)
 SWIG_SHARED_PTR(FiniteElement,dolfin::FiniteElement)
+SWIG_SHARED_PTR(Form,dolfin::Form)
 
 SWIG_SHARED_PTR(FunctionSpace,dolfin::FunctionSpace)
 SWIG_SHARED_PTR_DERIVED(SubSpace,dolfin::FunctionSpace,dolfin::SubSpace)
