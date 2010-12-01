@@ -27,6 +27,7 @@ RE:dolfin/swig/.*\.(py|cc|h)
 
 # Configuration files
 dolfin.conf
+dolfin-version
 .sconf_temp
 RE:local.*
 dolfin/dolfin-config.cmake

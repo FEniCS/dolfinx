@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 2.8)
 project(DOLFIN)
 set(DOLFIN_VERSION_MAJOR "0")
 set(DOLFIN_VERSION_MINOR "9")
-set(DOLFIN_VERSION_MICRO "9")
+set(DOLFIN_VERSION_MICRO "9+")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 add_definitions(-DPACKAGE_VERSION="${DOLFIN_VERSION}")
 
@@ -413,6 +413,18 @@ configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin.conf.in
 install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
         DESTINATION ${DOLFIN_SHARE_DIR}
         COMPONENT Development)
+
+#------------------------------------------------------------------------------
+# Generate and install helper file dolfin-version
+
+# FIXME: not cross-platform compatible
+# Create and install dolfin-version file
+configure_file(${DOLFIN_CMAKE_DIR}/templates/dolfin-version.in
+               ${CMAKE_BINARY_DIR}/dolfin-version @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/dolfin-version
+        DESTINATION ${DOLFIN_BIN_DIR}
+	PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+        COMPONENT RuntimeExecutables)
 
 #------------------------------------------------------------------------------
 # Add demos and install demo source files and mesh files

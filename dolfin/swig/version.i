@@ -2,19 +2,20 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-02-06
-// Last changed: 2009-09-23
+// Last changed: 2010-12-01
 
 //-----------------------------------------------------------------------------
-// Include code to generate a __swigversion__ attribute to the cpp module
-// Add prefix to avoid naming problems with other modules
+// Include code to generate a __swigversion__ and a __dolfinversion__ 
+// attributes, from defines during compile time, to the cpp module
 //-----------------------------------------------------------------------------
 %inline %{
 int dolfin_swigversion() { return  SWIGVERSION; }
+std::string dolfin_version() {return DOLFIN_VERSION;}
 %}
 
 %pythoncode %{
 tmp = hex(dolfin_swigversion())
 __swigversion__ = ".".join([tmp[-5],tmp[-3],tmp[-2:]])
-
-del tmp, dolfin_swigversion
+__dolfinversion__ = dolfin_version()
+del tmp, dolfin_swigversion, dolfin_version
 %}
