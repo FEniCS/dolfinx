@@ -35,9 +35,10 @@ dolfin/dolfin-config.cmake
 RE:demo/.*\.(pvd|vtu|pvtu|xml|bin)
 RE:demo/adaptivity/.*/(cpp|python)/.*\.(pvd|vtu|pvtu|xml|bin)
 RE:demo/adaptivity/.*/indicators.py
-RE:demo/.*/cpp/.*demo
-RE:test/.*/cpp/test
+RE:demo/.*/cpp/.*-demo
 RE:test/unit/mesh/(cpp|python)/.*.(xml|m)
+RE:test/.*/cpp/.*-test
+RE:bench/.*/cpp/.*-bench
 
 # Generated documentation
 doc/progr_reference/html/**.html
@@ -60,6 +61,7 @@ dorsal_build
 CMakeCache.txt
 CMakeFiles
 cmake_install.cmake
+cmake_uninstall.cmake
 Makefile
 install_manifest.txt
 
