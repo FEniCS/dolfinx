@@ -359,8 +359,9 @@ endif()
 
 # Append the library version information to the library target properties
 if (DOLFIN_WITH_LIBRARY_VERSION)
+  string(REPLACE "+" "" DOLFIN_LIBRARY_VERSION ${DOLFIN_VERSION})
   set(DOLFIN_LIBRARY_PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES}
-    VERSION ${DOLFIN_VERSION}
+    VERSION ${DOLFIN_LIBRARY_VERSION}
     SOVERSION ${DOLFIN_VERSION_MAJOR}
   )
 endif()
