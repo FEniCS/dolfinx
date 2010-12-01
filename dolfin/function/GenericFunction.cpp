@@ -38,15 +38,12 @@ void GenericFunction::evaluate(double* values,
   assert(values);
   assert(coordinates);
 
-  // Add ufc::cell and coordinates to data
-  // FIXME: Can creation of Data objects be made more efficient?
-  Data data;
-  data.set(cell, coordinates);
-
+  // Wrap values and coordinates
   Array<double> _values(value_size(), values);
+  const Array<double> x(cell.geometric_dimension, const_cast<double*>(coordinates));
 
   // Redirect to eval
-  eval(_values, data);
+  eval(_values, x, cell);
 }
 //-----------------------------------------------------------------------------
 void GenericFunction::restrict_as_ufc_function(double* w,
