@@ -66,10 +66,11 @@ dolfin::uint Expression::value_dimension(uint i) const
   return value_shape[i];
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Array<double>& values, const Data& data) const
+void Expression::eval(Array<double>& values, const Array<double>& x,
+                      const ufc::cell& cell) const
 {
   // Redirect to simple eval
-  eval(values, data.x);
+  eval(values, x);
 }
 //-----------------------------------------------------------------------------
 void Expression::restrict(double* w,
@@ -88,7 +89,6 @@ void Expression::compute_vertex_values(Array<double>& vertex_values,
   // Local data for vertex values
   const uint size = value_size();
   Array<double> local_vertex_values(size);
-  Data data;
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
   UFCCell ufc_cell(mesh);
@@ -96,16 +96,15 @@ void Expression::compute_vertex_values(Array<double>& vertex_values,
   {
     // Update cell data
     ufc_cell.update(*cell);
-    data.set(*cell, ufc_cell, -1);
 
     // Iterate over cell vertices
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
     {
-      // Update coordinate data
-      data.set(mesh.geometry().dim(), vertex->x());
+      // Coordinate data
+      const Array<double> x(mesh.geometry().dim(), const_cast<double*>(vertex->x()));
 
       // Evaluate at vertex
-      eval(local_vertex_values, data);
+      eval(local_vertex_values, x, ufc_cell);
 
       // Copy to array
       for (uint i = 0; i < size; i++)
@@ -119,7 +118,7 @@ void Expression::compute_vertex_values(Array<double>& vertex_values,
 //-----------------------------------------------------------------------------
 void Expression::eval(Array<double>& values, const Array<double>& x) const
 {
-  error("Missing eval() for Expression (must be overloaded).");
+  error("xxxx Missing eval() for Expression (must be overloaded).");
 }
 //-----------------------------------------------------------------------------
 

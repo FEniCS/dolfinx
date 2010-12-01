@@ -97,7 +97,8 @@ Constant::operator double() const
   return _values[0];
 }
 //-----------------------------------------------------------------------------
-void Constant::eval(Array<double>& values, const Data& data) const
+void Constant::eval(Array<double>& values, const Array<double>& x,
+                    const ufc::cell& cell) const
 {
   // Copy values
   for (uint i = 0; i < _values.size(); i++)

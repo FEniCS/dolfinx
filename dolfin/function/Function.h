@@ -139,7 +139,7 @@ namespace dolfin
     virtual uint value_dimension(uint i) const;
 
     /// Evaluate function for given data
-    virtual void eval(Array<double>& values, const Data& data) const;
+    virtual void eval(Array<double>& values, const Array<double>& x, const ufc::cell& ufc_cell) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,

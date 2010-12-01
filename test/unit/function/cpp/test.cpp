@@ -32,9 +32,8 @@ public:
 
       F0() {}
 
-      void eval(Array<double>& values, const Data& data) const
+      void eval(Array<double>& values, const Array<double>& x) const
       {
-        const Array<double>& x = data.x;
         values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]);
       }
     };
@@ -45,18 +44,17 @@ public:
 
       F1() {}
 
-      void eval(Array<double>& values, const Data& data) const
+      void eval(Array<double>& values, const Array<double>& x) const
       {
-        const Array<double>& x = data.x;
         values[0] = 1.0 + 3.0*x[0] + 4.0*x[1] + 0.5*x[2];
       }
     };
 
     UnitCube mesh(8, 8, 8);
-    double x[3] = {0.31, 0.32, 0.33};
 
-    Data data;
-    data.set(3, x);
+    Array<double> x(3);
+    x[0] = 0.31; x[1] = 0.32; x[2] = 0.33;
+
     Array<double> u0(2);
     Array<double> u1(2);
 
@@ -65,7 +63,7 @@ public:
     F1 f1;
 
     // Test evaluation of a user-defined function
-    f0.eval(u0, data);
+    f0.eval(u0, x);
     CPPUNIT_ASSERT_DOUBLES_EQUAL(u0[0],
                                  sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2]),
                                  DOLFIN_EPS);
@@ -83,8 +81,8 @@ public:
       problem.solve(g);
 
       const double tol = 1.0e-6;
-      f1.eval(u0, data);
-      g.eval(u1, data);
+      f1.eval(u0, x);
+      g.eval(u1, x);
       CPPUNIT_ASSERT( std::abs(u0[0]-u1[0]) < tol );
     }
 #endif
