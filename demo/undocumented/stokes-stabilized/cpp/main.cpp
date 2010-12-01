@@ -75,12 +75,10 @@ int main()
   bcs.push_back(&bc0); bcs.push_back(&bc1); bcs.push_back(&bc2);
 
   // Set up PDE
-  CellSize h(mesh);
   Constant f(0.0, 0.0);
   Stokes::BilinearForm a(W, W);
-  a.h = h;
   Stokes::LinearForm L(W);
-  L.f = f; L.h = h;
+  L.f = f;
   VariationalProblem problem(a, L, bcs);
 
   // Solve PDE

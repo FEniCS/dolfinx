@@ -52,7 +52,6 @@
 %shared_ptr(dolfin::Function)
 %shared_ptr(dolfin::Expression)
 %shared_ptr(dolfin::FacetArea)
-%shared_ptr(dolfin::CellSize)
 %shared_ptr(dolfin::Constant)
 %shared_ptr(dolfin::MeshCoordinates)
 
@@ -85,7 +84,6 @@ SWIG_SHARED_PTR(GenericFunction,dolfin::GenericFunction)
 SWIG_SHARED_PTR_DERIVED(Function,dolfin::GenericFunction,dolfin::Function)
 SWIG_SHARED_PTR_DERIVED(Expression,dolfin::GenericFunction,dolfin::Expression)
 SWIG_SHARED_PTR_DERIVED(FacetArea,dolfin::Expression,dolfin::FacetArea)
-SWIG_SHARED_PTR_DERIVED(CellSize,dolfin::Expression,dolfin::CellSize)
 SWIG_SHARED_PTR_DERIVED(Constant,dolfin::Expression,dolfin::Constant)
 SWIG_SHARED_PTR_DERIVED(MeshCoordinates,dolfin::Expression,dolfin::MeshCoordinates)
 

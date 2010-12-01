@@ -20,7 +20,7 @@ u = TrialFunction(element)
 f = Coefficient(element)
 
 # Normal component, cell size and right-hand side
-h = Constant(triangle)
+h = 2.0*triangle.circumradius
 h_avg = (h('+') + h('-'))/2
 n = element.cell().n
 

@@ -50,7 +50,6 @@ int main()
 
   // Create functions
   Source f;
-  CellSize h(mesh);
 
   // Create funtion space
   Poisson::FunctionSpace V(mesh);
@@ -58,7 +57,7 @@ int main()
   // Define forms and attach functions
   Poisson::BilinearForm a(V, V);
   Poisson::LinearForm L(V);
-  a.h = h; L.f = f;
+  L.f = f;
 
   // Create variational problem
   VariationalProblem problem(a, L);

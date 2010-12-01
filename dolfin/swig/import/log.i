@@ -5,3 +5,4 @@
 %import(module="dolfin.cpp") "dolfin/log/LogStream.h"
 %import(module="dolfin.cpp") "dolfin/log/Progress.h"
 %import(module="dolfin.cpp") "dolfin/log/Table.h"
+%import(module="dolfin.cpp") "dolfin/log/LogLevel.h"

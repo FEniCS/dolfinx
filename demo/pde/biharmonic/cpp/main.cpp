@@ -52,7 +52,6 @@ int main()
 
   // Create functions
   Source f;
-  CellSize h(mesh);
   Constant alpha(8.0);
 
   // Create function space
@@ -66,7 +65,7 @@ int main()
   // Define forms and attach functions
   Biharmonic::BilinearForm a(V, V);
   Biharmonic::LinearForm L(V);
-  a.h = h; a.alpha = alpha; L.f = f;
+  a.alpha = alpha; L.f = f;
 
   // Create PDE
   VariationalProblem problem(a, L, bc);

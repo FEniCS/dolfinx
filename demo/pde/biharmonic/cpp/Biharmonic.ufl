@@ -21,7 +21,7 @@ f = Coefficient(element)
 
 # Normal component, mesh size and right-hand side
 n  = element.cell().n
-h  = Constant(triangle)
+h = 2.0*triangle.circumradius
 h_avg = (h('+') + h('-'))/2
 
 # Parameters

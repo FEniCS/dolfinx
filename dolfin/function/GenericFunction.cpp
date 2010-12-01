@@ -57,16 +57,8 @@ void GenericFunction::restrict_as_ufc_function(double* w,
 {
   assert(w);
 
-  // Set cell data
-  // FIXME: Can creation of Data objects be made more efficient?
-  //Data data;
-  //data.set(dolfin_cell, ufc_cell, local_facet);
-
   // Evaluate each dof to get the expansion coefficients
   for (uint i = 0; i < element.space_dimension(); ++i)
     w[i] = element.evaluate_dof(i, *this, ufc_cell);
-
-  // Clear cell data
-  //data.clear();
 }
 //-----------------------------------------------------------------------------

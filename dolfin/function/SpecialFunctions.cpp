@@ -32,6 +32,7 @@ void MeshCoordinates::eval(Array<double>& values, const Data& data) const
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+/*
 CellSize::CellSize(const Mesh& mesh)
   : mesh(mesh)
 {
@@ -43,10 +44,10 @@ void CellSize::eval(Array<double>& values, const Data& data) const
   assert(&data.cell().mesh() == &mesh);
   values[0] = data.cell().diameter();
 }
+*/
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-FacetArea::FacetArea(const Mesh& mesh)
-  : mesh(mesh)
+FacetArea::FacetArea(const Mesh& mesh) : mesh(mesh)
 {
   // Do nothing
 }
