@@ -1,10 +1,10 @@
 // Copyright (C) 2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2009-2010.
+// Modified by Garth N. Wells, 2009.
 //
 // First added:  2009-09-28
-// Last changed: 2010-11-30
+// Last changed: 2009-12-11
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
@@ -12,14 +12,14 @@
 #include <ufc.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
+#include "Data.h"
 
 namespace dolfin
 {
 
-  class Cell;
-  class Data;
-  class FiniteElement;
   class Mesh;
+  class Cell;
+  class FiniteElement;
 
   /// This is a common base class for functions. Functions can be
   /// evaluated at a given point and they can be restricted to a given
@@ -51,7 +51,7 @@ namespace dolfin
     virtual uint value_dimension(uint i) const = 0;
 
     /// Evaluate function for given data
-    virtual void eval(Array<double>& values, const Array<double>& x, const ufc::cell& cell) const = 0;
+    virtual void eval(Array<double>& values, const Data& data) const = 0;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
@@ -96,6 +96,11 @@ namespace dolfin
                                   const Cell& dolfin_cell,
                                   const ufc::cell& ufc_cell,
                                   int local_facet) const;
+
+  private:
+
+    // Function call data
+    mutable Data data;
 
   };
 

@@ -57,7 +57,7 @@ namespace dolfin
     //--- Implementation of Expression interface ---
 
     /// Evaluate function
-    virtual void eval(Array<double>& values, const Array<double>& x, const ufc::cell& cell) const;
+    virtual void eval(Array<double>& values, const Data& data) const;
 
   private:
 

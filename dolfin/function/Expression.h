@@ -11,15 +11,9 @@
 #include <dolfin/common/Array.h>
 #include "GenericFunction.h"
 
-namespace ufc
-{
-  class cell;
-}
-
 namespace dolfin
 {
 
-  class Cell;
   class Data;
   class Mesh;
 
@@ -68,7 +62,7 @@ namespace dolfin
     virtual uint value_dimension(uint i) const;
 
     /// Evaluate function for given data
-    virtual void eval(Array<double>& values, const Array<double>& x, const ufc::cell& cell) const;
+    virtual void eval(Array<double>& values, const Data& data) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,

@@ -348,30 +348,23 @@ dolfin::uint Function::value_dimension(uint i) const
   return _function_space->element().value_dimension(i);
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Array<double>& values, const Array<double>& x,
-                    const ufc::cell& ufc_cell) const
+void Function::eval(Array<double>& values, const Data& data) const
 {
   //assert(values);
   assert(_function_space);
 
-  // FIXME: This is very inefficent
-  eval(values, x);
-
-  /*
-  // Check cell belongs to this mesh if UFC cell is available and cell matches
-  if (_function_space->has_cell(cell))
+  // Check if UFC cell if available and cell matches
+  if (data._dolfin_cell && _function_space->has_cell(*data._dolfin_cell))
   {
     // Efficient evaluation on given cell
-    //assert(data._ufc_cell);
-    //eval(values, x, cell, ufc_cell);
-    eval(values, x, cell);
+    assert(data._ufc_cell);
+    eval(values, data.x, *data._dolfin_cell, *data._ufc_cell);
   }
   else
   {
     // Redirect to point-based evaluation
-    eval(values, x);
+    eval(values, data.x);
   }
-  */
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(double* w,

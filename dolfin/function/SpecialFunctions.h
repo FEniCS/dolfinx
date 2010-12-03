@@ -55,7 +55,8 @@ namespace dolfin
     const Mesh& mesh;
 
   };
-  */
+*/
+
 
   /// This function represents the area/length of a cell facet on a given mesh.
   class FacetArea : public Expression

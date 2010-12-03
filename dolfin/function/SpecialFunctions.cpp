@@ -10,7 +10,6 @@
 
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
-#include "Data.h"
 #include "SpecialFunctions.h"
 
 using namespace dolfin;
@@ -47,7 +46,8 @@ void CellSize::eval(Array<double>& values, const Data& data) const
 */
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-FacetArea::FacetArea(const Mesh& mesh) : mesh(mesh)
+FacetArea::FacetArea(const Mesh& mesh)
+  : mesh(mesh)
 {
   // Do nothing
 }
