@@ -53,13 +53,14 @@ namespace dolfin
 // We need to rename the method in the base class as the Python callback ends
 // up here.
 //-----------------------------------------------------------------------------
-%rename(eval_data) dolfin::GenericFunction::eval(Array<double>& values, const Data& data) const;
+//%rename(eval_data) dolfin::GenericFunction::eval(Array<double>& values, const Data& data) const;
+%ignore dolfin::GenericFunction::eval(Array<double>& values, const Data& data) const;
 
 //-----------------------------------------------------------------------------
 // Ignore the Data.x, pointer to the coordinates in the Data object
 //-----------------------------------------------------------------------------
 %ignore dolfin::Data::x;
-%rename (x) dolfin::Data::x_();
+//%rename (x) dolfin::Data::x_();
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Constant
@@ -144,4 +145,3 @@ namespace dolfin
 %feature("nodirector") dolfin::Expression::value_rank;
 %feature("nodirector") dolfin::Expression::str;
 %feature("nodirector") dolfin::Expression::compute_vertex_values;
-

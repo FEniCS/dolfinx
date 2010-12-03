@@ -76,20 +76,20 @@ class Eval(unittest.TestCase):
                def eval(self, values, x):
                     values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
-          class F1(Expression):
-               def eval_data(self, values, data):
-                    x = data.x()
-                    values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
+          #class F1(Expression):
+          #     def eval_data(self, values, data):
+          #          x = data.x()
+          #          values[0] = sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])
 
           e0 = F0(degree=2)
-          e1 = F1(degree=2)
+          #e1 = F1(degree=2)
           e2 = Expression("sin(3.0*x[0])*sin(3.0*x[1])*sin(3.0*x[2])", degree=2)
 
           s0 = norm(interpolate(e0, V))
-          s1 = norm(interpolate(e1, V))
+          #s1 = norm(interpolate(e1, V))
           s2 = norm(interpolate(e2, V))
 
-          self.assertAlmostEqual(s0, s1)
+          #self.assertAlmostEqual(s0, s1)
           self.assertAlmostEqual(s0, s2)
 
      def testWrongEval(self):
@@ -128,10 +128,10 @@ class Instantiation(unittest.TestCase):
                     def eval(values, x):
                          pass
 
-          def wrongEvalDataAttribute():
-               class WrongEvalDataAttribute(Expression):
-                    def eval_data(values, data):
-                         pass
+          #def wrongEvalDataAttribute():
+          #     class WrongEvalDataAttribute(Expression):
+          #          def eval_data(values, data):
+          #               pass
 
           def noEvalAttribute():
                class NoEvalAttribute(Expression):
@@ -151,7 +151,7 @@ class Instantiation(unittest.TestCase):
                     def value_shape(self):
                          return (2,)
                e = WrongElement(element=V.ufl_element())
-          
+
           def deprecationWarning():
                class Deprecated(Expression):
                     def eval(self, values, x):
@@ -159,15 +159,15 @@ class Instantiation(unittest.TestCase):
                     def dim(self):
                          return 2
                e = Deprecated()
-          
+
           self.assertRaises(TypeError, noAttributes)
           self.assertRaises(TypeError, noEvalAttribute)
           self.assertRaises(TypeError, wrongEvalAttribute)
-          self.assertRaises(TypeError, wrongEvalDataAttribute)
+          #self.assertRaises(TypeError, wrongEvalDataAttribute)
           self.assertRaises(TypeError, wrongArgs)
           self.assertRaises(ValueError, wrongElement)
           self.assertRaises(DeprecationWarning, deprecationWarning)
- 
+
 
 class Interpolate(unittest.TestCase):
 
