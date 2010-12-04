@@ -28,7 +28,7 @@ namespace dolfin
     MeshCoordinates(const Mesh& mesh);
 
     /// Evaluate function
-    void eval(Array<double>& values, const Data& data) const;
+    void eval(Array<double>& values, const Array<double>& x, const ufc::cell& cell) const;
 
   private:
 
@@ -67,7 +67,8 @@ namespace dolfin
     FacetArea(const Mesh& mesh);
 
     /// Evaluate function
-    void eval(Array<double>& values, const Data& data) const;
+    void eval(Array<double>& values, const Array<double>& x,
+              const ufc::cell& cell) const;
 
   private:
 

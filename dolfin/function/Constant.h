@@ -56,10 +56,8 @@ namespace dolfin
 
     //--- Implementation of Expression interface ---
 
-    //virtual void eval_tmp(Array<double>& values, const Array<double>& x, unsigned int i) const;
-
-    /// Evaluate function
-    virtual void eval(Array<double>& values, const Data& data) const;
+    virtual void eval(Array<double>& values, const Array<double>& x,
+                      const ufc::cell& cell) const;
 
   private:
 

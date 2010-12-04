@@ -59,11 +59,14 @@ public:
   Conductivity() : Expression(3) {}
 
   // Function for evaluating expression on each cell
-  void eval(Array<double>& values, const Data& data) const
+  //void eval(Array<double>& values, const Data& data) const
+  void eval(Array<double>& values, const Array<double>& x,  const ufc::cell& cell) const
   {
-    values[0] = (*c00)[data.cell().index()];
-    values[1] = (*c01)[data.cell().index()];
-    values[2] = (*c11)[data.cell().index()];
+    const uint D = cell.topological_dimension;
+    const uint cell_index = cell.entity_indices[D][0];
+    values[0] = (*c00)[cell_index];
+    values[1] = (*c01)[cell_index];
+    values[2] = (*c11)[cell_index];
   }
 
   // The data stored in mesh functions

@@ -21,13 +21,14 @@ MeshCoordinates::MeshCoordinates(const Mesh& mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshCoordinates::eval(Array<double>& values, const Data& data) const
+void MeshCoordinates::eval(Array<double>& values, const Array<double>& x,
+                           const ufc::cell& cell) const
 {
-  assert(data.geometric_dimension() == mesh.geometry().dim());
-  assert(data.x.size() == mesh.geometry().dim());
+  assert(cell.geometric_dimension == mesh.geometry().dim());
+  assert(x.size() == mesh.geometry().dim());
 
-  for (uint i = 0; i < data.geometric_dimension(); ++i)
-    values[i] = (data.x)[i];
+  for (uint i = 0; i < cell.geometric_dimension; ++i)
+    values[i] = x[i];
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -52,13 +53,17 @@ FacetArea::FacetArea(const Mesh& mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void FacetArea::eval(Array<double>& values, const Data& data) const
+void FacetArea::eval(Array<double>& values, const Array<double>& x,
+                     const ufc::cell& cell) const
 {
+  error("FacetArea::eval in SpecialFunctions needs to be updated");
+  /*
   assert(&data.cell().mesh() == &mesh);
 
   if (data.on_facet())
     values[0] = data.cell().facet_area(data.facet());
   else
     values[0] = 0.0;
+  */
 }
 //-----------------------------------------------------------------------------

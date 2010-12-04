@@ -12,7 +12,6 @@
 #include <ufc.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Variable.h>
-#include "Data.h"
 
 namespace dolfin
 {
@@ -50,11 +49,8 @@ namespace dolfin
     /// Return value dimension for given axis
     virtual uint value_dimension(uint i) const = 0;
 
-    /// This messes up Python compiled Expressions
-    virtual void eval_tmp(unsigned int i) const;
-
     /// Evaluate function for given data
-    virtual void eval(Array<double>& values, const Data& data) const = 0;
+    virtual void eval(Array<double>& values, const Array<double>& x, const ufc::cell& cell) const = 0;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
@@ -99,11 +95,6 @@ namespace dolfin
                                   const Cell& dolfin_cell,
                                   const ufc::cell& ufc_cell,
                                   int local_facet) const;
-
-  private:
-
-    // Function call data
-    mutable Data data;
 
   };
 

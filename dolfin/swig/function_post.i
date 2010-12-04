@@ -21,18 +21,3 @@ def function_space(self):
     return FunctionSpaceFromCpp(self._function_space())
 %}
 }
-
-//-----------------------------------------------------------------------------
-// Extend the Data class with an accessor function for the x coordinates
-//-----------------------------------------------------------------------------
-%feature("docstring") dolfin::Data::x_ "Missing docstring";
-%extend dolfin::Data {
-  PyObject* x_() {
-    npy_intp adims[1];
-    adims[0] = self->x.size();
-    PyArrayObject* array = reinterpret_cast<PyArrayObject*>(PyArray_SimpleNewFromData(1, adims, NPY_DOUBLE, (char *)(self->x.data().get())));
-    if ( array == NULL ) return NULL;
-    return reinterpret_cast<PyObject*>(array);
-  }
-}
-

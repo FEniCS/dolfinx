@@ -15,7 +15,6 @@
 namespace dolfin
 {
 
-  class Data;
   class Mesh;
 
   /// This class represents a user-defined expression. Expressions can
@@ -62,11 +61,9 @@ namespace dolfin
     /// Return value dimension for given axis
     virtual uint value_dimension(uint i) const;
 
-    /// Evaluate function for given data
-    //virtual void eval_tmp(Array<double>& values, const Array<double>& x, uint i) const;
-
-    /// Evaluate function for given data
-    virtual void eval(Array<double>& values, const Data& data) const;
+    /// Evaluate function for given cell
+    virtual void eval(Array<double>& values, const Array<double>& x,
+                      const ufc::cell& cell) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,

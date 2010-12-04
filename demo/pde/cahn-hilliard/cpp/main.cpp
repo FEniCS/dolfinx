@@ -29,7 +29,7 @@ public:
     dolfin::seed(2 + dolfin::MPI::process_number());
   }
 
-  void eval(Array<double>& values, const Data& data) const
+  void eval(Array<double>& values, const Array<double>& x) const
   {
     values[0]= 0.63 + 0.02*(0.5 - dolfin::rand());
     values[1]= 0.0;

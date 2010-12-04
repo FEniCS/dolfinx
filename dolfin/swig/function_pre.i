@@ -5,7 +5,7 @@
 // Modified by Ola Skavhaug, 2008
 // Modified by Martin Sandve Alnaes, 2008
 // Modified by Johan Hake, 2008-2009
-// Modified by Garth Wells, 2008-2009
+// Modified by Garth Wells, 2008-2010
 // Modified by Kent-Andre Mardal, 2009
 //
 // First added:  2007-08-16
@@ -53,15 +53,9 @@ namespace dolfin
 // We need to rename the method in the base class as the Python callback ends
 // up here.
 //-----------------------------------------------------------------------------
-//%rename(eval_data) dolfin::GenericFunction::eval(Array<double>& values, const Data& data) const;
-%ignore dolfin::GenericFunction::eval(Array<double>& values, const Data& data) const;
-%ignore dolfin::GenericFunction::eval_tmp(unsigned int i) const;
-
-//-----------------------------------------------------------------------------
-// Ignore the Data.x, pointer to the coordinates in the Data object
-//-----------------------------------------------------------------------------
-%ignore dolfin::Data::x;
-//%rename (x) dolfin::Data::x_();
+%rename(eval_cell) dolfin::GenericFunction::eval(Array<double>& values,
+                                                 const Array<double>& x,
+                                                 const ufc::cell& cell) const;
 
 //-----------------------------------------------------------------------------
 // Modifying the interface of Constant

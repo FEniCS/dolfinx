@@ -25,7 +25,6 @@
 #include <dolfin/fem/UFC.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/adaptivity/Extrapolation.h>
-#include "Data.h"
 #include "Expression.h"
 #include "FunctionSpace.h"
 #include "Function.h"
@@ -348,16 +347,16 @@ dolfin::uint Function::value_dimension(uint i) const
   return _function_space->element().value_dimension(i);
 }
 //-----------------------------------------------------------------------------
-/*
-void Function::eval_tmp(Array<double>& values, const Array<double>& x,
-                        unsigned int i) const
+void Function::eval(Array<double>& values, const Array<double>& x,
+                    const ufc::cell& cell) const
 {
   assert(_function_space);
+
+  // FIXME: Figure out how to test which mesh a cell comes from
 
   // Redirect to point-based evaluation
   eval(values, x);
-
-  // FIXME: Figure out how to test which mesh a cell comes from
+/*
   // Check if UFC cell if available and cell matches
   if (data._dolfin_cell && _function_space->has_cell(*data._dolfin_cell))
   {
@@ -370,25 +369,7 @@ void Function::eval_tmp(Array<double>& values, const Array<double>& x,
     // Redirect to point-based evaluation
     eval(values, data.x);
   }
-}
 */
-//-----------------------------------------------------------------------------
-void Function::eval(Array<double>& values, const Data& data) const
-{
-  assert(_function_space);
-
-  // Check if UFC cell if available and cell matches
-  if (data._dolfin_cell && _function_space->has_cell(*data._dolfin_cell))
-  {
-    // Efficient evaluation on given cell
-    assert(data._ufc_cell);
-    eval(values, data.x, *data._dolfin_cell, *data._ufc_cell);
-  }
-  else
-  {
-    // Redirect to point-based evaluation
-    eval(values, data.x);
-  }
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(double* w,

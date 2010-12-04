@@ -27,14 +27,28 @@ class BoundarySource : public Expression
 {
 public:
 
-  BoundarySource() : Expression(2) {}
+  BoundarySource(const Mesh& mesh) : Expression(2), mesh(mesh) {}
 
-  void eval(Array<double>& values, const Data& data) const
+  void eval(Array<double>& values, const Array<double>& x, const ufc::cell& cell) const
   {
-    double g = sin(5*data.x[0]);
-    values[0] = g*data.normal()[0];
-    values[1] = g*data.normal()[1];
+    //const uint D = cell.topological_dimension;
+    //const uint cell_index = cell.entity_indices[D][0];
+    //Cell cell(mesh, cell_index);
+
+    const double g = sin(5*x[0]);
+
+    // FIXME: attach local facet to cell
+
+    //values[0] = g*data.normal()[0];
+    //values[1] = g*data.normal()[1];
+    values[0] = g;
+    values[1] = g;
   }
+
+private:
+
+  const Mesh& mesh;
+
 };
 
 // Sub domain for essential boundary condition
@@ -62,7 +76,7 @@ int main()
 
   // Define boundary condition
   SubSpace W0(W, 0);
-  BoundarySource G;
+  BoundarySource G(mesh);
   EssentialBoundary boundary;
   DirichletBC bc(W0, G, boundary);
 
