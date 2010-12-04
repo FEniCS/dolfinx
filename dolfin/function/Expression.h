@@ -8,6 +8,7 @@
 #define __EXPRESSION_H
 
 #include <vector>
+#include <ufc.h>
 #include <dolfin/common/Array.h>
 #include "GenericFunction.h"
 
@@ -60,6 +61,9 @@ namespace dolfin
 
     /// Return value dimension for given axis
     virtual uint value_dimension(uint i) const;
+
+    /// Evaluate function for given data
+    //virtual void eval_tmp(Array<double>& values, const Array<double>& x, uint i) const;
 
     /// Evaluate function for given data
     virtual void eval(Array<double>& values, const Data& data) const;

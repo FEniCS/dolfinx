@@ -66,6 +66,16 @@ dolfin::uint Expression::value_dimension(uint i) const
   return value_shape[i];
 }
 //-----------------------------------------------------------------------------
+/*
+void Expression::eval_tmp(Array<double>& values, const Array<double>& x,
+                          uint i) const
+{
+  std::cout << "************* Here I am" << std::endl;
+  // Redirect to simple eval
+  eval(values, x);
+}
+*/
+//-----------------------------------------------------------------------------
 void Expression::eval(Array<double>& values, const Data& data) const
 {
   // Redirect to simple eval
@@ -122,4 +132,3 @@ void Expression::eval(Array<double>& values, const Array<double>& x) const
   error("Missing eval() for Expression (must be overloaded).");
 }
 //-----------------------------------------------------------------------------
-

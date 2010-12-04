@@ -4,6 +4,8 @@
 // First added:  2009-09-28
 // Last changed: 2010-06-21
 
+#include <iostream>
+#include <string>
 #include <dolfin/fem/FiniteElement.h>
 #include "GenericFunction.h"
 
@@ -38,7 +40,9 @@ void GenericFunction::evaluate(double* values,
   // Add ufc::cell and coordinates to data
   data.set(cell, coordinates);
 
+  // Wrap data
   Array<double> _values(value_size(), values);
+  const Array<double> x(cell.geometric_dimension, const_cast<double*>(coordinates));
 
   // Redirect to eval
   eval(_values, data);
@@ -64,3 +68,7 @@ void GenericFunction::restrict_as_ufc_function(double* w,
   data.clear();
 }
 //-----------------------------------------------------------------------------
+void GenericFunction::eval_tmp(unsigned int i) const
+{
+  //std::cout << "Insise GenericFunction::eval_tmp" << std::endl;
+}

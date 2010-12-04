@@ -50,6 +50,9 @@ namespace dolfin
     /// Return value dimension for given axis
     virtual uint value_dimension(uint i) const = 0;
 
+    /// This messes up Python compiled Expressions
+    virtual void eval_tmp(unsigned int i) const;
+
     /// Evaluate function for given data
     virtual void eval(Array<double>& values, const Data& data) const = 0;
 

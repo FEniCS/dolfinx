@@ -55,6 +55,7 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 //%rename(eval_data) dolfin::GenericFunction::eval(Array<double>& values, const Data& data) const;
 %ignore dolfin::GenericFunction::eval(Array<double>& values, const Data& data) const;
+%ignore dolfin::GenericFunction::eval_tmp(unsigned int i) const;
 
 //-----------------------------------------------------------------------------
 // Ignore the Data.x, pointer to the coordinates in the Data object

@@ -139,6 +139,9 @@ namespace dolfin
     virtual uint value_dimension(uint i) const;
 
     /// Evaluate function for given data
+    //virtual void eval_tmp(Array<double>& values, const Array<double>& x, unsigned int i) const;
+
+    /// Evaluate function for given data
     virtual void eval(Array<double>& values, const Data& data) const;
 
     /// Restrict function to local cell (compute expansion coefficients w)
