@@ -97,6 +97,7 @@ Constant::operator double() const
   return _values[0];
 }
 //-----------------------------------------------------------------------------
+/*
 void Constant::eval_tmp(Array<double>& values, const Array<double>& x,
                     unsigned int i) const
 {
@@ -104,6 +105,7 @@ void Constant::eval_tmp(Array<double>& values, const Array<double>& x,
   for (uint j = 0; j < _values.size(); j++)
     values[j] = _values[j];
 }
+*/
 //-----------------------------------------------------------------------------
 void Constant::eval(Array<double>& values, const Data& data) const
 {
