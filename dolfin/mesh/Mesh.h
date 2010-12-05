@@ -16,7 +16,6 @@
 
 #include <string>
 #include <utility>
-#include <vector>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -239,6 +238,13 @@ namespace dolfin
 
     /// Get mesh geometry (const version).
     const MeshGeometry& geometry() const { return _geometry; }
+
+    /// Get unique mesh identifier.
+    ///
+    /// *Returns*
+    ///     _uint_
+    ///         The unique integer identifier associated with the mesh.
+    uint id() { return unique_id; }
 
     /// Get intersection operator.
     ///
