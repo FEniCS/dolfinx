@@ -3,7 +3,7 @@
 //
 // Modified by Johan Hoffman, 2007.
 // Modified by Magnus Vikstrøm, 2007.
-// Modified by Garth N. Wells, 2007.
+// Modified by Garth N. Wells, 2007-2010.
 // Modified by Niclas Jansson, 2008.
 // Modified by Kristoffer Selim, 2008.
 // Modified by Andre Massing, 2009-2010.
@@ -16,6 +16,7 @@
 
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -610,6 +611,9 @@ namespace dolfin
 
     // Cell type
     CellType* _cell_type;
+
+    // Unique mesh identifier
+    const uint unique_id;
 
     // Intersection detector
     IntersectionOperator _intersection_operator;

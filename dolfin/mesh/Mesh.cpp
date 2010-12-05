@@ -2,24 +2,21 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Johan Hoffman, 2007.
-// Modified by Garth N. Wells 2007.
+// Modified by Garth N. Wells 2007-2010.
 // Modified by Niclas Jansson 2008.
 // Modified by Kristoffer Selim 2008.
 // Modified by Andre Massing, 2009-2010.
 //
 // First added:  2006-05-09
-// Last changed: 2010-11-29
+// Last changed: 2010-12-05
 
-#include <sstream>
-#include <vector>
-
-#include <dolfin/log/log.h>
-#include <dolfin/io/File.h>
-#include <dolfin/main/MPI.h>
 #include <dolfin/ale/ALE.h>
-#include <dolfin/io/File.h>
-#include <dolfin/common/utils.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/UniqueIdGenerator.h>
+#include <dolfin/common/utils.h>
+#include <dolfin/io/File.h>
+#include <dolfin/log/log.h>
+#include <dolfin/main/MPI.h>
 #include "IntersectionOperator.h"
 #include "TopologyComputation.h"
 #include "MeshSmoothing.h"
@@ -38,13 +35,16 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh() : Variable("mesh", "DOLFIN mesh"), _data(*this), _cell_type(0),
+               unique_id(UniqueIdGenerator::id()),
                _intersection_operator(*this), _ordered(false), _colored(-1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"), _data(*this),
-                               _cell_type(0), _intersection_operator(*this),
+                               _cell_type(0),
+                               unique_id(UniqueIdGenerator::id()),
+                               _intersection_operator(*this),
                                _ordered(false), _colored(-1)
 {
   *this = mesh;
@@ -52,6 +52,7 @@ Mesh::Mesh(const Mesh& mesh) : Variable("mesh", "DOLFIN mesh"), _data(*this),
 //-----------------------------------------------------------------------------
 Mesh::Mesh(std::string filename) : Variable("mesh", "DOLFIN mesh"),
                                    _data(*this), _cell_type(0),
+                                   unique_id(UniqueIdGenerator::id()),
                                    _intersection_operator(*this),
                                    _ordered(false), _colored(-1)
 {

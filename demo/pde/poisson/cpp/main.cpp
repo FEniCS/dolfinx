@@ -80,7 +80,7 @@ int main()
   file << u;
 
   // Plot solution
-  plot(u);
+  //plot(u);
 
   return 0;
 }
