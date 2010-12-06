@@ -1,7 +1,7 @@
 // Copyright (C) 2009 Shawn W. Walker.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// This file is to be used as a ``testing-ground'' for future additions to
+// This file is to be used as a "testing-ground" for future additions to
 // ufc.h (see the UFC project for more info).  That means when using the
 // functionality in here, one must use dynamic_cast to access the
 // data structures created here.
@@ -28,7 +28,7 @@ namespace ufcexp
 
     /// Destructor
     virtual ~cell() {}
-    
+
     /// Array of coordinates for higher order vertices of the cell
     double** higher_order_coordinates;
 
