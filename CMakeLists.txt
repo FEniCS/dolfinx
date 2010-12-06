@@ -147,14 +147,8 @@ endif()
 # Run tests to find required packages
 
 # Check for Boost
-option(Boost_USE_STATIC_LIBS "Use the static Boost libraries." OFF)
-if (NOT "$ENV{Boost_USE_MULTITHREADED}" STREQUAL "")
-  option(Boost_USE_MULTITHREADED "Use the multithreaded Boost libraries." $ENV{Boost_USE_MULTITHREADED})
-else()
-  option(Boost_USE_MULTITHREADED "Use the multithreaded Boost libraries." OFF)
-endif()
 set(BOOST_ROOT $ENV{BOOST_DIR})
-set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45.0)
+set(Boost_ADDITIONAL_VERSIONS 1.43 1.43.0 1.44 1.44.0 1.45 1.45.0)
 find_package(Boost 1.36 COMPONENTS filesystem program_options system thread REQUIRED)
 
 # Check for required packages
