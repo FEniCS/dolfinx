@@ -51,15 +51,12 @@ L = - f*v*dx
 class BoundarySource(Expression):
     def __init__(self, **kwargs):
         self.mesh = kwargs['mesh']
-
     def eval_cell(self, values, x, ufc_cell):
-        print "Cell index:", ufc_cell.index
-        print "Local facet index:", ufc_cell.local_facet
-        #cell = Cell(self.mesh, cell.index)
-        #g = sin(5*data.x()[0])
-        #values[0] = g*data.normal()[0]
-        #values[1] = g*data.normal()[1]
-
+        cell = Cell(self.mesh, ufc_cell.index)
+        n = cell.normal(ufc_cell.local_facet)
+        g = sin(5*x[0])
+        values[0] = g*n[0]
+        values[1] = g*n[1]
     def value_shape(self):
         return (2,)
 
