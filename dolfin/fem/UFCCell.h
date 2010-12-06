@@ -1,7 +1,8 @@
 // Copyright (C) 2007-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Ola Skavhaug, 2009
+// Modified by Ola Skavhaug, 2009.
+// Modified by Garth N. Wells, 2010.
 //
 // First added:  2007-03-01
 // Last changed: 2010-11-09
@@ -140,7 +141,7 @@ namespace dolfin
 
     // Update cell entities and coordinates
     // Note: We use MeshEntity& rather than Cell& to avoid a gcc 4.4.1 warning
-    void update(const MeshEntity& cell)
+    void update(const MeshEntity& cell, int local_facet=-1)
     {
       assert(cell.dim() == topological_dimension);
 
@@ -153,6 +154,12 @@ namespace dolfin
       // class is non parallel aware. It just uses the local-to-global
       // mapping when it is available.
 
+      // Set mesh identifier
+      mesh_identifier = cell.mesh_id();
+
+      // Set local facet (-1 means no local facet set)
+      this->local_facet = local_facet;
+
       // Copy local entity indices from mesh
       const uint D = topological_dimension;
       for (uint d = 0; d < D; ++d)
@@ -160,7 +167,10 @@ namespace dolfin
         for (uint i = 0; i < num_cell_entities[d]; ++i)
           entity_indices[d][i] = cell.entities(d)[i];
       }
+
+      // Set cell index
       entity_indices[D][0] = cell.index();
+      index = cell.index();
 
       // Map to global entity indices (if any)
       for (uint d = 0; d < D; ++d)
@@ -185,7 +195,7 @@ namespace dolfin
         const uint current_cell_index = cell.index();
         const uint* higher_order_vertex_indices = cell.mesh().geometry().higher_order_cell(current_cell_index);
         for (uint i = 0; i < num_higher_order_vertices; i++)
-          higher_order_coordinates[i] = const_cast<double*> (cell.mesh().geometry().higher_order_x(higher_order_vertex_indices[i]));
+          higher_order_coordinates[i] = const_cast<double*>(cell.mesh().geometry().higher_order_x(higher_order_vertex_indices[i]));
       }
     }
 

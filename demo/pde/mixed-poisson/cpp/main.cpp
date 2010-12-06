@@ -29,20 +29,17 @@ public:
 
   BoundarySource(const Mesh& mesh) : Expression(2), mesh(mesh) {}
 
-  void eval(Array<double>& values, const Array<double>& x, const ufc::cell& cell) const
+  void eval(Array<double>& values, const Array<double>& x,
+            const ufc::cell& ufc_cell) const
   {
-    //const uint D = cell.topological_dimension;
-    //const uint cell_index = cell.entity_indices[D][0];
-    //Cell cell(mesh, cell_index);
+    assert(ufc_cell.local_facet >= 0);
+
+    Cell cell(mesh, ufc_cell.index);
+    Point n = cell.normal(ufc_cell.local_facet);
 
     const double g = sin(5*x[0]);
-
-    // FIXME: attach local facet to cell
-
-    //values[0] = g*data.normal()[0];
-    //values[1] = g*data.normal()[1];
-    values[0] = g;
-    values[1] = g;
+    values[0] = g*n[0];
+    values[1] = g*n[1];
   }
 
 private:

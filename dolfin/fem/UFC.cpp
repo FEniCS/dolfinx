@@ -172,7 +172,7 @@ void UFC::update(const Cell& cell)
 void UFC::update(const Cell& cell, uint local_facet)
 {
   // Update UFC cell
-  this->cell.update(cell);
+  this->cell.update(cell, local_facet);
 
   // Update local dimensions
   for (uint i = 0; i < form.rank(); i++)
@@ -193,8 +193,8 @@ void UFC::update(const Cell& cell0, uint local_facet0,
                  const Cell& cell1, uint local_facet1)
 {
   // Update UFC cells
-  this->cell0.update(cell0);
-  this->cell1.update(cell1);
+  this->cell0.update(cell0, local_facet0);
+  this->cell1.update(cell1, local_facet1);
 
   // Update local dimensions
   for (uint i = 0; i < form.rank(); i++)

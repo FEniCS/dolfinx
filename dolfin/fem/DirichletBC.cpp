@@ -452,7 +452,7 @@ void DirichletBC::init_from_mesh_function(const MeshFunction<uint>& sub_domains,
       continue;
 
     // Get cell to which facet belongs (there may be two, but pick first)
-    Cell cell(_function_space->mesh(), facet->entities(dim)[0]);
+    const Cell cell(_function_space->mesh(), facet->entities(dim)[0]);
 
     // Get local index of facet with respect to the cell
     const uint facet_number = cell.index(*facet);
@@ -544,19 +544,22 @@ void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values
   const Mesh& mesh = _function_space->mesh();
   const GenericDofMap& dofmap = _function_space->dofmap();
 
+  // Create UFC cell object
+  UFCCell ufc_cell(mesh);
+
   // Iterate over facets
   Progress p("Computing Dirichlet boundary values, topological search", facets.size());
   for (uint f = 0; f < facets.size(); f++)
   {
     // Get cell number and local facet number
-    uint cell_number = facets[f].first;
-    uint facet_number = facets[f].second;
+    const uint cell_number = facets[f].first;
+    const uint facet_number = facets[f].second;
 
     // Create cell
     Cell cell(mesh, cell_number);
-    UFCCell ufc_cell(cell);
+    ufc_cell.update(cell, facet_number);
 
-    /// Restrict coefficient to cell
+    // Restrict coefficient to cell
     g->restrict(data.w, _function_space->element(), cell, ufc_cell, facet_number);
 
     // Tabulate dofs on cell
@@ -610,12 +613,15 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
   for (uint f = 0; f < facets.size(); f++)
   {
     // Get cell number and local facet number
-    uint cell_number = facets[f].first;
-    uint facet_number = facets[f].second;
+    const uint cell_number = facets[f].first;
+    const uint facet_number = facets[f].second;
 
     // Create facet
     Cell cell(mesh, cell_number);
     Facet facet(mesh, cell.entities(mesh.topology().dim() - 1)[facet_number]);
+
+    // Create UFC cell object
+    UFCCell ufc_cell(mesh);
 
     // Loop the vertices associated with the facet
     for (VertexIterator vertex(facet); !vertex.end(); ++vertex)
@@ -623,7 +629,7 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
       // Loop the cells associated with the vertex
       for (CellIterator c(*vertex); !c.end(); ++c)
       {
-        UFCCell ufc_cell(*c);
+        ufc_cell.update(*c, facet_number);
 
         bool interpolated = false;
 
@@ -667,11 +673,15 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
   const Mesh& mesh = _function_space->mesh();
   const GenericDofMap& dofmap = _function_space->dofmap();
 
+  // Create UFC cell object
+  UFCCell ufc_cell(mesh);
+
   // Iterate over cells
   Progress p("Computing Dirichlet boundary values, pointwise search", mesh.num_cells());
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    UFCCell ufc_cell(*cell);
+    // Update UFC cell
+    ufc_cell.update(*cell);
 
     // Tabulate coordinates of dofs on cell
     dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
@@ -693,7 +703,7 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
         // Tabulate dofs on cell
         dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell->index());
 
-        /// Restrict coefficient to cell
+        // Restrict coefficient to cell
         g->restrict(data.w, _function_space->element(), *cell, ufc_cell);
       }
 
@@ -710,17 +720,17 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
 bool DirichletBC::on_facet(double* coordinates, Facet& facet) const
 {
   // Check if the coordinates are on the same line as the line segment
-  if ( facet.dim() == 1 )
+  if (facet.dim() == 1)
   {
     // Create points
     Point p(coordinates[0], coordinates[1]);
-    Point v0 = Vertex(facet.mesh(), facet.entities(0)[0]).point();
-    Point v1 = Vertex(facet.mesh(), facet.entities(0)[1]).point();
+    const Point v0 = Vertex(facet.mesh(), facet.entities(0)[0]).point();
+    const Point v1 = Vertex(facet.mesh(), facet.entities(0)[1]).point();
 
     // Create vectors
-    Point v01 = v1 - v0;
-    Point vp0 = v0 - p;
-    Point vp1 = v1 - p;
+    const Point v01 = v1 - v0;
+    const Point vp0 = v0 - p;
+    const Point vp1 = v1 - p;
 
     // Check if the length of the sum of the two line segments vp0 and vp1 is
     // equal to the total length of the facet
@@ -730,25 +740,25 @@ bool DirichletBC::on_facet(double* coordinates, Facet& facet) const
       return false;
   }
   // Check if the coordinates are in the same plane as the triangular facet
-  else if ( facet.dim() == 2 )
+  else if (facet.dim() == 2)
   {
     // Create points
     Point p(coordinates[0], coordinates[1], coordinates[2]);
-    Point v0 = Vertex(facet.mesh(), facet.entities(0)[0]).point();
-    Point v1 = Vertex(facet.mesh(), facet.entities(0)[1]).point();
-    Point v2 = Vertex(facet.mesh(), facet.entities(0)[2]).point();
+    const Point v0 = Vertex(facet.mesh(), facet.entities(0)[0]).point();
+    const Point v1 = Vertex(facet.mesh(), facet.entities(0)[1]).point();
+    const Point v2 = Vertex(facet.mesh(), facet.entities(0)[2]).point();
 
     // Create vectors
-    Point v01 = v1 - v0;
-    Point v02 = v2 - v0;
-    Point vp0 = v0 - p;
-    Point vp1 = v1 - p;
-    Point vp2 = v2 - p;
+    const Point v01 = v1 - v0;
+    const Point v02 = v2 - v0;
+    const Point vp0 = v0 - p;
+    const Point vp1 = v1 - p;
+    const Point vp2 = v2 - p;
 
     // Check if the sum of the area of the sub triangles is equal to the total
     // area of the facet
-    if ( std::abs(v01.cross(v02).norm() - vp0.cross(vp1).norm() - vp1.cross(vp2).norm()
-        - vp2.cross(vp0).norm()) < DOLFIN_EPS )
+    if (std::abs(v01.cross(v02).norm() - vp0.cross(vp1).norm() - vp1.cross(vp2).norm()
+        - vp2.cross(vp0).norm()) < DOLFIN_EPS)
       return true;
     else
       return false;

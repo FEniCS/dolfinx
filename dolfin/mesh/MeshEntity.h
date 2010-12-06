@@ -67,6 +67,10 @@ namespace dolfin
     const uint* entities(uint dim) const
     { return _mesh->topology()(_dim, dim)(_index); }
 
+    /// Return unique mesh ID
+    uint mesh_id() const
+    { return _mesh->id(); }
+
     /// Check if given entity is indicent
     bool incident(const MeshEntity& entity) const;
 

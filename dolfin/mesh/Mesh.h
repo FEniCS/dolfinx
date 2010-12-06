@@ -244,7 +244,7 @@ namespace dolfin
     /// *Returns*
     ///     _uint_
     ///         The unique integer identifier associated with the mesh.
-    uint id() { return unique_id; }
+    uint id() const { return unique_id; }
 
     /// Get intersection operator.
     ///

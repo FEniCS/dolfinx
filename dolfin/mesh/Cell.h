@@ -3,9 +3,10 @@
 //
 // Modified by Johan Hoffman 2006.
 // Modified by Andre Massing 2009.
+// Modified by Garth N. Wells 2010.
 //
 // First added:  2006-06-01
-// Last changed: 2010-08-16
+// Last changed: 2010-12-06
 
 #ifndef __CELL_H
 #define __CELL_H
@@ -29,13 +30,15 @@ namespace dolfin
     Cell() : MeshEntity() {}
 
     /// Create cell on given mesh with given index
-    Cell(const Mesh& mesh, uint index) : MeshEntity(mesh, mesh.topology().dim(), index) {}
+    Cell(const Mesh& mesh, uint index)
+      : MeshEntity(mesh, mesh.topology().dim(), index) {}
 
     /// Destructor
     ~Cell() {}
 
     /// Return type of cell
-    inline CellType::Type type() const { return _mesh->type().cell_type(); }
+    inline CellType::Type type() const
+    { return _mesh->type().cell_type(); }
 
     /// Compute orientation of cell (0 is right, 1 is left)
     inline double orientation() const
