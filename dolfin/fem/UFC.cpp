@@ -143,10 +143,7 @@ void UFC::update_new(const Cell& cell)
 
   // Restrict coefficients to cell
   for (uint i = 0; i < coefficients.size(); ++i)
-  {
-    coefficients[i]->restrict(w[i], coefficient_elements[i], cell,
-                              this->cell, -1);
-  }
+    coefficients[i]->restrict(w[i], coefficient_elements[i], cell, this->cell);
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell)
@@ -163,10 +160,7 @@ void UFC::update(const Cell& cell)
 
   // Restrict coefficients to cell
   for (uint i = 0; i < coefficients.size(); ++i)
-  {
-    coefficients[i]->restrict(w[i], coefficient_elements[i], cell,
-                              this->cell, -1);
-  }
+    coefficients[i]->restrict(w[i], coefficient_elements[i], cell, this->cell);
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell, uint local_facet)
@@ -183,10 +177,7 @@ void UFC::update(const Cell& cell, uint local_facet)
 
   // Restrict coefficients to facet
   for (uint i = 0; i < coefficients.size(); ++i)
-  {
-    coefficients[i]->restrict(w[i], coefficient_elements[i], cell, this->cell,
-                              local_facet);
-  }
+    coefficients[i]->restrict(w[i], coefficient_elements[i], cell, this->cell);
 }
 //-----------------------------------------------------------------------------
 void UFC::update(const Cell& cell0, uint local_facet0,
@@ -208,10 +199,10 @@ void UFC::update(const Cell& cell0, uint local_facet0,
   for (uint i = 0; i < coefficients.size(); ++i)
   {
     const uint offset = coefficient_elements[i].space_dimension();
-    coefficients[i]->restrict(macro_w[i],          coefficient_elements[i],
-                              cell0, this->cell0, local_facet0);
+    coefficients[i]->restrict(macro_w[i], coefficient_elements[i],
+                              cell0, this->cell0);
     coefficients[i]->restrict(macro_w[i] + offset, coefficient_elements[i],
-                              cell1, this->cell1, local_facet1);
+                              cell1, this->cell1);
   }
 }
 //-----------------------------------------------------------------------------

@@ -75,11 +75,10 @@ void Expression::eval(Array<double>& values, const Array<double>& x,
 void Expression::restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
-                          const ufc::cell& ufc_cell,
-                          int local_facet) const
+                          const ufc::cell& ufc_cell) const
 {
   // Restrict as UFC function (by calling eval)
-  restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet);
+  restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell);
 }
 //-----------------------------------------------------------------------------
 void Expression::compute_vertex_values(Array<double>& vertex_values,

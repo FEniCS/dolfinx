@@ -47,8 +47,7 @@ void GenericFunction::evaluate(double* values,
 void GenericFunction::restrict_as_ufc_function(double* w,
                                                const FiniteElement& element,
                                                const Cell& dolfin_cell,
-                                               const ufc::cell& ufc_cell,
-                                               int local_facet) const
+                                               const ufc::cell& ufc_cell) const
 {
   assert(w);
 

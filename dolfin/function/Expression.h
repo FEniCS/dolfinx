@@ -69,8 +69,7 @@ namespace dolfin
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
-                          const ufc::cell& ufc_cell,
-                          int local_facet) const;
+                          const ufc::cell& ufc_cell) const;
 
     /// Compute values at all mesh vertices
     virtual void compute_vertex_values(Array<double>& vertex_values,

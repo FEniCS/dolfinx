@@ -50,14 +50,14 @@ namespace dolfin
     virtual uint value_dimension(uint i) const = 0;
 
     /// Evaluate function for given data
-    virtual void eval(Array<double>& values, const Array<double>& x, const ufc::cell& cell) const = 0;
+    virtual void eval(Array<double>& values, const Array<double>& x,
+                      const ufc::cell& cell) const = 0;
 
     /// Restrict function to local cell (compute expansion coefficients w)
     virtual void restrict(double* w,
                           const FiniteElement& element,
                           const Cell& dolfin_cell,
-                          const ufc::cell& ufc_cell,
-                          int local_facet) const = 0;
+                          const ufc::cell& ufc_cell) const = 0;
 
     /// Compute values at all mesh vertices
     virtual void compute_vertex_values(Array<double>& vertex_values,
@@ -73,13 +73,6 @@ namespace dolfin
     /// Return value size (product of value dimensions)
     uint value_size() const;
 
-    /// Convenience function for restriction when facet is unknown
-    void restrict(double* w,
-                  const FiniteElement& element,
-                  const Cell& dolfin_cell,
-                  const ufc::cell& ufc_cell) const
-    { restrict(w, element, dolfin_cell, ufc_cell, -1); }
-
     //--- Implementation of ufc::function interface ---
 
     /// Evaluate function at given point in cell
@@ -93,8 +86,7 @@ namespace dolfin
     void restrict_as_ufc_function(double* w,
                                   const FiniteElement& element,
                                   const Cell& dolfin_cell,
-                                  const ufc::cell& ufc_cell,
-                                  int local_facet) const;
+                                  const ufc::cell& ufc_cell) const;
 
   };
 

@@ -560,7 +560,7 @@ void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values
     ufc_cell.update(cell, facet_number);
 
     // Restrict coefficient to cell
-    g->restrict(data.w, _function_space->element(), cell, ufc_cell, facet_number);
+    g->restrict(data.w, _function_space->element(), cell, ufc_cell);
 
     // Tabulate dofs on cell
     dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell_number);

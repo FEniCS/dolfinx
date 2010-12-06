@@ -5,12 +5,12 @@
 // Modified by Garth N. Wells, 2010
 //
 // First added:  2009-12-08
-// Last changed: 2010-09-10
+// Last changed: 2010-12-06
 //
 
 #include <vector>
-#include <boost/scoped_array.hpp>
 #include <armadillo>
+#include <boost/scoped_array.hpp>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/log/log.h>
@@ -90,7 +90,7 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
                                          uint& offset)
 {
   // Call recursively for mixed elements
-  uint num_sub_spaces = V.element().num_sub_elements();
+  const uint num_sub_spaces = V.element().num_sub_elements();
   if (num_sub_spaces > 0)
   {
     for (uint k = 0; k < num_sub_spaces; k++)
@@ -166,13 +166,13 @@ void Extrapolation::add_cell_equations(arma::Mat<double>& A,
 {
   // Extract coefficents for v on patch cell
   boost::scoped_array<double> dof_values(new double[V.element().space_dimension()]);
-  v.restrict(dof_values.get(), V.element(), cell1, c1, -1);
+  v.restrict(dof_values.get(), V.element(), cell1, c1);
 
   // Iterate over given local dofs for V on patch cell
   for (std::map<uint, uint>::iterator it = dof2row.begin(); it!= dof2row.end(); it++)
   {
-    uint i = it->first;
-    uint row = it->second;
+    const uint i = it->first;
+    const uint row = it->second;
 
     // Iterate over basis functions for W on center cell
     for (uint j = 0; j < W.element().space_dimension(); ++j)
@@ -225,7 +225,7 @@ Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
 }
 //-----------------------------------------------------------------------------
 void Extrapolation::average_coefficients(Function& w,
-                                         std::vector<std::vector<double> >& coefficients)
+                               std::vector<std::vector<double> >& coefficients)
 {
   const FunctionSpace& W = w.function_space();
   Array<double> dof_values(W.dim());

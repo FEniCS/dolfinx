@@ -308,7 +308,7 @@ void Function::eval(Array<double>& values,
   boost::scoped_array<double> coefficients(new double[element.space_dimension()]);
 
   // Restrict function to cell
-  restrict(coefficients.get(), element, dolfin_cell, ufc_cell, -1);
+  restrict(coefficients.get(), element, dolfin_cell, ufc_cell);
 
   // Initialise values
   for (uint j = 0; j < num_tensor_entries; ++j)
@@ -375,8 +375,7 @@ void Function::eval(Array<double>& values, const Array<double>& x,
 void Function::restrict(double* w,
                         const FiniteElement& element,
                         const Cell& dolfin_cell,
-                        const ufc::cell& ufc_cell,
-                        int local_facet) const
+                        const ufc::cell& ufc_cell) const
 {
   assert(w);
   assert(_function_space);
@@ -394,7 +393,7 @@ void Function::restrict(double* w,
   else
   {
     // Restrict as UFC function (by calling eval)
-    restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell, local_facet);
+    restrict_as_ufc_function(w, element, dolfin_cell, ufc_cell);
   }
 }
 //-----------------------------------------------------------------------------
@@ -432,7 +431,7 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
     ufc_cell.update(*cell);
 
     // Pick values from global vector
-    restrict(coefficients.get(), element, *cell, ufc_cell, -1);
+    restrict(coefficients.get(), element, *cell, ufc_cell);
 
     // Interpolate values at the vertices
     element.interpolate_vertex_values(cell_vertex_values.get(), coefficients.get(), ufc_cell);
