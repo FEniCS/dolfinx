@@ -49,14 +49,21 @@ L = - f*v*dx
 
 # Define function G such that G \cdot n = g
 class BoundarySource(Expression):
-    def eval_data(self, values, data):
-        g = sin(5*data.x()[0])
-        values[0] = g*data.normal()[0]
-        values[1] = g*data.normal()[1]
+    def __init__(self, **kwargs):
+        self.mesh = kwargs['mesh']
+
+    def eval_cell(self, values, x, ufc_cell):
+        print "Cell index:", ufc_cell.index
+        print "Local facet index:", ufc_cell.local_facet
+        #cell = Cell(self.mesh, cell.index)
+        #g = sin(5*data.x()[0])
+        #values[0] = g*data.normal()[0]
+        #values[1] = g*data.normal()[1]
+
     def value_shape(self):
         return (2,)
 
-G = BoundarySource()
+G = BoundarySource(mesh=mesh)
 
 # Define essential boundary
 def boundary(x):
