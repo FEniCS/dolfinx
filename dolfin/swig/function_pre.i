@@ -57,9 +57,6 @@ namespace dolfin
                                                  const Array<double>& x,
                                                  const ufc::cell& cell) const;
 
-%rename(eval_cell) dolfin::Expression::eval(Array<double>& values,
-					    const Array<double>& x,
-					    const ufc::cell& cell) const;
 //-----------------------------------------------------------------------------
 // Modifying the interface of Constant
 //-----------------------------------------------------------------------------
