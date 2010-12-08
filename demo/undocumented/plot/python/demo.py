@@ -1,4 +1,4 @@
-"This demo illustrate basic plotting."
+"This demo illustrates basic plotting."
 
 __author__ = "Anders Logg (logg@simula.no)"
 __date__ = "2007-05-29 -- 2009-10-15"
