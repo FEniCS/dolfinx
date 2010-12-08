@@ -121,4 +121,3 @@ if len(args) in (2, 3):
 # Catch all
 usage()
 sys.exit(1)
-
