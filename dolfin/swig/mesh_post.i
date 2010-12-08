@@ -102,16 +102,17 @@ DECLARE_MESHFUNCTIONS(CellFunction)
 %{
 _doc_string = MeshFunctionInt.__doc__
 _doc_string += """
-    Arguments
-//-----------------------------------------------------------------------------\n      String defining the type of the MeshFunction
+  *Arguments*
+    tp (str) 
+      String defining the type of the MeshFunction
       Allowed: 'int', 'uint', 'double', and 'bool'
-    @param mesh:
+    mesh (_Mesh_)
       A DOLFIN mesh.
       Optional.
-    @param dim:
+    dim (uint)
       The topological dimension of the MeshFunction.
       Optional.
-    @param filename:
+    filename (str)
       A filename with a stored MeshFunction.
       Optional.
 
@@ -136,21 +137,7 @@ del _doc_string
 
 def _new_closure(MeshType):
     assert(isinstance(MeshType,str))
-    def new(cls, tp, mesh):
-        if not isinstance(tp, str):
-            raise TypeError, "expected a 'str' as first argument"
-        if tp == "int":
-            return eval("%sInt(mesh)"%MeshType)
-        if tp == "uint":
-            return eval("%sUInt(mesh)"%MeshType)
-        elif tp == "double":
-            return eval("%sDouble(mesh)"%MeshType)
-        elif tp == "bool":
-            return eval("%sBool(mesh)"%MeshType)
-        else:
-            raise RuntimeError, "Cannot create a %sFunction of type '%s'." % (MeshType, tp)
-
-    def new(cls, tp, mesh, value):
+    def new(cls, tp, mesh, value=0):
         if not isinstance(tp, str):
             raise TypeError, "expected a 'str' as first argument"
         if tp == "int":
@@ -158,7 +145,7 @@ def _new_closure(MeshType):
         if tp == "uint":
             return eval("%sUInt(mesh, value)"%MeshType)
         elif tp == "double":
-            return eval("%sDouble(mesh, value)"%MeshType)
+            return eval("%sDouble(mesh, float(value))"%MeshType)
         elif tp == "bool":
             return eval("%sBool(mesh, value)"%MeshType)
         else:
@@ -167,21 +154,26 @@ def _new_closure(MeshType):
     return new
 
 # Create the named MeshFunction types
-VertexFunction = type("VertexFunction", (), {"__new__":_new_closure("VertexFunction"),
-                                             "__doc__":"Create MeshFunction of topological"\
-                                             " dimension 0 on given mesh."})
-EdgeFunction = type("EdgeFunction", (), {"__new__":_new_closure("EdgeFunction"),
-                                             "__doc__":"Create MeshFunction of topological"
-                                         " dimension 1 on given mesh."})
-FaceFunction = type("FaceFunction", (), {"__new__":_new_closure("FaceFunction"),
-                                             "__doc__":"Create MeshFunction of topological"
-                                         " dimension 2 on given mesh."})
-FacetFunction = type("FacetFunction", (), {"__new__":_new_closure("FacetFunction"),
-                                             "__doc__":"Create MeshFunction of topological"
-                                           " codimension 1 on given mesh."})
-CellFunction = type("CellFunction", (), {"__new__":_new_closure("CellFunction"),
-                                             "__doc__":"Create MeshFunction of topological"
-                                         " codimension 0 on given mesh."})
+VertexFunction = type("VertexFunction", (), \
+		      {"__new__":_new_closure("VertexFunction"),\
+                       "__doc__":"Create MeshFunction of topological" \
+                       " dimension 0 on given mesh."})
+EdgeFunction = type("EdgeFunction", (), \
+                    {"__new__":_new_closure("EdgeFunction"),\
+                     "__doc__":"Create MeshFunction of topological"\
+                     " dimension 1 on given mesh."})
+FaceFunction = type("FaceFunction", (), \
+                    {"__new__":_new_closure("FaceFunction"),\
+                     "__doc__":"Create MeshFunction of topological"\
+                     " dimension 2 on given mesh."})
+FacetFunction = type("FacetFunction", (),\
+                     {"__new__":_new_closure("FacetFunction"),
+                      "__doc__":"Create MeshFunction of topological"\
+                      " codimension 1 on given mesh."})
+CellFunction = type("CellFunction", (),\
+                    {"__new__":_new_closure("CellFunction"),\
+                     "__doc__":"Create MeshFunction of topological"\
+                     " codimension 0 on given mesh."})
 
 %}
 
