@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+
+"Script for simple command-line plotting."
+
+__author__ = "Anders Logg (logg@simula.no)"
+__date__ = "2010-12-08"
+__copyright__ = "Copyright (C) 2010 " + __author__
+__license__  = "GNU GPL version 3 or any later version"
+
+# Last changed: 2010-12-08
+
+import sys
+
+# Try importing DOLFIN
+try:
+    from dolfin import *
+except:
+    print """\
+Unable to import DOLFIN. The DOLFIN Python module is required
+to run this script. Check that DOLFIN is in your PYTHONPATH."""
+    sys.exit(1)
+
+def usage():
+    "Print usage of this script."
+
+    # Build list of supported elements
+    element_list = ""
+    for e in supported_elements_for_plotting:
+        if e in supported_elements:
+            element_list += ("   %s\n" % e)
+        else:
+            element_list += ("   %s (*)\n" % e)
+
+    print """\
+Usage:
+
+1. dolfin-plot <meshfile>
+
+   where <meshfile> is a mesh stored in DOLFIN XML format
+   with suffix .xml or .xml.gz.
+
+2. dolfin-plot <family> <domain> [degree]
+
+   where <family> is the name of a finite element family,
+   <domain> is the domain type ('triangle' or 'tetrahedron'),
+   and <degree> is an optional degree for elements that
+   support variable degree.
+
+Examples:
+
+   dolfin-plot mesh.xml
+   dolfin-plot Lagrange triangle 3
+   dolfin-plot BDM tetrahedron 5
+   dolfin-plot Hermite triangle
+
+List of supported element families:
+
+%s
+A (*) indicates that the element is not supported by DOLFIN/FFC,
+but the element may still be plotted.
+""" % element_list
+
+# Check command-line arguments
+if len(sys.argv) < 2:
+    usage()
+    sys.exit(1)
+args = sys.argv[1:]
+
+# Check for help text
+if "-h" in args or "--help" in args:
+    usage()
+    sys.exit(0)
+
+# Check for plotting of mesh
+if len(args) == 1:
+
+    # Read mesh
+    print "Reading mesh from file '%s'." % args[0]
+    try:
+        mesh = Mesh(args[0])
+    except:
+        print "Unable to read mesh from file."
+        sys.exit(1)
+
+    # Plot mesh
+    print "Plotting mesh."
+    plot(mesh, title="Mesh", interactive=True)
+
+    sys.exit(0)
+
+# Check for plotting of element
+if len(args) in (2, 3):
+
+    # Get family and domain
+    family, domain = args[:2]
+
+    # Get degree
+    if len(args) == 2:
+        degree = None
+    else:
+        degree = int(args[2])
+
+    # Create element
+    print "Creating finite element."
+    element = FiniteElement(family, domain, degree)
+
+    # Plot element
+    print "Plotting finite element, press ctrl-c to quit."
+    plot(element)
+
+    sys.exit(0)
+
+# Catch all
+usage()
+sys.exit(1)
