@@ -39,7 +39,7 @@ Usage:
    where <meshfile> is a mesh stored in DOLFIN XML format
    with suffix .xml or .xml.gz.
 
-2. dolfin-plot <family> <domain> [degree]
+2. dolfin-plot <family> <domain> [degree] [rotate=1/0]
 
    where <family> is the name of a finite element family,
    <domain> is the domain type ('triangle' or 'tetrahedron'),
@@ -64,12 +64,15 @@ but the element may still be plotted.
 if len(sys.argv) < 2:
     usage()
     sys.exit(1)
-args = sys.argv[1:]
 
 # Check for help text
-if "-h" in args or "--help" in args:
+if "-h" in sys.argv[1:] or "--help" in sys.argv[1:]:
     usage()
     sys.exit(0)
+
+# Extract arguments and options
+args = [arg for arg in sys.argv[1:] if not "=" in arg]
+options = dict([arg.split("=") for arg in sys.argv[1:] if "=" in arg])
 
 # Check for plotting of mesh
 if len(args) == 1:
@@ -100,16 +103,22 @@ if len(args) in (2, 3):
     else:
         degree = int(args[2])
 
+    # Check for rotate option
+    rotate = 1
+    if "rotate" in options:
+        rotate = int(options["rotate"])
+
     # Create element
     print "Creating finite element."
     element = FiniteElement(family, domain, degree)
 
     # Plot element
     print "Plotting finite element, press ctrl-c to quit."
-    plot(element)
+    plot(element, rotate=rotate)
 
     sys.exit(0)
 
 # Catch all
 usage()
 sys.exit(1)
+
