@@ -94,6 +94,7 @@ void Assembler::assemble(GenericTensor& A,
   // interface.
 
   // Check whether we should call the multi-core assembler
+  #ifdef HAS_OPENMP
   const uint num_threads = parameters["num_threads"];
   if (num_threads > 0)
   {
@@ -110,6 +111,7 @@ void Assembler::assemble(GenericTensor& A,
                               reset_sparsity, add_values);
     return;
   }
+  #endif
 
   // Check form
   AssemblerTools::check(a);
