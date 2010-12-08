@@ -4,11 +4,11 @@
 //
 // Modified by Johan Jansson 2006-2007
 // Modified by Ola Skavhaug 2006-2007
-// Modified by Garth Wells 2007-2009
+// Modified by Garth Wells 2007-2010
 // Modified by Johan Hake 2008-2009
 //
 // First added:  2006-09-20
-// Last changed: 2010-11-24
+// Last changed: 2010-12-08
 
 //=============================================================================
 // SWIG directives for the DOLFIN Mesh kernel module (post)
@@ -147,6 +147,20 @@ def _new_closure(MeshType):
             return eval("%sDouble(mesh)"%MeshType)
         elif tp == "bool":
             return eval("%sBool(mesh)"%MeshType)
+        else:
+            raise RuntimeError, "Cannot create a %sFunction of type '%s'." % (MeshType, tp)
+
+    def new(cls, tp, mesh, value):
+        if not isinstance(tp, str):
+            raise TypeError, "expected a 'str' as first argument"
+        if tp == "int":
+            return eval("%sInt(mesh, value)"%MeshType)
+        if tp == "uint":
+            return eval("%sUInt(mesh, value)"%MeshType)
+        elif tp == "double":
+            return eval("%sDouble(mesh, value)"%MeshType)
+        elif tp == "bool":
+            return eval("%sBool(mesh, value)"%MeshType)
         else:
             raise RuntimeError, "Cannot create a %sFunction of type '%s'." % (MeshType, tp)
 
