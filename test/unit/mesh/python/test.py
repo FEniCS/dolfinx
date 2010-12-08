@@ -1,7 +1,7 @@
 """Unit tests for the mesh library"""
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2006-08-08 -- 2010-12-07"
+__date__ = "2006-08-08 -- 2010-12-08"
 __copyright__ = "Copyright (C) 2006 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -98,7 +98,7 @@ class NamedMeshFunctions(unittest.TestCase):
                 self.assertTrue(all(values[i]==self.funcs[(tp, name)][i]
                                     for i in xrange(len(values))))
 
-# Do not run these tests if we are running in parallel
+# FIXME: The following test breaks in parallel
 if MPI.num_processes()==1:
     class SimpleShapes(unittest.TestCase):
     
