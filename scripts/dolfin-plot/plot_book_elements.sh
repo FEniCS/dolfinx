@@ -26,8 +26,8 @@ dolfin-plot DG                     triangle     1 rotate=$ROTATE
 dolfin-plot DG                     triangle     2 rotate=$ROTATE
 dolfin-plot DG                     triangle     3 rotate=$ROTATE
 dolfin-plot DG                     tetrahedron  1 rotate=$ROTATE
-dolfin-plot DG                     Lagrange tetrahedron  2 rotate=$ROTATE
-dolfin-plot DG                     Lagrange tetrahedron  3 rotate=$ROTATE
+dolfin-plot DG                     tetrahedron  2 rotate=$ROTATE
+dolfin-plot DG                     tetrahedron  3 rotate=$ROTATE
 
 dolfin-plot Hermite                triangle       rotate=$ROTATE
 dolfin-plot Hermite                tetrahedron    rotate=$ROTATE
@@ -35,9 +35,15 @@ dolfin-plot Hermite                tetrahedron    rotate=$ROTATE
 dolfin-plot Lagrange               triangle     1 rotate=$ROTATE
 dolfin-plot Lagrange               triangle     2 rotate=$ROTATE
 dolfin-plot Lagrange               triangle     3 rotate=$ROTATE
+dolfin-plot Lagrange               triangle     4 rotate=$ROTATE
+dolfin-plot Lagrange               triangle     5 rotate=$ROTATE
+dolfin-plot Lagrange               triangle     6 rotate=$ROTATE
 dolfin-plot Lagrange               tetrahedron  1 rotate=$ROTATE
 dolfin-plot Lagrange               tetrahedron  2 rotate=$ROTATE
 dolfin-plot Lagrange               tetrahedron  3 rotate=$ROTATE
+dolfin-plot Lagrange               tetrahedron  4 rotate=$ROTATE
+dolfin-plot Lagrange               tetrahedron  5 rotate=$ROTATE
+dolfin-plot Lagrange               tetrahedron  6 rotate=$ROTATE
 
 dolfin-plot Mardal-Tai-Winther     triangle       rotate=$ROTATE
 
