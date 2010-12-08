@@ -1,3 +1,6 @@
+ - Add lists supported_elements and supported_elements_for_plotting in Python
+ - Add script dolfin-plot for plotting meshes and elements from the command-line
+ - Add support for plotting elements from Python
  - Add experimental OpenMP assembler
  - Thread-safe fixed in Function class
  - Make GenericFunction::eval thread-safe (Data class removed)
