@@ -22,12 +22,12 @@ dolfin-plot Brezzi-Douglas-Marini  tetrahedron  3 rotate=$ROTATE
 dolfin-plot Crouzeix-Raviart       triangle     1 rotate=$ROTATE
 dolfin-plot Crouzeix-Raviart       tetrahedron  1 rotate=$ROTATE
 
-dolfin-plot Discontinuous Lagrange triangle     1 rotate=$ROTATE
-dolfin-plot Discontinuous Lagrange triangle     2 rotate=$ROTATE
-dolfin-plot Discontinuous Lagrange triangle     3 rotate=$ROTATE
-dolfin-plot Discontinuous Lagrange tetrahedron  1 rotate=$ROTATE
-dolfin-plot Discontinuous Lagrange tetrahedron  2 rotate=$ROTATE
-dolfin-plot Discontinuous Lagrange tetrahedron  3 rotate=$ROTATE
+dolfin-plot DG                     triangle     1 rotate=$ROTATE
+dolfin-plot DG                     triangle     2 rotate=$ROTATE
+dolfin-plot DG                     triangle     3 rotate=$ROTATE
+dolfin-plot DG                     tetrahedron  1 rotate=$ROTATE
+dolfin-plot DG                     Lagrange tetrahedron  2 rotate=$ROTATE
+dolfin-plot DG                     Lagrange tetrahedron  3 rotate=$ROTATE
 
 dolfin-plot Hermite                triangle       rotate=$ROTATE
 dolfin-plot Hermite                tetrahedron    rotate=$ROTATE
