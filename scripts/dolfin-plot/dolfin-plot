@@ -113,7 +113,7 @@ if len(args) in (2, 3):
     element = FiniteElement(family, domain, degree)
 
     # Plot element
-    print "Plotting finite element, press ctrl-c to quit."
+    print "Plotting finite element."
     plot(element, rotate=rotate)
 
     sys.exit(0)
