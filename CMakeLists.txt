@@ -375,8 +375,8 @@ add_subdirectory(dolfin)
 # Installation of DOLFIN utilities
 
 set(DOLFIN_UTILITIES
-  ${DOLFIN_SOURCE_DIR}/utils/convert/dolfin-convert
-  ${DOLFIN_SOURCE_DIR}/utils/order/dolfin-order)
+  ${DOLFIN_SOURCE_DIR}/scripts/dolfin-convert/dolfin-convert
+  ${DOLFIN_SOURCE_DIR}/scripts/dolfin-order/dolfin-order)
 
 install(FILES ${DOLFIN_UTILITIES}
   DESTINATION ${DOLFIN_BIN_DIR}
