@@ -97,8 +97,11 @@ namespace dolfin
   {
   public:
 
-    FacetFunction(const Mesh& mesh) : MeshFunction<T>(mesh, mesh.topology().dim() - 1) {}
+    FacetFunction(const Mesh& mesh)
+      : MeshFunction<T>(mesh, mesh.topology().dim() - 1) {}
 
+    FacetFunction(const Mesh& mesh, const T& value)
+      : MeshFunction<T>(mesh, mesh.topology().dim() - 1, value) {}
   };
 
 }

@@ -61,6 +61,9 @@ namespace dolfin
 
     EdgeFunction(const Mesh& mesh) : MeshFunction<T>(mesh, 1) {}
 
+    EdgeFunction(const Mesh& mesh, const T& value)
+      : MeshFunction<T>(mesh, 1, value) {}
+
   };
 
 }

@@ -65,7 +65,6 @@ def next(self):
 //-----------------------------------------------------------------------------
 %define DECLARE_MESHFUNCTION(MESHFUNCTION,TYPE,TYPENAME)
 %template(MESHFUNCTION ## TYPENAME) dolfin::MESHFUNCTION<TYPE>;
-//%typedef dolfin::MESHFUNCTION<TYPE> MESHFUNCTION ## TYPENAME;
 
 %feature("docstring") dolfin::MESHFUNCTION::__getitem__ "Missing docstring";
 %feature("docstring") dolfin::MESHFUNCTION::__setitem__ "Missing docstring";
@@ -97,7 +96,7 @@ DECLARE_MESHFUNCTIONS(VertexFunction)
 DECLARE_MESHFUNCTIONS(EdgeFunction)
 DECLARE_MESHFUNCTIONS(FaceFunction)
 DECLARE_MESHFUNCTIONS(FacetFunction)
-DECLARE_MESHFUNCTIONS(CellFunction) 
+DECLARE_MESHFUNCTIONS(CellFunction)
 
 %pythoncode
 %{
@@ -150,7 +149,7 @@ def _new_closure(MeshType):
             return eval("%sBool(mesh)"%MeshType)
         else:
             raise RuntimeError, "Cannot create a %sFunction of type '%s'." % (MeshType, tp)
-    
+
     return new
 
 # Create the named MeshFunction types
@@ -165,7 +164,7 @@ FaceFunction = type("FaceFunction", (), {"__new__":_new_closure("FaceFunction"),
                                          " dimension 2 on given mesh."})
 FacetFunction = type("FacetFunction", (), {"__new__":_new_closure("FacetFunction"),
                                              "__doc__":"Create MeshFunction of topological"
-                                           " codimension 1 on given mesh."}) 
+                                           " codimension 1 on given mesh."})
 CellFunction = type("CellFunction", (), {"__new__":_new_closure("CellFunction"),
                                              "__doc__":"Create MeshFunction of topological"
                                          " codimension 0 on given mesh."})

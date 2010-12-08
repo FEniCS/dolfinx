@@ -1,3 +1,6 @@
+ - Add experimental OpenMP assembler
+ - Thread-safe fixed in Function class
+ - Make GenericFunction::eval thread-safe (Data class removed)
  - Optimize and speedup topology computation (mesh.init())
  - Add function Mesh::clean() for cleaning out auxilliary topology data
  - Improve speed and accuracy of timers
