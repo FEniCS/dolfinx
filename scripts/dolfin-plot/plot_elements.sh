@@ -4,6 +4,8 @@
 #
 # Anders Logg, 2010-12-08
 
+echo "Plotting elements..."
+
 dolfin-plot Argyris                triangle     5 rotate=1 &
 dolfin-plot Arnold-Winther         triangle       rotate=1 &
 dolfin-plot Brezzi-Douglas-Marini  tetrahedron  3 rotate=1 &
