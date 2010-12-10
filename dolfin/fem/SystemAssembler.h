@@ -125,6 +125,9 @@ namespace dolfin
     public:
 
       Scratch(const Form& a, const Form& L);
+
+      Scratch(const Scratch& data);
+
       ~Scratch();
 
       void zero_cell();

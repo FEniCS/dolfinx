@@ -343,49 +343,6 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
   }
 }
 //-----------------------------------------------------------------------------
-SystemAssembler::Scratch::Scratch(const Form& a, const Form& L)
-  : A_num_entries(1), b_num_entries(1), Ae(0), be(0), indicators(0), g(0)
-{
-  for (uint i = 0; i < a.rank(); i++)
-    A_num_entries *= a.function_space(i)->dofmap().max_local_dimension();
-  Ae = new double[A_num_entries];
-
-  for (uint i = 0; i < L.rank(); i++)
-    b_num_entries *= L.function_space(i)->dofmap().max_local_dimension();
-  be = new double[b_num_entries];
-
-  const uint N = a.function_space(1)->dofmap().global_dimension();
-  indicators = new uint[N];
-  g = new double[N];
-  for (uint i = 0; i < N; i++)
-  {
-    indicators[i] = 0;
-    g[i] = 0.0;
-  }
-}
-//-----------------------------------------------------------------------------
-SystemAssembler::Scratch::~Scratch()
-{
-  delete [] Ae;
-  delete [] be;
-  delete [] indicators;
-  delete [] g;
-}
-//-----------------------------------------------------------------------------
-inline void SystemAssembler::Scratch::zero_cell()
-{
-  if (Ae)
-  {
-    for (uint i = 0; i < A_num_entries; i++)
-      Ae[i] = 0.0;
-  }
-  if (be)
-  {
-    for (uint i = 0; i < b_num_entries; i++)
-      be[i] = 0.0;
-  }
-}
-//-----------------------------------------------------------------------------
 void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b,
                                               UFC& A_ufc, UFC& b_ufc,
                                               const Form& a,
@@ -555,5 +512,53 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
   // Add entries to global tensor
   A.add(data.Ae, A_ufc.local_dimensions.get(), A_ufc.dofs);
   b.add(data.be, b_ufc.local_dimensions.get(), b_ufc.dofs);
+}
+//-----------------------------------------------------------------------------
+SystemAssembler::Scratch::Scratch(const Form& a, const Form& L)
+  : A_num_entries(1), b_num_entries(1), Ae(0), be(0), indicators(0), g(0)
+{
+  for (uint i = 0; i < a.rank(); i++)
+    A_num_entries *= a.function_space(i)->dofmap().max_local_dimension();
+  Ae = new double[A_num_entries];
+
+  for (uint i = 0; i < L.rank(); i++)
+    b_num_entries *= L.function_space(i)->dofmap().max_local_dimension();
+  be = new double[b_num_entries];
+
+  const uint N = a.function_space(1)->dofmap().global_dimension();
+  indicators = new uint[N];
+  g = new double[N];
+  for (uint i = 0; i < N; i++)
+  {
+    indicators[i] = 0;
+    g[i] = 0.0;
+  }
+}
+//-----------------------------------------------------------------------------
+SystemAssembler::Scratch::Scratch(const Scratch& data)
+{
+  error("SystemAssembler::Scratch copy constructor not implemented");
+}
+//-----------------------------------------------------------------------------
+SystemAssembler::Scratch::~Scratch()
+{
+  delete [] Ae;
+  delete [] be;
+  delete [] indicators;
+  delete [] g;
+}
+//-----------------------------------------------------------------------------
+inline void SystemAssembler::Scratch::zero_cell()
+{
+  if (Ae)
+  {
+    for (uint i = 0; i < A_num_entries; i++)
+      Ae[i] = 0.0;
+  }
+  if (be)
+  {
+    for (uint i = 0; i < b_num_entries; i++)
+      be[i] = 0.0;
+  }
 }
 //-----------------------------------------------------------------------------
