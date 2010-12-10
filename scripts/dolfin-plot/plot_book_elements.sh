@@ -22,9 +22,11 @@ dolfin-plot Brezzi-Douglas-Marini  tetrahedron  3 rotate=$ROTATE
 dolfin-plot Crouzeix-Raviart       triangle     1 rotate=$ROTATE
 dolfin-plot Crouzeix-Raviart       tetrahedron  1 rotate=$ROTATE
 
+dolfin-plot DG                     triangle     0 rotate=$ROTATE
 dolfin-plot DG                     triangle     1 rotate=$ROTATE
 dolfin-plot DG                     triangle     2 rotate=$ROTATE
 dolfin-plot DG                     triangle     3 rotate=$ROTATE
+dolfin-plot DG                     tetrahedron  0 rotate=$ROTATE
 dolfin-plot DG                     tetrahedron  1 rotate=$ROTATE
 dolfin-plot DG                     tetrahedron  2 rotate=$ROTATE
 dolfin-plot DG                     tetrahedron  3 rotate=$ROTATE
