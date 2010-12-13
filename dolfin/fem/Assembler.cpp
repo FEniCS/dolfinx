@@ -6,7 +6,7 @@
 // Modified by Kent-Andre Mardal, 2008
 //
 // First added:  2007-01-17
-// Last changed: 2010-11-18
+// Last changed: 2010-12-13
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -180,7 +180,10 @@ void Assembler::assemble_cells(GenericTensor& A,
 
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
-      a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
+    {
+      const GenericDofMap& dofmap = a.function_space(i)->dofmap();
+      dofmap.tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
+    }
 
     // Tabulate cell tensor
     integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
@@ -263,7 +266,10 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
 
     // Tabulate dofs for each dimension
     for (uint i = 0; i < ufc.form.rank(); i++)
-      a.function_space(i)->dofmap().tabulate_dofs(ufc.dofs[i], ufc.cell, mesh_cell.index());
+    {
+      const GenericDofMap& dofmap = a.function_space(i)->dofmap();
+      dofmap.tabulate_dofs(ufc.dofs[i], ufc.cell, mesh_cell.index());
+    }
 
     // Tabulate exterior facet tensor
     integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell, local_facet);
@@ -344,9 +350,10 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     // Tabulate dofs for each dimension on macro element
     for (uint i = 0; i < ufc.form.rank(); i++)
     {
-      const uint offset = a.function_space(i)->dofmap().local_dimension(ufc.cell0);
-      a.function_space(i)->dofmap().tabulate_dofs(ufc.macro_dofs[i],          ufc.cell0, cell0.index());
-      a.function_space(i)->dofmap().tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
+      const GenericDofMap& dofmap = a.function_space(i)->dofmap();
+      const uint offset = dofmap.local_dimension(ufc.cell0);
+      dofmap.tabulate_dofs(ufc.macro_dofs[i],          ufc.cell0, cell0.index());
+      dofmap.tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
     }
 
     // Tabulate exterior interior facet tensor on macro element
