@@ -83,6 +83,7 @@ int main() {
     ARMADILLO_CONFIG_TEST_VERSION_COMPILED
     ${CMAKE_CURRENT_BINARY_DIR}
     ${ARMADILLO_CONFIG_TEST_VERSION_CPP}
+    CMAKE_FLAGS -DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}
     RUN_OUTPUT_VARIABLE OUTPUT
     )
 
@@ -90,8 +91,19 @@ int main() {
     set(ARMADILLO_VERSION ${OUTPUT} CACHE TYPE STRING)
   endif()
 
-  # Check that C++ program runs
-  check_cxx_source_compiles("
+  if (${ARMADILLO_VERSION} VERSION_GREATER "0.9.10")
+    set(armadillo_test_str "
+#include <armadillo>
+int main()
+{
+ arma::mat A = arma::randu(4, 4);
+ arma::vec b = arma::randu(4);
+ arma::vec x = arma::solve(A, b);
+ return 0;
+}
+")
+  else()
+    set(armadillo_test_str "
 #include <armadillo>
 int main()
 {
@@ -100,25 +112,20 @@ int main()
  arma::vec x = arma::solve(A, b);
  return 0;
 }
-"
-    ARMADILLO_TEST_RUNS)
+")
+  endif()
 
-  # If program runs, trying adding LAPACK library and test again
+  # Check that C++ program runs
+  check_cxx_source_runs("${armadillo_test_str}" ARMADILLO_TEST_RUNS)
+
+  # If program does not run, try adding LAPACK library and test again
   if(NOT ARMADILLO_TEST_RUNS)
-    find_package(LAPACK)
+    if (NOT LAPACK_FOUND)
+      find_package(LAPACK)
+    endif()
     if (LAPACK_LIBRARIES)
       set(CMAKE_REQUIRED_LIBRARIES ${ARMADILLO_LIBRARIES} ${LAPACK_LIBRARIES})
-      check_cxx_source_runs("
-#include <armadillo>
-int main()
-{
- arma::mat A = arma::rand(4, 4);
- arma::vec b = arma::rand(4);
- arma::vec x = arma::solve(A, b);
- return 0;
-}
-"
-      ARMADILLO_LAPACK_TEST_RUNS)
+      check_cxx_source_runs("${armadillo_test_str}" ARMADILLO_LAPACK_TEST_RUNS)
 
       # Add LAPACK libary if required
       if (ARMADILLO_LAPACK_TEST_RUNS)
