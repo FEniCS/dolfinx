@@ -154,6 +154,17 @@ void Assembler::assemble_cells(GenericTensor& A,
   // Extract mesh
   const Mesh& mesh = a.mesh();
 
+  // Form rank
+  const uint form_rank = ufc.form.rank();
+
+  // Collect pointers to dof maps
+  std::vector<const GenericDofMap*> dof_maps;
+  for (uint i = 0; i < form_rank; ++i)
+    dof_maps.push_back(&a.function_space(i)->dofmap());
+
+  // Vector to hold dof map for a cell
+  std::vector<const std::vector<uint>* > dofs(form_rank);
+
   // Cell integral
   ufc::cell_integral* integral = ufc.cell_integrals[0].get();
 
@@ -178,27 +189,20 @@ void Assembler::assemble_cells(GenericTensor& A,
     // Update to current cell
     ufc.update(*cell);
 
-    // Tabulate dofs for each dimension
-    for (uint i = 0; i < ufc.form.rank(); i++)
-    {
-      const GenericDofMap& dofmap = a.function_space(i)->dofmap();
-      dofmap.tabulate_dofs(ufc.dofs[i], ufc.cell, cell->index());
-    }
+    // Get local-to-global dof maps for cell
+    for (uint i = 0; i < form_rank; ++i)
+      dofs[i] = &(dof_maps[i]->cell_dofs(cell->index()));
 
     // Tabulate cell tensor
     integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
 
-    // Add entries to global tensor
+    // Add entries to global tensor. Either store values cell-by-cell
+    // (currently only available for functionals)
     if (values && ufc.form.rank() == 0)
-    {
-      // Either store values cell-by-cell (currently only available for functionals)
       (*values)[cell->index()] = ufc.A[0];
-    }
     else
-    {
-      // Or add to global tensor
-      A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
-    }
+      A.add(ufc.A.get(), dofs);
+
     p++;
   }
 }
@@ -216,6 +220,17 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
 
   // Extract mesh
   const Mesh& mesh = a.mesh();
+
+  // Form rank
+  const uint form_rank = ufc.form.rank();
+
+  // Collect pointers to dof maps
+  std::vector<const GenericDofMap*> dof_maps;
+  for (uint i = 0; i < form_rank; ++i)
+    dof_maps.push_back(&a.function_space(i)->dofmap());
+
+  // Vector to hold dof map for a cell
+  std::vector<const std::vector<uint>* > dofs(form_rank);
 
   // Exterior facet integral
   const ufc::exterior_facet_integral* integral = ufc.exterior_facet_integrals[0].get();
@@ -264,18 +279,15 @@ void Assembler::assemble_exterior_facets(GenericTensor& A,
     // Update to current cell
     ufc.update(mesh_cell, local_facet);
 
-    // Tabulate dofs for each dimension
-    for (uint i = 0; i < ufc.form.rank(); i++)
-    {
-      const GenericDofMap& dofmap = a.function_space(i)->dofmap();
-      dofmap.tabulate_dofs(ufc.dofs[i], ufc.cell, mesh_cell.index());
-    }
+    // Get local-to-global dof maps for cell
+    for (uint i = 0; i < form_rank; ++i)
+      dofs[i] = &(dof_maps[i]->cell_dofs(mesh_cell.index()));
 
     // Tabulate exterior facet tensor
     integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell, local_facet);
 
     // Add entries to global tensor
-    A.add(ufc.A.get(), ufc.local_dimensions.get(), ufc.dofs);
+    A.add(ufc.A.get(), dofs);
 
     p++;
   }
@@ -295,6 +307,9 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
 
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
+
+  // Form rank
+  const uint form_rank = ufc.form.rank();
 
   // Interior facet integral
   const ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0].get();
@@ -348,7 +363,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     ufc.update(cell0, local_facet0, cell1, local_facet1);
 
     // Tabulate dofs for each dimension on macro element
-    for (uint i = 0; i < ufc.form.rank(); i++)
+    for (uint i = 0; i <form_rank; i++)
     {
       const GenericDofMap& dofmap = a.function_space(i)->dofmap();
       const uint offset = dofmap.local_dimension(ufc.cell0);

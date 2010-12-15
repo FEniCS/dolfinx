@@ -130,7 +130,7 @@ void OpenMpAssembler::assemble_cells(GenericTensor& A,
   for (uint i = 0; i < form_rank; ++i)
     dof_maps.push_back(&a.function_space(i)->dofmap());
 
-  // Vector to hold dof maps for a cell
+  // Vector to hold dof map for a cell
   std::vector<const std::vector<uint>* > dofs(form_rank);
 
   // Assemble over cells (loop over colours, then cells of same color)
