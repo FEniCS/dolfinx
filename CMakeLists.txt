@@ -29,6 +29,9 @@ endif()
 set(DOLFIN_CMAKE_DIR "${DOLFIN_SOURCE_DIR}/cmake" CACHE INTERNAL "")
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
 
+# Make sure CMake uses the correct dolfin-config.cmake for tests and demos
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${CMAKE_CURRENT_BINARY_DIR}/dolfin)
+
 #------------------------------------------------------------------------------
 # Configurable options for how we want to build
 
