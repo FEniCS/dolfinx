@@ -24,7 +24,6 @@
 #include "Form.h"
 #include "UFC.h"
 #include "FiniteElement.h"
-#include "MulticoreAssembler.h"
 #include "OpenMpAssembler.h"
 #include "AssemblerTools.h"
 #include "Assembler.h"
