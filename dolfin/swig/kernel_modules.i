@@ -194,7 +194,6 @@
 %include "dolfin/fem/Assembler.h"
 %include "dolfin/fem/SparsityPatternBuilder.h"
 %include "dolfin/fem/SystemAssembler.h"
-%include "dolfin/fem/MulticoreAssembler.h"
 %include "dolfin/fem/VariationalProblem.h"
 %include "dolfin/fem/OpenMpAssembler.h"
 %include "dolfin/swig/fem_post.i"
