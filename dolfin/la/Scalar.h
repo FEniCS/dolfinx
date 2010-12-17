@@ -80,6 +80,13 @@ namespace dolfin
       value += block[0];
     }
 
+    /// Add block of values
+    void add(const double* block, const std::vector<std::vector<uint> >& rows)
+    {
+      assert(block);
+      value += block[0];
+    }
+
     /// Set all entries to zero and keep any sparse structure
     void zero()
     { value = 0.0; }

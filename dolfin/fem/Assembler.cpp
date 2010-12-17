@@ -311,6 +311,14 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   // Form rank
   const uint form_rank = ufc.form.rank();
 
+  // Collect pointers to dof maps
+  std::vector<const GenericDofMap*> dof_maps;
+  for (uint i = 0; i < form_rank; ++i)
+    dof_maps.push_back(&a.function_space(i)->dofmap());
+
+  // Vector to hold dofs for cells
+  std::vector<std::vector<uint> > macro_dofs(form_rank);
+
   // Interior facet integral
   const ufc::interior_facet_integral* integral = ufc.interior_facet_integrals[0].get();
 
@@ -322,8 +330,10 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
   // Get interior facet directions (if any)
   MeshFunction<uint>* facet_orientation = mesh.data().mesh_function("facet orientation");
   if (facet_orientation && facet_orientation->dim() != mesh.topology().dim() - 1)
+  {
     error("Expecting facet orientation to be defined on facets (not dimension %d).",
           facet_orientation);
+  }
 
   // Assemble over interior facets (the facets of the mesh)
   Progress p(AssemblerTools::progress_message(A.rank(), "interior facets"), mesh.num_facets());
@@ -363,12 +373,19 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
     ufc.update(cell0, local_facet0, cell1, local_facet1);
 
     // Tabulate dofs for each dimension on macro element
-    for (uint i = 0; i <form_rank; i++)
+    for (uint i = 0; i < form_rank; i++)
     {
-      const GenericDofMap& dofmap = a.function_space(i)->dofmap();
-      const uint offset = dofmap.local_dimension(ufc.cell0);
-      dofmap.tabulate_dofs(ufc.macro_dofs[i],          ufc.cell0, cell0.index());
-      dofmap.tabulate_dofs(ufc.macro_dofs[i] + offset, ufc.cell1, cell1.index());
+      // Get dofs for each cell
+      const std::vector<uint>& cell_dofs0 = dof_maps[i]->cell_dofs(cell0.index());
+      const std::vector<uint>& cell_dofs1 = dof_maps[i]->cell_dofs(cell1.index());
+
+      // Create space in macro dof vector
+      macro_dofs[i].resize(cell_dofs0.size() + cell_dofs1.size());
+
+      // Copy cell dofs into macro dof vector
+      std::copy(cell_dofs0.begin(), cell_dofs0.end(), macro_dofs[i].begin());
+      std::copy(cell_dofs1.begin(), cell_dofs1.end(), macro_dofs[i].begin() + cell_dofs0.size());
+
     }
 
     // Tabulate exterior interior facet tensor on macro element
@@ -376,7 +393,7 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
                               local_facet0, local_facet1);
 
     // Add entries to global tensor
-    A.add(ufc.macro_A.get(), ufc.macro_local_dimensions.get(), ufc.macro_dofs);
+    A.add(ufc.macro_A.get(), macro_dofs);
 
     p++;
   }

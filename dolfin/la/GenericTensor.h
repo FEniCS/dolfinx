@@ -61,6 +61,10 @@ namespace dolfin
     virtual void add(const double* block,
                      const std::vector<const std::vector<uint>* >& rows) = 0;
 
+    /// Add block of values
+    virtual void add(const double* block,
+                     const std::vector<std::vector<uint> >& rows) = 0;
+
     /// Get block of values
     //virtual void get(double* block, const uint* num_rows,
     //                 const uint * const * rows) const = 0;
