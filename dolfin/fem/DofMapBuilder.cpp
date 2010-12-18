@@ -19,7 +19,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshData.h>
 #include <dolfin/mesh/MeshPartitioning.h>
-#include "UFC.h"
+#include "UFCCell.h"
 #include "DofMap.h"
 #include "DofMapBuilder.h"
 

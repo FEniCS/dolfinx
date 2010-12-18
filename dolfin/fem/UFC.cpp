@@ -35,18 +35,8 @@ UFC::UFC(const UFC& ufc) : form(ufc.dolfin_form.ufc_form()),
 //-----------------------------------------------------------------------------
 UFC::~UFC()
 {
-  const uint rank = this->form.rank();
+  //const uint rank = this->form.rank();
   const uint num_coefficients = this->form.num_coefficients();
-
-  // Delete dofs
-  for (uint i = 0; i < rank; i++)
-    delete [] dofs[i];
-  delete [] dofs;
-
-  // Delete macro dofs
-  for (uint i = 0; i < rank; i++)
-    delete [] macro_dofs[i];
-  delete [] macro_dofs;
 
   // Delete coefficients
   for (uint i = 0; i < num_coefficients; i++)
@@ -108,20 +98,6 @@ void UFC::init(const Form& form)
     num_entries *= max_macro_local_dimension[i];
   macro_A.reset(new double[num_entries]);
 
-  // Allocate memory for storing local dimensions
-  local_dimensions.reset(new uint[this->form.rank()]);
-  macro_local_dimensions.reset(new uint[this->form.rank()]);
-
-  // Initialize dofs
-  dofs = new uint*[this->form.rank()];
-  for (uint i = 0; i < this->form.rank(); i++)
-    dofs[i] = new uint[max_local_dimension[i]];
-
-  // Initialize dofs on macro element
-  macro_dofs = new uint*[this->form.rank()];
-  for (uint i = 0; i < this->form.rank(); i++)
-    macro_dofs[i] = new uint[max_macro_local_dimension[i]];
-
   // Initialize coefficients
   w = new double*[this->form.num_coefficients()];
   for (uint i = 0; i < this->form.num_coefficients(); i++)
@@ -151,13 +127,6 @@ void UFC::update(const Cell& cell)
   // Update UFC cell
   this->cell.update(cell);
 
-  // Update local dimensions
-  for (uint i = 0; i < form.rank(); i++)
-  {
-    local_dimensions[i]
-      = dolfin_form.function_space(i)->dofmap().local_dimension(this->cell);
-  }
-
   // Restrict coefficients to cell
   for (uint i = 0; i < coefficients.size(); ++i)
     coefficients[i]->restrict(w[i], coefficient_elements[i], cell, this->cell);
@@ -167,13 +136,6 @@ void UFC::update(const Cell& cell, uint local_facet)
 {
   // Update UFC cell
   this->cell.update(cell, local_facet);
-
-  // Update local dimensions
-  for (uint i = 0; i < form.rank(); i++)
-  {
-    local_dimensions[i]
-        = dolfin_form.function_space(i)->dofmap().local_dimension(this->cell);
-  }
 
   // Restrict coefficients to facet
   for (uint i = 0; i < coefficients.size(); ++i)
@@ -186,14 +148,6 @@ void UFC::update(const Cell& cell0, uint local_facet0,
   // Update UFC cells
   this->cell0.update(cell0, local_facet0);
   this->cell1.update(cell1, local_facet1);
-
-  // Update local dimensions
-  for (uint i = 0; i < form.rank(); i++)
-  {
-    macro_local_dimensions[i]
-      = dolfin_form.function_space(i)->dofmap().local_dimension(this->cell0)
-      + dolfin_form.function_space(i)->dofmap().local_dimension(this->cell1);
-  }
 
   // Restrict coefficients to facet
   for (uint i = 0; i < coefficients.size(); ++i)

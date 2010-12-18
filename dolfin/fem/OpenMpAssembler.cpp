@@ -335,6 +335,9 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
                                          const MeshFunction<uint>* domains,
                                          std::vector<double>* values)
 {
+  error("OpenMpAssembler::assemble_interior_facets is not implemented.");
+  /*
+
   // Skip assembly if there are no interior facet integrals
   if (ufc.form.num_interior_facet_integrals() == 0)
     return;
@@ -412,6 +415,7 @@ void OpenMpAssembler::assemble_interior_facets(GenericTensor& A,
 
     p++;
   }
+  */
 }
 //-----------------------------------------------------------------------------
 #endif

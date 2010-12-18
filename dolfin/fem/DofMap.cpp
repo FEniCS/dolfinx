@@ -18,8 +18,8 @@
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshData.h>
-#include "UFC.h"
 #include "UFCCell.h"
+#include "UFCMesh.h"
 #include "DofMapBuilder.h"
 #include "DofMap.h"
 

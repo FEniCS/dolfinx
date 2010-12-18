@@ -18,12 +18,12 @@
 namespace dolfin
 {
 
+  class Cell;
   class FiniteElement;
+  class Form;
   class FunctionSpace;
   class GenericFunction;
   class Mesh;
-  class Cell;
-  class Form;
 
   /// This class is a simple data structure that holds data used
   /// during assembly of a given UFC form. Data is created for each
@@ -97,18 +97,6 @@ namespace dolfin
 
     // Local tensor for macro element
     boost::scoped_array<double> macro_A;
-
-    // std::vector for local dimensions for each argument
-    boost::scoped_array<uint> local_dimensions;
-
-    // Local dimensions of macro element for primary arguments
-    boost::scoped_array<uint> macro_local_dimensions;
-
-    // Mapped dofs for primary arguments
-    uint** dofs;
-
-    // Mapped dofs of macro element for primary arguments
-    uint** macro_dofs;
 
     // Coefficients
     double** w;

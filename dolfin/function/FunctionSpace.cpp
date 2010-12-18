@@ -17,7 +17,7 @@
 #include <dolfin/common/NoDeleter.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/fem/UFC.h>
+#include <dolfin/fem/UFCCell.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/Mesh.h>

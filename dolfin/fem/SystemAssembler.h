@@ -117,7 +117,8 @@ namespace dolfin
                                         const Scratch& data);
 
     static void apply_bc(double* A, double* b, const uint* indicators,
-                         const double* g, uint** global_dofs, const uint* dims);
+                         const double* g,
+                         const std::vector<const std::vector<uint>* > global_dofs);
 
     // Class to hold temporary data
     class Scratch

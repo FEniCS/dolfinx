@@ -14,7 +14,6 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
-#include "UFC.h"
 #include "Form.h"
 
 using namespace dolfin;
