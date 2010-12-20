@@ -36,7 +36,8 @@
 
 using namespace dolfin;
 
-const std::set<std::string> DirichletBC::methods = boost::assign::list_of("topological")("geometric")("pointwise");
+const std::set<std::string> DirichletBC::methods
+            = boost::assign::list_of("topological")("geometric")("pointwise");
 
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(const FunctionSpace& V,
@@ -769,8 +770,11 @@ bool DirichletBC::on_facet(double* coordinates, Facet& facet) const
   return false;
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::get_bc(uint* indicators, double* values) const
+void DirichletBC::get_bc(std::vector<bool>& indicators,
+                         std::vector<double>& values) const
 {
+  // FIXME: Should we use an unordered_map here?
+
   // A map to hold the mapping from boundary dofs to boundary values
   std::map<uint, double> boundary_values;
 
@@ -781,11 +785,10 @@ void DirichletBC::get_bc(uint* indicators, double* values) const
   compute_bc(boundary_values, data);
 
   std::map<uint, double>::const_iterator boundary_value;
-  uint i = 0;
   for (boundary_value = boundary_values.begin(); boundary_value != boundary_values.end(); ++boundary_value)
   {
-    i = boundary_value->first;
-    indicators[i] = 1;
+    const uint i = boundary_value->first;
+    indicators[i] = true;
     values[i] = boundary_value->second;
   }
 }

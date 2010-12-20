@@ -116,13 +116,15 @@ namespace dolfin
                 uint sub_domain,
                 std::string method="topological");
 
-    // Create boundary condition for subdomain by boundary markers (cells, local facet numbers)
+    /// Create boundary condition for subdomain by boundary markers
+    /// (cells, local facet numbers)
     DirichletBC(const FunctionSpace& V,
                 const GenericFunction& g,
                 const std::vector<std::pair<uint, uint> >& markers,
                 std::string method="topological");
 
-    // Create boundary condition for subdomain by boundary markers (cells, local facet numbers)
+    /// Create boundary condition for subdomain by boundary markers
+    /// (cells, local facet numbers)
     DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                 boost::shared_ptr<const GenericFunction> g,
                 const std::vector<std::pair<uint, uint> >& markers,
@@ -150,12 +152,15 @@ namespace dolfin
     void apply(GenericVector& b, const GenericVector& x) const;
 
     /// Apply boundary condition to a linear system for a nonlinear problem
-    void apply(GenericMatrix& A, GenericVector& b, const GenericVector& x) const;
+    void apply(GenericMatrix& A, GenericVector& b,
+               const GenericVector& x) const;
 
-    /// Make row associated with boundary conditions zero, useful for non-diagonal matrices in a block matrix.
+    /// Make row associated with boundary conditions zero, useful for
+    /// non-diagonal matrices in a block matrix.
     void zero(GenericMatrix& A) const;
 
-    /// Return boundary markers (facets stored as pairs of cells and local facet numbers)
+    /// Return boundary markers (facets stored as pairs of cells and local
+    /// facet numbers)
     const std::vector<std::pair<uint, uint> >& markers();
 
     /// Return boundary value g
@@ -166,9 +171,11 @@ namespace dolfin
     boost::shared_ptr<const GenericFunction> value_ptr();
 
     /// Get Dirichlet values and indicators
-    void get_bc(uint* indicators, double* values) const;
+    void get_bc(std::vector<bool>& indicators,
+                std::vector<double>& values) const;
 
-    /// Check if given function is compatible with boundary condition (checking only vertex values)
+    /// Check if given function is compatible with boundary condition
+    /// (checking only vertex values)
     bool is_compatible(GenericFunction& v) const;
 
     /// Set value g for boundary condition, domain remains unchanged
@@ -203,7 +210,8 @@ namespace dolfin
     void init_from_sub_domain(boost::shared_ptr<const SubDomain> sub_domain);
 
     // Initialize sub domain markers from MeshFunction
-    void init_from_mesh_function(const MeshFunction<uint>& sub_domains, uint sub_domain);
+    void init_from_mesh_function(const MeshFunction<uint>& sub_domains,
+                                 uint sub_domain);
 
     // Initialize sub domain markers from mesh
     void init_from_mesh(uint sub_domain);

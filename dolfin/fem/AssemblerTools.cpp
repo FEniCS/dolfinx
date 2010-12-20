@@ -20,11 +20,10 @@
 #include <dolfin/function/GenericFunction.h>
 #include "GenericDofMap.h"
 #include "Form.h"
-#include "UFC.h"
-#include "AssemblerTools.h"
 #include "SparsityPatternBuilder.h"
-#include "DirichletBC.h"
+//#include "DirichletBC.h"
 #include "FiniteElement.h"
+#include "AssemblerTools.h"
 
 using namespace dolfin;
 

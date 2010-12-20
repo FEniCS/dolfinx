@@ -104,21 +104,23 @@ namespace dolfin
 
     static void assemble_interior_facet(GenericMatrix& A, GenericVector& b,
                                         UFC& A_ufc, UFC& b_ufc,
-                                        const Form& a,
-                                        const Form& L,
-                                        const Cell& cell0, const Cell& cell1, const Facet& facet,
-                                        const Scratch& data);
+                                        const Form& a, const Form& L,
+                                        const Cell& cell0, const Cell& cell1,
+                                        const Facet& facet,
+                                        Scratch& data);
 
     static void assemble_exterior_facet(GenericMatrix& A, GenericVector& b,
                                         UFC& A_ufc, UFC& b_ufc,
                                         const Form& a,
                                         const Form& L,
                                         const Cell& cell, const Facet& facet,
-                                        const Scratch& data);
+                                        Scratch& data);
 
-    static void apply_bc(double* A, double* b, const uint* indicators,
-                         const double* g,
-                         const std::vector<const std::vector<uint>* > global_dofs);
+    static void apply_bc(double* A,
+                         double* b,
+                         const std::vector<bool>& bc_indicators,
+                         const std::vector<double>& bc_values,
+                         const std::vector<const std::vector<uint>* >& global_dofs);
 
     // Class to hold temporary data
     class Scratch
@@ -127,18 +129,14 @@ namespace dolfin
 
       Scratch(const Form& a, const Form& L);
 
-      Scratch(const Scratch& data);
-
       ~Scratch();
 
       void zero_cell();
 
-      uint A_num_entries, b_num_entries;
-
-      double* Ae;
-      double* be;
-      uint* indicators;
-      double* g;
+      std::vector<double> Ae;
+      std::vector<double> be;
+      std::vector<bool>   bc_indicators;
+      std::vector<double> bc_values;
     };
 
   };

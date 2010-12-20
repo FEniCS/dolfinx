@@ -10,7 +10,7 @@
 #ifndef __ASSEMBLER_TOOLS_H
 #define __ASSEMBLER_TOOLS_H
 
-#include <vector>
+#include <string>
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -19,7 +19,6 @@ namespace dolfin
   // Forward declarations
   class GenericTensor;
   class Form;
-  class UFC;
 
   /// This class provides some common functions used in the
   /// Assembler and SystemAssembler classes.
