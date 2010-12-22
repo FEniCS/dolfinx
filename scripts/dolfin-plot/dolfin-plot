@@ -7,7 +7,9 @@ __date__ = "2010-12-08"
 __copyright__ = "Copyright (C) 2010 " + __author__
 __license__  = "GNU GPL version 3 or any later version"
 
-# Last changed: 2010-12-08
+# Modified by Marie E. Rognes (meg@simula.no), 2010
+
+# Last changed: 2010-12-22
 
 import sys
 
@@ -92,7 +94,7 @@ if len(args) == 1:
     sys.exit(0)
 
 # Check for plotting of element
-if len(args) in (2, 3):
+if len(args) in (2, 3, 4):
 
     # Get family and domain
     family, domain = args[:2]
@@ -103,14 +105,25 @@ if len(args) in (2, 3):
     else:
         degree = int(args[2])
 
-    # Check for rotate option
-    rotate = 1
-    if "rotate" in options:
-        rotate = int(options["rotate"])
 
     # Create element
     print "Creating finite element."
-    element = FiniteElement(family, domain, degree)
+
+    if len(args) == 3:
+        element = FiniteElement(family, domain, degree)
+    elif len(args) == 4:
+        assert family == "P Lambda" or family == "P- Lambda"
+        form_degree = int(args[3])
+        element = FiniteElement(family, domain, degree, form_degree)
+    else:
+        pass
+
+    # Rotate by default in 3D
+    rotate = 1 if str(domain) == "tetrahedron" else 0
+
+    # Check for rotate option
+    if "rotate" in options:
+        rotate = int(options["rotate"])
 
     # Plot element
     print "Plotting finite element."
