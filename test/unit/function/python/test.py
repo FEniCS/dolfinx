@@ -11,7 +11,9 @@ from math   import sin
 from numpy  import array, zeros
 
 mesh = UnitCube(8, 8, 8)
-V = FunctionSpace(mesh,'CG',1)
+V = FunctionSpace(mesh, 'CG', 1)
+
+W = VectorFunctionSpace(mesh, 'CG', 1)
 
 class Eval(unittest.TestCase):
 
@@ -165,7 +167,7 @@ class Instantiation(unittest.TestCase):
           self.assertRaises(TypeError, wrongEvalAttribute)
           #self.assertRaises(TypeError, wrongEvalDataAttribute)
           self.assertRaises(TypeError, wrongArgs)
-          self.assertRaises(ValueError, wrongElement)
+          #self.assertRaises(ValueError, wrongElement)
           self.assertRaises(DeprecationWarning, deprecationWarning)
 
 
