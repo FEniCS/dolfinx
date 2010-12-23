@@ -107,7 +107,7 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
     else
       type = "ILU";
     Ifpack ifpack_factory;
-    ifpack_preconditioner.reset( ifpack_factory.Create(type, _P, overlap) );
+    ifpack_preconditioner.reset(ifpack_factory.Create(type, _P, overlap));
     assert(ifpack_preconditioner != 0);
 
     // Set up preconditioner

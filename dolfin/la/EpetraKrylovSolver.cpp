@@ -7,6 +7,8 @@
 
 #ifdef HAS_TRILINOS
 
+#include <boost/assign/list_of.hpp>
+
 #include <dolfin/main/MPI.h>
 
 #include <Epetra_ConfigDefs.h>
@@ -20,7 +22,6 @@
 #include <AztecOO.h>
 #include <Epetra_LinearProblem.h>
 
-#include <boost/assign/list_of.hpp>
 #include <dolfin/log/dolfin_log.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
@@ -55,7 +56,7 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method, std::string pc_type)
   parameters = default_parameters();
 
   // Check that requsted solver is supported
-  if (methods.count(method) == 0 )
+  if (methods.count(method) == 0)
     error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str());
 
   // Set solver type
@@ -73,7 +74,7 @@ EpetraKrylovSolver::EpetraKrylovSolver(std::string method,
   parameters = default_parameters();
 
   // Check that requsted solver is supported
-  if (methods.count(method) == 0 )
+  if (methods.count(method) == 0)
     error("Requested EpetraKrylovSolver method '%s' in unknown", method.c_str());
 
   // Set solver type
@@ -152,16 +153,22 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
 
   // Start solve
   solver->Iterate(parameters["maximum_iterations"], parameters["relative_tolerance"]);
+
+  // Check solve status
   const double* status = solver->GetAztecStatus();
   if ((int) status[AZ_why] != AZ_normal)
   {
-    bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
+    const bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
     if (error_on_nonconvergence)
+    {
       error("Epetra (Aztec00) Krylov solver failed to converge (error code %i).",
             status[AZ_why]);
+    }
     else
+    {
       warning("Epetra (Aztec00) Krylov solver failed to converge (error code %i).",
               status[AZ_why]);
+    }
   }
   else
   {
@@ -169,7 +176,8 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
           method.c_str(), preconditioner->name().c_str(), solver->NumIters());
   }
 
-  return solver->NumIters();}
+  return solver->NumIters();
+}
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraKrylovSolver::solve(const GenericMatrix& A, GenericVector& x,
                                        const GenericVector& b)
