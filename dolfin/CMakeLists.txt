@@ -203,7 +203,7 @@ add_definitions(${DOLFIN_CXX_DEFINITIONS})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
 
 # Define libraries
-add_library(dolfin SHARED ${DOLFIN_H} ${HEADERS} ${SOURCES})
+add_library(dolfin ${DOLFIN_H} ${HEADERS} ${SOURCES})
 set_target_properties(dolfin PROPERTIES ${DOLFIN_LIBRARY_PROPERTIES})
 
 # FIXME: GNW: What link flags are we adding? Is this platform-independent?
