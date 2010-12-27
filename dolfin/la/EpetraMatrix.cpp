@@ -90,8 +90,8 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   // Get number of non-zeroes per row (on and off diagonal)
   std::vector<uint> dnum_nonzeros(num_local_rows);
   std::vector<uint> onum_nonzeros(num_local_rows);
-  sparsity_pattern.num_nonzeros_diagonal(&dnum_nonzeros[0]);
-  sparsity_pattern.num_nonzeros_off_diagonal(&onum_nonzeros[0]);
+  sparsity_pattern.num_nonzeros_diagonal(dnum_nonzeros);
+  sparsity_pattern.num_nonzeros_off_diagonal(onum_nonzeros);
 
   // Create row map
   EpetraFactory& f = EpetraFactory::instance();

@@ -148,23 +148,29 @@ dolfin::uint SparsityPattern::num_nonzeros() const
   return nz;
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::num_nonzeros_diagonal(uint* num_nonzeros) const
+void SparsityPattern::num_nonzeros_diagonal(std::vector<uint>& num_nonzeros) const
 {
   // Check rank
   if (shape.size() != 2)
     error("Non-zero entries per row can be computed for matrices only.");
 
-  // Compute number of nonzeros per row
+  // Resize vector
+  num_nonzeros.resize(diagonal.size());
+
+  // Get number of nonzeros per row
   typedef std::vector<set_type>::const_iterator row_it;
   for (row_it row = diagonal.begin(); row != diagonal.end(); ++row)
     num_nonzeros[row - diagonal.begin()] = row->size();
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::num_nonzeros_off_diagonal(uint* num_nonzeros) const
+void SparsityPattern::num_nonzeros_off_diagonal(std::vector<uint>& num_nonzeros) const
 {
   // Check rank
   if (shape.size() != 2)
     error("Non-zero entries per row can be computed for matrices only.");
+
+  // Resize vector
+  num_nonzeros.resize(diagonal.size());
 
   // Compute number of nonzeros per row
   typedef std::vector<set_type>::const_iterator row_it;

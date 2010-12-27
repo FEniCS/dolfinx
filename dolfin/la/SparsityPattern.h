@@ -34,8 +34,6 @@ namespace dolfin
 
   public:
 
-    enum Type {sorted, unsorted};
-
     /// Create empty sparsity pattern
     SparsityPattern();
 
@@ -59,11 +57,11 @@ namespace dolfin
 
     /// Fill array with number of nonzeros for diagonal block in local_range for dimension 0
     /// For matrices, fill array with number of nonzeros per local row for diagonal block
-    void num_nonzeros_diagonal(uint* num_nonzeros) const;
+    void num_nonzeros_diagonal(std::vector<uint>& num_nonzeros) const;
 
     /// Fill array with number of nonzeros for off-diagonal block in local_range for dimension 0
     /// For matrices, fill array with number of nonzeros per local row for off-diagonal block
-    void num_nonzeros_off_diagonal(uint* num_nonzeros) const;
+    void num_nonzeros_off_diagonal(std::vector<uint>& num_nonzeros) const;
 
     /// Finalize sparsity pattern
     void apply();

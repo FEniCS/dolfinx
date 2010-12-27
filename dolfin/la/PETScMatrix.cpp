@@ -117,19 +117,36 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
   if (row_range.first == 0 && row_range.second == M)
   {
     // Get number of nonzeros for each row from sparsity pattern
-    uint* num_nonzeros = new uint[M];
-    assert(num_nonzeros);
+    std::vector<uint> num_nonzeros(M);
     sparsity_pattern.num_nonzeros_diagonal(num_nonzeros);
 
-    // FIXME: Does this need to be cleaned up? Seems like a mix of
-    // FIXME: of MatSeqAIJ and MatSetFromOptions?
+    // Create matrix
+    MatCreate(PETSC_COMM_SELF, A.get());
 
-    // FIXME: It can be cleaned up with PETSc 3 since the matrix
-    //        does not have to be set for different linear solvers
+    // Set size
+    MatSetSizes(*A, M, N, M, N);
 
-    // Initialize PETSc matrix
-    MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, PETSC_NULL,
-                    reinterpret_cast<int*>(num_nonzeros), A.get());
+    // Set matrix type
+    MatSetType(*A, MATSEQAIJ);
+
+    // Allocate space (using data from sparsity pattern)
+    MatSeqAIJSetPreallocation(*A, PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros[0]));
+
+    // Set column indices
+    /*
+    std::vector<std::vector<uint> > _column_indices = sparsity_pattern.diagonal_pattern(SparsityPattern::unsorted);
+    std::vector<int> column_indices(sparsity_pattern.num_nonzeros());
+    uint k = 0;
+    for (uint i = 0; i < _column_indices.size(); ++i)
+    {
+      for (uint j = 0; j < _column_indices[i].size(); ++j)
+        column_indices[k++] = _column_indices[i][j];
+    }
+    //MatSeqAIJSetColumnIndices(*A, reinterpret_cast<int*>(&column_indices[0]));
+
+    // Do not allow new nonzero entries
+    //MatSetOption(*A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
+    */
 
     // Set some options
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
@@ -137,32 +154,36 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     #else
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
     #endif
-    MatZeroEntries(*A);
 
-    // Cleanup
-    delete [] num_nonzeros;
+    MatSetFromOptions(*A);
   }
   else
   {
+    // FIXME: Try using MatStashSetInitialSize to optimise performance
+
     //info("Initializing parallel PETSc matrix (MPIAIJ) of size %d x %d.", M, N);
     //info("Local range is [%d, %d] x [%d, %d].",
     //     row_range.first, row_range.second, col_range.first, col_range.second);
 
     // Get number of nonzeros for each row from sparsity pattern
-    uint* num_nonzeros_diagonal = new uint[m];
-    uint* num_nonzeros_off_diagonal = new uint[n];
-    assert(num_nonzeros_diagonal);
-    assert(num_nonzeros_off_diagonal);
+    std::vector<uint> num_nonzeros_diagonal(m);
+    std::vector<uint> num_nonzeros_off_diagonal(n);
     sparsity_pattern.num_nonzeros_diagonal(num_nonzeros_diagonal);
     sparsity_pattern.num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
 
-    // Initialize PETSc matrix (MPIAIJ)
-    MatCreateMPIAIJ(PETSC_COMM_WORLD,
-                    m, n,
-                    M, N,
-                    PETSC_NULL, reinterpret_cast<int*>(num_nonzeros_diagonal),
-                    PETSC_NULL, reinterpret_cast<int*>(num_nonzeros_off_diagonal),
-                    A.get());
+    // Create matrix
+    MatCreate(PETSC_COMM_WORLD, A.get());
+
+    // Set size
+    MatSetSizes(*A, m, n, M, N);
+
+    // Set matrix type
+    MatSetType(*A, MATMPIAIJ);
+
+    // Allocate space (using data from sparsity pattern)
+    MatMPIAIJSetPreallocation(*A,
+               PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros_diagonal[0]),
+               PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros_off_diagonal[0]));
 
     // Set some options
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
@@ -170,11 +191,8 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     #else
     MatSetOption(*A, MAT_KEEP_ZEROED_ROWS, PETSC_TRUE);
     #endif
-    MatZeroEntries(*A);
 
-    // Cleanup
-    delete [] num_nonzeros_diagonal;
-    delete [] num_nonzeros_off_diagonal;
+    MatSetFromOptions(*A);
   }
 }
 //-----------------------------------------------------------------------------

@@ -105,14 +105,26 @@ uint EpetraSparsityPattern::num_nonzeros() const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void EpetraSparsityPattern::num_nonzeros_diagonal(uint* num_nonzeros) const
+void EpetraSparsityPattern::num_nonzeros_diagonal(std::vector<uint>& num_nonzeros) const
 {
   dolfin_not_implemented();
 }
 //-----------------------------------------------------------------------------
-void EpetraSparsityPattern::num_nonzeros_off_diagonal(uint* num_nonzeros) const
+void EpetraSparsityPattern::num_nonzeros_off_diagonal(std::vector<uint>& num_nonzeros) const
 {
   dolfin_not_implemented();
+}
+//-----------------------------------------------------------------------------
+std::vector<std::vector<uint> > EpetraSparsityPattern::diagonal_pattern(Type type) const
+{
+  dolfin_not_implemented();
+  return std::vector<std::vector<uint> >(0);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::vector<uint> > EpetraSparsityPattern::off_diagonal_pattern(Type type) const
+{
+  dolfin_not_implemented();
+  return std::vector<std::vector<uint> >(0);
 }
 //-----------------------------------------------------------------------------
 void EpetraSparsityPattern::apply()

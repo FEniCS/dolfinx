@@ -88,7 +88,7 @@ int MatrixRenumbering::num_local_objects() const
   return sparsity_pattern.size(0);
 }
 //-----------------------------------------------------------------------------
-void MatrixRenumbering::num_edges_per_vertex(uint* num_edges) const
+void MatrixRenumbering::num_edges_per_vertex(std::vector<uint>& num_edges) const
 {
   sparsity_pattern.num_nonzeros_diagonal(num_edges);
 }
@@ -132,7 +132,13 @@ void MatrixRenumbering::get_number_edges(void *data, int num_gid_entries,
   //assert(num_gid_entries == objs->num_global_objects());
   //assert(num_lid_entries == objs->num_local_objects());
 
-  objs->num_edges_per_vertex(reinterpret_cast<uint*>(num_edges));
+  // Get number of edges for each graph vertex
+  std::vector<uint> number_edges;
+  objs->num_edges_per_vertex(number_edges);
+
+  // Fill array num_edges array
+  for (uint i = 0; i < number_edges.size(); ++i)
+    num_edges[i] = number_edges[i];
 }
 //-----------------------------------------------------------------------------
 void MatrixRenumbering::get_all_edges(void *data, int num_gid_entries,

@@ -61,9 +61,9 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
                        local_graph);
   cout << "Finished computing local cell-cell connections" << endl;
 
-  ///-----------------------------------------------
-  /// The rest only applies when running in parallel
-  ///-----------------------------------------------
+  //-----------------------------------------------
+  // The rest only applies when running in parallel
+  //-----------------------------------------------
 
   // Determine candidate ghost cells (graph ghost vertices)
   info("Preparing data to to send off-process.");

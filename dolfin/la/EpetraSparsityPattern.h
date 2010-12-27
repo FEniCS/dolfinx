@@ -12,6 +12,7 @@
 
 #ifdef HAS_TRILINOS
 
+#include <vector>
 #include <dolfin/common/types.h>
 #include "GenericSparsityPattern.h"
 
@@ -58,11 +59,19 @@ namespace dolfin
 
     /// Fill array with number of nonzeros for diagonal block in local_range for dimension 0
     /// For matrices, fill array with number of nonzeros per local row for diagonal block
-    void num_nonzeros_diagonal(uint* num_nonzeros) const;
+    void num_nonzeros_diagonal(std::vector<uint>& num_nonzeros) const;
 
     /// Fill array with number of nonzeros for off-diagonal block in local_range for dimension 0
     /// For matrices, fill array with number of nonzeros per local row for off-diagonal block
-    void num_nonzeros_off_diagonal(uint* num_nonzeros) const;
+    void num_nonzeros_off_diagonal(std::vector<uint>& num_nonzeros) const;
+
+    /// Return underlying sparsity pattern (diagonal). Options are
+    /// 'sorted' and 'unsorted'.
+    std::vector<std::vector<uint> > diagonal_pattern(Type type) const;
+
+    /// Return underlying sparsity pattern (off-diagional). Options are
+    /// 'sorted' and 'unsorted'.
+    std::vector<std::vector<uint> > off_diagonal_pattern(Type type) const;
 
     /// Finalize sparsity pattern
     void apply();
