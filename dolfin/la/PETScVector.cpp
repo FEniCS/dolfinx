@@ -215,7 +215,7 @@ void PETScVector::get_local(double* block, uint m, const uint* rows) const
 {
   assert(x);
   int _m = static_cast<int>(m);
-  const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
+  const int* _rows = reinterpret_cast<const int*>(rows);
 
   // Handle case that m = 0 (VecGetValues is collective -> must be called be
   //                         all processes)
@@ -233,9 +233,6 @@ void PETScVector::get_local(double* block, uint m, const uint* rows) const
   }
   else
   {
-    //x_ghosted.reset(new Vec, PETScVectorDeleter());
-    //VecGhostGetLocalForm(*x, x_ghosted.get());
-
     assert(x_ghosted);
 
     // Get local range
@@ -266,7 +263,7 @@ void PETScVector::set(const double* block, uint m, const uint* rows)
 {
   assert(x);
   int _m =  static_cast<int>(m);
-  const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
+  const int* _rows = reinterpret_cast<const int*>(rows);
   if (m == 0)
   {
     _rows = &_m;
@@ -280,7 +277,7 @@ void PETScVector::add(const double* block, uint m, const uint* rows)
 {
   assert(x);
   int _m =  static_cast<int>(m);
-  const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
+  const int* _rows = reinterpret_cast<const int*>(rows);
   if (m == 0)
   {
     _rows = &_m;
@@ -560,7 +557,7 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
     error("PETScVector::gather can only gather into local vectors");
 
   // Prepare data for index sets (global indices)
-  const int* global_indices = reinterpret_cast<int*>(const_cast<uint*>(indices.data().get()));
+  const int* global_indices = reinterpret_cast<const int*>(indices.data().get());
 
   // Prepare data for index sets (local indices)
   const int n = indices.size();

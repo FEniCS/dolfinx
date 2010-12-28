@@ -217,8 +217,8 @@ void PETScMatrix::get(double* block,
 
   assert(A);
   MatGetValues(*A,
-               static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)),
-               static_cast<int>(n), reinterpret_cast<int*>(const_cast<uint*>(cols)),
+               static_cast<int>(m), reinterpret_cast<const int*>(rows),
+               static_cast<int>(n), reinterpret_cast<const int*>(cols),
                block);
 }
 //-----------------------------------------------------------------------------
@@ -228,8 +228,8 @@ void PETScMatrix::set(const double* block,
 {
   assert(A);
   MatSetValues(*A,
-               static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)),
-               static_cast<int>(n), reinterpret_cast<int*>(const_cast<uint*>(cols)),
+               static_cast<int>(m), reinterpret_cast<const int*>(rows),
+               static_cast<int>(n), reinterpret_cast<const int*>(cols),
                block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
@@ -239,8 +239,8 @@ void PETScMatrix::add(const double* block,
 {
   assert(A);
   MatSetValues(*A,
-               static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)),
-               static_cast<int>(n), reinterpret_cast<int*>(const_cast<uint*>(cols)),
+               static_cast<int>(m), reinterpret_cast<const int*>(rows),
+               static_cast<int>(n), reinterpret_cast<const int*>(cols),
                block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
@@ -288,21 +288,8 @@ void PETScMatrix::setrow(uint row,
   if (n == 0)
     return;
 
-  // Assign values to arrays
-  uint* cols = new uint[n];
-  double* vals = new double[n];
-  for (uint j = 0; j < n; j++)
-  {
-    cols[j] = columns[j];
-    vals[j] = values[j];
-  }
-
   // Set values
-  set(vals, 1, &row, n, cols);
-
-  // Free temporary storage
-  delete [] cols;
-  delete [] vals;
+  set(&values[0], 1, &row, n, &columns[0]);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero(uint m, const uint* rows)
@@ -310,7 +297,8 @@ void PETScMatrix::zero(uint m, const uint* rows)
   assert(A);
 
   IS is = 0;
-  ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), &is);
+  ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m),
+                  reinterpret_cast<const int*>(rows), &is);
   PetscScalar null = 0.0;
   MatZeroRowsIS(*A, is, null);
   ISDestroy(is);
@@ -321,7 +309,8 @@ void PETScMatrix::ident(uint m, const uint* rows)
   assert(A);
 
   IS is = 0;
-  ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m), reinterpret_cast<int*>(const_cast<uint*>(rows)), &is);
+  ISCreateGeneral(PETSC_COMM_SELF, static_cast<int>(m),
+                  reinterpret_cast<const int*>(rows), &is);
   PetscScalar one = 1.0;
   MatZeroRowsIS(*A, is, one);
   ISDestroy(is);

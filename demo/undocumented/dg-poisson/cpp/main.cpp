@@ -35,8 +35,8 @@ int main()
 
     void eval(Array<double>& values, const Array<double>& x) const
     {
-      double dx = x[0] - 0.5;
-      double dy = x[1] - 0.5;
+      const double dx = x[0] - 0.5;
+      const double dy = x[1] - 0.5;
       values[0] = 500.0*exp(-(dx*dx + dy*dy)/0.02);
     }
 

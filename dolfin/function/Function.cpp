@@ -12,7 +12,6 @@
 #include <map>
 #include <utility>
 #include <boost/assign/list_of.hpp>
-#include <boost/scoped_array.hpp>
 
 #include <dolfin/adaptivity/Extrapolation.h>
 #include <dolfin/common/utils.h>
@@ -206,10 +205,10 @@ Function& Function::operator[] (uint i) const
   {
     // Extract function subspace
     std::vector<uint> component = boost::assign::list_of(i);
-    boost::shared_ptr<const FunctionSpace> sub_space(this->function_space().extract_sub_space(component));
+    boost::shared_ptr<const FunctionSpace> sub_space(_function_space->extract_sub_space(component));
 
     // Insert sub-Function into map and return reference
-    sub_functions.insert(i, new Function(sub_space, this->_vector));
+    sub_functions.insert(i, new Function(sub_space, _vector));
     return *(sub_functions.find(i)->second);
   }
 }
@@ -262,7 +261,7 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
 
   // Find the cell that contains x
   const double* _x = x.data().get();
-  Point point(_function_space->mesh().geometry().dim(), _x);
+  const Point point(_function_space->mesh().geometry().dim(), _x);
   int id = _function_space->mesh().any_intersected_entity(point);
 
   // If not found, use the closest cell
@@ -280,10 +279,11 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
     }
   }
 
-  Cell cell(_function_space->mesh(), id);
-  UFCCell ufc_cell(cell);
+  // Create cell that contains point
+  const Cell cell(_function_space->mesh(), id);
+  const UFCCell ufc_cell(cell);
 
-  // Evaluate function
+  // Call evaluate function
   eval(values, x, cell, ufc_cell);
 }
 //-----------------------------------------------------------------------------
@@ -292,9 +292,13 @@ void Function::eval(Array<double>& values,
                     const Cell& dolfin_cell,
                     const ufc::cell& ufc_cell) const
 {
+  // Developer note: work arrays/vectors are re-created each time this function
+  //                 is called for thread-safety
+
   const FiniteElement& element = _function_space->element();
 
-  // FIXME: Rather than computing num_tensor_entries, we could just use values.size()
+  // FIXME: Rather than computing num_tensor_entries, we could just use
+  //        values.size()
 
   // Compute in tensor (one for scalar function, . . .)
   uint num_tensor_entries = 1;
@@ -303,14 +307,14 @@ void Function::eval(Array<double>& values,
 
   assert(values.size() == num_tensor_entries);
 
-  // Create array for basis
-  boost::scoped_array<double> basis(new double[num_tensor_entries]);
-
-  // Create array for expansion coefficients
-  boost::scoped_array<double> coefficients(new double[element.space_dimension()]);
+  // Create work vector for expansion coefficients
+  std::vector<double> coefficients(element.space_dimension());
 
   // Restrict function to cell
-  restrict(coefficients.get(), element, dolfin_cell, ufc_cell);
+  restrict(&coefficients[0], element, dolfin_cell, ufc_cell);
+
+  // Create work vector for basis
+  std::vector<double> basis(num_tensor_entries);
 
   // Initialise values
   for (uint j = 0; j < num_tensor_entries; ++j)
@@ -319,7 +323,7 @@ void Function::eval(Array<double>& values,
   // Compute linear combination
   for (uint i = 0; i < element.space_dimension(); ++i)
   {
-    element.evaluate_basis(i, basis.get(), &x[0], ufc_cell);
+    element.evaluate_basis(i, &basis[0], &x[0], ufc_cell);
     for (uint j = 0; j < num_tensor_entries; ++j)
       values[j] += coefficients[i]*basis[j];
   }
@@ -330,7 +334,10 @@ void Function::interpolate(const GenericFunction& v)
   // Gather off-process dofs
   v.gather();
 
+  // Initialise vector
   init_vector();
+
+  // Interpolate
   function_space().interpolate(*_vector, v);
 }
 //-----------------------------------------------------------------------------
@@ -357,7 +364,7 @@ void Function::eval(Array<double>& values, const Array<double>& x,
   // Check if UFC cell comes from mesh, otherwise redirect to point-based evaluation
   if (ufc_cell.mesh_identifier == (int) _function_space->mesh().id())
   {
-    Cell cell(_function_space->mesh(), ufc_cell.index);
+    const Cell cell(_function_space->mesh(), ufc_cell.index);
     eval(values, x, cell, ufc_cell);
   }
   else
@@ -376,7 +383,8 @@ void Function::restrict(double* w,
   if (_function_space->has_element(element) && _function_space->has_cell(dolfin_cell))
   {
     // Get dofmap for cell
-    const std::vector<uint>& dofs = _function_space->dofmap().cell_dofs(dolfin_cell.index());
+    const GenericDofMap& dofmap = _function_space->dofmap();
+    const std::vector<uint>& dofs = dofmap.cell_dofs(dolfin_cell.index());
 
     // Pick values from vector(s)
     _vector->get_local(w, dofs.size(), &dofs[0]);
@@ -393,7 +401,7 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
 {
   assert(&mesh == &_function_space->mesh());
 
-  // Gather ghots dofs
+  // Gather ghosts dofs
   gather();
 
   // Get finite element
@@ -407,11 +415,11 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
   for (uint i = 0; i < element.value_rank(); i++)
     num_tensor_entries *= element.value_dimension(i);
 
-  // Create array to hold cell vertex values
-  boost::scoped_array<double> cell_vertex_values(new double[num_tensor_entries*num_cell_vertices]);
+  // Create vector to hold cell vertex values
+  std::vector<double> cell_vertex_values(num_tensor_entries*num_cell_vertices);
 
-  // Create array for expansion coefficients
-  boost::scoped_array<double> coefficients(new double[element.space_dimension()]);
+  // Create vector for expansion coefficients
+  std::vector<double> coefficients(element.space_dimension());
 
   // Interpolate vertex values on each cell (using last computed value if not
   // continuous, e.g. discontinuous Galerkin methods)
@@ -422,10 +430,11 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
     ufc_cell.update(*cell);
 
     // Pick values from global vector
-    restrict(coefficients.get(), element, *cell, ufc_cell);
+    restrict(&coefficients[0], element, *cell, ufc_cell);
 
     // Interpolate values at the vertices
-    element.interpolate_vertex_values(cell_vertex_values.get(), coefficients.get(), ufc_cell);
+    element.interpolate_vertex_values(&cell_vertex_values[0],
+                                      &coefficients[0], ufc_cell);
 
     // Copy values to array of vertex values
     for (VertexIterator vertex(*cell); !vertex.end(); ++vertex)
@@ -457,7 +466,7 @@ void Function::init_vector()
   // Get local range
   const uint n0 = range.first;
   const uint n1 = range.second;
-  const uint local_size  = n1 - n0;
+  const uint local_size = n1 - n0;
 
   // Get ghost vertices if vector is distributed
   std::vector<uint> ghost_indices;

@@ -13,6 +13,8 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <boost/scoped_array.hpp>
+
 #include <dolfin/common/types.h>
 
 namespace arma
