@@ -92,9 +92,14 @@ namespace dolfin
     /// Resize vector to size N
     virtual void resize(uint N) = 0;
 
-    /// Resize vector with given range
+    /// Resize vector to global size N, local size n and with ghost values
     virtual void resize(uint N, uint n, const std::vector<uint>& ghost_indices)
-    { error("GenericVector::resize with ghost values not yet implemented." ); }
+    {
+      if (ghost_indices.size() > 0 || N != n)
+        error("GenericVector::resize with ghost values not yet implemented for this backend." );
+      else
+        resize(N);
+    }
 
     /// Return global size of vector
     virtual uint size() const = 0;

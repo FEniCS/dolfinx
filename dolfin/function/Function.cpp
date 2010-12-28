@@ -459,7 +459,7 @@ void Function::init_vector()
   const uint n1 = range.second;
   const uint local_size  = n1 - n0;
 
-  // Get ghost vertices if running in parallel
+  // Get ghost vertices if vector is distributed
   std::vector<uint> ghost_indices;
   if (N != local_size)
     compute_ghost_indices(n0, n1, ghost_indices);
@@ -470,7 +470,6 @@ void Function::init_vector()
     DefaultFactory factory;
     _vector.reset(factory.create_vector());
   }
-
   assert(_vector);
 
   // Initialize vector of dofs

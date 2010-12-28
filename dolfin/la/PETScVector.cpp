@@ -127,7 +127,6 @@ void PETScVector::resize(uint N, uint n, const std::vector<uint>& ghost_indices)
     init(N, n, ghost_indices, "sequential");
   else
     init(N, n, ghost_indices, "mpi");
-
 }
 //-----------------------------------------------------------------------------
 PETScVector* PETScVector::copy() const
