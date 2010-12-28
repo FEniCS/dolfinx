@@ -481,13 +481,9 @@ void Function::compute_off_process_dofs() const
   const uint num_dofs_global = vector().size();
 
   // Iterate over mesh and check which dofs are needed
-  UFCCell ufc_cell(mesh);
   uint i = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    // Update to current cell
-    ufc_cell.update(*cell);
-
     // Get dofs on cell
     const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
 
@@ -524,6 +520,45 @@ void Function::init_vector()
   assert(_vector);
   _vector->resize(N);
   _vector->zero();
+}
+//-----------------------------------------------------------------------------
+void Function::compute_ghost_indices(std::vector<uint>& ghost_indices) const
+{
+  // Clear data
+  ghost_indices.clear();
+
+  // Get process number
+  const uint process_number = MPI::process_number();
+
+  // Get mesh
+  assert(_function_space);
+  const Mesh& mesh = _function_space->mesh();
+
+  // Get dof map
+  const GenericDofMap& dofmap = _function_space->dofmap();
+
+  // Dofs per cell and total dofs
+  const uint num_dofs_per_cell = _function_space->element().space_dimension();
+  const uint num_dofs_global   = vector().size();
+
+  // Iterate over local mesh and check which dofs are needed
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Get dofs on cell
+    const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
+
+    for (uint d = 0; d < num_dofs_per_cell; ++d)
+    {
+      const uint dof = dofs[d];
+      const uint index_owner = MPI::index_owner(dof, num_dofs_global);
+      if (index_owner != process_number)
+      {
+        // FIXME: Could we use dolfin::Set here?
+        if (std::find(ghost_indices.begin(), ghost_indices.end(), dof) == ghost_indices.end())
+          ghost_indices.push_back(dof);
+      }
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void Function::get(double* block, uint m, const uint* rows) const
