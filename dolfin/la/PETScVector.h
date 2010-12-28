@@ -70,8 +70,11 @@ namespace dolfin
 
     //--- Implementation of the GenericVector interface ---
 
-    /// Resize vector ro size N
+    /// Resize vector to size N
     virtual void resize(uint N);
+
+    /// Resize vector to gloabl size N, local size n
+    virtual void resize(uint N, uint n, const std::vector<uint>& ghost_indices);
 
     /// Return size of vector
     virtual uint size() const;
@@ -142,6 +145,8 @@ namespace dolfin
     /// Assignment operator
     virtual const PETScVector& operator= (double a);
 
+    virtual void update_ghost_values();
+
     //--- Special functions ---
 
     /// Return linear algebra backend factory
@@ -166,10 +171,20 @@ namespace dolfin
   private:
 
     // Initialise PETSc vector
-    void init(uint N, uint n, std::string type);
+    void init(uint N, uint n, const std::vector<uint>& ghost_indices,
+              std::string type);
+
+    // Return vector type (sequential/mpi)
+    std::string vector_type() const;
 
     // PETSc Vec pointer
     boost::shared_ptr<Vec> x;
+
+    // PETSc Vec pointer (local ghosted)
+    boost::shared_ptr<Vec> x_ghosted;
+
+    // Global-to-local map for ghost values
+    std::map<uint, uint> ghost_global_to_local;
 
     // PETSc norm types
     static const std::map<std::string, NormType> norm_types;

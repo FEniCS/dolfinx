@@ -45,28 +45,35 @@ const std::map<std::string, NormType> PETScVector::norm_types
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(std::string type)
 {
+  // Empty ghost indices vector
+  const std::vector<uint> ghost_indices;
+
   if (type == "global" && dolfin::MPI::num_processes() > 1)
-    init(0, 0, "mpi");
+    init(0, 0, ghost_indices, "mpi");
   else
-    init(0, 0, "sequential");
+    init(0, 0, ghost_indices, "sequential");
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(uint N, std::string type)
 {
+  // Empty ghost indices vector
+  const std::vector<uint> ghost_indices;
+
   if (type == "global")
   {
     // Get local range
     const std::pair<uint, uint> range = MPI::local_range(N);
+
     if (range.first == 0 && range.second == N)
-      init(N, 0, "sequential");
+      init(N, 0, ghost_indices, "sequential");
     else
     {
       const uint n = range.second - range.first;
-      init(N, n, "mpi");
+      init(N, n, ghost_indices, "mpi");
     }
   }
   else if (type == "local")
-    init(N, 0, "sequential");
+    init(N, 0, ghost_indices, "sequential");
   else
     error("PETScVector type not known.");
 }
@@ -94,24 +101,33 @@ void PETScVector::resize(uint N)
   if (!x)
     error("PETSc vector has not been initialised. Cannot call PETScVector::resize.");
 
-  // Figure out vector type
-  std::string type;
+  // Get vector type string
+  const std::string type = vector_type();
+
   uint n = 0;
-  const VecType petsc_type;
-  VecGetType(*x, &petsc_type);
-  if (strcmp(petsc_type, VECSEQ) == 0)
-    type = "sequential";
-  else if (strcmp(petsc_type, VECMPI) == 0)
+  if (type == "mpi")
   {
     const std::pair<uint, uint> range = MPI::local_range(N);
     n = range.second - range.first;
-    type = "mpi";
   }
-  else
-    error("Unknown PETSc vector type.");
+
+  // Empty ghost indices vector
+  std::vector<uint> ghost_indices;
 
   // Initialise vector
-  init(N, n, type);
+  init(N, n, ghost_indices, vector_type());
+}
+//-----------------------------------------------------------------------------
+void PETScVector::resize(uint N, uint n, const std::vector<uint>& ghost_indices)
+{
+  // Get local range
+  const std::pair<uint, uint> range = MPI::local_range(N);
+
+  if (N == n)
+    init(N, n, ghost_indices, "sequential");
+  else
+    init(N, n, ghost_indices, "mpi");
+
 }
 //-----------------------------------------------------------------------------
 PETScVector* PETScVector::copy() const
@@ -201,13 +217,42 @@ void PETScVector::get_local(double* block, uint m, const uint* rows) const
   assert(x);
   int _m = static_cast<int>(m);
   const int* _rows = reinterpret_cast<int*>(const_cast<uint*>(rows));
+
+  // Handle case that m = 0 (VecGetValues is collective -> must be called be
+  //                         all processes)
   if (m == 0)
   {
     _rows = &_m;
     double tmp = 0.0;
     block = &tmp;
   }
-  VecGetValues(*x, _m, _rows, block);
+
+  // Use VecGetValues if no ghost points, otherwise check for ghost values
+  if (ghost_global_to_local.size() == 0 || m == 0)
+    VecGetValues(*x, _m, _rows, block);
+  else
+  {
+    assert(x_ghosted);
+
+    // Get local range
+    const uint n0 = local_range().first;
+    const uint n1 = local_range().second;
+
+    // Build list of rows, and get from ghosted vector
+    std::vector<int> local_rows(m);
+    for (uint i = 0; i < m; ++i)
+    {
+      if (rows[i] >= n0 &&  rows[i] < n1)
+        local_rows[i] = rows[i] - n0;
+      else
+      {
+        std::map<uint ,uint>::const_iterator local_index = ghost_global_to_local.find(rows[i]);
+        assert(local_index != ghost_global_to_local.end());
+        local_rows[i] = local_index->second + n1;
+      }
+    }
+    VecGetValues(*x_ghosted, _m, &local_rows[0], block);
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set(const double* block, uint m, const uint* rows)
@@ -281,6 +326,9 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
   // Check for self-assignment
   if (this != &v)
   {
+    if (ghost_global_to_local.size())
+      error("PETScVector::operator= needs updating for ghost values.");
+
     x.reset(new Vec, PETScVectorDeleter());
 
     // Create new vector
@@ -297,6 +345,12 @@ const PETScVector& PETScVector::operator= (double a)
   assert(x);
   VecSet(*x, a);
   return *this;
+}
+//-----------------------------------------------------------------------------
+void PETScVector::update_ghost_values()
+{
+  VecGhostUpdateBegin(*x, INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateEnd(*x, INSERT_VALUES, SCATTER_FORWARD);
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator+= (const GenericVector& x)
@@ -532,7 +586,8 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
   VecScatterDestroy(scatter);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(uint N, uint n, std::string type)
+void PETScVector::init(uint N, uint n, const std::vector<uint>& ghost_indices,
+                       std::string type)
 {
   // Create vector
   if (x && !x.unique())
@@ -546,7 +601,22 @@ void PETScVector::init(uint N, uint n, std::string type)
     VecSetFromOptions(*x);
   }
   else if (type == "mpi")
-    VecCreateMPI(PETSC_COMM_WORLD, n, N, x.get());
+  {
+    //VecCreateMPI(PETSC_COMM_WORLD, n, N, x.get());
+    VecCreateGhost(PETSC_COMM_WORLD, n, N, ghost_indices.size(),
+                   reinterpret_cast<const int*>(&ghost_indices[0]), x.get());
+
+    // Clear ghost indices map
+    ghost_global_to_local.clear();
+
+    // Build global-to-local map for ghost indices
+    for (uint i = 0; i < ghost_indices.size(); ++i)
+      ghost_global_to_local[i] = ghost_indices[i];
+
+    // Created ghost view
+    x_ghosted.reset(new Vec, PETScVectorDeleter());
+    VecGhostGetLocalForm(*x, x_ghosted.get());
+  }
   else
     error("Unknown vector type in PETScVector::init.");
 }
@@ -556,10 +626,27 @@ boost::shared_ptr<Vec> PETScVector::vec() const
   return x;
 }
 //-----------------------------------------------------------------------------
+std::string PETScVector::vector_type() const
+{
+  // Get type
+  const VecType petsc_type;
+  VecGetType(*x, &petsc_type);
+
+  // Return type string
+  if (strcmp(petsc_type, VECSEQ) == 0)
+    return  "sequential";
+  else if (strcmp(petsc_type, VECMPI) == 0)
+    return "mpi";
+  else
+  {
+    error("Unknown PETSc vector type.");
+    return "";
+  }
+}
+//-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScVector::factory() const
 {
   return PETScFactory::instance();
 }
 //-----------------------------------------------------------------------------
-
 #endif

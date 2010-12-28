@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <utility>
 #include <vector>
+#include <dolfin/log/log.h>
 #include "GenericSparsityPattern.h"
 #include "GenericTensor.h"
 
@@ -90,6 +91,10 @@ namespace dolfin
 
     /// Resize vector to size N
     virtual void resize(uint N) = 0;
+
+    /// Resize vector with given range
+    virtual void resize(uint N, uint n, const std::vector<uint>& ghost_indices)
+    { error("GenericVector::resize with ghost values not yet implemented." ); }
 
     /// Return global size of vector
     virtual uint size() const = 0;
@@ -181,6 +186,10 @@ namespace dolfin
       error("Unable to return pointer to underlying vector data.");
       return 0;
     }
+
+    /// Update ghost values
+    virtual void update_ghost_values()
+    { error("GenericVector::update_ghost_values not implemented for this backend."); }
 
     //--- Convenience functions ---
 
