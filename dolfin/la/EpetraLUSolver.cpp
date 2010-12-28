@@ -79,10 +79,12 @@ EpetraLUSolver::~EpetraLUSolver()
 void EpetraLUSolver::set_operator(const GenericMatrix& A)
 {
   assert(linear_problem);
+
   const EpetraMatrix& _A = A.down_cast<EpetraMatrix>();
   linear_problem->SetOperator(_A.mat().get());
+
   symbolic_factorized = false;
-  numeric_factorized = false;
+  numeric_factorized  = false;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint EpetraLUSolver::solve(GenericVector& x, const GenericVector& b)

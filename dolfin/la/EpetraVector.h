@@ -12,12 +12,15 @@
 
 #ifdef HAS_TRILINOS
 
+#include <map>
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+
 #include "GenericVector.h"
 
 class Epetra_FEVector;
+class Epetra_MultiVector;
 class Epetra_Map;
 
 namespace dolfin
@@ -75,8 +78,14 @@ namespace dolfin
     /// Resize vector to size N
     virtual void resize(uint N);
 
+    /// Resize vector to global size N, local size n and with ghost values
+    virtual void resize(uint N, uint n, const std::vector<uint>& ghost_indices);
+
     /// Return size of vector
     virtual uint size() const;
+
+    /// Return size of local vector
+    virtual uint local_size() const;
 
     /// Return local ownership range of a vector
     virtual std::pair<uint, uint> local_range() const;
@@ -146,6 +155,8 @@ namespace dolfin
     /// Assignment operator
     virtual const EpetraVector& operator= (double a);
 
+    virtual void update_ghost_values();
+
     //--- Special functions ---
 
     /// Return linear algebra backend factory
@@ -166,6 +177,12 @@ namespace dolfin
 
     // Epetra_FEVector pointer
     boost::shared_ptr<Epetra_FEVector> x;
+
+    // Epetra_FEVector pointer
+    boost::shared_ptr<Epetra_MultiVector> x_ghosted;
+
+    // Global-to-local map for ghost values
+    std::map<uint, uint> ghost_global_to_local;
 
     // Local/global vector
     const std::string type;

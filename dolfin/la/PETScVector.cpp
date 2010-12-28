@@ -155,14 +155,15 @@ void PETScVector::get_local(Array<double>& values) const
 void PETScVector::set_local(const Array<double>& values)
 {
   assert(x);
-
   const uint n0 = local_range().first;
   const uint local_size = local_range().second - local_range().first;
-  assert(values.size() == local_size);
+  if (values.size() != local_size)
+    error("PETScVector::set_local: length of values array is not equal to local vector size.");
 
   if (local_size == 0)
     return;
 
+  // Build array of global indices
   std::vector<int> rows(local_size);
   for (uint i = 0; i < local_size; ++i)
     rows[i] = i + n0;
@@ -175,11 +176,13 @@ void PETScVector::add_local(const Array<double>& values)
   assert(x);
   const uint n0 = local_range().first;
   const uint local_size = local_range().second - local_range().first;
-  assert(values.size() == local_size);
+  if (values.size() != local_size)
+    error("PETScVector::add_local: length of values array is not equal to local vector size.");
 
   if (local_size == 0)
     return;
 
+  // Build array of global indices
   std::vector<int> rows(local_size);
   for (uint i = 0; i < local_size; ++i)
     rows[i] = i + n0;
@@ -248,13 +251,13 @@ void PETScVector::get_local(double* block, uint m, const uint* rows) const
         local_rows[i] = rows[i] - n0;
       else
       {
-        std::map<uint ,uint>::const_iterator local_index = ghost_global_to_local.find(rows[i]);
+        std::map<uint, uint>::const_iterator local_index = ghost_global_to_local.find(rows[i]);
         assert(local_index != ghost_global_to_local.end());
         local_rows[i] = local_index->second + local_size;
       }
     }
 
-    // Pick values from vector
+    // Pick values from ghosted vector
     VecGetValues(*x_ghosted, _m, &local_rows[0], block);
   }
 }
@@ -309,6 +312,14 @@ dolfin::uint PETScVector::size() const
   return static_cast<uint>(n);
 }
 //-----------------------------------------------------------------------------
+dolfin::uint PETScVector::local_size() const
+{
+  int n = 0;
+  if (x)
+    VecGetLocalSize(*x, &n);
+  return static_cast<uint>(n);
+}
+//-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> PETScVector::local_range() const
 {
   std::pair<uint, uint> range;
@@ -330,9 +341,6 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
   // Check for self-assignment
   if (this != &v)
   {
-    if (ghost_global_to_local.size())
-      error("PETScVector::operator= needs updating for ghost values.");
-
     x.reset(new Vec, PETScVectorDeleter());
 
     // Create new vector
@@ -340,6 +348,13 @@ const PETScVector& PETScVector::operator= (const PETScVector& v)
 
     // Copy data
     VecCopy(*(v.x), *x);
+
+    // Create ghost view
+    this->x_ghosted.reset(new Vec, PETScVectorDeleter());
+    VecGhostGetLocalForm(*x, x_ghosted.get());
+
+    // Copy ghost data
+    this->ghost_global_to_local = v.ghost_global_to_local;
   }
   return *this;
 }
@@ -617,7 +632,7 @@ void PETScVector::init(uint N, uint n, const std::vector<uint>& ghost_indices,
     for (uint i = 0; i < ghost_indices.size(); ++i)
       ghost_global_to_local.insert(std::pair<uint, uint>(ghost_indices[i], i));
 
-    // Created ghost view
+    // Create ghost view
     x_ghosted.reset(new Vec, PETScVectorDeleter());
     VecGhostGetLocalForm(*x, x_ghosted.get());
   }

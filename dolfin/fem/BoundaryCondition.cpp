@@ -48,8 +48,7 @@ boost::shared_ptr<const FunctionSpace> BoundaryCondition::function_space_ptr() c
   return _function_space;
 }
 //-----------------------------------------------------------------------------
-void BoundaryCondition::check_arguments(GenericMatrix* A,
-                                        GenericVector* b,
+void BoundaryCondition::check_arguments(GenericMatrix* A, GenericVector* b,
                                         const GenericVector* x) const
 {
   assert(_function_space);

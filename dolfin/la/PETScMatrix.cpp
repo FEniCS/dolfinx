@@ -81,7 +81,8 @@ void PETScMatrix::resize(uint M, uint N)
     // and number of off-diagonal non-zeroes (50 in this case).
     // Note that guessing too high leads to excessive memory usage.
     // In order to not waste any memory one would need to specify d_nnz and o_nnz.
-    MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N, 50, PETSC_NULL, 50, PETSC_NULL, A.get());
+    MatCreateMPIAIJ(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, M, N,
+                    50, PETSC_NULL, 50, PETSC_NULL, A.get());
   }
   else
   {

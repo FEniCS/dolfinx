@@ -79,6 +79,9 @@ namespace dolfin
     /// Return size of vector
     virtual uint size() const;
 
+    /// Return local size of vector
+    virtual uint local_size() const;
+
     /// Return ownership range of a vector
     virtual std::pair<uint, uint> local_range() const;
 

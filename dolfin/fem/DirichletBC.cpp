@@ -210,20 +210,17 @@ void DirichletBC::zero(GenericMatrix& A) const
   compute_bc(boundary_values, data);
 
   // Copy boundary value data to arrays
-  uint* dofs = new uint[boundary_values.size()];
-  std::map<uint, double>::const_iterator boundary_value;
+  std::vector<uint> dofs(boundary_values.size());
+  std::map<uint, double>::const_iterator bv;
   uint i = 0;
-  for (boundary_value = boundary_values.begin(); boundary_value != boundary_values.end(); ++boundary_value)
-    dofs[i++] = boundary_value->first;
+  for (bv = boundary_values.begin(); bv != boundary_values.end(); ++bv)
+    dofs[i++] = bv->first;
 
   // Modify linear system (A_ii = 1)
-  A.zero(boundary_values.size(), dofs);
+  A.zero(boundary_values.size(), &dofs[0]);
 
   // Finalise changes to A
   A.apply("insert");
-
-  // Clear temporary arrays
-  delete [] dofs;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::pair<dolfin::uint, dolfin::uint> >& DirichletBC::markers()
@@ -336,17 +333,19 @@ void DirichletBC::apply(GenericMatrix* A,
   const uint size = boundary_values.size();
   std::vector<uint> dofs(size);
   std::vector<double> values(size);
-  std::map<uint, double>::const_iterator boundary_value;
+  std::map<uint, double>::const_iterator bv;
   uint i = 0;
-  for (boundary_value = boundary_values.begin(); boundary_value != boundary_values.end(); ++boundary_value)
+  for (bv = boundary_values.begin(); bv != boundary_values.end(); ++bv)
   {
-    dofs[i]     = boundary_value->first;
-    values[i++] = boundary_value->second;
+    dofs[i]     = bv->first;
+    values[i++] = bv->second;
   }
 
   // Modify boundary values for nonlinear problems
   if (x)
   {
+    // FIXME: Could use get_local (with ghost values) for this
+
     // Gather values
     std::vector<double> x_values(size);
     x->get(&x_values[0], dofs.size(), &dofs[0]);
@@ -370,9 +369,7 @@ void DirichletBC::apply(GenericMatrix* A,
   {
     const bool use_ident = parameters["use_ident"];
     if (use_ident)
-    {
       A->ident(size, &dofs[0]);
-    }
     else
     {
       for (uint i = 0; i < size; i++)
@@ -503,7 +500,7 @@ void DirichletBC::init_from_mesh(uint sub_domain)
   assert(size == indicators->size());
 
   // Build set of boundary facets
-  for (uint i = 0; i < size; i++)
+  for (uint i = 0; i < size; ++i)
   {
     // Skip facets not on this boundary
     if ((*indicators)[i] != sub_domain)
@@ -550,7 +547,7 @@ void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values
 
   // Iterate over facets
   Progress p("Computing Dirichlet boundary values, topological search", facets.size());
-  for (uint f = 0; f < facets.size(); f++)
+  for (uint f = 0; f < facets.size(); ++f)
   {
     // Get cell number and local facet number
     const uint cell_number = facets[f].first;
@@ -589,7 +586,7 @@ void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
-                                       BoundaryCondition::LocalData& data) const
+                                      BoundaryCondition::LocalData& data) const
 {
   assert(_function_space);
   assert(g);
@@ -611,7 +608,7 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
 
   // Iterate over facets
   Progress p("Computing Dirichlet boundary values, geometric search", facets.size());
-  for (uint f = 0; f < facets.size(); f++)
+  for (uint f = 0; f < facets.size(); ++f)
   {
     // Get cell number and local facet number
     const uint cell_number = facets[f].first;
@@ -744,7 +741,7 @@ bool DirichletBC::on_facet(double* coordinates, Facet& facet) const
   else if (facet.dim() == 2)
   {
     // Create points
-    Point p(coordinates[0], coordinates[1], coordinates[2]);
+    const Point p(coordinates[0], coordinates[1], coordinates[2]);
     const Point v0 = Vertex(facet.mesh(), facet.entities(0)[0]).point();
     const Point v1 = Vertex(facet.mesh(), facet.entities(0)[1]).point();
     const Point v2 = Vertex(facet.mesh(), facet.entities(0)[2]).point();
@@ -784,12 +781,12 @@ void DirichletBC::get_bc(std::vector<bool>& indicators,
   // Compute dofs and values
   compute_bc(boundary_values, data);
 
-  std::map<uint, double>::const_iterator boundary_value;
-  for (boundary_value = boundary_values.begin(); boundary_value != boundary_values.end(); ++boundary_value)
+  std::map<uint, double>::const_iterator bv;
+  for (bv = boundary_values.begin(); bv != boundary_values.end(); ++bv)
   {
-    const uint i = boundary_value->first;
+    const uint i  = bv->first;
     indicators[i] = true;
-    values[i] = boundary_value->second;
+    values[i]     = bv->second;
   }
 }
 //-----------------------------------------------------------------------------

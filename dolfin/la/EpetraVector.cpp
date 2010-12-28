@@ -11,6 +11,8 @@
 #include <cmath>
 #include <cstring>
 #include <numeric>
+#include <utility>
+#include <boost/scoped_ptr.hpp>
 
 #include <Epetra_FEVector.h>
 #include <Epetra_Export.h>
@@ -30,9 +32,6 @@
 #include "PETScVector.h"
 #include "EpetraFactory.h"
 #include "EpetraVector.h"
-
-// FIXME: A review is needed with respect to correct use of parallel vectors.
-//        It would be useful to store the Epetra map.
 
 using namespace dolfin;
 
@@ -73,27 +72,61 @@ void EpetraVector::resize(uint N)
   if (x && this->size() == N)
     return;
 
-  if (x && !x.unique())
-      error("Cannot resize EpetraVector. More than one object points to the underlying Epetra object.");
-
   // Get local range
   const std::pair<uint, uint> range = MPI::local_range(N);
   const uint n = range.second - range.first;
 
+  // Resize vector
+  std::vector<uint> ghost_indices;
+  resize(N, n, ghost_indices);
+}
+//-----------------------------------------------------------------------------
+void EpetraVector::resize(uint N, uint n, const std::vector<uint>& ghost_indices)
+{
+  if (x && !x.unique())
+      error("Cannot resize EpetraVector. More than one object points to the underlying Epetra object.");
+
+  // Create ghost data structures
+  ghost_global_to_local.clear();
+
+  // Pointer to Epetra map
+  boost::scoped_ptr<Epetra_Map> epetra_map;
+
+  // Epetra factory and serial communicator
+  const EpetraFactory& f = EpetraFactory::instance();
+  Epetra_SerialComm serial_comm = f.get_serial_comm();
+
+  // Create vector
   if (N == n || type == "local")
   {
-    EpetraFactory& f = EpetraFactory::instance();
-    Epetra_SerialComm serial_comm = f.get_serial_comm();
-    Epetra_Map map(N, N, 0, serial_comm);
-    x.reset(new Epetra_FEVector(map));
+    if (ghost_indices.size() != 0)
+      error("Serial EpetraVectors do not suppprt ghost points.");
+
+    // Create map
+    epetra_map.reset(new Epetra_Map(N, N, 0, serial_comm));
   }
   else
   {
-    EpetraFactory& f = EpetraFactory::instance();
+    // Create map
     Epetra_MpiComm mpi_comm = f.get_mpi_comm();
-    Epetra_Map map(N, n, 0, mpi_comm);
-    x.reset(new Epetra_FEVector(map));
+    epetra_map.reset(new Epetra_Map(-1, n, 0, mpi_comm));
+
+    assert(epetra_map->LinearMap());
+
+    // Build global-to-local map for ghost indices
+    for (uint i = 0; i < ghost_indices.size(); ++i)
+      ghost_global_to_local.insert(std::pair<uint, uint>(ghost_indices[i], i));
   }
+
+  // Create vector
+  x.reset(new Epetra_FEVector(*epetra_map));
+
+  // Create local ghost vector
+  const int num_ghost_entries = ghost_indices.size();
+  const int* ghost_entries = reinterpret_cast<const int*>(&ghost_indices[0]);
+  Epetra_Map ghost_map(num_ghost_entries, num_ghost_entries,
+                       ghost_entries, 0, serial_comm);
+  x_ghosted.reset(new Epetra_MultiVector(ghost_map, 1));
 }
 //-----------------------------------------------------------------------------
 EpetraVector* EpetraVector::copy() const
@@ -107,11 +140,16 @@ dolfin::uint EpetraVector::size() const
   return x ? x->GlobalLength(): 0;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint EpetraVector::local_size() const
+{
+  return x ? x->MyLength(): 0;
+}
+//-----------------------------------------------------------------------------
 std::pair<dolfin::uint, dolfin::uint> EpetraVector::local_range() const
 {
   assert(x);
 
-  if ( x->Comm().NumProc() == 1 )
+  if (x->Comm().NumProc() == 1)
     return std::make_pair<uint, uint>(0, size());
   else
   {
@@ -163,7 +201,10 @@ std::string EpetraVector::str(bool verbose) const
 void EpetraVector::get_local(Array<double>& values) const
 {
   assert(x);
-  assert( (int)values.size() >= x->MyLength() );
+  const uint local_size = x->MyLength();
+  if (values.size() != local_size)
+    error("EpetraVector::get_local: length of values array is not equal to local vector size.");
+
   const int err = x->ExtractCopy(values.data().get(), 0);
   if (err!= 0)
     error("EpetraVector::get: Did not manage to perform Epetra_Vector::ExtractCopy.");
@@ -173,7 +214,8 @@ void EpetraVector::set_local(const Array<double>& values)
 {
   assert(x);
   const uint local_size = x->MyLength();
-  assert(values.size() >= local_size);
+  if (values.size() != local_size)
+    error("EpetraVector::set_local: length of values array is not equal to local vector size.");
 
   for (uint i = 0; i < local_size; ++i)
     (*x)[0][i] = values[i];
@@ -183,7 +225,8 @@ void EpetraVector::add_local(const Array<double>& values)
 {
   assert(x);
   const uint local_size = x->MyLength();
-  assert(values.size() >= local_size);
+  if (values.size() != local_size)
+    error("EpetraVector::add_local: length of values array is not equal to local vector size.");
 
   for (uint i = 0; i < local_size; ++i)
     (*x)[0][i] += values[i];
@@ -198,30 +241,29 @@ void EpetraVector::get(double* block, uint m, const uint* rows) const
     get_local(block, m, rows);
   else
   {
+    // Create local vector
     EpetraVector y("local");
-    std::vector<uint> indices;
-    std::vector<uint> local_indices;
-    indices.reserve(m);
-    local_indices.reserve(m);
-    for (uint i = 0; i < m; ++i)
-    {
-      indices.push_back(rows[i]);
-      local_indices.push_back(i);
-    }
 
-    // Gather values into y
-    const Array<uint> _indices(indices.size(), &indices[0]);
-    gather(y, _indices);
+    // Wrap row array
+    const Array<uint> indices(m, const_cast<uint*>(rows));
+
+    // Gather values into local vector y
+    gather(y, indices);
+    assert(y.size() == m);
 
     // Get entries of y
-    y.get_local(block, m, &local_indices[0]);
+    const boost::shared_ptr<Epetra_FEVector> _y = y.vec();
+    for (uint i = 0; i < m; ++i)
+      block[i] = (*_y)[0][i];
   }
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::set(const double* block, uint m, const uint* rows)
 {
   assert(x);
-  const int err = x->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows), block, 0);
+  const int err = x->ReplaceGlobalValues(m, reinterpret_cast<const int*>(rows),
+                                         block, 0);
+
   if (err != 0)
     error("EpetraVector::set: Did not manage to perform Epetra_Vector::ReplaceGlobalValues.");
 }
@@ -229,7 +271,9 @@ void EpetraVector::set(const double* block, uint m, const uint* rows)
 void EpetraVector::add(const double* block, uint m, const uint* rows)
 {
   assert(x);
-  int err = x->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows), block, 0);
+  int err = x->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
+                                   block, 0);
+
   if (err != 0)
     error("EpetraVector::add: Did not manage to perform Epetra_Vector::SumIntoGlobalValues.");
 }
@@ -237,9 +281,34 @@ void EpetraVector::add(const double* block, uint m, const uint* rows)
 void EpetraVector::get_local(double* block, uint m, const uint* rows) const
 {
   assert(x);
-  const uint n0 = local_range().first;
-  for (uint i = 0; i < m; ++i)
-    block[i] = (*x)[0][rows[i] - n0];
+  const Epetra_BlockMap& map = x->Map();
+  assert(x->Map().LinearMap());
+  const uint n0 = map.MinMyGID();
+
+  // Get values
+  if (ghost_global_to_local.size() == 0)
+  {
+    for (uint i = 0; i < m; ++i)
+      block[i] = (*x)[0][rows[i] - n0];
+  }
+  else
+  {
+    assert(x_ghosted);
+    const uint n1 = map.MaxMyGID();
+    const Epetra_BlockMap& ghost_map = x_ghosted->Map();
+    for (uint i = 0; i < m; ++i)
+    {
+      if (rows[i] >= n0 && rows[i] <= n1)
+        block[i] = (*x)[0][rows[i] - n0];
+      else
+      {
+        // FIXME: Check if look-up in std::map is faster than Epetra_BlockMap::LID
+        const int local_index = ghost_map.LID(rows[i]);
+        assert(local_index != -1);
+        block[i] = (*x_ghosted)[0][local_index];
+      }
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::gather(GenericVector& y,
@@ -250,7 +319,7 @@ void EpetraVector::gather(GenericVector& y,
 
   assert(x);
 
-  EpetraFactory& f = EpetraFactory::instance();
+  const EpetraFactory& f = EpetraFactory::instance();
   Epetra_SerialComm serial_comm = f.get_serial_comm();
 
   // Down cast to a EpetraVector and resize
@@ -293,6 +362,7 @@ double EpetraVector::inner(const GenericVector& y) const
   const int err = x->Dot(*(v.x), &a);
   if (err!= 0)
     error("EpetraVector::inner: Did not manage to perform Epetra_Vector::Dot.");
+
   return a;
 }
 //-----------------------------------------------------------------------------
@@ -328,6 +398,22 @@ const EpetraVector& EpetraVector::operator= (double a)
   assert(x);
   x->PutScalar(a);
   return *this;
+}
+//-----------------------------------------------------------------------------
+void EpetraVector::update_ghost_values()
+{
+  assert(x);
+  assert(x_ghosted);
+  assert(x_ghosted->MyLength() == (int) ghost_global_to_local.size());
+
+  assert(x->Map().LinearMap());
+
+  // Create importer
+  Epetra_Import importer(x_ghosted->Map(), x->Map());
+
+  // Import into ghost vector
+  x_ghosted->Import(*x, importer, Insert);
+  assert(x->Map().LinearMap());
 }
 //-----------------------------------------------------------------------------
 const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
@@ -504,5 +590,4 @@ double EpetraVector::sum(const Array<uint>& rows) const
   return global_sum;
 }
 //-----------------------------------------------------------------------------
-
 #endif
