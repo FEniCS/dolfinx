@@ -39,7 +39,7 @@ class AbstractBaseTest(object):
     def get_Vector(self):
         from numpy import random, linspace
         vec = Vector(16)
-        vec.set_local(random.rand(len(vec)))
+        vec.set_local(random.rand(vec.local_size()))
         return vec
 
     def run_matrix_test(self,use_backend):
