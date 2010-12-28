@@ -1,10 +1,11 @@
 // Copyright (C) 2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2009-12-08
-// Last changed: 2010-04-29
-//
 // Modified by Marie E. Rognes (meg@simula.no) 2010.
+// Modified by Garth N. Wells 2010.
+//
+// First added:  2009-12-08
+// Last changed: 2010-12-28
 
 #ifndef __EXTRAPOLATION_H
 #define __EXTRAPOLATION_H
@@ -12,6 +13,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <dolfin/common/types.h>
 
 namespace arma
 {
