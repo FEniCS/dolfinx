@@ -242,7 +242,7 @@ void PETScVector::get_local(double* block, uint m, const uint* rows) const
     std::vector<int> local_rows(m);
     for (uint i = 0; i < m; ++i)
     {
-      if (rows[i] >= n0 &&  rows[i] < n1)
+      if (rows[i] >= n0 && rows[i] < n1)
         local_rows[i] = rows[i] - n0;
       else
       {

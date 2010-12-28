@@ -9,6 +9,8 @@
 #ifndef __EXTRAPOLATION_H
 #define __EXTRAPOLATION_H
 
+#include <map>
+#include <set>
 #include <vector>
 
 namespace arma
@@ -17,12 +19,18 @@ namespace arma
   template <class T> class Col;
 }
 
+namespace ufc
+{
+  class cell;
+}
+
 namespace dolfin
 {
 
-  class Function;
   class Cell;
   class DirichletBC;
+  class Function;
+  class FunctionSpace;
 
   /// This class implements an algorithm for extrapolating a function
   /// on a given function space from an approximation of that function

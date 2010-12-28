@@ -11,20 +11,21 @@
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
 #include <boost/scoped_array.hpp>
-#include <dolfin/log/log.h>
+
+#include <dolfin/adaptivity/Extrapolation.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Array.h>
 #include <dolfin/common/NoDeleter.h>
-#include <dolfin/parameter/GlobalParameters.h>
-#include <dolfin/io/File.h>
-#include <dolfin/la/GenericVector.h>
-#include <dolfin/la/DefaultFactory.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/UFC.h>
+#include <dolfin/io/File.h>
+#include <dolfin/la/GenericVector.h>
+#include <dolfin/la/DefaultFactory.h>
+#include <dolfin/log/log.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/adaptivity/Extrapolation.h>
+#include <dolfin/parameter/GlobalParameters.h>
 #include "Expression.h"
 #include "FunctionSpace.h"
 #include "Function.h"
@@ -506,8 +507,21 @@ void Function::compute_off_process_dofs() const
 //-----------------------------------------------------------------------------
 void Function::init_vector()
 {
-  // Get size
+  // Get global size
   const uint N = _function_space->dofmap().global_dimension();
+
+  // Get range
+  const std::pair<uint, uint> range = MPI::local_range(N);
+
+  // Get local range
+  const uint n0 = range.first;
+  const uint n1 = range.second;
+  const uint local_size  = n1 - n0;
+
+  // Get ghost vertices if running in parallel
+  std::vector<uint> ghost_indices;
+  if (N != local_size)
+    compute_ghost_indices(n0, n1, ghost_indices);
 
   // Create vector of dofs
   if (!_vector)
@@ -516,19 +530,19 @@ void Function::init_vector()
     _vector.reset(factory.create_vector());
   }
 
-  // Initialize vector of dofs
   assert(_vector);
+
+  // Initialize vector of dofs
+  //_vector->resize(N, local_size, ghost_indices);
   _vector->resize(N);
   _vector->zero();
 }
 //-----------------------------------------------------------------------------
-void Function::compute_ghost_indices(std::vector<uint>& ghost_indices) const
+void Function::compute_ghost_indices(uint n0, uint n1,
+                                     std::vector<uint>& ghost_indices) const
 {
   // Clear data
   ghost_indices.clear();
-
-  // Get process number
-  const uint process_number = MPI::process_number();
 
   // Get mesh
   assert(_function_space);
@@ -539,7 +553,6 @@ void Function::compute_ghost_indices(std::vector<uint>& ghost_indices) const
 
   // Dofs per cell and total dofs
   const uint num_dofs_per_cell = _function_space->element().space_dimension();
-  const uint num_dofs_global   = vector().size();
 
   // Iterate over local mesh and check which dofs are needed
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -550,10 +563,9 @@ void Function::compute_ghost_indices(std::vector<uint>& ghost_indices) const
     for (uint d = 0; d < num_dofs_per_cell; ++d)
     {
       const uint dof = dofs[d];
-      const uint index_owner = MPI::index_owner(dof, num_dofs_global);
-      if (index_owner != process_number)
+      if (dof < n0 || dof >= n1)
       {
-        // FIXME: Could we use dolfin::Set here?
+        // FIXME: Could we use dolfin::Set here? Or unordered_set?
         if (std::find(ghost_indices.begin(), ghost_indices.end(), dof) == ghost_indices.end())
           ghost_indices.push_back(dof);
       }

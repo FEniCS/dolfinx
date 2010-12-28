@@ -168,7 +168,8 @@ namespace dolfin
     void init_vector();
 
     // Get coefficients from the vector(s)
-    void compute_ghost_indices(std::vector<uint>& ghost_indices) const;
+    void compute_ghost_indices(uint n0, uint n1,
+                               std::vector<uint>& ghost_indices) const;
 
     // Get coefficients from the vector(s)
     void get(double* block, uint m, const uint* rows) const;
