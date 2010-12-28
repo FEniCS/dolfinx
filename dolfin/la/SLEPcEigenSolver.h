@@ -6,7 +6,7 @@
 // Modified by Marie Rognes, 2009.
 //
 // First added:  2005-08-31
-// Last changed: 2010-09-30
+// Last changed: 2010-12-28
 
 #ifndef __SLEPC_EIGEN_SOLVER_H
 #define __SLEPC_EIGEN_SOLVER_H
@@ -132,22 +132,23 @@ namespace dolfin
     void solve(const PETScMatrix& A, const PETScMatrix& B, uint n);
 
     /// Get the first eigenvalue
-    void get_eigenvalue(double& lr, double& lc);
+    void get_eigenvalue(double& lr, double& lc) const;
 
     /// Get the first eigenpair
-    void get_eigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c);
+    void get_eigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c) const;
 
     /// Get eigenvalue i
-    void get_eigenvalue(double& lr, double& lc, uint i);
+    void get_eigenvalue(double& lr, double& lc, uint i) const;
 
     /// Get eigenpair i
-    void get_eigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c, uint i);
+    void get_eigenpair(double& lr, double& lc,
+                       PETScVector& r, PETScVector& c, uint i) const;
 
     // Get the number of iterations used by the solver
-    int get_iteration_number();
+    int get_iteration_number() const;
 
     // Get the number of converged eigenvalues
-    int get_number_converged();
+    int get_number_converged() const;
 
     // Set deflation space
     void set_deflation_space(const PETScVector& deflation_space);
@@ -171,7 +172,7 @@ namespace dolfin
   private:
 
     /// Compute eigenpairs
-    void solve(const PETScMatrix* A, const PETScMatrix* B, uint n);
+    void solve(const PETScMatrix& A, const PETScMatrix* B, uint n);
 
     /// Callback for changes in parameter values
     void read_parameters();

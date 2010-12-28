@@ -6,7 +6,7 @@
 // Modified by Marie Rognes, 2009.
 //
 // First added:  2005-08-31
-// Last changed: 2010-10-20
+// Last changed: 2010-12-28
 
 #ifdef HAS_SLEPC
 
@@ -41,36 +41,36 @@ SLEPcEigenSolver::~SLEPcEigenSolver()
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(const PETScMatrix& A)
 {
-  solve(&A, 0, A.size(0));
+  solve(A, 0, A.size(0));
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(const PETScMatrix& A, uint n)
 {
-  solve(&A, 0, n);
+  solve(A, 0, n);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(const PETScMatrix& A, const PETScMatrix& B)
 {
-  solve(&A, &B, A.size(0));
+  solve(A, &B, A.size(0));
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(const PETScMatrix& A, const PETScMatrix& B, uint n)
 {
-  solve(&A, &B, n);
+  solve(A, &B, n);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc)
+void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc) const
 {
   get_eigenvalue(lr, lc, 0);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
-                                     PETScVector& r, PETScVector& c)
+                                     PETScVector& r, PETScVector& c) const
 {
   get_eigenpair(lr, lc, r, c, 0);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i)
+void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i) const
 {
   const int ii = static_cast<int>(i);
 
@@ -92,7 +92,7 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc, uint i)
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
                                     PETScVector& r, PETScVector& c,
-                                    uint i)
+                                    uint i) const
 {
   const int ii = static_cast<int>(i);
 
@@ -115,7 +115,7 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc,
     error("Requested eigenvalue/vector has not been computed");
 }
 //-----------------------------------------------------------------------------
-int SLEPcEigenSolver::get_number_converged()
+int SLEPcEigenSolver::get_number_converged() const
 {
   int num_conv;
   EPSGetConverged(eps, &num_conv);
@@ -125,29 +125,27 @@ int SLEPcEigenSolver::get_number_converged()
 void SLEPcEigenSolver::set_deflation_space(const PETScVector& deflation_space)
 {
   #if SLEPC_VERSION_MAJOR == 3 && SLEPC_VERSION_MINOR == 1
-  EPSSetDeflationSpace(eps, 1, const_cast<Vec*>(deflation_space.vec().get()));
+  EPSSetDeflationSpace(eps, 1, deflation_space.vec().get());
   #else
   error("Setting a deflation space requires SLEPc 3.1 or newer version");
   #endif
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::solve(const PETScMatrix* A,
-                             const PETScMatrix* B,
+void SLEPcEigenSolver::solve(const PETScMatrix& A, const PETScMatrix* B,
                              uint n)
 {
   // Associate matrix (matrices) with eigenvalue solver
-  assert(A);
-  assert(A->size(0) == A->size(1));
+  assert(A.size(0) == A.size(1));
   if (B)
   {
-    assert(B->size(0) == B->size(1) && B->size(0) == A->size(0));
-    EPSSetOperators(eps, *A->mat(), *B->mat());
+    assert(B->size(0) == B->size(1) && B->size(0) == A.size(0));
+    EPSSetOperators(eps, *A.mat(), *B->mat());
   }
   else
-    EPSSetOperators(eps, *A->mat(), PETSC_NULL);
+    EPSSetOperators(eps, *A.mat(), PETSC_NULL);
 
   // Store the size of the eigenvalue system
-  system_size = A->size(0);
+  system_size = A.size(0);
 
   // Set number of eigenpairs to compute
   assert(n <= system_size);
@@ -283,7 +281,7 @@ void SLEPcEigenSolver::set_solver(std::string solver)
   if (solver == "default")
     return;
 
-  // Choose solver.
+  // Choose solver
 
   // (Note that lanczos will give PETSc error unless problem_type is
   // set to 'hermitian' or 'gen_hermitian')
@@ -309,12 +307,11 @@ void SLEPcEigenSolver::set_tolerance(double tolerance, uint maxiter)
   EPSSetTolerances(eps, tolerance, static_cast<int>(maxiter));
 }
 //-----------------------------------------------------------------------------
-int SLEPcEigenSolver::get_iteration_number()
+int SLEPcEigenSolver::get_iteration_number() const
 {
   int num_iter;
   EPSGetIterationNumber(eps, &num_iter);
   return num_iter;
 }
 //-----------------------------------------------------------------------------
-
 #endif
