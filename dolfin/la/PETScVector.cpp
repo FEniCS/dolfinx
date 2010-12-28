@@ -1,11 +1,11 @@
 // Copyright (C) 2004-2007 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells 2005-2009.
+// Modified by Garth N. Wells 2005-2010.
 // Modified by Martin Sandve Alnes 2008
 //
 // First added:  2004
-// Last changed: 2009-09-07
+// Last changed: 2010-12-28
 
 #ifdef HAS_PETSC
 

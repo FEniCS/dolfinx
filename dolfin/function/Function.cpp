@@ -1,14 +1,16 @@
 // Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2005-2009.
+// Modified by Garth N. Wells, 2005-2010.
 // Modified by Martin Sandve Alnes, 2008.
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-04-29
+// Last changed: 2010-12-28
 
 #include <algorithm>
+#include <map>
+#include <utility>
 #include <boost/assign/list_of.hpp>
 #include <boost/scoped_array.hpp>
 
@@ -278,7 +280,6 @@ void Function::eval(Array<double>& values, const Array<double>& x) const
     }
   }
 
-
   Cell cell(_function_space->mesh(), id);
   UFCCell ufc_cell(cell);
 
@@ -377,9 +378,8 @@ void Function::restrict(double* w,
     // Get dofmap for cell
     const std::vector<uint>& dofs = _function_space->dofmap().cell_dofs(dolfin_cell.index());
 
-    // FIXME: The parallel check in Function::get is a bit expensive
     // Pick values from vector(s)
-    get(w, dofs.size(), &dofs[0]);
+    _vector->get_local(w, dofs.size(), &dofs[0]);
   }
   else
   {
@@ -393,7 +393,7 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
 {
   assert(&mesh == &_function_space->mesh());
 
-  // Gather off-process dofs
+  // Gather ghots dofs
   gather();
 
   // Get finite element
@@ -442,67 +442,8 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
 //-----------------------------------------------------------------------------
 void Function::gather() const
 {
-  // Gather off-process coefficients if running in parallel and function has a vector
   if (MPI::num_processes() > 1)
-  {
-    assert(_function_space);
-
-    // Initialise scratch space
-    gather_scratch.init(_function_space->dofmap().max_local_dimension());
-
-    // Compute lists of off-process dofs
-    compute_off_process_dofs();
-
-    // Create off process vector if it doesn't exist
-    if (!_off_process_vector.get())
-      _off_process_vector.reset(_vector->factory().create_local_vector());
-
-    // Gather off process coefficients
-    const Array<uint> wrapped_off_process_dofs(_off_process_dofs.size(),
-                                               &_off_process_dofs[0]);
-    _vector->gather(*_off_process_vector, wrapped_off_process_dofs);
-  }
-}
-//-----------------------------------------------------------------------------
-void Function::compute_off_process_dofs() const
-{
-  // Clear data
-  _off_process_dofs.clear();
-  global_to_local.clear();
-
-  // Get mesh
-  assert(_function_space);
-  const Mesh& mesh = _function_space->mesh();
-
-  // Get dof map
-  const GenericDofMap& dofmap = _function_space->dofmap();
-
-  // Dofs per cell and total dofs
-  const uint num_dofs_per_cell = _function_space->element().space_dimension();
-  const uint num_dofs_global = vector().size();
-
-  // Iterate over mesh and check which dofs are needed
-  uint i = 0;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Get dofs on cell
-    const std::vector<uint>& dofs = dofmap.cell_dofs(cell->index());
-
-    for (uint d = 0; d < num_dofs_per_cell; ++d)
-    {
-      const uint dof = dofs[d];
-      const uint index_owner = MPI::index_owner(dof, num_dofs_global);
-      if (index_owner != MPI::process_number())
-      {
-        // FIXME: Could we use dolfin::Set here?
-        if (std::find(_off_process_dofs.begin(), _off_process_dofs.end(), dof) == _off_process_dofs.end())
-        {
-          _off_process_dofs.push_back(dof);
-          global_to_local[dof] = i++;
-        }
-      }
-    }
-  }
+    _vector->update_ghost_values();
 }
 //-----------------------------------------------------------------------------
 void Function::init_vector()
@@ -533,8 +474,7 @@ void Function::init_vector()
   assert(_vector);
 
   // Initialize vector of dofs
-  //_vector->resize(N, local_size, ghost_indices);
-  _vector->resize(N);
+  _vector->resize(N, local_size, ghost_indices);
   _vector->zero();
 }
 //-----------------------------------------------------------------------------
@@ -570,52 +510,6 @@ void Function::compute_ghost_indices(uint n0, uint n1,
           ghost_indices.push_back(dof);
       }
     }
-  }
-}
-//-----------------------------------------------------------------------------
-void Function::get(double* block, uint m, const uint* rows) const
-{
-  // Get local ownership range
-  const std::pair<uint, uint> range = _vector->local_range();
-
-  // Get local values when running in serial or collect values in parallel
-  if (range.first == 0 && range.second == _vector->size())
-    _vector->get_local(block, m, rows);
-  else
-  {
-    if (!_off_process_vector.get())
-      error("Function has not been prepared with off-process data. Did you forget to call Function::gather()?");
-
-    // FIXME: Perform some more sanity checks
-
-    // Build lists of local and nonlocal coefficients
-    uint n_local = 0;
-    uint n_nonlocal = 0;
-    for (uint i = 0; i < m; ++i)
-    {
-      if (rows[i] >= range.first && rows[i] < range.second)
-      {
-        gather_scratch.local_index[n_local]  = i;
-        gather_scratch.local_rows[n_local++] = rows[i];
-      }
-      else
-      {
-        gather_scratch.nonlocal_index[n_nonlocal]  = i;
-        gather_scratch.nonlocal_rows[n_nonlocal++] = global_to_local[rows[i]];
-      }
-    }
-
-    // Get local coefficients
-    _vector->get_local(gather_scratch.local_block, n_local, gather_scratch.local_rows);
-
-    // Get off process coefficients
-    _off_process_vector->get_local(gather_scratch.nonlocal_block, n_nonlocal, gather_scratch.nonlocal_rows);
-
-    // Copy result into block
-    for (uint i = 0; i < n_local; ++i)
-      block[gather_scratch.local_index[i]] = gather_scratch.local_block[i];
-    for (uint i = 0; i < n_nonlocal; ++i)
-      block[gather_scratch.nonlocal_index[i]] = gather_scratch.nonlocal_block[i];
   }
 }
 //-----------------------------------------------------------------------------

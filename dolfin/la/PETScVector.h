@@ -1,13 +1,13 @@
 // Copyright (C) 2004-2008 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2005-2009.
+// Modified by Garth N. Wells, 2005-2010.
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Ola Skavhaug, 2008.
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2009-09-08
+// Last changed: 2010-12-28
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H

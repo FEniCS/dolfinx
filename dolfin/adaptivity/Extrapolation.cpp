@@ -13,17 +13,17 @@
 #include <boost/scoped_array.hpp>
 
 #include <dolfin/common/Array.h>
-#include <dolfin/log/log.h>
-#include <dolfin/la/GenericVector.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/BoundaryMesh.h>
-#include <dolfin/mesh/FacetCell.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/fem/BasisFunction.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/common/Timer.h>
+#include <dolfin/la/GenericVector.h>
+#include <dolfin/log/log.h>
+#include <dolfin/mesh/BoundaryMesh.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/FacetCell.h>
 #include "Extrapolation.h"
 
 using namespace dolfin;

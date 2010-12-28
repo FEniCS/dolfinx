@@ -8,8 +8,8 @@
 #define __TIME_SERIES_H
 
 #include <string>
-#include <dolfin/common/Variable.h>
 #include <dolfin/common/Array.h>
+#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -61,7 +61,8 @@ namespace dolfin
     void clear();
 
     /// Return filename for data
-    static std::string filename_data(std::string series_name, std::string type_name, uint index);
+    static std::string filename_data(std::string series_name,
+                                     std::string type_name, uint index);
 
     /// Return filename for times
     static std::string filename_times(std::string series_name, std::string type_name);

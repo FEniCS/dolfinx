@@ -1,18 +1,17 @@
 // Copyright (C) 2003-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Garth N. Wells, 2005-2009.
+// Modified by Garth N. Wells, 2005-2010.
 // Modified by Kristian B. Oelgaard, 2007.
 // Modified by Martin Sandve Alnes, 2008.
 // Modified by Andre Massing, 2009.
 //
 // First added:  2003-11-28
-// Last changed: 2010-04-29
+// Last changed: 2010-12-28
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
-#include <map>
 #include <vector>
 #include <boost/ptr_container/ptr_map.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -171,68 +170,14 @@ namespace dolfin
     void compute_ghost_indices(uint n0, uint n1,
                                std::vector<uint>& ghost_indices) const;
 
-    // Get coefficients from the vector(s)
-    void get(double* block, uint m, const uint* rows) const;
-
     // The function space
     boost::shared_ptr<const FunctionSpace> _function_space;
 
     // The vector of expansion coefficients (local)
     boost::shared_ptr<GenericVector> _vector;
 
-    // The vector of expansion coefficients (off-process)
-    mutable boost::shared_ptr<GenericVector> _off_process_vector;
-    mutable std::map<uint, uint> global_to_local;
-    mutable std::vector<uint> _off_process_dofs;
-
     // True if extrapolation should be allowed
     bool allow_extrapolation;
-
-    // Scratch data used in extracting coefficients from parallel vectors
-    class GatherScratch
-    {
-    public:
-
-      GatherScratch() : local_rows(0), nonlocal_rows(0), local_block(0),
-                        nonlocal_block(0), local_index(0), nonlocal_index(0)
-      {}
-
-      ~GatherScratch()
-      {
-        clear();
-      }
-
-      void init(uint dim)
-      {
-        clear();
-        local_rows     = new uint[dim];
-        nonlocal_rows  = new uint[dim];
-        local_block    = new double[dim];
-        nonlocal_block = new double[dim];
-        local_index    = new uint[dim];
-        nonlocal_index = new uint[dim];
-      }
-
-      void clear()
-      {
-        delete [] local_rows;
-        delete [] nonlocal_rows;
-        delete [] local_block;
-        delete [] nonlocal_block;
-        delete [] local_index;
-        delete [] nonlocal_index;
-      }
-
-      uint* local_rows;
-      uint* nonlocal_rows;
-      double* local_block;
-      double* nonlocal_block;
-      uint* local_index;
-      uint* nonlocal_index;
-
-    };
-
-    mutable GatherScratch gather_scratch;
 
   };
 
