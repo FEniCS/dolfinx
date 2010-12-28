@@ -181,7 +181,7 @@ namespace dolfin
     boost::shared_ptr<Vec> x;
 
     // PETSc Vec pointer (local ghosted)
-    boost::shared_ptr<Vec> x_ghosted;
+    mutable boost::shared_ptr<Vec> x_ghosted;
 
     // Global-to-local map for ghost values
     std::map<uint, uint> ghost_global_to_local;

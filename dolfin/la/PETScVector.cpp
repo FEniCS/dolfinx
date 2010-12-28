@@ -229,14 +229,20 @@ void PETScVector::get_local(double* block, uint m, const uint* rows) const
 
   // Use VecGetValues if no ghost points, otherwise check for ghost values
   if (ghost_global_to_local.size() == 0 || m == 0)
+  {
     VecGetValues(*x, _m, _rows, block);
+  }
   else
   {
+    //x_ghosted.reset(new Vec, PETScVectorDeleter());
+    //VecGhostGetLocalForm(*x, x_ghosted.get());
+
     assert(x_ghosted);
 
     // Get local range
     const uint n0 = local_range().first;
     const uint n1 = local_range().second;
+    const uint local_size = n1 - n0;
 
     // Build list of rows, and get from ghosted vector
     std::vector<int> local_rows(m);
@@ -248,9 +254,11 @@ void PETScVector::get_local(double* block, uint m, const uint* rows) const
       {
         std::map<uint ,uint>::const_iterator local_index = ghost_global_to_local.find(rows[i]);
         assert(local_index != ghost_global_to_local.end());
-        local_rows[i] = local_index->second + n1;
+        local_rows[i] = local_index->second + local_size;
       }
     }
+
+    // Pick values from vector
     VecGetValues(*x_ghosted, _m, &local_rows[0], block);
   }
 }
@@ -511,7 +519,7 @@ double PETScVector::sum(const Array<uint>& rows) const
   get_local(&local_values[0], local_rows.size(), &local_rows.set()[0]);
 
   // Compute local sum
-  double local_sum = std::accumulate(local_values.begin(), local_values.end(), 0.0);
+  const double local_sum = std::accumulate(local_values.begin(), local_values.end(), 0.0);
 
   return MPI::sum(local_sum);
 }
@@ -611,7 +619,7 @@ void PETScVector::init(uint N, uint n, const std::vector<uint>& ghost_indices,
 
     // Build global-to-local map for ghost indices
     for (uint i = 0; i < ghost_indices.size(); ++i)
-      ghost_global_to_local[i] = ghost_indices[i];
+      ghost_global_to_local.insert(std::pair<uint, uint>(ghost_indices[i], i));
 
     // Created ghost view
     x_ghosted.reset(new Vec, PETScVectorDeleter());
