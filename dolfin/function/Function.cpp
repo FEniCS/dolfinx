@@ -179,13 +179,9 @@ const Function& Function::operator= (const Function& v)
       old_rows[i++] = entry->second;
     }
 
-    // Gather appropriate values from old vector
-    boost::scoped_ptr<GenericVector> gather_vector(v.vector().factory().create_local_vector());
-    v.vector().gather(*gather_vector, old_rows);
-
-    // Copy gathered values into an Array
-    Array<double> gathered_values(gather_vector->local_size());
-    gather_vector->get_local(gathered_values);
+    // Gather values into an Array
+    Array<double> gathered_values;
+    v.vector().gather(gathered_values, old_rows);
 
     // Set values in vector
     this->_vector->set(&gathered_values[0], collapsed_map.size(), &new_rows[0]);
@@ -436,9 +432,7 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
     ufc_cell.update(*cell);
 
     // Pick values from global vector
-    cout << "Calling restrict" << endl;
     restrict(&coefficients[0], element, *cell, ufc_cell);
-    cout << "End Calling restrict" << endl;
 
     // Interpolate values at the vertices
     element.interpolate_vertex_values(&cell_vertex_values[0],

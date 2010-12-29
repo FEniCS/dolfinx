@@ -120,6 +120,17 @@ void uBLASVector::gather(GenericVector& x, const Array<uint>& indices) const
     _x(i) = (*this->x)(indices[i]);
 }
 //-----------------------------------------------------------------------------
+void uBLASVector::gather(Array<double>& x, const Array<uint>& indices) const
+{
+  not_working_in_parallel("uBLASVector::gather)");
+
+  const uint _size = indices.size();
+  x.resize(_size);
+  assert(x.size() == _size);
+  for (uint i = 0; i < _size; i++)
+    x[i] = (*this->x)(indices[i]);
+}
+//-----------------------------------------------------------------------------
 void uBLASVector::set(const double* block, uint m, const uint* rows)
 {
   for (uint i = 0; i < m; i++)

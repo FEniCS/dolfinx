@@ -107,13 +107,9 @@ void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
     for (uint i = 0; i < local_size; ++i)
       indices[i] = n0 + i;
 
-    // Create local vector and gather values into it
-    boost::scoped_ptr<GenericVector> gather_vector(vector.factory().create_local_vector());
-    vector.gather(*gather_vector, indices);
-
-    // Get values into an array
-    Array<double> vector_values(gather_vector->local_size());
-    gather_vector->get_local(vector_values);
+    // Create local Array and gather values into it
+    Array<double> vector_values;
+    vector.gather(vector_values, indices);
 
     // Write vector entries
     if (write_to_stream)

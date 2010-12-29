@@ -160,11 +160,11 @@ namespace dolfin
     /// Assignment operator
     const PETScVector& operator= (const PETScVector& x);
 
-    /// Gather vector entries into a local vector. If local_indices is
-    /// 0, then a local index array is created such that the order of
-    /// the values in the return array is the same as the order in
-    /// global_indices.
+    /// Gather vector entries into a local vector
     virtual void gather(GenericVector& y, const Array<uint>& indices) const;
+
+    /// Gather entries into Array x
+    virtual void gather(Array<double>& x, const Array<uint>& indices) const;
 
     friend class PETScMatrix;
 

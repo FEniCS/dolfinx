@@ -552,19 +552,20 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
 
   // Prepare data for index sets (local indices)
   const int n = indices.size();
-  Array<int> local_indices(n);
-  for (int i = 0; i < n; ++i)
-    local_indices[i] = i;
+  //Array<int> local_indices(n);
+  //for (int i = 0; i < n; ++i)
+  //  local_indices[i] = i;
 
   // PETSc will bail out if it receives a NULL pointer even though m == 0.
-  // Can't return from function as this will cause a lock up in parallel
+  // Can't return from function since function calls are collective.
   if (n == 0)
     global_indices = &n;
 
-  // Create index sets
+  // Create local index sets
   IS from, to;
   ISCreateGeneral(PETSC_COMM_SELF, n, global_indices,    &from);
-  ISCreateGeneral(PETSC_COMM_SELF, n, local_indices.data().get(), &to);
+  //ISCreateGeneral(PETSC_COMM_SELF, n, local_indices.data().get(), &to);
+  ISCreateStride(PETSC_COMM_SELF, n, 0 , 1, &to);
 
   // Resize vector if required
   y.resize(n);
@@ -579,6 +580,15 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
   ISDestroy(from);
   ISDestroy(to);
   VecScatterDestroy(scatter);
+}
+//-----------------------------------------------------------------------------
+void PETScVector::gather(Array<double>& x, const Array<uint>& indices) const
+{
+  x.resize(indices.size());
+  PETScVector y("local");
+  gather(y, indices);
+  assert(y.local_size() == x.size());
+  y.get_local(x);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::init(uint N, uint n, const std::vector<uint>& ghost_indices,

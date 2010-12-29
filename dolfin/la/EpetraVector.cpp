@@ -124,7 +124,7 @@ void EpetraVector::resize(uint N, uint n, const std::vector<uint>& ghost_indices
   const int* ghost_entries = reinterpret_cast<const int*>(&ghost_indices[0]);
   Epetra_Map ghost_map(num_ghost_entries, num_ghost_entries,
                        ghost_entries, 0, serial_comm);
-  x_ghost.reset(new Epetra_MultiVector(ghost_map, 1));
+  x_ghost.reset(new Epetra_Vector(ghost_map));
 }
 //-----------------------------------------------------------------------------
 EpetraVector* EpetraVector::copy() const
@@ -275,7 +275,7 @@ void EpetraVector::get_local(double* block, uint m, const uint* rows) const
         //std::map<uint, uint>::const_iterator _local_index = ghost_global_to_local.find(rows[i]);
         //assert(_local_index != ghost_global_to_local.end());
 
-        block[i] = (*x_ghost)[0][local_index];
+        block[i] = (*x_ghost)[local_index];
       }
     }
   }
@@ -306,6 +306,24 @@ void EpetraVector::gather(GenericVector& y,
 
   // Import values into y
   _y.vec()->Import(*x, importer, Insert);
+}
+//-----------------------------------------------------------------------------
+void EpetraVector::gather(Array<double>& x, const Array<uint>& indices) const
+{
+  const uint _size = indices.size();
+  x.resize(_size);
+  assert(x.size() == _size);
+
+  // Gather values into a vector
+  EpetraVector y;
+  gather(y, indices);
+
+  assert(y.size() == _size);
+  const Epetra_FEVector& _y = *(y.vec());
+
+  // Copy values into x
+  for (uint i = 0; i < _size; ++i)
+    x[i] = (_y)[0][i];
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::reset(const Epetra_Map& map)
@@ -393,7 +411,7 @@ const EpetraVector& EpetraVector::operator= (const EpetraVector& v)
     x.reset(new Epetra_FEVector(*(v.x)));
 
     // Copy ghost data
-    x_ghost.reset(new Epetra_MultiVector(*(v.x_ghost)));
+    x_ghost.reset(new Epetra_Vector(*(v.x_ghost)));
     ghost_global_to_local = v.ghost_global_to_local;
   }
   return *this;

@@ -54,6 +54,7 @@ class DirichletBoundary : public SubDomain
 int main()
 {
   //parameters["linear_algebra_backend"] = "Epetra";
+  parameters["linear_algebra_backend"] = "MTL4";
 
   // Create mesh and function space
   UnitSquare mesh(32, 32);

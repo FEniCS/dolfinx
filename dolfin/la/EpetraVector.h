@@ -21,6 +21,7 @@
 
 class Epetra_FEVector;
 class Epetra_MultiVector;
+class Epetra_Vector;
 class Epetra_Map;
 
 namespace dolfin
@@ -110,6 +111,9 @@ namespace dolfin
     /// Gather entries into local vector x
     virtual void gather(GenericVector& x, const Array<uint>& indices) const;
 
+    /// Gather entries into Array x
+    virtual void gather(Array<double>& x, const Array<uint>& indices) const;
+
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);
 
@@ -176,7 +180,7 @@ namespace dolfin
     boost::shared_ptr<Epetra_FEVector> x;
 
     // Epetra_FEVector pointer
-    boost::shared_ptr<Epetra_MultiVector> x_ghost;
+    boost::shared_ptr<Epetra_Vector> x_ghost;
 
     // Global-to-local map for ghost values
     std::map<uint, uint> ghost_global_to_local;

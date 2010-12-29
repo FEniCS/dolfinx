@@ -94,6 +94,12 @@ std::string MTL4Vector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
+void MTL4Vector::get_local(double* block, uint m, const uint* rows) const
+{
+  for (uint i = 0; i < m; ++i)
+    block[i] = x[ rows[i] ];
+}
+//-----------------------------------------------------------------------------
 void MTL4Vector::get_local(Array<double>& values) const
 {
   values.resize(size());
@@ -125,6 +131,30 @@ void MTL4Vector::add(const double* block, uint m, const uint* rows)
 {
   for (uint i = 0; i < m; i++)
     x[ rows[i] ] += block[i];
+}
+//-----------------------------------------------------------------------------
+void MTL4Vector::gather(GenericVector& x, const Array<uint>& indices) const
+{
+  not_working_in_parallel("MTL4Vector::gather)");
+
+  const uint _size = indices.size();
+  assert(this->size() >= _size);
+
+  x.resize(_size);
+  mtl4_vector& _x = x.down_cast<MTL4Vector>().vec();
+  for (uint i = 0; i < _size; i++)
+    _x[i] = this->x[ indices[i] ];
+}
+//-----------------------------------------------------------------------------
+void MTL4Vector::gather(Array<double>& x, const Array<uint>& indices) const
+{
+  not_working_in_parallel("MTL4Vector::gather)");
+
+  const uint _size = indices.size();
+  x.resize(_size);
+  assert(x.size() == _size);
+  for (uint i = 0; i < _size; i++)
+    x[i] = this->x[ indices[i] ];
 }
 //-----------------------------------------------------------------------------
 const mtl4_vector& MTL4Vector::vec() const

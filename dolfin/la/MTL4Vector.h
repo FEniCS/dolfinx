@@ -12,6 +12,7 @@
 #ifndef __MTL4_VECTOR_H
 #define __MTL4_VECTOR_H
 
+#include <dolfin/common/types.h>
 #include "mtl4.h"
 #include "GenericVector.h"
 
@@ -71,8 +72,7 @@ namespace dolfin
     virtual std::pair<uint, uint> local_range() const;
 
     /// Get block of values
-    virtual void get_local(double* block, uint m, const uint* rows) const
-    { get(block, m, rows); }
+    virtual void get_local(double* block, uint m, const uint* rows) const;
 
     /// Set block of values
     virtual void set(const double* block, uint m, const uint* rows);
@@ -90,8 +90,9 @@ namespace dolfin
     virtual void add_local(const Array<double>& values);
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const Array<uint>& indices) const
-    { not_working_in_parallel("MTL4::gather()"); }
+    virtual void gather(GenericVector& x, const Array<uint>& indices) const;
+
+    virtual void gather(Array<double>& x, const Array<uint>& indices) const;
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);
