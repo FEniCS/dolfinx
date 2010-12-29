@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Garth N. Wells.
+// Copyright (C) 2006-2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2006-2008.
@@ -8,7 +8,7 @@
 // Modified by Johan Hake, 2009-2010.
 //
 // First added:  2006-04-25
-// Last changed: 2010-03-07
+// Last changed: 2010-12-29
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -58,7 +58,7 @@ namespace dolfin
     /// Get block of values
     virtual void get(double* block, const uint* num_rows,
                      const uint * const * rows) const
-    { get(block, num_rows[0], rows[0]); }
+    { get_local(block, num_rows[0], rows[0]); }
 
     /// Set block of values
     virtual void set(const double* block, const uint* num_rows,
@@ -112,7 +112,11 @@ namespace dolfin
     virtual std::pair<uint, uint> local_range() const = 0;
 
     /// Get block of values (values may live on any process)
-    virtual void get(double* block, uint m, const uint* rows) const = 0;
+    virtual void get(double* block, uint m, const uint* rows) const
+    {
+      warning("GenericVector::get is redirected to GenericVector::get_local. Use GenericVector::gather for get off-process entries. GenericVector::get will be removed");
+      get_local(block, m, rows);
+    }
 
     /// Get block of values (values must all live on the local process)
     virtual void get_local(double* block, uint m, const uint* rows) const = 0;
@@ -200,11 +204,11 @@ namespace dolfin
 
     /// Get value of given entry
     virtual double operator[] (uint i) const
-    { double value(0); get(&value, 1, &i); return value; }
+    { double value(0); get_local(&value, 1, &i); return value; }
 
     /// Get value of given entry
     virtual double getitem(uint i) const
-    { double value(0); get(&value, 1, &i); return value; }
+    { double value(0); get_local(&value, 1, &i); return value; }
 
     /// Set given entry to value. apply("insert") should be called before using
     /// using the object.

@@ -115,12 +115,6 @@ void MTL4Vector::add_local(const Array<double>& values)
     x(i) += values[i];
 }
 //-----------------------------------------------------------------------------
-void MTL4Vector::get(double* block, uint m, const uint* rows) const
-{
-  for (uint i = 0; i < m; i++)
-    block[i] = x[ rows[i] ];
-}
-//-----------------------------------------------------------------------------
 void MTL4Vector::set(const double* block, uint m, const uint* rows)
 {
   for (uint i = 0; i < m; i++)

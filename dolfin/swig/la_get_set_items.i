@@ -44,7 +44,7 @@ bool _contains( dolfin::GenericVector* self, double value )
       break;
     }
   }
-  
+
   // Clean up Array
   delete &values;
   return contains;
@@ -165,7 +165,7 @@ double _get_vector_single_item( dolfin::GenericVector* self, int index )
 {
   double value;
   dolfin::uint i(Indices::check_index(index, self->size()));
-  self->get(&value, 1, &i);
+  self->get_local(&value, 1, &i);
   return value;
 }
 
@@ -207,7 +207,7 @@ dolfin::GenericVector* _get_vector_sub_vector( const dolfin::GenericVector* self
 
   values = new double[m];
 
-  self->get(values, m, indices);
+  self->get_local(values, m, indices);
   return_vec->set(values, m, range);
   return_vec->apply("insert");
 
@@ -254,7 +254,7 @@ void _set_vector_items_vector( dolfin::GenericVector* self, PyObject* op, dolfin
   values = new double[m];
 
   // Get and set values
-  other.get(values, m, range);
+  other.get_local(values, m, range);
   self->set(values, m, indices);
   self->apply("insert");
 

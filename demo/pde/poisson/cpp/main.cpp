@@ -53,6 +53,8 @@ class DirichletBoundary : public SubDomain
 
 int main()
 {
+  //parameters["linear_algebra_backend"] = "Epetra";
+
   // Create mesh and function space
   UnitSquare mesh(32, 32);
   Poisson::FunctionSpace V(mesh);
@@ -74,6 +76,8 @@ int main()
   VariationalProblem problem(a, L, bc);
   Function u(V);
   problem.solve(u);
+
+  cout << "Size: " << u.vector().local_size() << "  " << u.vector().size() << endl;
 
   // Save solution in VTK format
   File file("poisson.pvd");

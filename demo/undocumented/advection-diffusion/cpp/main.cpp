@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
   lu.parameters["reuse_factorization"] = true;
 
   // Parameters for time-stepping
-  double T = 20.0;
+  double T = 2.0;
   const double k = 0.05;
   double t = k;
 
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
     p = t / T;
     t += k;
   }
-  std::cout << "Test " << u.vector().norm("l2") << std::endl;
+  std::cout << "Test vector norm: " << u.vector().norm("l2") << std::endl;
 
   // Plot solution
   plot(u);

@@ -256,8 +256,7 @@ void PETScMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_patte
     MatAXPY(*(this->A), a, *AA->mat(), DIFFERENT_NONZERO_PATTERN);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::getrow(uint row,
-                         std::vector<uint>& columns,
+void PETScMatrix::getrow(uint row, std::vector<uint>& columns,
                          std::vector<double>& values) const
 {
   assert(A);
@@ -274,8 +273,7 @@ void PETScMatrix::getrow(uint row,
   MatRestoreRow(*A, row, &ncols, &cols, &vals);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::setrow(uint row,
-                         const std::vector<uint>& columns,
+void PETScMatrix::setrow(uint row, const std::vector<uint>& columns,
                          const std::vector<double>& values)
 {
   assert(A);

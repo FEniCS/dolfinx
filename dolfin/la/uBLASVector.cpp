@@ -54,6 +54,11 @@ uBLASVector::~uBLASVector()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+uBLASVector* uBLASVector::copy() const
+{
+  return new uBLASVector(*this);
+}
+//-----------------------------------------------------------------------------
 void uBLASVector::resize(uint N)
 {
   if (x->size() == N)
@@ -75,9 +80,10 @@ std::pair<dolfin::uint, dolfin::uint> uBLASVector::local_range() const
   return std::make_pair(0, size());
 }
 //-----------------------------------------------------------------------------
-uBLASVector* uBLASVector::copy() const
+void uBLASVector::get_local(double* block, uint m, const uint* rows) const
 {
-  return new uBLASVector(*this);
+  for (uint i = 0; i < m; i++)
+    block[i] = (*x)(rows[i]);
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::get_local(Array<double>& values) const
@@ -101,10 +107,17 @@ void uBLASVector::add_local(const Array<double>& values)
     (*x)(i) += values[i];
 }
 //-----------------------------------------------------------------------------
-void uBLASVector::get(double* block, uint m, const uint* rows) const
+void uBLASVector::gather(GenericVector& x, const Array<uint>& indices) const
 {
-  for (uint i = 0; i < m; i++)
-    block[i] = (*x)(rows[i]);
+  not_working_in_parallel("uBLASVector::gather)");
+
+  const uint _size = indices.size();
+  assert(this->size() >= _size);
+
+  x.resize(_size);
+  ublas_vector& _x = x.down_cast<uBLASVector>().vec();
+  for (uint i = 0; i < _size; i++)
+    _x(i) = (*this->x)(indices[i]);
 }
 //-----------------------------------------------------------------------------
 void uBLASVector::set(const double* block, uint m, const uint* rows)

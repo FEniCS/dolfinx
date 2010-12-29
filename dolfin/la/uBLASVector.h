@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2008 Garth N. Wells.
+// Copyright (C) 2006-2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2006-2008.
@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2009-09-08
+// Last changed: 2010-12-29
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -81,11 +81,7 @@ namespace dolfin
     virtual std::pair<uint, uint> local_range() const;
 
     /// Get block of values
-    virtual void get(double* block, uint m, const uint* rows) const;
-
-    /// Get block of values
-    virtual void get_local(double* block, uint m, const uint* rows) const
-    { get(block, m, rows); }
+    virtual void get_local(double* block, uint m, const uint* rows) const;
 
     /// Set block of values
     virtual void set(const double* block, uint m, const uint* rows);
@@ -103,8 +99,7 @@ namespace dolfin
     virtual void add_local(const Array<double>& values);
 
     /// Gather entries into local vector x
-    virtual void gather(GenericVector& x, const Array<uint>& indices) const
-    { not_working_in_parallel("uBLASVector::gather)"); }
+    virtual void gather(GenericVector& x, const Array<uint>& indices) const;
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);

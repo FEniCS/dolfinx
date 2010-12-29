@@ -90,9 +90,6 @@ namespace dolfin
     /// Return local ownership range of a vector
     virtual std::pair<uint, uint> local_range() const;
 
-    /// Get block of values
-    virtual void get(double* block, uint m, const uint* rows) const;
-
     /// Set block of values
     virtual void set(const double* block, uint m, const uint* rows);
 
@@ -179,7 +176,7 @@ namespace dolfin
     boost::shared_ptr<Epetra_FEVector> x;
 
     // Epetra_FEVector pointer
-    boost::shared_ptr<Epetra_MultiVector> x_ghosted;
+    boost::shared_ptr<Epetra_MultiVector> x_ghost;
 
     // Global-to-local map for ghost values
     std::map<uint, uint> ghost_global_to_local;

@@ -66,7 +66,8 @@ namespace dolfin
       send_buffer_size = std::max(send_buffer_size, static_cast<uint>(send_data[p].size()));
     }
 
-    // Determine size of receive buffer (same for all processes)
+    // Determine size of receive buffer (max. values across for all processes,
+    // make receive buffer size same on all processes)
     uint recv_buffer_size = 0;
     MPI_Allreduce(&send_buffer_size, &recv_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, MPI_COMM_WORLD);
 

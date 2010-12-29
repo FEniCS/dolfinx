@@ -71,9 +71,6 @@ namespace dolfin
     virtual std::pair<uint, uint> local_range() const;
 
     /// Get block of values
-    virtual void get(double* block, uint m, const uint* rows) const;
-
-    /// Get block of values
     virtual void get_local(double* block, uint m, const uint* rows) const
     { get(block, m, rows); }
 

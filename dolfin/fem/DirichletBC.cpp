@@ -344,11 +344,10 @@ void DirichletBC::apply(GenericMatrix* A,
   // Modify boundary values for nonlinear problems
   if (x)
   {
-    // FIXME: Could use get_local (with ghost values) for this
-
-    // Gather values
+    // Get values (these must reside in local portion (including ghost
+    // values) of the vector
     std::vector<double> x_values(size);
-    x->get(&x_values[0], dofs.size(), &dofs[0]);
+    x->get_local(&x_values[0], dofs.size(), &dofs[0]);
 
     // Modify RHS entries
     for (uint i = 0; i < size; i++)

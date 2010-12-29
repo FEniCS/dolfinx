@@ -190,30 +190,6 @@ void PETScVector::add_local(const Array<double>& values)
   VecSetValues(*x, local_size, &rows[0], values.data().get(), ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::get(double* block, uint m, const uint* rows) const
-{
-  assert(x);
-
-  // If vector is local, just get the values. For distributed vectors, perform
-  // first a gather into a local vector
-  if (local_range().first == 0 && local_range().second == size())
-    get_local(block, m, rows);
-  else
-  {
-    PETScVector y("local");
-    std::vector<uint> local_indices(m);
-    for (uint i = 0; i < m; ++i)
-      local_indices[i] = i;
-
-    // Gather values into y
-    const Array<uint> _rows(m, const_cast<uint*>(rows));
-    gather(y, _rows);
-
-    // Get entries of y
-    y.get_local(block, m, &local_indices[0]);
-  }
-}
-//-----------------------------------------------------------------------------
 void PETScVector::get_local(double* block, uint m, const uint* rows) const
 {
   assert(x);

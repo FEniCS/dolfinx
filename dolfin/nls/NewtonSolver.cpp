@@ -98,6 +98,8 @@ std::pair<dolfin::uint, bool> NewtonSolver::solve(NonlinearProblem& nonlinear_pr
     // Compute Jacobian
     nonlinear_problem.J(*A, x);
 
+    solver->set_operator(*A);
+
     // Perform linear solve and update total number of Krylov iterations
     if (dx->size() > 0)
       dx->zero();

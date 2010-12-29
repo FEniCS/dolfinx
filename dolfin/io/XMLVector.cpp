@@ -10,6 +10,7 @@
 #include <dolfin/common/Array.h>
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/la/GenericVector.h>
+#include <dolfin/la/Vector.h>
 #include <dolfin/main/MPI.h>
 #include "XMLIndent.h"
 #include "XMLVector.h"
@@ -106,9 +107,13 @@ void XMLVector::write(const GenericVector& vector, std::ostream& outfile,
     for (uint i = 0; i < local_size; ++i)
       indices[i] = n0 + i;
 
-    // Get data from vector
-    Array<double> vector_values(local_size);
-    vector.get(vector_values.data().get(), local_size, indices.data().get());
+    // Create local vector and gather values into it
+    boost::scoped_ptr<GenericVector> gather_vector(vector.factory().create_local_vector());
+    vector.gather(*gather_vector, indices);
+
+    // Get values into an array
+    Array<double> vector_values(gather_vector->local_size());
+    gather_vector->get_local(vector_values);
 
     // Write vector entries
     if (write_to_stream)
