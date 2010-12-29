@@ -36,7 +36,8 @@ namespace dolfin
 
     /// Resize tensor with given dimensions
     virtual void resize(uint rank, const uint* dims)
-    { assert(rank == 2); resize(dims[0], dims[1]); }
+    { error("Generic matrices must be re-sized using a GenericSparsityPattern"); }
+    //{ assert(rank == 2); resize(dims[0], dims[1]); }
 
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
@@ -86,7 +87,7 @@ namespace dolfin
     //--- Matrix interface ---
 
     /// Resize matrix to  M x N
-    virtual void resize(uint M, uint N) = 0;
+    //virtual void resize(uint M, uint N) = 0;
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows, uint n,

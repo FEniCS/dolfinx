@@ -42,12 +42,6 @@ PETScMatrix::PETScMatrix(boost::shared_ptr<Mat> A) : PETScBaseMatrix(A)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(uint M, uint N)
-{
-  // Create PETSc matrix
-  resize(M, N);
-}
-//-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(const PETScMatrix& A)
 {
   *this = A;
@@ -55,7 +49,7 @@ PETScMatrix::PETScMatrix(const PETScMatrix& A)
 //-----------------------------------------------------------------------------
 PETScMatrix::~PETScMatrix()
 {
-  // Do nothing. The custom shared_ptr deleter takes care of the cleanup.
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::resize(uint M, uint N)
@@ -183,8 +177,8 @@ void PETScMatrix::init(const GenericSparsityPattern& sparsity_pattern)
 
     // Allocate space (using data from sparsity pattern)
     MatMPIAIJSetPreallocation(*A,
-               PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros_diagonal[0]),
-               PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros_off_diagonal[0]));
+           PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros_diagonal[0]),
+           PETSC_NULL, reinterpret_cast<int*>(&num_nonzeros_off_diagonal[0]));
 
     // Set some options
     #if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR == 1
@@ -210,22 +204,20 @@ PETScMatrix* PETScMatrix::copy() const
   return Acopy;
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::get(double* block,
-                      uint m, const uint* rows,
-                      uint n, const uint* cols) const
+void PETScMatrix::get(double* block, uint m, const uint* rows,
+                                     uint n, const uint* cols) const
 {
-  not_working_in_parallel("PETScMatrix::get");
-
   assert(A);
+
+  // Get matrix entries (must be on this process)
   MatGetValues(*A,
                static_cast<int>(m), reinterpret_cast<const int*>(rows),
                static_cast<int>(n), reinterpret_cast<const int*>(cols),
                block);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set(const double* block,
-                      uint m, const uint* rows,
-                      uint n, const uint* cols)
+void PETScMatrix::set(const double* block, uint m, const uint* rows,
+                                           uint n, const uint* cols)
 {
   assert(A);
   MatSetValues(*A,
@@ -234,9 +226,8 @@ void PETScMatrix::set(const double* block,
                block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::add(const double* block,
-                      uint m, const uint* rows,
-                      uint n, const uint* cols)
+void PETScMatrix::add(const double* block, uint m, const uint* rows,
+                                           uint n, const uint* cols)
 {
   assert(A);
   MatSetValues(*A,
@@ -245,7 +236,8 @@ void PETScMatrix::add(const double* block,
                block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::axpy(double a, const GenericMatrix& A, bool same_nonzero_pattern)
+void PETScMatrix::axpy(double a, const GenericMatrix& A,
+                       bool same_nonzero_pattern)
 {
   const PETScMatrix* AA = &A.down_cast<PETScMatrix>();
   assert(this->A);
@@ -407,7 +399,8 @@ const PETScMatrix& PETScMatrix::operator= (const PETScMatrix& A)
 void PETScMatrix::binary_dump(std::string file_name) const
 {
   PetscViewer view_out;
-  PetscViewerBinaryOpen(PETSC_COMM_WORLD, file_name.c_str(), FILE_MODE_WRITE, &view_out);
+  PetscViewerBinaryOpen(PETSC_COMM_WORLD, file_name.c_str(),
+                        FILE_MODE_WRITE, &view_out);
   MatView(*(A.get()), view_out);
   PetscViewerDestroy(view_out);
 }

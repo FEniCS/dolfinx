@@ -40,9 +40,6 @@ namespace dolfin
     /// Create empty matrix
     EpetraMatrix();
 
-    /// Create M x N matrix
-    EpetraMatrix(uint M, uint N);
-
     /// Copy constuctor
     EpetraMatrix(const EpetraMatrix& A);
 
@@ -76,9 +73,6 @@ namespace dolfin
     virtual std::string str(bool verbose) const;
 
     //--- Implementation of the GenericMatrix interface ---
-
-    /// Resize matrix to M x N
-    virtual void resize(uint M, uint N);
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const;

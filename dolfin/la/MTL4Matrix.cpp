@@ -23,11 +23,6 @@ MTL4Matrix::MTL4Matrix() : ins(0), nnz_row(0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MTL4Matrix::MTL4Matrix(uint M, uint N) :ins(0), nnz_row(0)
-{
-  resize(M, N);
-}
-//-----------------------------------------------------------------------------
 MTL4Matrix::MTL4Matrix(uint M, uint N, uint nz) : ins(0), nnz_row(nz)
 {
   resize(M, N);

@@ -29,10 +29,6 @@ namespace dolfin
     Matrix() : matrix(0)
     { DefaultFactory factory; matrix = factory.create_matrix(); }
 
-    /// Create M x N matrix
-    Matrix(uint M, uint N) : matrix(0)
-    { DefaultFactory factory; matrix = factory.create_matrix(); matrix->resize(M, N); }
-
     /// Copy constructor
     Matrix(const Matrix& A) : matrix(A.matrix->copy()) {}
 
@@ -67,10 +63,6 @@ namespace dolfin
     { return "<Matrix wrapper of " + matrix->str(verbose) + ">"; }
 
     //--- Implementation of the GenericMatrix interface ---
-
-    /// Resize matrix to M x N
-    virtual void resize(uint M, uint N)
-    { matrix->resize(M, N); }
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows, uint n, const uint* cols) const

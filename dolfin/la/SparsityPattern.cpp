@@ -22,15 +22,13 @@ SparsityPattern::SparsityPattern() : row_range_min(0), row_range_max(0),
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::init(uint rank, const uint* dims)
+void SparsityPattern::init(const std::vector<uint>& dims)
 {
   // Only rank 1 and 2 sparsity patterns are supported
-  assert(rank < 3);
+  assert(dims.size() < 3);
 
   // Store dimensions
-  shape.resize(rank);
-  for (uint i = 0; i < rank; ++i)
-    shape[i] = dims[i];
+  shape = dims;
 
   // Clear sparsity pattern
   diagonal.clear();
@@ -194,7 +192,7 @@ void SparsityPattern::apply()
     // Figure out correct process for each non-local entry
     assert(non_local.size() % 2 == 0);
     std::vector<uint> partition(non_local.size());
-    for (uint i = 0; i < non_local.size(); i+= 2)
+    for (uint i = 0; i < non_local.size(); i += 2)
     {
       // Get row for non-local entry
       const uint I = non_local[i];

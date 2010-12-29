@@ -3,12 +3,15 @@
 //
 // Modified by Magnus Vikstrom, 2008.
 // Modified by Anders Logg, 2009.
+// Modified by Garth N. Wells, 2010.
 //
 // First added:  2007-11-30
-// Last changed: 2009-08-06
+// Last changed: 2010-12-29
 
 #ifndef __GENERIC_SPARSITY_PATTERN_H
 #define __GENERIC_SPARSITY_PATTERN_H
+
+#include <vector>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -32,7 +35,7 @@ namespace dolfin
     virtual ~GenericSparsityPattern() {};
 
     /// Initialize sparsity pattern for a generic tensor
-    virtual void init(uint rank, const uint* dims) = 0;
+    virtual void init(const std::vector<uint>& dims) = 0;
 
     /// Insert non-zero entries
     virtual void insert(const uint* num_rows, const uint * const * rows) = 0;

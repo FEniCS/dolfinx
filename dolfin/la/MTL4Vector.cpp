@@ -210,12 +210,12 @@ const MTL4Vector& MTL4Vector::operator*= (double a)
 //-----------------------------------------------------------------------------
 const MTL4Vector& MTL4Vector::operator*= (const GenericVector& y)
 {
-  if ( size() != y.size() )
+  if (size() != y.size())
     error("Vectors must be of same size.");
 
-  const MTL4Vector& _y = y.down_cast<MTL4Vector>();
+  const mtl4_vector& _y = y.down_cast<MTL4Vector>().vec();
   for (uint i = 0; i < size(); ++i)
-    x[i] *= _y.vec()[i];
+    x[i] *= _y[i];
   return *this;
 }
 //-----------------------------------------------------------------------------

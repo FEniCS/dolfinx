@@ -4,10 +4,12 @@
 // First added:  2008-05-15
 // Last changed: 2009-09-08
 
+#include <boost/scoped_ptr.hpp>
+
 #include <dolfin/common/Array.h>
-#include "LinearAlgebraFactory.h"
 #include "GenericMatrix.h"
 #include "GenericVector.h"
+#include "LinearAlgebraFactory.h"
 #include "SparsityPattern.h"
 #include "SingularSolver.h"
 
@@ -105,8 +107,10 @@ void SingularSolver::init(const GenericMatrix& A)
 
   // Create sparsity pattern for B
   SparsityPattern s;
-  uint dims[2] = {N + 1, N + 1};
-  s.init(2, dims);
+  std::vector<uint> dims(2);
+  dims[0] = N + 1;
+  dims[1] = N + 1;
+  s.init(dims);
 
   // Copy sparsity pattern for A and last column
   std::vector<uint> columns;
@@ -120,7 +124,7 @@ void SingularSolver::init(const GenericMatrix& A)
 
     // Copy columns to array
     const uint num_cols = columns.size() + 1;
-    uint* cols = new uint[num_cols];
+    std::vector<uint> cols(num_cols);
     for (uint j = 0; j < columns.size(); j++)
       cols[j] = columns[j];
 
@@ -131,25 +135,21 @@ void SingularSolver::init(const GenericMatrix& A)
     num_rows[0] = 1;
     num_rows[1] = num_cols;
     rows[0] = &i;
-    rows[1] = cols;
+    rows[1] = &cols[0];
     s.insert(num_rows, rows);
-
-    // Delete temporary array
-    delete [] cols;
   }
 
   // Add last row
   const uint num_cols = N;
-  uint* cols = new uint[num_cols];
+  std::vector<uint> cols(num_cols);
   for (uint j = 0; j < num_cols; j++)
     cols[j] = j;
   const uint row = N;
   num_rows[0] = 1;
   num_rows[1] = num_cols;
   rows[0] = &row;
-  rows[1] = cols;
+  rows[1] = &cols[0];
   s.insert(num_rows, rows);
-  delete [] cols;
 
   // Create matrix and vector
   B = A.factory().create_matrix();
@@ -190,8 +190,8 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
   values.resize(N);
   if (M)
   {
-    GenericVector* ones = A.factory().create_vector();
-    GenericVector* z = A.factory().create_vector();
+    boost::scoped_ptr<GenericVector> ones(A.factory().create_vector());
+    boost::scoped_ptr<GenericVector> z(A.factory().create_vector());
     ones->resize(N);
     *ones = 1.0;
     z->resize(N);
@@ -203,8 +203,6 @@ void SingularSolver::create(const GenericMatrix& A, const GenericVector& b,
       columns[i] = i;
       values[i] = (*z)[i];
     }
-    delete ones;
-    delete z;
   }
   else
   {

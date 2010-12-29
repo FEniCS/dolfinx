@@ -127,12 +127,14 @@ void XMLMatrix::write(const GenericMatrix& A, std::ostream& outfile, uint indent
 //-----------------------------------------------------------------------------
 void XMLMatrix::read_matrix(const xmlChar *name, const xmlChar **attrs)
 {
+  error("XMLMatrix::read_matrix: reading sparse matrices needs updating.");
+
   // Parse values
-  uint M = parse_int(name, attrs, "rows");
-  uint N = parse_int(name, attrs, "columns");
+  //uint M = parse_int(name, attrs, "rows");
+  //uint N = parse_int(name, attrs, "columns");
 
   // Set size
-  A.resize(M, N);
+  //A.resize(M, N);
 }
 //-----------------------------------------------------------------------------
 void XMLMatrix::read_row(const xmlChar *name, const xmlChar **attrs)

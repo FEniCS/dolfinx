@@ -41,9 +41,6 @@ namespace dolfin
     /// Create empty matrix
     PETScMatrix();
 
-    /// Create M x N matrix
-    PETScMatrix(uint M, uint N);
-
     /// Copy constructor
     PETScMatrix(const PETScMatrix& A);
 

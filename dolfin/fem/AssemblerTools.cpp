@@ -9,20 +9,20 @@
 // Last changed: 2010-02-13
 
 #include <boost/scoped_ptr.hpp>
-#include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/GenericFunction.h>
 #include <dolfin/la/GenericTensor.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
+#include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/GenericFunction.h>
-#include "GenericDofMap.h"
-#include "Form.h"
-#include "SparsityPatternBuilder.h"
-//#include "DirichletBC.h"
+
 #include "FiniteElement.h"
+#include "Form.h"
+#include "GenericDofMap.h"
+#include "SparsityPatternBuilder.h"
 #include "AssemblerTools.h"
 
 using namespace dolfin;
@@ -128,7 +128,9 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
       for (uint i = 0; i < a.rank(); i++)
         global_dimensions[i] = a.function_space(i)->dofmap().global_dimension();
 
-      A.resize(a.rank(), &global_dimensions[0]);
+      SparsityPattern _sparsity_pattern;
+      _sparsity_pattern.init(global_dimensions);
+      A.init(_sparsity_pattern);
       A.zero();
     }
     t1.stop();

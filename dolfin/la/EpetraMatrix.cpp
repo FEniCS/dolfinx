@@ -41,11 +41,6 @@ EpetraMatrix::EpetraMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EpetraMatrix::EpetraMatrix(uint M, uint N)
-{
-  resize(M, N);
-}
-//-----------------------------------------------------------------------------
 EpetraMatrix::EpetraMatrix(const EpetraMatrix& A)
 {
   if (A.mat())
@@ -66,11 +61,6 @@ EpetraMatrix::EpetraMatrix(const Epetra_CrsGraph& graph)
 EpetraMatrix::~EpetraMatrix()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-void EpetraMatrix::resize(uint M, uint N)
-{
-  error("EpetraMatrix::resize(uint, unit) not yet implemented.");
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
@@ -141,8 +131,6 @@ dolfin::uint EpetraMatrix::size(uint dim) const
 void EpetraMatrix::get(double* block, uint m, const uint* rows,
 		                   uint n, const uint* cols) const
 {
-  not_working_in_parallel("EpetraMatrix::get");
-
   assert(A);
 
   int num_entities = 0;

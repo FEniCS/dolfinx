@@ -12,6 +12,7 @@
 #include <set>
 #include <vector>
 #include <boost/unordered_set.hpp>
+
 #include "dolfin/common/Set.h"
 #include "dolfin/common/types.h"
 #include <dolfin/log/LogStream.h>
@@ -38,7 +39,7 @@ namespace dolfin
     SparsityPattern();
 
     /// Initialize sparsity pattern for a generic tensor
-    void init(uint rank, const uint* dims);
+    void init(const std::vector<uint>& dims);
 
     /// Insert non-zero entries
     void insert(const uint* num_rows, const uint * const * rows);

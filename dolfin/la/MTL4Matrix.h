@@ -34,9 +34,6 @@ namespace dolfin
     /// Create empty matrix
     MTL4Matrix();
 
-    /// Create M x N matrix
-    MTL4Matrix(uint M, uint N);
-
     /// Copy constuctor
     MTL4Matrix(const MTL4Matrix& A);
 

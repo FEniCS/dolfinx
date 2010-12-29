@@ -1,11 +1,11 @@
-// Copyright (C) 2007-2009 Garth N. Wells.
+// Copyright (C) 2007-2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Ola Skavhaug, 2007.
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2007-05-24
-// Last changed: 2010-09-30
+// Last changed: 2010-12-29
 
 #include <boost/scoped_array.hpp>
 #include <dolfin/mesh/Cell.h>
@@ -29,20 +29,20 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   const uint rank = dof_maps.size();
 
   // Get global dimensions
-  boost::scoped_array<uint> global_dimensions(new uint[rank]);
+  std::vector<uint> global_dimensions(rank);
   for (uint i = 0; i < rank; ++i)
     global_dimensions[i] = dof_maps[i]->global_dimension();
 
   // Initialise sparsity pattern
-  sparsity_pattern.init(rank, global_dimensions.get());
+  sparsity_pattern.init(global_dimensions);
 
   // Only build for rank >= 2 (matrices and higher order tensors)
   if (rank < 2)
     return;
 
   // Allocate some more space
-  boost::scoped_array<uint> local_dimensions(new uint[rank]);
-  boost::scoped_array<uint> macro_local_dimensions(new uint[rank]);
+  std::vector<uint> local_dimensions(rank);
+  std::vector<uint> macro_local_dimensions(rank);
   uint** dofs = new uint*[rank];
   uint** macro_dofs = new uint*[rank];
   for (uint i = 0; i < rank; ++i)
@@ -73,7 +73,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       }
 
       // Fill sparsity pattern.
-      sparsity_pattern.insert(local_dimensions.get(), dofs);
+      sparsity_pattern.insert(&local_dimensions[0], dofs);
       p++;
     }
   }
@@ -124,7 +124,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       }
 
       // Fill sparsity pattern.
-      sparsity_pattern.insert(macro_local_dimensions.get(), macro_dofs);
+      sparsity_pattern.insert(&macro_local_dimensions[0], macro_dofs);
 
       p++;
     }

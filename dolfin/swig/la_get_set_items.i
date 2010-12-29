@@ -417,7 +417,8 @@ dolfin::GenericVector* _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolf
 }
 
 // Get items for slice, list, or numpy array object
-dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self, PyObject* row_op, PyObject* col_op )
+dolfin::GenericMatrix* _get_matrix_sub_matrix(const dolfin::GenericMatrix* self,
+                                              PyObject* row_op, PyObject* col_op )
 {
   dolfin::GenericMatrix * return_mat;
   dolfin::uint i, j, k, m, n, nz_i;
@@ -429,19 +430,19 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self
   double* values;
 
   // Instantiate the row indices
-  if ( ( row_inds = indice_chooser( row_op, self->size(0))) == 0 )
+  if ( (row_inds = indice_chooser(row_op, self->size(0))) == 0 )
     throw std::runtime_error("row indices must be either a slice, a list or a Numpy array of integer");
 
   // The number of rows
   m = row_inds->size();
 
   // If None is provided for col_op we assume symmetric indices
-  if ( col_op == Py_None )
+  if (col_op == Py_None)
   {
     same_indices = true;
 
     // Check size of cols
-    if ( m > self->size(1) )
+    if (m > self->size(1))
     {
       delete row_inds;
       throw std::runtime_error("num indices excedes the number of columns");
@@ -458,7 +459,7 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self
     same_indices = false;
 
     // Instantiate the col indices
-    if ( ( col_inds = indice_chooser( col_op, self->size(1))) == 0 )
+    if ( (col_inds = indice_chooser(col_op, self->size(1))) == 0 )
     {
       delete row_inds;
       throw std::runtime_error("col indices must be either a slice, a list or a Numpy array of integer");
@@ -469,7 +470,7 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self
 
   }
 
-  // Access the collumn indices
+  // Access the column indices
   try
   {
     col_index_array = col_inds->indices();
@@ -479,14 +480,16 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self
   catch (std::runtime_error e)
   {
     delete row_inds;
-    if ( !same_indices )
+    if (!same_indices)
       delete col_inds;
     throw;
   }
 
   // Create the return matrix
   return_mat = self->factory().create_matrix();
-  return_mat->resize(m,n);
+
+  throw std::runtime_error("Python interface for slices needs to be updated.");
+  //return_mat->resize(m, n);
 
   // Zero the matrice (needed for the uBLASDenseMatrix)
   return_mat->zero();
@@ -494,16 +497,16 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix( const dolfin::GenericMatrix* self
   // Fill the get the values from me and set non zero values in return matrix
   tmp_index_array = new dolfin::uint[n];
   values = new double[n];
-  for ( i = 0; i < row_inds->size(); i++ )
+  for (i = 0; i < row_inds->size(); i++)
   {
     // Get all column values
     k = row_inds->index(i);
     self->get(values, 1, &k, n, col_index_array);
     // Collect non zero values
     nz_i = 0;
-    for ( j = 0; j < col_inds->size(); j++ )
+    for (j = 0; j < col_inds->size(); j++)
     {
-      if ( !( fabs(values[j]) < DOLFIN_EPS ) )
+      if ( !(fabs(values[j]) < DOLFIN_EPS) )
       {
         tmp_index_array[nz_i] = j;
         values[nz_i] = values[j];
