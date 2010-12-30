@@ -408,7 +408,6 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def array(self):
         "Return a numpy array representation of Matrix"
         from numpy import zeros
-        #m_range = MPI.local_range(self.size(0))
         m_range = self.local_range(0);
         A = zeros((m_range[1] - m_range[0], self.size(1)))
         for i, row in enumerate(xrange(*m_range)):
