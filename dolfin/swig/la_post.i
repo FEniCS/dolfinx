@@ -157,7 +157,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         return self_type == get_tensor_type(other)
 
     def array(self):
-        "Return a numpy array representation of Vector"
+        "Return a numpy array representation of the local part of a Vector"
         from numpy import zeros, arange, uint0
         v = zeros(self.local_size())
         self.get_local(v)
@@ -221,7 +221,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def __delslice__(self,i,j):
         raise ValueError, "cannot delete Vector elements"
 
-    def __setslice__(self,i,j,values):
+    def __setslice__(self, i, j, values):
         if i == 0 and (j >= len(self) or j == -1) and isinstance(values, (float, int, GenericVector)):
             if isinstance(values, (float, int)) or len(values) == len(self):
                 self._assign(values)
@@ -248,7 +248,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def __setitem__(self, indices, values):
         from numpy import ndarray, integer
         from types import SliceType
-        if isinstance(indices, (int,integer)):
+        if isinstance(indices, (int, integer)):
             if isinstance(values,(float, int, integer)):
                 return _set_vector_items_value(self, indices, values)
             else:
@@ -290,7 +290,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __mul__(self,other):
         """x.__mul__(y) <==> x*y"""
-        if isinstance(other,(int,float)):
+        if isinstance(other, (int, float)):
             ret = self.copy()
             ret._scale(other)
             return ret
@@ -312,11 +312,11 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         """x.__radd__(y) <==> y+x"""
         return self.__add__(other)
 
-    def __rsub__(self,other):
+    def __rsub__(self, other):
         """x.__rsub__(y) <==> y-x"""
         return self.__sub__(other)
 
-    def __rmul__(self,other):
+    def __rmul__(self, other):
         """x.__rmul__(y) <==> y*x"""
         if isinstance(other,(int,float)):
             ret = self.copy()
@@ -324,25 +324,25 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             return ret
         return NotImplemented
 
-    def __rdiv__(self,other):
+    def __rdiv__(self, other):
         """x.__rdiv__(y) <==> y/x"""
         return NotImplemented
 
-    def __iadd__(self,other):
+    def __iadd__(self, other):
         """x.__iadd__(y) <==> x+y"""
         if self.__is_compatible(other):
             self.axpy(1.0, other)
             return self
         return NotImplemented
 
-    def __isub__(self,other):
+    def __isub__(self, other):
         """x.__isub__(y) <==> x-y"""
         if self.__is_compatible(other):
             self.axpy(-1.0, other)
             return self
         return NotImplemented
 
-    def __imul__(self,other):
+    def __imul__(self, other):
         """x.__imul__(y) <==> x*y"""
         if isinstance(other, (float, int)):
             self._scale(other)
@@ -352,7 +352,7 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             return self
         return NotImplemented
 
-    def __idiv__(self,other):
+    def __idiv__(self, other):
         """x.__idiv__(y) <==> x/y"""
         if isinstance(other, (float, int)):
             self._scale(1.0 / other)
