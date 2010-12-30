@@ -61,6 +61,9 @@ namespace dolfin
     /// Return size of given dimension
     uint size(uint dim) const { return PETScBaseMatrix::size(dim); }
 
+    /// Return local ownership range
+    std::pair<uint, uint> local_range(uint dim) const { return PETScBaseMatrix::local_range(dim); };
+
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
 

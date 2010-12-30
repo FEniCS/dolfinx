@@ -49,6 +49,9 @@ namespace dolfin
     /// Return size of given dimension
     virtual uint size(uint dim) const = 0;
 
+    /// Return local ownership range
+    virtual std::pair<uint, uint> local_range(uint dim) const = 0;
+
     /// Get block of values
     virtual void get(double* block, const uint* num_rows,
                      const uint * const * rows) const = 0;

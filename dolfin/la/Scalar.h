@@ -58,6 +58,14 @@ namespace dolfin
     uint size(uint dim) const
     { error("The size() function is not available for scalars."); return 0; }
 
+    /// Return local ownership range
+    virtual std::pair<uint, uint> local_range(uint dim) const
+    {
+      error("The size() function is not available for scalars.");
+      return std::make_pair(0, 0);
+    }
+
+
     /// Get block of values
     void get(double* block, const uint* num_rows, const uint * const * rows) const
     { block[0] = value; }

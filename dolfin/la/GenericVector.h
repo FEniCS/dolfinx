@@ -55,6 +55,10 @@ namespace dolfin
     virtual uint size(uint dim) const
     { assert(dim == 0); return size(); }
 
+    /// Return local ownership range
+    virtual std::pair<uint, uint> local_range(uint dim) const
+    { assert(dim == 0); return local_range(); }
+
     /// Get block of values
     virtual void get(double* block, const uint* num_rows,
                      const uint * const * rows) const
@@ -105,8 +109,7 @@ namespace dolfin
     virtual uint size() const = 0;
 
     /// Return local size of vector
-    virtual uint local_size() const
-    { return local_range().second - local_range().first; }
+    virtual uint local_size() const = 0;
 
     /// Return local ownership range of a vector
     virtual std::pair<uint, uint> local_range() const = 0;

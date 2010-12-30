@@ -59,9 +59,25 @@ namespace dolfin
           return m;
         else
           return n;
-     }
+      }
       else
         return 0;
+    }
+
+    /// Return local rang along dimension dim
+    std::pair<uint, uint> local_range(uint dim) const
+    {
+      assert(dim <= 1);
+      if (dim == 1)
+        error("Cannot compute columns range for PETSc matrices.");
+      if (A)
+      {
+        int m(0), n(0);
+        MatGetOwnershipRange(*A, &m, &n);
+        return std::make_pair(m, n);
+      }
+      else
+        return std::make_pair(0, 0);
     }
 
     /// Return PETSc Mat pointer

@@ -52,6 +52,9 @@ namespace dolfin
     /// Return size of given dimension
     virtual uint size(uint dim) const = 0;
 
+    /// Return local ownership range
+    virtual std::pair<uint, uint> local_range(uint dim) const = 0;
+
     /// Get block of values
     virtual void get(double* block, const uint* num_rows,
                      const uint * const * rows) const
@@ -85,9 +88,6 @@ namespace dolfin
     virtual std::string str(bool verbose) const = 0;
 
     //--- Matrix interface ---
-
-    /// Resize matrix to  M x N
-    //virtual void resize(uint M, uint N) = 0;
 
     /// Get block of values
     virtual void get(double* block, uint m, const uint* rows, uint n,

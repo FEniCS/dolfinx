@@ -12,10 +12,11 @@
 #define __STL_MATRIX_H
 
 #include <map>
+#include <string>
+#include <utility>
+#include <vector>
 #include <boost/unordered_map.hpp>
 
-#include <string>
-#include <vector>
 #include <dolfin/log/log.h>
 #include "GenericSparsityPattern.h"
 #include "GenericMatrix.h"
@@ -64,6 +65,10 @@ namespace dolfin
     /// Return size of given dimension
     virtual uint size(uint dim) const
     { assert(dim < 2); return dims[dim]; }
+
+    /// Return local ownership range
+    virtual std::pair<uint, uint> local_range(uint dim) const
+    { return std::make_pair(0, size(dim)); }
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero()

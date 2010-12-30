@@ -50,6 +50,10 @@ namespace dolfin
     virtual uint size(uint dim) const
     { return matrix->size(dim); }
 
+    /// Return local ownership range
+    virtual std::pair<uint, uint> local_range(uint dim) const
+    { return matrix->local_range(dim); }
+
     /// Set all entries to zero and keep any sparse structure
     virtual void zero()
     { matrix->zero(); }

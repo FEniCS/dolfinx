@@ -15,6 +15,7 @@
 #include <sstream>
 #include <utility>
 
+#include <Epetra_BlockMap.h>
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_FECrsGraph.h>
@@ -126,6 +127,18 @@ dolfin::uint EpetraMatrix::size(uint dim) const
   const int M = A->NumGlobalRows();
   const int N = A->NumGlobalCols();
   return (dim == 0 ? M : N);
+}
+//-----------------------------------------------------------------------------
+std::pair<dolfin::uint, dolfin::uint> EpetraMatrix::local_range(uint dim) const
+{
+  assert(dim < 2);
+  if (dim == 1)
+    error("Cannot compute columns range for Epetra matrices.");
+
+  const Epetra_BlockMap& row_map = A->RowMap();
+  assert(row_map.LinearMap());
+
+  return std::make_pair(row_map.MinMyGID(), row_map.MaxMyGID() + 1);
 }
 //-----------------------------------------------------------------------------
 void EpetraMatrix::get(double* block, uint m, const uint* rows,

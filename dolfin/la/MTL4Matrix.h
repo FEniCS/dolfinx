@@ -11,6 +11,7 @@
 #ifndef __MTL4_MATRIX_H
 #define __MTL4_MATRIX_H
 
+#include <utility>
 #include <tr1/tuple>
 #include "GenericMatrix.h"
 #include "mtl4.h"
@@ -50,6 +51,10 @@ namespace dolfin
 
     /// Return size of given dimension
     virtual uint size(uint dim) const;
+
+    /// Return local ownership range
+    virtual std::pair<uint, uint> local_range(uint dim) const
+    { return std::make_pair(0, size(dim)); }
 
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();

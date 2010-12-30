@@ -408,16 +408,16 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
     def array(self):
         "Return a numpy array representation of Matrix"
         from numpy import zeros
-        m_range = MPI.local_range(self.size(0))
-        A = zeros((m_range[1]-m_range[0], self.size(1)))
+        #m_range = MPI.local_range(self.size(0))
+        m_range = self.local_range(0);
+        A = zeros((m_range[1] - m_range[0], self.size(1)))
         for i, row in enumerate(xrange(*m_range)):
             column, values = self.getrow(row)
-            A[i,column] = values
+            A[i, column] = values
         return A
 
     def data(self):
         """Return arrays to underlying compresssed row/column storage data """
-
         return self._data()
 
     def __getitem__(self,indices):

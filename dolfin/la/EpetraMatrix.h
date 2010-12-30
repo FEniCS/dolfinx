@@ -63,6 +63,9 @@ namespace dolfin
     /// Return size of given dimension
     virtual uint size(uint dim) const;
 
+    /// Return local ownership range
+    virtual std::pair<uint, uint> local_range(uint dim) const;
+
     /// Set all entries to zero and keep any sparse structure
     virtual void zero();
 
