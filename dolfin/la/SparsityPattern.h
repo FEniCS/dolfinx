@@ -42,7 +42,7 @@ namespace dolfin
     void init(const std::vector<uint>& dims);
 
     /// Insert non-zero entries
-    void insert(const uint* num_rows, const uint * const * rows);
+    void insert(const std::vector<const std::vector<uint>* >& entries);
 
     /// Return rank
     uint rank() const;

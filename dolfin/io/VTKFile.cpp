@@ -66,8 +66,7 @@ void VTKFile::operator<<(const Mesh& mesh)
   // Get vtu file name and intialise out files
   std::string vtu_filename = init(mesh);
 
-  // Write mesh to vtu file
-  //mesh_write(mesh, vtu_filename);
+  // Write local mesh to vtu file
   VTKWriter::write_mesh(mesh, vtu_filename, binary, compress);
 
   // Parallel-specfic files
@@ -222,7 +221,6 @@ void VTKFile::results_write(const Function& u, std::string vtu_filename) const
 
   const GenericDofMap& dofmap(u.function_space().dofmap());
   if (dofmap.max_local_dimension() == cell_based_dim)
-    //write_cell_data(u, vtu_filename);
     VTKWriter::write_cell_data(u, vtu_filename, binary, compress);
   else
     write_point_data(u, mesh, vtu_filename);
@@ -446,6 +444,15 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
   if (dofmap.max_local_dimension() == cell_based_dim)
     data_type = "cell";
 
+  // Write file
+  pvtu_results_write(dim, rank, data_type, u.name(), pvtu_filename);
+
+}
+//----------------------------------------------------------------------------
+void VTKFile::pvtu_results_write(uint dim, uint rank, std::string data_type,
+                                 std::string name,
+                                 std::string pvtu_filename) const
+{
   // Open pvtu file
   std::ofstream pvtu_file(pvtu_filename.c_str(), std::ios::app);
 
@@ -455,22 +462,22 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
     // Write headers
     if (rank == 0)
     {
-      pvtu_file << "<PCellData  Scalars=\"" << u.name() << "\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << u.name() << "\">" << std::endl;
+      pvtu_file << "<PCellData  Scalars=\"" << name << "\"> " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << name << "\">" << std::endl;
     }
     else if (rank == 1)
     {
       if (!(dim == 2 || dim == 3))
         error("Do not know what to do with vector function with dim other than 2 or 3.");
-      pvtu_file << "<PCellData  Vectors=\"" << u.name() << "\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\">" << std::endl;
+      pvtu_file << "<PCellData  Vectors=\"" << name << "\"> " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << name << "\"  NumberOfComponents=\"3\">" << std::endl;
     }
     else if (rank == 2)
     {
       if(!(dim == 4 || dim == 9))
         error("Don't know what to do with tensor function with dim other than 4 or 9.");
-      pvtu_file << "<PCellData  Tensors=\"" << u.name() << "\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\">" << std::endl;
+      pvtu_file << "<PCellData  Tensors=\"" << name << "\"> " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << name << "\"  NumberOfComponents=\"9\">" << std::endl;
     }
     pvtu_file << "</PDataArray> " << std::endl;
     pvtu_file << "</PCellData> " << std::endl;
@@ -479,18 +486,18 @@ void VTKFile::pvtu_results_write(const Function& u, std::string pvtu_filename) c
   {
     if (rank == 0)
     {
-      pvtu_file << "<PPointData  Scalars=\"" << u.name() << "\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << u.name() << "\">" << std::endl;
+      pvtu_file << "<PPointData  Scalars=\"" << name << "\"> " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << name << "\">" << std::endl;
     }
     else if (rank == 1)
     {
-      pvtu_file << "<PPointData  Vectors=\"" << u.name() << "\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"3\">" << std::endl;
+      pvtu_file << "<PPointData  Vectors=\"" << name << "\"> " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << name << "\"  NumberOfComponents=\"3\">" << std::endl;
     }
     else if (rank == 2)
     {
-      pvtu_file << "<PPointData  Tensors=\"" << u.name() << "\"> " << std::endl;
-      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << u.name() << "\"  NumberOfComponents=\"9\">" << std::endl;
+      pvtu_file << "<PPointData  Tensors=\"" << name << "\"> " << std::endl;
+      pvtu_file << "<PDataArray  type=\"Float32\"  Name=\"" << name << "\"  NumberOfComponents=\"9\">" << std::endl;
     }
     pvtu_file << "</PDataArray> " << std::endl;
     pvtu_file << "</PPointData> " << std::endl;
@@ -609,8 +616,15 @@ void VTKFile::mesh_function_write(T& meshfunction)
   std::string vtu_filename = init(mesh);
 
   // Write mesh
-  //mesh_write(mesh, vtu_filename);
   VTKWriter::write_mesh(mesh, vtu_filename, binary, compress);
+
+  // Parallel-specfic files
+  if (MPI::num_processes() > 1 && MPI::process_number() == 0)
+  {
+    std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
+    pvtu_mesh_write(pvtu_filename, vtu_filename);
+    pvtu_results_write(1, 0, "cell", meshfunction.name(), pvtu_filename);
+  }
 
   // Open file
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);

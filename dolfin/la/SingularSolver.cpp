@@ -1,10 +1,10 @@
 // Copyright (C) 2008-2009 Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2010.
+//
 // First added:  2008-05-15
-// Last changed: 2009-09-08
-
-#include <boost/scoped_ptr.hpp>
+// Last changed: 2010-12-30
 
 #include <dolfin/common/Array.h>
 #include "GenericMatrix.h"
@@ -115,41 +115,40 @@ void SingularSolver::init(const GenericMatrix& A)
   // Copy sparsity pattern for A and last column
   std::vector<uint> columns;
   std::vector<double> dummy;
-  uint num_rows[2];
-  const uint* rows[2];
+  std::vector<const std::vector<uint>* > _rows(2);
+  std::vector<std::vector<uint> > rows(2);
+  rows[0].resize(1);
   for (uint i = 0; i < N; i++)
   {
+    // FIXME: Add function to get row sparsity pattern
     // Get row
     A.getrow(i, columns, dummy);
 
-    // Copy columns to array
+    // Copy columns to vector
     const uint num_cols = columns.size() + 1;
-    std::vector<uint> cols(num_cols);
-    for (uint j = 0; j < columns.size(); j++)
-      cols[j] = columns[j];
+    rows[1].resize(num_cols);
+    std::copy(columns.begin(), columns.end(), rows[1].begin());
 
     // Add last entry
-    cols[num_cols - 1] = N;
+    rows[1][num_cols - 1] = N;
+
+    // Set row index
+    rows[0][0] = i;
 
     // Insert into sparsity pattern
-    num_rows[0] = 1;
-    num_rows[1] = num_cols;
-    rows[0] = &i;
-    rows[1] = &cols[0];
-    s.insert(num_rows, rows);
+    _rows[0] = &rows[0];
+    _rows[1] = &rows[1];
+    s.insert(_rows);
   }
 
   // Add last row
   const uint num_cols = N;
-  std::vector<uint> cols(num_cols);
-  for (uint j = 0; j < num_cols; j++)
-    cols[j] = j;
-  const uint row = N;
-  num_rows[0] = 1;
-  num_rows[1] = num_cols;
-  rows[0] = &row;
-  rows[1] = &cols[0];
-  s.insert(num_rows, rows);
+  rows[1].resize(num_cols);
+  std::copy(columns.begin(), columns.end(), rows[1].begin());
+  rows[0][0] = N;
+  _rows[0] = &rows[0];
+  _rows[1] = &rows[1];
+  s.insert(_rows);
 
   // Create matrix and vector
   B = A.factory().create_matrix();

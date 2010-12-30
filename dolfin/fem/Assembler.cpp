@@ -384,7 +384,6 @@ void Assembler::assemble_interior_facets(GenericTensor& A,
       // Copy cell dofs into macro dof vector
       std::copy(cell_dofs0.begin(), cell_dofs0.end(), macro_dofs[i].begin());
       std::copy(cell_dofs1.begin(), cell_dofs1.end(), macro_dofs[i].begin() + cell_dofs0.size());
-
     }
 
     // Tabulate exterior interior facet tensor on macro element

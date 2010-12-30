@@ -53,6 +53,9 @@ namespace dolfin
 
     void pvtu_results_write(const Function& u, std::string pvtu_filename) const;
 
+    void pvtu_results_write(uint dim, uint rank, std::string data_type,
+                            std::string name, std::string pvtu_filename) const;
+
     void vtk_header_open(uint num_vertices, uint num_cells, std::string file) const;
     void vtk_header_close(std::string file) const;
 

@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells, 2010.
 //
 // First added:  2007-11-30
-// Last changed: 2010-12-29
+// Last changed: 2010-12-30
 
 #ifndef __GENERIC_SPARSITY_PATTERN_H
 #define __GENERIC_SPARSITY_PATTERN_H
@@ -38,7 +38,7 @@ namespace dolfin
     virtual void init(const std::vector<uint>& dims) = 0;
 
     /// Insert non-zero entries
-    virtual void insert(const uint* num_rows, const uint * const * rows) = 0;
+    virtual void insert(const std::vector<const std::vector<uint>* >& entries) = 0;
 
     /// Return rank
     virtual uint rank() const = 0;

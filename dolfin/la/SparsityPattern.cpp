@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2007-03-13
-// Last changed: 2010-04-21
+// Last changed: 2010-13-30
 
 #include <algorithm>
 #include <dolfin/log/dolfin_log.h>
@@ -56,17 +56,21 @@ void SparsityPattern::init(const std::vector<uint>& dims)
     off_diagonal.resize(row_range_max - row_range_min);
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert(const uint* num_rows, const uint * const * rows)
+void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entries)
 {
   // Check rank, ignore if not a matrix
   if (shape.size() != 2)
     return;
 
-  // Get local rows and columsn to insert
-  const uint  m = num_rows[0];
-  const uint  n = num_rows[1];
-  const uint* map_i = rows[0];
-  const uint* map_j = rows[1];
+  assert(entries.size() == 2);
+  assert(entries[0]);
+  assert(entries[1]);
+
+  // Get local rows and columns to insert
+  const std::vector<uint>& map_i = *entries[0];
+  const std::vector<uint>& map_j = *entries[1];
+  const uint m = map_i.size();
+  const uint n = map_j.size();
 
   // Check local range
   if (row_range_min == 0 && row_range_max == shape[0])

@@ -75,14 +75,12 @@ int main()
   Function u(V);
   problem.solve(u);
 
-  cout << "Size: " << u.vector().local_size() << "  " << u.vector().size() << endl;
-
   // Save solution in VTK format
   File file("poisson.pvd");
   file << u;
 
-  // Plot solution
-  //plot(u);
+  //Plot solution
+  plot(u);
 
   return 0;
 }

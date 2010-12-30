@@ -52,15 +52,15 @@ int main()
     void eval(Array<double>& values, const Array<double>& x) const
     {
       // Center of rotation
-      double y0 = 0.5;
-      double z0 = 0.219;
+      const double y0 = 0.5;
+      const double z0 = 0.219;
 
       // Angle of rotation (30 degrees)
-      double theta = 0.5236;
+      const double theta = 0.5236;
 
       // New coordinates
-      double y = y0 + (x[1] - y0)*cos(theta) - (x[2] - z0)*sin(theta);
-      double z = z0 + (x[1] - y0)*sin(theta) + (x[2] - z0)*cos(theta);
+      const double y = y0 + (x[1] - y0)*cos(theta) - (x[2] - z0)*sin(theta);
+      const double z = z0 + (x[1] - y0)*sin(theta) + (x[2] - z0)*cos(theta);
 
       // Clamp at right end
       values[0] = 0.0;
@@ -82,6 +82,9 @@ int main()
   //parameters["mesh_partitioner"] = "ParMETIS";
   parameters["mesh_partitioner"] = "SCOTCH";
 
+  //parameters["linear_algebra_backend"] = "Epetra";
+  parameters["linear_algebra_backend"] = "PETSc";
+
   // Read mesh and create function space
   Mesh mesh("gear.xml.gz");
   Elasticity::FunctionSpace V(mesh);
@@ -92,12 +95,14 @@ int main()
   // Set up boundary condition at left end
   Clamp c;
   Left left;
-  DirichletBC bcl(V, c, left);
+  //DirichletBC bcl(V, c, left);
+  DirichletBC bcl(V, f, left);
 
   // Set up boundary condition at right end
   Rotation r;
   Right right;
-  DirichletBC bcr(V, r, right);
+  //DirichletBC bcr(V, r, right);
+  DirichletBC bcr(V, f, right);
 
   // Collect boundary conditions
   std::vector<const BoundaryCondition*> bcs;
@@ -115,8 +120,23 @@ int main()
   a.mu = mu; a.lmbda = lambda;
   Elasticity::LinearForm L(V);
   L.f = f;
+  Matrix A;
+  Vector b;
+  assemble_system(A, b, a, L, bcl);
+  std::cout.precision(15);
+  std::cout << "Matrix norm: " << A.norm("frobenius") << std::endl;
+  std::cout << "Vector norm: " << b.norm("l2") << std::endl;
+
+  //cout <<  " --  " << endl;
+
+  //assemble(A, a);
+  //assemble(b, L);
+  //std::cout.precision(15);
+  //std::cout << "Matrix norm (2): " << A.norm("frobenius") << std::endl;
+  //std::cout << "Vector norm (2): " << b.norm("l2") << std::endl;
+  /*
   VariationalProblem problem(a, L, bcs);
-  //problem.parameters["symmetric"] = true;
+  problem.parameters["symmetric"] = true;
 
   // Solve PDE (using direct solver)
   Function u(V);
@@ -135,12 +155,20 @@ int main()
   File vtk_file("elasticity.pvd", "compressed");
   vtk_file << u;
 
+  // Save colored mesh paritions in VTK format if running in parallel
+  if (MPI::num_processes() > 1)
+  {
+    CellFunction<dolfin::uint> partitions(mesh, MPI::process_number());
+    File file("partitions.pvd");
+    file << partitions;
+  }
+
   // Plot solution
   plot(u, "Displacement", "displacement");
 
   // Displace mesh and plot displaced mesh
   mesh.move(u);
   plot(mesh, "Deformed mesh");
-
-  return 0;
+  */
+ return 0;
 }

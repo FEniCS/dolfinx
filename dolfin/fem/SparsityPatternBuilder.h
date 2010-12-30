@@ -15,11 +15,9 @@
 namespace dolfin
 {
 
-  class Mesh;
   class GenericDofMap;
   class GenericSparsityPattern;
-  class UFC;
-  class Form;
+  class Mesh;
 
   /// This class provides functions to compute the sparsity pattern.
 
