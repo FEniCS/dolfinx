@@ -82,6 +82,11 @@ namespace dolfin
     virtual std::pair<uint, uint> local_range() const
     { return vector->local_range(); }
 
+    /// Determine whether global vector index is owned by this process
+    virtual bool owns_index(uint i) const
+    { return vector->owns_index(i); }
+
+
     /// Get block of values (values must all live on the local process)
     virtual void get_local(double* block, uint m, const uint* rows) const
     { vector->get_local(block,m,rows); }

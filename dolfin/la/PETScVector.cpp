@@ -304,6 +304,14 @@ std::pair<dolfin::uint, dolfin::uint> PETScVector::local_range() const
   return range;
 }
 //-----------------------------------------------------------------------------
+bool PETScVector::owns_index(uint i) const
+{
+  if (i >= local_range().first && i < local_range().second)
+    return true;
+  else
+    return false;
+}
+//-----------------------------------------------------------------------------
 const GenericVector& PETScVector::operator= (const GenericVector& v)
 {
   *this = v.down_cast<PETScVector>();

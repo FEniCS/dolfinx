@@ -90,8 +90,8 @@
 // Declare newobject for vector and matrix get functions
 //-----------------------------------------------------------------------------
 %newobject _get_vector_sub_vector;
-%newobject _get_matrix_sub_vector;
-%newobject _get_matrix_sub_matrix;
+//%newobject _get_matrix_sub_vector;
+//%newobject _get_matrix_sub_matrix;
 
 //-----------------------------------------------------------------------------
 // Define a macros for the linear algebra factory interface

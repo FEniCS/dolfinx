@@ -91,6 +91,9 @@ namespace dolfin
     /// Return local ownership range of a vector
     virtual std::pair<uint, uint> local_range() const;
 
+    /// Determine whether global vector index is owned by this process
+    virtual bool owns_index(uint i) const;
+
     /// Set block of values
     virtual void set(const double* block, uint m, const uint* rows);
 

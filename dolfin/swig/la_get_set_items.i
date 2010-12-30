@@ -416,14 +416,15 @@ dolfin::GenericVector* _get_matrix_sub_vector( dolfin::GenericMatrix* self, dolf
   return return_vec;
 }
 
+/*
 // Get items for slice, list, or numpy array object
 dolfin::GenericMatrix* _get_matrix_sub_matrix(const dolfin::GenericMatrix* self,
                                               PyObject* row_op, PyObject* col_op )
 {
-  dolfin::GenericMatrix * return_mat;
+  dolfin::GenericMatrix* return_mat;
   dolfin::uint i, j, k, m, n, nz_i;
-  dolfin::uint *col_index_array;
-  dolfin::uint *tmp_index_array;
+  dolfin::uint* col_index_array;
+  dolfin::uint* tmp_index_array;
   bool same_indices;
   Indices* row_inds;
   Indices* col_inds;
@@ -491,7 +492,7 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix(const dolfin::GenericMatrix* self,
   throw std::runtime_error("Python interface for slices needs to be updated.");
   //return_mat->resize(m, n);
 
-  // Zero the matrice (needed for the uBLASDenseMatrix)
+  // Zero the matrix (needed for the uBLASDenseMatrix)
   return_mat->zero();
 
   // Fill the get the values from me and set non zero values in return matrix
@@ -529,6 +530,7 @@ dolfin::GenericMatrix* _get_matrix_sub_matrix(const dolfin::GenericMatrix* self,
   return_mat->apply("insert");
   return return_mat;
 }
+*/
 
 // Set single item in Matrix
 void _set_matrix_single_item( dolfin::GenericMatrix* self, int m, int n, double value )

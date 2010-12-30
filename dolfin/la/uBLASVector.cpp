@@ -80,6 +80,14 @@ std::pair<dolfin::uint, dolfin::uint> uBLASVector::local_range() const
   return std::make_pair(0, size());
 }
 //-----------------------------------------------------------------------------
+bool uBLASVector::owns_index(uint i) const
+{
+  if (i < size())
+    return true;
+  else
+    return false;
+}
+//-----------------------------------------------------------------------------
 void uBLASVector::get_local(double* block, uint m, const uint* rows) const
 {
   for (uint i = 0; i < m; i++)

@@ -59,6 +59,14 @@ std::pair<dolfin::uint, dolfin::uint> MTL4Vector::local_range() const
   return std::make_pair<uint, uint>(0, size());
 }
 //-----------------------------------------------------------------------------
+bool MTL4Vector::owns_index(uint i) const
+{
+  if (i < size())
+    return true;
+  else
+    return false;
+}
+//-----------------------------------------------------------------------------
 void MTL4Vector::zero()
 {
   x = 0.0;

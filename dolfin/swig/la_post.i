@@ -419,6 +419,9 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
         """Return arrays to underlying compresssed row/column storage data """
         return self._data()
 
+    # FIXME: Getting matrix entries need to be carefully examined, especially for
+    #        parallel objects.
+    """
     def __getitem__(self,indices):
         from numpy import ndarray
         from types import SliceType
@@ -497,10 +500,11 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
             else:
                 if isinstance(values,GenericMatrix):
                     _set_matrix_items_matrix(self, indices[0], indices[1], values)
-                elif isinstance(values,ndarray) and len(values.shape)==2:
+                elif isinstance(values,ndarray) and len(values.shape) == 2:
                     _set_matrix_items_array_of_float(self, indices[0], indices[1], values)
                 else:
                     raise TypeError, "expected a GenericMatrix or 2D numpy array of float"
+    """
 
     def __add__(self,other):
         """x.__add__(y) <==> x+y"""
@@ -536,8 +540,8 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
                 ret = vector_type(self.size(0))
             self.mult(other, ret)
             return ret
-        elif isinstance(other,ndarray):
-            if len(other.shape) !=1:
+        elif isinstance(other, ndarray):
+            if len(other.shape) != 1:
                 raise ValueError, "Provide an 1D NumPy array"
             vec_size = other.shape[0]
             if vec_size != self.size(1):

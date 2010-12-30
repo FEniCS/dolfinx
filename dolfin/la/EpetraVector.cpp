@@ -151,6 +151,11 @@ std::pair<dolfin::uint, dolfin::uint> EpetraVector::local_range() const
   return std::make_pair<uint, uint>(map.MinMyGID(), map.MaxMyGID() + 1);
 }
 //-----------------------------------------------------------------------------
+bool EpetraVector::owns_index(uint i) const
+{
+  return x->Map().MyGID(i);
+}
+//-----------------------------------------------------------------------------
 void EpetraVector::zero()
 {
   assert(x);
