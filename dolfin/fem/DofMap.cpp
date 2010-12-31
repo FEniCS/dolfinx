@@ -244,7 +244,7 @@ DofMap* DofMap::collapse(std::map<uint, uint>& collapsed_map,
   assert(collapsed_dof_map->dofmap.size() == dolfin_mesh.num_cells());
   assert(dofmap.size() == dolfin_mesh.num_cells());
 
-  // FIXME: Could we use a std::vector instead of std::map if the collapsed
+  // FIXME: Could we use a std::vector instead of std::map of the collapsed
   //        dof map is contiguous (0, . . . ,n)?
 
   // Build map from collapsed dof index to original dof index

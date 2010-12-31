@@ -17,6 +17,8 @@
 #include <map>
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
+
 #include <petscvec.h>
 
 #include "PETScObject.h"
@@ -187,7 +189,7 @@ namespace dolfin
     mutable boost::shared_ptr<Vec> x_ghosted;
 
     // Global-to-local map for ghost values
-    std::map<uint, uint> ghost_global_to_local;
+    boost::unordered_map<uint, uint> ghost_global_to_local;
 
     // PETSc norm types
     static const std::map<std::string, NormType> norm_types;

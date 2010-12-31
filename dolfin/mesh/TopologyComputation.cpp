@@ -6,19 +6,27 @@
 
 #include <set>
 #include <vector>
+#include <boost/unordered_set.hpp>
 
-#include <dolfin/log/dolfin_log.h>
-#include <dolfin/common/utils.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/Timer.h>
+#include <dolfin/common/utils.h>
+#include <dolfin/log/dolfin_log.h>
 #include "CellType.h"
 #include "Mesh.h"
-#include "MeshTopology.h"
 #include "MeshConnectivity.h"
 #include "MeshEntity.h"
 #include "MeshEntityIterator.h"
+#include "MeshTopology.h"
 #include "TopologyComputation.h"
 
 using namespace dolfin;
+
+// Set typedefs
+typedef std::set<dolfin::uint> set;
+typedef std::set<dolfin::uint>::const_iterator set_iterator;
+//typedef boost::unordered_set<dolfin::uint> set;
+//typedef boost::unordered_set<dolfin::uint>::const_iterator set_iterator;
 
 //-----------------------------------------------------------------------------
 dolfin::uint TopologyComputation::compute_entities(Mesh& mesh, uint dim)
@@ -327,10 +335,10 @@ void TopologyComputation::compute_from_intersection_old(Mesh& mesh,
   for (uint i = 0; i < tmp.size(); i++)
     tmp[i] = 0;
 
-  // FIXME: Check efficiency of std::set, compare with std::vector
+  // FIXME: Check efficiency of std::set, compare with std::vector, boost::unordered_set
 
   // A set with connected entities
-  std::set<uint> entities;
+  set entities;
 
   // Iterate over all entities of dimension d0
   for (MeshEntityIterator e0(mesh, d0); !e0.end(); ++e0)
@@ -395,7 +403,7 @@ void TopologyComputation::compute_from_intersection_old(Mesh& mesh,
 
     // Add the connected entities
     uint pos = 0;
-    for (std::set<uint>::iterator it = entities.begin(); it != entities.end(); ++it)
+    for (set_iterator it = entities.begin(); it != entities.end(); ++it)
       connectivity.set(e0->index(), *it, pos++);
   }
 }

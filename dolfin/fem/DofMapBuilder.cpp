@@ -7,10 +7,12 @@
 // First added:  2008-08-12
 // Last changed: 2010-04-05
 
-#include <iostream>
 #include <algorithm>
 #include <cstring>
 #include <ctime>
+#include <iostream>
+#include <boost/unordered_map.hpp>
+
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/Edge.h>
@@ -55,7 +57,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
 
   // Decide ownership of shared dofs
   std::vector<uint> send_buffer;
-  std::map<uint, uint> dof_vote;
+  boost::unordered_map<uint, uint> dof_vote;
   std::vector<uint> old_cell_dofs(dofmap.max_local_dimension());
   std::vector<uint> facet_dofs(dofmap.num_facet_dofs());
 
@@ -152,7 +154,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   const uint process_offset = MPI::global_offset(owned_dofs.size(), true);
 
   // Map from old to new index for dofs
-  std::map<uint, uint> old_to_new_dof_index;
+  boost::unordered_map<uint, uint> old_to_new_dof_index;
 
   // Compute renumber for dofs
   uint counter = 0;

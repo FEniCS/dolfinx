@@ -227,7 +227,7 @@ void PETScVector::get_local(double* block, uint m, const uint* rows) const
         local_rows[i] = rows[i] - n0;
       else
       {
-        std::map<uint, uint>::const_iterator local_index = ghost_global_to_local.find(rows[i]);
+        boost::unordered_map<uint, uint>::const_iterator local_index = ghost_global_to_local.find(rows[i]);
         assert(local_index != ghost_global_to_local.end());
         local_rows[i] = local_index->second + local_size;
       }

@@ -7,26 +7,26 @@
 // First added:  2007-07-08
 // Last changed: 2009-11-06
 
-#include <boost/scoped_array.hpp>
-#include <vector>
 #include <map>
+#include <vector>
+#include <boost/unordered_map.hpp>
 
-#include <dolfin/log/log.h>
 #include <dolfin/common/Array.h>
-#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/constants.h>
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Facet.h>
-#include <dolfin/mesh/SubDomain.h>
+#include <dolfin/log/log.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
-#include "GenericDofMap.h"
-#include "FiniteElement.h"
-#include "UFCMesh.h"
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/SubDomain.h>
+#include <dolfin/mesh/Vertex.h>
 #include "BoundaryCondition.h"
+#include "FiniteElement.h"
+#include "GenericDofMap.h"
+#include "UFCMesh.h"
 #include "PeriodicBC.h"
 
 using namespace dolfin;
@@ -58,6 +58,8 @@ struct lt_coordinate
   }
 };
 
+
+// FIXME: Change this to boost::unordered_map
 // Mapping from coordinates to dof pairs
 typedef std::map<std::vector<double>, std::pair<int, int>, lt_coordinate> coordinate_map;
 typedef coordinate_map::iterator coordinate_iterator;
