@@ -560,7 +560,7 @@ void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values
     g->restrict(data.w, _function_space->element(), cell, ufc_cell);
 
     // Tabulate dofs on cell
-    dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell_number);
+    dofmap.tabulate_dofs(data.cell_dofs, cell);
 
     // Tabulate which dofs are on the facet
     dofmap.tabulate_facet_dofs(data.facet_dofs, facet_number);
@@ -643,7 +643,7 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
           if (!interpolated)
           {
             // Tabulate dofs on cell
-            dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, c->index());
+            dofmap.tabulate_dofs(data.cell_dofs, *c);
 
             /// Restrict coefficient to cell
             g->restrict(data.w, _function_space->element(), cell, ufc_cell);
@@ -698,7 +698,7 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
         interpolated = true;
 
         // Tabulate dofs on cell
-        dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell->index());
+        dofmap.tabulate_dofs(data.cell_dofs, *cell);
 
         // Restrict coefficient to cell
         g->restrict(data.w, _function_space->element(), *cell, ufc_cell);

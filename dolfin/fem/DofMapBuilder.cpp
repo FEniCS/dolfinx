@@ -54,7 +54,6 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
   interior_boundary.init_interior_boundary(mesh);
 
   // Decide ownership of shared dofs
-  UFCCell ufc_cell(mesh);
   std::vector<uint> send_buffer;
   std::map<uint, uint> dof_vote;
   std::vector<uint> old_cell_dofs(dofmap.max_local_dimension());
@@ -72,8 +71,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
       Cell c(mesh, f.entities(mesh.topology().dim())[0]);
 
       // Tabulate dofs on cell
-      ufc_cell.update(c);
-      dofmap.tabulate_dofs(&old_cell_dofs[0], ufc_cell, c.index());
+      dofmap.tabulate_dofs(&old_cell_dofs[0], c);
 
       // Tabulate which dofs are on the facet
       dofmap.tabulate_facet_dofs(&facet_dofs[0], c.index(f));

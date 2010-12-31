@@ -104,6 +104,8 @@ void SystemAssembler::assemble(GenericMatrix& A,
   Scratch data(a, L);
 
   // Get boundary values (global)
+  data.bc_indicators.resize(function_space(1)->dofmap().local_dimension());
+  data.bc_values.resize(function_space(1)->dofmap().local_dimension());
   for(uint i = 0; i < bcs.size(); ++i)
     bcs[i]->get_bc(data.bc_indicators, data.bc_values);
 
@@ -112,8 +114,9 @@ void SystemAssembler::assemble(GenericMatrix& A,
   {
     not_working_in_parallel("Symmetric assembly over interior facets for nonlinear problems");
 
-    const uint N = a.function_space(1)->dofmap().global_dimension();
-    assert(x0->size() == N);
+    assert(x0->size() == a.function_space(1)->dofmap().global_dimension());
+
+    const uint N = a.function_space(1)->dofmap().local_dimension();
     Array<double> x0_values(N);
     x0->get_local(x0_values);
     for (uint i = 0; i < N; i++)
@@ -122,6 +125,9 @@ void SystemAssembler::assemble(GenericMatrix& A,
 
   if (A_ufc.form.num_interior_facet_integrals() == 0 && b_ufc.form.num_interior_facet_integrals() == 0)
   {
+    if (MPI::num_processes() > 1)
+      warning("SystemAssembler over cells is not yet working correctly in parallel.");
+
     // Assemble cell-wise (no interior facet integrals)
     cell_wise_assembly(A, b, a, L, A_ufc, b_ufc, data, cell_domains,
                        exterior_facet_domains);

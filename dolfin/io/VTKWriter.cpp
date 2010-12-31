@@ -85,15 +85,13 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
   std::vector<uint> dofs(dofmap.max_local_dimension());
 
   // Build lists of dofs and create map
-  UFCCell ufc_cell(mesh);
   std::vector<uint> dof_set;
   std::vector<uint> offset(size+1);
   std::vector<uint>::iterator cell_offset = offset.begin();
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Tabulate dofs
-    ufc_cell.update(*cell);
-    dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());
+    dofmap.tabulate_dofs(&dofs[0], *cell);
     for(uint i = 0; i < dofmap.dimension(cell->index()); ++i)
       dof_set.push_back(dofs[i]);
 

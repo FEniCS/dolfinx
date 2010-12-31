@@ -59,12 +59,6 @@ namespace dolfin
     virtual const std::vector<uint>& cell_dofs(uint cell_index) const = 0;
 
     /// Tabulate the local-to-global mapping of dofs on a cell
-    /// (UFC cell version)
-    virtual void tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
-                               uint cell_index) const = 0;
-
-    /// Tabulate the local-to-global mapping of dofs on a cell
-    /// (DOLFIN cell version)
     virtual void tabulate_dofs(uint* dofs, const Cell& cell) const = 0;
 
     /// Tabulate local-local facet dofs
@@ -89,7 +83,7 @@ namespace dolfin
     /// Return the set of dof indices with option to sort dofs
     virtual Set<dolfin::uint> dofs(bool sort) const = 0;
 
-    /// Re-number
+    /// Re-number based on provided re-numbering map
     virtual void renumber(const std::vector<uint>& renumbering_map) = 0;
 
     /// Return informal string representation (pretty-print)

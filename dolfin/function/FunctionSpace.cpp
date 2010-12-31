@@ -138,7 +138,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
     v.restrict(cell_coefficients.get(), this->element(), *cell, ufc_cell);
 
     // Tabulate dofs
-    _dofmap->tabulate_dofs(cell_dofs.get(), ufc_cell, cell->index());
+    _dofmap->tabulate_dofs(cell_dofs.get(), *cell);
 
     // Copy dofs to vector
     expansion_coefficients.set(cell_coefficients.get(),
@@ -227,13 +227,11 @@ std::string FunctionSpace::str(bool verbose) const
 //-----------------------------------------------------------------------------
 void FunctionSpace::print_dofmap() const
 {
-  UFCCell ufc_cell(*_mesh);
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
-    ufc_cell.update(*cell);
     const uint n = _dofmap->dimension(cell->index());
-    boost::scoped_array<uint> dofs(new uint[n]);
-    _dofmap->tabulate_dofs(dofs.get(), ufc_cell, cell->index());
+    std::vector<uint> dofs(n);
+    _dofmap->tabulate_dofs(&dofs[0], *cell);
 
     cout << cell->index() << ":";
     for (uint i = 0; i < n; i++)

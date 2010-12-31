@@ -173,19 +173,20 @@ void EqualityBC::init_from_sub_domain(const SubDomain& sub_domain)
 
   // Create UFC view of mesh
   UFCMesh ufc_mesh(mesh);
+  UFCCell ufc_cell(mesh);
 
   // Iterate over the facets of the mesh
   for (FacetIterator facet(mesh); !facet.end(); ++facet)
   {
     // Get cell to which facet belongs (there may be two, but pick first)
     Cell cell(mesh, facet->entities(D)[0]);
-    UFCCell ufc_cell(cell);
+    ufc_cell.update(cell);
 
     // Get local index of facet with respect to the cell
     const uint local_facet = cell.index(*facet);
 
     // Tabulate dofs on cell
-    dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell.index());
+    dofmap.tabulate_dofs(data.cell_dofs, cell);
 
     // Tabulate coordinates on cell
     dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
@@ -239,6 +240,8 @@ void EqualityBC::init_from_mesh(uint sub_domain)
   // Create local data for application of boundary conditions
   BoundaryCondition::LocalData data(*_function_space);
 
+  UFCCell ufc_cell(mesh);
+
   // Build set of boundary facets
   for (uint i = 0; i < size; i++)
   {
@@ -248,13 +251,13 @@ void EqualityBC::init_from_mesh(uint sub_domain)
 
     // Get cell
     Cell cell(mesh, (*facet_cells)[i]);
-    UFCCell ufc_cell(cell);
+    ufc_cell.update(cell);
 
     // Get local index of facet with respect to the cell
     const uint local_facet = (*facet_numbers)[i];
 
     // Tabulate dofs on cell
-    dofmap.tabulate_dofs(data.cell_dofs, ufc_cell, cell.index());
+    dofmap.tabulate_dofs(data.cell_dofs, cell);
 
     // Tabulate coordinates on cell
     dofmap.tabulate_coordinates(data.coordinates, ufc_cell);

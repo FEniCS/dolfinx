@@ -143,13 +143,6 @@ unsigned int DofMap::num_facet_dofs() const
   return _ufc_dofmap->num_facet_dofs();
 }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
-                           uint cell_index) const
-{
-  // FIXME: Add assertion to test that this process has the dof.
-  std::copy(dofmap[cell_index].begin(), dofmap[cell_index].end(), dofs);
-}
-//-----------------------------------------------------------------------------
 void DofMap::tabulate_dofs(uint* dofs, const Cell& cell) const
 {
   // FIXME: Add assertion to test that this process has the dof.
@@ -398,11 +391,13 @@ void DofMap::init_ufc_dofmap(ufc::dof_map& dofmap,
 //-----------------------------------------------------------------------------
 dolfin::Set<dolfin::uint> DofMap::dofs(bool sort) const
 {
+  // Build set of dofs
   dolfin::Set<uint> dof_list;
   for (uint i = 0; i < dofmap.size(); ++i)
     for (uint j = 0; j < dofmap[i].size(); ++j)
       dof_list.insert(dofmap[i][j]);
 
+  // Sort set of dofs if required
   if(sort)
     dof_list.sort();
 

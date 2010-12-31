@@ -88,10 +88,7 @@ namespace dolfin
       return dofmap[cell_index];
     }
 
-    /// Tabulate the local-to-global mapping of dofs on a cell (UFC cell version)
-    void tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell, uint cell_index) const;
-
-    /// Tabulate the local-to-global mapping of dofs on a cell (DOLFIN cell version)
+    /// Tabulate the local-to-global mapping of dofs on a cell
     void tabulate_dofs(uint* dofs, const Cell& cell) const;
 
     /// Tabulate local-local facet dofs

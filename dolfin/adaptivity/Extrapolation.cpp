@@ -68,7 +68,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
     c0.update(*cell0);
 
     // Tabulate dofs for w on cell and store values
-    W.dofmap().tabulate_dofs(&dofs[0], c0, cell0->index());
+    W.dofmap().tabulate_dofs(&dofs[0], *cell0);
 
     // Compute coefficients on this cell
     uint offset = 0;
@@ -198,8 +198,8 @@ Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
                                    uint& row,
                                    std::set<uint>& unique_dofs)
 {
-  boost::scoped_array<uint> dofs(new uint[V.dofmap().dimension(cell.index())]);
-  V.dofmap().tabulate_dofs(dofs.get(), c, cell.index());
+  std::vector<uint> dofs(V.dofmap().dimension(cell.index()));
+  V.dofmap().tabulate_dofs(&dofs[0], cell);
 
   // Data structure for current cell
   std::map<uint, uint> dof2row;
