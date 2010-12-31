@@ -565,19 +565,12 @@ void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values
     // Tabulate which dofs are on the facet
     dofmap.tabulate_facet_dofs(data.facet_dofs, facet_number);
 
-    // Debugging print:
-    /*
-       cout << endl << "Handling BC's for:" << endl;
-       cout << "Cell:  " << facet.entities(facet.dim() + 1)[0] << endl;
-       cout << "Facet: " << local_facet << endl;
-    */
-
     // Pick values for facet
     for (uint i = 0; i < dofmap.num_facet_dofs(); i++)
     {
-      const uint dof = data.cell_dofs[data.facet_dofs[i]];
+      const uint global_dof = data.cell_dofs[data.facet_dofs[i]];
       const double value = data.w[data.facet_dofs[i]];
-      boundary_values[dof] = value;
+      boundary_values[global_dof] = value;
     }
 
     p++;
@@ -650,9 +643,9 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
           }
 
           // Set boundary value
-          const uint dof = data.cell_dofs[i];
+          const uint global_dof = data.cell_dofs[i];
           const double value = data.w[i];
-          boundary_values[dof] = value;
+          boundary_values[global_dof] = value;
         }
       }
     }
@@ -705,9 +698,9 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
       }
 
       // Set boundary value
-      const uint dof = data.cell_dofs[i];
+      const uint global_dof = data.cell_dofs[i];
       const double value = data.w[i];
-      boundary_values[dof] = value;
+      boundary_values[global_dof] = value;
     }
 
     p++;
@@ -766,26 +759,15 @@ bool DirichletBC::on_facet(double* coordinates, Facet& facet) const
   return false;
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::get_bc(std::vector<bool>& indicators,
-                         std::vector<double>& values) const
+void DirichletBC::get_bc(std::map<uint, double>& boundary_values) const
 {
-  // FIXME: Should we use an unordered_map here?
-
   // Map from boundary dofs to boundary values
-  std::map<uint, double> boundary_values;
+  //std::map<uint, double> boundary_values;
 
   // Create local data
   BoundaryCondition::LocalData data(*_function_space);
 
   // Compute dofs and values
   compute_bc(boundary_values, data);
-
-  std::map<uint, double>::const_iterator bv;
-  for (bv = boundary_values.begin(); bv != boundary_values.end(); ++bv)
-  {
-    const uint i  = bv->first;
-    indicators[i] = true;
-    values[i]     = bv->second;
-  }
 }
 //-----------------------------------------------------------------------------

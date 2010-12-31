@@ -9,6 +9,7 @@
 #ifndef __SYSTEM_ASSEMBLER_H
 #define __SYSTEM_ASSEMBLER_H
 
+#include <map>
 #include <vector>
 #include <dolfin/common/types.h>
 
@@ -92,12 +93,14 @@ namespace dolfin
     static void cell_wise_assembly(GenericMatrix& A, GenericVector& b,
                                    const Form& a, const Form& L,
                                    UFC& A_ufc, UFC& b_ufc, Scratch& data,
+                                   const std::map<uint, double>& boundary_values,
                                    const MeshFunction<uint>* cell_domains,
                                    const MeshFunction<uint>* exterior_facet_domains);
 
     static void facet_wise_assembly(GenericMatrix& A, GenericVector& b,
                                     const Form& a, const Form& L,
                                     UFC& A_ufc, UFC& b_ufc, Scratch& data,
+                                    const std::map<uint, double>& boundary_values,
                                     const MeshFunction<uint>* cell_domains,
                                     const MeshFunction<uint>* exterior_facet_domains,
                                     const MeshFunction<uint>* interior_facet_domains);
@@ -107,19 +110,19 @@ namespace dolfin
                                         const Form& a, const Form& L,
                                         const Cell& cell0, const Cell& cell1,
                                         const Facet& facet,
-                                        Scratch& data);
+                                        Scratch& data,
+                                        const std::map<uint, double>& boundary_values);
 
     static void assemble_exterior_facet(GenericMatrix& A, GenericVector& b,
                                         UFC& A_ufc, UFC& b_ufc,
                                         const Form& a,
                                         const Form& L,
                                         const Cell& cell, const Facet& facet,
-                                        Scratch& data);
+                                        Scratch& data,
+                                        const std::map<uint, double>& boundary_values);
 
-    static void apply_bc(double* A,
-                         double* b,
-                         const std::vector<bool>& bc_indicators,
-                         const std::vector<double>& bc_values,
+    static void apply_bc(double* A, double* b,
+                         const std::map<uint, double>& boundary_values,
                          const std::vector<const std::vector<uint>* >& global_dofs);
 
     // Class to hold temporary data
@@ -135,8 +138,6 @@ namespace dolfin
 
       std::vector<double> Ae;
       std::vector<double> be;
-      std::vector<bool>   bc_indicators;
-      std::vector<double> bc_values;
     };
 
   };

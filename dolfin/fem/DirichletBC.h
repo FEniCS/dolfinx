@@ -170,9 +170,8 @@ namespace dolfin
     /// Testing multiline comment
     boost::shared_ptr<const GenericFunction> value_ptr();
 
-    /// Get Dirichlet values and indicators
-    void get_bc(std::vector<bool>& indicators,
-                std::vector<double>& values) const;
+    /// Get Dirichlet dofs and values
+    void get_bc(std::map<uint, double>& boundary_values) const;
 
     /// Check if given function is compatible with boundary condition
     /// (checking only vertex values)

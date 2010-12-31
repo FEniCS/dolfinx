@@ -93,6 +93,19 @@ void SystemAssembler::assemble(GenericMatrix& A,
   // Check that forms share a function space
   assert(a.function_space(1).get() == L.function_space(0).get());
 
+
+  // FIXME: This may gather coefficients twice. Checked for shared coefficients
+
+  // Gather off-process coefficients for a
+  std::vector<const GenericFunction*> coefficients = a.coefficients();
+  for (uint i = 0; i < coefficients.size(); ++i)
+    coefficients[i]->gather();
+
+  // Gather off-process coefficients for L
+  coefficients = L.coefficients();
+  for (uint i = 0; i < coefficients.size(); ++i)
+    coefficients[i]->gather();
+
   // Create data structure for local assembly data
   UFC A_ufc(a); UFC b_ufc(L);
 
@@ -103,24 +116,40 @@ void SystemAssembler::assemble(GenericMatrix& A,
   // Allocate data
   Scratch data(a, L);
 
-  // Get boundary values (global)
-  data.bc_indicators.resize(a.function_space(1)->dofmap().local_dimension());
-  data.bc_values.resize(a.function_space(1)->dofmap().local_dimension());
-  for(uint i = 0; i < bcs.size(); ++i)
-    bcs[i]->get_bc(data.bc_indicators, data.bc_values);
+  // Get Dirichlet dofs and values for local mesh
+  std::map<uint, double> boundary_values;
+  for (uint i = 0; i < bcs.size(); ++i)
+    bcs[i]->get_bc(boundary_values);
+
+  //cout << "Number of Dirichlet bc: " <<  boundary_values.size() << endl;
 
   // Modify boundary values for incremental (typically nonlinear) problems
   if (x0)
   {
-    not_working_in_parallel("Symmetric assembly over interior facets for nonlinear problems");
+    if (MPI::num_processes() > 1)
+      warning("Parallel symmetric assembly over interior facets for nonlinear problems is untested");
 
     assert(x0->size() == a.function_space(1)->dofmap().global_dimension());
 
-    const uint N = a.function_space(1)->dofmap().local_dimension();
-    Array<double> x0_values(N);
-    x0->get_local(x0_values);
-    for (uint i = 0; i < N; i++)
-      data.bc_values[i] = x0_values[i] - data.bc_values[i];
+    const uint num_bc_dofs = boundary_values.size();
+    std::vector<uint> bc_indices;
+    std::vector<double> bc_values;
+    bc_indices.reserve(num_bc_dofs);
+    bc_values.reserve(num_bc_dofs);
+
+    // Build list of boundary dofs and values
+    std::map<uint, double>::const_iterator bv;
+    for (bv = boundary_values.begin(); bv != boundary_values.end(); ++bv)
+    {
+      bc_indices.push_back(bv->first);
+      bc_values.push_back(bv->second);
+    }
+
+    // Modify bc values
+    std::vector<double> x0_values(num_bc_dofs);
+    x0->get_local(&x0_values[0], num_bc_dofs, &bc_indices[0]);
+    for (uint i = 0; i < num_bc_dofs; i++)
+      bc_values[i] = x0_values[i] - bc_values[i];
   }
 
   if (A_ufc.form.num_interior_facet_integrals() == 0 && b_ufc.form.num_interior_facet_integrals() == 0)
@@ -129,16 +158,17 @@ void SystemAssembler::assemble(GenericMatrix& A,
       warning("SystemAssembler over cells is not yet working correctly in parallel.");
 
     // Assemble cell-wise (no interior facet integrals)
-    cell_wise_assembly(A, b, a, L, A_ufc, b_ufc, data, cell_domains,
-                       exterior_facet_domains);
+    cell_wise_assembly(A, b, a, L, A_ufc, b_ufc, data, boundary_values,
+                       cell_domains, exterior_facet_domains);
   }
   else
   {
     not_working_in_parallel("Assembly over interior facets");
 
     // Assemble facet-wise (including cell assembly)
-    facet_wise_assembly(A, b, a, L, A_ufc, b_ufc, data, cell_domains,
-                        exterior_facet_domains, interior_facet_domains);
+    facet_wise_assembly(A, b, a, L, A_ufc, b_ufc, data, boundary_values,
+                        cell_domains, exterior_facet_domains,
+                        interior_facet_domains);
   }
 
   // Finalise assembly
@@ -149,6 +179,7 @@ void SystemAssembler::assemble(GenericMatrix& A,
 void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
                                     const Form& a, const Form& L,
                                     UFC& A_ufc, UFC& b_ufc, Scratch& data,
+                                    const std::map<uint, double>& boundary_values,
                                     const MeshFunction<uint>* cell_domains,
                                     const MeshFunction<uint>* exterior_facet_domains)
 {
@@ -156,6 +187,15 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
   // related terms to cut down on code repetition.
 
   const Mesh& mesh = a.mesh();
+
+  // Compute facets and facet - cell connectivity if not already computed
+  const uint D = mesh.topology().dim();
+  mesh.init(D - 1);
+  mesh.init(D - 1, D);
+  assert(mesh.ordered());
+
+  // Extract exterior (non shared) facets markers
+  const MeshFunction<uint>* exterior_facets = mesh.data().mesh_function("exterior facets");
 
   // Form ranks
   const uint a_rank = a.rank();
@@ -203,7 +243,8 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
       for (FacetIterator facet(*cell); !facet.end(); ++facet)
       {
         // Assemble if we have an external facet
-        if (facet->num_entities(D) != 2)
+        const bool interior_facet = facet->num_entities(D) == 2 || (exterior_facets && !(*exterior_facets)[*facet]);
+        if (!interior_facet)
         {
           const uint local_facet = cell->index(*facet);
           if (A_ufc.form.num_exterior_facet_integrals() > 0)
@@ -234,7 +275,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     L_dofs[0] = &(L_dof_maps[0]->cell_dofs(cell->index()));
 
     // Modify local matrix/element for Dirichlet boundary conditions
-    apply_bc(&(data.Ae)[0], &(data.be)[0], data.bc_indicators, data.bc_values, a_dofs);
+    apply_bc(&(data.Ae)[0], &(data.be)[0], boundary_values, a_dofs);
 
     // Add entries to global tensor
     A.add(&(data.Ae)[0], a_dofs);
@@ -247,6 +288,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
 void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
                                     const Form& a, const Form& L,
                                     UFC& A_ufc, UFC& b_ufc, Scratch& data,
+                                    const std::map<uint, double>& boundary_values,
                                     const MeshFunction<uint>* cell_domains,
                                     const MeshFunction<uint>* exterior_facet_domains,
                                     const MeshFunction<uint>* interior_facet_domains)
@@ -305,7 +347,7 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
         b_ufc.macro_A[i] = 0.0;
 
       // Assemble interior facet and neighbouring cells if needed
-      assemble_interior_facet(A, b, A_ufc, b_ufc, a, L, cell0, cell1, *facet, data);
+      assemble_interior_facet(A, b, A_ufc, b_ufc, a, L, cell0, cell1, *facet, data, boundary_values);
     }
     else // Exterior facet
     {
@@ -332,7 +374,7 @@ void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
       data.zero_cell();
 
       // Assemble exterior facet and attached cells if needed
-      assemble_exterior_facet(A, b, A_ufc, b_ufc, a, L, cell, *facet, data);
+      assemble_exterior_facet(A, b, A_ufc, b_ufc, a, L, cell, *facet, data, boundary_values);
     }
     p++;
   }
@@ -367,26 +409,27 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
                                            local_facet0, local_facet1);
 }
 //-----------------------------------------------------------------------------
-inline void SystemAssembler::apply_bc(double* A,
-                      double* b,
-                      const std::vector<bool>& bc_indicators,
-                      const std::vector<double>& bc_values,
+inline void SystemAssembler::apply_bc(double* A, double* b,
+                      const std::map<uint, double>& boundary_values,
                       const std::vector<const std::vector<uint>* >& global_dofs)
 {
+  // Get local dimensions
   const uint m = (global_dofs[0])->size();
   const uint n = (global_dofs[1])->size();
 
   for (uint i = 0; i < n; ++i)
   {
     const uint ii = (*global_dofs[1])[i];
-    if (bc_indicators[ii])
+    std::map<uint, double>::const_iterator bc_value = boundary_values.find(ii);
+
+    if (bc_value != boundary_values.end())
     {
-      b[i] = bc_values[ii];
+      b[i] = bc_value->second;
       for (uint k = 0; k < n; ++k)
         A[k + i*n] = 0.0;
       for (uint j = 0; j < m; ++j)
       {
-        b[j] -= A[i + j*n]*bc_values[ii];
+        b[j] -= A[i + j*n]*bc_value->second;
         A[i + j*n] = 0.0;
       }
       A[i + i*n] = 1.0;
@@ -395,12 +438,12 @@ inline void SystemAssembler::apply_bc(double* A,
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b,
-                                              UFC& A_ufc, UFC& b_ufc,
-                                              const Form& a,
-                                              const Form& L,
-                                              const Cell& cell0, const Cell& cell1,
-                                              const Facet& facet,
-                                              Scratch& data)
+                              UFC& A_ufc, UFC& b_ufc,
+                              const Form& a, const Form& L,
+                              const Cell& cell0, const Cell& cell1,
+                              const Facet& facet,
+                              Scratch& data,
+                              const std::map<uint, double>& boundary_values)
 {
   // Facet orientation not supported
   if (cell0.mesh().data().mesh_function("facet orientation"))
@@ -503,8 +546,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
   _a_macro_dofs[0] = &a_macro_dofs[0];
   _a_macro_dofs[1] = &a_macro_dofs[1];
 
-  apply_bc(A_ufc.macro_A.get(), b_ufc.macro_A.get(), data.bc_indicators,
-           data.bc_values, _a_macro_dofs);
+  apply_bc(A_ufc.macro_A.get(), b_ufc.macro_A.get(), boundary_values, _a_macro_dofs);
 
   // Add entries to global tensor
   A.add(A_ufc.macro_A.get(), a_macro_dofs);
@@ -513,10 +555,10 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
 //-----------------------------------------------------------------------------
 void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b,
                                UFC& A_ufc, UFC& b_ufc,
-                               const Form& a,
-                               const Form& L,
+                               const Form& a, const Form& L,
                                const Cell& cell, const Facet& facet,
-                               Scratch& data)
+                               Scratch& data,
+                               const std::map<uint, double>& boundary_values)
 {
   const uint local_facet = cell.index(facet);
 
@@ -571,7 +613,7 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
   L_dofs[0] = &(L.function_space(0)->dofmap().cell_dofs(cell.index()));
 
   // Modify local matrix/element for Dirichlet boundary conditions
-  apply_bc(&(data.Ae)[0], &(data.be)[0], data.bc_indicators, data.bc_values, a_dofs);
+  apply_bc(&(data.Ae)[0], &(data.be)[0], boundary_values, a_dofs);
 
   // Add entries to global tensor
   A.add(&(data.Ae)[0], a_dofs);
@@ -579,8 +621,6 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
 }
 //-----------------------------------------------------------------------------
 SystemAssembler::Scratch::Scratch(const Form& a, const Form& L)
-  : bc_indicators(a.function_space(1)->dofmap().global_dimension(), false),
-    bc_values(a.function_space(1)->dofmap().global_dimension(), 0.0)
 {
   uint A_num_entries  = a.function_space(0)->dofmap().max_local_dimension();
   A_num_entries      *= a.function_space(1)->dofmap().max_local_dimension();
