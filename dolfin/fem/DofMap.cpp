@@ -95,6 +95,54 @@ DofMap::~DofMap()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+std::string DofMap::signature() const
+{
+  error("DofMap has been re-ordered. Cannot return signature string.");
+  return _ufc_dofmap->signature();
+}
+//-----------------------------------------------------------------------------
+bool DofMap::needs_mesh_entities(unsigned int d) const
+{
+  assert(_ufc_dofmap);
+  return _ufc_dofmap->needs_mesh_entities(d);
+}
+//-----------------------------------------------------------------------------
+unsigned int DofMap::global_dimension() const
+{
+  assert(_ufc_dofmap);
+  assert(_ufc_dofmap->global_dimension() > 0);
+  return _ufc_dofmap->global_dimension();
+}
+//-----------------------------------------------------------------------------
+unsigned int DofMap::local_dimension() const
+{
+  // FIXME: DofMap::dofs build a dolfin::Set each time, which is expensive
+  return this->dofs(false).size();
+}
+//-----------------------------------------------------------------------------
+unsigned int DofMap::dimension(uint cell_index) const
+{
+  return dofmap[cell_index].size();
+}
+//-----------------------------------------------------------------------------
+unsigned int DofMap::max_local_dimension() const
+{
+  assert( _ufc_dofmap);
+  return _ufc_dofmap->max_local_dimension();
+}
+//-----------------------------------------------------------------------------
+unsigned int DofMap::geometric_dimension() const
+{
+  assert(_ufc_dofmap);
+  return _ufc_dofmap->geometric_dimension();
+}
+//-----------------------------------------------------------------------------
+unsigned int DofMap::num_facet_dofs() const
+{
+  assert(_ufc_dofmap);
+  return _ufc_dofmap->num_facet_dofs();
+}
+//-----------------------------------------------------------------------------
 void DofMap::tabulate_dofs(uint* dofs, const ufc::cell& ufc_cell,
                            uint cell_index) const
 {
@@ -348,7 +396,7 @@ void DofMap::init_ufc_dofmap(ufc::dof_map& dofmap,
   }
 }
 //-----------------------------------------------------------------------------
-dolfin::Set<dolfin::uint> DofMap::dofs(const Mesh& mesh, bool sort) const
+dolfin::Set<dolfin::uint> DofMap::dofs(bool sort) const
 {
   dolfin::Set<uint> dof_list;
   for (uint i = 0; i < dofmap.size(); ++i)

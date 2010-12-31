@@ -94,11 +94,11 @@ void VTKWriter::write_cell_data(const Function& u, std::string filename,
     // Tabulate dofs
     ufc_cell.update(*cell);
     dofmap.tabulate_dofs(&dofs[0], ufc_cell, cell->index());
-    for(uint i = 0; i < dofmap.local_dimension(ufc_cell); ++i)
+    for(uint i = 0; i < dofmap.dimension(cell->index()); ++i)
       dof_set.push_back(dofs[i]);
 
     // Add local dimension to cell offset and increment
-    *(cell_offset + 1) = *(cell_offset) + dofmap.local_dimension(ufc_cell);
+    *(cell_offset + 1) = *(cell_offset) + dofmap.dimension(cell->index());
     ++cell_offset;
   }
 

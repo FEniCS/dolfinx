@@ -122,10 +122,9 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_dofs,
   // Mark all non-forbidden dofs as owned by the processes
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    ufc_cell.update(*cell);
     dofmap.tabulate_dofs(&old_cell_dofs[0], *cell);
-    const uint local_dimension = dofmap.local_dimension(ufc_cell);
-    for (uint i = 0; i < local_dimension; ++i)
+    const uint cell_dimension = dofmap.dimension(cell->index());
+    for (uint i = 0; i < cell_dimension; ++i)
     {
       // Mark dof as owned if not forbidden
       if (forbidden_dofs.find(old_cell_dofs[i]) == forbidden_dofs.end())
@@ -202,15 +201,12 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   }
 
   // Build new dof map
-  UFCCell ufc_cell(mesh);
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    ufc_cell.update(*cell);
+    const uint cell_dimension = dofmap.dimension(cell->index());
+    new_dofmap[cell->index()].resize(cell_dimension);
 
-    const uint local_dimension = dofmap.local_dimension(ufc_cell);
-    new_dofmap[cell->index()].resize(local_dimension);
-
-    for (uint i = 0; i < local_dimension; ++i)
+    for (uint i = 0; i < cell_dimension; ++i)
     {
       const uint old_index = old_dofmap[cell->index()][i];
       new_dofmap[cell->index()][i] = old_to_new_dof_index[old_index];

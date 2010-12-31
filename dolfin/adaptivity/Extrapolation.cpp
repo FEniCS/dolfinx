@@ -10,7 +10,6 @@
 
 #include <vector>
 #include <armadillo>
-#include <boost/scoped_array.hpp>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Timer.h>
@@ -60,7 +59,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
   coefficients.resize(W.dim());
 
   // Local array for dof indices
-  boost::scoped_array<uint> dofs(new uint[W.dofmap().max_local_dimension()]);
+  std::vector<uint> dofs(W.dofmap().max_local_dimension());
 
   // Iterate over cells in mesh
   for (CellIterator cell0(mesh); !cell0.end(); ++cell0)
@@ -69,7 +68,7 @@ void Extrapolation::extrapolate(Function& w, const Function& v)
     c0.update(*cell0);
 
     // Tabulate dofs for w on cell and store values
-    W.dofmap().tabulate_dofs(dofs.get(), c0, cell0->index());
+    W.dofmap().tabulate_dofs(&dofs[0], c0, cell0->index());
 
     // Compute coefficients on this cell
     uint offset = 0;
@@ -86,7 +85,7 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
                                          const FunctionSpace& W,
                                          const Cell& cell0,
                                          const ufc::cell& c0,
-                                         const boost::scoped_array<uint>& dofs,
+                                         const std::vector<uint>& dofs,
                                          uint& offset)
 {
   // Call recursively for mixed elements
@@ -125,11 +124,11 @@ void Extrapolation::compute_coefficients(std::vector<std::vector<double> >& coef
   arma::Col<double> x = arma::solve(A, b);
 
   // Insert resulting coefficients into global coefficient vector
-  for (uint i = 0; i < W.dofmap().local_dimension(c0); ++i)
+  for (uint i = 0; i < W.dofmap().dimension(cell0.index()); ++i)
     coefficients[dofs[i + offset]].push_back(x[i]);
 
   // Increase offset
-  offset += W.dofmap().local_dimension(c0);
+  offset += W.dofmap().dimension(cell0.index());
 }
 //-----------------------------------------------------------------------------
 void Extrapolation::build_unique_dofs(std::set<uint>& unique_dofs,
@@ -165,8 +164,8 @@ void Extrapolation::add_cell_equations(arma::Mat<double>& A,
                                        std::map<uint, uint>& dof2row)
 {
   // Extract coefficents for v on patch cell
-  boost::scoped_array<double> dof_values(new double[V.element().space_dimension()]);
-  v.restrict(dof_values.get(), V.element(), cell1, c1);
+  std::vector<double> dof_values(V.element().space_dimension());
+  v.restrict(&dof_values[0], V.element(), cell1, c1);
 
   // Iterate over given local dofs for V on patch cell
   for (std::map<uint, uint>::iterator it = dof2row.begin(); it!= dof2row.end(); it++)
@@ -199,13 +198,13 @@ Extrapolation::compute_unique_dofs(const Cell& cell, const ufc::cell& c,
                                    uint& row,
                                    std::set<uint>& unique_dofs)
 {
-  boost::scoped_array<uint> dofs(new uint[V.dofmap().local_dimension(c)]);
+  boost::scoped_array<uint> dofs(new uint[V.dofmap().dimension(cell.index())]);
   V.dofmap().tabulate_dofs(dofs.get(), c, cell.index());
 
   // Data structure for current cell
   std::map<uint, uint> dof2row;
 
-  for (uint i = 0; i < V.dofmap().local_dimension(c); ++i)
+  for (uint i = 0; i < V.dofmap().dimension(cell.index()); ++i)
   {
     // Ignore if this degree of freedom is already considered
     if (unique_dofs.find(dofs[i]) != unique_dofs.end())

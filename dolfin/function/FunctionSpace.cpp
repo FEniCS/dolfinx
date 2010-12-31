@@ -142,7 +142,7 @@ void FunctionSpace::interpolate(GenericVector& expansion_coefficients,
 
     // Copy dofs to vector
     expansion_coefficients.set(cell_coefficients.get(),
-                               _dofmap->local_dimension(ufc_cell),
+                               _dofmap->dimension(cell->index()),
                                cell_dofs.get());
   }
 
@@ -231,7 +231,7 @@ void FunctionSpace::print_dofmap() const
   for (CellIterator cell(*_mesh); !cell.end(); ++cell)
   {
     ufc_cell.update(*cell);
-    const uint n = _dofmap->local_dimension(ufc_cell);
+    const uint n = _dofmap->dimension(cell->index());
     boost::scoped_array<uint> dofs(new uint[n]);
     _dofmap->tabulate_dofs(dofs.get(), ufc_cell, cell->index());
 

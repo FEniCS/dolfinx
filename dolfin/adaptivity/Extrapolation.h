@@ -13,7 +13,6 @@
 #include <map>
 #include <set>
 #include <vector>
-#include <boost/scoped_array.hpp>
 
 #include <dolfin/common/types.h>
 
@@ -74,7 +73,7 @@ namespace dolfin
                                      const Function&v, const FunctionSpace& V,
                                      const FunctionSpace& W, const Cell& cell0,
                                      const ufc::cell& c0,
-                                     const boost::scoped_array<uint>& dofs,
+                                     const std::vector<uint>& dofs,
                                      uint& offset);
 
     // Add equations for current cell

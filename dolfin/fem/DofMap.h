@@ -23,7 +23,7 @@ namespace dolfin
 
   class UFC;
   class UFCMesh;
-  template<class T> class Set;
+  //template<class T> class Set;
 
   /// This class handles the mapping of degrees of freedom. It builds
   /// a dof map based on a ufc::dof_map on a specific mesh. It will
@@ -58,57 +58,28 @@ namespace dolfin
     ~DofMap();
 
     /// Return a string identifying the dof map
-    std::string signature() const
-    {
-      error("DofMap has been re-ordered. Cannot return signature string.");
-      return _ufc_dofmap->signature();
-    }
+    std::string signature() const;
 
     /// Return true iff mesh entities of topological dimension d are needed
-    bool needs_mesh_entities(unsigned int d) const
-    {
-      assert(_ufc_dofmap);
-      return _ufc_dofmap->needs_mesh_entities(d);
-    }
+    bool needs_mesh_entities(unsigned int d) const;
 
     /// Return the dimension of the global finite element function space
-    unsigned int global_dimension() const
-    {
-      assert(_ufc_dofmap);
-      assert(_ufc_dofmap->global_dimension() > 0);
-      return _ufc_dofmap->global_dimension();
-    }
+    unsigned int global_dimension() const;
+
+    /// Return the dimension of the local (process) finite element function space
+    unsigned int local_dimension() const;
 
     /// Return the dimension of the local finite element function space on a cell
-    unsigned int local_dimension(const ufc::cell& cell) const
-    {
-      // FIXME: Needs to be fixed for parallel. Perhaps have local_dimension(uint cell_index)?
-
-      // Get cell index
-      //return dofmap[cell_index].size();
-      return  _ufc_dofmap->local_dimension(cell);
-    }
+    unsigned int dimension(uint cell_index) const;
 
     /// Return the maximum dimension of the local finite element function space
-    unsigned int max_local_dimension() const
-    {
-      assert( _ufc_dofmap);
-      return _ufc_dofmap->max_local_dimension();
-    }
+    unsigned int max_local_dimension() const;
 
     // Return the geometric dimension of the coordinates this dof map provides
-    unsigned int geometric_dimension() const
-    {
-      assert(_ufc_dofmap);
-      return _ufc_dofmap->geometric_dimension();
-    }
+    unsigned int geometric_dimension() const;
 
     /// Return number of facet dofs
-    unsigned int num_facet_dofs() const
-    {
-      assert(_ufc_dofmap);
-      return _ufc_dofmap->num_facet_dofs();
-    }
+    unsigned int num_facet_dofs() const;
 
     /// Local-to-global mapping of dofs on a cell
     const std::vector<uint>& cell_dofs(uint cell_index) const
@@ -140,7 +111,7 @@ namespace dolfin
     DofMap* collapse(std::map<uint, uint>& collapsed_map, const Mesh& dolfin_mesh) const;
 
     /// Return the set of dof indices
-    Set<dolfin::uint> dofs(const Mesh& mesh, bool sort = false) const;
+    Set<dolfin::uint> dofs(bool sort) const;
 
     // Renumber dofs
     void renumber(const std::vector<uint>& renumbering_map);

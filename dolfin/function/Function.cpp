@@ -163,10 +163,11 @@ const Function& Function::operator= (const Function& v)
 
     // FIXME: This assertion doesn't work in parallel
     //assert(collapsed_map.size() == _function_space->dofmap().global_dimension());
+    //assert(collapsed_map.size() == _function_space->dofmap().local_dimension());
 
     // Create new vector (global)
     _vector.reset(v.vector().factory().create_vector());
-    _vector->resize( collapsed_dof_map->global_dimension() );
+    _vector->resize(collapsed_dof_map->global_dimension());
 
     // Get row indices of original and new vectors
     std::map<uint, uint>::const_iterator entry;

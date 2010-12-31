@@ -39,9 +39,12 @@ namespace dolfin
     /// Return the dimension of the global finite element function space
     virtual unsigned int global_dimension() const = 0;
 
+    /// Return the dimension of the local (process) finite element function space
+    virtual unsigned int local_dimension() const = 0;
+
     /// Return the dimension of the local finite element function space on a
     /// cell
-    virtual unsigned int local_dimension(const ufc::cell& cell) const = 0;
+    virtual unsigned int dimension(uint index) const = 0;
 
     /// Return the maximum dimension of the local finite element function space
     virtual unsigned int max_local_dimension() const = 0;
@@ -83,9 +86,8 @@ namespace dolfin
     virtual GenericDofMap* collapse(std::map<uint, uint>& collapsed_map,
                                     const Mesh& dolfin_mesh) const = 0;
 
-    /// Return the set of dof indices
-    virtual Set<dolfin::uint> dofs(const Mesh& mesh,
-                                   bool sort = false) const = 0;
+    /// Return the set of dof indices with option to sort dofs
+    virtual Set<dolfin::uint> dofs(bool sort) const = 0;
 
     /// Re-number
     virtual void renumber(const std::vector<uint>& renumbering_map) = 0;
