@@ -174,7 +174,7 @@ void DirichletBC::apply(GenericMatrix& A,
   apply(&A, &b, &x);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::get_boundary_values(std::map<uint, double>& boundary_values,
+void DirichletBC::get_boundary_values(Map& boundary_values,
                          std::string method) const
 {
   // Create local data
@@ -187,7 +187,7 @@ void DirichletBC::get_boundary_values(std::map<uint, double>& boundary_values,
 void DirichletBC::zero(GenericMatrix& A) const
 {
   // A map to hold the mapping from boundary dofs to boundary values
-  std::map<uint, double> boundary_values;
+  Map boundary_values;
 
   // Create local data for application of boundary conditions
   BoundaryCondition::LocalData data(*_function_space);
@@ -197,7 +197,7 @@ void DirichletBC::zero(GenericMatrix& A) const
 
   // Copy boundary value data to arrays
   std::vector<uint> dofs(boundary_values.size());
-  std::map<uint, double>::const_iterator bv;
+  Map::const_iterator bv;
   uint i = 0;
   for (bv = boundary_values.begin(); bv != boundary_values.end(); ++bv)
     dofs[i++] = bv->first;
@@ -312,7 +312,7 @@ void DirichletBC::apply(GenericMatrix* A,
   check_arguments(A, b, x);
 
   // A map to hold the mapping from boundary dofs to boundary values
-  std::map<uint, double> boundary_values;
+  Map boundary_values;
 
   // Create local data for application of boundary conditions
   BoundaryCondition::LocalData data(*_function_space);
@@ -324,7 +324,7 @@ void DirichletBC::apply(GenericMatrix* A,
   const uint size = boundary_values.size();
   std::vector<uint> dofs(size);
   std::vector<double> values(size);
-  std::map<uint, double>::const_iterator bv;
+  Map::const_iterator bv;
   uint i = 0;
   for (bv = boundary_values.begin(); bv != boundary_values.end(); ++bv)
   {
@@ -501,7 +501,7 @@ void DirichletBC::init_from_mesh(uint sub_domain)
   }
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::compute_bc(std::map<uint, double>& boundary_values,
+void DirichletBC::compute_bc(Map& boundary_values,
                              BoundaryCondition::LocalData& data,
                              std::string method) const
 {
@@ -520,7 +520,7 @@ void DirichletBC::compute_bc(std::map<uint, double>& boundary_values,
     error("Unknown method for application of boundary conditions.");
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values,
+void DirichletBC::compute_bc_topological(Map& boundary_values,
                                          BoundaryCondition::LocalData& data) const
 {
   assert(_function_space);
@@ -573,7 +573,7 @@ void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values
   }
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
+void DirichletBC::compute_bc_geometric(Map& boundary_values,
                                       BoundaryCondition::LocalData& data) const
 {
   assert(_function_space);
@@ -648,7 +648,7 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
   }
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
+void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                       BoundaryCondition::LocalData& data) const
 {
   assert(_function_space);

@@ -103,6 +103,10 @@ int main()
   bcs.push_back(&bcl);
   bcs.push_back(&bcr);
 
+  std::vector<const DirichletBC*> _bcs;
+  _bcs.push_back(&bcl);
+  _bcs.push_back(&bcr);
+
   // Set elasticity parameters
   double E  = 10.0;
   double nu = 0.3;
@@ -136,9 +140,9 @@ int main()
   vtk_file << u;
 
   // Save colored mesh paritions in VTK format if running in parallel
-  if (MPI::num_processes() > 1)
+  if (dolfin::MPI::num_processes() > 1)
   {
-    CellFunction<dolfin::uint> partitions(mesh, MPI::process_number());
+    CellFunction<dolfin::uint> partitions(mesh, dolfin::MPI::process_number());
     File file("partitions.pvd");
     file << partitions;
   }

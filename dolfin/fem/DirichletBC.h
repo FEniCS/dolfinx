@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
 
 #include <dolfin/common/types.h>
 #include "BoundaryCondition.h"
@@ -79,7 +80,11 @@ namespace dolfin
 
   class DirichletBC : public BoundaryCondition
   {
+
   public:
+
+    typedef boost::unordered_map<uint, double> Map;
+    //typedef std::map<uint, double> Map;
 
     /// Create boundary condition for subdomain
     DirichletBC(const FunctionSpace& V,
@@ -157,7 +162,7 @@ namespace dolfin
                const GenericVector& x) const;
 
     /// Get Dirichlet dofs and values
-    void get_boundary_values(std::map<uint, double>& boundary_values,
+    void get_boundary_values(Map& boundary_values,
                              std::string method="default") const;
 
     /// Make row associated with boundary conditions zero, useful for
@@ -223,19 +228,19 @@ namespace dolfin
 
     // Compute dofs and values for application of boundary conditions using
     // given method
-    void compute_bc(std::map<uint, double>& boundary_values,
+    void compute_bc(Map& boundary_values,
                     BoundaryCondition::LocalData& data, std::string method) const;
 
     // Compute boundary values for facet (topological approach)
-    void compute_bc_topological(std::map<uint, double>& boundary_values,
+    void compute_bc_topological(Map& boundary_values,
                                 BoundaryCondition::LocalData& data) const;
 
     // Compute boundary values for facet (geometrical approach)
-    void compute_bc_geometric(std::map<uint, double>& boundary_values,
+    void compute_bc_geometric(Map& boundary_values,
                               BoundaryCondition::LocalData& data) const;
 
     // Compute boundary values for facet (pointwise approach)
-    void compute_bc_pointwise(std::map<uint, double>& boundary_values,
+    void compute_bc_pointwise(Map& boundary_values,
                               BoundaryCondition::LocalData& data) const;
 
     // Check if the point is in the same plane as the given facet

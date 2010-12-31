@@ -8,6 +8,8 @@
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/function/GenericFunction.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/GenericMatrix.h>
 #include <dolfin/la/GenericVector.h>
 #include <dolfin/mesh/Mesh.h>
@@ -15,14 +17,12 @@
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/SubDomain.h>
-#include <dolfin/function/GenericFunction.h>
-#include <dolfin/function/FunctionSpace.h>
-#include "GenericDofMap.h"
+#include "AssemblerTools.h"
+#include "DirichletBC.h"
 #include "FiniteElement.h"
 #include "Form.h"
+#include "GenericDofMap.h"
 #include "UFC.h"
-#include "DirichletBC.h"
-#include "AssemblerTools.h"
 #include "SystemAssembler.h"
 
 using namespace dolfin;
@@ -113,7 +113,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
   Scratch data(a, L);
 
   // Get Dirichlet dofs and values for local mesh
-  std::map<uint, double> boundary_values;
+  DirichletBC::Map boundary_values;
   for (uint i = 0; i < bcs.size(); ++i)
   {
     // Methods other than 'pointwise' are not robust in parallel since a vertex
@@ -143,7 +143,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     bc_values.reserve(num_bc_dofs);
 
     // Build list of boundary dofs and values
-    std::map<uint, double>::const_iterator bv;
+    DirichletBC::Map::const_iterator bv;
     for (bv = boundary_values.begin(); bv != boundary_values.end(); ++bv)
     {
       bc_indices.push_back(bv->first);
@@ -181,7 +181,7 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
 void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
                               const Form& a, const Form& L,
                               UFC& A_ufc, UFC& b_ufc, Scratch& data,
-                              const std::map<uint, double>& boundary_values,
+                              const DirichletBC::Map& boundary_values,
                               const MeshFunction<uint>* cell_domains,
                               const MeshFunction<uint>* exterior_facet_domains)
 {
@@ -292,7 +292,7 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
 void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
                               const Form& a, const Form& L,
                               UFC& A_ufc, UFC& b_ufc, Scratch& data,
-                              const std::map<uint, double>& boundary_values,
+                              const DirichletBC::Map& boundary_values,
                               const MeshFunction<uint>* cell_domains,
                               const MeshFunction<uint>* exterior_facet_domains,
                               const MeshFunction<uint>* interior_facet_domains)
@@ -414,7 +414,7 @@ void SystemAssembler::compute_tensor_on_one_interior_facet(const Form& a,
 }
 //-----------------------------------------------------------------------------
 inline void SystemAssembler::apply_bc(double* A, double* b,
-                      const std::map<uint, double>& boundary_values,
+                      const DirichletBC::Map& boundary_values,
                       const std::vector<const std::vector<uint>* >& global_dofs)
 {
   // Get local dimensions
@@ -424,7 +424,7 @@ inline void SystemAssembler::apply_bc(double* A, double* b,
   for (uint i = 0; i < n; ++i)
   {
     const uint ii = (*global_dofs[1])[i];
-    std::map<uint, double>::const_iterator bc_value = boundary_values.find(ii);
+    DirichletBC::Map::const_iterator bc_value = boundary_values.find(ii);
 
     if (bc_value != boundary_values.end())
     {
@@ -446,7 +446,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
                               const Form& a, const Form& L,
                               const Cell& cell0, const Cell& cell1,
                               const Facet& facet, Scratch& data,
-                              const std::map<uint, double>& boundary_values)
+                              const DirichletBC::Map& boundary_values)
 {
   // Facet orientation not supported
   if (cell0.mesh().data().mesh_function("facet orientation"))
@@ -561,7 +561,7 @@ void SystemAssembler::assemble_exterior_facet(GenericMatrix& A, GenericVector& b
                                const Form& a, const Form& L,
                                const Cell& cell, const Facet& facet,
                                Scratch& data,
-                               const std::map<uint, double>& boundary_values)
+                               const DirichletBC::Map& boundary_values)
 {
   const uint local_facet = cell.index(facet);
 
