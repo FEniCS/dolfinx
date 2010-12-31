@@ -9,6 +9,7 @@
 
 #include <set>
 #include <vector>
+
 #include <dolfin/common/types.h>
 
 namespace dolfin
@@ -28,11 +29,11 @@ namespace dolfin
 
   private:
 
-    // Compute distribted dual graph for mesh
+    // Compute cell partitions from distribted dual graph
     static void partition(const std::vector<std::set<uint> >& local_graph,
                           const std::set<uint>& ghost_vertices,
                           const std::vector<uint>& global_cell_indices,
-                          uint num_global_vertices,
+                          const uint num_global_vertices,
                           std::vector<uint>& cell_partition);
 
   };
