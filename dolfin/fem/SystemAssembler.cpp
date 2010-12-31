@@ -104,8 +104,8 @@ void SystemAssembler::assemble(GenericMatrix& A,
   Scratch data(a, L);
 
   // Get boundary values (global)
-  data.bc_indicators.resize(function_space(1)->dofmap().local_dimension());
-  data.bc_values.resize(function_space(1)->dofmap().local_dimension());
+  data.bc_indicators.resize(a.function_space(1)->dofmap().local_dimension());
+  data.bc_values.resize(a.function_space(1)->dofmap().local_dimension());
   for(uint i = 0; i < bcs.size(); ++i)
     bcs[i]->get_bc(data.bc_indicators, data.bc_values);
 

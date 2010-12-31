@@ -771,10 +771,10 @@ void DirichletBC::get_bc(std::vector<bool>& indicators,
 {
   // FIXME: Should we use an unordered_map here?
 
-  // A map to hold the mapping from boundary dofs to boundary values
+  // Map from boundary dofs to boundary values
   std::map<uint, double> boundary_values;
 
-  // Create local data for application of boundary conditions
+  // Create local data
   BoundaryCondition::LocalData data(*_function_space);
 
   // Compute dofs and values
