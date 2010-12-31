@@ -9,7 +9,7 @@
 //
 // This file duplicates the Assembler::assemble* and SystemAssembler::assemble*
 // functions in namespace dolfin, and adds special versions returning the value
-// directly for scalars. For documentation, refer to Assemble.h and 
+// directly for scalars. For documentation, refer to Assemble.h and
 // SystemAssemble.h
 
 #ifndef __ASSEMBLE_H
@@ -67,7 +67,7 @@ namespace dolfin
                        const Form& a,
                        const Form& L,
                        const DirichletBC& bc,
-                       bool reset_sparsitys=true,
+                       bool reset_sparsities=true,
                        bool add_values=false);
 
   /// Assemble system (A, b) and apply Dirichlet boundary conditions
@@ -76,7 +76,7 @@ namespace dolfin
                        const Form& a,
                        const Form& L,
                        const std::vector<const DirichletBC*>& bcs,
-                       bool reset_sparsitys=true,
+                       bool reset_sparsities=true,
                        bool add_values=false);
 
   /// Assemble system (A, b) on sub domains and apply Dirichlet boundary conditions
@@ -96,13 +96,13 @@ namespace dolfin
 
   /// Assemble scalar
   double assemble(const Form& a,
-                  bool reset_sparsity=true, 
+                  bool reset_sparsity=true,
                   bool add_values=false);
 
   /// Assemble scalar on sub domain
   double assemble(const Form& a,
                   const SubDomain& sub_domain,
-                  bool reset_sparsity=true, 
+                  bool reset_sparsity=true,
                   bool add_values=false);
 
   /// Assemble scalar on sub domains

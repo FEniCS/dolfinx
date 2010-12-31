@@ -95,7 +95,7 @@ namespace dolfin
       // Coordinates for dofs
       double** coordinates;
 
-      std::vector< Array<double> > array_coordinates;
+      std::vector<Array<double> > array_coordinates;
 
     };
 

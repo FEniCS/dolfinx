@@ -38,7 +38,7 @@ int main()
   {
     bool inside(const Array<double>& x, bool on_boundary) const
     {
-      return x[0] < 0.5 && on_boundary;
+      return x[0] < 0.5;// && on_boundary;
     }
   };
 
@@ -75,15 +75,11 @@ int main()
   {
     bool inside(const Array<double>& x, bool on_boundary) const
     {
-      return x[0] > 0.9 && on_boundary;
+      return x[0] > 0.9;// && on_boundary;
     }
   };
 
-  //parameters["mesh_partitioner"] = "ParMETIS";
   parameters["mesh_partitioner"] = "SCOTCH";
-
-  //parameters["linear_algebra_backend"] = "Epetra";
-  parameters["linear_algebra_backend"] = "PETSc";
 
   // Read mesh and create function space
   Mesh mesh("gear.xml.gz");
@@ -95,14 +91,12 @@ int main()
   // Set up boundary condition at left end
   Clamp c;
   Left left;
-  //DirichletBC bcl(V, c, left);
-  DirichletBC bcl(V, f, left);
+  DirichletBC bcl(V, c, left);
 
   // Set up boundary condition at right end
   Rotation r;
   Right right;
-  //DirichletBC bcr(V, r, right);
-  DirichletBC bcr(V, f, right);
+  DirichletBC bcr(V, r, right);
 
   // Collect boundary conditions
   std::vector<const BoundaryCondition*> bcs;
@@ -120,21 +114,7 @@ int main()
   a.mu = mu; a.lmbda = lambda;
   Elasticity::LinearForm L(V);
   L.f = f;
-  Matrix A;
-  Vector b;
-  assemble_system(A, b, a, L, bcl);
-  std::cout.precision(15);
-  std::cout << "Matrix norm: " << A.norm("frobenius") << std::endl;
-  std::cout << "Vector norm: " << b.norm("l2") << std::endl;
 
-  //cout <<  " --  " << endl;
-
-  //assemble(A, a);
-  //assemble(b, L);
-  //std::cout.precision(15);
-  //std::cout << "Matrix norm (2): " << A.norm("frobenius") << std::endl;
-  //std::cout << "Vector norm (2): " << b.norm("l2") << std::endl;
-  /*
   VariationalProblem problem(a, L, bcs);
   problem.parameters["symmetric"] = true;
 
@@ -146,10 +126,10 @@ int main()
   Function ux = u[0];
   Function uy = u[1];
   Function uz = u[2];
-  cout << "Norm (u): " << u.vector().norm("l2") << endl;
-  cout << "Norm (ux, uy, uz): " << ux.vector().norm("l2") << "  "
+  std::cout << "Norm (u): " << u.vector().norm("l2") << std::endl;
+  std::cout << "Norm (ux, uy, uz): " << ux.vector().norm("l2") << "  "
                                    << uy.vector().norm("l2") << "  "
-                                   << uz.vector().norm("l2") << endl;
+                                   << uz.vector().norm("l2") << std::endl;
 
   // Save solution in VTK format
   File vtk_file("elasticity.pvd", "compressed");
@@ -169,6 +149,6 @@ int main()
   // Displace mesh and plot displaced mesh
   mesh.move(u);
   plot(mesh, "Deformed mesh");
-  */
+
  return 0;
 }

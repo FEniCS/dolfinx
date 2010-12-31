@@ -1,11 +1,11 @@
-// Copyright (C) 2007-2008 Anders Logg and Garth N. Wells.
+// Copyright (C) 2007-2010 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Kristian Oelgaard, 2007
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2010-08-26
+// Last changed: 2010-12-21
 //
 // FIXME: This class needs some cleanup, in particular collecting
 // FIXME: all data from different representations into a common
@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+
 #include <dolfin/common/types.h>
 #include "BoundaryCondition.h"
 
@@ -155,6 +156,10 @@ namespace dolfin
     void apply(GenericMatrix& A, GenericVector& b,
                const GenericVector& x) const;
 
+    /// Get Dirichlet dofs and values
+    void get_boundary_values(std::map<uint, double>& boundary_values,
+                             std::string method="default") const;
+
     /// Make row associated with boundary conditions zero, useful for
     /// non-diagonal matrices in a block matrix.
     void zero(GenericMatrix& A) const;
@@ -170,9 +175,6 @@ namespace dolfin
     /// Testing multiline comment
     boost::shared_ptr<const GenericFunction> value_ptr();
 
-    /// Get Dirichlet dofs and values
-    void get_bc(std::map<uint, double>& boundary_values) const;
-
     /// Check if given function is compatible with boundary condition
     /// (checking only vertex values)
     bool is_compatible(GenericFunction& v) const;
@@ -182,6 +184,10 @@ namespace dolfin
 
     /// Set value g for boundary condition, domain remains unchanged
     void set_value(boost::shared_ptr<const GenericFunction> g);
+
+    /// Return method used for computing Dirichet dofs ("topological",
+    /// "geometric" or "pointwise")
+    std::string method() const;
 
     /// Default parameter values
     static Parameters default_parameters()
@@ -215,9 +221,10 @@ namespace dolfin
     // Initialize sub domain markers from mesh
     void init_from_mesh(uint sub_domain);
 
-    // Compute dofs and values for application of boundary conditions
+    // Compute dofs and values for application of boundary conditions using
+    // given method
     void compute_bc(std::map<uint, double>& boundary_values,
-                    BoundaryCondition::LocalData& data) const;
+                    BoundaryCondition::LocalData& data, std::string method) const;
 
     // Compute boundary values for facet (topological approach)
     void compute_bc_topological(std::map<uint, double>& boundary_values,
@@ -238,7 +245,7 @@ namespace dolfin
     boost::shared_ptr<const GenericFunction> g;
 
     // Search method
-    std::string method;
+    std::string _method;
 
     // Possible search methods
     static const std::set<std::string> methods;

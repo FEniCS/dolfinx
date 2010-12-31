@@ -1,10 +1,10 @@
-// Copyright (C) 2008-2009 Kent-Andre Mardal and Garth N. Wells.
+// Copyright (C) 2008-20010 Kent-Andre Mardal and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008-2009.
 //
 // First added:  2009-06-22
-// Last changed: 2010-02-17
+// Last changed: 2010-12-21
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/common/Timer.h>
@@ -28,55 +28,51 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(GenericMatrix& A,
-                                      GenericVector& b,
-                                      const Form& a,
-                                      const Form& L,
-                                      bool reset_sparsity,
-                                      bool add_values)
+void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
+                               const Form& a, const Form& L,
+                               bool reset_sparsity, bool add_values)
 {
   std::vector<const DirichletBC*> bcs;
   assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_sparsity, add_values);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(GenericMatrix& A,
-                                          GenericVector& b,
-                                          const Form& a,
-                                          const Form& L,
-                                          const DirichletBC& bc,
-                                          bool reset_sparsity,
-                                          bool add_values)
+void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
+                               const Form& a, const Form& L,
+                               const DirichletBC& bc,
+                               bool reset_sparsity, bool add_values)
 {
   std::vector<const DirichletBC*> bcs;
   bcs.push_back(&bc);
   assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_sparsity, add_values);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(GenericMatrix& A,
-                                          GenericVector& b,
-                                          const Form& a,
-                                          const Form& L,
-                                          const std::vector<const DirichletBC*>& bcs,
-                                          bool reset_sparsity,
-                                          bool add_values)
+void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
+                               const Form& a, const Form& L,
+                               const std::vector<const DirichletBC*>& bcs,
+                               bool reset_sparsity, bool add_values)
 {
   assemble(A, b, a, L, bcs, 0, 0, 0, 0, reset_sparsity, add_values);
 }
 //-----------------------------------------------------------------------------
-void SystemAssembler::assemble(GenericMatrix& A,
-                                          GenericVector& b,
-                                          const Form& a,
-                                          const Form& L,
-                                          const std::vector<const DirichletBC*>& bcs,
-                                          const MeshFunction<uint>* cell_domains,
-                                          const MeshFunction<uint>* exterior_facet_domains,
-                                          const MeshFunction<uint>* interior_facet_domains,
-                                          const GenericVector* x0,
-                                          bool reset_sparsity,
-                                          bool add_values)
+void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
+                               const Form& a, const Form& L,
+                               const std::vector<const DirichletBC*>& bcs,
+                               const MeshFunction<uint>* cell_domains,
+                               const MeshFunction<uint>* exterior_facet_domains,
+                               const MeshFunction<uint>* interior_facet_domains,
+                               const GenericVector* x0,
+                               bool reset_sparsity, bool add_values)
 {
   Timer timer("Assemble system");
   info(PROGRESS, "Assembling linear system and applying boundary conditions...");
+
+  const Mesh& mesh = a.mesh();
+
+  // Compute facets and facet - cell connectivity if not already computed
+  const uint D = mesh.topology().dim();
+  mesh.init(D - 1);
+  mesh.init(D - 1, D);
+  assert(mesh.ordered());
 
   // FIXME: Some things can be simplified since we know it's a matrix and a vector
 
@@ -119,9 +115,18 @@ void SystemAssembler::assemble(GenericMatrix& A,
   // Get Dirichlet dofs and values for local mesh
   std::map<uint, double> boundary_values;
   for (uint i = 0; i < bcs.size(); ++i)
-    bcs[i]->get_bc(boundary_values);
-
-  //cout << "Number of Dirichlet bc: " <<  boundary_values.size() << endl;
+  {
+    // Methods other than 'pointwise' are not robust in parallel since a vertex
+    // can have a bc applied, but the partition might not have a facet on the boundary.
+    if (MPI::num_processes() > 1 && bcs[i]->method() != "pointwise")
+    {
+      warning("Dirichlet boundary condition method '%s' is not robust in parallel with symmetric assembly. Using 'pointwise' instead.", bcs[i]->method().c_str());
+      warning("Caution: 'on_boundary' does not work with 'pointwise' boundary conditions,");
+      bcs[i]->get_boundary_values(boundary_values, "pointwise");
+    }
+    else
+      bcs[i]->get_boundary_values(boundary_values);
+  }
 
   // Modify boundary values for incremental (typically nonlinear) problems
   if (x0)
@@ -154,9 +159,6 @@ void SystemAssembler::assemble(GenericMatrix& A,
 
   if (A_ufc.form.num_interior_facet_integrals() == 0 && b_ufc.form.num_interior_facet_integrals() == 0)
   {
-    if (MPI::num_processes() > 1)
-      warning("SystemAssembler over cells is not yet working correctly in parallel.");
-
     // Assemble cell-wise (no interior facet integrals)
     cell_wise_assembly(A, b, a, L, A_ufc, b_ufc, data, boundary_values,
                        cell_domains, exterior_facet_domains);
@@ -177,11 +179,11 @@ void SystemAssembler::assemble(GenericMatrix& A,
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
-                                    const Form& a, const Form& L,
-                                    UFC& A_ufc, UFC& b_ufc, Scratch& data,
-                                    const std::map<uint, double>& boundary_values,
-                                    const MeshFunction<uint>* cell_domains,
-                                    const MeshFunction<uint>* exterior_facet_domains)
+                              const Form& a, const Form& L,
+                              UFC& A_ufc, UFC& b_ufc, Scratch& data,
+                              const std::map<uint, double>& boundary_values,
+                              const MeshFunction<uint>* cell_domains,
+                              const MeshFunction<uint>* exterior_facet_domains)
 {
   // FIXME: We can used some std::vectors or array pointers for the A and b
   // related terms to cut down on code repetition.
@@ -274,6 +276,8 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
     a_dofs[1] = &(a_dof_maps[1]->cell_dofs(cell->index()));
     L_dofs[0] = &(L_dof_maps[0]->cell_dofs(cell->index()));
 
+    assert(L_dofs[0] == a_dofs[1]);
+
     // Modify local matrix/element for Dirichlet boundary conditions
     apply_bc(&(data.Ae)[0], &(data.be)[0], boundary_values, a_dofs);
 
@@ -286,12 +290,12 @@ void SystemAssembler::cell_wise_assembly(GenericMatrix& A, GenericVector& b,
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::facet_wise_assembly(GenericMatrix& A, GenericVector& b,
-                                    const Form& a, const Form& L,
-                                    UFC& A_ufc, UFC& b_ufc, Scratch& data,
-                                    const std::map<uint, double>& boundary_values,
-                                    const MeshFunction<uint>* cell_domains,
-                                    const MeshFunction<uint>* exterior_facet_domains,
-                                    const MeshFunction<uint>* interior_facet_domains)
+                              const Form& a, const Form& L,
+                              UFC& A_ufc, UFC& b_ufc, Scratch& data,
+                              const std::map<uint, double>& boundary_values,
+                              const MeshFunction<uint>* cell_domains,
+                              const MeshFunction<uint>* exterior_facet_domains,
+                              const MeshFunction<uint>* interior_facet_domains)
 {
   // Extract mesh and coefficients
   const Mesh& mesh = a.mesh();
@@ -441,8 +445,7 @@ void SystemAssembler::assemble_interior_facet(GenericMatrix& A, GenericVector& b
                               UFC& A_ufc, UFC& b_ufc,
                               const Form& a, const Form& L,
                               const Cell& cell0, const Cell& cell1,
-                              const Facet& facet,
-                              Scratch& data,
+                              const Facet& facet, Scratch& data,
                               const std::map<uint, double>& boundary_values)
 {
   // Facet orientation not supported

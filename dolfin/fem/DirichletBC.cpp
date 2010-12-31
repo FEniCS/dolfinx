@@ -6,9 +6,8 @@
 // Modified by Johan Hake, 2009
 //
 // First added:  2007-04-10
-// Last changed: 2010-09-16
+// Last changed: 2010-12-21
 
-#include <boost/scoped_ptr.hpp>
 #include <boost/assign/list_of.hpp>
 
 #include <dolfin/common/constants.h>
@@ -40,13 +39,10 @@ const std::set<std::string> DirichletBC::methods
             = boost::assign::list_of("topological")("geometric")("pointwise");
 
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const FunctionSpace& V,
-                         const GenericFunction& g,
-                         const SubDomain& sub_domain,
-                         std::string method)
-  : BoundaryCondition(V),
-    g(reference_to_no_delete_pointer(g)),
-    method(method), user_sub_domain(reference_to_no_delete_pointer(sub_domain))
+DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
+                         const SubDomain& sub_domain, std::string method)
+  : BoundaryCondition(V), g(reference_to_no_delete_pointer(g)),
+    _method(method), user_sub_domain(reference_to_no_delete_pointer(sub_domain))
 {
   check();
   parameters = default_parameters();
@@ -57,23 +53,18 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
                          boost::shared_ptr<const SubDomain> sub_domain,
                          std::string method)
-  : BoundaryCondition(V),
-    g(g),
-    method(method), user_sub_domain(sub_domain)
+  : BoundaryCondition(V), g(g), _method(method), user_sub_domain(sub_domain)
 {
   check();
   parameters = default_parameters();
   init_from_sub_domain(user_sub_domain);
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const FunctionSpace& V,
-                         const GenericFunction& g,
+DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
                          const MeshFunction<uint>& sub_domains,
-                         uint sub_domain,
-                         std::string method)
-  : BoundaryCondition(V),
-    g(reference_to_no_delete_pointer(g)),
-    method(method), user_sub_domain(static_cast<SubDomain*>(0))
+                         uint sub_domain, std::string method)
+  : BoundaryCondition(V), g(reference_to_no_delete_pointer(g)),
+    _method(method)
 {
   check();
   parameters = default_parameters();
@@ -85,22 +76,16 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          const MeshFunction<uint>& sub_domains,
                          uint sub_domain,
                          std::string method)
-  : BoundaryCondition(V),
-    g(g),
-    method(method), user_sub_domain(static_cast<SubDomain*>(0))
+  : BoundaryCondition(V), g(g), _method(method)
 {
   check();
   parameters = default_parameters();
   init_from_mesh_function(sub_domains, sub_domain);
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const FunctionSpace& V,
-                         const GenericFunction& g,
-                         uint sub_domain,
-                         std::string method)
-  : BoundaryCondition(V),
-    g(reference_to_no_delete_pointer(g)),
-    method(method), user_sub_domain(static_cast<SubDomain*>(0))
+DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
+                         uint sub_domain, std::string method)
+  : BoundaryCondition(V), g(reference_to_no_delete_pointer(g)), _method(method)
 {
   check();
   parameters = default_parameters();
@@ -109,24 +94,18 @@ DirichletBC::DirichletBC(const FunctionSpace& V,
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
-                         uint sub_domain,
-                         std::string method)
-  : BoundaryCondition(V),
-    g(g),
-    method(method), user_sub_domain(static_cast<SubDomain*>(0))
+                         uint sub_domain, std::string method)
+  : BoundaryCondition(V), g(g), _method(method)
 {
   check();
   parameters = default_parameters();
   init_from_mesh(sub_domain);
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(const FunctionSpace& V,
-                         const GenericFunction& g,
+DirichletBC::DirichletBC(const FunctionSpace& V, const GenericFunction& g,
                          const std::vector<std::pair<uint, uint> >& markers,
                          std::string method)
-  : BoundaryCondition(V),
-    g(reference_to_no_delete_pointer(g)),
-    method(method), user_sub_domain(static_cast<SubDomain*>(0)),
+  : BoundaryCondition(V), g(reference_to_no_delete_pointer(g)), _method(method),
     facets(markers)
 {
   check();
@@ -137,10 +116,7 @@ DirichletBC::DirichletBC(boost::shared_ptr<const FunctionSpace> V,
                          boost::shared_ptr<const GenericFunction> g,
                          const std::vector<std::pair<uint, uint> >& markers,
                          std::string method)
-  : BoundaryCondition(V),
-    g(g),
-    method(method), user_sub_domain(static_cast<SubDomain*>(0)),
-    facets(markers)
+  : BoundaryCondition(V), g(g), _method(method), facets(markers)
 {
   check();
   parameters = default_parameters();
@@ -164,7 +140,7 @@ const DirichletBC& DirichletBC::operator= (const DirichletBC& bc)
 {
   _function_space = bc._function_space;
   g = bc.g;
-  method = bc.method;
+  _method = bc._method;
   user_sub_domain = bc.user_sub_domain;
   facets = bc.facets;
 
@@ -198,6 +174,16 @@ void DirichletBC::apply(GenericMatrix& A,
   apply(&A, &b, &x);
 }
 //-----------------------------------------------------------------------------
+void DirichletBC::get_boundary_values(std::map<uint, double>& boundary_values,
+                         std::string method) const
+{
+  // Create local data
+  BoundaryCondition::LocalData data(*_function_space);
+
+  // Compute dofs and values
+  compute_bc(boundary_values, data, method);
+}
+//-----------------------------------------------------------------------------
 void DirichletBC::zero(GenericMatrix& A) const
 {
   // A map to hold the mapping from boundary dofs to boundary values
@@ -207,7 +193,7 @@ void DirichletBC::zero(GenericMatrix& A) const
   BoundaryCondition::LocalData data(*_function_space);
 
   // Compute dofs and values
-  compute_bc(boundary_values, data);
+  compute_bc(boundary_values, data, _method);
 
   // Copy boundary value data to arrays
   std::vector<uint> dofs(boundary_values.size());
@@ -313,6 +299,11 @@ void DirichletBC::set_value(boost::shared_ptr<const GenericFunction> g)
   this->g = g;
 }
 //-----------------------------------------------------------------------------
+std::string DirichletBC::method() const
+{
+  return _method;
+}
+//-----------------------------------------------------------------------------
 void DirichletBC::apply(GenericMatrix* A,
                         GenericVector* b,
                         const GenericVector* x) const
@@ -327,7 +318,7 @@ void DirichletBC::apply(GenericMatrix* A,
   BoundaryCondition::LocalData data(*_function_space);
 
   // Compute dofs and values
-  compute_bc(boundary_values, data);
+  compute_bc(boundary_values, data, _method);
 
   // Copy boundary value data to arrays
   const uint size = boundary_values.size();
@@ -397,7 +388,7 @@ void DirichletBC::check() const
                 "create boundary condition", "value dimension");
 
   // Check that boundary condition method is known
-  if (methods.count(method) == 0)
+  if (methods.count(_method) == 0)
     error("Unable to create boundary condition, unknown method specified.");
 
   // Check that the mesh is ordered
@@ -469,8 +460,6 @@ void DirichletBC::init_from_mesh(uint sub_domain)
   // or it won't do anything good (since the markers are wrong anyway).
   // In conclusion: we don't need to order the mesh here.
 
-  cout << "Creating sub domain markers for boundary condition." << endl;
-
   // Get data
   const std::vector<uint>* facet_cells   = _function_space->mesh().data().array("boundary facet cells");
   const std::vector<uint>* facet_numbers = _function_space->mesh().data().array("boundary facet numbers");
@@ -482,11 +471,13 @@ void DirichletBC::init_from_mesh(uint sub_domain)
     info(_function_space->mesh().data());
     error("Mesh data \"boundary facet cells\" not available.");
   }
+
   if (!facet_numbers)
   {
     info(_function_space->mesh().data());
     error("Mesh data \"boundary facet numbers\" not available.");
   }
+
   if (!indicators)
   {
     info(_function_space->mesh().data());
@@ -511,8 +502,13 @@ void DirichletBC::init_from_mesh(uint sub_domain)
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc(std::map<uint, double>& boundary_values,
-                             BoundaryCondition::LocalData& data) const
+                             BoundaryCondition::LocalData& data,
+                             std::string method) const
 {
+  // Set method if dafault
+  if (method == "default")
+    method = _method;
+
   // Choose strategy
   if (method == "topological")
     compute_bc_topological(boundary_values, data);
@@ -549,7 +545,7 @@ void DirichletBC::compute_bc_topological(std::map<uint, double>& boundary_values
   for (uint f = 0; f < facets.size(); ++f)
   {
     // Get cell number and local facet number
-    const uint cell_number = facets[f].first;
+    const uint cell_number  = facets[f].first;
     const uint facet_number = facets[f].second;
 
     // Create cell
@@ -638,7 +634,7 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
             // Tabulate dofs on cell
             dofmap.tabulate_dofs(data.cell_dofs, *c);
 
-            /// Restrict coefficient to cell
+            // Restrict coefficient to cell
             g->restrict(data.w, _function_space->element(), cell, ufc_cell);
           }
 
@@ -653,7 +649,7 @@ void DirichletBC::compute_bc_geometric(std::map<uint, double>& boundary_values,
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
-                                       BoundaryCondition::LocalData& data) const
+                                      BoundaryCondition::LocalData& data) const
 {
   assert(_function_space);
   assert(g);
@@ -677,18 +673,18 @@ void DirichletBC::compute_bc_pointwise(std::map<uint, double>& boundary_values,
     dofmap.tabulate_coordinates(data.coordinates, ufc_cell);
 
     // Interpolate function only once and only on cells where necessary
-    bool interpolated = false;
+    bool already_interpolated = false;
 
     // Loop all dofs on cell
     for (uint i = 0; i < dofmap.dimension(cell->index()); ++i)
     {
-      // Check if the coordinates are part of the sub domain
+      // Check if the coordinates are part of the sub domain (calls user-defined 'indside' function)
       if (!user_sub_domain->inside(data.array_coordinates[i], false))
         continue;
 
-      if (!interpolated)
+      if (!already_interpolated)
       {
-        interpolated = true;
+        already_interpolated = true;
 
         // Tabulate dofs on cell
         dofmap.tabulate_dofs(data.cell_dofs, *cell);
@@ -757,17 +753,5 @@ bool DirichletBC::on_facet(double* coordinates, Facet& facet) const
   error("Unable to determine if given point is on facet (not implemented for given facet dimension).");
 
   return false;
-}
-//-----------------------------------------------------------------------------
-void DirichletBC::get_bc(std::map<uint, double>& boundary_values) const
-{
-  // Map from boundary dofs to boundary values
-  //std::map<uint, double> boundary_values;
-
-  // Create local data
-  BoundaryCondition::LocalData data(*_function_space);
-
-  // Compute dofs and values
-  compute_bc(boundary_values, data);
 }
 //-----------------------------------------------------------------------------

@@ -62,7 +62,7 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
   // Extract exterior (non shared) facets markers
   MeshFunction<uint>* exterior = mesh.data().mesh_function("exterior facets");
 
-  Array<double> x;  
+  Array<double> x;
 
   // Compute sub domain markers
   Progress p("Computing sub domain markers", mesh.num_entities(dim));
@@ -88,7 +88,7 @@ void SubDomain::mark(MeshFunction<uint>& sub_domains, uint sub_domain) const
         {
           all_points_inside = false;
           break;
-       }
+        }
       }
     }
 
