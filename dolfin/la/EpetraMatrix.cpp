@@ -12,8 +12,11 @@
 #include <cstring>
 #include <iostream>
 #include <iomanip>
+#include <set>
 #include <sstream>
 #include <utility>
+
+#include <boost/unordered_set.hpp>
 
 #include <Epetra_BlockMap.h>
 #include <Epetra_CrsGraph.h>
@@ -110,7 +113,10 @@ void EpetraMatrix::init(const GenericSparsityPattern& sparsity_pattern)
     std::vector<dolfin::uint>& _nz_entries = const_cast<std::vector<dolfin::uint>& >(nz_entries);
     matrix_map.InsertGlobalIndices(global_row, row_set->size(), reinterpret_cast<int*>(&_nz_entries[0]));
   }
+
+  // Finalise map
   matrix_map.GlobalAssemble();
+  matrix_map.OptimizeStorage();
 
   // Create matrix
   A.reset( new Epetra_FECrsMatrix(Copy, matrix_map) );
@@ -278,31 +284,83 @@ std::string EpetraMatrix::str(bool verbose) const
 void EpetraMatrix::ident(uint m, const uint* rows)
 {
   assert(A);
+  assert(A->Filled() == true);
 
-  // FIXME: Is this the best way to do this?
+  // FIXME: This is a major hack and will not scale for large numbers of
+  // processes. The problem is that a dof is not guaranteed to reside on
+  // the same process as one of cells to which it belongs (which is bad,
+  // but is due to the sparsity pattern computation). This function only
+  // work for locally owned rows (the PETSc version works for any row).
 
-  // FIXME: This can be made more efficient by eliminating creation of some
-  //        obejcts inside the loop
+  typedef boost::unordered_set<uint> MySet;
 
-  const Epetra_CrsGraph& graph = A->Graph();
+  // Build lists of local and nonlocal rows
+  MySet local_rows;
+  std::vector<uint> non_local_rows;
   for (uint i = 0; i < m; ++i)
   {
-    const int row = rows[i];
-    const int num_nz = graph.NumGlobalIndices(row);
-    std::vector<int> indices(num_nz);
+    if (A->MyGlobalRow(rows[i]))
+      local_rows.insert(rows[i]);
+    else
+      non_local_rows.push_back(rows[i]);
+  }
 
-    int out_num = 0;
-    graph.ExtractGlobalRowCopy(row, num_nz, out_num, &indices[0]);
+  // If parallel, send non_local rows to all processes
+  if (MPI::num_processes() > 1)
+  {
+    // Send list of nonlocal rows to all processes
+    std::vector<uint> partition;
+    std::vector<uint> transmit_data;
+    for (uint i = 0; i < MPI::num_processes(); ++i)
+    {
+      if (i != MPI::process_number())
+      {
+        transmit_data.insert(transmit_data.end(), non_local_rows.begin(),
+                             non_local_rows.end());
+        partition.insert(partition.end(), non_local_rows.size(), i);
+      }
+    }
+    MPI::distribute(transmit_data, partition);
 
-    // Zero row
-    std::vector<double> block(num_nz);
-    int err = A->ReplaceGlobalValues(row, num_nz, &block[0], &indices[0]);
-    if (err != 0)
-      error("EpetraMatrix::ident: Did not manage to perform Epetra_CrsMatrix::ReplaceGlobalValues.");
+    // Unpack data
+    assert(transmit_data.size() == partition.size());
+    for (uint i = 0; i < transmit_data.size(); ++i)
+    {
+      // Insert row into set if it's local
+      const uint new_index = transmit_data[i];
+      if (A->MyGlobalRow(new_index))
+        local_rows.insert(new_index);
+    }
+  }
+  //-------------------------
 
-    // Place one on the diagonal
-    const double one = 1.0;
-    A->ReplaceGlobalValues(row, 1, &one, &row);
+  const Epetra_CrsGraph& graph = A->Graph();
+  MySet::const_iterator global_row;
+  for (global_row = local_rows.begin(); global_row != local_rows.end(); ++global_row)
+  {
+    // Get local row index
+    const int local_row = A->LRID(*global_row);
+
+    // If this process owns row, then zero row
+    if (local_row >= 0)
+    {
+      // Get row map
+      int num_nz = 0;
+      int* column_indices;
+      int err = graph.ExtractMyRowView(local_row, num_nz, column_indices);
+      if (err != 0)
+        error("EpetraMatrix::ident: Did not manage to extract row map.");
+
+      // Zero row
+      std::vector<double> block(num_nz, 0.0);
+      err = A->ReplaceMyValues(local_row, num_nz, &block[0], column_indices);
+      if (err != 0)
+        error("EpetraMatrix::ident: Did not manage to perform Epetra_CrsMatrix::ReplaceGlobalValues.");
+
+      // Place one on the diagonal
+      const double one = 1.0;
+      A->ReplaceMyValues(local_row, 1, &one, &local_row);
+    }
   }
 }
 //-----------------------------------------------------------------------------

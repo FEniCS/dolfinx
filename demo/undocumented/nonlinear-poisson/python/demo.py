@@ -35,7 +35,9 @@ class DirichletBoundary(SubDomain):
         return abs(x[0] - 1.0) < DOLFIN_EPS and on_boundary
 
 # Create mesh and define function space
-mesh = UnitSquare(16, 16)
+mesh = UnitSquare(32, 32)
+File("mesh.pvd") << mesh
+
 V = FunctionSpace(mesh, "CG", 1)
 
 # Define boundary condition

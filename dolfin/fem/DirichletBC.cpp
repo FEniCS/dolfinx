@@ -368,7 +368,9 @@ void DirichletBC::apply(GenericMatrix* A,
         A->setitem(ij, 1.0);
       }
     }
-    A->apply("insert");
+
+    // Apply changes
+    A->apply("add");
   }
 }
 //-----------------------------------------------------------------------------

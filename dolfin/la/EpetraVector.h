@@ -17,6 +17,7 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
 
 #include "GenericVector.h"
 
@@ -188,6 +189,9 @@ namespace dolfin
 
     // Global-to-local map for ghost values
     boost::unordered_map<uint, uint> ghost_global_to_local;
+
+    // Cache of off-process 'set' values (versus 'add') to be communicated
+    boost::unordered_map<uint, double> off_process_set_values;
 
     // Local/global vector
     const std::string type;

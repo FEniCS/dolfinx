@@ -108,6 +108,10 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
   // Set number of candidate ghost cells on this process to zero (not communicated to self)
   boundary_cells_per_process[MPI::process_number()] = 0;
 
+  // FIXME: Make the communication cleverer and more scalable. Send to
+  // one process at a time, and remove cells when it is know that all
+  // neighbors have been found.
+
   // Distribute data to all processes
   cout << "Send off-process data" << endl;
   MPI::distribute(transmit_data, partition);
@@ -119,16 +123,16 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
 
   // Unpack data
   uint _offset = 0;
-  for (uint i = 0; i < MPI::num_processes()-1; ++i)
+  for (uint i = 0; i < MPI::num_processes() - 1; ++i)
   {
     const uint p = partition[_offset];
-    const uint data_length = (num_cell_vertices+1)*boundary_cells_per_process[p];
+    const uint data_length = (num_cell_vertices + 1)*boundary_cells_per_process[p];
 
     std::vector<uint>& _global_cell_indices         = candidate_ghost_cell_global_indices[p];
     std::vector<std::vector<uint> >& _cell_vertices = candidate_ghost_cell_vertices[p];
 
     // Loop over data for each cell
-    for (uint j = _offset; j < _offset + data_length; j += num_cell_vertices+1)
+    for (uint j = _offset; j < _offset + data_length; j += num_cell_vertices + 1)
     {
       assert(partition[j] == p);
 
@@ -138,7 +142,7 @@ void GraphBuilder::compute_dual_graph(const LocalMeshData& mesh_data,
       // Get cell vertices
       std::vector<uint> vertices;
       for (uint k = 0; k < num_cell_vertices; ++k)
-        vertices.push_back(transmit_data[(j+1)+k]);
+        vertices.push_back(transmit_data[(j + 1) +k]);
       _cell_vertices.push_back(vertices);
     }
 

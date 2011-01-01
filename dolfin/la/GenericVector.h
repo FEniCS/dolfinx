@@ -41,7 +41,7 @@ namespace dolfin
     { assert(rank == 1); resize(dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
-    inline void init(const GenericSparsityPattern& sparsity_pattern)
+    void init(const GenericSparsityPattern& sparsity_pattern)
     { resize(sparsity_pattern.size(0)); zero(); }
 
     /// Return copy of tensor

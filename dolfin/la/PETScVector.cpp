@@ -354,6 +354,26 @@ void PETScVector::update_ghost_values()
 {
   VecGhostUpdateBegin(*x, INSERT_VALUES, SCATTER_FORWARD);
   VecGhostUpdateEnd(*x, INSERT_VALUES, SCATTER_FORWARD);
+
+  /*
+  std::vector<uint> gdof;
+  std::vector<uint> ldof;
+  for (std::map<uint, uint>::const_iterator ghost = ghost_global_to_local.begin();
+           ghost != ghost_global_to_local.end(); ++ghost)
+  {
+    gdof.push_back(ghost->first);
+    ldof.push_back(ghost->second);
+  }
+
+  std::vector<double> gvals(gdof.size());
+  get_local(&gvals[0], gdof.size(), &gdof[0]);
+  if (MPI::process_number() == 0)
+  {
+    cout << "Local   " << "Global    " << "value" << endl;
+    for (uint i = 0; i < gdof.size(); ++i)
+      cout << ldof[i] << "   " << gdof[i] << "   " << gvals[i] << endl;
+  }
+  */
 }
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator+= (const GenericVector& x)
@@ -525,7 +545,7 @@ std::string PETScVector::str(bool verbose) const
 
   if (verbose)
   {
-    warning("Verbose output for PETScVector not implemented, calling PETSc VecView directly.");
+    //warning("Verbose output for PETScVector not implemented, calling PETSc VecView directly.");
 
     // Get vector type
     const VecType petsc_type;

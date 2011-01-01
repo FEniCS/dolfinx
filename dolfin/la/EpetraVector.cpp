@@ -22,6 +22,7 @@
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 #include <Epetra_Vector.h>
+#include <Epetra_DataAccess.h>
 
 #include <dolfin/common/Array.h>
 #include <dolfin/common/Set.h>
@@ -160,6 +161,7 @@ void EpetraVector::zero()
 {
   assert(x);
   const int err = x->PutScalar(0.0);
+  //apply("add");
   if (err != 0)
     error("EpetraVector::zero: Did not manage to perform Epetra_Vector::PutScalar.");
 }
@@ -167,16 +169,57 @@ void EpetraVector::zero()
 void EpetraVector::apply(std::string mode)
 {
   assert(x);
-  int err = 0;
-  if (mode == "add")
-    err = x->GlobalAssemble(Add);
-  else if (mode == "insert")
-    err = x->GlobalAssemble(Insert);
-  else
-    error("Unknown apply mode in EpetraVector::apply");
 
-  if (err != 0)
-    error("EpetraVector::apply: Did not manage to perform Epetra_Vector::GlobalAssemble.");
+  // Special treatement required for values applied using 'set'
+  // This would be simpler if we required that only local values (on this process) can be set
+  if (MPI::sum(static_cast<uint>(off_process_set_values.size())) > 0)
+  {
+    // Create communicator
+    const EpetraFactory& f = EpetraFactory::instance();
+    Epetra_MpiComm mpi_comm = f.get_mpi_comm();
+    Epetra_SerialComm serial_comm = f.get_serial_comm();
+
+    std::vector<int> non_local_indices; non_local_indices.reserve(off_process_set_values.size());
+    std::vector<double> non_local_values; non_local_values.reserve(off_process_set_values.size());
+    boost::unordered_map<uint, double>::const_iterator entry;
+    for (entry = off_process_set_values.begin(); entry != off_process_set_values.end(); ++entry)
+    {
+      non_local_indices.push_back(entry->first);
+      non_local_values.push_back(entry->second);
+    }
+
+    // Create map for y
+    const int* _non_local_indices = reinterpret_cast<const int*>(&non_local_indices[0]);
+    Epetra_Map target_map(-1, non_local_indices.size(), _non_local_indices, 0, mpi_comm);
+
+    // Create vector y (view of non_local_values)
+    Epetra_Vector y(View, target_map, &non_local_values[0]);
+
+    // Create importer
+    Epetra_Import importer(x->Map(), target_map);
+
+    // Import off-process 'set' data
+    if (mode == "add")
+      x->Import(y, importer, Add);
+    else if (mode == "insert")
+      x->Import(y, importer, InsertAdd);
+
+    // Clear map of off-process set values
+    off_process_set_values.clear();
+  }
+  else
+  {
+    int err = 0;
+    if (mode == "add")
+      err = x->GlobalAssemble(Add);
+    else if (mode == "insert")
+      err = x->GlobalAssemble(Insert);
+    else
+      error("Unknown apply mode in EpetraVector::apply");
+
+    if (err != 0)
+      error("EpetraVector::apply: Did not manage to perform Epetra_Vector::GlobalAssemble.");
+  }
 }
 //-----------------------------------------------------------------------------
 std::string EpetraVector::str(bool verbose) const
@@ -237,10 +280,28 @@ void EpetraVector::set(const double* block, uint m, const uint* rows)
 
   if (err != 0)
     error("EpetraVector::set: Did not manage to perform Epetra_Vector::ReplaceGlobalValues.");
+
+  assert(x);
+  const Epetra_BlockMap& map = x->Map();
+  assert(x->Map().LinearMap());
+  const uint n0 = map.MinMyGID();
+  const uint n1 = map.MaxMyGID();
+
+  // Set local values, or add to off-process cache
+  for (uint i = 0; i < m; ++i)
+  {
+    if (rows[i] >= n0 && rows[i] <= n1)
+      (*x)[0][rows[i] - n0] = block[i];
+    else
+      off_process_set_values[rows[i]] = block[i];
+  }
 }
 //-----------------------------------------------------------------------------
 void EpetraVector::add(const double* block, uint m, const uint* rows)
 {
+  if (off_process_set_values.size() > 0)
+    error("EpetraVector:: must be called between calling EpetraVector::set and EpetraVector::add.");
+
   assert(x);
   int err = x->SumIntoGlobalValues(m, reinterpret_cast<const int*>(rows),
                                    block, 0);
@@ -277,9 +338,12 @@ void EpetraVector::get_local(double* block, uint m, const uint* rows) const
         // Get local index
         const int local_index = ghost_map.LID(rows[i]);
         assert(local_index != -1);
-        //std::map<uint, uint>::const_iterator _local_index = ghost_global_to_local.find(rows[i]);
-        //assert(_local_index != ghost_global_to_local.end());
 
+        //boost::unordered_map<uint, uint>::const_iterator _local_index = ghost_global_to_local.find(rows[i]);
+        //assert(_local_index != ghost_global_to_local.end());
+        //const int local_index = _local_index->second;
+
+        // Get value
         block[i] = (*x_ghost)[local_index];
       }
     }
