@@ -79,11 +79,14 @@ namespace dolfin
     // Return the geometric dimension of the coordinates this dof map provides
     unsigned int geometric_dimension() const;
 
+    /// Return number of facet dofs
+    unsigned int num_facet_dofs() const;
+
     /// Return the ownership range (dofs in this range are owned by this process)
     std::pair<unsigned int, unsigned int> ownership_range() const;
 
-    /// Return number of facet dofs
-    unsigned int num_facet_dofs() const;
+    /// Return map from nonlocal-dofs that appear in local dof map to owning process
+    const boost::unordered_map<unsigned int, unsigned int>& off_process_owner() const;
 
     /// Local-to-global mapping of dofs on a cell
     const std::vector<uint>& cell_dofs(uint cell_index) const
@@ -154,7 +157,7 @@ namespace dolfin
 
     // Owner (process) of dofs in this local dof map that do not belong to
     // this process
-    boost::unordered_map<uint, uint> off_process_owner;
+    boost::unordered_map<uint, uint> _off_process_owner;
 
     // UFC dof map offset (this is greater than zero when the dof map is a view,
     // i.e. a sub-dofmap that has not been collapsed)

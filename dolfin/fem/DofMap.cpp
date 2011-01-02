@@ -137,15 +137,20 @@ unsigned int DofMap::geometric_dimension() const
   return _ufc_dofmap->geometric_dimension();
 }
 //-----------------------------------------------------------------------------
+unsigned int DofMap::num_facet_dofs() const
+{
+  assert(_ufc_dofmap);
+  return _ufc_dofmap->num_facet_dofs();
+}
+//-----------------------------------------------------------------------------
 std::pair<unsigned int, unsigned int> DofMap::ownership_range() const
 {
   return _ownership_range;
 }
 //-----------------------------------------------------------------------------
-unsigned int DofMap::num_facet_dofs() const
+const boost::unordered_map<unsigned int, unsigned int>& DofMap::off_process_owner() const
 {
-  assert(_ufc_dofmap);
-  return _ufc_dofmap->num_facet_dofs();
+  return _off_process_owner;
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_dofs(uint* dofs, const Cell& cell) const

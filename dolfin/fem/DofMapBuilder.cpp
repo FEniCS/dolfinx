@@ -30,9 +30,6 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void DofMapBuilder::parallel_build(DofMap& dofmap, const Mesh& mesh)
 {
-  // Clear some dof map data
-  dofmap.off_process_owner.clear();
-
   // Create data structures
   set owned_dofs, shared_owned_dofs, shared_unowned_dofs;
 
@@ -175,7 +172,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
 
 
   // Clear some data
-  dofmap.off_process_owner.clear();
+  dofmap._off_process_owner.clear();
 
   // Map from old to new index for dofs
   boost::unordered_map<uint, uint> old_to_new_dof_index;
@@ -228,7 +225,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
         old_to_new_dof_index[received_old_dof_index] = received_new_dof_index;
 
         // Store map from off-process dof to owner
-        dofmap.off_process_owner[received_new_dof_index] = src;
+        dofmap._off_process_owner[received_new_dof_index] = src;
 
         // Update UFC-to-renumbered map
         dofmap.ufc_map_to_dofmap[received_old_dof_index] = received_new_dof_index;
@@ -257,7 +254,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   dofmap._ownership_range = std::make_pair<uint, uint>(process_offset, owned_dofs.size());
 
   // Check dimensions
-  assert(owned_dofs.size() + dofmap.off_process_owner.size() == dofmap.local_dimension());
+  assert(owned_dofs.size() + dofmap.off_process_owner().size() == dofmap.local_dimension());
 
   info(TRACE, "Finished renumbering dofs for parallel dof map");
 }

@@ -10,6 +10,8 @@
 #include <map>
 #include <utility>
 #include <vector>
+#include <boost/unordered_map.hpp>
+
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
 
@@ -53,14 +55,17 @@ namespace dolfin
     // Return the geometric dimension of the coordinates this dof map provides
     virtual unsigned int geometric_dimension() const = 0;
 
-    /// Return the ownership range (dofs in this range are owned by this process)
-    virtual std::pair<unsigned int, unsigned int> ownership_range() const = 0;
-
     /// Return number of facet dofs
     virtual unsigned int num_facet_dofs() const = 0;
 
+    /// Return the ownership range (dofs in this range are owned by this process)
+    virtual std::pair<unsigned int, unsigned int> ownership_range() const = 0;
+
+    /// Return map from nonlocal-dofs that appear in local dof map to owning process
+    virtual const boost::unordered_map<unsigned int, unsigned int>& off_process_owner() const = 0;
+
     /// Local-to-global mapping of dofs on a cell
-    virtual const std::vector<uint>& cell_dofs(uint cell_index) const = 0;
+    virtual const std::vector<unsigned int>& cell_dofs(uint cell_index) const = 0;
 
     /// Tabulate the local-to-global mapping of dofs on a cell
     virtual void tabulate_dofs(uint* dofs, const Cell& cell) const = 0;
