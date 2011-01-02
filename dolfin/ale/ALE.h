@@ -26,10 +26,10 @@ namespace dolfin
   public:
 
     /// Move coordinates of mesh according to new boundary coordinates
-    static void move(Mesh& mesh, BoundaryMesh& new_boundary, dolfin::ALEType method=lagrange);
+    static void move(Mesh& mesh, const BoundaryMesh& new_boundary, dolfin::ALEType method=lagrange);
 
     /// Move coordinates of mesh0 according to mesh1 with common global vertices
-    static void move(Mesh& mesh0, Mesh& mesh1, dolfin::ALEType method=lagrange);
+    static void move(Mesh& mesh0, const Mesh& mesh1, dolfin::ALEType method=lagrange);
 
     /// Move coordinates of mesh according to displacement function
     static void move(Mesh& mesh, const Function& displacement);

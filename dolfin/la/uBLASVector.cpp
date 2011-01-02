@@ -70,6 +70,26 @@ void uBLASVector::resize(uint N)
   x->clear();
 }
 //-----------------------------------------------------------------------------
+void uBLASVector::resize(std::pair<uint, uint> range)
+{
+  if (range.first != 0)
+    error("uBLASVector does not support distributed vectors.");
+
+  resize(range.second - range.first);
+}
+//-----------------------------------------------------------------------------
+void uBLASVector::resize(std::pair<uint, uint> range,
+                    const std::vector<uint>& ghost_indices)
+{
+  if (range.first != 0)
+    error("uBLASVector does not support distributed vectors.");
+
+  if (ghost_indices.size() != 0)
+    error("uBLASVector does not support ghost entries.");
+
+  resize(range.second - range.first);
+}
+//-----------------------------------------------------------------------------
 dolfin::uint uBLASVector::size() const
 {
   return x->size();

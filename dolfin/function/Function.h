@@ -12,6 +12,7 @@
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
+#include <utility>
 #include <vector>
 #include <boost/ptr_container/ptr_map.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -167,7 +168,7 @@ namespace dolfin
     void init_vector();
 
     // Get coefficients from the vector(s)
-    void compute_ghost_indices(uint n0, uint n1,
+    void compute_ghost_indices(std::pair<uint, uint> range,
                                std::vector<uint>& ghost_indices) const;
 
     // The function space

@@ -16,7 +16,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void ALE::move(Mesh& mesh, BoundaryMesh& new_boundary, ALEType method)
+void ALE::move(Mesh& mesh, const BoundaryMesh& new_boundary, ALEType method)
 {
   switch (method)
   {
@@ -39,7 +39,7 @@ void ALE::move(Mesh& mesh, BoundaryMesh& new_boundary, ALEType method)
   }
 }
 //-----------------------------------------------------------------------------
-void ALE::move(Mesh& mesh0, Mesh& mesh1, ALEType method)
+void ALE::move(Mesh& mesh0, const Mesh& mesh1, ALEType method)
 {
   // Extract boundary meshes
   BoundaryMesh boundary0(mesh0);
@@ -102,7 +102,9 @@ void ALE::move(Mesh& mesh, const Function& displacement)
   const uint gdim = mesh.geometry().dim();
   if (!((element.value_rank() == 0 && gdim == 0) ||
         (element.value_rank() == 1 && gdim == element.value_dimension(0))))
+  {
     error("Unable to move mesh, illegal value dimension of displacement function.");
+  }
 
   // Interpolate at vertices
   const uint N = mesh.num_vertices();

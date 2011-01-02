@@ -34,9 +34,6 @@ namespace dolfin
 
     //--- Basic GenericTensor interface ---
 
-    /// Resize tensor with given dimensions
-    //virtual void resize(uint rank, const uint* dims) = 0;
-
     /// Initialize zero tensor using sparsity pattern
     virtual void init(const GenericSparsityPattern& sparsity_pattern) = 0;
 

@@ -12,6 +12,7 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 
 #include "dolfin/common/Set.h"
@@ -39,7 +40,8 @@ namespace dolfin
 
     /// Initialize sparsity pattern for a generic tensor
     void init(const std::vector<uint>& dims,
-              const std::vector<std::pair<uint, uint> >& ownership_range);
+              const std::vector<std::pair<uint, uint> >& ownership_range,
+              const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner);
 
     /// Insert non-zero entries
     void insert(const std::vector<const std::vector<uint>* >& entries);
@@ -101,6 +103,9 @@ namespace dolfin
 
     // Ownership range for each dimension
     std::vector<std::pair<uint, uint> > ownership_range;
+
+    // Map from non-local vertex owning process index
+    std::vector<boost::unordered_map<uint, uint> > off_process_owner;
 
   };
 

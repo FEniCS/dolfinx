@@ -70,6 +70,14 @@ namespace dolfin
     virtual void resize(uint N)
     { vector->resize(N); }
 
+    /// Resize vector with given ownership range
+    virtual void resize(std::pair<uint, uint> range)
+    { vector->resize(range); }
+
+    /// Resize vector with given ownership range and with ghost values
+    virtual void resize(std::pair<uint, uint> range, const std::vector<uint>& ghost_indices)
+    { vector->resize(range, ghost_indices); }
+
     /// Return size of vector
     virtual uint size() const
     { return vector->size(); }
@@ -85,7 +93,6 @@ namespace dolfin
     /// Determine whether global vector index is owned by this process
     virtual bool owns_index(uint i) const
     { return vector->owns_index(i); }
-
 
     /// Get block of values (values must all live on the local process)
     virtual void get_local(double* block, uint m, const uint* rows) const

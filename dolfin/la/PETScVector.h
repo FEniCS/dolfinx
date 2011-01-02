@@ -27,6 +27,7 @@
 namespace dolfin
 {
 
+  class GenericSparsityPattern;
   template<class T> class Array;
 
   /// This class provides a simple vector class based on PETSc.
@@ -46,6 +47,9 @@ namespace dolfin
 
     /// Create vector of size N
     PETScVector(uint N, std::string type="global");
+
+    /// Create vector
+    PETScVector(const GenericSparsityPattern& sparsity_pattern);
 
     /// Copy constructor
     PETScVector(const PETScVector& x);
@@ -72,11 +76,15 @@ namespace dolfin
 
     //--- Implementation of the GenericVector interface ---
 
-    /// Resize vector to size N
+    /// Resize vector to global size N
     virtual void resize(uint N);
 
-    /// Resize vector to gloabl size N, local size n
-    virtual void resize(uint N, uint n, const std::vector<uint>& ghost_indices);
+    /// Resize vector with given ownership range
+    virtual void resize(std::pair<uint, uint> range);
+
+    /// Resize vector with given ownership range and with ghost values
+    virtual void resize(std::pair<uint, uint> range,
+                        const std::vector<uint>& ghost_indices);
 
     /// Return size of vector
     virtual uint size() const;
@@ -176,7 +184,7 @@ namespace dolfin
   private:
 
     // Initialise PETSc vector
-    void init(uint N, uint n, const std::vector<uint>& ghost_indices,
+    void init(std::pair<uint, uint> range, const std::vector<uint>& ghost_indices,
               std::string type);
 
     // Return vector type (sequential/mpi)

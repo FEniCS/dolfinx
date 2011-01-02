@@ -110,12 +110,15 @@ void SingularSolver::init(const GenericMatrix& A)
   SparsityPattern s;
   std::vector<uint> dims(2);
   std::vector<std::pair<uint, uint> > local_range(2);
+  std::vector<const boost::unordered_map<uint, uint>* > off_process_owner(2);
+  const boost::unordered_map<uint, uint> empty_off_process_owner;
   for (uint i = 0; i < 1; ++i)
   {
     dims[i] = N + 1;
     local_range[i] = MPI::local_range(dims[i]);
+    off_process_owner[i] = &empty_off_process_owner;
   }
-  s.init(dims, local_range);
+  s.init(dims, local_range, off_process_owner);
 
   // Copy sparsity pattern for A and last column
   std::vector<uint> columns;

@@ -44,6 +44,23 @@ void MTL4Vector::resize(uint N)
     x.change_dim(N);
 }
 //-----------------------------------------------------------------------------
+void MTL4Vector::resize(std::pair<uint, uint> range)
+{
+  if (range.first != 0)
+    error("MTL4Vector does not support distributed vectors.");
+
+  resize(range.second - range.first);
+}
+//-----------------------------------------------------------------------------
+void MTL4Vector::resize(std::pair<uint, uint> range,
+                    const std::vector<uint>& ghost_indices)
+{
+  if (ghost_indices.size() != 0)
+    error("MTL4SVector does not support ghost entries.");
+
+  resize(range);
+}
+//-----------------------------------------------------------------------------
 MTL4Vector* MTL4Vector::copy() const
 {
   return new MTL4Vector(*this);

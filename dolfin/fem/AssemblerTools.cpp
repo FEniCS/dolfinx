@@ -102,15 +102,16 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
 
   if (reset_sparsity)
   {
+    // Get dof maps
+    std::vector<const GenericDofMap*> dof_maps;
+    for (uint i = 0; i < a.rank(); ++i)
+      dof_maps.push_back(&(a.function_space(i)->dofmap()));
+
     // Build sparsity pattern
     Timer t0("Build sparsity");
     boost::scoped_ptr<GenericSparsityPattern> sparsity_pattern(A.factory().create_pattern());
     if (sparsity_pattern)
     {
-      // Get dof maps
-      std::vector<const GenericDofMap*> dof_maps;
-      for (uint i = 0; i < a.rank(); ++i)
-        dof_maps.push_back(&(a.function_space(i)->dofmap()));
 
       // Build sparsity pattern
       SparsityPatternBuilder::build(*sparsity_pattern, a.mesh(), dof_maps,
@@ -125,16 +126,21 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
       A.init(*sparsity_pattern);
     else
     {
+      // Build data structure for intialising sparsity pattern
       std::vector<uint> global_dimensions(a.rank());
       std::vector<std::pair<uint, uint> > local_range(a.rank());
+      std::vector<const boost::unordered_map<uint, uint>* > off_process_owner(a.rank());
       for (uint i = 0; i < a.rank(); i++)
       {
         global_dimensions[i] = a.function_space(i)->dofmap().global_dimension();
-        local_range[i]       = MPI::local_range(global_dimensions[i]);
+        //local_range[i]       = MPI::local_range(global_dimensions[i]);
+        local_range[i]       = dof_maps[i]->ownership_range();
+        off_process_owner[i] = &(dof_maps[i]->off_process_owner());
       }
 
+      // Create and build sparsity pattern
       SparsityPattern _sparsity_pattern;
-      _sparsity_pattern.init(global_dimensions, local_range);
+      _sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
       A.init(_sparsity_pattern);
       A.zero();
     }

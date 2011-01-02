@@ -22,7 +22,7 @@ namespace dolfin
   public:
 
     /// Move coordinates of mesh according to new boundary coordinates
-    static void move(Mesh& mesh, Mesh& new_boundary);
+    static void move(Mesh& mesh, const Mesh& new_boundary);
 
   };
 

@@ -73,16 +73,31 @@ void EpetraVector::resize(uint N)
   if (x && this->size() == N)
     return;
 
-  // Get local range
-  const std::pair<uint, uint> range = MPI::local_range(N);
-  const uint n = range.second - range.first;
-
-  // Resize vector
+  // Create empty ghost vertices vector
   std::vector<uint> ghost_indices;
-  resize(N, n, ghost_indices);
+
+  if (type == "global")
+  {
+    const std::pair<uint, uint> range = MPI::local_range(N);
+    resize(range, ghost_indices);
+  }
+  else if (type == "local")
+  {
+    const std::pair<uint, uint> range(0, N);
+    resize(range, ghost_indices);
+  }
+  else
+    error("Epetra vector type unkown.");
 }
 //-----------------------------------------------------------------------------
-void EpetraVector::resize(uint N, uint n, const std::vector<uint>& ghost_indices)
+void EpetraVector::resize(std::pair<uint, uint> range)
+{
+  std::vector<uint> ghost_indices;
+  resize(range, ghost_indices);
+}
+//-----------------------------------------------------------------------------
+void EpetraVector::resize(std::pair<uint, uint> range,
+                          const std::vector<uint>& ghost_indices)
 {
   if (x && !x.unique())
     error("Cannot resize EpetraVector. More than one object points to the underlying Epetra object.");
@@ -97,20 +112,24 @@ void EpetraVector::resize(uint N, uint n, const std::vector<uint>& ghost_indices
   const EpetraFactory& f = EpetraFactory::instance();
   Epetra_SerialComm serial_comm = f.get_serial_comm();
 
+  // Compute local size
+  const uint local_size = range.second - range.first;
+  assert(range.second - range.first >= 0);
+
   // Create vector
-  if (N == n || type == "local")
+  if (type == "local")
   {
     if (ghost_indices.size() != 0)
       error("Serial EpetraVectors do not suppprt ghost points.");
 
     // Create map
-    epetra_map.reset(new Epetra_Map(N, N, 0, serial_comm));
+    epetra_map.reset(new Epetra_Map(-1, local_size, 0, serial_comm));
   }
   else
   {
     // Create map
     Epetra_MpiComm mpi_comm = f.get_mpi_comm();
-    epetra_map.reset(new Epetra_Map(N, n, 0, mpi_comm));
+    epetra_map.reset(new Epetra_Map(-1, local_size, 0, mpi_comm));
 
     // Build global-to-local map for ghost indices
     for (uint i = 0; i < ghost_indices.size(); ++i)
@@ -254,7 +273,8 @@ void EpetraVector::set_local(const Array<double>& values)
 {
   assert(x);
   const uint local_size = x->MyLength();
-  if (values.size() != local_size)
+
+ if (values.size() != local_size)
     error("EpetraVector::set_local: length of values array is not equal to local vector size.");
 
   for (uint i = 0; i < local_size; ++i)

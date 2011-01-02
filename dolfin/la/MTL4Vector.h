@@ -12,6 +12,9 @@
 #ifndef __MTL4_VECTOR_H
 #define __MTL4_VECTOR_H
 
+#include <vector>
+#include <utility>
+
 #include <dolfin/common/types.h>
 #include "mtl4.h"
 #include "GenericVector.h"
@@ -64,6 +67,13 @@ namespace dolfin
 
     /// Resize vector to size N
     virtual void resize(uint N);
+
+    /// Resize vector with given ownership range
+    virtual void resize(std::pair<uint, uint> range);
+
+    /// Resize vector with given ownership range and with ghost values
+    virtual void resize(std::pair<uint, uint> range,
+                        const std::vector<uint>& ghost_indices);
 
     /// Return size of vector
     virtual uint size() const;

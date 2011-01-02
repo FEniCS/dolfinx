@@ -25,15 +25,30 @@ SparsityPattern::SparsityPattern() : row_range_min(0), row_range_max(0),
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::init(const std::vector<uint>& dims,
-                    const std::vector<std::pair<uint, uint> >& ownership_range)
+  const std::vector<std::pair<uint, uint> >& ownership_range,
+  const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner)
 {
   // Only rank 1 and 2 sparsity patterns are supported
   assert(dims.size() < 3);
 
+  // Check that dimensions match
+  assert(dims.size() == ownership_range.size());
+  assert(dims.size() == off_process_owner.size());
+
   // Store dimensions
   shape = dims;
 
-  // Clear sparsity pattern
+  // Set ownership range
+  this->ownership_range = ownership_range;
+
+  // Store copy of nonlocal index to owning process map
+  for (uint i = 0; i < off_process_owner.size(); ++i)
+  {
+    assert(off_process_owner[i]);
+    this->off_process_owner.push_back(*off_process_owner[i]);
+  }
+
+  // Clear sparsity pattern data
   diagonal.clear();
   off_diagonal.clear();
   non_local.clear();
@@ -44,22 +59,13 @@ void SparsityPattern::init(const std::vector<uint>& dims,
 
   // Set ownership range
   this->ownership_range = ownership_range;
-  //ownership_range.push_back(MPI::local_range(size(0)));
-  //ownership_range.push_back(MPI::local_range(size(1)));
+
 
   // Get local range
-  /*
-  const std::pair<uint, uint> _row_range = local_range(0);
-  const std::pair<uint, uint> _col_range = local_range(1);
-  row_range_min = _row_range.first;
-  row_range_max = _row_range.second;
-  col_range_min = _col_range.first;
-  col_range_max = _col_range.second;
-  */
-  row_range_min = ownership_range[0].first;
-  row_range_max = ownership_range[0].second;
-  col_range_min = ownership_range[1].first;
-  col_range_max = ownership_range[1].second;
+  row_range_min = this->ownership_range[0].first;
+  row_range_max = this->ownership_range[0].second;
+  col_range_min = this->ownership_range[1].first;
+  col_range_max = this->ownership_range[1].second;
 
   // Resize diagonal block
   assert(row_range_max > row_range_min);
@@ -215,11 +221,14 @@ void SparsityPattern::apply()
       // Get row for non-local entry
       const uint I = non_local[i];
 
-      // FIXME: ownership should come from a 'Map' type object
       // Figure out which process owns the row
-      const uint p = MPI::index_owner(I, shape[0]);
+      boost::unordered_map<uint, uint>::const_iterator non_local_index = off_process_owner[0].find(I);
+      assert(non_local_index != off_process_owner[0].end());
+      const uint p = non_local_index->second;
+
       assert(p < MPI::num_processes());
       assert(p != MPI::process_number());
+
       partition[i] = p;
       partition[i + 1] = p;
     }

@@ -418,6 +418,9 @@ void Function::compute_vertex_values(Array<double>& vertex_values,
   for (uint i = 0; i < element.value_rank(); i++)
     num_tensor_entries *= element.value_dimension(i);
 
+  // Resize Array for holding vertex values
+  vertex_values.resize(num_tensor_entries*(_function_space->mesh().num_vertices()));
+
   // Create vector to hold cell vertex values
   std::vector<double> cell_vertex_values(num_tensor_entries*num_cell_vertices);
 
@@ -463,18 +466,14 @@ void Function::init_vector()
   // Get global size
   const uint N = _function_space->dofmap().global_dimension();
 
-  // Get range
-  const std::pair<uint, uint> range = MPI::local_range(N);
-
   // Get local range
-  const uint n0 = range.first;
-  const uint n1 = range.second;
-  const uint local_size = n1 - n0;
+  const std::pair<uint, uint> range = _function_space->dofmap().ownership_range();
+  const uint local_size = range.second - range.first;
 
-  // Get ghost vertices if vector is distributed
+  // Determine ghost vertices if dof map is distributed
   std::vector<uint> ghost_indices;
-  if (N != local_size)
-    compute_ghost_indices(n0, n1, ghost_indices);
+  if (N  > local_size)
+    compute_ghost_indices(range, ghost_indices);
 
   // Create vector of dofs
   if (!_vector)
@@ -485,11 +484,11 @@ void Function::init_vector()
   assert(_vector);
 
   // Initialize vector of dofs
-  _vector->resize(N, local_size, ghost_indices);
+  _vector->resize(range, ghost_indices);
   _vector->zero();
 }
 //-----------------------------------------------------------------------------
-void Function::compute_ghost_indices(uint n0, uint n1,
+void Function::compute_ghost_indices(std::pair<uint, uint> range,
                                      std::vector<uint>& ghost_indices) const
 {
   // Clear data
@@ -504,6 +503,10 @@ void Function::compute_ghost_indices(uint n0, uint n1,
 
   // Dofs per cell and total dofs
   const uint num_dofs_per_cell = _function_space->element().space_dimension();
+
+  // Get local range
+  const uint n0 = range.first;
+  const uint n1 = range.second;
 
   // Iterate over local mesh and check which dofs are needed
   for (CellIterator cell(mesh); !cell.end(); ++cell)

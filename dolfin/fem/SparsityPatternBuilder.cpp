@@ -28,14 +28,17 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Get global dimensions and local range
   std::vector<uint> global_dimensions(rank);
   std::vector<std::pair<uint, uint> > local_range(rank);
+  std::vector<const boost::unordered_map<uint, uint>* > off_process_owner(rank);
+
   for (uint i = 0; i < rank; ++i)
   {
     global_dimensions[i] = dof_maps[i]->global_dimension();
-    local_range[i]       = MPI::local_range(global_dimensions[i]);
+    local_range[i]       = dof_maps[i]->ownership_range();
+    off_process_owner[i] = &(dof_maps[i]->off_process_owner());
   }
 
   // Initialise sparsity pattern
-  sparsity_pattern.init(global_dimensions, local_range);
+  sparsity_pattern.init(global_dimensions, local_range, off_process_owner);
 
   // Only build for rank >= 2 (matrices and higher order tensors)
   if (rank < 2)
@@ -118,5 +121,7 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
   // Finalize sparsity pattern
   sparsity_pattern.apply();
+  //MPI::barrier();
+  //error("Stopping here.");
 }
 //-----------------------------------------------------------------------------

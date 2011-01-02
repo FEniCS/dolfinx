@@ -41,8 +41,8 @@ namespace dolfin
     { assert(rank == 1); resize(dims[0]); }
 
     /// Initialize zero tensor using sparsity pattern
-    void init(const GenericSparsityPattern& sparsity_pattern)
-    { resize(sparsity_pattern.size(0)); zero(); }
+    virtual void init(const GenericSparsityPattern& sparsity_pattern)
+    { resize(sparsity_pattern.local_range(0)); zero(); }
 
     /// Return copy of tensor
     virtual GenericVector* copy() const = 0;
@@ -93,17 +93,15 @@ namespace dolfin
 
     //--- Vector interface ---
 
-    /// Resize vector to size N
+    /// Resize vector to global size N
     virtual void resize(uint N) = 0;
 
-    /// Resize vector to global size N, local size n and with ghost values
-    virtual void resize(uint N, uint n, const std::vector<uint>& ghost_indices)
-    {
-      if (ghost_indices.size() > 0 || N != n)
-        error("GenericVector::resize with ghost values not yet implemented for this backend." );
-      else
-        resize(N);
-    }
+    /// Resize vector with given ownership range
+    virtual void resize(std::pair<uint, uint> range) = 0;
+
+    /// Resize vector with given ownership range and with ghost values
+    virtual void resize(std::pair<uint, uint> range,
+                        const std::vector<uint>& ghost_indices) = 0;
 
     /// Return global size of vector
     virtual uint size() const = 0;

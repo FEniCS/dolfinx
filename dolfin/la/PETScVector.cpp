@@ -48,10 +48,13 @@ PETScVector::PETScVector(std::string type)
   // Empty ghost indices vector
   const std::vector<uint> ghost_indices;
 
+  // Trivial range
+  const std::pair<uint, uint> range(0, 0);
+
   if (type == "global" && dolfin::MPI::num_processes() > 1)
-    init(0, 0, ghost_indices, "mpi");
+    init(range, ghost_indices, "mpi");
   else
-    init(0, 0, ghost_indices, "sequential");
+    init(range, ghost_indices, "sequential");
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(uint N, std::string type)
@@ -61,21 +64,27 @@ PETScVector::PETScVector(uint N, std::string type)
 
   if (type == "global")
   {
-    // Get local range
+    // Compute a local range
     const std::pair<uint, uint> range = MPI::local_range(N);
 
     if (range.first == 0 && range.second == N)
-      init(N, 0, ghost_indices, "sequential");
+      init(range, ghost_indices, "sequential");
     else
-    {
-      const uint n = range.second - range.first;
-      init(N, n, ghost_indices, "mpi");
-    }
+      init(range, ghost_indices, "mpi");
   }
   else if (type == "local")
-    init(N, 0, ghost_indices, "sequential");
+  {
+    const std::pair<uint, uint> range(0, N);
+    init(range, ghost_indices, "sequential");
+  }
   else
     error("PETScVector type not known.");
+}
+//-----------------------------------------------------------------------------
+PETScVector::PETScVector(const GenericSparsityPattern& sparsity_pattern)
+{
+  std::vector<uint> ghost_indices;
+  resize(sparsity_pattern.local_range(0), ghost_indices);
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(boost::shared_ptr<Vec> x): x(x)
@@ -104,29 +113,63 @@ void PETScVector::resize(uint N)
   // Get vector type string
   const std::string type = vector_type();
 
-  uint n = 0;
-  if (type == "mpi")
-  {
-    const std::pair<uint, uint> range = MPI::local_range(N);
-    n = range.second - range.first;
-  }
-
   // Empty ghost indices vector
   std::vector<uint> ghost_indices;
 
-  // Initialise vector
-  init(N, n, ghost_indices, vector_type());
+  // Create vector
+  if (type == "mpi")
+  {
+    const std::pair<uint, uint> range = MPI::local_range(N);
+    resize(range, ghost_indices);
+  }
+  else if (type == "sequential")
+  {
+    const std::pair<uint, uint> range(0, N);
+    resize(range, ghost_indices);
+  }
+  else
+    error("PETSc vector type unkown.");
 }
 //-----------------------------------------------------------------------------
-void PETScVector::resize(uint N, uint n, const std::vector<uint>& ghost_indices)
+void PETScVector::resize(std::pair<uint, uint> range)
 {
-  // Get local range
-  const std::pair<uint, uint> range = MPI::local_range(N);
+  // Empty ghost indices vector
+  std::vector<uint> ghost_indices;
 
-  if (N == n)
-    init(N, n, ghost_indices, "sequential");
-  else
-    init(N, n, ghost_indices, "mpi");
+  resize(range, ghost_indices);
+}
+//-----------------------------------------------------------------------------
+void PETScVector::resize(std::pair<uint, uint> range,
+            const std::vector<uint>& ghost_indices)
+{
+  // Get local size
+  assert (range.second - range.first >= 0);
+  const uint local_size = range.second - range.first;
+  const uint global_size = MPI::sum(local_size);
+
+  // FIXME: do better size check
+  if (x && this->size() == global_size)
+    return;
+
+ // Create vector
+  if (x && !x.unique())
+    error("Cannot init/resize PETScVector. More than one object points to the underlying PETSc object.");
+  x.reset(new Vec, PETScVectorDeleter());
+
+  // Create vector
+  VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE, ghost_indices.size(),
+                 reinterpret_cast<const int*>(&ghost_indices[0]), x.get());
+
+  // Clear ghost indices map
+  ghost_global_to_local.clear();
+
+  // Build global-to-local map for ghost indices
+  for (uint i = 0; i < ghost_indices.size(); ++i)
+    ghost_global_to_local.insert(std::pair<uint, uint>(ghost_indices[i], i));
+
+  // Create ghost view
+  x_ghosted.reset(new Vec, PETScVectorDeleter());
+  VecGhostGetLocalForm(*x, x_ghosted.get());
 }
 //-----------------------------------------------------------------------------
 PETScVector* PETScVector::copy() const
@@ -580,9 +623,6 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
 
   // Prepare data for index sets (local indices)
   const int n = indices.size();
-  //Array<int> local_indices(n);
-  //for (int i = 0; i < n; ++i)
-  //  local_indices[i] = i;
 
   // PETSc will bail out if it receives a NULL pointer even though m == 0.
   // Can't return from function since function calls are collective.
@@ -592,7 +632,6 @@ void PETScVector::gather(GenericVector& y, const Array<uint>& indices) const
   // Create local index sets
   IS from, to;
   ISCreateGeneral(PETSC_COMM_SELF, n, global_indices,    &from);
-  //ISCreateGeneral(PETSC_COMM_SELF, n, local_indices.data().get(), &to);
   ISCreateStride(PETSC_COMM_SELF, n, 0 , 1, &to);
 
   // Resize vector if required
@@ -619,24 +658,27 @@ void PETScVector::gather(Array<double>& x, const Array<uint>& indices) const
   y.get_local(x);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(uint N, uint n, const std::vector<uint>& ghost_indices,
-                       std::string type)
+void PETScVector::init(std::pair<uint, uint> range,
+                       const std::vector<uint>& ghost_indices, std::string type)
 {
   // Create vector
   if (x && !x.unique())
     error("Cannot init/resize PETScVector. More than one object points to the underlying PETSc object.");
   x.reset(new Vec, PETScVectorDeleter());
 
+  const uint local_size = range.second - range.first;
+  assert(range.second - range.first >= 0);
+
   // Initialize vector, either default or MPI vector
   if (type == "sequential")
   {
-    VecCreateSeq(PETSC_COMM_SELF, N, x.get());
+    VecCreateSeq(PETSC_COMM_SELF, local_size, x.get());
     VecSetFromOptions(*x);
   }
   else if (type == "mpi")
   {
     //VecCreateMPI(PETSC_COMM_WORLD, n, N, x.get());
-    VecCreateGhost(PETSC_COMM_WORLD, n, N, ghost_indices.size(),
+    VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE, ghost_indices.size(),
                    reinterpret_cast<const int*>(&ghost_indices[0]), x.get());
 
     // Clear ghost indices map

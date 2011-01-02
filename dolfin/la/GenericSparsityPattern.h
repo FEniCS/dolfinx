@@ -13,6 +13,7 @@
 
 #include <utility>
 #include <vector>
+#include <boost/unordered_map.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -37,7 +38,9 @@ namespace dolfin
 
     /// Initialize sparsity pattern for a generic tensor
     virtual void init(const std::vector<uint>& dims,
-                      const std::vector<std::pair<uint, uint> >& ownership_range) = 0;
+                      const std::vector<std::pair<uint, uint> >& ownership_range,
+                      const std::vector<const boost::unordered_map<uint, uint>* > off_process_owner) = 0;
+
 
     /// Insert non-zero entries
     virtual void insert(const std::vector<const std::vector<uint>* >& entries) = 0;

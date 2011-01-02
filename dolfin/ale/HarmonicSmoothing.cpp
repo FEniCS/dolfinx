@@ -19,7 +19,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void HarmonicSmoothing::move(Mesh& mesh, Mesh& new_boundary)
+void HarmonicSmoothing::move(Mesh& mesh, const Mesh& new_boundary)
 {
   // Choose form and function space
   FunctionSpace* V = 0;

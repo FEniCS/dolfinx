@@ -74,6 +74,13 @@ namespace dolfin
     /// Resize vector to size N
     virtual void resize(uint N);
 
+    /// Resize vector with given ownership range
+    virtual void resize(std::pair<uint, uint> range);
+
+    /// Resize vector with given ownership range and with ghost values
+    virtual void resize(std::pair<uint, uint> range,
+                        const std::vector<uint>& ghost_indices);
+
     /// Return size of vector
     virtual uint size() const;
 
