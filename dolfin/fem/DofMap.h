@@ -36,8 +36,6 @@ namespace dolfin
   /// larger dof map. A dof map which is a view, can be 'collapsed'
   /// such that the dof indices are contiguous.
 
-  // FIXME: Review function names for parallel dof maps
-
   class DofMap : public GenericDofMap
   {
   public:
@@ -80,6 +78,9 @@ namespace dolfin
 
     // Return the geometric dimension of the coordinates this dof map provides
     unsigned int geometric_dimension() const;
+
+    /// Return the ownership range (dofs in this range are owned by this process)
+    std::pair<unsigned int, unsigned int> ownership_range() const;
 
     /// Return number of facet dofs
     unsigned int num_facet_dofs() const;
@@ -149,7 +150,7 @@ namespace dolfin
     boost::shared_ptr<ufc::dof_map> _ufc_dofmap;
 
     // Ownership range (dofs in this range are owned by this process)
-    std::pair<uint, uint> ownership_range;
+    std::pair<uint, uint> _ownership_range;
 
     // Owner (process) of dofs in this local dof map that do not belong to
     // this process

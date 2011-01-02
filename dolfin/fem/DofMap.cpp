@@ -117,9 +117,7 @@ unsigned int DofMap::global_dimension() const
 unsigned int DofMap::local_dimension() const
 {
   // FIXME: DofMap::dofs build a dolfin::Set each time, which is expensive
-  Set<uint> _dofs_set = this->dofs(false);
-  return _dofs_set.size();
-//  return this->dofs(false).size();
+  return this->dofs(false).size();
 }
 //-----------------------------------------------------------------------------
 unsigned int DofMap::dimension(uint cell_index) const
@@ -137,6 +135,11 @@ unsigned int DofMap::geometric_dimension() const
 {
   assert(_ufc_dofmap);
   return _ufc_dofmap->geometric_dimension();
+}
+//-----------------------------------------------------------------------------
+std::pair<unsigned int, unsigned int> DofMap::ownership_range() const
+{
+  return _ownership_range;
 }
 //-----------------------------------------------------------------------------
 unsigned int DofMap::num_facet_dofs() const
@@ -365,7 +368,7 @@ void DofMap::build(const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh)
   if (_distributed)
     DofMapBuilder::parallel_build(*this, dolfin_mesh);
   else
-    ownership_range = std::make_pair(0, global_dimension());
+    _ownership_range = std::make_pair(0, global_dimension());
 }
 //-----------------------------------------------------------------------------
 void DofMap::init_ufc_dofmap(ufc::dof_map& dofmap,

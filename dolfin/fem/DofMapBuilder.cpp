@@ -36,11 +36,13 @@ void DofMapBuilder::parallel_build(DofMap& dofmap, const Mesh& mesh)
   // Create data structures
   set owned_dofs, shared_owned_dofs, shared_unowned_dofs;
 
-  // Computed owned and shared (and onwed) dofs
-  compute_ownership(owned_dofs, shared_owned_dofs, shared_unowned_dofs, dofmap, mesh);
+  // Computed owned and shared dofs (and owned and un-owned)
+  compute_ownership(owned_dofs, shared_owned_dofs, shared_unowned_dofs,
+                    dofmap, mesh);
 
-  // Renumber dofs owned dofs and received new numbering for shared dofs
-  parallel_renumber(owned_dofs, shared_owned_dofs, shared_unowned_dofs, dofmap, mesh);
+  // Renumber dofs owned dofs and received new numbering for unowned shared dofs
+  parallel_renumber(owned_dofs, shared_owned_dofs, shared_unowned_dofs,
+                    dofmap, mesh);
 }
 //-----------------------------------------------------------------------------
 void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
@@ -252,7 +254,7 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   dofmap.dofmap = new_dofmap;
 
   // Set ownership range
-  dofmap.ownership_range = std::make_pair<uint, uint>(process_offset, owned_dofs.size());
+  dofmap._ownership_range = std::make_pair<uint, uint>(process_offset, owned_dofs.size());
 
   // Check dimensions
   assert(owned_dofs.size() + dofmap.off_process_owner.size() == dofmap.local_dimension());

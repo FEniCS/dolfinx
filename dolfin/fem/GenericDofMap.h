@@ -8,6 +8,7 @@
 #define __GENERIC_DOF_MAP_H
 
 #include <map>
+#include <utility>
 #include <vector>
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -51,6 +52,9 @@ namespace dolfin
 
     // Return the geometric dimension of the coordinates this dof map provides
     virtual unsigned int geometric_dimension() const = 0;
+
+    /// Return the ownership range (dofs in this range are owned by this process)
+    virtual std::pair<unsigned int, unsigned int> ownership_range() const = 0;
 
     /// Return number of facet dofs
     virtual unsigned int num_facet_dofs() const = 0;
