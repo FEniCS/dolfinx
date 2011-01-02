@@ -80,7 +80,6 @@ int main()
   };
 
   parameters["mesh_partitioner"] = "SCOTCH";
-  parameters["linear_algebra_backend"] = "Epetra";
 
   // Read mesh and create function space
   Mesh mesh("gear.xml.gz");
@@ -121,7 +120,7 @@ int main()
   L.f = f;
 
   VariationalProblem problem(a, L, bcs);
-  //problem.parameters["symmetric"] = true;
+  problem.parameters["symmetric"] = true;
 
   // Solve PDE (using direct solver)
   Function u(V);
