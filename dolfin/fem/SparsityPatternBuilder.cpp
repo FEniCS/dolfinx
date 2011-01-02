@@ -8,6 +8,7 @@
 // Last changed: 2010-12-29
 
 #include <dolfin/la/GenericSparsityPattern.h>
+#include <dolfin/main/MPI.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
@@ -24,13 +25,17 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 {
   const uint rank = dof_maps.size();
 
-  // Get global dimensions
+  // Get global dimensions and local range
   std::vector<uint> global_dimensions(rank);
+  std::vector<std::pair<uint, uint> > local_range(rank);
   for (uint i = 0; i < rank; ++i)
+  {
     global_dimensions[i] = dof_maps[i]->global_dimension();
+    local_range[i]       = MPI::local_range(global_dimensions[i]);
+  }
 
   // Initialise sparsity pattern
-  sparsity_pattern.init(global_dimensions);
+  sparsity_pattern.init(global_dimensions, local_range);
 
   // Only build for rank >= 2 (matrices and higher order tensors)
   if (rank < 2)

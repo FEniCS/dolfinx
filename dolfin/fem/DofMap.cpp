@@ -30,7 +30,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap, Mesh& dolfin_mesh)
              : _ufc_dofmap(ufc_dofmap), ufc_offset(0),
-               _parallel(MPI::num_processes() > 1)
+               _distributed(MPI::num_processes() > 1)
 {
   assert(_ufc_dofmap);
 
@@ -42,10 +42,10 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap, Mesh& dolfin_mesh)
   for (uint d = 1; d <= dolfin_mesh.topology().dim(); ++d)
   {
     if (_ufc_dofmap->needs_mesh_entities(d) ||
-    	(_parallel && d == (dolfin_mesh.topology().dim() - 1)))
+    	(_distributed && d == (dolfin_mesh.topology().dim() - 1)))
     {
       dolfin_mesh.init(d);
-      if (_parallel)
+      if (_distributed)
         MeshPartitioning::number_entities(dolfin_mesh, d);
     }
   }
@@ -63,7 +63,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap, Mesh& dolfin_mesh)
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
                const Mesh& dolfin_mesh)
              : _ufc_dofmap(ufc_dofmap), ufc_offset(0),
-               _parallel(MPI::num_processes() > 1)
+               _distributed(MPI::num_processes() > 1)
 {
   assert(_ufc_dofmap);
 
@@ -84,7 +84,7 @@ DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
 DofMap::DofMap(boost::shared_ptr<ufc::dof_map> ufc_dofmap,
                const UFCMesh& ufc_mesh)
              : _ufc_dofmap(ufc_dofmap), ufc_offset(0),
-               _parallel(MPI::num_processes() > 1)
+               _distributed(MPI::num_processes() > 1)
 
 {
   assert(_ufc_dofmap);
@@ -117,7 +117,9 @@ unsigned int DofMap::global_dimension() const
 unsigned int DofMap::local_dimension() const
 {
   // FIXME: DofMap::dofs build a dolfin::Set each time, which is expensive
-  return this->dofs(false).size();
+  Set<uint> _dofs_set = this->dofs(false);
+  return _dofs_set.size();
+//  return this->dofs(false).size();
 }
 //-----------------------------------------------------------------------------
 unsigned int DofMap::dimension(uint cell_index) const
@@ -360,8 +362,10 @@ void DofMap::build(const Mesh& dolfin_mesh, const UFCMesh& ufc_mesh)
   }
 
   // Build (renumber) dofmap when running in parallel
-  if (_parallel)
+  if (_distributed)
     DofMapBuilder::parallel_build(*this, dolfin_mesh);
+  else
+    ownership_range = std::make_pair(0, global_dimension());
 }
 //-----------------------------------------------------------------------------
 void DofMap::init_ufc_dofmap(ufc::dof_map& dofmap,

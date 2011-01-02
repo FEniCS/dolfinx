@@ -1,22 +1,21 @@
-// Copyright (C) 2007-2009 Garth N. Wells
+// Copyright (C) 2007-2011 Garth N. Wells
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2007-2009.
 //
 // First added:  2007-03-13
-// Last changed: 2009-06-19
+// Last changed: 2011-01-02
 
 #ifndef __SPARSITY_PATTERN_H
 #define __SPARSITY_PATTERN_H
 
 #include <set>
+#include <utility>
 #include <vector>
 #include <boost/unordered_set.hpp>
 
 #include "dolfin/common/Set.h"
 #include "dolfin/common/types.h"
-#include <dolfin/log/LogStream.h>
-#include <dolfin/main/MPI.h>
 #include "GenericSparsityPattern.h"
 
 namespace dolfin
@@ -39,7 +38,8 @@ namespace dolfin
     SparsityPattern();
 
     /// Initialize sparsity pattern for a generic tensor
-    void init(const std::vector<uint>& dims);
+    void init(const std::vector<uint>& dims,
+              const std::vector<std::pair<uint, uint> >& ownership_range);
 
     /// Insert non-zero entries
     void insert(const std::vector<const std::vector<uint>* >& entries);
@@ -98,6 +98,9 @@ namespace dolfin
 
     // Sparsity pattern for non-local entries stored as [i, j, i, j, ...]
     std::vector<uint> non_local;
+
+    // Ownership range for each dimension
+    std::vector<std::pair<uint, uint> > ownership_range;
 
   };
 

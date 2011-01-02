@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Garth N. Wells.
+// Copyright (C) 2007-2011 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Magnus Vikstrom, 2008.
@@ -6,10 +6,12 @@
 // Modified by Ola Skavhaug, 2009.
 //
 // First added:  2007-03-13
-// Last changed: 2010-13-30
+// Last changed: 2011-01-02
 
 #include <algorithm>
-#include <dolfin/log/dolfin_log.h>
+
+#include <dolfin/log/log.h>
+#include <dolfin/log/LogStream.h>
 #include <dolfin/main/MPI.h>
 #include "SparsityPattern.h"
 
@@ -22,7 +24,8 @@ SparsityPattern::SparsityPattern() : row_range_min(0), row_range_max(0),
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::init(const std::vector<uint>& dims)
+void SparsityPattern::init(const std::vector<uint>& dims,
+                    const std::vector<std::pair<uint, uint> >& ownership_range)
 {
   // Only rank 1 and 2 sparsity patterns are supported
   assert(dims.size() < 3);
@@ -39,13 +42,24 @@ void SparsityPattern::init(const std::vector<uint>& dims)
   if (shape.size() != 2)
     return;
 
+  // Set ownership range
+  this->ownership_range = ownership_range;
+  //ownership_range.push_back(MPI::local_range(size(0)));
+  //ownership_range.push_back(MPI::local_range(size(1)));
+
   // Get local range
+  /*
   const std::pair<uint, uint> _row_range = local_range(0);
   const std::pair<uint, uint> _col_range = local_range(1);
   row_range_min = _row_range.first;
   row_range_max = _row_range.second;
   col_range_min = _col_range.first;
   col_range_max = _col_range.second;
+  */
+  row_range_min = ownership_range[0].first;
+  row_range_max = ownership_range[0].second;
+  col_range_min = ownership_range[1].first;
+  col_range_max = ownership_range[1].second;
 
   // Resize diagonal block
   assert(row_range_max > row_range_min);
@@ -138,7 +152,7 @@ dolfin::uint SparsityPattern::size(uint i) const
 std::pair<dolfin::uint, dolfin::uint> SparsityPattern::local_range(uint dim) const
 {
   assert(dim < 2);
-  return MPI::local_range(size(dim));
+  return ownership_range[dim];
 }
 //-----------------------------------------------------------------------------
 dolfin::uint SparsityPattern::num_nonzeros() const
@@ -201,6 +215,7 @@ void SparsityPattern::apply()
       // Get row for non-local entry
       const uint I = non_local[i];
 
+      // FIXME: ownership should come from a 'Map' type object
       // Figure out which process owns the row
       const uint p = MPI::index_owner(I, shape[0]);
       assert(p < MPI::num_processes());
@@ -209,7 +224,7 @@ void SparsityPattern::apply()
       partition[i + 1] = p;
     }
 
-    // Communicate non-local entries
+    // Communicate non-local entries to other processes
     MPI::distribute(non_local, partition);
 
     // Insert non-local entries received from other processes

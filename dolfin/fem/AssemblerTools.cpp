@@ -16,6 +16,7 @@
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/LinearAlgebraFactory.h>
 #include <dolfin/log/dolfin_log.h>
+#include <dolfin/main/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Cell.h>
 
@@ -125,11 +126,15 @@ void AssemblerTools::init_global_tensor(GenericTensor& A, const Form& a,
     else
     {
       std::vector<uint> global_dimensions(a.rank());
+      std::vector<std::pair<uint, uint> > local_range(a.rank());
       for (uint i = 0; i < a.rank(); i++)
+      {
         global_dimensions[i] = a.function_space(i)->dofmap().global_dimension();
+        local_range[i]       = MPI::local_range(global_dimensions[i]);
+      }
 
       SparsityPattern _sparsity_pattern;
-      _sparsity_pattern.init(global_dimensions);
+      _sparsity_pattern.init(global_dimensions, local_range);
       A.init(_sparsity_pattern);
       A.zero();
     }

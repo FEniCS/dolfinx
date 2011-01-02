@@ -7,6 +7,7 @@
 // Last changed: 2010-12-30
 
 #include <dolfin/common/Array.h>
+#include <dolfin/main/MPI.h>
 #include "GenericMatrix.h"
 #include "GenericVector.h"
 #include "LinearAlgebraFactory.h"
@@ -108,9 +109,13 @@ void SingularSolver::init(const GenericMatrix& A)
   // Create sparsity pattern for B
   SparsityPattern s;
   std::vector<uint> dims(2);
-  dims[0] = N + 1;
-  dims[1] = N + 1;
-  s.init(dims);
+  std::vector<std::pair<uint, uint> > local_range(2);
+  for (uint i = 0; i < 1; ++i)
+  {
+    dims[i] = N + 1;
+    local_range[i] = MPI::local_range(dims[i]);
+  }
+  s.init(dims, local_range);
 
   // Copy sparsity pattern for A and last column
   std::vector<uint> columns;

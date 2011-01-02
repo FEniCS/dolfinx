@@ -13,8 +13,11 @@
 
 #include <map>
 #include <memory>
+#include <utility>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
+
 #include <dolfin/common/types.h>
 #include "GenericDofMap.h"
 
@@ -145,12 +148,19 @@ namespace dolfin
     // UFC dof map
     boost::shared_ptr<ufc::dof_map> _ufc_dofmap;
 
+    // Ownership range (dofs in this range are owned by this process)
+    std::pair<uint, uint> ownership_range;
+
+    // Owner (process) of dofs in this local dof map that do not belong to
+    // this process
+    boost::unordered_map<uint, uint> off_process_owner;
+
     // UFC dof map offset (this is greater than zero when the dof map is a view,
     // i.e. a sub-dofmap that has not been collapsed)
     unsigned int ufc_offset;
 
     // True iff running in parallel
-    bool _parallel;
+    bool _distributed;
 
   };
 

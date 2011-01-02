@@ -11,6 +11,7 @@
 #ifndef __GENERIC_SPARSITY_PATTERN_H
 #define __GENERIC_SPARSITY_PATTERN_H
 
+#include <utility>
 #include <vector>
 
 #include <dolfin/common/types.h>
@@ -35,7 +36,8 @@ namespace dolfin
     virtual ~GenericSparsityPattern() {};
 
     /// Initialize sparsity pattern for a generic tensor
-    virtual void init(const std::vector<uint>& dims) = 0;
+    virtual void init(const std::vector<uint>& dims,
+                      const std::vector<std::pair<uint, uint> >& ownership_range) = 0;
 
     /// Insert non-zero entries
     virtual void insert(const std::vector<const std::vector<uint>* >& entries) = 0;

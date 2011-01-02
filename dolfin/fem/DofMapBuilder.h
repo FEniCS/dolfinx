@@ -44,13 +44,14 @@ namespace dolfin
 
   private:
 
-    static void compute_ownership(set& owned_dofs, set& shared_dofs,
-                                  set& forbidden_dofs, const DofMap& dofmap,
+    static void compute_ownership(set& owned_dofs, set& shared_owned_dofs,
+                                  set& shared_unowned_dofs,
+                                  const DofMap& dofmap,
                                   const Mesh& mesh);
 
-    static void parallel_renumber(const set& owned_dofs, const set& shared_dofs,
-                                  const set& forbidden_dofs, DofMap& dofmap,
-                                  const Mesh& mesh);
+    static void parallel_renumber(const set& owned_dofs, const set& shared_owned_dofs,
+                                  const set& shared_unowned_dofs,
+                                  DofMap& dofmap, const Mesh& mesh);
 
 
   };
@@ -58,5 +59,3 @@ namespace dolfin
 }
 
 #endif
-
-
