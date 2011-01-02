@@ -1,3 +1,5 @@
+ - Map linear algebra objects to processes consistently with mesh parition
+ - Lots of improvemenst to parallel assembly, dof maps and linear algebra
  - Add lists supported_elements and supported_elements_for_plotting in Python
  - Add script dolfin-plot for plotting meshes and elements from the command-line
  - Add support for plotting elements from Python
