@@ -56,13 +56,13 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
 
   // Create a radom number generator
   boost::mt19937 engine(MPI::process_number());
-  boost::uniform_int<> distribution(0, std::pow(2, 16));
-  boost::variate_generator<boost::mt19937, boost::uniform_int<> > rng(engine, distribution);
+  boost::uniform_int<uint> distribution(0, 65536);
+  boost::variate_generator<boost::mt19937, boost::uniform_int<uint> > rng(engine, distribution);
 
   // Initialize random number generator differently on each process
   //srand((uint)time(0) + MPI::process_number());
   // FIXME: Temporary while debugging (to get same results in each run)
-  srand(253*MPI::process_number() + 378);
+  //srand(253*MPI::process_number() + 378);
 
   // Extract the interior boundary
   BoundaryMesh interior_boundary;
@@ -104,7 +104,8 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
         if (shared_owned_dofs.find(cell_dofs[facet_dofs[i]]) == shared_owned_dofs.end())
         {
           shared_owned_dofs.insert(cell_dofs[facet_dofs[i]]);
-          dof_vote[cell_dofs[facet_dofs[i]]] = (uint) rand();
+          //dof_vote[cell_dofs[facet_dofs[i]]] = (uint) rand();
+          dof_vote[cell_dofs[facet_dofs[i]]] = rng();
 
           //if (MPI::process_number() == 0)
           //  cout << "My test vote: " << rng() << "  " << distribution.max() << "  " << distribution.min() << endl;

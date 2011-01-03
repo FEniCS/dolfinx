@@ -142,14 +142,11 @@ void PETScVector::resize(std::pair<uint, uint> range,
             const std::vector<uint>& ghost_indices)
 {
   // Get local size
-  assert (range.second - range.first >= 0);
+  assert(range.second - range.first >= 0);
 
   // Check if resizing is required
   if (x && (this->local_range().first == range.first && this->local_range().second == range.second))
     return;
-  // FIXME: do better size check
-  //if (x && this->size() == global_size)
-  //  return;
 
   // Save type
   bool _distributed = distributed();
@@ -452,11 +449,11 @@ double PETScVector::inner(const GenericVector& y) const
 {
   assert(x);
 
-  const PETScVector& v = y.down_cast<PETScVector>();
-  assert(v.x);
+  const PETScVector& _y = y.down_cast<PETScVector>();
+  assert(_y.x);
 
   double a;
-  VecDot(*(v.x), *x, &a);
+  VecDot(*(_y.x), *x, &a);
   return a;
 }
 //-----------------------------------------------------------------------------
@@ -464,13 +461,13 @@ void PETScVector::axpy(double a, const GenericVector& y)
 {
   assert(x);
 
-  const PETScVector& v = y.down_cast<PETScVector>();
-  assert(v.x);
+  const PETScVector& _y = y.down_cast<PETScVector>();
+  assert(_y.x);
 
-  if (size() != v.size())
+  if (size() != _y.size())
     error("The vectors must be of the same size.");
 
-  VecAXPY(*x, a, *(v.x));
+  VecAXPY(*x, a, *(_y.x));
 }
 //-----------------------------------------------------------------------------
 double PETScVector::norm(std::string norm_type) const
