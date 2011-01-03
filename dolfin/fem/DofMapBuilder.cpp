@@ -48,7 +48,7 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
   // Create a radom number generator for ownership 'voting'
   boost::mt19937 engine(MPI::process_number());
   boost::uniform_int<uint> distribution(0, 65536);
-  boost::variate_generator<boost::mt19937, boost::uniform_int<uint> > rng(engine, distribution);
+  boost::variate_generator<boost::mt19937&, boost::uniform_int<uint> > rng(engine, distribution);
 
   // Extract the interior boundary
   BoundaryMesh interior_boundary;
