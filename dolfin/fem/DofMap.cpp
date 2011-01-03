@@ -116,8 +116,11 @@ unsigned int DofMap::global_dimension() const
 //-----------------------------------------------------------------------------
 unsigned int DofMap::local_dimension() const
 {
-  // FIXME: DofMap::dofs build a dolfin::Set each time, which is expensive
-  return this->dofs(false).size();
+  // FIXME: This is inelgant and expensize. Need to use _local_dimension and
+  //        make sure that it's handled correctly with sub-dofmaps
+
+  //return (_ownership_range.second - _ownership_range.first) + _off_process_owner.size();
+  return this->dofs().size();
 }
 //-----------------------------------------------------------------------------
 unsigned int DofMap::dimension(uint cell_index) const
@@ -178,7 +181,7 @@ DofMap* DofMap::extract_sub_dofmap(const std::vector<uint>& component,
   assert(_ufc_dofmap);
 
   // Create UFC mesh
-  UFCMesh ufc_mesh(dolfin_mesh);
+  const UFCMesh ufc_mesh(dolfin_mesh);
 
   // Initialise offset
   uint offset = ufc_offset;
@@ -401,17 +404,13 @@ void DofMap::init_ufc_dofmap(ufc::dof_map& dofmap,
   }
 }
 //-----------------------------------------------------------------------------
-dolfin::Set<dolfin::uint> DofMap::dofs(bool sort) const
+boost::unordered_set<dolfin::uint> DofMap::dofs() const
 {
   // Build set of dofs
-  dolfin::Set<uint> dof_list;
+  boost::unordered_set<dolfin::uint> dof_list;
   for (uint i = 0; i < dofmap.size(); ++i)
     for (uint j = 0; j < dofmap[i].size(); ++j)
       dof_list.insert(dofmap[i][j]);
-
-  // Sort set of dofs if required
-  if(sort)
-    dof_list.sort();
 
   return dof_list;
 }

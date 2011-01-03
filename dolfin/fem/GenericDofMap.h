@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
 
 #include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
@@ -89,8 +90,8 @@ namespace dolfin
     virtual GenericDofMap* collapse(std::map<uint, uint>& collapsed_map,
                                     const Mesh& dolfin_mesh) const = 0;
 
-    /// Return the set of dof indices with option to sort dofs
-    virtual Set<dolfin::uint> dofs(bool sort) const = 0;
+    /// Return the set of dof indices
+    virtual boost::unordered_set<dolfin::uint> dofs() const = 0;
 
     /// Re-number based on provided re-numbering map
     virtual void renumber(const std::vector<uint>& renumbering_map) = 0;

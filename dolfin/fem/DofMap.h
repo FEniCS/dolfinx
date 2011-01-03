@@ -115,7 +115,7 @@ namespace dolfin
     DofMap* collapse(std::map<uint, uint>& collapsed_map, const Mesh& dolfin_mesh) const;
 
     /// Return the set of dof indices
-    Set<dolfin::uint> dofs(bool sort) const;
+    boost::unordered_set<dolfin::uint> dofs() const;
 
     // Renumber dofs
     void renumber(const std::vector<uint>& renumbering_map);

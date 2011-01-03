@@ -253,9 +253,6 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   // Set ownership range
   dofmap._ownership_range = std::make_pair<uint, uint>(process_offset, process_offset + owned_dofs.size());
 
-  // Check dimensions
-  assert(owned_dofs.size() + dofmap.off_process_owner().size() == dofmap.local_dimension());
-
   info(TRACE, "Finished renumbering dofs for parallel dof map");
 }
 //-----------------------------------------------------------------------------
