@@ -47,8 +47,8 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
 
   // Create a radom number generator for ownership 'voting'
   boost::mt19937 engine(MPI::process_number());
-  boost::uniform_int<uint> distribution(0, 65536);
-  boost::variate_generator<boost::mt19937&, boost::uniform_int<uint> > rng(engine, distribution);
+  boost::uniform_int<> distribution(0, 100000000);
+  boost::variate_generator<boost::mt19937&, boost::uniform_int<> > rng(engine, distribution);
 
   // Extract the interior boundary
   BoundaryMesh interior_boundary;
@@ -124,7 +124,12 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
           shared_owned_dofs.erase(received_dof);
         }
         else if (received_vote == dof_vote[received_dof])
+        {
+          // FIXME: Eventually replace this with a more robust condition. It's
+          // good for testing that ownership of shared dofs is spread roughly
+          // equally
           error("Cannot decide on dof ownership. Votes are equal.");
+        }
       }
     }
   }
