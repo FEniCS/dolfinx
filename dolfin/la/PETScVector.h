@@ -185,10 +185,10 @@ namespace dolfin
 
     // Initialise PETSc vector
     void init(std::pair<uint, uint> range, const std::vector<uint>& ghost_indices,
-              std::string type);
+              bool distributed);
 
-    // Return vector type (sequential/mpi)
-    std::string vector_type() const;
+    // Test vector type (distributed/local)
+    bool distributed() const;
 
     // PETSc Vec pointer
     boost::shared_ptr<Vec> x;

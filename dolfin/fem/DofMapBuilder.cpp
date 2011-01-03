@@ -8,9 +8,15 @@
 // Last changed: 2010-04-05
 
 #include <algorithm>
-#include <cstring>
-#include <ctime>
+//#include <cstring>
+//#include <ctime>
 #include <iostream>
+
+#include <boost/random.hpp>
+//#include <boost/random/mersenne_twister.hpp>
+//#include <boost/random/uniform_int.hpp>
+//#include <boost/random/variate_generator.hpp>
+
 #include <boost/unordered_map.hpp>
 
 #include <dolfin/log/log.h>
@@ -47,6 +53,11 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
                                       const DofMap& dofmap, const Mesh& mesh)
 {
   info(TRACE, "Determining dof ownership for parallel dof map");
+
+  // Create a radom number generator
+  boost::mt19937 engine(MPI::process_number());
+  boost::uniform_int<> distribution(0, std::pow(2, 16));
+  boost::variate_generator<boost::mt19937, boost::uniform_int<> > rng(engine, distribution);
 
   // Initialize random number generator differently on each process
   //srand((uint)time(0) + MPI::process_number());
@@ -94,6 +105,9 @@ void DofMapBuilder::compute_ownership(set& owned_dofs, set& shared_owned_dofs,
         {
           shared_owned_dofs.insert(cell_dofs[facet_dofs[i]]);
           dof_vote[cell_dofs[facet_dofs[i]]] = (uint) rand();
+
+          //if (MPI::process_number() == 0)
+          //  cout << "My test vote: " << rng() << "  " << distribution.max() << "  " << distribution.min() << endl;
 
           send_buffer.push_back(cell_dofs[facet_dofs[i]]);
           send_buffer.push_back(dof_vote[cell_dofs[facet_dofs[i]]]);
@@ -170,7 +184,6 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   // Compute offset for owned and non-shared dofs
   const uint process_offset = MPI::global_offset(owned_dofs.size(), true);
 
-
   // Clear some data
   dofmap._off_process_owner.clear();
 
@@ -236,14 +249,15 @@ void DofMapBuilder::parallel_renumber(const set& owned_dofs,
   // Build new dof map
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    const uint cell_dimension = dofmap.dimension(cell->index());
+    const uint cell_index = cell->index();
+    const uint cell_dimension = dofmap.dimension(cell_index);
 
     // Resize cell map and insert dofs
-    new_dofmap[cell->index()].resize(cell_dimension);
+    new_dofmap[cell_index].resize(cell_dimension);
     for (uint i = 0; i < cell_dimension; ++i)
     {
-      const uint old_index = old_dofmap[cell->index()][i];
-      new_dofmap[cell->index()][i] = old_to_new_dof_index[old_index];
+      const uint old_index = old_dofmap[cell_index][i];
+      new_dofmap[cell_index][i] = old_to_new_dof_index[old_index];
     }
   }
 

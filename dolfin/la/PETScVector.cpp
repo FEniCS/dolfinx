@@ -45,6 +45,9 @@ const std::map<std::string, NormType> PETScVector::norm_types
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(std::string type)
 {
+  if (type != "global" && type != "local")
+    error("PETSc vector type unkown.");
+
   // Empty ghost indices vector
   const std::vector<uint> ghost_indices;
 
@@ -52,9 +55,9 @@ PETScVector::PETScVector(std::string type)
   const std::pair<uint, uint> range(0, 0);
 
   if (type == "global" && dolfin::MPI::num_processes() > 1)
-    init(range, ghost_indices, "mpi");
+    init(range, ghost_indices, true);
   else
-    init(range, ghost_indices, "sequential");
+    init(range, ghost_indices, false);
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(uint N, std::string type)
@@ -68,14 +71,15 @@ PETScVector::PETScVector(uint N, std::string type)
     const std::pair<uint, uint> range = MPI::local_range(N);
 
     if (range.first == 0 && range.second == N)
-      init(range, ghost_indices, "sequential");
+      init(range, ghost_indices, false);
     else
-      init(range, ghost_indices, "mpi");
+      init(range, ghost_indices, true);
   }
   else if (type == "local")
   {
+    cout << "Calling PETSc init:  " << N << endl;
     const std::pair<uint, uint> range(0, N);
-    init(range, ghost_indices, "sequential");
+    init(range, ghost_indices, false);
   }
   else
     error("PETScVector type not known.");
@@ -110,25 +114,20 @@ void PETScVector::resize(uint N)
   if (!x)
     error("PETSc vector has not been initialised. Cannot call PETScVector::resize.");
 
-  // Get vector type string
-  const std::string type = vector_type();
-
-  // Empty ghost indices vector
-  std::vector<uint> ghost_indices;
+  // Get vector type
+  bool _distributed = distributed();
 
   // Create vector
-  if (type == "mpi")
+  if (_distributed)
   {
     const std::pair<uint, uint> range = MPI::local_range(N);
-    resize(range, ghost_indices);
-  }
-  else if (type == "sequential")
-  {
-    const std::pair<uint, uint> range(0, N);
-    resize(range, ghost_indices);
+    resize(range);
   }
   else
-    error("PETSc vector type unkown.");
+  {
+    const std::pair<uint, uint> range(0, N);
+    resize(range);
+  }
 }
 //-----------------------------------------------------------------------------
 void PETScVector::resize(std::pair<uint, uint> range)
@@ -144,32 +143,19 @@ void PETScVector::resize(std::pair<uint, uint> range,
 {
   // Get local size
   assert (range.second - range.first >= 0);
-  const uint local_size = range.second - range.first;
-  const uint global_size = MPI::sum(local_size);
 
-  // FIXME: do better size check
-  if (x && this->size() == global_size)
+  // Check if resizing is required
+  if (x && (this->local_range().first == range.first && this->local_range().second == range.second))
     return;
+  // FIXME: do better size check
+  //if (x && this->size() == global_size)
+  //  return;
 
- // Create vector
-  if (x && !x.unique())
-    error("Cannot init/resize PETScVector. More than one object points to the underlying PETSc object.");
-  x.reset(new Vec, PETScVectorDeleter());
+  // Save type
+  bool _distributed = distributed();
 
-  // Create vector
-  VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE, ghost_indices.size(),
-                 reinterpret_cast<const int*>(&ghost_indices[0]), x.get());
-
-  // Clear ghost indices map
-  ghost_global_to_local.clear();
-
-  // Build global-to-local map for ghost indices
-  for (uint i = 0; i < ghost_indices.size(); ++i)
-    ghost_global_to_local.insert(std::pair<uint, uint>(ghost_indices[i], i));
-
-  // Create ghost view
-  x_ghosted.reset(new Vec, PETScVectorDeleter());
-  VecGhostGetLocalForm(*x, x_ghosted.get());
+  // Re-initialise vector
+  init(range, ghost_indices, _distributed);
 }
 //-----------------------------------------------------------------------------
 PETScVector* PETScVector::copy() const
@@ -655,11 +641,16 @@ void PETScVector::gather(Array<double>& x, const Array<uint>& indices) const
   PETScVector y("local");
   gather(y, indices);
   assert(y.local_size() == x.size());
+
   y.get_local(x);
+
+  double sum = 0.0;
+  for (uint i = 0; i < x.size(); ++i)
+    sum += x[i]*x[i];
 }
 //-----------------------------------------------------------------------------
 void PETScVector::init(std::pair<uint, uint> range,
-                       const std::vector<uint>& ghost_indices, std::string type)
+                       const std::vector<uint>& ghost_indices, bool distributed)
 {
   // Create vector
   if (x && !x.unique())
@@ -670,14 +661,13 @@ void PETScVector::init(std::pair<uint, uint> range,
   assert(range.second - range.first >= 0);
 
   // Initialize vector, either default or MPI vector
-  if (type == "sequential")
+  if (!distributed)
   {
     VecCreateSeq(PETSC_COMM_SELF, local_size, x.get());
     VecSetFromOptions(*x);
   }
-  else if (type == "mpi")
+  else
   {
-    //VecCreateMPI(PETSC_COMM_WORLD, n, N, x.get());
     VecCreateGhost(PETSC_COMM_WORLD, local_size, PETSC_DECIDE, ghost_indices.size(),
                    reinterpret_cast<const int*>(&ghost_indices[0]), x.get());
 
@@ -692,8 +682,6 @@ void PETScVector::init(std::pair<uint, uint> range,
     x_ghosted.reset(new Vec, PETScVectorDeleter());
     VecGhostGetLocalForm(*x, x_ghosted.get());
   }
-  else
-    error("Unknown vector type in PETScVector::init.");
 }
 //-----------------------------------------------------------------------------
 boost::shared_ptr<Vec> PETScVector::vec() const
@@ -701,21 +689,23 @@ boost::shared_ptr<Vec> PETScVector::vec() const
   return x;
 }
 //-----------------------------------------------------------------------------
-std::string PETScVector::vector_type() const
+bool PETScVector::distributed() const
 {
+  assert(x);
+
   // Get type
   const VecType petsc_type;
   VecGetType(*x, &petsc_type);
 
   // Return type string
-  if (strcmp(petsc_type, VECSEQ) == 0)
-    return  "sequential";
-  else if (strcmp(petsc_type, VECMPI) == 0)
-    return "mpi";
+  if (strcmp(petsc_type, VECMPI) == 0)
+    return true;
+  else if (strcmp(petsc_type, VECSEQ) == 0)
+    return false;
   else
   {
     error("Unknown PETSc vector type.");
-    return "";
+    return false;
   }
 }
 //-----------------------------------------------------------------------------

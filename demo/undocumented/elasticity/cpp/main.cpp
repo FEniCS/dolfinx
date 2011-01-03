@@ -79,7 +79,8 @@ int main()
     }
   };
 
-  parameters["mesh_partitioner"] = "SCOTCH";
+  //parameters["mesh_partitioner"] = "SCOTCH";
+  //parameters["linear_algebra_backend"] = "Epetra";
 
   // Read mesh and create function space
   Mesh mesh("gear.xml.gz");

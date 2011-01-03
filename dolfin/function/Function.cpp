@@ -165,10 +165,6 @@ const Function& Function::operator= (const Function& v)
     //assert(collapsed_map.size() == _function_space->dofmap().global_dimension());
     //assert(collapsed_map.size() == _function_space->dofmap().local_dimension());
 
-    // Create new vector (global)
-    _vector.reset(v.vector().factory().create_vector());
-    _vector->resize(collapsed_dof_map->global_dimension());
-
     // Get row indices of original and new vectors
     std::map<uint, uint>::const_iterator entry;
     std::vector<uint> new_rows(collapsed_map.size());
@@ -183,6 +179,10 @@ const Function& Function::operator= (const Function& v)
     // Gather values into an Array
     Array<double> gathered_values;
     v.vector().gather(gathered_values, old_rows);
+
+    // Initial new vector (global)
+    init_vector();
+    assert(_vector->size() == collapsed_dof_map->global_dimension());
 
     // Set values in vector
     this->_vector->set(&gathered_values[0], collapsed_map.size(), &new_rows[0]);
