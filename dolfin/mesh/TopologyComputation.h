@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-06-02
-// Last changed: 2010-11-25
+// Last changed: 2011-01-03
 
 #ifndef __TOPOLOGY_COMPUTATION_H
 #define __TOPOLOGY_COMPUTATION_H
@@ -36,9 +36,6 @@ namespace dolfin
 
     /// Compute connectivity from intersection
     static void compute_from_intersection(Mesh& mesh, uint d0, uint d1, uint d);
-
-    /// Compute connectivity from intersection
-    static void compute_from_intersection_old(Mesh& mesh, uint d0, uint d1, uint d);
 
     /// Count how many of the given entities that are new
     static uint count_entities(Mesh& mesh, MeshEntity& cell,
