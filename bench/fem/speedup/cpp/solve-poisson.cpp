@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
   L.f = f;
   VariationalProblem problem(a, L, bc);
   info(problem.parameters, true);
-  problem.parameters["linear_solver"] = "cg";
+  problem.parameters["linear_solver"] = "gmres";
   problem.parameters["preconditioner"] = "amg_hypre";
   Function u(V);
 
