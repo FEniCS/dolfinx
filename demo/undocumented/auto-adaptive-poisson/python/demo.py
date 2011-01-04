@@ -25,9 +25,9 @@ L = f*v*dx + g*v*ds
 problem = VariationalProblem(a, L, bc)
 
 # Define goal (quantity of interest)
+u = Function(V) # FIXME
 M = u*dx
 
 # Compute solution (adaptively) with accuracy to within tol
 tol = 1.e-5
-u = Function(V) # FIXME
 problem.solve(u, tol, M)
