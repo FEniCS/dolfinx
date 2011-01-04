@@ -1,8 +1,10 @@
 // Copyright (C) 2008-2009 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Marie E. Rognes 2011
+//
 // First added:  2008-12-26
-// Last changed: 2010-05-03
+// Last changed: 2011-01-04
 
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
@@ -14,6 +16,7 @@
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/LUSolver.h>
+#include <dolfin/adaptivity/AdaptiveSolver.h>
 
 namespace dolfin
 {
@@ -21,7 +24,8 @@ namespace dolfin
   class Form;
   class BoundaryCondition;
   class Function;
-  class NewtonSolver;
+  class GoalFunctional;
+  class ErrorControl;
 
   /// This class represents a (system of) partial differential
   /// equation(s) in variational form: Find u in V such that
@@ -55,37 +59,40 @@ namespace dolfin
   public:
 
     /// Define variational problem with natural boundary conditions
-    VariationalProblem(const Form& a,
-                       const Form& L,
-                       bool nonlinear=false);
+    VariationalProblem(const Form& F, const Form& jacobian);
 
     /// Define variational problem with a single Dirichlet boundary conditions
-    VariationalProblem(const Form& a,
-                       const Form& L,
-                       const BoundaryCondition& bc,
-                       bool nonlinear=false);
+    VariationalProblem(const Form& F,
+                       const Form& jacobian,
+                       const BoundaryCondition& bc);
 
     /// Define variational problem with a list of Dirichlet boundary conditions
-    VariationalProblem(const Form& a,
-                       const Form& L,
-                       const std::vector<const BoundaryCondition*>& bcs,
-                       bool nonlinear=false);
+    VariationalProblem(const Form& F,
+                       const Form& jacobian,
+                       const std::vector<const BoundaryCondition*>& bcs);
+
 
     /// Define variational problem with a list of Dirichlet boundary conditions
     /// and subdomains
-    VariationalProblem(const Form& a,
-                       const Form& L,
+    VariationalProblem(const Form& F,
+                       const Form& jacobian,
                        const std::vector<const BoundaryCondition*>& bcs,
                        const MeshFunction<uint>* cell_domains,
                        const MeshFunction<uint>* exterior_facet_domains,
-                       const MeshFunction<uint>* interior_facet_domains,
-                       bool nonlinear=false);
+                       const MeshFunction<uint>* interior_facet_domains);
 
     /// Destructor
     ~VariationalProblem();
 
     /// Solve variational problem
     void solve(Function& u);
+
+    /// Solve variational problem adaptively to given tolerance
+    void solve(Function& u, const double tol, GoalFunctional& M);
+
+    /// Solve variational problem adaptively to given tolerance with
+    /// given error controller
+    void solve(Function& u, const double tol, Form& M, ErrorControl& ec);
 
     /// Solve variational problem and extract sub functions
     void solve(Function& u0, Function& u1);
@@ -121,11 +128,20 @@ namespace dolfin
       p.add(NewtonSolver::default_parameters());
       p.add(LUSolver::default_parameters());
       p.add(KrylovSolver::default_parameters());
+      p.add(AdaptiveSolver::default_parameters());
 
       return p;
     }
 
+    // Friends can access private variables.
+    friend class AdaptiveSolver;
+
   private:
+
+    // Initialize private forms based on checking of input
+    const Form& init_rhs(const Form& F, const Form& jacobian);
+    const Form& init_lhs(const Form& F, const Form& jacobian);
+    bool is_nonlinear(const Form &F);
 
     // Solve linear variational problem
     void solve_linear(Function& u);
