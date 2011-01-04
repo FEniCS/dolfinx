@@ -33,7 +33,6 @@ const std::map<std::string, const PCType> PETScPreconditioner::methods
                               ("hypre_amg",        PCHYPRE)
                               ("hypre_euclid",     PCHYPRE)
                               ("hypre_parasails",  PCHYPRE)
-                              ("hypre_pilut",      PCHYPRE)
                               ("amg_hypre",        PCHYPRE)
                               ("amg_ml",           PCML);
 //-----------------------------------------------------------------------------
@@ -104,7 +103,9 @@ void PETScPreconditioner::set(PETScKrylovSolver& solver) const
       PetscOptionsSetValue("-pc_hypre_parasails_nlevels", boost::lexical_cast<std::string>(levels).c_str());
     }
     else if (type == "hypre_euclid")
+    {
       PCHYPRESetType(pc, "euclid");
+    }
     else
       error("Requested Hypre preconditioner unknown (Note: pilut is not supported).");
 

@@ -179,6 +179,9 @@ namespace dolfin
     /// Gather entries into Array x
     virtual void gather(Array<double>& x, const Array<uint>& indices) const;
 
+    // Test vector type (distributed/local)
+    bool distributed() const;
+
     friend class PETScMatrix;
 
   private:
@@ -186,9 +189,6 @@ namespace dolfin
     // Initialise PETSc vector
     void init(std::pair<uint, uint> range, const std::vector<uint>& ghost_indices,
               bool distributed);
-
-    // Test vector type (distributed/local)
-    bool distributed() const;
 
     // PETSc Vec pointer
     boost::shared_ptr<Vec> x;

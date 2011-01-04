@@ -145,11 +145,12 @@ dolfin::uint EpetraKrylovSolver::solve(EpetraVector& x, const EpetraVector& b)
     solver->SetAztecOption(AZ_output, AZ_none);
 
   // Configure preconditioner
-  if (preconditioner && !preconditioner_set)
-  {
+  //if (preconditioner && !preconditioner_set)
+  //{
+    assert(P);
     preconditioner->set(*this, *P);
-    preconditioner_set = true;
-  }
+    //preconditioner_set = true;
+  //}
 
   // Start solve
   solver->Iterate(parameters["maximum_iterations"], parameters["relative_tolerance"]);
