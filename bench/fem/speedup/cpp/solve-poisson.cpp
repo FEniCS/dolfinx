@@ -15,7 +15,7 @@ using namespace dolfin;
 int main(int argc, char* argv[])
 {
 
-  #ifdef HAS_SLEPC
+  #ifdef HAS_PETSC
 
   //parameters["mesh_partitioner"] = "SCOTCH";
   //parameters["linear_algebra_backend"] = "Epetra";
@@ -43,7 +43,6 @@ int main(int argc, char* argv[])
   Poisson::LinearForm L(V);
   Constant f(1.0);
   L.f = f;
-  VariationalProblem problem(a, L, bc);
   Function u(V);
 
   // Create preconditioner and linear solver
