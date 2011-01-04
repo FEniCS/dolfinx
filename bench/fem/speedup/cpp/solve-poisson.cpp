@@ -37,15 +37,26 @@ int main(int argc, char* argv[])
   Constant f(1.0);
   L.f = f;
   VariationalProblem problem(a, L, bc);
-  info(problem.parameters, true);
-  problem.parameters["linear_solver"] = "gmres";
-  problem.parameters["preconditioner"] = "amg_hypre";
   Function u(V);
+
+  // Create linear solver
+  KrylovSolver solver("gmres", "amg_hypre");
+
+  // Assemble matrix and vector, and apply Dirichlet boundary conditions
+  Matrix A;
+  Vector b;
+  dolfin::MPI::barrier();
+  double t = time();
+  assemble(A, a);
+  assemble(b, L);
+  bc.apply(A, b);
+  dolfin::MPI::barrier();
+  t = time() - t;
 
   // Solve problem
   dolfin::MPI::barrier();
-  double t = time();
-  problem.solve(u);
+  t = time();
+  solver.solve(A, u.vector(), b);
   dolfin::MPI::barrier();
   t = time() - t;
 
