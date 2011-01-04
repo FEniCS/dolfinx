@@ -2,10 +2,9 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-10-13
-// Last changed: 2010-11-05
+// Last changed: 2011-01-04
 
 #include <dolfin/common/Array.h>
-#include <dolfin/function/Data.h>
 #include "SpecialFacetFunction.h"
 
 using namespace dolfin;
@@ -29,10 +28,11 @@ Function* SpecialFacetFunction::operator[] (uint i) const {
   return _f_e[i];
 }
 //-----------------------------------------------------------------------------
-void SpecialFacetFunction::eval(Array<double>& values, const Data& data) const
+void SpecialFacetFunction::eval(Array<double>& values, const Array<double>& x,
+                                const ufc::cell& cell) const
 {
   values[0] = 0.0;
-  if (data.on_facet())
-    _f_e[data.facet()]->eval(values, data);
+  if (cell.local_facet >= 0)
+    _f_e[cell.local_facet]->eval(values, x, cell);
 }
 //-----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-10-13
-// Last changed: 2010-11-05
+// Last changed: 2011-01-04
 
 #ifndef __SPECIAL_FACET_FUNCTION_H
 #define __SPECIAL_FACET_FUNCTION_H
@@ -18,7 +18,6 @@ namespace dolfin
   /// function that is in P(f) for each _Facet_ f in a _Mesh_
   /// for some _FunctionSpace_ P
 
-  class Data;
   template <class T> class Array;
 
   class SpecialFacetFunction : public Expression
@@ -47,7 +46,9 @@ namespace dolfin
     ~SpecialFacetFunction() { /* Do nothing */};
 
     /// Evaluate SpecialFacetFunction (cf _Expression_.eval)
-    void eval(Array<double>& values, const Data& data) const;
+    /// Evaluate function for given cell
+    void eval(Array<double>& values, const Array<double>& x,
+              const ufc::cell& cell) const;
 
     /// Extract sub-function i
     ///
