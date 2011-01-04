@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 __author__ = "Anders Logg (logg@simula.no)"
-__date__ = "2009-09-15 -- 2009-09-17"
+__date__ = "2009-09-15 -- 2011-01-04"
 __copyright__ = "Copyright (C) 2009 Anders Logg"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -14,10 +14,12 @@ from glob import glob
 from numpy import arange
 
 # Size of mesh
-size = 64
+size = 128
 
 # Number of processes to use
-num_processes = 2**arange(16 + 1)
+# NOTE: Largest number of processors to run is 2^EXP
+EXP = 6
+num_processes = list(2**arange(EXP+1))
 
 # Function for extracting log file
 def get_filename(pattern):
@@ -31,26 +33,43 @@ def get_filename(pattern):
     return filename
 
 # Iterate over process range
-t1 = []
-t2 = []
+assemble_time = []
+assemble_second_time = []
+solve_time = []
+
+# Remove run with one processor
+if 1 in num_processes:
+    num_processes.remove(1)
+
 for np in num_processes:
 
     # Read timings for assemble benchmark
-    filename = get_filename("assemble-poisson_np_%d_size_%d.log*" % (np, size))
-    t1.append(float([line for line in open(filename).readlines() if "TIME:" in line][0].split("TIME: ")[-1]))
+    lines = open(get_filename(\
+        "assemble-poisson_np_%d_size_%d.log*" % (np, size))).readlines()
+    assemble_time.append(float([line for line in lines \
+                                if "TIME (first assembly):" in \
+                                line][0].split("TIME (first assembly): ")[-1]))
+
+    assemble_second_time.append(float([line for line in lines \
+                                       if "TIME (second assembly):" in \
+                                       line][0].split("TIME (second assembly): ")[-1]))
 
     # Read timings for solve benchmark
     filename = get_filename("solve-poisson_np_%d_size_%d.log*" % (np, size))
-    t2.append(float([line for line in open(filename).readlines()  if "TIME:" in line][0].split("TIME: ")[-1]))
+    solve_time.append(float([line for line in open(filename).readlines()\
+                             if "TIME:" in line][0].split("TIME: ")[-1]))
 
 # Compute speedups
-s1 = [t1[0] / t for t in t1]
-s2 = [t2[0] / t for t in t2]
+scale_assemble = [assemble_time[0] / t for t in assemble_time]
+scale_second_assemble = [assemble_second_time[0] / t for t in assemble_second_time]
+scale_solve = [solve_time[0] / t for t in solve_time]
 
 # Print results
 table = Table("Speedup")
 for i, np in enumerate(num_processes):
-    table.set(str(np), "Assemble",         s1[i])
-    table.set(str(np), "Assemble + solve", s2[i])
+    table.set(str(np), "Assemble (first)", scale_assemble[i])
+    table.set(str(np), "Assemble (second)", scale_second_assemble[i])
+    table.set(str(np), "Solve", scale_solve[i])
 
+print ""
 info(table, True)
