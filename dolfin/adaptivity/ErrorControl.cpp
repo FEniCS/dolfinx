@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-09-16
-// Last changed: 2011-01-04
+// Last changed: 2011-01-03
 
 #include <boost/scoped_array.hpp>
 
@@ -218,7 +218,6 @@ void ErrorControl::residual_representation(Function& R_T,
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 {
-  /*
 
   begin("Computing cell residual representation");
 
@@ -290,16 +289,12 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   }
 
   end();
-
-  */
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
                                           const Function& u,
                                           const Function& R_T)
 {
-
-  /*
   begin("Computing facet residual representation");
 
   // Extract function space for facet residual approximation
@@ -396,8 +391,6 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     }
   }
   end();
-
-  */
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::assemble_cell(arma::mat& A, const uint N,
@@ -406,8 +399,6 @@ void ErrorControl::assemble_cell(arma::mat& A, const uint N,
                                  std::vector<uint> exterior_facets,
                                  std::vector<uint> interior_facets)
 {
-
-  /*
   uint local_facet = 0;
 
   // Iterate over cell_integral(s) (assume max 1 for now)
@@ -486,8 +477,6 @@ void ErrorControl::assemble_cell(arma::mat& A, const uint N,
       }
     }
   }
-
-  */
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::assemble_cell(arma::vec& b, const uint N,
@@ -496,9 +485,6 @@ void ErrorControl::assemble_cell(arma::vec& b, const uint N,
                                  std::vector<uint> exterior_facets,
                                  std::vector<uint> interior_facets)
 {
-
-  /*
-
   // Iterate over cell_integral(s) (assume max 1 for now)
   if (ufc.form.num_cell_integrals() == 1)
   {
@@ -566,6 +552,5 @@ void ErrorControl::assemble_cell(arma::vec& b, const uint N,
     }
   }
 
-  */
 }
 //-----------------------------------------------------------------------------
