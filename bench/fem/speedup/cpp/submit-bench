@@ -18,7 +18,7 @@ SIZE = 128
 
 # Number of processes to use
 # NOTE: Largest number of processors to run is 2^EXP
-EXP = 0
+EXP = 6
 num_processes = 2**arange(EXP+1)
 
 # Check command-line arguments
