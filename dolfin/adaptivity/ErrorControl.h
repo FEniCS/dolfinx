@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-03
+// Last changed: 2011-01-04
 
 #ifndef __ERROR_CONTROL_H
 #define __ERROR_CONTROL_H
@@ -22,6 +22,7 @@ namespace dolfin
   class SpecialFacetFunction;
   class Vector;
   class Cell;
+  class UFC;
 
   /// (Goal-oriented) Error Control class
 
