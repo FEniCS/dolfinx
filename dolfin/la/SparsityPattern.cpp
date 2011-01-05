@@ -99,6 +99,7 @@ void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entri
     for (uint i = 0; i < m; ++i)
     {
       const uint I = map_i[i];
+      //diagonal[I].insert(map_j.begin(), map_j.end());
       for (uint j = 0; j < n; ++j)
         diagonal[I].insert(map_j[j]);
     }

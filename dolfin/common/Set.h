@@ -26,11 +26,11 @@ namespace dolfin
     typedef typename std::vector<T>::const_iterator const_iterator;
 
     /// Create empty set
-    Set() {}
+    Set() { _x.reserve(100); }
 
     /// Wrap std::vectpr as a set. Contents will be erased.
     Set(std::vector<T>& x) : _x(x)
-    { _x.clear(); }
+    { _x.clear(); _x.reserve(100); }
 
     /// Copy constructor
     Set(const dolfin::Set<T>& x) : _x(x._x) {}
@@ -57,6 +57,19 @@ namespace dolfin
       else
         return false;
     }
+
+    /*
+    /// Insert entries
+    void insert(const std::vector<unsigned int>& entries)
+    {
+      std::vector<unsigned int>::const_iterator entry;
+      for (entry = entries.begin(); entry != entries.end(); ++entry)
+      {
+        if (std::find(_x.begin(), _x.end(), *entry) == _x.end())
+          _x.push_back(*entry);
+      }
+    }
+    */
 
     const_iterator begin() const
     { return _x.begin(); }
