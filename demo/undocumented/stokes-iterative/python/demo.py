@@ -13,8 +13,10 @@ if not has_la_backend("PETSc") or not has_la_backend("Epetra"):
     print "DOLFIN has not been configured with Trilinos or PETSc. Exiting."
     exit()
 
+print "This demo is unlikely to converge if PETSc is not configured with Hypre or ML."
+
 # Load mesh and subdomains
-mesh = UnitSquare(64, 64)
+mesh = UnitCube(16, 16, 16)
 
 # Define function spaces
 V = VectorFunctionSpace(mesh, "CG", 2)
@@ -28,11 +30,11 @@ def top_bottom(x, on_boundary):
     return (x[1] > (1.0 - DOLFIN_EPS) and on_boundary) or (x[1] < DOLFIN_EPS and on_boundary)
 
 # No-slip boundary condition for velocity
-noslip = Constant((0, 0))
+noslip = Constant((0.0, 0.0, 0.0))
 bc0 = DirichletBC(W.sub(0), noslip, top_bottom)
 
 # Inflow boundary condition for velocity
-inflow = Expression(("-sin(x[1]*pi)", "0.0"))
+inflow = Expression(("-sin(x[1]*pi)", "0.0", "0.0"))
 bc1 = DirichletBC(W.sub(0), inflow, right)
 
 # Boundary condition for pressure at outflow
@@ -45,7 +47,7 @@ bcs = [bc0, bc1, bc2]
 # Define variational problem
 (v, q) = TestFunctions(W)
 (u, p) = TrialFunctions(W)
-f = Constant((0.0, 0.0))
+f = Constant((0.0, 0.0, 0.0))
 a = inner(grad(v), grad(u))*dx + div(v)*p*dx + q*div(u)*dx
 L = inner(v, f)*dx
 
@@ -60,7 +62,6 @@ P, btmp = assemble_system(b, L, bcs)
 
 # Create Krylov solver and AMG preconditioner
 solver = KrylovSolver("tfqmr", "hypre_amg")
-print "This demo is unlikely to converge if PETSc is not configured with Hypre."
 
 # Associate opeartor (A) and preconditioner matrix (P)
 solver.set_operators(A, P)
