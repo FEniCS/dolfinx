@@ -36,6 +36,7 @@ r = Expression(("scale*0.0",
 
 bcl = DirichletBC(V, c, left)
 bcr = DirichletBC(V, r, right)
+bcs = [bcl, bcr]
 
 # Define functions
 du = TrialFunction(V)            # Incremental displacement
@@ -64,13 +65,13 @@ psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2
 Pi = psi*dx - dot(B, u)*dx - dot(T, u)*ds
 
 # Compute first variation of Pi (directional derivative about u in the direction of v)
-L = derivative(Pi, u, v)
+F = derivative(Pi, u, v)
 
-# Compute Jacobian of L
-a = derivative(L, u, du)
+# Compute Jacobian of F
+dF = derivative(F, u, du)
 
 # Create nonlinear variational problem and solve
-problem = VariationalProblem(a, L, [bcl, bcr], nonlinear = True, form_compiler_parameters = ffc_options)
+problem = VariationalProblem(F, dF, bcs, form_compiler_parameters=ffc_options)
 problem.solve(u)
 
 # Save solution in VTK format
