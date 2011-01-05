@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-04
+// Last changed: 2011-01-05
 
 #ifndef __ERROR_CONTROL_H
 #define __ERROR_CONTROL_H
@@ -21,8 +21,6 @@ namespace dolfin
   class BoundaryCondition;
   class SpecialFacetFunction;
   class Vector;
-  class Cell;
-  class UFC;
 
   /// (Goal-oriented) Error Control class
 
@@ -138,18 +136,6 @@ namespace dolfin
     ///         the dual boundary conditions
     void compute_extrapolation(const Function& z,
                                std::vector<const BoundaryCondition*> bcs);
-
-    void assemble_cell(arma::mat& A, const uint N,
-                       UFC& ufc,
-                       const Cell& cell,
-                       std::vector<uint> exterior_facets,
-                       std::vector<uint> interior_facets);
-
-    void assemble_cell(arma::vec& b, const uint N,
-                       UFC& ufc,
-                       const Cell& cell,
-                       std::vector<uint> exterior_facets,
-                       std::vector<uint> interior_facets);
 
   private:
 

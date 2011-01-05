@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-09-16
-// Last changed: 2011-01-04
+// Last changed: 2011-01-05
 
 #include <boost/scoped_array.hpp>
 
@@ -22,9 +22,11 @@
 #include <dolfin/fem/BoundaryCondition.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/plot/plot.h>
 
 #include "ErrorControl.h"
 #include "SpecialFacetFunction.h"
+#include "LocalAssembler.h"
 
 using namespace dolfin;
 
@@ -109,8 +111,6 @@ void ErrorControl::compute_extrapolation(const Function& z,
   _Ez_h->extrapolate(z);
 
   // Apply homogeneous boundary conditions to extrapolated dual
-  Function u0(_E);
-
   for (uint i = 0; i < bcs.size(); i++)
   {
     // FIXME: Suboptimal cast.
@@ -124,7 +124,7 @@ void ErrorControl::compute_extrapolation(const Function& z,
     if (component.size() == 0)
     {
       // Define constant 0.0 on this space
-      Function u0(V);
+      const Function u0(V);
 
       // Create corresponding boundary condition for extrapolation
       DirichletBC e_bc(V, u0, bc.markers());
@@ -138,13 +138,13 @@ void ErrorControl::compute_extrapolation(const Function& z,
     SubSpace S(*_E, component[0]); // FIXME: Only one level allowed so far...
 
     // Define constant 0.0 on this space
-    Function u0(S);
+    const Function u0(S);
 
     // Create corresponding boundary condition for extrapolation
     DirichletBC e_bc(S, u0, bc.markers());
 
     // Apply boundary condition to extrapolation
-    e_bc.apply(_Ez_h->vector());
+    //e_bc.apply(_Ez_h->vector()); // FIXME!!
   }
 }
 //-----------------------------------------------------------------------------
@@ -190,7 +190,7 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   for (uint i=0; i < indicators.size(); i++)
   {
     abs = std::abs(indicators.getitem(i));
-    indicators.setitem(i, abs);
+    //indicators.setitem(i, abs); // FIXME
   }
 
   // Delete stuff
@@ -218,8 +218,6 @@ void ErrorControl::residual_representation(Function& R_T,
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 {
-  /*
-
   begin("Computing cell residual representation");
 
   // Attach primal approximation to left-hand side form (residual) if
@@ -252,8 +250,9 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   UFC ufc_lhs(*_a_R_T);
   UFC ufc_rhs(*_L_R_T);
 
-  // Local array for dof indices
-  boost::scoped_array<uint> dofs(new uint[N]);
+  // Extract (common) dof map
+  const GenericDofMap& dof_map = V.dofmap();
+  std::vector<uint> dofs(N);
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -272,34 +271,30 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
         exterior_facets.push_back(facet.pos());
     }
 
-    // Assemble A
-    assemble_cell(A, N, ufc_lhs, *cell, exterior_facets, interior_facets);
-
-    // Assemble b
-    assemble_cell(b, N, ufc_rhs, *cell, exterior_facets, interior_facets);
+    // Assemble A and b
+    LocalAssembler::assemble_cell(A, N, ufc_lhs, *cell,
+                                  exterior_facets, interior_facets);
+    LocalAssembler::assemble_cell(b, N, ufc_rhs, *cell,
+                                  exterior_facets, interior_facets);
 
     // solve A x = b
     x = arma::solve(A, b);
 
-    // Tabulate dofs for w on cell
-    V.dofmap().tabulate_dofs(dofs.get(), ufc_lhs.cell, cell->index());
+    // Get local-to-global dof map for cell
+    dofs = dof_map.cell_dofs(cell->index());
 
     // Plug x into global vector
     for (uint i=0; i < N; i++)
-      R_T.vector().setitem(dofs[i], x[i]);
+      R_T.vector().setitem(dofs[i], x[i]); // FIXME: Do this better.
   }
 
   end();
-
-  */
 }
 //-----------------------------------------------------------------------------
 void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
                                           const Function& u,
                                           const Function& R_T)
 {
-
-  /*
   begin("Computing facet residual representation");
 
   // Extract function space for facet residual approximation
@@ -331,6 +326,9 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   // otherwise).
   if (_is_linear)
     _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 3, u);
+
+  // Extract (common) dof map
+  const GenericDofMap& dof_map = V.dofmap();
 
   for (int e=0; e < (q+1); e++)
   {
@@ -368,11 +366,11 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
           exterior_facets.push_back(facet.pos());
       }
 
-      // Assemble A
-      assemble_cell(A, N, ufc_lhs, *cell, exterior_facets, interior_facets);
-
-      // Assemble b
-      assemble_cell(b, N, ufc_rhs, *cell, exterior_facets, interior_facets);
+      // Assemble A and b
+      LocalAssembler::assemble_cell(A, N, ufc_lhs, *cell,
+                                    exterior_facets, interior_facets);
+      LocalAssembler::assemble_cell(b, N, ufc_rhs, *cell,
+                                    exterior_facets, interior_facets);
 
       //Non-singularize
       for(uint i=0; i < N; i ++)
@@ -388,7 +386,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       x = arma::solve(A, b);
 
       // Tabulate dofs for w on cell
-      V.dofmap().tabulate_dofs(dofs.get(), ufc_lhs.cell, cell->index());
+      const std::vector<uint> dofs = dof_map.cell_dofs(cell->index());
 
       // Plug x into global vector
       for (uint i=0; i < N; i++)
@@ -396,176 +394,4 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     }
   }
   end();
-
-  */
 }
-//-----------------------------------------------------------------------------
-void ErrorControl::assemble_cell(arma::mat& A, const uint N,
-                                 UFC& ufc,
-                                 const Cell& cell,
-                                 std::vector<uint> exterior_facets,
-                                 std::vector<uint> interior_facets)
-{
-
-  /*
-  uint local_facet = 0;
-
-  // Iterate over cell_integral(s) (assume max 1 for now)
-  if (ufc.form.num_cell_integrals() == 1)
-  {
-    // Extract cell integral
-    ufc::cell_integral* integral = ufc.cell_integrals[0];
-
-    // Update ufc object to this cell
-    ufc.update(cell);
-
-    // Tabulate local tensor
-    integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
-
-    // Stuff a_ufc.A into A
-    for (uint i=0; i < N; i++)
-    {
-      for (uint j=0; j < N; j++) {
-        A(i, j) += ufc.A[N*i + j];
-      }
-    }
-  }
-
-  // Iterate over exterior_facet integral(s) (assume max 1 for now)
-  if (ufc.form.num_exterior_facet_integrals() == 1)
-  {
-    // Extract exterior facet integral
-    ufc::exterior_facet_integral* ef_integral = ufc.exterior_facet_integrals[0];
-
-    // Iterate over given exterior facets
-    for (uint k=0; k < exterior_facets.size(); k++)
-    {
-      // Get local index of facet with respect to the cell
-      local_facet = exterior_facets[k];
-
-      // Update to current cell and facet
-      ufc.update(cell, local_facet);
-
-      // Tabulate exterior facet tensor
-      ef_integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell, local_facet);
-
-      // Stuff a_ufc.A into A
-      for (uint i=0; i < N; i++)
-      {
-        for (uint j=0; j < N; j++)
-          A(i, j) += ufc.A[N*i + j];
-      }
-    }
-  }
-
-  // Iterate over interior facet integral(s) (assume max 1 for now)
-  if (ufc.form.num_interior_facet_integrals() == 1)
-  {
-    // Extract exterior facet integral
-    ufc::interior_facet_integral* if_integral = ufc.interior_facet_integrals[0];
-
-    // Iterate over given interior facets
-    for (uint k=0; k < interior_facets.size(); k++)
-    {
-      // Get local index of facet with respect to the cell
-      local_facet = interior_facets[k];
-
-      // Update to current pair of cells and facets
-      ufc.update(cell, local_facet, cell, local_facet);
-
-      // Tabulate exterior interior facet tensor on macro element
-      if_integral->tabulate_tensor(ufc.macro_A.get(), ufc.macro_w,
-                                ufc.cell0, ufc.cell1,
-                                local_facet, local_facet);
-
-      // Stuff a_ufc.A into A
-      for (uint i=0; i < N; i++)
-      {
-        for (uint j=0; j < N; j++)
-          A(i, j) += ufc.macro_A[2*N*i + j];
-      }
-    }
-  }
-
-  */
-}
-//-----------------------------------------------------------------------------
-void ErrorControl::assemble_cell(arma::vec& b, const uint N,
-                                 UFC& ufc,
-                                 const Cell& cell,
-                                 std::vector<uint> exterior_facets,
-                                 std::vector<uint> interior_facets)
-{
-
-  /*
-
-  // Iterate over cell_integral(s) (assume max 1 for now)
-  if (ufc.form.num_cell_integrals() == 1)
-  {
-    // Extract cell integral
-    ufc::cell_integral* integral = ufc.cell_integrals[0];
-
-    // Update ufc object to this cell
-    ufc.update(cell);
-
-    // Tabulate local tensor
-    integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell);
-
-    // Stuff a_ufc.A into b
-    for (uint i=0; i < N; i++)
-      b(i) += ufc.A[i];
-  }
-
-  // Iterate over exterior_facet integral(s) (assume max 1 for now)
-  if (ufc.form.num_exterior_facet_integrals() == 1)
-  {
-    // Extract exterior facet integral
-    ufc::exterior_facet_integral* ef_integral = ufc.exterior_facet_integrals[0];
-
-    // Iterate over given exterior facets
-    for (uint k=0; k < exterior_facets.size(); k++)
-    {
-      // Get local index of facet with respect to the cell
-      const uint local_facet = exterior_facets[k];
-
-      // Update to current cell and facet
-      ufc.update(cell, local_facet);
-
-      // Tabulate exterior facet tensor
-      ef_integral->tabulate_tensor(ufc.A.get(), ufc.w, ufc.cell, local_facet);
-
-      // Stuff a_ufc.A into A
-      for (uint i=0; i < N; i++)
-        b(i) += ufc.A[i];
-    }
-  }
-
-  // Iterate over interior facet integral(s) (assume max 1 for now)
-  if (ufc.form.num_interior_facet_integrals() == 1)
-  {
-    // Extract interior facet integral
-    ufc::interior_facet_integral* if_integral = ufc.interior_facet_integrals[0];
-
-    // Iterate over given exterior facets
-    for (uint k=0; k < interior_facets.size(); k++)
-    {
-      // Get local index of facet with respect to the cell
-      const uint local_facet = interior_facets[k];
-
-      // Update to current pair of cells and facets
-      ufc.update(cell, local_facet, cell, local_facet);
-
-      // Tabulate exterior interior facet tensor on macro element
-      if_integral->tabulate_tensor(ufc.macro_A.get(), ufc.macro_w,
-                                ufc.cell0, ufc.cell1,
-                                local_facet, local_facet);
-
-      // Stuff correct pieces from a_ufc.A into b
-      for (uint i=0; i < N; i++)
-        b(i) += ufc.macro_A[i];
-    }
-  }
-
-  */
-}
-//-----------------------------------------------------------------------------
