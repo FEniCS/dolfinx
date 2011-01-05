@@ -361,8 +361,7 @@ void PETScKrylovSolver::write_report(int num_iterations,
     const char* hypre_sub_type;
     PCHYPREGetType(pc, &hypre_sub_type);
 
-    info(PROGRESS, "PETSc Krylov solver Hypre preconditioner method: %s",
-          hypre_sub_type);
+    info(PROGRESS, "  Hypre preconditioner method: %s", hypre_sub_type);
   }
   #endif
 
