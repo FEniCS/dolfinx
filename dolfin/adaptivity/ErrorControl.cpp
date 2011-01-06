@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-09-16
-// Last changed: 2011-01-05
+// Last changed: 2011-01-06
 
 #include <boost/scoped_array.hpp>
 
@@ -190,7 +190,7 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   for (uint i=0; i < indicators.size(); i++)
   {
     abs = std::abs(indicators.getitem(i));
-    //indicators.setitem(i, abs); // FIXME
+    indicators.setitem(i, abs); // FIXME
   }
 
   // Delete stuff
