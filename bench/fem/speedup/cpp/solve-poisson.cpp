@@ -48,8 +48,11 @@ int main(int argc, char* argv[])
   // Create preconditioner and linear solver
   //TrilinosPreconditioner pc("amg_ml");
   //EpetraKrylovSolver solver("gmres", pc);
-  PETScPreconditioner pc("amg_hypre");
-  PETScKrylovSolver solver("gmres", pc);
+  //PETScPreconditioner pc("amg_hypre");
+  //PETScPreconditioner pc("amg_ml");
+  //PETScKrylovSolver solver("gmres", pc);
+
+  PETScLUSolver solver;
 
   // Assemble matrix and vector, and apply Dirichlet boundary conditions
   Matrix A;

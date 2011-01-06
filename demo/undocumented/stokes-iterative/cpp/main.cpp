@@ -121,6 +121,8 @@ int main()
   // Solve system
   solver.solve(w.vector(), b);
 
+  cout << "Soln norm: " << w.vector().norm("l2") << endl;
+
   // Split solution
   Function u = w[0];
   Function p = w[1];

@@ -1,21 +1,23 @@
-// Copyright (C) 2009 Garth N. Wellls.
+// Copyright (C) 2009-2011 Garth N. Wellls.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2009-08-09
-// Last changed:
+// Last changed: 2011-01-05
 
 #ifndef __DOLFIN_SET_H
 #define __DOLFIN_SET_H
 
 #include <algorithm>
 #include <vector>
+
 #include "dolfin/common/types.h"
 
 namespace dolfin
 {
 
-  /// This is a std::set like data structure. It is not ordered and it is based
-  /// a std::vector. It can be faster than a std::set for some cases.
+  /// This is a set-like data structure. It is not ordered and it is based
+  /// a std::vector. It uses linear search, and can be faster than std::set
+  // and boost::unordered_set in some cases.
 
   template<class T>
   class Set
@@ -26,11 +28,11 @@ namespace dolfin
     typedef typename std::vector<T>::const_iterator const_iterator;
 
     /// Create empty set
-    Set() { _x.reserve(100); }
+    Set() {}
 
     /// Wrap std::vectpr as a set. Contents will be erased.
     Set(std::vector<T>& x) : _x(x)
-    { _x.clear(); _x.reserve(100); }
+    { _x.clear(); }
 
     /// Copy constructor
     Set(const dolfin::Set<T>& x) : _x(x._x) {}
@@ -58,18 +60,16 @@ namespace dolfin
         return false;
     }
 
-    /*
     /// Insert entries
-    void insert(const std::vector<unsigned int>& entries)
+    template <class InputIt>
+    void insert(const InputIt first, const InputIt last)
     {
-      std::vector<unsigned int>::const_iterator entry;
-      for (entry = entries.begin(); entry != entries.end(); ++entry)
+      for (InputIt position = first; position != last; ++position)
       {
-        if (std::find(_x.begin(), _x.end(), *entry) == _x.end())
-          _x.push_back(*entry);
+        if (std::find(_x.begin(), _x.end(), *position) == _x.end())
+          _x.push_back(*position);
       }
     }
-    */
 
     const_iterator begin() const
     { return _x.begin(); }
@@ -96,10 +96,6 @@ namespace dolfin
     /// Clear set
     void clear()
     { _x.clear(); }
-
-    /// Resize set
-    void resize(uint n)
-    { _x.resize(n); }
 
     /// Index the nth entry in the set
     T operator[](uint n) const
