@@ -24,10 +24,10 @@ Q = FunctionSpace(mesh, "CG", 1)
 W = V * Q
 
 # Boundaries
-def right(x, on_boundary): return x[0] > (1.0 - DOLFIN_EPS) and on_boundary
-def left(x, on_boundary): return x[0] < DOLFIN_EPS and on_boundary
+def right(x, on_boundary): return x[0] > (1.0 - DOLFIN_EPS)
+def left(x, on_boundary): return x[0] < DOLFIN_EPS
 def top_bottom(x, on_boundary):
-    return (x[1] > (1.0 - DOLFIN_EPS) and on_boundary) or (x[1] < DOLFIN_EPS and on_boundary)
+    return x[1] > 1.0 - DOLFIN_EPS or x[1] < DOLFIN_EPS
 
 # No-slip boundary condition for velocity
 noslip = Constant((0.0, 0.0, 0.0))
@@ -61,7 +61,7 @@ A, bb = assemble_system(a, L, bcs)
 P, btmp = assemble_system(b, L, bcs)
 
 # Create Krylov solver and AMG preconditioner
-solver = KrylovSolver("tfqmr", "hypre_amg")
+solver = KrylovSolver("tfqmr", "amg_ml")
 
 # Associate opeartor (A) and preconditioner matrix (P)
 solver.set_operators(A, P)

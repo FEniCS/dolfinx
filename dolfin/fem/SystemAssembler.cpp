@@ -122,10 +122,11 @@ void SystemAssembler::assemble(GenericMatrix& A, GenericVector& b,
     {
       if (MPI::process_number() == 0)
       {
-        warning("Dirichlet boundary condition method '%s' is not robust in parallel with symmetric assembly. Using 'pointwise' instead.", bcs[i]->method().c_str());
-        warning("Caution: 'on_boundary' does not work with 'pointwise' boundary conditions,");
+        warning("Dirichlet boundary condition method '%s' is not robust in parallel with symmetric assembly.", bcs[i]->method().c_str());
+        //warning("Caution: 'on_boundary' does not work with 'pointwise' boundary conditions,");
       }
-      bcs[i]->get_boundary_values(boundary_values, "pointwise");
+      bcs[i]->get_boundary_values(boundary_values);
+      //bcs[i]->get_boundary_values(boundary_values, "pointwise");
     }
     else
       bcs[i]->get_boundary_values(boundary_values);

@@ -182,6 +182,11 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
 
   // Solve linear system
+  if (MPI::process_number() == 0)
+  {
+    info(PROGRESS, "PETSc Krylov solver starting to solve %i x %i system.",
+                    A->size(0), A->size(1));
+  }
   KSPSolve(*_ksp, *b.vec(), *x.vec());
 
   // Get the number of iterations
