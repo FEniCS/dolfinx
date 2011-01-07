@@ -3,7 +3,7 @@
 # This script submits jobs for measuring parallel speedup.
 
 __author__ = "Johan Hake (hake@simula.no)"
-__date__ = "2009-09-15 -- 2009-09-17"
+__date__ = "2009-09-15 -- 2011-01-04"
 __copyright__ = "Copyright (C) 2009 Johan Hake"
 __license__  = "GNU LGPL Version 2.1"
 
@@ -17,7 +17,9 @@ import sys
 SIZE = 128
 
 # Number of processes to use
-num_processes = 2**arange(16 + 1)
+# NOTE: Largest number of processors to run is 2^EXP
+EXP = 6
+num_processes = list(2**arange(EXP+1))
 
 # Check command-line arguments
 dryrun = True if 'dryrun' in sys.argv else False
@@ -31,15 +33,15 @@ for np in num_processes:
         run_cmd = "mpirun.openmpi -n %d " % np
 
     # Submit assemble benchmark
-    submit("%s./assemble-poisson %d" % (run_cmd, size),
+    submit("%s./assemble-poisson %d" % (run_cmd, SIZE),
            nodes=max(1, np/8),
-           ppn=8,
-           name="assemble-poisson_np_%d_size_%d.log" % (np, size),
+           ppn=8, # Grab all cores on a node
+           name="assemble-poisson_np_%d_size_%d.log" % (np, SIZE),
            dryrun=dryrun)
 
     # Submit solve benchmark
-    submit("%s./solve-poisson %d" % (run_cmd, size),
+    submit("%s./solve-poisson %d" % (run_cmd, SIZE),
            nodes=max(1, np/8),
-           ppn=8,
-           name="solve-poisson_np_%d_size_%d.log" % (np, size),
+           ppn=8, # Grab all cores on a node
+           name="solve-poisson_np_%d_size_%d.log" % (np, SIZE),
            dryrun=dryrun)

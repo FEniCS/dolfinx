@@ -182,6 +182,11 @@ dolfin::uint PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b)
   }
 
   // Solve linear system
+  if (MPI::process_number() == 0)
+  {
+    info(PROGRESS, "PETSc Krylov solver starting to solve %i x %i system.",
+                    A->size(0), A->size(1));
+  }
   KSPSolve(*_ksp, *b.vec(), *x.vec());
 
   // Get the number of iterations
@@ -338,34 +343,35 @@ void PETScKrylovSolver::write_report(int num_iterations,
   // FIXME: Get preconditioner description from PETScPreconditioner
 
   // Report number of iterations and solver type
-  if (reason >= 0)
+  if (MPI::process_number() == 0)
   {
-    info(PROGRESS, "PETSc Krylov solver (%s, %s) converged in %d iterations.",
-            ksp_type, pc_type, num_iterations);
-  }
-  else
-  {
-    info(PROGRESS, "PETSc Krylov solver (%s, %s) failed to converge in %d iterations.",
-            ksp_type, pc_type, num_iterations);
-  }
+    if (reason >= 0)
+    {
+      info(PROGRESS, "PETSc Krylov solver (%s, %s) converged in %d iterations.",
+              ksp_type, pc_type, num_iterations);
+    }
+    else
+    {
+      info(PROGRESS, "PETSc Krylov solver (%s, %s) failed to converge in %d iterations.",
+              ksp_type, pc_type, num_iterations);
+    }
 
-  if (pc_type_str == PCASM || pc_type_str == PCBJACOBI)
-  {
-    info(PROGRESS, "PETSc Krylov solver preconditioner (%s) sub-methods: (%s, %s)",
-            pc_type, sub_ksp_type, sub_pc_type);
+    if (pc_type_str == PCASM || pc_type_str == PCBJACOBI)
+    {
+      info(PROGRESS, "PETSc Krylov solver preconditioner (%s) sub-methods: (%s, %s)",
+              pc_type, sub_ksp_type, sub_pc_type);
+    }
+
+    #if PETSC_HAVE_HYPRE
+    if (pc_type_str == PCHYPRE)
+    {
+      const char* hypre_sub_type;
+      PCHYPREGetType(pc, &hypre_sub_type);
+
+      info(PROGRESS, "  Hypre preconditioner method: %s", hypre_sub_type);
+    }
+    #endif
   }
-
-  #if PETSC_HAVE_HYPRE
-  if (pc_type_str == PCHYPRE)
-  {
-    const char* hypre_sub_type;
-    PCHYPREGetType(pc, &hypre_sub_type);
-
-    info(PROGRESS, "PETSc Krylov solver Hypre preconditioner method: %s",
-          hypre_sub_type);
-  }
-  #endif
-
 }
 //-----------------------------------------------------------------------------
 

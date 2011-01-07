@@ -24,6 +24,7 @@ namespace dolfin
   class Form;
   class BoundaryCondition;
   class Function;
+  class NewtonSolver;
   class GoalFunctional;
   class ErrorControl;
 
@@ -32,22 +33,6 @@ namespace dolfin
   ///
   ///     F_u(v) = 0  for all v in V'.
   ///
-  /// The variational problem is defined in terms of a bilinear
-  /// form a(v, u) and a linear for L(v).
-  ///
-  /// For a linear variational problem, F_u(v) = a(v, u) - L(v),
-  /// the forms should correspond to the canonical formulation
-  ///
-  ///     a(v, u) = L(v)  for all v in V'.
-  ///
-  /// For a nonlinear variational problem, the forms should
-  /// be given by
-  ///
-  ///     a(v, u) = F_u'(v) u = F_u'(v, u),
-  ///     L(v)    = F(v),
-  ///
-  /// that is, a(v, u) should be the Frechet derivative of F_u
-  /// with respect to u, and L = F.
   ///
   /// Parameters:
   ///
@@ -59,23 +44,20 @@ namespace dolfin
   public:
 
     /// Define variational problem with natural boundary conditions
-    VariationalProblem(const Form& F, const Form& jacobian);
+    VariationalProblem(const Form& a, const Form& L);
 
     /// Define variational problem with a single Dirichlet boundary conditions
-    VariationalProblem(const Form& F,
-                       const Form& jacobian,
+    VariationalProblem(const Form& a, const Form& L,
                        const BoundaryCondition& bc);
 
     /// Define variational problem with a list of Dirichlet boundary conditions
-    VariationalProblem(const Form& F,
-                       const Form& jacobian,
+    VariationalProblem(const Form& a, const Form& L,
                        const std::vector<const BoundaryCondition*>& bcs);
-
 
     /// Define variational problem with a list of Dirichlet boundary conditions
     /// and subdomains
-    VariationalProblem(const Form& F,
-                       const Form& jacobian,
+    VariationalProblem(const Form& a,
+                       const Form& L,
                        const std::vector<const BoundaryCondition*>& bcs,
                        const MeshFunction<uint>* cell_domains,
                        const MeshFunction<uint>* exterior_facet_domains,
@@ -84,10 +66,8 @@ namespace dolfin
     /// Destructor
     ~VariationalProblem();
 
-    /// is_linear
-    const bool is_nonlinear() const {
-      return nonlinear;
-    };
+    /// Return true if problem is non-linear
+    const bool is_nonlinear() const;
 
     /// Solve variational problem
     void solve(Function& u);
@@ -138,21 +118,22 @@ namespace dolfin
       return p;
     }
 
-    // Friends can access private variables.
     friend class AdaptiveSolver;
 
   private:
-
-    // Initialize private forms based on checking of input
-    const Form& init_rhs(const Form& F, const Form& jacobian);
-    const Form& init_lhs(const Form& F, const Form& jacobian);
-    bool is_nonlinear(const Form &F);
 
     // Solve linear variational problem
     void solve_linear(Function& u);
 
     // Solve nonlinear variational problem
     void solve_nonlinear(Function& u);
+
+    // Extract bilinear and linear forms
+    const Form& extract_bilinear(const Form& b, const Form& c) const;
+    const Form& extract_linear(const Form& b, const Form& c) const;
+
+    // Detect whether problem is nonlinear
+    bool is_nonlinear(const Form &b, const Form& c) const;
 
     // Bilinear form
     const Form& a;

@@ -646,6 +646,26 @@ void PETScVector::gather(Array<double>& x, const Array<uint>& indices) const
     sum += x[i]*x[i];
 }
 //-----------------------------------------------------------------------------
+bool PETScVector::distributed() const
+{
+  assert(x);
+
+  // Get type
+  const VecType petsc_type;
+  VecGetType(*x, &petsc_type);
+
+  // Return type string
+  if (strcmp(petsc_type, VECMPI) == 0)
+    return true;
+  else if (strcmp(petsc_type, VECSEQ) == 0)
+    return false;
+  else
+  {
+    error("Unknown PETSc vector type.");
+    return false;
+  }
+}
+//-----------------------------------------------------------------------------
 void PETScVector::init(std::pair<uint, uint> range,
                        const std::vector<uint>& ghost_indices, bool distributed)
 {
@@ -684,26 +704,6 @@ void PETScVector::init(std::pair<uint, uint> range,
 boost::shared_ptr<Vec> PETScVector::vec() const
 {
   return x;
-}
-//-----------------------------------------------------------------------------
-bool PETScVector::distributed() const
-{
-  assert(x);
-
-  // Get type
-  const VecType petsc_type;
-  VecGetType(*x, &petsc_type);
-
-  // Return type string
-  if (strcmp(petsc_type, VECMPI) == 0)
-    return true;
-  else if (strcmp(petsc_type, VECSEQ) == 0)
-    return false;
-  else
-  {
-    error("Unknown PETSc vector type.");
-    return false;
-  }
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& PETScVector::factory() const

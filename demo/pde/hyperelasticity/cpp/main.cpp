@@ -110,14 +110,16 @@ int main()
   Constant mu(E/(2*(1 + nu)));
   Constant lambda(E*nu/((1 + nu)*(1 - 2*nu)));
 
-  // Create forms
-  HyperElasticity::BilinearForm a(V, V);
-  a.mu = mu; a.lmbda = lambda; a.u = u;
-  HyperElasticity::LinearForm L(V);
-  L.mu = mu; L.lmbda = lambda; L.B = B; L.T = T; L.u = u;
+  // Create (linear) form defining (nonlinear) variational problem
+  HyperElasticity::LinearForm F(V);
+  F.mu = mu; F.lmbda = lambda; F.B = B; F.T = T; F.u = u;
 
-  // Solve nonlinear variational problem
-  VariationalProblem problem(a, L, bcs, true);
+  // Create jacobian dF = F' (for use in nonlinear solver).
+  HyperElasticity::BilinearForm dF(V, V);
+  dF.mu = mu; dF.lmbda = lambda; dF.u = u;
+
+  // Solve nonlinear variational problem (F(u; v) = 0)
+  VariationalProblem problem(F, dF, bcs);
   problem.solve(u);
 
   // Save solution in VTK format

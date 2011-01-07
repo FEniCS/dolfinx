@@ -89,55 +89,46 @@ void SparsityPattern::insert(const std::vector<const std::vector<uint>* >& entri
   // Get local rows and columns to insert
   const std::vector<uint>& map_i = *entries[0];
   const std::vector<uint>& map_j = *entries[1];
-  const uint m = map_i.size();
-  const uint n = map_j.size();
 
   // Check local range
   if (row_range_min == 0 && row_range_max == shape[0])
   {
     // Sequential mode, do simple insertion
-    for (uint i = 0; i < m; ++i)
-    {
-      const uint I = map_i[i];
-      for (uint j = 0; j < n; ++j)
-        diagonal[I].insert(map_j[j]);
-    }
+    for (std::vector<uint>::const_iterator row = map_i.begin(); row != map_i.end(); ++row)
+      diagonal[*row].insert(map_j.begin(), map_j.end());
   }
   else
   {
     // Parallel mode, use either diagonal, off_diagonal or non_local
-    for (uint i = 0; i < m; ++i)
+    for (std::vector<uint>::const_iterator row = map_i.begin(); row != map_i.end(); ++row)
     {
-      uint I = map_i[i];
-      if (row_range_min <= I && I < row_range_max)
+      if (row_range_min <= *row && *row < row_range_max)
       {
         // Subtract offset
-        I -= row_range_min;
+        const uint I = *row - row_range_min;
 
         // Store local entry in diagonal or off-diagonal block
-        for (uint j = 0; j < n; ++j)
+        for (std::vector<uint>::const_iterator col = map_j.begin(); col != map_j.end(); ++col)
         {
-          const uint J = map_j[j];
-          if (col_range_min <= J && J < col_range_max)
+          if (col_range_min <= *col && *col < col_range_max)
           {
             assert(I < diagonal.size());
-            diagonal[I].insert(J);
+            diagonal[I].insert(*col);
           }
           else
           {
             assert(I < off_diagonal.size());
-            off_diagonal[I].insert(J);
+            off_diagonal[I].insert(*col);
           }
         }
       }
       else
       {
         // Store non-local entry (communicated later during apply())
-        for (uint j = 0; j < n; ++j)
+        for (std::vector<uint>::const_iterator col = map_j.begin(); col != map_j.end(); ++col)
         {
-          const uint J = map_j[j];
-          non_local.push_back(I);
-          non_local.push_back(J);
+          non_local.push_back(*row);
+          non_local.push_back(*col);
         }
       }
     }

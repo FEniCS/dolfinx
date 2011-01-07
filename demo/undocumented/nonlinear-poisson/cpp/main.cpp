@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2005-2008.
 //
 // First added:  2005
-// Last changed: 2010-01-27
+// Last changed: 2011-01-05
 //
 // This demo illustrates how to use of DOLFIN for solving a nonlinear
 // PDE, in this case a nonlinear variant of Poisson's equation,
@@ -72,14 +72,16 @@ int main()
   Source f;
   Function u(V);
 
-  // Create forms
-  NonlinearPoisson::BilinearForm a(V, V);
-  a.u = u;
-  NonlinearPoisson::LinearForm L(V);
-  L.u = u; L.f = f;
+  // Create (linear) form defining (nonlinear) variational problem
+  NonlinearPoisson::LinearForm F(V);
+  F.u = u; F.f = f;
+
+  // Create jacobian dF = F' (for use in nonlinear solver).
+  NonlinearPoisson::BilinearForm dF(V, V);
+  dF.u = u;
 
   // Solve nonlinear variational problem
-  VariationalProblem problem(a, L, bc, true);
+  VariationalProblem problem(F, dF, bc);
   problem.solve(u);
 
   // Plot solution

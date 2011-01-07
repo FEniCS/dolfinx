@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-01-04
+// Last changed: 2011-01-05
 
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
@@ -23,30 +23,22 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-VariationalProblem::VariationalProblem(const Form& F,
-                                       const Form& jacobian)
-
-  : a(init_lhs(F, jacobian)), L(init_rhs(F, jacobian)),
-    cell_domains(0), exterior_facet_domains(0),
-    interior_facet_domains(0), nonlinear(is_nonlinear(F)),
-    jacobian_initialised(false)
+VariationalProblem::VariationalProblem(const Form& a, const Form& L)
+  : a(extract_bilinear(a, L)), L(extract_linear(a, L)),
+    cell_domains(0), exterior_facet_domains(0), interior_facet_domains(0),
+    nonlinear(is_nonlinear(a, L)), jacobian_initialised(false)
 {
-
   // Set default parameter values
   parameters = default_parameters();
 
 }
 //-----------------------------------------------------------------------------
-VariationalProblem::VariationalProblem(const Form& F,
-                                       const Form& jacobian,
+VariationalProblem::VariationalProblem(const Form& a, const Form& L,
                                        const BoundaryCondition& bc)
-
-  : a(init_lhs(F, jacobian)), L(init_rhs(F, jacobian)),
-    cell_domains(0), exterior_facet_domains(0),
-    interior_facet_domains(0), nonlinear(is_nonlinear(F)),
-    jacobian_initialised(false)
+  : a(extract_bilinear(a, L)), L(extract_linear(a, L)),
+    cell_domains(0), exterior_facet_domains(0), interior_facet_domains(0),
+    nonlinear(is_nonlinear(a, L)), jacobian_initialised(false)
 {
-
   // Set default parameters
   parameters = default_parameters();
 
@@ -54,15 +46,13 @@ VariationalProblem::VariationalProblem(const Form& F,
   bcs.push_back(&bc);
 }
 //-----------------------------------------------------------------------------
-VariationalProblem::VariationalProblem(const Form& F,
-                                       const Form& jacobian,
+VariationalProblem::VariationalProblem(const Form& a,
+                                       const Form& L,
                                        const std::vector<const BoundaryCondition*>& bcs)
-  : a(init_lhs(F, jacobian)), L(init_rhs(F, jacobian)),
-    cell_domains(0), exterior_facet_domains(0),
-    interior_facet_domains(0), nonlinear(is_nonlinear(F)),
-    jacobian_initialised(false)
+  : a(extract_bilinear(a, L)), L(extract_linear(a, L)),
+    cell_domains(0), exterior_facet_domains(0), interior_facet_domains(0),
+    nonlinear(is_nonlinear(a, L)), jacobian_initialised(false)
 {
-
   // Set default parameters
   parameters = default_parameters();
 
@@ -71,18 +61,17 @@ VariationalProblem::VariationalProblem(const Form& F,
     this->bcs.push_back(bcs[i]);
 }
 //-----------------------------------------------------------------------------
-VariationalProblem::VariationalProblem(const Form& F,
-                                       const Form& jacobian,
+VariationalProblem::VariationalProblem(const Form& a,
+                                       const Form& L,
                                        const std::vector<const BoundaryCondition*>& bcs,
                                        const MeshFunction<uint>* cell_domains,
                                        const MeshFunction<uint>* exterior_facet_domains,
                                        const MeshFunction<uint>* interior_facet_domains)
-  : a(init_lhs(F, jacobian)), L(init_rhs(F, jacobian)),
+  : a(extract_bilinear(a, L)), L(extract_linear(a, L)),
     cell_domains(cell_domains),
     exterior_facet_domains(exterior_facet_domains),
     interior_facet_domains(interior_facet_domains),
-    nonlinear(is_nonlinear(F)),
-    jacobian_initialised(false)
+    nonlinear(is_nonlinear(a, L)), jacobian_initialised(false)
 {
 
   // Set default parameters
@@ -296,37 +285,44 @@ void VariationalProblem::solve_nonlinear(Function& u)
   end();
 }
 //-----------------------------------------------------------------------------
-const Form& VariationalProblem::init_rhs(const Form& F, const Form& jacobian)
+//-----------------------------------------------------------------------------
+const Form& VariationalProblem::extract_linear(const Form& b, const Form& c) const
 {
+  // Return the argument that has rank 1 (and check that other
+  // argument has rank 2)
+  if (c.rank() == 1 && b.rank() == 2)
+    return c;
 
-  if (F.rank() == 1)
-    return F;
+  if (b.rank() == 1 && c.rank() == 2)
+    return b;
 
-  if (jacobian.rank() == 1)
-    return jacobian;
-
-  error("No rank 1 form given.");
-  return F;
+  error("This is not a valid combination of a bilinear and a linear form");
+  return b;
 }
 //-----------------------------------------------------------------------------
-const Form& VariationalProblem::init_lhs(const Form& F, const Form& jacobian)
+const Form& VariationalProblem::extract_bilinear(const Form& b, const Form& c) const
 {
+  // Return the argument that has rank 2 (and check that other
+  // argument has rank 1)
+  if (c.rank() == 2 && b.rank() == 1)
+    return c;
 
-  if (F.rank() == 2)
-    return F;
+  if (b.rank() == 2 && c.rank() == 1)
+    return b;
 
-  if (jacobian.rank() == 2)
-    return jacobian;
-
-  error("No rank 2 form given");
-  return F;
+  error("This is not a valid combination of a bilinear and a linear form");
+  return c;
 }
 //-----------------------------------------------------------------------------
-bool VariationalProblem::is_nonlinear(const Form& F)
+bool VariationalProblem::is_nonlinear(const Form& b, const Form& c) const
 {
-
-  if (F.rank() == 2)
-    return false;
-  return true;
+  // Linear if the first argument is the linear form.
+  if (b.rank() == 1)
+    return true;
+  return false;
 }
 //-----------------------------------------------------------------------------
+const bool VariationalProblem::is_nonlinear() const 
+{
+	return nonlinear;
+}

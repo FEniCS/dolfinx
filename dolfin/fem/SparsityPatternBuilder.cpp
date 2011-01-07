@@ -121,7 +121,5 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
 
   // Finalize sparsity pattern
   sparsity_pattern.apply();
-  //MPI::barrier();
-  //error("Stopping here.");
 }
 //-----------------------------------------------------------------------------

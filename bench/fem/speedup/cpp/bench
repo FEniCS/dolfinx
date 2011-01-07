@@ -5,21 +5,25 @@ __date__ = "2010-05-03"
 __copyright__ = "Copyright (C) 2010 " + __author__
 __license__  = "GNU LGPL Version 2.1"
 
-import commands
+# Modified by Garth N. Wells, 2011.
 
-print "Assembly/solve speedup running on 4 processors"
+import commands
 
 # Parameters for benchmark
 SIZE = 64
 NUM_PROCS = 4
 
-# Function for extracting time from benchmark
+print "Assembly/solve speedup running on %s processors" % NUM_PROCS
+
+# Function for extracting test name and time from benchmark
 def get_time(output):
-    lines = [line for line in output.split("\n") if "TIME:" in line]
-    if not len(lines) == 1:
-        print output
-        raise RuntimeError, "Not exactly one timing in benchmark."
-    return float(lines[0].split("TIME:")[1])
+    lines = [line for line in output.split("\n") if "TIME" in line]
+    timing = []
+    for line in lines:
+        time = float(line.split(":")[-1])
+        name = line.split(":")[-2].strip("TIME").strip(None).replace("(", "").replace(")", "")
+        timing.append( (name, time) )
+    return timing
 
 # Serial assembly
 output = commands.getoutput("./assemble-poisson %d" % SIZE)
@@ -41,6 +45,10 @@ output = commands.getoutput("mpirun -n %d ./solve-poisson %d" % (NUM_PROCS, SIZE
 solve_t2 = get_time(output)
 print "Parallel solve:", solve_t2
 
-# Report results
-print "BENCH assembly", assembly_t1 / assembly_t2
-print "BENCH solve", solve_t1 / solve_t2
+print "BENCH assembly"
+for test1, test2  in zip(assembly_t1, assembly_t2):
+    print "  ", test1[0] + ":", test1[1]/test2[1]
+
+print "BENCH solve"
+for test1, test2  in zip(solve_t1, solve_t2):
+    print "  ", test1[0] + ":", test1[1]/test2[1]

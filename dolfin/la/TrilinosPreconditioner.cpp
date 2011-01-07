@@ -36,8 +36,8 @@ const std::map<std::string, int> TrilinosPreconditioner::methods
                               ("none",      AZ_none)
                               ("sor",       AZ_sym_GS)
                               ("icc",       AZ_icc)
-                              ("hypre_amg", -1)
-                              ("ml_amg",    -1);
+                              ("amg_hypre", -1)
+                              ("amg_ml",    -1);
 //-----------------------------------------------------------------------------
 Parameters TrilinosPreconditioner::default_parameters()
 {
@@ -68,7 +68,7 @@ TrilinosPreconditioner::TrilinosPreconditioner(std::string type) : type(type)
 
   // Check that the requested method is known
   if (methods.count(type) == 0)
-    error("Requested PETSc proconditioner '%s' is unknown,", type.c_str());
+    error("Requested Trilinos proconditioner '%s' is unknown,", type.c_str());
 }
 //-----------------------------------------------------------------------------
 TrilinosPreconditioner::~TrilinosPreconditioner()
@@ -116,12 +116,12 @@ void TrilinosPreconditioner::set(EpetraKrylovSolver& solver,
     ifpack_preconditioner->Compute();
     _solver.SetPrecOperator(ifpack_preconditioner.get());
   }
-  else if (type == "hypre_amg")
+  else if (type == "amg_hypre")
   {
     info("Hypre AMG not available for Trilinos. Using ML instead.");
     set_ml(_solver, *_P);
   }
-  else if (type == "ml_amg")
+  else if (type == "amg_ml")
     set_ml(_solver, *_P);
   else
   {
@@ -152,18 +152,18 @@ void TrilinosPreconditioner::set_ml(AztecOO& solver, const Epetra_RowMatrix& P)
   Teuchos::ParameterList mlist;
 
   //ML_Epetra::SetDefaults("SA", mlist);
-  ML_Epetra::SetDefaults("DD", mlist);
+  //ML_Epetra::SetDefaults("DD", mlist);
   //mlist.set("increasing or decreasing", "decreasing");
-  mlist.set("aggregation: type", "ParMETIS");
+  //mlist.set("aggregation: type", "ParMETIS");
   //mlist.set("coarse: max size", 30);
 
   //mlist.set("aggregation: nodes per aggregate", 4);
   //mlist.set("coarse: type","Amesos-KLU");
-  mlist.set("coarse: type", "Amesos-UMFPACK");
+  //mlist.set("coarse: type", "Amesos-UMFPACK");
 
   // Set maximum numer of level
-  const int max_levels = parameters("ml")["max_levels"];
-  mlist.set("max levels", max_levels);
+  //const int max_levels = parameters("ml")["max_levels"];
+  //mlist.set("max levels", max_levels);
 
   // Set output level
   const int output_level = parameters("ml")["output_level"];

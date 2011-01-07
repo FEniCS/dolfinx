@@ -14,6 +14,13 @@ using namespace dolfin;
 
 int main(int argc, char* argv[])
 {
+
+  #ifdef HAS_PETSC
+
+  //parameters["mesh_partitioner"] = "SCOTCH";
+  //parameters["linear_algebra_backend"] = "Epetra";
+  parameters["linear_algebra_backend"] = "PETSc";
+
   // Parse command-line arguments
   if (argc != 2)
   {
@@ -36,22 +43,58 @@ int main(int argc, char* argv[])
   Poisson::LinearForm L(V);
   Constant f(1.0);
   L.f = f;
-  VariationalProblem problem(a, L, bc);
-  info(problem.parameters, true);
-  problem.parameters["linear_solver"] = "cg";
-  problem.parameters["preconditioner"] = "amg_hypre";
   Function u(V);
 
-  // Solve problem
+  // Create preconditioner and linear solver
+  //TrilinosPreconditioner pc("amg_ml");
+  //EpetraKrylovSolver solver("gmres", pc);
+  //PETScPreconditioner pc("amg_hypre");
+  //PETScPreconditioner pc("amg_ml");
+  //PETScKrylovSolver solver("gmres", pc);
+
+  PETScLUSolver solver;
+
+  // Assemble matrix and vector, and apply Dirichlet boundary conditions
+  Matrix A;
+  Vector b;
+  assemble(A, a);
+  assemble(b, L);
+  bc.apply(A, b);
+
+  // Solve linear system
   dolfin::MPI::barrier();
   double t = time();
-  problem.solve(u);
+  solver.solve(A, u.vector(), b);
   dolfin::MPI::barrier();
   t = time() - t;
-
-  // Report timing
   if (dolfin::MPI::process_number() == 0)
-    info("TIME: %.5g", t);
+    info("TIME (first time): %.5g", t);
+
+  // Solve linear system (preconditioner assuming same non-zero pattern)
+  solver.parameters("preconditioner")["same_nonzero_pattern"] = true;
+  u.vector().zero();
+  dolfin::MPI::barrier();
+  t = time();
+  solver.solve(A, u.vector(), b);
+  dolfin::MPI::barrier();
+  t = time() - t;
+  if (dolfin::MPI::process_number() == 0)
+    info("TIME (same nonzero pattern): %.5g", t);
+
+  // Solve linear system (re-use preconditioner)
+  solver.parameters("preconditioner")["reuse"] = true;
+  u.vector().zero();
+  dolfin::MPI::barrier();
+  t = time();
+  solver.solve(A, u.vector(), b);
+  dolfin::MPI::barrier();
+  t = time() - t;
+  if (dolfin::MPI::process_number() == 0)
+    info("TIME (re-use preconditioner): %.5g", t);
+
+  #else
+  error("This benchmark requires PETSc.");
+  #endif
 
   return 0;
 }

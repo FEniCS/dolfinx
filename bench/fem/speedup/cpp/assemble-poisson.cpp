@@ -37,7 +37,18 @@ int main(int argc, char* argv[])
 
   // Report timing
   if (dolfin::MPI::process_number() == 0)
-    info("TIME: %.5g", t);
+    info("TIME (first assembly): %.5g", t);
+
+  // Re-assemble matrix
+  dolfin::MPI::barrier();
+  t = time();
+  assemble(A, a, false);
+  dolfin::MPI::barrier();
+  t = time() - t;
+
+  // Report timing
+  if (dolfin::MPI::process_number() == 0)
+    info("TIME (second assembly): %.5g", t);
 
   return 0;
 }
