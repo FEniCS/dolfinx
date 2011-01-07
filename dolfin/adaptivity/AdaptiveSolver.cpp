@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-08-19
-// Last changed: 2010-12-02
+// Last changed: 2011-01-07
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Variable.h>
@@ -18,6 +18,7 @@
 #include <dolfin/plot/plot.h>
 #include <dolfin/fem/VariationalProblem.h>
 #include <dolfin/fem/Form.h>
+#include <dolfin/fem/assemble.h>
 #include "marking.h"
 #include "GoalFunctional.h"
 #include "ErrorControl.h"
@@ -61,8 +62,6 @@ void AdaptiveSolver::solve(Function& u,
     //--- Stage 0: Solve primal problem ---
     info("");
     begin("Stage %d.0: Solving primal problem...", i);
-
-    // Solve primal problem given by variational problem
     problem.solve(u);
 
     // Extract function space and mesh
@@ -75,12 +74,19 @@ void AdaptiveSolver::solve(Function& u,
 
     //--- Stage 1: Estimate error ---
     begin("Stage %d.1: Estimating error...", i);
-
-    // Estimate error
     const double error_estimate = ec.estimate_error(u, problem.bcs);
 
+    // Evaluate functional value
+    if (!problem.is_nonlinear())
+      M.set_coefficient(M.num_coefficients()-1, u);
+    M.set_mesh(u.function_space().mesh()); // FIXME
+    const double functional_value = assemble(M);
+
     // Initialize adaptive data
-    AdaptiveDatum datum(i, V.dim(), mesh.num_cells(), error_estimate, tol);
+    AdaptiveDatum datum(i, V.dim(), mesh.num_cells(), error_estimate, tol,
+                        functional_value);
+    if (parameters["reference"].change_count() > 0)
+      datum.set_reference_value(parameters["reference"]);
     data.push_back(datum);
 
     // Stop if stopping criterion is satisfied
@@ -98,7 +104,6 @@ void AdaptiveSolver::solve(Function& u,
     //--- Stage 2: Compute error indicators ---
     begin("Stage %d.2: Computing indicators...", i);
 
-    // Compute error indicators
     Vector indicators(mesh.num_cells());
     ec.compute_indicators(indicators, u);
 
@@ -107,7 +112,6 @@ void AdaptiveSolver::solve(Function& u,
     //--- Stage 3: Mark mesh for refinement ---
     begin("Stage %d.3: Marking mesh for refinement...", i);
 
-    // Mark mesh
     MeshFunction<bool> markers(mesh, mesh.topology().dim());
     const std::string strategy = parameters["marking_strategy"];
     const double fraction = parameters["marking_fraction"];
@@ -118,7 +122,6 @@ void AdaptiveSolver::solve(Function& u,
     //--- Stage 4: Refine mesh ---
     begin("Stage %d.4: Refining mesh...", i);
 
-    // Refine mesh
     Mesh new_mesh = refine(mesh, markers);
     if (parameters["plot_mesh"])
       plot(new_mesh, "Refined mesh");
@@ -128,7 +131,6 @@ void AdaptiveSolver::solve(Function& u,
     //--- Stage 5: Update forms ---
     begin("Stage %d.5: Updating forms...", i);
 
-    // Update forms
     info("Updating forms to new mesh. Dc. Logg will fix...");
 
     end();

@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-01-04
+// Last changed: 2011-01-07
 
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
@@ -83,6 +83,11 @@ namespace dolfin
 
     /// Destructor
     ~VariationalProblem();
+
+    /// is_linear
+    const bool is_nonlinear() const {
+      return nonlinear;
+    };
 
     /// Solve variational problem
     void solve(Function& u);

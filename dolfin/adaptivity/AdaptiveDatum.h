@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-11-01
-// Last changed: 2010-11-30
+// Last changed: 2011-01-07
 
 #ifndef __ADAPTIVE_DATUM_H
 #define __ADAPTIVE_DATUM_H
@@ -46,7 +46,8 @@ namespace dolfin
                   const uint num_dofs,
                   const uint num_cells,
                   const double error_estimate,
-                  const double tolerance);
+                  const double tolerance,
+                  const double functional_value);
 
     /// Destructor.
     ~AdaptiveDatum() { /* Do nothing */};
@@ -55,7 +56,7 @@ namespace dolfin
     ///
     /// *Arguments*
     ///     filename (string)
-    ///         Nme of file to store in
+    ///         Name of file to store in
     void store(std::string filename) const;
 
     /// Store adaptive datum to _Table_.
@@ -64,6 +65,8 @@ namespace dolfin
     ///     table (_Table_)
     ///         Table to store in
     void store(Table& table) const;
+
+    void set_reference_value(const double reference);
 
     // AdaptiveSolver is AdaptiveDatum's BFF.
     friend class AdaptiveSolver;
@@ -78,6 +81,8 @@ namespace dolfin
 
     double functional_value;
     double reference;
+
+    bool reference_value_given;
 
   };
 

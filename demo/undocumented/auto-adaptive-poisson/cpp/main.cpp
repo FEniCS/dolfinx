@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3 or any later version
 
 // First added:  2010-08-19
-// Last changed: 2011-01-04
+// Last changed: 2011-01-07
 
 #include <dolfin.h>
 #include "Poisson.h"
@@ -58,12 +58,14 @@ int main()
   L.g = g;
   VariationalProblem pde(a, L, bc);
 
+  // Define function for solution
+  Function u(V);
+
   // Define goal (quantity of interest)
   Poisson::GoalFunctional M(mesh);
 
   // Compute solution (adaptively) with accuracy to within tol
   double tol = 1.e-5;
-  Function u(V);
   pde.solve(u, tol, M);
 
   summary();

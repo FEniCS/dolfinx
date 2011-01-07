@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3 or any later version
 
 // First added:  2010-08-19
-// Last changed: 2011-01-04
+// Last changed: 2011-01-07
 
 #include <dolfin.h>
 #include "NavierStokes.h"
@@ -63,6 +63,7 @@ int main() {
 
   // Define goal functional
   NavierStokes::GoalFunctional M(mesh);
+  M.w = w;
 
   // FIXME: The darned exterior_facet_domains must be tackled somewhere
   // Outflow outflow; M = u.ds(outflow);
@@ -75,42 +76,14 @@ int main() {
   // New notation for variational problem
   VariationalProblem pde(F, dF, bc);
 
-  double tol = 0.0;
+  // Give reference
   pde.parameters("adaptive_solver")["reference"] = 0.82174229794; // FIXME
 
   // Solve problem with goal-oriented error control to given tolerance
+  double tol = 0.0;
   pde.solve(w, tol, M);
 
   summary();
 
   return 0;
 }
-
-
-/*
-
-Python:
-
-Refinement level   : 0
-Value of functional: 0.82174229794
-Tolerance          : 0
-Error estimate     : 0.00928838535272
-Number of cells    : 780
-Number of dofs     : 3788
-
-Timings/s
-
-Compute solution   : 1.75277996063
-Estimate error     : 3.22601509094
-
-cpp :)
-
-  Refinement level      : 0
-  Reference             : 0
-  Tolerance             : 0
-  Error estimate        : 0.0092884
-  Number of cells       : 780
-  Number of dofs        : 3788
-  Maximal number of iterations (1) exceeded! Returning anyhow.
-
-*/

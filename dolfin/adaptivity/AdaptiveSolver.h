@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-08-19
-// Last changed: 2010-12-01
+// Last changed: 2011-01-07
 
 #ifndef __ADAPTIVE_SOLVER_H
 #define __ADAPTIVE_SOLVER_H
@@ -65,7 +65,7 @@ namespace dolfin
       Parameters p("adaptive_solver");
 
       // Set generic adaptive parameters
-      p.add("max_iterations",  2);
+      p.add("max_iterations",  1);
       p.add("stopping_criterion", "tolerance");
       p.add("plot_mesh", true);
       p.add("reference", 0.0);

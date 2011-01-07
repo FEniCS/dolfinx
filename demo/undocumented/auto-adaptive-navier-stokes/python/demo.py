@@ -51,7 +51,9 @@ pde = VariationalProblem(F, dF, bc)
 
 # Define goal and reference
 M = u_h[0]*ds#(0) #FIXME
+pde.parameters["adaptive_solver"]["reference"] = 0.82174229794; # FIXME
 
+# Solve to given tolerance
 tol = 0.0
 pde.solve(w_h, tol, M)
 
