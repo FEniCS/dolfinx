@@ -1,10 +1,10 @@
 // Copyright (C) 2008-2009 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Marie E. Rognes (meg@simula.no)
+// Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-01-05
+// Last changed: 2011-01-07
 
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
@@ -16,6 +16,7 @@
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/LUSolver.h>
+#include <dolfin/adaptivity/AdaptiveSolver.h>
 
 namespace dolfin
 {
@@ -24,6 +25,8 @@ namespace dolfin
   class BoundaryCondition;
   class Function;
   class NewtonSolver;
+  class GoalFunctional;
+  class ErrorControl;
 
   /// This class represents a (system of) partial differential
   /// equation(s) in variational form: Find u in V such that
@@ -60,12 +63,21 @@ namespace dolfin
                        const MeshFunction<uint>* exterior_facet_domains,
                        const MeshFunction<uint>* interior_facet_domains);
 
-
     /// Destructor
     ~VariationalProblem();
 
+    /// Return true if problem is non-linear
+    const bool is_nonlinear() const;
+
     /// Solve variational problem
     void solve(Function& u);
+
+    /// Solve variational problem adaptively to given tolerance
+    void solve(Function& u, const double tol, GoalFunctional& M);
+
+    /// Solve variational problem adaptively to given tolerance with
+    /// given error controller
+    void solve(Function& u, const double tol, Form& M, ErrorControl& ec);
 
     /// Solve variational problem and extract sub functions
     void solve(Function& u0, Function& u1);
@@ -101,9 +113,12 @@ namespace dolfin
       p.add(NewtonSolver::default_parameters());
       p.add(LUSolver::default_parameters());
       p.add(KrylovSolver::default_parameters());
+      p.add(AdaptiveSolver::default_parameters());
 
       return p;
     }
+
+    friend class AdaptiveSolver;
 
   private:
 

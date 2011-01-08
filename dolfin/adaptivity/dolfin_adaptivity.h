@@ -3,6 +3,7 @@
 
 // DOLFIN adaptivity interface
 
+#include <dolfin/adaptivity/ErrorControl.h>
 #include <dolfin/adaptivity/TimeSeries.h>
 
 #endif
