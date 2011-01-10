@@ -91,9 +91,11 @@ int main() {
     set(SCOTCH_VERSION ${OUTPUT} CACHE TYPE STRING)
   endif()
 
-  # Build and run test program
-  include(CheckCXXSourceRuns)
-  check_cxx_source_runs("
+  # PT-SCOTCH was first introduced in SCOTCH version 5.0
+  # FIXME: parallel graph partitioning features in PT-SCOTCH was first
+  #        introduced in 5.1. Do we require version 5.1?
+  if (NOT ${SCOTCH_VERSION} VERSION_LESS "5.0")
+    set(scotch_test_str "
 #include <sys/types.h>
 #include <stdio.h>
 #include <mpi.h>
@@ -125,8 +127,33 @@ int main() {
 
   return ret;
 }
-" SCOTCH_TEST_RUNS)
+")
 
+    # Build and run test program
+    include(CheckCXXSourceRuns)
+    check_cxx_source_runs("${scotch_test_str}" SCOTCH_TEST_RUNS)
+
+    # If program does not run, try adding zlib library and test again
+    if(NOT SCOTCH_TEST_RUNS)
+      if (NOT ZLIB_FOUND)
+	find_package(ZLIB)
+      endif()
+
+      if (ZLIB_INCLUDE_DIRS AND ZLIB_LIBRARIES)
+	set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${ZLIB_INCLUDE_DIRS})
+	set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${ZLIB_LIBRARIES})
+	check_cxx_source_runs("${scotch_test_str}" SCOTCH_ZLIB_TEST_RUNS)
+
+	# Add zlib flags if required and set test run to 'true'
+	if (SCOTCH_ZLIB_TEST_RUNS)
+	  set(SCOTCH_INCLUDE_DISR ${SCOTCH_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS})
+          set(SCOTCH_LIBRARIES ${SCOTCH_LIBRARIES} ${ZLIB_LIBRARIES})
+	  set(SCOTCH_TEST_RUNS TRUE)
+	endif()
+
+      endif()
+    endif()
+  endif()
 endif()
 
 # Standard package handling
