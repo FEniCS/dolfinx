@@ -15,10 +15,12 @@ special = {"CahnHilliard2D.ufl":       "-fsplit",
            "AdaptiveNavierStokes.ufl": "-e"}
 
 # Directories to scan
-topdirs = ["dolfin", "demo", "bench", "test"]
+subdirs = ["dolfin", "demo", "bench", "test"]
+
 # Compile all form files
-for topdir in topdirs:
-    for root, dirs, files in os.walk(topdir):
+topdir = os.getcwd()
+for subdir in subdirs:
+    for root, dirs, files in os.walk(subdir):
 
         # Check for .ufl files
         formfiles = [f for f in files if len(f) > 4 and f[-4:] == ".ufl"]
@@ -38,3 +40,4 @@ for topdir in topdirs:
             ret = os.system(command)
             if not ret == 0:
                 raise RuntimeError, "Unable to compile form: %s/%s" % (root, f)
+        os.chdir(topdir)
