@@ -284,7 +284,11 @@ foreach(_lib ${DOLFIN_TARGET_LINK_LIBRARIES})
     _linkflags
     "${_lib}"
     )
-  set(PKG_LINKFLAGS "${_linkflags} ${PKG_LINKFLAGS}")
+
+  # Only add libraries that matches the form -L<libdir> -l<lib>
+  if ("${_linkflags}" MATCHES "-L.+ -l.+")
+    set(PKG_LINKFLAGS "${_linkflags} ${PKG_LINKFLAGS}")
+  endif()
 endforeach()
 
 # Remove duplicated link flags
