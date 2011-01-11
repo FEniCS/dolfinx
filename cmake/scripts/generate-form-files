@@ -14,25 +14,27 @@ special = {"CahnHilliard2D.ufl":       "-fsplit",
            "AdaptivePoisson.ufl":      "-e",
            "AdaptiveNavierStokes.ufl": "-e"}
 
+# Directories to scan
+topdirs = ["dolfin", "demo", "bench", "test"]
 # Compile all form files
-cwd = os.getcwd()
-for root, dirs, files in os.walk(cwd):
+for topdir in topdirs:
+    for root, dirs, files in os.walk(topdir):
 
-    # Check for .ufl files
-    formfiles = [f for f in files if len(f) > 4 and f[-4:] == ".ufl"]
-    if len(formfiles) == 0:
-        continue
+        # Check for .ufl files
+        formfiles = [f for f in files if len(f) > 4 and f[-4:] == ".ufl"]
+        if len(formfiles) == 0:
+            continue
 
-    # Compile files
-    os.chdir(root)
-    print "Compiling forms in %s..." % root
-    for f in formfiles:
-        if f in special:
-            options = special[f]
-        else:
-            options = ""
-        command = "ffc -v -O -l dolfin %s %s >> compile.log" % (options, f)
-        print "  " + command
-        ret = os.system(command)
-        if not ret == 0:
-            raise RuntimeError, "Unable to compile form: %s/%s" % (root, f)
+        # Compile files
+        os.chdir(root)
+        print "Compiling forms in %s..." % root
+        for f in formfiles:
+            if f in special:
+                options = special[f]
+            else:
+                options = ""
+            command = "ffc -v -O -l dolfin %s %s >> compile.log" % (options, f)
+            print "  " + command
+            ret = os.system(command)
+            if not ret == 0:
+                raise RuntimeError, "Unable to compile form: %s/%s" % (root, f)
