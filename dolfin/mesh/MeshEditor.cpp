@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // First added:  2006-05-16
-// Last changed: 2009-10-08
+// Last changed: 2011-01-11
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/parameter/dolfin_parameter.h>
@@ -130,7 +130,7 @@ void MeshEditor::init_cells(uint num_cells)
   mesh->_topology(tdim, 0).init(num_cells, mesh->type().num_vertices(tdim));
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::init_higher_order_cells(uint num_higher_order_cells, 
+void MeshEditor::init_higher_order_cells(uint num_higher_order_cells,
                                          uint num_higher_order_cell_dof)
 {
   // Check if we are currently editing a mesh
@@ -172,7 +172,7 @@ void MeshEditor::add_vertex(uint v, double x)
   add_vertex_common(v, 1);
 
   // Set coordinate, next_vertex doesn't seem to work right
-//  mesh->_geometry.set(next_vertex, 0, x);
+  // mesh->_geometry.set(next_vertex, 0, x);
 
   // Set coordinate
   mesh->_geometry.set(v, 0, x);
@@ -416,7 +416,7 @@ void MeshEditor::compute_boundary_indicators()
 {
   // Do nothing if mesh function "exterior facet domains" is present
   if (mesh->data().mesh_function("exterior facet domains"))
-    return; 
+    return;
 
   // Extract data for boundary indicators
   std::vector<uint>* facet_cells   = mesh->data().array("boundary facet cells");
@@ -452,10 +452,10 @@ void MeshEditor::compute_boundary_indicators()
     // Get cell index and local facet index
     const uint cell_index = (*facet_cells)[i];
     const uint local_facet = (*facet_numbers)[i];
-    
+
     // Get global facet index
     const uint global_facet = mesh->_topology(D, D - 1)(cell_index)[local_facet];
-        
+
     // Set boundary indicator for facet
     (*exterior_facet_domains)[global_facet] = (*indicators)[i];
   }

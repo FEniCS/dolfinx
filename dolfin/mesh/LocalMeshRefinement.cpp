@@ -306,6 +306,7 @@ bool LocalMeshRefinement::iteration_of_refinement(Mesh& mesh,
 
   // Generate cell - edge connectivity if not generated
   mesh.init(mesh.topology().dim(), 1);
+
   // Generate edge - vertex connectivity if not generated
   mesh.init(1, 0);
 

@@ -6,7 +6,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2008
-// Last changed: 2010-02-26
+// Last changed: 2011-01-11
 
 #include <dolfin/log/dolfin_log.h>
 #include <dolfin/mesh/Mesh.h>
@@ -25,8 +25,6 @@ void RivaraRefinement::refine(Mesh& refined_mesh,
                               std::vector<int>& facet_map)
 {
   info(TRACE, "Refining simplicial mesh by recursive Rivara bisection.");
-
-  const uint dim = mesh.topology().dim();
 
   // Create dynamic mesh and import data
   DMesh dmesh;
@@ -66,7 +64,7 @@ void RivaraRefinement::refine(Mesh& refined_mesh,
   dmesh.export_mesh(refined_mesh, new2old_cell_arr, new2old_facet_arr);
 
   // Generate cell mesh function map
-  cell_map.init(refined_mesh, dim);
+  cell_map.init(refined_mesh, mesh.topology().dim());
   for (CellIterator c(refined_mesh); !c.end(); ++c)
     cell_map[*c] = new2old_cell_arr[c->index()];
 
@@ -112,7 +110,8 @@ RivaraRefinement::DMesh::~DMesh()
 void RivaraRefinement::DMesh::import_mesh(const Mesh& mesh)
 {
   cell_type = &(mesh.type());
-  dim = mesh.topology().dim();
+  tdim = mesh.topology().dim();
+  gdim = mesh.geometry().dim();
   vertices.clear();
   cells.clear();
 
@@ -162,7 +161,7 @@ void RivaraRefinement::DMesh::export_mesh(Mesh& mesh,
   new2old_facet.resize(cells.size()*cell_type->num_entities(0));
 
   MeshEditor editor;
-  editor.open(mesh, cell_type->cell_type(), dim, dim);
+  editor.open(mesh, cell_type->cell_type(), tdim, gdim);
 
   editor.init_vertices(vertices.size());
   editor.init_cells(cells.size());
@@ -396,9 +395,9 @@ void RivaraRefinement::DMesh::propagate_facets(DCell* dcell, DCell* c0,
                        DCell* c1, uint ii, uint jj, DVertex* mv)
 {
   // Initialize local facets
-  std::vector<int> facets0(dim+1);
-  std::vector<int> facets1(dim+1);
-  for(uint i = 0; i < dim+1; i++)
+  std::vector<int> facets0(tdim + 1);
+  std::vector<int> facets1(tdim + 1);
+  for(uint i = 0; i < tdim + 1; i++)
   {
     facets0[i] = -2;
     facets1[i] = -2;
@@ -417,7 +416,7 @@ void RivaraRefinement::DMesh::propagate_facets(DCell* dcell, DCell* c0,
   // Changed facets
   int c0i = 0;
   int c1i = 0;
-  for (uint i = 0; i < dim + 1; i++)
+  for (uint i = 0; i < tdim + 1; i++)
   {
     if ( mv->id > c0->vertices[i]->id )
       c0i++;
@@ -429,13 +428,13 @@ void RivaraRefinement::DMesh::propagate_facets(DCell* dcell, DCell* c0,
 
   // Untouched facets
   std::vector<int> rest;
-  for (uint i = 0; i < dim + 1; i++)
+  for (uint i = 0; i < tdim + 1; i++)
   {
     if(i != ii && i != jj)
       rest.push_back(i);
   }
   int j = 0, k = 0;
-  for(uint i = 0; i < dim + 1; i++)
+  for(uint i = 0; i < tdim + 1; i++)
   {
     if(facets0[i] == -2)
       facets0[i] = rest[j++];
@@ -445,7 +444,7 @@ void RivaraRefinement::DMesh::propagate_facets(DCell* dcell, DCell* c0,
 
   // Rewrite facets whenever different that -1
   //   ( -1 for new, internal facets )
-  for(uint i = 0; i < dim + 1; i++)
+  for (uint i = 0; i < tdim + 1; i++)
   {
     if (facets0[i] != -1)
       c0->facets.push_back(dcell->facets[facets0[i]]);

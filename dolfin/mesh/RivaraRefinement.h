@@ -6,7 +6,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2008
-// Last changed: 2010-02-26
+// Last changed: 2011-01-11
 
 #ifndef __RIVARAREFINEMENT_H
 #define __RIVARAREFINEMENT_H
@@ -23,6 +23,10 @@ namespace dolfin
   // Forward declarations
   //class CellType;
   //class Mesh
+
+  // FIXME: This implementation needs quite a bit of cleanup, in particular
+  // FIXME: the DMesh class. Should be possible to use plain STL data structures
+  // FIXME: in place of the DMesh class.
 
   class RivaraRefinement
   {
@@ -66,8 +70,10 @@ namespace dolfin
     class DMesh
     {
     public:
+
       DMesh();
       ~DMesh();
+
       void add_vertex(DVertex* v);
       void add_cell(DCell* c, std::vector<DVertex*> vs, int parent_id);
       void remove_cell(DCell* c);
@@ -82,7 +88,9 @@ namespace dolfin
       std::list<DVertex*> vertices;
       std::list<DCell*> cells;
       const CellType* cell_type;
-      uint dim;
+      uint tdim;
+      uint gdim;
+
     };
 
   };
