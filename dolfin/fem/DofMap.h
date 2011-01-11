@@ -6,7 +6,7 @@
 // Modified by Ola Skavhaug, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2010-06-01
+// Last changed: 2011-01-11
 
 #ifndef __DOF_MAP_H
 #define __DOF_MAP_H
@@ -94,6 +94,8 @@ namespace dolfin
       assert(cell_index < dofmap.size());
       return dofmap[cell_index];
     }
+
+    // FIXME: Why is this not inlined?
 
     /// Tabulate the local-to-global mapping of dofs on a cell
     void tabulate_dofs(uint* dofs, const Cell& cell) const;
