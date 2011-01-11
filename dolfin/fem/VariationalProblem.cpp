@@ -1,7 +1,7 @@
 // Copyright (C) 2008-2009 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Marie E. Rognes (meg@simula.no)
+// Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
 // Last changed: 2011-01-05
@@ -12,6 +12,8 @@
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/adaptivity/AdaptiveSolver.h>
+#include <dolfin/adaptivity/GoalFunctional.h>
 #include "assemble.h"
 #include "Form.h"
 #include "BoundaryCondition.h"
@@ -90,6 +92,19 @@ void VariationalProblem::solve(Function& u)
     solve_nonlinear(u);
   else
     solve_linear(u);
+}
+//-----------------------------------------------------------------------------
+void VariationalProblem::solve(Function& u, const double tol, GoalFunctional& M)
+{
+  // Call adaptive solver
+  AdaptiveSolver::solve(u, *this, tol, M, parameters("adaptive_solver"));
+}
+//-----------------------------------------------------------------------------
+void VariationalProblem::solve(Function& u, const double tol, Form& M,
+                               ErrorControl& ec)
+{
+  // Call adaptive solver
+  AdaptiveSolver::solve(u, *this, tol, M, ec, parameters("adaptive_solver"));
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve(Function& u0, Function& u1)
@@ -301,5 +316,10 @@ bool VariationalProblem::is_nonlinear(const Form& b, const Form& c) const
   if (b.rank() == 1)
     return true;
   return false;
+}
+//-----------------------------------------------------------------------------
+const bool VariationalProblem::is_nonlinear() const 
+{
+	return nonlinear;
 }
 //-----------------------------------------------------------------------------
