@@ -2,10 +2,10 @@
 // Licensed under the GNU LGPL Version 3 or any later version
 
 // First added:  2010-08-19
-// Last changed: 2011-01-07
+// Last changed: 2011-01-11
 
 #include <dolfin.h>
-#include "Poisson.h"
+#include "AdaptivePoisson.h"
 
 using namespace dolfin;
 
@@ -42,7 +42,7 @@ int main()
 {
   // Create mesh and function space
   UnitSquare mesh(8, 8);
-  Poisson::TestSpace V(mesh);    // FIXME: Missing typedefs
+  AdaptivePoisson::TestSpace V(mesh);    // FIXME: Missing typedefs
 
   // Define boundary condition
   Constant u0(0.0);
@@ -50,8 +50,8 @@ int main()
   DirichletBC bc(V, u0, boundary);
 
   // Define variational problem
-  Poisson::BilinearForm a(V, V);
-  Poisson::LinearForm L(V);
+  AdaptivePoisson::BilinearForm a(V, V);
+  AdaptivePoisson::LinearForm L(V);
   Source f;
   dUdN g;
   L.f = f;
@@ -62,7 +62,7 @@ int main()
   Function u(V);
 
   // Define goal (quantity of interest)
-  Poisson::GoalFunctional M(mesh);
+  AdaptivePoisson::GoalFunctional M(mesh);
 
   // Compute solution (adaptively) with accuracy to within tol
   double tol = 1.e-5;
