@@ -35,7 +35,7 @@ for subdir in subdirs:
                 options = special[f]
             else:
                 options = ""
-            command = "ffc -v -O -l dolfin %s %s >> compile.log" % (options, f)
+            command = "ffc -v -O -f no_ferari -l dolfin %s %s >> compile.log" % (options, f)
             print "  " + command
             ret = os.system(command)
             if not ret == 0:
