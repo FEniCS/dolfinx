@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2005-2009 Anders Logg.
+# Copyright (C) 2005-2010 Anders Logg.
 # Licensed under the GNU LGPL Version 2.1.
 #
 # Recompile all ffc forms (use when FFC has been updated)
@@ -9,8 +9,10 @@
 import os
 
 # Forms that need special options
-special = {"CahnHilliard2D.ufl": "-fsplit",
-           "CahnHilliard3D.ufl": "-fsplit"}
+special = {"CahnHilliard2D.ufl":       "-fsplit",
+           "CahnHilliard3D.ufl":       "-fsplit",
+           "AdaptivePoisson.ufl":      "-e",
+           "AdaptiveNavierStokes.ufl": "-e"}
 
 # Compile all form files
 cwd = os.getcwd()
