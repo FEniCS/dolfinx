@@ -4,8 +4,6 @@
 // First added:  2010-09-16
 // Last changed: 2011-01-06
 
-#include <boost/scoped_array.hpp>
-
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/mesh/Cell.h>
@@ -187,7 +185,7 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
 
   // Take absolute value of indicators: FIXME. Must be better way.
   double abs;
-  for (uint i=0; i < indicators.size(); i++)
+  for (uint i = 0; i < indicators.size(); i++)
   {
     abs = std::abs(indicators.getitem(i));
     indicators.setitem(i, abs); // FIXME
@@ -252,7 +250,6 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 
   // Extract (common) dof map
   const GenericDofMap& dof_map = V.dofmap();
-  std::vector<uint> dofs(N);
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -281,7 +278,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
     x = arma::solve(A, b);
 
     // Get local-to-global dof map for cell
-    dofs = dof_map.cell_dofs(cell->index());
+    const std::vector<uint>& dofs = dof_map.cell_dofs(cell->index());
 
     // Plug x into global vector
     for (uint i=0; i < N; i++)
@@ -314,9 +311,6 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 
   std::vector<uint> exterior_facets;
   std::vector<uint> interior_facets;
-
-  // Local array for dof indices
-  boost::scoped_array<uint> dofs(new uint[N]);
 
   // Extract number of coefficients on right-hand side (for use with
   // attaching coefficients)
@@ -373,7 +367,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
                                     exterior_facets, interior_facets);
 
       //Non-singularize
-      for(uint i=0; i < N; i ++)
+      for(uint i = 0; i < N; i ++)
       {
         if (std::abs(A(i, i)) < 1.e-10)
         {
@@ -386,10 +380,10 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       x = arma::solve(A, b);
 
       // Tabulate dofs for w on cell
-      const std::vector<uint> dofs = dof_map.cell_dofs(cell->index());
+      const std::vector<uint>& dofs = dof_map.cell_dofs(cell->index());
 
       // Plug x into global vector
-      for (uint i=0; i < N; i++)
+      for (uint i = 0; i < N; i++)
         R_dT[e]->vector().setitem(dofs[i], x[i]);
     }
   }
