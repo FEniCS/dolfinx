@@ -267,29 +267,21 @@ void PETScVector::get_local(double* block, uint m, const uint* rows) const
 void PETScVector::set(const double* block, uint m, const uint* rows)
 {
   assert(x);
-  int _m =  static_cast<int>(m);
-  const int* _rows = reinterpret_cast<const int*>(rows);
+
   if (m == 0)
-  {
-    _rows = &_m;
-    double tmp = 0.0;
-    block = &tmp;
-  }
-  VecSetValues(*x, _m, _rows, block, INSERT_VALUES);
+    return;
+
+  VecSetValues(*x, m, reinterpret_cast<const int*>(rows), block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add(const double* block, uint m, const uint* rows)
 {
   assert(x);
-  int _m =  static_cast<int>(m);
-  const int* _rows = reinterpret_cast<const int*>(rows);
+
   if (m == 0)
-  {
-    _rows = &_m;
-    double tmp = 0;
-    block = &tmp;
-  }
-  VecSetValues(*x, _m, _rows, block, ADD_VALUES);
+    return;
+
+  VecSetValues(*x, m, reinterpret_cast<const int*>(rows), block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::apply(std::string mode)

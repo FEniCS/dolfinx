@@ -7,6 +7,9 @@
 // First added:  2007-05-24
 // Last changed: 2010-12-29
 
+#include <dolfin/common/timing.h>
+
+
 #include <dolfin/la/GenericSparsityPattern.h>
 #include <dolfin/main/MPI.h>
 #include <dolfin/mesh/Cell.h>
@@ -47,6 +50,10 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
   // Create vector to point to dofs
   std::vector<const std::vector<uint>* > dofs(rank);
 
+  std::vector<std::vector<uint> > _dofs(rank);
+
+  double t = time();
+
   // Build sparsity pattern for cell integrals
   if (cells)
   {
@@ -62,6 +69,9 @@ void SparsityPatternBuilder::build(GenericSparsityPattern& sparsity_pattern,
       p++;
     }
   }
+  t = time() -t;
+  cout << "Sparsity time: " << t << endl;
+
 
   // FIXME: The below note is not true when there are no cell integrals,
   //        e.g. finite volume method
