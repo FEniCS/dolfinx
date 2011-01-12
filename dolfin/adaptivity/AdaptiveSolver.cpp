@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-07
+// Last changed: 2011-01-12
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Variable.h>
@@ -48,9 +48,9 @@ void AdaptiveSolver::solve(Function& u,
                            ErrorControl& ec,
                            Parameters& parameters)
 {
-  // Set marking tolerance if not set
-  if (parameters["marking_tolerance"].change_count() == 0)
-    parameters["marking_tolerance"] = tol;
+  // Set tolerance parameter if not set
+  if (parameters["tolerance"].change_count() == 0)
+    parameters["tolerance"] = tol;
 
   // A list of adaptive data
   std::vector<AdaptiveDatum> data;
@@ -83,7 +83,8 @@ void AdaptiveSolver::solve(Function& u,
     const double functional_value = assemble(M);
 
     // Initialize adaptive data
-    AdaptiveDatum datum(i, V.dim(), mesh.num_cells(), error_estimate, tol,
+    AdaptiveDatum datum(i, V.dim(), mesh.num_cells(), error_estimate,
+                        parameters["tolerance"],
                         functional_value);
     if (parameters["reference"].change_count() > 0)
       datum.set_reference_value(parameters["reference"]);
@@ -98,7 +99,6 @@ void AdaptiveSolver::solve(Function& u,
     }
     info(INFO, "Estimated error (%0.5g) does not satisfy tolerance (%0.5g).",
          error_estimate, tol);
-
     end();
 
     //--- Stage 2: Compute error indicators ---
@@ -142,27 +142,22 @@ void AdaptiveSolver::solve(Function& u,
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveSolver::stop(const FunctionSpace& V,
-                          double error_estimate,
+                          const double error_estimate,
                           const Parameters& parameters)
 {
-  const std::string criterion = parameters["stopping_criterion"];
-  const double tolerance = parameters["marking_tolerance"];
+  // Done if error is less than tolerance
+  const double tolerance = parameters["tolerance"];
+  if (std::abs(error_estimate) < tolerance)
+    return true;
 
-  if (criterion == "tolerance")
-  {
-    if (std::abs(error_estimate) < tolerance)
-      return true;
-    return false;
-  }
+  // Or done if dimension is larger than max dimension (and that
+  // parameter is set).
+  const uint max_dimension = parameters["max_dimension"];
+  if (parameters["max_dimension"].change_count() > 0
+      && V.dim() > max_dimension)
+    return true;
 
-  if (criterion == "dimension")
-  {
-    if (V.dim() > tolerance)
-      return true;
-    return false;
-  }
-
-  error("No such stopping criterion defined.");
+  // Otherwise, not done.
   return false;
 }
 //-----------------------------------------------------------------------------

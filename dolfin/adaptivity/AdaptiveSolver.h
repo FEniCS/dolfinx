@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-07
+// Last changed: 2011-01-12
 
 #ifndef __ADAPTIVE_SOLVER_H
 #define __ADAPTIVE_SOLVER_H
@@ -64,9 +64,13 @@ namespace dolfin
     {
       Parameters p("adaptive_solver");
 
+      // Set default adaptive parameters associated with stopping
+      // criteria
+      p.add("tolerance", 0.0);
+      p.add("max_iterations", 1);
+      p.add("max_dimension", 0);
+
       // Set generic adaptive parameters
-      p.add("max_iterations",  1);
-      p.add("stopping_criterion", "tolerance");
       p.add("plot_mesh", true);
       p.add("reference", 0.0);
 
@@ -79,7 +83,6 @@ namespace dolfin
       // Set parameters for mesh marking
       p.add("marking_strategy", "dorfler");
       p.add("marking_fraction", 0.5, 0.0, 1.0);
-      p.add("marking_tolerance", 0.0);
 
       return p;
     }
