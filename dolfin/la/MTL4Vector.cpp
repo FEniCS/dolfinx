@@ -2,9 +2,10 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2008-2009.
+// Modified by Anders Logg, 2010.
 //
 // First added:  2008-07-06
-// Last changed: 2009-08-22
+// Last changed: 2011-01-14
 
 #ifdef HAS_MTL4
 
@@ -202,6 +203,13 @@ double MTL4Vector::inner(const GenericVector& v) const
 void MTL4Vector::axpy(double a, const GenericVector& v)
 {
   x += a*v.down_cast<MTL4Vector>().vec();
+}
+//-----------------------------------------------------------------------------
+void MTL4Vector::abs()
+{
+  assert(x);
+  for (uint i = 0; i < _size; i++)
+    x[i] = std::abs(x[i]);
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& MTL4Vector::factory() const

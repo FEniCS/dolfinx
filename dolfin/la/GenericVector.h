@@ -1,14 +1,14 @@
 // Copyright (C) 2006-2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2006-2008.
+// Modified by Anders Logg, 2006-2010.
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Ola Skavhaug, 2008.
 // Modified by Martin Sandve Alnes, 2009.
 // Modified by Johan Hake, 2009-2010.
 //
 // First added:  2006-04-25
-// Last changed: 2010-12-29
+// Last changed: 2011-01-14
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -148,6 +148,9 @@ namespace dolfin
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x) = 0;
+
+    /// Replace all entries in the vector by their absolute values
+    virtual void abs() = 0;
 
     /// Return inner product with given vector
     virtual double inner(const GenericVector& x) const = 0;

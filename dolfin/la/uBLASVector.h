@@ -1,13 +1,13 @@
 // Copyright (C) 2006-2010 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2006-2008.
+// Modified by Anders Logg, 2006-2010.
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Ola Skavhaug, 2008.
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2006-03-04
-// Last changed: 2010-12-29
+// Last changed: 2011-01-14
 
 #ifndef __UBLAS_VECTOR_H
 #define __UBLAS_VECTOR_H
@@ -120,6 +120,9 @@ namespace dolfin
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);
+
+    /// Replace all entries in the vector by their absolute values
+    virtual void abs();
 
     /// Return inner product with given vector
     virtual double inner(const GenericVector& x) const;
