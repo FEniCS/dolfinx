@@ -3,7 +3,7 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2007-2009.
-// Modified by Garth Wells, 2008-2010
+// Modified by Garth Wells, 2008-2011.
 // Modified by Ola Skavhaug, 2008-2009
 // Modified by Kent-Andre Mardal, 2008.
 // Modified by Martin Sandve Alnaes, 2008.
