@@ -1,3 +1,4 @@
+ - Add abs() to GenericVector interface
  - Fix bug for local refinement of manifolds
  - Interface change: VariationalProblem now takes: a, L or F, (dF)
  - Map linear algebra objects to processes consistently with mesh parition

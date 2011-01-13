@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2008-2010.
 //
 // First added:  2008-04-21
-// Last changed: 2010-11-26
+// Last changed: 2011-01-14
 
 #ifdef HAS_TRILINOS
 
@@ -455,6 +455,12 @@ void EpetraVector::axpy(double a, const GenericVector& y)
   const int err = x->Update(a, *(_y.vec()), 1.0);
   if (err != 0)
     error("EpetraVector::axpy: Did not manage to perform Epetra_Vector::Update.");
+}
+//-----------------------------------------------------------------------------
+void EpetraVector::abs()
+{
+  assert(x);
+  dolfin_not_implemented(); // anyone knows the correct function in Epetra?
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraVector::factory() const

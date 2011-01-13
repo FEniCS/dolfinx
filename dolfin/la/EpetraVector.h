@@ -1,11 +1,11 @@
 // Copyright (C) 2008 Martin Sandve Alnes, Kent-Andre Mardal and Johannes Ring.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg, 2008.
+// Modified by Anders Logg, 2008-2010.
 // Modified by Garth N. Wells, 2008-2009.
 //
 // First added:  2008-04-21
-// Last changed: 2009-09-08
+// Last changed: 2011-01-14
 
 #ifndef __EPETRA_VECTOR_H
 #define __EPETRA_VECTOR_H
@@ -125,6 +125,9 @@ namespace dolfin
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);
+
+    /// Replace all entries in the vector by their absolute values
+    virtual void abs();
 
     /// Return inner product with given vector
     virtual double inner(const GenericVector& vector) const;

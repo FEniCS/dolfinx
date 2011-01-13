@@ -1,12 +1,12 @@
 // Copyright (C) 2006-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2006-2008.
+// Modified by Anders Logg 2006-2010.
 // Modified by Kent-Andre Mardal 2008.
 // Modified by Martin Sandve Alnes 2008.
 //
 // First added:  2006-04-04
-// Last changed: 2010-06-28
+// Last changed: 2011-01-14
 
 #include <iostream>
 #include <sstream>
@@ -214,10 +214,18 @@ double uBLASVector::sum() const
 //-----------------------------------------------------------------------------
 void uBLASVector::axpy(double a, const GenericVector& y)
 {
-  if ( size() != y.size() )
+  if (size() != y.size())
     error("Vectors must be of same size.");
 
   (*x) += a * y.down_cast<uBLASVector>().vec();
+}
+//-----------------------------------------------------------------------------
+void uBLASVector::abs()
+{
+  assert(x);
+  const uint size = x->size();
+  for (uint i = 0; i < size; i++)
+    (*x)[i] = std::abs((*x)[i]);
 }
 //-----------------------------------------------------------------------------
 double uBLASVector::inner(const GenericVector& y) const

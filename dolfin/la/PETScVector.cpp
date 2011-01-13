@@ -5,7 +5,7 @@
 // Modified by Martin Sandve Alnes 2008
 //
 // First added:  2004
-// Last changed: 2010-12-28
+// Last changed: 2011-01-14
 
 #ifdef HAS_PETSC
 
@@ -460,6 +460,12 @@ void PETScVector::axpy(double a, const GenericVector& y)
     error("The vectors must be of the same size.");
 
   VecAXPY(*x, a, *(_y.x));
+}
+//-----------------------------------------------------------------------------
+void PETScVector::abs()
+{
+  assert(x);
+  VecAbs(*x);
 }
 //-----------------------------------------------------------------------------
 double PETScVector::norm(std::string norm_type) const

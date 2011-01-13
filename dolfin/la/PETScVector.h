@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2008 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2010 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Garth N. Wells, 2005-2010.
@@ -7,7 +7,7 @@
 // Modified by Martin Alnæs, 2008.
 //
 // First added:  2004-01-01
-// Last changed: 2010-12-28
+// Last changed: 2011-01-14
 
 #ifndef __PETSC_VECTOR_H
 #define __PETSC_VECTOR_H
@@ -118,6 +118,9 @@ namespace dolfin
 
     /// Add multiple of given vector (AXPY operation)
     virtual void axpy(double a, const GenericVector& x);
+
+    /// Replace all entries in the vector by their absolute values
+    virtual void abs();
 
     /// Return inner product with given vector
     virtual double inner(const GenericVector& v) const;
