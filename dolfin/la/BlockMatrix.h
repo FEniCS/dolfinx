@@ -1,30 +1,30 @@
 // Copyright (C) 2008 Kent-Andre Mardal.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// First added:  2008-08-25
-// Last changed: 2009-09-08
-//
 // Modified by Anders Logg, 2008.
+// Modified by Garth N. Wells, 2011.
+//
+// First added:  2008-08-25
+// Last changed: 2011-01-13
 
 #ifndef __BLOCKMATRIX_H
 #define __BLOCKMATRIX_H
 
-#include <map>
-#include "Matrix.h"
+#include <vector>
+#include <boost/shared_ptr.hpp>
 
 namespace dolfin
 {
-  // Forward declaration
+  // Forward declarations
+  class GenericMatrix;
   class SubMatrix;
 
   class BlockMatrix
   {
   public:
 
-    // FIXME: Change order of m and n
-
     // Constructor
-    BlockMatrix(uint n=0, uint m=0, bool owner=false);
+    BlockMatrix(uint m = 0, uint n = 0);
 
     // Destructor
     ~BlockMatrix();
@@ -33,13 +33,13 @@ namespace dolfin
     SubMatrix operator() (uint i, uint j);
 
     /// Set block
-    void set(uint i, uint j, Matrix& m);
+    void set(uint i, uint j, GenericMatrix& m);
 
     /// Get block (const version)
-    const Matrix& get(uint i, uint j) const;
+    const GenericMatrix& get(uint i, uint j) const;
 
     /// Get block
-    Matrix& get(uint i, uint j);
+    GenericMatrix& get(uint i, uint j);
 
     /// Return size of given dimension
     uint size(uint dim) const;
@@ -58,10 +58,7 @@ namespace dolfin
 
   private:
 
-    bool owner;
-    uint n, m;
-    //    std::map<std::pair<int,int>, Matrix*> matrices;
-    Matrix** matrices;
+    std::vector<std::vector<boost::shared_ptr<GenericMatrix> > > matrices;
 
   };
 
@@ -74,10 +71,11 @@ namespace dolfin
   public:
 
     SubMatrix(uint row, uint col, BlockMatrix& bm);
+
     ~SubMatrix();
 
     /// Assign Matrix to SubMatrix
-    const SubMatrix& operator= (Matrix& m);
+    const SubMatrix& operator= (GenericMatrix& m);
 
   private:
 
