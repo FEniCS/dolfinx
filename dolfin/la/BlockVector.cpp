@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/utils.h>
 #include "GenericVector.h"
 #include "Vector.h"
@@ -41,11 +42,11 @@ BlockVector* BlockVector::copy() const
   return 0;
 }
 //-----------------------------------------------------------------------------
-SubVector BlockVector::operator()(uint i)
+GenericVector& BlockVector::operator()(uint i)
 {
   assert(i < vectors.size());
-  SubVector sv(i, *this);
-  return sv;
+  assert(vectors[i]);
+  return *vectors[i];
 }
 //-----------------------------------------------------------------------------
 dolfin::uint BlockVector::size() const
@@ -171,12 +172,12 @@ std::string BlockVector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void BlockVector::set(uint i, boost::shared_ptr<GenericVector> v)
+void BlockVector::set(uint i, GenericVector& v)
 {
   assert(i < vectors.size());
 
   // FIXME: Resolve copy/view approach
-  vectors[i] = v;
+  vectors[i] = boost::shared_ptr<GenericVector>(reference_to_no_delete_pointer(v));
 }
 //-----------------------------------------------------------------------------
 const GenericVector& BlockVector::get(uint i) const
@@ -189,22 +190,5 @@ GenericVector& BlockVector::get(uint i)
 {
   assert(i < vectors.size());
   return *(vectors[i]);
-}
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-SubVector::SubVector(uint n, BlockVector& bv) : n(n), bv(bv)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-SubVector::~SubVector()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-const SubVector& SubVector::operator=(boost::shared_ptr<GenericVector> v)
-{
-  bv.set(n, v);
-  return *this;
 }
 //-----------------------------------------------------------------------------

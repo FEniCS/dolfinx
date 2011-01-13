@@ -10,6 +10,7 @@
 #include <iostream>
 #include <boost/scoped_ptr.hpp>
 
+#include <dolfin/common/NoDeleter.h>
 #include "dolfin/common/utils.h"
 #include "BlockVector.h"
 #include "DefaultFactory.h"
@@ -33,13 +34,13 @@ BlockMatrix::~BlockMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void BlockMatrix::set_block(uint i, uint j, boost::shared_ptr<GenericMatrix> m)
+void BlockMatrix::set_block(uint i, uint j, GenericMatrix& m)
 {
   assert(i < matrices.size());
   assert(j < matrices[i].size());
 
   // FIXME: Resolve copy/view approach
-  matrices[i][j] = m;
+  matrices[i][j] = boost::shared_ptr<GenericMatrix>(reference_to_no_delete_pointer(m));
 }
 //-----------------------------------------------------------------------------
 const GenericMatrix& BlockMatrix::get_block(uint i, uint j) const
@@ -130,30 +131,11 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
   }
 }
 //-----------------------------------------------------------------------------
-SubMatrix BlockMatrix::operator()(uint i, uint j)
+GenericMatrix& BlockMatrix::operator()(uint i, uint j)
 {
   assert(i < matrices.size());
   assert(j < matrices[i].size());
 
-  SubMatrix sm(i, j, *this);
-  return sm;
-}
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-SubMatrix::SubMatrix(uint col, uint row, BlockMatrix& bm)
-  : row(row), col(col), bm(bm)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-SubMatrix::~SubMatrix()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-const SubMatrix& SubMatrix::operator=(boost::shared_ptr<GenericMatrix> m)
-{
-  bm.set_block(row, col, m);
-  return *this;
+  return *matrices[i][j];
 }
 //-----------------------------------------------------------------------------

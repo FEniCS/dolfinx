@@ -34,10 +34,10 @@ namespace dolfin
     /// Return copy of tensor
     virtual BlockVector* copy() const;
 
-    SubVector operator() (uint i);
+    GenericVector& operator() (uint i);
 
     /// Set function
-    void set(uint i, boost::shared_ptr<GenericVector> v);
+    void set(uint i, GenericVector& v);
 
     /// Get functions (const)
     const GenericVector& get(uint i) const;
@@ -86,25 +86,7 @@ namespace dolfin
 
   private:
 
-      //bool owner;
-      //uint n;
-      std::vector<boost::shared_ptr<GenericVector> > vectors;
-
-  };
-
-  class SubVector
-  {
-  public:
-
-    SubVector(uint n, BlockVector& bv);
-    ~SubVector();
-
-    const SubVector& operator= (boost::shared_ptr<GenericVector> v);
-
-  private:
-
-    uint n;
-    BlockVector& bv;
+    std::vector<boost::shared_ptr<GenericVector> > vectors;
 
   };
 

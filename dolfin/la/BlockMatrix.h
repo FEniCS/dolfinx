@@ -17,7 +17,7 @@ namespace dolfin
 {
   // Forward declarations
   class GenericMatrix;
-  class SubMatrix;
+  //class SubMatrix;
 
   class BlockMatrix
   {
@@ -30,7 +30,7 @@ namespace dolfin
     ~BlockMatrix();
 
     /// Set block
-    void set_block(uint i, uint j, boost::shared_ptr<GenericMatrix> m);
+    void set_block(uint i, uint j, GenericMatrix& m);
 
     /// Get block (const version)
     const GenericMatrix& get_block(uint i, uint j) const;
@@ -39,7 +39,7 @@ namespace dolfin
     GenericMatrix& get_block(uint i, uint j);
 
     /// Return SubMatrix reference number (i,j)
-    SubMatrix operator() (uint i, uint j);
+    GenericMatrix& operator() (uint i, uint j);
 
     /// Return size of given dimension
     uint size(uint dim) const;
@@ -59,28 +59,6 @@ namespace dolfin
   private:
 
     std::vector<std::vector<boost::shared_ptr<GenericMatrix> > > matrices;
-
-  };
-
-  // SubMatrix
-  // Rip off of the design in Table and TableEntry for giving nice operators
-  // A(0,0) = A00 also in the case with external storage.
-
-  class SubMatrix
-  {
-  public:
-
-    SubMatrix(uint row, uint col, BlockMatrix& bm);
-
-    ~SubMatrix();
-
-    /// Assign Matrix to SubMatrix
-    const SubMatrix& operator= (boost::shared_ptr<GenericMatrix> m);
-
-  private:
-
-    uint row, col;
-    BlockMatrix& bm;
 
   };
 
