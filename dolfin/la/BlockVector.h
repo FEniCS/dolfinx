@@ -2,19 +2,23 @@
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Anders Logg, 2008.
+// Modified by Garth N. Wells, 2011.
 //
 // First added:  2008-08-25
-// Last changed: 2009-09-08
+// Last changed: 2011-01-13
 //
 
 #ifndef __BLOCKVECTOR_H
 #define __BLOCKVECTOR_H
 
-#include <map>
-#include "Vector.h"
+#include <vector>
+#include <boost/shared_ptr.hpp>
 
 namespace dolfin
 {
+
+  // Forward declarations
+  class GenericVector;
   class SubVector;
 
   class BlockVector
@@ -22,7 +26,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    BlockVector(uint n_=0, bool owner=false);
+    BlockVector(uint n = 0);
 
     /// Destructor
     virtual ~BlockVector();
@@ -33,11 +37,13 @@ namespace dolfin
     SubVector operator() (uint i);
 
     /// Set function
-    void set(uint i, Vector& v);
+    void set(uint i, GenericVector& v);
 
-    /// Get functions (const and non-const)
-    const Vector& get(uint i) const;
-    Vector& get(uint);
+    /// Get functions (const)
+    const GenericVector& get(uint i) const;
+
+    /// Get functions (non-const)
+    GenericVector& get(uint);
 
     /// Add multiple of given vector (AXPY operation)
     void axpy(double a, const BlockVector& x);
@@ -80,9 +86,9 @@ namespace dolfin
 
   private:
 
-      bool owner;
-      uint n;
-      Vector** vectors;
+      //bool owner;
+      //uint n;
+      std::vector<boost::shared_ptr<GenericVector> > vectors;
 
   };
 
@@ -93,7 +99,7 @@ namespace dolfin
     SubVector(uint n, BlockVector& bv);
     ~SubVector();
 
-    const SubVector& operator= (Vector& v);
+    const SubVector& operator= (GenericVector& v);
 
   private:
 
@@ -105,4 +111,3 @@ namespace dolfin
 }
 
 #endif
-

@@ -1,71 +1,64 @@
 // Copyright (C) 2008 Kent-Andre Mardal.
 // Licensed under the GNU LGPL Version 2.1.
 //
+// Modified by Garth N. Wells, 2011.
+//
 // First added:  2008-08-25
-// Last changed: 2009-08-11
+// Last changed: 2011-01-12
 //
 // Modified by Anders Logg, 2008.
 
-#include <stdexcept>
-#include <iostream>
+#include <algorithm>
 #include <cmath>
-#include <climits>
+
 #include <dolfin/common/utils.h>
+#include "GenericVector.h"
 #include "Vector.h"
 #include "BlockVector.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BlockVector::BlockVector(uint n_, bool owner_): owner(owner_), n(n_)
+BlockVector::BlockVector(uint n) : vectors(n)
 {
-  vectors = new Vector*[n];
-  if (owner)
-  {
-    for (uint i = 0; i < n; i++)
-      vectors[i] = new Vector();
-  }
+  for (uint i = 0; i < n; i++)
+    vectors[i].reset(new Vector());
 }
 //-----------------------------------------------------------------------------
 BlockVector::~BlockVector()
 {
-  if (owner)
-  {
-    for (uint i = 0; i < n; i++)
-      delete vectors[i];
-  }
-  delete [] vectors;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 BlockVector* BlockVector::copy() const
 {
-  BlockVector* x= new BlockVector(n);
-  for (uint i = 0; i < n; i++)
-    x->set(i,*(this->get(i).copy()));
+  BlockVector* x= new BlockVector(vectors.size());
+  for (uint i = 0; i < vectors.size(); i++)
+    x->set(i, *(this->get(i).copy()));
   return x;
 }
 //-----------------------------------------------------------------------------
 SubVector BlockVector::operator()(uint i)
 {
-  SubVector sv(i,*this);
+  SubVector sv(i, *this);
   return sv;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint BlockVector::size() const
 {
-  return n;
+  return vectors.size();
 }
 //-----------------------------------------------------------------------------
 void BlockVector::axpy(double a, const BlockVector& x)
 {
-  for (uint i = 0; i < n; i++)
+  for (uint i = 0; i < vectors.size(); i++)
     this->get(i).axpy(a, x.get(i));
 }
 //-----------------------------------------------------------------------------
 double BlockVector::inner(const BlockVector& x) const
 {
   double value = 0.0;
-  for (uint i = 0; i < n; i++)
+  for (uint i = 0; i < vectors.size(); i++)
     value += this->get(i).inner(x.get(i));
   return value;
 }
@@ -75,64 +68,53 @@ double BlockVector::norm(std::string norm_type) const
   double value = 0.0;
   if(norm_type == "l1")
   {
-    for (uint i = 0; i < n; i++)
+    for (uint i = 0; i < vectors.size(); i++)
       value += this->get(i).norm(norm_type);
   }
-  else if(norm_type == "l2")
+  else if (norm_type == "l2")
   {
-    for (uint i = 0; i < n; i++)
+    for (uint i = 0; i < vectors.size(); i++)
       value += std::pow(this->get(i).norm(norm_type), 2);
     value = sqrt(value);
   }
-  else
+  else if (norm_type == "linf")
   {
-    double tmp= 0.0;
-    for (uint i = 0; i < n; i++)
-    {
-      tmp = this->get(i).norm(norm_type);
-      if (tmp > value)
-        value = tmp;
-    }
+    std::vector<double> linf(vectors.size());
+    for (uint i = 0; i < vectors.size(); i++)
+      linf[i] = this->get(i).norm(norm_type);
+     value = *(std::max_element(linf.begin(), linf.end()));
   }
   return value;
 }
 //-----------------------------------------------------------------------------
 double BlockVector::min() const
 {
-  double value = 100000000; //FIXME use MAXFLOAT or something
-  double tmp = 0.0;
-  for (uint i = 0; i < n; i++)
-  {
-    tmp = this->get(i).min();
-    if (tmp < value)
-      value = tmp;
-  }
-  return value;
+  std::vector<double> _min(vectors.size());
+  for (uint i = 0; i < vectors.size(); i++)
+    _min[i] = this->get(i).min();
+
+  return *(std::min_element(_min.begin(), _min.end()));
 }
 //-----------------------------------------------------------------------------
 double BlockVector::max() const
 {
-  double value = -1.0; //FIXME use MINFLOAT or something
-  double tmp = 0.0;
-  for (uint i = 0; i < n; i++)
-  {
-    tmp = this->get(i).min();
-    if (tmp > value)
-      value = tmp;
-  }
-  return value;
+  std::vector<double> _max(vectors.size());
+  for (uint i = 0; i < vectors.size(); i++)
+    _max[i] = this->get(i).min();
+
+  return *(std::max_element(_max.begin(), _max.end()));
 }
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator*= (double a)
 {
-  for(uint i = 0; i < n; i++)
+  for(uint i = 0; i < vectors.size(); i++)
     this->get(i) *= a;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator/= (double a)
 {
-  for(uint i = 0; i < n; i++)
+  for(uint i = 0; i < vectors.size(); i++)
     this->get(i) /= a;
   return *this;
 }
@@ -151,14 +133,14 @@ const BlockVector& BlockVector::operator-= (const BlockVector& y)
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator= (const BlockVector& x)
 {
-  for(uint i = 0; i < n; i++)
+  for(uint i = 0; i < vectors.size(); i++)
     this->get(i) = x.get(i);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator= (double a)
 {
-  for(uint i = 0; i < n; i++)
+  for(uint i = 0; i < vectors.size(); i++)
     this->get(i) = a;
   return *this;
 }
@@ -171,7 +153,7 @@ std::string BlockVector::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
 
-    for (uint i = 0; i < n; i++)
+    for (uint i = 0; i < vectors.size(); i++)
     {
       s << "  BlockVector " << i << std::endl << std::endl;
       s << indent(indent(get(i).str(true))) << std::endl;
@@ -179,32 +161,31 @@ std::string BlockVector::str(bool verbose) const
   }
   else
   {
-    s << "<BlockVector containing " << n << " blocks>";
+    s << "<BlockVector containing " << vectors.size() << " blocks>";
   }
 
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void BlockVector::set(uint i, Vector& v)
+void BlockVector::set(uint i, GenericVector& v)
 {
-//  matrices[i*n+j] = m.copy(); //FIXME. not obvious that copy is the right thing
-  vectors[i] = &v; //FIXME. not obvious that copy is the right thing
+  error("BlockVector::set needs to be updated");
+  //matrices[i*n+j] = m.copy(); //FIXME. not obvious that copy is the right thing
+  //vectors[i] = &v; //FIXME. not obvious that copy is the right thing
 }
 //-----------------------------------------------------------------------------
-const Vector& BlockVector::get(uint i) const
-{
-  return *(vectors[i]);
-}
-//-----------------------------------------------------------------------------
-Vector& BlockVector::get(uint i)
+const GenericVector& BlockVector::get(uint i) const
 {
   return *(vectors[i]);
 }
 //-----------------------------------------------------------------------------
-// SubVector
+GenericVector& BlockVector::get(uint i)
+{
+  return *(vectors[i]);
+}
 //-----------------------------------------------------------------------------
-SubVector::SubVector(uint n_, BlockVector& bv_)
-  : n(n_),bv(bv_)
+//-----------------------------------------------------------------------------
+SubVector::SubVector(uint n, BlockVector& bv) : n(n), bv(bv)
 {
   // Do nothing
 }
@@ -214,16 +195,9 @@ SubVector::~SubVector()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const SubVector& SubVector::operator=(Vector& v)
+const SubVector& SubVector::operator=(GenericVector& v)
 {
   bv.set(n, v);
   return *this;
 }
-/*
-//-----------------------------------------------------------------------------
-Vector& SubVector::operator()
-{
-  return bm.get(row, col);
-}
-*/
 //-----------------------------------------------------------------------------

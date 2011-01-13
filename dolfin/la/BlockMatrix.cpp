@@ -6,12 +6,15 @@
 //
 // Modified by Anders Logg, 2008.
 
+#include <iostream>
 #include <stdexcept>
-#include <dolfin/common/utils.h>
+
+#include "dolfin/common/utils.h"
+#include "DefaultFactory.h"
+#include "GenericVector.h"
+
 #include "BlockVector.h"
 #include "BlockMatrix.h"
-#include "DefaultFactory.h"
-#include <iostream>
 
 using namespace dolfin;
 
