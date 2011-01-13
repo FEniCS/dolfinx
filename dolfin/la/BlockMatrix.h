@@ -29,17 +29,17 @@ namespace dolfin
     // Destructor
     ~BlockMatrix();
 
-    /// Return SubMatrix reference number (i,j)
-    SubMatrix operator() (uint i, uint j);
-
     /// Set block
-    void set(uint i, uint j, GenericMatrix& m);
+    void set_block(uint i, uint j, boost::shared_ptr<GenericMatrix> m);
 
     /// Get block (const version)
-    const GenericMatrix& get(uint i, uint j) const;
+    const GenericMatrix& get_block(uint i, uint j) const;
 
     /// Get block
-    GenericMatrix& get(uint i, uint j);
+    GenericMatrix& get_block(uint i, uint j);
+
+    /// Return SubMatrix reference number (i,j)
+    SubMatrix operator() (uint i, uint j);
 
     /// Return size of given dimension
     uint size(uint dim) const;
@@ -75,7 +75,7 @@ namespace dolfin
     ~SubMatrix();
 
     /// Assign Matrix to SubMatrix
-    const SubMatrix& operator= (GenericMatrix& m);
+    const SubMatrix& operator= (boost::shared_ptr<GenericMatrix> m);
 
   private:
 

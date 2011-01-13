@@ -44,12 +44,12 @@
 %ignore dolfin::SubMatrix::operator=;
 
 //-----------------------------------------------------------------------------
-// Rename set and get from BlockFoo 
+// Rename set and get from BlockFoo
 //-----------------------------------------------------------------------------
-%rename(_get) dolfin::BlockVector::get;
-%rename(_set) dolfin::BlockVector::set;
-%rename(_get) dolfin::BlockMatrix::get;
-%rename(_set) dolfin::BlockMatrix::set;
+//%rename(_get) dolfin::BlockVector::get;
+//%rename(_set) dolfin::BlockVector::set;
+//%rename(_get) dolfin::BlockMatrix::get;
+//%rename(_set) dolfin::BlockMatrix::set;
 
 //-----------------------------------------------------------------------------
 // Modify the Scalar interface

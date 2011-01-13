@@ -37,7 +37,7 @@ namespace dolfin
     SubVector operator() (uint i);
 
     /// Set function
-    void set(uint i, GenericVector& v);
+    void set(uint i, boost::shared_ptr<GenericVector> v);
 
     /// Get functions (const)
     const GenericVector& get(uint i) const;
@@ -99,7 +99,7 @@ namespace dolfin
     SubVector(uint n, BlockVector& bv);
     ~SubVector();
 
-    const SubVector& operator= (GenericVector& v);
+    const SubVector& operator= (boost::shared_ptr<GenericVector> v);
 
   private:
 

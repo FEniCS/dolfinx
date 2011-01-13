@@ -32,14 +32,18 @@ BlockVector::~BlockVector()
 //-----------------------------------------------------------------------------
 BlockVector* BlockVector::copy() const
 {
-  BlockVector* x= new BlockVector(vectors.size());
-  for (uint i = 0; i < vectors.size(); i++)
-    x->set(i, *(this->get(i).copy()));
-  return x;
+  error("BlockVector needs a cleanup.");
+
+  //BlockVector* x = new BlockVector(vectors.size());
+  //for (uint i = 0; i < vectors.size(); i++)
+  //  x->set(i, boost::shared_ptr<GenericVector>(vectors[i]->copy())));
+  //return x;
+  return 0;
 }
 //-----------------------------------------------------------------------------
 SubVector BlockVector::operator()(uint i)
 {
+  assert(i < vectors.size());
   SubVector sv(i, *this);
   return sv;
 }
@@ -52,14 +56,14 @@ dolfin::uint BlockVector::size() const
 void BlockVector::axpy(double a, const BlockVector& x)
 {
   for (uint i = 0; i < vectors.size(); i++)
-    this->get(i).axpy(a, x.get(i));
+    vectors[i]->axpy(a, x.get(i));
 }
 //-----------------------------------------------------------------------------
 double BlockVector::inner(const BlockVector& x) const
 {
   double value = 0.0;
   for (uint i = 0; i < vectors.size(); i++)
-    value += this->get(i).inner(x.get(i));
+    value += vectors[i]->inner(x.get(i));
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -69,19 +73,19 @@ double BlockVector::norm(std::string norm_type) const
   if(norm_type == "l1")
   {
     for (uint i = 0; i < vectors.size(); i++)
-      value += this->get(i).norm(norm_type);
+      value += vectors[i]->norm(norm_type);
   }
   else if (norm_type == "l2")
   {
     for (uint i = 0; i < vectors.size(); i++)
-      value += std::pow(this->get(i).norm(norm_type), 2);
+      value += std::pow(vectors[i]->norm(norm_type), 2);
     value = sqrt(value);
   }
   else if (norm_type == "linf")
   {
     std::vector<double> linf(vectors.size());
     for (uint i = 0; i < vectors.size(); i++)
-      linf[i] = this->get(i).norm(norm_type);
+      linf[i] = vectors[i]->norm(norm_type);
      value = *(std::max_element(linf.begin(), linf.end()));
   }
   return value;
@@ -91,7 +95,7 @@ double BlockVector::min() const
 {
   std::vector<double> _min(vectors.size());
   for (uint i = 0; i < vectors.size(); i++)
-    _min[i] = this->get(i).min();
+    _min[i] = vectors[i]->min();
 
   return *(std::min_element(_min.begin(), _min.end()));
 }
@@ -100,7 +104,7 @@ double BlockVector::max() const
 {
   std::vector<double> _max(vectors.size());
   for (uint i = 0; i < vectors.size(); i++)
-    _max[i] = this->get(i).min();
+    _max[i] = vectors[i]->min();
 
   return *(std::max_element(_max.begin(), _max.end()));
 }
@@ -108,14 +112,14 @@ double BlockVector::max() const
 const BlockVector& BlockVector::operator*= (double a)
 {
   for(uint i = 0; i < vectors.size(); i++)
-    this->get(i) *= a;
+    *vectors[i] *= a;
   return *this;
 }
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator/= (double a)
 {
   for(uint i = 0; i < vectors.size(); i++)
-    this->get(i) /= a;
+    *vectors[i] /= a;
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -134,14 +138,14 @@ const BlockVector& BlockVector::operator-= (const BlockVector& y)
 const BlockVector& BlockVector::operator= (const BlockVector& x)
 {
   for(uint i = 0; i < vectors.size(); i++)
-    this->get(i) = x.get(i);
+    *vectors[i] = x.get(i);
   return *this;
 }
 //-----------------------------------------------------------------------------
 const BlockVector& BlockVector::operator= (double a)
 {
   for(uint i = 0; i < vectors.size(); i++)
-    this->get(i) = a;
+    *vectors[i] = a;
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -156,7 +160,7 @@ std::string BlockVector::str(bool verbose) const
     for (uint i = 0; i < vectors.size(); i++)
     {
       s << "  BlockVector " << i << std::endl << std::endl;
-      s << indent(indent(get(i).str(true))) << std::endl;
+      s << indent(indent(vectors[i]->str(true))) << std::endl;
     }
   }
   else
@@ -167,20 +171,23 @@ std::string BlockVector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void BlockVector::set(uint i, GenericVector& v)
+void BlockVector::set(uint i, boost::shared_ptr<GenericVector> v)
 {
-  error("BlockVector::set needs to be updated");
-  //matrices[i*n+j] = m.copy(); //FIXME. not obvious that copy is the right thing
-  //vectors[i] = &v; //FIXME. not obvious that copy is the right thing
+  assert(i < vectors.size());
+
+  // FIXME: Resolve copy/view approach
+  vectors[i] = v;
 }
 //-----------------------------------------------------------------------------
 const GenericVector& BlockVector::get(uint i) const
 {
+  assert(i < vectors.size());
   return *(vectors[i]);
 }
 //-----------------------------------------------------------------------------
 GenericVector& BlockVector::get(uint i)
 {
+  assert(i < vectors.size());
   return *(vectors[i]);
 }
 //-----------------------------------------------------------------------------
@@ -195,7 +202,7 @@ SubVector::~SubVector()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const SubVector& SubVector::operator=(GenericVector& v)
+const SubVector& SubVector::operator=(boost::shared_ptr<GenericVector> v)
 {
   bv.set(n, v);
   return *this;

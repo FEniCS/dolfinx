@@ -33,20 +33,28 @@ BlockMatrix::~BlockMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void BlockMatrix::set(uint i, uint j, GenericMatrix& m)
+void BlockMatrix::set_block(uint i, uint j, boost::shared_ptr<GenericMatrix> m)
 {
-  error("BlockMatrix::set needs revision.");
-  //matrices[i*n+j] = m.copy(); //FIXME. not obvious that copy is the right thing
-  //matrices[i*n+j] = &m;         //FIXME. not obvious that copy is the right thing
+  assert(i < matrices.size());
+  assert(j < matrices[i].size());
+
+  // FIXME: Resolve copy/view approach
+  matrices[i][j] = m;
 }
 //-----------------------------------------------------------------------------
-const GenericMatrix& BlockMatrix::get(uint i, uint j) const
+const GenericMatrix& BlockMatrix::get_block(uint i, uint j) const
 {
+  assert(i < matrices.size());
+  assert(j < matrices[i].size());
+
   return *(matrices[i][j]);
 }
 //-----------------------------------------------------------------------------
-GenericMatrix& BlockMatrix::get(uint i, uint j)
+GenericMatrix& BlockMatrix::get_block(uint i, uint j)
 {
+  assert(i < matrices.size());
+  assert(j < matrices[i].size());
+
   return *(matrices[i][j]);
 }
 //-----------------------------------------------------------------------------
@@ -66,14 +74,14 @@ void BlockMatrix::zero()
 {
   for(uint i = 0; i < matrices.size(); i++)
     for(uint j = 0; j < matrices[i].size(); j++)
-      this->get(i, j).zero();
+      matrices[i][j]->zero();
 }
 //-----------------------------------------------------------------------------
 void BlockMatrix::apply(std::string mode)
 {
   for(uint i = 0; i < matrices.size(); i++)
     for(uint j = 0; j < matrices[i].size(); j++)
-      this->get(i,j).apply(mode);
+      matrices[i][j]->apply(mode);
 }
 //-----------------------------------------------------------------------------
 std::string BlockMatrix::str(bool verbose) const
@@ -88,7 +96,7 @@ std::string BlockMatrix::str(bool verbose) const
       for (uint j = 0; i < matrices[0].size(); j++)
       {
         s << "  BlockMatrix (" << i << ", " << j << ")" << std::endl << std::endl;
-        s << indent(indent(get(i, j).str(true))) << std::endl;
+        s << indent(indent(matrices[i][j]->str(true))) << std::endl;
       }
     }
   }
@@ -108,7 +116,7 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
   boost::scoped_ptr<GenericVector> vec(factory.create_vector());
   for(uint i = 0; i < matrices.size(); i++)
   {
-    y.get(i).resize(this->get(i, 0).size(0));
+    y.get(i).resize(matrices[i][0]->size(0));
     vec->resize(y.get(i).size());
 
     // FIXME: Do we need to zero the vector?
@@ -116,7 +124,7 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
     vec->zero();
     for(uint j = 0; j < matrices.size(); j++)
     {
-      this->get(i, j).mult(x.get(j), *vec);
+      matrices[i][j]->mult(x.get(j), *vec);
       y.get(i) += *vec;
     }
   }
@@ -124,6 +132,9 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
 //-----------------------------------------------------------------------------
 SubMatrix BlockMatrix::operator()(uint i, uint j)
 {
+  assert(i < matrices.size());
+  assert(j < matrices[i].size());
+
   SubMatrix sm(i, j, *this);
   return sm;
 }
@@ -140,9 +151,9 @@ SubMatrix::~SubMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const SubMatrix& SubMatrix::operator=(GenericMatrix& m)
+const SubMatrix& SubMatrix::operator=(boost::shared_ptr<GenericMatrix> m)
 {
-  bm.set(row, col, m);
+  bm.set_block(row, col, m);
   return *this;
 }
 //-----------------------------------------------------------------------------
