@@ -20,10 +20,10 @@ int main()
   UnitSquare mesh(4, 4);
 
   // Create a simple stiffness matrix
-  boost::shared_ptr<GenericMatrix> A(new Matrix);
+  Matrix A;
   StiffnessMatrix::FunctionSpace V(mesh);
   StiffnessMatrix::BilinearForm a(V, V);
-  assemble(*A, a);
+  assemble(A, a);
 
   // Create a block matrix
   BlockMatrix AA(2, 2);
@@ -33,20 +33,20 @@ int main()
   AA(1, 1) = A;
 
   // Create a block vector
-  boost::shared_ptr<GenericVector> x(new Vector(A->size(0)));
-  for (unsigned int i = 0; i < x->size(); i++)
-    x->setitem(i, i);
+  Vector x(A.size(0));
+  for (unsigned int i = 0; i < x.size(); i++)
+    x.setitem(i, i);
   BlockVector xx(2);
   xx(0) = x;
   xx(1) = x;
 
   // Create another block vector
-  boost::shared_ptr<GenericVector> y(new Vector(A->size(1)));
+  Vector y(A.size(1));
   BlockVector yy(2);
   yy(0) = y;
   yy(1) = y;
 
   // Multiply
-  AA.mult(xx, yy);
-  info("||Ax|| = %g", y->norm("l2"));
-}
+  AA.mult(xx,yy);
+  info("||Ax|| = %g", y.norm("l2"));
+};
