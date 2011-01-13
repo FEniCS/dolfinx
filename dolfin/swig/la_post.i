@@ -64,10 +64,13 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
   %pythoncode %{
 
     def __getitem__(self, i):
-        return self.get(i)
+        return self._get(i)
 
     def __setitem__(self, i, m):
-        self.set(i, m)
+        if not hasattr(self, "_items"):
+            self._items = {}
+        self._items[i] = m
+        self._set(i, m)
 
     def __add__(self, v):
       a = self.copy()
@@ -102,11 +105,14 @@ PyObject* _get_eigenpair(dolfin::PETScVector& r, dolfin::PETScVector& c, const i
 
     def __getitem__(self, t):
         i,j = t
-        return self.get(i, j)
+        return self._get(i, j)
 
     def __setitem__(self, t, m):
+        if not hasattr(self, "_items"):
+            self._items = {}
+        self._items[t] = m
         i,j = t
-        self.set(i, j, m)
+        self._set(i, j, m)
 
 %}
 }
