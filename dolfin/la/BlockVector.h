@@ -37,13 +37,13 @@ namespace dolfin
     GenericVector& operator() (uint i);
 
     /// Set function
-    void set(uint i, GenericVector& v);
+    void set_block(uint i, GenericVector& v);
 
     /// Get functions (const)
-    const GenericVector& get(uint i) const;
+    const GenericVector& get_block(uint i) const;
 
     /// Get functions (non-const)
-    GenericVector& get(uint);
+    GenericVector& get_block(uint);
 
     /// Add multiple of given vector (AXPY operation)
     void axpy(double a, const BlockVector& x);

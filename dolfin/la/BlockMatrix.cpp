@@ -117,16 +117,16 @@ void BlockMatrix::mult(const BlockVector& x, BlockVector& y,
   boost::scoped_ptr<GenericVector> vec(factory.create_vector());
   for(uint i = 0; i < matrices.size(); i++)
   {
-    y.get(i).resize(matrices[i][0]->size(0));
-    vec->resize(y.get(i).size());
+    y.get_block(i).resize(matrices[i][0]->size(0));
+    vec->resize(y.get_block(i).size());
 
     // FIXME: Do we need to zero the vector?
-    y.get(i).zero();
+    y.get_block(i).zero();
     vec->zero();
     for(uint j = 0; j < matrices.size(); j++)
     {
-      matrices[i][j]->mult(x.get(j), *vec);
-      y.get(i) += *vec;
+      matrices[i][j]->mult(x.get_block(j), *vec);
+      y.get_block(i) += *vec;
     }
   }
 }

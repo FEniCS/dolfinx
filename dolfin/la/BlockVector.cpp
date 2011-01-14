@@ -57,14 +57,14 @@ dolfin::uint BlockVector::size() const
 void BlockVector::axpy(double a, const BlockVector& x)
 {
   for (uint i = 0; i < vectors.size(); i++)
-    vectors[i]->axpy(a, x.get(i));
+    vectors[i]->axpy(a, x.get_block(i));
 }
 //-----------------------------------------------------------------------------
 double BlockVector::inner(const BlockVector& x) const
 {
   double value = 0.0;
   for (uint i = 0; i < vectors.size(); i++)
-    value += vectors[i]->inner(x.get(i));
+    value += vectors[i]->inner(x.get_block(i));
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -139,7 +139,7 @@ const BlockVector& BlockVector::operator-= (const BlockVector& y)
 const BlockVector& BlockVector::operator= (const BlockVector& x)
 {
   for(uint i = 0; i < vectors.size(); i++)
-    *vectors[i] = x.get(i);
+    *vectors[i] = x.get_block(i);
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -172,7 +172,7 @@ std::string BlockVector::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-void BlockVector::set(uint i, GenericVector& v)
+void BlockVector::set_block(uint i, GenericVector& v)
 {
   assert(i < vectors.size());
 
@@ -180,13 +180,13 @@ void BlockVector::set(uint i, GenericVector& v)
   vectors[i] = boost::shared_ptr<GenericVector>(reference_to_no_delete_pointer(v));
 }
 //-----------------------------------------------------------------------------
-const GenericVector& BlockVector::get(uint i) const
+const GenericVector& BlockVector::get_block(uint i) const
 {
   assert(i < vectors.size());
   return *(vectors[i]);
 }
 //-----------------------------------------------------------------------------
-GenericVector& BlockVector::get(uint i)
+GenericVector& BlockVector::get_block(uint i)
 {
   assert(i < vectors.size());
   return *(vectors[i]);
