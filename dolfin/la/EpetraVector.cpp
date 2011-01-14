@@ -460,7 +460,7 @@ void EpetraVector::axpy(double a, const GenericVector& y)
 void EpetraVector::abs()
 {
   assert(x);
-  dolfin_not_implemented(); // anyone knows the correct function in Epetra?
+  x->Abs(*x);
 }
 //-----------------------------------------------------------------------------
 LinearAlgebraFactory& EpetraVector::factory() const
