@@ -151,7 +151,7 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   Function R_T(_a_R_T->function_space(1));
 
   // Create SpecialFacetFunction for the strong facet residual (R_dT)
-  std::vector<Function *> f_e;
+  std::vector<Function*> f_e;
   for (uint i = 0; i <= R_T.geometric_dimension(); i++)
     f_e.push_back(new Function(_a_R_dT->function_space(1)));
 
@@ -310,7 +310,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
     // Construct b_e // FIXME: Better way much appreciated!
     Function b_e(_C);
     for (uint k = 0; k < mesh.num_cells(); k++)
-      b_e.vector().setitem(n*(k+1) - (q+1) + e, 1.0);
+      b_e.vector().setitem(n*(k + 1) - (q + 1) + e, 1.0);
     b_e.vector().apply("insert");
 
     // Attach b_e to _a_R_dT and _L_R_dT
@@ -331,7 +331,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
                                exterior_facet_domains, interior_facet_domains);
 
       // Non-singularize local matrix
-      for (uint i = 0; i < N; i ++)
+      for (uint i = 0; i < N; ++i)
       {
         if (std::abs(A(i, i)) < 1.0e-10)
         {
