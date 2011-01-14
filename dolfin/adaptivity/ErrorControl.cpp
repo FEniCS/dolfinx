@@ -61,11 +61,11 @@ ErrorControl::ErrorControl(boost::shared_ptr<Form> a_star,
 double ErrorControl::estimate_error(const Function& u,
                                     std::vector<const BoundaryCondition*> bcs)
 {
-  // Compute dual
+  // Compute discrete dual approximation
   Function z_h(_a_star->function_space(1));
   compute_dual(z_h, bcs);
 
-  // Compute extrapolation
+  // Compute extrapolation of discrete dual
   compute_extrapolation(z_h,  bcs);
 
   // Extract number of coefficients in residual
@@ -280,10 +280,12 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 
   // Extract mesh
   const Mesh& mesh(V.mesh());
-  const int q = mesh.topology().dim();
+  //const int q = mesh.topology().dim();
+  const int dim = mesh.topology().dim();
 
-  // Extract dimension of cell cone space
-  const int n = _C->element().space_dimension();
+  // Extract dimension of cell cone space (DG_{dim})
+  //const int n = _C->element().space_dimension();
+  const int local_cone_dim = _C->element().space_dimension();
 
   // Extract number of coefficients on right-hand side (for use with
   // attaching coefficients)
@@ -305,13 +307,23 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   arma::mat b(N, 1);
   std::vector<double> x(N);
 
-  for (int e = 0; e < (q + 1); e++)
+  // Variables to be used for the construction of the cone function
+  // b_e
+  const uint num_cells = mesh.num_cells();
+  const std::vector<double> ones(num_cells, 1.0);
+  std::vector<uint> facet_dofs(num_cells);
+
+  // Compute the facet residual for each local facet number
+  for (int local_facet = 0; local_facet < (dim + 1); local_facet++)
   {
-    // Construct b_e // FIXME: Better way much appreciated!
+    // Construct "cone function" for this local facet number by
+    // setting the "right" degree of freedom equal to one on each
+    // cell. (Requires dof-ordering knowledge.)
     Function b_e(_C);
-    for (uint k = 0; k < mesh.num_cells(); k++)
-      b_e.vector().setitem(n*(k + 1) - (q + 1) + e, 1.0);
-    b_e.vector().apply("insert");
+    facet_dofs.clear();
+    for (uint k = 0; k < num_cells; k++)
+      facet_dofs.push_back(local_cone_dim*(k + 1) - (dim + 1) + local_facet);
+    b_e.vector().set(&ones[0], num_cells, &facet_dofs[0]);
 
     // Attach b_e to _a_R_dT and _L_R_dT
     _a_R_dT->set_coefficient(0, b_e);
@@ -349,7 +361,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 
       // Plug local solution into global vector
       //R_dT[e]->vector().set(&x[0], N, &dofs[0]);
-      R_dT[e]->vector().set(x.memptr(), N, &dofs[0]);
+      R_dT[local_facet]->vector().set(x.memptr(), N, &dofs[0]);
     }
   }
   end();
