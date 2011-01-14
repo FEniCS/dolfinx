@@ -207,8 +207,7 @@ void MTL4Vector::axpy(double a, const GenericVector& v)
 //-----------------------------------------------------------------------------
 void MTL4Vector::abs()
 {
-  assert(x);
-  for (uint i = 0; i < _size; i++)
+  for (uint i = 0; i < size(); ++i)
     x[i] = std::abs(x[i]);
 }
 //-----------------------------------------------------------------------------
