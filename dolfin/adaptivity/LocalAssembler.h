@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2011-01-04
-// Last changed: 2011-01-05
+// Last changed: 2011-01-13
 
 #ifndef __LOCAL_ASSEMBLER_H
 #define __LOCAL_ASSEMBLER_H
@@ -17,6 +17,7 @@ namespace dolfin
 
   class UFC;
   class Cell;
+  template<class T> class MeshFunction;
 
   ///
   class LocalAssembler
@@ -25,20 +26,34 @@ namespace dolfin
   public:
 
     ///
-    static void assemble_cell(arma::mat& A,
-                              const uint N,
-                              UFC& ufc,
-                              const Cell& cell,
-                              std::vector<uint> exterior_facets,
-                              std::vector<uint> interior_facets);
+    static void assemble(arma::mat& A,
+                         UFC& ufc,
+                         const Cell& cell,
+                         const MeshFunction<uint>* cell_domains,
+                         const MeshFunction<uint>* exterior_facet_domains,
+                         const MeshFunction<uint>* interior_facet_domains);
 
     ///
-    static void assemble_cell(arma::vec& b,
-                              const uint N,
+    static void assemble_cell(arma::mat& A,
                               UFC& ufc,
                               const Cell& cell,
-                              std::vector<uint> exterior_facets,
-                              std::vector<uint> interior_facets);
+                              const MeshFunction<uint>* domains);
+
+    ///
+    static void assemble_exterior_facet(arma::mat& A,
+                                        UFC& ufc,
+                                        const Cell& cell,
+                                        const Facet& facet,
+                                        const uint local_facet,
+                                        const MeshFunction<uint>* domains);
+
+    ///
+    static void assemble_interior_facet(arma::mat& A,
+                                        UFC& ufc,
+                                        const Cell& cell,
+                                        const Facet& facet,
+                                        const uint local_facet,
+                                        const MeshFunction<uint>* domains);
   };
 
 }

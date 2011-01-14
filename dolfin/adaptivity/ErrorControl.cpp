@@ -2,15 +2,13 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-09-16
-// Last changed: 2011-01-06
+// Last changed: 2011-01-14
 
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/fem/assemble.h>
-#include <dolfin/la/solve.h>
-#include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -20,7 +18,6 @@
 #include <dolfin/fem/BoundaryCondition.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DofMap.h>
-#include <dolfin/plot/plot.h>
 
 #include "ErrorControl.h"
 #include "SpecialFacetFunction.h"
@@ -75,7 +72,7 @@ double ErrorControl::estimate_error(const Function& u,
   // Attach improved dual approximation to residual
   _residual->set_coefficient(num_coeffs - 1, _Ez_h);
 
-  // Attach primal approximation if linear (already attached
+  // Attach primal approximation if linear problem (already attached
   // otherwise).
   if (_is_linear)
     _residual->set_coefficient(num_coeffs - 2, u);
@@ -142,7 +139,7 @@ void ErrorControl::compute_extrapolation(const Function& z,
     DirichletBC e_bc(S, u0, bc.markers());
 
     // Apply boundary condition to extrapolation
-    //e_bc.apply(_Ez_h->vector()); // FIXME!!
+    //e_bc.apply(_Ez_h->vector()); // FIXME!! Awaits BUG #698229
   }
 }
 //-----------------------------------------------------------------------------
@@ -153,7 +150,7 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
 
   // Create SpecialFacetFunction for the strong facet residual (R_dT)
   std::vector<Function *> f_e;
-  for (uint i=0; i <= R_T.geometric_dimension(); i++)
+  for (uint i = 0; i <= R_T.geometric_dimension(); i++)
     f_e.push_back(new Function(_a_R_dT->function_space(1)));
 
   SpecialFacetFunction* R_dT;
@@ -183,16 +180,11 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   // Assemble error indicator form
   assemble(indicators, *_eta_T);
 
-  // Take absolute value of indicators: FIXME. Must be better way.
-  double abs;
-  for (uint i = 0; i < indicators.size(); i++)
-  {
-    abs = std::abs(indicators.getitem(i));
-    indicators.setitem(i, abs); // FIXME
-  }
+  // Take absolute value of indicators
+  indicators.abs();
 
   // Delete stuff
-  for (uint i=0; i <= R_T.geometric_dimension(); i++)
+  for (uint i = 0; i <= R_T.geometric_dimension(); i++)
     delete f_e[i];
   delete R_dT;
 }
@@ -218,6 +210,11 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 {
   begin("Computing cell residual representation");
 
+  // FIXME:
+  const MeshFunction<uint>* cell_domains = 0;
+  const MeshFunction<uint>* exterior_facet_domains = 0;
+  const MeshFunction<uint>* interior_facet_domains = 0;
+
   // Attach primal approximation to left-hand side form (residual) if
   // necessary
   if (_is_linear) {
@@ -225,66 +222,39 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
     _L_R_T->set_coefficient(num_coeffs - 2, u);
   }
 
-  // Extract trial space for strong cell residual and mesh
-  const FunctionSpace& V(R_T.function_space());
-  const Mesh& mesh(V.mesh());
-
-  // Define Matrix and Vector and Vector for cell-residual problems of
-  // dimension equal to the local dimension of the function spaces
-  const uint N = V.element().space_dimension();
-
-  // Hope that Armadillo is the best at solving small linear systems
-  arma::mat A(N, N);
-  arma::vec b(N);
-  arma::vec x(N);
-
-  std::vector<uint> exterior_facets;
-  std::vector<uint> interior_facets;
-
-  // Solve local problem for each cell in mesh
-  const uint D = mesh.topology().dim();
-
   // Create data structures for local assembly data
   UFC ufc_lhs(*_a_R_T);
   UFC ufc_rhs(*_L_R_T);
 
-  // Extract (common) dof map
+  // Extract common space, mesh and dofmap
+  const FunctionSpace& V(R_T.function_space());
+  const Mesh& mesh(V.mesh());
   const GenericDofMap& dof_map = V.dofmap();
 
+  // Define matrices for cell-residual problems
+  const uint N = V.element().space_dimension();
+  arma::mat A(N, N);
+  arma::mat b(N, 1);
+  std::vector<double> x(N);
+
+  // Assemble and solve local linear systems
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    // Figure out which facets are interior and which are exterior on
-    // this cell by iterating over facets in cell
-    exterior_facets.clear();
-    interior_facets.clear();
+    // Assemble local linear system
+    LocalAssembler::assemble(A, ufc_lhs, *cell, cell_domains,
+                             exterior_facet_domains, interior_facet_domains);
+    LocalAssembler::assemble(b, ufc_rhs, *cell, cell_domains,
+                             exterior_facet_domains, interior_facet_domains);
 
-    A.zeros();
-    b.zeros();
-    for (FacetIterator facet(*cell); !facet.end(); ++facet)
-    {
-      if (facet->num_entities(D) == 2)
-        interior_facets.push_back(facet.pos());
-      else
-        exterior_facets.push_back(facet.pos());
-    }
-
-    // Assemble A and b
-    LocalAssembler::assemble_cell(A, N, ufc_lhs, *cell,
-                                  exterior_facets, interior_facets);
-    LocalAssembler::assemble_cell(b, N, ufc_rhs, *cell,
-                                  exterior_facets, interior_facets);
-
-    // solve A x = b
-    x = arma::solve(A, b);
+    // Solve linear system and convert result
+    x = arma::conv_to<std::vector<double> >::from(arma::solve(A, b));
 
     // Get local-to-global dof map for cell
     const std::vector<uint>& dofs = dof_map.cell_dofs(cell->index());
 
-    // Plug x into global vector
-    for (uint i=0; i < N; i++)
-      R_T.vector().setitem(dofs[i], x[i]); // FIXME: Do this better.
+    // Plug local solution into global vector
+    R_T.vector().set(&x[0], N, &dofs[0]);
   }
-
   end();
 }
 //-----------------------------------------------------------------------------
@@ -294,23 +264,21 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 {
   begin("Computing facet residual representation");
 
+  // FIXME:
+  const MeshFunction<uint>* cell_domains = 0;
+  const MeshFunction<uint>* exterior_facet_domains = 0;
+  const MeshFunction<uint>* interior_facet_domains = 0;
+
   // Extract function space for facet residual approximation
   const FunctionSpace& V(R_dT[0]->function_space());
   const uint N = V.element().space_dimension();
 
   // Extract mesh
   const Mesh& mesh(V.mesh());
-  int q = mesh.topology().dim();
+  const int q = mesh.topology().dim();
 
   // Extract dimension of cell cone space
-  int n = _C->element().space_dimension();
-
-  arma::mat A(N, N);
-  arma::vec b(N);
-  arma::vec x(N);
-
-  std::vector<uint> exterior_facets;
-  std::vector<uint> interior_facets;
+  const int n = _C->element().space_dimension();
 
   // Extract number of coefficients on right-hand side (for use with
   // attaching coefficients)
@@ -321,12 +289,20 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   if (_is_linear)
     _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 3, u);
 
+  // Attach cell residual to residual form
+  _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 2, R_T);
+
   // Extract (common) dof map
   const GenericDofMap& dof_map = V.dofmap();
 
-  for (int e=0; e < (q+1); e++)
+  // Define matrices for facet-residual problems
+  arma::mat A(N, N);
+  arma::mat b(N, 1);
+  std::vector<double> x(N);
+
+  for (int e = 0; e < (q+1); e++)
   {
-    // Construct b_e
+    // Construct b_e // FIXME: Better way much appreciated!
     Function b_e(_C);
     for (uint k = 0; k < mesh.num_cells(); k++)
       b_e.vector().setitem(n*(k+1) - (q+1) + e, 1.0);
@@ -334,40 +310,23 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
 
     // Attach b_e to _a_R_dT and _L_R_dT
     _a_R_dT->set_coefficient(0, b_e);
-    _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 2, R_T);
     _L_R_dT->set_coefficient(L_R_dT_num_coefficients - 1, b_e);
 
+    // Create data structures for local assembly data
     UFC ufc_lhs(*_a_R_dT);
     UFC ufc_rhs(*_L_R_dT);
 
-    // Solve local problem for each cell in mesh
-    const uint D = mesh.topology().dim();
+    // Assemble and solve local linear systems
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      // Figure out which facets are interior and which are exterior on
-      // this cell by iterating over facets in cell
-      exterior_facets.clear();
-      interior_facets.clear();
+      // Assemble linear system
+      LocalAssembler::assemble(A, ufc_lhs, *cell, cell_domains,
+                               exterior_facet_domains, interior_facet_domains);
+      LocalAssembler::assemble(b, ufc_rhs, *cell, cell_domains,
+                               exterior_facet_domains, interior_facet_domains);
 
-      A.zeros();
-      b.zeros();
-
-      for (FacetIterator facet(*cell); !facet.end(); ++facet)
-      {
-        if (facet->num_entities(D) == 2)
-          interior_facets.push_back(facet.pos());
-        else
-          exterior_facets.push_back(facet.pos());
-      }
-
-      // Assemble A and b
-      LocalAssembler::assemble_cell(A, N, ufc_lhs, *cell,
-                                    exterior_facets, interior_facets);
-      LocalAssembler::assemble_cell(b, N, ufc_rhs, *cell,
-                                    exterior_facets, interior_facets);
-
-      //Non-singularize
-      for(uint i = 0; i < N; i ++)
+      // Non-singularize local matrix
+      for (uint i = 0; i < N; i ++)
       {
         if (std::abs(A(i, i)) < 1.e-10)
         {
@@ -376,15 +335,14 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
         }
       }
 
-      // solve A x = b
-      x = arma::solve(A, b);
+      // Solve linear system and convert result
+      x = arma::conv_to<std::vector<double> >::from(arma::solve(A, b));
 
-      // Tabulate dofs for w on cell
+      // Get local-to-global dof map for cell
       const std::vector<uint>& dofs = dof_map.cell_dofs(cell->index());
 
-      // Plug x into global vector
-      for (uint i = 0; i < N; i++)
-        R_dT[e]->vector().setitem(dofs[i], x[i]);
+      // Plug local solution into global vector
+      R_dT[e]->vector().set(&x[0], N, &dofs[0]);
     }
   }
   end();
