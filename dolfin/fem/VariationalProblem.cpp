@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-01-14
+// Last changed: 2011-01-15
 
 #include <dolfin/function/Function.h>
 #include "Form.h"
@@ -93,11 +93,11 @@ void VariationalProblem::solve(Function& u)
 {
   // Call nonlinear solver
   if (_is_nonlinear)
-    NonlinearVariationalSolver::solve(u, *this, parameters("nonlinear_solver"));
+    NonlinearVariationalSolver::solve(u, *this, parameters("nonlinear_variational_solver"));
 
   // Call linear solver
   else
-    LinearVariationalSolver::solve(u, *this, parameters("linear_solver"));
+    LinearVariationalSolver::solve(u, *this, parameters("linear_variational_solver"));
 }
 //-----------------------------------------------------------------------------
 void VariationalProblem::solve(Function& u0, Function& u1)

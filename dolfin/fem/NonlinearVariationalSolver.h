@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes, 2011.
 //
 // First added:  2011-01-14 (2008-12-26 as VariationalProblem.h)
-// Last changed: 2011-01-14
+// Last changed: 2011-01-15
 
 #ifndef __NONLINEAR_VARIATIONAL_SOLVER_H
 #define __NONLINEAR_VARIATIONAL_SOLVER_H
@@ -35,7 +35,7 @@ namespace dolfin
     /// Default parameter values
     static Parameters default_parameters()
     {
-      Parameters p("variational_problem");
+      Parameters p("nonlinear_variational_solver");
 
       p.add("linear_solver",  "lu");
       p.add("preconditioner", "default");

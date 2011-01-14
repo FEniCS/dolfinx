@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-01-14
+// Last changed: 2011-01-15
 
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
@@ -59,7 +59,7 @@ namespace dolfin
   /// problem or a linear problem depending on the ranks of the given
   /// forms.
 
-  class VariationalProblem : public Variable, public NonlinearProblem
+  class VariationalProblem : public Variable
   {
   public:
 
