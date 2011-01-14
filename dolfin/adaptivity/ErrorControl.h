@@ -2,7 +2,7 @@
 // Licensed under the GNU LGPL Version 3.0 or any later version
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-05
+// Last changed: 2011-01-14
 
 #ifndef __ERROR_CONTROL_H
 #define __ERROR_CONTROL_H
@@ -22,7 +22,11 @@ namespace dolfin
   class SpecialFacetFunction;
   class Vector;
 
-  /// (Goal-oriented) Error Control class
+  /// (Goal-oriented) Error Control class.
+
+  /// The notation used here follows the notation in "Automated
+  /// goal-oriented error control I: stationary variational problems",
+  /// ME Rognes and A Logg, 2010-2011.
 
   class ErrorControl
   {

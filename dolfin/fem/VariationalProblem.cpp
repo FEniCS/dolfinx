@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-01-05
+// Last changed: 2011-01-14
 
 #include <dolfin/la/Matrix.h>
 #include <dolfin/la/Vector.h>
@@ -25,7 +25,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& a, const Form& L)
   : a(extract_bilinear(a, L)), L(extract_linear(a, L)),
-    cell_domains(0), exterior_facet_domains(0), interior_facet_domains(0),
+    _cell_domains(0), _exterior_facet_domains(0), _interior_facet_domains(0),
     nonlinear(is_nonlinear(a, L)), jacobian_initialised(false)
 {
   // Set default parameter values
@@ -35,21 +35,21 @@ VariationalProblem::VariationalProblem(const Form& a, const Form& L)
 VariationalProblem::VariationalProblem(const Form& a, const Form& L,
                                        const BoundaryCondition& bc)
   : a(extract_bilinear(a, L)), L(extract_linear(a, L)),
-    cell_domains(0), exterior_facet_domains(0), interior_facet_domains(0),
+    _cell_domains(0), _exterior_facet_domains(0), _interior_facet_domains(0),
     nonlinear(is_nonlinear(a, L)), jacobian_initialised(false)
 {
   // Set default parameters
   parameters = default_parameters();
 
   // Store boundary condition
-  bcs.push_back(&bc);
+  _bcs.push_back(&bc);
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& a,
                                        const Form& L,
                                        const std::vector<const BoundaryCondition*>& bcs)
   : a(extract_bilinear(a, L)), L(extract_linear(a, L)),
-    cell_domains(0), exterior_facet_domains(0), interior_facet_domains(0),
+    _cell_domains(0), _exterior_facet_domains(0), _interior_facet_domains(0),
     nonlinear(is_nonlinear(a, L)), jacobian_initialised(false)
 {
   // Set default parameters
@@ -57,7 +57,7 @@ VariationalProblem::VariationalProblem(const Form& a,
 
   // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
-    this->bcs.push_back(bcs[i]);
+    this->_bcs.push_back(bcs[i]);
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::VariationalProblem(const Form& a,
@@ -67,9 +67,9 @@ VariationalProblem::VariationalProblem(const Form& a,
                                        const MeshFunction<uint>* exterior_facet_domains,
                                        const MeshFunction<uint>* interior_facet_domains)
   : a(extract_bilinear(a, L)), L(extract_linear(a, L)),
-    cell_domains(cell_domains),
-    exterior_facet_domains(exterior_facet_domains),
-    interior_facet_domains(interior_facet_domains),
+    _cell_domains(cell_domains),
+    _exterior_facet_domains(exterior_facet_domains),
+    _interior_facet_domains(interior_facet_domains),
     nonlinear(is_nonlinear(a, L)), jacobian_initialised(false)
 {
   // Set default parameters
@@ -77,7 +77,7 @@ VariationalProblem::VariationalProblem(const Form& a,
 
   // Store boundary conditions
   for (uint i = 0; i < bcs.size(); i++)
-    this->bcs.push_back(bcs[i]);
+    this->_bcs.push_back(bcs[i]);
 }
 //-----------------------------------------------------------------------------
 VariationalProblem::~VariationalProblem()
@@ -141,11 +141,11 @@ void VariationalProblem::F(GenericVector& b, const GenericVector& x)
     error("Attempt to solve linear variational problem with Newton solver.");
 
   // Assemble
-  assemble(b, L, cell_domains, exterior_facet_domains, interior_facet_domains);
+  assemble(b, L, _cell_domains, _exterior_facet_domains, _interior_facet_domains);
 
   // Apply boundary conditions
-  for (uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(b, x);
+  for (uint i = 0; i < _bcs.size(); i++)
+    _bcs[i]->apply(b, x);
 
   // Print vector
   const bool print_rhs = parameters["print_rhs"];
@@ -165,13 +165,13 @@ void VariationalProblem::J(GenericMatrix& A, const GenericVector& x)
     reset_sparsity = false;
 
   // Assemble
-  assemble(A, a, cell_domains, exterior_facet_domains, interior_facet_domains,
+  assemble(A, a, _cell_domains, _exterior_facet_domains, _interior_facet_domains,
            reset_sparsity);
   jacobian_initialised = true;
 
   // Apply boundary conditions
-  for (uint i = 0; i < bcs.size(); i++)
-    bcs[i]->apply(A);
+  for (uint i = 0; i < _bcs.size(); i++)
+    _bcs[i]->apply(A);
 
   // Print matrix
   const bool print_matrix = parameters["print_matrix"];
@@ -216,27 +216,27 @@ void VariationalProblem::solve_linear(Function& u)
   if (symmetric)
   {
     // Need to cast to DirichletBC to use assemble_system
-    std::vector<const DirichletBC*> _bcs;
-    for (uint i = 0; i < bcs.size(); i++)
+    std::vector<const DirichletBC*> __bcs;
+    for (uint i = 0; i < _bcs.size(); i++)
     {
-      const DirichletBC* _bc = dynamic_cast<const DirichletBC*>(bcs[i]);
+      const DirichletBC* _bc = dynamic_cast<const DirichletBC*>(_bcs[i]);
       if (!_bc)
         error("Only Dirichlet boundary conditions may be used for assembly of symmetric system.");
-      _bcs.push_back(_bc);
+      __bcs.push_back(_bc);
     }
 
     // Assemble linear system and apply boundary conditions
-    assemble_system(A, b, a, L, _bcs, cell_domains, exterior_facet_domains, interior_facet_domains, 0, true);
+    assemble_system(A, b, a, L, __bcs, _cell_domains, _exterior_facet_domains, _interior_facet_domains, 0, true);
   }
   else
   {
     // Assemble linear system
-    assemble(A, a, cell_domains, exterior_facet_domains, interior_facet_domains);
-    assemble(b, L, cell_domains, exterior_facet_domains, interior_facet_domains);
+    assemble(A, a, _cell_domains, _exterior_facet_domains, _interior_facet_domains);
+    assemble(b, L, _cell_domains, _exterior_facet_domains, _interior_facet_domains);
 
     // Apply boundary conditions
-    for (uint i = 0; i < bcs.size(); i++)
-      bcs[i]->apply(A, b);
+    for (uint i = 0; i < _bcs.size(); i++)
+      _bcs[i]->apply(A, b);
   }
 
   // Print vector/matrix
@@ -318,8 +318,50 @@ bool VariationalProblem::is_nonlinear(const Form& b, const Form& c) const
   return false;
 }
 //-----------------------------------------------------------------------------
-const bool VariationalProblem::is_nonlinear() const 
+const bool VariationalProblem::is_nonlinear() const
 {
-	return nonlinear;
+  return nonlinear;
+}
+//-----------------------------------------------------------------------------
+
+// FIXME: New functions below
+
+//-----------------------------------------------------------------------------
+const FunctionSpace& VariationalProblem::trial_space() const
+{
+  //return _bilinear_form.function_space(1);
+  return *a.function_space(1);
+}
+//-----------------------------------------------------------------------------
+const Form& VariationalProblem::bilinear_form() const
+{
+  //return _bilinear_form;
+  return a;
+}
+//-----------------------------------------------------------------------------
+const Form& VariationalProblem::linear_form() const
+{
+  //return _linear_form;
+  return L;
+}
+//-----------------------------------------------------------------------------
+const std::vector<const BoundaryCondition*> VariationalProblem::bcs() const
+{
+  return _bcs;
+}
+//-----------------------------------------------------------------------------
+const MeshFunction<dolfin::uint>* VariationalProblem::cell_domains() const
+{
+  return _cell_domains;
+}
+//-----------------------------------------------------------------------------
+const MeshFunction<dolfin::uint>* VariationalProblem::exterior_facet_domains() const
+{
+  return _exterior_facet_domains;
+}
+//-----------------------------------------------------------------------------
+const MeshFunction<dolfin::uint>* VariationalProblem::interior_facet_domains() const
+{
+  return _interior_facet_domains;
 }
 //-----------------------------------------------------------------------------
