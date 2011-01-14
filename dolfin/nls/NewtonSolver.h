@@ -1,10 +1,10 @@
 // Copyright (C) 2005-2008 Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
-// Modified by Anders Logg 2006-2009.
+// Modified by Anders Logg 2006-2011.
 //
 // First added:  2005-10-23
-// Last changed: 2009-06-29
+// Last changed: 2011-01-14
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
@@ -19,7 +19,7 @@ namespace dolfin
 
   // Forward declarations
   class GenericLinearSolver;
-  class GenericLinearAlgebraFactory;
+  class LinearAlgebraFactory;
   class GenericMatrix;
   class GenericVector;
   class Mesh;

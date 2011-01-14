@@ -7,6 +7,8 @@
 #ifndef __LINEAR_ALGEBRA_FACTORY_H
 #define __LINEAR_ALGEBRA_FACTORY_H
 
+#include <string>
+
 namespace dolfin
 {
 
@@ -41,7 +43,8 @@ namespace dolfin
     virtual GenericLinearSolver* create_lu_solver() const = 0;
 
     /// Create Krylov solver
-    virtual GenericLinearSolver* create_krylov_solver(std::string method, std::string pc) const = 0;
+    virtual GenericLinearSolver* create_krylov_solver(std::string method,
+                                                      std::string pc) const = 0;
 
   };
 

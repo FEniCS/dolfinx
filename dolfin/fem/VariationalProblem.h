@@ -4,7 +4,7 @@
 // Modified by Marie E. Rognes 2011
 //
 // First added:  2008-12-26
-// Last changed: 2011-01-07
+// Last changed: 2011-01-14
 
 #ifndef __VARIATIONAL_PROBLEM_H
 #define __VARIATIONAL_PROBLEM_H
@@ -16,6 +16,7 @@
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/la/KrylovSolver.h>
 #include <dolfin/la/LUSolver.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/adaptivity/AdaptiveSolver.h>
 
 namespace dolfin
@@ -27,6 +28,8 @@ namespace dolfin
   class NewtonSolver;
   class GoalFunctional;
   class ErrorControl;
+
+  class FunctionSpace;
 
   /// This class represents a (system of) partial differential
   /// equation(s) in variational form: Find u in V such that
@@ -120,6 +123,15 @@ namespace dolfin
 
     friend class AdaptiveSolver;
 
+    // New functions below to be implemented
+    const FunctionSpace& trial_space() const;
+    const Form& linear_form() const;
+    const Form& bilinear_form() const;
+    const std::vector<const BoundaryCondition*> bcs() const;
+    const MeshFunction<uint>* cell_domains() const;
+    const MeshFunction<uint>* exterior_facet_domains() const;
+    const MeshFunction<uint>* interior_facet_domains() const;
+
   private:
 
     // Solve linear variational problem
@@ -142,12 +154,12 @@ namespace dolfin
     const Form& L;
 
     // Boundary conditions
-    std::vector<const BoundaryCondition*> bcs;
+    std::vector<const BoundaryCondition*> _bcs;
 
     // Mesh functions for assembly
-    const MeshFunction<uint>* cell_domains;
-    const MeshFunction<uint>* exterior_facet_domains;
-    const MeshFunction<uint>* interior_facet_domains;
+    const MeshFunction<uint>* _cell_domains;
+    const MeshFunction<uint>* _exterior_facet_domains;
+    const MeshFunction<uint>* _interior_facet_domains;
 
     // True if problem is nonlinear
     bool nonlinear;
