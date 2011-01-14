@@ -238,7 +238,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   const uint N = V.element().space_dimension();
   arma::mat A(N, N);
   arma::mat b(N, 1);
-  std::vector<double> x(N);
+  arma::vec x(N);
 
   // Assemble and solve local linear systems
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -250,7 +250,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
                              exterior_facet_domains, interior_facet_domains);
 
     // Solve linear system and convert result
-    arma::vec x = arma::solve(A, b);
+    x = arma::solve(A, b);
 
     // Get local-to-global dof map for cell
     const std::vector<uint>& dofs = dof_map.cell_dofs(cell->index());
@@ -303,7 +303,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   // Define matrices for facet-residual problems
   arma::mat A(N, N);
   arma::mat b(N, 1);
-  std::vector<double> x(N);
+  arma::vec x(N);
 
   // Variables to be used for the construction of the cone function
   // b_e
@@ -350,14 +350,14 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
         }
       }
 
-      // Solve linear system
-      arma::vec x = arma::solve(A, b);
+      // Solve linear system and convert result
+      x = arma::solve(A, b);
 
       // Get local-to-global dof map for cell
       const std::vector<uint>& dofs = dof_map.cell_dofs(cell->index());
 
       // Plug local solution into global vector
-      R_dT[e]->vector().set(x.memptr(), N, &dofs[0]);
+      R_dT[local_facet]->vector().set(x.memptr(), N, &dofs[0]);
     }
   }
   end();
