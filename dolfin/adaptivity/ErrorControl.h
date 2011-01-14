@@ -9,16 +9,14 @@
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
-
-#include <dolfin/fem/Form.h>
-#include <dolfin/function/Function.h>
-#include <dolfin/function/FunctionSpace.h>
 
 namespace dolfin
 {
 
   class BoundaryCondition;
+  class Form;
+  class Function;
+  class FunctionSpace;
   class SpecialFacetFunction;
   class Vector;
 

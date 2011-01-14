@@ -5,27 +5,28 @@
 // Last changed: 2011-01-04
 
 #include <dolfin/common/Array.h>
+#include <dolfin/function/Function.h>
 #include "SpecialFacetFunction.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SpecialFacetFunction::SpecialFacetFunction(std::vector<Function*> f_e, uint dim)
-  : Expression(dim)
+SpecialFacetFunction::SpecialFacetFunction(std::vector<Function>& f_e, uint dim)
+  : Expression(dim), f_e(f_e)
 {
-  for (uint i=0; i < f_e.size(); i++)
-    _f_e.push_back(f_e[i]);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-SpecialFacetFunction::SpecialFacetFunction(std::vector<Function*> f_e)
-  : Expression()
+SpecialFacetFunction::SpecialFacetFunction(std::vector<Function>& f_e)
+  : Expression(), f_e(f_e)
 {
-  for (uint i=0; i < f_e.size(); i++)
-    _f_e.push_back(f_e[i]);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-Function* SpecialFacetFunction::operator[] (uint i) const {
-  return _f_e[i];
+Function& SpecialFacetFunction::operator[] (uint i) const
+{
+  assert(i < f_e.size());
+  return f_e[i];
 }
 //-----------------------------------------------------------------------------
 void SpecialFacetFunction::eval(Array<double>& values, const Array<double>& x,
@@ -33,6 +34,6 @@ void SpecialFacetFunction::eval(Array<double>& values, const Array<double>& x,
 {
   values[0] = 0.0;
   if (cell.local_facet >= 0)
-    _f_e[cell.local_facet]->eval(values, x, cell);
+    f_e[cell.local_facet].eval(values, x, cell);
 }
 //-----------------------------------------------------------------------------

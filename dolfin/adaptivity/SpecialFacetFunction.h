@@ -9,7 +9,11 @@
 
 #include <vector>
 #include <dolfin/function/Expression.h>
-#include <dolfin/function/Function.h>
+
+namespace ufc
+{
+  class cell;
+}
 
 namespace dolfin
 {
@@ -19,6 +23,7 @@ namespace dolfin
   /// for some _FunctionSpace_ P
 
   template <class T> class Array;
+  class Function;
 
   class SpecialFacetFunction : public Expression
   {
@@ -30,7 +35,7 @@ namespace dolfin
     /// *Arguments*
     ///     f_e (std::vector<_Function_*>)
     ///        Separate _Function_s for each facet
-    SpecialFacetFunction(std::vector<Function*> f_e);
+    SpecialFacetFunction(std::vector<Function>& f_e);
 
     /// Create (vector-valued) SpecialFacetFunction
     ///
@@ -40,10 +45,7 @@ namespace dolfin
     ///
     ///     dim (int)
     ///         The value-dimension of the Functions
-    SpecialFacetFunction(std::vector<Function*> f_e, uint dim);
-
-    /// Destroy SpecialFacetFunction
-    ~SpecialFacetFunction() { /* Do nothing */};
+    SpecialFacetFunction(std::vector<Function>& f_e, uint dim);
 
     /// Evaluate SpecialFacetFunction (cf _Expression_.eval)
     /// Evaluate function for given cell
@@ -58,11 +60,11 @@ namespace dolfin
     ///
     /// *Returns*
     ///     the sub-function (_Function_)
-    Function* operator[] (uint i) const;
+    Function& operator[] (uint i) const;
 
   private:
 
-    std::vector<Function*> _f_e;
+    std::vector<Function>& f_e;
 
   };
 

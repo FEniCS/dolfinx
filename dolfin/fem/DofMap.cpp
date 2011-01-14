@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2010 Anders Logg and Garth N. Wells.
+// Copyright (C) 2007-2011 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Martin Alnes, 2008
@@ -7,23 +7,22 @@
 // Modified by Niclas Jansson, 2009
 //
 // First added:  2007-03-01
-// Last changed: 2010-06-01
+// Last changed: 2011-01-01
 
+#include <dolfin/common/NoDeleter.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/types.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/main/MPI.h>
-#include <dolfin/mesh/MeshPartitioning.h>
-#include <dolfin/common/NoDeleter.h>
-#include <dolfin/common/types.h>
-#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/BoundaryMesh.h>
 #include <dolfin/mesh/MeshData.h>
+#include <dolfin/mesh/MeshPartitioning.h>
+#include "DofMapBuilder.h"
 #include "UFCCell.h"
 #include "UFCMesh.h"
-#include "DofMapBuilder.h"
 #include "DofMap.h"
 
-#include <dolfin/mesh/BoundaryMesh.h>
 
 using namespace dolfin;
 
@@ -154,13 +153,6 @@ std::pair<unsigned int, unsigned int> DofMap::ownership_range() const
 const boost::unordered_map<unsigned int, unsigned int>& DofMap::off_process_owner() const
 {
   return _off_process_owner;
-}
-//-----------------------------------------------------------------------------
-void DofMap::tabulate_dofs(uint* dofs, const Cell& cell) const
-{
-  // FIXME: Add assertion to test that this process has the dof.
-  const uint cell_index = cell.index();
-  std::copy(dofmap[cell_index].begin(), dofmap[cell_index].end(), dofs);
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_facet_dofs(uint* dofs, uint local_facet) const

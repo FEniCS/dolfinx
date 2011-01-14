@@ -9,23 +9,23 @@
 #include <armadillo>
 
 #include <dolfin/common/Timer.h>
-#include <dolfin/fem/UFC.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Facet.h>
 #include <dolfin/fem/assemble.h>
-#include <dolfin/la/Vector.h>
-#include <dolfin/function/Function.h>
-#include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/SubSpace.h>
-#include <dolfin/fem/Form.h>
-#include <dolfin/fem/VariationalProblem.h>
 #include <dolfin/fem/BoundaryCondition.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/Form.h>
+#include <dolfin/fem/UFC.h>
+#include <dolfin/fem/VariationalProblem.h>
+#include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
+#include <dolfin/function/SubSpace.h>
+#include <dolfin/la/Vector.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Facet.h>
 
-#include "ErrorControl.h"
-#include "SpecialFacetFunction.h"
 #include "LocalAssembler.h"
+#include "SpecialFacetFunction.h"
+#include "ErrorControl.h"
 
 using namespace dolfin;
 
@@ -153,18 +153,18 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   Function R_T(_a_R_T->function_space(1));
 
   // Create SpecialFacetFunction for the strong facet residual (R_dT)
-  std::vector<Function*> f_e;
+  std::vector<Function> f_e;
   for (uint i = 0; i <= R_T.geometric_dimension(); i++)
-    f_e.push_back(new Function(_a_R_dT->function_space(1)));
+    f_e.push_back(Function(_a_R_dT->function_space(1)));
 
   SpecialFacetFunction* R_dT;
-  if (f_e[0]->value_rank() == 0)
+  if (f_e[0].value_rank() == 0)
     R_dT = new SpecialFacetFunction(f_e);
-  else if (f_e[0]->value_rank() == 1)
-    R_dT = new SpecialFacetFunction(f_e, f_e[0]->value_dimension(0));
+  else if (f_e[0].value_rank() == 1)
+    R_dT = new SpecialFacetFunction(f_e, f_e[0].value_dimension(0));
   else
   {
-    R_dT = new SpecialFacetFunction(f_e, f_e[0]->value_dimension(0));
+    R_dT = new SpecialFacetFunction(f_e, f_e[0].value_dimension(0));
     error("Not implemented for tensor-valued functions");
   }
 
@@ -188,8 +188,8 @@ void ErrorControl::compute_indicators(Vector& indicators, const Function& u)
   indicators.abs();
 
   // Delete stuff
-  for (uint i = 0; i <= R_T.geometric_dimension(); i++)
-    delete f_e[i];
+  //for (uint i = 0; i <= R_T.geometric_dimension(); i++)
+  //  delete f_e[i];
   delete R_dT;
 }
 //-----------------------------------------------------------------------------
@@ -240,7 +240,7 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
   const uint N = V.element().space_dimension();
   arma::mat A(N, N);
   arma::mat b(N, 1);
-  std::vector<double> x(N);
+  arma::vec x(N);
 
   // Assemble and solve local linear systems
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -252,14 +252,12 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
                              exterior_facet_domains, interior_facet_domains);
 
     // Solve linear system and convert result
-    arma::vec x = arma::solve(A, b);
-    //x = arma::conv_to<std::vector<double> >::from(arma::solve(A, b));
+    x = arma::solve(A, b);
 
     // Get local-to-global dof map for cell
     const std::vector<uint>& dofs = dof_map.cell_dofs(cell->index());
 
     // Plug local solution into global vector
-    //R_T.vector().set(&x[0], N, &dofs[0]);
     R_T.vector().set(x.memptr(), N, &dofs[0]);
   }
   end();
@@ -277,7 +275,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   const MeshFunction<uint>* interior_facet_domains = 0;
 
   // Extract function space for facet residual approximation
-  const FunctionSpace& V(R_dT[0]->function_space());
+  const FunctionSpace& V = R_dT[0].function_space();
   const uint N = V.element().space_dimension();
 
   // Extract mesh
@@ -307,7 +305,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   // Define matrices for facet-residual problems
   arma::mat A(N, N);
   arma::mat b(N, 1);
-  std::vector<double> x(N);
+  arma::vec x(N);
 
   // Variables to be used for the construction of the cone function
   // b_e
@@ -355,15 +353,13 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       }
 
       // Solve linear system and convert result
-      //x = arma::conv_to<std::vector<double> >::from(arma::solve(A, b));
-      arma::vec x = arma::solve(A, b);
+      x = arma::solve(A, b);
 
       // Get local-to-global dof map for cell
       const std::vector<uint>& dofs = dof_map.cell_dofs(cell->index());
 
       // Plug local solution into global vector
-      //R_dT[e]->vector().set(&x[0], N, &dofs[0]);
-      R_dT[local_facet]->vector().set(x.memptr(), N, &dofs[0]);
+      R_dT[local_facet].vector().set(x.memptr(), N, &dofs[0]);
     }
   }
   end();

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2010 Anders Logg and Garth N. Wells.
+// Copyright (C) 2007-2011 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Martin Alnes, 2008
@@ -17,8 +17,10 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
+#include <ufc.h>
 
 #include <dolfin/common/types.h>
+#include <dolfin/mesh/Cell.h>
 #include "GenericDofMap.h"
 
 namespace dolfin
@@ -26,7 +28,6 @@ namespace dolfin
 
   class UFC;
   class UFCMesh;
-  //template<class T> class Set;
 
   /// This class handles the mapping of degrees of freedom. It builds
   /// a dof map based on a ufc::dof_map on a specific mesh. It will
@@ -67,10 +68,12 @@ namespace dolfin
     /// Return the dimension of the global finite element function space
     unsigned int global_dimension() const;
 
-    /// Return the dimension of the local (process) finite element function space
+    /// Return the dimension of the local (process) finite element function
+    // space
     unsigned int local_dimension() const;
 
-    /// Return the dimension of the local finite element function space on a cell
+    /// Return the dimension of the local finite element function space on a
+    // cell
     unsigned int dimension(uint cell_index) const;
 
     /// Return the maximum dimension of the local finite element function space
@@ -85,7 +88,8 @@ namespace dolfin
     /// Return the ownership range (dofs in this range are owned by this process)
     std::pair<unsigned int, unsigned int> ownership_range() const;
 
-    /// Return map from nonlocal-dofs that appear in local dof map to owning process
+    /// Return map from nonlocal-dofs that appear in local dof map to owning
+    /// process
     const boost::unordered_map<unsigned int, unsigned int>& off_process_owner() const;
 
     /// Local-to-global mapping of dofs on a cell
@@ -95,26 +99,32 @@ namespace dolfin
       return dofmap[cell_index];
     }
 
-    // FIXME: Why is this not inlined?
-
     /// Tabulate the local-to-global mapping of dofs on a cell
-    void tabulate_dofs(uint* dofs, const Cell& cell) const;
+    void tabulate_dofs(uint* dofs, const Cell& cell) const
+    {
+      const uint cell_index = cell.index();
+      assert(cell_index < dofmap.size());
+      std::copy(dofmap[cell_index].begin(), dofmap[cell_index].end(), dofs);
+    }
 
     /// Tabulate local-local facet dofs
     void tabulate_facet_dofs(uint* dofs, uint local_facet) const;
 
     /// Tabulate the coordinates of all dofs on a cell (UFC cell version)
-    void tabulate_coordinates(double** coordinates, const ufc::cell& ufc_cell) const
+    void tabulate_coordinates(double** coordinates,
+                              const ufc::cell& ufc_cell) const
     { _ufc_dofmap->tabulate_coordinates(coordinates, ufc_cell); }
 
     /// Tabulate the coordinates of all dofs on a cell (DOLFIN cell version)
     void tabulate_coordinates(double** coordinates, const Cell& cell) const;
 
     /// Extract sub dofmap component
-    DofMap* extract_sub_dofmap(const std::vector<uint>& component, const Mesh& dolfin_mesh) const;
+    DofMap* extract_sub_dofmap(const std::vector<uint>& component,
+                               const Mesh& dolfin_mesh) const;
 
     /// "Collapse" a sub dofmap
-    DofMap* collapse(std::map<uint, uint>& collapsed_map, const Mesh& dolfin_mesh) const;
+    DofMap* collapse(std::map<uint, uint>& collapsed_map,
+                     const Mesh& dolfin_mesh) const;
 
     /// Return the set of dof indices
     boost::unordered_set<dolfin::uint> dofs() const;
