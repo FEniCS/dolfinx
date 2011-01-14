@@ -31,16 +31,39 @@ namespace dolfin
 
   class FunctionSpace;
 
-  /// This class represents a (system of) partial differential
-  /// equation(s) in variational form: Find u in V such that
+  /// A _VariationalProblem_ represents a (system of) partial
+  /// differential equation(s) in variational form:
   ///
-  ///     F_u(v) = 0  for all v in V'.
+  /// Find u_h in V_h such that
   ///
+  ///     F(u_h; v) = 0  for all v in V_h',
   ///
-  /// Parameters:
+  /// where V_h is the trial space and V_h' is the test space.
   ///
-  ///     "linear solvers": "direct" or "iterative" (default: "direct")
-  ///     "symmetric":      true or false (default: false)
+  /// The variational problem is specified in terms of a pair of
+  /// _Form_s and, optionally, a set of _BoundaryCondition_s and
+  /// _MeshFunction_s that specify any subdomains involved in the
+  /// definition of the _Form_s.
+  ///
+  /// The pair of forms may either specify a nonlinear problem
+  ///
+  ///    (1) F(u_h; v) = 0
+  ///
+  /// in terms of the residual F and its derivative J = F':
+  ///
+  ///    F, J  (F linear, J bilinear)
+  ///
+  /// or a linear problem
+  ///
+  ///    (2) F(u_h; v) = a(u_h, v) - L(v) = 0
+  ///
+  /// in terms of the bilinear form a and a linear form L:
+  ///
+  ///    a, L  (a bilinear, L linear)
+  ///
+  /// Thus, a pair of forms is interpreted either as a nonlinear
+  /// problem or a linear problem depending on the ranks of the given
+  /// forms.
 
   class VariationalProblem : public Variable, public NonlinearProblem
   {
