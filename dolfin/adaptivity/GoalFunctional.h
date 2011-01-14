@@ -7,6 +7,7 @@
 #ifndef __GOAL_FUNCTIONAL_H
 #define __GOAL_FUNCTIONAL_H
 
+#include <boost/scoped_ptr.hpp>
 #include <dolfin/fem/Form.h>
 #include "ErrorControl.h"
 
@@ -32,9 +33,6 @@ namespace dolfin
     ///     num_coefficients (int)
     ///         the number of coefficients in functional
     GoalFunctional(uint rank, uint num_coefficients);
-
-    /// Destroy _GoalFunctional_
-    ~GoalFunctional() { /* Do nothing */ };
 
     /// Update error control instance with given forms
     ///

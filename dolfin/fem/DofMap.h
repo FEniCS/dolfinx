@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2010 Anders Logg and Garth N. Wells.
+// Copyright (C) 2007-2011 Anders Logg and Garth N. Wells.
 // Licensed under the GNU LGPL Version 2.1.
 //
 // Modified by Martin Alnes, 2008
@@ -17,6 +17,7 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
+#include <ufc.h>
 
 #include <dolfin/common/types.h>
 #include "GenericDofMap.h"
