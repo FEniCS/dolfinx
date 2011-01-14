@@ -4,6 +4,8 @@
 // First added:  2010-09-16
 // Last changed: 2011-01-14
 
+#include <armadillo>
+
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/UFC.h>
 #include <dolfin/mesh/Cell.h>
@@ -217,7 +219,8 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 
   // Attach primal approximation to left-hand side form (residual) if
   // necessary
-  if (_is_linear) {
+  if (_is_linear)
+  {
     const uint num_coeffs = _L_R_T->num_coefficients();
     _L_R_T->set_coefficient(num_coeffs - 2, u);
   }
@@ -247,13 +250,15 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
                              exterior_facet_domains, interior_facet_domains);
 
     // Solve linear system and convert result
-    x = arma::conv_to<std::vector<double> >::from(arma::solve(A, b));
+    arma::vec x = arma::solve(A, b);
+    //x = arma::conv_to<std::vector<double> >::from(arma::solve(A, b));
 
     // Get local-to-global dof map for cell
     const std::vector<uint>& dofs = dof_map.cell_dofs(cell->index());
 
     // Plug local solution into global vector
-    R_T.vector().set(&x[0], N, &dofs[0]);
+    //R_T.vector().set(&x[0], N, &dofs[0]);
+    R_T.vector().set(x.memptr(), N, &dofs[0]);
   }
   end();
 }
@@ -300,7 +305,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
   arma::mat b(N, 1);
   std::vector<double> x(N);
 
-  for (int e = 0; e < (q+1); e++)
+  for (int e = 0; e < (q + 1); e++)
   {
     // Construct b_e // FIXME: Better way much appreciated!
     Function b_e(_C);
@@ -328,7 +333,7 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       // Non-singularize local matrix
       for (uint i = 0; i < N; i ++)
       {
-        if (std::abs(A(i, i)) < 1.e-10)
+        if (std::abs(A(i, i)) < 1.0e-10)
         {
           A(i, i) = 1.0;
           b(i) = 0.0;
@@ -336,14 +341,17 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
       }
 
       // Solve linear system and convert result
-      x = arma::conv_to<std::vector<double> >::from(arma::solve(A, b));
+      //x = arma::conv_to<std::vector<double> >::from(arma::solve(A, b));
+      arma::vec x = arma::solve(A, b);
 
       // Get local-to-global dof map for cell
       const std::vector<uint>& dofs = dof_map.cell_dofs(cell->index());
 
       // Plug local solution into global vector
-      R_dT[e]->vector().set(&x[0], N, &dofs[0]);
+      //R_dT[e]->vector().set(&x[0], N, &dofs[0]);
+      R_dT[e]->vector().set(x.memptr(), N, &dofs[0]);
     }
   }
   end();
 }
+//-----------------------------------------------------------------------------

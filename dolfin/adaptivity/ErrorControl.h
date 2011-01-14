@@ -7,13 +7,13 @@
 #ifndef __ERROR_CONTROL_H
 #define __ERROR_CONTROL_H
 
-#include <armadillo>
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/scoped_ptr.hpp>
+
 #include <dolfin/fem/Form.h>
-#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 
 namespace dolfin
 {
