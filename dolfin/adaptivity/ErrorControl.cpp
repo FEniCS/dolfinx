@@ -251,13 +251,11 @@ void ErrorControl::compute_cell_residual(Function& R_T, const Function& u)
 
     // Solve linear system and convert result
     arma::vec x = arma::solve(A, b);
-    //x = arma::conv_to<std::vector<double> >::from(arma::solve(A, b));
 
     // Get local-to-global dof map for cell
     const std::vector<uint>& dofs = dof_map.cell_dofs(cell->index());
 
     // Plug local solution into global vector
-    //R_T.vector().set(&x[0], N, &dofs[0]);
     R_T.vector().set(x.memptr(), N, &dofs[0]);
   }
   end();
@@ -340,15 +338,13 @@ void ErrorControl::compute_facet_residual(SpecialFacetFunction& R_dT,
         }
       }
 
-      // Solve linear system and convert result
-      //x = arma::conv_to<std::vector<double> >::from(arma::solve(A, b));
+      // Solve linear system
       arma::vec x = arma::solve(A, b);
 
       // Get local-to-global dof map for cell
       const std::vector<uint>& dofs = dof_map.cell_dofs(cell->index());
 
       // Plug local solution into global vector
-      //R_dT[e]->vector().set(&x[0], N, &dofs[0]);
       R_dT[e]->vector().set(x.memptr(), N, &dofs[0]);
     }
   }
