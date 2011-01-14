@@ -320,6 +320,48 @@ bool VariationalProblem::is_nonlinear(const Form& b, const Form& c) const
 //-----------------------------------------------------------------------------
 const bool VariationalProblem::is_nonlinear() const
 {
-	return nonlinear;
+  return nonlinear;
+}
+//-----------------------------------------------------------------------------
+
+// FIXME: New functions below
+
+//-----------------------------------------------------------------------------
+const FunctionSpace& VariationalProblem::trial_space() const
+{
+  //return _bilinear_form.function_space(1);
+  return *a.function_space(1);
+}
+//-----------------------------------------------------------------------------
+const Form& VariationalProblem::bilinear_form() const
+{
+  //return _bilinear_form;
+  return a;
+}
+//-----------------------------------------------------------------------------
+const Form& VariationalProblem::linear_form() const
+{
+  //return _linear_form;
+  return L;
+}
+//-----------------------------------------------------------------------------
+const std::vector<const BoundaryCondition*> VariationalProblem::bcs() const
+{
+  return _bcs;
+}
+//-----------------------------------------------------------------------------
+const MeshFunction<dolfin::uint>* VariationalProblem::cell_domains() const
+{
+  return _cell_domains;
+}
+//-----------------------------------------------------------------------------
+const MeshFunction<dolfin::uint>* VariationalProblem::exterior_facet_domains() const
+{
+  return _exterior_facet_domains;
+}
+//-----------------------------------------------------------------------------
+const MeshFunction<dolfin::uint>* VariationalProblem::interior_facet_domains() const
+{
+  return _interior_facet_domains;
 }
 //-----------------------------------------------------------------------------

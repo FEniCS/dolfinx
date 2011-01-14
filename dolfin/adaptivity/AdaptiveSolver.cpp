@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2010.
 //
 // First added:  2010-08-19
-// Last changed: 2011-01-12
+// Last changed: 2011-01-14
 
 #include <dolfin/common/utils.h>
 #include <dolfin/common/Variable.h>
@@ -74,7 +74,7 @@ void AdaptiveSolver::solve(Function& u,
 
     //--- Stage 1: Estimate error ---
     begin("Stage %d.1: Estimating error...", i);
-    const double error_estimate = ec.estimate_error(u, problem.bcs);
+    const double error_estimate = ec.estimate_error(u, problem.bcs());
 
     // Evaluate functional value
     if (!problem.is_nonlinear())

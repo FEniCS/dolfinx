@@ -123,10 +123,10 @@ namespace dolfin
 
     friend class AdaptiveSolver;
 
-    // New functions below to be implemented
+    // FIXME: New functions below to be implemented
     const FunctionSpace& trial_space() const;
-    const Form& linear_form() const;
     const Form& bilinear_form() const;
+    const Form& linear_form() const;
     const std::vector<const BoundaryCondition*> bcs() const;
     const MeshFunction<uint>* cell_domains() const;
     const MeshFunction<uint>* exterior_facet_domains() const;
@@ -147,11 +147,17 @@ namespace dolfin
     // Detect whether problem is nonlinear
     bool is_nonlinear(const Form &b, const Form& c) const;
 
-    // Bilinear form
+    // Forms (old names, will be deleted)
     const Form& a;
 
     // Linear form
     const Form& L;
+
+    // Bilinear form
+    //const Form& _bilinear_form;
+
+    // Linear form
+    //const Form& _linear_form;
 
     // Boundary conditions
     std::vector<const BoundaryCondition*> _bcs;
